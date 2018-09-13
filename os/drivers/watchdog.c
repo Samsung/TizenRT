@@ -85,10 +85,10 @@
 #define wdlldbg  lldbg
 #define wdllvdbg llvdbg
 #else
-#define wddbg(x...)
-#define wdvdbg(x...)
-#define wdlldbg(x...)
-#define wdllvdbg(x...)
+#define wddbg(...)
+#define wdvdbg(...)
+#define wdlldbg(...)
+#define wdllvdbg(...)
 #endif
 
 /****************************************************************************

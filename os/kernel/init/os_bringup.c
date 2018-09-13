@@ -72,6 +72,9 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
+#ifdef CONFIG_TASK_MANAGER
+#include <tinyara/task_manager_internal.h>
+#endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"
 #ifdef CONFIG_PAGING
@@ -247,6 +250,7 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
+
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->preapp_start != NULL);
@@ -254,6 +258,22 @@ static inline void os_do_appstart(void)
 #else
 	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
 #endif
+	if (pid < 0) {
+		svdbg("Failed to create application init thread\n");
+	}
+#endif
+
+#ifdef CONFIG_TASK_MANAGER
+#define TASKMGR_STACK_SIZE 2048
+#define TASKMGR_PRIORITY 200
+
+	svdbg("Starting task manager\n");
+	task_manager_drv_register();
+
+	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
+	if (pid < 0) {
+		svdbg("Failed to create Task Manager\n");
+	}
 #endif
 
 	svdbg("Starting application main thread\n");
@@ -400,6 +420,10 @@ int os_bringup(void)
 
 #ifdef CONFIG_LOGM
 	logm_start();
+#endif
+
+#if !defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_HAVE_CXXINITIALIZE)
+	up_cxxinitialize();
 #endif
 
 	/* Once the operating system has been initialized, the system must be

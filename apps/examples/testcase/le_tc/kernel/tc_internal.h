@@ -32,10 +32,10 @@
 # define tcknvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 # define tcknllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-# define tckndbg(x...)
-# define tcknlldbg(x...)
-# define tcknvdbg(x...)
-# define tcknllvdbg(x...)
+# define tckndbg(...)
+# define tcknlldbg(...)
+# define tcknvdbg(...)
+# define tcknllvdbg(...)
 #endif
 
 #else /* ! CONFIG_CPP_HAVE_VARARGS */
@@ -62,6 +62,7 @@ int environ_main(void);
 int errno_main(void);
 int group_main(void);
 int libc_fixedmath_main(void);
+int libc_inttypes_main(void);
 int libc_libgen_main(void);
 int libc_math_main(void);
 int libc_misc_main(void);
@@ -71,7 +72,6 @@ int libc_queue_main(void);
 int libc_sched_main(void);
 int libc_semaphore_main(void);
 int libc_signal_main(void);
-int libc_spawn_main(void);
 int libc_stdio_main(void);
 int libc_stdlib_main(void);
 int libc_string_main(void);
@@ -97,7 +97,6 @@ int itc_libc_semaphore_main(void);
 int itc_semaphore_main(void);
 int itc_sched_main(void);
 int itc_timer_main(void);
-int itc_libc_spawn_main(void);
 int itc_pthread_main(void);
 
 

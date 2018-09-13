@@ -17,9 +17,11 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
@@ -30,12 +32,18 @@
 #include "wifi_utils.h"
 #include "wifi_profile.h"
 
+#ifdef CONFIG_WIFIMGR_ERROR_REPORT
+#include <error_report/error_report.h>
+#define WIFIADD_ERR_RECORD(reason_code)	ERR_DATA_CREATE(ERRMOD_WIFI_MANAGER, reason_code)
+#else
+#define WIFIADD_ERR_RECORD(reason_code)
+#endif
+
 #undef ndbg
 #define ndbg printf
 #undef nvdbg
 #define nvdbg printf
 
-#define NUM_OF_STATE_HANDLER 10 // the number of states
 enum _wifimgr_state {
 	WIFIMGR_UNINITIALIZED,
 	WIFIMGR_STA_DISCONNECTED,
@@ -45,9 +53,11 @@ enum _wifimgr_state {
 	WIFIMGR_STA_RECONNECT, // 5
 	WIFIMGR_STA_RECONNECTING,
 	WIFIMGR_STA_CONNECT_CANCEL,
+	WIFIMGR_SOFTAP_DISCONNECTING_STA,
 	WIFIMGR_SOFTAP,
 	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
+	WIFIMGR_STATE_MAX,
 };
 typedef enum _wifimgr_state _wifimgr_state_e;
 
@@ -76,9 +86,12 @@ enum _wifimgr_usr_cb_type {
 	CB_STA_CONNECTED,
 	CB_STA_CONNECT_FAILED,
 	CB_STA_DISCONNECTED,
+	CB_STA_RECONNECTED,
 	CB_STA_JOINED,
 	CB_STA_LEFT,
 	CB_SCAN_DONE,
+	CB_SOFTAP_DONE, /* This callback does not exist, but is used for stats management. */
+	CB_MAX,
 	CB_EVT_NONE = -1
 };
 typedef enum _wifimgr_usr_cb_type _wifimgr_usr_cb_type_e;
@@ -96,8 +109,8 @@ struct _wifimgr_msg {
 typedef struct _wifimgr_msg _wifimgr_msg_s;
 
 struct _wifimgr_info {
-	char ssid[32];             // SSID of Connected AP if mode is a station, SoftAP SSID if mode is a soft ap
-	char mac_address[6];	   // MAC address of wifi interface
+	char ssid[WIFIMGR_SSID_LEN + 1];             // SSID of Connected AP if mode is a station, SoftAP SSID if mode is a soft ap
+	char mac_address[WIFIMGR_MACADDR_LEN];	   // MAC address of wifi interface
 	int rssi;                  // It is only used for a station mode
 	int num_sta;               // It is only used for a softap mode, it shows the number of stations connected
 	uint32_t ip4_address;
@@ -110,6 +123,8 @@ struct _wifimgr_info {
 
 	pthread_mutex_t state_lock;
 	pthread_mutex_t info_lock;
+	pthread_mutex_t softap_lock;
+	pthread_cond_t softap_signal; 
 	wifi_manager_cb_s cb;
 
 	//
@@ -121,6 +136,9 @@ struct _wifimgr_info {
 	int terminate;	// it is protected by g_reconn_mutex to sync between the callback task and reconn_worker
 	int conn_tries; // to do: set  it by Kconfig
 	int max_tries;
+	wifi_manager_softap_config_s softap_config;
+
+	uint16_t stats[CB_MAX];
 };
 typedef struct _wifimgr_info _wifimgr_info_s;
 
@@ -134,10 +152,198 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_CHECK_STATE(s) ((s) != g_manager_info.state)
 #define WIFIMGR_IS_STATE(s) ((s) == g_manager_info.state)
 #define WIFIMGR_GET_STATE g_manager_info.state
-#define WIFIMGR_SET_STATE(s) (g_manager_info.state = s)
+#define WIFIMGR_SET_STATE(s)				\
+	do {									\
+		g_manager_info.state = s;			\
+	} while (0)
+#define WIFIMGR_STATS_INC(s)				\
+	do {									\
+		g_manager_info.stats[s]++;			\
+	} while (0)
 #define WIFIMGR_SET_NO_CBK (g_manager_info.chk_cbk = 1)
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
+
+#define WIFIMGR_SOFTAP_WAIT_CALLBACK                                                                    \
+	do {                                                                                            \
+		pthread_mutex_lock(&g_manager_info.softap_lock);					\
+		pthread_cond_wait(&g_manager_info.softap_signal, &g_manager_info.softap_lock);          \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	                                \
+		nvdbg("[WM] T%d wait disconnect callback\n", getpid());					\
+	} while (0)
+
+#define WIFIMGR_SOFTAP_CALLBACK_RECEIVED					\
+	do {									\
+		pthread_mutex_lock(&g_manager_info.softap_lock);		\
+		pthread_cond_signal(&g_manager_info.softap_signal);             \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	        \
+		nvdbg("[WM] T%d received disconnect callback\n", getpid());	\
+	} while (0)
+
+#define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
+#define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
+#define WIFIMGR_RESTORE_STATE								\
+	do {										\
+		g_manager_info.state = g_manager_info.prev_state;	                \
+		g_manager_info.prev_state = WIFIMGR_NONE;			        \
+	} while (0)
+
+#define WIFIMGR_SET_SSID(s)					\
+	do {							\
+		strncpy(g_manager_info.ssid, s, strlen(s));	\
+		g_manager_info.ssid[strlen(s)] = '\0';          \
+	} while (0)
+
+#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
+	do {											\
+		(dest).channel = (src)->channel;						\
+		strncpy((dest).ssid, (src)->ssid, strlen((src)->ssid));				\
+		(dest).ssid[strlen((src)->ssid)] = '\0';                                        \
+		strncpy((dest).passphrase, (src)->passphrase, strlen((src)->passphrase));	\
+		(dest).passphrase[strlen((src)->passphrase)] = '\0';                            \
+	} while (0)
+
+#define WIFIMGR_COPY_AP_INFO(dest, src)								\
+	do {											\
+		(dest).ssid_length = (src).ssid_length;						\
+		(dest).passphrase_length = (src).passphrase_length;				\
+		strncpy((dest).ssid, (src).ssid, (src).ssid_length);		                \
+		(dest).ssid[(src).ssid_length] = '\0';                                          \
+		strncpy((dest).passphrase, (src).passphrase, (src).passphrase_length);          \
+		(dest).passphrase[(src).passphrase_length] = '\0';                              \
+		(dest).ap_auth_type = (src).ap_auth_type;					\
+		(dest).ap_crypto_type = (src).ap_crypto_type;					\
+	} while (0)
+
+#define WIFIMGR_COPY_RECONN_INFO(dest, src)			\
+	do {							\
+		(dest).type = (src).type;			\
+		(dest).interval = (src).interval;		\
+		(dest).max_interval = (src).max_interval;	\
+	} while (0)
+
+#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	        \
+	do {							\
+		int res = -1;					\
+		res = netlib_set_ipv4addr(intf, &ip);		\
+		if (res == -1) {				\
+			nvdbg("[WM] set ipv4 addr error\n");	\
+		}						\
+		res = netlib_set_ipv4netmask(intf, &netmask);	\
+		if (res == -1) {				\
+			nvdbg("[WM] set netmask addr error\n");	\
+		}						\
+		res = netlib_set_dripv4addr(intf, &gateway);	\
+		if (res == -1) {				\
+			nvdbg("[WM] set route addr error\n");	\
+		}						\
+		g_manager_info.ip4_address = ip.s_addr;		\
+	} while (0)
+
+#define WIFIMGR_INC_NUM_CLIENT						\
+	do {								\
+		pthread_mutex_lock(&g_manager_info.info_lock);		\
+		g_manager_info.num_sta++;				\
+		pthread_mutex_unlock(&g_manager_info.info_lock);	\
+	} while (0)
+
+#define WIFIMGR_DEC_NUM_CLIENT						\
+	do {								\
+		pthread_mutex_lock(&g_manager_info.info_lock);		\
+		g_manager_info.num_sta--;				\
+		pthread_mutex_unlock(&g_manager_info.info_lock);	\
+	} while (0)
+
+#define WIFIMGR_SPC // to pass the code check ruls
+#define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
+	do {							\
+		wifi_manager_result_e wmres = func;		\
+		if (wmres != WIFI_MANAGER_SUCCESS) {		\
+			ndbg(msg);				\
+			free_rsc;				\
+			return ret;				\
+		}						\
+	} while (0)
+
+#define WIFIMGR_CHECK_RESULT(func, msg, ret) WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, WIFIMGR_SPC)
+#define WIFIMGR_CHECK_RESULT_NORET(func, msg)				\
+	do {								\
+		wifi_manager_result_e wmres = func;			\
+		if (wmres != WIFI_MANAGER_SUCCESS) {                    \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);       \
+			ndbg(msg);					\
+		}							\
+	} while (0)													\
+
+#define WIFIMGR_CHECK_UTILRESULT(func, msg, ret)	                \
+	do {								\
+		wifi_utils_result_e res = func;				\
+		if (res != WIFI_UTILS_SUCCESS) {			\
+			ndbg(msg);					\
+			ndbg("error code(%d)\n", res);                  \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);     \
+			return ret;					\
+		}							\
+	} while (0)
+
+#define WIFIMGR_CHECK_AP_CONFIG(config)									    \
+	do {												    \
+		if (config->ssid_length > WIFIMGR_SSID_LEN ||						    \
+			config->passphrase_length > WIFIMGR_PASSPHRASE_LEN ||				    \
+			strlen(config->ssid) > WIFIMGR_SSID_LEN ||					    \
+			strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {				    \
+			ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");	            \
+			ndbg("[WM] Make sure that length of SSID < 33 and length of passphrase < 65\n");    \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);				    \
+			return WIFI_MANAGER_INVALID_ARGS;						    \
+		}											    \
+	} while (0)
+
+#define LOCK_WIFIMGR pthread_mutex_lock(&g_manager_info.state_lock)
+#define UNLOCK_WIFIMGR pthread_mutex_unlock(&g_manager_info.state_lock)
+
+#define WIFIMGR_FREE_CONNMSG(msg)		\
+	do {					\
+		free(msg->config);		\
+		msg->config = NULL;		\
+		free(msg->conn_config);		\
+		msg->conn_config = NULL;	\
+		close(msg->fd);			\
+		free(msg);			\
+	} while (0)
+
+/**
+ * Debugging
+ */
+#define WM_LOG_START nvdbg("[WM] T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
+#define WM_LOG_HANDLER_START nvdbg("[WM] T%d %s:%d state(%d) evt(%d)\n", getpid(), __FUNCTION__, __LINE__, g_manager_info.state, msg->event);
+#define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
+#define WM_RECONN_INITIALIZER {WIFI_RECONN_NONE, -1, -1}
+#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
+#define WIFIMGR_SOTFAP_CONFIG {{0,}, {0,}, 1}
+
+/**
+ * global variables
+ */
+static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
+										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
+										 PTHREAD_MUTEX_INITIALIZER,
+										 PTHREAD_MUTEX_INITIALIZER,
+										 PTHREAD_MUTEX_INITIALIZER,
+										 PTHREAD_COND_INITIALIZER,
+										 {NULL, NULL, NULL, NULL, NULL},
+										 0,
+										 WM_APINFO_INITIALIZER,
+										 WM_RECONN_INITIALIZER,
+										 0, 0, 10,
+										 WIFIMGR_SOTFAP_CONFIG,
+										 {0} };
+
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
+static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
+#define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
+#define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
 #define WIFIMGR_TRIGGER_RECONNECT_WORKER		\
 	do {										\
 		g_manager_info.conn_tries++;			\
@@ -164,119 +370,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		nvdbg("[WM] wait worker to terminate\n");							\
 		pthread_join(g_manager_info.reconn_id, NULL);					\
 	} while (0)
-
-#define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
-#define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
-#define WIFIMGR_RESTORE_STATE								\
-	do {													\
-		g_manager_info.state = g_manager_info.prev_state;	\
-		g_manager_info.prev_state = WIFIMGR_NONE;			\
-	} while (0)
-
-#define WIFIMGR_SET_SSID(s)							\
-	do {											\
-		strncpy(g_manager_info.ssid, s, strlen(s));	\
-	} while (0)
-
-#define WIFIMGR_COPY_AP_INFO(dest, src)									\
-	do {																\
-		(dest).ssid_length = (src).ssid_length;							\
-		(dest).passphrase_length = (src).passphrase_length;				\
-		strncpy((dest).ssid, (src).ssid, (src).ssid_length + 1);		\
-		strncpy((dest).passphrase, (src).passphrase, (src).passphrase_length + 1); \
-		(dest).ap_auth_type = (src).ap_auth_type;						\
-		(dest).ap_crypto_type = (src).ap_crypto_type;					\
-	} while (0)
-
-#define WIFIMGR_COPY_RECONN_INFO(dest, src)			\
-	do {											\
-		(dest).type = (src).type;					\
-		(dest).interval = (src).interval;			\
-		(dest).max_interval = (src).max_interval;	\
-	} while (0)
-
-#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	\
-	do {												\
-		netlib_set_ipv4addr(intf, &ip);					\
-		netlib_set_ipv4netmask(intf, &netmask);			\
-		netlib_set_dripv4addr(intf, &gateway);			\
-		g_manager_info.ip4_address = ip.s_addr;			\
-	} while (0)
-
-#define WIFIMGR_INC_NUM_CLIENT								\
-	do {													\
-		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta++;							\
-		pthread_mutex_unlock(&g_manager_info.info_lock);	\
-	} while (0)
-
-#define WIFIMGR_DEC_NUM_CLIENT								\
-	do {													\
-		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta--;							\
-		pthread_mutex_unlock(&g_manager_info.info_lock);	\
-	} while (0)
-
-#define WIFIMGR_SPC // to pass the code check ruls
-#define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
-	do {														\
-		wifi_manager_result_e wmres = func;						\
-		if (wmres != WIFI_MANAGER_SUCCESS) {					\
-			ndbg(msg);											\
-			free_rsc;											\
-			return ret;											\
-		}														\
-	} while (0)
-
-#define WIFIMGR_CHECK_RESULT(func, msg, ret) WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, WIFIMGR_SPC)
-#define WIFIMGR_CHECK_RESULT_NORET(func, msg) WIFIMGR_CHECK_RESULT(func, msg, WIFIMGR_SPC)
-#define WIFIMGR_CHECK_UTILRESULT(func, msg, ret)	\
-	do {											\
-		wifi_utils_result_e res = func;				\
-		if (res != WIFI_UTILS_SUCCESS) {			\
-			ndbg(msg);								\
-			ndbg("error code(%d)\n", res);\
-			return ret;								\
-		}											\
-	} while (0)
-
-#define LOCK_WIFIMGR pthread_mutex_lock(&g_manager_info.state_lock)
-#define UNLOCK_WIFIMGR pthread_mutex_unlock(&g_manager_info.state_lock)
-#define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
-#define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
-#define WIFIMGR_FREE_CONNMSG(msg)				\
-	do {										\
-		free(msg->config);						\
-		msg->config = NULL;						\
-		free(msg->conn_config);					\
-		msg->conn_config = NULL;				\
-		free(msg);								\
-		close(msg->fd);							\
-	} while (0)
-
-/**
- * Debugging
- */
-#define WM_LOG_START nvdbg("[WM] T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
-#define WM_LOG_HANDLER_START nvdbg("[WM] T%d %s:%d state(%d) evt(%d)\n", getpid(), __FUNCTION__, __LINE__, g_manager_info.state, msg->event);
-#define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
-#define WM_RECONN_INITIALIZER {WIFI_RECONN_NONE, -1, -1}
-#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
-
-/**
- * global variables
- */
-static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
-										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
-										 PTHREAD_MUTEX_INITIALIZER,
-										 PTHREAD_MUTEX_INITIALIZER,
-										 {NULL, NULL, NULL, NULL, NULL},
-										 0,
-										 WM_APINFO_INITIALIZER,
-										 WM_RECONN_INITIALIZER,
-										 0, 0, 10};
-static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
+#endif
 #ifdef CONFIG_ENABLE_IOTIVITY
 static mqd_t g_dw_nwevent_mqfd;
 #endif
@@ -306,11 +400,11 @@ static wifi_manager_result_e _get_ipaddr_dhcp(void);
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
+static void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config);
 static wifi_manager_result_e _wifimgr_disconnect_ap(void);
 static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config);
 static wifi_manager_result_e _wifimgr_stop_softap(void);
 static wifi_manager_result_e _wifimgr_scan(void);
-static wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config);
 //
 // user callback handler
 //
@@ -328,6 +422,7 @@ static wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg);
 
@@ -336,7 +431,7 @@ typedef wifi_manager_result_e (*wifimgr_handler)(_wifimgr_msg_s *msg);
 /*
  * g_handler should be matched to _wifimgr_state
  */
-wifimgr_handler g_handler[NUM_OF_STATE_HANDLER] = {
+const wifimgr_handler g_handler[] = {
 	_handler_on_uninitialized_state,
 	_handler_on_disconnected_state,
 	_handler_on_disconnecting_state,
@@ -345,6 +440,7 @@ wifimgr_handler g_handler[NUM_OF_STATE_HANDLER] = {
 	_handler_on_reconnect_state,
 	_handler_on_reconnecting_state,
 	_handler_on_connect_cancel_state,
+	_handler_on_softap_disconnecting_state,
 	_handler_on_softap_state,
 	_handler_on_scanning_state,
 };
@@ -360,6 +456,15 @@ void __tizenrt_manual_linkset(const char *msg)
 	}
 }
 #endif
+
+
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
+wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config)
+{
+	_wifimgr_msg_s msg = {EVT_RECONNECT, config};
+	wifi_manager_result_e res = _handle_request(&msg);
+	return res;
+}
 
 
 static void *_reconn_worker(void *arg)
@@ -438,6 +543,7 @@ static void *_reconn_worker(void *arg)
 	nvdbg("[WM] reconnect func terminated\n");
 	return NULL;
 }
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 
 
 wifi_manager_result_e
@@ -449,13 +555,16 @@ _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list
 		cur = (wifi_manager_scan_info_s *)calloc(1, sizeof(wifi_manager_scan_info_s));
 		if (!cur) {
 			_free_scan_info(*wm_scan_list);
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 			return WIFI_MANAGER_FAIL;
 		}
 		cur->rssi = iter->ap_info.rssi;
 		cur->channel = iter->ap_info.channel;
 		cur->phy_mode = iter->ap_info.phy_mode;
-		strncpy(cur->ssid, (char *)iter->ap_info.ssid, 32);
-		strncpy(cur->bssid, (char *)iter->ap_info.bssid, 17);
+		cur->ap_auth_type = iter->ap_info.ap_auth_type;
+		cur->ap_crypto_type = iter->ap_info.ap_crypto_type;
+		strncpy(cur->ssid, (char *)iter->ap_info.ssid, WIFIMGR_SSID_LEN);
+		strncpy(cur->bssid, (char *)iter->ap_info.bssid, WIFIMGR_MACADDR_STR_LEN);
 
 		if (!prev) {
 			*wm_scan_list = cur;
@@ -490,6 +599,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	case WIFIMGR_STA_DISCONNECTED:
 	case WIFIMGR_STA_DISCONNECTING:
 	case WIFIMGR_STA_CONNECTING:
+	case WIFIMGR_SOFTAP_DISCONNECTING_STA:
 		*mode = STA_MODE;
 		*conn = AP_DISCONNECTED;
 		break;
@@ -507,6 +617,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 		break;
 	default:
 		// CRITICAL ERROR
+		ndbg("[WM] CRITICAL ERROR: BAD STATE\n");
 		break;
 	}
 }
@@ -518,16 +629,18 @@ wifi_manager_result_e _start_dhcpd(void)
 	struct in_addr netmask = {.s_addr = 0x00ffffff};
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
-
-	if (dhcpd_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) < 0) {
-		ndbg("[WM] DHCP Server - started fail\n");
-		return WIFI_MANAGER_FAIL;
-	}
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
+	if (dhcpd_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) >= 0) {
+		ndbg("[WM] DHCP Server - started successfully\n");
 #ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("gen");
+		__tizenrt_manual_linkset("gen");
 #endif
-	nvdbg("[WM] DHCP Server - started success\n");
-	return WIFI_MANAGER_SUCCESS;
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		ndbg("[WM] DHCP Server - started fail\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_SOFTAP_DHCPD_FAIL);
+	}
+	return wret;
 }
 
 
@@ -550,26 +663,25 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 	struct dhcpc_state state;
 	int ret;
 	void *dhcp_hnd = NULL;
-
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	dhcp_hnd = dhcpc_open(WIFIMGR_STA_IFNAME);
-	if (dhcp_hnd == NULL) {
-		ndbg("[WM] Invalid dhcp handle\n");
-		return WIFI_MANAGER_FAIL;
-	}
-	ret = dhcpc_request(dhcp_hnd, &state);
-	if (ret != OK) {
-		ndbg("[WM] get IP address fail\n");
+	if (dhcp_hnd) {
+		ret = dhcpc_request(dhcp_hnd, &state);
+		if (ret != OK) {
+			ndbg("[WM] get IP address fail\n");
+			dhcpc_close(dhcp_hnd);
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+			return wret;
+		}
+		WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
+		nvdbg("[WM] IP address : %s ----\n", inet_ntoa(state.ipaddr));
 		dhcpc_close(dhcp_hnd);
-		return WIFI_MANAGER_FAIL;
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		ndbg("[WM] Invalid dhcp handle\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 	}
-	WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("gen");
-#endif
-	nvdbg("[WM] IP address : %s ----\n", inet_ntoa(state.ipaddr));
-	dhcpc_close(dhcp_hnd);
-
-	return WIFI_MANAGER_SUCCESS;
+	return wret;
 }
 
 
@@ -582,6 +694,7 @@ wifi_manager_result_e _wifimgr_deinit(void)
 	int ret = mq_close(g_dw_nwevent_mqfd);
 	if (ret < 0) {
 		ndbg("[WM] close message queue fail\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
@@ -598,13 +711,26 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 }
 
 
+void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
+{
+	WM_LOG_START;
+	wifi_utils_result_e ret = wifi_profile_write(config, 1);
+	if (ret != WIFI_UTILS_SUCCESS) {
+		ndbg("[WM] Failed to save the connected AP configuration in file system\n");
+	}
+	return;
+}
+
+
 wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
 	WM_LOG_START;
 	wifi_utils_ap_config_s util_config;
-	strncpy(util_config.ssid, config->ssid, config->ssid_length + 1);
+	strncpy(util_config.ssid, config->ssid, config->ssid_length);
+	util_config.ssid[config->ssid_length] = '\0';
 	util_config.ssid_length = config->ssid_length;
-	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length + 1);
+	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length);
+	util_config.passphrase[config->passphrase_length] = '\0';
 	util_config.passphrase_length = config->passphrase_length;
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
@@ -613,9 +739,12 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	if (wres == WIFI_UTILS_ALREADY_CONNECTED) {
 		return WIFI_MANAGER_ALREADY_CONNECTED;
 	} else if (wres != WIFI_UTILS_SUCCESS) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
-	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
+	WIFIMGR_SET_SSID(config->ssid);
+
+	_wifimgr_save_connected_config(config);
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -626,10 +755,6 @@ wifi_manager_result_e _wifimgr_disconnect_ap(void)
 	WM_LOG_START;
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disconnect_ap(NULL), "[WM] disconnect to ap fail\n", WIFI_MANAGER_FAIL);
-
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("del");
-#endif
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -644,16 +769,23 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 	softap_config.ssid_length = strlen(config->ssid);
 	softap_config.passphrase_length = strlen(config->passphrase);
-	strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length + 1);
-	strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length + 1);
+	strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length);
+	softap_config.ssid[softap_config.ssid_length] = '\0';
+	strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length);
+	softap_config.passphrase[softap_config.passphrase_length] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
 	WIFIMGR_CHECK_RESULT(_start_dhcpd(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 
 	/* update wifi_manager_info */
-	strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length + 1);
+	WIFIMGR_SET_SSID(config->ssid);
 	g_manager_info.num_sta = 0;
 
+	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
+		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;
+	}
+	/* For tracking softap stats, the LAST value is used */
+	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -671,22 +803,12 @@ wifi_manager_result_e _wifimgr_scan(void)
 {
 	WM_LOG_START;
 	wifi_manager_cb_s *cbk = &g_manager_info.cb;
-	
-	if (!cbk->scan_ap_done) {
-		ndbg("[WM] Callback funciton should be defined.\n");
-		return WIFI_MANAGER_FAIL;
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
+	if (cbk->scan_ap_done) {
+		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
+		wret = WIFI_MANAGER_SUCCESS;
 	}
-	
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
-	return WIFI_MANAGER_SUCCESS;
-}
-
-
-wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config)
-{
-	_wifimgr_msg_s msg = {EVT_RECONNECT, config};
-	wifi_manager_result_e res = _handle_request(&msg);
-	return res;
+	return wret;
 }
 
 
@@ -737,7 +859,7 @@ void _wifi_dhcpd_event(void)
 	WM_LOG_START;
 	_wifimgr_msg_s msg = {EVT_DHCPD_GET_IP, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(_handle_request(&msg), "[WM] handle dhcpd event fail\n");
-	return ;
+	return;
 }
 
 /*
@@ -748,6 +870,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	WM_LOG_HANDLER_START;
 	_wifimgr_evt_e evt = msg->event;
 	if (evt != EVT_INIT) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 
@@ -760,6 +883,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 
 	if (g_dw_nwevent_mqfd == (mqd_t)ERROR) {
 		ndbg("[WM] iotivity connect event message queue init fail");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
@@ -783,7 +907,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	}
 
 	g_manager_info.cb = *cb;
-	memcpy(g_manager_info.mac_address, info.mac_address, 6);
+	memcpy(g_manager_info.mac_address, info.mac_address, WIFIMGR_MACADDR_LEN);
 
 	WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 
@@ -815,6 +939,7 @@ wifi_manager_result_e _handler_on_disconnected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -832,31 +957,54 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
 
 
+
+wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg)
+{
+	WM_LOG_HANDLER_START;
+	if (msg->event == EVT_STA_DISCONNECTED) {
+		if (WIFIMGR_CHECK_CBK) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
+		} else {
+			WIFIMGR_RESET_CBK_CHK;
+		}
+		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(&g_manager_info.softap_config), "run_softap fail", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
+
 wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
-	wifi_manager_result_e res;
 	if (msg->event == EVT_STA_CONNECTED) {
-		res = _get_ipaddr_dhcp();
-		if (res != WIFI_MANAGER_SUCCESS) {
+#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
+		wifi_manager_result_e wret;
+		wret = _get_ipaddr_dhcp();
+		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_NO_CBK;
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-			return WIFI_MANAGER_FAIL;
+			return wret;
 		}
+#endif
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -870,21 +1018,23 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
-		/* STA is disconnected from AP */
-		_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
+			_handle_user_cb(CB_STA_RECONNECTED, NULL);
 			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
 			if (!rmsg) {				// critical error
 				ndbg("[WM] allocate memory for reconn msg fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 			rmsg->config = (wifi_manager_ap_config_s *)malloc(sizeof(wifi_manager_ap_config_s));
 			if (!rmsg->config) {				// critical error
 				free(rmsg);
 				ndbg("[WM] allocate memory for reconnmsg apconfig is fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 
@@ -893,6 +1043,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 				free(rmsg->config);
 				free(rmsg);
 				ndbg("[WM] allocate memory for reonnmsg conn_config is fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 			WIFIMGR_COPY_AP_INFO(*(rmsg->config), g_manager_info.connected_ap);
@@ -903,24 +1054,25 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			int ret = pthread_create(&g_manager_info.reconn_id, NULL, _reconn_worker, (pthread_addr_t)rmsg);
 			if (ret != 0) {				// critical error
 				ndbg("[WM] [error] pthread_create fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 			}
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
+			ndbg("[WM] AUTOCONNECT: go to RECONNECT state\n");
+			_handle_user_cb(CB_STA_RECONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP) {
-		wifi_manager_result_e res = _wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param);
-		if (res != WIFI_MANAGER_SUCCESS) {
-			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
-			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-		}
-		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+		WIFIMGR_COPY_SOFTAP_CONFIG(g_manager_info.softap_config, (wifi_manager_softap_config_s *)msg->param);
+		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP_DISCONNECTING_STA);
 	} else if (msg->event == EVT_DEINIT) {
 		// Todo: do I need to disconnect?
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
@@ -930,6 +1082,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -987,16 +1140,16 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
-		nvdbg("[WM] disconnect\n");
+		ndbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		nvdbg("[WM] reconnect\n");
+		ndbg("[WM] AUTOCONNECT wait\n");
 	} else if (msg->event == EVT_STA_CONNECTED) {
-		nvdbg("[WM] connected\n");
+		ndbg("[WM] AUTOCONNECT done: go to CONNECTED\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_DEINIT) {
-		nvdbg("[WM] deinit\n");
+		ndbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
@@ -1008,6 +1161,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 	if (msg->event == EVT_STA_CONNECT_FAILED) {
 		nvdbg("[WM] reconnect fail\n");
 		if (g_manager_info.conn_tries == g_manager_info.max_tries) {
@@ -1026,6 +1180,7 @@ wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -1033,12 +1188,14 @@ wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 	if (msg->event == EVT_STA_CONNECTED) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -1067,6 +1224,7 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 
@@ -1077,12 +1235,15 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (msg->event == EVT_SCAN_DONE) {
 		_handle_user_cb(CB_SCAN_DONE, msg->param);
 		WIFIMGR_RESTORE_STATE;
-		return WIFI_MANAGER_SUCCESS;
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 	}
-	return WIFI_MANAGER_FAIL;
+	return wret;
 }
 
 
@@ -1093,15 +1254,29 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	switch (evt) {
 	case CB_STA_CONNECTED:
 		nvdbg("[WM] call sta connect success event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("gen");
+#endif
 		cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 		break;
 	case CB_STA_CONNECT_FAILED:
 		nvdbg("[WM] call sta connect fail event\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		cbk->sta_connected(WIFI_MANAGER_FAIL);
 		break;
 	case CB_STA_DISCONNECTED:
 		nvdbg("[WM] call sta disconnect event\n");
-		cbk->sta_disconnected();
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("del");
+#endif
+		cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+		break;
+	case CB_STA_RECONNECTED:
+		nvdbg("[WM] call sta disconnect event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("del");
+#endif
+		cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
 		break;
 	case CB_STA_JOINED:
 		nvdbg("[WM] call sta join event\n");
@@ -1121,13 +1296,16 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
 			_free_scan_info(info);
 		} else {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_SCAN_FAIL);
 			cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
 		}
 		break;
 	default:
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		ndbg("[WM] Invalid State\n");
-		break;
+		return;
 	}
+	WIFIMGR_STATS_INC(evt);
 }
 
 
@@ -1138,9 +1316,39 @@ wifi_manager_result_e _handle_request(_wifimgr_msg_s *msg)
 	LOCK_WIFIMGR;
 	WM_LOG_HANDLER_START;
 	res = g_handler[WIFIMGR_GET_STATE](msg);
+#ifdef CONFIG_WIFIMGR_ERROR_REPORT
 	if (res != WIFI_MANAGER_SUCCESS) {
 		ndbg("[WM] Wi-Fi manager fail: state error\n");
+		error_code_wifi_manager_t wifi_err_code;
+		switch (msg->event) {
+		case EVT_INIT:
+			wifi_err_code = ERR_WIFIMGR_INIT_FAIL;
+			break;
+		case EVT_DEINIT:
+			wifi_err_code = ERR_WIFIMGR_DEINIT_FAIL;
+			break;
+		case EVT_SET_SOFTAP:
+			wifi_err_code = ERR_WIFIMGR_SOFTAP_FAIL;
+			break;
+		case EVT_SET_STA:
+			wifi_err_code = ERR_WIFIMGR_STA_FAIL;
+			break;
+		case EVT_CONNECT:
+			wifi_err_code = ERR_WIFIMGR_CONNECT_FAIL;
+			break;
+		case EVT_DISCONNECT:
+			wifi_err_code = ERR_WIFIMGR_DISCONNECT_FAIL;
+			break;
+		case EVT_SCAN:
+			wifi_err_code = ERR_WIFIMGR_SCAN_FAIL;
+			break;
+		default:
+			wifi_err_code = ERR_WIFIMGR_UTILS_FAIL;
+			break;
+		}
+		WIFIADD_ERR_RECORD(wifi_err_code);
 	}
+#endif
 	UNLOCK_WIFIMGR;
 	nvdbg("[WM] T%d <-- _handle_request\n", getpid());
 	return res;
@@ -1153,6 +1361,7 @@ wifi_manager_result_e _handle_request(_wifimgr_msg_s *msg)
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 {
 	if (!wmcb) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	_wifimgr_msg_s msg = {EVT_INIT, (void *)wmcb};
@@ -1172,9 +1381,11 @@ wifi_manager_result_e wifi_manager_deinit(void)
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config)
 {
 	if (mode != STA_MODE && mode != SOFTAP_MODE) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	if (mode == SOFTAP_MODE && !config) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
@@ -1184,6 +1395,14 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		msg.param = (void *)config;
 	}
 	wifi_manager_result_e res = _handle_request(&msg);
+	LOCK_WIFIMGR;
+	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
+		UNLOCK_WIFIMGR;
+		WIFIMGR_SOFTAP_WAIT_CALLBACK;
+	} else {
+		UNLOCK_WIFIMGR;
+	}
+
 	return res;
 }
 
@@ -1191,13 +1410,20 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
 	if (info == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	LOCK_WIFIMGR;
 	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-	memcpy(info->ssid, g_manager_info.ssid, 32);
-	memcpy(info->mac_address, g_manager_info.mac_address, 6);
+	memcpy(info->ssid, g_manager_info.ssid, WIFIMGR_SSID_LEN + 1);
+	memcpy(info->mac_address, g_manager_info.mac_address, WIFIMGR_MACADDR_LEN);
+	/* Get RSSI */
+	wifi_utils_info info_utils;
+	wifi_utils_result_e wres = wifi_utils_get_info(&info_utils);
+	if (wres != WIFI_UTILS_FAIL) {
+		g_manager_info.rssi = info_utils.rssi;
+	}
 	info->rssi = g_manager_info.rssi;
 	if (WIFIMGR_IS_STATE(WIFIMGR_SCANNING)) {
 		_convert_state_to_info(&info->status, &info->mode, WIFIMGR_GET_PREVSTATE);
@@ -1212,66 +1438,112 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
 													 wifi_manager_reconnect_config_s *conn_config)
 {
-	if (!config || !conn_config) {
-		return WIFI_MANAGER_INVALID_ARGS;
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config && conn_config) {
+		WIFIMGR_CHECK_AP_CONFIG(config);
+		_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
+		_wifimgr_msg_s msg = {EVT_CONNECT, &conninfo};
+		wret = _handle_request(&msg);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
-
-	if ((config->ssid_length > 31) || (config->passphrase_length > 63)) {
-		ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");
-		ndbg("[WM] Make sure that length of SSID < 32 and length of passphrase < 64\n");
-		return WIFI_MANAGER_INVALID_ARGS;
-	}
-	_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
-	_wifimgr_msg_s msg = {EVT_CONNECT, &conninfo};
-	wifi_manager_result_e res = _handle_request(&msg);
-	return res;
+	return wret;
 }
 
 
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
-	if (!config) {
-		return WIFI_MANAGER_INVALID_ARGS;
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config) {
+		wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;
+		wret = wifi_manager_connect_ap_config(config, &conn_config);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
-	wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;
-	wifi_manager_result_e res = wifi_manager_connect_ap_config(config, &conn_config);
-
-	return res;
+	return wret;
 }
 
 
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
 {
 	_wifimgr_msg_s msg = {EVT_DISCONNECT, NULL};
-	wifi_manager_result_e res = _handle_request(&msg);
-	return res;
+	wifi_manager_result_e wret = _handle_request(&msg);
+	return wret;
 }
 
 
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	_wifimgr_msg_s msg = {EVT_SCAN, NULL};
-	wifi_manager_result_e res = _handle_request(&msg);
-	return res;
+	wifi_manager_result_e wret = _handle_request(&msg);
+	return wret;
 }
-
 
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
-	return WIFI_MANAGER_SUCCESS;
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config) {
+		WIFIMGR_CHECK_AP_CONFIG(config);
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config, 0), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+	}
+	return wret;
 }
 
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
-	return WIFI_MANAGER_SUCCESS;
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config) {
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 0), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+	}
+	return wret;
 }
 
 
 wifi_manager_result_e wifi_manager_remove_config(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(0), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
+}
+
+
+wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config)
+{
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config) {
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 1), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+	}
+	return wret;
+}
+
+
+wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
+{
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (stats) {
+		LOCK_WIFIMGR;
+		stats->connect = g_manager_info.stats[CB_STA_CONNECTED];
+		stats->connectfail = g_manager_info.stats[CB_STA_CONNECT_FAILED];
+		stats->disconnect = g_manager_info.stats[CB_STA_DISCONNECTED];
+		stats->reconnect = g_manager_info.stats[CB_STA_RECONNECTED];
+		stats->joined = g_manager_info.stats[CB_STA_JOINED];
+		stats->left = g_manager_info.stats[CB_STA_LEFT];
+		stats->scan = g_manager_info.stats[CB_SCAN_DONE];
+		/* SoftAP mode has no callback */
+		stats->softap = g_manager_info.stats[CB_SOFTAP_DONE];
+		wret = WIFI_MANAGER_SUCCESS;
+		UNLOCK_WIFIMGR;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+	}
+	return wret;
 }

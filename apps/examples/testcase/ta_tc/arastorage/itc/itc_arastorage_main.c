@@ -102,7 +102,12 @@ static void db_cleanup(const char *rel)
 {
 	memset(g_query, 0, QUERY_LENGTH);
 	snprintf(g_query, QUERY_LENGTH, "REMOVE RELATION %s;", rel);
-	db_exec(g_query);
+	int ret = db_exec(g_query);
+	if (ret != DB_OK) {
+		printf("\ndb_create_attribute : db_exec FAIL\n");
+		db_deinit();
+		return;
+	}
 }
 
 /**
@@ -207,7 +212,7 @@ static void db_insert(const char *rel_name)
 	}
 
 	memset(g_query, 0, QUERY_LENGTH);
-	sprintf(g_query, "CREATE INDEX %s.%s TYPE %s;", rel_name, g_attribute_set[0], RELATION_INDEX);
+	snprintf(g_query, QUERY_LENGTH, "CREATE INDEX %s.%s TYPE %s;", rel_name, g_attribute_set[0], RELATION_INDEX);
 	ret = db_exec(g_query);
 	if (ret != DB_OK) {
 		error_exec(rel_name);
@@ -370,7 +375,7 @@ void itc_arastorage_startup_p(void)
 	TC_ASSERT_EQ("db_exec", ret, DB_OK);
 
 	memset(g_query, 0, QUERY_LENGTH);
-	sprintf(g_query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[0], RELATION_INDEX);
+	snprintf(g_query, QUERY_LENGTH, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[0], RELATION_INDEX);
 	ret = db_exec(g_query);
 	TC_ASSERT_EQ("db_exec", ret, DB_OK);
 
@@ -804,12 +809,15 @@ void itc_arastorage_cursor_get_count_p(void)
 	TC_ASSERT_EQ("ARASTORAGE_STARTUP", g_check, true);
 
 	g_cursor = NULL;
+	int nCount = -1;
 	memset(g_query, 0, QUERY_LENGTH);
 	snprintf(g_query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 5;", g_attribute_set[0], g_attribute_set[1], g_attribute_set[2], RELATION_NAME1, g_attribute_set[0]);
 	g_cursor = db_query(g_query);
 	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 
-	TC_ASSERT_GEQ("cursor_get_count", cursor_get_count(g_cursor), 0);
+	nCount = cursor_get_count(g_cursor);
+
+	TC_ASSERT_GEQ("cursor_get_count", nCount, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1654,7 +1662,9 @@ void itc_arastorage_cursor_get_row_p(void)
 	g_cursor = db_query(g_query);
 	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 
-	cursor_move_to(g_cursor, id);
+	int ret = cursor_move_to(g_cursor, id);
+	TC_ASSERT_EQ("cursor_move_to", DB_ERROR(ret), 0);
+
 	row = cursor_get_row(g_cursor);
 	TC_ASSERT_EQ("cursor_get_row", row, id);
 

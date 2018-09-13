@@ -102,9 +102,9 @@
  *   - If pid is greater than 0, it specifies the process ID of a single child
  *     process for which status is requested.
  *   - If pid is 0, status is requested for any child process whose process
- *     group ID is equal to that of the calling process.
+ *     group ID is equal to that of the calling process.(Not supported yet)
  *   - If pid is less than (pid_t)-1, status is requested for any child process
- *     whose process group ID is equal to the absolute value of pid.
+ *     whose process group ID is equal to the absolute value of pid.(Not supported yet)
  *
  *   The options argument is constructed from the bitwise-inclusive OR of zero
  *   or more of the following flags, defined in the <sys/wait.h> header:

@@ -4,14 +4,19 @@
 #
 
 source "$EXTERNALDIR/audiocodec/Kconfig"
+source "$EXTERNALDIR/avs-device-sdk/Kconfig"
 source "$EXTERNALDIR/aws/Kconfig"
 source "$EXTERNALDIR/codecs/Kconfig"
 source "$EXTERNALDIR/curl/Kconfig"
+source "$EXTERNALDIR/error_report/Kconfig"
 source "$EXTERNALDIR/gmock/Kconfig"
 source "$EXTERNALDIR/iotivity/Kconfig"
 source "$EXTERNALDIR/json/Kconfig"
 source "$EXTERNALDIR/libtuv/Kconfig"
+source "$EXTERNALDIR/nghttp2/Kconfig"
 source "$EXTERNALDIR/protobuf/Kconfig"
 source "$EXTERNALDIR/wakaama/Kconfig"
 source "$EXTERNALDIR/WICED/Kconfig"
-
+source "$EXTERNALDIR/libopus/Kconfig"
+source "$EXTERNALDIR/stress_tool/Kconfig"
+source "$EXTERNALDIR/swepd/Kconfig"

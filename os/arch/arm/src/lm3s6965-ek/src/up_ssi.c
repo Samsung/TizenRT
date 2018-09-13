@@ -87,12 +87,12 @@
 #ifdef SSI_VERBOSE
 #define ssivdbg lldbg
 #else
-#define ssivdbg(x...)
+#define ssivdbg(...)
 #endif
 #else
 #undef SSI_VERBOSE
-#define ssidbg(x...)
-#define ssivdbg(x...)
+#define ssidbg(...)
+#define ssivdbg(...)
 #endif
 
 /* Dump GPIO registers */

@@ -79,7 +79,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME"d1"
+#else
+#define SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+#endif
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -315,20 +319,20 @@ int board_app_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+	ret = mksmartfs(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed",
-				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+				SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
+		ret = mount(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK)
 			lldbg("ERROR: mounting '%s' failed\n",
-				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+				SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
 	}
 #endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS */
 
@@ -351,15 +355,6 @@ int board_app_initialize(void)
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
 	}
 #endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW */
-
-#ifdef CONFIG_FS_PROCFS
-	/* Mount the procfs file system */
-	ret = mount(NULL, SIDK_S5JT200_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
-	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n",
-				SIDK_S5JT200_PROCFS_MOUNTPOINT, ret);
-	}
-#endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	rambuf = (uint8_t *)malloc(bufsize);
@@ -404,7 +399,7 @@ int board_app_initialize(void)
 
 		up_rtc_getdatetime(&tp);
 		lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
-				tp.tm_year + 1900, tp.tm_mon + 1,
+				tp.tm_year + TM_YEAR_BASE, tp.tm_mon + 1,
 				tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
 		lldbg("Version Info :\n");
 		lldbg("tinyARA %s\n", __TIMESTAMP__);

@@ -78,7 +78,7 @@
 #endif
 #else
 #ifdef CONFIG_CPP_HAVE_VARARGS
-#define msemdbg(x...)
+#define msemdbg(...)
 #else
 #define msemdbg (void)
 #endif
@@ -225,4 +225,19 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
 		heap->mm_counts_held = 0;
 		ASSERT(sem_post(&heap->mm_semaphore) == 0);
 	}
+}
+
+/****************************************************************************
+ * Name: mm_is_sem_available
+ *
+ * Description:
+ *   Check availability of mm semaphore 
+ *
+ ****************************************************************************/
+void mm_is_sem_available(void)
+{
+	struct mm_heap_s *heap = mm_get_heap_info();
+
+	mm_takesemaphore(heap);
+	mm_givesemaphore(heap);
 }

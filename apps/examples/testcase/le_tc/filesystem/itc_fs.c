@@ -37,15 +37,20 @@
  ****************************************************************************/
 
 #ifdef CONFIG_FS_SMARTFS
-
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-
+#define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-
+#define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
+#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
 #else
-#define MOUNT_DEV_DIR "/dev/smart1"
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"
+#else
+#define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR
 #endif
 
 #define FS_TYPE "smartfs"
@@ -149,7 +154,10 @@ static void itc_fs_vfs_mount_p_read_mode(void)
 	TC_ASSERT_EQ("mount", ret, OK);
 
 	ret = mkdir(VFS_FOLDER_PATH, 0777);
-	TC_ASSERT_NEQ_CLEANUP("mkdir", ret, OK, rmdir(VFS_FOLDER_PATH); umount(MOUNT_DIR));
+	TC_ASSERT_EQ_CLEANUP("mkdir", ret, OK, umount(MOUNT_DIR));
+
+	ret = rmdir(VFS_FOLDER_PATH);
+	TC_ASSERT_EQ("rmdir", ret, OK);
 
 	ret = umount(MOUNT_DIR);
 	TC_ASSERT_EQ("umount", ret, OK);
@@ -1140,6 +1148,7 @@ static void itc_libc_stdio_fseek_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase         itc_libc_stdio_fseek_n_invalid_fp
 * @brief            Move file position to specific position
@@ -1165,6 +1174,7 @@ static void itc_libc_stdio_fseek_n_invalid_fp(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         itc_libc_stdio_ftell_n

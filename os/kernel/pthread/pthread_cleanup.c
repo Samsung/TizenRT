@@ -92,12 +92,12 @@
 static void pthread_cleanup_pop_tcb(FAR struct pthread_tcb_s *tcb, int execute)
 {
 	if (tcb->tos > 0) {
-		unsigned int ndx;
+		uint8_t ndx;
 
 		/* Get the index to the last cleaner function pushed onto the stack */
 
 		ndx = tcb->tos - 1;
-		DEBUGASSERT(ndx >= 0 && ndx < CONFIG_PTHREAD_CLEANUP_STACKSIZE);
+		DEBUGASSERT(ndx < CONFIG_PTHREAD_CLEANUP_STACKSIZE);
 
 		/* Should we execute the cleanup routine at the top of the stack? */
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_math.c
+/// @file tc_libc_math.c
 /// @brief Test Case Example for Libc Math API
 
 /****************************************************************************
@@ -992,7 +992,7 @@ static void tc_libc_math_cosl(void)
 static void tc_libc_math_erf(void)
 {
 	const double in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const double sol_val[] = { 0.8427006858353, -217.6481312007792, 0, 0.52049987781, -132.8284539391262 };
+	const double sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	double ret_val[SIZE(sol_val, double)];
 	int erf_idx;
 
@@ -1018,7 +1018,7 @@ static void tc_libc_math_erf(void)
 static void tc_libc_math_erff(void)
 {
 	const float in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const float sol_val[] = { 0.8427006858353, -217.6480102539062, 0, 0.52049987781, -132.8285064697266 };
+	const float sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	float ret_val[SIZE(sol_val, float)];
 	int erff_idx;
 
@@ -1044,7 +1044,7 @@ static void tc_libc_math_erff(void)
 static void tc_libc_math_erfl(void)
 {
 	const long double in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const long double sol_val[] = { 0.8427006858353, -217.6481312007792, 0, 0.52049987781, -132.8284539391262 };
+	const long double sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int erfl_idx;
 
@@ -1623,7 +1623,7 @@ static void tc_libc_math_frexp(void)
 {
 	const double in_val[] = { 8.0, 2.3, -10.0 };
 	const double sol_val[] = { 0.5, 0.575, -10 };
-	const double n_val[] = { 4, 2, 0 };
+	const int n_val[] = { 4, 2, 0 };
 	double ret_val[SIZE(sol_val, double)];
 	int n[SIZE(sol_val, double)];
 	int frexp_idx;
@@ -1633,7 +1633,7 @@ static void tc_libc_math_frexp(void)
 	for (frexp_idx = 0; frexp_idx < SIZE(sol_val, double); frexp_idx++) {
 		ret_val[frexp_idx] = frexp(in_val[frexp_idx], &n[frexp_idx]);
 		TC_ASSERT_LEQ("frexp", fabs(sol_val[frexp_idx] - ret_val[frexp_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabs(n[frexp_idx] - n_val[frexp_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexp", n[frexp_idx], n_val[frexp_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1651,8 +1651,8 @@ static void tc_libc_math_frexp(void)
 static void tc_libc_math_frexpf(void)
 {
 	const float in_val[] = { 8.0, 2.3, -10.0 };
-	const float sol_val[] = { 1, 0.575, 0 };
-	const float n_val[] = { 3, 2, 2147483647 };
+	const float sol_val[] = { 0.99999976158142, 0.574999988079071, 0 };
+	const int n_val[] = { 3, 2, 2147483647 };
 	float ret_val[SIZE(sol_val, float)];
 	int n[SIZE(sol_val, float)];
 	int frexpf_idx;
@@ -1661,8 +1661,8 @@ static void tc_libc_math_frexpf(void)
 
 	for (frexpf_idx = 0; frexpf_idx < SIZE(sol_val, float); frexpf_idx++) {
 		ret_val[frexpf_idx] = frexpf(in_val[frexpf_idx], &n[frexpf_idx]);
-		TC_ASSERT_LEQ("frexp", fabsf(sol_val[frexpf_idx] - ret_val[frexpf_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabsf(n[frexpf_idx] - n_val[frexpf_idx]), FLT_EPSILON);
+		TC_ASSERT_LEQ("frexpf", fabsf(sol_val[frexpf_idx] - ret_val[frexpf_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexpf", n[frexpf_idx], n_val[frexpf_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1681,7 +1681,7 @@ static void tc_libc_math_frexpl(void)
 {
 	const long double in_val[] = { 8.0, 2.3, -10.0 };
 	const long double sol_val[] = { 0.5, 0.575, -10 };
-	const long double n_val[] = { 4, 2, 0 };
+	const int n_val[] = { 4, 2, 0 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int n[SIZE(sol_val, long double)];
 	int frexpl_idx;
@@ -1690,8 +1690,8 @@ static void tc_libc_math_frexpl(void)
 
 	for (frexpl_idx = 0; frexpl_idx < SIZE(sol_val, long double); frexpl_idx++) {
 		ret_val[frexpl_idx] = frexpl(in_val[frexpl_idx], &n[frexpl_idx]);
-		TC_ASSERT_LEQ("frexp", fabsl(sol_val[frexpl_idx] - ret_val[frexpl_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabsl(n[frexpl_idx] - n_val[frexpl_idx]), FLT_EPSILON);
+		TC_ASSERT_LEQ("frexpl", fabsl(sol_val[frexpl_idx] - ret_val[frexpl_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexpl", n[frexpl_idx], n_val[frexpl_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1984,7 +1984,7 @@ static void tc_libc_math_ldexp(void)
 static void tc_libc_math_ldexpf(void)
 {
 	const float in_val[] = { 0.95, 0, -10 };
-	const float sol_val[] = { 15.1999998092651, 0, -10239.9990234375000 };
+	const float sol_val[] = { 15.200005531311, 0, -10240.003906250 };
 	float ret_val[SIZE(sol_val, float)];
 	int n[] = { 4, -2, 10 };
 	int ldexpf_idx;
@@ -3395,6 +3395,59 @@ static void tc_libc_math_ynf(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_math_gamma
+ * @brief                :gamma(d) function returns (d-1)!
+ * @Scenario             :put a value and check the return
+ * API's covered         :gamma
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_gamma(void)
+{
+	double value;
+	double result;
+
+	value = 2.0;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, 1);
+
+	value = 3.0;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, 2);
+
+	value = INFINITY;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, (double)INFINITY);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_lgamma
+ * @brief                :lgamma(d) function returns the log of |(d-1)!|
+ * @Scenario             :put a value and check the return
+ * API's covered         :lgamma
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_lgamma(void)
+{
+	double value;
+	double result;
+
+	value = 2.0;
+	result = lgamma(value);
+	TC_ASSERT_EQ("lgamma", result, 0);
+
+	value = INFINITY;
+	result = lgamma(value);
+	TC_ASSERT_EQ("lgamma", result, (double)INFINITY);
+
+	TC_SUCCESS_RESULT();
+}
 #endif
 
 /****************************************************************************
@@ -3466,6 +3519,7 @@ int libc_math_main(void)
 	tc_libc_math_frexp();
 	tc_libc_math_frexpf();
 	tc_libc_math_frexpl();
+	tc_libc_math_gamma();
 	tc_libc_math_hypot();
 	tc_libc_math_hypotf();
 	tc_libc_math_hypotl();
@@ -3478,6 +3532,7 @@ int libc_math_main(void)
 	tc_libc_math_ldexp();
 	tc_libc_math_ldexpf();
 	tc_libc_math_ldexpl();
+	tc_libc_math_lgamma();
 	tc_libc_math_log2();
 	tc_libc_math_log2f();
 	tc_libc_math_log2l();

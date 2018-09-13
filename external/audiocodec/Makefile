@@ -58,7 +58,6 @@ CSRCS		=
 
 CSRCS += $(wildcard ./mp3dec/*.c)
 CSRCS += $(wildcard ./aacdec/*.c)
-CSRCS += $(wildcard ./streaming/*.c)
 
 CFLAGS += -D__TINYARA__
 CFLAGS += -std=c99
@@ -107,6 +106,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
+	find . -name "*.o" -exec rm -rf {} \;
 
 distclean: clean
 	$(call DELFILE, Make.dep)

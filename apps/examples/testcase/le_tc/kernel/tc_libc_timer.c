@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_timer.c
+/// @file tc_libc_timer.c
 /// @brief Test Case Example for Libc Timer API
 
 /****************************************************************************
@@ -28,7 +28,6 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-#include <spawn.h>
 #include <syslog.h>
 #include <time.h>
 #include <tinyara/time.h>
@@ -38,7 +37,6 @@
 #include "tc_internal.h"
 
 #define BUFF_SIZE 64
-#define YEAR_BASE 1900
 #define DAY_1 1
 #define DAY_2 2
 #define SEC_5 5
@@ -274,23 +272,28 @@ static void tc_libc_timer_localtime_r(void)
 */
 static void tc_libc_timer_mktime(void)
 {
-	int ret_chk = ERROR;
-	int today;
-	int after5days;
-	struct tm *st_time;
-	time_t test_time;
+	time_t cur_day;
+	time_t after_5days;
+	struct tm st_time;
+	struct timespec ts;
+	int ret_chk;
 
-	time(&test_time);
-	/* calculate current date */
-	st_time = localtime(&test_time);
-	today = st_time->tm_mday;
-	st_time->tm_mday = st_time->tm_mday + 5;
+	/* Get the current time */
 
-	ret_chk = mktime(st_time);
-	TC_ASSERT_NEQ("mktime", ret_chk, ERROR);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &ts);
+	TC_ASSERT_LEQ("clock_gettime", ret_chk, 0);
+	(void)gmtime_r((FAR const time_t *)&ts.tv_sec, &st_time);
 
-	after5days = st_time->tm_mday;
-	TC_ASSERT_EQ("mktime", today + 5, after5days);
+	/* convert current day to time_t */
+	cur_day = mktime(&st_time);
+	TC_ASSERT_NEQ("mktime", cur_day, ERROR);
+
+	/* convert current day + 5 to time_t */
+	st_time.tm_mday = st_time.tm_mday + 5;
+	after_5days = mktime(&st_time);
+	TC_ASSERT_NEQ("mktime", after_5days, ERROR);
+	/* after_5day should be greater than cur_day */
+	TC_ASSERT_GT("mktime", after_5days, cur_day);
 
 	TC_SUCCESS_RESULT();
 }
@@ -318,7 +321,7 @@ static void tc_libc_timer_strftime(void)
 	st_time.tm_hour = 18;
 	st_time.tm_mday = 19;
 	st_time.tm_mon = 5;
-	st_time.tm_year = 2017 - YEAR_BASE;
+	st_time.tm_year = 2017 - TM_YEAR_BASE;
 
 	/* Verifying year and month filled in time structure.
 	 * time structure has month in range 0-11,
@@ -396,7 +399,7 @@ static void tc_libc_timer_strftime(void)
 
 	/* Check the year as a decimal number including the century */
 	strftime(buffer, BUFF_SIZE, "%Y", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + YEAR_BASE);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + TM_YEAR_BASE);
 
 	/* Check the year as a decimal number without a century (range 00 to 99) */
 	strftime(buffer, BUFF_SIZE, "%y", &st_time);
@@ -406,6 +409,144 @@ static void tc_libc_timer_strftime(void)
 	ret_chk = strftime(buffer, BUFF_SIZE, "%f", &st_time);
 	TC_ASSERT_EQ("strftime", ret_chk, 0);
 	TC_ASSERT_EQ("strftime", atoi(buffer), 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn             :tc_libc_timer_strptime
+* @brief          :strptime - Format string as time
+* @Scenario       :strptime - converts time string as the time described in timeptr
+*                  structure as per the format specifiers.
+* API's covered   :strptime
+* Preconditions   :none
+* Postconditions  :none
+* @return         :void
+*/
+static void tc_libc_timer_strptime(void)
+{
+	struct tm sp_tm;
+	struct tm sf_tm;
+	char *ret;
+
+	sf_tm.tm_sec  = 13;
+	sf_tm.tm_min  = 42;
+	sf_tm.tm_hour = 12;
+	sf_tm.tm_mday = 5;
+	sf_tm.tm_mon  = 5;
+	sf_tm.tm_year = 2018 - TM_YEAR_BASE;
+
+	memset(&sp_tm, 0, sizeof(struct tm));
+
+	/* strptime() converts a string representation of time to a time tm structure,
+	 * using the specified format. descrtiption of example formats are as shown below,
+	 * %Y or %y - The year, including century (2018 = 2000(century) + 18(year)).
+	 * %m - The month number.
+	 * %d - The day of month (1-31).
+	 * %k - The hour on a 24-hour clock (0-23).
+	 * %M - The minute (0-59).
+	 * %S - The second (0-60).
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("2018-06-05 12:42:13 PM", "%Y-%m-%Od %k:%M:%S %p", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+	/* %U - The week number with Sunday the first day of the week (0-53).
+	 *      The first Sunday of January is the first day of week 1.
+	 * %b or %B or %h - The month name according to the current locale, in abbreviated form or the full name.
+	 * %l or %I - The hour on a 12-hour clock (1-12).
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("22 June 10 AM 18", "%U %B %l %p %Ey", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour - 2);
+
+	/* %C - The century number (0-99).
+	 * %C does not modify tm structure, so just validating the return value..
+	 */
+	ret = strptime("2018", "%C", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+
+	/* %D - Equivalent  to %m/%d/%y(month/day/year).
+	 * %X - The time, using the locale's time format.
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("06/05/18 12:42:13", "%D %X", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+	/* %x - The date, using the locale's date format.
+	 * %R - Equivalent to %H:%M (hour:minute).
+     */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("06/05/18 12:42", "%x %R", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+
+	/* %T - Equivalent to %H:%M:%S (hour/minute/second). */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("12:42:13", "%T", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+
+	/* %r - The 12-hour clock time (using the locale's AM or PM).
+	 * In the POSIX locale equivalent to %I:%M:%S %p.
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("12:42:13 PM", "%r", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	/* Tuesday (0-6: day of the week, week starts on Sunday)*/
+	sf_tm.tm_wday = 2;
+	memset(&sp_tm, 0, sizeof(struct tm));
+	/* %a or %A - The weekday name according to the current locale,
+	 * in abbreviated form or the full name.
+	 * %j - The day number in the year (1-366).
+	 * %w - The weekday number (0-6) with Sunday = 0.
+	 */
+	ret = strptime("Tue/Tuesday 187 2", "%a/%A %j %w", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_wday, sf_tm.tm_wday);
+
+	/* %c - The date and time representation for the current locale. */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("Tue Jun 5 12:42:13 2018", "%c", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+#endif
+
+	/* Check with invalid param. it will returns NULl. */
+	ret = strptime("", "%f", NULL);
+	TC_ASSERT_EQ("strptime", ret, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -495,10 +636,38 @@ static void tc_libc_timer_clock(void)
 	clock_t ret_time = ERROR;
 
 	ret_time = clock();
-	TC_ASSERT_GEQ("clock", ret_time, 0);
+	TC_ASSERT_NEQ("clock", ret_time, 0);
 
 	TC_SUCCESS_RESULT();
 }
+
+#ifdef CONFIG_LIBM
+static void tc_libc_timer_difftime(void)
+{
+	time_t t0;
+	time_t t1;
+#ifdef CONFIG_HAVE_DOUBLE
+	double ret;
+#else
+	float ret;
+#endif
+
+	t0 = time(NULL);
+	/* Time elapse of 1s */
+	sleep(1);
+	t1 = time(NULL);
+
+	ret = difftime(t1, t0);
+
+#ifdef CONFIG_HAVE_DOUBLE
+	TC_ASSERT_LEQ("difftime", fabs(1.0 - ret), DBL_EPSILON);
+#else
+	TC_ASSERT_LEQ("difftime", fabsf(1.0f - ret), DBL_EPSILON);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+#endif
 
 /****************************************************************************
  * Name: libc_timer
@@ -506,17 +675,21 @@ static void tc_libc_timer_clock(void)
 
 int libc_timer_main(void)
 {
+	tc_libc_timer_clock();
 	tc_libc_timer_clock_calendar2utc();
-	tc_libc_timer_gmtime_r();
-	tc_libc_timer_gmtime();
+	tc_libc_timer_clock_daysbeforemonth();
 	tc_libc_timer_clock_isleapyear();
+#ifdef CONFIG_LIBM
+	tc_libc_timer_difftime();
+#endif
+	tc_libc_timer_gmtime();
+	tc_libc_timer_gmtime_r();
 	tc_libc_timer_localtime();
 	tc_libc_timer_localtime_r();
 	tc_libc_timer_mktime();
 	tc_libc_timer_strftime();
+	tc_libc_timer_strptime();
 	tc_libc_timer_time();
-	tc_libc_timer_clock_daysbeforemonth();
-	tc_libc_timer_clock();
 
 	return 0;
 }

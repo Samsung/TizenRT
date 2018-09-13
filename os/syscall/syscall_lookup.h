@@ -126,15 +126,6 @@ SYSCALL_LOOKUP(waitid,                  4, STUB_waitid)
 #  endif
 #endif
 
-/* The following can only be defined if we are configured to execute
- * programs from a file system.
- */
-
-#if defined(CONFIG_LIBC_EXECFUNCS)
-SYSCALL_LOOKUP(posix_spawn,             6, STUB_posix_spawn)
-SYSCALL_LOOKUP(execv,                   2, STUB_execv)
-#endif
-
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
  */
@@ -155,6 +146,7 @@ SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
  * TinyAra configuration.
  */
 
+SYSCALL_LOOKUP(syscall_clock,           0, STUB_clock)
 SYSCALL_LOOKUP(clock_getres,            2, STUB_clock_getres)
 SYSCALL_LOOKUP(clock_gettime,           2, STUB_clock_gettime)
 SYSCALL_LOOKUP(clock_settime,           2, STUB_clock_settime)
@@ -256,6 +248,7 @@ SYSCALL_LOOKUP(pthread_exit,            1, STUB_pthread_exit)
 SYSCALL_LOOKUP(pthread_getschedparam,   3, STUB_pthread_getschedparam)
 SYSCALL_LOOKUP(pthread_getspecific,     1, STUB_pthread_getspecific)
 SYSCALL_LOOKUP(pthread_join,            2, STUB_pthread_join)
+SYSCALL_LOOKUP(pthread_tryjoin_np,      2, STUB_pthread_tryjoin_np)
 SYSCALL_LOOKUP(pthread_key_create,      2, STUB_pthread_key_create)
 SYSCALL_LOOKUP(pthread_key_delete,      1, STUB_pthread_key_delete)
 SYSCALL_LOOKUP(pthread_mutex_destroy,   1, STUB_pthread_mutex_destroy)

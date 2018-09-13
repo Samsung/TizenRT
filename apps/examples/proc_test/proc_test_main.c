@@ -27,6 +27,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
+#include <string.h>
+#include <sys/mount.h>
 
 /****************************************************************************
  * Pre-processor Definitions

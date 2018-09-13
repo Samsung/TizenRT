@@ -43,9 +43,9 @@ static void showusage(void)
 	printf("\ncurl test Usage\n");
 	printf("curl <protocol> <method> [parameters] <url>\n");
 	printf("Commands list :\n");
-	printf(" - curl http/https get <xyz.com>\n");
-	printf(" - curl http/https post json <json_data> <xyz.com>\n");
-	printf(" - curl http/https post <content_data> <xyz.com>\n");
+	printf(" - curl http/https/http2 get <xyz.com>\n");
+	printf(" - curl http/https/http2 post json <json_data> <xyz.com>\n");
+	printf(" - curl http/https/http2 post <content_data> <xyz.com>\n");
 }
 
 void *curl_start(void *arg)
@@ -60,7 +60,8 @@ void *curl_start(void *arg)
 	argc = input->argc;
 	argv = input->argv;
 
-	if (strcmp(argv[1], "http") == 0 || strcmp(argv[1], "https") == 0) {
+	if (strcmp(argv[1], "http") == 0 || strcmp(argv[1], "https") == 0 ||
+			strcmp(argv[1], "http2") == 0) {
 		if (strcmp(argv[2], "get") == 0) {
 			hnd = curl_easy_init();
 			curl_easy_setopt(hnd, CURLOPT_URL, argv[3]);
@@ -89,6 +90,8 @@ void *curl_start(void *arg)
 				curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 			}
 
+			if (strcmp(argv[1], "http2") == 0) // For http/2
+				curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 
 			ret = curl_easy_perform(hnd);
 			printf("ret [%d]\n", ret);
@@ -133,6 +136,9 @@ void *curl_start(void *arg)
 					curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 				}
 
+				if (strcmp(argv[1], "http2") == 0) // For http/2
+					curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+
 				ret = curl_easy_perform(hnd);
 				printf("ret [%d]\n", ret);
 
@@ -166,6 +172,9 @@ void *curl_start(void *arg)
 					 */
 					curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 				}
+
+				if (strcmp(argv[1], "http2") == 0) // For http/2
+					curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 
 				ret = curl_easy_perform(hnd);
 				printf("ret [%d]\n", ret);

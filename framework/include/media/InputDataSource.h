@@ -16,77 +16,70 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/InuptDataSource.h
+ * @brief Media InuptDataSource APIs
+ */
+
 #ifndef __MEDIA_INPUTDATASOURCE_H
 #define __MEDIA_INPUTDATASOURCE_H
 
-#include <fstream>
 #include <memory>
 #include <media/DataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
-class Decoder;
 namespace stream {
+
 /**
  * @class
  * @brief This class is input data structure
  * @details @b #include <media/InputDataSource.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
-class InputDataSource : public DataSource
+class InputDataSource
+	: public DataSource
 {
 public:
 	/**
 	 * @brief Constructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	InputDataSource();
 	/**
 	 * @brief Copy constructs for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
-	InputDataSource(const InputDataSource& source);
+	InputDataSource(const InputDataSource &source);
 	/**
 	 * @brief Operator= for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
-	InputDataSource& operator=(const InputDataSource& source);
+	InputDataSource &operator=(const InputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~InputDataSource();
-  
-  	/**
-	 * @brief Gets the stream data
-	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
-	 */
-	virtual size_t read(unsigned char* buf, size_t size) = 0;
 
 	/**
-	 * @brief Gets current audio decoder. The audio decoder is set by each data source.
+	 * @brief Gets the stream data
 	 * @details @b #include <media/InputDataSource.h>
-	 * @return Current audio decoder instance.
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
-	const std::shared_ptr<Decoder> getDecoder();
-
-protected:
-	void setDecoder(std::shared_ptr<Decoder> decoder);
-	void setAudioType(utils::audio_type_t audioType);
-	utils::audio_type_t getAudioType();
-
-private:
-	utils::audio_type_t mAudioType;
-	std::shared_ptr<Decoder> mDecoder;
+	virtual ssize_t read(unsigned char *buf, size_t size) = 0;
 };
 
 } // namespace stream
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

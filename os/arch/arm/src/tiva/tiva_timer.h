@@ -154,8 +154,8 @@
 #define timdbg  lldbg
 #define timvdbg llvdbg
 #else
-#define timdbg(x...)
-#define timvdbg(x...)
+#define timdbg(...)
+#define timvdbg(...)
 #endif
 
 /****************************************************************************

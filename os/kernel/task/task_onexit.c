@@ -116,9 +116,7 @@
  *
  *    Limitiations in the current implementation:
  *
- *      1. Only a single on_exit function can be registered unless
- *         CONFIG_SCHED_ONEXIT_MAX defines a larger number.
- *      2. on_exit functions are not inherited when a new task is
+ *      1. on_exit functions are not inherited when a new task is
  *         created.
  *
  * Parameters:
@@ -133,11 +131,10 @@
 
 int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 {
-#if defined(CONFIG_SCHED_ONEXIT_MAX) && CONFIG_SCHED_ONEXIT_MAX > 1
 	FAR struct tcb_s *tcb = this_task();
 	FAR struct task_group_s *group = tcb->group;
-	int index;
-	int ret = ENOSPC;
+	FAR struct onexit_s *ponexit;
+	int ret = ERROR;
 
 	trace_begin(TTRACE_TAG_TASK, "on_exit");
 	DEBUGASSERT(group);
@@ -147,45 +144,23 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 	if (func) {
 		sched_lock();
 
-		/* Search for the first available slot.  on_exit() functions are registered
-		 * from lower to higher arry indices; they must be called in the reverse
-		 * order of registration when task exists, i.e., from higher to lower
-		 * indices.
+		/* Allocate an onexit_s structure, initialize with functions and arguments;
+		 * then add it to the head of single linked queue. These must be called back in the
+		 * reverse order during task exit i.e, remove from head.
 		 */
-
-		for (index = 0; index < CONFIG_SCHED_ONEXIT_MAX; index++) {
-			if (!group->tg_onexitfunc[index]) {
-				group->tg_onexitfunc[index] = func;
-				group->tg_onexitarg[index] = arg;
-				ret = OK;
-				break;
-			}
+		ponexit = (struct onexit_s *)kmm_malloc(sizeof(struct onexit_s));
+		if (ponexit) {
+			ponexit->onexitfunc = func;
+			ponexit->onexitarg = arg;
+			sq_addfirst((sq_entry_t *)ponexit, &(group->tg_onexitfunc));
+			ret = OK;
 		}
 
 		sched_unlock();
+
 	}
 	trace_end(TTRACE_TAG_TASK);
 	return ret;
-#else
-	FAR struct tcb_s *tcb = this_task();
-	FAR struct task_group_s *group = tcb->group;
-	int ret = ENOSPC;
-
-	DEBUGASSERT(group);
-
-	/* The following must be atomic */
-
-	sched_lock();
-	if (func && !group->tg_onexitfunc) {
-		group->tg_onexitfunc = func;
-		group->tg_onexitarg = arg;
-		ret = OK;
-	}
-
-	sched_unlock();
-	trace_end(TTRACE_TAG_TASK);
-	return ret;
-#endif
 }
 
 #endif							/* CONFIG_SCHED_ONEXIT */

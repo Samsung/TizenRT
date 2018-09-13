@@ -18,7 +18,7 @@
 /****************************************************************************
  * pm/pm.h
  *
- *   Copyright (C) 2011-2012, 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012, 2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -175,7 +175,7 @@ struct pm_domain_s {
 
 	/* stime - The time (in ticks) at the start of the current time slice */
 
-	systime_t stime;
+	clock_t stime;
 };
 
 /* This structure encapsulates all of the global data used by the PM module */

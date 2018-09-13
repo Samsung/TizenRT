@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_stdio.c
+/// @file tc_libc_stdio.c
 
 /// @brief Test Case Example for Libc Stdio API
 
@@ -480,8 +480,10 @@ static void tc_libc_stdio_puts(void)
 */
 static void tc_libc_stdio_perror(void)
 {
+#ifdef CONFIG_LIBC_STRERROR
 	char *result_msg = "No data available";
 	const char *test_msg;
+#endif
 
 	set_errno(ENODATA);
 #ifdef CONFIG_LIBC_STRERROR

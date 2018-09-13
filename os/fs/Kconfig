@@ -32,6 +32,7 @@ source fs/mqueue/Kconfig
 source fs/smartfs/Kconfig
 source fs/procfs/Kconfig
 source fs/romfs/Kconfig
+source fs/tmpfs/Kconfig
 source fs/driver/block/Kconfig
 source fs/driver/mtd/Kconfig
 

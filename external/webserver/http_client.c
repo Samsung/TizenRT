@@ -286,7 +286,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					HTTP_LOGD("[HEADER] buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 				}
 				if (buf_len - len->sentence_start + len->message_len == len->content_len) {
-					buf[buf_len + len->message_len] = '\0';
+					buf[buf_len] = '\0';
 					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
@@ -593,8 +593,8 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		} else
 			valid = 1;
 		/* Need to create file with unique file name */
-		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
-		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
+		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH - strlen(path));
+		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH - strlen(path));
 		if (valid && (f = fopen(path, "w"))) {
 			if (fputs(entity, f) < 0) {
 				HTTP_LOGE("Error: Fail to execute fputs\n");
@@ -619,7 +619,7 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 			HTTP_LOGE("ERROR: URL length is too long. Cannot send response\n");
 		} else
 			valid = 1;
-		if (valid && (f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
+		if (valid && (f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH - strlen(path)), "w"))) {
 			if (fputs(entity, f) < 0) {
 				HTTP_LOGE("Error: Fail to execute fputs\n");
 				fclose(f);
@@ -643,7 +643,7 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 			HTTP_LOGE("ERROR: URL length is too long. Cannot send response\n");
 		} else
 			valid = 1;
-		if (valid && unlink(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH))) {
+		if (valid && unlink(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH - strlen(path)))) {
 			HTTP_LOGE("fail to delete %s\n", url);
 			if (http_send_response(client, 500, HTTP_ERROR_500, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");

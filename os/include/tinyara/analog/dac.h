@@ -92,7 +92,7 @@
  * Public Types
  ************************************************************************************/
 
-begin_packed_struct struct dac_msg_s {
+struct dac_msg_s {
 	uint8_t      am_channel;               /* The 8-bit DAC Channel */
 	int32_t      am_data;                  /* DAC convert result (4 bytes) */
 } end_packed_struct;

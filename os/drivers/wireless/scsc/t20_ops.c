@@ -565,7 +565,7 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 	int r, i;
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
-	u16 p2p_state = sdev->p2p_state;
+	u16 p2p_state;
 #endif
 	u8 *scan_ie = NULL;;
 	size_t scan_ie_len;
@@ -585,6 +585,9 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_SCSC_ENABLE_P2P
+	p2p_state = sdev->p2p_state;
+#endif
 	dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
 	if (!dev) {
 		SLSI_ERR_NODEV("dev not available\n");

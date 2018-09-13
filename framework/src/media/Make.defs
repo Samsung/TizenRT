@@ -16,37 +16,59 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_AUDIO), y)
-CSRCS += audio_manager.c 
-DEPPATH += --dep-path src/media/audio 
+CSRCS += audio_manager.c
+DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio
-endif
-
-ifeq ($(CONFIG_AUDIO_CODEC), y)
-CSRCS += $(notdir $(wildcard src/media/codecs/mp3dec/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/aacdec/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/resample/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/streaming/*.c))
-DEPPATH += --dep-path src/media/codecs/mp3dec
-VPATH += :src/media/codecs/mp3dec
-DEPPATH += --dep-path src/media/codecs/aacdec
-VPATH += :src/media/codecs/aacdec
-DEPPATH += --dep-path src/media/codecs/resample
-VPATH += :src/media/codecs/resample
-DEPPATH += --dep-path src/media/codecs/streaming
-VPATH += :src/media/codecs/streaming
-CFLAGS += -std=c99
+CSRCS += samplerate.c
+DEPPATH += --dep-path src/media/audio/resample
+VPATH += :src/media/audio/resample
+DEPPATH += --dep-path src/media/streaming
+VPATH += :src/media/streaming
 endif
 
 CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
-CXXSRCS += MediaQueue.cpp DataSource.cpp MediaUtils.cpp
+CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
+CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
+CXXSRCS += MediaUtils.cpp
+CXXSRCS += FocusRequest.cpp FocusManager.cpp
+CSRCS += rb.c rbs.c
+DEPPATH += --dep-path src/media/utils
+VPATH += :src/media/utils
+
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_encoder_api.c opus_decoder_api.c
+DEPPATH += --dep-path src/media/codecs
+VPATH += :src/media/codecs
+endif
+
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp Decoder.cpp
+CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += InputHandler.cpp
+CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
+CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp RecorderObserverWorker.cpp 
+CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += Encoder.cpp audio_encoder.cpp
+ifeq ($(CONFIG_NET), y)
+CXXSRCS += SocketOutputDataSource.cpp
+endif
+endif
+
+ifeq ($(CONFIG_MEDIA_VOICE_SPEECH_DETECTOR), y)
+DEPPATH += --dep-path src/media/voice
+VPATH += :src/media/voice
+CXXSRCS += \
+	SpeechDetector.cpp \
+	EndPointDetector.cpp \
+	SoftwareKeywordDetector.cpp \
+	HardwareKeywordDetector.cpp \
+	SoftwareEndPointDetector.cpp \
+	HardwareEndPointDetector.cpp
+CXXFLAGS += -I$(TOPDIR)/../external/swepd
 endif
 
 DEPPATH += --dep-path src/media

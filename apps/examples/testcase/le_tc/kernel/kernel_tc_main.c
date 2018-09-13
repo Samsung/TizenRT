@@ -52,9 +52,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_ERRNO
-#if (!defined CONFIG_LIBC_STRERROR)
-#error CONFIG_LIBC_STRERROR is needed for testing ERRNO TC
-#endif
 	errno_main();
 #endif
 
@@ -67,6 +64,10 @@ int tc_kernel_main(int argc, char *argv[])
 
 #ifdef CONFIG_TC_KERNEL_LIBC_FIXEDMATH
 	libc_fixedmath_main();
+#endif
+
+#ifdef CONFIG_TC_KERNEL_LIBC_INTTYPES
+	libc_inttypes_main();
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_LIBGEN
@@ -108,10 +109,6 @@ int tc_kernel_main(int argc, char *argv[])
 	libc_signal_main();
 #endif
 
-#ifdef CONFIG_TC_KERNEL_LIBC_SPAWN
-	libc_spawn_main();
-#endif
-
 #ifdef CONFIG_TC_KERNEL_LIBC_STDIO
 	libc_stdio_main();
 #endif
@@ -124,9 +121,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_STRING
-#if (!defined CONFIG_LIBC_STRERROR)
-#error CONFIG_LIBC_STRERROR is needed for testing LIBC_STRING TC
-#endif
 	libc_string_main();
 #endif
 
@@ -151,16 +145,10 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_SCHED
-#if (!defined CONFIG_SCHED_HAVE_PARENT)
-	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
-#endif
 	sched_main();
 #endif
 
 #ifdef CONFIG_TC_KERNEL_SEMAPHORE
-#if (!defined CONFIG_DEBUG) || (!defined CONFIG_SEM_PREALLOCHOLDERS) || (!defined CONFIG_PRIORITY_INHERITANCE)
-#error CONFIG_DEBUG, CONFIG_SEM_PHDEBUG, CONFIG_SEM_PREALLOCHOLDERS and CONFIG_PRIORITY_INHERITANCE are needed for testing SEMAPHORE TC
-#endif
 	semaphore_main();
 #endif
 
@@ -169,9 +157,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_TASK
-#if (!defined CONFIG_SCHED_ATEXIT) || (!defined CONFIG_SCHED_ONEXIT) || (!defined CONFIG_TASK_NAME_SIZE)
-#error CONFIG_SCHED_ATEXIT, CONFIG_SCHED_ONEXIT and CONFIG_TASK_NAME_SIZE are needed for testing TASK TC
-#endif
 	task_main();
 #endif
 
@@ -195,6 +180,10 @@ int tc_kernel_main(int argc, char *argv[])
 	wqueue_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_MEMORY_SAFETY
+	memory_safety_main();
+#endif
+
 #ifdef CONFIG_ITC_KERNEL_ENVIRON
 	itc_environ_main();
 #endif
@@ -212,18 +201,11 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_ITC_KERNEL_SCHED
-#if (!defined CONFIG_SCHED_HAVE_PARENT)
-	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
-#endif
 	itc_sched_main();
 #endif
 
 #ifdef CONFIG_ITC_KERNEL_TIMER
 	itc_timer_main();
-#endif
-
-#ifdef CONFIG_ITC_KERNEL_LIBC_SPAWN
-	itc_libc_spawn_main();
 #endif
 
 #ifdef CONFIG_ITC_KERNEL_PTHREAD

@@ -39,14 +39,16 @@ char cm_iobuffer[PROC_BUFFER_LEN];
 
 void get_interface_name(char *mac)
 {
-#if defined(CONFIG_WICED)
+#if defined(CONFIG_WIFI_MANAGER)
+	strcpy(mac,CONFIG_WIFIMGR_STA_IFNAME);
+#elif defined(CONFIG_WICED)
     strcpy(mac,"en1");
 #elif defined(CONFIG_NET_ETHERNET)
     strcpy(mac,"eth0");
 #elif defined(CONFIG_NET_802154)
     strcpy(mac,"wlan0");
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-    strcpy(mac, "wl1");
+#else
+	strcpy(mac,"wl1");
 #endif
 }
 
@@ -98,9 +100,9 @@ void get_router_ip_address(char *routerIPAddr)
 		inet_ntop(AF_INET, &addr, routerIPAddr, INET_ADDRSTRLEN);
 #endif
 #ifdef CONFIG_NET_IPv6
-		struct in6_addr addr;
-		netlib_get_dripv6addr(mac,addr);
-		inet_ntop(AF_INET6, &addr, routerIPAddr, INET6_ADDRSTRLEN);
+		struct in6_addr addr6;
+		netlib_get_dripv6addr(mac, addr6 );
+		inet_ntop(AF_INET6, &addr6, routerIPAddr, INET6_ADDRSTRLEN);
 #endif
 }
 

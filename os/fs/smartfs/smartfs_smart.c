@@ -1063,7 +1063,6 @@ static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_
 
 	switch (whence) {
 	case SEEK_SET:
-	default:
 		newpos = offset;
 		break;
 
@@ -1074,6 +1073,8 @@ static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_
 	case SEEK_END:
 		newpos = sf->entry.datlen + offset;
 		break;
+	default:
+		return -EINVAL;
 	}
 
 	/* Ensure newpos is in range */

@@ -162,6 +162,55 @@
 #endif
 #endif
 
+/* SIGTM is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_UNICAST
+#define SIGTM_UNICAST       18			/* Taskmgt signal */
+#else
+#define SIGTM_UNICAST       CONFIG_SIG_SIGTM_UNICAST
+#endif
+
+/* SIGTM_PAUSE is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_PAUSE
+#define SIGTM_PAUSE       19			/* Taskmgt signal */
+#else
+#define SIGTM_PAUSE       CONFIG_SIG_SIGTM_PAUSE
+#endif
+
+/* SIGTM_RESUME is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_RESUME
+#define SIGTM_RESUME       20			/* Taskmgt signal */
+#else
+#define SIGTM_RESUME       CONFIG_SIG_SIGTM_RESUME
+#endif
+
+/* SIGTM_BROADCAST is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_BROADCAST
+#define SIGTM_BROADCAST       21			/* Taskmgt signal */
+#else
+#define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
+#endif
+
+/* SIG_SIGEL_WAKEUP is used in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_WAKEUP
+#define SIGEL_WAKEUP       22			/* Eventloop signal */
+#else
+#define SIGEL_WAKEUP       CONFIG_SIG_SIGEL_WAKEUP
+#endif
+
+/* SIG_SIGTM_TERMINATION is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_TERMINATION
+#define SIGTM_TERMINATION       23			/* Taskmgt signal */
+#else
+#define SIGTM_TERMINATION       CONFIG_SIG_SIGTM_TERMINATION
+#endif
+
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_EVENT
+#define SIGEL_EVENT       24			/* Eventloop signal */
+#else
+#define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */
@@ -204,6 +253,13 @@
 #define SIG_DFL         ((_sa_handler_t)0)
 #define SIG_IGN         ((_sa_handler_t)0)
 #define SIG_HOLD        ((_sa_handler_t)1)   /* Used only with sigset() */
+
+#define COPY_SIGACTION(t, f) \
+	{ \
+		(t)->sa_sigaction = (f)->sa_sigaction; \
+		(t)->sa_mask      = (f)->sa_mask; \
+		(t)->sa_flags     = (f)->sa_flags; \
+	}
 
 /********************************************************************************
  * Global Type Declarations

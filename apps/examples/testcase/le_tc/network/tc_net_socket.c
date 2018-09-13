@@ -40,11 +40,11 @@
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_pf_inet_sock_raw_p(void)
+static void tc_net_socket_pf_inet_sock_raw_n(void)
 {
 	int fd = -1;
 	fd = socket(PF_INET, SOCK_RAW, 0);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -115,13 +115,11 @@ static void tc_net_socket_pf_inet_sock_stream_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_TCP);
+
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -151,19 +149,19 @@ static void tc_net_socket_af_inet_sock_dgram_udp_p(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_soc_dgram_icmp_p(void)
+static void tc_net_socket_af_inet_sock_dgram_icmp_n(void)
 {
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
 
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_dgram_igmp_p
 * @brief
@@ -172,12 +170,12 @@ static void tc_net_socket_af_inet_soc_dgram_icmp_p(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_dgram_igmp_p(void)
+static void tc_net_socket_af_inet_sock_dgram_igmp_n(void)
 {
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IGMP);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -200,51 +198,7 @@ static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_inet_sock_dgram_routing_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_dgram_routing_p(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ROUTING);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-
-#ifdef IPPROTO_FRAGMENT
-/**
-* @testcase		tc_net_socket_af_inet_sock_dgram_fragment_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_dgram_fragment_p(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_FRAGMENT);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 
 /**
 * @testcase		tc_net_socket_af_inet_sock_dgram_icmpv6_n
@@ -256,13 +210,10 @@ static void tc_net_socket_af_inet_sock_dgram_fragment_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -282,8 +233,6 @@ static void tc_net_socket_af_unix_sock_dgram_tcp_n(void)
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_TCP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -320,11 +269,9 @@ static void tc_net_socket_af_unix_sock_dgram_icmp_n(void)
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_dgram_igmp_n
 * @brief
@@ -340,8 +287,6 @@ static void tc_net_socket_af_unix_sock_dgram_igmp_n(void)
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #endif
@@ -361,8 +306,6 @@ static void tc_net_socket_af_x25_sock_stream_n(void)
 	fd = socket(AF_X25, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -381,8 +324,6 @@ static void tc_net_socket_af_ax25_sock_stream_n(void)
 	fd = socket(AF_AX25, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -401,8 +342,6 @@ static void tc_net_socket_af_packet_sock_stream_n(void)
 	fd = socket(AF_PACKET, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -456,8 +395,6 @@ static void tc_net_socket_af_unix_sock_stream_udp_n(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_UDP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -475,11 +412,9 @@ static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_stream_igmp_n
 * @brief
@@ -495,8 +430,6 @@ static void tc_net_socket_af_unix_sock_stream_igmp_n(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #ifdef CONFIG_NET_IPv6
@@ -515,30 +448,7 @@ static void tc_net_socket_af_unix_sock_stream_ipv6_n(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_unixsock_stream_routing_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_unixsock_stream_routing_n(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ROUTING);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 
 /**
 * @testcase		tc_net_socket_af_unix_sock_stream_icmpv6_n
@@ -555,8 +465,6 @@ static void tc_net_socket_af_unix_sock_stream_icmpv6_n(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #endif
@@ -576,8 +484,6 @@ static void tc_net_socket_af_netlink_sock_stream_n(void)
 	fd = socket(AF_NETLINK, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -631,8 +537,6 @@ static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, 256);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -645,13 +549,10 @@ static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 */
 static void tc_net_socket_domain_sock_stream_protocol_n(void)
 {
-
 	int fd = -1;
 	fd = socket(30, SOCK_STREAM, 256);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -668,8 +569,6 @@ static void tc_net_socket_af_inet_type_protocol_n(void)
 	fd = socket(AF_INET, 7, 256);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -686,8 +585,6 @@ static void tc_net_socket_domain_type_protocol_n(void)
 	fd = socket(13, 6, 256);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -704,8 +601,6 @@ static void tc_net_socket_domain_sock_stream_tcp_n(void)
 	fd = socket(40, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -722,8 +617,6 @@ static void tc_net_socket_af_inet_sock_stream_udp_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -734,17 +627,17 @@ static void tc_net_socket_af_inet_sock_stream_udp_n(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_stream_icmp_p(void)
+static void tc_net_socket_af_inet_sock_stream_icmp_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_ICMP);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_stream_igmp_p
 * @brief
@@ -753,11 +646,11 @@ static void tc_net_socket_af_inet_sock_stream_icmp_p(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_stream_igmp_p(void)
+static void tc_net_socket_af_inet_sock_stream_igmp_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IGMP);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -779,49 +672,7 @@ static void tc_net_socket_af_inet_sock_stream_protoipv6_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_inet_sock_stream_routing_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_stream_routing_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_ROUTING);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-
-#ifdef IPPROTO_FRAGMENT
-/**
-* @testcase		tc_net_socket_af_inet_sock_stream_fragment_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_stream_fragment_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_FRAGMENT);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 
 /**
 * @testcase		tc_net_socket_af_inet_sock_stream_icmpv6_n
@@ -837,8 +688,6 @@ static void tc_net_socket_af_inet_sock_stream_icmpv6_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 /**
@@ -873,8 +722,6 @@ static void tc_net_socket_af_inet_sock_stream_type_n(void)
 	fd = socket(AF_INET, 5, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -891,8 +738,6 @@ static void tc_net_socket_af_inet_sock_stream_domain_n(void)
 	fd = socket(12, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -909,8 +754,6 @@ static void tc_net_socket_af_inet_sock_stream_domain_protocol_n(void)
 	fd = socket(15, SOCK_STREAM, 289);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -927,8 +770,6 @@ static void tc_net_socket_af_inet_sock_stream_type_protocol_n(void)
 	fd = socket(AF_INET, 7, 300);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -949,6 +790,7 @@ static void tc_net_socket_af_inet_sock_stream_p(void)
 	close(fd);
 }
 
+#ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_invalid_domain_sock_stream_n
 * @brief
@@ -963,9 +805,8 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 	fd = socket(-1, SOCK_STREAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
+#endif
 
 #ifdef AF_UNIX
 #ifdef CONFIG_NET_IPv6
@@ -983,49 +824,7 @@ static void tc_net_socket_af_unix_sock_dgram_ipv6_n(void)
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_unix_sock_dgram_routing_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_unix_sock_dgram_routing_n(void)
-{
-	int fd = -1;
-	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ROUTING);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-#ifdef IPPROTO_FRAGMENT
-/**
-* @testcase		tc_net_socket_af_unix_sock_dgram_fragment_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_unix_sock_dgram_fragment_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_FRAGMENT);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-
 /**
 * @testcase		tc_net_socket_af_unix_sock_dgram_icmpv6_n
 * @brief
@@ -1040,8 +839,6 @@ static void tc_net_socket_af_unix_sock_dgram_icmpv6_n(void)
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #endif
@@ -1118,8 +915,6 @@ static void tc_net_socket_af_x25_sock_dgram_n(void)
 	fd = socket(AF_X25, SOCK_DGRAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #ifdef AF_AX25
@@ -1137,8 +932,6 @@ static void tc_net_socket_af_ax25_sock_dgram_n(void)
 	fd = socket(AF_AX25, SOCK_DGRAM, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -1163,36 +956,36 @@ static void tc_net_socket_af_packet_sock_dgram_p(void)
 #endif
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_p
+* @testcase		tc_net_socket_af_inet_sock_raw_n
 * @brief
 * @scenario
 * @apicovered		socket()
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_raw_p(void)
+static void tc_net_socket_af_inet_sock_raw_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, 0);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_tcp_p
+* @testcase		tc_net_socket_af_inet_sock_raw_tcp_n
 * @brief
 * @scenario
 * @apicovered		socket()
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_raw_tcp_p(void)
+static void tc_net_socket_af_inet_sock_raw_tcp_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
-	TC_ASSERT_GEQ("socket", fd, 0)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1234,7 +1027,7 @@ static void tc_net_socket_af_inet_sock_raw_icmp_p(void)
 	close(fd);
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_raw_igmp_p
 * @brief
@@ -1249,7 +1042,6 @@ static void tc_net_socket_af_inet_sock_raw_igmp_p(void)
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_IGMP);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
-
 	close(fd);
 }
 #endif
@@ -1270,49 +1062,7 @@ static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_inet_sock_raw_routing_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_raw_routing_p(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ROUTING);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-#ifdef IPPROTO_FRAGMENT
-/**
-* @testcase		tc_net_socket_af_inet_sock_raw_fragment_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_inet_sock_raw_fragment_p(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_RAW, IPPROTO_FRAGMENT);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 /**
 * @testcase		tc_net_socket_af_inet_sock_raw_icmpv6_n
 * @brief
@@ -1321,14 +1071,13 @@ static void tc_net_socket_af_inet_sock_raw_fragment_p(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_raw_icmpv6_n(void)
+static void tc_net_socket_af_inet_sock_raw_icmpv6_p(void)
 {
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
+	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
-
 	close(fd);
 }
 #endif
@@ -1349,8 +1098,6 @@ static void tc_net_socket_af_unix_sock_raw_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -1368,8 +1115,6 @@ static void tc_net_socket_af_unix_sock_raw_tcp_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_TCP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -1387,8 +1132,6 @@ static void tc_net_socket_af_unix_sock_raw_udp_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_UDP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -1406,11 +1149,9 @@ static void tc_net_socket_af_unix_sock_raw_icmp_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_raw_igmp_n
 * @brief
@@ -1426,8 +1167,6 @@ static void tc_net_socket_af_unix_sock_raw_igmp_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IGMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 
@@ -1447,51 +1186,7 @@ static void tc_net_socket_af_unix_sock_raw_ipv6_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
-
-#ifdef IPPROTO_ROUTING
-/**
-* @testcase		tc_net_socket_af_unix_sock_raw_routing_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_unix_sock_raw_routing_n(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ROUTING);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-
-#ifdef IPPROTO_FRAGMENT
-/**
-* @testcase		tc_net_socket_af_unix_sock_raw_fragment_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_unix_sock_raw_fragment_n(void)
-{
-
-	int fd = -1;
-	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_FRAGMENT);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 
 /**
 * @testcase		tc_net_socket_af_unix_sock_raw_icmpv6_n
@@ -1508,8 +1203,6 @@ static void tc_net_socket_af_unix_sock_raw_icmpv6_n(void)
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 #endif
 #endif
@@ -1523,65 +1216,19 @@ int net_socket_main(void)
 	tc_net_socket_pf_inet_sock_stream_p();
 	tc_net_socket_af_inet_sock_dgram_p();
 	tc_net_socket_pf_inet_sock_dgram_p();
-	tc_net_socket_pf_inet_sock_raw_p();
+	tc_net_socket_pf_inet_sock_raw_n();
 	tc_net_socket_af_inet_sock_dgram_tcp_n();
 	tc_net_socket_af_inet_sock_dgram_udp_p();
-	tc_net_socket_af_inet_soc_dgram_icmp_p();
-#ifdef IPPROTO_IGMP
-	tc_net_socket_af_inet_sock_dgram_igmp_p();
+	tc_net_socket_af_inet_sock_dgram_icmp_n();
+#ifdef CONFIG_NET_LWIP_IGMP
+	tc_net_socket_af_inet_sock_dgram_igmp_n();
 #endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_dgram_ipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_inet_sock_dgram_routing_p();
-#endif
-#ifdef IPPROTO_FRAGMENT
-	tc_net_socket_af_inet_sock_dgram_fragment_p();
-#endif
-#endif
 	tc_net_socket_invalid_domain_sock_stream_n();
-#ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_dgram_icmpv6_n();
 #endif
-#ifdef AF_UNIX
-	tc_net_socket_af_unix_sock_dgram_tcp_n();
-	tc_net_socket_af_unix_sock_dgram_udp_p();
-	tc_net_socket_af_unix_sock_dgram_icmp_n();
-#ifdef IPPROTO_IGMP
-	tc_net_socket_af_unix_sock_dgram_igmp_n();
-#endif
-#endif
-#ifdef AF_X25
-	tc_net_socket_af_x25_sock_stream_n();
-#endif
-#ifdef AF_AX25
-	tc_net_socket_af_ax25_sock_stream_n();
-#endif
-#ifdef AF_PACKET
-	tc_net_socket_af_packet_sock_stream_n();
-#endif
-#ifdef AF_UNIX
-	tc_net_socket_af_unix_sock_stream_p();
-	tc_net_socket_af_unix_sock_stream_udp_n();
-	tc_net_socket_af_unix_sock_stream_icmp_n();
-#ifdef IPPROTO_IGMP
-	tc_net_socket_af_unix_sock_stream_igmp_n();
-#endif
-#ifdef CONFIG_NET_IPv6
-	tc_net_socket_af_unix_sock_stream_ipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_unixsock_stream_routing_n();
-#endif
-	tc_net_socket_af_unix_sock_stream_icmpv6_n();
-#endif
-#endif
-#ifdef AF_NETLINK
-	tc_net_socket_af_netlink_sock_stream_n();
-#endif
 	tc_net_socket_af_unspec_sock_stream_p();
-#ifdef AF_UNIX
-	tc_net_socket_af_unix_sock_stream_tcp_p();
-#endif
 	tc_net_socket_af_inet_sock_stream_protocol_n();
 	tc_net_socket_domain_sock_stream_protocol_n();
 	tc_net_socket_af_inet_sock_stream_tcp_p();
@@ -1589,18 +1236,12 @@ int net_socket_main(void)
 	tc_net_socket_domain_type_protocol_n();
 	tc_net_socket_domain_sock_stream_tcp_n();
 	tc_net_socket_af_inet_sock_stream_udp_n();
-	tc_net_socket_af_inet_sock_stream_icmp_p();
-#ifdef IPPROTO_IGMP
-	tc_net_socket_af_inet_sock_stream_igmp_p();
+	tc_net_socket_af_inet_sock_stream_icmp_n();
+#ifdef CONFIG_NET_LWIP_IGMP
+	tc_net_socket_af_inet_sock_stream_igmp_n();
 #endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_stream_protoipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_inet_sock_stream_routing_p();
-#endif
-#ifdef IPPROTO_FRAGMENT
-	tc_net_socket_af_inet_sock_stream_fragment_p();
-#endif
 	tc_net_socket_af_inet_sock_stream_icmpv6_n();
 #endif
 	tc_net_socket_af_inet6_sock_stream_p();
@@ -1608,69 +1249,17 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_stream_domain_n();
 	tc_net_socket_af_inet_sock_stream_domain_protocol_n();
 	tc_net_socket_af_inet_sock_stream_type_protocol_n();
-#ifdef AF_UNIX
-#ifdef CONFIG_NET_IPv6
-	tc_net_socket_af_unix_sock_dgram_ipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_unix_sock_dgram_routing_n();
-#endif
-#ifdef IPPROTO_FRAGMENT
-	tc_net_socket_af_unix_sock_dgram_fragment_p();
-#endif
-	tc_net_socket_af_unix_sock_dgram_icmpv6_n();
-#endif
-#endif
-#ifdef AF_NETLINK
-	tc_net_socket_af_netlink_sock_dgram_p();
-#endif
 	tc_net_socket_af_unspec_sock_dgram_p();
-#ifdef AF_LOCAL
-	tc_net_socket_af_local_sock_dgram_p();
-#endif
-#ifdef AF_X25
-	tc_net_socket_af_x25_sock_dgram_n();
-#endif
-#ifdef AF_AX25
-	tc_net_socket_af_ax25_sock_dgram_n();
-#endif
-#ifdef AF_PACKET
-	tc_net_socket_af_packet_sock_dgram_p();
-#endif
-	tc_net_socket_af_inet_sock_raw_p();
-	tc_net_socket_af_inet_sock_raw_tcp_p();
+	tc_net_socket_af_inet_sock_raw_n();
+	tc_net_socket_af_inet_sock_raw_tcp_n();
 	tc_net_socket_af_inet_sock_raw_udp_p();
 	tc_net_socket_af_inet_sock_raw_icmp_p();
-#ifdef IPPROTO_IGMP
+#ifdef CONFIG_NET_LWIP_IGMP
 	tc_net_socket_af_inet_sock_raw_igmp_p();
 #endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_raw_ipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_inet_sock_raw_routing_p();
-#endif
-#ifdef IPPROTO_FRAGMENT
-	tc_net_socket_af_inet_sock_raw_fragment_p();
-#endif
-	tc_net_socket_af_inet_sock_raw_icmpv6_n();
-#endif
-#ifdef AF_UNIX
-	tc_net_socket_af_unix_sock_raw_n();
-	tc_net_socket_af_unix_sock_raw_tcp_n();
-	tc_net_socket_af_unix_sock_raw_udp_n();
-	tc_net_socket_af_unix_sock_raw_icmp_n();
-#ifdef IPPROTO_IGMP
-	tc_net_socket_af_unix_sock_raw_igmp_n();
-#endif
-#ifdef CONFIG_NET_IPv6
-	tc_net_socket_af_unix_sock_raw_ipv6_n();
-#ifdef IPPROTO_ROUTING
-	tc_net_socket_af_unix_sock_raw_routing_n();
-#endif
-#ifdef IPPROTO_FRAGMENT
-	tc_net_socket_af_unix_sock_raw_fragment_n();
-#endif
-	tc_net_socket_af_unix_sock_raw_icmpv6_n();
-#endif
+	tc_net_socket_af_inet_sock_raw_icmpv6_p();
 #endif
 	return 0;
 }

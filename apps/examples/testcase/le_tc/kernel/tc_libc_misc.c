@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_misc.c
+/// @file tc_libc_misc.c
 
 /// @brief Test Case Example for Libc Misc API
 
@@ -364,6 +364,9 @@ static void tc_libc_misc_lib_dumpbuffer(void)
 	unsigned char buffer[] = { 'S', 'A', 'M', 'S', 'U', 'N', 'G', '-', 'T', 'i', 'z', 'e', 'n', 'R', 'T' };
 	unsigned char *buf = NULL;
 	int idx;
+
+	/* To guarantee flushing other printf messages before using lowsyslog */
+	usleep(10);
 
 	/**
 	 * As lib_dumpbuffer returns void, there in no way to check the success or failure case

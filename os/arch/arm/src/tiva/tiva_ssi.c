@@ -93,8 +93,8 @@
 #define ssidbg  lldbg
 #define ssivdbg llvdbg
 #else
-#define ssidbg(x...)
-#define ssivdbg(x...)
+#define ssidbg(...)
+#define ssivdbg(...)
 #endif
 
 /* How many SSI modules does this chip support? The LM3S6918 supports 2 SSI

@@ -58,6 +58,7 @@ void uuid_unparse_lower(const uuid_t uu, char *out)
 
 int getifaddrs(struct ifaddrs **ifap)
 {
+	int ret = 0;
 	static struct ifaddrs ifa;
 	static struct sockaddr_in addr, netmask;
 	uint8_t flags;
@@ -68,9 +69,11 @@ int getifaddrs(struct ifaddrs **ifap)
 
 	struct netif *curr = g_netdevices;
 
-	netlib_get_ipv4addr(curr->d_ifname, &addr.sin_addr);
-	netlib_get_dripv4addr(curr->d_ifname, &netmask.sin_addr);
-	netlib_getifstatus(curr->d_ifname, &flags);
+	if ((netlib_get_ipv4addr(curr->d_ifname, &addr.sin_addr) == -1)
+		|| (netlib_get_dripv4addr(curr->d_ifname, &netmask.sin_addr) == -1)
+		|| (netlib_getifstatus(curr->d_ifname, &flags) == -1)) {
+		goto error;
+	}
 
 	ifa.ifa_next = NULL;
 	ifa.ifa_name = curr->d_ifname;
@@ -81,16 +84,13 @@ int getifaddrs(struct ifaddrs **ifap)
 
 	*ifap = &ifa;
 
-	return 0;
+	return ret;
+error:
+	ret = -1;
+	return ret;
 }
 
 unsigned int if_nametoindex(const char *ifname)
 {
 	return 0;					// TODO: Now supports only 1 device
-}
-
-const char *gai_strerror(int errcode)
-{
-	static const char *n_str = "null";
-	return n_str;
 }

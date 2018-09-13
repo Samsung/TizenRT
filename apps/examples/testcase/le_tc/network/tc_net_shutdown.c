@@ -166,8 +166,19 @@ void tc_net_shutdown_sock_n(int fd)
 void *shutdown_server(void *args)
 {
 	char *msg = "Hello World !\n";
+	char buf[64] = {0,};
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
+		printf("socket error %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("socket error %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(socket_fd);
+		return 0;
+	}
 
 	memset(&sa, 0, sizeof(sa));
 
@@ -175,25 +186,40 @@ void *shutdown_server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
+		close(socket_fd);
+		return 0;
+	}
 
-	listen(SocketFD, 1);
+	ret = listen(socket_fd, 1);
+	if (ret < 0) {
+		printf("listen fail %s:%d", __FUNCTION__, __LINE__);
+		close(socket_fd);
+		return 0;
+	}
 
 	shutdown_signal();
 
-	int ConnectFD = accept(SocketFD, NULL, NULL);
-	tc_net_shutdown_send_p(ConnectFD);
-	int val = send(ConnectFD, msg, strlen(msg), 0);
+	int connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd < 0) {
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		close(socket_fd);
+		return 0;
+	}
+	tc_net_shutdown_send_p(connect_fd);
+	int val = send(connect_fd, msg, strlen(msg), 0);
 	if (val == -1)
 		printf("\nShutdown send successful %d\n", errno);
-	tc_net_shutdown_recv_p(ConnectFD);
-	val = recv(ConnectFD, msg, 1024, 0);
+	tc_net_shutdown_recv_p(connect_fd);
+	val = recv(connect_fd, buf, 64, 0);
 	if (val == -1)
 		printf("\nShutdown recv successful %d\n", errno);
 	tc_net_shutdown_n();
-	tc_net_shutdown_sock_n(SocketFD);
-	close(ConnectFD);
-	close(SocketFD);
+	tc_net_shutdown_sock_n(socket_fd);
+	close(connect_fd);
+	close(socket_fd);
 
 	return 0;
 
@@ -215,7 +241,10 @@ void *shutdown_client(void *args)
 	struct sockaddr_in dest;
 
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (mysocket < 0) {
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -223,8 +252,18 @@ void *shutdown_client(void *args)
 
 	shutdown_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	int ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		close(mysocket);
+		return 0;
+	}
 	len = recv(mysocket, buffer, MAXRCVLEN, 0);
+	if (len < 0) {
+		printf("recv fail %s:%d\n", __FUNCTION__, __LINE__);
+		close(mysocket);
+		return 0;
+	}
 	buffer[len] = '\0';
 	tc_net_shutdown_recv_p(mysocket);
 	int val = recv(mysocket, buffer, MAXRCVLEN, 0);

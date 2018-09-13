@@ -34,7 +34,7 @@ With the Model Manager, you can:
 - [Manage device model](HowToManageDeviceModel.md)
 - [Manage Certificate](manage-certificate.md)
 
-The Model Manager is displayed while creating a new project with SmartThings functionality. If you want to access the Model Manager later again, in the **Project Explorer** view, right-click the project and select **Manage ST-Things Resource**.
+The Model Manager is displayed while creating a new project with SmartThings functionality. If you want to access the Model Manager later again, in the **Project Explorer** view, right-click the project and select **Manage ST Things Resource**.
 
 #### **Checking Device, Resource, and Property Information**
 To access information:  
@@ -71,7 +71,7 @@ When the project is created, template code for the selected device and resources
 <resource_<uri>.c>
 - Get and set handlers for a resource
 - You need to write additional code for the functionality you want.
-- Refet to annotation or TODO in the resource file.
+- Refer to annotation or TODO in the resource file.
 
 <Makefile> and <Make.defs>
 - Makefile for building the project
@@ -114,7 +114,7 @@ You can check the build logs in the **Console** view.
 ### 5. Flash the Project  
 To upload your project to the board, you need to flash it:  
 1. Connect the board to your computer.  
-2. Select the project in the **Project Exploer** view.  
+2. Select the project in the **Project Explorer** view.  
 3. To flash the TizenRT project:  
      i. In the Tizen Studio for RT toolbar, click the **Flash** icon.  
     ii. Select a flash option **'ALL'** and click **OK**.  

@@ -58,7 +58,10 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double log(double x)
 {
-	double y, y_old, ey, epsilon;
+	double y;
+	double y_old;
+	double ey;
+	double epsilon;
 
 	if (x < 0.0) {
 		return NAN;

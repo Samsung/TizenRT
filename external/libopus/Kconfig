@@ -1,0 +1,71 @@
+###########################################################################
+#
+# Copyright 2018 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig CODEC_LIBOPUS
+	bool "libopus 1.2.1"
+	default y
+	depends on AUDIO_CODEC
+	---help---
+		select to enable the libopus library
+
+if CODEC_LIBOPUS
+
+comment "OPUS Config Parameters"
+
+choice
+	prompt "Opus Application Mode"
+	default OPUS_APPLICATION_AUDIO
+
+config OPUS_APPLICATION_VOIP
+	bool "VoIP"
+
+config OPUS_APPLICATION_AUDIO
+	bool "Audio"
+
+config OPUS_APPLICATION_RESTRICTED_LOWDELAY
+	bool "Restricted_lowdelay"
+
+endchoice
+
+config OPUS_ENCODE_COMPLEXITY
+	int "Complexity for encoding, value in [0, 10]"
+	default 5
+	range 0 10
+	---help---
+		Complexity for opus encoding, avaiable complexity is in range [0, 10]
+
+config OPUS_ENCODE_FRAMESIZE
+	int "Frame size for encoding, value in msec"
+	default 100
+	---help---
+		Frame size for opus encoding, it's duration of each packet.
+		5, 10, 20, 40, 60, 80, 100, 120 milliseconds is available.
+
+config OPUS_ENCODE_BITRATE
+	int "Bitrate for encoding, bits per second"
+	default 16000
+	---help---
+		Bitrate for encoding, bits per second, e.g. 16000
+
+endif # CODEC_LIBOPUS
+

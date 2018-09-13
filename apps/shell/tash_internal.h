@@ -32,19 +32,19 @@
 #ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg(format, ...)        dbg(format, ##__VA_ARGS__)
 #endif
-#ifdef CONFIG_DEBUG_TASH_VERBOSE
+#ifdef CONFIG_DEBUG_TASH_INFO
 #define shvdbg(format, ...)       vdbg(format, ##__VA_ARGS__)
 #endif
 #else  /* !CONFIG_DEBUG_TASH */
-#define shdbg(x...)
-#define shvdbg(x...)
+#define shdbg(...)
+#define shvdbg(...)
 #endif /* CONFIG_DEBUG_TASH */
 #else  /* !CONFIG_CPP_HAVE_VARARGS */
 #ifdef CONFIG_DEBUG_TASH
 #ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg        dbg
 #endif
-#ifdef CONFIG_DEBUG_TASH_VERBOSE
+#ifdef CONFIG_DEBUG_TASH_INFO
 #define shvdbg       vdbg
 #endif
 #else  /* !CONFIG_DEBUG_TASH */

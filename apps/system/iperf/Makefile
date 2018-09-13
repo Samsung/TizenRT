@@ -26,6 +26,9 @@ APPNAME = iperf
 FUNCNAME = iperf_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
+IPERF_PRIORITY = 100
+IPERF_STACKSIZE = 4096
+
 ASRCS =
 CSRCS =  iperf_api.c iperf_error.c iperf_server_api.c
 CSRCS += iperf_t_timer.c iperf_client_api.c iperf_locale.c iperf_udp.c
@@ -97,7 +100,7 @@ endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_IPERF),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(IPERF_PRIORITY),$(IPERF_STACKSIZE))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 

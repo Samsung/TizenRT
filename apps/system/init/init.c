@@ -36,9 +36,8 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
-#include <errno.h>
-#include <sys/mount.h>
+#ifdef CONFIG_EVENTLOOP
+#include <tinyara/eventloop.h>
 #endif
 
 /****************************************************************************
@@ -49,10 +48,6 @@
 
 #if !defined(CONFIG_BUILD_PROTECTED)
 #undef CONFIG_LIB_USRWORK
-#endif
-
-#ifdef CONFIG_DM
-extern void dm_cb_register_init(void);
 #endif
 
 #ifdef CONFIG_ENABLE_IOTJS
@@ -102,16 +97,8 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 	int pid;
-#endif
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
-	int ret;
-	ret = mount(NULL, "/proc", "procfs", 0, NULL);
-	if (ret < 0) {
-		printf("procfs mount is failed, error code is %d\n", get_errno());
-	}
 #endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION
@@ -128,10 +115,6 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#ifdef CONFIG_DM
-	dm_cb_register_init();
-#endif
-
 #ifdef CONFIG_TASH
 	pid = tash_start();
 	if (pid <= 0) {
@@ -142,7 +125,16 @@ int preapp_start(int argc, char *argv[])
 	tash_register_cmds();
 #endif
 
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
+#ifdef CONFIG_EVENTLOOP
+	pid = eventloop_task_start();
+	if (pid <= 0) {
+		printf("eventloop is failed to start, error code is %d\n", pid);
+		goto error_out;
+	}
+#endif
+
+
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 error_out:
 	return pid;
 #else

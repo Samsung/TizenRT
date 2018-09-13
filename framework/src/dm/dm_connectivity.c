@@ -34,6 +34,11 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
+void dm_cb_register_init(void)
+{
+	return;
+}
+
 int dm_conn_get_rssi(int *rssi)
 {
 	return DM_ERROR_NOT_SUPPORTED;
@@ -80,6 +85,36 @@ int dm_conn_unregister_linkup_cb(conn_cb cb)
 }
 
 int dm_conn_unregister_linkdown_cb(conn_cb cb)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_wifi_scan(void)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_get_scan_result(dm_scan_info_t **result)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_free_scan_result(dm_scan_info_t **result)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_dhcp_init(void)
+{
+	return DM_ERROR_NOT_SUPPORTED;
+}
+
+int dm_conn_wifi_disconnect(void)
 {
 	return DM_ERROR_NOT_SUPPORTED;
 }

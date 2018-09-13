@@ -128,6 +128,14 @@
 #ifndef SMEMCPY
 #define SMEMCPY(dst, src, len)            memcpy(dst, src, len)
 #endif
+
+/**
+ * MEMCMP : override this with care! Some compilers (e.g. gcc) can inline a
+ * call to memcmp() if the length is known at compile time and is small.
+ */
+#ifndef MEMCMP
+#define MEMCMP(dst, src, len)            memcmp(dst, src, len)
+#endif
 /**
  * @}
  */
@@ -769,10 +777,17 @@
 #endif
 
 /**
- * LWIP_MULTICAST_PING==1: respond to multicast pings (default is unicast only)
+ * LWIP_MULTICAST_PING4==1: respond to multicast ipv4 pings (default is unicast only)
  */
-#ifndef LWIP_MULTICAST_PING
-#define LWIP_MULTICAST_PING             0
+#ifndef LWIP_MULTICAST_PING4
+#define LWIP_MULTICAST_PING4            0
+#endif
+
+/**
+ * LWIP_MULTICAST_PING6==1: respond to multicast ipv6 pings (default is unicast only)
+ */
+#ifndef LWIP_MULTICAST_PING6
+#define LWIP_MULTICAST_PING6            0
 #endif
 /**
  * @}
@@ -2185,6 +2200,15 @@
 #ifndef LWIP_IPV6_DUP_DETECT_ATTEMPTS
 #define LWIP_IPV6_DUP_DETECT_ATTEMPTS   1
 #endif
+
+/**
+ * LWIP_IPV6_REASS_MAXAGE: Maximum time (in multiples of IP6_REASS_TMR_INTERVAL - so seconds, normally) a fragmented IP packet waits for all fragments to arrive.
+ * If not all fragments arrived in this time, the whole packet is discarded.
+ */
+#ifndef LWIP_IPV6_REASS_MAXAGE
+#define LWIP_IPV6_REASS_MAXAGE    60
+#endif
+
 /**
  * @}
  */
@@ -2311,6 +2335,15 @@
 #endif
 
 /**
+ * LWIP_ND6_MAX_SOLICIT_INTERVAL: max interval mili-second of router solicit to send.
+ * INTERVAL should be bigger than ND6_TMR_INTERVAL and recommend to set it as multiple
+ * values of ND6_TMR_INTERVAL.
+ */
+#ifndef LWIP_ND6_MAX_SOLICIT_INTERVAL
+#define LWIP_ND6_MAX_SOLICIT_INTERVAL	4000
+#endif
+
+/**
  * Unused: See ND RFC (time in milliseconds).
  */
 #ifndef LWIP_ND6_MAX_ANYCAST_DELAY_TIME
@@ -2371,6 +2404,14 @@
  */
 #ifndef LWIP_ND6_RDNSS_MAX_DNS_SERVERS
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  0
+#endif
+
+/**
+ * LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME > 0 : Use default valid life time when a new router is identified without ValidLifetime option
+ * This value is used when NA message with IsRouter flags (default 30 days)
+ */
+#ifndef LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME
+#define LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME  (2592000 * 1000)
 #endif
 /**
  * @}
@@ -2830,6 +2871,14 @@
  */
 #ifndef IP6_DEBUG
 #define IP6_DEBUG                       LWIP_DBG_OFF
+#endif
+
+
+/**
+ * ND6_DEBUG: Enable debugging for ND6.
+ */
+#ifndef ND6_DEBUG
+#define ND6_DEBUG                       LWIP_DBG_OFF
 #endif
 /**
  * @}

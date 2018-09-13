@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += things_hashmap.c things_list.c things_network.c things_ping.c things_queue.c things_string.c things_thread.c things_wait_handler.c things_rtos_util.c things_malloc.c
+CSRCS += things_hashmap.c things_list.c things_network.c things_ping.c things_string.c things_wait_handler.c things_rtos_util.c things_malloc.c
 
 DEPPATH += --dep-path src/st_things/things_stack/utils
 VPATH += :src/st_things/things_stack/utils

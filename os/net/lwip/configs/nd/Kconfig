@@ -55,6 +55,12 @@ config NET_IPv6_ND_MAX_UNICAST_SOLICIT
 		Max number of unicast neighbor solicitation messages
 		to send during neighbor reachability detection.
 
+config NET_IPv6_ND_MAX_SOLICIT_INTERVAL
+	int "Max interval time of solicit messages to send"
+	default 4000
+	---help---
+		Max interval time of solicit message to send
+
 config NET_IPv6_ND_REACHABLE_TIME
 	int "Default neighbor reachable time (in milliseconds)"
 	default 30000

@@ -36,51 +36,99 @@
 using namespace std;
 
 namespace media {
-typedef enum observer_command_e
-{
+/**
+ * @brief current state of MediaRecorder
+ * @details @b #include <media/MediaRecorder.h>
+ * @since TizenRT v2.0 PRE
+ */
+typedef enum recorder_state_e {
+	/** MediaRecorder object was created */
+	RECORDER_STATE_NONE,
+	/** MediaRecorder worker object was created */
+	RECORDER_STATE_IDLE,
+	/** MediaRecorder datasource configured */
+	RECORDER_STATE_CONFIGURED,
+	/** MediaRecorder ready to record */
+	RECORDER_STATE_READY,
+	/** MediaRecorder do recording */
+	RECORDER_STATE_RECORDING,
+	/** MediaRecorder pause to record */
+	RECORDER_STATE_PAUSED
+} recorder_state_t;
+
+const char *const recorder_state_names[] = {
+	"RECORDER_STATE_NONE",
+	"RECORDER_STATE_IDLE",
+	"RECORDER_STATE_CONFIGURED",
+	"RECORDER_STATE_READY",
+	"RECORDER_STATE_RECORDING",
+	"RECORDER_STATE_PAUSED",
+};
+
+typedef enum observer_command_e {
 	OBSERVER_COMMAND_STARTED,
+	OBSERVER_COMMAND_PAUSED,
 	OBSERVER_COMMAND_FINISHIED,
-	OBSERVER_COMMAND_ERROR
+	OBSERVER_COMMAND_START_ERROR,
+	OBSERVER_COMMAND_PAUSE_ERROR,
+	OBSERVER_COMMAND_STOP_ERROR,
+	OBSERVER_COMMAND_BUFFER_OVERRUN,
+	OBSERVER_COMMAND_BUFFER_UNDERRUN,
+	OBSERVER_COMMAND_BUFFER_DATAREACHED,
 } observer_command_t;
 
 class MediaRecorderImpl : public enable_shared_from_this<MediaRecorderImpl>
 {
 public:
-	MediaRecorderImpl();
+	MediaRecorderImpl(MediaRecorder& recorder);
 	~MediaRecorderImpl();
 
 	recorder_result_t create();
 	recorder_result_t destroy();
-
 	recorder_result_t prepare();
 	recorder_result_t unprepare();
+
 	recorder_result_t start();
 	recorder_result_t pause();
 	recorder_result_t stop();
 
-	recorder_result_t getVolume();
-	void setVolume(int vol);
-
-	void setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
+	recorder_result_t getVolume(uint8_t *vol);
+	recorder_result_t setVolume(uint8_t vol);
+	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
-	void setState(recorder_state_t state);
-	void setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
-	
+	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	recorder_result_t setDuration(int second);
 	void notifySync();
-	void notifyObserver(observer_command_t cmd);
+	void notifyObserver(observer_command_t cmd, ...);
 	void capture();
 
 private:
-	recorder_state_t mCurState;
-	std::unique_ptr<stream::OutputDataSource> mOutputDataSource;
+	void createRecorder(recorder_result_t& ret);
+	void destroyRecorder(recorder_result_t& ret);
+	void prepareRecorder(recorder_result_t& ret);
+	void unprepareRecorder(recorder_result_t& ret);
+	void startRecorder();
+	void pauseRecorder();
+	void stopRecorder(recorder_result_t ret);
+	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
+	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);
+	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
+	void setRecorderDuration(int second, recorder_result_t& ret);
+
+private:
+	std::atomic<recorder_state_t> mCurState;
+	std::shared_ptr<stream::OutputDataSource> mOutputDataSource;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
+	MediaRecorder& mRecorder;
 	unsigned char* mBuffer;
-	unsigned int mBuffSize;
+	int mBuffSize;
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;
-	int mCurVolume;
-	int mId;
+	int mDuration;
+	uint32_t mTotalFrames;
+	uint32_t mCapturedFrames;
 };
 } // namespace media
 

@@ -73,8 +73,6 @@
 #define _ALT_O          0x02
 #define _LEGAL_ALT(x)       { if (alt_format & ~(x)) return (0); }
 
-#define TM_YEAR_BASE        1900
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -230,6 +228,7 @@ literal:
 		/*
 		 * "Elementary" conversion rules.
 		 */
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 		case 'A':				/* The day of week, using the locale's form. */
 		case 'a':
 			_LEGAL_ALT(0);
@@ -252,6 +251,7 @@ literal:
 			tm->tm_wday = i;
 			bp += len;
 			break;
+#endif
 		case 'B':				/* The month, using the locale's form. */
 		case 'b':
 		case 'h':
@@ -307,6 +307,7 @@ literal:
 				return (NULL);
 			}
 			break;
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 		case 'j':				/* The day of year. */
 			_LEGAL_ALT(0);
 			if (!(_conv_num(&bp, &tm->tm_yday, 1, 366))) {
@@ -314,6 +315,7 @@ literal:
 			}
 			tm->tm_yday--;
 			break;
+#endif
 		case 'M':				/* The minute. */
 			_LEGAL_ALT(_ALT_O);
 			if (!(_conv_num(&bp, &tm->tm_min, 0, 59))) {
@@ -372,12 +374,14 @@ literal:
 				return (NULL);
 			}
 			break;
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 		case 'w':				/* The day of week, beginning on sunday. */
 			_LEGAL_ALT(_ALT_O);
 			if (!(_conv_num(&bp, &tm->tm_wday, 0, 6))) {
 				return (NULL);
 			}
 			break;
+#endif
 		case 'Y':				/* The year. */
 			_LEGAL_ALT(_ALT_E);
 			if (!(_conv_num(&bp, &i, 0, 9999))) {

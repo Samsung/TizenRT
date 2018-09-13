@@ -30,7 +30,8 @@
  ****************************************************************************/
 
 static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
-
+static ssize_t testdrv_read(FAR struct file *filep, FAR char *buffer, size_t len);
+static ssize_t testdrv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -38,8 +39,8 @@ static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static const struct file_operations testdrv_fops = {
 	0,							/* open */
 	0,							/* close */
-	0,							/* read */
-	0,							/* write */
+	testdrv_read,						/* read */
+	testdrv_write,						/* write */
 	0,							/* seek */
 	testdrv_ioctl						/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
@@ -84,6 +85,17 @@ static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 
 	return ret;
+}
+
+
+static ssize_t testdrv_read(FAR struct file *filep, FAR char *buffer, size_t len)
+{
+	return 0;                                       /* Return EOF */
+}
+
+static ssize_t testdrv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+{
+	return len;                                     /* Say that everything was written */
 }
 
 /****************************************************************************

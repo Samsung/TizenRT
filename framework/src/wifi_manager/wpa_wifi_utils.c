@@ -19,13 +19,12 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <slsi_wifi/slsi_wifi_api.h>
 #include "wifi_utils.h"
 
-#define MACADDR_LENGTH			6
-#define SSID_LENGTH_MAX			32
-#define PASSPHRASE_LENGTH_MAX	64
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0
 
@@ -95,61 +94,64 @@ free_scan_results(wifi_utils_scan_list_s *scan_list)
 static wifi_utils_result_e
 fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_info)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	wifi_utils_scan_list_s *cur = NULL, *prev = NULL;
 	slsi_scan_info_t *wifi_scan_iter = NULL;
 	int cnt = 0;
-	if (*slsi_scan_info == NULL) {
-		return WIFI_UTILS_FAIL;
-	}
+	if (*slsi_scan_info) {
 	/* Initialize pointer */
-	wifi_scan_iter = *slsi_scan_info;
-	while (wifi_scan_iter) {
+		wifi_scan_iter = *slsi_scan_info;
+		while (wifi_scan_iter) {
 #if WIFI_UTILS_DEBUG
-		/* Debug */
-		ndbg("SSID (");
-		int i = 0;
-		for (; i < wifi_scan_iter->ssid_len; i++) {
-			ndbg("%c", wifi_scan_iter->ssid[i]);
-		}
-		ndbg(")\n");
-		ndbg("rssi(%d)\n", wifi_scan_iter->rssi);
-		ndbg("beacon_period(%d)\n", wifi_scan_iter->beacon_period);
-		ndbg("channel(%d)\n", wifi_scan_iter->channel);
-		ndbg("physical mode(%d)\n", wifi_scan_iter->phy_mode);
-		ndbg("bss type(%d)\n", wifi_scan_iter->bss_type);
-		ndbg("wps support(%d)\n", wifi_scan_iter->wps_support);
-		ndbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
-		ndbg("-----------------------------------------------\n");
+			/* Debug */
+			ndbg("SSID (");
+			int i = 0;
+			for (; i < wifi_scan_iter->ssid_len; i++) {
+				ndbg("%c", wifi_scan_iter->ssid[i]);
+			}
+			ndbg(")\n");
+			ndbg("rssi(%d)\n", wifi_scan_iter->rssi);
+			ndbg("beacon_period(%d)\n", wifi_scan_iter->beacon_period);
+			ndbg("channel(%d)\n", wifi_scan_iter->channel);
+			ndbg("physical mode(%d)\n", wifi_scan_iter->phy_mode);
+			ndbg("bss type(%d)\n", wifi_scan_iter->bss_type);
+			ndbg("wps support(%d)\n", wifi_scan_iter->wps_support);
+			ndbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
+			ndbg("-----------------------------------------------\n");
 #endif
-		cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
-		if (!cur) {
-			free_scan_results(*scan_list);
-			return WIFI_UTILS_FAIL;
-		}
-		cur->next = NULL;
+			cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
+			if (!cur) {
+				free_scan_results(*scan_list);
+				return wuret;
+			}
+			cur->next = NULL;
 
-		memset(&cur->ap_info, 0x0, sizeof(wifi_utils_ap_scan_info_s));
-		cur->ap_info.rssi = wifi_scan_iter->rssi;
-		cur->ap_info.channel = wifi_scan_iter->channel;
-		cur->ap_info.phy_mode = wifi_scan_iter->phy_mode;
-		get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
-						  &cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
-		strncpy(cur->ap_info.ssid, (char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
-		cur->ap_info.ssid_length = wifi_scan_iter->ssid_len;
-		strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
+			memset(&cur->ap_info, 0x0, sizeof(wifi_utils_ap_scan_info_s));
+			cur->ap_info.rssi = wifi_scan_iter->rssi;
+			cur->ap_info.channel = wifi_scan_iter->channel;
+			cur->ap_info.phy_mode = wifi_scan_iter->phy_mode;
+			get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
+			&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
+			strncpy(cur->ap_info.ssid, (const char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
+			cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
+			strncpy((char *)cur->ap_info.bssid, (const char *)wifi_scan_iter->bssid, WIFI_UTILS_MACADDR_STR_LEN);
+			cur->ap_info.bssid[WIFI_UTILS_MACADDR_STR_LEN] = '\0';
 
-		if (!prev) {
-			*scan_list = cur;
-		} else {
-			prev->next = cur;
+			if (!prev) {
+				*scan_list = cur;
+			} else {
+				prev->next = cur;
+			}
+			prev = cur;
+			wifi_scan_iter = wifi_scan_iter->next;
+			cnt++;
 		}
-		prev = cur;
-		wifi_scan_iter = wifi_scan_iter->next;
-		cnt++;
+		ndbg("%d records scanned\n", cnt);
+		wuret = WIFI_UTILS_SUCCESS;
+	} else {
+		ndbg("Scanning result is null...\n");
 	}
-	ndbg("%d records scanned\n", cnt);
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 /*
@@ -176,10 +178,6 @@ static int callback_handler(void *arg)
 
 static void linkup_handler(slsi_reason_t *reason)
 {
-	wifi_utils_result_e res = WIFI_UTILS_FAIL;
-	if (reason->reason_code == SLSI_STATUS_SUCCESS) {
-		res = WIFI_UTILS_SUCCESS;
-	}
 	int *type = (int *)malloc(sizeof(int));
 	if (type == NULL) {
 		ndbg("[WU] malloc error\n");
@@ -187,7 +185,7 @@ static void linkup_handler(slsi_reason_t *reason)
 	}
 
 	if (g_mode == SLSI_WIFI_STATION_IF) {
-		if (res == WIFI_UTILS_SUCCESS) {
+		if (reason->reason_code == SLSI_STATUS_SUCCESS) {
 			*type = 1;
 		} else {
 			*type = 2;
@@ -263,77 +261,91 @@ static int8_t wifi_scan_result_callback(slsi_reason_t *reason)
 //
 wifi_utils_result_e wifi_utils_init(void)
 {
-	if (g_mode != SLSI_WIFI_NONE) {
-		return WIFI_UTILS_FAIL;
-	}
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	if (g_mode == SLSI_WIFI_NONE) {
+		int ret = SLSI_STATUS_SUCCESS;
+		g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
+		ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
+		if (ret != SLSI_STATUS_SUCCESS) {
+			ndbg("[WU] Failed to start STA mode\n");
+			return wuret;
+		}
+		g_mode = SLSI_WIFI_STATION_IF;
 
-	int ret = SLSI_STATUS_SUCCESS;
-	g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
-	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Failed to start STA mode\n");
-		return WIFI_UTILS_FAIL;
-	}
-	g_mode = SLSI_WIFI_STATION_IF;
+		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+		if (ret != SLSI_STATUS_SUCCESS) {
+			ndbg("[WU] Link callback handles: register failed !\n");
+			return wuret;
+		} else {
+			nvdbg("[WU] Link callback handles: registered\n");
+		}
 
-	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Link callback handles: register failed !\n");
-		return WIFI_UTILS_FAIL;
+		ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
+		if (ret != SLSI_STATUS_SUCCESS) {
+			ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+			return wuret;
+		}
+		wuret = WIFI_UTILS_SUCCESS;
 	} else {
-		nvdbg("[WU] Link callback handles: registered\n");
+		ndbg("Already %d\n", g_mode);
 	}
-
-	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
-		return WIFI_UTILS_FAIL;
-	}
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_deinit(void)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	int ret = WiFiStop();
-	if (ret != SLSI_STATUS_SUCCESS) {
+	if (ret == SLSI_STATUS_SUCCESS) {
+		g_mode = SLSI_WIFI_NONE;
+		g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
+		wuret = WIFI_UTILS_SUCCESS;
+	} else {
 		ndbg("[WU] Failed to stop STA mode\n");
-		return WIFI_UTILS_FAIL;
 	}
-	g_mode = SLSI_WIFI_NONE;
-	g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
-	int8_t ret = WiFiScanNetwork();
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	int8_t ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
 	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] WiFI scan fail(%d).", ret);
-		return WIFI_UTILS_FAIL;
-	}
-	return WIFI_UTILS_SUCCESS;
+		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+		return wuret;
+	} 
+	ret = WiFiScanNetwork();
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] [ERR] WiFi scan fail(%d)\n", ret);
+		return wuret;
+	} 
+	wuret = WIFI_UTILS_SUCCESS;
+	ndbg("[WU] WIFi Scan success\n");
+	return wuret;
 }
 
 
 wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 {
-	if (!cbk) {
-		return WIFI_UTILS_INVALID_ARGS;
+	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
+	if (cbk) {
+		g_cbk = *cbk;
+		wuret = WIFI_UTILS_SUCCESS;
+	} else {
+		ndbg("[WU] WiFi callback register failure (no callback)\n");
 	}
-	g_cbk = *cbk;
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
 	if (!ap_connect_config) {
-		return WIFI_UTILS_INVALID_ARGS;
+		return wuret;
 	}
 
 	int ret;
-	wifi_utils_result_e result = WIFI_UTILS_FAIL;
+	wuret = WIFI_UTILS_FAIL;
 	slsi_security_config_t *config = NULL;
 
 	if (ap_connect_config->passphrase_length > 0) {
@@ -394,13 +406,13 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	if (ret != SLSI_STATUS_SUCCESS) {
 		if (ret == SLSI_STATUS_ALREADY_CONNECTED) {
 			nvdbg("[WU] WiFiNetworkJoin already connected\n");
-			result = WIFI_UTILS_ALREADY_CONNECTED;
+			wuret = WIFI_UTILS_ALREADY_CONNECTED;
 		} else {
 			ndbg("[WU] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
 			goto connect_ap_fail;
 		}
 	} else {
-		result = WIFI_UTILS_SUCCESS;
+		wuret = WIFI_UTILS_SUCCESS;
 		nvdbg("[WU] Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
 			  ap_connect_config->ssid_length);
 	}
@@ -411,52 +423,55 @@ connect_ap_fail:
 		config = NULL;
 	}
 
-	return result;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	int ret = WiFiNetworkLeave();
-	if (ret != SLSI_STATUS_SUCCESS) {
+	if (ret == SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] WiFiNetworkLeave success\n");
+		wuret = WIFI_UTILS_SUCCESS;
+	} else {
 		ndbg("[WU] WiFiNetworkLeave fail because of %d\n", ret);
-		return WIFI_UTILS_FAIL;
 	}
 
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info)
 {
-	if (!wifi_info) {
-		return WIFI_UTILS_INVALID_ARGS;
-	}
-	if (g_mode == SLSI_WIFI_NONE) {
-		return WIFI_UTILS_FAIL;
-	}
-
-	int ret = WiFiGetMac(wifi_info->mac_address);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		return WIFI_UTILS_FAIL;
-	}
-
-	wifi_info->rssi = (int)0;
-
-	if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
-	} else if (g_mode == SLSI_WIFI_STATION_IF) {
-		uint8_t isConnected;
-		if (WiFiIsConnected(&isConnected, NULL) == SLSI_STATUS_SUCCESS) {
-			int8_t rssi;
-			wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
-			if (WiFiGetRssi(&rssi) == SLSI_STATUS_SUCCESS) {
-				wifi_info->rssi = (int)rssi;
+	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
+	if (wifi_info) {
+		wuret = WIFI_UTILS_FAIL;
+		if (g_mode != SLSI_WIFI_NONE) {
+			int ret = WiFiGetMac(wifi_info->mac_address);
+			if (ret == SLSI_STATUS_SUCCESS) {
+				wifi_info->rssi = (int)0;
+				if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
+					wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
+				} else if (g_mode == SLSI_WIFI_STATION_IF) {
+					uint8_t isConnected;
+					if (WiFiIsConnected(&isConnected, NULL) == SLSI_STATUS_SUCCESS) {
+						int8_t rssi;
+						wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
+						if (WiFiGetRssi(&rssi) == SLSI_STATUS_SUCCESS) {
+							wifi_info->rssi = (int)rssi;
+						}
+					} else {
+						wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;
+					}
+				}
+				wuret = WIFI_UTILS_SUCCESS;
+			} else {
+				ndbg("[WU] no MAC exists\n");
 			}
 		} else {
-			wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;
+			ndbg("[WU] need to init... get info fail\n");
 		}
 	}
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
@@ -527,6 +542,20 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
 	nvdbg("[WU] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
+	
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] Link callback handles: register failed !\n");
+		return WIFI_UTILS_FAIL;
+	} else {
+		nvdbg("[WU] Link callback handles: registered\n");
+	}
+
+	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+		return WIFI_UTILS_FAIL;
+	}
 
 	ret = WIFI_UTILS_SUCCESS;
 
@@ -544,44 +573,44 @@ start_soft_ap_fail:
 
 wifi_utils_result_e wifi_utils_start_sta(void)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	int ret = SLSI_STATUS_SUCCESS;
 	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Failed to start STA mode\n");
-		return WIFI_UTILS_FAIL;
-	}
-	g_mode = SLSI_WIFI_STATION_IF;
-
-	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Link callback handles: register failed !\n");
-		return WIFI_UTILS_FAIL;
+	if (ret == SLSI_STATUS_SUCCESS) {
+		g_mode = SLSI_WIFI_STATION_IF;
+		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+		if (ret == SLSI_STATUS_SUCCESS) {
+			nvdbg("[WU] Link callback handles: registered\n");
+			ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
+			if (ret == SLSI_STATUS_SUCCESS) {
+				nvdbg("[WU] Scan callback handles: registered\n");
+				wuret = WIFI_UTILS_SUCCESS;
+			} else {
+				ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+			}
+		} else {
+			ndbg("[WU] [ERR] Register Link Callback(%d)\n", ret);
+		}
 	} else {
-		nvdbg("[WU] Link callback handles: registered\n");
+		ndbg("[WU] Failed to start STA mode\n");
 	}
-
-	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
-		return WIFI_UTILS_FAIL;
-	}
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }
 
 wifi_utils_result_e wifi_utils_stop_softap(void)
 {
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	int ret;
-
-	if (g_mode != SLSI_WIFI_SOFT_AP_IF) {
-		return WIFI_UTILS_FAIL;
+	if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
+		ret = WiFiStop();
+		if (ret == SLSI_STATUS_SUCCESS) {
+			wuret = WIFI_UTILS_SUCCESS;
+			ndbg("[WU] Stop AP mode successfully\n");
+		} else {
+			ndbg("[WU] Stop AP mode fail\n");
+		}
+	} else {
+		ndbg("[WU] Mode is not AP mode\n");
 	}
-
-	ret = WiFiStop();
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Failed to stop AP mode\n");
-		return WIFI_UTILS_FAIL;
-	}
-
-	return WIFI_UTILS_SUCCESS;
+	return wuret;
 }

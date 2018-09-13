@@ -81,13 +81,13 @@
 #if CONFIG_SYSTEM_INIFILE_DEBUGLEVEL > 0
 #define inidbg(format, ...) printf(EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define inidbg(x...)
+#define inidbg(...)
 #endif
 
 #if CONFIG_SYSTEM_INIFILE_DEBUGLEVEL > 1
 #define inivdbg(format, ...) printf(EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define inivdbg(x...)
+#define inivdbg(...)
 #endif
 #else
 #if CONFIG_SYSTEM_INIFILE_DEBUGLEVEL > 0

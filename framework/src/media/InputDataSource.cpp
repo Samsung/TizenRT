@@ -16,53 +16,44 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+#include <assert.h>
+#include <debug.h>
+#include <unistd.h>
 #include <media/InputDataSource.h>
 #include "Decoder.h"
+#include "MediaPlayerImpl.h"
+#include "StreamBuffer.h"
+#include "StreamBufferReader.h"
+#include "StreamBufferWriter.h"
+
+#ifndef CONFIG_INPUT_DATASOURCE_STACKSIZE
+#define CONFIG_INPUT_DATASOURCE_STACKSIZE 4096
+#endif
 
 namespace media {
 namespace stream {
 
-InputDataSource::InputDataSource()
-	: DataSource()
+InputDataSource::InputDataSource() :
+	DataSource()
 {
 }
 
-InputDataSource::InputDataSource(const InputDataSource& source)
-	: DataSource(source)
+InputDataSource::InputDataSource(const InputDataSource &source) :
+	DataSource(source)
 {
-
 }
 
-InputDataSource& InputDataSource::operator=(const InputDataSource& source)
+InputDataSource &InputDataSource::operator=(const InputDataSource &source)
 {
 	DataSource::operator=(source);
+
 	return *this;
 }
 
 InputDataSource::~InputDataSource()
 {
 }
-
-void InputDataSource::setDecoder(std::shared_ptr<Decoder> decoder)
-{
-	mDecoder = decoder;
-}
-
-const std::shared_ptr<Decoder> InputDataSource::getDecoder()
-{
-	return mDecoder;
-}
-
-void InputDataSource::setAudioType(utils::audio_type_t audioType)
-{
-	mAudioType = audioType;
-}
-
-utils::audio_type_t InputDataSource::getAudioType()
-{
-	return mAudioType;
-}
-
-
 } // namespace stream
 } // namespace media
+

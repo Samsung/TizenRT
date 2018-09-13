@@ -14,49 +14,87 @@ config MEDIA
 
 if MEDIA
 
-config DEBUG_MEDIA
-	bool "Media Debug Output"
-	depends on DEBUG
-	default n
-	---help---
-		Enable Media debug SYSLOG output(disable by default)
-
-if DEBUG_MEDIA
-
-config DEBUG_MEDIA_ERROR
-	bool "Media Error Output"
-	depends on DEBUG_ERROR
-	default n
-	---help---
-		Enable Media error SYSLOG output
-
-config DEBUG_MEDIA_WARN
-	bool "Media Warning Output"
-	depends on DEBUG_WARN
-	default n
-	---help---
-		Enable Media warning SYSLOG output
-
-config DEBUG_MEDIA_INFO
-	bool "Media Informational Output"
-	depends on DEBUG_VERBOSE
-	default n
-	---help---
-		Enable Media informational SYSLOG output
-
-endif #DEBUG_MEDIA
-
 config MEDIA_PLAYER
 	bool "Support Media player"
 	default n
 	---help---
 		Enable media player functions
 
+if MEDIA_PLAYER
+
+config MEDIA_PLAYER_STACKSIZE
+	int "Media Player thread stack size"
+	default 4096
+	---help---
+
+config MEDIA_PLAYER_OBSERVER_STACKSIZE
+	int "Media Player Observer thread stack size"
+	default 2048
+	---help---
+
+config INPUT_DATASOURCE_STACKSIZE
+	int "InputDataSource thread stack size"
+	default 4096
+	---help---
+
+endif #MEDIA_PLAYER
+
 config MEDIA_RECORDER
 	bool "Support Media recorder"
 	default n
 	---help---
 		Enable media recoreder functions
+
+if MEDIA_RECORDER
+
+config MEDIA_RECORDER_STACKSIZE
+	int "Media Recorder thread stack size"
+	default 12288
+	---help---
+
+config MEDIA_RECORDER_OBSERVER_STACKSIZE
+	int "Media Recorder Observer thread stack size"
+	default 2048
+	---help---
+
+config OUTPUT_DATASOURCE_STACKSIZE
+	int "OutputDataSource thread stack size"
+	default 4096
+	---help---
+
+endif #MEDIA_RECORDER
+
+config MEDIA_VOICE_SPEECH_DETECTOR
+	bool "Support Media/Voice Speech Detector"
+	default n
+	select VOICE_SOFTWARE_EPD
+	---help---
+		Enable Media/Voice Speech Detector functions
+
+config AUDIO_RESAMPLER_BUFSIZE
+	int "Audio Resampler Buffer size"
+	default 4096
+	depends on AUDIO
+	---help---
+		Buffer size for resampler
+
+config FILE_DATASOURCE_STREAM_BUFFER_SIZE
+	int "File DataSource stream buffer size"
+	default 4096
+	---help---
+
+config FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "File DataSource stream buffer threshold"
+	default 2048
+
+config BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
+	int "Buffer DataSource stream buffer size"
+	default 4096
+	---help---
+
+config BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "Buffer DataSource stream buffer threshold"
+	default 1
 
 endif #MEDIA
 

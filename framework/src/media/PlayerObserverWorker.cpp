@@ -16,76 +16,29 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <functional>
 #include <debug.h>
 #include "PlayerObserverWorker.h"
 
-namespace media {
-std::unique_ptr<PlayerObserverWorker> PlayerObserverWorker::mWorker;
-std::once_flag PlayerObserverWorker::mOnceFlag;
+#ifndef CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE
+#define CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE 2048
+#endif
 
+namespace media {
 PlayerObserverWorker::PlayerObserverWorker()
 {
+	mThreadName = "PlayerObserverWorker";
+	mStacksize = CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE;
 }
+
 PlayerObserverWorker::~PlayerObserverWorker()
 {
 }
 
-PlayerObserverWorker& PlayerObserverWorker::getWorker()
+PlayerObserverWorker &PlayerObserverWorker::getWorker()
 {
-	std::call_once(PlayerObserverWorker::mOnceFlag, []() { mWorker.reset(new PlayerObserverWorker); });
-
-	return *(mWorker.get());
-}
-
-int PlayerObserverWorker::entry()
-{
-	while (mIsRunning) {
-		std::unique_lock<std::mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wait\n");
-			mObserverQueue.wait(lock);
-		}
-
-		if (!mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wake\n");
-			std::function<void()> run = mObserverQueue.deQueue();
-			run();
-		}
-	}
-	return 0;
-}
-
-player_result_t PlayerObserverWorker::startWorker()
-{
-	std::lock_guard<std::mutex> lock(mRefMtx);
-	medvdbg("PlayerObserverWorker : startWorker\n");
-	if (++mRefCnt == 1) {
-		medvdbg("PlayerObserverWorker : create thread\n");
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&PlayerObserverWorker::entry, this));
-	}
-
-	return PLAYER_OK;
-}
-
-void PlayerObserverWorker::stopWorker()
-{
-	std::lock_guard<std::mutex> lock(mRefMtx);
-	medvdbg("PlayerObserverWorker : stopWorker\n");
-	if (--mRefCnt <= 0) {
-		medvdbg("PlayerObserverWorker : join thread\n");
-		mIsRunning = false;
-		if (mWorkerThread.joinable()) {
-			mObserverQueue.notify_one();
-			mWorkerThread.join();
-		}
-	}
-}
-
-MediaQueue& PlayerObserverWorker::getQueue()
-{
-	return mObserverQueue;
+	static PlayerObserverWorker worker;
+	return worker;
 }
 } // namespace media

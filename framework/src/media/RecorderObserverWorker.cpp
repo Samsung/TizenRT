@@ -16,81 +16,27 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include "RecorderObserverWorker.h"
 
-namespace media {
-unique_ptr<RecorderObserverWorker> RecorderObserverWorker::mWorker;
-once_flag RecorderObserverWorker::mOnceFlag;
+#ifndef CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE
+#define CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE 2048
+#endif
 
-RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0)
+namespace media {
+
+RecorderObserverWorker::RecorderObserverWorker()
 {
+	mThreadName = "RecorderObserverWorker";
+	mStacksize = CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE;
 }
 RecorderObserverWorker::~RecorderObserverWorker()
 {
 }
 
-int RecorderObserverWorker::entry()
+RecorderObserverWorker& RecorderObserverWorker::getWorker()
 {
-	medvdbg("RecorderObserverWorker::entry()\n");
-	while (mIsRunning) {
-		unique_lock<mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("RecorderObserverWorker::entry() - wait Queue\n");
-			mObserverQueue.wait(lock);
-		}
-
-		std::function<void()> run = mObserverQueue.deQueue();
-		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
-		run();
-	}
-	return 0;
-}
-
-recorder_result_t RecorderObserverWorker::startWorker()
-{
-	unique_lock<mutex> lock(mRefMtx);
-	increaseRef();
-
-	medvdbg("RecorderObserverWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&RecorderObserverWorker::entry, this));
-	}
-
-	return RECORDER_OK;
-}
-
-void RecorderObserverWorker::stopWorker()
-{
-	unique_lock<mutex> lock(mRefMtx);
-	decreaseRef();
-
-	medvdbg("RecorderObserverWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt <= 0) {
-		mIsRunning = false;
-
-		if (mWorkerThread.joinable()) {
-			mWorkerThread.join();
-			medvdbg("RecorderObserverWorker::stopWorker() - workerthread exited\n");
-		}
-	}
-}
-
-MediaQueue& RecorderObserverWorker::getQueue()
-{
-	return mObserverQueue;
-}
-
-void RecorderObserverWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderObserverWorker::decreaseRef()
-{
-	mRefCnt--;
+	static RecorderObserverWorker worker;
+	return worker;
 }
 } // namespace media

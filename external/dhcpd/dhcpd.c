@@ -1491,7 +1491,6 @@ void dhcpd_stop(void)
 		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
-	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	g_dhcpd_quit = 1;
 	while (ret != OK) {
@@ -1502,17 +1501,21 @@ void dhcpd_stop(void)
 				ndbg("ERR: EINTR for sem_wait in dhcpd\n");
 				continue;
 			}
+			pthread_mutex_unlock(&g_dhcpd_lock);			
 			return;
 		}
 	}
+	g_dhcpd_running = 0;
 	ret = sem_destroy(&g_dhcpd_sem);
 	if (ret != OK) {
 		ndbg("ERR: sem_destroy for dhcpd failed\n");
+		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
 #if DHCPD_SELECT
 	ndbg("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
 #endif
+	pthread_mutex_unlock(&g_dhcpd_lock);
 }
 
 /****************************************************************************
@@ -1612,7 +1615,10 @@ int dhcpd_run(void *arg)
 		switch (g_state.ds_optmsgtype) {
 		case DHCPDISCOVER:
 			ndbg("DHCPDISCOVER\n");
-			dhcpd_discover();
+			int res = dhcpd_discover();
+			if (res == ERROR) {
+				ndbg("dhcpd discover fail\n");
+			}
 			break;
 
 		case DHCPREQUEST:
@@ -1672,8 +1678,6 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 		pthread_mutex_unlock(&g_dhcpd_lock);
 		return -1;
 	}
-	g_dhcpd_running = 1;
-	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	pthread_attr_t attr;
 	int status;
@@ -1732,9 +1736,11 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	pthread_setname_np(g_tid, "dhcpd");
 	pthread_detach(g_tid);
 
+	g_dhcpd_running = 1;
+	pthread_mutex_unlock(&g_dhcpd_lock);
+
 	return 0;
 err_exit:
-	pthread_mutex_lock(&g_dhcpd_lock);
 	g_dhcpd_running = 0;
 	pthread_mutex_unlock(&g_dhcpd_lock);
 

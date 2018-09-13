@@ -214,7 +214,7 @@ static void i2schar_txcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 
 static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
-	FAR struct inode *inode = filep->f_inode;
+	FAR struct inode *inode;
 	FAR struct i2schar_dev_s *priv;
 	FAR struct ap_buffer_s *apb;
 	size_t nbytes;
@@ -275,7 +275,7 @@ errout_with_reference:
 
 static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-	FAR struct inode *inode = filep->f_inode;
+	FAR struct inode *inode;
 	FAR struct i2schar_dev_s *priv;
 	FAR struct ap_buffer_s *apb;
 	size_t nbytes;

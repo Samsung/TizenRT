@@ -70,6 +70,9 @@ int uv_loop_init(uv_loop_t *loop)
 	loop->backend_fd = -1;
 	loop->emfile_fd = -1;
 
+	loop->signal_pipefd[0] = -1;
+	loop->signal_pipefd[1] = -1;
+
 	loop->timer_counter = 0;
 	loop->stop_flag = 0;
 
@@ -77,6 +80,8 @@ int uv_loop_init(uv_loop_t *loop)
 	if (err) {
 		return err;
 	}
+
+	uv__signal_global_once_init();
 
 	if (uv_rwlock_init(&loop->cloexec_lock)) {
 		TDLOG("uv_loop_init rwlock abort");
@@ -153,6 +158,8 @@ int uv_loop_close(uv_loop_t *loop)
 	QUEUE *q;
 	uv_handle_t *h;
 
+	uv__signal_loop_cleanup(loop);
+
 	if (!QUEUE_EMPTY(&(loop)->active_reqs)) {
 		TDDLOG("uv_loop_close active_req exist, cancel");
 		return UV_EBUSY;
@@ -185,6 +192,10 @@ void uv_update_time(uv_loop_t *loop)
 uint64_t uv_now(const uv_loop_t *loop)
 {
 	return loop->time;
+}
+
+void uv_stop(uv_loop_t* loop) {
+	loop->stop_flag = 1;
 }
 
 int uv__loop_alive(const uv_loop_t *loop)

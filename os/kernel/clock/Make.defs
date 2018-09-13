@@ -52,7 +52,7 @@
 
 CSRCS += clock_initialize.c clock_settime.c clock_gettime.c clock_getres.c
 CSRCS += clock_time2ticks.c clock_abstime2ticks.c clock_ticks2time.c
-CSRCS += clock_gettimeofday.c clock_systimer.c clock_systimespec.c
+CSRCS += clock_gettimeofday.c clock_systimer.c clock_systimespec.c clock.c
 
 # Include clock build support
 

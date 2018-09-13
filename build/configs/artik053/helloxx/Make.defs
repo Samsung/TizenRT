@@ -52,7 +52,8 @@
 
 include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
-include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
 LDSCRIPT = flash.ld
 
@@ -135,11 +136,6 @@ CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
-
-NXFLATLDFLAGS1 = -r -d -warn-common
-NXFLATLDFLAGS2 = $(NXFLATLDFLAGS1) -T$(TOPDIR)/binfmt/libnxflat/gnu-nxflat-pcrel.ld -no-check-sections
-LDNXFLATFLAGS = -e main -s 2048
-
 ASMEXT = .S
 OBJEXT = .o
 LIBEXT = .a
@@ -159,5 +155,13 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1)
+  $(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1) $(2) $(3) $(4) $(5) $(6)
+endef
+
+define OTA_IMG
+  $(TOPDIR)/../build/configs/artik05x/artik05x_ota.sh
+endef
+
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/artik05x/artik05x_make_bin.sh --bin $(1) --ext $(2)
 endef

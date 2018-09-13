@@ -16,169 +16,53 @@
  *
  ******************************************************************/
 
-#include "PlayerWorker.h"
+#include <tinyara/config.h>
 #include <debug.h>
+
+#include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
-#include "Decoder.h"
+
+#ifndef CONFIG_MEDIA_PLAYER_STACKSIZE
+#define CONFIG_MEDIA_PLAYER_STACKSIZE 4096
+#endif
 
 using namespace std;
 
 namespace media {
-	
-std::unique_ptr<PlayerWorker> PlayerWorker::mWorker;
-std::once_flag PlayerWorker::mOnceFlag;
-
-PlayerWorker::PlayerWorker()
-	: mRefCnt{0}
+PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
 {
+	mThreadName = "PlayerWorker";
+	mStacksize = CONFIG_MEDIA_PLAYER_STACKSIZE;
 }
 
 PlayerWorker::~PlayerWorker()
 {
 }
 
-int PlayerWorker::entry()
+PlayerWorker& PlayerWorker::getWorker()
 {
-	while (mIsRunning) {
-		unique_lock<mutex> lock(mWorkerQueue.getMutex());
+	static PlayerWorker worker;
+	return worker;
+}
 
-		if (mWorkerQueue.isEmpty()) {
-			if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
-				shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
-				if(mDecoder) {
-					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, std::min(mCurPlayer->mBufSize, mDecoder->getDataSpace()));
-					medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
-
-					/* Todo: Below code has an issue about file EOF.
-					 *       Should be fixed after discuss.
-					 */
-					if(num_read == 0 && mDecoder->empty()) {
-						mCurPlayer->notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
-						stopPlayer(mCurPlayer);
-					} else {
-						/* Todo: Currently, below function is working correctly.
-						 *       Because the read size cannot be larger than remain data space.
-						 *       But this isn't beautiful logic. Need to rearrange and modify the logic.
-						 */
-						mDecoder->pushData(mCurPlayer->mBuffer, num_read);
-						size_t size = 0;
-						unsigned int sampleRate = 0;
-						unsigned short channels = 0;
-						while(mDecoder->getFrame(mCurPlayer->mBuffer, &size, &sampleRate, &channels)) {
-							mCurPlayer->mInputDataSource->setSampleRate(sampleRate);
-							mCurPlayer->mInputDataSource->setChannels(channels);
-							mCurPlayer->playback(size);
-						}
-					}
-				} else {
-					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, mCurPlayer->mBufSize);
-					medvdbg("MediaPlayer Worker : num_read = %d\n", num_read);
-
-					if (num_read > 0) {
-						mCurPlayer->playback(num_read);
-					} else {
-						mCurPlayer->notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
-						stopPlayer(mCurPlayer);
-					}
-				}
-			} else {
-				medvdbg("MediaPlayer Worker : SLEEP\n");
-				mWorkerQueue.wait(lock);
-				medvdbg("MediaPlayer Worker : WAKEUP\n");
-			}
-		}
-
-		if (!mWorkerQueue.isEmpty()) {
-			std::function<void()> run = mWorkerQueue.deQueue();
-			run();
-		}
+bool PlayerWorker::processLoop()
+{
+	if (mCurPlayer && (mCurPlayer->getState() == PLAYER_STATE_PLAYING)) {
+		mCurPlayer->playback();
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
-player_result_t PlayerWorker::startWorker()
+void PlayerWorker::setPlayer(std::shared_ptr<MediaPlayerImpl> player)
 {
-	std::unique_lock<mutex> lock(mRefMtx);
-	mCurPlayer.reset();
-	increaseRef();
-
-	if (mRefCnt == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&PlayerWorker::entry, this));
-	}
-
-	return PLAYER_OK;
+	mCurPlayer = player;
 }
 
-void PlayerWorker::stopWorker()
+std::shared_ptr<MediaPlayerImpl> PlayerWorker::getPlayer()
 {
-	std::unique_lock<mutex> lock(mRefMtx);
-	decreaseRef();
-
-	if (mRefCnt <= 0) {
-		mIsRunning = false;
-
-		if (mWorkerThread.joinable()) {
-			mWorkerQueue.notify_one();
-			mWorkerThread.join();
-		}
-	}
+	return mCurPlayer;
 }
 
-void PlayerWorker::startPlayer(std::shared_ptr<MediaPlayerImpl> mp)
-{
-	medvdbg("MediaPlayer Worker : startPlayer\n");
-	if (mp->mCurState != PLAYER_STATE_READY && mp->mCurState != PLAYER_STATE_PAUSED) {
-		mp->notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		return;
-	}
-
-	if (mCurPlayer != nullptr) {
-		pausePlayer(mCurPlayer);
-	}
-	mCurPlayer = mp;
-
-	mp->mCurState = PLAYER_STATE_PLAYING;
-	mp->notifyObserver(PLAYER_OBSERVER_COMMAND_STARTED);
-}
-
-void PlayerWorker::stopPlayer(std::shared_ptr<MediaPlayerImpl> mp)
-{
-	medvdbg("MediaPlayer Worker : stopPlayer\n");
-	if (mp->mCurState != PLAYER_STATE_PLAYING && mp->mCurState != PLAYER_STATE_PAUSED) {
-		mp->notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		return;
-	}
-
-	mCurPlayer = nullptr;
-	mp->mCurState = PLAYER_STATE_READY;
-}
-
-void PlayerWorker::pausePlayer(std::shared_ptr<MediaPlayerImpl> mp)
-{
-	medvdbg("MediaPlayer Worker : pausePlayer\n");
-	if (mp->mCurState != PLAYER_STATE_PLAYING) {
-		mp->notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		return;
-	}
-
-	mCurPlayer = nullptr;
-	mp->mCurState = PLAYER_STATE_PAUSED;
-}
-
-MediaQueue& PlayerWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-void PlayerWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void PlayerWorker::decreaseRef()
-{
-	mRefCnt--;
-}
 } // namespace media

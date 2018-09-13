@@ -129,14 +129,13 @@ static const u8_t tcp_persist_backoff[7] = { 3, 6, 12, 24, 48, 96, 120 };
 /* The TCP PCB lists. */
 
 /** List of all TCP PCBs bound but not yet (connected || listening) */
-struct tcp_pcb *tcp_bound_pcbs;
+struct tcp_pcb *tcp_bound_pcbs = NULL;
 /** List of all TCP PCBs in LISTEN state */
-union tcp_listen_pcbs_t tcp_listen_pcbs;
-/** List of all TCP PCBs that are in a state in which
- * they accept or send data. */
-struct tcp_pcb *tcp_active_pcbs;
+union tcp_listen_pcbs_t tcp_listen_pcbs = {NULL};
+/** List of all TCP PCBs that are in a state in which they accept or send data. */
+struct tcp_pcb *tcp_active_pcbs = NULL;
 /** List of all TCP PCBs in TIME-WAIT state */
-struct tcp_pcb *tcp_tw_pcbs;
+struct tcp_pcb *tcp_tw_pcbs = NULL;
 
 /** An array with all (non-temporary) PCB lists, mainly used for smaller code size */
 struct tcp_pcb **const tcp_pcb_lists[] = { &tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,

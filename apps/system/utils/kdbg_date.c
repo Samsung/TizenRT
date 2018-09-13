@@ -58,11 +58,15 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include <tinyara/time.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 
-#define MAX_TIME_STRING 80
+#define MAX_TIME_STRING         80
+#define STR_LEN_OF_MONTH_WEEK   3
+#define MAX_EPOCH_YEAR_OF_UINT  2106
 
 /****************************************************************************
  * Private Data
@@ -79,6 +83,11 @@ static FAR const char *const g_dayofweek[] = {
 };
 #endif
 
+static const unsigned int g_dayofmonth[] = {
+	31, 28, 31, 30, 31, 30,
+	31, 31, 30, 31, 30, 31
+};
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -88,7 +97,7 @@ static inline int date_month(FAR const char *abbrev)
 	int month;
 
 	for (month = 0; month < 12; month++) {
-		if (strncasecmp(g_datemontab[month], abbrev, 3) == 0) {
+		if (strncasecmp(g_datemontab[month], abbrev, STR_LEN_OF_MONTH_WEEK) == 0) {
 			return month;
 		}
 	}
@@ -102,7 +111,7 @@ static inline int day_of_week(FAR const char *abbrev)
 	int wday;
 
 	for (wday = 0; wday < 7; wday++) {
-		if (strncasecmp(g_dayofweek[wday], abbrev, 3) == 0) {
+		if (strncasecmp(g_dayofweek[wday], abbrev, STR_LEN_OF_MONTH_WEEK) == 0) {
 			return wday;
 		}
 	}
@@ -153,10 +162,23 @@ static inline int date_settime(int argc, char **args)
 	long result;
 	int ret = OK;
 
+	/* Get the year */
+
+	token = args[5];
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
+
+	result = strtol(token, NULL, 10);
+	if (result < EPOCH_YEAR || result > MAX_EPOCH_YEAR_OF_UINT) {
+		goto errout_bad_parm;
+	}
+	tm.tm_year = (int)result - TM_YEAR_BASE;
+
 	/* Get the month abbreviation */
 
 	token = args[2];
-	if (token == NULL) {
+	if (token == NULL || strlen(token) != STR_LEN_OF_MONTH_WEEK) {
 		goto errout_bad_parm;
 	}
 
@@ -165,7 +187,7 @@ static inline int date_settime(int argc, char **args)
 		goto errout_bad_parm;
 	}
 
-	/* Get the day of the month.  NOTE: Accepts day-of-month up to 31 for all months */
+	/* Get the day of the month. */
 
 	token = args[3];
 	if (token == NULL) {
@@ -173,7 +195,13 @@ static inline int date_settime(int argc, char **args)
 	}
 
 	result = strtol(token, NULL, 10);
-	if (result < 1 || result > 31) {
+	if (result < 1) {
+		goto errout_bad_parm;
+	} else if ((tm.tm_mon != 1) || !clock_isleapyear(tm.tm_year + TM_YEAR_BASE)) {
+		if (result > g_dayofmonth[tm.tm_mon]) {
+			goto errout_bad_parm;
+		}
+	} else if (result > g_dayofmonth[tm.tm_mon] + 1) {
 		goto errout_bad_parm;
 	}
 	tm.tm_mday = (int)result;
@@ -217,24 +245,11 @@ static inline int date_settime(int argc, char **args)
 	}
 	tm.tm_sec = (int)result;
 
-	/* And finally the year */
-
-	token = args[5];
-	if (token == NULL) {
-		goto errout_bad_parm;
-	}
-
-	result = strtol(token, NULL, 10);
-	if (result < 1900 || result > 2100) {
-		goto errout_bad_parm;
-	}
-	tm.tm_year = (int)result - 1900;
-
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	/* Get the day of the week.  NOTE: Accepts day-of-week from sunday to saturday */
 
 	token = args[6];
-	if (token == NULL) {
+	if (token == NULL || strlen(token) != STR_LEN_OF_MONTH_WEEK) {
 		goto errout_bad_parm;
 	}
 
@@ -310,30 +325,29 @@ int kdbg_date(int argc, char **args)
 #endif
 		ret = date_settime(argc, args);
 	} else {
-#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
+
 		printf("\nUsage: date\n");
 		printf("   or: date [-s FORMAT]\n");
 		printf("Display, or Set system time and date information\n");
 		printf("\nOptions:\n");
 		printf(" -s FORMAT     Set system time in the given FORMAT\n");
+#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
 		printf("                Example: Apr 21 10:35:22 1991\n");
-		ret = ERROR;
 #else
-		printf("\nUsage: date\n");
-		printf("   or: date [-s FORMAT]\n");
-		printf("Display, or Set system time and date information\n");
-		printf("\nOptions:\n");
-		printf(" -s FORMAT     Set system time in the given FORMAT\n");
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
+		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
+		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
+
 		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
 		printf("                Day of Year Range(DYR) = [0,365], \n");
 		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
-		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
-		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
-		ret = ERROR;
 #endif
+		printf("                Year valid range = [1970,2106]\n");
+		printf("                Month and day of week allows only 3 abbreviation characters like Jan, Sun.\n");
+
+		ret = ERROR;
 	}
 	return ret;
 }

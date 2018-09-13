@@ -97,9 +97,16 @@ off_t file_seek(FAR struct file *filep, off_t offset, int whence)
 	DEBUGASSERT(filep);
 	inode = filep->f_inode;
 
+	/* File is not open */
+
+	if (!inode) {
+		err = -EBADF;
+		goto errout;
+	}
+
 	/* Invoke the file seek method if available */
 
-	if (inode && inode->u.i_ops && inode->u.i_ops->seek) {
+	if (inode->u.i_ops && inode->u.i_ops->seek) {
 		ret = (int)inode->u.i_ops->seek(filep, offset, whence);
 		if (ret < 0) {
 			err = -ret;

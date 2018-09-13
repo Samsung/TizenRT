@@ -117,38 +117,8 @@ void uv__io_poll(uv_loop_t *loop, int timeout)
 	base = loop->time;
 	count = 5;
 
-	int max_fd = 0;
-	fd_set readfds;
-	fd_set writefds;
-	FD_ZERO(&readfds);
-	FD_ZERO(&writefds);
-	for (i = 0; i < loop->npollfds; ++i) {
-		pe = &loop->pollfds[i];
-
-		if (pe->fd > max_fd) {
-			max_fd = pe->fd;
-		}
-
-		if (pe->fd >= 0) {
-			if (pe->events & UV__POLLIN) {
-				FD_SET(pe->fd, &readfds);
-			}
-			if (pe->events & UV__POLLOUT) {
-				FD_SET(pe->fd, &writefds);
-			}
-		}
-	}
-
-	struct timeval tv;
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = timeout * 1000;
 	for (;;) {
-		// nfd = poll(loop->pollfds, loop->npollfds, timeout); // kbuild
-		if (timeout != -1) {
-			nfd = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
-		} else {
-			nfd = select(max_fd + 1, &readfds, &writefds, NULL, NULL);
-		}
+		nfd = poll(loop->pollfds, loop->npollfds, timeout);
 
 		SAVE_ERRNO(uv__update_time(loop));
 
@@ -162,8 +132,9 @@ void uv__io_poll(uv_loop_t *loop, int timeout)
 			if (err == EAGAIN) {
 				set_errno(0);
 			} else if (err != EINTR) {
+				// poll of which the watchers is null should be removed
 				TDLOG("uv__io_poll abort for errno(%d)", err);
-				ABORT();
+				goto handle_poll;
 			}
 			if (timeout == -1) {
 				continue;
@@ -174,29 +145,22 @@ void uv__io_poll(uv_loop_t *loop, int timeout)
 			goto update_timeout;
 		}
 
+handle_poll:
 		nevents = 0;
 
 		for (i = 0; i < loop->npollfds; ++i) {
 			pe = &loop->pollfds[i];
+			w = loop->watchers[pe->fd];
 
-			if (pe->fd >= 0) {
-				if (FD_ISSET(pe->fd, &readfds)) {
-					w = loop->watchers[pe->fd];
-					if (w == NULL) {
-						uv__rem_pollfd(loop, pe);
-					} else {
-						w->cb(loop, w, UV__POLLIN);
-						++nevents;
-					}
-				} else if (FD_ISSET(pe->fd, &writefds)) {
-					w = loop->watchers[pe->fd];
-					if (w == NULL) {
-						uv__rem_pollfd(loop, pe);
-					} else {
-						w->cb(loop, w, UV__POLLOUT);
-						++nevents;
-					}
-				}
+			if (w == NULL) {
+				uv__rem_pollfd(loop, pe);
+				--i;
+				continue;
+			}
+
+			if (pe->fd >= 0 && (pe->revents & (POLLIN | POLLOUT | POLLHUP))) {
+				w->cb(loop, w, pe->revents);
+				++nevents;
 			}
 		}
 

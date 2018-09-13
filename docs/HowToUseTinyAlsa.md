@@ -5,11 +5,11 @@ TinyAlsa is a small library which exposes a set of API's which can be used by de
 TinyAlsa takes care of:
 - Opening and closing the audio device
 - Creating, handling and destroying audio pipeline buffers
-- Underlying communication and synchronization menchanism with audio codecs
+- Underlying communication and synchronization mechanism with audio codecs
 - Error reporting
 - etc..
 
-TinyAlsa exposes API's like pcm_open(), pcm_close(), pcm_readi() and pcm_writei() which allow user to capture and playback audio data. A set of mmap based API's are also available which allow users to directly read/write data into the audio pipeline buffers, thereby avoiding overhead of copying data accross multiple buffers and reducing latency. The complete list of API's exposed by TinyAlsa along with the corresponding documentation is available in [framework/include/tinyalsa/tinyalsa.h](../framework/include/tinyalsa/tinyalsa.h).
+TinyAlsa exposes API's like pcm_open(), pcm_close(), pcm_readi() and pcm_writei() which allow user to capture and playback audio data. A set of mmap based API's are also available which allow users to directly read/write data into the audio pipeline buffers, thereby avoiding overhead of copying data across multiple buffers and reducing latency. The complete list of API's exposed by TinyAlsa along with the corresponding documentation is available in [framework/include/tinyalsa/tinyalsa.h](../framework/include/tinyalsa/tinyalsa.h).
 
 ## Open and close audio device with TinyAlsa
 The user can use pcm_open() or pcm_open_by_name() API's to open an audio device, and pcm_close() API to close an audio device.
@@ -33,9 +33,9 @@ pcm_close(p);
 ```
 
 ## Record audio with TinyAlsa
-Having opened an suitable audio recording device with the pcm_open API, the user can record audio data by repeatedly calling the pcm_readi API in a loop. The user may choose to exit the loop and close the device at any point of time when he no longer wants to record data. While using the pcm_readi API, the user needs to allocate a buffer locally and pass it to the API to read audio data. It is also the responsibility of the user to check the return values from the pcm_readi API to verify the amount of data actually read from the device. In case the return value of pcm_readi API indicates an error, then it is left to the user to either try to recover from the error or ingore the error and continue reading data.
+Having opened an suitable audio recording device with the pcm_open API, the user can record audio data by repeatedly calling the pcm_readi API in a loop. The user may choose to exit the loop and close the device at any point of time when he no longer wants to record data. While using the pcm_readi API, the user needs to allocate a buffer locally and pass it to the API to read audio data. It is also the responsibility of the user to check the return values from the pcm_readi API to verify the amount of data actually read from the device. In case the return value of pcm_readi API indicates an error, then it is left to the user to either try to recover from the error or ignore the error and continue reading data.
 
-It is recommended that the user performs all processing and storage operation on the audio data on a separate thread to ensure that a continuous supply of audio buffers is avaialable to the audio device to fill the recorded data. Failure to do so might result in underrun error and loss of audio data. It is also recommended that the user try to run the audio recording thread at a higher priority to ensure low latency in reading data from the device.
+It is recommended that the user performs all processing and storage operation on the audio data on a separate thread to ensure that a continuous supply of audio buffers is available to the audio device to fill the recorded data. Failure to do so might result in underrun error and loss of audio data. It is also recommended that the user try to run the audio recording thread at a higher priority to ensure low latency in reading data from the device.
 
 The below code snippet shows simple steps for audio recording:
 ```
@@ -59,7 +59,7 @@ pcm_close(p);
 ## Playback audio with TinyAlsa
 Audio playback with TinyAlsa is very similar to the recording scenario. Having opened the proper audio device, the user can call the pcm_writei API repeatedly to play the audio data. The user needs to check whether the audio hardware in the device supports playback of a particular audio format. If not supported, the user has to perform header parsing / decoding operations in software and pass only the pcm samples in the pcm_writei API.
 
-As mentioned in the case of recording, the user has to ensure smooth and continuous availability of audio data in the playback thread. All processing of data may be done on a separate thread. Also, the user has to check the return value from the API to verify amount of data written or errors that might have occured during playback.
+As mentioned in the case of recording, the user has to ensure smooth and continuous availability of audio data in the playback thread. All processing of data may be done on a separate thread. Also, the user has to check the return value from the API to verify amount of data written or errors that might have occurred during playback.
 
 The below code snippet shows simple steps for audio playback:
 ```
@@ -89,7 +89,7 @@ A set of 4 API's are provided for mmap based operation. The usage of each API is
 This API is used to check how much of buffer space is free to write data or how much of buffer is filled with data and ready to be read by the application. The user must always call this API before attempting to read or write data. User can proceed to the read or write step only upon receiving a non zero return value from this API.
 
 **pcm_wait**
-This API can be used to wait for either free space or data to become avaialable in the buffers. The user must use this API to wait for the buffers whenever pcm_avail_update returns zero.
+This API can be used to wait for either free space or data to become available in the buffers. The user must use this API to wait for the buffers whenever pcm_avail_update returns zero.
 
 **pcm_mmap_begin**
 **pcm_mmap_commit**

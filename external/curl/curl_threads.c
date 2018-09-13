@@ -62,6 +62,8 @@ static void *curl_thread_create_thunk(void *arg)
 curl_thread_t Curl_thread_create(unsigned int (*func) (void *), void *arg)
 {
   curl_thread_t t = malloc(sizeof(pthread_t));
+  curl_attr_t attr;
+  int status;
   struct curl_actual_call *ac = malloc(sizeof(struct curl_actual_call));
   if(!(ac && t))
     goto err;
@@ -69,7 +71,21 @@ curl_thread_t Curl_thread_create(unsigned int (*func) (void *), void *arg)
   ac->func = func;
   ac->arg = arg;
 
-  if(pthread_create(t, NULL, curl_thread_create_thunk, ac) != 0)
+  /* Initialize the attribute variable */
+  status = pthread_attr_init(&attr);
+  if (status != 0) {
+    printf("pthread_attr_init failed, status=%d\n", status);
+    goto err;
+  }
+
+  /* set a stacksize */
+  status = pthread_attr_setstacksize(&attr, CURL_STACKSIZE);
+  if (status != 0) {
+    printf("pthread_attr_setstacksize failed, status=%d\n", status);
+    goto err;
+  }
+
+  if (pthread_create(t, &attr, curl_thread_create_thunk, ac) != 0)
     goto err;
 
   return t;

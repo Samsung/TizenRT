@@ -210,7 +210,7 @@ EXTERN pid_t wait(FAR int *stat_loc);
 EXTERN int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options);
 /**
  * @ingroup SCHED_KERNEL
- * @brief suspend execution of the calling thread
+ * @brief wait for a specific thread to end
  * @details @b #include <sys/wait.h> \n
  * SYSTEM CALL API \n
  *     obtain status information pertaining to one
@@ -233,9 +233,9 @@ EXTERN int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options);
  *   - If pid is greater than 0, it specifies the process ID of a single child
  *     process for which status is requested.
  *   - If pid is 0, status is requested for any child process whose process
- *     group ID is equal to that of the calling process.
+ *     group ID is equal to that of the calling process.(Not supported yet)
  *   - If pid is less than (pid_t)-1, status is requested for any child process
- *     whose process group ID is equal to the absolute value of pid.
+ *     whose process group ID is equal to the absolute value of pid.(Not supported yet)
  *
  *   The options argument is constructed from the bitwise-inclusive OR of zero
  *   or more of the following flags, defined in the <sys/wait.h> header:

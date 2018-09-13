@@ -73,6 +73,23 @@
  * Public Type Definitions
  ****************************************************************************/
 
+#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
+struct atexit_s {
+	struct atexit_s *flink;
+	struct atexit_s *blink;
+	atexitfunc_t atexitfunc;
+};
+#endif
+
+#ifdef CONFIG_SCHED_ONEXIT
+struct onexit_s {
+	struct onexit_s *flink;
+	struct onexit_s *blink;
+	onexitfunc_t onexitfunc;
+	void *onexitarg;
+};
+#endif
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -92,7 +109,16 @@ int task_exit(void);
 int task_terminate(pid_t pid, bool nonblocking);
 void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking);
 void task_recover(FAR struct tcb_s *tcb);
-
+#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
+void task_atexit(FAR struct tcb_s *tcb);
+#else
+#define task_atexit(tcb)
+#endif
+#ifdef CONFIG_SCHED_ONEXIT
+void task_onexit(FAR struct tcb_s *tcb, int status);
+#else
+#define task_onexit(tcb, status)
+#endif
 /* Misc. */
 
 bool sched_addreadytorun(FAR struct tcb_s *rtrtcb);

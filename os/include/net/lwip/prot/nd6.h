@@ -62,41 +62,52 @@
 extern "C" {
 #endif
 
+/** Common Macros for Neighbor Discovery headers **/
+#define ND6H_TYPE(hdr) ((hdr)->_type)
+#define ND6H_CODE(hdr) ((hdr)->_code)
+#define ND6H_CHKSUM(hdr) ((hdr)->_chksum)
+#define ND6H_RESERV(hdr) ((hdr)->reserved)
+
 /** Neighbor solicitation message header. */
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
 PACK_STRUCT_BEGIN
 struct ns_header {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t code);
-	PACK_STRUCT_FIELD(u16_t chksum);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _code);
+	PACK_STRUCT_FIELD(u16_t _chksum);
 	PACK_STRUCT_FIELD(u32_t reserved);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t target_address);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _target_address);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_NS_TARGET_ADDR(hdr) ((hdr)->_target_address)
+
 /** Neighbor advertisement message header. */
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
 PACK_STRUCT_BEGIN
 struct na_header {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t code);
-	PACK_STRUCT_FIELD(u16_t chksum);
-	PACK_STRUCT_FLD_8(u8_t flags);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _code);
+	PACK_STRUCT_FIELD(u16_t _chksum);
+	PACK_STRUCT_FLD_8(u8_t _flags);
 	PACK_STRUCT_FLD_8(u8_t reserved[3]);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t target_address);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _target_address);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_NA_FLAG(hdr) ((hdr)->_flags)
+#define ND6H_NA_TARGET_ADDR(hdr) ((hdr)->_target_address)
+
 #define ND6_FLAG_ROUTER      (0x80)
 #define ND6_FLAG_SOLICITED   (0x40)
 #define ND6_FLAG_OVERRIDE    (0x20)
@@ -106,9 +117,9 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct rs_header {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t code);
-	PACK_STRUCT_FIELD(u16_t chksum);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _code);
+	PACK_STRUCT_FIELD(u16_t _chksum);
 	PACK_STRUCT_FIELD(u32_t reserved);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
@@ -116,6 +127,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+
 /** Router advertisement message header. */
 #define ND6_RA_FLAG_MANAGED_ADDR_CONFIG (0x80)
 #define ND6_RA_FLAG_OTHER_CONFIG (0x40)
@@ -130,38 +142,47 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct ra_header {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t code);
-	PACK_STRUCT_FIELD(u16_t chksum);
-	PACK_STRUCT_FLD_8(u8_t current_hop_limit);
-	PACK_STRUCT_FLD_8(u8_t flags);
-	PACK_STRUCT_FIELD(u16_t router_lifetime);
-	PACK_STRUCT_FIELD(u32_t reachable_time);
-	PACK_STRUCT_FIELD(u32_t retrans_timer);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _code);
+	PACK_STRUCT_FIELD(u16_t _chksum);
+	PACK_STRUCT_FLD_8(u8_t _current_hop_limit);
+	PACK_STRUCT_FLD_8(u8_t _flags);
+	PACK_STRUCT_FIELD(u16_t _router_lifetime);
+	PACK_STRUCT_FIELD(u32_t _reachable_time);
+	PACK_STRUCT_FIELD(u32_t _retrans_timer);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_RA_HOPLIM(hdr) ((hdr)->_current_hop_limit)
+#define ND6H_RA_FLAG(hdr) ((hdr)->_flags)
+#define ND6H_RA_ROUT_LIFE(hdr) ((hdr)->_router_lifetime)
+#define ND6H_RA_REACH_TIME(hdr) ((hdr)->_reachable_time)
+#define ND6H_RA_RETRANS_TMR(hdr) ((hdr)->_retrans_timer)
+
 /** Redirect message header. */
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
 PACK_STRUCT_BEGIN
 struct redirect_header {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t code);
-	PACK_STRUCT_FIELD(u16_t chksum);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _code);
+	PACK_STRUCT_FIELD(u16_t _chksum);
 	PACK_STRUCT_FIELD(u32_t reserved);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t target_address);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t destination_address);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _target_address);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _destination_address);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_RD_TARGET_ADDR(hdr) ((hdr)->_target_address)
+#define ND6H_RD_DEST_ADDR(hdr) ((hdr)->_destination_address)
+
 /** Link-layer address option. */
 #define ND6_OPTION_TYPE_SOURCE_LLADDR (0x01)
 #define ND6_OPTION_TYPE_TARGET_LLADDR (0x02)
@@ -170,14 +191,18 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct lladdr_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
-	PACK_STRUCT_FLD_8(u8_t addr[NETIF_MAX_HWADDR_LEN]);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
+	PACK_STRUCT_FLD_8(u8_t _addr[NETIF_MAX_HWADDR_LEN]);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_LLADDR_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_LLADDR_OPT_LEN(hdr) ((hdr)->_length)
+#define ND6H_LLADDR_OPT_ADDR(hdr) ((hdr)->_addr)
+
 /** Prefix information option. */
 #define ND6_OPTION_TYPE_PREFIX_INFO (0x03)
 #define ND6_PREFIX_FLAG_ON_LINK (0x80)
@@ -189,20 +214,29 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct prefix_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
-	PACK_STRUCT_FLD_8(u8_t prefix_length);
-	PACK_STRUCT_FLD_8(u8_t flags);
-	PACK_STRUCT_FIELD(u32_t valid_lifetime);
-	PACK_STRUCT_FIELD(u32_t preferred_lifetime);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
+	PACK_STRUCT_FLD_8(u8_t _prefix_length);
+	PACK_STRUCT_FLD_8(u8_t _flags);
+	PACK_STRUCT_FIELD(u32_t _valid_lifetime);
+	PACK_STRUCT_FIELD(u32_t _preferred_lifetime);
 	PACK_STRUCT_FLD_8(u8_t reserved2[3]);
-	PACK_STRUCT_FLD_8(u8_t site_prefix_length);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t prefix);
+	PACK_STRUCT_FLD_8(u8_t _site_prefix_length);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _prefix);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_PF_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_PF_OPT_LEN(hdr) ((hdr)->_length)
+#define ND6H_PF_OPT_PF_LEN(hdr) ((hdr)->_prefix_length)
+#define ND6H_PF_OPT_FLAG(hdr) ((hdr)->_flags)
+#define ND6H_PF_OPT_VAL_LIFE(hdr) ((hdr)->_valid_lifetime)
+#define ND6H_PF_OPT_PREFER_LIFE(hdr) ((hdr)->_preferred_lifetime)
+#define ND6H_PF_OPT_SITE_PF_LEN(hdr) ((hdr)->_site_prefix_length)
+#define ND6H_PF_OPT_PF(hdr) ((hdr)->_prefix)
+
 /** Redirected header option. */
 #define ND6_OPTION_TYPE_REDIR_HDR (0x04)
 #ifdef PACK_STRUCT_USE_INCLUDES
@@ -210,8 +244,8 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct redirected_header_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
 	PACK_STRUCT_FLD_8(u8_t reserved[6]);
 	/* Portion of redirected packet follows. */
 	/* PACK_STRUCT_FLD_8(u8_t redirected[8]); */
@@ -220,6 +254,9 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_RD_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_RD_OPT_LEN(hdr) ((hdr)->_length)
+
 /** MTU option. */
 #define ND6_OPTION_TYPE_MTU (0x05)
 #ifdef PACK_STRUCT_USE_INCLUDES
@@ -227,15 +264,19 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct mtu_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
 	PACK_STRUCT_FIELD(u16_t reserved);
-	PACK_STRUCT_FIELD(u32_t mtu);
+	PACK_STRUCT_FIELD(u32_t _mtu);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_MTU_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_MTU_OPT_LEN(hdr) ((hdr)->_length)
+#define ND6H_MTU_OPT_MTU(hdr) ((hdr)->_mtu)
+
 /** Route information option. */
 #define ND6_OPTION_TYPE_ROUTE_INFO (24)
 #ifdef PACK_STRUCT_USE_INCLUDES
@@ -243,17 +284,24 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct route_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
-	PACK_STRUCT_FLD_8(u8_t prefix_length);
-	PACK_STRUCT_FLD_8(u8_t preference);
-	PACK_STRUCT_FIELD(u32_t route_lifetime);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t prefix);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
+	PACK_STRUCT_FLD_8(u8_t _prefix_length);
+	PACK_STRUCT_FLD_8(u8_t _preference);
+	PACK_STRUCT_FIELD(u32_t _route_lifetime);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _prefix);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_ROUT_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_ROUT_OPT_LEN(hdr) ((hdr)->_length)
+#define ND6H_ROUT_OPT_PF_LEN(hdr) ((hdr)->_prefix_length)
+#define ND6H_ROUT_OPT_PREFER(hdr) ((hdr)->_preference)
+#define ND6H_ROUT_OPT_ROUT_LIFE(hdr) ((hdr)->_route_lifetime)
+#define ND6H_ROUT_OPT_PF(hdr) ((hdr)->_prefix)
+
 /** Recursive DNS Server Option. */
 #if LWIP_ND6_RDNSS_MAX_DNS_SERVERS
 #define LWIP_RDNSS_OPTION_MAX_SERVERS LWIP_ND6_RDNSS_MAX_DNS_SERVERS
@@ -266,16 +314,21 @@ PACK_STRUCT_END
 #endif
 PACK_STRUCT_BEGIN
 struct rdnss_option {
-	PACK_STRUCT_FLD_8(u8_t type);
-	PACK_STRUCT_FLD_8(u8_t length);
+	PACK_STRUCT_FLD_8(u8_t _type);
+	PACK_STRUCT_FLD_8(u8_t _length);
 	PACK_STRUCT_FIELD(u16_t reserved);
-	PACK_STRUCT_FIELD(u32_t lifetime);
-	PACK_STRUCT_FLD_S(ip6_addr_p_t rdnss_address[LWIP_RDNSS_OPTION_MAX_SERVERS]);
+	PACK_STRUCT_FIELD(u32_t _lifetime);
+	PACK_STRUCT_FLD_S(ip6_addr_p_t _rdnss_address[LWIP_RDNSS_OPTION_MAX_SERVERS]);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ND6H_RDNSS_OPT_TYPE(hdr) ((hdr)->_type)
+#define ND6H_RDNSS_OPT_LEN(hdr) ((hdr)->_length)
+#define ND6H_RDNSS_OPT_LIFE(hdr) ((hdr)->_lifetime)
+#define ND6H_RDNSS_OPT_ADDR(hdr) ((hdr)->_rdnss_address)
+
 #ifdef __cplusplus
 }
 #endif

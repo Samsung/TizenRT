@@ -202,7 +202,7 @@
 #define HEAPINFO_DETAIL_ALL 2
 #define HEAPINFO_DETAIL_PID 3
 #define HEAPINFO_DETAIL_FREE 4
-#define HEAPINFO_PID_NOTNEEDED -1
+#define HEAPINFO_PID_ALL -1
 #define HEAPINFO_INIT_INFO 0
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
@@ -222,14 +222,14 @@ typedef size_t mmsize_t;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 typedef size_t mmaddress_t;		/* 32 bit address space */
 
-#if (CONFIG_ARCH_MIPS)
+#if defined(CONFIG_ARCH_MIPS)
 /* Macro gets return address of malloc API */
 #define ARCH_GET_RET_ADDRESS \
 	mmaddress_t retaddr = 0; \
 	do { \
 		asm volatile ("sw $ra, %0" : "=m" (retaddr)); \
 	} while (0);
-#elif (CONFIG_ARCH_ARM)
+#elif defined(CONFIG_ARCH_ARM)
 #define ARCH_GET_RET_ADDRESS \
 	mmaddress_t retaddr = 0; \
 	do { \
@@ -392,6 +392,23 @@ EXTERN struct mm_heap_s g_mmheap;
 /* This is the kernel heap */
 
 EXTERN struct mm_heap_s g_kmmheap;
+#endif
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+/* In the kernel build, there are multiple user heaps; one for each task
+ * group.  In this build configuration, the user heap structure lies
+ * in a reserved region at the beginning of the .bss/.data address
+ * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
+ * ARCH_DATA_RESERVE_SIZE
+ */
+
+#include <tinyara/addrenv.h>
+#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+
+#else
+/* Otherwise, the user heap data structures are in common .bss */
+
+#define USR_HEAP &g_mmheap
 #endif
 
 /****************************************************************************
@@ -638,11 +655,10 @@ void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 #endif
+void mm_is_sem_available(void);
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions to get heap information */
 struct mm_heap_s *mm_get_heap_info(void);
-#endif
 
 #undef EXTERN
 #ifdef __cplusplus

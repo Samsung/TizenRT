@@ -149,6 +149,14 @@ extern int total_fail;
 	} \
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int tc_handler(tc_op_type_t type, const char *tc_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

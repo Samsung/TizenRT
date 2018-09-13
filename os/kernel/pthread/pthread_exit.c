@@ -101,7 +101,7 @@
  *   Terminate execution of a thread started with pthread_create.
  *
  * Parameters:
- *   exit_valie
+ *   exit_value
  *
  * Returned Value:
  *   None
@@ -112,12 +112,6 @@
 
 void pthread_exit(FAR void *exit_value)
 {
-#if CONFIG_NPTHREAD_KEYS > 0
-	struct pthread_tcb_s *rptcb = (struct pthread_tcb_s *)this_task();
-	struct pthread_key_s *key;
-	int destr_count = 0;
-	int key_index;
-#endif
 	struct tcb_s *tcb = this_task();
 	int status;
 
@@ -150,16 +144,7 @@ void pthread_exit(FAR void *exit_value)
 #endif
 
 #if CONFIG_NPTHREAD_KEYS > 0
-	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
-		key = &rptcb->pthread_data[key_index];
-		if (key->destructor != NULL && key->data != NULL) {
-			key->destructor(key->data);
-			destr_count++;
-		}
-		if (destr_count >= PTHREAD_DESTRUCTOR_ITERATIONS) {
-			break;
-		}
-	}
+	pthread_key_destroy((struct pthread_tcb_s *)tcb);
 #endif
 
 	/* Complete pending join operations */

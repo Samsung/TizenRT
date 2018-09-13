@@ -104,7 +104,7 @@ void ci_cp_del_is_there_cp(void)	// [SET] Setting false to Flag about existing o
 int ci_cp_pend_event_data(es_cloud_prov_data_s *event_data)	// [SET] Setting true all Flag and Store Event-Data to pending repo.
 {
 	if (event_data == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Event Data is NULL.");
+		THINGS_LOG_E(TAG, "Event Data is NULL.");
 		return 0;
 	}
 

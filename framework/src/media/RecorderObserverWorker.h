@@ -30,42 +30,18 @@
 
 #include <tinyalsa/tinyalsa.h>
 #include <media/MediaRecorder.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 #include "MediaRecorderImpl.h"
 using namespace std;
 
 namespace media {
-class RecorderObserverWorker
+class RecorderObserverWorker : public MediaWorker
 {
 public:
+	static RecorderObserverWorker& getWorker();
+private:
 	RecorderObserverWorker();
-	~RecorderObserverWorker();
-
-	static RecorderObserverWorker& getWorker() {
-		call_once(RecorderObserverWorker::mOnceFlag, []() {
-			mWorker.reset(new RecorderObserverWorker);
-		});
-
-		return *(mWorker.get());
-	}
-	
-	recorder_result_t startWorker();
-	void stopWorker();
-	MediaQueue& getQueue();
-
-private:
-	int entry();
-	void increaseRef();
-	void decreaseRef();
-
-private:
-	static unique_ptr<RecorderObserverWorker> mWorker;
-	static once_flag mOnceFlag;
-	int mRefCnt;
-	bool mIsRunning;
-	std::thread mWorkerThread;
-	MediaQueue mObserverQueue; // observer queue
-	std::mutex mRefMtx;  // reference cnt mutex
+	virtual ~RecorderObserverWorker();
 };
 } // namespace media
 

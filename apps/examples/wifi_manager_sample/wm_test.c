@@ -21,18 +21,20 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
 
-#define WM_TEST_COUNT  3
+#define WM_TEST_COUNT  1
 
 #define USAGE															\
 	"\n usage: wm_test [options]\n"										\
 	"\n run Wi-Fi Manager:\n"											\
 	"	 wm_test start(default: station mode)\n"						\
 	"	 wm_test stop\n"												\
+	"	 wm_test stats\n"                                               \
 	"\n softap mode options:\n"											\
 	"	 wm_test softap [ssid] [password]\n"							\
 	"\n station mode options:\n"										\
@@ -44,8 +46,16 @@
 	"	 wm_test scan\n"												\
 	"\n get current state:\n"											\
 	"	 wm_test mode\n\n"												\
-	"\n repeat test:\n"													\
-	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n\n"
+	"\n set a profile:\n"											\
+	"	 wm_test set [ssid] [security mode] [password]\n"			\
+	"\n get a profile:\n"											\
+	"	 wm_test get\n"												\
+	"\n remove a profile:\n"										\
+	"	 wm_test reset\n\n"											\
+	"\n repeat test of APIs:\n"										\
+	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n" \
+	"\n code coverage test:\n"													             \
+	"	 wm_test coverage [softap ssid] [softap password] [ssid] [security mode] [password] [bad_ssid] [bad_password]\n\n"
 
 typedef void (*test_func)(void *arg);
 
@@ -53,7 +63,9 @@ struct options {
 	test_func func;
 	uint16_t channel;
 	char *ssid;
+	char *bad_ssid;
 	char *password;
+	char *bad_password;
 	wifi_manager_ap_auth_type_e    auth_type;
 	wifi_manager_ap_crypto_type_e  crypto_type;
 	char *softap_ssid;
@@ -63,6 +75,11 @@ struct options {
 /**
  * Functions
  */
+/**
+ * Internal functions
+ */
+static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
+static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
 /*
  * Signal
  */
@@ -72,15 +89,15 @@ int wm_signal_init(void);
  * callbacks
  */
 static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(void);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
 static void wm_softap_sta_join(void);
 static void wm_softap_sta_leave(void);
 static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
-
 /*
  * handler
  */
 static void wm_auto_test(void *arg); // it tests softap mode and stations mode repeatedly
+static void wm_coverage(void *arg); 
 static void wm_start(void *arg);
 static void wm_stop(void *arg);
 static void wm_softap_start(void *arg);
@@ -93,6 +110,10 @@ static void wm_process(int argc, char *argv[]);
 
 static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
 
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
+extern void wm_run_stress_test(void *arg);
+#endif
+
 /*
  * Global
  */
@@ -102,6 +123,13 @@ static wifi_manager_cb_s wifi_callbacks = {
 	wm_softap_sta_join,
 	wm_softap_sta_leave,
 	wm_scan_done,
+};
+static wifi_manager_cb_s wifi_null_callbacks = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 };
 
 static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;;
@@ -183,7 +211,6 @@ static const char *wifi_test_auth_method[] = {
 	"wpa2_mixed",
 };
 
-
 static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                      */
 	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)       */
@@ -192,7 +219,6 @@ static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode */
 	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                   */
 };
-
 
 static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
 	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                */
@@ -203,8 +229,7 @@ static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
 	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  unknown encryption             */
 };
 
-void
-print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
+void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 {
 	printf("====================================\n");
 	if (title) {
@@ -219,8 +244,7 @@ print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	printf("====================================\n");
 }
 
-void
-print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
+void print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 {
 	printf("====================================\n");
 	if (title) {
@@ -234,8 +258,7 @@ print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 }
 
 
-wifi_manager_ap_auth_type_e
-get_auth_type(const char *method)
+wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 {
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
@@ -247,9 +270,7 @@ get_auth_type(const char *method)
 	return WIFI_MANAGER_AUTH_UNKNOWN;
 }
 
-
-wifi_manager_ap_crypto_type_e
-get_crypto_type(const char *method)
+wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 {
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
@@ -261,9 +282,35 @@ get_crypto_type(const char *method)
 	return WIFI_MANAGER_CRYPTO_UNKNOWN;
 }
 
+/*
+ * Internal functions
+ */
+static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20])
+{
+	int wret = -1;
+	if (mac_addr && mac_str) {
+		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+		wret = OK;
+	}
+	return wret;
+}
 
-int
-wm_signal_init(void)
+static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
+{
+	int wret = -1;
+	if (mac_addr && mac_str) {
+		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
+		if (ret == WIFIMGR_MACADDR_LEN) {
+			wret = OK;
+		}
+	}
+	return wret;
+}
+
+/*
+ * Signal
+ */
+int wm_signal_init(void)
 {
 	if (g_mode != 0) {
 		printf("Program is already running\n");
@@ -296,9 +343,7 @@ wm_signal_init(void)
 	return 0;
 }
 
-
-void
-wm_signal_deinit(void)
+void wm_signal_deinit(void)
 {
 	pthread_mutex_destroy(&g_wm_func_mutex);
 	pthread_cond_destroy(&g_wm_func_cond);
@@ -306,7 +351,6 @@ wm_signal_deinit(void)
 	pthread_cond_destroy(&g_wm_cond);
 	g_mode = 0;
 }
-
 
 /*
  * Callback
@@ -317,14 +361,12 @@ void wm_sta_connected(wifi_manager_result_e res)
 	WM_TEST_SIGNAL;
 }
 
-
-void wm_sta_disconnected(void)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	sleep(2);
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_softap_sta_join(void)
 {
@@ -332,13 +374,11 @@ void wm_softap_sta_join(void)
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_softap_sta_leave(void)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
@@ -352,19 +392,18 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
-		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
-			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi);
+		printf("WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %d, Crypto: %d\n",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
+			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 	WM_TEST_SIGNAL;
 }
 
-
 /*
  * Control Functions
  */
-void
-wm_reset_info(void *arg)
+void wm_reset_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = wifi_manager_remove_config();
@@ -376,9 +415,24 @@ wm_reset_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
+void wm_get_stats(void *arg)
+{
+	WM_TEST_LOG_START;
+	wifi_manager_stats_s stats;
+	wifi_manager_result_e res = wifi_manager_get_stats(&stats);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Get WiFi Manager stats failed\n");
+	} else {
+		printf("=======================================================================\n");
+		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
+		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+		printf("=======================================================================\n");
+	}
+	WM_TEST_LOG_END;
+}
 
-void
-wm_get_info(void *arg)
+void wm_get_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_ap_config_s apconfig;
@@ -392,17 +446,18 @@ wm_get_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
-void
-wm_set_info(void *arg)
+void wm_set_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
 	wifi_manager_ap_config_s apconfig;
-	strncpy(apconfig.ssid, ap_info->ssid, 33);
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
+	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
 	apconfig.ap_auth_type = ap_info->auth_type;
 	if (apconfig.ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig.passphrase, ap_info->password, 64);
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
@@ -417,8 +472,7 @@ wm_set_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
-void
-wm_start(void *arg)
+void wm_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -430,9 +484,7 @@ wm_start(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_stop(void *arg)
+void wm_stop(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = wifi_manager_deinit();
@@ -442,9 +494,7 @@ wm_stop(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_scan(void *arg)
+void wm_scan(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -458,12 +508,12 @@ wm_scan(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_display_state(void *arg)
+void wm_display_state(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_info_s info;
+	char mac_str[20];
+	char mac_char[6];
 	wifi_manager_result_e res = wifi_manager_get_info(&info);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		goto exit;
@@ -476,21 +526,29 @@ wm_display_state(void *arg)
 		}
 		printf("IP: %s\n", info.ip4_address);
 		printf("SSID: %s\n", info.ssid);
-		printf("MAC: %d:%d:%d:%d:%d:%d\n", info.mac_address[0], info.mac_address[1],
-			   info.mac_address[2], info.mac_address[3],
-			   info.mac_address[4], info.mac_address[5]);
+		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
+			goto exit;
+		}
+		printf("MAC: %s\n", mac_str);
+		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
+			goto exit;
+		}
 	} else if (info.mode == STA_MODE) {
 		if (info.status == AP_CONNECTED) {
 			printf("MODE: station (connected)\n");
 			printf("IP: %s\n", info.ip4_address);
 			printf("SSID: %s\n", info.ssid);
-			printf("rssi: %s\n", info.rssi);
+			printf("rssi: %d\n", info.rssi);
 		} else if (info.status == AP_DISCONNECTED) {
 			printf("MODE: station (disconnected)\n");
 		}
-		printf("MAC: %d:%d:%d:%d:%d:%d\n", info.mac_address[0], info.mac_address[1],
-			   info.mac_address[2], info.mac_address[3],
-			   info.mac_address[4], info.mac_address[5]);
+		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
+			goto exit;
+		}
+		printf("MAC: %s\n", mac_str);
+		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
+			goto exit;
+		}
 	} else {
 		printf("STATE: NONE\n");
 	}
@@ -499,34 +557,32 @@ exit:
 	return ;
 }
 
-
-void
-wm_sta_start(void *arg)
+void wm_sta_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 
 	res = wifi_manager_set_mode(STA_MODE, NULL);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" Set AP mode Fail\n");
+		printf(" Set STA mode Fail\n");
 		return ;
 	}
 	printf(" Connecting to AP\n");
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_connect(void *arg)
+void wm_connect(void *arg)
 {
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
 	wifi_manager_ap_config_s apconfig;
-	strncpy(apconfig.ssid, ap_info->ssid, 33);
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
+	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
 	apconfig.ap_auth_type = ap_info->auth_type;
 	if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig.passphrase, ap_info->password, 64);
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
@@ -545,9 +601,7 @@ wm_connect(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_disconnect(void *arg)
+void wm_disconnect(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -561,9 +615,7 @@ wm_disconnect(void *arg)
 	WM_TEST_LOG_END;;
 }
 
-
-void
-wm_cancel(void *arg)
+void wm_cancel(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -576,18 +628,21 @@ wm_cancel(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-void
-wm_softap_start(void *arg)
+void wm_softap_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	struct options *ap_info = (struct options *)arg;
+	if (strlen(ap_info->ssid) > WIFIMGR_SSID_LEN || strlen(ap_info->password) > WIFIMGR_PASSPHRASE_LEN) {
+		printf("Param Error\n");
+		WM_TEST_LOG_END;
+		return;
+	}
 	wifi_manager_softap_config_s ap_config;
-	strcpy(ap_config.ssid, ap_info->ssid);
-	ap_config.ssid[strlen(ap_info->ssid)] = '\0';
-	strcpy(ap_config.passphrase, ap_info->password);
-	ap_config.passphrase[strlen(ap_info->password)] = '\0';
+	strncpy(ap_config.ssid, ap_info->ssid, WIFIMGR_SSID_LEN-1);
+	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	strncpy(ap_config.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN-1);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
 	ap_config.channel = 1;
 
 	print_wifi_softap_profile(&ap_config, "AP INFO");
@@ -599,40 +654,421 @@ wm_softap_start(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
-
 /****************************************************************************
  * ocf_wifi_test
  ****************************************************************************/
-
-void
-wm_auto_test(void *arg)
+void wm_coverage(void *arg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	struct options *info = (struct options *)arg;
+	int failed_count = 0;
+	wifi_manager_info_s *info_null = NULL;
 
 	/* Set SoftAP Configuration */
 	wifi_manager_softap_config_s softap_config;
-	strncpy(softap_config.ssid, info->softap_ssid, 33);
-	softap_config.ssid[strlen(info->ssid)] = '\0';
-	strncpy(softap_config.passphrase, info->softap_password, 64);
-	softap_config.passphrase[strlen(info->password)] = '\0';
+	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN);
+	softap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN);
+	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	softap_config.channel = 1;
 
 	/* Set AP Configuration */
 	wifi_manager_ap_config_s ap_config;
-	strncpy(ap_config.ssid, info->ssid, 33);
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
 	ap_config.ssid_length = strlen(info->ssid);
-	strncpy(ap_config.passphrase, info->password, 64);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
 	ap_config.passphrase_length = strlen(info->password);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_config.ap_auth_type = info->auth_type;
 	ap_config.ap_crypto_type = info->crypto_type;
 
+	/* Set AP Long SSID Configuration */
+	char fake_long_ssid[] = "MakeLongSSIDFakeAPMakeLongSSIDFakeAP";
+	wifi_manager_ap_config_s ap_fake_config;
+	ap_fake_config.ssid_length = strlen(fake_long_ssid);
+	strncpy(ap_fake_config.ssid, fake_long_ssid, ap_fake_config.ssid_length + 1);
+	strncpy(ap_fake_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
+	ap_fake_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+	ap_fake_config.passphrase_length = strlen(info->password);
+	ap_fake_config.ap_auth_type = info->auth_type;
+	ap_fake_config.ap_crypto_type = info->crypto_type;
+
+	printf("====================================\n");
+	printf(" T%d Starting\n", getpid());
+	printf("0. Init WiFi (default STA mode)\n");
+	res = wifi_manager_init(NULL);
+	res = wifi_manager_get_info(info_null);
 	res = wifi_manager_init(&wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" wifi_manager_init fail\n");
+		printf("wifi_manager_init fail\n");
+		failed_count++;
+	}
+	/* Print current status */
+	wm_display_state(NULL);
+	print_wifi_ap_profile(&ap_config, "");
+	print_wifi_softap_profile(&softap_config, "SoftAP Info");
+
+	/* Connect to fake AP */
+	printf("Connecting to AP (NULL)\n");
+	res = wifi_manager_connect_ap(NULL);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("AP connect should be failed due to NULL\n");
+		failed_count++;
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to fake AP */
+	printf("Connecting to AP (long SSID)\n");
+	res = wifi_manager_connect_ap(&ap_fake_config);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("AP connect should be failed due to bad configuration: long SSID\n");
+		failed_count++;
+		WM_TEST_WAIT;
+	} 
+	
+	/* Connect to fake AP */
+	printf("Connecting to AP (bad SSID)\n");
+	strncpy(ap_config.ssid, info->bad_ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	ap_config.ssid_length = strlen(info->bad_ssid);
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	// Both WIFI_MANAGER_SUCCESS and WIFI_MANAGER_FAIL can be possible, depending on the device driver
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed due to bad SSID\n");
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to fake AP */
+	printf("Connecting to AP (wrong passphrase)\n");
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	ap_config.ssid_length = strlen(info->ssid);
+	strncpy(ap_config.passphrase, info->bad_password, WIFIMGR_PASSPHRASE_LEN);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+	ap_config.passphrase_length = strlen(info->bad_password);
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	// Both WIFI_MANAGER_SUCCESS and WIFI_MANAGER_FAIL can be possible, depending on the device driver
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed due to bad configuration: bad passphrase\n");
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to fake AP */
+	printf("Connecting to fake AP (Auth/Crypto type 1/3)\n");
+	ap_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
+	ap_config.passphrase_length = strlen(info->password);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	// Both WIFI_MANAGER_SUCCESS and WIFI_MANAGER_FAIL can be possible, depending on the device driver
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed due to bad configuration: auth/crypto type 1/3\n");
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to AP */
+	ap_config.ap_auth_type = info->auth_type;
+	printf("Connecting to AP\n");
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Print current status */
+	wm_display_state(NULL); //check dhcp
+
+	/* Connect to AP, second trial*/
+	printf("Connecting to AP, but already connected\n");
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("AP connect should be failed due to already connected state\n");
+		failed_count++;
+		WM_TEST_WAIT;
+	} 
+	
+	/* Start SoftAP mode */
+	printf("Start SoftAP mode\n");
+	res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf(" Set AP mode Fail\n");
+		failed_count++;
+	}
+
+	/* Print current status */
+	wm_display_state(NULL);
+
+	/* Scanning */
+	printf("Start scanning\n");
+	res = wifi_manager_scan_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("scan Fail\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT; // wait the scan result
+	}
+
+	/* Start STA mode */	
+	printf("Start STA mode\n");
+	res = wifi_manager_set_mode(STA_MODE, NULL);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf(" Set STA mode Fail\n");
+		failed_count++;
+	}
+
+	/* Scanning */
+	printf("Start scanning\n");
+	res = wifi_manager_scan_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("scan Fail\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT; // wait the scan result
+	}
+
+	/* Connect to fake AP */
+	printf("Connecting to fake AP (Auth/Crypto type 2/3)\n");
+	ap_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_PSK;
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	// Both WIFI_MANAGER_SUCCESS and WIFI_MANAGER_FAIL can be possible, depending on the device driver
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed due to bad configuration: auth/crypto type 2/3\n");
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to fake AP */
+	printf("Connecting to fake AP (Auth/Crypto type 4/3)\n");
+	ap_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK;
+	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed due to bad configuration: auth/crypto type 4/3\n");
+	} else {
+		WM_TEST_WAIT;
+	}
+
+	/* Connect to AP */
+	printf("Connecting to AP\n");
+	ap_config.ap_auth_type = info->auth_type;
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT; // wait dhcp
+	}
+
+	/* File system call */
+	res = wifi_manager_save_config(NULL);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("Save null should be failed\n");
+		failed_count++;
+	}
+	wifi_manager_ap_config_s new_config;
+	res = wifi_manager_get_config(&new_config);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("Get null should be failed\n");
+		failed_count++;
+	}
+	res = wifi_manager_remove_config();
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("Reset null should be failed\n");
+		failed_count++;
+	}
+
+	printf("Save AP info.\n");
+	res = wifi_manager_save_config(&ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Save AP configuration failed\n");
+		failed_count++;
+	}
+
+	printf("Get AP info.\n");
+	res = wifi_manager_get_config(&new_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Get AP configuration failed\n");
+		failed_count++;
+	}
+
+	print_wifi_ap_profile(&new_config, "Stored WiFi Information");
+	printf("Reset AP info.\n");
+	res = wifi_manager_remove_config();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Reset AP configuration failed\n");
+		failed_count++;
+	}
+
+	/* Disconnect AP */
+	printf("Disconnecting AP\n");
+	res = wifi_manager_disconnect_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("disconnect fail (%d)\n", res);
+		failed_count++;
+	} else {
+		WM_TEST_WAIT;
+	}
+	res = wifi_manager_disconnect_ap();
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("Disconnect AP should be failed due to already disconnected\n");
+		failed_count++;
+		WM_TEST_WAIT;
+	}
+
+	/* Print current status */
+	wm_display_state(NULL);
+
+	printf("Deinit TEST in disconnected state\n");
+	res = wifi_manager_deinit();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("WiFi Manager failed to stop\n");
+		failed_count++;
+	}	
+
+	printf("Re-init WiFi (default STA mode)\n");
+	res = wifi_manager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_init fail\n");
+		failed_count++;
+	}
+
+	/* Connect to AP */
+	printf("Connecting to AP\n");
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("AP connect failed\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT; // wait dhcp
+	}
+
+	/* Scanning */
+	printf("Start scanning in connected state\n");
+	res = wifi_manager_scan_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("scan Fail\n");
+		failed_count++;
+	} else {
+		WM_TEST_WAIT; // wait the scan result
+	}
+
+	printf("Deinit in connected state\n");
+	res = wifi_manager_deinit();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("WiFi Manager failed to stop\n");
+		failed_count++;
+	}
+	
+	res = wifi_manager_deinit();
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("WiFi Manager should be failed to stop, due to already stop\n");
+		failed_count++;
+	}
+
+	printf("Re-init WiFi (default STA mode)\n");
+	res = wifi_manager_init(&wifi_null_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_init fail\n");
+		failed_count++;
+	}
+	
+	/* Scanning */
+	printf("Start scanning without callback \n");
+	res = wifi_manager_scan_ap();
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("scan should be faile due to NULL scan callback\n");
+		failed_count++;
+		WM_TEST_WAIT; // wait the scan result
+	}
+	
+	printf("Deinit in connected state\n");
+	res = wifi_manager_deinit();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("WiFi Manager failed to stop\n");
+		failed_count++;
+	}
+	
+	printf("Re-init WiFi (default STA mode)\n");
+	res = wifi_manager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_init fail\n");
+		failed_count++;
+	}
+
+	/* Start SoftAP mode */
+	printf("Re-start SoftAP mode\n");
+	res = wifi_manager_set_mode(SOFTAP_MODE, NULL);
+	res = wifi_manager_set_mode(WIFI_NONE, &softap_config);
+	res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf(" Set AP mode Fail\n");
+		failed_count++;
+	}
+	
+	/* Connect to AP in SoftAP mode*/
+	printf("Connecting to AP\n");
+	res = wifi_manager_connect_ap(&ap_config);
+	if (res == WIFI_MANAGER_SUCCESS) {
+		printf("AP connect should be failed in SoftAP mode\n");
+		failed_count++;
+		WM_TEST_WAIT; // wait dhcp
+	} 
+	
+	printf("Deinit TEST in SoftAP state\n");
+	res = wifi_manager_deinit();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("WiFi Manager failed to stop\n");
+		failed_count++;
+	}
+	printf("Finish coverage test, failed count (%d) should be zero.\n", failed_count);
+	printf("====================================\n");
+
+	return ;
+}
+
+void wm_auto_test(void *arg)
+{
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+	struct options *info = (struct options *)arg;
+	/* Set SoftAP Configuration */
+	wifi_manager_softap_config_s softap_config;
+	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN);
+	softap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN);
+	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+	softap_config.channel = 1;
+
+	/* Set AP Configuration */
+	wifi_manager_ap_config_s ap_config;
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid_length = strlen(info->ssid);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
+	ap_config.passphrase_length = strlen(info->password);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+	ap_config.ap_auth_type = info->auth_type;
+	ap_config.ap_crypto_type = info->crypto_type;
+
+	printf("Init WiFi (default STA mode)\n");
+	res = wifi_manager_init(NULL);
+	res = wifi_manager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_init fail\n");
 		return ;
 	}
+	/* Print current status */
+	wm_display_state(NULL);
 
 	printf("====================================\n");
 	printf("Repeated Test\n");
@@ -644,61 +1080,129 @@ wm_auto_test(void *arg)
 	int cnt = 0;
 	while (cnt++ < WM_TEST_COUNT) {
 		printf(" T%d Starting round %d\n", getpid(), cnt);
+		/* Print current status */
+		wm_display_state(NULL);
+
+		/* Connect to AP */
+		printf("Connecting to AP\n");
+		print_wifi_ap_profile(&ap_config, "Connecting AP Info");
+		res = wifi_manager_connect_ap(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed in round %d\n", cnt);
+			return ;
+		} else {
+			WM_TEST_WAIT;
+		}
+
+		/* Print current status */
+		wm_display_state(NULL); //check dhcp
+
+		/* Start SoftAP mode */
+		printf("Start SoftAP mode\n");
 		res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 		if (res != WIFI_MANAGER_SUCCESS) {
 			printf(" Set AP mode Fail\n");
 			return ;
 		}
-		printf(" Step 1 done.. Waiting for STA join\n");
+		/* Print current status */
+		wm_display_state(NULL);
 
-		/* Wait station connect */
-		WM_TEST_WAIT;
+		/* Scanning */
+		printf("Start scanning\n");
+		res = wifi_manager_scan_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("scan Fail\n");
+			return ;
+		} else {
+			WM_TEST_WAIT; // wait the scan result
+		}
 
-		printf(" Step 2 done..Waiting for STA leave\n");
-		/* Wait station disconnect */
-		WM_TEST_WAIT;
+		/* Print current status */
+		wm_display_state(NULL);
 
-		printf(" Step 3 done..Waiting for SoftAP down and startSTA\n");
-		// Do Soft AP down
+		/* Start STA mode */	
+		printf("Start STA mode\n");
 		res = wifi_manager_set_mode(STA_MODE, NULL);
 		if (res != WIFI_MANAGER_SUCCESS) {
-			printf(" Set AP mode Fail\n");
+			printf(" Set STA mode Fail\n");
 			return ;
 		}
-		printf(" Step 4 done..Connecting to AP\n");
+
+		/* Scanning */
+		printf("Start scanning\n");
+		res = wifi_manager_scan_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("scan Fail\n");
+			return ;
+		} else {
+			WM_TEST_WAIT; // wait the scan result
+		}
 
 		/* Connect to AP */
+		printf("Connecting to AP\n");
 		res = wifi_manager_connect_ap(&ap_config);
 		if (res != WIFI_MANAGER_SUCCESS) {
-			printf(" Ap connect failed in round %d\n", cnt);
+			printf("AP connect failed in round %d\n", cnt);
+			return ;
+		} else {
+			WM_TEST_WAIT; // wait dhcp
+		}
+
+		/* File system call */
+		printf("Save AP info.\n");
+		res = wifi_manager_save_config(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Save AP configuration failed\n");
 			return ;
 		}
-		/* Wait for DHCP connection */
-		WM_TEST_WAIT;
-		printf(" Step 5 done..Scanning for APs\n", cnt);
-		wifi_manager_scan_ap();
-		WM_TEST_WAIT;
-		printf(" Step 6 done..Disconnecting AP\n");
+
+		printf("Get AP info.\n");
+		wifi_manager_ap_config_s new_config;
+		res = wifi_manager_get_config(&new_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get AP configuration failed\n");
+			return ;
+		}
+
+		print_wifi_ap_profile(&new_config, "Stored WiFi Information");
+		printf("Reset AP info.\n");
+		res = wifi_manager_remove_config();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Reset AP configuration failed\n");
+			return ;
+		}
+
+		/* Print current status */
+		wm_display_state(NULL);
+
 		/* Disconnect AP */
-		wifi_manager_disconnect_ap();
-		WM_TEST_WAIT;
-		printf(" Step 7 done..Cycle finished [Round %d]\n", cnt);
-	}
+		printf("Disconnecting AP\n");
+		res = wifi_manager_disconnect_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("disconnect fail (%d)\n", res);
+			return ;
+		} else {
+			WM_TEST_WAIT;
+		}
 
-	res = wifi_manager_deinit();
-	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" WiFi Manager failed to stop\n");
-		return ;
-	}
+		/* Print current status */
+		wm_display_state(NULL);
 
-	printf("Exit Wi-Fi Manager Stress Test..\n");
+		printf("Deinit TEST in disconnected state\n");
+		res = wifi_manager_deinit();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("WiFi Manager failed to stop\n");
+			return ;
+		}	
+
+		printf("Cycle finished [Round %d]\n", cnt);
+	}
+	printf("Exit WiFi Manager Stress Test..\n");
 
 	return ;
 }
 
-
-int
-wm_parse_commands(struct options *opt, int argc, char *argv[])
+int wm_parse_commands(struct options *opt, int argc, char *argv[])
 {
 	if (argc < 3) {
 		return -1;
@@ -707,6 +1211,12 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		opt->func = wm_start;
 	} else if (strcmp(argv[2], "stop") == 0) {
 		opt->func = wm_stop;
+	} else if (strcmp(argv[2], "stress") == 0) {
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
+		opt->func = wm_run_stress_test;
+#else
+		return -1;
+#endif
 	} else if (strcmp(argv[2], "softap") == 0) {
 		/* wpa2 aes is a default security mode. */
 		opt->func = wm_softap_start;
@@ -744,6 +1254,8 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		}
 		opt->crypto_type = get_crypto_type(argv[4]);
 		opt->password = argv[5];
+	} else if (strcmp(argv[2], "stats") == 0) {
+		opt->func = wm_get_stats;
 	} else if (strcmp(argv[2], "get") == 0) {
 		opt->func = wm_get_info;
 	} else if (strcmp(argv[2], "reset") == 0) {
@@ -773,15 +1285,32 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		}
 		opt->crypto_type = get_crypto_type(argv[6]);
 		opt->password = argv[7];
+	} else if (strcmp(argv[2], "coverage") == 0) {
+		opt->func = wm_coverage;
+		if (argc < 9) {
+			return -1;
+		}
+		opt->softap_ssid = argv[3];
+		opt->softap_password = argv[4];
+		opt->ssid = argv[5];
+		opt->auth_type = get_auth_type(argv[6]);
+		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+			return -1;
+		}
+		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+			return 0;
+		}
+		opt->crypto_type = get_crypto_type(argv[6]);
+		opt->password = argv[7];
+		opt->bad_ssid = argv[8];
+		opt->bad_password = argv[9];
 	} else {
 		return -1;
 	}
 	return 0;
 }
 
-
-void
-wm_process(int argc, char *argv[])
+void wm_process(int argc, char *argv[])
 {
 	struct options opt;
 	int res = wm_parse_commands(&opt, argc, argv);
@@ -793,7 +1322,6 @@ wm_process(int argc, char *argv[])
 exit:
 	WM_TEST_FUNC_SIGNAL;
 }
-
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])

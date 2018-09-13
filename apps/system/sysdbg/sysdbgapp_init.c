@@ -135,6 +135,8 @@ int sysdbgapp_main(int argc, char **args)
 {
 	int nbytes;
 	int ret = 0;
+	int arg1_len = 0;
+	int arg2_len = 0;
 	char arg_str[64] = { '\0' };
 
 	if (argc < 2 || argc > 3) {
@@ -147,10 +149,19 @@ int sysdbgapp_main(int argc, char **args)
 			goto end;
 		}
 		/* Second and Third arguments length should not be greater than 32 [ 31 + '\0' ] */
-		if (((strlen(args[1]) + 1) > 32) || ((strlen(args[2]) + 1) > 32)) {
-			printf("sysdbgapp: One or Both of the arguments exceeds max argument length of 31\n");
+		arg1_len = strlen(args[1]);
+		if ((arg1_len + 1) > 32) {
+			printf("sysdbgapp: args[1]:%s exceeds max argument length of 31\n", args[1]);
 			ret = -1;
 			goto end;
+		}
+		if (argc == 3) {
+			arg2_len = strlen(args[2]);
+			if ((arg2_len + 1) > 32) {
+				printf("sysdbgapp: args[2]:%s exceeds max argument length of 31\n", args[2]);
+				ret = -1;
+				goto end;
+			}
 		}
 		snprintf(arg_str, sizeof(arg_str), "%s %s", args[1], (argc == 3) ? args[2] : NULL);
 		nbytes = write(g_sysdbg_handle, arg_str, strlen(arg_str));

@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config STRESS_TOOL
+	bool "Enable Stress Tool"
+	default n
+	---help---
+		Enable support for stress tool APIs.

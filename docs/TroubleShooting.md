@@ -5,23 +5,42 @@
 > [Board-Specific](#board-specific)
 
 ## Common
-### Issues on GNU toolchain
-When 64 bit machine tries to use 32 bit package like GDB, someone meets below:
-```
-'Launching XXX' has envountered a problem.
-Could not determine GDB version after sending: /home/.../arm-none-eabi-gdb --version
-```
-```
-bash: .../gcc-arm-none-eabi-4_9-2015q3/bin/arm-none-eabi-gcc: No such file or directory
-```
-
-Installing *lib32ncurses5* package resolves it.
-```bash
-sudo apt-get install lib32ncurses5
-```
-
 ### Issues on Kconfig-frontend
-When ```make menuconfig``` excutes after installing Kconfig-frontend, someone meets below:
+#### Build break on hconf
+If you are using gperf 3.1 and kconfig-frontends-4.11.0.1,
+you may meet below at Kconfig-frontend build(make) time:
+```
+~/kconfig-frontends-4.11.0.1$ make
+.
+.
+.
+In file included from libs/parser/yconf.c:252:0:
+libs/parser/hconf.gperf:153:1: error: conflicting types for ‘kconf_id_lookup’
+libs/parser/hconf.gperf:12:31: note: previous declaration of ‘kconf_id_lookup’ was here
+ static const struct kconf_id *kconf_id_lookup(register const char *str, register GPERF_LEN_TYPE len);
+                               ^~~~~~~~~~~~~~~
+Makefile:1404: recipe for target 'libs/parser/libs_parser_libkconfig_parser_la-yconf.lo' failed
+make[1]: *** [libs/parser/libs_parser_libkconfig_parser_la-yconf.lo] Error 1
+```
+
+To resolve:
+Modify `kconfig-frontends-4.11.0.1/libs/parser/hconf.c` like below
+```diff
+--- a/libs/parser/hconf.c
++++ b/libs/parser/hconf.c
+@@ -172,7 +172,7 @@ __attribute__ ((__gnu_inline__))
+ #endif
+ #endif
+ const struct kconf_id *
+-kconf_id_lookup (register const char *str, register unsigned int len)
++kconf_id_lookup (register const char *str, register GPERF_LEN_TYPE len)
+ {
+   enum
+     {
+```
+
+#### Execution error on mconf
+When ```make menuconfig``` executes after installing Kconfig-frontend, someone meets below:
 ```
 kconfig-mconf: error while loading shared libraries: libkconfig-parser-x.xx.0.so: cannot open shared object file: No such file or directory
 Makefile.unix:579: recipe for target 'menuconfig' failed
@@ -34,6 +53,27 @@ cd <Kconfig-frontend_package_PATH>
 make
 sudo make install
 ```
+
+### Issue on build of Proto buffers
+When Proto buffers (a.k.a., protobuf) which is mandatory on using gRPC is enabled, 
+you can meet build breaks as shown below:
+```
+AR: helloxx_main.o
+make[2]: Leaving directory '/TizenRT/apps/examples/helloxx'
+make[2]: Entering directory '/TizenRT/apps/examples/grpc_greeter_client'
+protoc -I . --cpp_out=. helloworld.proto
+make[2]: protoc: Command not found
+Makefile:86: recipe for target 'helloworld.pb.cc' failed
+make[2]: *** [helloworld.pb.cc] Error 127
+make[2]: Leaving directory '/TizenRT/apps/examples/grpc_greeter_client'
+Makefile:109: recipe for target 'examples/grpc_greeter_client_all' failed
+make[1]: *** [examples/grpc_greeter_client_all] Error 2
+make[1]: Leaving directory '/TizenRT/apps'
+LibTargets.mk:158: recipe for target '../apps/libapps.a' failed
+make: *** [../apps/libapps.a] Error 2
+```
+This is coming from missing ```protoc``` installation.  
+Please find [Proto buffers' README](https://github.com/Samsung/TizenRT/blob/master/external/protobuf/README.md).
 
 ## Board-Specific
 ### ARTIK

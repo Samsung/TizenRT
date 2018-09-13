@@ -1,0 +1,63 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_AVS_TEST
+	bool "AVS Device SDK test example"
+	default n
+	---help---
+		Enable the AVS Device SDK test example
+
+if EXAMPLES_AVS_TEST
+
+config EXAMPLES_AVS_TEST_CXXINITIALIZE
+	bool "C++ Initialization"
+	default y
+	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	---help---
+		By default, if CONFIG_HAVE_CXX and CONFIG_HAVE_CXXINITIALIZE are
+		defined, then this example will call the TinyAra function to
+		initialize static C++ constructors.  This option may be disabled,
+		however, if that static initialization was preformed elsewhere.
+
+config EXAMPLES_AVS_TEST_SSID
+	string "SSID of AP"
+	default "NULL"
+	---help---
+		Select SSID of AP which you want to connect to
+
+config EXAMPLES_AVS_TEST_PASSPHRASE
+	string "Passphrase of AP"
+	default "NULL"
+	---help---
+		Passphrase of AP which you want to connect to
+
+config EXAMPLES_AVS_TEST_AUTHENTICATION
+	int "Authentication type"
+	default 0
+	---help---
+		0 : Open
+		1 : WEP Shared
+		2 : WPA PSK
+		3 : WPA2 PSK
+		4 : WPA and WPA2 PSK
+		5 : Unknown
+
+config EXAMPLES_AVS_TEST_CRYPTO
+	int "Encryption type"
+	default 0
+	---help---
+		0 : None
+		1 : WEP 64 bits
+		2 : WEP 128 bits
+		3 : AES
+		4 : TKIP
+		5 : TIKP and AES
+		6 : Unknown
+
+endif # EXAMPLES_AVS_TEST
+
+config USER_ENTRYPOINT
+	string
+	default "avs_test_main" if ENTRY_AVS_TEST

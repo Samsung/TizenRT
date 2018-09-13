@@ -51,7 +51,7 @@ typedef struct st_resource_type_s {
 	int prop_cnt;
 	struct things_attribute_info_s *prop[MAX_PROPERTY_CNT];
 } st_resource_type_s;
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 typedef struct col_resource_s {
 	char uri[MAX_URI_LENGTH_OCF];
 	char *interface_types[MAX_IT_CNT];
@@ -64,12 +64,12 @@ typedef struct col_resource_s {
 	int link_cnt;
 	int policy;
 } col_resource_s;
-
+#endif
 typedef struct st_device_s {
 	int no;
 	char *type;
 	char *name;
-	char *manufacturer_name;
+	char *mnid;
 	char *manufacturer_url;
 	char *manufacturing_date;
 	char *model_num;
@@ -78,9 +78,10 @@ typedef struct st_device_s {
 	char *ver_hw;	// mnhw
 	char *ver_fw;	// mnfv
 	char *device_id;	// mnfv
-	char *vender_id;	// mnfv
-
+	char *vid;	// mnfv
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	col_resource_s *collection;
+#endif
 	things_resource_info_s *single;
 
 	int capa_cnt;
@@ -112,9 +113,6 @@ const wifi_freq_e dm_get_wifi_property_freq();
 
 struct things_resource_s *dm_get_resource_instance(const char *uri, const int id);
 
-int dm_get_device_information(int *cnt, st_device_s ***list);
-
-long dm_get_num_of_dev_cnt(void);
 st_device_s *dm_get_info_of_dev(unsigned long number);
 bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev_id);
 bool dm_register_device_id(void);
@@ -126,7 +124,7 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data);
 bool dm_is_rsc_published(void);
 
 int dm_del_things_cloud_data(void);
-bool dm_is_there_things_cloud(void);
+bool dm_is_es_complete(void);
 
 bool dm_get_easy_setup_use_artik_crt(void);
 char *dm_get_mnid(void);

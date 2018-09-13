@@ -31,21 +31,21 @@ Debug Options -> Enable backtracking using Frame pointer register  to y
 ```
 
 ## How to upload RAMDUMP
-Run ramdump tool from host after target crashed.  
-1. If target got PANIC (asserted), below messages will be promted.
+With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
 ```
 	****************************************************
 	Disconnect this serial terminal and Run Ramdump Tool
 	****************************************************
 ```
-2. Disconnect/close serial termial (may be minicom)  
+After you see this message, you can upload the ramdump by following the step below:  
+1. Disconnect/close your serial terminal (may be minicom)  
 
-3. Run ramdump tool
+2. Run ramdump tool
 ```
 cd $TIZENRT_BASEDIR/tools/ramdump/
 ./ramdump.sh
 ```
-4. Ramdump Tool receives the ram contents from target.
+3. Ramdump Tool receives the ram contents from target.
 ```
 Target Handshake successful do_handshake
 Target entered to ramdump mode
@@ -63,7 +63,7 @@ DumpParser Script privodes two interfaces: CUI and GUI
 1. Run Ramdump Parser Script
 ```
 cd $TIZENRT_BASEDIR/tools/ramdump/
-python dumpParce.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
+python dumpParser.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
 ```
 2. See the Output
 

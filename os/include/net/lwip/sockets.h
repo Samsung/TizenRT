@@ -292,7 +292,9 @@ struct linger {
 
 #define IPPROTO_IP      0
 #define IPPROTO_ICMP    1
+#define IPPROTO_IGMP    2
 #define IPPROTO_TCP     6
+
 #define IPPROTO_UDP     17
 #define IPPROTO_IPV6    41
 #define IPPROTO_ICMPV6  58
@@ -521,6 +523,7 @@ int lwip_select(int maxfdp1, fd_set * readset, fd_set * writeset, fd_set * excep
 int lwip_ioctl(int s, long cmd, void *argp);
 int lwip_fcntl(int s, int cmd, int val);
 
+int lwip_poll(int fd, struct pollfd *fds, bool setup);
 #ifdef __cplusplus
 }
 #endif

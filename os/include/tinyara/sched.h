@@ -178,6 +178,11 @@
 #define CHILD_FLAG_TTYPE_KERNEL  (2 << CHILD_FLAG_TTYPE_SHIFT)	/* Kernel thread */
 #define CHILD_FLAG_EXITED          (1 << 0)	/* Bit 2: The child thread has exit'ed */
 
+/* Values for flag of pthread key allocated */
+
+#define KEY_NOT_INUSE   (0)
+#define KEY_INUSE       (1)
+
 /********************************************************************************
  * Public Type Definitions
  ********************************************************************************/
@@ -252,10 +257,6 @@ typedef CODE void (*atexitfunc_t)(void);
 typedef CODE void (*onexitfunc_t)(int exitcode, FAR void *arg);
 #endif
 
-#if CONFIG_NPTHREAD_KEYS > 0
-typedef CODE void (*pthread_destructor_t)(void *arg);
-#endif
-
 /* struct child_status_s *********************************************************/
 /** @brief This structure is used to maintin information about child tasks.
  * pthreads work differently, they have join information.  This is
@@ -303,14 +304,6 @@ struct dspace_s {
 	 */
 
 	FAR uint8_t *region;
-};
-#endif
-
-/* struct pthread_key_s **********************************************************/
-#if CONFIG_NPTHREAD_KEYS > 0
-struct pthread_key_s {
-	void *data;
-	pthread_destructor_t destructor;
 };
 #endif
 
@@ -368,23 +361,12 @@ struct task_group_s {
 #if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
 	/* atexit support *********************************************************** */
 
-#if defined(CONFIG_SCHED_ATEXIT_MAX) && CONFIG_SCHED_ATEXIT_MAX > 1
-	atexitfunc_t tg_atexitfunc[CONFIG_SCHED_ATEXIT_MAX];
-#else
-	atexitfunc_t tg_atexitfunc;	/* Called when exit is called.             */
-#endif
+	sq_queue_t tg_atexitfunc;
 #endif
 
 #ifdef CONFIG_SCHED_ONEXIT
 	/* on_exit support ********************************************************** */
-
-#if defined(CONFIG_SCHED_ONEXIT_MAX) && CONFIG_SCHED_ONEXIT_MAX > 1
-	onexitfunc_t tg_onexitfunc[CONFIG_SCHED_ONEXIT_MAX];
-	FAR void *tg_onexitarg[CONFIG_SCHED_ONEXIT_MAX];
-#else
-	onexitfunc_t tg_onexitfunc;	/* Called when exit is called.             */
-	FAR void *tg_onexitarg;		/* The argument passed to the function     */
-#endif
+	sq_queue_t tg_onexitfunc;
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
@@ -408,7 +390,8 @@ struct task_group_s {
 	FAR struct join_s *tg_joinhead;	/*   Head of a list of join data            */
 	FAR struct join_s *tg_jointail;	/*   Tail of a list of join data            */
 #if CONFIG_NPTHREAD_KEYS > 0
-	uint8_t tg_keys[CONFIG_NPTHREAD_KEYS];	/* Information of pthread keys allocated */
+	uint8_t tg_key[PTHREAD_KEYS_MAX];		/* flag of pthread keys allocated */
+	pthread_destructor_t tg_destructor[PTHREAD_KEYS_MAX];	/* Address list of each destructor */
 #endif
 #endif
 
@@ -663,7 +646,7 @@ struct pthread_tcb_s {
 	/* POSIX Thread Specific Data ************************************************ */
 
 #if CONFIG_NPTHREAD_KEYS > 0
-	struct pthread_key_s pthread_data[CONFIG_NPTHREAD_KEYS];
+	void *key_data[PTHREAD_KEYS_MAX];
 #endif
 #if defined(CONFIG_BUILD_PROTECTED)
 	struct pthread_region_s *region;

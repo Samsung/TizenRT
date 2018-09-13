@@ -124,18 +124,6 @@ uintptr_t STUB_wait(int nbr, uintptr_t parm1);
 uintptr_t STUB_waitid(int nbr, uintptr_t parm1, uintptr_t parm2,
 					  uintptr_t parm3, uintptr_t parm4);
 
-/* The following can only be defined if we are configured to execute
- * programs from a file system.
- */
-
-uintptr_t STUB_posix_spawn(int nbr, uintptr_t parm1, uintptr_t parm2,
-						   uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
-						   uintptr_t parm6);
-uintptr_t STUB_posix_spawnp(int nbr, uintptr_t parm1, uintptr_t parm2,
-							uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
-							uintptr_t parm6);
-uintptr_t STUB_execv(int nbr, uintptr_t parm1, uintptr_t parm2);
-
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
  */
@@ -158,6 +146,7 @@ uintptr_t STUB_nanosleep(int nbr, uintptr_t parm1, uintptr_t parm2);
  * TinyAra configuration.
  */
 
+uintptr_t STUB_clock(int nbr);
 uintptr_t STUB_clock_getres(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_gettime(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_settime(int nbr, uintptr_t parm1, uintptr_t parm2);
@@ -268,6 +257,7 @@ uintptr_t STUB_pthread_getschedparam(int nbr, uintptr_t parm1,
 									 uintptr_t parm2, uintptr_t parm3);
 uintptr_t STUB_pthread_getspecific(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_join(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_pthread_tryjoin_np(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_key_create(int nbr, uintptr_t parm1,
 								  uintptr_t parm2);
 uintptr_t STUB_pthread_key_delete(int nbr, uintptr_t parm1);

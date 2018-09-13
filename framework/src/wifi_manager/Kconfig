@@ -66,5 +66,9 @@ config WIFIMGR_STA_IFNAME
 	string "interface name of station mode"
 	default "wl1"
 
+config WIFIMGR_DISABLE_AUTO_GET_IP
+	bool "disable auto get ip (ipv4 dhcp)"
+	default n
+
 endif #WIFI_MANAGER
 

@@ -4,19 +4,43 @@
 #
 
 config EXAMPLES_ST_THINGS
-	bool "SmartThings Things example"
+	bool "ST Things example"
 	default n
 	select IOTBUS
-	select IOTBUS_GPIO
 	---help---
-		Enable the SmartThings Things example
+		Enable the ST(SmartThings) Things example
 
 if EXAMPLES_ST_THINGS
+choice
+	prompt "ST Things Sample list"
+	default EXAMPLES_ST_THINGS_LIGHT
+	---help---
+		This selection builds a sample of ST_things.
+
+config EXAMPLES_ST_THINGS_LIGHT
+	bool "LIGHT"
+	select IOTBUS_GPIO
+	---help---
+		This is a Light Sample.
+
+config EXAMPLES_ST_THINGS_BLINK
+	bool "BLINK"
+	select IOTBUS_GPIO
+	---help---
+		This is a Blink Sample.
+
+config EXAMPLES_ST_THINGS_MSG_HANDLING
+	bool "Message Handling Example"
+	select IOTBUS_GPIO
+	---help---
+		This is a Message handling Sample.
+
+endchoice
 
 config RESET_BUTTON
 	bool "Reset_Button"
 	default y
-	depends on EXAMPLES_ST_THINGS
+	depends on EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		Decide whether to use the button to reset the connection on your board.
 
@@ -27,6 +51,14 @@ config RESET_BUTTON_PIN_NUMBER
 	---help---
 		The default is the reset button pin number 44 for the ARTIK 053.
 		If you use another board, you can set the pin number for the board.
+
+
+config EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM
+	int "GPIO number of RED LED"
+	default 45
+	depends on EXAMPLES_ST_THINGS_BLINK
+	---help---
+		This is a red led gpio num.
 
 endif
 

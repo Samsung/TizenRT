@@ -128,8 +128,6 @@
 typedef unsigned long __kernel_size_t;
 
 #ifdef CONFIG_ENABLE_IOTIVITY
-
-typedef int wint_t;
 typedef unsigned short __kernel_sa_family_t;
 typedef unsigned short __u16;
 
@@ -272,7 +270,11 @@ typedef int16_t blksize_t;
 typedef unsigned int socklen_t;
 typedef uint16_t sa_family_t;
 
-/* Used for system times in clock ticks (equivalent to systime_t) */
+/* Used for system times in clock ticks. This type is the natural width of
+ * the system timer.
+ * NOTE: The signed-ness of clock_t is not specified at OpenGroup.org.
+ * An unsigned type is used to support the full range of the internal clock.
+ */
 
 #ifdef CONFIG_SYSTEM_TIME64
 typedef uint64_t clock_t;
@@ -321,6 +323,10 @@ typedef CODE int (*main_t)(int argc, char *argv[]);
 /* pre-init application task entry point */
 
 typedef CODE int (*preapp_main_t)(int argc, char *argv[]);
+
+#ifdef CONFIG_TASK_MANAGER
+typedef CODE int (*task_manager_main_t)(int argc, char *argv[]);
+#endif
 
 #endif
 

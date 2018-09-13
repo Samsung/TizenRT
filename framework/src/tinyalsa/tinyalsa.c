@@ -176,7 +176,7 @@ static int oops(struct pcm *pcm, int e, const char *fmt, ...)
 	sz = strlen(pcm->error);
 
 	if (errno) {
-		snprintf(pcm->error + sz, PCM_ERROR_MAX - sz, ": %s", strerror(e));
+		snprintf(pcm->error + sz, PCM_ERROR_MAX - sz, ": %s errno : %d", strerror(e), errno);
 	}
 	return -1;
 }
@@ -326,7 +326,7 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 
 	ret = ioctl(pcm->fd, AUDIOIOC_CONFIGURE, (unsigned long)&cap_desc);
 	if (ret < 0) {
-		return oops(pcm, -errno, "AUDIOIOC_CONFIGURE ioctl failed");
+		return oops(pcm, errno, "AUDIOIOC_CONFIGURE ioctl failed\n");
 	}
 
 	/* Gain buffer size and count through the ioctl */
@@ -497,7 +497,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 			if (size != sizeof(msg)) {
 				/* Interrupted by a signal? What to do? */
-				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
@@ -506,7 +506,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 				/* Underrun to be handled by client */
 				return -EPIPE;
 			} else {
-				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
 			}
 		}
 
@@ -520,7 +520,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		bufdesc.numbytes = apb->nbytes;
 		bufdesc.u.pBuffer = apb;
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
 		}
 		/* If playback is not already started, start now! */
 		if ((!pcm->running) && (pcm_start(pcm) < 0)) {
@@ -611,7 +611,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				apb->flags = 0;
 				bufdesc.u.pBuffer = apb;
 				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-					return oops(pcm, errno, "failed to enque buffer after read");
+					return oops(pcm, errno, "failed to enque buffer after read\n");
 				}
 			}
 
@@ -634,7 +634,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 				if (size != sizeof(msg)) {
 					/* Interrupted by a signal? What to do? */
-					return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+					return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
 				}
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
@@ -663,7 +663,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 						apb->flags = 0;
 						bufdesc.u.pBuffer = apb;
 						if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-							return oops(pcm, errno, "failed to enque buffer after read");
+							return oops(pcm, errno, "failed to enque buffer after read\n");
 						}
 					}
 				}
@@ -671,7 +671,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				/* Underrun to be handled by client */
 				return -EPIPE;
 			} else {
-				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
 			}
 		}
 
@@ -838,7 +838,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	}
 
 	if (pcm->fd < 0) {
-		oops(pcm, errno, "cannot open device '%s'", fn);
+		oops(pcm, errno, "cannot open device '%s'\n", fn);
 		return pcm;
 	}
 
@@ -851,8 +851,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #endif
 	if (ret < 0) {
 		/* Device is busy or error */
-		oops(pcm, errno, "Failed to reserve device");
-		ret = -errno;
+		oops(pcm, errno, "Failed to reserve device\n");
 		goto fail_close;
 	}
 
@@ -871,19 +870,21 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	pcm->mq = mq_open(pcm->mqname, O_RDWR | O_CREAT, 0644, &attr);
 	if (pcm->mq == NULL) {
 		/* Unable to open message queue! */
-		ret = -errno;
-		oops(pcm, errno, "mq_open failed");
+		oops(pcm, errno, "mq_open failed\n");
 		goto fail_close;
 	}
 
 	/* Register our message queue with the audio device */
-	ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
-
+	ret = ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
+	if (ret < 0) {
+		oops(pcm, errno, "register mq failed\n");
+		goto fail_after_mq;
+	}
+	
 	/* Create array of pointers to buffers */
 	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->buffer_cnt * sizeof(FAR void *));
 	if (pcm->pBuffers == NULL) {
 		/* Error allocating memory for buffer storage! */
-		ret = -ENOMEM;
 		goto fail_after_mq;
 	}
 
@@ -1006,7 +1007,7 @@ int pcm_prepare(struct pcm *pcm)
 	if (ioctl(pcm->fd, AUDIOIOC_PREPARE, 0) < 0)
 #endif
 	{
-		return oops(pcm, errno, "cannot prepare pcm");
+		return oops(pcm, errno, "cannot prepare pcm\n");
 	}
 
 	pcm->prepared = 1;
@@ -1061,7 +1062,7 @@ int pcm_start(struct pcm *pcm)
 			bufdesc.u.pBuffer->curbyte = 0;
 			bufdesc.u.pBuffer->flags = 0;
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
 			}
 			pcm->pBuffers[pcm->buf_idx]->flags |= AUDIO_APB_MMAP_ENQUEUED;
 		}
@@ -1069,7 +1070,7 @@ int pcm_start(struct pcm *pcm)
 		/* If device is opened for playback, we need atleast one buffer to be enqueued before
 		starting the codec. Else we return error here */
 		if (pcm->buf_idx == 0) {
-			return oops(pcm, -EINVAL, "ERROR Trying to start PCM for playback without enqueuing buffers");
+			return oops(pcm, -EINVAL, "ERROR Trying to start PCM for playback without enqueuing buffers\n");
 		}
 	}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -1078,7 +1079,7 @@ int pcm_start(struct pcm *pcm)
 	if (ioctl(pcm->fd, AUDIOIOC_START, 0) < 0)
 #endif
 	{
-		return oops(pcm, errno, "cannot start channel");
+		return oops(pcm, errno, "cannot start channel\n");
 	}
 
 	pcm->running = 1;
@@ -1099,14 +1100,14 @@ int pcm_stop(struct pcm *pcm)
 	}
 
 	if (!pcm->running) {
-		return oops(pcm, EINVAL, "PCM already in stop state");
+		return oops(pcm, EINVAL, "PCM already in stop state\n");
 	}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	if (ioctl(pcm->fd, AUDIOIOC_STOP, (unsigned long)pcm->session) < 0)
 #else
 	if (ioctl(pcm->fd, AUDIOIOC_STOP, 0) < 0)
 #endif
-		return oops(pcm, errno, "cannot stop channel");
+		return oops(pcm, errno, "cannot stop channel\n");
 
 	/* Remove any pending messages from the message queue */
 	struct audio_msg_s msg;
@@ -1152,7 +1153,7 @@ int pcm_drain(struct pcm *pcm)
 	}
 
 	if (!pcm->running) {
-		return oops(pcm, EINVAL, "PCM is already stopped.");
+		return oops(pcm, EINVAL, "PCM is already stopped.\n");
 	}
 
 	if (pcm->flags & PCM_OUT) {
@@ -1167,13 +1168,13 @@ int pcm_drain(struct pcm *pcm)
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 			if (size != sizeof(msg)) {
 				/* Interrupted by a signal? What to do? */
-				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_idx--;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
-				/* Underrun to be handled by client */
-				return -EPIPE;
+				/* Ignore Underrun since we are trying to flush and close */
+				continue;
 			}
 		}
 
@@ -1186,7 +1187,7 @@ int pcm_drain(struct pcm *pcm)
 #else
 		if (ioctl(pcm->fd, AUDIOIOC_STOP, 0) < 0) {
 #endif
-			return oops(pcm, errno, "cannot stop channel");
+			return oops(pcm, errno, "cannot stop channel\n");
 		}
 
 		pcm->prepared = 0;
@@ -1302,7 +1303,7 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 	bufdesc.u.pBuffer = apb;
 	apb->flags = 0;
 	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
 	}
 	apb->flags |= AUDIO_APB_MMAP_ENQUEUED;
 
@@ -1417,7 +1418,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	/* If PCM is opened for recording, then start it */
 	if ((pcm->flags & PCM_IN) && !pcm->running && !pcm->draining) {
 		if (pcm_start(pcm) < 0) {
-			return oops(pcm, -1, "Failed to start PCM");
+			return oops(pcm, -1, "Failed to start PCM\n");
 		}
 	}
 
@@ -1442,10 +1443,10 @@ int pcm_wait(struct pcm *pcm, int timeout)
 
 	if (size != sizeof(msg)) {
 		if (errno == ETIMEDOUT) {
-			oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel");
+			oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel\n");
 			return 0;
 		} else {
-			return oops(pcm, errno, "Interrupted while waiting for deque message from kernel");
+			return oops(pcm, errno, "Interrupted while waiting for deque message from kernel\n");
 		}
 	}
 	if (msg.msgId == AUDIO_MSG_DEQUEUE) {
@@ -1461,7 +1462,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		return -EPIPE;
 	}
 
-	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
 }
 
 int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
@@ -1479,7 +1480,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 		/* get the available space for writing new frames */
 		avail = pcm_avail_update(pcm);
 		if (avail < 0) {
-			return oops(pcm, ENOMEM, "cannot determine available mmap frames");
+			return oops(pcm, ENOMEM, "cannot determine available mmap frames\n");
 		}
 
 		/* sleep until we have space to write new frames */

@@ -112,9 +112,10 @@ int fclose(FAR FILE *stream)
 
 			/* If close() returns an error but flush() did not then make sure
 			 * that we return the close() error condition.
+			 * Also If flush returns error but storage is full, we return close status.
 			 */
 
-			if (ret == OK) {
+			if (ret == OK || ret == -ENOSPC) {
 				ret = status;
 				err = errno;
 			}

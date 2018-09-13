@@ -17,7 +17,9 @@
  ****************************************************************************/
 
 /// @file tc_wqueue.c
+
 /// @brief Test Case Example for Work Queue API
+
 /**************************************************************************
 * Included Files
 **************************************************************************/
@@ -37,29 +39,29 @@
 * Private Variables
 **************************************************************************/
 
-static systime_t start_time;
+static clock_t start_time;
 
 /**************************************************************************
 * Private Functions
 **************************************************************************/
 static void wq_test1(void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 	printf("workqueue_test 1 : test 1 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 
 static void wq_test2(void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 	printf("workqueue_test 2 : test 2 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 
 static void wq_test3(void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 	printf("workqueue_test 3 : test 3 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 /**************************************************************************
@@ -77,7 +79,7 @@ static void tc_wqueue_work_queue_cancel(void)
 	test_work2 = (struct work_s *)malloc(sizeof(struct work_s));
 	test_work3 = (struct work_s *)malloc(sizeof(struct work_s));
 
-	start_time = clock_systimer();
+	start_time = clock();
 
 	printf("workqueue_test: test1 is queued and will excute it after 50 ticks\n");
 	result = work_queue(HPWORK, test_work1, wq_test1, (void *)50, 50);

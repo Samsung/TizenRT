@@ -29,7 +29,17 @@ THREADEXEC = TASH_EXECMD_SYNC
 # SmartThings Things example
 
 ASRCS =
-CSRCS = sample_light_user.c sample_light_things.c
+CSRCS =
+ifeq ($(CONFIG_EXAMPLES_ST_THINGS_LIGHT),y)
+CSRCS += light/sample_light_things.c light/sample_light_user.c
+endif
+ifeq ($(CONFIG_EXAMPLES_ST_THINGS_BLINK),y)
+CSRCS += blink/sample_blink_things.c blink/sample_blink_user.c blink/iotbus_util.c
+endif
+ifeq ($(CONFIG_EXAMPLES_ST_THINGS_MSG_HANDLING),y)
+CSRCS += msghandling/sample_msghandling_things.c msghandling/sample_msghandling_user.c
+endif
+
 MAINSRC = st_things_sample_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -62,7 +72,7 @@ endif
 CONFIG_EXAMPLES_ST_THINGS_PROGNAME ?= st_things$(EXEEXT)
 PROGNAME = $(CONFIG_EXAMPLES_ST_THINGS_PROGNAME)
 
-ROOTDEPPATH = --dep-path . 
+ROOTDEPPATH = --dep-path .
 
 # Common build
 

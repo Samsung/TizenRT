@@ -18,6 +18,7 @@ if !DISABLE_HTTP
 config USE_NGHTTP2
 	bool "Use NGHTTP2"
 	default n
+	depends on ENABLE_NGHTTP2
 
 config USE_ZLIB
 	bool "Use Zlib Compression"
@@ -115,52 +116,14 @@ endif #DISABLE_CRYPTO_AUTH
 config SSL_SUPPORT
 	bool "SSL Support"
 	default n
+	depends on NET_SECURITY_TLS
+	depends on FS_ROMFS
 
 if SSL_SUPPORT
-config AXTLS
-	bool "AX TLS"
-	default n
-
-config CYASSL
-	bool "Cya SSL"
-	default n
-
-config DARWINSSL
-	bool "Darwin SSL"
-	default n
-
-config GNUTLS
-	bool "GNU TLS"
-	default n
-if GNUTLS
-config GNUTLS_NETTLE
-	bool "GNU TLS NETTLE"
-	default n
-endif #GNUTLS
-
-config GSKIT
-	bool "GSKIT"
-	default n
-
 config MBEDTLS
 	bool "Mbed TLS"
 	default y
 
-config NSS
-	bool "NSS"
-	default n
-
-config OPENSSL
-	bool "Open SSL"
-	default n
-
-config POLARSSL
-	bool "Polar SSL"
-	default n
-
-config SCHANNEL
-	bool "SChannel"
-	default n
 endif #SSL_SUPPORT
 
 config CURL_DEBUG

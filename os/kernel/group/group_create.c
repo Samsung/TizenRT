@@ -254,7 +254,9 @@ int group_allocate(FAR struct task_tcb_s *tcb, uint8_t ttype)
 #ifndef CONFIG_DISABLE_PTHREAD
 	(void)sem_init(&group->tg_joinsem, 0, 1);
 #endif
-
+#if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_SCHED_HAVE_PARENT)
+	(void)sem_init(&group->tg_exitsem, 0, 0);
+#endif
 	return OK;
 }
 
@@ -328,6 +330,17 @@ int group_initialize(FAR struct task_tcb_s *tcb)
 
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
 	group->tg_task = tcb->cmn.pid;
+#endif
+#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
+	/* atexit support *********************************************************** */
+
+	sq_init(&(group->tg_atexitfunc));
+#endif
+
+#ifdef CONFIG_SCHED_ONEXIT
+	/* on_exit support ********************************************************** */
+
+	sq_init(&(group->tg_onexitfunc));
 #endif
 
 	/* Mark that there is one member in the group, the main task */

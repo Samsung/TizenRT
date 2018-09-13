@@ -28,6 +28,8 @@
 #include "octypes.h"
 #include <json/cJSON.h>
 #endif
+#include <errno.h>
+
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
@@ -43,7 +45,6 @@
 #include "utils/things_malloc.h"
 #include "utils/things_string.h"
 #include "utils/things_network.h"
-#include "utils/things_thread.h"
 #include "utils/things_rtos_util.h"
 #include "utils/things_network.h"
 
@@ -55,29 +56,21 @@
 #ifdef CONFIG_ST_THINGS_FOTA
 #include "fota/fmwup_api.h"
 #include "deviceDef.h"
-#define DEVICE_DEF_FILE_ROOT "/mnt/"
+#define DEVICE_DEF_FILE_ROOT PATH_MNT
 #else
-#define DEVICE_DEF_FILE_ROOT "/rom/"
+#define DEVICE_DEF_FILE_ROOT PATH_ROM
 #endif
 
 #define TAG "[things_stack]"
 
 typedef void *(*pthread_func_type)(void *);
-
-volatile static int g_quit_flag = 0;
-volatile static int is_things_module_inited = 0;
-
-typedef struct s_abort_s {
-	pthread_t *h_thread;
-	things_es_enrollee_abort_e level;
-} s_abort_s;
+volatile static int is_things_module_initialized = 0;
 
 typedef struct reset_args_s {
 	things_resource_s *remote_owner;
 	things_es_enrollee_reset_e resetType;
 } reset_args_s;
 
-things_abort_easysetup_func_type g_abort_easysetup = NULL;
 
 things_server_builder_s *g_server_builder = NULL;
 things_request_handler_s *g_req_handler = NULL;
@@ -94,23 +87,16 @@ static pthread_mutex_t m_thread_oic_reset = PTHREAD_MUTEX_INITIALIZER;
 static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
+
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
+typedef struct s_abort_s {
+	pthread_t *h_thread;
+	things_es_enrollee_abort_e level;
+} s_abort_s;
+
+things_abort_easysetup_func_type g_abort_easysetup = NULL;
 static void *t_things_abort_loop(s_abort_s *contents);
-
-// This logic will be refactored later to reflact whole easy-setup states..
-int things_get_easysetup_state(void)
-{
-	bool isOwned = false;
-	// 1. check the owned state
-	if (OC_STACK_OK != OCGetDeviceOwnedState(&isOwned)) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to get device owned state, Informing as UNOWNED~!!!!");
-		isOwned = false;
-	}
-	// 2. check the resource publish state if necessary..
-
-	// 3. anything else to check???
-
-	return (isOwned == true);
-}
+#endif
 
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
@@ -128,25 +114,25 @@ static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int 
 {
 	switch (event) {
 	case OIC_OTM_READY:
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OIC_OTM_READY");
+		THINGS_LOG_D(TAG, "OIC_OTM_READY");
 		break;
 	case OIC_OTM_STARTED:
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OIC_OTM_STARTED");
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "[%s:%d][%s]", addr, port, uuid);
+		THINGS_LOG_D(TAG, "OIC_OTM_STARTED");
+		THINGS_LOG_D(TAG, "[%s:%d][%s]", addr, port, uuid);
 		break;
 	case OIC_OTM_DONE:
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OIC_OTM_DONE");
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "[%s:%d][%s]", addr, port, uuid);
+		THINGS_LOG_D(TAG, "OIC_OTM_DONE");
+		THINGS_LOG_D(TAG, "[%s:%d][%s]", addr, port, uuid);
 		break;
 	case OIC_OTM_ERROR:
-		THINGS_LOG_D(THINGS_ERROR, TAG, "OIC_OTM_ERROR");
+		THINGS_LOG_E(TAG, "OIC_OTM_ERROR");
 		break;
 	default:
-		THINGS_LOG_D(THINGS_ERROR, TAG, "Unknown");
+		THINGS_LOG_E(TAG, "Unknown");
 		break;
 	}
 	if (g_otm_event_handler) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Call the registered funcation...");
+		THINGS_LOG_D(TAG, "Call the registered funcation...");
 		g_otm_event_handler(addr, port, uuid, event);
 	}
 }
@@ -184,19 +170,19 @@ static char *things_make_abs_device_def_path(const char *json_path)
 
 int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Make a file path to match device type.");
+	THINGS_LOG_D(TAG, "Make a file path to match device type.");
 	char *abs_json_path = NULL;
 	if (json_path == NULL) {
-		THINGS_LOG_D_DEBUG(THINGS_DEBUG, TAG, "json_path could not be null.");
+		THINGS_LOG_V(TAG, "json_path could not be null.");
 		return 0;
 	} else {
 		abs_json_path = things_make_abs_device_def_path(json_path);
-		THINGS_LOG_D_DEBUG(THINGS_DEBUG, TAG, "Origin path(%s), converted path(%s).", json_path, abs_json_path);
+		THINGS_LOG_V(TAG, "Origin path(%s), converted path(%s).", json_path, abs_json_path);
 	}
 #if CONFIG_ST_THINGS_FOTA
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Create a file regarding the device's resource");
+	THINGS_LOG_D(TAG, "Create a file regarding the device's resource");
 	int ret = 0;
 	int size_d = sizeof(deviceDef);
 	FILE *fp;
@@ -205,57 +191,65 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	cJSON *h_root;
 	fp = fopen(abs_json_path, "r");
 	if (fp) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "File is exist...");
+		THINGS_LOG_V(TAG, "File is exist...");
 		fclose(fp);
 		json_str = get_json_string_from_file(abs_json_path);
 		h_root = cJSON_Parse(deviceDef);
 		if (json_str != NULL && strlen(json_str) > 0) {
 			root = cJSON_Parse((const char *)json_str);
 			if (root == NULL) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Failed to parse a device resource file");
+				THINGS_LOG_D(TAG, "Failed to parse a device resource file");
 			}
 		}
 		if (!cJSON_Compare(h_root, root, 1)) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Modify the device resource file");
+			THINGS_LOG_D(TAG, "Modify the device resource file");
 			fp = fopen(abs_json_path, "w+");
 			if (!fp) {
-				THINGS_LOG_D(THINGS_ERROR, TAG, "fopen() failed");
+				THINGS_LOG_E(TAG, "fopen() failed");
+				things_free(abs_json_path);
 				return -1;
 			}
 			ret = fwrite(deviceDef, size_d, 1, fp);
 			if (ret < 0) {
-				THINGS_LOG_D(THINGS_ERROR, TAG, "fwrite() failed");
+				fclose(fp);
+				THINGS_LOG_E(TAG, "fwrite() failed");
+				things_free(abs_json_path);
 				return -1;
 			}
 			fclose(fp);
-			THINGS_LOG_D(THINGS_INFO, TAG, "Success to modify the device resource file");
+			THINGS_LOG_V(TAG, "Success to modify the device resource file");
 		} else {
-			THINGS_LOG_D(THINGS_INFO, TAG, "A resource file alreasy exists");
+			THINGS_LOG_V(TAG, "A resource file alreasy exists");
 		}
 	} else {
 		fclose(fp);
-		THINGS_LOG_D(THINGS_INFO, TAG, "File did not exist...Create file");
+		THINGS_LOG_V(TAG, "File did not exist...Create file");
 		fp = fopen(abs_json_path, "w+");
 		if (!fp) {
-			THINGS_LOG_D(THINGS_ERROR, TAG, "fopen() failed");
+			THINGS_LOG_E(TAG, "fopen() failed");
+			things_free(abs_json_path);
 			return -1;
 		}
 		ret = fwrite(deviceDef, size_d, 1, fp);
 		if (ret < 0) {
-			THINGS_LOG_D(THINGS_ERROR, TAG, "fwrite() failed");
+			fclose(fp);
+			THINGS_LOG_E(TAG, "fwrite() failed");
+			things_free(abs_json_path);
 			return -1;
 		}
 		fclose(fp);
-		THINGS_LOG_D(THINGS_INFO, TAG, "Success to create the device resource file");
+		THINGS_LOG_V(TAG, "Success to create the device resource file");
 	}
 #endif
-	if (is_things_module_inited) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Stack already initialized");
+	if (is_things_module_initialized) {
+		THINGS_LOG_E(TAG, "Stack already initialized");
+		things_free(abs_json_path);
 		return 0;
 	}
 
 	if (things_network_initialize() != 0) {
-		THINGS_LOG(THINGS_ERROR, TAG, "ERROR things_network initialize");
+		THINGS_LOG_E(TAG, "ERROR things_network initialize");
+		things_free(abs_json_path);
 		return 0;
 	}
 
@@ -263,16 +257,24 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	things_log_set_version(ST_THINGS_STACK_VERSION);
 
 	if (!dm_init_module(abs_json_path)) {
-		THINGS_LOG(THINGS_ERROR, TAG, "dm_init_module() failed");
+		THINGS_LOG_E(TAG, "dm_init_module() failed");
+		things_free(abs_json_path);
 		return 0;
 	}
-	is_things_module_inited = 1;
+	is_things_module_initialized = 1;
 
-	*easysetup_completed = dm_is_there_things_cloud();
-	
+	int es_state = esm_read_easysetup_state();
+	*easysetup_completed = ((es_state == ES_COMPLETE) ? true : false);
+
+	if (es_state != ES_COMPLETE) {
+		esm_save_easysetup_state(ES_NOT_COMPLETE);
+		THINGS_LOG_D(TAG, "delete svrdb");
+		unlink(dm_get_svrdb_file_path());
+	}
+
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
-		THINGS_LOG(THINGS_ERROR, TAG, "fmwup_initizlize() failed");
+		THINGS_LOG_E(TAG, "fmwup_initizlize() failed");
 	}
 #endif
 	things_free(abs_json_path);
@@ -282,35 +284,25 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 
 int things_deinitialize_stack(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	dm_termiate_module();
 
-	is_things_module_inited = 0;
+	is_things_module_initialized = 0;
 
 	return 1;
 }
 
 int things_start_stack(void)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
+	THINGS_LOG_V(TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
-	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
-		if (dm_is_there_things_cloud() == false) {
-			if (!things_network_turn_on_soft_ap()) {
-				return 0;
-			}
-		} else if (!things_network_connect_home_ap()) {
-			return 0;
-		}
-	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
-		//TO DO
-	} else {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "es_conn_type_Unknown");
+	if (!is_things_module_initialized) {
+		THINGS_LOG_E(TAG, "Initialize failed. You must initialize it first.");
 		return 0;
 	}
 
-	// 2. Enable Security Features
+	// Enable Security Features
 #ifdef __SECURED__
 	int auty_type = AUTH_UNKNOW;
 	switch (dm_get_ownership_transfer_method()) {
@@ -326,70 +318,81 @@ int things_start_stack(void)
 	}
 
 	if (0 != sm_init_things_security(auty_type, dm_get_svrdb_file_path())) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize OICSecurity features");
+		THINGS_LOG_E(TAG, "Failed to initialize OICSecurity features");
 		return 0;
 	}
 	sm_set_otm_event_handler(otm_event_cb);
 #endif
 	g_req_handler = get_handler_instance();
 	if (NULL == g_req_handler) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Request Handler");
+		THINGS_LOG_E(TAG, "Failed to initialize Request Handler");
 		return 0;
 	}
 	// Will be refactored to received callbacks for GET/PUT/POST/DELETE/OBSERVE ..
 	g_req_handler->init_module();
 
-	// 4. Initiate Server Builder
+	// Initiate Server Builder
 	g_server_builder = get_builder_instance();
 	if (NULL == g_server_builder) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Resource Server");
+		THINGS_LOG_E(TAG, "Failed to initialize Resource Server");
 		return 0;
 	}
 
 	g_server_builder->init_module(g_server_builder, g_req_handler->entity_handler);
 
 #ifdef __SECURED__
-	//5. Generate device UUID
+	// Generate device UUID
 	if (0 != sm_generate_device_id()) {
-		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate device_id");
+		THINGS_LOG_E(TAG, "Failed to generate device_id");
 		return 0;
 	}
 #endif
 
-	// 6. Register Device-ID & Resources
+	// Register Device-ID & Resources
 	if (dm_register_device_id() == false) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to register Device ID");
+		THINGS_LOG_E(TAG, "Failed to register Device ID");
 		return 0;
 	}
 
 	if (!dm_register_resource(g_server_builder)) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to register Resource");
+		THINGS_LOG_E(TAG, "Failed to register Resource");
 		return 0;
 	}
-	// 7. Initiate Easy-Setup & Login to Cloud
+	// Initiate Easy-Setup & Login to Cloud
 	if (ESM_OK != esm_init_easysetup(0, g_server_builder)) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Easy-Setup Module");
+		THINGS_LOG_E(TAG, "Failed to initialize Easy-Setup Module");
 		return 0;
 	}
 	// Register Callback
 	esm_register_cloud_cb(cloud_data_cb_esm);
 
 	if (es_cloud_init(g_server_builder) == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Cloud");
+		THINGS_LOG_E(TAG, "Failed to initialize Cloud");
 		return 0;
 	}
 
-	is_things_module_inited = 1;
+	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
+		if (dm_is_es_complete() == false) {
+			if (!things_network_turn_on_soft_ap()) {
+				return 0;
+			}
+		} else if (!things_network_connect_home_ap()) {
+			return 0;
+		}
+	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
+		//TO DO
+	} else {
+		THINGS_LOG_E(TAG, "es_conn_type_Unknown");
+		return 0;
+	}
 
-	g_quit_flag = 0;
-
-	THINGS_LOG_D(THINGS_INFO, TAG, "Stack Initialization Success");
+	THINGS_LOG_V(TAG, "Stack Start Success");
 	return 1;
 }
 
 int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (resetType == RST_AUTO_RESET) {
 		things_network_turn_on_soft_ap();
@@ -402,12 +405,12 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 	}
 
 	if (resetType >= RST_ENUM_EOF) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "Not support things_es_enrollee_reset_e value(%d). So, Set value with RST_NEED_CONFIRM", resetType);
+		THINGS_LOG_V(TAG, "Not support things_es_enrollee_reset_e value(%d). So, Set value with RST_NEED_CONFIRM", resetType);
 		resetType = RST_NEED_CONFIRM;
 	}
 
 	if (g_confirm_reset_start == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Reset-Start confirmation Function is not registered. It's mandatory");
+		THINGS_LOG_E(TAG, "Reset-Start confirmation Function is not registered. It's mandatory");
 		return res;
 	}
 
@@ -416,7 +419,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		b_thread_things_reset = true;
 		reset_args_s *args = (reset_args_s *) things_malloc(sizeof(reset_args_s));
 		if (args == NULL) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to allocate reset_args_s memory");
+			THINGS_LOG_E(TAG, "Failed to allocate reset_args_s memory");
 			b_thread_things_reset = false;
 			res = -1;
 			goto GOTO_OUT;
@@ -427,7 +430,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		b_reset_continue_flag = true;
 
 		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to create thread");
+			THINGS_LOG_E(TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
 			things_free(args);
 			b_thread_things_reset = false;
@@ -435,30 +438,27 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 			goto GOTO_OUT;
 		}
 		pthread_detach(h_thread_things_reset);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Reset Thread handler = 0x%X", h_thread_things_reset);
+		THINGS_LOG_D(TAG, "Reset Thread handler = 0x%X", h_thread_things_reset);
 		res = 1;
 	} else {
-		THINGS_LOG(THINGS_INFO, TAG, "Already run Reset-Process.");
+		THINGS_LOG_V(TAG, "Already run Reset-Process.");
 		res = 0;
 	}
 
 GOTO_OUT:
 	pthread_mutex_unlock(&m_thread_oic_reset);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return res;
 }
 
 int things_stop_stack(void)
 {
-	pthread_mutex_lock(&g_things_stop_mutex);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	g_quit_flag = 1;
-	is_things_module_inited = 0;
-
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	pthread_mutex_lock(&g_things_stop_mutex);	
 	pthread_mutex_lock(&m_thread_oic_reset);
+
 	if (b_thread_things_reset == true) {
 		b_reset_continue_flag = false;
 
@@ -470,14 +470,14 @@ int things_stop_stack(void)
 
 	pthread_mutex_unlock(&m_thread_oic_reset);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate Cloud Session Managing");
+	THINGS_LOG_D(TAG, "Terminate Cloud Session Managing");
 	es_cloud_terminate();
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
+	THINGS_LOG_D(TAG, "Terminate EasySetup");
 	esm_terminate_easysetup();
 
 #ifdef __SECURED__
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate OIC Security Manager");
+	THINGS_LOG_D(TAG, "Terminate OIC Security Manager");
 #endif
 
 	if (g_server_builder != NULL) {
@@ -494,7 +494,7 @@ int things_stop_stack(void)
 	dm_termiate_module();
 
 	// [Jay] Need to add memory release for the Queue..
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	pthread_mutex_unlock(&g_things_stop_mutex);
 	return 1;
@@ -513,7 +513,7 @@ int things_register_confirm_reset_start_func(things_reset_confirm_func_type func
 int things_notify_observers(const char *uri)
 {
 	if (g_req_handler == NULL) {
-		THINGS_LOG(THINGS_ERROR, TAG, "g_req_handler is NULL");
+		THINGS_LOG_E(TAG, "g_req_handler is NULL");
 		return 0;
 	}
 	return g_req_handler->notify_things_observers(uri);
@@ -525,7 +525,7 @@ int things_register_pin_generated_func(things_pin_generated_func_type func)
 #ifdef __SECURED__
 		return esm_register_pin_generated_cb(func);
 #else
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
+		THINGS_LOG_E(TAG, "Stack is in UNSECURED Mode");
 		return 0;
 #endif
 	} else {
@@ -539,7 +539,7 @@ int things_register_pin_display_close_func(things_pin_display_close_func_type fu
 #ifdef __SECURED__
 		return esm_register_pin_close_cb(func);
 #else
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
+		THINGS_LOG_E(TAG, "Stack is in UNSECURED Mode");
 		return 0;
 #endif
 	} else {
@@ -553,7 +553,7 @@ int things_register_user_confirm_func(things_get_user_confirm_func_type func)
 #ifdef __SECURED__
 		return esm_register_user_confirm_cb(func);
 #else
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
+		THINGS_LOG_E(TAG, "Stack is in UNSECURED Mode");
 		return 0;
 #endif
 	} else {
@@ -563,9 +563,9 @@ int things_register_user_confirm_func(things_get_user_confirm_func_type func)
 
 int things_register_handle_request_func(things_handle_request_func_type get_func, things_handle_request_func_type set_func)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if ((NULL == get_func) || (NULL == set_func)) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Callback is NULL");
+		THINGS_LOG_E(TAG, "Callback is NULL");
 		return 0;
 	}
 	register_handle_request_func(get_func, set_func);
@@ -577,15 +577,15 @@ int things_register_handle_request_func(things_handle_request_func_type get_func
 //////////////////////////////////////////////////////////////////////////
 int things_register_otm_event_handler(things_sec_otm_state_func_type otmEventCallback)
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 #ifdef __SECURED__
 	if (otmEventCallback == NULL) {
-		THINGS_LOG(THINGS_ERROR, TAG, "otmEventCallback is NULL");
+		THINGS_LOG_E(TAG, "otmEventCallback is NULL");
 		return 0;
 	}
 	g_otm_event_handler = otmEventCallback;
 #else
-	THINGS_LOG(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
+	THINGS_LOG_E(TAG, "Stack is in UNSECURED Mode");
 	return 0;
 #endif
 	return 1;
@@ -610,7 +610,7 @@ bool things_get_reset_mask(rst_state_e value)
 
 int things_return_user_opinion_for_reset(int b_reset_start)	// b_reset_start : User opinion.
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 	int result = 0;
 
@@ -621,117 +621,117 @@ int things_return_user_opinion_for_reset(int b_reset_start)	// b_reset_start : U
 		b_reset_continue_flag = false;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "User Opinion : %d", result);
+	THINGS_LOG_D(TAG, "User Opinion : %d", result);
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return result;
 }
 
 static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *args)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter. Handler=0x%X", h_thread_things_reset);
+	THINGS_LOG_D(TAG, "Enter. Handler=0x%X", h_thread_things_reset);
 
 	int result = 0;
 	things_reset_result_func_type things_cb_func_for_reset_result = NULL;
 
 	if (args == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "args is NULL. It's mandatory.");
+		THINGS_LOG_E(TAG, "args is NULL. It's mandatory.");
 		goto GOTO_OUT;
 	}
 
 	if (g_confirm_reset_start == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Reset-Start confirmation Function is not registered. It's mandatory.");
+		THINGS_LOG_E(TAG, "Reset-Start confirmation Function is not registered. It's mandatory.");
 		goto GOTO_OUT;
 	}
 
 	things_set_reset_mask(RST_COMPLETE);
-	THINGS_LOG(THINGS_DEBUG, TAG, "Start Reset Processing.");
+	THINGS_LOG_D(TAG, "Start Reset Processing.");
 
 	// 0. Trigger User-Confirm GUI and Wait for getting User-Opinion with regard to Reset.
-	THINGS_LOG(THINGS_DEBUG, TAG, "Trigger Reset-GUI.");
+	THINGS_LOG_D(TAG, "Trigger Reset-GUI.");
 	if (g_confirm_reset_start(&things_cb_func_for_reset_result, args->resetType) == 0) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "User don't want to reset. So reset canceled.");
+		THINGS_LOG_D(TAG, "User don't want to reset. So reset canceled.");
 		goto GOTO_OUT;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Waiting User-Opinion for Reset-Start.");
+	THINGS_LOG_D(TAG, "Waiting User-Opinion for Reset-Start.");
 	while (b_reset_continue_flag == true && things_get_reset_mask(RST_USER_CONFIRM_COMPLETED) == false) {	// It's Blocking until receive user-opinion.
 		usleep(300000);			// 0.3 seconds wait.
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Break-Stop Check.");
+	THINGS_LOG_D(TAG, "Break-Stop Check.");
 	if (b_reset_continue_flag == false) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Called Reset break-STOP.");
+		THINGS_LOG_D(TAG, "Called Reset break-STOP.");
 		goto GOTO_OUT;
 	}
 	// 1. Easy Setup : Provisioning Disable.
 	// 2. Controlling Module : Disable pushing request to Queue.
-	THINGS_LOG(THINGS_DEBUG, TAG, "Disable Modules.(EasySetup/Controlling Module)");
+	THINGS_LOG_D(TAG, "Disable Modules.(EasySetup/Controlling Module)");
 	things_set_reset_mask(RST_EASY_SETUP_DISABLE | RST_CONTROL_MODULE_DISABLE);
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Break-Stop Check.");
+	THINGS_LOG_D(TAG, "Break-Stop Check.");
 	if (b_reset_continue_flag == false) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Called Reset break-STOP.");
+		THINGS_LOG_D(TAG, "Called Reset break-STOP.");
 		goto GOTO_OUT;
 	}
 	// 3. Notification Push Disable.
-	THINGS_LOG(THINGS_DEBUG, TAG, "Disable Notification Module.");
+	THINGS_LOG_D(TAG, "Disable Notification Module.");
 	things_set_reset_mask(RST_NOTI_MODULE_DISABLE);
 
 	OCClearObserverlist();		// delete All Observer. (for remote Client)
 
 	// 4. Cloud Manager : Terminate
-	THINGS_LOG(THINGS_DEBUG, TAG, "Terminate Cloud Module.");
+	THINGS_LOG_D(TAG, "Terminate Cloud Module.");
 	es_cloud_terminate();
 
 	// 5. Easy Setup : Terminate
-	THINGS_LOG(THINGS_DEBUG, TAG, "Terminate Easy-Setup Module.");
+	THINGS_LOG_D(TAG, "Terminate Easy-Setup Module.");
 	if (esm_terminate_easysetup() != ESM_MODULE_TERMINATED) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Easy-Setup Module termination failed");
+		THINGS_LOG_E(TAG, "Easy-Setup Module termination failed");
 		goto GOTO_OUT;
 	}
 	// 6. Delete Cloud data in "provisioning.json"
-	THINGS_LOG(THINGS_DEBUG, TAG, "Delete Cloud-Data in provisioning.json file.");
+	THINGS_LOG_D(TAG, "Delete Cloud-Data in provisioning.json file.");
 	if (dm_del_things_cloud_data() == 0) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "It's failed to delete information about Cloud-Data in \"ocf_infoX.json\" file.");
+		THINGS_LOG_D(TAG, "It's failed to delete information about Cloud-Data in \"ocf_infoX.json\" file.");
 		goto GOTO_OUT;
 	}
-	THINGS_LOG(THINGS_INFO, TAG, "Reset done: cloud provisioning data");
+	THINGS_LOG_V(TAG, "Reset done: cloud provisioning data");
 
 	OCClearCallBackList();		// delete All Client Call-Back List. (for SET Self-Request)
 
 	// 7. Security Reset.
 #ifdef __SECURED__
 	if (0 != sm_reset_svrdb()) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize OICSecurity features.");
+		THINGS_LOG_E(TAG, "Failed to initialize OICSecurity features.");
 		goto GOTO_OUT;
 	}
-	THINGS_LOG(THINGS_INFO, TAG, "Reset done: security resources");
+	THINGS_LOG_V(TAG, "Reset done: security resources");
 
 	if (0 != sm_generate_device_id()) {
-		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate device_id.");
+		THINGS_LOG_E(TAG, "Failed to generate device_id.");
 		goto GOTO_OUT;
 	}
 #else
-	THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "NOT SECURED MODE!!!!! ");
+	THINGS_LOG_E(TAG, "NOT SECURED MODE!!!!! ");
 #endif
 
 	// 8. Easy Setup : Initialization.
-	THINGS_LOG(THINGS_DEBUG, TAG, "Initial Easy-Setup Module.");
+	THINGS_LOG_D(TAG, "Initial Easy-Setup Module.");
 	if (ESM_OK != esm_init_easysetup(0, g_server_builder)) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Easy-Setup Module initialization failed");
+		THINGS_LOG_E(TAG, "Easy-Setup Module initialization failed");
 		goto GOTO_OUT;
 	}
 	esm_register_cloud_cb(cloud_data_cb_esm);
 
 	// 9. Cloud Manager : Initialization.
-	THINGS_LOG(THINGS_DEBUG, TAG, "Initial Cloud Module.");
+	THINGS_LOG_D(TAG, "Initial Cloud Module.");
 	if (es_cloud_init(g_server_builder) == NULL) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "It's failed Cloud_Module initialization.");
+		THINGS_LOG_D(TAG, "It's failed Cloud_Module initialization.");
 		goto GOTO_OUT;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Reset Success.");
+	THINGS_LOG_D(TAG, "Reset Success.");
 	result = 1;
 
 GOTO_OUT:
@@ -741,12 +741,12 @@ GOTO_OUT:
 	/*SVACE warning fix */
 	if (args) {
 		// 11. If reset-processing is triggered by remote-owner, then Notify result of Reset.
-		THINGS_LOG(THINGS_DEBUG, TAG, "Notify result of reset to remote-client.(mobile)");
+		THINGS_LOG_D(TAG, "Notify result of reset to remote-client.(mobile)");
 		notify_result_of_reset(args->remote_owner, result);
 	}
 	// 12. If there is Reset Result Call-Back Function, then Notify result of Reset to st_things-Application.
 	if (things_cb_func_for_reset_result) {	// Notify result of reset to st_things.
-		THINGS_LOG(THINGS_DEBUG, TAG, "Notify result of reset to st_things.");
+		THINGS_LOG_D(TAG, "Notify result of reset to st_things.");
 		things_cb_func_for_reset_result(result);
 	}
 
@@ -758,23 +758,24 @@ GOTO_OUT:
 	h_thread_things_reset = 0;
 	b_thread_things_reset = false;
 	pthread_mutex_unlock(&m_thread_oic_reset);
-	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
 }
 
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
 OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level)
 {
 	s_abort_s *ARGs = NULL;
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	if (h_thread_abort == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "h_thread_abort is NULL.");
+		THINGS_LOG_E(TAG, "h_thread_abort is NULL.");
 		return eh_result;
 	}
 
 	if ((*h_thread_abort) == 0) {
 		if ((ARGs = (s_abort_s *) things_malloc(sizeof(s_abort_s))) == NULL) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Memory Allocation is failed.(for abort Thread)");
+			THINGS_LOG_E(TAG, "Memory Allocation is failed.(for abort Thread)");
 			return OC_EH_ERROR;
 		}
 
@@ -784,14 +785,14 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		eh_result = OC_EH_OK;
 
 		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_ABORT_THREAD) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
+			THINGS_LOG_E(TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
 			things_free(ARGs);
 			pthread_detach(h_thread_abort);
 			eh_result = OC_EH_ERROR;
 		}
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Already called Thread. So, OC_EH_NOT_ACCEPTABLE");
+		THINGS_LOG_D(TAG, "Already called Thread. So, OC_EH_NOT_ACCEPTABLE");
 		eh_result = OC_EH_NOT_ACCEPTABLE;
 	}
 
@@ -800,15 +801,15 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 
 static void *__attribute__((optimize("O0"))) t_things_abort_loop(s_abort_s *contents)
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 	if (contents == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "contents is NULL.");
+		THINGS_LOG_E(TAG, "contents is NULL.");
 		goto GOTO_OUT;
 	}
 
 	if (g_abort_easysetup != NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Registered Abort Function. So, Call Function st_things API.");
+		THINGS_LOG_E(TAG, "Registered Abort Function. So, Call Function st_things API.");
 		g_abort_easysetup(contents->level);
 	}
 
@@ -819,11 +820,12 @@ GOTO_OUT:
 		contents = NULL;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
 }
+#endif
 
-int things_is_things_module_inited(void)
+int things_is_things_module_initialized(void)
 {
-	return is_things_module_inited;
+	return is_things_module_initialized;
 }

@@ -54,9 +54,8 @@
  * Included Files
  ****************************************************************************/
 
-#include  <tinyara/config.h>
-
-#include  <sched.h>
+#include <tinyara/config.h>
+#include <sched.h>
 
 #include  "sched/sched.h"
 
@@ -89,6 +88,22 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void prepare_exit(struct tcb_s *tcb)
+{
+	struct tcb_s *exit_tcb = tcb;
+
+	/* Since context switching should not occur during task_exit,
+	 * in order to release the heap used by dtcb, it is necessary
+	 * to check whether heap->mm_semaphore is acquired before executing exit.
+	 * Otherwise, the critical section of mm operations might not be protected
+	 * because the exiting task's pid is inevitably changed to one of the head
+	 * of readytorun list. Unfortunatetly, if the holder of heap semaphore is the
+	 * head of readytorun, then the thread of task_exit function re-enters and
+	 * breaks the critical section.
+	 */
+	exit_tcb->lockcount++;
+	mm_is_sem_available();
+}
 
 /****************************************************************************
  * Public Functions
@@ -129,6 +144,9 @@ int task_exit(void)
 	int ret;
 
 	trace_begin(TTRACE_TAG_TASK, "task_exit");
+
+	/* Check that exit is ready or not before execution */
+	prepare_exit(dtcb);
 
 	/* Remove the TCB of the current task from the ready-to-run list.  A context
 	 * switch will definitely be necessary -- that must be done by the

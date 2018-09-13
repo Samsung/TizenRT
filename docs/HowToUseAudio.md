@@ -1,7 +1,7 @@
 
-# Tizen RT's Audio Framework
+# TizenRT's Audio Framework
 
-Tizen RT's audio framework has 4 components namely;
+TizenRT's audio framework has 4 components namely;
 
 **Audio Subsystem**  
 **Audio Codec Drivers**    
@@ -16,16 +16,18 @@ the lower half through POSIX like system APIs.
 
 
 ## Audio Codec Drivers
-[os/drivers/audio](../os/drivers/audio) is the place holder for different audio codec's BSP/drivers. At present only REALTEK's ALC5658 is supported. Tizen RT also supports NULL & char device drivers for audio devices.  
+[os/drivers/audio](../os/drivers/audio) is the place holder for different audio codec's BSP/drivers. At present only REALTEK's ALC5658 is supported. TizenRT also supports NULL & char device drivers for audio devices.  
 
 
 ##  Tinyalsa  
 [framework/src/tinyalsa](../framework/src/tinyalsa) has the Tiny library to provide audio API similar to ALSA in Linux. Refer [HowToUseTinyAlsa](HowToUseTinyalsa.md) to find out how to develop audio applications using TinyAlsa
 
+
 ## Device Drivers  
 Most commonly, audio devices use I2S port for audio data path and 
 I2C, SPI etc for audio control path.  
 Depending on the board schematics, a control path (i2c, spi, etc) and a data path (i2s, etc) is to be configured. Please refer [HowToUsePeripheral](HowToUsePeripheral.md)
+
 
 ## Audio Codec Setup
 
@@ -53,9 +55,14 @@ After setting up audio codec, the codec's lowerhalf is wrapped around in an audi
 Psuedocode
 
 ```
-	/*Embed codec device witin audio device */
+	/*Embed codec device within audio device */
 	ret = audio_register(devname, codec_lowerhalf);
 ```
 
 Example: [os/arch/arm/src/artik05x/src/artik055_alc5658.c](../os/arch/arm/src/artik05x/src/artik055_alc5658.c)
 
+
+Driver registering policy (*devname* Naming)
+
+>Input: 	/dev/pcmC[card id]D[device id]c  
+>Output:	/dev/pcmC[card id]D[device id]p

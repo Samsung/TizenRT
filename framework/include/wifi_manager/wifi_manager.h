@@ -31,6 +31,16 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Length defines */
+#define WIFIMGR_MACADDR_LEN        6
+#define WIFIMGR_MACADDR_STR_LEN    17
+#define WIFIMGR_SSID_LEN           32
+#define WIFIMGR_PASSPHRASE_LEN     64
+
 /**
  * @brief Status of Wi-Fi interface such as connected or disconnected
  */
@@ -60,6 +70,14 @@ typedef enum {
 	WIFI_MANAGER_BUSY,
 	WIFI_MANAGER_ALREADY_CONNECTED,
 } wifi_manager_result_e;
+
+/**
+ * @brief Wi-Fi disconnect event reason
+ */
+typedef enum {
+	WIFI_MANAGER_DISCONNECT,
+	WIFI_MANAGER_RECONNECT, //AUTOCONNECT
+} wifi_manager_disconnect_e;
 
 /**
  * @brief Mode of Wi-Fi interface such as station mode or ap mode
@@ -92,65 +110,6 @@ typedef enum {
 } wifi_manager_scan_result_e;
 
 /**
- * @brief Keep information of nearby access points as scan results
- */
-struct wifi_manager_scan_info_s {
-	char ssid[33];	// 802.11 spec defined unspecified or uint8
-	char bssid[18];	// char string e.g. xx:xx:xx:xx:xx:xx
-	int8_t rssi;		// received signal strength indication
-	uint8_t channel;	// channel/frequency
-	uint8_t phy_mode;	// 0:legacy 1: 11N HT
-	struct wifi_manager_scan_info_s *next;
-};
-
-typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
-
-/**
- * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
- */
-typedef struct {
-	void (*sta_connected)(wifi_manager_result_e);	// in station mode, connected to ap
-	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
-	void (*softap_sta_joined)(void);	// in softap mode, a station joined
-	void (*softap_sta_left)(void);		// in softap mode, a station left
-	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
-} wifi_manager_cb_s;
-
-/**
- * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
- */
-typedef struct {
-	char ip4_address[18];
-	char ssid[32];
-	char mac_address[6];	   /**<  MAC address of wifi interface             */
-	int rssi;
-	connect_status_e status;
-	wifi_manager_mode_e mode;
-} wifi_manager_info_s;
-
-/**
- * @brief Specify information of soft access point (softAP) such as ssid and channel number
- */
-typedef struct {
-	char ssid[32];
-	uint16_t channel;
-	char passphrase[64];
-} wifi_manager_softap_config_s;
-
-/**
- * @brief Specify the policy of reconnect when the device is disconnected
- */
-typedef struct {
-	wifi_manager_reconn_type_e type;
-	// interval: if type is INTERVAL, it will try to connect AP every interval second
-	//           if type is EXPONENTIAL, it is initial wait time.
-	int interval;
-	// max_interval: it is the maximum wait time if type is EXPONENTIAL
-	//             : it is not used if type is INTERVAL
-	int max_interval; // 
-} wifi_manager_reconnect_config_s;
-
-/**
  * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
@@ -176,16 +135,91 @@ typedef enum {
 } wifi_manager_ap_crypto_type_e;
 
 /**
+ * @brief Keep information of nearby access points as scan results
+ */
+struct wifi_manager_scan_info_s {
+	char ssid[WIFIMGR_SSID_LEN + 1];			// 802.11 spec defined unspecified or uint8
+	char bssid[WIFIMGR_MACADDR_STR_LEN + 1];	// char string e.g. xx:xx:xx:xx:xx:xx
+	int8_t rssi;		// received signal strength indication
+	uint8_t channel;	// channel/frequency
+	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
+	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
+	struct wifi_manager_scan_info_s *next;
+};
+
+typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
+
+/**
+ * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
+ */
+typedef struct {
+	void (*sta_connected)(wifi_manager_result_e);	// in station mode, connected to ap
+	void (*sta_disconnected)(wifi_manager_disconnect_e);		// in station mode, disconnected from ap
+	void (*softap_sta_joined)(void);	// in softap mode, a station joined
+	void (*softap_sta_left)(void);		// in softap mode, a station left
+	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
+} wifi_manager_cb_s;
+
+/**
+ * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
+ */
+typedef struct {
+	char ip4_address[WIFIMGR_MACADDR_STR_LEN + 1];
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char mac_address[WIFIMGR_MACADDR_LEN + 1];	   /**<  MAC address of wifi interface             */
+	int rssi;
+	connect_status_e status;
+	wifi_manager_mode_e mode;
+} wifi_manager_info_s;
+
+/**
+ * @brief Specify information of soft access point (softAP) such as ssid and channel number
+ */
+typedef struct {
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];
+	uint16_t channel;
+} wifi_manager_softap_config_s;
+
+/**
+ * @brief Specify the policy of reconnect when the device is disconnected
+ */
+typedef struct {
+	wifi_manager_reconn_type_e type;
+	// interval: if type is INTERVAL, it will try to connect AP every interval second
+	//           if type is EXPONENTIAL, it is initial wait time.
+	int interval;
+	// max_interval: it is the maximum wait time if type is EXPONENTIAL
+	//             : it is not used if type is INTERVAL
+	int max_interval; // 
+} wifi_manager_reconnect_config_s;
+
+/**
  * @brief Specify which access point (AP) a client connects to
  */
 typedef struct {
-	char ssid[32];							 /**<  Service Set Identification         */
+	char ssid[WIFIMGR_SSID_LEN + 1];						 /**<  Service Set Identification         */
 	unsigned int ssid_length;				 /**<  Service Set Identification Length  */
-	char passphrase[64];					 /**<  ap passphrase(password)            */
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];					 /**<  ap passphrase(password)            */
 	unsigned int passphrase_length;			 /**<  ap passphrase length               */
 	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
 	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 } wifi_manager_ap_config_s;
+
+/**
+ * @brief Specify Wi-Fi Manager internal stats information
+ */
+typedef struct {
+	uint16_t connect;
+	uint16_t connectfail;
+	uint16_t disconnect;
+	uint16_t reconnect;
+	uint16_t joined;
+	uint16_t left;
+	uint16_t scan;
+	uint16_t softap;
+} wifi_manager_stats_s;
 
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
@@ -209,7 +243,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
  * @brief Change the Wi-Fi mode to station or AP.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] mode Wi-Fi mode (station or AP)
- * @param[in] config In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @param[in] config In case of AP mode, AP configuration information should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -266,18 +300,18 @@ wifi_manager_result_e wifi_manager_scan_ap(void);
 /**
  * @brief Save the AP configuration at persistent storage
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @param[in] config AP configuration information should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v1.x
+ * @since TizenRT v2.0 PRE
  */
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config);
 
 /**
  * @brief Get the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @param[in] config The pointer of AP configuration information which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v1.x
+ * @since TizenRT v2.0 PRE
  */
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
@@ -286,10 +320,32 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
  * @brief Remove the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v1.x
+ * @since TizenRT v2.0 PRE
  */
 wifi_manager_result_e wifi_manager_remove_config(void);
 
+/**
+ * @brief Get the most recently connected AP configuration which was saved by Wi-Fi Manager
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+
+wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config);
+
+/**
+ * @brief Obtain WiFi Manager state stats
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] The pointer of WiFi Manager stats information which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 /**
  *@}

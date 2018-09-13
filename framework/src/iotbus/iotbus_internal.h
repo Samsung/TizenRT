@@ -23,7 +23,7 @@
 #ifdef CONFIG_DEBUG_IOTBUS
 #define ibdbg(format, ...)        dbg(format, ##__VA_ARGS__)
 #else
-#define ibdbg(x...)
+#define ibdbg(...)
 #endif
 #else /* !CONFIG_CPP_HAVE_VARARGS */
 #ifdef CONFIG_DEBUG_IOTBUS

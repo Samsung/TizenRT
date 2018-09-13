@@ -46,7 +46,11 @@ static void tc_net_getsockopt_multicast_ttl_p(int s)
 	int ret = -1;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
+	ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
+	if (ret < 0) {
+		printf("setsockopt fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
@@ -67,7 +71,11 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(int s)
 	int ret = -1;
 	socklen_t loop = 1;
 	socklen_t looplen = sizeof(loop);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	if (ret < 0) {
+		printf("setsockopt fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
@@ -88,7 +96,11 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(int s)
 	int ret = -1;
 	socklen_t loop = 250;
 	socklen_t looplen = sizeof(loop);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	if (ret < 0) {
+		printf("setsockopt fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
@@ -110,7 +122,7 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
 
-	setsockopt(0, SOL_SOCKET, 0, 0, 0);
+	ret = setsockopt(0, SOL_SOCKET, 0, 0, 0);
 	ret = getsockopt(0, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
 
 	TC_ASSERT_EQ("getsockopt", ret, -1);
@@ -132,8 +144,13 @@ static void tc_net_getsockopt_optval_n(int s)
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
 
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
-	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, NULL, &optlen);
+	ret = setsockopt(s, IPPROTO_IP, IP_TTL, &optval, optlen);
+	if (ret < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
+
+	ret = getsockopt(s, IPPROTO_IP, IP_TTL, NULL, &optlen);
 
 	TC_ASSERT_EQ("getsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -148,18 +165,24 @@ static void tc_net_getsockopt_optval_n(int s)
    * @precondition	   :socket file descriptor
    * @postcondition	   :
    */
+#if 0 // get has lwip_tcp in the accepticonn option and not in set.
 static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
 {
 	int ret = -1;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
+	ret = setsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
+	if (ret < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, &optval, &optlen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
 
 }
+#endif
 
 /**
    * @testcase		   :tc_net_getsockopt_sol_socket_so_broadcast_p
@@ -174,7 +197,11 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(int s)
 	int ret = -1;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
+	ret = setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
+	if (ret < 0) {
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, &optlen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
@@ -195,7 +222,11 @@ static void tc_net_getsockopt_sol_socket_so_keepalive_p(int s)
 	int ret = -1;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
+	ret = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
+	if (ret < 0) {
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	ret = getsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
 
 	TC_ASSERT_GEQ("getsockopt", ret, 0);
@@ -211,15 +242,25 @@ void net_getsockopt_main(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
+
 	tc_net_getsockopt_invalid_filedesc_n();
 	tc_net_getsockopt_optval_n(fd);
-	tc_net_getsockopt_sol_socket_so_acceptconn_p(fd);
+	/* get has lwip_tcp in the accepticonn option and not in set. */
+//	tc_net_getsockopt_sol_socket_so_acceptconn_p(fd);
 	tc_net_getsockopt_sol_socket_so_broadcast_p(fd);
 	tc_net_getsockopt_sol_socket_so_keepalive_p(fd);
 
 	close(fd);
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	tc_net_getsockopt_multicast_ttl_loop_p(fd);
 	tc_net_getsockopt_multicast_ttl_loop_own_p(fd);
 	tc_net_getsockopt_multicast_ttl_p(fd);

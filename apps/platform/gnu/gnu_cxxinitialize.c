@@ -73,7 +73,7 @@
 #ifdef CONFIG_DEBUG_CXX
 #define cxxinfo        dbg
 #else
-#define cxxinfo(x...)
+#define cxxinfo(...)
 #endif
 
 /****************************************************************************
@@ -123,6 +123,14 @@ extern uint32_t _etext;
 void up_cxxinitialize(void)
 {
 	initializer_t *initp;
+#if !defined(CONFIG_BUILD_KERNEL)
+	static bool cxxinitialized = false;
+
+	if (cxxinitialized)
+		return;
+
+	cxxinitialized = true;
+#endif
 
 	cxxinfo("_sinit: %p _einit: %p _stext: %p _etext: %p\n", &_sinit, &_einit, &_stext, &_etext);
 

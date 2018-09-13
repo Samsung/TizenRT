@@ -143,8 +143,8 @@
 #define i2cdbg dbg
 #define i2cvdbg vdbg
 #else
-#define i2cdbg(x...)
-#define i2cvdbg(x...)
+#define i2cdbg(...)
+#define i2cvdbg(...)
 #endif
 
 #ifndef CONFIG_DEBUG

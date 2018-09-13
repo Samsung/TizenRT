@@ -25,6 +25,7 @@
 // if we have unistd.h, we're a Unix system
 #include <time.h>
 #include <sys/time.h>
+#include <debug.h>
 
 #include "things_logger.h"
 #include "utils/things_malloc.h"
@@ -36,15 +37,6 @@ static const char *LEVEL[] __attribute__((unused)) = {
 static char ts_buf[64] = { 0 };
 
 char *p_version = NULL;
-things_log_level_e glevel = THINGS_DEBUG;
-void set_things_log_level(int level)
-{
-	if (level > 4) {
-		return;
-	}
-	int lev = level - 4;
-	glevel = abs(lev);
-}
 
 void things_log_init()
 {
@@ -73,7 +65,7 @@ void things_log_set_version(char *version)
 	 */
 	p_version = (char *)things_malloc(strlen(version) + 1);
 	if (NULL == p_version) {
-		printf("Error while allocating memory for version");
+		dbg("Error while allocating memory for version");
 		return;
 	}
 	memset(p_version, 0, strlen(version) + 1);
@@ -90,13 +82,6 @@ void things_log_set_version(char *version)
  */
 void things_log(things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *logStr)
 {
-	if (!logStr || !tag) {
-		return;
-	}
-	if (level < glevel) {
-		return;
-	}
-
 	struct timeval tv;
 	time_t nowtime = 0;
 	struct tm *nowtm = NULL;
@@ -112,9 +97,9 @@ void things_log(things_log_level_e level, const char *tag, const char *func_name
 	 * [<MM/YY H:M:S.uS> <LOGGER_VERSION>] <LOG_LEVEL> <TAG> <API> <LINE_NO> <LOG_STR>
 	 */
 	if (p_version) {
-		printf("[%s %s] %s %s %s %d %s\n", buf, p_version, LEVEL[level], tag, func_name, line_num, logStr);
+		dbg("[%s %s] %s %s %s %d %s\n", buf, p_version, LEVEL[level], tag, func_name, line_num, logStr);
 	} else {
-		printf("T%d [%s] %s %s %s %d %s\n", getpid(), buf, LEVEL[level], tag, func_name, line_num, logStr);
+		dbg("T%d [%s] %s %s %s %d %s\n", getpid(), buf, LEVEL[level], tag, func_name, line_num, logStr);
 	}
 }
 
@@ -131,32 +116,11 @@ void things_logv(things_log_level_e level, const char *tag, const char *func_nam
 	if (!format || !tag) {
 		return;
 	}
-	if (level < glevel) {
-		return;
-	}
-	/*
-	 * Using Variable arguments to extract each argument and passing it things_log API
-	 */
+
 	char buffer[MAX_LOG_V_BUFFER_SIZE] = { 0 };
 	va_list args;
 	va_start(args, format);
 	vsnprintf(buffer, sizeof buffer - 1, format, args);
 	va_end(args);
 	things_log(level, tag, func_name, line_num, buffer);
-}
-
-//#endif
-
-const char *__get_timestamp__()
-{
-	struct timeval tv;
-	time_t nowtime = 0;
-	struct tm *nowtm = NULL;
-
-	gettimeofday(&tv, NULL);
-	nowtime = tv.tv_sec;
-	nowtm = localtime(&nowtime);
-	strftime(ts_buf, sizeof ts_buf, "%m/%d %H:%M:%S", nowtm);
-
-	return ts_buf;
 }

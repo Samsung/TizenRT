@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <string.h>
+#include <sys/mount.h>
 
 #include <tinyara/config.h>
 

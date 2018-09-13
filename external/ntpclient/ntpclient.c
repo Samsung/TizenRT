@@ -72,6 +72,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <protocols/ntpclient.h>
 #include <netdb.h>
 #include "ntpv3.h"
@@ -732,6 +733,7 @@ done:
 	sched_unlock();
 	return result;
 }
+#endif
 
 /****************************************************************************
  * Name: ntpc_get_status
@@ -796,4 +798,3 @@ int ntpc_get_link_status(void)
 	return status;
 }
 
-#endif

@@ -70,7 +70,7 @@ qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic -g
 ### Using make command
 
 ```
-make download
+./dbuild.sh download
 ```
 
 ## How to debug

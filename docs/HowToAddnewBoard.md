@@ -1,6 +1,6 @@
 # How to add(port) a new board
 
-Changes in *[arch](#arch)* and *[configs](#configs)* folders are mandantory to support a new board.  
+Changes in *[arch](#arch)* and *[configs](#configs)* folders are mandatory to support a new board.  
 Adding static library or expanding driver will be provided later.
 
 ## Arch

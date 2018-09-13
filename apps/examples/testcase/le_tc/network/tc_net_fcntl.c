@@ -46,6 +46,10 @@ static void tc_net_fcntl_nonblock_p(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
 	close(fd);
 
@@ -67,6 +71,10 @@ static void tc_net_fcntl_p(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = fcntl(fd, F_SETFL, 0);
 	close(fd);
 
@@ -108,6 +116,10 @@ static void tc_net_fcntl_ndelay_p(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = fcntl(fd, F_SETFL, O_NDELAY);
 	close(fd);
 

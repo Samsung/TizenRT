@@ -8,20 +8,24 @@ services:
 - docker
 
 env:
-- BUILD_CONFIG=artik055s/audio
-- BUILD_CONFIG=artik053/grpc
-- BUILD_CONFIG=artik053/st_things
-- BUILD_CONFIG=artik053/tc
-- BUILD_CONFIG=artik053/iotjs
-- BUILD_CONFIG=artik053/minimal
-- BUILD_CONFIG=qemu/tc_64k
+  global:
+    - TIZENRT_IMG_VERSION=1.4.6
+  matrix:
+    - BUILD_CONFIG=artik055s/audio
+    - BUILD_CONFIG=artik053/grpc
+    - BUILD_CONFIG=artik053/st_things
+    - BUILD_CONFIG=artik053/tc
+    - BUILD_CONFIG=artik053/iotjs
+    - BUILD_CONFIG=artik053/minimal
+    - BUILD_CONFIG=qemu/tc_64k
+    - BUILD_CONFIG=qemu/build_test
 
 before_install:
-- docker pull tizenrt/tizenrt:1.4.4
+- docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
 - echo "${TRAVIS_BUILD_DIR}"
 
 script:
-- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:1.4.4 /bin/bash
+- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:${TIZENRT_IMG_VERSION} /bin/bash
 - docker exec tizenrt_docker arm-none-eabi-gcc --version
 - docker exec tizenrt_docker make distclean
 

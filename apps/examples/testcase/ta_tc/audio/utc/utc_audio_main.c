@@ -39,7 +39,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define AUDIO_TEST_FILE "/ramfs/pcm"
+#define AUDIO_TEST_FILE "/tmp/pcm"
 
 #define AUDIO_DEFAULT_CHANNELS 2
 
@@ -1182,7 +1182,6 @@ static void utc_audio_pcm_begin_p(void)
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_begin", areas, NULL, pcm_close(g_pcm));
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_begin", offset, 0, pcm_close(g_pcm));
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_begin", frames, 0, pcm_close(g_pcm));
 	pcm_close(g_pcm);
 
@@ -1192,7 +1191,6 @@ static void utc_audio_pcm_begin_p(void)
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_begin", areas, NULL, pcm_close(g_pcm));
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_begin", offset, 0, pcm_close(g_pcm));
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_begin", frames, 0, pcm_close(g_pcm));
 	pcm_close(g_pcm);
 
@@ -1255,7 +1253,6 @@ static void utc_audio_pcm_commit_p(void)
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_commit", areas, NULL, pcm_close(g_pcm));
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_commit", offset, 0, pcm_close(g_pcm));
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_commit", frames, 0, pcm_close(g_pcm));
 
 	ret = pcm_mmap_commit(g_pcm, offset, 10);
@@ -1264,7 +1261,6 @@ static void utc_audio_pcm_commit_p(void)
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_commit", areas, NULL, pcm_close(g_pcm));
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_commit", offset, 0, pcm_close(g_pcm));
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_commit", frames, 0, pcm_close(g_pcm));
 	ret = pcm_mmap_commit(g_pcm, offset, frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
@@ -1277,7 +1273,6 @@ static void utc_audio_pcm_commit_p(void)
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_commit", areas, NULL, pcm_close(g_pcm));
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_commit", offset, 0, pcm_close(g_pcm));
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_commit", frames, 0, pcm_close(g_pcm));
 	ret = pcm_mmap_commit(g_pcm, offset, frames);
 	TC_ASSERT_EQ_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
@@ -1505,6 +1500,7 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_bytes_to_frames_n();
 	utc_audio_pcm_format_to_bits_p();
 	utc_audio_pcm_format_to_bits_n();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	utc_audio_pcm_readi_p();
 	utc_audio_pcm_readi_n();
 
@@ -1513,7 +1509,6 @@ int utc_audio_main(int argc, char *argv[])
 	*/
 	utc_audio_pcm_writei_p();
 	utc_audio_pcm_drain_p();
-
 	utc_audio_pcm_writei_n();
 	utc_audio_pcm_drain_n();
 	utc_audio_pcm_drop_p();
@@ -1532,7 +1527,8 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_commit_p();
 	utc_audio_pcm_mmap_read_p();
 	utc_audio_pcm_mmap_write_p();
-
+#endif
+	clean_all_data(0, NULL);
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 

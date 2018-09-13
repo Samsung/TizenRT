@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 
 #include "tc_internal.h"
 
@@ -81,6 +82,12 @@ static void *server(void *args)
 	if (server_socket == -1) {
 		printf("[%s]Failed to create socket\n", __func__);
 		return NULL;
+	}
+
+	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(server_socket);
+		return 0;
 	}
 
 	memset(&sa, 0, sizeof(sa));

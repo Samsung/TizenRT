@@ -56,12 +56,21 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <tinyara/board.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/fs/mksmartfs.h>
+#include <tinyara/rtc.h>
+#include <tinyara/analog/adc.h>
+#include <tinyara/configdata.h>
 #include <chip.h>
 
 #include "s5j_adc.h"
@@ -76,7 +85,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME"d1"
+#else
+#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -278,20 +291,20 @@ int board_app_initialize(void)
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n",
-				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
+		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
 				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
-					CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
@@ -327,43 +340,35 @@ int board_app_initialize(void)
 	}
 #endif
 
-#ifdef CONFIG_FS_PROCFS
-	/* Mount the procfs file system */
-	ret = mount(NULL, ARTIK05X_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
-	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n",
-				ARTIK05X_PROCFS_MOUNTPOINT, ret);
-	}
-#endif
-
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	rambuf = (uint8_t *)malloc(bufsize);
-
-	mtd = rammtd_initialize(rambuf, bufsize);
-	if (!mtd) {
-		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
-		free(rambuf);
+	if (!rambuf) {
+		lldbg("ERROR: FAILED TO allocate RAMMTD\n");
 	} else {
-		ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
-		if (ret < 0) {
-			lldbg("ERROR: FAILED TO smart_initialize\n");
+		mtd = rammtd_initialize(rambuf, bufsize);
+		if (!mtd) {
+			lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
 			free(rambuf);
 		} else {
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-			ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, 1, false);
-#else
-			ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
-#endif
-			if (ret != OK) {
-				lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
+			ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
+			if (ret < 0) {
+				lldbg("ERROR: FAILED TO smart_initialize\n");
 				free(rambuf);
 			} else {
-				ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT,
-					CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT,
-					"smartfs", 0, NULL);
-				if (ret < 0) {
-					lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, 1, false);
+#else
+				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
+#endif
+				if (ret != OK) {
+					lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
 					free(rambuf);
+				} else {
+					ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+					if (ret < 0) {
+						lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+						free(rambuf);
+					}
 				}
 			}
 		}

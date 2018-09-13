@@ -79,7 +79,7 @@
 #ifdef CONFIG_DEBUG_HARDFAULT
 #define hfdbg(format, ...) lldbg(format, ##__VA_ARGS__)
 #else
-#define hfdbg(x...)
+#define hfdbg(...)
 #endif
 
 #define INSN_SVC0        0xdf00	/* insn: svc 0 */

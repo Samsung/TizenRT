@@ -19,24 +19,7 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <time.h>
 #include "st_things_sample.h"
-
-int time_set(unsigned int second, unsigned int microsecond)
-{
-	struct timespec current_time;
-
-	current_time.tv_sec = second;
-	current_time.tv_nsec = (long int)microsecond * 1000;
-
-	if (clock_settime(CLOCK_REALTIME, &current_time) != 0) {
-		return 0;
-	}
-
-	return 1;
-}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -45,9 +28,6 @@ int st_things_sample_main(int argc, char *argv[])
 #endif
 {
 	printf("st_things_sample!!\n");
-
-	// set system default time (2017/01/01 0:0:0)
-	time_set(1495089694, 0);
 	
 	ess_process();
 	

@@ -719,8 +719,8 @@ static void enc_wrbreg(FAR struct enc_driver_s *priv, uint8_t ctrlreg, uint8_t w
 
 static int enc_waitbreg(FAR struct enc_driver_s *priv, uint8_t ctrlreg, uint8_t bits, uint8_t value)
 {
-	systime_t start = clock_systimer();
-	systime_t elapsed;
+	clock_t start = clock_systimer();
+	clock_t elapsed;
 	uint8_t rddata;
 
 	/* Loop until the exit condition is met */

@@ -21,34 +21,34 @@
 
 #include <stdbool.h>
 
-#define FIRMWARE_URI						"/firmware"
+#define FIRMWARE_URI                            "/firmware"
 
 /* save to key manager(ckmc) with update */
-#define FIRMWARE_PROPERTY_UPDATE			"update"
-#define FIRMWARE_PROPERTY_UPDATE_TIME		"updatetime"
-#define FIRMWARE_PROPERTY_DESCRIPTION		"description"
-#define FIRMWARE_PROPERTY_STATE				"state"
-#define FIRMWARE_PROPERTY_RESULT			"result"
-#define FIRMWARE_PROPERTY_PROGRESS			"progress"
+#define FIRMWARE_PROPERTY_UPDATE                "update"
+#define FIRMWARE_PROPERTY_UPDATE_TIME           "updatetime"
+#define FIRMWARE_PROPERTY_DESCRIPTION           "description"
+#define FIRMWARE_PROPERTY_STATE                 "state"
+#define FIRMWARE_PROPERTY_RESULT                "result"
+#define FIRMWARE_PROPERTY_PROGRESS              "progress"
 
 /* save to key manager(ckmc) with pacakage */
-#define FIRMWARE_PROPERTY_NEW_VERSION		"newversion"
-#define FIRMWARE_PROPERTY_PACKAGE_URI		"packageuri"
+#define FIRMWARE_PROPERTY_NEW_VERSION           "newversion"
+#define FIRMWARE_PROPERTY_PACKAGE_URI           "packageuri"
 
 /* platform information */
-#define FIRMWARE_PROPERTY_CURRENT_VERSION	"version"
-#define FIRMWARE_PROPERTY_VENDER			"vender"
-#define FIRMWARE_PROPERTY_MODEL				"model"
+#define FIRMWARE_PROPERTY_CURRENT_VERSION       "version"
+#define FIRMWARE_PROPERTY_VENDER                "vender"
+#define FIRMWARE_PROPERTY_MODEL                 "model"
 
-#define KEY_MANAGER_MAX_DATA_LENGTH			200
-#define KEY_MANAGER_INT_DEFAULT_DATA		"0"
-#define KEY_MANAGER_STR_DEFAULT_DATA		" "
-#define KEY_MANAGER_BOL_DEFAULT_DATA		"0"
+#define KEY_MANAGER_MAX_DATA_LENGTH             21
+#define KEY_MANAGER_INT_DEFAULT_DATA            "0"
+#define KEY_MANAGER_STR_DEFAULT_DATA            " "
+#define KEY_MANAGER_BOL_DEFAULT_DATA            "0"
 
-#define FIRMWARE_PROPERTY_UPDATE_INIT       "Init"
-#define FIRMWARE_PROPERTY_UPDATE_CHECK      "Check"
-#define FIRMWARE_PROPERTY_UPDATE_DOWNLOAD   "Download"
-#define FIRMWARE_PROPERTY_UPDATE_UPDATE     "Update"
+#define FIRMWARE_PROPERTY_UPDATE_INIT           "Init"
+#define FIRMWARE_PROPERTY_UPDATE_CHECK          "Check"
+#define FIRMWARE_PROPERTY_UPDATE_DOWNLOAD       "Download"
+#define FIRMWARE_PROPERTY_UPDATE_UPDATE         "Update"
 #define FIRMWARE_PROPERTY_UPDATE_DOWNLOADUPDATE "DownloadUpdate"
 
 typedef struct {

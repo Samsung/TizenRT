@@ -6,7 +6,7 @@ Logm messages are queued and flushed whereas printf/syslog messages would be wri
 If there are many log messages, these can be dropped because of buffer overflow. In order to avoid the message loss, please refer to [How to resolve buffer overflow](#how-to-resolve-buffer-overflow).
 
 ## How to enable and configure
-Enable configuration of LogM through menuconfig.
+Enable configuration of LogM with menuconfig.
 ```
 cd $TIZENRT_BASEDIR
 cd os
@@ -14,27 +14,27 @@ make menuconfig
 ```
 Enable LogM feature.
 ```
-Debug Options -> Logger Module -> Logger Module to y
+Debug Options -> Logger Module -> [*] Logger Module
 ```
 Select options.  
  * printf to logm
  ```
- Route printf through logm to y
+ [*] Route printf through logm
  ```
  * syslog to logm
   ```
- Route all syslogs through logm to y
+ [*] Route all syslogs through logm
  ```
   * add timestamp to message
  ```
- Prepend timestamp to message to y
+ [*] Prepend timestamp to message
  ```
 
 Other Configurations
  * Logm Buffer size  
    > If it is not sufficient, some messages would be dropped.
  * Interval for flushing logm buffer  
-   > It dedcides how frequently buffer is flushed (ms).
+   > It decides how frequently buffer is flushed (ms).
  * Logm Task priority  
    > If it is lower than other tasks, logm can not be operated properly.
  * Logm Task stack size
@@ -59,7 +59,7 @@ To avoid the loss of messages, some options should be set carefully for usage.
 There are 2 options, **buffer size** and **interval of flushing buffer**.  
 You can configure them in [build-time](#how-to-enable-and configure) or [run-time](#how-to-configure-logm-in-run-time).
 1. Buffer size  
-The size of buffer used for queueing messages. (default:10240)  
+The size of buffer used for queuing messages. (default:10240)  
 This value decides how many messages can be put at once.
 
 2. Interval for flushing  

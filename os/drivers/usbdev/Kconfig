@@ -13,7 +13,7 @@ config USBDEV_DUALSPEED
 	---help---
 		Hardware handles high and full speed operation (USB 2.0)
 
-choice USBDEV_POWERED
+choice
 	prompt "Select USB device powered"
 	default USBDEV_SELFPOWERED
 

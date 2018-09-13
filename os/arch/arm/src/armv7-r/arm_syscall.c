@@ -95,7 +95,7 @@
 #if defined(CONFIG_DEBUG_SYSCALL)
 #define svcdbg(format, ...) lldbg(format, ##__VA_ARGS__)
 #else
-#define svcdbg(x...)
+#define svcdbg(...)
 #endif
 
 /****************************************************************************

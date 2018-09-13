@@ -91,19 +91,24 @@ union ldshape {
  *	Pre-processor Definitions
  ***************************************************************************/
 
-#define FORCE_EVAL(x)                               \
-	do {                                            \
-		if (sizeof(x) == sizeof(float)) {           \
-			volatile float __x;                     \
-			__x = (x);                              \
-		} else if (sizeof(x) == sizeof(double)) {   \
-			volatile double __x;                    \
-			__x = (x);                              \
-		} else {                                    \
-			volatile long double __x;               \
-			__x = (x);                              \
-	}                                               \
-} while (0)
+#define FORCE_EVAL(x)                             \
+	do {                                          \
+		if (sizeof(x) == sizeof(float)) {         \
+			volatile float __x = 0;               \
+			UNUSED(__x);                          \
+			__x = (x);                            \
+		} else if (sizeof(x) == sizeof(double)) { \
+			volatile double __x = 0;              \
+			UNUSED(__x);                          \
+			__x = (x);                            \
+		}                                         \
+		else {                                    \
+			volatile long double __x = 0;         \
+			UNUSED(__x);                          \
+			__x = (x);                            \
+		}                                         \
+	} while (0)
+
 
 /* Get two 32 bit ints from a double.  */
 #define EXTRACT_WORDS(hi, lo, d)    \

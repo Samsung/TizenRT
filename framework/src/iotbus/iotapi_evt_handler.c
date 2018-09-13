@@ -29,7 +29,7 @@
 #ifdef CONFIG_IOTAPI_DEBUG
 #define IOTAPI_LOG(format, ...)	printf(format, ##__VA_ARGS__)
 #else
-#define IOTAPI_LOG(x...)
+#define IOTAPI_LOG(...)
 #endif
 
 #define IOTAPI_MESSAGE_QUEUE_EMPTY	0

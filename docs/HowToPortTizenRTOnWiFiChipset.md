@@ -8,7 +8,7 @@ to interface driver to network stack, and to get/set WiFi configuration from a h
  
 ## How to add external WiFi library
 
-External vendors may choose to build TizenRT application that includes their compiled WiFi libary, rather than opting for TizenRT's *wpa_supplicant*.
+External vendors may choose to build TizenRT application that includes their compiled WiFi library, rather than opting for TizenRT's *wpa_supplicant*.
 To support external and independently compiled WiFi supplicant libraries, they must be added to TizenRT.  
 For details on how to add libraries, please refer to [How to add Static Library](HowToAddStaticLibrary.md).
 
@@ -76,7 +76,7 @@ In order to interface the new WiFi chipset to this WiFi Manager, please do the f
 
 ### Configuring new WiFi library, WiFi driver for WiFi Manager
 
-When you activate WiFI Manager, you have to specify your preference for WiFi library and WiFi driver.
+When you activate WiFi Manager, you have to specify your preference for WiFi library and WiFi driver.
 Accordingly, please modify the *framework/src/wifi_manager/Kconfig* as shown in the example below:
 
 ```

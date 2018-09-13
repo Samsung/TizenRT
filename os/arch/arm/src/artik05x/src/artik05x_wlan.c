@@ -21,6 +21,11 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <debug.h>
+#include <sys/ioctl.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <net/if.h>
 #include <net/lwip/opt.h>

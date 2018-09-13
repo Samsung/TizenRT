@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_unistd.c
+/// @file tc_libc_unistd.c
 /// @brief Test Case Example for Libc Unistd API
 
 /****************************************************************************
@@ -25,17 +25,20 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
 #include "tc_internal.h"
 
-#define ARG_COUNT 6
-#define SEC_3 3
-
+#define ARG_COUNT       6
+#define BUFFSIZE        32
+#ifndef CONFIG_DISABLE_SIGNALS
+#define SEC_3           3
 #define USLEEP_INTERVAL 3000000
-#define BUFFSIZE 32
-#define MSG_SIZE 30
+#endif
+#ifdef CONFIG_PIPES
+#define MSG_SIZE        30
 
 sem_t pipe_sem;
 int pipe_tc_chk = OK;
@@ -70,9 +73,34 @@ static void *pipe_rx_func(void *arg)
 
 	return NULL;
 }
+#endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+/**
+* @fn                   :tc_libc_unistd_access
+* @brief                :check real user's permissions for a file
+* @Scenario             :checks whether the calling process can access the file path‐name
+* API's covered         :access
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_unistd_access(void)
+{
+	int ret_chk;
+	char path[BUFFSIZE + 1];
+
+	getcwd(path, BUFFSIZE);
+	snprintf(path, BUFFSIZE, "%s/%s", path, __FILE__);
+
+	ret_chk = access(path, F_OK);
+	TC_ASSERT_EQ("access", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
+}
 
 /**
-* @fn                   :tc_libc_unistd_chdir
+* @fn                   :tc_libc_unistd_chdir_getcwd
 * @brief                :The chdir() function shall cause the directory named by the\
 *                        pathname pointed to by the path argument to become the current working directory
 * @Scenario             :The chdir() function only affects the working directory of the current process.\
@@ -103,7 +131,7 @@ static void tc_libc_unistd_chdir_getcwd(void)
 	/* Failure case: when "PWD" is not defined*/
 	unsetenv("PWD");
 	cwd = getcwd(buff, BUFFSIZE);
-	TC_ASSERT_EQ("getcwd", strcmp(cwd, CONFIG_LIB_HOMEDIR), 0);
+	TC_ASSERT_NEQ("getcwd", strcmp(directory, cwd), 0);
 
 	directory = NULL;
 	ret_chk = chdir(directory);
@@ -116,6 +144,7 @@ static void tc_libc_unistd_chdir_getcwd(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_libc_unistd_getopt
@@ -169,6 +198,7 @@ static void tc_libc_unistd_getopt(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_SIGNALS
 /**
 * @fn                   :tc_libc_unistd_sleep
 * @brief                :The sleep() function shall cause the calling thread to be suspended from execution until either\
@@ -220,7 +250,9 @@ static void tc_libc_unistd_usleep(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
+#ifdef CONFIG_PIPES
 /**
 * @fn                   :tc_libc_unistd_pipe
 * @brief                :creates a pair of file descriptor
@@ -260,29 +292,7 @@ cleanup_pipe:
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
 }
-
-/**
-* @fn                   :tc_libc_unistd_access
-* @brief                :check real user's permissions for a file
-* @Scenario             :checks whether the calling process can access the file path‐name
-* API's covered         :access
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-static void tc_libc_unistd_access(void)
-{
-	int ret_chk;
-	char path[BUFFSIZE + 1];
-
-	getcwd(path, BUFFSIZE);
-	snprintf(path, BUFFSIZE, "%s/%s", path, __FILE__);
-
-	ret_chk = access(path, F_OK);
-	TC_ASSERT_EQ("access", ret_chk, 0);
-
-	TC_SUCCESS_RESULT();
-}
+#endif
 
 /****************************************************************************
  * Name: libc_unistd
@@ -290,12 +300,18 @@ static void tc_libc_unistd_access(void)
 
 int libc_unistd_main(void)
 {
+#ifndef CONFIG_DISABLE_ENVIRON
 	tc_libc_unistd_access();
 	tc_libc_unistd_chdir_getcwd();
+#endif
 	tc_libc_unistd_getopt();
+#ifdef CONFIG_PIPES
 	tc_libc_unistd_pipe();
+#endif
+#ifndef CONFIG_DISABLE_SIGNALS
 	tc_libc_unistd_sleep();
 	tc_libc_unistd_usleep();
+#endif
 
 	return 0;
 }

@@ -75,19 +75,35 @@ endif
 # Add external directories
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
+
 USER_ADDONS += $(EXTDIR)
 ifeq ($(CONFIG_HAVE_CXX),y)
 # libc++ library is added in external directory as an add-on.
 USER_ADDONS += $(EXTDIR)$(DELIM)libcxx
 endif
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+USER_ADDONS += $(EXTDIR)$(DELIM)iotivity
+endif
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+USER_ADDONS += $(EXTDIR)$(DELIM)iotjs$(DELIM)config$(DELIM)tizenrt
+endif
+
 else
+
 ifneq ($(CONFIG_BUILD_KERNEL),y)
 TINYARA_ADDONS += $(EXTDIR)
 ifeq ($(CONFIG_HAVE_CXX),y)
 # libc++ library is added in external directory as an add-on.
 TINYARA_ADDONS += $(EXTDIR)$(DELIM)libcxx
 endif
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+TINYARA_ADDONS += $(EXTDIR)$(DELIM)iotivity
 endif
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+TINYARA_ADDONS += $(EXTDIR)$(DELIM)iotjs$(DELIM)config$(DELIM)tizenrt
+endif
+endif # CONFIG_BUILD_KERNEL
+
 endif
 
 # Add Framework directories
@@ -130,6 +146,9 @@ CONTEXTDIRS = $(APPDIR)
 CONTEXTDIRS += $(TOOLSDIR)
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
 CONTEXTDIRS += mm
+endif
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+CONTEXTDIRS += $(EXTDIR)$(DELIM)iotivity
 endif
 USERDIRS =
 OTHERDIRS = $(LIBRARIES_DIR)

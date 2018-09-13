@@ -16,80 +16,153 @@
  *
  ******************************************************************/
 
-#include <media/FileInputDataSource.h>
+#include <tinyara/config.h>
+#include <stdio.h>
 #include <debug.h>
-#include "Decoder.h"
+
+#include <media/FileInputDataSource.h>
+#include "utils/MediaUtils.h"
 
 namespace media {
 namespace stream {
 
-FileInputDataSource::FileInputDataSource()
-	: InputDataSource()
-	, mDataPath("")
-	, mFp(nullptr)
+FileInputDataSource::FileInputDataSource() :
+	InputDataSource(),
+	mDataPath(""),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const std::string& dataPath)
-	: mDataPath(dataPath)
+FileInputDataSource::FileInputDataSource(const std::string &dataPath) :
+	InputDataSource(),
+	mDataPath(dataPath),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const FileInputDataSource& source)
-	: InputDataSource(source)
+FileInputDataSource::FileInputDataSource(const FileInputDataSource &source) :
+	InputDataSource(source),
+	mDataPath(source.mDataPath),
+	mFp(source.mFp)
 {
 }
 
-FileInputDataSource& FileInputDataSource::operator=(const FileInputDataSource& source)
+FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &source)
 {
 	InputDataSource::operator=(source);
 	return *this;
 }
 
-FileInputDataSource::~FileInputDataSource()
-{
-}
-
 bool FileInputDataSource::open()
 {
-	setAudioType(utils::getAudioTypeFromPath(mDataPath));
+	if (!mFp) {
+		unsigned int channel;
+		unsigned int sampleRate;
+		audio_format_type_t pcmFormat;
+		audio_type_t audioType;
 
-	switch (getAudioType()) {
-		case utils::AUDIO_TYPE_MP3:
-		case utils::AUDIO_TYPE_AAC:
-			setDecoder(std::make_shared<Decoder>(new Decoder()));
+		mFp = fopen(mDataPath.c_str(), "rb");
+		if (!mFp) {
+			medvdbg("file open failed error : %d\n", errno);
+			return false;
+		}
+
+		audioType = utils::getAudioTypeFromPath(mDataPath);
+		setAudioType(audioType);
+		switch (audioType) {
+		case AUDIO_TYPE_MP3:
+		case AUDIO_TYPE_AAC:
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
 			break;
-		case utils::AUDIO_TYPE_OPUS:
-			/* To be supported */
+		case AUDIO_TYPE_WAVE:
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
+			setPcmFormat(pcmFormat);
 			break;
-		case utils::AUDIO_TYPE_FLAC:
+		case AUDIO_TYPE_FLAC:
 			/* To be supported */
 			break;
 		default:
 			/* Don't set any decoder for unsupported formats */
 			break;
+		}
+
+		return true;
 	}
 
-	mFp = fopen(mDataPath.c_str(), "rb");
-	medvdbg("FileInputDataSource : %s : %p\n", mDataPath.c_str(), mFp);
-
-	return isPrepare();
+	/** return true if mFp is not null, because it means it using now */
+	return true;
 }
 
-void FileInputDataSource::close()
+bool FileInputDataSource::close()
 {
-	fclose(mFp);
-	mFp = nullptr;
+	bool ret = true;
+	if (mFp) {
+		if (fclose(mFp) == OK) {
+			mFp = nullptr;
+			medvdbg("close success!!\n");
+		} else {
+			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			ret = false;
+		}
+	} else {
+		meddbg("close failed, mFp is nullptr!!\n");
+		ret = false;
+	}
+
+	return ret;
 }
 
 bool FileInputDataSource::isPrepare()
 {
-	return (mFp != nullptr);
+	if (mFp == nullptr) {
+		return false;
+	}
+	return true;
 }
 
-size_t FileInputDataSource::read(unsigned char* buf, size_t size)
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	return fread(buf, sizeof(unsigned char), size, mFp);
+	if (!isPrepare()) {
+		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
+		return EOF;
+	}
+
+	if (buf == nullptr) {
+		meddbg("%s[line : %d] Fail : buf is nullptr\n", __func__, __LINE__);
+		return EOF;
+	}
+
+	size_t rlen = fread(buf, sizeof(unsigned char), size, mFp);
+	medvdbg("read size : %d\n", rlen);
+	if (rlen == 0) {
+		/* If file position reaches end of file, it's a normal case, we returns 0 */
+		if (feof(mFp)) {
+			medvdbg("eof!!!\n");
+			return 0;
+		}
+
+		/* Otherwise, an error occurred, we also returns error */
+		return EOF;
+	}
+
+	return rlen;
+}
+
+FileInputDataSource::~FileInputDataSource()
+{
+	if (isPrepare()) {
+		close();
+	}
 }
 
 } // namespace stream

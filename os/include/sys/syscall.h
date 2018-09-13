@@ -175,15 +175,13 @@
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #define SYS_wait                       (__SYS_waitpid+1)
 #define SYS_waitid                     (__SYS_waitpid+2)
-#define __SYS_posix_spawn              (__SYS_waitpid+3)
+#define __SYS_signals                  (__SYS_waitpid+3)
 #else
-#define __SYS_posix_spawn              (__SYS_waitpid+1)
+#define __SYS_signals                  (__SYS_waitpid+1)
 #endif
 #else
-#define __SYS_posix_spawn              __SYS_waitpid
+#define __SYS_signals                   __SYS_waitpid
 #endif
-
-#define __SYS_signals                  __SYS_posix_spawn
 
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
@@ -208,11 +206,12 @@
  * TinyAra configuration.
  */
 
-#define SYS_clock_getres               (__SYS_clock+0)
-#define SYS_clock_gettime              (__SYS_clock+1)
-#define SYS_clock_settime              (__SYS_clock+2)
-#define SYS_gettimeofday               (__SYS_clock+3)
-#define __SYS_timers                   (__SYS_clock+4)
+#define SYS_clock                      (__SYS_clock+0)
+#define SYS_clock_getres               (__SYS_clock+1)
+#define SYS_clock_gettime              (__SYS_clock+2)
+#define SYS_clock_settime              (__SYS_clock+3)
+#define SYS_gettimeofday               (__SYS_clock+4)
+#define __SYS_timers                   (__SYS_clock+5)
 
 /* The following are defined only if POSIX timers are supported */
 
@@ -337,25 +336,26 @@
 #define SYS_pthread_getschedparam      (__SYS_pthread+7)
 #define SYS_pthread_getspecific        (__SYS_pthread+8)
 #define SYS_pthread_join               (__SYS_pthread+9)
-#define SYS_pthread_key_create         (__SYS_pthread+10)
-#define SYS_pthread_key_delete         (__SYS_pthread+11)
-#define SYS_pthread_mutex_destroy      (__SYS_pthread+12)
-#define SYS_pthread_mutex_init         (__SYS_pthread+13)
-#define SYS_pthread_mutex_lock         (__SYS_pthread+14)
-#define SYS_pthread_mutex_trylock      (__SYS_pthread+15)
-#define SYS_pthread_mutex_unlock       (__SYS_pthread+16)
-#define SYS_pthread_setcancelstate     (__SYS_pthread+17)
-#define SYS_pthread_setschedparam      (__SYS_pthread+18)
-#define SYS_pthread_setschedprio       (__SYS_pthread+19)
-#define SYS_pthread_setspecific        (__SYS_pthread+20)
+#define SYS_pthread_tryjoin_np         (__SYS_pthread+10)
+#define SYS_pthread_key_create         (__SYS_pthread+11)
+#define SYS_pthread_key_delete         (__SYS_pthread+12)
+#define SYS_pthread_mutex_destroy      (__SYS_pthread+13)
+#define SYS_pthread_mutex_init         (__SYS_pthread+14)
+#define SYS_pthread_mutex_lock         (__SYS_pthread+15)
+#define SYS_pthread_mutex_trylock      (__SYS_pthread+16)
+#define SYS_pthread_mutex_unlock       (__SYS_pthread+17)
+#define SYS_pthread_setcancelstate     (__SYS_pthread+18)
+#define SYS_pthread_setschedparam      (__SYS_pthread+19)
+#define SYS_pthread_setschedprio       (__SYS_pthread+20)
+#define SYS_pthread_setspecific        (__SYS_pthread+21)
 
 #ifndef CONFIG_DISABLE_SIGNAL
-#define SYS_pthread_cond_timedwait     (__SYS_pthread+21)
-#define SYS_pthread_kill               (__SYS_pthread+22)
-#define SYS_pthread_sigmask            (__SYS_pthread+23)
-#define __SYS_mqueue                   (__SYS_pthread+24)
+#define SYS_pthread_cond_timedwait     (__SYS_pthread+22)
+#define SYS_pthread_kill               (__SYS_pthread+23)
+#define SYS_pthread_sigmask            (__SYS_pthread+24)
+#define __SYS_mqueue                   (__SYS_pthread+25)
 #else
-#define __SYS_mqueue                   (__SYS_pthread+21)
+#define __SYS_mqueue                   (__SYS_pthread+22)
 #endif
 
 #else

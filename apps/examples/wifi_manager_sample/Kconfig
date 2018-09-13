@@ -13,3 +13,78 @@ config EXAMPLES_WIFIMANAGER_TEST
 config USER_ENTRYPOINT
 	string
 	default "wm_test_main" if ENTRY_WIFIMANAGER_TEST
+
+
+if EXAMPLES_WIFIMANAGER_TEST
+config EXAMPLES_WIFIMANAGER_STRESS_TOOL
+	bool "Enable Sterss Tool for WiFi Manager"
+	default n
+	depends on STRESS_TOOL
+
+if EXAMPLES_WIFIMANAGER_STRESS_TOOL
+config WIFIMANAGER_TEST_TRIAL
+	int "Number of test trial"
+	default 5
+	---help---
+		Number of test trial
+
+config WIFIMANAGER_TEST_AP_SSID
+	string "SSID of AP"
+	default "SSID"
+	---help---
+		Select SSID of AP which you want to connect to
+
+config WIFIMANAGER_TEST_AP_PASSPHRASE
+	string "Passphrase of AP"
+	default "NULL"
+	---help---
+		Passphrase of AP which you want to connect to
+
+
+config WIFIMANAGER_TEST_AP_AUTHENTICATION
+	int "Authentication type"
+	default 0
+	---help---
+		0 : Open
+		1 : WEP Shared
+		2 : WPA PSK
+		3 : WPA2 PSK
+		4 : WPA and WPA2 PSK
+		5 : Unknown
+
+
+config WIFIMANAGER_TEST_AP_CRYPTO
+	int "Encryption type"
+	default 0
+	---help---
+		0 : None
+		1 : WEP 64 bits
+		2 : WEP 128 bits
+		3 : AES
+		4 : TKIP
+		5 : TIKP and AES
+		6 : Unknown
+
+
+config WIFIMANAGER_TEST_SOFTAP_SSID
+	string "SSID of SoftAP"
+	default "PKES"
+	---help---
+		Name SSID of SoftAP
+
+
+config WIFIMANAGER_TEST_SOFTAP_PASSWORD
+	string "Passphrase of SoftAP"
+	default "password"
+	---help---
+		Passphrase of SoftAP
+
+
+config WIFIMANAGER_TEST_SOFTAP_CHANNEL
+	int "Channel of SoftAP"
+	default 1
+	---help---
+		Select the channel number of SoftAP
+
+endif #if EXAMPLES_WIFIMANAGER_STRESS_TOOL
+endif #if EXAMPLES_WIFIMANAGER_TEST

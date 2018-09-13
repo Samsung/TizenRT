@@ -204,6 +204,12 @@
 #define _PTHREAD_MFLAGS_INCONSISTENT  (1 << 1)	/* Mutex is in an inconsistent state */
 #define _PTHREAD_MFLAGS_NRECOVERABLE  (1 << 2)	/* Inconsistent mutex has been unlocked */
 
+/*
+ * Maximum values of pthread key operation
+ */
+#define PTHREAD_KEYS_MAX              CONFIG_NPTHREAD_KEYS
+#define PTHREAD_DESTRUCTOR_ITERATIONS CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
+
 /* Definitions to map some non-standard, BSD thread management interfaces to
  * the non-standard Linux-like prctl() interface.  Since these are simple
  * mappings to prctl, they will return 0 on success and -1 on failure with the
@@ -245,6 +251,7 @@ extern "C" {
 /* pthread-specific types */
 
 typedef unsigned int pthread_key_t;
+typedef CODE void (*pthread_destructor_t)(void *arg);
 typedef FAR void *pthread_addr_t;
 
 typedef pthread_addr_t(*pthread_startroutine_t)(pthread_addr_t);
@@ -514,6 +521,15 @@ void pthread_cleanup_push(pthread_cleanup_t routine, FAR void *arg);
  */
 int pthread_join(pthread_t thread, FAR pthread_addr_t *value);
 
+/**
+ * @ingroup PTHREAD_KERNEL
+ * @brief performs a nonblocking join with the thread thread, returning the exit status of the thread in *pexit_value
+ * @details @b #include <pthread.h> \n
+ * SYSTEM CALL API
+ * @since TizenRT v2.0 PRE
+ */
+int pthread_tryjoin_np(pthread_t thread, FAR pthread_addr_t *pexit_value);
+
 /* A thread may tell the scheduler that its processor can be made available. */
 /**
  * @ingroup PTHREAD_KERNEL
@@ -602,14 +618,14 @@ int pthread_setspecific(pthread_key_t key, FAR const void *value);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
-FAR void *pthread_getspecific(pthread_key_t key);
+void *pthread_getspecific(pthread_key_t key);
 /**
  * @ingroup PTHREAD_KERNEL
  * @brief thread-specific data key deletion
  * @details @b #include <pthread.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 int pthread_key_delete(pthread_key_t key);
 

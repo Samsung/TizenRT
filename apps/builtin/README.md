@@ -8,7 +8,7 @@ It is needed only when TASH is enabled.
 
 ### Configuration
 
-Enable configuration of builtin through menuconfig
+Enable configuration of builtin with menuconfig
 ```bash
 cd $TIZENRT_BASEDIR
 cd os
@@ -16,7 +16,7 @@ make menuconfig
 ```
 Select menu
 ```bash
-Application Configuration -> Support builtin applications to y
+Application Configuration -> [*] Support builtin applications
 ```
 
 ### Makefile
@@ -34,7 +34,7 @@ context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 include $(APPDIR)/Make.defs
 ```
 
-3. Set argumens, command name, callback function and execution type
+3. Set arguments, command name, callback function and execution type
 ```bash
 APPNAME =
 FUNCNAME =

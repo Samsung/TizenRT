@@ -138,10 +138,18 @@
 #define localtime_r(c, r)  gmtime_r(c, r)
 #endif
 
+/* tm_year of struct tm means years since 1900 */
+#define TM_YEAR_BASE       1900
+
 /********************************************************************************
  * Public Types
  ********************************************************************************/
 
+/* Some libc represents time_t intenally as long type.
+ * However, type long supports year value within the interval (1901, 2038),
+ * whereas  type unsigned int supports the interval (1970, 2106).
+ * Therefore, we represent time_t internally as type uint32_t.
+ */
 typedef uint32_t time_t;		/* Holds time in seconds */
 typedef uint8_t clockid_t;		/* Identifies one time base source */
 typedef FAR void *timer_t;		/* Represents one POSIX timer */
@@ -171,12 +179,12 @@ struct timezone {
  * @ingroup TIME_KERNEL
  * @brief Structure containing a calendar date and time */
 struct tm {
-	int tm_sec;					/* second (0-61, allows for leap seconds) */
-	int tm_min;					/* minute (0-59) */
+	int tm_sec;				/* second (0-61, allows for leap seconds) */
+	int tm_min;				/* minute (0-59) */
 	int tm_hour;				/* hour (0-23) */
 	int tm_mday;				/* day of the month (1-31) */
-	int tm_mon;					/* month (0-11) */
-	int tm_year;				/* years since 1900 */
+	int tm_mon;				/* month (0-11) */
+	int tm_year;				/* years since 1900, TM_YEAR_BASE */
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	int tm_wday;				/* day of the week (0-6) */
 	int tm_yday;				/* day of the year (0-365) */
@@ -202,8 +210,13 @@ struct sigevent;
 /********************************************************************************
  * Public Data
  ********************************************************************************/
+#ifdef CONFIG_LIBC_LOCALTIME
+/* tzname[] - Timezone strings
+ * Setup by tzset()
+ */
 
-/* extern char *tznames[]; not supported */
+extern char *tznames[2];
+#endif
 
 /********************************************************************************
  * Public Function Prototypes
@@ -252,7 +265,7 @@ int clock_getres(clockid_t clockid, FAR struct timespec *res);
  * implementation-defined era related only to the process invocation.
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 clock_t clock(void);
 /**
@@ -334,23 +347,26 @@ FAR char *ctime_r(FAR const time_t *timep, FAR char *buf);
  * @endcond
  */
 
-#ifdef CONFIG_ENABLE_IOTIVITY
 /**
- * @cond
- * @internal
+ * @ingroup TIME_KERNEL
+ * @brief convert a time string to a time tm structure
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 char *strptime(const char *buf, const char *fmt, struct tm *tm);
+
 /**
- * @internal
+ * @ingroup TIME_KERNEL
+ * @brief calculate time difference
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 #ifdef CONFIG_HAVE_DOUBLE
 double difftime(time_t time1, time_t time0);
 #else
 float difftime(time_t time1, time_t time0);
-#endif
-/**
- * @endcond
- */
 #endif
 
 /**
@@ -423,6 +439,20 @@ int timer_getoverrun(timer_t timerid);
  */
 int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp);
 
+/**
+ * @cond
+ * @internal
+ * @ingroup TIME_KERNEL
+ * @brief set time conversion information
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ */
+#ifdef CONFIG_LIBC_LOCALTIME
+void tzset(void);
+#endif
+/**
+ * @endcond
+ */
 #undef EXTERN
 #if defined(__cplusplus)
 }

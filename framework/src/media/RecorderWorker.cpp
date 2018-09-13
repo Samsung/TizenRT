@@ -16,143 +16,50 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+#include <debug.h>
 #include "RecorderWorker.h"
 
-namespace media {
-unique_ptr<RecorderWorker> RecorderWorker::mWorker;
-once_flag RecorderWorker::mOnceFlag;
+#ifndef CONFIG_MEDIA_RECORDER_STACKSIZE
+#define CONFIG_MEDIA_RECORDER_STACKSIZE 4096
+#endif
 
-RecorderWorker::RecorderWorker() : mRefCnt(0)
+namespace media {
+
+RecorderWorker::RecorderWorker()
 {
 	medvdbg("RecorderWorker::RecorderWorker()\n");
+	mThreadName = "RecorderWorker";
+	mStacksize = CONFIG_MEDIA_RECORDER_STACKSIZE;
 }
 RecorderWorker::~RecorderWorker()
 {
 	medvdbg("RecorderWorker::~RecorderWorker()\n");
 }
 
-int RecorderWorker::entry()
+RecorderWorker& RecorderWorker::getWorker()
 {
-	medvdbg("RecorderWorker::entry()\n");
-
-	while (mIsRunning) {
-		unique_lock<mutex> lock(mWorkerQueue.getMutex());
-
-		if (mWorkerQueue.isEmpty()) {
-			if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
-				mCurRecorder->capture();
-			} else {
-				medvdbg("RecorderWorker::entry() - wait Queue\n");
-				mWorkerQueue.wait(lock);
-			}
-		}
-
-		if (!mWorkerQueue.isEmpty()) {
-			std::function<void()> run = mWorkerQueue.deQueue();
-			medvdbg("RecorderWorker::entry() - pop Queue\n");
-			run();
-		}
-	}
-	return 0;
+	static RecorderWorker worker;
+	return worker;
 }
 
-recorder_result_t RecorderWorker::startWorker()
+bool RecorderWorker::processLoop()
 {
-	unique_lock<mutex> lock(mRefMtx);
-	increaseRef();
-
-	medvdbg("RecorderWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&RecorderWorker::entry, this));
+	if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
+		mCurRecorder->capture();
+		return true;
 	}
 
-	return RECORDER_OK;
+	return false;
 }
 
-void RecorderWorker::stopWorker()
+std::shared_ptr<MediaRecorderImpl> RecorderWorker::getCurrentRecorder()
 {
-	unique_lock<mutex> lock(mRefMtx);
-	decreaseRef();
-
-	medvdbg("RecorderWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt <= 0) {
-		mIsRunning = false;
-
-		if (mWorkerThread.joinable()) {
-			mWorkerQueue.notify_one();
-			mWorkerThread.join();
-			medvdbg("RecorderObserverWorker::stopWorker() - mWorkerthread exited\n");
-		}
-	}
+	return mCurRecorder;
 }
 
-void RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr)
+void RecorderWorker::setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr)
 {
-	medvdbg("RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr)\n");
-
-	if (mr->getState() != RECORDER_STATE_READY) {
-
-		mr->notifyObserver(OBSERVER_COMMAND_ERROR);
-		meddbg("RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr) \
-				- mr->getState() != RECORDER_STATE_READY\n");
-		return;
-	}
-
-	if (mCurRecorder != nullptr) {
-		pauseRecorder(mCurRecorder);
-	}
 	mCurRecorder = mr;
-
-	mr->setState(RECORDER_STATE_RECORDING);
-}
-
-void RecorderWorker::stopRecorder(std::shared_ptr<MediaRecorderImpl> mr, bool completed)
-{
-	medvdbg("RecorderWorker::stopRecorder(std::shared_ptr<MediaRecorderImpl> mr)\n");
-
-	recorder_state_t curState = mr->getState();
-	if (curState != RECORDER_STATE_RECORDING && curState != RECORDER_STATE_PAUSED && completed != true) {
-		mr->notifyObserver(OBSERVER_COMMAND_ERROR);
-		meddbg("RecorderWorker::stopRecorder(std::shared_ptr<MediaRecorderImpl> mr) - \
-				(curState != RECORDER_STATE_RECORDING && curState != RECORDER_STATE_PAUSED)\n");
-		return;
-	}
-	
-	mr->setState(RECORDER_STATE_READY);
-	mr->notifyObserver(OBSERVER_COMMAND_FINISHIED);
-
-	mCurRecorder = nullptr;
-}
-
-void RecorderWorker::pauseRecorder(std::shared_ptr<MediaRecorderImpl> mr)
-{
-	medvdbg("RecorderWorker::pauseRecorder(std::shared_ptr<MediaRecorderImpl> mr)\n");
-
-	if (mr->getState() != RECORDER_STATE_RECORDING) {
-		mr->notifyObserver(OBSERVER_COMMAND_ERROR);
-		meddbg("RecorderWorker::pauseRecorder(std::shared_ptr<MediaRecorderImpl> mr) \
-				- mr->getState() != RECORDER_STATE_RECORDING\n");
-		return;
-	}
-
-	mr->setState(RECORDER_STATE_PAUSED);
-}
-
-MediaQueue& RecorderWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-void RecorderWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderWorker::decreaseRef()
-{
-	mRefCnt--;
 }
 } // namespace media

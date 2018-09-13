@@ -159,7 +159,14 @@ float jnf(int n, float x)
 			 * When Q(k) > 1e17     good for quadruple
 			 */
 			/* determine k */
-			float t, q0, q1, w, h, z, tmp, nf;
+			float t;
+			float q0;
+			float q1;
+			float w;
+			float h;
+			float z;
+			float tmp;
+			float nf;
 			int k;
 
 			nf = nm1 + 1.0f;

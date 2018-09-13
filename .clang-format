@@ -1,0 +1,25 @@
+---
+Language:        Cpp
+ColumnLimit: 0
+# BasedOnStyle:  LLVM
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: false #[M16]
+  AfterFunction: true #[M14]
+  AfterStruct: false #[M16]
+  AfterUnion: false #[M16]
+  AfterClass: true
+  AfterNamespace: false
+  BeforeElse: false #[M15]
+IndentCaseLabels: false #[M09]
+IndentWidth:     4 #[M08]
+SpaceBeforeAssignmentOperators: true #[M11]
+SpaceBeforeParens: ControlStatements
+TabWidth:        4 #[M08]
+UseTab:          Always #[M08]
+PointerAlignment: Right
+SortIncludes: false
+BreakConstructorInitializers: AfterColon
+...

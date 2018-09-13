@@ -25,6 +25,9 @@
 #include <sys/types.h>
 #include <sys/boardctl.h>
 #include <apps/shell/tash.h>
+#ifdef CONFIG_BUILTIN_APPS
+#include <apps/builtin.h>
+#endif
 #include "tash_internal.h"
 
 /****************************************************************************
@@ -86,7 +89,6 @@ static int tash_exit(int argc, char **args);
 static int tash_reboot(int argc, char **argv);
 #endif
 
-extern const tash_taskinfo_t tash_taskinfo_list[];
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -201,19 +203,22 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	int ret = 0;
 	int pri = TASH_CMDTASK_PRIORITY;
 	long stack_size = TASH_CMDTASK_STACKSIZE;
+#ifdef	CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
+	stack_size = 8192;
+#endif
 #if defined(CONFIG_BUILTIN_APPS)
 	int cmd_idx;
 
-	for (cmd_idx = 0; (cmd_idx < tash_cmds_info.count) && (tash_taskinfo_list[cmd_idx].str != NULL); cmd_idx++) {
-		if (!(strncmp(args[0], tash_taskinfo_list[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1))) {
-			pri = tash_taskinfo_list[cmd_idx].task_prio;
-			stack_size = tash_taskinfo_list[cmd_idx].task_stacksize;
+	for (cmd_idx = 0; (cmd_idx < tash_cmds_info.count) && (builtin_list[cmd_idx].name != NULL); cmd_idx++) {
+		if (!(strncmp(args[0], builtin_list[cmd_idx].name, TASH_CMD_MAXSTRLENGTH - 1))) {
+			pri = builtin_list[cmd_idx].priority;
+			stack_size = builtin_list[cmd_idx].stacksize;
 			break;
 		}
 	}
 #endif
 
-	printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
+	shvdbg("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
 
 	ret = task_create(args[0], pri, stack_size, cb, &args[1]);
 
@@ -333,8 +338,8 @@ void tash_cmdlist_install(const tash_cmdlist_t list[])
 {
 	const tash_cmdlist_t *map;
 
-	for (map = list; map->cb; map++) {
-		tash_cmd_install(map->str, map->cb, map->thread_exec);
+	for (map = list; map->entry; map++) {
+		tash_cmd_install(map->name, map->entry, map->exectype);
 	}
 }
 

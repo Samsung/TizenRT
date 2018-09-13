@@ -521,7 +521,7 @@ static ssize_t proc_loadavg(FAR struct proc_file_s *procfile, FAR struct tcb_s *
 	 * after the procfs entry was opened.
 	 */
 
-	(void)clock_cpuload(procfile->pid, &cpuload);
+	(void)clock_cpuload(procfile->pid, 0, &cpuload);
 
 	/* On the simulator, you may hit cpuload.total == 0, but probably never on
 	 * real hardware.

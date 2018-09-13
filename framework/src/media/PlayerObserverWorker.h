@@ -23,38 +23,18 @@
 #include <memory>
 #include <mutex>
 #include <media/MediaPlayer.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 
 namespace media {
-typedef enum player_observer_command_e
-{
-	PLAYER_OBSERVER_COMMAND_STARTED,
-	PLAYER_OBSERVER_COMMAND_FINISHIED,
-	PLAYER_OBSERVER_COMMAND_ERROR
-} player_observer_command_t;
 
-class PlayerObserverWorker
+class PlayerObserverWorker : public MediaWorker
 {
 public:
-	PlayerObserverWorker();
-	~PlayerObserverWorker();
-
 	static PlayerObserverWorker& getWorker();
-	player_result_t startWorker();
-	void stopWorker();
-	MediaQueue& getQueue();
 
 private:
-	int entry();
-
-private:
-	static std::unique_ptr<PlayerObserverWorker> mWorker;
-	static std::once_flag mOnceFlag;
-	int mRefCnt;
-	bool mIsRunning;
-	std::thread mWorkerThread;
-	MediaQueue mObserverQueue; // observer queue
-	std::mutex mRefMtx;  // reference cnt mutex
+	PlayerObserverWorker();
+	virtual ~PlayerObserverWorker();
 };
 } // namespace media
 

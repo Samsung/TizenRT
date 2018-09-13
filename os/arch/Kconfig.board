@@ -15,7 +15,6 @@ choice
 config ARCH_BOARD_ARTIK053
 	bool "Samsung ARTIK-053 Starter Kit"
 	depends on ARCH_CHIP_S5JT200
-	select SAMSUNG_NS2
 	select ARCH_BOARD_ARTIK05X_FAMILY
 	---help---
 		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
@@ -23,7 +22,6 @@ config ARCH_BOARD_ARTIK053
 config ARCH_BOARD_ARTIK053S
 	bool "Samsung ARTIK-053S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
-	select SAMSUNG_NS2
 	select ARCH_BOARD_ARTIK05X_FAMILY
 	---help---
 		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
@@ -31,7 +29,6 @@ config ARCH_BOARD_ARTIK053S
 config ARCH_BOARD_ARTIK055S
 	bool "Samsung ARTIK-055S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
-	select SAMSUNG_NS2
 	select ARCH_BOARD_ARTIK05X_FAMILY
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
@@ -47,7 +44,6 @@ config ARCH_BOARD_LM3S6965EK
 config ARCH_BOARD_SIDK_S5JT200
 	bool "Samsung S5JT200 sidk board"
 	depends on ARCH_CHIP_S5JT200
-	select SAMSUNG_NS2
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
 	---help---

@@ -83,8 +83,8 @@
 #define intdbg    lldbg
 #define intvdbg   llvdbg
 #else
-#define intdbg(x...)
-#define intvdbg(x...)
+#define intdbg(...)
+#define intvdbg(...)
 #endif
 
 /****************************************************************************

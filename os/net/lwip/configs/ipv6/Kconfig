@@ -28,6 +28,14 @@ config NET_IPv6_REASS
 	---help---
 		Enables reassemble incoming IPv6 packets that fragmented.
 
+config NET_IPV6_REASS_MAXAGE
+	int "Maximum time for fragments"
+	default 60
+	---help---
+		Maximum time (in multiples of IP6_REASS_TMR_INTERVAL - so seconds, normally)
+		a fragmented IP packet waits for all fragments to arrive. If not all fragments
+		arrived in this time, the whole packet is discarded.
+
 config NET_IPv6_SEND_ROUTER_SOLICIT
 	bool "Send router solicitation messages during network startup"
 	default y
@@ -46,5 +54,11 @@ config NET_IPv6_DUP_DETECT_ATTEMPTS
 	default 1
 	---help---
 		Number of duplicate address detection attempts.
+
+config NET_IPv6_PMTU_FOR_MULTICAST
+	bool "Support PMTU for multicast destinations"
+	default n
+	---help---
+		Support PMTU for multicast destinations
 
 endif

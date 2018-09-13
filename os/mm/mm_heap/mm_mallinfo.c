@@ -58,7 +58,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <debug.h>
+#include <unistd.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/sched.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -74,7 +76,28 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: mm_get_heap_info
+ *
+ * Description:
+ *   returns a heap which type is matched with ttype
+ *
+ ****************************************************************************/
+struct mm_heap_s *mm_get_heap_info(void)
+{
+#ifdef CONFIG_MM_KERNEL_HEAP
+	struct tcb_s *tcb;
 
+	tcb = sched_gettcb(getpid());
+	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
+		return &g_kmmheap;
+	} else
+#endif
+	{
+		return USR_HEAP;
+	}
+
+}
 /****************************************************************************
  * Name: mm_mallinfo
  *

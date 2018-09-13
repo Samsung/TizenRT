@@ -32,7 +32,7 @@
 
 int fmwup_get_data(things_resource_s *target_resource)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	things_representation_s *rep = NULL;
 
@@ -61,9 +61,9 @@ int fmwup_get_data(things_resource_s *target_resource)
 	rep->things_set_value(rep, FIRMWARE_PROPERTY_VENDER, fmwup_data->manufacturer);
 	rep->things_set_value(rep, FIRMWARE_PROPERTY_MODEL, fmwup_data->model_name);
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "firmware_version = %s", fmwup_data->current_version);
-	THINGS_LOG_D(THINGS_INFO, TAG, "vendor_id = %s", fmwup_data->manufacturer);
-	THINGS_LOG_D(THINGS_INFO, TAG, "model_number = %s", fmwup_data->model_name);
+	THINGS_LOG_V(TAG, "firmware_version = %s", fmwup_data->current_version);
+	THINGS_LOG_V(TAG, "vendor_id = %s", fmwup_data->manufacturer);
+	THINGS_LOG_V(TAG, "model_number = %s", fmwup_data->model_name);
 
 	things_free(fmwup_data->update_time);
 	things_free(fmwup_data->new_version);
@@ -80,7 +80,7 @@ int fmwup_get_data(things_resource_s *target_resource)
 
 int fmwup_set_data(things_resource_s *target_res)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
@@ -89,7 +89,7 @@ int fmwup_set_data(things_resource_s *target_res)
 	if (target_res->rep != NULL) {
 		rep = target_res->rep;
 	} else {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "fmwup_set_data is NULL");
+		THINGS_LOG_E(TAG, "fmwup_set_data is NULL");
 		return OC_EH_ERROR;
 	}
 
@@ -105,18 +105,18 @@ int fmwup_set_data(things_resource_s *target_res)
 	update = fmwup_data_get_update_int64(update_str);
 
 	if (fmwup_data_set_property_int64(FIRMWARE_PROPERTY_UPDATE, update) != 0) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_UPDATE);
+		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_UPDATE);
 	}
 
 	if (fmwup_data_set_property(FIRMWARE_PROPERTY_NEW_VERSION, new_version) != 0) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_NEW_VERSION);
+		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_NEW_VERSION);
 	}
 
 	if (fmwup_data_set_property(FIRMWARE_PROPERTY_PACKAGE_URI, package_uri) != 0) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_PACKAGE_URI);
+		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_PACKAGE_URI);
 	}
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "update : %d, new_version : %s, package_uri : %s\n", update, new_version, package_uri);
+	THINGS_LOG_V(TAG, "update : %d, new_version : %s, package_uri : %s\n", update, new_version, package_uri);
 
 	fmwup_internal_update_command(update);
 
@@ -125,11 +125,11 @@ int fmwup_set_data(things_resource_s *target_res)
 
 int fmwup_check_firmware_upgraded(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	char *temp_state = fmwup_data_get_property(FIRMWARE_PROPERTY_STATE);
 	if (!temp_state) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "failed to get state property");
+		THINGS_LOG_E(TAG, "failed to get state property");
 		return FMWUP_ERROR_OPERATION_FAILED;
 	}
 
@@ -138,7 +138,7 @@ int fmwup_check_firmware_upgraded(void)
 	things_free(temp_state);
 
 	if (state == FMWUP_STATE_UPDATING) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "***Firmware Upgrade Done***");
+		THINGS_LOG_V(TAG, "***Firmware Upgrade Done***");
 
 		// TODO :: It should be checked and set result value according to upgrade result
 		/* Initialize - new platform information - */
@@ -147,7 +147,7 @@ int fmwup_check_firmware_upgraded(void)
 			fmwup_data_set_property(FIRMWARE_PROPERTY_CURRENT_VERSION, new_version);
 			things_free(new_version);
 		} else {
-			THINGS_LOG_D(THINGS_ERROR, TAG, "failed get new version");
+			THINGS_LOG_E(TAG, "failed get new version");
 		}
 
 		/* Initialize - new firmware information - */
@@ -156,7 +156,7 @@ int fmwup_check_firmware_upgraded(void)
 		fmwup_internal_propagate_resource(FMWUP_STATE_IDLE, FMWUP_RESULT_SUCCESS, false);
 
 	} else {
-		THINGS_LOG_D(THINGS_INFO, TAG, "is not updating, state[%d]", state);
+		THINGS_LOG_V(TAG, "is not updating, state[%d]", state);
 		return FMWUP_ERROR_OPERATION_FAILED;
 	}
 
@@ -165,10 +165,10 @@ int fmwup_check_firmware_upgraded(void)
 
 int fmwup_initialize(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (key_manager_init() < 0) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "fail key_manager_init()");
+		THINGS_LOG_D(TAG, "fail key_manager_init()");
 		return -1;
 	}
 

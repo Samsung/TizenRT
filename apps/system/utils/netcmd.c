@@ -44,15 +44,14 @@
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/dhcp.h>
+#include <net/lwip/mld6.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
-#include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
 #include <netutils/netlib.h>
 #endif
 
-#include <netutils/netlib.h>
 #include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
@@ -65,14 +64,18 @@
 #endif
 
 #include "netcmd.h"
+#ifdef CONFIG_NET_PING_CMD
 #include "netcmd_ping.h"
+#endif
 #ifdef CONFIG_NETUTILS_DHCPD
 #include "netcmd_dhcpd.h"
 #endif
 #ifdef CONFIG_NETUTILS_TFTPC
 #include "netcmd_tftpc.h"
 #endif
-
+#ifdef CONFIG_NET_NETMON
+#include "netcmd_netmon.h"
+#endif
 #undef HAVE_PING
 #undef HAVE_PING6
 
@@ -90,10 +93,15 @@ static void nic_display_state(void)
 	struct sockaddr_in *sin;
 	struct sockaddr *sa;
 	struct ifconf ifcfg;
+	int ret = -1;
 	int fd;
 	int numreqs = 3;
 	int num_nic = 0;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
@@ -105,6 +113,11 @@ static void nic_display_state(void)
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
 	ifr = ifcfg.ifc_req;
 	int i = 0;
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+	int j;
+	struct netif *netif;
+#endif
+
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
@@ -113,20 +126,47 @@ static void nic_display_state(void)
 		} else {
 			struct ifreq tmp;
 			strncpy(tmp.ifr_name, ifr->ifr_name, IF_NAMESIZE);
-			ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
-			sa = &tmp.ifr_hwaddr;
-			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+			ret = ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
+			if (ret < 0) {
+				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+			} else {
+				sa = &tmp.ifr_hwaddr;
+				printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+			}
 
-			ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
-			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+			ret = ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
+			if (ret < 0) {
+				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+			} else {
+				printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+			}
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
-		ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
-		printf("MTU: %d\n", ifr->ifr_mtu);
+		ret = ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
+		if (ret < 0) {
+			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		} else {
+			sin = (struct sockaddr_in *)&ifr->ifr_addr;
+			printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
+		}
+
+		ret = ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
+		if (ret < 0) {
+			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		} else {
+			printf("MTU: %d\n", ifr->ifr_mtu);
+		}
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+		netif = netif_find(ifr->ifr_name);
+		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
+			if (netif->ip6_addr_state[j] != 0) {
+				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
+			}
+		}
+#else
+		printf("\n");
+#endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
 		printf("\n");
 	}
 DONE:
@@ -263,7 +303,10 @@ int cmd_ifconfig(int argc, char **argv)
 
 	if (hw) {
 		ndbg("HW MAC: %s\n", hw);
-		netlib_setmacaddr(intf, mac);
+		int ret = netlib_setmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("Set mac address fail\n");
+		}
 	}
 #endif
 
@@ -273,14 +316,90 @@ int cmd_ifconfig(int argc, char **argv)
 
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
+			netlib_set_ipv4addr(intf, &addr);
+#ifdef CONFIG_NET_IPv6
+		} else if (!strcmp(hostip, "auto")) {
+			/* IPV6 auto configuration : Link-Local address */
+
+			ndbg("IPV6 link local address auto config\n");
+			netif = netif_find(intf);
+
+			if (netif) {
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+				/* enable IPv6 address stateless autoconfiguration */
+				netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+				/* To auto-config linklocal address, netif should have mac address already */
+				netif_create_ip6_linklocal_address(netif, 1);
+				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
+#ifdef CONFIG_NET_IPv6_MLD
+				ip6_addr_t solicit_addr;
+
+				/* set MLD6 group to receive solicit multicast message */
+				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
+				mld6_joingroup_netif(netif, &solicit_addr);
+				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+			}
+
+			return OK;
+#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
-			gip = addr.s_addr = inet_addr(hostip);
+
+			if (strstr(hostip, ".") != NULL) {
+				gip = addr.s_addr = inet_addr(hostip);
+				netlib_set_ipv4addr(intf, &addr);
+			}
+#ifdef CONFIG_NET_IPv6
+			else if (strstr(hostip, ":") != NULL) {
+				ip6_addr_t temp;
+				s8_t idx;
+
+				netif = netif_find(intf);
+				if (netif) {
+					inet_pton(AF_INET6, hostip, &temp);
+					idx = netif_get_ip6_addr_match(netif, &temp);
+					if (idx != -1) {
+#ifdef CONFIG_NET_IPv6_MLD
+						ip6_addr_t solicit_addr;
+
+						/* leaving MLD6 group */
+						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+						mld6_leavegroup_netif(netif, &solicit_addr);
+						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+						/* delete static ipv6 address if the same ip address exists */
+						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
+						return OK;
+					}
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+					/* enable IPv6 address stateless autoconfiguration */
+					netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+					/* add static ipv6 address */
+					(void)netif_add_ip6_address(netif, &temp, &idx);
+
+#ifdef CONFIG_NET_IPv6_MLD
+					ip6_addr_t solicit_addr;
+
+					/* set MLD6 group to receive solicit multicast message */
+					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+					mld6_joingroup_netif(netif, &solicit_addr);
+					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+				}
+
+				return OK;
+			}
+#endif /* CONFIG_NET_IPv6 */
+			else {
+				ndbg("hostip is not valid\n");
+
+				return ERROR;
+			}
 		}
-
-		netlib_set_ipv4addr(intf, &addr);
-
 	} else {
 		printf("hostip is not provided\n");
 		return ERROR;
@@ -296,7 +415,10 @@ int cmd_ifconfig(int argc, char **argv)
 		struct netif *ifcon_if = NULL;
 		int32_t timeleft = NET_CMD_DHCP_TIMEOUT;
 
-		netlib_getmacaddr(intf, mac);
+		ret = netlib_getmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("get mac fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		ifcon_if = netif_find(intf);
 		if (ifcon_if == NULL) {
@@ -318,12 +440,12 @@ int cmd_ifconfig(int argc, char **argv)
 		}
 
 		if (ifcon_if->dhcp->state == DHCP_BOUND) {
-			printf("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
-			printf("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
-			printf("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
+			nvdbg("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
+			nvdbg("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
+			nvdbg("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
 		} else {
 			if (timeleft <= 0) {
-				printf("DHCP Client - Timeout fail to get ip address\n");
+				nvdbg("DHCP Client - Timeout fail to get ip address\n");
 				return ERROR;
 			}
 		}
@@ -332,7 +454,10 @@ int cmd_ifconfig(int argc, char **argv)
 		FAR void *handle;
 		struct dhcpc_state ds;
 
-		netlib_getmacaddr(intf, mac);
+		ret = netlib_getmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("get mac  fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		/* Set up the DHCPC modules */
 		handle = dhcpc_open(intf);
@@ -352,7 +477,10 @@ int cmd_ifconfig(int argc, char **argv)
 			return ERROR;
 		}
 
-		netlib_set_ipv4addr(intf, &ds.ipaddr);
+		ret = netlib_set_ipv4addr(intf, &ds.ipaddr);
+		if (ret < 0) {
+			ndbg("Set IPv4 address fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		if (ds.netmask.s_addr != 0) {
 			netlib_set_ipv4netmask(intf, &ds.netmask);
@@ -387,8 +515,10 @@ int cmd_ifconfig(int argc, char **argv)
 
 		addr.s_addr = gip;
 	}
-	netlib_set_dripv4addr(intf, &addr);
-
+	int ret = netlib_set_dripv4addr(intf, &addr);
+	if (ret < 0) {
+		ndbg("Set IPv4 route fail %s:%d\n", __FUNCTION__, __LINE__);
+	}
 	/* Set network mask */
 	if (mask) {
 		ndbg("Netmask: %s\n", mask);
@@ -397,8 +527,10 @@ int cmd_ifconfig(int argc, char **argv)
 		ndbg("Netmask: Default\n");
 		addr.s_addr = inet_addr("255.255.255.0");
 	}
-	netlib_set_ipv4netmask(intf, &addr);
-
+	ret = netlib_set_ipv4netmask(intf, &addr);
+	if (ret < 0) {
+		ndbg("Set IPv4 netmask fail %s:%d\n", __FUNCTION__, __LINE__);
+	}
 	if (dns) {
 		ndbg("DNS: %s\n", dns);
 		addr.s_addr = inet_addr(dns);
@@ -420,7 +552,12 @@ const static tash_cmdlist_t net_utilcmds[] = {
 #ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
-	{"ping", cmd_ping, TASH_EXECMD_SYNC},
+#ifdef CONFIG_NET_NETMON
+	{"netmon", cmd_netmon, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_NET_PING_CMD
+	{"ping", cmd_ping, TASH_EXECMD_ASYNC},
+#endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
 #endif

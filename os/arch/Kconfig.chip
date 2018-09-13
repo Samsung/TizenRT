@@ -441,12 +441,18 @@ config ARCH_STACKDUMP
 	bool "Dump stack on assertions"
 	default n
 	---help---
-		Enable to do stack dumps after assertions
+		Enable to do stack dumps after assertions.
+		To see symbols on call stack dump, please enable DEBUG_DISPLAY_SYMBOL.
+		It is possible to enable it when FS_ROMFS is enabled.
+		
 
 config DEBUG_DISPLAY_SYMBOL
 	bool "Display symbols on call stack dump"
 	default n
-	depends on DEBUG_SYMBOLS && FRAME_POINTER && FS_ROMFS
+	select DEBUG_SYMBOLS
+	select FRAME_POINTER
+	depends on ARCH_STACKDUMP
+	depends on FS_ROMFS
 	---help---
 		Enable to show symbol on call stack dump
 
@@ -734,6 +740,31 @@ config RAM_SIZE
 		refers to the RAM that you link program code into.  If program code
 		does not execute out of RAM but from FLASH, then you may designate
 		any block of RAM as "primary."
+
+config RAMx_START
+	string "List of start address for additional heap region"
+	default "0x00000000,"
+	depends on MM_REGIONS != 1
+	---help---
+		The start address list of the additional heap regions.
+		When you want to use separated heap region in a physical RAM or
+		two different physical RAMs, set MM_REGIONS first at memory
+		management, and then set hexa values at RAMx_START and RAMx_SIZE
+		to support several heap regions.
+		Each region is separated by ',' as shown in example.
+		i.e. "0x02000000,0x4000000"
+
+config RAMx_SIZE
+	string "List of size for additional heap region"
+	default "0,"
+	depends on MM_REGIONS != 1
+	---help---
+		The size list of additional heap region.
+		Refer RAMx_START content. One different thing is this has
+		decimal values (START has hexa values).
+		This should have same number of list element with RAMx_START's.
+		Each region is separated by ',' as shown in example.
+		i.e. "100,200"
 
 config DDR
 	bool "Use DDR memory"

@@ -110,15 +110,8 @@
  *
  *    Limitiations in the current implementation:
  *
- *      1. Only a single atexit function can be registered unless
- *         CONFIG_SCHED_ATEXIT_MAX defines a larger number.
- *      2. atexit functions are not inherited when a new task is
+ *      1. atexit functions are not inherited when a new task is
  *         created.
- *      3. If both SCHED_ONEXIT and SCHED_ATEXIT are selected, then atexit()
- *         is built on top of the on_exit() implementation.  In that case,
- *         CONFIG_SCHED_ONEXIT_MAX determines the size of the combined
- *         number of atexit(0) and on_exit calls and SCHED_ATEXIT_MAX is
- *         not used.
  *
  * Input Parameters:
  *   func - A pointer to the function to be called when the task exits.
@@ -132,14 +125,15 @@ int atexit(void (*func)(void))
 {
 #if defined(CONFIG_SCHED_ONEXIT)
 	/* atexit is equivalent to on_exit() with no argument (Assuming that the ABI
-	 * can handle a callback function that recieves more parameters than it expects).
+	 * can handle a callback function that receives more parameters than it expects).
 	 */
 
 	return on_exit((onexitfunc_t)func, NULL);
 
-#elif defined(CONFIG_SCHED_ATEXIT_MAX) && CONFIG_SCHED_ATEXIT_MAX > 1
+#else
 	FAR struct tcb_s *tcb = this_task();
 	FAR struct task_group_s *group = tcb->group;
+	FAR struct atexit_s *patexit;
 	int index;
 	int ret = ERROR;
 
@@ -150,41 +144,21 @@ int atexit(void (*func)(void))
 	if (func) {
 		sched_lock();
 
-		/* Search for the first available slot.  atexit() functions are registered
-		 * from lower to higher arry indices; they must be called in the reverse
-		 * order of registration when task exists, i.e., from higher to lower
-		 * indices.
+		/* Allocate an atexit_s structure, initialize with functions and arguments;
+		 * then add it to the head of single linked queue. These must be called back in the
+		 * reverse order during task exit i.e, remove from head.
 		 */
-
-		available = -1;
-		for (index = 0; index < CONFIG_SCHED_ATEXIT_MAX; index++) {
-			if (!group->tg_atexitfunc[index]) {
-				group->tg_atexitfunc[index] = func;
-				ret = OK;
-				break;
-			}
+		patexit = (struct atexit_s *)kmm_malloc(sizeof(struct atexit_s));
+		if (patexit) {
+			patexit->atexitfunc = func;
+			sq_addfirst((sq_entry_t *)patexit, &(group->tg_atexitfunc));
+			ret = OK;
 		}
 
 		sched_unlock();
+
 	}
 
-	return ret;
-#else
-	FAR struct tcb_s *tcb = this_task();
-	FAR struct task_group_s *group = tcb->group;
-	int ret = ERROR;
-
-	DEBUGASSERT(group);
-
-	/* The following must be atomic */
-
-	sched_lock();
-	if (func && !group->tg_atexitfunc) {
-		group->tg_atexitfunc = func;
-		ret = OK;
-	}
-
-	sched_unlock();
 	return ret;
 #endif
 }

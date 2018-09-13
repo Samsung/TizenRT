@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file environ.c
+/// @file tc_environ.c
 
 /// @brief Test Case Example for Environ API
 

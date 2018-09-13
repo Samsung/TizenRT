@@ -346,7 +346,6 @@ err_t slipif_init(struct netif *netif)
 
 	netif->output = slipif_output;
 	netif->mtu = SLIP_MAX_SIZE;
-	netif->flags |= NETIF_FLAG_POINTTOPOINT;
 
 	/* netif->state or netif->num contain the port number */
 	if (netif->state != NULL) {

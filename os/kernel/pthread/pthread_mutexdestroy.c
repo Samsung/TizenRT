@@ -62,6 +62,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <debug.h>
+#include <stdbool.h>
 
 #include <tinyara/semaphore.h>
 
@@ -109,6 +110,8 @@
 
 int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 {
+	struct tcb_s *ptcb;
+	struct join_s *pjoin = NULL;
 	int ret = EINVAL;
 	int status;
 
@@ -138,7 +141,23 @@ int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 			 * does.
 			 */
 
-			if (sched_gettcb(mutex->pid) == NULL) {
+			ptcb = sched_gettcb(mutex->pid);
+			if (ptcb && ((ptcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD)) {
+				pjoin = pthread_findjoininfo(ptcb->group, ptcb->pid);
+			}
+
+			/* In some cases, pthread_mutex_destroy can be executed on middle of
+			 * exiting pthread which holds mutex. The sched_releasepid() updates
+			 * g_pidhash list to NULL by calling _exit() from pthread_exit().
+			 * But, before calling it, pthread_exit() calls pthread_completejoin().
+			 * It gives semaphore of pthread_join before executing _exit().
+			 * It might cause user call pthread_mutex_destroy before updating scheduler.
+			 * Checking pjoin structure and terminated element helps to check
+			 * whether pthread which holds mutex is exiting or not.
+			 */
+
+			if (ptcb == NULL || \
+			   (((ptcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD) && (pjoin == NULL || pjoin->terminated == true))) {
 				/* The thread associated with the PID no longer exists */
 
 				mutex->pid = -1;

@@ -25,7 +25,6 @@
 #include "logging/things_logger.h"
 #include "things_wait_handler.h"
 
-#include "things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif
@@ -76,7 +75,7 @@ int things_cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal)
 	pthread_mutex_lock(&gREQmutex);
 	for (i = iSendHandle - 1; i >= 0; i--) {	// latest gSendHandle Value check.
 		if (gSendHandle[i] == EqualVal) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Found request handler.(%d th : 0x%X)", i, gSendHandle[i]);
+			THINGS_LOG_D(TAG, "Found request handler.(%d th : 0x%X)", i, gSendHandle[i]);
 			gSendHandle[i] = writeHandleVal;
 			res = 1;
 			break;
@@ -106,7 +105,7 @@ OCDoHandle things_add_request_handle(OCDoHandle HandleVal)
 
 	pthread_mutex_lock(&gREQmutex);
 	if (iSendHandle >= MAX_SENDHANDLES) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "gSendHandle array is Full.");
+		THINGS_LOG_V(TAG, "gSendHandle array is Full.");
 	} else {
 		gSendHandle[iSendHandle] = HandleVal;
 		result = gSendHandle[iSendHandle];
@@ -138,19 +137,19 @@ void things_del_all_request_handle(void)
  ************************************************************/
 static void *handle_base_timeout_loop(TimeOutManager_s *pTimeOutManager)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 	static int cntTimeOutThread = 0;
 
 	pthread_mutex_lock(&gTimeOutmutex);
 	cntTimeOutThread++;
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[HD Start] Count of Time-Out thread is %d.", cntTimeOutThread);
+	THINGS_LOG_D(TAG, "[HD Start] Count of Time-Out thread is %d.", cntTimeOutThread);
 	pthread_mutex_unlock(&gTimeOutmutex);
 
 	sleep(1);
 
 	if (pTimeOutManager == NULL || pTimeOutManager->gthreadId < 0 || pTimeOutManager->funcName == NULL || pTimeOutManager->timeout.cur_counter <= 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Parameter is invalid.");
+		THINGS_LOG_E(TAG, "Parameter is invalid.");
 		if (pTimeOutManager) {
 			things_free(pTimeOutManager);
 		}
@@ -158,7 +157,7 @@ static void *handle_base_timeout_loop(TimeOutManager_s *pTimeOutManager)
 		return 0;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "handleVal=0x%X, timeCounter=%d, funcName=0x%X", pTimeOutManager->handleVal, pTimeOutManager->timeout.cur_counter, pTimeOutManager->funcName);
+	THINGS_LOG_D(TAG, "handleVal=0x%X, timeCounter=%d, funcName=0x%X", pTimeOutManager->handleVal, pTimeOutManager->timeout.cur_counter, pTimeOutManager->funcName);
 
 	while (things_get_request_handle() != NULL && pTimeOutManager->handleVal == things_get_request_handle()) {	// things_get_request_handle() != NULL will guarantee for Connecting to AP.
 		sleep(1);
@@ -174,10 +173,10 @@ static void *handle_base_timeout_loop(TimeOutManager_s *pTimeOutManager)
 	things_free(pTimeOutManager);
 	pthread_mutex_lock(&gTimeOutmutex);
 	cntTimeOutThread--;
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[HD End] Count of Time-Out thread is %d.", cntTimeOutThread);
+	THINGS_LOG_D(TAG, "[HD End] Count of Time-Out thread is %d.", cntTimeOutThread);
 	pthread_mutex_unlock(&gTimeOutmutex);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 
 	return 0;
 }
@@ -188,7 +187,7 @@ long long things_next_time_out(const long long ori_num, const long long cur_num)
 	long long nextT = -1;
 
 	if (ori_num <= 0 || cur_num <= 0) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Not Enabled PDF re-try.");
+		THINGS_LOG_V(TAG, "Not Enabled PDF re-try.");
 		return nextT;
 	}
 
@@ -199,15 +198,15 @@ long long things_next_time_out(const long long ori_num, const long long cur_num)
 		x = x + 500;
 
 		if (x < 500 || x > MAX_RANDOM_NUM + 500) {
-			THINGS_LOG_V(THINGS_INFO, TAG, "X value invalid.");
+			THINGS_LOG_V(TAG, "X value invalid.");
 			break;
 		}
 
 		nextT = ((long long)ori_num * ((long long)10000000000000 + x * x * x * x)) / (long long)10000000000000;
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Gaussian next Time-Out Number: nextT = %lld", nextT);
+		THINGS_LOG_D(TAG, "Gaussian next Time-Out Number: nextT = %lld", nextT);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "next Time-Out: %lld", nextT);
+	THINGS_LOG_D(TAG, "next Time-Out: %lld", nextT);
 	return nextT;
 }
 
@@ -216,7 +215,7 @@ unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check
 	TimeOutManager_s *pTimeOutManager = NULL;
 
 	if ((pTimeOutManager = (TimeOutManager_s *) things_malloc(sizeof(TimeOutManager_s))) == NULL || CallFunc == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Memory allocation is failed.");
+		THINGS_LOG_E(TAG, "Memory allocation is failed.");
 		return 0;
 	}
 
@@ -235,7 +234,7 @@ unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check
 
 
 	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager, THINGS_STACK_TIME_OUT_THREAD) != 0)	{
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
+		THINGS_LOG_E(TAG, "Create thread is failed.");
 		things_free(pTimeOutManager);
 		return 0;
 	}

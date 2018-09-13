@@ -96,10 +96,10 @@
 #define pwmlldbg  lldbg
 #define pwmllvdbg llvdbg
 #else
-#define pwmdbg(x...)
-#define pwmvdbg(x...)
-#define pwmlldbg(x...)
-#define pwmllvdbg(x...)
+#define pwmdbg(...)
+#define pwmvdbg(...)
+#define pwmlldbg(...)
+#define pwmllvdbg(...)
 #endif
 
 /****************************************************************************

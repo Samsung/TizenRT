@@ -195,11 +195,11 @@ time_t clock_calendar2utc(int year, int month, int day)
 
 	/* Years since epoch in units of days (ignoring leap years). */
 
-	days = (year - 1970) * 365;
+	days = (year - EPOCH_YEAR) * 365;
 
 	/* Add in the extra days for the leap years prior to the current year. */
 
-	days += (year - 1969) >> 2;
+	days += (year - EPOCH_YEAR - 1) >> 2;
 
 	/* Add in the days up to the beginning of this month. */
 

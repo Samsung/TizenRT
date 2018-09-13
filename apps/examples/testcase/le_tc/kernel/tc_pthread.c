@@ -16,7 +16,8 @@
  *
  ****************************************************************************/
 
-/// @file pthread.c
+/// @file tc_pthread.c
+
 /// @brief Test Case Example for Pthread API
 
 /****************************************************************************
@@ -74,7 +75,6 @@ int g_barrier_count_spare = 0;
 static pthread_mutex_t g_mutex_timedwait;
 static pthread_cond_t cond;
 static int g_mutex_cnt = 0;
-static int isemaphore;
 
 int g_cond_sig_val = 0;
 
@@ -83,7 +83,7 @@ static bool g_sig_handle = false;
 pthread_t self_pid;
 volatile uint8_t check_prio;
 
-static void *setgetname_thread(void *param)
+static void *infinite_loop_thread(void *param)
 {
 	while (1) {
 		sleep(1);
@@ -120,17 +120,6 @@ static void *self_test_thread(void *param)
 }
 
 /**
-* @fn                   :do_nothing_thread
-* @brief                :utility function
-* @return               :void*
-*/
-static void *do_nothing_thread(void *param)
-{
-	pthread_exit(0);
-	return NULL;
-}
-
-/**
 * @fn                   :setschedprio_test_thread
 * @brief                :utility function for tc_pthread_setschedprio
 * @return               :void*
@@ -139,15 +128,19 @@ static void *do_nothing_thread(void *param)
 static void *setschedprio_test_thread(void *param)
 {
 	struct sched_param param_info;
+	int ret_chk;
 
 	/* sleep to guarantee running of pthread_setschedprio() */
 	sleep(1);
 
 	/* get current priority */
-	(void)sched_getparam(0, &param_info);
-
-	/* give getting value to global variable to compare it in another function */
-	check_prio = param_info.sched_priority;
+	ret_chk = sched_getparam(0, &param_info);
+	if (ret_chk == ERROR) {
+		check_prio = 0;	// Fail to get current priority
+	} else {
+		/* give getting value to global variable to compare it in another function */
+		check_prio = param_info.sched_priority;
+	}
 
 	return NULL;
 }
@@ -172,14 +165,12 @@ static void *task_barrier(void *param)
 }
 
 /**
-* @fn                   :task_exit
+* @fn                   :pthread_exit_thread
 * @brief                :utility function for tc_pthread_pthread_create_exit_join
 * @return               :void*
 */
-static void *task_exit(void *param)
+static void *pthread_exit_thread(void *param)
 {
-	isemaphore = INMAIN;
-	pthread_setname_np(0, "task_exit");
 	pthread_exit(RETURN_PTHREAD_JOIN);
 	return NULL;
 }
@@ -266,6 +257,7 @@ static void *threadfunc_sched(void *param)
 	return NULL;
 }
 
+#if CONFIG_NPTHREAD_KEYS > 0
 /**
 * @fn                   :pthread_key_test
 * @brief                :utility function for tc_pthread_pthread_key_create_delete_set_getspecific
@@ -350,6 +342,7 @@ test_out:
 	}
 	return NULL;
 }
+#endif
 
 /**
 * @fn                   :cancel_state_func
@@ -609,19 +602,65 @@ static void tc_pthread_pthread_create_exit_join(void)
 	int ret_chk;
 	pthread_t pthread;
 	void *p_value = 0;
-	isemaphore = ERROR;
 
-	ret_chk = pthread_create(&pthread, NULL, task_exit, NULL);
+	ret_chk = pthread_create(&pthread, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 
 	/* To make sure thread is created before we join it */
-	while (isemaphore == INTHREAD) {
-		sleep(SEC_1);
-	}
+	sleep(SEC_1);
 
 	ret_chk = pthread_join(pthread, &p_value);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_join", p_value, RETURN_PTHREAD_JOIN);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_pthread_pthread_tryjoin_np
+* @brief                :test the pthread_tryjoin_np function
+* @Scenario             :1. creates a new thread with infinite loop
+*                        2. call pthread_tryjoin_np
+*                        3. cancel thread
+*                        4. call pthread_tryjoin_np again
+* API's covered         :pthread_create, pthread_cancel, pthread_tryjoin_np
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_pthread_pthread_tryjoin_np(void)
+{
+	int ret_chk;
+	pthread_t pid;
+	void *pexit_value = 0;
+
+	ret_chk = pthread_create(&pid, NULL, infinite_loop_thread, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	/* To make sure thread is running */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, NULL);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, EBUSY);
+
+	ret_chk = pthread_cancel(pid);
+	TC_ASSERT_EQ("pthread_cancel", ret_chk, OK);
+
+	/* To make sure thread is terminated */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, ESRCH);
+
+	ret_chk = pthread_create(&pid, NULL, pthread_exit_thread, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	/* To make sure thread is started and terminated */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_tryjoin_np", pexit_value, RETURN_PTHREAD_JOIN);
 
 	TC_SUCCESS_RESULT();
 }
@@ -813,6 +852,7 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if CONFIG_NPTHREAD_KEYS > 0
 /**
 * @fn                   :tc_pthread_pthread_key_create_delete_set_getspecific
 * @brief                :thread-specific data management
@@ -840,6 +880,7 @@ static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_pthread_pthread_cancel_setcancelstate
@@ -945,7 +986,9 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 {
 	int ret_chk;
 	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
+	
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
 	pthread_mutex_init(&g_mutex, NULL);
@@ -1250,19 +1293,12 @@ static void tc_pthread_pthread_detach(void)
 	pthread_t new_th;
 
 	/* Create the thread */
-	ret_chk = pthread_create(&new_th, NULL, do_nothing_thread, NULL);
+	ret_chk = pthread_create(&new_th, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
-
-	/* Wait 'till the thread returns.
-	 * The thread could have ended by the time we try to join, so
-	 * don't worry about it, just so long as other errors don't
-	 * occur. The point is to make sure the thread has ended execution. */
-	ret_chk = pthread_join(new_th, NULL);
-	TC_ASSERT_NEQ("pthread_join", ret_chk, EDEADLK);
 
 	/* Detach the non-existant thread. */
 	ret_chk = pthread_detach(new_th);
-	TC_ASSERT_NEQ("pthread_detach", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_detach", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1346,10 +1382,10 @@ static void tc_pthread_pthread_equal(void)
 	pthread_t second_th;
 	bool check_same;
 
-	ret_chk = pthread_create(&first_th, NULL, do_nothing_thread, NULL);
+	ret_chk = pthread_create(&first_th, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	ret_chk = pthread_create(&second_th, NULL, do_nothing_thread, NULL);
+	ret_chk = pthread_create(&second_th, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	pthread_join(first_th, NULL);
@@ -1388,7 +1424,7 @@ static void tc_pthread_pthread_setgetname_np(void)
 	char *thread_name = "NameThread";
 	char get_name[32];
 
-	ret_chk = pthread_create(&name_th, NULL, setgetname_thread, NULL);
+	ret_chk = pthread_create(&name_th, NULL, infinite_loop_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	ret_chk = pthread_setname_np(name_th, "NameThread");
@@ -1466,11 +1502,14 @@ int pthread_main(void)
 {
 	tc_pthread_pthread_barrier_init_destroy_wait();
 	tc_pthread_pthread_create_exit_join();
+	tc_pthread_pthread_tryjoin_np();
 	tc_pthread_pthread_kill();
 	tc_pthread_pthread_cond_broadcast();
 	tc_pthread_pthread_cond_init_destroy();
 	tc_pthread_pthread_set_get_schedparam();
+#if CONFIG_NPTHREAD_KEYS > 0
 	tc_pthread_pthread_key_create_delete_set_getspecific();
+#endif
 	tc_pthread_pthread_cancel_setcancelstate();
 	tc_pthread_pthread_setschedprio();
 	tc_pthread_pthread_timed_wait();
