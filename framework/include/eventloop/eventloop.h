@@ -96,7 +96,7 @@ typedef uv_signal_t el_event_t;
 /**
  * @brief EventLoop Timeout Callback
  */
-typedef void (*timeout_callback)(void *);
+typedef bool (*timeout_callback)(void *data);
 
 /**
  * @brief EventLoop Thread Safe Callback
@@ -121,17 +121,21 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  * @details @b #include <eventloop/eventloop.h> \n
  * This API can create timer which is called once or repeated according to repeat flag. \n
  * The timer event is handled in the loop of its own task by calling eventloop_loop_run. \n
- * When eventloop_delete_timer is called, the timer is stopped if it is active and then used resources are freed
- * @remarks You should free used timer resources after using timer by calling @eventloop_delete_timer with returned pointer
+ * All resources created for timer at this call is freed when timer is stopped. \n
+ * So you don't have to call eventloop_delete_timer after it is stopped. \n
+ * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
+ * In other case, timer is stopped after calling callback function once regardless of return value in callback function. \n
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
  * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
+ *            In case of repeated timer, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] data data to pass to func when func is called
+ * @param[in] data_size size of data
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size);
 
 /**
  * @brief Delete specific timer
@@ -150,17 +154,20 @@ int eventloop_delete_timer(el_timer_t *timer);
  * So you don't need to call eventloop_loop_run() to run loop. \n
  * In other words, the timer event is added to a loop handled by eventloop task, \n
  * and then registered callback is executed in the context of eventloop task asynchronously, not task which created timer. \n
- * When eventloop_delete_timer is called, the timer is stopped if it is active and then used resources are freed
- * @remarks You should free used timer resources after using timer by calling @eventloop_delete_timer with returned pointer
+ * All resources created for timer at this call is freed when timer is stopped. \n
+ * So you don't have to call eventloop_delete_timer after it is stopped. \n
+ * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
+ * In other case, timer is stopped after calling callback function once. regardless of return value in callback function.
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
  * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
  * @param[in] data data to pass to func when func is called
+ * @param[in] data_size size of data
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size);
 
 /**
  * @brief Set event callback which will be called a certain event occur
