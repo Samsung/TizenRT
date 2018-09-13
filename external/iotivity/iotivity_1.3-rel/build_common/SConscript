@@ -46,7 +46,7 @@ host = platform.system().lower()
 # In case of msys_nt, the host string contains an internal Windows version
 # which is not interesting for lookups in the maps.
 # Canonicalize the msys_nt-XX.X system name to msys-nt
-if 'msys_nt' in host:
+if 'msys_nt' or 'mingw' in host:
     host = 'msys_nt'
 
 if host not in host_target_map:
