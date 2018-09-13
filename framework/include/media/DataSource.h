@@ -54,7 +54,7 @@ public:
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0
 	 */
-	~DataSource();
+	virtual ~DataSource();
 	/**
 	 * @brief Constructs a new object provide with audio configuration.
 	 * @details @b #include <media/DataSource.h>
