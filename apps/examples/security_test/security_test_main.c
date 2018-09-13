@@ -1314,7 +1314,7 @@ void TC_see_get_uuid(int debug_mode)
 
 	ret = get_artik_crt_uuid(uuid, &uuid_len);
 	if (ret) {
-		printf("Failed to get uuid (err:0x%x)");
+		printf("Failed to get uuid (err:0x%x)", ret);
 		return;
 	}
 
@@ -1325,6 +1325,72 @@ void TC_see_get_uuid(int debug_mode)
 	printf("\n");
 }
 
+#define PUFKEY_NUM	1024
+
+typedef struct {
+	unsigned char puf[64];
+	unsigned int puflen;
+	unsigned char input[64];
+} pufkey_t;
+
+static pufkey_t pufkey[PUFKEY_NUM];
+
+void TC_puf_key_test(int debug_mode)
+{
+	unsigned int input_len = 0;
+	unsigned char comp_puf[PUFKEY_NUM] = { 0x00, };
+	unsigned int comp_puflen = 0;
+	int ret = 0;
+	int i, j;
+
+	input_len = debug_mode;
+
+	printf("------------------------------------------\n");
+	printf("TESTCASE : TC_puf_key_test (len:%d)\n", input_len);
+	printf("------------------------------------------\n");
+
+	if (input_len > 55 || input_len < 1) {
+		see_selfprintf("Invalid input length!!\n");
+		return;
+	}
+
+	see_selfprintf("[Key generation check  (%d)] ", PUFKEY_NUM);
+	for (i = 0; i < PUFKEY_NUM; i++) {
+
+		ret = see_generate_random((unsigned int *)pufkey[i].input, input_len);
+
+		ret += isp_kdf(&pufkey[i].puflen, pufkey[i].puf,
+						input_len, pufkey[i].input);
+		ret += isp_kdf(&comp_puflen, comp_puf, input_len, pufkey[i].input);
+
+		if (memcmp(pufkey[i].puf, comp_puf, 32)) {
+			ret++;
+		}
+	}
+	if (ret) {
+		see_selfprintf(" fail\n");
+	} else {
+		see_selfprintf(" success\n");
+	}
+
+	ret = 0;
+	see_selfprintf("[Key duplication check (%d)] ", PUFKEY_NUM);
+
+	for (i = 0; i < PUFKEY_NUM; i++) {
+		for (j = i + 1; j < PUFKEY_NUM; j++) {
+			if ((!memcmp(pufkey[i].puf, pufkey[j].puf, 32)) &&
+					(memcmp(pufkey[i].input, pufkey[j].input, input_len))) {
+				ret++;
+			}
+		}
+	}
+	if (ret) {
+		see_selfprintf(" fail\n");
+	} else {
+		see_selfprintf(" success\n");
+	}
+}
+
 pthread_addr_t security_test_cb(void *args)
 {
 	int i;
@@ -1332,6 +1398,7 @@ pthread_addr_t security_test_cb(void *args)
 	int debug_mode = 0;
 	int factory_test = 0;
 	int get_uuid = 0;
+	int puf_test = 0;
 	unsigned int test_select = 0x1fff;	// FULL TEST = 0x1fff;
 
 	int argc;
@@ -1368,6 +1435,11 @@ pthread_addr_t security_test_cb(void *args)
 			get_uuid = 1;
 		}
 
+		if (strcmp(p, "puf") == 0) {
+			debug_mode = atoi(q);
+			puf_test = 1;
+		}
+
 	}
 
 	if (factory_test) {
@@ -1384,6 +1456,12 @@ pthread_addr_t security_test_cb(void *args)
 
 	if (get_uuid) {
 		TC_see_get_uuid(debug_mode);
+		printf("\n");
+		return 0;
+	}
+
+	if (puf_test) {
+		TC_puf_key_test(debug_mode);
 		printf("\n");
 		return 0;
 	}
