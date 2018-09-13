@@ -27,6 +27,8 @@ if EXAMPLES_ARTIK_SDK
 		bool "ARTIK WiFi example"
 	config EXAMPLES_ARTIK_MQTT
 		bool "ARTIK MQTT example"
+	config EXAMPLES_ARTIK_COAP
+		bool "ARTIK CoAP example"
 endif
 
 config USER_ENTRYPOINT
