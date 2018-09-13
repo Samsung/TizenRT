@@ -1,0 +1,3 @@
+config ENTRY_SECURITY_SDK_TEST
+	bool "Security SDK Test"
+	depends on EXAMPLES_SECURITY_SDK_TEST
