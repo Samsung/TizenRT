@@ -115,8 +115,10 @@ static void eventloop_func_handle_remove(thread_safe_func_t *func_handle)
 	}
 
 	sem_destroy(&func_handle->func_sem);
+	func_handle->func = NULL;
 	sq_rem((sq_entry_t *)func_handle, &g_thread_safe_func_list);
 	EL_FREE(func_handle);
+	func_handle = NULL;
 }
 
 static int eventloop_thread_safe_cb_list_node_init(int list_idx, thread_safe_func_t *func_handle)
@@ -229,9 +231,7 @@ static void eventloop_async_callback(el_async_t *handle)
 				curr->func_handle->refs--;
 				if (curr->func_handle->refs == 0) {
 					sem_post(&curr->func_handle->func_sem);
-					sem_destroy(&curr->func_handle->func_sem);
-					EL_FREE(curr->func_handle);
-					curr->func_handle = NULL;
+					eventloop_func_handle_remove(curr->func_handle);
 				} else {
 					sem_post(&curr->func_handle->func_sem);
 				}
