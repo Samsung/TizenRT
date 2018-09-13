@@ -1,0 +1,157 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "IOTIVITY Config Parameters"
+
+config ENABLE_IOTIVITY
+	bool "enable / disable iotivity stack"
+	default n
+	select LIBC_NETDB
+	select TIME_EXTENDED
+	select ARCH_STDARG_H
+	---help---
+		select to enable the iotivity stack in tinyara
+
+config EXAMPLES_IOTIVITY
+	bool "Enable building IoTivity Samples"
+	default y
+	depends on ENABLE_IOTIVITY
+	---help---
+		Enable building IoTivity Samples
+
+choice
+	prompt "iotivity stack version"
+	default IOTIVITY_RELEASE_VERSION_1_3
+	depends on ENABLE_IOTIVITY
+
+config IOTIVITY_RELEASE_VERSION_1_2
+	bool "1.2-rel"
+	---help---
+		1.2-rel version
+
+config IOTIVITY_RELEASE_VERSION_1_3
+	bool "1.3-rel"
+	---help---
+		1.3-rel version
+endchoice
+
+config IOTIVITY_ROUTING
+	string "Enable routing, allowed values : 'EP' / 'GW' "
+	default "EP"
+	depends on ENABLE_IOTIVITY
+	---help---
+		define this to enable routing, allowed values : 'EP' / 'GW'
+
+config IOTIVITY_PTHREAD_STACKSIZE
+	int "Default pthread stack size for iotivity threads"
+	default 8192
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for iotivity threads
+
+config IOTIVITY_QUEING_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the queing thread"
+	default 3072
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for the queing thread
+
+config IOTIVITY_RETRANSMIT_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the retransmission pthread"
+	default 1024
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for the retransmission pthread
+
+config IOTIVITY_TCPRECEIVE_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the TCP-receive thread"
+	default 8192
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for the TCP-receive thread
+
+config IOTIVITY_RECEIVEHANDLER_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the receive-handler thread"
+	default 8192
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for the receive-handler thread
+
+config ENABLE_IOTIVITY_SECURED
+	bool "enable iotivity security"
+	default n
+	depends on ENABLE_IOTIVITY
+	select NET_SECURITY_TLS
+	---help---
+		select to enable the security for iotivity stack in tinyara
+
+config ENABLE_IOTIVITY_CLOUD
+	bool "enable iotivity cloud"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable the cloud for iotivity stack in tinyara
+
+config IOTIVITY_RELEASE
+	bool "Set Iotivity to Release mode"
+	default y
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to build IoTivity in Release mode. Code will be optimized.
+
+config IOTIVITY_LOGGING
+        bool "enable iotivity stack logs"
+        default n
+        depends on ENABLE_IOTIVITY
+        ---help---
+                select to enable all iotivity stack logs (DEBUG / INFO etc.)
+
+config IOTIVITY_MBEDTLS_DEBUG
+	bool "enable mbedtls debug"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		enable mbedtls debug
+
+if IOTIVITY_MBEDTLS_DEBUG
+config IOTIVITY_MBEDTLS_DEBUG_LEVEL
+	int "mbedtls debug level in iotivity"
+	default 3
+	---help---
+		set mbedtls debug level
+endif
+
+choice
+	prompt "iotivity log level"
+	default IOTIVITY_LOG_LEVEL_ERROR
+	depends on ENABLE_IOTIVITY
+
+config IOTIVITY_LOG_LEVEL_DEBUG
+        bool "DEBUG"
+	---help---
+		All logs including DEBUG, INFO, WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_INFO
+        bool "INFO"
+	---help---
+		The logs including INFO, WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_WARNING
+        bool "WARNING"
+	---help---
+		The logs including WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_ERROR
+        bool "ERROR"
+	---help---
+		The logs including ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_FATAL
+        bool "FATAL"
+	---help---
+		FATAL level is printed.
+endchoice
+
+endmenu #IOTIVITY Config Parameters
