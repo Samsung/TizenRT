@@ -755,6 +755,10 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	artik_lwm2m_module *lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
 	artik_ssl_config ssl_config;
 	on_lwm2m_start_cb callback = (on_lwm2m_start_cb)arg;
+	artik_secure_element_config se_config = {
+		ARTIK_DEVICE_CERT_ID,
+		ECC_SEC_P256R1
+	};
 
 	if (!lwm2m) {
 		printf("Failed to request lwm2m module\n");
@@ -777,7 +781,29 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 			"1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 			"Europe/Paris", "+01:00", "U");
 
-	ssl_config.secure = CloudIsSecureDeviceType();
+	if (CloudIsSecureDeviceType()) {
+		artik_security_handle handle;
+		artik_security_module *security = NULL;
+
+		ssl_config.se_config = &se_config;
+				security = (artik_security_module *)artik_request_api_module("security");
+		ret = security->request(&handle);
+		if (ret != S_OK) {
+			fprintf(stderr, "Failed to load security module (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+
+		ret = security->get_certificate(
+			handle, se_config.key_id, ARTIK_SECURITY_CERT_TYPE_PEM,
+			(unsigned char **)&ssl_config.client_cert.data, &ssl_config.client_cert.len);
+		if (ret != S_OK || !ssl_config.client_cert.data || ssl_config.client_cert.len == 0) {
+			fprintf(stderr, "Failed to get device certificate (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+	}
+
 	ssl_config.ca_cert.data = (char *)akc_root_ca;
 	ssl_config.ca_cert.len = sizeof(akc_root_ca);
 	ssl_config.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
@@ -841,6 +867,9 @@ exit:
 		lwm2m->client_release(g_lwm2m_handle);
 		g_lwm2m_handle = NULL;
 	}
+
+	if (ssl_config.client_cert.data)
+		free(ssl_config.client_cert.data);
 
 	pthread_exit((void *)ret);
 

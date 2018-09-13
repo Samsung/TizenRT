@@ -38,7 +38,6 @@
 
 #define AKC_DEFAULT_DTID    "dt2d93bdb9c8fa446eb4a35544e66150f7"
 #define LED_ID              ARTIK_A05x_XGPIO20
-#define CERT_ID_ARTIK       "ARTIK/0"
 
 #define RESP_ERROR_TPL      RESP_ERROR("%d", "%s")
 #define RESP_INVALID_TPL    RESP_ERROR(API_ERROR_COMMUNICATION, "Device Communication Error")
@@ -144,7 +143,7 @@ static void cloud_websocket_rx_cb(void *user_data, void *result)
 			data = cJSON_GetObjectItem(error, "message");
 			if (data && (data->type == cJSON_String)) {
 				printf("Websocket error %d - %s\n", code->valueint,
-				       data->valuestring);
+					   data->valuestring);
 				if (code->valueint >= 400) {
 					if (g_ws_registration_result) {
 						StartCloudWebsocket(false, NULL);
@@ -237,6 +236,10 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	on_ws_start_cb callback = (on_ws_start_cb)arg;
 	artik_error ret = S_OK;
 	artik_ssl_config ssl;
+	artik_secure_element_config se_config = {
+		ARTIK_DEVICE_CERT_ID,
+		ECC_SEC_P256R1
+	};
 
 	if (!cloud) {
 		printf("Cloud module is not available\n");
@@ -248,7 +251,28 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	printf("Start websocket to ARTIK Cloud\n");
 
 	memset(&ssl, 0, sizeof(ssl));
-	ssl.secure = CloudIsSecureDeviceType();
+	if (CloudIsSecureDeviceType()) {
+		artik_security_handle handle;
+		artik_security_module *security = NULL;
+
+		ssl.se_config = &se_config;
+				security = (artik_security_module *)artik_request_api_module("security");
+		ret = security->request(&handle);
+		if (ret != S_OK) {
+			fprintf(stderr, "Failed to load security module (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+
+		ret = security->get_certificate(
+			handle, se_config.key_id, ARTIK_SECURITY_CERT_TYPE_PEM,
+			(unsigned char **)&ssl.client_cert.data, &ssl.client_cert.len);
+		if (ret != S_OK || !ssl.client_cert.data || ssl.client_cert.len == 0) {
+			fprintf(stderr, "Failed to get device certificate (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+	}
 
 	ret = cloud->websocket_open_stream(&g_ws_handle, cloud_config.device_token,
 					   cloud_config.device_id, 30000, 10000, &ssl);
@@ -256,6 +280,8 @@ static pthread_addr_t websocket_start_cb(void *arg)
 		printf("Failed to open websocket to cloud (err=%d)\n", ret);
 		goto exit;
 	}
+
+	free(ssl.client_cert.data);
 
 	cloud->websocket_set_receive_callback(g_ws_handle, cloud_websocket_rx_cb, NULL);
 	cloud->websocket_set_connection_callback(g_ws_handle, cloud_websocket_conn_cb, NULL);
@@ -462,6 +488,10 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
 	artik_security_module *security = (artik_security_module *)artik_request_api_module("security");
 	artik_security_handle handle;
+	artik_secure_element_config se_config = {
+		ARTIK_DEVICE_CERT_ID,
+		ECC_SEC_P256R1
+	};
 	artik_error ret = S_OK;
 
 	if (!cloud || !security) {
@@ -478,7 +508,7 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 		goto exit;
 	}
 
-	ret = security->get_certificate(handle, CERT_ID_ARTIK,
+	ret = security->get_certificate(handle, ARTIK_DEVICE_CERT_ID,
 			ARTIK_SECURITY_CERT_TYPE_PEM, &se_cert, &se_cert_size);
 	if (ret != S_OK) {
 		status = 500;
@@ -512,7 +542,7 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 	security->release(handle);
 
 	/* Start SDR registration to ARTIK Cloud */
-	ret = cloud->sdr_start_registration(CERT_ID_ARTIK,
+	ret = cloud->sdr_start_registration(&se_config,
 			cloud_config.device_type_id, vdid, &response);
 	if (ret != S_OK) {
 		if (response) {
@@ -644,6 +674,10 @@ static pthread_addr_t complete_sdr_registration_cb(void *arg)
 	cJSON *jresp = NULL;
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
 	artik_error ret = S_OK;
+	artik_secure_element_config se_config = {
+		ARTIK_DEVICE_CERT_ID,
+		ECC_SEC_P256R1
+	};
 
 	if (!cloud) {
 		status = 500;
@@ -652,7 +686,7 @@ static pthread_addr_t complete_sdr_registration_cb(void *arg)
 	}
 
 	/* Start SDR registration to ARTIK Cloud */
-	ret = cloud->sdr_complete_registration(CERT_ID_ARTIK, cloud_config.reg_id,
+	ret = cloud->sdr_complete_registration(&se_config, cloud_config.reg_id,
 			cloud_config.reg_nonce, &response);
 	if (ret != S_OK) {
 		if (response) {

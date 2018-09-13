@@ -340,6 +340,7 @@ static int connect_command(int argc, char *argv[])
 	artik_error err = S_OK;
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
 	artik_ssl_config ssl;
+	artik_secure_element_config se_config;
 
 	if (ws_handle) {
 		fprintf(stderr, "Websocket to cloud is already connected. %p", ws_handle);
@@ -356,8 +357,32 @@ static int connect_command(int argc, char *argv[])
 
 	memset(&ssl, 0, sizeof(ssl));
 
-	if ((argc == 6) && !strncmp(argv[5], "use_se", strlen("use_se")))
-		ssl.secure = true;
+	if ((argc == 6) && !strncmp(argv[5], "use_se", strlen("use_se"))) {
+		artik_security_handle handle;
+		artik_security_module *security =
+			(artik_security_module *)artik_request_api_module("security");
+
+		se_config.key_id = ARTIK_DEVICE_KEY_ID;
+		se_config.key_algo = ECC_SEC_P256R1;
+		ssl.se_config = &se_config;
+
+		security = (artik_security_module *)artik_request_api_module("security");
+		ret = security->request(&handle);
+		if (ret != S_OK) {
+			fprintf(stderr, "Failed to load security module (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+
+		ret = security->get_certificate(
+			handle, se_config.key_id, ARTIK_SECURITY_CERT_TYPE_PEM,
+			(unsigned char **)&ssl.client_cert.data, &ssl.client_cert.len);
+		if (ret != S_OK || !ssl.client_cert.data || ssl.client_cert.len == 0) {
+			fprintf(stderr, "Failed to get device certificate (err=%d)\n", ret);
+			artik_release_api_module(handle);
+			goto exit;
+		}
+	}
 
 	if (!cloud) {
 		fprintf(stderr, "Failed to request cloud module\n");
@@ -365,7 +390,7 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	ssl.verify_cert = ssl.secure ? ARTIK_SSL_VERIFY_NONE :
+	ssl.verify_cert = ssl.se_config ? ARTIK_SSL_VERIFY_NONE :
 			ARTIK_SSL_VERIFY_REQUIRED;
 	ssl.ca_cert.data = (char *)akc_root_ca;
 	ssl.ca_cert.len = sizeof(akc_root_ca);
@@ -377,6 +402,10 @@ static int connect_command(int argc, char *argv[])
 		ws_handle = NULL;
 		ret = -1;
 		goto exit;
+	}
+
+	if (ssl.client_cert.data) {
+		free(ssl.client_cert.data);
 	}
 
 	err = cloud->websocket_set_connection_callback(ws_handle, websocket_connection_callback, NULL);
@@ -466,6 +495,10 @@ static int sdr_command(int argc, char *argv[])
 {
 	int ret = 0;
 	artik_cloud_module *cloud = NULL;
+	artik_secure_element_config se_config = {
+			ARTIK_DEVICE_KEY_ID,
+			ECC_SEC_P256R1
+	};
 
 	if (!strcmp(argv[3], "start")) {
 		char *response = NULL;
@@ -481,7 +514,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_start_registration("ARTIK/0", argv[4], argv[5],
+		cloud->sdr_start_registration(&se_config, argv[4], argv[5],
 				&response);
 
 		if (response) {
@@ -502,7 +535,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_registration_status("ARTIK/0", argv[4], &response);
+		cloud->sdr_registration_status(&se_config, argv[4], &response);
 
 		if (response) {
 			fprintf(stdout, "Response: %s\n", response);
@@ -522,7 +555,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_complete_registration("ARTIK/0", argv[4], argv[5],
+		cloud->sdr_complete_registration(&se_config, argv[4], argv[5],
 				&response);
 
 		if (response) {
@@ -833,6 +866,10 @@ static int dm_command(int argc, char *argv[])
 	artik_lwm2m_module *lwm2m = NULL;
 	artik_ssl_config *ssl_config = NULL;
 	artik_lwm2m_config dm_config;
+	artik_secure_element_config se_config = {
+			ARTIK_DEVICE_KEY_ID,
+			ECC_SEC_P256R1
+	};
 
 	memset(&dm_config, 0, sizeof(dm_config));
 
@@ -862,15 +899,48 @@ static int dm_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		ssl_config->secure = (argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"));
+		if ((argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"))) {
+			artik_security_handle handle;
+			artik_security_module *security =
+				(artik_security_module *)artik_request_api_module("security");
+			unsigned char *se_cert = NULL;
+			unsigned int se_cert_len = 0;
+
+			ssl_config->se_config = &se_config;
+
+			ret = security->request(&handle);
+			if (ret != S_OK) {
+				fprintf(stderr, "Failed to load security module (err=%d)\n", ret);
+				artik_release_api_module(security);
+				goto exit;
+			}
+
+			ret = security->get_certificate(
+				handle, se_config.key_id, ARTIK_SECURITY_CERT_TYPE_PEM,
+				&se_cert, &se_cert_len);
+			if (ret != S_OK || !se_cert || se_cert_len == 0) {
+				fprintf(stderr, "Failed to get device certificate (err=%d)\n", ret);
+				security->release(handle);
+				artik_release_api_module(security);
+				goto exit;
+			}
+
+			/* Use  the device cert */
+			ssl_config->client_cert.data = (char *)se_cert;
+			ssl_config->client_cert.len = se_cert_len;
+
+			security->release(handle);
+			artik_release_api_module(security);
+		}
+
 		ssl_config->ca_cert.data = (char *)akc_root_ca;
 		ssl_config->ca_cert.len = sizeof(akc_root_ca);
-		ssl_config->verify_cert = ssl_config->secure ? ARTIK_SSL_VERIFY_NONE :
+		ssl_config->verify_cert = ssl_config->se_config ? ARTIK_SSL_VERIFY_NONE :
 				ARTIK_SSL_VERIFY_REQUIRED;
 
 		dm_config.ssl_config = ssl_config;
 		dm_config.server_id = 123;
-		dm_config.server_uri = ssl_config->secure ?
+		dm_config.server_uri = ssl_config->se_config ?
 				"coaps+tcp://coaps-api.artik.cloud:5689" :
 				"coaps://coaps-api.artik.cloud:5686";
 		dm_config.lifetime = 30;
@@ -879,8 +949,8 @@ static int dm_command(int argc, char *argv[])
 		dm_config.tls_psk_key = strndup(argv[4], UUID_MAX_LEN);
 		dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE] =
 			lwm2m->create_device_object("Samsung", "ARTIK05x", "1234567890", "1.0",
-						    "1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
-						    "Europe/Paris", "+01:00", "U");
+							"1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
+							"Europe/Paris", "+01:00", "U");
 		if (!dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
 			fprintf(stderr, "Failed to allocate memory for object device.");
 			ret = -1;
@@ -903,16 +973,19 @@ static int dm_command(int argc, char *argv[])
 			goto exit;
 		}
 
+		if (ssl_config->client_cert.data)
+			free(ssl_config->client_cert.data);
+
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_ERROR,
-				    dm_on_error, (void *)g_dm_client);
+					dm_on_error, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_CONNECT,
-				    dm_on_connect, (void *)g_dm_client);
+					dm_on_connect, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_DISCONNECT,
-				    dm_on_disconnect, (void *)g_dm_client);
+					dm_on_disconnect, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_RESOURCE_EXECUTE,
-				    dm_on_execute_resource, (void *)g_dm_client);
+					dm_on_execute_resource, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_RESOURCE_CHANGED,
-				    dm_on_changed_resource, (void *)g_dm_client);
+					dm_on_changed_resource, (void *)g_dm_client);
 
 		ret = lwm2m->client_connect(g_dm_client);
 		if (ret != S_OK) {
