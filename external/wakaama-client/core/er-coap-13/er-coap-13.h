@@ -182,6 +182,8 @@ typedef enum {
   COAP_OPTION_BLOCK1 = 27,        /* 1-3 B */
   COAP_OPTION_SIZE = 28,          /* 0-4 B */
   COAP_OPTION_PROXY_URI = 35,     /* 1-270 B */
+  COAP_OPTION_PROXY_SCHEME = 39,  /* 1-255 B */
+  COAP_OPTION_SIZE1 = 60,         /* 0-4 B */
   OPTION_MAX_VALUE = 0xFFFF
 } coap_option_t;
 
@@ -228,13 +230,15 @@ typedef struct {
   uint8_t code;
   uint16_t mid;
 
-  uint8_t options[COAP_OPTION_PROXY_URI / OPTION_MAP_SIZE + 1]; /* Bitmap to check if option is set */
+  uint8_t options[COAP_OPTION_SIZE1 / OPTION_MAP_SIZE + 1]; /* Bitmap to check if option is set */
   uint16_t options_len;
 
   coap_content_type_t content_type; /* Parse options once and store; allows setting options in random order  */
   uint32_t max_age;
   size_t proxy_uri_len;
   const uint8_t *proxy_uri;
+  size_t proxy_scheme_len;
+  const uint8_t *proxy_scheme;
   uint8_t etag_len;
   uint8_t etag[COAP_ETAG_LEN];
   size_t uri_host_len;
@@ -260,6 +264,7 @@ typedef struct {
   uint16_t block1_size;
   uint32_t block1_offset;
   uint32_t size;
+  uint32_t size1;
   multi_option_t *uri_query;
   uint8_t if_none_match;
 
@@ -372,6 +377,12 @@ int coap_set_header_token(void *packet, const uint8_t *token, size_t token_len);
 int coap_get_header_proxy_uri(void *packet, const char **uri); /* In-place string might not be 0-terminated. */
 int coap_set_header_proxy_uri(void *packet, const char *uri);
 
+int coap_get_header_proxy_scheme(void *packet, const char **scheme); /* In-place string might not be 0-terminated */
+int coap_set_header_proxy_scheme(void *packet, const char *scheme);
+
+int coap_get_header_uri_port(void *packet, uint16_t *port);
+int coap_set_header_uri_port(void *packet, uint16_t port);
+
 int coap_get_header_uri_host(void *packet, const char **host); /* In-place string might not be 0-terminated. */
 int coap_set_header_uri_host(void *packet, const char *host);
 
@@ -399,6 +410,9 @@ int coap_set_header_block1(void *packet, uint32_t num, uint8_t more, uint16_t si
 
 int coap_get_header_size(void *packet, uint32_t *size);
 int coap_set_header_size(void *packet, uint32_t size);
+
+int coap_get_header_size1(void *packet, uint32_t *size);
+int coap_set_header_size1(void *packet, uint32_t size);
 
 int coap_get_payload(void *packet, const uint8_t **payload);
 int coap_set_payload(void *packet, const void *payload, size_t length);

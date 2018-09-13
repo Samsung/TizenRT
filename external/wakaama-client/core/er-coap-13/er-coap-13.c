@@ -511,9 +511,18 @@ size_t coap_serialize_get_size(void *packet)
         // can be stored in extended fields
         coap_pkt->options_len += COAP_MAX_OPTION_HEADER_LEN;
     }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_SIZE1))
+    {
+        // can be stored in extended fields
+        coap_pkt->options_len += COAP_MAX_OPTION_HEADER_LEN;
+    }
     if (IS_OPTION(coap_pkt, COAP_OPTION_PROXY_URI))
     {
         coap_pkt->options_len += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->proxy_uri_len;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_PROXY_SCHEME))
+    {
+        coap_pkt->options_len += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->proxy_scheme_len;
     }
 
     switch (coap_pkt->protocol)
@@ -609,6 +618,8 @@ coap_serialize_message(void *packet, uint8_t *buffer)
     COAP_SERIALIZE_BLOCK_OPTION(  COAP_OPTION_BLOCK1,         block1, "Block1")
     COAP_SERIALIZE_INT_OPTION(    COAP_OPTION_SIZE,           size, "Size")
     COAP_SERIALIZE_STRING_OPTION( COAP_OPTION_PROXY_URI,      proxy_uri, '\0', "Proxy-Uri")
+    COAP_SERIALIZE_STRING_OPTION( COAP_OPTION_PROXY_SCHEME,   proxy_scheme, '\0', "Proxy-Scheme")
+    COAP_SERIALIZE_INT_OPTION(    COAP_OPTION_SIZE1,          size1, "Size1")
 
     coap_pkt->options_len = option - options_buf;
   } else  {
@@ -854,6 +865,12 @@ coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t *data, uint16
 
     option_number += option_delta;
 
+    if (option_number > COAP_OPTION_SIZE1) {
+      /* Malformed CoAP - out of bounds */
+      PRINTF("BAD REQUEST: option number too large: %u\n", option_number);
+      return BAD_REQUEST_4_00;
+    }
+
     PRINTF("OPTION %u (delta %u, len %u): ", option_number, option_delta, option_length);
 
     SET_OPTION(coap_pkt, option_number);
@@ -952,6 +969,14 @@ coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t *data, uint16
         return PROXYING_NOT_SUPPORTED_5_05;
         break;
 
+      case COAP_OPTION_PROXY_SCHEME:
+        coap_pkt->proxy_scheme = current_option;
+        coap_pkt->proxy_scheme_len = option_length;
+        PRINTF("Proxy-Scheme NOT IMPLEMENTED [%.*s]\n", coap_pkt->proxy_scheme_len, coap_pkt->proxy_scheme);
+        coap_error_message = "This is a constrained server (Contiki)";
+        return PROXYING_NOT_SUPPORTED_5_05;
+        break;
+
       case COAP_OPTION_OBSERVE:
         coap_pkt->observe = coap_parse_int_option(current_option, option_length);
         PRINTF("Observe [%lu]\n", coap_pkt->observe);
@@ -976,6 +1001,9 @@ coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t *data, uint16
         coap_pkt->size = coap_parse_int_option(current_option, option_length);
         PRINTF("Size [%lu]\n", coap_pkt->size);
         break;
+      case COAP_OPTION_SIZE1:
+        coap_pkt->size1 = coap_parse_int_option(current_option, option_length);
+        PRINTF("Size1 [%lu]\n", coap_pkt->size1);
       default:
         PRINTF("unknown (%u)\n", option_number);
         /* Check if critical (odd) */
@@ -1210,6 +1238,50 @@ coap_set_header_proxy_uri(void *packet, const char *uri)
 
   SET_OPTION(coap_pkt, COAP_OPTION_PROXY_URI);
   return coap_pkt->proxy_uri_len;
+}
+/*-----------------------------------------------------------------------------------*/
+int
+coap_get_header_proxy_scheme(void *packet, const char **scheme)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  if (!IS_OPTION(coap_pkt, COAP_OPTION_PROXY_SCHEME)) return 0;
+
+  *scheme = (const char *)coap_pkt->proxy_scheme;
+  return coap_pkt->proxy_scheme_len;
+}
+
+int
+coap_set_header_proxy_scheme(void *packet, const char *scheme)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  coap_pkt->proxy_scheme = (uint8_t *)scheme;
+  coap_pkt->proxy_scheme_len = strlen(scheme);
+
+  SET_OPTION(coap_pkt, COAP_OPTION_PROXY_SCHEME);
+  return coap_pkt->proxy_scheme_len;
+}
+/*-----------------------------------------------------------------------------------*/
+int
+coap_get_header_uri_port(void *packet, uint16_t* port)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  if (!IS_OPTION(coap_pkt, COAP_OPTION_URI_PORT)) return 0;
+
+  *port = coap_pkt->uri_port;
+  return 1;
+}
+
+int
+coap_set_header_uri_port(void *packet, uint16_t port)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  coap_pkt->uri_port = port;
+  SET_OPTION(coap_pkt, COAP_OPTION_URI_PORT);
+  return 1;
 }
 /*-----------------------------------------------------------------------------------*/
 int
@@ -1500,6 +1572,27 @@ coap_set_header_size(void *packet, uint32_t size)
 
   coap_pkt->size = size;
   SET_OPTION(coap_pkt, COAP_OPTION_SIZE);
+  return 1;
+}
+/*-----------------------------------------------------------------------------------*/
+int
+coap_get_header_size1(void *packet, uint32_t *size)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  if (!IS_OPTION(coap_pkt, COAP_OPTION_SIZE1)) return 0;
+
+  *size = coap_pkt->size1;
+  return 1;
+}
+
+int
+coap_set_header_size1(void *packet, uint32_t size)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  coap_pkt->size1 = size;
+  SET_OPTION(coap_pkt, COAP_OPTION_SIZE1);
   return 1;
 }
 /*-----------------------------------------------------------------------------------*/
