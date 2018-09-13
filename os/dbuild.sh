@@ -98,6 +98,9 @@ function SELECT_OPTION()
 		x|exit)
 			exit 1
 			;;
+		applist|appupdate)
+			BUILD ${SELECTED_START}
+			;;
 		*)
 			;;
 		esac
