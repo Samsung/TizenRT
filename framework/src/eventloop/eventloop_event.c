@@ -23,6 +23,7 @@
 #include <queue.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <libtuv/uv.h>
 #include <libtuv/uv__types.h>
@@ -174,9 +175,6 @@ static void eventloop_unregister_event_cb(el_event_t *handle)
 		while (ptr != NULL && ptr->handle != NULL) {
 			if (ptr->handle == handle) {
 				sq_rem((FAR sq_entry_t *)ptr, &event_group->event_list);
-				if (data->cb_data != NULL) {
-					EL_FREE(data->cb_data);
-				}
 				if (data->event_data != NULL) {
 					EL_FREE(data->event_data);
 				}
@@ -279,14 +277,14 @@ static int eventloop_send_event_sig(int type, void *event_data, int data_size)
 	return OK;
 }
 
-el_event_t *eventloop_add_event_handler(int type, event_callback func, void *data, int data_size)
+el_event_t *eventloop_add_event_handler(int type, event_callback func, void *data)
 {
 	int ret;
 	el_loop_t *loop;
 	el_event_t *handle;
 	event_data_t *event_cb;
 
-	if (type < 0 || type >= EL_EVENT_MAX || func == NULL || data_size < 0) {
+	if (type < 0 || type >= EL_EVENT_MAX || func == NULL) {
 		eldbg("Invalid Parameter\n");
 		return NULL;
 	}
@@ -314,16 +312,7 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *dat
 	event_cb->pid = getpid();
 	event_cb->event_in = -1;
 	event_cb->func = func;
-	if (data_size == 0) {
-		event_cb->cb_data = NULL;
-	} else {
-		event_cb->cb_data = EL_ALLOC(data_size);
-		if (event_cb->cb_data == NULL) {
-			eldbg("Failed to allocate callback info\n");
-			goto errout;
-		}
-		memcpy(event_cb->cb_data, data, data_size);
-	}
+	event_cb->cb_data = data;
 	event_cb->event_data = NULL;
 	handle->data = (void *)event_cb;
 
@@ -350,9 +339,6 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *dat
 
 	return handle;
 errout:
-	if (event_cb->cb_data != NULL) {
-		EL_FREE(event_cb->cb_data);
-	}
 	EL_FREE(event_cb);
 	EL_FREE(handle);
 

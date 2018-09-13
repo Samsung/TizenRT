@@ -182,17 +182,18 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
  * Please refer to a description of EVENTLOOP_CALLBACK_STOP and EVENTLOOP_CALLBACK_CONTINUE. \n
  * Finally when returned handle is not needed anymore or all works you want are done, you should call eventloop_del_event_handler. \n
  * Because some resources for event handler are allocated internally, you should free them.
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          It means that user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP or after eventloop_loop_run()
  * @param[in] type a value of event type
  * @param[in] func the callback function to be called \n
  *            It has specific type, event_callback which has two types of data as parameter. \n
  *            The first parameter is data registered in this call and the second parameter is data received from sender. \n
  *            And, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] data data to pass to func when func is called
- * @param[in] data_size size of data
  * @return On success,  A pointer of created event handle is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data, int data_size);
+el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data);
 
 /**
  * @brief Delete registered handler for event
@@ -240,13 +241,14 @@ int eventloop_loop_stop(void);
 /**
  * @brief Callback is added at the each eventloop to be called thread safely.\n
  * @details @b #include <eventloop/eventloop.h>
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          It means that user should free them in callback function or free them after eventloop_loop_run()
  * @param[in] func the callback function to be called
  * @param[in] cb_data data to pass to func when func is called
- * @param[in] data_size size of data
  * @return On success, OK is returned. On failure, defined negative value is returned
  * @since TizenRT v2.0 PRE
  */
-int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data, int data_size);
+int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data);
 
 #ifdef __cplusplus
 }

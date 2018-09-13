@@ -150,7 +150,7 @@ static void eventloop_thread_safe_cb_list_node_deinit(int list_idx)
 	sem_destroy(&LIST_SEM(list_idx));
 }
 
-static thread_safe_cb_t *eventloop_thread_safe_cb_generate(thread_safe_func_t *func_handle, void *cb_data, int data_size)
+static thread_safe_cb_t *eventloop_thread_safe_cb_generate(thread_safe_func_t *func_handle, void *cb_data)
 {
 	thread_safe_cb_t *thread_safe_cb;
 
@@ -166,17 +166,7 @@ static thread_safe_cb_t *eventloop_thread_safe_cb_generate(thread_safe_func_t *f
 	}
 	thread_safe_cb->flink = NULL;
 	thread_safe_cb->func_handle = func_handle;
-	
-	if (data_size == 0) {
-		thread_safe_cb->cb_data = NULL;
-	} else {
-		thread_safe_cb->cb_data = EL_ALLOC(data_size);
-		if (thread_safe_cb->cb_data == NULL) {
-			EL_FREE(thread_safe_cb);
-			return NULL;
-		}
-		memcpy(thread_safe_cb->cb_data, cb_data, data_size);
-	}
+	thread_safe_cb->cb_data = cb_data;
 	
 	return thread_safe_cb;
 }
@@ -188,10 +178,6 @@ static void eventloop_thread_safe_cb_destroy(thread_safe_cb_t *thread_safe_cb)
 		return;
 	}
 
-	if (thread_safe_cb->cb_data != NULL) {
-		EL_FREE(thread_safe_cb->cb_data);
-	}
-	
 	EL_FREE(thread_safe_cb);
 }
 
@@ -236,7 +222,6 @@ static void eventloop_async_callback(el_async_t *handle)
 					sem_post(&curr->func_handle->func_sem);
 				}
 			}
-			EL_FREE(curr->cb_data);
 			EL_FREE(curr);
 		}
 	}
@@ -245,7 +230,7 @@ static void eventloop_async_callback(el_async_t *handle)
 	eventloop_thread_safe_cb_list_node_deinit(thread_safe_cb_list_idx);
 }
 
-int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data, int data_size)
+int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data)
 {
 	int ret;
 	int thread_safe_cb_list_idx;
@@ -253,7 +238,7 @@ int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data
 	thread_safe_cb_t *thread_safe_cb;
 	thread_safe_func_t *func_handle;
 
-	if (func == NULL || data_size < 0) {
+	if (func == NULL) {
 		eldbg("Invalid Parameter!\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
@@ -272,7 +257,7 @@ int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data
 		}
 	}
 
-	thread_safe_cb = eventloop_thread_safe_cb_generate(func_handle, cb_data, data_size);
+	thread_safe_cb = eventloop_thread_safe_cb_generate(func_handle, cb_data);
 	if (thread_safe_cb == NULL) {
 		ret = EVENTLOOP_OUT_OF_MEMORY;
 		goto errout;
