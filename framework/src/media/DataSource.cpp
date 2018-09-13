@@ -38,23 +38,6 @@ DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_for
 	medvdbg("DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)\n");
 }
 
-DataSource::DataSource(const DataSource& source)
-	: mChannels(source.mChannels)
-	, mSampleRate(source.mSampleRate)
-	, mPcmFormat(source.mPcmFormat)
-	, mAudioType(source.mAudioType)
-{
-}
-
-DataSource& DataSource::operator=(const DataSource& source)
-{
-	mChannels = source.mChannels;
-	mSampleRate = source.mSampleRate;
-	mPcmFormat = source.mPcmFormat;
-	mAudioType = source.mAudioType;
-	return *this;
-}
-
 unsigned int DataSource::getChannels()
 {
 	return mChannels;
