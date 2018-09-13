@@ -34,6 +34,9 @@
 #include <tls/ssl_cache.h>
 #endif
 
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #define EASY_TLS_DEBUG	ndbg
 
 enum easy_tls_error {
@@ -88,11 +91,25 @@ typedef struct tls_options {
 	int debug_mode;				///< select debug level (0 ~ 5)
 	char *host_name;			///< set host_name (NULL or char *)
 	int force_ciphersuites[3];	///< set force ciphersuites
+	int force_curves[3];		///< set force curves
 	unsigned int recv_timeout;	///< parameter for setting tls recv timeout milisecond
+	unsigned int client_rpk:1;
+	unsigned int server_rpk:1;
+	int hs_timeout_min;
+	int hs_timeout_max;
+	int (*psk_callback)(void *, mbedtls_ssl_context *, const unsigned char *, size_t);
+	void *user_data;
 } tls_opt;
+
+typedef struct bio_context {
+	int fd;
+	struct sockaddr *addr;
+	socklen_t n;
+} bio_context;
 
 typedef struct tls_session_context {
 	mbedtls_net_context net;
+	bio_context b_ctx;
 	mbedtls_ssl_context *ssl;
 } tls_session;
 

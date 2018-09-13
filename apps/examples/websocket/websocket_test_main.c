@@ -168,11 +168,11 @@ static tls_cred g_credsrv = { 0, };
 static tls_cred g_credcli = { 0, };
 static tls_opt g_tlssrv_opt = {
 	MBEDTLS_SSL_IS_SERVER,	MBEDTLS_SSL_TRANSPORT_STREAM,
-	MBEDTLS_SSL_VERIFY_REQUIRED, 0, NULL, {0, 0, 0}, 10000,
+	MBEDTLS_SSL_VERIFY_REQUIRED, 0, NULL, {0, 0, 0}, {0, 0, 0}, 10000,
 };
 static tls_opt g_tlscli_opt = {
 	MBEDTLS_SSL_IS_CLIENT,	MBEDTLS_SSL_TRANSPORT_STREAM,
-	MBEDTLS_SSL_VERIFY_REQUIRED, 0, NULL, {0, 0, 0}, 10000,
+	MBEDTLS_SSL_VERIFY_REQUIRED, 0, NULL, {0, 0, 0}, {0, 0, 0}, 10000,
 };
 
 /****************************************************************************

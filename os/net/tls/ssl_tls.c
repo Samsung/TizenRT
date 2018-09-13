@@ -74,6 +74,10 @@
 #include "tls/oid.h"
 #endif
 
+#define ECP_PUB_DER_MAX_BYTES   30 + 2 * MBEDTLS_ECP_MAX_BYTES
+
+#define PUB_DER_MAX_BYTES   ECP_PUB_DER_MAX_BYTES
+
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
     volatile unsigned char *p = v; while( n-- ) *p++ = 0;
@@ -4510,27 +4514,56 @@ int mbedtls_ssl_write_certificate( mbedtls_ssl_context *ssl )
     i = 7;
     crt = mbedtls_ssl_own_cert( ssl );
 
-    while( crt != NULL )
-    {
-        n = crt->raw.len;
-        if( n > MBEDTLS_SSL_MAX_CONTENT_LEN - 3 - i )
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "certificate too large, %d > %d",
-                           i + 3 + n, MBEDTLS_SSL_MAX_CONTENT_LEN ) );
-            return( MBEDTLS_ERR_SSL_CERTIFICATE_TOO_LARGE );
+    if (crt && (ssl->handshake->ecdh_ctx.client_raw_public_key ||
+        ssl->handshake->ecdh_ctx.server_raw_public_key)) {
+
+        unsigned char buf[PUB_DER_MAX_BYTES];
+        mbedtls_pk_context *pk = (mbedtls_pk_context *)&crt->pk;
+
+        if (pk) {
+            n = mbedtls_pk_write_pubkey_der( pk, buf, PUB_DER_MAX_BYTES );
+
+            if (n > MBEDTLS_SSL_MAX_CONTENT_LEN - 3 - i) {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "public key too large, %d > %d",
+                               i + 3 + n, MBEDTLS_SSL_MAX_CONTENT_LEN ) );
+                return( MBEDTLS_ERR_SSL_CERTIFICATE_TOO_LARGE );
+            }
+
+            mbedtls_pk_write_pubkey_der(pk, ssl->out_msg + i, n);
+        } else {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "no public key" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
         }
 
-        ssl->out_msg[i    ] = (unsigned char)( n >> 16 );
-        ssl->out_msg[i + 1] = (unsigned char)( n >>  8 );
-        ssl->out_msg[i + 2] = (unsigned char)( n       );
+        i += n;
 
-        i += 3; memcpy( ssl->out_msg + i, crt->raw.p, n );
-        i += n; crt = crt->next;
+        ssl->out_msg[4] = (unsigned char)( n >> 16 );
+        ssl->out_msg[5] = (unsigned char)( n >> 8 );
+        ssl->out_msg[6] = (unsigned char)( n );
+
+    } else {
+        while( crt != NULL )
+        {
+            n = crt->raw.len;
+            if( n > MBEDTLS_SSL_MAX_CONTENT_LEN - 3 - i )
+            {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "certificate too large, %d > %d",
+                               i + 3 + n, MBEDTLS_SSL_MAX_CONTENT_LEN ) );
+                return( MBEDTLS_ERR_SSL_CERTIFICATE_TOO_LARGE );
+            }
+
+            ssl->out_msg[i    ] = (unsigned char)( n >> 16 );
+            ssl->out_msg[i + 1] = (unsigned char)( n >>  8 );
+            ssl->out_msg[i + 2] = (unsigned char)( n       );
+
+            i += 3; memcpy( ssl->out_msg + i, crt->raw.p, n );
+            i += n; crt = crt->next;
+        }
+
+        ssl->out_msg[4]  = (unsigned char)( ( i - 7 ) >> 16 );
+        ssl->out_msg[5]  = (unsigned char)( ( i - 7 ) >>  8 );
+        ssl->out_msg[6]  = (unsigned char)( ( i - 7 )       );
     }
-
-    ssl->out_msg[4]  = (unsigned char)( ( i - 7 ) >> 16 );
-    ssl->out_msg[5]  = (unsigned char)( ( i - 7 ) >>  8 );
-    ssl->out_msg[6]  = (unsigned char)( ( i - 7 )       );
 
     ssl->out_msglen  = i;
     ssl->out_msgtype = MBEDTLS_SSL_MSG_HANDSHAKE;
@@ -4713,63 +4746,96 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
 
     mbedtls_x509_crt_init( ssl->session_negotiate->peer_cert );
 
-    i += 3;
-
-    while( i < ssl->in_hslen )
-    {
-        if ( i + 3 > ssl->in_hslen ) {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
-            mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                           MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
-        }
-        if( ssl->in_msg[i] != 0 )
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
-            mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                            MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
-        }
-
-        n = ( (unsigned int) ssl->in_msg[i + 1] << 8 )
-            | (unsigned int) ssl->in_msg[i + 2];
+    if (ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT &&
+            ssl->handshake->ecdh_ctx.server_raw_public_key) {
         i += 3;
 
-        if( n < 128 || i + n > ssl->in_hslen )
+        unsigned char *p = ssl->in_msg + i;
+        unsigned char *end = p + n;
+        mbedtls_x509_crt *crt = ssl->session_negotiate->peer_cert;
+
+        ret = mbedtls_pk_parse_subpubkey(&p, end, &crt->pk);
+
+        if (ret != 0)
         {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
-            mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                            MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
+            MBEDTLS_SSL_DEBUG_RET(1, "mbedtls_pk_parse_subpubkey", ret);
+            return (ret);
         }
+    }
+    else if (ssl->conf->endpoint == MBEDTLS_SSL_IS_SERVER &&
+            ssl->handshake->ecdh_ctx.client_raw_public_key) {
+        i += 3;
 
-        ret = mbedtls_x509_crt_parse_der( ssl->session_negotiate->peer_cert,
-                                  ssl->in_msg + i, n );
-        switch( ret )
+        unsigned char *p = ssl->in_msg + i;
+        unsigned char *end = p + n;
+        mbedtls_x509_crt *crt = ssl->session_negotiate->peer_cert;
+
+        ret = mbedtls_pk_parse_subpubkey(&p, end, &crt->pk);
+
+        if (ret != 0)
         {
-        case 0: /*ok*/
-        case MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG + MBEDTLS_ERR_OID_NOT_FOUND:
-            /* Ignore certificate with an unknown algorithm: maybe a
-               prior certificate was already trusted. */
-            break;
-
-        case MBEDTLS_ERR_X509_ALLOC_FAILED:
-            alert = MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR;
-            goto crt_parse_der_failed;
-
-        case MBEDTLS_ERR_X509_UNKNOWN_VERSION:
-            alert = MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT;
-            goto crt_parse_der_failed;
-
-        default:
-            alert = MBEDTLS_SSL_ALERT_MSG_BAD_CERT;
-        crt_parse_der_failed:
-            mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL, alert );
-            MBEDTLS_SSL_DEBUG_RET( 1, " mbedtls_x509_crt_parse_der", ret );
-            return( ret );
+            MBEDTLS_SSL_DEBUG_RET(1, "mbedtls_pk_parse_subpubkey", ret);
+            return (ret);
         }
+    } else {
+        i += 3;
 
-        i += n;
+        while( i < ssl->in_hslen )
+        {
+            if ( i + 3 > ssl->in_hslen ) {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
+                mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                               MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
+                return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
+            }
+            if( ssl->in_msg[i] != 0 )
+            {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
+                mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                                MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
+                return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
+            }
+
+            n = ( (unsigned int) ssl->in_msg[i + 1] << 8 )
+                | (unsigned int) ssl->in_msg[i + 2];
+            i += 3;
+
+            if( n < 128 || i + n > ssl->in_hslen )
+            {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate message" ) );
+                mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                                MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
+                return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
+            }
+
+            ret = mbedtls_x509_crt_parse_der( ssl->session_negotiate->peer_cert,
+                                      ssl->in_msg + i, n );
+            switch( ret )
+            {
+            case 0: /*ok*/
+            case MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG + MBEDTLS_ERR_OID_NOT_FOUND:
+                /* Ignore certificate with an unknown algorithm: maybe a
+                   prior certificate was already trusted. */
+                break;
+
+            case MBEDTLS_ERR_X509_ALLOC_FAILED:
+                alert = MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR;
+                goto crt_parse_der_failed;
+
+            case MBEDTLS_ERR_X509_UNKNOWN_VERSION:
+                alert = MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT;
+                goto crt_parse_der_failed;
+
+            default:
+                alert = MBEDTLS_SSL_ALERT_MSG_BAD_CERT;
+            crt_parse_der_failed:
+                mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL, alert );
+                MBEDTLS_SSL_DEBUG_RET( 1, " mbedtls_x509_crt_parse_der", ret );
+                return( ret );
+            }
+
+            i += n;
+        }
     }
 
     MBEDTLS_SSL_DEBUG_CRT( 3, "peer certificate", ssl->session_negotiate->peer_cert );
@@ -6580,6 +6646,20 @@ const char *mbedtls_ssl_get_alpn_protocol( const mbedtls_ssl_context *ssl )
     return( ssl->alpn_chosen );
 }
 #endif /* MBEDTLS_SSL_ALPN */
+
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
+void mbedtls_ssl_conf_client_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
+{
+    conf->client_rpk = use_rpk;
+}
+#endif /* MBEDTLS_SSL_CLIENT_RPK */
+
+#if defined(MBEDTLS_SSL_SERVER_RPK)
+void mbedtls_ssl_conf_server_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
+{
+    conf->server_rpk = use_rpk;
+}
+#endif /* MBEDTLS_SSL_SERVER_RPK */
 
 void mbedtls_ssl_conf_max_version( mbedtls_ssl_config *conf, int major, int minor )
 {

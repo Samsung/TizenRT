@@ -342,10 +342,15 @@
 
 #define MBEDTLS_TLS_EXT_MAX_FRAGMENT_LENGTH          1
 
+#define MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY         2
+
 #define MBEDTLS_TLS_EXT_TRUNCATED_HMAC               4
 
 #define MBEDTLS_TLS_EXT_SUPPORTED_ELLIPTIC_CURVES   10
 #define MBEDTLS_TLS_EXT_SUPPORTED_POINT_FORMATS     11
+
+#define MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE     19
+#define MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE     20
 
 #define MBEDTLS_TLS_EXT_SIG_ALG                     13
 
@@ -705,6 +710,14 @@ struct mbedtls_ssl_config
 
 #if defined(MBEDTLS_SSL_ALPN)
     const char **alpn_list;         /*!< ordered list of protocols          */
+#endif
+
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
+    unsigned int client_rpk : 1;   /*!< use client RPK?                     */
+#endif
+
+#if defined(MBEDTLS_SSL_SERVER_RPK)
+    unsigned int server_rpk : 1;   /*!< use server RPK?                     */
 #endif
 
     /*

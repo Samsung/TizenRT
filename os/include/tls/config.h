@@ -1366,6 +1366,26 @@
 #define MBEDTLS_SSL_ALPN
 
 /**
+ * \def MBEDTLS_SSL_CLIENT_RPK
+ *
+ * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
+ * Security (TLS) and Datagram Transport Layer Security (DTLS) (client-side)
+ *
+ * Comment this macro to disable support for RPK.
+ */
+#define MBEDTLS_SSL_CLIENT_RPK
+
+/**
+ * \def MBEDTLS_SSL_SERVER_RPK
+ *
+ * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
+ * Security (TLS) and Datagram Transport Layer Security (DTLS) (server-side)
+ *
+ * Comment this macro to disable support for RPK.
+ */
+#define MBEDTLS_SSL_SERVER_RPK
+
+/**
  * \def MBEDTLS_SSL_DTLS_ANTI_REPLAY
  *
  * Enable support for the anti-replay mechanism in DTLS.
