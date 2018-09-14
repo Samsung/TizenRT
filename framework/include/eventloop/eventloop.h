@@ -71,9 +71,9 @@ enum el_event_type_e {
  * @brief Return value of callback function for event
  * @details The callback function should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).\n
  * It decides whether continuing to execute callback function for the event or not.\n
- * If it returns EVENTLOOP_CALLBACK_STOP, receving registered events is stopped.\n
- * The registered handler won't be executed from now on although receving the event.\n
- * Otherwise, a callback funtion is called continuously.
+ * If it returns EVENTLOOP_CALLBACK_STOP, receiving registered events is stopped.\n
+ * The registered handler won't be executed from now on although receiving the event.\n
+ * Otherwise, a callback function is called continuously.
  */
 #define EVENTLOOP_CALLBACK_STOP 0
 #define EVENTLOOP_CALLBACK_CONTINUE 1
@@ -106,7 +106,7 @@ typedef void (*thread_safe_callback)(void *data);
 /**
  * @brief EventLoop Event Callback
  * This is specific type for callback function used in eventloop_add_event_handler. \n
- * When some tasks send event, registered callback fuctions are called with some data. \n
+ * When some tasks send event, registered callback functions are called with some data. \n
  * The first parameter, registered_cb_data is function data registered in eventloop_add_event_handler. \n
  * The second parameter, received_event_data is data received from event sender. \n
  */
@@ -128,15 +128,15 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
  *          It means that user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP or after eventloop_loop_run()
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
- * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
+ * @param[in] repeat the value which represents whether timer runs repeatedly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
  *            In case of repeated timer, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
- * @param[in] data data to pass to func when func is called
+ * @param[in] cb_data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *cb_data);
 
 /**
  * @brief Delete specific timer
@@ -151,7 +151,7 @@ int eventloop_delete_timer(el_timer_t *timer);
 /**
  * @brief Create timer to call the function in the given period of time asynchronously
  * @details @b #include <eventloop/eventloop.h> \n
- * This API is same as eventloop_add_timer(), but it yields the event to evnet loop task.\n
+ * This API is same as eventloop_add_timer(), but it yields the event to event loop task.\n
  * So you don't need to call eventloop_loop_run() to run loop. \n
  * In other words, the timer event is added to a loop handled by eventloop task, \n
  * and then registered callback is executed in the context of eventloop task asynchronously, not task which created timer. \n
@@ -162,14 +162,14 @@ int eventloop_delete_timer(el_timer_t *timer);
  * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
  *          Therefore, user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP.
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
- * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
+ * @param[in] repeat the value which represents whether timer runs repeatedly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
- * @param[in] data data to pass to func when func is called
+ * @param[in] cb_data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *cb_data);
 
 /**
  * @brief Set event callback which will be called a certain event occur
@@ -189,7 +189,7 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
  *            It has specific type, event_callback which has two types of data as parameter. \n
  *            The first parameter is data registered in this call and the second parameter is data received from sender. \n
  *            And, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
- * @param[in] data data to pass to func when func is called
+ * @param[in] cb_data data to pass to func when func is called
  * @return On success,  A pointer of created event handle is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
@@ -198,7 +198,7 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_
 /**
  * @brief Delete registered handler for event
  * @details @b #include <eventloop/eventloop.h> \n
- * The registed event handler is deleted and all used resources for event handler are freed.
+ * The registered event handler is deleted and all used resources for event handler are freed.
  * @param[in] handle a pointer of event handle to be deleted
  * @return On success, OK is returned. On failure, defined negative value is returned
  * @since TizenRT v2.0 PRE
@@ -212,7 +212,7 @@ int eventloop_del_event_handler(el_event_t *handle);
  * The event will be sent with some data to tasks which registed handler for this event.\n
  * And then registered callback functions will be executed when they are polling events.
  * @param[in] type a value of event type
- * @param[in] data data to be passed to registered handler together
+ * @param[in] event_data data to be passed to registered handler together
  * @param[in] data_size size of data
  * @return On success, OK is returned. On failure, defined negative value is returned
  * @since TizenRT v2.0 PRE
