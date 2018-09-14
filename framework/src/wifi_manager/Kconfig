@@ -70,5 +70,16 @@ config WIFIMGR_DISABLE_AUTO_GET_IP
 	bool "disable auto get ip (ipv4 dhcp)"
 	default n
 
+config DISABLE_EXTERNAL_AUTOCONNECT
+	bool "disable external autoconnect"
+	default n
+
+if DISABLE_EXTERNAL_AUTOCONNECT
+config WIFIMGR_INTERNAL_AUTOCONNECT
+	bool "enable internal auto(re)connect"
+	default y
+
+endif #WIFIMGR_DISABLE_EXTERNAL_AUTOCONNECT
+
 endif #WIFI_MANAGER
 
