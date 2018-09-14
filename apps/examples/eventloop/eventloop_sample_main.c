@@ -23,52 +23,71 @@
 
 #include <eventloop/eventloop.h>
 
-el_timer_t *timer_10s;
+#define CALLBACK_DATA "EVENTLOOP_TIMER_CALLBACK"
+
+el_timer_t *timer_5s;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void timer_callback_2s(void *data)
+static bool timer_callback_2s(void *data)
 {
+	static int cnt_2s;
 	struct timeval now;
+
 	(void)gettimeofday(&now, NULL);
 	printf("%s timeout %d %d\n", __func__, now.tv_sec, now.tv_usec);
+
+	if (cnt_2s++ >= 10) {
+		printf("Stop timer with interval 2s by itself \n");
+		cnt_2s = 0;
+		free(data);
+		return EVENTLOOP_CALLBACK_STOP;
+	}
+
+	return EVENTLOOP_CALLBACK_CONTINUE;
 }
 
-static void timer_callback_10s(void *data)
+static bool timer_callback_5s(void *data)
 {
 	struct timeval now;
+
 	(void)gettimeofday(&now, NULL);
 	printf("%s timeout %d %d\n", __func__, now.tv_sec, now.tv_usec);
 
 	if (data != NULL) {
-		printf("Callback %s\n", (char *)data);
+		printf("Callback data : %s\n", (char *)data);
 	}
+
+	return EVENTLOOP_CALLBACK_CONTINUE;
 }
 
 static void timer_callback_20s(void *data)
 {
 	struct timeval now;
+
 	(void)gettimeofday(&now, NULL);
 	printf("%s timeout %d %d\n", __func__, now.tv_sec, now.tv_usec);
 
 	if (data != NULL) {
-		el_timer_t *timer = (el_timer_t *)data;
-		printf("Stop timer with interval 2s\n");
-		eventloop_delete_timer(timer);
+		printf("Callback data : %s\n", (char *)data);
 	}
 }
 
-static void timer_callback_40s(void *data)
+static void timer_callback_30s(void *data)
 {
+	int ret;
 	struct timeval now;
+
 	(void)gettimeofday(&now, NULL);
 	printf("%s timeout %d %d\n", __func__, now.tv_sec, now.tv_usec);
 
-	printf("Stop timer with interval 10s\n");
-	eventloop_delete_timer(timer_10s);
-
-	eventloop_loop_stop();
+	ret = eventloop_delete_timer(timer_5s);
+	if (ret == OK) {
+		printf("Stop timer with interval 5s\n");
+	} else {
+		printf("Failed to stop timer with interval 5s\n");
+	}
 }
 
 /****************************************************************************
@@ -82,27 +101,24 @@ int eventloop_sample_main(int argc, FAR char *argv[])
 {
 	el_timer_t *timer_2s;
 	el_timer_t *timer_20s;
-	el_timer_t *timer_40s;
+	el_timer_t *timer_30s;
+	char *user_data;
 
 	/* Add timer to be called every 2 seconds */
-	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, NULL);
+	user_data = (char *)strdup(CALLBACK_DATA);
+	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, user_data);
 
-	/* Add timer to be called every 10 seconds */
-	timer_10s = eventloop_add_timer_async(10000, true, timer_callback_10s, "10s Timeout");
+	/* Add timer to be called every 5 seconds */
+	timer_5s = eventloop_add_timer_async(5000, true, timer_callback_5s, NULL);
 
-	/* Add timer to be called once after 20s. It deletes the timer with 2s interval through passing the pointer */
-	timer_20s = eventloop_add_timer(20000, false, timer_callback_20s, timer_2s);
+	/* Add timer to be called once after 20s.  */
+	timer_20s = eventloop_add_timer(20000, false, (timeout_callback)timer_callback_20s, CALLBACK_DATA);
 
-	/* Add timer to be called once after 40s. It deletes the timer with 10s interval declared as global variable */
-	timer_40s = eventloop_add_timer(40000, false, timer_callback_40s, NULL);
+	/* Add timer to be called once after 30s. It will delete created timer with 5s interval. */
+	timer_30s = eventloop_add_timer(30000, false, (timeout_callback)timer_callback_30s, NULL);
 
 	/* Run loop */
 	eventloop_loop_run();
-
-	/* Delete created timers */
-	eventloop_delete_timer(timer_20s);
-	eventloop_delete_timer(timer_40s);
-	/* Other timers with 2s and 10s interval are already deleted in callback functions, timer_callback_20s and timer_callback_40s */
 
 	return 0;
 }

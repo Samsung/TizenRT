@@ -96,7 +96,7 @@ typedef uv_signal_t el_event_t;
 /**
  * @brief EventLoop Timeout Callback
  */
-typedef void (*timeout_callback)(void *);
+typedef bool (*timeout_callback)(void *data);
 
 /**
  * @brief EventLoop Thread Safe Callback
@@ -121,12 +121,17 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  * @details @b #include <eventloop/eventloop.h> \n
  * This API can create timer which is called once or repeated according to repeat flag. \n
  * The timer event is handled in the loop of its own task by calling eventloop_loop_run. \n
- * When eventloop_delete_timer is called, the timer is stopped if it is active and then used resources are freed
- * @remarks You should free used timer resources after using timer by calling @eventloop_delete_timer with returned pointer
+ * All resources created for timer at this call is freed when timer is stopped. \n
+ * So you don't have to call eventloop_delete_timer after it is stopped. \n
+ * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
+ * In other case, timer is stopped after calling callback function once regardless of return value in callback function. \n
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          It means that user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP or after eventloop_loop_run()
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
  * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
+ *            In case of repeated timer, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
@@ -150,8 +155,12 @@ int eventloop_delete_timer(el_timer_t *timer);
  * So you don't need to call eventloop_loop_run() to run loop. \n
  * In other words, the timer event is added to a loop handled by eventloop task, \n
  * and then registered callback is executed in the context of eventloop task asynchronously, not task which created timer. \n
- * When eventloop_delete_timer is called, the timer is stopped if it is active and then used resources are freed
- * @remarks You should free used timer resources after using timer by calling @eventloop_delete_timer with returned pointer
+ * All resources created for timer at this call is freed when timer is stopped. \n
+ * So you don't have to call eventloop_delete_timer after it is stopped. \n
+ * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
+ * In other case, timer is stopped after calling callback function once. regardless of return value in callback function.
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          Therefore, user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP.
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
  * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
@@ -173,17 +182,18 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
  * Please refer to a description of EVENTLOOP_CALLBACK_STOP and EVENTLOOP_CALLBACK_CONTINUE. \n
  * Finally when returned handle is not needed anymore or all works you want are done, you should call eventloop_del_event_handler. \n
  * Because some resources for event handler are allocated internally, you should free them.
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          It means that user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP or after eventloop_loop_run()
  * @param[in] type a value of event type
  * @param[in] func the callback function to be called \n
  *            It has specific type, event_callback which has two types of data as parameter. \n
  *            The first parameter is data registered in this call and the second parameter is data received from sender. \n
  *            And, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] data data to pass to func when func is called
- * @param[in] data_size size of data
  * @return On success,  A pointer of created event handle is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data, int data_size);
+el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data);
 
 /**
  * @brief Delete registered handler for event
@@ -231,13 +241,14 @@ int eventloop_loop_stop(void);
 /**
  * @brief Callback is added at the each eventloop to be called thread safely.\n
  * @details @b #include <eventloop/eventloop.h>
+ * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
+ *          It means that user should free them in callback function or free them after eventloop_loop_run()
  * @param[in] func the callback function to be called
  * @param[in] cb_data data to pass to func when func is called
- * @param[in] data_size size of data
  * @return On success, OK is returned. On failure, defined negative value is returned
  * @since TizenRT v2.0 PRE
  */
-int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data, int data_size);
+int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data);
 
 #ifdef __cplusplus
 }
