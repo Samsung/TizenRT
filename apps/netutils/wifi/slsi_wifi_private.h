@@ -28,7 +28,7 @@
 #define WPA_PARAM_KEY_MGMT_WPA_PSK      "key_mgmt WPA-PSK"
 #define WPA_PARAM_SSID_                 "ssid "
 #define WPA_PARAM_SCAN_SSID             "scan_ssid "
-#define WPA_PARAM_SCAN_ID               "scan_ssid="
+#define WPA_PARAM_SCAN_ID               "scan_id="
 #define WPA_PARAM_BSSID_                "bssid "
 #define WPA_PARAM_PSK                   "psk "
 #define WPA_PARAM_WEPKEY                "wep_key0 "
