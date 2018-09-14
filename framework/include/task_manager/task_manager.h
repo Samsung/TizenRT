@@ -89,7 +89,7 @@ enum tm_result_error_e {
 
 /**
  * @brief Broadcast message list
- * @details These values can be used for broadcast messges.\n
+ * @details These values can be used for broadcast messages.\n
  * If user wants to add some other types of broadcast message,\n
  * user can add their own broadcast messages at <task_manager/task_manager_broadcast_list.h>.
  */
@@ -152,10 +152,10 @@ extern "C" {
  * Public Function Prototypes
  ****************************************************************************/
 /**
- * @brief Request to register a builtin task
+ * @brief Request to register a built-in task
  * @details @b #include <task_manager/task_manager.h>\n
- * This API can request to register a builtin task.\n
- * Find apps/builtin/README.md to know how to use builtin task.
+ * This API can request to register a built-in task.\n
+ * Find apps/builtin/README.md to know how to use built-in task.
  * @param[in] name the name of task to be registered
  * @param[in] permission the permission of task to be registered
  * @param[in] timeout returnable flag. It can be one of the below.\n
@@ -167,9 +167,9 @@ extern "C" {
  */
 int task_manager_register_builtin(char *name, int permission, int timeout);
 /**
- * @brief Request to register a task which is not in builtin list
+ * @brief Request to register a task which is not in built-in list
  * @details @b #include <task_manager/task_manager.h>\n
- * Find apps/builtin/README.md to know how to use builtin task.
+ * Find apps/builtin/README.md to know how to use built-in task.
  * @param[in] name the name of task to be registered
  * @param[in] priority the priority of task to be registered
  * @param[in] stack_size the stack_size of task to be registered
@@ -185,7 +185,7 @@ int task_manager_register_builtin(char *name, int permission, int timeout);
  */
 int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout);
 /**
- * @brief Request to register a pthread which is not in builtin list
+ * @brief Request to register a pthread which is not in built-in list
  * @details @b #include <task_manager/task_manager.h>\n
  * @param[in] name the name of pthread to be registered
  * @param[in] attr the attribute of pthread to be registered
@@ -263,7 +263,7 @@ int task_manager_resume(int handle, int timeout);
 /**
  * @brief Request to restart the task
  * @details @b #include <task_manager/task_manager.h>
- * It cannot guarantee the resource deallocation.
+ * It cannot guarantee the resource de-allocation.
  * @param[in] handle the handle id of task to be restarted
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
