@@ -408,18 +408,20 @@ static void utc_media_MediaPlayer_getVolume_n(void)
 
 static void utc_media_MediaPlayer_setVolume_p(void)
 {
-	uint8_t volume;
+	uint8_t prev, volume;
 	media::MediaPlayer mp;
 	std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
 	mp.create();
 	mp.setDataSource(std::move(source));
 	mp.prepare();
+	mp.getVolume(&prev);
 
-	auto ret = mp.setVolume(0);
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", ret, media::PLAYER_OK);
+	TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_setVolume", mp.setVolume(0), media::PLAYER_OK, goto cleanup);
 	mp.getVolume(&volume);
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", volume, 0);
+	TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_setVolume", volume, 0, goto cleanup);
 
+cleanup:
+	mp.setVolume(prev);
 	mp.unprepare();
 	mp.destroy();
 	TC_SUCCESS_RESULT();
