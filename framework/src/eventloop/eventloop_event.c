@@ -31,7 +31,7 @@
 
 #include "eventloop_internal.h"
 
-/* The stucture for a group of event nodes which have same event type, event_group_t */
+/* The structure for a group of event nodes which have same event type, event_group_t */
 struct event_group_s {
 	struct event_group_s *flink;
 	int type;
@@ -39,14 +39,14 @@ struct event_group_s {
 };
 typedef struct event_group_s event_group_t;
 
-/* The stucture for wrapping of event handle to be kept in a list internally. */
+/* The structure for wrapping of event handle to be kept in a list internally. */
 struct event_node_s {
 	struct event_node_s *flink;
 	el_event_t *handle;
 };
 typedef struct event_node_s event_node_t;
 
-/* The stucture which has information of event handle user registered.
+/* The structure which has information of event handle user registered.
  * The handle of event_node_t has it in data field, and use data values when calling callback function.
  */
 struct event_data_s {
