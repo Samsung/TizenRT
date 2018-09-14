@@ -16,6 +16,8 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
