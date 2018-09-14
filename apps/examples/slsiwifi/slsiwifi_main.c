@@ -354,26 +354,30 @@ int8_t doSpecificScan(uint8_t *ssid, uint8_t ssid_len, char *passphrase, char *s
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	char *quotedpass = NULL;
+	slsi_security_config_t *conf = NULL;
 
 	sem_init(&g_sem_result, 0, 0);
-	/* We need to check if the passphrase is ascii if we are using wep/wep_shared */
-	if (strncmp("wep", sec, 3) == 0) {	/* covers both wep and wep_shared */
-		if (strlen(passphrase) == 5 || strlen(passphrase) == 13) {
-			/* we expect it to be ascii in WEP mode -- add quotes */
-			int passlen = strlen(passphrase);
 
-			quotedpass = (char *)zalloc(passlen + 3);	/* make room for quotes */
-			if (!quotedpass) {
-				return result;
+	if (sec != NULL) {
+		/* We need to check if the passphrase is ascii if we are using wep/wep_shared */
+		if (strncmp("wep", sec, 3) == 0) {	/* covers both wep and wep_shared */
+			if (strlen(passphrase) == 5 || strlen(passphrase) == 13) {
+				/* we expect it to be ascii in WEP mode -- add quotes */
+				int passlen = strlen(passphrase);
+
+				quotedpass = (char *)zalloc(passlen + 3);	/* make room for quotes */
+				if (!quotedpass) {
+					return result;
+				}
+				quotedpass[0] = '"';
+				memcpy(&quotedpass[1], passphrase, passlen);
+				quotedpass[passlen + 1] = '"';
+				quotedpass[passlen + 2] = '\0';
+				passphrase = quotedpass;
 			}
-			quotedpass[0] = '"';
-			memcpy(&quotedpass[1], passphrase, passlen);
-			quotedpass[passlen + 1] = '"';
-			quotedpass[passlen + 2] = '\0';
-			passphrase = quotedpass;
 		}
+		conf = getSecurityConfig(sec, passphrase, g_mode);
 	}
-	slsi_security_config_t *conf = getSecurityConfig(sec, passphrase, g_mode);
 
 	WiFiRegisterScanCallback(sw_ScanResultHandler);
 	if (wifiStarted && WiFiScanSpecificNetwork(ssid, ssid_len, conf) == SLSI_STATUS_SUCCESS) {
@@ -900,17 +904,24 @@ int8_t parseCmdLine(int argc, char *argv[])
 		/* no more arguments - just scan */
 		(void)doScan();
 	} else if (strncmp("scan_specific", argv[1], MAXLEN(13, strlen(argv[1]))) == 0) {
-		if (argc < 5) {
+		if (argc != 3 && argc != 5) {
 			sw_printHelp();
-			printf("\nNot enough parameters\n");
+			printf("\nWrong parameters\n");
+			printf("wifi scan_specific <ssid> <key> <security>\n");
 		} else {
-			char *secmode = argv[4];
-			char *passphrase = argv[3];
 			char *ssid = argv[2];
 
 			ssid_len = strlen(ssid);
-			printf("Starting scan for specific AP with info\n:  ssid: %s\n Pass: %s\n  Secmode: %s\n", ssid, passphrase, secmode);
-			(void)doSpecificScan((uint8_t *) ssid, ssid_len, passphrase, secmode);
+			if (argc == 3) {
+				printf("Starting scan for specific AP with info\n:  ssid: %s\n  Secmode: open\n", ssid);
+				(void)doSpecificScan((uint8_t *) ssid, ssid_len, NULL, NULL);
+			} else {
+				char *secmode = argv[4];
+				char *passphrase = argv[3];
+
+				printf("Starting scan for specific AP with info\n:  ssid: %s\n Pass: %s\n  Secmode: %s\n", ssid, passphrase, secmode);
+				(void)doSpecificScan((uint8_t *) ssid, ssid_len, passphrase, secmode);
+			}
 		}
 	} else if (strncmp("startap", argv[1], MAXLEN(7, strlen(argv[1]))) == 0) {
 		/* slsiwifi startap <ssid> <security> <key> <channel> */

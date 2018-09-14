@@ -50,6 +50,7 @@ void sw_printHelp(void)
 	printf("   join\n");
 	printf("   leave\n");
 	printf("   scan\n");
+	printf("   scan_specific\n");
 	printf("   startsta\n");
 	printf("   startap\n");
 	printf("   stop\n");
