@@ -758,7 +758,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			alc5658_setvolume(priv);
 		break;
 #else							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
-		return -ENOSYS;
+		return -EACCES;
 #endif
 		}
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
@@ -800,7 +800,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			}
 			break;
 #else							/* CONFIG_AUDIO_EXCLUDE_GAIN */
-			return -ENOSYS;
+			return -EACCES;
 #endif
 		}
 		default:

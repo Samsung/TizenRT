@@ -420,7 +420,7 @@ void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_result_t& ret)
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
 		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
-			ret = RECORDER_ERROR_INVALID_OPERATION;
+			ret = RECORDER_ERROR_DEVICE_NOT_SUPPORTED;
 		} else {
 			ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 		}
