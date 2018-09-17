@@ -54,7 +54,8 @@ static void iotjs_startup_wifi_connect(void);
 static void iotjs_startup_wifi_sta_connected(wifi_manager_result_e status)
 {
 	printf("log: %s status=0x%x\n", __FUNCTION__, status);
-	g_is_connected = true;
+	g_is_connected = ((status == WIFI_MANAGER_SUCCESS) ||
+			  (status == WIFI_MANAGER_ALREADY_CONNECTED));
 }
 
 static void iotjs_startup_wifi_sta_disconnected(wifi_manager_disconnect_e status)
