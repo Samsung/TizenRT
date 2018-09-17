@@ -647,18 +647,32 @@ void wpa_bss_update_scan_res(struct wpa_supplicant *wpa_s, struct wpa_scan_res *
 
 	bss = wpa_bss_get(wpa_s, res->bssid, ssid + 2, ssid[1]);
 	if (bss == NULL) {
+#ifdef CONFIG_WPA_SUPPLICANT_HIDE_HIDDEN_SSID
+		if (ssid[1] == 0 || (ssid[1] > 0 && *(ssid + 2) == 0))
+			wpa_printf(MSG_DEBUG, "BSS: hidden ssid - skipping BSS to add" MACSTR " (len=%d)", MAC2STR(res->bssid), ssid[1]);
+		else
+#endif
 		bss = wpa_bss_add(wpa_s, ssid + 2, ssid[1], res, fetch_time);
 	} else {
-		bss = wpa_bss_update(wpa_s, bss, res, fetch_time);
-		if (wpa_s->last_scan_res) {
-			unsigned int i;
-			for (i = 0; i < wpa_s->last_scan_res_used; i++) {
-				if (bss == wpa_s->last_scan_res[i]) {
-					/* Already in the list */
-					return;
+#ifdef CONFIG_WPA_SUPPLICANT_HIDE_HIDDEN_SSID
+		if (ssid[1] == 0 || (ssid[1] > 0 && *(ssid + 2) == 0))
+			wpa_printf(MSG_DEBUG, "BSS: hidden ssid - skipping BSS to update" MACSTR " (len=%d)", MAC2STR(res->bssid), ssid[1]);
+		else {
+#endif
+			bss = wpa_bss_update(wpa_s, bss, res, fetch_time);
+			if (wpa_s->last_scan_res) {
+				unsigned int i;
+
+				for (i = 0; i < wpa_s->last_scan_res_used; i++) {
+					if (bss == wpa_s->last_scan_res[i]) {
+						/* Already in the list */
+						return;
+					}
 				}
 			}
+#ifdef CONFIG_WPA_SUPPLICANT_HIDE_HIDDEN_SSID
 		}
+#endif
 	}
 
 	if (bss == NULL) {

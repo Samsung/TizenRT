@@ -33,6 +33,10 @@ config WPA_SUPPLICANT_ENTRYPOINT
 	string "wpa_supplicant entry point"
 	default "wpa_supplicant_main"
 
+config WPA_SUPPLICANT_HIDE_HIDDEN_SSID
+	bool "do not show up hidden SSID when scan"
+	default y
+
 config CTRL_IFACE
 	bool "wpa_supplicant ctrl_iface flag"
 	default y
