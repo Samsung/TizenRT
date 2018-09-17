@@ -36,6 +36,9 @@
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+#include <tinyara/wqueue.h>
+#endif
 #include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
@@ -209,15 +212,8 @@ static void taskmgr_clear_broadcast_info_list(int handle)
 	}
 }
 
-static int taskmgr_unregister(int handle)
+static void taskmgr_execute_unregister(int handle)
 {
-	if (IS_INVALID_HANDLE(handle)) {
-		return TM_INVALID_PARAM;
-	}
-	if (taskmgr_get_task_state(handle) == TM_APP_STATE_UNREGISTERED) {
-		return TM_UNREGISTERED_APP;
-	}
-
 	/* If type is TM_TASK or TM_PTHREAD, remove the data in the list */
 	if (TM_TYPE(handle) == TM_TASK) {
 		TM_FREE(tm_task_list[TM_IDX(handle)].name);
@@ -270,7 +266,42 @@ static int taskmgr_unregister(int handle)
 	g_handle_hash[handle] = false;
 	tmvdbg("Unregistered handle %d\n", handle);
 	handle_cnt--;
+}
 
+static void taskmgr_late_unregister(void *arg)
+{
+	taskmgr_execute_unregister((int)arg);
+}
+
+static int taskmgr_unregister(int handle)
+{
+	int state;
+	struct work_s *wq;
+
+	if (IS_INVALID_HANDLE(handle)) {
+		return TM_INVALID_PARAM;
+	}
+
+	state = taskmgr_get_task_state(handle);
+	if (state == TM_APP_STATE_UNREGISTERED) {
+		return TM_UNREGISTERED_APP;
+	}
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+	else if (state == TM_APP_STATE_CANCELLING) {
+		/* If task is on cancelling state, unregister will be treated later. */
+		wq = (struct work_s *)TM_ALLOC(sizeof(struct work_s));
+		if (wq == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		/* FIX ME - wq should be freed after lpwork running. */
+		tmdbg("Unregister will be treated in low-priority work queue.\n");
+		(void)work_queue(USRWORK, wq, taskmgr_late_unregister, (void *)handle, 0);
+		return OK;
+	}
+#endif
+
+	/* If task is on stop state, unregister immediately. */
+	taskmgr_execute_unregister(handle);
 	return OK;
 }
 
