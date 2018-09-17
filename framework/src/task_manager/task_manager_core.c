@@ -1203,7 +1203,7 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 		STOP_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
 			if (STOP_CBDATA(handle) == NULL) {
-				STOP_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				STOP_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
 				if (STOP_CBDATA(handle) == NULL) {
 					TM_FREE(TM_STOP_CB_INFO(handle));
 					return TM_OUT_OF_MEMORY;
@@ -1211,7 +1211,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 			}
 
 			if (STOP_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				TM_FREE(STOP_CBDATA_MSG(handle));
+				if (STOP_CBDATA_MSG(handle) != NULL) {
+					TM_FREE(STOP_CBDATA_MSG(handle));
+				}
 				STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
 				if (STOP_CBDATA_MSG(handle) == NULL) {
 					TM_FREE(STOP_CBDATA(handle));
@@ -1237,7 +1239,7 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 		EXIT_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
 			if (EXIT_CBDATA(handle) == NULL) {
-				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
 				if (EXIT_CBDATA(handle) == NULL) {
 					TM_FREE(TM_EXIT_CB_INFO(handle));
 					return TM_OUT_OF_MEMORY;
@@ -1245,7 +1247,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 			}
 
 			if (EXIT_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				TM_FREE(EXIT_CBDATA_MSG(handle));
+				if (EXIT_CBDATA_MSG(handle) != NULL) {
+					TM_FREE(EXIT_CBDATA_MSG(handle));
+				}
 				EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
 				if (EXIT_CBDATA_MSG(handle) == NULL) {
 					TM_FREE(EXIT_CBDATA(handle));
