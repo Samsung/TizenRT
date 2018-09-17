@@ -973,7 +973,7 @@ static void itc_audio_pcm_readi_p(void)
 
 	printf("Record will be start for 3s, press any key to start(Total frame: %d)\n", remain);
 	fflush(stdout);
-	str = gets(input_str);
+	str = fgets(input_str, INPUT_STR_LEN - 1, stdin);
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", str, NULL, clean_all_data(fd, buffer));
 
 	while (remain > 0) {
@@ -1042,7 +1042,7 @@ static void itc_audio_pcm_writei_p(void)
 
 	char *buffer = NULL;
 	int num_read = 0;
-	int total_frames = 0;
+	unsigned int total_frames = 0;
 	unsigned int size = 0;
 
 	/* use default config here */
@@ -1068,7 +1068,7 @@ static void itc_audio_pcm_writei_p(void)
 	} while (num_read > 0);
 
 	sleep(SEC_2);
-	printf("Playback done! Total Frames: %d\n", pcm_bytes_to_frames(g_pcm, total_frames));
+	printf("Playback done! Total Frames: %ul\n", pcm_bytes_to_frames(g_pcm, total_frames));
 
 	clean_all_data(fd, buffer);
 	TC_SUCCESS_RESULT();
