@@ -60,12 +60,8 @@ artik_error InitConfiguration(void)
 	struct stat st;
 	int fd = 0;
 
-	if (stat(config_file, &st) < 0) {
-		printf("Stat failed\n");
-		return E_ACCESS_DENIED;
-	}
-
-	if (st.st_size != (sizeof(wifi_config) + sizeof(cloud_config) + sizeof(lwm2m_config))) {
+	if ((stat(config_file, &st) < 0) ||
+		(st.st_size != (sizeof(wifi_config) + sizeof(cloud_config) + sizeof(lwm2m_config)))) {
 		printf("Invalid configuration, creating default one\n");
 
 		return ResetConfiguration(true);
@@ -98,6 +94,7 @@ artik_error InitConfiguration(void)
 		return E_ACCESS_DENIED;
 	}
 
+	close(fd);
 	return S_OK;
 }
 
