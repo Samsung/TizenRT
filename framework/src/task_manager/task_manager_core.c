@@ -419,7 +419,6 @@ static int taskmgr_stop(int handle, int caller_pid)
 static int taskmgr_restart(int handle, int caller_pid)
 {
 	int ret;
-	int fd;
 
 	if (IS_INVALID_HANDLE(handle) || caller_pid < 0) {
 		return TM_INVALID_PARAM;
@@ -464,16 +463,6 @@ static int taskmgr_restart(int handle, int caller_pid)
 	ret = task_restart(TM_PID(handle));
 	if (ret != OK) {
 		tmdbg("Fail to restart the task\n");
-		return TM_OPERATION_FAIL;
-	}
-
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
-	}
-
-	ret = ioctl(fd, TMIOC_RESTART, TM_PID(handle));
-	if (ret != OK) {
 		return TM_OPERATION_FAIL;
 	}
 
