@@ -105,7 +105,7 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-After buiding a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.  
+After building a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.  
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 ```bash
 ./dbuild.sh download ALL
@@ -170,7 +170,7 @@ There are three configuration sets for sidk_s5jt200, including 'hello_with_tash'
  for running kernel functions
 
 #### tc
- for runnig unit test cases
+ for running unit test cases
 
 #### sidk_tash_aws
  for running AWS IoT SDK examples.

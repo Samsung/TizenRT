@@ -109,7 +109,7 @@ Therefore, our TizenRT application must internally use either `pthread_create` A
 Please refer to `grpc_greeter_client` and `grpc_route_client` applications under `apps/examples` folder as examples on how to achieve this.
 
 An important consideration when running gRPC on TizenRT is the stack size allocated for its threads.
-From our initial verfication, we observe that a minimum thread stack size of 16384 bytes is necessary for the main gRPC thread to run successfully on TizenRT.
+From our initial verification, we observe that a minimum thread stack size of 16384 bytes is necessary for the main gRPC thread to run successfully on TizenRT.
 This can be achieved by either using the `pthread_attr_setstacksize` API or configuring the default pthread stacksize via menuconfig, at the location `Kernel Features -> Stack size information -> Default pthread stack size`.
 Additionally, this gRPC main thread engine uses `pthread_create` internally for its run-time procedures, for which we recommend setting a stack size of 10240 bytes or higher. In order to configure this easily, TizenRT features a menuconfig parameter at the location `Networking Support -> Protocols -> gRPC -> Set thread size for grpc modules`.
 

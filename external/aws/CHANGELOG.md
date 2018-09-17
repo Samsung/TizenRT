@@ -113,7 +113,7 @@ Bugfixes/Improvements:
 
 Features:
 
-  - Testing with mbedTLS, prepping for relase
+  - Testing with mbedTLS, prepping for release
 
 Bugfixes/Improvements:
 
