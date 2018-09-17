@@ -34,7 +34,7 @@ namespace media {
 /**
  * @brief current state of MediaPlayer.
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum player_state_e {
 	/** MediaPlayer object was created */

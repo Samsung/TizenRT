@@ -39,7 +39,7 @@ namespace media {
 /**
  * @brief current state of MediaRecorder
  * @details @b #include <media/MediaRecorder.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum recorder_state_e {
 	/** MediaRecorder object was created */

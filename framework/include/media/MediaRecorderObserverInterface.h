@@ -44,7 +44,7 @@ typedef enum recorder_error_e recorder_error_t;
  * @details @b #include <media/MediaRecorderObserverInterface.h>
  * This class informs the user of the recording state of MediaRecorder
  * This class informs the user of the error state of MediaRecorder
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 
 class MediaRecorderObserverInterface
@@ -53,37 +53,37 @@ public:
 	/**
 	 * @brief informs the user of the recording has begun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordStarted(MediaRecorder& mediaRecorder) = 0;
 	/**
 	 * @brief informs the user of the recording has paused.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordPaused(MediaRecorder& mediaRecorder) = 0;
 	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordFinished(MediaRecorder& mediaRecorder) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder start operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordStartError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder pause operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder stop operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 	/**
@@ -92,19 +92,19 @@ public:
 	 * @remark user need to override this method when the recorder working
 	 * with a BufferOutputDataSource.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordBufferDataReached(MediaRecorder& mediaRecorder, std::shared_ptr<unsigned char> data, size_t size) {}
 	/**
 	 * @brief informs the user the recorder buffer state: overrun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordBufferOverrun(MediaRecorder& mediaRecorder) {}
 	/**
 	 * @brief informs the user the recorder buffer state: underrun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onRecordBufferUnderrun(MediaRecorder& mediaRecorder) {}
 };

@@ -41,7 +41,7 @@ class MediaRecorderImpl;
 /**
  * @brief result of call the apis
  * @details @b #include <media/MediaRecorder.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 enum recorder_error_e : int {
 	/** MediaRecorder Error case */
@@ -64,7 +64,7 @@ typedef int recorder_result_t;
  * @class 
  * @brief This class implements the MediaRecorder capability agent.
  * @details @b #include <media/MediaRecorder.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class MediaRecorder
 {
@@ -72,14 +72,14 @@ public:
 	/**
 	 * @brief Constructs an empty MediaRecorder.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	MediaRecorder();
 	
 	/**
 	 * @brief Deconstructs an empty MediaRecorder.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	~MediaRecorder();
 	
@@ -88,7 +88,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @return The result of the create operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t create();
 	
@@ -97,7 +97,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @return The result of the destroy operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t destroy();
 	
@@ -106,7 +106,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @return The result of the prepare operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t prepare();
 	
@@ -115,7 +115,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t unprepare();
 	
@@ -125,7 +125,7 @@ public:
 	 * This function is a asynchronous api
 	 * Order to MediaRecordWorker begin recording through the queue
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t start();
 	
@@ -135,7 +135,7 @@ public:
 	 * This function is a asynchronous api
 	 * Order to MediaRecordWorker pause recording through the queue
 	 * @return The result of the pause operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t pause();
 	
@@ -145,7 +145,7 @@ public:
 	 * This function is a asynchronous api
 	 * Order to MediaRecordWorker stop recording through the queue
 	 * @return The result of the stop operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t stop();
 	
@@ -154,7 +154,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @return The value of current mic volume
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t getVolume(uint8_t *vol);
 	
@@ -164,7 +164,7 @@ public:
 	 * This function is a synchronous api
 	 * @param[in] vol The vol that the value of mic volume
 	 * @return The result of setting the mic volume
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t setVolume(uint8_t vol);
 	
@@ -174,7 +174,7 @@ public:
 	 * This function is a synchronous api
 	 * @param[in] dataSource The dataSource that the config of output data
 	 * @return The result of setting the datasource
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	
@@ -185,7 +185,7 @@ public:
 	 * It sets the user's function
 	 * @param[in] observer The callback to be set for Media Recorder Observer.
 	 * @return The result of setting the observer
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 
@@ -197,7 +197,7 @@ public:
 	 * It sets the user's function
  	 * @param[in] Max duration(second), No limitation If zero or negative.
 	 * @return The result of setting the duration
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	recorder_result_t setDuration(int second);
 
@@ -207,7 +207,7 @@ public:
 	 * This function is a synchronous api
 	 * Compares the MediaRecorder objects for equality
 	 * @return The result of the compare operation for MediaRecorder object
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool operator==(const MediaRecorder& rhs);
 
