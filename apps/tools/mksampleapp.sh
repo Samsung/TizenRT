@@ -217,6 +217,7 @@ depend: .depend
 
 clean:
 	\$(call DELFILE, .built)
+	\$(call DELFILE, \$(wildcard ${SAMPLES_SUB_SRC}/*.o))
 	\$(call CLEAN)
 
 distclean: clean
