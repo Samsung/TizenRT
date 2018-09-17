@@ -1,3 +1,0 @@
-config ENTRY_WIFIMANAGER_TEST
-	bool "wifi manager test"
-	depends on EXAMPLES_WIFIMANAGER_TEST

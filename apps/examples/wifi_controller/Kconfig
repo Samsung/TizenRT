@@ -3,45 +3,45 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config EXAMPLES_WIFIMANAGER_TEST
-	bool "Wi-Fi Manager Sample"
+config EXAMPLES_WICTL
+	bool "Wi-Fi Manager control application; Wi-Fi controller"
 	default n
 	depends on WIFI_MANAGER
 	---help---
-		Wi-Fi Manager sample program
+		Wi-Fi manager control application
 
 config USER_ENTRYPOINT
 	string
-	default "wm_test_main" if ENTRY_WIFIMANAGER_TEST
+	default "wictl_main" if ENTRY_WICTL
 
 
-if EXAMPLES_WIFIMANAGER_TEST
-config EXAMPLES_WIFIMANAGER_STRESS_TOOL
-	bool "Enable Sterss Tool for WiFi Manager"
+if EXAMPLES_WICTL
+config EXAMPLES_WICTL_STRESS_TOOL
+	bool "Enable Sterss Tool for WiFi controller"
 	default n
 	depends on STRESS_TOOL
 
-if EXAMPLES_WIFIMANAGER_STRESS_TOOL
-config WIFIMANAGER_TEST_TRIAL
+if EXAMPLES_WICTL_STRESS_TOOL
+config WICTL_STRESS_TRIAL
 	int "Number of test trial"
 	default 5
 	---help---
-		Number of test trial
+		Number of test trial for Wi-Fi controller
 
-config WIFIMANAGER_TEST_AP_SSID
+config WICTL_STRESS_AP_SSID
 	string "SSID of AP"
 	default "SSID"
 	---help---
 		Select SSID of AP which you want to connect to
 
-config WIFIMANAGER_TEST_AP_PASSPHRASE
+config WICTL_STRESS_AP_PASSPHRASE
 	string "Passphrase of AP"
 	default "NULL"
 	---help---
 		Passphrase of AP which you want to connect to
 
 
-config WIFIMANAGER_TEST_AP_AUTHENTICATION
+config WICTL_STRESS_AP_AUTHENTICATION
 	int "Authentication type"
 	default 0
 	---help---
@@ -53,7 +53,7 @@ config WIFIMANAGER_TEST_AP_AUTHENTICATION
 		5 : Unknown
 
 
-config WIFIMANAGER_TEST_AP_CRYPTO
+config WICTL_STRESS_AP_CRYPTO
 	int "Encryption type"
 	default 0
 	---help---
@@ -66,25 +66,25 @@ config WIFIMANAGER_TEST_AP_CRYPTO
 		6 : Unknown
 
 
-config WIFIMANAGER_TEST_SOFTAP_SSID
+config WICTL_STRESS_SOFTAP_SSID
 	string "SSID of SoftAP"
 	default "PKES"
 	---help---
 		Name SSID of SoftAP
 
 
-config WIFIMANAGER_TEST_SOFTAP_PASSWORD
+config WICTL_STRESS_SOFTAP_PASSWORD
 	string "Passphrase of SoftAP"
 	default "password"
 	---help---
 		Passphrase of SoftAP
 
 
-config WIFIMANAGER_TEST_SOFTAP_CHANNEL
+config WICTL_STRESS_SOFTAP_CHANNEL
 	int "Channel of SoftAP"
 	default 1
 	---help---
 		Select the channel number of SoftAP
 
-endif #if EXAMPLES_WIFIMANAGER_STRESS_TOOL
-endif #if EXAMPLES_WIFIMANAGER_TEST
+endif #if EXAMPLES_WICTL_STRESS_TOOL
+endif #if EXAMPLES_WICTL
