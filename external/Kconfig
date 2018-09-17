@@ -30,10 +30,7 @@ config ARTIK_SDK
 	---help---
 		include the ARTIK SDK
 
-config LWM2M_WAKAAMA_CLIENT
-	bool "LWM2M_WAKAAMA_CLIENT"
-	---help---
-		enable LWM2M Artik Cloud client
+source "$EXTERNALDIR/wakaama-client/Kconfig"
 
 source "$EXTERNALDIR/aws/Kconfig"
 

@@ -3,8 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config EXAMPLES_LWM2M
-	bool "artik-cloud-lwm2m"
-	default n
+config LWM2M_WAKAAMA_CLIENT
+	bool "LWM2M_WAKAAMA_CLIENT"
 	---help---
-		Enable lwm2m client example
+		enable LWM2M Artik Cloud client
