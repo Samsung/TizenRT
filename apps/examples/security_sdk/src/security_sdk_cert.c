@@ -151,7 +151,7 @@ static int get_certificate_sn(unsigned char *pem_cert_chain, unsigned int pem_ce
 	return S_OK;
 }
 
-int security_sdk_serial(void)
+int security_sdk_cert_serial(void)
 {
 	artik_security_handle handle = NULL;
 	artik_error ret = S_OK;
@@ -163,7 +163,7 @@ int security_sdk_serial(void)
 	int i = 0;
 
 	fprintf(stderr, "--------------------------------------------\n");
-	fprintf(stderr, "  SECURITY SDK TESTCASE : get serial number\n");
+	fprintf(stderr, "  SECURITY SDK TESTCASE : get cert serial number\n");
 	fprintf(stderr, "--------------------------------------------\n");
 
 	artik_security_module *security = (artik_security_module *) artik_request_api_module("security");
@@ -279,6 +279,10 @@ int security_sdk_get_certificates(void)
 			0x1B, 0xBE, 0x24, 0x5D, 0x83, 0x78, 0xA7, 0x61, 0x7D, 0xE9, 0x58, 0xED, 0xBB, 0x9C, 0xD9, 0x35,
 			0x82, 0xFF, 0x26, 0x3B, 0xD1, 0xC3
 	};
+
+	fprintf(stderr, "------------------------------------------------------\n");
+	fprintf(stderr, "  SECURITY SDK TESTCASE : get/set certificates\n");
+	fprintf(stderr, "------------------------------------------------------\n");
 
 	security = (artik_security_module *) artik_request_api_module("security");
 

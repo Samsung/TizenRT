@@ -215,20 +215,16 @@ static void security_sdk_factory_getcert(int debug_mode)
 		printf("[%d] %s ... ", i, g_cert_existence[i].object_name);
 		buf_len = 4096;
 
-		lldbg("[LLDBG] %s / %s / %d  ret=0x%X\n", __FILE__, __func__, __LINE__, ret);
 		ret = security->get_certificate(handle, g_cert_existence[i].key_name,
 				ARTIK_SECURITY_CERT_TYPE_PEM, (unsigned char **)&buf,
 				(unsigned int *)&buf_len);
-		lldbg("[LLDBG] %s / %s / %d  ret=0x%X\n", __FILE__, __func__, __LINE__, ret);
 		if (ret != 0) {
 			printf("get certificate failed : %d\n", ret);
 			i++;
 			continue;
 		}
 
-		lldbg("[LLDBG] %s / %s / %d  ret=0x%X\n", __FILE__, __func__, __LINE__, ret);
 		ret = security_sdk_print_crt(debug_mode, buf, buf_len);
-		lldbg("[LLDBG] %s / %s / %d  ret=0x%X\n", __FILE__, __func__, __LINE__, ret);
 		if (ret != 0) {
 			printf("get certificate failed : %d\n", ret);
 			i++;

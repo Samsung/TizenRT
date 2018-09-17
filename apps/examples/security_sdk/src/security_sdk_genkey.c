@@ -66,12 +66,12 @@ int security_sdk_generate_key(void)
 	char key_name_sk[20] = { 0 };
 	char key_name_mem[20] = { 0 };
 	unsigned int genkey_input[SEE_GENERATE_KEY_TC][3] = {
-		{AES_128, 16, SEE_OK}, {AES_192, 24, SEE_OK}, {AES_256, 32, SEE_OK},
-		{HMAC_ALGORITHM, 0, SEE_ERROR}, {HMAC_ALGORITHM, 128, SEE_OK},
-		{HMAC_ALGORITHM, 129, SEE_ERROR},
-		{ECC_BRAINPOOL_P256R1, 0, SEE_OK}, {ECC_SEC_P256R1, 0, SEE_OK},
-		{ECC_SEC_P384R1, 0, SEE_OK}, {ECC_SEC_P521R1, 0, SEE_OK},
-		{0xffff, 0, SEE_INVALID_INPUT_PARAMS}
+		{AES_128, 16, SECURITY_SDK_OK}, {AES_192, 24, SECURITY_SDK_OK}, {AES_256, 32, SECURITY_SDK_OK},
+		{HMAC_ALGORITHM, 0, SECURITY_SDK_ERROR}, {HMAC_ALGORITHM, 128, SECURITY_SDK_OK},
+		{HMAC_ALGORITHM, 129, SECURITY_SDK_ERROR},
+		{ECC_BRAINPOOL_P256R1, 0, SECURITY_SDK_OK}, {ECC_SEC_P256R1, 0, SECURITY_SDK_OK},
+		{ECC_SEC_P384R1, 0, SECURITY_SDK_OK}, {ECC_SEC_P521R1, 0, SECURITY_SDK_OK},
+		{0xffff, 0, SECURITY_SDK_ERROR}
 	};
 
 	fprintf(stderr, "------------------------------------------------------\n");
@@ -122,9 +122,8 @@ int security_sdk_generate_key(void)
 
 	unsigned char exp1[] = { 0x00, 0x00, 0x00, 0x00 };
 	unsigned char exp2[] = { 0x00, 0x01, 0x00, 0x01 };
-	unsigned int genkey_input_rsa[4][3] = {
-		{RSA_1024, 0}, {RSA_2048, 0},
-		{RSA_1024, 0}, {RSA_2048, 0}
+	unsigned int genkey_input_rsa[4] = {
+		RSA_1024, RSA_2048, RSA_1024, RSA_2048
 	};
 	unsigned char *exp[] = {
 		exp1, exp1, exp2, exp2
@@ -139,15 +138,14 @@ int security_sdk_generate_key(void)
 		rsa_param.exponent_size = 4;
 		rsa_param.exponent = (unsigned char *)exp[j];
 
-		ret = security->generate_key(handle, genkey_input_rsa[j][0], key_name_sk, &rsa_param);
+		ret = security->generate_key(handle, genkey_input_rsa[j], key_name_sk, &rsa_param);
+		ret += security->remove_key(handle, genkey_input_rsa[j], key_name_sk);
 
-		if (ret && genkey_input_rsa[j][1]) {
-			see_selfprintf(" success\n");
-		} else if (!ret && !genkey_input_rsa[j][1]) {
-			see_selfprintf(" success\n");
-		} else {
+		if (ret) {
 			test_result++;
 			see_selfprintf(" fail\n");
+		} else {
+			see_selfprintf(" success\n");
 		}
 	}
 

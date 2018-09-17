@@ -64,9 +64,9 @@ int security_sdk_get_publickey(void)
 	unsigned char *out = NULL;
 	unsigned int outlen = 0;
 	unsigned int genkey_input[6][3] = {
-		{ECC_BRAINPOOL_P256R1, 0, SEE_OK}, {ECC_SEC_P256R1, 0, SEE_OK},
-		{ECC_SEC_P384R1, 0, SEE_OK}, {ECC_SEC_P521R1, 0, SEE_OK},
-		{RSA_1024, 0, SEE_OK}, {RSA_2048, 0, SEE_OK}
+		{ECC_BRAINPOOL_P256R1, 0, SECURITY_SDK_OK}, {ECC_SEC_P256R1, 0, SECURITY_SDK_OK},
+		{ECC_SEC_P384R1, 0, SECURITY_SDK_OK}, {ECC_SEC_P521R1, 0, SECURITY_SDK_OK},
+		{RSA_1024, 0, SECURITY_SDK_OK}, {RSA_2048, 0, SECURITY_SDK_OK}
 	};
 	unsigned char exp[] = { 0x00, 0x00, 0x00, 0x05 };
 	unsigned char ecc_pair[] = {

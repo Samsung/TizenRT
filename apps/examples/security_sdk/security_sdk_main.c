@@ -114,7 +114,7 @@ pthread_addr_t security_sdk_cb(void *args)
 
 	unsigned char test_name[][50] = {
 		"security_sdk_get_certificates",
-		"security_sdk_serial",
+		"security_sdk_cert_serial",
 		"security_sdk_rand",
 		"security_sdk_cert_publickey",
 		"security_sdk_rsa_encrypt_decrypt",
@@ -139,7 +139,7 @@ pthread_addr_t security_sdk_cb(void *args)
 		}
 	}
 	if (test_select & 0x2) {
-		if (security_sdk_serial()) {
+		if (security_sdk_cert_serial()) {
 			test_result |= 0x2;
 		}
 	}
