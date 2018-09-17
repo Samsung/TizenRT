@@ -199,9 +199,12 @@ int task_restart(pid_t pid)
 		tcb->cmn.task_state = TSTATE_TASK_INVALID;
 		irqrestore(state);
 
+#ifndef CONFIG_DISABLE_SIGNALS
 		/* Deallocate anything left in the TCB's queues */
 
 		sig_cleanup((FAR struct tcb_s *)tcb);	/* Deallocate Signal lists */
+		tcb->cmn.sigprocmask = NULL_SIGNAL_SET;
+#endif
 
 		/* Reset the current task priority  */
 
