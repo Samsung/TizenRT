@@ -117,11 +117,12 @@ static void utc_media_MediaRecorder_setVolume_p(void)
 	mr.getVolume(&volume);
 	TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, goto cleanup);
 
+	TC_SUCCESS_RESULT();
+
 cleanup:
 	mr.setVolume(prev);
 	mr.unprepare();
 	mr.destroy();
-	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_setVolume_n(void)
@@ -136,11 +137,12 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 	mr.getVolume(&prev);
 	TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, goto cleanup);
 
+	TC_SUCCESS_RESULT();
+
 cleanup:
 	mr.setVolume(prev);
 	mr.unprepare();
 	mr.destroy();
-	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_getVolume_p(void)
