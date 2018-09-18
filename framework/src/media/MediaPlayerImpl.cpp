@@ -428,7 +428,11 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 	audio_manager_result_t result = set_output_audio_volume(vol);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+			ret = PLAYER_ERROR_INVALID_OPERATION;
+		} else {
+			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		}
 		return notifySync();
 	}
 
