@@ -195,7 +195,7 @@ int rand(void);
  * @brief pseudo-random number generator
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 long random(void);
 
@@ -555,7 +555,7 @@ lldiv_t lldiv(long long numer, long long denom);
  * @brief generates a unique temporary filename from template.
  * @details @b #include <stdlib.h> \n
  * @return always returns template.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 FAR char *mktemp(FAR char *path_template);
 
@@ -564,7 +564,7 @@ FAR char *mktemp(FAR char *path_template);
  * @brief create a regular file with a unique name derived from template and return a file descriptor for the file open for reading and writing.
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int mkstemp(FAR char *path_template);
 
