@@ -9,7 +9,7 @@ Untar the gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2 and export the pa
 tar xvjf gcc-arm-none-eabi-6-2017-q1-update-[OS Type].tar.bz2
 export PATH=<Your Toolchain PATH>:$PATH
 ```
-Be aware that recommanded toolchain is fully working on 64bits machine.
+Be aware that recommended toolchain is fully working on 64bits machine.
 
 ## Getting the source code
 

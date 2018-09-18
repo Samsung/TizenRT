@@ -163,7 +163,7 @@ extern "C" {
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, handle id is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_register_builtin(char *name, int permission, int timeout);
 /**
@@ -181,7 +181,7 @@ int task_manager_register_builtin(char *name, int permission, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, handle id is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout);
 /**
@@ -197,7 +197,7 @@ int task_manager_register_task(char *name, int priority, int stack_size, main_t 
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, handle id is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, int permission, int timeout);
 /**
@@ -209,7 +209,7 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_unregister(int handle, int timeout);
 /**
@@ -221,7 +221,7 @@ int task_manager_unregister(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_start(int handle, int timeout);
 /**
@@ -233,7 +233,7 @@ int task_manager_start(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_stop(int handle, int timeout);
 /**
@@ -245,7 +245,7 @@ int task_manager_stop(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_pause(int handle, int timeout);
 /**
@@ -257,7 +257,7 @@ int task_manager_pause(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_resume(int handle, int timeout);
 /**
@@ -270,7 +270,7 @@ int task_manager_resume(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_restart(int handle, int timeout);
 /**
@@ -290,7 +290,7 @@ int task_manager_restart(int handle, int timeout);
  *            CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT even if user calls this API with TM_RESPONSE_WAIT_INF.\n
  *            When set to zero, task manager waits the reply forever, it can cause task manager hang.
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, int timeout);
 /**
@@ -305,7 +305,7 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
  * @return On success, OK is returned. On failure, defined negative value is returned.\n
  *         (This return value only checks whether a broadcast message has been requested\n
  *          to the task manager to broadcast.)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_broadcast(int msg, tm_msg_t *data, int timeout);
 /**
@@ -313,7 +313,7 @@ int task_manager_broadcast(int msg, tm_msg_t *data, int timeout);
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] func the callback function which handle the msg\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
 /**
@@ -328,7 +328,7 @@ int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
  * @param[in] func the callback function which will be called when a msg is received.
  * @param[in] cb_data a message structure to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), tm_msg_t *cb_data);
 /**
@@ -337,7 +337,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *d
  * @param[in] func the callback function that is called when the task or thread terminates normally.
  * @param[in] cb_data a data pointer to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data);
 /**
@@ -346,7 +346,7 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data);
  * @param[in] func the callback function that is called when the task or thread is stopped by task manager.
  * @param[in] cb_data a data pointer to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data);
 /**
@@ -359,7 +359,7 @@ int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the list of task information is returned(at the end of the list, NULL will be returned). On failure, NULL is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 tm_appinfo_list_t *task_manager_getinfo_with_name(char *name, int timeout);
 /**
@@ -372,7 +372,7 @@ tm_appinfo_list_t *task_manager_getinfo_with_name(char *name, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the task information is returned. On failure, NULL is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 tm_appinfo_t *task_manager_getinfo_with_handle(int handle, int timeout);
 /**
@@ -385,7 +385,7 @@ tm_appinfo_t *task_manager_getinfo_with_handle(int handle, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the task information is returned. On failure, NULL is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout);
 /**
@@ -397,7 +397,7 @@ tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout);
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds\n
  *            For this API, timeout cannot be set to TM_NO_RESPONSE.
  * @return On success, the task information is returned. On failure, NULL is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 tm_appinfo_t *task_manager_getinfo_with_pid(int pid, int timeout);
 /**
@@ -405,7 +405,7 @@ tm_appinfo_t *task_manager_getinfo_with_pid(int pid, int timeout);
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] info the task information
  * @return none
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 void task_manager_clean_info(tm_appinfo_t **info);
 /**
@@ -413,7 +413,7 @@ void task_manager_clean_info(tm_appinfo_t **info);
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] info_list the task information list
  * @return none
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 void task_manager_clean_infolist(tm_appinfo_list_t **info_list);
 /**
@@ -421,7 +421,7 @@ void task_manager_clean_infolist(tm_appinfo_list_t **info_list);
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] reply_msg the pointer of msg for reply
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_reply_unicast(tm_msg_t *reply_msg);
 /**
@@ -429,7 +429,7 @@ int task_manager_reply_unicast(tm_msg_t *reply_msg);
  *        and <task_manager/task_manager_broadcast_list.h>
  * @details @b #include <task_manager/task_manager.h>
  * @return On success, a newly allocated broadcast message value is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_alloc_broadcast_msg(void);
 /**
@@ -441,7 +441,7 @@ int task_manager_alloc_broadcast_msg(void);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_unset_broadcast_cb(int msg, int timeout);
 /**
@@ -453,7 +453,7 @@ int task_manager_unset_broadcast_cb(int msg, int timeout);
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 int task_manager_dealloc_broadcast_msg(int msg, int timeout);
 

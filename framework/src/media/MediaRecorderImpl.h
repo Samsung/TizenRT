@@ -30,6 +30,7 @@
 
 #include <tinyalsa/tinyalsa.h>
 #include <media/OutputDataSource.h>
+#include "OutputHandler.h"
 #include "MediaQueue.h"
 #include "RecorderObserverWorker.h"
 
@@ -39,7 +40,7 @@ namespace media {
 /**
  * @brief current state of MediaRecorder
  * @details @b #include <media/MediaRecorder.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum recorder_state_e {
 	/** MediaRecorder object was created */
@@ -118,7 +119,7 @@ private:
 
 private:
 	std::atomic<recorder_state_t> mCurState;
-	std::shared_ptr<stream::OutputDataSource> mOutputDataSource;
+	stream::OutputHandler mOutputHandler;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
 	MediaRecorder& mRecorder;

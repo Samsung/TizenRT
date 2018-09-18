@@ -420,11 +420,12 @@ static void utc_media_MediaPlayer_setVolume_p(void)
 	mp.getVolume(&volume);
 	TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_setVolume", volume, 0, goto cleanup);
 
+	TC_SUCCESS_RESULT();
+
 cleanup:
 	mp.setVolume(prev);
 	mp.unprepare();
 	mp.destroy();
-	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaPlayer_setVolume_n(void)

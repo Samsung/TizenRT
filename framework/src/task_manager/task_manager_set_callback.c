@@ -93,12 +93,17 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 	info = (tm_termination_info_t *)data->si_value.sival_ptr;
 
 	/* Call callback function with callback data */
-	if (info != NULL && info->cb_data != NULL) {
-		(*info->cb)(info->cb_data->msg);
-		TM_FREE(info->cb_data->msg);
-		TM_FREE(info->cb_data);
+	if (info != NULL && info->cb != NULL) {
+		if (info->cb_data != NULL) {
+			(*info->cb)(info->cb_data->msg);
+			TM_FREE(info->cb_data->msg);
+			TM_FREE(info->cb_data);
+		} else {
+			(*info->cb)(NULL);
+		}
 	} else {
-		(*info->cb)(NULL);
+		tmdbg("stop callback information is not correct.\n");
+		return;
 	}
 
 	taskmgr_pid = taskmgr_get_task_manager_pid();

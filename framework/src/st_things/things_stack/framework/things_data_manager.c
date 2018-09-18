@@ -193,6 +193,16 @@ static const char *internal_resource_json_str = "{\n\
 					\"interfaces\": [\n\
 						\"oic.if.a\"\n\
 					],\n\
+					\"policy\": 3\n\
+				},\n\
+				{\n\
+					\"uri\": \"/sec/accesspointlist\",\n\
+					\"types\": [\n\
+						\"x.com.samsung.accesspointlist\"\n\
+					],\n\
+					\"interfaces\": [\n\
+						\"oic.if.s\"\n\
+					],\n\
 					\"policy\": 3\n"
 #ifdef CONFIG_ST_THINGS_FOTA
 				"},\n\
@@ -311,7 +321,18 @@ static const char *internal_resource_json_str = "{\n\
 					}\n\
 				]\n"
 #endif
-			"}\n\
+			"},\n\
+			{\n\
+				\"type\": \"x.com.samsung.accesspointlist\",\n\
+				\"properties\": [\n\
+					{\n\
+						\"key\": \"x.com.samsung.accesspoint.items\",\n\
+						\"type\": 9,\n\
+						\"mandatory\": true,\n\
+						\"rw\": 1\n\
+					}\n\
+				]\n\
+			}\n\
 		]\n\
 	}";
 
@@ -2517,4 +2538,30 @@ char *dm_get_vendor_id()
 char *dm_get_model_number()
 {
 	return g_model_number;
+}
+
+char *dm_get_access_token()
+{
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_access_token = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_access_token = things_strdup(cloud_data->access_token);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_access_token;
+}
+
+char *dm_get_uid()
+{ 
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_uid = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_uid = things_strdup(cloud_data->uid);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_uid;
 }

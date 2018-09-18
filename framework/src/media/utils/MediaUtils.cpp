@@ -315,6 +315,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 
 			if (fseek(fp, -1, SEEK_CUR) != 0) {
 				meddbg("file seek failed error\n");
+				free(header);
 				return false;
 			}
 

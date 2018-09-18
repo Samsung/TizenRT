@@ -28,9 +28,15 @@ namespace media {
 #define LOG_STATE_INFO(state) medvdbg("state at %s[line : %d] : %s\n", __func__, __LINE__, recorder_state_names[(state)])
 #define LOG_STATE_DEBUG(state) meddbg("state at %s[line : %d] : %s\n", __func__, __LINE__, recorder_state_names[(state)])
 
-MediaRecorderImpl::MediaRecorderImpl(MediaRecorder& recorder)
-	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr),
-	mRecorder(recorder), mBuffer(nullptr), mBuffSize(0), mDuration(0), mTotalFrames(0), mCapturedFrames(0)
+MediaRecorderImpl::MediaRecorderImpl(MediaRecorder &recorder) :
+	mCurState(RECORDER_STATE_NONE),
+	mRecorderObserver(nullptr),
+	mRecorder(recorder),
+	mBuffer(nullptr),
+	mBuffSize(0),
+	mDuration(0),
+	mTotalFrames(0),
+	mCapturedFrames(0)
 {
 	medvdbg("MediaRecorderImpl::MediaRecorderImpl()\n");
 }
@@ -146,18 +152,19 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	if (!mOutputDataSource->open()) {
+	if (!mOutputHandler.open()) {
 		meddbg("open() failed\n");
 		ret = RECORDER_ERROR_FILE_OPEN_FAILED;
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_audio_stream_in(mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(),
-		(pcm_format)mOutputDataSource->getPcmFormat());
+	auto source = mOutputHandler.getOutputDataSource();
+	audio_manager_result_t result = set_audio_stream_in(source->getChannels(), source->getSampleRate(),
+		(pcm_format)source->getPcmFormat());
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_stream_in failed : result : %d channel %d sample rate : %d format : %d\n", result, \
-			mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(), (pcm_format)mOutputDataSource->getPcmFormat());
-		mOutputDataSource->close();
+			source->getChannels(), source->getSampleRate(), (pcm_format)source->getPcmFormat());
+		mOutputHandler.close();
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
 	}
@@ -166,7 +173,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 
 	if (mBuffSize == 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
-		mOutputDataSource->close();
+		mOutputHandler.close();
 		ret = RECORDER_ERROR_INVALID_PARAM;
 		return notifySync();
 	}
@@ -176,12 +183,12 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	if (!mBuffer) {
 		meddbg("mBuffer alloc failed\n");
 		ret = RECORDER_ERROR_OUT_OF_MEMORY;
-		mOutputDataSource->close();
+		mOutputHandler.close();
 		return notifySync();
 	}
 
 	if (mDuration > 0) {
-		mTotalFrames = mDuration * mOutputDataSource->getSampleRate();
+		mTotalFrames = mDuration * source->getSampleRate();
 	}
 
 	mCurState = RECORDER_STATE_READY;
@@ -220,8 +227,9 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	if (mOutputDataSource->isPrepare()) {
-		mOutputDataSource->close();
+	auto source = mOutputHandler.getOutputDataSource();
+	if (source->isPrepare()) {
+		mOutputHandler.close();
 	}
 
 	if (mBuffer) {
@@ -464,8 +472,9 @@ void MediaRecorderImpl::setRecorderDataSource(std::shared_ptr<stream::OutputData
 		return notifySync();
 	}
 
-	mOutputDataSource = dataSource;
-	mOutputDataSource->setRecorder(shared_from_this());
+	dataSource->setRecorder(shared_from_this());
+	mOutputHandler.setRecorder(shared_from_this());
+	mOutputHandler.setOutputDataSource(dataSource);
 	mCurState = RECORDER_STATE_CONFIGURED;
 
 	notifySync();
@@ -574,7 +583,7 @@ void MediaRecorderImpl::capture()
 		int size = get_input_frames_to_byte(frames);
 
 		while (size > 0) {
-			int written = mOutputDataSource->write(mBuffer + ret, size);
+			int written = mOutputHandler.write(mBuffer + ret, size);
 			medvdbg("written : %d size : %d frames : %d\n", written, size, frames);
 			medvdbg("mCapturedFrames : %ld totalduration : %d mTotalFrames : %ld\n", mCapturedFrames, mDuration, mTotalFrames);
 			/* For Error case, we stop Capture */

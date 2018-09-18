@@ -110,7 +110,8 @@ static void utc_media_MediaRecorder_setVolume_p(void)
 	MediaRecorder mr;
 	mr.create();
 	mr.getVolume(&prev);
-	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
+
+  if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 		printf("device does not support volume control\n");
 		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(prev + 1), RECORDER_OK, mr.destroy());		
 	} else {
@@ -119,7 +120,6 @@ static void utc_media_MediaRecorder_setVolume_p(void)
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, mr.destroy());
 	}
 	mr.destroy();
-	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_setVolume_n(void)
@@ -128,6 +128,7 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 	MediaRecorder mr;
 	mr.create();
 	mr.getVolume(&prev);
+
 	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 		mr.setVolume(prev + 1);
 		mr.getVolume(&volume);
@@ -136,7 +137,6 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, mr.destroy());
 	}
 	mr.destroy();
-	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_getVolume_p(void)

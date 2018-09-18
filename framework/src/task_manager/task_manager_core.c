@@ -36,6 +36,9 @@
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+#include <tinyara/wqueue.h>
+#endif
 #include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
@@ -209,15 +212,8 @@ static void taskmgr_clear_broadcast_info_list(int handle)
 	}
 }
 
-static int taskmgr_unregister(int handle)
+static void taskmgr_execute_unregister(int handle)
 {
-	if (IS_INVALID_HANDLE(handle)) {
-		return TM_INVALID_PARAM;
-	}
-	if (taskmgr_get_task_state(handle) == TM_APP_STATE_UNREGISTERED) {
-		return TM_UNREGISTERED_APP;
-	}
-
 	/* If type is TM_TASK or TM_PTHREAD, remove the data in the list */
 	if (TM_TYPE(handle) == TM_TASK) {
 		TM_FREE(tm_task_list[TM_IDX(handle)].name);
@@ -270,7 +266,42 @@ static int taskmgr_unregister(int handle)
 	g_handle_hash[handle] = false;
 	tmvdbg("Unregistered handle %d\n", handle);
 	handle_cnt--;
+}
 
+static void taskmgr_late_unregister(void *arg)
+{
+	taskmgr_execute_unregister((int)arg);
+}
+
+static int taskmgr_unregister(int handle)
+{
+	int state;
+	struct work_s *wq;
+
+	if (IS_INVALID_HANDLE(handle)) {
+		return TM_INVALID_PARAM;
+	}
+
+	state = taskmgr_get_task_state(handle);
+	if (state == TM_APP_STATE_UNREGISTERED) {
+		return TM_UNREGISTERED_APP;
+	}
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+	else if (state == TM_APP_STATE_CANCELLING) {
+		/* If task is on cancelling state, unregister will be treated later. */
+		wq = (struct work_s *)TM_ALLOC(sizeof(struct work_s));
+		if (wq == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		/* FIX ME - wq should be freed after lpwork running. */
+		tmdbg("Unregister will be treated in low-priority work queue.\n");
+		(void)work_queue(USRWORK, wq, taskmgr_late_unregister, (void *)handle, 0);
+		return OK;
+	}
+#endif
+
+	/* If task is on stop state, unregister immediately. */
+	taskmgr_execute_unregister(handle);
 	return OK;
 }
 
@@ -419,7 +450,6 @@ static int taskmgr_stop(int handle, int caller_pid)
 static int taskmgr_restart(int handle, int caller_pid)
 {
 	int ret;
-	int fd;
 
 	if (IS_INVALID_HANDLE(handle) || caller_pid < 0) {
 		return TM_INVALID_PARAM;
@@ -464,16 +494,6 @@ static int taskmgr_restart(int handle, int caller_pid)
 	ret = task_restart(TM_PID(handle));
 	if (ret != OK) {
 		tmdbg("Fail to restart the task\n");
-		return TM_OPERATION_FAIL;
-	}
-
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
-	}
-
-	ret = ioctl(fd, TMIOC_RESTART, TM_PID(handle));
-	if (ret != OK) {
 		return TM_OPERATION_FAIL;
 	}
 
@@ -1203,7 +1223,7 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 		STOP_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
 			if (STOP_CBDATA(handle) == NULL) {
-				STOP_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				STOP_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
 				if (STOP_CBDATA(handle) == NULL) {
 					TM_FREE(TM_STOP_CB_INFO(handle));
 					return TM_OUT_OF_MEMORY;
@@ -1211,7 +1231,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 			}
 
 			if (STOP_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				TM_FREE(STOP_CBDATA_MSG(handle));
+				if (STOP_CBDATA_MSG(handle) != NULL) {
+					TM_FREE(STOP_CBDATA_MSG(handle));
+				}
 				STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
 				if (STOP_CBDATA_MSG(handle) == NULL) {
 					TM_FREE(STOP_CBDATA(handle));
@@ -1237,7 +1259,7 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 		EXIT_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
 			if (EXIT_CBDATA(handle) == NULL) {
-				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
 				if (EXIT_CBDATA(handle) == NULL) {
 					TM_FREE(TM_EXIT_CB_INFO(handle));
 					return TM_OUT_OF_MEMORY;
@@ -1245,7 +1267,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 			}
 
 			if (EXIT_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				TM_FREE(EXIT_CBDATA_MSG(handle));
+				if (EXIT_CBDATA_MSG(handle) != NULL) {
+					TM_FREE(EXIT_CBDATA_MSG(handle));
+				}
 				EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
 				if (EXIT_CBDATA_MSG(handle) == NULL) {
 					TM_FREE(EXIT_CBDATA(handle));

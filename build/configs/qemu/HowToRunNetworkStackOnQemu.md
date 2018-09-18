@@ -1,5 +1,5 @@
-# How to run Network Stack on QEMU
-This document explains steps to be followed to run Network Stack on QEMU.  
+# How to run network stack on QEMU
+This document explains steps to be followed to run network stack on QEMU.  
 
 ## Steps to verify network stack on QEMU is as follows
 

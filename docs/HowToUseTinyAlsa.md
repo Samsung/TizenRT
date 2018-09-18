@@ -102,7 +102,7 @@ At any point of time, the user is free to exit the record/play loop and close th
 **pcm_mmap_write**
 These are additional API's provided for the sake of compatibility with the ALSA API list. These API's internally make use of the mmap API's to transfer data. However, these API's require the user to allocate data buffers and then copy the data from these buffer to the mmap buffers internally. Hence, they do not provide the advantage of low latency which would be provided by using the other mmap API's directly. Hence, it is recommended to avoid the use of these API's for improving latency reduction.
 
-The psuedocode below briefly illustrates the use of mmap API's for recording audio:
+The pseudocode below briefly illustrates the use of mmap API's for recording audio:
 ```
 #include <tinyalsa/tinyalsa.h>
 ...

@@ -35,7 +35,7 @@ int net_socket_main(void);
 void net_getsockopt_main(void);
 #endif
 #ifdef CONFIG_TC_NET_SETSOCKOPT
-int net_setsockopt_main(void);
+void net_setsockopt_main(void);
 #endif
 #ifdef CONFIG_TC_NET_CONNECT
 int net_connect_main(void);

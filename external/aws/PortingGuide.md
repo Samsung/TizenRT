@@ -43,7 +43,7 @@ All makefiles in this SDK were configured using the documented folder structure 
 
 ##Integrating the SDK into your environment
 
-This section explains the API calls that need to be implemented in order for the Device SDK to run on your platform. The SDK interfaces follow the driver model where only prototypes are defined by the Device SDK itself while the implementation is delegated to the user of the SDK to adjust it to the platform in use. The following sections list the needed functionality for the device SDK to run successfully on any given platform.
+This section explains the API calls that need to be implemented in order for the device SDK to run on your platform. The SDK interfaces follow the driver model where only prototypes are defined by the device SDK itself while the implementation is delegated to the user of the SDK to adjust it to the platform in use. The following sections list the needed functionality for the device SDK to run successfully on any given platform.
 
 ###Timer Functions
 

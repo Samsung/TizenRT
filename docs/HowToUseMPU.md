@@ -49,7 +49,7 @@ mpu_user_intsram_wb()      : Read Write        Read Write
 
 ```mpu_priv_noncache()``` - This function is used to configure a memory region as internal memory with _not cacheable_, _not bufferable_, _shareable_ and _instruction access disable_ attributes.
 
-```mpu_peripheral()``` - This function is used to configure a memory region as periperal address space with _shareable_, _bufferable_ and _instruction access disable_ attributes.
+```mpu_peripheral()``` - This function is used to configure a memory region as peripheral address space with _shareable_, _bufferable_ and _instruction access disable_ attributes.
 
 ```mpu_priv_flash()``` - This function is used to configure a memory region as privileged program flash with _cacheable_ attributes.
 

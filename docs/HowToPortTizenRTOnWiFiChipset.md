@@ -125,7 +125,7 @@ config SELECT_DRIVER_NONE
 	depends on SELECT_<SUPPLICANT_LIBRARY_NAME>
 ```
 Please add the above lines *ONLY* if you do not need wireless driver support from TizenRT. Also note, that in such cases, you should interface TizenRT's network stack directly
-to the WiFi library. These details are covered further in [Interfacing WiFi Driver to Network Stack](#1-interfacing-the-wifi-driver-to-the-network-stack).
+to the WiFi library. These details are covered further in [Interfacing WiFi Driver to network stack](#1-interfacing-the-wifi-driver-to-the-network-stack).
 
 ### Choosing the right WiFi utils for build
 
@@ -179,7 +179,7 @@ Make sure you create your board-specific files at *os/arch/arm/src/\<board_name\
 driver initialization function as shown in the example above.
 
 Next, inside your board specific directory, create a *\<board\>_wlan.c* file. This file should include following functionalities:
-#### 1. Interfacing the WiFi driver to the Network Stack
+#### 1. Interfacing the WiFi driver to the network stack
 In TizenRT, the *netif* structure links the WiFi driver to the overlying network layer. Netif creation and initialization should
 follow immediately after WiFi driver initialization. Inside the *\<board\>_wlan.c* file, this can be implemented as a three step process
 1. Allocate memory for LWIP's netif structure, and populate its fields with the driver API

@@ -354,7 +354,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count);
 * @details @b #include <tinyalsa/tinyalsa.h>
 * @param[in] pcm A PCM handle.
 * @returns On success, zero; on failure, a negative number.
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_drop(struct pcm *pcm);
 
@@ -364,7 +364,7 @@ int pcm_drop(struct pcm *pcm);
 * @details @b #include <tinyalsa/tinyalsa.h>
 * @param[in] pcm A PCM handle.
 * @returns On success, zero; on failure, a negative number.
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_drain(struct pcm *pcm);
 
@@ -406,7 +406,7 @@ unsigned int pcm_get_subdevice(const struct pcm *pcm);
 * @param[in] data Pointer to the buffer containing data to be written
 * @param[in] count Size of the data in bytes
 * @returns On success, written number of frames returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count);
 
@@ -418,7 +418,7 @@ int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count);
 * @param[in] data Pointer to the buffer to read into
 * @param[in] count Size of the buffer in bytes
 * @returns On success, read number of frames returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count);
 
@@ -431,7 +431,7 @@ int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count);
 * @param[out] offset Returned mmap area offset in frames
 * @param[out] frames Mmap area portion size in frames
 * @returns On success, zero is returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned int *frames);
 
@@ -443,7 +443,7 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 * @param[in] offset Area offset in frames. This must be same as the offset returned by pcm_mmap_begin
 * @param[in] frames Mmap area portion size in frames that application wishes to commit
 * @returns On success, zero is returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames);
 
@@ -454,7 +454,7 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames);
 * @param[in] pcm A PCM handle
 * @param[in] timeout Maximum time in milliseconds to wait, a negative value means infinity
 * @returns On success, one is returned. On timeout, zero is returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_wait(struct pcm *pcm, int timeout);
 
@@ -464,7 +464,7 @@ int pcm_wait(struct pcm *pcm, int timeout);
 * @details @b #include <tinyalsa/tinyalsa.h>
 * @param[in] pcm A PCM handle
 * @returns On success, positive number is returned. On failure, a negative number returned
-* @since TizenRT v2.0 PRE
+* @since TizenRT v2.0
 */
 int pcm_avail_update(struct pcm *pcm);
 #if defined(__cplusplus)

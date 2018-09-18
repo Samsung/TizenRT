@@ -39,7 +39,7 @@ namespace stream {
  * @class
  * @brief This class is input data structure
  * @details @b #include <media/InputDataSource.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class InputDataSource
 	: public DataSource
@@ -48,32 +48,32 @@ public:
 	/**
 	 * @brief Constructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	InputDataSource();
 	/**
 	 * @brief Copy constructs for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	InputDataSource(const InputDataSource &source);
 	/**
 	 * @brief Operator= for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	InputDataSource &operator=(const InputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ~InputDataSource();
 
 	/**
 	 * @brief Gets the stream data
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ssize_t read(unsigned char *buf, size_t size) = 0;
 };

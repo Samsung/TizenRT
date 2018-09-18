@@ -235,7 +235,7 @@ release libprotobuf.lib library.
 DLLs vs. static linking
 =======================
 
-Static linking is now the default for the Protocol Buffer libraries.  Due to
+Static linking is now the default for the protocol buffer libraries.  Due to
 issues with Win32's use of a separate heap for each DLL, as well as binary
 compatibility issues between different versions of MSVC's STL library, it is
 recommended that you use static linkage only.  However, it is possible to
@@ -322,14 +322,14 @@ well, or live with them.
 * C4800 - 'type' : forcing value to bool 'true' or 'false' (performance warning)
 * C4996 - 'function': was declared deprecated
 
-C4251 is of particular note, if you are compiling the Protocol Buffer library
+C4251 is of particular note, if you are compiling the protocol buffer library
 as a DLL (see previous section).  The protocol buffer library uses templates in
 its public interfaces.  MSVC does not provide any reasonable way to export
 template classes from a DLL.  However, in practice, it appears that exporting
 templates is not necessary anyway.  Since the complete definition of any
 template is available in the header files, anyone importing the DLL will just
 end up compiling instances of the templates into their own binary.  The
-Protocol Buffer implementation does not rely on static template members being
+protocol Buffer implementation does not rely on static template members being
 unique, so there should be no problem with this, but MSVC prints warning
 nevertheless.  So, we disable it.  Unfortunately, this warning will also be
 produced when compiling code which merely uses protocol buffers, meaning you

@@ -106,11 +106,6 @@ ssize_t SocketOutputDataSource::write(unsigned char* buf, size_t size)
 	return send(mSockFd, buf, size, 0);
 }
 
-ssize_t SocketOutputDataSource::onStreamBufferReadable(bool isFlush)
-{
-	return 0;
-}
-
 SocketOutputDataSource::~SocketOutputDataSource()
 {
 }

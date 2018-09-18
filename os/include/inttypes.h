@@ -214,21 +214,21 @@ intmax_t imaxabs(intmax_t j);
  * @brief return quotient and remainder of an integer division
  * @details @b #include <inttypes.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom);
 /**
  * @brief convert string to integer
  * @details @b #include <inttypes.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base);
 /**
  * @brief convert string to unsigned integer
  * @details @b #include <inttypes.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 uintmax_t strtoumax(FAR const char *nptr, FAR char **endptr, int base);
 /**

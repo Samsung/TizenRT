@@ -37,7 +37,7 @@ namespace stream {
  * @class
  * @brief This class is buffer output data structure
  * @details @b #include <media/BufferOutputDataSource.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class BufferOutputDataSource : public OutputDataSource
 {
@@ -46,7 +46,7 @@ public:
 	 * @brief Constructs an empty BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * Delete the default construct
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	BufferOutputDataSource();
 	/**
@@ -56,25 +56,25 @@ public:
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * param[in] callback   The callback that the callback function
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
 	/**
 	 * @brief Copy constructs for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	BufferOutputDataSource(const BufferOutputDataSource &source);
 	/**
 	 * @brief Operator= for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	BufferOutputDataSource &operator=(const BufferOutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ~BufferOutputDataSource();
 
@@ -82,26 +82,36 @@ public:
 	 * @brief Whether file is ready to be write.
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @return True.
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool isPrepare() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @return True.
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool open() override;
 	/**
 	 * @brief Close the file
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @return True.
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool close() override;
 
-protected:
-	ssize_t onStreamBufferReadable(bool isFlush) override;
+	/**
+	 * @brief Write the file
+	 * @details @b #include <media/BufferOutputDataSource.h>
+	 * param[in] buf poiter to a buffer
+	 * param[in] size Number of size to write
+	 * @return Data size written to buf.
+	 * @since TizenRT v2.0
+	 */
+	ssize_t write(unsigned char *buf, size_t size);
+
+private:
+	bool mIsPrepare;
 };
 
 } // namespace stream

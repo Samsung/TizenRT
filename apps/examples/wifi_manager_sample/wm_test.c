@@ -237,10 +237,18 @@ void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	}
 	printf("------------------------------------\n");
 	printf("SSID: %s\n", config->ssid);
-	printf("SECURITY TYPE: %s\n", wifi_test_auth_method[config->ap_auth_type]);
-	/*if (config->ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		printf("PASSWORD: %s\n", config->passphrase);
-		}*/
+	switch (config->ap_auth_type) {
+	case WIFI_MANAGER_AUTH_OPEN:
+	case WIFI_MANAGER_AUTH_WEP_SHARED:
+	case WIFI_MANAGER_AUTH_WPA_PSK:
+	case WIFI_MANAGER_AUTH_WPA2_PSK:
+	case WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK:
+		printf("SECURITY TYPE: %s\n", wifi_test_auth_method[config->ap_auth_type]);
+		break;
+	default:
+		printf("SECURITY TYPE: unknown\n");
+		break;
+	}
 	printf("====================================\n");
 }
 

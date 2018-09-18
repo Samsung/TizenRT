@@ -21,6 +21,14 @@
 #include <string.h>
 #include <media/MediaTypes.h>
 
+BufferInputDataSource::BufferInputDataSource()
+	: mFp(nullptr)
+	, mSrcBuf(nullptr)
+	, mSrcSize(0)
+{
+
+}
+
 bool BufferInputDataSource::isPrepare()
 {
 	return mFp && mSrcBuf && mSrcSize;
