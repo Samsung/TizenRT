@@ -123,6 +123,9 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 	socklen_t optlen = sizeof(optval);
 
 	ret = setsockopt(0, SOL_SOCKET, 0, 0, 0);
+	if (ret != 0) {
+		printf("setsockopt fail code(%d)\n", errno);
+	}
 	ret = getsockopt(0, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
 
 	TC_ASSERT_EQ("getsockopt", ret, -1);

@@ -128,6 +128,7 @@
 
 #define NUM_PACKETS     50
 #define LOCAL_DEVICE "192.168.2.10"
+#define NETTEST_MAX_PACKETS 20000
 
 /****************************************************************************
  * Private Data
@@ -173,7 +174,7 @@ static void show_usage(void)
 	printf("\tudp: UDP\n");
 	printf("\tmtc: MULTICAST\n");
 	printf("\tbrc: BROADCAST\n");
-		
+
 	printf("ADDRESS\n");
 	printf("\tAddress to bind if mode is server\n");
 	printf("\t\t(If you want to choose the default interface then insert 0)\n");
@@ -863,7 +864,7 @@ int nettest_main(int argc, char *argv[])
 	g_app_target_addr = argv[3];
 	g_app_target_port = atoi(argv[4]);
 	num_packets_to_process = atoi(argv[5]);
-	if (num_packets_to_process < 0) {
+	if (num_packets_to_process < 0 || num_packets_to_process > NETTEST_MAX_PACKETS) {
 		goto err_with_input;
 	}
 
@@ -886,7 +887,7 @@ int nettest_main(int argc, char *argv[])
 		}
 		/* get interval */
 		pps = atoi(argv[6]);
-		if (pps < 0) {
+		if (pps <= 0) {
 			goto err_with_input;
 		}
 		interval = 1000000ul / pps; /* sleep interval */

@@ -235,6 +235,11 @@ void *getpeername_server(void *args)
 	}
 	getpeername_signal();
 	int connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd == -1) {
+		printf("accept fail\n");
+		close(socket_fd);
+		return 0;
+	}
 
 	close(connect_fd);
 	close(socket_fd);
