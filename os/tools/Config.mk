@@ -169,6 +169,14 @@ define ASSEMBLE
 	$(Q) $(CC) -c $(AFLAGS) $1 -o $2
 endef
 
+# INSTALL_LIB - Install a library $1 into target $2
+# Example: $(call INSTALL_LIB, libabc.a, $(TOPDIR)/staging/)
+
+define INSTALL_LIB
+	@echo "IN: $1 -> $2"
+	$(Q) install -m 0644 $1 $2
+endef
+
 # MOVEOBJ - Default macro to move an object file to the correct location
 # Example: $(call MOVEOBJ, prefix, directory)
 #

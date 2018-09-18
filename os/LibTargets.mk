@@ -61,61 +61,61 @@ libc$(DELIM)libkc$(LIBEXT): context
 	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT): libc$(DELIM)libkc$(LIBEXT)
-	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libkc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$(LIB_DIR)$(DELIM)$<,$@)
 
 mm$(DELIM)libkmm$(LIBEXT): context
 	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libkmm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT): mm$(DELIM)libkmm$(LIBEXT)
-	$(Q) install mm$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libkarch$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT)
-	$(Q) install $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkarch$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 kernel$(DELIM)libkernel$(LIBEXT): context
 	$(Q) $(MAKE) -C kernel TOPDIR="$(TOPDIR)" libkernel$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT): kernel$(DELIM)libkernel$(LIBEXT)
-	$(Q) install kernel$(DELIM)libkernel$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 net$(DELIM)libnet$(LIBEXT): context
 	$(Q) $(MAKE) -C net TOPDIR="$(TOPDIR)" libnet$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT): net$(DELIM)libnet$(LIBEXT)
-	$(Q) install net$(DELIM)libnet$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 pm$(DELIM)libpm$(LIBEXT): context
 	$(Q) $(MAKE) -C pm TOPDIR="$(TOPDIR)" libpm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libpm$(LIBEXT): pm$(DELIM)libpm$(LIBEXT)
-	$(Q) install pm$(DELIM)libpm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libpm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 logm$(DELIM)liblogm$(LIBEXT): context
 	$(Q) $(MAKE) -C logm TOPDIR="$(TOPDIR)" liblogm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT): logm$(DELIM)liblogm$(LIBEXT)
-	$(Q) install logm$(DELIM)liblogm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 fs$(DELIM)libfs$(LIBEXT): context
 	$(Q) $(MAKE) -C fs TOPDIR="$(TOPDIR)" libfs$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT): fs$(DELIM)libfs$(LIBEXT)
-	$(Q) install fs$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 audio$(DELIM)libaudio$(LIBEXT): context
 	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
-	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 drivers$(DELIM)libdrivers$(LIBEXT): context
 	$(Q) $(MAKE) -C drivers TOPDIR="$(TOPDIR)" libdrivers$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT): drivers$(DELIM)libdrivers$(LIBEXT)
-	$(Q) install drivers$(DELIM)libdrivers$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 # Special case
 
@@ -123,7 +123,7 @@ syscall$(DELIM)libstubs$(LIBEXT): context
 	$(Q) $(MAKE) -C syscall TOPDIR="$(TOPDIR)" libstubs$(LIBEXT) # KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
-	$(Q) install syscall$(DELIM)libstubs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 # Possible user-mode builds
 
@@ -131,90 +131,118 @@ libc$(DELIM)libuc$(LIBEXT): context
 	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT): libc$(DELIM)libuc$(LIBEXT)
-	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libuc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$(LIB_DIR)$(DELIM)$<,$@)
 
 mm$(DELIM)libumm$(LIBEXT): context
 	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT): mm$(DELIM)libumm$(LIBEXT)
-	$(Q) install mm$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libuarch$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT)
-	$(Q) install $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 libxx$(DELIM)libcxx$(LIBEXT): context
 	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libxx TOPDIR="$(TOPDIR)" libcxx$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT): libxx$(DELIM)libcxx$(LIBEXT)
-	$(Q) install $(LIB_DIR)$(DELIM)libxx$(DELIM)libcxx$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$(LIB_DIR)$(DELIM)$<,$@)
 
 $(APPDIR)$(DELIM)libapps$(LIBEXT): context
 	$(Q) $(MAKE) -C $(APPDIR) TOPDIR="$(TOPDIR)" libapps$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT): $(APPDIR)$(DELIM)libapps$(LIBEXT)
-	$(Q) install $(APPDIR)$(DELIM)libapps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 syscall$(DELIM)libproxies$(LIBEXT): context
 	$(Q) $(MAKE) -C syscall TOPDIR="$(TOPDIR)" libproxies$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT): syscall$(DELIM)libproxies$(LIBEXT)
-	$(Q) install syscall$(DELIM)libproxies$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT): context
 	$(Q) $(MAKE) -C $(FRAMEWORK_LIB_DIR) TOPDIR="$(TOPDIR)" libframework$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT): $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT)
-	$(Q) install $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
 	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libexternal$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
-	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 # ARTIK Security API lib
 ifeq ($(CONFIG_ARTIK_SDK),y)
+$(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libsecurity-api$(LIBEXT) KERNEL=n
+
 $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT)
-	$(Q) install $(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 endif
 
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+$(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" liboctbstack$(LIBEXT) KERNEL=n
+
 $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libc_common$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libcoap$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libconnectivity_abstraction$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" liblogger$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libocsrm$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
+
+$(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libroutingmanager$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+$(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libresource_directory$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-
+	$(Q) $(call INSTALL_LIB,$<,$@)
 endif
 
 ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
+$(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): context
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libtizenrt_compat$(LIBEXT) KERNEL=n
+
 $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 endif
 endif
 
@@ -224,16 +252,16 @@ libc$(DELIM)libc$(LIBEXT): context
 	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libc$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT): libc$(DELIM)libc$(LIBEXT)
-	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$(LIB_DIR)$(DELIM)$<,$@)
 
 mm$(DELIM)libmm$(LIBEXT): context
 	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libmm$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT): mm$(DELIM)libmm$(LIBEXT)
-	$(Q) install mm$(DELIM)libmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
 
 $(ARCH_SRC)$(DELIM)libarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libarch$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libarch$(LIBEXT)
-	$(Q) install $(ARCH_SRC)$(DELIM)libarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT)
+	$(Q) $(call INSTALL_LIB,$<,$@)
