@@ -134,7 +134,7 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  *            In case of repeated timer, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] cb_data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *cb_data);
 
@@ -144,7 +144,7 @@ el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callb
  * The timer is stopped if it is active and all used resources for timer are freed
  * @param[in] timer A pointer of timer to be deleted
  * @return On success, OK is returned. On failure, defined negative value is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_delete_timer(el_timer_t *timer);
 
@@ -167,7 +167,7 @@ int eventloop_delete_timer(el_timer_t *timer);
  * @param[in] func the callback function to be called
  * @param[in] cb_data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *cb_data);
 
@@ -191,7 +191,7 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
  *            And, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
  * @param[in] cb_data data to pass to func when func is called
  * @return On success,  A pointer of created event handle is returned. On failure, NULL is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data);
 
@@ -201,7 +201,7 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_
  * The registered event handler is deleted and all used resources for event handler are freed.
  * @param[in] handle a pointer of event handle to be deleted
  * @return On success, OK is returned. On failure, defined negative value is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_del_event_handler(el_event_t *handle);
 
@@ -215,7 +215,7 @@ int eventloop_del_event_handler(el_event_t *handle);
  * @param[in] event_data data to be passed to registered handler together
  * @param[in] data_size size of data
  * @return On success, OK is returned. On failure, defined negative value is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_send_event(int type, void *event_data, int data_size);
 
@@ -225,7 +225,7 @@ int eventloop_send_event(int type, void *event_data, int data_size);
  * @param[in] None
  * @return On success, OK is returned. On failure, defined negative value is returned. \n
  *         If eventloop_loop_stop() was called and there are still active works, EVENTLOOP_NOT_FINISHED is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_loop_run(void);
 
@@ -234,7 +234,7 @@ int eventloop_loop_run(void);
  * @details @b #include <eventloop/eventloop.h>
  * @param[in] None
  * @return On success, OK is returned. On failure, defined negative value is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_loop_stop(void);
 
@@ -246,7 +246,7 @@ int eventloop_loop_stop(void);
  * @param[in] func the callback function to be called
  * @param[in] cb_data data to pass to func when func is called
  * @return On success, OK is returned. On failure, defined negative value is returned
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.1 PRE
  */
 int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data);
 

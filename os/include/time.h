@@ -265,7 +265,7 @@ int clock_getres(clockid_t clockid, FAR struct timespec *res);
  * implementation-defined era related only to the process invocation.
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 clock_t clock(void);
 /**
@@ -352,7 +352,7 @@ FAR char *ctime_r(FAR const time_t *timep, FAR char *buf);
  * @brief convert a time string to a time tm structure
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 char *strptime(const char *buf, const char *fmt, struct tm *tm);
 
@@ -361,7 +361,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm);
  * @brief calculate time difference
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 #ifdef CONFIG_HAVE_DOUBLE
 double difftime(time_t time1, time_t time0);
