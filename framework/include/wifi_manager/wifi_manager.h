@@ -42,6 +42,19 @@ extern "C" {
 #define WIFIMGR_PASSPHRASE_LEN     64
 
 /**
+  * @brief <b> wifi MAC/PHY standard types
+  */
+typedef enum {
+	WIFI_MANAGER_IEEE_80211_LEGACY,             /**<  IEEE 802.11a/g/b           */
+	WIFI_MANAGER_IEEE_80211_A,                  /**<  IEEE 802.11a               */
+	WIFI_MANAGER_IEEE_80211_B,                  /**<  IEEE 802.11b               */
+	WIFI_MANAGER_IEEE_80211_G,                  /**<  IEEE 802.11g               */
+	WIFI_MANAGER_IEEE_80211_N,                  /**<  IEEE 802.11n               */
+	WIFI_MANAGER_IEEE_80211_AC,                 /**<  IEEE 802.11ac              */
+	WIFI_MANAGER_NOT_SUPPORTED,                 /**<  Driver does not report     */
+} wifi_manager_standard_type_e;
+
+/**
  * @brief Status of Wi-Fi interface such as connected or disconnected
  */
 typedef enum {
@@ -118,6 +131,11 @@ typedef enum {
 	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
 	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
 	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode               */
+	WIFI_MANAGER_AUTH_WPS,					 /**<  WPS mode                       */
 	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
 } wifi_manager_ap_auth_type_e;
 
@@ -131,6 +149,9 @@ typedef enum {
 	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
 	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
 	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_AES_ENT,				 /**<  Enterprise AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP_ENT,				 /**<  Enterprise TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,		 /**<  Enterprise TKIP and AES mixed encryption  */
 	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
 } wifi_manager_ap_crypto_type_e;
 
@@ -142,7 +163,7 @@ struct wifi_manager_scan_info_s {
 	char bssid[WIFIMGR_MACADDR_STR_LEN + 1];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t rssi;		// received signal strength indication
 	uint8_t channel;	// channel/frequency
-	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	wifi_manager_standard_type_e phy_mode;  /**< Supported MAC/PHY standard                              */
 	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
 	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 	struct wifi_manager_scan_info_s *next;
