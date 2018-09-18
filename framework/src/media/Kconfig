@@ -78,23 +78,19 @@ config AUDIO_RESAMPLER_BUFSIZE
 	---help---
 		Buffer size for resampler
 
-config FILE_DATASOURCE_STREAM_BUFFER_SIZE
-	int "File DataSource stream buffer size"
+config CONFIG_HANDLER_STREAM_BUFFER_SIZE
+	int "Handler stream buffer size"
 	default 4096
 	---help---
 
-config FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
-	int "File DataSource stream buffer threshold"
+config CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD
+	int "Handler stream buffer threshold"
 	default 2048
 
-config BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
-	int "Buffer DataSource stream buffer size"
+config CONFIG_HANDLER_WORKER_THREAD_STACKSIZE
+	int "Handler worker thread stack size"
 	default 4096
 	---help---
-
-config BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
-	int "Buffer DataSource stream buffer threshold"
-	default 1
 
 endif #MEDIA
 

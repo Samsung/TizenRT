@@ -26,10 +26,6 @@
 #include "StreamBufferReader.h"
 #include "StreamBufferWriter.h"
 
-#ifndef CONFIG_OUTPUT_DATASOURCE_STACKSIZE
-#define CONFIG_OUTPUT_DATASOURCE_STACKSIZE 4096
-#endif
-
 namespace media {
 namespace stream {
 OutputDataSource::OutputDataSource() :

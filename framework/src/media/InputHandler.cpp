@@ -30,6 +30,10 @@
 #define CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD 2048
 #endif
 
+#ifndef CONFIG_HANDLER_WORKER_THREAD_STACKSIZE
+#define CONFIG_HANDLER_WORKER_THREAD_STACKSIZE 4096
+#endif
+
 namespace media {
 namespace stream {
 
@@ -117,7 +121,7 @@ void InputHandler::createWorker()
 		mTotalBytes = 0;
 		mIsWorkerAlive = true;
 
-		long stackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
+		long stackSize = CONFIG_HANDLER_WORKER_THREAD_STACKSIZE;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, stackSize);
