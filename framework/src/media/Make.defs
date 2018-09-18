@@ -52,6 +52,7 @@ endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
 CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += OutputHandler.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp

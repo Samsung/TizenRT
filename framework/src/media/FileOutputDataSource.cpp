@@ -59,37 +59,12 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
-	}
-
 	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
-		switch (getAudioType()) {
-		case AUDIO_TYPE_OPUS:
-			setEncoder(Encoder::create(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
-			break;
-
-		default:
-			/* Don't set any encoder for unsupported formats */
-			break;
-		}
 
 		mFp = fopen(mDataPath.c_str(), "wb");
 		if (mFp) {
 			medvdbg("file open success\n");
-			start();
 			return true;
 		} else {
 			meddbg("file open failed error : %d\n", errno);
@@ -105,7 +80,6 @@ bool FileOutputDataSource::open()
 bool FileOutputDataSource::close()
 {
 	if (mFp) {
-		stop();
 
 		int ret = fclose(mFp);
 		if (ret == OK) {
@@ -124,41 +98,27 @@ bool FileOutputDataSource::close()
 bool FileOutputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
 		return false;
 	}
 	return true;
 }
 
-ssize_t FileOutputDataSource::onStreamBufferReadable(bool isFlush)
+ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 {
-	size_t total = 0;
-	unsigned char buf[1024];
-	auto reader = getBufferReader();
+	if (!isPrepare()) {
+		return EOF;
+	}
 
-	do {
-		size_t size = sizeof(buf);
-		size = reader->read(buf, size);
-		size_t wlen = 0;
-		while (wlen < size) {
-			size_t temp = fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
-			if (!temp) {
-				// Can not write data, error occurred.
-				meddbg("fwrite failed!\n");
-				return EOF;
-			}
-			wlen += temp;
-		}
+	if (buf == nullptr) {
+		return EOF;
+	}
 
-		total += wlen;
-	} while (isFlush && (reader->sizeOfData() > 0));
-
-	return (ssize_t) total;
+	return fwrite(buf,sizeof(unsigned char), size, mFp);
 }
 
 FileOutputDataSource::~FileOutputDataSource()
 {
-	if (mFp) {
+	if (isPrepare()) {
 		close();
 	}
 }
