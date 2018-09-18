@@ -57,7 +57,7 @@ copying ramdump_0x02020000_0x0210c800.bin to  $TIZENRT_BASEDIR/build/output/bin
 ```
 
 ## How to parse RAMDUMP
-DumpParser Script privodes two interfaces: CUI and GUI
+DumpParser Script provides two interfaces: CUI and GUI
 
 ### DumpParser using CUI
 1. Run Ramdump Parser Script

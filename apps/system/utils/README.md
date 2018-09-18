@@ -272,7 +272,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 
 ## getenv/setenv/unsetenv
 These commands are related with setting or getting the environment variables.  
-The **getenv** prints all of environment variables. If specific environment name is given, this prints the value of given envionment.   
+The **getenv** prints all of environment variables. If specific environment name is given, this prints the value of given environment.   
 The **setenv** save new environment variable with given value.  
 The **unsetenv** unsets environment variable with NAME.
 ```bash

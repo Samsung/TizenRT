@@ -71,7 +71,7 @@ LogM takes stronger precedence over syslog, so if LogM and either syslog devices
 ### How to enable LogM
 For details pertaining to LogM, please refer to [README](../os/logm/README.md).
 
-### How to enable Syslog Devices
+### How to enable syslog devices
 Using Menuconfig, syslog devices can be enabled as shown below:
 ```
 cd $TIZENRT_BASEDIR
