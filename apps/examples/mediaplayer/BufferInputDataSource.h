@@ -25,7 +25,7 @@
 class BufferInputDataSource : public media::stream::InputDataSource
 {
 public:
-	BufferInputDataSource() = default;
+	BufferInputDataSource();
 	virtual ~BufferInputDataSource() = default;
 	bool isPrepare() override;
 	bool open() override;
