@@ -71,26 +71,10 @@ static int task_manager_pid;
 #define TYPE_CANCEL      3
 #define TYPE_EXIT        4
 
-#define CB_FUNC_OF(X)             (X)->cb
-#define CB_DATA_OF(X)             (X)->cb_data
+#define CB_FUNC_OF(X)             ((tm_termination_info_t *)X)->cb
+#define CB_DATA_OF(X)             ((tm_termination_info_t *)X)->cb_data
 #define CB_MSG_OF(X)              ((tm_msg_t *)CB_DATA_OF(X))->msg
 #define CB_MSGSIZE_OF(X)          ((tm_msg_t *)CB_DATA_OF(X))->msg_size
-
-#define STOP_CBFUNC(X)            CB_FUNC_OF(TM_STOP_CB_INFO(X))
-#define STOP_CBDATA(X)            CB_DATA_OF(TM_STOP_CB_INFO(X))
-#define STOP_CBDATA_MSG(X)        CB_MSG_OF(TM_STOP_CB_INFO(X))
-#define STOP_CBDATA_MSG_SIZE(X)   CB_MSGSIZE_OF(TM_STOP_CB_INFO(X))
-
-#define EXIT_CBFUNC(X)            CB_FUNC_OF(TM_EXIT_CB_INFO(X))
-#define EXIT_CBDATA(X)            CB_DATA_OF(TM_EXIT_CB_INFO(X))
-#define EXIT_CBDATA_MSG(X)        CB_MSG_OF(TM_EXIT_CB_INFO(X))
-#define EXIT_CBDATA_MSG_SIZE(X)   CB_MSGSIZE_OF(TM_EXIT_CB_INFO(X))
-
-#define INPUT_CBFUNC(X)        ((tm_termination_info_t *)X)->cb
-#define INPUT_DATA(X)          ((tm_termination_info_t *)X)->cb_data
-#define INPUT_DATA_MSG(X)      ((tm_msg_t *)((tm_termination_info_t *)X)->cb_data)->msg
-#define INPUT_DATA_MSG_SIZE(X) ((tm_msg_t *)((tm_termination_info_t *)X)->cb_data)->msg_size
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -155,6 +139,20 @@ static int taskmgr_assign_handle(void)
 	return TM_BUSY;
 }
 
+static void taskmgr_dealloc_cb_info(tm_termination_info_t **info)
+{
+	if (CB_DATA_OF(*info) != NULL) {
+		if (CB_MSG_OF(*info) != NULL) {
+			TM_FREE(CB_MSG_OF(*info));
+			CB_MSG_OF(*info) = NULL;
+		}
+		TM_FREE(CB_DATA_OF(*info));
+		CB_DATA_OF(*info) = NULL;
+	}
+	TM_FREE(*info);
+	*info = NULL;
+}
+
 static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 {
 	int chk_idx;
@@ -193,8 +191,8 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
+		TM_STOP_INFO(handle) = NULL;
+		TM_EXIT_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -234,30 +232,11 @@ static void taskmgr_execute_unregister(int handle)
 #endif
 
 	TM_PID(handle) = 0;
-	if (TM_STOP_CB_INFO(handle) != NULL) {
-		if (STOP_CBDATA(handle) != NULL) {
-			if (STOP_CBDATA_MSG(handle) != NULL) {
-				TM_FREE(STOP_CBDATA_MSG(handle));
-				STOP_CBDATA_MSG(handle) = NULL;
-			}
-			TM_FREE(STOP_CBDATA(handle));
-			STOP_CBDATA(handle) = NULL;
-		}
-		TM_FREE(TM_STOP_CB_INFO(handle));
-		TM_STOP_CB_INFO(handle) = NULL;
+	if (TM_STOP_INFO(handle) != NULL) {
+		taskmgr_dealloc_cb_info(&TM_STOP_INFO(handle));
 	}
-
-	if (TM_EXIT_CB_INFO(handle) != NULL) {
-		if (EXIT_CBDATA(handle) != NULL) {
-			if (EXIT_CBDATA_MSG(handle) != NULL) {
-				TM_FREE(EXIT_CBDATA_MSG(handle));
-				EXIT_CBDATA_MSG(handle) = NULL;
-			}
-			TM_FREE(EXIT_CBDATA(handle));
-			EXIT_CBDATA(handle) = NULL;
-		}
-		TM_FREE(TM_EXIT_CB_INFO(handle));
-		TM_EXIT_CB_INFO(handle) = NULL;
+	if (TM_EXIT_INFO(handle) != NULL) {
+		taskmgr_dealloc_cb_info(&TM_EXIT_INFO(handle));
 	}
 
 	taskmgr_clear_broadcast_info_list(handle);
@@ -305,10 +284,26 @@ static int taskmgr_unregister(int handle)
 	return OK;
 }
 
+static int taskmgr_handle_tcb(int type, int pid)
+{
+	int fd;
+	int ret;
+
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		return TM_INVALID_DRVFD;
+	}
+
+	ret = ioctl(fd, type, pid);
+	if (ret == ERROR) {
+		return TM_OPERATION_FAIL;
+	}
+	return OK;
+}
+
 static int taskmgr_start(int handle, int caller_pid)
 {
 	int ret;
-	int fd;
 	int pid = ERROR;
 
 	if (IS_INVALID_HANDLE(handle)) {
@@ -323,11 +318,6 @@ static int taskmgr_start(int handle, int caller_pid)
 	/* handle is for starting task, pid is for caller */
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
 		return TM_NO_PERMISSION;
-	}
-
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
 	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK) {
@@ -356,10 +346,10 @@ static int taskmgr_start(int handle, int caller_pid)
 		return TM_OPERATION_FAIL;
 	}
 
-	ret = ioctl(fd, TMIOC_START, pid);
-	if (ret == ERROR) {
+	ret = taskmgr_handle_tcb(TMIOC_START, pid);
+	if (ret < 0) {
 		(void)task_delete(pid);
-		return TM_OPERATION_FAIL;
+		return ret;
 	}
 
 	/* task created well */
@@ -371,27 +361,21 @@ static int taskmgr_start(int handle, int caller_pid)
 
 void taskmgr_update_stop_status(int signo, siginfo_t *data)
 {
-	int fd;
 	int ret;
 	int handle;
 	handle = taskmgr_get_handle_by_pid(data->si_value.sival_int);
 
 	/* Terminate based on task type */
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		tmdbg("Invalid driver fd\n");
-	}
-
-	ret = ioctl(fd, TMIOC_TERMINATE, TM_PID(handle));
-	if (ret == ERROR) {
+	ret = taskmgr_handle_tcb(TMIOC_TERMINATE, TM_PID(handle));
+	if (ret < 0) {
 		tmdbg("Fail to terminate the task\n");
 	}
 
 	/* task or pthread terminated well */
 	TM_STATUS(handle) = TM_APP_STATE_STOP;
 
-	TM_FREE(TM_STOP_CB_INFO(handle));
-	TM_STOP_CB_INFO(handle) = NULL;
+	TM_FREE(TM_STOP_INFO(handle));
+	TM_STOP_INFO(handle) = NULL;
 }
 
 static int taskmgr_stop(int handle, int caller_pid)
@@ -416,9 +400,9 @@ static int taskmgr_stop(int handle, int caller_pid)
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
 
-	if (TM_STOP_CB_INFO(handle) != NULL) {
-		info.cb = STOP_CBFUNC(handle);
-		info.cb_data = STOP_CBDATA(handle);
+	if (TM_STOP_INFO(handle) != NULL) {
+		info.cb = CB_FUNC_OF(TM_STOP_INFO(handle));
+		info.cb_data = CB_DATA_OF(TM_STOP_INFO(handle));
 		msg.sival_ptr = &info;
 
 		ret = sigqueue(TM_PID(handle), SIGTM_TERMINATION, msg);
@@ -456,7 +440,6 @@ static int taskmgr_restart(int handle, int caller_pid)
 	}
 
 	ret = taskmgr_get_task_state(handle);
-
 	if (ret == TM_APP_STATE_UNREGISTERED) {
 		return -ret;
 	}
@@ -465,30 +448,13 @@ static int taskmgr_restart(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
-	if (TM_STOP_CB_INFO(handle) != NULL) {
-		if (STOP_CBDATA(handle) != NULL) {
-			if (STOP_CBDATA_MSG(handle) != NULL) {
-				TM_FREE(STOP_CBDATA_MSG(handle));
-				STOP_CBDATA_MSG(handle) = NULL;
-			}
-			TM_FREE(STOP_CBDATA(handle));
-			STOP_CBDATA(handle) = NULL;
-		}
-		TM_FREE(TM_STOP_CB_INFO(handle));
-		TM_STOP_CB_INFO(handle) = NULL;
+	/* After restart, previous callback information is not needed,
+	 * because restarted task will re-allocate the callback information again. */
+	if (TM_STOP_INFO(handle) != NULL) {
+		taskmgr_dealloc_cb_info(&TM_STOP_INFO(handle));
 	}
-
-	if (TM_EXIT_CB_INFO(handle) != NULL) {
-		if (EXIT_CBDATA(handle) != NULL) {
-			if (EXIT_CBDATA_MSG(handle) != NULL) {
-				TM_FREE(EXIT_CBDATA_MSG(handle));
-				EXIT_CBDATA_MSG(handle) = NULL;
-			}
-			TM_FREE(EXIT_CBDATA(handle));
-			EXIT_CBDATA(handle) = NULL;
-		}
-		TM_FREE(TM_EXIT_CB_INFO(handle));
-		TM_EXIT_CB_INFO(handle) = NULL;
+	if (TM_EXIT_INFO(handle) != NULL) {
+		taskmgr_dealloc_cb_info(&TM_EXIT_INFO(handle));
 	}
 
 	ret = task_restart(TM_PID(handle));
@@ -505,7 +471,6 @@ static int taskmgr_restart(int handle, int caller_pid)
 static int taskmgr_pause(int handle, int caller_pid)
 {
 	int ret;
-	int fd;
 
 	if (IS_INVALID_HANDLE(handle) || caller_pid < 0) {
 		return TM_INVALID_PARAM;
@@ -520,13 +485,8 @@ static int taskmgr_pause(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
-	}
-
-	ret = ioctl(fd, TMIOC_PAUSE, TM_PID(handle));
-	if (ret != OK) {
+	ret = taskmgr_handle_tcb(TMIOC_PAUSE, TM_PID(handle));
+	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
 
@@ -572,7 +532,6 @@ static int taskmgr_resume(int handle, int caller_pid)
 static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 {
 	int ret;
-	int fd;
 	union sigval msg;
 
 	if (IS_INVALID_HANDLE(handle)) {
@@ -588,12 +547,7 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 		return TM_NO_PERMISSION;
 	}
 
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
-	}
-
-	ret = ioctl(fd, TMIOC_UNICAST, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle));
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
@@ -634,7 +588,6 @@ int taskmgr_calc_time(struct timespec *result_time, int offset)
 static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *data, tm_msg_t *response_msg, int timeout)
 {
 	int ret;
-	int fd;
 	union sigval msg;
 	mqd_t unicast_mqfd;
 	struct mq_attr attr;
@@ -654,12 +607,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 		return TM_NO_PERMISSION;
 	}
 
-	fd = taskmgr_get_drvfd();
-	if (fd < 0) {
-		return TM_INVALID_DRVFD;
-	}
-
-	ret = ioctl(fd, TMIOC_UNICAST, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle));
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
@@ -840,6 +788,7 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 static void taskmgr_termination_callback(void)
 {
 	task_manager_pid = TM_TASK_MGR_NOT_ALIVE;
+	(void)close(g_taskmgr_fd);
 	mq_close(g_tm_recv_mqfd);
 	mq_unlink(TM_PUBLIC_MQ);
 }
@@ -1123,8 +1072,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
+		TM_STOP_INFO(handle) = NULL;
+		TM_EXIT_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -1189,8 +1138,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
+		TM_STOP_INFO(handle) = NULL;
+		TM_EXIT_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -1200,11 +1149,55 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 }
 #endif
 
-static int taskmgr_set_termination_cb(int type, void *data, int pid)
+static int taskmgr_alloc_cb(tm_termination_info_t **info, void *param)
+{
+	if (*info == NULL) {
+		*info = (tm_termination_info_t *)TM_ZALLOC(sizeof(tm_termination_info_t));
+		if (*info == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+	}
+
+	CB_FUNC_OF(*info) = CB_FUNC_OF(param);
+	if (CB_DATA_OF(param) != NULL) {
+		/* In this case, User wants to pass callback data to callback. */
+		if (CB_DATA_OF(*info) == NULL) {
+			CB_DATA_OF(*info) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
+			if (CB_DATA_OF(*info) == NULL) {
+				TM_FREE(*info);
+				return TM_OUT_OF_MEMORY;
+			}
+		}
+
+		/* If previous callback message size is different with new callback message size,
+		 * we should deallocate the old one, and set to new. */
+		if (CB_MSGSIZE_OF(*info) != CB_MSGSIZE_OF(param)) {
+			if (CB_MSG_OF(*info) != NULL) {
+				TM_FREE(CB_MSG_OF(*info));
+			}
+			CB_MSG_OF(*info) = TM_ALLOC(CB_MSGSIZE_OF(param));
+			if (CB_MSG_OF(*info) == NULL) {
+				TM_FREE(CB_DATA_OF(*info));
+				TM_FREE(*info);
+				return TM_OUT_OF_MEMORY;
+			}
+			CB_MSGSIZE_OF(*info) = CB_MSGSIZE_OF(param);
+		}
+
+		memcpy(CB_MSG_OF(*info), CB_MSG_OF(param), CB_MSGSIZE_OF(param));
+		TM_FREE(CB_MSG_OF(param));
+		TM_FREE(CB_DATA_OF(param));
+	} else {
+		CB_DATA_OF(*info) = NULL;
+	}
+	return OK;
+}
+
+static int taskmgr_set_termination_cb(int type, void *param, int pid)
 {
 	int handle;
 
-	if (data == NULL) {
+	if (param == NULL) {
 		return TM_INVALID_PARAM;
 	}
 
@@ -1214,77 +1207,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 	}
 
 	if (type == TYPE_CANCEL) {
-		if (TM_STOP_CB_INFO(handle) == NULL) {
-			TM_STOP_CB_INFO(handle) = (tm_termination_info_t *)TM_ZALLOC(sizeof(tm_termination_info_t));
-			if (TM_STOP_CB_INFO(handle) == NULL) {
-				return TM_OUT_OF_MEMORY;
-			}
-		}
-		STOP_CBFUNC(handle) = INPUT_CBFUNC(data);
-		if (INPUT_DATA(data) != NULL) {
-			if (STOP_CBDATA(handle) == NULL) {
-				STOP_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
-				if (STOP_CBDATA(handle) == NULL) {
-					TM_FREE(TM_STOP_CB_INFO(handle));
-					return TM_OUT_OF_MEMORY;
-				}
-			}
-
-			if (STOP_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				if (STOP_CBDATA_MSG(handle) != NULL) {
-					TM_FREE(STOP_CBDATA_MSG(handle));
-				}
-				STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
-				if (STOP_CBDATA_MSG(handle) == NULL) {
-					TM_FREE(STOP_CBDATA(handle));
-					TM_FREE(TM_STOP_CB_INFO(handle));
-					return TM_OUT_OF_MEMORY;
-				}
-				STOP_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
-			}
-
-			memcpy(STOP_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
-			TM_FREE(INPUT_DATA_MSG(data));
-			TM_FREE(INPUT_DATA(data));
-		} else {
-			STOP_CBDATA(handle) = NULL;
-		}
+		return taskmgr_alloc_cb(&TM_STOP_INFO(handle), param);
 	} else {
-		if (TM_EXIT_CB_INFO(handle) == NULL) {
-			TM_EXIT_CB_INFO(handle) = (tm_termination_info_t *)TM_ZALLOC(sizeof(tm_termination_info_t));
-			if (TM_EXIT_CB_INFO(handle) == NULL) {
-				return TM_OUT_OF_MEMORY;
-			}
-		}
-		EXIT_CBFUNC(handle) = INPUT_CBFUNC(data);
-		if (INPUT_DATA(data) != NULL) {
-			if (EXIT_CBDATA(handle) == NULL) {
-				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ZALLOC(sizeof(tm_msg_t));
-				if (EXIT_CBDATA(handle) == NULL) {
-					TM_FREE(TM_EXIT_CB_INFO(handle));
-					return TM_OUT_OF_MEMORY;
-				}
-			}
-
-			if (EXIT_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
-				if (EXIT_CBDATA_MSG(handle) != NULL) {
-					TM_FREE(EXIT_CBDATA_MSG(handle));
-				}
-				EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
-				if (EXIT_CBDATA_MSG(handle) == NULL) {
-					TM_FREE(EXIT_CBDATA(handle));
-					TM_FREE(TM_EXIT_CB_INFO(handle));
-					return TM_OUT_OF_MEMORY;
-				}
-				EXIT_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
-			}
-
-			memcpy(EXIT_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
-			TM_FREE(INPUT_DATA_MSG(data));
-			TM_FREE(INPUT_DATA(data));
-		} else {
-			EXIT_CBDATA(handle) = NULL;
-		}
+		return taskmgr_alloc_cb(&TM_EXIT_INFO(handle), param);
 	}
 
 	return OK;
@@ -1299,15 +1224,15 @@ int task_manager_run_exit_cb(int pid)
 	}
 	/* Run exit callback when normally terminated. */
 	if (TM_STATUS(handle) != TM_APP_STATE_CANCELLING) {
-		if (TM_EXIT_CB_INFO(handle) != NULL) {
-			if (EXIT_CBDATA(handle) != NULL) {
-				(*EXIT_CBFUNC(handle))(EXIT_CBDATA_MSG(handle));
-				TM_FREE(EXIT_CBDATA_MSG(handle));
-				EXIT_CBDATA_MSG(handle) = NULL;
-				TM_FREE(EXIT_CBDATA(handle));
-				EXIT_CBDATA(handle) = NULL;
+		if (TM_EXIT_INFO(handle) != NULL) {
+			if (CB_DATA_OF(TM_EXIT_INFO(handle)) != NULL) {
+				(*CB_FUNC_OF(TM_EXIT_INFO(handle)))(CB_MSG_OF(TM_EXIT_INFO(handle)));
+				TM_FREE(CB_MSG_OF(TM_EXIT_INFO(handle)));
+				CB_MSG_OF(TM_EXIT_INFO(handle)) = NULL;
+				TM_FREE(CB_DATA_OF(TM_EXIT_INFO(handle)));
+				CB_DATA_OF(TM_EXIT_INFO(handle)) = NULL;
 			} else {
-				(*EXIT_CBFUNC(handle))(NULL);
+				(*CB_FUNC_OF(TM_EXIT_INFO(handle)))(NULL);
 			}
 		}
 	}
