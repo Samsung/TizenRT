@@ -2518,3 +2518,29 @@ char *dm_get_model_number()
 {
 	return g_model_number;
 }
+
+char *dm_get_access_token()
+{
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_access_token = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_access_token = things_strdup(cloud_data->access_token);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_access_token;
+}
+
+char *dm_get_uid()
+{ 
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_uid = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_uid = things_strdup(cloud_data->uid);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_uid;
+}
