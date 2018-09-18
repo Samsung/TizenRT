@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <sys/stat.h>
 #include <media/MediaRecorder.h>
 #include <media/MediaRecorderObserverInterface.h>
 #include <media/FileOutputDataSource.h>
@@ -107,41 +108,34 @@ static void utc_media_MediaRecorder_setVolume_p(void)
 {
 	uint8_t prev, volume;
 	MediaRecorder mr;
-	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 	mr.create();
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
 	mr.getVolume(&prev);
 
-	TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(10), RECORDER_OK, goto cleanup);
-	mr.getVolume(&volume);
-	TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, goto cleanup);
-
-	TC_SUCCESS_RESULT();
-
-cleanup:
-	mr.setVolume(prev);
-	mr.unprepare();
+  if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
+		printf("device does not support volume control\n");
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(prev + 1), RECORDER_OK, mr.destroy());		
+	} else {
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(10), RECORDER_OK, mr.destroy());
+		mr.getVolume(&volume);
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, mr.destroy());
+	}
 	mr.destroy();
 }
 
 static void utc_media_MediaRecorder_setVolume_n(void)
 {
-	uint8_t prev;
+	uint8_t prev, volume;
 	MediaRecorder mr;
-	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
-	TC_ASSERT_EQ("utc_media_mediarecorder_setVolume", mr.setVolume(10), RECORDER_ERROR_NOT_ALIVE);
 	mr.create();
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
 	mr.getVolume(&prev);
-	TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, goto cleanup);
 
-	TC_SUCCESS_RESULT();
-
-cleanup:
-	mr.setVolume(prev);
-	mr.unprepare();
+	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
+		mr.setVolume(prev + 1);
+		mr.getVolume(&volume);
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", prev, volume, mr.destroy());		
+	} else {
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, mr.destroy());
+	}
 	mr.destroy();
 }
 
@@ -152,18 +146,21 @@ static void utc_media_MediaRecorder_getVolume_p(void)
 	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 
 	mr.create();
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
+
 	for (int i = 0; i <= 10; ++i)
 	{
-		mr.setVolume(i);
-		mr.getVolume(&volume);
-		TC_ASSERT_EQ("utc_media_MediaRecorder_getVolume", volume, i);
+		if (mr.setVolume(i) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
+			mr.getVolume(&volume);
+			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, 0, mr.destroy());
+			break;
+		} else {
+			mr.setVolume(i);
+			mr.getVolume(&volume);
+			TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, i, mr.destroy());
+		}
 	}
 
-	mr.unprepare();
 	mr.destroy();
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -174,10 +171,7 @@ static void utc_media_MediaRecorder_getVolume_n(void)
 	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 	TC_ASSERT_EQ("utc_media_MediaRecorder_getVolume", mr.getVolume(&volume), RECORDER_ERROR_NOT_ALIVE);
 	mr.create();
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
-	TC_ASSERT_EQ("utc_media_MediaRecorder_getVolume", mr.getVolume(nullptr), RECORDER_ERROR_INVALID_PARAM);
-	mr.unprepare();
+	TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getVolume", mr.getVolume(nullptr), RECORDER_ERROR_INVALID_PARAM, mr.destroy());
 	mr.destroy();
 
 	TC_SUCCESS_RESULT();
@@ -324,27 +318,22 @@ private:
 	std::condition_variable cvError;
 };
 
-static int get_file_size()
+static long get_file_size()
 {
-	int ret;
-	FILE *fp;
-	fp = fopen(filePath, "r");
-	if (fp == NULL) {
-		meddbg("file open failed error : %d\n", errno);
-		return -1;
+	struct stat st;
+	long ret;
+
+	ret = stat(filePath, &st);
+	if (ret == OK) {
+		printf("size : %d\n", st.st_size);
+		return st.st_size;
 	}
-	if (fseek(fp, 0, SEEK_END) != 0) {
-		meddbg("fseek failed error : %d\n", errno);
-		fclose(fp);
-		return -1;
-	}
-	ret = ftell(fp);
-	fclose(fp);
-	return ret;
+	return 0;
 }
 
 static void utc_media_MediaRecorder_setDuration_p(void)
 {
+	long size;
 	MediaRecorder mr;
 	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 
@@ -361,23 +350,22 @@ static void utc_media_MediaRecorder_setDuration_p(void)
 	mr.unprepare();
 	mr.destroy();
 
-	int byte = 0;
+	size = channels * sampleRate * RECORD_DURATION;
 
 	switch (pcmFormat) {
 	case AUDIO_FORMAT_TYPE_S8:
-		byte = 1;
+		size *= 1;
 		break;
 	case AUDIO_FORMAT_TYPE_S16_LE:
-		byte = 2;
+		size *= 2;
 		break;
 	case AUDIO_FORMAT_TYPE_S32_LE:
-		byte = 4;
+		size *= 4;
 		break;
 	default:
 		break;
 	}
-
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), (int)(RECORD_DURATION * channels * sampleRate * byte));
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), size);
 
 	TC_SUCCESS_RESULT();
 }

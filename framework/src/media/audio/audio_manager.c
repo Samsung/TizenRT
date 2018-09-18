@@ -171,15 +171,15 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
  * Private Function Prototypes
  ****************************************************************************/
 static audio_manager_result_t find_audio_card(audio_io_direction_t direct);
+static audio_manager_result_t find_audio_card_if_empty(audio_io_direction_t direct);
 static audio_manager_result_t get_actual_audio_in_card_id(void);
 static audio_manager_result_t get_actual_audio_out_card_id(void);
-static void get_hardware_params(audio_card_info_t *card, audio_io_direction_t direct);
-static audio_manager_result_t get_supported_sample_rate(int fd, uint8_t *sample_type, audio_io_direction_t direct);
-static audio_manager_result_t get_supported_process_type(int fd, audio_config_t *config, audio_io_direction_t direct);
+static audio_manager_result_t get_supported_sample_rate(audio_io_direction_t direct);
+static audio_manager_result_t get_supported_process_type(int card_id, int device_id, audio_io_direction_t direct);
 static uint32_t get_closest_samprate(unsigned origin_samprate, audio_io_direction_t direct);
 static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsigned int frames);
 static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames);
-static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, audio_io_direction_t direct);
+static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
 
 /****************************************************************************
@@ -198,17 +198,36 @@ static void get_card_path(char *card_path, uint8_t card_id, uint8_t device_id, a
 
 static audio_manager_result_t init_audio_stream(audio_io_direction_t direct)
 {
-	if (((direct == INPUT) && (g_actual_audio_in_card_id >= 0)) || ((direct == OUTPUT) && (g_actual_audio_out_card_id >= 0))) {
-		return AUDIO_MANAGER_SUCCESS;
-	}
-
 	/* check available cards and try to find all cards if there's no one */
-	if (find_audio_card(direct) != AUDIO_MANAGER_SUCCESS) {
+	if (find_audio_card_if_empty(direct) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Found no active %s audio card\n", (direct == OUTPUT ? "output" : "input"));
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
-
 	return AUDIO_MANAGER_SUCCESS;
+}
+
+static audio_manager_result_t find_audio_card_if_empty(audio_io_direction_t direct)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	
+	if (direct == INPUT) {
+		if (g_actual_audio_in_card_id == INVALID_ID) {
+			ret = find_audio_card(INPUT);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				meddbg("find card failed result : %d\n", ret);
+				return ret;
+			}
+		}
+	} else {
+		if (g_actual_audio_out_card_id == INVALID_ID) {
+			ret = find_audio_card(OUTPUT);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				meddbg("find card failed result : %d\n", ret);
+				return ret;
+			}
+		}
+	}
+	return ret;
 }
 
 static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
@@ -254,9 +273,6 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 			card[card_id].device_id = device_id;
 			found_cards++;
 			medvdbg("Found an audio card, total card : %d id : %d device : %d\n", found_cards, card_id, device_id);
-
-			get_hardware_params(&card[card_id], direct);
-
 			pthread_mutex_unlock(&(card[card_id].card_mutex));
 		}
 	}
@@ -284,69 +300,53 @@ error_out:
 	return ret;
 }
 
-static void get_hardware_params(audio_card_info_t *card, audio_io_direction_t direct)
-{
-	int fd;
-	int ret;
-	audio_config_t *config;
-	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	get_card_path(card_path, card->card_id, card->device_id, direct);
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", card_path, errno);
-		return;
-	}
-
-	config = &card->config[card->device_id];
-
-	/* get gain/volume of current card first */
-	ret = get_audio_volume(fd, config, direct);
-
-	/* If it is failed, it doesn't return because we should get next h/w params */
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Get volume failed card path : %s direct : %d ret : %d\n", card_path, direct, ret);
-	}
-
-	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n", config->max_volume, config->volume, card_path);
-
-	/* get supported sample rate type */
-	ret = get_supported_sample_rate(fd, &card->resample.samprate_types, direct);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Get supported sample rate failed card path : %s direct : %d ret : %d\n", card_path, direct, ret);
-	}
-	medvdbg("card path : %s Supported sample rate: %x\n", card_path, card->resample.samprate_types);
-
-	/** TODO card type handling logic should be added **/
-	get_supported_process_type(fd, config, direct);
-
-	close(fd);
-}
-
-static audio_manager_result_t get_supported_sample_rate(int fd, uint8_t *sample_type, audio_io_direction_t direct)
+static audio_manager_result_t get_supported_sample_rate(audio_io_direction_t direct)
 {
 	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	int fd;
 
-	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
-	pthread_mutex_t *card_mutex;
-
+	ret = find_audio_card_if_empty(direct);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
 	if (direct == INPUT) {
-		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		caps_desc.caps.ac_type = AUDIO_TYPE_INPUT;
 	} else {
-		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		caps_desc.caps.ac_type = AUDIO_TYPE_OUTPUT;
 	}
+
 	caps_desc.caps.ac_subtype = AUDIO_TYPE_QUERY;
-	pthread_mutex_lock(card_mutex);
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	get_card_path(card_path, card->card_id, card->device_id, direct);
+	
+	pthread_mutex_lock(&(card->card_mutex));
+
+	fd = open(card_path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		goto errout;
+	}
+	
 	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
-		pthread_mutex_unlock(card_mutex);
-		return AUDIO_MANAGER_DEVICE_FAIL;
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		goto errout_with_fd;
 	}
 
-	*sample_type = caps_desc.caps.ac_controls.b[0];
-	pthread_mutex_unlock(card_mutex);
-	return AUDIO_MANAGER_SUCCESS;
+	card->resample.samprate_types = caps_desc.caps.ac_controls.b[0];
+	medvdbg("samprate_type : %d\n", card->resample.samprate_types);
+	
+errout_with_fd:
+	close(fd);
+errout:
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
 }
 
 /* TODO this function should consider priority of each function in future */
@@ -362,6 +362,7 @@ static audio_manager_result_t get_actual_audio_in_card_id()
 					cnt++;
 				} else {
 					/* found activated one */
+					g_audio_in_cards[i].card_id = i;
 					g_audio_in_cards[i].device_id = j;
 					g_actual_audio_in_card_id = i;
 					return AUDIO_MANAGER_SUCCESS;
@@ -372,6 +373,7 @@ static audio_manager_result_t get_actual_audio_in_card_id()
 	/* Return basic one If we found device & all devices in each card are IDLE */
 	if (cnt > 0) {
 		g_actual_audio_in_card_id = 0;
+		g_audio_in_cards[0].card_id = 0;
 		g_audio_in_cards[0].device_id = 0;
 		return AUDIO_MANAGER_SUCCESS;
 	}
@@ -390,6 +392,7 @@ static audio_manager_result_t get_actual_audio_out_card_id()
 					cnt++;
 				} else {
 					/* found activated one */
+					g_audio_out_cards[i].card_id = i;
 					g_audio_out_cards[i].device_id = j;
 					g_actual_audio_out_card_id = i;
 					return AUDIO_MANAGER_SUCCESS;
@@ -401,6 +404,7 @@ static audio_manager_result_t get_actual_audio_out_card_id()
 	/* Return basic one If we found device & all devices in each card are IDLE */
 	if (cnt > 0) {
 		g_actual_audio_out_card_id = 0;
+		g_audio_out_cards[0].card_id = 0;
 		g_audio_out_cards[0].device_id = 0;
 		return AUDIO_MANAGER_SUCCESS;
 	}
@@ -411,21 +415,21 @@ static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_dire
 {
 	int i;
 	uint32_t result = 0;
-	uint32_t samprate_types;
 	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
+	audio_card_info_t *card;
 
 	ASSERT(count > 0);
 
 	if (direct == INPUT) {
 		ASSERT(g_actual_audio_in_card_id >= 0);
-		samprate_types = g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	} else {
 		ASSERT(g_actual_audio_out_card_id >= 0);
-		samprate_types = g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	}
-
+	
 	for (i = 0; i < count; i++) {
-		if (g_audio_samprate_entry[i].samprate_types & samprate_types) {
+		if (g_audio_samprate_entry[i].samprate_types & card->resample.samprate_types) {
 			result = g_audio_samprate_entry[i].samprate;
 			if (g_audio_samprate_entry[i].samprate >= origin_samprate) {
 				break;
@@ -514,29 +518,49 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 	return resampled_frames;
 }
 
-static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, audio_io_direction_t direct)
+static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 {
+	audio_manager_result_t ret;
+	int fd;
 	struct audio_caps_desc_s caps_desc;
 	uint8_t max_volume;
 	uint8_t cur_volume;
 	pthread_mutex_t *card_mutex;
+	audio_card_info_t *card;
+	audio_config_t *config;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
+	ret = find_audio_card_if_empty(direct);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+	
 	if (direct == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
 	}
+	get_card_path(card_path, card->card_id, card->device_id, direct);
 
 	pthread_mutex_lock(card_mutex);
+	fd = open(card_path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		goto errout;
+	}
+	
 	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 		meddbg("An ioctl error occurs\n");
-		pthread_mutex_unlock(card_mutex);
-		return AUDIO_MANAGER_DEVICE_FAIL;
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		goto errout_with_fd;
 	}
 
 	max_volume = caps_desc.caps.ac_controls.hw[0];
@@ -544,13 +568,16 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 
 	/* scale here */
 	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
-
+	config = &card->config[card->device_id];
 	config->max_volume = max_volume;
 	config->volume = (uint8_t) cur_volume;
-	pthread_mutex_unlock(card_mutex);
 	medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
 
-	return AUDIO_MANAGER_SUCCESS;
+errout_with_fd:
+	close(fd);
+errout:
+	pthread_mutex_unlock(card_mutex);
+	return ret;
 }
 
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume)
@@ -565,6 +592,17 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 
 	if (volume > AUDIO_DEVICE_MAX_VOLUME) {
 		volume = AUDIO_DEVICE_MAX_VOLUME;
+	}
+
+	ret = find_audio_card_if_empty(direct);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+
+	/* get system volume before set */
+	ret = get_audio_volume(direct);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
 	}
 
 	if (direct == INPUT) {
@@ -587,7 +625,7 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 	pthread_mutex_lock(card_mutex);
 	fd = open(card_path, O_RDONLY);
 	if (fd < 0) {
-		meddbg("Failed to open device path : %s type : %d\n", card_path, direct);
+		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
 		ret = AUDIO_MANAGER_DEVICE_FAIL;
 		goto errout;
 	}
@@ -595,7 +633,7 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
 	if (ret < 0) {
 		meddbg("Fail to set a volume, ret = %d\n", ret);
-		if (ret == -ENOSYS) {
+		if (ret == -EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
@@ -630,19 +668,32 @@ audio_manager_result_t init_audio_stream_out(void)
 audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format)
 {
 	audio_card_info_t *card;
+	audio_config_t *card_config;
 	struct pcm_config config;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-
-	if (g_actual_audio_in_card_id < 0) {
-		meddbg("Found no active input audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
 
 	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
+	
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+	
+	ret = get_supported_sample_rate(INPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+	
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-	if ((card->config[card->device_id].status == AUDIO_CARD_PAUSE)) {
+	card_config = &card->config[card->device_id];
+	if ((card_config->status != AUDIO_CARD_IDLE) && (card_config->status != AUDIO_CARD_PAUSE)) {
+		meddbg("Card status is wrong status : %d\n", card_config->status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
+
+	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
 		reset_audio_stream_out();
 	}
@@ -669,8 +720,6 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 		goto error_with_pcm;
 	}
 
-	card->config[card->device_id].status = AUDIO_CARD_READY;
-
 	if (sample_rate == config.rate) {
 		card->resample.necessary = false;
 	} else {
@@ -686,7 +735,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 			goto error_with_pcm;
 		}
 	}
-
+	card_config->status = AUDIO_CARD_READY;
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -699,6 +748,7 @@ error_with_pcm:
 audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format)
 {
 	audio_card_info_t *card;
+	audio_config_t *card_config;
 	struct pcm_config config;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 
@@ -710,9 +760,21 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
-	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
+	ret = get_supported_sample_rate(OUTPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+	
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	card_config = &card->config[card->device_id];
+
+	if ((card_config->status != AUDIO_CARD_IDLE) && (card_config->status != AUDIO_CARD_PAUSE)) {
+		meddbg("Card status is wrong status : %d\n", card_config->status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
+
+	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
 		reset_audio_stream_out();
 	}
@@ -751,8 +813,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 		goto error_with_pcm;
 	}
 
-	card->config[card->device_id].status = AUDIO_CARD_READY;
-
 	if (card->resample.necessary) {
 		card->resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
 		card->resample.buffer_size = (int)((float)get_output_frames_to_byte(get_output_frame_count()) * card->resample.ratio) + 1;	// +1 for floating point margin
@@ -766,6 +826,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 		medvdbg("buffer address = 0x%x\n", card->resample.buffer);
 	}
 
+	card_config->status = AUDIO_CARD_READY;
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -787,6 +848,11 @@ int start_audio_stream_in(void *data, unsigned int frames)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+
+	if ((card->config[card->device_id].status == AUDIO_CARD_IDLE) || (card->config[card->device_id].status == AUDIO_CARD_NONE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
@@ -797,9 +863,10 @@ int start_audio_stream_in(void *data, unsigned int frames)
 			goto error_with_lock;
 		}
 
-		card->config[card->device_id].status = AUDIO_CARD_RUNNING;
 		medvdbg("Resume the input audio card!!\n");
 	}
+	
+	card->config[card->device_id].status = AUDIO_CARD_RUNNING;
 
 	do {
 		// Todo: Logic needs to be changed.
@@ -862,6 +929,11 @@ int start_audio_stream_out(void *data, unsigned int frames)
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
+	if ((card->config[card->device_id].status == AUDIO_CARD_IDLE) || (card->config[card->device_id].status == AUDIO_CARD_NONE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
+
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
@@ -871,14 +943,14 @@ int start_audio_stream_out(void *data, unsigned int frames)
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
 			goto error_with_lock;
 		}
-
-		card->config[card->device_id].status = AUDIO_CARD_RUNNING;
 		medvdbg("Resume the output audio card!!\n");
 	}
 
 	if (card->resample.necessary) {
 		resampled_frames = resample_stream_out(card, data, frames);
 	}
+
+	card->config[card->device_id].status = AUDIO_CARD_RUNNING;
 
 	do {
 		medvdbg("Start Playing!! Resample : %d\t", card->resample.necessary);
@@ -930,6 +1002,11 @@ audio_manager_result_t pause_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+
+	if (card->config[card->device_id].status != AUDIO_CARD_RUNNING) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	ret = ioctl(pcm_get_file_descriptor(card->pcm), AUDIOIOC_PAUSE, 0UL);
@@ -957,6 +1034,11 @@ audio_manager_result_t pause_audio_stream_out(void)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	
+	if (card->config[card->device_id].status != AUDIO_CARD_RUNNING) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	ret = ioctl(pcm_get_file_descriptor(card->pcm), AUDIOIOC_PAUSE, 0UL);
@@ -984,6 +1066,10 @@ audio_manager_result_t stop_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	if ((card->config[card->device_id].status != AUDIO_CARD_RUNNING) && (card->config[card->device_id].status != AUDIO_CARD_PAUSE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	ret = pcm_drop(card->pcm);
@@ -1011,6 +1097,10 @@ audio_manager_result_t stop_audio_stream_out(void)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	if ((card->config[card->device_id].status != AUDIO_CARD_RUNNING) && (card->config[card->device_id].status != AUDIO_CARD_PAUSE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
@@ -1042,6 +1132,10 @@ audio_manager_result_t reset_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	if ((card->config[card->device_id].status == AUDIO_CARD_IDLE) || (card->config[card->device_id].status == AUDIO_CARD_NONE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	pcm_close(card->pcm);
@@ -1071,6 +1165,10 @@ audio_manager_result_t reset_audio_stream_out(void)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	if ((card->config[card->device_id].status == AUDIO_CARD_IDLE) || (card->config[card->device_id].status == AUDIO_CARD_NONE)) {
+		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+		return AUDIO_MANAGER_INVALID_DEVICE;	
+	}
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	pcm_close(card->pcm);
@@ -1161,65 +1259,46 @@ audio_manager_result_t get_max_audio_volume(uint8_t *volume)
 
 audio_manager_result_t get_input_audio_gain(uint8_t *gain)
 {
-	int ret;
-	int fd;
-	char card_path[AUDIO_DEV_PATH_LENGTH + AUDIO_PCM_PATH_LENGTH];
+	int ret = AUDIO_MANAGER_SUCCESS;
 	audio_card_info_t *card;
-	audio_config_t *config;
-
+	
 	if (gain == NULL) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
+	ret = get_audio_volume(INPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}	
+
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-	get_card_path(card_path, card->card_id, card->device_id, INPUT);
 
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", card_path, errno);
-		pthread_mutex_unlock(&card->card_mutex);
-		return AUDIO_MANAGER_CARD_NOT_READY;
-	}
+	medvdbg("ret = %d, Max volume: %d, Current Volume : %d card id : %d device id : %d\n", ret, card->config[card->device_id].max_volume, \
+		card->config[card.device_id].volume, g_actual_audio_in_card_id, card->device_id);
 
-	/* get the gain of the current card first */
-	config = &card->config[card->device_id];
-	ret = get_audio_volume(fd, config, INPUT);
-	medvdbg("ret = %d, Max gain: %d, Current gain : %d card path : %s\n", ret, config->max_volume, config->volume, card_path);
 
-	*gain = config->volume;
-
-	close(fd);
-
+	*gain = card->config[card->device_id].volume;
 	return ret;
 }
 
 audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 {
 	int ret = AUDIO_MANAGER_SUCCESS;
-	int fd;
-	char card_path[AUDIO_DEV_PATH_LENGTH + AUDIO_PCM_PATH_LENGTH];
 	audio_card_info_t *card;
-	audio_config_t *config;
-
+	
 	if (volume == NULL) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
+	ret = get_audio_volume(OUTPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}	
+
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
-	get_card_path(card_path, card->card_id, card->device_id, OUTPUT);
+	medvdbg("ret = %d, Max volume: %d, Current Volume : %d card id : %d device id : %d\n", ret, card->config[card->device_id].max_volume, \
+		card->config[card.device_id].volume, g_actual_audio_out_card_id, card->device_id);
 
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", card_path, errno);
-		return AUDIO_MANAGER_CARD_NOT_READY;
-	}
-	config = &card->config[card->device_id];
-
-	/* get the volume of the current card first */
-	ret = get_audio_volume(fd, config, OUTPUT);
-	medvdbg("ret = %d, Max volume: %d, Current Volume : %d card path : %s\n", ret, config->max_volume, config->volume, card_path);
-
-	*volume = config->volume;
-	close(fd);
+	*volume = card->config[card->device_id].volume;
 	return ret;
 }
 
@@ -1277,31 +1356,44 @@ uint8_t get_subprocess_type_audio_param_value(device_process_subtype_t type)
 	}
 }
 
-static audio_manager_result_t get_supported_process_type(int fd, audio_config_t *config, audio_io_direction_t direct)
+static audio_manager_result_t get_supported_process_type(int card_id, int device_id, audio_io_direction_t direct)
 {
+	int fd;
 	struct audio_caps_desc_s caps_desc;
-	pthread_mutex_t *card_mutex;
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
 
 	if (direct == OUTPUT) {		// TODO add output logic in future.
 		medvdbg("Do not support output for now...\n");
 		return AUDIO_MANAGER_SUCCESS;
-	} else {
-		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
 	}
+	card = &g_audio_in_cards[card_id];
 
+	get_card_path(path, card_id, device_id, INPUT);
+	
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
 	caps_desc.caps.ac_subtype = AUDIO_PU_UNDEF;
-	pthread_mutex_lock(card_mutex);
+
+	pthread_mutex_lock(&(card->card_mutex));
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
+		pthread_mutex_unlock(&(card->card_mutex));
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
 	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 		meddbg("An ioctl error occurs\n");
-		pthread_mutex_unlock(card_mutex);
+		close(fd);
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
-	config->device_process_type = caps_desc.caps.ac_controls.b[0];
-	pthread_mutex_unlock(card_mutex);
-	medvdbg("process type = 0x%x\n", config->device_process_type);
+	card->config[device_id].device_process_type = caps_desc.caps.ac_controls.b[0];
+	close(fd);
+	pthread_mutex_unlock(&(card->card_mutex));
+	medvdbg("process type = 0x%x\n", card->config[device_id].device_process_type);
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -1319,13 +1411,19 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
 
-	ret = init_audio_stream(INPUT);
+	if (type == AUDIO_DEVICE_PROCESS_TYPE_NONE) {
+		meddbg("Type is AUDIO_DEVICE_PROCESS_TYPE_NONE\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	/* Make a card list First */
+	ret = find_audio_card_if_empty(INPUT);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("init stream failed\n");
 		return ret;
 	}
 
 	process_type = get_process_type_audio_param_value(type);
+	subprocess_type = get_subprocess_type_audio_param_value(subtype);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
 	caps_desc.caps.ac_subtype = process_type;
@@ -1333,28 +1431,36 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
 			card = &g_audio_in_cards[i];
+			if (card->config[j].status == AUDIO_CARD_NONE) {
+				medvdbg("Card is not avalialbe, card_id : %d device_id : %d continue\n", i, j);
+				continue;
+			}
+
+			ret = get_supported_process_type(i, j, INPUT);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				medvdbg("get process type failed, find next ret : %d\n", ret);
+				continue;
+			}
 
 			/* If process type is matched */
-			if ((card->config[j].device_process_type & process_type) != 0) {
+			if ((process_type & card->config[j].device_process_type) != 0) {
 				get_card_path(path, i, j, INPUT);
 				pthread_mutex_lock(&(card->card_mutex));
 				fd = open(path, O_RDONLY);
 				if (fd < 0) {
-					meddbg("open failed, path : %s process type : 0x%x\n", path, type);
+					medvdbg("open failed, path : %s process type : 0x%x errno %d\n", path, type, errno);
 					/* open failed but check next one anyway */
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
 				}
 
 				if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
-					meddbg("An ioctl error occurs\n");
+					medvdbg("An ioctl error occurs, find next anyway\n");
 					close(fd);
 					/* ioctl failed, try next one */
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
 				}
-
-				subprocess_type = get_subprocess_type_audio_param_value(subtype);
 
 				/* Now we get subtype from h/w, compare it and subtype(param) */
 				if ((subprocess_type & caps_desc.caps.ac_controls.b[0]) != 0) {
@@ -1362,6 +1468,7 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 					*device_id = j;
 					close(fd);
 					pthread_mutex_unlock(&(card->card_mutex));
+					medvdbg("found! card_id : %d device_id : %d subtype : %d\n", *card_id, *device_id, subtype);
 					return AUDIO_MANAGER_SUCCESS;
 				}
 				close(fd);
@@ -1444,13 +1551,11 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 	int fd;
 	int ret;
 	audio_card_info_t *card;
-	audio_config_t *config;
 	uint8_t process_type;
 	uint8_t subprocess_type;
 	struct audio_caps_desc_s cap_desc;
 
 	card = &g_audio_in_cards[card_id];
-	config = &card->config[device_id];
 	get_card_path(path, card_id, device_id, INPUT);
 
 	pthread_mutex_lock(&(card->card_mutex));
@@ -1496,10 +1601,32 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	int ret;
 	struct mq_attr attr;
 
+	if (type == AUDIO_DEVICE_PROCESS_TYPE_NONE) {
+		meddbg("Type is AUDIO_DEVICE_PROCESS_TYPE_NONE\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	ret = find_audio_card_if_empty(INPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+
+	ret = get_supported_process_type(card_id, device_id, INPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
+	
 	card = &g_audio_in_cards[card_id];
 	config = &card->config[device_id];
-	get_card_path(path, card_id, device_id, INPUT);
 
+	process_type = get_process_type_audio_param_value(type);
+
+	if (((config->device_process_type) & process_type) == 0) {
+		meddbg("device doesn't support this type, device_process_type : %d request type : %d\n", process_type);
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+	}
+	get_card_path(path, card_id, device_id, INPUT);
+	
 	pthread_mutex_lock(&(card->card_mutex));
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
@@ -1507,17 +1634,6 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
-	process_type = get_process_type_audio_param_value(type);
-
-	pthread_mutex_unlock(&(card->card_mutex));
-
-	if ((get_supported_process_type(fd, config, INPUT) != AUDIO_MANAGER_SUCCESS) || (((config->device_process_type) & process_type) == 0)) {
-		meddbg("Device doesn't support it\n");
-		close(fd);
-		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
-	}
-
-	pthread_mutex_lock(&(card->card_mutex));
 
 	/* Create a message queue */
 	attr.mq_maxmsg = 16;
@@ -1804,7 +1920,8 @@ void print_audio_card_info(audio_io_direction_t direct)
 		max_card = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
 		actual_card_id = g_actual_audio_out_card_id;
 	}
-
+	get_audio_volume(direct);
+	get_supported_sample_rate(direct);
 	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < max_card; i++) {
 			if (direct == INPUT) {
@@ -1847,15 +1964,15 @@ void print_audio_card_info(audio_io_direction_t direct)
 
 				dbg_noarg("Volume : %d Max Volume : %d\n", card->config[j].volume, card->config[j].max_volume);
 				dbg_noarg("Supports Process Type : ");
-				if ((card->config[j].device_process_type & AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER) != 0) {
+				if ((card->config[j].device_process_type & get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER)) != 0) {
 					dbg_noarg("%s(%x)\t", "AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER", AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER);
 				}
 
-				if ((card->config[j].device_process_type & AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR) != 0) {
+				if ((card->config[j].device_process_type & get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR)) != 0) {
 					dbg_noarg("%s(%x)\t", "AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR", AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR);
 				}
 
-				if ((card->config[j].device_process_type & AUDIO_DEVICE_PROCESS_TYPE_NONE) != 0) {
+				if ((card->config[j].device_process_type & get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_NONE)) != 0) {
 					dbg_noarg("%s(%x)\t", "AUDIO_DEVICE_PROCESS_TYPE_NONE", AUDIO_DEVICE_PROCESS_TYPE_NONE);
 				}
 				dbg_noarg("\n");
