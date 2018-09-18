@@ -581,12 +581,12 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// Attention : when 64bit linux Build, runtime-error occur. (memset () at ../sysdeps/x86_64/memset.S: Not Found File or Directory)
 	// It's because of p_info.(64 bit malloc internal code flow is not support that character array data-type of access_point_info_s)
 	// TODO : Fix Bug for 64bit support.
-	memset(p_info->e_ssid, 0, MAX_SSID_LEN);
-	memset(p_info->security_key, 0, MAX_SECUIRTYKEY_LEN);
+	memset(p_info->e_ssid, 0, WIFIMGR_SSID_LEN + 1);
+	memset(p_info->security_key, 0, WIFIMGR_PASSPHRASE_LEN + 1);
 	memset(p_info->enc_type, 0, MAX_TYPE_ENC);
 	memset(p_info->auth_type, 0, MAX_TYPE_AUTH);
 	memset(p_info->channel, 0, MAX_CHANNEL);
-	memset(p_info->bss_id, 0, MAX_SSID_LEN);
+	memset(p_info->bss_id, 0, WIFIMGR_MACADDR_STR_LEN + 1);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);
 
 	if (strlen(event_data->ssid) > 0) {

@@ -40,7 +40,6 @@ extern "C" {
 #define WIFIMGR_MACADDR_STR_LEN    17
 #define WIFIMGR_SSID_LEN           32
 #define WIFIMGR_PASSPHRASE_LEN     64
-
 /**
  * @brief Status of Wi-Fi interface such as connected or disconnected
  */
