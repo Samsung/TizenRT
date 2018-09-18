@@ -45,7 +45,7 @@ static OicSecKey_t cacert;
 static OicSecKey_t subca;
 static OicSecKey_t devicecert;
 
-static uint8_t g_certChain;
+static uint8_t *g_certChain;
 
 OCStackResult things_sss_rootca_handler_init(OicUuid_t* subjectUuid)
 {

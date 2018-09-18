@@ -792,6 +792,9 @@ const unsigned char g_regional_test_root_ca[] = {
 };
 #endif
 
+static bool g_b_init_key = false;
+static bool g_b_init_cert = false;
+
 /*
  * This API added as workaround to test certificate based TLS connection.
  * It will be replaced to use TZ or eSE based key protection.
@@ -829,15 +832,17 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 
 #ifdef USE_SSS
 	if (dm_get_easy_setup_use_artik_crt()) {
-		if (things_sss_key_handler_init() < 0) {
-			THINGS_LOG_E(TAG, "InitializeSSSKeyHandlers() Fail");
+		if (!g_b_init_key && things_sss_key_handler_init() < 0) {
+			THINGS_LOG_E(TAG, "g_b_init_key = false and InitializeSSSKeyHandlers() Fail");
 			return OC_STACK_ERROR;
 		}
+		g_b_init_key = true;
 
-		if (things_sss_rootca_handler_init(subject_uuid) < 0) {
-			THINGS_LOG_E(TAG, "SSSRootCAHandler() Fail");
+		if (!g_b_init_cert && things_sss_rootca_handler_init(subject_uuid) < 0) {
+			THINGS_LOG_E(TAG, "g_b_init_cert = false and SSSRootCAHandler() Fail");
 			return OC_STACK_ERROR;
 		}
+		g_b_init_cert = true;
 	} else
 #endif
 	{
