@@ -336,13 +336,14 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			/* Provide capabilities of our Speech Detect */
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+			caps->ac_controls.b[0] = 0;
 
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-			caps->ac_controls.b[0] = AUDIO_SD_ENDPOINT_DETECT;
+			caps->ac_controls.b[0] |= AUDIO_SD_KEYWORD_DETECT;
 #endif
 
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-			caps->ac_controls.b[0] |= AUDIO_SD_KEYWORD_DETECT;
+			caps->ac_controls.b[0] |= AUDIO_SD_ENDPOINT_DETECT;
 #endif
 
 #else
@@ -431,18 +432,19 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 		break;
 
 	case AUDIO_PU_SPEECH_DETECT:
+		audvdbg("  AUDIO_PU_SPEECH_DETECT\n");
 		switch (caps->ac_subtype) {
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
-		case AUDIO_SD_ENDPOINT_DETECT:
+		case AUDIO_SD_KEYWORD_DETECT:
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-			priv->endpoint_detect = true;
+			priv->keyword_detect = true;
 #else
 			ret = -EINVAL;
 #endif
 			break;
-		case AUDIO_SD_KEYWORD_DETECT:
+		case AUDIO_SD_ENDPOINT_DETECT:
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-			priv->keyword_detect = true;
+			priv->endpoint_detect = true;
 #else
 			ret = -EINVAL;
 #endif
@@ -476,7 +478,7 @@ static int null_shutdown(FAR struct audio_lowerhalf_s *dev)
 }
 
 /****************************************************************************
- * Name: null_workerthread
+ * Name: null_processthread
  *
  *  This is the thread that feeds data to the chip and keeps the audio
  *  stream going.
@@ -494,9 +496,11 @@ static void *null_processthread(pthread_addr_t pvarg)
 {
 	FAR struct null_dev_s *priv = (struct null_dev_s *)pvarg;
 	struct audio_msg_s msg;
+
 	while (!priv->process_terminate) {
-		audvdbg("count : %d state : %d\n", priv->frames, priv->speech_state);
+		audvdbg("count : %d state : %d kd : %d epd : %d\n", priv->frames, priv->speech_state, priv->keyword_detect, priv->endpoint_detect);
 		if (priv->speech_state == AUDIO_NULL_SPEECH_STATE_NONE) {
+			usleep(10 * 1000);
 			continue;
 		}
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
@@ -512,7 +516,8 @@ static void *null_processthread(pthread_addr_t pvarg)
 #endif
 
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-		if ((priv->endpoint_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_KD)) {
+		if ((priv->endpoint_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_IDLE)) {
+			audvdbg("EPD Frames: %d\n", priv->frames);
 			if (priv->frames == AUDIO_NULL_ENDPOINT_DETECT_THRESHOLD) {
 				audvdbg("EndPoint Detected!!\n");
 				priv->speech_state = AUDIO_NULL_SPEECH_STATE_EPD;
@@ -528,6 +533,9 @@ static void *null_processthread(pthread_addr_t pvarg)
 		}
 		usleep(10 * 1000);
 	}
+
+	audvdbg("############## End of null_processthread ##############\n");
+
 	return NULL;
 }
 
@@ -688,7 +696,8 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 	pthread_attr_init(&tattr);
 	(void)pthread_attr_setstacksize(&tattr, CONFIG_AUDIO_NULL_WORKER_STACKSIZE);
 
-	audvdbg("Starting worker thread\n");
+	audvdbg("#### Starting worker thread\n");
+	priv->process_terminate = false;
 	ret = pthread_create(&priv->process_threadid, &tattr, null_processthread, (pthread_addr_t) priv);
 	if (ret != OK) {
 		auddbg("ERROR: pthread_create failed: %d\n", ret);
@@ -696,7 +705,7 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 		pthread_setname_np(priv->process_threadid, "null audio process");
 		auddbg("Created worker thread\n");
 	}
-	priv->process_terminate = false;
+
 	audvdbg("Return %d\n", ret);
 	return ret;
 }
