@@ -447,7 +447,7 @@ static void utc_media_MediaPlayer_setVolume_n(void)
 	if (mp.setVolume(prev) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
 		mp.setVolume(prev + 1);
 		mp.getVolume(&volume);
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", prev, volume, mp.destroy());		
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", prev + 1, volume, mp.destroy());		
 	} else {
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(11), media::PLAYER_OK, mp.destroy());
 	}

@@ -632,8 +632,8 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
 	if (ret < 0) {
-		meddbg("Fail to set a volume, ret = %d\n", ret);
-		if (ret == -EACCES) {
+		meddbg("Fail to set a volume, ret = %d errno : %d\n", ret, errno);
+		if (errno == EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
@@ -1574,7 +1574,7 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&cap_desc);
 	if (ret < 0) {
-		if (ret == -EINVAL) {
+		if (errno == EINVAL) {
 			meddbg("Device doesn't support it!\n");
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
@@ -1649,10 +1649,10 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	if (ret < 0) {
-		if (ret == -EBUSY) {
+		if (errno == EBUSY) {
 			meddbg("Already Registered\n");
 			ret = AUDIO_MANAGER_DEVICE_ALREADY_IN_USE;
-		} else if (ret == -EINVAL) {
+		} else if (errno == EINVAL) {
 			meddbg("Device doesn't support it!\n");
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
