@@ -78,6 +78,10 @@
 
 #ifdef CONFIG_AUDIO
 
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+#include <mqueue.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/

@@ -1,0 +1,3 @@
+config ENTRY_SPEECH_DETECTOR_TEST
+	bool "\"Speech Detector Test\" Application"
+	depends on EXAMPLES_SPEECH_DETECTOR_TEST

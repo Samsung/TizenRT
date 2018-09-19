@@ -20,22 +20,21 @@
 
 ASRCS		=
 CSRCS		=
-CXXSRCS		=
 
-CXXSRCS += \
+CSRCS += \
 	fftwrap.c \
 	filterbank.c \
-	kiss_fft.c \
+	kiss_fft_for_epd.c \
 	kiss_fftr.c \
 	mdf.c \
 	preprocess.c
 
-CXXFLAGS += -Wno-shadow
+CFLAGS += -Wno-shadow
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 
-SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS)
+SRCS		= $(ASRCS) $(CSRCS)
 OBJS		= $(AOBJS) $(COBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -68,7 +67,7 @@ $(COBJS): %$(OBJEXT): %.c
 	$(Q) touch .built
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend

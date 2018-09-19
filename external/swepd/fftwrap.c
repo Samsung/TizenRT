@@ -293,7 +293,7 @@ void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
 #elif defined(USE_KISS_FFT)
 
 #include "kiss_fftr.h"
-#include "kiss_fft.h"
+#include "kiss_fft_for_epd.h"
 
 struct kiss_config {
    kiss_fftr_cfg forward;
