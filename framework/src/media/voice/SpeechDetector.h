@@ -53,12 +53,6 @@ public:
 private:
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
 	std::shared_ptr<EndPointDetector> mEndPointDetector;
-
-	int mKeywordDetectorCard;
-	int mKeywordDetectorDevice;
-
-	int mEndPointDetectorCard;
-	int mEndPointDetectorDevice;
 };
 
 } // namespace voice
