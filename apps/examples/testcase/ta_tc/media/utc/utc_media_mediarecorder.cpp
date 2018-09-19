@@ -120,6 +120,7 @@ static void utc_media_MediaRecorder_setVolume_p(void)
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, mr.destroy());
 	}
 	mr.destroy();
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_setVolume_n(void)
@@ -137,6 +138,7 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, mr.destroy());
 	}
 	mr.destroy();
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_getVolume_p(void)
