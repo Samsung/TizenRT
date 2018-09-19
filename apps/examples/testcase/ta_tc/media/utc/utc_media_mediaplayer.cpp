@@ -388,8 +388,7 @@ static void utc_media_MediaPlayer_getVolume_p(void)
 
 	mp.create();
 
-	for (int i = 0; i <= 10; ++i)
-	{
+	for (int i = 0; i <= 10; ++i) {
 		if (mp.setVolume(i) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
 			mp.getVolume(&volume);
 			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaPlayer_getVolume", volume, 0, mp.destroy());

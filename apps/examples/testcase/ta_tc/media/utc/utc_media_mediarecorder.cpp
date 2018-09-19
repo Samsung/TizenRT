@@ -149,8 +149,7 @@ static void utc_media_MediaRecorder_getVolume_p(void)
 
 	mr.create();
 
-	for (int i = 0; i <= 10; ++i)
-	{
+	for (int i = 0; i <= 10; ++i) {
 		if (mr.setVolume(i) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 			mr.getVolume(&volume);
 			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, 0, mr.destroy());
