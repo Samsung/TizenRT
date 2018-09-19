@@ -70,6 +70,8 @@ char *g_client_ip_str;
 sem_t ap_conn_sem;
 sem_t g_sem_result;
 sem_t g_sem_join;
+bool in_specific_scan;
+char *ssid_specific;
 
 /****************************************************************************
  * Private Functions
@@ -211,12 +213,24 @@ int8_t sw_ScanResultHandler(slsi_reason_t *reason)
 {
 	if (reason->reason_code == 0) {
 		slsi_scan_info_t *results;
+
 		WiFiGetScanResults(&results);
-		printScanResult(results);
+		if (in_specific_scan == 1) {
+			printScanResult(results, in_specific_scan, ssid_specific);
+
+			in_specific_scan = 0;
+			if (ssid_specific != NULL) {
+				free(ssid_specific);
+				ssid_specific = NULL;
+			}
+		} else {
+			printScanResult(results, 0, NULL);
+		}
 		WiFiFreeScanResults(&results);
 	} else {
 		printf("Scan failed reason: %d, locally_generated: %d\n", reason->reason_code, reason->locally_generated);
 	}
+
 	sem_post(&g_sem_result);
 	return SLSI_STATUS_SUCCESS;
 }
@@ -237,6 +251,9 @@ int8_t doStartSta(void)
 	} else {
 		printf("Failed to start STA mode (error: %d)\n", result);
 	}
+
+	in_specific_scan = 0;
+
 	return result;
 }
 
@@ -379,6 +396,18 @@ int8_t doSpecificScan(uint8_t *ssid, uint8_t ssid_len, char *passphrase, char *s
 		conf = getSecurityConfig(sec, passphrase, g_mode);
 	}
 
+	in_specific_scan = 1;
+	if (ssid_specific != NULL) {
+		free(ssid_specific);
+		ssid_specific = NULL;
+	}
+	ssid_specific = zalloc(WPA_MAX_SSID_LEN);
+	if (ssid_specific == NULL) {
+		printf("Failed to alloc ssid_specific\n");
+		return result;
+	}
+	strncpy(ssid_specific, (char *)ssid, ssid_len);
+
 	WiFiRegisterScanCallback(sw_ScanResultHandler);
 	if (wifiStarted && WiFiScanSpecificNetwork(ssid, ssid_len, conf) == SLSI_STATUS_SUCCESS) {
 		result = SLSI_STATUS_SUCCESS;
@@ -468,6 +497,9 @@ int8_t doStartAP(char *ssid, char *sec, char *passphrase, uint8_t channel)
 		free(ap_config);
 		ap_config = NULL;
 	}
+
+	in_specific_scan = 0;
+
 	return result;
 }
 
@@ -913,13 +945,13 @@ int8_t parseCmdLine(int argc, char *argv[])
 
 			ssid_len = strlen(ssid);
 			if (argc == 3) {
-				printf("Starting scan for specific AP with info\n:  ssid: %s\n  Secmode: open\n", ssid);
+				printf("Starting scan for specific AP with info:\n  SSID: %s, Sec_mode: open\n", ssid);
 				(void)doSpecificScan((uint8_t *) ssid, ssid_len, NULL, NULL);
 			} else {
 				char *secmode = argv[4];
 				char *passphrase = argv[3];
 
-				printf("Starting scan for specific AP with info\n:  ssid: %s\n Pass: %s\n  Secmode: %s\n", ssid, passphrase, secmode);
+				printf("Starting scan for specific AP with info:\n  SSID: %s, Passphrase: %s, Sec_mode: %s\n", ssid, passphrase, secmode);
 				(void)doSpecificScan((uint8_t *) ssid, ssid_len, passphrase, secmode);
 			}
 		}

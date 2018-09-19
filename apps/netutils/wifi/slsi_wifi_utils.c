@@ -190,21 +190,30 @@ static void resultStringEncode(char *txt, size_t maxlen, const u8 *data, size_t 
 	*txt = '\0';
 }
 
-void printScanResult(slsi_scan_info_t *list)
+void printScanResult(slsi_scan_info_t *list, bool scan_specific, char *ssid_scan)
 {
 	// if NULL scan finished
 	int count = 0;
 	char ssid[MAX_SSID_LEN];
 	slsi_scan_info_t *current_element = list;
+
 	printf("Scan Result - networks:\n");
+	if (scan_specific == 1)
+		printf("  It will show up only scan result for specific scan (%s)\n", ssid_scan);
 	printf("          %-20.20s %-8.8s %-40.40s %-6.6s %s\n", "BSSID", "RSSI", "SECURITY", "CH", "SSID");
+
 	while (current_element) {
 		char modestring[MODE_STRING_MAX];
 		count++;
 		getSecurityModeString(current_element->sec_modes, current_element->num_sec_modes, modestring);
 
 		resultStringEncode(ssid, MAX_SSID_LEN, current_element->ssid, current_element->ssid_len);
-		printf("     %3.3d) %-20.20s %-8.8d %-40.40s %-6.6d %.32s \n", count, current_element->bssid, current_element->rssi, modestring, current_element->channel, ssid);
+		if (scan_specific == 1) {
+			if (strncmp(ssid, ssid_scan, MAX_SSID_LEN) == 0)
+				printf("     %3.3d) %-20.20s %-8.8d %-40.40s %-6.6d %.32s\n", count, current_element->bssid, current_element->rssi, modestring, current_element->channel, ssid);
+		} else {
+			printf("     %3.3d) %-20.20s %-8.8d %-40.40s %-6.6d %.32s\n", count, current_element->bssid, current_element->rssi, modestring, current_element->channel, ssid);
+		}
 		current_element = current_element->next;
 	}
 }

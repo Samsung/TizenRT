@@ -65,7 +65,7 @@ slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterF
 /* prints a nicely ordered list of the scan results from the scan_info list
  */
 
-void printScanResult(slsi_scan_info_t *list);
+void printScanResult(slsi_scan_info_t *list, bool scan_specific, char *ssid_scan);
 
 #undef EXTERN
 #ifdef __cplusplus
