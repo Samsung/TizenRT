@@ -351,13 +351,17 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 		mbedtls_ssl_conf_curves(ctx->conf, (mbedtls_ecp_group_id *)opt->force_curves);
 	}
 
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
 	if (opt->client_rpk) {
 		mbedtls_ssl_conf_client_rpk_support(ctx->conf, 1);
 	}
+#endif
 
+#if defined(MBEDTLS_SSL_SERVER_RPK)
 	if (opt->server_rpk) {
 		mbedtls_ssl_conf_server_rpk_support(ctx->conf, 1);
 	}
+#endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
 	if (opt->psk_callback) {
@@ -365,7 +369,9 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 	}
 #endif
 
-	if ((ret = mbedtls_ssl_setup(session->ssl, ctx->conf) != 0)) {
+	ret = mbedtls_ssl_setup(session->ssl, ctx->conf);
+
+	if (ret != 0) {
 		ret = TLS_SET_DEFAULT_FAIL;
 		goto errout;
 	}
@@ -587,7 +593,6 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 	else
 		session->net.fd = -1;
 
-
 	struct timeval timeout;
 
 	timeout.tv_sec = 0;
@@ -663,6 +668,11 @@ reset:
 		}
 		session->b_ctx.n = n;
 	} else {
+		if (session->net.fd < 0) {
+			EASY_TLS_DEBUG("wrong value of fd");
+			goto errout;
+		}
+
 		if (setsockopt(session->net.fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
 			EASY_TLS_DEBUG("error setsockopt : %s\n", strerror(errno));
 		}
