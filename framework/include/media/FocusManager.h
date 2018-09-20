@@ -34,6 +34,8 @@
 #include <mutex>
 #include <string>
 
+#include <unistd.h>
+
 #include <media/FocusRequest.h>
 
 namespace media {
@@ -59,6 +61,7 @@ public:
 	static FocusManager &getFocusManager();
 	/**
 	 * @brief Abandon Focus
+	 * @remarks Do not call this funtion within FocusChangeListner::onFocusChange()
 	 * @details @b #include <media/FocusManager.h>
 	 * param[in] focusRequest FocusRequest to abandon
 	 * @return return FOCUS_REQUEST_SUCCESS on Success, else return FOCUS_REQUEST_FAIL
@@ -67,29 +70,41 @@ public:
 	int abandonFocus(std::shared_ptr<FocusRequest> focusRequest);
 	/**
 	 * @brief Request Focus
+	 * @remarks Do not call this funtion within FocusChangeListner::onFocusChange()
 	 * @details @b #include <media/FocusManager.h>
 	 * param[in] focusRequest FocusRequest to request
 	 * @return return FOCUS_REQUEST_SUCCESS on Success, else return FOCUS_REQUEST_FAIL
 	 * @since TizenRT v2.0
 	 */
 	int requestFocus(std::shared_ptr<FocusRequest> focusRequest);
+	/**
+	 * @brief Get a pid of the current FocusRequester
+	 * @remarks Do not call this funtion within FocusChangeListner::onFocusChange()
+	 * @details @b #include <media/FocusManager.h>
+	 * @return return pid of the current focused thread
+	 * @since TizenRT v2.0
+	 */
+	pid_t getCurrentRequesterPid();
 
 private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener);
+		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener, pid_t pid);
 		bool hasSameId(std::string id);
 		void notify(int focusChange);
+		pid_t getpid();
 
 	private:
 		std::string mId;
 		std::shared_ptr<FocusChangeListener> mListener;
+		pid_t mPid;
 	};
 
-	FocusManager() = default;
+	FocusManager();
 	virtual ~FocusManager() = default;
 	void removeFocusElement(std::string id);
+	pid_t mCurrentRequesterPid;
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;
 };

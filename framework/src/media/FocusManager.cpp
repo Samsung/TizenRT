@@ -16,12 +16,19 @@
  *
  ******************************************************************/
 
+#include <debug.h>
+
 #include <media/FocusManager.h>
 
 namespace media {
 
-FocusManager::FocusRequester::FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener)
-	: mId(id), mListener(listener)
+FocusManager::FocusManager() :
+	mCurrentRequesterPid(0)
+{
+}
+
+FocusManager::FocusRequester::FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener, pid_t pid) :
+	mId(id), mListener(listener), mPid(pid)
 {
 }
 
@@ -37,6 +44,11 @@ void FocusManager::FocusRequester::notify(int focusChange)
 	}
 }
 
+pid_t FocusManager::FocusRequester::getpid()
+{
+	return mPid;
+}
+
 FocusManager &FocusManager::getFocusManager()
 {
 	static FocusManager focusManager;
@@ -47,6 +59,7 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 {
 	std::lock_guard<std::mutex> lock(mFocusLock);
 	if (focusRequest == nullptr) {
+		meddbg("%s[line : %d] Fail : nullptr parameter\n", __func__, __LINE__);
 		return FOCUS_REQUEST_FAIL;
 	}
 
@@ -55,7 +68,13 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 		mFocusList.pop_front();
 		focus->notify(FOCUS_LOSS);
 		if (!mFocusList.empty()) {
-			mFocusList.front()->notify(FOCUS_GAIN);
+			auto currentFocus = mFocusList.front();
+			mCurrentRequesterPid = currentFocus->getpid();
+			medvdbg("Focus changed : current focus pid : %u\n", mCurrentRequesterPid);
+			currentFocus->notify(FOCUS_GAIN);
+		} else {
+			medvdbg("All focus are lost\n");
+			mCurrentRequesterPid = 0;
 		}
 	} else {
 		removeFocusElement(focusRequest->getId());
@@ -68,6 +87,7 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 {
 	std::lock_guard<std::mutex> lock(mFocusLock);
 	if (focusRequest == nullptr) {
+		meddbg("%s[line : %d] Fail : nullptr parameter\n", __func__, __LINE__);
 		return FOCUS_REQUEST_FAIL;
 	}
 
@@ -81,11 +101,19 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		mFocusList.front()->notify(FOCUS_LOSS);
 	}
 
-	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getId(), focusRequest->getListener());
+	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getId(), focusRequest->getListener(), getpid());
 	mFocusList.push_front(focusRequester);
+	mCurrentRequesterPid = focusRequester->getpid();
+	medvdbg("Focus changed : current focus pid : %u\n", mCurrentRequesterPid);
 	focusRequester->notify(FOCUS_GAIN);
 
 	return FOCUS_REQUEST_SUCCESS;
+}
+
+pid_t FocusManager::getCurrentRequesterPid()
+{
+	std::lock_guard<std::mutex> lock(mFocusLock);
+	return mCurrentRequesterPid;
 }
 
 void FocusManager::removeFocusElement(std::string id)
