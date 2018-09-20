@@ -178,6 +178,21 @@ static void utc_media_MediaRecorder_getVolume_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_MediaRecorder_getMaxVolume_p(void)
+{
+	uint8_t volume;
+	MediaRecorder mr;
+	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+
+	mr.create();
+
+	mr.getVolume(&volume);
+	TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getMaxVolume", volume, 10, mr.destroy());
+
+	mr.destroy();
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_media_MediaRecorder_prepare_p(void)
 {
 	MediaRecorder mr;
@@ -541,6 +556,8 @@ int utc_media_mediarecorder_main(void)
 
 	utc_media_MediaRecorder_getVolume_p();
 	utc_media_MediaRecorder_getVolume_n();
+
+	utc_media_MediaRecorder_getMaxVolume_p();
 
 	utc_media_MediaRecorder_prepare_p();
 	utc_media_MediaRecorder_prepare_n();

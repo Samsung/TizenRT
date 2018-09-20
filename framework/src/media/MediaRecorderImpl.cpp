@@ -409,6 +409,42 @@ void MediaRecorderImpl::getRecorderVolume(uint8_t *vol, recorder_result_t &ret)
 	notifySync();
 }
 
+recorder_result_t MediaRecorderImpl::getMaxVolume(uint8_t *vol)
+{
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorderImpl::getMaxVolume()\n");
+
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return RECORDER_ERROR_INVALID_PARAM;
+	}
+
+	recorder_result_t ret = RECORDER_OK;
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		ret = RECORDER_ERROR_NOT_ALIVE;
+		return ret;
+	}
+
+	mrw.enQueue(&MediaRecorderImpl::getRecorderMaxVolume, shared_from_this(), vol, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaRecorderImpl::getRecorderMaxVolume(uint8_t *vol, recorder_result_t &ret)
+{
+	medvdbg("getRecorderMaxVolume\n");
+
+	if (get_max_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_max_audio_volume() is failed, ret = %d\n", ret);
+		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
+		return notifySync();
+	}
+
+	notifySync();
+}
+
 recorder_result_t MediaRecorderImpl::setVolume(uint8_t vol)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);

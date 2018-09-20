@@ -417,6 +417,20 @@ static void utc_media_MediaPlayer_getVolume_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_MediaPlayer_getMaxVolume_p(void)
+{
+	uint8_t volume;
+	media::MediaPlayer mp;
+
+	mp.create();
+
+	mp.getMaxVolume(&volume);
+	TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_getMaxVolume", volume, 10, mp.destroy());
+
+	mp.destroy();
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_media_MediaPlayer_setVolume_p(void)
 {
 	uint8_t prev, volume;
@@ -487,6 +501,8 @@ int utc_media_MediaPlayer_main(void)
 
 	utc_media_MediaPlayer_getVolume_p();
 	utc_media_MediaPlayer_getVolume_n();
+
+	utc_media_MediaPlayer_getMaxVolume_p();
 
 	utc_media_MediaPlayer_setVolume_p();
 	utc_media_MediaPlayer_setVolume_n();

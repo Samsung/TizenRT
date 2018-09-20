@@ -404,6 +404,42 @@ void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
 	notifySync();
 }
 
+player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
+{
+	player_result_t ret = PLAYER_OK;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer getMaxVolume\n");
+
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return PLAYER_ERROR_INVALID_PARAMETER;
+	}
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
+{
+	medvdbg("MediaPlayer Worker : getMaxVolume\n");
+	if (get_max_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_max_audio_volume() is failed, ret = %d\n", ret);
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+	}
+
+	notifySync();
+}
+
 player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 {
 	player_result_t ret = PLAYER_OK;
