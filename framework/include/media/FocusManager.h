@@ -34,6 +34,8 @@
 #include <mutex>
 #include <string>
 
+#include <unistd.h>
+
 #include <media/FocusRequest.h>
 
 namespace media {
@@ -47,23 +49,27 @@ public:
 	static FocusManager &getFocusManager();
 	int abandonFocus(std::shared_ptr<FocusRequest> focusRequest);
 	int requestFocus(std::shared_ptr<FocusRequest> focusRequest);
+	pid_t getCurrentFocusedPid();
 
 private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener);
+		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener, pid_t pid);
 		bool hasSameId(std::string id);
 		void notify(int focusChange);
+		pid_t getpid();
 
 	private:
 		std::string mId;
 		std::shared_ptr<FocusChangeListener> mListener;
+		pid_t mPid;
 	};
 
-	FocusManager() = default;
+	FocusManager();
 	virtual ~FocusManager() = default;
 	void removeFocusElement(std::string id);
+	pid_t mCurrentFocusedPid;
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;
 };
