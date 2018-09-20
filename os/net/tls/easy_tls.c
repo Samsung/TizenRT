@@ -548,6 +548,8 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 	socklen_t n = (socklen_t) sizeof( client_addr );
 	char buf[1] = { 0 };
 	tls_session *session = NULL;
+	int type;
+	socklen_t type_len = (int)sizeof(type);
 
 	if (fd < 0 || ctx == NULL || opt == NULL) {
 		EASY_TLS_DEBUG("TLSSession input error\n");
@@ -589,13 +591,28 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 
 reset:
 
+	if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&type, &type_len) != 0 ||
+					(type != SOCK_STREAM && type != SOCK_DGRAM)) {
+		EASY_TLS_DEBUG("error getsockopt : %s\n", strerror(errno));
+		goto errout;
+	}
+
 	if (opt->server == MBEDTLS_SSL_IS_SERVER) {
 		mbedtls_ssl_session_reset(session->ssl);
 
-		if ((ret = recvfrom(fd, buf, sizeof(buf),
-			MSG_PEEK, (struct sockaddr *)&client_addr, &n)) < 0) {
-			EASY_TLS_DEBUG("recvfrom failed: %s\n", strerror(errno));
-			goto errout;
+		if (type == SOCK_STREAM) {
+			ret = fd = (int)accept(fd, (struct sockaddr *)&client_addr, &n);
+			if (ret < 0) {
+				EASY_TLS_DEBUG("accept failed: %s\n", strerror(errno));
+				goto errout;
+			}
+		} else {
+
+			if ((ret = recvfrom(fd, buf, sizeof(buf),
+				MSG_PEEK, (struct sockaddr *)&client_addr, &n)) < 0) {
+				EASY_TLS_DEBUG("recvfrom failed: %s\n", strerror(errno));
+				goto errout;
+			}
 		}
 
 		if( client_addr.ss_family == AF_INET )
@@ -624,7 +641,11 @@ reset:
 			EASY_TLS_DEBUG("error setsockopt : %s\n", strerror(errno));
 		}
 
-		session->b_ctx.fd = fd;
+		if (type == SOCK_STREAM) {
+			session->net.fd = fd;
+		} else {
+			session->b_ctx.fd = fd;
+		}
 
 		TLS_FREE(session->b_ctx.addr);
 
