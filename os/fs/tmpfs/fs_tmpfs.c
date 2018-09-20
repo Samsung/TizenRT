@@ -379,7 +379,6 @@ static int tmpfs_realloc_file(FAR struct tmpfs_file_s **tfo,
 	FAR struct tmpfs_file_s *newtfo;
 	size_t objsize;
 	size_t allocsize;
-	size_t delta;
 
 	/* Check if the current allocation is sufficent */
 
@@ -397,8 +396,7 @@ static int tmpfs_realloc_file(FAR struct tmpfs_file_s **tfo,
 			 * lot.
 			 */
 
-			delta = oldtfo->tfo_alloc - objsize;
-			if (delta <= CONFIG_FS_TMPFS_FILE_FREEGUARD) {
+			if (oldtfo->tfo_alloc - objsize <= CONFIG_FS_TMPFS_FILE_FREEGUARD) {
 				/* Hasn't shrunk enough.. Return doing nothing for now */
 
 				oldtfo->tfo_size = newsize;

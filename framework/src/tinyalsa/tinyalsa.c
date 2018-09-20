@@ -165,6 +165,9 @@ struct pcm {
 	unsigned int mmap_idx;
 };
 
+int pcm_start(struct pcm *pcm);
+int pcm_stop(struct pcm *pcm);
+
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
 {
 	va_list ap;

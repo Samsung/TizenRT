@@ -57,6 +57,7 @@
 
 #include <errno.h>
 #include <poll.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <netinet/in.h>
@@ -428,7 +429,7 @@ int copy_socket(void *arg)
 				return -1;
 			}
 
-			struct netmon_sock *sock_info = (struct netmon_sock *) malloc(sizeof(struct netmon_sock));
+			struct netmon_sock *sock_info = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
 			if (!sock_info) {
 				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
 				set_errno(ENOMEM);
