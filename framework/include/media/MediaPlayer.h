@@ -70,14 +70,14 @@ class MediaPlayer
 {
 public:
 	/**
-	 * @brief Constructs an empty MediaPlayer.
+	 * @brief Construct an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
 	 * @since TizenRT v2.0
 	 */
 	MediaPlayer();
 
 	/**
-	 * @brief Deconstructs an empty MediaPlayer.
+	 * @brief Deconstruct an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
 	 * @since TizenRT v2.0
 	 */
@@ -86,7 +86,7 @@ public:
 	/**
 	 * @brief Create the MediaPlayer for playback
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the create operation
 	 * @since TizenRT v2.0
 	 */
@@ -95,7 +95,7 @@ public:
 	/**
 	 * @brief Destroy MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the destroy operation
 	 * @since TizenRT v2.0
 	 */
@@ -104,7 +104,7 @@ public:
 	/**
 	 * @brief Allocate and prepare resources related to the player, it should be called before start
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0
 	 */
@@ -113,7 +113,7 @@ public:
 	/**
 	 * @brief Releases allocated resources related to the player.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0
 	 */
@@ -122,9 +122,9 @@ public:
 	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaPlayerWorker begin playback through the queue
-	 * @return The result of the unpreapre operation
+	 * @return The result of the unprepare operation
 	 * @since TizenRT v2.0
 	 */
 	player_result_t start();
@@ -132,7 +132,7 @@ public:
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -142,7 +142,7 @@ public:
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0
@@ -150,27 +150,36 @@ public:
 	player_result_t stop();
 
 	/**
-	 * @brief Gets the current volume
+	 * @brief Get the current volume
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The value of current volume
 	 * @since TizenRT v2.0
 	 */
 	player_result_t getVolume(uint8_t *volume);
 
 	/**
-	 * @brief Sets the volume adjusted
+	 * @brief Get the maximum output volume
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
-	 * @param[in] vol The vol that the value of mic volume
+	 * This function is a synchronous API
+	 * @return The value of the maximum volume
+	 * @since TizenRT v2.0
+	 */
+	player_result_t getMaxVolume(uint8_t *volume);
+
+	/**
+	 * @brief Set the volume adjusted
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous API
+	 * @param[in] vol The volume value to set
 	 * @since TizenRT v2.0
 	 */
 	player_result_t setVolume(uint8_t);
 
 	/**
-	 * @brief Sets the DataSource of input data
+	 * @brief Set the DataSource of input data
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @param[in] dataSource The dataSource that the config of input data
 	 * @return The result of the setDataSource operation
 	 * @since TizenRT v2.0
@@ -178,9 +187,9 @@ public:
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 
 	/**
-	 * @brief Sets the observer of MediaPlayer
+	 * @brief Set the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * It sets the user's function
 	 * @param[in] observer The callback to be set for Media Player Observer.
 	 * @return The result of the setObserver operation
@@ -191,7 +200,7 @@ public:
 	/**
 	 * @brief MediaPlayer operator==
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * Compares the MediaPlayer objects for equality
 	 * @return The result of the compare operation for MediaPlayer object
 	 * @since TizenRT v2.0

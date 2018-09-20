@@ -45,7 +45,7 @@ static const int TEST_AAC = 2;
 static const int TEST_OPUS = 3;
 static const int TEST_BUFFER = 4;
 
-enum test_command_e { APP_OFF, PLAYER_START, PLAYER_PAUSE, PLAYER_RESUME, PLAYER_STOP, VOLUME_UP, VOLUME_DOWN };
+enum test_command_e { APP_OFF, PLAYER_START, PLAYER_PAUSE, PLAYER_RESUME, PLAYER_STOP, GET_MAX_VOLUME, VOLUME_UP, VOLUME_DOWN };
 
 class MyMediaPlayer : public MediaPlayerObserverInterface,
 					  public FocusChangeListener,
@@ -158,6 +158,14 @@ void MyMediaPlayer::doCommand(int command)
 		}
 		isSourceSet = false;
 		break;
+	case GET_MAX_VOLUME:
+		cout << "GET_MAX_VOLUME is selected" << endl;
+		if (mp.getMaxVolume(&volume) != PLAYER_OK) {
+			cout << "MediaPlayer::getMaxVolume failed" << endl;
+		} else {
+			cout << "Max Volume is " << (int)volume << endl;
+		}
+		break;
 	case VOLUME_UP:
 		cout << "VOLUME_UP is selected" << endl;
 		if (mp.getVolume(&volume) != PLAYER_OK) {
@@ -181,7 +189,10 @@ void MyMediaPlayer::doCommand(int command)
 		} else {
 			cout << "Volume was " << (int)volume << endl;
 		}
-		if (mp.setVolume(volume - 1) != PLAYER_OK) {
+		if (volume > 0 ) {
+			volume--;
+		}
+		if (mp.setVolume(volume) != PLAYER_OK) {
 			cout << "MediaPlayer::setVolume failed" << endl;
 		}
 		if (mp.getVolume(&volume) != PLAYER_OK) {
@@ -329,10 +340,11 @@ private:
 		cout << " 2. PLAYER_PAUSE    " << endl;
 		cout << " 3. PLAYER_RESUME   " << endl;
 		cout << " 4. PLAYER_STOP     " << endl;
-		cout << " 5. VOLUME_UP       " << endl;
-		cout << " 6. VOLUME_DOWN     " << endl;
+		cout << " 5. GET_MAX_VOLUME  " << endl;
+		cout << " 6. VOLUME_UP       " << endl;
+		cout << " 7. VOLUME_DOWN     " << endl;
 		cout << "====================" << endl;
-		return userInput(0, 6);
+		return userInput(0, 7);
 	}
 	shared_ptr<MyMediaPlayer> mPlayer[2];
 };
