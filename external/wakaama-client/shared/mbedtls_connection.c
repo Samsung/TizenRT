@@ -380,6 +380,14 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
 
     mbedtls_ssl_conf_authmode(&ssl->config, lwm2m_ssl_config->auth_mode);
 
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
+    mbedtls_ssl_conf_client_rpk_support(&ssl->config, 1);
+#endif
+
+#if defined(MBEDTLS_SSL_SERVER_RPK)
+    mbedtls_ssl_conf_server_rpk_support(&ssl->config, 1);
+#endif
+
     if (lwm2m_ssl_config->ciphersuites)
         mbedtls_ssl_conf_ciphersuites(&ssl->config, lwm2m_ssl_config->ciphersuites);
 
