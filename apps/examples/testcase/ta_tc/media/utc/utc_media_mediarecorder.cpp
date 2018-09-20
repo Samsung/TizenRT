@@ -133,7 +133,7 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 		mr.setVolume(prev + 1);
 		mr.getVolume(&volume);
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", prev, volume, mr.destroy());		
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", prev + 1, volume, mr.destroy());		
 	} else {
 		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, mr.destroy());
 	}
