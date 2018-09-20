@@ -113,7 +113,7 @@ ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 		return EOF;
 	}
 
-	return fwrite(buf,sizeof(unsigned char), size, mFp);
+	return fwrite(buf, sizeof(unsigned char), size, mFp);
 }
 
 FileOutputDataSource::~FileOutputDataSource()
