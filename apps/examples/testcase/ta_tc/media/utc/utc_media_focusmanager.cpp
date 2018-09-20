@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <media/FocusRequest.h>
 #include <media/FocusManager.h>
 #include "tc_common.h"
@@ -34,11 +35,12 @@ static void utc_media_FocusManager_requestFocus_p(void)
 	auto focusRequest = media::FocusRequest::Builder().build();
 	auto &focusManger = media::FocusManager::getFocusManager();
 	auto ret = focusManger.requestFocus(focusRequest);
-	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS);
-
-	focusManger.abandonFocus(focusRequest);
+	TC_ASSERT_EQ_CLEANUP("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS, goto cleanup);
 
 	TC_SUCCESS_RESULT();
+
+cleanup:
+	focusManger.abandonFocus(focusRequest);
 }
 
 static void utc_media_FocusManager_requestFocus_n(void)
@@ -70,6 +72,39 @@ static void utc_media_FocusManager_abandonFocus_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_FocusManager_getCurrentFocusedPid_p(void)
+{
+	auto focusRequest = media::FocusRequest::Builder().build();
+	auto &focusManger = media::FocusManager::getFocusManager();
+	focusManger.requestFocus(focusRequest);
+	auto ret = focusManger.getCurrentFocusedPid();
+	TC_ASSERT_EQ_CLEANUP("utc_media_FocusManager_getCurrentFocusedPid", ret, getpid(), goto cleanup);
+
+	TC_SUCCESS_RESULT();
+
+cleanup:
+	focusManger.abandonFocus(focusRequest);
+}
+
+static void utc_media_FocusManager_getCurrentFocusedPid_n(void)
+{
+	{
+		auto &focusManger = media::FocusManager::getFocusManager();
+		auto ret = focusManger.getCurrentFocusedPid();
+		TC_ASSERT_EQ("utc_media_FocusManager_getCurrentFocusedPid", ret, 0);
+	}
+	{
+		auto focusRequest = media::FocusRequest::Builder().build();
+		auto &focusManger = media::FocusManager::getFocusManager();
+		focusManger.requestFocus(focusRequest);
+		focusManger.abandonFocus(focusRequest);
+		auto ret = focusManger.getCurrentFocusedPid();
+		TC_ASSERT_EQ("utc_media_FocusManager_getCurrentFocusedPid", ret, 0);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
 int utc_media_FocusManager_main(void)
 {
 	utc_media_FocusManager_getFocusManager_p();
@@ -77,5 +112,7 @@ int utc_media_FocusManager_main(void)
 	utc_media_FocusManager_requestFocus_n();
 	utc_media_FocusManager_abandonFocus_p();
 	utc_media_FocusManager_abandonFocus_n();
+	utc_media_FocusManager_getCurrentFocusedPid_p();
+	utc_media_FocusManager_getCurrentFocusedPid_n();
 	return 0;
 }
