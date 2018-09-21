@@ -614,3 +614,17 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 	}
 	return wuret;
 }
+
+wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
+{
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	int ret = WiFiSetAutoconnect(check);
+	if (ret == SLSI_STATUS_SUCCESS) {
+		wuret = WIFI_UTILS_SUCCESS;
+		ndbg("[WU] External Autoconnect set to %d\n", check);
+	} else {
+		ndbg("[WU] External Autoconnect failed to set %d", check);
+	}
+	return wuret;
+}
+

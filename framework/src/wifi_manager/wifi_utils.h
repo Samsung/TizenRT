@@ -230,4 +230,15 @@ wifi_utils_result_e wifi_utils_start_sta(void);
  */
 wifi_utils_result_e wifi_utils_stop_softap(void);
 
+/**
+ * @brief enable/disable external autoconnect
+ *
+ * @param[in]   check :  enable/disable external autoconnect
+ *
+ * @return WIFI_UTILS_SUCCESS       :  success
+ * @return WIFI_UTILS_FAIL          :  fail
+ */
+wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check);
+
+
 #endif							//WIFI_UTILS_H
