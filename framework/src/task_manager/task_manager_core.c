@@ -31,14 +31,13 @@
 #include <debug.h>
 #include <queue.h>
 #include <time.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
-#include <tinyara/wqueue.h>
-#endif
 #include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
@@ -247,40 +246,58 @@ static void taskmgr_execute_unregister(int handle)
 	handle_cnt--;
 }
 
-static void taskmgr_late_unregister(void *arg)
+static void *taskmgr_late_unregister(void *arg)
 {
+	int ret;
+
+	while (1) {
+		ret = taskmgr_get_task_state((int)arg);
+		if (ret == TM_APP_STATE_STOP || ret == TM_APP_STATE_UNREGISTERED) {
+			break;
+		}
+		sleep(TM_INTERVAL_TRY_UNREGISTER);
+	}
 	taskmgr_execute_unregister((int)arg);
+	return NULL;
 }
 
 static int taskmgr_unregister(int handle)
 {
 	int state;
-	struct work_s *wq;
+	int ret;
+	int unregister_handle;
+	pthread_t pth;
+	pthread_attr_t attr;
 
-	if (IS_INVALID_HANDLE(handle)) {
+	unregister_handle = handle;
+
+	if (IS_INVALID_HANDLE(unregister_handle)) {
 		return TM_INVALID_PARAM;
 	}
 
-	state = taskmgr_get_task_state(handle);
+	state = taskmgr_get_task_state(unregister_handle);
 	if (state == TM_APP_STATE_UNREGISTERED) {
 		return TM_UNREGISTERED_APP;
-	}
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
-	else if (state == TM_APP_STATE_CANCELLING) {
+	} else if (state == TM_APP_STATE_CANCELLING) {
+		TM_STATUS(unregister_handle) = TM_APP_STATE_WAIT_UNREGISTER;
 		/* If task is on cancelling state, unregister will be treated later. */
-		wq = (struct work_s *)TM_ALLOC(sizeof(struct work_s));
-		if (wq == NULL) {
-			return TM_OUT_OF_MEMORY;
+		ret = pthread_attr_init(&attr);
+		if (ret != OK) {
+			return TM_OPERATION_FAIL;
 		}
-		/* FIX ME - wq should be freed after lpwork running. */
-		tmdbg("Unregister will be treated in low-priority work queue.\n");
-		(void)work_queue(USRWORK, wq, taskmgr_late_unregister, (void *)handle, 0);
+		attr.priority = TM_LATE_UNREGISTER_PRIO;
+		ret = pthread_create(&pth, &attr, taskmgr_late_unregister, (void *)unregister_handle);
+		if (ret != OK) {
+			return TM_OPERATION_FAIL;
+		}
+		pthread_setname_np(pth, "tm_late_unregister");
+		(void)pthread_detach(pth);
+
 		return OK;
 	}
-#endif
 
 	/* If task is on stop state, unregister immediately. */
-	taskmgr_execute_unregister(handle);
+	taskmgr_execute_unregister(unregister_handle);
 	return OK;
 }
 
@@ -372,7 +389,11 @@ void taskmgr_update_stop_status(int signo, siginfo_t *data)
 	}
 
 	/* task or pthread terminated well */
-	TM_STATUS(handle) = TM_APP_STATE_STOP;
+	if (TM_STATUS(handle) == TM_APP_STATE_WAIT_UNREGISTER) {
+		TM_STATUS(handle) = TM_APP_STATE_UNREGISTERED;
+	} else {
+		TM_STATUS(handle) = TM_APP_STATE_STOP;
+	}
 
 	TM_FREE(TM_STOP_INFO(handle));
 	TM_STOP_INFO(handle) = NULL;
@@ -382,7 +403,7 @@ static int taskmgr_stop(int handle, int caller_pid)
 {
 	int ret;
 	union sigval msg;
-	tm_termination_info_t info;
+	tm_termination_info_t *info;
 
 	if (IS_INVALID_HANDLE(handle)) {
 		return TM_INVALID_PARAM;
@@ -401,9 +422,13 @@ static int taskmgr_stop(int handle, int caller_pid)
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
 
 	if (TM_STOP_INFO(handle) != NULL) {
-		info.cb = CB_FUNC_OF(TM_STOP_INFO(handle));
-		info.cb_data = CB_DATA_OF(TM_STOP_INFO(handle));
-		msg.sival_ptr = &info;
+		info = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
+		if (info == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		info->cb = CB_FUNC_OF(TM_STOP_INFO(handle));
+		info->cb_data = CB_DATA_OF(TM_STOP_INFO(handle));
+		msg.sival_ptr = info;
 
 		ret = sigqueue(TM_PID(handle), SIGTM_TERMINATION, msg);
 		if (ret != OK) {

@@ -40,7 +40,9 @@ static void taskmgr_update_task_state(int handle)
 
 	ret = ioctl(fd, TMIOC_CHECK_ALIVE, TM_PID(handle));
 	if (ret != OK && TM_LIST_ADDR(handle) != NULL) {
-		TM_STATUS(handle) = TM_APP_STATE_STOP;
+		if (TM_STATUS(handle) == TM_APP_STATE_RUNNING || TM_STATUS(handle) == TM_APP_STATE_PAUSE) {
+			TM_STATUS(handle) = TM_APP_STATE_STOP;
+		}
 	}
 }
 

@@ -37,11 +37,12 @@
 /**
  * @brief Task State which managed by Task Manager
  */
-#define TM_APP_STATE_RUNNING      (1)
-#define TM_APP_STATE_PAUSE        (2)
-#define TM_APP_STATE_STOP         (3)
-#define TM_APP_STATE_UNREGISTERED (4)
-#define TM_APP_STATE_CANCELLING   (5)
+#define TM_APP_STATE_RUNNING         (1)
+#define TM_APP_STATE_PAUSE           (2)
+#define TM_APP_STATE_STOP            (3)
+#define TM_APP_STATE_UNREGISTERED    (4)
+#define TM_APP_STATE_CANCELLING      (5)
+#define TM_APP_STATE_WAIT_UNREGISTER (6)
 
 /**
  * @brief Task Permission

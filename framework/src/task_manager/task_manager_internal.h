@@ -81,6 +81,17 @@
 #endif
 
 /**
+ * @brief Late Unregister Options
+ */
+#ifdef CONFIG_SCHED_LPWORK
+#define TM_LATE_UNREGISTER_PRIO CONFIG_SCHED_LPWORKPRIORITY
+#else
+#define TM_LATE_UNREGISTER_PRIO 50
+#endif
+
+#define TM_INTERVAL_TRY_UNREGISTER 3
+
+/**
  * @brief Unicast Type
  */
 #define TM_UNICAST_SYNC      (0)
