@@ -191,12 +191,12 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%s: PID=%d Stack Used=%lu of %lu\n",
-			tcb->name, tcb->pid, (unsigned long)up_check_tcbstack(tcb),
-			(unsigned long)tcb->adj_stack_size);
+	lldbg("%s: PID=%d PRI=%d Stack Used=%lu of %lu\n",
+			tcb->name, tcb->pid, tcb->sched_priority,
+			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
 #else
-	lldbg("PID: %d Stack Used=%lu of %lu\n",
-			tcb->pid, (unsigned long)up_check_tcbstack(tcb),
+	lldbg("PID: %d PRI=%d Stack Used=%lu of %lu\n",
+			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
 			(unsigned long)tcb->adj_stack_size);
 #endif
 }
