@@ -31,7 +31,7 @@
 #define VENEER_NAME_THUMB2(name) veneer_thumb2_##name
 #define VENEER_NAME_ARM(name)    veneer_arm_##name
 
-#if defined(__thumb__) || defined(CONFIG_DDR)
+#if defined(__thumb__) || defined(CONFIG_BCM4390X_USE_EXTMEM)
 #define VECTOR_VENEER_NEEDED
 #endif
 

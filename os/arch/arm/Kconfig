@@ -27,7 +27,7 @@ config ARCH_CHIP_S5J
 		Samsung IoT SoC architectures (ARM Cortex R)
 
 config ARCH_CHIP_BCM4390X
-	bool "CY 4390X series"
+	bool "Cypress BCM4390X"
 	select ARCH_CORTEXR4
 	select ARCH_HAVE_MPU
 	select ARMV7M_MPU
