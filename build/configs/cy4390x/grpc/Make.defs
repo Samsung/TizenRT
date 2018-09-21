@@ -1,8 +1,8 @@
 ############################################################################
 #
-# Copyright 2018, Cypress Semiconductor Corporation or a subsidiary of 
+# Copyright 2018, Cypress Semiconductor Corporation or a subsidiary of
 # Cypress Semiconductor Corporation. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -28,19 +28,25 @@ else
 LDSCRIPT = flash-sram.ld
 endif
 
+ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++.a}
+EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+EXTRA_LIBS += -lsupc++
+endif
+
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
   DIRUNLINK = $(TOPDIR)/tools/unlink.sh
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
-  ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
-  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
+  ARCHINCLUDES = -I. -I "${shell cygpath -w $(TOPDIR)/include}" -I "${shell cygpath -w $(TOPDIR)/../framework/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include}"
+  ARCHXXINCLUDES = -I. -I "${shell cygpath -w $(TOPDIR)/include}" -I "${shell cygpath -w $(TOPDIR)/../framework/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
-  ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
-  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -I $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
+  ARCHINCLUDES = -I. -I $(TOPDIR)/include -I $(TOPDIR)/../framework/include -I $(TOPDIR)/../external/include
+  ARCHXXINCLUDES = -I. -I $(TOPDIR)/include -I $(TOPDIR)/../framework/include -I $(TOPDIR)/../external/include -I $(TOPDIR)/../external/include/libcxx
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 endif
 
@@ -71,7 +77,7 @@ endif
 
 ARCHCPUFLAGS = -mcpu=cortex-r4
 ARCHCFLAGS = -fno-builtin
-ARCHCXXFLAGS = -fno-builtin -fno-exceptions -fno-rtti
+ARCHCXXFLAGS = -fno-builtin
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 ifeq ($(CONFIG_ARM_UNWIND),y)
@@ -79,9 +85,12 @@ ifeq ($(CONFIG_ARM_UNWIND),y)
 endif
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
-CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
-CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+CXXFLAGS  = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES)
+CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
+CXXFLAGS += -fexceptions -fcheck-new -frtti -fpermissive
+CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
@@ -91,9 +100,13 @@ OBJEXT = .o
 LIBEXT = .a
 EXEEXT =
 
+LDFLAGS += -nostartfiles -nodefaultlibs
+
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
+
+LDFLAGS += --gc-sections
 
 HOSTCC = gcc
 HOSTINCLUDES = -I.

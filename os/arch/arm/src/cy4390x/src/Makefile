@@ -1,8 +1,7 @@
 ############################################################################
 #
-# Copyright 2018, Cypress Semiconductor Corporation or a subsidiary of 
-# Cypress Semiconductor Corporation. All Rights Reserved.
-# 
+# Copyright 2018 Samsung Electronics All Rights Reserved.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -20,18 +19,20 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-# Common build
+ifeq ($(CONFIG_AUDIO_CX20921)$(CONFIG_AUDIO_TAS5749),yy)
+BOARD_LIB=libboard_audio.a
+else
+BOARD_LIB=libboard_noaudio.a
+endif
 
-VPATH		=
+all: libboard$(LIBEXT)
 
-.PHONY: depend clean distclean
+libboard$(LIBEXT):
+	$(Q) cp $(BOARD_LIB) libboard$(LIBEXT)
+
+depend:
 
 clean:
-	$(call DELFILE, .built)
+	$(call DELFILE, libboard$(LIBEXT))
 
 distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-
--include Make.dep
-
