@@ -154,3 +154,49 @@ config AUDIO_NULL_WORKER_STACKSIZE
 	default 768
 
 endif # AUDIO_NULL
+
+config AUDIO_CX20921
+	bool "CX20921 ADC audio chip"
+	default n
+	depends on AUDIO
+	---help---
+		Select to enable support for the CX20921 ADC Audio codec by conexant
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
+
+config CX20921_I2S_TIMEOUT
+	int "Timeout value of CX20921 I2S Response (in ms)"
+	default 100
+	depends on AUDIO_CX20921
+	---help---
+		Set timeout of CX20921 I2S response in millisecond
+
+config AUDIO_TAS5749
+	bool "TAS5749 DAC audio chip"
+	default n
+	depends on AUDIO
+	---help---
+		Select to enable support for the TAS5749 DAC Audio codec by TI
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
+
+config TAS5749_I2S_TIMEOUT
+	int "Timeout value of TAS5749 I2S Response (in ms)"
+	default 100
+	depends on AUDIO_TAS5749
+	---help---
+		Set timeout of TAS5749 I2S response in millisecond
+
+config TAS5749_BUFFER_SIZE
+	int "buffer size on TAS5749"
+	default 4096
+	depends on AUDIO_TAS5749
+	---help---
+		Set buffer size of TAS5749
+
+config TAS5749_NUM_BUFFERS
+	int "number of buffer on TAS5749"
+	default 4
+	depends on AUDIO_TAS5749
+	---help---
+		Set buffers number of TAS5749
