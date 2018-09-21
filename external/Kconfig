@@ -26,7 +26,7 @@ config ARTIK_SDK
 	select NETUTILS_MQTT_SECURITY
 	select TLS_WITH_SSS
 	select LWM2M_WAKAAMA_CLIENT
-	select LIBC_LOCALTIME
+	select TIME_EXTENDED
 	---help---
 		include the ARTIK SDK
 
