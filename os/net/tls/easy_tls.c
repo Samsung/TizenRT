@@ -142,6 +142,7 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 		return TLS_INVALID_CRED;
 	}
 
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
 	if (cred->psk && cred->psk_len) {
 		ret = mbedtls_ssl_conf_psk(ctx->conf, cred->psk, cred->psk_len, (const unsigned char *)cred->psk_identity, strlen(cred->psk_identity));
 
@@ -149,6 +150,7 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 			return TLS_INVALID_PSK;
 		}
 	}
+#endif
 
 	/* Mandatory */
 	if (cred->ca_cert) {
@@ -357,9 +359,11 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 		mbedtls_ssl_conf_server_rpk_support(ctx->conf, 1);
 	}
 
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
 	if (opt->psk_callback) {
 		mbedtls_ssl_conf_psk_cb(ctx->conf, opt->psk_callback, opt->user_data);
 	}
+#endif
 
 	if ((ret = mbedtls_ssl_setup(session->ssl, ctx->conf) != 0)) {
 		ret = TLS_SET_DEFAULT_FAIL;
