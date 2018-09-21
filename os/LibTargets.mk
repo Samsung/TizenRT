@@ -187,62 +187,35 @@ endif
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-$(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" liboctbstack$(LIBEXT) KERNEL=n
-
 $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libc_common$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libcoap$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libconnectivity_abstraction$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" liblogger$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libocsrm$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
-
-$(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libroutingmanager$(LIBEXT) KERNEL=n
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-$(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libresource_directory$(LIBEXT) KERNEL=n
-
 $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
 endif
 
 ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
-$(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libtizenrt_compat$(LIBEXT) KERNEL=n
-
 $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
-	$(Q) $(call INSTALL_LIB,$<,$@)
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 endif
 endif
 
