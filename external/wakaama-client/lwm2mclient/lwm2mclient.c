@@ -816,7 +816,8 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
             fprintf(stdout, "LWM2M_CLIENT_DISCONNECTED\n");
 #endif
             min_timeout = 0;
-        } else if (registration_getStatus(data->lwm2mH) == STATE_REGISTERED) {
+        } else if (registration_getStatus(data->lwm2mH) == STATE_REGISTERED ||
+                   registration_getStatus(data->lwm2mH) == STATE_REG_PENDING) {
             handles[i]->error = LWM2M_CLIENT_OK;
         }
 
