@@ -1273,7 +1273,7 @@ audio_manager_result_t get_input_audio_gain(uint8_t *gain)
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 
 	medvdbg("ret = %d, Max volume: %d, Current Volume : %d card id : %d device id : %d\n", ret, card->config[card->device_id].max_volume, \
-		card->config[card.device_id].volume, g_actual_audio_in_card_id, card->device_id);
+		card->config[card->device_id].volume, g_actual_audio_in_card_id, card->device_id);
 
 
 	*gain = card->config[card->device_id].volume;
@@ -1296,7 +1296,7 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	medvdbg("ret = %d, Max volume: %d, Current Volume : %d card id : %d device id : %d\n", ret, card->config[card->device_id].max_volume, \
-		card->config[card.device_id].volume, g_actual_audio_out_card_id, card->device_id);
+		card->config[card->device_id].volume, g_actual_audio_out_card_id, card->device_id);
 
 	*volume = card->config[card->device_id].volume;
 	return ret;
