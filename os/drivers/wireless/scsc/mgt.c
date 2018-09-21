@@ -299,7 +299,6 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 					slsi_disconnected(ndev_vif, FAPI_REASONCODE_UNSPECIFIED_REASON, NULL, 0, 1);
 				}
 			}
-			wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
 			if (hw_available) {
