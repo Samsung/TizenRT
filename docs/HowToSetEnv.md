@@ -55,14 +55,15 @@ The configuration file is named *defconfig*, and resides under the relative path
  **\<board\>/\<configuration_set\> ** inside the directory  *build/configs*.  
 
 Hence to see the config file for artik053/hello go to:
-	```
-		/> cd *$TIZENRT_BASEDIR/build/configs/artik053/hello
-		/> ls -l
-			total 32
-			-rw-r--r-- 1    18754 Sep 20 12:32 defconfig
-			-rw-r--r-- 1    6339 Sep 20 12:32 Make.defs
-			-rw-r--r-- 1    629 Sep 20 12:32 README.md		
-	```
+
+```
+	/> cd *$TIZENRT_BASEDIR/build/configs/artik053/hello
+	/> ls -l
+		total 32
+		-rw-r--r-- 1    18754 Sep 20 12:32 defconfig
+		-rw-r--r-- 1    6339 Sep 20 12:32 Make.defs
+		-rw-r--r-- 1    629 Sep 20 12:32 README.md		
+```
 
 You can do further configuration options to your build using the *make menuconfig* command. This starts the simple
 kconfig text based UI, a tool typically used to configure linux kernel builds.
