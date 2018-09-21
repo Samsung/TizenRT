@@ -1239,7 +1239,7 @@ static int coap_server_stop(int argc, char *argv[])
 
 	ret = g_coap->stop_server(f_handle);
 	if (ret != S_OK) {
-		fprintf(stderr, "Fail to start server\n");
+		fprintf(stderr, "Fail to stop server\n");
 		ret = -1;
 		goto exit;
 	}
