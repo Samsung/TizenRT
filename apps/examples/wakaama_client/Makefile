@@ -152,13 +152,9 @@ endif
 
 depend: .depend
 
-custom_clean:
-	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
-
-clean: custom_clean
+clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-
 
 distclean: clean
 	$(call DELFILE, Make.dep)
