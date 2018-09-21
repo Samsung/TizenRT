@@ -60,6 +60,9 @@ void sw_printHelp(void)
 	printf("   txpower\n");
 	printf("   saveconfig\n");
 	printf("   auto\n");
+#ifdef CONFIG_SLSI_WIFI_AUTO_RECOVERY_API
+	printf("   forcepanic\n");
+#endif
 #ifdef CONFIG_SLSI_WIFI_P2P_APP
 	printf("   p2p_find\n");
 	printf("   p2p_stop_find\n");
@@ -209,6 +212,12 @@ void sw_printFullHelp(void)
 	printf("wifi p2p_set_name\n <device_name>\n");
 	printf("  <device_name> : name of Wi-Fi Direct ssid, maximum length 32-10 = 22 bytes\n");
 	printf("                  i.e. SSID_MAX_LEN(32) - \"DIRECT-xy-\"(10)\n");
+	printf("\n");
+#endif
+#ifdef CONFIG_SLSI_WIFI_AUTO_RECOVERY_API
+	printf("forcepanic\n--------\n");
+	printf("wifi forcepanic\n");
+	printf("    It triggers force panic to driver.\n");
 	printf("\n");
 #endif
 	printf("help\n  This help\n");

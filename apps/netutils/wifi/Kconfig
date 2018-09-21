@@ -100,4 +100,11 @@ config SLSI_WIFI_P2P_CONFIG_FILE_NAME
 		The name of the file used to store information about the wifi system.
 endif
 
+config SLSI_WIFI_AUTO_RECOVERY_API
+	bool "Enable Wi-Fi Auto Recovery test"
+	default n
+	depends on SCSC_WLAN_AUTO_RECOVERY
+	---help---
+		Enables API to test Wi-Fi Auto Recovery
+
 endif

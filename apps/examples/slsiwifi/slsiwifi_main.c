@@ -1108,6 +1108,10 @@ int8_t parseCmdLine(int argc, char *argv[])
 		} else {
 			return 1;
 		}
+#ifdef CONFIG_SLSI_WIFI_AUTO_RECOVERY_API
+	} else if (strncmp(argv[1], "forcepanic", MAXLEN(10, strlen(argv[1]))) == 0) {
+		WiFiForcePanic();
+#endif
 #ifdef CONFIG_SLSI_WIFI_P2P_APP
 	} else if (strncmp(argv[1], "p2p_set_name", MAXLEN(12, strlen(argv[1]))) == 0) {
 		int ret = SLSI_STATUS_ERROR;

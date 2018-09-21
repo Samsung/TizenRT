@@ -4067,3 +4067,11 @@ int8_t WiFiSaveConfig(void)
 #endif
 	return result;
 }
+
+#ifdef CONFIG_SLSI_WIFI_AUTO_RECOVERY_API
+void WiFiForcePanic(void)
+{
+	DPRINT("Initiate Wi-Fi Force Panic\n");
+	slsi_sent_force_panic();
+}
+#endif

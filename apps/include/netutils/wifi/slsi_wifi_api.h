@@ -655,6 +655,14 @@ int8_t WiFiP2PRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_ne
 
 #endif //CONFIG_SLSI_WIFI_P2P_API
 
+
+#ifdef CONFIG_SLSI_WIFI_AUTO_RECOVERY_API
+/**
+ * Used to make force panic in Wi-Fi driver
+ */
+void WiFiForcePanic(void);
+#endif
+
 #undef EXTERN
 #ifdef  __cplusplus
 }
