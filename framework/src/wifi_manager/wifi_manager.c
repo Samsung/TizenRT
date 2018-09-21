@@ -25,6 +25,7 @@
 #include <wifi_manager/wifi_manager.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
+#include <netutils/netlib.h>
 #ifdef CONFIG_ENABLE_IOTIVITY
 #include <mqueue.h>
 #include <fcntl.h>

@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <libtuv/uv.h>
 #include <libtuv/uv__types.h>
+#include <libtuv/uv__loop.h>
 #include <eventloop/eventloop.h>
 
 #include "eventloop_internal.h"
