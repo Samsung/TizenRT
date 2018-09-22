@@ -390,6 +390,7 @@ int blake2s_init_param(FAR blake2s_state *S, FAR const blake2s_param *P)
 	}
 #endif
 
+	DEBUGASSERT(S && P);
 	blake2s_init0(S);
 
 	/* IV XOR ParamBlock */
@@ -467,7 +468,10 @@ int blake2s_init_key(FAR blake2s_state *S, size_t outlen, FAR const void *key, s
 
 int blake2s_update(FAR blake2s_state *S, FAR const void *pin, size_t inlen)
 {
-	FAR const unsigned char *in = FAR(const unsigned char *)pin;
+	FAR const unsigned char *in;
+
+	DEBUGASSERT(pin && S);
+	in = FAR(const unsigned char *)pin;
 	size_t left, fill;
 
 	if (inlen <= 0) {
