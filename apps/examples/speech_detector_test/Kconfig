@@ -6,6 +6,7 @@
 config EXAMPLES_SPEECH_DETECTOR_TEST
 	bool "\"Speech Detector Test\" Application"
 	default n
+	depends on HAVE_CXXINITIALIZE
 	---help---
 		Enable the \"Speech Detector Test\" Application
 

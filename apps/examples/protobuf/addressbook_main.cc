@@ -29,8 +29,6 @@
 
 #include <tinyara/init.h>
 
-#include <apps/platform/cxxinitialize.h>
-
 #include <ctime>
 #include <fstream>
 #include <google/protobuf/util/time_util.h>
@@ -46,11 +44,6 @@ using google::protobuf::util::TimeUtil;
 // Definitions
 //***************************************************************************
 // Configuration ************************************************************
-// C++ initialization requires CXX initializer support
-
-#if !defined(CONFIG_HAVE_CXX) || !defined(CONFIG_HAVE_CXXINITIALIZE)
-#undef CONFIG_EXAMPLES_PROTOBUF_CXXINITIALIZE
-#endif
 
 // Debug ********************************************************************
 // Non-standard debug that may be enabled just for testing the constructors
@@ -240,13 +233,6 @@ void DoString(void)
 extern "C" {
 int addressbook_main(int argc, char* argv[])
 {
-// If C++ initialization for static constructors is supported, then do
-// that first
-
-#ifdef CONFIG_EXAMPLES_PROTOBUF_CXXINITIALIZE
-	up_cxxinitialize();
-#endif
-
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	DoStream();

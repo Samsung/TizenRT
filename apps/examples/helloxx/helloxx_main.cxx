@@ -61,18 +61,9 @@
 
 #include <tinyara/init.h>
 
-#include <apps/platform/cxxinitialize.h>
-
 //***************************************************************************
 // Definitions
 //***************************************************************************
-// Configuration ************************************************************
-// C++ initialization requires CXX initializer support
-
-#if !defined(CONFIG_HAVE_CXX) || !defined(CONFIG_HAVE_CXXINITIALIZE)
-#  undef CONFIG_EXAMPLES_HELLOXX_CXXINITIALIZE
-#endif
-
 // Debug ********************************************************************
 // Non-standard debug that may be enabled just for testing the constructors
 
@@ -157,13 +148,6 @@ extern "C"
 {
 	int helloxx_main(int argc, char *argv[])
 	{
-		// If C++ initialization for static constructors is supported, then do
-		// that first
-
-#ifdef CONFIG_EXAMPLES_HELLOXX_CXXINITIALIZE
-		up_cxxinitialize();
-#endif
-
 		// Exercise an explictly instantiated C++ object
 
 		CHelloWorld *pHelloWorld = new CHelloWorld;

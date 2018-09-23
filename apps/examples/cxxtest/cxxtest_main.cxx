@@ -73,7 +73,6 @@
 #include <chrono>         // std::chrono::seconds
 
 #include <tinyara/init.h>
-#include <apps/platform/cxxinitialize.h>
 
 using namespace std;
 
@@ -81,13 +80,6 @@ using namespace std;
 // Definitions
 //***************************************************************************
 // Configuration ************************************************************
-// C++ initialization requires CXX initializer support
-
-#if !defined(CONFIG_HAVE_CXX) || !defined(CONFIG_HAVE_CXXINITIALIZE)
-#  warning Support for static initializers is NOT enabled
-#  undef CONFIG_EXAMPLES_CXXTEST_CXXINITIALIZE
-#endif
-
 #define CXXTEST_RTTI
 #undef CXXTEST_ISTREAM
 #define CXXTEST_EXCEPTION
@@ -509,12 +501,6 @@ extern "C"
 {
 	int cxxtest_main(int argc, char *argv[])
 	{
-		// If C++ initialization for static constructors is supported, then do
-		// that first
-
-#ifdef CONFIG_EXAMPLES_CXXTEST_CXXINITIALIZE
-		up_cxxinitialize();
-#endif
 		test_ofstream();
 		test_iostream();
 		test_stl();

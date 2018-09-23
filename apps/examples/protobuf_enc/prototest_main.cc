@@ -21,7 +21,6 @@
 //***************************************************************************
 
 #include <tinyara/config.h>
-#include <apps/platform/cxxinitialize.h>
 #include "messagetype.pb.h"
 
 using namespace std;
@@ -110,8 +109,6 @@ extern "C" {
 
 	int prototest_main(int argc, char *argv[])
 	{
-		up_cxxinitialize();
-
 		GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 		total_fails = total_success = 0;

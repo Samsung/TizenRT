@@ -7,7 +7,7 @@ config EXAMPLES_PROTOTEST
 	bool "Protocol Buffers Serialize/Deserialize Tests"
 	default n
 	depends on PROTOBUF
-	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	depends on HAVE_CXXINITIALIZE
 	---help---
 		Test the Protocol Buffers Serialize/Deserialize by Type
 
