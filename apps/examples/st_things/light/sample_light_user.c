@@ -26,6 +26,10 @@
 
 #define TAG	"LIGHT_USER"
 
+#define PUSH_MESG_SOURCE_ATTRIBUTE    "x.org.iotivity.ns.source"
+#define PUSH_MESG_TYPE_ATTRIBUTE      "x.org.iotivity.ns.type"
+#define PUSH_MESG_CODE_ATTRIBUTE      "x.com.samsung.code"
+
 static const char *PROPERTY_VALUE_SWITCH = "power";
 static const char *PROPERTY_VALUE_DIMMING = "dimmingSetting";
 static const char *PROPERTY_VALUE_RANGE = "range";
@@ -33,6 +37,8 @@ static const char *PROPERTY_VALUE_STEP = "step";
 static const char *PROPERTY_VALUE_COLOR_TEMPERATURE = "ct";
 
 static char *g_power_status[] = { "off", "on" };
+
+static const char *g_push_res_uri = "/service/pushservice";
 
 static char *g_power;
 static int g_switch_value = 0;
@@ -141,4 +147,18 @@ bool handle_set_request_on_ct(st_things_set_request_message_s *req_msg, st_thing
 
 	printf("[%s]OUT-handle_set_request_on_ct() called..\n", TAG);
 	return true;
+}
+
+void set_rep_push_mesg(void)
+{
+	st_things_representation_s *st_things_rep = st_things_create_representation_inst();
+	if (st_things_rep == NULL) {
+		printf("[%s]Failed to create st_things representation.\n", TAG);
+		return;
+	}
+	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_SOURCE_ATTRIBUTE, "/alarms/vs/0");
+	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_TYPE_ATTRIBUTE, "4");
+	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_CODE_ATTRIBUTE, "Light 50 % progress");
+	int res = st_things_push_notification_to_cloud(g_push_res_uri, st_things_rep);
+	printf("[%s]Send push notifiation to cloud!! %d\n", TAG, res);
 }
