@@ -613,6 +613,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	case WIFIMGR_STA_DISCONNECTING:
 	case WIFIMGR_STA_CONNECTING:
 	case WIFIMGR_SOFTAP_DISCONNECTING_STA:
+	case WIFIMGR_STA_CONNECT_CANCEL:
 		*mode = STA_MODE;
 		*conn = AP_DISCONNECTED;
 		break;
@@ -628,9 +629,14 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 			*conn = CLIENT_DISCONNECTED;
 		}
 		break;
+	case WIFIMGR_STA_RECONNECT:
+	case WIFIMGR_STA_RECONNECTING:
+		*mode = STA_MODE;
+		*conn = AP_RECONNECTING;
+		break;
 	default:
 		// CRITICAL ERROR
-		ndbg("[WM] CRITICAL ERROR: BAD STATE\n");
+		ndbg("[WM] CRITICAL ERROR: BAD STATE (%d)\n", state);
 		break;
 	}
 }
@@ -1078,11 +1084,13 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			if (ret != 0) {				// critical error
 				ndbg("[WM] [error] pthread_create fail\n");
 				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
+			} else {
+				ndbg("[WM] Internal AUTOCONNECT: go to RECONNECT state\n");
 			}
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
-		ndbg("[WM] AUTOCONNECT: go to RECONNECT state\n");
+		ndbg("[WM] External AUTOCONNECT: go to RECONNECT state\n");
 		_handle_user_cb(CB_STA_RECONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
