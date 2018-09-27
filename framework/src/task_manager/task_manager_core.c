@@ -354,6 +354,7 @@ static int taskmgr_start(int handle, int caller_pid)
 			return TM_OPERATION_FAIL;
 		}
 		pthread_setname_np(thread, pthread_info->name);
+		pthread_detach(thread);
 		pid = (int)thread;
 	}
 #endif
@@ -441,7 +442,6 @@ static int taskmgr_stop(int handle, int caller_pid)
 		}
 #ifndef CONFIG_DISABLE_PTHREAD
 		else {
-			(void)pthread_detach(TM_PID(handle));
 			ret = pthread_cancel(TM_PID(handle));
 		}
 #endif
