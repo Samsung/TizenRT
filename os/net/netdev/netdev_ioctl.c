@@ -1119,6 +1119,8 @@ void netdev_ifup(FAR struct netif *dev)
 				 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
 				 */
 				sleep(3);
+				netif_set_up(dev);
+				netif_set_link_up(dev);
 			}
 		}
 	}
@@ -1131,6 +1133,8 @@ void netdev_ifdown(FAR struct netif *dev)
 	if (dev->d_ifdown) {
 		/* Is the interface already down? */
 
+		netif_set_link_down(dev);
+		netif_set_down(dev);
 		if ((dev->d_flags & IFF_UP) != 0) {
 			/* No, take the interface down now */
 
