@@ -302,7 +302,7 @@ int things_start_stack(void)
 	if (!is_things_module_initialized) {
 		THINGS_LOG_E(TAG, "Initialize failed. You must initialize it first.");
 		return 0;
-	}	
+	}
 	// Enable Security Features
 #ifdef __SECURED__
 	int auty_type = AUTH_UNKNOW;
@@ -391,7 +391,7 @@ int things_start_stack(void)
 	return 1;
 }
 
-int things_start_scanning_ap() 
+int things_start_scanning_ap()
 {
 	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
 		THINGS_LOG_E(TAG, "Failed to create thread");
@@ -436,17 +436,16 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 
 	pthread_mutex_lock(&m_thread_oic_reset);
 	if (b_thread_things_reset == false) {
-		b_thread_things_reset = true;
 		reset_args_s *args = (reset_args_s *) things_malloc(sizeof(reset_args_s));
 		if (args == NULL) {
 			THINGS_LOG_E(TAG, "Failed to allocate reset_args_s memory");
-			b_thread_things_reset = false;
 			res = -1;
 			goto GOTO_OUT;
 		}
 		args->remote_owner = (things_resource_s *) remote_owner;
 		args->resetType = resetType;
 
+		b_thread_things_reset = true;
 		b_reset_continue_flag = true;
 
 		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0) {
@@ -454,6 +453,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 			h_thread_things_reset = 0;
 			things_free(args);
 			b_thread_things_reset = false;
+			b_reset_continue_flag = false;
 			res = -1;
 			goto GOTO_OUT;
 		}
@@ -476,7 +476,7 @@ GOTO_OUT:
 int things_stop_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
-	pthread_mutex_lock(&g_things_stop_mutex);	
+	pthread_mutex_lock(&g_things_stop_mutex);
 	pthread_mutex_lock(&m_thread_oic_reset);
 
 	if (b_thread_things_reset == true) {
@@ -753,9 +753,9 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 
 	THINGS_LOG_D(TAG, "Reset Success.");
 	result = 1;
-	// After completed reset of device doing wifi scan  
+	// After completed reset of device doing wifi scan
 	things_start_scanning_ap();
-	
+
 GOTO_OUT:
 	// 10. All Module Enable.
 	things_set_reset_mask(RST_COMPLETE);
@@ -779,6 +779,7 @@ GOTO_OUT:
 	pthread_mutex_lock(&m_thread_oic_reset);
 	h_thread_things_reset = 0;
 	b_thread_things_reset = false;
+	b_reset_continue_flag = false;
 	pthread_mutex_unlock(&m_thread_oic_reset);
 	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
