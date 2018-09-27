@@ -63,6 +63,50 @@ enum CertFormat {
 	CERT_FORMAT_PEM
 };
 
+static void output_buffer(uint8_t *buffer, int length)
+{
+	int i = 0;
+
+	printf("\n");
+
+	while (i < length) {
+		uint8_t array[16] = {0};
+		int j;
+		size_t size = 16;
+
+		if (size > length - i) {
+			size = length - i;
+		}
+
+		memcpy(array, buffer+i, size);
+		for (j = 0 ; j < 16 && i+j < length; j++) {
+			printf("%02X ", array[j]);
+			if (j%4 == 3) {
+				printf(" ");
+			}
+		}
+		if (length > 16) {
+			while (j < 16) {
+				printf("   ");
+				if (j%4 == 3) {
+					printf(" ");
+				}
+				j++;
+			}
+		}
+		printf(" ");
+		for (j = 0 ; j < 16 && i+j < length; j++) {
+			if (isprint(array[j])) {
+				printf("%c", array[j]);
+			} else {
+				printf(".");
+			}
+		}
+		printf("\n");
+		i += 16;
+	}
+}
+
 static int get_ec_pubkey_from_cert(const char *cert, char **key)
 {
 	int ret = 0;
@@ -315,7 +359,7 @@ int security_sdk_get_certificates(void)
 	}
 
 	if (cert) {
-		print_buffer("DER_CERT", cert, certlen);
+		output_buffer(cert, certlen);
 	}
 
 	see_selfprintf("[%d] ", cnt++);
