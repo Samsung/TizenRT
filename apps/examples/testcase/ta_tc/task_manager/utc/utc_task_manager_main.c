@@ -73,7 +73,6 @@ static int handle_tm_utc;
 static int broadcast_data_flag;
 static bool cb_flag;
 
-static sem_t tm_terminate_sem;
 static sem_t tm_broad_sem;
 
 static void sync_test_cb(tm_msg_t *info)
@@ -144,7 +143,6 @@ void exit_handler(void *info)
 static void test_stop_cb(void *data)
 {
 	cb_flag = true;
-	(void)sem_post(&tm_terminate_sem);
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -814,6 +812,8 @@ static void utc_task_manager_unregister_p(void)
 	ret = task_manager_unregister(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
+	/* Wait for unregistering */
+	sleep(1);
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, TM_UNREGISTERED_APP);
 
@@ -941,10 +941,8 @@ static void utc_task_manager_set_stop_cb_n(void)
 
 static void utc_task_manager_set_stop_cb_p(void)
 {
-	(void)sem_wait(&tm_terminate_sem);
-	TC_ASSERT_EQ_CLEANUP("task_manager_set_stop_cb", cb_flag, true, sem_destroy(&tm_terminate_sem));
+	TC_ASSERT_EQ("task_manager_set_stop_cb", cb_flag, true);
 
-	(void)sem_destroy(&tm_terminate_sem);
 	TC_SUCCESS_RESULT();	
 }
 
@@ -968,7 +966,6 @@ void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
 	cb_flag = false;
-	sem_init(&tm_terminate_sem, 0, 0);
 	
 	utc_task_manager_alloc_broadcast_msg_p();
 
@@ -1032,11 +1029,11 @@ void tm_utc_main(void)
 	utc_task_manager_stop_n();
 	utc_task_manager_stop_p();
 
-	utc_task_manager_set_stop_cb_n();
-	utc_task_manager_set_stop_cb_p();
-
 	utc_task_manager_unregister_n();
 	utc_task_manager_unregister_p();
+
+	utc_task_manager_set_stop_cb_n();
+	utc_task_manager_set_stop_cb_p();
 
 	utc_task_manager_dealloc_broadcast_msg_n();
 	utc_task_manager_dealloc_broadcast_msg_p();

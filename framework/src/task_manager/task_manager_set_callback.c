@@ -105,6 +105,7 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 		tmdbg("stop callback information is not correct.\n");
 		return;
 	}
+	TM_FREE(info);
 
 	taskmgr_pid = taskmgr_get_task_manager_pid();
 	if (taskmgr_pid == TM_TASK_MGR_NOT_ALIVE) {
