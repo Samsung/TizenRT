@@ -179,7 +179,11 @@ struct netif *ip4_route(const ip4_addr_t *dest)
 		/* is the netif up, does it have a link and a valid address? */
 		if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
 			/* network mask matches? */
+			ip4_addr_t broadcast_ip = {0xffffffff};
 			if (ip4_addr_netcmp(dest, netif_ip4_addr(netif), netif_ip4_netmask(netif))) {
+				/* return netif on which to forward IP packet */
+				return netif;
+			} else if (((netif->flags & NETIF_FLAG_BROADCAST) > 0) && ip4_addr_cmp(dest, &broadcast_ip)) {
 				/* return netif on which to forward IP packet */
 				return netif;
 			}
