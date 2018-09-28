@@ -56,7 +56,7 @@
  * Definition for handling pthread
  */
 #define SECURITY_TEST_PRIORITY     100
-#define SECURITY_TEST_STACK_SIZE   51200
+#define SECURITY_TEST_STACK_SIZE   8096
 #define SECURITY_TEST_SCHED_POLICY SCHED_RR
 
 #define SEE_CERTNUM 1

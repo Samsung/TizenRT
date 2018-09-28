@@ -111,7 +111,7 @@ static int get_ec_pubkey_from_cert(const char *cert, char **key)
 {
 	int ret = 0;
 	mbedtls_x509_crt x509_cert;
-	unsigned char buf[2048];
+	unsigned char buf[512];
 	size_t key_len = 0;
 
 	if (!cert || !key || *key) {

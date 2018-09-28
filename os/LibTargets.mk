@@ -177,9 +177,6 @@ $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBE
 
 # ARTIK Security API lib
 ifeq ($(CONFIG_ARTIK_SDK),y)
-$(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libsecurity-api$(LIBEXT) KERNEL=n
-
 $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT)
 	$(Q) $(call INSTALL_LIB,$<,$@)
 endif
