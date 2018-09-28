@@ -1109,7 +1109,11 @@ audio_manager_result_t stop_audio_stream_out(void)
 		}
 	} else {
 		if ((ret = pcm_drain(card->pcm)) < 0) {
-			meddbg("pcm_drain faled, ret = %d\n", ret);
+			if (ret == -EPIPE) {
+				ret = AUDIO_MANAGER_SUCCESS;
+			} else {
+				meddbg("pcm_drain faled, ret = %d\n", ret);
+			}
 		}
 	}
 	card->config[card->device_id].status = AUDIO_CARD_READY;
