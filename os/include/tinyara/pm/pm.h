@@ -517,6 +517,22 @@ enum pm_state_e pm_checkstate(int domain);
 
 int pm_changestate(int domain, enum pm_state_e newstate);
 
+/****************************************************************************
+ * Name: pm_querystate
+ *
+ * Description:
+ *   This function returns the current power management state.
+ *
+ * Input Parameters:
+ *   domain - The PM domain to check
+ *
+ * Returned Value:
+ *   The current power management state.
+ *
+ ****************************************************************************/
+
+enum pm_state_e pm_querystate(int domain);
+
 #undef EXTERN
 #ifdef __cplusplus
 }
@@ -540,6 +556,7 @@ int pm_changestate(int domain, enum pm_state_e newstate);
 #define pm_activity(domain, prio)
 #define pm_checkstate(domain)       (0)
 #define pm_changestate(domain, state)
+#define pm_querystate(domain)       (0)
 
 #endif							/* CONFIG_PM */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */
