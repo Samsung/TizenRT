@@ -85,7 +85,7 @@ static int eventloop_register_timer(el_timer_t *timer)
 	return OK;
 }
 
-static void eventloop_unregister_timer(el_timer_t *timer)
+void eventloop_unregister_timer(el_timer_t *timer)
 {
 	timer_node_t *ptr;
 	timer_cb_t *callback = NULL;
@@ -106,13 +106,6 @@ static void eventloop_unregister_timer(el_timer_t *timer)
 			break;
 		}
 		ptr = (timer_node_t *)sq_next(ptr);
-	}
-}
-
-static void eventloop_clean_timer(el_timer_t *handle, void *data)
-{
-	if (handle != NULL && handle->type == UV_TIMER) {
-		(void)eventloop_unregister_timer(handle);
 	}
 }
 
@@ -137,8 +130,6 @@ static void timeout_callback_func(el_timer_t *timer)
 		ret = callback->func(callback->cb_data);
 		/* It is true if eventloop_loop_stop is called in callback function. */
 		if (LOOP_IS_STOPPED(timer->loop)) {
-			/* Unregister all timers in a loop. */
-			uv_walk(timer->loop, (uv_walk_cb)eventloop_clean_timer, NULL);
 			return;
 		}
 		/* If callback function returns EVENTLOOP_CALLBACK_STOP, close and unregister the timer. */

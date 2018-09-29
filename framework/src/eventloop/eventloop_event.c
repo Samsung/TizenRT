@@ -157,7 +157,7 @@ static int eventloop_register_event_cb(el_event_t *handle)
 	return OK;
 }
 
-static void eventloop_unregister_event_cb(el_event_t *handle)
+void eventloop_unregister_event_cb(el_event_t *handle)
 {
 	event_group_t *event_group;
 	event_node_t *ptr;
@@ -192,13 +192,6 @@ static void eventloop_unregister_event_cb(el_event_t *handle)
 	}
 }
 
-static void eventloop_clean_event_handle(el_event_t *handle, void *data)
-{
-	if (handle != NULL && handle->type == UV_SIGNAL) {
-		(void)eventloop_unregister_event_cb(handle);
-	}
-}
-
 static void event_callback_func(el_event_t *event, int signum)
 {
 	int ret;
@@ -216,8 +209,6 @@ static void event_callback_func(el_event_t *event, int signum)
 		ret = data->func(data->cb_data, data->event_data);
 		/* It is true if eventloop_loop_stop is called in callback function. */
 		if (LOOP_IS_STOPPED(event->loop)) {
-			/* Unregister all event handles in a loop. */
-			uv_walk(event->loop, (uv_walk_cb)eventloop_clean_event_handle, NULL);
 			return;
 		}
 		/* If callback function returns EVENTLOOP_CALLBACK_STOP, close and unregister the event handler.  */
