@@ -16,8 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * configs/lm3s6965-ek/src/up_ssi.c
- * arch/arm/src/board/up_ssi.c
+ * board/lm3s6965-ek/src/up_ssi.c
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

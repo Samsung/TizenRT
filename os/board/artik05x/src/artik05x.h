@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik05x/src/artik05x.h
+ * board/artik05x/src/artik05x.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>

@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# arch/arm/src/sidk_s5jt200/src/Makefile
+# board/sidk_s5jt200/src/Makefile
 #
 #   Copyright (C) 2009-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

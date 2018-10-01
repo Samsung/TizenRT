@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * arch/arm/src/sidk_s5jt200/include/board.h
+ * board/sidk_s5jt200/include/board.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>

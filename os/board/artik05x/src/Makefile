@@ -16,7 +16,7 @@
 #
 ############################################################################
 ############################################################################
-# arch/arm/src/artik05x/src/Makefile
+# board/artik05x/src/Makefile
 #
 #   Copyright (C) 2009-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

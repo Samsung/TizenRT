@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sidk_s5jt200/src/s5jt200_pwm.c
+ * board/sidk_s5jt200/src/s5jt200_pwm.c
  *
  *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

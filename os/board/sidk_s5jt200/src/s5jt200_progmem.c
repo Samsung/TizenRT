@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sidk_s5jt200/sidk200_progmem.c
+ * board/sidk_s5jt200/src/sidk200_progmem.c
  *
  *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
