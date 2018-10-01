@@ -435,8 +435,12 @@ config DEBUG_OPTLEVEL
 
 endmenu # Build Setup
 
-menu "Hardware Configuration"
+menu "Chip Selection"
 source arch/Kconfig
+endmenu
+
+menu "Board Selection"
+source board/Kconfig
 endmenu
 
 menu "Kernel Features"

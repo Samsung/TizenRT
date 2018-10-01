@@ -201,11 +201,11 @@ endif
 comment "Board-Specific Options"
 
 if ARCH_BOARD_ARTIK05X_FAMILY
-source arch/arm/src/artik05x/Kconfig
+source board/artik05x/Kconfig
 endif
 if ARCH_BOARD_LM3S6965EK
-source arch/arm/src/lm3s6965-ek/Kconfig
+source board/lm3s6965-ek/Kconfig
 endif
 if ARCH_BOARD_SIDK_S5JT200
-source arch/arm/src/sidk_s5jt200/Kconfig
+source board/sidk_s5jt200/Kconfig
 endif
