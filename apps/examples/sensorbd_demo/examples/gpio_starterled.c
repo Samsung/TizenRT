@@ -63,6 +63,7 @@ static int gpio_read(int port)
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
 	if (read(fd, buf, sizeof(buf)) < 0) {
 		printf("read error\n");
+		close(fd);
 		return -1;
 	}
 	close(fd);
@@ -80,6 +81,7 @@ static void gpio_write(int port, int value)
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 	if (write(fd, buf, snprintf(buf, sizeof(buf), "%d", !!value)) < 0) {
 		printf("write error\n");
+		close(fd);
 		return;
 	}
 	close(fd);

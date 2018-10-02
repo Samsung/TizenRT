@@ -56,31 +56,31 @@
 void ledpwm_main(int argc, char *argv[])
 {
 	int i;
-	int fd1;
-	int fd2;
-	int fd3;
-	int fd4;
+	int fd1 = 0;
+	int fd2 = 0;
+	int fd3 = 0;
+	int fd4 = 0;
 	struct pwm_info_s pwm_info;
 
 	fd1 = open("/dev/pwm0", O_RDWR);
 	if (fd1 < 0) {
 		printf("fd open fail\n");
-		return;
+		goto exit;
 	}
 	fd2 = open("/dev/pwm3", O_RDWR);
 	if (fd2 < 0) {
 		printf("fd open fail\n");
-		return;
+		goto exit;
 	}
 	fd3 = open("/dev/pwm4", O_RDWR);
 	if (fd3 < 0) {
 		printf("fd open fail\n");
-		return;
+		goto exit;
 	}
 	fd4 = open("/dev/pwm5", O_RDWR);
 	if (fd4 < 0) {
 		printf("fd open fail\n");
-		return;
+		goto exit;
 	}
 	pwm_info.frequency = 1000;
 
@@ -114,8 +114,20 @@ void ledpwm_main(int argc, char *argv[])
 
 	up_mdelay(2000);
 
-	close(fd1);
-	close(fd2);
-	close(fd3);
-	close(fd4);
+exit:
+	if (fd1) {
+		close(fd1);
+	}
+
+	if (fd2) {
+		close(fd2);
+	}
+
+	if (fd3) {
+		close(fd3);
+	}
+
+	if (fd4) {
+		close(fd4);
+	}
 }
