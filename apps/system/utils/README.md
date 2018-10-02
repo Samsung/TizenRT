@@ -156,7 +156,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 
 
 ## df
-This shows information about the file system on which each FILE resides, or all file systems by default.
+This shows information about the File System on which each FILE resides, or all File Systems by default.
 ```bash
 TASH>>df -h
 Filesystem    Size      Used  Available Mounted on
@@ -573,7 +573,7 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 
 
 ## mksmartfs
-This makes SmartFS file system on the specified block device.
+This makes SmartFS File System on the specified block device.
 ```
 Usage:
    mksmartfs <source directory> [-f] <target directory>
@@ -590,7 +590,7 @@ File Systems -> [ ] Disable support for mount points
 ```
 - Enable CONFIG_FS_SMARTFS.
 ```
-File Systems -> [*] SMART file system
+File Systems -> [*] SMART File System
 ```
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```
@@ -599,7 +599,7 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 
 
 ## mount
-This mounts specific file system.
+This mounts specific File System.
 ```
 Usage:
    mount -t <filesystem name> <source directory> <target directory>
@@ -853,7 +853,7 @@ Debug Options -> [*] Stack coloration
 
 
 ## umount
-This unmounts specific file system.
+This unmounts specific File System.
 ```
 Usage:
    umount <mounted directory>

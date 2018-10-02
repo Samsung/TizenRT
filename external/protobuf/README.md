@@ -1,6 +1,6 @@
 # Introduce
 
-Protocol buffers (a.k.a. `protobuf`) is Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data. TizenRT features a port for `protobuf` version 3.5.1, with support for C++ language. 
+Protocol Buffers (a.k.a. `protobuf`) is Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data. TizenRT features a port for `protobuf` version 3.5.1, with support for C++ language. 
 You can find details of `protobuf` at https://github.com/google/protobuf.
 
 Before you proceed with the rest of the documentation below, please note the following points:
@@ -34,7 +34,7 @@ The appropriate `protoc` release can be fetched and installed using the steps be
 
 ## Build `protobuf` on TizenRT
 
-Protocol buffers in menuconfig should be selected under [`External Libraries > protocol buffer`].
+Protocol Buffers in menuconfig should be selected under [`External Libraries > protocol buffer`].
 Currently, `protobuf` configuration is supported only for applications that use `gRPC`(see `artik053/grpc` under `build/configs` directory). In the future, `protobuf` configurations will be extended to cover applications that
 do not strictly require `gRPC`.
 

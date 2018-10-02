@@ -266,7 +266,7 @@ This can be used to test network functionality.
 #### [st_things](st_things/README.md)
 This can be used to test Smart Things Things SDK functionality.
 #### [tc](tc/README.md)
-This can be used to test database, file system, kernel, network functionality of TizenRT on ARTIK053.
+This can be used to test database, File System, kernel, network functionality of TizenRT on ARTIK053.
 
 ## Appendix
 ### On Chip Debugger installation

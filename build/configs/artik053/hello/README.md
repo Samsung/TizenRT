@@ -14,7 +14,7 @@ Round Robin Scheduling
 Signal  
 Work Queue  
 
-### File system
+### File System
 Smart FS  
 Proc FS  
 MTD
