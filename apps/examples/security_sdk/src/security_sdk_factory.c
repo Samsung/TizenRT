@@ -132,8 +132,13 @@ static int security_sdk_print_crt(int debug_mode, unsigned char *buf, unsigned i
 	int ret;
 	int pos = 0;
 	size_t len = 0;
-	unsigned char *p;
+	unsigned char *p = NULL;
 	int buf_format = MBEDTLS_X509_FORMAT_DER;
+
+	if (!buf) {
+		ret = -1;
+		goto exit;
+	}
 
 	mbedtls_x509_crt crt;
 	mbedtls_x509_crt *t_crt;
@@ -155,7 +160,7 @@ static int security_sdk_print_crt(int debug_mode, unsigned char *buf, unsigned i
 			if (ret != 0) {
 				goto exit;
 			}
-			if (pos + len < buf_len) {
+			if ((pos + len) < buf_len) {
 				ret = mbedtls_x509_crt_parse(&crt, buf + pos, len + 4);
 				if (ret != 0) {
 					goto exit;
@@ -181,6 +186,7 @@ static int security_sdk_print_crt(int debug_mode, unsigned char *buf, unsigned i
 		t_crt = t_crt->next;
 	}
 
+	mbedtls_x509_crt_free(&crt);
 	return 0;
 
 exit:
@@ -194,8 +200,10 @@ static void security_sdk_factory_getcert(int debug_mode)
 	artik_security_handle handle = NULL;
 	artik_error err = S_OK;
 	int ret = 0, i = 0;
+	unsigned char *cert = NULL;
+	unsigned int cert_len = 0;
 	unsigned char *buf = NULL;
-	unsigned int buf_len = 4096;
+	unsigned int buf_len = 0;
 
 	security = (artik_security_module *) artik_request_api_module("security");
 
@@ -211,44 +219,54 @@ static void security_sdk_factory_getcert(int debug_mode)
 		goto exit;
 	}
 
-	while (i < ARTIK_CERTS_NUM) {
+	cert_len = 1024;
+	cert = malloc(cert_len);
+
+	for (i = 0; i < ARTIK_CERTS_NUM; i++) {
 		printf("[%d] %s ... ", i, g_cert_existence[i].object_name);
-		buf_len = 4096;
 
 		ret = security->get_certificate(handle, g_cert_existence[i].key_name,
 				ARTIK_SECURITY_CERT_TYPE_PEM, (unsigned char **)&buf,
 				(unsigned int *)&buf_len);
-		if (ret != 0) {
+		if (ret != 0 || !buf) {
 			printf("get certificate failed : %d\n", ret);
-			i++;
+
+			if (buf) {
+				free(buf);
+				buf = NULL;
+				buf_len = 0;
+			}
+
 			continue;
 		}
 
-		ret = security_sdk_print_crt(debug_mode, buf, buf_len);
-		if (ret != 0) {
-			printf("get certificate failed : %d\n", ret);
-			i++;
-			continue;
-		}
+		cert_len = 1024;
+		memset(cert, 0, cert_len);
+		memcpy(cert, buf, buf_len);
 
 		if (buf) {
 			free(buf);
 			buf = NULL;
+			buf_len = 0;
 		}
 
+		ret = security_sdk_print_crt(debug_mode, cert, cert_len);
 		if (ret) {
 			printf("parse failed : %x\n", -ret);
-			i++;
 			continue;
 		}
 
 		g_cert_existence[i].existence = 1;
-		i++;
 
 		printf("success\n");
 	}
 
 exit:
+	if (cert) {
+		free(cert);
+		cert = NULL;
+	}
+
 	if (buf) {
 		free(buf);
 		buf = NULL;
@@ -320,6 +338,11 @@ static void security_sdk_factory_ecctest(int debug_mode)
 				free(out);
 				out = NULL;
 			}
+		}
+
+		if (out) {
+			free(out);
+			out = NULL;
 		}
 
 		while (!ret) {

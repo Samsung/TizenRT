@@ -121,7 +121,6 @@ static int get_ec_pubkey_from_cert(const char *cert, char **key)
 	mbedtls_x509_crt_init(&x509_cert);
 
 	ret = mbedtls_x509_crt_parse(&x509_cert, (unsigned char *)cert, strlen(cert) + 1);
-
 	if (ret) {
 		fprintf(stderr, "Failed to parse certificate (err=%d)", ret);
 		mbedtls_x509_crt_free(&x509_cert);
@@ -131,7 +130,6 @@ static int get_ec_pubkey_from_cert(const char *cert, char **key)
 	memset(&buf, 0, sizeof(buf));
 
 	ret = mbedtls_pk_write_pubkey_pem(&x509_cert.pk, buf, 2048);
-
 	if (ret) {
 		fprintf(stderr, "Failed to write pubkey PEM (err=%d)", ret);
 		mbedtls_x509_crt_free(&x509_cert);
@@ -139,7 +137,6 @@ static int get_ec_pubkey_from_cert(const char *cert, char **key)
 	}
 
 	key_len = strlen((char *)buf) + 1;
-
 	if (key_len <= 0) {
 		fprintf(stderr, "Wrong size of key");
 		mbedtls_x509_crt_free(&x509_cert);
@@ -147,7 +144,6 @@ static int get_ec_pubkey_from_cert(const char *cert, char **key)
 	}
 
 	*key = malloc(key_len);
-
 	if (!*key) {
 		fprintf(stderr, "Not enough memory to allocate key");
 		mbedtls_x509_crt_free(&x509_cert);
@@ -255,7 +251,9 @@ exit:
 		security->release(handle);
 	}
 
-	artik_release_api_module(security);
+	if (security) {
+		artik_release_api_module(security);
+	}
 
 	return test_result;
 }
@@ -441,7 +439,7 @@ int security_sdk_cert_publickey(void)
 	char *se_pk_pem = NULL;
 	unsigned char *se_pk_der = NULL;
 	unsigned char *cert = NULL;
-	unsigned char certlen = 0;
+	unsigned int certlen = 0;
 	int length;
 	enum CertFormat fmt = CERT_FORMAT_PEM;
 
@@ -485,7 +483,7 @@ int security_sdk_cert_publickey(void)
 		fprintf(stdout, se_pk_pem);
 		break;
 	case CERT_FORMAT_DER:
-		ret = convert_pem_to_der((char *)se_pk_pem, &se_pk_der, (size_t *)&length);
+		ret = security->convert_pem_to_der((char *)se_pk_pem, &se_pk_der, (size_t *)&length);
 		if (ret != S_OK) {
 			fprintf(stderr, "Failed to convert PEM public key to DER (err=%d)\n", ret);
 			test_result++;
@@ -495,11 +493,16 @@ int security_sdk_cert_publickey(void)
 	}
 
 exit:
+
+	if (se_pk_der) {
+		free(se_pk_der);
+	}
+
 	if (se_pk_pem) {
 		free(se_pk_pem);
 	}
 
-	if (cert != NULL) {
+	if (cert) {
 		free(cert);
 	}
 

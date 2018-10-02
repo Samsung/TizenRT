@@ -138,16 +138,16 @@ int security_sdk_rsassa_sign_verify(void)
 			} else {
 				see_selfprintf(" success\n");
 			}
-		}
 
-		if (hash != NULL) {
-			free(hash);
-			hash = NULL;
-		}
+			if (hash != NULL) {
+				free(hash);
+				hash = NULL;
+			}
 
-		if (out != NULL) {
-			free(out);
-			out = NULL;
+			if (out != NULL) {
+				free(out);
+				out = NULL;
+			}
 		}
 	}
 
@@ -190,6 +190,11 @@ int security_sdk_rsassa_sign_verify(void)
 	}
 
 exit:
+	if (hash != NULL) {
+		free(hash);
+		hash = NULL;
+	}
+
 	if (out != NULL) {
 		free(out);
 		out = NULL;

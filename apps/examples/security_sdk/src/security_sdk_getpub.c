@@ -137,21 +137,9 @@ int security_sdk_get_publickey(void)
 		out = NULL;
 	}
 
-	unsigned char *sig = NULL;
-	unsigned int siglen;
-	unsigned char hash[32] = {0};
-
-	memset(hash, 0, 32);
-
 	memset(key_name, 0, sizeof(key_name));
 	sprintf(key_name, "%s/%X", SECURE_STORAGE_DEFAULT, 1);
 	ret = security->set_key(handle, ECC_SEC_P256R1, key_name, ecc_pair, sizeof(ecc_pair));
-
-	ret += security->get_ecdsa_signature(handle, ECC_SEC_P256R1, key_name, hash, 32, &sig, &siglen);
-	if (security->verify_ecdsa_signature(handle, ECC_SEC_P256R1, key_name, hash, 32, sig, siglen) != 0) {
-		see_selfprintf("Signature verification fail\n");
-	}
-
 	ret += security->get_publickey(handle, ECC_SEC_P256R1, key_name, &out, &outlen);
 
 	see_selfprintf("[%d] ", cnt++);

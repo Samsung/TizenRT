@@ -102,6 +102,7 @@ int security_sdk_get_hmac(void)
 			memset(key_name, 0, sizeof(key_name));
 			sprintf(key_name, "%s/%X", SECURE_STORAGE_DEFAULT, j);
 
+			outlen = 0;
 			ret = security->set_key(handle, HMAC_ALGORITHM, key_name, input_hmac, input_size[i]);
 			ret += security->get_hmac(handle, input_oid[j], key_name, input_hmac, sizeof(input_hmac), &out, &outlen);
 

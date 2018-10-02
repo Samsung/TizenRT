@@ -99,9 +99,14 @@ exit:
 	if (rand_bytes) {
 		free(rand_bytes);
 	}
-	security->release(handle);
 
-	artik_release_api_module(security);
+	if (handle) {
+		security->release(handle);
+	}
+
+	if (security) {
+		artik_release_api_module(security);
+	}
 
 	return test_result;
 }

@@ -1098,6 +1098,7 @@ int print_crt(int debug_mode, unsigned char *buf, unsigned int buf_len)
 		t_crt = t_crt->next;
 	}
 
+	mbedtls_x509_crt_free(&crt);
 	return 0;
 
 exit:
