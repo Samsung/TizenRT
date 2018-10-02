@@ -37,7 +37,7 @@ Using menuconfig an example can be used to selected needed feature.
 ## How to load scripts
 
 File can be loaded for different locations,
-For convinence, it is recommended to use the approach of adding a ROM partition as explained in
+For convenience, it is recommended to use the approach of adding a ROM partition as explained in
 [HowToUseROMFS.md](HowToUseROMFS.md)
 
 Then place your script(s) in tools/fs/contents, for instance:

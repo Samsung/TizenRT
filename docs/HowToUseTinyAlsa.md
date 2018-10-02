@@ -17,7 +17,7 @@ While opening an audio device, the user needs to be careful regarding which devi
 
 The flags and config parameters in the pcm_open API's may be used to configure the audio device being opened and also to indicate to TinyAlsa about the intended use of the device. If the config parameter is not passed when opening a device, then TinyAlsa will open the device with a default configuration set. Once the device is opened, its configuration cannot be modified. Hence, care has to be taken to select required configuration at the time of opening the device.
 
-The psuedocode below shows opening and closing an audio device for recording with default configuration setting:
+The pseudocode below shows opening and closing an audio device for recording with default configuration setting:
 ```
 
 #include <tinyalsa/tinyalsa.h>
