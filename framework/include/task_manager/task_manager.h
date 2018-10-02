@@ -32,7 +32,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 
 /**
  * @brief Task State which managed by Task Manager
@@ -133,17 +133,20 @@ typedef struct tm_msg_s tm_msg_t;
 /**
  * @brief Unicast callback function type
  */
-typedef void (*_tm_unicast_t)(tm_msg_t *);
+typedef void (*tm_unicast_callback_t)(tm_msg_t *unicast_data);
 
 /**
  * @brief Broadcast callback function type
+ * The broadcast callback gets 'broadcast_data' argument through the input variable of task_manager_broadcast().\n
+ * The 'cb_data' is set through the task_manager_set_broadcast_cb() and the broadcast callback function will get\n
+ * this argument when the task_manager_broadcast() is called from the task manager.
  */
-typedef void (*_tm_broadcast_t)(void *, void *);
+typedef void (*tm_broadcast_callback_t)(void *broadcast_data, void *cb_data);
 
 /**
  * @brief Termination callback function type
  */
-typedef void (*_tm_termination_t)(void *);
+typedef void (*tm_termination_callback_t)(void *cb_data);
 
 #ifdef __cplusplus
 extern "C" {
@@ -298,7 +301,9 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
  * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] msg message structure to be unicasted
- * @param[in] data data and its size to be broadcasted
+ * @param[in] broadcast_data a message data structure which will be used as input of the callback function func.\n
+ *            The broadcast callback function (which was set through task_manager_set_broadcast_cb()) uses\n
+ *            'broadcast_data->msg' field as the input argument 'broadcast_data'.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -308,7 +313,7 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
  *          to the task manager to broadcast.)
  * @since TizenRT v2.0
  */
-int task_manager_broadcast(int msg, tm_msg_t *data, int timeout);
+int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout);
 /**
  * @brief Set unicast callback function API
  * @details @b #include <task_manager/task_manager.h>
@@ -316,7 +321,7 @@ int task_manager_broadcast(int msg, tm_msg_t *data, int timeout);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0
  */
-int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
+int task_manager_set_unicast_cb(tm_unicast_callback_t func);
 /**
  * @brief Register callback function which will be used for processing a certain received broadcast message
  * @details @b #include <task_manager/task_manager.h>
@@ -327,29 +332,34 @@ int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
  *            If this message is not pre defined at the <task_manager/task_manager.h> and <task_manager/task_manager_broadcast_list.h>,\n
  *            user should use task_manager_alloc_broadcast_msg() API to get a new broadacast message.
  * @param[in] func the callback function which will be called when a msg is received.
- * @param[in] cb_data a message structure to pass to the callback function func.
+ * @param[in] cb_data a data structure which will be used as input of the callback function func.\n
+ *            cb_data->msg field will passed to the broadcast callback function func as cb_data.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0
  */
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), tm_msg_t *cb_data);
+int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_t *cb_data);
 /**
  * @brief Set callback function called when task terminates normally.
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] func the callback function that is called when the task or thread terminates normally.
- * @param[in] cb_data a data pointer to pass to the callback function func.
+ * @param[in] cb_data a data structure will be used as input of the callback function func.\n
+ *            The exit callback function (which was set through task_manager_set_exit_cb()) uses\n
+ *            'cb_data->msg' field as the input argument 'cb_data' when the task or thread terminates normally.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0
  */
-int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data);
+int task_manager_set_exit_cb(tm_termination_callback_t func, tm_msg_t *cb_data);
 /**
  * @brief Set callback function called when task is stopped by task manager.
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] func the callback function that is called when the task or thread is stopped by task manager.
- * @param[in] cb_data a data pointer to pass to the callback function func.
+ * @param[in] cb_data a data structure will be used as input of the callback function func.\n
+ *            The stop callback function (which was set through task_manager_set_stop_cb()) uses\n
+ *            'cb_data->msg' field as the input argument 'cb_data' when the task or thread is stopped by task manager.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0
  */
-int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data);
+int task_manager_set_stop_cb(tm_termination_callback_t func, tm_msg_t *cb_data);
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>

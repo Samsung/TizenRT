@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H
-#define __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H
+#ifndef __INCLUDE_TINYARA_TASK_MANAGER_DRV_H
+#define __INCLUDE_TINYARA_TASK_MANAGER_DRV_H
 
 /* This file will be used to provide definitions to support
  * task manager framework
@@ -53,4 +53,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H */
+#endif /* __INCLUDE_TINYARA_TASK_MANAGER_DRV_H */

@@ -38,7 +38,7 @@
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
 #include <task_manager/task_manager_broadcast_list.h>
@@ -950,7 +950,7 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 		return handle;
 	}
 	if (type == TYPE_UNICAST) {
-		TM_UNICAST_CB(handle) = (_tm_unicast_t)data;
+		TM_UNICAST_CB(handle) = (tm_unicast_callback_t)data;
 	} else {
 		if (!taskmgr_is_tm_broadcast_msg_init()) {
 			taskmgr_broadcast_msg_init();
