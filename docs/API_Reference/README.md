@@ -16,5 +16,5 @@ Please find it under *v1.1/libs_env/html* folder and execute index.html.
 
 # Public
 
-The public has framework APIs like database - arastorage, device management, iotbus, SmartThings Things SDK, audio and wifi manager.  
+The public has framework APIs like database - arastorage, Device Management, iotbus, SmartThings Things SDK, audio and wifi manager.  
 Please find it under *v1.1/public/html* folder and execute index.html.

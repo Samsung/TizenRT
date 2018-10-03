@@ -354,7 +354,7 @@
 ### [0.2.0] - 2017-03-27 (patch)
 
 * Added memory profiling for ACL and ADSL.  See Appendix A in the README.
-* Added a command to build the API documentation.
+* Added a command to build API Documentation.
 
 ### [0.2.0] - 2017-03-09
 
