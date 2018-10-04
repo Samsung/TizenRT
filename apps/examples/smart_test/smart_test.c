@@ -590,11 +590,12 @@ int main(int argc, FAR char *argv[])
 int smart_test_main(int argc, char *argv[])
 #endif
 {
-	int ret, opt;
+	int ret;
+	int opt;
 
 	/* Argument given? */
 
-	optind = -1;
+	int optind = -1;
 	while ((opt = getopt(argc, argv, "c:e:l:r:s:a:t:w:")) != -1) {
 		switch (opt) {
 		case 'c':
