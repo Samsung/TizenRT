@@ -1,0 +1,211 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+choice
+	prompt "Select target board"
+	default ARCH_BOARD_SIDK_S5JT200
+	---help---
+		Select the board hosting the architecture.  You must first select the
+		exact MCU part number, then the boards supporting that part will
+		be available for selection.  Use ARCH_BOARD_CUSTOM to create a new
+		board configuration.
+
+config ARCH_BOARD_ARTIK053
+	bool "Samsung ARTIK-053 Starter Kit"
+	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
+	---help---
+		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
+
+config ARCH_BOARD_ARTIK053S
+	bool "Samsung ARTIK-053S Starter Kit"
+	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
+	---help---
+		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
+
+config ARCH_BOARD_ARTIK055S
+	bool "Samsung ARTIK-055S Starter Kit"
+	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
+	---help---
+		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
+
+config ARCH_BOARD_LM3S6965EK
+	bool "Stellaris LM3S6965 Evaluation Kit"
+	depends on ARCH_CHIP_LM3S6965
+	select ARCH_HAVE_LEDS
+	---help---
+		Stellaris LM3S6965 Evaluation Kit.  This board is based on the
+		an ARM Cortex-M3 MCU, the Luminary/TI LM3S6965.
+
+config ARCH_BOARD_SIDK_S5JT200
+	bool "Samsung S5JT200 sidk board"
+	depends on ARCH_CHIP_S5JT200
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		Samsung S5JT200 IoT wifi MCU
+
+config ARCH_BOARD_CY4390x
+	bool "Cypress 4390x board"
+	depends on ARCH_CHIP_BCM4390X
+	---help---
+		Cypress 4390x IoT wifi MCU
+
+endchoice
+
+config ARCH_BOARD_ARTIK05X_FAMILY
+    bool
+    default n
+
+config ARCH_BOARD
+	string
+	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
+	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
+	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
+	default "cy4390x"            if ARCH_BOARD_CY4390x
+
+comment "Common Board Options"
+
+config ARCH_HAVE_LEDS
+	bool
+
+config ARCH_LEDS
+	bool "Board LED support"
+	default y
+	depends on ARCH_HAVE_LEDS
+	---help---
+		Use board LEDs to show TinyAra execution status state. Unique to boards that have LEDs
+
+config ARCH_HAVE_BUTTONS
+	bool
+
+config ARCH_BUTTONS
+	bool "Board button support"
+	default n
+	depends on ARCH_HAVE_BUTTONS
+	---help---
+		"Support interfaces to use buttons provided by the board."
+
+config ARCH_HAVE_IRQBUTTONS
+	bool
+
+config ARCH_IRQBUTTONS
+	bool "Button interrupt support"
+	default n
+	depends on ARCH_BUTTONS && ARCH_HAVE_IRQBUTTONS
+	---help---
+		"Support interrupts on button presses and releases."
+
+config BOARD_CRASHDUMP
+	bool "Enable Board level logging of crash dumps"
+	default n
+	---help---
+		If selected up_asseert will call out to board_crashdump, in the case
+		of an assertion failure, prior to calling exit. Or in the
+		case of a hardfault prior to looping indefinitely. board_crashdump
+		then has a chance to save the state of the machine.
+
+		The purpose of board_crashdump is to save as much information as it can
+		about the cause of the fault and then most likely reset the system.
+
+		N.B. There is limited system resources that can be used, who knows
+		what memory is trashed? So all we can expect to do is save the
+		"machine state" in a place where on the next reset can write it
+		to more sophisticated storage in a sane operating environment.
+
+config BOARD_ASSERT_AUTORESET
+	bool "Reset a board on assert status automatically"
+	default n
+	depends on BOARDCTL_RESET
+	---help---
+		Some cases do not need to stay assert status. This supports
+		board reset.
+
+config LIB_BOARDCTL
+	bool "Enable boardctl() interface"
+	default n
+	---help---
+		Enables support for the boardctl() interface.  Architecture
+		specific logic must provide board_app_initialize() interface.
+
+if LIB_BOARDCTL
+
+config BOARDCTL_POWEROFF
+	bool "Enable power off interfaces"
+	default n
+	depends on ARCH_HAVE_POWEROFF
+	---help---
+		Enables support for the BOARDIOC_POWEROFF boardctl() command.
+		Architecture specific logic must provide the board_power_off()
+		interface.
+
+config BOARDCTL_RESET
+	bool "Enable reset interfaces"
+	default n
+	depends on ARCH_HAVE_RESET
+	---help---
+		Enables support for the BOARDIOC_RESET boardctl() command.
+		Architecture specific logic must provide the board_reset()
+		interface.
+
+config BOARDCTL_UNIQUEID
+	bool "Return board unique ID"
+	default n
+	---help---
+		Enables support for the BOARDIOC_UNIQUEID boardctl() command.
+		Architecture specific logic must provide the board_uniqueid()
+		interface.
+
+config BOARDCTL_UNIQUEID_SIZE
+	int "Size of the board unique ID (bytes)"
+	default 16
+	depends on BOARDCTL_UNIQUEID
+	---help---
+		Provides the size of the memory buffer that must be provided by the
+		caller of board_uniqueid() in which to receive the board unique ID.
+
+endif # LIB_BOARDCTL
+
+config BOARD_FOTA_SUPPORT
+	bool "Enable board support for FOTA"
+	default n
+	select FOTA_DRIVER
+	---help---
+		If selected the board provides support for FOTA.
+
+if BOARD_CRASHDUMP
+
+config BOARD_COREDUMP_FLASH
+	bool "Enable crashlog dump to flash"
+	default n
+	---help---
+		If selected it will dump the assert log information to flash.
+
+config BOARD_RAMDUMP_FLASH
+	bool "Enable ramdump to flash"
+	default n
+	---help---
+		If selected it will dump the RAM contents to flash.
+
+config BOARD_RAMDUMP_UART
+	bool "Enable ramdump via UART"
+	default n
+	---help---
+		If selected it will send the RAM dump via UART.
+endif
+
+comment "Board-Specific Options"
+
+if ARCH_BOARD_ARTIK05X_FAMILY
+source board/artik05x/Kconfig
+endif
+if ARCH_BOARD_LM3S6965EK
+source board/lm3s6965-ek/Kconfig
+endif
+if ARCH_BOARD_SIDK_S5JT200
+source board/sidk_s5jt200/Kconfig
+endif
