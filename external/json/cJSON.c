@@ -721,43 +721,42 @@ static cJSON_bool parse_string(cJSON * const item, parse_buffer * const input_bu
                 goto fail;
             }
 
-            switch (input_pointer[1])
-            {
-                case 'b':
-                    *output_pointer++ = '\b';
-                    break;
-                case 'f':
-                    *output_pointer++ = '\f';
-                    break;
-                case 'n':
-                    *output_pointer++ = '\n';
-                    break;
-                case 'r':
-                    *output_pointer++ = '\r';
-                    break;
-                case 't':
-                    *output_pointer++ = '\t';
-                    break;
-                case '\"':
-                case '\\':
-                case '/':
-                    *output_pointer++ = input_pointer[1];
-                    break;
+            switch (input_pointer[1]) {
+            case 'b':
+            	*output_pointer++ = '\b';
+                break;
+            case 'f':
+                *output_pointer++ = '\f';
+                break;
+            case 'n':
+                *output_pointer++ = '\n';
+                break;
+            case 'r':
+                *output_pointer++ = '\r';
+                break;
+            case 't':
+                *output_pointer++ = '\t';
+                break;
+            case '\"':
+            case '\\':
+            case '/':
+                *output_pointer++ = input_pointer[1];
+                break;
 
                 /* UTF-16 literal */
-                case 'u':
+            case 'u':
                     sequence_length = utf16_literal_to_utf8(input_pointer, input_end, &output_pointer);
-                    if (sequence_length == 0)
-                    {
-                        /* failed to convert UTF16-literal to UTF-8 */
-                        goto fail;
-                    }
-                    break;
-
-                default:
+                if (sequence_length == 0)
+                {
+                    /* failed to convert UTF16-literal to UTF-8 */
                     goto fail;
-            }
-            input_pointer += sequence_length;
+                }
+                break;
+
+            default:
+                    goto fail;
+           }
+        input_pointer += sequence_length;
         }
     }
 
