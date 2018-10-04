@@ -100,24 +100,24 @@ int aws_sample_cb(void *args)
 		num = atoi(argv[1]);
 
 		switch (num) {
-		case 1:
-			aws_shadow(0, NULL);
-			break;
-		case 2:
-			aws_shadow_console_echo(0, NULL);
-			break;
-		case 3:
-			aws_subscribe_publish_cpp(0, NULL);
-			break;
-		case 4:
-			aws_subscribe_publish_library(0, NULL);
-			break;
-		case 5:
-			aws_subscribe_publish(0, NULL);
-			break;
-		default:
-			printf("Wrong number : %d\n", num);
-			break;
+			case 1:
+				aws_shadow(0, NULL);
+				break;
+			case 2:
+				aws_shadow_console_echo(0, NULL);
+				break;
+			case 3:
+				aws_subscribe_publish_cpp(0, NULL);
+				break;
+			case 4:
+				aws_subscribe_publish_library(0, NULL);
+				break;
+			case 5:
+				aws_subscribe_publish(0, NULL);
+				break;
+			default:
+				printf("Wrong number : %d\n", num);
+				break;
 		}
 	}
 
