@@ -33,14 +33,11 @@
 static int exit_flag;
 static int handle_alarm;
 
-static void action(void *info)
+static void action(tm_msg_t *info)
 {
 	int ret;
 
-	char *rec = (char *)malloc(strlen((char *)info) + 1);
-	strncpy(rec, info, strlen((char *)info) + 1);
-
-	if (strncmp(rec, "alarm_on", strlen("alarm_on") + 1) == 0) {
+	if (strncmp((char *)info->msg, "alarm_on", info->msg_size) == 0) {
 		printf("\nAction Manager receives Alarm On request\n");
 		ret = task_manager_start(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret < 0) {
@@ -48,7 +45,7 @@ static void action(void *info)
 		} else if (ret == OK) {
 			printf("Alarm is successfully on\n");
 		}
-	} else if (strncmp(rec, "alarm_pause", strlen("alarm_pause") + 1) == 0) {
+	} else if (strncmp((char *)info->msg, "alarm_pause", info->msg_size) == 0) {
 		printf("\nAction Manager receives Alarm Pause request\n");
 		ret = task_manager_pause(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret < 0) {
@@ -56,7 +53,7 @@ static void action(void *info)
 		} else if (ret == OK) {
 			printf("Alarm is successfully paused\n");
 		}
-	} else if (strncmp(rec, "alarm_resume", strlen("alarm_resume") + 1) == 0) {
+	} else if (strncmp((char *)info->msg, "alarm_resume", info->msg_size) == 0) {
 		printf("\nAction Manager receives Alarm Resume request\n");
 		ret = task_manager_resume(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret < 0) {
@@ -64,7 +61,7 @@ static void action(void *info)
 		} else if (ret == OK) {
 			printf("Alarm is successfully resumed\n");
 		}
-	} else if (strncmp(rec, "alarm_restart", strlen("alarm_restart") + 1) == 0) {
+	} else if (strncmp((char *)info->msg, "alarm_restart", info->msg_size) == 0) {
 		printf("\nAction Manager receives Alarm Restart request\n");
 		ret = task_manager_restart(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret != OK) {
@@ -72,7 +69,7 @@ static void action(void *info)
 		} else {
 			printf("Alarm is successfully restarted\n");
 		}
-	} else if (strncmp(rec, "alarm_off", strlen("alarm_off") + 1) == 0) {
+	} else if (strncmp((char *)info->msg, "alarm_off", info->msg_size) == 0) {
 		printf("\nAction Manager receives Alarm Off request\n");
 		ret = task_manager_stop(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret < 0) {
@@ -83,25 +80,13 @@ static void action(void *info)
 	} else {
 		printf("Unregistered Action\n");
 	}
-	free(rec);
+
 	exit_flag++;
 }
 
-static void action_broad(int info)
+static void action_broad(void *user_data, void *cb_data)
 {
-	switch (info) {
-	case TM_BROADCAST_WIFI_ON:
-		printf("\nWIFI is On!\n");
-		break;
-
-	case TM_BROADCAST_WIFI_OFF:
-		printf("\nWIFI is Off!\n");
-		break;
-
-	default:
-		printf("Unsubscribed Action\n");
-		break;
-	}
+	printf("User data: %s, Callback data: %s\n", (char *)user_data, (char *)cb_data);
 	exit_flag++;
 }
 
@@ -121,6 +106,10 @@ int action_manager_main(int argc, char *argv[])
 	int ret_unregister_alarm;
 	int ret_unregister_ledon;
 	int ret_unregister_ledoff;
+	char *broad_cb_msg = "Broadcast Callback Msg";
+	tm_msg_t cb_data;
+	cb_data.msg = (void *)broad_cb_msg;
+	cb_data.msg_size = strlen(broad_cb_msg) + 1;
 
 	printf("Action Manager is started\n\nRegister Alarm Action\n");
 
@@ -167,8 +156,9 @@ int action_manager_main(int argc, char *argv[])
 		printf("LED Off Action is successfully started\n");
 	}
 
-	task_manager_set_unicast_cb(action);
-	task_manager_set_broadcast_cb((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
+	(void)task_manager_set_unicast_cb(action);
+	(void)task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, action_broad, &cb_data);
+	(void)task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, action_broad, &cb_data);
 	sem_post(&tm_sem);
 
 	while (exit_flag < 7) {
@@ -199,6 +189,9 @@ int action_manager_main(int argc, char *argv[])
 		} else if (ret_unregister_ledoff == OK) {
 			printf("LED Off Action is succeefully unregistered\n");
 		}
+
+		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
+		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_OFF, TM_NO_RESPONSE);
 
 		if ((ret_unregister_alarm == OK) && (ret_unregister_ledon == OK) && (ret_unregister_ledoff == OK)) {
 			printf("\n\nAction Manager is Ended, and Unregister Procedure is Completed!\n");
