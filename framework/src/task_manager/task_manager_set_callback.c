@@ -120,7 +120,7 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
-int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data))
+int task_manager_set_unicast_cb(tm_unicast_callback_t func)
 {
 	int ret = OK;
 	struct sigaction act;
@@ -165,7 +165,7 @@ int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data))
 /****************************************************************************
  * task_manager_set_broadcast_cb
  ****************************************************************************/
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), tm_msg_t *cb_data)
+int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_t *cb_data)
 {
 	int status;
 	tm_request_t request_msg;
@@ -197,7 +197,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *d
 		return TM_OUT_OF_MEMORY;
 	}
 	((tm_broadcast_info_t *)request_msg.data)->msg = msg;
-	((tm_broadcast_info_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
+	((tm_broadcast_info_t *)request_msg.data)->cb = (tm_broadcast_callback_t)func;
 	if (cb_data != NULL) {
 		((tm_broadcast_info_t *)request_msg.data)->cb_data = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 		if (((tm_broadcast_info_t *)request_msg.data)->cb_data == NULL) {
@@ -242,7 +242,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *d
 /****************************************************************************
  * task_manager_set_exit_cb
  ****************************************************************************/
-int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
+int task_manager_set_exit_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 {
 	int ret = OK;
 	tm_request_t request_msg;
@@ -261,7 +261,7 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	REQ_CBFUNC(request_msg) = (_tm_termination_t)func;
+	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
 	if (cb_data != NULL) {
 		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
 		if (REQ_CBDATA(request_msg) == NULL) {
@@ -296,7 +296,7 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 /****************************************************************************
  * task_manager_set_stop_cb
  ****************************************************************************/
-int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data)
+int task_manager_set_stop_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 {
 	int ret = OK;
 	struct sigaction act;
@@ -332,7 +332,7 @@ int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data)
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	REQ_CBFUNC(request_msg) = (_tm_termination_t)func;
+	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
 	if (cb_data != NULL) {
 		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
 		if (REQ_CBDATA(request_msg) == NULL) {

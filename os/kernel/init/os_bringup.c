@@ -73,7 +73,7 @@
 #include <tinyara/logm.h>
 #endif
 #ifdef CONFIG_TASK_MANAGER
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 #endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"

@@ -38,7 +38,7 @@
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
 #include <task_manager/task_manager_broadcast_list.h>
@@ -745,6 +745,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 {
 	int chk_idx;
 	int ret;
+	char *tm_stored_name = NULL;
 
 	if (name == NULL) {
 		return TM_INVALID_PARAM;
@@ -754,17 +755,24 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 	response_msg->data = NULL;
 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
-		if (TM_LIST_ADDR(chk_idx) && ((strncmp(builtin_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
-					   || (strncmp(tm_task_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
+		if (TM_LIST_ADDR(chk_idx)) {
+			if (TM_TYPE(chk_idx) == TM_BUILTIN_TASK) {
+				tm_stored_name = (char *)builtin_list[TM_IDX(chk_idx)].name;
+			} else if (TM_TYPE(chk_idx) == TM_TASK) {
+				tm_stored_name = tm_task_list[TM_IDX(chk_idx)].name;
+			}
 #ifndef CONFIG_DISABLE_PTHREAD
-					   || (strncmp(tm_pthread_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
+			else if (TM_TYPE(chk_idx) == TM_PTHREAD) {
+				tm_stored_name = tm_pthread_list[TM_IDX(chk_idx)].name;
+			}
 #endif
-		)) {
-
-			tmvdbg("found handle = %d\n", chk_idx);
-			ret = taskmgr_get_task_info((tm_appinfo_list_t **)&response_msg->data, chk_idx);
-			if (ret != OK) {
-				return ret;
+			if (tm_stored_name && !strncmp(tm_stored_name, name, strlen(name) + 1)) {
+				tmvdbg("found handle = %d\n", chk_idx);
+				ret = taskmgr_get_task_info((tm_appinfo_list_t **)&response_msg->data, chk_idx);
+				if (ret != OK) {
+					return ret;
+				}
+				tm_stored_name = NULL;
 			}
 		}
 	}
@@ -950,7 +958,7 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 		return handle;
 	}
 	if (type == TYPE_UNICAST) {
-		TM_UNICAST_CB(handle) = (_tm_unicast_t)data;
+		TM_UNICAST_CB(handle) = (tm_unicast_callback_t)data;
 	} else {
 		if (!taskmgr_is_tm_broadcast_msg_init()) {
 			taskmgr_broadcast_msg_init();

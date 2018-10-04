@@ -98,7 +98,7 @@
 #define TM_UNICAST_ASYNC     (1)
 
 struct tm_termination_info_s {
-	_tm_termination_t cb;
+	tm_termination_callback_t cb;
 	tm_msg_t *cb_data;
 };
 typedef struct tm_termination_info_s tm_termination_info_t;
@@ -116,7 +116,7 @@ struct app_list_data_s {
 	int tm_gid;
 	int status;
 	int permission;
-	_tm_unicast_t unicast_cb;
+	tm_unicast_callback_t unicast_cb;
 	sq_queue_t broadcast_info_list;
 	tm_termination_info_t *stop_cb_info;
 	tm_termination_info_t *exit_cb_info;
@@ -142,7 +142,7 @@ typedef struct tm_response_s tm_response_t;
 struct tm_broadcast_info_s {
 	struct tm_broadcast_info_s *flink;
 	int msg;
-	_tm_broadcast_t cb;
+	tm_broadcast_callback_t cb;
 	void* cb_data;
 };
 typedef struct tm_broadcast_info_s tm_broadcast_info_t;

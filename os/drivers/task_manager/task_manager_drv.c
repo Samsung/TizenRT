@@ -31,7 +31,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/wdog.h>
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 
 #include "sched/sched.h"
 
