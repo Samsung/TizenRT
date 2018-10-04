@@ -318,6 +318,30 @@ static int taskmgr_handle_tcb(int type, int pid)
 	return OK;
 }
 
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+static int taskmgr_adj_pthread_parent(int parent_pid, int child_pid)
+{
+	int fd;
+	int ret;
+	tm_pthread_pid_t group_info;
+
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		return TM_INVALID_DRVFD;
+	}
+
+	group_info.parent_pid = parent_pid;
+	group_info.child_pid = child_pid;
+
+	ret = ioctl(fd, TMIOC_PTHREAD_PARENT, (int)&group_info);
+	if (ret != OK) {
+		ret = TM_OPERATION_FAIL;
+	}
+
+	return ret;
+}
+#endif			/* HAVE_TASK_GROUP && !CONFIG_DISABLE_PTHREAD */
+
 static int taskmgr_start(int handle, int caller_pid)
 {
 	int ret;
@@ -356,6 +380,9 @@ static int taskmgr_start(int handle, int caller_pid)
 		pthread_setname_np(thread, pthread_info->name);
 		pthread_detach(thread);
 		pid = (int)thread;
+#ifdef HAVE_TASK_GROUP
+		taskmgr_adj_pthread_parent(caller_pid, pid);
+#endif
 	}
 #endif
 
