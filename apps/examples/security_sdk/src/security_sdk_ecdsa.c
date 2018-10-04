@@ -82,7 +82,7 @@ int security_sdk_ecdsa_sign_verify(void)
 		(ECC_SEC_P521R1)
 	};
 	unsigned int hash_size[SEE_ECDSA_SV_TC] = { 20, 32, 48, 64, 20, 32, 48, 64, 20, 32, 48, 64, 20, 32, 48, 64 };
-	unsigned char hash[100];
+	unsigned char *hash = NULL;
 	unsigned char *out = NULL;
 	unsigned int outlen = 0;
 
@@ -118,6 +118,8 @@ int security_sdk_ecdsa_sign_verify(void)
 			} else {
 				ret = security->set_key(handle, ECC_SEC_P521R1, key_name, test_ecdsa_521_dev_nist, sizeof(test_ecdsa_521_dev_nist));
 			}
+
+			ret += security->get_random_bytes(handle, hash_size[j], &hash);
 			ret += security->get_ecdsa_signature(handle, algo_type[j], key_name, hash, hash_size[j], &out, &outlen);
 			ret += security->verify_ecdsa_signature(handle, algo_type[j], key_name, hash, hash_size[j], out, outlen);
 
@@ -135,6 +137,11 @@ int security_sdk_ecdsa_sign_verify(void)
 			if (out != NULL) {
 				free(out);
 				out = NULL;
+			}
+
+			if (hash != NULL) {
+				free(hash);
+				hash = NULL;
 			}
 		}
 	}
@@ -154,6 +161,7 @@ int security_sdk_ecdsa_sign_verify(void)
 				ret = security->set_key(handle, ECC_SEC_P521R1, key_name, test_ecdsa_521_dev_nist, sizeof(test_ecdsa_521_dev_nist));
 			}
 
+			ret += security->get_random_bytes(handle, hash_size[j], &hash);
 			ret += security->get_ecdsa_signature(handle, algo_type[j], key_name, hash, hash_size[j], &out, &outlen);
 			ret += security->verify_ecdsa_signature(handle, algo_type[j], key_name, hash, hash_size[j], out, outlen);
 			ret += security->remove_key(handle, algo_type[j], key_name);
@@ -171,6 +179,11 @@ int security_sdk_ecdsa_sign_verify(void)
 				free(out);
 				out = NULL;
 			}
+
+			if (hash != NULL) {
+				free(hash);
+				hash = NULL;
+			}
 		}
 	}
 
@@ -178,6 +191,11 @@ exit:
 	if (out != NULL) {
 		free(out);
 		out = NULL;
+	}
+
+	if (hash != NULL) {
+		free(hash);
+		hash = NULL;
 	}
 
 	if (handle) {
