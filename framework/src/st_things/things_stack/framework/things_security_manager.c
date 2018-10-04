@@ -420,7 +420,7 @@ error:
 		things_free(svrdb);
 		return OIC_SEC_ERROR;
 	} else {
-		THINGS_LOG_E(TAG, "Can not open the [%s], Please make sure the access permision of file system.", SVR_DB_PATH);
+		THINGS_LOG_E(TAG, "Can not open the [%s], Please make sure the access permission of file system.", SVR_DB_PATH);
 	}
 
 	return res;					// return 0 when failed, 1 otherwise..
