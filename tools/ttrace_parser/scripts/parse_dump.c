@@ -134,7 +134,7 @@ static char *alloc_tracebuffer(int size)
 {
 	char *bp = (char *)malloc(size * sizeof(char));
 	if (bp == NULL) {
-		printf("Failed to zalloc buffer in ttrace\r\n");
+		printf("Failed to malloc buffer in ttrace\r\n");
 	}
 	return bp;
 }
