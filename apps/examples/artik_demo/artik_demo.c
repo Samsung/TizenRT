@@ -544,7 +544,8 @@ HANDSHAKE_FAIL:
 
 static int wget_parsestatus(struct wget_s *ws)
 {
-	int offset, ndx;
+	int offset;
+	int ndx;
 	char *dest;
 
 	offset = ws->offset;
@@ -688,7 +689,9 @@ static int wget_parseheaders(struct wget_s *ws)
 int send_data_to_artik(int *data)
 {
 
-	int ret, sockfd, i;
+	int ret;
+	int sockfd;
+	int i;
 	bool redirected;
 	struct sockaddr_in server;
 	struct wget_s ws;
