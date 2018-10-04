@@ -38,7 +38,7 @@ TIZENRT_BASEDIR="$PWD"
 
 ## How to build
 
-TizenRT provides an interactive tool (*dbuild.sh*) where you are prompted to select a option among multiple choices.  
+TizenRT provides an interactive tool (*dbuild.sh*) where you are prompted to select an option among multiple choices.  
 According to your selection, it consecutively provides next-step options.  
 When you become familiar to the TizenRT build system, you may use the *dbuild.sh* script with a specific build option.
 
