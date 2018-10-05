@@ -505,7 +505,7 @@ static artik_error ssl_init_context(struct http_server_t *server)
 	}
 
 	ret = security->get_certificate_pem_chain(handle, "ARTIK", &ca_chain);
-	if ((ret != S_OK) || !ca_chain || !artik_list_size(ca_chain)) {
+	if ((ret != S_OK) || !ca_chain || (artik_list_size(ca_chain) < ARTIK_CERTS_NUM)) {
 		printf("Failed to get CA chain from SE (err=%d)\n", ret);
 		ret = E_BAD_ARGS;
 		goto exit;
