@@ -391,11 +391,8 @@ struct netif {
 #else
 	u8_t d_buf[MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE];
 #endif
-#if LWIP_DHCP
-	struct dhcp *dhcp;
 #if LWIP_DHCPS
 	struct udp_pcb *dhcps_pcb;
-#endif
 #endif
 };
 
