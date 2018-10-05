@@ -26,6 +26,13 @@
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
 #include <netutils/netlib.h>
+
+#include <net/lwip/netif.h>
+#include <net/lwip/dhcp.h>
+#include <net/lwip/inet.h>
+#include <net/lwip/ip.h>
+#include <net/lwip/err.h>
+
 #ifdef CONFIG_ENABLE_IOTIVITY
 #include <mqueue.h>
 #include <fcntl.h>
@@ -145,6 +152,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
+#define WIFIMGR_DHCP_TIMEOUT 10000
 
 #define WIFIMGR_MAX_CONN_RETRIES 10
 #define WIFIMGR_IPC_PORT 9098
@@ -246,6 +254,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		}						\
 		g_manager_info.ip4_address = ip.s_addr;		\
 	} while (0)
+
+#define WIFIMGR_SET_WM_IP4ADDR(ip)	g_manager_info.ip4_address = ip.s_addr;
 
 #define WIFIMGR_INC_NUM_CLIENT						\
 	do {								\
@@ -410,6 +420,7 @@ static void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *
 static wifi_manager_result_e _start_dhcpd(void);
 static wifi_manager_result_e _stop_dhcpd(void);
 static wifi_manager_result_e _get_ipaddr_dhcp(void);
+static void _close_ipaddr_dhcp(void);
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
@@ -643,8 +654,9 @@ wifi_manager_result_e _start_dhcpd(void)
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
+#ifndef CONFIG_WIFIMGR_ENABLE_LWIP_DHCP
 	if (dhcpd_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) >= 0) {
-		ndbg("[WM] DHCP Server - started successfully\n");
+		ndbg("[WM] DHCP Server - started successfully (external)\n");
 #ifdef CONFIG_ENABLE_IOTIVITY
 		__tizenrt_manual_linkset("gen");
 #endif
@@ -654,6 +666,25 @@ wifi_manager_result_e _start_dhcpd(void)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_SOFTAP_DHCPD_FAIL);
 	}
 	return wret;
+#else
+	struct netif *cur_netif;
+	cur_netif = netif_find(WIFIMGR_SOFTAP_IFNAME);
+	if (cur_netif == NULL) {
+		ndbg("[WM] DHCP Server - no network interface for dhcpd start\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPD_FAIL);
+		return wret;
+	}
+	netif_set_up(cur_netif);
+	if (dhcps_start(cur_netif) == ERR_OK) {
+		ndbg("[WM} DHCP Server - started successfully (lwip)\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("gen");
+#endif
+		wret = WIFI_MANAGER_SUCCESS;
+	}
+	return wret;
+
+#endif
 }
 
 
@@ -661,22 +692,52 @@ wifi_manager_result_e _stop_dhcpd(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
-
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
+#ifndef CONFIG_WIFIMGR_ENABLE_LWIP_DHCP
 	dhcpd_stop();
-
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("del");
 #endif
-	return WIFI_UTILS_SUCCESS;
+	wret = WIFI_MANAGER_SUCCESS;
+	return wret;
+#else
+	struct netif *cur_netif;
+	cur_netif = netif_find(WIFIMGR_SOFTAP_IFNAME);
+	if (cur_netif == NULL) {
+		ndbg("[WM] DHCP Server - no network interface for dhcpd stop\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPD_FAIL);
+		return wret;
+	}
+	netif_set_down(cur_netif);
+	if (cur_netif->dhcps_pcb == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPD_FAIL);
+		ndbg("[WM] DHCP Server - stop dhcpd fail: no pcb\n");
+	}
+	dhcps_stop(cur_netif);
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("del");
+#endif
+	ndbg("[WM] DHCP Server - stop dhcpd\n");
+	wret = WIFI_MANAGER_SUCCESS;
+	return wret;
+#endif
 }
 
 
 wifi_manager_result_e _get_ipaddr_dhcp(void)
 {
+	struct netif *cur_netif;
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
+	cur_netif = netif_find(WIFIMGR_STA_IFNAME);
+	if (cur_netif == NULL) {
+		ndbg("[WM] No network interface for dhcpc\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+		return wret;
+	}
+#ifndef CONFIG_WIFIMGR_ENABLE_LWIP_DHCP
 	struct dhcpc_state state;
 	int ret;
 	void *dhcp_hnd = NULL;
-	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	dhcp_hnd = dhcpc_open(WIFIMGR_STA_IFNAME);
 	if (dhcp_hnd) {
 		ret = dhcpc_request(dhcp_hnd, &state);
@@ -690,11 +751,84 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 		nvdbg("[WM] IP address : %s ----\n", inet_ntoa(state.ipaddr));
 		dhcpc_close(dhcp_hnd);
 		wret = WIFI_MANAGER_SUCCESS;
+		netif_set_up(cur_netif);
 	} else {
 		ndbg("[WM] Invalid dhcp handle\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 	}
 	return wret;
+#else
+	int32_t timeleft = CONFIG_WIFIMGR_LWIP_DHCP_TIMEOUT;
+	struct in_addr local_ipaddr;
+	struct in_addr local_netmask;
+	struct in_addr local_gateway;
+	int ret = 0;
+	struct in_addr ip_check;
+
+	if (netif_dhcp_data(cur_netif)) {
+		dhcp_stop(cur_netif);
+	}
+
+	local_ipaddr.s_addr = IPADDR_ANY;
+	local_netmask.s_addr = IPADDR_BROADCAST;
+	local_gateway.s_addr = IPADDR_ANY;
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, local_ipaddr, local_netmask, local_gateway);
+
+	err_t res = dhcp_start(cur_netif);
+	if (res) {
+		ndbg("[WM] dhcp_start failure %d\n", res);
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+		return wret;
+	}
+	ndbg("[WM] dhcp_start success, waiting IP address (timeout %d secs)\n", CONFIG_WIFIMGR_LWIP_DHCP_TIMEOUT);
+	while (!dhcp_supplied_address(cur_netif)) {
+		usleep(100000);
+		timeleft -= 100;
+		if (timeleft <= 0) {
+			ndbg("[WM] dhcp_start timeout\n");
+			dhcp_stop(cur_netif);
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+			return wret;
+		}
+	}
+	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip_check);
+	if (ret == -1) {
+		ndbg("[WM] fail to get IP address\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+		dhcp_stop(cur_netif);
+		return wret;
+	}
+	netif_set_up(cur_netif);
+
+	wret = WIFI_MANAGER_SUCCESS;
+	ndbg("[WM] dhcp_start - got IP address %s\n", inet_ntoa(ip_check));
+	WIFIMGR_SET_WM_IP4ADDR(ip_check);
+	return wret;
+#endif								/* CONFIG_WIFIMGR_ENABLE_LWIP_DHCP */
+}
+
+
+void _close_ipaddr_dhcp(void)
+{
+	struct in_addr in = { .s_addr = INADDR_NONE };
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, in, in, in);
+	struct netif *cur_netif;
+	cur_netif = netif_find(WIFIMGR_STA_IFNAME);
+	if (cur_netif == NULL) {
+		ndbg("[WM] No network interface for dhcpc\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+		return;
+	}
+#ifndef CONFIG_WIFIMGR_ENABLE_LWIP_DHCP
+	netif_set_down(cur_netif);
+	ndbg("[WM] dhcp_stop - release IP address (external)\n");
+	return;
+#else
+	dhcp_stop(cur_netif);
+	netif_set_down(cur_netif);
+	ndbg("[WM] dhcp_stop - release IP address (lwip)\n");
+	return;
+#endif
 }
 
 
@@ -979,6 +1113,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 			WIFIMGR_RESET_CBK_CHK;
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		_close_ipaddr_dhcp();
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -997,6 +1132,7 @@ wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg
 		} else {
 			WIFIMGR_RESET_CBK_CHK;
 		}
+		_close_ipaddr_dhcp();
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(&g_manager_info.softap_config), "run_softap fail", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 	} else {
@@ -1045,6 +1181,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
 			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+			_close_ipaddr_dhcp();
 		} else {
 			_handle_user_cb(CB_STA_RECONNECTED, NULL);
 			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
@@ -1134,6 +1271,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		pthread_join(g_manager_info.reconn_id, NULL);
 
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		_close_ipaddr_dhcp();
 	} else if (msg->event == EVT_RECONNECT) {
 		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
 		wifi_manager_result_e wres = _wifimgr_connect_ap(apinfo);
@@ -1159,6 +1297,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 	if (msg->event == EVT_DISCONNECT) {
 		ndbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		_close_ipaddr_dhcp();
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		ndbg("[WM] AUTOCONNECT wait\n");
 	} else if (msg->event == EVT_STA_CONNECTED) {
@@ -1211,6 +1350,7 @@ wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		_close_ipaddr_dhcp();
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
