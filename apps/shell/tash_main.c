@@ -307,7 +307,7 @@ int tash_execute_cmdline(char *buff)
 
 					state = IN_VOID;
 					*buff = '\0';
-				break;
+					break;
 
 				case ASCII_QUOTE:
 					if (*(buff - 1) == ASCII_BACKSLASH) {
