@@ -111,6 +111,20 @@
 #define ETHARP_SUPPORT_STATIC_ENTRIES   CONFIG_NET_ARP_STATIC_ENTRIES
 #endif
 
+/* ---------- DHCP4 options ---------- */
+/* LWIP_DHCP always set to 1 if LWIP_IPV4 */
+#if LWIP_IPV4
+#define LWIP_DHCP 1
+#else
+#define LWIP_DHCP 0
+#endif
+/* NET_DHCPS depends on LWIP_IPV4 in config */
+#ifdef CONFIG_NET_DHCPS
+#define LWIP_DHCPS CONFIG_NET_DHCPS
+#else
+#define LWIP_DHCPS 0
+#endif
+
 /* ---------- ARP options ---------- */
 
 

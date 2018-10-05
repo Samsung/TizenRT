@@ -163,6 +163,7 @@ static struct list_node *plist;
 //static _uint8_t offer = 0xFF;
 static bool renew;
 static const _uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };	//0x63825363; // 99.130.83.99
+static dhcp_sta_joined g_dhcp_sta_joined = NULL;
 
 /****************************************************************************
  * Public Functions
@@ -695,6 +696,10 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 	case DHCPS_STATE_ACK:		//3
 		LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): DHCPD_STATE_ACK\n"));
 		dhcps_send_msg(pmsg_dhcps, DHCP_ACK);
+		if (g_dhcp_sta_joined) {
+			LWIP_DEBUGF(DHCP_DEBUG, ("station join done: callback\n"));
+			g_dhcp_sta_joined();
+		}
 		break;
 	case DHCPS_STATE_NAK:		//4
 		LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): DHCPD_STATE_NAK\n"));
@@ -758,15 +763,17 @@ static void kill_oldest_dhcps_pool(void)
 /**
  * @fn dhcps_start
  * @brief start DHCP server
- * @param info
+ * @param info, callback
  * @return void
  * @section
  * **/
-err_t dhcps_start(struct netif *netif)
+err_t dhcps_start(struct netif *netif, dhcp_sta_joined dhcp_join_cb)
 {
 	struct udp_pcb *dhcps;
 	err_t result = ERR_OK;
 	u32_t ipaddr_tmp;
+
+	g_dhcp_sta_joined = 0;
 
 	if (netif == NULL) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("error: netif is null\n"));
@@ -847,6 +854,11 @@ err_t dhcps_start(struct netif *netif)
 
 	if (result != ERR_OK) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start(): could not start dhcp server\n"));
+	}
+
+	if (dhcp_join_cb) {
+		g_dhcp_sta_joined = dhcp_join_cb;
+		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start(): link callback\n"));
 	}
 
 	return result;

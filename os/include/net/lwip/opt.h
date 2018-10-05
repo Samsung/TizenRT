@@ -842,13 +842,6 @@
 #define LWIP_DHCP                       0
 #endif							/* !LWIP_IPV4 */
 
-#ifdef CONFIG_NET_DHCPS
-/* NET_DHCPS depends on LWIP_IPV4 in config */
-#define LWIP_DHCPS CONFIG_NET_DHCPS
-#else
-#define LWIP_DHCPS 0
-#endif
-
 /**
  * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
  */

@@ -675,7 +675,7 @@ wifi_manager_result_e _start_dhcpd(void)
 		return wret;
 	}
 	netif_set_up(cur_netif);
-	if (dhcps_start(cur_netif) == ERR_OK) {
+	if (dhcps_start(cur_netif, _wifi_dhcpd_event) == ERR_OK) {
 		ndbg("[WM} DHCP Server - started successfully (lwip)\n");
 #ifdef CONFIG_ENABLE_IOTIVITY
 		__tizenrt_manual_linkset("gen");
