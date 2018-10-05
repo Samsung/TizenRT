@@ -3,6 +3,26 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 if NET_IPv4
+config NET_DHCP
+	bool "Support DHCP"
+	default y
+	---help---
+		Enable DHCP of LWIP
+
+config NET_DHCPS
+	bool "Support DHCP server"
+	default n
+	---help---
+		Enable DHCP server of LWIP
+
+if NET_DHCPS
+config DHCPS_LEASE_TIME
+	int "Default IP lease time (minutes)"
+	default 120
+	---help---
+		Default value for DHCP IP lease time of DHCPS
+endif
+
 config NET_IP_DEFAULT_TTL
 	int "Default value for Time-To-Live"
 	default 255

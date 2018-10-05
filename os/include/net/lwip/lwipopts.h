@@ -63,9 +63,16 @@
  * In this platform, DHCP client and server are supported through netutils
  * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
  */
-#define LWIP_DHCPS                      0
-#define LWIP_DHCP                       1
-#define LWIP_NETIF_API                  1
+
+#ifdef CONFIG_NET_DHCPS
+#define LWIP_DHCPS CONFIG_NET_DHCPS
+#else
+#define LWIP_DHCPS 0
+#endif
+#ifdef CONFIG_NET_DHCP
+#define LWIP_DHCP CONFIG_NET_DHCP
+#endif
+#define LWIP_NETIF_API 1
 
 #ifdef CONFIG_NET_ENABLE_LOOPBACK
 #define ENABLE_LOOPBACK    CONFIG_NET_ENABLE_LOOPBACK
