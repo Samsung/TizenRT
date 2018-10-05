@@ -94,6 +94,8 @@ struct dhcp {
 #endif	/* LWIP_DHCP_BOOTPFILE */
 };
 
+typedef void (*dhcp_sta_joined)(void);
+
 void dhcp_set_struct(struct netif *netif, struct dhcp *dhcp);
 /** Remove a struct dhcp previously set to the netif using dhcp_set_struct() */
 #define dhcp_remove_struct(netif) do { (netif)->dhcp = NULL; } while (0)
@@ -186,7 +188,7 @@ extern void dhcp_set_ntp_servers(u8_t num_ntp_servers, const ip4_addr_t *ntp_ser
  * @note netif parameter must not be null
  * @return On success, ERR_OK. On failure, returns error @ref err_t
 */
-err_t dhcps_start(struct netif *netif);
+err_t dhcps_start(struct netif *netif, dhcp_sta_joined dhcp_join_cb);
 /**
  * @brief dhcps_stop() stops DHCP server of network interface
  *
