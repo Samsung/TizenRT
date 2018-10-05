@@ -34,6 +34,14 @@
  ****************************************************************************/
 #define TASK_MANAGER_DRVPATH     "/dev/taskmgr"
 
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+struct tm_pthread_pid_s {
+	pid_t parent_pid;
+	pid_t child_pid;
+};
+typedef struct tm_pthread_pid_s tm_pthread_pid_t;
+#endif
+
 void task_manager_drv_register(void);
 
 /**
