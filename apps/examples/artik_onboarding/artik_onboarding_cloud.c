@@ -90,26 +90,6 @@ static void set_led_state(bool state)
 	artik_release_api_module(gpio);
 }
 
-static pthread_addr_t wifi_onboarding_start(pthread_addr_t arg)
-{
-	StartCloudWebsocket(false, NULL);
-	StartLwm2m(false, NULL);
-
-	if (StartSoftAP(true) != S_OK) {
-		return NULL;
-	}
-
-	if (StartWebServer(true, API_SET_WIFI) != S_OK) {
-		StartSoftAP(false);
-		return NULL;
-	}
-
-	printf("ARTIK Onboarding Service started\n");
-	current_service_state = STATE_ONBOARDING;
-
-	return NULL;
-}
-
 static void cloud_websocket_rx_cb(void *user_data, void *result)
 {
 	cJSON *msg, *error, *code, *type, *data, *actions, *action;
