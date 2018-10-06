@@ -89,20 +89,17 @@ CJSON_PUBLIC(const char*) cJSON_Version(void)
 /* Case insensitive string comparison, doesn't consider two NULL pointers equal though */
 static int case_insensitive_strcmp(const unsigned char *string1, const unsigned char *string2)
 {
-    if ((string1 == NULL) || (string2 == NULL))
-    {
+    if ((string1 == NULL) || (string2 == NULL)) {
         return 1;
     }
-
-    if (string1 == string2)
-    {
+    
+    if (string1 == string2) {
         return 0;
     }
 
     for(; tolower(*string1) == tolower(*string2); (void)string1++, string2++)
     {
-        if (*string1 == '\0')
-        {
+        if (*string1 == '\0') {
             return 0;
         }
     }
@@ -124,14 +121,12 @@ static unsigned char* cJSON_strdup(const unsigned char* string, const internal_h
     size_t length = 0;
     unsigned char *copy = NULL;
 
-    if (string == NULL)
-    {
+    if (string == NULL) {
         return NULL;
     }
 
     length = strlen((const char*)string) + sizeof("");
-    if (!(copy = (unsigned char*)hooks->allocate(length)))
-    {
+    if (!(copy = (unsigned char*)hooks->allocate(length))) {
         return NULL;
     }
     memcpy(copy, string, length);
@@ -141,8 +136,7 @@ static unsigned char* cJSON_strdup(const unsigned char* string, const internal_h
 
 CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
 {
-    if (hooks == NULL)
-    {
+    if (hooks == NULL) {
         /* Reset hooks */
         global_hooks.allocate = malloc;
         global_hooks.deallocate = free;
@@ -151,21 +145,18 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
     }
 
     global_hooks.allocate = malloc;
-    if (hooks->malloc_fn != NULL)
-    {
+    if (hooks->malloc_fn != NULL) {
         global_hooks.allocate = hooks->malloc_fn;
     }
 
     global_hooks.deallocate = free;
-    if (hooks->free_fn != NULL)
-    {
+    if (hooks->free_fn != NULL) {
         global_hooks.deallocate = hooks->free_fn;
     }
 
     /* use realloc only if both free and malloc are used */
     global_hooks.reallocate = NULL;
-    if ((global_hooks.allocate == malloc) && (global_hooks.deallocate == free))
-    {
+    if ((global_hooks.allocate == malloc) && (global_hooks.deallocate == free)) {
         global_hooks.reallocate = realloc;
     }
 }
@@ -174,8 +165,7 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
 static cJSON *cJSON_New_Item(const internal_hooks * const hooks)
 {
     cJSON* node = (cJSON*)hooks->allocate(sizeof(cJSON));
-    if (node)
-    {
+    if (node) {
         memset(node, '\0', sizeof(cJSON));
     }
 
@@ -244,31 +234,30 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
      * This also takes care of '\0' not necessarily being available for marking the end of the input */
     for (i = 0; (i < (sizeof(number_c_string) - 1)) && can_access_at_index(input_buffer, i); i++)
     {
-        switch (buffer_at_offset(input_buffer)[i])
-        {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '+':
-            case '-':
-            case 'e':
-            case 'E':
-                number_c_string[i] = buffer_at_offset(input_buffer)[i];
-                break;
+        switch (buffer_at_offset(input_buffer)[i]) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '+':
+        case '-':
+        case 'e':
+        case 'E':
+            number_c_string[i] = buffer_at_offset(input_buffer)[i];
+            break;
 
-            case '.':
-                number_c_string[i] = decimal_point;
-                break;
+        case '.':
+            number_c_string[i] = decimal_point;
+            break;
 
-            default:
-                goto loop_end;
+        default:
+            goto loop_end;
         }
     }
 loop_end:
@@ -721,43 +710,42 @@ static cJSON_bool parse_string(cJSON * const item, parse_buffer * const input_bu
                 goto fail;
             }
 
-            switch (input_pointer[1])
-            {
-                case 'b':
-                    *output_pointer++ = '\b';
-                    break;
-                case 'f':
-                    *output_pointer++ = '\f';
-                    break;
-                case 'n':
-                    *output_pointer++ = '\n';
-                    break;
-                case 'r':
-                    *output_pointer++ = '\r';
-                    break;
-                case 't':
-                    *output_pointer++ = '\t';
-                    break;
-                case '\"':
-                case '\\':
-                case '/':
-                    *output_pointer++ = input_pointer[1];
-                    break;
+            switch (input_pointer[1]) {
+            case 'b':
+            	*output_pointer++ = '\b';
+                break;
+            case 'f':
+                *output_pointer++ = '\f';
+                break;
+            case 'n':
+                *output_pointer++ = '\n';
+                break;
+            case 'r':
+                *output_pointer++ = '\r';
+                break;
+            case 't':
+                *output_pointer++ = '\t';
+                break;
+            case '\"':
+            case '\\':
+            case '/':
+                *output_pointer++ = input_pointer[1];
+                break;
 
                 /* UTF-16 literal */
-                case 'u':
+            case 'u':
                     sequence_length = utf16_literal_to_utf8(input_pointer, input_end, &output_pointer);
-                    if (sequence_length == 0)
-                    {
-                        /* failed to convert UTF16-literal to UTF-8 */
-                        goto fail;
-                    }
-                    break;
-
-                default:
+                if (sequence_length == 0)
+                {
+                    /* failed to convert UTF16-literal to UTF-8 */
                     goto fail;
-            }
-            input_pointer += sequence_length;
+                }
+                break;
+
+            default:
+                    goto fail;
+           }
+        input_pointer += sequence_length;
         }
     }
 
