@@ -234,31 +234,30 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
      * This also takes care of '\0' not necessarily being available for marking the end of the input */
     for (i = 0; (i < (sizeof(number_c_string) - 1)) && can_access_at_index(input_buffer, i); i++)
     {
-        switch (buffer_at_offset(input_buffer)[i])
-        {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '+':
-            case '-':
-            case 'e':
-            case 'E':
-                number_c_string[i] = buffer_at_offset(input_buffer)[i];
-                break;
+        switch (buffer_at_offset(input_buffer)[i]) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '+':
+        case '-':
+        case 'e':
+        case 'E':
+            number_c_string[i] = buffer_at_offset(input_buffer)[i];
+            break;
 
-            case '.':
-                number_c_string[i] = decimal_point;
-                break;
+        case '.':
+            number_c_string[i] = decimal_point;
+            break;
 
-            default:
-                goto loop_end;
+        default:
+            goto loop_end;
         }
     }
 loop_end:
