@@ -113,6 +113,10 @@
 #define M25P_M25P128_CAPACITY      0x18	/* 128 M-bit */
 #define M25P_M25P256_CAPACITY      0x19	/* 256 M-bit */
 
+/* Winbond flash & Memory types */
+#define WINBOND_SFLASH_ID          0xEF
+#define WINBOND_W25Q128_TYPE       0x40
+
 /*  M25P1 capacity is 131,072 bytes:
  *  (4 sectors) * (32,768 bytes per sector)
  *  (512 pages) * (256 bytes per page)
@@ -175,6 +179,22 @@
 #define M25P_M25P128_NSECTORS      64
 #define M25P_M25P128_PAGE_SHIFT    8	/* Page size 1 << 8 = 256 */
 #define M25P_M25P128_NPAGES        65536
+
+/* W25Q128JV  capacity :
+ * The W25Q128JV array is organized into 65,536 programmable pages of 256-bytes
+ * each. Up to 256 bytes can be programmed at a time. Pages can be erased in groups
+ * of 16 (4KB sector erase), groups of 128 (32KB block erase), groups of 256
+ * (64KB block erase) or the entire chip (chip erase). The W25Q128JV has 4,096
+ * erasable sectors and 256 erasable blocks respectively.
+ * The small 4KB sectors allow for greater flexibility in applications
+ * that require data and parameter storage
+*/
+#define W25Q128_SECTOR_SHIFT       16	/* Sector size 1 << 16 = 65,536 */
+#define W25Q128_NSECTORS           256  /* Erase blocks = 256 */
+#define W25Q128_PAGE_SHIFT         8	/* Page size 1 << 8 = 256 */
+#define W25Q128_NPAGES             65536
+#define W25Q128_SUBSECT_SHIFT      12	/* Sub sector size 1 << 12 = 4K */
+
 
 /*  M25P256 capacity is 33,554,432 bytes:
  *  (512 sectors) * (65,536 bytes per sector)
@@ -413,10 +433,26 @@ static inline int m25p_readid(struct m25p_dev_s *priv)
 		} else if (capacity == M25P_M25P128_CAPACITY) {
 			/* Save the FLASH geometry */
 
-			priv->sectorshift = M25P_M25P128_SECTOR_SHIFT;
-			priv->nsectors = M25P_M25P128_NSECTORS;
-			priv->pageshift = M25P_M25P128_PAGE_SHIFT;
-			priv->npages = M25P_M25P128_NPAGES;
+			if (manufacturer == WINBOND_SFLASH_ID &&
+				memory == WINBOND_W25Q128_TYPE) {
+
+				priv->sectorshift = W25Q128_SECTOR_SHIFT;
+				priv->nsectors = W25Q128_NSECTORS;
+				priv->pageshift = W25Q128_PAGE_SHIFT;
+				priv->npages = W25Q128_NPAGES;
+#if defined(CONFIG_M25P_SUBSECTOR_ERASE)
+				priv->subsectorshift = W25Q128_SUBSECT_SHIFT;
+#endif
+
+			} else {
+
+				priv->sectorshift = M25P_M25P128_SECTOR_SHIFT;
+				priv->nsectors = M25P_M25P128_NSECTORS;
+				priv->pageshift = M25P_M25P128_PAGE_SHIFT;
+				priv->npages = M25P_M25P128_NPAGES;
+
+			}
+
 			return OK;
 		} else if (capacity == M25P_M25P256_CAPACITY) {
 			/* Save the FLASH geometry */
