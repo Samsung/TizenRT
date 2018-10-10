@@ -97,8 +97,22 @@ int eventloop_loop_run(void)
 /* A function for closing each handle in loop called by iteration in uv_walk. */
 static void eventloop_close_handle(uv_handle_t *handle, void *data)
 {
-	if (!uv__is_closing(handle)) {
-		uv_close(handle, data);
+	if (handle == NULL || uv__is_closing(handle)) {
+		return;
+	}
+
+	switch (handle->type) {
+	case UV_TIMER:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_timer);
+		break;
+	case UV_SIGNAL:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_event_cb);
+		break;
+	case UV_ASYNC:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_thread_safe_cb);
+		break;
+	default:
+		break;
 	}
 }
 

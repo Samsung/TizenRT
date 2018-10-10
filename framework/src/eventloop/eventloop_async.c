@@ -29,8 +29,6 @@
 
 #include "eventloop_internal.h"
 
-typedef uv_async_t el_async_t;
-
 struct thread_safe_func_s {
 	struct thread_safe_func_s *flink;
 	thread_safe_callback func;
@@ -183,6 +181,23 @@ static void eventloop_thread_safe_cb_destroy(thread_safe_cb_t *thread_safe_cb)
 	EL_FREE(thread_safe_cb);
 }
 
+void eventloop_unregister_thread_safe_cb(el_async_t *handle)
+{
+	int thread_safe_cb_list_idx;
+	thread_safe_cb_t *curr;
+
+	thread_safe_cb_list_idx = THREAD_SAFE_CB_LIST_IDX_HASH(getpid());
+	while ((curr = (thread_safe_cb_t *)sq_remfirst(&CB_LIST(thread_safe_cb_list_idx)))) {
+		curr->func_handle->refs--;
+		if (curr->func_handle->refs == 0) {
+			eventloop_func_handle_remove(curr->func_handle);
+		}
+		EL_FREE(curr);
+	}
+
+	eventloop_thread_safe_cb_list_node_deinit(thread_safe_cb_list_idx);
+}
+
 static void eventloop_thread_safe_cb_add(thread_safe_cb_t *thread_safe_cb, int list_idx)
 {
 	if (list_idx < 0 || list_idx > CONFIG_MAX_TASKS || thread_safe_cb == NULL) {
@@ -207,7 +222,7 @@ static void eventloop_async_callback(el_async_t *handle)
 		eldbg("Failed to get loop\n");
 		return;
 	}
-	
+
 	thread_safe_cb_list_idx = THREAD_SAFE_CB_LIST_IDX_HASH(getpid());
 	while ((curr = (thread_safe_cb_t *)sq_remfirst(&CB_LIST(thread_safe_cb_list_idx)))) {
 		if (curr->func_handle->refs > 0) {
@@ -224,8 +239,12 @@ static void eventloop_async_callback(el_async_t *handle)
 			}
 			EL_FREE(curr);
 		}
+		/* It is true if eventloop_loop_stop is called in callback function. */
+		if (LOOP_IS_STOPPED(handle->loop)) {
+			return;
+		}
 	}
-	
+
 	uv_async_deinit(loop, ASYNC_HANDLE(thread_safe_cb_list_idx));
 	eventloop_thread_safe_cb_list_node_deinit(thread_safe_cb_list_idx);
 }

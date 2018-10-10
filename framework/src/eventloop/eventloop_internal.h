@@ -30,7 +30,15 @@
 
 #define LOOP_IS_STOPPED(loop) (loop->stop_flag == 1)
 
+/* EventLoop async type used for thread-safe call */
+typedef uv_async_t el_async_t;
+
 el_loop_t *get_app_loop(void);
 int get_async_task(void);
+
+/* Unregister Functions for each handles */
+void eventloop_unregister_timer(el_timer_t *timer);
+void eventloop_unregister_event_cb(el_event_t *handle);
+void eventloop_unregister_thread_safe_cb(el_async_t *handle);
 
 #endif
