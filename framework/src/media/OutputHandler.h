@@ -66,6 +66,7 @@ public:
 	void unregisterEncoder();
 
 private:
+	void writeToSource(size_t size);
 	std::shared_ptr<OutputDataSource> mOutputDataSource;
 	std::shared_ptr<Encoder> mEncoder;
 	std::shared_ptr<StreamBuffer> mStreamBuffer;
@@ -77,6 +78,8 @@ private:
 	bool mIsWorkerAlive;
 	std::mutex mMutex;
 	std::condition_variable mCondv;
+	std::mutex mFlushMutex;
+	std::condition_variable mFlushCondv;
 
 	std::weak_ptr<MediaRecorderImpl> mRecorder;
 };

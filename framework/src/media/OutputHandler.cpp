@@ -152,21 +152,14 @@ bool OutputHandler::stop()
 void OutputHandler::flush()
 {
 	medvdbg("OutputHandler::flush() enter\n");
-	mIsFlushing = true;
 
-	// Worker may be sleeping, wake it up!
-	wakenWorker();
-
-	while (mIsWorkerAlive) {
-		if (mBufferReader->sizeOfData() == 0) {
-			// Flushed
-			break;
-		}
-
-		usleep(20 * 1000);
+	if (mIsWorkerAlive) {
+		std::unique_lock<std::mutex> lock(mFlushMutex);
+		mIsFlushing = true;
+		wakenWorker();
+		mFlushCondv.wait(lock);
 	}
 
-	mIsFlushing = false;
 	medvdbg("OutputDataSource::flush() exit\n");
 }
 
@@ -210,6 +203,26 @@ void OutputHandler::destroyWorker()
 	}
 }
 
+void OutputHandler::writeToSource(size_t size)
+{
+	auto buf = new unsigned char[size];
+	auto readed = mBufferReader->read(buf, size);
+	if (readed != size) {
+		meddbg("StreamBufferReader::read failed! size : %u, readed : %u\n", size, readed);
+		delete buf;
+		return;
+	}
+
+	auto written = mOutputDataSource->write(buf, size);
+	if (written <= 0) {
+		// Error occurred, stop outputting
+		meddbg("OutputDataSource::write returned <= 0! size : %u, written : %d\n", size, written);
+		mBufferWriter->setEndOfStream();
+	}
+
+	delete buf;
+}
+
 void *OutputHandler::workerMain(void *arg)
 {
 	medvdbg("OutputHandler::workerMain()\n");
@@ -232,30 +245,19 @@ void *OutputHandler::workerMain(void *arg)
 		}
 
 		auto size = stream->mBufferReader->sizeOfData();
-		if ((size >= stream->mStreamBuffer->getThreshold()) ||
-			(size > 0 && stream->mIsFlushing)) {
-			auto buf = new unsigned char[size];
-			size_t wlen = 0;
-			while (wlen < size) {
-				size_t temp = stream->mBufferReader->read(buf + wlen, size - wlen);
-				if (temp == 0) {
-					// Can not read data, error occurred.
-					meddbg("StreamBufferReader::read failed!\n");
-					break;
-				}
-				wlen += temp;
+		if (stream->mIsFlushing) {
+			if (size != 0) {
+				stream->writeToSource(size);
 			}
-
-			if (worker->write(buf, size) < 0) {
-				// Error occurred, stop outputting
-				stream->mBufferWriter->setEndOfStream();
-				delete buf;
-				break;
-			}
-			delete buf;
+			std::unique_lock<std::mutex> lock(stream->mFlushMutex);
+			stream->mIsFlushing = false;
+			stream->mFlushCondv.notify_one();
+		} else if (size >= stream->mStreamBuffer->getThreshold()) {
+			stream->writeToSource(size);
 		}
 	}
 
+	medvdbg("OutputHandler exit\n");
 	return NULL;
 }
 
@@ -263,8 +265,8 @@ void OutputHandler::sleepWorker()
 {
 	size_t spaces = mBufferWriter->sizeOfSpace();
 	std::unique_lock<std::mutex> lock(mMutex);
-	// In case of flushing or overrun, DO NOT sleep worker.
-	if (mIsWorkerAlive && !mIsFlushing && (spaces > 0)) {
+	// In case of overrun, DO NOT sleep worker.
+	if (mIsWorkerAlive && (spaces > 0)) {
 		mCondv.wait(lock);
 	}
 }

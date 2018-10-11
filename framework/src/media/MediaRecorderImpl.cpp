@@ -312,6 +312,8 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 		return;
 	}
 
+	mOutputHandler.flush();
+
 	audio_manager_result_t result = stop_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_in failed ret : %d\n", result);
