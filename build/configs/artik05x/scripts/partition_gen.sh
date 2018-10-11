@@ -29,7 +29,7 @@ source .config
 BOARD_NAME=${CONFIG_ARCH_BOARD}
 OS_DIR_PATH=${PWD}
 PARTMAP_DIR_PATH=${OS_DIR_PATH}/../build/configs/artik05x/scripts
-BOARD_KCONFIG=${OS_DIR_PATH}/arch/arm/src/${BOARD_NAME}/Kconfig
+BOARD_KCONFIG=${OS_DIR_PATH}/board/${BOARD_NAME}/Kconfig
 
 # FLASH BASE ADDRESS (Can it be made to read dynamically from .config?)
 FLASH_BASE=0x04000000
