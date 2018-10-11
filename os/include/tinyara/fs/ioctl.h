@@ -94,6 +94,7 @@
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
+#define _ERBASE         (0x2200)	/* Error Report ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -367,6 +368,19 @@
 #define TMIOC_TERMINATE            _TMIOC(0x0007)
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
 #define TMIOC_PTHREAD_PARENT       _TMIOC(0x0008)
+#endif
+
+/* TinyAra Error Report driver ioctl definitions ************************/
+#ifdef CONFIG_ERROR_REPORT
+#define _ERIOCVALID(c)   (_IOC_TYPE(c) == _ERBASE)
+#define _ERIOC(nr)       _IOC(_ERBASE, nr)
+
+#define ERIOC_GET_ENTRY            _ERIOC(0x0001)
+#define ERIOC_CHECK_INFWAIT        _ERIOC(0x0002)
+#define ERIOC_GET_BACKTRACE        _ERIOC(0x0004)
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+#define ERIOC_SET_CALLBACK         _ERIOC(0x0005)
+#endif
 #endif
 
 /****************************************************************************

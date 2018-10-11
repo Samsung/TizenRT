@@ -80,6 +80,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
+#ifdef CONFIG_ERROR_REPORT
+#include <tinyara/error_report_internal.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -276,6 +279,10 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
+#ifdef CONFIG_ERROR_REPORT
+	/* Starting error reporting module */
+	error_report_drv_register();
+#endif
 	svdbg("Starting application main thread\n");
 
 #ifdef CONFIG_BUILD_PROTECTED

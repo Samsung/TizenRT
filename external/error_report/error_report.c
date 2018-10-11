@@ -18,6 +18,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -26,6 +27,9 @@
 #include <arpa/inet.h>
 #include <sched.h>
 #include <tinyara/sched.h>
+#include <tinyara/error_report_internal.h>
+#include <tinyara/fs/ioctl.h>
+#include <semaphore.h>
 #include <error_report/error_report.h>
 
 #define ERR_IP_ADRR_LEN 16
@@ -43,40 +47,160 @@ typedef struct {
 	uint16_t front;
 	int8_t q_pending;
 	pthread_mutex_t err_mutex;
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+	sem_t infinity_loop_exit;
+	pthread_t infinity_thread;
+	uint8_t ntasks;
+#endif
 	err_fsm_t fsm;
 } g_error_info_t;
 
 static g_error_info_t g_err_info;
+static int g_err_report_fd;
 
-static unsigned long prv_fetch_taskaddr(int pid)
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+static void prv_create_infwait_err_rec(int pid, int state, unsigned long task_addr)
 {
-	struct tcb_s *tcbptr = sched_gettcb(pid);
-	if (tcbptr != NULL) {
-		entry_t e = tcbptr->entry;
-		if ((tcbptr->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD) {
-			return (unsigned long)e.pthread;
-		} else {
-			return (unsigned long)e.main;
+	infinty_waitdata_t param;
+	int ret;
+	param.pid = pid;
+	ret = ioctl(g_err_report_fd, ERIOC_GET_BACKTRACE, &param);
+	if (ret < 0) {
+		nwerrdbg("ioctl failed\n");
+		return;
+	}
+	error_infwait_data_t send_data;
+	struct timeval ts;
+	char sendbuf[ERR_BUFLEN];
+	int i;
+	gettimeofday(&ts, NULL);
+	send_data.error_type = ERRTYPE_HANGING;
+	send_data.ncalls = param.ncalls;
+	send_data.task_state = param.task_state;
+	send_data.task_addr = param.entry;
+	for (i = 0; i < CONFIG_ERROR_REPORT_BACKTRACE_MAX_DEPTH; i++) {
+		send_data.backtrace[i] = param.backtrace[i];
+	}
+	send_data.timestamp.tv_sec = ts.tv_sec;
+	send_data.timestamp.tv_usec = ts.tv_usec;
+	if (sizeof(sendbuf) < sizeof(error_infwait_data_t)) {
+		nwerrdbg("Buffer space inadequate\n");
+		return;
+	}
+	memcpy(sendbuf, (void *)&send_data, sizeof(error_infwait_data_t));
+	sendbuf[sizeof(error_infwait_data_t)] = 0;
+	/* Send error record to default endpoint */
+	error_report_send(0, sendbuf, sizeof(error_infwait_data_t) + 1);
+}
+#endif
+
+
+static int prv_check_infinite_wait(void *args)
+{
+	struct timespec ts;
+	struct timeval t1;
+	int ret;
+
+	while (1) {
+		ret = ioctl(g_err_report_fd, ERIOC_CHECK_INFWAIT, NULL);
+		if (ret < 0) {
+			nwerr_vdbg("ioctl failed\n");
+			goto done;
+		}
+		gettimeofday(&t1, NULL);
+		/* Logic to check every thread state whether it is in WAITSEM or WAITSIG mode */
+		nwerr_vdbg("%lu: sem_timedwait for %lu seconds\n", t1.tv_sec, ts.tv_sec);
+		ts.tv_sec = t1.tv_sec + CONFIG_ERROR_REPORT_INFINITE_CHECK_TIMER;
+		ts.tv_nsec = t1.tv_usec * 1000;
+		ret = sem_timedwait(&g_err_info.infinity_loop_exit, &ts);
+		gettimeofday(&t1, NULL);
+		nwerr_vdbg("%lu: sem_timedwait returned with value %d\n", t1.tv_sec, ret);
+		if (!ret) {
+			break;
+		} else if ((ret < 0) && (get_errno() != ETIMEDOUT)) {
+			printf("exiting with errno %d", get_errno());
+			goto done;
 		}
 	}
 	return 0;
+done:
+	sem_destroy(&g_err_info.infinity_loop_exit);
+	return ret;
 }
 
 err_status_t error_report_init(void)
 {
+	if (g_err_info.fsm == ERRSTATE_INITIALIZED) {
+		return ERR_SUCCESS;
+	}
 	pthread_mutex_init(&g_err_info.err_mutex, NULL);
 	g_err_info.fsm = ERRSTATE_INITIALIZED;
+	g_err_report_fd = open(ERROR_REPORT_DRVPATH, O_RDWR);
+	if (g_err_report_fd < 0) {
+		nwerrdbg("Failed to open error report driver file: %d\n", get_errno());
+		goto err_case;
+	}
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+	int retval;
+	sem_init(&g_err_info.infinity_loop_exit, 0, 0);
+	retval = ioctl(g_err_report_fd, ERIOC_SET_CALLBACK, prv_create_infwait_err_rec);
+	if (retval < 0) {
+		nwerr_vdbg("Ioctl failed\n");
+		sem_destroy(&g_err_info.infinity_loop_exit);
+		goto err_case;
+	}
+#endif
+	return ERR_SUCCESS;
+err_case:
+	pthread_mutex_destroy(&g_err_info.err_mutex);
+	return ERR_FAIL;
+}
+
+err_status_t error_report_start_infinitywait(void)
+{
+	int r;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	sparam.sched_priority = 100;
+	if ((r = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+		nwerrdbg("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
+		return ERR_FAIL;
+	}
+
+	if ((r = pthread_attr_setschedpolicy(&attr, SCHED_RR)) != 0) {
+		nwerrdbg("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
+		return ERR_FAIL;
+	}
+
+	if ((r = pthread_attr_setstacksize(&attr, 4096)) != 0) {
+		nwerrdbg("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
+		return ERR_FAIL;
+	}
+	if ((r = pthread_create(&g_err_info.infinity_thread, &attr, (pthread_startroutine_t)prv_check_infinite_wait, NULL)) != 0) {
+		nwerrdbg("%s: pthread_create failed, status=%d\n", __func__, r);
+		return ERR_FAIL;
+	}
+	nwerr_vdbg("Created infinity thread\n");
 	return ERR_SUCCESS;
 }
 
 err_status_t error_report_deinit(void)
 {
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+	sem_post(&g_err_info.infinity_loop_exit);
+	pthread_join(g_err_info.infinity_thread, NULL);
+#endif
+	pthread_mutex_lock(&g_err_info.err_mutex);
+	g_err_info.front = 0;
+	g_err_info.rear = 0;
+	g_err_info.q_pending = 0;
+	g_err_info.fsm = ERRSTATE_UNINITIALIZED;
+	pthread_mutex_unlock(&g_err_info.err_mutex);
 	pthread_mutex_destroy(&g_err_info.err_mutex);
-
 	return ERR_SUCCESS;
 }
 
-error_data_t *error_report_data_create(int module_id, int error_code, uint32_t pc_value)
+error_data_t *error_report_data_create(int err_type, int module_id, int error_code, uint32_t pc_value, uint32_t task_addr)
 {
 	struct timeval ts;
 	gettimeofday(&ts, NULL);
@@ -85,13 +209,27 @@ error_data_t *error_report_data_create(int module_id, int error_code, uint32_t p
 	pthread_mutex_lock(&g_err_info.err_mutex);
 
 	ret = (error_data_t *) g_error_report + g_err_info.rear;
+	ret->error_type = ERRTYPE_SERVICE;
 	ret->timestamp.tv_sec = ts.tv_sec;
 	ret->timestamp.tv_usec = ts.tv_usec;
 	ret->module_id = module_id;
 	ret->error_code = error_code;
 	ret->pc_value = pc_value;
 	nwerr_vdbg("pc_value: %08x\n", pc_value);
-	ret->task_addr = prv_fetch_taskaddr(getpid());
+	if (module_id == ERRMOD_INFINITE_WAIT) {
+		ret->task_addr = task_addr;
+	} else {
+		int retval;
+		thread_entry_t thd;
+		thd.pid = getpid();
+		retval = ioctl(g_err_report_fd, ERIOC_GET_ENTRY, &thd);
+		if (retval < 0) {
+			nwerr_vdbg("Ioctl failed\n");
+			ret = NULL;
+			goto done;
+		}
+		ret->task_addr = thd.entry;
+	}
 	nwerr_vdbg("task_addr: %08x\n", ret->task_addr);
 	if (g_err_info.fsm == ERRSTATE_MEMUNDERFLOW) {
 		g_err_info.fsm = ERRSTATE_INITIALIZED;
@@ -100,6 +238,7 @@ error_data_t *error_report_data_create(int module_id, int error_code, uint32_t p
 	if (g_err_info.q_pending < CONFIG_ERROR_REPORT_NENTRIES) {
 		g_err_info.q_pending++;
 	}
+done:
 	pthread_mutex_unlock(&g_err_info.err_mutex);
 	return ret;
 }
@@ -117,11 +256,13 @@ int error_report_data_read(char *readbuf)
 	}
 	if (readbuf != NULL) {
 		if (!nentries) {
+			nwerr_vdbg("No entries\n");
 			g_err_info.fsm = ERRSTATE_MEMUNDERFLOW;
 		} else {
 			while (nentries) {
 				if (nbytes + sizeof(error_data_t) >= ERR_BUFLEN) {
 					g_err_info.fsm = ERRSTATE_BUFFER_EXCEEDED;
+					nwerr_vdbg("Buffer exceeded\n");
 					goto err_read_done;
 				}
 				memcpy(readbuf + nbytes, (char *)(g_error_report + g_err_info.front), sizeof(error_data_t));
@@ -134,7 +275,7 @@ int error_report_data_read(char *readbuf)
 	}
 
 err_read_done:
-	printf("Report in Hex: ");
+	printf("Report (%d bytes) in Hex: ", nbytes);
 	for (i = 0; i < nbytes; i++) {
 		printf("%02x ", readbuf[i]);
 	}
@@ -150,7 +291,7 @@ int error_report_send(const char *ep, char *readbuf, int readbuf_len)
 	int socket_fd;
 	struct sockaddr_in endpoint;
 	char ip_addr[ERR_IP_ADRR_LEN];
-	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_fd < CONFIG_NSOCKET_DESCRIPTORS) {
 		return ERR_FAIL;
 	}
