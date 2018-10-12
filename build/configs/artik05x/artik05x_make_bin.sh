@@ -22,8 +22,10 @@
 
 set -e
 
-# Remember, make is invoked from "os" directory
-OS_DIR_PATH=${PWD}
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
