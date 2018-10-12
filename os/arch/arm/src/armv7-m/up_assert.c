@@ -199,6 +199,10 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
 			(unsigned long)tcb->adj_stack_size);
 #endif
+
+	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
+	}
 }
 #endif
 
@@ -215,7 +219,7 @@ static inline void up_showtasks(void)
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("--------------------------------------------------\n");
+	lldbg("-------------------------------------------------\n");
 #else
 	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
 	lldbg("----------------------------------\n");
