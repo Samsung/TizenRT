@@ -78,6 +78,10 @@ bool BufferOutputDataSource::isPrepare()
 
 ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 {
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!isPrepare()) {
 		return EOF;
 	}
