@@ -43,6 +43,7 @@ public:
 
 protected:
 	long mStacksize;
+	int mPriority;
 	const char *mThreadName;
 	virtual bool processLoop();
 
