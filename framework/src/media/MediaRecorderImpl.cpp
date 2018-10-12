@@ -266,7 +266,7 @@ void MediaRecorderImpl::startRecorder()
 	if (mCurState != RECORDER_STATE_READY && mCurState != RECORDER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
-		notifyObserver(OBSERVER_COMMAND_START_ERROR, RECORDER_ERROR_INVALID_STATE);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, RECORDER_ERROR_INVALID_STATE);
 		return;
 	}
 
@@ -285,7 +285,7 @@ void MediaRecorderImpl::startRecorder()
 	}
 
 	mCurState = RECORDER_STATE_RECORDING;
-	notifyObserver(OBSERVER_COMMAND_STARTED);
+	notifyObserver(RECORDER_OBSERVER_COMMAND_STARTED);
 }
 
 recorder_result_t MediaRecorderImpl::stop()
@@ -308,7 +308,7 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 	if (ret == RECORDER_OK && mCurState != RECORDER_STATE_RECORDING && mCurState != RECORDER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
-		notifyObserver(OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INVALID_STATE);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INVALID_STATE);
 		return;
 	}
 
@@ -316,7 +316,7 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_in failed ret : %d\n", result);
 		if (ret == RECORDER_OK) {
-			notifyObserver(OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INTERNAL_OPERATION_FAILED);
+			notifyObserver(RECORDER_OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 		return;
 	}
@@ -326,9 +326,9 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 	mrw.setCurrentRecorder(nullptr);
 
 	if (ret == RECORDER_OK) {
-		notifyObserver(OBSERVER_COMMAND_FINISHIED);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_FINISHIED);
 	} else {
-		notifyObserver(OBSERVER_COMMAND_STOP_ERROR, (recorder_error_t)ret);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_STOP_ERROR, (recorder_error_t)ret);
 	}
 }
 
@@ -352,19 +352,19 @@ void MediaRecorderImpl::pauseRecorder()
 	if (mCurState != RECORDER_STATE_RECORDING) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
-		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INVALID_STATE);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INVALID_STATE);
 		return;
 	}
 
 	audio_manager_result_t result = pause_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INTERNAL_OPERATION_FAILED);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INTERNAL_OPERATION_FAILED);
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		return;
 	}
 
 	mCurState = RECORDER_STATE_PAUSED;
-	notifyObserver(OBSERVER_COMMAND_PAUSED);
+	notifyObserver(RECORDER_OBSERVER_COMMAND_PAUSED);
 }
 
 recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
@@ -618,7 +618,7 @@ void MediaRecorderImpl::notifySync()
 	mSyncCv.notify_one();
 }
 
-void MediaRecorderImpl::notifyObserver(observer_command_t cmd, ...)
+void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 {
 	medvdbg("notifyObserver cmd : %d\n", cmd);
 	if (mRecorderObserver) {
@@ -627,43 +627,43 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd, ...)
 
 		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
 		switch (cmd) {
-		case OBSERVER_COMMAND_STARTED: {
-			medvdbg("OBSERVER_COMMAND_STARTED\n");
+		case RECORDER_OBSERVER_COMMAND_STARTED: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_STARTED\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_PAUSED: {
-			medvdbg("OBSERVER_COMMAND_PAUSED\n");
+		case RECORDER_OBSERVER_COMMAND_PAUSED: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_PAUSED\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_FINISHIED: {
-			medvdbg("OBSERVER_COMMAND_FINISHIED\n");
+		case RECORDER_OBSERVER_COMMAND_FINISHIED: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_FINISHIED\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_START_ERROR: {
-			medvdbg("OBSERVER_COMMAND_START_ERROR\n");
+		case RECORDER_OBSERVER_COMMAND_START_ERROR: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_START_ERROR\n");
 			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordStartError, mRecorderObserver, mRecorder, errCode);
 		} break;
-		case OBSERVER_COMMAND_PAUSE_ERROR: {
-			medvdbg("OBSERVER_COMMAND_PAUSE_ERROR\n");
+		case RECORDER_OBSERVER_COMMAND_PAUSE_ERROR: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_PAUSE_ERROR\n");
 			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordPauseError, mRecorderObserver, mRecorder, errCode);
 		} break;
-		case OBSERVER_COMMAND_STOP_ERROR: {
-			medvdbg("OBSERVER_COMMAND_STOP_ERROR\n");
+		case RECORDER_OBSERVER_COMMAND_STOP_ERROR: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_STOP_ERROR\n");
 			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordStopError, mRecorderObserver, mRecorder, errCode);
 		} break;
-		case OBSERVER_COMMAND_BUFFER_OVERRUN: {
-			medvdbg("OBSERVER_COMMAND_BUFFER_OVERRUN\n");
+		case RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferOverrun, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_BUFFER_UNDERRUN: {
-			medvdbg("OBSERVER_COMMAND_BUFFER_UNDERRUN\n");
+		case RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferUnderrun, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_BUFFER_DATAREACHED: {
-			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
+		case RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
 			unsigned char *data = va_arg(ap, unsigned char *);
 			size_t size = va_arg(ap, size_t);
 			std::shared_ptr<unsigned char> autodata(data, [](unsigned char *p){ delete[] p; });

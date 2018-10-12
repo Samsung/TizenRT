@@ -364,6 +364,7 @@ void MediaPlayerImpl::pausePlayer()
 		mpw.setPlayer(nullptr);
 	}
 	mCurState = PLAYER_STATE_PAUSED;
+	notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSED);
 }
 
 player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)

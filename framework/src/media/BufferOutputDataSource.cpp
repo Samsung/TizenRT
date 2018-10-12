@@ -90,7 +90,7 @@ ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 	memcpy(buffer, buf, size);
 	auto recorder = getRecorder();
 	if (recorder) {
-		recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
+		recorder->notifyObserver(RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
 	}
 	// DO NOT `delete[]`, `buffer` will be managed in std::shared_ptr<> and released automatically!
 
