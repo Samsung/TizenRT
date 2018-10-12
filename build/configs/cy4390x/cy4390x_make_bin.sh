@@ -20,8 +20,10 @@
 # File   : cy4390x_make_bin.sh
 # Description : make cy4390x specific binary
 
-# Remember, make is invoked from "os" directory
-OS_DIR_PATH=${PWD}
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
 BIN_DIR_PATH=${OS_DIR_PATH}/../build/output/bin
 
 TIZENRT_BIN=${BIN_DIR_PATH}/tinyara

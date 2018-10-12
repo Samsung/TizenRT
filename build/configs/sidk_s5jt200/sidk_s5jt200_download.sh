@@ -20,14 +20,17 @@
 # File   : sidk_s5jt200_download.sh
 # Description : interface script for sidk_s5jt200 download
 
-# Include the configuration file
-source .config
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
+
+source ${OS_DIR_PATH}/.config
 
 # Board name for which tinyara has been compiled
 BOARD_NAME=${CONFIG_ARCH_BOARD}
 
 # ENV : Set to proper path's
-OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 OUTPUT_BIN_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}

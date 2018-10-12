@@ -20,8 +20,10 @@
 # File   : artik05x_ota.sh
 # Description : Attach CRC and Signing in TizenRT Binary
 
-# Remember, make is invoked from "os" directory
-OS_DIR_PATH=${PWD}
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
 OUTPUT_BINARY_PATH=${OS_DIR_PATH}/../build/output/bin
 TIZENRT_BIN=${OUTPUT_BINARY_PATH}/tinyara_head.bin
 

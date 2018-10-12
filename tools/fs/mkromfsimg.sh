@@ -51,28 +51,21 @@
 #
 ############################################################################
 
-# Make sure we understand where we are
-if [ ! -f ../tools/fs/mkromfsimg.sh ]; then
-  cd .. || { echo "ERROR: cd .. failed"; exit 1; }
-  if [ ! -f ../tools/fs/mkromfsimg.sh ]; then
-    error "This script must be executed from the top-level os/ directory"
-    exit 1
-  fi
-fi
-
 echo "Making romfs.img..."
 
 # Environmental stuff
 
-topdir=$PWD
-buildpath=${topdir}/../build
-contentsdir=${topdir}/../tools/fs/contents
-romfsimg=${buildpath}/output/bin/romfs.img
+FSTOOL_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+# When location of this script is changed, only OS_PATH should be changed together!!!
+OS_PATH=${FSTOOL_PATH}/../../os
+BIN_PATH=${OS_PATH}/../build/output/bin
+CONTENTS_PATH=${FSTOOL_PATH}/contents
+ROMFS_IMG=${BIN_PATH}/romfs.img
 
 # Sanity checks
 
-if [ ! -d "${contentsdir}" ]; then
-  echo "ERROR: Directory ${contentsdir} does not exist"
+if [ ! -d "${CONTENTS_PATH}" ]; then
+  echo "ERROR: Directory ${CONTENTS_PATH} does not exist"
   exit 1
 fi
 
@@ -84,7 +77,7 @@ genromfs -h 1>/dev/null 2>&1 || { \
 
 # Now we are ready to make the ROMFS image
 
-genromfs -f ${romfsimg} -d ${contentsdir} -x .gitignore -V "TinyAraROMVol" || { echo "genromfs failed" ; exit 1 ; }
+genromfs -f ${ROMFS_IMG} -d ${CONTENTS_PATH} -x .gitignore -V "TinyAraROMVol" || { echo "genromfs failed" ; exit 1 ; }
 
 # And, finally, create the header file
-echo "${romfsimg} was made."
+echo "${ROMFS_IMG} was made."

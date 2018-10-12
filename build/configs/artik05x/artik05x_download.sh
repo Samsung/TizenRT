@@ -20,10 +20,13 @@
 # File   : artik05x_download.sh
 # Description : Download script for ARTIK 05X
 
-source .config
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 
-# Remember, make is invoked from "os" directory
-OS_DIR_PATH=${PWD}
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
+
+source ${OS_DIR_PATH}/.config
+
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
