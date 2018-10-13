@@ -296,7 +296,7 @@ void OutputHandler::onBufferOverrun()
 {
 	auto mr = getRecorder();
 	if (mr) {
-		mr->notifyObserver(OBSERVER_COMMAND_BUFFER_OVERRUN);
+		mr->notifyObserver(RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN);
 	}
 }
 
@@ -304,7 +304,7 @@ void OutputHandler::onBufferUnderrun()
 {
 	auto mr = getRecorder();
 	if (mr) {
-		mr->notifyObserver(OBSERVER_COMMAND_BUFFER_UNDERRUN);
+		mr->notifyObserver(RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN);
 	}
 }
 

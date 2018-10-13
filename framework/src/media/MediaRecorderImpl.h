@@ -66,17 +66,17 @@ const char *const recorder_state_names[] = {
 	"RECORDER_STATE_PAUSED",
 };
 
-typedef enum observer_command_e {
-	OBSERVER_COMMAND_STARTED,
-	OBSERVER_COMMAND_PAUSED,
-	OBSERVER_COMMAND_FINISHIED,
-	OBSERVER_COMMAND_START_ERROR,
-	OBSERVER_COMMAND_PAUSE_ERROR,
-	OBSERVER_COMMAND_STOP_ERROR,
-	OBSERVER_COMMAND_BUFFER_OVERRUN,
-	OBSERVER_COMMAND_BUFFER_UNDERRUN,
-	OBSERVER_COMMAND_BUFFER_DATAREACHED,
-} observer_command_t;
+typedef enum recorder_observer_command_e {
+	RECORDER_OBSERVER_COMMAND_STARTED,
+	RECORDER_OBSERVER_COMMAND_PAUSED,
+	RECORDER_OBSERVER_COMMAND_FINISHIED,
+	RECORDER_OBSERVER_COMMAND_START_ERROR,
+	RECORDER_OBSERVER_COMMAND_PAUSE_ERROR,
+	RECORDER_OBSERVER_COMMAND_STOP_ERROR,
+	RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN,
+	RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
+	RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED,
+} recorder_observer_command_t;
 
 class MediaRecorderImpl : public enable_shared_from_this<MediaRecorderImpl>
 {
@@ -100,7 +100,7 @@ public:
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	recorder_result_t setDuration(int second);
 	void notifySync();
-	void notifyObserver(observer_command_t cmd, ...);
+	void notifyObserver(recorder_observer_command_t cmd, ...);
 	void capture();
 
 private:
