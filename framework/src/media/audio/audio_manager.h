@@ -489,11 +489,12 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
  *
  * Input parameter:
  *   card_id : Target card id , device_id : Target device id
+ *   subtype : Process Subtype
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t start_stream_in_device_process(int card_id, int device_id);
+audio_manager_result_t start_stream_in_device_process(int card_id, int device_id, device_process_subtype_t subtype);
 
 /****************************************************************************
  * Name: stop_stream_in_device_process
@@ -503,25 +504,27 @@ audio_manager_result_t start_stream_in_device_process(int card_id, int device_id
  *
  * Input parameter:
  *   card_id : Target card id , device_id : Target device id
+ *   subtype : Process Subtype
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id);
+audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id, device_process_subtype_t subtype);
 
 /****************************************************************************
- * Name: unregister_stream_in_device_process
+ * Name: unregister_stream_in_device_process_type
  *
  * Description:
  *   Release device process and unregister it
  *
  * Input parameter:
  *   card_id : Target card id , device_id : Target device id
+ *   subtype : Process Subtype
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t unregister_stream_in_device_process(int card_id, int device_id);
+audio_manager_result_t unregister_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype);
 
 /****************************************************************************
  * Name: get_device_process_handler_message

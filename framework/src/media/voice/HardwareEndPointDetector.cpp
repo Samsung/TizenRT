@@ -55,7 +55,7 @@ bool HardwareEndPointDetector::init(uint32_t samprate, uint8_t channels)
 		return false;
 	}
 
-	result = start_stream_in_device_process(mCard, mDevice);
+	result = start_stream_in_device_process(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
 		return false;
@@ -86,10 +86,10 @@ void HardwareEndPointDetector::deinit()
 {
 	audio_manager_result_t result;
 
-	result = unregister_stream_in_device_process(mCard, mDevice);
+	result = unregister_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: unregister_stream_in_device_process_type(%d, %d) failed!\n", mCard, mDevice);
 	}
 }
 
@@ -105,7 +105,7 @@ void *HardwareEndPointDetector::endPointDetectThread(void *param)
 		usleep(30 * 1000);
 	}
 
-	unregister_stream_in_device_process(detector->mCard, detector->mDevice);
+	unregister_stream_in_device_process_type(detector->mCard, detector->mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 
 	return NULL;
 }
@@ -119,7 +119,7 @@ bool HardwareEndPointDetector::processEPDFrame(short *sample, int numSample)
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
 		if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
-			stop_stream_in_device_process(mCard, mDevice);
+			stop_stream_in_device_process(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 			return true;
 		}
 	} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
