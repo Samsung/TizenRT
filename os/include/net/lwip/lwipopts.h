@@ -58,15 +58,6 @@
 #include <tinyara/config.h>
 
 /* --------- PreDefined Configurations -------------*/
-/*
- * Note
- * In this platform, DHCP client and server are supported through netutils
- * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
- */
-#define LWIP_DHCPS                      0
-#define LWIP_DHCP                       1
-#define LWIP_NETIF_API                  1
-
 #ifdef CONFIG_NET_ENABLE_LOOPBACK
 #define ENABLE_LOOPBACK    CONFIG_NET_ENABLE_LOOPBACK
 #endif
@@ -77,6 +68,7 @@
 /* --------- PreDefined Configurations -------------*/
 
 /* ---------- IPv options ---------- */
+#define LWIP_NETIF_API 1
 
 #ifdef CONFIG_NET_IPv4
 #define LWIP_IPV4 CONFIG_NET_IPv4
@@ -117,6 +109,20 @@
 
 #ifdef CONFIG_NET_ARP_STATIC_ENTRIES
 #define ETHARP_SUPPORT_STATIC_ENTRIES   CONFIG_NET_ARP_STATIC_ENTRIES
+#endif
+
+/* ---------- DHCP4 options ---------- */
+/* LWIP_DHCP always set to 1 if LWIP_IPV4 */
+#if LWIP_IPV4
+#define LWIP_DHCP 1
+#else
+#define LWIP_DHCP 0
+#endif
+/* NET_DHCPS depends on LWIP_IPV4 in config */
+#ifdef CONFIG_NET_DHCPS
+#define LWIP_DHCPS CONFIG_NET_DHCPS
+#else
+#define LWIP_DHCPS 0
 #endif
 
 /* ---------- ARP options ---------- */

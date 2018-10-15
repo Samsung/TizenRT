@@ -831,7 +831,7 @@
  * @{
  */
 /**
- * LWIP_DHCP==1: Enable DHCP module.
+ * LWIP_DHCP set to 1; Force DHCP to be enabled when IPv4 is set.
  */
 #ifndef LWIP_DHCP
 #define LWIP_DHCP                       1

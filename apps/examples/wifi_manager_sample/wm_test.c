@@ -575,7 +575,7 @@ void wm_sta_start(void *arg)
 		printf(" Set STA mode Fail\n");
 		return ;
 	}
-	printf(" Connecting to AP\n");
+	printf(" Set STA mode finished successfully\n");
 	WM_TEST_LOG_END;
 }
 

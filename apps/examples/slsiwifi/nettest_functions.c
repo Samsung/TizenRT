@@ -191,7 +191,7 @@ static uint8_t doDhcpStart(WiFi_InterFace_ID_t mode)
 		netif_set_addr(g_netif, &local_ipaddr, &local_netmask, &local_gateway);
 		netif_set_up(g_netif);
 		printf("doDhcpStart - dhcps_start\n");
-		if (dhcps_start(g_netif) == ERR_OK) {
+		if (dhcps_start(g_netif, NULL) == ERR_OK) {
 			result = SLSI_STATUS_SUCCESS;
 			printf("DHCP Server - started success\n");
 		}
