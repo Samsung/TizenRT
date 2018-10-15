@@ -20,7 +20,6 @@
 #include <debug.h>
 #include <functional>
 
-#include "SpeechDetector.h"
 #include "SoftwareKeywordDetector.h"
 #include "SoftwareEndPointDetector.h"
 #include "HardwareKeywordDetector.h"
@@ -28,23 +27,35 @@
 
 #include "../audio/audio_manager.h"
 
+#include <media/voice/SpeechDetector.h>
+
 namespace media {
 namespace voice {
 
-SpeechDetectorInterface *SpeechDetectorInterface::instance()
+class SpeechDetectorImpl : public SpeechDetector
 {
-	static SpeechDetector inst;
+public:
+	SpeechDetectorImpl() = default;
+	bool initKeywordDetect(uint32_t samprate, uint8_t channels) override;
+	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
+	void deinitKeywordDetect() override;
+	void deinitEndPointDetect() override;
+	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) override;
+	bool startKeywordDetect(uint32_t timeout) override;
+	bool processEPDFrame(short *sample, int numSample) override;
+
+private:
+	std::shared_ptr<KeywordDetector> mKeywordDetector;
+	std::shared_ptr<EndPointDetector> mEndPointDetector;
+};
+
+SpeechDetector *SpeechDetector::instance()
+{
+	static SpeechDetectorImpl inst;
 	return &inst;
 }
 
-SpeechDetector::SpeechDetector()
-	: mKeywordDetector(nullptr)
-	, mEndPointDetector(nullptr)
-{
-
-}
-
-bool SpeechDetector::initKeywordDetect(uint32_t samprate, uint8_t channels)
+bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 {
 	int card = -1;
 	int device = -1;
@@ -72,7 +83,7 @@ bool SpeechDetector::initKeywordDetect(uint32_t samprate, uint8_t channels)
 	return mKeywordDetector->init(samprate, channels);
 }
 
-bool SpeechDetector::initEndPointDetect(uint32_t samprate, uint8_t channels)
+bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 {
 	int card = -1;
 	int device = -1;
@@ -99,7 +110,7 @@ bool SpeechDetector::initEndPointDetect(uint32_t samprate, uint8_t channels)
 	return mEndPointDetector->init(samprate, channels);
 }
 
-void SpeechDetector::deinitKeywordDetect()
+void SpeechDetectorImpl::deinitKeywordDetect()
 {
 	if (mKeywordDetector) {
 		mKeywordDetector->deinit();
@@ -107,7 +118,7 @@ void SpeechDetector::deinitKeywordDetect()
 	}
 }
 
-void SpeechDetector::deinitEndPointDetect()
+void SpeechDetectorImpl::deinitEndPointDetect()
 {
 	if (mEndPointDetector) {
 		mEndPointDetector->deinit();
@@ -115,19 +126,19 @@ void SpeechDetector::deinitEndPointDetect()
 	}
 }
 
-void SpeechDetector::setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected)
+void SpeechDetectorImpl::setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected)
 {
 	assert(mEndPointDetector);
 	mEndPointDetector->setEndPointDetectedDelegate(onEndPointDetected);
 }
 
-bool SpeechDetector::startKeywordDetect(uint32_t timeout)
+bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)
 {
 	assert(mKeywordDetector);
 	return mKeywordDetector->startKeywordDetect(timeout);
 }
 
-bool SpeechDetector::processEPDFrame(short *sample, int numSample)
+bool SpeechDetectorImpl::processEPDFrame(short *sample, int numSample)
 {
 	assert(mEndPointDetector);
 	return mEndPointDetector->processEPDFrame(sample, numSample);

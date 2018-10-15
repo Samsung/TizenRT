@@ -22,12 +22,12 @@
  */
 
 /**
- * @file media/voice/SpeechDetectorInterface.h
- * @brief Media SpeechDetectorInterface APIs
+ * @file media/voice/SpeechDetector.h
+ * @brief Media SpeechDetector APIs
  */
 
-#ifndef __MEDIA_SPEECH_DETECTOR_INTERFACE_H
-#define __MEDIA_SPEECH_DETECTOR_INTERFACE_H
+#ifndef __MEDIA_SPEECH_DETECTOR_H
+#define __MEDIA_SPEECH_DETECTOR_H
 
 #include <functional>
 #include <memory>
@@ -37,26 +37,19 @@ namespace voice {
 
 typedef std::function<void(void)> OnEndPointDetectedCallback;
 
-class SpeechDetectorInterface
+class SpeechDetector
 {
 public:
-	static SpeechDetectorInterface *instance();
-
-public:
+	static SpeechDetector *instance();
 	virtual bool initKeywordDetect(uint32_t samprate, uint8_t channels) = 0;
-
 	virtual bool initEndPointDetect(uint32_t samprate, uint8_t channels) = 0;
-
 	virtual void deinitKeywordDetect() = 0;
-
 	virtual void deinitEndPointDetect() = 0;
-
-	virtual void setEndPointDetectedDelegate(
-		OnEndPointDetectedCallback onEndPointDetected) = 0;
-
+	virtual void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) = 0;
 	virtual bool startKeywordDetect(uint32_t timeout) = 0;
-
 	virtual bool processEPDFrame(short *sample, int numSample) = 0;
+protected:
+	SpeechDetector() = default;
 };
 
 } // namespace voice
