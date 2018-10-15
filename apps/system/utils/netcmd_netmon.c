@@ -37,6 +37,10 @@
 
 #include <netutils/netlib.h>
 
+#ifdef CONFIG_WIFI_MANAGER
+#include <wifi_manager/wifi_manager.h>
+#endif
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -201,8 +205,53 @@ int cmd_netmon(int argc, char **argv)
 			printf("Failed to fetch socket info.\n");
 		}
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
-		/* Get wifi information: SIOCGETWIFI */
-		printf("wifi option will be supported\n");
+#ifdef CONFIG_WIFI_MANAGER
+		wifi_manager_stats_s stats;
+		wifi_manager_info_s info;
+
+		wifi_manager_result_e res = wifi_manager_get_stats(&stats);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get Wi-Fi Manager stats failed\n");
+			return ERROR;
+		}
+		printf("\n=======================================================================\n");
+		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
+		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+		printf("=======================================================================\n");
+
+		printf("Connection INFO.\n");
+		res = wifi_manager_get_info(&info);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get Wi-Fi Manager Connection info failed\n");
+			return ERROR;
+		}
+		if (info.mode == SOFTAP_MODE) {
+			if (info.status == CLIENT_CONNECTED) {
+				printf("MODE: softap (client connected)\n");
+			} else if (info.status == CLIENT_DISCONNECTED) {
+				printf("MODE: softap (no client)\n");
+			}
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
+			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
+		} else if (info.mode == STA_MODE) {
+			if (info.status == AP_CONNECTED) {
+				printf("MODE: station (connected)\n");
+				printf("IP: %s\n", info.ip4_address);
+				printf("SSID: %s\n", info.ssid);
+				printf("rssi: %d\n", info.rssi);
+			} else if (info.status == AP_DISCONNECTED) {
+				printf("MODE: station (disconnected)\n");
+			}
+			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
+		} else {
+			printf("STATE: NONE\n");
+		}
+		printf("=======================================================================\n");
+#else
+		printf("Wi-Fi Manager is not enabled\n");
+#endif
 	} else {
 #ifdef CONFIG_NET_STATS
 		struct netmon_netdev_stats stats = {{0,}, 0, 0, 0, 0};
@@ -215,7 +264,8 @@ int cmd_netmon(int argc, char **argv)
 		if (!ret) {
 			print_devstats(&stats);
 		} else {
-			printf("No such an option or device interface\n");
+			printf("No device interface %s\n", intf);
+			return ERROR;
 		}
 #else
 		printf("No such an option\n");
