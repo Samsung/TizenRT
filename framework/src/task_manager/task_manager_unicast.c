@@ -142,6 +142,8 @@ int task_manager_reply_unicast(tm_msg_t *reply_msg)
 
 	reply_mqfd = mq_open(TM_UNICAST_MQ, O_WRONLY | O_CREAT, 0666, &attr);
 	if (reply_mqfd == (mqd_t)ERROR) {
+		TM_FREE(data->msg);
+		TM_FREE(data);
 		tmdbg("mq_open failed!\n");
 		return TM_COMMUCATION_FAIL;
 	}
@@ -149,6 +151,8 @@ int task_manager_reply_unicast(tm_msg_t *reply_msg)
 	ret = mq_send(reply_mqfd, (char *)data, sizeof(tm_msg_t), TM_MQ_PRIO);
 	if (ret != 0) {
 		mq_close(reply_mqfd);
+		TM_FREE(data->msg);
+		TM_FREE(data);
 		tmdbg("mq_send failed! %d\n", errno);
 		return TM_COMMUCATION_FAIL;
 	}
