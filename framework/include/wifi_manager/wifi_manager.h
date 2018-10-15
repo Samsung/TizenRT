@@ -60,6 +60,7 @@ typedef enum {
 	// STA mode status
 	AP_DISCONNECTED,
 	AP_CONNECTED,
+	AP_RECONNECTING,
 
 	// SOFT AP mode status
 	CLIENT_CONNECTED,

@@ -549,6 +549,10 @@ void wm_display_state(void *arg)
 			printf("rssi: %d\n", info.rssi);
 		} else if (info.status == AP_DISCONNECTED) {
 			printf("MODE: station (disconnected)\n");
+		} else if (info.status == AP_RECONNECTING) {
+			printf("MODE: station (reconnecting)\n");
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
 		}
 		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
 			goto exit;
@@ -575,7 +579,7 @@ void wm_sta_start(void *arg)
 		printf(" Set STA mode Fail\n");
 		return ;
 	}
-	printf(" Connecting to AP\n");
+	printf("Start STA mode\n");
 	WM_TEST_LOG_END;
 }
 
