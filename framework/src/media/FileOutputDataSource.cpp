@@ -105,6 +105,10 @@ bool FileOutputDataSource::isPrepare()
 
 ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 {
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!isPrepare()) {
 		return EOF;
 	}
