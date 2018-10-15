@@ -28,7 +28,7 @@
 #include <media/MediaRecorderObserverInterface.h>
 #include <media/BufferOutputDataSource.h>
 
-#include <media/voice/SpeechDetectorInterface.h>
+#include <media/voice/SpeechDetector.h>
 
 /****************************************************************************
  * speech_detector_test_main
@@ -54,7 +54,7 @@ static void run() {
 		printf("[MR] setDataSource failed.\n");
 	}
 
-	media::voice::SpeechDetectorInterface *detector = media::voice::SpeechDetectorInterface::instance();
+	auto detector = media::voice::SpeechDetector::instance();
 
 	bRet = detector->initKeywordDetect(16000, 1);
 	if (bRet) {

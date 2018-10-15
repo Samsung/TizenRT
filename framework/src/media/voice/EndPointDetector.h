@@ -20,7 +20,7 @@
 
 #include <functional>
 
-#include <media/voice/SpeechDetectorInterface.h>
+#include <media/voice/SpeechDetector.h>
 
 namespace media {
 namespace voice {
