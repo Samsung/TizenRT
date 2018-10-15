@@ -129,7 +129,11 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 			memset(&cur->ap_info, 0x0, sizeof(wifi_utils_ap_scan_info_s));
 			cur->ap_info.rssi = wifi_scan_iter->rssi;
 			cur->ap_info.channel = wifi_scan_iter->channel;
-			cur->ap_info.phy_mode = wifi_scan_iter->phy_mode;
+			if (wifi_scan_iter->phy_mode == 1) {
+				cur->ap_info.phy_mode = WIFI_UTILS_IEEE_80211_N;
+			} else {
+				cur->ap_info.phy_mode = WIFI_UTILS_IEEE_80211_LEGACY;
+			}
 			get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
 			&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
 			strncpy(cur->ap_info.ssid, (const char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
@@ -493,7 +497,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	/* add initialization code as slsi_app */
 	ap_config->beacon_period = 100;
 	ap_config->DTIM = 1;
-	ap_config->phy_mode = 1;
+	ap_config->phy_mode = 1; //1 for 11n, 0 for legacy
 
 	if (softap_config->channel > 14 || softap_config->channel < 1) {
 		ndbg("[WU] Channel needs to be between 1 and 14" " (highest channel depends on regulatory of countries)\n");
