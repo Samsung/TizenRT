@@ -937,6 +937,7 @@ Here is the list you need to change.
 1. Copy received “tinyara_head.bin” into “TizenRT/build/output/bin”
 2. Run below command in "TizenRT/os" to sign “tinyara_head.bin” and fuse it on your artik module.
 ```bash
+$ rm -f ../build/output/bin/tinyara_head.bin-signed
 $ make download os
 ```
 3. After fusing please run commands as below.
