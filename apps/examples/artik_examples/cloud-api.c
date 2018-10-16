@@ -500,6 +500,12 @@ static int sdr_command(int argc, char *argv[])
 			ECC_SEC_P256R1
 	};
 
+	/* Check number of arguments */
+	if (argc < 4) {
+		FAIL_AND_EXIT("Wrong number of arguments\n");
+		goto exit;
+	}
+
 	if (!strcmp(argv[3], "start")) {
 		char *response = NULL;
 
@@ -871,6 +877,12 @@ static int dm_command(int argc, char *argv[])
 			ECC_SEC_P256R1
 	};
 
+	/* Check number of arguments */
+	if (argc < 4) {
+		FAIL_AND_EXIT("Wrong number of arguments\n");
+		goto exit;
+	}
+
 	memset(&dm_config, 0, sizeof(dm_config));
 
 	if (!strcmp(argv[3], "connect")) {
@@ -1064,7 +1076,7 @@ static int dm_command(int argc, char *argv[])
 		ret = lwm2m->client_write_resource(g_dm_client, argv[4], (unsigned char *)argv[5],
 											strlen(argv[5]));
 		if (ret != S_OK) {
-			fprintf(stderr, "Failed to write %s", argv[4]);
+			fprintf(stderr, "Failed to write %s (%d)\n", argv[4], ret);
 			ret = -1;
 			goto exit;
 		}
