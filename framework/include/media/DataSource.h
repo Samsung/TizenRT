@@ -54,7 +54,7 @@ public:
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0
 	 */
-	~DataSource();
+	virtual ~DataSource();
 	/**
 	 * @brief Constructs a new object provide with audio configuration.
 	 * @details @b #include <media/DataSource.h>
@@ -64,18 +64,6 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
-	/**
-	 * @brief Copy constructs for DataSource.
-	 * @details @b #include <media/DataSource.h>
-	 * @since TizenRT v2.0
-	 */
-	DataSource(const DataSource&);
-	/**
-	 * @brief Operator= for DataSource.
-	 * @details @b #include <media/DataSource.h>
-	 * @since TizenRT v2.0
-	 */
-	DataSource& operator=(const DataSource&);
 
 public:
 	/**
