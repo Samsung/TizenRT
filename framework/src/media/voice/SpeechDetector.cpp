@@ -70,7 +70,7 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 		mKeywordDetector = std::make_shared<HardwareKeywordDetector>(card, device);
 
 		result = change_stream_in_device(card, device);
-		if (result == AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
+		if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
 			meddbg("change_stream_in_device failed: %d\n", result);
 			mKeywordDetector = nullptr;
 			return false;
@@ -98,7 +98,7 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 		mEndPointDetector = std::make_shared<HardwareEndPointDetector>(card, device);
 
 		result = change_stream_in_device(card, device);
-		if (result == AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
+		if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
 			meddbg("change_stream_in_device failed: %d\n", result);
 			mEndPointDetector = nullptr;
 			return false;
