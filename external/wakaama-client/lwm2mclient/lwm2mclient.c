@@ -1095,7 +1095,7 @@ int lwm2m_read_resource(client_handle_t* handle, lwm2m_resource_t *res)
 #ifdef WITH_LOGS
                 fprintf(stderr, "lwm2m_read_resource: failed (%d)\r\n", result);
 #endif
-                lwm2m_free(data);
+                lwm2m_data_free(dnum, data);
                 return LWM2M_CLIENT_ERROR;
             }
             else
@@ -1164,11 +1164,11 @@ int lwm2m_read_resource(client_handle_t* handle, lwm2m_resource_t *res)
 #ifdef WITH_LOGS
                         fprintf(stderr, "lwm2m_read_resource: failed to encode data\r\n");
 #endif
+                        lwm2m_data_free(dnum, data);
                         return LWM2M_CLIENT_ERROR;
-                        lwm2m_free(data);
                     }
                 }
-                lwm2m_free(data);
+                lwm2m_data_free(dnum, data);
             }
         }
         else
