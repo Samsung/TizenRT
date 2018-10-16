@@ -64,10 +64,10 @@ void HardwareKeywordDetector::deinit()
 {
 	audio_manager_result_t result;
 
-	result = unregister_stream_in_device_process(mCard, mDevice);
+	result = unregister_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: unregister_stream_in_device_process_type(%d, %d) failed!\n", mCard, mDevice);
 	}
 }
 
@@ -94,7 +94,7 @@ void *HardwareKeywordDetector::keywordDetectThread(void *param)
 		usleep(30 * 1000);
 	}
 
-	stop_stream_in_device_process(detector->mCard, detector->mDevice);
+	stop_stream_in_device_process(detector->mCard, detector->mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	return NULL;
 }
@@ -107,7 +107,7 @@ bool HardwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 
 	medvdbg("startKeywordDetect for %d %d\n", mCard, mDevice);
 
-	result = start_stream_in_device_process(mCard, mDevice);
+	result = start_stream_in_device_process(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
