@@ -503,7 +503,7 @@ static int sdr_command(int argc, char *argv[])
 	/* Check number of arguments */
 	if (argc < 4) {
 		FAIL_AND_EXIT("Wrong number of arguments\n");
-		goto exit;
+		return ret;
 	}
 
 	if (!strcmp(argv[3], "start")) {
@@ -880,7 +880,7 @@ static int dm_command(int argc, char *argv[])
 	/* Check number of arguments */
 	if (argc < 4) {
 		FAIL_AND_EXIT("Wrong number of arguments\n");
-		goto exit;
+		return ret;
 	}
 
 	memset(&dm_config, 0, sizeof(dm_config));
