@@ -129,6 +129,13 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
 #define netifapi_dhcp_renew(n)        netifapi_netif_common(n, NULL, dhcp_renew)
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcp_release(n)      netifapi_netif_common(n, NULL, dhcp_release)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_address_valid(n)      netifapi_netif_common(n, NULL, dhcp_address_valid)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcps_start(n)        netifapi_netif_common(n, NULL, dhcps_start)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcps_stop(n)         netifapi_netif_common(n, dhcps_stop, NULL)
+
 
 /**
  * @defgroup netifapi_autoip AUTOIP

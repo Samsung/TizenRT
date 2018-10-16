@@ -95,5 +95,17 @@ config LWIP_DHCPS_LEASE_DEF
 	int "LWIP DHCPS lease time (min)"
 	default 120
 
+config LWIP_DHCPS_SERVER_IP
+	string "Set DHCP server IP"
+	default "192.168.47.1"
+
+config LWIP_DHCPS_SERVER_NETMASK
+	string "Set netmask"
+	default "255.255.255.0"
+
+config LWIP_DHCPS_MAX_STATION_NUM
+	int "Maximum number of allowed stations"
+	default 8
+	
 endif
 endif
