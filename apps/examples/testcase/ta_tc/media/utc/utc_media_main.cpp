@@ -53,6 +53,9 @@ int utc_media_mediarecorder_main(void);
 int utc_media_fileoutputdatasource_main(void);
 int utc_media_bufferoutputdatasource_main(void);
 #endif
+#ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
+int utc_media_SpeechDetector_main(void);
+#endif
 #endif
 
 extern "C"
