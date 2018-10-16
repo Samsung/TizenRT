@@ -195,10 +195,6 @@ sem_t g_dhcpd_sem;
 #define CONFIG_NETUTILS_DHCPD_MAXLEASETIME (60*60*24*30)	/* 30 days */
 #endif
 
-#ifndef CONFIG_NETUTILS_DHCPD_INTERFACE
-#define CONFIG_NETUTILS_DHCPD_INTERFACE "eth0"
-#endif
-
 #ifndef CONFIG_NETUTILS_DHCPD_MAXLEASES
 #define CONFIG_NETUTILS_DHCPD_MAXLEASES 16
 #endif
@@ -1695,7 +1691,8 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	if (intf) {
 		strncpy(DHCPD_IFNAME, intf, strlen(intf));
 	} else {
-		strncpy(DHCPD_IFNAME, CONFIG_NETUTILS_DHCPD_INTERFACE, IFNAMSIZ);
+		ndbg("failed to get interface\n");
+		goto err_exit;
 	}
 
 	status = pthread_attr_init(&attr);

@@ -96,6 +96,11 @@
 #define CHECKSUM_GEN_IP_INLINE  0
 #endif
 
+/* Using external DHCP application requires to set udp port */
+#if !LWIP_DHCP
+#define LWIP_IP_ACCEPT_UDP_PORT(port) ((port) == PP_NTOHS(DHCP_CLIENT_PORT))
+#endif
+
 #if LWIP_DHCP || defined(LWIP_IP_ACCEPT_UDP_PORT)
 #define IP_ACCEPT_LINK_LAYER_ADDRESSING 1
 
