@@ -728,6 +728,12 @@ static int taskmgr_get_task_info(tm_appinfo_list_t **data, int handle)
 	int name_len = 0;
 	tm_appinfo_list_t *item;
 	const char *name;
+	int ret;
+
+	ret = taskmgr_get_task_state(handle);
+	if (ret == TM_APP_STATE_UNREGISTERED) {
+		return -ret;
+	}
 
 	item = (tm_appinfo_list_t *)TM_ALLOC(sizeof(tm_appinfo_list_t));
 	if (item == NULL) {
@@ -755,7 +761,7 @@ static int taskmgr_get_task_info(tm_appinfo_list_t **data, int handle)
 		return TM_OUT_OF_MEMORY;
 	}
 
-	strncpy(item->task.name, name, name_len + 1);	
+	strncpy(item->task.name, name, name_len + 1);
 
 	item->task.tm_gid = TM_GID(handle);
 	item->task.handle = handle;
