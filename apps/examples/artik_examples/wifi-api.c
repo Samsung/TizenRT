@@ -238,7 +238,7 @@ static int connect_command(int argc, char *argv[])
 	}
 
 	/* Check number of arguments */
-	if (argc < 5) {
+	if (argc < 4) {
 		fprintf(stderr, "Wrong number of arguments\n");
 		usage(argv[1], wifi_commands);
 		ret = -1;
@@ -258,7 +258,7 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = wifi->connect(argv[3], argv[4], persistent);
+	err = wifi->connect(argv[3], (argc == 4) ? NULL : argv[4], persistent);
 	if (err != S_OK) {
 		sem_destroy(&(conn_res.sem));
 		wifi->set_connect_callback(NULL, NULL);
