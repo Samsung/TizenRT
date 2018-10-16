@@ -18,6 +18,7 @@
 
 #include "MediaUtils.h"
 #include <debug.h>
+#include <errno.h>
 
 namespace media {
 namespace utils {
@@ -269,6 +270,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 	unsigned char *header;
 	unsigned char tag[2];
 	bool isHeader;
+
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 		isHeader = false;
@@ -281,15 +283,26 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 		if (isHeader) {
 			header = (unsigned char *)malloc(sizeof(unsigned char) * (MP3_HEADER_LENGTH + 1));
 			if (header == NULL) {
-				medvdbg("malloc failed error\n");
+				meddbg("malloc failed error\n");
+				return false;
+			}
+			int ret;
+			ret = fseek(fp, -1, SEEK_CUR);
+			if (ret != OK) {
+				meddbg("file seek failed errno : %d\n", errno);
+				free(header);
 				return false;
 			}
 
-			if (fseek(fp, -1, SEEK_CUR) != 0) {
-				medvdbg("file seek failed error\n");
+			ret = fread(header, sizeof(unsigned char), MP3_HEADER_LENGTH, fp);
+			if (ret != MP3_HEADER_LENGTH) {
+				meddbg("read failed ret : %d\n", ret);
+				free(header);
 				return false;
 			}
-			if ((fread(header, sizeof(unsigned char), MP3_HEADER_LENGTH, fp) != MP3_HEADER_LENGTH) || !mp3_header_parsing(header, channel, sampleRate)) {
+			
+			if (!mp3_header_parsing(header, channel, sampleRate)) {
+				meddbg("Header parsing failed\n");
 				free(header);
 				return false;
 			}
