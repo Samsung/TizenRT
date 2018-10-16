@@ -1615,9 +1615,15 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
-	
+
 	card = &g_audio_in_cards[card_id];
 	config = &card->config[device_id];
+
+	if (config->process_handler != NULL)
+	{
+		medvdbg("Handler is already registered\n");
+		return AUDIO_MANAGER_SUCCESS;
+	}
 
 	process_type = get_process_type_audio_param_value(type);
 
