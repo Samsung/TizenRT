@@ -35,6 +35,7 @@ MediaRecorderImpl::MediaRecorderImpl(MediaRecorder &recorder) :
 	mBuffer(nullptr),
 	mBuffSize(0),
 	mDuration(0),
+	mSizeLimit(0),
 	mTotalFrames(0),
 	mCapturedFrames(0)
 {
@@ -189,6 +190,8 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 
 	if (mDuration > 0) {
 		mTotalFrames = mDuration * source->getSampleRate();
+	} else if (mSizeLimit > 0) {
+		mTotalFrames = get_input_bytes_to_frame(mSizeLimit);
 	}
 
 	mCurState = RECORDER_STATE_READY;
@@ -557,6 +560,36 @@ void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
 		mDuration = second;
 	}
 
+	notifySync();
+}
+
+recorder_result_t MediaRecorderImpl::setSizeLimit(int byte)
+{
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorderImpl::setSizeLimit()\n");
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		meddbg("Worker is not alive\n");
+		return RECORDER_ERROR_NOT_ALIVE;
+	}
+	recorder_result_t ret = RECORDER_OK;
+	mrw.enQueue(&MediaRecorderImpl::setRecorderSizeLimit, shared_from_this(), byte, std::ref(ret));
+	mSyncCv.wait(lock);
+	return ret;
+}
+
+void MediaRecorderImpl::setRecorderSizeLimit(int byte, recorder_result_t& ret)
+{
+	medvdbg("setRecorderSizeLimit mCurState : %d\n", (recorder_state_t)mCurState);
+	if (mCurState != RECORDER_STATE_CONFIGURED) {
+		meddbg("setRecorderSizeLimit Failed mCurState: %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
+		return notifySync();
+	}
+	if (byte > 0) {
+		medvdbg("byte is greater than zero, set limit : %d\n", byte);
+		mSizeLimit = byte;
+	}
 	notifySync();
 }
 
