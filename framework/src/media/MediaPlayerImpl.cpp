@@ -321,6 +321,7 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 
 	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
+	notifyObserver(PLAYER_OBSERVER_COMMAND_STOPPED);
 }
 
 player_result_t MediaPlayerImpl::pause()
