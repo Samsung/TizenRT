@@ -88,9 +88,9 @@
  * in sys/types.h.
  */
 
-/* Maximum value returned by rand() */
+/* Maximum value returned by rand(). Must be a minimum of 32767. */
 
-#define RAND_MAX 32767
+#define RAND_MAX INT_MAX
 
 /* Integer expression whose value is the maximum number of bytes in a
  * character specified by the current locale.
@@ -187,6 +187,17 @@ void srand(unsigned int seed);
  * @since TizenRT v1.0
  */
 int rand(void);
+
+#define srandom(s) srand(s)
+
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief pseudo-random number generator
+ * @details @b #include <stdlib.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0
+ */
+long random(void);
 
 /* Environment variable support */
 
@@ -540,17 +551,22 @@ lldiv_t lldiv(long long numer, long long denom);
  */
 
 /**
- * @cond
- * @internal
+ * @ingroup STDLIB_LIBC
+ * @brief generates a unique temporary filename from template.
+ * @details @b #include <stdlib.h> \n
+ * @return always returns template.
+ * @since TizenRT v2.0
  */
-int mktemp(FAR char *path_template);
+FAR char *mktemp(FAR char *path_template);
+
 /**
- * @internal
+ * @ingroup STDLIB_LIBC
+ * @brief create a regular file with a unique name derived from template and return a file descriptor for the file open for reading and writing.
+ * @details @b #include <stdlib.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0
  */
 int mkstemp(FAR char *path_template);
-/**
- * @endcond
- */
 
 /* Sorting */
 /**

@@ -18,6 +18,8 @@
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC),y)
 CXXSRCS += utc_media_main.cpp
+CXXSRCS += utc_media_focusrequest.cpp
+CXXSRCS += utc_media_focusmanager.cpp
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
 CXXSRCS += utc_media_mediaplayer.cpp
 CXXSRCS += utc_media_fileinputdatasource.cpp
@@ -25,6 +27,10 @@ endif
 ifeq ($(CONFIG_MEDIA_RECORDER),y)
 CXXSRCS += utc_media_mediarecorder.cpp
 CXXSRCS += utc_media_fileoutputdatasource.cpp
+CXXSRCS += utc_media_bufferoutputdatasource.cpp
+endif
+ifeq ($(CONFIG_MEDIA_VOICE_SPEECH_DETECTOR),y)
+CXXSRCS += utc_media_speechdetector.cpp
 endif
 
 ifeq ($(CONFIG_GMOCK),y)

@@ -180,6 +180,10 @@ int tc_kernel_main(int argc, char *argv[])
 	wqueue_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_MEMORY_SAFETY
+	memory_safety_main();
+#endif
+
 #ifdef CONFIG_ITC_KERNEL_ENVIRON
 	itc_environ_main();
 #endif

@@ -1,0 +1,5 @@
+# Ignore auto-generated files from protobuf
+./*.pb.h
+./*.pb.cc
+./*.grpc.pb.h
+./*.grpc.cc

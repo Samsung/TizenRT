@@ -72,10 +72,6 @@
 #define SEC_PER_DAY  ((time_t)24 * SEC_PER_HOUR)
 
 /****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
@@ -107,8 +103,7 @@ static void clock_utc2julian(time_t jdn, int *year, int *month, int *day);
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  clock_calendar2utc, clock_gregorian2utc,
- *            and clock_julian2utc
+ * Function:   clock_utc2calendar, clock_utc2gregorian, and clock_utc2julian
  *
  * Description:
  *    Calendar to UTC conversion routines.  These conversions

@@ -72,6 +72,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <float.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /****************************************************************************
 * Pre-processor Definitions
 ****************************************************************************/
@@ -450,6 +455,10 @@ double cursor_get_double_value(db_cursor_t *cursor, int attr_index);
 * @since TizenRT v1.0
 */
 unsigned char *cursor_get_string_value(db_cursor_t *cursor, int attr_index);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 /** @} */ // end of AraStorage group
 

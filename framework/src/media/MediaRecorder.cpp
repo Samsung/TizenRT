@@ -21,8 +21,10 @@
 #include "RecorderWorker.h"
 
 namespace media {
-MediaRecorder::MediaRecorder() : mPMrImpl(new MediaRecorderImpl())
+MediaRecorder::MediaRecorder() : mPMrImpl(new MediaRecorderImpl(*this))
 {
+	mId = (uint64_t)this << 32;
+	mId = mId | (uint64_t)mPMrImpl.get();
 }
 
 recorder_result_t MediaRecorder::create()
@@ -30,7 +32,7 @@ recorder_result_t MediaRecorder::create()
 	return mPMrImpl->create();
 }
 
-recorder_result_t MediaRecorder::destroy() // sync call
+recorder_result_t MediaRecorder::destroy()
 {
 	return mPMrImpl->destroy();
 }
@@ -60,12 +62,12 @@ recorder_result_t MediaRecorder::pause()
 	return mPMrImpl->pause();
 }
 
-int MediaRecorder::getVolume()
+recorder_result_t MediaRecorder::getVolume(uint8_t *vol)
 {
-	return mPMrImpl->getVolume();
+	return mPMrImpl->getVolume(vol);
 }
 
-recorder_result_t MediaRecorder::setVolume(int vol)
+recorder_result_t MediaRecorder::setVolume(uint8_t vol)
 {
 	return mPMrImpl->setVolume(vol);
 }
@@ -83,6 +85,11 @@ recorder_result_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserv
 recorder_result_t MediaRecorder::setDuration(int second)
 {
 	return mPMrImpl->setDuration(second);
+}
+
+bool MediaRecorder::operator==(const MediaRecorder& rhs)
+{
+	return this->mId == rhs.mId;
 }
 
 MediaRecorder::~MediaRecorder()

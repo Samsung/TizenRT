@@ -153,7 +153,7 @@ fi
 if [ -r ${dest_config} ]; then
   if [ -r "${TOPDIR}/.version" ]; then
     echo "Already configured and compiled!"
-    echo "Do 'make distclean' and try again."
+    echo "Do './dbuild.sh distclean' in a Docker container, otherwise do 'make distclean' and then try again."
     exit 7
   fi
 fi

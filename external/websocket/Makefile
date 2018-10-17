@@ -53,13 +53,13 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-ASRCS		=
-CSRCS		= websocket.c
+ASRCS   =
+CSRCS   = websocket.c
 
-CSRCS += wslay/wslay_net.c \
-	  wslay/wslay_queue.c \
-	  wslay/wslay_frame.c \
-	  wslay/wslay_event.c
+DEPPATH = --dep-path .
+VPATH   =
+
+include wslay/Make.defs
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
@@ -76,12 +76,6 @@ else
   BIN		= ../libexternal$(LIBEXT)
 endif
 endif
-
-DEPPATH	= --dep-path .
-
-# Common build
-
-VPATH		=
 
 all: .built
 .PHONY: depend clean distclean

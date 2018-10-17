@@ -16,27 +16,34 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
 
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
-#include "Decoder.h"
 
 namespace media {
 namespace stream {
 
-FileInputDataSource::FileInputDataSource() : InputDataSource(), mDataPath(""), mFp(nullptr)
+FileInputDataSource::FileInputDataSource() :
+	InputDataSource(),
+	mDataPath(""),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const std::string &dataPath)
-	: InputDataSource(), mDataPath(dataPath), mFp(nullptr)
+FileInputDataSource::FileInputDataSource(const std::string &dataPath) :
+	InputDataSource(),
+	mDataPath(dataPath),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const FileInputDataSource &source)
-	: InputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
+FileInputDataSource::FileInputDataSource(const FileInputDataSource &source) :
+	InputDataSource(source),
+	mDataPath(source.mDataPath),
+	mFp(source.mFp)
 {
 }
 
@@ -46,21 +53,40 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 	return *this;
 }
 
-FileInputDataSource::~FileInputDataSource()
-{
-	close();
-}
-
 bool FileInputDataSource::open()
 {
 	if (!mFp) {
-		setAudioType(utils::getAudioTypeFromPath(mDataPath));
+		unsigned int channel;
+		unsigned int sampleRate;
+		audio_format_type_t pcmFormat;
+		audio_type_t audioType;
 
-		switch (getAudioType()) {
+		mFp = fopen(mDataPath.c_str(), "rb");
+		if (!mFp) {
+			medvdbg("file open failed error : %d\n", errno);
+			return false;
+		}
+
+		audioType = utils::getAudioTypeFromPath(mDataPath);
+		setAudioType(audioType);
+		switch (audioType) {
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
-		case AUDIO_TYPE_OPUS:
-			setDecoder(std::make_shared<Decoder>(getChannels(), getSampleRate()));
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
+			break;
+		case AUDIO_TYPE_WAVE:
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
+			setPcmFormat(pcmFormat);
 			break;
 		case AUDIO_TYPE_FLAC:
 			/* To be supported */
@@ -70,14 +96,7 @@ bool FileInputDataSource::open()
 			break;
 		}
 
-		mFp = fopen(mDataPath.c_str(), "rb");
-		if (mFp) {
-			medvdbg("file open success\n");
-			return true;
-		} else {
-			meddbg("file open failed error : %d\n", errno);
-			return false;
-		}
+		return true;
 	}
 
 	/** return true if mFp is not null, because it means it using now */
@@ -86,26 +105,26 @@ bool FileInputDataSource::open()
 
 bool FileInputDataSource::close()
 {
+	bool ret = true;
 	if (mFp) {
-		int ret = fclose(mFp);
-		if (ret == OK) {
+		if (fclose(mFp) == OK) {
 			mFp = nullptr;
 			medvdbg("close success!!\n");
-			return true;
 		} else {
 			meddbg("close failed ret : %d error : %d\n", ret, errno);
-			return false;
+			ret = false;
 		}
+	} else {
+		meddbg("close failed, mFp is nullptr!!\n");
+		ret = false;
 	}
 
-	meddbg("close failed, mFp is nullptr!!\n");
-	return false;
+	return ret;
 }
 
 bool FileInputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
 		return false;
 	}
 	return true;
@@ -113,70 +132,37 @@ bool FileInputDataSource::isPrepare()
 
 ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	size_t rlen = 0;
-	size_t readSize = size;
-	std::shared_ptr<Decoder> decoder = getDecoder();
-
-	if (!buf) {
-		meddbg("buf is nullptr, hence return EOF\n");
+	if (!isPrepare()) {
+		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
 		return EOF;
 	}
 
-	if (decoder) {
-		size_t frames = size;
-		rlen = getDecodeFrames(buf, &frames);
-		medvdbg("decode frame : %d/%d\n", rlen, size);
-		if (rlen == size) {
-			return rlen;
-		}
-
-		/* Set buf offset */
-		buf += rlen;
-		/* Calculate available space in 'buf' */
-		readSize -= rlen;
-
-		if (readSize > decoder->getAvailSpace()) {
-			readSize = decoder->getAvailSpace();
-		}
+	if (buf == nullptr) {
+		meddbg("%s[line : %d] Fail : buf is nullptr\n", __func__, __LINE__);
+		return EOF;
 	}
 
-	size_t readRet = fread(buf, sizeof(unsigned char), readSize, mFp);
-	medvdbg("read size : %d\n", readRet);
-	if (readRet == 0) {
-		/* fread returned 0 */
-		/* If file position reaches end of file, it's a normal case, we returns rlen */
+	size_t rlen = fread(buf, sizeof(unsigned char), size, mFp);
+	medvdbg("read size : %d\n", rlen);
+	if (rlen == 0) {
+		/* If file position reaches end of file, it's a normal case, we returns 0 */
 		if (feof(mFp)) {
-			medvdbg("eof!! stop!\n");
-			return rlen;
+			medvdbg("eof!!!\n");
+			return 0;
 		}
 
 		/* Otherwise, an error occurred, we also returns error */
 		return EOF;
 	}
 
-	if (decoder) {
-		if (!decoder->pushData(buf, readRet)) {
-			meddbg("decode push data failed!\n");
-			return EOF;
-		}
-
-		size_t frames = size - rlen;
-		rlen += getDecodeFrames(buf, &frames);
-		medvdbg("decode frame ; %d/%d\n", rlen, size);
-		return rlen;
-	}
-
-	return readRet;
+	return rlen;
 }
 
-int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
+FileInputDataSource::~FileInputDataSource()
 {
-	if (fseek(mFp, offset, origin) != 0) {
-		meddbg("FileInputDataSource::readAt : fail to seek\n");
-		return -1;
+	if (isPrepare()) {
+		close();
 	}
-
-	return fread(buf, sizeof(unsigned char), size, mFp);
 }
 
 } // namespace stream

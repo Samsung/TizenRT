@@ -18,7 +18,7 @@
 
 /**
  * @defgroup MEDIA MEDIA
- * @brief Provides APIs for Media Framework 
+ * @brief Provides APIs for Media Framework
  * @{
  */
 
@@ -31,29 +31,40 @@
 #define __MEDIA_MEDIAPLAYER_H
 
 #include <memory>
-#include <media/MediaPlayerObserverInterface.h>
 #include <media/InputDataSource.h>
+#include <media/MediaPlayerObserverInterface.h>
 
 namespace media {
 /**
  * @brief result of call the apis
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
-typedef enum player_result_e {
+enum player_error_e : int {
 	/** MediaPlayer Error case */
-	PLAYER_ERROR,
+	PLAYER_ERROR_NOT_ALIVE = INT32_MIN,
+	PLAYER_ERROR_INVALID_STATE,
+	PLAYER_ERROR_INVALID_OPERATION,
+	PLAYER_ERROR_INVALID_PARAMETER,
+	PLAYER_ERROR_INTERNAL_OPERATION_FAILED,
+	PLAYER_ERROR_FILE_OPEN_FAILED,
+	PLAYER_ERROR_OUT_OF_MEMORY,
+	PLAYER_ERROR_DEVICE_NOT_SUPPORTED,
 	/** MediaPlayer Success case */
-	PLAYER_OK
-} player_result_t;
+	PLAYER_ERROR_NONE = 0
+};
+
+typedef enum player_error_e player_error_t;
+const int PLAYER_OK = PLAYER_ERROR_NONE;
+typedef int player_result_t;
 
 class MediaPlayerImpl;
 
 /**
- * @class 
+ * @class
  * @brief This class implements the MediaPlayer capability agent.
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
 */
 class MediaPlayer
 {
@@ -61,124 +72,135 @@ public:
 	/**
 	 * @brief Constructs an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	MediaPlayer();
-	
+
 	/**
 	 * @brief Deconstructs an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	~MediaPlayer();
-	
+
 	/**
 	 * @brief Create the MediaPlayer for playback
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the create operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t create();
-	
+
 	/**
 	 * @brief Destroy MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the destroy operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t destroy();
-	
+
 	/**
 	 * @brief Allocate and prepare resources related to the player, it should be called before start
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the prepare operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t prepare();
-	
+
 	/**
 	 * @brief Releases allocated resources related to the player.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t unprepare();
-	
+
 	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker begin playback through the queue
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t start();
-	
+
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t pause();
-	
+
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t stop();
-	
+
 	/**
 	 * @brief Gets the current volume
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The value of current volume
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	int getVolume();
-	
+	player_result_t getVolume(uint8_t *volume);
+
 	/**
 	 * @brief Sets the volume adjusted
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @param[in] vol The vol that the value of mic volume
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	player_result_t setVolume(int);
-	
+	player_result_t setVolume(uint8_t);
+
 	/**
-	 * @brief Sets the DatSource of input data
+	 * @brief Sets the DataSource of input data
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @param[in] dataSource The dataSource that the config of input data
 	 * @return The result of the setDataSource operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
-	
+
 	/**
 	 * @brief Sets the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * It sets the user's function
 	 * @param[in] observer The callback to be set for Media Player Observer.
 	 * @return The result of the setObserver operation
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
+	/**
+	 * @brief MediaPlayer operator==
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous api
+	 * Compares the MediaPlayer objects for equality
+	 * @return The result of the compare operation for MediaPlayer object
+	 * @since TizenRT v2.0
+	 */
+	bool operator==(const MediaPlayer &rhs);
+
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
+	uint64_t mId;
 };
 } // namespace media
 #endif

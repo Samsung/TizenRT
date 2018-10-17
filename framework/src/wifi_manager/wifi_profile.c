@@ -39,6 +39,7 @@
 
 #define WIFI_PROFILE_PATH "/mnt/"
 #define WIFI_PROFILE_FILENAME "wifi.conf"
+#define WIFI_PROFILE_FILENAME_INTERNAL "wifi_connected.conf"
 
 #define DELIMITER "\t"
 #define DELI_LEN 1
@@ -47,6 +48,7 @@
 
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
 #define WIFI_PROFILE_SS_INDEX 1
+#define WIFI_PROFILE_SS_INDEX_INTERNAL 2
 #endif
 
 #define ENCODE_STRING(buf, size, data, pos)					\
@@ -118,7 +120,6 @@ static void _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *bu
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_OPEN) {
 		return;
 	}
-	
 	DECODE_INTEGER(buf, config->passphrase_length, pos);
 	DECODE_STRING(buf, config->passphrase, pos, config->passphrase_length);
 
@@ -128,9 +129,15 @@ static void _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *bu
 }
 
 #ifndef CONFIG_WIFI_PROFILE_SECURESTORAGE
-static int _wifi_profile_store_file(char *buf, unsigned int buf_size)
+static int _wifi_profile_store_file(char *buf, unsigned int buf_size, int internal)
 {
-	FILE *fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME, "w+");
+	FILE *fp;
+	if (internal > 0) {
+		fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME_INTERNAL, "w+");
+	} else {
+		fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME, "w+");
+	}
+
 	if (!fp) {
 		ndbg("file open error(%d)\n", errno);
 		return -1;
@@ -147,9 +154,14 @@ static int _wifi_profile_store_file(char *buf, unsigned int buf_size)
 }
 
 
-static int _wifi_profile_read_file(char *buf, unsigned int buf_size)
+static int _wifi_profile_read_file(char *buf, unsigned int buf_size, int internal)
 {
-	FILE *fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME, "r");
+	FILE *fp;
+	if (internal > 0) {
+		fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME_INTERNAL, "r");
+	} else {
+		fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME, "r");
+	}
 	if (!fp) {
 		ndbg("file open error(%d)\n", errno);
 		return -1;
@@ -196,18 +208,26 @@ wifi_utils_result_e wifi_profile_init(void)
 	return WIFI_UTILS_SUCCESS;
 }
 
-wifi_utils_result_e wifi_profile_reset(void)
+wifi_utils_result_e wifi_profile_reset(int internal)
 {
 	int ret = -1;
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
 	char buf = '\0';
-	ret = see_write_secure_storage((unsigned char *)&buf, (unsigned int)1, WIFI_PROFILE_SS_INDEX);
+	if (internal > 0) {
+		ret = see_write_secure_storage((unsigned char *)&buf, (unsigned int)1, WIFI_PROFILE_SS_INDEX_INTERNAL);
+	} else {
+		ret = see_write_secure_storage((unsigned char *)&buf, (unsigned int)1, WIFI_PROFILE_SS_INDEX);
+	}
 	if (ret != SEE_OK) {
 		ndbg("Write SS fail(%d)\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #else
-	ret = unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME);
+	if (internal > 0) {
+		ret = unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME_INTERNAL);
+	} else {
+		ret = unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME);
+	}
 	if (ret < 0) {
 		ndbg("Delete Wi-Fi profile fail(%d)\n", errno);
 		return WIFI_UTILS_FILE_ERROR;
@@ -216,7 +236,7 @@ wifi_utils_result_e wifi_profile_reset(void)
 	return WIFI_UTILS_SUCCESS;
 }
 
-wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config)
+wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int internal)
 {
 	char buf[WIFI_PROFILE_BUFSIZE];
 	int ret = 0;
@@ -227,13 +247,17 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config)
 	}
 	nvdbg("store data to file: buffer len(%d)\n", len);
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
-	ret = see_write_secure_storage((unsigned char *)buf, (unsigned int)len, WIFI_PROFILE_SS_INDEX);
+	if (internal > 0) {
+		ret = see_write_secure_storage((unsigned char *)buf, (unsigned int)len, WIFI_PROFILE_SS_INDEX_INTERNAL);
+	} else {
+		ret = see_write_secure_storage((unsigned char *)buf, (unsigned int)len, WIFI_PROFILE_SS_INDEX);
+	}
 	if (ret != SEE_OK) {
 		ndbg("Write SS fail(%d)\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #else
-	ret = _wifi_profile_store_file(buf, len);
+	ret = _wifi_profile_store_file(buf, len, internal);
 	if (ret < 0) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
@@ -243,7 +267,7 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config)
 }
 
 
-wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config)
+wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int internal)
 {
 	char buf[WIFI_PROFILE_BUFSIZE] = {0,};
 	int ret = -1;
@@ -258,18 +282,21 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config)
 	//
 	/////////////////////////////////////////////////////////////////////////////////////////
 	unsigned int readlen = WIFI_PROFILE_BUFSIZE;
-	ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX);
+	if (internal > 0) {
+		ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX_INTERNAL);
+	} else {
+		ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX);
+	}
 	if (ret != SEE_OK) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
+	nvdbg("read data len(%u)\n", readlen);
 #else
-	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE);
+	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE, internal);
 	if (ret < 0) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #endif
-	nvdbg("readed data len(%d)\n", readlen);
-
 	_wifi_profile_deserialize(config, buf);
 
 	return WIFI_UTILS_SUCCESS;

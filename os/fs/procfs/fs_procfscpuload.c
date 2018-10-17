@@ -242,7 +242,7 @@ static ssize_t cpuload_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		 * for the IDLE thread.
 		 */
 
-		DEBUGVERIFY(clock_cpuload(0, &cpuload));
+		DEBUGVERIFY(clock_cpuload(0, 0, &cpuload));
 
 		/* On the simulator, you may hit cpuload.total == 0, but probably never on
 		 * real hardware.

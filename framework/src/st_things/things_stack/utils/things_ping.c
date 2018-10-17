@@ -108,6 +108,7 @@ bool things_ping_init(void)
 	if (list == NULL) {
 		if ((list = create_list()) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return res;
 		}
 
@@ -167,6 +168,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
 
@@ -175,6 +177,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s). So, Create Node.", remote_addr);
 		if ((ping = create_things_ping_s(remote_addr, port)) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return false;
 		}
 		list->insert(list, (void *)ping);
@@ -211,14 +214,17 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		return false;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
-	pthread_mutex_lock(&mutex_ping_list);
+
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s).", remote_addr);
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	} else {
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);

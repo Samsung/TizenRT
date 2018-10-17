@@ -157,7 +157,7 @@ struct slsi_ba_session_rx {
 struct slsi_rx_perf_test {
 	bool rx_perf_test_started;
 	u32 num_bits_received;
-	systime_t last_timestamp;
+	clock_t last_timestamp;
 	pthread_mutex_t rx_perf_lock;
 };
 

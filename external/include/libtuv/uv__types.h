@@ -58,6 +58,7 @@ typedef struct uv_stream_s uv_stream_t;
 typedef struct uv_tcp_s uv_tcp_t;
 typedef struct uv_pipe_s uv_pipe_t;
 typedef struct uv_poll_s uv_poll_t;
+typedef struct uv_signal_s uv_signal_t;
 
 // request types
 typedef struct uv_req_s uv_req_t;
@@ -105,6 +106,7 @@ typedef void (*uv_work_cb)(uv_work_t *req);
 typedef void (*uv_after_work_cb)(uv_work_t *req, int status);
 
 typedef void (*uv_getaddrinfo_cb)(uv_getaddrinfo_t *req, int status, struct addrinfo *res);
+typedef void (*uv_signal_cb)(uv_signal_t* handle, int signum);
 
 //-----------------------------------------------------------------------------
 

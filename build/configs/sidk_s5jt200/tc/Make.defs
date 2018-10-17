@@ -122,6 +122,9 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+ifeq ($(CONFIG_LIBCXX),y)
+CXXFLAGS += -DCONFIG_WCHAR_BUILTIN
+endif
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
@@ -142,6 +145,9 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_download.sh $(1)
+  $(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_download.sh $(1)
 endef
 
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_make_bin.sh --bin $(1) --ext $(2)
+endef

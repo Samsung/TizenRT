@@ -190,6 +190,27 @@
 #define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
 #endif
 
+/* SIG_SIGEL_WAKEUP is used in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_WAKEUP
+#define SIGEL_WAKEUP       22			/* Eventloop signal */
+#else
+#define SIGEL_WAKEUP       CONFIG_SIG_SIGEL_WAKEUP
+#endif
+
+/* SIG_SIGTM_TERMINATION is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_TERMINATION
+#define SIGTM_TERMINATION       23			/* Taskmgt signal */
+#else
+#define SIGTM_TERMINATION       CONFIG_SIG_SIGTM_TERMINATION
+#endif
+
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_EVENT
+#define SIGEL_EVENT       24			/* Eventloop signal */
+#else
+#define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

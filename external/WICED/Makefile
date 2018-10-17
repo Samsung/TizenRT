@@ -20,9 +20,6 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-DEPPATH	= --dep-path .
-
-CFLAGS+=-I$(TOPDIR)/../external/include
 # Common build
 
 VPATH		=

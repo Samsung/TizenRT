@@ -45,7 +45,7 @@ int task_manager_pause(int handle, int timeout)
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}

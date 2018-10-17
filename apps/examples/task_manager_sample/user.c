@@ -40,27 +40,41 @@ int user_main(int argc, char *argv[])
 {
 	int handle_actionmanager = 0;
 	int ret;
-	app_info_list_t *action_manager_info;
+	tm_appinfo_list_t *action_manager_info;
+	tm_msg_t uni_msg1;
+	tm_msg_t uni_msg2;
+	tm_msg_t uni_msg3;
+	tm_msg_t uni_msg4;
+	tm_msg_t uni_msg5;
+	tm_msg_t broad_msg1;
+	tm_msg_t broad_msg2;
+	char *alarm_on_msg = "alarm_on";
+	char *alarm_pause_msg = "alarm_pause";
+	char *alarm_resume_msg = "alarm_resume";
+	char *alarm_restart_msg = "alarm_restart";
+	char *alarm_off_msg = "alarm_off";
+	char *wifi_on_msg = "WIFI On";
+	char *wifi_off_msg = "WIFI Off";
 
-	char *msg1 = (char *)malloc(sizeof(char) * 9);
-	char *msg2 = (char *)malloc(sizeof(char) * 12);
-	char *msg3 = (char *)malloc(sizeof(char) * 13);	
-	char *msg4 = (char *)malloc(sizeof(char) * 14);
-	char *msg5 = (char *)malloc(sizeof(char) * 10);
-	strcpy(msg1, "alarm_on");
-	strcpy(msg2, "alarm_pause");
-	strcpy(msg3, "alarm_resume");
-	strcpy(msg4, "alarm_restart");
-	strcpy(msg5, "alarm_off");
+	uni_msg1.msg = (void *)alarm_on_msg;
+	uni_msg1.msg_size = strlen(alarm_on_msg) + 1;
+	uni_msg2.msg = (void *)alarm_pause_msg;
+	uni_msg2.msg_size = strlen(alarm_pause_msg) + 1;
+	uni_msg3.msg = (void *)alarm_resume_msg;
+	uni_msg3.msg_size = strlen(alarm_resume_msg) + 1;
+	uni_msg4.msg = (void *)alarm_restart_msg;
+	uni_msg4.msg_size = strlen(alarm_restart_msg) + 1;
+	uni_msg5.msg = (void *)alarm_off_msg;
+	uni_msg5.msg_size = strlen(alarm_off_msg) + 1;
 
-	action_manager_info = (app_info_list_t *)task_manager_getinfo_with_name("action_manager", TM_RESPONSE_WAIT_INF);
+	action_manager_info = task_manager_getinfo_with_name("action_manager", TM_RESPONSE_WAIT_INF);
 	if (action_manager_info != NULL) {
 		handle_actionmanager = action_manager_info->task.handle;
 	}
 	task_manager_clean_infolist(&action_manager_info);
 	
 	printf("\nUser App sends Alarm On message to Action Manager\n");
-	ret = task_manager_unicast(handle_actionmanager, msg1, strlen(msg1) + 1, TM_RESPONSE_WAIT_INF);
+	ret = task_manager_unicast(handle_actionmanager, &uni_msg1, NULL, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
@@ -69,7 +83,7 @@ int user_main(int argc, char *argv[])
 
 	sleep(3);
 	printf("\nUser App sends Alarm Pause message to Action Manager\n");
-	ret = task_manager_unicast(handle_actionmanager, msg2, strlen(msg2) + 1, TM_RESPONSE_WAIT_INF);
+	ret = task_manager_unicast(handle_actionmanager, &uni_msg2, NULL, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
@@ -78,7 +92,7 @@ int user_main(int argc, char *argv[])
 
 	sleep(3);
 	printf("\nUser App sends Alarm Resume message to Action Manager\n");
-	ret = task_manager_unicast(handle_actionmanager, msg3, strlen(msg3) + 1, TM_RESPONSE_WAIT_INF);
+	ret = task_manager_unicast(handle_actionmanager, &uni_msg3, NULL, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
@@ -87,7 +101,7 @@ int user_main(int argc, char *argv[])
 
 	sleep(3);
 	printf("\nUser App sends Alarm Restart message to Action Manager\n");
-	ret = task_manager_unicast(handle_actionmanager, msg4, strlen(msg4) + 1, TM_RESPONSE_WAIT_INF);
+	ret = task_manager_unicast(handle_actionmanager, &uni_msg4, NULL, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
@@ -96,31 +110,29 @@ int user_main(int argc, char *argv[])
 
 	sleep(3);
 	printf("\nUser App sends Alarm Off message to Action Manager\n");
-	ret = task_manager_unicast(handle_actionmanager, msg5, strlen(msg5) + 1, TM_RESPONSE_WAIT_INF);
+	ret = task_manager_unicast(handle_actionmanager, &uni_msg5, NULL, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
 		printf("Alarm Off message is successfully sended!\n");
 	}
 
-	free(msg1);
-	free(msg2);
-	free(msg3);
-	free(msg4);
-	free(msg5);
-
+	broad_msg1.msg = (void *)wifi_on_msg;
+	broad_msg1.msg_size = strlen(wifi_on_msg) + 1;
 	sleep(1);
 	printf("\nUser App broadcasts WIFI_ON message\n");
-	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON);
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON, &broad_msg1, TM_NO_RESPONSE);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {
 		printf("WIFI_ON message is successfully broadcasted!\n");
 	}
 
+	broad_msg2.msg = (void *)wifi_off_msg;
+	broad_msg2.msg_size = strlen(wifi_off_msg) + 1;
 	sleep(1);
 	printf("\nUser App broadcasts WIFI_OFF message\n");
-	ret = task_manager_broadcast(TM_BROADCAST_WIFI_OFF);
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_OFF, &broad_msg2, TM_NO_RESPONSE);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
 	} else {

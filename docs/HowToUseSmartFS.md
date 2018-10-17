@@ -36,7 +36,7 @@ Below diagram shows the dependent layers part of Smart FS.
 +----------------------------------------------+
 ```
 
-The code directly above the MTD driver is the SMART MTD layer.  
+The code directly above the MTD Driver is the SMART MTD layer.  
 This interfaces with the MTD (flash driver) layer and handles low-level
 media operations such as logical sector allocation, freeing and management,
 erase block management, low-level formatting, wear leveling, etc.
@@ -49,7 +49,7 @@ chaining logical sectors together to create files, creating directories and
 
 ## How to Enable SmartFS on New Board
 1. add *[FLASH Driver](#flash-driver)* for the flash present in the SoC/Board.  
-2. enable *[MTD driver](#mtd-driver)* corresponding to flash.  
+2. enable *[MTD Driver](#mtd-driver)* corresponding to flash.  
 3. enable *[SMART MTD Driver](#smart-mtd-driver)*.  
 4. enable *[SMART FS](#smart-fs)*
 
@@ -74,10 +74,10 @@ void s5j_board_initialize(void)
 }
 ```
 ## MTD Driver
-MTD driver must be enabled to access the underlying FLASH driver.  
+MTD Driver must be enabled to access the underlying FLASH driver.  
 Example driver is at *os/fs/driver/mtd/mtd_progmem.c*.  
 
-Below configuration must be enabled for using mtd driver.
+Below configuration must be enabled for using Mtd Driver.
 1. Enable CONFIG_MTD  
 ```
 File  Systems->Memory Technology Device (MTD) Support to y

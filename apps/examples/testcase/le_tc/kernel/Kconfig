@@ -6,7 +6,6 @@
 menuconfig EXAMPLES_TESTCASE_KERNEL
 	bool "Kernel TestCase Example"
 	default y
-	select KERNEL_TEST_DRV
 	---help---
 		Enable the Kernel TestCase Example
 
@@ -163,6 +162,7 @@ config TC_KERNEL_PTHREAD
 config TC_KERNEL_ROUNDROBIN
 	bool "RoundRobin"
 	default n
+	depends on RR_INTERVAL != 0
 
 config TC_KERNEL_SCHED
 	bool "Sched"
@@ -206,6 +206,11 @@ config TC_KERNEL_WORK_QUEUE
 	bool "wqueue"
 	default n
 	depends on SCHED_WORKQUEUE || LIB_USRWORK
+
+config TC_KERNEL_MEMORY_SAFETY
+	bool "Memory Safety"
+	default n
+	depends on !DISABLE_MQUEUE
 
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"

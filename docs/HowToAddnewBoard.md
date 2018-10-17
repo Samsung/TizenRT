@@ -1,20 +1,35 @@
 # How to add(port) a new board
 
-Changes in *[arch](#arch)* and *[configs](#configs)* folders are mandatory to support a new board.  
+There are three kinds of folders, core, chip architecture and board.  
+For example, armv7-r is a core architecture, s5j is a chip architecture and artik05x is a board.  
+
+Changes in *[arch](#arch)*, *[board](#board)* and *[configs](#configs)* folders are mandatory to support a new board.  
+
+core and chip architecture must be added in *[arch](#arch)*.  
+board must be added in *[board](#board)* and *[configs](#configs)*.  
+
 Adding static library or expanding driver will be provided later.
 
 ## Arch
 
-Changes in *arch* directory for a new board includes chip architecture and BSP for board.  
-Currently, TizenRT supports only ARM architecture.  
-But if new board is another architecture, new architecture folder should be added in this path.
+Changes in *os/arch* directory for a new board includes core and chip architecture.  
+Currently, TizenRT supports only ARM architectures.  
+But if new board is of another architecture, new core architecture folder must be added.  
 
-### BSP
+chip architecture sources must be added in *os/arch/arm/src/chip-name*.  
+chip architecture headers must be added in *os/arch/arm/include/chip-name*.  
 
-There are three kinds of folders, core, chip architecture and board.  
-For example, armv7-r is a core architecture, s5j is a chip architecture and artik053 is a board.  
+Example: *os/arch/arm/src/s5j*, *os/arch/arm/include/s5j*  
 
-At least, new board folder should be added.
+Refer *[kconfig](#kconfig)* for adding Kconfig entries
+
+## Board
+
+Board sources must be added in *os/board/board-name/src/*  
+Board headers must be added in *os/board/board-name/include/*  
+Example: *os/board/artik05x/src*,  *os/board/artik05x/include*  
+
+Refer *[kconfig](#kconfig)* for adding Kconfig entries
 
 ### Kconfig
 
@@ -46,7 +61,7 @@ endif
 ```
 
 #### Board
-Modify *os/arch/Kconfig.board* file.
+Modify *os/board/Kconfig* file.
 
 1. Add new configurations as belows.
 ```
@@ -69,7 +84,7 @@ config ARCH_BOARD
 comment "Board-Specific Options"
 
 if ARCH_BOARD_<BOARD_NAME>
-source arch/arm/src/<BOARD_NAME>/Kconfig
+source board/<BOARD_NAME>/Kconfig
 endif
 ```
 

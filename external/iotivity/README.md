@@ -14,9 +14,9 @@ For more information refer to the [web site](http://www.scons.org/doc/production
 
 ### How to enable IoTivity
 There are two methods to enable IoTivity. One is using a pre-set configuration(defconfig), the other is using menuconfig.  
-As a default configuration, you can use the IoTivity defconfig. Otherwise, you should enable this function through menuconfig.
+As a default configuration, you can use the IoTivity defconfig. Otherwise, you should enable this function with menuconfig.
 
-#### Using pre-set configration
+#### Using pre-set configuration
 Use the IoTivity configuration.  
 ```bash
 ~/TIZENRT_BASEDIR$ cd os/tools

@@ -53,7 +53,7 @@
 # Add the time C files to the build
 
 CSRCS += lib_strftime.c lib_strptime.c lib_calendar2utc.c lib_daysbeforemonth.c
-CSRCS += lib_isleapyear.c lib_time.c lib_difftime.c lib_clock.c
+CSRCS += lib_isleapyear.c lib_time.c lib_difftime.c
 
 ifdef CONFIG_LIBC_LOCALTIME
 CSRCS +=lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c

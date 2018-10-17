@@ -165,6 +165,9 @@ struct pcm {
 	unsigned int mmap_idx;
 };
 
+int pcm_start(struct pcm *pcm);
+int pcm_stop(struct pcm *pcm);
+
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
 {
 	va_list ap;
@@ -486,7 +489,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 
 	while (pending > 0) {
 		nbytes = pending > pcm_frames_to_bytes(pcm, pcm->buffer_size) ? pcm_frames_to_bytes(pcm, pcm->buffer_size) : pending;
-
 		if (pcm->buf_idx < pcm->buffer_cnt) {
 			/* If we have empty buffers, fill them first */
 			memcpy(pcm->pBuffers[pcm->buf_idx]->samp, (char *)data + offset, nbytes);
@@ -587,7 +589,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		if (pcm->next_buf != NULL) {
 			/* We have a pending buffer with some data in it. */
 			apb = pcm->next_buf;
-
 			if (pending <= pcm->next_size) {
 				/* User wants less data than we have in buffer.
 				   Copy the requested amount of data to user buffer and return */
@@ -1180,6 +1181,10 @@ int pcm_drain(struct pcm *pcm)
 
 		return pcm_stop(pcm);
 	} else {
+		struct audio_msg_s msg;
+		int size;
+		int prio;
+		struct timespec st_time;
 		/* Recording case */
 		/* Stop the codec */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -1189,6 +1194,12 @@ int pcm_drain(struct pcm *pcm)
 #endif
 			return oops(pcm, errno, "cannot stop channel\n");
 		}
+
+		/* Remove any pending messages from the message queue */
+		do {
+			clock_gettime(CLOCK_REALTIME, &st_time);
+			size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+		} while (size > 0);
 
 		pcm->prepared = 0;
 		pcm->running = 0;
@@ -1365,105 +1376,109 @@ int pcm_avail_update(struct pcm *pcm)
  *  If an error occured, a negative number is returned.
  * @ingroup libtinyalsa-pcm
  */
-int pcm_wait(struct pcm *pcm, int timeout)
-{
-	struct ap_buffer_s *apb;
-	struct audio_msg_s msg;
-	unsigned int size;
-	int prio;
-	struct timespec st_time;
-	int count = 0;
-
-	if (pcm == NULL) {
-		return -EINVAL;
-	}
-
-	if (!(pcm->flags & PCM_MMAP)) {
-		return -EINVAL;
-	}
-
-	/* If there are some messages in the queue, empty them */
-	while (1) {
-		clock_gettime(CLOCK_REALTIME, &st_time);
-		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
-		if (size != sizeof(msg)) {
-			break;
+	int pcm_wait(struct pcm *pcm, int timeout)
+	{
+		struct ap_buffer_s *apb;
+		struct audio_msg_s msg;
+		unsigned int size;
+		int prio;
+		struct timespec st_time;
+		int count = 0;
+	
+		if (pcm == NULL) {
+			return -EINVAL;
 		}
-
-		/* If you find a dequeue message in the queue,
-		update the apb flags and curbyte and increment the count*/
-		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-			apb = (struct ap_buffer_s *)msg.u.pPtr;
-			apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
-			apb->curbyte = 0;
-			count++;
-		} else if (msg.msgId == AUDIO_MSG_XRUN) {
-			/* Underrun to be handled by client */
-			return -EPIPE;
+	
+		if (!(pcm->flags & PCM_MMAP)) {
+			return -EINVAL;
 		}
-	}
-
-	/* If we got some buffer from the queue, return positive result */
-	if (count > 0) {
-		return 1;
-	}
-
-	/* If we are in draining state, and the queue is empty, reset the draining state
-	We will return positive result for now. But next call to pcm_wait will return error */
-	if (count == 0 && pcm->draining) {
-		pcm->draining = 0;
-		return 1;
-	}
-
-	/* If PCM is opened for recording, then start it */
-	if ((pcm->flags & PCM_IN) && !pcm->running && !pcm->draining) {
-		if (pcm_start(pcm) < 0) {
-			return oops(pcm, -1, "Failed to start PCM\n");
+	
+		/* If there are some messages in the queue, empty them */
+		while (1) {
+			clock_gettime(CLOCK_REALTIME, &st_time);
+			size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+			if (size != sizeof(msg)) {
+				break;
+			}
+			/* If you find a dequeue message in the queue,
+			update the apb flags and curbyte and increment the count*/
+			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+				apb = (struct ap_buffer_s *)msg.u.pPtr;
+				apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
+				apb->curbyte = 0;
+				count++;
+			} else if (msg.msgId == AUDIO_MSG_XRUN) {
+				/* Underrun to be handled by client */
+				return -EPIPE;
+			}
 		}
-	}
-
-	/* Check if some buffer is already available */
-	/* This is put here to handle corner case of open for write -> wait() */
-	if (pcm_avail_update(pcm) == pcm->buffer_size) {
-		return 1;
-	}
-
-	/* If there were no buffers in the queue, wait for codec to put a buffer on the queue */
-	if (timeout > 0) {
-		/* Use the timeout given by application */
-		clock_gettime(CLOCK_REALTIME, &st_time);
-		st_time.tv_nsec += timeout * MILLI_TO_NANO;
-		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
-	} else {
-		/* Application did not give a timeout value
-		The behavior here depends on whether mq was opened with O_NONBLOCK
-		This might block until a msg becomes available on the queue */
-		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
-	}
-
-	if (size != sizeof(msg)) {
-		if (errno == ETIMEDOUT) {
-			oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel\n");
-			return 0;
-		} else {
-			return oops(pcm, errno, "Interrupted while waiting for deque message from kernel\n");
+		/* If we got some buffer from the queue, return positive result */
+		if (count > 0) {
+			return 1;
 		}
+	
+		/* If we are in draining state, and the queue is empty, reset the draining state
+		We will return positive result for now. But next call to pcm_wait will return error */
+		if (count == 0 && pcm->draining) {
+			pcm->draining = 0;
+			return 1;
+		}
+	
+		/* If PCM is opened for recording, then start it */
+		if ((pcm->flags & PCM_IN) && !pcm->running && !pcm->draining) {
+			if (pcm_start(pcm) < 0) {
+				return oops(pcm, -1, "Failed to start PCM\n");
+			}
+		}
+	
+		/* Check if some buffer is already available */
+		/* This is put here to handle corner case of open for write -> wait() */
+		if (pcm_avail_update(pcm) == pcm->buffer_size) {
+			audvdbg("avail update %d buffer_size %d\n", pcm_avail_update(pcm), pcm->buffer_size);
+			return 1;
+		}
+		int cnt = 0;
+		while (cnt < pcm->buffer_cnt - 1) {
+			/* If there were no buffers in the queue, wait for codec to put a buffer on the queue */
+			if (timeout > 0) {
+				/* Use the timeout given by application */
+				clock_gettime(CLOCK_REALTIME, &st_time);
+				st_time.tv_nsec += timeout * MILLI_TO_NANO;
+				size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+			} else {
+				/* Application did not give a timeout value
+				The behavior here depends on whether mq was opened with O_NONBLOCK
+				This might block until a msg becomes available on the queue */
+				size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+			}
+			if (size != sizeof(msg)) {
+				if (errno == ETIMEDOUT) {
+					oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel\n");
+					return 0;
+				} else {
+					return oops(pcm, errno, "Interrupted while waiting for deque message from kernel\n");
+				}
+			}
+			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+				/* If you find a dequeue message in the queue,
+				update the apb flags and curbyte and increment the count*/
+				apb = (struct ap_buffer_s *)msg.u.pPtr;
+				apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
+				apb->curbyte = 0;
+				cnt++;
+			} else if (msg.msgId == AUDIO_MSG_XRUN) {
+				/* Underrun to be handled by client */
+				return -EPIPE;
+			} else {
+				break;
+			}
+		}
+		if (cnt == pcm->buffer_cnt -1) {
+			return 1;
+		}
+	
+		return oops(pcm, EINTR, "Received unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
 	}
-	if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-		/* If you find a dequeue message in the queue,
-		update the apb flags and curbyte and increment the count*/
-		apb = (struct ap_buffer_s *)msg.u.pPtr;
-		apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
-		apb->curbyte = 0;
-
-		return 1;
-	} else if (msg.msgId == AUDIO_MSG_XRUN) {
-		/* Underrun to be handled by client */
-		return -EPIPE;
-	}
-
-	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
-}
 
 int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 {

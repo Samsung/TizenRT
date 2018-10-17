@@ -20,17 +20,23 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdint.h>
-#include <errno.h>
+#include <string.h>
 #include <debug.h>
 #include <signal.h>
-#include <apps/builtin.h>
 #include <sys/types.h>
+
+#include <apps/builtin.h>
 #include <tinyara/sched.h>
 #include <tinyara/signal.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/wdog.h>
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
+
+#include "sched/sched.h"
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+#include "group/group.h"
+#endif
 
 /****************************************************************************
  * Private Function Prototypes
@@ -89,6 +95,81 @@ static int taskmgr_task_init(pid_t pid)
 	return sig_sethandler(tcb, SIGTM_PAUSE, &act);
 }
 
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+static void taskmgr_pthread_group_detach(pid_t pthread_pid)
+{
+	FAR struct tcb_s *pthread_tcb;
+
+	pthread_tcb = sched_gettcb(pthread_pid);
+	if (pthread_tcb) {
+		group_leave(pthread_tcb);
+	}
+}
+
+static struct task_group_s *taskmgr_get_group_struct(pid_t pid)
+{
+	struct tcb_s *tcb;
+
+	tcb = sched_gettcb(pid);
+	if (!tcb) {
+		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
+		return NULL;
+	}
+
+	return tcb->group;
+}
+
+static int taskmgr_group_bind(struct task_group_s *parent_group, struct pthread_tcb_s *child_tcb)
+{
+	if (parent_group == NULL || child_tcb == NULL) {
+		tmdbg("[TM] Invalid parameter! Group bind is failed.\n");
+		return ERROR;
+	}
+
+	child_tcb->cmn.group = parent_group;
+	return OK;
+}
+
+static int taskmgr_pthread_group_join(pid_t parent_pid, pid_t child_pid)
+{
+	struct task_group_s *parent_group;
+	struct pthread_tcb_s *child_tcb;
+	int ret;
+
+	parent_group = taskmgr_get_group_struct(parent_pid);
+	child_tcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
+	ret = taskmgr_group_bind(parent_group, child_tcb);
+	if (ret != OK) {
+		tmdbg("[TM] Group bind is failed.\n");
+		return ERROR;
+	}
+
+	ret = group_join(child_tcb);
+	if (ret != OK) {
+		tmdbg("[TM] Group join is failed.\n");
+		return ERROR;
+	}
+
+	return OK;
+}
+
+#if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
+static int taskmgr_pthread_ppid_change(pid_t parent_pid, pid_t child_pid)
+{
+	struct pthread_tcb_s *ptcb;
+	ptcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
+
+	if (ptcb == NULL) {
+		tmdbg("[TM] Invalid pthread tcb. Pthread ppid change failed.\n");
+		return ERROR;
+	}
+
+	ptcb->cmn.ppid = parent_pid;
+	return OK;
+}
+#endif			/* CONFIG_SCHED_HAVE_PARENT && !HAVE_GROUP_MEMBERS */
+#endif			/* HAVE_TASK_GROUP && !CONFIG_DISABLE_PTHREAD */
+
 static ssize_t taskmgr_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	return 0;
@@ -107,8 +188,9 @@ static ssize_t taskmgr_write(FAR struct file *filep, FAR const char *buffer, siz
  ************************************************************************************/
 static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int ret = -EINVAL;
+	int ret = ERROR;
 	struct tcb_s *tcb;
+	tm_pthread_pid_t *group_info;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
 
@@ -151,8 +233,6 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			ret = OK;
 		}
 		break;
-	case TMIOC_RESTART:
-		break;
 	case TMIOC_BROADCAST:
 		tcb = sched_gettcb((int)arg);
 		if (tcb == NULL) {
@@ -175,6 +255,53 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		ret = OK;
 		break;
+	case TMIOC_TERMINATE:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
+			return ERROR;
+		}
+		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT == TCB_FLAG_TTYPE_TASK) {
+			ret = task_delete(tcb->pid);
+			if (ret != OK) {
+				return ERROR;
+			}
+		}
+#ifndef CONFIG_DISABLE_PTHREAD
+		else {
+			(void)pthread_detach(tcb->pid);
+			ret = pthread_cancel(tcb->pid);
+			if (ret != OK) {
+				return ERROR;
+			}
+		}
+#endif
+		break;
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+	case TMIOC_PTHREAD_PARENT:
+		group_info = (tm_pthread_pid_t *)arg;
+		if (group_info == NULL) {
+			return ERROR;
+		}
+
+		/* First, the group of pthread is detached from the task manager */
+		taskmgr_pthread_group_detach(group_info->child_pid);
+
+		/* After the group detach procedure, the pthread group is joined with the group of parent */
+		ret = taskmgr_pthread_group_join(group_info->parent_pid, group_info->child_pid);
+		if (ret != OK) {
+			return ERROR;
+		}
+
+#if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
+		/* Afeter the pthread group join proceduere, the parent pid of pthread is changed into parent pid */
+		ret = taskmgr_pthread_ppid_change(group_info->parent_pid, group_info->child_pid);
+		if (ret != OK) {
+			return ERROR;
+		}
+#endif
+		break;
+#endif
 	default:
 		tmdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

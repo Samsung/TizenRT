@@ -92,6 +92,9 @@ CXXFLAGS  = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS
 CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
 CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
 CXXFLAGS += -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
+ifeq ($(CONFIG_LIBCXX),y)
+CXXFLAGS += -DCONFIG_WCHAR_BUILTIN
+endif
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
@@ -115,5 +118,13 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1)
+  $(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1) $(2) $(3) $(4) $(5) $(6)
+endef
+
+define OTA_IMG
+  $(TOPDIR)/../build/configs/artik05x/artik05x_ota.sh
+endef
+
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/artik05x/artik05x_make_bin.sh --bin $(1) --ext $(2)
 endef

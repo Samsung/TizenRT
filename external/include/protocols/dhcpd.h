@@ -91,6 +91,13 @@ extern "C" {
 typedef void (*dhcp_sta_joined)(void);
 
 /**
+ * @brief Get DHCP server status which means server is running or not.
+ *
+ * @return When server is running, returns 1. When stopped, returns 0.
+*/
+int dhcpd_status(void);
+
+/**
  * @brief Starts DHCP server which is attached given network interface.
  *
  * @param[in] intf the name of network interface to run DHCP server
@@ -105,6 +112,11 @@ int dhcpd_run(void *arg);
  * @return On success, 0. On failure, returns -1
 */
 int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb);
+
+/**
+ * @brief Stops DHCP server.
+*/
+void dhcpd_stop(void);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -523,6 +523,7 @@ int lwip_select(int maxfdp1, fd_set * readset, fd_set * writeset, fd_set * excep
 int lwip_ioctl(int s, long cmd, void *argp);
 int lwip_fcntl(int s, int cmd, int val);
 
+int lwip_poll(int fd, struct pollfd *fds, bool setup);
 #ifdef __cplusplus
 }
 #endif

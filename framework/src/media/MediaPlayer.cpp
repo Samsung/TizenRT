@@ -21,8 +21,10 @@
 #include "PlayerWorker.h"
 
 namespace media {
-MediaPlayer::MediaPlayer() : mPMpImpl(new MediaPlayerImpl())
+MediaPlayer::MediaPlayer() : mPMpImpl(new MediaPlayerImpl(*this))
 {
+	mId = (uint64_t)this << 32;
+	mId = mId | (uint64_t)mPMpImpl.get();
 }
 
 player_result_t MediaPlayer::create()
@@ -60,12 +62,12 @@ player_result_t MediaPlayer::pause()
 	return mPMpImpl->pause();
 }
 
-int MediaPlayer::getVolume()
+player_result_t MediaPlayer::getVolume(uint8_t *vol)
 {
-	return mPMpImpl->getVolume();
+	return mPMpImpl->getVolume(vol);
 }
 
-player_result_t MediaPlayer::setVolume(int vol)
+player_result_t MediaPlayer::setVolume(uint8_t vol)
 {
 	return mPMpImpl->setVolume(vol);
 }
@@ -78,6 +80,11 @@ player_result_t MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSour
 player_result_t MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	return mPMpImpl->setObserver(observer);
+}
+
+bool MediaPlayer::operator==(const MediaPlayer &rhs)
+{
+	return this->mId == rhs.mId;
 }
 
 MediaPlayer::~MediaPlayer()

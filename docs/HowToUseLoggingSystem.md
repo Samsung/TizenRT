@@ -1,18 +1,18 @@
 # How to use Logging System
-**Debug Messages** is the interface for logging events and **Logging Modules** are modules which process the log messages, LogM and syslog devices.
+**Debug Messages** is the interface for logging events and **Logging Modules** are modules which process the log messages, LogM and Syslog Devices.
 
 ## Contents
 > [Debug Messages](#debug-messages)  
 > [Logging Modules](#logging-modules)
 
 ## Debug Messages
-TizenRT uses debug messages for logging.  
+TizenRT uses Debug Messages for logging.  
 These messages are processed through [logging modules](#logging-modules).  
-It is similar to printf with respect to printing messages. However, it differs from printf in that debug messages can be configured by menuconfig.  
-Debug messages can be configured for each module or level. In contrast, printf messages cannot be selectively disabled during buildtime, unless you have disabled it explicitly by a macro definition.
+It is similar to printf with respect to printing messages. However, it differs from printf in that Debug Messages can be configured by menuconfig.  
+Debug Messages can be configured for each module or level. In contrast, printf messages cannot be selectively disabled during buildtime, unless you have disabled it explicitly by a macro definition.
 
-### Adding new debug messages
-TizenRT defines debug macros for debug messages according to the debug level and interface level.  
+### Adding new Debug Messages
+TizenRT defines debug macros for Debug Messages according to the debug level and interface level.  
 * Debug level represents the severity of the log message, and is available as a configuration in menuconfig.  
    * 3 debug levels : Error, Warning, Information.  
 * Low-level interface uses architecture-specific I/O which writes something to device directly such as up_putc().  
@@ -62,23 +62,23 @@ For example, to enable filesystem debug with error level and network debug with 
 By default, all log output goes to stdout, i.e. console.  
 Using Menuconfig, however, they can be configured to route to other interfaces or devices as well.  
 
-There are 3 kinds of logging modules, LogM and 2 syslog devices.
+There are 3 kinds of logging modules, LogM and 2 Syslog Devices.
  * [LogM](../os/logm/README.md)
  * [Syslog Devices](../os/drivers/syslog/README.txt) : Character device, RAM logging device  
 
-LogM takes stronger precedence over syslog, so if LogM and either syslog devices are enabled at the same time, all logs will be directed to LogM.
+LogM takes stronger precedence over syslog, so if LogM and either Syslog Devices are enabled at the same time, all logs will be directed to LogM.
 
 ### How to enable LogM
 For details pertaining to LogM, please refer to [README](../os/logm/README.md).
 
 ### How to enable Syslog Devices
-Using Menuconfig, syslog devices can be enabled as shown below:
+Using Menuconfig, Syslog Devices can be enabled as shown below:
 ```
 cd $TIZENRT_BASEDIR
 cd os
 make menuconfig
 ```
-1. Enable syslog devices as shown below:
+1. Enable Syslog Devices as shown below:
 ```
 File Systems -> Advanced SYSLOG features to y
 ```

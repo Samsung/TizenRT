@@ -29,73 +29,53 @@
 #ifndef __MEDIA_INPUTDATASOURCE_H
 #define __MEDIA_INPUTDATASOURCE_H
 
-#include <fstream>
 #include <memory>
 #include <media/DataSource.h>
 
 namespace media {
-class Decoder;
 namespace stream {
+
 /**
  * @class
  * @brief This class is input data structure
  * @details @b #include <media/InputDataSource.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
-class InputDataSource : public DataSource
+class InputDataSource
+	: public DataSource
 {
 public:
 	/**
 	 * @brief Constructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	InputDataSource();
 	/**
 	 * @brief Copy constructs for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	InputDataSource(const InputDataSource& source);
+	InputDataSource(const InputDataSource &source);
 	/**
 	 * @brief Operator= for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	InputDataSource& operator=(const InputDataSource& source);
+	InputDataSource &operator=(const InputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ~InputDataSource();
 
-  	/**
+	/**
 	 * @brief Gets the stream data
-	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0 PRE
-	 */
-	virtual ssize_t read(unsigned char* buf, size_t size) = 0;
-
-  	/**
-	 * @brief Gets the stream data from offset
 	 * @details @b #include <media/InputDataSource.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual int readAt(long offset, int origin, unsigned char* buf, size_t size) = 0;
-
-
-protected:
-	void setDecoder(std::shared_ptr<Decoder> decoder);
-	const std::shared_ptr<Decoder> getDecoder();
-	void setAudioType(audio_type_t audioType);
-	audio_type_t getAudioType();
-	size_t getDecodeFrames(unsigned char* buf, size_t* size);
-
-private:
-	audio_type_t mAudioType;
-	std::shared_ptr<Decoder> mDecoder;
-
+	virtual ssize_t read(unsigned char *buf, size_t size) = 0;
 };
 
 } // namespace stream

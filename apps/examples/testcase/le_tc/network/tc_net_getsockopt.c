@@ -123,6 +123,9 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 	socklen_t optlen = sizeof(optval);
 
 	ret = setsockopt(0, SOL_SOCKET, 0, 0, 0);
+	if (ret != 0) {
+		printf("setsockopt fail code(%d)\n", errno);
+	}
 	ret = getsockopt(0, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
 
 	TC_ASSERT_EQ("getsockopt", ret, -1);
@@ -165,6 +168,7 @@ static void tc_net_getsockopt_optval_n(int s)
    * @precondition	   :socket file descriptor
    * @postcondition	   :
    */
+#if 0 // get has lwip_tcp in the accepticonn option and not in set.
 static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
 {
 	int ret = -1;
@@ -181,6 +185,7 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
 	TC_SUCCESS_RESULT();
 
 }
+#endif
 
 /**
    * @testcase		   :tc_net_getsockopt_sol_socket_so_broadcast_p

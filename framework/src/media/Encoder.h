@@ -16,9 +16,13 @@
  *
  ******************************************************************/
 
+#ifndef __MEDIA_ENCODER_H
+#define __MEDIA_ENCODER_H
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <media/MediaTypes.h>
+#include <memory>
 
 #ifdef CONFIG_AUDIO_CODEC
 #include "streaming/audio_encoder.h"
@@ -29,22 +33,27 @@ namespace media {
 class Encoder
 {
 public:
-	Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate);
-	Encoder(const Encoder *source);
+	Encoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
 	~Encoder();
 
 public:
+	static std::shared_ptr<Encoder> create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
+	bool init(void);
 	size_t pushData(unsigned char *buf, size_t size);
 	bool getFrame(unsigned char *buf, size_t *size);
 	bool empty();
 	size_t getAvailSpace();
 
 private:
-	Encoder() {}
 #ifdef CONFIG_AUDIO_CODEC
 	audio_encoder_t mEncoder;
+	audio_type_t mAudioType;
+	unsigned short mChannels;
+	unsigned int mSampleRate;
 	signed short *inputBuf;
 	unsigned char *outputBuf;
 #endif
 };
 } // namespace media
+
+#endif

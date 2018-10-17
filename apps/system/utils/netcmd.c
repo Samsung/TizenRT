@@ -73,7 +73,9 @@
 #ifdef CONFIG_NETUTILS_TFTPC
 #include "netcmd_tftpc.h"
 #endif
-
+#ifdef CONFIG_NET_NETMON
+#include "netcmd_netmon.h"
+#endif
 #undef HAVE_PING
 #undef HAVE_PING6
 
@@ -354,7 +356,6 @@ int cmd_ifconfig(int argc, char **argv)
 			else if (strstr(hostip, ":") != NULL) {
 				ip6_addr_t temp;
 				s8_t idx;
-				int result;
 
 				netif = netif_find(intf);
 				if (netif) {
@@ -378,7 +379,7 @@ int cmd_ifconfig(int argc, char **argv)
 					netif_set_ip6_autoconfig_enabled(netif, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 					/* add static ipv6 address */
-					result = netif_add_ip6_address(netif, &temp, &idx);
+					(void)netif_add_ip6_address(netif, &temp, &idx);
 
 #ifdef CONFIG_NET_IPv6_MLD
 					ip6_addr_t solicit_addr;
@@ -550,6 +551,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"ifup", cmd_ifup, TASH_EXECMD_SYNC},
 #ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_NET_NETMON
+	{"netmon", cmd_netmon, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NET_PING_CMD
 	{"ping", cmd_ping, TASH_EXECMD_ASYNC},

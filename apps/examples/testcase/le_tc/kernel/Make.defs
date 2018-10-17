@@ -155,6 +155,9 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_WORK_QUEUE),y)
   CSRCS += tc_wqueue.c
 endif
+ifeq ($(CONFIG_TC_KERNEL_MEMORY_SAFETY),y)
+  CSRCS += tc_memory_safety.c
+endif
 ifeq ($(CONFIG_ITC_KERNEL_ENVIRON),y)
   CSRCS += itc_environ.c
 endif

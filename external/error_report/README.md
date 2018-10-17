@@ -33,7 +33,7 @@ In certain cases, especially involving callback routines in the network stack, i
 ### Module Id
 The error record includes a pre-defined identifier associated with the TizenRT module at fault
 ### Error Code
-The error record includes a pre-defined identifier associated with the error code for the above-mentioned module.
+The error record includes a pre-defined identifier associated with the Error Code for the above-mentioned module.
 
 **Figure 2** below shows an example of Error Reporting in TizenRT's WiFi Manager.
 ![image](images/error_reporting_picture.jpg)
@@ -77,7 +77,7 @@ enum error_module_id_e {
 
 ```
 
-Ideally, error codes from a module must be contained in the module implementation itself. If, however, the error codes do not cover the error scenarios witnessed in production runs, we can define the additional error codes in ```error_report.h```, using ```enum``` declarations. Please note that this declaration is optional, and should be avoided when module-specific error codes already exist. Following example shows one such declaration template:
+Ideally, Error Codes from a module must be contained in the module implementation itself. If, however, the Error Codes do not cover the error scenarios witnessed in production runs, we can define the additional Error Codes in ```error_report.h```, using ```enum``` declarations. Please note that this declaration is optional, and should be avoided when module-specific Error Codes already exist. Following example shows one such declaration template:
 
 ```
 #ifdef CONFIG_<MODULE_NAME>_REPORT
@@ -91,7 +91,7 @@ typedef enum error_code_<module_name>_e error_code_<module_name>_t;
 ```
 
 ## Create Error Records
-Having defined the Module Id and the associated error codes, we have to insert error reporting API calls (mostly ```error_report_data_create```) at appropriate places in the module source code. For simplicity, the API call to ```error_report_data_create``` can be done using a macro ```ERR_DATA_CREATE``` defined in ```error_report.h```. ```ERR_DATA_CREATE``` takes in the Module Id and Error code and adds in the program counter value, before calling the ```error_report_data_create``` API, as shown below:
+Having defined the Module Id and the associated Error Codes, we have to insert error reporting API calls (mostly ```error_report_data_create```) at appropriate places in the module source code. For simplicity, the API call to ```error_report_data_create``` can be done using a macro ```ERR_DATA_CREATE``` defined in ```error_report.h```. ```ERR_DATA_CREATE``` takes in the Module Id and Error Code and adds in the program counter value, before calling the ```error_report_data_create``` API, as shown below:
 
 ```
 #define ERR_DATA_CREATE(module_id, reason_code)	    \

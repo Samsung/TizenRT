@@ -19,13 +19,12 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <slsi_wifi/slsi_wifi_api.h>
 #include "wifi_utils.h"
 
-#define MACADDR_LENGTH			6
-#define SSID_LENGTH_MAX			32
-#define PASSPHRASE_LENGTH_MAX	64
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0
 
@@ -130,12 +129,17 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 			memset(&cur->ap_info, 0x0, sizeof(wifi_utils_ap_scan_info_s));
 			cur->ap_info.rssi = wifi_scan_iter->rssi;
 			cur->ap_info.channel = wifi_scan_iter->channel;
-			cur->ap_info.phy_mode = wifi_scan_iter->phy_mode;
+			if (wifi_scan_iter->phy_mode == 1) {
+				cur->ap_info.phy_mode = WIFI_UTILS_IEEE_80211_N;
+			} else {
+				cur->ap_info.phy_mode = WIFI_UTILS_IEEE_80211_LEGACY;
+			}
 			get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
-					&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
-			strncpy(cur->ap_info.ssid, (char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
+			&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
+			strncpy(cur->ap_info.ssid, (const char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
 			cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
-			strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
+			strncpy((char *)cur->ap_info.bssid, (const char *)wifi_scan_iter->bssid, WIFI_UTILS_MACADDR_STR_LEN);
+			cur->ap_info.bssid[WIFI_UTILS_MACADDR_STR_LEN] = '\0';
 
 			if (!prev) {
 				*scan_list = cur;
@@ -493,7 +497,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	/* add initialization code as slsi_app */
 	ap_config->beacon_period = 100;
 	ap_config->DTIM = 1;
-	ap_config->phy_mode = 1;
+	ap_config->phy_mode = 1; //1 for 11n, 0 for legacy
 
 	if (softap_config->channel > 14 || softap_config->channel < 1) {
 		ndbg("[WU] Channel needs to be between 1 and 14" " (highest channel depends on regulatory of countries)\n");
@@ -614,3 +618,17 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 	}
 	return wuret;
 }
+
+wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
+{
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	int ret = WiFiSetAutoconnect(check);
+	if (ret == SLSI_STATUS_SUCCESS) {
+		wuret = WIFI_UTILS_SUCCESS;
+		ndbg("[WU] External Autoconnect set to %d\n", check);
+	} else {
+		ndbg("[WU] External Autoconnect failed to set %d", check);
+	}
+	return wuret;
+}
+

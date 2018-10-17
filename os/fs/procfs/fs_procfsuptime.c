@@ -216,7 +216,7 @@ static int uptime_close(FAR struct file *filep)
 static ssize_t uptime_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct uptime_file_s *attr;
-	systime_t ticktime;
+	clock_t ticktime;
 	size_t linesize;
 	off_t offset;
 	ssize_t ret;

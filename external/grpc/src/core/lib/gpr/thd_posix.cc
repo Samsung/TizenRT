@@ -71,9 +71,13 @@ static void* thread_body(void* v) {
   return nullptr;
 }
 
-// TODO(TizenRT)
 #ifndef GRPC_THD_CLIENT_STACK_SIZE
+#ifdef __TizenRT__
+#include <tinyara/config.h>
+#define GRPC_THD_CLIENT_STACK_SIZE CONFIG_GRPC_PTHREAD_SIZE
+#else
 #define GRPC_THD_CLIENT_STACK_SIZE 10240
+#endif
 #endif
 int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
                 void (*thd_body)(void* arg), void* arg,
@@ -112,6 +116,8 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
     /* don't use gpr_free, as this was allocated using malloc (see above) */
     free(a);
     dec_thd_count();
+  } else {
+    pthread_setname_np(p, a->name);
   }
   *t = (gpr_thd_id)p;
   return thread_started;

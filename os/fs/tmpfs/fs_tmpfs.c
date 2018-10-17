@@ -88,13 +88,13 @@
 #endif
 
 #define tmpfs_lock_file(tfo) \
-           (tmpfs_lock_object((FAR struct tmpfs_object_s *)tfo))
+	(tmpfs_lock_object((FAR struct tmpfs_object_s *)tfo))
 #define tmpfs_lock_directory(tdo) \
-           (tmpfs_lock_object((FAR struct tmpfs_object_s *)tdo))
+	(tmpfs_lock_object((FAR struct tmpfs_object_s *)tdo))
 #define tmpfs_unlock_file(tfo) \
-           (tmpfs_unlock_object((FAR struct tmpfs_object_s *)tfo))
+	(tmpfs_unlock_object((FAR struct tmpfs_object_s *)tfo))
 #define tmpfs_unlock_directory(tdo) \
-           (tmpfs_unlock_object((FAR struct tmpfs_object_s *)tdo))
+	(tmpfs_unlock_object((FAR struct tmpfs_object_s *)tdo))
 
 /****************************************************************************
  * Private Function Prototypes
@@ -108,77 +108,77 @@ static void tmpfs_unlock(FAR struct tmpfs_s *fs);
 static void tmpfs_lock_object(FAR struct tmpfs_object_s *to);
 static void tmpfs_unlock_object(FAR struct tmpfs_object_s *to);
 static int  tmpfs_realloc_directory(FAR struct tmpfs_directory_s **tdo,
-              unsigned int nentries);
+		unsigned int nentries);
 static int  tmpfs_realloc_file(FAR struct tmpfs_file_s **tfo,
-              size_t newsize);
+		size_t newsize);
 static void tmpfs_release_lockedobject(FAR struct tmpfs_object_s *to);
 static void tmpfs_release_lockedfile(FAR struct tmpfs_file_s *tfo);
 static int  tmpfs_find_dirent(FAR struct tmpfs_directory_s *tdo,
-              FAR const char *name);
+		FAR const char *name);
 static int  tmpfs_remove_dirent(FAR struct tmpfs_directory_s *tdo,
-              FAR const char *name);
+		FAR const char *name);
 static int  tmpfs_add_dirent(FAR struct tmpfs_directory_s **tdo,
-              FAR struct tmpfs_object_s *to, FAR const char *name);
+		FAR struct tmpfs_object_s *to, FAR const char *name);
 static FAR struct tmpfs_file_s *tmpfs_alloc_file(void);
 static int  tmpfs_create_file(FAR struct tmpfs_s *fs,
-              FAR const char *relpath, FAR struct tmpfs_file_s **tfo);
+		FAR const char *relpath, FAR struct tmpfs_file_s **tfo);
 static FAR struct tmpfs_directory_s *tmpfs_alloc_directory(void);
 static int  tmpfs_create_directory(FAR struct tmpfs_s *fs,
-              FAR const char *relpath, FAR struct tmpfs_directory_s **tdo);
+		FAR const char *relpath, FAR struct tmpfs_directory_s **tdo);
 static int  tmpfs_find_object(FAR struct tmpfs_s *fs,
-              FAR const char *relpath, FAR struct tmpfs_object_s **object,
-              FAR struct tmpfs_directory_s **parent);
+		FAR const char *relpath, FAR struct tmpfs_object_s **object,
+		FAR struct tmpfs_directory_s **parent);
 static int  tmpfs_find_file(FAR struct tmpfs_s *fs,
-              FAR const char *relpath,
-              FAR struct tmpfs_file_s **tfo,
-              FAR struct tmpfs_directory_s **parent);
+		FAR const char *relpath,
+		FAR struct tmpfs_file_s **tfo,
+		FAR struct tmpfs_directory_s **parent);
 static int  tmpfs_find_directory(FAR struct tmpfs_s *fs,
-              FAR const char *relpath,
-              FAR struct tmpfs_directory_s **tdo,
-              FAR struct tmpfs_directory_s **parent);
+		FAR const char *relpath,
+		FAR struct tmpfs_directory_s **tdo,
+		FAR struct tmpfs_directory_s **parent);
 static int  tmpfs_statfs_callout(FAR struct tmpfs_directory_s *tdo,
-              unsigned int index, FAR void *arg);
+		unsigned int index, FAR void *arg);
 static int  tmpfs_free_callout(FAR struct tmpfs_directory_s *tdo,
-              unsigned int index, FAR void *arg);
+		unsigned int index, FAR void *arg);
 static int  tmpfs_foreach(FAR struct tmpfs_directory_s *tdo,
-              tmpfs_foreach_t callout, FAR void *arg);
+		tmpfs_foreach_t callout, FAR void *arg);
 
 /* File system operations */
 
 static int  tmpfs_open(FAR struct file *filep, FAR const char *relpath,
-              int oflags, mode_t mode);
+		int oflags, mode_t mode);
 static int  tmpfs_close(FAR struct file *filep);
 static ssize_t tmpfs_read(FAR struct file *filep, FAR char *buffer,
-              size_t buflen);
+		size_t buflen);
 static ssize_t tmpfs_write(FAR struct file *filep, FAR const char *buffer,
-              size_t buflen);
+		size_t buflen);
 static off_t tmpfs_seek(FAR struct file *filep, off_t offset, int whence);
 static int  tmpfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int  tmpfs_dup(FAR const struct file *oldp, FAR struct file *newp);
 static int  tmpfs_fstat(FAR const struct file *filep, FAR struct stat *buf);
 
 static int  tmpfs_opendir(FAR struct inode *mountpt, FAR const char *relpath,
-              FAR struct fs_dirent_s *dir);
+		FAR struct fs_dirent_s *dir);
 static int  tmpfs_closedir(FAR struct inode *mountpt,
-              FAR struct fs_dirent_s *dir);
+		FAR struct fs_dirent_s *dir);
 static int  tmpfs_readdir(FAR struct inode *mountpt,
-              FAR struct fs_dirent_s *dir);
+		FAR struct fs_dirent_s *dir);
 static int  tmpfs_rewinddir(FAR struct inode *mountpt,
-              FAR struct fs_dirent_s *dir);
+		FAR struct fs_dirent_s *dir);
 static int  tmpfs_bind(FAR struct inode *blkdriver, FAR const void *data,
-              FAR void **handle);
+		FAR void **handle);
 static int  tmpfs_unbind(FAR void *handle, FAR struct inode **blkdriver);
 static int  tmpfs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf);
 static int  tmpfs_unlink(FAR struct inode *mountpt, FAR const char *relpath);
 static int  tmpfs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
-              mode_t mode);
+		mode_t mode);
 static int  tmpfs_rmdir(FAR struct inode *mountpt, FAR const char *relpath);
 static int  tmpfs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath,
-              FAR const char *newrelpath);
+		FAR const char *newrelpath);
 static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
-                              FAR struct stat *buf);
+		FAR struct stat *buf);
 static int  tmpfs_stat(FAR struct inode *mountpt, FAR const char *relpath,
-              FAR struct stat *buf);
+		FAR struct stat *buf);
 
 /****************************************************************************
  * Public Data
@@ -241,7 +241,7 @@ static void tmpfs_lock_reentrant(FAR struct tmpfs_sem_s *sem)
 			 */
 
 			ASSERT(get_errno() == EINTR);
-	}
+		}
 
 		/* No we hold the semaphore */
 
@@ -316,7 +316,7 @@ static void tmpfs_unlock_object(FAR struct tmpfs_object_s *to)
  ****************************************************************************/
 
 static int tmpfs_realloc_directory(FAR struct tmpfs_directory_s **tdo,
-                                   unsigned int nentries)
+		unsigned int nentries)
 {
 	FAR struct tmpfs_directory_s *oldtdo = *tdo;
 	FAR struct tmpfs_directory_s *newtdo;
@@ -373,13 +373,12 @@ static int tmpfs_realloc_directory(FAR struct tmpfs_directory_s **tdo,
  ****************************************************************************/
 
 static int tmpfs_realloc_file(FAR struct tmpfs_file_s **tfo,
-                              size_t newsize)
+		size_t newsize)
 {
 	FAR struct tmpfs_file_s *oldtfo = *tfo;
 	FAR struct tmpfs_file_s *newtfo;
 	size_t objsize;
 	size_t allocsize;
-	size_t delta;
 
 	/* Check if the current allocation is sufficent */
 
@@ -397,8 +396,7 @@ static int tmpfs_realloc_file(FAR struct tmpfs_file_s **tfo,
 			 * lot.
 			 */
 
-			delta = oldtfo->tfo_alloc - objsize;
-			if (delta <= CONFIG_FS_TMPFS_FILE_FREEGUARD) {
+			if (oldtfo->tfo_alloc - objsize <= CONFIG_FS_TMPFS_FILE_FREEGUARD) {
 				/* Hasn't shrunk enough.. Return doing nothing for now */
 
 				oldtfo->tfo_size = newsize;
@@ -480,16 +478,16 @@ static void tmpfs_release_lockedfile(FAR struct tmpfs_file_s *tfo)
  ****************************************************************************/
 
 static int tmpfs_find_dirent(FAR struct tmpfs_directory_s *tdo,
-                             FAR const char *name)
+		FAR const char *name)
 {
 	int i;
 
 	/* Search the list of directory entries for a match */
 
 	for (i = 0;
-		i < tdo->tdo_nentries &&
-		strcmp(tdo->tdo_entry[i].tde_name, name) != 0;
-		i++);
+			i < tdo->tdo_nentries &&
+			strcmp(tdo->tdo_entry[i].tde_name, name) != 0;
+			i++);
 
 	/* Return what we found, if anything */
 
@@ -501,7 +499,7 @@ static int tmpfs_find_dirent(FAR struct tmpfs_directory_s *tdo,
  ****************************************************************************/
 
 static int tmpfs_remove_dirent(FAR struct tmpfs_directory_s *tdo,
-                               FAR const char *name)
+		FAR const char *name)
 {
 	int index;
 	int last;
@@ -550,8 +548,8 @@ static int tmpfs_remove_dirent(FAR struct tmpfs_directory_s *tdo,
  ****************************************************************************/
 
 static int tmpfs_add_dirent(FAR struct tmpfs_directory_s **tdo,
-                            FAR struct tmpfs_object_s *to,
-                            FAR const char *name)
+		FAR struct tmpfs_object_s *to,
+		FAR const char *name)
 {
 	FAR struct tmpfs_directory_s *oldtdo;
 	FAR struct tmpfs_directory_s *newtdo;
@@ -632,8 +630,8 @@ static FAR struct tmpfs_file_s *tmpfs_alloc_file(void)
  ****************************************************************************/
 
 static int tmpfs_create_file(FAR struct tmpfs_s *fs,
-                             FAR const char *relpath,
-                             FAR struct tmpfs_file_s **tfo)
+		FAR const char *relpath,
+		FAR struct tmpfs_file_s **tfo)
 {
 	FAR struct tmpfs_directory_s *parent;
 	FAR struct tmpfs_file_s *newtfo;
@@ -748,8 +746,8 @@ static FAR struct tmpfs_directory_s *tmpfs_alloc_directory(void)
 	/* Convert the pre-allocated memory to a number of directory entries */
 
 	nentries = (CONFIG_FS_TMPFS_DIRECTORY_ALLOCGUARD +
-				sizeof(struct tmpfs_dirent_s) - 1) /
-				sizeof(struct tmpfs_dirent_s);
+			sizeof(struct tmpfs_dirent_s) - 1) /
+		sizeof(struct tmpfs_dirent_s);
 
 	/* Create a new zero length directory object */
 
@@ -777,8 +775,8 @@ static FAR struct tmpfs_directory_s *tmpfs_alloc_directory(void)
  ****************************************************************************/
 
 static int tmpfs_create_directory(FAR struct tmpfs_s *fs,
-                                  FAR const char *relpath,
-                                  FAR struct tmpfs_directory_s **tdo)
+		FAR const char *relpath,
+		FAR struct tmpfs_directory_s **tdo)
 {
 	FAR struct tmpfs_directory_s *parent;
 	FAR struct tmpfs_directory_s *newtdo;
@@ -816,10 +814,10 @@ static int tmpfs_create_directory(FAR struct tmpfs_s *fs,
 		 */
 
 		ret = tmpfs_find_directory(fs, copy, &parent, NULL);
-			if (ret < 0) {
+		if (ret < 0) {
 			goto errout_with_copy;
-			}
 		}
+	}
 
 	/* Verify that no object of this name already exists in the directory */
 
@@ -833,7 +831,7 @@ static int tmpfs_create_directory(FAR struct tmpfs_s *fs,
 			ret = -EEXIST;
 		}
 		goto errout_with_parent;
-    }
+	}
 
 	/* Allocate an empty directory object.  NOTE that there is no reference on
 	 * the new directory and the object is not locked.
@@ -866,7 +864,7 @@ static int tmpfs_create_directory(FAR struct tmpfs_s *fs,
 	}
 	return OK;
 
-/* Error exits */
+	/* Error exits */
 
 errout_with_directory:
 	sem_destroy(&newtdo->tdo_exclsem.ts_sem);
@@ -886,9 +884,9 @@ errout_with_copy:
  ****************************************************************************/
 
 static int tmpfs_find_object(FAR struct tmpfs_s *fs,
-                             FAR const char *relpath,
-                             FAR struct tmpfs_object_s **object,
-                             FAR struct tmpfs_directory_s **parent)
+		FAR const char *relpath,
+		FAR struct tmpfs_object_s **object,
+		FAR struct tmpfs_directory_s **parent)
 {
 	FAR struct tmpfs_object_s *to = NULL;
 	FAR struct tmpfs_directory_s *tdo = NULL;
@@ -911,8 +909,8 @@ static int tmpfs_find_object(FAR struct tmpfs_s *fs,
 	next_tdo = (FAR struct tmpfs_directory_s *)fs->tfs_root.tde_object;
 
 	for (segment =  strtok_r(copy, "/", &tkptr);
-		segment != NULL;
-		segment = next_segment) {
+			segment != NULL;
+			segment = next_segment) {
 		/* Get the next segment after the one we are currently working on.
 		 * This will be NULL is we are working on the final segment of the
 		 * relpath.
@@ -1011,9 +1009,9 @@ static int tmpfs_find_object(FAR struct tmpfs_s *fs,
  ****************************************************************************/
 
 static int tmpfs_find_file(FAR struct tmpfs_s *fs,
-                           FAR const char *relpath,
-                           FAR struct tmpfs_file_s **tfo,
-                           FAR struct tmpfs_directory_s **parent)
+		FAR const char *relpath,
+		FAR struct tmpfs_file_s **tfo,
+		FAR struct tmpfs_directory_s **parent)
 {
 	FAR struct tmpfs_object_s *to;
 	int ret;
@@ -1055,9 +1053,9 @@ static int tmpfs_find_file(FAR struct tmpfs_s *fs,
  ****************************************************************************/
 
 static int tmpfs_find_directory(FAR struct tmpfs_s *fs,
-                           FAR const char *relpath,
-                           FAR struct tmpfs_directory_s **tdo,
-                           FAR struct tmpfs_directory_s **parent)
+		FAR const char *relpath,
+		FAR struct tmpfs_directory_s **tdo,
+		FAR struct tmpfs_directory_s **parent)
 {
 	FAR struct tmpfs_object_s *to;
 	int ret;
@@ -1096,7 +1094,7 @@ static int tmpfs_find_directory(FAR struct tmpfs_s *fs,
  ****************************************************************************/
 
 static int tmpfs_statfs_callout(FAR struct tmpfs_directory_s *tdo,
-                                unsigned int index, FAR void *arg)
+		unsigned int index, FAR void *arg)
 {
 	FAR struct tmpfs_object_s *to;
 	FAR struct tmpfs_statfs_s *tmpbuf;
@@ -1124,8 +1122,7 @@ static int tmpfs_statfs_callout(FAR struct tmpfs_directory_s *tdo,
 		tmptfo = (FAR struct tmpfs_file_s *)to;
 		tmpbuf->tsf_inuse += tmptfo->tfo_size;
 		tmpbuf->tsf_files++;
-	}
-	else /* if (to->to_type == TMPFS_DIRECTORY) */ {
+	} else /* if (to->to_type == TMPFS_DIRECTORY) */ {
 		FAR struct tmpfs_directory_s *tmptdo;
 		size_t inuse;
 		size_t avail;
@@ -1150,7 +1147,7 @@ static int tmpfs_statfs_callout(FAR struct tmpfs_directory_s *tdo,
  ****************************************************************************/
 
 static int tmpfs_free_callout(FAR struct tmpfs_directory_s *tdo,
-                              unsigned int index, FAR void *arg)
+		unsigned int index, FAR void *arg)
 {
 	FAR struct tmpfs_dirent_s *tde;
 	FAR struct tmpfs_object_s *to;
@@ -1216,7 +1213,7 @@ static int tmpfs_free_callout(FAR struct tmpfs_directory_s *tdo,
  ****************************************************************************/
 
 static int tmpfs_foreach(FAR struct tmpfs_directory_s *tdo,
-                         tmpfs_foreach_t callout, FAR void *arg)
+		tmpfs_foreach_t callout, FAR void *arg)
 {
 	FAR struct tmpfs_object_s *to;
 	unsigned int index;
@@ -1282,7 +1279,7 @@ static int tmpfs_foreach(FAR struct tmpfs_directory_s *tdo,
  ****************************************************************************/
 
 static int tmpfs_open(FAR struct file *filep, FAR const char *relpath,
-                      int oflags, mode_t mode)
+		int oflags, mode_t mode)
 {
 	FAR struct inode *inode;
 	FAR struct tmpfs_s *fs;
@@ -1466,7 +1463,7 @@ static int tmpfs_close(FAR struct file *filep)
  ****************************************************************************/
 
 static ssize_t tmpfs_read(FAR struct file *filep, FAR char *buffer,
-                          size_t buflen)
+		size_t buflen)
 {
 	FAR struct tmpfs_file_s *tfo;
 	ssize_t nread;
@@ -1474,7 +1471,7 @@ static ssize_t tmpfs_read(FAR struct file *filep, FAR char *buffer,
 	off_t endpos;
 
 	fvdbg("filep: %p buffer: %p buflen: %lu\n",
-		filep, buffer, (unsigned long)buflen);
+			filep, buffer, (unsigned long)buflen);
 	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
 
 	/* Recover our private data from the struct file instance */
@@ -1494,7 +1491,7 @@ static ssize_t tmpfs_read(FAR struct file *filep, FAR char *buffer,
 	if (endpos > tfo->tfo_size) {
 		endpos = tfo->tfo_size;
 		nread  = endpos - startpos;
-    }
+	}
 
 	/* Copy data from the memory object to the user buffer */
 
@@ -1512,7 +1509,7 @@ static ssize_t tmpfs_read(FAR struct file *filep, FAR char *buffer,
  ****************************************************************************/
 
 static ssize_t tmpfs_write(FAR struct file *filep, FAR const char *buffer,
-                           size_t buflen)
+		size_t buflen)
 {
 	FAR struct tmpfs_file_s *tfo;
 	ssize_t nwritten;
@@ -1521,7 +1518,7 @@ static ssize_t tmpfs_write(FAR struct file *filep, FAR const char *buffer,
 	int ret;
 
 	fvdbg("filep: %p buffer: %p buflen: %lu\n",
-		filep, buffer, (unsigned long)buflen);
+			filep, buffer, (unsigned long)buflen);
 	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
 
 	/* Recover our private data from the struct file instance */
@@ -1587,12 +1584,12 @@ static off_t tmpfs_seek(FAR struct file *filep, off_t offset, int whence)
 		break;
 
 	case SEEK_CUR: /* The offset is set to its current location plus
-                      * offset bytes. */
+					* offset bytes. */
 		position = offset + filep->f_pos;
 		break;
 
 	case SEEK_END: /* The offset is set to the size of the file plus
-                      * offset bytes. */
+					* offset bytes. */
 		position = offset + tfo->tfo_size;
 		break;
 
@@ -1635,7 +1632,7 @@ static int tmpfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	/* Recover our private data from the struct file instance */
 
-	tfo = filep->f_inode->i_private;
+	tfo = filep->f_priv;
 
 	DEBUGASSERT(tfo != NULL);
 
@@ -1664,7 +1661,7 @@ static int tmpfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	fvdbg("Dup %p->%p\n", oldp, newp);
 	DEBUGASSERT(oldp->f_priv != NULL && oldp->f_inode != NULL &&
-				newp->f_priv == NULL && newp->f_inode != NULL);
+			newp->f_priv == NULL && newp->f_inode != NULL);
 
 	/* Recover our private data from the struct file instance */
 
@@ -1726,7 +1723,7 @@ static int tmpfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
  ****************************************************************************/
 
 static int tmpfs_opendir(FAR struct inode *mountpt, FAR const char *relpath,
-                         FAR struct fs_dirent_s *dir)
+		FAR struct fs_dirent_s *dir)
 {
 	FAR struct tmpfs_s *fs;
 	FAR struct tmpfs_directory_s *tdo;
@@ -1774,7 +1771,7 @@ static int tmpfs_opendir(FAR struct inode *mountpt, FAR const char *relpath,
  ****************************************************************************/
 
 static int tmpfs_closedir(FAR struct inode *mountpt,
-                          FAR struct fs_dirent_s *dir)
+		FAR struct fs_dirent_s *dir)
 {
 	FAR struct tmpfs_directory_s *tdo;
 
@@ -1799,7 +1796,7 @@ static int tmpfs_closedir(FAR struct inode *mountpt,
  ****************************************************************************/
 
 static int tmpfs_readdir(FAR struct inode *mountpt,
-                         FAR struct fs_dirent_s *dir)
+		FAR struct fs_dirent_s *dir)
 {
 	FAR struct tmpfs_directory_s *tdo;
 	unsigned int index;
@@ -1866,7 +1863,7 @@ static int tmpfs_readdir(FAR struct inode *mountpt,
  ****************************************************************************/
 
 static int tmpfs_rewinddir(FAR struct inode *mountpt,
-                           FAR struct fs_dirent_s *dir)
+		FAR struct fs_dirent_s *dir)
 {
 	fvdbg("mountpt: %p dir: %p\n",  mountpt, dir);
 	DEBUGASSERT(mountpt != NULL && dir != NULL);
@@ -1882,7 +1879,7 @@ static int tmpfs_rewinddir(FAR struct inode *mountpt,
  ****************************************************************************/
 
 static int tmpfs_bind(FAR struct inode *blkdriver, FAR const void *data,
-                      FAR void **handle)
+		FAR void **handle)
 {
 	FAR struct tmpfs_directory_s *tdo;
 	FAR struct tmpfs_s *fs;
@@ -1987,7 +1984,7 @@ static int tmpfs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
 
 	tdo = (FAR struct tmpfs_directory_s *)fs->tfs_root.tde_object;
 	inuse = sizeof(struct tmpfs_s) +
-			SIZEOF_TMPFS_DIRECTORY(tdo->tdo_nentries);
+		SIZEOF_TMPFS_DIRECTORY(tdo->tdo_nentries);
 	avail = sizeof(struct tmpfs_s) + tdo->tdo_alloc - inuse;
 
 	tmpbuf.tsf_alloc = tdo->tdo_alloc;
@@ -2004,9 +2001,9 @@ static int tmpfs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
 	/* Return something for the file system description */
 
 	blkalloc        = (tmpbuf.tsf_alloc + CONFIG_FS_TMPFS_BLOCKSIZE - 1) /
-						CONFIG_FS_TMPFS_BLOCKSIZE;
+		CONFIG_FS_TMPFS_BLOCKSIZE;
 	blkused         = (tmpbuf.tsf_inuse + CONFIG_FS_TMPFS_BLOCKSIZE - 1) /
-						CONFIG_FS_TMPFS_BLOCKSIZE;
+		CONFIG_FS_TMPFS_BLOCKSIZE;
 
 	buf->f_type     = TMPFS_MAGIC;
 	buf->f_namelen  = NAME_MAX;
@@ -2124,7 +2121,7 @@ errout_with_lock:
  ****************************************************************************/
 
 static int tmpfs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
-                       mode_t mode)
+		mode_t mode)
 {
 	FAR struct tmpfs_s *fs;
 	int ret;
@@ -2242,7 +2239,7 @@ errout_with_lock:
  ****************************************************************************/
 
 static int tmpfs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath,
-                        FAR const char *newrelpath)
+		FAR const char *newrelpath)
 {
 	FAR struct tmpfs_directory_s *oldparent;
 	FAR struct tmpfs_directory_s *newparent;
@@ -2254,7 +2251,7 @@ static int tmpfs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath,
 	int ret;
 
 	fvdbg("mountpt: %p oldrelpath: %s newrelpath: %s\n",
-		mountpt, oldrelpath, newrelpath);
+			mountpt, oldrelpath, newrelpath);
 	DEBUGASSERT(mountpt != NULL && oldrelpath != NULL && newrelpath != NULL);
 
 	/* Get the file system structure from the inode reference. */
@@ -2311,7 +2308,7 @@ static int tmpfs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath,
 		 * OR perhaps some fatal error occurred.
 		 */
 
-		if (ret >= 0 ) {
+		if (ret >= 0) {
 			ret = -EEXIST;
 		}
 		goto errout_with_newparent;
@@ -2370,7 +2367,7 @@ errout_with_lock:
  ****************************************************************************/
 
 static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
-                              FAR struct stat *buf)
+		FAR struct stat *buf)
 {
 	size_t objsize;
 
@@ -2380,7 +2377,7 @@ static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
 
 	if (to->to_type == TMPFS_REGULAR) {
 		FAR struct tmpfs_file_s *tfo =
-				(FAR struct tmpfs_file_s *)to;
+			(FAR struct tmpfs_file_s *)to;
 
 		/* -rwxrwxrwx */
 
@@ -2391,7 +2388,7 @@ static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
 		objsize = tfo->tfo_size;
 	} else /* if (to->to_type == TMPFS_DIRECTORY) */ {
 		FAR struct tmpfs_directory_s *tdo =
-				(FAR struct tmpfs_directory_s *)to;
+			(FAR struct tmpfs_directory_s *)to;
 
 		/* drwxrwxrwx */
 
@@ -2407,7 +2404,7 @@ static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
 	buf->st_size    = objsize;
 	buf->st_blksize = CONFIG_FS_TMPFS_BLOCKSIZE;
 	buf->st_blocks  = (objsize + CONFIG_FS_TMPFS_BLOCKSIZE - 1) /
-					CONFIG_FS_TMPFS_BLOCKSIZE;
+		CONFIG_FS_TMPFS_BLOCKSIZE;
 }
 
 /****************************************************************************
@@ -2415,7 +2412,7 @@ static void tmpfs_stat_common(FAR struct tmpfs_object_s *to,
  ****************************************************************************/
 
 static int tmpfs_stat(FAR struct inode *mountpt, FAR const char *relpath,
-                      FAR struct stat *buf)
+		FAR struct stat *buf)
 {
 	FAR struct tmpfs_s *fs;
 	FAR struct tmpfs_object_s *to;

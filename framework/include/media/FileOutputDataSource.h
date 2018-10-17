@@ -37,7 +37,7 @@ namespace stream {
  * @class
  * @brief This class is file output data structure
  * @details @b #include <media/FileOutputDataSource.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class FileOutputDataSource : public OutputDataSource
 {
@@ -46,14 +46,14 @@ public:
 	 * @brief Constructs an empty FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * Delete the default construct
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	FileOutputDataSource() = delete;
 	/**
 	 * @brief Constructs an empty FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * param[in] dataPath The dataPath that the path of data
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	FileOutputDataSource(const std::string& dataPath);
 	/**
@@ -63,25 +63,25 @@ public:
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * param[in] datapath   The datapath that the path of data
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& dataPath);
 	/**
 	 * @brief Copy constructs for FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	FileOutputDataSource(const FileOutputDataSource& source);
 	/**
 	 * @brief Operator= for FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	FileOutputDataSource& operator=(const FileOutputDataSource& source);
 	/**
 	 * @brief Deconstructs an empty FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ~FileOutputDataSource();
 
@@ -89,34 +89,32 @@ public:
 	 * @brief Whether file is ready to be write.
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * @return True is ready, False is not ready
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool isPrepare() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool open() override;
 	/**
 	 * @brief Close the file
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool close() override;
-
 	/**
-	 * @brief Puts the file data
+	 * @brief Write the file
 	 * @details @b #include <media/FileOutputDataSource.h>
-	 * @param[in] buf The buf that buffer to be written to the file
-	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to write, it returns 0
-	 *         if error occurred, it returns negative value, else written size returns
-	 * @since TizenRT v2.0 PRE
+	 * param[in] buf poiter to a buffer
+	 * param[in] size Number of size to write
+	 * @return Data size written to buf.
+	 * @since TizenRT v2.0
 	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
+	ssize_t write(unsigned char *buf, size_t size) override;
 
 private:
 	std::string mDataPath;

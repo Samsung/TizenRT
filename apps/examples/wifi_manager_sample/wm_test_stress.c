@@ -118,8 +118,9 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
-		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
-			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi);
+		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d\n",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
+			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 	WM_TEST_SIGNAL;
@@ -127,11 +128,11 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 
 static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
 {
-	strncpy(apconfig->ssid, WM_AP_SSID, 33);
+	strncpy(apconfig->ssid, WM_AP_SSID, sizeof(WM_AP_SSID));
 	apconfig->ssid_length = strlen(WM_AP_SSID);
 	apconfig->ap_auth_type = WM_AP_AUTH;
 	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig->passphrase, WM_AP_PASSWORD, 64);
+		strncpy(apconfig->passphrase, WM_AP_PASSWORD, sizeof(WM_AP_PASSWORD));
 		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
 		apconfig->ap_crypto_type = WM_AP_CRYPTO;
 	}
@@ -139,10 +140,8 @@ static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
 
 static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
 {
-	strcpy(ap_config->ssid, WM_SOFTAP_SSID);
-	ap_config->ssid[strlen(WM_SOFTAP_SSID)] = '\0';
-	strcpy(ap_config->passphrase, WM_SOFTAP_PASSWORD);
-	ap_config->passphrase[strlen(WM_SOFTAP_PASSWORD)] = '\0';
+	strncpy(ap_config->ssid, WM_SOFTAP_SSID, sizeof(WM_SOFTAP_SSID));
+	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, sizeof(WM_SOFTAP_PASSWORD));
 	ap_config->channel = WM_SOFTAP_CHANNEL;
 }
 /*
@@ -318,11 +317,11 @@ TEST_F(softap_stop)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(WM_TEST_TRIAL, 8000000, "station join", sta_join);
-ST_SET_SMOKE(WM_TEST_TRIAL, 1000000, "station leave", sta_leave, sta_join);
-ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "station scan", sta_scan, sta_leave);
+ST_SET_SMOKE_TAIL(WM_TEST_TRIAL, 10000000, "station join", sta_join);
+ST_SET_SMOKE(WM_TEST_TRIAL, 2000000, "station leave", sta_leave, sta_join);
+ST_SET_SMOKE(WM_TEST_TRIAL, 10000000, "station scan", sta_scan, sta_leave);
 ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
-ST_SET_SMOKE(WM_TEST_TRIAL, 2000000, "softap stop", softap_stop, softap_start);
+ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap stop", softap_stop, softap_start);
 ST_SET_PACK(wifi, softap_stop);
 
 void wm_run_stress_test(void *arg)

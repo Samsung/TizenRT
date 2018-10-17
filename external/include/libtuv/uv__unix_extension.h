@@ -116,6 +116,17 @@ extern "C" {
   int error;                                                                  \
   uv_buf_t bufsml[4];                                                         \
  
+#define UV_SIGNAL_PRIVATE_FIELDS                                              \
+  /* RB_ENTRY(uv_signal_s) tree_entry; */                                     \
+  struct {                                                                    \
+    struct uv_signal_s* rbe_left;                                             \
+    struct uv_signal_s* rbe_right;                                            \
+    struct uv_signal_s* rbe_parent;                                           \
+    int rbe_color;                                                            \
+  } tree_entry;                                                               \
+  /* Use two counters here so we don have to fiddle with atomics. */          \
+  unsigned int caught_signals;                                                \
+  unsigned int dispatched_signals;
 
 #define UV_SHUTDOWN_PRIVATE_FIELDS	/* empty */
 
@@ -124,6 +135,7 @@ extern "C" {
 
 #include "uv__handle.h"
 #include "uv__async.h"
+#include "uv__signal.h"
 
 //-----------------------------------------------------------------------------
 // loop, this needs to be at the bottom
@@ -150,6 +162,9 @@ extern "C" {
   } timer_heap;                                                               \
   uint64_t timer_counter;                                                     \
   uint64_t time;                                                              \
+  int signal_pipefd[2];                                                       \
+  uv__io_t signal_io_watcher;                                                 \
+  uv_signal_t child_watcher;                                                  \
   int emfile_fd;                                                              \
   UV_PLATFORM_LOOP_FIELDS                                                     \
  

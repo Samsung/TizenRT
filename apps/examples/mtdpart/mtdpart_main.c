@@ -471,7 +471,7 @@ int mtdpart_main(int argc, char *argv[])
 	 * should on the device.
 	 */
 
-	printf("Verfying media:\n");
+	printf("Verifying media:\n");
 
 	fd = open("/dev/mtd2", O_RDONLY);
 	if (fd < 0) {

@@ -31,11 +31,27 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Length defines */
 #define WIFIMGR_MACADDR_LEN        6
-#define WIFIMGR_MACADDR_STR_LEN    18
+#define WIFIMGR_MACADDR_STR_LEN    17
 #define WIFIMGR_SSID_LEN           32
 #define WIFIMGR_PASSPHRASE_LEN     64
+/**
+  * @brief <b> wifi MAC/PHY standard types
+  */
+typedef enum {
+	WIFI_MANAGER_IEEE_80211_LEGACY,             /**<  IEEE 802.11a/g/b           */
+	WIFI_MANAGER_IEEE_80211_A,                  /**<  IEEE 802.11a               */
+	WIFI_MANAGER_IEEE_80211_B,                  /**<  IEEE 802.11b               */
+	WIFI_MANAGER_IEEE_80211_G,                  /**<  IEEE 802.11g               */
+	WIFI_MANAGER_IEEE_80211_N,                  /**<  IEEE 802.11n               */
+	WIFI_MANAGER_IEEE_80211_AC,                 /**<  IEEE 802.11ac              */
+	WIFI_MANAGER_NOT_SUPPORTED,                 /**<  Driver does not report     */
+} wifi_manager_standard_type_e;
 
 /**
  * @brief Status of Wi-Fi interface such as connected or disconnected
@@ -44,6 +60,7 @@ typedef enum {
 	// STA mode status
 	AP_DISCONNECTED,
 	AP_CONNECTED,
+	AP_RECONNECTING,
 
 	// SOFT AP mode status
 	CLIENT_CONNECTED,
@@ -106,14 +123,49 @@ typedef enum {
 } wifi_manager_scan_result_e;
 
 /**
+ * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
+ */
+typedef enum {
+	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
+	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
+	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode               */
+	WIFI_MANAGER_AUTH_WPS,					 /**<  WPS mode                       */
+	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
+} wifi_manager_ap_auth_type_e;
+
+/**
+ * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
+ */
+typedef enum {
+	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
+	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
+	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
+	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_AES_ENT,				 /**<  Enterprise AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP_ENT,				 /**<  Enterprise TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,		 /**<  Enterprise TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
+} wifi_manager_ap_crypto_type_e;
+
+/**
  * @brief Keep information of nearby access points as scan results
  */
 struct wifi_manager_scan_info_s {
-	char ssid[WIFIMGR_SSID_LEN];	// 802.11 spec defined unspecified or uint8
-	char bssid[WIFIMGR_MACADDR_STR_LEN];	// char string e.g. xx:xx:xx:xx:xx:xx
+	char ssid[WIFIMGR_SSID_LEN + 1];			// 802.11 spec defined unspecified or uint8
+	char bssid[WIFIMGR_MACADDR_STR_LEN + 1];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t rssi;		// received signal strength indication
 	uint8_t channel;	// channel/frequency
-	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	wifi_manager_standard_type_e phy_mode;  /**< Supported MAC/PHY standard                              */
+	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
+	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 	struct wifi_manager_scan_info_s *next;
 };
 
@@ -134,9 +186,9 @@ typedef struct {
  * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
  */
 typedef struct {
-	char ip4_address[WIFIMGR_MACADDR_STR_LEN];
-	char ssid[WIFIMGR_SSID_LEN];
-	char mac_address[WIFIMGR_MACADDR_LEN];	   /**<  MAC address of wifi interface             */
+	char ip4_address[WIFIMGR_MACADDR_STR_LEN + 1];
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char mac_address[WIFIMGR_MACADDR_LEN + 1];	   /**<  MAC address of wifi interface             */
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
@@ -146,8 +198,8 @@ typedef struct {
  * @brief Specify information of soft access point (softAP) such as ssid and channel number
  */
 typedef struct {
-	char ssid[WIFIMGR_SSID_LEN];
-	char passphrase[64];
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];
 	uint16_t channel;
 } wifi_manager_softap_config_s;
 
@@ -165,41 +217,30 @@ typedef struct {
 } wifi_manager_reconnect_config_s;
 
 /**
- * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
- */
-typedef enum {
-	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
-	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
-	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
-} wifi_manager_ap_auth_type_e;
-
-/**
- * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
- */
-typedef enum {
-	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
-	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
-	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
-	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
-} wifi_manager_ap_crypto_type_e;
-
-/**
  * @brief Specify which access point (AP) a client connects to
  */
 typedef struct {
-	char ssid[WIFIMGR_SSID_LEN];							 /**<  Service Set Identification         */
+	char ssid[WIFIMGR_SSID_LEN + 1];						 /**<  Service Set Identification         */
 	unsigned int ssid_length;				 /**<  Service Set Identification Length  */
-	char passphrase[WIFIMGR_PASSPHRASE_LEN];					 /**<  ap passphrase(password)            */
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];					 /**<  ap passphrase(password)            */
 	unsigned int passphrase_length;			 /**<  ap passphrase length               */
 	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
 	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 } wifi_manager_ap_config_s;
+
+/**
+ * @brief Specify Wi-Fi Manager internal stats information
+ */
+typedef struct {
+	uint16_t connect;
+	uint16_t connectfail;
+	uint16_t disconnect;
+	uint16_t reconnect;
+	uint16_t joined;
+	uint16_t left;
+	uint16_t scan;
+	uint16_t softap;
+} wifi_manager_stats_s;
 
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
@@ -223,7 +264,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
  * @brief Change the Wi-Fi mode to station or AP.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] mode Wi-Fi mode (station or AP)
- * @param[in] config In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @param[in] config In case of AP mode, AP configuration information should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -280,18 +321,18 @@ wifi_manager_result_e wifi_manager_scan_ap(void);
 /**
  * @brief Save the AP configuration at persistent storage
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @param[in] config AP configuration information should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config);
 
 /**
  * @brief Get the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @param[in] config The pointer of AP configuration information which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
@@ -300,38 +341,32 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
  * @brief Remove the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 wifi_manager_result_e wifi_manager_remove_config(void);
 
 /**
- * @brief convert mac address (48bit) to mac address string (FF:FF:FF:FF:FF:FF)
- *
- * @param[in]  mac_addr  :  mac address 48bit
- * @param[out] mac_str   :  mac address string
- *
- * @return WIFI_MANAGER_SUCCESS       :  success
- * @return WIFI_MANAGER_FAIL          :  fail
- * @return WIFI_MANAGER_INVALID_ARGS  :  input parameter invalid
- * @since TinzeRT v2.0 PRE
+ * @brief Get the most recently connected AP configuration which was saved by Wi-Fi Manager
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
  */
 
-wifi_manager_result_e wifi_manager_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
+wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config);
 
 /**
- * @brief convert mac address string (FF:FF:FF:FF:FF:FF)to mac address (48bit)
- *
- * @param[in]   mac_str   :  mac address string
- * @param[out]  mac_addr  :  mac address 48bit
- *
- * @return WIFI_MANAGER_SUCCESS       :  success
- * @return WIFI_MANAGER_FAIL          :  fail
- * @return WIFI_MANAGER_INVALID_ARGS  :  input parameter invalid
- * @since TinzeRT v2.0 PRE
+ * @brief Obtain WiFi Manager state stats
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] The pointer of WiFi Manager stats information which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
  */
+wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
 
-wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
-
+#ifdef __cplusplus
+}
+#endif
 #endif
 /**
  *@}

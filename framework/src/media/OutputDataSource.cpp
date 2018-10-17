@@ -16,27 +16,38 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+#include <assert.h>
+#include <debug.h>
+#include <unistd.h>
 #include <media/OutputDataSource.h>
-#include "Encoder.h"
+#include "MediaRecorderImpl.h"
+#include "StreamBuffer.h"
+#include "StreamBufferReader.h"
+#include "StreamBufferWriter.h"
+
+#ifndef CONFIG_OUTPUT_DATASOURCE_STACKSIZE
+#define CONFIG_OUTPUT_DATASOURCE_STACKSIZE 4096
+#endif
 
 namespace media {
 namespace stream {
-OutputDataSource::OutputDataSource()
-	: DataSource(), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
+OutputDataSource::OutputDataSource() :
+	DataSource()
 {
 }
 
-OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
-	: DataSource(channels, sampleRate, pcmFormat), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
+OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat) :
+	DataSource(channels, sampleRate, pcmFormat)
 {
 }
 
-OutputDataSource::OutputDataSource(const OutputDataSource& source)
-	: DataSource(source), mAudioType(source.mAudioType), mEncoder(source.mEncoder)
+OutputDataSource::OutputDataSource(const OutputDataSource &source) :
+	DataSource(source)
 {
 }
 
-OutputDataSource& OutputDataSource::operator=(const OutputDataSource& source)
+OutputDataSource &OutputDataSource::operator=(const OutputDataSource &source)
 {
 	DataSource::operator=(source);
 	return *this;
@@ -46,27 +57,6 @@ OutputDataSource::~OutputDataSource()
 {
 }
 
-void OutputDataSource::setEncoder(std::shared_ptr<Encoder> encoder)
-{
-	mEncoder = encoder;
-}
-
-const std::shared_ptr<Encoder> OutputDataSource::getEncoder()
-{
-	return mEncoder;
-}
-
-void OutputDataSource::setAudioType(audio_type_t audioType)
-{
-	mAudioType = audioType;
-}
-
-audio_type_t OutputDataSource::getAudioType()
-{
-	return mAudioType;
-}
-
-
-
 } // namespace stream
 } // namespace media
+

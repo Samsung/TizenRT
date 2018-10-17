@@ -1,0 +1,17 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config VOICE_SOFTWARE_EPD
+	bool "Software EndPoint Detector(Fixed Float) Support"
+	default n
+	---help---
+		Enable software endpoint detector(Fixed float) functions
+
+config VOICE_SOFTWARE_EPD_FRAMESIZE
+	int "Software End Point Detector Framesize"
+	default 256
+	depends on VOICE_SOFTWARE_EPD
+	---help---
+		Software end point detector frame size that used for processing end point.

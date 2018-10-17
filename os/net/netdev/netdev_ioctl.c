@@ -818,6 +818,53 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
 #endif							/* CONFIG_NET_IGMP */
 
 /****************************************************************************
+ * Name: netdev_nmioctl
+ *
+ * Description:
+ *   Perform network monitor specific operations.
+ *
+ * Parameters:
+ *   sock    Socket structure
+ *   cmd     The ioctl command
+ *   arg    The argument of ioctl command
+ *
+ * Return:
+ *   >=0 on success (positive non-zero values are cmd-specific)
+ *   Negated errno returned on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_NETMON
+static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
+{
+	int ret = -EINVAL;
+	int num_copy;
+	switch (cmd) {
+	case SIOCGETSOCK:          /* Get socket info. */
+		num_copy = copy_socket(arg);
+		/* num_copy shoud be larger than 0 (this socket) */
+		if (num_copy > 0) {
+			ret = OK;
+		} else {
+			ret = ERROR;
+		}
+		break;
+#ifdef CONFIG_NET_STATS
+	case SIOCGDSTATS:          /* Get netdev info. */
+		ret = netdev_getstats(arg);
+		break;
+#endif
+	default:
+		ret = -ENOTTY;
+		break;
+	} /* end switch */
+
+	return ret;
+}
+#endif                            /* CONFIG_NET_NETMON */
+
+
+/****************************************************************************
  * Name: netdev_imsfioctl
  *
  * Description:
@@ -1016,8 +1063,12 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Execute the command */
-
 	ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+#ifdef CONFIG_NET_NETMON
+	if (ret == -ENOTTY) {
+		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
+	}
+#endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
 		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
@@ -1068,6 +1119,8 @@ void netdev_ifup(FAR struct netif *dev)
 				 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
 				 */
 				sleep(3);
+				netif_set_up(dev);
+				netif_set_link_up(dev);
 			}
 		}
 	}
@@ -1080,6 +1133,8 @@ void netdev_ifdown(FAR struct netif *dev)
 	if (dev->d_ifdown) {
 		/* Is the interface already down? */
 
+		netif_set_link_down(dev);
+		netif_set_down(dev);
 		if ((dev->d_flags & IFF_UP) != 0) {
 			/* No, take the interface down now */
 

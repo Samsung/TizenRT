@@ -387,21 +387,24 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 }
 
 // Initialize the MP3 reader.
-bool mp3_init(rbstream_p mFp, ssize_t *offset, uint32_t *header)
+int mp3_init(audio_decoder_p decoder, void *dec_ext)
 {
-	// Sync to the first valid frame.
-	bool success = mp3_resync(mFp, 0, offset, header);
-	RETURN_VAL_IF_FAIL((success == true), false);
+	decoder->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
+	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
-	// Policy: Pop out data when *offset updated!
-	rbs_seek_ext(mFp, *offset, SEEK_SET);
+	decoder->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
+	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
 
-	size_t frame_size;
-	return _parse_header(*header, &frame_size);
+	*((tPVMP3DecoderExternal *) decoder->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
+
+	pvmp3_resetDecoder(decoder->dec_mem);
+	pvmp3_InitDecoder((tPVMP3DecoderExternal *) decoder->dec_ext, decoder->dec_mem);
+
+	return AUDIO_DECODER_OK;
 }
 
 // Get the next valid MP3 frame.
-bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t fixed_header, void *buffer, uint32_t *size)
+bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t *fixed_header, void *buffer, uint32_t *size)
 {
 	size_t frame_size;
 
@@ -411,14 +414,14 @@ bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t fixed_header, void 
 
 		uint32_t header = _u32_at((const uint8_t *)buffer);
 
-		if ((header & MP3_FRAME_HEADER_MASK) == (fixed_header & MP3_FRAME_HEADER_MASK)
+		if ((header & MP3_FRAME_HEADER_MASK) == (*fixed_header & MP3_FRAME_HEADER_MASK)
 			&& _parse_header(header, &frame_size)) {
 			break;
 		}
 
 		// Lost sync.
 		ssize_t pos = *offset;
-		if (!mp3_resync(mFp, fixed_header, &pos, NULL /*out_header */)) {
+		if (!mp3_resync(mFp, *fixed_header, &pos, fixed_header)) {
 			// Unable to mp3_resync. Signalling end of stream.
 			return false;
 		}
@@ -548,15 +551,21 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 }
 
 // Initialize the aac reader.
-bool aac_init(rbstream_p mFp, ssize_t *offset)
+int aac_init(audio_decoder_p decoder, void *dec_ext)
 {
-	// Sync to the first valid frame.
-	bool success = aac_resync(mFp, offset);
-	RETURN_VAL_IF_FAIL((success == true), false);
+	decoder->dec_ext = calloc(1, sizeof(tPVMP4AudioDecoderExternal));
+	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
-	// Policy: Pop out data when *offset updated!
-	rbs_seek_ext(mFp, *offset, SEEK_SET);
-	return true;
+	decoder->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
+	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+
+	*((tPVMP4AudioDecoderExternal *) decoder->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
+
+	PVMP4AudioDecoderResetBuffer(decoder->dec_mem);
+	Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) decoder->dec_ext, decoder->dec_mem);
+	RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), AUDIO_DECODER_ERROR);
+
+	return AUDIO_DECODER_OK;
 }
 
 // Get the next valid aac frame.
@@ -698,15 +707,21 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 }
 
 // Initialize the Opus reader.
-bool opus_init(rbstream_p mFp, ssize_t *offset)
+int opus_init(audio_decoder_p decoder, void *dec_ext)
 {
-	// Sync to the first valid frame.
-	bool success = opus_resync(mFp, offset);
-	RETURN_VAL_IF_FAIL((success == true), false);
+	decoder->dec_ext = calloc(1, sizeof(opus_dec_external_t));
+	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
-	// Policy: Pop out data when *offset updated!
-	rbs_seek_ext(mFp, *offset, SEEK_SET);
-	return true;
+	decoder->dec_mem = calloc(1, opus_decoderMemRequirements());
+	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+
+	*((opus_dec_external_t *) decoder->dec_ext) = *((opus_dec_external_t *) dec_ext);
+
+	opus_resetDecoder(decoder->dec_mem);
+	int err = opus_initDecoder((opus_dec_external_t *) decoder->dec_ext, decoder->dec_mem);
+	RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_DECODER_ERROR);
+
+	return AUDIO_DECODER_OK;
 }
 
 // Get the next valid Opus frame.
@@ -782,7 +797,7 @@ bool _get_frame(audio_decoder_p decoder)
 	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) decoder->dec_ext;
-		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
+		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
 	}
 
 	case AUDIO_TYPE_AAC: {
@@ -815,57 +830,21 @@ int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 
 	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
-		decoder->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
-		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
-
-		decoder->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
-		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
-
-		*((tPVMP3DecoderExternal *) decoder->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
-
-		pvmp3_resetDecoder(decoder->dec_mem);
-		pvmp3_InitDecoder((tPVMP3DecoderExternal *) decoder->dec_ext, decoder->dec_mem);
-
-		bool ret = mp3_init(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
-		RETURN_VAL_IF_FAIL((ret == true), AUDIO_DECODER_ERROR);
+		int ret = mp3_init(decoder, dec_ext);
+		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
 
 	case AUDIO_TYPE_AAC: {
-		decoder->dec_ext = calloc(1, sizeof(tPVMP4AudioDecoderExternal));
-		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
-
-		decoder->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
-		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
-
-		*((tPVMP4AudioDecoderExternal *) decoder->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
-
-		PVMP4AudioDecoderResetBuffer(decoder->dec_mem);
-		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) decoder->dec_ext, decoder->dec_mem);
-		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), AUDIO_DECODER_ERROR);
-
-		bool ret = aac_init(decoder->rbsp, &priv->mCurrentPos);
-		RETURN_VAL_IF_FAIL((ret == true), AUDIO_DECODER_ERROR);
+		int ret = aac_init(decoder, dec_ext);
+		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		decoder->dec_ext = calloc(1, sizeof(opus_dec_external_t));
-		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
-
-		decoder->dec_mem = calloc(1, opus_decoderMemRequirements());
-		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
-
-		*((opus_dec_external_t *) decoder->dec_ext) = *((opus_dec_external_t *) dec_ext);
-
-		opus_resetDecoder(decoder->dec_mem);
-		int err = opus_initDecoder((opus_dec_external_t *) decoder->dec_ext, decoder->dec_mem);
-		RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_DECODER_ERROR);
-
-		priv->mCurrentPos = 0;
-		bool ret = opus_init(decoder->rbsp, &priv->mCurrentPos);
-		RETURN_VAL_IF_FAIL((ret == true), AUDIO_DECODER_ERROR);
+		int ret = opus_init(decoder, dec_ext);
+		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
 #endif
@@ -1013,7 +992,7 @@ int audio_decoder_get_audio_type(audio_decoder_p decoder)
 	return decoder->audio_type;
 }
 
-int audio_decoder_init_decoder(audio_decoder_p decoder, int audio_type, void *dec_ext)
+int audio_decoder_configure(audio_decoder_p decoder, int audio_type, void *dec_ext)
 {
 	assert(decoder != NULL);
 

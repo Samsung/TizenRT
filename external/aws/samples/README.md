@@ -15,7 +15,7 @@ This folder contains several samples that demonstrate various SDK functions. The
 	* `subscribe_publish_cpp_sample` - a simple pub/sub MQTT example written in C++
 	* `subscribe_publish_library_sample` - a simple pub/sub MQTT example which builds the SDK as a separate library
 	* `shadow_sample` - a simple device shadow example using a connected window example
-	* `shadow_sample_console_echo` - a sample to work with the AWS IoT Console interactive guide
+	* `shadow_sample_console_echo` - a sample to work with AWS IoT Console interactive guide
 
 ## Subscribe Publish Sample
 This is a simple pub/sub MQTT example. It connects a single MQTT client to the server and subscribes to a test topic. Then it proceeds to publish messages on this topic and yields after each publish to ensure that the message was received.
@@ -23,7 +23,7 @@ This is a simple pub/sub MQTT example. It connects a single MQTT client to the s
  * The sample first creates an instance of the AWS_IoT_Client
  * The next step is to initialize the client. The aws_iot_mqtt_init API is called for this purpose. The API takes the client instance and an IoT_Client_Init_Params variable to set the initial values for the client. The Init params include values like host URL, port, certificates, disconnect handler etc.
  * If the call to the init API was successful, we can proceed to call connect. The API is called aws_iot_mqtt_connect. It takes the client instance and IoT_Client_Connect_Params variable as arguments. The IoT_Client_Connect_Params is optional after the first call to connect as the client retains the original values that were provided to support reconnect. The Connect params include values like Client Id, MQTT Version etc.
- * If the connect API call was successful, we can proceed to subscribe and publish on this connect. The connect API call will return an error code, specific to the type of error that occurred, in case the call fails.
+ * If the connect API call was successful, we can proceed to subscribe and publish on this connect. The connect API call will return an Error Code, specific to the type of error that occurred, in case the call fails.
  * It is important to remember here that there is no dynamic memory allocation in the SDK. Any values that are passed as a pointer to the APIs should not be freed unless they are not required any further. For example, if the variable that stores the certificate path is freed after the init call is made, the connect call will fail. Similarly, if it is freed after the connect API returns success, any future connect calls (including reconnects) will fail.
  * The next step for this sample is to subscribe to the test topic. The API to be called for subscribe is aws_iot_mqtt_subscribe. It takes as arguments, the IoT Client instance, topic name, the length of the topic name, QoS, the subscribe callback handler and an optional pointer to some data to be returned to the subscribe handler
  * The next step it to call the publish API to send a message on the test topic. The sample sends two different messages, one QoS0 and one QoS1. The
@@ -33,7 +33,7 @@ This is a simple pub/sub MQTT example. It connects a single MQTT client to the s
  * The yield API should be called periodically to process the PING request as well as read any messages in the receive buffer. It should be called once at least every TTL/2 time periods to ensure disconnect does not happen. There can only be one yield in progress at a time. Therefore, in multi-threaded scenarios one thread can be a dedicated yield thread while other threads handle other operations.
  * The sample sends out messages equal to the value set in publish count unless infinite publishing flag is set
 
-For further information on each API please read the API documentation.
+For further information on each API please read API Documentation.
 
 ## Subscribe Publish Cpp Sample
 This is the same sample as above but it is built using a C++ compiler. It demonstrates how the SDK can be used in a C++ program.

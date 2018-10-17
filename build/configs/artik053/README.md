@@ -108,12 +108,12 @@ After building TizenRT, execute below command at $TIZENRT_BASEDIR/os folder.
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 ```bash
-make download [Programming Option]
+./dbuild.sh download [Programming Option]
 ```
 
 For example, *ALL* option makes complete set of binaries programmed.
 ```bash
-make download ALL
+./dbuild.sh download ALL
 ```
 See programming options list which is pre-defined at [.flashSpec.xml](.flashSpec.xml).
 
@@ -173,7 +173,7 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         ```
     4. Enable the audomount config for romfs
         ```bash
-        Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
+        Hardware Configuration -> Board Selection -> Automount partitions -> [*] Automount romfs partiton
         ```
 4. Build TizenRT and flash a binary.  
     Refer [How to program a binary](#how-to-program-a-binary).
@@ -266,7 +266,7 @@ This can be used to test network functionality.
 #### [st_things](st_things/README.md)
 This can be used to test Smart Things Things SDK functionality.
 #### [tc](tc/README.md)
-This can be used to test database, file system, kernel, network functionality of TizenRT on ARTIK053.
+This can be used to test database, File System, kernel, network functionality of TizenRT on ARTIK053.
 
 ## Appendix
 ### On Chip Debugger installation

@@ -20,6 +20,8 @@
 /// @brief Test Case Example for listen() API
 
 #include <sys/socket.h>
+#include <arpa/inet.h>
+
 #include "tc_internal.h"
 
 #define ADDR_PORT 1100

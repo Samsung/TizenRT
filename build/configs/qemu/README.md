@@ -70,7 +70,7 @@ qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic -g
 ### Using make command
 
 ```
-make download
+./dbuild.sh download
 ```
 
 ## How to debug
@@ -104,5 +104,5 @@ Select `NONE`(64KB) or `Build for SRAM increased QEMU Hardware`(16MB)
 Enter `Chip Selection` -> `Boot Memory Configuration`  
 Set `Primary RAM size` to `65536`(64KB) or `16777216`(16MB)
 
-### How to run Network Stack on QEMU
-To run the Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md).
+### How to run network stack on QEMU
+To run the network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md).

@@ -1557,9 +1557,11 @@ int push_notification_to_cloud(const char *uri, OCRepPayload *payload)
 static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 {
 	char *ipport = (char *)ci_addr;
+	bool is_ci_addr_null = true;
 	THINGS_LOG_D(TAG, "ip=%s, port=%s, ci_addr=%s", ip, port, ci_addr);
 
 	if (ci_addr != NULL && strlen(ci_addr) > 0) {	// ci address.
+		is_ci_addr_null = false;
 		char *point = strstr(ci_addr, DEFAULT_COAP_TCP_HOST);
 		if (point) {
 			ipport = point + strlen(DEFAULT_COAP_TCP_HOST);
@@ -1571,13 +1573,23 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	// Update Cloud Address.
 	memset(g_cloud_address, 0, MAX_CI_ADDRESS);
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, DEFAULT_COAP_TCP_HOST) == NULL) {
+		if (is_ci_addr_null) {
+			things_free(ipport);
+		}
 		THINGS_LOG_E(TAG, "things_strcat() is failed.");
 		return NULL;
 	}
 
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, ipport) == NULL) {
+		if (is_ci_addr_null) {
+			things_free(ipport);
+		}
 		THINGS_LOG_E(TAG, "things_strcat() is failed.");
 		return NULL;
+	}
+
+	if (is_ci_addr_null) {
+		things_free(ipport);
 	}
 
 	return g_cloud_address;

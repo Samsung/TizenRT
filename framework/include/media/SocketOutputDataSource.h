@@ -41,7 +41,7 @@ namespace stream {
  * @class
  * @brief This class is file output data structure
  * @details @b #include <media/SocketOutputDataSource.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class SocketOutputDataSource : public OutputDataSource
 {
@@ -50,7 +50,7 @@ public:
 	 * @brief Constructs an empty SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * Delete the default construct
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	SocketOutputDataSource() = delete;
 	/**
@@ -58,7 +58,7 @@ public:
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * param[in] ipAddr     The IP address for connecting to the socket server
 	 * param[in] port       The port number for connecting to the socket server
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	SocketOutputDataSource(const std::string& ipAddr, const uint16_t port);
 	/**
@@ -69,25 +69,25 @@ public:
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * param[in] ipAddr     The IP address for connecting to the socket server
 	 * param[in] port       The port number for connecting to the socket server
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port);
 	/**
 	 * @brief Copy constructs for SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	SocketOutputDataSource(const SocketOutputDataSource& source);
 	/**
 	 * @brief Operator= for SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	SocketOutputDataSource& operator=(const SocketOutputDataSource& source);
 	/**
 	 * @brief Deconstructs an empty SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual ~SocketOutputDataSource();
 
@@ -95,21 +95,21 @@ public:
 	 * @brief Whether file is ready to be write.
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @return True is ready, False is not ready
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool isPrepare() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool open() override;
 	/**
 	 * @brief Close the file
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	bool close() override;
 
@@ -120,7 +120,7 @@ public:
 	 * @param[in] size The size that the size of the buffer
 	 * @return if there is nothing to write, it returns 0
 	 *         if error occurred, it returns -1, else written size returns
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	ssize_t write(unsigned char* buf, size_t size) override;
 

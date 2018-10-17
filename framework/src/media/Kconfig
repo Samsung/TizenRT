@@ -32,6 +32,11 @@ config MEDIA_PLAYER_OBSERVER_STACKSIZE
 	default 2048
 	---help---
 
+config INPUT_DATASOURCE_STACKSIZE
+	int "InputDataSource thread stack size"
+	default 4096
+	---help---
+
 endif #MEDIA_PLAYER
 
 config MEDIA_RECORDER
@@ -52,7 +57,19 @@ config MEDIA_RECORDER_OBSERVER_STACKSIZE
 	default 2048
 	---help---
 
+config OUTPUT_DATASOURCE_STACKSIZE
+	int "OutputDataSource thread stack size"
+	default 4096
+	---help---
+
 endif #MEDIA_RECORDER
+
+config MEDIA_VOICE_SPEECH_DETECTOR
+	bool "Support Media/Voice Speech Detector"
+	default n
+	select VOICE_SOFTWARE_EPD
+	---help---
+		Enable Media/Voice Speech Detector functions
 
 config AUDIO_RESAMPLER_BUFSIZE
 	int "Audio Resampler Buffer size"
@@ -60,6 +77,24 @@ config AUDIO_RESAMPLER_BUFSIZE
 	depends on AUDIO
 	---help---
 		Buffer size for resampler
+
+config FILE_DATASOURCE_STREAM_BUFFER_SIZE
+	int "File DataSource stream buffer size"
+	default 4096
+	---help---
+
+config FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "File DataSource stream buffer threshold"
+	default 2048
+
+config BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
+	int "Buffer DataSource stream buffer size"
+	default 4096
+	---help---
+
+config BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "Buffer DataSource stream buffer threshold"
+	default 1
 
 endif #MEDIA
 

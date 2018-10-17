@@ -850,7 +850,7 @@ static const struct snmp_obj_id ifspecific = { 2, {0, 0} };
 static const struct snmp_obj_id iprouteinfo = { 2, {0, 0} };
 
 /* mib-2.system counter(s) */
-static systime_t sysuptime = 0;
+static clock_t sysuptime = 0;
 
 /* mib-2.ip counter(s) */
 static u32_t ipinreceives = 0, ipinhdrerrors = 0, ipinaddrerrors = 0, ipforwdatagrams = 0, ipinunknownprotos = 0, ipindiscards = 0, ipindelivers = 0, ipoutrequests = 0, ipoutdiscards = 0, ipoutnoroutes = 0, ipreasmreqds = 0, ipreasmoks = 0, ipreasmfails = 0, ipfragoks = 0, ipfragfails = 0, ipfragcreates = 0, iproutingdiscards = 0;

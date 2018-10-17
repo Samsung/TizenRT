@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <semaphore.h>
 #include <debug.h>
 #include <tinyara/pm/pm.h>

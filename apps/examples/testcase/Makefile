@@ -156,7 +156,7 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM),y)
 	$(Q) $(call REGISTER,filesystem_tc,tc_filesystem_main,TASH_EXECMD_ASYNC,100,4096)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_KERNEL),y)
-	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,100,2048)
+	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,180,2048)
 endif
 ifeq ($(CONFIG_LIBCXX_UTC),y)
 	$(Q) $(call REGISTER,libcxx_utc,utc_libcxx_main,TASH_EXECMD_ASYNC,100,4096)
@@ -191,6 +191,7 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,tm_broadcast1,tm_broadcast1_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast2,tm_broadcast2_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast3,tm_broadcast3_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_utc,tm_utc_main,TASH_EXECMD_ASYNC,101,1024)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
 	$(Q) $(call REGISTER,ttrace_tc,tc_ttrace_main,TASH_EXECMD_ASYNC,100,2048)
@@ -203,6 +204,10 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC),y)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS),y)
 	$(Q) $(call REGISTER,tcp_tls_stress,tc_tcp_tls_main,TASH_EXECMD_ASYNC,100,8192)
+endif
+
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_EVENTLOOP_UTC),y)
+	$(Q) $(call REGISTER,eventloop_utc,utc_eventloop_main,TASH_EXECMD_ASYNC,100,2048)
 endif
 
 context: $(BUILTIN_REGISTRY)$(DELIM)testcase.bdat

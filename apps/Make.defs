@@ -93,3 +93,21 @@ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
 else
   MKKCONFIG = $(APPDIR)/tools/mkkconfig.sh
 endif
+
+ifeq ($(CONFIG_GRPC), y)
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+define DEL_GRPCFILES
+	if exist *.pb.h (del /f /q *.pb.h)
+	if exist *.pb.cc (del /f /q *.pb.cc)
+	if exist *.grpc.pb.h (del /f /q *.grpc.pb.h)
+	if exist *.grpc.pb.cc (del /f /q *.grpc.pb.cc)
+endef
+else
+define DEL_GRPCFILES
+	$(Q) rm -f *.pb.h
+	$(Q) rm -f *.pb.cc
+	$(Q) rm -f *.grpc.pb.h
+	$(Q) rm -f *.grpc.pb.cc
+endef
+endif
+endif

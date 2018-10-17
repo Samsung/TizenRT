@@ -39,9 +39,10 @@
 #ifdef CONFIG_FS_SMARTFS
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
+#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
 #else
 #define TMP_MOUNT_DEV_DIR "/dev/smart1"
 #endif
@@ -1147,6 +1148,7 @@ static void itc_libc_stdio_fseek_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase         itc_libc_stdio_fseek_n_invalid_fp
 * @brief            Move file position to specific position
@@ -1172,6 +1174,7 @@ static void itc_libc_stdio_fseek_n_invalid_fp(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         itc_libc_stdio_ftell_n

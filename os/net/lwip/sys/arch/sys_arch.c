@@ -67,7 +67,9 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int queue_sz)
 {
 	err_t err = ERR_OK;
 	mbox->is_valid = 1;
+#if LWIP_STATS
 	mbox->id = lwip_stats.sys.mbox.used + 1;
+#endif
 	mbox->queue_size = queue_sz;
 	mbox->wait_send = 0;
 	mbox->wait_fetch = 0;
@@ -455,7 +457,7 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
-	systime_t start = clock_systimer();
+	clock_t start = clock_systimer();
 	int status = OK;
 	int remaining_time;
 
@@ -495,7 +497,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 
 	}
 
-	systime_t end = clock_systimer();
+	clock_t end = clock_systimer();
 	return TICK2MSEC(end - start);
 }
 

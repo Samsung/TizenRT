@@ -9,7 +9,49 @@ config AUDIO_MAX_INPUT_CARD_NUM
 config AUDIO_MAX_OUTPUT_CARD_NUM
 	int "Max # of Output Audio Card"
 	default 2
+
+config AUDIO_MAX_DEVICE_NUM
+	int "Max # of device of each card"
+	default 3
 	
+config AUDIO_PROCESSING_FEATURES
+	bool "Audio Specific Processing features on dsp"
+	default n
+	---help---
+		Enable control processing on dsp.
+		Some devices process Keyword Detect, EPD, buffering, Dolby, etc on device level.
+		Send event message to user layer regarding this kind of process.
+		
+if AUDIO_PROCESSING_FEATURES
+menu "Audio Processing Features"
+
+config AUDIO_SPEECH_DETECT_FEATURES
+	bool "Speech Detect Features"
+	default n
+	---help---
+		Speech Detect Features including End Point Detect(EPD), Keyword Detect(KD) for
+		wake up recognition.
+
+if AUDIO_SPEECH_DETECT_FEATURES	
+
+config AUDIO_KEYWORD_DETECT
+	bool "Provides keyword detect"
+	default n
+	---help---
+		Keyword detect may be supported by some audio devices, but not the typical
+		device doesn't have this in dsp chip.
+
+config AUDIO_ENDPOINT_DETECT
+	bool "Provides endpoint detect"
+	default n
+	---help---
+		End Point detect may be supported by some audio devices, but not the typical
+		device doesn't have this in dsp chip.		
+
+endif
+endmenu
+endif
+
 config AUDIO_I2SCHAR
 	bool "I2S character driver (for testing only)"
 	default n
@@ -41,14 +83,6 @@ config AUDIO_I2SCHAR_TXTIMEOUT
 		The special value of zero disables RX timeouts.  Default: 0
 
 endif # AUDIO_I2SCHAR
-
-config AUDIO_NULL
-	bool "NULL audio device"
-	default n
-	depends on AUDIO
-	---help---
-		A do-nothinig audio device driver to simplify testing of audio
-		decoders.
 
 config AUDIO_ALC5658
 	bool "ALC5658 audio chip"
@@ -94,6 +128,13 @@ config ALC5658_CLKDEBUG
 
 endif # AUDIO_ALC5658
 
+config AUDIO_NULL
+	bool "NULL audio device"
+	default n
+	depends on AUDIO
+	---help---
+		A do-nothinig audio device driver to simplify testing of audio
+		decoders.
 if AUDIO_NULL
 
 config AUDIO_NULL_MSG_PRIO
@@ -113,3 +154,49 @@ config AUDIO_NULL_WORKER_STACKSIZE
 	default 768
 
 endif # AUDIO_NULL
+
+config AUDIO_CX20921
+	bool "CX20921 ADC audio chip"
+	default n
+	depends on AUDIO
+	---help---
+		Select to enable support for the CX20921 ADC Audio codec by conexant
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
+
+config CX20921_I2S_TIMEOUT
+	int "Timeout value of CX20921 I2S Response (in ms)"
+	default 100
+	depends on AUDIO_CX20921
+	---help---
+		Set timeout of CX20921 I2S response in millisecond
+
+config AUDIO_TAS5749
+	bool "TAS5749 DAC audio chip"
+	default n
+	depends on AUDIO
+	---help---
+		Select to enable support for the TAS5749 DAC Audio codec by TI
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
+
+config TAS5749_I2S_TIMEOUT
+	int "Timeout value of TAS5749 I2S Response (in ms)"
+	default 100
+	depends on AUDIO_TAS5749
+	---help---
+		Set timeout of TAS5749 I2S response in millisecond
+
+config TAS5749_BUFFER_SIZE
+	int "buffer size on TAS5749"
+	default 4096
+	depends on AUDIO_TAS5749
+	---help---
+		Set buffer size of TAS5749
+
+config TAS5749_NUM_BUFFERS
+	int "number of buffer on TAS5749"
+	default 4
+	depends on AUDIO_TAS5749
+	---help---
+		Set buffers number of TAS5749

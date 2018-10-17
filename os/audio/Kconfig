@@ -62,6 +62,12 @@ endmenu # Audio Buffer Configuration
 
 menu "Exclude Specific Audio Features"
 
+config AUDIO_EXCLUDE_GAIN
+	bool "Exclude gain controls"
+	default n
+	---help---
+		Exclude building support for changing the recording gain.
+		
 config AUDIO_EXCLUDE_VOLUME
 	bool "Exclude volume controls"
 	default n
