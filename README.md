@@ -33,6 +33,7 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [How to use JTAG equiqments](#how-to-use-jtag-equiqments)
 >   * [GPIO Mapping](#gpio-mapping)
 >   * [SERIAL Mapping](#serial-mapping)
+>   * [GPIO Interrupt](#gpio-interrupt)
 >   * [SPI Frequency](#spi-frequency)
 >   * [How to enable Secure shell](#how-to-enable-secure-shell)
 >   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
@@ -335,6 +336,23 @@ If you change the serial console to UART3, the mapping of the other device chang
 |   XUART3   |   XUART0   |   XUART1   |   XUART2   |   XUART4   |
 |:----------:|:----------:|:----------:|:----------:|:----------:|
 | /dev/ttyS0 | /dev/ttyS1 | /dev/ttyS2 | /dev/ttyS3 | /dev/ttyS4 |
+
+## GPIO Interrupt
+
+ARTIK05x provides interrupts that can be shared with GPIO pinouts, and dedicated interrupt pinouts. Please refer to the following table for GPIO interrupts provided by ARTIK05x.
+
+| Name   | PinOut  | GPIO Num    | Name   | PinOut  | GPIO Num    | Name   | PinOut | GPIO Num    |
+|--------|---------|-------------|--------|---------|-------------|--------|--------|-------------|
+| INTG10 | XGPIO8  | /dev/gpio37 | INTG20 | XGPIO16 | /dev/gpio45 | INTA00 | XEINT0 | /dev/gpio57 |
+| INTG11 | XGPIO9  | /dev/gpio38 | INTG21 | XGPIO17 | /dev/gpio46 | INTA01 | XEINT1 | /dev/gpio58 |
+| INTG12 | XGPIO10 | /dev/gpio39 | INTG22 | XGPIO18 | /dev/gpio47 | INTA02 | XEINT2 | /dev/gpio59 |
+| INTG13 | XGPIO11 | /dev/gpio40 | INTG23 | XGPIO19 | /dev/gpio48 |        |        |             |
+| INTG14 | XGPIO12 | /dev/gpio41 | INTG24 | XGPIO20 | /dev/gpio49 |        |        |             |
+| INTG15 | XGPIO13 | /dev/gpio42 | INTG25 | XGPIO21 | /dev/gpio50 |        |        |             |
+| INTG16 | XGPIO14 | /dev/gpio43 | INTG26 | XGPIO22 | /dev/gpio51 |        |        |             |
+| INTG17 | XGPIO15 | /dev/gpio44 | INTG27 | XGPIO23 | /dev/gpio52 |        |        |             |
+
+**NOTE: Some pins are pulled up.**
 
 ## SPI Frequency
 
