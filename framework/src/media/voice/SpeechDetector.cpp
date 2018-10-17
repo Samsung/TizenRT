@@ -42,6 +42,7 @@ public:
 	void deinitEndPointDetect() override;
 	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) override;
 	bool startKeywordDetect(uint32_t timeout) override;
+	bool startEndPointDetect(uint32_t timeout) override;
 	bool processEPDFrame(short *sample, int numSample) override;
 
 private:
@@ -136,6 +137,12 @@ bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)
 {
 	assert(mKeywordDetector);
 	return mKeywordDetector->startKeywordDetect(timeout);
+}
+
+bool SpeechDetectorImpl::startEndPointDetect(uint32_t timeout)
+{
+	assert(mEndPointDetector);
+	return mEndPointDetector->startEndPointDetect(timeout);
 }
 
 bool SpeechDetectorImpl::processEPDFrame(short *sample, int numSample)

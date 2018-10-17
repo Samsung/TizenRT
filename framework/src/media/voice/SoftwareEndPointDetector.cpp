@@ -45,6 +45,10 @@ void SoftwareEndPointDetector::deinit()
 	speex_preprocess_state_destroy(mState);
 }
 
+bool SoftwareEndPointDetector::startEndPointDetect(uint32_t timeout)
+{
+}
+
 bool SoftwareEndPointDetector::processEPDFrame(short *sample, int numSample)
 {
 	while (numSample > CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE) {

@@ -47,6 +47,7 @@ public:
 	virtual void deinitEndPointDetect() = 0;
 	virtual void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) = 0;
 	virtual bool startKeywordDetect(uint32_t timeout) = 0;
+	virtual bool startEndPointDetect(uint32_t timeout) = 0;
 	virtual bool processEPDFrame(short *sample, int numSample) = 0;
 protected:
 	SpeechDetector() = default;
