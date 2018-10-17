@@ -187,7 +187,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	if (mDuration > 0) {
+	if (mDuration >= 0) {
 		mTotalFrames = mDuration * source->getSampleRate();
 	}
 
@@ -552,8 +552,8 @@ void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
-	if (second > 0) {
-		medvdbg("second is greater than zero, set limit : %d\n", second);
+	if (second >= 0) {
+		medvdbg("second is greater than or eqaul to zero, set limit : %d\n", second);
 		mDuration = second;
 	}
 
