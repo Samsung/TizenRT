@@ -88,7 +88,13 @@ public:
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) = 0;
+	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user of the playback has stopped.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackStopped(MediaPlayer &mediaPlayer) {}
 	/**
 	 * @brief informs the user that data in the input-buffer reach the
 	 * threshold, and it's possible to fetch data now.
