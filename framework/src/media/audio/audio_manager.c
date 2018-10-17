@@ -117,6 +117,7 @@ struct audio_device_config_s {
 	audio_device_type_t device_type;
 	device_process_type_t device_process_type;
 	mqd_t process_handler;
+	uint8_t handler_refcnt;
 };
 
 struct audio_resample_s {
@@ -1619,9 +1620,9 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	card = &g_audio_in_cards[card_id];
 	config = &card->config[device_id];
 
-	if (config->process_handler != NULL)
-	{
+	if (config->process_handler != NULL) {
 		medvdbg("Handler is already registered\n");
+		++config->handler_refcnt;
 		return AUDIO_MANAGER_SUCCESS;
 	}
 
@@ -1648,6 +1649,7 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	attr.mq_flags = 0;
 	snprintf(mq_path, AUDIO_DEVICE_PROCESS_QUEUE_PATH_LENGTH, "%s%s", path, AUDIO_DEVICE_PROCESS_QUEUE_PATH);
 	config->process_handler = mq_open(path, O_RDWR | O_CREAT, 0644, &attr);
+	config->handler_refcnt = 1;
 
 	/* Register our message queue with the audio device */
 	ret = ioctl(fd, AUDIOIOC_REGISTERPROCESS, (unsigned long)config->process_handler);
@@ -1686,6 +1688,9 @@ audio_manager_result_t unregister_stream_in_device_process(int card_id, int devi
 		meddbg("Handler is not registered\n");
 		return AUDIO_MANAGER_INVALID_DEVICE;
 	}
+	if (--config->handler_refcnt > 0) {
+		return AUDIO_MANAGER_SUCCESS;
+	}
 	get_card_path(path, card_id, device_id, INPUT);
 
 	pthread_mutex_lock(&(card->card_mutex));
@@ -1704,6 +1709,9 @@ audio_manager_result_t unregister_stream_in_device_process(int card_id, int devi
 		meddbg("Unregister Failed : %d\n", ret);
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
+
+	mq_close(config->process_handler);
+	config->process_handler = NULL;
 	return AUDIO_MANAGER_SUCCESS;
 
 }
