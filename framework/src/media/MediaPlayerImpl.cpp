@@ -558,6 +558,9 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
 			break;
+		case PLAYER_OBSERVER_COMMAND_STOPPED:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
+			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, mPlayer);
 			break;
@@ -605,8 +608,8 @@ void MediaPlayerImpl::playback()
 			}
 		}
 	} else if (num_read == 0) {
-		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
-		stop();
+		PlayerWorker &mpw = PlayerWorker::getWorker();
+		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), PLAYER_OK);
 	} else {
 		meddbg("InputDatasource read error\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
