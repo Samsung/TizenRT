@@ -191,9 +191,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("****************************************************************\n");
 	printf("Total                           : %u (100%%)\n", heap->mm_heapsize);
 	printf("  - Allocated (Current / Peak)  : %u (%d%%) / %u (%d%%)\n",\
-		heap->total_alloc_size, heap->total_alloc_size * 100 / heap->mm_heapsize,\
-		heap->peak_alloc_size,  heap->peak_alloc_size * 100 / heap->mm_heapsize);
-	printf("  - Free (Current)              : %u (%d%%)\n", fordblks, fordblks * 100 / heap->mm_heapsize);
+		heap->total_alloc_size, (size_t)((uint64_t)(heap->total_alloc_size) * 100 / heap->mm_heapsize),\
+		heap->peak_alloc_size,  (size_t)((uint64_t)(heap->peak_alloc_size) * 100 / heap->mm_heapsize));
+	printf("  - Free (Current)              : %u (%d%%)\n", fordblks, (size_t)((uint64_t)fordblks * 100 / heap->mm_heapsize));
 	printf("  - Reserved                    : %u\n", SIZEOF_MM_ALLOCNODE * 2);
 
 	printf("\n****************************************************************\n");
