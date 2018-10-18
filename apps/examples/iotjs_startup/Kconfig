@@ -27,6 +27,12 @@ config EXAMPLES_IOTJS_STARTUP_JS_FILE
 	---help---
 		This is the name of the javascript loaded by IoT.js runtime
 
+config EXAMPLES_IOTJS_EXTRA_MODULE_PATH
+	string "Directories used for external modules lookup"
+	default "/rom/example/iotjs_modules"
+	---help---
+		This is the name of the javascript loaded by IoT.js runtime
+
 config EXAMPLES_IOTJS_STARTUP_WIFI
 	bool "Connect WiFi"
 	select WIFI_MANAGER
