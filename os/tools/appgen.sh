@@ -10,7 +10,13 @@ cd - > /dev/null
 
 echo "${BOLD}TizenRT Application Generator${NORMAL}"
 echo "======================= v 1.0"
+echo "Select Application Type"
+echo "1. Hello World Sample"
+echo "2. Task Manager Sample"
+echo "3. Eventloop Sample"
+echo "============================="
 
+read -p "Select application type: " APP_TYPE
 read -p "Enter application name: " APP_NAME
 
 APP_NAME_UPPER=$(echo "$APP_NAME" | tr '[:lower:]' '[:upper:]')
@@ -21,6 +27,17 @@ ENTRY_FUNC="${APP_NAME_LOWER}_main"
 
 echo "${BOLD}[Summary]${NORMAL}"
 echo "-------------------------------"
+case ${APP_TYPE} in
+	1)
+		echo "* Application Type: ${BOLD}Hello World Sample${NORMAL}"
+		;;
+	2)
+		echo "* Application Type: ${BOLD}Task Manager Sample${NORMAL}"
+		;;
+	3)
+		echo "* Application Type: ${BOLD}Eventloop Sample${NORMAL}"
+		;;
+esac
 echo "* Application Name: ${BOLD}${APP_NAME}${NORMAL}"
 echo "* Configuration Key: ${BOLD}CONFIG_APP_${APP_NAME_UPPER}${NORMAL}"
 echo "* Entry Function: ${BOLD}${ENTRY_FUNC}${NORMAL}"
@@ -38,9 +55,23 @@ MAKE_DEFS_FILENAME="${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}/Make.defs"
 MAKEFILE_FILENAME="${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}/Makefile"
 
 mkdir "${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}"
-cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig ${KCONFIG_FILENAME}
+
+case ${APP_TYPE} in
+	1)
+		cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig ${KCONFIG_FILENAME}
+		cp ${TIZENRT_ROOT}/apps/appgen/template_main.c_source ${MAIN_FILENAME}
+		;;
+	2)
+		cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig_task_manager ${KCONFIG_FILENAME}
+		cp ${TIZENRT_ROOT}/apps/appgen/template_task_manager_sample_main.c_source ${MAIN_FILENAME}
+		;;
+	3)
+		cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig_eventloop ${KCONFIG_FILENAME}
+		cp ${TIZENRT_ROOT}/apps/appgen/template_eventloop_sample_main.c_source ${MAIN_FILENAME}
+		;;
+esac
+
 cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig_ENTRY ${KCONFIG_ENTRY_FILENAME}
-cp ${TIZENRT_ROOT}/apps/appgen/template_main.c_source ${MAIN_FILENAME}
 cp ${TIZENRT_ROOT}/apps/appgen/template_Make.defs ${MAKE_DEFS_FILENAME}
 cp ${TIZENRT_ROOT}/apps/appgen/template_Makefile ${MAKEFILE_FILENAME}
 
@@ -77,7 +108,7 @@ sed -i -e "s/##ENTRY_FUNC##/${ENTRY_FUNC}/g" ${MAKEFILE_FILENAME}
 echo ""
 echo "* How to setup your application"
 echo "Run) ${BOLD}TizenRT/os/tools\$${NORMAL} ./configure.sh <BOARD>/<CONFIG>"
-echo "Run) ${BOLD}TizenRT/os\$${NORMAL} make menuconfig"
+echo "Run) ${BOLD}TizenRT/os\$${NORMAL} ./dbuild.sh menuconfig"
 echo "1. Turn on your application in ${BOLD}Application Configuration/Examples${NORMAL} menu"
 echo "2. Set the entry point to your application in ${BOLD}Application Configuration${NORMAL} menu"
 echo "------------------------------"

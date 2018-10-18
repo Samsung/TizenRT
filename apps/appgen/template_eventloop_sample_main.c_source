@@ -1,0 +1,103 @@
+/****************************************************************************
+ *
+ * Copyright ##YEAR## Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+#include <stdio.h>
+
+#include <eventloop/eventloop.h>
+
+/************************************************************************
+ * Pre-processor Definitions
+ ************************************************************************/
+
+#define EVENTLOOP_TIMER_INTERVAL 2000
+#define EVENTLOOP_EVENT_DATA     "WIFI_ON"
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static bool sample_timer_callback(void *data)
+{
+	printf("Hello, sample timer callback is called! callback data: %s\n", (char *)data);
+
+	/* Timer callback is no longer called 
+	 * when it returns EVENTLOOP_CALLBACK_STOP */
+
+	return EVENTLOOP_CALLBACK_STOP;
+}
+
+static bool sample_event_callback(void *registered_cb_data, void *received_event_data)
+{
+	printf("Registered callback data: %s, Received event data: %s\n", (char *)registered_cb_data, (char *)received_event_data);
+
+	/* Event callback is no longer called 
+	 * when it returns EVENTLOOP_CALLBACK_STOP */
+
+	return EVENTLOOP_CALLBACK_STOP;
+}
+
+/****************************************************************************
+ * ##ENTRY_FUNC##
+ ****************************************************************************/
+
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int ##ENTRY_FUNC##(int argc, char *argv[])
+#endif
+{
+	int ret;
+
+	el_timer_t *timer;
+	el_event_t *event;
+	char *timer_cb_data = "Hello Timer";
+	char *event_cb_data = "Hello Event";
+
+	timer = eventloop_add_timer(EVENTLOOP_TIMER_INTERVAL, true, sample_timer_callback, timer_cb_data);
+	if (timer == NULL) {
+		printf("Failed to add timer!\n");
+	}
+
+	event = eventloop_add_event_handler(EL_EVENT_WIFI_ON, sample_event_callback, event_cb_data);
+	if (event == NULL) {
+		printf("Failed to add event handler!\n");
+	}
+
+	ret = eventloop_send_event(EL_EVENT_WIFI_ON, (void *)EVENTLOOP_EVENT_DATA, strlen(EVENTLOOP_EVENT_DATA) + 1);
+	if (ret != OK) {
+		printf("Failed to send event\n");
+	}
+
+	/* Please add timers or event handlers before eventloop_loop_run() */
+
+	ret = eventloop_loop_run();
+	if (ret != OK) {
+		printf("eventloop_loop_run() is failed.\n");
+	} else {
+		/* If there is nothing to process in the eventloop, the eventloop is ended. */
+
+		printf("Loop is ended!\n");
+	}
+
+	return 0;
+}
