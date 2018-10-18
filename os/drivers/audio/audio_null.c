@@ -643,7 +643,6 @@ static int null_unregisterprocess(FAR struct audio_lowerhalf_s *dev)
 	}
 
 	if (priv->dev.process_mq != NULL) {
-		mq_close(priv->dev.process_mq);
 		priv->dev.process_mq = NULL;
 	} else {
 		auddbg("mq is null\n");
