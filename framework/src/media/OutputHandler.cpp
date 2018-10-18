@@ -209,7 +209,7 @@ void OutputHandler::writeToSource(size_t size)
 	auto readed = mBufferReader->read(buf, size);
 	if (readed != size) {
 		meddbg("StreamBufferReader::read failed! size : %u, readed : %u\n", size, readed);
-		delete buf;
+		delete[] buf;
 		return;
 	}
 
@@ -220,7 +220,7 @@ void OutputHandler::writeToSource(size_t size)
 		mBufferWriter->setEndOfStream();
 	}
 
-	delete buf;
+	delete[] buf;
 }
 
 void *OutputHandler::workerMain(void *arg)
