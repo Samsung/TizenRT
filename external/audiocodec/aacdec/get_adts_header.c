@@ -458,6 +458,21 @@ Int get_adts_header(
          */
         pVars->prog_config.sampling_rate_idx = (lower_16 >> 6) & 0xF;
 
+        if (pVars->prog_config.sampling_rate_idx > 0xb)
+        {
+            /*
+            *  Only support 12 sampling frequencies from array samp_rate_info ( see sfb.cpp)
+            *  7350 Hz (index 0xc) is not supported, the other indexes are reserved or escape
+            */
+
+            /*
+            * Future use : if (pVars->prog_config.sampling_rate_idx == 0xf) escape sequence 
+            * refer to the get_audio_specific_config() process method
+            */
+
+            status = 1;
+        }
+
         /*
          * private_bit is a bit for private use.  ISO/IEC will not make
          * use of this bit in the future.
