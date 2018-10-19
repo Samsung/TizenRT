@@ -44,10 +44,6 @@
 	} while (0);
 
 
-#if defined(CONFIG_NET_LWIP_DHCPC) && !defined(CONFIG_NETUTILS_DHCPC)
-struct dhcp dhcp_handle;
-#endif
-
 static dm_scan_info_t *appwifiscan_result = NULL;
 static dm_scan_info_t *wifi_iterator;
 

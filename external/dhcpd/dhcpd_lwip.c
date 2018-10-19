@@ -78,11 +78,10 @@
 #include <net/lwip/netif.h>
 #include <net/lwip/netifapi.h>
 
+#undef nvdbg
+#undef ndbg
 #define ndbg(...) printf(__VA_ARGS__)
 #define nvdbg(...) printf(__VA_ARGS__)
-
-#define ERROR (-1)
-#define OK    (0)
 
 /****************************************************************************
  * Global Data
