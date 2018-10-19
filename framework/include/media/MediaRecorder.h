@@ -45,7 +45,7 @@ class MediaRecorderImpl;
  */
 enum recorder_error_e : int {
 	/** MediaRecorder Error case */
-	RECORDER_ERROR_NOT_ALIVE = INT32_MIN,
+	RECORDER_ERROR_NOT_ALIVE = -8,
 	RECORDER_ERROR_INVALID_STATE,
 	RECORDER_ERROR_INVALID_OPERATION,
 	RECORDER_ERROR_INVALID_PARAM,
