@@ -270,6 +270,7 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 			if (http_client_tls_init(p) != HTTP_OK) {
 				HTTP_LOGE("Error: Cannot initialize TLS!! Close client.. %d\n", sock_fd);
 				http_client_release(p);
+				close(sock_fd);
 				continue;
 			}
 		}
