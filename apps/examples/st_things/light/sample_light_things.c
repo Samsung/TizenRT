@@ -58,7 +58,7 @@ static void gpio_callback_event_trigger_light_switch(void *user_data)
 {
 	printf("gpio_callback_event to notify switch resource's observers manually!!\n");
 	change_switch_value();
-	printf("Notify to observer :: %d\n", things_notify_observers(g_res_switch));
+	printf("Notify to observer :: %d\n", st_things_notify_observers(g_res_switch));
 }
 #endif
 
