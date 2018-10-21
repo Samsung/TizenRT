@@ -531,12 +531,12 @@ audio_manager_result_t unregister_stream_in_device_process(int card_id, int devi
  *
  * Input parameter:
  *   card_id : Target card id , device_id : Target device id
- *   msgId : Message ID to be returned
+ *   msgId : Message ID to be returned, abstime : timeout
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_device_process_handler_message(int card_id, int device_id, uint16_t *msgId);
+audio_manager_result_t get_device_process_handler_message(int card_id, int device_id, uint16_t *msgId, const struct timespec *abstime);
 
 /****************************************************************************
  * Name: set_stream_in_policy

@@ -102,7 +102,6 @@ void *HardwareEndPointDetector::endPointDetectThread(void *param)
 			medvdbg("#### EPD DETECTED!! ####\n");
 			break;
 		}
-		usleep(30 * 1000);
 	}
 
 	unregister_stream_in_device_process(detector->mCard, detector->mDevice);
@@ -115,7 +114,10 @@ bool HardwareEndPointDetector::processEPDFrame(short *sample, int numSample)
 	audio_manager_result_t result;
 	uint16_t msgId;
 
-	result = get_device_process_handler_message(mCard, mDevice, &msgId);
+	struct timespec timeout;
+	clock_gettime(CLOCK_REALTIME, &timeout);
+	timeout.tv_sec += 1;
+	result = get_device_process_handler_message(mCard, mDevice, &msgId, &timeout);
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
 		if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {

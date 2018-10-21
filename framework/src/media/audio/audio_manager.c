@@ -1716,12 +1716,11 @@ audio_manager_result_t unregister_stream_in_device_process(int card_id, int devi
 
 }
 
-audio_manager_result_t get_device_process_handler_message(int card_id, int device_id, uint16_t *msgId)
+audio_manager_result_t get_device_process_handler_message(int card_id, int device_id, uint16_t *msgId, const struct timespec *abstime)
 {
 	struct audio_msg_s msg;
 	int prio;
 	ssize_t size = 0;
-	struct timespec st_time;
 	audio_card_info_t *card;
 
 	card = &g_audio_in_cards[card_id];
@@ -1729,8 +1728,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
 		meddbg("Device doesn't registered process handler\n");
 		return AUDIO_MANAGER_INVALID_DEVICE;
 	}
-	clock_gettime(CLOCK_REALTIME, &st_time);
-	size = mq_timedreceive(card->config[device_id].process_handler, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+	size = mq_timedreceive(card->config[device_id].process_handler, (FAR char *)&msg, sizeof(msg), &prio, abstime);
 
 	if (size != sizeof(msg)) {
 		medvdbg("wrong message id : %ld\n", msg.msgId);
