@@ -489,7 +489,10 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 		fds->priv = NULL;
 	}
 
-	gpio_enable(priv);
+	/* gpio should only be enabled when poll is set up. */
+	if (setup) {
+		gpio_enable(priv);
+	}
 
 errout_with_dusem:
 	gpio_givesem(&priv->gu_exclsem);
