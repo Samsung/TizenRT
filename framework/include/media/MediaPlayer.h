@@ -42,7 +42,7 @@ namespace media {
  */
 enum player_error_e : int {
 	/** MediaPlayer Error case */
-	PLAYER_ERROR_NOT_ALIVE = INT32_MIN,
+	PLAYER_ERROR_NOT_ALIVE = -8,
 	PLAYER_ERROR_INVALID_STATE,
 	PLAYER_ERROR_INVALID_OPERATION,
 	PLAYER_ERROR_INVALID_PARAMETER,
