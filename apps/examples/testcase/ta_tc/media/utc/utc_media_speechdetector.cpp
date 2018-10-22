@@ -22,7 +22,10 @@
 
 static void utc_media_SpeechDetector_instance_p(void)
 {
-    TC_SUCCESS_RESULT();
+	auto p1 = media::voice::SpeechDetector::instance();
+	auto p2 = media::voice::SpeechDetector::instance();
+	TC_ASSERT_EQ("instance", p1, p2);
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_initKeywordDetect_p(void)
