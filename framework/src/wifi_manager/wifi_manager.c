@@ -1,4 +1,4 @@
-/****************************************************************************
+/**************************************************************************** 
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
@@ -990,7 +990,7 @@ wifi_manager_result_e _handler_on_disconnected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param), "run_softap fail", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 	} else if (msg->event == EVT_SCAN) {
-		WIFIMGR_PASS_RESULT(_wifimgr_scan(), "fail scan");
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan(), "fail scan", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
@@ -1129,7 +1129,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else if (msg->event == EVT_SCAN) {
-		WIFIMGR_PASS_RESULT(_wifimgr_scan(), "fail scan\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan(), "fail scan\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
@@ -1259,7 +1259,7 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_sta(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_SCAN) {
-		WIFIMGR_PASS_RESULT(_wifimgr_scan(), "fail scan\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan(), "fail scan\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else if (msg->event == EVT_JOINED) {
