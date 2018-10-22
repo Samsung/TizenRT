@@ -273,7 +273,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
 wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb);
 
 /**
- * @brief Unregister the callback to receive wi-fi events
+ * @brief Unregister the callback not to receive wi-fi events
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] wmcb callback functions are used to find registered callback
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
@@ -304,8 +304,8 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 /**
  * @brief Connect to an access point.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
- * @param[in] reconn_config reconnect type, interval, minimum or maximun intervalis set
+ * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
+ * @param[in] reconn_config reconnect type, interval, minimum or maximum interval is set
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -314,8 +314,8 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 /**
  * @brief Connect to an access point.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
- * @param[in] conn_config reconnect type, interval, minimum or maximun intervalis set 
+ * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
+ * @param[in] reconn_config reconnect type, interval, minimum or maximum intervals is set
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */

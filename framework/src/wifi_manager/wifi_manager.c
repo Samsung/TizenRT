@@ -1322,9 +1322,9 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			break;
 		case CB_STA_DISCONNECTED:
 			nvdbg("[WM] call sta disconnect event\n");
-	#ifdef CONFIG_ENABLE_IOTIVITY
+#ifdef CONFIG_ENABLE_IOTIVITY
 			__tizenrt_manual_linkset("del");
-	#endif
+#endif
 			cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
 			break;
 		case CB_STA_RECONNECTED:
@@ -1612,13 +1612,19 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
+	int i;
 
 	LOCK_WIFIMGR;
 	// g_manager_info.cb[0] is assigned to the callback which is registered by wifi_manager_init
-	int i = 1;
-	for (; i < WIFIMGR_NUM_CALLBACKS; i++) {
+	if (g_manager_info.cb[0] == NULL) {
+		UNLOCK_WIFIMGR;
+		return WIFI_MANAGER_DEINITIALIZED;
+	}
+	for (i = 1; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		if (g_manager_info.cb[i] == NULL) {
 			g_manager_info.cb[i] = wmcb;
+			res = WIFI_MANAGER_SUCCESS;
+			break;
 		}
 	}
 	UNLOCK_WIFIMGR;
@@ -1628,13 +1634,15 @@ wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb)
 wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
-
+	int i;
+	
 	LOCK_WIFIMGR;
 	// g_manager_info.cb[0] is assigned to the callback which is registered by wifi_manager_init
-	int i = 1;
-	for (; i < WIFIMGR_NUM_CALLBACKS; i++) {
+	for (i = 1; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		if (g_manager_info.cb[i] == wmcb) {
 			g_manager_info.cb[i] = NULL;
+			res = WIFI_MANAGER_SUCCESS;
+			break;
 		}
 	}
 	UNLOCK_WIFIMGR;
