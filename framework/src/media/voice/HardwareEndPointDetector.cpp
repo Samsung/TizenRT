@@ -55,6 +55,24 @@ bool HardwareEndPointDetector::init(uint32_t samprate, uint8_t channels)
 		return false;
 	}
 
+	return true;
+}
+
+void HardwareEndPointDetector::deinit()
+{
+	audio_manager_result_t result;
+
+	result = unregister_stream_in_device_process(mCard, mDevice);
+
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
+	}
+}
+
+bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
+{
+	audio_manager_result_t result;
+
 	result = start_stream_in_device_process(mCard, mDevice);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
@@ -80,17 +98,6 @@ bool HardwareEndPointDetector::init(uint32_t samprate, uint8_t channels)
 	medvdbg("### pthread return for EPD: %d\n", thread_ret);
 
 	return true;
-}
-
-void HardwareEndPointDetector::deinit()
-{
-	audio_manager_result_t result;
-
-	result = unregister_stream_in_device_process(mCard, mDevice);
-
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
-	}
 }
 
 void *HardwareEndPointDetector::endPointDetectThread(void *param)
