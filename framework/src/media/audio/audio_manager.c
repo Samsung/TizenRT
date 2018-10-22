@@ -1730,6 +1730,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
 		return AUDIO_MANAGER_INVALID_DEVICE;
 	}
 	clock_gettime(CLOCK_REALTIME, &st_time);
+	st_time.tv_sec += 1;
 	size = mq_timedreceive(card->config[device_id].process_handler, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 
 	if (size != sizeof(msg)) {

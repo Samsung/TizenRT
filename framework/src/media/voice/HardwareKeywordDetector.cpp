@@ -90,8 +90,6 @@ void *HardwareKeywordDetector::keywordDetectThread(void *param)
 			meddbg("Error: device doesn't support it!!!\n");
 			break;
 		}
-
-		usleep(30 * 1000);
 	}
 
 	stop_stream_in_device_process(detector->mCard, detector->mDevice);

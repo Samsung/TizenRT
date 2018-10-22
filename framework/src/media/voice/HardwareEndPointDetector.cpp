@@ -102,7 +102,6 @@ void *HardwareEndPointDetector::endPointDetectThread(void *param)
 			medvdbg("#### EPD DETECTED!! ####\n");
 			break;
 		}
-		usleep(30 * 1000);
 	}
 
 	unregister_stream_in_device_process(detector->mCard, detector->mDevice);
