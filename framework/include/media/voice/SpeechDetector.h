@@ -44,8 +44,8 @@ public:
 	static SpeechDetector *instance();
 	virtual bool initKeywordDetect(uint32_t samprate, uint8_t channels) = 0;
 	virtual bool initEndPointDetect(uint32_t samprate, uint8_t channels) = 0;
-	virtual void deinitKeywordDetect() = 0;
-	virtual void deinitEndPointDetect() = 0;
+	virtual bool deinitKeywordDetect() = 0;
+	virtual bool deinitEndPointDetect() = 0;
 	virtual void setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected) = 0;
 	virtual void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) = 0;
 	virtual bool startKeywordDetect(uint32_t timeout) = 0;

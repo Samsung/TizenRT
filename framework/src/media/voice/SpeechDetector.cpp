@@ -38,8 +38,8 @@ public:
 	SpeechDetectorImpl() = default;
 	bool initKeywordDetect(uint32_t samprate, uint8_t channels) override;
 	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
-	void deinitKeywordDetect() override;
-	void deinitEndPointDetect() override;
+	bool deinitKeywordDetect() override;
+	bool deinitEndPointDetect() override;
 	void setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected) override;
 	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) override;
 	bool startKeywordDetect(uint32_t timeout) override;
@@ -122,19 +122,27 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 	return mEndPointDetector->init(samprate, channels);
 }
 
-void SpeechDetectorImpl::deinitKeywordDetect()
+bool SpeechDetectorImpl::deinitKeywordDetect()
 {
 	if (mKeywordDetector) {
 		mKeywordDetector->deinit();
 		mKeywordDetector = nullptr;
+		return true;
+	} else {
+		meddbg("Nothing to deinit\n");
+		return false;
 	}
 }
 
-void SpeechDetectorImpl::deinitEndPointDetect()
+bool SpeechDetectorImpl::deinitEndPointDetect()
 {
 	if (mEndPointDetector) {
 		mEndPointDetector->deinit();
 		mEndPointDetector = nullptr;
+		return true;
+	} else {
+		meddbg("Nothing to deinit\n");
+		return false;
 	}
 }
 
