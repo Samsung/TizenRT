@@ -87,6 +87,9 @@ int utc_media_main(int argc, char *argv[])
 	utc_media_bufferoutputdatasource_main();
 	unlink("/tmp/record");
 #endif
+#ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
+	utc_media_SpeechDetector_main();
+#endif
 #endif
 
 	(void)tc_handler(TC_END, "Media UTC");
