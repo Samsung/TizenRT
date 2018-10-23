@@ -58,6 +58,11 @@ SpeechDetector *SpeechDetector::instance()
 
 bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 {
+	if (samprate == 0 || channels == 0) {
+		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
+		return false;
+	}
+
 	int card = -1;
 	int device = -1;
 
@@ -86,6 +91,11 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 
 bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 {
+	if (samprate == 0 || channels == 0) {
+		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
+		return false;
+	}
+
 	int card = -1;
 	int device = -1;
 
