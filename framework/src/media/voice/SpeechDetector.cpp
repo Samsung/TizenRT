@@ -152,13 +152,21 @@ void SpeechDetectorImpl::setKeywordDetectedDelegate(OnKeywordDetectedCallback on
 
 bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)
 {
-	assert(mKeywordDetector);
+	if (mKeywordDetector == nullptr) {
+		meddbg("KeywordDetector is not init\n");
+		return false;
+	}
+
 	return mKeywordDetector->startKeywordDetect(timeout);
 }
 
 bool SpeechDetectorImpl::startEndPointDetect(uint32_t timeout)
 {
-	assert(mEndPointDetector);
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
 	return mEndPointDetector->startEndPointDetect(timeout);
 }
 
