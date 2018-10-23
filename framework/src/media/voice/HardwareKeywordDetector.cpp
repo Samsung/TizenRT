@@ -71,42 +71,10 @@ void HardwareKeywordDetector::deinit()
 	}
 }
 
-void *HardwareKeywordDetector::keywordDetectThread(void *param)
-{
-	audio_manager_result_t result;
-	uint16_t msgId;
-
-	HardwareKeywordDetector *detector = (HardwareKeywordDetector *)param;
-
-	while (true) {
-		result = get_device_process_handler_message(detector->mCard, detector->mDevice, &msgId);
-
-		if (result == AUDIO_MANAGER_SUCCESS) {
-			if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {
-				if (detector->mOnKeywordDetected) {
-					detector->mOnKeywordDetected();
-				}
-				medvdbg("#### KD DETECTED!! ####\n");
-				break;
-			}
-		} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
-			meddbg("Error: device doesn't support it!!!\n");
-			break;
-		}
-
-		usleep(30 * 1000);
-	}
-
-	stop_stream_in_device_process(detector->mCard, detector->mDevice);
-
-	return NULL;
-}
-
 bool HardwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 {
+	bool ret = false;
 	audio_manager_result_t result;
-	pthread_t kd_thread;
-	pthread_attr_t attr;
 
 	medvdbg("startKeywordDetect for %d %d\n", mCard, mDevice);
 
@@ -114,26 +82,36 @@ bool HardwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
-		return false;
+		return ret;
 	}
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 1024);
-	int ret = pthread_create(&kd_thread, &attr, static_cast<pthread_startroutine_t>(HardwareKeywordDetector::keywordDetectThread), this);
-	if (ret != 0) {
-		meddbg("Fail to create worker thread, return value : %d\n", ret);
-		return false;
-	}
-	pthread_setname_np(kd_thread, "kd_thread");
+	struct timespec curtime;
+	struct timespec waketime;
+	clock_gettime(CLOCK_REALTIME, &waketime);
+	waketime.tv_sec += timeout;
 
-	void *thread_ret = 0;
+	do {
+		uint16_t msgId;
+		result = get_device_process_handler_message(mCard, mDevice, &msgId);
 
-	medvdbg("### pthread join\n");
-	pthread_join(kd_thread, &thread_ret);
+		if (result == AUDIO_MANAGER_SUCCESS) {
+			if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {
+				medvdbg("#### KD DETECTED!! ####\n");
+				ret = true;
+				break;
+			}
+		} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
+			meddbg("Error: device doesn't support it!!!\n");
+			break;
+		}
 
-	medvdbg("### pthread return: %d\n", thread_ret);
+		pthread_yield();
+		clock_gettime(CLOCK_REALTIME, &curtime);
+	} while ((curtime.tv_sec < waketime.tv_sec) ||
+			 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
 
-	return true;
+	stop_stream_in_device_process(mCard, mDevice);
+	return ret;
 }
 
 } // namespace voice

@@ -36,9 +36,6 @@ public:
 	bool startKeywordDetect(uint32_t timeout) override;
 
 private:
-	static void *keywordDetectThread(void *param);
-
-private:
 	int mCard;
 	int mDevice;
 };
