@@ -651,8 +651,10 @@ static void check_ping_thread(things_ping_s *ping)
 		return;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return;
 	}
 
@@ -673,6 +675,8 @@ static void check_ping_thread(things_ping_s *ping)
 			terminate_things_ping_s(ping);
 		}
 	}
+
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	THINGS_LOG_D(TAG, "Exit.");
 }
@@ -747,6 +751,7 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		return;
 	}
 
+	pthread_mutex_lock(&ping->mutex_state);
 	THINGS_LOG_D(TAG, "(B) bit_mask_state = 0x%X", ping->bit_mask_state);
 	if (state != PING_ST_INIT) {
 		ping->bit_mask_state &= (~state);
@@ -754,6 +759,8 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		ping->bit_mask_state = state;
 	}
 	THINGS_LOG_D(TAG, "(A) bit_mask_state = 0x%X", ping->bit_mask_state);
+	pthread_mutex_unlock(&ping->mutex_state);
+
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
