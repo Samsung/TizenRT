@@ -32,7 +32,7 @@ void SoftwareKeywordDetector::deinit()
 
 bool SoftwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 {
-	return false;
+	return true;
 }
 
 } // namespace voice

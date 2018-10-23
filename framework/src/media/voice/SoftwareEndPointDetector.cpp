@@ -47,6 +47,7 @@ void SoftwareEndPointDetector::deinit()
 
 bool SoftwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 {
+	return true;
 }
 
 bool SoftwareEndPointDetector::processEPDFrame(short *sample, int numSample)

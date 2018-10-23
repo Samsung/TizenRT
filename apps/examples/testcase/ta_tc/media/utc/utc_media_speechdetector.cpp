@@ -64,27 +64,64 @@ static void utc_media_SpeechDetector_initEndPointDetect_n(void)
 
 static void utc_media_SpeechDetector_deinitKeywordDetect_p(void)
 {
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_deinitEndPointDetect_p(void)
 {
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_setEndPointDetectedDelegate_p(void)
 {
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_startKeywordDetect_p(void)
 {
-    TC_SUCCESS_RESULT();
+	auto instance = media::voice::SpeechDetector::instance();
+	instance->initKeywordDetect(16000, 2);
+	bool ret = instance->startKeywordDetect(0);
+	TC_ASSERT_EQ_CLEANUP("initKeywordDetect", ret, true, goto cleanup);
+	TC_SUCCESS_RESULT();
+cleanup:
+	instance->deinitKeywordDetect();
+}
+
+static void utc_media_SpeechDetector_startKeywordDetect_n(void)
+{
+	auto instance = media::voice::SpeechDetector::instance();
+	bool ret = instance->startKeywordDetect(0);
+	TC_ASSERT_EQ_CLEANUP("initKeywordDetect", ret, false, goto cleanup);
+	TC_SUCCESS_RESULT();
+cleanup:
+	instance->deinitKeywordDetect();
+}
+
+static void utc_media_SpeechDetector_startEndPointDetect_p(void)
+{
+	auto instance = media::voice::SpeechDetector::instance();
+	instance->initEndPointDetect(16000, 2);
+	bool ret = instance->startEndPointDetect(0);
+	TC_ASSERT_EQ_CLEANUP("initEndPointDetect", ret, true, goto cleanup);
+	TC_SUCCESS_RESULT();
+cleanup:
+	instance->deinitEndPointDetect();
+}
+
+static void utc_media_SpeechDetector_startEndPointDetect_n(void)
+{
+	auto instance = media::voice::SpeechDetector::instance();
+	bool ret = instance->startEndPointDetect(0);
+	TC_ASSERT_EQ_CLEANUP("initEndPointDetect", ret, false, goto cleanup);
+	TC_SUCCESS_RESULT();
+cleanup:
+	instance->deinitEndPointDetect();
 }
 
 static void utc_media_SpeechDetector_processEPDFrame_p(void)
 {
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 int utc_media_SpeechDetector_main(void)
@@ -98,6 +135,9 @@ int utc_media_SpeechDetector_main(void)
 	utc_media_SpeechDetector_deinitEndPointDetect_p();
 	utc_media_SpeechDetector_setEndPointDetectedDelegate_p();
 	utc_media_SpeechDetector_startKeywordDetect_p();
+	utc_media_SpeechDetector_startKeywordDetect_n();
+	utc_media_SpeechDetector_startEndPointDetect_p();
+	utc_media_SpeechDetector_startEndPointDetect_n();
 	utc_media_SpeechDetector_processEPDFrame_p();
 	return 0;
 }
