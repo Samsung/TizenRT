@@ -83,6 +83,9 @@ void *HardwareKeywordDetector::keywordDetectThread(void *param)
 
 		if (result == AUDIO_MANAGER_SUCCESS) {
 			if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {
+				if (detector->mOnKeywordDetected) {
+					detector->mOnKeywordDetected();
+				}
 				medvdbg("#### KD DETECTED!! ####\n");
 				break;
 			}

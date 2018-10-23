@@ -40,6 +40,7 @@ public:
 	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
 	void deinitKeywordDetect() override;
 	void deinitEndPointDetect() override;
+	void setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected) override;
 	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) override;
 	bool startKeywordDetect(uint32_t timeout) override;
 	bool startEndPointDetect(uint32_t timeout) override;
@@ -141,6 +142,12 @@ void SpeechDetectorImpl::setEndPointDetectedDelegate(OnEndPointDetectedCallback 
 {
 	assert(mEndPointDetector);
 	mEndPointDetector->setEndPointDetectedDelegate(onEndPointDetected);
+}
+
+void SpeechDetectorImpl::setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected)
+{
+	assert(mKeywordDetector);
+	mKeywordDetector->setKeywordDetectedDelegate(onKeywordDetected);
 }
 
 bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)

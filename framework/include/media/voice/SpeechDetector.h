@@ -35,6 +35,7 @@
 namespace media {
 namespace voice {
 
+typedef std::function<void(void)> OnKeywordDetectedCallback;
 typedef std::function<void(void)> OnEndPointDetectedCallback;
 
 class SpeechDetector
@@ -45,6 +46,7 @@ public:
 	virtual bool initEndPointDetect(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinitKeywordDetect() = 0;
 	virtual void deinitEndPointDetect() = 0;
+	virtual void setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected) = 0;
 	virtual void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) = 0;
 	virtual bool startKeywordDetect(uint32_t timeout) = 0;
 	virtual bool startEndPointDetect(uint32_t timeout) = 0;
