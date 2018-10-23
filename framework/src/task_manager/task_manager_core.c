@@ -1035,9 +1035,12 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 				broadcast_info->cb_data = NULL;
 			}
 		}
-		TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg);
-		TM_FREE(((tm_broadcast_info_t *)data)->cb_data);
-		
+		if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
+			if (((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg != NULL) {
+				TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg);
+			}
+			TM_FREE(((tm_broadcast_info_t *)data)->cb_data);
+		}
 	}
 	return OK;
 }
