@@ -344,18 +344,26 @@
 #define SYS_pthread_mutex_lock         (__SYS_pthread+15)
 #define SYS_pthread_mutex_trylock      (__SYS_pthread+16)
 #define SYS_pthread_mutex_unlock       (__SYS_pthread+17)
-#define SYS_pthread_setcancelstate     (__SYS_pthread+18)
-#define SYS_pthread_setschedparam      (__SYS_pthread+19)
-#define SYS_pthread_setschedprio       (__SYS_pthread+20)
-#define SYS_pthread_setspecific        (__SYS_pthread+21)
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+#define SYS_pthread_mutex_consistent   (__SYS_pthread+18)
+#define __SYS_pthread_setcancelstate   (__SYS_pthread+19)
+#else
+#define __SYS_pthread_setcancelstate   (__SYS_pthread+18)
+#endif
+
+#define SYS_pthread_setcancelstate     (__SYS_pthread_setcancelstate+0)
+#define SYS_pthread_setschedparam      (__SYS_pthread_setcancelstate+1)
+#define SYS_pthread_setschedprio       (__SYS_pthread_setcancelstate+2)
+#define SYS_pthread_setspecific        (__SYS_pthread_setcancelstate+3)
 
 #ifndef CONFIG_DISABLE_SIGNAL
-#define SYS_pthread_cond_timedwait     (__SYS_pthread+22)
-#define SYS_pthread_kill               (__SYS_pthread+23)
-#define SYS_pthread_sigmask            (__SYS_pthread+24)
-#define __SYS_mqueue                   (__SYS_pthread+25)
+#define SYS_pthread_cond_timedwait     (__SYS_pthread_setcancelstate+4)
+#define SYS_pthread_kill               (__SYS_pthread_setcancelstate+5)
+#define SYS_pthread_sigmask            (__SYS_pthread_setcancelstate+6)
+#define __SYS_mqueue                   (__SYS_pthread_setcancelstate+7)
 #else
-#define __SYS_mqueue                   (__SYS_pthread+22)
+#define __SYS_mqueue                   (__SYS_pthread_setcancelstate+4)
 #endif
 
 #else

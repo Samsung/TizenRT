@@ -677,6 +677,25 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex);
  */
 int pthread_mutex_unlock(FAR pthread_mutex_t *mutex);
 
+/**
+ * @cond
+ * @internal
+ * @ingroup PTHREAD_KERNEL
+ * @brief Make sure that the pthread mutex is in a consistent state
+ * @details @b #include <pthread.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1
+ */
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+/* Make sure that the pthread mutex is in a consistent state */
+
+int pthread_mutex_consistent(FAR pthread_mutex_t *mutex);
+#endif
+/**
+ * @endcond
+ */
+
 /* A thread can create and delete condition variables. */
 /**
  * @ingroup PTHREAD_KERNEL
