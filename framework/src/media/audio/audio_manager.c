@@ -1482,12 +1482,13 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 	return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 }
 
-audio_manager_result_t request_stream_in_device_process(int card_id, int device_id, int cmd)
+audio_manager_result_t request_stream_in_device_process_type(int card_id, int device_id, int cmd, device_process_subtype_t subtype)
 {
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 	int fd;
 	audio_card_info_t *card;
 	audio_config_t *config;
+	uint8_t subprocess_type;
 	int ret;
 
 	card = &g_audio_in_cards[card_id];
@@ -1507,7 +1508,8 @@ audio_manager_result_t request_stream_in_device_process(int card_id, int device_
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	ret = ioctl(fd, cmd, 0);
+	subprocess_type = get_subprocess_type_audio_param_value(subtype);
+	ret = ioctl(fd, cmd, subprocess_type);
 	close(fd);
 	pthread_mutex_unlock(&(card->card_mutex));
 	if (ret < 0) {
@@ -1517,12 +1519,12 @@ audio_manager_result_t request_stream_in_device_process(int card_id, int device_
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t start_stream_in_device_process(int card_id, int device_id)
+audio_manager_result_t start_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype)
 {
-	return request_stream_in_device_process(card_id, device_id, AUDIOIOC_STARTPROCESS);
+	return request_stream_in_device_process_type(card_id, device_id, AUDIOIOC_STARTPROCESS, subtype);
 }
 
-audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id)
+audio_manager_result_t stop_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype)
 {
 	audio_card_info_t *card;
 	audio_manager_result_t result;
@@ -1534,7 +1536,7 @@ audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id)
 	card = &g_audio_in_cards[card_id];
 	
 	/* Stop First */
-	result = request_stream_in_device_process(card_id, device_id, AUDIOIOC_STOPPROCESS);
+	result = request_stream_in_device_process_type(card_id, device_id, AUDIOIOC_STOPPROCESS, subtype);
 
 	/* Consume all remained msg */
 	if (result == AUDIO_MANAGER_SUCCESS) {
