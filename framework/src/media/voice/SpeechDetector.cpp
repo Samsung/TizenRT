@@ -44,7 +44,6 @@ public:
 	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected) override;
 	bool startKeywordDetect(uint32_t timeout) override;
 	bool startEndPointDetect(uint32_t timeout) override;
-	bool processEPDFrame(short *sample, int numSample) override;
 
 private:
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
@@ -168,12 +167,6 @@ bool SpeechDetectorImpl::startEndPointDetect(uint32_t timeout)
 	}
 
 	return mEndPointDetector->startEndPointDetect(timeout);
-}
-
-bool SpeechDetectorImpl::processEPDFrame(short *sample, int numSample)
-{
-	assert(mEndPointDetector);
-	return mEndPointDetector->processEPDFrame(sample, numSample);
 }
 
 } // namespace voice

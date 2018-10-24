@@ -50,26 +50,5 @@ bool SoftwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 	return true;
 }
 
-bool SoftwareEndPointDetector::processEPDFrame(short *sample, int numSample)
-{
-	while (numSample > CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE) {
-		mPreviousVAD = mVAD;
-		mVAD = speex_preprocess_run(mState, sample);
-
-		if (mPreviousVAD != mVAD) {
-			if (mVAD == 0) {
-				/**
-				 * mVAD has changed to 0 from 1.
-				 */
-				return true;
-			}
-		}
-
-		numSample -= CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE;
-	}
-
-	return false;
-}
-
 } // namespace voice
 } // namespace media

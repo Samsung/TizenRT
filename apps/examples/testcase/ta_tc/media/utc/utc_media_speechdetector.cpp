@@ -119,11 +119,6 @@ cleanup:
 	instance->deinitEndPointDetect();
 }
 
-static void utc_media_SpeechDetector_processEPDFrame_p(void)
-{
-	TC_SUCCESS_RESULT();
-}
-
 int utc_media_SpeechDetector_main(void)
 {
 	utc_media_SpeechDetector_instance_p();
@@ -138,6 +133,5 @@ int utc_media_SpeechDetector_main(void)
 	utc_media_SpeechDetector_startKeywordDetect_n();
 	utc_media_SpeechDetector_startEndPointDetect_p();
 	utc_media_SpeechDetector_startEndPointDetect_n();
-	utc_media_SpeechDetector_processEPDFrame_p();
 	return 0;
 }
