@@ -254,7 +254,7 @@ typedef unsigned int pthread_key_t;
 typedef CODE void (*pthread_destructor_t)(void *arg);
 typedef FAR void *pthread_addr_t;
 
-typedef pthread_addr_t(*pthread_startroutine_t)(pthread_addr_t);
+typedef pthread_addr_t (*pthread_startroutine_t)(pthread_addr_t);
 typedef pthread_startroutine_t pthread_func_t;
 
 /**
