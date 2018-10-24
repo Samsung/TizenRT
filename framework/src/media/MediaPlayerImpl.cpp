@@ -558,6 +558,9 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
 			break;
+		case PLAYER_OBSERVER_COMMAND_STOPPED:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackStopped, mPlayerObserver, mPlayer);
+			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, mPlayer);
 			break;
