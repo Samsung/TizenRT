@@ -67,7 +67,32 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: calloc_at
+ *
+ * Description:
+ *   calloc to the specific heap.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
 
+#if CONFIG_MM_NHEAPS > 1
+void *calloc_at(int heap_index, size_t n, size_t elem_size)
+{
+	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
+		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+		return NULL;
+	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_calloc(&g_mmheap[heap_index], n, elem_size, retaddr);
+#else
+	return mm_calloc(&g_mmheap[heap_index], n, elem_size);
+#endif
+}
+#endif
 /****************************************************************************
  * Name: calloc
  *
@@ -78,12 +103,22 @@
 
 FAR void *calloc(size_t n, size_t elem_size)
 {
+	int heap_idx;
+	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_calloc(USR_HEAP, n, elem_size, retaddr);
-#else
-	return mm_calloc(USR_HEAP, n, elem_size);
 #endif
+	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size, retaddr);
+#else
+		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+	return NULL;
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

@@ -99,10 +99,10 @@ extern "C" {
  * into user-space via a header at the beginning of the user-space blob.
  */
 
-#define kumm_initialize(h, s)    umm_initialize(h, s)
-#define kumm_addregion(h, s)     umm_addregion(h, s)
-#define kumm_trysemaphore()      umm_trysemaphore()
-#define kumm_givesemaphore()     umm_givesemaphore()
+#define kumm_initialize(h, s)     umm_initialize(h, s)
+#define kumm_addregion(h, s)      umm_addregion(h, s)
+#define kumm_trysemaphore(a)      umm_trysemaphore(a)
+#define kumm_givesemaphore(a)     umm_givesemaphore(a)
 
 #ifdef CONFIG_BUILD_PROTECTED
 /* In the kernel-phase of the protected build, the these macros are defined
@@ -139,9 +139,9 @@ extern "C" {
  */
 
 #define kmm_initialize(h, s)		/* Initialization done by kumm_initialize */
-#define kmm_addregion(h, s)    umm_addregion(h, s)
-#define kmm_trysemaphore()     umm_trysemaphore()
-#define kmm_givesemaphore()    umm_givesemaphore()
+#define kmm_addregion(h, s)      umm_addregion(h, s)
+#define kmm_trysemaphore(a)      umm_trysemaphore(a)
+#define kmm_givesemaphore(a)     umm_givesemaphore(a)
 
 #define kmm_malloc(s)          malloc(s)
 #define kmm_zalloc(s)          zalloc(s)
@@ -157,9 +157,9 @@ extern "C" {
  */
 
 #define kmm_initialize(h, s)		/* Initialization done by kumm_initialize */
-#define kmm_addregion(h, s)    umm_addregion(h, s)
-#define kmm_trysemaphore()     umm_trysemaphore()
-#define kmm_givesemaphore()    umm_givesemaphore()
+#define kmm_addregion(h, s)     umm_addregion(h, s)
+#define kmm_trysemaphore(a)     umm_trysemaphore(a)
+#define kmm_givesemaphore(a)    umm_givesemaphore(a)
 
 #define kmm_malloc(s)          umm_malloc(s)
 #define kmm_zalloc(s)          umm_zalloc(s)

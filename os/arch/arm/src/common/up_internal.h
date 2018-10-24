@@ -504,14 +504,6 @@ void up_l2ccinitialize(void);
 #define up_l2ccinitialize()
 #endif
 
-/* Memory management ********************************************************/
-
-#if CONFIG_MM_REGIONS > 1
-void up_addregion(void);
-#else
-#define up_addregion()
-#endif
-
 /* Watchdog timer ***********************************************************/
 
 void up_wdtinit(void);

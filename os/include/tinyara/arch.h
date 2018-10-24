@@ -683,6 +683,14 @@ void up_signal_dispatch(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info,
 void up_signal_handler(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info, FAR void *ucontext) noreturn_function;
 #endif
 
+/* Memory management ********************************************************/
+
+#if CONFIG_MM_REGIONS > 1
+void up_addregion(void);
+#else
+#define up_addregion()
+#endif
+
 /****************************************************************************
  * Name: up_allocate_heap
  *

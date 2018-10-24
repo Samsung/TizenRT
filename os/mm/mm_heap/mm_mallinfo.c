@@ -83,8 +83,9 @@
  *   returns a heap which type is matched with ttype
  *
  ****************************************************************************/
-struct mm_heap_s *mm_get_heap_info(void)
+struct mm_heap_s *mm_get_heap_info(void *address)
 {
+	int heap_idx;
 #ifdef CONFIG_MM_KERNEL_HEAP
 	struct tcb_s *tcb;
 
@@ -94,7 +95,12 @@ struct mm_heap_s *mm_get_heap_info(void)
 	} else
 #endif
 	{
-		return USR_HEAP;
+		heap_idx = mm_get_heapindex(address);
+		if (heap_idx == INVALID_HEAP_IDX) {
+			mdbg("address is not in heap region.\n");
+			return NULL;
+		}
+		return &g_mmheap[heap_idx];
 	}
 
 }
@@ -159,10 +165,18 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 	DEBUGASSERT(uordblks + fordblks == heap->mm_heapsize);
 
+#if CONFIG_MM_NHEAPS > 1
+	info->arena    += heap->mm_heapsize;
+	info->ordblks  += ordblks;
+	info->mxordblk += mxordblk;
+	info->uordblks += uordblks;
+	info->fordblks += fordblks;
+#else
 	info->arena    = heap->mm_heapsize;
 	info->ordblks  = ordblks;
 	info->mxordblk = mxordblk;
 	info->uordblks = uordblks;
 	info->fordblks = fordblks;
+#endif
 	return OK;
 }

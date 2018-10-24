@@ -92,7 +92,7 @@ KBIN = libkmm$(LIBEXT)
 BIN ?= libmm$(LIBEXT)
 
 all: $(BIN)
-.PHONY: clean distclean
+.PHONY: clean distclean heap_regioninfo
 
 $(AOBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -121,8 +121,11 @@ $(KBIN):
 	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
+heap_regioninfo:
+	$(Q) $(TOPDIR)/tools/mk_heap_regioninfo.sh
+
+context: heap_regioninfo
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
-context:
 GROUP_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o '/' | wc -l}"
 THREAD_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o ',' | wc -l}"
 
@@ -132,6 +135,7 @@ endif
 # Dependencies
 
 .depend: Makefile $(SRCS)
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 	$(Q) $(MKDEP) --obj-path ubin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make_ubin.dep
 	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >Make_kbin.dep
@@ -162,6 +166,7 @@ distclean: clean
 	$(Q) $(MAKE) -C bin  distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C ubin distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C kbin distclean TOPDIR=$(TOPDIR)
+	$(call DELFILE, $(TOPDIR)$(DELIM)mm$(DELIM)mm_heap$(DELIM)mm_heap_regioninfo.c)
 	$(call DELFILE, Make_bin.dep)
 	$(call DELFILE, Make_ubin.dep)
 	$(call DELFILE, Make_kbin.dep)

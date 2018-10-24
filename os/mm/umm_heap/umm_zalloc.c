@@ -68,7 +68,32 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: zalloc_at
+ *
+ * Description:
+ *   zalloc to the specific heap.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
 
+#if CONFIG_MM_NHEAPS > 1
+void *zalloc_at(int heap_index, size_t size)
+{
+	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
+		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+		return NULL;
+	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_zalloc(&g_mmheap[heap_index], size, retaddr);
+#else
+	return mm_zalloc(&g_mmheap[heap_index], size);
+#endif
+}
+#endif
 /************************************************************************
  * Name: zalloc
  *
@@ -95,15 +120,25 @@ FAR void *zalloc(size_t size)
 
 	return alloc;
 
-#else
+#else /* CONFIG_ARCH_ADDRENV */
 	/* Use mm_zalloc() becuase it implements the clear */
+	int heap_idx;
+	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_zalloc(USR_HEAP, size, retaddr);
+#endif
+	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_zalloc(&g_mmheap[heap_idx], size, retaddr);
 #else
-	return mm_zalloc(USR_HEAP, size);
+		ret = mm_zalloc(&g_mmheap[heap_idx], size);
 #endif
-#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+	return NULL;
+#endif /* CONFIG_ARCH_ADDRENV */
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
