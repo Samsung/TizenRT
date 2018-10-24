@@ -26,6 +26,10 @@
 #define CONFIG_EXAMPLES_IOTJS_STARTUP_JS_FILE "/rom/example/index.js"
 #endif
 
+#ifndef CONFIG_EXAMPLES_IOTJS_EXTRA_MODULE_PATH
+#define CONFIG_EXAMPLES_IOTJS_EXTRA_MODULE_PATH "/rom/example/iotjs_modules"
+#endif
+
 #ifndef CONFIG_EXAMPLES_IOTJS_STARTUP_WIFI_SSID
 #define CONFIG_EXAMPLES_IOTJS_STARTUP_WIFI_SSID "public"
 #endif
@@ -112,6 +116,7 @@ int main(int argc, FAR char *argv[])
 int iotjs_startup_main(int argc, char *argv[])
 #endif
 {
+	setenv("IOTJS_EXTRA_MODULE_PATH", CONFIG_EXAMPLES_IOTJS_EXTRA_MODULE_PATH, 1);
 	chdir(dirname(CONFIG_EXAMPLES_IOTJS_STARTUP_JS_FILE));
 	char *targv[] = { "iotjs", CONFIG_EXAMPLES_IOTJS_STARTUP_JS_FILE };
 	int targc = 2;
