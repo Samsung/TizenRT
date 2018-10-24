@@ -683,26 +683,6 @@ int pthread_barrier_wait(FAR pthread_barrier_t *barrier);
  */
 int pthread_once(FAR pthread_once_t *once_control, CODE void (*init_routine)(void));
 
-/* Pthread signal management APIs */
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief send a signal to a thread
- * @details @b #include <pthread.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int pthread_kill(pthread_t thread, int sig);
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief examine and change blocked signals
- * @details @b #include <pthread.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int pthread_sigmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
-
 /**
  * @addtogroup PTHREAD_KERNEL
  * @{

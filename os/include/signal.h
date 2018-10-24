@@ -358,6 +358,27 @@ extern "C" {
  */
 int kill(pid_t pid, int sig);
 
+/* Pthread signal management APIs */
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief send a signal to a pthread
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_kill(pthread_t thread, int sig);
+
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief examine and change blocked signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_sigmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
+
 /**
  * @addtogroup SIGNAL_KERNEL
  * @{
