@@ -28,16 +28,9 @@ namespace voice {
 class KeywordDetector
 {
 public:
-	void setKeywordDetectedDelegate(OnKeywordDetectedCallback onKeywordDetected)
-	{
-		mOnKeywordDetected = onKeywordDetected;
-	}
 	virtual bool init(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinit() = 0;
 	virtual bool startKeywordDetect(uint32_t timeout) = 0;
-
-protected:
-	OnKeywordDetectedCallback mOnKeywordDetected;
 };
 
 } // namespace voice

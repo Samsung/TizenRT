@@ -64,7 +64,6 @@ DEPPATH += --dep-path src/media/voice
 VPATH += :src/media/voice
 CXXSRCS += \
 	SpeechDetector.cpp \
-	EndPointDetector.cpp \
 	SoftwareKeywordDetector.cpp \
 	HardwareKeywordDetector.cpp \
 	SoftwareEndPointDetector.cpp \

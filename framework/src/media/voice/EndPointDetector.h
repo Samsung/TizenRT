@@ -28,15 +28,9 @@ namespace voice {
 class EndPointDetector
 {
 public:
-	void setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected);
-
-public:
 	virtual bool init(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinit() = 0;
 	virtual bool startEndPointDetect(uint32_t timeout) = 0;
-
-protected:
-	OnEndPointDetectedCallback mOnEndPointDetected;
 };
 
 } // namespace voice
