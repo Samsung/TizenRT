@@ -66,6 +66,9 @@
 #include <mqueue.h>
 #include <sched.h>
 #include <errno.h>
+#ifndef CONFIG_DISABLE_SIGNALS
+#include <signal.h>
+#endif
 
 #include "kernel_sample.h"
 

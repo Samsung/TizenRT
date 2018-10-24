@@ -21,6 +21,7 @@
 #include <protocols/webserver/http_err.h>
 #include <protocols/webserver/http_server.h>
 #include <protocols/webserver/http_keyvalue_list.h>
+#include <signal.h>
 #include <fcntl.h>
 
 #include "http.h"
