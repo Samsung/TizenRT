@@ -71,6 +71,7 @@ void HardwareEndPointDetector::deinit()
 
 bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 {
+	bool ret = false;
 	audio_manager_result_t result;
 
 	result = start_stream_in_device_process(mCard, mDevice);
@@ -79,52 +80,33 @@ bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 		return false;
 	}
 
-	pthread_t epd_thread;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 1024);
-	int ret = pthread_create(&epd_thread, &attr, static_cast<pthread_startroutine_t>(HardwareEndPointDetector::endPointDetectThread), this);
-	if (ret != 0) {
-		meddbg("Fail to create worker thread, return value : %d\n", ret);
-		return false;
-	}
-	pthread_setname_np(epd_thread, "epd_thread");
+	struct timespec curtime;
+	struct timespec waketime;
+	clock_gettime(CLOCK_REALTIME, &waketime);
+	waketime.tv_sec += timeout;
 
-	void *thread_ret = 0;
-
-	medvdbg("### pthread join for EPD\n");
-	pthread_join(epd_thread, &thread_ret);
-
-	medvdbg("### pthread return for EPD: %d\n", thread_ret);
-
-	return true;
-}
-
-void *HardwareEndPointDetector::endPointDetectThread(void *param)
-{
-	audio_manager_result_t result;
-	HardwareEndPointDetector *detector = (HardwareEndPointDetector *)param;
-
-	while (true) {
+	do {
 		uint16_t msgId;
-		result = get_device_process_handler_message(detector->mCard, detector->mDevice, &msgId);
+		result = get_device_process_handler_message(mCard, mDevice, &msgId);
 
 		if (result == AUDIO_MANAGER_SUCCESS) {
 			if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
 				medvdbg("#### EPD DETECTED!! ####\n");
+				ret = true;
 				break;
 			}
 		} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
 			meddbg("Error: device doesn't support it!!!\n");
 			break;
 		}
-		usleep(30 * 1000);
-	}
 
-	stop_stream_in_device_process(detector->mCard, detector->mDevice);
-	unregister_stream_in_device_process(detector->mCard, detector->mDevice);
+		pthread_yield();
+		clock_gettime(CLOCK_REALTIME, &curtime);
+	} while ((curtime.tv_sec < waketime.tv_sec) ||
+			 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
 
-	return NULL;
+	stop_stream_in_device_process(mCard, mDevice);
+	return ret;
 }
 
 } // namespace voice
