@@ -74,7 +74,7 @@ bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 	bool ret = false;
 	audio_manager_result_t result;
 
-	result = start_stream_in_device_process(mCard, mDevice);
+	result = start_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
 		return false;
@@ -105,7 +105,7 @@ bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 	} while ((curtime.tv_sec < waketime.tv_sec) ||
 			 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
 
-	stop_stream_in_device_process(mCard, mDevice);
+	stop_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	return ret;
 }
 

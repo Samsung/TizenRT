@@ -78,7 +78,7 @@ bool HardwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 
 	medvdbg("startKeywordDetect for %d %d\n", mCard, mDevice);
 
-	result = start_stream_in_device_process(mCard, mDevice);
+	result = start_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
@@ -110,7 +110,7 @@ bool HardwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 	} while ((curtime.tv_sec < waketime.tv_sec) ||
 			 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
 
-	stop_stream_in_device_process(mCard, mDevice);
+	stop_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 	return ret;
 }
 
