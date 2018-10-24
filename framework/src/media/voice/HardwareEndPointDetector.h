@@ -36,9 +36,6 @@ public:
 	bool startEndPointDetect(uint32_t timeout) override;
 
 private:
-	static  void *endPointDetectThread(void *param);
-
-private:
 	int mCard;
 	int mDevice;
 };
