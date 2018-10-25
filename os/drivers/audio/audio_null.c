@@ -633,13 +633,13 @@ static int null_unregisterprocess(FAR struct audio_lowerhalf_s *dev)
 	int ret;
 	/* Join any old worker thread we had created to prevent a memory leak */
 	ret = OK;
-	if (priv->worker_threadid != 0) {
+	if (priv->process_threadid != 0) {
 		ret = pthread_join(priv->process_threadid, &value);
 		if (ret != OK) {
 			auddbg("join failed!! ret : %d\n", ret);
 			return ret;
 		}
-		priv->worker_threadid = 0;
+		priv->process_threadid = 0;
 	}
 
 	if (priv->dev.process_mq != NULL) {
