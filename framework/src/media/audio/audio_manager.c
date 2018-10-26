@@ -1429,9 +1429,6 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 
 	process_type = get_process_type_audio_param_value(type);
 	subprocess_type = get_subprocess_type_audio_param_value(subtype);
-	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
-	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
-	caps_desc.caps.ac_subtype = process_type;
 
 	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
@@ -1451,6 +1448,7 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 			if ((process_type & card->config[j].device_process_type) != 0) {
 				get_card_path(path, i, j, INPUT);
 				pthread_mutex_lock(&(card->card_mutex));
+
 				fd = open(path, O_RDONLY);
 				if (fd < 0) {
 					medvdbg("open failed, path : %s process type : 0x%x errno %d\n", path, type, errno);
@@ -1458,6 +1456,10 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
 				}
+
+				caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+				caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
+				caps_desc.caps.ac_subtype = process_type;
 
 				if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 					medvdbg("An ioctl error occurs, find next anyway\n");
@@ -1468,6 +1470,7 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 				}
 
 				/* Now we get subtype from h/w, compare it and subtype(param) */
+				medvdbg("   process_type: %d | card_id: %d device_id: %d subprocess_type: %d ac_controls: %d\n", process_type, i, j, subprocess_type, caps_desc.caps.ac_controls.b[0]);
 				if ((subprocess_type & caps_desc.caps.ac_controls.b[0]) != 0) {
 					*card_id = i;
 					*device_id = j;
