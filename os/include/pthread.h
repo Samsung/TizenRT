@@ -250,91 +250,13 @@ extern "C" {
 
 /* pthread-specific types */
 
-typedef unsigned int pthread_key_t;
 typedef CODE void (*pthread_destructor_t)(void *arg);
 typedef FAR void *pthread_addr_t;
 
 typedef pthread_addr_t (*pthread_startroutine_t)(pthread_addr_t);
 typedef pthread_startroutine_t pthread_func_t;
 
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread region configuration
- */
-struct pthread_region_s {
-	void *address;			/* start address of the region */
-	uint32_t size;			/* size of the region in bytes */
-	uint32_t attributes;	/* attributes of the region */
-};
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread attr configuration
- */
-struct pthread_attr_s {
-	size_t stacksize;		/* Size of the stack allocated for the pthread */
-	int16_t priority;		/* Priority of the pthread */
-	uint8_t policy;			/* Pthread scheduler policy */
-	uint8_t inheritsched;	/* Inherit parent prio/policy? */
-	struct pthread_region_s region[2];	/* space for user-space region if MPU supported */
-};
-typedef struct pthread_attr_s pthread_attr_t;
-
-typedef pid_t pthread_t;
-
-typedef int pthread_condattr_t;
-
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread condition configuration
- */
-struct pthread_cond_s {
-	sem_t sem;
-};
-typedef struct pthread_cond_s pthread_cond_t;
 #define PTHREAD_COND_INITIALIZER { SEM_INITIALIZER(0) }
-
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread mutex attr configuration
- */
-struct pthread_mutexattr_s {
-	uint8_t pshared:1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
-#ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t proto:2; /* See PTHREAD_PRIO_* definitions */
-#endif
-#ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	uint8_t type:2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
-#endif
-#if defined(CONFIG_PTHREAD_MUTEX_BOTH) || defined(CONFIG_PTHREAD_MUTEX_ROBUST)
-	uint8_t robust:1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
-#endif
-};
-typedef struct pthread_mutexattr_s pthread_mutexattr_t;
-
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread mutex configuration
- */
-struct pthread_mutex_s {
-
-#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
-	/* Supports a singly linked list */
-
-	FAR struct pthread_mutex_s *flink;
-#endif
-	/* Payload */
-
-	sem_t sem;				/* Semaphore underlying the implementation of the mutex */
-	int pid;				/* ID of the holder of the mutex */
-#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
-	uint8_t flags;			/* See _PTHREAD_MFLAGS_* */
-#endif
-#ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
-	int nlocks;				/* The number of recursive locks held */
-#endif
-};
-typedef struct pthread_mutex_s pthread_mutex_t;
 
 #define __PTHREAD_MUTEX_T_DEFINED 1
 
@@ -360,48 +282,11 @@ typedef struct pthread_mutex_s pthread_mutex_t;
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
 #endif
 
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread barrier attr configuration
- */
-struct pthread_barrierattr_s {
-	int pshared;
-};
-typedef struct pthread_barrierattr_s pthread_barrierattr_t;
-
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread barrier configuration
- */
-struct pthread_barrier_s {
-	sem_t sem;
-	unsigned int count;
-};
-typedef struct pthread_barrier_s pthread_barrier_t;
-
-typedef bool pthread_once_t;
-
 #ifdef CONFIG_PTHREAD_CLEANUP
 /* This type describes the pthread cleanup callback (non-standard) */
 
 typedef CODE void (*pthread_cleanup_t)(FAR void *arg);
 #endif
-
-/**
- * @ingroup PTHREAD_KERNEL
- * @brief Structure of pthread rwlock
- */
-struct pthread_rwlock_s {
-	pthread_mutex_t lock;
-	pthread_cond_t cv;
-	unsigned int num_readers;
-	unsigned int num_writers;
-	bool write_in_progress;
-};
-
-typedef struct pthread_rwlock_s pthread_rwlock_t;
-
-typedef int pthread_rwlockattr_t;
 
 #define PTHREAD_RWLOCK_INITIALIZER {PTHREAD_MUTEX_INITIALIZER, \
 				    PTHREAD_COND_INITIALIZER, \
