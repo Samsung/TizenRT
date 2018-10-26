@@ -122,6 +122,7 @@ struct audio_device_config_s {
 
 struct audio_resample_s {
 	bool necessary;
+	bool rechannel_necessary;
 	uint8_t samprate_types;
 	unsigned int from;
 	unsigned int to;
@@ -485,7 +486,7 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 	unsigned int resampled_frames = 0;
 	src_data_t srcData = { 0, };
 
-	srcData.channels_num = 2;
+	srcData.channels_num = AUDIO_OUTPUT_CHANNELS;
 	srcData.origin_sample_rate = card->resample.from;
 	srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
 	srcData.desired_sample_rate = card->resample.to;
@@ -515,7 +516,6 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 		medvdbg("%d resampled from (%d/%d) @ 0x%x\t", resampled_frames, used_frames, frames, srcData.data_out);
 	}
 	medvdbg("Resample finished\n");
-
 	return resampled_frames;
 }
 
@@ -786,9 +786,15 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
 		channels = AUDIO_STREAM_CHANNEL_STEREO;
 	}
+	
+	if (channels != AUDIO_OUTPUT_CHANNELS) {
+		card->resample.rechannel_necessary = true;
+	} else {
+		card->resample.rechannel_necessary = false;
+	}
 
 	memset(&config, 0, sizeof(struct pcm_config));
-	config.channels = channels;
+	config.channels = AUDIO_OUTPUT_CHANNELS;
 	config.rate = get_closest_samprate(sample_rate, OUTPUT);
 	config.format = format;
 	config.period_size = AUDIO_STREAM_VOICE_RECOGNITION_PERIOD_SIZE;
@@ -816,7 +822,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 
 	if (card->resample.necessary) {
 		card->resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
-		card->resample.buffer_size = (int)((float)get_output_frames_to_byte(get_output_frame_count()) * card->resample.ratio) + 1;	// +1 for floating point margin
+		card->resample.buffer_size = get_output_frames_to_byte(get_output_frame_count() * card->resample.ratio + 1);	// +1 for floating point margin
 		card->resample.buffer = malloc(card->resample.buffer_size);
 		if (!card->resample.buffer) {
 			meddbg("malloc for a resampling buffer(stream_out) is failed\n");
@@ -945,6 +951,10 @@ int start_audio_stream_out(void *data, unsigned int frames)
 			goto error_with_lock;
 		}
 		medvdbg("Resume the output audio card!!\n");
+	}
+	
+	if (card->resample.rechannel_necessary) {
+		src_MonoToStereo(data, frames);
 	}
 
 	if (card->resample.necessary) {

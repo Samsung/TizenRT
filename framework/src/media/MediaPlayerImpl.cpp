@@ -586,10 +586,18 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 
 void MediaPlayerImpl::playback()
 {
-	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
+	ssize_t num_read = 0;
+	auto source = mInputHandler.getInputDataSource();
+	int channels = source->getChannels();
+	
+	if (channels == AUDIO_OUTPUT_CHANNELS) {
+		num_read = mInputHandler.read(mBuffer, (int)mBufSize);
+	} else {
+		num_read = mInputHandler.read(mBuffer, (int)mBufSize / AUDIO_OUTPUT_CHANNELS);
+	}
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
+		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read * (AUDIO_OUTPUT_CHANNELS / channels)));
 		if (ret < 0) {
 			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			PlayerWorker &mpw = PlayerWorker::getWorker();

@@ -36,6 +36,11 @@ extern "C" {
  * Public Data
  ****************************************************************************/
 /**
+ * @brief Define the supported output channels
+ */
+#define AUDIO_OUTPUT_CHANNELS 2
+
+/**
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
