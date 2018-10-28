@@ -24,6 +24,9 @@
 #include <wifi_manager/wifi_manager.h>
 #include "tc_common.h"
 
+#define WIFI_PROFILE_PATH "/mnt/"
+#define WIFI_PROFILE_FILENAME_INTERNAL "wifi_connected.conf"
+
 static pthread_mutex_t g_wifi_manager_test_mutex = PTHREAD_MUTEX_INITIALIZER;;
 static pthread_cond_t g_wifi_manager_test_cond;
 
@@ -444,6 +447,9 @@ static void utc_wifi_manager_get_connected_config_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_ap_config_s apconfig;
+
+	unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME_INTERNAL);
+
 	ret = wifi_manager_get_connected_config(&apconfig);
 	if (ret == WIFI_MANAGER_SUCCESS) {
 		printf("====================================\n");
