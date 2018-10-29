@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <pthread.h>
+#include <sys/types.h>
 
 #include <media/InputDataSource.h>
 #include <media/BufferObserverInterface.h>

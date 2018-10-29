@@ -44,6 +44,9 @@
 #include "mbedtls/threading.h"
 
 #if defined(MBEDTLS_THREADING_PTHREAD)
+
+#include <pthread.h>
+
 static void threading_mutex_init_pthread(mbedtls_threading_mutex_t *mutex)
 {
 	if (mutex == NULL || mutex->is_valid) {

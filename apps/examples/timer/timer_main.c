@@ -55,6 +55,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
 #include <stdlib.h>

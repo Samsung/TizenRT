@@ -18,10 +18,10 @@
 #ifndef __MEDIA_OUTPUTHANDLER_H
 #define __MEDIA_OUTPUTHANDLER_H
 
+#include <sys/types.h>
 #include <memory>
 #include <media/OutputDataSource.h>
 #include <media/BufferObserverInterface.h>
-#include <pthread.h>
 
 #include "Encoder.h"
 #include "StreamBuffer.h"

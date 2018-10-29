@@ -19,20 +19,21 @@
 // @file tc_net_getpeername.c
 // @brief Test Case Example for getpeername() API
 #include <tinyara/config.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
 #include <stdio.h>
 #include <errno.h>
-
-#include <sys/stat.h>
+#include <pthread.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
-#include <sys/socket.h>
-
 #include "tc_internal.h"
-#include <pthread.h>
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20

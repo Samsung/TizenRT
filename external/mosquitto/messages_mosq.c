@@ -31,9 +31,11 @@ Contributors:
    Roger Light - initial implementation and documentation.
 */
 
+#include <sys/types.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <mosquitto_internal.h>
 #include <mosquitto.h>

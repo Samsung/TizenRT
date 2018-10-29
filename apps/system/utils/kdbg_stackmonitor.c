@@ -54,6 +54,8 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -61,8 +63,10 @@
 #include <sched.h>
 #include <pthread.h>
 #include <errno.h>
+
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+
 #include "kdbg_utils.h"
 
 /****************************************************************************

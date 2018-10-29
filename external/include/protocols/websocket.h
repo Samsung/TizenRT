@@ -35,8 +35,10 @@
  * Included Files
  ****************************************************************************/
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <netinet/in.h>
+
 #include <protocols/wslay/wslay.h>
 #include <tinyara/wqueue.h>
 

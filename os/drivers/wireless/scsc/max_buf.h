@@ -19,6 +19,7 @@
 #ifndef SLSI_MAX_BUF_H__
 #define SLSI_MAX_BUF_H__
 
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include "utils_scsc.h"
 #include "utils_misc.h"

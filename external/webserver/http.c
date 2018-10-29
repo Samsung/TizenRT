@@ -16,6 +16,8 @@
  *
  ****************************************************************************/
 
+#include <sys/types.h>
+#include <pthread.h>
 #include <protocols/webserver/http_err.h>
 #include <protocols/webserver/http_server.h>
 #include <protocols/webserver/http_keyvalue_list.h>

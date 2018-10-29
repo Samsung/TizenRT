@@ -19,7 +19,7 @@
 #ifndef _THINGS_LIST_H_
 #define _THINGS_LIST_H_
 
-#include <pthread.h>
+#include <sys/types.h>
 
 #include "octypes.h"
 #include "things_node.h"

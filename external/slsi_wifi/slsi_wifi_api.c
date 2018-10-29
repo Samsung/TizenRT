@@ -25,6 +25,7 @@
 #include "common/ieee802_11_common.h"
 #include "common/defs.h"
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>

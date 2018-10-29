@@ -18,6 +18,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE				// for the usleep
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

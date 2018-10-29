@@ -23,11 +23,15 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <errno.h>
 #include <inttypes.h>
+
 #include "tc_internal.h"
 
 #define NVAL1 1000

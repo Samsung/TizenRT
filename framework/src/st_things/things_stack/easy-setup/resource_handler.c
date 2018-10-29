@@ -19,6 +19,7 @@
 
 #include "resource_handler.h"
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>

@@ -40,10 +40,12 @@
  * Included Files
  ****************************************************************************/
 
-#include <stdio.h>
-#include <mqueue.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+
+#include <stdio.h>
+#include <mqueue.h>
 #include <netinet/in.h>
 
 #ifdef CONFIG_NETUTILS_WEBSOCKET

@@ -18,6 +18,8 @@
 
 #include <tinyara/config.h>
 
+#include <pthread.h>
+
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
