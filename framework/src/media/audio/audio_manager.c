@@ -317,6 +317,8 @@ static audio_manager_result_t get_supported_sample_rate(audio_io_direction_t dir
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
+
+	memset(&caps_desc, 0, sizeof(struct audio_caps_desc_s));
 	if (direct == INPUT) {
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		caps_desc.caps.ac_type = AUDIO_TYPE_INPUT;
@@ -535,6 +537,7 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 	audio_config_t *config;
 	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 
+	memset(&caps_desc, 0, sizeof(struct audio_caps_desc_s));
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
@@ -610,6 +613,7 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		return ret;
 	}
 
+	memset(&caps_desc, 0, sizeof(struct audio_caps_desc_s));
 	if (direct == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
@@ -1375,7 +1379,8 @@ static audio_manager_result_t get_supported_process_type(int card_id, int device
 	card = &g_audio_in_cards[card_id];
 
 	get_card_path(path, card_id, device_id, INPUT);
-	
+
+	memset(&caps_desc, 0, sizeof(struct audio_caps_desc_s));
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
 	caps_desc.caps.ac_subtype = AUDIO_PU_UNDEF;
@@ -1429,6 +1434,8 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 
 	process_type = get_process_type_audio_param_value(type);
 	subprocess_type = get_subprocess_type_audio_param_value(subtype);
+
+	memset(&caps_desc, 0, sizeof(struct audio_caps_desc_s));
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
 	caps_desc.caps.ac_subtype = process_type;
