@@ -120,7 +120,7 @@ static void *server_connect(void *ptr_num_clients)
 		strncpy(buffer + recv_len, ptr_msg, sizeof(SERVER_MSG));
 		total_send = strlen(buffer);
 		while (total_send) {
-			valsend = send(client_socket, buffer + send_len, strlen(buffer) - send_len + 1, 0);
+			valsend = send(client_socket, buffer + send_len, strlen(buffer) - send_len, 0);
 			printf("server send: %s\n", buffer);
 			if (valsend == -1) {
 				close(client_socket);
@@ -202,7 +202,7 @@ static void *client_connect(void *ptr_id)
 	client_msg[strlen(client_msg) - 2] = '0' + (*id);
 	total_send = strlen(client_msg);
 	while (total_send) {
-		valsend = send(sock, client_msg + send_len, strlen(client_msg) - send_len + 1, 0);
+		valsend = send(sock, client_msg + send_len, strlen(client_msg) - send_len, 0);
 		printf("client send: %s\n", client_msg);
 		if (valsend == -1) {
 			close(sock);
