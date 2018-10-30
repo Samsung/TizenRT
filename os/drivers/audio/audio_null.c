@@ -397,7 +397,7 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 {
 	int ret = OK;
 #if defined(CONFIG_AUDIO_KEYWORD_DETECT) || defined(CONFIG_AUDIO_ENDPOINT_DETECT)
-	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
+	//FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
 #endif
 	audvdbg("ac_type: %d\n", caps->ac_type);
 
@@ -439,14 +439,14 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
 		case AUDIO_SD_KEYWORD_DETECT:
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-			priv->keyword_detect = true;
+			//priv->keyword_detect = true;
 #else
 			ret = -EINVAL;
 #endif
 			break;
 		case AUDIO_SD_ENDPOINT_DETECT:
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-			priv->endpoint_detect = true;
+			//priv->endpoint_detect = true;
 #else
 			ret = -EINVAL;
 #endif
@@ -990,6 +990,13 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 	case AUDIOIOC_STARTPROCESS: {
 		auddbg("set start process!!\n");
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+
+		if ((uint8_t)arg == AUDIO_SD_KEYWORD_DETECT) {
+			priv->keyword_detect = true;
+		} else if ((uint8_t)arg == AUDIO_SD_ENDPOINT_DETECT) {
+			priv->endpoint_detect = true;
+		}
+
 		priv->process_terminate = false;
 		priv->speech_state = AUDIO_NULL_SPEECH_STATE_IDLE;
 		sem_post(&priv->processing_sem);
@@ -1004,8 +1011,16 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 	case AUDIOIOC_STOPPROCESS: {
 		auddbg("set stop process!!\n");
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
-		priv->speech_state = AUDIO_NULL_SPEECH_STATE_NONE;
-		priv->process_terminate = true;
+		if ((uint8_t)arg == AUDIO_SD_KEYWORD_DETECT) {
+			priv->keyword_detect = false;
+		} else if ((uint8_t)arg == AUDIO_SD_ENDPOINT_DETECT) {
+			priv->endpoint_detect = false;
+		}
+
+		if (!priv->keyword_detect && !priv->endpoint_detect) {
+			priv->speech_state = AUDIO_NULL_SPEECH_STATE_NONE;
+			priv->process_terminate = true;
+		}
 		ret = OK;
 #else
 		auddbg("start Process Failed - Device Doesn't support\n");
