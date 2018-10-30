@@ -61,7 +61,7 @@
 ------------------------------------------------------------------------------
  REFERENCES
 
-SC 29 Software Copyright Licencing Disclaimer:
+SC 29 Software Copyright Licensing Disclaimer:
 
 This software module was originally developed by
   Coding Technologies
