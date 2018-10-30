@@ -24,4 +24,10 @@ config NETUTILS_WEBSERVER_LOGE
 	default n
 	---help---
 		Enables HTTP error logs.
+
+config NETUTILS_WEBSERVER_MAX_CLIENT_HANDLER
+	int "Number of HTTP client handler"
+	default 1
+	---help---
+		Config number of client hadler to process http client requests.
 endif
