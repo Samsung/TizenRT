@@ -64,6 +64,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <semaphore.h>
 #include <string.h>
 #include <errno.h>
 #include <mqueue.h>
@@ -113,6 +114,7 @@ struct null_dev_s {
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 	pthread_t process_threadid;	/* ID of our process thread */
 	volatile bool process_terminate;	/* True : request to terminate processing */
+	sem_t processing_sem;		/* Protection for processing start */
 #endif
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
 	volatile bool terminate;	/* True: request to terminate audio operation */
@@ -497,12 +499,9 @@ static void *null_processthread(pthread_addr_t pvarg)
 	FAR struct null_dev_s *priv = (struct null_dev_s *)pvarg;
 	struct audio_msg_s msg;
 
+	sem_wait(&priv->processing_sem);
 	while (!priv->process_terminate) {
 		audvdbg("count : %d state : %d kd : %d epd : %d\n", priv->frames, priv->speech_state, priv->keyword_detect, priv->endpoint_detect);
-		if (priv->speech_state == AUDIO_NULL_SPEECH_STATE_NONE) {
-			usleep(10 * 1000);
-			continue;
-		}
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 		if ((priv->keyword_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_IDLE)) {
 			if (priv->frames == AUDIO_NULL_KEYWORD_DETECT_THRESHOLD) {
@@ -642,6 +641,8 @@ static int null_unregisterprocess(FAR struct audio_lowerhalf_s *dev)
 		priv->process_threadid = 0;
 	}
 
+	sem_destroy(&priv->processing_sem);
+
 	if (priv->dev.process_mq != NULL) {
 		priv->dev.process_mq = NULL;
 	} else {
@@ -682,6 +683,8 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 		auddbg("already registered!!\n");
 		return -EBUSY;
 	}
+
+	sem_init(&priv->processing_sem, 0, 0);
 
 	/* Join any old worker thread we had created to prevent a memory leak */
 
@@ -989,6 +992,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		priv->process_terminate = false;
 		priv->speech_state = AUDIO_NULL_SPEECH_STATE_IDLE;
+		sem_post(&priv->processing_sem);
 		ret = OK;
 #else
 		auddbg("start Process Failed - Device Doesn't support\n");
