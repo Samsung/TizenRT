@@ -169,7 +169,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	mBuffSize = get_input_frames_to_byte(get_input_frame_count());
+	mBuffSize = get_user_input_frames_to_byte(get_input_frame_count());
 
 	if (mBuffSize == 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
@@ -582,7 +582,7 @@ void MediaRecorderImpl::capture()
 		}
 
 		int ret = 0;
-		int size = get_input_frames_to_byte(frames);
+		int size = get_user_input_frames_to_byte(frames);
 
 		while (size > 0) {
 			int written = mOutputHandler.write(mBuffer + ret, size);

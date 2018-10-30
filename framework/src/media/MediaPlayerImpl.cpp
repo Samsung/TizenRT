@@ -167,7 +167,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	mBufSize = get_output_frames_to_byte(get_output_frame_count());
+	mBufSize = get_user_output_frames_to_byte(get_output_frame_count());
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -590,9 +590,9 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 void MediaPlayerImpl::playback()
 {
 	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
-	meddbg("num_read : %d\n", num_read);
+	medvdbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
+		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
 			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			PlayerWorker &mpw = PlayerWorker::getWorker();
