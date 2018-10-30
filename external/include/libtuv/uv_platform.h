@@ -37,7 +37,7 @@
 #ifndef __uv__platform_tinyara_header__
 #define __uv__platform_tinyara_header__
 
-#include <pthread.h>
+#include <sys/types.h>
 #include <poll.h>				// nuttx poll // kbuild
 #include <unistd.h>
 #include <errno.h>

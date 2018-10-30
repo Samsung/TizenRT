@@ -18,6 +18,8 @@
 
 #include <debug.h>
 #include <sched.h>
+#include <pthread.h>
+
 #include "MediaWorker.h"
 
 namespace media {

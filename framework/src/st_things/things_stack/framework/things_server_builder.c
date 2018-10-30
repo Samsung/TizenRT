@@ -18,6 +18,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE
+#include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>

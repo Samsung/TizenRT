@@ -59,6 +59,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>

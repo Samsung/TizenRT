@@ -256,6 +256,9 @@ SYSCALL_LOOKUP(pthread_mutex_init,      2, STUB_pthread_mutex_init)
 SYSCALL_LOOKUP(pthread_mutex_lock,      1, STUB_pthread_mutex_lock)
 SYSCALL_LOOKUP(pthread_mutex_trylock,   1, STUB_pthread_mutex_trylock)
 SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_pthread_mutex_unlock)
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
+#endif
 SYSCALL_LOOKUP(pthread_setcancelstate,  2, STUB_pthread_setcancelstate)
 SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_pthread_setschedparam)
 SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_pthread_setschedprio)

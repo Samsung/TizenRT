@@ -58,6 +58,7 @@
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>

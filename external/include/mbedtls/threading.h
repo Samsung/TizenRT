@@ -57,7 +57,7 @@ extern "C" {
 #define MBEDTLS_ERR_THREADING_MUTEX_ERROR                 -0x001E  /**< Locking / unlocking / free failed with error code. */
 
 #if defined(MBEDTLS_THREADING_PTHREAD)
-#include <pthread.h>
+#include <sys/types.h>
 typedef struct {
 	pthread_mutex_t mutex;
 	char is_valid;

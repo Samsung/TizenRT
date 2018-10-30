@@ -85,6 +85,7 @@
 #define nvdbg(...) printf(__VA_ARGS__)
 #endif							/* CONFIG_NETUTILS_DHCPD_HOST */
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>

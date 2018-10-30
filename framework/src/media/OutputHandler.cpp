@@ -17,6 +17,8 @@
  ******************************************************************/
 
 #include <tinyara/config.h>
+
+#include <pthread.h>
 #include <debug.h>
 
 #include "OutputHandler.h"

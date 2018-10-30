@@ -19,6 +19,8 @@
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE				// for the usleep
 
+#include <sys/types.h>
+#include <sys/select.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,7 +28,6 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/select.h>
 #include <time.h>
 
 #include "utils/things_network.h"

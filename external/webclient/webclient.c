@@ -67,8 +67,8 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
-#include <debug.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -77,6 +77,8 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <debug.h>
+#include <pthread.h>
 
 #ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>

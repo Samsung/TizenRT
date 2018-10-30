@@ -48,6 +48,7 @@
     __libcpp_has_include(<__external_threading>)
 #include <__external_threading>
 #else
+#include <sys/types.h>
 #include <pthread.h>
 #include <sched.h>
 

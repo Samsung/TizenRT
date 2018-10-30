@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <sys/time.h>

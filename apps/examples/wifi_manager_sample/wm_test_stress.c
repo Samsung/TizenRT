@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>

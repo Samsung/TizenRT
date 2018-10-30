@@ -18,7 +18,9 @@
 
 #ifndef THINGS_RTOS_UTIL_H_
 #define THINGS_RTOS_UTIL_H_
-#include "pthread.h"
+#include <sys/types.h>
+#include <pthread.h>
+
 typedef enum {
 	THINGS_STACK_PING_THREAD = 0,
 	THINGS_STACK_RESETLOOP_THREAD,

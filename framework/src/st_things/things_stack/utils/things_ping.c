@@ -18,6 +18,7 @@
 
 #define THINGS_PING_ENABLE      1
 
+#include <sys/types.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
