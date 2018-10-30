@@ -18,7 +18,7 @@
 /********************************************************************************
  * include/signal.h
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011, 2013-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -495,6 +495,22 @@ int sigsuspend(FAR const sigset_t *sigmask);
  * @since TizenRT v1.0
  */
 int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
+
+/**
+ * @cond
+ * @internal
+ * @ingroup SIGNAL_KERNEL
+ * @brief wait for queued signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1
+ */
+int sigwait(FAR const sigset_t *set, FAR int *sig);
+/**
+ * @endcond
+ */
+
 /**
  * @ingroup SIGNAL_KERNEL
  * @brief wait for queued signals
