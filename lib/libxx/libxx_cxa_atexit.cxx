@@ -69,8 +69,7 @@
 // Private Types
 //***************************************************************************
 
-struct __cxa_atexit_s
-{
+struct __cxa_atexit_s {
   __cxa_exitfunc_t func;
   FAR void *arg;
 };
@@ -97,8 +96,7 @@ extern "C"
   // 	after destruction. So that Static object can be instantiated again
   //*************************************************************************
 
-  static void __cxa_guard_reset(void *__pstatic)
-  {
+  static void __cxa_guard_reset(void *__pstatic){
     // Get to the guard pointer:
     // if __ARM_EABI__, then -32 bytes from the object otherwise -64 bytes
     __guard *g = (__guard *)__pstatic - 1;
@@ -120,8 +118,7 @@ extern "C"
   //*************************************************************************
 
 #ifdef CONFIG_SCHED_ONEXIT
-  static void __cxa_callback(int exitcode, FAR void *arg)
-  {
+  static void __cxa_callback(int exitcode, FAR void *arg){
     FAR struct __cxa_atexit_s *alloc = (FAR struct __cxa_atexit_s *)arg;
     DEBUGASSERT(alloc && alloc->func);
 
@@ -162,15 +159,14 @@ extern "C"
     FAR struct __cxa_atexit_s *alloc =
       (FAR struct __cxa_atexit_s *)lib_malloc(sizeof(struct __cxa_atexit_s));
 
-    if (alloc)
-    {
+    if (alloc) {
       // Register the function to be called when the task/thread exists.
 
       alloc->func = func;
       alloc->arg  = arg;
 
       return on_exit(__cxa_callback, alloc);
-    }
+    } 
     else
 #endif
     {
