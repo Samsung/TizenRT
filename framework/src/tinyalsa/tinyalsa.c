@@ -671,6 +671,8 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
 				/* Underrun to be handled by client */
 				return -EPIPE;
+			} else if (msg.msgId == AUDIO_MSG_COMPLETE) {
+				return pcm_bytes_to_frames(pcm, pcm_frames_to_bytes(pcm, frame_count) - pending);
 			} else {
 				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
 			}
