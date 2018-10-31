@@ -85,7 +85,8 @@ static int eeprom_test(int argc, char **args)
 	int rd_fd;
 	int wr_fd;
 	int i;
-	char *array1, *array2;
+	char *array1;
+	char *array2;
 
 	/* Allocate the memory */
 	array1 = (char *)malloc(524);
