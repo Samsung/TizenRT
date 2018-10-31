@@ -95,8 +95,7 @@ void *operator new(unsigned int nbytes)
 {
   // We have to allocate something
 
-  if (nbytes < 1)
-  {
+  if (nbytes < 1) {
     nbytes = 1;
   }
 
@@ -105,8 +104,8 @@ void *operator new(unsigned int nbytes)
   void *alloc = lib_malloc(nbytes);
 
 #ifdef CONFIG_DEBUG
-  if (alloc == 0)
-  {
+  if (alloc == 0) {
+    
     // Oh my.. we are required to return a valid pointer and
     // we cannot throw an exception!  We are bad.
 
