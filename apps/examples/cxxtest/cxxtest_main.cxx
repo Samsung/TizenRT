@@ -308,8 +308,7 @@ static void test_vectors(void)
 	string words[4] = {"Hello", "World", "Good", "Luck"};
 	vector<string> v3(words, words + 4);
 	vector<string>::iterator it;
-	for (it = v3.begin(); it != v3.end(); ++it)
-	{
+	for (it = v3.begin(); it != v3.end(); ++it){
 		cout << *it << ' ';
 	}
 
