@@ -46,7 +46,7 @@ To check the different \<board\>/\<configuration_set\> combinations supported, t
 ./configure.sh --help
 ```
 
-After configuring above, configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
+After configuring above, confiation can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
 ```bash
 cd ..
 make menuconfig
