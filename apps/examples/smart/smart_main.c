@@ -503,7 +503,7 @@ static inline int smart_rdfile(FAR struct smart_filedesc_s *file)
 		return ERROR;
 	}
 
-	/* Read all of the data info the fileimage buffer using random read sizes */
+	/* Read all of the data info the file image buffer using random read sizes */
 
 	for (ntotalread = 0; ntotalread < file->len;) {
 		nbytesread = smart_rdblock(fd, file, ntotalread, file->len - ntotalread);
