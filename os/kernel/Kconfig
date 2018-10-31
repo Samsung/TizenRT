@@ -72,7 +72,7 @@ config SCHED_TICKLESS_ALARM
 	bool "Tickless alarm"
 	default n
 	---help---
-		The tickless option can be supported either via a simple interval
+		The tick-less option can be supported either via a simple interval
 		timer (plus elapsed time) or via an alarm.  The interval timer allows
 		programming events to occur after an interval.  With the alarm,
 		you can set a time in the future and get an event when that alarm
