@@ -24,210 +24,251 @@
 #include <signal.h>
 #include <queue.h>
 #include <stdbool.h>
-#include <libtuv/uv.h>
-#include <libtuv/uv__handle.h>
+#include <time.h>
+#include <signal.h>
+#include <tinyara/wdog.h>
 #include <eventloop/eventloop.h>
 
 #include "eventloop_internal.h"
 
-struct timer_cb_s {
-	timeout_callback func;
-	void *cb_data;
-};
-typedef struct timer_cb_s timer_cb_t;
+sq_queue_t g_timer_list;  // list node type : el_handle_t
 
-/* The structure for wrapping of timer handle to be kept in a list internally. */
-struct timer_node_s {
-	struct timer_node_s *flink;
-	el_timer_t *timer;
-};
-typedef struct timer_node_s timer_node_t;
+static void eventloop_timer_callback(int argc, el_handle_t *handle);
 
-sq_queue_t g_timer_list;  // list node type : timer_node_t
-
-static bool is_registered_timer(el_timer_t *timer)
+static int eventloop_get_timeout_abstime_ticks(uint32_t timeout)
 {
-	timer_node_t *node_ptr;
+	time_t sec;
+	long nsec;
+	int ticks;
+	struct timespec abstime;
 
-	if (timer == NULL) {
-		return false;
+	sec = timeout / MSEC_PER_SEC;
+	nsec = (timeout - MSEC_PER_SEC * sec) * NSEC_PER_MSEC;
+	ticks = -1;
+
+	(void)clock_gettime(CLOCK_REALTIME, &abstime);
+
+	abstime.tv_sec += sec;
+	abstime.tv_nsec += nsec;
+	if (abstime.tv_nsec >= NSEC_PER_SEC) {
+		abstime.tv_sec++;
+		abstime.tv_nsec -= NSEC_PER_SEC;
 	}
 
-	node_ptr = (timer_node_t *)sq_peek(&g_timer_list);
-	while (node_ptr != NULL && node_ptr->timer != NULL) {
-		if (node_ptr->timer == timer) {
-			return true;
-		}
-		node_ptr = (timer_node_t *)sq_next(node_ptr);
-	}
+	clock_abstime2ticks(CLOCK_REALTIME, &abstime, &ticks);
 
-	return false;
+	elvdbg("timeout ticks %d\n", ticks);
+
+	return ticks;
 }
 
-static int eventloop_register_timer(el_timer_t *timer)
+static int eventloop_timer_start(el_handle_t *handle)
 {
-	timer_node_t *timer_node;
+	int ret;
+	int ticks;
+	el_timer_t *timer;
 
-	if (timer == NULL) {
-		eldbg("Invalid Parameter\n");
+	if (handle == NULL) {
 		return ERROR;
 	}
 
-	timer_node = (timer_node_t *)EL_ALLOC(sizeof(timer_node_t));
-	if (timer_node == NULL) {
-		eldbg("Failed to allocate timer node\n");
-		return ERROR;
+	timer = &handle->data.timer;
+
+	if (timer->wdog == NULL) {
+		/* Create a new watchdog */
+		timer->wdog = wd_create();
+		if (timer->wdog == NULL) {
+			eldbg("Failed to create watchdog\n");
+			return ERROR;
+		}
 	}
-	timer_node->flink = NULL;
-	timer_node->timer = timer;
-	sq_addlast((FAR sq_entry_t *)timer_node, &g_timer_list);
+
+	ticks = eventloop_get_timeout_abstime_ticks(timer->timeout);
+	if (ticks < 0) {
+		goto errout;
+	}
+
+	ret = wd_start(timer->wdog, ticks, (wdentry_t)eventloop_timer_callback, 1, handle);
+	if (ret != OK) {
+		eldbg("Failed to start watchdog\n");
+		goto errout;
+	}
+	elvdbg("[%d] watchdog start! %p ticks %d\n", getpid(), timer->wdog, ticks);
+	sq_addlast((FAR sq_entry_t *)handle, &g_timer_list);
 
 	return OK;
+errout:
+	wd_delete(timer->wdog);
+
+	return ERROR;
 }
 
-void eventloop_unregister_timer(el_timer_t *timer)
-{
-	timer_node_t *ptr;
-	timer_cb_t *callback = NULL;
-
-	if (timer == NULL || timer->data == NULL) {
-		return;
-	}
-
-	callback = (timer_cb_t *)timer->data;
-
-	ptr = (timer_node_t *)sq_peek(&g_timer_list);
-	while (ptr != NULL && ptr->timer != NULL) {
-		if (ptr->timer == timer) {
-			sq_rem((FAR sq_entry_t *)ptr, &g_timer_list);
-			EL_FREE(callback);
-			EL_FREE(timer);
-			EL_FREE(ptr);
-			break;
-		}
-		ptr = (timer_node_t *)sq_next(ptr);
-	}
-}
-
-/* Eventloop calls this function when timeout.
- * It calls callback function registered by user, and frees the timer resource allocated for timeout once.
- */
-static void timeout_callback_func(el_timer_t *timer)
+/* Callback function called by watchdog when time is expired */
+static void eventloop_timer_callback(int argc, el_handle_t *handle)
 {
 	int ret;
-	timer_cb_t *callback = NULL;
+	bool is_empty;
 
-	if (timer == NULL || timer->data == NULL) {
-		eldbg("Invalid callback timer\n");
+	if (handle == NULL) {
 		return;
 	}
 
-	callback = (timer_cb_t *)timer->data;
+	elvdbg("[%d] watchdog callback %p timer %p\n", getpid(), handle, &handle->data.timer);
 
-	elvdbg("[%d] timeout callback!!\n", getpid());
+	/* Remove timer handle from g_timer_list and add it to a jobs list of app */
+	sq_rem((FAR sq_entry_t *)handle, &g_timer_list);
 
-	if (callback->func) {
-		ret = callback->func(callback->cb_data);
-		/* It is true if eventloop_loop_stop is called in callback function. */
-		if (LOOP_IS_STOPPED(timer->loop)) {
-			return;
+	ret = eventloop_job_empty(handle, &is_empty);
+	if (ret != OK) {
+		return;
+	}
+
+	/* Add handle to a queue of jobs */
+	ret = eventloop_push_job(handle);
+	if (ret == OK && is_empty) {
+		/* Send signal to notify event */
+		ret = kill(handle->pid, SIGEL_EVENT);
+		elvdbg("[%d] watchdog kill %d\n", getpid(), handle->pid);
+		if (ret == OK) {
+		} else {
+			eldbg("Fail to send signal, pid %d errno %d\n", handle->pid, errno);
 		}
-		/* If callback function returns EVENTLOOP_CALLBACK_STOP, close and unregister the timer. */
-		if (!timer->repeat || ret == EVENTLOOP_CALLBACK_STOP) {
-			uv_close((uv_handle_t *)timer, (uv_close_cb)eventloop_unregister_timer);
+	}
+
+	/* Wake up task */
+	if (eventloop_get_state(handle->pid) == EL_STATE_WAIT_WAKEUP) {
+		elvdbg("[%d] SEND WAKEUP [%d]\n", getpid(), handle->pid);
+		ret = kill(handle->pid, SIGEL_WAKEUP);
+		if (ret != OK) {
+			eldbg("Fail to send signal, errno %d\n", errno);
 			return;
 		}
 	}
 }
 
-static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat, timeout_callback func, void *data)
+void eventloop_clean_timer_handle(el_handle_t *handle)
 {
 	int ret;
 	el_timer_t *timer;
-	timer_cb_t *callback;
 
-	if (loop == NULL || func == NULL) {
-		return NULL;
+	if (handle == NULL) {
+		return;
 	}
 
-	timer = (el_timer_t *)EL_ALLOC(sizeof(el_timer_t));
-	if (timer == NULL) {
-		eldbg("Failed to allocate timer\n");
-		return NULL;
-	}
+	timer = (el_timer_t *)&handle->data.timer;
 
-	callback = (timer_cb_t *)EL_ALLOC(sizeof(timer_cb_t));
-	if (callback == NULL) {
-		eldbg("Failed to allocate callback\n");
-		EL_FREE(timer);
-		return NULL;
-	}
-	callback->func = func;
-	callback->cb_data = data;
-	timer->data = (void *)callback;
-
-	ret = eventloop_register_timer(timer);
+	/* Clean timer handle */
+	ret = wd_delete(timer->wdog);
 	if (ret != OK) {
-		EL_FREE(callback);
-		EL_FREE(timer);
+		eldbg("Failed to delete watchdog\n");
+		return;
+	}
+	timer->wdog = NULL;
+
+	eventloop_decrease_app_handle_cnt(handle->pid);
+
+	EL_FREE(handle);
+}
+
+/* Remove all timers that task/pthread 'pid' registered */
+void eventloop_clean_app_timers(void)
+{
+	el_handle_t *rem_handle;
+	el_handle_t *handle;
+
+	handle = (el_handle_t *)sq_peek(&g_timer_list);
+	while (handle != NULL) {
+		if (handle->mode == EL_MODE_DEFAULT && handle->pid == getpid()) {
+			sq_rem((sq_entry_t *)handle, &g_timer_list);
+			rem_handle = handle;
+			handle = (el_handle_t *)sq_next(handle);
+			eventloop_clean_timer_handle(rem_handle);
+			continue;
+		}
+		handle = (el_handle_t *)sq_next(handle);
+	}
+}
+
+/* Timer callback function called in user side */
+void eventloop_timer_user_callback(el_handle_t *handle)
+{
+	int ret;
+	el_timer_t *timer;
+
+	if (handle == NULL) {
+		return;
+	}
+
+	elvdbg("[%d] Timer Callback!\n", getpid());
+
+	timer = (el_timer_t *)&handle->data.timer;
+	if (timer->cb_func) {
+		/* Execute timer callback */
+		ret = timer->cb_func(timer->cb_data);
+		if (ret == EVENTLOOP_CALLBACK_CONTINUE) {
+			ret = eventloop_timer_start(handle);
+			if (ret == OK) {
+				elvdbg("watchdog restart\n");
+				return;
+			}
+		}
+	}
+
+	/* Clean timer handle */
+	eventloop_clean_timer_handle(handle);
+}
+
+el_timer_t *eventloop_add_timer(uint32_t timeout, bool repeat, timeout_callback func, void *data)
+{
+	int ret;
+	el_timer_t *timer;
+	el_handle_t *handle;
+
+	if (func == NULL) {
+		eldbg("Invalid parameter\n");
 		return NULL;
 	}
 
-	uv_update_time(loop);
-	uv_timer_init(loop, timer);
-
-	if (!repeat) {
-		/* Add timer to be called once after timeout */
-		uv_timer_start(timer, (uv_timer_cb)timeout_callback_func, timeout, 0);
-	} else {
-		/* Add timer to be called every timeout repeatly */
-		uv_timer_start(timer, (uv_timer_cb)timeout_callback_func, timeout, timeout);
+	/* Set timer handle */
+	handle = (el_handle_t *)EL_ALLOC(sizeof(el_handle_t));
+	if (handle == NULL) {
+		return NULL;
 	}
+	handle->pid = getpid();
+	handle->type = EL_HANDLE_TYPE_TIMER;
+	handle->mode = EL_MODE_DEFAULT;
+
+	timer = (el_timer_t *)&handle->data.timer;
+	timer->timeout = timeout;
+	timer->repeat = repeat;
+	timer->cb_func = func;
+	timer->cb_data = data;
+	timer->wdog = NULL;
+
+	/* Set a handler to call user callback */
+	ret = eventloop_set_user_cb_handler();
+	if (ret != OK) {
+		EL_FREE(handle);
+		return NULL;
+	}
+
+	/* Start timer */
+	ret = eventloop_timer_start(handle);
+	if (ret != OK) {
+		EL_FREE(handle);
+		return NULL;
+	}
+	eventloop_increase_app_handle_cnt(handle->pid);
 
 	return timer;
 }
 
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data)
-{
-	el_loop_t *loop;
-
-	if (func == NULL) {
-		return NULL;
-	}
-
-	loop = get_app_loop();
-	if (loop == NULL) {
-		eldbg("Failed to get loop\n");
-		return NULL;
-	}
-
-	return (el_timer_t *)add_timer(loop, timeout, repeat, func, data);
-}
-
-int eventloop_delete_timer(el_timer_t *timer)
-{
-	if (timer == NULL) {
-		eldbg("Invalid parameter\n");
-		return EVENTLOOP_INVALID_PARAM;
-	}
-
-	if (!is_registered_timer(timer) || uv__is_closing(timer)) {
-		eldbg("Invalid handle\n");
-		return EVENTLOOP_INVALID_HANDLE;
-	}
-
-	/* Stop the timer */
-	uv_close((uv_handle_t *)timer, (uv_close_cb)eventloop_unregister_timer);
-
-	return OK;
-}
-
-el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data)
+el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *cb_data)
 {
 	int ret;
 	int async_pid;
-	el_loop_t *loop;
 	el_timer_t *timer;
+	el_handle_t *handle;
 
 	if (func == NULL) {
 		eldbg("Invalid parameter\n");
@@ -242,27 +283,72 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
 		return NULL;
 	}
 
-	loop = uv_default_loop();
-	if (loop == NULL) {
-		eldbg("Failed to get loop\n");
+	/* Set timer handle */
+	handle = (el_handle_t *)EL_ALLOC(sizeof(el_handle_t));
+	if (handle == NULL) {
 		return NULL;
 	}
+	handle->pid = async_pid;
+	handle->type = EL_HANDLE_TYPE_TIMER;
+	handle->mode = EL_MODE_DEFAULT;
 
-	timer = add_timer(loop, timeout, repeat, func, data);
-	if (timer == NULL) {
-		eldbg("Failed to add timer\n");
+	timer = (el_timer_t *)&handle->data.timer;
+	timer->timeout = timeout;
+	timer->repeat = repeat;
+	timer->cb_func = func;
+	timer->cb_data = cb_data;
+	timer->wdog = NULL;
+
+	/* Start timer */
+	ret = eventloop_timer_start(handle);
+	if (ret != OK) {
+		EL_FREE(handle);
 		return NULL;
 	}
-
-	/* Wake up event loop task */
-	if (uv_loop_alive(loop) != ASYNCLOOP_RUNNING) {
-		ret = kill(async_pid, SIGEL_WAKEUP);
-		if (ret != OK) {
-			eldbg("Failed to send signal to wake up event loop task, err %d.\n", errno);
-			eventloop_delete_timer(timer);
-			return NULL;
-		}
-	}
+	eventloop_increase_app_handle_cnt(handle->pid);
 
 	return timer;
+}
+
+int eventloop_delete_timer(el_timer_t *timer)
+{
+	el_handle_t *handle;
+
+	if (timer == NULL) {
+		eldbg("Invalid parameter\n");
+		return EVENTLOOP_INVALID_PARAM;
+	}
+
+	handle = (el_handle_t *)sq_peek(&g_timer_list);
+	while (handle != NULL) {
+		if (&handle->data.timer == timer) {
+			sq_rem((sq_entry_t *)handle, &g_timer_list);
+			eventloop_clean_timer_handle(handle);
+			return OK;
+		}
+		handle = (el_handle_t *)sq_next(handle);
+	}
+	return EVENTLOOP_INVALID_HANDLE;
+
+}
+
+int eventloop_set_timer_mode(el_timer_t *timer, int mode)
+{
+	el_handle_t *handle;
+
+	if (timer == NULL || mode < 0 || mode >= EL_MODE_MAX) {
+		eldbg("Invalid Parameter\n");
+		return EVENTLOOP_INVALID_PARAM;
+	}
+
+	handle = (el_handle_t *)sq_peek(&g_timer_list);
+	while (handle != NULL) {
+		if (&handle->data.timer == timer) {
+			handle->mode = mode;
+			return OK;
+		}
+		handle = (el_handle_t *)sq_next(handle);
+	}
+
+	return EVENTLOOP_INVALID_HANDLE;
 }

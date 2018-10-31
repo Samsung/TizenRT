@@ -21,12 +21,11 @@
 #include <debug.h>
 #include <signal.h>
 #include <queue.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
-#include <libtuv/uv.h>
-#include <libtuv/uv__types.h>
 #include <eventloop/eventloop.h>
 
 #include "eventloop_internal.h"
@@ -39,27 +38,25 @@ struct event_group_s {
 };
 typedef struct event_group_s event_group_t;
 
-/* The structure for wrapping of event handle to be kept in a list internally. */
-struct event_node_s {
-	struct event_node_s *flink;
-	el_event_t *handle;
-};
-typedef struct event_node_s event_node_t;
-
-/* The structure which has information of event handle user registered.
- * The handle of event_node_t has it in data field, and use data values when calling callback function.
- */
-struct event_data_s {
-	int type;
-	int pid;
-	int event_in;
-	event_callback func;
-	void *cb_data;
-	void *event_data;
-};
-typedef struct event_data_s event_data_t;
-
 sq_queue_t g_event_list;  // list node type : event_group_t
+
+static event_group_t *eventloop_new_event_group(int type)
+{
+	event_group_t *event_group;
+
+	event_group = (event_group_t *)EL_ALLOC(sizeof(event_group_t));
+	if (event_group == NULL) {
+		eldbg("Failed to allocate event group\n");
+		return NULL;
+	}
+
+	sq_init(&event_group->event_list);
+	event_group->flink = NULL;
+	event_group->type = type;
+	sq_addlast((FAR sq_entry_t *)event_group, &g_event_list);
+
+	return event_group;
+}
 
 static event_group_t *get_event_group(int type)
 {
@@ -81,283 +78,326 @@ static event_group_t *get_event_group(int type)
 	return ptr;
 }
 
-static bool is_registered_event_cb(el_event_t *handle)
+static void eventloop_unregister_event_type(int type)
 {
-	event_group_t *group_ptr;
-	event_node_t *node_ptr;
+	el_handle_t *handle;
+	event_group_t *event_group;
 
-	if (handle == NULL) {
-		return false;
+	if (type < 0 || type >= EL_EVENT_MAX) {
+		return;
 	}
 
-	group_ptr = (event_group_t *)sq_peek(&g_event_list);
-	while (group_ptr != NULL) {
-		node_ptr = (event_node_t *)sq_peek(&group_ptr->event_list);
-		while (node_ptr != NULL && node_ptr->handle != NULL) {
-			if (node_ptr->handle == handle) {
-				return true;
+	event_group = get_event_group(type);
+	if (event_group != NULL) {
+		handle = (el_handle_t *)sq_peek(&event_group->event_list);
+		while (handle) {
+			if (handle->pid == getpid()) {
+				sq_rem((FAR sq_entry_t *)handle, &event_group->event_list);
+				eventloop_decrease_app_handle_cnt(handle->pid);
+				EL_FREE(handle);
+				handle = NULL;
+				break;
 			}
-			node_ptr = (event_node_t *)sq_next(node_ptr);
+			handle = (el_handle_t *)sq_next(handle);
 		}
-		group_ptr = (event_group_t *)sq_next(group_ptr);
+		if (sq_empty(&event_group->event_list)) {
+			sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
+			EL_FREE(event_group);
+			event_group = NULL;
+		}
 	}
-
-	return false;
 }
 
-static event_group_t *eventloop_new_event_group(int type)
+static int eventloop_register_event_handle(el_handle_t *handle)
 {
+	el_handle_t *handle_ptr;
+	el_event_t *event_handler;
 	event_group_t *event_group;
-
-	event_group = (event_group_t *)EL_ALLOC(sizeof(event_group_t));
-	if (event_group == NULL) {
-		eldbg("Failed to allocate event group\n");
-		return NULL;
-	}
-
-	sq_init(&event_group->event_list);
-	event_group->flink = NULL;
-	event_group->type = type;
-	sq_addlast((FAR sq_entry_t *)event_group, &g_event_list);
-
-	return event_group;
-}
-static int eventloop_register_event_cb(el_event_t *handle)
-{
-	event_group_t *event_group;
-	event_node_t *event_node;
-	int type;
 	
-	if (handle == NULL || handle->data == NULL) {
+	if (handle == NULL) {
 		eldbg("Invalid Parameter\n");
 		return ERROR;
 	}
 
-	type = ((event_data_t *)handle->data)->type;
-	event_group = get_event_group(type);
+	event_handler = (el_event_t *)&handle->data.event;
+
+	event_group = get_event_group(event_handler->event_type);
 	if (event_group == NULL) {
-		event_group = eventloop_new_event_group(type);
+		event_group = eventloop_new_event_group(event_handler->event_type);
 		if (event_group == NULL) {
 			return ERROR;
 		}
-	}
-	event_node = (event_node_t *)EL_ALLOC(sizeof(event_node_t));
-	if (event_node == NULL) {
-		eldbg("Failed to allocate event node\n");
-		if (sq_empty(&event_group->event_list)) {
-			sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
-			EL_FREE(event_group);
+		handle_ptr = (el_handle_t *)sq_peek(&event_group->event_list);
+		while (handle_ptr) {
+			if (handle_ptr->pid == handle->pid) {
+				/* Remove old event handler for type */
+				sq_rem((FAR sq_entry_t *)handle_ptr, &event_group->event_list);
+				EL_FREE(handle_ptr);
+				break;
+			}
+			handle_ptr = (el_handle_t *)sq_next(handle_ptr);
 		}
-		return ERROR;
 	}
-	event_node->flink = NULL;
-	event_node->handle = handle;
-	sq_addlast((FAR sq_entry_t *)event_node, &event_group->event_list);
+
+	sq_addlast((FAR sq_entry_t *)handle, &event_group->event_list);
+	eventloop_increase_app_handle_cnt(handle->pid);
 
 	return OK;
 }
 
-void eventloop_unregister_event_cb(el_event_t *handle)
-{
-	event_group_t *event_group;
-	event_node_t *ptr;
-	event_data_t *data;
-
-	if (handle == NULL || handle->data == NULL) {
-		return;
-	}
-
-	data = (event_data_t *)handle->data;
-
-	event_group = get_event_group(data->type);
-	if (event_group != NULL) {
-		ptr = (event_node_t *)sq_peek(&event_group->event_list);
-		while (ptr != NULL && ptr->handle != NULL) {
-			if (ptr->handle == handle) {
-				sq_rem((FAR sq_entry_t *)ptr, &event_group->event_list);
-				if (data->event_data != NULL) {
-					EL_FREE(data->event_data);
-				}
-				EL_FREE(data);
-				EL_FREE(handle);
-				EL_FREE(ptr);
-				break;
-			}
-			ptr = (event_node_t *)sq_next(ptr);
-		}
-		if (sq_empty(&event_group->event_list)) {
-			sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
-			EL_FREE(event_group);
-		}
-	}
-}
-
-static void event_callback_func(el_event_t *event, int signum)
+static int eventloop_send_event_handle(el_handle_t *handle, void *event_data, int data_size)
 {
 	int ret;
-	event_data_t *data = NULL;
+	bool is_empty;
+	el_handle_t *new_handle;
+	el_event_t *event;
 
-	if (event == NULL || event->data == NULL) {
-		eldbg("Invalid event callback\n");
-		return;
-	}
-
-	data = (event_data_t *)event->data;
-
-	elvdbg("[%d] Event callback!! type : %d\n", getpid(), data->type);
-	if (data->event_in == data->type && data->func) {
-		ret = data->func(data->cb_data, data->event_data);
-		/* It is true if eventloop_loop_stop is called in callback function. */
-		if (LOOP_IS_STOPPED(event->loop)) {
-			return;
-		}
-		/* If callback function returns EVENTLOOP_CALLBACK_STOP, close and unregister the event handler.  */
-		if (ret == EVENTLOOP_CALLBACK_STOP) {
-			uv_close((uv_handle_t *)event, (uv_close_cb)eventloop_unregister_event_cb);
-			return;
-		}
-	}
-	if (data->event_data != NULL) {
-		EL_FREE(data->event_data);
-	}
-	data->event_data = NULL;
-	data->event_in = -1;
-
-	return;
-}
-
-static int eventloop_send_event_sig(int type, void *event_data, int data_size)
-{
-	event_group_t *event_group;
-	event_node_t *ptr;
-
-	if (type < 0 || type >= EL_EVENT_MAX || data_size < 0) {
+	if (handle == NULL || data_size < 0) {
 		eldbg("Invalid Parameter\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
 
-	event_group = get_event_group(type);
-	if (event_group != NULL) {
-		ptr = (event_node_t *)sq_peek(&event_group->event_list);
-		while (ptr != NULL && ptr->handle != NULL) {
-			event_data_t *cb_data = (event_data_t *)ptr->handle->data;
-			cb_data->event_in = type;
-			if (data_size == 0) {
-				cb_data->event_data = NULL;
-			} else {
-				cb_data->event_data = EL_ALLOC(data_size);
-				if (cb_data->event_data == NULL) {
-					eldbg("Failed to allocate callback info\n");
-					return EVENTLOOP_OUT_OF_MEMORY;
-				}
-				memcpy(cb_data->event_data, event_data, data_size);
-			}
-			/* Send signal to task which registered event */
-			int ret = kill(cb_data->pid, SIGEL_EVENT);
-			if (ret < 0) {
-				eldbg("kill failed %d \n", errno);
-				if (cb_data->event_data != NULL) {
-					EL_FREE(cb_data->event_data);
-					cb_data->event_data = NULL;
-				}
-			}
-			ptr = (event_node_t *)sq_next(ptr);
+	new_handle = (el_handle_t *)EL_ALLOC(sizeof(el_handle_t));
+	if (new_handle == NULL) {
+		return EVENTLOOP_OUT_OF_MEMORY;
+	}
+	memcpy(new_handle, handle, sizeof(el_handle_t));
+
+	event = &new_handle->data.event;
+	if (data_size == 0) {
+		event->event_data = NULL;
+	} else {
+		event->event_data = EL_ALLOC(data_size);
+		if (event->event_data == NULL) {
+			eldbg("Failed to allocate callback info\n");
+			return EVENTLOOP_OUT_OF_MEMORY;
+		}
+		memcpy(event->event_data, event_data, data_size);
+	}
+
+	ret = eventloop_job_empty(handle, &is_empty);
+	if (ret != OK) {
+		return EVENTLOOP_OPERATION_FAIL;
+	}
+
+	/* Add handle to a queue of jobs */
+	ret = eventloop_push_job(new_handle);
+	if (ret == OK && is_empty) {
+		/* Send signal to notify event */
+		ret = kill(new_handle->pid, SIGEL_EVENT);
+		if (ret == OK) {
+			elvdbg("[%d] Sending event signal to %d Success\n", getpid(), new_handle->pid);
+		} else {
+			eldbg("Fail to send signal, errno %d\n", errno);
+			return EVENTLOOP_OPERATION_FAIL;
+		}
+	}
+
+	/* Wake up task */
+	if (eventloop_get_state(new_handle->pid) == EL_STATE_WAIT_WAKEUP) {
+		dbg("[%d] SEND WAKEUP [%d]\n", getpid(), new_handle->pid);
+		ret = kill(new_handle->pid, SIGEL_WAKEUP);
+		if (ret == OK) {
+			elvdbg("[%d] Sending wake up signal to %d Success\n", getpid(), new_handle->pid);
+		} else {
+			eldbg("Fail to send signal, errno %d\n", errno);
+			return EVENTLOOP_OPERATION_FAIL;
 		}
 	}
 
 	return OK;
+}
+
+void eventloop_clean_event_handle(el_handle_t *handle)
+{
+	el_event_t *event;
+
+	if (handle == NULL) {
+		return;
+	}
+
+	event = (el_event_t *)&handle->data.event;
+
+	/* Clean event handle */
+	if (event->event_data != NULL) {
+		EL_FREE(event->event_data);
+		event->event_data = NULL;
+	}
+	EL_FREE(handle);
+}
+
+/* Remove all event handlers that task/pthread 'pid' registered */
+void eventloop_clean_app_event_handles(void)
+{
+	int i;
+	el_handle_t *handle;
+	event_group_t *event_group;
+
+	for (i = 1; i < EL_EVENT_MAX; i++) {
+		event_group = get_event_group(i);
+		if (event_group != NULL) {
+			handle = (el_handle_t *)sq_peek(&event_group->event_list);
+			while (handle) {
+				if (handle->pid == getpid() && handle->mode == EL_MODE_DEFAULT) {
+					sq_rem((FAR sq_entry_t *)handle, &event_group->event_list);
+					eventloop_decrease_app_handle_cnt(handle->pid);
+					eventloop_clean_event_handle(handle);
+					break;
+				}
+				handle = (el_handle_t *)sq_next(handle);
+			}
+			if (sq_empty(&event_group->event_list)) {
+				sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
+				EL_FREE(event_group);
+			}
+		}
+	}
+}
+
+/* Event callback function called in user side */
+void eventloop_event_user_callback(el_handle_t *handle)
+{
+	int ret;
+	el_event_t *event;
+
+	if (handle == NULL) {
+		return;
+	}
+
+	elvdbg("[%d] Event Callback!\n", getpid());
+
+	event = (el_event_t *)&handle->data.event;
+	if (event->cb_func) {
+		/* Execute event callback */
+		ret = event->cb_func(event->cb_data, event->event_data);
+		if (ret == EVENTLOOP_CALLBACK_STOP) {
+			eventloop_unregister_event_type(event->event_type);
+		}
+	}
+
+	eventloop_clean_event_handle(handle);
 }
 
 el_event_t *eventloop_add_event_handler(int type, event_callback func, void *data)
 {
 	int ret;
-	el_loop_t *loop;
-	el_event_t *handle;
-	event_data_t *event_cb;
+	el_handle_t *handle;
+	el_event_t *event_handler;
 
 	if (type < 0 || type >= EL_EVENT_MAX || func == NULL) {
 		eldbg("Invalid Parameter\n");
 		return NULL;
 	}
 
-	loop = get_app_loop();
-	if (loop == NULL) {
-		eldbg("Failed to get loop\n");
-		return NULL;
-	}
-
-	handle = (el_event_t *)EL_ALLOC(sizeof(el_event_t));
+	handle = (el_handle_t *)EL_ALLOC(sizeof(el_handle_t));
 	if (handle == NULL) {
-		eldbg("Failed to allocate event\n");
 		return NULL;
 	}
+	handle->pid = getpid();
+	handle->type = EL_HANDLE_TYPE_EVENT;
+	handle->mode = EL_MODE_DEFAULT;
 
-	event_cb = (event_data_t *)EL_ALLOC(sizeof(event_data_t));
-	if (event_cb == NULL) {
-		eldbg("Failed to allocate callback\n");
+	event_handler = (el_event_t *)&handle->data.event;
+	event_handler->event_type = type;
+	event_handler->cb_func = func;
+	event_handler->cb_data = data;
+	event_handler->event_data = NULL;
+
+	/* Set a handler to call user callback */
+	ret = eventloop_set_user_cb_handler();
+	if (ret != OK) {
 		EL_FREE(handle);
 		return NULL;
 	}
 
-	event_cb->type = type;
-	event_cb->pid = getpid();
-	event_cb->event_in = -1;
-	event_cb->func = func;
-	event_cb->cb_data = data;
-	event_cb->event_data = NULL;
-	handle->data = (void *)event_cb;
-
-	ret = uv_signal_init(loop, handle);
-	if (ret != 0) {
-		eldbg("Failed to initialize event\n");
-		goto errout;
-	}
-
-	ret = uv_signal_start(handle, event_callback_func, SIGEL_EVENT);
-	if (ret != 0) {
-		eldbg("Failed to initialize event\n");
-		goto errout;
-	}
-
-	/* Add event handle to a list of handles */
-	ret = eventloop_register_event_cb(handle);
+	/* Register event handle */
+	ret = eventloop_register_event_handle(handle);
 	if (ret != OK) {
-		eldbg("Failed to register signal for event\n");
-		uv_close((uv_handle_t *)handle, NULL);
-		goto errout;
+		EL_FREE(handle);
+		return NULL;
 	}
-	elvdbg("created event handle %p, type = %d\n", handle, type);
 
-	return handle;
-errout:
-	EL_FREE(event_cb);
-	EL_FREE(handle);
-
-	return NULL;
+	return event_handler;
 }
 
-int eventloop_del_event_handler(el_event_t *handle)
+int eventloop_del_event_handler(el_event_t *event_handler)
 {
-	if (handle == NULL) {
-		eldbg("Invalid Parameter\n");
+	el_handle_t *handle;
+	event_group_t *event_group;
+
+	if (event_handler == NULL) {
+		eldbg("Invalid parameter\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
 
-	if (!is_registered_event_cb(handle) || uv__is_closing(handle)) {
-		return EVENTLOOP_INVALID_HANDLE;
+	event_group = get_event_group(event_handler->event_type);
+	if (event_group != NULL) {
+		handle = (el_handle_t *)sq_peek(&event_group->event_list);
+		while (handle) {
+			if (&handle->data.event == event_handler) {
+				sq_rem((FAR sq_entry_t *)handle, &event_group->event_list);
+				eventloop_decrease_app_handle_cnt(handle->pid);
+				if (event_handler->event_data != NULL) {
+					EL_FREE(event_handler->event_data);
+				}
+				EL_FREE(handle);
+				return OK;
+			}
+			handle = (el_handle_t *)sq_next(handle);
+		}
+		if (sq_empty(&event_group->event_list)) {
+			sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
+			EL_FREE(event_group);
+		}
 	}
-
-	uv_close((uv_handle_t *)handle, (uv_close_cb)eventloop_unregister_event_cb);
-
-	return OK;
+	return EVENTLOOP_INVALID_HANDLE;
 }
 
 int eventloop_send_event(int type, void *event_data, int data_size)
 {
+	int ret;
+	el_handle_t *handle;
+	event_group_t *event_group;
+
 	if (type < 0 || type >= EL_EVENT_MAX || data_size < 0) {
 		eldbg("Invalid Parameter\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
 
-	return eventloop_send_event_sig(type, event_data, data_size);
+	event_group = get_event_group(type);
+	if (event_group != NULL) {
+		handle = (el_handle_t *)sq_peek(&event_group->event_list);
+		while (handle) {
+			ret = eventloop_send_event_handle(handle, event_data, data_size);
+			if (ret != OK) {
+				return ret;
+			}
+			handle = (el_handle_t *)sq_next(handle);
+		}
+	}
+	return OK;
+}
+
+int eventloop_set_event_handler_mode(el_event_t *event_handler, int mode)
+{
+	el_handle_t *handle;
+	event_group_t *event_group;
+
+	if (event_handler == NULL || mode < 0 || mode >= EL_MODE_MAX) {
+		eldbg("Invalid Parameter\n");
+		return EVENTLOOP_INVALID_PARAM;
+	}
+
+	event_group = get_event_group(event_handler->event_type);
+	if (event_group != NULL) {
+		handle = (el_handle_t *)sq_peek(&event_group->event_list);
+		while (handle) {
+			if (&handle->data.event == event_handler) {
+				handle->mode = mode;
+				return OK;
+			}
+			handle = (el_handle_t *)sq_next(handle);
+		}
+	}
+	return EVENTLOOP_INVALID_HANDLE;
 }

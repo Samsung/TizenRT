@@ -70,6 +70,9 @@
 #include "signal/signal.h"
 #include "task/task.h"
 
+#ifdef CONFIG_EVENTLOOP
+#include <tinyara/eventloop.h>
+#endif
 #ifdef CONFIG_TASK_MANAGER
 #include <task_manager/task_manager.h>
 #include <tinyara/task_manager_drv.h>
@@ -571,6 +574,9 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 		return;
 	}
 
+#ifdef CONFIG_EVENTLOOP
+	eventloop_exit_process(tcb->pid);
+#endif
 #ifdef CONFIG_TASK_MANAGER
 	task_manager_run_exit_cb(tcb->pid);
 #endif

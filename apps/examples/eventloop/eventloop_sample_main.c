@@ -113,12 +113,11 @@ int eventloop_sample_main(int argc, FAR char *argv[])
 
 	/* Add timer to be called once after 20s.  */
 	timer_20s = eventloop_add_timer(20000, false, (timeout_callback)timer_callback_20s, CALLBACK_DATA);
+	eventloop_set_timer_mode(timer_20s, EL_MODE_WAIT_DONE);
 
 	/* Add timer to be called once after 30s. It will delete created timer with 5s interval. */
 	timer_30s = eventloop_add_timer(30000, false, (timeout_callback)timer_callback_30s, NULL);
-
-	/* Run loop */
-	eventloop_loop_run();
+	eventloop_set_timer_mode(timer_30s, EL_MODE_WAIT_DONE);
 
 	return 0;
 }

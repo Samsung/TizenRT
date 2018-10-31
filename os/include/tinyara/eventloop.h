@@ -33,6 +33,7 @@
  ****************************************************************************/
 #ifdef CONFIG_EVENTLOOP
 int eventloop_task_start(void);
+void eventloop_exit_process(int pid);
 #endif
 
 #ifdef __cplusplus
