@@ -76,7 +76,7 @@ int fota_sample(int argc, char *argv[])
 
 	printf(" current running partition is  [ OTA%d ]\n", part_id);
 
-	/* Decide the next partiton we can use, may be first free partition */
+	/* Decide the next partition we can use, may be first free partition */
 	for (next_part_id = FOTA_PARTITION_OTA0; (next_part_id < FOTA_PARTITION_MAX)
 		 && next_part_id == part_id; next_part_id++) ;
 
