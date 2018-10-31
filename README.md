@@ -27,7 +27,7 @@ Be aware that recommanded toolchain is fully working on 64bits machine.
 ### Getting the sources
 
 ```bash
-git clone https://github.com/Samsung/TizenRT.git
+git clone https://github./Samsung/TizenRT.git
 cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
