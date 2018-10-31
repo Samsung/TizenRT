@@ -264,7 +264,7 @@ static inline void group_release(FAR struct task_group_s *group)
 	/* In the kernel build, the unprivileged process' stream list will be
 	 * allocated from with its per-process, private user heap. But in that
 	 * case, there is no reason to do anything here:  That allocation resides
-	 * in the user heap which which be completely freed when we destroy the
+	 * in the user heap which be completely freed when we destroy the
 	 * process' address environment.
 	 */
 
