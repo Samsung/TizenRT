@@ -53,7 +53,7 @@
 # Add the string C files to the build
 
 CSRCS += lib_isbasedigit.c lib_memset.c lib_memchr.c lib_memccpy.c
-CSRCS += lib_memcmp.c lib_memmove.c lib_skipspace.c lib_stpcpy.c
+CSRCS += lib_memcmp.c lib_memmove.c lib_skipspace.c lib_stpcpy.c lib_stpncpy.c
 CSRCS += lib_strcasecmp.c lib_strcat.c lib_strchr.c lib_strcpy.c lib_strlcpy.c
 CSRCS += lib_strcmp.c lib_strcspn.c lib_strdup.c lib_strerror.c lib_strlen.c
 CSRCS += lib_strnlen.c lib_strncasecmp.c lib_strncat.c lib_strncmp.c
@@ -71,6 +71,10 @@ endif
 
 ifeq ($(CONFIG_LIBC_LOCALE),y)
 CSRCS += lib_strcoll.c lib_strxfrm.c
+endif
+
+ifneq ($(CONFIG_DISABLE_SIGNALS),y)
+CSRCS += lib_strsignal.c
 endif
 
 # Add the string directory to the build

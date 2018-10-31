@@ -195,12 +195,24 @@ int strcoll(FAR const char *, FAR const char *s2);
  */
 FAR char *strcpy(char *dest, FAR const char *src);
 /**
+ * @cond
+ * @internal
  * @brief copy a string and return a pointer to the end of the result
  * @details @b #include <string.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
 FAR char *stpcpy(FAR char *dest, FAR const char *src);
+/**
+ * @endcond
+ */
+/**
+ * @brief copy fixed length string, returning a pointer to the array end
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+FAR char *stpncpy(FAR char *dest, FAR const char *src, size_t n);
 /**
  * @brief copy fixed length string, returning a pointer to the array end
  * @details @b #include <string.h> \n
@@ -251,6 +263,8 @@ size_t strcspn(FAR const char *, FAR const char *);
  */
 FAR char *strstr(FAR const char *, FAR const char *);
 /**
+ * @cond
+ * @internal
  * @brief locate a substring
  * @details @b #include <string.h> \n
  * @param[in] str src string
@@ -258,6 +272,16 @@ FAR char *strstr(FAR const char *, FAR const char *);
  * @since TizenRT v1.0
  */
 FAR char *strcasestr(FAR const char *, FAR const char *);
+/**
+ * @endcond
+ */
+/**
+ * @brief get name of signal
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+FAR char *strsignal(int signum);
 /**
  * @brief split string into tokens
  * @details @b #include <string.h> \n
