@@ -60,7 +60,7 @@ APPNAME = smart
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_SYNC
 
-# smart file sytem test example
+# smart file system test example
 
 ASRCS =
 CSRCS = smart_main.c
