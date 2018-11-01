@@ -235,12 +235,16 @@ int http_client_response_init(struct http_client_response_t *response)
 		ndbg("Error: Fail to init\n");
 		return -1;
 	}
+	memset(response->phrase, 0, WEBCLIENT_CONF_MAX_PHRASE_SIZE);
+
 	response->message = malloc(WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
 	if (response->message == NULL) {
 		ndbg("Error: Fail to init\n");
 		free(response->phrase);
 		return -1;
 	}
+	memset(response->message, 0, WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
+
 	response->headers = malloc(sizeof(struct http_keyvalue_list_t));
 	if (response->headers == NULL || http_keyvalue_list_init(response->headers) < 0) {
 		ndbg("Error: Fail to init\n");
@@ -248,6 +252,7 @@ int http_client_response_init(struct http_client_response_t *response)
 		free(response->message);
 		return -1;
 	}
+
 	return 0;
 }
 
