@@ -165,20 +165,7 @@ int strcmp(FAR const char *, FAR const char *);
  * @since TizenRT v1.0
  */
 int strncmp(FAR const char *, FAR const char *, size_t);
-/**
- * @brief case-insensitive string comparisons
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int strcasecmp(FAR const char *, FAR const char *);
-/**
- * @brief case-insensitive string comparisons
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int strncasecmp(FAR const char *, FAR const char *, size_t);
+
 /**
  * @cond
  * @internal
