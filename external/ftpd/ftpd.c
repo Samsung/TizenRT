@@ -71,6 +71,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <libgen.h>

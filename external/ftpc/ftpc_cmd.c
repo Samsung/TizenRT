@@ -60,6 +60,9 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <debug.h>
+#ifdef CONFIG_FTP_AUTORECONNECT
+#include <strings.h>
+#endif
 
 #include "ftpc_internal.h"
 
