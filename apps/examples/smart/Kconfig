@@ -40,7 +40,7 @@ config EXAMPLES_SMART_MAXNAME
 	default 32
 	range 1 255
 	---help---
-		Determines the maximum size of names used in the filesystem
+		Determines the maximum size of names used in the file system
 
 config EXAMPLES_SMART_MAXFILE
 	int "Max file size"
