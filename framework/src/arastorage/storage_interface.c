@@ -232,8 +232,10 @@ db_result_t storage_put_relation(relation_t *rel)
 
 	if (rel->tuple_filename[0] == '\0') {
 		snprintf(tuple_path, TUPLE_NAME_LENGTH, "%s.%x\0", TUPLE_FILE_NAME, (unsigned)(random_rand() & 0xffff));
-		while (storage_open(tuple_path, O_RDWR) > 0) {
+		int nfd;
+		while ((nfd = storage_open(tuple_path, O_RDWR)) > 0) {
 			DB_LOG_D("DB: tuplefile = %s already exist, try another\n", tuple_path);
+			storage_close(nfd);
 			snprintf(tuple_path, TUPLE_NAME_LENGTH, "%s.%x\0", TUPLE_FILE_NAME, (unsigned)(random_rand() & 0xffff));
 		}
 		
