@@ -133,9 +133,9 @@ static wifi_manager_cb_s wifi_null_callbacks = {
 	NULL,
 };
 
-static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;;
+static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wm_cond;
-static pthread_mutex_t g_wm_func_mutex = PTHREAD_MUTEX_INITIALIZER;;
+static pthread_mutex_t g_wm_func_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wm_func_cond;
 static int g_mode = 0; // check program is running
 
@@ -625,7 +625,7 @@ void wm_disconnect(void *arg)
 		return;
 	}
 	WM_TEST_WAIT;
-	WM_TEST_LOG_END;;
+	WM_TEST_LOG_END;
 }
 
 void wm_cancel(void *arg)
