@@ -200,33 +200,33 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 
 #define WIFIMGR_SET_SSID(s)					\
 	do {							\
-		strncpy(g_manager_info.ssid, s, strlen(s));	\
-		g_manager_info.ssid[strlen(s)] = '\0';          \
+		strncpy(g_manager_info.ssid, s, WIFIMGR_SSID_LEN);	\
+		g_manager_info.ssid[WIFIMGR_SSID_LEN] = '\0';          \
 	} while (0)
 
 #define WIFIMGR_SET_SOFTAP_SSID(s)					\
 	do {							\
-		strncpy(g_manager_info.softap_ssid, s, strlen(s));	\
-		g_manager_info.softap_ssid[strlen(s)] = '\0';          \
+		strncpy(g_manager_info.softap_ssid, s, WIFIMGR_SSID_LEN);	\
+		g_manager_info.softap_ssid[WIFIMGR_SSID_LEN] = '\0';          \
 	} while (0)
 
 #define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
 	do {											\
 		(dest).channel = (src)->channel;						\
-		strncpy((dest).ssid, (src)->ssid, strlen((src)->ssid));				\
-		(dest).ssid[strlen((src)->ssid)] = '\0';                                        \
-		strncpy((dest).passphrase, (src)->passphrase, strlen((src)->passphrase));	\
-		(dest).passphrase[strlen((src)->passphrase)] = '\0';                            \
+		strncpy((dest).ssid, (src)->ssid, WIFIMGR_SSID_LEN);				\
+		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';                                        \
+		strncpy((dest).passphrase, (src)->passphrase, WIFIMGR_PASSPHRASE_LEN);	\
+		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';                            \
 	} while (0)
 
 #define WIFIMGR_COPY_AP_INFO(dest, src)								\
 	do {											\
 		(dest).ssid_length = (src).ssid_length;						\
 		(dest).passphrase_length = (src).passphrase_length;				\
-		strncpy((dest).ssid, (src).ssid, (src).ssid_length);		                \
-		(dest).ssid[(src).ssid_length] = '\0';                                          \
-		strncpy((dest).passphrase, (src).passphrase, (src).passphrase_length);          \
-		(dest).passphrase[(src).passphrase_length] = '\0';                              \
+		strncpy((dest).ssid, (src).ssid, WIFIMGR_SSID_LEN);		                \
+		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';                                          \
+		strncpy((dest).passphrase, (src).passphrase, WIFIMGR_PASSPHRASE_LEN);          \
+		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';                              \
 		(dest).ap_auth_type = (src).ap_auth_type;					\
 		(dest).ap_crypto_type = (src).ap_crypto_type;					\
 	} while (0)
@@ -600,7 +600,9 @@ _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list
 		cur->ap_auth_type = iter->ap_info.ap_auth_type;
 		cur->ap_crypto_type = iter->ap_info.ap_crypto_type;
 		strncpy(cur->ssid, (char *)iter->ap_info.ssid, WIFIMGR_SSID_LEN);
+		cur->ssid[WIFIMGR_SSID_LEN] = '\0';
 		strncpy(cur->bssid, (char *)iter->ap_info.bssid, WIFIMGR_MACADDR_STR_LEN);
+		cur->bssid[WIFIMGR_MACADDR_STR_LEN] = '\0';
 
 		if (!prev) {
 			*wm_scan_list = cur;
@@ -793,11 +795,11 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
 	WM_LOG_START;
 	wifi_utils_ap_config_s util_config;
-	strncpy(util_config.ssid, config->ssid, config->ssid_length);
-	util_config.ssid[config->ssid_length] = '\0';
+	strncpy(util_config.ssid, config->ssid, WIFIMGR_SSID_LEN);
+	util_config.ssid[WIFIMGR_SSID_LEN] = '\0';
 	util_config.ssid_length = config->ssid_length;
-	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length);
-	util_config.passphrase[config->passphrase_length] = '\0';
+	strncpy(util_config.passphrase, config->passphrase, WIFIMGR_PASSPHRASE_LEN);
+	util_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	util_config.passphrase_length = config->passphrase_length;
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
@@ -831,6 +833,11 @@ wifi_manager_result_e _wifimgr_disconnect_ap(void)
 wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 {
 	WM_LOG_START;
+
+	if (strlen(config->ssid) > WIFIMGR_SSID_LEN || strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {
+		ndbg("[WM] SSID or PASSPHRASE length invalid\n");
+		return WIFI_MANAGER_FAIL;
+	}
 	wifi_utils_softap_config_s softap_config;
 
 	softap_config.channel = config->channel;
@@ -838,10 +845,10 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 	softap_config.ssid_length = strlen(config->ssid);
 	softap_config.passphrase_length = strlen(config->passphrase);
-	strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length);
-	softap_config.ssid[softap_config.ssid_length] = '\0';
-	strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length);
-	softap_config.passphrase[softap_config.passphrase_length] = '\0';
+	strncpy(softap_config.ssid, config->ssid, WIFIMGR_SSID_LEN);
+	softap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(softap_config.passphrase, config->passphrase, WIFIMGR_PASSPHRASE_LEN);
+	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
 	WIFIMGR_CHECK_RESULT(_start_dhcps(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
