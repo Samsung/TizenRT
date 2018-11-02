@@ -239,7 +239,7 @@ void ipmcast_receiver_thread(int num_packets, int ipver)
 		goto err_out;
 	}
 
-	tv.tv_sec = 10;
+	tv.tv_sec = 600;
 	tv.tv_usec = 0;
 	ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 	if (ret != 0) {
@@ -274,11 +274,11 @@ void ipmcast_receiver_thread(int num_packets, int ipver)
 		goto err_out;
 	}
 
-	printf("[IPMRECV%s] addr: %s netif_addr: %s port: %s\n", NETTEST_IPV(ipver), (ipver == 1) ? IPM6_ADDR : IPM_ADDR, g_app_netif_addr, g_app_target_port);
+	printf("[IPMRECV%s] addr: %s (my)netif_addr: %s port: %s\n", NETTEST_IPV(ipver), (ipver == 1) ? IPM6_ADDR : IPM_ADDR, g_app_netif_addr, g_app_target_port);
 
 	/* Read from the socket. */
 	while (1) {
-		ret = read(fd, buf, BUF_SIZE);
+		ret = recvfrom(fd, buf, BUF_SIZE, 0, NULL, NULL);
 		if (ret <= 0) {
 			printf("[IPMRECV%s] read err: %d", NETTEST_IPV(ipver), errno);
 			goto err_out;
@@ -820,36 +820,38 @@ void nettest_print_usage(int index)
 		printf("\nUsage1: nettest proto target_port option1\n");
 		printf("\tUsage1 is for echoback SERVER\n");
 		printf("Parameter:\n");
-		printf("\tproto - 0(tcp ipv4 echoback), 1(tcp ipv6 echoback)\n");
-		printf("\t        2(udp ipv4 echoback), 3(udp ipv6 echoback)\n");
+		printf("\tproto - 0(TCP IPv4 echoback), 1(TCP IPv6 echoback)\n");
+		printf("\t        2(UDP IPv4 echoback), 3(UDP IPv6 echoback)\n");
 		printf("\ttarget_port - port address to bind\n");
 		printf("\toption1 - number of pakcets to test, default: %d\n", NUM_PACKETS);
-		printf("Sample Command(tcp ipv4 echoback server): nettest 0 8888 1000(option1)\n\n");
+		printf("Sample Command(TCP IPv4 echoback server): nettest 0 8888 1000(option1)\n\n");
 		break;
 	case 2:
 		printf("\nUsage2: nettest proto target_addr target_port option1\n");
 		printf("\tUsage2 is for CLIENT that expects echoing back from the server\n");
 		printf("Parameter:\n");
-		printf("\tproto - 10(tcp ipv4 client), 11(tcp ipv6 client)\n");
-		printf("\t        12(udp ipv4 client), 13(udp ipv6 client)\n");
+		printf("\tproto - 10(TCP IPv4 client), 11(TCP IPv6 client)\n");
+		printf("\t        12(UDP IPv4 client), 13(UDP IPv6 client)\n");
 		printf("\ttarget_addr - target IP address to send or connect\n");
 		printf("\ttarget_port - target port address to send or connect\n");
 		printf("\toption1 - number of packets to test, default: %d\n", NUM_PACKETS);
-		printf("Sample Command(udp ipv6 client): nettest 13 fe80::dcc3:3084:cb9b:38ce%%wl1 8888 1000(option1)\n\n");
+		printf("Sample Command(UDP IPv6 client): nettest 13 fe80::dcc3:3084:cb9b:38ce 8888 1000(option1)\n\n");
 		break;
 	case 3:
 		printf("\nUsage3: nettest proto netif_addr target_port option1\n");
-		printf("\tUsage3 is for sending and receiving ipmulticast message\n");
-		printf("\tipmulticast address is fixed as definition in source file\n");
+		printf("\tUsage3 is for sending and receiving IP multicast message\n");
+		printf("\tIP multicast address is fixed as definition in source file\n");
 		printf("\tipv4 multicast address: %s\n", IPM_ADDR);
 		printf("\tipv6 multicast address: %s\n", IPM6_ADDR);
 		printf("Parameter:\n");
-		printf("\tproto - 20(ipmulticast ipv4 receiver), 21(ipmulticast ipv6 receiver)\n");
-		printf("\t        22(ipmulticast ipv4 sender), 23(ipmulticast ipv6 sender)\n");
-		printf("\tnetif_addr - network interface address to send or receive ipmulticast message\n");
-		printf("\ttarget_port - target port address for ipmulticast\n");
+		printf("\tproto - 20(IP multicast ipv4 receiver), 21(IP multicast ipv6 receiver)\n");
+		printf("\t        22(IP multicast ipv4 sender), 23(IP multicast ipv6 sender)\n");
+		printf("\tnetif_addr - network interface address to send or receive IP multicast message\n");
+		printf("\ttarget_port - target port address for IP multicast\n");
 		printf("\toption1 - number of packets to test, default: %d\n", NUM_PACKETS);
-		printf("Sample Command(ipmulticast ipv6 sender): nettest 23 fe80::dcc3:3084:cb9b:38ce 8888 1000(option1)\n\n");
+		printf("Sample Command:\n");
+		printf("\tnettest 21 fe80::dcc3:3084:cb9b:38ce 8888 1000(option1) (receiver: netif_addr is my addr.)\n");
+		printf("\tnettest 23 FF02::1 8888 (client: netif_addr is dummy in this case.)\n\n");
 		break;
 	default:
 		printf("invalid parameter\n");
