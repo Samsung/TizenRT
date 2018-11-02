@@ -73,7 +73,7 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_scan_done,
 };
 
-static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;;
+static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wm_cond = PTHREAD_COND_INITIALIZER;
 
 /*
