@@ -830,17 +830,6 @@
  * @ingroup lwip_opts_ipv4
  * @{
  */
-/**
- * LWIP_DHCP==1: Enable DHCP module.
- */
-#ifndef LWIP_DHCP
-#define LWIP_DHCP                       1
-#endif
-#if !LWIP_IPV4
-/* disable DHCP when IPv4 is disabled */
-#undef LWIP_DHCP
-#define LWIP_DHCP                       0
-#endif							/* !LWIP_IPV4 */
 
 /**
  * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.

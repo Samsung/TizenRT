@@ -6,6 +6,19 @@
 config NETUTILS_DHCPC
 	bool "DHCP client"
 	default n
+	depends on NET_IPv4
 	# This depend will be added when Network Config implementation is finished
 	---help---
 		Enable support for the DHCP client.
+
+if NETUTILS_DHCPC && NET_LWIP_DHCP
+
+config LWIP_DHCPC
+	bool
+	default y
+
+config LWIP_DHCPC_TIMEOUT
+	int "LWIP DHCPC timeout"
+	default 10000
+
+endif
