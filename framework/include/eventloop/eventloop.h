@@ -124,7 +124,7 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  * All resources created for timer at this call is freed when timer is stopped. \n
  * So you don't have to call eventloop_delete_timer after it is stopped. \n
  * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
- * In other case, timer is stopped after calling callback function once regardless of return value in callback function. \n
+ * In other case, timer is stopped after calling callback function once. Regardless of return value in callback function. \n
  * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
  *          It means that user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP or after eventloop_loop_run()
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
@@ -158,7 +158,7 @@ int eventloop_delete_timer(el_timer_t *timer);
  * All resources created for timer at this call is freed when timer is stopped. \n
  * So you don't have to call eventloop_delete_timer after it is stopped. \n
  * In case of repeated timer, it can be stopped by calling eventloop_delete_timer or by returning EVENTLOOP_CALLBACK_STOP in callback function. \n
- * In other case, timer is stopped after calling callback function once. regardless of return value in callback function.
+ * In other case, timer is stopped after calling callback function once. Regardless of return value in callback function.
  * @remarks User should NOT free the data passed to callback function before callback function is finished. \n
  *          Therefore, user should free them in callback function before it returns EVENTLOOP_CALLBACK_STOP.
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
