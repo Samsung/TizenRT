@@ -20,25 +20,23 @@
  * @file artik_demo.c
  */
 
+#include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <strings.h>
+#include <net/if.h>
 
-#include <sys/types.h>
-#include <tinyara/config.h>
 #include <apps/shell/tash.h>
-
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
 #include <protocols/webclient.h>
-
-#include <net/if.h>
-
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
-
 #include <slsi_wifi/slsi_wifi_api.h>
 
 /****************************************************************************

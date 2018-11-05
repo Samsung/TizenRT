@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <strings.h>
 #ifndef _WIN32_WCE
 #ifndef CONFIG_TI_COMPILER
 #include <signal.h>
