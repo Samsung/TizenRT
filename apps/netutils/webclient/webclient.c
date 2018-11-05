@@ -463,6 +463,8 @@ send_message:
 		}
 	}
 
+	param->response->entity = NULL;
+	param->response->entity_len = 0;
 	buf_len = 0;
 	while (!read_finish) {
 		if (param->tls) {
@@ -667,6 +669,8 @@ send_message:
 		}
 	}
 
+	param->response->entity = NULL;
+	param->response->entity_len = 0;
 	buf_len = 0;
 	while (!read_finish) {
 		len = recv(sockfd, param->response->message + buf_len, WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len, 0);
