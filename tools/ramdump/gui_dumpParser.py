@@ -24,11 +24,13 @@ from Tkinter import *
 import tkFileDialog
 import os
 import tempfile
+import subprocess
 
 modes = (
     ("AssertLog",1),
     ("AssertLogFile",2),
     ("Ramdump",3),
+	("CallStackLog",4),
 )
 
 g_elfpath = "../../build/output/bin/tinyara"
@@ -95,6 +97,8 @@ class DumpParser(Tk):
 			self.logpath.pack(anchor=W)
 		elif self.modevar.get() == 3:
 			self.ramdumppath.pack(anchor=W)
+		elif self.modevar.get() == 4:
+			self.logtext.pack(anchor=W)
 
 	def RunDumpParser(self):
 		resWin = Toplevel(self)
@@ -125,6 +129,17 @@ class DumpParser(Tk):
 						  " -r " + self.ramdumppath.path.get()) as fd:
 				output = fd.read()
 				resText.insert(INSERT, output)
+		elif self.modevar.get() == 4:
+			text = self.logtext.get("1.0",END)
+			lines = filter(None, text.split("\n"))
+			for line in lines:
+				addr_start = line.find("[<")
+				addr_end = line.find(">]")
+				addr = line[addr_start+2:addr_end]
+				cmd = ['addr2line', '-e', self.elfpath.path.get(), addr]
+				fd_popen = subprocess.Popen(cmd, stdout=subprocess.PIPE).stdout
+				data = fd_popen.read()
+				resText.insert(INSERT, data)
 
 if __name__ == "__main__":
 	app = DumpParser()
