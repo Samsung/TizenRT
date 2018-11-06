@@ -80,6 +80,12 @@ bool StreamBuffer::reset()
 	return ret;
 }
 
+size_t StreamBuffer::dump(size_t offset, unsigned char *buf, size_t size)
+{
+	assert(mRingBuf);
+	return rb_read_ext(mRingBuf, (void *)buf, size, offset);
+}
+
 size_t StreamBuffer::read(unsigned char *buf, size_t size)
 {
 	assert(mRingBuf);

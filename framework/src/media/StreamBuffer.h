@@ -63,6 +63,7 @@ public:
 		UPDATED,
 	};
 	void notifyObserver(State st, ...);
+	size_t dump(size_t offset, unsigned char *buf, size_t size);
 	size_t read(unsigned char *buf, size_t size);
 	size_t write(unsigned char *buf, size_t size);
 	size_t sizeOfData();

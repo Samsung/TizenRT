@@ -33,6 +33,15 @@ StreamBufferReader::StreamBufferReader(std::shared_ptr<StreamBuffer> stream)
 	assert(mStream);
 }
 
+size_t StreamBufferReader::dump(size_t offset, unsigned char *buf, size_t size)
+{
+	medvdbg("offset %lu, size %lu\n", offset, size);
+	std::lock_guard<std::mutex> lock(mStream->getMutex());
+	size_t len = mStream->dump(offset, buf, size);
+	medvdbg("copied %lu\n", len);
+	return len;
+}
+
 size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync)
 {
 	medvdbg("size %lu sync %c\n", size, sync ? 'Y' : 'N');
