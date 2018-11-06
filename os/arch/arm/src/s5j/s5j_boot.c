@@ -176,7 +176,7 @@ void arm_boot(void)
 #if !defined(CONFIG_ARCH_STACK_SMASH_PROTECT_NONE) && \
 	defined(CONFIG_TLS_WITH_SSS)
 	{
-#include <sss/isp_custom.h>
+#include <arch/chip/sss/isp_custom.h>
 
 		uintptr_t tmp;
 
