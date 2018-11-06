@@ -336,7 +336,7 @@ def parse_tcb(b, len):
 	fp.close();
 
 def parse_ram_dump(b, len):
-	fp = open(path + ram_dump, 'a')
+	fp = open(path + ram_dump, 'w')
 	print "\n================ram dump data================"
 	print "outfile : %s" % (path + ram_dump)
 	dump = b.rawread(len)
