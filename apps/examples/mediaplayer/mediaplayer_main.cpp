@@ -28,8 +28,25 @@
 #include <media/FocusManager.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
+#include <media/HttpInputDataSource.h>
 #include "BufferInputDataSource.h"
 #include <string.h>
+#include <debug.h>
+#include <fcntl.h>
+#include <wifi_manager/wifi_manager.h>
+
+#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_SSID
+#define CONFIG_EXAMPLES_MEDIAPLAYER_SSID "NULL"
+#endif
+#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE
+#define CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE "NULL"
+#endif
+#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION
+#define CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION 0
+#endif
+#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO
+#define CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO 0
+#endif
 
 using namespace std;
 using namespace media;
@@ -45,6 +62,9 @@ static const int TEST_AAC = 2;
 static const int TEST_OPUS = 3;
 static const int TEST_WAVE = 4;
 static const int TEST_BUFFER = 5;
+static const int TEST_HTTP = 6;
+
+static const std::string TEST_HTTP_URL = "http://ra01.sycdn.kuwo.cn/resource/n3/32/56/3260586875.mp3";
 
 static const int TEST_COMMAND_NUM = 8;
 
@@ -64,7 +84,7 @@ class MyMediaPlayer : public MediaPlayerObserverInterface,
 					  public enable_shared_from_this<MyMediaPlayer>
 {
 public:
-	MyMediaPlayer() : volume(0), isSourceSet(false) {};
+	MyMediaPlayer() : volume(0), isSourceSet(false), testSource(-1) {};
 	virtual ~MyMediaPlayer() = default;
 	bool init(int test);
 	void doCommand(int command);
@@ -75,6 +95,7 @@ public:
 	void onStopError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPlaybackPaused(MediaPlayer &mediaPlayer) override;
+	void onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onFocusChange(int focusChange) override;
 
 private:
@@ -83,6 +104,7 @@ private:
 	std::shared_ptr<FocusRequest> mFocusRequest;
 	std::function<std::unique_ptr<InputDataSource>()> makeSource;
 	bool isSourceSet;
+	int testSource;
 };
 
 bool MyMediaPlayer::init(int test)
@@ -124,6 +146,12 @@ bool MyMediaPlayer::init(int test)
 			return std::move(source);
 		};
 		break;
+	case TEST_HTTP:
+		makeSource = []() {
+			auto source = std::move(unique_ptr<HttpInputDataSource>(new HttpInputDataSource(TEST_HTTP_URL)));
+			return std::move(source);
+		};
+		break;
 	default:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
@@ -134,6 +162,7 @@ bool MyMediaPlayer::init(int test)
 		};
 	}
 	isSourceSet = false;
+	testSource = test;
 	mp.setObserver(shared_from_this());
 
 	mFocusRequest = FocusRequest::Builder().setFocusChangeListener(shared_from_this()).build();
@@ -267,16 +296,32 @@ void MyMediaPlayer::onPlaybackPaused(MediaPlayer &mediaPlayer)
 	cout << "onPlaybackPaused" << endl;
 }
 
+void MyMediaPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error)
+{
+	cout << "onAsyncPrepared res" << endl;
+	if (error == PLAYER_ERROR_NONE) {
+		mediaPlayer.start();
+	} else {
+		mediaPlayer.unprepare();
+	}
+}
+
 void MyMediaPlayer::onFocusChange(int focusChange)
 {
-
 	switch (focusChange) {
 	case FOCUS_GAIN:
-		if (mp.prepare() != PLAYER_OK) {
-			cout << "Mediaplayer::prepare failed" << endl;
-		}
-		if (mp.start() != PLAYER_OK) {
-			cout << "Mediaplayer::start failed" << endl;
+		if (testSource == TEST_HTTP) {
+			if (mp.prepareAsync() != PLAYER_OK) {
+				cout << "Mediaplayer::prepareAsync failed" << endl;
+			}
+			// start player in onAsyncPrepared()
+		} else {
+			if (mp.prepare() != PLAYER_OK) {
+				cout << "Mediaplayer::prepare failed" << endl;
+			}
+			if (mp.start() != PLAYER_OK) {
+				cout << "Mediaplayer::start failed" << endl;
+			}
 		}
 		break;
 	case FOCUS_LOSS:
@@ -375,12 +420,110 @@ private:
 };
 
 extern "C" {
+
+static bool sg_wifiIsConnected = false;
+static std::mutex sg_wifiMutex;
+static std::condition_variable sg_wifiCondv;
+static const std::chrono::seconds WAIT_WIFI_TIMEOUT(5);
+
+#define WIFI_CONNECTED_RESETFLAG() sg_wifiIsConnected = false
+
+#define WIFI_CONNECTED_CHECKFLAG() sg_wifiIsConnected
+
+#define WIFI_CONNECTED_NOTIFY() \
+	do {\
+		std::lock_guard<std::mutex> lock(sg_wifiMutex);\
+		sg_wifiIsConnected = true;\
+		sg_wifiCondv.notify_one();\
+	} while (0)
+
+#define WIFI_CONNECTED_WAIT() \
+	do {\
+		std::unique_lock<std::mutex> lock(sg_wifiMutex);\
+		sg_wifiCondv.wait_for(lock, WAIT_WIFI_TIMEOUT, []{return sg_wifiIsConnected;});\
+	} while (0)
+
+static void wifi_sta_connected(wifi_manager_result_e result) {
+	meddbg("result %d\n", (int)result);
+	WIFI_CONNECTED_NOTIFY();
+}
+
+static void wifi_sta_disconnected(wifi_manager_disconnect_e result) {
+	meddbg("result %d\n", (int)result);
+}
+
+static int wifi_connect()
+{
+	static wifi_manager_cb_s wifi_callbacks = {
+		wifi_sta_connected,
+		wifi_sta_disconnected,
+		NULL,
+		NULL,
+		NULL,
+	};
+
+	wifi_manager_result_e ret = wifi_manager_init(&wifi_callbacks);
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		meddbg("wifi_manager_init failed, ret %d\n", (int)ret);
+		return -1;
+	}
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(CONFIG_EXAMPLES_MEDIAPLAYER_SSID);
+	config.passphrase_length = strlen(CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE);
+	strncpy(config.ssid, CONFIG_EXAMPLES_MEDIAPLAYER_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO;
+
+	WIFI_CONNECTED_RESETFLAG();
+
+	meddbg("wifi_manager_connect_ap...\n");
+	ret = wifi_manager_connect_ap(&config);
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		meddbg("wifi_manager_connect_ap failed, ret %d\n", (int)ret);
+		wifi_manager_deinit();
+		return -1;
+	}
+
+	meddbg("WIFI_CONNECTED_WAIT...\n");
+	WIFI_CONNECTED_WAIT();
+	if (!WIFI_CONNECTED_CHECKFLAG()) {
+		meddbg("wifi connect failed, timeout!\n");
+		wifi_manager_deinit();
+		return -1;
+	}
+
+	return 0;
+}
+
+static int wifi_disconnect()
+{
+	wifi_manager_result_e ret = wifi_manager_deinit();
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		meddbg("wifi_manager_deinit failed, ret %d\n", (int)ret);
+		return -1;
+	}
+
+	return 0;
+}
+
 int mediaplayer_main(int argc, char *argv[])
 {
 	up_cxxinitialize();
 
+	int test = TEST_AAC;
+ 	if ((test == TEST_HTTP) && (wifi_connect() != 0)) {
+		return 0;
+	}
+
 	MediaPlayerController mediaPlayerController;
-	mediaPlayerController.start(TEST_BUFFER);
+	mediaPlayerController.start(test);
+
+	if (test == TEST_HTTP) {
+		wifi_disconnect();
+	}
+
 	return 0;
 }
 }

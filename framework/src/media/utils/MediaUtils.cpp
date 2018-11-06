@@ -23,6 +23,13 @@
 namespace media {
 namespace utils {
 
+// Mine-Type for audio stream
+static const std::string AAC_MIME_TYPE = "audio/aac";
+static const std::string AACP_MIME_TYPE = "audio/aacp";
+static const std::string MPEG_MIME_TYPE = "audio/mpeg";
+static const std::string MP4_MIME_TYPE = "audio/mp4";
+static const std::string OPUS_MIME_TYPE = "audio/opus";
+
 void toLowerString(std::string &str)
 {
 	for (char& c : str) {
@@ -76,6 +83,30 @@ audio_type_t getAudioTypeFromPath(std::string datapath)
 		medvdbg("audio type : unknown\n");
 		return AUDIO_TYPE_INVALID;
 	}
+}
+
+audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
+{
+	audio_type_t audioType;
+
+	if (mimeType.empty()) {
+		medwdbg("empty mime type!\n");
+		audioType = AUDIO_TYPE_UNKNOWN;
+	} else if ((mimeType.find(AAC_MIME_TYPE) != std::string::npos) ||
+			(mimeType.find(AACP_MIME_TYPE) != std::string::npos)) {
+		audioType = AUDIO_TYPE_AAC;
+	} else if (mimeType.find(MPEG_MIME_TYPE) != std::string::npos) {
+		audioType = AUDIO_TYPE_MP3;
+	} else if (mimeType.find(MP4_MIME_TYPE) != std::string::npos) {
+		audioType = AUDIO_TYPE_AAC;
+	} else if (mimeType.find(OPUS_MIME_TYPE) != std::string::npos) {
+		audioType = AUDIO_TYPE_OPUS;
+	} else {
+		meddbg("Unsupported mime type: %s\n", mimeType.c_str());
+		audioType = AUDIO_TYPE_UNKNOWN;
+	}
+
+	return audioType;
 }
 
 bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
@@ -300,7 +331,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 				free(header);
 				return false;
 			}
-			
+
 			if (!mp3_header_parsing(header, channel, sampleRate)) {
 				meddbg("Header parsing failed\n");
 				free(header);

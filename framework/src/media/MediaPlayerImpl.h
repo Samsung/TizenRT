@@ -43,6 +43,8 @@ typedef enum player_state_e {
 	PLAYER_STATE_IDLE,
 	/** MediaPlayer datasource configured */
 	PLAYER_STATE_CONFIGURED,
+	/** MediaPlayer is preparing datasource */
+	PLAYER_STATE_PREPARING,
 	/** MediaPlayer ready to play */
 	PLAYER_STATE_READY,
 	/** MediaPlayer do playing */
@@ -55,12 +57,14 @@ const char *const player_state_names[] = {
 	"PLAYER_STATE_NONE",
 	"PLAYER_STATE_IDLE",
 	"PLAYER_STATE_CONFIGURED",
+	"PLAYER_STATE_PREPARING",
 	"PLAYER_STATE_READY",
 	"PLAYER_STATE_PLAYING",
 	"PLAYER_STATE_PAUSED",
 };
 
 typedef enum player_observer_command_e {
+	PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED,
 	PLAYER_OBSERVER_COMMAND_STARTED,
 	PLAYER_OBSERVER_COMMAND_FINISHIED,
 	PLAYER_OBSERVER_COMMAND_START_ERROR,
@@ -76,6 +80,11 @@ typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED,
 } player_observer_command_t;
 
+typedef enum player_event_e {
+	PLAYER_EVENT_SOURCE_OPEN_FAILED,
+	PLAYER_EVENT_SOURCE_PREPARED,
+} player_event_t;
+
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
 public:
@@ -85,6 +94,7 @@ public:
 	player_result_t create();
 	player_result_t destroy();
 	player_result_t prepare();
+	player_result_t prepareAsync();
 	player_result_t unprepare();
 	player_result_t start();
 	player_result_t pause();
@@ -101,13 +111,14 @@ public:
 
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd, ...);
-
+	void notifyAsync(player_event_t event);
 	void playback();
 
 private:
 	void createPlayer(player_result_t &ret);
 	void destroyPlayer(player_result_t &ret);
 	void preparePlayer(player_result_t &ret);
+	void prepareAsyncPlayer();
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
