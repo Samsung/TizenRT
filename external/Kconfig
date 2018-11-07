@@ -32,8 +32,6 @@ config ARTIK_SDK
 
 source "$EXTERNALDIR/wakaama-client/Kconfig"
 
-source "$EXTERNALDIR/aws/Kconfig"
-
 source "$EXTERNALDIR/sysview/Kconfig"
 
 config ARTIK_IDE_INTERGRATE

@@ -59,10 +59,6 @@ ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)
 include wakaama-client/Make.defs
 endif
 
-ifeq ($(CONFIG_AWS_SDK),y)
-include aws/Make.defs
-endif
-
 ifeq ($(CONFIG_ARTIK_SDK),y)
 include artik-sdk/Make.defs
 endif

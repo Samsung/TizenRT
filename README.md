@@ -56,8 +56,6 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [Memory Map](#memory-map)
 >   * [U-Boot for ARTIK05x](#u-boot-for-artik05x)
 >   * [Configure USB Drivers](#configure-usb-drivers)
-> * Support External Features
->   * [AWS IoT Embedded C SDK](./external/aws/README.md)
 > * Training
 >   * [Sign up for an ARTIK Cloud account](#sign-up-for-an-artik-cloud-account)
 >   * [Onboard a device with the ARTIK mobile app](#onboard-a-device-with-the-artik-mobile-app)
