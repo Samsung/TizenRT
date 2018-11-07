@@ -24,6 +24,14 @@ config ROMFS_TEST
 	---help---
 		Enable "romfs_test" application
 
+config FS_RW_TEST
+	bool "fs rw test"
+	depends on TASH
+	depends on FS_SMARTFS
+	default n
+	---help---
+		Enable "fs_rw_test" application
+
 config RAMFS_TEST
 	bool "ramfs test"
 	default n
@@ -46,4 +54,3 @@ config PROCFS_TEST
 		Enable "procfs_test" application
 
 endif #FILESYSTEM_HELPER_ENABLE
-
