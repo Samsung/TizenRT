@@ -15,13 +15,21 @@ config ARCH_ARM
 	select ARCH_HAVE_CUSTOMOPT
 	---help---
 		The ARM architectures
+
+config ARCH_XTENSA
+	bool "Xtensa"
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_CUSTOMOPT
+	---help---
+		Cadence Tensilica Xtensa architectures.
 endchoice
 
 config ARCH
 	string
 	default "arm"	if ARCH_ARM
-
+	default "xtensa"  if ARCH_XTENSA
 source arch/arm/Kconfig
+source arch/xtensa/Kconfig
 
 comment "Architecture Options"
 
