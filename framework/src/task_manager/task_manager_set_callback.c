@@ -39,7 +39,8 @@
 void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
-	void *broadcast_param = NULL;
+	tm_msg_t *broadcast_param;
+	void *broadcast_data = NULL;
 	void *user_data;
 	void *cb_data;
 	int user_data_size;
@@ -67,20 +68,44 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 		user_data_size = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size;
 		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb_data;
 
-		if (user_data_size != 0) {
-			broadcast_param = TM_ALLOC(((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size);
+		if (user_data_size >= 0) {
+			broadcast_param = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 			if (broadcast_param == NULL) {
-				tmdbg("Fail to alloc user data\n");
+				tmdbg("Fail to alloc broadcast param\n");
 				return;
 			}
-			memcpy(broadcast_param, user_data, user_data_size);
+			if (user_data_size != 0) {
+				broadcast_data = TM_ALLOC(user_data_size);
+				if (broadcast_data == NULL) {
+					TM_FREE(broadcast_param);
+					tmdbg("Fail to alloc broadcast data\n");
+					return;
+				}
+				broadcast_param->msg = broadcast_data;
+				broadcast_param->msg_size = user_data_size;
+				memcpy(broadcast_data, user_data, user_data_size);
+			} else {
+				broadcast_param->msg = NULL;
+				broadcast_param->msg_size = 0;
+			}
+		} else {
+			broadcast_param = NULL;
 		}
 
 		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb)(broadcast_param, cb_data);
 
-		TM_FREE(broadcast_param);
-		TM_FREE(user_data);
-		broadcast_param = NULL;
+		if (broadcast_param != NULL) {
+			TM_FREE(broadcast_param);
+			broadcast_param = NULL;
+		}
+		if (broadcast_data != NULL) {
+			TM_FREE(broadcast_data);
+			broadcast_data = NULL;
+		}
+		if (user_data != NULL) {
+			TM_FREE(user_data);
+			user_data = NULL;
+		}
 	}
 	TM_FREE(data->si_value.sival_ptr);
 }
@@ -204,14 +229,19 @@ int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
 		}
-		((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = cb_data->msg_size;
-		((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = TM_ALLOC(cb_data->msg_size);
-		if (((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg == NULL) {
-			TM_FREE(request_msg.data);
-			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
-			return TM_OUT_OF_MEMORY;
+		if (cb_data->msg_size != 0) {
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = cb_data->msg_size;
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = TM_ALLOC(cb_data->msg_size);
+			if (((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg == NULL) {
+				TM_FREE(request_msg.data);
+				TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+				return TM_OUT_OF_MEMORY;
+			}
+			memcpy(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg, cb_data->msg, cb_data->msg_size);
+		} else {
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = 0;
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = NULL;
 		}
-		memcpy(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg, cb_data->msg, cb_data->msg_size);
 	} else {
 		((tm_broadcast_info_t *)request_msg.data)->cb_data = NULL;
 	}

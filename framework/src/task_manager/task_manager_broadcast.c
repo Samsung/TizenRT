@@ -46,7 +46,7 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	if (broadcast_data != NULL) {
+	if (broadcast_data != NULL && broadcast_data->msg_size != 0) {
 		((tm_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(broadcast_data->msg_size);
 		if (((tm_internal_msg_t *)request_msg.data)->msg == NULL) {
 			TM_FREE(request_msg.data);
@@ -54,8 +54,11 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 		}
 		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, broadcast_data->msg, broadcast_data->msg_size);
 		((tm_internal_msg_t *)request_msg.data)->msg_size = broadcast_data->msg_size;
-	} else {
+	} else if (broadcast_data != NULL && broadcast_data->msg_size == 0) {
 		((tm_internal_msg_t *)request_msg.data)->msg_size = 0;
+		((tm_internal_msg_t *)request_msg.data)->msg = NULL;
+	} else {
+		((tm_internal_msg_t *)request_msg.data)->msg_size = TM_NULL_MSG_SIZE;
 		((tm_internal_msg_t *)request_msg.data)->msg = NULL;
 	}
 	((tm_internal_msg_t *)request_msg.data)->type = msg;
