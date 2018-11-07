@@ -112,24 +112,28 @@ static void test_unicast_handler(tm_msg_t *info)
 	flag = !strncmp((char *)info->msg, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 }
 
-static void test_broadcast_handler(void *user_data, void *info)
+static void test_broadcast_handler(tm_msg_t *user_data, tm_msg_t *info)
 {
-	if (strncmp((char *)info, TM_BROAD_WIFI_ON_DATA, strlen(TM_BROAD_WIFI_ON_DATA) + 1) == 0) {
-		broadcast_data_flag = strncmp((char *)user_data, "WIFI_ON", strlen("WIFI_ON") + 1);
-		sem_wait(&tm_broad_sem);
-		broad_wifi_on_cnt++;
-		sem_post(&tm_broad_sem);
-		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
-	} else if (strncmp((char *)info, TM_BROAD_WIFI_OFF_DATA, strlen(TM_BROAD_WIFI_OFF_DATA) + 1) == 0) {
-		sem_wait(&tm_broad_sem);
-		broad_wifi_off_cnt++;
-		sem_post(&tm_broad_sem);
-		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_OFF, TM_NO_RESPONSE);
-	} else if (strncmp((char *)info, TM_BROAD_UNDEFINED_MSG_DATA, strlen(TM_BROAD_UNDEFINED_MSG_DATA) + 1) == 0) {
-		sem_wait(&tm_broad_sem);
-		broad_undefined_cnt++;
-		sem_post(&tm_broad_sem);
-		(void)task_manager_unset_broadcast_cb(tm_broadcast_undefined_msg, TM_NO_RESPONSE);
+	if (info->msg != NULL) {
+		if (strncmp((char *)info->msg, TM_BROAD_WIFI_ON_DATA, info->msg_size) == 0) {
+			if (user_data->msg != NULL) {
+				broadcast_data_flag = strncmp((char *)user_data->msg, "WIFI_ON", user_data->msg_size);
+			}
+			sem_wait(&tm_broad_sem);
+			broad_wifi_on_cnt++;
+			sem_post(&tm_broad_sem);
+			(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
+		} else if (strncmp((char *)info->msg, TM_BROAD_WIFI_OFF_DATA, info->msg_size) == 0) {
+			sem_wait(&tm_broad_sem);
+			broad_wifi_off_cnt++;
+			sem_post(&tm_broad_sem);
+			(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_OFF, TM_NO_RESPONSE);
+		} else if (strncmp((char *)info->msg, TM_BROAD_UNDEFINED_MSG_DATA, info->msg_size) == 0) {
+			sem_wait(&tm_broad_sem);
+			broad_undefined_cnt++;
+			sem_post(&tm_broad_sem);
+			(void)task_manager_unset_broadcast_cb(tm_broadcast_undefined_msg, TM_NO_RESPONSE);
+		}
 	}
 }
 
