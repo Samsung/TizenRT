@@ -76,6 +76,7 @@ typedef enum recorder_observer_command_e {
 	RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN,
 	RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
 	RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED,
+	RECORDER_OBSERVER_COMMAND_FLUSH
 } recorder_observer_command_t;
 
 class MediaRecorderImpl : public enable_shared_from_this<MediaRecorderImpl>
@@ -116,6 +117,7 @@ private:
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
 	void setRecorderDuration(int second, recorder_result_t& ret);
+	void notifyObserverSync();
 
 private:
 	std::atomic<recorder_state_t> mCurState;
@@ -126,7 +128,9 @@ private:
 	unsigned char* mBuffer;
 	int mBuffSize;
 	mutex mCmdMtx; // command mutex
+	mutex mObMtx; // observer mutex
 	std::condition_variable mSyncCv;
+	std::condition_variable mObFlushCv;
 	int mDuration;
 	uint32_t mTotalFrames;
 	uint32_t mCapturedFrames;

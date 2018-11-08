@@ -313,6 +313,7 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 	}
 
 	mOutputHandler.flush();
+	notifyObserver(RECORDER_OBSERVER_COMMAND_FLUSH);
 
 	audio_manager_result_t result = stop_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
@@ -620,6 +621,12 @@ void MediaRecorderImpl::notifySync()
 	mSyncCv.notify_one();
 }
 
+void MediaRecorderImpl::notifyObserverSync()
+{
+	std::unique_lock<std::mutex> lock(mObMtx);
+	mObFlushCv.notify_one();
+}
+
 void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 {
 	medvdbg("notifyObserver cmd : %d\n", cmd);
@@ -628,6 +635,7 @@ void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 		va_start(ap, cmd);
 
 		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+		std::unique_lock<std::mutex> lock(mObMtx);
 		switch (cmd) {
 		case RECORDER_OBSERVER_COMMAND_STARTED: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_STARTED\n");
@@ -670,6 +678,11 @@ void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 			size_t size = va_arg(ap, size_t);
 			std::shared_ptr<unsigned char> autodata(data, [](unsigned char *p){ delete[] p; });
 			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferDataReached, mRecorderObserver, mRecorder, autodata, size);
+		} break;
+		case RECORDER_OBSERVER_COMMAND_FLUSH: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_FLUSH\n");
+			row.enQueue(&MediaRecorderImpl::notifyObserverSync, shared_from_this());
+			mObFlushCv.wait(lock);
 		} break;
 		}
 
