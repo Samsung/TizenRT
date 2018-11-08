@@ -27,7 +27,7 @@
 
 #ifdef __TIZENRT__
 #include <tinyara/config.h>
-#include <uio.h>
+#include <sys/uio.h>
 #endif
 
 #include "iotivity_config.h"
@@ -64,7 +64,6 @@
 #endif
 
 #ifdef __TIZENRT__
-#include <uio.h>
 #include <mqueue.h>
 #endif
 #include <coap/pdu.h>

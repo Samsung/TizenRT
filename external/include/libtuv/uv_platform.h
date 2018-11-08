@@ -38,6 +38,7 @@
 #define __uv__platform_tinyara_header__
 
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <poll.h>				// nuttx poll // kbuild
 #include <unistd.h>
 #include <errno.h>
@@ -45,7 +46,6 @@
 #include "uv__unix_platform.h"
 
 #include <netdb.h>
-#include <uio.h>
 
 /* for testing */
 #define TUV_POLL_EVENTS_SIZE  32

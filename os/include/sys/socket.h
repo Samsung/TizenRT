@@ -69,7 +69,7 @@
 
 #include <tinyara/config.h>
 #include <sys/types.h>
-#include <uio.h>
+#include <sys/uio.h>
 
 #ifdef CONFIG_NET_LWIP
 #include <net/lwip/sockets.h>
