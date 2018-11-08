@@ -1,4 +1,4 @@
-
+#include <tinyara/config.h>
 #include <sys/select.h>
 
 /* lib/curl_config.h.  Generated from curl_config.h.in by configure.  */
@@ -813,22 +813,26 @@
 #define SIZEOF_INT 4
 
 /* The size of `long', as computed by sizeof. */
-#define SIZEOF_LONG 8
+#define SIZEOF_LONG 4
 
 /* The size of `long long', as computed by sizeof. */
 /* #undef SIZEOF_LONG_LONG */
 
 /* The size of `off_t', as computed by sizeof. */
-#define SIZEOF_OFF_T 8
+#define SIZEOF_OFF_T 4
 
 /* The size of `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
 /* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 8
+#ifdef CONFIG_SMALL_MEMORY
+#define SIZEOF_SIZE_T 2
+#else
+#define SIZEOF_SIZE_T 4
+#endif
 
 /* The size of `time_t', as computed by sizeof. */
-#define SIZEOF_TIME_T 8
+#define SIZEOF_TIME_T 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
