@@ -87,6 +87,11 @@ recorder_result_t MediaRecorder::setDuration(int second)
 	return mPMrImpl->setDuration(second);
 }
 
+recorder_result_t MediaRecorder::setFileSize(int byte)
+{
+	return mPMrImpl->setFileSize(byte);
+}
+
 bool MediaRecorder::operator==(const MediaRecorder& rhs)
 {
 	return this->mId == rhs.mId;

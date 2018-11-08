@@ -203,6 +203,18 @@ public:
 	recorder_result_t setDuration(int second);
 
 	/**
+	 * @brief Limit the size of the file to be recoreded.
+	 * This should be called after setDataSource but before prepare
+	 * @details @b #include <media/MediaRecorder.h>
+	 * This function is a synchronous api
+	 * It sets the user's function
+	 * @param[in] Max size(byte), No limitation If zero or negative.
+	 * @return The result of setting the size
+	 * @since TizenRT v2.0
+	 */
+	recorder_result_t setFileSize(int byte);
+
+	/**
 	 * @brief MediaRecorder operator==
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
