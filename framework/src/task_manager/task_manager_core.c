@@ -933,7 +933,7 @@ static int taskmgr_broadcast(tm_internal_msg_t *arg)
 			if (bm == NULL) {
 				return TM_OUT_OF_MEMORY;
 			}
-			if (arg->msg_size != 0) {
+			if (arg->msg_size > 0) {
 				bm->user_data = TM_ALLOC(arg->msg_size);
 				if (bm->user_data == NULL) {
 					TM_FREE(bm);
@@ -943,7 +943,7 @@ static int taskmgr_broadcast(tm_internal_msg_t *arg)
 				memcpy(bm->user_data, arg->msg, arg->msg_size);
 			} else {
 				bm->user_data = NULL;
-				bm->size = 0;
+				bm->size = arg->msg_size;
 			}
 
 			bm->info = broadcast_info;
@@ -1010,27 +1010,46 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 			broadcast_info->msg = ((tm_broadcast_info_t *)data)->msg;
 			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
 			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
-				broadcast_info->cb_data = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
 				if (broadcast_info->cb_data == NULL) {
-					TM_FREE(broadcast_info);
 					return TM_OUT_OF_MEMORY;
 				}
-				memcpy(broadcast_info->cb_data, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				if ((((tm_broadcast_info_t *)data)->cb_data)->msg_size != 0) {
+					broadcast_info->cb_data->msg = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+					if (broadcast_info->cb_data->msg == NULL) {
+						return TM_OUT_OF_MEMORY;
+					}
+					memcpy(broadcast_info->cb_data->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+					broadcast_info->cb_data->msg_size = (((tm_broadcast_info_t *)data)->cb_data)->msg_size;
+				} else {
+					broadcast_info->cb_data->msg = NULL;
+					broadcast_info->cb_data->msg_size = 0;
+				}
 			} else {
 				broadcast_info->cb_data = NULL;
 			}
 			sq_addlast((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
 		} else {
-			if ((broadcast_info->cb == ((tm_broadcast_info_t *)data)->cb) && broadcast_info->cb_data == ((tm_broadcast_info_t *)data)->cb_data) {
+			if ((broadcast_info->cb == ((tm_broadcast_info_t *)data)->cb) && (broadcast_info->cb_data->msg_size == (((tm_broadcast_info_t *)data)->cb_data)->msg_size) && (memcmp(broadcast_info->cb_data->msg, ((tm_broadcast_info_t *)data)->cb_data->msg, ((tm_broadcast_info_t *)data)->cb_data->msg_size) == 0)) {
 				return TM_ALREADY_REGISTERED_CB;
 			}
 			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
 			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
-				broadcast_info->cb_data = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
 				if (broadcast_info->cb_data == NULL) {
 					return TM_OUT_OF_MEMORY;
 				}
-				memcpy(broadcast_info->cb_data, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				if ((((tm_broadcast_info_t *)data)->cb_data)->msg_size != 0) {
+					broadcast_info->cb_data->msg = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+					if (broadcast_info->cb_data->msg == NULL) {
+						TM_FREE(broadcast_info->cb_data);
+						return TM_OUT_OF_MEMORY;
+					}
+					memcpy(broadcast_info->cb_data->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				} else {
+					broadcast_info->cb_data->msg = NULL;
+					broadcast_info->cb_data->msg_size = 0;
+				}
 			} else {
 				broadcast_info->cb_data = NULL;
 			}
@@ -1078,6 +1097,10 @@ static int taskmgr_unset_broadcast_cb(int msg, int pid)
 	}
 	sq_rem((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
 	if (broadcast_info->cb_data != NULL) {
+		if (broadcast_info->cb_data->msg != NULL) {
+			TM_FREE(broadcast_info->cb_data->msg);
+			broadcast_info->cb_data->msg = NULL;
+		}
 		TM_FREE(broadcast_info->cb_data);
 		broadcast_info->cb_data = NULL;
 	}

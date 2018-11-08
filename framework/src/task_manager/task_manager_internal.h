@@ -97,6 +97,11 @@
 #define TM_UNICAST_SYNC      (0)
 #define TM_UNICAST_ASYNC     (1)
 
+/**
+ * @brief Represent the msg size when input is NULL
+ */
+#define TM_NULL_MSG_SIZE     (-1)
+
 struct tm_termination_info_s {
 	tm_termination_callback_t cb;
 	tm_msg_t *cb_data;
@@ -143,7 +148,7 @@ struct tm_broadcast_info_s {
 	struct tm_broadcast_info_s *flink;
 	int msg;
 	tm_broadcast_callback_t cb;
-	void* cb_data;
+	tm_msg_t *cb_data;
 };
 typedef struct tm_broadcast_info_s tm_broadcast_info_t;
 

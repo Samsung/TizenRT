@@ -142,7 +142,7 @@ typedef void (*tm_unicast_callback_t)(tm_msg_t *unicast_data);
  * The 'cb_data' is set through the task_manager_set_broadcast_cb() and the broadcast callback function will get\n
  * this argument when the task_manager_broadcast() is called from the task manager.
  */
-typedef void (*tm_broadcast_callback_t)(void *broadcast_data, void *cb_data);
+typedef void (*tm_broadcast_callback_t)(tm_msg_t *broadcast_data, tm_msg_t *cb_data);
 
 /**
  * @brief Termination callback function type
