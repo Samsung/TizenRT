@@ -195,9 +195,6 @@
 
 #if defined(__TIZENRT__)
 #include <tinyara/config.h>
-#if defined(CONFIG_SERIAL_TERMIOS)
-#include <termios.h>
-#endif
 #endif
 #include <ctype.h>   // for isspace, etc
 #include <stddef.h>  // for ptrdiff_t
