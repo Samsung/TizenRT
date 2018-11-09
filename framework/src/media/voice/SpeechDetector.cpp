@@ -40,8 +40,8 @@ public:
 	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
 	bool deinitKeywordDetect() override;
 	bool deinitEndPointDetect() override;
-	bool startKeywordDetect(uint32_t timeout) override;
-	bool startEndPointDetect(uint32_t timeout) override;
+	bool startKeywordDetect(int timeout) override;
+	bool startEndPointDetect(int timeout) override;
 
 private:
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
@@ -143,7 +143,7 @@ bool SpeechDetectorImpl::deinitEndPointDetect()
 	}
 }
 
-bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)
+bool SpeechDetectorImpl::startKeywordDetect(int timeout)
 {
 	if (mKeywordDetector == nullptr) {
 		meddbg("KeywordDetector is not init\n");
@@ -153,7 +153,7 @@ bool SpeechDetectorImpl::startKeywordDetect(uint32_t timeout)
 	return mKeywordDetector->startKeywordDetect(timeout);
 }
 
-bool SpeechDetectorImpl::startEndPointDetect(uint32_t timeout)
+bool SpeechDetectorImpl::startEndPointDetect(int timeout)
 {
 	if (mEndPointDetector == nullptr) {
 		meddbg("EndPointDetector is not init\n");
