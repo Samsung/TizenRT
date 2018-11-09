@@ -70,7 +70,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 #define MAXLN 128
 
 #ifndef MIN
@@ -452,7 +451,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						width  = fwidth;
 					}
 
-					width = MIN(sizeof(tmp) - 1, width);
 
 					/* Copy the string (if we are making an assignment) */
 
@@ -511,7 +509,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						width  = fwidth;
 					}
 
-					width = MIN(sizeof(tmp) - 1, width);
 
 					/* Copy the string (if we are making an assignment) */
 
