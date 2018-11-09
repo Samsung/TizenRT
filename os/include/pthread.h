@@ -570,7 +570,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex);
  * @details @b #include <pthread.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1
+ * @since TizenRT v2.1 PRE
  */
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 /* Make sure that the pthread mutex is in a consistent state */
