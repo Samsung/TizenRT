@@ -241,4 +241,12 @@
 #define SEM_NSEMS_MAX  _POSIX_SEM_NSEMS_MAX
 #define SEM_VALUE_MAX  _POSIX_SEM_VALUE_MAX
 
+/* Required for readv() and writev() */
+
+#define IOV_MAX        INT_MAX
+#if defined(CONFIG_NET_LWIP) && (IOV_MAX > 0xFFFF)
+#undef IOV_MAX
+#define IOV_MAX        0xFFFF
+#endif
+
 #endif							/* __INCLUDE_LIMITS_H */

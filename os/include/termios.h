@@ -358,17 +358,6 @@ int tcsendbreak(int fd, int duration);
  */
 int tcsetattr(int fd, int options, FAR const struct termios *termiosp);
 
-/* Check if a file descriptor corresponds to a terminal I/O file */
-
-/**
- * @cond
- * @internal
- */
-int isatty(int fd);
-/**
- * @endcond
- */
-
 #undef EXTERN
 #ifdef __cplusplus
 }

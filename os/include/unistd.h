@@ -199,6 +199,16 @@ pid_t vfork(void);
  * @since TizenRT v1.0
  */
 pid_t getpid(void);
+
+/* Check if a file descriptor corresponds to a terminal I/O file */
+/**
+ * @ingroup UNISTD_KERNEL
+ * @brief test for a terminal device
+ * @details @b #include <unistd.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+int isatty(int fd);
 /**
  * @cond
  * @internal

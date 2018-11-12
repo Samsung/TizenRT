@@ -68,7 +68,7 @@
 #include <net/lwip/inet.h>
 
 #include <sys/select.h>
-#include <uio.h>
+#include <sys/uio.h>
 
 #ifdef __cplusplus
 extern "C" {

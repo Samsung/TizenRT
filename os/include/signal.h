@@ -525,7 +525,7 @@ int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1
+ * @since TizenRT v2.1 PRE
  */
 int sigwait(FAR const sigset_t *set, FAR int *sig);
 /**
