@@ -50,7 +50,6 @@
 static int g_taskmgr_fd;
 static uint32_t g_lasthandle;
 static mqd_t g_tm_recv_mqfd;
-static int builtin_cnt;
 static int handle_cnt;
 static int task_cnt;
 #ifndef CONFIG_DISABLE_PTHREAD
@@ -156,8 +155,9 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 {
 	int chk_idx;
 	int handle;
+	unsigned int builtin_cnt;
 
-	if (permission < 0 || caller_pid < 0 || name == NULL) {
+	if (permission < 0 || caller_pid <= 0 || name == NULL) {
 		return TM_INVALID_PARAM;
 	}
 
@@ -166,6 +166,10 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 	}
 
 	handle = TM_OPERATION_FAIL;
+	builtin_cnt = get_builtin_list_cnt();
+	if (builtin_cnt == 0) {
+		return TM_NOT_SUPPORTED;
+	}
 
 	/* Check that task is in builtin-list or not */
 	for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
@@ -276,9 +280,7 @@ static int taskmgr_unregister(int handle)
 	}
 
 	state = taskmgr_get_task_state(unregister_handle);
-	if (state == TM_APP_STATE_UNREGISTERED) {
-		return TM_UNREGISTERED_APP;
-	} else if (state == TM_APP_STATE_CANCELLING) {
+	if (state == TM_APP_STATE_CANCELLING) {
 		TM_STATUS(unregister_handle) = TM_APP_STATE_WAIT_UNREGISTER;
 		/* If task is on cancelling state, unregister will be treated later. */
 		ret = pthread_attr_init(&attr);
@@ -294,10 +296,13 @@ static int taskmgr_unregister(int handle)
 		(void)pthread_detach(pth);
 
 		return OK;
+	} else if (state == TM_APP_STATE_STOP) {
+		/* If task is on stop state, unregister immediately. */
+		taskmgr_execute_unregister(unregister_handle);
+	} else {
+		return -state;
 	}
 
-	/* If task is on stop state, unregister immediately. */
-	taskmgr_execute_unregister(unregister_handle);
 	return OK;
 }
 
@@ -1371,12 +1376,6 @@ int task_manager(int argc, char *argv[])
 
 	task_manager_pid = getpid();
 
-	builtin_cnt = get_builtin_list_cnt();
-
-	if (builtin_cnt < 1) {
-		tmdbg("Failed to start task manager\n");
-		return 0;
-	}
 	/* service register : register, set tm_gid to its pid */
 
 	ret = taskmgr_open_driver();
