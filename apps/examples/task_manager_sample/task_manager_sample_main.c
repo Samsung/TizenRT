@@ -53,7 +53,7 @@ int task_manager_sample_main(int argc, char *argv[])
 	if (handle_actionmanager < 0) {
 		printf("FAIL TO REGISTER ACTION MANAGER, %d\n", handle_actionmanager);
 	} else if (handle_actionmanager >= 0) {
-		printf("Action Manager is succeefully registered and its handle is %d\n", handle_actionmanager);
+		printf("Action Manager is successfully registered and its handle is %d\n", handle_actionmanager);
 	}
 
 	printf("\nRegister User App\n");
@@ -61,7 +61,7 @@ int task_manager_sample_main(int argc, char *argv[])
 	if (handle_user < 0) {
 		printf("FAIL TO REGISTER USER APP, %d\n", handle_user);
 	} else if (handle_user >= 0) {
-		printf("User App is succeefully registered and its handle is %d\n", handle_user);
+		printf("User App is successfully registered and its handle is %d\n", handle_user);
 	}
 
 	printf("\nStart Action Manager\n");
@@ -87,7 +87,7 @@ int task_manager_sample_main(int argc, char *argv[])
 	if (ret_unregister_actionmanager < 0) {
 		printf("FAIL TO UNREGISTER ACTION MANAGER, %d\n", handle_actionmanager);
 	} else if (ret_unregister_actionmanager == OK) {
-		printf("Action Manager is succeefully unregistered\n");
+		printf("Action Manager is successfully unregistered\n");
 	}
 
 	printf("\nUnregister User App\n");
@@ -95,7 +95,7 @@ int task_manager_sample_main(int argc, char *argv[])
 	if (ret_unregister_user < 0) {
 		printf("FAIL TO UNREGISTER USER APP, %d\n", handle_user);
 	} else if (ret_unregister_user == OK) {
-		printf("User App is succeefully unregistered\n");
+		printf("User App is successfully unregistered\n");
 	}
 
 
