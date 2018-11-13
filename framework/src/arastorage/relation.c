@@ -356,11 +356,6 @@ attribute_t *relation_attribute_add(relation_t *rel, db_direction_t dir, char *n
 	attribute->index = NULL;
 	attribute->flags = 0 /*ATTRIBUTE_FLAG_UNIQUE */ ;
 
-	rel->row_length += element_size;
-
-	list_add(rel->attributes, attribute);
-	rel->attribute_count++;
-
 	if (dir == DB_STORAGE) {
 		if (DB_ERROR(storage_put_attribute(rel, attribute))) {
 			DB_LOG_E("DB: Failed to store attribute %s\n", attribute->name);
@@ -368,6 +363,10 @@ attribute_t *relation_attribute_add(relation_t *rel, db_direction_t dir, char *n
 			return NULL;
 		}
 	}
+	
+	rel->row_length += element_size;
+	list_add(rel->attributes, attribute);
+	rel->attribute_count++;
 
 	return attribute;
 }
