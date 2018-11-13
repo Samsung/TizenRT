@@ -27,7 +27,6 @@
 #include "result.h"
 #include "db_debug.h"
 #include "storage.h"
-#include "memb.h"
 #include "relation.h"
 
 /****************************************************************************

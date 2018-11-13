@@ -21,7 +21,7 @@ CSRCS += aql_adt.c aql_exec.c aql_lexer.c aql_parser.c
 CSRCS += arastorage.c cursor.c lvm.c relation.c result.c
 CSRCS += storage_abstraction.c storage_interface.c
 CSRCS += index_manager.c index_bplustree.c index_inline.c
-CSRCS += list.c random.c memb.c rw_locks.c
+CSRCS += list.c random.c rw_locks.c
 
 DEPPATH += --dep-path src/arastorage
 VPATH += :src/arastorage
