@@ -358,6 +358,32 @@ extern "C" {
  */
 int kill(pid_t pid, int sig);
 
+/**
+ * @cond
+ * @internal
+ * @brief write signal information to standard error
+ * @details @b #include <signal.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+void psignal(int signum, FAR const char *message);
+/**
+ * @endcond
+ */
+
+/**
+ * @cond
+ * @internal
+ * @brief write signal information to standard error
+ * @details @b #include <signal.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+void psiginfo(const siginfo_t *pinfo, const char *message);
+/**
+ * @endcond
+ */
+
 /* Pthread signal management APIs */
 /**
  * @ingroup SIGNAL_KERNEL
