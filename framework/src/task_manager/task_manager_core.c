@@ -64,10 +64,8 @@ static int task_manager_pid;
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
-#define TYPE_UNICAST     1
-#define TYPE_BROADCAST   2
-#define TYPE_CANCEL      3
-#define TYPE_EXIT        4
+#define TYPE_CANCEL      1
+#define TYPE_EXIT        2
 
 #define CB_FUNC_OF(X)             ((tm_termination_info_t *)X)->cb
 #define CB_DATA_OF(X)             ((tm_termination_info_t *)X)->cb_data
@@ -982,7 +980,25 @@ static int taskmgr_is_tm_broadcast_msg_init(void)
 	return 1;
 }
 
-static int taskmgr_set_msg_cb(int type, void *data, int pid)
+static int taskmgr_set_unicast_cb(tm_unicast_callback_t data, int pid)
+{
+	int handle;
+
+	if (data == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_UNREGISTERED_APP) {
+		return handle;
+	}
+
+	TM_UNICAST_CB(handle) = data;
+
+	return OK;
+}
+
+static int taskmgr_set_broadcast_cb(tm_broadcast_info_t *data, int pid)
 {
 	int handle;
 	int ret;
@@ -991,81 +1007,86 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 	if (data == NULL) {
 		return TM_INVALID_PARAM;
 	}
+
 	handle = taskmgr_get_handle_by_pid(pid);
 	if (handle == TM_UNREGISTERED_APP) {
 		return handle;
 	}
-	if (type == TYPE_UNICAST) {
-		TM_UNICAST_CB(handle) = (tm_unicast_callback_t)data;
-	} else {
-		if (!taskmgr_is_tm_broadcast_msg_init()) {
-			taskmgr_broadcast_msg_init();
-		}
-		ret = taskmgr_check_broad_msg(((tm_broadcast_info_t *)data)->msg);
-		if (ret == TM_UNREGISTERED_MSG) {
-			return ret;
-		}
-		broadcast_info = taskmgr_search_broadcast_info(((tm_broadcast_info_t *)data)->msg, handle);
+
+	if (!taskmgr_is_tm_broadcast_msg_init()) {
+		taskmgr_broadcast_msg_init();
+	}
+
+	ret = taskmgr_check_broad_msg(data->msg);
+	if (ret == TM_UNREGISTERED_MSG) {
+		return ret;
+	}
+
+	broadcast_info = taskmgr_search_broadcast_info(data->msg, handle);
+	if (broadcast_info == NULL) {
+		broadcast_info = (tm_broadcast_info_t *)TM_ALLOC(sizeof(tm_broadcast_info_t));
 		if (broadcast_info == NULL) {
-			broadcast_info = (tm_broadcast_info_t *)TM_ALLOC(sizeof(tm_broadcast_info_t));
-			if (broadcast_info == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		broadcast_info->flink = NULL;
+		broadcast_info->msg = data->msg;
+		broadcast_info->cb = data->cb;
+		if (data->cb_data != NULL) {
+			broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
+			if (broadcast_info->cb_data == NULL) {
+				TM_FREE(broadcast_info);
 				return TM_OUT_OF_MEMORY;
 			}
-			broadcast_info->flink = NULL;
-			broadcast_info->msg = ((tm_broadcast_info_t *)data)->msg;
-			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
-			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
-				broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
-				if (broadcast_info->cb_data == NULL) {
+			if (data->cb_data->msg_size != 0) {
+				broadcast_info->cb_data->msg = TM_ALLOC(data->cb_data->msg_size);
+				if (broadcast_info->cb_data->msg == NULL) {
+					TM_FREE(broadcast_info->cb_data);
+					TM_FREE(broadcast_info);
 					return TM_OUT_OF_MEMORY;
 				}
-				if ((((tm_broadcast_info_t *)data)->cb_data)->msg_size != 0) {
-					broadcast_info->cb_data->msg = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
-					if (broadcast_info->cb_data->msg == NULL) {
-						return TM_OUT_OF_MEMORY;
-					}
-					memcpy(broadcast_info->cb_data->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
-					broadcast_info->cb_data->msg_size = (((tm_broadcast_info_t *)data)->cb_data)->msg_size;
-				} else {
-					broadcast_info->cb_data->msg = NULL;
-					broadcast_info->cb_data->msg_size = 0;
-				}
+				memcpy(broadcast_info->cb_data->msg, data->cb_data->msg, data->cb_data->msg_size);
+				broadcast_info->cb_data->msg_size = data->cb_data->msg_size;
 			} else {
-				broadcast_info->cb_data = NULL;
+				broadcast_info->cb_data->msg = NULL;
+				broadcast_info->cb_data->msg_size = 0;
 			}
-			sq_addlast((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
 		} else {
-			if ((broadcast_info->cb == ((tm_broadcast_info_t *)data)->cb) && (broadcast_info->cb_data->msg_size == (((tm_broadcast_info_t *)data)->cb_data)->msg_size) && (memcmp(broadcast_info->cb_data->msg, ((tm_broadcast_info_t *)data)->cb_data->msg, ((tm_broadcast_info_t *)data)->cb_data->msg_size) == 0)) {
-				return TM_ALREADY_REGISTERED_CB;
+			broadcast_info->cb_data = NULL;
+		}
+		sq_addlast((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
+	} else {
+		if ((broadcast_info->cb == data->cb) && (broadcast_info->cb_data->msg_size == data->cb_data->msg_size) && (memcmp(broadcast_info->cb_data->msg, data->cb_data->msg, data->cb_data->msg_size) == 0)) {
+			return TM_ALREADY_REGISTERED_CB;
+		}
+		broadcast_info->cb = data->cb;
+		if (data->cb_data != NULL) {
+			broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
+			if (broadcast_info->cb_data == NULL) {
+				return TM_OUT_OF_MEMORY;
 			}
-			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
-			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
-				broadcast_info->cb_data = TM_ALLOC(sizeof(tm_msg_t));
-				if (broadcast_info->cb_data == NULL) {
+			if (data->cb_data->msg_size != 0) {
+				broadcast_info->cb_data->msg = TM_ALLOC(data->cb_data->msg_size);
+				if (broadcast_info->cb_data->msg == NULL) {
+					TM_FREE(broadcast_info->cb_data);
 					return TM_OUT_OF_MEMORY;
 				}
-				if ((((tm_broadcast_info_t *)data)->cb_data)->msg_size != 0) {
-					broadcast_info->cb_data->msg = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
-					if (broadcast_info->cb_data->msg == NULL) {
-						TM_FREE(broadcast_info->cb_data);
-						return TM_OUT_OF_MEMORY;
-					}
-					memcpy(broadcast_info->cb_data->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
-				} else {
-					broadcast_info->cb_data->msg = NULL;
-					broadcast_info->cb_data->msg_size = 0;
-				}
+				memcpy(broadcast_info->cb_data->msg, data->cb_data->msg, data->cb_data->msg_size);
 			} else {
-				broadcast_info->cb_data = NULL;
+				broadcast_info->cb_data->msg = NULL;
+				broadcast_info->cb_data->msg_size = 0;
 			}
-		}
-		if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
-			if (((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg != NULL) {
-				TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg);
-			}
-			TM_FREE(((tm_broadcast_info_t *)data)->cb_data);
+		} else {
+			broadcast_info->cb_data = NULL;
 		}
 	}
+
+	if (data->cb_data != NULL) {
+		if (data->cb_data->msg != NULL) {
+			TM_FREE(data->cb_data->msg);
+		}
+		TM_FREE(data->cb_data);
+	}
+
 	return OK;
 }
 
@@ -1497,11 +1518,11 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_SET_BROADCAST_CB:
-			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
+			ret = taskmgr_set_broadcast_cb((tm_broadcast_info_t *)request_msg.data, request_msg.caller_pid);
 			break;
 
 		case TASKMGRCMD_SET_UNICAST_CB:
-			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
+			ret = taskmgr_set_unicast_cb((tm_unicast_callback_t)request_msg.data, request_msg.caller_pid);
 			break;
 
 		case TASKMGRCMD_REGISTER_TASK:
