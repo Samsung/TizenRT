@@ -69,8 +69,8 @@
  *
  ****************************************************************************/
 
-int strcoll(const char *a, const char *b)
+int strcoll(const char *s1, const char *s2)
 {
-	return strcmp(a, b);
+	return strcmp(s1, s2);
 }
 #endif
