@@ -45,7 +45,7 @@ void SoftwareEndPointDetector::deinit()
 	speex_preprocess_state_destroy(mState);
 }
 
-bool SoftwareEndPointDetector::startEndPointDetect(uint32_t timeout)
+bool SoftwareEndPointDetector::startEndPointDetect(int timeout)
 {
 	return true;
 }

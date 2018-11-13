@@ -69,7 +69,7 @@ void HardwareEndPointDetector::deinit()
 	}
 }
 
-bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
+bool HardwareEndPointDetector::startEndPointDetect(int timeout)
 {
 	bool ret = false;
 	audio_manager_result_t result;
@@ -80,30 +80,50 @@ bool HardwareEndPointDetector::startEndPointDetect(uint32_t timeout)
 		return false;
 	}
 
-	struct timespec curtime;
-	struct timespec waketime;
-	clock_gettime(CLOCK_REALTIME, &waketime);
-	waketime.tv_sec += timeout;
+	if (timeout < 0) {
+		while (true) {
+			uint16_t msgId;
+			result = get_device_process_handler_message(mCard, mDevice, &msgId);
 
-	do {
-		uint16_t msgId;
-		result = get_device_process_handler_message(mCard, mDevice, &msgId);
-
-		if (result == AUDIO_MANAGER_SUCCESS) {
-			if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
-				medvdbg("#### EPD DETECTED!! ####\n");
-				ret = true;
+			if (result == AUDIO_MANAGER_SUCCESS) {
+				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
+					medvdbg("#### EPD DETECTED!! ####\n");
+					ret = true;
+					break;
+				}
+			} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
+				meddbg("Error: device doesn't support it!!!\n");
 				break;
 			}
-		} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
-			meddbg("Error: device doesn't support it!!!\n");
-			break;
-		}
 
-		pthread_yield();
-		clock_gettime(CLOCK_REALTIME, &curtime);
-	} while ((curtime.tv_sec < waketime.tv_sec) ||
-			 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
+			pthread_yield();
+		}
+	} else {
+		struct timespec curtime;
+		struct timespec waketime;
+		clock_gettime(CLOCK_REALTIME, &waketime);
+		waketime.tv_sec += timeout;
+
+		do {
+			uint16_t msgId;
+			result = get_device_process_handler_message(mCard, mDevice, &msgId);
+
+			if (result == AUDIO_MANAGER_SUCCESS) {
+				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
+					medvdbg("#### EPD DETECTED!! ####\n");
+					ret = true;
+					break;
+				}
+			} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
+				meddbg("Error: device doesn't support it!!!\n");
+				break;
+			}
+
+			pthread_yield();
+			clock_gettime(CLOCK_REALTIME, &curtime);
+		} while ((curtime.tv_sec < waketime.tv_sec) ||
+				 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
+	}
 
 	stop_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	return ret;
