@@ -1212,8 +1212,9 @@ static void itc_libc_stdio_fseek_ftell_p(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
-	char *write_buf;
+	char write_buf[BUFFER_LEN];
 	char read_buf[BUFFER_LEN];
+	int null_index = 15;
 
 	fp = fopen(filename, "w+");
 	TC_ASSERT_NEQ("fopen", fp, NULL);
@@ -1221,8 +1222,9 @@ static void itc_libc_stdio_fseek_ftell_p(void)
 	TC_ASSERT_EQ_CLEANUP("fseek", fseek(fp, 0, SEEK_SET), OK, fclose(fp));
 	TC_ASSERT_EQ_CLEANUP("ftell", ftell(fp), (long)0, fclose(fp));
 
-	write_buf = VFS_TEST_CONTENTS_1;
-	write_buf[15] = '\0';
+	strncpy(write_buf, VFS_TEST_CONTENTS_1, strlen(VFS_TEST_CONTENTS_1));
+
+	write_buf[null_index] = '\0';
 	TC_ASSERT_NEQ_CLEANUP("fputs", fputs(write_buf, fp), EOF, fclose(fp));
 
 	TC_ASSERT_EQ_CLEANUP("fseek", fseek(fp, 0, SEEK_CUR), OK, fclose(fp));
