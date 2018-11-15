@@ -303,10 +303,11 @@ audio_manager_result_t reset_audio_stream_out(void);
 unsigned int get_input_frame_count(void);
 
 /****************************************************************************
- * Name: get_input_frames_to_byte
+ * Name: get_card_input_frames_to_byte
  *
  * Description:
- *   Get the byte size of the given frame value in input stream.
+ *   Get the byte size of the given frame value with the channel value
+ *   supported by the card for input stream.
  *
  * Input parameter:
  *   frames: the target of which byte size is returned.
@@ -314,13 +315,14 @@ unsigned int get_input_frame_count(void);
  * Return Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frames_to_byte(unsigned int frames);
+unsigned int get_card_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_input_bytes_to_frame
+ * Name: get_card_input_bytes_to_frame
  *
  * Description:
- *   Get the number of frames for the given byte size in input stream.
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for input stream.
  *
  * Input parameter:
  *   bytes: the target of which frame count is returned.
@@ -328,7 +330,37 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  * Return Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_bytes_to_frame(unsigned int bytes);
+unsigned int get_card_input_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_user_input_frames_to_byte
+ *
+ * Description:
+ *   Get the byte size of the given frame value with the channel value
+ *   specified by the user for input stream.
+ *
+ * Input parameter:
+ *   frames: the target of which byte size is returned.
+ *
+ * Return Value:
+ *   On success, the byte size of the frame in input stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_input_frames_to_byte(unsigned int frames);
+
+/****************************************************************************
+ * Name: get_user_input_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   specified by the user for input stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in input stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -342,10 +374,11 @@ unsigned int get_input_bytes_to_frame(unsigned int bytes);
 unsigned int get_output_frame_count(void);
 
 /****************************************************************************
- * Name: get_output_frames_to_byte
+ * Name: get_card_output_frames_to_byte
  *
  * Description:
- *   Get the byte size of the given frame value in output stream.
+ *   Get the byte size of the given frame value with the channel value
+ *   supported by the card for output stream.
  *
  * Input parameter:
  *   frames: the target of which byte size is returned.
@@ -353,13 +386,14 @@ unsigned int get_output_frame_count(void);
  * Return Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frames_to_byte(unsigned int frames);
+unsigned int get_card_output_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_output_bytes_to_frame
+ * Name: get_card_output_bytes_to_frame
  *
  * Description:
- *   Get the number of frames for the given byte size in output stream.
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for output stream.
  *
  * Input parameter:
  *   bytes: the target of which frame count is returned.
@@ -367,7 +401,37 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  * Return Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_bytes_to_frame(unsigned int bytes);
+unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_user_output_frames_to_byte
+ *
+ * Description:
+ *   Get the byte size of the given frame value with the channel value
+ *   specified by the user for output stream.
+ *
+ * Input parameter:
+ *   frames: the target of which byte size is returned.
+ *
+ * Return Value:
+ *   On success, the byte size of the frame in output stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_output_frames_to_byte(unsigned int frames);
+
+/****************************************************************************
+ * Name: get_user_output_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   specified by the user for output stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in output stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_max_audio_volume
