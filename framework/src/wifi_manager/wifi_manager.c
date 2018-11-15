@@ -753,7 +753,6 @@ wifi_manager_result_e _wifimgr_deinit(void)
 {
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), "[WM] wifi_utils_deinit fail", WIFI_MANAGER_FAIL);
-
 #ifdef CONFIG_ENABLE_IOTIVITY
 	int ret = mq_close(g_dw_nwevent_mqfd);
 	if (ret < 0) {
@@ -762,6 +761,12 @@ wifi_manager_result_e _wifimgr_deinit(void)
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
+	int i = 0;
+	for (i = 0; i < WIFIMGR_NUM_CALLBACKS; i++) {
+		if (g_manager_info.cb[i] != NULL) {
+			g_manager_info.cb[i] = NULL;
+		}
+	}
 	return WIFI_MANAGER_SUCCESS;
 }
 
