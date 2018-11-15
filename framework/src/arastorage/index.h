@@ -96,6 +96,8 @@ struct index_s {
 	void *opaque_data;
 	index_type_t type;
 	index_state_t state;
+	uint8_t ref_cnt;
+	uint8_t reserved[3];
 };
 typedef struct index_s index_t;
 
