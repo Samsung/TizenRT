@@ -94,6 +94,7 @@ public:
 	recorder_result_t stop();
 
 	recorder_result_t getVolume(uint8_t *vol);
+	recorder_result_t getMaxVolume(uint8_t *vol);
 	recorder_result_t setVolume(uint8_t vol);
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
@@ -113,6 +114,7 @@ private:
 	void pauseRecorder();
 	void stopRecorder(recorder_result_t ret);
 	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
+	void getRecorderMaxVolume(uint8_t *vol, recorder_result_t& ret);
 	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);

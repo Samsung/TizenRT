@@ -71,14 +71,14 @@ class MediaRecorder
 {
 public:
 	/**
-	 * @brief Constructs an empty MediaRecorder.
+	 * @brief Construct an empty MediaRecorder.
 	 * @details @b #include <media/MediaRecorder.h>
 	 * @since TizenRT v2.0
 	 */
 	MediaRecorder();
 	
 	/**
-	 * @brief Deconstructs an empty MediaRecorder.
+	 * @brief Deconstruct an empty MediaRecorder.
 	 * @details @b #include <media/MediaRecorder.h>
 	 * @since TizenRT v2.0
 	 */
@@ -87,7 +87,7 @@ public:
 	/**
 	 * @brief Create MediaRecorder for capturing
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the create operation
 	 * @since TizenRT v2.0
 	 */
@@ -96,7 +96,7 @@ public:
 	/**
 	 * @brief Destroy MediaRecorder
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the destroy operation
 	 * @since TizenRT v2.0
 	 */
@@ -105,16 +105,16 @@ public:
 	/**
 	 * @brief Allocate and prepare resources related to the recorder, it should be called before start
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t prepare();
 	
 	/**
-	 * @brief Releases allocated resources related to the recorder.
+	 * @brief Release allocated resources related to the recorder.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0
 	 */
@@ -123,7 +123,7 @@ public:
 	/**
 	 * @brief Start recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaRecordWorker begin recording through the queue
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0
@@ -133,7 +133,7 @@ public:
 	/**
 	 * @brief Pause recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaRecordWorker pause recording through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -143,7 +143,7 @@ public:
 	/**
 	 * @brief Stop recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous api
+	 * This function is a asynchronous API
 	 * Order to MediaRecordWorker stop recording through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0
@@ -151,18 +151,27 @@ public:
 	recorder_result_t stop();
 	
 	/**
-	 * @brief Gets the current volume
+	 * @brief Get the current volume
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
-	 * @return The value of current mic volume
+	 * This function is a synchronous API
+	 * @return The value of current MIC volume
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t getVolume(uint8_t *vol);
 	
 	/**
-	 * @brief Sets the volume adjusted
+	 * @brief Get the Maximum input gain
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
+	 * @return The value of the maximum MIC gain
+	 * @since TizenRT v2.0
+	 */
+	recorder_result_t getMaxVolume(uint8_t *vol);
+
+	/**
+	 * @brief Set the volume adjusted
+	 * @details @b #include <media/MediaRecorder.h>
+	 * This function is a synchronous API
 	 * @param[in] vol The vol that the value of mic volume
 	 * @return The result of setting the mic volume
 	 * @since TizenRT v2.0
@@ -170,9 +179,9 @@ public:
 	recorder_result_t setVolume(uint8_t vol);
 	
 	/**
-	 * @brief Sets the DataSource of output data
+	 * @brief Set the DataSource of output data
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * @param[in] dataSource The dataSource that the config of output data
 	 * @return The result of setting the datasource
 	 * @since TizenRT v2.0
@@ -180,9 +189,9 @@ public:
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	
 	/**
-	 * @brief Sets the observer of MediaRecorder
+	 * @brief Set the observer of MediaRecorder
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * It sets the user's function
 	 * @param[in] observer The callback to be set for Media Recorder Observer.
 	 * @return The result of setting the observer
@@ -194,7 +203,7 @@ public:
 	 * @brief Set limitation of recording time by given value(second), will be stopped when it reaches that.
 	 * This should be called after setDataSource but before prepare
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * It sets the user's function
  	 * @param[in] Max duration(second), No limitation If zero or negative.
 	 * @return The result of setting the duration
@@ -217,7 +226,7 @@ public:
 	/**
 	 * @brief MediaRecorder operator==
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous api
+	 * This function is a synchronous API
 	 * Compares the MediaRecorder objects for equality
 	 * @return The result of the compare operation for MediaRecorder object
 	 * @since TizenRT v2.0

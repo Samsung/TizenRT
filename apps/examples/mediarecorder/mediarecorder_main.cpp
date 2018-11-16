@@ -32,17 +32,6 @@
 #include <iostream>
 #include <memory>
 
-constexpr int APP_ON = 1;
-constexpr int RECORDER_START = 2;
-constexpr int RECORDER_PAUSE = 3;
-constexpr int RECORDER_RESUME = 4;
-constexpr int RECORDER_STOP = 5;
-constexpr int VOLUME_UP = 6;
-constexpr int VOLUME_DOWN = 7;
-constexpr int PLAY_DATA = 8;
-constexpr int DELETE_FILE = 9;
-constexpr int APP_OFF = 0;
-
 using namespace std;
 using namespace media;
 using namespace media::stream;
@@ -54,6 +43,20 @@ static const int TEST_DATASOURCE_TYPE_FILE = 0;
 static const int TEST_DATASOURCE_TYPE_BUFFER = 1;
 
 static const char *filePath = "";
+
+enum test_command_e {
+	APP_ON = 0,
+	RECORDER_START = 1,
+	RECORDER_PAUSE,
+	RECORDER_RESUME,
+	RECORDER_STOP,
+	GET_MAX_VOLUME,
+	VOLUME_UP,
+	VOLUME_DOWN,
+	PLAY_DATA,
+	DELETE_FILE,
+	APP_OFF,
+};
 
 class MediaRecorderTest : public MediaRecorderObserverInterface,
 						  public MediaPlayerObserverInterface,
@@ -229,14 +232,29 @@ public:
 				std::cout << "PLAY_DATA" << std::endl;
 				play_data();
 				break;
+			case GET_MAX_VOLUME:
+				cout << "GET_MAX_VOLUME is selected" << endl;
+				if (mMr.getMaxVolume(&volume) != RECORDER_ERROR_NONE) {
+					cout << "MediaRecorder::getMaxVolume failed" << endl;
+				} else {
+					cout << "Max Volume is " << (int)volume << endl;
+				}
+				break;
 			case VOLUME_UP:
+				uint8_t max_volume;
 				cout << "VOLUME_UP is selected" << endl;
+				if (mMr.getMaxVolume(&max_volume) != RECORDER_ERROR_NONE) {
+					cout << "MediaRecorder::getMaxVolume failed" << endl;
+				}
 				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::getVolume failed" << endl;
 				} else {
 					cout << "Volume was " << (int)volume << endl;
 				}
-				if (mMr.setVolume(volume + 1) != RECORDER_ERROR_NONE) {
+				if (volume < max_volume) {
+					volume++;
+				}
+				if (mMr.setVolume(volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::setVolume failed" << endl;
 				}
 				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
@@ -252,7 +270,10 @@ public:
 				} else {
 					cout << "Volume was " << (int)volume << endl;
 				}
-				if (mMr.setVolume(volume - 1) != RECORDER_ERROR_NONE) {
+				if (volume > 0) {
+					volume--;
+				}
+				if (mMr.setVolume(volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::setVolume failed" << endl;
 				}
 				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
@@ -323,16 +344,17 @@ public:
 	void printRecorderMenu()
 	{
 		std::cout << "========================================" << std::endl;
-		std::cout << "1. RECORDER APP ON" << std::endl;
-		std::cout << "2. RECORDER Start" << std::endl;
-		std::cout << "3. RECORDER Pause" << std::endl;
-		std::cout << "4. RECORDER Resume" << std::endl;
-		std::cout << "5. RECORDER Stop" << std::endl;
-		std::cout << "6. RECORDER Volume Up" << std::endl;
-		std::cout << "7. RECORDER Volume Down" << std::endl;
-		std::cout << "8. play Data" << std::endl;
-		std::cout << "9. Delete file" << std::endl;
-		std::cout << "0. RECORDER APP OFF" << std::endl;
+		std::cout << "0.  RECORDER APP ON" << std::endl;
+		std::cout << "1.  RECORDER Start" << std::endl;
+		std::cout << "2.  RECORDER Pause" << std::endl;
+		std::cout << "3.  RECORDER Resume" << std::endl;
+		std::cout << "4.  RECORDER Stop" << std::endl;
+		std::cout << "5.  RECORDER Get Max Volume" << std::endl;
+		std::cout << "6.  RECORDER Volume Up" << std::endl;
+		std::cout << "7.  RECORDER Volume Down" << std::endl;
+		std::cout << "8.  Play Data" << std::endl;
+		std::cout << "9.  Delete file" << std::endl;
+		std::cout << "10. RECORDER APP OFF" << std::endl;
 		std::cout << "========================================" << std::endl;
 	}
 
