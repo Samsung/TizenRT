@@ -122,7 +122,6 @@ int towctrans(wint_t, wctrans_t);
 wint_t towlower(wint_t);
 wint_t towupper(wint_t);
 wctrans_t wctrans(FAR const char *);
-int iswctype(wint_t, wctype_t);
 wctype_t wctype(FAR const char *);
 
 #endif							/* INCLUDE_WTYPE_H */
