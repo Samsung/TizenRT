@@ -848,7 +848,7 @@ static void utc_task_manager_register_task_n(void)
 
 static void utc_task_manager_register_task_p(void)
 {
-	tm_not_builtin_handle = task_manager_register_task("not_builtin", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_not_builtin_handle = task_manager_register_task("not_builtin", 100, 1024, 0 , NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_not_builtin_handle, 0);
 
 	TC_SUCCESS_RESULT();
