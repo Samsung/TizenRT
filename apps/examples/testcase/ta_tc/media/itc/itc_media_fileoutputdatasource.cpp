@@ -29,7 +29,9 @@ using namespace media::stream;
  ****************************************************************************/
 #define MEDIA_TEST_FILE_PATH "/tmp/record";
 #define FILE_DEFAULT_RATE 16000
-#define CHANNELS 2
+#define FILE_CUSTOM_RATE 16000
+#define DEFAULT_CHANNELS 2
+#define CUSTOM_CHANNELS 16
 #define NULL 0
 #define COUNT 10
 
@@ -51,11 +53,14 @@ static const char *file_path = MEDIA_TEST_FILE_PATH;
 static void itc_media_FileOutputDataSource_getChannels_setChannels_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
+
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getChannels", source.getChannels(), 2);
-	source.setChannels(16);
-	TC_ASSERT_EQ("getChannels", source.getChannels(), 16);
+	TC_ASSERT_EQ_CLEANUP("getChannels", source.getChannels(), DEFAULT_CHANNELS, source.close());
+	source.setChannels(CUSTOM_CHANNELS);
+
+	TC_ASSERT_EQ_CLEANUP("getChannels", source.getChannels(), CUSTOM_CHANNELS, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -71,10 +76,12 @@ static void itc_media_FileOutputDataSource_getSampleRate_setSampleRate_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getSampleRate", source.getSampleRate(), FILE_DEFAULT_RATE);
-	source.setSampleRate(20000);
-	TC_ASSERT_EQ("getSampleRate", source.getSampleRate(), 20000);
+	TC_ASSERT_EQ_CLEANUP("getSampleRate", source.getSampleRate(), FILE_DEFAULT_RATE, source.close());
+	source.setSampleRate(FILE_CUSTOM_RATE);
+	TC_ASSERT_EQ_CLEANUP("getSampleRate", source.getSampleRate(), FILE_CUSTOM_RATE, source.close());
+
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -90,12 +97,15 @@ static void itc_media_FileOutputDataSource_getPcmFormat_setPcmFormat_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), MEDIA_FORMAT_TYPE);
-	source.setPcmFormat(1);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), 1);
-	source.setPcmFormat(2);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), 2);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE, source.close());
+	source.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S8, source.close());
+
+	source.setPcmFormat(media::AUDIO_FORMAT_TYPE_S32_LE);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S32_LE, source.close());
+
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -110,10 +120,11 @@ static void itc_media_FileOutputDataSource_getPcmFormat_setPcmFormat_p(void)
 static void itc_media_FileOutputDataSource_open_close_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
-	for(int i=0; i<COUNT; i++){
+	for (int i = 0; i < COUNT; i++) {
 		TC_ASSERT_EQ("open", source.open(), 1);
 		TC_ASSERT_EQ("close", source.close(), 1);
 	}
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -129,10 +140,11 @@ static void itc_media_FileOutputDataSource_open_n(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	for(int i=0; i<COUNT; i++){
-		TC_ASSERT_EQ("open", source.open(), 0);
+	for (int i = 0; i < COUNT; i++) {
+		TC_ASSERT_EQ("open", source.open(), 1);
 	}
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -149,9 +161,10 @@ static void itc_media_FileOutputDataSource_close_n(void)
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
 	TC_ASSERT_EQ("close", source.close(), 1);
-	for(int i=0; i<COUNT; i++){
+	for (int i = 0; i < COUNT; i++) {
 		TC_ASSERT_EQ("close", source.close(), 0);
 	}
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -167,8 +180,9 @@ static void itc_media_FileOutputDataSource_isPrepare_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("isPrepare", source.isPrepare(), 1);
+	TC_ASSERT_EQ_CLEANUP("isPrepare", source.isPrepare(), 1, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 /**
@@ -185,6 +199,7 @@ static void itc_media_FileOutputDataSource_isPrepare_n(void)
 	TC_ASSERT_EQ("open", source.open(), 1);
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_ASSERT_EQ("isPrepare", source.isPrepare(), 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -201,12 +216,13 @@ static void itc_media_FileOutputDataSource_write_p(void)
 	media::stream::FileOutputDataSource source(file_path);
 	unsigned char buf[] = "dummydata";
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("write", source.write(buf, 9), 9);
-	TC_ASSERT_EQ("write", source.write(buf, 0), 0);
-	TC_ASSERT_EQ("write", source.write(buf, 10), 10);
-	TC_ASSERT_EQ("write", source.write(buf, 24), 24);
-	TC_ASSERT_EQ("write", source.write(buf, 31), 31);
+	TC_ASSERT_EQ_CLEANUP("write", source.write(buf, 9), 9, source.close());
+	TC_ASSERT_EQ_CLEANUP("write", source.write(buf, 0), 0, source.close());
+	TC_ASSERT_EQ_CLEANUP("write", source.write(buf, 10), 10, source.close());
+	TC_ASSERT_EQ_CLEANUP("write", source.write(buf, 24), 24, source.close());
+	TC_ASSERT_EQ_CLEANUP("write", source.write(buf, 31), 31, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 /**
@@ -222,8 +238,9 @@ static void itc_media_FileOutputDataSource_write_n(void)
 	media::stream::FileOutputDataSource source(file_path);
 	unsigned char buf[] = "dummydata";
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("write", source.write(NULL,24), 0);
+	TC_ASSERT_EQ_CLEANUP("write", source.write(nullptr, 1), EOF, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -239,5 +256,6 @@ int itc_media_fileoutputdatasource_main(void)
 	itc_media_FileOutputDataSource_isPrepare_n();
 	itc_media_FileOutputDataSource_write_p();
 	itc_media_FileOutputDataSource_write_n();
+
 	return 0;
 }

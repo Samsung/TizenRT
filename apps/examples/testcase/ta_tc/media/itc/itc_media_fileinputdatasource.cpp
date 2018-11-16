@@ -24,26 +24,38 @@
  ****************************************************************************/
 #define MEDIA_TEST_FILE_PATH "/mnt/fileinputdatasource.raw";
 #define FILE_DEFAULT_RATE 16000
+#define FILE_CUSTOM_RATE 20000
 #define MEDIA_FORMAT_TYPE 0
 #define COUNT 10
-
+#define BUFFER_LENGTH 32
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-static const char *file_path = MEDIA_TEST_FILE_PATH;
-static const char *test_data = "dummydata";
-static int g_flag=0;
+static const char file_path[] = "/mnt/fileinputdatasource.raw";
+static const char test_data[] = "dummydata";
 static unsigned char *buf;
+static int g_flag = 0;
+static unsigned int getchannels = 2;
+static unsigned int setchannels = 16;
+static unsigned int sampleRate = 16000;
 
 static void SetUp(void)
 {
-	FILE *fp;
-	fp = fopen(file_path, "w");
-	TC_ASSERT_NEQ("fopen", fp, NULL);
-	TC_ASSERT_NEQ_CLEANUP("fputs", fputs(test_data, fp), EOF, fclose(fp));
-	TC_ASSERT_EQ("fclose", fclose(fp), OK);
-	buf = new unsigned char[31];
-	g_flag = 1;
+	buf = new unsigned char[BUFFER_LENGTH];
+	if (buf == nullptr) {
+		printf("fail to allocate buffer\n");
+	}
+	FILE *fp = fopen(file_path, "w");
+	if (fp != NULL) {
+		int ret = fputs(test_data, fp);
+		if (ret != (int)strlen(test_data)) {
+			printf("fail to fputs\n");
+		}
+		fclose(fp);
+		g_flag = 1;
+	} else {
+		printf("fail to open %s, errno : %d\n", file_path, get_errno());
+	}
 }
 
 static void TearDown()
@@ -64,9 +76,9 @@ static void itc_media_FileInputDataSource_getChannels_setChannels_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getChannels", source.getChannels(), 2);
-	source.setChannels(16);
-	TC_ASSERT_EQ("getChannels", source.getChannels(), 16);
+	TC_ASSERT_EQ_CLEANUP("getChannels", source.getChannels(), getchannels, source.close());
+	source.setChannels(setchannels);
+	TC_ASSERT_EQ_CLEANUP("getChannels", source.getChannels(), setchannels, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
 }
@@ -83,9 +95,9 @@ static void itc_media_FileInputDataSource_getSampleRate_setSampleRate_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getSampleRate", source.getSampleRate(), FILE_DEFAULT_RATE);
-	source.setSampleRate(20000);
-	TC_ASSERT_EQ("getSampleRate", source.getSampleRate(), 20000);
+	TC_ASSERT_EQ_CLEANUP("getSampleRate", source.getSampleRate(), FILE_DEFAULT_RATE, source.close());
+	source.setSampleRate(FILE_CUSTOM_RATE);
+	TC_ASSERT_EQ_CLEANUP("getSampleRate", source.getSampleRate(), FILE_CUSTOM_RATE, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
 }
@@ -102,11 +114,11 @@ static void itc_media_FileInputDataSource_getPcmFormat_setPcmFormat_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), MEDIA_FORMAT_TYPE);
-	source.setPcmFormat(1);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), 1);
-	source.setPcmFormat(2);
-	TC_ASSERT_EQ("getPcmFormat", source.getPcmFormat(), 2);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE, source.close());
+	source.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S8, source.close());
+	source.setPcmFormat(media::AUDIO_FORMAT_TYPE_S32_LE);
+	TC_ASSERT_EQ_CLEANUP("getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S32_LE, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
 }
@@ -122,7 +134,7 @@ static void itc_media_FileInputDataSource_getPcmFormat_setPcmFormat_p(void)
 static void itc_media_FileInputDataSource_open_close_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
-	for(int i=0; i<COUNT; i++){
+	for (int i = 0; i < COUNT; i++) {
 		TC_ASSERT_EQ("open", source.open(), 1);
 		TC_ASSERT_EQ("close", source.close(), 1);
 	}
@@ -141,8 +153,8 @@ static void itc_media_FileInputDataSource_open_n(void)
 {
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	for(int i=0; i<COUNT; i++){
-		TC_ASSERT_EQ("open", source.open(), 0);
+	for (int i = 0; i < COUNT; i++) {
+		TC_ASSERT_EQ("open", source.open(), 1);
 	}
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
@@ -161,7 +173,7 @@ static void itc_media_FileInputDataSource_close_n(void)
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
 	TC_ASSERT_EQ("close", source.close(), 1);
-	for(int i=0; i<COUNT; i++){
+	for (int i = 0; i < COUNT; i++) {
 		TC_ASSERT_EQ("close", source.close(), 0);
 	}
 	TC_SUCCESS_RESULT();
@@ -179,7 +191,7 @@ static void itc_media_FileInputDataSource_isPrepare_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("isPrepare", source.isPrepare(), 1);
+	TC_ASSERT_EQ_CLEANUP("isPrepare", source.isPrepare(), 1, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
 }
@@ -203,8 +215,8 @@ static void itc_media_FileInputDataSource_isPrepare_n(void)
 
 /**
 * @testcase         itc_media_FileInputDataSource_read_p
-* @brief            open, readAt and close FileInputDataSource
-* @scenario         open, readAt and close and check its validation
+* @brief            open, and close FileInputDataSource
+* @scenario         open, and close and check its validation
 * @apicovered       open, close
 * @precondition     NA
 * @postcondition    NA
@@ -212,19 +224,17 @@ static void itc_media_FileInputDataSource_isPrepare_n(void)
 static void itc_media_FileInputDataSource_read_p(void)
 {
 	media::stream::FileInputDataSource source(file_path);
-	memset(buf, 0, 31);
+	memset(buf, 0, BUFFER_LENGTH);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("read", source.read(buf, 100), strlen(test_data));
-	TC_ASSERT_EQ("readAt", source.readAt(1, 0, buf, 100), strlen(test_data + 1));
-	TC_ASSERT_EQ("readAt", source.readAt(0, 0, buf, 100), strlen(test_data));
+	TC_ASSERT_EQ_CLEANUP("read", source.read(buf, 100), strlen(test_data), source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase         itc_media_FileInputDataSource_read_n
-* @brief            open, readAt and close FileInputDataSource
-* @scenario         open, readAt with invalid parameters and close and check its validation
+* @brief            open, and close FileInputDataSource
+* @scenario         open, with invalid parameters and close and check its validation
 * @apicovered       open,readAt, close
 * @precondition     NA
 * @postcondition    NA
@@ -232,19 +242,15 @@ static void itc_media_FileInputDataSource_read_p(void)
 static void itc_media_FileInputDataSource_read_n(void)
 {
 	media::stream::FileInputDataSource source(file_path);
-	memset(buf, 0, 31);
-	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ("readAt", source.readAt(0, 36, buf, 100), -1);
-	TC_ASSERT_EQ("readAt", source.readAt(36, 36, buf, 100), -1);
-	TC_ASSERT_EQ("readAt", source.readAt(0, strlen(test_data), buf, 100), -1);
-	TC_ASSERT_EQ("close", source.close(), 1);
+	memset(buf, 0, BUFFER_LENGTH);
+	TC_ASSERT_EQ("itc_media_FileInputDataSource_read_n", source.read(buf, 100), EOF);
 	TC_SUCCESS_RESULT();
 }
 
 int itc_media_FileInputDataSource_main(void)
 {
 	SetUp();
-	if(g_flag){
+	if (g_flag) {
 		itc_media_FileInputDataSource_getChannels_setChannels_p();
 		itc_media_FileInputDataSource_getSampleRate_setSampleRate_p();
 		itc_media_FileInputDataSource_getPcmFormat_setPcmFormat_p();
@@ -255,7 +261,6 @@ int itc_media_FileInputDataSource_main(void)
 		itc_media_FileInputDataSource_isPrepare_n();
 		itc_media_FileInputDataSource_read_p();
 		itc_media_FileInputDataSource_read_n();
-
 	}
 	TearDown();
 	return 0;
