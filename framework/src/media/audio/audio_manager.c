@@ -545,11 +545,11 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 	}
 
 	if (direct == INPUT) {
-		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
+		caps_desc.caps.ac_subtype = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
 	} else {
-		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
+		caps_desc.caps.ac_subtype = AUDIO_FU_VOLUME;
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
 	}
