@@ -90,7 +90,7 @@ public:
 	 * @return Return success if Keyword is detected
 	 * @since TizenRT v2.0
 	 */
-	virtual bool startKeywordDetect(uint32_t timeout) = 0;
+	virtual bool startKeywordDetect(int timeout) = 0;
 	/**
 	 * @brief Start Detecting EndPoint
 	 * @details @b #include <media/voice/SpeechDetector.h>
@@ -98,7 +98,7 @@ public:
 	 * @return Return success if EndPoint is detected
 	 * @since TizenRT v2.0
 	 */
-	virtual bool startEndPointDetect(uint32_t timeout) = 0;
+	virtual bool startEndPointDetect(int timeout) = 0;
 protected:
 	SpeechDetector() = default;
 };
