@@ -515,11 +515,11 @@ void itc_task_manager_unicast_thrice_p(void)
 }
 
 
-void itc_broadcast_handler(void *user_data, void *info)
+void itc_broadcast_handler(tm_msg_t *user_data, tm_msg_t *info)
 {
 	int ret;
 
-	if (strncmp((char *)info, TM_BROAD_START, strlen(TM_BROAD_START) + 1) == 0) {
+	if (strncmp((char *)info->msg, TM_BROAD_START, strlen(TM_BROAD_START) + 1) == 0) {
 
 		ret = task_manager_unset_broadcast_cb(tm_broadcast_msg, TM_NO_RESPONSE);
 		if (ret != OK) {
@@ -537,7 +537,7 @@ void itc_broadcast_handler(void *user_data, void *info)
 		if (ret != OK) {
 			printf("ERROR : fail to set broadcast callback ERR: %d\n", ret);
 		}
-	} else if (strncmp((char *)info, TM_BROAD_END, strlen(TM_BROAD_END) + 1) == 0) {
+	} else if (strncmp((char *)info->msg, TM_BROAD_END, strlen(TM_BROAD_END) + 1) == 0) {
 		broadcast_data_flag = false;
 		ret = task_manager_unset_broadcast_cb(tm_broadcast_msg, TM_NO_RESPONSE);
 		if (ret != OK) {
@@ -599,7 +599,7 @@ void itc_task_manager_broadcast_twice_p(void)
 		if (broadcast_data_flag) {
 			break;
 		}
-		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 10, unregister_tasks_3(tm_sample_handle));
+		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 1, unregister_tasks_3(tm_sample_handle));
 		sleep_cnt++;
 	}
 	user_data.msg_size = strlen("END") + 1;
@@ -616,7 +616,7 @@ void itc_task_manager_broadcast_twice_p(void)
 		if (!broadcast_data_flag) {
 			break;
 		}
-		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 10, unregister_tasks_3(tm_sample_handle));
+		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 1, unregister_tasks_3(tm_sample_handle));
 		sleep_cnt++;
 	}
 
