@@ -213,10 +213,14 @@ static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource
 		THINGS_LOG_V(TAG, "e_ssid : %s", wifi_scan_iter->e_ssid);
 		THINGS_LOG_V(TAG, "signal_level : %s", wifi_scan_iter->signal_level);
 		THINGS_LOG_V(TAG, "bss_id : %s", wifi_scan_iter->bss_id);
+		THINGS_LOG_V(TAG, "sec_type : %s", wifi_scan_iter->auth_type);
+		THINGS_LOG_V(TAG, "enc_type : %s", wifi_scan_iter->enc_type);
 		child_rep[iter] = things_create_representation_inst(NULL);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MACADDR, wifi_scan_iter->bss_id);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_RSSI, wifi_scan_iter->signal_level);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SSID, wifi_scan_iter->e_ssid);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SECTYPE, wifi_scan_iter->auth_type);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_ENCTYPE, wifi_scan_iter->enc_type);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 	rep->things_set_arrayvalue(rep, SEC_ATTRIBUTE_AP_ITEMS, list_cnt, child_rep);

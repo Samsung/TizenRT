@@ -584,8 +584,8 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// TODO : Fix Bug for 64bit support.
 	memset(p_info->e_ssid, 0, WIFIMGR_SSID_LEN + 1);
 	memset(p_info->security_key, 0, WIFIMGR_PASSPHRASE_LEN + 1);
-	memset(p_info->enc_type, 0, MAX_TYPE_ENC);
-	memset(p_info->auth_type, 0, MAX_TYPE_AUTH);
+	memset(p_info->enc_type, 0, MAX_TYPE_ENC + 1);
+	memset(p_info->auth_type, 0, MAX_TYPE_AUTH + 1);
 	memset(p_info->channel, 0, MAX_CHANNEL);
 	memset(p_info->bss_id, 0, WIFIMGR_MACADDR_STR_LEN + 1);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);

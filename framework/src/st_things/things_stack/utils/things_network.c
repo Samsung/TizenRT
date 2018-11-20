@@ -254,7 +254,8 @@ int things_get_ap_list(access_point_info_s** p_info, int* p_count)
 			snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->e_ssid);
 			snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bss_id);
 			snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->signal_level);
-
+			snprintf(pinfo->auth_type, MAX_TYPE_AUTH, "%s", wifi_scan_iter->auth_type);
+			snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", wifi_scan_iter->enc_type);
 			if (*p_info == NULL) {
 				*p_info = pinfo;
 			} else {
@@ -380,12 +381,41 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 	access_point_info_s *pinfo = NULL;
 	access_point_info_s *p_last_info = NULL;
 	while (wifi_scan_iter != NULL) {
-		if (wifi_scan_iter->ssid != NULL) {
+		if ((wifi_scan_iter->ssid != NULL) && (strlen(wifi_scan_iter->ssid)) != 0) {
 			pinfo = (access_point_info_s*)things_malloc(sizeof(access_point_info_s));
 			pinfo->next = NULL;
 			snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->ssid);
 			snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bssid);
 			snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->rssi);
+			// Set auth type
+			const char *sec_type;
+			if (wifi_scan_iter->ap_auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+				sec_type = SEC_TYPE_WEP;
+			} else if (wifi_scan_iter->ap_auth_type == WIFI_MANAGER_AUTH_WPA_PSK) {
+				sec_type = SEC_TYPE_WPA_PSK;
+			} else if (wifi_scan_iter->ap_auth_type == WIFI_MANAGER_AUTH_WPA2_PSK) {
+				sec_type = SEC_TYPE_WPA2_PSK;
+			} else {
+				sec_type = "NONE";
+			}
+			snprintf(pinfo->auth_type, MAX_TYPE_AUTH, "%s", sec_type);
+
+			// Set encryption type
+			const char *enc_type;
+			if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_WEP_64) {
+				enc_type = ENC_TYPE_WEP_64;
+			} else if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_WEP_128) {
+				enc_type = ENC_TYPE_WEP_128;
+			} else if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_TKIP) {
+				enc_type = ENC_TYPE_TKIP;
+			} else if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_AES) {
+				enc_type = ENC_TYPE_AES;
+			} else if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_TKIP_AND_AES) {
+				enc_type = ENC_TYPE_TKIP_AES;
+			} else {
+				enc_type = "NONE";
+			}
+			snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", enc_type);
 			if (g_wifi_scan_info == NULL) {
 				g_wifi_scan_info = pinfo;
 			} else {

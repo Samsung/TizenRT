@@ -254,8 +254,8 @@ typedef enum {
 typedef struct access_point_info_s {
 	char e_ssid[WIFIMGR_SSID_LEN + 1];		// mandatory
 	char security_key[WIFIMGR_PASSPHRASE_LEN + 1];	// mandatory
-	char auth_type[MAX_TYPE_AUTH];	// mandatory (None | WEP | WPA-PSK | WPA2-PSK)
-	char enc_type[MAX_TYPE_ENC];	// mandatory (WEP-64 | WEP-128 | TKIP | AES | TKIP_AES)
+	char auth_type[MAX_TYPE_AUTH +1];	// mandatory (None | WEP | WPA-PSK | WPA2-PSK)
+	char enc_type[MAX_TYPE_ENC +1];	// mandatory (WEP-64 | WEP-128 | TKIP | AES | TKIP_AES)
 	char channel[MAX_CHANNEL];	// optional
 	char signal_level[MAX_LEVEL_SIGNAL];	// optional
 	char bss_id[WIFIMGR_MACADDR_STR_LEN + 1];		// optional

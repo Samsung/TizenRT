@@ -50,13 +50,26 @@
 #define SEC_ATTRIBUTE_AP_MACADDR            "x.com.samsung.macAddress"
 #define SEC_ATTRIBUTE_AP_RSSI               "x.com.samsung.rssi"
 #define SEC_ATTRIBUTE_AP_SSID               "x.com.samsung.ssid"
-
+#define SEC_ATTRIBUTE_AP_SECTYPE            "x.com.samsung.securityType"
+#define SEC_ATTRIBUTE_AP_ENCTYPE            "x.com.samsung.encryptionType"
 /* Resource URI */
 #define URI_SEC                         "/sec"
 #define URI_PROVINFO                    "/provisioninginfo"
 #define URI_DEVICE_COL                  "/device"
 #define URI_FIRMWARE                    "/firmware"
 #define URI_ACCESSPOINTLIST             "/accesspointlist"
+
+/* SecType value */
+#define SEC_TYPE_WEP                    "WEP"
+#define SEC_TYPE_WPA_PSK                "WPA-PSK"
+#define SEC_TYPE_WPA2_PSK               "WPA2-PSK"
+
+/* EncType value */
+#define ENC_TYPE_WEP_64                 "WEP-64"
+#define ENC_TYPE_WEP_128                "WEP-128"
+#define ENC_TYPE_TKIP                   "TKIP"
+#define ENC_TYPE_AES                    "AES"
+#define ENC_TYPE_TKIP_AES               "TKIP_AES"
 
 #define DEVICE_OS_VERSION               "1.1"
 #define DEVICE_PLATFORM_VERSION         "1.1"
