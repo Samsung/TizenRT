@@ -9,6 +9,7 @@ Import('env')
 target_os = env.get('TARGET_OS')
 transport = env.get('TARGET_TRANSPORT')
 with_tcp = env.get('WITH_TCP')
+disable_tcp_server = env.get('DISABLE_TCP_SERVER')
 
 print "Given Transport is %s" % transport
 
@@ -51,6 +52,10 @@ else:
 		print "CA Transport is TCP"
 	else:
 		env.AppendUnique(CPPDEFINES = ['NO_TCP_ADAPTER'])
+
+	if disable_tcp_server == True:
+		env.AppendUnique(CPPDEFINES = ['DISABLE_TCP_SERVER'])
+		print "TCP server is disabled"
 
 
 env.SConscript(['../con/lib/libcoap-4.1.1/SConscript'])

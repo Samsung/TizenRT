@@ -66,6 +66,7 @@ help_vars.Add(BoolVariable('UPLOAD', 'Upload binary ? (For Arduino)', require_up
 help_vars.Add(EnumVariable('ROUTING', 'Enable routing', 'EP', allowed_values=('GW', 'EP')))
 help_vars.Add(EnumVariable('BUILD_SAMPLE', 'Build with sample', 'ON', allowed_values=('ON', 'OFF')))
 help_vars.Add(BoolVariable('WITH_TCP', 'Enable TCP', False))
+help_vars.Add(BoolVariable('DISABLE_TCP_SERVER', 'Disable TCP server', False))
 help_vars.Add(ListVariable('WITH_MQ', 'Build with MQ publisher/subscriber/broker', 'OFF', ['OFF', 'SUB', 'PUB', 'BROKER']))
 
 help_vars.AddVariables(('DEVICE_NAME', 'Network display name for device', 'OIC-DEVICE', None, None),)

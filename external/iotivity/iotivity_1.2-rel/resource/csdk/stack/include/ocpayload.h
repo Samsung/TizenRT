@@ -235,7 +235,7 @@ OCDiscoveryPayload* OCDiscoveryPayloadCreate();
 OCSecurityPayload* OCSecurityPayloadCreate(const uint8_t* securityData, size_t size);
 void OCSecurityPayloadDestroy(OCSecurityPayload* payload);
 
-#ifndef TCP_ADAPTER
+#if !defined(TCP_ADAPTER) || defined(DISABLE_TCP_SERVER)
 void OCDiscoveryPayloadAddResource(OCDiscoveryPayload* payload, const OCResource* res,
                                    uint16_t securePort);
 #else

@@ -83,6 +83,7 @@ Source1002: %{name}-test.manifest
 %{!?WITH_MQ: %define WITH_MQ OFF}
 %{!?WITH_PROXY: %define WITH_PROXY 0}
 %{!?WITH_TCP: %define WITH_TCP 1}
+%{!?DISABLE_TCP_SERVER: %define DISABLE_TCP_SERVER 1}
 %{!?RD_MODE: %define RD_MODE CLIENT}
 %{!?BLE_CUSTOM_ADV: %define BLE_CUSTOM_ADV False}
 %{!?BLE_DIVISION: %define BLE_DIVISION VD}
@@ -194,6 +195,7 @@ scons %{JOB} --prefix=%{_prefix} \
     WITH_MQ=%{WITH_MQ} \
     WITH_PROXY=%{WITH_PROXY} \
     WITH_TCP=%{WITH_TCP} \
+    DISABLE_TCP_SERVER=%{DISABLE_TCP_SERVER} \
     RD_MODE=%{RD_MODE} \
     BLE_CUSTOM_ADV=%{BLE_CUSTOM_ADV} \
     BLE_DIVISION=%{BLE_DIVISION} \
@@ -221,6 +223,7 @@ scons install --install-sandbox=%{buildroot} --prefix=%{_prefix} \
     WITH_MQ=%{WITH_MQ} \
     WITH_PROXY=%{WITH_PROXY} \
     WITH_TCP=%{WITH_TCP} \
+    DISABLE_TCP_SERVER=%{DISABLE_TCP_SERVER} \
     RD_MODE=%{RD_MODE} \
     BLE_CUSTOM_ADV=%{BLE_CUSTOM_ADV} \
     BLE_DIVISION=%{BLE_DIVISION} \

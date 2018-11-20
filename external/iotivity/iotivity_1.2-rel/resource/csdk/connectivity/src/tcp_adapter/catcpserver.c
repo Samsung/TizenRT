@@ -890,6 +890,7 @@ static void CAInitializePipe(int *fds)
 #endif
 }
 
+#ifndef DISABLE_TCP_SERVER
 #define NEWSOCKET(FAMILY, NAME) \
     caglobals.tcp.NAME.fd = CACreateAcceptSocket(FAMILY, &caglobals.tcp.NAME); \
     if (caglobals.tcp.NAME.fd == -1) \
@@ -898,6 +899,7 @@ static void CAInitializePipe(int *fds)
         caglobals.tcp.NAME.fd = CACreateAcceptSocket(FAMILY, &caglobals.tcp.NAME); \
     } \
     CHECKFD(caglobals.tcp.NAME.fd);
+#endif // DISABLE_TCP_SERVER
 
 CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
 {
@@ -938,6 +940,7 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
     }
     oc_mutex_unlock(g_mutexObjectList);
 
+#ifndef DISABLE_TCP_SERVER
     if (caglobals.server)
     {
 #ifndef __WITH_TLS__
@@ -966,6 +969,8 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
                   caglobals.tcp.ipv6s.fd, caglobals.tcp.ipv6s.port);
 #endif
     }
+#endif
+
 #ifndef __TIZENRT__
     // create pipe for fast shutdown
     CAInitializePipe(caglobals.tcp.shutdownFds);
