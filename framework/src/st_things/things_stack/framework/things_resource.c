@@ -26,6 +26,7 @@
 
 #include "things_def.h"
 #include "things_common.h"
+#include "things_iotivity_lock.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "utils/things_string.h"
@@ -342,13 +343,17 @@ void get_uri(struct things_resource_s *res, char **value)
 int get_num_of_res_types(struct things_resource_s *res)
 {
 	uint8_t num = 0;
+	iotivity_api_lock();
 	OCGetNumberOfResourceTypes((OCResourceHandle) res->resource_handle, &num);
+	iotivity_api_unlock();
 	return (int)num;
 }
 
 const char *get_res_type(struct things_resource_s *res, int index)
 {
+	iotivity_api_lock();
 	const char *resourcType = OCGetResourceTypeName((OCResourceHandle) res->resource_handle, index);
+	iotivity_api_unlock();
 	THINGS_LOG_D(TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
 	THINGS_LOG_D(TAG, "=====>  RT : %s ", resourcType);
 
@@ -358,13 +363,17 @@ const char *get_res_type(struct things_resource_s *res, int index)
 int get_num_of_inf_types(struct things_resource_s *res)
 {
 	uint8_t num = 0;
+	iotivity_api_lock();
 	OCGetNumberOfResourceInterfaces((OCResourceHandle) res->resource_handle, &num);
+	iotivity_api_unlock();
 	return (int)num;
 }
 
 const char *get_inf_type(struct things_resource_s *res, int index)
 {
+	iotivity_api_lock();
 	const char *interface_type = OCGetResourceInterfaceName((OCResourceHandle) res->resource_handle, index);
+	iotivity_api_unlock();
 	THINGS_LOG_D(TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
 	THINGS_LOG_D(TAG, "=====>  IT : %s ", interface_type);
 
@@ -522,6 +531,7 @@ void /*OCRepPayload */ *create_payload(struct things_resource_s *res, char *quer
 		uint8_t number_of_interfaces = 0;
 		uint8_t number_of_resource_type = 0;
 
+		iotivity_api_lock();
 		OCGetNumberOfResourceInterfaces((OCResourceHandle) res->resource_handle, &number_of_interfaces);
 
 		THINGS_LOG_D(TAG, "@@  IF # : %d ", number_of_interfaces);
@@ -540,6 +550,7 @@ void /*OCRepPayload */ *create_payload(struct things_resource_s *res, char *quer
 			THINGS_LOG_D(TAG, "=====>  RT : %s ", rt);
 			OCRepPayloadAddResourceType(payload, rt);
 		}
+		iotivity_api_unlock();
 	} else if (strstr(query, OC_RSRVD_INTERFACE_BATCH)) {
 		THINGS_LOG_D(TAG, "Batch only supported by Collection Resource");
 	} else if (strstr(query, OC_RSRVD_INTERFACE_LL)) {
@@ -591,6 +602,7 @@ bool is_supporting_interface_type(struct things_resource_s *res, char *query)
 	bool result = false;
 	uint8_t number_of_interfaces = 0;
 
+	iotivity_api_lock();
 	OCGetNumberOfResourceInterfaces((OCResourceHandle) res->resource_handle, &number_of_interfaces);
 
 	THINGS_LOG_D(TAG, "@@  IF # : %d ", number_of_interfaces);
@@ -607,6 +619,8 @@ bool is_supporting_interface_type(struct things_resource_s *res, char *query)
 			}
 		}
 	}
+
+	iotivity_api_unlock();
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return result;
 }
@@ -617,6 +631,7 @@ bool is_supporting_resource_type(struct things_resource_s *res, char *query)
 	bool result = false;
 	uint8_t number_of_resource_type = 0;
 
+	iotivity_api_lock();
 	OCGetNumberOfResourceTypes((OCResourceHandle) res->resource_handle, &number_of_resource_type);
 
 	THINGS_LOG_D(TAG, "@@  RT # : %d ", number_of_resource_type);
@@ -631,6 +646,8 @@ bool is_supporting_resource_type(struct things_resource_s *res, char *query)
 			break;
 		}
 	}
+
+	iotivity_api_unlock();
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return result;
 }
@@ -758,7 +775,9 @@ things_resource_s *create_resource_inst_impl(void *requesthd, void *resourcehd, 
 	res->request_handle = requesthd;
 
 	res->uri = NULL;
+	iotivity_api_lock();
 	const char *uri = OCGetResourceUri(resourcehd);
+	iotivity_api_unlock();
 	if (uri != NULL && strlen(uri) > 0) {
 		res->uri = (char *)things_malloc(sizeof(char) * strlen(uri) + 1);
 		memset(res->uri, 0, strlen(uri) + 1);

@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += port_tinyara.c things_stack.c
+CSRCS += port_tinyara.c things_iotivity_lock.c things_stack.c
 
 DEPPATH += --dep-path src/st_things/things_stack
 VPATH += :src/st_things/things_stack

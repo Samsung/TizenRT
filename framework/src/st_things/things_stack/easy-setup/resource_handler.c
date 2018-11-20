@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #endif
 #include "things_api.h"
+#include "things_iotivity_lock.h"
 #include "octypes.h"
 #include "ocpayload.h"
 #include "logging/things_logger.h"
@@ -189,7 +190,10 @@ static OCRepPayload *make_rep_payload(OCResourceHandle rsc_handle, OCDevAddr *de
 		things_free(resource_interface[0]);
 	}
 
+	iotivity_api_lock();
 	OCResourceProperty p = OCGetResourceProperties(rsc_handle);
+	iotivity_api_unlock();
+
 	OCRepPayload *policy = OCRepPayloadCreate();
 	if (!policy) {
 		THINGS_LOG_E(ES_RH_TAG, "Failed to allocate Payload");
@@ -266,6 +270,8 @@ OCStackResult init_prov_resource(bool is_secured)
 	g_prov_resource.vd_err_code = ERRCI_NO_ERROR;
 
 	OCStackResult res = OC_STACK_ERROR;
+
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_prov_resource.handle, THINGS_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
@@ -274,28 +280,33 @@ OCStackResult init_prov_resource(bool is_secured)
 
 	if (res) {
 		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceTypeToResource(g_prov_resource.handle, OC_RSRVD_RESOURCE_TYPE_COLLECTION);
 	if (res) {
 		THINGS_LOG_D(ES_RH_TAG, "Binding Resource type with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceInterfaceToResource(g_prov_resource.handle, OC_RSRVD_INTERFACE_LL);
 	if (res) {
 		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceInterfaceToResource(g_prov_resource.handle, OC_RSRVD_INTERFACE_BATCH);
 	if (res) {
 		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+	iotivity_api_unlock();
 	return res;
 }
 
@@ -316,11 +327,13 @@ OCStackResult init_wifi_resource(bool is_secured)
 	memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
 	g_wifi_resource.discovery_channel = 1;
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
 	THINGS_LOG_D(ES_RH_TAG, "Created WiFi resource with result: %s", get_result(res));
 	return res;
@@ -430,11 +443,13 @@ OCStackResult init_cloud_server_resource(bool is_secured)
 
 	init_cloud_resource_data(&g_cloud_resource);
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
 	THINGS_LOG_D(ES_RH_TAG, "Created CloudServer resource with result: %s", get_result(res));
 	return res;
@@ -453,11 +468,13 @@ OCStackResult init_dev_conf_resource(bool is_secured)
 #endif
 	memset(g_dev_conf_resource.datetime, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
 	THINGS_LOG_D(ES_RH_TAG, "Created dev_conf_s resource with result: %s", get_result(res));
 	return res;
@@ -1135,7 +1152,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_wifi_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind wifi_resource_s result: %s", get_result(res));
 			return res;
@@ -1151,7 +1170,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_cloud_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind cloud_resource_s result: %s", get_result(res));
 			return res;
@@ -1166,7 +1187,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_dev_conf_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind dev_conf_resource_s result: %s", get_result(res));
 			return res;
@@ -1186,16 +1209,18 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 
 OCStackResult delete_provisioning_resource()
 {
+	iotivity_api_lock();
 	OCStackResult res = OCDeleteResource(g_prov_resource.handle);
 	if (res != OC_STACK_OK) {
 		THINGS_LOG_V(ES_RH_TAG, "Deleting Prov resource error with result: %s", get_result(res));
 	}
-
+	iotivity_api_unlock();
 	return res;
 }
 
 OCStackResult delete_easysetup_resources()
 {
+	iotivity_api_lock();
 	OCStackResult res = OC_STACK_ERROR;
 	if (g_wifi_resource.handle != NULL) {
 		res = OCUnBindResource(g_prov_resource.handle, g_wifi_resource.handle);
@@ -1244,6 +1269,7 @@ OCStackResult delete_easysetup_resources()
 		}
 	}
 
+	iotivity_api_unlock();
 	return res;
 }
 
@@ -1383,7 +1409,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 		} else {
 			THINGS_LOG_E(ES_RH_TAG, "EZ-Setup Resource not Registered Yet~!!!!!");
 		}
-		
+
 		THINGS_LOG_V(ES_RH_TAG, "\t\tRespone : (%d) ", (int)eh_ret);
 
 		response.numSendVendorSpecificHeaderOptions = 0;
@@ -1399,7 +1425,10 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 		response.persistentBufferFlag = 0;
 
 		// Send the response
-		if (OCDoResponse(&response) != OC_STACK_OK) {
+		iotivity_api_lock();
+		OCStackResult res = OCDoResponse(&response);
+		iotivity_api_unlock();
+		if (res != OC_STACK_OK) {
 			THINGS_LOG_E(ES_RH_TAG, "Error sending response");
 			eh_ret = OC_EH_ERROR;
 		}
@@ -1429,6 +1458,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 
 OCStackResult prov_rsc_notify_all_observers(void)
 {
+	iotivity_api_lock();
 	OCStackResult ret = OCNotifyAllObservers(g_prov_resource.handle, OC_HIGH_QOS);
 
 	switch (ret) {
@@ -1444,6 +1474,7 @@ OCStackResult prov_rsc_notify_all_observers(void)
 	}
 
 	ret = OCNotifyAllObservers(g_cloud_resource.handle, OC_HIGH_QOS);
+	iotivity_api_unlock();
 
 	switch (ret) {
 	case OC_STACK_OK:

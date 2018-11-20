@@ -34,6 +34,7 @@
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
+#include "things_iotivity_lock.h"
 #include "things_resource.h"
 
 #include "framework/things_common.h"
@@ -250,6 +251,8 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		return 0;
 	}
 
+	init_iotivity_api_lock();
+
 	if (things_network_initialize() != 0) {
 		THINGS_LOG_E(TAG, "ERROR things_network initialize");
 		things_free(abs_json_path);
@@ -290,6 +293,8 @@ int things_deinitialize_stack(void)
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	dm_termiate_module();
+
+	deinit_iotivity_api_lock();
 
 	is_things_module_initialized = 0;
 
@@ -699,7 +704,9 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 	THINGS_LOG_D(TAG, "Disable Notification Module.");
 	things_set_reset_mask(RST_NOTI_MODULE_DISABLE);
 
+	iotivity_api_lock();
 	OCClearObserverlist();		// delete All Observer. (for remote Client)
+	iotivity_api_unlock();
 
 	// 4. Cloud Manager : Terminate
 	THINGS_LOG_D(TAG, "Terminate Cloud Module.");
@@ -719,7 +726,9 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 	}
 	THINGS_LOG_V(TAG, "Reset done: cloud provisioning data");
 
+	iotivity_api_lock();
 	OCClearCallBackList();		// delete All Client Call-Back List. (for SET Self-Request)
+	iotivity_api_unlock();
 
 	// 7. Security Reset.
 #ifdef __SECURED__

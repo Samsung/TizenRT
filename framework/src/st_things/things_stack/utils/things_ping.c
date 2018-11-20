@@ -807,7 +807,10 @@ static int find_resource_oic_ping(things_ping_s *ping)
 	set_mask(ping, PING_ST_DISCOVERY);
 
 	THINGS_LOG_D(TAG, "Send OCFindKeepAliveResouce request to %s.", hostAddr);
-	if (OCFindKeepAliveResource(&g_req_handle, hostAddr, &cb) == OC_STACK_OK) {
+	iotivity_api_lock();
+	OCStackResult res = OCFindKeepAliveResource(&g_req_handle, hostAddr, &cb);
+	iotivity_api_unlock();
+	if (res == OC_STACK_OK) {
 		THINGS_LOG_D(TAG, "Waiting for /oic/ping Cloud-response.(%s)", ping->addr);
 		sleepTime = 5;
 	} else {
@@ -880,7 +883,10 @@ static int send_things_ping_request(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "interval = %lld", interval);
 
 	THINGS_LOG_D(TAG, "Send OCSendKeepAliveRequest request to %s.", hostAddr);
-	if ((result = OCSendKeepAliveRequest(&g_req_handle, hostAddr, payload, &cb)) == OC_STACK_OK)
+	iotivity_api_lock();
+	result = OCSendKeepAliveRequest(&g_req_handle, hostAddr, payload, &cb);
+	iotivity_api_unlock();
+	if (result == OC_STACK_OK)
 	//if( (result= SendKeepAliveRequest(hostAddr, interval, &cb)) == OC_STACK_OK )
 	{
 		THINGS_LOG_V(TAG, "\e[35mSending Success about common-Ping request.\e[m");

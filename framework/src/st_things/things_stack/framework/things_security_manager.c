@@ -32,6 +32,7 @@
 #include "things_security_manager.h"
 #include "things_common.h"
 #include "things_sss_manager.h"
+#include "things_iotivity_lock.h"
 #include "credresource.h"
 #include "security/ss_sha2.h"
 #include "oxmverifycommon.h"
@@ -497,7 +498,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	wifi_manager_get_info(&st_wifi_info);
 
 	if (wifi_manager_get_info(&st_wifi_info) != WIFI_MANAGER_SUCCESS) {
-		
+
 		THINGS_LOG_E(TAG, "MAC Get Error\n");
 		return OIC_SEC_ERROR;
 	}
@@ -648,8 +649,9 @@ int sm_init_things_security(int auth_type, const char *db_path)
 	}
 
 	THINGS_LOG_V(TAG, "******* WARNING : SVR DB will be used without encryption *******");
-	
+	iotivity_api_lock();
 	OCStackResult oc_res = OCRegisterPersistentStorageHandler(&ps);
+	iotivity_api_unlock();
 	if (OC_STACK_INCONSISTENT_DB == oc_res || OC_STACK_SVR_DB_NOT_EXIST == oc_res) {
 		//If failed to load SVR DB
 		THINGS_LOG_W(TAG, "SVR DB[%s] is inconsistent or not exist : %d", SVR_DB_PATH, oc_res);
@@ -670,7 +672,9 @@ int sm_init_things_security(int auth_type, const char *db_path)
 			return res;
 		}
 		//Re-register PSI
+		iotivity_api_lock();
 		oc_res = OCRegisterPersistentStorageHandler(&ps);
+		iotivity_api_unlock();
 		if (OC_STACK_OK != oc_res) {
 			THINGS_LOG_E(TAG, "Failed to register persistent storage for SVR DB : %d", (int)oc_res);
 			return OIC_SEC_ERROR;
@@ -868,9 +872,9 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 			*/
 #ifdef CONFIG_ST_THINGS_STG_MODE
 			res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
-#else		
+#else
 			res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
-#endif		
+#endif
 
 			if (OC_STACK_OK != res) {
 				THINGS_LOG_E(TAG, "SRPCredSaveOwnCertChain error");
