@@ -66,7 +66,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	} else {
 		user_data = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->user_data;
 		user_data_size = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size;
-		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb_data;
+		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->cb_info)->cb_data;
 
 		if (user_data_size >= 0) {
 			broadcast_param = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
@@ -92,7 +92,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 			broadcast_param = NULL;
 		}
 
-		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb)(broadcast_param, cb_data);
+		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->cb_info)->cb)(broadcast_param, cb_data);
 
 		if (broadcast_param != NULL) {
 			TM_FREE(broadcast_param);
@@ -114,23 +114,23 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 {
 	int taskmgr_pid;
 	union sigval msg;
-	tm_termination_info_t *info;
-	info = (tm_termination_info_t *)data->si_value.sival_ptr;
+	tm_termination_info_t *cb_info;
+	cb_info = (tm_termination_info_t *)data->si_value.sival_ptr;
 
 	/* Call callback function with callback data */
-	if (info != NULL && info->cb != NULL) {
-		if (info->cb_data != NULL) {
-			(*info->cb)(info->cb_data->msg);
-			TM_FREE(info->cb_data->msg);
-			TM_FREE(info->cb_data);
+	if (cb_info != NULL && cb_info->cb != NULL) {
+		if (cb_info->cb_data != NULL) {
+			(*cb_info->cb)(cb_info->cb_data->msg);
+			TM_FREE(cb_info->cb_data->msg);
+			TM_FREE(cb_info->cb_data);
 		} else {
-			(*info->cb)(NULL);
+			(*cb_info->cb)(NULL);
 		}
 	} else {
 		tmdbg("stop callback information is not correct.\n");
 		return;
 	}
-	TM_FREE(info);
+	TM_FREE(cb_info);
 
 	taskmgr_pid = taskmgr_get_task_manager_pid();
 	if (taskmgr_pid == TM_TASK_MGR_NOT_ALIVE) {

@@ -181,7 +181,7 @@ typedef struct tm_internal_msg_s tm_internal_msg_t;
 struct tm_broadcast_internal_msg_s {
 	int size;
 	void *user_data;
-	tm_broadcast_info_t *info;
+	tm_broadcast_info_t *cb_info;
 };
 typedef struct tm_broadcast_internal_msg_s tm_broadcast_internal_msg_t;
 
@@ -196,8 +196,8 @@ typedef struct tm_broadcast_internal_msg_s tm_broadcast_internal_msg_t;
 #define TM_PERMISSION(handle)           TM_LIST_ADDR(handle)->permission
 #define TM_UNICAST_CB(handle)           TM_LIST_ADDR(handle)->unicast_cb
 #define TM_BROADCAST_INFO_LIST(handle)  TM_LIST_ADDR(handle)->broadcast_info_list
-#define TM_STOP_INFO(handle)            TM_LIST_ADDR(handle)->stop_cb_info
-#define TM_EXIT_INFO(handle)            TM_LIST_ADDR(handle)->exit_cb_info
+#define TM_STOP_CB_INFO(handle)         TM_LIST_ADDR(handle)->stop_cb_info
+#define TM_EXIT_CB_INFO(handle)         TM_LIST_ADDR(handle)->exit_cb_info
 
 extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
