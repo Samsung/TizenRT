@@ -74,7 +74,7 @@
 #if !defined(CONFIG_ARCH_ADDRENV) || !defined(CONFIG_BUILD_KERNEL)
 /* Otherwise, the user heap data structures are in common .bss */
 
-struct mm_heap_s g_mmheap;
+struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #endif
 
 /************************************************************************
@@ -132,7 +132,7 @@ struct mm_heap_s g_mmheap;
 
 void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
-	mm_initialize(USR_HEAP, heap_start, heap_size);
+	mm_initialize(BASE_HEAP, heap_start, heap_size);
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

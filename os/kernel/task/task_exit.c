@@ -102,7 +102,7 @@ static void prepare_exit(struct tcb_s *tcb)
 	 * breaks the critical section.
 	 */
 	exit_tcb->lockcount++;
-	mm_is_sem_available();
+	mm_is_sem_available(exit_tcb);
 }
 
 /****************************************************************************

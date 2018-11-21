@@ -61,6 +61,7 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/mm/heap_regioninfo.h>
 #include <arch/irq.h>
 
 #include "nvic.h"
@@ -358,7 +359,7 @@ void up_irqinitialize(void)
 #endif
 
 #ifdef CONFIG_ARCH_CHIP_CC3200
-	putreg32((uint32_t) CONFIG_RAM_START, NVIC_VECTAB);
+	putreg32((uint32_t)REGION_START, NVIC_VECTAB);
 #endif
 
 	/* Set all interrupts (and exceptions) to the default priority */

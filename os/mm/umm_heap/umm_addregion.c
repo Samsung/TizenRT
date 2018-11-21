@@ -98,7 +98,7 @@
 
 void umm_addregion(FAR void *heap_start, size_t heap_size)
 {
-	mm_addregion(USR_HEAP, heap_start, heap_size);
+	mm_addregion(BASE_HEAP, heap_start, heap_size);
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

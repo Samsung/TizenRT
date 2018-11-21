@@ -206,15 +206,6 @@ int main(int argc, char **argv, char **envp)
 	printf("#ifndef CONFIG_MM_REGIONS\n");
 	printf("# define CONFIG_MM_REGIONS 1\n");
 	printf("#endif\n\n");
-	printf("/* If the end of RAM is not specified then it is assumed to be the beginning\n");
-	printf(" * of RAM plus the RAM size.\n");
-	printf(" */\n\n");
-	printf("#ifndef CONFIG_RAM_END\n");
-	printf("#define CONFIG_RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE)\n");
-	printf("#endif\n\n");
-	printf("#ifndef CONFIG_RAM_VEND\n");
-	printf("#define CONFIG_RAM_VEND (CONFIG_RAM_VSTART + CONFIG_RAM_SIZE)\n");
-	printf("#endif\n\n");
 	printf("/* If the end of FLASH is not specified then it is assumed to be the beginning\n");
 	printf(" * of FLASH plus the FLASH size.\n");
 	printf(" */\n\n");

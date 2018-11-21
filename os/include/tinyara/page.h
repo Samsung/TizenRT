@@ -62,6 +62,8 @@
 #ifndef __ASSEMBLY__
 #include <stdbool.h>
 #include <tinyara/sched.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/mm/heap_regioninfo.h>
 #endif
 
 #ifdef CONFIG_PAGING
@@ -104,7 +106,7 @@
 
 /* CONFIG_PAGING_LOCKED_P/VBASE - May be defined to determine the base
  * address of the locked page regions (lowest in memory).  If neither
- * are defined, then this logic will be set the bases to CONFIG_RAM_START
+ * are defined, then this logic will be set the bases to RAM_START(&REGION_START)
  * and CONFIG_RAM_VSTART (i.e., it assumes that the base address of the
  * locked region is at the beginning of RAM).
  *
@@ -121,7 +123,7 @@
 #define PG_LOCKED_PBASE          CONFIG_PAGING_LOCKED_PBASE
 #define PG_LOCKED_VBASE          CONFIG_PAGING_LOCKED_VBASE
 #else
-#define PG_LOCKED_PBASE          CONFIG_RAM_START
+#define PG_LOCKED_PBASE          &REGION_START
 #define PG_LOCKED_VBASE          CONFIG_RAM_VSTART
 #endif
 
@@ -190,8 +192,7 @@
  * CONFIG_PAGING_NDATA should be defined to prevent the data region from
  * extending all the way to the end of memory.
  */
-
-#define PG_RAM_PAGES               (CONFIG_RAM_SIZE >> PAGESHIFT)
+#define PG_RAM_PAGES               (REGION_SIZE >> PAGESHIFT)
 
 #ifdef CONFIG_PAGING_NDATA
 #define PG_DATA_NPAGES           CONFIG_PAGING_NDATA

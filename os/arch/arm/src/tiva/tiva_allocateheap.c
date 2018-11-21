@@ -64,6 +64,8 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <tinyara/userspace.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/mm/heap_regioninfo.h>
 
 #include <arch/board/board.h>
 
@@ -130,21 +132,21 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	 */
 
 	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-	size_t usize = CONFIG_RAM_END - ubase;
+	size_t usize = REGION_END - ubase;
 	int log2;
 
-	DEBUGASSERT(ubase < (uintptr_t) CONFIG_RAM_END);
+	DEBUGASSERT(ubase < (uintptr_t)(REGION_END);
 
 	/* Adjust that size to account for MPU alignment requirements.
-	 * NOTE that there is an implicit assumption that the CONFIG_RAM_END
+	 * NOTE that there is an implicit assumption that the RAM_END(REGION_START + REGION_SIZE)
 	 * is aligned to the MPU requirement.
 	 */
 
 	log2 = (int)mpu_log2regionfloor(usize);
-	DEBUGASSERT((CONFIG_RAM_END & ((1 << log2) - 1)) == 0);
+	DEBUGASSERT((REGION_END & ((1 << log2) - 1)) == 0);
 
 	usize = (1 << log2);
-	ubase = CONFIG_RAM_END - usize;
+	ubase = REGION_END - usize;
 
 	/* Return the user-space heap settings */
 
@@ -161,7 +163,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 
 	board_led_on(LED_HEAPALLOCATE);
 	*heap_start = (FAR void *)g_idle_topstack;
-	*heap_size = CONFIG_RAM_END - g_idle_topstack;
+	*heap_size =  REGION_END - (uint32_t)(*heap_start);
 #endif
 }
 
@@ -184,21 +186,21 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	 */
 
 	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-	size_t usize = CONFIG_RAM_END - ubase;
+	size_t usize = REGION_END - ubase;
 	int log2;
 
-	DEBUGASSERT(ubase < (uintptr_t) CONFIG_RAM_END);
+	DEBUGASSERT(ubase < (uintptr_t)(REGION_END));
 
 	/* Adjust that size to account for MPU alignment requirements.
-	 * NOTE that there is an implicit assumption that the CONFIG_RAM_END
+	 * NOTE that there is an implicit assumption that the RAM_END(REGION_START + REGION_SIZE)
 	 * is aligned to the MPU requirement.
 	 */
 
 	log2 = (int)mpu_log2regionfloor(usize);
-	DEBUGASSERT((CONFIG_RAM_END & ((1 << log2) - 1)) == 0);
+	DEBUGASSERT((REGION_END & ((1 << log2) - 1)) == 0);
 
 	usize = (1 << log2);
-	ubase = CONFIG_RAM_END - usize;
+	ubase = REGION_END - usize;
 
 	/* Return the kernel heap settings (i.e., the part of the heap region
 	 * that was not dedicated to the user heap).

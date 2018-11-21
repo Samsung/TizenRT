@@ -108,7 +108,7 @@ void sched_ufree(FAR void *address)
 	 * must have exclusive access to the memory manager to do this.
 	 */
 
-	if (up_interrupt_context() || kumm_trysemaphore() != 0) {
+	if (up_interrupt_context() || kumm_trysemaphore(address) != 0) {
 		/* Yes.. Make sure that this is not a attempt to free kernel memory
 		 * using the user deallocator.
 		 */
@@ -133,7 +133,7 @@ void sched_ufree(FAR void *address)
 		/* No.. just deallocate the memory now. */
 
 		kumm_free(address);
-		kumm_givesemaphore();
+		kumm_givesemaphore(address);
 	}
 }
 
@@ -147,7 +147,7 @@ void sched_kfree(FAR void *address)
 	 * must have exclusive access to the memory manager to do this.
 	 */
 
-	if (up_interrupt_context() || kmm_trysemaphore() != 0) {
+	if (up_interrupt_context() || kmm_trysemaphore(address) != 0) {
 		/* Yes.. Make sure that this is not a attempt to free user memory
 		 * using the kernel deallocator.
 		 */

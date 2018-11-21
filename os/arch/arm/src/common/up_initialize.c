@@ -166,10 +166,6 @@ void up_initialize(void)
 
 	up_color_intstack();
 
-	/* Add any extra memory fragments to the memory manager */
-
-	up_addregion();
-
 	/* Initialize the interrupt subsystem */
 
 	up_irqinitialize();

@@ -712,16 +712,6 @@ config BOOT_COPYTORAM
 endchoice
 
 menu "Boot Memory Configuration"
-
-config RAM_START
-	hex "Primary RAM start address (physical)"
-	default 0x0
-	---help---
-		The physical start address of primary installed RAM.  "Primary" RAM
-		refers to the RAM that you link program code into.  If program code
-		does not execute out of RAM but from FLASH, then you may designate
-		any block of RAM as "primary."
-
 config RAM_VSTART
 	hex "Primary RAM start address (virtual)"
 	default 0x0
@@ -732,39 +722,39 @@ config RAM_VSTART
 		does not execute out of RAM but from FLASH, then you may designate
 		any block of RAM as "primary."
 
-config RAM_SIZE
-	int "Primary RAM size"
-	default 0
-	---help---
-		The size in bytes of the installed primary RAM. "Primary" RAM
-		refers to the RAM that you link program code into.  If program code
-		does not execute out of RAM but from FLASH, then you may designate
-		any block of RAM as "primary."
-
-config RAMx_START
-	string "List of start address for additional heap region"
+config RAM_REGIONx_START
+	string "An address or list of start address for RAM region"
 	default "0x00000000,"
-	depends on MM_REGIONS != 1
 	---help---
-		The start address list of the additional heap regions.
-		When you want to use separated heap region in a physical RAM or
-		two different physical RAMs, set MM_REGIONS first at memory
-		management, and then set hexa values at RAMx_START and RAMx_SIZE
+		The address or address list of the RAM regions.
+		If you want to use more than two RAMs physically, or
+		if you want to divide RAM into multiple heaps,
+		set MM_REGIONS first at memory management, and then
+		set hexa values at RAM_REGIONx_START and RAM_REGIONx_SIZE
 		to support several heap regions.
-		Each region is separated by ',' as shown in example.
+		If it will be an address list, the addresses should be given
+		by increasing order, and each region is separated by ',' as shown in example.
 		i.e. "0x02000000,0x4000000"
 
-config RAMx_SIZE
-	string "List of size for additional heap region"
+config RAM_REGIONx_SIZE
+	string "A size or list of size for RAM region"
 	default "0,"
-	depends on MM_REGIONS != 1
 	---help---
-		The size list of additional heap region.
-		Refer RAMx_START content. One different thing is this has
+		The size list of RAM region.
+		Refer RAM_REGIONx_START content. One different thing is this has
 		decimal values (START has hexa values).
-		This should have same number of list element with RAMx_START's.
-		Each region is separated by ',' as shown in example.
+		This should have same number of list element with RAM_REGIONx_START's.
+		If it will be an list, each region is separated by ',' as shown in example.
 		i.e. "100,200"
+
+config RAM_REGIONx_HEAP_INDEX
+	string "List of heap index for RAM region"
+	default "0,"
+	depends on MM_NHEAPS != 1
+	---help---
+		The heap index list of RAM region.
+		It means that its region can be handled to the index-th heap. 
+		Index can be from 0 to (MM_NHEAPS-1).
 
 config DDR
 	bool "Use DDR memory"

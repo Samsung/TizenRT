@@ -234,9 +234,11 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
  *   Check availability of mm semaphore 
  *
  ****************************************************************************/
-void mm_is_sem_available(void)
+void mm_is_sem_available(void *address)
 {
-	struct mm_heap_s *heap = mm_get_heap_info();
+	struct mm_heap_s *heap;
+
+	heap = mm_get_heap_info(address);
 
 	mm_takesemaphore(heap);
 	mm_givesemaphore(heap);

@@ -207,6 +207,11 @@
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
+#define REGION_START (size_t)regionx_start[0]
+#define REGION_SIZE  regionx_size[0]
+#define REGION_END (REGION_START + REGION_SIZE)
+#define INVALID_HEAP_IDX -1
+
 /* Determines the size of the chunk size/offset type */
 
 #ifdef CONFIG_MM_SMALL
@@ -384,8 +389,7 @@ extern "C" {
  *   structure is associated with the address environment and there is
  *   no global user heap structure.
  */
-
-EXTERN struct mm_heap_s g_mmheap;
+extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -403,12 +407,12 @@ EXTERN struct mm_heap_s g_kmmheap;
  */
 
 #include <tinyara/addrenv.h>
-#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+#define BASE_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
 #else
 /* Otherwise, the user heap data structures are in common .bss */
 
-#define USR_HEAP &g_mmheap
+#define BASE_HEAP &g_mmheap[0]
 #endif
 
 /****************************************************************************
@@ -452,15 +456,15 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap);
 /* Functions contained in umm_sem.c ****************************************/
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-int umm_trysemaphore(void);
-void umm_givesemaphore(void);
+int umm_trysemaphore(void *address);
+void umm_givesemaphore(void *address);
 #endif
 
 /* Functions contained in kmm_sem.c ****************************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
-int kmm_trysemaphore(void);
-void kmm_givesemaphore(void);
+int kmm_trysemaphore(void *address);
+void kmm_givesemaphore(void *address);
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 
@@ -655,10 +659,25 @@ void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 #endif
-void mm_is_sem_available(void);
+void mm_is_sem_available(void *address);
 
 /* Functions to get heap information */
-struct mm_heap_s *mm_get_heap_info(void);
+struct mm_heap_s *mm_get_heap_info(void *address);
+
+int mm_get_heapindex(void *mem);
+#if CONFIG_MM_NHEAPS > 1
+void *malloc_at(int heap_index, size_t size);
+void *calloc_at(int heap_index, size_t n, size_t elem_size);
+void *memalign_at(int heap_index, size_t alignment, size_t size);
+void *realloc_at(int heap_index, void *oldmem, size_t size);
+void *zalloc_at(int heap_index, size_t size);
+#else
+#define malloc_at(heap_index, size)              malloc(size)
+#define calloc_at(heap_index, n, elem_size)      calloc(n, elem_size)
+#define memalign_at(heap_index, alignment, size) memalign(alignment, size)
+#define realloc_at(heap_index, oldmem, size)     realloc(oldmem, size)
+#define zalloc_at(heap_index, size)              zalloc(size)
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus

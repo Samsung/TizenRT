@@ -93,7 +93,7 @@ int kdbg_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	struct mm_heap_s *user_heap = mm_get_heap_info();
+	struct mm_heap_s *user_heap = mm_get_heap_info(BASE_HEAP);
 	while ((option = getopt(argc, args, "iap:fg")) != ERROR) {
 		switch (option) {
 		case 'i':
