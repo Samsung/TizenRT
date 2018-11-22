@@ -37,6 +37,9 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 int mm_get_heapindex(void *mem)
 {
 	int heap_idx;
+	if (mem == NULL) {
+		return 0;
+	}
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 		if (mem < (void *)(g_mmheap[heap_idx].mm_heapstart + g_mmheap[heap_idx].mm_heapsize) && mem >= (void *)g_mmheap[heap_idx].mm_heapstart) {
 			return heap_idx;
