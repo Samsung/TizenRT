@@ -9,6 +9,7 @@ transport = env.get('TARGET_TRANSPORT')
 build_sample = env.get('BUILD_SAMPLE')
 with_ra = env.get('WITH_RA')
 with_tcp = env.get('WITH_TCP')
+disable_tcp_server = env.get('DISABLE_TCP_SERVER')
 with_mq = env.get('WITH_MQ')
 ble_custom_adv = env.get('BLE_CUSTOM_ADV')
 
@@ -30,6 +31,8 @@ if 'ALL' in transport:
 			env.AppendUnique(CPPDEFINES = ['RA_ADAPTER'])
 	if with_tcp == True:
 			env.AppendUnique(CPPDEFINES = ['TCP_ADAPTER'])
+	if disable_tcp_server == True:
+			env.AppendUnique(CPPDEFINES = ['DISABLE_TCP_SERVER'])
 	if target_os in ['linux']:
 		env.AppendUnique(CPPDEFINES = ['IP_ADAPTER','NO_EDR_ADAPTER','LE_ADAPTER'])
 	elif target_os == 'tizen':
@@ -80,6 +83,10 @@ else:
 			Exit(1)
 	else:
 		env.AppendUnique(CPPDEFINES = ['NO_TCP_ADAPTER'])
+
+	if disable_tcp_server == True:
+		if target_os in ['linux', 'tizen', 'android', 'arduino', 'ios', 'tizenrt']:
+			env.AppendUnique(CPPDEFINES = ['DISABLE_TCP_SERVER'])
 
 	if 'NFC' in transport:
 		if target_os in['android']:

@@ -324,10 +324,13 @@ static void CAInitializeTCPGlobals()
     {
         flags |= caglobals.clientFlags;
     }
+
+#ifndef DISABLE_TCP_SERVER
     if (caglobals.server)
     {
         flags |= caglobals.serverFlags;
     }
+#endif
 
     caglobals.tcp.ipv4tcpenabled = flags & CA_IPV4;
     caglobals.tcp.ipv6tcpenabled = flags & CA_IPV6;
@@ -442,7 +445,7 @@ CAResult_t CATCPDisconnectSession(const CAEndpoint_t *endpoint)
 
 CAResult_t CAStartTCPListeningServer()
 {
-#ifndef SINGLE_THREAD
+#if !defined(SINGLE_THREAD) && !defined(DISABLE_TCP_SERVER)
     if (!caglobals.server)
     {
         caglobals.server = true;    // only needed to run CA tests

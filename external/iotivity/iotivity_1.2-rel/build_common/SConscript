@@ -96,6 +96,7 @@ help_vars.Add(EnumVariable('TARGET_OS', 'Target platform', host, host_target_map
 
 help_vars.Add(BoolVariable('WITH_RA', 'Build with Remote Access module', False))
 help_vars.Add(BoolVariable('WITH_TCP', 'Build with TCP adapter', False))
+help_vars.Add(BoolVariable('DISABLE_TCP_SERVER', 'Disable TCP server', False))
 help_vars.Add(BoolVariable('WITH_PROXY', 'Build with CoAP-HTTP Proxy', False))
 help_vars.Add(ListVariable('WITH_MQ', 'Build with MQ publisher/broker', 'OFF', ['OFF', 'SUB', 'PUB', 'BROKER']))
 help_vars.Add(BoolVariable('WITH_CLOUD', 'Build including AccountManager class and Cloud Client sample', False))
@@ -353,6 +354,9 @@ if env.get('WITH_TCP'):
     defines.append('-DTCP_ADAPTER=1')
     if env.get('SECURED') == '1':
         defines.append('-D__WITH_TLS__=1')
+
+if env.get('DISABLE_TCP_SERVER'):
+	defines.append('-DDISABLE_TCP_SERVER=1')
 
 if env.get('SECURED') == '1':
     defines.append('-D__WITH_DTLS__=1')
