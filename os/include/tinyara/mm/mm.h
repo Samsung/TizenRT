@@ -202,6 +202,7 @@
 #define HEAPINFO_DETAIL_ALL 2
 #define HEAPINFO_DETAIL_PID 3
 #define HEAPINFO_DETAIL_FREE 4
+#define HEAPINFO_DETAIL_SPECIFIC_HEAP 5
 #define HEAPINFO_PID_ALL -1
 #define HEAPINFO_INIT_INFO 0
 #define HEAPINFO_ADD_INFO 1
@@ -666,6 +667,18 @@ struct mm_heap_s *mm_get_heap_info(void *address);
 
 int mm_get_heapindex(void *mem);
 #if CONFIG_MM_NHEAPS > 1
+struct heapinfo_total_info_s {
+	int total_heap_size;
+	int cur_free;
+	int largest_free_size;
+	int cur_dead_thread;
+	int sum_of_stacks;
+	int sum_of_heaps;
+	int cur_alloc_size;
+	int peak_alloc_size;
+};
+typedef struct heapinfo_total_info_s heapinfo_total_info_t;
+
 void *malloc_at(int heap_index, size_t size);
 void *calloc_at(int heap_index, size_t n, size_t elem_size);
 void *memalign_at(int heap_index, size_t alignment, size_t size);

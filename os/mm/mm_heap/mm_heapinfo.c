@@ -72,7 +72,13 @@
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
+int max_group;
+struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
 struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
+#endif
+
+#if CONFIG_MM_NHEAPS > 1
+heapinfo_total_info_t total_info;
 #endif
 
 /****************************************************************************
@@ -134,8 +140,6 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				heap->mm_heapend[region],
 				(int)heap->mm_heapend[region] - (int)heap->mm_heapstart[region] + SIZEOF_MM_ALLOCNODE);
 			printf("****************************************************************\n");
-			printf("Allocation Info- (Size in Bytes)\n");
-			printf("****************************************************************\n");
 			printf("  MemAddr |   Size   | Status |    Owner   |  Pid  |\n");
 			printf("----------|----------|--------|------------|-------|\n");
 		}
@@ -144,7 +148,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((pid == HEAPINFO_PID_ALL || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
-				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
+				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID || mode == HEAPINFO_DETAIL_SPECIFIC_HEAP) {
 					if (node->pid >= 0) {
 						printf("0x%x | %8u |   %c    | 0x%8x | %3d   |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
 					} else {
@@ -165,7 +169,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 					heap_resource += node->size;
 				}
 #else
-				printf("\n");
+				if (mode != HEAPINFO_SIMPLE) {
+					printf("\n");
+				}
 #endif
 			} else {
 				ordblks++;
@@ -173,19 +179,33 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				if (node->size > mxordblk) {
 					mxordblk = node->size;
 				}
-				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_FREE) {
+				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_FREE || mode == HEAPINFO_DETAIL_SPECIFIC_HEAP) {
 					printf("0x%x | %8d |   %c    |            |       |\n", node, node->size, 'F');
 				}
 			}
 		}
 
 		if (mode != HEAPINFO_SIMPLE) {
-			printf("** PID(S) in Pid colum means that mem is used for stack of PID\n");
+			printf("** PID(S) in Pid colum means that mem is used for stack of PID\n\n");
 		}
-		printf("\n");
 		mm_givesemaphore(heap);
 	}
 #undef region
+
+#if CONFIG_MM_NHEAPS > 1
+	total_info.total_heap_size += heap->mm_heapsize;
+	total_info.cur_free += fordblks;
+	if (total_info.largest_free_size < mxordblk) {
+		total_info.largest_free_size = mxordblk;
+	}
+	total_info.cur_dead_thread += nonsched_resource;
+	total_info.sum_of_stacks += stack_resource;
+	total_info.sum_of_heaps += heap_resource - (heap->mm_nregions * SIZEOF_MM_ALLOCNODE);
+
+	if (mode == HEAPINFO_SIMPLE) {
+		return;
+	}
+#endif
 	printf("\n****************************************************************\n");
 	printf("     Summary of Heap Usages (Size in Bytes)\n");
 	printf("****************************************************************\n");
@@ -239,23 +259,21 @@ static void heapinfo_update_group(mmsize_t size, pid_t pid)
 	int check_idx;
 	int group_num;
 	int stack_pid;
-	struct tcb_s *tcb = sched_gettcb(pid);
-	struct mm_heap_s *heap = mm_get_heap_info(tcb);
 	for (check_idx = 0; check_idx < HEAPINFO_THREAD_NUM; check_idx++) {
 		if (pid == group_info[check_idx].pid) {
 			group_num = group_info[check_idx].group;
-			heap->group[group_num].curr_size += size;
+			heapinfo_group[group_num].curr_size += size;
 			/* Update peak size */
-			if (heap->group[group_num].curr_size > heap->group[group_num].peak_size) {
-				heap->group[group_num].peak_size = heap->group[group_num].curr_size;
+			if (heapinfo_group[group_num].curr_size > heapinfo_group[group_num].peak_size) {
+				heapinfo_group[group_num].peak_size = heapinfo_group[group_num].curr_size;
 				/* calculate the summation of stacks */
-				heap->group[group_num].stack_size = 0;
+				heapinfo_group[group_num].stack_size = 0;
 				for (stack_pid = 0; stack_pid < HEAPINFO_THREAD_NUM; stack_pid++) {
 					if (group_info[stack_pid].pid != -1 && group_info[stack_pid].group == group_num) {
-						heap->group[group_num].stack_size += group_info[stack_pid].stack_size;
+						heapinfo_group[group_num].stack_size += group_info[stack_pid].stack_size;
 					}
 				}
-				heap->group[group_num].heap_size = heap->group[group_num].peak_size - heap->group[group_num].stack_size;
+				heapinfo_group[group_num].heap_size = heapinfo_group[group_num].peak_size - heapinfo_group[group_num].stack_size;
 			}
 			break;
 		}
@@ -308,6 +326,12 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 	if (heap->total_alloc_size > heap->peak_alloc_size) {
 		heap->peak_alloc_size = heap->total_alloc_size;
 	}
+#if CONFIG_MM_NHEAPS > 1
+	total_info.cur_alloc_size += size;
+	if (total_info.cur_alloc_size > total_info.peak_alloc_size) {
+		total_info.peak_alloc_size = total_info.cur_alloc_size;
+	}
+#endif
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group(size, pid);
 #endif
@@ -351,12 +375,11 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	int check_idx;
 	int group_num;
-	struct mm_heap_s *heap = mm_get_heap_info(node);
 
-	for (check_idx = 0; check_idx <= heap->max_group; check_idx++) {
+	for (check_idx = 0; check_idx <= max_group; check_idx++) {
 		if (node->pid == group_info[check_idx].pid) {
 			group_num = group_info[check_idx].group;
-			heap->group[group_num].curr_size -= node->size;
+			heapinfo_group[group_num].curr_size -= node->size;
 			break;
 		}
 	}
@@ -374,8 +397,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 void heapinfo_update_group_info(pid_t pid, int group, int type)
 {
 	int info_idx;
-	struct tcb_s *tcb = sched_gettcb(pid);
-	struct mm_heap_s *heap = mm_get_heap_info(tcb);
+	struct tcb_s *tcb;
 	switch (type) {
 	case HEAPINFO_INIT_INFO:
 		for (info_idx = 0; info_idx < HEAPINFO_THREAD_NUM; info_idx++) {
@@ -385,13 +407,14 @@ void heapinfo_update_group_info(pid_t pid, int group, int type)
 		}
 		break;
 	case HEAPINFO_ADD_INFO:
-		if (group > heap->max_group) {
-			heap->max_group = group;
+		if (group > max_group) {
+			max_group = group;
 		}
 		for (info_idx = 0; info_idx < HEAPINFO_THREAD_NUM; info_idx++) {
 			if (group_info[info_idx].pid <= 0) {
 				group_info[info_idx].pid = pid;
 				group_info[info_idx].group = group;
+				tcb = sched_gettcb(pid);
 				if (tcb) {
 					group_info[info_idx].stack_size = tcb->adj_stack_size;
 					heapinfo_update_group(tcb->adj_stack_size, pid);
