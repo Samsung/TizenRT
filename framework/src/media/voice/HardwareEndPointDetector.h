@@ -28,7 +28,7 @@ namespace voice {
 class HardwareEndPointDetector : public EndPointDetector
 {
 public:
-	HardwareEndPointDetector(int card, int device);
+	HardwareEndPointDetector(int normal_card, int normal_device, int sd_card, int sd_device);
 
 public:
 	bool init(uint32_t samprate, uint8_t channels) override;
@@ -36,8 +36,12 @@ public:
 	bool startEndPointDetect(int timeout) override;
 
 private:
-	int mCard;
-	int mDevice;
+	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
+	int mNormalCard;
+	int mNormalDevice;
+	/* AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR card, device id */
+	int mSdCard;
+	int mSdDevice;
 };
 
 } // namespace voice

@@ -27,33 +27,40 @@
 namespace media {
 namespace voice {
 
-HardwareKeywordDetector::HardwareKeywordDetector(int card, int device)
-	: mCard(card)
-	, mDevice(device)
+HardwareKeywordDetector::HardwareKeywordDetector(int normal_card, int normal_device, int sd_card, int sd_device) :
+	mNormalCard(normal_card),
+	mNormalDevice(normal_device),
+	mSdCard(sd_card),
+	mSdDevice(sd_device)
 {
-
 }
 
 bool HardwareKeywordDetector::init(uint32_t samprate, uint8_t channels)
 {
 	audio_manager_result_t result;
 
+	result = change_stream_in_device(mSdCard, mSdDevice);
+	if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
+		meddbg("change_stream_in_device failed: %d\n", result);
+		return false;
+	}
+
 	result = register_stream_in_device_process_type(
-		mCard, mDevice,
+		mSdCard, mSdDevice,
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: register_stream_in_device_process_type(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: register_stream_in_device_process_type(%d, %d) failed!\n", mSdCard, mSdDevice);
 		return false;
 	}
 
 	result = register_stream_in_device_process_handler(
-		mCard, mDevice,
+		mSdCard, mSdDevice,
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: register_stream_in_device_process_handler(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: register_stream_in_device_process_handler(%d, %d) failed!\n", mSdCard, mSdDevice);
 		return false;
 	}
 
@@ -64,10 +71,14 @@ void HardwareKeywordDetector::deinit()
 {
 	audio_manager_result_t result;
 
-	result = unregister_stream_in_device_process(mCard, mDevice);
-
+	result = unregister_stream_in_device_process(mSdCard, mSdDevice);
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: unregister_stream_in_device_process(%d, %d) failed!\n", mSdCard, mSdDevice);
+	}
+
+	result = change_stream_in_device(mNormalCard, mNormalDevice);
+	if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
+		meddbg("change_stream_in_device failed: %d\n", result);
 	}
 }
 
@@ -76,19 +87,19 @@ bool HardwareKeywordDetector::startKeywordDetect(int timeout)
 	bool ret = false;
 	audio_manager_result_t result;
 
-	medvdbg("startKeywordDetect for %d %d\n", mCard, mDevice);
+	medvdbg("startKeywordDetect for %d %d\n", mSdCard, mSdDevice);
 
-	result = start_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
+	result = start_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mCard, mDevice);
+		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mSdCard, mSdDevice);
 		return ret;
 	}
 
 	if (timeout < 0) {
 		while (true) {
 			uint16_t msgId;
-			result = get_device_process_handler_message(mCard, mDevice, &msgId);
+			result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
 
 			if (result == AUDIO_MANAGER_SUCCESS) {
 				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {
@@ -111,7 +122,7 @@ bool HardwareKeywordDetector::startKeywordDetect(int timeout)
 
 		do {
 			uint16_t msgId;
-			result = get_device_process_handler_message(mCard, mDevice, &msgId);
+			result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
 
 			if (result == AUDIO_MANAGER_SUCCESS) {
 				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {
@@ -130,7 +141,7 @@ bool HardwareKeywordDetector::startKeywordDetect(int timeout)
 				 (curtime.tv_sec == waketime.tv_sec && curtime.tv_nsec <= waketime.tv_nsec));
 	}
 
-	stop_stream_in_device_process_type(mCard, mDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
+	stop_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_KD);
 	return ret;
 }
 

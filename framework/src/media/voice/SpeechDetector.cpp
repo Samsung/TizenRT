@@ -29,6 +29,8 @@
 
 #include <media/voice/SpeechDetector.h>
 
+#define INVALID_HW_NUMBER -1
+
 namespace media {
 namespace voice {
 
@@ -61,24 +63,19 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 		return false;
 	}
 
-	int card = -1;
-	int device = -1;
+	int sd_card = INVALID_HW_NUMBER;
+	int sd_device = INVALID_HW_NUMBER;
 
 	audio_manager_result_t result = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_KD,
-		&card, &device);
+		&sd_card, &sd_device);
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
-		medvdbg("KeywordDetector : card_id : %d device_id %d\n", card, device);
-		mKeywordDetector = std::make_shared<HardwareKeywordDetector>(card, device);
-
-		result = change_stream_in_device(card, device);
-		if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
-			meddbg("change_stream_in_device failed: %d\n", result);
-			mKeywordDetector = nullptr;
-			return false;
-		}
+		medvdbg("KeywordDetector : card_id : %d device_id %d\n", sd_card, sd_device);
+		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
+				  currently set 0, 0 */
+		mKeywordDetector = std::make_shared<HardwareKeywordDetector>(0, 0, sd_card, sd_device);
 	} else {
 		medvdbg("Not found H/W speech detector. Use Software\n");
 		mKeywordDetector = std::make_shared<SoftwareKeywordDetector>();
@@ -94,24 +91,19 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 		return false;
 	}
 
-	int card = -1;
-	int device = -1;
+	int sd_card = INVALID_HW_NUMBER;
+	int sd_device = INVALID_HW_NUMBER;
 
 	audio_manager_result_t result = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_EPD,
-		&card, &device);
+		&sd_card, &sd_device);
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
-		medvdbg("EndPointDetector : card_id : %d device_id %d\n", card, device);
-		mEndPointDetector = std::make_shared<HardwareEndPointDetector>(card, device);
-
-		result = change_stream_in_device(card, device);
-		if (result != AUDIO_MANAGER_SUCCESS && result != AUDIO_MANAGER_DEVICE_ALREADY_IN_USE) {
-			meddbg("change_stream_in_device failed: %d\n", result);
-			mEndPointDetector = nullptr;
-			return false;
-		}
+		medvdbg("EndPointDetector : card_id : %d device_id %d\n", sd_card, sd_device);
+		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
+				  currently set 0, 0 */
+		mEndPointDetector = std::make_shared<HardwareEndPointDetector>(0, 0, sd_card, sd_device);
 	} else {
 		mEndPointDetector = std::make_shared<SoftwareEndPointDetector>();
 	}
