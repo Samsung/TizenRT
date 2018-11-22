@@ -116,11 +116,15 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 FAR void *realloc(FAR void *oldmem, size_t size)
 {
 	int heap_idx;
+	int prev_heap_idx;
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 #endif
 	heap_idx = mm_get_heapindex(oldmem);
+	if (heap_idx < 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_realloc(&g_mmheap[heap_idx], oldmem, size, retaddr);
 #else
@@ -131,6 +135,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	}
 	/* Try to mm_malloc to another heap */
 	mdbg("After realloc, memory can be allocated to another heap which is not as same as previous.\n");
+	prev_heap_idx = heap_idx;
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_malloc(&g_mmheap[heap_idx], size, retaddr);
@@ -138,6 +143,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		ret = mm_malloc(&g_mmheap[heap_idx], size);
 #endif
 		if (ret != NULL) {
+			mm_free(&g_mmheap[prev_heap_idx], oldmem);
 			return ret;
 		}
 	}
