@@ -1614,8 +1614,22 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 	audio_card_info_t *card;
 
 	if (type == AUDIO_DEVICE_PROCESS_TYPE_NONE) {
-		meddbg("Type is AUDIO_DEVICE_PROCESS_TYPE_NONE\n");
-		return AUDIO_MANAGER_INVALID_PARAM;
+		/* TODO : will be implemented later based on audio subsystem's implementation */
+		medvdbg("Type is AUDIO_DEVICE_PROCESS_TYPE_NONE\n");
+		for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
+			for (i = 0; i < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
+				card = &g_audio_in_cards[i];
+				if (card->config[j].status == AUDIO_CARD_NONE) {
+					medvdbg("Card is not avalialbe, card_id : %d device_id : %d continue\n", i, j);
+					continue;
+				}
+				*card_id = i;
+				*device_id = j;
+				medvdbg("found! card_id : %d device_id : %d subtype : %d\n", *card_id, *device_id, subtype);
+				return AUDIO_MANAGER_SUCCESS;
+			}
+		}
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 	}
 	/* Make a card list First */
 	ret = find_audio_card_if_empty(INPUT);
