@@ -141,7 +141,7 @@ int setjmp_test(int argc, char *argv[])
 	}
 	VERIFY_OR_RETURN(!fail, "longjmp didn't work (?)");
 	for (i = 0; i < MAX_DEPTH; ++i) {
-		VERIFY_OR_RETURN(did_return[i] == -1, "frame #%d should have longjmp'ed out");
+		VERIFY_OR_RETURN(did_return[i] == -1, "frame #%d should have longjmp'ed out", i);
 	}
 	printf("setjmp skips a single stack frame\n");
 
@@ -155,7 +155,7 @@ int setjmp_test(int argc, char *argv[])
 	for (i = 0; i < MAX_DEPTH - 1; ++i) {
 		VERIFY_OR_RETURN(did_return[i] == 0, "frame #%d should have been skipped");
 	}
-	VERIFY_OR_RETURN(did_return[MAX_DEPTH - 1] == -1, "frame #%d should have longjmp'ed out");
+	VERIFY_OR_RETURN(did_return[MAX_DEPTH - 1] == -1, "frame #%d should have longjmp'ed out", i);
 	printf("setjmp skips multiple frames\n");
 
 	return 0;

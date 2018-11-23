@@ -81,8 +81,8 @@
 /* Allow above macros to always exist in source without ifdefs */
 
 #ifndef CONFIG_CRYPTO_RANDOM_POOL
-#define up_rngaddint(k, x)            ((void)(k),(void)(x))
-#define up_rngaddentropy(k, buf, x)   ((void)(k),(void)(buf),(void)(x))
+#define up_rngaddint(k, x)            ((void)(k), (void)(x))
+#define up_rngaddentropy(k, buf, x)   ((void)(k), (void)(buf), (void)(x))
 #endif
 
 /****************************************************************************
@@ -101,9 +101,9 @@ enum rnd_source_t {
 	RND_SRC_TIME = 0,
 	RND_SRC_IRQ,
 	RND_SRC_SENSOR,
-	RND_SRC_HW,					/* unique per HW UID or coming from factory line. */
-	RND_SRC_SW,					/* unique per SW version. */
-	RND_SRC_UI					/* buttons etc. user-visible interface elements. */
+	RND_SRC_HW,             /* unique per HW UID or coming from factory line. */
+	RND_SRC_SW,             /* unique per SW version. */
+	RND_SRC_UI              /* buttons etc. user-visible interface elements. */
 };
 
 /****************************************************************************
@@ -180,6 +180,6 @@ void up_rngreseed(void);
 
 void up_randompool_initialize(void);
 
-#endif							/* CONFIG_CRYPTO_RANDOM_POOL */
+#endif  /* CONFIG_CRYPTO_RANDOM_POOL */
 
-#endif							/* __INCLUDE_TINYARA_RANDOM_H */
+#endif  /* __INCLUDE_TINYARA_RANDOM_H */
