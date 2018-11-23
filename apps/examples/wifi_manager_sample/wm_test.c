@@ -625,7 +625,7 @@ void wm_disconnect(void *arg)
 		return;
 	}
 	WM_TEST_WAIT;
-	WM_TEST_LOG_END;;
+	WM_TEST_LOG_END;
 }
 
 void wm_cancel(void *arg)
