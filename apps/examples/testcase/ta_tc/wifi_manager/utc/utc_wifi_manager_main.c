@@ -46,6 +46,9 @@ do {										\
 } while (0)
 void wifi_sta_connected(wifi_manager_result_e result);		// in station mode, connected to ap
 void wifi_sta_disconnected(wifi_manager_disconnect_e disconn);	// in station mode, disconnected from ap
+void wifi_sta_dup_connected(wifi_manager_result_e result);
+void wifi_sta_dup_disconnected(wifi_manager_disconnect_e disconn);
+
 void wifi_softap_sta_joined(void);	// in softap mode, a station joined
 void wifi_softap_sta_left(void);		// in softap mode, a station left
 void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
@@ -66,15 +69,36 @@ static wifi_manager_cb_s wifi_null_callbacks = {
 	NULL,	// in station mode, this callback function is called when scanning ap is done.
 };
 
+static wifi_manager_cb_s wifi_dup_callbacks = {
+	wifi_sta_dup_connected,
+	wifi_sta_dup_disconnected,
+	NULL,
+	NULL,
+	NULL,
+};
+
+
 void wifi_sta_connected(wifi_manager_result_e result)
 {
 	printf("wifi_sta_connected: send signal!!!(%d) \n", result);
 	WIFITEST_SIGNAL;
 }
 
+void wifi_sta_dup_connected(wifi_manager_result_e result)
+{
+	printf("wifi_sta_dup_connected: send signal!!!(%d) \n", result);
+	WIFITEST_SIGNAL;
+}
+
 void wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf("wifi_sta_disconnected: send signal!!! \n");
+	WIFITEST_SIGNAL;
+}
+
+void wifi_sta_dup_disconnected(wifi_manager_disconnect_e disconn)
+{
+	printf("wifi_sta_dup_disconnected: send signal!!! \n");
 	WIFITEST_SIGNAL;
 }
 
@@ -503,6 +527,38 @@ static void utc_wifi_manager_get_stats_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_wifi_manager_register_cb_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_register_cb_n", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_register_cb_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_register_cb_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_unregister_cb_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_unregister_cb_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_unregister_cb_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_unregister_cb_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
 	if (tc_handler(TC_START, "WiFiManager UTC") == ERROR) {
@@ -510,6 +566,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	}
 
 	utc_wifi_manager_init_n();
+	utc_wifi_manager_register_cb_n(); //not initialized yet
 	utc_wifi_manager_init_p();
 
 	utc_wifi_manager_set_mode_n();
@@ -539,11 +596,15 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_get_config_p();    
 	utc_wifi_manager_remove_config_p();
 
+	utc_wifi_manager_unregister_cb_n();  // nothing to unregister
+	utc_wifi_manager_register_cb_p();
+
 	utc_wifi_manager_disconnect_ap_p();
 
 	WIFITEST_WAIT;
 
 	utc_wifi_manager_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
+	utc_wifi_manager_unregister_cb_p();
 
 	utc_wifi_manager_deinit_p();
 	utc_wifi_manager_deinit_n(); // Should be run after positive tc, that is, the second deinit gets failed.
