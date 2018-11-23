@@ -16,66 +16,44 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+#include <assert.h>
 #include <debug.h>
+#include <unistd.h>
 #include <media/InputDataSource.h>
 #include "Decoder.h"
+#include "MediaPlayerImpl.h"
+#include "StreamBuffer.h"
+#include "StreamBufferReader.h"
+#include "StreamBufferWriter.h"
+
+#ifndef CONFIG_INPUT_DATASOURCE_STACKSIZE
+#define CONFIG_INPUT_DATASOURCE_STACKSIZE 4096
+#endif
 
 namespace media {
 namespace stream {
 
-InputDataSource::InputDataSource() : DataSource(), mAudioType(AUDIO_TYPE_INVALID)
+InputDataSource::InputDataSource() :
+	DataSource()
 {
 }
 
-InputDataSource::InputDataSource(const InputDataSource &source) : DataSource(source), mAudioType(source.mAudioType)
+InputDataSource::InputDataSource(const InputDataSource &source) :
+	DataSource(source)
 {
 }
 
 InputDataSource &InputDataSource::operator=(const InputDataSource &source)
 {
 	DataSource::operator=(source);
+
 	return *this;
 }
 
 InputDataSource::~InputDataSource()
 {
 }
-
-void InputDataSource::setDecoder(std::shared_ptr<Decoder> decoder)
-{
-	mDecoder = decoder;
-}
-
-const std::shared_ptr<Decoder> InputDataSource::getDecoder()
-{
-	return mDecoder;
-}
-
-void InputDataSource::setAudioType(audio_type_t audioType)
-{
-	mAudioType = audioType;
-}
-
-audio_type_t InputDataSource::getAudioType()
-{
-	return mAudioType;
-}
-
-size_t InputDataSource::getDecodeFrames(unsigned char *buf, size_t *size)
-{
-	unsigned int sampleRate = 0;
-	unsigned short channels = 0;
-
-	if (mDecoder->getFrame(buf, size, &sampleRate, &channels)) {
-		/* TODO set configuration should be removed when we finish implement header parser */
-		setSampleRate(sampleRate);
-		setChannels(channels);
-		medvdbg("size : %u samplerate : %d channels : %d\n", size, sampleRate, channels);
-		return *size;
-	}
-
-	return 0;
-}
-
 } // namespace stream
 } // namespace media
+

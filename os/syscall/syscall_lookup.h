@@ -146,6 +146,7 @@ SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
  * TinyAra configuration.
  */
 
+SYSCALL_LOOKUP(syscall_clock,           0, STUB_clock)
 SYSCALL_LOOKUP(clock_getres,            2, STUB_clock_getres)
 SYSCALL_LOOKUP(clock_gettime,           2, STUB_clock_gettime)
 SYSCALL_LOOKUP(clock_settime,           2, STUB_clock_settime)
@@ -247,6 +248,7 @@ SYSCALL_LOOKUP(pthread_exit,            1, STUB_pthread_exit)
 SYSCALL_LOOKUP(pthread_getschedparam,   3, STUB_pthread_getschedparam)
 SYSCALL_LOOKUP(pthread_getspecific,     1, STUB_pthread_getspecific)
 SYSCALL_LOOKUP(pthread_join,            2, STUB_pthread_join)
+SYSCALL_LOOKUP(pthread_tryjoin_np,      2, STUB_pthread_tryjoin_np)
 SYSCALL_LOOKUP(pthread_key_create,      2, STUB_pthread_key_create)
 SYSCALL_LOOKUP(pthread_key_delete,      1, STUB_pthread_key_delete)
 SYSCALL_LOOKUP(pthread_mutex_destroy,   1, STUB_pthread_mutex_destroy)
@@ -254,6 +256,9 @@ SYSCALL_LOOKUP(pthread_mutex_init,      2, STUB_pthread_mutex_init)
 SYSCALL_LOOKUP(pthread_mutex_lock,      1, STUB_pthread_mutex_lock)
 SYSCALL_LOOKUP(pthread_mutex_trylock,   1, STUB_pthread_mutex_trylock)
 SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_pthread_mutex_unlock)
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
+#endif
 SYSCALL_LOOKUP(pthread_setcancelstate,  2, STUB_pthread_setcancelstate)
 SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_pthread_setschedparam)
 SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_pthread_setschedprio)

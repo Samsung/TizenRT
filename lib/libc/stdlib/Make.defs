@@ -59,7 +59,7 @@ CSRCS += lib_strtol.c lib_strtoll.c lib_strtoul.c lib_strtoull.c
 CSRCS += lib_strtod.c lib_strtof.c lib_strtold.c lib_checkbase.c
 
 ifeq ($(CONFIG_FS_WRITABLE),y)
-CSRCS += lib_mktemp.c lib_mkstemp.c
+CSRCS += lib_mktemp.c __randname.c lib_mkstemp.c
 endif
 
 ifeq ($(CONFIG_LIBC_WCHAR),y)

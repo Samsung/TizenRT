@@ -25,52 +25,52 @@
 
 #define THINGS_STRING_MAX_HOSTNAME 256
 #define THINGS_STRING_MAX_VALUE    100
-#define IP_PORT                 22
+#define IP_PORT                    22
 
 /**
  * Attributes used to form a proper easysetup conforming JSON message.
  */
-#define THINGS_RSRVD_ES_PROVSTATUS             "ps"
-#define THINGS_RSRVD_ES_LATHINGS_ERRORCODE         "lec"
-#define THINGS_RSRVD_ES_LINKS                  "links"
-#define THINGS_RSRVD_ES_SUPPORTEDWIFIMODE      "swmt"
-#define THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ      "swf"
-#define THINGS_RSRVD_ES_SSID                   "tnn"
-#define THINGS_RSRVD_ES_CRED                   "cd"
-#define THINGS_RSRVD_ES_AUTHTYPE               "wat"
-#define THINGS_RSRVD_ES_ENCTYPE                "wet"
-#define THINGS_RSRVD_ES_AUTHCODE               "ac"
-#define THINGS_RSRVD_ES_AUTHPROVIDER           "apn"
-#define THINGS_RSRVD_ES_CISERVER               "cis"
-#define THINGS_RSRVD_ES_SERVERID               "sid"
-#define THINGS_RSRVD_ES_CLIENTID               "clientid"
-#define THINGS_RSRVD_ES_DEVNAME                "dn"
-#define THINGS_RSRVD_ES_LANGUAGE               "lang"
-#define THINGS_RSRVD_ES_COUNTRY                "ctry"
-#define THINGS_RSRVD_ES_VENDOR_DEVTYPE         "x.com.samsung.dt"
+#define THINGS_RSRVD_ES_PROVSTATUS               "ps"
+#define THINGS_RSRVD_ES_LATHINGS_ERRORCODE       "lec"
+#define THINGS_RSRVD_ES_LINKS                    "links"
+#define THINGS_RSRVD_ES_SUPPORTEDWIFIMODE        "swmt"
+#define THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ        "swf"
+#define THINGS_RSRVD_ES_SSID                     "tnn"
+#define THINGS_RSRVD_ES_CRED                     "cd"
+#define THINGS_RSRVD_ES_AUTHTYPE                 "wat"
+#define THINGS_RSRVD_ES_ENCTYPE                  "wet"
+#define THINGS_RSRVD_ES_AUTHCODE                 "ac"
+#define THINGS_RSRVD_ES_AUTHPROVIDER             "apn"
+#define THINGS_RSRVD_ES_CISERVER                 "cis"
+#define THINGS_RSRVD_ES_SERVERID                 "sid"
+#define THINGS_RSRVD_ES_CLIENTID                 "clientid"
+#define THINGS_RSRVD_ES_DEVNAME                  "dn"
+#define THINGS_RSRVD_ES_LANGUAGE                 "lang"
+#define THINGS_RSRVD_ES_COUNTRY                  "ctry"
+#define THINGS_RSRVD_ES_VENDOR_DEVTYPE           "x.com.samsung.dt"
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
-#define THINGS_RSRVD_ES_VENDOR_DEVSUBTYPE      "x.com.samsung.sdt"
+#define THINGS_RSRVD_ES_VENDOR_DEVSUBTYPE        "x.com.samsung.sdt"
 #endif
-#define THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL "x.com.samsung.chn"
-#define THINGS_RSRVD_ES_VENDOR_CLIENTID         "x.com.samsung.clientid"
-#define THINGS_RSRVD_ES_VENDOR_ERRORCODE        "x.com.samsung.vd.errcode"
-#define THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN     "at"
+#define THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL  "x.com.samsung.chn"
+#define THINGS_RSRVD_ES_VENDOR_CLIENTID          "x.com.samsung.clientid"
+#define THINGS_RSRVD_ES_VENDOR_ERRORCODE         "x.com.samsung.vd.errcode"
+#define THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN      "at"
 #define THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE "att"
-#define SC_RSRVD_ES_VENDOR_REFRESH_TOKEN    "x.com.samsung.refreshtoken"
-#define THINGS_RSRVD_ES_VENDOR_USER_ID          "x.com.samsung.uid"
-#define THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME    "x.com.samsung.datetime"
+#define SC_RSRVD_ES_VENDOR_REFRESH_TOKEN         "x.com.samsung.refreshtoken"
+#define THINGS_RSRVD_ES_VENDOR_USER_ID           "x.com.samsung.uid"
+#define THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME     "x.com.samsung.datetime"
 
 /**
  * Easysetup defined resoruce types and uris.
  */
-#define THINGS_RSRVD_ES_RES_TYPE_PROV         "oic.r.easysetup"	//"oic.wk.prov"
-#define THINGS_RSRVD_ES_URI_PROV              "/EasySetupResURI"	//"/ProvisioningResURI"
-#define THINGS_RSRVD_ES_RES_TYPE_WIFI         "oic.r.wificonf"	//"oic.wk.wifi"
-#define THINGS_RSRVD_ES_URI_WIFI              "/WiFiConfResURI"	//"/WiFiProvisioningResURI"
-#define THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER  "oic.r.coapcloudconf"	//"oic.wk.cloudserver"
-#define THINGS_RSRVD_ES_URI_CLOUDSERVER       "/CoapCloudConfResURI"	//"/CloudServerProvisioningResURI"
-#define THINGS_RSRVD_ES_RES_TYPE_DEVCONF      "oic.r.devconf"	//"oic.wk.devconf"
-#define THINGS_RSRVD_ES_URI_DEVCONF           "/DevConfResURI"	//"/DevConfProvisioningResURI"
+#define THINGS_RSRVD_ES_RES_TYPE_PROV         "oic.r.easysetup"         // "oic.wk.prov"
+#define THINGS_RSRVD_ES_URI_PROV              "/EasySetupResURI"        // "/ProvisioningResURI"
+#define THINGS_RSRVD_ES_RES_TYPE_WIFI         "oic.r.wificonf"          // "oic.wk.wifi"
+#define THINGS_RSRVD_ES_URI_WIFI              "/WiFiConfResURI"         // "/WiFiProvisioningResURI"
+#define THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER  "oic.r.coapcloudconf"     // "oic.wk.cloudserver"
+#define THINGS_RSRVD_ES_URI_CLOUDSERVER       "/CoapCloudConfResURI"    // "/CloudServerProvisioningResURI"
+#define THINGS_RSRVD_ES_RES_TYPE_DEVCONF      "oic.r.devconf"           // "oic.wk.devconf"
+#define THINGS_RSRVD_ES_URI_DEVCONF           "/DevConfResURI"          // "/DevConfProvisioningResURI"
 
 #define NUM_WIFIMODE    10
 

@@ -26,20 +26,20 @@
 
 #define DEFAULT_CONTEXT_VALUE   0x99
 
-#define KEY_TOKEN_ACCESS           "accesstoken"	// mandatory
-#define KEY_TOKEN_ACCESS_REFRESH   "refreshtoken"	// mandatory
-#define KEY_TOKEN_TYPE			   "token_type"	// mandatory
-#define KEY_EXPIRE_TIME			   "expiresin"	// mandatory
-#define KEY_ID_USER                "uid"	// mandatory
-#define KEY_SERVER_REDIRECT_URI    "redirect_uri"	// option
-#define KEY_CERTIFICATE_FILE       "certificate"	// option
-#define KEY_SERVER_ID              "sid"	// option
+#define KEY_TOKEN_ACCESS           "accesstoken"    // mandatory
+#define KEY_TOKEN_ACCESS_REFRESH   "refreshtoken"   // mandatory
+#define KEY_TOKEN_TYPE             "token_type"     // mandatory
+#define KEY_EXPIRE_TIME            "expiresin"      // mandatory
+#define KEY_ID_USER                "uid"            // mandatory
+#define KEY_SERVER_REDIRECT_URI    "redirect_uri"   // option
+#define KEY_CERTIFICATE_FILE       "certificate"    // option
+#define KEY_SERVER_ID              "sid"            // option
 #define KEY_ID_DEVICE              "di"
 #define KEY_LOGINOUT               "login"
 #define KEY_ICORE_VER              "coreversion"
 #define KEY_IOTIVITY_VER           "verticalversion"
 #define KEY_TYPE_GRANT             "granttype"
-#define CLOUD_ERROR_CODE            "code"
+#define CLOUD_ERROR_CODE           "code"
 #define VALUE_TYPE_GRANT_TOKEN     "refresh_token"
 
 
@@ -93,5 +93,4 @@ extern OCStackResult things_cloud_topic_publish_topic(const char *host,
 		OCRepPayload *payload,
 		OCClientResponseHandler response);
 
-#endif	/* 
- */
+#endif

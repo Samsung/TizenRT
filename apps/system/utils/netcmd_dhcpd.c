@@ -65,6 +65,7 @@
 #include <net/if.h>
 
 #include <protocols/dhcpd.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -97,7 +98,7 @@ static void show_usage(void)
 	printf("	<command>		command string (start | stop | status ) \n");
 	printf("					 - start  : start dhcpd daemon \n");
 	printf("					 - stop   : terminate dhcpd daemon \n");
-	printf("					 - status : show dhcpd daemon's status \n");
+	printf("					 - status : show dhcpd's status \n");
 	printf("	[interface name] name of network interface used for running dhcpd  \n");
 	printf("\n");
 
@@ -128,8 +129,8 @@ int cmd_dhcpd(int argc, char *argv[])
 			goto done;
 		}
 
-		if (dhcpd_status()) {
-			printf("ERROR : %s, another dhcpd is running\n", __FUNCTION__);
+		if (dhcp_server_status(argv[2])) {
+			printf("ERROR : %s, dhcpd is already running\n", __FUNCTION__);
 			result = ERR;
 			goto done;
 		}
@@ -140,7 +141,7 @@ int cmd_dhcpd(int argc, char *argv[])
 			goto done;
 		} else {
 			if (flags & IFF_UP) {
-				printf("%s : dhcpd start on %s\n", __FUNCTION__, argv[2]);
+				printf("%s : dhcp server start on %s\n", __FUNCTION__, argv[2]);
 			} else {
 				printf("%s : interface %s is down, unable to run dhcpd\n", __FUNCTION__, argv[2]);
 				result = ERR;
@@ -148,20 +149,16 @@ int cmd_dhcpd(int argc, char *argv[])
 			}
 		}
 
-		if (dhcpd_start(argv[2], NULL) != 0) {
-			printf("%s : failed to start dhcpd\n", __FUNCTION__);
+		if (dhcp_server_start(argv[2], NULL) != 0) {
+			printf("%s : failed to start dhcp server\n", __FUNCTION__);
 			goto done;
 		}
 	} else if (!strcmp(argv[1], "stop")) {
-		if (dhcpd_status()) {
-			printf("%s : dhcpd stop\n", __FUNCTION__);
-			dhcpd_stop();
-		} else {
-			printf("%s : dhcpd is already stopped\n", __FUNCTION__);
-		}
+		printf("%s : dhcp server stop\n", __FUNCTION__);
+		dhcp_server_stop(argv[2]);
 	} else if (!strcmp(argv[1], "status")) {
 		printf("\ndhcpd status : ");
-		if (dhcpd_status()) {
+		if (dhcp_server_status(argv[2])) {
 			printf("running\n");
 		} else {
 			printf("stopped\n");

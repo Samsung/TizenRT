@@ -105,10 +105,10 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-After buiding a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.  
+After building a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.  
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 ```bash
-make download ALL
+./dbuild.sh download ALL
 ```
 
 ## ROMFS
@@ -132,7 +132,7 @@ Before executing below steps, execute [generic steps](../../../tools/fs/README_R
         ```
 4. Enable auto-mount config.
     ```bash
-    Hardware Configuration -> Board Selection -> Automount partitions -> Automount ROM read only partition to y
+    Hardware Configuration -> Board Selection -> Automount partitions -> [*] Automount ROM read only partition
     ```
 5. Build TizenRT and flash a binary.  
     Refer [How to program a binary](#how-to-program-a-binary).
@@ -170,7 +170,7 @@ There are three configuration sets for sidk_s5jt200, including 'hello_with_tash'
  for running kernel functions
 
 #### tc
- for runnig unit test cases
+ for running unit test cases
 
 #### sidk_tash_aws
  for running AWS IoT SDK examples.

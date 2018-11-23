@@ -35,11 +35,13 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 1. [How to use SmartFS](HowToUseSmartFS.md)
 
 ## Network
-1. How to use LWIP (will be updated)
-2. [How to port TizenRT on new WiFi chipset](HowToPortTizenRTOnWiFiChipset.md)
+1. [How to port TizenRT on new WiFi chipset](HowToPortTizenRTOnWiFiChipset.md)
+2. [How to use LWIP](HowToUseLWIP.md)
 
 ## Audio
 [How to use audio](HowToUseAudio.md)
 
 ## Confirmation of Porting
+1. [How to confirm Network](HowToConfirmNetworkPorting.md)
+
 Will be updated

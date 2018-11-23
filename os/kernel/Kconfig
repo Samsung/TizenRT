@@ -387,7 +387,7 @@ config PTHREAD_MUTEX_TYPES
 choice
 	prompt "pthread mutex robustness"
 	default PTHREAD_MUTEX_ROBUST if !DEFAULT_SMALL
-	default PTHREAD_UNSAFE if DEFAULT_SMALL
+	default PTHREAD_MUTEX_UNSAFE if DEFAULT_SMALL
 
 config PTHREAD_MUTEX_ROBUST
 	bool "Robust mutexes"
@@ -529,12 +529,36 @@ config SCHED_CPULOAD_TICKSPERSEC
 		possible choice in most cases.
 
 config SCHED_CPULOAD_TIMECONSTANT
-	int "CPU load time constant"
+	int "CPU load time constant (in seconds)"
+	depends on !SCHED_MULTI_CPULOAD
 	default 2
 	---help---
 		The accumulated CPU count is divided by two when the accumulated
 		tick count exceeds this time constant.  This time constant is in
-		units of seconds.
+		units of seconds. Default : 2 seconds
+
+config SCHED_MULTI_CPULOAD
+	bool "Use multi interval for cpuload measurement (in seconds)"
+	default n
+	---help---
+		If this option is selected, user can measure CPU load with 3 types of interval : short-term, mid-term, long-term.
+		It can bring overhead on system because it is handled in timer interrupt handler.
+		These time constants are in units of seconds. Default : 2, 5, 10 seconds
+
+config SCHED_CPULOAD_TIMECONSTANT_SHORT
+	int "Time constant for short-term"
+	default 2
+	depends on SCHED_MULTI_CPULOAD
+
+config SCHED_CPULOAD_TIMECONSTANT_MID
+	int "Time constant for mid-term"
+	default 5
+	depends on SCHED_MULTI_CPULOAD
+
+config SCHED_CPULOAD_TIMECONSTANT_LONG
+	int "Time constant for long-term"
+	default 10
+	depends on SCHED_MULTI_CPULOAD
 
 endif # SCHED_CPULOAD
 
@@ -826,6 +850,33 @@ config SIG_SIGTM_BROADCAST
 		SIGTM_BROADCAST is a non-standard signal used to send broadcast message to
 		the internal TinyAra task manager. This setting specifies the signal number
 		that will be used for SIGTM_BROADCAST. Default: 21
+
+config SIG_SIGEL_WAKEUP
+	int "SIGEL_WAKEUP"
+	default 22
+	depends on EVENTLOOP
+	---help---
+		SIG_SIGEL_WAKEUP is a non-standard signal used to wake eventloop task up.
+		This setting specifies the signal number that will be used for SIG_SIGEL_WAKEUP.
+		Default: 22
+
+config SIG_SIGTM_TERMINATION
+	int "SIGTM_TERMINATION"
+	default 23
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_TERMINATION is a non-standard signal used to send termination info to
+		the TinyAra task managed by task manager. This setting specifies the signal number
+		that will be used for SIGTM_TERMINATION. Default: 23
+
+config SIG_SIGEL_EVENT
+	int "SIGEL_EVENT"
+	default 24
+	depends on EVENTLOOP
+	---help---
+		SIG_SIGEL_EVENT is a non-standard signal used to wake eventloop task up.
+		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
+		Default: 24
 
 endmenu # Signal Numbers
 

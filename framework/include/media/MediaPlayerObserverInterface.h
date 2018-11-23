@@ -30,48 +30,104 @@
 #define __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 
 namespace media {
+class MediaPlayer;
+enum player_error_e : int;
+typedef enum player_error_e player_error_t;
+enum buffer_state_e : int;
+typedef enum buffer_state_e buffer_state_t;
+
 /**
  * @class
  * @brief This class provides an interface to the user.
  * @details @b #include <media/MediaPlayerObserverInterface.h>
  * This class informs the user of the playback state of MediaPlayer
  * This class informs the user of the error state of MediaPlayer
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class MediaPlayerObserverInterface
 {
 public:
 	/**
-	 * @brief Id means unique id of MediaPlayer.
-	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * support multi-recorders according to device specifications
-	 * @since TizenRT v2.0 PRE
-	 */
-	using Id = uint64_t;
-	/**
 	 * @brief informs the user of the playback has begun.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	virtual void onPlaybackStarted(Id id) = 0;
+	virtual void onPlaybackStarted(MediaPlayer &mediaPlayer) = 0;
 	/**
 	 * @brief informs the user of the playback has finished.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	virtual void onPlaybackFinished(Id id) = 0;
+	virtual void onPlaybackFinished(MediaPlayer &mediaPlayer) = 0;
 	/**
 	 * @brief informs the user of the error state of player operation
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	virtual void onPlaybackError(Id id) = 0;
+	virtual void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onStartError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onStopError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
 	/**
 	 * @brief informs the user of the playback has paused.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
-	virtual void onPlaybackPaused(Id id) = 0;
+	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user of the playback has stopped.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackStopped(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user that data in the input-buffer reach the
+	 * threshold, and it's possible to fetch data now.
+	 * @remark user need to override this method when the player working
+	 * with a BufferInputDataSource.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackBufferDataReached(MediaPlayer& mediaPlayer, unsigned char *data, size_t size) {}
+	/**
+	 * @brief informs the user the playback buffer state: overrun.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackBufferOverrun(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user the playback buffer state: underrun.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackBufferUnderrun(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user the playback buffer updated.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackBufferUpdated(MediaPlayer &mediaPlayer, size_t bytes) {}
+	/**
+	 * @brief informs the user the playback buffer state changed
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onPlaybackBufferStateChanged(MediaPlayer &mediaPlayer, buffer_state_t state) {}
 };
 } // namespace media
 

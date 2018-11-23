@@ -491,7 +491,11 @@ int ZEXPORT deflateResetKeep (strm)
         s->wrap ? INIT_STATE : BUSY_STATE;
     strm->adler =
 #ifdef GZIP
+#ifdef __TizenRT__
+        s->wrap == 2 ? grpc_crc32(0L, Z_NULL, 0) :
+#else
         s->wrap == 2 ? crc32(0L, Z_NULL, 0) :
+#endif
 #endif
         adler32(0L, Z_NULL, 0);
     s->last_flush = Z_NO_FLUSH;
@@ -752,12 +756,21 @@ local void flush_pending(strm)
 /* ===========================================================================
  * Update the header CRC with the bytes s->pending_buf[beg..s->pending - 1].
  */
+#ifdef __TizenRT__
+#define HCRC_UPDATE(beg) \
+    do { \
+        if (s->gzhead->hcrc && s->pending > (beg)) \
+            strm->adler = grpc_crc32(strm->adler, s->pending_buf + (beg), \
+                                s->pending - (beg)); \
+    } while (0)
+#else
 #define HCRC_UPDATE(beg) \
     do { \
         if (s->gzhead->hcrc && s->pending > (beg)) \
             strm->adler = crc32(strm->adler, s->pending_buf + (beg), \
                                 s->pending - (beg)); \
     } while (0)
+#endif
 
 /* ========================================================================= */
 int ZEXPORT deflate (strm, flush)
@@ -848,7 +861,11 @@ int ZEXPORT deflate (strm, flush)
 #ifdef GZIP
     if (s->status == GZIP_STATE) {
         /* gzip header */
+#ifdef __TizenRT__
+        strm->adler = grpc_crc32(0L, Z_NULL, 0);
+#else
         strm->adler = crc32(0L, Z_NULL, 0);
+#endif
         put_byte(s, 31);
         put_byte(s, 139);
         put_byte(s, 8);
@@ -891,8 +908,13 @@ int ZEXPORT deflate (strm, flush)
                 put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
             }
             if (s->gzhead->hcrc)
+#ifdef __TizenRT__
+                strm->adler = grpc_crc32(strm->adler, s->pending_buf,
+                                    s->pending);
+#else
                 strm->adler = crc32(strm->adler, s->pending_buf,
                                     s->pending);
+#endif
             s->gzindex = 0;
             s->status = EXTRA_STATE;
         }
@@ -978,7 +1000,11 @@ int ZEXPORT deflate (strm, flush)
             }
             put_byte(s, (Byte)(strm->adler & 0xff));
             put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
+#ifdef __TizenRT__
+            strm->adler = grpc_crc32(0L, Z_NULL, 0);
+#else
             strm->adler = crc32(0L, Z_NULL, 0);
+#endif
         }
         s->status = BUSY_STATE;
 
@@ -1179,7 +1205,11 @@ local unsigned read_buf(strm, buf, size)
     }
 #ifdef GZIP
     else if (strm->state->wrap == 2) {
+#ifdef __TizenRT__
+        strm->adler = grpc_crc32(strm->adler, buf, len);
+#else
         strm->adler = crc32(strm->adler, buf, len);
+#endif
     }
 #endif
     strm->next_in  += len;

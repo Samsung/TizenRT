@@ -19,6 +19,7 @@
 #ifndef _THINGS_TYPES_H_
 #define _THINGS_TYPES_H_
 
+#include <wifi_manager/wifi_manager.h>
 #define THINGS_STRING_MAX_DNSNAME  256
 #define THINGS_STRING_MAX_LENGTH   100
 
@@ -37,12 +38,10 @@
 #define MAX_IT_CNT            5
 #define MAX_RT_CNT            10
 
-#define MAX_SSID_LEN          33
-#define MAX_SECUIRTYKEY_LEN   64
+#define MAX_LEVEL_SIGNAL      12
 #define MAX_TYPE_AUTH         16
 #define MAX_TYPE_ENC          16
 #define MAX_CHANNEL           8
-#define MAX_LEVEL_SIGNAL      12
 
 #define ES_COMPLETE            1
 #define ES_NOT_COMPLETE        0
@@ -83,8 +82,8 @@ typedef enum {
 } wifi_enc_type_e;
 
 typedef struct {
-	char ssid[MAX_SSID_LEN];	/**< ssid of the Enroller**/
-	char pwd[MAX_SECUIRTYKEY_LEN]; /**< pwd of the Enroller**/
+	char ssid[WIFIMGR_SSID_LEN + 1];	/**< ssid of the Enroller**/
+	char pwd[WIFIMGR_PASSPHRASE_LEN + 1]; /**< pwd of the Enroller**/
 	wifi_auth_type_e authtype;	/**< auth type of the Enroller**/
 	wifi_enc_type_e enctype; /**< encryption type of the Enroller**/
 	int discovery_channel;		// samsung specific property
@@ -253,13 +252,14 @@ typedef enum {
 } things_es_enrollee_state_e, things_prov_status_e, things_cloud_status_e;
 
 typedef struct access_point_info_s {
-	char e_ssid[MAX_SSID_LEN];		// mandatory
-	char security_key[MAX_SECUIRTYKEY_LEN];	// mandatory
+	char e_ssid[WIFIMGR_SSID_LEN + 1];		// mandatory
+	char security_key[WIFIMGR_PASSPHRASE_LEN + 1];	// mandatory
 	char auth_type[MAX_TYPE_AUTH];	// mandatory (None | WEP | WPA-PSK | WPA2-PSK)
 	char enc_type[MAX_TYPE_ENC];	// mandatory (WEP-64 | WEP-128 | TKIP | AES | TKIP_AES)
 	char channel[MAX_CHANNEL];	// optional
 	char signal_level[MAX_LEVEL_SIGNAL];	// optional
-	char bss_id[MAX_SSID_LEN];		// optional
+	char bss_id[WIFIMGR_MACADDR_STR_LEN + 1];		// optional
+	struct access_point_info_s* next;
 } access_point_info_s;
 
 #endif							/* _THINGS_TYPES_H_ */

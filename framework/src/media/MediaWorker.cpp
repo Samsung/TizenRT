@@ -17,11 +17,20 @@
  ******************************************************************/
 
 #include <debug.h>
+#include <sched.h>
+#include <pthread.h>
+
 #include "MediaWorker.h"
 
 namespace media {
 
-MediaWorker::MediaWorker() : mStacksize(PTHREAD_STACK_DEFAULT), mThreadName("MediaWorker"), mIsRunning(false), mRefCnt(0)
+MediaWorker::MediaWorker() :
+	mStacksize(PTHREAD_STACK_DEFAULT),
+	mPriority(100),
+	mThreadName("MediaWorker"),
+	mIsRunning(false),
+	mRefCnt(0),
+	mWorkerThread(0)
 {
 	medvdbg("MediaWorker::MediaWorker()\n");
 }
@@ -34,17 +43,21 @@ void MediaWorker::startWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
 	++mRefCnt;
-	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
+	medvdbg("%s::startWorker() - increase RefCnt : %d\n", mThreadName, mRefCnt);
 	if (mRefCnt == 1) {
 		int ret;
+		struct sched_param sparam;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, mStacksize);
+		sparam.sched_priority = mPriority;
+		pthread_attr_setschedparam(&attr, &sparam);
 		mIsRunning = true;
 		ret = pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
 		if (ret != OK) {
 			medvdbg("Fail to create worker thread, return value : %d\n", ret);
 			--mRefCnt;
+			mIsRunning = false;
 			return;
 		}
 		pthread_setname_np(mWorkerThread, mThreadName);
@@ -57,14 +70,14 @@ void MediaWorker::stopWorker()
 	if (mRefCnt > 0) {
 		--mRefCnt;
 	}
-	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
+	medvdbg("%s::stopWorker() - decrease RefCnt : %d\n", mThreadName, mRefCnt);
 	if (mRefCnt <= 0) {
 		std::atomic<bool> &refBool = mIsRunning;
 		mWorkerQueue.enQueue([&refBool]() {
 			refBool = false;
 		});
 		pthread_join(mWorkerThread, NULL);
-		medvdbg("MediaWorker::stopWorker() - mWorkerthread exited\n");
+		medvdbg("%s::stopWorker() - mWorkerthread exited\n", mThreadName);
 	}
 }
 

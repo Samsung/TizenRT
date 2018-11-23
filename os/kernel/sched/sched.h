@@ -63,7 +63,9 @@
 #include <stdbool.h>
 #include <queue.h>
 #include <sched.h>
-
+#ifdef CONFIG_SCHED_CPULOAD
+#include <tinyara/clock.h>
+#endif
 #include <tinyara/kmalloc.h>
 
 /****************************************************************************
@@ -111,7 +113,7 @@ struct pidhash_s {
 	FAR struct tcb_s *tcb;		/* TCB assigned to this PID */
 	pid_t pid;					/* The full PID value */
 #ifdef CONFIG_SCHED_CPULOAD
-	uint32_t ticks;				/* Number of ticks on this thread */
+	uint32_t ticks[SCHED_NCPULOAD];				/* Number of ticks on this thread */
 #endif
 };
 
@@ -240,7 +242,7 @@ extern const struct tasklist_s g_tasklisttable[NUM_TASK_STATES];
  * 'denominator' for all CPU load calculations.
  */
 
-extern volatile uint32_t g_cpuload_total;
+extern volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
 #endif
 
 /****************************************************************************

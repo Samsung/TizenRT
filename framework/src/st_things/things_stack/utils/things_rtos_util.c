@@ -18,6 +18,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include <sys/types.h>
 #include <pthread.h>
 #include <sched.h>
 
@@ -44,6 +45,7 @@ static const thread_info_s things_stack_thread_name[THINGS_STACK_MAX_INDEX] = { 
 	{"THINGS_STACK_WIFI_JOIN", 8 * 1024},		/*THINGS_STACK_WIFI_JOIN_THREAD */
 	{"THINGS_STACK_FOTA_UPDATE", 6 * 1024},	/*THINGS_STACK_FOTA_THREAD */
 	{"THINGS_STACK_AP_INFO_SET", 4 * 1024},/*THINGS_STACK_AP_INFO_SET_THREAD */
+	{"THINGS_STACK_AP_SCAN_THREAD", 1024},/*THINGS_STACK_AP_SCAN_THREAD */
 	{"THINGS_STACK_MAX_INDEX", 8 * 1024}		/*THINGS_STACK_MAX_INDEX */
 };
 

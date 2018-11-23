@@ -76,24 +76,12 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-
-struct dhcpc_state {
-	struct in_addr serverid;
-	struct in_addr ipaddr;
-	struct in_addr netmask;
-	struct in_addr dnsaddr;
-	struct in_addr default_router;
-	uint32_t lease_time;		/* Lease expires in this number of seconds */
-};
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
 #ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
@@ -102,34 +90,22 @@ extern "C" {
 #endif
 
 /**
- * @brief Get DHCP client handle
- *
- * @param[in] intf the name of network interface
- * @param[in] mac_addr the mac address of network interface
- * @param[in] mac_len the length of mac address
- * @return On success, handle. On failure, returns null
- * @since TizenRT v1.0
- */
-void *dhcpc_open(const char *intf);
-
-/**
  * @brief Starts DHCP client
  *
- * @param[in] handle generic data structure that contains dhcpc information
- * @param[out] presult dhcp informations that contain ip address, netmask and gateway
+ * @param[in] intf name of interface to run dhcpc
  * @return On success, 0. On failure, returns negative
- * @since TizenRT v1.0
+ * @since TizenRT v2.0
  */
-int dhcpc_request(void *handle, struct dhcpc_state *presult);
+int dhcp_client_start(const char *intf);
 
 /**
- * @brief dhcpc_close() return dhcp client handle
+ * @brief Stop DHCP client
  *
- * @param[in] handle generic data structure that contains dhcpc information
- * @return none
- * @since TizenRT v1.0
-*/
-void dhcpc_close(void *handle);
+ * @param[in] intf name of interface to stop dhcpc
+ * @return On success, 0. On failure, returns negative
+ * @since TizenRT v2.0
+ */
+void dhcp_client_stop(const char *intf);
 
 #undef EXTERN
 #ifdef __cplusplus

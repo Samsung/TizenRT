@@ -16,11 +16,13 @@
  *
  ******************************************************************/
 
+#include <sys/types.h>
+#include <pthread.h>
+#include <errno.h>
+
 #include "fmwup_util_internal.h"
 #include "fmwup_util_http.h"
 #include "fmwup_util_data.h"
-#include <pthread.h>
-#include <errno.h>
 #include "utils/things_rtos_util.h"
 #include "utils/things_malloc.h"
 #include "logging/things_logger.h"

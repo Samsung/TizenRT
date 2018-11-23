@@ -43,11 +43,11 @@ If controller application does not have proper permission for controllee applica
 ### State
 Task Manager manages each application with four states, unregistered, stop, running and paused.  
 Please find below how to move each state by APIs.  
-![State Diagram](https://github.com/Samsung/TizenRT/tree/master/docs/media/tm_state_diagram.png)
+![State Diagram](../../../docs/media/Task_Manager_State_Diagram.PNG)
 
 ## Prerequisites
 ### Configuration
-Enable configuration of task manager through menuconfig
+Enable configuration of task manager with menuconfig
 ```bash
 cd $TIZENRT_BASEDIR
 cd os

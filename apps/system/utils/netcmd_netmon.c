@@ -37,9 +37,22 @@
 
 #include <netutils/netlib.h>
 
+#ifdef CONFIG_WIFI_MANAGER
+#include <wifi_manager/wifi_manager.h>
+#endif
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
+#define USAGE							\
+	"\n usage: netmon [options]\n"		\
+	"\n socket information:\n"			\
+	"       netmon sock\n"				\
+	"\n WiFi Manager stats:\n"			\
+	"       netmon wifi\n"				\
+	"\n Net device stats:\n"			\
+	"       netmon [devname]\n\n"
+
 #ifdef CONFIG_NET_IPv6
 #define PRINT_IPV(sock)										\
 	do {													\
@@ -101,6 +114,15 @@
 * Private Functions
 ****************************************************************************/
 /**
+ * Print the command list
+ */
+static void print_help(void)
+{
+	printf("%s", USAGE);
+	return;
+}
+
+/**
  * Print a externally used socket information.
  */
 static void print_socket(sq_queue_t *q_sock)
@@ -144,9 +166,24 @@ static void print_socket(sq_queue_t *q_sock)
 		sock_info = (struct netmon_sock *) sq_remfirst(q_sock);
 	}
 
-	return ;
+	return;
 }
 
+#ifdef CONFIG_NET_STATS
+/**
+ * Print a externally used netdev information.
+ */
+static void print_devstats(struct netmon_netdev_stats *stats)
+{
+	printf("\n==============================================\n");
+	printf("IFNAME    RXbyte    RXPKT    TXbyte    TXPKT\n");
+	printf("----------------------------------------------\n");
+	printf("%-10s%-10d%-9d", stats->devname, stats->devinoctets, stats->devinpkts);
+	printf("%-10d%-9d\n", stats->devoutoctets, stats->devoutpkts);
+	printf("==============================================\n");
+	return;
+}
+#endif							/* CONFIG_NET_STATS */
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -155,18 +192,10 @@ int cmd_netmon(int argc, char **argv)
 	sq_queue_t q_data;
 	sq_init(&q_data);
 	int ret;
-	if (argc > 2) {
-		printf("Bad input\n");
-	} else if (argc == 1) {
-		/* Get default information: SIOCGETSOCK (default) */
-		ret = netlib_netmon_sock(&q_data);
-		if (!ret) {
-			/* Free sq_queue entry of netmon_sock in print_socket() */
-			print_socket(&q_data);
-		} else {
-			printf("Failed to fetch socket info.\n");
-		}
-	} else if (!(strncmp(argv[1], "sock", strlen("sock")))) {
+
+	if (argc == 1 || argc > 2) {
+		print_help();
+	} else if (!(strncmp(argv[1], "sock", strlen("sock") + 1))) {
 		/* Get socket information: SIOCGETSOCK */
 		ret = netlib_netmon_sock(&q_data);
 		if (!ret) {
@@ -175,11 +204,72 @@ int cmd_netmon(int argc, char **argv)
 		} else {
 			printf("Failed to fetch socket info.\n");
 		}
-	} else if (!(strncmp(argv[1], "wifi", strlen("wifi")))) {
-		/* Get socket information: SIOCGETWIFI */
-		printf("wifi option will be supported\n");
+	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
+#ifdef CONFIG_WIFI_MANAGER
+		wifi_manager_stats_s stats;
+		wifi_manager_info_s info;
+
+		wifi_manager_result_e res = wifi_manager_get_stats(&stats);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get Wi-Fi Manager stats failed\n");
+			return ERROR;
+		}
+		printf("\n=======================================================================\n");
+		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
+		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+		printf("=======================================================================\n");
+
+		printf("Connection INFO.\n");
+		res = wifi_manager_get_info(&info);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get Wi-Fi Manager Connection info failed\n");
+			return ERROR;
+		}
+		if (info.mode == SOFTAP_MODE) {
+			if (info.status == CLIENT_CONNECTED) {
+				printf("MODE: softap (client connected)\n");
+			} else if (info.status == CLIENT_DISCONNECTED) {
+				printf("MODE: softap (no client)\n");
+			}
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
+			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
+		} else if (info.mode == STA_MODE) {
+			if (info.status == AP_CONNECTED) {
+				printf("MODE: station (connected)\n");
+				printf("IP: %s\n", info.ip4_address);
+				printf("SSID: %s\n", info.ssid);
+				printf("rssi: %d\n", info.rssi);
+			} else if (info.status == AP_DISCONNECTED) {
+				printf("MODE: station (disconnected)\n");
+			}
+			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
+		} else {
+			printf("STATE: NONE\n");
+		}
+		printf("=======================================================================\n");
+#else
+		printf("Wi-Fi Manager is not enabled\n");
+#endif
 	} else {
+#ifdef CONFIG_NET_STATS
+		struct netmon_netdev_stats stats = {{0,}, 0, 0, 0, 0};
+		char *intf = NULL;
+		/* Get network interface stats if exists: SIOCGDEVSTATS */
+		intf = argv[1];
+		strncpy(stats.devname, intf, IFNAMSIZ);
+		stats.devname[IFNAMSIZ] = '\0';
+		ret = netlib_netmon_devstats(&stats);
+		if (!ret) {
+			print_devstats(&stats);
+		} else {
+			printf("No device interface %s\n", intf);
+			return ERROR;
+		}
+#else
 		printf("No such an option\n");
+#endif
 	}
 
 	return OK;

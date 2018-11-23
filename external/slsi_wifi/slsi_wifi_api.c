@@ -25,6 +25,7 @@
 #include "common/ieee802_11_common.h"
 #include "common/defs.h"
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -3125,10 +3126,10 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 			slsi_set_updateconfig();
 			slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
 			slsi_set_bss_expiration();
-			if (interface_id == SLSI_WIFI_SOFT_AP_IF) {
-				slsi_set_autoconnect(0);
-			} else {
+			if (interface_id == SLSI_WIFI_STATION_IF) {
 				slsi_set_autoconnect(1);
+			} else {
+				slsi_set_autoconnect(0);
 			}
 
 		} else {
@@ -3698,3 +3699,24 @@ int8_t WiFiSaveConfig(void)
 #endif
 	return result;
 }
+
+int8_t WiFiSetAutoconnect(uint8_t check)
+{
+	int8_t result = SLSI_STATUS_NOT_SUPPORTED;
+
+	ENTER_CRITICAL;
+	if (slsi_get_op_mode() == SLSI_WIFI_STATION_IF) {
+		DPRINT("WiFiSetAutoconnect - set to %d\n", (int)check);
+		slsi_set_autoconnect(check);
+		result = SLSI_STATUS_SUCCESS;
+	} else if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
+		DPRINT("WiFiSetAutoconnect - not started\n");
+	} else {
+		DPRINT("WiFiSetAutoconnect - not allowed during AP mode\n");
+		result = SLSI_STATUS_NOT_ALLOWED;
+	}
+	LEAVE_CRITICAL;
+
+	return result;
+}
+

@@ -332,6 +332,7 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 	int count = 0;
 	int ret;
 
+	DEBUGASSERT((fds != NULL));
 	/* poll() is a cancellation point */
 	(void)enter_cancellation_point();
 

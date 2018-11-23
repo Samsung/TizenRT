@@ -272,6 +272,16 @@ struct netmon_sock {
 	pid_t pid;
 	char  pid_name[CONFIG_TASK_NAME_SIZE];
 };
+#ifdef CONFIG_NET_STATS
+/* Netdev info. */
+struct netmon_netdev_stats {
+	char devname[IFNAMSIZ + 1];
+	u32_t devinpkts;
+	u32_t devinoctets;
+	u32_t devoutpkts;
+	u32_t devoutoctets;
+};
+#endif								/* CONFIG_NET_STATS */
 #endif                              /* CONFIG_NET_NETMON */
 /*******************************************************************************************
  * Public Function Prototypes

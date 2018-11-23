@@ -65,6 +65,9 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/ttrace.h>
+#ifdef CONFIG_SCHED_CPULOAD
+#include <tinyara/clock.h>
+#endif
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -169,7 +172,10 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			g_pidhash[hash_ndx].tcb = tcb;
 			g_pidhash[hash_ndx].pid = next_pid;
 #ifdef CONFIG_SCHED_CPULOAD
-			g_pidhash[hash_ndx].ticks = 0;
+			int cpuload_idx;
+			for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
+				g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+			}
 #endif
 			tcb->pid = next_pid;
 
@@ -497,9 +503,7 @@ static void task_namesetup(FAR struct task_tcb_s *tcb, FAR const char *name)
  *
  * Input Parameters:
  *   tcb  - Address of the new task's TCB
- *   argv - A pointer to an array of input parameters.  Up to
- *          CONFIG_MAX_TASK_ARG parameters may be provided. If fewer than
- *          CONFIG_MAX_TASK_ARG parameters are passed, the list should be
+ *   argv - A pointer to an array of input parameters. The array should be
  *          terminated with a NULL argv[] value. If no parameters are
  *          required, argv may be NULL.
  *
@@ -718,10 +722,7 @@ int pthread_schedsetup(FAR struct pthread_tcb_s *tcb, int priority, start_t star
  *   tcb        - Address of the new task's TCB
  *   name       - Name of the new task (not used)
  *   argv       - A pointer to an array of input parameters.
- *                Up to CONFIG_MAX_TASK_ARG parameters may be
- *                provided. If fewer than CONFIG_MAX_TASK_ARG
- *                parameters are passed, the list should be
- *                terminated with a NULL argv[] value.
+ *                The array should be terminated with a NULL argv[] value.
  *                If no parameters are required, argv may be NULL.
  *
  * Return Value:

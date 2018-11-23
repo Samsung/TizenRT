@@ -232,6 +232,13 @@ db_result_t storage_put_relation(relation_t *rel)
 
 	if (rel->tuple_filename[0] == '\0') {
 		snprintf(tuple_path, TUPLE_NAME_LENGTH, "%s.%x\0", TUPLE_FILE_NAME, (unsigned)(random_rand() & 0xffff));
+		int nfd;
+		while ((nfd = storage_open(tuple_path, O_RDWR)) > 0) {
+			DB_LOG_D("DB: tuplefile = %s already exist, try another\n", tuple_path);
+			storage_close(nfd);
+			snprintf(tuple_path, TUPLE_NAME_LENGTH, "%s.%x\0", TUPLE_FILE_NAME, (unsigned)(random_rand() & 0xffff));
+		}
+		
 		result = storage_generate_file(tuple_path);
 		if (DB_ERROR(result)) {
 			storage_close(fd);
@@ -588,7 +595,7 @@ db_result_t storage_flush_insert_buffer()
 		storage_close(fd);
 		return DB_STORAGE_ERROR;
 	}
-	DB_LOG_D("DB : Stored buffer(%d bytes) in storage : %d\n", g_storage_write_buffer.data_size);
+	DB_LOG_D("DB : Stored buffer(%d bytes) in storage\n", g_storage_write_buffer.data_size);
 	storage_close(fd);
 	storage_write_buffer_clean();
 	return DB_OK;

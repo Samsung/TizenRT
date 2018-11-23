@@ -68,6 +68,7 @@
 #include <net/lwip/inet.h>
 
 #include <sys/select.h>
+#include <uio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,28 +166,7 @@ struct lwip_setgetsockopt_data {
 #error "IOV_MAX larger than supported by lwIP"
 #endif /* IOV_MAX */
 
-#define LWIP_HAVE_UIO	1
-#ifdef LWIP_HAVE_UIO
-/* To prevent duplicated definition of iovec */
-#include <uio.h>
-#else
-#if !defined(iovec)
-struct iovec {
-	void *iov_base;
-	size_t iov_len;
-};
-#endif
-#endif /* LWIP_HAVE_UIO */
-
-struct msghdr {
-	void *msg_name;
-	socklen_t msg_namelen;
-	struct iovec *msg_iov;
-	int msg_iovlen;
-	void *msg_control;
-	socklen_t msg_controllen;
-	int msg_flags;
-};
+struct msghdr;
 
 /* struct msghdr->msg_flags bit field values */
 #define MSG_TRUNC   0x04
@@ -523,6 +503,7 @@ int lwip_select(int maxfdp1, fd_set * readset, fd_set * writeset, fd_set * excep
 int lwip_ioctl(int s, long cmd, void *argp);
 int lwip_fcntl(int s, int cmd, int val);
 
+int lwip_poll(int fd, struct pollfd *fds, bool setup);
 #ifdef __cplusplus
 }
 #endif

@@ -23,10 +23,13 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <string.h>
+#include <sys/mount.h>
 
 #include <tinyara/config.h>
 #include <tinyara/fs/fs_utils.h>

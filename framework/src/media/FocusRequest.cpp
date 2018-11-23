@@ -20,10 +20,6 @@
 #include <media/FocusRequest.h>
 
 namespace media {
-FocusRequest::FocusRequest(std::string id, std::shared_ptr<FocusChangeListener> listener) : mId(id), mListener(listener)
-{
-}
-
 std::string FocusRequest::getId()
 {
 	return mId;
@@ -46,11 +42,13 @@ FocusRequest::Builder &FocusRequest::Builder::setFocusChangeListener(std::shared
 
 std::shared_ptr<FocusRequest> FocusRequest::Builder::build()
 {
+	auto focusRequest = std::make_shared<FocusRequest>();
 	std::stringstream ss;
-	ss << static_cast<const void *>(this);
+	ss << static_cast<const void *>(focusRequest.get());
 	ss << static_cast<const void *>(mListener.get());
 	mId = ss.str();
-	auto focusRequest = std::make_shared<FocusRequest>(mId, mListener);
+	focusRequest.get()->mId = mId;
+	focusRequest.get()->mListener = mListener;
 	return focusRequest;
 }
 } // namespace media

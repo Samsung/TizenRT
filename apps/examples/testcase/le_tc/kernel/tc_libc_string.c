@@ -24,12 +24,16 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+
 #include <tinyara/float.h>
 #include <tinyara/math.h>
+
 #include "tc_internal.h"
 
 #define BUFF_SIZE 5

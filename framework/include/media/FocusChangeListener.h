@@ -34,9 +34,20 @@ static const int FOCUS_NONE = 0;
 static const int FOCUS_GAIN = 1;
 static const int FOCUS_LOSS = -1;
 
+/**
+ * @class 
+ * @brief This class is callback interface of FocusRequest
+ * @details @b #include <media/FocusChangeListener.h>
+ * @since TizenRT v2.0
+ */
 class FocusChangeListener
 {
 public:
+	/**
+	 * @brief Called when a focus is changed
+	 * @details @b #include <media/FocusChangeListener.h>
+	 * @since TizenRT v2.0
+	 */
 	virtual void onFocusChange(int focusChange) {};
 };
 } // namespace media

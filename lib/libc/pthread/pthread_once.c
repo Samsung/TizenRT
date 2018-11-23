@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <stdbool.h>
+#include <sys/types.h>
 #include <pthread.h>
 #include <sched.h>
 #include <errno.h>

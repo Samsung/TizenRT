@@ -13,10 +13,10 @@ The C-code files of this SDK are delivered via the following directory structure
 Current SDK Directory Layout (mbedTLS)
 
 |--`certs` (Private key, device certificate and Root CA) <br>
-|--`docs` (Developer guide & API documentation) <br>
+|--`docs` (Developer guide & API Documentation) <br>
 |--`external_libs` (external libraries - jsmn, mbedTLS) <br>
-|--`include` (Header files of the AWS IoT device SDK) <br>
-|--`src` (Source files of the AWS IoT device SDK) <br>
+|--`include` (Header files of AWS IoT Device SDK) <br>
+|--`src` (Source files of AWS IoT Device SDK) <br>
 |--`platform` (Platform specific files) <br>
 |--`samples` (Samples including makefiles for building on mbedTLS) <br> 
 |--`tests` (Tests for verifying SDK is functioning as expected) <br> 
@@ -25,7 +25,7 @@ All makefiles in this SDK were configured using the documented folder structure 
 
 ##Explanation of folders and their content
 
- * `certs` : This directory is initially empty and will need to contain the private key, the client certificate and the root CA. The client certificate and private key can be downloaded from the AWS IoT console or be created using the AWS CLI commands. The root CA can be downloaded from [Symantec](https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem).
+ * `certs` : This directory is initially empty and will need to contain the private key, the client certificate and the root CA. The client certificate and private key can be downloaded from AWS IoT Console or be created using the AWS CLI commands. The root CA can be downloaded from [Symantec](https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem).
 
  * `docs` : SDK API and file documentation.
 
@@ -43,7 +43,7 @@ All makefiles in this SDK were configured using the documented folder structure 
 
 ##Integrating the SDK into your environment
 
-This section explains the API calls that need to be implemented in order for the Device SDK to run on your platform. The SDK interfaces follow the driver model where only prototypes are defined by the Device SDK itself while the implementation is delegated to the user of the SDK to adjust it to the platform in use. The following sections list the needed functionality for the device SDK to run successfully on any given platform.
+This section explains the API calls that need to be implemented in order for Device SDK to run on your platform. The SDK interfaces follow the driver model where only prototypes are defined by  Device SDK itself while the implementation is delegated to the user of the SDK to adjust it to the platform in use. The following sections list the needed functionality for  Device SDK to run successfully on any given platform.
 
 ###Timer Functions
 
@@ -71,7 +71,7 @@ left_ms - query time in milliseconds left on the timer.
 
 In order for the MQTT client stack to be able to communicate via the TCP/IP network protocol stack using a mutually authenticated TLS connection, the following API calls need to be implemented for your platform. 
 
-For additional details about API parameters refer to the [API documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
+For additional details about API parameters refer to [API Documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
 
 Define the `TLSDataParams` Struct as in `network_platform.h`
 This is used for data specific to the TLS library being used.
@@ -107,7 +107,7 @@ The TLS library generally provides the API for the underlying TCP socket.
 
 The MQTT client uses a state machine to control operations in multi-threaded situations. However it requires a mutex implementation to guarantee thread safety. This is not required in situations where thread safety is not important and it is disabled by default. The _ENABLE_THREAD_SUPPORT_ macro needs to be defined in aws_iot_config.h to enable this layer. You will also need to add the -lpthread linker flag for the compiler if you are using the provided reference implementation.   
 
-For additional details about API parameters refer to the [API documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
+For additional details about API parameters refer to [API Documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
 
 Define the `IoT_Mutex_t` Struct as in `threads_platform.h`
 This is used for data specific to the TLS library being used.

@@ -656,7 +656,6 @@ static void utc_audio_pcm_readi_p(void)
 
 	printf("Record done.\n");
 	sleep(2);
-
 	clean_all_data(fd, buffer);
 	TC_SUCCESS_RESULT();
 }
@@ -892,6 +891,7 @@ static void utc_audio_pcm_writei_p(void)
 		close(fd);
 	}
 
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -940,12 +940,11 @@ static void utc_audio_pcm_writei_n(void)
 static void utc_audio_pcm_drain_p(void)
 {
 	/* Executed after writei positive tc */
-
 	int ret;
 
 	printf("Draining buffers to complete playback and close device\n");
 	ret = pcm_drain(g_pcm);
-	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, clean_all_data(0, NULL));
+	TC_ASSERT_CLEANUP("pcm_drain", ret >= 0 || ret == -EPIPE, clean_all_data(0, NULL));
 	printf("Playback done!\n");
 
 	clean_all_data(0, NULL);
@@ -1528,7 +1527,7 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_mmap_read_p();
 	utc_audio_pcm_mmap_write_p();
 #endif
-
+	clean_all_data(0, NULL);
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 

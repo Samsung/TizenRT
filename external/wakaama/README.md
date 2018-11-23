@@ -125,8 +125,8 @@ Options are:
 - -c		Change battery level over time.
   
 If DTLS feature enable:
-- -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
-- -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
+- -i Set the Device Management or bootstrap server PSK identity. If not set use none secure mode
+- -s Set the Device Management or bootstrap server Pre-Shared-Key. If not set use none secure mode
 
 To launch a bootstrap session:
 ``./lwm2mclient -b``

@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <string.h>
@@ -66,9 +67,10 @@
 #ifdef CONFIG_FS_SMARTFS
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
+#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
 #else
 #define TMP_MOUNT_DEV_DIR "/dev/smart1"
 #endif
@@ -157,6 +159,7 @@
 #define SMARTFS_TYPE    "smartfs"
 #define PROCFS_TYPE     "procfs"
 #define ROMFS_TYPE      "romfs"
+#define TMPFS_TYPE      "tmpfs"
 
 /****************************************************************************
  * Global Variables
@@ -259,10 +262,14 @@ static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR v
 	case PROCFS_MAGIC:
 		fstype = PROCFS_TYPE;
 		break;
+	case TMPFS_MAGIC:
+		fstype = TMPFS_TYPE;
+		break;
 	default:
 		fstype = NONEFS_TYPE;
 		break;
 	}
+	UNUSED(fstype);
 	return OK;
 
 }
@@ -1235,12 +1242,14 @@ static void tc_fs_vfs_fstatfs(void)
 #endif
 	close(fd);
 
+#ifdef CONFIG_DEV_ZERO
 	fd = open(DEV_ZERO_PATH, O_RDWR);
 	TC_ASSERT_GEQ("open", fd, 0);
 	/*root pseudo file system */
 	ret = fstatfs(fd, &fs);
 	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
 	close(fd);
+#endif
 
 	TC_SUCCESS_RESULT();
 }
@@ -1479,6 +1488,7 @@ static void tc_fs_vfs_poll(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
 * @testcase         tc_fs_vfs_select
 * @brief            To monitor multiple I/O
@@ -1525,6 +1535,7 @@ static void tc_fs_vfs_select(void)
 	TC_ASSERT_NEQ_CLEANUP("select", errcnt, VFS_LOOP_COUNT, FD_CLR(STDIN_FILENO, &readfds));
 	TC_SUCCESS_RESULT();
 }
+#endif
 #endif
 
 /**
@@ -2273,6 +2284,7 @@ static void tc_libc_stdio_clearerr(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
 * @testcase         tc_libc_stdio_gets
 * @brief            get string by user input
@@ -2308,6 +2320,7 @@ static void tc_libc_stdio_gets_s(void)
 	TC_ASSERT_NEQ("gets_s", gets_s(input_str, sizeof(input_str)), NULL);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         tc_libc_stdio_fileno
@@ -3180,6 +3193,155 @@ static void tc_libc_stdio_stdsostream(void)
 }
 
 /**
+* @testcase         tc_libc_stdio_mktemp
+* @brief            The mktemp() function generates a unique temporary filename from template.
+* @scenario         The mktemp() function generates a unique temporary filename from template.
+* @apicovered       mktemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_libc_stdio_mktemp(void)
+{
+	char test_template[16] = "test1XXXXXX";
+	char *ret = NULL;
+	FILE *fp = NULL;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
+	/* Test cases with valid input */
+
+	ret = mktemp(test_template);
+	TC_ASSERT_NEQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	printf("\nmktemp: %s\n", ret);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
+	fclose(fp);
+
+	strncpy(test_template, "test12XXXXXX", strlen("test12XXXXXX"));
+	ret = mktemp(test_template);
+	TC_ASSERT_NEQ("mktemp", strncmp(ret, "", 1), 0);
+	printf("mktemp: %s\n", ret);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
+	fclose(fp);
+
+	/* Test cases with invalid input */
+
+	strncpy(test_template, "test2", strlen("test2"));
+	ret = mktemp(test_template);
+	TC_ASSERT_EQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	strncpy(test_template, "test3XXXXX", strlen("test3XXXXX"));
+	ret = mktemp(test_template);
+	TC_ASSERT_EQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	ret = mktemp(NULL);
+	TC_ASSERT_EQ_CLEANUP("mktemp", ret, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	TC_SUCCESS_RESULT();
+errout:
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
+}
+
+/**
+* @testcase         tc_libc_stdio_mkstemp
+* @brief            The  mkstemp() function generates a unique temporary filename from template, creates and opens the file, and returns an open file descriptor for the file.
+* @scenario         The mkstemp() function replaces the contents of the string pointed to by path_template by a unique filename, and returns a file descriptor for the file open for reading and writing.
+* @apicovered       mkstemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_libc_stdio_mkstemp(void)
+{
+	char test_template[32] = "/tmp/test1XXXXXX";
+	int ret = 0;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
+	/* Test cases with valid input */
+
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("\nmkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test12XXXXXX", strlen("/tmp/test12XXXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test2mkstemp", strlen("/tmp/test2mkstemp"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test3XXXXX", strlen("/tmp/test3XXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test4XXXXXXXX", strlen("/tmp/test4XXXXXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	/* Test cases with invalid input */
+
+	ret = mkstemp(NULL);
+	TC_ASSERT_EQ_CLEANUP("mkstemp", ret, ERROR, goto errout);
+
+	TC_SUCCESS_RESULT();
+errout:
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
+}
+
+/**
 * @testcase         tc_libc_stdio_tempnam
 * @brief            Returns a pointer to a string that is a valid filename
 * @scenario         The tempnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
@@ -3190,60 +3352,45 @@ static void tc_libc_stdio_stdsostream(void)
 static void tc_libc_stdio_tempnam(void)
 {
 	const char filename[] = "tempnam_tc_test";
-	char *ret1 = NULL;
-	char *ret2 = NULL;
-	FILE *fp;
-	/* TC 1 with valid prefix */
-#if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	char *ret = NULL;
+	FILE *fp = NULL;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
 	int ret_check = 0;
 	bool tmpfs_mount_exist = false;
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
-	if (ret_check < 0) {
-		TC_ASSERT_EQ("mount", errno, EEXIST);
-		tmpfs_mount_exist = true;
-	}
-#elif defined(CONFIG_FS_TMPFS) && !defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_AUTOMOUNT_FS_TMPFS)
-	int ret_check = 0;
-	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
 		tmpfs_mount_exist = true;
 	}
 #endif
+	/* TC 1 with valid prefix */
 
-	ret1 = tempnam(CONFIG_LIBC_TMPDIR, filename);
-	TC_ASSERT_NEQ_CLEANUP("tempnam", ret1, NULL, goto errout);
+	ret = tempnam(CONFIG_LIBC_TMPDIR, filename);
+	TC_ASSERT_NEQ_CLEANUP("tempnam", ret, NULL, goto errout);
+	printf("\ntempnam: %s\n", ret);
 
-	fp = fopen(ret1, "w");
-	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout1);
-	fclose(fp);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
 
 	/* TC 2 with NULL prefix */
 
-	ret2 = tempnam(CONFIG_LIBC_TMPDIR, NULL);
-	TC_ASSERT_NEQ_CLEANUP("tempnam", ret2, NULL, goto errout1);
+	ret = tempnam(NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("tempnam", ret, NULL, goto errout);
+	printf("tempnam: %s\n", ret);
 
-	fp = fopen(ret2, "w");
-	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout2);
-	fclose(fp);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
 
-	unlink(ret1);
-	unlink(ret2);
-#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
-	if (false == tmpfs_mount_exist) {
-		umount(CONFIG_LIBC_TMPDIR);
-	}
-#endif
 	TC_SUCCESS_RESULT();
-	return;
-
-errout2:
-	unlink(ret2);
-errout1:
-	unlink(ret1);
 errout:
-#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
 	if (false == tmpfs_mount_exist) {
 		umount(CONFIG_LIBC_TMPDIR);
 	}
@@ -3261,61 +3408,46 @@ errout:
 */
 static void tc_libc_stdio_tmpnam(void)
 {
-	char filename[] = "tmpnam_tc_test";
-	char *ret1 = NULL;
-	char *ret2 = NULL;
-	FILE *fp;
-	/* TC 1 with NULL string */
-#if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	char filename[16] = { '\0' };
+	char *ret = NULL;
+	FILE *fp = NULL;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
 	int ret_check = 0;
 	bool tmpfs_mount_exist = false;
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
-	if (ret_check < 0) {
-		TC_ASSERT_EQ("mount", errno, EEXIST);
-		tmpfs_mount_exist = true;
-	}
-#elif defined(CONFIG_FS_TMPFS) && !defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_AUTOMOUNT_FS_TMPFS)
-	int ret_check = 0;
-	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
 		tmpfs_mount_exist = true;
 	}
 #endif
-	ret1 = tmpnam(NULL);
-	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret1, NULL, goto errout);
+	/* TC 1 with NULL string */
 
-	fp = fopen(ret1, "w");
-	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout1);
-	fclose(fp);
+	ret = tmpnam(NULL);
+	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret, NULL, goto errout);
+	printf("\ntmpnam: %s\n", ret);
+
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
 
 	/* TC 2 with valid string */
 
-	ret2 = tmpnam(filename);
-	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret2, NULL, goto errout1);
+	ret = tmpnam(filename);
+	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret, NULL, goto errout);
+	printf("tmpnam: %s\n", ret);
 
-	fp = fopen(ret2, "w");
-	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout2);
-	fclose(fp);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
 
-	unlink(ret1);
-	unlink(ret2);
-
-#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
-	if (false == tmpfs_mount_exist) {
-		umount(CONFIG_LIBC_TMPDIR);
-	}
-#endif
 	TC_SUCCESS_RESULT();
-	return;
-
-errout2:
-	unlink(ret2);
-errout1:
-	unlink(ret1);
 errout:
-#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
 	if (false == tmpfs_mount_exist) {
 		umount(CONFIG_LIBC_TMPDIR);
 	}
@@ -3474,7 +3606,7 @@ static void tc_fs_driver_ramdisk_ops(void)
 	fd = open(DEV_RAMDISK_PATH, O_RDWR);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buffer));
 
-	ret = ioctl(fd, BIOC_XIPBASE, &size);
+	ret = ioctl(fd, BIOC_XIPBASE, (unsigned long)&size);
 	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, free(buffer); close(fd));
 
 	ret = read(fd, buf, sizeof(buf));
@@ -3584,6 +3716,8 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_lib_snoflush();
 #endif
 	tc_libc_stdio_lib_sprintf();
+	tc_libc_stdio_mktemp();
+	tc_libc_stdio_mkstemp();
 	tc_libc_stdio_remove();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	tc_libc_stdio_setbuf();

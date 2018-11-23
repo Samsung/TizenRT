@@ -34,13 +34,13 @@
 
 /**
  * @brief User specific broadcast message list
- * @details These values can be used for broadcast messges.\n
+ * @details These values can be used for broadcast messages.\n
  * If user wants to add some other types of broadcast message,\n
  * user can add their own broadcast messages at here.\n
  * \n
  * User must avoid setting an arbitrary value to their broadcast message.\n
  * First user specific broadcast message would be set as (TM_BROADCAST_USER_SPECIFIC_MAX + 1).\n
- * Other user specific broadcast messages are automatically set as asceding order.\n
+ * Other user specific broadcast messages are automatically set as ascending order.\n
  * An example of a user specific broadcast message is shown below\n
  * \n
  * enum tm_user_specific_broadcast_msg {\n
@@ -53,9 +53,9 @@
 
 enum tm_user_specific_broadcast_msg {
 	TM_BROADCAST_USER_SPECIFIC_MIN = TM_BROADCAST_SYSTEM_MSG_MAX,
-		
+
 /* Please Add User Specific Broadcast Message at HERE */
-	
+
 	TM_BROADCAST_MSG_MAX,
 };
 #endif

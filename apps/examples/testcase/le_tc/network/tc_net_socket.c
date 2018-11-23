@@ -46,8 +46,6 @@ static void tc_net_socket_pf_inet_sock_raw_n(void)
 	fd = socket(PF_INET, SOCK_RAW, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -156,9 +154,6 @@ static void tc_net_socket_af_inet_sock_dgram_icmp_n(void)
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
-
 }
 
 #ifdef CONFIG_NET_LWIP_IGMP
@@ -172,14 +167,10 @@ static void tc_net_socket_af_inet_sock_dgram_icmp_n(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_igmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
-
 }
 #endif
 
@@ -407,7 +398,6 @@ static void tc_net_socket_af_unix_sock_stream_udp_n(void)
 */
 static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
@@ -633,8 +623,6 @@ static void tc_net_socket_af_inet_sock_stream_icmp_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 #ifdef CONFIG_NET_LWIP_IGMP
@@ -652,9 +640,8 @@ static void tc_net_socket_af_inet_sock_stream_igmp_n(void)
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
+
 #endif
 
 #ifdef CONFIG_NET_IPv6
@@ -790,6 +777,7 @@ static void tc_net_socket_af_inet_sock_stream_p(void)
 	close(fd);
 }
 
+#ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_invalid_domain_sock_stream_n
 * @brief
@@ -805,6 +793,7 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 }
+#endif
 
 #ifdef AF_UNIX
 #ifdef CONFIG_NET_IPv6
@@ -967,8 +956,6 @@ static void tc_net_socket_af_inet_sock_raw_n(void)
 	fd = socket(AF_INET, SOCK_RAW, 0);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**
@@ -985,8 +972,6 @@ static void tc_net_socket_af_inet_sock_raw_tcp_n(void)
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
-
-	close(fd);
 }
 
 /**

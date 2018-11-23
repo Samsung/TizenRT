@@ -52,6 +52,7 @@ Contributors:
 #include <stdlib.h>
 
 #if defined(WITH_THREADING) && !defined(WITH_BROKER)
+#	include <sys/types.h>
 #	include <pthread.h>
 #else
 #	include <dummypthread.h>

@@ -54,6 +54,8 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -61,8 +63,10 @@
 #include <sched.h>
 #include <pthread.h>
 #include <errno.h>
+
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+
 #include "kdbg_utils.h"
 
 /****************************************************************************
@@ -139,7 +143,7 @@ static void stkmon_active_check(struct tcb_s *tcb, void *arg)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	printf("%5d | %8s | %8d | %10d | %10d | %7lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((clock_t)clock()));
 #else
-	printf("%5d | %8s | %8d | %10d | %10lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((clock_t)clock()));
+	printf("%5d | %8s | %8d | %10d | %10lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)(clock()));
 #endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf("%s\n", tcb->name);

@@ -111,17 +111,22 @@ void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t
 #ifdef CONFIG_NO_STDOUT_DEBUG
 
 #define wpa_debug_print_timestamp() do { } while (0)
-#define wpa_printf(args...) do { } while (0)
 #define wpa_debug_open_file(p) do { } while (0)
 #define wpa_debug_close_file() do { } while (0)
 #define wpa_debug_setup_stdout() do { } while (0)
-#define wpa_dbg(args...) do { } while (0)
 
 static inline int wpa_debug_reopen_file(void)
 {
 	return 0;
 }
-
+static inline void wpa_dbg(void *ctx, int level, const char *fmt, ...)
+{
+	return ;
+}
+static inline void wpa_printf(int level, const char *fmt, ...)
+{
+	return ;
+}
 #else							/* CONFIG_NO_STDOUT_DEBUG */
 
 int wpa_debug_open_file(const char *path);

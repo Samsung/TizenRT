@@ -2,7 +2,7 @@
  This can be used to use Iotivity (OCF).
 
 ## Enabled Feature
-### File system
+### File System
   MTD, ProcFS, ROMFS, SmartFS
 
 ### IoTivity

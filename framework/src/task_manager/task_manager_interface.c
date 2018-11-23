@@ -120,9 +120,13 @@ int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int time
 	if (timeout == TM_RESPONSE_WAIT_INF) {
 		status = mq_receive(private_mqfd, (char *)response_msg, sizeof(tm_response_t), 0);
 	} else {
-		time.tv_sec = timeout / MSEC_PER_SEC;
-		time.tv_nsec = (timeout - MSEC_PER_SEC * time.tv_sec) * NSEC_PER_MSEC;
-		status = mq_timedreceive(private_mqfd, (char *)response_msg, sizeof(tm_response_t), 0, &time);
+		status = taskmgr_calc_time(&time, timeout);
+		if (status != OK) {
+			mq_close(private_mqfd);
+			mq_unlink(q_name);
+			return TM_COMMUCATION_FAIL;
+		}
+		status = mq_timedreceive(private_mqfd, (char *)response_msg, sizeof(tm_response_t), NULL, &time);
 	}
 
 	mq_close(private_mqfd);

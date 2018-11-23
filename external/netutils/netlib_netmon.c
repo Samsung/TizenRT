@@ -48,7 +48,7 @@
  *   Get the socket info
 
  * Parameters:
- *   command   Type of information to get
+ *   arg   Type of information to get
  *
  * Return:
  *   0 on success; -1 on failure
@@ -62,9 +62,39 @@ int netlib_netmon_sock(void *arg)
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd >= 0) {
 		ret = ioctl(sockfd, SIOCGETSOCK, (unsigned long)arg);
+	    close(sockfd);
 	}
-	close(sockfd);
 	return ret;
 }
 
+#ifdef CONFIG_NET_STATS
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+/****************************************************************************
+ * Name: netlib_netmon_devstats
+ *
+ * Description:
+ *   Get the stats of a specific interface
+
+ * Parameters:
+ *   arg   Type of information to get
+ *
+ * Return:
+ *   0 on success; -1 on failure
+ *
+ ****************************************************************************/
+
+int netlib_netmon_devstats(void *arg)
+{
+    int ret = ERROR;
+    /* Get netdev stats */
+    int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
+    if (sockfd >= 0) {
+        ret = ioctl(sockfd, SIOCGDSTATS, (unsigned long)arg);
+        close(sockfd);
+    }
+    return ret;
+}
+#endif							/* CONFIG_NET_STATS */
 #endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

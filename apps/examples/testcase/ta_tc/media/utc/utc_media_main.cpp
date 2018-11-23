@@ -42,6 +42,8 @@ int gtest_run(int *argc, char **argv)
 }
 
 #else
+int utc_media_FocusRequest_main(void);
+int utc_media_FocusManager_main(void);
 #ifdef CONFIG_MEDIA_PLAYER
 int utc_media_MediaPlayer_main(void);
 int utc_media_FileInputDataSource_main(void);
@@ -49,6 +51,10 @@ int utc_media_FileInputDataSource_main(void);
 #ifdef CONFIG_MEDIA_RECORDER
 int utc_media_mediarecorder_main(void);
 int utc_media_fileoutputdatasource_main(void);
+int utc_media_bufferoutputdatasource_main(void);
+#endif
+#ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
+int utc_media_SpeechDetector_main(void);
 #endif
 #endif
 
@@ -69,6 +75,8 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_GMOCK
 	gtest_run(&argc, argv);
 #else
+	utc_media_FocusRequest_main();
+	utc_media_FocusManager_main();
 #ifdef CONFIG_MEDIA_PLAYER
 	utc_media_MediaPlayer_main();
 	utc_media_FileInputDataSource_main();
@@ -76,7 +84,11 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
 	utc_media_fileoutputdatasource_main();
+	utc_media_bufferoutputdatasource_main();
 	unlink("/tmp/record");
+#endif
+#ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
+	utc_media_SpeechDetector_main();
 #endif
 #endif
 

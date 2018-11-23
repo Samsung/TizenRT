@@ -52,7 +52,7 @@ int task_manager_dealloc_broadcast_msg(int msg, int timeout)
 	*((int *)request_msg.data) = msg;
 	
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;

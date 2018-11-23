@@ -95,7 +95,7 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
 # Add libraries for iotivity support
 
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)

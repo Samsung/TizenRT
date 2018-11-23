@@ -30,10 +30,12 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <errno.h>
+#include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "tc_common.h"
 #include <stdbool.h>
+#include <tinyara/fs/mksmartfs.h>
 
 #define PROCFS_TEST_MOUNTPOINT "/proc_test"
 #define MTD_PROCFS_PATH PROCFS_TEST_MOUNTPOINT"/mtd"
@@ -47,10 +49,10 @@
 #define INVALID_PATH PROCFS_TEST_MOUNTPOINT"/fs/invalid"
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
 #define SMARTFS_DEV_PATH CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
 #define SMARTFS_DEV_PATH CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-
+#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
+#define SMARTFS_DEV_PATH "/dev/smart0p0"
 #else
 #define SMARTFS_DEV_PATH "/dev/smart1"
 #endif
@@ -124,7 +126,7 @@ static int procfs_uptime_ops(char *dirpath)
 	struct stat st;
 	fd = open(PROC_UPTIME_PATH, O_RDONLY);
 	if (fd < 0) {
-		printf("Failed to open \n" );
+		printf("Failed to open \n");
 		return ERROR;
 	}
 
@@ -210,7 +212,7 @@ static int procfs_rewind_tc(const char *dirpath)
 	} while (dirent != NULL);
 
 	if (count != 0) {
-		printf("rewind operation failed %s \n",dirpath);
+		printf("rewind operation failed %s \n", dirpath);
 		closedir(dir);
 		return ERROR;
 	}
@@ -248,7 +250,7 @@ void tc_fs_smartfs_procfs_main(void)
 
 	/* entry not found condition */
 
-	fd = open(PROC_SMARTFS_FILE_PATH, O_RDWR | O_CREAT );
+	fd = open(PROC_SMARTFS_FILE_PATH, O_RDWR | O_CREAT);
 	TC_ASSERT_EQ("open", fd, ERROR);
 
 	fd = open(INVALID_PATH, O_RDONLY);

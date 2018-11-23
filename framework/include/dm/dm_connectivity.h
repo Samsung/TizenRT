@@ -50,6 +50,14 @@ typedef struct dm_scan_info_s dm_scan_info_t;
 
 typedef void (*conn_cb)(void);
 
+
+/**
+ * @brief register dm callback of wifi
+ * @details @b #include <dm/dm_connectivity.h>
+ * @since TizenRT v2.0
+ */
+void dm_cb_register_init(void);
+
 /**
  * @brief get the rssi of network
  *

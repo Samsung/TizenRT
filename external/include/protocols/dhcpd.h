@@ -91,20 +91,32 @@ extern "C" {
 typedef void (*dhcp_sta_joined)(void);
 
 /**
+ * @brief Returns whether DHCP server is already running or not
+ *
+ * @param[in] intf the name of network interface to run DHCP server
+ * @return Status: 1 if server is running
+ * @since TizenRT v2.0
+*/
+int dhcp_server_status(char *intf);
+
+/**
  * @brief Starts DHCP server which is attached given network interface.
  *
  * @param[in] intf the name of network interface to run DHCP server
- * @return On success, 0. On failure, returns error
+ * @param[in] dhcp_joincb link callback after assigning IP address
+ * @return On success, 0. On failure, returns -1
+ * @since TizenRT v2.0
 */
-int dhcpd_run(void *arg);
+int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb);
 
 /**
- * @brief Starts DHCP server as daemon which is attached given network interface.
+ * @brief Stops DHCP server which is attached given network interface.
  *
- * @param[in] intf the name of network interface to run DHCP server
+ * @param[in] intf the name of network interface to stop DHCP server
  * @return On success, 0. On failure, returns -1
+ * @since TizenRT v2.0
 */
-int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb);
+int dhcp_server_stop(char *intf);
 
 #undef EXTERN
 #ifdef __cplusplus

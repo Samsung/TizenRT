@@ -43,8 +43,8 @@ Bugfixes/Improvements:
   - Renamed timer_linux.h to timer_platform.h as requested [here](https://github.com/aws/aws-iot-device-sdk-embedded-C/issues/5)
   - Adds support for disconnect handler to shadow. A similar pull request can be found [here](https://github.com/aws/aws-iot-device-sdk-embedded-C/pull/9)
   - New SDK folder structure, cleaned and simplified code structure
-  - Removed Paho Wrapper, Merge MQTT into SDK code, added specific error codes
-  - Refactored Network and Timer layer wrappers, added specific error codes
+  - Removed Paho Wrapper, Merge MQTT into SDK code, added specific Error Codes
+  - Refactored Network and Timer layer wrappers, added specific Error Codes
   - Refactored samples and makefiles
   
 ## [1.1.2](https://github.com/aws/aws-iot-device-sdk-embedded-C/releases/tag/v1.1.2) (April 22,  2016)
@@ -113,7 +113,7 @@ Bugfixes/Improvements:
 
 Features:
 
-  - Testing with mbedTLS, prepping for relase
+  - Testing with mbedTLS, prepping for release
 
 Bugfixes/Improvements:
 

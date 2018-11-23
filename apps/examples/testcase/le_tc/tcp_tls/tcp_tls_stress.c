@@ -17,13 +17,16 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wifi_manager/wifi_manager.h>
-#include <stress_tool/st_perf.h>
 #include <netdb.h>
 #include <pthread.h>
+
+#include <wifi_manager/wifi_manager.h>
+#include <stress_tool/st_perf.h>
 
 #include "mbedtls/config.h"
 #include "mbedtls/net.h"

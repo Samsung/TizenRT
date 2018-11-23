@@ -129,6 +129,26 @@ bool dm_is_es_complete(void);
 bool dm_get_easy_setup_use_artik_crt(void);
 char *dm_get_mnid(void);
 
+/**
+ * Return access token received from cloud.
+ * 
+ * Internally loads the cloud information stored in persistent storage,
+ * retrieves access token from it and returns the copy of the same.
+
+ * Note: Memory allocated for return parameter should be released by the caller.
+ */
+char *dm_get_access_token();
+
+/**
+ * Return uid received from cloud.
+ *
+ * Internally loads the cloud information stored in persistent storage,
+ * retrieves access token from it and returns the copy of the same.
+
+ * Note: Memory allocated for return parameter should be released by the caller.
+ */
+char *dm_get_uid();
+
 int dm_validate_attribute_in_request(char *res_type, const void *payload);
 
 char *dm_get_firmware_version();

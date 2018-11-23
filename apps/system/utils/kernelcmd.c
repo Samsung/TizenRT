@@ -25,46 +25,49 @@
 
 #ifdef CONFIG_KERNEL_CMDS
 const static tash_cmdlist_t kdbg_cmds[] = {
-#if defined(CONFIG_ENABLE_DATE)
+#if defined(CONFIG_ENABLE_CPULOAD_CMD)
+	{"cpuload",  kdbg_cpuload,      TASH_EXECMD_SYNC},
+#endif
+#if defined(CONFIG_ENABLE_DATE_CMD)
 	{"date",     kdbg_date,         TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_DMESG)
+#if defined(CONFIG_ENABLE_DMESG_CMD)
 	{"dmesg",    kdbg_dmesg,        TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_ENV_GET) && !defined(CONFIG_DISABLE_ENVIRON)
+#if defined(CONFIG_ENABLE_ENV_GET_CMD) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"getenv",   kdbg_env_get,      TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_FREE)
+#if defined(CONFIG_ENABLE_FREE_CMD)
 	{"free",     kdbg_free,         TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_HEAPINFO)
+#if defined(CONFIG_ENABLE_HEAPINFO_CMD)
 	{"heapinfo", kdbg_heapinfo,     TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_IRQINFO)
+#if defined(CONFIG_ENABLE_IRQINFO_CMD)
 	{"irqinfo",   kdbg_irqinfo,      TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_KILL)
+#if defined(CONFIG_ENABLE_KILL_CMD)
 	{"kill",     kdbg_kill,         TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_KILLALL)
+#if defined(CONFIG_ENABLE_KILLALL_CMD)
 	{"killall",  kdbg_killall,      TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_PS)
+#if defined(CONFIG_ENABLE_PS_CMD)
 	{"ps",       kdbg_ps,           TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_ENV_SET) && !defined(CONFIG_DISABLE_ENVIRON)
+#if defined(CONFIG_ENABLE_ENV_SET_CMD) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"setenv",   kdbg_env_set,      TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_STACKMONITOR)
+#if defined(CONFIG_ENABLE_STACKMONITOR_CMD)
 	{"stkmon",   kdbg_stackmonitor, TASH_EXECMD_SYNC},
 #endif
 #if defined(CONFIG_TTRACE)
 	{"ttrace",   kdbg_ttrace,       TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_ENV_UNSET) && !defined(CONFIG_DISABLE_ENVIRON)
+#if defined(CONFIG_ENABLE_ENV_UNSET_CMD) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"unsetenv", kdbg_env_unset,    TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_ENABLE_UPTIME)
+#if defined(CONFIG_ENABLE_UPTIME_CMD)
 	{"uptime",   kdbg_uptime,       TASH_EXECMD_SYNC},
 #endif
 	{NULL,       NULL,              0}

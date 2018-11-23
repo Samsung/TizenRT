@@ -13,6 +13,12 @@ config GRPC
 
 if GRPC
 
+config GRPC_PTHREAD_SIZE
+	int "Set thread size for grpc modules"
+	default 16384
+	---help---
+		set thread size for grpc modules
+
 config TSI_LOG
 	bool "Enable TSI Layer Log"
 	default n

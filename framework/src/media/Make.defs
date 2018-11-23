@@ -30,6 +30,7 @@ CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
+CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
 CXXSRCS += MediaUtils.cpp
 CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
@@ -43,16 +44,31 @@ VPATH += :src/media/codecs
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += InputHandler.cpp
+CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
 CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
 CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += OutputHandler.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp
 endif
+endif
+
+ifeq ($(CONFIG_MEDIA_VOICE_SPEECH_DETECTOR), y)
+DEPPATH += --dep-path src/media/voice
+VPATH += :src/media/voice
+CXXSRCS += \
+	SpeechDetector.cpp \
+	SoftwareKeywordDetector.cpp \
+	HardwareKeywordDetector.cpp \
+	SoftwareEndPointDetector.cpp \
+	HardwareEndPointDetector.cpp
+CXXFLAGS += -I$(TOPDIR)/../external/swepd
 endif
 
 DEPPATH += --dep-path src/media

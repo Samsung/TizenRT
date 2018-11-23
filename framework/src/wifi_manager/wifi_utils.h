@@ -26,6 +26,18 @@
 #define WIFI_UTILS_MACADDR_STR_LEN    17
 #define WIFI_UTILS_SSID_LEN           32
 #define WIFI_UTILS_PASSPHRASE_LEN     64
+/**
+  * @brief <b> wifi MAC/PHY standard types
+  */
+typedef enum {
+	WIFI_UTILS_IEEE_80211_LEGACY,             /**<  IEEE 802.11a/g/b          */
+	WIFI_UTILS_IEEE_80211_A,                  /**<  IEEE 802.11a              */
+	WIFI_UTILS_IEEE_80211_B,                  /**<  IEEE 802.11b              */
+	WIFI_UTILS_IEEE_80211_G,                  /**<  IEEE 802.11g              */
+	WIFI_UTILS_IEEE_80211_N,                  /**<  IEEE 802.11n              */
+	WIFI_UTILS_IEEE_80211_AC,                 /**<  IEEE 802.11ac             */
+	WIFI_UTILS_NOT_SUPPORTED,                 /**<  Driver does not report    */
+} wifi_utils_standard_type_e;
 
 /**
  * @brief <b> wifi authentication type WPA, WPA2, WPS</b>
@@ -36,6 +48,11 @@ typedef enum {
 	WIFI_UTILS_AUTH_WPA_PSK,				 /**<  WPA_PSK mode                   */
 	WIFI_UTILS_AUTH_WPA2_PSK,				 /**<  WPA2_PSK mode                  */
 	WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK,		 /**<  WPA_PSK and WPA_PSK mixed mode */
+	WIFI_UTILS_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode                   */
+	WIFI_UTILS_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_UTILS_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode               */
+	WIFI_UTILS_AUTH_WPS,					 /**<  WPS mode                       */
 	WIFI_UTILS_AUTH_UNKNOWN,				 /**<  unknown type                   */
 } wifi_utils_ap_auth_type_e;
 
@@ -49,6 +66,9 @@ typedef enum {
 	WIFI_UTILS_CRYPTO_AES,					 /**<  AES encryption                 */
 	WIFI_UTILS_CRYPTO_TKIP,					 /**<  TKIP encryption                */
 	WIFI_UTILS_CRYPTO_TKIP_AND_AES,			 /**<  TKIP and AES mixed encryption  */
+	WIFI_UTILS_CRYPTO_AES_ENT,				 /**<  Enterprise AES encryption                 */
+	WIFI_UTILS_CRYPTO_TKIP_ENT,				 /**<  Enterprise TKIP encryption                */
+	WIFI_UTILS_CRYPTO_TKIP_AND_AES_ENT,		 /**<  Enterprise TKIP and AES mixed encryption  */
 	WIFI_UTILS_CRYPTO_UNKNOWN,				 /**<  unknown encryption             */
 } wifi_utils_ap_crypto_type_e;
 
@@ -71,7 +91,7 @@ typedef struct {
 	unsigned char bssid[WIFI_UTILS_MACADDR_STR_LEN + 1];				  /**<  MAC address (xx:xx:xx:xx:xx:xx) of Access Point */
 	unsigned int max_rate;				  /**<  Maximum data rate in kilobits/s                        */
 	int rssi;							  /**<  Receive Signal Strength Indication in dBm              */
-	uint8_t phy_mode;					// 0:legacy 1: 11N HT
+	wifi_utils_standard_type_e phy_mode;  /**< Supported MAC/PHY standard                              */
 	wifi_utils_ap_auth_type_e ap_auth_type;	   /**<  @ref wifi_utils_ap_auth_type            */
 	wifi_utils_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type        */
 } wifi_utils_ap_scan_info_s;
@@ -229,5 +249,16 @@ wifi_utils_result_e wifi_utils_start_sta(void);
  * @return WIFI_UTILS_FAIL          :  fail
  */
 wifi_utils_result_e wifi_utils_stop_softap(void);
+
+/**
+ * @brief enable/disable external autoconnect
+ *
+ * @param[in]   check :  enable/disable external autoconnect
+ *
+ * @return WIFI_UTILS_SUCCESS       :  success
+ * @return WIFI_UTILS_FAIL          :  fail
+ */
+wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check);
+
 
 #endif							//WIFI_UTILS_H

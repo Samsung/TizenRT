@@ -826,7 +826,7 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
  * Parameters:
  *   sock    Socket structure
  *   cmd     The ioctl command
- *   data    The argument of ioctl command
+ *   arg    The argument of ioctl command
  *
  * Return:
  *   >=0 on success (positive non-zero values are cmd-specific)
@@ -840,7 +840,7 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 	int ret = -EINVAL;
 	int num_copy;
 	switch (cmd) {
-	case SIOCGETSOCK:
+	case SIOCGETSOCK:          /* Get socket info. */
 		num_copy = copy_socket(arg);
 		/* num_copy shoud be larger than 0 (this socket) */
 		if (num_copy > 0) {
@@ -849,10 +849,16 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 			ret = ERROR;
 		}
 		break;
+#ifdef CONFIG_NET_STATS
+	case SIOCGDSTATS:          /* Get netdev info. */
+		ret = netdev_getstats(arg);
+		break;
+#endif
 	default:
 		ret = -ENOTTY;
 		break;
-	}
+	} /* end switch */
+
 	return ret;
 }
 #endif                            /* CONFIG_NET_NETMON */
@@ -1113,6 +1119,8 @@ void netdev_ifup(FAR struct netif *dev)
 				 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
 				 */
 				sleep(3);
+				netif_set_up(dev);
+				netif_set_link_up(dev);
 			}
 		}
 	}
@@ -1125,6 +1133,8 @@ void netdev_ifdown(FAR struct netif *dev)
 	if (dev->d_ifdown) {
 		/* Is the interface already down? */
 
+		netif_set_link_down(dev);
+		netif_set_down(dev);
 		if ((dev->d_flags & IFF_UP) != 0) {
 			/* No, take the interface down now */
 

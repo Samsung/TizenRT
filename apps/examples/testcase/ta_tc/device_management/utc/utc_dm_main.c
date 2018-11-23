@@ -41,33 +41,19 @@ static int isConnected = 0;
 
 static int app_dhcp_main(void)
 {
-	uint32_t timeleft = 15000;
-	struct dhcpc_state state;
-	void *dhcp_handle;
 	int ret;
+	struct in_addr ip_check;
 
-	dhcp_handle = dhcpc_open(NET_DEVNAME);
-	ret = dhcpc_request(dhcp_handle, &state);
-	while (ret != OK) {
-		usleep(10);
-		//sys_msleep(10);
-		timeleft -= 10;
-
-		if (timeleft <= 0) {
-			break;
-		}
-	}
-
-	if (timeleft <= 0) {
-		dhcpc_close(dhcp_handle);
+	ret = dhcp_client_start(NET_DEVNAME);
+	if (ret != OK) {
 		return -1;
 	}
 
-	netlib_set_ipv4addr(NET_DEVNAME, &state.ipaddr);
-	netlib_set_ipv4netmask(NET_DEVNAME, &state.netmask);
-	netlib_set_dripv4addr(NET_DEVNAME, &state.default_router);
-
-	printf("IP address : %s ----\n", inet_ntoa(state.ipaddr));
+	ret = netlib_get_ipv4addr(NET_DEVNAME, &ip_check)
+	if (ret != OK) {
+		return -1;
+	}
+	printf("IP address get %s ----\n", inet_ntoa(ip_check));
 	return 1;
 }
 

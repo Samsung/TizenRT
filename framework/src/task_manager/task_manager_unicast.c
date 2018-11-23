@@ -31,7 +31,7 @@
 /****************************************************************************
  * task_manager_unicast
  ****************************************************************************/
-int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_t *reply_msg, int timeout)
+int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -46,22 +46,22 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 		if (send_msg->msg_size == 0) {
 			return TM_INVALID_PARAM;
 		}
-		request_msg.data = (void *)TM_ALLOC(sizeof(tm_unicast_internal_msg_t));
+		request_msg.data = (void *)TM_ALLOC(sizeof(tm_internal_msg_t));
 		if (request_msg.data == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}
-		((tm_unicast_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(send_msg->msg_size);
-		if (((tm_unicast_internal_msg_t *)request_msg.data)->msg == NULL) {
+		((tm_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(send_msg->msg_size);
+		if (((tm_internal_msg_t *)request_msg.data)->msg == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
 		}
-		memcpy(((tm_unicast_internal_msg_t *)request_msg.data)->msg, send_msg->msg, send_msg->msg_size);
-		((tm_unicast_internal_msg_t *)request_msg.data)->msg_size = send_msg->msg_size;
+		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, send_msg->msg, send_msg->msg_size);
+		((tm_internal_msg_t *)request_msg.data)->msg_size = send_msg->msg_size;
 
 		if (reply_msg == NULL) {
-			((tm_unicast_internal_msg_t *)request_msg.data)->type = TM_UNICAST_ASYNC;
+			((tm_internal_msg_t *)request_msg.data)->type = TM_UNICAST_ASYNC;
 		} else {
-			((tm_unicast_internal_msg_t *)request_msg.data)->type = TM_UNICAST_SYNC;
+			((tm_internal_msg_t *)request_msg.data)->type = TM_UNICAST_SYNC;
 		}
 
 	}
@@ -73,9 +73,9 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
-			TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
+			TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
 		}
@@ -83,7 +83,7 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
+		TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
 		TM_FREE(request_msg.data);
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
@@ -95,38 +95,36 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
 		TM_FREE(request_msg.q_name);
 		if (reply_msg != NULL) {
-			reply_msg->msg_size = ((tm_unicast_msg_t *)response_msg.data)->msg_size;
+			reply_msg->msg_size = ((tm_msg_t *)response_msg.data)->msg_size;
 			reply_msg->msg = TM_ALLOC(reply_msg->msg_size);
 			if (reply_msg->msg == NULL) {
-				TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
+				TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
 				TM_FREE(request_msg.data);
 				return TM_OUT_OF_MEMORY;
 			}
-			memcpy(reply_msg->msg, ((tm_unicast_msg_t *)response_msg.data)->msg, reply_msg->msg_size);
-			TM_FREE(((tm_unicast_msg_t *)response_msg.data)->msg);
+			memcpy(reply_msg->msg, ((tm_msg_t *)response_msg.data)->msg, reply_msg->msg_size);
+			TM_FREE(((tm_msg_t *)response_msg.data)->msg);
 			TM_FREE(response_msg.data);
 		}
 	}
 
-	TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
 	return status;
 }
 
 /****************************************************************************
  * task_manager_reply_unicast
  ****************************************************************************/
-int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg)
+int task_manager_reply_unicast(tm_msg_t *reply_msg)
 {
 	int ret = ERROR;
 	mqd_t reply_mqfd;
 	struct mq_attr attr;
-	int handle;
-	tm_unicast_msg_t *data;
+	tm_msg_t *data;
 
 	if (reply_msg == NULL) {
 		return TM_INVALID_PARAM;
 	}
-	data = (tm_unicast_msg_t *)TM_ALLOC(sizeof(tm_unicast_msg_t));
+	data = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 	if (data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
@@ -138,21 +136,23 @@ int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg)
 	data->msg_size = reply_msg->msg_size;
 	memcpy(data->msg, reply_msg->msg, reply_msg->msg_size);
 
-	handle = taskmgr_get_handle_by_pid(getpid());
-
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
-	attr.mq_msgsize = sizeof(tm_unicast_msg_t);
+	attr.mq_msgsize = sizeof(tm_msg_t);
 	attr.mq_flags = 0;
 
 	reply_mqfd = mq_open(TM_UNICAST_MQ, O_WRONLY | O_CREAT, 0666, &attr);
 	if (reply_mqfd == (mqd_t)ERROR) {
+		TM_FREE(data->msg);
+		TM_FREE(data);
 		tmdbg("mq_open failed!\n");
 		return TM_COMMUCATION_FAIL;
 	}
 
-	ret = mq_send(reply_mqfd, (char *)data, sizeof(tm_unicast_msg_t), TM_MQ_PRIO);
+	ret = mq_send(reply_mqfd, (char *)data, sizeof(tm_msg_t), TM_MQ_PRIO);
 	if (ret != 0) {
 		mq_close(reply_mqfd);
+		TM_FREE(data->msg);
+		TM_FREE(data);
 		tmdbg("mq_send failed! %d\n", errno);
 		return TM_COMMUCATION_FAIL;
 	}

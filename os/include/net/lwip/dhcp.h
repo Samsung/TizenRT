@@ -161,6 +161,7 @@ void dhcp_network_changed(struct netif *netif);
 void dhcp_arp_reply(struct netif *netif, const ip4_addr_t * addr);
 #endif
 u8_t dhcp_supplied_address(const struct netif *netif);
+err_t dhcp_address_valid(struct netif *netif);
 /* to be called every minute */
 void dhcp_coarse_tmr(void);
 /* to be called every half second */
@@ -175,6 +176,12 @@ extern void dhcp_set_ntp_servers(u8_t num_ntp_servers, const ip4_addr_t *ntp_ser
 #endif /* LWIP_DHCP_GET_NTP_SRV */
 
 #define netif_dhcp_data(netif) ((struct dhcp*)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP))
+
+/** Function prototype for dhcps link callback */
+typedef void (*dhcp_sta_joined)(void);
+
+/* Register user callback for IP assign */
+err_t dhcps_register_cb(dhcp_sta_joined dhcp_join_cb);
 
 /**
  * @brief Starts DHCP server of network interface.

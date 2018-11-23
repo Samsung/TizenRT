@@ -20,9 +20,36 @@
 # File   : artik05x_download.sh
 # Description : Download script for ARTIK 05X
 
-source .config
-source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
+
+source ${OS_DIR_PATH}/.config
+
+BUILD_DIR_PATH=${OS_DIR_PATH}/../build
+CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
+OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
+ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
+
+TIZENRT_BIN=${OUTPUT_BINARY_PATH}/tinyara_head.bin
+
+OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
+if [[ $OSTYPE == "darwin"* ]]; then
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
+elif [[ $OSTYPE == "linux"* ]]; then
+	SYSTEM_TYPE=`getconf LONG_BIT`
+	if [ "$SYSTEM_TYPE" = "64" ]; then
+		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
+	else
+		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
+	fi
+else
+    echo "Doesn’t support Host OS: $OSTYPE"
+    exit 1
+fi
+OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
 CFG_FILE=artik05x.cfg
 
@@ -52,26 +79,6 @@ Options:
 	WLANFW                        write WiFi Firmware image into FLASH
 
 EOF
-}
-
-make_romfs()
-{
-	for part in "$@"; do
-		case "${part}" in
-			rom)
-				# Make romfs.img
-				pushd ${OS_DIR_PATH} > /dev/null
-				sh ../tools/fs/mkromfsimg.sh
-				if [ ! -f "${OUTPUT_BINARY_PATH}/romfs.img" ]; then
-					echo "ROMFS image is not present"
-					exit 1
-				fi
-				popd > /dev/null
-				;;
-			*)
-				;;
-		esac
-	done
 }
 
 compute_fw_parts()
@@ -144,7 +151,7 @@ compute_ocd_commands()
 				commands+="flash_write ${part} ${FW_DIR_PATH}/${part}.bin ${VERIFY}; "
 				;;
 			os)
-				ensure_file ${OUTPUT_BINARY_PATH}/tinyara_head.bin
+				ensure_file ${TIZENRT_BIN}
 				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
 				;;
 			ota)
@@ -170,12 +177,9 @@ download()
 	parts=$(compute_fw_parts $1)
 	echo "The \"${parts}\" partition(s) will be flashed"
 
-	# Generate ROMFS image
-	make_romfs ${parts}
-
 	# Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
-    echo "ocd command to run: ${commands}"
+	echo "ocd command to run: ${commands}"
 
 	# Generate Partition Map
 	${SCRIPTS_PATH}/partition_gen.sh
@@ -230,15 +234,15 @@ while test $# -gt 0; do
 	case $1 in
 		--board*)
 			BOARD_NAME=$optarg
-			BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/$BOARD_NAME
+			BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
 			FW_DIR_PATH=${BOARD_DIR_PATH}/bin
-			if [ ! -d $BOARD_DIR_PATH ]; then
+			if [ ! -d ${BOARD_DIR_PATH} ]; then
 				usage 1>&2
 				exit 1
 			fi
 			;;
 		--secure)
-			signing
+			TIZENRT_BIN=${TIZENRT_BIN}-signed
 			;;
 		--verify)
 			VERIFY=verify
@@ -256,5 +260,3 @@ while test $# -gt 0; do
 	esac
 	shift
 done
-
-

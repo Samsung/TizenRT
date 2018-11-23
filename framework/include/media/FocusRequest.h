@@ -34,14 +34,44 @@
 #include <media/FocusChangeListener.h>
 
 namespace media {
+/**
+ * @class 
+ * @brief This class is focus request
+ * @details @b #include <media/FocusRequest.h>
+ * @since TizenRT v2.0
+ */
 class FocusRequest
 {
 public:
+	/**
+	 * @class 
+	 * @brief This class is FocusRequest builder
+	 * @details @b #include <media/FocusRequest.h>
+	 * @since TizenRT v2.0
+	 */
 	class Builder
 	{
 	public:
+		/**
+		 * @brief constructor of FocusRequest::Builder
+		 * @details @b #include <media/FocusRequest.h>
+		 * @since TizenRT v2.0
+		 */
 		Builder();
+		/**
+		 * @brief set FocusChangeListener of FocusRequest
+		 * @details @b #include <media/FocusRequest.h>
+		 * param[in] listener shared_ptr of FocusChangeListener
+	 	 * @return FocusRequest::Builder instance
+		 * @since TizenRT v2.0
+		 */
 		Builder &setFocusChangeListener(std::shared_ptr<FocusChangeListener> listener);
+		/**
+		 * @brief build FocusRequest instance
+		 * @details @b #include <media/FocusRequest.h>
+	 	 * @return shared_ptr of FocusRequest
+		 * @since TizenRT v2.0
+		 */
 		std::shared_ptr<FocusRequest> build();
 
 	private:
@@ -49,8 +79,19 @@ public:
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
-	FocusRequest(std::string id, std::shared_ptr<FocusChangeListener> listener);
+	/**
+	 * @brief Get FocusRequest Id
+	 * @details @b #include <media/FocusRequest.h>
+	 * @return FocusRequest Id
+	 * @since TizenRT v2.0
+	 */
 	std::string getId();
+	/**
+	 * @brief Get FocusChangeListener of FocusRequest
+	 * @details @b #include <media/FocusRequest.h>
+	 * @return shared_ptr of FocusChangeListener
+	 * @since TizenRT v2.0
+	 */
 	std::shared_ptr<FocusChangeListener> getListener();
 
 private:

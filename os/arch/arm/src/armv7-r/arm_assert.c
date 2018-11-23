@@ -478,10 +478,18 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%s: PID=%d Stack Used=%lu of %lu\n", tcb->name, tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
+			tcb->name, tcb->pid, tcb->sched_priority,
+			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
 #else
-	lldbg("PID: %d Stack Used=%lu of %lu\n", tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+	lldbg("%5d | %4d | %7lu / %7lu\n",
+			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
+			(unsigned long)tcb->adj_stack_size);
 #endif
+
+	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
+	}
 }
 #endif
 
@@ -495,6 +503,14 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 	lldbg("List of all tasks in the system:\n");
 	lldbg("*******************************************\n");
+
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
+	lldbg("--------------------------------------------------\n");
+#else
+	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
+	lldbg("----------------------------------\n");
+#endif
 
 	/* Dump interesting properties of each task in the crash environment */
 

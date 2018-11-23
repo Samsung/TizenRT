@@ -22,6 +22,7 @@
 #include <tinyara/pwm.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include "tc_internal.h"
 
 /**
@@ -113,10 +114,10 @@ static void tc_driver_pwm_ioctl(void)
 	info_s.count = 100;
 #endif
 #endif
-	ret = ioctl(fd, PWMIOC_SETCHARACTERISTICS, &info_s);
+	ret = ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)&info_s);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_GETCHARACTERISTICS, &info_r);
+	ret = ioctl(fd, PWMIOC_GETCHARACTERISTICS, (unsigned long)&info_r);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 	TC_ASSERT_EQ_CLEANUP("pwm_ioctl", info_r.frequency, 1000, close(fd));
 #ifdef CONFIG_PWM_MULTICHAN
@@ -129,26 +130,26 @@ static void tc_driver_pwm_ioctl(void)
 #endif
 #endif
 
-	ret = ioctl(fd, PWMIOC_START);
+	ret = ioctl(fd, PWMIOC_START, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_STOP);
+	ret = ioctl(fd, PWMIOC_STOP, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
 	/* Negative test cases */
 	ret = ioctl(fd, -1, 0);
 	TC_ASSERT_LT_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_STOP);
+	ret = ioctl(fd, PWMIOC_STOP, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_START);
+	ret = ioctl(fd, PWMIOC_START, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_START);
+	ret = ioctl(fd, PWMIOC_START, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, PWMIOC_STOP);
+	ret = ioctl(fd, PWMIOC_STOP, 0UL);
 	TC_ASSERT_GEQ_CLEANUP("pwm_ioctl", ret, 0, close(fd));
 
 	close(fd);

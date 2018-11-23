@@ -147,8 +147,11 @@ static void *task_thread(void *param)
 	timeout.tv_nsec = WAIT_TIME_0;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGUSR1);
-	pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
+	ret = pthread_sigmask(SIG_BLOCK, &mask, NULL);
+	if (ret != 0) {
+		printf("pthread_sigmask Called failed  \n");
+		return NULL;
+	}
 	ret = sigtimedwait(&mask, &info, &timeout);
 	if (ret < SIG_ERROR) {
 		printf("Signal SIGSUR1:  Not Received inside  task_thread in =%d sec  \n", timeout.tv_sec);
@@ -243,14 +246,12 @@ static void itc_pthread_setgetname_np_p_reset_name(void)
 {
 	int ret_chk;
 	int exec_index;
-	int len;
 	pthread_t name_th;
 	char thread_name[BUF_LEN];
 	char *thread_str = "NameThread";
 	char get_name[BUF_LEN];
 	g_exec_index = 0;
 
-	len = strlen(thread_name);
 	ret_chk = pthread_create(&name_th, NULL, thread_setgetname, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 

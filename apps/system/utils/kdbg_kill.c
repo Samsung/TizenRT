@@ -53,12 +53,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
 
-#if defined(CONFIG_ENABLE_KILLALL) && (CONFIG_TASK_NAME_SIZE <= 0)
+#if defined(CONFIG_ENABLE_KILLALL_CMD) && (CONFIG_TASK_NAME_SIZE <= 0)
 #error If you want to use killall, CONFIG_TASK_NAME_SIZE should be > 0
 #endif
 
@@ -91,7 +92,7 @@ static const struct kdbg_sig_s kdbg_sig[] = {
 	{NULL,              0}
 };
 
-#if defined(CONFIG_ENABLE_KILLALL)
+#if defined(CONFIG_ENABLE_KILLALL_CMD)
 struct kdbg_killall_arg_s {
 	int signo;
 	char name[CONFIG_TASK_NAME_SIZE + 1];
@@ -190,7 +191,7 @@ static int send_signal(pid_t pid, int signo)
  * Public Functions
  ****************************************************************************/
 
-#if defined(CONFIG_ENABLE_KILL)
+#if defined(CONFIG_ENABLE_KILL_CMD)
 int kdbg_kill(int argc, char **args)
 {
 	int signo;
@@ -261,7 +262,7 @@ usage:
 }
 #endif
 
-#if defined(CONFIG_ENABLE_KILLALL)
+#if defined(CONFIG_ENABLE_KILLALL_CMD)
 static void kdbg_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
 {
 	struct kdbg_killall_arg_s *killall_arg = (struct kdbg_killall_arg_s *)arg;

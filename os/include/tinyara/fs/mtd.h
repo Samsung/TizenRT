@@ -62,6 +62,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#include <tinyara/spi/spi.h>
+
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -267,6 +269,17 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd);
 ****************************************************************************/
 
 FAR struct mtd_dev_s *m25p_initialize(FAR struct spi_dev_s *dev);
+
+/****************************************************************************
+ * Name: w25_initialize
+ *
+ * Description:
+ *   Initializes the driver for SPI-based W25x16, x32, and x64 and W25q16,
+ *   q32, q64, and q128 FLASH
+ *
+ ****************************************************************************/
+
+FAR struct mtd_dev_s *w25_initialize(FAR struct spi_dev_s *dev);
 
 /* MTD Support **************************************************************/
 

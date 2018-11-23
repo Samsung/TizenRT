@@ -55,6 +55,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <sys/types.h>
 #include <string.h>
 #include <stdbool.h>
 #include <pthread.h>
@@ -275,6 +276,7 @@ db_result_t index_load(relation_t *rel, attribute_t *attr)
 		api = find_index_api(index->type);
 		if (api == NULL) {
 			DB_LOG_E("DB: No API for index type %d\n", index->type);
+			memb_free(&index_memb, index); 
 			return DB_INDEX_ERROR;
 		}
 

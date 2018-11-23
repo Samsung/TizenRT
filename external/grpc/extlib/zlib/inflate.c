@@ -447,14 +447,36 @@ unsigned copy;
 
 /* check function to use adler32() for zlib or crc32() for gzip */
 #ifdef GUNZIP
+#ifdef __TizenRT__
+#  define UPDATE(check, buf, len) \
+    (state->flags ? grpc_crc32(check, buf, len) : adler32(check, buf, len))
+#else
 #  define UPDATE(check, buf, len) \
     (state->flags ? crc32(check, buf, len) : adler32(check, buf, len))
+#endif
 #else
 #  define UPDATE(check, buf, len) adler32(check, buf, len)
 #endif
 
 /* check macros for header crc */
 #ifdef GUNZIP
+#ifdef __TizenRT__
+#  define CRC2(check, word) \
+    do { \
+        hbuf[0] = (unsigned char)(word); \
+        hbuf[1] = (unsigned char)((word) >> 8); \
+        check = grpc_crc32(check, hbuf, 2); \
+    } while (0)
+
+#  define CRC4(check, word) \
+    do { \
+        hbuf[0] = (unsigned char)(word); \
+        hbuf[1] = (unsigned char)((word) >> 8); \
+        hbuf[2] = (unsigned char)((word) >> 16); \
+        hbuf[3] = (unsigned char)((word) >> 24); \
+        check = grpc_crc32(check, hbuf, 4); \
+    } while (0)
+#else
 #  define CRC2(check, word) \
     do { \
         hbuf[0] = (unsigned char)(word); \
@@ -470,6 +492,7 @@ unsigned copy;
         hbuf[3] = (unsigned char)((word) >> 24); \
         check = crc32(check, hbuf, 4); \
     } while (0)
+#endif
 #endif
 
 /* Load registers with state in inflate() for speed */
@@ -664,7 +687,11 @@ int flush;
             if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
                 if (state->wbits == 0)
                     state->wbits = 15;
+#ifdef __TizenRT__
+                state->check = grpc_crc32(0L, Z_NULL, 0);
+#else
                 state->check = crc32(0L, Z_NULL, 0);
+#endif
                 CRC2(state->check, hold);
                 INITBITS();
                 state->mode = FLAGS;
@@ -766,7 +793,11 @@ int flush;
                                 state->head->extra_max - len : copy);
                     }
                     if ((state->flags & 0x0200) && (state->wrap & 4))
+#ifdef __TizenRT__
+                        state->check = grpc_crc32(state->check, next, copy);
+#else
                         state->check = crc32(state->check, next, copy);
+#endif
                     have -= copy;
                     next += copy;
                     state->length -= copy;
@@ -787,7 +818,11 @@ int flush;
                         state->head->name[state->length++] = (Bytef)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
+#ifdef __TizenRT__
+                    state->check = grpc_crc32(state->check, next, copy);
+#else
                     state->check = crc32(state->check, next, copy);
+#endif
                 have -= copy;
                 next += copy;
                 if (len) goto inf_leave;
@@ -808,7 +843,11 @@ int flush;
                         state->head->comment[state->length++] = (Bytef)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
+#ifdef __TizenRT__
+                    state->check = grpc_crc32(state->check, next, copy);
+#else
                     state->check = crc32(state->check, next, copy);
+#endif
                 have -= copy;
                 next += copy;
                 if (len) goto inf_leave;
@@ -830,7 +869,11 @@ int flush;
                 state->head->hcrc = (int)((state->flags >> 9) & 1);
                 state->head->done = 1;
             }
+#ifdef __TizenRT__
+            strm->adler = state->check = grpc_crc32(0L, Z_NULL, 0);
+#else
             strm->adler = state->check = crc32(0L, Z_NULL, 0);
+#endif
             state->mode = TYPE;
             break;
 #endif

@@ -33,26 +33,26 @@ CXXFLAGS += -g -Wall -Wextra
 #
 # gmock 
 #
-CXXSRCS +=	$(GMOCK_DIR)/src/gmock_main.cc	\
-	$(GMOCK_DIR)/src/gmock-all.cc			\
-	$(GMOCK_DIR)/src/gmock-cardinalities.cc	\
-	$(GMOCK_DIR)/src/gmock-internal-utils.cc\
-	$(GMOCK_DIR)/src/gmock-matchers.cc		\
-	$(GMOCK_DIR)/src/gmock-spec-builders.cc	\
-	$(GMOCK_DIR)/src/gmock.cc
+CXXSRCS +=	gmock_main.cc	\
+	gmock-all.cc			\
+	gmock-cardinalities.cc	\
+	gmock-internal-utils.cc\
+	gmock-matchers.cc		\
+	gmock-spec-builders.cc	\
+	gmock.cc
 
 #
 # gtest
 #
-CXXSRCS +=	$(GTEST_DIR)/src/gtest-all.cc	\
-	$(GTEST_DIR)/src/gtest_main.cc			\
-	$(GTEST_DIR)/src/gtest.cc				\
-	$(GTEST_DIR)/src/gtest-death-test.cc	\
-	$(GTEST_DIR)/src/gtest-filepath.cc		\
-	$(GTEST_DIR)/src/gtest-port.cc			\
-	$(GTEST_DIR)/src/gtest-printers.cc		\
-	$(GTEST_DIR)/src/gtest-test-part.cc		\
-	$(GTEST_DIR)/src/gtest-typed-test.cc
+CXXSRCS +=	gtest-all.cc	\
+	gtest_main.cc			\
+	gtest.cc				\
+	gtest-death-test.cc	\
+	gtest-filepath.cc		\
+	gtest-port.cc			\
+	gtest-printers.cc		\
+	gtest-test-part.cc		\
+	gtest-typed-test.cc
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
@@ -71,11 +71,11 @@ else
 endif
 endif
 
-DEPPATH	= --dep-path .
+DEPPATH	= --dep-path . --dep-path $(GMOCK_DIR)/src --dep-path $(GTEST_DIR)/src
 
 # Common build
 
-VPATH		=
+VPATH	= :$(GMOCK_DIR)/src :$(GTEST_DIR)/src
 
 all: .built
 .PHONY: depend clean distclean chkcxx
@@ -114,7 +114,6 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	find . -name "*.o" -exec rm -rf {} \; # Tobe fixed
 
 distclean: clean
 	$(call DELFILE, Make.dep)

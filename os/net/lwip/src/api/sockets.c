@@ -57,6 +57,7 @@
 
 #include <errno.h>
 #include <poll.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <netinet/in.h>
@@ -427,7 +428,13 @@ int copy_socket(void *arg)
 				set_errno(EBADF);
 				return -1;
 			}
-			struct netmon_sock *sock_info = (struct netmon_sock *) malloc(sizeof(struct netmon_sock));
+
+			struct netmon_sock *sock_info = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
+			if (!sock_info) {
+				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
+				set_errno(ENOMEM);
+				return -1;
+			}
 
 			sock_info->type = sockets[i].conn->type;
 			sock_info->state = sockets[i].conn->state;
@@ -522,6 +529,27 @@ struct socket *tryget_socket(int s)
 		return NULL;
 	}
 	return &sockets[s];
+}
+
+ /**
+  * Check closed socket which has non-zero select_waiting value
+  *
+  * @param s externally used socket index
+  * @return struct lwip_sock for the socket with non-zero select_waiting value,
+  *         or NULL if not found
+  */
+struct socket *trycheck_selwait_socket(int s)
+{
+	s -= LWIP_SOCKET_OFFSET;
+	if ((s < 0) || (s >= NUM_SOCKETS)) {
+		return NULL;
+	}
+
+	if (!sockets[s].conn && sockets[s].select_waiting > 0) {
+		return &sockets[s];
+	}
+
+	return NULL;
 }
 
 /**
@@ -1835,7 +1863,17 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 	sock = tryget_socket(fd);
 	if (!sock) {
-		return -EBADF;
+		/* Need to check select_waiting counter on socket ... */
+		sock = trycheck_selwait_socket(fd);
+		if (!sock) {
+			return -EBADF;
+		}
+		/* Suspisious case, try to make poll setup with invalid socket */
+		LWIP_ASSERT("setup = true", (setup == false));
+
+		/* Set to zero for send/rcv event to prevent setting abnormal value */
+		sock->sendevent = 0;
+		sock->rcvevent = 0;
 	}
 
 	/* Check if we are setting up or tearing down the poll */

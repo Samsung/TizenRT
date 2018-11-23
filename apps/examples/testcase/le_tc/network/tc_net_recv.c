@@ -203,7 +203,7 @@ void *recv_server(void *args)
 			printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		}
 	}
-
+	close(connect_fd);
 	connect_fd = accept(socket_fd, NULL, NULL);
 	if (connect_fd < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);

@@ -361,10 +361,13 @@
 #define TMIOC_START                _TMIOC(0x0001)
 #define TMIOC_PAUSE                _TMIOC(0x0002)
 #define TMIOC_RESUME               _TMIOC(0x0003)
-#define TMIOC_RESTART              _TMIOC(0x0004)
-#define TMIOC_UNICAST              _TMIOC(0x0005)
-#define TMIOC_BROADCAST            _TMIOC(0x0006)
-#define TMIOC_CHECK_ALIVE          _TMIOC(0x0007)
+#define TMIOC_UNICAST              _TMIOC(0x0004)
+#define TMIOC_BROADCAST            _TMIOC(0x0005)
+#define TMIOC_CHECK_ALIVE          _TMIOC(0x0006)
+#define TMIOC_TERMINATE            _TMIOC(0x0007)
+#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
+#define TMIOC_PTHREAD_PARENT       _TMIOC(0x0008)
+#endif
 
 /****************************************************************************
  * Public Type Definitions

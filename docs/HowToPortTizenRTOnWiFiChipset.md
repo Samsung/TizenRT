@@ -29,7 +29,7 @@ config DRIVER_T20
 ```
 
 2. Add new chipset driver under *external/wpa_supplicant/src/drivers/*, and name it as
-*driver_\<driver_name\>.c*. Select this file for build in *external/wpa_supplicant/src/drivers/Make.defs*, depending on the Kconfig that is defined for your WiFi driver.
+*driver_\<driver_name\>.c*. Select this file for build in *external/wpa_supplicant/src/drivers/Make.defs*, depending on the Kconfig that is defined for your WiFi Driver.
 An example is shown for LSI WiFi:
 
 ```
@@ -40,7 +40,7 @@ endif
 
 Inside *driver_\<driver_name\>.c*, declare a driver structure variable named *wpa_driver_\<driver_name\>_ops*.
 *wpa_driver_\<driver_name\>_ops* is a structure of type *wpa_driver_ops* that is declared in *external/wpa_supplicant/src/drivers/driver.h*.
-The *wpa_driver_ops* structure contains function pointers to the specific WiFi driver that the supplicant links to.
+The *wpa_driver_ops* structure contains function pointers to the specific WiFi Driver that the supplicant links to.
 As an example, refer to the *wpa_driver_t20_ops* structure declared in *external/wpa_supplicant/src/drivers/driver_t20.c* for the LSI WiFi chipset.
 ```
 const struct wpa_driver_ops wpa_driver_t20_ops = {
@@ -67,16 +67,16 @@ const struct wpa_driver_ops *const wpa_drivers[] = {
 ...
 }
 ```
-This links the supplicant to the relevant WiFi driver.
+This links the supplicant to the relevant WiFi Driver.
 
 ## Interfacing to WiFi Manager
 
 TizenRT features a generic WiFi Manager framework (API located at *framework/inc/wifi_manager*) for applications.
 In order to interface the new WiFi chipset to this WiFi Manager, please do the following:
 
-### Configuring new WiFi library, WiFi driver for WiFi Manager
+### Configuring new WiFi library, WiFi Driver for WiFi Manager
 
-When you activate WiFi Manager, you have to specify your preference for WiFi library and WiFi driver.
+When you activate WiFi Manager, you have to specify your preference for WiFi library and WiFi Driver.
 Accordingly, please modify the *framework/src/wifi_manager/Kconfig* as shown in the example below:
 
 ```
@@ -102,7 +102,7 @@ config SELECT_DRIVER_<DRIVER_NAME>
 	bool "Enable vendor-specific Wireless Module"
 	default n
 	select DRIVER_<DRIVER_NAME>
-endchoice # WiFi driver choice
+endchoice # WiFi Driver choice
 
 if <SUPPLICANT_LIBRARY_NAME>
 source "$EXTERNALDIR/<wifi_lib_dir>/Kconfig"
@@ -125,7 +125,7 @@ config SELECT_DRIVER_NONE
 	depends on SELECT_<SUPPLICANT_LIBRARY_NAME>
 ```
 Please add the above lines *ONLY* if you do not need wireless driver support from TizenRT. Also note, that in such cases, you should interface TizenRT's network stack directly
-to the WiFi library. These details are covered further in [Interfacing WiFi Driver to Network Stack](#1-interfacing-the-wifi-driver-to-the-network-stack).
+to the WiFi library. These details are covered further in [Interfacing WiFi Driver to network stack](#1-interfacing-the-wifi-driver-to-the-network-stack).
 
 ### Choosing the right WiFi utils for build
 
@@ -145,14 +145,14 @@ endif
 
 ## Incorporating WiFi Chipset Driver
 
-The WiFi driver source files should reside under a newly created *os/driver/wireless/<wifi_driver_name>* folder.
-In the following subsections, we describe how to configure the new WiFi driver for build. Additionally, we also describe how
+The WiFi Driver source files should reside under a newly created *os/driver/wireless/<wifi_driver_name>* folder.
+In the following subsections, we describe how to configure the new WiFi Driver for build. Additionally, we also describe how
 to initialize and interface it with the overlying network stack.
 
 ### WiFi Driver Configuration
 
-The choice for the WiFi driver is already made when configuring WiFi Manager, as described in [configuring new wifi library, wifi driver for wifi manager](#configuring-new-wifi-library-wifi-driver-for-wifi-manager).
-Accordingly, please select the WiFi driver to build, by adding the lines to *os/drivers/wireless/Kconfig* as shown below:
+The choice for the WiFi Driver is already made when configuring WiFi Manager, as described in [configuring new wifi library, Wifi Driver for wifi manager](#configuring-new-wifi-library-wifi-driver-for-wifi-manager).
+Accordingly, please select the WiFi Driver to build, by adding the lines to *os/drivers/wireless/Kconfig* as shown below:
 ```
 if DRIVERS_WIRELESS && SELECT_DRIVER_<DRIVER_NAME>
 
@@ -179,12 +179,12 @@ Make sure you create your board-specific files at *os/arch/arm/src/\<board_name\
 driver initialization function as shown in the example above.
 
 Next, inside your board specific directory, create a *\<board\>_wlan.c* file. This file should include following functionalities:
-#### 1. Interfacing the WiFi driver to the Network Stack
-In TizenRT, the *netif* structure links the WiFi driver to the overlying network layer. Netif creation and initialization should
-follow immediately after WiFi driver initialization. Inside the *\<board\>_wlan.c* file, this can be implemented as a three step process
+#### 1. Interfacing the WiFi Driver to the network stack
+In TizenRT, the *netif* structure links the WiFi Driver to the overlying network layer. Netif creation and initialization should
+follow immediately after WiFi Driver initialization. Inside the *\<board\>_wlan.c* file, this can be implemented as a three step process
 1. Allocate memory for LWIP's netif structure, and populate its fields with the driver API
 2. Add the netif created in step 1 to TizenRT's runtime environment
-3. Initialize the netif created in step 2, thus completing the interface between LWIP and the WiFi driver.
+3. Initialize the netif created in step 2, thus completing the interface between LWIP and the WiFi Driver.
 
 Please note that netif creation (Step 1) should be called from *board_initialize()* function defined at *os/arch/arm/src/\<board_name\>/src/\<board\>_boot.c*.
 The three steps above can be implemented as functions, as shown in the template code below:

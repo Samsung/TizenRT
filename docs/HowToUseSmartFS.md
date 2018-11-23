@@ -1,4 +1,4 @@
-# How to use SmartFS
+# How to Enable and use SmartFS
 
 ## Contents
 > [About SmartFS](#about-smartfs)  
@@ -36,7 +36,7 @@ Below diagram shows the dependent layers part of Smart FS.
 +----------------------------------------------+
 ```
 
-The code directly above the MTD driver is the SMART MTD layer.  
+The code directly above the MTD Driver is the SMART MTD layer.  
 This interfaces with the MTD (flash driver) layer and handles low-level
 media operations such as logical sector allocation, freeing and management,
 erase block management, low-level formatting, wear leveling, etc.
@@ -49,13 +49,13 @@ chaining logical sectors together to create files, creating directories and
 
 ## How to Enable SmartFS on New Board
 1. add *[FLASH Driver](#flash-driver)* for the flash present in the SoC/Board.  
-2. enable *[MTD driver](#mtd-driver)* corresponding to flash.  
+2. enable *[MTD Driver](#mtd-driver)* corresponding to flash.  
 3. enable *[SMART MTD Driver](#smart-mtd-driver)*.  
 4. enable *[SMART FS](#smart-fs)*
 
 ## FLASH Driver
 Flash driver must provide low-level read/write/erase capability for the FLASH HW.  
-Example driver is at *os/arch/arm/src/s5j/s5j_sflash.c*
+Example of flash driver is present at *os/arch/arm/src/s5j/s5j_sflash.c*
 
 During bootup flash driver must be initialized similar to below example snippet.
 ```
@@ -74,117 +74,119 @@ void s5j_board_initialize(void)
 }
 ```
 ## MTD Driver
-MTD driver must be enabled to access the underlying FLASH driver.  
-Example driver is at *os/fs/driver/mtd/mtd_progmem.c*.  
+MTD Driver must be enabled to access the underlying FLASH driver.  
+Example of MTD driver is at *os/fs/driver/mtd/mtd_progmem.c*.  
 
-Below configuration must be enabled for using mtd driver.
+Below configurations must be enabled for using MTD Driver.
 1. Enable CONFIG_MTD  
 ```
-File  Systems->Memory Technology Device (MTD) Support to y
+File Systems -> Memory Technology Device (MTD) Support = y
 ```
 2. Enable CONFIG_MTD_PARTITION  
 ```
-File  Systems->Memory Technology Device (MTD) Support->Support MTD partitions to y
+File Systems -> Memory Technology Device (MTD) Support -> Support MTD partitions = y
 ```
 3. Enable CONFIG_MTD_PARTITION_NAMES  
 ```
-File  Systems->Memory Technology Device (MTD) Support->Support MTD partition  naming to y
+File Systems -> Memory Technology Device (MTD) Support -> Support MTD partition  naming = y
 ```
 4. Enable CONFIG_MTD_PROGMEM  
 ```
-File  Systems->Memory Technology Device (MTD) Support->Enable on-chip program  FLASH MTD device to y
+File Systems -> Memory Technology Device (MTD) Support -> Enable on-chip program FLASH MTD device = y
 ```
 
-Example of initialization is as shown below,refer *os/arch/arm/src/sidk_s5jt200/src/s5jt200_tash.c*
+Refer to *os/board/artik05x/src/artik05x_tash.c* for example of MTD driver initialization
 ```
-artik053_configure_partitions() -> progmem_initialize ();
+artik05x_configure_partitions() -> progmem_initialize ();
 ```
 
 ## SMART MTD Driver
 Smart MTD layer can be enabled by enabling CONFIG_MTD_SMART config
 ```
-File  Systems->Memory Technology Device (MTD) Support-> Sector Mapped  Allocation for Really Tiny (SMART) Flash support) to y
+File Systems -> Memory Technology Device (MTD) Support -> Sector Mapped Allocation for Really Tiny (SMART) Flash support = y
 ```
 
 Refer *os/fs/driver/mtd/smart.c* for smart mtd layer code.
 
-smart device can be initialized using as shown below,
+smart device can be initialized as shown below,
 ```
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
                 if (!strncmp(types, "smartfs,", 8)) {
                         char partref[4];
+
                         snprintf(partref, sizeof(partref), "p%d", partno);
-                        smart_initialize(CONFIG_SIDK_S5JT200_FLASH_MINOR,
-                                        mtd_part, partref);
+                        smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
                 }
 #endif
+
 ```
-The above snippet creates smart device node similar to */dev/smartp0x*.  
-For smart device initialization, refer *os/arch/arm/src/sidk_s5jt200/src/s5jt200_tash.c*
+The above snippet creates smart device node similar to */dev/smart0p8*.  
+For smart device initialization, refer *os/board/artik05x/src/artik05x_tash.c*
 
 ## SMART FS
 Smart FS layer can be enabled by enabling below configurations.  
 1. Enable CONFIG_FS_SMARTFS
 ```
-File  Systems->SMART file system
+File Systems -> SMART file system = y
 ```
 2. Set CONFIG_SMARTFS_ERASEDSTATE
 ```
-File  Systems->SMART file system ->SMARTFS options->FLASH erased state  (0xff) to 0xFF
+File Systems -> SMART file system -> SMARTFS options -> FLASH erased state = 0xff
 ```
 3. set CONFIG_SMARTFS_MAXNAMLEN=32
 ```
-File  Systems->SMART file system ->SMARTFS options->Maximum file length  (32) to 32
+File Systems -> SMART file system -> SMARTFS options -> Maximum file name length = 32
 ```
 4. Enable CONFIG_SMARTFS_ALIGNED_ACCESS
 ```
-File  Systems->SMART file system ->SMARTFS options->Ensure 16 and 32 bit  accesses are aligned to y
+File Systems -> SMART file system -> SMARTFS options -> Ensure 16 and 32 bit accesses are aligned = y
 ```
 
 Below are the optional features configurations. Refer *os/fs/smartfs/Kconfig* for more details.  
 1. CONFIG_SMARTFS_MULTI_ROOT_DIRS
 ```
-File  Systems->SMART file system ->SMARTFS options->Support multiple Root  Directories/Mount points
+File Systems -> SMART file system -> SMARTFS options -> Support multiple Root Directories/Mount points
 ```
 2.CONFIG_SMARTFS_BAD_SECTOR
 ```
-File  Systems->SMART file system ->SMARTFS options->Bad Sector Management
+File Systems -> SMART file system -> SMARTFS options -> Bad Sector Management
 ```
 3.CONFIG_SMARTFS_DYNAMIC_HEADER
 ```
-File  Systems->SMART file system ->SMARTFS options->Dynamic Header
+File Systems -> SMART file system -> SMARTFS options -> Dynamic Header
 ```
 4. CONFIG_SMARTFS_JOURNALING
 ```
-File  Systems->SMART file system ->SMARTFS options->Enable journaling for  smartfs
+File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs
 ```
 5. CONFIG_SMARTFS_VERIFY_JOURNALING
 ```
-File  Systems->SMART file system ->SMARTFS options->Enable journaling for  smartfs->verify Journal logging
+File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs -> Verify Journal logging
 ```
 6. CONFIG_SMARTFS_SECTOR_RECOVERY
 ```
-File  Systems->SMART file system ->SMARTFS options-> Enable recovery of  lost sectors in File system
+File Systems -> SMART file system -> SMARTFS options -> Enable recovery of lost sectors in Filesystem
 ```
-Smart FS can be mounted on smart mtd device.  
-Before mounting, smart device formatted to smartfs using mksmartfs tool.  
-Example snippet for formatting and mounting smart fs:
+SmartFS filesystem can be mounted on smart mtd device.  
+Before mounting, smart device is formatted to smartfs using mksmartfs tool.  
+Example snippet for formatting and mounting SmartFS:
 ```
-#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS
-        /* Initialize and mount user partition (if we have) */
-        ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
-        if (ret != OK) {
-                lldbg("ERROR: mksmartfs on %s failed",
-                                CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
-        } else {
-                ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
-                                CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT, 
-                                "smartfs", 0, NULL);
-                if (ret != OK)
-                        lldbg("ERROR: mounting '%s' failed\n",
-                                CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
-        }
-#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS */
+#ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
+	/* Initialize and mount user partition (if we have) */
+	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed\n",
+				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+	} else {
+		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
+				"smartfs", 0, NULL);
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed\n",
+					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+		}
+	}
+#endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
 ```
 Smart FS can also be mounted in TASH Shell as shown below:  
 1. Format the partition using mksmartfs command
@@ -195,5 +197,5 @@ Example : mksmartfs /dev/smart0p8
 2. Mount smartfs using mount command
 ```
 Usage   : mount -t <fs-type> <source/device name> <target/ logical mount path>
-Example : mount -t smartfs /dev/smartp0p8 /mnt
+Example : mount -t smartfs /dev/smart0p8 /mnt
 ```

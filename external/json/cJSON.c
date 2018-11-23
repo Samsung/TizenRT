@@ -440,7 +440,7 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
     double d = item->valuedouble;
     int length = 0;
     size_t i = 0;
-    unsigned char number_buffer[26]; /* temporary buffer to print the number into */
+    unsigned char number_buffer[27]; /* temporary buffer to print the number into */
 	unsigned char decimal_point = '.';
     double test;
 

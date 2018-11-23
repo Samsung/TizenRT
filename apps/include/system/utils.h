@@ -32,7 +32,7 @@ void net_register_appcmds(void);
 #endif
 #endif							/* CONFIG_TASH */
 
-#ifdef CONFIG_ENABLE_STACKMONITOR
+#ifdef CONFIG_ENABLE_STACKMONITOR_CMD
 void stkmon_logging(struct tcb_s *);
 #endif
 #endif							/* __APPS_INCLUDE_SYSTEM_UTILS_H */

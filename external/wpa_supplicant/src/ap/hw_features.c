@@ -24,23 +24,9 @@
 #include "beacon.h"
 #include "hw_features.h"
 
-void hostapd_free_hw_features(struct hostapd_hw_modes *hw_features, size_t num_hw_features)
-{
-	size_t i;
-
-	if (hw_features == NULL) {
-		return;
-	}
-
-	for (i = 0; i < num_hw_features; i++) {
-		os_free(hw_features[i].channels);
-		os_free(hw_features[i].rates);
-	}
-
-	os_free(hw_features);
-}
-
-#ifndef CONFIG_NO_STDOUT_DEBUG
+#ifdef CONFIG_NO_STDOUT_DEBUG
+#define dfs_info(p) NULL
+#else
 static char *dfs_info(struct hostapd_channel_data *chan)
 {
 	static char info[256];
@@ -64,10 +50,25 @@ static char *dfs_info(struct hostapd_channel_data *chan)
 	}
 	os_snprintf(info, sizeof(info), " (DFS state = %s)", state);
 	info[sizeof(info) - 1] = '\0';
-
 	return info;
 }
 #endif							/* CONFIG_NO_STDOUT_DEBUG */
+
+void hostapd_free_hw_features(struct hostapd_hw_modes *hw_features, size_t num_hw_features)
+{
+	size_t i;
+
+	if (hw_features == NULL) {
+		return;
+	}
+
+	for (i = 0; i < num_hw_features; i++) {
+		os_free(hw_features[i].channels);
+		os_free(hw_features[i].rates);
+	}
+
+	os_free(hw_features);
+}
 
 int hostapd_get_hw_features(struct hostapd_iface *iface)
 {

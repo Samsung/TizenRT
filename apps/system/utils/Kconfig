@@ -50,13 +50,46 @@ config NET_PING_CMD_ICOUNT
 
 endif #NET_CMDS
 
-config ENABLE_DATE
+config ENABLE_CPULOAD_CMD
+	bool "cpuload"
+	default y
+	depends on SCHED_CPULOAD
+	---help---
+		Display current cpuload or start/stop CPU load monitor.
+		CPU load monitor is a daemon that will periodically assess
+		CPU usage by all live tasks and threads in the system.
+
+config ENABLE_CPULOAD_MONITOR
+	bool "cpuload monitor"
+	default y
+	depends on ENABLE_CPULOAD_CMD && !CONFIG_DISABLE_PTHREAD && !CONFIG_DISABLE_SIGNALS
+	---help---
+		The CPU load monitor is a daemon that will periodically assess
+		CPU usage by all live tasks and threads in the system.
+		It is available if both signal and pthread are supported only, !DISABLE_SIGNALS && !DISABLE_PTHREAD.
+
+config CPULOADMONITOR_PRIORITY
+	int "CPU load monitor daemon priority"
+	default 100
+	depends on ENABLE_CPULOAD_MONITOR
+	---help---
+		The priority to use the the CPU load monitor daemon.  Default: 100
+
+config CPULOADMONITOR_INTERVAL
+	int "CPU load monitor frequency"
+	default 5
+	depends on ENABLE_CPULOAD_MONITOR
+	---help---
+		The rate in seconds that the CPU load monitor will wait before dumping
+		the next set CPU load usage information.  Default:  5 seconds.
+
+config ENABLE_DATE_CMD
 	bool "date"
 	default y
 	---help---
 		Display or set time
 
-config ENABLE_DMESG
+config ENABLE_DMESG_CMD
 	bool "dmesg"
 	default y
 	depends on SYSLOG && RAMLOG_SYSLOG
@@ -64,32 +97,32 @@ config ENABLE_DMESG
 		Print the contents of log message buffer
 
 if !DISABLE_ENVIRON
-config ENABLE_ENV_GET
+config ENABLE_ENV_GET_CMD
 	bool "env get"
 	default y
 	---help---
 		print the current contents of env
 
-config ENABLE_ENV_SET
+config ENABLE_ENV_SET_CMD
 	bool "env set"
 	default y
 	---help---
 		set a env variable
 
-config ENABLE_ENV_UNSET
+config ENABLE_ENV_UNSET_CMD
 	bool "env unset"
 	default y
 	---help---
 		unset a specific env variable
 endif #!DISABLE_ENVIRON
 
-config ENABLE_FREE
+config ENABLE_FREE_CMD
 	bool "free"
 	default y
 	---help---
 		Show information about memory status
 
-config ENABLE_HEAPINFO
+config ENABLE_HEAPINFO_CMD
 	bool "heapinfo"
 	default y
 	depends on !BUILD_PROTECTED
@@ -97,7 +130,7 @@ config ENABLE_HEAPINFO
 	---help---
 		Show information about memory status per thread
 
-if ENABLE_HEAPINFO
+if ENABLE_HEAPINFO_CMD
 config HEAPINFO_USER_GROUP
 	bool "Enable User defined Group Memory Usage"
 	default n
@@ -112,7 +145,7 @@ config HEAPINFO_USER_GROUP_LIST
 endif
 endif
 
-config ENABLE_IRQINFO
+config ENABLE_IRQINFO_CMD
 	bool "irqinfo"
 	default n
 	depends on TASH && !BUILD_PROTECTED && !BUILD_KERNEL
@@ -120,28 +153,28 @@ config ENABLE_IRQINFO
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
 
-config ENABLE_KILL
+config ENABLE_KILL_CMD
 	bool "kill"
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to processes or process groups
 
-config ENABLE_KILLALL
+config ENABLE_KILLALL_CMD
 	bool "killall"
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to all processes running any of the specified commands
 
-config ENABLE_PS
+config ENABLE_PS_CMD
 	bool "ps"
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
 		List of tasks/threads
 
-config ENABLE_STACKMONITOR
+config ENABLE_STACKMONITOR_CMD
 	bool "Stack monitor"
 	default n
 	depends on !BUILD_PROTECTED && !BUILD_KERNEL
@@ -152,7 +185,7 @@ config ENABLE_STACKMONITOR
 		feature depends on internal OS features and, hence, is
 		not available if the kernel build or protected build is selected.
 
-if ENABLE_STACKMONITOR
+if ENABLE_STACKMONITOR_CMD
 config STACKMONITOR_PRIORITY
 	int "Stack monitor daemon priority"
 	default 100
@@ -166,9 +199,9 @@ config STACKMONITOR_INTERVAL
 		The rate in seconds that the stack monitor will wait before dumping
 		the next set stack usage information.  Default:  2 seconds.
 
-endif #ENABLE_STACKMONITOR
+endif #ENABLE_STACKMONITOR_CMD
 
-config ENABLE_UPTIME
+config ENABLE_UPTIME_CMD
 	bool "uptime"
 	default y
 	---help---

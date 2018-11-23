@@ -18,7 +18,7 @@
 
 ifeq ($(CONFIG_EVENTLOOP),y)
 
-CSRCS += eventloop_timer.c eventloop_loop.c
+CSRCS += eventloop_timer.c eventloop_loop.c eventloop_task.c eventloop_async.c eventloop_event.c
 
 DEPPATH += --dep-path src/eventloop
 VPATH += :src/eventloop

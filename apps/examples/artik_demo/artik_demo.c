@@ -20,25 +20,23 @@
  * @file artik_demo.c
  */
 
+#include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <strings.h>
+#include <net/if.h>
 
-#include <sys/types.h>
-#include <tinyara/config.h>
 #include <apps/shell/tash.h>
-
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
 #include <protocols/webclient.h>
-
-#include <net/if.h>
-
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
-
 #include <slsi_wifi/slsi_wifi_api.h>
 
 /****************************************************************************
@@ -233,22 +231,19 @@ static char NET_DEVNAME[10];
 
 static int app_dhcp_main(void)
 {
-	struct dhcpc_state state;
-	void *dhcp_handle;
 	int ret;
+	struct in_addr ip_check;
 
-	dhcp_handle = dhcpc_open(NET_DEVNAME);
-	ret = dhcpc_request(dhcp_handle, &state);
-	dhcpc_close(dhcp_handle);
-
+	ret = dhcp_client_start(NET_DEVNAME);
 	if (ret != OK) {
 		return -1;
 	}
-	netlib_set_ipv4addr(NET_DEVNAME, &state.ipaddr);
-	netlib_set_ipv4netmask(NET_DEVNAME, &state.netmask);
-	netlib_set_dripv4addr(NET_DEVNAME, &state.default_router);
 
-	printf("IP address get %s ----\n", inet_ntoa(state.ipaddr));
+	ret = netlib_get_ipv4addr(NET_DEVNAME, &ip_check)
+	if (ret != OK) {
+		return -1;
+	}
+	printf("IP address get %s ----\n", inet_ntoa(ip_check));
 	return 1;
 }
 

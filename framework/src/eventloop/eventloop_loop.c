@@ -18,21 +18,121 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
+
 #include <debug.h>
+#include <unistd.h>
 #include <libtuv/uv.h>
+#include <libtuv/uv__types.h>
+#include <libtuv/uv__loop.h>
 #include <eventloop/eventloop.h>
 
-void eventloop_loop_run(void)
+#include "eventloop_internal.h"
+
+el_loop_t *g_loop_list[CONFIG_MAX_TASKS];
+
+#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
+#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
+
+el_loop_t *get_app_loop(void)
 {
-	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+	int index;
+
+	/* Get a loop assigned to own task */
+	index = PID_HASH(getpid());
+
+	if (g_loop_list[index] == NULL) {
+		g_loop_list[index] = (el_loop_t *)EL_ALLOC(sizeof(el_loop_t));
+		if (g_loop_list[index] != NULL) {
+			uv_loop_init(g_loop_list[index]);
+		}
+	}
+
+	return g_loop_list[index];
 }
 
+static int release_app_loop(void)
+{
+	int index;
+
+	index = PID_HASH(getpid());
+
+	if (g_loop_list[index] != NULL) {
+		if (uv_loop_close(g_loop_list[index]) < 0) {
+			eldbg("Failed to close loop\n");
+			return EVENTLOOP_BUSY;
+		}
+		EL_FREE(g_loop_list[index]);
+		g_loop_list[index] = NULL;
+	}
+
+	return OK;
+}
+
+/* It runs until there is no event to process or eventloop_loop_stop is called. */
+int eventloop_loop_run(void)
+{
+	int ret;
+	el_loop_t *loop;
+
+	loop = get_app_loop();
+	if (loop == NULL) {
+		return EVENTLOOP_LOOP_FAIL;
+	}
+
+	/* It is returned when event processing is done or stop request is called. */
+	if (uv_run(loop, UV_RUN_DEFAULT) != 0) {
+		/* there are still events to process */
+		return EVENTLOOP_NOT_FINISHED;
+	}
+
+	ret = release_app_loop();
+	if (ret != OK) {
+		eldbg("Running loop is done, but failed to close loop\n");
+	}
+
+	return ret;
+}
+
+/* A function for closing each handle in loop called by iteration in uv_walk. */
+static void eventloop_close_handle(uv_handle_t *handle, void *data)
+{
+	if (handle == NULL || uv__is_closing(handle)) {
+		return;
+	}
+
+	switch (handle->type) {
+	case UV_TIMER:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_timer);
+		break;
+	case UV_SIGNAL:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_event_cb);
+		break;
+	case UV_ASYNC:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_thread_safe_cb);
+		break;
+	default:
+		break;
+	}
+}
+
+/* It is called from callback function registered in loop.
+ * So uv_run in eventloop_loop_run will exit and loop is released after executing this function.
+ */
 int eventloop_loop_stop(void)
 {
-	if (uv_loop_close(uv_default_loop()) < 0) {
-		eldbg("Failed to cloase loop\n");
-		return EVENTLOOP_BUSY;
+	int index;
+
+	index = PID_HASH(getpid());
+
+	/* If app loop is already finished or not exist, EVENTLOOP_LOOP_FAIL is returned. */
+	if (g_loop_list[index] == NULL) {
+		return EVENTLOOP_LOOP_FAIL;
 	}
+
+	/* Stop loop and close all handles in loop */
+	uv_stop(g_loop_list[index]);
+	uv_walk(g_loop_list[index], (uv_walk_cb)eventloop_close_handle, NULL);
 
 	return OK;
 }

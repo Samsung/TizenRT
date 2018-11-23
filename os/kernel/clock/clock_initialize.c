@@ -99,7 +99,7 @@
  ****************************************************************************/
 
 #ifndef CONFIG_SCHED_TICKLESS
-volatile systime_t g_system_timer;
+volatile clock_t g_system_timer;
 #endif
 
 struct timespec g_basetime;
@@ -171,7 +171,7 @@ static inline void clock_basetime(FAR struct timespec *tp)
 	 * month, and date
 	 */
 
-	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH, CONFIG_START_DAY);
+	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH - 1, CONFIG_START_DAY);
 
 	/* Set the base time as seconds into this julian day. */
 

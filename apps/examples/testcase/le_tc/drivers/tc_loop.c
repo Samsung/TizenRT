@@ -22,6 +22,7 @@
 #include <tinyara/fs/fs.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
 #include "tc_internal.h"
 #include <errno.h>
 
@@ -131,7 +132,7 @@ static void tc_driver_loop_write(void)
 
 	TC_ASSERT_NEQ("malloc", read_buf, NULL);
 
-	strncpy(read_buf, "Test loop driver", 16);
+	strncpy((char *)read_buf, "Test loop driver", 16);
 
 	/* Positive testcases */
 	ret = open_blockdriver("/dev/loop", 0, &pnode);
@@ -143,7 +144,7 @@ static void tc_driver_loop_write(void)
 	memset(read_buf, 0, 1024);
 	ret = pnode->u.i_bops->read(pnode, read_buf, 0, 1);
 	TC_ASSERT_GEQ_CLEANUP("loop_read", ret, 0, cleanup(pnode, read_buf));
-	TC_ASSERT_EQ_CLEANUP("loop_write", strncmp(read_buf, "Test loop driver", 16), 0, cleanup(pnode, read_buf));
+	TC_ASSERT_EQ_CLEANUP("loop_write", strncmp((const char *)read_buf, "Test loop driver", 16), 0, cleanup(pnode, read_buf));
 
 	close_blockdriver(pnode);
 	free(read_buf);

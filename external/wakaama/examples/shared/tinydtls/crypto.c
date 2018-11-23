@@ -46,6 +46,7 @@
 #include "netq.h"
 
 #ifndef WITH_CONTIKI
+#include <sys/types.h>
 #include <pthread.h>
 #endif
 

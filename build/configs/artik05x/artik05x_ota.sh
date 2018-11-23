@@ -20,9 +20,15 @@
 # File   : artik05x_ota.sh
 # Description : Attach CRC and Signing in TizenRT Binary
 
-source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../os
+OUTPUT_BINARY_PATH=${OS_DIR_PATH}/../build/output/bin
+TIZENRT_BIN=${OUTPUT_BINARY_PATH}/tinyara_head.bin
+
 TARGET_NAME=ota
-OUTPUT_BIN=$OUTPUT_BINARY_PATH/${TARGET_NAME}.bin
+OUTPUT_BIN=${OUTPUT_BINARY_PATH}/${TARGET_NAME}.bin
 
 make-target-bin() {
     local bin=
@@ -65,31 +71,14 @@ ota_crc() {
     make-target-bin --target=$TARGET_NAME --bin=$TARGET_NAME
 }
 
-if test $# -eq 0; then
-    exit 1
-fi
-
 while test $# -gt 0; do
-    case "$1" in
-        -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
-        *) optarg= ;;
-    esac
-
-    case $1 in
-        --board=*)
-            BOARD_NAME=$optarg
-            BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/$BOARD_NAME
-            FW_DIR_PATH=${BOARD_DIR_PATH}/bin
-            if [ ! -d $BOARD_DIR_PATH ]; then
-                exit 1
-            fi
-            ;;
-        --secure)
-            signing
-            ;;
-        *)
-            ;;
-    esac
-    shift
+	case $1 in
+		--secure)
+			TIZENRT_BIN=${TIZENRT_BIN}-signed
+			;;
+		*)
+			;;
+	esac
+	shift
 done
 ota_crc

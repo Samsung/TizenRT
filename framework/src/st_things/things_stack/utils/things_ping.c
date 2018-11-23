@@ -18,6 +18,7 @@
 
 #define THINGS_PING_ENABLE      1
 
+#include <sys/types.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -108,6 +109,7 @@ bool things_ping_init(void)
 	if (list == NULL) {
 		if ((list = create_list()) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return res;
 		}
 
@@ -167,6 +169,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
 
@@ -175,6 +178,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s). So, Create Node.", remote_addr);
 		if ((ping = create_things_ping_s(remote_addr, port)) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return false;
 		}
 		list->insert(list, (void *)ping);
@@ -211,14 +215,17 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		return false;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
-	pthread_mutex_lock(&mutex_ping_list);
+
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s).", remote_addr);
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	} else {
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
@@ -645,8 +652,10 @@ static void check_ping_thread(things_ping_s *ping)
 		return;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return;
 	}
 
@@ -667,6 +676,8 @@ static void check_ping_thread(things_ping_s *ping)
 			terminate_things_ping_s(ping);
 		}
 	}
+
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	THINGS_LOG_D(TAG, "Exit.");
 }
@@ -741,6 +752,7 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		return;
 	}
 
+	pthread_mutex_lock(&ping->mutex_state);
 	THINGS_LOG_D(TAG, "(B) bit_mask_state = 0x%X", ping->bit_mask_state);
 	if (state != PING_ST_INIT) {
 		ping->bit_mask_state &= (~state);
@@ -748,6 +760,8 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		ping->bit_mask_state = state;
 	}
 	THINGS_LOG_D(TAG, "(A) bit_mask_state = 0x%X", ping->bit_mask_state);
+	pthread_mutex_unlock(&ping->mutex_state);
+
 	THINGS_LOG_D(TAG, "Exit.");
 }
 

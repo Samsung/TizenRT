@@ -16,8 +16,12 @@
  *
  ******************************************************************/
 
+#ifndef __MEDIA_DECODER_H
+#define __MEDIA_DECODER_H
+
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <memory>
 
 #ifdef CONFIG_AUDIO_CODEC
 #include "streaming/audio_decoder.h"
@@ -28,11 +32,12 @@ namespace media {
 class Decoder
 {
 public:
-	Decoder(unsigned short channels, unsigned int sampleRate);
-	Decoder(const Decoder *source);
+	Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
 	~Decoder();
 
 public:
+	static std::shared_ptr<Decoder> create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
+	bool init(void);
 	size_t pushData(unsigned char *buf, size_t size);
 	bool getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels);
 	bool empty();
@@ -43,8 +48,11 @@ private:
 	//static int _configFunc(void *user_data, int audio_type, void *dec_ext);
 	bool mConfig(int audioType);
 	audio_decoder_t mDecoder;
+	audio_type_t mAudioType;
 	unsigned short mChannels;
 	unsigned int mSampleRate;
 #endif
 };
 } // namespace media
+
+#endif

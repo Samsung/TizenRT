@@ -17,6 +17,7 @@
  ******************************************************************/
 
 #include <opus/opus.h>
+#include <string.h>
 #include <debug.h>
 #include <assert.h>
 #include <pthread.h>
@@ -102,7 +103,7 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 
 	// Sync word
 	out_data = (unsigned char *)pExt->pOutputBuffer;
-	strncpy(out_data, "Opus", 4);
+	strncpy((char *)out_data, "Opus", 4);
 	out_data += 4;
 
 	// Packet length

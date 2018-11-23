@@ -31,13 +31,61 @@
 
 #include <tinyalsa/tinyalsa.h>
 
+#define AAC_HEADER_LENGTH         7
+#define MP3_HEADER_LENGTH         4
+#define WAVE_HEADER_LENGTH        44
+
+#define AUDIO_EXT_TYPE_AAC        "aac"
+#define AUDIO_EXT_TYPE_FLAC       "flac"
+#define AUDIO_EXT_TYPE_NULL       ""
+#define AUDIO_EXT_TYPE_MP3        "mp3"
+#define AUDIO_EXT_TYPE_MP4        "mp4"
+#define AUDIO_EXT_TYPE_OPUS       "opus"
+#define AUDIO_EXT_TYPE_PCM        "pcm"
+#define AUDIO_EXT_TYPE_RAW        "raw"
+#define AUDIO_EXT_TYPE_WAV        "wav"
+
 namespace media {
 
+/**
+ * @brief Audio sample rate.
+ * @details
+ * @since TizenRT v2.0
+ */
+typedef enum audio_sample_rate_e {
+	/** Audio sample rate is 7350 */
+	AUDIO_SAMPLE_RATE_7350 = 7350,
+	/** Audio sample rate is 8000 */
+	AUDIO_SAMPLE_RATE_8000 = 8000,
+	/** Audio sample rate is 11025 */
+	AUDIO_SAMPLE_RATE_11025 = 11025,
+	/** Audio sample rate is 12000 */
+	AUDIO_SAMPLE_RATE_12000 = 12000,
+	/** Audio sample rate is 16000 */
+	AUDIO_SAMPLE_RATE_16000 = 16000,
+	/** Audio sample rate is 22050 */
+	AUDIO_SAMPLE_RATE_22050 = 22050,
+	/** Audio sample rate is 24000 */
+	AUDIO_SAMPLE_RATE_24000 = 24000,
+	/** Audio sample rate is 32000 */
+	AUDIO_SAMPLE_RATE_32000 = 32000,
+	/** Audio sample rate is 44100 */
+	AUDIO_SAMPLE_RATE_44100 = 44100,
+	/** Audio sample rate is 48000 */
+	AUDIO_SAMPLE_RATE_48000 = 48000,
+	/** Audio sample rate is 64000 */
+	AUDIO_SAMPLE_RATE_64000 = 64000,
+	/** Audio sample rate is 88200 */
+	AUDIO_SAMPLE_RATE_88200 = 88200,
+	/** Audio sample rate is 96000 */
+	AUDIO_SAMPLE_RATE_96000 = 96000
+
+} audio_sample_rate_t;
 
 /**
  * @brief Audio type.
  * @details
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum audio_type_e {
 	/** Audio type is invalid */
@@ -50,17 +98,19 @@ typedef enum audio_type_e {
 	AUDIO_TYPE_AAC = 2,
 	/** Audio type is PCM */
 	AUDIO_TYPE_PCM = 3,
-	/** Audio type is PCM */
+	/** Audio type is OPUS */
 	AUDIO_TYPE_OPUS = 4,
-	/** Audio type is PCM */
-	AUDIO_TYPE_FLAC = 5
+	/** Audio type is FLAC */
+	AUDIO_TYPE_FLAC = 5,
+	/** Audio type is WAVE */
+	AUDIO_TYPE_WAVE = 6
 } audio_type_t;
 
 /**
- * @class 
+ * @class
  * @brief Audio format type, each value follows pcm_format in tinyalsa.
  * @details
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum audio_format_type_e {
 	/* Signed 8 bit */

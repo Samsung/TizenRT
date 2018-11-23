@@ -655,6 +655,7 @@ static void itc_systemio_gpio_open_close_p_multi_handle(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase         itc_systemio_gpio_open_close_p_reclose
 * @brief            gpio_open returns handle of gpio context and gpio_close closes the context
@@ -679,6 +680,7 @@ static void itc_systemio_gpio_open_close_p_reclose(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         itc_systemio_gpio_open_n

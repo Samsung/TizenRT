@@ -62,6 +62,10 @@ ASRCS =
 CSRCS =
 VPATH = .
 
+ifeq ($(CONFIG_TASK_MANAGER),y)
+CFLAGS += -I $(TOPDIR)/kernel
+endif
+
 # Include support for various drivers.  Each Make.defs file will add its
 # files to the source file list, add its DEPPATH info, and will add
 # the appropriate paths to the VPATH variable

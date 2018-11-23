@@ -18,7 +18,7 @@
 /********************************************************************************
  * include/signal.h
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011, 2013-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -190,6 +190,27 @@
 #define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
 #endif
 
+/* SIG_SIGEL_WAKEUP is used in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_WAKEUP
+#define SIGEL_WAKEUP       22			/* Eventloop signal */
+#else
+#define SIGEL_WAKEUP       CONFIG_SIG_SIGEL_WAKEUP
+#endif
+
+/* SIG_SIGTM_TERMINATION is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_TERMINATION
+#define SIGTM_TERMINATION       23			/* Taskmgt signal */
+#else
+#define SIGTM_TERMINATION       CONFIG_SIG_SIGTM_TERMINATION
+#endif
+
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_EVENT
+#define SIGEL_EVENT       24			/* Eventloop signal */
+#else
+#define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */
@@ -337,6 +358,27 @@ extern "C" {
  */
 int kill(pid_t pid, int sig);
 
+/* Pthread signal management APIs */
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief send a signal to a pthread
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_kill(pthread_t thread, int sig);
+
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief examine and change blocked signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_sigmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
+
 /**
  * @addtogroup SIGNAL_KERNEL
  * @{
@@ -474,6 +516,22 @@ int sigsuspend(FAR const sigset_t *sigmask);
  * @since TizenRT v1.0
  */
 int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
+
+/**
+ * @cond
+ * @internal
+ * @ingroup SIGNAL_KERNEL
+ * @brief wait for queued signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1
+ */
+int sigwait(FAR const sigset_t *set, FAR int *sig);
+/**
+ * @endcond
+ */
+
 /**
  * @ingroup SIGNAL_KERNEL
  * @brief wait for queued signals

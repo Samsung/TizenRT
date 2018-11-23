@@ -18,6 +18,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE				// for the usleep
+#include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>
@@ -190,6 +191,79 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 	return eh_result;
 }
 
+static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource, access_point_info_s *p_list, int list_cnt)
+{
+	things_representation_s *rep = NULL;
+
+	if (list_cnt == 0 || p_list == NULL) {
+		THINGS_LOG_E(TAG, "Scaned AP list is NULL ");
+		return OC_EH_ERROR;
+	}
+
+	if (target_resource->rep == NULL) {
+		rep = things_create_representation_inst(NULL);
+		target_resource->things_set_representation(target_resource, rep);
+	} else {
+		rep = target_resource->rep;
+	}
+	things_representation_s **child_rep = (things_representation_s **)things_malloc(list_cnt * sizeof(things_representation_s *));
+	access_point_info_s *wifi_scan_iter = p_list;
+	int iter;
+	for (iter = 0; iter < list_cnt; ++iter) {
+		THINGS_LOG_V(TAG, "e_ssid : %s", wifi_scan_iter->e_ssid);
+		THINGS_LOG_V(TAG, "signal_level : %s", wifi_scan_iter->signal_level);
+		THINGS_LOG_V(TAG, "bss_id : %s", wifi_scan_iter->bss_id);
+		child_rep[iter] = things_create_representation_inst(NULL);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MACADDR, wifi_scan_iter->bss_id);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_RSSI, wifi_scan_iter->signal_level);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SSID, wifi_scan_iter->e_ssid);
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+	rep->things_set_arrayvalue(rep, SEC_ATTRIBUTE_AP_ITEMS, list_cnt, child_rep);
+	for (iter = 0; iter < list_cnt; ++iter) {
+		/*! Changed by st_things for memory Leak fix
+		 */
+		things_release_representation_inst(child_rep[iter]);
+		child_rep[iter] = NULL;
+	}
+	things_free(child_rep);
+	child_rep = NULL;
+	return OC_EH_OK;
+}
+
+static OCEntityHandlerResult get_ap_scan_result(things_resource_s *target_resource)
+{
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	OCEntityHandlerResult eh_result = OC_EH_ERROR;
+	access_point_info_s *p_list = NULL;
+	int list_cnt = 0;
+	int result = 0;
+	result = things_get_ap_list(&p_list, &list_cnt);
+	if (result) {
+		if (list_cnt > 0) {
+			THINGS_LOG_V(TAG, "Get Access points list!!! %d ", list_cnt);
+			eh_result = convert_ap_infor(target_resource, p_list, list_cnt);
+		} else if (list_cnt == 0) {
+			THINGS_LOG_V(TAG, "'0' Access points!!!!");
+			eh_result = OC_EH_OK;
+		}
+	} else {
+		THINGS_LOG_E(TAG, "GET AP Searching List FUNC Failed!!!!");
+	}
+	if (p_list != NULL) {
+	// free p_list
+		access_point_info_s *p_list_curr;
+		access_point_info_s *p_list_next;
+		p_list_curr = p_list;
+		while (p_list_curr != NULL) {
+			p_list_next = p_list_curr->next;
+			things_free(p_list_curr);
+			p_list_curr = p_list_next;
+		}
+		p_list = NULL;
+	}
+	return eh_result;
+}
 /**
  * This functions will replace the get_ap_scan_result(~~)
  */
@@ -396,6 +470,9 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_get_data(target_resource);
 #endif
+	} else if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_ACCESSPOINTLIST) != NULL) {
+		// X. Get request for the Access point list
+		eh_result = get_ap_scan_result(target_resource);
 	} else {
 		if (g_handle_request_get_cb != NULL) {
 			int ret = g_handle_request_get_cb(target_resource);

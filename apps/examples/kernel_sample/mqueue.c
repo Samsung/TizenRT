@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -65,6 +66,9 @@
 #include <mqueue.h>
 #include <sched.h>
 #include <errno.h>
+#ifndef CONFIG_DISABLE_SIGNALS
+#include <signal.h>
+#endif
 
 #include "kernel_sample.h"
 

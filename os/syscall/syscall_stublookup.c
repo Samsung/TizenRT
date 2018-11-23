@@ -146,6 +146,7 @@ uintptr_t STUB_nanosleep(int nbr, uintptr_t parm1, uintptr_t parm2);
  * TinyAra configuration.
  */
 
+uintptr_t STUB_clock(int nbr);
 uintptr_t STUB_clock_getres(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_gettime(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_settime(int nbr, uintptr_t parm1, uintptr_t parm2);
@@ -256,6 +257,7 @@ uintptr_t STUB_pthread_getschedparam(int nbr, uintptr_t parm1,
 									 uintptr_t parm2, uintptr_t parm3);
 uintptr_t STUB_pthread_getspecific(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_join(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_pthread_tryjoin_np(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_key_create(int nbr, uintptr_t parm1,
 								  uintptr_t parm2);
 uintptr_t STUB_pthread_key_delete(int nbr, uintptr_t parm1);
@@ -265,6 +267,7 @@ uintptr_t STUB_pthread_mutex_init(int nbr, uintptr_t parm1,
 uintptr_t STUB_pthread_mutex_lock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_trylock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_unlock(int nbr, uintptr_t parm1);
+uintptr_t STUB_pthread_mutex_consistent(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_setcancelstate(int nbr, uintptr_t parm1,
 									  uintptr_t parm2);
 uintptr_t STUB_pthread_setschedparam(int nbr, uintptr_t parm1,

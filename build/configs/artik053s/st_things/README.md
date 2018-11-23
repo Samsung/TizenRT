@@ -2,7 +2,7 @@
  This can be used to test Smart Things Things SDK functionality.
 
 ## Enabled Feature
-### File system
+### File System
   MTD, ProcFS, ROMFS, SmartFS
 
 ### IoTivity

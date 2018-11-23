@@ -15,11 +15,13 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
 include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
-include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-ifeq ($(CONFIG_DDR),y)
+ifeq ($(CONFIG_BCM4390X_USE_EXTMEM),y)
 LDSCRIPT = flash-ddr.ld
 else
 LDSCRIPT = flash-sram.ld
@@ -31,13 +33,13 @@ ifeq ($(WINTOOL),y)
   DIRUNLINK = $(TOPDIR)/tools/unlink.sh
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
   ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
-  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
+  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
-  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../external/include
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -I $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 endif
 
@@ -67,7 +69,7 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 endif
 
 ARCHCPUFLAGS = -mcpu=cortex-r4
-ARCHCFLAGS = -Wall -Werror -fno-builtin -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHCFLAGS = -fno-builtin
 ARCHCXXFLAGS = -fno-builtin -fno-exceptions -fno-rtti
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
@@ -79,6 +81,9 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+ifeq ($(CONFIG_LIBCXX),y)
+CXXFLAGS += -DCONFIG_WCHAR_BUILTIN
+endif
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
@@ -92,26 +97,15 @@ ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
 
-LDFLAGS += --gc-sections
-
 HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
-ifeq ($(CONFIG_HOST_WINDOWS),y)
-  HOSTEXEEXT = .exe
-else
-  HOSTEXEEXT =
-endif
+define DOWNLOAD
+  $(TOPDIR)/../build/configs/cy4390x/cy4390x_download.sh $(1)
+endef
 
-ifeq ($(WINTOOL),y)
-  # Windows-native host tools
-  DIRLINK = $(TOPDIR)/tools/copydir.sh
-  DIRUNLINK = $(TOPDIR)/tools/unlink.sh
-  MKDEP = $(TOPDIR)/tools/mkwindeps.sh
-else
-  # Linux/Cygwin-native host tools
-  MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
-endif
-
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/cy4390x/cy4390x_make_bin.sh --bin $(1) --ext $(2)
+endef
