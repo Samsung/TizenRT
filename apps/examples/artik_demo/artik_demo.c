@@ -239,7 +239,7 @@ static int app_dhcp_main(void)
 		return -1;
 	}
 
-	ret = netlib_get_ipv4addr(NET_DEVNAME, &ip_check)
+	ret = netlib_get_ipv4addr(NET_DEVNAME, &ip_check);
 	if (ret != OK) {
 		return -1;
 	}
