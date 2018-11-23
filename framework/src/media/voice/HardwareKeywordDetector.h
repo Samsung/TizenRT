@@ -28,16 +28,18 @@ namespace voice {
 class HardwareKeywordDetector : public KeywordDetector
 {
 public:
-	HardwareKeywordDetector(int card, int device);
-
-public:
+	HardwareKeywordDetector(int normal_card, int normal_device, int sd_card, int sd_device);
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
 	bool startKeywordDetect(int timeout) override;
 
 private:
-	int mCard;
-	int mDevice;
+	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
+	int mNormalCard;
+	int mNormalDevice;
+	/* AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR card, device id */
+	int mSdCard;
+	int mSdDevice;
 };
 
 } // namespace voice
