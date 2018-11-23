@@ -67,6 +67,6 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	printf("Hello, Worlfd!!\n");
 	return 0;
 }
