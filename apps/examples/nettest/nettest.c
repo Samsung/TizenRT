@@ -187,9 +187,9 @@ static void show_usage(void)
 
 	printf("PACKET\n");
 	printf("\tThe number of packets to receive if the mode is server\n");
-	printf("\t\t(If you want to receive continousely then insert 0)\n");
+	printf("\t\t(If you want to receive continuosely then insert 0)\n");
 	printf("\tThe number of packets to send if the mode is client\n");
-	printf("\t\t(If you want to send continousely then insert 0)\n");
+	printf("\t\t(If you want to send continuosely then insert 0)\n");
 
 	printf("INTERVAL\n");
 	printf("\tSet the interval of the sent packet if mode is client(default 0)\n");
