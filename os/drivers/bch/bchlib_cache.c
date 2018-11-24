@@ -133,7 +133,7 @@ int bchlib_flushsector(FAR struct bchlib_s *bch)
 	ssize_t ret = OK;
 
 	/*
-	 * Check if the sector has been modified and is out of synch with the
+	 * Check if the sector has been modified and is out of sync with the
 	 * media.
 	 */
 	if (bch->dirty) {
