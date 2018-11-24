@@ -438,7 +438,7 @@ static int cx20921_start(FAR struct audio_lowerhalf_s *dev)
 	/* Finally set cx20921 to be running */
 	priv->running = true;
 	
-	/* Enqueue buffers (enqueueed before the start of cx20921) to lower layer */
+	/* Enqueue buffers (enqueued before the start of cx20921) to lower layer */
 	sq_entry_t *tmp = NULL;
 	sq_queue_t *q = &priv->pendq;
 	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
