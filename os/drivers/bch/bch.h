@@ -66,23 +66,23 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define bchlib_semgive(d)	sem_post(&(d)->sem)	/* To match bchlib_semtake */
-#define MAX_OPENCNT			(255)				/* Limit of uint8_t */
+#define bchlib_semgive(d)	sem_post(&(d)->sem)		/* To match bchlib_semtake */
+#define MAX_OPENCNT			(255)			/* Limit of uint8_t */
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 struct bchlib_s {
-	FAR struct inode *inode;	/* I-node of the block driver */
-	uint32_t sectsize;			/* The size of one sector on the device */
-	size_t nsectors;			/* Number of sectors supported by the device */
-	size_t sector;				/* The current sector in the buffer */
+	FAR struct inode *inode;			/* I-node of the block driver */
+	uint32_t sectsize;				/* The size of one sector on the device */
+	size_t nsectors;				/* Number of sectors supported by the device */
+	size_t sector;					/* The current sector in the buffer */
 	sem_t sem;					/* For atomic accesses to this structure */
-	uint8_t refs;				/* Number of references */
+	uint8_t refs;					/* Number of references */
 	bool dirty;					/* true: Data has been written to the buffer */
-	bool readonly;				/* true: Only read operations are supported */
-	bool unlinked;				/* true: The driver has been unlinked */
-	FAR uint8_t *buffer;		/* One sector buffer */
+	bool readonly;					/* true: Only read operations are supported */
+	bool unlinked;					/* true: The driver has been unlinked */
+	FAR uint8_t *buffer;				/* One sector buffer */
 
 #if defined(CONFIG_BCH_ENCRYPTION)
 	uint8_t key[CONFIG_BCH_ENCRYPTION_KEY_SIZE];	/* Encryption key */
