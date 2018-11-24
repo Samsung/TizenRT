@@ -877,7 +877,7 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 
 	priv->frames++;
 
-	/* The buffer belongs to to an upper level.  Just forward the event to
+	/* The buffer belongs to an upper level.  Just forward the event to
 	 * the next level up.
 	 */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
