@@ -25,7 +25,7 @@
  * in the article at: http://www.drdobbs.com/web-development/
  *    an-embeddable-lightweight-xml-rpc-server/184405364
  *
- *  Copyright (c) 2002 Cogito LLC.  All rights reserved.
+ *  Copyright (C) 2002 Cogito LLC.  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or
  *  without modification, is hereby granted without fee provided
