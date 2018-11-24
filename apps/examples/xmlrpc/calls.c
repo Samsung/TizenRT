@@ -22,7 +22,7 @@
  *   Author: Max Holtzberg <mh@uvc.de>
  *
  * Based on the embeddable lightweight XML-RPC server code discussed
- * in the article at: http://www.drdobbs.com/web-development/\
+ * in the article at: http://www.drdobbs.com/web-development/
  *    an-embeddable-lightweight-xml-rpc-server/184405364
  *
  *  Copyright (c) 2002 Cogito LLC.  All rights reserved.
