@@ -100,7 +100,7 @@ struct alc5658_dev_s {
 #endif						/* CONFIG_AUDIO_EXCLUDE_BALANCE */
 	uint16_t volume;			/* Current volume level {0..31} */
 	uint16_t gain;				/* In port gain */
-	uint8_t nchannels;			/* Numbe	r of channels (1 or 2) */
+	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */
 	volatile uint8_t inflight;		/* Number of audio buffers in-flight */
 #ifdef ALC5658_USE_FFLOCK_INT
