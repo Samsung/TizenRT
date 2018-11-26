@@ -327,6 +327,9 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 	case AUDIO_TYPE_PCM:
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
 		return true;
+	case AUDIO_TYPE_WAVE:
+		medvdbg("AUDIO_TYPE_WAVE does not need the decoder\n");
+		return true;
 	case AUDIO_TYPE_FLAC:
 	    /* To be supported */ 
 	default:
