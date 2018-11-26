@@ -207,6 +207,8 @@
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
+#define GET_BASE_HEAP_ADDR NULL
+
 #define REGION_START (size_t)regionx_start[0]
 #define REGION_SIZE  regionx_size[0]
 #define REGION_END (REGION_START + REGION_SIZE)
@@ -661,7 +663,9 @@ void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 void mm_is_sem_available(void *address);
 
-/* Functions to get heap information */
+/* Functions to get heap information.
+ * If address is GET_BASE_HEAP_ADDR, BASE_HEAP address will be returned.
+ */
 struct mm_heap_s *mm_get_heap_info(void *address);
 
 int mm_get_heapindex(void *mem);
