@@ -84,6 +84,10 @@ bool FileInputDataSource::open()
 				medvdbg("header parsing failed\n");
 				return false;
 			}
+			if (fseek(mFp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
+				medvdbg("file seek failed error\n");
+				return false;
+			}
 			setSampleRate(sampleRate);
 			setChannels(channel);
 			setPcmFormat(pcmFormat);

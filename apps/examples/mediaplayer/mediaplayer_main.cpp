@@ -43,7 +43,8 @@ static const int TEST_PCM = 0;
 static const int TEST_MP3 = 1;
 static const int TEST_AAC = 2;
 static const int TEST_OPUS = 3;
-static const int TEST_BUFFER = 4;
+static const int TEST_WAVE = 4;
+static const int TEST_BUFFER = 5;
 
 static const int TEST_COMMAND_NUM = 8;
 
@@ -108,6 +109,12 @@ bool MyMediaPlayer::init(int test)
 	case TEST_OPUS:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
+			return std::move(source);
+		};
+		break;
+	case TEST_WAVE:
+		makeSource = []() {
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/Audio.wav")));
 			return std::move(source);
 		};
 		break;
