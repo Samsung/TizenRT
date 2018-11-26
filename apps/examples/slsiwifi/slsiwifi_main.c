@@ -104,7 +104,7 @@ static struct mm_heap_s *g_user_heap;
 int g_memstat_total = 0;
 static int getMemUsage(void)
 {
-	g_user_heap = mm_get_heap_info();
+	g_user_heap = mm_get_heap_info(GET_BASE_HEAP_ADDR);
 	printf("\n\tCurrent memory usage (total): %d bytes\n", g_user_heap->total_alloc_size);
 	return g_user_heap->total_alloc_size;
 }
@@ -118,7 +118,7 @@ int getMemLeaks(void)
 		// situations where the the blocks are freed while
 		// exiting
 		//print heapinfo
-		heapinfo_parse(mm_get_heap_info(), HEAPINFO_TRACE);
+		heapinfo_parse(mm_get_heap_info(GET_BASE_HEAP_ADDR), HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 		printf(" ______________________________________________________________ \n");
 		printf("|                                                              |\n");
 		printf("| WARNING: %6.6d bytes leaked during this run                 |\n", result);
