@@ -39,6 +39,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_ST_THINGS_MSG_HANDLING),y)
 CSRCS += msghandling/sample_msghandling_things.c msghandling/sample_msghandling_user.c
 endif
+ifeq ($(CONFIG_EXAMPLES_ST_THINGS_TESTS),y)
+CSRCS += tests/sample_tests_things.c tests/sample_tests_user.c
+endif
 
 MAINSRC = st_things_sample_main.c
 
