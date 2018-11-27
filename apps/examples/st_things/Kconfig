@@ -23,12 +23,6 @@ config EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		This is a Light Sample.
 
-config EXAMPLES_ST_THINGS_TESTS
-        bool "TESTS"
-        select IOTBUS_GPIO
-        ---help---
-                This is a st_things tests
-
 config EXAMPLES_ST_THINGS_BLINK
 	bool "BLINK"
 	select IOTBUS_GPIO

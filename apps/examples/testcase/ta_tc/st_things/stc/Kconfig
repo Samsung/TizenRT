@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_ST_THINGS_STC
+	bool "ST_THINGS STC TestCase Example"
+        select ST_THINGS 
+        default n
+        ---help---
+                Enable the st_things TestCase example

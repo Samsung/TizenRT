@@ -137,6 +137,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_ITC),y)
 	$(Q) $(call REGISTER,arastorage_itc,itc_arastorage_main,TASH_EXECMD_ASYNC,100,4096)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_ST_THINGS_STC),y)
+	$(Q) $(call REGISTER,st_things_stc,stc_st_things_main,TASH_EXECMD_ASYNC,100,4096)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC),y)
 	$(Q) $(call REGISTER,audio_utc,utc_audio_main,TASH_EXECMD_ASYNC,100,2048)
 endif

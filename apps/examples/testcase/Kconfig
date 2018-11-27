@@ -37,6 +37,7 @@ source "$APPSDIR/examples/testcase/ta_tc/task_manager/itc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/eventloop/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/wifi_manager/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/wifi_manager/itc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/st_things/stc/Kconfig"
 source "$EXTERNALDIR/libcxx-test/Kconfig"
 endif #EXAMPLES_TESTCASE
 
