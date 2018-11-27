@@ -103,7 +103,7 @@ int cmd_rquit(SESSION handle, int argc, char **argv)
 		printf("quit failed: %d\n", errno);
 		return ERROR;
 	}
-	printf("Exitting...\n");
+	printf("Exiting...\n");
 	return OK;
 }
 
