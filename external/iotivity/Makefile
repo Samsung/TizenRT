@@ -62,7 +62,7 @@ clean:
 	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls)
 	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o)
 	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/.sconsign.dblite)
+	$(Q) $(call DELFILE, $(IOTIVITY_CONFIG_DIR)/iotivity_config.h)
 	$(call CLEAN)
 
 distclean:
-	$(Q) $(call DELFILE, $(IOTIVITY_CONFIG_DIR)/iotivity_config.h)
