@@ -199,12 +199,12 @@ int things_set_ap_connection(access_point_info_s *p_info)
 
 	THINGS_LOG_V(TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
-	// set auth type
-	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
+	// set sec type
+	if (strncmp(p_info->sec_type, "WEP", strlen("WEP")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
-	} else if (strncmp(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK")) == 0) {
+	} else if (strncmp(p_info->sec_type, "WPA-PSK", strlen("WPA-PSK")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_PSK;
-	} else if (strncmp(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK")) == 0) {
+	} else if (strncmp(p_info->sec_type, "WPA2-PSK", strlen("WPA2-PSK")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA2_PSK;
 	}
 	// set encryption crypto type
@@ -254,7 +254,7 @@ int things_get_ap_list(access_point_info_s** p_info, int* p_count)
 			snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->e_ssid);
 			snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bss_id);
 			snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->signal_level);
-			snprintf(pinfo->auth_type, MAX_TYPE_AUTH, "%s", wifi_scan_iter->auth_type);
+			snprintf(pinfo->sec_type, MAX_TYPE_SEC, "%s", wifi_scan_iter->sec_type);
 			snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", wifi_scan_iter->enc_type);
 			if (*p_info == NULL) {
 				*p_info = pinfo;
@@ -398,7 +398,7 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 			} else {
 				sec_type = "NONE";
 			}
-			snprintf(pinfo->auth_type, MAX_TYPE_AUTH, "%s", sec_type);
+			snprintf(pinfo->sec_type, MAX_TYPE_SEC, "%s", sec_type);
 
 			// Set encryption type
 			const char *enc_type;

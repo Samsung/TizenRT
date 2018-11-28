@@ -585,7 +585,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	memset(p_info->e_ssid, 0, WIFIMGR_SSID_LEN + 1);
 	memset(p_info->security_key, 0, WIFIMGR_PASSPHRASE_LEN + 1);
 	memset(p_info->enc_type, 0, MAX_TYPE_ENC + 1);
-	memset(p_info->auth_type, 0, MAX_TYPE_AUTH + 1);
+	memset(p_info->sec_type, 0, MAX_TYPE_SEC + 1);
 	memset(p_info->channel, 0, MAX_CHANNEL);
 	memset(p_info->bss_id, 0, WIFIMGR_MACADDR_STR_LEN + 1);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);
@@ -601,21 +601,21 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	if (event_data->authtype >= NONE_AUTH && event_data->authtype <= WPA2_PSK) {
 		switch (event_data->authtype) {
 		case WEP:
-			things_strncpy(p_info->auth_type, "WEP", strlen("WEP"));
+			things_strncpy(p_info->sec_type, "WEP", strlen("WEP"));
 			break;
 		case WPA_PSK:
-			things_strncpy(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK"));
+			things_strncpy(p_info->sec_type, "WPA-PSK", strlen("WPA-PSK"));
 			break;
 		case WPA2_PSK:
-			things_strncpy(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK"));
+			things_strncpy(p_info->sec_type, "WPA2-PSK", strlen("WPA2-PSK"));
 			break;
 		case NONE_AUTH:
 		default:
-			things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->sec_type, "NONE", strlen("NONE"));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->sec_type, "NONE", strlen("NONE"));
 	}
 
 	if (event_data->enctype >= NONE_ENC && event_data->enctype <= TKIP_AES) {
@@ -649,7 +649,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 
 	THINGS_LOG_D(TAG, "e_ssid : %s", p_info->e_ssid);
 	THINGS_LOG_D(TAG, "security_key : %s", p_info->security_key);
-	THINGS_LOG_D(TAG, "auth_type : %s", p_info->auth_type);
+	THINGS_LOG_D(TAG, "sec_type : %s", p_info->sec_type);
 	THINGS_LOG_D(TAG, "enc_type : %s", p_info->enc_type);
 	THINGS_LOG_D(TAG, "channel : %s", p_info->channel);
 	THINGS_LOG_D(TAG, "Copied ssid = %s", g_wifi_prov_data->ssid);
