@@ -821,6 +821,7 @@ CONFIG_WIFIMGR_STA_IFNAME="wl1"
 # Network utilities
 #
 CONFIG_NETUTILS_NETLIB=y
+CONFIG_NET_NETMON=y
 
 #
 # Audio Support
