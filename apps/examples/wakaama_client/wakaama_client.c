@@ -162,7 +162,7 @@ int wakaamaclient_main(int argc, char *argv[])
 
 	if (!g_wakaama_initialized) {
 		app_init_param();
-		printf("trying connect\n");
+		printf("trying connection\n");
 		if (dm_conn_wifi_connect(linkUpEvent, linkDownEvent) != DM_ERROR_NONE) {
 			return -1;
 		}
