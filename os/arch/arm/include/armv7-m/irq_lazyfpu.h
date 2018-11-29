@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/armv7-m/irq.h
+ * arch/arm/include/armv7-m/irq_lazyfpu.h
  *
  *   Copyright (C) 2009, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -186,7 +186,7 @@
 
 /* The total number of registers saved by software */
 
-#define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS + MPU_CONTEXT_REGS)
+#define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS)
 #define SW_XCPT_SIZE        (4 * SW_XCPT_REGS)
 
 /* On entry into an IRQ, the hardware automatically saves the following

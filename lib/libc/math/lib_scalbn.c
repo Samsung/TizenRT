@@ -46,7 +46,7 @@
 
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 
 #ifdef CONFIG_HAVE_DOUBLE
@@ -64,20 +64,20 @@ double scalbn(double x, int n)
 	double y = x;
 
 	if (n > 1023) {
-		y *= 0x1p1023;
+		y *= 0x1 p1023;
 		n -= 1023;
 		if (n > 1023) {
-			y *= 0x1p1023;
+			y *= 0x1 p1023;
 			n -= 1023;
 			if (n > 1023) {
 				n = 1023;
 			}
 		}
 	} else if (n < -1022) {
-		y *= 0x1p-1022;
+		y *= 0x1 p - 1022;
 		n += 1022;
 		if (n < -1022) {
-			y *= 0x1p-1022;
+			y *= 0x1 p - 1022;
 			n += 1022;
 			if (n < -1022) {
 				n = -1022;

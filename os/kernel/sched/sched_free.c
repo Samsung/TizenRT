@@ -59,6 +59,7 @@
 #include <queue.h>
 #include <assert.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
 #include <tinyara/wqueue.h>

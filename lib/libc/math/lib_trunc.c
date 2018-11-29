@@ -50,7 +50,7 @@
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -62,7 +62,9 @@ double trunc(double x)
 	union {
 		double f;
 		uint64_t i;
-	} u = { x };
+	} u = {
+		x
+	};
 	int e = (int)(u.i >> 52 & 0x7ff) - 0x3ff + 12;
 	uint64_t m;
 	volatile float __x;
@@ -82,7 +84,7 @@ double trunc(double x)
 
 	/* Force Evaluation */
 
-	__x = (x + 0x1p120f);
+	__x = (x + 0x1 p120f);
 	(void)__x;
 
 	u.i &= ~m;

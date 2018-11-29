@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/src/common/up_checkstack.c
  *
- *   Copyright (C) 2011, 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011, 2013, 2015-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,9 +59,12 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <sched.h>
+#include <assert.h>
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/tls.h>
+#include <tinyara/board.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"

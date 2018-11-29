@@ -59,6 +59,7 @@
 #include <sched.h>
 #include <debug.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "clock/clock.h"
@@ -127,9 +128,13 @@ void up_unblock_task(struct tcb_s *tcb)
 	if (sched_addreadytorun(tcb)) {
 		/* The currently active task has changed! We need to do
 		 * a context switch to the new task.
-		 *
-		 * Are we in an interrupt handler?
 		 */
+
+		/* Update scheduler parameters */
+
+		sched_suspend_scheduler(rtcb);
+
+		/* Are we in an interrupt handler? */
 
 		if (current_regs) {
 			/* Yes, then we have to do things differently.
@@ -144,10 +149,11 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			rtcb = this_task();
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Update scheduler parameters */
+
+			sched_resume_scheduler(rtcb);
+
 			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(rtcb);
-#endif
 
 			/* Then switch contexts */
 
@@ -157,15 +163,16 @@ void up_unblock_task(struct tcb_s *tcb)
 		/* No, then we will need to perform the user context switch */
 
 		else {
+			struct tcb_s *nexttcb = this_task();
+
+			/* Update scheduler parameters */
+
+			sched_resume_scheduler(nexttcb);
+
 			/* Switch context to the context of the task at the head of the
 			 * ready to run list.
 			 */
 
-			struct tcb_s *nexttcb = this_task();
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(nexttcb);
-#endif
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the

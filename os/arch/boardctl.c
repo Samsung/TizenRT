@@ -53,6 +53,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
 
 #include <sys/types.h>
@@ -95,6 +96,7 @@
  *   with the errno variable to indicate the nature of the failure.
  *
  ****************************************************************************/
+
 int boardctl(unsigned int cmd, uintptr_t arg)
 {
 	int ret;
@@ -121,49 +123,73 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 		ret = board_app_initialize();
 		break;
 
+#ifdef CONFIG_BOARDCTL_FINALINIT
+		/* CMD:           BOARDIOC_FINALINIT
+		 * DESCRIPTION:   Perform one-time application initialization after
+		 *                start-up script.
+		 * ARG:           The argument has no meaning
+		 * CONFIGURATION: CONFIG_BOARDCTL_FINALINIT
+		 * DEPENDENCIES:  Board logic must provide board_app_finalinitialize
+		 */
+
+	case BOARDIOC_FINALINIT:
+		ret = board_app_finalinitialize(arg);
+		break;
+#endif
+
 #ifdef CONFIG_BOARDCTL_POWEROFF
-	/*
-	 * CMD:           BOARDIOC_POWEROFF
-	 * DESCRIPTION:   Power off the board
-	 * ARG:           Integer value providing power off status information
-	 * CONFIGURATION: CONFIG_BOARDCTL_POWEROFF
-	 * DEPENDENCIES:  Board logic must provide board_power_off
-	 */
+		/*
+		 * CMD:           BOARDIOC_POWEROFF
+		 * DESCRIPTION:   Power off the board
+		 * ARG:           Integer value providing power off status information
+		 * CONFIGURATION: CONFIG_BOARDCTL_POWEROFF
+		 * DEPENDENCIES:  Board logic must provide board_power_off
+		 */
 	case BOARDIOC_POWEROFF:
 		ret = board_power_off((int)arg);
 		break;
 #endif
 
 #ifdef CONFIG_BOARDCTL_RESET
-	/*
-	 * CMD:           BOARDIOC_RESET
-	 * DESCRIPTION:   Reset the board
-	 * ARG:           Integer value providing power off status information
-	 * CONFIGURATION: CONFIG_BOARDCTL_RESET
-	 * DEPENDENCIES:  Board logic must provide board_reset
-	 */
+		/*
+		 * CMD:           BOARDIOC_RESET
+		 * DESCRIPTION:   Reset the board
+		 * ARG:           Integer value providing power off status information
+		 * CONFIGURATION: CONFIG_BOARDCTL_RESET
+		 * DEPENDENCIES:  Board logic must provide board_reset
+		 */
 	case BOARDIOC_RESET:
 		ret = board_reset((int)arg);
 		break;
 #endif
 
 #ifdef CONFIG_BOARDCTL_UNIQUEID
-	/*
-	 * CMD:           BOARDIOC_UNIQUEID
-	 * DESCRIPTION:   Return a unique ID associated with the board (such
-	 *                as a serial number or a MAC address).
-	 * ARG:           A writable array of size CONFIG_BOARDCTL_UNIQUEID_SIZE
-	 *                in which to receive the board unique ID.
-	 * DEPENDENCIES:  Board logic must provide the board_uniqueid()
-	 *                interface.
-	 */
+		/*
+		 * CMD:           BOARDIOC_UNIQUEID
+		 * DESCRIPTION:   Return a unique ID associated with the board (such
+		 *                as a serial number or a MAC address).
+		 * ARG:           A writable array of size CONFIG_BOARDCTL_UNIQUEID_SIZE
+		 *                in which to receive the board unique ID.
+		 * DEPENDENCIES:  Board logic must provide the board_uniqueid()
+		 *                interface.
+		 */
 	case BOARDIOC_UNIQUEID:
 		ret = board_uniqueid((FAR uint8_t *)arg);
 		break;
 #endif
 
 	default:
-		ret = -ENOTTY;
+#ifdef CONFIG_BOARDCTL_IOCTL
+			/* Boards may also select CONFIG_BOARDCTL_IOCTL=y to enable board-
+			 * specific commands.  In this case, all commands not recognized
+			 * by boardctl() will be forwarded to the board-provided board_ioctl()
+			 * function.
+			 */
+
+			ret = board_ioctl(cmd, arg);
+#else
+			ret = -ENOTTY;
+#endif
 		break;
 	}
 

@@ -112,6 +112,9 @@
  * [a-z]llvdbg() -- Identical to [a-z]lldbg() except that it also requires that
  *    CONFIG_DEBUG_VERBOSE be defined.  This is intended for general debug
  *    output that you would normally want to suppress.
+ *
+ * _alert() - is a special, high-priority, unconditional version that is really
+ *    intended only for crash error reporting.
  */
 
 #ifdef CONFIG_HAVE_FUNCTIONNAME
@@ -135,6 +138,34 @@
 Once LOGM is approved, each module should have its own index
 */
 #define LOGM_IDX (0)
+
+#ifdef CONFIG_DEBUG_ALERT
+#define _alert(format, ...) \
+   __arch_syslog(LOG_EMERG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#else /* CONFIG_DEBUG_ERROR */
+#define  _alert(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_ERROR
+#define  _err(format, ...) \
+   __arch_syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#else
+#define  _err(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_WARN
+#define _warn(format, ...) \
+   __arch_syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#else
+#define _warn(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_INFO
+#define _info(format, ...) \
+   __arch_syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#else
+#define _info(x...)
+#endif
 
 #ifdef CONFIG_DEBUG_ERROR
 #ifdef CONFIG_LOGM

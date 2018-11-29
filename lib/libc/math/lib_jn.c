@@ -81,7 +81,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -276,7 +276,7 @@ double jn(int n, double x)
 					b = b * (2.0 * i) / x - a;
 					a = temp;
 					/* scale b to avoid spurious overflow */
-					if (b > 0x1p500) {
+					if (b > 0x1 p500) {
 						a /= b;
 						t /= b;
 						b = 1.0;

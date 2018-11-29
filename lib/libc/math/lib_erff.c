@@ -58,7 +58,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -87,11 +87,11 @@
 
 float erff(float x)
 {
-  float t;
-  float z;
+	float t;
+	float z;
 
-  z = fabsf(x);
-  t = 1.0F / (1.0F + P * z);
-  t = 1.0F - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * expf(-z * z);
-  return copysignf(t, x);
+	z = fabsf(x);
+	t = 1.0F / (1.0F + P * z);
+	t = 1.0F - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * expf(-z * z);
+	return copysignf(t, x);
 }

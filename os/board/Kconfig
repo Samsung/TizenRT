@@ -55,6 +55,17 @@ config ARCH_BOARD_CY4390x
 	---help---
 		Cypress 4390x IoT wifi MCU
 
+config ARCH_BOARD_IMXRT1050_EVK
+	bool "NXP i.MX RT 1050 EVK"
+	depends on ARCH_CHIP_MIMXRT1052DVL6A
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		This is the board configuration for the port of TinyARA to the NXP i.MXRT
+		evaluation kit, MIMXRT1050-EVKB.  This board features the MIMXRT1052DVL6A MCU.
+
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -67,6 +78,7 @@ config ARCH_BOARD
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
 	default "cy4390x"            if ARCH_BOARD_CY4390x
+	default "imxrt1050-evk"            if ARCH_BOARD_IMXRT1050_EVK
 
 comment "Common Board Options"
 
@@ -208,4 +220,7 @@ source board/lm3s6965-ek/Kconfig
 endif
 if ARCH_BOARD_SIDK_S5JT200
 source board/sidk_s5jt200/Kconfig
+endif
+if ARCH_BOARD_IMXRT1050_EVK
+source board/imxrt1050-evk/Kconfig
 endif

@@ -146,13 +146,13 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 		/* Use lseek to get the current file position */
 
 		startpos = lseek(infd, 0, SEEK_CUR);
-		if (startpos == (off_t)-1) {
+		if (startpos == (off_t) - 1) {
 			return ERROR;
 		}
 
 		/* Use lseek again to set the new file position */
 
-		if (lseek(infd, *offset, SEEK_SET) == (off_t)-1) {
+		if (lseek(infd, *offset, SEEK_SET) == (off_t) - 1) {
 			return ERROR;
 		}
 	}
@@ -274,7 +274,7 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 		/* Use lseek to get the current file position */
 
 		off_t curpos = lseek(infd, 0, SEEK_CUR);
-		if (curpos == (off_t)-1) {
+		if (curpos == (off_t) - 1) {
 			return ERROR;
 		}
 
@@ -284,7 +284,7 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 
 		/* Use lseek again to restore the original file position */
 
-		if (lseek(infd, startpos, SEEK_SET) == (off_t)-1) {
+		if (lseek(infd, startpos, SEEK_SET) == (off_t) - 1) {
 			return ERROR;
 		}
 	}

@@ -397,6 +397,177 @@ config ARCH_STDARG_H
 
 endmenu # Customize Header Files
 
+menu "Debug Options"
+
+config DEBUG_ALERT
+	bool
+	default n
+
+config DEBUG_FEATURES
+	bool "Enable Debug Features"
+	default n
+	select DEBUG_ALERT
+	---help---
+		Enables built-in debug features.  Selecting this option will (1) Enable
+		debug assertions in the code, (2) enable extended parameter testing in
+		many functions, and (3) enable support for debug output to the SYSLOG.
+		Note that enabling this option by itself does not produce debug output.
+		Debug output must also be selected on a subsystem-by-subsystem basis.
+
+if DEBUG_FEATURES
+
+comment "Debug SYSLOG Output Controls"
+
+config DEBUG_ERROR
+	bool "Enable Error Output"
+	default n
+	---help---
+		Enables output from [a-z]err() statements.  Errors are significant system
+		exceptions that require immediate attention.
+
+config DEBUG_WARN
+	bool "Enable Warnings Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enables output from [a-z]warn() statements.  Warnings are considered to
+		be various unexpected conditions, potential errors or errors that will
+		not have serious consequences.
+
+config DEBUG_INFO
+	bool "Enable Informational Debug Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enables verbose "informational" debug output.  If you enable
+		CONFIG_DEBUG_INFO, then very chatty (and often annoying) output
+		will be generated.
+
+config DEBUG_ASSERTIONS
+	bool "Enable Debug Assertions"
+	default n
+	---help---
+		Enables the DEBUGASSERT() macro.  When CONFIG_DEBUG_ASSERTIONS is
+		defined, DEBUGASSERT() will cause the system to halt if the
+		assertion fails.  If CONFIG_DEBUG_ASSERTIONS is not defined
+		DEBUGASSERT() compiled out of the system.  In general, you would
+		set CONFIG_DEBUG_ASSERTIONS=y during debug, but disable the
+		assertions on a final, buckled up system.
+
+config DEBUG_LIB
+	bool "C Library Debug Features"
+	default n
+	---help---
+		Enable C library debug features.
+
+if DEBUG_LIB
+
+config DEBUG_LIB_ERROR
+	bool "C Library Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable C library error output to SYSLOG.
+
+config DEBUG_LIB_WARN
+	bool "C Library Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable C library warning output to SYSLOG.
+
+config DEBUG_LIB_INFO
+	bool "C Library Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable C library informational output to SYSLOG.
+
+endif # DEBUG_LIB
+
+config DEBUG_SHM
+	bool "Shared Memory Debug Output"
+	default n
+	depends on MM_SHM
+	---help---
+		Enable shared memory management debug SYSLOG output (disabled by default)
+
+config DEBUG_SYSCALL
+	bool "SYSCALL Debug Features"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable very low level features related to system calls.  If SYSCAL
+		output is enabled, this gives you basically a poor man's version of
+		strace.
+
+if DEBUG_SYSCALL
+
+config DEBUG_SYSCALL_ERROR
+	bool "SYSCALL Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable OS SYSCALL error output to SYSLOG.
+
+config DEBUG_SYSCALL_WARN
+	bool "SYSCALL Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable OS SYSCALL warning output to SYSLOG.
+
+config DEBUG_SYSCALL_INFO
+	bool "SYSCALL Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable OS SYSCALL informational output to SYSLOG.
+
+endif # DEBUG_SYSCALL
+
+config DEBUG_IRQ
+	bool "Interrupt Controller Debug Features"
+	default n
+	---help---
+		Enable interrupt controller debug features.
+
+		Some (but not all) architectures support debug output to verify
+		interrupt controller logic.  If supported, then option will enable
+		that output.  This may interfere with normal operations!  You
+		should *not* enable interrupt controller debug unless you suspect
+		that here is a problem with that logic.  On some platforms, this
+		option may even cause crashes! Use with care!
+
+if DEBUG_IRQ
+
+config DEBUG_IRQ_ERROR
+	bool "Interrupt Controller Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable interrupt controller error output to SYSLOG.
+
+config DEBUG_IRQ_WARN
+	bool "Interrupt Controller Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable interrupt controller warning output to SYSLOG.
+
+config DEBUG_IRQ_INFO
+	bool "Interrupt Controller Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable interrupt controller informational output to SYSLOG.
+
+endif # DEBUG_IRQ
+
+endif # DEBUG_FEATURES
+
+endmenu # Debug Options
+
 config ARCH_HAVE_CUSTOMOPT
 	bool
 	default n

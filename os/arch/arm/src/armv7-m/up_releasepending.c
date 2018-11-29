@@ -59,6 +59,7 @@
 #include <sched.h>
 #include <debug.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"
@@ -108,6 +109,12 @@ void up_release_pending(void)
 		 * contexts.  First check if we are operating in interrupt context.
 		 */
 
+		/* Update scheduler parameters */
+
+		sched_suspend_scheduler(rtcb);
+
+		/* Are we operating in interrupt context? */
+
 		if (current_regs) {
 			/* Yes, then we have to do things differently. Just copy the
 			 * current_regs into the OLD rtcb.
@@ -122,27 +129,28 @@ void up_release_pending(void)
 			rtcb = this_task();
 			sllvdbg("New Active Task TCB=%p\n", rtcb);
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(rtcb);
-#endif
+
+			/* Update scheduler parameters */
+
+			sched_resume_scheduler(rtcb);
+
 			/* Then switch contexts */
 
 			up_restorestate(rtcb->xcp.regs);
-		}
+		} else {
+			/* No, then we will need to perform the user context switch */
 
-		/* No, then we will need to perform the user context switch */
+			struct tcb_s *nexttcb = this_task();
 
-		else {
+			/* Update scheduler parameters */
+
+			sched_resume_scheduler(nexttcb);
+
 			/* Switch context to the context of the task at the head of the
 			 * ready to run list.
 			 */
 
-			struct tcb_s *nexttcb = this_task();
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(nexttcb);
-#endif
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the

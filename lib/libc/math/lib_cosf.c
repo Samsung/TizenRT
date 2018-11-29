@@ -46,7 +46,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -54,5 +54,5 @@
 
 float cosf(float x)
 {
-	return sinf(x + M_PI_2);
+	return sinf(x + M_PI_2_F);
 }

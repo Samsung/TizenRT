@@ -102,14 +102,14 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
 }
 
 /****************************************************************************
- * Function:  up_timer_initialize
+ * Function:  arm_timer_initialize
  *
  * Description:
  *   This function is called during start-up to initialize
  *   the timer interrupt.
  *
  ****************************************************************************/
-void up_timer_initialize(void)
+void arm_timer_initialize(void)
 {
 	/* OSC_CON[16] should be set to 1, so that RTC uses XRTCXTO as srcclk */
 	modifyreg32(0x800A0554, 0x0, 1 << 16);

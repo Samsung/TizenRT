@@ -59,6 +59,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/board.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/syslog/ramlog.h>
 #include <tinyara/syslog/syslog_console.h>
@@ -131,6 +132,8 @@ static inline void up_color_intstack(void)
 #define up_color_intstack()
 #endif
 
+# 
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -197,7 +200,7 @@ void up_initialize(void)
 
 #if !defined(CONFIG_SUPPRESS_INTERRUPTS) && !defined(CONFIG_SUPPRESS_TIMER_INTS) && \
 	!defined(CONFIG_SYSTEMTICK_EXTCLK)
-	up_timer_initialize();
+	arm_timer_initialize();
 #endif
 
 	/* Register devices */
@@ -268,5 +271,9 @@ void up_initialize(void)
 	/* Initialize the L2 cache if present and selected */
 
 	up_l2ccinitialize();
+#ifdef CONFIG_ARCH_LEDS
+	board_autoled_on(LED_IRQSENABLED);
+#else
 	board_led_on(LED_IRQSENABLED);
+#endif
 }

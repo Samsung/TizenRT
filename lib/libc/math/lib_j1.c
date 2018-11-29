@@ -101,7 +101,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <sys/types.h>
 
 #include "libm.h"
@@ -115,7 +115,7 @@ static double pone(double);
 static double qone(double);
 
 static const double invsqrtpi = 5.64189583547756279280e-01;	/* 0x3FE20DD7, 0x50429B6D */
-static const double	tpi = 6.36619772367581382433e-01;	/* 0x3FE45F30, 0x6DC9C883 */
+static const double tpi = 6.36619772367581382433e-01;	/* 0x3FE45F30, 0x6DC9C883 */
 
 /************************************************************************
  * Private Function

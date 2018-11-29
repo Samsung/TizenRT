@@ -44,7 +44,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -57,7 +57,9 @@ float nexttowardf(float x, long double y)
 	union {
 		float f;
 		uint32_t i;
-	} ux = { x };
+	} ux = {
+		x
+	};
 	uint32_t e;
 
 	if (isnan(x) || isnan(y)) {

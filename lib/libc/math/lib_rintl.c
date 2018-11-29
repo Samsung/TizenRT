@@ -62,7 +62,7 @@
 
 #include <sys/types.h>
 #include <stdlib.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************
  * Definitions
@@ -119,7 +119,7 @@ long double rintl(long double x)
 	 * |rint(x)-x|=1/2, then rint(x) is even.
 	 */
 
-	llinteger = (int64_t)x;
+	llinteger = (int64_t) x;
 	fremainder = x - (long double)llinteger;
 
 	if (x < 0.0) {

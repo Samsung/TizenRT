@@ -51,7 +51,7 @@
 
 #include <stdint.h>
 #include <float.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -85,7 +85,7 @@ long double truncl(long double x)
 	if (e <= 0x3fff - 1) {
 		/* Force Eval */
 
-		__x = (x + 0x1p120f);
+		__x = (x + 0x1 p120f);
 		(void)__x;
 		return x * 0;
 	}

@@ -54,9 +54,10 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -65,6 +66,18 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double atanh(double x)
 {
-	return 0.5 * log((1 + x) / (1 - x));
+	double y;
+
+	if (fabs(x) < 1E-5) {
+		double z = x * x;
+
+		/* x + 1/3 * x^3 + 1/5 * x^5 + 1/7 * x^7 + ... */
+
+		y = x * (1 + z / 3.0);
+	} else {
+		y = log((1 + x) / (1 - x)) / 2.0;
+	}
+
+	return y;
 }
 #endif

@@ -45,7 +45,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include "libm.h"
 
 /************************************************************************
@@ -61,7 +61,9 @@ long double remquol(long double x, long double y, int *quo)
 #elif (LDBL_MANT_DIG == 64 || LDBL_MANT_DIG == 113) && LDBL_MAX_EXP == 16384
 long double remquol(long double x, long double y, int *quo)
 {
-	union ldshape ux = { x }, uy = { y };
+	union ldshape ux = { x }, uy = {
+		y
+	};
 	int ex = ux.i.se & 0x7fff;
 	int ey = uy.i.se & 0x7fff;
 	int sx = ux.i.se >> 15;
@@ -79,12 +81,12 @@ long double remquol(long double x, long double y, int *quo)
 	/* normalize x and y */
 	if (!ex) {
 		ux.i.se = ex;
-		ux.f *= 0x1p120f;
+		ux.f *= 0x1 p120f;
 		ex = ux.i.se - 120;
 	}
 	if (!ey) {
 		uy.i.se = ey;
-		uy.f *= 0x1p120f;
+		uy.f *= 0x1 p120f;
 		ey = uy.i.se - 120;
 	}
 
@@ -166,7 +168,7 @@ long double remquol(long double x, long double y, int *quo)
 	/* scale result and decide between |x| and |x|-|y| */
 	if (ex <= 0) {
 		ux.i.se = ex + 120;
-		ux.f *= 0x1p-120f;
+		ux.f *= 0x1 p - 120f;
 	} else {
 		ux.i.se = ex;
 	}

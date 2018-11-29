@@ -46,8 +46,8 @@
 
 #include <tinyara/compiler.h>
 
-#include <math.h>
-#include <float.h>
+#include <tinyara/lib/math.h>
+#include <tinyara/lib/float.h>
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 

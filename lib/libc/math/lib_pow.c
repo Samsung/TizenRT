@@ -48,7 +48,7 @@
 
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 
 static union {
@@ -78,9 +78,9 @@ double pow(double b, double e)
 			return NAN;
 		} else {
 			if (e == int_part) {
-				if ((int64_t)e % 2) {
+				if ((int64_t) e % 2) {
 					zero.dbl = b;
-					if (zero.bit != (uint64_t)0x0) {
+					if (zero.bit != (uint64_t) 0x0) {
 						return -INFINITY;
 					}
 				}
@@ -89,7 +89,7 @@ double pow(double b, double e)
 		}
 	} else {
 		if (e == int_part) {
-			if ((int64_t)e % 2) {
+			if ((int64_t) e % 2) {
 				return -exp(e * log(-b));
 			}
 			return exp(e * log(-b));

@@ -48,7 +48,7 @@
  ************************************************************************/
 
 #include <stdint.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -59,7 +59,9 @@ float truncf(float x)
 	union {
 		float f;
 		uint32_t i;
-	} u = { x };
+	} u = {
+		x
+	};
 	int e = (int)(u.i >> 23 & 0xff) - 0x7f + 9;
 	uint32_t m;
 	volatile float __x;
@@ -79,7 +81,7 @@ float truncf(float x)
 
 	/* Force Eval */
 
-	__x = (x + 0x1p120f);
+	__x = (x + 0x1 p120f);
 	(void)__x;
 
 	u.i &= ~m;

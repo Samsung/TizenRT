@@ -46,10 +46,11 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <sys/types.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "lib_internal.h"
 
@@ -104,7 +105,7 @@ long double expl(long double x)
 
 	/* Extract integer component */
 
-	int_part = (size_t)x;
+	int_part = (size_t) x;
 
 	/* Set x to fractional component */
 

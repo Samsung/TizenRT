@@ -46,7 +46,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -57,8 +57,8 @@ float ceilf(float x)
 	float x1 = x;
 
 	modff(x, &x);
-	if (x1 > 0.0 && fabsf(x1 - x) > 0.0) {
-		x += 1.0;
+	if (x1 > 0.0F && fabsf(x1 - x) > 0.0F) {
+		x += 1.0F;
 	}
 
 	return x;

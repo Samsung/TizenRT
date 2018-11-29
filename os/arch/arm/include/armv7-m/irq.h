@@ -66,12 +66,13 @@
 #include <tinyara/irq.h>
 #ifndef __ASSEMBLY__
 #include <tinyara/compiler.h>
+#include <arch/chip/chip.h>
 #include <stdint.h>
 #endif
 
 /* Included implementation-dependent register save structure layouts */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifndef CONFIG_ARMV7M_LAZYFPU
 #include <arch/armv7-m/irq_cmnvector.h>
 #else
 #include <arch/armv7-m/irq_lazyfpu.h>
@@ -197,27 +198,29 @@ static inline uint8_t getprimask(void) inline_function;
 static inline uint8_t getprimask(void)
 {
 	uint32_t primask;
-	__asm__ __volatile__
-	(
-		"\tmrs  %0, primask\n"
-		: "=r"(primask)
-		:
-		: "memory"
-	);
+	__asm__ __volatile__("\tmrs  %0, primask\n":"=r"(primask)
+						 ::"memory");
 
-	return (uint8_t)primask;
+	return (uint8_t) primask;
 }
 
 static inline void setprimask(uint32_t primask) inline_function;
 static inline void setprimask(uint32_t primask)
 {
-	__asm__ __volatile__
-	(
-		"\tmsr primask, %0\n"
-		:
-		: "r"(primask)
-		: "memory"
-	);
+	__asm__ __volatile__("\tmsr primask, %0\n"::"r"(primask)
+						 :"memory");
+}
+
+static inline void cpsie(void) inline_function;
+static inline void cpsie(void)
+{
+	__asm__ __volatile__("\tcpsie  i\n");
+}
+
+static inline void cpsid(void) inline_function;
+static inline void cpsid(void)
+{
+	__asm__ __volatile__("\tcpsid  i\n");
 }
 
 /* Get/set the BASEPRI register.  The BASEPRI register defines the minimum
@@ -231,28 +234,48 @@ static inline uint8_t getbasepri(void)
 {
 	uint32_t basepri;
 
-	__asm__ __volatile__
-	(
-		"\tmrs  %0, basepri\n"
-		: "=r"(basepri)
-		:
-		: "memory"
-	);
+	__asm__ __volatile__("\tmrs  %0, basepri\n":"=r"(basepri)
+						 ::"memory");
 
-	return (uint8_t)basepri;
+	return (uint8_t) basepri;
 }
 
 static inline void setbasepri(uint32_t basepri) inline_function;
 static inline void setbasepri(uint32_t basepri)
 {
-	__asm__ __volatile__
-	(
-		"\tmsr basepri, %0\n"
-		:
-		: "r"(basepri)
-		: "memory"
-	);
+	__asm__ __volatile__("\tmsr basepri, %0\n"::"r"(basepri)
+						 :"memory");
 }
+
+#ifdef CONFIG_ARMV7M_BASEPRI_WAR	/* Cortex-M7 r0p1 Errata 837070 Workaround */
+/* Set the BASEPRI register (possibly increasing the priority).
+ *
+ * This may be retaining or raising priority.  Cortex-M7 r0p1 Errata
+ * 837070 Workaround may be required if we are raising the priority.
+ */
+
+static inline void raisebasepri(uint32_t basepri) inline_function;
+static inline void raisebasepri(uint32_t basepri)
+{
+	register uint32_t primask;
+
+	/* 1. Retain the previous value of the PRIMASK register,
+	 * 2  Disable all interrupts via the PRIMASK register.  NOTE:  They
+	 *    could possibly already be disabled.
+	 * 3. Set the BASEPRI register as requested (possibly increasing the
+	 *    priority)
+	 * 4. Restore the original value of the PRIMASK register, probably re-
+	 *    enabling interrupts.  This avoids the possibly undesirable side-
+	 *    effect of unconditionally re-enabling interrupts.
+	 */
+
+	__asm__ __volatile__("\tmrs   %0, primask\n" "\tcpsid i\n" "\tmsr   basepri, %1\n" "\tmsr   primask, %0\n":"+r"(primask)
+						 :"r"(basepri)
+						 :"memory");
+}
+#else
+#define raisebasepri(b) setbasepri(b);
+#endif
 
 /* Disable IRQs */
 
@@ -272,10 +295,11 @@ static inline irqstate_t irqsave(void) inline_function;
 static inline irqstate_t irqsave(void)
 {
 #ifdef CONFIG_ARMV7M_USEBASEPRI
+	/* Probably raising priority */
 
 	uint8_t basepri = getbasepri();
 	setbasepri(NVIC_SYSH_DISABLE_PRIORITY);
-	return (irqstate_t)basepri;
+	return (irqstate_t) basepri;
 
 #else
 
@@ -285,14 +309,8 @@ static inline irqstate_t irqsave(void)
 	 * bit 0 of the primask register to disable interrupts
 	 */
 
-	__asm__ __volatile__
-	(
-		"\tmrs    %0, primask\n"
-		"\tcpsid  i\n"
-		: "=r"(primask)
-		:
-		: "memory"
-	);
+	__asm__ __volatile__("\tmrs    %0, primask\n" "\tcpsid  i\n":"=r"(primask)
+						 ::"memory");
 
 	return primask;
 #endif
@@ -303,7 +321,9 @@ static inline irqstate_t irqsave(void)
 static inline void irqenable(void) inline_function;
 static inline void irqenable(void)
 {
-	setbasepri(0);
+	/* In this case, we are always retaining or lowering the priority value */
+
+	setbasepri(NVIC_SYSH_PRIORITY_MIN);
 	__asm__ __volatile__("\tcpsie  i\n");
 }
 
@@ -313,22 +333,17 @@ static inline void irqrestore(irqstate_t flags) inline_function;
 static inline void irqrestore(irqstate_t flags)
 {
 #ifdef CONFIG_ARMV7M_USEBASEPRI
-	setbasepri((uint32_t)flags);
+	/* In this case, we are always retaining or lowering the priority value */
+
+	setbasepri((uint32_t) flags);
+
 #else
 	/* If bit 0 of the primask is 0, then we need to restore
 	 * interrupts.
 	 */
 
-	__asm__ __volatile__
-	(
-		"\ttst    %0, #1\n"
-		"\tbne.n  1f\n"
-		"\tcpsie  i\n"
-		"1:\n"
-		:
-		: "r"(flags)
-		: "memory"
-	);
+	__asm__ __volatile__("\ttst    %0, #1\n" "\tbne.n  1f\n" "\tcpsie  i\n" "1:\n"::"r"(flags)
+						 :"memory");
 #endif
 }
 
@@ -338,13 +353,8 @@ static inline uint32_t getipsr(void) inline_function;
 static inline uint32_t getipsr(void)
 {
 	uint32_t ipsr;
-	__asm__ __volatile__
-	(
-		"\tmrs  %0, ipsr\n"
-		: "=r"(ipsr)
-		:
-		: "memory"
-	);
+	__asm__ __volatile__("\tmrs  %0, ipsr\n":"=r"(ipsr)
+						 ::"memory");
 
 	return ipsr;
 }
@@ -352,13 +362,8 @@ static inline uint32_t getipsr(void)
 static inline void setipsr(uint32_t ipsr) inline_function;
 static inline void setipsr(uint32_t ipsr)
 {
-	__asm__ __volatile__
-	(
-		"\tmsr ipsr, %0\n"
-		:
-		: "r"(ipsr)
-		: "memory"
-	);
+	__asm__ __volatile__("\tmsr ipsr, %0\n"::"r"(ipsr)
+						 :"memory");
 }
 
 /* Get/set CONTROL */
@@ -367,13 +372,8 @@ static inline uint32_t getcontrol(void) inline_function;
 static inline uint32_t getcontrol(void)
 {
 	uint32_t control;
-	__asm__ __volatile__
-	(
-		"\tmrs  %0, control\n"
-		: "=r"(control)
-		:
-		: "memory"
-	);
+	__asm__ __volatile__("\tmrs  %0, control\n":"=r"(control)
+						 ::"memory");
 
 	return control;
 }
@@ -381,13 +381,8 @@ static inline uint32_t getcontrol(void)
 static inline void setcontrol(uint32_t control) inline_function;
 static inline void setcontrol(uint32_t control)
 {
-	__asm__ __volatile__
-	(
-		"\tmsr control, %0\n"
-		:
-		: "r"(control)
-		: "memory"
-	);
+	__asm__ __volatile__("\tmsr control, %0\n"::"r"(control)
+						 :"memory");
 }
 
 #endif							/* __ASSEMBLY__ */

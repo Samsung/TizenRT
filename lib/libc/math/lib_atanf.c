@@ -46,7 +46,9 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /************************************************************************
  * Public Functions
@@ -54,5 +56,5 @@
 
 float atanf(float x)
 {
-	return asinf(x / sqrtf(x * x + 1));
+	return asinf(x / sqrtf(x * x + 1.0F));
 }

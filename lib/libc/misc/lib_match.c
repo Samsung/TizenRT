@@ -187,11 +187,11 @@ static int match_one(const char *pattern, int patlen, const char *string)
 
 int match(const char *pattern, const char *string)
 {
-	const char *or;
+	const char * or;
 
 	for (;;) {
 		or = strchr(pattern, '|');
-		if (or == (char *)0) {
+		if ( or == (char *)0) {
 			return match_one(pattern, strlen(pattern), string);
 		}
 

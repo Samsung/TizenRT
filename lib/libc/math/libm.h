@@ -109,7 +109,6 @@ union ldshape {
 		}                                         \
 	} while (0)
 
-
 /* Get two 32 bit ints from a double.  */
 #define EXTRACT_WORDS(hi, lo, d)    \
 	do {                            \

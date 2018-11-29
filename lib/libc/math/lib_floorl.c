@@ -46,9 +46,10 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -57,11 +58,26 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double floorl(long double x)
 {
-	modfl(x, &x);
-	if (x < 0.0) {
-		x -= 1.0;
+	long double modx;
+
+	/* modf() will return the integer part of X.  The return value of floor
+	 * differs for non-integer, negative values.
+	 *
+	 *  x   modfl floor
+	 * ---- ----- -----
+	 *  2.0  2.0   2.0
+	 *  2.4  2.0   2.0
+	 *  2.9  2.0   2.0
+	 * -2.7 -2.0  -3.0
+	 * -2.0 -2.0  -2.0
+	 */
+
+	(void)modfl(x, &modx);
+	if (x < 0.0 && x < modx) {
+		modx -= 1.0;
 	}
 
-	return x;
+	return modx;
+
 }
 #endif

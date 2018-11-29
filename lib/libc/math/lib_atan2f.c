@@ -46,7 +46,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -57,16 +57,16 @@ float atan2f(float y, float x)
 	if (x > 0) {
 		return atanf(y / x);
 	} else if (y >= 0 && x < 0) {
-		return atanf(y / x) + M_PI;
+		return atanf(y / x) + M_PI_F;
 	} else if (y < 0) {
 		if (x == 0) {
-			return -M_PI_2;
+			return -M_PI_2_F;
 		} else {				/* Can only be x < 0 */
 
-			return atanf(y / x) - M_PI;
+			return atanf(y / x) - M_PI_F;
 		}
 	} else if (y > 0 && x == 0) {
-		return M_PI_2;
+		return M_PI_2_F;
 	} else {					/* if (y == 0 && x == 0) Undefined but returns normally 0 */
 
 		return 0;

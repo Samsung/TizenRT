@@ -58,10 +58,13 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
+#include <sys/types.h>
+#include <stdbool.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
-#include <tinyara/compiler.h>
 
 /****************************************************************************
  * Definitions
@@ -78,7 +81,7 @@ struct irq {
 	xcpt_t handler;
 	FAR void *arg;
 #ifdef CONFIG_DEBUG_IRQ_INFO
-	char irq_name[MAX_IRQNAME_SIZE + 1]; /* Includes the terminating Null */
+	char irq_name[MAX_IRQNAME_SIZE + 1];	/* Includes the terminating Null */
 	size_t count;
 #endif
 };
@@ -100,7 +103,25 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+/****************************************************************************
+ * Name: irq_initialize
+ *
+ * Description:
+ *   Configure the IRQ subsystem
+ *
+ ****************************************************************************/
+
 void weak_function irq_initialize(void);
+
+/****************************************************************************
+ * Name: irq_unexpected_isr
+ *
+ * Description:
+ *   An interrupt has been received for an IRQ that was never registered
+ *   with the system.
+ *
+ ****************************************************************************/
+
 int irq_unexpected_isr(int irq, FAR void *context, FAR void *arg);
 
 #undef EXTERN

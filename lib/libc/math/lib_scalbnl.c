@@ -64,20 +64,20 @@ long double scalbnl(long double x, int n)
 	union ldshape u;
 
 	if (n > 16383) {
-		x *= 0x1p16383L;
+		x *= 0x1 p16383L;
 		n -= 16383;
 		if (n > 16383) {
-			x *= 0x1p16383L;
+			x *= 0x1 p16383L;
 			n -= 16383;
 			if (n > 16383) {
 				n = 16383;
 			}
 		}
 	} else if (n < -16382) {
-		x *= 0x1p-16382L;
+		x *= 0x1 p - 16382L;
 		n += 16382;
 		if (n < -16382) {
-			x *= 0x1p-16382L;
+			x *= 0x1 p - 16382L;
 			n += 16382;
 			if (n < -16382) {
 				n = -16382;

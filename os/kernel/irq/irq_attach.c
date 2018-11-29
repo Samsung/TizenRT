@@ -94,6 +94,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_IRQ_INFO
+#error CONFIG_DEBUG_IRQ_INFO
 int irq_attach_withname(int irq, xcpt_t isr, FAR void *arg, const char *name)
 #else
 int irq_attach(int irq, xcpt_t isr, FAR void *arg)
@@ -136,10 +137,11 @@ int irq_attach(int irq, xcpt_t isr, FAR void *arg)
 		/* Save the new ISR in the table. */
 
 		g_irqvector[irq].handler = isr;
-		g_irqvector[irq].arg     = arg;
+		g_irqvector[irq].arg = arg;
+
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		/* Reset the irq counter to 0 and it's applicable for both irq_attach and irq_detach */
-		g_irqvector[irq].count   = 0;
+		g_irqvector[irq].count = 0;
 		if (name != NULL) {
 			strncpy(g_irqvector[irq].irq_name, name, MAX_IRQNAME_SIZE);
 			g_irqvector[irq].irq_name[MAX_IRQNAME_SIZE] = '\0';

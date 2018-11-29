@@ -54,7 +54,10 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -62,5 +65,5 @@
 
 float atanhf(float x)
 {
-	return 0.5 * logf((1 + x) / (1 - x));
+	return 0.5F * logf((1.0F + x) / (1.0F - x));
 }

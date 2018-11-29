@@ -45,7 +45,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 
 /************************************************************************
@@ -58,7 +58,11 @@ double remquo(double x, double y, int *quo)
 	union {
 		double f;
 		uint64_t i;
-	} ux = { x }, uy = { y };
+	} ux = {
+		x
+	}, uy = {
+		y
+	};
 	int ex = ux.i >> 52 & 0x7ff;
 	int ey = uy.i >> 52 & 0x7ff;
 	int sx = ux.i >> 63;
@@ -123,7 +127,7 @@ end:
 	/* scale result and decide between |x| and |x|-|y| */
 	if (ex > 0) {
 		uxi -= 1ULL << 52;
-		uxi |= (uint64_t)ex << 52;
+		uxi |= (uint64_t) ex << 52;
 	} else {
 		uxi >>= -ex + 1;
 	}

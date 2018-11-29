@@ -58,7 +58,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -70,7 +70,7 @@ static float ponef(float);
 static float qonef(float);
 
 static const float invsqrtpi = 5.6418961287e-01;	/* 0x3f106ebb */
-static const float tpi = 6.3661974669e-01;		/* 0x3f22f983 */
+static const float tpi = 6.3661974669e-01;	/* 0x3f22f983 */
 
 /************************************************************************
  * Private Functions
@@ -117,14 +117,14 @@ static float common(uint32_t ix, float x, int y1, int sign)
 
 /* R0/S0 on [0,2] */
 static const float r00 = -6.2500000000e-02;	/* 0xbd800000 */
-static const float r01 = 1.4070566976e-03;		/* 0x3ab86cfd */
+static const float r01 = 1.4070566976e-03;	/* 0x3ab86cfd */
 static const float r02 = -1.5995563444e-05;	/* 0xb7862e36 */
-static const float r03 = 4.9672799207e-08;		/* 0x335557d2 */
-static const float s01 = 1.9153760746e-02;		/* 0x3c9ce859 */
-static const float s02 = 1.8594678841e-04;		/* 0x3942fab6 */
-static const float s03 = 1.1771846857e-06;		/* 0x359dffc2 */
-static const float s04 = 5.0463624390e-09;		/* 0x31ad6446 */
-static const float s05 = 1.2354227016e-11;		/* 0x2d59567e */
+static const float r03 = 4.9672799207e-08;	/* 0x335557d2 */
+static const float s01 = 1.9153760746e-02;	/* 0x3c9ce859 */
+static const float s02 = 1.8594678841e-04;	/* 0x3942fab6 */
+static const float s03 = 1.1771846857e-06;	/* 0x359dffc2 */
+static const float s04 = 5.0463624390e-09;	/* 0x31ad6446 */
+static const float s05 = 1.2354227016e-11;	/* 0x2d59567e */
 
 /************************************************************************
  * Public Functions

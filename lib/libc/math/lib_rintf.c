@@ -62,7 +62,7 @@
 
 #include <sys/types.h>
 #include <stdlib.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 /************************************************************
  * Definitions

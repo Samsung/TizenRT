@@ -79,29 +79,29 @@
  * Private Data
  ************************************************************************/
 
-static const float redux = 0x1.8p23f / TBLSIZE;
-static const float P1 = 0x1.62e430p-1f;
-static const float P2 = 0x1.ebfbe0p-3f;
-static const float P3 = 0x1.c6b348p-5f;
-static const float P4 = 0x1.3b2c9cp-7f;
+static const float redux = 0x1 .8 p23f / TBLSIZE;
+static const float P1 = 0x1 .62e430 p - 1f;
+static const float P2 = 0x1.ebfbe0p - 3f;
+static const float P3 = 0x1.c6b348p - 5f;
+static const float P4 = 0x1 .3 b2c9cp - 7f;
 
 static const double exp2ft[TBLSIZE] = {
-	0x1.6a09e667f3bcdp-1,
-	0x1.7a11473eb0187p-1,
-	0x1.8ace5422aa0dbp-1,
-	0x1.9c49182a3f090p-1,
-	0x1.ae89f995ad3adp-1,
-	0x1.c199bdd85529cp-1,
-	0x1.d5818dcfba487p-1,
-	0x1.ea4afa2a490dap-1,
-	0x1.0000000000000p+0,
-	0x1.0b5586cf9890fp+0,
-	0x1.172b83c7d517bp+0,
-	0x1.2387a6e756238p+0,
-	0x1.306fe0a31b715p+0,
-	0x1.3dea64c123422p+0,
-	0x1.4bfdad5362a27p+0,
-	0x1.5ab07dd485429p+0,
+	0x1 .6 a09e667f3bcdp - 1,
+	0x1 .7 a11473eb0187p - 1,
+	0x1 .8 ace5422aa0dbp - 1,
+	0x1 .9 c49182a3f090p - 1,
+	0x1.ae89f995ad3adp - 1,
+	0x1.c199bdd85529cp - 1,
+	0x1.d5818dcfba487p - 1,
+	0x1.ea4afa2a490dap - 1,
+	0x1 .0000000000000 p + 0,
+	0x1 .0 b5586cf9890fp + 0,
+	0x1 .172 b83c7d517bp + 0,
+	0x1 .2387 a6e756238p + 0,
+	0x1 .306f e0a31b715p + 0,
+	0x1 .3 dea64c123422p + 0,
+	0x1 .4 bfdad5362a27p + 0,
+	0x1 .5 ab07dd485429p + 0,
 };
 
 /************************************************************************
@@ -142,7 +142,9 @@ float exp2f(float x)
 	union {
 		float f;
 		uint32_t i;
-	} u = { x };
+	} u = {
+		x
+	};
 	union {
 		double f;
 		uint64_t i;
@@ -158,12 +160,12 @@ float exp2f(float x)
 			return x;
 		}
 		if (u.i >= 0x43000000 && u.i < 0x80000000) {	/* x >= 128 */
-			x *= 0x1p127f;
+			x *= 0x1 p127f;
 			return x;
 		}
 		if (u.i >= 0x80000000) {	/* x < -126 */
 			if (u.i >= 0xc3160000 || (u.i & 0x0000ffff)) {
-				FORCE_EVAL(-0x1p-149f / x);
+				FORCE_EVAL(-0x1 p - 149f / x);
 			}
 			if (u.i >= 0xc3160000) {	/* x <= -150 */
 				return 0;

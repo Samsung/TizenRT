@@ -54,7 +54,10 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
+#include <tinyara/lib/math.h>
 
 /************************************************************************
  * Public Functions
@@ -62,5 +65,5 @@
 
 float acoshf(float x)
 {
-	return logf(x + sqrtf(x * x - 1));
+	return logf(x + sqrtf(x * x - 1.0F));
 }

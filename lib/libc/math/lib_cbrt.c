@@ -64,7 +64,7 @@
 
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 
 #ifdef CONFIG_HAVE_DOUBLE
@@ -122,7 +122,7 @@ double cbrt(double x)
 	 * division rounds towards minus infinity; this is also efficient.
 	 */
 	if (hx < 0x00100000) {		/* zero or subnormal? */
-		u.f = x * 0x1p54;
+		u.f = x * 0x1 p54;
 		hx = u.i >> 32 & 0x7fffffff;
 		if (hx == 0) {
 			return x;			/* cbrt(0) is itself */

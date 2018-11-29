@@ -79,16 +79,17 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/board.h>
+#include <tinyara/syslog/syslog.h>
 
 #include <arch/board/board.h>
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
-#include <sys/boardctl.h>
-#endif
+
+#include "sched/sched.h"
+#include "irq/irq.h"
 
 #include "up_arch.h"
-#include "sched/sched.h"
 #include "up_internal.h"
-#include "mpu.h"
+#include "chip.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -99,9 +100,17 @@
 #undef CONFIG_ARCH_USBDUMP
 #endif
 
+#ifndef CONFIG_BOARD_RESET_ON_ASSERT
+#define CONFIG_BOARD_RESET_ON_ASSERT 0
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+static uint32_t s_last_regs[XCPTCONTEXT_REGS];
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -116,11 +125,8 @@
 static inline uint32_t up_getsp(void)
 {
 	uint32_t sp;
-	__asm__
-	(
-		"\tmov %0, sp\n\t"
-		: "=r"(sp)
-	);
+	__asm__("\tmov %0, sp\n\t":"=r"(sp)
+		   );
 	return sp;
 }
 
@@ -134,51 +140,12 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
 	uint32_t stack;
 
 	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
-		uint32_t *ptr = (uint32_t *)stack;
-		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+		uint32_t *ptr = (uint32_t *) stack;
+		_alert("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
 	}
 }
 #else
 #define up_stackdump(sp, stack_base)
-#endif
-
-/****************************************************************************
- * Name: up_registerdump
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_STACKDUMP
-static inline void up_registerdump(void)
-{
-	/* Are user registers available from interrupt processing? */
-
-	if (current_regs) {
-		/* Yes.. dump the interrupt registers */
-
-		lldbg("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R0], current_regs[REG_R1],
-			  current_regs[REG_R2], current_regs[REG_R3],
-			  current_regs[REG_R4], current_regs[REG_R5],
-			  current_regs[REG_R6], current_regs[REG_R7]);
-		lldbg("R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R8], current_regs[REG_R9],
-			  current_regs[REG_R10], current_regs[REG_R11],
-			  current_regs[REG_R12], current_regs[REG_R13],
-			  current_regs[REG_R14], current_regs[REG_R15]);
-
-#ifdef CONFIG_ARMV7M_USEBASEPRI
-		lldbg("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_BASEPRI], getcontrol());
-#else
-		lldbg("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_PRIMASK], getcontrol());
-#endif
-
-#ifdef REG_EXC_RETURN
-		lldbg("EXC_RETURN: %08x\n", current_regs[REG_EXC_RETURN]);
-#endif
-	}
-}
-#else
-#define up_registerdump()
 #endif
 
 /****************************************************************************
@@ -191,18 +158,10 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
-			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+	_alert("%s: PID=%d Stack Used=%lu of %lu\n", tcb->name, tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
 #else
-	lldbg("%5d | %4d | %7lu / %7lu\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
-			(unsigned long)tcb->adj_stack_size);
+	_alert("PID: %d Stack Used=%lu of %lu\n", tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
 #endif
-
-	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
-		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
-	}
 }
 #endif
 
@@ -213,18 +172,6 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 #ifdef CONFIG_STACK_COLORATION
 static inline void up_showtasks(void)
 {
-	lldbg("*******************************************\n");
-	lldbg("List of all tasks in the system:\n");
-	lldbg("*******************************************\n");
-
-#if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("-------------------------------------------------\n");
-#else
-	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
-	lldbg("----------------------------------\n");
-#endif
-
 	/* Dump interesting properties of each task in the crash environment */
 
 	sched_foreach(up_taskdump, NULL);
@@ -233,6 +180,42 @@ static inline void up_showtasks(void)
 #define up_showtasks()
 #endif
 
+/****************************************************************************
+ * Name: up_registerdump
+ ****************************************************************************/
+/* Dump interesting properties of each task in the crash environment */
+#ifdef CONFIG_ARCH_STACKDUMP
+static inline void up_registerdump(void)
+{
+	volatile uint32_t *regs = current_regs;
+
+	/* Are user registers available from interrupt processing? */
+
+	if (regs == NULL) {
+		/* No.. capture user registers by hand */
+
+		up_saveusercontext(s_last_regs);
+		regs = s_last_regs;
+	}
+
+	/* Dump the interrupt registers */
+
+	_alert("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n", regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3], regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
+	_alert("R8: %08x %08x %08x %08x %08x %08x %08x %08x\n", regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11], regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
+
+#ifdef CONFIG_ARMV7M_USEBASEPRI
+	_alert("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n", regs[REG_XPSR], regs[REG_BASEPRI], getcontrol());
+#else
+	_alert("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n", regs[REG_XPSR], regs[REG_PRIMASK], getcontrol());
+#endif
+
+#ifdef REG_EXC_RETURN
+	_alert("EXC_RETURN: %08x\n", regs[REG_EXC_RETURN]);
+#endif
+}
+#else
+#define up_registerdump()
+#endif
 
 /****************************************************************************
  * Name: assert_tracecallback
@@ -266,14 +249,18 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 #ifdef CONFIG_ARCH_STACKDUMP
 static void up_dumpstate(void)
 {
-	struct tcb_s *rtcb = this_task();
+	struct tcb_s *rtcb = running_task();
 	uint32_t sp = up_getsp();
 	uint32_t ustackbase;
 	uint32_t ustacksize;
-#if CONFIG_ARCH_INTERRUPTSTACK > 3
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
 	uint32_t istackbase;
 	uint32_t istacksize;
 #endif
+
+	/* Get the limits on the user stack memory */
+
+	up_registerdump();
 
 	/* Get the limits on the user stack memory */
 
@@ -281,24 +268,24 @@ static void up_dumpstate(void)
 		ustackbase = g_idle_topstack - 4;
 		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
 	} else {
-		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
-		ustacksize = (uint32_t)rtcb->adj_stack_size;
+		ustackbase = (uint32_t) rtcb->adj_stack_ptr;
+		ustacksize = (uint32_t) rtcb->adj_stack_size;
 	}
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	/* Get the limits on the interrupt stack memory */
 
-	istackbase = (uint32_t)&g_intstackbase;
+	istackbase = (uint32_t) & g_intstackbase;
 	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
 
 	/* Show interrupt stack info */
 
-	lldbg("sp:     %08x\n", sp);
-	lldbg("IRQ stack:\n");
-	lldbg("  base: %08x\n", istackbase);
-	lldbg("  size: %08x\n", istacksize);
+	_alert("sp:     %08x\n", sp);
+	_alert("IRQ stack:\n");
+	_alert("  base: %08x\n", istackbase);
+	_alert("  size: %08x\n", istacksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_intstack());
+	_alert("  used: %08x\n", up_check_intstack());
 #endif
 
 	/* Does the current stack pointer lie within the interrupt
@@ -309,6 +296,9 @@ static void up_dumpstate(void)
 		/* Yes.. dump the interrupt stack */
 
 		up_stackdump(sp, istackbase);
+	} else if (current_regs) {
+		_alert("ERROR: Stack pointer is not within the interrupt stack\n");
+		up_stackdump(istackbase - istacksize, istackbase);
 	}
 
 	/* Extract the user stack pointer if we are in an interrupt handler.
@@ -318,14 +308,14 @@ static void up_dumpstate(void)
 
 	if (current_regs) {
 		sp = current_regs[REG_R13];
-		lldbg("sp:     %08x\n", sp);
+		_alert("sp:     %08x\n", sp);
 	}
 
-	lldbg("User stack:\n");
-	lldbg("  base: %08x\n", ustackbase);
-	lldbg("  size: %08x\n", ustacksize);
+	_alert("User stack:\n");
+	_alert("  base: %08x\n", ustackbase);
+	_alert("  size: %08x\n", ustacksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_tcbstack(rtcb));
+	_alert("  used: %08x\n", up_check_tcbstack(rtcb));
 #endif
 
 	/* Dump the user stack if the stack pointer lies within the allocated user
@@ -334,16 +324,20 @@ static void up_dumpstate(void)
 
 	if (sp <= ustackbase && sp > ustackbase - ustacksize) {
 		up_stackdump(sp, ustackbase);
+	} else {
+		_alert("ERROR: Stack pointer is not within the allocated stack\n");
+		up_stackdump(ustackbase - ustacksize, ustackbase);
 	}
+
 #else
 
 	/* Show user stack info */
 
-	lldbg("sp:         %08x\n", sp);
-	lldbg("stack base: %08x\n", ustackbase);
-	lldbg("stack size: %08x\n", ustacksize);
+	_alert("sp:         %08x\n", sp);
+	_alert("stack base: %08x\n", ustackbase);
+	_alert("stack size: %08x\n", ustacksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("stack used: %08x\n", up_check_tcbstack(rtcb));
+	_alert("stack used: %08x\n", up_check_tcbstack(rtcb));
 #endif
 
 	/* Dump the user stack if the stack pointer lies within the allocated user
@@ -351,7 +345,7 @@ static void up_dumpstate(void)
 	 */
 
 	if (sp > ustackbase || sp <= ustackbase - ustacksize) {
-		lldbg("ERROR: Stack pointer is not within the allocated stack\n");
+		_alert("ERROR: Stack pointer is not within the allocated stack\n");
 	} else {
 		up_stackdump(sp, ustackbase);
 	}
@@ -360,17 +354,9 @@ static void up_dumpstate(void)
 
 	/* Then dump the registers (if available) */
 
-	up_registerdump();
-
 	/* Dump the state of all tasks (if available) */
 
 	up_showtasks();
-
-	/* Dump MPU regions info */
-
-#ifdef CONFIG_ARMV7M_MPU
-	mpu_show_regioninfo();
-#endif
 
 #ifdef CONFIG_ARCH_USBDUMP
 	/* Dump USB trace data */
@@ -389,19 +375,28 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+	/* Flush any buffered SYSLOG data */
+
+#if 0
+	(void)syslog_flush();
+#endif
+
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (current_regs || (this_task())->pid == 0) {
+	if (current_regs || (running_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
-			board_led_on(LED_PANIC);
+			board_autoled_on(LED_PANIC);
 			up_mdelay(250);
-			board_led_off(LED_PANIC);
+			board_autoled_off(LED_PANIC);
 			up_mdelay(250);
 #endif
 		}
 	} else {
+#if CONFIG_BOARD_RESET_ON_ASSERT >= 2
+		board_reset(CONFIG_BOARD_ASSERT_RESET_VALUE);
+#endif
 		exit(errorcode);
 	}
 }
@@ -411,40 +406,38 @@ static void _up_assert(int errorcode)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: dump_stack : dumps the stack of current thread
- ****************************************************************************/
-void dump_stack(void)
-{
-	/* ToDo: implement as per the armv7-m architecture */
-	return;
-}
-
-/****************************************************************************
- * Name: dump_all_stack : dumps the stack of current thread
- ****************************************************************************/
-void dump_all_stack(void)
-{
-	/* ToDo: implement as per the armv7-m architecture */
-	return;
-}
-
-/****************************************************************************
  * Name: up_assert
  ****************************************************************************/
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-	board_led_on(LED_ASSERTION);
+#if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ALERT)
+	struct tcb_s *rtcb = running_task();
+#endif
+	/* ToDo: implement as per the armv7-m architecture */
+	board_autoled_on(LED_ASSERTION);
+
+	/* Flush any buffered SYSLOG data (prior to the assertion) */
+
+#if 0
+	(void)syslog_flush();
+#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+	_alert("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
-	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
+	_alert("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
 	up_dumpstate();
+
+#ifdef CONFIG_BOARD_CRASHDUMP
+	board_crashdump(up_getsp(), running_task(), filename, lineno);
+#endif
+
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
+
 	_up_assert(EXIT_FAILURE);
 }

@@ -46,7 +46,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <errno.h>
 
 #include "lib_internal.h"

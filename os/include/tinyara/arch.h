@@ -1261,6 +1261,44 @@ int up_addrenv_kstackfree(FAR struct tcb_s *tcb);
 #endif
 
 /****************************************************************************
+ * Name: up_addrenv_pa_to_va
+ *
+ * Description:
+ *   Map phy address to virtual address.  Not supported by all architectures.
+ *
+ *   REVISIT:  Should this not then be conditional on having that
+ *   architecture-specific support?
+ *
+ * Input Parameters:
+ *   pa - The phy address to be mapped.
+ *
+ * Returned Value:
+ *   Virtual address on success; NULL on failure.
+ *
+ ****************************************************************************/
+
+FAR void *up_addrenv_pa_to_va(uintptr_t pa);
+
+/****************************************************************************
+ * Name: up_addrenv_va_to_pa
+ *
+ * Description:
+ *   Map virtual address to phy address.  Not supported by all architectures.
+ *
+ *   REVISIT:  Should this not then be conditional on having that
+ *   architecture-specific support?
+ *
+ * Input Parameters:
+ *   va - The virtual address to be mapped.  Not supported by all architectures.
+ *
+ * Returned Value:
+ *   Phy address on success; NULL on failure.
+ *
+ ****************************************************************************/
+
+uintptr_t up_addrenv_va_to_pa(FAR void *va);
+
+/****************************************************************************
  * Name: up_shmat
  *
  * Description:
@@ -1354,6 +1392,18 @@ void up_enable_irq(int irq);
 
 #ifndef CONFIG_ARCH_NOINTC
 void up_disable_irq(int irq);
+#endif
+
+/****************************************************************************
+ * Name: up_trigger_irq
+ *
+ * Description:
+ *   Trigger an IRQ by software. May not be supported by all architectures.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_HAVE_IRQTRIGGER
+void up_trigger_irq(int irq);
 #endif
 
 /****************************************************************************
@@ -1609,6 +1659,322 @@ int up_timer_cancel(FAR struct timespec *ts);
 
 #if defined(CONFIG_SCHED_TICKLESS) && !defined(CONFIG_SCHED_TICKLESS_ALARM)
 int up_timer_start(FAR const struct timespec *ts);
+#endif
+
+/****************************************************************************
+ * TLS support
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_tls_info
+ *
+ * Description:
+ *   Return the TLS information structure for the currently executing thread.
+ *   When TLS is enabled, up_create_stack() will align allocated stacks to
+ *   the TLS_STACK_ALIGN value.  An instance of the following structure will
+ *   be implicitly positioned at the "lower" end of the stack.  Assuming a
+ *   "push down" stack, this is at the "far" end of the stack (and can be
+ *   clobbered if the stack overflows).
+ *
+ *   If an MCU has a "push up" then that TLS structure will lie at the top
+ *   of the stack and stack allocation and initialization logic must take
+ *   care to preserve this structure content.
+ *
+ *   The stack memory is fully accessible to user mode threads.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   A pointer to TLS info structure at the beginning of the STACK memory
+ *   allocation.  This is essentially an application of the TLS_INFO(sp)
+ *   macro and has a platform dependency only in the manner in which the
+ *   stack pointer (sp) is obtained and interpreted.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_TLS
+/* struct tls_info_s;
+ * FAR struct tls_info_s *up_tls_info(void);
+ *
+ * The actual declaration or definition is provided in arch/tls.h.  The
+ * actual implementation may be a MACRO or and inline function.
+ */
+#endif
+
+/****************************************************************************
+ * Multiple CPU support
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_testset
+ *
+ * Description:
+ *   Perform an atomic test and set operation on the provided spinlock.
+ *
+ * Input Parameters:
+ *   lock - The address of spinlock object.
+ *
+ * Returned Value:
+ *   The spinlock is always locked upon return.  The value of previous value
+ *   of the spinlock variable is returned, either SP_LOCKED if the spinlock
+ *   was previously locked (meaning that the test-and-set operation failed to
+ *   obtain the lock) or SP_UNLOCKED if the spinlock was previously unlocked
+ *   (meaning that we successfully obtained the lock)
+ *
+ ****************************************************************************/
+
+/* See prototype in include/nuttx/spinlock.h */
+
+/****************************************************************************
+ * Name: up_fetchadd8, up_fetchadd16, and up_fetchadd32
+ *
+ * Description:
+ *   Perform an atomic fetch add operation on the provided 8-, 16-, or 32-
+ *   bit value.
+ *
+ *   This function must be provided via the architecture-specific logic.
+ *
+ * Input Parameters:
+ *   addr  - The address of value to be incremented.
+ *   value - The addend
+ *
+ * Returned Value:
+ *   The incremented value (volatile!)
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_HAVE_FETCHADD
+int32_t up_fetchadd32(FAR volatile int32_t *addr, int32_t value);
+int16_t up_fetchadd16(FAR volatile int16_t *addr, int16_t value);
+int8_t up_fetchadd8(FAR volatile int8_t *addr, int8_t value);
+#endif
+
+/****************************************************************************
+ * Name: up_fetchsub8
+ *
+ * Description:
+ *   Perform an atomic fetch subtract operation on the provided 8-, 16-, or
+ *   32-bit value.
+ *
+ *   This function must be provided via the architecture-specific logic.
+ *
+ * Input Parameters:
+ *   addr  - The address of value to be decremented.
+ *   value - The subtrahend
+ *
+ * Returned Value:
+ *   The decremented value (volatile!)
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_HAVE_FETCHADD
+int32_t up_fetchsub32(FAR volatile int32_t *addr, int32_t value);
+int16_t up_fetchsub16(FAR volatile int16_t *addr, int16_t value);
+int8_t up_fetchsub8(FAR volatile int8_t *addr, int8_t value);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_index
+ *
+ * Description:
+ *   Return an index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   An integer index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_index(void);
+#else
+#  define up_cpu_index() (0)
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_idlestack
+ *
+ * Description:
+ *   Allocate a stack for the CPU[n] IDLE task (n > 0) if appropriate and
+ *   setup up stack-related information in the IDLE task's TCB.  This
+ *   function is always called before up_cpu_start().  This function is
+ *   only called for the CPU's initial IDLE task; up_create_task is used for
+ *   all normal tasks, pthreads, and kernel threads for all CPUs.
+ *
+ *   The initial IDLE task is a special case because the CPUs can be started
+ *   in different wans in different environments:
+ *
+ *   1. The CPU may already have been started and waiting in a low power
+ *      state for up_cpu_start().  In this case, the IDLE thread's stack
+ *      has already been allocated and is already in use.  Here
+ *      up_cpu_idlestack() only has to provide information about the
+ *      already allocated stack.
+ *
+ *   2. The CPU may be disabled but started when up_cpu_start() is called.
+ *      In this case, a new stack will need to be created for the IDLE
+ *      thread and this function is then equivalent to:
+ *
+ *      return up_create_stack(tcb, stack_size, TCB_FLAG_TTYPE_KERNEL);
+ *
+ *   The following TCB fields must be initialized by this function:
+ *
+ *   - adj_stack_size: Stack size after adjustment for hardware, processor,
+ *     etc.  This value is retained only for debug purposes.
+ *   - stack_alloc_ptr: Pointer to allocated stack
+ *   - adj_stack_ptr: Adjusted stack_alloc_ptr for HW.  The initial value of
+ *     the stack pointer.
+ *
+ * Input Parameters:
+ *   - cpu:         CPU index that indicates which CPU the IDLE task is
+ *                  being created for.
+ *   - tcb:         The TCB of new CPU IDLE task
+ *   - stack_size:  The requested stack size for the IDLE task.  At least
+ *                  this much must be allocated.  This should be
+ *                  CONFIG_SMP_IDLETHREAD_STACKSIZE.
+ *
+ ****************************************************************************/
+
+int up_cpu_idlestack(int cpu, FAR struct tcb_s *tcb, size_t stack_size);
+
+/****************************************************************************
+ * Name: up_cpu_start
+ *
+ * Description:
+ *   In an SMP configution, only one CPU is initially active (CPU 0). System
+ *   initialization occurs on that single thread. At the completion of the
+ *   initialization of the OS, just before beginning normal multitasking,
+ *   the additional CPUs would be started by calling this function.
+ *
+ *   Each CPU is provided the entry point to is IDLE task when started.  A
+ *   TCB for each CPU's IDLE task has been initialized and placed in the
+ *   CPU's g_assignedtasks[cpu] list.  A stack has also been allocateded and
+ *   initialized.
+ *
+ *   The OS initialization logic calls this function repeatedly until each
+ *   CPU has been started, 1 through (CONFIG_SMP_NCPUS-1).
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being started.  This will be a numeric
+ *         value in the range of from one to (CONFIG_SMP_NCPUS-1).  (CPU
+ *         0 is already active)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_start(int cpu);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_pause
+ *
+ * Description:
+ *   Save the state of the current task at the head of the
+ *   g_assignedtasks[cpu] task list and then pause task execution on the
+ *   CPU.
+ *
+ *   This function is called by the OS when the logic executing on one CPU
+ *   needs to modify the state of the g_assignedtasks[cpu] list for another
+ *   CPU.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be paused.
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_resume() must be called
+ *   later while still within the same critical section.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_pause(int cpu);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_pausereq
+ *
+ * Description:
+ *   Return true if a pause request is pending for this CPU.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be queried
+ *
+ * Returned Value:
+ *   true   = a pause request is pending.
+ *   false = no pasue request is pending.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+bool up_cpu_pausereq(int cpu);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_paused
+ *
+ * Description:
+ *   Handle a pause request from another CPU.  Normally, this logic is
+ *   executed from interrupt handling logic within the architecture-specific
+ *   However, it is sometimes necessary necessary to perform the pending
+ *   pause operation in other contexts where the interrupt cannot be taken
+ *   in order to avoid deadlocks.
+ *
+ *   This function performs the following operations:
+ *
+ *   1. It saves the current task state at the head of the current assigned
+ *      task list.
+ *   2. It waits on a spinlock, then
+ *   3. Returns from interrupt, restoring the state of the new task at the
+ *      head of the ready to run list.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be paused
+ *
+ * Returned Value:
+ *   On success, OK is returned.  Otherwise, a negated errno value indicating
+ *   the nature of the failure is returned.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_paused(int cpu);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_resume
+ *
+ * Description:
+ *   Restart the cpu after it was paused via up_cpu_pause(), restoring the
+ *   state of the task at the head of the g_assignedtasks[cpu] list, and
+ *   resume normal tasking.
+ *
+ *   This function is called after up_cpu_pause in order resume operation of
+ *   the CPU after modifying its g_assignedtasks[cpu] list.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being resumed.
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_pause() must have
+ *   previously been called within the same critical section.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_resume(int cpu);
 #endif
 
 /****************************************************************************

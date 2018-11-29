@@ -58,7 +58,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #ifdef CONFIG_HAVE_DOUBLE
 
@@ -89,13 +89,13 @@
 
 double erf(double x)
 {
-  double t;
-  double z;
+	double t;
+	double z;
 
-  z = fabs(x);
-  t = 1.0 / (1.0 + P * z);
-  t = 1.0 - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * exp(-z * z);
-  return copysign(t, x);
+	z = fabs(x);
+	t = 1.0 / (1.0 + P * z);
+	t = 1.0 - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * exp(-z * z);
+	return copysign(t, x);
 }
 
-#endif /* CONFIG_HAVE_DOUBLE */
+#endif							/* CONFIG_HAVE_DOUBLE */

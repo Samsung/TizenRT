@@ -125,13 +125,13 @@ long double hypotl(long double x, long double y)
 
 	z = 1;
 	if (ex > 0x3fff + 8000) {
-		z = 0x1p10000L;
-		x *= 0x1p-10000L;
-		y *= 0x1p-10000L;
+		z = 0x1 p10000L;
+		x *= 0x1 p - 10000L;
+		y *= 0x1 p - 10000L;
 	} else if (ey < 0x3fff - 8000) {
-		z = 0x1p-10000L;
-		x *= 0x1p10000L;
-		y *= 0x1p10000L;
+		z = 0x1 p - 10000L;
+		x *= 0x1 p10000L;
+		y *= 0x1 p10000L;
 	}
 	sq(&hx, &lx, x);
 	sq(&hy, &ly, y);

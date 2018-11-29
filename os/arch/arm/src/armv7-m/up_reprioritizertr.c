@@ -61,6 +61,7 @@
 #include <sched.h>
 #include <debug.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"
@@ -133,7 +134,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
 		/* Setup up the new task priority */
 
-		tcb->sched_priority = (uint8_t)priority;
+		tcb->sched_priority = (uint8_t) priority;
 
 		/* Return the task to the ready-to-run task list. sched_addreadytorun
 		 * will return true if the task was added to the head of ready-to-run
@@ -158,6 +159,10 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				sched_mergepending();
 			}
 
+			/* Update scheduler parameters */
+
+			sched_suspend_scheduler(rtcb);
+
 			/* Are we in an interrupt handler? */
 
 			if (current_regs) {
@@ -172,29 +177,30 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				 */
 
 				rtcb = this_task();
+
 				sllvdbg("New Active Task TCB=%p\n", rtcb);
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
-				/* Save the task name which will be scheduled */
-				save_task_scheduling_status(rtcb);
-#endif
+				/* Update scheduler parameters */
+
+				sched_resume_scheduler(rtcb);
+
 				/* Then switch contexts */
 
 				up_restorestate(rtcb->xcp.regs);
-			}
+			} else {
 
-			/* No, then we will need to perform the user context switch */
+				/* No, then we will need to perform the user context switch */
 
-			else {
+				struct tcb_s *nexttcb = this_task();
+
+				/* Update scheduler parameters */
+
+				sched_resume_scheduler(nexttcb);
+
 				/* Switch context to the context of the task at the head of the
 				 * ready to run list.
 				 */
 
-				struct tcb_s *nexttcb = this_task();
-#ifdef CONFIG_TASK_SCHED_HISTORY
-				/* Save the task name which will be scheduled */
-				save_task_scheduling_status(nexttcb);
-#endif
 				up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 				/* up_switchcontext forces a context switch to the task at the

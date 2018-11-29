@@ -47,7 +47,7 @@
  ************************************************************************/
 
 #include <sys/types.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "lib_internal.h"
 
@@ -92,7 +92,7 @@ float expf(float x)
 
 	/* Extract integer component */
 
-	int_part = (size_t)x;
+	int_part = (size_t) x;
 
 	/* set x to fractional component */
 

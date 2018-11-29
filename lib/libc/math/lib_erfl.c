@@ -57,7 +57,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 
@@ -74,16 +74,16 @@
 
 long double erfl(long double x)
 {
-  /* This implementation comes from the Handbook of Mathmatical Functions
-   * The implementations in this book are not protected by copyright.
-   * erf comes from formula 7.1.26
-   */
+	/* This implementation comes from the Handbook of Mathmatical Functions
+	 * The implementations in this book are not protected by copyright.
+	 * erf comes from formula 7.1.26
+	 */
 
-  long double t, z;
+	long double t, z;
 
-  z = fabsl(x);
-  t = 1.0 / (1.0 + P * z);
-  t = 1.0 - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * expl(-z * z);
-  return copysignl(t, x);
+	z = fabsl(x);
+	t = 1.0 / (1.0 + P * z);
+	t = 1.0 - (((((A5 * t + A4) * t) + A3) * t + A2) * t + A1) * t * expl(-z * z);
+	return copysignl(t, x);
 }
 #endif

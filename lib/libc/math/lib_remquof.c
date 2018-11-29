@@ -44,7 +44,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 
 /************************************************************************
@@ -56,7 +56,11 @@ float remquof(float x, float y, int *quo)
 	union {
 		float f;
 		uint32_t i;
-	} ux = { x }, uy = { y };
+	} ux = {
+		x
+	}, uy = {
+		y
+	};
 	int ex = ux.i >> 23 & 0xff;
 	int ey = uy.i >> 23 & 0xff;
 	int sx = ux.i >> 31;
@@ -121,7 +125,7 @@ end:
 	/* scale result and decide between |x| and |x|-|y| */
 	if (ex > 0) {
 		uxi -= 1U << 23;
-		uxi |= (uint32_t)ex << 23;
+		uxi |= (uint32_t) ex << 23;
 	} else {
 		uxi >>= -ex + 1;
 	}

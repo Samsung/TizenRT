@@ -45,7 +45,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -65,7 +65,9 @@ double nexttoward(double x, long double y)
 	union {
 		double f;
 		uint64_t i;
-	} ux = { x };
+	} ux = {
+		x
+	};
 	int e;
 
 	if (isnan(x) || isnan(y)) {

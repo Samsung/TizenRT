@@ -45,7 +45,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -59,7 +59,11 @@ double nextafter(double x, double y)
 	union {
 		double f;
 		uint64_t i;
-	} ux = { x }, uy = { y };
+	} ux = {
+		x
+	}, uy = {
+		y
+	};
 	uint64_t ax, ay;
 	int e;
 

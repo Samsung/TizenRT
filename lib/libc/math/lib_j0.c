@@ -101,7 +101,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <sys/types.h>
 
 #include "libm.h"
@@ -116,7 +116,7 @@ static double pzero(double);
 static double qzero(double);
 
 static const double invsqrtpi = 5.64189583547756279280e-01;	/* 0x3FE20DD7, 0x50429B6D */
-static const double	tpi = 6.36619772367581382433e-01;	/* 0x3FE45F30, 0x6DC9C883 */
+static const double tpi = 6.36619772367581382433e-01;	/* 0x3FE45F30, 0x6DC9C883 */
 
 /************************************************************************
  * Private Function
@@ -227,15 +227,15 @@ double j0(double x)
 
 static const double u00 = -7.38042951086872317523e-02;	/* 0xBFB2E4D6, 0x99CBD01F */
 static const double u01 = 1.76666452509181115538e-01;	/* 0x3FC69D01, 0x9DE9E3FC */
-static const double	u02 = -1.38185671945596898896e-02;	/* 0xBF8C4CE8, 0xB16CFA97 */
-static const double	u03 = 3.47453432093683650238e-04;	/* 0x3F36C54D, 0x20B29B6B */
-static const double	u04 = -3.81407053724364161125e-06;	/* 0xBECFFEA7, 0x73D25CAD */
-static const double	u05 = 1.95590137035022920206e-08;	/* 0x3E550057, 0x3B4EABD4 */
-static const double	u06 = -3.98205194132103398453e-11;	/* 0xBDC5E43D, 0x693FB3C8 */
-static const double	v01 = 1.27304834834123699328e-02;	/* 0x3F8A1270, 0x91C9C71A */
-static const double	v02 = 7.60068627350353253702e-05;	/* 0x3F13ECBB, 0xF578C6C1 */
-static const double	v03 = 2.59150851840457805467e-07;	/* 0x3E91642D, 0x7FF202FD */
-static const double	v04 = 4.41110311332675467403e-10;	/* 0x3DFE5018, 0x3BD6D9EF */
+static const double u02 = -1.38185671945596898896e-02;	/* 0xBF8C4CE8, 0xB16CFA97 */
+static const double u03 = 3.47453432093683650238e-04;	/* 0x3F36C54D, 0x20B29B6B */
+static const double u04 = -3.81407053724364161125e-06;	/* 0xBECFFEA7, 0x73D25CAD */
+static const double u05 = 1.95590137035022920206e-08;	/* 0x3E550057, 0x3B4EABD4 */
+static const double u06 = -3.98205194132103398453e-11;	/* 0xBDC5E43D, 0x693FB3C8 */
+static const double v01 = 1.27304834834123699328e-02;	/* 0x3F8A1270, 0x91C9C71A */
+static const double v02 = 7.60068627350353253702e-05;	/* 0x3F13ECBB, 0xF578C6C1 */
+static const double v03 = 2.59150851840457805467e-07;	/* 0x3E91642D, 0x7FF202FD */
+static const double v04 = 4.41110311332675467403e-10;	/* 0x3DFE5018, 0x3BD6D9EF */
 
 /************************************************************************
  * Public Function

@@ -103,7 +103,7 @@
 #include <tinyara/compiler.h>
 
 #include <sys/types.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #ifdef CONFIG_HAVE_DOUBLE
 

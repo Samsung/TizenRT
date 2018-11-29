@@ -108,7 +108,7 @@
  */
 
 up_vector_t g_ram_vectors[ARMV7M_VECTAB_SIZE]
-__attribute__((section(".ram_vectors"), aligned(128)));
+__attribute__((section(".ram_vectors"), aligned(RAMVEC_ALIGN)));
 
 /****************************************************************************
  * Private Variables
@@ -138,7 +138,7 @@ void up_ramvec_initialize(void)
 
 	/* The vector table must be aligned */
 
-	DEBUGASSERT(((uint32_t)g_ram_vectors & ~NVIC_VECTAB_TBLOFF_MASK) == 0);
+	DEBUGASSERT(((uint32_t) g_ram_vectors & ~NVIC_VECTAB_TBLOFF_MASK) == 0);
 
 	/* Copy the ROM vector table at address zero to RAM vector table.
 	 *
@@ -157,7 +157,7 @@ void up_ramvec_initialize(void)
 
 	/* Now configure the NVIC to use the new vector table. */
 
-	putreg32((uint32_t)g_ram_vectors, NVIC_VECTAB);
+	putreg32((uint32_t) g_ram_vectors, NVIC_VECTAB);
 
 	/* The number bits required to align the RAM vector table seem to vary
 	 * from part-to-part.  The following assertion will catch the case where
@@ -165,7 +165,7 @@ void up_ramvec_initialize(void)
 	 */
 
 	intvdbg("NVIC_VECTAB=%08x\n", getreg32(NVIC_VECTAB));
-	DEBUGASSERT(getreg32(NVIC_VECTAB) == (uint32_t)g_ram_vectors);
+	DEBUGASSERT(getreg32(NVIC_VECTAB) == (uint32_t) g_ram_vectors);
 }
 
 #endif							/* !CONFIG_ARCH_RAMVECTORS */

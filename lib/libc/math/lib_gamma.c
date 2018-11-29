@@ -81,7 +81,7 @@
 #include <tinyara/compiler.h>
 
 #include <sys/types.h>
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -247,14 +247,14 @@ double tgamma(double x)
 		/* |x| >= 184 */
 
 		if (sign) {
-			FORCE_EVAL((float)(0x1p-126 / x));
+			FORCE_EVAL((float)(0x1 p - 126 / x));
 			if (floor(x) * 0.5 == floor(x * 0.5)) {
 				return 0;
 			}
 			return -0.0;
 		}
 
-		x *= 0x1p1023;
+		x *= 0x1 p1023;
 		return x;
 	}
 

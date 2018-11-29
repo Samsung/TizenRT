@@ -109,17 +109,17 @@ void irq_dispatch(int irq, FAR void *context)
 #if NR_IRQS > 0
 	if ((unsigned)irq >= NR_IRQS || g_irqvector[irq].handler == NULL) {
 		vector = irq_unexpected_isr;
-		arg    = NULL;
+		arg = NULL;
 	} else {
 		vector = g_irqvector[irq].handler;
-		arg    = g_irqvector[irq].arg;
+		arg = g_irqvector[irq].arg;
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		g_irqvector[irq].count++;
 #endif
 	}
 #else
 	vector = irq_unexpected_isr;
-	arg    = NULL;
+	arg = NULL;
 #endif
 
 #ifdef CONFIG_IRQ_SCHED_HISTORY

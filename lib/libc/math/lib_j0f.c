@@ -59,7 +59,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -71,7 +71,7 @@ static float pzerof(float);
 static float qzerof(float);
 
 static const float invsqrtpi = 5.6418961287e-01;	/* 0x3f106ebb */
-static const float tpi = 6.3661974669e-01;		/* 0x3f22f983 */
+static const float tpi = 6.3661974669e-01;	/* 0x3f22f983 */
 
 /************************************************************************
  * Private Functions
@@ -119,12 +119,12 @@ static float common(uint32_t ix, float x, int y0)
 /* R0/S0 on [0, 2.00] */
 static const float R02 = 1.5625000000e-02;	/* 0x3c800000 */
 static const float R03 = -1.8997929874e-04;	/* 0xb947352e */
-static const float R04 = 1.8295404516e-06;		/* 0x35f58e88 */
+static const float R04 = 1.8295404516e-06;	/* 0x35f58e88 */
 static const float R05 = -4.6183270541e-09;	/* 0xb19eaf3c */
-static const float S01 = 1.5619102865e-02;		/* 0x3c7fe744 */
-static const float S02 = 1.1692678527e-04;		/* 0x38f53697 */
-static const float S03 = 5.1354652442e-07;		/* 0x3509daa6 */
-static const float S04 = 1.1661400734e-09;		/* 0x30a045e8 */
+static const float S01 = 1.5619102865e-02;	/* 0x3c7fe744 */
+static const float S02 = 1.1692678527e-04;	/* 0x38f53697 */
+static const float S03 = 5.1354652442e-07;	/* 0x3509daa6 */
+static const float S04 = 1.1661400734e-09;	/* 0x30a045e8 */
 
 /************************************************************************
  * Public Functions
@@ -166,16 +166,16 @@ float j0f(float x)
  ************************************************************************/
 
 static const float u00 = -7.3804296553e-02;	/* 0xbd9726b5 */
-static const float u01 = 1.7666645348e-01;		/* 0x3e34e80d */
+static const float u01 = 1.7666645348e-01;	/* 0x3e34e80d */
 static const float u02 = -1.3818567619e-02;	/* 0xbc626746 */
-static const float u03 = 3.4745343146e-04;		/* 0x39b62a69 */
+static const float u03 = 3.4745343146e-04;	/* 0x39b62a69 */
 static const float u04 = -3.8140706238e-06;	/* 0xb67ff53c */
-static const float u05 = 1.9559013964e-08;		/* 0x32a802ba */
+static const float u05 = 1.9559013964e-08;	/* 0x32a802ba */
 static const float u06 = -3.9820518410e-11;	/* 0xae2f21eb */
-static const float v01 = 1.2730483897e-02;		/* 0x3c509385 */
-static const float v02 = 7.6006865129e-05;		/* 0x389f65e0 */
-static const float v03 = 2.5915085189e-07;		/* 0x348b216c */
-static const float v04 = 4.4111031494e-10;		/* 0x2ff280c2 */
+static const float v01 = 1.2730483897e-02;	/* 0x3c509385 */
+static const float v02 = 7.6006865129e-05;	/* 0x389f65e0 */
+static const float v03 = 2.5915085189e-07;	/* 0x348b216c */
+static const float v04 = 4.4111031494e-10;	/* 0x2ff280c2 */
 
 /************************************************************************
  * Public Functions

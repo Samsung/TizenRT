@@ -46,7 +46,7 @@
 
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 #include <stdint.h>
 #include <tinyara/float.h>
 
@@ -128,13 +128,13 @@ double hypot(double x, double y)
 	/* xh*xh must not overflow and xl*xl must not underflow in sq */
 	z = 1;
 	if (ex > 0x3ff + 510) {
-		z = 0x1p700;
-		x *= 0x1p-700;
-		y *= 0x1p-700;
+		z = 0x1 p700;
+		x *= 0x1 p - 700;
+		y *= 0x1 p - 700;
 	} else if (ey < 0x3ff - 450) {
-		z = 0x1p-700;
-		x *= 0x1p700;
-		y *= 0x1p700;
+		z = 0x1 p - 700;
+		x *= 0x1 p700;
+		y *= 0x1 p700;
 	}
 	sq(&hx, &lx, x);
 	sq(&hy, &ly, y);

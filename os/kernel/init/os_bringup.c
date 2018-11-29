@@ -158,7 +158,7 @@ static inline void os_pgworker(void)
 
 	svdbg("Starting paging thread\n");
 
-	g_pgworker = kernel_thread("pgfill", CONFIG_PAGING_DEFPRIO, CONFIG_PAGING_STACKSIZE, (main_t)pg_worker, (FAR char *const *)NULL);
+	g_pgworker = kernel_thread("pgfill", CONFIG_PAGING_DEFPRIO, CONFIG_PAGING_STACKSIZE, (main_t) pg_worker, (FAR char * const *)NULL);
 	DEBUGASSERT(g_pgworker > 0);
 }
 
@@ -250,13 +250,12 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
-
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->preapp_start != NULL);
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char *const *)NULL);
+	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char * const *)NULL);
 #else
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
+	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char * const *)NULL);
 #endif
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
@@ -270,7 +269,7 @@ static inline void os_do_appstart(void)
 	svdbg("Starting task manager\n");
 	task_manager_drv_register();
 
-	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
+	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char * const *)NULL);
 	if (pid < 0) {
 		svdbg("Failed to create Task Manager\n");
 	}
@@ -280,9 +279,9 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->us_entrypoint != NULL);
-	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
+	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char * const *)NULL);
 #else
-	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
+	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t) CONFIG_USER_ENTRYPOINT, (FAR char * const *)NULL);
 #endif
 	ASSERT(pid > 0);
 }
@@ -347,7 +346,7 @@ static inline void os_start_application(void)
 	 * execution.
 	 */
 
-	pid = kernel_thread("AppBringUp", CONFIG_BOARD_INITTHREAD_PRIORITY, CONFIG_BOARD_INITTHREAD_STACKSIZE, (main_t)os_start_task, (FAR char *const *)NULL);
+	pid = kernel_thread("AppBringUp", CONFIG_BOARD_INITTHREAD_PRIORITY, CONFIG_BOARD_INITTHREAD_STACKSIZE, (main_t) os_start_task, (FAR char * const *)NULL);
 
 	ASSERT(pid > 0);
 
@@ -432,7 +431,6 @@ int os_bringup(void)
 	 */
 
 	os_start_application();
-
 
 	/* We an save a few bytes by discarding the IDLE thread's environment. */
 

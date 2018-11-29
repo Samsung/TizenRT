@@ -3,6 +3,8 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+#menu "Math Library Support"
+
 config LIBM
 	bool "Standard Math library"
 	default n
@@ -24,3 +26,5 @@ config LIBM
 		math library built into TinyAra.  This math library comes from the Rhombus OS and
 		was written by Nick Johnson.  The Rhombus OS math library port was contributed by
 		Darcy Gong.
+
+#endmenu # Math Library Support

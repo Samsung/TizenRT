@@ -59,7 +59,7 @@
  * Included Files
  ************************************************************************/
 
-#include <math.h>
+#include <tinyara/lib/math.h>
 
 #include "libm.h"
 
@@ -209,7 +209,7 @@ float jnf(int n, float x)
 					b = 2.0f * i * b / x - a;
 					a = temp;
 					/* scale b to avoid spurious overflow */
-					if (b > 0x1p60f) {
+					if (b > 0x1 p60f) {
 						a /= b;
 						t /= b;
 						b = 1.0f;
