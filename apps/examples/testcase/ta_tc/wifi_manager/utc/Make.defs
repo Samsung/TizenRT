@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC),y)
-CSRCS += utc_wifi_manager_main.c
+CSRCS += utc_wifimanager_main.c
 
 DEPPATH += --dep-path ta_tc/wifi_manager/utc
 VPATH += :ta_tc/wifi_manager/utc

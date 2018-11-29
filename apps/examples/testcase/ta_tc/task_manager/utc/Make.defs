@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
-CSRCS += utc_task_manager_main.c
+CSRCS += utc_taskmanager_main.c
 
 DEPPATH += --dep-path ta_tc/task_manager/utc
 VPATH += :ta_tc/task_manager/utc

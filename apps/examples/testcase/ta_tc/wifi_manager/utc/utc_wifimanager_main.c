@@ -627,7 +627,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int utc_wifi_manager_main(int argc, char *argv[])
+int utc_wifimanager_main(int argc, char *argv[])
 #endif
 {
 
