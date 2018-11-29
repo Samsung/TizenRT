@@ -73,6 +73,22 @@ bool header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel, uns
  * @since TizenRT v2.0
  */
 bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+/**
+ * @brief Create a wav header in file.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file point.
+ * @return ture - create success. false - create fail.
+ * @since TizenRT v2.1 PRE
+ */
+bool createWavHeader(FILE *fp);
+/**
+ * @brief Write a wav header in file.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file point, Audio channel and sample rate, pcm format, file data size.
+ * @return ture - write success. false - write fail.
+ * @since TizenRT v2.1 PRE
+ */
+bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, audio_format_type_t pcmFormat, unsigned int fileSize);
 } // namespace utils
 } // namespace media
 

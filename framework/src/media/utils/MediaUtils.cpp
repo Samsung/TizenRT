@@ -80,16 +80,16 @@ audio_type_t getAudioTypeFromPath(std::string datapath)
 
 bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
 {
-	/**
-	*mp3_header is AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
-	*A - Frame sync
-	*B - MPEG Audio version
-	*...
-	*F - Sampling rate frequency
-	*.
-	*I - Channel Mode
-	*...
-	*/
+/**
+*mp3_header is AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
+*A - Frame sync
+*B - MPEG Audio version
+*...
+*F - Sampling rate frequency
+*.
+*I - Channel Mode
+*...
+*/
 	unsigned char bit;
 	unsigned int mpegVersion;
 
@@ -146,15 +146,15 @@ bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 
 bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
 {
-	/**
-	*aac_header is AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP
-	*A - syncword 0xFFF, all bits must be 1
-	*....
-	*F - Sampling rate frequency
-	*..
-	*H - Channel Mode
-	*......
-	*/
+/**
+*aac_header is AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP
+*A - syncword 0xFFF, all bits must be 1
+*....
+*F - Sampling rate frequency
+*..
+*H - Channel Mode
+*......
+*/
 	unsigned char bit;
 	bit = header[2];
 	bit >>= 2;
@@ -224,13 +224,13 @@ bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 
 bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
-	/**
-	*wave header is
-	*Chunk ID   (4byte) / .... (4byte) /            .... (4byte)                /
-	*.....      (4byte) / .... (4byte) / .. (2bye)    / NumChannels  (2byte)    /
-	*sample Rate (4yte) / .... (4byte) / .. (2bye)    / Bits Per sample (2byte) /
-	*.....     (4byte)  / .... (4byte)
-	*/
+/**
+*wave header is
+*Chunk ID    (4byte) / .... (4byte) /            .... (4byte)                /
+*.....       (4byte) / .... (4byte) / .. (2byte)   / NumChannels     (2byte) /
+*sample Rate (4byte) / .... (4byte) / .. (2byte)   / Bits Per sample (2byte) /
+*.....       (4byte) / .... (4byte)
+*/
 	unsigned short bitPerSample;
 	*channel = header[23];
 	*channel <<= 8;
@@ -460,6 +460,135 @@ bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t
 	if (header != NULL) {
 		free(header);
 	}
+	return true;
+}
+
+struct wav_header_s {
+	char headerRiff[4]; //"RIFF"
+	uint32_t riffSize;
+	char headerWave[4]; //"wave"
+	char headerFmt[4]; //"fmt "
+	uint32_t fmtSize; //16 for pcm
+	uint16_t format; //1 for pcm
+	uint16_t channels;
+	uint32_t sampleRate;
+	uint32_t byteRate;
+	uint16_t blockAlign;
+	uint16_t bitPerSample;
+	char headerData[4]; //"data"
+	uint32_t dataSize;
+};
+
+uint32_t convertLittleEndian(unsigned int num, unsigned short byte)
+{
+	unsigned int ret = 0;
+	for (int i = 0; i < byte; ++i) {
+		ret |= (num & 0xff);
+		num >>= 8;
+		ret <<= 8;
+	}
+	return ret;
+}
+
+bool createWavHeader(FILE *fp)
+{
+	struct wav_header_s *header;
+	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
+	if (!header) {
+		meddbg("fail to malloc buffer\n");
+		if (fclose(fp) == 0) {
+			fp = nullptr;
+		}
+		return false;
+	}
+
+	memset(header, 0xff, WAVE_HEADER_LENGTH);
+	int ret;
+	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
+	if (ret < 0) {
+		meddbg("file write failed error %d\n", errno);
+		return false;
+	}
+	if (fseek(fp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
+		meddbg("file seek failed error\n");
+		return false;
+	}
+	if (header != NULL) {
+		free(header);
+	}
+	return true;
+}
+
+bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, audio_format_type_t pcmFormat, unsigned int fileSize)
+{
+/**
+*wave header is
+*Chunk ID 'RIFF' (4byte) / Chunk Size (4byte) / Fomat 'WAVE' (4byte) /
+*Chunk ID 'fmt ' (4byte) / Chunk Size (4byte) / Audio Format (2byte) / NumChannels     (2byte) /
+*sample Rate     (4byte) / Byte Rate  (4byte) / Block Align  (2byte) / Bits Per sample (2byte) /
+*Chunk ID 'data' (4byte) / Chunk Size (4byte)
+*/
+	if (fseek(fp, 0, SEEK_SET) != 0) {
+		meddbg("file seek failed error\n");
+		return false;
+	}
+
+	struct wav_header_s *header;
+	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
+	uint32_t byteRate = 0;
+	uint16_t bitPerSample = 0;
+	uint16_t blockAlign = 0;
+
+	switch (pcmFormat) {
+	case AUDIO_FORMAT_TYPE_S16_LE:
+		bitPerSample = 16;
+		break;
+	case AUDIO_FORMAT_TYPE_S32_LE:
+		bitPerSample = 32;
+		break;
+	default:
+		meddbg("does not support audio format.\n");
+		return false;
+	}
+
+	blockAlign = channel * (bitPerSample >> 3);
+	byteRate = sampleRate * blockAlign;
+
+	if (header == NULL) {
+		meddbg("malloc failed error\n");
+		return false;
+	}
+
+	strcpy(header->headerRiff, "RIFF");
+
+	header->riffSize = convertLittleEndian(fileSize - 8, 4);
+
+	strcpy(header->headerWave, "WAVE");
+	strcpy(header->headerFmt, "fmt ");
+
+	header->fmtSize = convertLittleEndian(16, 4);
+	header->format = convertLittleEndian(1, 2);
+	header->channels = convertLittleEndian(channel, 2);
+	header->sampleRate = convertLittleEndian(sampleRate, 4);
+	header->byteRate = convertLittleEndian(byteRate, 4);
+	header->blockAlign = convertLittleEndian(blockAlign, 2);
+	header->bitPerSample = convertLittleEndian(bitPerSample, 2);
+
+	strcpy(header->headerData, "data");
+
+	header->dataSize = convertLittleEndian(fileSize - WAVE_HEADER_LENGTH, 4);
+
+	int ret = 0;
+	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
+
+	if (ret < 0) {
+		meddbg("file write failed error %d\n", errno);
+		return false;
+	}
+	if (header != NULL) {
+		free(header);
+	}
+
 	return true;
 }
 } // namespace util

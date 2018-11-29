@@ -38,6 +38,7 @@ using namespace media::stream;
 
 static const int TEST_MEDIATYPE_PCM = 0;
 static const int TEST_MEDIATYPE_OPUS = 1;
+static const int TEST_MEDIATYPE_WAVE = 2;
 
 static const int TEST_DATASOURCE_TYPE_FILE = 0;
 static const int TEST_DATASOURCE_TYPE_BUFFER = 1;
@@ -184,6 +185,8 @@ public:
 						filePath = "/tmp/record.pcm";
 					} else if (mMediaType == TEST_MEDIATYPE_OPUS) {
 						filePath = "/tmp/record.opus";
+					} else if (mMediaType == TEST_MEDIATYPE_WAVE) {
+						filePath = "/tmp/record.wav";
 					}
 
 					if (mDataSourceType == TEST_DATASOURCE_TYPE_FILE) {

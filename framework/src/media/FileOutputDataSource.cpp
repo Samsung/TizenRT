@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <debug.h>
 #include <media/FileOutputDataSource.h>
 #include "utils/MediaUtils.h"
@@ -60,27 +61,49 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 bool FileOutputDataSource::open()
 {
 	if (!mFp) {
-		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
 		mFp = fopen(mDataPath.c_str(), "wb");
-		if (mFp) {
-			medvdbg("file open success\n");
-			return true;
-		} else {
+		if (!mFp) {
 			meddbg("file open failed error : %d\n", errno);
 			return false;
 		}
-	}
 
-	medvdbg("file already exists\n");
-	/** return true if mFp is not null, because it means it using now */
+		setAudioType(utils::getAudioTypeFromPath(mDataPath));
+		switch (getAudioType()) {
+		case AUDIO_TYPE_WAVE:
+			if (!utils::createWavHeader(mFp)) {
+				meddbg("wav header create failed\n");
+			}
+			break;
+		default:
+			/* Don't set any encoder for unsupported formats */
+			break;
+		}
+	} else {
+		medvdbg("file already exists\n");
+		/** return true if mFp is not null, because it means it using now */
+	}
 	return true;
 }
 
 bool FileOutputDataSource::close()
 {
+	switch (getAudioType()) {
+		case AUDIO_TYPE_WAVE:
+			unsigned int fileSize;
+			fileSize = ftell(mFp);
+			if (fileSize < 0) {
+				meddbg("file size could not be found\n");
+				break;
+			}
+			if (!utils::writeWavHeader(mFp, getChannels(), getSampleRate(), getPcmFormat(), fileSize)) {
+				meddbg("wav header write to failed\n");
+			}
+			break;
+		default:
+			/* Don't set any encoder for unsupported formats */
+			break;
+	}
 	if (mFp) {
-
 		int ret = fclose(mFp);
 		if (ret == OK) {
 			mFp = nullptr;
