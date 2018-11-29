@@ -390,7 +390,7 @@ static void my_debug(void *ctx, int level, const char *file, int line, const cha
 
 /*
  * Test recv/send functions that make sure each try returns
- * WANT_READ/WANT_WRITE at least once before sucesseding
+ * WANT_READ/WANT_WRITE at least once before succeeding
  */
 static int my_recv(void *ctx, unsigned char *buf, size_t len)
 {
