@@ -217,7 +217,7 @@ static int smart_seek_test(char *filename)
 /****************************************************************************
  * Name: smart_append_test
  *
- * Description: Conducts an append test on the file.
+ * Description: Conducts a test on the appended file.
  *
  ****************************************************************************/
 
@@ -235,7 +235,7 @@ static int smart_append_test(char *filename)
 
 	/* Now write some data to the end of the file */
 
-	fprintf(fd, "This is a test of the append.\n");
+	fprintf(fd, "This is a test of the appended file.\n");
 	if (ferror(fd) != OK) {
 		printf("Error appending message... Maybe disk has been fulled\n");
 		fclose(fd);
@@ -249,7 +249,7 @@ static int smart_append_test(char *filename)
 
 	fseek(fd, 0, SEEK_END);
 	if (ftell(fd) != pos) {
-		printf("Error opening for append ... data not at EOF\n");
+		printf("Error opening for appended file ... data not at EOF\n");
 	}
 
 	/* Now seek to that position and read the data back */
@@ -257,7 +257,7 @@ static int smart_append_test(char *filename)
 	fseek(fd, -30, SEEK_END);
 	fread(readstring, 1, 30, fd);
 	readstring[30] = '\0';
-	if (strcmp(readstring, "This is a test of the append.\n") != 0) {
+	if (strcmp(readstring, "This is a test of the appended file.\n") != 0) {
 		printf("\nAppend test failed\n");
 	} else {
 		printf("\nAppend test passed\n");
@@ -270,7 +270,7 @@ static int smart_append_test(char *filename)
 /****************************************************************************
  * Name: smart_seek_with_write_test
  *
- * Description: Conducts an append test on the file.
+ * Description: Conducts a test on the appended file.
  *
  ****************************************************************************/
 
