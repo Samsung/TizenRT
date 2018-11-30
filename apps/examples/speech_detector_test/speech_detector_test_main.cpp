@@ -42,9 +42,9 @@ static void run() {
 
 	media::recorder_result_t mret = recorder.create();
 	if (mret == media::RECORDER_OK) {
-		printf("[MR] create succeeded.\n");
+		printf("[MR] creation succeeded.\n");
 	} else {
-		printf("[MR] create failed.\n");
+		printf("[MR] creation failed.\n");
 	}
 
 	mret = recorder.setDataSource(std::unique_ptr<media::stream::BufferOutputDataSource>(new media::stream::BufferOutputDataSource()));
@@ -72,9 +72,9 @@ static void run() {
 	
 	mret = recorder.prepare();
 	if (mret == media::RECORDER_OK) {
-		printf("[MR] prepare succeeded.\n");
+		printf("[MR] preparation succeeded.\n");
 	} else {
-		printf("[MR] prepare failed.\n");
+		printf("[MR] preparation failed.\n");
 	}
 
 	mret = recorder.start();
