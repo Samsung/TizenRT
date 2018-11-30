@@ -503,7 +503,7 @@ static inline int smart_rdfile(FAR struct smart_filedesc_s *file)
 		return ERROR;
 	}
 
-	/* Read all of the data info the fileimage buffer using random read sizes */
+	/* Read all of the data into the fileimage buffer using random read sizes */
 
 	for (ntotalread = 0; ntotalread < file->len;) {
 		nbytesread = smart_rdblock(fd, file, ntotalread, file->len - ntotalread);
@@ -526,7 +526,7 @@ static inline int smart_rdfile(FAR struct smart_filedesc_s *file)
 		return ERROR;
 	}
 
-	/* Try reading past the end of the file */
+	/* Try to reading past the end of the file */
 
 	nbytesread = smart_rdblock(fd, file, ntotalread, 1024);
 	if (nbytesread > 0) {
@@ -575,7 +575,7 @@ static int smart_verifyfs(void)
 			} else {
 				if (file->deleted) {
 #if CONFIG_EXAMPLES_SMART_VERBOSE != 0
-					printf("Succesffully read a deleted file\n");
+					printf("Successfully read a deleted file\n");
 					printf("  File name: %s\n", file->name);
 					printf("  File size: %d\n", file->len);
 #endif
