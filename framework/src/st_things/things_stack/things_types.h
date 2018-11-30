@@ -66,11 +66,11 @@ typedef enum {
 } wifi_freq_e;
 
 typedef enum {
-	NONE_AUTH = 0,
+	NONE_SEC = 0,
 	WEP,
 	WPA_PSK,
 	WPA2_PSK
-} wifi_auth_type_e;
+} wifi_sec_type_e;
 
 typedef enum {
 	NONE_ENC = 0,
@@ -84,7 +84,7 @@ typedef enum {
 typedef struct {
 	char ssid[WIFIMGR_SSID_LEN + 1];	/**< ssid of the Enroller**/
 	char pwd[WIFIMGR_PASSPHRASE_LEN + 1]; /**< pwd of the Enroller**/
-	wifi_auth_type_e authtype;	/**< auth type of the Enroller**/
+	wifi_sec_type_e sectype;	/**< security type of the Enroller**/
 	wifi_enc_type_e enctype; /**< encryption type of the Enroller**/
 	int discovery_channel;		// samsung specific property
 } es_wifi_prov_data_s;

@@ -63,6 +63,7 @@
 #define SEC_TYPE_WEP                    "WEP"
 #define SEC_TYPE_WPA_PSK                "WPA-PSK"
 #define SEC_TYPE_WPA2_PSK               "WPA2-PSK"
+#define SEC_TYPE_NONE                   "NONE"
 
 /* EncType value */
 #define ENC_TYPE_WEP_64                 "WEP-64"
@@ -70,6 +71,7 @@
 #define ENC_TYPE_TKIP                   "TKIP"
 #define ENC_TYPE_AES                    "AES"
 #define ENC_TYPE_TKIP_AES               "TKIP_AES"
+#define ENC_TYPE_NONE                   "NONE"
 
 #define DEVICE_OS_VERSION               "1.1"
 #define DEVICE_PLATFORM_VERSION         "1.1"

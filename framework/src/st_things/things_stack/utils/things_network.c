@@ -200,23 +200,23 @@ int things_set_ap_connection(access_point_info_s *p_info)
 	THINGS_LOG_V(TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
 	// set sec type
-	if (strncmp(p_info->sec_type, "WEP", strlen("WEP")) == 0) {
+	if (strncmp(p_info->sec_type, SEC_TYPE_WEP, strlen(SEC_TYPE_WEP)) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
-	} else if (strncmp(p_info->sec_type, "WPA-PSK", strlen("WPA-PSK")) == 0) {
+	} else if (strncmp(p_info->sec_type, SEC_TYPE_WPA_PSK, strlen(SEC_TYPE_WPA_PSK)) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_PSK;
-	} else if (strncmp(p_info->sec_type, "WPA2-PSK", strlen("WPA2-PSK")) == 0) {
+	} else if (strncmp(p_info->sec_type, SEC_TYPE_WPA2_PSK, strlen(SEC_TYPE_WPA2_PSK)) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA2_PSK;
 	}
 	// set encryption crypto type
-	if (strncmp(p_info->enc_type, "WEP-64", strlen("WEP-64")) == 0) {
+	if (strncmp(p_info->enc_type, ENC_TYPE_WEP_64, strlen(ENC_TYPE_WEP_64)) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
-	} else if (strncmp(p_info->enc_type, "WEP-128", strlen("WEP-128")) == 0) {
+	} else if (strncmp(p_info->enc_type, ENC_TYPE_WEP_128, strlen(ENC_TYPE_WEP_128)) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-	} else if (strncmp(p_info->enc_type, "TKIP", strlen("TKIP")) == 0) {
+	} else if (strncmp(p_info->enc_type, ENC_TYPE_TKIP, strlen(ENC_TYPE_TKIP)) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP;
-	} else if (strncmp(p_info->enc_type, "AES", strlen("AES")) == 0) {
+	} else if (strncmp(p_info->enc_type, ENC_TYPE_AES, strlen(ENC_TYPE_AES)) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_AES;
-	} else if (strncmp(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES")) == 0) {
+	} else if (strncmp(p_info->enc_type, ENC_TYPE_TKIP_AES, strlen(ENC_TYPE_TKIP_AES)) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
 	}
 
@@ -396,7 +396,7 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 			} else if (wifi_scan_iter->ap_auth_type == WIFI_MANAGER_AUTH_WPA2_PSK) {
 				sec_type = SEC_TYPE_WPA2_PSK;
 			} else {
-				sec_type = "NONE";
+				sec_type = SEC_TYPE_NONE;
 			}
 			snprintf(pinfo->sec_type, MAX_TYPE_SEC, "%s", sec_type);
 
@@ -413,7 +413,7 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 			} else if (wifi_scan_iter->ap_crypto_type == WIFI_MANAGER_CRYPTO_TKIP_AND_AES) {
 				enc_type = ENC_TYPE_TKIP_AES;
 			} else {
-				enc_type = "NONE";
+				enc_type = ENC_TYPE_NONE;
 			}
 			snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", enc_type);
 			if (g_wifi_scan_info == NULL) {

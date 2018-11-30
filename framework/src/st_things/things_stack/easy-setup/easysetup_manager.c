@@ -598,49 +598,49 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		things_strncpy(p_info->security_key, event_data->pwd, strlen(event_data->pwd));
 	}
 
-	if (event_data->authtype >= NONE_AUTH && event_data->authtype <= WPA2_PSK) {
-		switch (event_data->authtype) {
+	if (event_data->sectype >= NONE_SEC && event_data->sectype <= WPA2_PSK) {
+		switch (event_data->sectype) {
 		case WEP:
-			things_strncpy(p_info->sec_type, "WEP", strlen("WEP"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WEP, strlen(SEC_TYPE_WEP));
 			break;
 		case WPA_PSK:
-			things_strncpy(p_info->sec_type, "WPA-PSK", strlen("WPA-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA_PSK, strlen(SEC_TYPE_WPA_PSK));
 			break;
 		case WPA2_PSK:
-			things_strncpy(p_info->sec_type, "WPA2-PSK", strlen("WPA2-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA2_PSK, strlen(SEC_TYPE_WPA2_PSK));
 			break;
-		case NONE_AUTH:
+		case NONE_SEC:
 		default:
-			things_strncpy(p_info->sec_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->sec_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 	}
 
 	if (event_data->enctype >= NONE_ENC && event_data->enctype <= TKIP_AES) {
 		switch (event_data->enctype) {
 		case WEP_64:
-			things_strncpy(p_info->enc_type, "WEP_64", strlen("WEP_64"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_64, strlen(ENC_TYPE_WEP_64));
 			break;
 		case WEP_128:
-			things_strncpy(p_info->enc_type, "WEP_128", strlen("WEP_128"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_128, strlen(ENC_TYPE_WEP_128));
 			break;
 		case TKIP:
-			things_strncpy(p_info->enc_type, "TKIP", strlen("TKIP"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP, strlen(ENC_TYPE_TKIP));
 			break;
 		case AES:
-			things_strncpy(p_info->enc_type, "AES", strlen("AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_AES, strlen(ENC_TYPE_AES));
 			break;
 		case TKIP_AES:
-			things_strncpy(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP_AES, strlen(ENC_TYPE_TKIP_AES));
 			break;
 		default:
-			things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 	}
 
 	if (event_data->discovery_channel != -1) {
@@ -656,7 +656,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	THINGS_LOG_D(TAG, "Copied pwd = %s", g_wifi_prov_data->pwd);
 	THINGS_LOG_D(TAG, "Copied enctype = %d", g_wifi_prov_data->enctype);
 	THINGS_LOG_D(TAG, "Copied discovery_channel = %d", g_wifi_prov_data->discovery_channel);
-	THINGS_LOG_D(TAG, "Copied authtype = %d", g_wifi_prov_data->authtype);
+	THINGS_LOG_D(TAG, "Copied sectype = %d", g_wifi_prov_data->sectype);
 
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
