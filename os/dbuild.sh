@@ -26,6 +26,9 @@ BINDIR="${BUILDDIR}/output/bin"
 BINFILE="${BINDIR}/tinyara.bin"
 CONFIGDIR="${BUILDDIR}/configs"
 
+# CFG file for artik05x
+CFG_FILE=${CONFIGDIR}/artik05x/scripts/artik05x-usb-ftdi.cfg
+
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
 BUILD_CMD=make
 
@@ -154,17 +157,17 @@ function SELECT_BOARD()
 		read SELECTED_BOARD
 	fi
 
-	# treate "exit"
+	# treat "exit"
 	if [ "${SELECTED_BOARD}" == "x" -o "${SELECTED_BOARD}" == "exit" -o "${SELECTED_BOARD}" == "EXIT" ]; then
 		exit 1
 	fi
 
-	# treate selected number
+	# treat selected number
 	if [ ! -z ${BOARDNAME_STR[${SELECTED_BOARD}]} ]; then
 		BOARD=${BOARDNAME_STR[${SELECTED_BOARD}]}	
 	fi
 
-	# treate given board string
+	# treat given board string
 	if [ -z ${BOARD} ]; then
 		IDX=1
 		for BOARDNAME_MEMBER in ${BOARDNAME_STR[@]}; do
@@ -173,7 +176,10 @@ function SELECT_BOARD()
 			fi
 		done
 	fi
+}
 
+function BOARD_CONFIGURED()
+{
 	if [ ! -z ${BOARD} ]; then
 		STATUS=BOARD_CONFIGURED
 		echo "${BOARD} is selected"
@@ -216,18 +222,18 @@ function SELECT_CONFIG()
 		read SELECTED_CONFIG
 	fi
 
-	# treate "exit"
+	# treat "exit"
 	if [ "${SELECTED_CONFIG}" == "x" -o "${SELECTED_CONFIG}" == "exit" -o "${SELECTED_CONFIG}" == "EXIT" ]; then
 		exit 0
 	fi
 
-	# treate selected number
+	# treat selected number
 	if [ ! -z ${CONFIGNAME_STR[${SELECTED_CONFIG}]} ]; then
 		CONFIG=${CONFIGNAME_STR[${SELECTED_CONFIG}]}
 		
 	fi
 
-	# treate given config string
+	# treat given config string
 	if [ -z ${CONFIG} ]; then
 		IDX=1
 		for CONFIGNAME_MEMBER in ${CONFIGNAME_STR[@]}; do
@@ -255,13 +261,13 @@ function SELECT_DL
 	if [ ! -z "$1" ];then
 		SELECTED_DL=$1
 	else
-		echo ==================================================
+		echo =============================================================================
 		echo "  \"Select download option\""
-		echo ==================================================
+		echo =============================================================================
 		echo "  \"1. ALL\""
 		echo "  \"2. OS\""
 		echo "  \"x. Exit\""
-		echo ==================================================
+		echo =============================================================================
 		read SELECTED_DL
 	fi
 
@@ -282,6 +288,100 @@ function SELECT_DL
 	if [ ! -z "${DL_ARG}" ]; then
 		STATUS=DOWNLOAD
 	fi
+}
+
+function SELECT_PORT()
+{
+	# Get current target board information
+	if [ -z ${BOARD} ]; then
+		SELECT_BOARD
+	fi
+
+	case ${BOARD} in
+	artik053|artik053s|artik055s)
+		unset SELECTED_PORT
+
+		# Delete the previous target port information
+		sed -i '/ftdi_location/d' ${CFG_FILE}
+		;;
+	*)
+		${SELECTED_PORT}="default"
+		;;
+	esac
+
+	if [ ! ${SELECTED_PORT} ];then
+		echo =============================================================================
+		echo "  \"Select PORT Option\""
+		echo =============================================================================
+		echo "  \"1. Last Connected Device\""
+		echo "  \"2. Select Specific Port\""
+		echo "  \"x. Exit\""
+		echo =============================================================================
+		read SELECTED_PORT
+	fi
+
+	case ${SELECTED_PORT} in
+	1|default)
+		SELECT_DL
+		;;
+	2|select*)
+		# Get buses which are connected with artik05x
+		BUS_NUMS=`lsusb -d 0403:6010 | awk '{printf "%d ", $2}'`
+
+		# Remove duplicated bus numbers and sort
+		BUS_LIST=`echo ${BUS_NUMS} | xargs -n1 | sort -u | xargs`
+
+		# Get PORT information corresponding to the BUS
+		LINE_IDX=1
+		for BUS_NUM in ${BUS_LIST}; do
+			LINE_INFO=(`lsusb -t | awk '/Bus/{printf "%d\t%d\n", $3, NR}END{printf "END\t%d\n", NR}'`)
+			while [ : ]; do
+				if [ ${LINE_INFO[${LINE_IDX}*2 - 2]} -eq ${BUS_NUM} ]; then
+					PORT_INFO=`lsusb -t | sed -n -e ''${LINE_INFO[${LINE_IDX}*2 - 1]}','${LINE_INFO[${LINE_IDX}*2 + 1]}'p' -e 's/.Port//' | awk '!/Bus/{print $3}' | sed 's/://'`
+					PORT_LIST=`echo ${PORT_INFO} | xargs -n1 | sort -u | xargs`
+					BUS_PORT_INFO[${BUS_NUM}]=${PORT_LIST}
+					break
+				fi
+				((LINE_IDX=LINE_IDX+1))
+			done
+		done
+
+		# Print Bus and Port inforation
+		IDX=1
+		echo =============================================================================
+		echo "  \"BUS and PORT Information of Available Device\""
+		echo =============================================================================
+		lsusb -t | awk '/Bus/||(/ftdi/&&/If 1/)' | sed -e 's/\.Port 1//' -e 's/If 1, //'
+		echo =============================================================================
+		echo "  \"Select BUS and PORT\""
+		echo =============================================================================
+		for BUS_IDX in ${BUS_LIST}; do
+			for BUS_PORT_IDX in ${BUS_PORT_INFO[$BUS_IDX]}; do
+				echo "  \"${IDX}. Bus: ${BUS_IDX} Port: ${BUS_PORT_IDX}\""
+				BUS_PORT[${IDX}]="${BUS_IDX}:${BUS_PORT_IDX}"
+				((IDX=IDX+1))
+			done
+		done
+		echo "  \"x. EXIT\""
+		echo =============================================================================
+		read SELECTED_BUS_PORT
+
+		# treat "exit"
+		if [ "${SELECTED_BUS_PORT}" == "x" -o "${SELECTED_BUS_PORT}" == "exit" -o "${SELECTED_BUS_PORT}" == "EXIT" ]; then
+			exit 0
+		fi
+		# treat selected number
+		if [ ! -z ${BUS_PORT[${SELECTED_BUS_PORT}]} ]; then
+			printf 'ftdi_location %s' ${BUS_PORT[${SELECTED_BUS_PORT}]} >> ${CFG_FILE}
+		fi
+		SELECT_DL
+		;;
+	x|exit)
+		exit 1
+		;;
+	*)
+		;;
+	esac
 }
 
 function BUILD()
@@ -322,6 +422,7 @@ function DOWNLOAD()
 	pushd ${OSDIR} > /dev/null
 	${BUILD_CMD} download $1 $2 $3 $4 $5
 	popd > /dev/null
+	sed -i '/ftdi_location/d' ${CFG_FILE}
 
 	exit 0
 }
@@ -343,13 +444,14 @@ function MENU()
 		case ${STATUS} in
 		NOT_CONFIGURED)
 			SELECT_BOARD
+			BOARD_CONFIGURED
 			SELECT_CONFIG
 			;;
 		CONFIGURED|BUILT)
 			SELECT_OPTION
 			;;
 		PREPARE_DL)
-			SELECT_DL
+			SELECT_PORT
 			;;
 		*)
 			echo "Invalid Status!! ${STATUS}"
