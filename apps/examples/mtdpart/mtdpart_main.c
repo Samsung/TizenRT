@@ -411,7 +411,7 @@ int mtdpart_main(int argc, char *argv[])
 				goto out;
 			}
 
-			/* Verfy the offsets in the block */
+			/* Verify the offsets in the block */
 
 			for (k = 0; k < blocksize / sizeof(uint32_t); k++) {
 				if (buffer[k] != check) {
@@ -455,7 +455,7 @@ int mtdpart_main(int argc, char *argv[])
 			sectoff += blocksize;
 		}
 
-		/* Try reading one more time.  We should get the end of file */
+		/* Try to reading one more time.  We should get the end of file */
 
 		nbytes = read(fd, buffer, blocksize);
 		if (nbytes != 0) {
@@ -501,7 +501,7 @@ int mtdpart_main(int argc, char *argv[])
 			goto out_free_buffer;
 		}
 
-		/* Verfy the values in the block */
+		/* Verify the values in the block */
 
 		for (k = 0; k < blocksize / sizeof(uint32_t); k++) {
 			if (buffer[k] != ~check) {
