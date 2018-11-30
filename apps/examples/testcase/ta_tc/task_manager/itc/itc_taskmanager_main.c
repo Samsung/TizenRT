@@ -788,7 +788,7 @@ void tm_itc_main(void)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int itc_task_manager_main(int argc, char *argv[])
+int itc_taskmanager_main(int argc, char *argv[])
 #endif
 {
 	int status;

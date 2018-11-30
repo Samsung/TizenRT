@@ -1204,7 +1204,7 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int itc_wifi_manager_main(int argc, char *argv[])
+int itc_wifimanager_main(int argc, char *argv[])
 #endif
 {
 	int ssid_len = strlen(TEST_SSID);
