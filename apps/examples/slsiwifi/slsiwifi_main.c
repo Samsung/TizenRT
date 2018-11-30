@@ -56,7 +56,7 @@ sem_t ap_conn_sem;
 sem_t g_sem_result;
 sem_t g_sem_join;
 static uint8_t g_join_result = 0;
-#define  WPA_MAX_SSID_LEN (4*32+1)	/* SSID encoded in a string - worst case is all 4-octet hex digits + '\0' */
+#define  WPA_MAX_SSID_LEN (4*32+1)	/* SSID encoded in a string - the worst case is all 4-octet hex digits + '\0' */
 
 /****************************************************************************
  * Defines
@@ -167,7 +167,7 @@ void sw_linkUpHandler(slsi_reason_t *reason)
 	} else {
 		printf("New Station connected bssid: %s \n", reason->bssid);
 		WiFiIsConnected(&numStations, NULL);
-		if (inAuto) {			// we need to post to the sanity test that we have a connection
+		if (inAuto) {			// we need to post to the sane test that we have a connection
 			sem_post(&ap_conn_sem);
 		}
 	}
@@ -317,7 +317,7 @@ int8_t doScan(void)
 		printf("Successfully started scan...waiting for result!\n");
 		sem_wait(&g_sem_result);
 	} else {
-		printf("Failed to start scan for networks. maybe you forgot to do \"startsta/startap\"\n");
+		printf("Failed to start scan for networks. maybe you forgot doing \"startsta/startap\"\n");
 	}
 	sem_destroy(&g_sem_result);
 	return result;
@@ -342,7 +342,7 @@ int8_t doStartAP(char *ssid, char *sec, char *passphrase, uint8_t channel)
 	}
 
 	if (channel > 14 || channel < 1) {
-		printf("Channel needs to be between 1 and 14 (highest channel depends on country)\n");
+		printf("Channel needs to be between 1 and 14 (the highest channel depends on country)\n");
 		free(ap_config);
 		return result;
 	} else {
