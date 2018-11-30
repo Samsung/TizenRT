@@ -295,7 +295,7 @@ int telnetd_main(int argc, char *argv[])
 	printf("telnetd_main: Starting the Telnet daemon\n");
 	ret = telnetd_start(&config);
 	if (ret < 0) {
-		printf("Failed to tart the Telnet daemon\n");
+		printf("Failed to start the Telnet daemon\n");
 	}
 
 	printf("telnetd_main: Exiting\n");
