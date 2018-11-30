@@ -54,22 +54,23 @@
  * Included Files
  ****************************************************************************/
 
-#include  <sys/types.h>
-#include  <stdbool.h>
-#include  <string.h>
-#include  <assert.h>
-#include  <debug.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
+#include <debug.h>
 
-#include  <tinyara/arch.h>
-#include  <tinyara/compiler.h>
-#include  <tinyara/sched.h>
-#include  <tinyara/fs/fs.h>
-#include  <tinyara/net/net.h>
-#include  <tinyara/lib.h>
-#include  <tinyara/mm/mm.h>
-#include  <tinyara/mm/shm.h>
-#include  <tinyara/kmalloc.h>
-#include  <tinyara/init.h>
+#include <tinyara/arch.h>
+#include <tinyara/compiler.h>
+#include <tinyara/sched.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/net/net.h>
+#include <tinyara/lib.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/mm/shm.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/syslog/syslog.h>
+#include <tinyara/init.h>
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -125,6 +126,8 @@ extern bool heapx_is_init[CONFIG_MM_NHEAPS];
  */
 
 volatile dq_queue_t g_readytorun;
+
+FAR struct tcb_s *g_running_tasks[1];
 
 /* This is the list of all tasks that are ready-to-run, but cannot be placed
  * in the g_readytorun list because:  (1) They are higher priority than the
@@ -215,26 +218,33 @@ struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
  */
 
 const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] = {
-	{NULL,                    false},	/* TSTATE_TASK_INVALID */
-	{&g_pendingtasks,         true },	/* TSTATE_TASK_PENDING */
-	{&g_readytorun,           true },	/* TSTATE_TASK_READYTORUN */
-	{&g_readytorun,           true },	/* TSTATE_TASK_RUNNING */
-	{&g_inactivetasks,        false},	/* TSTATE_TASK_INACTIVE */
-	{&g_waitingforsemaphore,  true }	/* TSTATE_WAIT_SEM */
+	{NULL, false},				/* TSTATE_TASK_INVALID */
+	{&g_pendingtasks, true},	/* TSTATE_TASK_PENDING */
+	{&g_readytorun, true},		/* TSTATE_TASK_READYTORUN */
+	{&g_readytorun, true},		/* TSTATE_TASK_RUNNING */
+	{&g_inactivetasks, false},	/* TSTATE_TASK_INACTIVE */
+	{&g_waitingforsemaphore, true}	/* TSTATE_WAIT_SEM */
 #ifndef CONFIG_DISABLE_SIGNALS
 	,
-	{&g_waitingforsignal,     false}	/* TSTATE_WAIT_SIG */
+	{&g_waitingforsignal, false}	/* TSTATE_WAIT_SIG */
 #endif
 #ifndef CONFIG_DISABLE_MQUEUE
 	,
-	{&g_waitingformqnotempty, true },	/* TSTATE_WAIT_MQNOTEMPTY */
-	{&g_waitingformqnotfull,  true }	/* TSTATE_WAIT_MQNOTFULL */
+	{&g_waitingformqnotempty, true},	/* TSTATE_WAIT_MQNOTEMPTY */
+	{&g_waitingformqnotfull, true}	/* TSTATE_WAIT_MQNOTFULL */
 #endif
 #ifdef CONFIG_PAGING
 	,
-	{&g_waitingforfill,       true }	/* TSTATE_WAIT_PAGEFILL */
+	{&g_waitingforfill, true}	/* TSTATE_WAIT_PAGEFILL */
 #endif
 };
+
+/* This is the current initialization state.  The level of initialization
+ * is only important early in the start-up sequence when certain OS or
+ * hardware resources may not yet be available to the kernel logic.
+ */
+
+uint8_t g_os_initstate;  /* See enum os_initstate_e */
 
 /****************************************************************************
  * Private Variables
@@ -280,9 +290,18 @@ static FAR char *g_idleargv[2];
 
 void os_start(void)
 {
+#ifdef CONFIG_SMP
+	int cpu;
+#else
+#	define cpu 0
+#endif
 	int i;
 
 	slldbg("Entry\n");
+
+	/* Boot up is complete */
+
+	g_os_initstate = OSINIT_BOOT;
 
 	/* Initialize RTOS Data ************************************************** */
 	/* Initialize all task lists */
@@ -323,7 +342,7 @@ void os_start(void)
 	/* Increment the g_alive_taskcount as first task "idle task" is created */
 	g_alive_taskcount++;
 
-	/* Initialize the IDLE task TCB *******************************************/
+	/* Initialize the IDLE task TCB ****************************************** */
 	/* Initialize a TCB for this thread of execution.  NOTE:  The default
 	 * value for most components of the g_idletcb are zero.  The entire
 	 * structure is set to zero.  Then only the (potentially) non-zero
@@ -333,7 +352,7 @@ void os_start(void)
 
 	bzero((void *)&g_idletcb, sizeof(struct task_tcb_s));
 	g_idletcb.cmn.task_state = TSTATE_TASK_RUNNING;
-	g_idletcb.cmn.entry.main = (main_t)os_start;
+	g_idletcb.cmn.entry.main = (main_t) os_start;
 	g_idletcb.cmn.flags = TCB_FLAG_TTYPE_KERNEL;
 
 	/* Set the IDLE task name */
@@ -352,11 +371,11 @@ void os_start(void)
 	 */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	g_idleargv[0]  = g_idletcb.cmn.name;
+	g_idleargv[0] = g_idletcb.cmn.name;
 #else
-	g_idleargv[0]  = (FAR char *)g_idlename;
+	g_idleargv[0] = (FAR char *)g_idlename;
 #endif							/* CONFIG_TASK_NAME_SIZE */
-	g_idleargv[1]  = NULL;
+	g_idleargv[1] = NULL;
 	g_idletcb.argv = g_idleargv;
 
 	/* Then add the idle task's TCB to the head of the ready to run list */
@@ -366,6 +385,10 @@ void os_start(void)
 	/* Initialize the processor-specific portion of the TCB */
 
 	up_initial_state(&g_idletcb.cmn);
+
+	/* Task lists are initialized */
+
+	g_os_initstate = OSINIT_TASKLISTS;
 
 	/* Initialize RTOS facilities *********************************************
 	 * Initialize the semaphore facility.  This has to be done very early
@@ -416,6 +439,10 @@ void os_start(void)
 	}
 #endif
 
+	/* The memory manager is available */
+
+	g_os_initstate = OSINIT_MEMORY;
+
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Initialize tasking data structures */
 
@@ -444,7 +471,6 @@ void os_start(void)
 	{
 		wd_initialize();
 	}
-
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	/* Initialize the file system (needed to support device drivers) */
 
@@ -522,6 +548,10 @@ void os_start(void)
 
 	up_initialize();
 
+	/* Hardware resources are available */
+
+	g_os_initstate = OSINIT_HARDWARE;
+
 	/* Auto-mount Arch-independent File Sysytems */
 
 	fs_auto_mount();
@@ -550,7 +580,7 @@ void os_start(void)
 
 	lib_initialize();
 
-	/* IDLE Group Initialization **********************************************/
+	/* IDLE Group Initialization ********************************************* */
 #ifdef HAVE_TASK_GROUP
 	/* Allocate the IDLE group */
 
@@ -575,11 +605,16 @@ void os_start(void)
 #endif
 
 	/* Bring Up the System ****************************************************/
+	/* The OS is fully initialized and we are beginning multi-tasking */
+
+	g_os_initstate = OSINIT_OSREADY;
+
+	/* Bring Up the System *************************************************** */
 	/* Create initial tasks and bring-up the system */
 
 	DEBUGVERIFY(os_bringup());
 
-	/* The IDLE Loop **********************************************************/
+	/* The IDLE Loop ********************************************************* */
 	/* When control is return to this point, the system is idle. */
 
 	svdbg("Beginning Idle Loop\n");

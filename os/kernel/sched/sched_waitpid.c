@@ -342,7 +342,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	if (rtcb->group->tg_children == NULL && retains) {
 		err = ECHILD;
 		goto errout_with_errno;
-	} else if (pid != (pid_t)-1) {
+	} else if (pid != (pid_t) - 1) {
 		/* Get the TCB corresponding to this PID and make sure it is our child. */
 
 		ctcb = sched_gettcb(pid);
@@ -374,7 +374,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 		err = ECHILD;
 		goto errout_with_errno;
-	} else if (pid != (pid_t)-1) {
+	} else if (pid != (pid_t) - 1) {
 		/* Get the TCB corresponding to this PID and make sure it is our child. */
 
 		ctcb = sched_gettcb(pid);
@@ -400,7 +400,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		 * instead).
 		 */
 
-		if (pid == (pid_t)-1) {
+		if (pid == (pid_t) - 1) {
 			/* We are waiting for any child, check if there are still
 			 * chilren.
 			 */
@@ -471,7 +471,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		 * instead).
 		 */
 
-		if (rtcb->nchildren == 0 || (pid != (pid_t)-1 && (ret = kill(pid, 0)) < 0)) {
+		if (rtcb->nchildren == 0 || (pid != (pid_t) - 1 && (ret = kill(pid, 0)) < 0)) {
 			/* We know that the child task was running okay we stared,
 			 * so we must have lost the signal.  What can we do?
 			 * Let's return ECHILD.. that is at least informative.
@@ -493,7 +493,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		 * pid == (pid_t)-1, we are waiting for any child thread.
 		 */
 
-		if (info.si_signo == SIGCHLD && (pid == (pid_t)-1 || info.si_pid == pid)) {
+		if (info.si_signo == SIGCHLD && (pid == (pid_t) - 1 || info.si_pid == pid)) {
 			/* Yes... return the status and PID (in the event it was -1) */
 
 			*stat_loc = info.si_status << 8;

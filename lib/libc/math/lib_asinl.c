@@ -46,37 +46,51 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
 #include <float.h>
 
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+
 /************************************************************************
  * Public Functions
  ************************************************************************/
 
-#ifdef CONFIG_HAVE_LONG_DOUBLE
+static long double asinl_aux(long double x)
+{
+	long double y, y_cos, y_sin;
+
+	y = 0.0;
+	y_sin = 0.0;
+
+	while (fabsl(y_sin - x) > DBL_EPSILON) {
+		y_cos = cosl(y);
+		y -= (y_sin - x) / y_cos;
+		y_sin = sinl(y);
+	}
+
+	return y;
+}
+
 long double asinl(long double x)
 {
 	long double y;
-	long double y_sin;
-	long double y_cos;
 
-	y = 0;
+	/* Verify that the input value is in the domain of the function */
 
-	while (1) {
-		y_sin = sinl(y);
-		y_cos = cosl(y);
+	if (x < -1.0 || x > 1.0 || isnan(x)) {
+		return NAN;
+	}
 
-		if (y > M_PI_2 || y < -M_PI_2) {
-			y = fmodl(y, M_PI);
-		}
+	/* if x is > sqrt(2), use identity for faster convergence */
 
-		if (y_sin + LDBL_EPSILON >= x && y_sin - LDBL_EPSILON <= x) {
-			break;
-		}
-
-		y = y - (y_sin - x) / y_cos;
+	if (fabsl(x) > 0.71) {
+		y = M_PI_2 - asinl_aux(sqrtl(1.0 - x * x));
+		y = copysignl(y, x);
+	} else {
+		y = asinl_aux(x);
 	}
 
 	return y;

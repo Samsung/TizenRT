@@ -130,7 +130,7 @@ int sched_yield(void)
 		switch_needed = true;
 
 		/* Remove the TCB from the ready-to-run list */
-		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
+		dq_rem((FAR dq_entry_t *) rtcb, (FAR dq_queue_t *)&g_readytorun);
 
 		/* Since the current TCB is not in any list, it is now invalid */
 		rtcb->task_state = TSTATE_TASK_INVALID;

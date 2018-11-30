@@ -151,7 +151,7 @@ bool sched_mergepending(void)
 			pndtcb->flink = rtrtcb;
 			pndtcb->blink = NULL;
 			rtrtcb->blink = pndtcb;
-			g_readytorun.head = (FAR dq_entry_t *)pndtcb;
+			g_readytorun.head = (FAR dq_entry_t *) pndtcb;
 			rtrtcb->task_state = TSTATE_TASK_READYTORUN;
 			pndtcb->task_state = TSTATE_TASK_RUNNING;
 			ret = true;

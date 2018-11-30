@@ -128,7 +128,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 
 	/* Remove the TCB from the ready-to-run list */
 
-	dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
+	dq_rem((FAR dq_entry_t *) rtcb, (FAR dq_queue_t *)&g_readytorun);
 
 	/* Since the TCB is not in any list, it is now invalid */
 

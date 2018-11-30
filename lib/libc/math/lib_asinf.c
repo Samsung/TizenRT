@@ -49,31 +49,53 @@
 #include <math.h>
 #include <float.h>
 
-/************************************************************************
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/* This lib uses Newton's method to approximate asin(x).  Newton's Method
+ * converges very slowly for x close to 1.  We can accelerate convergence
+ * with the following identy:  asin(x)=Sign(x)*(Pi/2-asin(sqrt(1-x^2)))
+ */
+
+static float asinf_aux(float x)
+{
+	double y;
+	float y_sin, y_cos;
+
+	y = 0.0;
+	y_sin = 0.0F;
+
+	while (fabsf(y_sin - x) > FLT_EPSILON) {
+		y_cos = cosf(y);
+		y -= ((double)y_sin - (double)x) / (double)y_cos;
+		y_sin = sinf(y);
+	}
+
+	return y;
+}
+
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 float asinf(float x)
 {
-	long double y;
-	long double y_sin;
-	long double y_cos;
+	float y;
 
-	y = 0;
+	/* Verify that the input value is in the domain of the function */
 
-	while (1) {
-		y_sin = sinf(y);
-		y_cos = cosf(y);
+	if (x < -1.0F || x > 1.0F || isnan(x)) {
+		return NAN_F;
+	}
 
-		if (y > M_PI_2 || y < -M_PI_2) {
-			y = fmodf(y, M_PI);
-		}
+	/* if x is > sqrt(2), use identity for faster convergence */
 
-		if (y_sin + FLT_EPSILON >= x && y_sin - FLT_EPSILON <= x) {
-			break;
-		}
-
-		y = y - (y_sin - x) / y_cos;
+	if (fabsf(x) > 0.71F) {
+		y = M_PI_2_F - asinf_aux(sqrtf(1.0F - x * x));
+		y = copysignf(y, x);
+	} else {
+		y = asinf_aux(x);
 	}
 
 	return y;

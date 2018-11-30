@@ -160,7 +160,7 @@ include Directories.mk
 #
 # Extra objects used in the final link.
 #
-# Pass 1 1ncremental (relative) link objects should be put into the
+# Pass 1 Incremental (relative) link objects should be put into the
 # processor-specific source directory (where other link objects will
 # be created).  If the pass1 object is an archive, it could go anywhere.
 
@@ -340,7 +340,7 @@ endif
 
 # Link the arch/<arch-name>/include directory to include/arch
 
-include/arch: Make.defs
+include/arch: Make.defs .config
 	@echo "LN: include/arch to $(ARCH_DIR)/include"
 	$(Q) $(DIRLINK) $(TOPDIR)/$(ARCH_DIR)/include include/arch
 
@@ -542,8 +542,14 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # must first download and install the kconfig-frontends package from this
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
 
+do_config: dirlinks apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} kconfig-conf Kconfig
+
 config: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
+
+do_oldconfig: dirlinks apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} kconfig-conf --oldconfig Kconfig
 
 oldconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf --oldconfig Kconfig
@@ -556,8 +562,14 @@ do_nconfig: apps_preconfig
 
 nconfig: do_nconfig clean_context
 
+do_qconfig: dirlinks apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} kconfig-qconf Kconfig
+
 qconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
+
+do_gconfig: dirlinks apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} kconfig-gconf Kconfig
 
 gconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig

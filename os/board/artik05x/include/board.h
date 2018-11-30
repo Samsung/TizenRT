@@ -54,5 +54,7 @@
 #define __ARCH_ARM_SRC_ARTIK05X_INCLUDE_BOARD_H__
 
 #define SYSCLK_FREQUENCY	32768	/* RTC clock at 32768Hz */
+#define LED_IRQSENABLED		2 /* */
+#define LED_STACKCREATED	1 /* */
 
 #endif /* __ARCH_ARM_SRC_ARTIK05X_INCLUDE_BOARD_H__ */

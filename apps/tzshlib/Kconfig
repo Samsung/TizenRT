@@ -1,0 +1,1761 @@
+#
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menu "TZSH Library"
+
+config TZSH_LIBRARY
+	bool "TZSH Library"
+	default n
+	select NETUTILS_NETLIB if NET
+	select LIBC_NETDB if NET
+	select READLINE_HAVE_EXTMATCH
+	---help---
+		Build the TZSH support library.  This is used, for example, by
+		system/tzsh in order to implement the full NuttShell (TZSH).
+
+if TZSH_LIBRARY
+
+config TZSH_PROMPT_STRING
+	string "Prompt String"
+	default "tash> "
+	---help---
+		Provide the shell prompt string, default is "tzsh> ".
+
+menuconfig TZSH_MOTD
+	bool "Message of the Day (MOTD)"
+	default n
+	---help---
+		Support a user-provided Message of the Day (MOTD) that will be
+		presented each time new TZSH session is opened.
+
+if TZSH_MOTD
+
+config TZSH_PLATFORM_MOTD
+	bool "Platform MOTD"
+	default n
+	---help---
+		If this option is selected, the TZSH will call into platform-specific
+		logic in order to get the MOTD.  The function prototype for this
+		call is:
+
+			void platform_motd(FAR char *buffer, size_t buflen);
+
+		Where buffer is the location to return the MOTD and buflen is the
+		length of that buffer.  The maximum size of the buffer is detemined
+		by TZSH_FILEIOSIZE.  An appopriate location for the
+		implementation of platform_motd would be within apps/platform/<board>.
+
+		One newline will be inserted after the platform-supplied message.
+
+		platform_motd() is prototyped and described in apps/include/tzshlib/tzshlib.h
+		which may be included like:
+
+			#include "apps/tzshlib/tzshlib.h"
+
+config TZSH_MOTD_STRING
+	string "MOTD String"
+	default "No MOTD string provided"
+	depends on !TZSH_PLATFORM_MOTD
+	---help---
+		If TZSH_MOTD is selected, but TZSH_PLATFORM_MOTD is not, then a fixed
+		MOTD string will be used.  That string is provided by this selection.
+
+		One newline will be inserted after supplied MOTD message.
+
+endif # TZSH_MOTD
+
+menu "Command Line Configuration"
+
+config TZSH_PROMPT_STRING
+	string "Prompt String"
+	default "tzsh> "
+	---help---
+		Provide the shell prompt string, default is "tzsh> ".
+
+choice
+	prompt "Command Line Editor"
+	default TZSH_READLINE if DEFAULT_SMALL
+	default TZSH_CLE if !DEFAULT_SMALL
+
+config TZSH_READLINE
+	bool "Minimal readline()"
+	select SYSTEM_READLINE
+	---help---
+		Selects the minimal implementation of readline().  This minimal
+		implementation provides on backspace for command line editing.
+
+config TZSH_CLE
+	bool "Command Line Editor"
+	select SYSTEM_CLE
+	---help---
+		Selects the more extensive, EMACS-like command line editor.
+		Select this option only if (1) you don't mind a modest increase
+		in the FLASH footprint, and (2) you work with a terminal that
+		supports extensive VT100 editing commands.
+
+		Selecting this option will add probably 1.5-2KB to the FLASH
+		footprint.
+
+endchoice
+
+config TZSH_LINELEN
+	int "Max command line length"
+	default 64 if DEFAULT_SMALL
+	default 80 if !DEFAULT_SMALL
+	---help---
+		The maximum length of one command line and of one output line.
+		Default: 64/80
+
+config TZSH_DISABLE_SEMICOLON
+	bool "Disable multiple commands per line"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	---help---
+		By default, you can enter multiple TZSH commands on a line with each
+		command separated by a semicolon.  You can disable this feature to
+		save a little memory on FLASH challenged platforms.
+
+config TZSH_QUOTE
+	bool "Enable back-slash quoting of characters"
+	default n if DEFAULT_SMALL || !TZSH_ARGCAT
+	default y if !DEFAULT_SMALL && TZSH_ARGCAT
+	---help---
+		Force special characters like back-quotes, quotation marks, and the
+		back-slash character itself to be treat like normal text.
+
+		This feature is only implemented properly for the case where
+		CONFIG_TZSH_ARGCAT is also selected.
+
+config TZSH_CMDPARMS
+	bool "Enable commands as parameters"
+	default n if DEFAULT_SMALL
+	default y if !DEFAULT_SMALL
+	depends on !DISABLE_MOUNTPOINT
+	---help---
+		If selected, then the output from commands, from file applications, and
+		from TZSH built-in commands can be used as arguments to other
+		commands.  The entity to be executed is identified by enclosing the
+		command line in back quotes.  For example,
+
+			set FOO `myprogram $BAR`
+
+		Will execute the program named myprogram passing it the value of the
+		environment variable BAR.  The value of the environment variable FOO
+		is then set output of myprogram on stdout.
+
+		Because this feature commits significant resources, it is disabled by
+		default.
+
+config TZSH_MAXARGUMENTS
+	int "Maximum number of command arguments"
+	default 7
+	---help---
+		The maximum number of TZSH command arguments.
+		Default: 7
+
+config TZSH_ARGCAT
+	bool "Concatenation of argument strings"
+	default n if DEFAULT_SMALL
+	default y if !DEFAULT_SMALL
+	---help---
+		Support concatenation of strings with environment variables or command
+		output.  For example:
+
+			set FOO XYZ
+			set BAR 123
+			set FOOBAR ABC_${FOO}_${BAR}
+
+		would set the environment variable FOO to XYZ, BAR to 123 and FOOBAR
+		to ABC_XYZ_123.  If TZSH_ARGCAT is not selected, then a slightly small
+		FLASH footprint results but then also only simple environment
+		variables like $FOO can be used on the command line.
+
+config TZSH_NESTDEPTH
+	int "Maximum command nesting"
+	default 3
+	---help---
+		The maximum number of nested if-then[-else]-fi sequences that
+		are permissable.  Default: 3
+
+config TZSH_DISABLEBG
+	bool "Disable background commands"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	---help---
+		This can be set to 'y' to suppress support for background
+		commands.  This setting disables the 'nice' command prefix and
+		the '&' command suffix.  This would only be set on systems
+		where a minimal footprint is a necessity and background command
+		execution is not.
+
+endmenu # Command Line Configuration
+
+config TZSH_BUILTIN_APPS
+	bool "Enable built-in applications"
+	default n
+	depends on BUILTIN
+	---help---
+		Support external registered, "built-in" applications that can be
+		executed from the TZSH command line (see apps/README.txt for
+		more information).  This options requires support for builtin
+		applications (BUILTIN).
+
+config TZSH_FILE_APPS
+	bool "Enable execution of program files"
+	default n
+	depends on LIBC_EXECFUNCS
+	---help---
+		Support execution of program files residing within a file
+		system.  This options requires support for the posix_spawn()
+		interface (LIBC_EXECFUNCS).
+
+menu "Disable Individual commands"
+
+config TZSH_DISABLE_ADDROUTE
+	bool "Disable addroute"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NET_ROUTE
+
+config TZSH_DISABLE_ARP
+	bool "Disable arp"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NET_ARP
+
+config TZSH_DISABLE_BASE64DEC
+	bool "Disable base64dec"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NETUTILS_CODECS && CODECS_BASE64
+
+config TZSH_DISABLE_BASE64ENC
+	bool "Disable base64enc"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NETUTILS_CODECS && CODECS_BASE64
+
+config TZSH_DISABLE_BASENAME
+	bool "Disable basename"
+	default y if DEFAULT_SMALL || TZSH_DISABLESCRIPT
+	default n if !DEFAULT_SMALL && !TZSH_DISABLESCRIPT
+
+config TZSH_DISABLE_CAT
+	bool "Disable cat"
+	default n
+
+config TZSH_DISABLE_CD
+	bool "Disable cd"
+	default n
+
+config TZSH_DISABLE_CP
+	bool "Disable cp"
+	default n
+
+config TZSH_DISABLE_CMP
+	bool "Disable cmp"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_DATE
+	bool "Disable date"
+	default n if RTC
+	default y if !RTC
+
+config TZSH_DISABLE_DD
+	bool "Disable dd"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_DF
+	bool "Disable df"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_DELROUTE
+	bool "Disable delroute"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NET_ROUTE
+
+config TZSH_DISABLE_DIRNAME
+	bool "Disable dirname"
+	default y if DEFAULT_SMALL || TZSH_DISABLESCRIPT
+	default n if !DEFAULT_SMALL && !TZSH_DISABLESCRIPT
+
+config TZSH_DISABLE_ECHO
+	bool "Disable echo"
+	default n
+
+config TZSH_DISABLE_ENV
+	bool "Disable env"
+	default n
+
+config TZSH_DISABLE_EXEC
+	bool "Disable exec"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_EXIT
+	bool "Disable exit"
+	default y if DEFAULT_SMALL && !TZSH_TELNET
+	default n if !DEFAULT_SMALL || TZSH_TELNET
+
+config TZSH_DISABLE_EXPORT
+	bool "Disable export"
+	default n
+
+config TZSH_DISABLE_FREE
+	bool "Disable free"
+	default n
+
+config TZSH_DISABLE_GET
+	bool "Disable get"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_HELP
+	bool "Disable help"
+	default n
+
+config TZSH_DISABLE_HEXDUMP
+	bool "Disable hexdump"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_IFCONFIG
+	bool "Disable ifconfig"
+	default y if !FS_PROCFS || FS_PROCFS_EXCLUDE_NET
+	default n if FS_PROCFS && !FS_PROCFS_EXCLUDE_NET
+
+config TZSH_DISABLE_IFUPDOWN
+	bool "Disable ifup/down"
+	default y if !FS_PROCFS || FS_PROCFS_EXCLUDE_NET
+	default n if FS_PROCFS && !FS_PROCFS_EXCLUDE_NET
+
+config TZSH_DISABLE_KILL
+	bool "Disable kill"
+	default n
+
+config TZSH_DISABLE_LOSETUP
+	bool "Disable losetup"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_LOSMART
+	bool "Disable losmart"
+	default y if DEFAULT_SMALL || !MTD_SMART
+	default n if !DEFAULT_SMALL && MTD_SMART
+
+config TZSH_DISABLE_LN
+	bool "Disable ln"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on PSEUDOFS_SOFTLINKS
+
+config TZSH_DISABLE_LS
+	bool "Disable ls"
+	default n
+
+config TZSH_DISABLE_MB
+	bool "Disable mb"
+	default n
+
+config TZSH_DISABLE_MD5
+	bool "Disable md5"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NETUTILS_CODECS && CODECS_HASH_MD5
+
+config TZSH_DISABLE_MKDIR
+	bool "Disable mkdir"
+	default n
+
+config TZSH_DISABLE_MKFATFS
+	bool "Disable mkfatfs"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on FUTILS_MKFATFS
+
+config TZSH_DISABLE_MKFIFO
+	bool "Disable mkfifo"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on PIPES
+
+config TZSH_DISABLE_MKRD
+	bool "Disable mkrd"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_MKSMARTFS
+	bool "Disable mksmartfs"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on FS_SMARTFS && FSUTILS_MKSMARTFS
+
+config TZSH_DISABLE_MH
+	bool "Disable mh"
+	default n
+
+config TZSH_DISABLE_MODCMDS
+	bool "Disable modules commands (insmod, rmmod, lsmod)"
+	default n
+	depends on MODULE
+
+config TZSH_DISABLE_MOUNT
+	bool "Disable mount"
+	default n
+
+config TZSH_DISABLE_MV
+	bool "Disable mv"
+	default n
+
+config TZSH_DISABLE_MW
+	bool "Disable mw"
+	default n
+
+config TZSH_DISABLE_NSFMOUNT
+	bool "Disable nfsmount"
+	default n
+	depends on NFS
+
+config TZSH_DISABLE_NSLOOKUP
+	bool "Disable nslookup"
+	default n
+	depends on LIBC_NETDB && NETDB_DNSCLIENT
+
+config TZSH_DISABLE_PASSWD
+	bool "Disable passwd"
+	default y
+	depends on TZSH_LOGIN_PASSWD && FS_WRITABLE && !FSUTILS_PASSWD_READONLY
+
+config TZSH_DISABLE_POWEROFF
+	bool "Disable poweroff"
+	default n if !DEFAULT_SMALL
+	default y if DEFAULT_SMALL
+	depends on BOARDCTL_POWEROFF
+
+config TZSH_DISABLE_PRINTF
+	bool "Disable printf"
+	default y
+
+config TZSH_DISABLE_PS
+	bool "Disable ps"
+	default y if !FS_PROCFS || FS_PROCFS_EXCLUDE_PROCESS
+	default n if FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS
+
+config TZSH_DISABLE_PSSTACKUSAGE
+	bool "Disable ps stack usage"
+	depends on STACK_COLORATION && !TZSH_DISABLE_PS
+	default n
+	---help---
+		Disable to save space and not pull in floating point routines
+
+config TZSH_DISABLE_PUT
+	bool "Disable put"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_PWD
+	bool "Disable pwd"
+	default n
+
+config TZSH_DISABLE_READLINK
+	bool "Disable readlink"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on PSEUDOFS_SOFTLINKS
+
+config TZSH_DISABLE_REBOOT
+	bool "Disable reboot"
+	default n if !DEFAULT_SMALL
+	default y if DEFAULT_SMALL
+	depends on BOARDCTL_RESET
+
+config TZSH_DISABLE_RM
+	bool "Disable rm"
+	default n
+
+config TZSH_DISABLE_RMDIR
+	bool "Disable rmdir"
+	default n
+
+config TZSH_DISABLE_ROUTE
+	bool "Disable delroute"
+	depends on FS_PROCFS && NET_ROUTE && !FS_PROCFS_EXCLUDE_NET && !FS_PROCFS_EXCLUDE_ROUTE
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_SET
+	bool "Disable set"
+	default n
+
+config TZSH_DISABLE_SH
+	bool "Disable sh"
+	default n
+
+config TZSH_DISABLE_SHUTDOWN
+	bool "Disable shutdown"
+	default n if !DEFAULT_SMALL && BOARD_POWEROFF && BOARD_RESET
+	default y if DEFAULT_SMALL || !BOARD_POWEROFF || !BOARD_RESET
+	depends on BOARDCTL_POWEROFF || BOARDCTL_RESET
+
+config TZSH_DISABLE_SLEEP
+	bool "Disable sleep"
+	default n
+
+config TZSH_DISABLE_TIME
+	bool "Disable time"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_TEST
+	bool "Disable test"
+	default n
+
+config TZSH_DISABLE_TELNETD
+	bool "Disable telnetd"
+	default n if !TZSH_NETLOCAL
+	default y if TZSH_NETLOCAL
+
+config TZSH_DISABLE_TRUNCATE
+	bool "Disable truncate"
+	default y
+
+config TZSH_DISABLE_UMOUNT
+	bool "Disable umount"
+	default n
+
+config TZSH_DISABLE_UNAME
+	bool "Disable uname"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_UNSET
+	bool "Disable unset"
+	default n
+
+config TZSH_DISABLE_URLDECODE
+	bool "Disable urldecode"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NETUTILS_CODECS && CODECS_URLCODE
+
+config TZSH_DISABLE_URLENCODE
+	bool "Disable urlencode"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	depends on NETUTILS_CODECS && CODECS_URLCODE
+
+config TZSH_DISABLE_USERADD
+	bool "Disable useradd"
+	default y
+	depends on TZSH_LOGIN_PASSWD && FS_WRITABLE && !FSUTILS_PASSWD_READONLY
+
+config TZSH_DISABLE_USERDEL
+	bool "Disable userdel"
+	default y
+	depends on TZSH_LOGIN_PASSWD && FS_WRITABLE && !FSUTILS_PASSWD_READONLY
+
+config TZSH_DISABLE_USLEEP
+	bool "Disable usleep"
+	default n
+
+config TZSH_DISABLE_WGET
+	bool "Disable wget"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config TZSH_DISABLE_XD
+	bool "Disable xd"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+endmenu
+
+if MMCSD
+
+config TZSH_MMCSDMINOR
+	int "MMC/SD minor number"
+	default 0
+	---help---
+		If board-specific TZSH start-up logic needs to mount an MMC/SD device, then the
+		setting should be provided to identify the MMC/SD minor device number (i.e., the N ini
+		/dev/mmcsdN).  Default 0
+
+config TZSH_MMCSDSLOTNO
+	int "MMC/SD slot number"
+	default 0
+	---help---
+		If board-specific TZSH start-up supports more than one MMC/SD slot, then this setting
+		should be provided to indicate which slot should be used.  Default: 0.
+
+config TZSH_MMCSDSPIPORTNO
+	int "MMC/SD SPI device number"
+	default 0
+	depends on MMCSD_SPI
+	---help---
+		If board-specif TZSH start-up logic will mount an SPI-based MMC/SD volume, then this
+		setting may be needed to tell the board logic which SPI bus to use.  Default: 0
+		(meaning is board-specific).
+
+endif # MMCSD
+
+menu "Configure Command Options"
+
+config TZSH_VARS
+	bool "TZSH variables"
+	default n
+	---help---
+		By default, there are no internal TZSH variables.  TZSH will use OS
+		environment variables for all variable storage.  If this option, TZSH
+		will also support local TZSH variables.  These variables are, for the
+		most part, transparent and work just like the OS environment
+		variables.  The difference is that when you create new tasks, all of
+		environment variables are inherited by the created tasks.  TZSH local
+		variables are not.
+
+		If this option is enabled (and CONFIG_DISABLE_ENVIRON is not), then a
+		new command called 'export' is enabled.  The export command works very
+		must like the set command except that is operates on environment
+		variables.  When CONFIG_TZSH_VARS is enabled, there are changes in the
+		behavior of certains commands
+
+		============== =========================== ===========================
+		CMD             w/o CONFIG_TZSH_VARS        w/CONFIG_TZSH_VARS
+		============== =========================== ===========================
+		set <a> <b>    Set environment var a to b  Set TZSH var a to b
+		unset <a>      Unsets environment var a    Unsets both environment var
+		                                           and TZSH var a
+		export <a> <b> Causes an error             Unsets TZSH var a.  Sets
+		                                           environment var a to b.
+		export <a>     Causes an error             Sets environment var a to
+		                                           TZSH var b (or "").  Unsets
+		                                           local var a.
+		env            Lists all environment       Lists all environment
+		               variables                   variables
+		============== =========================== ===========================
+
+config TZSH_CMDOPT_DD_STATS
+	bool "dd: Support transfer statistics"
+	default n
+	depends on !TZSH_DISABLE_DD
+
+config TZSH_CODECS_BUFSIZE
+	int "File buffer size used by CODEC commands"
+	default 128
+
+config TZSH_CMDOPT_HEXDUMP
+	bool "hexdump: Enable 'skip' and 'count' parameters"
+	default n if DEFAULT_SMALL
+	default y if !DEFAULT_SMALL
+	depends on !TZSH_DISABLE_HEXDUMP
+
+config TZSH_PROC_MOUNTPOINT
+	string "procfs mountpoint"
+	default "/proc"
+	depends on FS_PROCFS
+
+endmenu
+
+config TZSH_FILEIOSIZE
+	int "TZSH I/O buffer size"
+	default 512 if DEFAULT_SMALL
+	default 1024 if !DEFAULT_SMALL
+	---help---
+		Size of a static I/O buffer used for file access (ignored if
+		there is no filesystem). Default is 512/1024.
+
+config TZSH_STRERROR
+	bool "Use strerror()"
+	default n
+	depends on LIBC_STRERROR
+	---help---
+		strerror(errno) makes more readable output but strerror() is
+		very large and will not be used unless this setting is 'y'
+		This setting depends upon the strerror() having been enabled
+		with LIBC_STRERROR.
+
+menu "Scripting Support"
+
+config TZSH_DISABLESCRIPT
+	bool "Disable script support"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	---help---
+		This can be set to 'y' to suppress support for scripting.  This
+		setting disables the 'sh', 'test', and '[' commands and the
+		if-then[-else]-fi construct.  This would only be set on systems
+		where a minimal footprint is a necessity and scripting is not.
+
+if !TZSH_DISABLESCRIPT
+
+config TZSH_DISABLE_ITEF
+	bool "Disable if-then-else-fi"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	---help---
+		This can be set to 'y' to suppress support for if-then-else-fi
+		sequences in scripts.  This would only be set on systems where
+		some minimal scripting is required but if-then-else-fi is not.
+
+config TZSH_DISABLE_LOOPS
+	bool "Disable loops"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+	---help---
+		This can be set to 'y' to suppress support for while-do-done and
+		until-do-done sequences in scripts.  This would only be set on
+		systems where some minimal scripting is required but looping
+		is not.
+
+endif # !TZSH_DISABLESCRIPT
+
+config TZSH_MMCSDMINOR
+	int "MMC/SD minor device number"
+	default 0
+	---help---
+		If the architecture supports an MMC/SD slot and if the TZSH
+		architecture specific logic is present, this option will provide
+		the MMC/SD minor number, i.e., the MMC/SD block driver will
+		be registered as /dev/mmcsdN where N is the minor number.
+		Default is zero.
+
+config TZSH_ROMFSETC
+	bool "Support ROMFS start-up script"
+	default n
+	depends on FS_ROMFS
+	---help---
+		Mount a ROMFS filesystem at /etc and provide a startup script
+		at /etc/init.d/rcS.  The default startup script will mount
+		a FAT FS RAMDISK at /tmp but the logic is easily extensible.
+
+if TZSH_ROMFSETC
+
+config TZSH_ROMFSRC
+	bool "Support ROMFS login script"
+	default n
+	---help---
+		The ROMFS start-up script will be executed excactly once.  For
+		simple, persistence consoles (like a serial console).  But with
+		other other kinds of consoles, there may be multiple, transient
+		sessions (such as Telnet and USB consoles).  In these cases, you
+		may need another script that is executed at the beginning of each
+		session.  Selecting this option enables support for such a login
+		script
+
+config TZSH_ROMFSMOUNTPT
+	string "ROMFS mount point"
+	default "/etc"
+	---help---
+		The default mountpoint for the ROMFS volume is /etc, but that
+		can be changed with this setting.  This must be a absolute path
+		beginning with '/'.
+
+config TZSH_INITSCRIPT
+	string "Relative path to startup script"
+	default "init.d/rcS"
+	---help---
+		This is the relative path to the startup script within the mountpoint.
+		The default is init.d/rcS.  This is a relative path and must not
+		start with '/'.
+
+config TZSH_RCSCRIPT
+	string "Relative path to login script"
+	default ".tzshrc"
+	depends on TZSH_ROMFSRC
+	---help---
+		This is the relative path to the login script within the mountpoint.
+		The default is .tzshrc.  This is a relative path and must not
+		start with '/'.
+
+config TZSH_ROMFSDEVNO
+	int "ROMFS block device minor number"
+	default 0
+	---help---
+		This is the minor number of the ROMFS block device.  The default is
+		'0' corresponding to /dev/ram0.
+
+config TZSH_ROMFSSECTSIZE
+	int "ROMFS sector size"
+	default 64
+	---help---
+		This is the sector size to use with the ROMFS volume.  Since the
+		default volume is very small, this defaults to 64 but should be
+		increased if the ROMFS volume were to be become large.  Any value
+		selected must be a power of 2.
+
+choice
+	prompt "ROMFS header location"
+	default TZSH_DEFAULTROMFS
+
+config TZSH_DEFAULTROMFS
+	bool "Default ROMFS header path"
+	---help---
+		Selects the default header located in the source directory of the
+		TZSH library.
+
+config TZSH_ARCHROMFS
+	bool "Architecture-specific ROMFS path"
+	---help---
+		Enable this option to provide an architecture-specific ROMFS
+		header at arch/<boardname>/tzsh_romfsimg.h.  Note that this header
+		will be linked (or copied) from tinyara/configs/<boardname>/include
+		and should be stored at that location in the tinyara configs/
+		sub-directory.
+
+config TZSH_CUSTOMROMFS
+	bool "Custom ROMFS header path"
+	---help---
+		Enable this option to provide a custom ROMFS header. The path to
+		the header file can be specified in the option "Custom ROMFS header
+		file".
+
+endchoice
+
+if TZSH_CUSTOMROMFS
+
+config TZSH_CUSTOMROMFS_HEADER
+	string "Custom ROMFS header file path"
+	default ""
+	---help---
+		Specifies the path to the custom ROMFS header file.  This must be
+		either a full path or a path relative to one of the include file
+		search paths provided in your CFLAGS.
+
+endif #TZSH_CUSTOMROMFS
+
+config TZSH_FATDEVNO
+	int "FAT block device minor number"
+	default 1
+	depends on FS_FAT
+	---help---
+		When the default rcS file used when TZSH_ROMFSETC is selected, it
+		will mount a FAT FS under /tmp. This is the minor number of the FAT
+		FS block device.  The default is '1' corresponding to /dev/ram1.
+
+config TZSH_FATSECTSIZE
+	int "FAT sector size"
+	default 512
+	depends on FS_FAT
+	---help---
+		When the default rcS file used when TZSH_ROMFSETC is selected, it
+		will mount a FAT FS under /tmp. This is the sector size use with the
+		FAT FS. Default is 512.
+
+config TZSH_FATNSECTORS
+	int "FAT number of sectors"
+	default 1024
+	depends on FS_FAT
+	---help---
+		When the default rcS file used when TZSH_ROMFSETC is selected, it
+		will mount a FAT FS under /tmp. This is the number of sectors to use
+		with the FAT FS.  Defualt is 1024.  The amount of memory used by the
+		FAT FS will be TZSH_FATSECTSIZE * TZSH_FATNSECTORS bytes.
+
+config TZSH_FATMOUNTPT
+	string "FAT mount point"
+	default "/tmp"
+	depends on FS_FAT
+	---help---
+		When the default rcS file used when TZSH_ROMFSETC is selected, it
+		will mount a FAT FS under /tmp. This is the location where the FAT
+		FS will be mounted.  Default is "/tmp".
+
+endif # TZSH_ROMFSETC
+endmenu # Scripting Support
+
+menu "Console Configuration"
+
+config TZSH_CONSOLE
+	bool "Use console"
+	default y
+	---help---
+		If TZSH_CONSOLE is set to 'y', then a character driver
+		console front-end is selected (/dev/console).
+
+		Normally, the serial console device is a UART and RS-232
+		interface.  However, if USBDEV is defined, then a USB
+		serial device may, instead, be used if the one of
+		the following are defined:
+
+		PL2303 and PL2303_CONSOLE - Set up the Prolifics PL2303
+		emulation as a console device at /dev/console.
+
+		CDCACM and CDCACM_CONSOLE - Set up the CDC/ACM serial
+		device as a console device at dev/console.
+
+		TZSH_USBCONSOLE and TZSH_USBCONDEV - Sets up some other USB
+		serial device as the TZSH console (not necessarily dev/console).
+
+config TZSH_USBCONSOLE
+	bool "Use a USB serial console"
+	default n
+	depends on LIB_BOARDCTL && TZSH_CONSOLE && USBDEV && (CDCACM || PL2303)
+	select BOARDCTL_USBDEVCTRL
+	---help---
+		If defined, then the an arbitrary USB serial device may be used
+		to as the TZSH console.  In this case, TZSH_USBCONDEV must be defined
+		to indicate which USB serial device to use as the console.
+
+if TZSH_USBCONSOLE
+
+config TZSH_USBCONDEV
+	string "USB serial console device"
+	default "/dev/ttyACM0" if CDCACM
+	default "/dev/ttyUSB0" if !CDCACM
+	---help---
+		If TZSH_USBCONSOLE is set to 'y', then TZSH_USBCONDEV must
+		also be set to select the USB device used to support the
+		TZSH console.   This should be set to the quoted name of a
+		read-/write-able USB driver.  Default: "/dev/ttyACM0".
+
+config USBDEV_MINOR
+	int "USB serial console device minor number"
+	default 0
+	---help---
+		If there are more than one USB devices, then a USB device
+		minor number may also need to be provided. Default: 0
+
+endif # TZSH_USBCONSOLE
+
+config TZSH_ALTCONDEV
+	bool "Alternative console device"
+	default n
+	depends on TZSH_CONSOLE && !TZSH_USBCONSOLE && !TZSH_TELNET
+	---help---
+		If CONFIG_TZSH_CONSOLE is set to y, then CONFIG_TZSH_ALTCONDEV may
+		also be selected to enable use of an alternate character device
+		to support the TZSH console. If CONFIG_TZSH_ALTCONDEV is selected,
+		then TZSH_CONDEV must be set to select the serial device used to
+		support the TZSH console.  This may be useful, for example, to
+		separate the TZSH command line from the system console when the
+		system console is used to provide debug output.  Default: stdin
+		and stdout (probably "/dev/console")
+
+		NOTE 1: When any other device other than /dev/console is used
+		for a user interface, (1) linefeeds (\n) will not be expanded to
+		carriage return / linefeeds (\r\n).  You will need to set
+		your terminal program to account for this.  And (2) input is
+		not automatically echoed so you will have to turn local echo on.
+
+		NOTE 2:  This option forces the console of all sessions to use
+		TZSH_CONDEV.  Hence, this option only makes sense for a system
+		that supports only a single session.  This option is, in
+		particular, incompatible with Telnet sessions because each Telnet
+		session must use a different console device.
+
+if TZSH_ALTCONDEV
+
+config TZSH_CONDEV
+	string "Alternative console device name"
+	default "/dev/console"
+	---help---
+		If CONFIG_TZSH_CONSOLE is set to y, then CONFIG_TZSH_ALTCONDEV may
+		also be selected to enable use of an alternate character device
+		to support the TZSH console. If CONFIG_TZSH_ALTCONDEV is selected,
+		then TZSH_CONDEV must be set to select the serial device used to
+		support the TZSH console.   This should be set to the quoted name
+		of a readable/write-able character driver such as:
+		TZSH_CONDEV="/dev/ttyS1".  This is useful, for example, to separate
+		the TZSH command line from the system console when the system console
+		is used to provide debug output.  Default: stdin and stdout
+		(probably "/dev/console")
+
+		NOTE 1: When any other device other than /dev/console is used
+		for a user interface, (1) linefeeds (\n) will not be expanded to
+		carriage return / linefeeds (\r\n).  You will need to set
+		your terminal program to account for this.  And (2) input is
+		not automatically echoed so you will have to turn local echo on.
+
+		NOTE 2:  This option forces the console of all sessions to use
+		TZSH_CONDEV.  Hence, this option only makes sense for a system
+		that supports only a single session.  This option is, in
+		particular, incompatible with Telnet sessions because each Telnet
+		session must use a different console device.
+
+endif # TZSH_ALTCONDEV
+
+config TZSH_USBKBD
+	bool "Use USB keyboard input"
+	default n
+	depends on TZSH_CONSOLE && USBHOST_HIDKBD && !TZSH_USBCONSOLE
+	---help---
+		Normally TZSH uses the same device for stdin, stdout, and stderr.  By
+		default, that device is /dev/console.  If this option is selected,
+		then TZSH will use a USB HID keyboard for stdin.  In this case, the
+		keyboard is connected directly to the target (via a USB host
+		interface) and the data from the keyboard will drive TZSH.  TZSH
+		output (stdout and stderr) will still go to /dev/console.
+
+if TZSH_USBKBD
+
+config TZSH_USBKBD_DEVNAME
+	string "USB keyboard device"
+	default "/dev/kbda"
+	---help---
+		If TZSH_USBKBD is set to 'y', then TZSH_USBKBD_DEVNAME must also be
+		set to select the USB keyboard device used to support the TZSH
+		console input.   This should be set to the quoted name of a read-
+		able keyboard driver. Default: "/dev/kbda".
+
+endif #TZSH_USBKBD
+endmenu # Console Configuration
+
+menu "USB Device Trace Support"
+	depends on USBDEV && (DEBUG_FEATURES || USBDEV_TRACE)
+
+config TZSH_USBDEV_TRACE
+	bool "Enable Builtin USB Trace Support"
+	default n
+	---help---
+		Enable builtin USB trace support in TZSH.  If selected, buffered USB
+		trace data will be presented each time a command is provided to TZSH.
+		The USB trace data will be sent to the console unless CONFIG_DEBUG_FEATURES
+		set or unless you are using a USB console.  In those cases, the trace
+		data will go to the SYSLOG device.
+
+		If not enabled, the USB trace support can be provided by external
+		logic such as tinyara/drivers/usbmonitor.
+
+if TZSH_USBDEV_TRACE
+
+config TZSH_USBDEV_TRACEINIT
+	bool "Show initialization events"
+	default n
+	---help---
+		Show initialization events
+
+config TZSH_USBDEV_TRACECLASS
+	bool "Show class driver events"
+	default n
+	---help---
+		Show class driver events
+
+config TZSH_USBDEV_TRACETRANSFERS
+	bool "Show data transfer events"
+	default n
+	---help---
+		Show data transfer events
+
+config TZSH_USBDEV_TRACECONTROLLER
+	bool "Show controller events"
+	default n
+	---help---
+		Show controller events
+
+config TZSH_USBDEV_TRACEINTERRUPTS
+	bool "Show interrupt-related events"
+	default n
+	---help---
+		Show interrupt-related events
+
+endif # TZSH_USBDEV_TRACE
+endmenu # USB Device Trace Support
+
+config TZSH_ARCHINIT
+	bool "Have architecture-specific initialization"
+	default n
+	select LIB_BOARDCTL
+	---help---
+		Set if your board provides architecture specific initialization
+		via the board-interface function boardctl().  The boardctl()
+		function will be called early in TZSH initialization to allow
+		board logic to do such things as configure MMC/SD slots.
+
+menu "Networking Configuration"
+	depends on NET
+
+config TZSH_NETINIT
+	bool "Network initialization"
+	default y
+	depends on NET
+	---help---
+		This option enables/disables all network initialization in TZSH.
+
+if TZSH_NETINIT
+
+config TZSH_NETLOCAL
+	bool "Local network initialization"
+	default n
+	---help---
+		If this option is selected, then TZSH will only initialize the local
+		attributes of the network:  The MAC address if needed and any IP
+		addresses as needed.  More importantly, it will not do the following:
+
+		- It will not bring the network up.  That can be done later with the
+		  TZSH ifup command.
+		- It will not associate any wireless devices to an access point.
+		- It will not attempt to obtain an IP address if DHCPC is selected.
+		  This may be done later from the TZSH command line with the
+		  apps/system/dhcpc 'renew' command.
+		- It will not start the NTPC daemon.  This may be done later from
+		  the TZSH command line with the apps/system/ntpc 'ntpcstart' command.
+
+		This option permits you to divide the network configuration into two
+		parts:  The local configuration of the network device and the dynamic
+		configuration of the device in the network.  This may be important in
+		an environment when, for example, you need to manually scan for
+		available access points and associate the wireless driver with an
+		access point.
+
+config TZSH_NETINIT_THREAD
+	bool "Network initialization thread"
+	default n
+	depends on !DISABLE_PTHREAD && !TZSH_NETLOCAL
+	---help---
+		TZSH is brought up through a series of sequential initialization
+		steps.  This includes networking. If the network is available on
+		reset, then there is really no issue.  Negotiating the link will
+		take only a second or so and the delay to the TZSH prompt is
+		normally acceptable.
+
+		But if there is no network connected, then the start-up delay can
+		be very long depending upon things like the particular PHY, driver
+		timeout delay times and number of retries.  A failed negotiation
+		can potentially take a very long time, perhaps as much as a
+		minute... Long enough that you might think that the board would
+		never come up!
+
+		One solution is enabled by this option.  If TZSH_NETINIT_THREAD
+		is selected, the network bring-up will occur in parallel with
+		TZSH on a separate thread.  In this case, the TZSH prompt will occur
+		immediately with the network becoming available some time later (if
+		if all).  This thread will terminate once it successfully initializes
+		the network
+
+		NOTES:  If no network is connected, the network bring-up will fail
+		and the network initialization thread will simply exit.  There are
+		no retries and no mechanism to know if the network initialization
+		was successful.  Furthermore, there is currently no support for
+		detecting loss of network connection.  Lots of things to do!
+
+if TZSH_NETINIT_THREAD
+
+config TZSH_NETINIT_MONITOR
+	bool "Monitor link state"
+	default n
+	depends on ARCH_PHY_INTERRUPT && NETDEV_PHY_IOCTL && NET_UDP && !DISABLE_SIGNALS
+	---help---
+		By default the net initialization thread will bring-up the network
+		then exit, freeing all of the resources that it required.  This is a
+		good behavior for systems with limited memory.
+
+		If this option is selected, however, then the network initialization
+		thread will persist forever; it will monitor the network status.  In
+		the event that the network goes down (for example, if a cable is
+		removed), then the thread will monitor the link status and
+		attempt to bring the network back up.  In this case the resources
+		required for network initialization are never released.
+
+if TZSH_NETINIT_MONITOR
+
+config TZSH_NETINIT_SIGNO
+	int "Notification signal number"
+	default 18
+	---help---
+		The network monitor logic will receive signals when there is any
+		change in the link status.  This setting may be used to customize
+		that signal number in order to avoid conflicts.
+
+config TZSH_NETINIT_RETRYMSEC
+	int "Network bring-up retry period (msec)"
+	default 2000
+	---help---
+		When the network is down, the initialization thread will periodically
+		try to bring the network up.  This can be a time consuming operation
+		so is done only periodically with that period specified by this
+		selection in milliseconds.
+
+endif # TZSH_NETINIT_MONITOR
+
+config TZSH_NETINIT_THREAD_STACKSIZE
+	int "Network initialization thread stack size"
+	default 1568
+
+config TZSH_NETINIT_THREAD_PRIORITY
+	int "Network initialization thread priority"
+	default 80
+	---help---
+		This should be set to a priority lower than most tasks.  The network
+		PHY polling is CPU intensive and can interfere with the usability of
+		of threads competing for CPU bandwidth.
+
+endif # TZSH_NETINIT_THREAD
+
+config TZSH_NETINIT_DEBUG
+	bool "Network init debug"
+	default n
+	depends on DEBUG_FEATURES
+	---help---
+		Normally debug output is controlled by DEBUG_NET.  However, that
+		will generate a LOT of debug output, especially if CONFIG_DEBUG_INFO is
+		also selected.  This option is intended to force vervose debug
+		output from the TZSH network initialization logic even if CONFIG_DEBUG_NET
+		or CONFIG_DEBUG_INFO are not selected.  This allows for focused, unit-
+		level debug of the TZSH network initialization logic.
+
+# No IP address if 6LOWPAN selected; but Ethernet has precedence.
+
+menu "IP Address Configuration"
+	depends on NET_ETHERNET || !NET_6LOWPAN
+
+config TZSH_DHCPC
+	bool "Use DHCP to get IP address"
+	default n
+	depends on NETUTILS_DHCPC
+	---help---
+		Obtain the IP address via DHCP.
+
+		Per RFC2131 (p. 9), the DHCP client must be prepared to receive DHCP
+		messages of up to 576 bytes (excluding Ethernet, IP, or UDP headers and FCS).
+
+if NET_IPv4
+
+comment "IPv4 Addresses"
+
+config TZSH_IPADDR
+	hex "Target IPv4 address"
+	default 0x0a000002
+	depends on !TZSH_DHCPC
+	---help---
+		If TZSH_DHCPC is NOT set, then the static IP address must be provided.
+		This is a 32-bit integer value in host order.  So, as an example,
+		0x0a000002 would be 10.0.0.2.
+
+config TZSH_DRIPADDR
+	hex "Router IPv4 address"
+	default 0x0a000001
+	---help---
+		Default router IP address (aka, Gateway).  This is a 32-bit integer
+		value in host order.  So, as an example, 0x0a000001 would be 10.0.0.1.
+
+config TZSH_NETMASK
+	hex "IPv4 Network mask"
+	default 0xffffff00
+	---help---
+		Network mask.  This is a 32-bit integer value in host order.  So, as
+		an example, 0xffffff00 would be 255.255.255.0.
+
+endif # NET_IPv4
+
+if NET_IPv6 && !NET_ICMPv6_AUTOCONF
+
+comment "Target IPv6 address"
+
+config TZSH_IPv6ADDR_1
+	hex "[0]"
+	default 0xfc00
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the first of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_2
+	hex "[1]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the second of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_3
+	hex "[2]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the third of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_4
+	hex "[3]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the fourth of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_5
+	hex "[4]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the fifth of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_6
+	hex "[5]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the sixth of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_7
+	hex "[6]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the seventh of the 8-values.  The default for
+		all eight values is fc00::2.
+
+config TZSH_IPv6ADDR_8
+	hex "[7]"
+	default 0x0002
+	range 0x0 0xffff
+	---help---
+		If NET_ICMPv6_AUTOCONF is NOT set, then the static IP address must be
+		provided. This is a 16-bit integer value in host order.  Each of the
+		eight values forming the full IP address must be specified
+		individually.  This is the last of the 8-values.  The default for
+		all eight values is fc00::2.
+
+comment "Router IPv6 address"
+
+config TZSH_DRIPv6ADDR_1
+	hex "[0]"
+	default 0xfc00
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the first of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_2
+	hex "[1]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the second of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_3
+	hex "[2]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the third of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_4
+	hex "[3]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the fourth of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_5
+	hex "[4]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the fifth of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_6
+	hex "[5]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the sixth of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_7
+	hex "[6]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the seventh of the
+		8-values.  The default for all eight values is fc00::1.
+
+config TZSH_DRIPv6ADDR_8
+	hex "[7]"
+	default 0x0001
+	range 0x0 0xffff
+	---help---
+		Default router IP address (aka, Gateway).  This is a 16-bit integer
+		value in host order.  Each of the eight values forming the full IP
+		address must be specified individually.  This is the last of the
+		8-values.  The default for all eight values is fc00::1.
+
+comment "IPv6 Network mask"
+
+config TZSH_IPv6NETMASK_1
+	hex "[0]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the first of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_2
+	hex "[1]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the second of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_3
+	hex "[2]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the third of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_4
+	hex "[3]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the fourth of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_5
+	hex "[4]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the fifth of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_6
+	hex "[5]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the sixth of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_7
+	hex "[6]"
+	default 0xffff
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the seventh of the 8-values.  The default for
+		all eight values is fe00::0.
+
+config TZSH_IPv6NETMASK_8
+	hex "[7]"
+	default 0x0000
+	range 0x0 0xffff
+	---help---
+		Network mask.  This is a 16-bit integer value in host order.  Each
+		of the eight values forming the full IP address must be specified
+		individually.  This is the eighth of the 8-values.  The default for
+		all eight values is fe00::0.
+
+endif # NET_IPv6 && !NET_ICMPv6_AUTOCONF
+endmenu # IP Address Configuration
+
+config TZSH_DNS
+	bool "Use DNS"
+	default n
+	depends on TZSH_LIBRARY && NETDB_DNSCLIENT
+	---help---
+		Configure to use a DNS.
+
+config TZSH_DNSIPADDR
+	hex "DNS IP address"
+	default 0xa0000001
+	depends on TZSH_DNS
+	---help---
+		Configure the DNS address.  This is a 32-bit integer value in host
+		order.  So, as an example, 0xa0000001 would be 10.0.0.1.
+
+config TZSH_NOMAC
+	bool "Hardware has no MAC address"
+	default n
+	depends on TZSH_LIBRARY && NET
+	---help---
+		Set if your Ethernet hardware has no built-in MAC address.
+		If set, a bogus MAC will be assigned.
+
+if TZSH_NOMAC
+
+choice
+	prompt "MAC address selection"
+	default TZSH_SWMAC
+	---help---
+		If the hardware as no MAC address, then TZSH must assign an address
+		to the hardware before it brings the network up.  This choice allows
+		you select the source of that MAC address.
+
+config TZSH_SWMAC
+	bool "Fixed address"
+	---help---
+		With this choice, you can assign a fixed MAC address determined by
+		a NuttX configuration option.
+
+endchoice # MAC address selection
+
+config TZSH_MACADDR
+	hex "Fixed MAC address"
+	default 0x00e0deadbeef if NET_ETHERNET
+	default 0x00fade00deadbeef if !NET_ETHERNET && NET_6LOWPAN
+	depends on TZSH_SWMAC && (NET_ETHERNET || NET_6LOWPAN)
+	---help---
+		If the hardware has no built-in MAC address and if the TZSH_SWMAC
+		option is selected, then the fixed, software-assigned MAC address
+		MAC address must provided with this selection.
+
+endif # TZSH_NOMAC
+
+menu "WAPI Configuration"
+	depends on NET && WIRELESS_WAPI
+
+config TZSH_WAPI_STAMODE
+	int "Wireless mode of operation"
+	default 2
+	range 0 8
+	---help---
+		Mode of operation.  See the IW_MODE_* definitions in
+		include/tinyara/wireless/wireless.  The default value corresponds to
+		IW_MODE_INFRA
+
+config TZSH_WAPI_AUTHWPA
+	hex "IW_AUTH_WPA_VERSION value"
+	default 0x00000004
+	range 0x00000001 0x00000004
+	---help---
+		IW_AUTH_WPA_VERSION values.  See the IW_AUTH_WPA_VERSION_* definitions
+		in include/tinyara/wireless/wireless.  The default value corresponds to
+		IW_AUTH_WPA_VERSION_WPA2.  NOTE that this is a bit-encoded field.  The
+		only valid values are 0x00000001, 0x00000002, and 0x00000004
+
+config TZSH_WAPI_CIPHERMODE
+	hex "IW_AUTH_PAIRWISE_CIPHER and IW_AUTH_GROUP_CIPHER values"
+	default 0x00000008
+	range 0x00000001 0x00000010
+	---help---
+		IW_AUTH_PAIRWISE_CIPHER and IW_AUTH_GROUP_CIPHER values. See the
+		IW_AUTH_CIPHER_* definitions in include/tinyara/wireless/wireless.
+		The default value corresponds to IW_AUTH_CIPHER_CCMP.  NOTE that
+		this is a bit-encoded field.  The only valid values are 0x00000001,
+		0x00000002,0x00000004, ... 0x00000010
+
+config TZSH_WAPI_ALG
+	int "Algorithm"
+	default 3
+	range 0 13
+	---help---
+		Algorithm.  See enum wpa_alg_e in apps/include/wireless/wapi.h.  The
+		default corresponds to WPA_ALG_CCMP.
+
+config TZSH_WAPI_SSID
+	string "SSID"
+	default "myApSSID"
+
+config TZSH_WAPI_PASSPHRASE
+	string "Passprhase"
+	default "mySSIDpassphrase"
+
+endmenu # WAPI Configuration
+endif # TZSH_NETINIT
+endmenu # Networking Configuration"
+
+menu "Telnet Configuration"
+	depends on NETUTILS_TELNETD
+
+config TZSH_TELNET
+	bool "Use Telnet console"
+	default n if DEFAULT_SMALL
+	default y if !DEFAULT_SMALL
+	depends on NETUTILS_TELNETD
+	---help---
+		If TZSH_TELNET is set to 'y', then a TELENET
+		server front-end is selected.  When this option is provided,
+		you may log into NuttX remotely using telnet in order to
+		access TZSH.
+
+if TZSH_TELNET
+
+config TZSH_TELNETD_PORT
+	int "Telnet port number"
+	default 23
+	---help---
+		The telnet daemon will listen on this TCP port number for connections.
+		Default: 23
+
+config TZSH_TELNETD_DAEMONPRIO
+	int "Telnet daemon priority"
+	default 100
+	---help---
+		Priority of the Telnet daemon. Default: 100
+
+config TZSH_TELNETD_DAEMONSTACKSIZE
+	int "Telnet daemon stack size"
+	default 2048
+	---help---
+		Stack size allocated for the Telnet daemon. Default: 2048
+
+config TZSH_TELNETD_CLIENTPRIO
+	int "Telnet client priority"
+	default 100
+	---help---
+		Priority of the Telnet client. Default: 100
+
+config TZSH_TELNETD_CLIENTSTACKSIZE
+	int "Telnet client stack size"
+	default 2048
+	---help---
+		Stack size allocated for the Telnet client. Default: 2048
+
+config TZSH_IOBUFFER_SIZE
+	int "Telnet I/O buffer size"
+	default 512
+	---help---
+		Determines the size of the I/O buffer to use for sending/
+		receiving TELNET commands/reponses.  Default: 512
+
+endif # TZSH_TELNET
+endmenu # Telnet Configuration
+
+config TZSH_LOGIN
+	bool
+	default n
+
+config TZSH_CONSOLE_LOGIN
+	bool "Console Login"
+	default n
+	select TZSH_LOGIN
+	---help---
+		If defined, then the console user will be required to provide a
+		username and password to start the TZSH shell.
+
+config TZSH_TELNET_LOGIN
+	bool "Telnet Login"
+	default n
+	depends on TZSH_TELNET
+	select TZSH_LOGIN
+	---help---
+		If defined, then the Telnet user will be required to provide a
+		username and password to start the TZSH shell.
+
+if TZSH_LOGIN
+
+choice
+	prompt "Verification method"
+	default TZSH_LOGIN_PASSWD if FSUTILS_PASSWD
+	default TZSH_LOGIN_FIXED if !FSUTILS_PASSWD
+
+config TZSH_LOGIN_FIXED
+	bool "Fixed username/password"
+	---help---
+		Verify user credentials by matching to fixed username and password
+		strings
+
+config TZSH_LOGIN_PLATFORM
+	bool "Platform username/password"
+	---help---
+		Call a platform-specific function to perform the verification of
+		user credentials.  In this case, the platform-specific logic must
+		provide a function with the following prototype:
+
+			int platform_user_verify(FAR const char *username, FAR const char *password);
+
+		which is prototyped an described in apps/include/tzshlib/tzshlib.h and
+		which may be included like:
+
+			#include "apps/tzshlib/tzshlib.h"
+
+		An appropriate place to implement this function might be in the
+		directory apps/platform/<board>.
+
+config TZSH_LOGIN_PASSWD
+	bool "Encrypted password file"
+	depends on FSUTILS_PASSWD
+	---help---
+		Use the content of an encrypted password file to verify user
+		credentials.  This option requires that you have selected
+		CONFIG_FSUTILS_PASSWD to enable the access methods of
+		apps/fsutils/passwd.
+
+endchoice # Verification method
+
+config TZSH_LOGIN_USERNAME
+	string "Login username"
+	default "admin"
+	depends on !TZSH_LOGIN_PASSWD
+	---help---
+		Login user name.  Default: "admin"
+
+config TZSH_LOGIN_PASSWORD
+	string "Login password"
+	default "Administrator"
+	depends on !TZSH_LOGIN_PASSWD
+	---help---
+		Login password:  Default: "Administrator"
+
+config TZSH_LOGIN_FAILDELAY
+	int "Login failure delay"
+	default 0
+	---help---
+		Login failure delay in milliseconds.  The system will pause this
+		amount of time after each failed login attempt in order to
+		discourage people from cracking the password by brute force.  The
+		value zero may be supplied to disable the delay.
+
+config TZSH_LOGIN_FAILCOUNT
+	int "Login retry count"
+	default 3
+	---help---
+		Number of login retry attempts.
+
+endif # TZSH_LOGIN
+endif # TZSH_LIBRARY
+endmenu # TZSH Library

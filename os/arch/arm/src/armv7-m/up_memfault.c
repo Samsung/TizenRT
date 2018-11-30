@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/src/armv7-m/up_memfault.c
  *
- *   Copyright (C) 2011, 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011, 2013, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,12 +69,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#undef DEBUG_MEMFAULTS			/* Define to debug memory management faults */
-
-#ifdef DEBUG_MEMFAULTS
-#define mfdbg(format, ...) lldbg(format, ##__VA_ARGS__)
+#ifdef CONFIG_DEBUG_MEMFAULT
+#define mferr(format, ...)  _alert(format, ##__VA_ARGS__)
+#define mfinfo(format, ...) _alert(format, ##__VA_ARGS__)
 #else
-#define mfdbg(...)
+#define mferr(x...)
+#define mfinfo(x...)
 #endif
 
 /****************************************************************************
@@ -110,33 +110,26 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 
 	(void)irqsave();
 	lldbg("PANIC!!! Memory Management Fault:\n");
-	mfdbg("  IRQ: %d context: %p\n", irq, regs);
+	lldbg("  IRQ: %d context: %p\n", irq, context);
 	lldbg("  CFAULTS: %08x MMFAR: %08x\n",
 		  getreg32(NVIC_CFAULTS), getreg32(NVIC_MEMMANAGE_ADDR));
-	mfdbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
+	lldbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
 		  getbasepri(), getprimask(), getipsr(), getcontrol());
-	mfdbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3],
-		  regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-	mfdbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11],
-		  regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
 
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 #ifdef REG_EXC_RETURN
-	mfdbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
+	lldbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
 		  current_regs[REG_XPSR], current_regs[REG_BASEPRI], current_regs[REG_EXC_RETURN]);
 #else
-	mfdbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
+	lldbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
 		  current_regs[REG_XPSR], current_regs[REG_BASEPRI]);
 #endif
 #else
 #ifdef REG_EXC_RETURN
-	mfdbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
+	lldbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
+	      current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
 #else
-	mfdbg("  xPSR: %08x PRIMASK: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
+	lldbg("  xPSR: %08x PRIMASK: %08x (saved)\n", current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
 #endif
 #endif
 

@@ -61,6 +61,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"
@@ -125,7 +126,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 	/* Add the task to the specified blocked task list */
 
-	sched_addblocked(tcb, (tstate_t)task_state);
+	sched_addblocked(tcb, (tstate_t) task_state);
 
 	/* If there are any pending tasks, then add them to the g_readytorun
 	 * task list now
@@ -138,6 +139,10 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 	/* Now, perform the context switch if one is needed */
 
 	if (switch_needed) {
+		/* Are we in an interrupt handler? */
+
+		sched_suspend_scheduler(rtcb);
+
 		/* Are we in an interrupt handler? */
 
 		if (current_regs) {
@@ -153,10 +158,9 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			rtcb = this_task();
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(rtcb);
-#endif
+			/* Reset scheduler parameters */
+
+			sched_resume_scheduler(rtcb);
 
 			/* Then switch contexts */
 
@@ -166,15 +170,16 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 		/* No, then we will need to perform the user context switch */
 
 		else {
+			struct tcb_s *nexttcb = this_task();
+
+			/* Reset scheduler parameters */
+
+			sched_resume_scheduler(nexttcb);
+
 			/* Switch context to the context of the task at the head of the
 			 * ready to run list.
 			 */
 
-			struct tcb_s *nexttcb = this_task();
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(nexttcb);
-#endif
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the

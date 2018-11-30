@@ -106,6 +106,17 @@ uint8_t crc8part(FAR const uint8_t *src, size_t len, uint8_t crc8val);
 
 uint8_t crc8(FAR const uint8_t *src, size_t len);
 
+/****************************************************************************
+ * Name: crc8ccitt
+ *
+ * Description:
+ *   Return an 8-bit CRC of the contents of the 'src' buffer, length 'len'
+ *   using the polynomial x^8+x^2+x^1+1 (aka "0x07" poly).
+ *
+ ****************************************************************************/
+
+uint8_t crc8ccitt(FAR const uint8_t *src, size_t len);
+
 #undef EXTERN
 #ifdef __cplusplus
 }

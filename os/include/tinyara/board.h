@@ -162,7 +162,9 @@ void board_initialize(void);
  *
  ****************************************************************************/
 
+#ifdef CONFIG_BOARD_INITIALIZE
 int board_app_initialize(void);
+#endif
 
 /****************************************************************************
  * Name: board_power_off
@@ -471,8 +473,10 @@ void board_autoled_initialize(void);
 
 #ifdef CONFIG_ARCH_LEDS
 void board_autoled_on(int led);
+void board_led_on(int led);
 #else
 #define board_autoled_on(led)
+#define board_led_on(led)
 #endif
 
 /****************************************************************************

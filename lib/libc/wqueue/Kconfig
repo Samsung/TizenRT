@@ -1,0 +1,31 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the TinyARA tools repository.
+#
+
+menu "User Work Queue Support"
+	depends on (BUILD_PROTECTED || BUILD_KERNEL) && !DISABLE_SIGNALS
+
+config LIB_USRWORK
+	bool "User mode worker thread"
+	default n
+	---help---
+		User space work queues can also be made available for deferred
+		processing in the TinyARA kernel build.
+
+if LIB_USRWORK
+
+config LIB_USRWORKPRIORITY
+	int "User mode priority worker thread priority"
+	default 100
+	---help---
+		The execution priority of the user-mode priority worker thread.  Default: 100
+
+config LIB_USRWORKSTACKSIZE
+	int "User mode worker thread stack size"
+	default 2048
+	---help---
+		The stack size allocated for the lower priority worker thread.  Default: 2K.
+
+endif # LIB_USRWORK
+endmenu # User Work Queue Support

@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/src/armv7-m/up_doirq.c
  *
- *   Copyright (C) 2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011, 2013-2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/board.h>
 #include <arch/board/board.h>
 
 #include "up_arch.h"
@@ -106,7 +107,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 * current_regs is also used to manage interrupt level context switches.
 	 */
 
-	savestate = (uint32_t *)current_regs;
+	savestate = (uint32_t *) current_regs;
 	current_regs = regs;
 
 	/* Acknowledge the interrupt */
@@ -123,7 +124,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 * switch occurred during interrupt processing.
 	 */
 
-	regs = (uint32_t *)current_regs;
+	regs = (uint32_t *) current_regs;
 
 	/* Restore the previous value of current_regs.  NULL would indicate that
 	 * we are no longer in an interrupt handler.  It will be non-NULL if we

@@ -68,6 +68,9 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/clock.h>
+#include <tinyara/sched.h>
+#include <tinyara/signal.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/serial/serial.h>
@@ -151,7 +154,6 @@ static int uart_takesem(FAR sem_t *sem, bool errout)
 
 	return OK;
 }
-
 
 /************************************************************************************
  * Name: uart_givesem
@@ -374,7 +376,7 @@ static ssize_t uart_write(FAR struct file *filep, FAR const char *buffer, size_t
 
 	/* Only one user can access dev->xmit.head at a time */
 
-	ret = (ssize_t)uart_takesem(&dev->xmit.sem, true);
+	ret = (ssize_t) uart_takesem(&dev->xmit.sem, true);
 	if (ret < 0) {
 		/* A signal received while waiting for access to the xmit.head will
 		 * abort the transfer.  After the transfer has started, we are committed
@@ -843,10 +845,10 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
 				uart_rxflowcontrol(dev, 0, false);
 #endif
-					uart_givesem(&dev->recv.sem);
-					ret = OK;
-				}
-				if (arg == TCIOFLUSH || arg == TCOFLUSH) {
+				uart_givesem(&dev->recv.sem);
+				ret = OK;
+			}
+			if (arg == TCIOFLUSH || arg == TCOFLUSH) {
 				ret = uart_takesem(&dev->xmit.sem, true);
 				if (ret < 0) {
 					break;

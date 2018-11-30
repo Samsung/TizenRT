@@ -5,7 +5,7 @@
 
 config IOTBUS
 	bool "IoTbus framework Support"
-	default y
+	default n
 	---help---
 		Enables IoTBus (GPIO, I2C, PWM, SPI, UART) framework.
 
@@ -13,35 +13,35 @@ if IOTBUS
 
 config IOTBUS_GPIO
 	bool "IoTbus GPIO"
-	default y
+	default n
 	select GPIO
 	---help---
 		Enables IoTbus GPIO
 
 config IOTBUS_I2C
 	bool "IoTbus I2C"
-	default y
+	default n
 	depends on I2C
 	---help---
 		Enables IoTbus I2C
 
 config IOTBUS_PWM
 	bool "IoTbus PWM"
-	default y
+	default n
 	depends on PWM
 	---help---
 		Enables IoTbus PWM
 
 config IOTBUS_SPI
 	bool "IoTbus SPI"
-	default y
+	default n
 	depends on SPI
 	---help---
 		Enables IoTbus SPI
 
 config IOTBUS_UART
 	bool "IoTbus UART"
-	default y
+	default n
 	depends on SERIAL
 	---help---
 		Enables IoTbus Uart

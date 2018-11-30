@@ -76,6 +76,39 @@
 
 /* Maximum number of threads than can be waiting for POLL events */
 
+#ifndef CONFIG_PIPES
+#undef CONFIG_DEV_PIPE_MAXSIZE
+#undef CONFIG_DEV_PIPE_SIZE
+#undef CONFIG_DEV_FIFO_SIZE
+#define CONFIG_DEV_PIPE_MAXSIZE 0
+#define CONFIG_DEV_PIPE_SIZE 0
+#define CONFIG_DEV_FIFO_SIZE 0
+#endif
+
+/* Pipe/FIFO size */
+
+#ifndef CONFIG_DEV_PIPE_MAXSIZE
+#define CONFIG_DEV_PIPE_MAXSIZE 1024
+#endif
+
+#if CONFIG_DEV_PIPE_MAXSIZE <= 0
+#undef CONFIG_PIPES
+#undef CONFIG_DEV_PIPE_SIZE
+#undef CONFIG_DEV_FIFO_SIZE
+#define CONFIG_DEV_PIPE_SIZE 0
+#define CONFIG_DEV_FIFO_SIZE 0
+#endif
+
+#ifndef CONFIG_DEV_PIPE_SIZE
+#define CONFIG_DEV_PIPE_SIZE 1024
+#endif
+
+#ifndef CONFIG_DEV_FIFO_SIZE
+#define CONFIG_DEV_FIFO_SIZE 1024
+#endif
+
+/* Maximum number of threads than can be waiting for POLL events */
+
 #ifndef CONFIG_DEV_PIPE_NPOLLWAITERS
 #define CONFIG_DEV_PIPE_NPOLLWAITERS 2
 #endif
@@ -122,8 +155,10 @@ struct pipe_dev_s {
 	sem_t d_wrsem;				/* Full buffer - Writer waits for data read */
 	pipe_ndx_t d_wrndx;			/* Index in d_buffer to save next byte written */
 	pipe_ndx_t d_rdndx;			/* Index in d_buffer to return the next byte read */
+	pipe_ndx_t d_bufsize;		/* allocated size of d_buffer in bytes */
 	uint8_t d_refs;				/* References counts on pipe (limited to 255) */
 	uint8_t d_nwriters;			/* Number of reference counts for write access */
+	uint8_t d_nreaders;			/* Number of reference counts for read access */
 	uint8_t d_pipeno;			/* Pipe minor number */
 	uint8_t d_flags;			/* See PIPE_FLAG_* definitions */
 	uint8_t *d_buffer;			/* Buffer allocated when device opened */
@@ -153,6 +188,7 @@ struct file;					/* Forward reference */
 struct inode;					/* Forward reference */
 
 FAR struct pipe_dev_s *pipecommon_allocdev(void);
+FAR struct pipe_dev_s *pipecommon_allocdev2(size_t bufsize);
 void pipecommon_freedev(FAR struct pipe_dev_s *dev);
 int pipecommon_open(FAR struct file *filep);
 int pipecommon_close(FAR struct file *filep);

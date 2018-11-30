@@ -62,6 +62,7 @@
 
 #include <sys/types.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/drivers/drivers.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -290,6 +291,125 @@ errout_with_pipe:
 
 errout:
 	set_errno(err);
+	return ERROR;
+}
+
+/****************************************************************************
+ * Name: pipe2
+ *
+ * Description:
+ *   pipe() creates a pair of file descriptors, pointing to a pipe inode,
+ *   and  places them in the array pointed to by 'fd'. fd[0] is for reading,
+ *   fd[1] is for writing.
+ *
+ *   NOTE: mkfifo2 is a special, non-standard, NuttX-only interface.  Since
+ *   the NuttX FIFOs are based in in-memory, circular buffers, the ability
+ *   to control the size of those buffers is critical for system tuning.
+ *
+ * Input Parameters:
+ *   fd[2] - The user provided array in which to catch the pipe file
+ *   descriptors
+ *   bufsize - The size of the in-memory, circular buffer in bytes.
+ *
+ * Returned Value:
+ *   0 is returned on success; otherwise, -1 is returned with errno set
+ *   appropriately.
+ *
+ ****************************************************************************/
+
+int pipe2(int fd[2], size_t bufsize)
+{
+	FAR struct pipe_dev_s *dev = NULL;
+	char devname[16];
+	int pipeno;
+	int errcode;
+	int ret;
+
+	/* Get exclusive access to the pipe allocation data */
+
+	ret = sem_wait(&g_pipesem);
+	if (ret < 0) {
+		errcode = -ret;
+		goto errout;
+	}
+
+	/* Allocate a minor number for the pipe device */
+
+	pipeno = pipe_allocate();
+	if (pipeno < 0) {
+		(void)sem_post(&g_pipesem);
+		errcode = -pipeno;
+		goto errout;
+	}
+
+	/* Create a pathname to the pipe device */
+
+	snprintf(devname, sizeof(devname), "/dev/pipe%d", pipeno);
+
+	/* Check if the pipe device has already been created */
+
+	if ((g_pipecreated & (1 << pipeno)) == 0) {
+		/* No.. Allocate and initialize a new device structure instance */
+
+		dev = pipecommon_allocdev2(bufsize);
+		if (!dev) {
+			(void)sem_post(&g_pipesem);
+			errcode = ENOMEM;
+			goto errout_with_pipe;
+		}
+
+		dev->d_pipeno = pipeno;
+
+		/* Register the pipe device */
+
+		ret = register_driver(devname, &pipe_fops, 0666, (FAR void *)dev);
+		if (ret != 0) {
+			(void)sem_post(&g_pipesem);
+			errcode = -ret;
+			goto errout_with_dev;
+		}
+
+		/* Remember that we created this device */
+
+		g_pipecreated |= (1 << pipeno);
+	}
+
+	(void)sem_post(&g_pipesem);
+
+	/* Get a write file descriptor */
+
+	fd[1] = open(devname, O_WRONLY);
+	if (fd[1] < 0) {
+		errcode = -fd[1];
+		goto errout_with_driver;
+	}
+
+	/* Get a read file descriptor */
+
+	fd[0] = open(devname, O_RDONLY);
+	if (fd[0] < 0) {
+		errcode = -fd[0];
+		goto errout_with_wrfd;
+	}
+
+	return OK;
+
+errout_with_wrfd:
+	close(fd[1]);
+
+errout_with_driver:
+	unregister_driver(devname);
+
+errout_with_dev:
+	if (dev) {
+		pipecommon_freedev(dev);
+	}
+
+errout_with_pipe:
+	pipe_free(pipeno);
+
+errout:
+	set_errno(errcode);
 	return ERROR;
 }
 

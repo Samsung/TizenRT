@@ -1,0 +1,91 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config SYSTEM_TZSH
+	tristate "TizenRT Shell (TZSH) example"
+	default n
+	select TZSH_LIBRARY
+	select SYSTEM_READLINE
+	---help---
+		Enable the NuttShell (TZSH) example
+
+if SYSTEM_TZSH
+
+config SYSTEM_TZSH_PRIORITY
+	int "TizenRT Shell thread priority"
+	default 100
+
+config SYSTEM_TZSH_STACKSIZE
+	int "TizenRT Shell stack size"
+	default 2048
+
+config SYSTEM_TZSH_SYMTAB
+	bool "Register symbol table"
+	default n
+	depends on LIBC_EXECFUNCS && LIB_BOARDCTL && !EXECFUNCS_HAVE_SYMTAB
+	select BOARDCTL_APP_SYMTAB
+	---help---
+		Enable logic to automatically register an application symbol table
+		as part of TZSH initialization.  If enabled, then application logic
+		must provide the following:
+
+			const struct symtab_s g_exports[];
+			const int g_nexports;
+
+		Where g_exports is the name of the exported application symbol table
+		and g_nexports holds the number of entries in the application symbol
+		table.
+
+		This is done very early in the TZSH initialization sequence.
+
+		Why might you want to do this?  There is really only one reason:  You
+		would like to have the symbol tables in place early so that programs
+		started by TZSH, perhaps via an initialization script, will have all
+		of the necessary symbols in place.  Otherwise, you probably do *not*
+		want this option!
+
+if SYSTEM_TZSH_SYMTAB
+
+config SYSTEM_TZSH_SYMTAB_ARRAYNAME
+	string "Symbol table used by exec[l|v]"
+	default "g_exports"
+	---help---
+		The exec[l|v] and posix_spawn() functions needs to have (1) a
+		symbol table that provides the list of symbols exported by the base
+		code, and (2) the number of symbols in that table.  This selection
+		provides the name of that symbol table.
+
+config SYSTEM_TZSH_SYMTAB_COUNTNAME
+	string "Variable holding the number of symbols"
+	default "g_nexports"
+	---help---
+		The exec[l|v] and posix_spawn() functions needs to have (1) a
+		symbol table that provides the list of symbols exported by the base
+		code, and (2) the number of symbols in that table.  This selection
+		provides the name of 'int' variable that holds the number of symbol
+		in the table.
+
+endif # SYSTEM_TZSH_SYMTAB
+
+config SYSTEM_TZSH_PROGNAME
+	string "Program name"
+	default "tzsh"
+	depends on BUILD_LOADABLE
+	---help---
+		This is the name of the program that will be use when the TZSH ELF
+		program is installed.
+
+config SYSTEM_TZSH_CXXINITIALIZE
+	bool "C++ Initialization"
+	default n
+	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	---help---
+		If HAVE_CXX and HAVE_CXXINITIALIZE are slected, then this TZSH
+		example can be configured to initialize C++ constructors when it
+		is started.  TZSH does not use C++ and, by default, assumes that
+		constructors are initialized elsewhere.  However, you can force
+		TZSH to initialize constructors by setting this option.
+
+endif

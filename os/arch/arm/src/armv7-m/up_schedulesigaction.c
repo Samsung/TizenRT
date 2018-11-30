@@ -69,6 +69,8 @@
 #include "up_internal.h"
 #include "up_arch.h"
 
+#include "irq/irq.h"
+
 #ifndef CONFIG_DISABLE_SIGNALS
 
 /****************************************************************************
@@ -180,7 +182,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 				 * privileged thread mode.
 				 */
 
-				current_regs[REG_PC] = (uint32_t)up_sigdeliver;
+				current_regs[REG_PC] = (uint32_t) up_sigdeliver;
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 				current_regs[REG_BASEPRI] = NVIC_SYSH_DISABLE_PRIORITY;
 #else
@@ -225,7 +227,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 			 * here.
 			 */
 
-			tcb->xcp.regs[REG_PC] = (uint32_t)up_sigdeliver;
+			tcb->xcp.regs[REG_PC] = (uint32_t) up_sigdeliver;
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 			tcb->xcp.regs[REG_BASEPRI] = NVIC_SYSH_DISABLE_PRIORITY;
 #else

@@ -140,14 +140,26 @@ endif
 #   be cleaned to prevent garbage from collecting in them when changing
 #   configurations.
 
+#ifeq ($(CONFIG_LIBCXX),y)
+#LIBXX=libcxx
+#else
+#LIBXX=libxx
+#endif
+
 NONFSDIRS = kernel $(ARCH_SRC) $(TINYARA_ADDONS)
 FSDIRS = fs drivers
 CONTEXTDIRS = $(APPDIR)
 CONTEXTDIRS += $(TOOLSDIR)
 CONTEXTDIRS += mm
+
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 CONTEXTDIRS += $(EXTDIR)$(DELIM)iotivity
 endif
+
+#NONFSDIRS = kernel drivers configs $(ARCH_SRC) $(NUTTX_ADDONS)
+#NONFSDIRS = kernel drivers $(ARCH_SRC) $(NUTTX_ADDONS)
+#FSDIRS = fs binfmt
+#CONTEXTDIRS = configs $(APPDIR)
 USERDIRS =
 OTHERDIRS = $(LIBRARIES_DIR)
 

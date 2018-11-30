@@ -188,6 +188,40 @@ FAR struct pipe_dev_s *pipecommon_allocdev(void)
 }
 
 /****************************************************************************
+ * Name: pipecommon_allocdev2
+ ****************************************************************************/
+
+FAR struct pipe_dev_s *pipecommon_allocdev2(size_t bufsize)
+{
+	FAR struct pipe_dev_s *dev;
+
+	DEBUGASSERT(bufsize <= CONFIG_DEV_PIPE_MAXSIZE);
+
+	/* Allocate a private structure to manage the pipe */
+
+	dev = (FAR struct pipe_dev_s *)kmm_malloc(sizeof(struct pipe_dev_s));
+	if (dev) {
+		/* Initialize the private structure */
+
+		memset(dev, 0, sizeof(struct pipe_dev_s));
+		sem_init(&dev->d_bfsem, 0, 1);
+		sem_init(&dev->d_rdsem, 0, 0);
+		sem_init(&dev->d_wrsem, 0, 0);
+
+		/* The read/write wait semaphores are used for signaling and, hence,
+		 * should not have priority inheritance enabled.
+		 */
+
+		sem_setprotocol(&dev->d_rdsem, SEM_PRIO_NONE);
+		sem_setprotocol(&dev->d_wrsem, SEM_PRIO_NONE);
+
+		dev->d_bufsize = bufsize;
+	}
+
+	return dev;
+}
+
+/****************************************************************************
  * Name: pipecommon_freedev
  ****************************************************************************/
 

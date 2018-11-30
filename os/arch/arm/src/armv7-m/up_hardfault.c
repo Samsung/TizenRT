@@ -111,13 +111,10 @@
 
 int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
-#if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV7M_USEBASEPRI)
-	uint32_t *regs = (uint32_t *)context;
-#endif
-
 	/* Get the value of the program counter where the fault occurred */
 
 #ifndef CONFIG_ARMV7M_USEBASEPRI
+	uint32_t *regs = (uint32_t *)context;
 	uint16_t *pc = (uint16_t *)regs[REG_PC] - 1;
 
 	/* Check if the pc lies in known FLASH memory.
@@ -130,11 +127,11 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	 * FLASH region or in the user FLASH region.
 	 */
 
-	if (((uintptr_t)pc >= (uintptr_t)&_stext && (uintptr_t)pc < (uintptr_t)&_etext) || ((uintptr_t)pc >= (uintptr_t)USERSPACE->us_textstart && (uintptr_t)pc < (uintptr_t)USERSPACE->us_textend))
+	if (((uintptr_t)pc >= (uintptr_t)_START_TEXT && (uintptr_t)pc < (uintptr_t)_END_TEXT) || ((uintptr_t)pc >= (uintptr_t)USERSPACE->us_textstart && (uintptr_t)pc < (uintptr_t)USERSPACE->us_textend))
 #else
 	/* SVCalls are expected only from the base, kernel FLASH region */
 
-	if ((uintptr_t)pc >= (uintptr_t)&_stext && (uintptr_t)pc < (uintptr_t)&_etext)
+	if ((uintptr_t)pc >= (uintptr_t)_START_TEXT && (uintptr_t)pc < (uintptr_t)_END_TEXT)
 #endif
 	{
 		/* Fetch the instruction that caused the Hard fault */
@@ -160,37 +157,10 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	hfdbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
 		  getbasepri(), getprimask(), getipsr(), getcontrol());
 	hfdbg("  CFAULTS: %08x HFAULTS: %08x DFAULTS: %08x BFAULTADDR: %08x AFAULTS: %08x\n",
-		  getreg32(NVIC_CFAULTS), getreg32(NVIC_HFAULTS),
-		  getreg32(NVIC_DFAULTS), getreg32(NVIC_BFAULT_ADDR),
-		  getreg32(NVIC_AFAULTS));
-	hfdbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3],
-		  regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-	hfdbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11],
-		  regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
-
-#ifdef CONFIG_ARMV7M_USEBASEPRI
-#ifdef REG_EXC_RETURN
-	hfdbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI],
-		  current_regs[REG_EXC_RETURN]);
-#else
-	hfdbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI]);
-#endif
-#else
-#ifdef REG_EXC_RETURN
-	hfdbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
-#else
-	hfdbg("  xPSR: %08x PRIMASK: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
-#endif
-#endif
+		  getreg32(NVIC_CFAULTS), getreg32(NVIC_HFAULTS), getreg32(NVIC_DFAULTS), getreg32(NVIC_BFAULT_ADDR), getreg32(NVIC_AFAULTS));
 
 	(void)irqsave();
-	lldbg("PANIC!!! Hard fault: %08x\n", getreg32(NVIC_HFAULTS));
+	hfdbg("PANIC!!! Hard fault: %08x\n", getreg32(NVIC_HFAULTS));
 	PANIC();
 	return OK;
 }

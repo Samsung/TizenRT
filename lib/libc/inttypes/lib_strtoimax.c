@@ -57,10 +57,17 @@
 #include <tinyara/config.h>
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <inttypes.h>
 #include <errno.h>
 
-#include "lib_internal.h"
+#include "libc.h"
+
+/* Current implementation depends on strtoull() and, hence, is only
+ * available if long long types are supported.
+ */
+
+#ifdef CONFIG_HAVE_LONG_LONG
 
 /****************************************************************************
  * Public Functions
@@ -128,3 +135,5 @@ intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base)
 
 	return (intmax_t) accum;
 }
+
+#endif							/* CONFIG_HAVE_LONG_LONG */

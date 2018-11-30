@@ -110,7 +110,7 @@
  * state from the main stack. Execution uses MSP after return.
  */
 
-#if defined(CONFIG_ARMV7M_CMNVECTOR) && defined(CONFIG_ARCH_FPU)
+#if defined(CONFIG_ARMV7M_CMNVECTOR) && defined(CONFIG_ARCH_FPU)	/* CONFIG_ARMV7M_LAZYFPU */
 #define EXC_RETURN_PRIVTHR     (EXC_RETURN_BASE | EXC_RETURN_THREAD_MODE)
 #else
 #define EXC_RETURN_PRIVTHR     (EXC_RETURN_BASE | EXC_RETURN_STD_CONTEXT | \

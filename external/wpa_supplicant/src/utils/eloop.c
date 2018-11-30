@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <sys/select.h>
 #ifdef CONFIG_OS_NUTTX
-#include <nuttx/arch.h>
+#include <tinyara/arch.h>
 #else
 #include <tinyara/arch.h>
 #endif

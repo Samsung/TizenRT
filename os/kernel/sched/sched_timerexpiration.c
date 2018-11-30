@@ -450,14 +450,14 @@ static void sched_timer_start(unsigned int ticks)
 		 */
 
 #ifdef CONFIG_HAVE_LONG_LONG
-		usecs = TICK2USEC((uint64_t)ticks);
+		usecs = TICK2USEC((uint64_t) ticks);
 #else
 		usecs = TICK2USEC(ticks);
 #endif
 		secs = usecs / USEC_PER_SEC;
 		nsecs = (usecs - (secs * USEC_PER_SEC)) * NSEC_PER_USEC;
 
-		ts.tv_sec = (time_t)secs;
+		ts.tv_sec = (time_t) secs;
 		ts.tv_nsec = (long)nsecs;
 
 #ifdef CONFIG_SCHED_TICKLESS_ALARM

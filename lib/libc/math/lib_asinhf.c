@@ -54,6 +54,9 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
 #include <math.h>
 
 /************************************************************************
@@ -62,5 +65,5 @@
 
 float asinhf(float x)
 {
-	return logf(x + sqrtf(x * x + 1));
+	return logf(x + sqrtf(x * x + 1.0F));
 }

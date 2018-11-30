@@ -61,6 +61,7 @@
 
 #include <stdint.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/drivers/drivers.h>
 #include <errno.h>
 
 #include "pipe_common.h"

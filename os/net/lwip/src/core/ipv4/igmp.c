@@ -110,6 +110,9 @@ Steve Reynolds
 #include <net/lwip/tcp.h>
 #include <net/lwip/stats.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string.h>
 
 static struct igmp_group *igmp_lookup_group(struct netif *ifp, const ip4_addr_t *addr);

@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/include/irq.h
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,7 @@
  * save structure and irqsave()/irqrestore() macros)
  */
 
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4)
+#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
 #include <arch/armv7-m/irq.h>
 #elif defined(CONFIG_ARCH_CORTEXR4)
 #include <arch/armv7-r/irq.h>
@@ -81,38 +81,5 @@
 #include <arch/arm/irq.h>
 #endif
 
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-#endif
-
 #endif							/* __ARCH_ARM_INCLUDE_IRQ_H */
+
