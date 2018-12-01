@@ -56,6 +56,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <stdint.h>
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
