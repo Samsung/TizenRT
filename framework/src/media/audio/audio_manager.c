@@ -940,6 +940,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 		} else {
 			if (rechanneling_ratio < 1) {	// Stereo -> Mono
 				int i = 0;
+				int j = 0;
 				int len = card->resample.rechanneling_buffer_size / device_channel_num * rechanneling_ratio;
 				short *src = (short *)card->resample.rechanneling_buffer;
 				short *dst = (short *)data;
@@ -950,7 +951,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 				for (i = 0; i < len / 2; i++) {
 					// New Mono Sample = (L Sample + R Sample) / 2,
 					// Use the average value simply.
-					for (int j = 0; j < 2; j++) {
+					for (j = 0; j < 2; j++) {
 						dst[i * 2 + j] = (src[i * 2 * 2 + j] + src[i * 2 * 2 + 2 + j]) >> 1;
 					}
 				}
@@ -979,6 +980,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 	if (card->resample.ratio != 1) {
 		if (rechanneling_ratio < 1) {	// Stereo -> Mono
 			int i = 0;
+			int j = 0;
 			int len = card->resample.rechanneling_buffer_size / device_channel_num * rechanneling_ratio;
 			short *src = (short *)card->resample.rechanneling_buffer;
 			short *dst = (short *)data;
@@ -989,7 +991,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 			for (i = 0; i < len / 2; i++) {
 				// New Mono Sample = (L Sample + R Sample) / 2,
 				// Use the average value simply.
-				for (int j = 0; j < 2; j++) {
+				for (j = 0; j < 2; j++) {
 					dst[i * 2 + j] = (src[i * 2 * 2 + j] + src[i * 2 * 2 + 2 + j]) >> 1;
 				}
 			}
@@ -1047,11 +1049,13 @@ int start_audio_stream_out(void *data, unsigned int frames)
 
 	if (card->resample.ratio != 1) {	// ToDo: rechanneling_ratio < 1 will be added later.
 		if (rechanneling_ratio > 1) {	// Mono -> Stereo
+			int i = 0;
+			int j = 0;
 			char *src = (char *)data;
 			char *dst = (char *)card->resample.rechanneling_buffer;
 			medvdbg("Start addr = %x\n", card->resample.rechanneling_buffer);
-			for (int i = 0; i < frames; i++) {
-				for (int j = 0; j < 2; j++) {
+			for (i = 0; i < frames; i++) {
+				for (j = 0; j < 2; j++) {
 					dst[i * 2 * 2 + j] = src[i * 2 + j];
 					dst[i * 2 * 2 + 2 + j] = src[i * 2 + j];
 				}
@@ -1071,11 +1075,13 @@ int start_audio_stream_out(void *data, unsigned int frames)
 			ret = pcm_writei(card->pcm, card->resample.buffer, resampled_frames);
 		} else {
 			if (rechanneling_ratio > 1) {	// Mono -> Stereo
+				int i = 0;
+				int j = 0;
 				char *src = (char *)data;
 				char *dst = (char *)card->resample.rechanneling_buffer;
 				medvdbg("Start addr = %x\n", card->resample.rechanneling_buffer);
-				for (int i = 0; i < frames; i++) {
-					for (int j = 0; j < 2; j++) {
+				for (i = 0; i < frames; i++) {
+					for (j = 0; j < 2; j++) {
 						dst[i * 2 * 2 + j] = src[i * 2 + j];
 						dst[i * 2 * 2 + 2 + j] = src[i * 2 + j];
 					}

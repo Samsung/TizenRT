@@ -255,9 +255,10 @@ static inline long smh_call(unsigned int nbr, void *parm)
 
 	__asm__ __volatile__
 	(
-		"bkpt #0xab":"=r"(reg0)
-		:"r"(reg0), "r"(reg1)
-		:"memory"
+		"bkpt #0xab"
+		: "=r"(reg0)
+		: "r"(reg0), "r"(reg1)
+		: "memory"
 	);
 
 	return reg0;
