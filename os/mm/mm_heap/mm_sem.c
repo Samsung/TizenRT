@@ -238,7 +238,7 @@ void mm_is_sem_available(void *address)
 {
 	struct mm_heap_s *heap;
 
-	heap = mm_get_heap_info(address);
+	heap = mm_get_heap(address);
 
 	mm_takesemaphore(heap);
 	mm_givesemaphore(heap);

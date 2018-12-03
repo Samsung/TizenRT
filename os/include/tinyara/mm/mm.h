@@ -662,8 +662,9 @@ void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 void mm_is_sem_available(void *address);
 
-/* Functions to get heap information */
-struct mm_heap_s *mm_get_heap_info(void *address);
+/* Functions to get the address of heap structure */
+struct mm_heap_s *mm_get_heap(void *address);
+struct mm_heap_s *mm_get_heap_with_index(int index);
 
 int mm_get_heapindex(void *mem);
 #if CONFIG_MM_NHEAPS > 1
