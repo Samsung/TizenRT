@@ -41,6 +41,10 @@
 
 static int tm_sample_handle;
 static int pid_tm_itc;
+static int pid_tm_user1;
+static int pid_tm_task2;
+static int pid_tm_task4;
+static int pid_tm_task9;
 static int pid_task6;
 static int handle_tm_itc;
 static int tm_broadcast_msg;
@@ -69,24 +73,34 @@ static int not_builtin_task(int argc, char *argv[])
 void unregister_tasks(void)
 {
 	int ret;
-
-	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
-
 	int tm_sample_handle2;
-
 	tm_appinfo_list_t *sample_list_info;
 
+	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks ERR: %d\n", ret);
+	}
+
 	sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("itc_taskmanager_user1", TM_RESPONSE_WAIT_INF));
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+	if (sample_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_name in unregister_tasks\n");
+		return;
+	}
 
 	tm_sample_handle2 = sample_list_info->task.handle;
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
+	if (sample_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks\n");
+		task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
+		return;
+	}
 
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks ERR: %d\n", ret);
+	}
 
+	return;
 }
 
 void unregister_tasks_3(int tm_sample_handle2)
@@ -94,7 +108,9 @@ void unregister_tasks_3(int tm_sample_handle2)
 	int ret;
 
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregsiter in unregister_tasks_3 ERR: %d\n", ret);
+	}
 }
 
 void unregister_tasks_4(int gid)
@@ -104,38 +120,77 @@ void unregister_tasks_4(int gid)
 	int ret;
 
 	group_list_info = (tm_appinfo_list_t *)task_manager_getinfo_with_group(gid, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_NEQ("task_manager_getinfo_with_group", group_list_info, NULL);
+	if (group_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_group in unregister_tasks_4\n");
+		return;
+	}
 
 	while (group_list_info != NULL) {
+
 		task_info = &(group_list_info->task);
+		ret = task_manager_stop(task_info->handle, TM_RESPONSE_WAIT_INF);
+		if (ret != OK && ret != TM_ALREADY_STOPPED_APP) {
+			printf("ERROR: fail to task_manager_stop in unregister_tasks_4 ERR: %d\n", ret);
+		}
+
 		ret = task_manager_unregister(task_info->handle, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_unregister in unregister_tasks_4 ERR: %d\n", ret);
+		}
 
 		task_manager_clean_info(&task_info);
-		TC_ASSERT_NEQ("task_manager_clean_info", (tm_appinfo_t *)&task_info, NULL);
+		if (task_info != NULL) {
+			printf("ERROR: fail to task_manager_clean_info in unregister_tasks_4\n");
+		}
 
 		group_list_info = group_list_info->next;
 	}
 
 	task_manager_clean_infolist(&group_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&group_list_info, NULL);
+	if (group_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks_4\n");
+		return;
+	}
+}
+
+void unregister_tasks_5(int tm_sample_handle2, int tm_sample_handle3)
+{
+	int ret;
+
+	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_5 ERR: %d\n", ret);
+	}
+
+	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_5 ERR: %d\n", ret);
+	}
+
+	ret = task_manager_unregister(tm_sample_handle3, TM_RESPONSE_WAIT_INF);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_5 ERR: %d\n", ret);
+	}
 }
 
 void itc_taskmanager_check_dedicate_permission_p(void)
 {
 	int tm_sample_handle2;
+	int status;
+	int ret;
 
-	tm_sample_handle = task_manager_register_builtin("tm_sample", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_builtin("tm_sample_itc", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_builtin", tm_sample_handle, 0);
 
-	tm_sample_handle2 = task_manager_register_builtin("itc_taskmanager_user1", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_builtin("start_itc_sampl", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_builtin", tm_sample_handle2, 0);
 
-	int ret;
 	ret = task_manager_start(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks());
 
-	usleep(100);
+	usleep(10);
+
+	waitpid(pid_tm_user1, &status, 0);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_unregister", ret, OK, unregister_tasks_3(tm_sample_handle2));
@@ -146,81 +201,120 @@ void itc_taskmanager_check_dedicate_permission_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void itc_taskmanager_user1_main(void)
+void taskmanager_sample_main(void)
+{
+	while (1) {
+		usleep(1);
+	}	
+}
+
+void taskmanager_start_sample_main(void)
 {
 	int ret;
+	pid_tm_user1 = getpid();
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_NO_PERMISSION);
+	if (ret != TM_NO_PERMISSION) {
+		printf("ERROR: fail to task_manager_start in taskmanager_start_task0_main ERR: %d\n", ret);
+	}
 
 }
 
 void cleanup_task1(void)
 {
-	unregister_task1_flag = true;
+	unregister_tasks_3(tm_sample_handle);
 }
 
 void unregister_tasks_1(void)
 {
 	int ret;
-
-	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
-
 	int tm_sample_handle2;
-
 	tm_appinfo_list_t *sample_list_info;
 
+	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_1 ERR: %d\n", ret);
+	}
+
 	sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("task2", TM_RESPONSE_WAIT_INF));
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+	if (sample_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_name in unregister_tasks_1\n");
+		return;
+	}
 
 	tm_sample_handle2 = sample_list_info->task.handle;
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
-
+	if (sample_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks_1\n");
+		return;
+	}
+	
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_1 ERR: %d\n", ret);
+	}
 
 }
 
-void itc_taskmanager_pause_task1(void)
+void taskmanager_pause_task1(void)
 {
 	int ret;
 
 	ret = task_manager_pause(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_pause", ret, OK, cleanup_task1());
-
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_pause in taskmanager_pause_task1 ERR: %d\n", ret);
+		unregister_task1_flag = true;
+		return;
+	}
 	ret = task_manager_resume(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_resume", ret, OK, cleanup_task1());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_resume in taskmanager_pause_task1 ERR: %d\n", ret);
+		unregister_task1_flag = true;
+		return;
+	}
 
 	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_restart", ret, OK, cleanup_task1());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_restart in taskmanager_pause_task1 ERR: %d\n", ret);
+		unregister_task1_flag = true;
+		return;
+	}
 
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, cleanup_task1());
-
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_stop in taskmanager_pause_task1 ERR: %d\n", ret);
+		unregister_task1_flag = true;
+		return;
+	}
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_unregister", ret, OK, cleanup_task1());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in taskmanager_pause_task1 ERR: %d\n", ret);
+		unregister_task1_flag = true;
+		return;
+	}
 
 }
 
-int itc_taskmanager_pause_task1_main(int argc, char *argv[])
+int taskmanager_pause_task1_main(int argc, char *argv[])
 {
-	itc_taskmanager_pause_task1();
+
+	pid_tm_task2 = getpid();
+
+	taskmanager_pause_task1();
 	return 0;
 }
 
 void itc_taskmanager_check_group_permission_p(void)
 {
 	int tm_sample_handle2;
+	int ret;
+	int status;
 
 	tm_sample_handle = task_manager_register_task("task1", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
-	tm_sample_handle2 = task_manager_register_task("task2", 100, 1024, itc_taskmanager_pause_task1_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_task("task2", 100, 1024, taskmanager_pause_task1_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
-
-	int ret;
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_1());
@@ -229,15 +323,23 @@ void itc_taskmanager_check_group_permission_p(void)
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_1());
 
 	unregister_task1_flag = false;
-	usleep(100);
+	usleep(1);
 
-	if (unregister_task1_flag) {
-		ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_unregister", ret, OK, unregister_tasks_3(tm_sample_handle2));
-	}
+	waitpid(pid_tm_task2, &status, 0);
 
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+
+	if (unregister_task1_flag) {
+		ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+		TC_ASSERT_EQ("task_manager_stop", ret, OK);
+
+		ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+		TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+
+	}
+	
+	TC_ASSERT_EQ("task_manager_stop", unregister_task1_flag, false);
 
 	TC_SUCCESS_RESULT();
 }
@@ -247,108 +349,176 @@ void cleanup_task5(void)
 	unregister_task5_flag = true;
 }
 
-void itc_taskmanager_task3(void)
+void taskmanager_task3(void)
 {
 	int ret;
 	int tm_sample_handle4;
 	tm_appinfo_list_t *sample_list_info;
 
 	sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("task5", TM_RESPONSE_WAIT_INF));
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+	if (sample_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_name in taskmanager_task3\n");
+		cleanup_task5();
+		return;
+	}
 
 	tm_sample_handle4 = sample_list_info->task.handle;
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
+	if (sample_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in taskmanager_task3\n");
+		cleanup_task5();
+		return;
+	}
 
 	ret = task_manager_pause(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_pause", ret, OK, cleanup_task5());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_pause in taskmanager_task3 ERR: %d\n", ret);
+		cleanup_task5();
+		return;
+	}
 
 	ret = task_manager_resume(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_resume", ret, OK, cleanup_task5());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_resume in taskmanager_task3 ERR: %d\n", ret);
+		cleanup_task5();
+		return;
+	}
 
 	ret = task_manager_restart(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_restart", ret, OK, cleanup_task5());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_restart in taskmanager_task3 ERR: %d\n", ret);
+		cleanup_task5();
+		return;
+	}
 
 	ret = task_manager_stop(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, cleanup_task5());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_stop in taskmanager_task3 ERR: %d\n", ret);
+		cleanup_task5();
+		return;
+	}
 
 	ret = task_manager_unregister(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_unregister", ret, OK, cleanup_task5());
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in taskmanager_task3 ERR: %d\n", ret);
+		cleanup_task5();
+		return;
+	}
 
 }
 
-int itc_taskmanager_task3_main(int argc, char *argv[])
+int taskmanager_task3_main(int argc, char *argv[])
 {
-	itc_taskmanager_task3();
+	taskmanager_task3();
 	return 0;
 }
 
-void itc_taskmanager_task4(void)
+void taskmanager_task4(void)
 {
 	int tm_sample_handle4;
-
-	tm_sample_handle4 = task_manager_register_task("task5", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle4, 0);
-
-	unregister_task5_flag = false;
 	int ret;
 
+	tm_sample_handle4 = task_manager_register_task("task5", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	if (tm_sample_handle4 < 0) {
+		printf("ERROR: fail to task_manager_register_task in taskmanager_task4 ERR: %d\n", tm_sample_handle4);
+		return;
+	}
+
+	unregister_task5_flag = false;
+
 	ret = task_manager_start(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_start in taskmanager_task4 ERR: %d\n", ret);
+		unregister_tasks_3(tm_sample_handle4);
+		return;
+	}
 
 	while (1) {
 		usleep(1);
 		if (unregister_task5_flag) {
 			ret = task_manager_unregister(tm_sample_handle4, TM_RESPONSE_WAIT_INF);
-			TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+			if (ret != OK) {
+				printf("ERROR: fail to task_manager_unregister in taskmanager_task4 ERR: %d\n", ret);
+			}
 		}
 	}
 }
 
-int itc_taskmanager_task4_main(int argc, char *argv[])
+int taskmanager_task4_main(int argc, char *argv[])
 {
-	itc_taskmanager_task4();
+	pid_tm_task4 = getpid();
+
+	taskmanager_task4();
 	return 0;
 }
 
 void unregister_tasks_2(void)
 {
 	int ret;
-
 	int tm_sample_handle2;
-
 	tm_appinfo_list_t *sample_list_info;
+
 	if (unregister_task5_flag) {
 		sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("task5", TM_RESPONSE_WAIT_INF));
-		TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+		if (sample_list_info == NULL) {
+			printf("ERROR: fail to task_manager_getinfo_with_name in unregister_tasks_2\n");
+			return;
+		}
 
 		tm_sample_handle2 = sample_list_info->task.handle;
 		task_manager_clean_infolist(&sample_list_info);
-		TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
+		if (sample_list_info != NULL) {
+			printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks_2\n");
+			task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
+			return;
+		}
 
 		ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_unregister in unregister_tasks_2 ERR: %d\n", ret);
+			return;
+			
+		}
 	}
 
 	sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("task4", TM_RESPONSE_WAIT_INF));
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+	if (sample_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_name in unregister_tasks_2\n");
+
+		return;
+	}
 
 	tm_sample_handle2 = sample_list_info->task.handle;
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
+	if (sample_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks_2\n");
+		task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
+		return;
+	}
 
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_2 ERR: %d\n", ret);
+	}
 
 	sample_list_info = ((tm_appinfo_list_t *)task_manager_getinfo_with_name("task3", TM_RESPONSE_WAIT_INF));
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
+	if (sample_list_info == NULL) {
+		printf("ERROR: fail to task_manager_getinfo_with_name in unregister_tasks_2\n");
+		return;
+	}
 
 	tm_sample_handle2 = sample_list_info->task.handle;
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&sample_list_info, NULL);
+	if (sample_list_info != NULL) {
+		printf("ERROR: fail to task_manager_clean_infolist in unregister_tasks_2\n");
+		task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
+		return;
+	}
 
 	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR: fail to task_manager_unregister in unregister_tasks_2 ERR: %d\n", ret);
+	}
 
 }
 
@@ -357,11 +527,12 @@ void itc_taskmanager_check_all_permission_p(void)
 	int ret;
 	int tm_sample_handle3;
 	int tm_sample_handle2;
+	int status;
 
-	tm_sample_handle3 = task_manager_register_task("task4", 100, 1024, itc_taskmanager_task4_main, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle3 = task_manager_register_task("task4", 100, 1024, taskmanager_task4_main, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle3, 0);
 
-	tm_sample_handle2 = task_manager_register_task("task3", 100, 1024, itc_taskmanager_task3_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_task("task3", 100, 1024, taskmanager_task3_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
 
 	ret = task_manager_start(tm_sample_handle3, TM_RESPONSE_WAIT_INF);
@@ -370,7 +541,9 @@ void itc_taskmanager_check_all_permission_p(void)
 	ret = task_manager_start(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_2());
 
-	usleep(100);
+	usleep(1);
+
+	waitpid(pid_tm_task4, &status, 0);
 
 	ret = task_manager_stop(tm_sample_handle3, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, unregister_tasks_2());
@@ -384,7 +557,7 @@ void itc_taskmanager_check_all_permission_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void itc_unicast_handler_2(tm_msg_t *info)
+void unicast_handler_2(tm_msg_t *info)
 {
 	tm_msg_t reply_msg;
 	if (!strncmp((char *)info->msg, TM_SYNC_SEND_MSG, strlen(TM_SYNC_SEND_MSG))) {
@@ -397,54 +570,89 @@ void itc_unicast_handler_2(tm_msg_t *info)
 	}
 }
 
-void itc_unicast_handler(tm_msg_t *info)
+void unicast_handler(tm_msg_t *info)
 {
 	int tm_sample_handle2;
 	int ret;
+	tm_appinfo_t *task_info;
 
 	if (!strncmp((char *)info->msg, TM_START_MSG, strlen(TM_START_MSG))) {
 
 		tm_sample_handle2 = task_manager_register_task("task6", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
+		if (tm_sample_handle2 < 0) {
+			printf("ERROR: fail to task_manager_register_task in unicast_handler ERR: %d\n", tm_sample_handle2);
+			return;
+		}
 
 		ret = task_manager_start(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_start in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
 		ret = task_manager_pause(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_pause", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_pause in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
 		ret = task_manager_resume(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_resume", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_resume in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
 		ret = task_manager_restart(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_restart", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_restart in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
 	} else if (!strncmp((char *)info->msg, TM_STOP_MSG, strlen(TM_STOP_MSG))) {
-		tm_appinfo_t *task_info;
 
 		task_info = ((tm_appinfo_t *)task_manager_getinfo_with_pid(pid_task6, TM_RESPONSE_WAIT_INF));
-		TC_ASSERT_NEQ("task_manager_getinfo_with_name", task_info, NULL);
+		if (task_info == NULL) {
+			printf("ERROR: fail to task_manager_getinfo_with_pid in unicast_handler\n");
+			return;
+		}
 
 		tm_sample_handle2 = task_info->handle;
 		task_manager_clean_info(&task_info);
-		TC_ASSERT_NEQ("task_manager_clean_infolist", (tm_appinfo_list_t *)&task_info, NULL);
+		if (task_info != NULL) {
+			printf("ERROR: fail to task_manager_clean_info in unicast_handler\n");
+			return;
+		}
 
 		ret = task_manager_stop(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_stop in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
 		ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ_CLEANUP("task_manager_unregister", ret, OK, unregister_tasks_3(tm_sample_handle2));
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_unregister in unicast_handler ERR: %d\n", ret);
+			unregister_tasks_3(tm_sample_handle2);
+			return;
+		}
 
-		ret = task_manager_set_unicast_cb(itc_unicast_handler_2);
-		TC_ASSERT_EQ("task_manager_set_unicast_cb", ret, OK);
+		ret = task_manager_set_unicast_cb(unicast_handler_2);
+		if (ret != OK) {
+			printf("ERROR: fail to task_manager_set_unicast_cb in unicast_handler ERR: %d\n", ret);
+		}
 	}
 }
 
-void *itc_taskmanager_pthread(void *param)
+void *taskmanager_pthread(void *param)
 {
 	int ret;
 
-	ret = task_manager_set_unicast_cb(itc_unicast_handler);
+	ret = task_manager_set_unicast_cb(unicast_handler);
 	if (ret != OK) {
 		printf("ERROR : fail to set unicast callback handler\n");
 	}
@@ -457,20 +665,18 @@ void itc_taskmanager_unicast_thrice_p(void)
 {
 	int tm_pthread_handle;
 	int ret;
-
+	tm_msg_t send_msg;
+	tm_msg_t reply_msg;
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
-	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, itc_taskmanager_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, taskmanager_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_pthread", tm_pthread_handle, 0);
 
 	ret = task_manager_start(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_3(tm_pthread_handle));
 
-	usleep(100);
-
-	tm_msg_t send_msg;
-	tm_msg_t reply_msg;
+	usleep(1);
 
 	send_msg.msg_size = strlen(TM_START_MSG) + 1;
 	send_msg.msg = malloc(send_msg.msg_size);
@@ -480,7 +686,7 @@ void itc_taskmanager_unicast_thrice_p(void)
 
 	ret = task_manager_unicast(tm_pthread_handle, &send_msg, NULL, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_unicast", ret, OK);
-	usleep(100);
+	usleep(1);
 
 	send_msg.msg_size = strlen(TM_STOP_MSG) + 1;
 	send_msg.msg = malloc(send_msg.msg_size);
@@ -491,7 +697,7 @@ void itc_taskmanager_unicast_thrice_p(void)
 	ret = task_manager_unicast(tm_pthread_handle, &send_msg, NULL, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_unicast", ret, OK);
 
-	usleep(100);
+	usleep(1);
 
 	send_msg.msg_size = strlen(TM_SYNC_SEND_MSG) + 1;
 	send_msg.msg = malloc(send_msg.msg_size);
@@ -503,7 +709,7 @@ void itc_taskmanager_unicast_thrice_p(void)
 	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, OK, free(send_msg.msg));
 
 	if (strncmp((char *)reply_msg.msg, (char *)TM_SYNC_RECV_MSG, strlen(TM_SYNC_RECV_MSG)) != 0) {
-		printf("Callback failed");
+		printf("Callback fail to");
 	}
 	ret = task_manager_stop(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, unregister_tasks_3(tm_pthread_handle));
@@ -515,38 +721,39 @@ void itc_taskmanager_unicast_thrice_p(void)
 }
 
 
-void itc_broadcast_handler(tm_msg_t *user_data, tm_msg_t *info)
+void broadcast_handler(tm_msg_t *user_data, tm_msg_t *info)
 {
 	int ret;
+	tm_msg_t data;
 
 	if (strncmp((char *)info->msg, TM_BROAD_START, strlen(TM_BROAD_START) + 1) == 0) {
 
 		ret = task_manager_unset_broadcast_cb(tm_broadcast_msg, TM_NO_RESPONSE);
 		if (ret != OK) {
-			printf("ERROR : fail to unset broadcast callback ERR: %d\n", ret);
+			printf("ERROR : fail to unset broadcast callback in broadcast_handler ERR: %d\n", ret);
+			return;
 		}
 
 		broadcast_data_flag = true;
-		tm_msg_t data;
 
 		data.msg_size = strlen(TM_BROAD_END) + 1;
 		data.msg = malloc(data.msg_size);
 		memcpy(data.msg, TM_BROAD_END, data.msg_size);
-		ret = task_manager_set_broadcast_cb(tm_broadcast_msg, itc_broadcast_handler, &data);
+		ret = task_manager_set_broadcast_cb(tm_broadcast_msg, broadcast_handler, &data);
 		free(data.msg);
 		if (ret != OK) {
-			printf("ERROR : fail to set broadcast callback ERR: %d\n", ret);
+			printf("ERROR : fail to set broadcast callback in broadcast_handler ERR: %d\n", ret);
 		}
 	} else if (strncmp((char *)info->msg, TM_BROAD_END, strlen(TM_BROAD_END) + 1) == 0) {
 		broadcast_data_flag = false;
 		ret = task_manager_unset_broadcast_cb(tm_broadcast_msg, TM_NO_RESPONSE);
 		if (ret != OK) {
-			printf("ERROR : fail to unset broadcast callback ERR: %d\n", ret);
+			printf("ERROR : fail to unset broadcast callback in broadcast_handler ERR: %d\n", ret);
 		}
 	}
 }
 
-void itc_taskmanager_task7(void)
+void taskmanager_task7(void)
 {
 	int ret;
 	tm_msg_t data;
@@ -554,48 +761,47 @@ void itc_taskmanager_task7(void)
 	data.msg_size = strlen(TM_BROAD_START) + 1;
 	data.msg = malloc(data.msg_size);
 	memcpy(data.msg, TM_BROAD_START, data.msg_size);
-	ret = task_manager_set_broadcast_cb(tm_broadcast_msg, itc_broadcast_handler, &data);
+	ret = task_manager_set_broadcast_cb(tm_broadcast_msg, broadcast_handler, &data);
 	free(data.msg);
 	if (ret != OK) {
-		printf("ERROR : fail to set broadcast callback ERR: %d\n", ret);
+		printf("ERROR : fail to set broadcast callback in taskmanager_task7 ERR: %d\n", ret);
+		return;
 	}
 	while (1) {
 		usleep(1);
 	}
 }
 
-int itc_taskmanager_task7_main(int argc, char *argv[])
+int taskmanager_task7_main(int argc, char *argv[])
 {
-	itc_taskmanager_task7();
+	taskmanager_task7();
 	return 0;
 }
 
 void itc_taskmanager_broadcast_twice_p(void)
 {
 	int ret;
+	tm_msg_t user_data;
+	int sleep_cnt = 0;
 
 	tm_broadcast_msg = task_manager_alloc_broadcast_msg();
 	TC_ASSERT_GEQ("task_manager_alloc_broadcast_msg", tm_broadcast_msg, 0);
 
-	tm_sample_handle = task_manager_register_task("task7", 100, 1024, itc_taskmanager_task7_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_task("task7", 100, 1024, taskmanager_task7_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_3(tm_sample_handle));
 
-	tm_msg_t user_data;
-
 	user_data.msg_size = strlen("START") + 1;
 	user_data.msg = malloc(user_data.msg_size);
 	strncpy(user_data.msg, "START", user_data.msg_size);
 
-	int sleep_cnt = 0;
-
-	usleep(100);
+	usleep(1);
 
 	(void)task_manager_broadcast(tm_broadcast_msg, &user_data, TM_NO_RESPONSE);
 	while (1) {
-		sleep(1);
+		usleep(1);
 		if (broadcast_data_flag) {
 			break;
 		}
@@ -608,11 +814,11 @@ void itc_taskmanager_broadcast_twice_p(void)
 
 	sleep_cnt = 0;
 
-	usleep(100);
+	usleep(1);
 
 	(void)task_manager_broadcast(tm_broadcast_msg, &user_data, TM_NO_RESPONSE);
 	while (1) {
-		sleep(1);
+		usleep(1);
 		if (!broadcast_data_flag) {
 			break;
 		}
@@ -631,13 +837,15 @@ void itc_taskmanager_broadcast_twice_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-int itc_taskmanager_task9_main(int argc, char *argv[])
+int taskmanager_task9_main(int argc, char *argv[])
 {
 	int ret;
 
+	pid_tm_task9 = getpid();
+
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
-		printf("ERROR : fail to stop task8 ERR: %d\n", ret);
+		printf("ERROR : fail to stop task8\n");
 	}
 	return 0;
 }
@@ -646,22 +854,21 @@ void itc_taskmanager_group_unregister_p(void)
 {
 	int tm_sample_handle2;
 	int tm_sample_handle3;
-
-	tm_sample_handle = task_manager_register_task("task8", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
-
-	tm_sample_handle3 = task_manager_register_task("task10", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
-
-	tm_sample_handle2 = task_manager_register_task("task9", 100, 1024, itc_taskmanager_task9_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
-
+	int ret;
+	int status;
 	tm_appinfo_t *sample_info;
+
+	tm_sample_handle = task_manager_register_task("task8", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
+
+	tm_sample_handle3 = task_manager_register_task("task10", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
+
+	tm_sample_handle2 = task_manager_register_task("task9", 100, 1024, taskmanager_task9_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
 
 	sample_info = (tm_appinfo_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
-
-	int ret;
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_4(sample_info->tm_gid));
@@ -672,82 +879,67 @@ void itc_taskmanager_group_unregister_p(void)
 	ret = task_manager_start(tm_sample_handle3, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_4(sample_info->tm_gid));
 
-	usleep(100);
+	usleep(1);
+
+	waitpid(pid_tm_task9, &status, 0);
 
 	unregister_tasks_4(sample_info->tm_gid);
 
 	TC_SUCCESS_RESULT();
 }
 
-void itc_exit_handler(void *info)
-{
-	if (strncmp((char *)info, EXIT_CB_CHECK_STR, strlen(EXIT_CB_CHECK_STR) + 1) == 0) {
-		int ret;
-
-		ret = task_manager_pause(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_EQ("task_manager_pause", ret, OK);
-	}
-}
-
-void itc_stop_cb(void *data)
+void taskmanager_stop_cb(void *data)
 {
 	int ret;
 
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, unregister_tasks_3(tm_sample_handle));
+	if (ret != OK) {
+		printf("ERROR : fail to stop taskmanager handle ERR: %d\n", ret);
+		unregister_tasks_3(tm_sample_handle);
+		return;
+	}
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	if (ret != OK) {
+		printf("ERROR : fail to unregister taskmanager handle ERR: %d\n", ret);
+	}
 }
 
-void itc_taskmanager_task12(void)
+void taskmanager_task12(void)
 {
 	int ret;
 
-	ret = task_manager_set_stop_cb(itc_stop_cb, NULL);
+	ret = task_manager_set_stop_cb(taskmanager_stop_cb, NULL);
 	if (ret != OK) {
 		printf("ERROR : fail to set stop callback ERR: %d\n", ret);
+		return;
 	}
-
-	tm_msg_t data;
-
-	data.msg_size = strlen(EXIT_CB_CHECK_STR) + 1;
-	data.msg = malloc(data.msg_size);
-	memcpy(data.msg, EXIT_CB_CHECK_STR, data.msg_size);
-
-	ret = task_manager_set_exit_cb(itc_exit_handler, &data);
-	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(data.msg));
-
-	free(data.msg);
-
 
 	while (1) {
 		usleep(1);
 	}
 }
 
-int itc_taskmanager_task12_main(int argc, char *argv[])
+int taskmanager_task12_main(int argc, char *argv[])
 {
-	itc_taskmanager_task12();
+	taskmanager_task12();
 	return 0;
 }
 
 void itc_taskmanager_stop_exit_p(void)
 {
 	int tm_sample_handle2;
+	int ret;
+	tm_appinfo_t *sample_info;
 
-	tm_sample_handle = task_manager_register_task("task11", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_task("task11", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
-	tm_sample_handle2 = task_manager_register_task("task12", 100, 1024, itc_taskmanager_task12_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_task("task12", 100, 1024, taskmanager_task12_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
-
-	tm_appinfo_t *sample_info;
 
 	sample_info = (tm_appinfo_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
-
-	int ret;
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_4(sample_info->tm_gid));
@@ -755,13 +947,14 @@ void itc_taskmanager_stop_exit_p(void)
 	ret = task_manager_start(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_start", ret, OK, unregister_tasks_4(sample_info->tm_gid));
 
-	usleep(100);
+	usleep(1);
 
 	ret = task_manager_stop(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_stop", ret, OK, unregister_tasks_4(sample_info->tm_gid));
 
-	ret = task_manager_unregister(tm_sample_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+	usleep(1);
+
+	unregister_tasks_4(sample_info->tm_gid);
 
 	TC_SUCCESS_RESULT();
 }
@@ -799,7 +992,7 @@ int itc_taskmanager_main(int argc, char *argv[])
 
 	handle_tm_itc = task_manager_register_builtin("tm_itc", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	(void)task_manager_start(handle_tm_itc, TM_NO_RESPONSE);
-	sleep(3);	//wait for starting tm_itc
+	sleep(1);	//wait for starting tm_itc
 
 	(void)waitpid(pid_tm_itc, &status, 0);
 

@@ -195,8 +195,9 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC),y)
 	$(Q) $(call REGISTER,taskmgr_itc,itc_taskmanager_main,TASH_EXECMD_ASYNC,100,2048)
+	$(Q) $(call REGISTER,tm_sample_itc,taskmanager_sample_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_itc,tm_itc_main,TASH_EXECMD_ASYNC,101,1024)
-	$(Q) $(call REGISTER,itc_taskmanager_user1,itc_taskmanager_user1_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,start_itc_sampl,taskmanager_start_sample_main,TASH_EXECMD_ASYNC,101,1024)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
 	$(Q) $(call REGISTER,ttrace_tc,tc_ttrace_main,TASH_EXECMD_ASYNC,100,2048)
