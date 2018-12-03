@@ -548,13 +548,6 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 		set_wifi_prov_state(WIFI_DONE);
 		THINGS_LOG_D(TAG, "es_set_state ES_STATE_CONNECTED_TO_ENROLLER");
 
-#ifndef __ST_THINGS_RTOS__
-		if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
-			THINGS_LOG_E(TAG, "Broadcast Presence Failed.");
-			ret = 0;
-		}
-#endif
-
 		things_del_all_request_handle();	// clear time-out thread.
 		PROFILING_TIME("WiFi Provisioning End.");
 
