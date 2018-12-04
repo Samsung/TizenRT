@@ -57,10 +57,7 @@ static handle_request_func_type g_handle_request_set_cb = NULL;
 
 extern things_server_builder_s *g_builder;
 
-static int g_handle_res_cnt = 0;
-static char **g_handle_res_list = NULL;
 static handle_request_func_type g_handle_req_cb = NULL;
-static get_notify_obs_uri_cb g_get_notify_obs_uri = NULL;
 
 static handle_request_interface_cb g_handle_request_interface_cb = NULL;
 
@@ -460,7 +457,6 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 
 static OCEntityHandlerResult process_get_request(things_resource_s *target_resource)
 {
-
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	char *device_id = NULL;
@@ -562,16 +558,6 @@ int notify_things_observers(const char *uri, const char *query)
 	if (NULL != uri) {
 		int remainLen = MAX_RESOURCE_LEN - 1;
 		char tempUri[MAX_RESOURCE_LEN] = { 0 };
-
-		if (NULL != g_get_notify_obs_uri) {
-			char *temp = g_get_notify_obs_uri(uri, query);
-			if (NULL != temp) {
-				things_strncpy(tempUri, temp, remainLen);
-				remainLen -= strnlen(tempUri, MAX_RESOURCE_LEN - 1);
-				things_free(temp);
-			}
-		}
-
 		if (strnlen(tempUri, MAX_RESOURCE_LEN - 1) < 1) {
 			things_strncpy(tempUri, uri, remainLen);
 			remainLen -= strnlen(tempUri, MAX_RESOURCE_LEN - 1);
@@ -741,19 +727,6 @@ void init_handler()
 void deinit_handler()
 {
 	g_quit_flag = 1;
-
-	int iter = 0;
-	if (g_handle_res_list != NULL) {
-		for (iter = 0; iter < g_handle_res_cnt; iter++) {
-			if (g_handle_res_list[iter] != NULL) {
-				things_free(g_handle_res_list[iter]);
-				g_handle_res_list[iter] = NULL;
-			}
-		}
-		things_free(g_handle_res_list);
-		g_handle_res_list = NULL;
-	}
-	g_handle_res_cnt = 0;
 }
 
 struct things_request_handler_s *get_handler_instance()
