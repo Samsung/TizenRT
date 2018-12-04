@@ -34,6 +34,7 @@
 #include "utils/things_wait_handler.h"
 #include "easysetup_manager.h"
 #include "resource_handler.h"
+#include "things_iotivity_lock.h"
 #include "cloud/cloud_manager.h"
 #include "easysetup.h"
 #include "logging/things_logger.h"
@@ -284,7 +285,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_E(TAG, "[Error] g_server_builder is NULL.");
 		return ESM_ERROR;
 	}
-	
+
 #ifdef __SECURED__
 	bool g_is_secured = true;
 #else
@@ -409,7 +410,11 @@ static void *cloud_refresh_check_loop(void *param)
 	int *i_continue = (int *)param;
 	int hour_cnt_24 = 0;
 
+#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
+	iotivity_api_lock();
 	THINGS_LOG_D(TAG, "device ID = %s", OCGetServerInstanceIDString());
+	iotivity_api_unlock();
+#endif
 
 	// Close Loop Thread.
 	while (*i_continue) {
@@ -879,7 +884,7 @@ int esm_save_easysetup_state(int state)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (state == ES_COMPLETE) { // Done
-		THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);		
+		THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);
 		FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "w+");
 		if (!fp) {
 			THINGS_LOG_E(TAG, "File open error(%d)", errno);
@@ -904,7 +909,7 @@ int esm_save_easysetup_state(int state)
 
 int esm_read_easysetup_state(void)
 {
-	THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);	
+	THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);
 	FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "r");
 	if (!fp) {
 		THINGS_LOG_D(TAG, "File does not exist(%d)", errno);

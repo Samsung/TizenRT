@@ -29,6 +29,7 @@
 #include "ocpayload.h"
 
 #include "things_def.h"
+#include "things_iotivity_lock.h"
 #include "things_common.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
@@ -178,7 +179,9 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 
 		THINGS_LOG_V(TAG, "\t\t\tRes. : %s ( %d )", (response.ehResult == OC_EH_OK ? "NORMAL" : "ERROR"), response.ehResult);
 
+		iotivity_api_lock();
 		OCStackResult ret = OCDoResponse(&response);
+		iotivity_api_unlock();
 		THINGS_LOG_V(TAG, "\t\t\tMsg. Out? : (%s)", (ret == OC_STACK_OK) ? "SUCCESS" : "FAIL");
 		if (ret != OC_STACK_OK) {
 			eh_result = OC_EH_ERROR;
@@ -271,12 +274,15 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
-	const char *device_id = OCGetServerInstanceIDString();
 	const char *device_rt = dm_get_things_device_type(0);
 	bool is_owned = false;
 	bool is_reset = things_get_reset_mask(RST_ALL_FLAG);
 
-	if (OC_STACK_OK != OCGetDeviceOwnedState(&is_owned)) {
+	iotivity_api_lock();
+	const char *device_id = OCGetServerInstanceIDString();
+	OCStackResult res = OCGetDeviceOwnedState(&is_owned);
+	iotivity_api_unlock();
+	if (OC_STACK_OK != res) {
 		THINGS_LOG_E(TAG, "Failed to get device owned state, Informing as UNOWNED~!!!!");
 		is_owned = false;
 	}
@@ -315,7 +321,9 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	things_resource_s *clone_resource = NULL;
 	bool isOwned;
 
+	iotivity_api_lock();
 	OCGetDeviceOwnedState(&isOwned);
+	iotivity_api_unlock();
 
 	if (isOwned == false) {
 		return OC_EH_NOT_ACCEPTABLE;
@@ -571,6 +579,7 @@ int notify_things_observers(const char *uri, const char *query)
 
 		THINGS_LOG_D(TAG, "%s resource notifies to observers.", tempUri);
 
+		iotivity_api_lock();
 		for (int iter = 0; iter < g_builder->res_num; iter++) {
 			if (strstr(g_builder->gres_arr[iter]->uri, tempUri) != NULL) {
 				OCStackResult ret2 = OCNotifyAllObservers((OCResourceHandle) g_builder->gres_arr[iter]->resource_handle,
@@ -587,6 +596,7 @@ int notify_things_observers(const char *uri, const char *query)
 				break;
 			}
 		}
+		iotivity_api_unlock();
 	}
 
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
@@ -652,7 +662,9 @@ OCEntityHandlerResult entity_handler(OCEntityHandlerFlag flag, OCEntityHandlerRe
 		return eh_result;
 	}
 
+	iotivity_api_lock();
 	const char *uri = OCGetResourceUri(entity_handler_request->resource);
+	iotivity_api_unlock();
 
 	// Observe Request Handling
 	if (flag & OC_OBSERVE_FLAG) {

@@ -29,6 +29,7 @@
 #include "ocstackconfig.h"
 #include "ocrandom.h"
 #include "things_def.h"
+#include "things_iotivity_lock.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
@@ -2104,7 +2105,9 @@ bool dm_register_device_id(void)
 		return false;
 	}
 	// Set Main-Device ID
+	iotivity_api_lock();
 	id = OCGetServerInstanceIDString();
+	iotivity_api_unlock();
 	dev_list[0] = dm_get_info_of_dev(0);
 
 	if (id == NULL || dev_list[0] == NULL) {
@@ -2168,6 +2171,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 			p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0]);
 
+			iotivity_api_lock();
 			for (int rt_num = 1; rt_num < device->collection[0].rt_cnt; rt_num++) {
 				OCBindResourceTypeToResource(p_builder, device->collection[0].resource_types[rt_num]);
 			}
@@ -2176,6 +2180,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			for (int it_num = 1; it_num < device->collection[0].if_cnt; it_num++) {
 				OCBindResourceInterfaceToResource(p_builder, device->collection[0].interface_types[it_num]);
 			}
+			iotivity_api_unlock();
 
 			THINGS_LOG_D(TAG, "AFTER REGISTERGING DEVICE RESOURCE");
 
@@ -2554,7 +2559,7 @@ char *dm_get_access_token()
 }
 
 char *dm_get_uid()
-{ 
+{
 	es_cloud_signup_s *cloud_data = NULL;
 	char *cloud_uid = NULL;
 
