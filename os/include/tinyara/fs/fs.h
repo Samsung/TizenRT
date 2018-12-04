@@ -291,14 +291,14 @@ struct filelist {
 #endif
 
 /* The following structure defines the list of files used for standard C I/O.
- * Note that TinyAra can support the standard C APIs without or without buffering
+ * Note that TinyAra can support the standard C APIs with or without buffering
  *
- * When buffering us used, the following described the usage of the I/O buffer.
+ * When buffering is used, the following describes the usage of the I/O buffer.
  * The buffer can be used for reading or writing -- but not both at the same time.
- * An fflush is implied between each change in directionof access.
+ * A fflush is implied between each change in direction of access.
  *
  * The field fs_bufread determines whether the buffer is being used for reading or
- * for writing as fillows:
+ * for writing as follows:
  *
  *              BUFFER
  *     +----------------------+ <- fs_bufstart Points to the beginning of the buffer.
@@ -313,7 +313,7 @@ struct filelist {
  *     | RD: Available        |                WR: =bufstart buffer used for writing.
  *     |                      |                RD: Pointer to last buffered read char+1
  *     +----------------------+
- *                              <- fs_bufend   Points to end end of the buffer+1
+ *                              <- fs_bufend   Points to the end of the buffer+1
  */
 
 #if CONFIG_NFILE_STREAMS > 0
