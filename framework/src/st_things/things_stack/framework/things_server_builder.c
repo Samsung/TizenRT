@@ -35,7 +35,6 @@
 #include "things_resource.h"
 #include "things_server_builder.h"
 #include "things_iotivity_lock.h"
-
 #include "easy-setup/resource_handler.h"
 #ifdef __ST_THINGS_RTOS__
 #include "utils/things_rtos_util.h"
@@ -48,12 +47,8 @@
 #define KEY_ATTR_PLATFORM_VENDERID          "vid"
 
 static pthread_t g_thread_id_server;
-static pthread_t g_thread_id_presence;
 
 static int g_quit_flag = 0;
-static uint g_presence_flag = 0;
-static int g_presence_duration = 20;
-static volatile bool is_presence = false;
 
 things_server_builder_s *g_builder = NULL;
 
@@ -312,11 +307,6 @@ void deinit_builder(things_server_builder_s *builder)
 		pthread_detach(g_thread_id_server);
 		g_thread_id_server = NULL;
 
-		pthread_cancel(g_thread_id_presence);
-		pthread_join(g_thread_id_presence, NULL);
-		pthread_detach(g_thread_id_presence);
-		g_thread_id_presence = NULL;
-
 		// 1.    Need to unregister those registered resource in the Stack
 		// 2.    Free the payload of each resources
 		for (size_t iter = 0; iter < builder->res_num; iter++) {
@@ -428,11 +418,8 @@ things_server_builder_s *get_builder_instance()
 			g_builder->add_resource_type = &add_resource_type;
 			g_builder->bind = &things_bind;
 			g_builder->bind_all = &bind_all;
-			g_builder->broadcast_presence = NULL; //&BroadcastPresence;
 			g_builder->res_num = 0;
 			g_builder->handler = NULL;
-
-			is_presence = false;
 
 			return g_builder;
 		} else {
@@ -465,6 +452,5 @@ void release_builder_instance(things_server_builder_s *builder)
 
 		things_free(builder);
 		g_builder = NULL;
-		is_presence = false;
 	}
 }

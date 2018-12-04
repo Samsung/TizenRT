@@ -47,8 +47,6 @@ typedef struct things_server_builder_s {
 
 	void (*bind)(struct things_resource_s *, struct things_resource_s *);
 	void (*bind_all)(struct things_resource_s *, struct things_resource_s *[], size_t);
-
-	int (*broadcast_presence)(struct things_server_builder_s *, int);
 } things_server_builder_s;
 
 extern struct things_server_builder_s *get_builder_instance();
