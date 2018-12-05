@@ -72,6 +72,8 @@
  *
  * Description:
  *   calloc to the specific heap.
+ *   calloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
  *
  * Return Value:
  *   The address of the allocated memory (NULL on failure to allocate)

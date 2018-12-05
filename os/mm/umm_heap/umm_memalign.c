@@ -76,6 +76,8 @@
  *
  * Description:
  *   memalign to the specific heap.
+ *   memalign_at tries to align the memory for a specific heap which passed by api argument.
+ *   If there is no enough space, it will return NULL.
  *
  * Return Value:
  *   The address of the allocated memory (NULL on failure to allocate)

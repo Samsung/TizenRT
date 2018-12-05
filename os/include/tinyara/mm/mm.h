@@ -679,10 +679,73 @@ struct heapinfo_total_info_s {
 };
 typedef struct heapinfo_total_info_s heapinfo_total_info_t;
 
+/**
+ * @cond
+ * @internal
+ */
+
+/**
+ * @brief Allocate memory to the specific heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   malloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ * @param[in] heap_index Index of specific heap
+ * @param[in] size size (in bytes) of the memory region to be allocated
+ * 
+ * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
+ * @since TizenRT v2.1 PRE
+ */
 void *malloc_at(int heap_index, size_t size);
+/**
+ * @brief Calloc to the specific heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   calloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ * @param[in] heap_index Index of specific heap
+ * @param[in] n the number of elements to be allocated
+ * @param[in] elem_size the size of elements
+ * 
+ * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
+ * @since TizenRT v2.1 PRE
+ */
 void *calloc_at(int heap_index, size_t n, size_t elem_size);
+/**
+ * @brief Memalign to the specific heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   memalign_at tries to align the memory for a specific heap which passed by api argument.
+ *   If there is no enough space, it will return NULL.
+ * @param[in] heap_index Index of specific heap
+ * @param[in] alignment A power of two for alignment
+ * @param[in] size Allocated memory size
+ * 
+ * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
+ * @since TizenRT v2.1 PRE
+ */
 void *memalign_at(int heap_index, size_t alignment, size_t size);
+/**
+ * @brief Realloc to the specific heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   realloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ * @param[in] heap_index Index of specific heap
+ * @param[in] oldmem the pointer to a memory block previously allocated
+ * @param[in] size the new size for the memory block
+ * 
+ * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
+ * @since TizenRT v2.1 PRE
+ */
 void *realloc_at(int heap_index, void *oldmem, size_t size);
+/**
+ * @brief Zalloc to the specific heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   zalloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ * @param[in] heap_index Index of specific heap
+ * @param[in] size size (in bytes) of the memory region to be allocated
+ * 
+ * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
+ * @since TizenRT v2.1 PRE
+ */
 void *zalloc_at(int heap_index, size_t size);
 #else
 #define malloc_at(heap_index, size)              malloc(size)
@@ -691,6 +754,10 @@ void *zalloc_at(int heap_index, size_t size);
 #define realloc_at(heap_index, oldmem, size)     realloc(oldmem, size)
 #define zalloc_at(heap_index, size)              zalloc(size)
 #endif
+
+/**
+ * @endcond
+ */
 
 #undef EXTERN
 #ifdef __cplusplus
