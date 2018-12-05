@@ -1,4 +1,4 @@
-# How to use TinyAsla to create audio applications
+# How to use TinyAlsa to create audio applications
 
 TinyAlsa is a small library which exposes a set of API's which can be used by developers to create audio applications on TizenRT. TinyAlsa is compliant with the Linux ALSA sound framework and exposes a subset of its API's for user applications to record and playback audio data.
 
