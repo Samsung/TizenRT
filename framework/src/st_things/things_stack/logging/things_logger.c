@@ -34,11 +34,10 @@
 static const char *LEVEL[] __attribute__((unused)) = {
 	"DEBUG", "INFOR", "WARNING", "ERROR", "FATAL"
 };
-static char ts_buf[64] = { 0 };
 
 char *p_version = NULL;
 
-void things_log_init()
+void things_log_init(void)
 {
 	/*
 	 * Initialize p_version variable
@@ -46,7 +45,7 @@ void things_log_init()
 	p_version = NULL;
 }
 
-void things_log_shutdown()
+void things_log_shutdown(void)
 {
 	/*
 	 * Free the memory allocated for p_version

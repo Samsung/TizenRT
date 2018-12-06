@@ -579,7 +579,7 @@ bool update_cloud_resource(OCRepPayload *input)
 		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.accesstoken %s", g_cloud_resource.accesstoken);
 	}
 
-	int accesstokenType = NULL;
+	int64_t accesstokenType = 0;
 	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, &accesstokenType)) {
 		g_cloud_resource.actoken_type = accesstokenType;
 		g_cloud_data.actoken_type = accesstokenType;
@@ -1207,7 +1207,7 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 	return res;
 }
 
-OCStackResult delete_provisioning_resource()
+OCStackResult delete_provisioning_resource(void)
 {
 	iotivity_api_lock();
 	OCStackResult res = OCDeleteResource(g_prov_resource.handle);
@@ -1218,7 +1218,7 @@ OCStackResult delete_provisioning_resource()
 	return res;
 }
 
-OCStackResult delete_easysetup_resources()
+OCStackResult delete_easysetup_resources(void)
 {
 	iotivity_api_lock();
 	OCStackResult res = OC_STACK_ERROR;
@@ -1571,6 +1571,8 @@ OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state)
 			goto GOTO_OUT;
 		}
 		break;
+	default :
+		goto GOTO_OUT;
 	}
 
 	if (g_prov_resource.status == es_state) {

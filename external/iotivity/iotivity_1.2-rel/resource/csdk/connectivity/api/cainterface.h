@@ -94,7 +94,7 @@ CAResult_t CAInitialize(CATransportAdapter_t transportType);
  * Terminate the connectivity abstraction module.
  * All threads, data structures are destroyed for next initializations.
  */
-void CATerminate();
+void CATerminate(void);
 
 /**
  * Starts listening servers.
@@ -102,14 +102,14 @@ void CATerminate();
  * Based on the adapters configurations, different kinds of servers are started.
  * @return  ::CA_STATUS_OK or ::CA_STATUS_FAILED or ::CA_STATUS_NOT_INITIALIZED
  */
-CAResult_t CAStartListeningServer();
+CAResult_t CAStartListeningServer(void);
 
 /**
  * Stops the server from receiving the multicast traffic. This is used by sleeping
  * device to not receives the multicast traffic.
  * @return  ::CA_STATUS_OK or ::CA_STATUS_FAILED or ::CA_STATUS_NOT_INITIALIZED
  */
-CAResult_t CAStopListeningServer();
+CAResult_t CAStopListeningServer(void);
 
 /**
  * Starts discovery servers.
@@ -117,7 +117,7 @@ CAResult_t CAStopListeningServer();
  * Based on the adapters configurations, different kinds of servers are started.
  * @return  ::CA_STATUS_OK or ::CA_STATUS_FAILED or ::CA_STATUS_NOT_INITIALIZED
  */
-CAResult_t CAStartDiscoveryServer();
+CAResult_t CAStartDiscoveryServer(void);
 
 /**
  * Register request callbacks and response callbacks.
@@ -222,7 +222,7 @@ CAResult_t CAGetNetworkInformation(CAEndpoint_t **info, uint32_t *size);
  * To Handle the Request or Response.
  * @return   ::CA_STATUS_OK or ::CA_STATUS_NOT_INITIALIZED
  */
-CAResult_t CAHandleRequestResponse();
+CAResult_t CAHandleRequestResponse(void);
 
 #ifdef RA_ADAPTER
 /**

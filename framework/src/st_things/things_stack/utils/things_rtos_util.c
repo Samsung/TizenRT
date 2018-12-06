@@ -28,12 +28,12 @@
 
 #define THINGS_STACK_MAX_THREAD_NAME_LEN 40
 
-typedef const struct thread_info_s {
+typedef struct thread_info_s {
 	char thread_name[THINGS_STACK_MAX_THREAD_NAME_LEN];
 	int thread_size;
 } thread_info_s;
 
-static const thread_info_s things_stack_thread_name[THINGS_STACK_MAX_INDEX] = { {"THINGS_STACK_PING", 4 * 1024},	/*THINGS_STACK_PING_THREAD */
+static thread_info_s things_stack_thread_name[THINGS_STACK_MAX_INDEX + 1] = { {"THINGS_STACK_PING", 4 * 1024},	/*THINGS_STACK_PING_THREAD */
 	{"THINGS_STACK_RESET", 4 * 1024},		/*THINGS_STACK_RESETLOOP_THREAD */
 	{"THINGS_STACK_CLOUD_CONNECT", 4 * 1024},	/*THINGS_STACK_CICONNETION_INIT_THREAD */
 	{"THINGS_STACK_CICONN_WAIT", 6 * 1024},	/*THINGS_STACK_CICONNETION_WAIT_THREAD */

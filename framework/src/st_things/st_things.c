@@ -403,7 +403,7 @@ int st_things_push_notification_to_cloud(const char *target_uri, st_things_repre
 	} else {
 		OCRepPayloadSetUri(resp_rep->payload, target_uri);
 		OCRepPayloadSetPropInt(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_MSGID, 0);
-		OCRepPayloadSetPropString(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_PROVIDERID, OCGetServerInstanceIDString());
+		OCRepPayloadSetPropString(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_PROVIDERID, (char *)OCGetServerInstanceIDString());
 		OCRepPayloadSetPropString(payload, SEC_ATRRIBUTE_PUSH_MESG_ET, "device.changed");
 		OCRepPayloadSetPropObject(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_DATA, payload);
 		push_ret = push_notification_to_cloud(target_uri, resp_rep->payload);

@@ -731,7 +731,7 @@ things_representation_s *things_create_representation_inst(void *rep_payload)
 	return rep;
 }
 
-things_resource_s *create_resource_inst_impl(void *requesthd, void *resourcehd, void *query, void *rep_payload)
+things_resource_s *create_resource_inst_impl(OCRequestHandle requesthd, OCResourceHandle resourcehd, void *query, void *rep_payload)
 {
 	things_resource_s *res = (things_resource_s *) things_malloc(sizeof(things_resource_s));
 	if (NULL == res) {
@@ -841,7 +841,7 @@ things_resource_s *things_create_resource_inst(OCRequestHandle requesthd, OCReso
 	return res;
 }
 
-things_resource_s *clone_resource_inst(things_resource_s *pori)
+things_resource_s *things_clone_resource_inst(things_resource_s *pori)
 {
 	if (pori == NULL) {
 		return NULL;

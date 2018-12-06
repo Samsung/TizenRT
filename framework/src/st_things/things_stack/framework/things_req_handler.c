@@ -57,13 +57,7 @@ static handle_request_func_type g_handle_request_set_cb = NULL;
 
 extern things_server_builder_s *g_builder;
 
-static handle_request_func_type g_handle_req_cb = NULL;
-
-static handle_request_interface_cb g_handle_request_interface_cb = NULL;
-
 static stop_softap_func_type g_stop_soft_ap_cb = NULL;
-
-static pthread_t g_req_handle;
 
 static int g_quit_flag = 0;
 
@@ -87,7 +81,6 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 								  eh_request->resource,
 								  eh_request->query,
 								  eh_request->payload);	//g_builder->get_resource(g_builder, uri);
-	things_resource_s *child = NULL;
 	/*! Added by st_things for memory Leak fix
 	 */
 	pst_temp_resource = resource;
@@ -161,7 +154,7 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 	memset(response.sendVendorSpecificHeaderOptions, 0, sizeof response.sendVendorSpecificHeaderOptions);
 	memset(response.resourceUri, 0, sizeof(response.resourceUri));
 
-	if (NULL != request_handle && NULL != resource) {
+	if (0 != request_handle && 0 != resource) {
 		response.requestHandle = request_handle;	//eh_request->request_handle;
 		response.resourceHandle = resource;	//eh_request->resource;
 		response.persistentBufferFlag = 0;
@@ -271,7 +264,7 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
-	const char *device_rt = dm_get_things_device_type(0);
+	const char *device_rt = dm_get_things_device_type("0");
 	bool is_owned = false;
 	bool is_reset = things_get_reset_mask(RST_ALL_FLAG);
 
@@ -293,13 +286,13 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 	things_representation_s *child_rep[1] = { NULL };
 
 	child_rep[0] = things_create_representation_inst(NULL);
-	child_rep[0]->things_set_value(child_rep[0], SEC_ATTRIBUTE_PROV_TARGET_ID, device_id);
-	child_rep[0]->things_set_value(child_rep[0], SEC_ATTRIBUTE_PROV_TARGET_RT, device_rt);
+	child_rep[0]->things_set_value(child_rep[0], SEC_ATTRIBUTE_PROV_TARGET_ID, (char *)device_id);
+	child_rep[0]->things_set_value(child_rep[0], SEC_ATTRIBUTE_PROV_TARGET_RT, (char *)device_rt);
 	child_rep[0]->things_set_bool_value(child_rep[0], SEC_ATTRIBUTE_PROV_TARGET_PUBED, dm_is_rsc_published());
 
 	target_resource->rep->things_set_arrayvalue(target_resource->rep, SEC_ATTRIBUTE_PROV_TARGETS, 1, child_rep);
 	target_resource->rep->things_set_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_TARGET_OWNED, is_owned);
-	target_resource->rep->things_set_value(target_resource->rep, SEC_ATTRIBUTE_PROV_EZSETDI, device_id);
+	target_resource->rep->things_set_value(target_resource->rep, SEC_ATTRIBUTE_PROV_EZSETDI, (char *)device_id);
 	target_resource->rep->things_set_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_RESET, is_reset);
 	target_resource->rep->things_set_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, 0);
 
@@ -331,7 +324,7 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	if (reset == true) {
 		int res = -1;
 
-		clone_resource = clone_resource_inst(target_resource);
+		clone_resource = things_clone_resource_inst(target_resource);
 		res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
 
 		switch (res) {
@@ -408,8 +401,9 @@ static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_res
 
 	bool reset = false;
 	bool stop_ap = false;
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
 	int64_t abort_es = 0;
-
+#endif
 	if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_RESET, &reset) == true) {
 		eh_result = trigger_reset_request(target_resource, reset);
 	} else if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_TERMINATE_AP, &stop_ap) == true) {
@@ -548,7 +542,7 @@ void notify_result_of_reset(things_resource_s *target_resource, bool result)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
-int notify_things_observers(const char *uri, const char *query)
+int notify_things_observers(const char *uri)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
@@ -719,17 +713,17 @@ RESPONSE_ERROR:
 	return eh_result;
 }
 
-void init_handler()
+void init_handler(void)
 {
 	g_quit_flag = 0;
 }
 
-void deinit_handler()
+void deinit_handler(void)
 {
 	g_quit_flag = 1;
 }
 
-struct things_request_handler_s *get_handler_instance()
+struct things_request_handler_s *get_handler_instance(void)
 {
 	struct things_request_handler_s *handler = (things_request_handler_s *) things_malloc(sizeof(things_request_handler_s));
 

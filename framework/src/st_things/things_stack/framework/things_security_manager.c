@@ -20,7 +20,8 @@
 #include <unistd.h>
 #include <ifaddrs.h>
 #include <netpacket/packet.h>
-
+//#include "net/lwip/sockets.h"
+//#include "sys/sock_internal.h"
 #include "securevirtualresourcetypes.h"
 
 //Added as workround to test cert based (D)TLS connection
@@ -40,6 +41,8 @@
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
+#include "things_data_manager.h"
+//#include "net/lwip/sockets.h"
 
 #include <wifi_manager/wifi_manager.h>
 
@@ -234,7 +237,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 	}
 
 	if (encoding == OIC_ENCODING_UNKNOW) {
-		char *file_ext;
+		const char *file_ext;
 		int filename_len = strlen(filename);
 		file_ext = filename + filename_len;
 
@@ -485,15 +488,15 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
 {
-	char mac_addr[MAC_BUF_SIZE];
-	struct ifaddrs *ifaddr = NULL;
-	struct ifaddrs *ifa = NULL;
-	int family = 0;
-	int i = 0;
-
 	THINGS_LOG_D(TAG, "In %s", __func__);
 
+//#ifdef __ST_THINGS_RTOS__
+
+	//struct ifaddrs *ifaddr = NULL;
+	//struct ifaddrs *ifa = NULL;
+	//int i = 0;
 #ifdef __ST_THINGS_RTOS__
+
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
 
@@ -505,6 +508,9 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 
 	snprintf((char *)p_id_buf, MAC_BUF_SIZE - 1, "%02X%02X%02X%02X%02X%02X", st_wifi_info.mac_address[0], st_wifi_info.mac_address[1], st_wifi_info.mac_address[2], st_wifi_info.mac_address[3], st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 #else
+	int i = 0;
+	struct ifaddrs *ifaddr = NULL;
+        struct ifaddrs *ifa = NULL;
 	if (getifaddrs(&ifaddr) == -1) {
 		THINGS_LOG_E(TAG, "Failed to read network address information.");
 		return OIC_SEC_ERROR;
@@ -707,7 +713,7 @@ int SM_InitSvrDb(OCPersistentStorage *ps)
 	return OIC_SEC_OK;
 }
 
-int sm_reset_svrdb()
+int sm_reset_svrdb(void)
 {
 	THINGS_LOG_D(TAG, "In %s", __func__);
 	OCStackResult oc_res = ResetSecureResourceInPS();
@@ -726,7 +732,7 @@ static OicSecKey_t primary_cert;
 static OicSecKey_t primary_key;
 
 //Samsung_OCF_RootCA.der
-const unsigned char g_regional_root_ca[] = {
+unsigned char g_regional_root_ca[] = {
 	0x30, 0x82, 0x02, 0x5D, 0x30, 0x82, 0x02, 0x01, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x01, 0x01, 0x30, 0x0C, 0x06, 0x08,
 	0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02, 0x05, 0x00, 0x30, 0x6B, 0x31, 0x28, 0x30, 0x26, 0x06, 0x03, 0x55, 0x04,
 	0x03, 0x13, 0x1F, 0x53, 0x61, 0x6D, 0x73, 0x75, 0x6E, 0x67, 0x20, 0x45, 0x6C, 0x65, 0x63, 0x74, 0x72, 0x6F, 0x6E, 0x69,
@@ -761,7 +767,7 @@ const unsigned char g_regional_root_ca[] = {
 };
 
 #ifdef CONFIG_ST_THINGS_STG_MODE
-const unsigned char g_regional_test_root_ca[] = {
+unsigned char g_regional_test_root_ca[] = {
 	0x30, 0x82, 0x02, 0x68, 0x30, 0x82, 0x02, 0x0C, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x01, 0x02, 0x30, 0x0C, 0x06, 0x08,
 	0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02, 0x05, 0x00, 0x30, 0x70, 0x31, 0x2D, 0x30, 0x2B, 0x06, 0x03, 0x55, 0x04,
 	0x03, 0x13, 0x24, 0x53, 0x61, 0x6D, 0x73, 0x75, 0x6E, 0x67, 0x20, 0x45, 0x6C, 0x65, 0x63, 0x74, 0x72, 0x6F, 0x6E, 0x69,

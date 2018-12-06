@@ -74,7 +74,7 @@ static const int i_fail_sleep_sec = 60;	// 60 sec
 static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static es_device_property device_property;
-static const char *def_device_name = "ST_Things Device";
+static char *def_device_name = "ST_Things Device";
 
 static int g_es_state = 0; // 0 : EasySetup Need, 1 : Easysetup Done
 

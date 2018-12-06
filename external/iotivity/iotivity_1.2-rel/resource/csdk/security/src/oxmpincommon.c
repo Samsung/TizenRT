@@ -125,22 +125,22 @@ void SetClosePinDisplayCB(ClosePinDisplayCallback closeCB)
 }
 
 
-void UnsetInputPinCB()
+void UnsetInputPinCB(void)
 {
     gInputPinCallback = NULL;
 }
 
-void UnsetGeneratePinCB()
+void UnsetGeneratePinCB(void)
 {
     gGenPinCallback = NULL;
 }
 
-void UnsetClosePinDisplayCB()
+void UnsetClosePinDisplayCB(void)
 {
     gClosePinDispalyCallback = NULL;
 }
 
-void ClosePinDisplay()
+void ClosePinDisplay(void)
 {
     if (gClosePinDispalyCallback)
     {

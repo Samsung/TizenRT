@@ -33,7 +33,7 @@ typedef struct things_request_handler_s {
 	int (*notify_things_observers)(const char *uri);
 } things_request_handler_s;
 
-things_request_handler_s *get_handler_instance();
+things_request_handler_s *get_handler_instance(void);
 
 typedef int (*stop_softap_func_type)(int value);
 typedef int (*handle_request_func_type)(struct things_resource_s *res);

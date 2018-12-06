@@ -121,7 +121,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 		return NULL;
 	}
 
-	res = things_create_resource_inst(NULL, hd, NULL, NULL);
+	res = things_create_resource_inst(0, hd, NULL, NULL);
 
 	if (NULL == res) {
 		THINGS_LOG_E(TAG, "things_create_resource_inst is failed");
@@ -305,7 +305,7 @@ void deinit_builder(things_server_builder_s *builder)
 		pthread_cancel(g_thread_id_server);
 		pthread_join(g_thread_id_server, NULL);
 		pthread_detach(g_thread_id_server);
-		g_thread_id_server = NULL;
+		g_thread_id_server = 0;
 
 		// 1.    Need to unregister those registered resource in the Stack
 		// 2.    Free the payload of each resources
@@ -398,7 +398,7 @@ void set_platform_info(things_server_builder_s *builder, char *model_num, char *
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
-things_server_builder_s *get_builder_instance()
+things_server_builder_s *get_builder_instance(void)
 {
 	if (g_builder == NULL) {
 		g_builder = (things_server_builder_s *) things_malloc(sizeof(things_server_builder_s));

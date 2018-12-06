@@ -460,8 +460,6 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	OCDoHandle g_req_handle = NULL;
 	OCStackResult result = OC_STACK_ERROR;
 	char targetUri[MAX_URI_LENGTH * 2] = { 0, };
-	char *coreVer = NULL;
-	char *IoTivityVer = NULL;
 
 	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, OC_RSRVD_ACCOUNT_DEVPROFILE_URI);
 
@@ -502,7 +500,7 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	}
 
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { cntArrayPayload, 0, 0 };
-	OCRepPayloadSetPropObjectArray(payload, "devices", arrayPayload, dimensions);
+	OCRepPayloadSetPropObjectArray(payload, "devices", (const OCRepPayload **)arrayPayload, dimensions);
 
 	if (things_is_empty_request_handle() == true) {
 		iotivity_api_lock();

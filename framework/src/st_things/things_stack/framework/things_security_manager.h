@@ -76,14 +76,14 @@ extern int sm_init_things_security(int auth_type, const char *db_path);
  *
  * @ret 0 is success, otherwise fail.
  */
-extern int sm_init_svrdb();
+extern int sm_init_svrdb(void);
 
 /**
  * Function to reset SVR DB
  *
  * @ret 0 is success, otherwise fail.
  */
-extern int sm_reset_svrdb();
+extern int sm_reset_svrdb(void);
 
 /**
  * Function to generate the device UUID.
@@ -92,7 +92,7 @@ extern int sm_reset_svrdb();
  * @param is_forced if true, Device UUID will be generated.
  * @ret 0 is success, otherwise fail.
  */
-extern int sm_generate_device_id();
+extern int sm_generate_device_id(void);
 
 /**
  * Function to save the Cloud ACL

@@ -102,14 +102,14 @@ const char *dm_get_svrdb_file_path(void);
 const char *dm_get_certificate_file_path(void);
 const char *dm_get_privatekey_file_path(void);
 const char *dm_get_filename(int filenum);
-const char *dm_get_things_device_type(int device_id);
+const char *dm_get_things_device_type(const char *device_id);
 const char *dm_get_things_cloud_address(char *customized_ci_server);
 
 const int dm_get_file_id(int filenum);
 const int dm_get_num_of_files(void);
-const int dm_get_wifi_property_interface();
-const int dm_get_ownership_transfer_method();
-const wifi_freq_e dm_get_wifi_property_freq();
+const int dm_get_wifi_property_interface(void);
+const int dm_get_ownership_transfer_method(void);
+const wifi_freq_e dm_get_wifi_property_freq(void);
 
 struct things_resource_s *dm_get_resource_instance(const char *uri, const int id);
 
@@ -137,7 +137,7 @@ char *dm_get_mnid(void);
 
  * Note: Memory allocated for return parameter should be released by the caller.
  */
-char *dm_get_access_token();
+char *dm_get_access_token(void);
 
 /**
  * Return uid received from cloud.
@@ -147,13 +147,13 @@ char *dm_get_access_token();
 
  * Note: Memory allocated for return parameter should be released by the caller.
  */
-char *dm_get_uid();
+char *dm_get_uid(void);
 
-int dm_validate_attribute_in_request(char *res_type, const void *payload);
+int dm_validate_attribute_in_request(const char *res_type, const void *payload);
 
-char *dm_get_firmware_version();
-char *dm_get_vendor_id();
-char *dm_get_model_number();
+char *dm_get_firmware_version(void);
+char *dm_get_vendor_id(void);
+char *dm_get_model_number(void);
 char *get_json_string_from_file(const char *filename);
 int set_json_string_into_file(const char *filename, const char *json_str);
 typedef enum {
@@ -164,6 +164,6 @@ typedef enum {
 
 easysetup_connectivity_type_e dm_get_easysetup_connectivity_type(void);
 wifi_manager_softap_config_s *dm_get_softap_wifi_config(void);
-wifi_manager_ap_config_s *dm_get_homeap_wifi_config();
+wifi_manager_ap_config_s *dm_get_homeap_wifi_config(void);
 
 #endif							// _THINGS_DATA_MANAGER_H_

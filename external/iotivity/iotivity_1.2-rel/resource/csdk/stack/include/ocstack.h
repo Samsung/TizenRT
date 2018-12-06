@@ -98,7 +98,7 @@ OCStackResult OCSetRAInfo(const OCRAInfo_t *raInfo);
  *
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
-OCStackResult OCStop();
+OCStackResult OCStop(void);
 
 /**
  * This function starts receiving the multicast traffic. This can be only called
@@ -107,7 +107,7 @@ OCStackResult OCStop();
  *
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
-OCStackResult OCStartMulticastServer();
+OCStackResult OCStartMulticastServer(void);
 
 /**
  * This function stops receiving the multicast traffic. The rest of the stack
@@ -117,7 +117,7 @@ OCStackResult OCStartMulticastServer();
  *
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
-OCStackResult OCStopMulticastServer();
+OCStackResult OCStopMulticastServer(void);
 
 /**
  * This function is Called in main loop of OC client or server.
@@ -125,7 +125,7 @@ OCStackResult OCStopMulticastServer();
  *
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
-OCStackResult OCProcess();
+OCStackResult OCProcess(void);
 
 /**
  * This function discovers or Perform requests on a specified resource
@@ -276,7 +276,7 @@ OCStackResult OCStartPresence(const uint32_t ttl);
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
 
-OCStackResult OCStopPresence();
+OCStackResult OCStopPresence(void);
 #endif
 
 
@@ -605,7 +605,7 @@ const OCDPDev_t* OCDiscoverDirectPairingDevices(unsigned short waittime);
  *
  * @return OCDirectPairingDev_t pointer in case of success and NULL otherwise.
  */
-const OCDPDev_t* OCGetDirectPairedDevices();
+const OCDPDev_t* OCGetDirectPairedDevices(void);
 
 /**
  * The function is responsible for establishment of direct-pairing. It will proceed mode negotiation
@@ -803,12 +803,12 @@ OCStackResult OCGetPropertyValue(OCPayloadType type, const char *propName, void 
 /**
 * Delete client callback info all.
 */
-void OCClearCallBackList();
+void OCClearCallBackList(void);
 
 /**
  * Delete observer info all.
  */
-void OCClearObserverlist();
+void OCClearObserverlist(void);
 
 /**
  * API to encrypt the un-encrypted DB file before OCRegisterPersistentStorageHandler

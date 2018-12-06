@@ -497,7 +497,7 @@ static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandl
 	int64_t *interval = NULL;
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 	things_ping_s *ping = (things_ping_s *) ctx;
-	(void *)handle;
+	(void)handle;
 
 	if (ctx == (void *)DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
 		THINGS_LOG_D(TAG, "content value is invalid.(ctx=0x%X)", ctx);
@@ -671,7 +671,7 @@ static void check_ping_thread(things_ping_s *ping)
 
 	if (get_mask(ping, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT) == false) {
 		THINGS_LOG_D(TAG, "Not need things_ping_s, So, Terminate things_ping_s.(IP=%s)", ping->addr);
-		if ((ping = list->erase_by_key(list, is_ip_key_equal, ping->addr)) != NULL) {
+		if ((ping = list->erase_by_key(list, (key_compare) is_ip_key_equal, ping->addr)) != NULL) {
 			THINGS_LOG_D(TAG, "Erase node-element Success in List.");
 			terminate_things_ping_s(ping);
 		}

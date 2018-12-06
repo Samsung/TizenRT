@@ -142,24 +142,24 @@ CAResult_t CASetScanResponseData(const char* data, int length);
 /**
  * initialize client connection manager
  */
-CAResult_t CAUtilClientInitialize();
+CAResult_t CAUtilClientInitialize(void);
 
 /**
  * terminate client connection manager
  */
-CAResult_t CAUtilClientTerminate();
+CAResult_t CAUtilClientTerminate(void);
 
 /**
  * stop LE scan.
  * @return  ::CA_STATUS_OK or ::CA_NOT_SUPPORTED
  */
-CAResult_t CAUtilStopLEScan();
+CAResult_t CAUtilStopLEScan(void);
 
 /**
  * start LE scan.
  * @return  ::CA_STATUS_OK or ::CA_NOT_SUPPORTED
  */
-CAResult_t CAUtilStartLEScan();
+CAResult_t CAUtilStartLEScan(void);
 #endif
 
 #ifdef __ANDROID__
@@ -222,7 +222,7 @@ CAResult_t CAUtilSetLEScanInterval(jint intervalTime, jint workingCount);
  *
  * @return  ::CA_STATUS_OK or ::CA_NOT_SUPPORTED
  */
-CAResult_t CAUtilStopLEScan();
+CAResult_t CAUtilStopLEScan(void);
 #endif
 
 // BLE util
@@ -230,13 +230,13 @@ CAResult_t CAUtilStopLEScan();
  * start BLE advertising.
  * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
  */
-CAResult_t CAUtilStartLEAdvertising();
+CAResult_t CAUtilStartLEAdvertising(void);
 
 /**
  * stop BLE advertising.
  * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
  */
-CAResult_t CAUtilStopLEAdvertising();
+CAResult_t CAUtilStopLEAdvertising(void);
 
 /**
  * set CAUtil BT configure.

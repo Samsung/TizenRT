@@ -28,6 +28,7 @@
 #include "utils/things_rtos_util.h"
 #include "things_api.h"
 #include "things_network.h"
+#include "framework/things_data_manager.h"
 
 #include "easy-setup/resource_handler.h"
 #include "easy-setup/easysetup_manager.h"
@@ -45,7 +46,6 @@ unsigned short g_retry_connect_cnt = 0;
 
 typedef void *(*pthread_func_type)(void *);
 
-static int app_state = -1;
 static char *app_ap_name = NULL;
 static char *app_ip_addr = NULL;
 volatile static bool is_connected_target_ap = false;
@@ -365,7 +365,7 @@ void things_wifi_list_cleanup(void)
 	g_wifi_count = 0;
 }
 
-void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
+void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	/* Make sure you copy the scan results onto a local data structure.
@@ -416,7 +416,7 @@ int things_wifi_scan_ap(void)
 	return 1;
 }
 
-static const wifi_manager_cb_s wifi_callbacks = {
+static wifi_manager_cb_s wifi_callbacks = {
 	things_wifi_sta_connected,
 	things_wifi_sta_disconnected,
 	things_wifi_soft_ap_sta_joined,
@@ -430,6 +430,7 @@ int things_network_initialize(void)
 		THINGS_LOG_E(TAG, "Failed to initialize WiFi manager");
 		return 0;
 	}
+	return 1;
 }
 
 

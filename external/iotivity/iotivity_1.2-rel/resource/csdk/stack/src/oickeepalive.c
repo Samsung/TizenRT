@@ -274,7 +274,7 @@ OCStackResult OCFindKeepAliveResource(OCDoHandle *handle, const char *remoteAddr
 }
 
 OCStackResult OCSendKeepAliveRequest(OCDoHandle *handle, const char *remoteAddr,
-                                     OCPayload *payload, OCCallbackData *cbData)
+                                     OCRepPayload *payload, OCCallbackData *cbData)
 {
     VERIFY_NON_NULL(remoteAddr, FATAL, OC_STACK_INVALID_PARAM);
     VERIFY_NON_NULL(cbData, FATAL, OC_STACK_INVALID_PARAM);

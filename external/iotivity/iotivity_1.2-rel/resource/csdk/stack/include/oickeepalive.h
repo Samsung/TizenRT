@@ -74,7 +74,7 @@ OCStackResult OCFindKeepAliveResource(OCDoHandle *handle, const char *remoteAddr
  * @return ::OC_STACK_OK on success, some other value upon failure.
  */
 OCStackResult OCSendKeepAliveRequest(OCDoHandle *handle, const char *remoteAddr,
-                                     OCPayload *payload, OCCallbackData *cbData);
+                                     OCRepPayload *payload, OCCallbackData *cbData);
 
 
 #ifdef __cplusplus
