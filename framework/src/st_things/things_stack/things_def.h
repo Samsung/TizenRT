@@ -39,7 +39,6 @@
 #define SEC_ATTRIBUTE_PROV_EZSETDI          "x.com.samsung.provisioning.easysetupdi"
 #define SEC_ATTRIBUTE_PROV_RESET            "x.com.samsung.provisioning.reset"
 #define SEC_ATTRIBUTE_PROV_TARGET_OWNED     "x.com.samsung.provisioning.owned"
-#define SEC_ATTRIBUTE_PROV_TERMINATE_AP     "x.com.samsung.provisioning.stopAP"
 #define SEC_ATTRIBUTE_PROV_ABORT            "x.com.samsung.provisioning.abort"
 #define SEC_ATTRIBUTE_PROV_TARGET_ID        "x.com.samsung.targetDi"
 #define SEC_ATTRIBUTE_PROV_TARGET_RT        "x.com.samsung.targetRt"

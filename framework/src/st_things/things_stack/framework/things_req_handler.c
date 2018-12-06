@@ -61,8 +61,6 @@ static handle_request_func_type g_handle_req_cb = NULL;
 
 static handle_request_interface_cb g_handle_request_interface_cb = NULL;
 
-static stop_softap_func_type g_stop_soft_ap_cb = NULL;
-
 static pthread_t g_req_handle;
 
 static int g_quit_flag = 0;
@@ -359,30 +357,6 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	return eh_result;
 }
 
-static OCEntityHandlerResult trigger_stop_ap_request(things_resource_s *target_resource, bool stop_ap)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	THINGS_LOG_D(TAG, "==> STOP SOFT AP : %s", (stop_ap == true ? "YES" : "NO"));
-
-	if (stop_ap == true) {
-		if (NULL != g_stop_soft_ap_cb) {
-			if (1 == g_stop_soft_ap_cb(stop_ap)) {
-				THINGS_LOG_D(TAG, "Stop Soft AP notified Successfully");
-				eh_result = OC_EH_OK;
-			} else {
-				THINGS_LOG_D(TAG, "Stop Soft AP notified, BUT DENIED");
-				eh_result = OC_EH_ERROR;
-			}
-		}
-	} else {
-		THINGS_LOG_D(TAG, "stop_ap = %d, So, can not stop AP.", stop_ap);
-		eh_result = OC_EH_OK;
-	}
-
-	return eh_result;
-}
-
 static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_resource, things_es_enrollee_abort_e abort_es)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
@@ -411,13 +385,10 @@ static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_res
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	bool reset = false;
-	bool stop_ap = false;
 	int64_t abort_es = 0;
 
 	if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_RESET, &reset) == true) {
 		eh_result = trigger_reset_request(target_resource, reset);
-	} else if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_TERMINATE_AP, &stop_ap) == true) {
-		eh_result = trigger_stop_ap_request(target_resource, stop_ap);
 #ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
 	} else if (target_resource->rep->things_get_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, &abort_es) == true) {
 		eh_result = trigger_abort_request(target_resource, (things_es_enrollee_abort_e) abort_es);
