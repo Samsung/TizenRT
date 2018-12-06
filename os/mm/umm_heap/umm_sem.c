@@ -98,7 +98,7 @@
 int umm_trysemaphore(void *address)
 {
 	struct mm_heap_s *heap;
-	heap = mm_get_heap_info(address);
+	heap = mm_get_heap(address);
 	return mm_trysemaphore(heap);
 }
 
@@ -121,7 +121,7 @@ int umm_trysemaphore(void *address)
 void umm_givesemaphore(void *address)
 {
 	struct mm_heap_s *heap;
-	heap = mm_get_heap_info(address);
+	heap = mm_get_heap(address);
 	mm_givesemaphore(heap);
 }
 

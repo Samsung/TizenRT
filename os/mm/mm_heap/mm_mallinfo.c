@@ -77,34 +77,6 @@
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: mm_get_heap_info
- *
- * Description:
- *   returns a heap which type is matched with ttype
- *
- ****************************************************************************/
-struct mm_heap_s *mm_get_heap_info(void *address)
-{
-	int heap_idx;
-#ifdef CONFIG_MM_KERNEL_HEAP
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
-		return &g_kmmheap;
-	} else
-#endif
-	{
-		heap_idx = mm_get_heapindex(address);
-		if (heap_idx == INVALID_HEAP_IDX) {
-			mdbg("address is not in heap region.\n");
-			return NULL;
-		}
-		return &g_mmheap[heap_idx];
-	}
-
-}
-/****************************************************************************
  * Name: mm_mallinfo
  *
  * Description:
