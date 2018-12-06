@@ -51,7 +51,7 @@ typedef struct {
 	wifi_freq_e supported_freq;
 	char ssid[WIFIMGR_SSID_LEN+1];		// target network name, i.e. SSID for WLAN, MAC address for BT.
 	char cred[WIFIMGR_PASSPHRASE_LEN+1];		// credential information.
-	wifi_auth_type_e auth_type;
+	wifi_sec_type_e sec_type;
 	wifi_enc_type_e enc_type;
 	int discovery_channel;
 } wifi_resource_s;
