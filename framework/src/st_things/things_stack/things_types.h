@@ -163,28 +163,6 @@ typedef enum {
 	RST_ENUM_EOF
 } things_es_enrollee_reset_e;
 
-typedef enum {
-	/**
-	 * Default Abort State.
-	 */
-	ABORT_INIT = 0,
-
-	/**
-	 * Abort Status indicating cancel Reset Confirm.
-	 */
-	ABORT_BEFORE_RESET_CONFIRM = 1,
-
-	/**
-	 * Abort Status indicating cancel Security Confirm.
-	 */
-	ABORT_BEFORE_SEC_CONFIRM = 2,
-
-	/**
-	 * Abort Status indicating being security-process to delete Owned Security Data.
-	 */
-	ABORT_BEFORE_DATA_PROVISIONING = 3
-} things_es_enrollee_abort_e;
-
 /**
  * @brief Indicate enrollee and provisioning status. Provisioning status is shown in "provisioning
  *        status" property in provisioning resource.

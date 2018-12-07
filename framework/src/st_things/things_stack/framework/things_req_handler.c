@@ -65,8 +65,6 @@ static pthread_t g_req_handle;
 
 static int g_quit_flag = 0;
 
-OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level);
-
 /**
  * Return : 0 (Invalid Request), 1 (Resource Supporting Interface)
  * Need refactoring later...
@@ -354,50 +352,6 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	return eh_result;
 }
 
-static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_resource, things_es_enrollee_abort_e abort_es)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-	static pthread_t h_thread_abort = NULL;
-
-	THINGS_LOG_D(TAG, "==> ABORT Easy Setup : %d", abort_es);
-
-	switch (abort_es) {
-	case ABORT_BEFORE_RESET_CONFIRM:	// before Reset Confirm.
-	case ABORT_BEFORE_SEC_CONFIRM:	// After Reset Confirm & before Security Confirm.
-	case ABORT_BEFORE_DATA_PROVISIONING:	// After Security Confirm
-		THINGS_LOG_D(TAG, "Forwarding abort-level to st_things App.(Level: %d)", abort_es);
-		eh_result = things_abort(&h_thread_abort, abort_es);
-		break;
-	default:
-		THINGS_LOG_D(TAG, "abort_es = %d, So, Don't need any-process", abort_es);
-		eh_result = OC_EH_OK;
-		break;
-	}
-
-	return eh_result;
-}
-
-static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_resource)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	bool reset = false;
-	int64_t abort_es = 0;
-
-	if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_RESET, &reset) == true) {
-		eh_result = trigger_reset_request(target_resource, reset);
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-	} else if (target_resource->rep->things_get_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, &abort_es) == true) {
-		eh_result = trigger_abort_request(target_resource, (things_es_enrollee_abort_e) abort_es);
-#endif
-	} else {
-		THINGS_LOG_E(TAG, "Get Value is failed.(RESET NOR TERMINATE NOR ABORT)");
-		return eh_result;
-	}
-
-	return eh_result;
-}
-
 static OCEntityHandlerResult process_post_request(things_resource_s **target_res)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
@@ -405,8 +359,7 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 	things_resource_s *target_resource = *target_res;
 
 	if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_PROVINFO) != NULL) {
-		// 1. Post request for the Easy-Setup reset
-		eh_result = set_provisioning_info(target_resource);
+		eh_result = OC_EH_NOT_IMPLEMENTED;
 #ifdef CONFIG_ST_THINGS_FOTA
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_set_data(target_resource);
