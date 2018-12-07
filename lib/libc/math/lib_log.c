@@ -52,8 +52,23 @@
 #include <float.h>
 
 /************************************************************************
+ * Pre-processor Definitions
+ ************************************************************************/
+
+/* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
+ * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
+ * todo: might need to adjust the double floating point version too.
+ */
+
+#define LOGF_MAX_ITER		10
+#define LOGF_RELAX_MULTIPLIER	2
+/************************************************************************
  * Public Functions
  ************************************************************************/
+
+/****************************************************************************
+ * Name: log
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_DOUBLE
 double log(double x)
@@ -62,6 +77,8 @@ double log(double x)
 	double y_old;
 	double ey;
 	double epsilon;
+	int relax_factor;
+	int iter;
 
 	if (x < 0.0) {
 		return NAN;
@@ -70,6 +87,8 @@ double log(double x)
 	y = 0.0;
 	y_old = 1.0;
 	epsilon = DBL_EPSILON;
+	iter = 0;
+	relax_factor = 1;
 
 	while (y > y_old + epsilon || y < y_old - epsilon) {
 		y_old = y;
@@ -85,6 +104,15 @@ double log(double x)
 		}
 
 		epsilon = (fabs(y) > 1.0) ? fabs(y) * DBL_EPSILON : DBL_EPSILON;
+
+		if (++iter >= LOGF_MAX_ITER) {
+			relax_factor *= LOGF_RELAX_MULTIPLIER;
+			iter = 0;
+		}
+
+		if (relax_factor > 1) {
+			epsilon *= relax_factor;
+		}
 	}
 
 	if (y == 700.0) {
