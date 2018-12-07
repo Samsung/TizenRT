@@ -27,11 +27,6 @@ class EmptyFocusChangeListener : public media::FocusChangeListener
 		void onFocusChange(int focusChange) override;
 };
 
-void EmptyFocusChangeListener::onFocusChange(int focusChange)
-{
-	focus_checker = true;
-}
-
 static void itc_media_FocusRequest_getId_p(void)
 {
 	auto listener1 = std::make_shared<EmptyFocusChangeListener>();
