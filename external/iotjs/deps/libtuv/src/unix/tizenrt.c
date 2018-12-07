@@ -72,39 +72,6 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
 
 //-----------------------------------------------------------------------------
 
-ssize_t readv(int fd, const struct iovec* iiovec, int count) {
-  ssize_t result = 0;
-  ssize_t total = 0;
-  int idx;
-
-  for (idx = 0; idx < count; ++idx) {
-    result = read(fd, iiovec[idx].iov_base, iiovec[idx].iov_len);
-    if (result < 0) {
-      return result;
-    } else {
-      total += result;
-    }
-  }
-  return total;
-}
-
-
-ssize_t writev(int fd, const struct iovec* iiovec, int count) {
-  ssize_t result = 0;
-  ssize_t total = 0;
-  int idx;
-
-  for (idx = 0; idx < count; ++idx) {
-    result = write(fd, iiovec[idx].iov_base, iiovec[idx].iov_len);
-    if (result < 0) {
-      return result;
-    } else {
-      total += result;
-    }
-  }
-  return total;
-}
-
 // From nuttx_clock.c
 uint64_t uv__hrtime(uv_clocktype_t type) {
   struct timespec ts;
