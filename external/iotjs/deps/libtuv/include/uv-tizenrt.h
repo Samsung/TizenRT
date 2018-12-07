@@ -83,12 +83,6 @@
 #define UV_PLATFORM_RWLOCK_T pthread_mutex_t
 
 //-----------------------------------------------------------------------------
-// uio
-ssize_t readv(int __fd, const struct iovec* __iovec, int __count);
-ssize_t writev(int __fd, const struct iovec* __iovec, int __count);
-
-
-//-----------------------------------------------------------------------------
 // etc
 int getpeername(int sockfd, struct sockaddr* addr, socklen_t* addrlen);
 
