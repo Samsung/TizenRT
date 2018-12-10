@@ -107,9 +107,9 @@ choice
 	prompt "DHCP source"
 	default NET_DHCP
 config NET_DHCP
-	bool "External DHCP client/server application"
+	bool "Default DHCP client/server application"
 config NET_LWIP_DHCP
-	bool "Internal LWIP DHCP client/server"
+	bool "(Optional) Enabling LwIP DHCP client/server"
 	depends on NET_LWIP
 endchoice #DHCP
 source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
