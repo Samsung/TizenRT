@@ -78,7 +78,6 @@ static pthread_mutex_t g_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 //-----------------------------------------------------------------------------
 OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *eh_request, void *callback);
 OCEntityHandlerResult process_get_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 void update_prov_resource(OCEntityHandlerRequest *eh_request, OCRepPayload *input);
 void update_wifi_resource(OCRepPayload *input);
@@ -252,14 +251,6 @@ void unregister_resource_event_callback()
 	}
 	if (g_dev_conf_rsrc_evt_cb) {
 		g_dev_conf_rsrc_evt_cb = NULL;
-	}
-}
-
-void get_target_network_info_from_prov_resource(char *name, char *pass)
-{
-	if (name != NULL && pass != NULL) {
-		things_strncpy(name, g_wifi_resource.ssid, WIFIMGR_SSID_LEN);
-		things_strncpy(pass, g_wifi_resource.cred, WIFIMGR_PASSPHRASE_LEN);
 	}
 }
 
@@ -1133,10 +1124,8 @@ GOTO_FAILED:
 
 OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e resource_mask)
 {
-	OCStackResult res = OC_STACK_ERROR;
 	bool maskFlag = false;
-
-	res = init_prov_resource(is_secured);
+	OCStackResult res = init_prov_resource(is_secured);
 	if (res != OC_STACK_OK) {
 		// TODO: destroy logic will be added
 		THINGS_LOG_V(ES_RH_TAG, "init_prov_resource result: %s", get_result(res));
@@ -1204,17 +1193,6 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 
 	THINGS_LOG_D(ES_RH_TAG, "Created all resources with result: %s", get_result(res));
 
-	return res;
-}
-
-OCStackResult delete_provisioning_resource()
-{
-	iotivity_api_lock();
-	OCStackResult res = OCDeleteResource(g_prov_resource.handle);
-	if (res != OC_STACK_OK) {
-		THINGS_LOG_V(ES_RH_TAG, "Deleting Prov resource error with result: %s", get_result(res));
-	}
-	iotivity_api_unlock();
 	return res;
 }
 
@@ -1356,15 +1334,6 @@ OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, O
 	*payload = getResp;
 	eh_result = OC_EH_OK;
 	//eh_result = OC_EH_CHANGED;
-
-	return eh_result;
-}
-
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload)
-{
-	(void)eh_request;
-	(void)payload;
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	return eh_result;
 }

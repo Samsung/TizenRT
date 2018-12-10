@@ -317,7 +317,6 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_resource, bool reset)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-	things_resource_s *clone_resource = NULL;
 	bool isOwned;
 
 	iotivity_api_lock();
@@ -331,10 +330,8 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	THINGS_LOG_D(TAG, "==> RESET : %s", (reset == true ? "YES" : "NO"));
 
 	if (reset == true) {
-		int res = -1;
-
-		clone_resource = clone_resource_inst(target_resource);
-		res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
+		things_resource_s *clone_resource = clone_resource_inst(target_resource);
+		int res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
 
 		switch (res) {
 		case 1:
@@ -531,12 +528,8 @@ int notify_things_observers(const char *uri, const char *query)
 
 	THINGS_LOG_D(TAG, "uri = %s", uri);
 	if (NULL != uri) {
-		int remainLen = MAX_RESOURCE_LEN - 1;
 		char tempUri[MAX_RESOURCE_LEN] = { 0 };
-		if (strnlen(tempUri, MAX_RESOURCE_LEN - 1) < 1) {
-			things_strncpy(tempUri, uri, remainLen);
-			remainLen -= strnlen(tempUri, MAX_RESOURCE_LEN - 1);
-		}
+		things_strncpy(tempUri, uri, MAX_RESOURCE_LEN - 1);
 
 		THINGS_LOG_D(TAG, "%s resource notifies to observers.", tempUri);
 

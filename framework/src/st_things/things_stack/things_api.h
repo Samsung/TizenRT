@@ -48,7 +48,7 @@ int things_notify_observers(const char *uri);
 int things_reset(void *remote_owner, things_es_enrollee_reset_e reset_type);
 
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func);
-int things_return_user_opinion_for_reset(int b_reset_start);
+int things_return_user_opinion_for_reset(int reset);
 int things_register_handle_request_func(things_handle_request_func_type get_func, things_handle_request_func_type set_func);
 int things_register_pin_generated_func(things_pin_generated_func_type func);
 int things_register_pin_display_close_func(things_pin_display_close_func_type func);

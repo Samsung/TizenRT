@@ -276,7 +276,6 @@ things_resource_s *things_create_resource_inst(OCRequestHandle, OCResourceHandle
 * @return things_resource_s *  : Instance of cloned resource
 */
 things_resource_s *things_clone_resource_inst(things_resource_s *);
-void things_clone_resource_inst2(things_resource_s *pori, things_resource_s **pclone);
 
 /**
 * @brief API for releasing memory allocated for the instance of given representation

@@ -57,13 +57,12 @@ int CICheckDomain(const char *DomainName, char **pIP)
 {
 	char ipbuffer[20];
 	memset(ipbuffer, 0, 20);
-	char bytes[4];
-	struct hostent *shost;
 	unsigned int ip4_address = 0;
 
 	if (DomainName != NULL) {
-		shost = gethostbyname((const char *)DomainName);
+		struct hostent *shost = gethostbyname((const char *)DomainName);
 		if (shost != NULL) {
+			char bytes[4];
 			memcpy(&ip4_address, shost->h_addr, sizeof(in_addr_t));
 			bytes[0] = ip4_address & 0XFF;
 			bytes[1] = (ip4_address >> 8) & 0XFF;
@@ -95,8 +94,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
  */
 int ci_connection_pre_check(const char *DomainName, char **pIP)
 {
-	int n_err = -1;
-	n_err = CICheckDomain("samsung.com", NULL);
+	int n_err = CICheckDomain("samsung.com", NULL);
 	if (n_err != 0) {
 		THINGS_LOG_E(TAG, "AP is Not Connected to Internet");
 		return n_err;

@@ -97,7 +97,6 @@ OCStackResult set_device_property(es_device_property *device_property);
 OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state);
 OCStackResult set_enrollee_err_code(es_error_code_e es_err_code);
 
-void get_target_network_info_from_prov_resource(char *, char *);
 void register_wifi_rsrc_event_callback(es_wifi_cb);
 void register_cloud_rsrc_event_callback(es_cloud_cb);
 void register_dev_conf_rsrc_event_callback(es_dev_conf_cb);
