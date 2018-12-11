@@ -49,12 +49,22 @@ public:
 
 	StreamBuffer(size_t bufferSize, size_t threshold);
 	virtual ~StreamBuffer();
-
+	/**
+	 * Initialize stream buffer with specific buffer size.
+	 * A ring buffer would be allocated and initialized in this function.
+	 */
 	bool init(size_t size);
+	/**
+	 * Reset stream buffer
+	 * Data in stream buffer would be cleared.
+	 */
 	bool reset();
+	/**
+	 * Register observer for listening stream buffer state.
+	 */
+	void setObserver(BufferObserverInterface *observer);
 	std::mutex &getMutex() { return mMutex; }
 	std::condition_variable &getCondv() { return mCondv; }
-	void setObserver(BufferObserverInterface *observer);
 
 public:
 	enum class State {
@@ -62,13 +72,38 @@ public:
 		UNDERRUN,
 		UPDATED,
 	};
+	/**
+	 * Notify stream buffer state to observer, when stream buffer state changed.
+	 */
 	void notifyObserver(State st, ...);
-	size_t dump(size_t offset, unsigned char *buf, size_t size);
+	/**
+	 * Copy data from stream buffer without change.
+	 * And we can give an offset where start to copy.
+	 */
+	size_t copy(unsigned char *buf, size_t size, size_t offset = 0);
+	/**
+	 * Read(pop) data from stream buffer.
+	 */
 	size_t read(unsigned char *buf, size_t size);
+	/**
+	 * Write(push) data into stream buffer.
+	 */
 	size_t write(unsigned char *buf, size_t size);
+	/**
+	 * Get bytes of data available in stream buffer.
+	 */
 	size_t sizeOfData();
+	/**
+	 * Get bytes of space available in stream buffer.
+	 */
 	size_t sizeOfSpace();
+	/**
+	 * Set the end-of-stream flag.
+	 */
 	void setEndOfStream();
+	/**
+	 * Check if the end-of-stream flag was set.
+	 */
 	bool isEndOfStream();
 	size_t getBufferSize() { return mBufferSize; }
 	size_t getThreshold() { return mThreshold; }
