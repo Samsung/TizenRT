@@ -55,6 +55,15 @@ config ARCH_BOARD_CY4390x
 	---help---
 		Cypress 4390x IoT wifi MCU
 
+config ARCH_BOARD_STM32F407_DISC1
+	bool "STMicro STM32F407-Discovery board"
+	depends on ARCH_CHIP_STM32
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		STMicro STM32F407-DISC1 board based on the STMicro STM32F407VG MCU.
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -67,6 +76,7 @@ config ARCH_BOARD
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
 	default "cy4390x"            if ARCH_BOARD_CY4390x
+	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 
 comment "Common Board Options"
 
