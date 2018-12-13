@@ -32,7 +32,6 @@ typedef void (*things_pin_display_close_func_type)(void);
 typedef void (*things_pin_generated_func_type)(char *pin_data, size_t pin_size);
 typedef void (*things_get_easysetup_state_func_type)(things_es_enrollee_state_e state);
 typedef void (*things_cloud_con_result_func_type)(int result, char *domain, char *access_token);
-typedef void (*things_abort_easysetup_func_type)(things_es_enrollee_abort_e level);
 typedef void (*things_sec_otm_state_func_type)(const char *addr, uint16_t port, const char *uuid, int event);
 typedef int (*things_stop_soft_ap_func_type)(int value);
 typedef int (*things_get_user_confirm_func_type)(void);

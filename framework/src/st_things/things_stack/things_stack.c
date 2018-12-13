@@ -92,16 +92,6 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
 
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-typedef struct s_abort_s {
-	pthread_t *h_thread;
-	things_es_enrollee_abort_e level;
-} s_abort_s;
-
-things_abort_easysetup_func_type g_abort_easysetup = NULL;
-static void *t_things_abort_loop(s_abort_s *contents);
-#endif
-
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
 	int res = 0;
@@ -788,68 +778,6 @@ GOTO_OUT:
 	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
 }
-
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	if (h_thread_abort == NULL) {
-		THINGS_LOG_E(TAG, "h_thread_abort is NULL.");
-		return eh_result;
-	}
-
-	if ((*h_thread_abort) == 0) {
-		s_abort_s *ARGs = (s_abort_s *)things_malloc(sizeof(s_abort_s));
-		if (ARGs == NULL) {
-			THINGS_LOG_E(TAG, "Memory Allocation is failed.(for abort Thread)");
-			return OC_EH_ERROR;
-		}
-
-		ARGs->h_thread = h_thread_abort;
-		ARGs->level = level;
-
-		eh_result = OC_EH_OK;
-
-		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_ABORT_THREAD) != 0) {
-			THINGS_LOG_E(TAG, "Create thread is failed.(for abort Thread)");
-			*h_thread_abort = 0;
-			things_free(ARGs);
-			pthread_detach(h_thread_abort);
-			eh_result = OC_EH_ERROR;
-		}
-	} else {
-		THINGS_LOG_D(TAG, "Already called Thread. So, OC_EH_NOT_ACCEPTABLE");
-		eh_result = OC_EH_NOT_ACCEPTABLE;
-	}
-
-	return eh_result;
-}
-
-static void *__attribute__((optimize("O0"))) t_things_abort_loop(s_abort_s *contents)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	if (contents == NULL) {
-		THINGS_LOG_E(TAG, "contents is NULL.");
-		goto GOTO_OUT;
-	}
-
-	if (g_abort_easysetup != NULL) {
-		THINGS_LOG_E(TAG, "Registered Abort Function. So, Call Function st_things API.");
-		g_abort_easysetup(contents->level);
-	}
-
-GOTO_OUT:
-	if (contents) {
-		*(contents->h_thread) = 0;
-		things_free(contents);
-	}
-
-	THINGS_LOG_D(TAG, "Exit.");
-	return NULL;
-}
-#endif
 
 int things_is_things_module_initialized(void)
 {
