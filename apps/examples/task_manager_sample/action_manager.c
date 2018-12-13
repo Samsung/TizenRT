@@ -119,7 +119,7 @@ int action_manager_main(int argc, char *argv[])
 	if (handle_alarm < 0) {
 		printf("FAIL TO REGISTER ALARM ACTION, %d\n", handle_alarm);
 	} else if (handle_alarm >= 0) {
-		printf("Alarm Action is succeefully registered and its handle is %d\n", handle_alarm);
+		printf("Alarm Action is successfully registered and its handle is %d\n", handle_alarm);
 	}
 
 	printf("\nRegister LED On Action\n");
@@ -128,7 +128,7 @@ int action_manager_main(int argc, char *argv[])
 	if (handle_ledon < 0) {
 		printf("FAIL TO REGISTER LED ON ACTION, %d\n", handle_ledon);
 	} else if (handle_ledon >= 0) {
-		printf("LED On Action is succeefully registered and its handle is %d\n", handle_ledon);
+		printf("LED On Action is successfully registered and its handle is %d\n", handle_ledon);
 	}
 
 	printf("\nRegister LED Off Action\n");
@@ -137,7 +137,7 @@ int action_manager_main(int argc, char *argv[])
 	if (handle_ledoff < 0) {
 		printf("FAIL TO REGISTER LED OFF ACTION, %d\n", handle_ledoff);
 	} else if (handle_ledoff >= 0) {
-		printf("LED Off Action is succeefully registered and its handle is %d\n", handle_ledoff);
+		printf("LED Off Action is successfully registered and its handle is %d\n", handle_ledoff);
 	}
 
 	printf("\nLED On Action Start\n");
@@ -171,7 +171,7 @@ int action_manager_main(int argc, char *argv[])
 		if (ret_unregister_alarm < 0) {
 			printf("FAIL TO UNREGISTER ALARM ACTION, %d\n", handle_alarm);
 		} else if (ret_unregister_alarm == OK) {
-			printf("Alarm Action is succeefully unregistered\n");
+			printf("Alarm Action is successfully unregistered\n");
 		}
 
 		printf("\nUnregister LED On Action\n");
@@ -179,7 +179,7 @@ int action_manager_main(int argc, char *argv[])
 		if (ret_unregister_ledon < 0) {
 			printf("FAIL TO UNREGISTER LED ON ACTION, %d\n", handle_ledon);
 		} else if (ret_unregister_ledon == OK) {
-			printf("LED On Action is succeefully unregistered\n");
+			printf("LED On Action is successfully unregistered\n");
 		}
 
 		printf("\nUnregister LED Off Action\n");
@@ -187,7 +187,7 @@ int action_manager_main(int argc, char *argv[])
 		if (ret_unregister_ledoff < 0) {
 			printf("FAIL TO UNREGISTER LED OFF ACTION, %d\n", handle_ledoff);
 		} else if (ret_unregister_ledoff == OK) {
-			printf("LED Off Action is succeefully unregistered\n");
+			printf("LED Off Action is successfully unregistered\n");
 		}
 
 		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);

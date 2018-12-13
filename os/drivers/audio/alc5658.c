@@ -1607,7 +1607,7 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		goto errout_with_dev;
 	}
 
-	/* Reset and reconfigure the ALC5658 hardwaqre */
+	/* Reset and reconfigure the ALC5658 hardware */
 
 	alc5658_hw_reset(priv);
 

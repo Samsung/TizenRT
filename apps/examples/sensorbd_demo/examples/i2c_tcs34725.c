@@ -178,7 +178,7 @@ static void tcs34725_initialize(void)
 
 	tcs34725_read(TCS34725_ID, &reg, 1);
 	if ((reg != 0x44) && (reg != 0x10)) {
-		printf("Bad devie id(0x%02x)\n", reg);
+		printf("Bad device id(0x%02x)\n", reg);
 		return;
 	}
 	printf("Successfully read device id(0x%02x)\n", reg);

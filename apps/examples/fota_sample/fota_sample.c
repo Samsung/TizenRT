@@ -100,7 +100,7 @@ int fota_sample(int argc, char *argv[])
 	printf("Is OTA%d binary manually downloaded? If yes press Y to continue [Y/N]\n", next_part_id);
 	user_input = getchar();
 	if (user_input != 'Y' && user_input != 'y') {
-		printf(" fota update cancled !!!\n");
+		printf(" fota update cancelled !!!\n");
 		printf("***********************************************************\n");
 		goto fota_exit;
 	}
