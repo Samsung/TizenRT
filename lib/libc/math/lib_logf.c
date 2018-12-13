@@ -53,6 +53,8 @@
  * Pre-processor Definitions
  ************************************************************************/
 
+#define FLT_MAX_EXP_X         88.0F
+
 /* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
  * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
  * todo: might need to adjust the double floating point version too.
@@ -81,17 +83,25 @@ float logf(float x)
 	iter = 0;
 	relax_factor = 1;
 
+	if (x < 0.0) {
+		return NAN;
+	}
+
+	if (x == 0.0) {
+		return -INFINITY;
+	}
+
 	while (y > y_old + epsilon || y < y_old - epsilon) {
 		y_old = y;
 		ey = expf(y);
 		y -= (ey - x) / ey;
 
-		if (y > 700.0) {
-			y = 700.0;
+		if (y > FLT_MAX_EXP_X) {
+			y = FLT_MAX_EXP_X;
 		}
 
-		if (y < -700.0) {
-			y = -700.0;
+		if (y < -FLT_MAX_EXP_X) {
+			y = -FLT_MAX_EXP_X;
 		}
 		epsilon = (fabsf(y) > 1.0) ? fabsf(y) * FLT_EPSILON : FLT_EPSILON;
 
@@ -105,11 +115,11 @@ float logf(float x)
 		}
 	}
 
-	if (y == 700.0) {
+	if (y == FLT_MAX_EXP_X) {
 		return INFINITY;
 	}
 
-	if (y == -700.0) {
+	if (y == -FLT_MAX_EXP_X) {
 		return INFINITY;
 	}
 

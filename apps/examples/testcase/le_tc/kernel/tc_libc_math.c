@@ -1651,8 +1651,8 @@ static void tc_libc_math_frexp(void)
 static void tc_libc_math_frexpf(void)
 {
 	const float in_val[] = { 8.0, 2.3, -10.0 };
-	const float sol_val[] = { 0.99999976158142, 0.574999988079071, 0 };
-	const int n_val[] = { 3, 2, 2147483647 };
+	const float sol_val[] = { 0.99999976158142, 0.574999988079071, NAN };
+	const int n_val[] = { 3, 2, NAN };
 	float ret_val[SIZE(sol_val, float)];
 	int n[SIZE(sol_val, float)];
 	int frexpf_idx;
@@ -2037,8 +2037,8 @@ static void tc_libc_math_ldexpl(void)
  */
 static void tc_libc_math_log(void)
 {
-	const double in_val[] = { 1024, 5.5, -10.0, 0.936584472656250 };
-	const double sol_val[] = { 6.931471805599453, 1.704748092238425, NAN, -0.065515560785398 };
+	const double in_val[] = { 1024, 5.5, -10.0, 0.936584472656250, 0 };
+	const double sol_val[] = { 6.931471805599453, 1.704748092238425, NAN, -0.065515560785398, -INFINITY };
 	double ret_val[SIZE(sol_val, double)];
 	int log_idx;
 
@@ -2089,8 +2089,8 @@ static void tc_libc_math_log2(void)
  */
 static void tc_libc_math_log2f(void)
 {
-	const float in_val[] = { 1024, 5.5, -10.0 };
-	const float sol_val[] = { 10.0, 2.4594316186373, NAN };
+	const float in_val[] = { 1024, 5.5, -10.0, 0 };
+	const float sol_val[] = { 10.0, 2.4594316186373, NAN, -INFINITY };
 	float ret_val[SIZE(sol_val, float)];
 	int log2f_idx;
 
@@ -2383,7 +2383,7 @@ static void tc_libc_math_nexttowardl(void)
  */
 static void tc_libc_math_pow(void)
 {
-	const double in_val[][2] = { { 2, 2 }, { 2, 0.5 }, { 2, -2 }, { 2, -0.5 }, { 1, NAN }, { ZERO, 0.5 }, { ZERO, -2 }, { -ZERO, -1 }, { -ZERO, -2 }, { -2, -1 }, { -2, -2 }, { 0.5, INFINITY }, { 2, INFINITY }, {-0.936584472656250,2} };
+	const double in_val[][2] = { { 2, 2 }, { 2, 0.5 }, { 2, -2 }, { 2, -0.5 }, { 1, NAN }, { ZERO, 0.5 }, { ZERO, -2 }, { -ZERO, -1 }, { -ZERO, -2 }, { -2, -1 }, { -2, -2 }, { 0.5, INFINITY }, { 2, INFINITY }, { -0.936584472656250, 2 } };
 	const double sol_val[] = { 4.0, M_SQRT2, 0.25, M_SQRT1_2, 1, ZERO, INFINITY, -INFINITY, INFINITY, -0.5, 0.25, ZERO, INFINITY, 0.877190474420786 };
 	double ret_val[SIZE(sol_val, double)];
 	int pow_idx;

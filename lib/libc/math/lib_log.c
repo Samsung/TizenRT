@@ -55,6 +55,8 @@
  * Pre-processor Definitions
  ************************************************************************/
 
+#define DBL_MAX_EXP_X           700.0
+
 /* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
  * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
  * todo: might need to adjust the double floating point version too.
@@ -84,6 +86,10 @@ double log(double x)
 		return NAN;
 	}
 
+	if (x == 0.0) {
+		return -INFINITY;
+	}
+
 	y = 0.0;
 	y_old = 1.0;
 	epsilon = DBL_EPSILON;
@@ -95,12 +101,12 @@ double log(double x)
 		ey = exp(y);
 		y -= (ey - x) / ey;
 
-		if (y > 700.0) {
-			y = 700.0;
+		if (y > DBL_MAX_EXP_X) {
+			y = DBL_MAX_EXP_X;
 		}
 
-		if (y < -700.0) {
-			y = -700.0;
+		if (y < -DBL_MAX_EXP_X) {
+			y = -DBL_MAX_EXP_X;
 		}
 
 		epsilon = (fabs(y) > 1.0) ? fabs(y) * DBL_EPSILON : DBL_EPSILON;
@@ -115,12 +121,12 @@ double log(double x)
 		}
 	}
 
-	if (y == 700.0) {
+	if (y == DBL_MAX_EXP_X) {
 		return INFINITY;
 	}
 
-	if (y == -700.0) {
-		return -INFINITY;
+	if (y == -DBL_MAX_EXP_X) {
+		return INFINITY;
 	}
 
 	return y;
