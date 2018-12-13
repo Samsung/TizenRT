@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -401,7 +401,7 @@ int TLSSession_free(tls_session *session)
 	return 0;
 }
 
-int TLSSend(tls_session *session, unsigned char *buf, size_t size)
+int TLSSend(tls_session *session, const unsigned char *buf, size_t size)
 {
 	return mbedtls_ssl_write(session->ssl, buf, size);
 }

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2018 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
                       x509_create.c   x509_crl.c      x509_crt.c      \
                       x509_csr.c      x509write_crt.c x509write_csr.c
 
-SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
+SRC_TLS_CSRCS =       debug.c         net_sockets.c           ssl_cache.c     \
                       ssl_ciphersuites.c              ssl_tls.c       \
                       ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
                       ssl_ticket.c    easy_tls.c
