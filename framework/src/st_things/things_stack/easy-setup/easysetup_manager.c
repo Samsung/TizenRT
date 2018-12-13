@@ -100,7 +100,7 @@ void generate_pin_cb(char *pin, size_t pin_size)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	if (NULL == pin || pin_size <= 0) {
+	if (NULL == pin || pin_size == 0) {
 		THINGS_LOG_E(TAG, "INVALID PIN");
 		return;
 	}
@@ -831,13 +831,6 @@ void *esm_register_cloud_cb(void *func)
 {
 	g_cloud_data_cb_to_app = func;
 	return NULL;
-}
-
-esm_result_e esm_set_wifi_conn_err(void)
-{
-	es_set_state(ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER);
-	es_set_error_code(ES_ERRCODE_UNKNOWN);
-	return ESM_OK;
 }
 
 int esm_register_pin_generated_cb(pin_generated_func_type func)

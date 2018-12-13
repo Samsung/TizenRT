@@ -117,8 +117,6 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(TAG, "Sign-UP is Time-Out.");
 
-	es_cloud_prov_data_s *pend_cloud_data = NULL;
-
 	if (timeout == NULL) {
 		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
@@ -127,7 +125,8 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 	send_cnt_sign_up++;
 
 	if (send_cnt_sign_up <= MAX_SIGNUP_SENDNUM) {
-		if ((pend_cloud_data = ci_cp_get_pended_data()) != NULL) {
+		es_cloud_prov_data_s *pend_cloud_data = ci_cp_get_pended_data();
+		if (pend_cloud_data != NULL) {
 			timeout->cur_counter = timeout->cur_num;
 			THINGS_LOG_V(TAG, "Sign-UP Request Send is re-tryed(%d).", send_cnt_sign_up);
 			if (cloud_retry_sign_up(pend_cloud_data, timeout) == 0) {
@@ -1218,9 +1217,6 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
-	int sub_dev_pub_fail = -1;
-#endif
 	OCStackResult res = OC_STACK_OK;
 
 	if (target == RSC_PUB_ALL || target == RSC_PUB_MAIN_ONLY) {
@@ -1232,8 +1228,8 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	if (res == OC_STACK_OK && target != RSC_PUB_MAIN_ONLY) {
 		THINGS_LOG_D(TAG, "Sub-Devices Resource Publish Start.");
+		int sub_dev_pub_fail = -1;
 		int device_cnt = 0;
-		char *device_id = NULL;
 		st_device_s **dList = NULL;
 
 		if (1 == dm_get_device_information(&device_cnt, &dList) && device_cnt > 1) {
@@ -1244,7 +1240,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 						sub_dev_pub_fail = 0;
 					}
 
-					device_id = dList[index]->device_id;
+					char *device_id = dList[index]->device_id;
 
 					THINGS_LOG_D(TAG, "Sub-device ID=%s", device_id);
 					if (device_id == NULL || device_id[0] == 0) {
@@ -1631,11 +1627,13 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	}
 
 	THINGS_LOG_D(TAG, "CI Svr Addr         : %s", g_cloud_address);
-	THINGS_LOG_D(TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
-	THINGS_LOG_D(TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
-	THINGS_LOG_D(TAG, "CI Svr Uid          : %s", event_data->uid);
-	THINGS_LOG_D(TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
-	THINGS_LOG_D(TAG, "CI Svr client_id     : %s", event_data->client_id);
+	if (event_data != NULL) {
+		THINGS_LOG_D(TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
+		THINGS_LOG_D(TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
+		THINGS_LOG_D(TAG, "CI Svr Uid          : %s", event_data->uid);
+		THINGS_LOG_D(TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
+		THINGS_LOG_D(TAG, "CI Svr client_id     : %s", event_data->client_id);
+	}
 
 	if (timeout != NULL) {
 		THINGS_LOG_D(TAG, "CI Svr timeout_cnt     : %d", timeout->cur_counter);
@@ -1670,7 +1668,6 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 
 	int res = 0;
 	char *ci_ip = NULL;
-	char *ci_ip_port = NULL;
 	char *ci_host = NULL;
 	es_error_code_e es_err = ES_ERRCODE_UNKNOWN;
 
@@ -1706,7 +1703,7 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 			THINGS_LOG_V(TAG, "##########################");
 
 			if (ci_connection_pre_check(ci_host, &ci_ip) == 0) {
-				ci_ip_port = make_ip_port(ci_ip, event_data->port);
+				char *ci_ip_port = make_ip_port(ci_ip, event_data->port);
 
 				things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
 				things_strncpy(g_cloud_port, event_data->port, IP_PORT);
@@ -1807,12 +1804,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 
 	pthread_t cthread_handler;
 	es_cloud_event_timeout_s *cloned_data = NULL;
-#if 0							// pkcloud
-	if (ci_cp_cas_is_there_cp_if_false() == true) {
-		THINGS_LOG_D(TAG, "Already exist data of Cloud Provisioning.");
-		return NULL;
-	}
-#endif
+
 	switch (g_qis_cloud_thread_running) {
 	case CISESS_APDISCON:
 		// Backup loose try..
@@ -1867,7 +1859,6 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 
 	pthread_t cthread_handler;
 	es_cloud_prov_data_s dummy_data;
-	es_cloud_event_timeout_s *cloned_data = NULL;
 
 	if (ci_cp_get_is_there_cp() == true) {
 		THINGS_LOG_D(TAG, "There is a CloudProvisioning data. Cloud-retry is skiped.");
@@ -1884,7 +1875,8 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 		// cloud_data setting.
 		init_es_cloud_prov_data(&dummy_data);
 
-		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
+		es_cloud_event_timeout_s *cloned_data = clone_data_add_timeout(&dummy_data, timeout);
+		if (cloned_data == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type)ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
 			THINGS_LOG_E(TAG, "Create thread is failed.");
 			things_free(cloned_data);
 			cloned_data = NULL;
@@ -1983,17 +1975,6 @@ GOTO_OUT:
 	return clone_data;
 }
 
-void ci_stop_cloud_connection(void *CBfunc)
-{
-	force_session_stop(CISESS_NULL);
-	esm_get_network_status();	// State return
-	sleep(1);
-
-	things_res_cb_function = NULL;
-	if (CBfunc) {
-		things_res_cb_function = (things_cloud_con_result_func_type *) CBfunc;
-	}
-}
 static void force_session_stop(ci_session_level_e state)
 {
 	things_del_all_request_handle();

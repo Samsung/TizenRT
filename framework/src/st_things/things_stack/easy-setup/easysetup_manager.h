@@ -40,7 +40,6 @@ typedef int (*user_confirm_result_func_type)(void);
 int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_mode, const wifi_freq_e freq);
 esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *server_builder);
 esm_result_e esm_terminate_easysetup(void);
-esm_result_e esm_set_wifi_conn_err(void);
 bool esm_get_network_status(void);
 void *esm_register_cloud_cb(void *);
 int esm_register_pin_generated_cb(pin_generated_func_type func);

@@ -870,20 +870,6 @@ things_resource_s *clone_resource_inst(things_resource_s *pori)
 	return pclone;
 }
 
-void things_clone_resource_inst2(things_resource_s *pori, things_resource_s **pclone)
-{
-	if (pori == NULL) {
-		return;
-	}
-
-	*pclone = create_resource_inst_impl(pori->request_handle, pori->resource_handle, pori->query, ((pori->rep == NULL) ? NULL : pori->rep->payload));
-
-	(*pclone)->things_set_uri(*pclone, pori->uri);
-	THINGS_LOG_D(TAG, "@@@@@@@@@@@@@@@ URI  %s", (*pclone)->uri);
-
-	return;
-}
-
 void things_release_representation_inst(things_representation_s *rep)
 {
 	if (rep != NULL) {
@@ -903,7 +889,6 @@ void things_release_representation_inst(things_representation_s *rep)
 		}
 
 		things_free(rep);
-		rep = NULL;
 	}
 }
 
@@ -937,7 +922,6 @@ void release_resource_inst_impl(things_resource_s *res)
 			things_free(res->dev_addr);
 		}
 		things_free(res);
-		res = NULL;
 	}
 }
 
@@ -946,9 +930,8 @@ void things_release_resource_inst(things_resource_s *res)
 	if (res != NULL) {
 		if (NULL != res->next) {
 			things_resource_s *p_temp = res->next;
-			things_resource_s *pDel = NULL;
 			while (NULL != p_temp) {
-				pDel = p_temp;
+				things_resource_s *pDel = p_temp;
 				p_temp = p_temp->next;
 
 				release_resource_inst_impl(pDel);
@@ -957,6 +940,5 @@ void things_release_resource_inst(things_resource_s *res)
 		}
 
 		release_resource_inst_impl(res);
-		res = NULL;
 	}
 }
