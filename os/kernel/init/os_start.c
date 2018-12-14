@@ -127,8 +127,6 @@ extern bool heapx_is_init[CONFIG_MM_NHEAPS];
 
 volatile dq_queue_t g_readytorun;
 
-FAR struct tcb_s *g_running_tasks[1];
-
 /* This is the list of all tasks that are ready-to-run, but cannot be placed
  * in the g_readytorun list because:  (1) They are higher priority than the
  * currently active task at the head of the g_readytorun list, and (2) the
