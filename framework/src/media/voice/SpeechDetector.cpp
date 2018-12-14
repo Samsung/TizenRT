@@ -44,6 +44,8 @@ public:
 	bool deinitEndPointDetect() override;
 	bool startKeywordDetect(int timeout) override;
 	bool startEndPointDetect(int timeout) override;
+	bool detectEndPoint(short *sample, int numSample) override;
+	bool waitEndPoint(int timeout) override;
 
 private:
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
@@ -153,6 +155,31 @@ bool SpeechDetectorImpl::startEndPointDetect(int timeout)
 	}
 
 	return mEndPointDetector->startEndPointDetect(timeout);
+}
+
+bool SpeechDetectorImpl::detectEndPoint(short *sample, int numSample)
+{
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
+	if (sample == nullptr) {
+		meddbg("parameter sample is nullptr\n");
+		return false;
+	}
+
+	return mEndPointDetector->detectEndPoint(sample, numSample);
+}
+
+bool SpeechDetectorImpl::waitEndPoint(int timeout)
+{
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
+	return mEndPointDetector->waitEndPoint(timeout);
 }
 
 } // namespace voice

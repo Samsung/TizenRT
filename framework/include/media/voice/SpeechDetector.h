@@ -99,6 +99,25 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	virtual bool startEndPointDetect(int timeout) = 0;
+
+	/**
+	 * @brief Detect EndPoint
+	 * @details @b #include <media/voice/SpeechDetector.h>
+	 * param[in] sample Audio sample vector
+	 * param[in] numSample the number of samples
+	 * @return Return success if EndPoint is detected
+	 * @since TizenRT v2.1 PRE
+	 */
+	virtual bool detectEndPoint(short *sample, int numSample) = 0;
+
+	/**
+	 * @brief Wait EndPoint
+	 * @details @b #include <media/voice/SpeechDetector.h>
+	 * param[in] timeout EndPoint detect timout in second
+	 * @return Return success if EndPoint is detected
+	 * @since TizenRT v2.1 PRE
+	 */
+	virtual bool waitEndPoint(int timeout) = 0;
 protected:
 	SpeechDetector() = default;
 };

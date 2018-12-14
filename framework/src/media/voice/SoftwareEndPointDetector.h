@@ -29,6 +29,7 @@
 #endif
 
 #include <functional>
+#include <semaphore.h>
 
 #include <media/MediaRecorder.h>
 
@@ -41,14 +42,19 @@ namespace voice {
 class SoftwareEndPointDetector : public EndPointDetector
 {
 public:
+	SoftwareEndPointDetector();
+	~SoftwareEndPointDetector();
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
 	bool startEndPointDetect(int timeout) override;
+	bool detectEndPoint(short *sample, int numSample) override;
+	bool waitEndPoint(int timeout) override;
 
 private:
 	SpeexPreprocessState *mState;
 	int mPreviousVAD;
 	int mVAD;
+	sem_t mSem;
 };
 
 } // namespace voice

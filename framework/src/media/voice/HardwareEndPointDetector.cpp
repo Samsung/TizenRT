@@ -31,7 +31,12 @@ HardwareEndPointDetector::HardwareEndPointDetector(int normal_card, int normal_d
 	mSdCard(sd_card),
 	mSdDevice(sd_device)
 {
+	sem_init(&mSem, 0, 0);
+}
 
+HardwareEndPointDetector::~HardwareEndPointDetector()
+{
+	sem_destroy(&mSem);
 }
 
 bool HardwareEndPointDetector::init(uint32_t samprate, uint8_t channels)
@@ -139,6 +144,52 @@ bool HardwareEndPointDetector::startEndPointDetect(int timeout)
 
 	stop_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	return ret;
+}
+
+bool HardwareEndPointDetector::detectEndPoint(short *sample, int numSample)
+{
+	audio_manager_result_t result;
+	uint16_t msgId;
+
+	result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
+	if (result == AUDIO_MANAGER_SUCCESS && msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
+		int semVal;
+		medvdbg("#### EPD DETECTED!! ####\n");
+		if ((sem_getvalue(&mSem, &semVal) == OK) && (semVal < 0)) {
+			sem_post(&mSem);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool HardwareEndPointDetector::waitEndPoint(int timeout)
+{
+	int ret = -1;
+	audio_manager_result_t result;
+
+	result = start_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: start_stream_in_device_process(%d, %d) failed!\n", mSdCard, mSdDevice);
+		return false;
+	}
+
+	if (timeout < 0) {
+		ret = sem_wait(&mSem);
+	} else {
+		struct timespec waketime;
+		clock_gettime(CLOCK_REALTIME, &waketime);
+		waketime.tv_sec += timeout;
+		ret = sem_timedwait(&mSem, &waketime);
+	}
+
+	stop_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: stop_stream_in_device_process_type(%d, %d) failed!\n", mSdCard, mSdDevice);
+		return false;
+	}
+	return ret == 0 ? true : false;
 }
 
 } // namespace voice
