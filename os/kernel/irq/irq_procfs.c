@@ -254,7 +254,7 @@ static int irq_callback(int irq, FAR struct irq_info_s *info, FAR void *arg)
 		intpart = 9999;
 		fracpart = 999;
 	} else {
-		uint64_t intcount = ((uint64_t) intpart * elapsed);
+		uint64_t intcount = ((uint64_t)intpart * elapsed);
 		fracpart = (unsigned int)
 				   (((copy.count * TICK_PER_SEC - intcount) * 1000) / elapsed);
 	}
@@ -272,7 +272,7 @@ static int irq_callback(int irq, FAR struct irq_info_s *info, FAR void *arg)
 
 	/* Output information about this interrupt */
 
-	linesize = snprintf(irqfile->line, IRQ_LINELEN, IRQ_FMT, (unsigned int)irq, (unsigned long)((uintptr_t) copy.handler), (unsigned long)((uintptr_t) copy.arg),
+	linesize = snprintf(irqfile->line, IRQ_LINELEN, IRQ_FMT, (unsigned int)irq, (unsigned long)((uintptr_t)copy.handler), (unsigned long)((uintptr_t)copy.arg),
 #ifdef CONFIG_SCHED_TICKLESS
 						count, intpart, fracpart, copy.time / 1000);
 #else

@@ -108,17 +108,17 @@ void up_initial_state(struct tcb_s *tcb)
 
 	/* Save the initial stack pointer */
 
-	xcp->regs[REG_SP] = (uint32_t) tcb->adj_stack_ptr;
+	xcp->regs[REG_SP] = (uint32_t)tcb->adj_stack_ptr;
 
 #ifdef CONFIG_ARMV7M_STACKCHECK
 	/* Set the stack limit value */
 
-	xcp->regs[REG_R10] = (uint32_t) tcb->stack_alloc_ptr + 64;
+	xcp->regs[REG_R10] = (uint32_t)tcb->stack_alloc_ptr + 64;
 #endif
 
 	/* Save the task entry point (stripping off the thumb bit) */
 
-	xcp->regs[REG_PC] = (uint32_t) tcb->start & ~1;
+	xcp->regs[REG_PC] = (uint32_t)tcb->start & ~1;
 
 	/* Specify thumb mode */
 
@@ -134,7 +134,7 @@ void up_initial_state(struct tcb_s *tcb)
 		 * alloacated D-Space region.
 		 */
 
-		xcp->regs[REG_PIC] = (uint32_t) tcb->dspace->region;
+		xcp->regs[REG_PIC] = (uint32_t)tcb->dspace->region;
 	}
 #ifdef CONFIG_NXFLAT
 	/* Make certain that bit 0 is set in the main entry address.  This
@@ -143,7 +143,7 @@ void up_initial_state(struct tcb_s *tcb)
 	 * on file header info and won't have bit 0 set.
 	 */
 
-	tcb->entry.main = (main_t)((uint32_t) tcb->entry.main | 1);
+	tcb->entry.main = (main_t)((uint32_t)tcb->entry.main | 1);
 #endif
 #endif							/* CONFIG_PIC */
 

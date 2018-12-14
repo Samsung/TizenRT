@@ -126,7 +126,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 	/* Add the task to the specified blocked task list */
 
-	sched_addblocked(tcb, (tstate_t) task_state);
+	sched_addblocked(tcb, (tstate_t)task_state);
 
 	/* If there are any pending tasks, then add them to the g_readytorun
 	 * task list now

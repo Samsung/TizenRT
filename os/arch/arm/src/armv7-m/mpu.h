@@ -301,8 +301,8 @@ static inline void mpu_priv_stronglyordered(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region  */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size    */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions    */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size    */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions    */
 			 /* Not Cacheable  */
 			 /* Not Bufferable */
 			 MPU_RASR_S |			/* Shareable      */
@@ -342,8 +342,8 @@ static inline void mpu_user_flash(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_AP_RORO;		/* P:RO   U:RO   */
 	putreg32(regval, MPU_RASR);
@@ -380,8 +380,8 @@ static inline void mpu_priv_flash(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_AP_RONO;		/* P:RO   U:None */
 	putreg32(regval, MPU_RASR);
@@ -418,8 +418,8 @@ static inline void mpu_user_intsram(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_S |			/* Shareable     */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
@@ -457,8 +457,8 @@ static inline void mpu_priv_intsram(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_S |			/* Shareable     */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_AP_RWNO;		/* P:RW   U:None */
@@ -496,8 +496,8 @@ static inline void mpu_user_extsram(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_S |			/* Shareable     */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_B |			/* Bufferable    */
@@ -536,8 +536,8 @@ static inline void mpu_priv_extsram(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_S |			/* Shareable     */
 			 MPU_RASR_C |			/* Cacheable     */
 			 MPU_RASR_B |			/* Bufferable    */
@@ -576,8 +576,8 @@ static inline void mpu_peripheral(uintptr_t base, size_t size)
 	/* The configure the region */
 
 	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t) l2size) |	/* Region size   */
-			 ((uint32_t) subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
 			 MPU_RASR_S |			/* Shareable     */
 			 MPU_RASR_B |			/* Bufferable    */
 			 MPU_RASR_AP_RWNO |		/* P:RW   U:None */

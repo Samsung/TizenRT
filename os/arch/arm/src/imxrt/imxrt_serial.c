@@ -1155,7 +1155,7 @@ static bool imxrt_rxavailable(struct uart_dev_s *dev)
 static void imxrt_send(struct uart_dev_s *dev, int ch)
 {
 	struct imxrt_uart_s *priv = (struct imxrt_uart_s *)dev->priv;
-	imxrt_serialout(priv, IMXRT_LPUART_DATA_OFFSET, (uint32_t) ch);
+	imxrt_serialout(priv, IMXRT_LPUART_DATA_OFFSET, (uint32_t)ch);
 }
 
 /****************************************************************************

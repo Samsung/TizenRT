@@ -78,6 +78,6 @@
 
 wint_t towupper(wint_t c)
 {
-	return (c < (wint_t) 0x00ff ? (wint_t) toupper((int)c) : c);
+	return (c < (wint_t)0x00ff ? (wint_t)toupper((int)c) : c);
 }
 #endif

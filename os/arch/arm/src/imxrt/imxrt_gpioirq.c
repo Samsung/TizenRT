@@ -607,7 +607,7 @@ int imxrt_gpioirq_configure(gpio_pinset_t pinset)
 
 	port = ((unsigned int)pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
 	pin = ((unsigned int)pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-	icr = ((uint32_t) pinset & GPIO_INTCFG_MASK) >> GPIO_INTCFG_SHIFT;
+	icr = ((uint32_t)pinset & GPIO_INTCFG_MASK) >> GPIO_INTCFG_SHIFT;
 
 	/* Set the right field in the right ICR register */
 

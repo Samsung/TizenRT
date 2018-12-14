@@ -118,12 +118,12 @@ static struct systick_lowerhalf_s g_systick_lower = {
 
 static inline uint64_t usec_from_count(uint32_t count, uint32_t freq)
 {
-	return (uint64_t) count * USEC_PER_SEC / freq;
+	return (uint64_t)count * USEC_PER_SEC / freq;
 }
 
 static inline uint64_t usec_to_count(uint32_t usec, uint32_t freq)
 {
-	return (uint64_t) usec * freq / USEC_PER_SEC;
+	return (uint64_t)usec * freq / USEC_PER_SEC;
 }
 
 static bool systick_is_running(void)

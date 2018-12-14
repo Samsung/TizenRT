@@ -617,7 +617,7 @@ bool irq_cpu_locked(int cpu)
 	 * subsequent operations will operate on the sampled cpu set.
 	 */
 
-	irqset = (cpu_set_t) g_cpu_irqset;
+	irqset = (cpu_set_t)g_cpu_irqset;
 	if (irqset != 0) {
 		/* Some CPU holds the lock.  So g_cpu_irqlock should be locked.
 		 * Return false if the 'cpu' is the holder of the lock; return

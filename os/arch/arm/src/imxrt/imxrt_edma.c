@@ -1076,12 +1076,12 @@ int imxrt_dmach_xfrsetup(DMACH_HANDLE *handle, const struct imxrt_edma_xfrconfig
 		regval16 |= EDMA_TCD_CSR_ESG;
 		prev->csr = regval16;
 
-		prev->dlastsga = (uint32_t) tcd;
+		prev->dlastsga = (uint32_t)tcd;
 		dmach->tail = tcd;
 
 		/* Clean cache associated with the previous TCD memory */
 
-		arch_clean_dcache((uintptr_t) prev, (uintptr_t) prev + sizeof(struct imxrt_edmatcd_s));
+		arch_clean_dcache((uintptr_t)prev, (uintptr_t)prev + sizeof(struct imxrt_edmatcd_s));
 
 		/* Check if the TCD block in the DMA channel registers is the same as
 		 * the previous previous TCD.  This can happen if the previous TCD was
@@ -1098,13 +1098,13 @@ int imxrt_dmach_xfrsetup(DMACH_HANDLE *handle, const struct imxrt_edma_xfrconfig
 			putreg16(regval16, regaddr);
 
 			regaddr = IMXRT_EDMA_TCD_DLASTSGA(dmach->chan);
-			putreg32((uint32_t) tcd, regaddr);
+			putreg32((uint32_t)tcd, regaddr);
 		}
 	}
 
 	/* Clean cache associated with the TCD memory */
 
-	arch_clean_dcache((uintptr_t) tcd, (uintptr_t) tcd + sizeof(struct imxrt_edmatcd_s));
+	arch_clean_dcache((uintptr_t)tcd, (uintptr_t)tcd + sizeof(struct imxrt_edmatcd_s));
 #else
 	/* Scatter/gather DMA is NOT supported */
 
@@ -1138,7 +1138,7 @@ int imxrt_dmach_xfrsetup(DMACH_HANDLE *handle, const struct imxrt_edma_xfrconfig
 		 * is one.
 		 */
 
-		arch_invalidate_dcache((uintptr_t) config->daddr, (uintptr_t) config->daddr + config->nbytes);
+		arch_invalidate_dcache((uintptr_t)config->daddr, (uintptr_t)config->daddr + config->nbytes);
 	}
 
 	/* Check for an Tx (peripheral-to-memory/memory-to-memory) DMA transfer */
@@ -1151,7 +1151,7 @@ int imxrt_dmach_xfrsetup(DMACH_HANDLE *handle, const struct imxrt_edma_xfrconfig
 		 */
 #warning Missing logic
 
-		arch_clean_dcache((uintptr_t) config->saddr, (uintptr_t) config->saddr + config->nbytes);
+		arch_clean_dcache((uintptr_t)config->saddr, (uintptr_t)config->saddr + config->nbytes);
 	}
 
 	dmach->state = IMXRT_DMA_CONFIGURED;

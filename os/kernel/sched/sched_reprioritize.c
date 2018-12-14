@@ -132,7 +132,7 @@ int sched_reprioritize(FAR struct tcb_s *tcb, int sched_priority)
 		 * to once it posts the semaphore.
 		 */
 
-		tcb->base_priority = (uint8_t) sched_priority;
+		tcb->base_priority = (uint8_t)sched_priority;
 
 		/* Discard any pending reprioritizations as well */
 

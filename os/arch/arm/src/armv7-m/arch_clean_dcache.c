@@ -141,7 +141,7 @@ void arch_clean_dcache(uintptr_t start, uintptr_t end)
 		 *   smask  = 0x007f : Mask of the set field
 		 */
 
-		set = ((uint32_t) start >> sshift) & smask;
+		set = ((uint32_t)start >> sshift) & smask;
 
 		/* Clean and invalidate each way for this cacheline */
 

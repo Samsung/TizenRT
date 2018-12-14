@@ -374,7 +374,7 @@ static inline void irqrestore(irqstate_t flags)
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 	/* In this case, we are always retaining or lowering the priority value */
 
-	setbasepri((uint32_t) flags);
+	setbasepri((uint32_t)flags);
 
 #else
 	/* If bit 0 of the primask is 0, then we need to restore

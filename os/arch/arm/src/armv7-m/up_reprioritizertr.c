@@ -134,7 +134,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
 		/* Setup up the new task priority */
 
-		tcb->sched_priority = (uint8_t) priority;
+		tcb->sched_priority = (uint8_t)priority;
 
 		/* Return the task to the ready-to-run task list. sched_addreadytorun
 		 * will return true if the task was added to the head of ready-to-run

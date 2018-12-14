@@ -276,14 +276,14 @@ static void up_dumpstate(void)
 		ustackbase = g_idle_topstack - 4;
 		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
 	} else {
-		ustackbase = (uint32_t) rtcb->adj_stack_ptr;
-		ustacksize = (uint32_t) rtcb->adj_stack_size;
+		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
+		ustacksize = (uint32_t)rtcb->adj_stack_size;
 	}
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	/* Get the limits on the interrupt stack memory */
 
-	istackbase = (uint32_t) & g_intstackbase;
+	istackbase = (uint32_t)& g_intstackbase;
 	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
 
 	/* Show interrupt stack info */

@@ -281,8 +281,8 @@ int up_rtc_settime(FAR const struct timespec *ts)
 	 * IMXRT_SNVS_HPTALR 32-bit LSB of alarm setting.
 	 */
 
-	putreg32((uint32_t) ts->tv_sec >> 17, IMXRT_SNVS_HPRTCMR);
-	putreg32((uint32_t) ts->tv_sec << 15, IMXRT_SNVS_HPRTCLR);
+	putreg32((uint32_t)ts->tv_sec >> 17, IMXRT_SNVS_HPRTCMR);
+	putreg32((uint32_t)ts->tv_sec << 15, IMXRT_SNVS_HPRTCLR);
 
 #ifdef CONFIG_RTC_DRIVER
 	/* The time has been set */
@@ -553,7 +553,7 @@ int imxrt_hprtc_setalarm(FAR struct timespec *ts, hprtc_alarm_callback_t cb)
 	 * unused residual.
 	 */
 
-	if ((uint32_t) ts->tv_sec <= now) {
+	if ((uint32_t)ts->tv_sec <= now) {
 		rtcwarn("WARNING: time is in the past\n");
 		return -EINVAL;
 	}
@@ -577,8 +577,8 @@ int imxrt_hprtc_setalarm(FAR struct timespec *ts, hprtc_alarm_callback_t cb)
 	 * IMXRT_SNVS_HPTALR 32-bit LSB of alarm setting.
 	 */
 
-	putreg32((uint32_t) ts->tv_sec >> 17, IMXRT_SNVS_HPTAMR);
-	putreg32((uint32_t) ts->tv_sec << 15, IMXRT_SNVS_HPTALR);
+	putreg32((uint32_t)ts->tv_sec >> 17, IMXRT_SNVS_HPTAMR);
+	putreg32((uint32_t)ts->tv_sec << 15, IMXRT_SNVS_HPTALR);
 
 	/* Unconditionally enable the RTC alarm interrupt */
 

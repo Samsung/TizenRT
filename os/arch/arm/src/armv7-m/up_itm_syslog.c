@@ -134,7 +134,7 @@ static int itm_putc(int ch)
 
 	if (getreg32(ITM_TER) & (1 << CONFIG_ARMV7M_ITMSYSLOG_PORT)) {
 		while (getreg32(ITM_PORT(CONFIG_ARMV7M_ITMSYSLOG_PORT)) == 0) ;
-		putreg8((uint8_t) ch, ITM_PORT(CONFIG_ARMV7M_ITMSYSLOG_PORT));
+		putreg8((uint8_t)ch, ITM_PORT(CONFIG_ARMV7M_ITMSYSLOG_PORT));
 	}
 
 	return ch;

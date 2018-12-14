@@ -252,7 +252,7 @@ extern volatile pid_t g_lastpid;
 extern struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
 
 /* This is a table of task lists.  This table is indexed by the task state
- * enumeration type (tstate_t) and provides a pointer to the associated
+ * enumeration type (tstate_t)and provides a pointer to the associated
  * static task list (if there is one) as well as a boolean indication as to
  * if the list is an ordered list or not.
  */

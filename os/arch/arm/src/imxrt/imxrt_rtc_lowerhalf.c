@@ -180,7 +180,7 @@ static void imxrt_alarm_callback(void)
 	 * time in which race conditions can occur.
 	 */
 
-	rtc_alarm_callback_t cb = (rtc_alarm_callback_t) rtc->cb;
+	rtc_alarm_callback_t cb = (rtc_alarm_callback_t)rtc->cb;
 	FAR void *arg = (FAR void *)rtc->priv;
 
 	rtc->cb = NULL;
@@ -476,7 +476,7 @@ static int imxrt_rdalarm(FAR struct rtc_lowerhalf_s *lower, FAR struct lower_rda
 
 		/* Get the current alarm setting in seconds */
 
-		alarm = (time_t) imxrt_hprtc_getalarm();
+		alarm = (time_t)imxrt_hprtc_getalarm();
 
 		/* Convert the one second epoch time to a struct tm */
 

@@ -182,7 +182,7 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		}
 
 		offset += sym->st_value - addr;
-		if (offset & 3 || offset <= (int32_t) 0xfe000000 || offset >= (int32_t) 0x02000000) {
+		if (offset & 3 || offset <= (int32_t)0xfe000000 || offset >= (int32_t) 0x02000000) {
 			berr("ERROR:   ERROR: PC24 [%d] relocation out of range, offset=%08lx\n", ELF32_R_TYPE(rel->r_info), offset);
 
 			return -EINVAL;
@@ -301,7 +301,7 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 
 		/* Check the range of the offset */
 
-		if (offset <= (int32_t) 0xff000000 || offset >= (int32_t) 0x01000000) {
+		if (offset <= (int32_t)0xff000000 || offset >= (int32_t) 0x01000000) {
 			berr("ERROR:   ERROR: JUMP24 [%d] relocation out of range, branch taget=%08lx\n", ELF32_R_TYPE(rel->r_info), offset);
 
 			return -EINVAL;
@@ -316,10 +316,10 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		J2 = S ^ (~(offset >> 22) & 1);
 
 		upper_insn = ((upper_insn & 0xf800) | (S << 10) | ((offset >> 12) & 0x03ff));
-		*(uint16_t *) addr = (uint16_t) upper_insn;
+		*(uint16_t *) addr = (uint16_t)upper_insn;
 
 		lower_insn = ((lower_insn & 0xd000) | (J1 << 13) | (J2 << 11) | ((offset >> 1) & 0x07ff));
-		*(uint16_t *)(addr + 2) = (uint16_t) lower_insn;
+		*(uint16_t *)(addr + 2) = (uint16_t)lower_insn;
 
 		binfo("  S=%d J1=%d J2=%d insn [%04x %04x]\n", S, J1, J2, (int)upper_insn, (int)lower_insn);
 	}
@@ -427,10 +427,10 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		}
 
 		upper_insn = ((upper_insn & 0xfbf0) | ((offset & 0xf000) >> 12) | ((offset & 0x0800) >> 1));
-		*(uint16_t *) addr = (uint16_t) upper_insn;
+		*(uint16_t *) addr = (uint16_t)upper_insn;
 
 		lower_insn = ((lower_insn & 0x8f00) | ((offset & 0x0700) << 4) | (offset & 0x00ff));
-		*(uint16_t *)(addr + 2) = (uint16_t) lower_insn;
+		*(uint16_t *)(addr + 2) = (uint16_t)lower_insn;
 
 		binfo("  insn [%04x %04x]\n", (int)upper_insn, (int)lower_insn);
 	}

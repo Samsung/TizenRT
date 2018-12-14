@@ -523,7 +523,7 @@ void imxrt_lowputc(int ch)
 	if (ch == '\n') {
 		/* Send the carriage return by writing it into the UART_TXD register. */
 
-		putreg32((uint32_t) '\r', IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
+		putreg32((uint32_t)'\r', IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
 
 		/* Wait for the transmit register to be emptied. When the TXFE bit is non-zero,
 		 * the TX Buffer FIFO is empty.
@@ -535,7 +535,7 @@ void imxrt_lowputc(int ch)
 
 	/* Send the character by writing it into the UART_TXD register. */
 
-	putreg32((uint32_t) ch, IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
+	putreg32((uint32_t)ch, IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
 
 	/* Wait for the transmit register to be emptied. When the TXFE bit is non-zero,
 	 * the TX Buffer FIFO is empty.

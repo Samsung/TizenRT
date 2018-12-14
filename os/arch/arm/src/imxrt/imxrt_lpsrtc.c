@@ -237,8 +237,8 @@ int up_rtc_settime(FAR const struct timespec *ts)
 	 * IMXRT_SNVS_LPSMCLR 32-bit LSB of alarm setting.
 	 */
 
-	putreg32((uint32_t) ts->tv_sec >> 17, IMXRT_SNVS_LPSMCMR);
-	putreg32((uint32_t) ts->tv_sec << 15, IMXRT_SNVS_LPSMCLR);
+	putreg32((uint32_t)ts->tv_sec >> 17, IMXRT_SNVS_LPSMCMR);
+	putreg32((uint32_t)ts->tv_sec << 15, IMXRT_SNVS_LPSMCLR);
 
 	/* The time has been set */
 

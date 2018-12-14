@@ -504,7 +504,7 @@ static int imxrt_transmit(FAR struct imxrt_driver_s *priv)
 		priv->txhead = 0;
 	}
 #ifdef CONFIG_DEBUG_ASSERTIONS
-	arch_invalidate_dcache((uintptr_t) txdesc, (uintptr_t) txdesc + sizeof(struct enet_desc_s));
+	arch_invalidate_dcache((uintptr_t)txdesc, (uintptr_t)txdesc + sizeof(struct enet_desc_s));
 
 	DEBUGASSERT(priv->txtail != priv->txhead && (txdesc->status1 & TXDESC_R) == 0);
 #endif
@@ -524,7 +524,7 @@ static int imxrt_transmit(FAR struct imxrt_driver_s *priv)
 #endif
 	txdesc->status1 |= (TXDESC_R | TXDESC_L | TXDESC_TC);
 
-	buf = (uint8_t *) imxrt_swap32((uint32_t) priv->dev.d_buf);
+	buf = (uint8_t *) imxrt_swap32((uint32_t)priv->dev.d_buf);
 	if (priv->rxdesc[priv->rxtail].data == buf) {
 		struct enet_desc_s *rxdesc = &priv->rxdesc[priv->rxtail];
 
@@ -549,7 +549,7 @@ static int imxrt_transmit(FAR struct imxrt_driver_s *priv)
 
 	/* Setup the TX timeout watchdog (perhaps restarting the timer) */
 
-	(void)wd_start(priv->txtimeout, IMXRT_TXTIMEOUT, imxrt_txtimeout_expiry, 1, (wdparm_t) priv);
+	(void)wd_start(priv->txtimeout, IMXRT_TXTIMEOUT, imxrt_txtimeout_expiry, 1, (wdparm_t)priv);
 
 	/* Start the TX transfer (if it was not already waiting for buffers) */
 
@@ -618,7 +618,7 @@ static int imxrt_txpoll(struct net_driver_s *dev)
 			/* Send the packet */
 
 			imxrt_transmit(priv);
-			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t) priv->txdesc[priv->txhead].data);
+			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 
 			/* Check if there is room in the device to hold another packet. If not,
 			 * return a non-zero value to terminate the poll.
@@ -794,7 +794,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 		 */
 
 		rxdesc = &priv->rxdesc[priv->rxtail];
-		arch_invalidate_dcache((uintptr_t) rxdesc, (uintptr_t) rxdesc + sizeof(struct enet_desc_s));
+		arch_invalidate_dcache((uintptr_t)rxdesc, (uintptr_t)rxdesc + sizeof(struct enet_desc_s));
 
 		/* Check if the data buffer associated with the descriptor has
 		 * been filled with valid data.
@@ -807,13 +807,13 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			 */
 
 			priv->dev.d_len = imxrt_swap16(rxdesc->length);
-			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t) rxdesc->data);
+			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)rxdesc->data);
 
 			/* Invalidate the buffer so that the correct packet will be re-read
 			 * from memory when the packet content is accessed.
 			 */
 
-			arch_invalidate_dcache((uintptr_t) priv->dev.d_buf, (uintptr_t) priv->dev.d_buf + priv->dev.d_len);
+			arch_invalidate_dcache((uintptr_t)priv->dev.d_buf, (uintptr_t)priv->dev.d_buf + priv->dev.d_len);
 
 			/* Dispatch (or drop) the newly received packet */
 
@@ -826,7 +826,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			 * queue is not full.
 			 */
 
-			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t) priv->txdesc[priv->txhead].data);
+			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 			rxdesc->status1 |= RXDESC_E;
 
 			/* Update the index to the next descriptor */
@@ -882,7 +882,7 @@ static void imxrt_txdone(FAR struct imxrt_driver_s *priv)
 		 */
 
 		txdesc = &priv->txdesc[priv->txtail];
-		arch_invalidate_dcache((uintptr_t) txdesc, (uintptr_t) txdesc + sizeof(struct enet_desc_s));
+		arch_invalidate_dcache((uintptr_t)txdesc, (uintptr_t)txdesc + sizeof(struct enet_desc_s));
 
 		txdone = false;
 		if ((txdesc->status1 & TXDESC_R) == 0 && priv->txtail != priv->txhead) {
@@ -1182,7 +1182,7 @@ static void imxrt_poll_work(FAR void *arg)
 
 	/* Setup the watchdog poll timer again in any case */
 
-	(void)wd_start(priv->txpoll, IMXRT_WDDELAY, imxrt_polltimer_expiry, 1, (wdparm_t) priv);
+	(void)wd_start(priv->txpoll, IMXRT_WDDELAY, imxrt_polltimer_expiry, 1, (wdparm_t)priv);
 	net_unlock();
 }
 
@@ -1286,11 +1286,11 @@ static int imxrt_ifup_action(struct net_driver_s *dev, bool resetphy)
 
 	/* Point to the start of the circular RX buffer descriptor queue */
 
-	putreg32((uint32_t) priv->rxdesc, IMXRT_ENET_RDSR);
+	putreg32((uint32_t)priv->rxdesc, IMXRT_ENET_RDSR);
 
 	/* Point to the start of the circular TX buffer descriptor queue */
 
-	putreg32((uint32_t) priv->txdesc, IMXRT_ENET_TDSR);
+	putreg32((uint32_t)priv->txdesc, IMXRT_ENET_TDSR);
 
 	/* And enable the MAC itself */
 
@@ -1308,7 +1308,7 @@ static int imxrt_ifup_action(struct net_driver_s *dev, bool resetphy)
 
 	/* Set and activate a timer process */
 
-	(void)wd_start(priv->txpoll, IMXRT_WDDELAY, imxrt_polltimer_expiry, 1, (wdparm_t) priv);
+	(void)wd_start(priv->txpoll, IMXRT_WDDELAY, imxrt_polltimer_expiry, 1, (wdparm_t)priv);
 
 	/* Clear all pending ENET interrupt */
 
@@ -1679,7 +1679,7 @@ static int imxrt_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 #ifdef CONFIG_ARCH_PHY_INTERRUPT
 	case SIOCMIINOTIFY: {	/* Set up for PHY event notifications */
-		struct mii_iotcl_notify_s *req = (struct mii_iotcl_notify_s *)((uintptr_t) arg);
+		struct mii_iotcl_notify_s *req = (struct mii_iotcl_notify_s *)((uintptr_t)arg);
 
 		ret = phy_notify_subscribe(dev->d_ifname, req->pid, req->signo, req->arg);
 		if (ret == OK) {
@@ -1692,20 +1692,20 @@ static int imxrt_ioctl(struct net_driver_s *dev, int cmd, unsigned long arg)
 #endif
 
 	case SIOCGMIIPHY: {		/* Get MII PHY address */
-		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t) arg);
+		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t)arg);
 		req->phy_id = priv->phyaddr;
 		ret = OK;
 	}
 	break;
 
 	case SIOCGMIIREG: {		/* Get register from MII PHY */
-		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t) arg);
+		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t)arg);
 		ret = imxrt_readmii(priv, req->phy_id, req->reg_num, &req->val_out);
 	}
 	break;
 
 	case SIOCSMIIREG: {		/* Set register in MII PHY */
-		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t) arg);
+		struct mii_ioctl_data_s *req = (struct mii_ioctl_data_s *)((uintptr_t)arg);
 		ret = imxrt_writemii(priv, req->phy_id, req->reg_num, req->val_in);
 	}
 	break;
@@ -1818,7 +1818,7 @@ static int imxrt_writemii(struct imxrt_driver_s *priv, uint8_t phyaddr, uint8_t 
 
 	/* Initiate the MII Management write */
 
-	putreg32(data | 2 << ENET_MMFR_TA_SHIFT | (uint32_t) regaddr << ENET_MMFR_RA_SHIFT | (uint32_t) phyaddr << ENET_MMFR_PA_SHIFT | ENET_MMFR_OP_WRMII | 1 << ENET_MMFR_ST_SHIFT, IMXRT_ENET_MMFR);
+	putreg32(data | 2 << ENET_MMFR_TA_SHIFT | (uint32_t)regaddr << ENET_MMFR_RA_SHIFT | (uint32_t)phyaddr << ENET_MMFR_PA_SHIFT | ENET_MMFR_OP_WRMII | 1 << ENET_MMFR_ST_SHIFT, IMXRT_ENET_MMFR);
 
 	/* Wait for the transfer to complete */
 
@@ -1867,7 +1867,7 @@ static int imxrt_readmii(struct imxrt_driver_s *priv, uint8_t phyaddr, uint8_t r
 
 	/* Initiate the MII Management read */
 
-	putreg32(2 << ENET_MMFR_TA_SHIFT | (uint32_t) regaddr << ENET_MMFR_RA_SHIFT | (uint32_t) phyaddr << ENET_MMFR_PA_SHIFT | ENET_MMFR_OP_RDMII | 1 << ENET_MMFR_ST_SHIFT, IMXRT_ENET_MMFR);
+	putreg32(2 << ENET_MMFR_TA_SHIFT | (uint32_t)regaddr << ENET_MMFR_RA_SHIFT | (uint32_t)phyaddr << ENET_MMFR_PA_SHIFT | ENET_MMFR_OP_RDMII | 1 << ENET_MMFR_ST_SHIFT, IMXRT_ENET_MMFR);
 
 	/* Wait for the transfer to complete */
 
@@ -2162,7 +2162,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 
 	/* Get an aligned TX descriptor (array) address */
 
-	addr = (uintptr_t) g_desc_pool;
+	addr = (uintptr_t)g_desc_pool;
 	priv->txdesc = (struct enet_desc_s *)addr;
 
 	/* Get an aligned RX descriptor (array) address */
@@ -2172,14 +2172,14 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 
 	/* Get the beginning of the first aligned buffer */
 
-	addr = (uintptr_t) g_buffer_pool;
+	addr = (uintptr_t)g_buffer_pool;
 
 	/* Then fill in the TX descriptors */
 
 	for (i = 0; i < CONFIG_IMXRT_ENET_NTXBUFFERS; i++) {
 		priv->txdesc[i].status1 = 0;
 		priv->txdesc[i].length = 0;
-		priv->txdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t) addr);
+		priv->txdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t)addr);
 #ifdef CONFIG_IMXRT_ENETENHANCEDBD
 		priv->txdesc[i].status2 = TXDESC_IINS | TXDESC_PINS;
 #endif
@@ -2191,7 +2191,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	for (i = 0; i < CONFIG_IMXRT_ENET_NRXBUFFERS; i++) {
 		priv->rxdesc[i].status1 = RXDESC_E;
 		priv->rxdesc[i].length = 0;
-		priv->rxdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t) addr);
+		priv->rxdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t)addr);
 #ifdef CONFIG_IMXRT_ENETENHANCEDBD
 		priv->rxdesc[i].bdu = 0;
 		priv->rxdesc[i].status2 = RXDESC_INT;
@@ -2212,7 +2212,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 
 	/* Initialize the packet buffer, which is used when sending */
 
-	priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t) priv->txdesc[priv->txhead].data);
+	priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 }
 
 /****************************************************************************

@@ -251,7 +251,7 @@
  * aligned).
  */
 
-const uintptr_t g_idle_topstack = (uintptr_t) &_ebss + CONFIG_IDLETHREAD_STACKSIZE;
+const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE;
 
 /****************************************************************************
  * Public Functions
@@ -307,10 +307,10 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
-	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
+	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
 	size_t usize = PRIMARY_RAM_END - ubase;
 
-	DEBUGASSERT(ubase < (uintptr_t) PRIMARY_RAM_END);
+	DEBUGASSERT(ubase < (uintptr_t)PRIMARY_RAM_END);
 
 	/* Return the user-space heap settings */
 
@@ -346,15 +346,15 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
-	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-	DEBUGASSERT(ubase < (uintptr_t) PRIMARY_RAM_END);
+	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
+	DEBUGASSERT(ubase < (uintptr_t)PRIMARY_RAM_END);
 
 	/* Return the kernel heap settings (i.e., the part of the heap region
 	 * that was not dedicated to the user heap).
 	 */
 
 	*heap_start = (FAR void *)USERSPACE->us_bssend;
-	*heap_size = ubase - (uintptr_t) USERSPACE->us_bssend;
+	*heap_size = ubase - (uintptr_t)USERSPACE->us_bssend;
 }
 #endif
 
@@ -377,7 +377,7 @@ void up_addregion(void)
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 	/* Allow user-mode access to region 1 */
 
-	imxrt_mpu_uheap((uintptr_t) REGION1_RAM_START, REGION1_RAM_SIZE);
+	imxrt_mpu_uheap((uintptr_t)REGION1_RAM_START, REGION1_RAM_SIZE);
 #endif
 
 #if CONFIG_MM_REGIONS > 2
@@ -388,7 +388,7 @@ void up_addregion(void)
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 	/* Allow user-mode access to region 2 */
 
-	imxrt_mpu_uheap((uintptr_t) REGION2_RAM_START, REGION2_RAM_SIZE);
+	imxrt_mpu_uheap((uintptr_t)REGION2_RAM_START, REGION2_RAM_SIZE);
 #endif
 #endif							/* CONFIG_MM_REGIONS > 2 */
 }

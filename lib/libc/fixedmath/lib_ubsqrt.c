@@ -82,7 +82,7 @@ ub16_t ub32sqrtub16(ub32_t a)
 	if (xk == UINT64_MAX) {
 		/* Avoid 'xk + n / xk' overflow on first iteration. */
 
-		xk = (uint64_t) 1 << 63;
+		xk = (uint64_t)1 << 63;
 	}
 
 	do {
@@ -99,7 +99,7 @@ ub16_t ub32sqrtub16(ub32_t a)
 	 * 'xk' holds square root of 'a' in ub16_t format.
 	 */
 
-	return (ub16_t) xk;
+	return (ub16_t)xk;
 }
 
 #endif
@@ -124,7 +124,7 @@ ub8_t ub16sqrtub8(ub16_t a)
 	if (xk == UINT32_MAX) {
 		/* Avoid 'xk + n / xk' overflow on first iteration. */
 
-		xk = (uint32_t) 1 << 31;
+		xk = (uint32_t)1 << 31;
 	}
 
 	do {
@@ -141,5 +141,5 @@ ub8_t ub16sqrtub8(ub16_t a)
 	 * 'xk' holds square root of 'a' in ub8_t format.
 	 */
 
-	return (ub8_t) xk;
+	return (ub8_t)xk;
 }

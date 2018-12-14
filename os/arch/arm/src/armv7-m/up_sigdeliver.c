@@ -138,15 +138,15 @@ void up_sigdeliver(void)
 	 * more signal deliveries while processing the current pending signals.
 	 */
 
-	sigdeliver = (sig_deliver_t) rtcb->xcp.sigdeliver;
+	sigdeliver = (sig_deliver_t)rtcb->xcp.sigdeliver;
 	rtcb->xcp.sigdeliver = NULL;
 
 	/* Then restore the task interrupt state */
 
 #ifdef CONFIG_ARMV7M_USEBASEPRI
-	irqrestore((uint8_t) regs[REG_BASEPRI]);
+	irqrestore((uint8_t)regs[REG_BASEPRI]);
 #else
-	irqrestore((uint16_t) regs[REG_PRIMASK]);
+	irqrestore((uint16_t)regs[REG_PRIMASK]);
 #endif
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
