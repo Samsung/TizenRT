@@ -112,7 +112,7 @@ static inline void sched_kucleanup(void)
 		if (!address) {
 			return;
 		}
-		heap = mm_get_heap_info(address);
+		heap = mm_get_heap(address);
 		if (heap && heap->mm_semaphore.semcount <= 0) {
 			continue;
 		}

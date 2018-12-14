@@ -118,9 +118,6 @@ typedef sem_t uv_sem_t;
 typedef pthread_cond_t uv_cond_t;
 typedef pthread_mutex_t uv_rwlock_t;	// no rwlock for nuttx
 
-ssize_t readv(int __fd, const struct iovec *__iovec, int __count);
-ssize_t writev(int __fd, const struct iovec *__iovec, int __count);
-
 //-----------------------------------------------------------------------------
 // etc
 int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);

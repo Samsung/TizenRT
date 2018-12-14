@@ -542,10 +542,10 @@ char *get_json_string_from_file(const char *filename)
 	FILE *fp = NULL;
 	char *json_str = NULL;
 	size_t size = get_json_file_size(filename);
-	size_t readed = 0;
+	size_t read = 0;
 	int fp_acess_cnt = 0;
 
-	if (size <= 0) {
+	if (size == 0) {
 		THINGS_LOG_E(TAG, "Failed converting to JSON");
 		return NULL;
 	} else {
@@ -562,22 +562,20 @@ char *get_json_string_from_file(const char *filename)
 		return NULL;
 	}
 	// 2. Json String read from the given file.
-	size_t bytes_read = 0;
-	while (readed < size && fp_acess_cnt < MAX_FILE_ACCESS_CNT) {
-		bytes_read = fread(&(json_str[readed]), 1, size - readed, fp);
-		readed += bytes_read;
-		THINGS_LOG_D(TAG, "Read Size: %d, total Size =%d", readed, size);
+	while (read < size && fp_acess_cnt < MAX_FILE_ACCESS_CNT) {
+		read += fread(&(json_str[read]), 1, size - read, fp);
+		THINGS_LOG_D(TAG, "Read Size: %d, total Size =%d", read, size);
 		fp_acess_cnt++;
 	}
 
 	if (fp_acess_cnt >= MAX_FILE_ACCESS_CNT) {
-		THINGS_LOG_V(TAG, "Access-Times is Over for File Read. (Readed Size: %d, total Size =%d)", readed, size);
+		THINGS_LOG_V(TAG, "Access-Times is Over for File Read. (Readed Size: %d, total Size =%d)", read, size);
 		things_free(json_str);
 		fclose(fp);
 		return NULL;
 	}
 
-	json_str[readed] = '\0';
+	json_str[read] = '\0';
 
 	fclose(fp);
 	fp = NULL;
@@ -1974,12 +1972,9 @@ bool dm_is_rsc_published(void)
 static things_resource_s *register_resource(things_server_builder_s *p_builder, struct things_resource_info_s *resource, const char *id)
 {
 	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
 	if (NULL != resource) {
 		THINGS_LOG_D(TAG, "RESOURCE TO REGISTER : %s", resource->uri);
-
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
+		char res_uri[MAX_URI_LENGTH + 1] = { 0 };
 		strncat(res_uri, resource->uri, MAX_URI_LENGTH);
 
 		ret = p_builder->create_resource(p_builder, res_uri, resource->resource_types[0],
@@ -1997,94 +1992,6 @@ static things_resource_s *register_resource(things_server_builder_s *p_builder, 
 			p_builder->add_interface_type(ret, resource->interface_types[it_num]);
 			THINGS_LOG_D(TAG, "add_interface_type : %s", resource->interface_types[it_num]);
 		}
-	} else {
-		THINGS_LOG_V(TAG, "Invalid Input Param ");
-	}
-
-	return ret;
-}
-
-static things_resource_s *register_device_resource(things_server_builder_s *p_builder, st_device_s *device, const char *id)
-{
-	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
-	if (NULL != device) {
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
-		strncat(res_uri, OC_RSRVD_DEVICE_URI, MAX_URI_LENGTH);
-
-		ret = p_builder->create_resource(p_builder, res_uri, OC_RSRVD_RESOURCE_TYPE_DEVICE, OC_RSRVD_INTERFACE_READ, 0, 0, 1);
-
-		p_builder->add_resource_type(ret, device->type);
-
-		ret->rep = things_create_representation_inst(NULL);
-		if (ret->rep) {
-			THINGS_LOG_D(TAG, "[/oic/d] name :%s", device->name);
-			THINGS_LOG_D(TAG, "[/oic/d] type :%s", device->type);
-			THINGS_LOG_D(TAG, "[/oic/d] ver. Spec :%s", OC_SPEC_VERSION);
-			THINGS_LOG_D(TAG, "[/oic/d] ver. data_model :%s", OC_DATA_MODEL_VERSION);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DEVICE_NAME, device->name);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DEVICE_ID, device->device_id);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_SPEC_VERSION, OC_SPEC_VERSION);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DATA_MODEL_VERSION, OC_DATA_MODEL_VERSION);
-		} else {
-			THINGS_LOG_V(TAG, "Not able to create representation");
-		}
-	} else {
-		THINGS_LOG_V(TAG, "Invalid Input Param ");
-	}
-
-	return ret;
-}
-
-static things_resource_s *register_platform_resource(things_server_builder_s *p_builder, st_device_s *device, const char *id)
-{
-	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
-	if (NULL != device) {
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
-		strncat(res_uri, OC_RSRVD_PLATFORM_URI, MAX_URI_LENGTH);
-
-		ret = p_builder->create_resource(p_builder, res_uri, OC_RSRVD_RESOURCE_TYPE_PLATFORM, OC_RSRVD_INTERFACE_READ, 0, 0, 1);
-
-		ret->rep = things_create_representation_inst(NULL);
-		if (ret->rep) {
-			THINGS_LOG_D(TAG, "[/oic/p] platform ID :%s", device->device_id);
-			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer :%s", device->mnid);
-			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer_url :%s", device->manufacturer_url);
-			THINGS_LOG_D(TAG, "[/oic/p] Model Name :%s", device->model_num);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. Plaform :%s", device->ver_p);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. OS :%s", device->ver_os);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. HW :%s", device->ver_hw);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. FW :%s", device->ver_fw);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. vid :%s", device->vid);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_ID, device->device_id);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, device->mnid);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MODEL_NUM, device->model_num);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_VERSION, device->ver_p);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_OS_VERSION, device->ver_os);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_HARDWARE_VERSION, device->ver_hw);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_FIRMWARE_VERSION, device->ver_fw);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_URL, device->manufacturer_url);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_VID, device->vid);
-		} else {
-			THINGS_LOG_V(TAG, "Not able to create representation");
-		}
-
 	} else {
 		THINGS_LOG_V(TAG, "Invalid Input Param ");
 	}
@@ -2142,12 +2049,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		return 0;
 	}
 
-	int device_num = 0;
-	char id[11] = { 0 };
-	int n_count_of_children = 0;
-
 	st_device_s *device = NULL;
-	struct things_resource_info_s *resource = NULL;
 #ifdef CONFIG_ST_THINGS_COLLECTION
 	struct things_resource_s *p_collection_resource = NULL;
 #endif
@@ -2157,6 +2059,8 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 	device = dm_get_info_of_dev(0);
 	if (NULL != device) {
+		int n_count_of_children = 0;
+		char id[11] = { 0 };
 		snprintf(id, sizeof(id), "%d", device->no);
 		THINGS_LOG_D(TAG, "==================== Device (%s) ====================", id);
 #ifdef CONFIG_ST_THINGS_COLLECTION
@@ -2167,7 +2071,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		} else {
 			THINGS_LOG_V(TAG, "COLLECTION CHILDREN RESOURCE(S) CNT : %d", device->col_cnt);
 
-			memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
+			char res_uri[MAX_URI_LENGTH + 1] = { 0 };
 			strncat(res_uri, device->collection[0].uri, MAX_URI_LENGTH);
 
 			p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0]);
@@ -2188,7 +2092,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			if (p_collection_resource != NULL) {
 				THINGS_LOG_D(TAG, "DEVICE RESOURCE(S) CNT : %d", device->col_cnt);
 				for (int capa_num = 0; capa_num < device->collection[0].link_cnt; capa_num++) {
-					resource = device->collection[0].links[capa_num];
+					struct things_resource_info_s *resource = device->collection[0].links[capa_num];
 					device->pchild_resources[n_count_of_children++] = register_resource(p_builder, resource, id);
 				}			// End of for children resource(s) registration loop
 			}				// End of single device
@@ -2203,26 +2107,24 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 		THINGS_LOG_D(TAG, "SINGLE RESOURCE(S) CNT : %d", device->sig_cnt);
 		for (int capa_num = 0; capa_num < device->sig_cnt; capa_num++) {
-			resource = &device->single[capa_num];
+			struct things_resource_info_s *resource = &device->single[capa_num];
 			device->pchild_resources[n_count_of_children++] = register_resource(p_builder, resource, id);
 		}					// End of for single resource registration loop
 
 		// Create the Device(/oic/d) and Platform (/oic/p)
 		// ex) Aircon Multi-Model
-		if (device_num < 1) {
-			// for hosting device
-			THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO DEVICE(/oic/d).");
-			p_builder->set_device_info(p_builder, device->name, device->type);
-			THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO PLATFORM(/oic/p).");
-			p_builder->set_platform_info(p_builder, device->model_num,	// gDeviceModel,
-											device->ver_p,	// gPlatformVersion,
-											device->ver_os,	// gOSVersion,
-											device->ver_hw,	// gHWVersions,
-											device->ver_fw,	// gFWVersions,
-											device->vid,	// gVenderId
-											device->mnid,	// manufacturer_name
-											device->manufacturer_url);	// manufacturer_url
-		}
+		// for hosting device
+		THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO DEVICE(/oic/d).");
+		p_builder->set_device_info(p_builder, device->name, device->type);
+		THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO PLATFORM(/oic/p).");
+		p_builder->set_platform_info(p_builder, device->model_num,	// gDeviceModel,
+										device->ver_p,	// gPlatformVersion,
+										device->ver_os,	// gOSVersion,
+										device->ver_hw,	// gHWVersions,
+										device->ver_fw,	// gFWVersions,
+										device->vid,	// gVenderId
+										device->mnid,	// manufacturer_name
+										device->manufacturer_url);	// manufacturer_url
 
 		THINGS_LOG_D(TAG,
 			"[n_count_of_children : %d] : [device_cnt : %d]",
@@ -2235,31 +2137,6 @@ int dm_register_resource(things_server_builder_s *p_builder)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return 1;
-}
-
-struct things_resource_s *dm_get_resource_instance(const char *uri, const int id)
-{
-	things_resource_s *ret = NULL;
-	st_device_s *device = dm_get_info_of_dev(0);
-	if (device) {
-		for (int index = 0; index < device->capa_cnt; index++) {
-			if (device->pchild_resources[index] == NULL) {
-				THINGS_LOG_V(TAG, "Resource with URI : %s not exist !!!!", uri);
-				break;
-			} else if (strncmp(device->pchild_resources[index]->uri, uri, strlen(uri)) == 0) {
-				THINGS_LOG_D(TAG, "Found %s from device[%d] : %s!!!!", uri, id, device->device_id);
-
-				char *sValue = NULL;
-
-				device->pchild_resources[index]->rep->things_get_value(device->pchild_resources[index]->rep, OC_RSRVD_DEVICE_ID, &sValue);
-				ret = device->pchild_resources[index];
-				break;
-			} else {
-				THINGS_LOG_D(TAG, "[%d] Resource URI : %s", index, device->pchild_resources[index]->uri);
-			}
-		}
-	}
-	return ret;
 }
 
 int dm_update_things_cloud(es_cloud_signup_s *cl_data)

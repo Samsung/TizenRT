@@ -32,7 +32,6 @@ typedef void (*things_pin_display_close_func_type)(void);
 typedef void (*things_pin_generated_func_type)(char *pin_data, size_t pin_size);
 typedef void (*things_get_easysetup_state_func_type)(things_es_enrollee_state_e state);
 typedef void (*things_cloud_con_result_func_type)(int result, char *domain, char *access_token);
-typedef void (*things_abort_easysetup_func_type)(things_es_enrollee_abort_e level);
 typedef void (*things_sec_otm_state_func_type)(const char *addr, uint16_t port, const char *uuid, int event);
 typedef int (*things_stop_soft_ap_func_type)(int value);
 typedef int (*things_get_user_confirm_func_type)(void);
@@ -48,7 +47,7 @@ int things_notify_observers(const char *uri);
 int things_reset(void *remote_owner, things_es_enrollee_reset_e reset_type);
 
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func);
-int things_return_user_opinion_for_reset(int b_reset_start);
+int things_return_user_opinion_for_reset(int reset);
 int things_register_handle_request_func(things_handle_request_func_type get_func, things_handle_request_func_type set_func);
 int things_register_pin_generated_func(things_pin_generated_func_type func);
 int things_register_pin_display_close_func(things_pin_display_close_func_type func);

@@ -316,7 +316,6 @@ int st_things_deinitialize(void)
 
 int st_things_start(void)
 {
-	THINGS_LOG_INIT();
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_INITIALIZED != g_stack_status) {

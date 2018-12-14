@@ -51,7 +51,7 @@ typedef struct {
 	wifi_freq_e supported_freq;
 	char ssid[WIFIMGR_SSID_LEN+1];		// target network name, i.e. SSID for WLAN, MAC address for BT.
 	char cred[WIFIMGR_PASSPHRASE_LEN+1];		// credential information.
-	wifi_auth_type_e auth_type;
+	wifi_sec_type_e sec_type;
 	wifi_enc_type_e enc_type;
 	int discovery_channel;
 } wifi_resource_s;
@@ -97,7 +97,6 @@ OCStackResult set_device_property(es_device_property *device_property);
 OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state);
 OCStackResult set_enrollee_err_code(es_error_code_e es_err_code);
 
-void get_target_network_info_from_prov_resource(char *, char *);
 void register_wifi_rsrc_event_callback(es_wifi_cb);
 void register_cloud_rsrc_event_callback(es_cloud_cb);
 void register_dev_conf_rsrc_event_callback(es_dev_conf_cb);

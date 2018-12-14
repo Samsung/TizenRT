@@ -100,7 +100,7 @@ void generate_pin_cb(char *pin, size_t pin_size)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	if (NULL == pin || pin_size <= 0) {
+	if (NULL == pin || pin_size == 0) {
 		THINGS_LOG_E(TAG, "INVALID PIN");
 		return;
 	}
@@ -582,8 +582,8 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// TODO : Fix Bug for 64bit support.
 	memset(p_info->e_ssid, 0, WIFIMGR_SSID_LEN + 1);
 	memset(p_info->security_key, 0, WIFIMGR_PASSPHRASE_LEN + 1);
-	memset(p_info->enc_type, 0, MAX_TYPE_ENC);
-	memset(p_info->auth_type, 0, MAX_TYPE_AUTH);
+	memset(p_info->enc_type, 0, MAX_TYPE_ENC + 1);
+	memset(p_info->sec_type, 0, MAX_TYPE_SEC + 1);
 	memset(p_info->channel, 0, MAX_CHANNEL);
 	memset(p_info->bss_id, 0, WIFIMGR_MACADDR_STR_LEN + 1);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);
@@ -596,49 +596,49 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		things_strncpy(p_info->security_key, event_data->pwd, strlen(event_data->pwd));
 	}
 
-	if (event_data->authtype >= NONE_AUTH && event_data->authtype <= WPA2_PSK) {
-		switch (event_data->authtype) {
+	if (event_data->sectype >= NONE_SEC && event_data->sectype <= WPA2_PSK) {
+		switch (event_data->sectype) {
 		case WEP:
-			things_strncpy(p_info->auth_type, "WEP", strlen("WEP"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WEP, strlen(SEC_TYPE_WEP));
 			break;
 		case WPA_PSK:
-			things_strncpy(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA_PSK, strlen(SEC_TYPE_WPA_PSK));
 			break;
 		case WPA2_PSK:
-			things_strncpy(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA2_PSK, strlen(SEC_TYPE_WPA2_PSK));
 			break;
-		case NONE_AUTH:
+		case NONE_SEC:
 		default:
-			things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 	}
 
 	if (event_data->enctype >= NONE_ENC && event_data->enctype <= TKIP_AES) {
 		switch (event_data->enctype) {
 		case WEP_64:
-			things_strncpy(p_info->enc_type, "WEP_64", strlen("WEP_64"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_64, strlen(ENC_TYPE_WEP_64));
 			break;
 		case WEP_128:
-			things_strncpy(p_info->enc_type, "WEP_128", strlen("WEP_128"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_128, strlen(ENC_TYPE_WEP_128));
 			break;
 		case TKIP:
-			things_strncpy(p_info->enc_type, "TKIP", strlen("TKIP"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP, strlen(ENC_TYPE_TKIP));
 			break;
 		case AES:
-			things_strncpy(p_info->enc_type, "AES", strlen("AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_AES, strlen(ENC_TYPE_AES));
 			break;
 		case TKIP_AES:
-			things_strncpy(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP_AES, strlen(ENC_TYPE_TKIP_AES));
 			break;
 		default:
-			things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 	}
 
 	if (event_data->discovery_channel != -1) {
@@ -647,14 +647,14 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 
 	THINGS_LOG_D(TAG, "e_ssid : %s", p_info->e_ssid);
 	THINGS_LOG_D(TAG, "security_key : %s", p_info->security_key);
-	THINGS_LOG_D(TAG, "auth_type : %s", p_info->auth_type);
+	THINGS_LOG_D(TAG, "sec_type : %s", p_info->sec_type);
 	THINGS_LOG_D(TAG, "enc_type : %s", p_info->enc_type);
 	THINGS_LOG_D(TAG, "channel : %s", p_info->channel);
 	THINGS_LOG_D(TAG, "Copied ssid = %s", g_wifi_prov_data->ssid);
 	THINGS_LOG_D(TAG, "Copied pwd = %s", g_wifi_prov_data->pwd);
 	THINGS_LOG_D(TAG, "Copied enctype = %d", g_wifi_prov_data->enctype);
 	THINGS_LOG_D(TAG, "Copied discovery_channel = %d", g_wifi_prov_data->discovery_channel);
-	THINGS_LOG_D(TAG, "Copied authtype = %d", g_wifi_prov_data->authtype);
+	THINGS_LOG_D(TAG, "Copied sectype = %d", g_wifi_prov_data->sectype);
 
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
@@ -831,13 +831,6 @@ void *esm_register_cloud_cb(void *func)
 {
 	g_cloud_data_cb_to_app = func;
 	return NULL;
-}
-
-esm_result_e esm_set_wifi_conn_err(void)
-{
-	es_set_state(ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER);
-	es_set_error_code(ES_ERRCODE_UNKNOWN);
-	return ESM_OK;
 }
 
 int esm_register_pin_generated_cb(pin_generated_func_type func)

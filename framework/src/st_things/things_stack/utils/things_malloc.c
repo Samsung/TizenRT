@@ -96,7 +96,6 @@ void things_free(void *ptr)
 #endif
 
 	free(ptr);
-	ptr = NULL;
 }
 #endif
 

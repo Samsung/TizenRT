@@ -93,16 +93,6 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
 
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-typedef struct s_abort_s {
-	pthread_t *h_thread;
-	things_es_enrollee_abort_e level;
-} s_abort_s;
-
-things_abort_easysetup_func_type g_abort_easysetup = NULL;
-static void *t_things_abort_loop(s_abort_s *contents);
-#endif
-
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
 	int res = 0;
@@ -190,16 +180,13 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	THINGS_LOG_D(TAG, "Create a file regarding the device's resource");
 	int ret = 0;
 	int size_d = sizeof(deviceDef);
-	FILE *fp;
-	char *json_str = NULL;
-	cJSON *root;
-	cJSON *h_root;
-	fp = fopen(abs_json_path, "r");
-	if (fp) {
+	FILE *fp = fopen(abs_json_path, "r");
+	if (fp != NULL) {
 		THINGS_LOG_V(TAG, "File is exist...");
 		fclose(fp);
-		json_str = get_json_string_from_file(abs_json_path);
-		h_root = cJSON_Parse(deviceDef);
+		cJSON *root = NULL;
+		char *json_str = get_json_string_from_file(abs_json_path);
+		cJSON *h_root = cJSON_Parse(deviceDef);
 		if (json_str != NULL && strlen(json_str) > 0) {
 			root = cJSON_Parse((const char *)json_str);
 			if (root == NULL) {
@@ -227,7 +214,6 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 			THINGS_LOG_V(TAG, "A resource file alreasy exists");
 		}
 	} else {
-		fclose(fp);
 		THINGS_LOG_V(TAG, "File did not exist...Create file");
 		fp = fopen(abs_json_path, "w+");
 		if (!fp) {
@@ -266,6 +252,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	if (!dm_init_module(abs_json_path)) {
 		THINGS_LOG_E(TAG, "dm_init_module() failed");
 		things_free(abs_json_path);
+		things_log_shutdown();
 		return 0;
 	}
 	is_things_module_initialized = 1;
@@ -294,7 +281,7 @@ int things_deinitialize_stack(void)
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	dm_termiate_module();
-
+	things_log_shutdown();
 	deinit_iotivity_api_lock();
 
 	is_things_module_initialized = 0;
@@ -637,13 +624,13 @@ bool things_get_reset_mask(rst_state_e value)
 	return (int)(m_reset_bit_mask & value) != 0 ? true : false;
 }
 
-int things_return_user_opinion_for_reset(int b_reset_start)	// b_reset_start : User opinion.
+int things_return_user_opinion_for_reset(int reset)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
 	int result = 0;
 
-	if (b_reset_start == true && b_reset_continue_flag == true) {	// User allow Reset-Starting.
+	if (reset == 1 && b_reset_continue_flag == true) {	// User allow Reset-Starting.
 		things_set_reset_mask(RST_USER_CONFIRM_COMPLETED);
 		result = 1;
 	} else {					// User not allow Reset.
@@ -778,6 +765,7 @@ GOTO_OUT:
 		// 11. If reset-processing is triggered by remote-owner, then Notify result of Reset.
 		THINGS_LOG_D(TAG, "Notify result of reset to remote-client.(mobile)");
 		notify_result_of_reset(args->remote_owner, result);
+		things_free(args);
 	}
 	// 12. If there is Reset Result Call-Back Function, then Notify result of Reset to st_things-Application.
 	if (things_cb_func_for_reset_result) {	// Notify result of reset to st_things.
@@ -785,10 +773,6 @@ GOTO_OUT:
 		things_cb_func_for_reset_result(result);
 	}
 
-	if (args) {
-		things_free(args);
-		args = NULL;
-	}
 	pthread_mutex_lock(&m_thread_oic_reset);
 	h_thread_things_reset = 0;
 	b_thread_things_reset = false;
@@ -797,69 +781,6 @@ GOTO_OUT:
 	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
 }
-
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level)
-{
-	s_abort_s *ARGs = NULL;
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	if (h_thread_abort == NULL) {
-		THINGS_LOG_E(TAG, "h_thread_abort is NULL.");
-		return eh_result;
-	}
-
-	if ((*h_thread_abort) == 0) {
-		if ((ARGs = (s_abort_s *) things_malloc(sizeof(s_abort_s))) == NULL) {
-			THINGS_LOG_E(TAG, "Memory Allocation is failed.(for abort Thread)");
-			return OC_EH_ERROR;
-		}
-
-		ARGs->h_thread = h_thread_abort;
-		ARGs->level = level;
-
-		eh_result = OC_EH_OK;
-
-		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_ABORT_THREAD) != 0) {
-			THINGS_LOG_E(TAG, "Create thread is failed.(for abort Thread)");
-			*h_thread_abort = 0;
-			things_free(ARGs);
-			pthread_detach(h_thread_abort);
-			eh_result = OC_EH_ERROR;
-		}
-	} else {
-		THINGS_LOG_D(TAG, "Already called Thread. So, OC_EH_NOT_ACCEPTABLE");
-		eh_result = OC_EH_NOT_ACCEPTABLE;
-	}
-
-	return eh_result;
-}
-
-static void *__attribute__((optimize("O0"))) t_things_abort_loop(s_abort_s *contents)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	if (contents == NULL) {
-		THINGS_LOG_E(TAG, "contents is NULL.");
-		goto GOTO_OUT;
-	}
-
-	if (g_abort_easysetup != NULL) {
-		THINGS_LOG_E(TAG, "Registered Abort Function. So, Call Function st_things API.");
-		g_abort_easysetup(contents->level);
-	}
-
-GOTO_OUT:
-	if (contents) {
-		*(contents->h_thread) = 0;
-		things_free(contents);
-		contents = NULL;
-	}
-
-	THINGS_LOG_D(TAG, "Exit.");
-	return NULL;
-}
-#endif
 
 int things_is_things_module_initialized(void)
 {

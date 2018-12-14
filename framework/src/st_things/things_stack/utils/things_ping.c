@@ -77,7 +77,6 @@ things_ping_s* p_ping = NULL;
 static void *thd_ping_loop(things_ping_s *ping);
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
 static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
-static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
 
 static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16_t port);
 static void terminate_things_ping_s(things_ping_s *ping);
@@ -128,12 +127,10 @@ bool things_ping_terminate(void)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-	things_ping_s *ping = NULL;
-
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list) {
 		THINGS_LOG_D(TAG, "things_ping_s terminate.");
-
+		things_ping_s *ping = NULL;
 		while ((ping = (things_ping_s *) list->pop(list)) != NULL) {
 			THINGS_LOG_D(TAG, "Terminate ping.(%s)", ping->addr);
 			if (cas_mask(ping, PING_ST_STARTTHREAD, true, PING_ST_INIT) == true) {
@@ -303,8 +300,7 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "Start FindResource for /oic/ping to Cloud(%s)", ping->addr);
 	int retry_cnt = MAX_RETRY_CNT;
 	do {						// /oic/ping Resource Finding Start
-		int sleepTime = 1;
-		sleepTime = find_resource_oic_ping(ping);
+		int sleepTime = find_resource_oic_ping(ping);
 		sleep(sleepTime);
 	} while (!ping->continue_thread && ping->handle_thread && (retry_cnt--) > 0);
 
@@ -365,7 +361,6 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 	THINGS_LOG_D(TAG, "Enter.");
 
 	int64_t *interval = NULL;
-	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 	things_ping_s *ping = (things_ping_s *) ctx;
 
 	if (ctx == (void *)DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
@@ -374,6 +369,7 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 	}
 
 	if (client_response) {
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 		THINGS_LOG_D(TAG, "ctx=0x%X", ctx);
 		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
 
@@ -486,75 +482,6 @@ static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handl
 		THINGS_LOG_W(TAG, "handler_ping_request received Null client_response");
 	}
 
-	THINGS_LOG_D(TAG, "Exit.");
-	return OC_STACK_DELETE_TRANSACTION;
-}
-
-static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	int64_t *interval = NULL;
-	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
-	things_ping_s *ping = (things_ping_s *) ctx;
-	(void)handle;
-
-	if (ctx == (void *)DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
-		THINGS_LOG_D(TAG, "content value is invalid.(ctx=0x%X)", ctx);
-		return OC_STACK_DELETE_TRANSACTION;
-	}
-
-	if (client_response) {
-		THINGS_LOG_D(TAG, "ctx=0x%X", ctx);
-		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
-
-		THINGS_LOG_D(TAG, "Device =============> Discovered @ %s:%d", client_response->devAddr.addr, client_response->devAddr.port);
-
-		if (strncmp(ping->addr, client_response->devAddr.addr, strlen(client_response->devAddr.addr)) != 0) {
-			THINGS_LOG_E(TAG, "[Error]: Mismatching address.(ping->addr=%s, recvAddr=%s)", ping->addr, client_response->devAddr.addr);
-			return OC_STACK_DELETE_TRANSACTION;
-		}
-		// Parsing payload.
-		if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-			OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
-			while (val != NULL) {
-				things_rep_payload_value_print(val);
-				val = val->next;
-			}
-
-			OCRepPayloadGetIntArray(((const OCRepPayload *)client_response->payload), INTERVAL_ARRAY, &interval, dimensions);
-			THINGS_LOG_D(TAG, "dimension=[%d, %d, %d]", dimensions[0], dimensions[1], dimensions[2]);
-			for (int i = 0; i < dimensions[0]; i++) {
-				THINGS_LOG_D(TAG, "interval[%d]=%d", i, interval[i]);
-			}
-		}
-		// Result processing.
-		switch (client_response->result) {
-		case OC_STACK_RESOURCE_CHANGED:
-			THINGS_LOG_D(TAG, "update-Ping request Success.");
-			if (set_interval(ping, interval, dimensions[0], PING_ST_INTUPDATE) == true) {
-				THINGS_LOG_D(TAG, "Success Apply Interval.");
-			}
-			break;
-		case OC_STACK_TIMEOUT:
-			THINGS_LOG_E(TAG, "Occurred Time-Out Event.");
-			unset_mask(ping, PING_ST_SIGNIN|PING_ST_TCPCONNECT);
-			check_ping_thread(ping);
-			CAUtilTCPDisconnectSession(ping->addr, ping->port, 64);
-			THINGS_LOG_E(TAG, "SEND PING TIME OUT, CLOUD DISCONNECT");
-			break;
-		default:
-			THINGS_LOG_D(TAG, "Not Support StackResult: %s(%d)", get_result(client_response->result), client_response->result);
-			break;
-		}
-	} else {
-		THINGS_LOG_V(TAG, "handler_ping_update_request received Null client_response");
-	}
-	/*! Added by st_things for memory Leak fix
-	 */
-	if (NULL != interval) {
-		things_free(interval);
-	}
 	THINGS_LOG_D(TAG, "Exit.");
 	return OC_STACK_DELETE_TRANSACTION;
 }
@@ -942,7 +869,6 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-	int i = 0;
 	bool res = false;
 	int64_t min_interval = 0;
 
@@ -964,6 +890,7 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 	if (get_mask(ping, confirmState) == true && get_mask(ping, PING_ST_TIMEOUT) == false) {
 		min_interval = find_minimum_from_intervals(intervals, int_ea);
 		memset(ping->interval, 0, sizeof(int64_t) * MAX_INTERVAL_EA);
+		int i = 0;
 		for (i = 0; i < int_ea; i++) {
 			THINGS_LOG_D(TAG, "Setting interval[%d]=%d", i, min_interval);
 			ping->interval[i] = min_interval;

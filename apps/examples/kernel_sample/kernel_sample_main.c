@@ -488,7 +488,7 @@ static int user_main(int argc, char *argv[])
 #endif
 	}
 
-	printf("user_main: Exitting\n");
+	printf("user_main: Exiting\n");
 	return 0;
 }
 

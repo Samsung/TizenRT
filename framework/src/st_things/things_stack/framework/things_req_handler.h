@@ -35,7 +35,6 @@ typedef struct things_request_handler_s {
 
 things_request_handler_s *get_handler_instance(void);
 
-typedef int (*stop_softap_func_type)(int value);
 typedef int (*handle_request_func_type)(struct things_resource_s *res);
 typedef OCEntityHandlerResult(*handle_request_interface_cb)(things_resource_s **ppst_target_resource);
 

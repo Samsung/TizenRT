@@ -53,14 +53,12 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_NET_DHCP),y)
-ASRCS		=
-CSRCS		= dhcpd.c
-else
 ifeq ($(CONFIG_NET_LWIP_DHCP),y)
 ASRCS		=
 CSRCS		= dhcpd_lwip.c
-endif
+else
+ASRCS		=
+CSRCS		= dhcpd.c
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

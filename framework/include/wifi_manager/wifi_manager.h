@@ -302,7 +302,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 
 /**
- * @brief Connect to an access point.
+ * @brief Connect to an access point, including re(auto)connect configuration.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
  * @param[in] reconn_config reconnect type, interval, minimum or maximum interval is set
@@ -315,7 +315,6 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
  * @brief Connect to an access point.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
- * @param[in] reconn_config reconnect type, interval, minimum or maximum intervals is set
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */

@@ -52,13 +52,13 @@
 #include "utils/things_rtos_util.h"
 #include "things_iotivity_lock.h"
 
-#define MAX_CI_ADDRESS          256
-#define RESOURCE_DISCOVERY_QUERY "/oic/res"
+#define MAX_CI_ADDRESS              256
+#define RESOURCE_DISCOVERY_QUERY    "/oic/res"
 #define RESOURCE_DISCOVERY_QUERY_DI "/oic/res?di="
 
-#define ERR_UPPER_UNIT  10000	//!< Unit of Network-State for Cloud Error-Code
-#define MAX_SIGNUP_SENDNUM  1	//!< Max re-transmission count of send_cnt_sign_up variable.
-#define MAX_RETRY_RSCPUBLISH    10	//!< Max re-transmission count of retranslate_rsc_publish_cnt variable.
+#define ERR_UPPER_UNIT              10000	//!< Unit of Network-State for Cloud Error-Code
+#define MAX_SIGNUP_SENDNUM          1	//!< Max re-transmission count of send_cnt_sign_up variable.
+#define MAX_RETRY_RSCPUBLISH        10	//!< Max re-transmission count of retranslate_rsc_publish_cnt variable.
 
 #define TAG "[cloudmnger]"
 
@@ -67,36 +67,36 @@ typedef void *(*pthread_func_type)(void *);
 /*! Cloud Session Management enum. */
 typedef enum {
 	CISESS_NULL = -2,
-	CISESS_APDISCON = -1,		//!< -1 : AP Disconnected.
-	CISESS_STOP = 0,			//!<  0 : Cloud Connection Disconnected & AP Connected.
-	CISESS_BUSY = 1,			//!<  1 : Cloud Connection Connecting & Connected. (Busy)
-	CISESS_STOP_TRIGGER = 2,	//!<  2 : Triggered for Cloud Connection disconnect.
-	CISESS_SIGNOUT = 3			//!<  3 : Sign-Out from Cloud.
+	CISESS_APDISCON = -1,           //!< -1 : AP Disconnected.
+	CISESS_STOP = 0,                //!<  0 : Cloud Connection Disconnected & AP Connected.
+	CISESS_BUSY = 1,                //!<  1 : Cloud Connection Connecting & Connected. (Busy)
+	CISESS_STOP_TRIGGER = 2,        //!<  2 : Triggered for Cloud Connection disconnect.
+	CISESS_SIGNOUT = 3              //!<  3 : Sign-Out from Cloud.
 } ci_session_level_e;
 
 /*! Provisioned Data + Time-Out Data. */
 typedef struct es_cloud_event_timeout_s {
-	things_timeout_s timeOut;			//!< Time-Out value(unit: seconds)
-	es_cloud_prov_data_s event;	//!< Cloud Provisioned Data
+	things_timeout_s timeOut;       //!< Time-Out value(unit: seconds)
+	es_cloud_prov_data_s event;     //!< Cloud Provisioned Data
 } es_cloud_event_timeout_s;
 
 volatile static ci_session_level_e g_qis_cloud_thread_running = CISESS_APDISCON;	//!< Variable for managing Cloud session.(No cached)
 
-static int send_cnt_sign_up = 0;	//!< Counter for Sign-UP re-transmission process.
-static int retranslate_rsc_publish_cnt = 0;	//!< Counter for Resource-Publish re-transmission process.
+static int send_cnt_sign_up = 0;                         //!< Counter for Sign-UP re-transmission process.
+static int retranslate_rsc_publish_cnt = 0;              //!< Counter for Resource-Publish re-transmission process.
 
-static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;	//!< Mutex variable for thread-safety of start_ci_connection().
-static pthread_mutex_t g_es_tcp_session_mutex = PTHREAD_MUTEX_INITIALIZER;	//!< Mutex variable for thread-safety of ci_retry_stop_by_tcp_cb().
+static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;              //!< Mutex variable for thread-safety of start_ci_connection().
+static pthread_mutex_t g_es_tcp_session_mutex = PTHREAD_MUTEX_INITIALIZER;  //!< Mutex variable for thread-safety of ci_retry_stop_by_tcp_cb().
 
-static char g_cloud_ip[IP_PORT] = { 0, };	//!< Current Connected Cloud Ipv4 address.
-static char g_cloud_port[IP_PORT] = { 0, };	//!< Current Connected Cloud Port number.
-static char g_cloud_address[MAX_CI_ADDRESS] = { 0, };	//!< Current Connected Cloud Address.
+static char g_cloud_ip[IP_PORT] = { 0, };                //!< Current Connected Cloud Ipv4 address.
+static char g_cloud_port[IP_PORT] = { 0, };              //!< Current Connected Cloud Port number.
+static char g_cloud_address[MAX_CI_ADDRESS] = { 0, };    //!< Current Connected Cloud Address.
 
 static es_cloud_signup_s *signed_up_data = NULL;
 
-static things_server_builder_s *g_server_builder = NULL;	//!< Server-Builder pointer to get Resource List.
-static things_resource_s **g_resource_lists = NULL;	//!< Resource List pointer to be publishing resources to Cloud.
-static int g_len = 0;			//!< EA of Resources in "g_resource_lists" variable.
+static things_server_builder_s *g_server_builder = NULL; //!< Server-Builder pointer to get Resource List.
+static things_resource_s **g_resource_lists = NULL;      //!< Resource List pointer to be publishing resources to Cloud.
+static int g_len = 0;                                    //!< EA of Resources in "g_resource_lists" variable.
 
 static things_cloud_con_result_func_type things_res_cb_function = NULL;	//!< call-back Function pointer : it's called when finish Cloud-Connection.
 
@@ -118,8 +118,6 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(TAG, "Sign-UP is Time-Out.");
 
-	es_cloud_prov_data_s *pend_cloud_data = NULL;
-
 	if (timeout == NULL) {
 		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
@@ -128,7 +126,8 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 	send_cnt_sign_up++;
 
 	if (send_cnt_sign_up <= MAX_SIGNUP_SENDNUM) {
-		if ((pend_cloud_data = ci_cp_get_pended_data()) != NULL) {
+		es_cloud_prov_data_s *pend_cloud_data = ci_cp_get_pended_data();
+		if (pend_cloud_data != NULL) {
 			timeout->cur_counter = timeout->cur_num;
 			THINGS_LOG_V(TAG, "Sign-UP Request Send is re-tryed(%d).", send_cnt_sign_up);
 			if (cloud_retry_sign_up(pend_cloud_data, timeout) == 0) {
@@ -165,7 +164,7 @@ static void *handle_signin_timeout(things_timeout_s *timeout)
 		return 0;
 	}
 
-	int thres_hold = timeout->ori_num * 10;	// PDF thres_hold 0.2 --> 5
+	int thres_hold = timeout->ori_num * 10;    // PDF thres_hold 0.2 --> 5
 
 	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)things_next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
 		if (timeout->cur_num > thres_hold) {
@@ -202,7 +201,7 @@ static void *handle_publish_timeout(things_timeout_s *timeout)
 		return 0;
 	}
 
-	int thres_hold = timeout->ori_num * 5;	// PDF thres_hold 0.2 --> 5
+	int thres_hold = timeout->ori_num * 5;    // PDF thres_hold 0.2 --> 5
 
 	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)things_next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
 		if (timeout->cur_num > thres_hold) {
@@ -294,7 +293,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 		return 0;
 	}
 
-	things_strncpy(cloud_info->address, ip_port, MAX_CI_ADDRESS);	// Ip:Port  save.
+	things_strncpy(cloud_info->address, ip_port, MAX_CI_ADDRESS);    // Ip:Port  save.
 
 	// if exist Cloud m_domain Name, then Save Name and Port.
 	if (cloud_info->redirect_uri != NULL && strlen(cloud_info->redirect_uri) > 0) {
@@ -342,9 +341,9 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 			goto GOTO_OUT;
 		}
 
-		things_strncpy(cloud_info->port, ip_port, length_port);	// Cloud Port save.
+		things_strncpy(cloud_info->port, ip_port, length_port);         // Cloud Port save.
 
-		things_strncpy(cloud_info->domain, t_domain, length_domain);	// Cloud domain name save.
+		things_strncpy(cloud_info->domain, t_domain, length_domain);    // Cloud domain name save.
 	}
 
 	if (cloud_info->refresh_token == NULL) {
@@ -364,7 +363,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 			goto GOTO_OUT;
 		}
 
-		things_strncpy(cloud_info->refresh_token, prov_data->refreshtoken, length_refresh);	// Cloud Refresh Token save.
+		things_strncpy(cloud_info->refresh_token, prov_data->refreshtoken, length_refresh);    // Cloud Refresh Token save.
 	}
 
 GOTO_OUT:
@@ -473,11 +472,11 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 				break;
 			case ERRCI_DEVICE_DUPLICATE_PARAM:
 				THINGS_LOG_D(TAG, "[ERRCODE] %d : check your device_id and try again.", ci_err);
-				;				// TODO : need cloud definition.
+				// TODO : need cloud definition.
 				break;
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
-				esm_get_network_status();	// State return
+				esm_get_network_status();    // State return
 				res = OC_STACK_DELETE_TRANSACTION;
 				break;
 			}
@@ -508,7 +507,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
-#endif							//__SECURED__
+#endif     //__SECURED__
 
 		if (set_def_cloud_info(signed_up_data, g_cloud_address, proved_data) == 0) {
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
@@ -586,7 +585,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 		proved_data = NULL;
 	}
 
-	if (n_err >= 3 || n_err == 1) {	// mem alloc error, handle is invalid.
+	if (n_err >= 3 || n_err == 1) {     // mem alloc error, handle is invalid.
 		THINGS_LOG_D(TAG, "Memory alloc error or InValid Resp CB.(%d)", n_err);
 		return OC_STACK_DELETE_TRANSACTION;
 	}
@@ -621,21 +620,21 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
-				esm_get_network_status();	// State return
+				esm_get_network_status();      // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
-				refresh_token_into_cloud();	// refresh accesstoken.
+				refresh_token_into_cloud();    // refresh accesstoken.
 				break;
 			case ERRCI_FORBIDDEN:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
-				cloud_retry_sign_in(NULL);	// TODO : need re-code
+				cloud_retry_sign_in(NULL);     // TODO : need re-code
 				break;
 			case ERRCI_DEVICE_NOT_FOUND:
 				THINGS_LOG_D(TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
 				things_ping_unset_mask(g_cloud_ip, PING_ST_TCPCONNECT | PING_ST_ISCLOUD);
-				esm_get_network_status();	// State return
+				esm_get_network_status();      // State return
 				if (things_reset(NULL, RST_AUTO_RESET) == -1) {
 					THINGS_LOG_E(TAG, "[Error] things_reset is failed.");
 				}
@@ -643,7 +642,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
-				esm_get_network_status();	// State return
+				esm_get_network_status();      // State return
 				break;
 			}
 
@@ -740,7 +739,7 @@ static bool check_comm_error_retrans(OCStackResult result)
 	bool ret = false;
 	static int retransmission_count = 0;
 
-	if (result == OC_STACK_COMM_ERROR) {	// Don't Send Request Message.
+	if (result == OC_STACK_COMM_ERROR) {    // Don't Send Request Message.
 		THINGS_LOG_D(TAG, "Request-Send is Failed.");
 		if (g_qis_cloud_thread_running != CISESS_APDISCON && retransmission_count < MAX_COMM_ERROR_RETRANSMISSION) {
 			THINGS_LOG_D(TAG, "Re-transmission try.");
@@ -798,32 +797,32 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 			}
 
 			THINGS_LOG_D(TAG, "Cloud ErrCode = %d", ci_err);
-//            es_set_cloud_error_code(ci_err);
+			// es_set_cloud_error_code(ci_err);
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is invalid, fix RefreshToken and try again.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_SAMSUNG_ACCOUNT_UNAUTHORIZED_TOKEN:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is mismatched with client ID, fix RefreshToken or Client ID.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is expired, refresh RefreshToken and try again.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_FORBIDDEN:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			}
 
@@ -909,12 +908,12 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();       // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
-				refresh_token_into_cloud();	// refresh accesstoken.
+				refresh_token_into_cloud();     // refresh accesstoken.
 				break;
 			case ERRCI_FORBIDDEN:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
@@ -927,7 +926,7 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 				} else {
 					THINGS_LOG_V(TAG, "[INFO] Resource Publish is Re-translated about %d\n Please check Network Line.", retranslate_rsc_publish_cnt);
 					retranslate_rsc_publish_cnt = 0;
-					esm_get_network_status();	// State return
+					esm_get_network_status();   // State return
 				}
 				break;
 			default:
@@ -1002,12 +1001,12 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
-				refresh_token_into_cloud();	// refresh accesstoken.
+				refresh_token_into_cloud();   // refresh accesstoken.
 				break;
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
@@ -1057,17 +1056,17 @@ OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCC
 			if (get_cloud_code(client_response, OC_REST_POST, &ci_err) == 0) {
 				ci_err = ERRCI_UNKNOWN;
 			}
-//            es_set_cloud_error_code(ci_err);
+			// es_set_cloud_error_code(ci_err);
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
-				refresh_token_into_cloud();	// refresh accesstoken.
+				refresh_token_into_cloud();   // refresh accesstoken.
 				break;
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
@@ -1158,12 +1157,12 @@ OCStackApplicationResult handle_publish_topic_cb(void *ctx, OCDoHandle handle, O
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				esm_get_network_status();	// State return
+				esm_get_network_status();     // State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
 				THINGS_LOG_D(TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
-				refresh_token_into_cloud();	// refresh accesstoken.
+				refresh_token_into_cloud();   // refresh accesstoken.
 				break;
 			default:
 				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
@@ -1219,22 +1218,19 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
-	int sub_dev_pub_fail = -1;
-#endif
 	OCStackResult res = OC_STACK_OK;
 
 	if (target == RSC_PUB_ALL || target == RSC_PUB_MAIN_ONLY) {
 		THINGS_LOG_D(TAG, "Main-Device Resource Publish Start.");
 		res = publish_resource_main_dev_into_cloud(g_resource_lists, g_len, timeout);
-		usleep(10000);			// 1 device resource-publish per 10 msec.
+		usleep(10000);               // 1 device resource-publish per 10 msec.
 	}
 
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	if (res == OC_STACK_OK && target != RSC_PUB_MAIN_ONLY) {
 		THINGS_LOG_D(TAG, "Sub-Devices Resource Publish Start.");
+		int sub_dev_pub_fail = -1;
 		int device_cnt = 0;
-		char *device_id = NULL;
 		st_device_s **dList = NULL;
 
 		if (1 == dm_get_device_information(&device_cnt, &dList) && device_cnt > 1) {
@@ -1245,7 +1241,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 						sub_dev_pub_fail = 0;
 					}
 
-					device_id = dList[index]->device_id;
+					char *device_id = dList[index]->device_id;
 
 					THINGS_LOG_D(TAG, "Sub-device ID=%s", device_id);
 					if (device_id == NULL || device_id[0] == 0) {
@@ -1266,7 +1262,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 					}
 
 					device_id = NULL;
-					usleep(10000);	// 1 device resource-publish per 10 msec.
+					usleep(10000);     // 1 device resource-publish per 10 msec.
 				}
 			}
 		}
@@ -1278,11 +1274,11 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 
 		if (target == RSC_PUB_SUB_ALL || target == RSC_PUB_NEED_SUB_ONLY) {
 			switch (sub_dev_pub_fail) {
-			case 1:			// occurred error
+			case 1:                    // occurred error
 				THINGS_LOG_V(TAG, "Sending-request is failed for Sub-device publish.");
 				res = OC_STACK_ERROR;
 				break;
-			case -1:			// not exist sub-dev
+			case -1:                   // not exist sub-dev
 				THINGS_LOG_V(TAG, "Not exist sub-device publish.");
 				res = OC_STACK_ERROR;
 				break;
@@ -1583,13 +1579,13 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	bool is_ci_addr_null = true;
 	THINGS_LOG_D(TAG, "ip=%s, port=%s, ci_addr=%s", ip, port, ci_addr);
 
-	if (ci_addr != NULL && strlen(ci_addr) > 0) {	// ci address.
+	if (ci_addr != NULL && strlen(ci_addr) > 0) {                // ci address.
 		is_ci_addr_null = false;
 		char *point = strstr(ci_addr, DEFAULT_COAP_TCP_HOST);
 		if (point) {
 			ipport = point + strlen(DEFAULT_COAP_TCP_HOST);
 		}
-	} else if ((ipport = make_ip_port(ip, port)) == NULL) {	// ip , port coupling.
+	} else if ((ipport = make_ip_port(ip, port)) == NULL) {      // ip , port coupling.
 		return NULL;
 	}
 
@@ -1632,11 +1628,13 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	}
 
 	THINGS_LOG_D(TAG, "CI Svr Addr         : %s", g_cloud_address);
-	THINGS_LOG_D(TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
-	THINGS_LOG_D(TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
-	THINGS_LOG_D(TAG, "CI Svr Uid          : %s", event_data->uid);
-	THINGS_LOG_D(TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
-	THINGS_LOG_D(TAG, "CI Svr client_id     : %s", event_data->client_id);
+	if (event_data != NULL) {
+		THINGS_LOG_D(TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
+		THINGS_LOG_D(TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
+		THINGS_LOG_D(TAG, "CI Svr Uid          : %s", event_data->uid);
+		THINGS_LOG_D(TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
+		THINGS_LOG_D(TAG, "CI Svr client_id     : %s", event_data->client_id);
+	}
 
 	if (timeout != NULL) {
 		THINGS_LOG_D(TAG, "CI Svr timeout_cnt     : %d", timeout->cur_counter);
@@ -1659,7 +1657,7 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	if (OC_STACK_OK != result) {
 		THINGS_LOG_E(TAG, "start_ci_connection() is failed.");
 	} else {
-		ret = 1;				// Success.
+		ret = 1;            // Success.
 	}
 
 	return ret;
@@ -1671,7 +1669,6 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 
 	int res = 0;
 	char *ci_ip = NULL;
-	char *ci_ip_port = NULL;
 	char *ci_host = NULL;
 	es_error_code_e es_err = ES_ERRCODE_UNKNOWN;
 
@@ -1707,7 +1704,7 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 			THINGS_LOG_V(TAG, "##########################");
 
 			if (ci_connection_pre_check(ci_host, &ci_ip) == 0) {
-				ci_ip_port = make_ip_port(ci_ip, event_data->port);
+				char *ci_ip_port = make_ip_port(ci_ip, event_data->port);
 
 				things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
 				things_strncpy(g_cloud_port, event_data->port, IP_PORT);
@@ -1715,16 +1712,16 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 				pthread_mutex_lock(&g_es_mutex);
 				res = start_ci_connection(dm_get_things_cloud_address(ci_ip_port), event_data, g_server_builder->gres_arr, g_server_builder->res_num, &param->timeOut);
 				switch (res) {
-				case 1:		// Success
-					usleep(500000);	// 0.5 sec wait (need for Cloud CI Server cooling.)
+				case 1:                    // Success
+					usleep(500000);        // 0.5 sec wait (need for Cloud CI Server cooling.)
 					break;
-				case 0:		// Fail start_ci_connection.
+				case 0:                    // Fail start_ci_connection.
 					es_err = ES_ERRCODE_UNKNOWN;
 					break;
-				case -1:		// Json Parsing error. or Memory Alloc error. or Invalid argument error.
+				case -1:                   // Json Parsing error. or Memory Alloc error. or Invalid argument error.
 					es_err = ER_ERRCODE_SYSTEM_ERROR;
 					break;
-				case -2:		// Invalid Contents of Json file.
+				case -2:                   // Invalid Contents of Json file.
 					es_err = ER_ERRCODE_INVALID_SAVED_CLOUD_DATA;
 					break;
 				}
@@ -1780,7 +1777,7 @@ static void *ci_connection_waiting_loop(es_cloud_event_timeout_s *param)
 		ci_cp_del_is_there_cp();
 		ci_cp_del_pended_data();
 		es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-		esm_get_network_status();	// State return
+		esm_get_network_status();            // State return
 		return NULL;
 	}
 
@@ -1808,22 +1805,17 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 
 	pthread_t cthread_handler;
 	es_cloud_event_timeout_s *cloned_data = NULL;
-#if 0							// pkcloud
-	if (ci_cp_cas_is_there_cp_if_false() == true) {
-		THINGS_LOG_D(TAG, "Already exist data of Cloud Provisioning.");
-		return NULL;
-	}
-#endif
+
 	switch (g_qis_cloud_thread_running) {
 	case CISESS_APDISCON:
 		// Backup loose try..
 		ci_cp_pend_event_data(event_data);
 		return NULL;
-	case CISESS_BUSY:			// Occupied
-	case CISESS_STOP_TRIGGER:	// Re-Start triggered.
-	case CISESS_SIGNOUT:		// doing Auto Log-Out
+	case CISESS_BUSY:            // Occupied
+	case CISESS_STOP_TRIGGER:    // Re-Start triggered.
+	case CISESS_SIGNOUT:         // doing Auto Log-Out
 		break;
-	case CISESS_STOP:			// can start.
+	case CISESS_STOP:            // can start.
 		things_del_all_request_handle();
 		send_cnt_sign_up = 0;
 		ci_cp_pend_event_data(event_data);
@@ -1855,7 +1847,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		ci_cp_del_pended_data();
 		ci_cp_del_is_there_cp();
 		es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-		esm_get_network_status();	// State return
+		esm_get_network_status();    // State return
 	}
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
@@ -1868,7 +1860,6 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 
 	pthread_t cthread_handler;
 	es_cloud_prov_data_s dummy_data;
-	es_cloud_event_timeout_s *cloned_data = NULL;
 
 	if (ci_cp_get_is_there_cp() == true) {
 		THINGS_LOG_D(TAG, "There is a CloudProvisioning data. Cloud-retry is skiped.");
@@ -1885,7 +1876,8 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 		// cloud_data setting.
 		init_es_cloud_prov_data(&dummy_data);
 
-		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
+		es_cloud_event_timeout_s *cloned_data = clone_data_add_timeout(&dummy_data, timeout);
+		if (cloned_data == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type)ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
 			THINGS_LOG_E(TAG, "Create thread is failed.");
 			things_free(cloned_data);
 			cloned_data = NULL;
@@ -1912,7 +1904,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, things_timeout_
 	}
 
 	g_qis_cloud_thread_running = CISESS_STOP_TRIGGER;
-	esm_get_network_status();	// State return
+	esm_get_network_status();    // State return
 
 	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0) {
 		THINGS_LOG_E(TAG, "Create thread is failed.");
@@ -1931,9 +1923,9 @@ static void cloud_request_retry_trigger(things_timeout_s *timeout)
 	es_cloud_prov_data_s *pendedEvent = NULL;
 	if ((pendedEvent = ci_cp_get_pended_data()) != NULL) {
 		ci_cp_del_is_there_cp();
-		cloud_data_cb_esm(pendedEvent);	// 1. Last Cloud Provisioning-ed data. or Last Send Failed data.(Sign-UP)
+		cloud_data_cb_esm(pendedEvent);    // 1. Last Cloud Provisioning-ed data. or Last Send Failed data.(Sign-UP)
 	} else {
-		cloud_retry_sign_in(timeout);	// default. Cloud retry. (Sign-IN / Resource Publish failed data)
+		cloud_retry_sign_in(timeout);      // default. Cloud retry. (Sign-IN / Resource Publish failed data)
 	}
 }
 
@@ -1947,23 +1939,23 @@ static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResu
 
 	ci_cp_enter_pend_data_block();
 	if (things_cas_request_handle(handle, NULL) == 1) {
-		if (result == OC_STACK_COMM_ERROR) {	// Don't Send Request Message.
+		if (result == OC_STACK_COMM_ERROR) {        // Don't Send Request Message.
 			if (g_qis_cloud_thread_running != CISESS_APDISCON) {
 				cloud_request_retry_trigger(NULL);
 			}
-			*n_err = 1;			// communication error.
+			*n_err = 1;                             // communication error.
 		} else {
 			things_del_all_request_handle();
 
 			if ((pended_data = ci_cp_get_pended_data()) == NULL) {
 				THINGS_LOG_V(TAG, "Not exist Pended Event Data.");
-				*n_err = 2;		// not exist pended_data.
+				*n_err = 2;                         // not exist pended_data.
 				goto GOTO_OUT;
 			}
 
 			if ((clone_data = things_malloc(sizeof(es_cloud_prov_data_s))) == NULL) {
 				THINGS_LOG_E(TAG, "memory allocation is failed for clone_data.");
-				*n_err = 3;		// mem allocation error.
+				*n_err = 3;                         // mem allocation error.
 				goto GOTO_OUT;
 			}
 
@@ -1984,17 +1976,6 @@ GOTO_OUT:
 	return clone_data;
 }
 
-void ci_stop_cloud_connection(void *CBfunc)
-{
-	force_session_stop(CISESS_NULL);
-	esm_get_network_status();	// State return
-	sleep(1);
-
-	things_res_cb_function = NULL;
-	if (CBfunc) {
-		things_res_cb_function = (things_cloud_con_result_func_type) CBfunc;
-	}
-}
 static void force_session_stop(ci_session_level_e state)
 {
 	things_del_all_request_handle();
@@ -2003,19 +1984,19 @@ static void force_session_stop(ci_session_level_e state)
 	} else {
 		g_qis_cloud_thread_running = CISESS_STOP_TRIGGER;
 	}
-	esm_get_network_status();	// State return
+	esm_get_network_status();                       // State return
 }
 
 int ci_retry_stop_by_wifi_cb(bool is_retry)
 {
-	if (is_retry == true) {		// Last Failed Cloud Connection Retry. (Permanent setting)
+	if (is_retry == true) {                         // Last Failed Cloud Connection Retry. (Permanent setting)
 		things_del_all_request_handle();
 		g_qis_cloud_thread_running = CISESS_STOP;
 		cloud_request_retry_trigger(NULL);
-	} else if (is_retry == false) {	// if Cloud Session valid, then Stop Cloud Connection. And Don't Retry.
+	} else if (is_retry == false) {                 // if Cloud Session valid, then Stop Cloud Connection. And Don't Retry.
 		things_del_all_request_handle();
 		g_qis_cloud_thread_running = CISESS_APDISCON;
-		esm_get_network_status();	// State return
+		esm_get_network_status();                   // State return
 	}
 
 	return 1;
@@ -2038,7 +2019,7 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 		goto GOTO_OUT;
 	}
 
-	THINGS_LOG_D(TAG, "IP = %s, port = %d", addr_ip, port);	// I expect that ( IP = 52.37.99.111, port = 443 )
+	THINGS_LOG_D(TAG, "IP = %s, port = %d", addr_ip, port);
 
 	if ((ci_port = atoi(g_cloud_port)) <= 0) {
 		THINGS_LOG_E(TAG, "[Error] Cloud Port is not invalid.(g_cloud_port = %s = %d)", g_cloud_port, ci_port);
@@ -2261,7 +2242,7 @@ void *es_cloud_init(things_server_builder_s *server_builder)
 	g_server_builder = server_builder;
 	g_resource_lists = NULL;
 	g_len = 0;
-//    gDelDeviceCompletFunc = NULL;
+	// gDelDeviceCompletFunc = NULL;
 	send_cnt_sign_up = 0;
 	retranslate_rsc_publish_cnt = 0;
 
@@ -2292,7 +2273,7 @@ void es_cloud_terminate(void)
 	g_resource_lists = NULL;
 	g_len = 0;
 
-//    gDelDeviceCompletFunc = NULL;
+	// gDelDeviceCompletFunc = NULL;
 	send_cnt_sign_up = 0;
 	retranslate_rsc_publish_cnt = 0;
 
@@ -2476,7 +2457,7 @@ static void ci_finish_cloud_con(int result)
 	es_cloud_signup_s *Cloud_data = NULL;
 
 	if (things_res_cb_function) {
-		dm_load_legacy_cloud_data(&Cloud_data);	// TODO read Cloud-Data.
+		dm_load_legacy_cloud_data(&Cloud_data);    // TODO read Cloud-Data.
 		if (Cloud_data != NULL) {
 			if (Cloud_data->domain != NULL) {
 				domain = things_strdup(Cloud_data->domain);

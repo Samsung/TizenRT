@@ -34,8 +34,6 @@ es_cloud_prov_data_s *ci_cp_get_pended_data(void);
 
 bool ci_cp_get_is_there_cp(void);
 
-bool ci_cp_cas_is_there_cp_if_false(void);
-
 void ci_cp_del_pended_data(void);
 
 void ci_cp_del_is_there_cp(void);

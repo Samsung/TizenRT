@@ -69,12 +69,13 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 	char *p_origin = NULL;
 	char *p_ptr = NULL;
 
-	p_origin = p_buff = (char *)things_malloc(query_len + 1);
-	if (NULL == p_origin) {
+	p_buff = (char *)things_malloc(query_len + 1);
+	if (NULL == p_buff) {
 		THINGS_LOG_E(TAG, "Failed to allocate memory to get a specific value from query.");
 		return false;
 	}
 
+	p_origin = p_buff;  // Store the memory address to free it later.
 	memset(p_buff, 0, query_len + 1);
 	memcpy(p_buff, query, query_len);
 
@@ -177,9 +178,8 @@ static bool get_resource_types(things_resource_s *rsrc, char ***res_types, int *
 	RET_FALSE_IF_NULL(TAG, types, "Failed to allocate memory for resource types.");
 
 	bool result = true;
-	const char *res_type;
 	for (int i = 0; i < rt_count; i++) {
-		res_type = rsrc->things_get_res_type(rsrc, i);
+		const char *res_type = rsrc->things_get_res_type(rsrc, i);
 		if (NULL == res_type || strlen(res_type) < 1) {
 			THINGS_LOG_E(TAG, "Resource type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);
@@ -218,9 +218,8 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
 	RET_VAL_IF_NULL(TAG, types, "Failed to allocate memory for inteface types.", false);
 
 	bool result = true;
-	const char *if_type = NULL;
 	for (int i = 0; i < if_count; i++) {
-		if_type = rsrc->things_get_inf_type(rsrc, i);
+		const char *if_type = rsrc->things_get_inf_type(rsrc, i);
 		if (NULL == if_type || strlen(if_type) < 1) {
 			THINGS_LOG_E(TAG, "Interface type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);

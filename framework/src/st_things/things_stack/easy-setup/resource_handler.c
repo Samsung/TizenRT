@@ -78,7 +78,6 @@ static pthread_mutex_t g_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 //-----------------------------------------------------------------------------
 OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *eh_request, void *callback);
 OCEntityHandlerResult process_get_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 void update_prov_resource(OCEntityHandlerRequest *eh_request, OCRepPayload *input);
 void update_wifi_resource(OCRepPayload *input);
@@ -255,14 +254,6 @@ void unregister_resource_event_callback()
 	}
 }
 
-void get_target_network_info_from_prov_resource(char *name, char *pass)
-{
-	if (name != NULL && pass != NULL) {
-		things_strncpy(name, g_wifi_resource.ssid, WIFIMGR_SSID_LEN);
-		things_strncpy(pass, g_wifi_resource.cred, WIFIMGR_PASSPHRASE_LEN);
-	}
-}
-
 OCStackResult init_prov_resource(bool is_secured)
 {
 	es_set_state(ES_STATE_INIT);
@@ -321,7 +312,7 @@ OCStackResult init_wifi_resource(bool is_secured)
 	g_wifi_resource.supported_mode[3] = WiFi_11N;
 	g_wifi_resource.supported_mode[4] = WiFi_11AC;
 	g_wifi_resource.num_mode = 5;
-	g_wifi_resource.auth_type = NONE_AUTH;
+	g_wifi_resource.sec_type = NONE_SEC;
 	g_wifi_resource.enc_type = NONE_ENC;
 	memset(g_wifi_resource.ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
 	memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
@@ -405,7 +396,7 @@ static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 
 	memset(p_wifi_data->ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
 	memset(p_wifi_data->pwd, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
-	p_wifi_data->authtype = -1;
+	p_wifi_data->sectype = -1;
 	p_wifi_data->enctype = -1;
 	p_wifi_data->discovery_channel = -1;
 }
@@ -415,19 +406,19 @@ void set_ssid_in_wifi_resource(const char *ssid)
 	if (ssid == NULL) {
 		memset(g_wifi_resource.ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
 		memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
-		g_wifi_resource.auth_type = NONE_AUTH;
+		g_wifi_resource.sec_type = NONE_SEC;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 0;
 	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(ssid)) == 0) {
 		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *WIFIMGR_SSID_LEN);
 		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
-		g_wifi_resource.auth_type = g_wifi_data.authtype;
+		g_wifi_resource.sec_type = g_wifi_data.sectype;
 		g_wifi_resource.enc_type = g_wifi_data.enctype;
 		g_wifi_resource.discovery_channel = g_wifi_data.discovery_channel;
 	} else {
 		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *WIFIMGR_SSID_LEN);
 		memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
-		g_wifi_resource.auth_type = NONE_AUTH;
+		g_wifi_resource.sec_type = NONE_SEC;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 1;
 	}
@@ -519,10 +510,10 @@ void update_wifi_resource(OCRepPayload *input)
 		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.pwd %s", g_wifi_data.pwd);
 	}
 
-	int64_t auth_type = -1;
-	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_AUTHTYPE, &auth_type)) {
-		g_wifi_data.authtype = auth_type;
-		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.authtype %u", g_wifi_data.authtype);
+	int64_t sec_type = -1;
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_SECTYPE, &sec_type)) {
+		g_wifi_data.sectype = sec_type;
+		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.sectype %u", g_wifi_data.sectype);
 	}
 
 	int64_t enc_type = -1;
@@ -537,7 +528,7 @@ void update_wifi_resource(OCRepPayload *input)
 		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.discovery_channel %u", g_wifi_data.discovery_channel);
 	}
 
-	if (ssid || cred || auth_type != -1 || enc_type != -1) {
+	if (ssid || cred || sec_type != -1 || enc_type != -1) {
 		THINGS_LOG_V(ES_RH_TAG, "Send WiFiRsrc Callback To ES");
 		PROFILING_TIME("WiFi Provisioning Start.");
 
@@ -792,7 +783,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ, g_wifi_resource.supported_freq);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_SSID, g_wifi_resource.ssid);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_CRED, g_wifi_resource.cred);
-	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_AUTHTYPE, (int)g_wifi_resource.auth_type);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_SECTYPE, (int)g_wifi_resource.sec_type);
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_ENCTYPE, (int)g_wifi_resource.enc_type);
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, (int)g_wifi_resource.discovery_channel);
 
@@ -1133,10 +1124,8 @@ GOTO_FAILED:
 
 OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e resource_mask)
 {
-	OCStackResult res = OC_STACK_ERROR;
 	bool maskFlag = false;
-
-	res = init_prov_resource(is_secured);
+	OCStackResult res = init_prov_resource(is_secured);
 	if (res != OC_STACK_OK) {
 		// TODO: destroy logic will be added
 		THINGS_LOG_V(ES_RH_TAG, "init_prov_resource result: %s", get_result(res));
@@ -1207,18 +1196,7 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 	return res;
 }
 
-OCStackResult delete_provisioning_resource(void)
-{
-	iotivity_api_lock();
-	OCStackResult res = OCDeleteResource(g_prov_resource.handle);
-	if (res != OC_STACK_OK) {
-		THINGS_LOG_V(ES_RH_TAG, "Deleting Prov resource error with result: %s", get_result(res));
-	}
-	iotivity_api_unlock();
-	return res;
-}
-
-OCStackResult delete_easysetup_resources(void)
+OCStackResult delete_easysetup_resources()
 {
 	iotivity_api_lock();
 	OCStackResult res = OC_STACK_ERROR;
@@ -1356,15 +1334,6 @@ OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, O
 	*payload = getResp;
 	eh_result = OC_EH_OK;
 	//eh_result = OC_EH_CHANGED;
-
-	return eh_result;
-}
-
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload)
-{
-	(void)eh_request;
-	(void)payload;
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	return eh_result;
 }

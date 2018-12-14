@@ -224,7 +224,6 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 {
 	THINGS_LOG_D(TAG, "IN: %s", __func__);
 
-	size_t size = 0;
 	key->data = NULL;
 	key->len = 0;
 	key->encoding = OIC_ENCODING_UNKNOW;
@@ -258,7 +257,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 	}
 
 	if (0 == fseek(fp, 0L, SEEK_END)) {
-		size = ftell(fp);
+		size_t size = ftell(fp);
 		rewind(fp);
 		key->data = (uint8_t *)things_malloc(size);
 		if (key->data == NULL) {
@@ -432,11 +431,9 @@ error:
 
 static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 {
-	OCStackResult oc_res = OC_STACK_OK;
-
 	// Check Device is Owned
 	bool isOwned = false;
-	oc_res = GetDoxmIsOwned(&isOwned);
+	OCStackResult oc_res = GetDoxmIsOwned(&isOwned);
 	if (OC_STACK_OK != oc_res) {
 		THINGS_LOG_E(TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
 		return oc_res;
@@ -488,6 +485,8 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
 {
+	struct ifaddrs *ifaddr = NULL;
+	struct ifaddrs *ifa = NULL;
 	THINGS_LOG_D(TAG, "In %s", __func__);
 
 //#ifdef __ST_THINGS_RTOS__
@@ -518,8 +517,8 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 		for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
 			if ((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET)) {
 				struct sockaddr_ll *s = (struct sockaddr_ll *)ifa->ifa_addr;
-
 				memset(p_id_buf, 0x00, p_id_buf_size);
+				int i = 0;
 				for (i = 0; i < s->sll_halen && i < p_id_buf_size; i++) {
 					snprintf((char *)(p_id_buf + (i * 2)), MAC_BUF_SIZE - i, "%02X", (s->sll_addr[i]));
 				}
@@ -541,13 +540,11 @@ static int sm_generate_mac_based_device_id(void)
 {
 	THINGS_LOG_D(TAG, "In %s", __func__);
 
-	OICSecurityResult res = OIC_SEC_ERROR;
 	OicUuid_t device_id;
 	unsigned char mac_id[MAC_BUF_SIZE];
 	unsigned char hash_value[SS_SHA256_DIGEST_SIZE + 1];
 	unsigned int id_len = 0;
-
-	res = get_mac_addr(mac_id, MAC_BUF_SIZE, &id_len);
+	OICSecurityResult res = get_mac_addr(mac_id, MAC_BUF_SIZE, &id_len);
 	if (OIC_SEC_OK != res) {
 		THINGS_LOG_E(TAG, "Failed to read MAC Address.");
 		return res;
@@ -811,7 +808,6 @@ unsigned char g_regional_test_root_ca[] = {
 
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 {
-	OCStackResult res = OC_STACK_OK;
 	uint16_t cred_id = 0;
 
 	THINGS_LOG_D(TAG, "IN: %s", __func__);
@@ -822,14 +818,14 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	 * 1. Save the Trust CA cert chain.
 	 */
 #ifdef CONFIG_ST_THINGS_STG_MODE
-	res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
+	OCStackResult res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
 		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #2 error");
 		return res;
 	}
 	THINGS_LOG_D(TAG, "Samsung_OCF_Test_RootCA.der saved w/ cred ID=%d", cred_id);
 #else
-	res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
+	OCStackResult res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
 		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #1 error");
 		return res;

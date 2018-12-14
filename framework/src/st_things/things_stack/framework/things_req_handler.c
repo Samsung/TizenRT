@@ -57,11 +57,13 @@ static handle_request_func_type g_handle_request_set_cb = NULL;
 
 extern things_server_builder_s *g_builder;
 
-static stop_softap_func_type g_stop_soft_ap_cb = NULL;
+static handle_request_func_type g_handle_req_cb = NULL;
+
+static handle_request_interface_cb g_handle_request_interface_cb = NULL;
+
+static pthread_t g_req_handle;
 
 static int g_quit_flag = 0;
-
-OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level);
 
 /**
  * Return : 0 (Invalid Request), 1 (Resource Supporting Interface)
@@ -206,10 +208,14 @@ static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource
 		THINGS_LOG_V(TAG, "e_ssid : %s", wifi_scan_iter->e_ssid);
 		THINGS_LOG_V(TAG, "signal_level : %s", wifi_scan_iter->signal_level);
 		THINGS_LOG_V(TAG, "bss_id : %s", wifi_scan_iter->bss_id);
+		THINGS_LOG_V(TAG, "sec_type : %s", wifi_scan_iter->sec_type);
+		THINGS_LOG_V(TAG, "enc_type : %s", wifi_scan_iter->enc_type);
 		child_rep[iter] = things_create_representation_inst(NULL);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MACADDR, wifi_scan_iter->bss_id);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_RSSI, wifi_scan_iter->signal_level);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SSID, wifi_scan_iter->e_ssid);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SECTYPE, wifi_scan_iter->sec_type);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_ENCTYPE, wifi_scan_iter->enc_type);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 	rep->things_set_arrayvalue(rep, SEC_ATTRIBUTE_AP_ITEMS, list_cnt, child_rep);
@@ -308,7 +314,6 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_resource, bool reset)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-	things_resource_s *clone_resource = NULL;
 	bool isOwned;
 
 	iotivity_api_lock();
@@ -322,10 +327,8 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	THINGS_LOG_D(TAG, "==> RESET : %s", (reset == true ? "YES" : "NO"));
 
 	if (reset == true) {
-		int res = -1;
-
-		clone_resource = things_clone_resource_inst(target_resource);
-		res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
+		things_resource_s *clone_resource = clone_resource_inst(target_resource);
+		int res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
 
 		switch (res) {
 		case 1:
@@ -348,77 +351,6 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	return eh_result;
 }
 
-static OCEntityHandlerResult trigger_stop_ap_request(things_resource_s *target_resource, bool stop_ap)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	THINGS_LOG_D(TAG, "==> STOP SOFT AP : %s", (stop_ap == true ? "YES" : "NO"));
-
-	if (stop_ap == true) {
-		if (NULL != g_stop_soft_ap_cb) {
-			if (1 == g_stop_soft_ap_cb(stop_ap)) {
-				THINGS_LOG_D(TAG, "Stop Soft AP notified Successfully");
-				eh_result = OC_EH_OK;
-			} else {
-				THINGS_LOG_D(TAG, "Stop Soft AP notified, BUT DENIED");
-				eh_result = OC_EH_ERROR;
-			}
-		}
-	} else {
-		THINGS_LOG_D(TAG, "stop_ap = %d, So, can not stop AP.", stop_ap);
-		eh_result = OC_EH_OK;
-	}
-
-	return eh_result;
-}
-
-static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_resource, things_es_enrollee_abort_e abort_es)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-	static pthread_t h_thread_abort = NULL;
-
-	THINGS_LOG_D(TAG, "==> ABORT Easy Setup : %d", abort_es);
-
-	switch (abort_es) {
-	case ABORT_BEFORE_RESET_CONFIRM:	// before Reset Confirm.
-	case ABORT_BEFORE_SEC_CONFIRM:	// After Reset Confirm & before Security Confirm.
-	case ABORT_BEFORE_DATA_PROVISIONING:	// After Security Confirm
-		THINGS_LOG_D(TAG, "Forwarding abort-level to st_things App.(Level: %d)", abort_es);
-		eh_result = things_abort(&h_thread_abort, abort_es);
-		break;
-	default:
-		THINGS_LOG_D(TAG, "abort_es = %d, So, Don't need any-process", abort_es);
-		eh_result = OC_EH_OK;
-		break;
-	}
-
-	return eh_result;
-}
-
-static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_resource)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	bool reset = false;
-	bool stop_ap = false;
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-	int64_t abort_es = 0;
-#endif
-	if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_RESET, &reset) == true) {
-		eh_result = trigger_reset_request(target_resource, reset);
-	} else if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_TERMINATE_AP, &stop_ap) == true) {
-		eh_result = trigger_stop_ap_request(target_resource, stop_ap);
-#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
-	} else if (target_resource->rep->things_get_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, &abort_es) == true) {
-		eh_result = trigger_abort_request(target_resource, (things_es_enrollee_abort_e) abort_es);
-#endif
-	} else {
-		THINGS_LOG_E(TAG, "Get Value is failed.(RESET NOR TERMINATE NOR ABORT)");
-		return eh_result;
-	}
-
-	return eh_result;
-}
 
 static OCEntityHandlerResult process_post_request(things_resource_s **target_res)
 {
@@ -427,8 +359,7 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 	things_resource_s *target_resource = *target_res;
 
 	if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_PROVINFO) != NULL) {
-		// 1. Post request for the Easy-Setup reset
-		eh_result = set_provisioning_info(target_resource);
+		eh_result = OC_EH_NOT_IMPLEMENTED;
 #ifdef CONFIG_ST_THINGS_FOTA
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_set_data(target_resource);
@@ -550,12 +481,8 @@ int notify_things_observers(const char *uri)
 
 	THINGS_LOG_D(TAG, "uri = %s", uri);
 	if (NULL != uri) {
-		int remainLen = MAX_RESOURCE_LEN - 1;
 		char tempUri[MAX_RESOURCE_LEN] = { 0 };
-		if (strnlen(tempUri, MAX_RESOURCE_LEN - 1) < 1) {
-			things_strncpy(tempUri, uri, remainLen);
-			remainLen -= strnlen(tempUri, MAX_RESOURCE_LEN - 1);
-		}
+		things_strncpy(tempUri, uri, MAX_RESOURCE_LEN - 1);
 
 		THINGS_LOG_D(TAG, "%s resource notifies to observers.", tempUri);
 
