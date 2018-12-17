@@ -224,7 +224,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		if (wifiIntf & 0x08) {
 			wifi_mode[mode_count++] = WiFi_11N;
 		}
-		if (wifiIntf & 0x10) {
+		if (wifiIntf & 0x16) {
 			wifi_mode[mode_count++] = WiFi_11AC;
 		}
 	}
