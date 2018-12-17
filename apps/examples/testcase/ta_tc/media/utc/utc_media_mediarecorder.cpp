@@ -106,19 +106,23 @@ static void utc_media_MediaRecorder_setDataSource_n(void)
 
 static void utc_media_MediaRecorder_setVolume_p(void)
 {
-	uint8_t prev, volume;
+	uint8_t volume;
+	uint8_t prev;
 	MediaRecorder mr;
 	mr.create();
 	mr.getVolume(&prev);
 
-  if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
+	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 		printf("device does not support volume control\n");
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(prev + 1), RECORDER_OK, mr.destroy());		
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(prev + 1), RECORDER_OK, goto cleanup);
 	} else {
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(10), RECORDER_OK, mr.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(10), RECORDER_OK, goto cleanup);
 		mr.getVolume(&volume);
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, mr.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", volume, 10, goto cleanup);
 	}
+
+cleanup:
+	mr.setVolume(prev);
 	mr.destroy();
 	TC_SUCCESS_RESULT();
 }
@@ -133,36 +137,42 @@ static void utc_media_MediaRecorder_setVolume_n(void)
 	if (mr.setVolume(prev) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 		mr.setVolume(prev + 1);
 		mr.getVolume(&volume);
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", prev + 1, volume, mr.destroy());		
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediarecorder_setVolume", prev + 1, volume, goto cleanup);
 	} else {
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, mr.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediarecorder_setVolume", mr.setVolume(11), RECORDER_OK, goto cleanup);
 	}
-	mr.destroy();
+
 	TC_SUCCESS_RESULT();
+cleanup:
+	mr.setVolume(prev);
+	mr.destroy();
 }
 
 static void utc_media_MediaRecorder_getVolume_p(void)
 {
-	uint8_t volume;
+	uint8_t volume, prev;
 	MediaRecorder mr;
 	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 
 	mr.create();
+	mr.getVolume(&prev);
 
 	for (int i = 0; i <= 10; ++i) {
 		if (mr.setVolume(i) == RECORDER_ERROR_DEVICE_NOT_SUPPORTED) {
 			mr.getVolume(&volume);
-			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, 0, mr.destroy());
+			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, 0, goto cleanup);
 			break;
 		} else {
 			mr.setVolume(i);
 			mr.getVolume(&volume);
-			TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, i, mr.destroy());
+			TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getVolume", volume, i, goto cleanup);
 		}
 	}
 
-	mr.destroy();
 	TC_SUCCESS_RESULT();
+cleanup:
+	mr.setVolume(prev);
+	mr.destroy();
 }
 
 static void utc_media_MediaRecorder_getVolume_n(void)

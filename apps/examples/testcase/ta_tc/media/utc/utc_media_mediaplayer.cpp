@@ -384,24 +384,28 @@ static void utc_media_MediaPlayer_stop_n(void)
 static void utc_media_MediaPlayer_getVolume_p(void)
 {
 	uint8_t volume;
+	uint8_t prev;
 	media::MediaPlayer mp;
 
 	mp.create();
+	mp.getVolume(&prev);
 
 	for (int i = 0; i <= 10; ++i) {
 		if (mp.setVolume(i) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
 			mp.getVolume(&volume);
-			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaPlayer_getVolume", volume, 0, mp.destroy());
+			TC_ASSERT_NEQ_CLEANUP("utc_media_MediaPlayer_getVolume", volume, 0, goto cleanup);
 			break;
 		} else {
 			mp.setVolume(i);
 			mp.getVolume(&volume);
-			TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_getVolume", volume, i, mp.destroy());
+			TC_ASSERT_EQ_CLEANUP("utc_media_MediaPlayer_getVolume", volume, i, goto cleanup);
 		}
 	}
 
-	mp.destroy();
 	TC_SUCCESS_RESULT();
+cleanup:
+	mp.setVolume(prev);
+	mp.destroy();
 }
 
 static void utc_media_MediaPlayer_getVolume_n(void)
@@ -438,16 +442,19 @@ static void utc_media_MediaPlayer_setVolume_p(void)
 	mp.create();
 	mp.getVolume(&prev);
 
-  if (mp.setVolume(prev) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
+	if (mp.setVolume(prev) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
 		printf("device does not support volume control\n");
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(prev + 1), media::PLAYER_OK, mp.destroy());
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(prev + 1), media::PLAYER_OK, goto cleanup);
 	} else {
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(10), media::PLAYER_OK, mp.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(10), media::PLAYER_OK, goto cleanup);
 		mp.getVolume(&volume);
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", volume, 10, mp.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", volume, 10, goto cleanup);
 	}
-	mp.destroy();
+
 	TC_SUCCESS_RESULT();
+cleanup:
+	mp.setVolume(prev);
+	mp.destroy();
 }
 
 static void utc_media_MediaPlayer_setVolume_n(void)
@@ -460,12 +467,15 @@ static void utc_media_MediaPlayer_setVolume_n(void)
 	if (mp.setVolume(prev) == media::PLAYER_ERROR_DEVICE_NOT_SUPPORTED) {
 		mp.setVolume(prev + 1);
 		mp.getVolume(&volume);
-		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", prev + 1, volume, mp.destroy());		
+		TC_ASSERT_NEQ_CLEANUP("utc_media_mediaPlayer_setVolume", prev + 1, volume, goto cleanup);
 	} else {
-		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(11), media::PLAYER_OK, mp.destroy());
+		TC_ASSERT_EQ_CLEANUP("utc_media_mediaPlayer_setVolume", mp.setVolume(11), media::PLAYER_OK, goto cleanup);
 	}
-	mp.destroy();
+
 	TC_SUCCESS_RESULT();
+cleanup:
+	mp.setVolume(prev);
+	mp.destroy();
 }
 
 int utc_media_MediaPlayer_main(void)
