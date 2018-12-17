@@ -186,7 +186,7 @@ static void utc_media_MediaRecorder_getMaxVolume_p(void)
 
 	mr.create();
 
-	mr.getVolume(&volume);
+	mr.getMaxVolume(&volume);
 	TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getMaxVolume", volume, 10, mr.destroy());
 
 	mr.destroy();
