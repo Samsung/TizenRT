@@ -121,7 +121,9 @@ static void utc_media_SpeechDetector_startKeywordDetect_n(void)
 static void utc_media_SpeechDetector_startEndPointDetect_p(void)
 {
 	auto instance = media::voice::SpeechDetector::instance();
+	instance->initKeywordDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
 	instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+	instance->startKeywordDetect(-1);
 	bool ret = instance->startEndPointDetect(-1);
 	TC_ASSERT_EQ_CLEANUP("utc_media_SpeechDetector_startEndPointDetect", ret, true, goto cleanup);
 	TC_SUCCESS_RESULT();
