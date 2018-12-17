@@ -243,6 +243,11 @@ int cmd_netmon(int argc, char **argv)
 				printf("rssi: %d\n", info.rssi);
 			} else if (info.status == AP_DISCONNECTED) {
 				printf("MODE: station (disconnected)\n");
+			} else if (info.status == AP_RECONNECTING) {
+				printf("MODE: station (reconnecting)\n");
+				printf("IP: %s\n", info.ip4_address);
+				printf("SSID: %s\n", info.ssid);
+				printf("rssi: %d\n", info.rssi);
 			}
 			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
 		} else {
