@@ -61,6 +61,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#include <debug.h>
 #include <tinyara/mm/heap_regioninfo.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
