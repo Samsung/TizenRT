@@ -15,12 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-#ifndef __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#define __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#include "libcxx_tc_common.h"
-
-int tc_algorithms_main(void);
-int tc_numerics_main(void);
-int tc_utilities_main(void);
-#endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */
+#ifndef __EXTERNAL_LIBCXX_TEST_TC_NUMERICS_H
+#define __EXTERNAL_LIBCXX_TEST_TC_NUMERICS_H
+int tc_numerics_rand_device_ctor(void);
+int tc_numerics_rand_device_entropy(void);
+int tc_numerics_rand_device_eval(void);
+#endif

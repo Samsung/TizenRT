@@ -117,6 +117,16 @@ CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
 CXXSRCS += std/diagnostics/tc_diagnostics.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_NUMERICS),y)
+#Numerics TC
+CXXSRCS += std/numerics/rand/rand.device/entropy.pass.cpp
+CXXSRCS += std/numerics/rand/rand.device/eval.pass.cpp
+CXXSRCS += std/numerics/rand/rand.device/ctor.pass.cpp
+
+#Numerics TC Main
+CXXSRCS += std/numerics/tc_numerics.cpp
+endif
+
 ifeq ($(CONFIG_LIBCXX_UTC_STDBOOL),y)
 #stdbool sources
 CXXSRCS += std/depr/depr.c.headers/stdbool_h.pass.cpp

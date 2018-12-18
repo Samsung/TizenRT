@@ -15,12 +15,32 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+//===----------------------------------------------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
 
-#ifndef __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#define __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
+// <random>
+
+// class random_device;
+
+// double entropy() const;
+
+#include <random>
+#include <cassert>
 #include "libcxx_tc_common.h"
 
-int tc_algorithms_main(void);
-int tc_numerics_main(void);
-int tc_utilities_main(void);
-#endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */
+int tc_numerics_rand_device_entropy(void)
+{
+    std::random_device r;
+    double e;
+
+    e = r.entropy();
+    UNUSED(e);
+    TC_SUCCESS_RESULT();
+    return 0;
+}

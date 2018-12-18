@@ -443,6 +443,10 @@ menu "Board Selection"
 source board/Kconfig
 endmenu
 
+menu "Crypto Module"
+source crypto/Kconfig
+endmenu
+
 menu "Kernel Features"
 source kernel/Kconfig
 endmenu
