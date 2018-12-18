@@ -33,6 +33,7 @@
 #include <media/BufferObserverInterface.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <pthread.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -130,11 +131,12 @@ public:
 private:
 	static size_t HeaderCallback(char *data, size_t size, size_t nmemb, void *userp);
 	static size_t WriteCallback(char *data, size_t size, size_t nmemb, void *userp);
+	static void *workerMain(void *arg);
 
 private:
 	std::string mContentType;
 	std::string mUrl;
-	std::thread mThread;
+	pthread_t mThread;
 	std::mutex mMutex;
 	std::condition_variable mCondv;
 	bool mIsHeaderReceived;

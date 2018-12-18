@@ -41,6 +41,10 @@
 #define CONFIG_HTTPSOURCE_DOWNLOAD_BUFFER_THRESHOLD 2048
 #endif
 
+#ifndef CONFIG_HTTPSOURCE_DOWNLOAD_STACKSIZE
+#define CONFIG_HTTPSOURCE_DOWNLOAD_STACKSIZE 8192
+#endif
+
 namespace media {
 namespace stream {
 
@@ -51,13 +55,13 @@ static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
 
 HttpInputDataSource::HttpInputDataSource(const std::string &url)
-	: InputDataSource(), mUrl(url)
+	: InputDataSource(), mUrl(url), mThread((pthread_t)0)
 {
 	medvdbg("url: %s\n", mUrl.c_str());
 }
 
 HttpInputDataSource::HttpInputDataSource(const HttpInputDataSource &source)
-	: InputDataSource(source), mUrl(source.mUrl)
+	: InputDataSource(source), mUrl(source.mUrl), mThread((pthread_t)0)
 {
 }
 
@@ -104,19 +108,19 @@ bool HttpInputDataSource::open()
 	mIsHeaderReceived = false;
 	mIsDataReceived = false;
 
-	mThread = std::thread([this]() {
-		medvdbg("download thread enter!\n");
-		//mHttpStream->addHeader("Icy-MetaData:1"); // not support now
-		mHttpStream->setHeaderCallback(HeaderCallback, (void *)this);
-		mHttpStream->setWriteCallback(WriteCallback, (void *)this);
-		if (!mHttpStream->download(mUrl)) {
-			medwdbg("download failed or terminated!\n");
-			// TODO: send network error code to upper layer later
-		}
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, CONFIG_HTTPSOURCE_DOWNLOAD_STACKSIZE);
+	struct sched_param sparam;
+	sparam.sched_priority = 100;
+	pthread_attr_setschedparam(&attr, &sparam);
 
-		mBufferWriter->setEndOfStream();
-		medvdbg("download thread exit!\n");
-	});
+	int iRet = pthread_create(&mThread, &attr, static_cast<pthread_startroutine_t>(workerMain), this);
+	if (iRet != OK) {
+		meddbg("Fail to create download thread, err:%d\n", iRet);
+		return false;
+	}
+	pthread_setname_np(mThread, "HttpSourceDownloader");
 
 	// wait for Content-Type header
 	if (!mCondv.wait_for(lock, WAIT_HEADER_TIMEOUT, [=]{ return mIsHeaderReceived; })) {
@@ -182,8 +186,9 @@ bool HttpInputDataSource::close()
 		mBufferWriter->setEndOfStream();
 	}
 
-	if (mThread.joinable()) {
-		mThread.join();
+	if (mThread != (pthread_t)0) {
+		pthread_join(mThread, NULL);
+		mThread = (pthread_t)0;
 	}
 
 	mHttpStream = nullptr;
@@ -269,6 +274,24 @@ size_t HttpInputDataSource::WriteCallback(char *data, size_t size, size_t nmemb,
 	auto source = static_cast<HttpInputDataSource *>(userp);
 	size_t totalsize = size * nmemb;
 	return source->mBufferWriter->write((unsigned char *)data, totalsize);
+}
+
+void *HttpInputDataSource::workerMain(void *arg)
+{
+	medvdbg("download thread enter!\n");
+	auto source = static_cast<HttpInputDataSource *>(arg);
+
+	//mHttpStream->addHeader("Icy-MetaData:1"); // not support now
+	source->mHttpStream->setHeaderCallback(HeaderCallback, arg);
+	source->mHttpStream->setWriteCallback(WriteCallback, arg);
+	if (!source->mHttpStream->download(source->mUrl)) {
+		medwdbg("download failed or terminated!\n");
+		// TODO: send network error code to upper layer later
+	}
+
+	source->mBufferWriter->setEndOfStream();
+	medvdbg("download thread exit!\n");
+	return NULL;
 }
 
 HttpInputDataSource::~HttpInputDataSource()
