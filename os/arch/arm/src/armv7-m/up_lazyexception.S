@@ -1,5 +1,5 @@
 /************************************************************************************************
- * arch/arm/src/armv7-m/gnu/up_lazyexcption.S
+ * arch/arm/src/armv7-m/up_lazyexcption.S
  *
  *   Copyright (C) 2009-2010, 2013-2016, 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

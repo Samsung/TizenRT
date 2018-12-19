@@ -1,5 +1,5 @@
 /************************************************************************************
- * arch/arm/src/armv7-m/gnu/up_switchcontext.S
+ * arch/arm/src/armv7-m/up_switchcontext.S
  *
  *   Copyright (C) 2009-2011, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
