@@ -374,7 +374,7 @@ int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int
 	}
 
 	if (see_mutex_unlock(&m_handler) != SEE_OK) {
-		return SEE_MUTEX_UNLOCK_ERROR
+		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
 	return SEE_OK;
@@ -1177,7 +1177,11 @@ int see_generate_certificate(struct cert_opt opt, unsigned char *out_buf, unsign
 	mbedtls_x509write_crt_set_md_alg(&crt, MBEDTLS_MD_SHA256);
 	mbedtls_mpi_init(&serial);
 
-	mbedtls_pk_setup(&issuer_key, &mbedtls_rsa_info);
+	r = mbedtls_pk_setup(&issuer_key, &mbedtls_rsa_info);
+	if (r != 0) {
+		SEE_DEBUG("mbedtls_pk_setup -0x%x\n", -r);
+		return SEE_ERROR;
+	}
 
 	/* Check mandatory params */
 	if (!opt.subject_key_index && !opt.issuer_key_index) {

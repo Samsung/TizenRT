@@ -41,7 +41,7 @@
 
 #if defined(MBEDTLS_NET_C)
 
-#ifndef MBED_TIZENRT
+#ifdef MBED_TIZENRT
 #include <sys/select.h>
 #else
 #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
@@ -100,7 +100,7 @@ static int net_prepare( void )
     }
 #else
 #if !defined(EFIX64) && !defined(EFI32)
-#ifndef MBED_TIZENRT
+#ifdef MBED_TIZENRT
 #else
     signal( SIGPIPE, SIG_IGN );
 #endif

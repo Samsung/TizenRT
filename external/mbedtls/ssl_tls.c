@@ -6519,14 +6519,14 @@ const char *mbedtls_ssl_get_alpn_protocol( const mbedtls_ssl_context *ssl )
 
 void mbedtls_ssl_conf_max_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->max_major_ver = major;
-    conf->max_minor_ver = minor;
+    conf->max_major_ver = (unsigned char)major;
+    conf->max_minor_ver = (unsigned char)minor;
 }
 
 void mbedtls_ssl_conf_min_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->min_major_ver = major;
-    conf->min_minor_ver = minor;
+    conf->min_major_ver = (unsigned char)major;
+    conf->min_minor_ver = (unsigned char)minor;
 }
 
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)

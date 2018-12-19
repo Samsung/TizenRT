@@ -27,7 +27,7 @@
 
 int parse_crt_chain(mbedtls_x509_crt *crt, unsigned char *buf, unsigned int buf_len)
 {
-	int r;
+	int r = 0;
 	int pos = 0;
 	size_t len = 0;
 	unsigned char *p = NULL;
@@ -91,7 +91,7 @@ int get_crt_subject_uuid(unsigned char *uuid, unsigned int *uuid_len,
 	t_crt = &crt;
 	while (t_crt != NULL) {
 		r = mbedtls_x509_dn_gets(subname, sizeof(subname), &t_crt->subject);
-		if (r < 0 || sizeof(subname)) {
+		if (r < 0 || r >= sizeof(subname)) {
 			SEE_DEBUG("Fail to get dn %d\n", r);
 			r = MBEDTLS_ERR_X509_BUFFER_TOO_SMALL;
 			goto exit;

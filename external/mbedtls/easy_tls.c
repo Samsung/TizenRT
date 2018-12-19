@@ -496,6 +496,7 @@ int TLSSession_free(tls_session *session)
 	mbedtls_ssl_free(session->ssl);
 	mbedtls_net_free(&session->net);
 
+	TLS_FREE(session->b_ctx.addr);
 	TLS_FREE(session->ssl);
 	TLS_FREE(session);
 

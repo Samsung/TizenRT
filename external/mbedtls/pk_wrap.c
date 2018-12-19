@@ -654,8 +654,12 @@ int hw_ecdsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		goto cleanup;
 	}
 
-	mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len);
-	mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len);
+	if( ( ret = mbedtls_mpi_read_binary( &r, ecc_sign.r, ecc_sign.r_byte_len ) ) != 0 ) {
+		goto cleanup;
+	}
+	if( ( ret = mbedtls_mpi_read_binary( &s, ecc_sign.s, ecc_sign.s_byte_len ) ) != 0 ) {
+		goto cleanup;
+	}
 
 	MBEDTLS_MPI_CHK( ecdsa_signature_to_asn1( &r, &s, sig, sig_len ) );
 
@@ -684,9 +688,6 @@ int hw_rsa_sign_wrap( mbedtls_rsa_context *ctx, mbedtls_md_type_t md_alg,
 		goto sign_exit;
 	case MBEDTLS_MD_SHA1:
 		rsa_sign.alg_type = SHA1_160 | ( padding ^ 0x1 );	/* 0x110X */
-		break;
-	case MBEDTLS_MD_SHA224:
-		rsa_sign.alg_type = SHA2_224 | ( padding ^ 0x1 );	/* 0x220X */
 		break;
 	case MBEDTLS_MD_SHA256:
 		rsa_sign.alg_type = SHA2_256 | ( padding ^ 0x1 );	/* 0x230X */

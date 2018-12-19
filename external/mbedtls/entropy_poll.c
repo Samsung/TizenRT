@@ -57,7 +57,7 @@
 
 #if !defined(MBEDTLS_NO_PLATFORM_ENTROPY)
 
-#if !defined(MBED_TIZENRT)
+#if defined(MBED_TIZENRT)
 #else
 #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
 !defined(__APPLE__) && !defined(_WIN32)
