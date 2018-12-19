@@ -169,7 +169,7 @@ static int things_set_cert_chains(void)
 {
 	int ret = -1;
 	uint8_t *buf = NULL;
-	uint32_t buflen = SEE_BUF_MAX_SIZE;
+	uint32_t buflen = SEE_MAX_BUF_SIZE;
 
 	buf = (uint8_t *)things_malloc(buflen);
 	if (buf == NULL) {
