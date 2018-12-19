@@ -22,6 +22,14 @@
 #include <mbedtls/easy_tls.h>
 #include <mbedtls/debug.h>
 
+#include <sys/socket.h>
+#include <sys/types.h>
+
+#if defined(CONFIG_TLS_WITH_SSS)
+#include <mbedtls/see_cert.h>
+#include <mbedtls/see_api.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -36,6 +44,8 @@
 		free(buf);					\
 		buf = NULL;					\
 	}
+
+#define PEM_END_CERTIFICATE	"-----END CERTIFICATE-----\r\n"
 
 /****************************************************************************
  * Static Functions
@@ -122,6 +132,11 @@ static int tls_entropy_init(tls_ctx *ctx)
 static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 {
 	int ret = TLS_PARSE_CRED_FAIL;
+#if defined(CONFIG_TLS_WITH_SSS)
+	const mbedtls_pk_info_t *pk_info = NULL;
+#endif
+	char *start = NULL, *end = NULL, *copy = NULL;
+	int remain = 0;
 
 	if (cred == NULL) {
 		return TLS_INVALID_CRED;
@@ -137,24 +152,70 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 
 	/* Mandatory */
 	if (cred->ca_cert) {
-		ret = mbedtls_x509_crt_parse(ctx->crt, cred->ca_cert, cred->ca_certlen);
-		if (ret) {
-			return TLS_INVALID_CACERT;
-		}
+		/* CA certs may come as a bundle, parse them all */
+		start = (char *)cred->ca_cert;
+		end = start;
+		remain = cred->ca_certlen - 1;
+		do {
+			end = strstr(start, PEM_END_CERTIFICATE);
+			if (!end)
+				break;
+
+			end += strlen(PEM_END_CERTIFICATE);
+			copy = strndup(start, end - start);
+			if (!copy)
+				return TLS_ALLOC_FAIL;
+
+			if (mbedtls_x509_crt_parse(ctx->crt, (const unsigned char *)copy,
+						end - start + 1) != 0) {
+				free(copy);
+				return TLS_INVALID_CACERT;
+			}
+			remain -= end - start;
+			start = end;
+			free(copy);
+		} while (remain);
+
 		mbedtls_ssl_conf_ca_chain(ctx->conf, ctx->crt, NULL);
 	}
 
 	/* Optional */
-	if (cred->dev_cert && cred->dev_key) {
+	if (cred->dev_cert) {
 		ret = mbedtls_x509_crt_parse(ctx->crt, cred->dev_cert, cred->dev_certlen);
 		if (ret) {
 			return TLS_INVALID_DEVCERT;
 		}
-		ret = mbedtls_pk_parse_key(ctx->pkey, cred->dev_key, cred->dev_keylen, NULL, 0);
-		if (ret) {
+
+		if (cred->dev_key) {
+			ret = mbedtls_pk_parse_key(ctx->pkey, cred->dev_key, cred->dev_keylen, NULL, 0);
+			if (ret) {
+				return TLS_INVALID_DEVKEY;
+			}
+		}
+#if defined(CONFIG_TLS_WITH_SSS)
+		else if (cred->use_se) {
+			pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
+			if (!pk_info) {
+				return TLS_INVALID_DEVKEY;
+			}
+
+			ret = mbedtls_pk_setup(ctx->pkey, pk_info);
+			if (ret) {
+				return TLS_INVALID_DEVKEY;
+			}
+
+			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->grp.id =
+						MBEDTLS_ECP_DP_SECP256R1;
+			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->key_index =
+						FACTORYKEY_ARTIK_DEVICE;
+			ctx->use_se = true;
+		}
+#endif
+		else {
 			return TLS_INVALID_DEVKEY;
 		}
-		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+
+		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next ? ctx->crt->next : ctx->crt, ctx->pkey);
 		if (ret) {
 			return TLS_INVALID_DEVCERT;
 		}
@@ -162,6 +223,34 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 
 	return ret;
 }
+
+#if defined(CONFIG_TLS_WITH_SSS)
+static int see_generate_random_client(void *ctx, unsigned char *data, size_t len)
+{
+	size_t offset = 0;
+	int ret = 0;
+	unsigned int rand[SEE_MAX_RANDOM_SIZE];
+
+	if (!data || !len)
+		return -1;
+
+	while (len != 0) {
+		size_t rand_size = len >= SEE_MAX_RANDOM_SIZE ? SEE_MAX_RANDOM_SIZE : len;
+
+		ret = see_generate_random(rand, rand_size);
+		if (ret != SEE_OK) {
+			return -1;
+		}
+
+		memcpy(data + offset, rand, rand_size);
+
+		len -= rand_size;
+		offset += rand_size;
+	}
+
+	return 0;
+}
+#endif
 
 static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 {
@@ -189,11 +278,21 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 		mbedtls_debug_set_threshold(opt->debug_mode);
 	}
 #endif
-	mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);
+
+#if defined(CONFIG_TLS_WITH_SSS)
+	if (ctx->use_se) {
+		mbedtls_ssl_conf_rng(ctx->conf, see_generate_random_client, ctx->ctr_drbg);
+	} else
+#endif
+	{
+		mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);
+	}
+
 	mbedtls_ssl_conf_dbg(ctx->conf, easy_tls_debug, stdout);
 
 #if defined(MBEDTLS_SSL_CACHE_C)
-	mbedtls_ssl_conf_session_cache(ctx->conf, ctx->cache, mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
+	if (opt->server == MBEDTLS_SSL_IS_SERVER)
+		mbedtls_ssl_conf_session_cache(ctx->conf, ctx->cache, mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
 #endif
 
 	if (opt->auth_mode <= MBEDTLS_SSL_VERIFY_UNSET) {
@@ -280,6 +379,7 @@ tls_ctx *TLSCtx(tls_cred *cred)
 	return ctx;
 errout:
 	TLSCtx_free(ctx);
+	TLS_FREE(ctx);
 
 	return NULL;
 }
