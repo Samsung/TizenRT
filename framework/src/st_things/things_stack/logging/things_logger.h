@@ -46,14 +46,14 @@ typedef enum {
 /**
  * Initialize the logger.
  */
-void things_log_init();
+void things_log_init(void);
 
 /**
  * Called to Free dyamically allocated resources used with custom logging.
  * Not necessary if default logging is used
  *
  */
-void things_log_shutdown();
+void things_log_shutdown(void);
 
 /**
  * Set the Version.
@@ -71,7 +71,7 @@ void things_log_set_version(char *version);
 void things_logv(things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *format, ...);
 //#endif //#ifdef __TIZEN__
 
-const char *__get_timestamp__();
+const char *__get_timestamp__(void);
 
 #define THINGS_LOG_INIT()   things_log_init()
 #define THINGS_LOG_SHUTDOWN()   things_log_shutdown()

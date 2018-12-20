@@ -194,7 +194,7 @@ static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource
 	things_representation_s *rep = NULL;
 
 	if (list_cnt == 0 || p_list == NULL) {
-		THINGS_LOG_E(TAG, "Scaned AP list is NULL ");
+		THINGS_LOG_E(TAG, "Scanned AP list is NULL ");
 		return OC_EH_ERROR;
 	}
 
@@ -694,17 +694,17 @@ RESPONSE_ERROR:
 	return eh_result;
 }
 
-void init_handler()
+void init_handler(void)
 {
 	g_quit_flag = 0;
 }
 
-void deinit_handler()
+void deinit_handler(void)
 {
 	g_quit_flag = 1;
 }
 
-struct things_request_handler_s *get_handler_instance()
+struct things_request_handler_s *get_handler_instance(void)
 {
 	struct things_request_handler_s *handler = (things_request_handler_s *) things_malloc(sizeof(things_request_handler_s));
 

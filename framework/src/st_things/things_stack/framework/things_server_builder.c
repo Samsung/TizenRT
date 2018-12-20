@@ -398,7 +398,7 @@ void set_platform_info(things_server_builder_s *builder, char *model_num, char *
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
-things_server_builder_s *get_builder_instance()
+things_server_builder_s *get_builder_instance(void)
 {
 	if (g_builder == NULL) {
 		g_builder = (things_server_builder_s *) things_malloc(sizeof(things_server_builder_s));

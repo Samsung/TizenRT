@@ -49,7 +49,7 @@ typedef struct things_server_builder_s {
 	void (*bind_all)(struct things_resource_s *, struct things_resource_s *[], size_t);
 } things_server_builder_s;
 
-extern struct things_server_builder_s *get_builder_instance();
+extern struct things_server_builder_s *get_builder_instance(void);
 extern void release_builder_instance(struct things_server_builder_s *builder);
 
 #endif							// _THINGS_SERVER_BUILDER_H_

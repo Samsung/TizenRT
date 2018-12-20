@@ -88,7 +88,7 @@ void set_wifi_prov_state(wifi_prov_state_e value);
 wifi_prov_state_e get_wifi_prov_state(void);
 
 OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e resource_mask);
-OCStackResult delete_easysetup_resources();
+OCStackResult delete_easysetup_resources(void);
 OCStackResult prov_rsc_notify_all_observers(void);
 
 things_es_enrollee_state_e get_enrollee_state(void);
