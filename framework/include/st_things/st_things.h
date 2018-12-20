@@ -33,11 +33,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef __ST_THINGS_RTOS__
-#include <st_things/st_things_types.h>
-#else
 #include "st_things_types.h"
-#endif							// __ST_THINGS_RTOS__
 
 #ifdef __cplusplus
 extern "C" {

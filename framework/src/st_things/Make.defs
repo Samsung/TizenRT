@@ -19,6 +19,7 @@
 ifeq ($(CONFIG_ST_THINGS), y)
 THINGS_LIB_DIR = $(TOPDIR)/../framework/src/st_things
 THINGS_STACK_DIR = $(TOPDIR)/../framework/src/st_things/things_stack
+THINGS_INC_DIR = $(TOPDIR)/../framework/include/st_things
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(TOPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
 
@@ -29,16 +30,18 @@ CSRCS += st_things_request_handler_collection.c
 endif
 
 CFLAGS += -D__TIZENRT__
-CFLAGS += -D__TINYARA__
 CFLAGS += -D__ST_THINGS_RTOS__
 CFLAGS += -std=c99
-CFLAGS += -w
+CFLAGS += -Wall -Wno-error
 
 ####################################
 # LIBS
 ####################################
-CFLAGS += -I$(THINGS_STACK_DIR)
+ifeq ($(CONFIG_ST_THINGS),y)
 CFLAGS += -I$(THINGS_LIB_DIR)
+CFLAGS += -I$(THINGS_STACK_DIR)
+CFLAGS += -I$(THINGS_INC_DIR)
+endif
 
 ####################################
 # THINGS STACK
@@ -52,6 +55,9 @@ include $(THINGS_STACK_DIR)/framework/Make.defs
 include $(THINGS_STACK_DIR)/easy-setup/Make.defs
 include $(THINGS_STACK_DIR)/cloud/Make.defs
 include $(THINGS_STACK_DIR)/security/Make.defs
+ifeq ($(CONFIG_SVR_DB_SECURESTORAGE),y)
+include $(THINGS_STACK_DIR)/security/sss_security/Make.defs
+endif
 include $(THINGS_STACK_DIR)/logging/Make.defs
 ifeq ($(CONFIG_ST_THINGS_FOTA),y)
 include $(THINGS_STACK_DIR)/fota/Make.defs
@@ -82,12 +88,11 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/service/notification/src/common
 ifeq ($(CONFIG_IOTIVITY_ROUTING),"EP")
 CFLAGS += -DROUTING_EP
 else
-CFLAGS += -DROUTING_GW
+CFLAGS += -DROUTING_GATEWAY
 endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 CFLAGS += -D__WITH_DTLS__
-CFLAGS += -D__ST_THINGS_RTOS_LOCAL_SECURED__
 endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
@@ -95,7 +100,6 @@ CFLAGS += -DWITH_CLOUD
 CFLAGS += -D__WITH_TLS__
 CFLAGS += -D__SECURED__
 CFLAGS += -DTCP_ADAPTER
-CFLAGS += -D__ST_THINGS_RTOS_CLOUD__
 endif
 
 DEPPATH += --dep-path src/st_things

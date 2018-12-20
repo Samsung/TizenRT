@@ -20,11 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __ST_THINGS_RTOS__
-#include <st_things/st_things.h>
-#else
 #include "st_things.h"
-#endif							// __ST_THINGS_RTOS__
 #include "st_things_request_handler.h"
 #include "st_things_representation.h"
 #include "logging/things_logger.h"
@@ -301,16 +297,12 @@ int st_things_deinitialize(void)
 		return ret_val;
 	}
 
-	int result = 0;
-	if (1 != (result = things_deinitialize_stack())) {
-		THINGS_LOG_E(TAG, "things_deinitialize_stack failed (result:%d)", result);
-		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
-		return ST_THINGS_ERROR_OPERATION_FAILED;
-	}
-
 	g_stack_status = STACK_NOT_INITIALIZED;
 
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
+
+	(void)things_deinitialize_stack();
+
 	return ST_THINGS_ERROR_NONE;
 }
 

@@ -19,11 +19,7 @@
 #ifndef __ST_THINGS_REQUEST_HANDLER_H__
 #define __ST_THINGS_REQUEST_HANDLER_H__
 
-#ifdef __ST_THINGS_RTOS__
-#include <st_things/st_things.h>
-#else
 #include "st_things.h"
-#endif							// __ST_THINGS_RTOS__
 #include "things_resource.h"
 #include "octypes.h"
 
