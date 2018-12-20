@@ -45,7 +45,7 @@ static OicSecKey_t cacert;
 static OicSecKey_t subca;
 static OicSecKey_t devicecert;
 
-static uint8_t g_certChain;
+static uint8_t *g_certChain;
 
 OCStackResult things_sss_rootca_handler_init(OicUuid_t* subjectUuid)
 {
@@ -171,7 +171,7 @@ static int things_set_cert_chains(void)
 {
 	int ret = -1;
 	uint8_t *buf = NULL;
-	uint32_t buflen = SEE_BUF_MAX_SIZE;
+	uint32_t buflen = SEE_MAX_BUF_SIZE;
 
 	buf = (uint8_t *)things_malloc(buflen);
 	if (buf == NULL) {
