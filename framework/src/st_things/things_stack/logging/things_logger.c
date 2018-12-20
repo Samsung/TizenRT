@@ -31,14 +31,19 @@
 #include "utils/things_malloc.h"
 #include "string.h"
 
+#include <sys/types.h>
+#include <pthread.h>
+
 static const char *LEVEL[] __attribute__((unused)) = {
 	"DEBUG", "INFOR", "WARNING", "ERROR", "FATAL"
 };
 static char ts_buf[64] = { 0 };
 
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 char *p_version = NULL;
 
-void things_log_init()
+void things_log_init(void)
 {
 	/*
 	 * Initialize p_version variable
@@ -46,7 +51,7 @@ void things_log_init()
 	p_version = NULL;
 }
 
-void things_log_shutdown()
+void things_log_shutdown(void)
 {
 	/*
 	 * Free the memory allocated for p_version
@@ -96,11 +101,13 @@ void things_log(things_log_level_e level, const char *tag, const char *func_name
 	 * Logger Format is given below
 	 * [<MM/YY H:M:S.uS> <LOGGER_VERSION>] <LOG_LEVEL> <TAG> <API> <LINE_NO> <LOG_STR>
 	 */
+	pthread_mutex_lock(&lock);
 	if (p_version) {
-		dbg("[%s %s] %s %s %s %d %s\n", buf, p_version, LEVEL[level], tag, func_name, line_num, logStr);
+		dbg("[%s %s] %s %s %4d %s %s\n", buf, p_version, LEVEL[level], tag, line_num, func_name, logStr);
 	} else {
-		dbg("T%d [%s] %s %s %s %d %s\n", getpid(), buf, LEVEL[level], tag, func_name, line_num, logStr);
+		dbg("T%d [%s] %s %s %4d %s %s\n", getpid(), buf, LEVEL[level], tag, line_num, func_name, logStr);
 	}
+	pthread_mutex_unlock(&lock);
 }
 
 /**
