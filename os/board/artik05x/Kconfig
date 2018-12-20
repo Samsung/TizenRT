@@ -165,6 +165,14 @@ config ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT
 		Specifies the mount point where romfs file system
 		will be mounted at.
 
+config SVR_DB_SECURESTORAGE
+	bool "Enable storing SVR DB inside secure storage partition"
+	default n
+	depends on (SUPPORT_FULL_SECURITY && ARTIK05X_AUTOMOUNT_SSSRW && TLS_WITH_SSS)
+	---help---
+		If enabled, SVR DB is stored in secure storage partion
+		mounted at the specified mount point.
+
 if RAMMTD
 config ARTIK05X_RAMMTD_NEBLOCKS
 	int "RAM MTD erase block count"
@@ -185,3 +193,4 @@ config ARTIK05X_RAMMTD_MOUNT_POINT
 	string "Mountpoint of the partition for ramfs r/w file system"
 	default "/ramfs"
 endif
+
