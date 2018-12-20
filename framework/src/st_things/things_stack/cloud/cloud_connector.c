@@ -197,10 +197,6 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 		OCRepPayloadSetPropObject(registerPayload, "aaf", aafPayload);
 	}
 
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
-
 	if (things_is_empty_request_handle() == true) {
 		iotivity_api_lock();
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) registerPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
@@ -287,10 +283,6 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 	OCRepPayloadSetPropBool(loginoutPayload, KEY_LOGINOUT, isLogin);
 	OCRepPayloadSetPropString(loginoutPayload, KEY_ICORE_VER, coreVer);
 	OCRepPayloadSetPropString(loginoutPayload, KEY_IOTIVITY_VER, IoTivityVer);
-
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
 
 	if (things_is_empty_request_handle() == true) {
 		iotivity_api_lock();
@@ -593,9 +585,6 @@ OCStackResult things_cloud_refresh(const char *host, const char *uId, const char
 	THINGS_LOG_D(TAG, "granttype    =%s", VALUE_TYPE_GRANT_TOKEN);
 	THINGS_LOG_D(TAG, "refreshtoken =%s", refreshtoken);
 
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
 
 	iotivity_api_lock();
 	OCStackResult res = OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) refreshPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
@@ -622,9 +611,6 @@ OCStackResult things_cloud_topic_publish_topic(const char *host, const char *top
 	if (!message) {
 		goto no_memory;
 	}
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
 
 	iotivity_api_lock();
 	OCStackResult res = OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) message, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);

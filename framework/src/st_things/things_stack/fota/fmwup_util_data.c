@@ -173,9 +173,6 @@ char *key_manager_get_data(const char *name)
 
 	if (!name) {
 		THINGS_LOG_E(TAG, "name or data is NULL");
-		if (name) {
-			THINGS_LOG_E(TAG, "name [%s]", name);
-		}
 		return NULL;
 	}
 
