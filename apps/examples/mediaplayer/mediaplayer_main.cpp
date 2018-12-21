@@ -64,7 +64,9 @@ static const int TEST_WAVE = 4;
 static const int TEST_BUFFER = 5;
 static const int TEST_HTTP = 6;
 
-static const std::string TEST_HTTP_URL = "http://ra01.sycdn.kuwo.cn/resource/n3/32/56/3260586875.mp3";
+// We don't provide any song's URL, to avoid license issue.
+// Please fill a valid URL to `TEST_HTTP_URL` for testing!
+static const std::string TEST_HTTP_URL = "";
 
 static const int TEST_COMMAND_NUM = 8;
 

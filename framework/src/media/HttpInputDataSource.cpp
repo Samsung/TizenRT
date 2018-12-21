@@ -124,7 +124,7 @@ bool HttpInputDataSource::open()
 
 	// wait for Content-Type header
 	if (!mCondv.wait_for(lock, WAIT_HEADER_TIMEOUT, [=]{ return mIsHeaderReceived; })) {
-		medwdbg("download:: wait header timeout!\n");
+		meddbg("download:: wait header timeout!\n");
 		mBufferWriter->setEndOfStream();
 		return false;
 	}
@@ -136,7 +136,7 @@ bool HttpInputDataSource::open()
 	case AUDIO_TYPE_AAC: {
 		// wait for audio stream data
 		if (!mCondv.wait_for(lock, WAIT_DATA_TIMEOUT, [=]{ return mIsDataReceived; })) {
-			medwdbg("download:: wait audio data timeout!\n");
+			meddbg("download:: wait audio data timeout!\n");
 			mBufferWriter->setEndOfStream();
 			return false;
 		}
@@ -202,7 +202,7 @@ bool HttpInputDataSource::close()
 
 bool HttpInputDataSource::isPrepare()
 {
-	return (mStreamBuffer != nullptr && mHttpStream != nullptr && getAudioType() != AUDIO_TYPE_UNKNOWN);
+	return ((mStreamBuffer != nullptr) && (mHttpStream != nullptr) && (getAudioType() != AUDIO_TYPE_UNKNOWN));
 }
 
 ssize_t HttpInputDataSource::read(unsigned char *buf, size_t size)
