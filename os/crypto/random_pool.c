@@ -76,17 +76,17 @@
  ****************************************************************************/
 
 #ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define ROTL_32(x,n) (((x) << (n)) | ((x) >> (32-(n))))
-#define ROTR_32(x,n) (((x) >> (n)) | ((x) << (32-(n))))
+#define ROTL_32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
+#define ROTR_32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
-#define  POOL_SIZE ENTROPY_POOL_SIZE
-#define  POOL_MASK (POOL_SIZE - 1)
+#define  POOL_SIZE                  ENTROPY_POOL_SIZE
+#define  POOL_MASK                  (POOL_SIZE - 1)
 #define  MIN_SEED_NEW_ENTROPY_WORDS 128
 #define  MAX_SEED_NEW_ENTROPY_WORDS 1024
-#define  NSEC_PER_SEC 1000000000
+#define  NSEC_PER_SEC               1000000000
 
 /****************************************************************************
  * Private Function Prototypes
