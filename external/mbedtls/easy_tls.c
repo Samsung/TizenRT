@@ -401,7 +401,7 @@ int TLSSession_free(tls_session *session)
 	return 0;
 }
 
-int TLSSend(tls_session *session, unsigned char *buf, size_t size)
+int TLSSend(tls_session *session, const unsigned char *buf, size_t size)
 {
 	return mbedtls_ssl_write(session->ssl, buf, size);
 }

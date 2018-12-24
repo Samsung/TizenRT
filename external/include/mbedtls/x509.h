@@ -19,7 +19,8 @@
  * \file x509.h
  *
  * \brief X.509 generic defines and structures
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -129,29 +130,29 @@
  * X.509 v3 Key Usage Extension flags
  * Reminder: update x509_info_key_usage() when adding new flags.
  */
-#define MBEDTLS_X509_KU_DIGITAL_SIGNATURE            (0x80)	/* bit 0 */
-#define MBEDTLS_X509_KU_NON_REPUDIATION              (0x40)	/* bit 1 */
-#define MBEDTLS_X509_KU_KEY_ENCIPHERMENT             (0x20)	/* bit 2 */
-#define MBEDTLS_X509_KU_DATA_ENCIPHERMENT            (0x10)	/* bit 3 */
-#define MBEDTLS_X509_KU_KEY_AGREEMENT                (0x08)	/* bit 4 */
-#define MBEDTLS_X509_KU_KEY_CERT_SIGN                (0x04)	/* bit 5 */
-#define MBEDTLS_X509_KU_CRL_SIGN                     (0x02)	/* bit 6 */
-#define MBEDTLS_X509_KU_ENCIPHER_ONLY                (0x01)	/* bit 7 */
-#define MBEDTLS_X509_KU_DECIPHER_ONLY              (0x8000)	/* bit 8 */
+#define MBEDTLS_X509_KU_DIGITAL_SIGNATURE            (0x80)  /* bit 0 */
+#define MBEDTLS_X509_KU_NON_REPUDIATION              (0x40)  /* bit 1 */
+#define MBEDTLS_X509_KU_KEY_ENCIPHERMENT             (0x20)  /* bit 2 */
+#define MBEDTLS_X509_KU_DATA_ENCIPHERMENT            (0x10)  /* bit 3 */
+#define MBEDTLS_X509_KU_KEY_AGREEMENT                (0x08)  /* bit 4 */
+#define MBEDTLS_X509_KU_KEY_CERT_SIGN                (0x04)  /* bit 5 */
+#define MBEDTLS_X509_KU_CRL_SIGN                     (0x02)  /* bit 6 */
+#define MBEDTLS_X509_KU_ENCIPHER_ONLY                (0x01)  /* bit 7 */
+#define MBEDTLS_X509_KU_DECIPHER_ONLY              (0x8000)  /* bit 8 */
 
 /*
  * Netscape certificate types
  * (http://www.mozilla.org/projects/security/pki/nss/tech-notes/tn3.html)
  */
 
-#define MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT         (0x80)	/* bit 0 */
-#define MBEDTLS_X509_NS_CERT_TYPE_SSL_SERVER         (0x40)	/* bit 1 */
-#define MBEDTLS_X509_NS_CERT_TYPE_EMAIL              (0x20)	/* bit 2 */
-#define MBEDTLS_X509_NS_CERT_TYPE_OBJECT_SIGNING     (0x10)	/* bit 3 */
-#define MBEDTLS_X509_NS_CERT_TYPE_RESERVED           (0x08)	/* bit 4 */
-#define MBEDTLS_X509_NS_CERT_TYPE_SSL_CA             (0x04)	/* bit 5 */
-#define MBEDTLS_X509_NS_CERT_TYPE_EMAIL_CA           (0x02)	/* bit 6 */
-#define MBEDTLS_X509_NS_CERT_TYPE_OBJECT_SIGNING_CA  (0x01)	/* bit 7 */
+#define MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT         (0x80)  /* bit 0 */
+#define MBEDTLS_X509_NS_CERT_TYPE_SSL_SERVER         (0x40)  /* bit 1 */
+#define MBEDTLS_X509_NS_CERT_TYPE_EMAIL              (0x20)  /* bit 2 */
+#define MBEDTLS_X509_NS_CERT_TYPE_OBJECT_SIGNING     (0x10)  /* bit 3 */
+#define MBEDTLS_X509_NS_CERT_TYPE_RESERVED           (0x08)  /* bit 4 */
+#define MBEDTLS_X509_NS_CERT_TYPE_SSL_CA             (0x04)  /* bit 5 */
+#define MBEDTLS_X509_NS_CERT_TYPE_EMAIL_CA           (0x02)  /* bit 6 */
+#define MBEDTLS_X509_NS_CERT_TYPE_OBJECT_SIGNING_CA  (0x01)  /* bit 7 */
 
 /*
  * X.509 extension types
@@ -164,10 +165,10 @@
 #define MBEDTLS_X509_EXT_KEY_USAGE                   (1 << 2)
 #define MBEDTLS_X509_EXT_CERTIFICATE_POLICIES        (1 << 3)
 #define MBEDTLS_X509_EXT_POLICY_MAPPINGS             (1 << 4)
-#define MBEDTLS_X509_EXT_SUBJECT_ALT_NAME            (1 << 5)	/* Supported (DNS) */
+#define MBEDTLS_X509_EXT_SUBJECT_ALT_NAME            (1 << 5)    /* Supported (DNS) */
 #define MBEDTLS_X509_EXT_ISSUER_ALT_NAME             (1 << 6)
 #define MBEDTLS_X509_EXT_SUBJECT_DIRECTORY_ATTRS     (1 << 7)
-#define MBEDTLS_X509_EXT_BASIC_CONSTRAINTS           (1 << 8)	/* Supported */
+#define MBEDTLS_X509_EXT_BASIC_CONSTRAINTS           (1 << 8)    /* Supported */
 #define MBEDTLS_X509_EXT_NAME_CONSTRAINTS            (1 << 9)
 #define MBEDTLS_X509_EXT_POLICY_CONSTRAINTS          (1 << 10)
 #define MBEDTLS_X509_EXT_EXTENDED_KEY_USAGE          (1 << 11)
@@ -175,7 +176,7 @@
 #define MBEDTLS_X509_EXT_INIHIBIT_ANYPOLICY          (1 << 13)
 #define MBEDTLS_X509_EXT_FRESHEST_CRL                (1 << 14)
 
-#define MBEDTLS_X509_EXT_NS_CERT_TYPE                (1 << 16)	/* Parsed (and then ?) */
+#define MBEDTLS_X509_EXT_NS_CERT_TYPE                (1 << 16)
 
 /*
  * Storage format identifiers
@@ -221,10 +222,12 @@ typedef mbedtls_asn1_named_data mbedtls_x509_name;
 typedef mbedtls_asn1_sequence mbedtls_x509_sequence;
 
 /** Container for date and time (precision in seconds). */
-typedef struct mbedtls_x509_time {
-	int year, mon, day;		/**< Date. */
-	int hour, min, sec;		/**< Time. */
-} mbedtls_x509_time;
+typedef struct mbedtls_x509_time
+{
+    int year, mon, day;         /**< Date. */
+    int hour, min, sec;         /**< Time. */
+}
+mbedtls_x509_time;
 
 /** \} name Structures for parsing X.509 certificates, CRLs and CSRs */
 /** \} addtogroup x509_module */
@@ -240,7 +243,7 @@ typedef struct mbedtls_x509_time {
  * \return         The length of the string written (not including the
  *                 terminated nul byte), or a negative error code.
  */
-int mbedtls_x509_dn_gets(char *buf, size_t size, const mbedtls_x509_name *dn);
+int mbedtls_x509_dn_gets( char *buf, size_t size, const mbedtls_x509_name *dn );
 
 /**
  * \brief          Store the certificate serial in printable form into buf;
@@ -253,7 +256,7 @@ int mbedtls_x509_dn_gets(char *buf, size_t size, const mbedtls_x509_name *dn);
  * \return         The length of the string written (not including the
  *                 terminated nul byte), or a negative error code.
  */
-int mbedtls_x509_serial_gets(char *buf, size_t size, const mbedtls_x509_buf *serial);
+int mbedtls_x509_serial_gets( char *buf, size_t size, const mbedtls_x509_buf *serial );
 
 /**
  * \brief          Check a given mbedtls_x509_time against the system time
@@ -262,12 +265,12 @@ int mbedtls_x509_serial_gets(char *buf, size_t size, const mbedtls_x509_buf *ser
  * \note           Intended usage is "if( is_past( valid_to ) ) ERROR".
  *                 Hence the return value of 1 if on internal errors.
  *
- * \param time     mbedtls_x509_time to check
+ * \param to       mbedtls_x509_time to check
  *
  * \return         1 if the given time is in the past or an error occured,
  *                 0 otherwise.
  */
-int mbedtls_x509_time_is_past(const mbedtls_x509_time *time);
+int mbedtls_x509_time_is_past( const mbedtls_x509_time *to );
 
 /**
  * \brief          Check a given mbedtls_x509_time against the system time
@@ -276,53 +279,72 @@ int mbedtls_x509_time_is_past(const mbedtls_x509_time *time);
  * \note           Intended usage is "if( is_future( valid_from ) ) ERROR".
  *                 Hence the return value of 1 if on internal errors.
  *
- * \param time     mbedtls_x509_time to check
+ * \param from     mbedtls_x509_time to check
  *
  * \return         1 if the given time is in the future or an error occured,
  *                 0 otherwise.
  */
-int mbedtls_x509_time_is_future(const mbedtls_x509_time *time);
+int mbedtls_x509_time_is_future( const mbedtls_x509_time *from );
 
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if the test failed
  */
-int mbedtls_x509_self_test(int verbose);
+int mbedtls_x509_self_test( int verbose );
 
 /*
  * Internal module functions. You probably do not want to use these unless you
  * know you do.
  */
-int mbedtls_x509_get_name(unsigned char **p, const unsigned char *end, mbedtls_x509_name *cur);
-int mbedtls_x509_get_alg_null(unsigned char **p, const unsigned char *end, mbedtls_x509_buf *alg);
-int mbedtls_x509_get_alg(unsigned char **p, const unsigned char *end, mbedtls_x509_buf *alg, mbedtls_x509_buf *params);
+int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
+                   mbedtls_x509_name *cur );
+int mbedtls_x509_get_alg_null( unsigned char **p, const unsigned char *end,
+                       mbedtls_x509_buf *alg );
+int mbedtls_x509_get_alg( unsigned char **p, const unsigned char *end,
+                  mbedtls_x509_buf *alg, mbedtls_x509_buf *params );
 #if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT)
-int mbedtls_x509_get_rsassa_pss_params(const mbedtls_x509_buf *params, mbedtls_md_type_t *md_alg, mbedtls_md_type_t *mgf_md, int *salt_len);
+int mbedtls_x509_get_rsassa_pss_params( const mbedtls_x509_buf *params,
+                                mbedtls_md_type_t *md_alg, mbedtls_md_type_t *mgf_md,
+                                int *salt_len );
 #endif
-int mbedtls_x509_get_sig(unsigned char **p, const unsigned char *end, mbedtls_x509_buf *sig);
-int mbedtls_x509_get_sig_alg(const mbedtls_x509_buf *sig_oid, const mbedtls_x509_buf *sig_params, mbedtls_md_type_t *md_alg, mbedtls_pk_type_t *pk_alg, void **sig_opts);
-int mbedtls_x509_get_time(unsigned char **p, const unsigned char *end, mbedtls_x509_time *time);
-int mbedtls_x509_get_serial(unsigned char **p, const unsigned char *end, mbedtls_x509_buf *serial);
-int mbedtls_x509_get_ext(unsigned char **p, const unsigned char *end, mbedtls_x509_buf *ext, int tag);
-int mbedtls_x509_sig_alg_gets(char *buf, size_t size, const mbedtls_x509_buf *sig_oid, mbedtls_pk_type_t pk_alg, mbedtls_md_type_t md_alg, const void *sig_opts);
-int mbedtls_x509_key_size_helper(char *buf, size_t buf_size, const char *name);
-int mbedtls_x509_string_to_names(mbedtls_asn1_named_data **head, const char *name);
-int mbedtls_x509_set_extension(mbedtls_asn1_named_data **head, const char *oid, size_t oid_len, int critical, const unsigned char *val, size_t val_len);
-int mbedtls_x509_write_extensions(unsigned char **p, unsigned char *start, mbedtls_asn1_named_data *first);
-int mbedtls_x509_write_names(unsigned char **p, unsigned char *start, mbedtls_asn1_named_data *first);
-int mbedtls_x509_write_sig(unsigned char **p, unsigned char *start, const char *oid, size_t oid_len, unsigned char *sig, size_t size);
+int mbedtls_x509_get_sig( unsigned char **p, const unsigned char *end, mbedtls_x509_buf *sig );
+int mbedtls_x509_get_sig_alg( const mbedtls_x509_buf *sig_oid, const mbedtls_x509_buf *sig_params,
+                      mbedtls_md_type_t *md_alg, mbedtls_pk_type_t *pk_alg,
+                      void **sig_opts );
+int mbedtls_x509_get_time( unsigned char **p, const unsigned char *end,
+                   mbedtls_x509_time *t );
+int mbedtls_x509_get_serial( unsigned char **p, const unsigned char *end,
+                     mbedtls_x509_buf *serial );
+int mbedtls_x509_get_ext( unsigned char **p, const unsigned char *end,
+                  mbedtls_x509_buf *ext, int tag );
+int mbedtls_x509_sig_alg_gets( char *buf, size_t size, const mbedtls_x509_buf *sig_oid,
+                       mbedtls_pk_type_t pk_alg, mbedtls_md_type_t md_alg,
+                       const void *sig_opts );
+int mbedtls_x509_key_size_helper( char *buf, size_t buf_size, const char *name );
+int mbedtls_x509_string_to_names( mbedtls_asn1_named_data **head, const char *name );
+int mbedtls_x509_set_extension( mbedtls_asn1_named_data **head, const char *oid, size_t oid_len,
+                        int critical, const unsigned char *val,
+                        size_t val_len );
+int mbedtls_x509_write_extensions( unsigned char **p, unsigned char *start,
+                           mbedtls_asn1_named_data *first );
+int mbedtls_x509_write_names( unsigned char **p, unsigned char *start,
+                      mbedtls_asn1_named_data *first );
+int mbedtls_x509_write_sig( unsigned char **p, unsigned char *start,
+                    const char *oid, size_t oid_len,
+                    unsigned char *sig, size_t size );
 
 #define MBEDTLS_X509_SAFE_SNPRINTF                          \
-	do {                                                    \
-		if (ret < 0 || (size_t)ret >= n)                    \
-			return (MBEDTLS_ERR_X509_BUFFER_TOO_SMALL);     \
-															\
-		n -= (size_t)ret;                                   \
-		p += (size_t)ret;                                   \
-	} while (0)
+    do {                                                    \
+        if( ret < 0 || (size_t) ret >= n )                  \
+            return( MBEDTLS_ERR_X509_BUFFER_TOO_SMALL );    \
+                                                            \
+        n -= (size_t) ret;                                  \
+        p += (size_t) ret;                                  \
+    } while( 0 )
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* x509.h */
+
+#endif /* x509.h */

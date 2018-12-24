@@ -19,7 +19,8 @@
  * \file pkcs12.h
  *
  * \brief PKCS#12 Personal Information Exchange Syntax
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -51,9 +52,9 @@
 #define MBEDTLS_ERR_PKCS12_PBE_INVALID_FORMAT             -0x1E80  /**< PBE ASN.1 data not as expected. */
 #define MBEDTLS_ERR_PKCS12_PASSWORD_MISMATCH              -0x1E00  /**< Given private key password does not allow for correct decryption. */
 
-#define MBEDTLS_PKCS12_DERIVE_KEY       1	/**< encryption/decryption key */
-#define MBEDTLS_PKCS12_DERIVE_IV        2	/**< initialization vector     */
-#define MBEDTLS_PKCS12_DERIVE_MAC_KEY   3	/**< integrity / MAC key       */
+#define MBEDTLS_PKCS12_DERIVE_KEY       1   /**< encryption/decryption key */
+#define MBEDTLS_PKCS12_DERIVE_IV        2   /**< initialization vector     */
+#define MBEDTLS_PKCS12_DERIVE_MAC_KEY   3   /**< integrity / MAC key       */
 
 #define MBEDTLS_PKCS12_PBE_DECRYPT      0
 #define MBEDTLS_PKCS12_PBE_ENCRYPT      1
@@ -76,7 +77,10 @@ extern "C" {
  *
  * \return           0 if successful, or a MBEDTLS_ERR_XXX code
  */
-int mbedtls_pkcs12_pbe_sha1_rc4_128(mbedtls_asn1_buf *pbe_params, int mode, const unsigned char *pwd, size_t pwdlen, const unsigned char *input, size_t len, unsigned char *output);
+int mbedtls_pkcs12_pbe_sha1_rc4_128( mbedtls_asn1_buf *pbe_params, int mode,
+                             const unsigned char *pwd,  size_t pwdlen,
+                             const unsigned char *input, size_t len,
+                             unsigned char *output );
 
 /**
  * \brief            PKCS12 Password Based function (encryption / decryption)
@@ -94,7 +98,11 @@ int mbedtls_pkcs12_pbe_sha1_rc4_128(mbedtls_asn1_buf *pbe_params, int mode, cons
  *
  * \return           0 if successful, or a MBEDTLS_ERR_XXX code
  */
-int mbedtls_pkcs12_pbe(mbedtls_asn1_buf *pbe_params, int mode, mbedtls_cipher_type_t cipher_type, mbedtls_md_type_t md_type, const unsigned char *pwd, size_t pwdlen, const unsigned char *input, size_t len, unsigned char *output);
+int mbedtls_pkcs12_pbe( mbedtls_asn1_buf *pbe_params, int mode,
+                mbedtls_cipher_type_t cipher_type, mbedtls_md_type_t md_type,
+                const unsigned char *pwd,  size_t pwdlen,
+                const unsigned char *input, size_t len,
+                unsigned char *output );
 
 /**
  * \brief            The PKCS#12 derivation function uses a password and a salt
@@ -117,9 +125,13 @@ int mbedtls_pkcs12_pbe(mbedtls_asn1_buf *pbe_params, int mode, mbedtls_cipher_ty
  *
  * \return          0 if successful, or a MD, BIGNUM type error.
  */
-int mbedtls_pkcs12_derivation(unsigned char *data, size_t datalen, const unsigned char *pwd, size_t pwdlen, const unsigned char *salt, size_t saltlen, mbedtls_md_type_t mbedtls_md, int id, int iterations);
+int mbedtls_pkcs12_derivation( unsigned char *data, size_t datalen,
+                       const unsigned char *pwd, size_t pwdlen,
+                       const unsigned char *salt, size_t saltlen,
+                       mbedtls_md_type_t mbedtls_md, int id, int iterations );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* pkcs12.h */
+
+#endif /* pkcs12.h */

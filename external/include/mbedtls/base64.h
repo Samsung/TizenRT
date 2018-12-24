@@ -19,7 +19,8 @@
  * \file base64.h
  *
  * \brief RFC 1521 base64 encoding/decoding
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -68,7 +69,8 @@ extern "C" {
  * \note           Call this function with dlen = 0 to obtain the
  *                 required buffer size in *olen
  */
-int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen);
+int mbedtls_base64_encode( unsigned char *dst, size_t dlen, size_t *olen,
+                   const unsigned char *src, size_t slen );
 
 /**
  * \brief          Decode a base64-formatted buffer
@@ -87,16 +89,18 @@ int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const u
  * \note           Call this function with *dst = NULL or dlen = 0 to obtain
  *                 the required buffer size in *olen
  */
-int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen);
+int mbedtls_base64_decode( unsigned char *dst, size_t dlen, size_t *olen,
+                   const unsigned char *src, size_t slen );
 
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if the test failed
  */
-int mbedtls_base64_self_test(int verbose);
+int mbedtls_base64_self_test( int verbose );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* base64.h */
+
+#endif /* base64.h */
