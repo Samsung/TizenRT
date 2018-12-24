@@ -42,6 +42,11 @@ player_result_t MediaPlayer::prepare()
 	return mPMpImpl->prepare();
 }
 
+player_result_t MediaPlayer::prepareAsync()
+{
+	return mPMpImpl->prepareAsync();
+}
+
 player_result_t MediaPlayer::unprepare()
 {
 	return mPMpImpl->unprepare();

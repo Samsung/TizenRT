@@ -37,6 +37,21 @@ config INPUT_DATASOURCE_STACKSIZE
 	default 4096
 	---help---
 
+config HTTPSOURCE_DOWNLOAD_BUFFER_SIZE
+	int "Http DataSource download buffer size"
+	default 4096
+	---help---
+
+config HTTPSOURCE_DOWNLOAD_BUFFER_THRESHOLD
+	int "Http DataSource download buffer threshold"
+	default 2048
+	---help---
+
+config HTTPSOURCE_DOWNLOAD_STACKSIZE
+	int "Http DataSource download thread stack size"
+	default 8192
+	---help---
+
 endif #MEDIA_PLAYER
 
 config MEDIA_RECORDER

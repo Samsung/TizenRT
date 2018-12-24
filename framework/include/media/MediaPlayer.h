@@ -111,6 +111,17 @@ public:
 	player_result_t prepare();
 
 	/**
+	 * @brief Prepare resources related to the player asynchronously,
+	 * start() should be called when onAsyncPrepared callback invoked.
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is an asynchronous api
+	 * Order to MediaPlayerWorker prepare resources through the queue
+	 * @return The result of the prepare operation
+	 * @since TizenRT v2.0
+	 */
+	player_result_t prepareAsync();
+
+	/**
 	 * @brief Releases allocated resources related to the player.
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is a synchronous API

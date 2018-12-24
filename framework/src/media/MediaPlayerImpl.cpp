@@ -191,6 +191,43 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 	return notifySync();
 }
 
+player_result_t MediaPlayerImpl::prepareAsync()
+{
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer prepareAsync\n");
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::prepareAsyncPlayer, shared_from_this());
+
+	return PLAYER_OK;
+}
+
+void MediaPlayerImpl::prepareAsyncPlayer()
+{
+	LOG_STATE_INFO(mCurState);
+
+	if (mCurState != PLAYER_STATE_CONFIGURED) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INVALID_STATE);
+		return;
+	}
+
+	if (!mInputHandler.doStandBy()) {
+		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		return;
+	}
+
+	mCurState = PLAYER_STATE_PREPARING;
+	return;
+}
+
 player_result_t MediaPlayerImpl::unprepare()
 {
 	player_result_t ret = PLAYER_OK;
@@ -617,10 +654,63 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			// Because data buffer would be released after this function returned.
 			mPlayerObserver->onPlaybackBufferDataReached(mPlayer, data, size);
 		} break;
+		case PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED:
+			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			break;
 		}
 	}
 
 	va_end(ap);
+}
+
+void MediaPlayerImpl::notifyAsync(player_event_t event)
+{
+	LOG_STATE_INFO(mCurState);
+
+	if (mCurState != PLAYER_STATE_PREPARING) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INVALID_STATE);
+	}
+
+	switch (event) {
+	case PLAYER_EVENT_SOURCE_PREPARED: {
+		if (!mInputHandler.open()) {
+			meddbg("MediaPlayer prepare fail : input handler open fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_FILE_OPEN_FAILED);
+		}
+
+		auto source = mInputHandler.getInputDataSource();
+		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
+								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		mBufSize = get_user_output_frames_to_byte(get_output_frame_count());
+		if (mBufSize < 0) {
+			meddbg("MediaPlayer prepare fail : get_user_output_frames_to_byte fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
+
+		mBuffer = new unsigned char[mBufSize];
+		if (!mBuffer) {
+			meddbg("MediaPlayer prepare fail : mBuffer allocation fail\n");
+			if (get_errno() == ENOMEM) {
+				return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_OUT_OF_MEMORY);
+			}
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		mCurState = PLAYER_STATE_READY;
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_NONE);
+	}
+
+	case PLAYER_EVENT_SOURCE_OPEN_FAILED:
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_FILE_OPEN_FAILED);
+	}
 }
 
 void MediaPlayerImpl::playback()
@@ -644,8 +734,8 @@ void MediaPlayerImpl::playback()
 			}
 		}
 	} else if (num_read == 0) {
-		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 		stop();
+		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 	} else {
 		meddbg("InputDatasource read error\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);

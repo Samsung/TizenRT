@@ -58,6 +58,14 @@ void toUpperString(std::string& str);
  */
 audio_type_t getAudioTypeFromPath(std::string path);
 /**
+ * @brief Gets the audio type from Mime-Type.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] mimeType The string of Mime-Type
+ * @return The audio type
+ * @since TizenRT v2.0
+ */
+audio_type_t getAudioTypeFromMimeType(std::string &mimeType);
+/**
  * @brief Parsing the audio type in file.
  * @details @b #include <media/MediaUtils.h>
  * @param[in] audio file point, Audio type and channel, sample rate, pcm format adderss to receive.

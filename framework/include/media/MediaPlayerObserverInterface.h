@@ -128,6 +128,12 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	virtual void onPlaybackBufferStateChanged(MediaPlayer &mediaPlayer, buffer_state_t state) {}
+	/**
+	 * @brief informs the user of the player has been prepared
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual void onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error) {}
 };
 } // namespace media
 

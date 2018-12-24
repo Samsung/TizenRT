@@ -47,6 +47,10 @@ ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
 CXXSRCS += InputHandler.cpp
 CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
+CXXSRCS += HttpInputDataSource.cpp
+ifeq ($(CONFIG_ENABLE_CURL), y)
+CXXSRCS += HttpStream.cpp
+endif
 CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 

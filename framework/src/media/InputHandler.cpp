@@ -50,6 +50,30 @@ void InputHandler::setInputDataSource(std::shared_ptr<InputDataSource> source)
 	mInputDataSource = source;
 }
 
+bool InputHandler::doStandBy()
+{
+	auto mp = getPlayer();
+	if (!mp) {
+	    meddbg("get player handle failed!\n");
+	    return false;
+	}
+
+	std::thread wk = std::thread([=]() {
+		medvdbg("InputHandler::doStandBy thread enter\n");
+		player_event_t event;
+		if (mInputDataSource->open()) {
+			event = PLAYER_EVENT_SOURCE_PREPARED;
+		} else {
+			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
+		}
+		mp->notifyAsync(event);
+		medvdbg("InputHandler::doStandBy thread exit\n");
+	});
+
+	wk.detach();
+	return true;
+}
+
 bool InputHandler::open()
 {
 	if (!getStreamBuffer()) {
@@ -331,7 +355,7 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 		medvdbg("AUDIO_TYPE_WAVE does not need the decoder\n");
 		return true;
 	case AUDIO_TYPE_FLAC:
-	    /* To be supported */ 
+		/* To be supported */
 	default:
 		meddbg("%s[line : %d] Fail : type %d is not supported\n", __func__, __LINE__, audioType);
 		return false;
