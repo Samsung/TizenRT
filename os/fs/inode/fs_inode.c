@@ -77,9 +77,9 @@
 /* Implements a re-entrant mutex for inode access.  This must be re-entrant
  * because there can be cycles.  For example, it may be necessary to destroy
  * a block driver inode on umount() after a removable block device has been
- * removed.  In that case umount() hold the inode semaphore, but the block
+ * removed.  In that case umount() holds the inode semaphore, but the block
  * driver may callback to unregister_blockdriver() after the un-mount,
- * requiring the seamphore again.
+ * requiring the semaphore again.
  */
 
 struct inode_sem_s {
@@ -125,10 +125,10 @@ static int _inode_compare(FAR const char *fname, FAR struct inode *node)
 	}
 
 	for (;;) {
-		/* At end of node name? */
+		/* At the end of node name? */
 
 		if (!*nname) {
-			/* Yes.. also end of find name? */
+			/* Yes.. also the end of find name? */
 
 			if (!*fname || *fname == '/') {
 				/* Yes.. return match */
@@ -141,7 +141,7 @@ static int _inode_compare(FAR const char *fname, FAR struct inode *node)
 			}
 		}
 
-		/* At end of find name? */
+		/* At the end of find name? */
 
 		else if (!*fname || *fname == '/') {
 			/* Yes... return find name < node name */
@@ -157,7 +157,7 @@ static int _inode_compare(FAR const char *fname, FAR struct inode *node)
 			return -1;
 		}
 
-		/* Not at the end of either string and all of the
+		/* Not at the end of either string or all of the
 		 * characters still match.  keep looking.
 		 */
 
@@ -227,7 +227,7 @@ void inode_semtake(void)
 
 	else {
 		while (sem_wait(&g_inode_sem.sem) != 0) {
-			/* The only case that an error should occr here is if
+			/* The only case that an error should occur here is that
 			 * the wait was awakened by a signal.
 			 */
 
@@ -295,7 +295,7 @@ FAR struct inode *inode_search(FAR const char **path, FAR struct inode **peer, F
 		/* Case 1:  The name is less than the name of the node.
 		 * Since the names are ordered, these means that there
 		 * is no peer node with this name and that there can be
-		 * no match in the fileystem.
+		 * no match in the filesystem.
 		 */
 
 		if (result < 0) {
@@ -319,7 +319,7 @@ FAR struct inode *inode_search(FAR const char **path, FAR struct inode **peer, F
 			/* Now there are three more possibilities:
 			 *   (1) This is the node that we are looking for or,
 			 *   (2) The node we are looking for is "below" this one.
-			 *   (3) This node is a mountpoint and will absorb all request
+			 *   (3) This node is a mountpoint and will absorb all requests
 			 *       below this one
 			 */
 
