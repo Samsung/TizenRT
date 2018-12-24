@@ -265,8 +265,9 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 		/* Broadcast DISCOVER message to all servers */
 
 	case DHCPDISCOVER:
-
-		pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
+		/* we don't need the broadcast flag since we can receive unicast traffic
+		   before being fully configured! */
+		//pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
 		pend = dhcpc_addreqoptions(pend);
 		break;
 
