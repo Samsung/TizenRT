@@ -30,7 +30,6 @@
 #define HMAC                (0x1)
 
 #define SHA1_160            (((SHA1 << 4) | (HASH160)) << 8)  //0x00001100
-#define SHA2_224            (((SHA2 << 4) | (HASH224)) << 8)  //0x00002200
 #define SHA2_256            (((SHA2 << 4) | (HASH256)) << 8)  //0x00002300
 #define SHA2_384            (((SHA2 << 4) | (HASH384)) << 8)  //0x00002400
 #define SHA2_512            (((SHA2 << 4) | (HASH512)) << 8)  //0x00002500
