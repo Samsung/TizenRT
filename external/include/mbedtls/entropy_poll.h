@@ -19,7 +19,8 @@
  * \file entropy_poll.h
  *
  * \brief Platform-specific and custom entropy polling functions
- *
+ */
+/*
  *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -55,25 +56,27 @@ extern "C" {
 /*
  * Default thresholds for built-in sources, in bytes
  */
-#define MBEDTLS_ENTROPY_MIN_PLATFORM     32		/**< Minimum for platform source    */
-#define MBEDTLS_ENTROPY_MIN_HAVEGE       32		/**< Minimum for HAVEGE             */
-#define MBEDTLS_ENTROPY_MIN_HARDCLOCK     4		/**< Minimum for mbedtls_timing_hardclock()        */
+#define MBEDTLS_ENTROPY_MIN_PLATFORM     32     /**< Minimum for platform source    */
+#define MBEDTLS_ENTROPY_MIN_HAVEGE       32     /**< Minimum for HAVEGE             */
+#define MBEDTLS_ENTROPY_MIN_HARDCLOCK     4     /**< Minimum for mbedtls_timing_hardclock()        */
 #if !defined(MBEDTLS_ENTROPY_MIN_HARDWARE)
-#define MBEDTLS_ENTROPY_MIN_HARDWARE     32		/**< Minimum for the hardware source */
+#define MBEDTLS_ENTROPY_MIN_HARDWARE     32     /**< Minimum for the hardware source */
 #endif
 
 /**
  * \brief           Entropy poll callback that provides 0 entropy.
  */
 #if defined(MBEDTLS_TEST_NULL_ENTROPY)
-int mbedtls_null_entropy_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+    int mbedtls_null_entropy_poll( void *data,
+                                unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #if !defined(MBEDTLS_NO_PLATFORM_ENTROPY)
 /**
  * \brief           Platform-specific entropy poll callback
  */
-int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+int mbedtls_platform_entropy_poll( void *data,
+                           unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #if defined(MBEDTLS_HAVEGE_C)
@@ -82,14 +85,16 @@ int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len,
  *
  * Requires an HAVEGE state as its data pointer.
  */
-int mbedtls_havege_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+int mbedtls_havege_poll( void *data,
+                 unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #if defined(MBEDTLS_TIMING_C)
 /**
  * \brief           mbedtls_timing_hardclock-based entropy poll callback
  */
-int mbedtls_hardclock_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+int mbedtls_hardclock_poll( void *data,
+                    unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
@@ -101,7 +106,8 @@ int mbedtls_hardclock_poll(void *data, unsigned char *output, size_t len, size_t
  *
  * \note            This must accept NULL as its first argument.
  */
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+int mbedtls_hardware_poll( void *data,
+                           unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #if defined(MBEDTLS_ENTROPY_NV_SEED)
@@ -110,10 +116,12 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
  *
  * \note            This must accept NULL as its first argument.
  */
-int mbedtls_nv_seed_poll(void *data, unsigned char *output, size_t len, size_t *olen);
+int mbedtls_nv_seed_poll( void *data,
+                          unsigned char *output, size_t len, size_t *olen );
 #endif
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* entropy_poll.h */
+
+#endif /* entropy_poll.h */
