@@ -17,7 +17,6 @@
 
 #include "Alerts/Alarm.h"
 #include "Alerts/Reminder.h"
-#include "Alerts/Storage/SQLiteAlertStorage.h"
 #include "Alerts/Timer.h"
 #include "AVSCommon/AVS/CapabilityConfiguration.h"
 #include <AVSCommon/AVS/MessageRequest.h>

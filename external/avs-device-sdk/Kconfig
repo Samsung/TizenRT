@@ -11,5 +11,7 @@ config AVS_DEVICE_SDK
 	select MEDIA_PLAYER
 	select MEDIA_RECORDER
 	select AUDIO_CODEC
+	select ENABLE_CURL
+	select ARASTORAGE
 	---help---
 		Enable AVS Device SDK

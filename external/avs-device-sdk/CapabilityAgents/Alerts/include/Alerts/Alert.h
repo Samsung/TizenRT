@@ -40,6 +40,7 @@ namespace alerts {
 // forward declaration for the friend relationship.
 namespace storage {
 class SQLiteAlertStorage;
+class AraAlertStorage;
 }
 
 /**
@@ -421,6 +422,7 @@ public:
 private:
     /// A friend relationship, since our storage interface needs access to all fields.
     friend class storage::SQLiteAlertStorage;
+    friend class storage::AraAlertStorage;
 
     std::string getScheduledTime_ISO_8601Locked() const;
 

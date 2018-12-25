@@ -55,7 +55,7 @@
 
 AVS_OBJEXT ?= .o
 ASRCS		=
-CSRCS		= 
+CSRCS		=
 CXXSRCS		=
 
 CXXFLAGS += -Wno-shadow -Wno-pedantic
@@ -68,6 +68,7 @@ CXXFLAGS += -DRAPIDJSON_HAS_STDSTRING
 CXXFLAGS += -DACSDK_LOG_MODULE
 CXXFLAGS += -DACSDK_DEBUG_LOG_ENABLED
 CXXFLAGS += -DNO_SIGPIPE
+CXXFLAGS += -DUSE_ARASTORAGE
 CXXFLAGS += -I.
 CXXFLAGS += -I./ACL/include
 CXXFLAGS += -I./ADSL/include
@@ -99,6 +100,7 @@ CXXFLAGS += -I./MediaPlayer/include
 CXXFLAGS += -I./PlaylistParser/include
 CXXFLAGS += -I./RegistrationManager/include
 CXXFLAGS += -I./Storage/SQLiteStorage/include
+CXXFLAGS += -I./Storage/AraStorage/include
 CXXFLAGS += -I./SampleApp/include
 CXXFLAGS += -I./ThirdParty/MultipartParser
 CXXFLAGS += -I./ThirdParty/rapidjson/rapidjson-1.1.0/include
@@ -132,6 +134,7 @@ CXXSRCS += $(shell find ./MediaPlayer/src -name "*.cpp")
 CXXSRCS += $(shell find ./PlaylistParser/src -name "*.cpp")
 CXXSRCS += $(shell find ./RegistrationManager/src -name "*.cpp")
 CXXSRCS += $(shell find ./Storage/SQLiteStorage/src -name "*.cpp")
+CXXSRCS += $(shell find ./Storage/AraStorage/src -name "*.cpp")
 CXXSRCS += $(shell find ./SampleApp/src -name "*.cpp")
 
 AOBJS		= $(ASRCS:.S=$(AVS_OBJEXT))

@@ -48,7 +48,7 @@
 #include <Bluetooth/Bluetooth.h>
 #include <Bluetooth/BluetoothStorageInterface.h>
 #include <CertifiedSender/CertifiedSender.h>
-#include <CertifiedSender/SQLiteMessageStorage.h>
+#include <CertifiedSender/MessageStorageInterface.h>
 #include <ExternalMediaPlayer/ExternalMediaPlayer.h>
 #include <Notifications/NotificationsCapabilityAgent.h>
 #include <Notifications/NotificationRenderer.h>
