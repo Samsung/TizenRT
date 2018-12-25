@@ -129,9 +129,8 @@ const std::string generateUUID() {
     static std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
     if (!seeded) {
-        std::random_device rd;
         ibe.seed(
-            rd() +
+            (rand() % 0xff) +
             std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
                 .count());
         seeded = true;

@@ -27,6 +27,11 @@
 
 #include "AIP/AudioInputProcessor.h"
 
+#ifdef AUDIO_SIMPLEX_MODE
+#include "SampleApp/VoiceRecorder.h"
+using namespace alexaClientSDK::sampleApp;
+#endif
+
 namespace alexaClientSDK {
 namespace capabilityAgents {
 namespace aip {
@@ -850,6 +855,13 @@ void AudioInputProcessor::setState(ObserverInterface::State state) {
     }
 
     ACSDK_DEBUG(LX("setState").d("from", m_state).d("to", state));
+
+#ifdef AUDIO_SIMPLEX_MODE
+	if (ObserverInterface::State::EXPECTING_SPEECH == m_state && ObserverInterface::State::RECOGNIZING == state) {
+		VoiceRecorder::startRecorder();
+	}
+#endif
+
     m_state = state;
     for (auto observer : m_observers) {
         observer->onStateChanged(m_state);

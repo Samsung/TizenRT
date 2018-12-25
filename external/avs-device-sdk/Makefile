@@ -58,6 +58,12 @@ ASRCS		=
 CSRCS		=
 CXXSRCS		=
 
+# Use syslog() to print logs instead of std::cout
+CXXFLAGS += -DNCOUT
+
+# Currently, for cypress board, i2s don't support tx&rx simultaneously
+CXXFLAGS += -DAUDIO_SIMPLEX_MODE
+
 CXXFLAGS += -Wno-shadow -Wno-pedantic
 CXXFLAGS += -pipe -std=c++11
 CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti

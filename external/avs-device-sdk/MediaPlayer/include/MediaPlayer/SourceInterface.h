@@ -2,18 +2,17 @@
 #define ALEXA_CLIENT_SDK_MEDIAPLAYER_INCLUDE_MEDIAPLAYER_SOURCEINTERFACE_H_
 
 #include <AVSCommon/Utils/RequiresShutdown.h>
+#include <media/InputDataSource.h>
 
 namespace alexaClientSDK {
 namespace mediaPlayer {
 
-class SourceInterface : public avsCommon::utils::RequiresShutdown {
+class SourceInterface : public avsCommon::utils::RequiresShutdown, public media::stream::InputDataSource {
 public:
     SourceInterface(const std::string& className) : RequiresShutdown(className) {
     }
 
     virtual ~SourceInterface() = default;
-
-    virtual size_t readData(uint16_t *buffer, size_t size) = 0;
 };
 
 }  // namespace mediaPlayer

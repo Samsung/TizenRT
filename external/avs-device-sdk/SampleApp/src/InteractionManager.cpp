@@ -17,6 +17,7 @@
 #include "SampleApp/InteractionManager.h"
 #include "RegistrationManager/CustomerDataManager.h"
 #include "SampleApp/VoiceRecorder.h"
+#include "SampleApp/ConsolePrinter.h"
 
 namespace alexaClientSDK {
 namespace sampleApp {
@@ -119,9 +120,17 @@ void InteractionManager::tap() {
         if (!m_isTapOccurring) {
             if (m_client->notifyOfTapToTalk(m_tapToTalkAudioProvider).get()) {
                 m_isTapOccurring = true;
+#ifdef AUDIO_SIMPLEX_MODE
+				ConsolePrinter::simplePrint("InteractionManager::tap m_isTapOccurring -> TRUE");
+				VoiceRecorder::startRecorder();
+#endif
             }
         } else {
             m_isTapOccurring = false;
+#ifdef AUDIO_SIMPLEX_MODE
+			ConsolePrinter::simplePrint("InteractionManager::tap m_isTapOccurring -> FALSE");
+			VoiceRecorder::stopRecorder();
+#endif
             m_client->notifyOfTapToTalkEnd();
         }
     });
@@ -287,6 +296,10 @@ void InteractionManager::onDialogUXStateChanged(DialogUXState state) {
     // reset tap-to-talk state
     if (DialogUXState::LISTENING != state) {
         m_isTapOccurring = false;
+#ifdef AUDIO_SIMPLEX_MODE
+		ConsolePrinter::simplePrint("InteractionManager::onDialogUXStateChanged m_isTapOccurring -> FALSE");
+		VoiceRecorder::stopRecorder();
+#endif
     }
 }
 

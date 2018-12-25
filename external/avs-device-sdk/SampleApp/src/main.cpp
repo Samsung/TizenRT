@@ -40,23 +40,21 @@ int avsSampleAppEntry(void) {
     configFiles.push_back("/rom/AlexaClientSDKConfig.json");
     logLevel = "DEBUG9";
 
-    printf("Hello1\n");
-
     alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Gangster!");
 
-    auto sampleApplication =
-        alexaClientSDK::sampleApp::SampleApplication::create(configFiles, pathToKWDInputFolder, logLevel);
-        printf("Hello2\n");
+    auto sampleApplication = alexaClientSDK::sampleApp::SampleApplication::create(configFiles, pathToKWDInputFolder, logLevel);
 
     if (!sampleApplication) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create to SampleApplication!");
         return EXIT_FAILURE;
     }
 
-    // This will run until the user specifies the "quit" command.
-    //sampleApplication->run();
+    alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Run!");
 
-    std::cout << "Done!!" << std::endl;
+    // This will run until the user specifies the "quit" command.
+    sampleApplication->run();
+
+    alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Done!");
 
     return EXIT_SUCCESS;
 }

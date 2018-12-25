@@ -3,11 +3,14 @@
 #include <AVSCommon/Utils/Logger/Logger.h>
 #include <AVSCommon/AVS/Attachment/AttachmentReader.h>
 #include <MediaPlayer/AttachmentReaderSource.h>
+#include <media/MediaTypes.h>
 
 namespace alexaClientSDK {
 namespace mediaPlayer {
 
 using namespace avsCommon::avs::attachment;
+using namespace media;
+using namespace media::stream;
 
 /// String to identify log entries originating from this file.
 static const std::string TAG("AttachmentReaderSource");
@@ -30,22 +33,67 @@ std::unique_ptr<AttachmentReaderSource> AttachmentReaderSource::create(
 
 AttachmentReaderSource::AttachmentReaderSource(std::shared_ptr<AttachmentReader> reader) :
         SourceInterface{"AttachmentReaderSource"},
-        m_reader{reader} {};
-
-AttachmentReaderSource::~AttachmentReaderSource() {
-
+        m_reader{reader}
+{
 }
 
-bool AttachmentReaderSource::init() {
+AttachmentReaderSource::~AttachmentReaderSource()
+{
+	close();
+}
+
+bool AttachmentReaderSource::init()
+{
     return true;
 }
 
-size_t AttachmentReaderSource::readData(uint16_t *buffer, size_t size) {
-    auto status = AttachmentReader::ReadStatus::OK;
-    auto len = m_reader->read(buffer, size, &status);
+bool AttachmentReaderSource::open()
+{
+	setAudioType(media::AUDIO_TYPE_MP3);
+	setSampleRate(24000);
+	setChannels(1);
+	return true;
+}
+
+bool AttachmentReaderSource::close()
+{
+	return true;
+}
+
+bool AttachmentReaderSource::isPrepare()
+{
+	return (m_reader != nullptr);
+}
+
+ssize_t AttachmentReaderSource::read(unsigned char* buffer, size_t size)
+{
+	auto status = AttachmentReader::ReadStatus::OK;
+    size_t len = m_reader->read(buffer, size, &status);
+
+    switch (status) {
+    case AttachmentReader::ReadStatus::CLOSED:
+        if (len == 0) {
+	        ACSDK_ERROR(LX("AttachmentReader::ReadStatus::CLOSED"));
+            return -1;
+        }
+    // Fall through if some data was read.
+    case AttachmentReader::ReadStatus::OK:
+    case AttachmentReader::ReadStatus::OK_WOULDBLOCK:
+    // Fall through to retry reading later.
+    case AttachmentReader::ReadStatus::OK_TIMEDOUT:
+        if (len > 0) {
+			break;
+        }
+        return 0;
+    case AttachmentReader::ReadStatus::ERROR_OVERRUN:
+    case AttachmentReader::ReadStatus::ERROR_BYTES_LESS_THAN_WORD_SIZE:
+    case AttachmentReader::ReadStatus::ERROR_INTERNAL:
+        auto error = static_cast<int>(status);
+        ACSDK_ERROR(LX("AttachmentReaderSource").d("reason", "readFailed").d("error", error));
+        return -1;
+	}
 
     ACSDK_DEBUG9(LX("read").d("size", len).d("status", static_cast<int>(status)));
-
     return len;
 }
 

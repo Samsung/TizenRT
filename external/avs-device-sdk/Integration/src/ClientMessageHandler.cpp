@@ -15,6 +15,9 @@
 
 #include "Integration/ClientMessageHandler.h"
 #include <iostream>
+#ifdef NCOUT
+#include <debug.h>
+#endif
 
 namespace alexaClientSDK {
 namespace integration {
@@ -27,7 +30,11 @@ ClientMessageHandler::ClientMessageHandler(std::shared_ptr<AttachmentManager> at
 }
 
 void ClientMessageHandler::receive(const std::string& contextId, const std::string& message) {
+#ifdef NCOUT
+	syslog(LOG_ERR, "ClientMessageHandler::receive: message:%s\n", message.c_str());
+#else
     std::cout << "ClientMessageHandler::receive: message:" << message << std::endl;
+#endif
     std::unique_lock<std::mutex> lock(m_mutex);
     ++m_count;
     m_wakeTrigger.notify_all();

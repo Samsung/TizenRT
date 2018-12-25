@@ -104,7 +104,7 @@ bool prepareForTLS(CURL* handle) {
     }
 
 // Only allow disabling the verification of hosts and peers in debug configurations.
-#ifdef DEBUG
+//#ifdef DEBUG
     bool verifyHostsAndPeers = true;
     if (config.getBool(VERIFY_HOSTS_AND_PEERS_CONFIG_KEY, &verifyHostsAndPeers) && !verifyHostsAndPeers) {
         if (!(SETOPT(handle, CURLOPT_SSL_VERIFYPEER, 0L) && SETOPT(handle, CURLOPT_SSL_VERIFYHOST, 0L))) {
@@ -112,7 +112,7 @@ bool prepareForTLS(CURL* handle) {
         }
         ACSDK_WARN(LX("verificationOfHostsAndPeersDisabled"));
     }
-#endif
+//#endif
 
     return true;
 }

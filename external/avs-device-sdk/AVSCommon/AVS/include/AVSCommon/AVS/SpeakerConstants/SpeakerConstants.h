@@ -32,6 +32,9 @@ const int8_t AVS_SET_VOLUME_MIN = 0;
 /// AVS setVolume Maximum.
 const int8_t AVS_SET_VOLUME_MAX = 100;
 
+/// AVS default volume.
+const int8_t AVS_VOLUME_DEFAULT = 60;
+
 /// AVS adjustVolume Minimum.
 const int8_t AVS_ADJUST_VOLUME_MIN = -100;
 

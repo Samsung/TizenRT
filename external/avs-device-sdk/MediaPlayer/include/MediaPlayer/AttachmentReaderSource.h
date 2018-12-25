@@ -22,10 +22,13 @@ private:
     bool init();
 
     // SourceInterface
-    virtual size_t readData(uint16_t *buffer, size_t size) override;
+	bool open() override;
+	bool close() override;
+	bool isPrepare() override;
+	ssize_t read(unsigned char *buffer, size_t size) override;
 
     // RequiresShutdown
-    void doShutdown() override {};
+    void doShutdown() override {}
 
 private:
     std::shared_ptr<avsCommon::avs::attachment::AttachmentReader> m_reader;

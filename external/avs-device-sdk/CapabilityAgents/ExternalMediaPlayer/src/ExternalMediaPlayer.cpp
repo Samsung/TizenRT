@@ -211,7 +211,7 @@ ExternalMediaPlayer::ExternalMediaPlayer(
         m_speakerManager{speakerManager},
         m_contextManager{contextManager},
         m_playbackRouter{playbackRouter} {
-    m_speakerSettings.volume = avsCommon::avs::speakerConstants::AVS_SET_VOLUME_MAX;
+    m_speakerSettings.volume = avsCommon::avs::speakerConstants::AVS_VOLUME_DEFAULT;
     m_speakerSettings.mute = false;
 }
 

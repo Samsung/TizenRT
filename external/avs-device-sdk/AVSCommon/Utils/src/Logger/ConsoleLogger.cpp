@@ -17,6 +17,9 @@
 #include <ctime>
 #include <iostream>
 #include <mutex>
+#ifdef NCOUT
+#include <debug.h>
+#endif
 
 #include "AVSCommon/Utils/Logger/ConsoleLogger.h"
 #include "AVSCommon/Utils/Logger/LoggerUtils.h"
@@ -42,7 +45,11 @@ void ConsoleLogger::emit(
     const char* threadMoniker,
     const char* text) {
     std::lock_guard<std::mutex> lock(m_coutMutex);
+#ifdef NCOUT
+	syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
+#else
     std::cout << m_logFormatter.format(level, time, threadMoniker, text) << std::endl;
+#endif
 }
 
 ConsoleLogger::ConsoleLogger() : Logger(Level::UNKNOWN) {
@@ -52,12 +59,14 @@ ConsoleLogger::ConsoleLogger() : Logger(Level::UNKNOWN) {
     setLevel(Level::INFO);
 #endif  // DEBUG
     init(configuration::ConfigurationNode::getRoot()[CONFIG_KEY_DEFAULT_LOGGER]);
+#if 0
     std::string currentVersionLogEntry("sdkVersion: " + avsCommon::utils::sdkVersion::getCurrentVersion());
     emit(
         alexaClientSDK::avsCommon::utils::logger::Level::INFO,
         std::chrono::system_clock::now(),
         ThreadMoniker::getThisThreadMoniker().c_str(),
         currentVersionLogEntry.c_str());
+#endif
 }
 
 std::shared_ptr<Logger> getConsoleLogger() {

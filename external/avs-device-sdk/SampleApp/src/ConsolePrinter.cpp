@@ -17,6 +17,9 @@
 
 #include <iostream>
 #include <algorithm>
+#ifdef NCOUT
+#include <debug.h>
+#endif
 
 /**
  *  When using pretty print, we pad our strings in the beginning and in the end with the margin representation '#'
@@ -44,7 +47,11 @@ void ConsolePrinter::simplePrint(const std::string& stringToPrint) {
     }
 
     std::lock_guard<std::mutex> lock{*mutex};
+#ifdef NCOUT
+	syslog(LOG_ERR, "%s\n", stringToPrint.c_str());
+#else
     std::cout << stringToPrint << std::endl;
+#endif
 }
 
 void ConsolePrinter::prettyPrint(std::initializer_list<std::string> lines) {
@@ -80,7 +87,11 @@ void ConsolePrinter::emit(
     const char* threadMoniker,
     const char* text) {
     std::lock_guard<std::mutex> lock{*m_mutex};
+#ifdef NCOUT
+	syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
+#else
     std::cout << m_logFormatter.format(level, time, threadMoniker, text) << std::endl;
+#endif
 }
 
 }  // namespace sampleApp

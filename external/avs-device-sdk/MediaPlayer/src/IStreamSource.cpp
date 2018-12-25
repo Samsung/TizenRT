@@ -17,6 +17,7 @@
 
 #include <AVSCommon/Utils/Logger/Logger.h>
 #include <MediaPlayer/IStreamSource.h>
+#include <media/MediaTypes.h>
 
 namespace alexaClientSDK {
 namespace mediaPlayer {
@@ -31,9 +32,7 @@ static const std::string TAG("IStreamSource");
  */
 #define LX(event) alexaClientSDK::avsCommon::utils::logger::LogEntry(TAG, event)
 
-std::unique_ptr<IStreamSource> IStreamSource::create(
-    std::shared_ptr<std::istream> stream,
-    bool repeat) {
+std::unique_ptr<IStreamSource> IStreamSource::create(std::shared_ptr<std::istream> stream, bool repeat) {
     std::unique_ptr<IStreamSource> result(new IStreamSource(std::move(stream), repeat));
     if (result->init()) {
         return result;
@@ -47,23 +46,43 @@ IStreamSource::IStreamSource(std::shared_ptr<std::istream> stream, bool repeat) 
         m_repeat{repeat} {};
 
 IStreamSource::~IStreamSource() {
-
+	close();
 }
 
-bool IStreamSource::init() {
+bool IStreamSource::init()
+{
     return true;
 }
 
-size_t IStreamSource::readData(uint16_t *buffer, size_t size) {
-    m_stream->read(reinterpret_cast<std::istream::char_type*>(buffer), size);
+bool IStreamSource::open()
+{
+	setAudioType(media::AUDIO_TYPE_MP3);
+	setSampleRate(24000);
+	setChannels(1);
+    return true;
+}
 
+bool IStreamSource::close() {
+    return true;
+}
+
+bool IStreamSource::isPrepare()
+{
+	return (m_stream != nullptr);
+}
+
+ssize_t IStreamSource::read(unsigned char *buffer, size_t size)
+{
+    m_stream->read(reinterpret_cast<std::istream::char_type*>(buffer), size);
     if (m_stream->bad()) {
         ACSDK_WARN(LX("readFailed").d("bad", m_stream->bad()).d("eof", m_stream->eof()));
-        return 0;
+        size = 0;
     } else {
         ACSDK_DEBUG9(LX("read").d("size", size).d("pos", m_stream->tellg()).d("eof", m_stream->eof()));
-        return m_stream->gcount();
+        size = m_stream->gcount();
     }
+
+	return size;
 }
 
 }  // namespace mediaPlayer
