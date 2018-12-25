@@ -70,19 +70,6 @@ private:
 	AraBluetoothStorage(const std::string& filepath);
 
 	/**
-	 * Utility that extracts a row from the database using a given statement. The lock must be obtained
-	 * before calling this function to ensure a consistent result. A step will be executed on the passed
-	 * in statement, so this function is not idempotent.
-	 *
-	 * @param statement The statement to execute.
-	 * @param[out] row The row obtained from the statement.
-	 * @return A bool indicating success.
-	bool getSingleRowLocked(
-		std::unique_ptr<storage::sqliteStorage::SQLiteStatement>& statement,
-		std::unordered_map<std::string, std::string>* row);
-	 */
-
-	/**
 	 * Utility that extracts from the database all uuid and mac pairs. The pairs are returned in a map,
 	 * and the key is dependent on the @c keyPreference param.
 	 * The lock must be obtained before calling this function.
@@ -92,22 +79,6 @@ private:
 	 * @return A bool indicationg success.
 	 */
 	bool getMappingsLocked(const std::string& keyPreference, std::unordered_map<std::string, std::string>* mappings);
-
-	/**
-	 * Utility that gets a data element from the database based on the constraint key. The constraint key must be
-	 * unique. The lock must be obtained before calling this function.
-	 *
-	 * @param constraintKey The key to filter against. Must be unique.
-	 * @param constraintVal The value to filter against.
-	 * @param resultKey The key of the data element.
-	 * @param[out] resultVal The resulting value that is extracted.
-	 * @return A bool indicating success.
-	bool getAssociatedDataLocked(
-		const std::string& constraintKey,
-		const std::string& constraintVal,
-		const std::string& resultKey,
-		std::string* resultVal);
-	 */
 
 	/// A mutex to protect database access.
 	std::mutex m_databaseMutex;

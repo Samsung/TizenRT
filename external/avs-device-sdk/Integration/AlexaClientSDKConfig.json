@@ -4,7 +4,11 @@
         // Note: The directory specified must be valid.
         // The database file (cblAuthDelegate.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for CBLAuthDelegate (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/cbl.db"
+        "databaseFilePath":"/mnt/cbl.db"
+    },
+    "libcurlUtils":{
+        "verifyHostsAndPeers":false,
+        "CURLOPT_CAPATH":"/rom"
     },
     "deviceInfo":{
         // Unique device serial number. e.g. 123456
@@ -35,21 +39,21 @@
         // Path to misc database file. e.g. /home/ubuntu/Build/miscDatabase.db
         // Note: The directory specified must be valid.
         // The database file (miscDatabase.db) will be created by SampleApp, do not create it yourself.
-        "databaseFilePath":"/home/jarvisjang/misc.db"
+        "databaseFilePath":"/mnt/misc.db"
     },
     "alertsCapabilityAgent":{
         // Path to Alerts database file. e.g. /home/ubuntu/Build/alerts.db
         // Note: The directory specified must be valid.
         // The database file (alerts.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for alerts (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/alerts.db"
+        "databaseFilePath":"/mnt/alerts.db"
     },
     "settings":{
         // Path to Settings database file. e.g. /home/ubuntu/Build/settings.db
         // Note: The directory specified must be valid.
         // The database file (settings.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for settings (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/settings.db",
+        "databaseFilePath":"/mnt/settings.db",
         "defaultAVSClientSettings":{
             // Default language for Alexa.
             // See https://developer.amazon.com/docs/alexa-voice-service/settings.html#settingsupdated for valid values.
@@ -61,25 +65,25 @@
         // Note: The directory specified must be valid.
         // The database file (bluetooth.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for bluetooth (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/bluetooth.db"
+        "databaseFilePath":"/mnt/bluetooth.db"
     },
     "certifiedSender":{
         // Path to Certified Sender database file. e.g. /home/ubuntu/Build/certifiedsender.db
         // Note: The directory specified must be valid.
         // The database file (certifiedsender.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for certifiedSender (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/cert.db"
+        "databaseFilePath":"/mnt/cert.db"
     },
-    "notifications":{ 
+    "notifications":{
         // Path to Notifications database file. e.g. /home/ubuntu/Build/notifications.db
         // Note: The directory specified must be valid.
         // The database file (notifications.db) will be created by SampleApp, do not create it yourself.
         // The database file should only be used for notifications (don't use it for other components of SDK)
-        "databaseFilePath":"/home/jarvisjang/noti.db"
+        "databaseFilePath":"/mnt/noti.db"
     },
     "sampleApp":{
         // To specify if the SampleApp supports display cards.
-        "displayCardsSupported":true
+        "displayCardsSupported":false
         // The firmware version of the device to send in SoftwareInfo event.
         // Note: The firmware version should be a positive 32-bit integer in the range [1-2147483647].
         // e.g. "firmwareVersion": 123

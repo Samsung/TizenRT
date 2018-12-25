@@ -52,7 +52,7 @@ void CreateRequest::GetPrimaryKey(std::string &key, std::string &type)
 	type = m_primaryType;
 }
 
-void CreateRequest::GetCompositeKey(std::string & key, std::string &type)
+void CreateRequest::GetCompositeKey(std::string &key, std::string &type)
 {
 	key = m_compositeKey;
 	type = m_compositeType;

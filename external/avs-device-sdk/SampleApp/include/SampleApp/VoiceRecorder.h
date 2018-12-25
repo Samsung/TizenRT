@@ -73,7 +73,7 @@ public:
 			return true;
 		}
 
-		bool isPrepare() override {
+		bool isPrepared() override {
 			return (m_writer != nullptr);
 		}
 

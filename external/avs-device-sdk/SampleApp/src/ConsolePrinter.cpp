@@ -48,7 +48,7 @@ void ConsolePrinter::simplePrint(const std::string& stringToPrint) {
 
     std::lock_guard<std::mutex> lock{*mutex};
 #ifdef NCOUT
-	syslog(LOG_ERR, "%s\n", stringToPrint.c_str());
+    syslog(LOG_ERR, "%s\n", stringToPrint.c_str());
 #else
     std::cout << stringToPrint << std::endl;
 #endif
@@ -88,7 +88,7 @@ void ConsolePrinter::emit(
     const char* text) {
     std::lock_guard<std::mutex> lock{*m_mutex};
 #ifdef NCOUT
-	syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
+    syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
 #else
     std::cout << m_logFormatter.format(level, time, threadMoniker, text) << std::endl;
 #endif

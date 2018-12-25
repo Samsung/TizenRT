@@ -60,7 +60,7 @@ bool AttachmentReaderSource::close()
 	return true;
 }
 
-bool AttachmentReaderSource::isPrepare()
+bool AttachmentReaderSource::isPrepared()
 {
 	return (m_reader != nullptr);
 }

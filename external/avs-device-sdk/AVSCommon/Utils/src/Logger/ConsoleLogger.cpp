@@ -46,7 +46,7 @@ void ConsoleLogger::emit(
     const char* text) {
     std::lock_guard<std::mutex> lock(m_coutMutex);
 #ifdef NCOUT
-	syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
+    syslog(LOG_ERR, "%s\n", m_logFormatter.format(level, time, threadMoniker, text).c_str());
 #else
     std::cout << m_logFormatter.format(level, time, threadMoniker, text) << std::endl;
 #endif
@@ -59,7 +59,7 @@ ConsoleLogger::ConsoleLogger() : Logger(Level::UNKNOWN) {
     setLevel(Level::INFO);
 #endif  // DEBUG
     init(configuration::ConfigurationNode::getRoot()[CONFIG_KEY_DEFAULT_LOGGER]);
-#if 0
+#ifdef NCOUT
     std::string currentVersionLogEntry("sdkVersion: " + avsCommon::utils::sdkVersion::getCurrentVersion());
     emit(
         alexaClientSDK::avsCommon::utils::logger::Level::INFO,

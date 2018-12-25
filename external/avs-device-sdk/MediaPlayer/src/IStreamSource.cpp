@@ -66,7 +66,7 @@ bool IStreamSource::close() {
     return true;
 }
 
-bool IStreamSource::isPrepare()
+bool IStreamSource::isPrepared()
 {
 	return (m_stream != nullptr);
 }

@@ -22,10 +22,10 @@ private:
     bool init();
 
     // SourceInterface
-	bool open() override;
-	bool close() override;
-	bool isPrepare() override;
-	ssize_t read(unsigned char *buffer, size_t size) override;
+    bool open() override;
+    bool close() override;
+    bool isPrepared() override;
+    ssize_t read(unsigned char *buffer, size_t size) override;
 
     // RequiresShutdown
     void doShutdown() override {}

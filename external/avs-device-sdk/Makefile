@@ -73,6 +73,7 @@ CXXFLAGS += -D__TizenRT__
 CXXFLAGS += -DRAPIDJSON_HAS_STDSTRING
 CXXFLAGS += -DACSDK_LOG_MODULE
 CXXFLAGS += -DACSDK_DEBUG_LOG_ENABLED
+CXXFLAGS += -DDEBUG
 CXXFLAGS += -DNO_SIGPIPE
 CXXFLAGS += -DUSE_ARASTORAGE
 CXXFLAGS += -I.
@@ -191,6 +192,7 @@ $(CXXOBJS) $(MAINOBJ): %$(AVS_OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
 
 .built: chkcxx $(OBJS)
+	cp Integration/AlexaClientSDKConfig.json $(TOPDIR)/../tools/fs/contents
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
