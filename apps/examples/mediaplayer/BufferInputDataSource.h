@@ -27,7 +27,7 @@ class BufferInputDataSource : public media::stream::InputDataSource
 public:
 	BufferInputDataSource();
 	virtual ~BufferInputDataSource() = default;
-	bool isPrepare() override;
+	bool isPrepared() override;
 	bool open() override;
 	bool close() override;
 	ssize_t read(unsigned char *buf, size_t size) override;

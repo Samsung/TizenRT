@@ -120,7 +120,7 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 
 bool InputHandler::start()
 {
-	if (!mInputDataSource->isPrepare()) {
+	if (!mInputDataSource->isPrepared()) {
 		return false;
 	}
 

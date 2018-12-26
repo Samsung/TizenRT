@@ -106,7 +106,7 @@ TEST_F(FileOutputDataSourceTest, OpenFileNegative)
 TEST_F(FileOutputDataSourceTest, CloseFilePositiveWithIsPrepare)
 {
 	dataSource->close();
-	bool ret = dataSource->isPrepare();
+	bool ret = dataSource->isPrepared();
 
 	EXPECT_EQ(ret, false);
 }

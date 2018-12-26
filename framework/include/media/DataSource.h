@@ -35,7 +35,7 @@
 namespace media {
 
 /**
- * @class 
+ * @class
  * @brief This class is audio data structure
  * @details @b #include <media/DataSource.h>
  * @since TizenRT v2.0
@@ -95,7 +95,7 @@ public:
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual bool isPrepare() = 0;
+	virtual bool isPrepared() = 0;
 
 	/**
 	 * @brief Gets the channel count of the stream data.

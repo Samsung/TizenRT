@@ -37,19 +37,19 @@ namespace media {
 namespace stream {
 BufferOutputDataSource::BufferOutputDataSource() :
 	OutputDataSource(),
-	mIsPrepare(false)
+	mIsPrepared(false)
 {
 }
 
 BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat) :
 	OutputDataSource(channels, sampleRate, pcmFormat),
-	mIsPrepare(false)
+	mIsPrepared(false)
 {
 }
 
 BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource &source) :
 	OutputDataSource(source),
-	mIsPrepare(false)
+	mIsPrepared(false)
 {
 }
 
@@ -61,19 +61,19 @@ BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputData
 
 bool BufferOutputDataSource::open()
 {
-	mIsPrepare = true;
+	mIsPrepared = true;
 	return true;
 }
 
 bool BufferOutputDataSource::close()
 {
-	mIsPrepare = false;
+	mIsPrepared = false;
 	return true;
 }
 
-bool BufferOutputDataSource::isPrepare()
+bool BufferOutputDataSource::isPrepared()
 {
-	return mIsPrepare;
+	return mIsPrepared;
 }
 
 ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
@@ -82,7 +82,7 @@ ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 		return 0;
 	}
 
-	if (!isPrepare()) {
+	if (!isPrepared()) {
 		return EOF;
 	}
 
@@ -103,7 +103,7 @@ ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 
 BufferOutputDataSource::~BufferOutputDataSource()
 {
-	if (isPrepare()) {
+	if (isPrepared()) {
 		close();
 	}
 }

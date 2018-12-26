@@ -85,18 +85,18 @@ TEST_F(FileInputDataSourceTest, closeTwice)
 	EXPECT_FALSE(source->close());
 }
 
-TEST_F(FileInputDataSourceTest, isPrepare)
+TEST_F(FileInputDataSourceTest, isPrepared)
 {
 	source->open();
 
-	EXPECT_TRUE(source->isPrepare());
+	EXPECT_TRUE(source->isPrepared());
 
 	source->close();
 }
 
 TEST_F(FileInputDataSourceTest, isPrepareWithoutOpen)
 {
-	EXPECT_FALSE(source->isPrepare());
+	EXPECT_FALSE(source->isPrepared());
 }
 
 TEST_F(FileInputDataSourceTest, read)

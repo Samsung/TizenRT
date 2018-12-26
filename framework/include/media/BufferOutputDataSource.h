@@ -84,7 +84,7 @@ public:
 	 * @return True.
 	 * @since TizenRT v2.0
 	 */
-	bool isPrepare() override;
+	bool isPrepared() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/BufferOutputDataSource.h>
@@ -111,7 +111,7 @@ public:
 	ssize_t write(unsigned char *buf, size_t size);
 
 private:
-	bool mIsPrepare;
+	bool mIsPrepared;
 };
 
 } // namespace stream

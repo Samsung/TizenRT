@@ -126,7 +126,7 @@ bool FileInputDataSource::close()
 	return ret;
 }
 
-bool FileInputDataSource::isPrepare()
+bool FileInputDataSource::isPrepared()
 {
 	if (mFp == nullptr) {
 		return false;
@@ -136,7 +136,7 @@ bool FileInputDataSource::isPrepare()
 
 ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	if (!isPrepare()) {
+	if (!isPrepared()) {
 		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
 		return EOF;
 	}
@@ -164,7 +164,7 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 
 FileInputDataSource::~FileInputDataSource()
 {
-	if (isPrepare()) {
+	if (isPrepared()) {
 		close();
 	}
 }
