@@ -195,10 +195,7 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
  ****************************************************************************/
 static void get_card_path(char *card_path, uint8_t card_id, uint8_t device_id, audio_io_direction_t direct)
 {
-	char type_chr = 'p';
-	if (direct == INPUT) {
-		type_chr = 'c';
-	}
+	char type_chr = (direct == INPUT) ? 'c' : 'p';
 
 	snprintf(card_path, (AUDIO_DEVICE_FULL_PATH_LENGTH), "%s/pcmC%uD%u%c", CONFIG_AUDIO_DEV_PATH, card_id, device_id, type_chr);
 	medvdbg("card_path : %s\n", card_path);
@@ -246,9 +243,9 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 	char type;
 	struct dirent *dir_entry;
 	DIR *dir_info;
-	audio_card_info_t *card = g_audio_out_cards;
-	int max_card_num = CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM;
-	char type_chr = 'p';
+	char type_chr;
+	audio_card_info_t *card;
+	int max_card_num;
 	int found_cards = 0;
 
 	if (!(dir_info = opendir(CONFIG_AUDIO_DEV_PATH))) {
@@ -256,9 +253,13 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 	}
 
 	if (direct == INPUT) {
-		max_card_num = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
 		type_chr = 'c';
 		card = g_audio_in_cards;
+		max_card_num = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
+	} else {
+		type_chr = 'p';
+		card = g_audio_out_cards;
+		max_card_num = CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM;
 	}
 
 	while ((dir_entry = readdir(dir_info)) != NULL) {
