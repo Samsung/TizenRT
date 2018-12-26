@@ -128,6 +128,9 @@ public:
 		if (fp != NULL) {
 			fwrite(result, sizeof(unsigned char), size << 1, fp);
 		}
+
+		auto sd = media::voice::SpeechDetector::instance();
+		sd->detectEndPoint(sdata, size >> 1);
 	}
 private:
 	FILE *fp;
@@ -204,6 +207,7 @@ bool run()
 		return false;
 	}
 
+	sd->deinitKeywordDetect();
 	isRecordWellDone = false;
 	mret = mr.prepare();
 	if (mret == media::RECORDER_OK) {
@@ -219,7 +223,7 @@ bool run()
 		printf("#### [MR] start failed.\n");
 	}
 
-	ret = sd->startEndPointDetect(20);
+	ret = sd->waitEndPoint(20);
 	if (ret == false) {
 		mr.stop();
 		mr.unprepare();
@@ -250,7 +254,6 @@ bool run()
 		printf("#### [MR] destroy failed.\n");
 	}
 
-	sd->deinitKeywordDetect();
 	sd->deinitEndPointDetect();
 
 	printf("##################################\n");
