@@ -274,7 +274,9 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 		/* Send REQUEST message to the server that sent the *first* OFFER */
 
 	case DHCPREQUEST:
-		pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
+		/* we don't need the broadcast flag since we can receive unicast traffic
+		   before being fully configured! */
+		//pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
 		memcpy(pdhcpc->packet.ciaddr, &pdhcpc->ipaddr.s_addr, 4);
 		pend = dhcpc_addserverid(&pdhcpc->serverid, pend);
 		pend = dhcpc_addreqipaddr(&pdhcpc->ipaddr, pend);
