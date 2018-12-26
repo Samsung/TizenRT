@@ -29,7 +29,7 @@ BufferInputDataSource::BufferInputDataSource()
 
 }
 
-bool BufferInputDataSource::isPrepare()
+bool BufferInputDataSource::isPrepared()
 {
 	return mFp && mSrcBuf && mSrcSize;
 }

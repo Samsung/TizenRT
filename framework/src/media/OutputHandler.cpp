@@ -134,7 +134,7 @@ ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 bool OutputHandler::start()
 {
 	medvdbg("OutputHandler::start()\n");
-	if (!mOutputDataSource->isPrepare()) {
+	if (!mOutputDataSource->isPrepared()) {
 		return false;
 	}
 

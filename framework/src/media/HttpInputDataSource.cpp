@@ -75,7 +75,7 @@ bool HttpInputDataSource::open()
 {
 	medvdbg("HttpInputDataSource::open!\n");
 
-	if (isPrepare()) {
+	if (isPrepared()) {
 		medvdbg("HttpInputDataSource is already opened!\n");
 		return true;
 	}
@@ -200,14 +200,14 @@ bool HttpInputDataSource::close()
 	return true;
 }
 
-bool HttpInputDataSource::isPrepare()
+bool HttpInputDataSource::isPrepared()
 {
 	return ((mStreamBuffer != nullptr) && (mHttpStream != nullptr) && (getAudioType() != AUDIO_TYPE_UNKNOWN));
 }
 
 ssize_t HttpInputDataSource::read(unsigned char *buf, size_t size)
 {
-	if (!isPrepare()) {
+	if (!isPrepared()) {
 		meddbg("[line:%d] Fail : HttpInputDataSource is not prepared\n", __LINE__);
 		return EOF;
 	}
@@ -296,7 +296,7 @@ void *HttpInputDataSource::workerMain(void *arg)
 
 HttpInputDataSource::~HttpInputDataSource()
 {
-	if (isPrepare()) {
+	if (isPrepared()) {
 		close();
 	}
 }

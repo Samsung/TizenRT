@@ -97,7 +97,7 @@ public:
 	 * @return True is ready, False is not ready
 	 * @since TizenRT v2.0
 	 */
-	bool isPrepare() override;
+	bool isPrepared() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/SocketOutputDataSource.h>

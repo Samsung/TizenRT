@@ -231,7 +231,7 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 	}
 
 	auto source = mOutputHandler.getOutputDataSource();
-	if (source->isPrepare()) {
+	if (source->isPrepared()) {
 		mOutputHandler.close();
 	}
 

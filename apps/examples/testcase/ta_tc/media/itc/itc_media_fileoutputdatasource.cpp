@@ -169,36 +169,36 @@ static void itc_media_FileOutputDataSource_close_n(void)
 }
 
 /**
-* @testcase         itc_media_FileOutputDataSource_isPrepare_p
-* @brief            open, isPrepare and close for FileOutputDataSource
-* @scenario         open, isPrepare and close and check its validation
-* @apicovered       open, close, isPrepare
+* @testcase         itc_media_FileOutputDataSource_isPrepared_p
+* @brief            open, isPrepared and close for FileOutputDataSource
+* @scenario         open, isPrepared and close and check its validation
+* @apicovered       open, close, isPrepared
 * @precondition     NA
 * @postcondition    NA
 */
-static void itc_media_FileOutputDataSource_isPrepare_p(void)
+static void itc_media_FileOutputDataSource_isPrepared_p(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
-	TC_ASSERT_EQ_CLEANUP("isPrepare", source.isPrepare(), 1, source.close());
+	TC_ASSERT_EQ_CLEANUP("isPrepared", source.isPrepared(), 1, source.close());
 	TC_ASSERT_EQ("close", source.close(), 1);
 
 	TC_SUCCESS_RESULT();
 }
 /**
-* @testcase         itc_media_FileOutputDataSource_isPrepare_n
-* @brief            open, close and isPrepare for FileOutputDataSource
-* @scenario         open, close and isPrepare and  check its validation
-* @apicovered       open, close, isPrepare
+* @testcase         itc_media_FileOutputDataSource_isPrepared_n
+* @brief            open, close and isPrepared for FileOutputDataSource
+* @scenario         open, close and isPrepared and  check its validation
+* @apicovered       open, close, isPrepared
 * @precondition     NA
 * @postcondition    NA
 */
-static void itc_media_FileOutputDataSource_isPrepare_n(void)
+static void itc_media_FileOutputDataSource_isPrepared_n(void)
 {
 	media::stream::FileOutputDataSource source(file_path);
 	TC_ASSERT_EQ("open", source.open(), 1);
 	TC_ASSERT_EQ("close", source.close(), 1);
-	TC_ASSERT_EQ("isPrepare", source.isPrepare(), 0);
+	TC_ASSERT_EQ("isPrepared", source.isPrepared(), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -252,8 +252,8 @@ int itc_media_fileoutputdatasource_main(void)
 	itc_media_FileOutputDataSource_open_close_p();
 	itc_media_FileOutputDataSource_open_n();
 	itc_media_FileOutputDataSource_close_n();
-	itc_media_FileOutputDataSource_isPrepare_p();
-	itc_media_FileOutputDataSource_isPrepare_n();
+	itc_media_FileOutputDataSource_isPrepared_p();
+	itc_media_FileOutputDataSource_isPrepared_n();
 	itc_media_FileOutputDataSource_write_p();
 	itc_media_FileOutputDataSource_write_n();
 

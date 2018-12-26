@@ -95,7 +95,7 @@ bool FileOutputDataSource::close()
 	return false;
 }
 
-bool FileOutputDataSource::isPrepare()
+bool FileOutputDataSource::isPrepared()
 {
 	if (mFp == nullptr) {
 		return false;
@@ -109,7 +109,7 @@ ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 		return 0;
 	}
 
-	if (!isPrepare()) {
+	if (!isPrepared()) {
 		return EOF;
 	}
 
@@ -122,7 +122,7 @@ ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 
 FileOutputDataSource::~FileOutputDataSource()
 {
-	if (isPrepare()) {
+	if (isPrepared()) {
 		close();
 	}
 }
