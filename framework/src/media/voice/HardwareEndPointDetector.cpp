@@ -184,7 +184,7 @@ bool HardwareEndPointDetector::waitEndPoint(int timeout)
 		ret = sem_timedwait(&mSem, &waketime);
 	}
 
-	stop_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
+	result = stop_stream_in_device_process_type(mSdCard, mSdDevice, AUDIO_DEVICE_SPEECH_DETECT_EPD);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: stop_stream_in_device_process_type(%d, %d) failed!\n", mSdCard, mSdDevice);
 		return false;

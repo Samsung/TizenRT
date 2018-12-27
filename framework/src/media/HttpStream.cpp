@@ -48,7 +48,7 @@ std::shared_ptr<HttpStream> HttpStream::create()
 }
 
 HttpStream::HttpStream() :
-	mCurl(nullptr), mHttpHeaders(nullptr)
+	mCurl(nullptr), mHttpHeaders(nullptr), mInitializeFlag(false)
 {
 }
 
