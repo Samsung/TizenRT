@@ -197,7 +197,6 @@ void MyMediaPlayer::doCommand(int command)
 		break;
 	case PLAYER_STOP:
 		cout << "PLAYER_STOP is selected" << endl;
-		focusManager.abandonFocus(mFocusRequest);
 		if (mp.stop() != PLAYER_OK) {
 			cout << "Mediaplayer::stop failed" << endl;
 		}
@@ -206,6 +205,7 @@ void MyMediaPlayer::doCommand(int command)
 			cout << "Mediaplayer::unprepare failed" << endl;
 		}
 		isSourceSet = false;
+		focusManager.abandonFocus(mFocusRequest);
 		break;
 	case GET_MAX_VOLUME:
 		cout << "GET_MAX_VOLUME is selected" << endl;

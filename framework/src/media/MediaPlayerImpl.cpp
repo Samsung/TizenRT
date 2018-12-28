@@ -304,6 +304,16 @@ void MediaPlayerImpl::startPlayer()
 		return;
 	}
 
+	if (mCurState == PLAYER_STATE_PAUSED) {
+		auto source = mInputHandler.getInputDataSource();
+		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
+								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer startPlayer fail : set_audio_stream_out fail\n");
+			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+			return;
+		}
+	}
+
 	auto prevPlayer = mpw.getPlayer();
 	auto curPlayer = shared_from_this();
 	if (prevPlayer != curPlayer) {
