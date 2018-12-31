@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
