@@ -291,15 +291,12 @@ function BUILD()
 	fi
 
 	if [ "$1" == "menuconfig" ]; then
-		DOCKER_OPT="-it"
+		DOCKER_OPT="-it -e COLUMNS=$(tput cols) -e LINES=$(tput lines)"
 	else
 		DOCKER_OPT="-i"
 	fi
 	
-	docker rm -f tizenrt > /dev/null 2>&1
-	docker run --rm ${DOCKER_OPT} -d -v ${TOPDIR}:/root/tizenrt --name tizenrt -w /root/tizenrt/os tizenrt/tizenrt /bin/bash
-	docker exec ${DOCKER_OPT} tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
-	docker stop tizenrt > /dev/null 2>&1
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
 
 	if [ "$1" == "distclean" ]; then
 		STATUS=NOT_CONFIGURED
