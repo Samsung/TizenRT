@@ -373,10 +373,7 @@ size_t InputHandler::getDecodeFrames(unsigned char *buf, size_t *size)
 	unsigned short channels = 0;
 
 	if (mDecoder->getFrame(buf, size, &sampleRate, &channels)) {
-		/* TODO set configuration should be removed when we finish implement header parser */
-		mInputDataSource->setSampleRate(sampleRate);
-		mInputDataSource->setChannels(channels);
-		medvdbg("size : %u samplerate : %d channels : %d\n", size, sampleRate, channels);
+		medvdbg("size : %u samplerate : %d channels : %d\n", *size, sampleRate, channels);
 		return *size;
 	}
 
