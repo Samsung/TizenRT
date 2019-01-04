@@ -57,7 +57,12 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double floorl(long double x)
 {
-	modfl(x, &x);
+	if (isnan(x)) {
+		return NAN;
+	}
+
+	 modfl(x, &x);
+
 	if (x < 0.0) {
 		x -= 1.0;
 	}

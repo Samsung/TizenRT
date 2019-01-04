@@ -83,7 +83,7 @@ float logf(float x)
 	iter = 0;
 	relax_factor = 1;
 
-	if (x < 0.0) {
+	if (isnan(x) || x < 0.0) {
 		return NAN;
 	}
 

@@ -56,6 +56,10 @@ float ceilf(float x)
 {
 	float x1 = x;
 
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	modff(x, &x);
 	if (x1 > 0.0 && fabsf(x1 - x) > 0.0) {
 		x += 1.0;

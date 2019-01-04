@@ -57,6 +57,10 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double fabs(double x)
 {
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	return ((x < 0) ? -x : x);
 }
 #endif

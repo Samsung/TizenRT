@@ -54,5 +54,8 @@
 
 float acosf(float x)
 {
+	if (x == 1) {
+		return 0;
+	}
 	return (M_PI_2 - asinf(x));
 }

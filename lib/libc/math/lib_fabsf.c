@@ -54,5 +54,9 @@
 
 float fabsf(float x)
 {
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	return ((x < 0) ? -x : x);
 }

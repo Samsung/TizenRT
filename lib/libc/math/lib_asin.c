@@ -64,6 +64,10 @@ double asin(double x)
 
 	y = 0;
 
+	if (isnan(x) || x < -1.0 || x > 1.0) {
+		return NAN;
+	}
+
 	while (1) {
 		y_sin = sin(y);
 		y_cos = cos(y);

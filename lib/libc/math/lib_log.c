@@ -82,7 +82,7 @@ double log(double x)
 	int relax_factor;
 	int iter;
 
-	if (x < 0.0) {
+	if (isnan(x) || x < 0.0) {
 		return NAN;
 	}
 

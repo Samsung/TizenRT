@@ -98,6 +98,12 @@ float rintf(float x)
 	float fremainder;
 	float ret;
 
+	/* If x is  +0, -0, NaN, or infinite, x itself is returned */
+
+	if (x == INFINITY || x == -INFINITY || isnan(x)) {
+		return x;
+	}
+
 	/* If the current rounding mode rounds toward negative
 	 * infinity, rintf() is identical to floorf().  If the current
 	 * rounding mode rounds toward positive infinity, rintf() is

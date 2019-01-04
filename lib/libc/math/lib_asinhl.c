@@ -65,6 +65,10 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double asinhl(long double x)
 {
+	if (x == -INFINITY) {
+		return -INFINITY;
+	}
+
 	return logl(x + sqrtl(x * x + 1));
 }
 #endif

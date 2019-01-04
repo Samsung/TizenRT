@@ -64,6 +64,10 @@ long double asinl(long double x)
 
 	y = 0;
 
+	if (isnan(x) || x < -1.0 || x > 1.0) {
+		return NAN;
+	}
+
 	while (1) {
 		y_sin = sinl(y);
 		y_cos = cosl(y);
