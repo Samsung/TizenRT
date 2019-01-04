@@ -108,6 +108,7 @@ public:
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();
+	bool isPlaying();
 
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd, ...);
