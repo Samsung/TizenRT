@@ -263,7 +263,6 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 	}
 
 	while ((dir_entry = readdir(dir_info)) != NULL) {
-		// TODO: Add cases for various drivers. Currently, identify 'pcm' drivers only.
 		if ((dir_entry->d_name[0] != 'p') || (dir_entry->d_name[1] != 'c') || (dir_entry->d_name[2] != 'm') || (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)) {
 			continue;
 		}
@@ -293,7 +292,6 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 		goto error_out;
 	}
 
-	/* TODO update an actual card here, but mutex needed?? */
 	if (direct == INPUT) {
 		if (get_actual_audio_in_card_id() != AUDIO_MANAGER_SUCCESS) {
 			ret = AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -742,7 +740,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 		goto error_with_pcm;
 	}
 
-	card->resample.user_format = pcm_format_to_bits(pcm_get_format(card->pcm)) >> 3;	// ToDo: Change into the argument "format".
+	card->resample.user_format = pcm_format_to_bits(pcm_get_format(card->pcm)) >> 3;
 
 	card->resample.user_channel = channels;
 	rechanneling_ratio = (float)card->resample.user_channel / (float)config.channels;

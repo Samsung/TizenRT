@@ -81,8 +81,6 @@ enum audio_device_type_e {
 
 typedef enum audio_device_type_e audio_device_type_t;
 
-/* TODO below constant of AUDIO should be encapsulated */
-
 /**
  * @brief Defined values for handling process of voice recognition on device, provides as a interface.
  */
