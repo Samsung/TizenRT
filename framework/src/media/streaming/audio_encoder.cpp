@@ -78,7 +78,6 @@ static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
 		*opus_ext = * ((opus_enc_external_t *) enc_ext);
 
-		// TODO: check opus_ext-> param validation
 		RETURN_VAL_IF_FAIL((opus_ext->pInputBuffer != NULL), AUDIO_ENCODER_ERROR);
 		RETURN_VAL_IF_FAIL((opus_ext->pOutputBuffer != NULL), AUDIO_ENCODER_ERROR);
 
@@ -174,7 +173,6 @@ int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len)
 		RETURN_VAL_IF_FAIL((ret == OK), AUDIO_ENCODER_ERROR);
 
 		RETURN_VAL_IF_FAIL(((int32_t) len >= opus_ext->outputDataSize), AUDIO_ENCODER_ERROR);
-		// TODO: get part of data
 
 		memcpy(data, opus_ext->pOutputBuffer, opus_ext->outputDataSize);
 		return opus_ext->outputDataSize;
