@@ -360,7 +360,6 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 		if (ret == PLAYER_OK) {
-			/* TODO : inform device control fail */
 			notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			return;
 		}
