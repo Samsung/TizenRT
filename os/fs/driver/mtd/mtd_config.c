@@ -1160,6 +1160,10 @@ static int mtdconfig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	FAR struct mtdconfig_struct_s *dev = inode->i_private;
 	FAR struct config_data_s *pdata;
 	int ret = -ENOSYS;
+	if (arg == 0) {
+		fdbg("Error config item of CFGDIOC_SETCONFIG is NULL!\n");
+		return -EINVAL;
+	}
 
 	switch (cmd) {
 	case CFGDIOC_SETCONFIG:
