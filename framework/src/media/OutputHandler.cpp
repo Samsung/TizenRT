@@ -348,6 +348,9 @@ bool OutputHandler::registerEncoder(audio_type_t audioType, unsigned int channel
 		mEncoder = encoder;
 		return true;
 	}
+	case AUDIO_TYPE_WAVE:
+		medvdbg("AUDIO_TYPE_WAVE does not need the Encoder\n");
+		return true;
 	default:
 		/* Don't set any encoder for unsupported formats */
 		return true;
