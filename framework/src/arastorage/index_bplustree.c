@@ -900,11 +900,6 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 		DB_LOG_D("BUCKET ALREADY LOCKED IN GET NEXT SPINNING\n");
 		pthread_mutex_lock(&(tree->bucket_lock));
 	}
-	tree->lock_buckets[cache.bucket_id] = 1;
-	pthread_mutex_unlock(&(tree->bucket_lock));
-
-	cache.start = 0;
-	cache.end = cache.bucket->next_free_slot;
 
 	/* TODO
 	 * Absent of non-cast return handling, should be taken care in the definition
@@ -922,6 +917,13 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 		return INVALID_TUPLE;
 
 	}
+
+	tree->lock_buckets[cache.bucket_id] = 1;
+	pthread_mutex_unlock(&(tree->bucket_lock));
+
+	cache.start = 0;
+	cache.end = cache.bucket->next_free_slot;
+
 	iterator->next_item_no = 1;
 	return get_next(iterator, matched_condition);
 }
@@ -1051,15 +1053,18 @@ static cache_result_t modify_cache(tree_t *tree, int id, cache_type_t cache, op_
 		}
 		temp = temp->prev;
 	}
-	if (temp == end) {
-		DB_LOG_E("PANIC CACHE OPERATION FOR A NON EXISTENT ENTRY\n");
-		return CACHE_NOT_EXIST;
-	}
+
 	if (cache == NODE) {
 		pthread_mutex_unlock(&(tree->node_cache_lock));
 	} else {
 		pthread_mutex_unlock(&(tree->buck_cache_lock));
 	}
+
+	if (temp == end) {
+		DB_LOG_E("PANIC CACHE OPERATION FOR A NON EXISTENT ENTRY\n");
+		return CACHE_NOT_EXIST;
+	}
+
 	return CACHE_OK;
 }
 
@@ -1467,11 +1472,13 @@ void tree_print(tree_t *tree, int id)
 			modify_cache(tree, node->id[i], BUCKET, UNLOCK);
 		}
 		bucket = bucket_read(tree, node->id[node->val[BRANCH_FACTOR - 1]]);
-		DB_LOG_D("Bucket id:%d\n", node->id[node->val[BRANCH_FACTOR - 1]]);
-		for (j = 0; j < bucket->next_free_slot; j++) {
-			DB_LOG_V("Key %d, Value %d\n", bucket->pairs[j].key, bucket->pairs[j].value);
+		if (bucket != NULL) {
+			DB_LOG_D("Bucket id:%d\n", node->id[node->val[BRANCH_FACTOR - 1]]);
+			for (j = 0; j < bucket->next_free_slot; j++) {
+				DB_LOG_V("Key %d, Value %d\n", bucket->pairs[j].key, bucket->pairs[j].value);
+			}
+			modify_cache(tree, node->id[node->val[BRANCH_FACTOR - 1]], BUCKET, UNLOCK);
 		}
-		modify_cache(tree, node->id[node->val[BRANCH_FACTOR - 1]], BUCKET, UNLOCK);
 
 	} else {
 		for (i = 0; i < node->val[BRANCH_FACTOR - 1]; i++) {
