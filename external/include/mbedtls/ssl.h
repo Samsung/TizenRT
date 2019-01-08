@@ -712,6 +712,14 @@ struct mbedtls_ssl_config
     const char **alpn_list;         /*!< ordered list of protocols          */
 #endif
 
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
+    unsigned int client_rpk : 1;   /*!< use client RPK?                     */
+#endif
+
+#if defined(MBEDTLS_SSL_SERVER_RPK)
+    unsigned int server_rpk : 1;   /*!< use server RPK?                     */
+#endif
+
     /*
      * Numerical settings (int then char)
      */

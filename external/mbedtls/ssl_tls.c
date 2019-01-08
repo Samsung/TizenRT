@@ -6647,6 +6647,20 @@ const char *mbedtls_ssl_get_alpn_protocol( const mbedtls_ssl_context *ssl )
 }
 #endif /* MBEDTLS_SSL_ALPN */
 
+#if defined(MBEDTLS_SSL_CLIENT_RPK)
+void mbedtls_ssl_conf_client_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
+{
+    conf->client_rpk = use_rpk;
+}
+#endif /* MBEDTLS_SSL_CLIENT_RPK */
+
+#if defined(MBEDTLS_SSL_SERVER_RPK)
+void mbedtls_ssl_conf_server_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
+{
+    conf->server_rpk = use_rpk;
+}
+#endif /* MBEDTLS_SSL_SERVER_RPK */
+
 void mbedtls_ssl_conf_max_version( mbedtls_ssl_config *conf, int major, int minor )
 {
     conf->max_major_ver = (unsigned char)major;

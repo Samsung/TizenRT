@@ -324,9 +324,6 @@ MBEDTLS_DEPRECATED void mbedtls_md4( const unsigned char *input,
  */
 int mbedtls_md4_self_test( int verbose );
 
-/* Internal use */
-void mbedtls_md4_process(mbedtls_md4_context *ctx, const unsigned char data[64]);
-
 #ifdef __cplusplus
 }
 #endif

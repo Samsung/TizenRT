@@ -319,9 +319,6 @@ MBEDTLS_DEPRECATED void mbedtls_md2( const unsigned char *input,
  */
 int mbedtls_md2_self_test( int verbose );
 
-/* Internal use */
-void mbedtls_md2_process(mbedtls_md2_context *ctx);
-
 #ifdef __cplusplus
 }
 #endif

@@ -391,8 +391,6 @@
 //#define MBEDTLS_AES_SETKEY_DEC_ALT
 //#define MBEDTLS_AES_ENCRYPT_ALT
 //#define MBEDTLS_AES_DECRYPT_ALT
-//#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
-//#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
 //#define MBEDTLS_ECDSA_VERIFY_ALT
 //#define MBEDTLS_ECDSA_SIGN_ALT
 //#define MBEDTLS_ECDSA_GENKEY_ALT
@@ -1366,6 +1364,26 @@
  * Comment this macro to disable support for ALPN.
  */
 #define MBEDTLS_SSL_ALPN
+
+/**
+ * \def MBEDTLS_SSL_CLIENT_RPK
+ *
+ * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
+ * Security (TLS) and Datagram Transport Layer Security (DTLS) (client-side)
+ *
+ * Comment this macro to disable support for RPK.
+ */
+#define MBEDTLS_SSL_CLIENT_RPK
+
+/**
+ * \def MBEDTLS_SSL_SERVER_RPK
+ *
+ * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
+ * Security (TLS) and Datagram Transport Layer Security (DTLS) (server-side)
+ *
+ * Comment this macro to disable support for RPK.
+ */
+#define MBEDTLS_SSL_SERVER_RPK
 
 /**
  * \def MBEDTLS_SSL_DTLS_ANTI_REPLAY

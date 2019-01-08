@@ -290,9 +290,6 @@ MBEDTLS_DEPRECATED void mbedtls_sha512( const unsigned char *input,
  */
 int mbedtls_sha512_self_test( int verbose );
 
-/* Internal use */
-void mbedtls_sha512_process(mbedtls_sha512_context *ctx, const unsigned char data[128]);
-
 #ifdef __cplusplus
 }
 #endif
