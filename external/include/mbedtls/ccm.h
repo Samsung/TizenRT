@@ -17,18 +17,20 @@
  ****************************************************************************/
 /**
  * \file ccm.h
+ *
  * \brief CCM combines Counter mode encryption with CBC-MAC authentication
  *        for 128-bit block ciphers.
+ *
  * Input to CCM includes the following elements:
  * <ul><li>Payload - data that is both authenticated and encrypted.</li>
  * <li>Associated data (Adata) - data that is authenticated but not
  * encrypted, For example, a header.</li>
  * <li>Nonce - A unique value that is assigned to the payload and the
  * associated data.</li></ul>
+ *
  */
 /*
  *  Copyright (C) 2006-2018, Arm Limited (or its affiliates), All Rights Reserved
- *  This file is part of Mbed TLS (https://tls.mbed.org)
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -43,7 +45,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
-
+ *  This file is part of Mbed TLS (https://tls.mbed.org)
  */
 
 #ifndef MBEDTLS_CCM_H

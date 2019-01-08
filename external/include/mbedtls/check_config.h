@@ -222,6 +222,11 @@
 #error "MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED) && !defined(MBEDTLS_ECDH_C)
+
+#error "MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED defined, but not all prerequisites"
+#endif
+
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) && !defined(MBEDTLS_DHM_C)
 #error "MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED defined, but not all prerequisites"
 #endif

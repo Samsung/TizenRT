@@ -342,10 +342,15 @@
 
 #define MBEDTLS_TLS_EXT_MAX_FRAGMENT_LENGTH          1
 
+#define MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY         2
+
 #define MBEDTLS_TLS_EXT_TRUNCATED_HMAC               4
 
 #define MBEDTLS_TLS_EXT_SUPPORTED_ELLIPTIC_CURVES   10
 #define MBEDTLS_TLS_EXT_SUPPORTED_POINT_FORMATS     11
+
+#define MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE     19
+#define MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE     20
 
 #define MBEDTLS_TLS_EXT_SIG_ALG                     13
 
@@ -379,7 +384,8 @@ union mbedtls_ssl_premaster_secret
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)    || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)  || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED)     || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)   || \
+	defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
     unsigned char _pms_ecdh[MBEDTLS_ECP_MAX_BYTES];    /* RFC 4492 5.10 */
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
@@ -674,6 +680,12 @@ struct mbedtls_ssl_config
     mbedtls_ssl_key_cert *key_cert; /*!< own certificate/key pair(s)        */
     mbedtls_x509_crt *ca_chain;     /*!< trusted CAs                        */
     mbedtls_x509_crl *ca_crl;       /*!< trusted CAs CRLs                   */
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+    const char *client_oid;         /*!< OID to check on client certs       */
+    size_t client_oid_len;          /*!< length of client OID               */
+    const char *server_oid;         /*!< OID to check on server certs       */
+    size_t server_oid_len;          /*!< length of server OID               */
+#endif /* MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED)
@@ -944,14 +956,6 @@ extern int (*mbedtls_ssl_hw_record_write)(mbedtls_ssl_context *ssl);
 extern int (*mbedtls_ssl_hw_record_read)(mbedtls_ssl_context *ssl);
 extern int (*mbedtls_ssl_hw_record_finish)(mbedtls_ssl_context *ssl);
 #endif /* MBEDTLS_SSL_HW_RECORD_ACCEL */
-
-/**
- * \brief Returns the list of ciphersuites supported by the SSL/TLS module.
- *
- * \return              a statically allocated array of ciphersuites, the last
- *                      entry is 0.
- */
-const int *mbedtls_ssl_list_ciphersuites(void);
 
 /**
  * \brief               Return the name of the ciphersuite associated with the
@@ -1652,6 +1656,47 @@ void mbedtls_ssl_conf_ca_chain( mbedtls_ssl_config *conf,
 int mbedtls_ssl_conf_own_cert( mbedtls_ssl_config *conf,
                               mbedtls_x509_crt *own_cert,
                               mbedtls_pk_context *pk_key );
+
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+/**
+ * \brief                  Set custom EKU OIDs to be checked on certificates during TLS negotiation,
+ *                         and for selecting suitable certificates for TLS negotation.
+ *
+ * \note                   By default, if this function is not called, clients will
+ *                         check for the server authentication EKU (1.3.6.1.5.5.7.3.1) in
+ *                         a server's certificate, and servers will check for the
+ *                         client authentication EKU (1.3.6.1.5.5.7.3.2) if a client
+ *                         presents a certificate.
+ *
+ * \param conf             SSL configuration
+ * \param client_oid       OID to check for when verifying client certificates as a server.
+ *                         This must be an MBEDTLS_OID_* constant from oid.h, or a custom OID
+ *                         supplied by the caller. If a custom OID is used, it must be provided in
+ *                         its ASN.1 encoding; human-readable dotted numeric strings are not supported.
+ *                         Additionally, callers using custom OID buffers must ensure those buffers remain
+ *                         live while this SSL configuration is live. Passing NULL will
+ *                         disable EKU checking of client certificates.
+ * \param client_oid_len   The length of client_oid, not counting a terminating NULL if present; for constants
+ *                         from oid.h, this can be obtained with MBEDTLS_OID_SIZE(x) where x is the OID constant.
+ *                         If client_oid is NULL, this must be zero.
+ * \param server_oid       OID to check for when verifying server certificates as a client.
+ *                         This must be an MBEDTLS_OID_* constant from oid.h, or a custom OID
+ *                         supplied by the caller. If a custom OID is used, it must be provided in
+ *                         its ASN.1 encoding; human-readable dotted numeric strings are not supported.
+ *                         Additionally, callers using custom OID buffers must ensure those buffers remain
+ *                         live while this SSL configuration is live. Passing NULL will
+ *                         disable EKU checking of server certificates.
+ * \param server_oid_len   The length of server_oid not counting a terminating NULL if present; for constants
+ *                         from oid.h, this can be obtained with MBEDTLS_OID_SIZE(x) where x is the OID constant.
+ *                         If client_oid is NULL, this must be zero.
+ *
+ * \return                 0 on success or MBEDTLS_ERR_SSL_BAD_INPUT_DATA for invalid arguments.
+ *                         On failure, existing behavior is unchanged.
+ */
+int mbedtls_ssl_conf_ekus( mbedtls_ssl_config *conf,
+                           const char *client_oid, size_t client_oid_len,
+                           const char *server_oid, size_t server_oid_len );
+#endif /* MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)

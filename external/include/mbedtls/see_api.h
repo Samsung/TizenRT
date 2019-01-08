@@ -88,10 +88,10 @@ typedef enum {
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
 
 /* Key type */
-#define AES_KEY           0x010000
-#define HMAC_KEY          0x020000
-#define RSA_KEY           0x030000
-#define ECC_KEY           0x040000
+#define AES_KEY		0x010000
+#define HMAC_KEY	0x020000
+#define RSA_KEY		0x030000
+#define ECC_KEY		0x040000
 
 #define AES_KEY_128       ((AES_KEY)  | (0x1))
 #define AES_KEY_256       ((AES_KEY)  | (0x2))
@@ -120,8 +120,8 @@ typedef enum {
 
 #define SEE_MAX_DATA_SIZE	(208)
 
-#define SEE_IOTIVITY_MAXSIZE       (SEE_MAX_BUF_SIZE * 2)
-#define SEE_IOTIVITY_SLOT          (7)
+#define SEE_IOTIVITY_MAXSIZE	   (SEE_MAX_BUF_SIZE * 2)
+#define SEE_IOTIVITY_SLOT	   (7)
 
 /**
  * @brief structure to contain options for making cert.

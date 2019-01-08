@@ -53,6 +53,33 @@
 #endif
 
 /**
+ * \def MBED_TIZENRT
+ *
+ * Indicate the platform specific patches.
+ */
+#ifndef MBED_TIZENRT
+#define MBED_TIZENRT
+#endif
+
+#ifdef MBED_TIZENRT
+#define MBEDTLS_MAXIMUM_HANDSHAKE_MEMORY_USAGE ( 60 * 1024 )
+#endif
+
+/**
+ * \def MBEDTLS_OCF_PATCH
+ *
+ * Indicate the OCF specific patches.
+ * CAUTION: Please undef "MBEDTLS_OCF_PATCH" for using other network protocol
+ *          such as HTTPS, MQTT-Secure, etc. This definition will be able to
+ *          make an abnormal situation.
+ */
+#if defined(CONFIG_ENABLE_IOTIVITY_SECURED)
+#define MBEDTLS_OCF_PATCH
+#else
+#undef MBEDTLS_OCF_PATCH
+#endif
+
+/**
  * \name SECTION: System support
  *
  * This section sets system specific settings.
@@ -293,20 +320,17 @@
 //#define MBEDTLS_BLOWFISH_ALT
 //#define MBEDTLS_CAMELLIA_ALT
 //#define MBEDTLS_CCM_ALT
-//#define MBEDTLS_CMAC_ALT
 //#define MBEDTLS_DES_ALT
-//#define MBEDTLS_DHM_ALT
-//#define MBEDTLS_ECJPAKE_ALT
-//#define MBEDTLS_GCM_ALT
+//#define MBEDTLS_XTEA_ALT
 //#define MBEDTLS_MD2_ALT
 //#define MBEDTLS_MD4_ALT
 //#define MBEDTLS_MD5_ALT
 //#define MBEDTLS_RIPEMD160_ALT
-//#define MBEDTLS_RSA_ALT
 //#define MBEDTLS_SHA1_ALT
 //#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA512_ALT
-//#define MBEDTLS_XTEA_ALT
+
+
 /*
  * When replacing the elliptic curve module, pleace consider, that it is
  * implemented with two .c files:
@@ -619,7 +643,9 @@
  *
  * Comment this macro to disable deterministic ECDSA.
  */
+#if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_ECDSA_DETERMINISTIC
+#endif
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -1564,6 +1590,23 @@
 #define MBEDTLS_X509_RSASSA_PSS_SUPPORT
 
 /**
+ * \def MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+ *
+ * Enable parsing of all supported subtypes of the Subject Alternative Name
+ * extension. When enabled, the subject_alt_names field of mbedtls_x509_crt
+ * is defined as an mbedtls_x509_subject_alt_name_sequence, each element of
+ * which can describe a different subtype of the GeneralName choice as defined
+ * by the standard.
+ *
+ * Comment this macro to only support dNSName subtypes, and to define the
+ * subject_alt_names field as an mbedtls_x509_sequence. Any other subtypes will
+ * be ignored. This was the behavior in earlier versions.
+ */
+#if defined(MBEDTLS_OCF_PATCH)
+#define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+#endif
+
+/**
  * \def MBEDTLS_ZLIB_SUPPORT
  *
  * If set, the SSL/TLS module uses ZLIB to support compression and
@@ -1677,6 +1720,7 @@
  *      MBEDTLS_TLS_PSK_WITH_AES_128_GCM_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA
+ *      MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256
  *
  * PEM_PARSE uses AES for decrypting encrypted keys.
  */
@@ -2331,7 +2375,10 @@
  *
  * This module adds support for the PKCS#5 functions.
  */
+#if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_PKCS5_C
+#endif
+
 
 /**
  * \def MBEDTLS_PKCS11_C
@@ -2647,7 +2694,9 @@
  *
  * This module is required for X.509 CRL parsing.
  */
+#if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_X509_CRL_PARSE_C
+#endif
 
 /**
  * \def MBEDTLS_X509_CSR_PARSE_C
@@ -2700,7 +2749,9 @@
  *
  * This module is required for X.509 certificate request writing.
  */
+#if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_X509_CSR_WRITE_C
+#endif
 
 /**
  * \def MBEDTLS_XTEA_C
@@ -2731,11 +2782,7 @@
 
 /* MPI / BIGNUM options */
 //#define MBEDTLS_MPI_WINDOW_SIZE            6 /**< Maximum windows size used. */
-#ifdef CONFIG_TLS_MPI_MAX_SIZE
-#define MBEDTLS_MPI_MAX_SIZE            CONFIG_TLS_MPI_MAX_SIZE	/**< Maximum number of bytes for usable MPIs. */
-#else
-#define MBEDTLS_MPI_MAX_SIZE            512
-#endif
+#define MBEDTLS_MPI_MAX_SIZE            512	/**< Maximum number of bytes for usable MPIs. */
 
 /* CTR_DRBG options */
 //#define MBEDTLS_CTR_DRBG_ENTROPY_LEN               48 /**< Amount of entropy used per seed by default (48 with SHA-512, 32 with SHA-256) */
@@ -2804,19 +2851,6 @@
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
 
 /**
- * \def MBED_TIZENRT
- *
- * Indicate the platform specific patches.
- */
-#ifndef MBED_TIZENRT
-#define MBED_TIZENRT
-#endif
-
-#ifdef MBED_TIZENRT
-#define MBEDTLS_MAXIMUM_HANDSHAKE_MEMORY_USAGE ( 60 * 1024 )
-#endif
-
-/**
  * \def MBEDTLS_LIGHT_DEVICE
  *
  * Configuration for light devices.
@@ -2837,27 +2871,17 @@
 #undef MBEDTLS_ECP_DP_BP512R1_ENABLED
 #undef MBEDTLS_ECP_DP_CURVE25519_ENABLED
 
-#undef MBEDTLS_ECDSA_DETERMINISTIC
 #undef MBEDTLS_PK_PARSE_EC_EXTENDED
 #undef MBEDTLS_ERROR_STRERROR_DUMMY
 #undef MBEDTLS_GENPRIME
 
-/* MBEDTLS_FS_IO is required for CURL.
-	Dependent method calls below.
-	`mbedtls_x509_crt_parse_file'  `mbedtls_x509_crt_parse_path'
-	`mbedtls_pk_parse_keyfile' `mbedtls_x509_crl_parse_file'
-*/
-//#ifndef CONFIG_ENABLE_CURL
-//#undef MBEDTLS_FS_IO
-//#endif
-
+#undef MBEDTLS_FS_IO
 #undef MBEDTLS_MEMORY_DEBUG
 #undef MBEDTLS_HAVEGE_C
 
 #undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #undef MBEDTLS_SSL_DEBUG_ALL
 #undef MBEDTLS_SSL_EXTENDED_MASTER_SECRET
-#undef MBEDTLS_SSL_ALL_ALERT_MESSAGES
 
 #undef MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #undef MBEDTLS_SSL_EXTENDED_MASTER_SECRET
@@ -2868,28 +2892,24 @@
 #undef MBEDTLS_ARC4_C
 #undef MBEDTLS_BLOWFISH_C
 #undef MBEDTLS_CAMELLIA_C
-//#undef MBEDTLS_DEBUG_C
+#undef MBEDTLS_DEBUG_C
 #undef MBEDTLS_RIPEMD160_C
 //#undef MBEDTLS_SHA512_C
-//#undef MBEDTLS_PKCS5_C
 #undef MBEDTLS_PKCS12_C
 
-//#undef MBEDTLS_X509_CRL_PARSE_C
-//#undef MBEDTLS_X509_CSR_PARSE_C
+#undef MBEDTLS_X509_CSR_PARSE_C
 //#undef MBEDTLS_X509_CREATE_C
-//#undef MBEDTLS_X509_CSR_WRITE_C
 //#undef MBEDTLS_X509_CRT_WRITE_C
 
 #undef MBEDTLS_XTEA_C
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
-// #if defined(CONFIG_HW_ECDH_PARAM)
-// #undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-// #endif
+#if defined(CONFIG_HW_ECDH_PARAM)
+#undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+#endif
 
-// #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-// #undef MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+#undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 
 /**
  * Complete list of ciphersuites to use, in order of preference.
@@ -2921,7 +2941,7 @@
  *            on it, and considering stronger message digests instead.
  *
  */
-// #define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
+#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
 
 /**
  * Allow SHA-1 in the default TLS configuration for TLS 1.2 handshake

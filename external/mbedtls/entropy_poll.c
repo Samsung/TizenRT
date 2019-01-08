@@ -71,42 +71,52 @@
 #define _WIN32_WINNT 0x0400
 #endif
 #include <windows.h>
-#include <wincrypt.h>
+
+#if defined(MBEDTLS_OCF_PATCH)
 #include <bcrypt.h>
+#else
+#include <wincrypt.h>
+#endif
 
 int mbedtls_platform_entropy_poll( void *data, unsigned char *output, size_t len,
                            size_t *olen )
 {
+#if !defined(MBEDTLS_OCF_PATCH)
     HCRYPTPROV provider;
+#endif
     ((void) data);
     *olen = 0;
 
-	/*
-	 * size_t may be 64 bits, but ULONG is always 32.
-	 * If len is larger than the maximum for ULONG, just fail.
-	 * It's unlikely anything ever will want to ask for this much randomness.
-	 */
-	if (len > 0xFFFFFFFFULL) {
-		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
-	}
-
-	if (!BCRYPT_SUCCESS(BCryptGenRandom(NULL, output, (ULONG) len, BCRYPT_USE_SYSTEM_PREFERRED_RNG))) {
-		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
-	}
-
+#if defined(MBEDTLS_OCF_PATCH)
+    /*
+     * size_t may be 64 bits, but ULONG is always 32.
+     * If len is larger than the maximum for ULONG, just fail.
+     * It's unlikely anything ever will want to ask for this much randomness.
+     */
+    if ( len > 0xFFFFFFFFULL )
+#else
     if( CryptAcquireContext( &provider, NULL, NULL,
                               PROV_RSA_FULL, CRYPT_VERIFYCONTEXT ) == FALSE )
+#endif
     {
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
     }
 
+#if defined(MBEDTLS_OCF_PATCH)
+	if( !BCRYPT_SUCCESS(BCryptGenRandom(NULL, output, (ULONG) len, BCRYPT_USE_SYSTEM_PREFERRED_RNG)) )
+#else
     if( CryptGenRandom( provider, (DWORD) len, output ) == FALSE )
+#endif
     {
+#if !defined(MBEDTLS_OCF_PATCH)
         CryptReleaseContext( provider, 0 );
+#endif
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
     }
 
+#if !defined(MBEDTLS_OCF_PATCH)
     CryptReleaseContext( provider, 0 );
+#endif
     *olen = len;
 
     return( 0 );
@@ -296,9 +306,7 @@ int mbedtls_nv_seed_poll( void *data,
 }
 #endif /* MBEDTLS_ENTROPY_NV_SEED */
 
-
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
-
 #if defined(CONFIG_HW_RNG)
 #include "mbedtls/see_api.h"
 
@@ -322,7 +330,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 
 	return 0;
 }
-#else
+#else /* CONFIG_HW_RNG */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
 	/* It should be changed to hardware random generator */

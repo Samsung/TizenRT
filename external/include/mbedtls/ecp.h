@@ -177,8 +177,7 @@ typedef struct
 #if defined(CONFIG_TLS_WITH_SSS)
 	unsigned int key_index;
 #endif
-}
-mbedtls_ecp_group;
+} mbedtls_ecp_group;
 
 /**
  * \brief           ECP key pair structure
@@ -195,8 +194,7 @@ typedef struct
 #if defined(CONFIG_TLS_WITH_SSS)
 	unsigned int key_index;
 #endif
-}
-mbedtls_ecp_keypair;
+} mbedtls_ecp_keypair;
 
 /**
  * \name SECTION: Module settings

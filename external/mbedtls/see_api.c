@@ -374,7 +374,7 @@ int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int
 	}
 
 	if (see_mutex_unlock(&m_handler) != SEE_OK) {
-		return SEE_MUTEX_UNLOCK_ERROR
+		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
 	return SEE_OK;

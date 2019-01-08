@@ -651,4 +651,4 @@ int hw_rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen,
 }
 #endif
 
-#endif							/* MBEDTLS_PK_H */
+#endif /* MBEDTLS_PK_H */

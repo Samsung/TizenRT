@@ -53,8 +53,10 @@
 #include <string.h>
 
 #if defined(CONFIG_HW_ECDH_PARAM)
-#include "mbedtls/see_api.h"
-#include "mbedtls/see_internal.h"
+#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
+#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
+#include "tls/see_api.h"
+#include "tls/see_internal.h"
 #endif
 
 #if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
@@ -65,11 +67,7 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-#if defined(CONFIG_HW_ECDH_PARAM)
-	return hw_ecp_gen_keypair(grp, d, Q);
-#else
     return mbedtls_ecp_gen_keypair( grp, d, Q, f_rng, p_rng );
-#endif
 }
 #endif /* MBEDTLS_ECDH_GEN_PUBLIC_ALT */
 
@@ -83,9 +81,6 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
                          void *p_rng )
 {
     int ret;
-#if defined(CONFIG_HW_ECDH_PARAM)
-	return hw_ecdh_compute_shared(grp, z, Q);
-#else
     mbedtls_ecp_point P;
 
     mbedtls_ecp_point_init( &P );
@@ -107,7 +102,7 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
 cleanup:
     mbedtls_ecp_point_free( &P );
-#endif
+
     return( ret );
 }
 #endif /* MBEDTLS_ECDH_COMPUTE_SHARED_ALT */
@@ -301,8 +296,28 @@ int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
     *olen = ctx->grp.pbits / 8 + ( ( ctx->grp.pbits % 8 ) != 0 );
     return mbedtls_mpi_write_binary( &ctx->z, buf, *olen );
 }
-
 #if defined(CONFIG_HW_ECDH_PARAM)
+
+/*
+ * MBEDTLS_ECDH_GEN_PUBLIC_ALT
+ */
+int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
+                     int (*f_rng)(void *, unsigned char *, size_t),
+                     void *p_rng )
+{
+    return hw_ecp_gen_keypair( grp, d, Q );
+}
+
+/*
+ * MBEDTLS_ECDH_COMPUTE_SHARED_ALT
+ */
+int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
+                         const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
+                         int (*f_rng)(void *, unsigned char *, size_t),
+                         void *p_rng )
+{
+	return hw_ecdh_compute_shared( grp, z, Q );
+}
 
 int hw_ecp_gen_keypair( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q )
 {

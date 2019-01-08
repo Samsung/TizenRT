@@ -464,6 +464,14 @@ static void ssl_write_max_fragment_length_ext( mbedtls_ssl_context *ssl,
         return;
     }
 
+#if defined(MBEDTLS_OCF_PATCH)
+    if( ssl->conf->mfl_code > UCHAR_MAX )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "max fragment length too large" ) );
+        return;
+    }
+#endif
+
     MBEDTLS_SSL_DEBUG_MSG( 3, ( "client hello, adding max_fragment_length extension" ) );
 
     if( end < p || (size_t)( end - p ) < 5 )
@@ -478,7 +486,11 @@ static void ssl_write_max_fragment_length_ext( mbedtls_ssl_context *ssl,
     *p++ = 0x00;
     *p++ = 1;
 
+#if defined(MBEDTLS_OCF_PATCH)
+    *p++ = (unsigned char)ssl->conf->mfl_code;
+#else
     *p++ = ssl->conf->mfl_code;
+#endif
 
     *olen = 5;
 }
@@ -2084,6 +2096,79 @@ static int ssl_parse_server_ecdh_params( mbedtls_ssl_context *ssl,
           MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+#if defined(MBEDTLS_OCF_PATCH)
+static int ssl_parse_server_psk_hint( mbedtls_ssl_context *ssl,
+                                      unsigned char **p,
+                                      unsigned char *end )
+{
+    int ret = 0;
+    size_t n;
+
+    if( ssl->conf->f_psk == NULL &&
+        ( ssl->conf->psk == NULL || ssl->conf->psk_identity == NULL ||
+          ssl->conf->psk_identity_len == 0 || ssl->conf->psk_len == 0 ) )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "got no pre-shared key" ) );
+        return( MBEDTLS_ERR_SSL_PRIVATE_KEY_REQUIRED );
+    }
+
+    /*
+     * Receive client pre-shared key identity name
+     */
+    if( *p + 2 > end )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server key exchange message" ) );
+        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
+    }
+
+    n = ( (*p)[0] << 8 ) | (*p)[1];
+    *p += 2;
+
+    if (n == 0)
+    {
+        return ( 0 );
+    }
+
+    if( n < 1 || n > 65535 || *p + n > end )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server key exchange message" ) );
+        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
+    }
+
+    if( ssl->conf->f_psk != NULL )
+    {
+        if( ssl->conf->f_psk( ssl->conf->p_psk, ssl, *p, n ) != 0 )
+            ret = MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY;
+    }
+    else
+    {
+        /* Identity is not a big secret since clients send it in the clear,
+         * but treat it carefully anyway, just in case */
+        if( n != ssl->conf->psk_identity_len ||
+            mbedtls_ssl_safer_memcmp( ssl->conf->psk_identity, *p, n ) != 0 )
+        {
+            ret = MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY;
+        }
+    }
+
+    if( ret == MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY )
+    {
+        MBEDTLS_SSL_DEBUG_BUF( 3, "Unknown PSK identity", *p, n );
+        if( ( ret = mbedtls_ssl_send_alert_message( ssl,
+                              MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                              MBEDTLS_SSL_ALERT_MSG_UNKNOWN_PSK_IDENTITY ) ) != 0 )
+        {
+            return( ret );
+        }
+
+        return( MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY );
+    }
+
+    *p += n;
+
+    return( 0 );
+}
+#else
 static int ssl_parse_server_psk_hint( mbedtls_ssl_context *ssl,
                                       unsigned char **p,
                                       unsigned char *end )
@@ -2123,6 +2208,7 @@ static int ssl_parse_server_psk_hint( mbedtls_ssl_context *ssl,
 
     return( ret );
 }
+#endif /* MBEDTLS_OCF_PATCH */
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) ||                           \

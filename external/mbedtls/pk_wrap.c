@@ -657,7 +657,6 @@ int hw_ecdsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	if( ( ret = mbedtls_mpi_read_binary( &r, ecc_sign.r, ecc_sign.r_byte_len ) ) != 0 ) {
 		goto cleanup;
 	}
-
 	if( ( ret = mbedtls_mpi_read_binary( &s, ecc_sign.s, ecc_sign.s_byte_len ) ) != 0 ) {
 		goto cleanup;
 	}

@@ -1061,6 +1061,15 @@ int mbedtls_x509_self_test( int verbose )
     mbedtls_x509_crt cacert;
     mbedtls_x509_crt clicert;
 
+#if defined(MBEDTLS_OCF_PATCH)
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_SHA256_C) &&   \
+	    defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT) && \
+	    defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+	    mbedtls_x509_crt directorynamecert;
+		    char buf[2048];
+#endif
+#endif
+
     if( verbose != 0 )
         mbedtls_printf( "  X.509 certificate load: " );
 
@@ -1099,6 +1108,41 @@ int mbedtls_x509_self_test( int verbose )
 
         return( ret );
     }
+
+#if defined(MBEDTLS_OCF_PATCH)
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_SHA256_C) &&   \
+    defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT) && \
+    defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+    if( verbose != 0 )
+        mbedtls_printf( "passed\n  X.509 subject alt name verify: " );
+
+    mbedtls_x509_crt_init( &directorynamecert );
+
+    ret = mbedtls_x509_crt_parse( &directorynamecert, (const unsigned char *) mbedtls_test_srv_directoryname_ec_crt,
+                                  mbedtls_test_srv_directoryname_ec_crt_len );
+
+    if( ret != 0 )
+    {
+        if( verbose != 0 )
+            mbedtls_printf( "failed\n" );
+
+        return( ret );
+    }
+
+    if( verbose != 0 )
+        mbedtls_printf( "passed\n  X.509 directoryName parsing: " );
+
+    ret = mbedtls_x509_crt_info( buf, sizeof( buf ), "", &directorynamecert );
+    if ( ret < 0 )
+    {
+        if ( verbose != 0 )
+            mbedtls_printf( "failed\n" );
+
+        return( MBEDTLS_ERR_X509_BAD_INPUT_DATA );
+    }
+    mbedtls_x509_crt_free( &directorynamecert  );
+#endif
+#endif
 
     if( verbose != 0 )
         mbedtls_printf( "passed\n\n");

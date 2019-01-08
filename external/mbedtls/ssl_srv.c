@@ -762,8 +762,21 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
          * different uses based on keyUsage, eg if they want to avoid signing
          * and decrypting with the same RSA key.
          */
+#if defined(MBEDTLS_OCF_PATCH)
+        if( mbedtls_ssl_check_cert_usage( cur->cert, ciphersuite_info,
+                                  MBEDTLS_SSL_IS_SERVER,
+#if defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+                                  ssl->conf->client_oid, ssl->conf->client_oid_len,
+                                  ssl->conf->server_oid, ssl->conf->server_oid_len,
+#else
+                                  NULL, 0,
+                                  NULL, 0,
+#endif /* MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
+                                  &flags ) != 0 )
+#else
         if( mbedtls_ssl_check_cert_usage( cur->cert, ciphersuite_info,
                                   MBEDTLS_SSL_IS_SERVER, &flags ) != 0 )
+#endif /* !MBEDTLS_OCF_PATCH */
         {
             MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate mismatch: "
                                 "(extended) key usage extension" ) );
@@ -2957,10 +2970,18 @@ static int ssl_write_server_key_exchange( mbedtls_ssl_context *ssl )
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK )
     {
+#if defined(MBEDTLS_OCF_PATCH)
+        *(p++) = (unsigned char)( ssl->conf->psk_identity_len >> 8 );
+        *(p++) = (unsigned char)( ssl->conf->psk_identity_len      );
+        memcpy(p, ssl->conf->psk_identity, ssl->conf->psk_identity_len);
+        p += ssl->conf->psk_identity_len;
+        n += ssl->conf->psk_identity_len + 2;
+#else
         *(p++) = 0x00;
         *(p++) = 0x00;
 
         n += 2;
+#endif
     }
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */

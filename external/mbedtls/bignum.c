@@ -1265,9 +1265,15 @@ static mbedtls_mpi_uint mbedtls_int_div_int( mbedtls_mpi_uint u1,
      */
     if( 0 == d || u1 >= d )
     {
+#if defined(MBEDTLS_OCF_PATCH)
+        if (r != NULL) *r = (mbedtls_mpi_uint) ~0;
+
+        return ( (mbedtls_mpi_uint) ~0 );
+#else
         if (r != NULL) *r = ~0;
 
         return ( ~0 );
+#endif
     }
 
 #if defined(MBEDTLS_HAVE_UDBL)
@@ -1393,7 +1399,11 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, c
     for( i = n; i > t ; i-- )
     {
         if( X.p[i] >= Y.p[t] )
+#if defined(MBEDTLS_OCF_PATCH)
+            Z.p[i - t - 1] = (mbedtls_mpi_uint) ~0;
+#else
             Z.p[i - t - 1] = ~0;
+#endif
         else
         {
             Z.p[i - t - 1] = mbedtls_int_div_int( X.p[i], X.p[i - 1],

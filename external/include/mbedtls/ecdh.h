@@ -72,15 +72,17 @@ typedef enum
  */
 typedef struct
 {
-    mbedtls_ecp_group grp;   /*!< The elliptic curve used. */
-    mbedtls_mpi d;           /*!< The private key. */
-    mbedtls_ecp_point Q;     /*!< The public key. */
-    mbedtls_ecp_point Qp;    /*!< The value of the public key of the peer. */
-    mbedtls_mpi z;           /*!< The shared secret. */
-    int point_format;        /*!< The format of point export in TLS messages. */
-    mbedtls_ecp_point Vi;    /*!< The blinding value. */
-    mbedtls_ecp_point Vf;    /*!< The unblinding value. */
-    mbedtls_mpi _d;          /*!< The previous \p d. */
+    mbedtls_ecp_group grp;      /*!< The elliptic curve used. */
+    mbedtls_mpi d;              /*!< The private key. */
+    mbedtls_ecp_point Q;        /*!< The public key. */
+    mbedtls_ecp_point Qp;       /*!< The value of the public key of the peer. */
+    mbedtls_mpi z;              /*!< The shared secret. */
+    int point_format;           /*!< The format of point export in TLS messages. */
+    mbedtls_ecp_point Vi;       /*!< The blinding value. */
+    mbedtls_ecp_point Vf;       /*!< The unblinding value. */
+    mbedtls_mpi _d;             /*!< The previous \p d. */
+    int server_raw_public_key;  /*!< Use server Raw Public Key. */
+    int client_raw_public_key;  /*!< Use client Raw Public Key. */
 }
 mbedtls_ecdh_context;
 
@@ -295,4 +297,5 @@ int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls
 #ifdef __cplusplus
 }
 #endif
-#endif							/* ecdh.h */
+
+#endif /* ecdh.h */
