@@ -55,8 +55,8 @@
 #if defined(CONFIG_HW_ECDH_PARAM)
 #define MBEDTLS_ECDH_GEN_PUBLIC_ALT
 #define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
-#include "tls/see_api.h"
-#include "tls/see_internal.h"
+#include "mbedtls/see_api.h"
+#include "mbedtls/see_internal.h"
 #endif
 
 #if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)

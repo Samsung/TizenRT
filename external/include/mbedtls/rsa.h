@@ -145,7 +145,8 @@ typedef struct
 #if defined(CONFIG_TLS_WITH_SSS)
 	unsigned int key_index;
 #endif
-} mbedtls_rsa_context;
+}
+mbedtls_rsa_context;
 
 /**
  * \brief          This function initializes an RSA context.
