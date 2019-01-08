@@ -478,6 +478,49 @@ cleanup:
 	mp.destroy();
 }
 
+static void utc_media_MediaPlayer_isPlaying_p(void)
+{
+	media::MediaPlayer mp;
+	std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+	mp.create();
+	mp.setDataSource(std::move(source));
+	mp.prepare();
+	mp.start();
+
+	TC_ASSERT_EQ("utc_media_MediaPlayer_isPlaying", mp.isPlaying(), true);
+
+	mp.unprepare();
+	mp.destroy();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaPlayer_isPlaying_n(void)
+{
+	/* isPlaying before create */
+	{
+		media::MediaPlayer mp;
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_isPlaying", mp.isPlaying(), false);
+	}
+
+	/* isPlaying without start */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		mp.create();
+		mp.setDataSource(std::move(source));
+		mp.prepare();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_isPlaying", mp.isPlaying(), false);
+
+		mp.unprepare();
+		mp.destroy();
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
 int utc_media_MediaPlayer_main(void)
 {
 	SetUp();
@@ -516,6 +559,9 @@ int utc_media_MediaPlayer_main(void)
 
 	utc_media_MediaPlayer_setVolume_p();
 	utc_media_MediaPlayer_setVolume_n();
+
+	utc_media_MediaPlayer_isPlaying_p();
+	utc_media_MediaPlayer_isPlaying_n();
 
 	TearDown();
 

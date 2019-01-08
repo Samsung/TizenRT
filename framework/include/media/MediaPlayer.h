@@ -218,6 +218,14 @@ public:
 	 */
 	bool operator==(const MediaPlayer &rhs);
 
+	/**
+	 * @brief Get whether the player is playing
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous API
+	 * @return true if player is playing
+	 * @since TizenRT v2.1 PRE
+	 */
+	bool isPlaying();
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
 	uint64_t mId;

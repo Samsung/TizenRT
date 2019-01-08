@@ -599,6 +599,28 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 	notifySync();
 }
 
+bool MediaPlayerImpl::isPlaying()
+{
+	bool ret = false;
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer isPlaying\n");
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
+		return ret;
+	}
+
+	/* Wait for other commands to complete. */
+	mpw.enQueue([&]() {
+		if (getState() == PLAYER_STATE_PLAYING) {
+			ret = true;
+		}
+		notifySync();
+	});
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
 player_state_t MediaPlayerImpl::getState()
 {
 	medvdbg("MediaPlayer getState\n");

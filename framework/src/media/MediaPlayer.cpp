@@ -97,6 +97,11 @@ bool MediaPlayer::operator==(const MediaPlayer &rhs)
 	return this->mId == rhs.mId;
 }
 
+bool MediaPlayer::isPlaying()
+{
+	return mPMpImpl->isPlaying();
+}
+
 MediaPlayer::~MediaPlayer()
 {
 }
