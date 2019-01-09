@@ -536,7 +536,7 @@ bool createWavHeader(FILE *fp)
 	memset(header, 0xff, WAVE_HEADER_LENGTH);
 	int ret;
 	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
-	if (ret < 0) {
+	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
 		return false;
 	}
@@ -612,7 +612,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	int ret = 0;
 	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
 
-	if (ret < 0) {
+	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
 		return false;
 	}
