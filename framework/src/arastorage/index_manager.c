@@ -292,10 +292,12 @@ db_result_t index_load(relation_t *rel, attribute_t *attr)
 db_result_t index_release(index_t *index)
 {
 	index->ref_cnt--;
-	if (index->ref_cnt <= 0) {
-		list_remove(indices, index);
-		free(index);
+
+	list_remove(indices, index);
+	if (index->api->release) {
+		index->api->release(index);
 	}
+	free(index);
 
 	return DB_OK;
 }
