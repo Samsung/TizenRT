@@ -37,13 +37,23 @@ config ARCH_CHIP_BCM4390X
 	---help---
 		Cypress BCM4390x SoC architectures (ARM Cortex-R)
 
+config ARCH_CHIP_STM32
+	bool "STMicro STM32"
+	select ARCH_HAVE_CMNVECTOR
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	---help---
+		STMicro STM32 architectures (ARM Cortex-M3/4).
+
 endchoice
 
 config ARCH_CHIP
 	string
-	default "s5j"       if ARCH_CHIP_S5J
+	default "s5j"		if ARCH_CHIP_S5J
 	default "tiva"      if ARCH_CHIP_LM
-	default "bcm4390x"  if ARCH_CHIP_BCM4390X
+	default "bcm4390x"	if ARCH_CHIP_BCM4390X
+	default "stm32"		if ARCH_CHIP_STM32
 
 comment "ARM Options"
 
@@ -183,6 +193,9 @@ source arch/arm/src/s5j/Kconfig
 endif
 if ARCH_CHIP_BCM4390X
 source arch/arm/src/bcm4390x/Kconfig
+endif
+if ARCH_CHIP_STM32
+source arch/arm/src/stm32/Kconfig
 endif
 
 endif
