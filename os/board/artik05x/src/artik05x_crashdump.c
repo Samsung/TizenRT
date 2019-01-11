@@ -30,6 +30,9 @@
 #include <arch/board/board.h>
 #include "up_internal.h"
 
+#include <tinyara/mm/heap_regioninfo.h>
+#include <tinyara/mm/mm.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -55,11 +58,16 @@
  ****************************************************************************/
 
 #if defined(CONFIG_BOARD_RAMDUMP_UART)
-static int ramdump_via_uart(uint32_t address, uint32_t size)
+static int ramdump_via_uart(void)
 {
 	int i;
+	int x;
 	int ch;
+	int regions_to_dump;
+	int target_region;
+	size_t size;
 	uint8_t *ptr;
+	char host_reg[1] = "";
 	char *target_str = HANDSHAKE_STRING;
 	char host_buf[HANDSHAKE_STR_LEN_MAX] = "";
 
@@ -69,9 +77,9 @@ static int ramdump_via_uart(uint32_t address, uint32_t size)
 #endif
 
 	/* Inform the terminal user */
-	up_puts("****************************************************\n");
-	up_puts("Disconnect this serial terminal and Run Ramdump Tool\n");
-	up_puts("****************************************************\n");
+	up_puts("\n************************************************************************************************\n");
+	up_puts("\t\tDisconnect this serial terminal and Run Ramdump Tool\n");
+	up_puts("************************************************************************************************\n");
 
 	/* Receive hanshake string from HOST */
 	do {
@@ -93,30 +101,62 @@ static int ramdump_via_uart(uint32_t address, uint32_t size)
 	/* Send ACK */
 	up_lowputc('A');
 
-	/* Send RAM address */
-	ptr = (uint8_t *)&address;
-	for (i = 0; i < sizeof(address); i++) {
-		up_lowputc((uint8_t)*ptr);
-		ptr++;
+	/* Send number of memory regions to HOST */
+	up_lowputc(CONFIG_MM_REGIONS);
+
+	/* Send memory region address, size & heap index to HOST */
+	for (x = 0; x < CONFIG_MM_REGIONS; x++) {
+
+		/* Send RAM address */
+		ptr = (uint8_t *)&regionx_start[x];
+		for (i = 0; i < sizeof(regionx_start[x]); i++) {
+			up_lowputc((uint8_t)*ptr);
+			ptr++;
+		}
+
+		/* Send RAM size */
+		ptr = (uint8_t *)&regionx_size[x];
+		for (i = 0; i < sizeof(regionx_size[x]); i++) {
+			up_lowputc((uint8_t)*ptr);
+			ptr++;
+		}
+
+		/* Send Heap Index */
+		up_lowputc(regionx_heap_idx[x]);
 	}
 
-	/* Send RAM size */
-	ptr = (uint8_t *)&size;
-	for (i = 0; i < sizeof(size); i++) {
-		up_lowputc((uint8_t)*ptr);
-		ptr++;
-	}
+	/* Receive number of regions to be dumped from HOST */
+	do {
+		if ((ch = up_getc()) != -1) {
+			host_reg[0] = ch;
+		}
+	} while (ch == -1);
 
-	/* Send RAMDUMP of ram_size bytes */
-	ptr = (uint8_t *)address;
-	while (size) {
-		up_lowputc((uint8_t)*ptr);
-		ptr++;
-		size--;
+	regions_to_dump = host_reg[0] - '0';
+
+	/* Dump data region wise */
+
+	for (x = 0; x < regions_to_dump; x++) {
+		/* Receive region index from HOST */
+		do {
+			if ((ch = up_getc()) != -1) {
+				host_reg[0] = ch;
+			}
+		} while (ch == -1);
+
+		target_region = host_reg[0] - '0';
+
+		/* Send RAMDUMP of size bytes */
+		ptr = (uint8_t *)regionx_start[target_region];
+		size = regionx_size[target_region];
+		while (size) {
+			up_lowputc((uint8_t)*ptr);
+			ptr++;
+			size--;
+		}
 	}
 
 	lldbg(" Successfull\n");
-
 	return OK;
 }
 #endif
@@ -164,7 +204,7 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 #endif
 
 #if defined(CONFIG_BOARD_RAMDUMP_UART)
-	ret = ramdump_via_uart(CONFIG_RAM_START, CONFIG_RAM_SIZE);
+	ret = ramdump_via_uart();
 	if (ret != OK) {
 		lldbg("ramdump via uart failed, ret = %d\n", ret);
 	}

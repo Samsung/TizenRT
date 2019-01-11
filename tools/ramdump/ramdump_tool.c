@@ -20,6 +20,7 @@
 ******************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -27,12 +28,23 @@
 #include <termios.h>
 #include <unistd.h>
 
-#define HANDSHAKE_STRING        "RAMDUMP"
-#define HANDSHAKE_STR_LEN_MAX   (7)
-#define BINFILE_NAME_SIZE   (40)
+#define HANDSHAKE_STRING	"RAMDUMP"
+#define HANDSHAKE_STR_LEN_MAX	(7)
+#define BINFILE_NAME_SIZE	(40)
+#define KB_CHECK_COUNT		(16 * 1024)
 
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
+
+/* Ramdump initialization data */
+uint32_t  number_of_regions;
+typedef struct {
+	int rd_regionx_idx;
+	uint32_t rd_regionx_start;
+	uint32_t rd_regionx_size;
+	int rd_regionx_mark;
+} rd_regionx;
+rd_regionx *mem_info;
 
 static int do_handshake(int dev_fd)
 {
@@ -80,69 +92,201 @@ static int b_read(int fd, uint8_t *buf, int size)
 	return i;
 }
 
+int ramdump_info_init(int dev_fd)
+{
+	char c;
+	int i;
+	int ret;
+	uint32_t mem_address;
+	uint32_t mem_size;
+
+	/* Receive number of memory regions from TARGET */
+	ret = read(dev_fd, &c, 1);
+	if (ret != 1) {
+		printf("Receiving number of regions failed, ret = %d\n", ret);
+		return -1;
+	}
+	number_of_regions = c;
+
+	/* Allocate memory to ramdump info structure */
+	mem_info = (rd_regionx *)malloc((number_of_regions + 2) * sizeof(rd_regionx));
+	if (!mem_info) {
+		return -1;
+	}
+
+	/* Receive memory address, size & heap index for memory regions from TARGET */
+	for (i = 2; i <= number_of_regions + 1; i++) {
+		ret = b_read(dev_fd, (uint8_t *)&mem_address, 4);
+		if (ret != 4) {
+			printf("Receiving address failed, ret = %d\n", ret);
+			return -1;
+		}
+		mem_info[i].rd_regionx_start = mem_address;
+
+		ret = b_read(dev_fd, (uint8_t *)&mem_size, 4);
+		if (ret != 4) {
+			printf("Receiving size failed, ret = %d\n", ret);
+			return -1;
+		}
+		mem_info[i].rd_regionx_size = mem_size;
+
+		ret = read(dev_fd, &c, 1);
+		if (ret != 1) {
+			printf("Receiving size failed, ret = %d\n", ret);
+			return -1;
+		}
+		mem_info[i].rd_regionx_idx = c;
+	}
+
+	return 0;
+}
+
+static int send_region_info(int dev_fd, char *host_region)
+{
+	int ret;
+
+	/* Send region info to TARGET */
+	ret = write(dev_fd, host_region, 1);
+	if (ret != 1) {
+		printf("Sending region info failed, ret = %d\n", ret);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int ramdump_recv(int dev_fd)
 {
 	char buf;
+	int i;
 	int ret;
+	int index;
 	int count = 0;
-	uint32_t ramdump_address;
+	int regions_to_dump = 0;
 	uint32_t ramdump_size;
-	FILE *bin_fp;
+	char ramdump_region[2] = { '\0' };
 	char bin_file[BINFILE_NAME_SIZE] = { '\0' };
+	FILE *bin_fp;
 
-	ret = b_read(dev_fd, (uint8_t *)&ramdump_address, 4);
-	if (ret != 4) {
-		printf("Receiving address failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	ret = b_read(dev_fd, (uint8_t *)&ramdump_size, 4);
-	if (ret != 4) {
-		printf("Receiving size failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	printf("%s: ramdump_address = %08x, ramdump_size = %d\n", __func__, ramdump_address, ramdump_size);
-
-	snprintf(bin_file, BINFILE_NAME_SIZE, "ramdump_0x%08x_0x%08x.bin", ramdump_address, (ramdump_address + ramdump_size));
-
-	bin_fp = fopen(bin_file, "w");
-	if (bin_fp == NULL) {
-		printf("%s create failed\n", bin_file);
-		return -1;
-	}
-
-	printf("[>");
-	fflush(stdout);
-
-	while (ramdump_size) {
-		ret = read(dev_fd, &buf, 1);
-		if (ret != 1) {
-			printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
-			fclose(bin_fp);
-			return -1;
+	/* Display memory region options for user to dump */
+	printf("\n=========================================================================\n");
+	printf("Ramdump Region Options:\n");
+	printf("1. ALL");
+	if (number_of_regions == 1) {
+		printf("\t( Address: %08x, Size: %d )\n", mem_info[2].rd_regionx_start, mem_info[2].rd_regionx_size);
+	} else {
+		for (index = 2; index <= number_of_regions + 1; index++) {
+			printf("\n%d. Region %d:\t( Address: 0x%08x, Size: %d )\t [Heap index = %d]", index, index - 2, mem_info[index].rd_regionx_start, mem_info[index].rd_regionx_size, mem_info[index].rd_regionx_idx);
 		}
+	}
+	printf("\n=========================================================================\n");
+	printf("Please enter desired ramdump option as below:\n \t1 for ALL\n");
+	if (number_of_regions > 1) {
+	printf(" \t2 for Region 0\n \t25 for Region 0 & 3 ...\n");
+	}
 
-		ret = fwrite(&buf, 1, 1, bin_fp);
-		if (ret != 1) {
-			printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
-			fclose(bin_fp);
-			return -1;
+	/* Take user's input for desired ramdump region */
+	printf("Please enter your input: ");
+	scanf("%d", &index);
+
+scan_input:
+	/* Check if user's input is valid */
+	while (index < 0 || index == EOF || (number_of_regions == 1 && index > 1)) {
+		printf("Please enter correct input: ");
+		scanf("%d", &index);
+	}
+
+	/* Mark regions to be dumped */
+	while (index > 0) {
+		if ((index % 10) > (number_of_regions + 1)) {
+			index = -1;
+			goto scan_input;
 		}
+		mem_info[index % 10].rd_regionx_mark = 1;
+		index = index / 10;
+		regions_to_dump++;
+	}
 
-		count++;
-		ramdump_size--;
+	/* If any digit in input integer is 1, dump all regions */
+	if (mem_info[1].rd_regionx_mark) {
+		mem_info[1].rd_regionx_mark = 0;
+		regions_to_dump = number_of_regions;
+		for (i = 2; i <= number_of_regions + 1; i++) {
+			mem_info[i].rd_regionx_mark = 1;
+		}
+	}
 
-		if ((count % (16 * 1024)) == 0) {
-			// printf("%s: received %d bytes\n", __func__, count);
-			printf("\b=>");
+	/* Send number of regions to dump to TARGET */
+	snprintf(ramdump_region, 2, "%d", regions_to_dump);
+	ret = send_region_info(dev_fd, ramdump_region);
+	if (ret != 0) {
+		printf("Receiving number of regions to be dumped failed, ret = %d\n", ret);
+		return -1;
+	}
+	printf("\nNo. of Regions to be dumped received: %s\n", __func__);
+	printf("\nReceiving ramdump......\n\n");
+
+	/* Dump data region wise */
+	for (index = 2; index <= number_of_regions + 1; index++) {
+		if (mem_info[index].rd_regionx_mark == 1) {
+
+			/* Send region index to TARGET */
+			snprintf(ramdump_region, 2, "%d", index - 2);
+			ret = send_region_info(dev_fd, ramdump_region);
+			if (ret != 0) {
+				printf("Receiving region index failed, ret = %d\n", ret);
+				return -1;
+			}
+
+			snprintf(bin_file, BINFILE_NAME_SIZE, "ramdump_0x%08x_0x%08x.bin",  mem_info[index].rd_regionx_start, (mem_info[index].rd_regionx_start +  mem_info[index].rd_regionx_size));
+			printf("=========================================================================\n");
+			if (number_of_regions == 1) {
+				printf("Dumping data, Address: 0x%08x, Size: %dbytes\n",  mem_info[index].rd_regionx_start,  mem_info[index].rd_regionx_size);
+			} else {
+				printf("Dumping Region: %d, Address: 0x%08x, Size: %dbytes\n", index - 2,  mem_info[index].rd_regionx_start,  mem_info[index].rd_regionx_size);
+			}
+			printf("=========================================================================\n");
+
+			bin_fp = fopen(bin_file, "w");
+			if (bin_fp == NULL) {
+				printf("%s create failed\n", bin_file);
+				return -1;
+			}
+
+			printf("[>");
 			fflush(stdout);
+
+			/* Dump data of Memory REGIONx  */
+			ramdump_size =  mem_info[index].rd_regionx_size;
+			while (ramdump_size) {
+				ret = read(dev_fd, &buf, 1);
+				if (ret != 1) {
+					printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
+					fclose(bin_fp);
+					return -1;
+				}
+
+				ret = fwrite(&buf, 1, 1, bin_fp);
+				if (ret != 1) {
+					printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
+					fclose(bin_fp);
+					return -1;
+				}
+
+				count++;
+				ramdump_size--;
+
+				if ((count % (KB_CHECK_COUNT)) == 0) {
+					printf("\b=>");
+					fflush(stdout);
+				}
+			}
+			printf("]\n");
+			fclose(bin_fp);
 		}
 	}
-	printf("]\n");
-	fclose(bin_fp);
-
 	return 0;
+
 }
 
 static int configure_tty(int tty_fd)
@@ -226,16 +370,22 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Target entered to ramdump mode\n");
-	printf("Receiving ramdump......\n");
+
+	if (ramdump_info_init(dev_fd) != 0) {
+		printf("Ramdump initialization failed\n");
+		goto init_err;
+	}
 
 	if (ramdump_recv(dev_fd) != 0) {
 		printf("Ramdump receive failed\n");
 		goto ramdump_err;
 	}
 
-	printf("Ramdump received successfully\n");
+	printf("Ramdump received successfully..!\n");
 	ret = 0;
 
+init_err:
+	free(mem_info);
 ramdump_err:
 handshake_err:
 dl_mode_err:
