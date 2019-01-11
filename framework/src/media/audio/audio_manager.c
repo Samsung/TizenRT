@@ -679,6 +679,12 @@ errout:
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+audio_manager_result_t audio_manager_init(void)
+{
+	return AUDIO_MANAGER_SUCCESS;
+}
+
 audio_manager_result_t init_audio_stream_in(void)
 {
 	return init_audio_stream(INPUT);

@@ -116,6 +116,17 @@ typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: audio_manager_init
+ *
+ * Description:
+ *   Init audio_manager
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t audio_manager_init(void);
+
+/****************************************************************************
  * Name: init_audio_stream_in
  *
  * Description:

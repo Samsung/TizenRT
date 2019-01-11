@@ -39,6 +39,9 @@
 #ifdef CONFIG_EVENTLOOP
 #include <tinyara/eventloop.h>
 #endif
+#ifdef CONFIG_MEDIA
+#include <media/media_init.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -100,6 +103,9 @@ int preapp_start(int argc, char *argv[])
 #if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 	int pid;
 #endif
+#if defined(CONFIG_MEDIA)
+	int ret;
+#endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
@@ -133,6 +139,13 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_MEDIA
+	ret = media_init();
+	if (ret < 0) {
+		printf("media is failed to start, error code is %d\n", ret);
+		return ret;
+	}
+#endif
 
 #if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 error_out:
