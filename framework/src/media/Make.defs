@@ -15,7 +15,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-ifeq ($(CONFIG_AUDIO), y)
+ifeq ($(CONFIG_MEDIA), y)
 CSRCS += media_init.c
 CSRCS += audio_manager.c
 DEPPATH += --dep-path src/media/audio
@@ -25,11 +25,9 @@ DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
 DEPPATH += --dep-path src/media/streaming
 VPATH += :src/media/streaming
-endif
 
 CFLAGS += -D__TINYARA__
 
-ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
 CXXSRCS += MediaUtils.cpp
