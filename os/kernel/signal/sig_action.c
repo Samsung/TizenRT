@@ -190,6 +190,13 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 		return ERROR;
 	}
 
+#ifdef CONFIG_SIGKILL_HANDLER
+	if (signo == SIGKILL) {
+		rtcb->sigkillusrhandler = act->sa_sigaction;
+		return OK;
+	}
+#endif
+
 	/* Find the signal in the sigactionq */
 
 	sigact = sig_findaction(rtcb, signo);

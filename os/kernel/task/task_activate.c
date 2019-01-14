@@ -60,6 +60,14 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#ifndef CONFIG_DISABLE_SIGNALS
+#include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
+#include <tinyara/signal.h>
+#include "sched/sched.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -84,6 +92,40 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifndef CONFIG_DISABLE_SIGNALS
+void thread_termination_handler(int signo, siginfo_t *data)
+{
+	struct tcb_s *rtcb = sched_gettcb(getpid());
+	if (!rtcb) {
+		set_errno(ESRCH);
+		return;
+	}
+
+#ifdef CONFIG_SIGKILL_HANDLER
+	if (rtcb->sigkillusrhandler != NULL) {
+		rtcb->sigkillusrhandler(signo, data, NULL);
+	}
+#endif
+
+	switch ((rtcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
+	case TCB_FLAG_TTYPE_TASK:
+	case TCB_FLAG_TTYPE_KERNEL:
+		/* tasks and kernel threads has to use this interface */
+		(void)task_delete(rtcb->pid);
+		break;
+#ifndef CONFIG_DISABLE_PTHREAD
+	case TCB_FLAG_TTYPE_PTHREAD:
+		(void)pthread_cancel(rtcb->pid);
+		(void)pthread_join(rtcb->pid, NULL);
+		break;
+#endif
+	default:
+		set_errno(EINVAL);
+		break;
+	}
+	return;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -107,7 +149,19 @@
 int task_activate(FAR struct tcb_s *tcb)
 {
 	irqstate_t flags = irqsave();
+#ifndef CONFIG_DISABLE_SIGNALS
+	int ret;
+	struct sigaction act;
 
+	act.sa_sigaction = (_sa_sigaction_t)thread_termination_handler;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+
+	ret = sig_sethandler(tcb, SIGKILL, &act);
+	if (ret != OK) {
+		sdbg("Fail to set SIGKILL handler for activating tcb.\n");
+	}
+#endif
 	up_unblock_task(tcb);
 	irqrestore(flags);
 	return OK;
