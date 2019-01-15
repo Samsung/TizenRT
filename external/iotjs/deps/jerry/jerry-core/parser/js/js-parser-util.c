@@ -15,7 +15,11 @@
 
 #include "js-parser-internal.h"
 
-#if JERRY_JS_PARSER
+#ifndef JERRY_DISABLE_JS_PARSER
+
+#ifdef JERRY_ENABLE_LINE_INFO
+#include "jcontext.h"
+#endif /* JERRY_ENABLE_LINE_INFO */
 
 /** \addtogroup parser Parser
  * @{
@@ -68,6 +72,12 @@ parser_emit_two_bytes (parser_context_t *context_p, /**< context */
   }
 } /* parser_emit_two_bytes */
 
+/**
+ * Append byte to the end of the current byte code stream.
+ *
+ * @param context_p parser context
+ * @param byte byte
+ */
 #define PARSER_APPEND_TO_BYTE_CODE(context_p, byte) \
   if ((context_p)->byte_code.last_position >= PARSER_CBC_STREAM_PAGE_SIZE) \
   { \
@@ -82,17 +92,18 @@ void
 parser_flush_cbc (parser_context_t *context_p) /**< context */
 {
   uint8_t flags;
+  uint16_t last_opcode = context_p->last_cbc_opcode;
 
-  if (context_p->last_cbc_opcode == PARSER_CBC_UNAVAILABLE)
+  if (last_opcode == PARSER_CBC_UNAVAILABLE)
   {
     return;
   }
 
   context_p->status_flags |= PARSER_NO_END_LABEL;
 
-  if (PARSER_IS_BASIC_OPCODE (context_p->last_cbc_opcode))
+  if (PARSER_IS_BASIC_OPCODE (last_opcode))
   {
-    cbc_opcode_t opcode = (cbc_opcode_t) context_p->last_cbc_opcode;
+    cbc_opcode_t opcode = (cbc_opcode_t) last_opcode;
 
     JERRY_ASSERT (opcode < CBC_END);
     flags = cbc_flags[opcode];
@@ -102,11 +113,11 @@ parser_flush_cbc (parser_context_t *context_p) /**< context */
   }
   else
   {
-    cbc_ext_opcode_t opcode = (cbc_ext_opcode_t) PARSER_GET_EXT_OPCODE (context_p->last_cbc_opcode);
+    cbc_ext_opcode_t opcode = (cbc_ext_opcode_t) PARSER_GET_EXT_OPCODE (last_opcode);
 
     JERRY_ASSERT (opcode < CBC_EXT_END);
     flags = cbc_ext_flags[opcode];
-    parser_emit_two_bytes (context_p, CBC_EXT_OPCODE, opcode);
+    parser_emit_two_bytes (context_p, CBC_EXT_OPCODE, (uint8_t) opcode);
     context_p->byte_code_size += 2;
   }
 
@@ -163,18 +174,10 @@ parser_flush_cbc (parser_context_t *context_p) /**< context */
 #ifdef PARSER_DUMP_BYTE_CODE
   if (context_p->is_show_opcodes)
   {
-    const char *name_p;
-
-    if (PARSER_IS_BASIC_OPCODE (context_p->last_cbc_opcode))
-    {
-      name_p = cbc_names[context_p->last_cbc_opcode];
-    }
-    else
-    {
-      name_p = cbc_ext_names[PARSER_GET_EXT_OPCODE (context_p->last_cbc_opcode)];
-    }
-
-    JERRY_DEBUG_MSG ("  [%3d] %s", (int) context_p->stack_depth, name_p);
+    JERRY_DEBUG_MSG ("  [%3d] %s",
+                     (int) context_p->stack_depth,
+                     PARSER_IS_BASIC_OPCODE (last_opcode) ? cbc_names[last_opcode]
+                                                          : cbc_ext_names[PARSER_GET_EXT_OPCODE (last_opcode)]);
 
     if (flags & (CBC_HAS_LITERAL_ARG | CBC_HAS_LITERAL_ARG2))
     {
@@ -203,7 +206,20 @@ parser_flush_cbc (parser_context_t *context_p) /**< context */
 
     if (flags & CBC_HAS_BYTE_ARG)
     {
-      JERRY_DEBUG_MSG (" byte_arg:%d", (int) context_p->last_cbc.value);
+      if ((last_opcode == CBC_PUSH_NUMBER_POS_BYTE)
+          || (last_opcode == PARSER_TO_EXT_OPCODE (CBC_EXT_PUSH_LITERAL_PUSH_NUMBER_POS_BYTE)))
+      {
+        JERRY_DEBUG_MSG (" number:%d", (int) context_p->last_cbc.value + 1);
+      }
+      else if ((last_opcode == CBC_PUSH_NUMBER_NEG_BYTE)
+               || (last_opcode == PARSER_TO_EXT_OPCODE (CBC_EXT_PUSH_LITERAL_PUSH_NUMBER_NEG_BYTE)))
+      {
+        JERRY_DEBUG_MSG (" number:%d", -((int) context_p->last_cbc.value + 1));
+      }
+      else
+      {
+        JERRY_DEBUG_MSG (" byte_arg:%d", (int) context_p->last_cbc.value);
+      }
     }
 
     JERRY_DEBUG_MSG ("\n");
@@ -308,49 +324,126 @@ parser_emit_cbc_push_number (parser_context_t *context_p, /**< context */
                              bool is_negative_number) /**< sign is negative */
 {
   uint16_t value = context_p->lit_object.index;
+  uint16_t lit_value = UINT16_MAX;
 
   if (context_p->last_cbc_opcode != PARSER_CBC_UNAVAILABLE)
+  {
+    if (context_p->last_cbc_opcode == CBC_PUSH_LITERAL)
+    {
+      lit_value = context_p->last_cbc.literal_index;
+    }
+    else
+    {
+      if (context_p->last_cbc_opcode == CBC_PUSH_TWO_LITERALS)
+      {
+        context_p->last_cbc_opcode = CBC_PUSH_LITERAL;
+        lit_value = context_p->last_cbc.value;
+      }
+      else if (context_p->last_cbc_opcode == CBC_PUSH_THREE_LITERALS)
+      {
+        context_p->last_cbc_opcode = CBC_PUSH_TWO_LITERALS;
+        lit_value = context_p->last_cbc.third_literal_index;
+      }
+
+      parser_flush_cbc (context_p);
+    }
+  }
+
+  if (value == 0)
+  {
+    if (lit_value == UINT16_MAX)
+    {
+      context_p->last_cbc_opcode = CBC_PUSH_NUMBER_0;
+      return;
+    }
+
+    context_p->last_cbc_opcode = PARSER_TO_EXT_OPCODE (CBC_EXT_PUSH_LITERAL_PUSH_NUMBER_0);
+    context_p->last_cbc.literal_index = lit_value;
+    return;
+  }
+
+  uint16_t opcode;
+
+  if (lit_value == UINT16_MAX)
+  {
+    opcode = (is_negative_number ? CBC_PUSH_NUMBER_NEG_BYTE
+                                 : CBC_PUSH_NUMBER_POS_BYTE);
+
+    JERRY_ASSERT (CBC_STACK_ADJUST_VALUE (PARSER_GET_FLAGS (opcode)) == 1);
+  }
+  else
+  {
+    opcode = PARSER_TO_EXT_OPCODE (is_negative_number ? CBC_EXT_PUSH_LITERAL_PUSH_NUMBER_NEG_BYTE
+                                                      : CBC_EXT_PUSH_LITERAL_PUSH_NUMBER_POS_BYTE);
+    JERRY_ASSERT (CBC_STACK_ADJUST_VALUE (PARSER_GET_FLAGS (opcode)) == 2);
+
+    context_p->last_cbc.literal_index = lit_value;
+  }
+
+  JERRY_ASSERT (value > 0 && value <= CBC_PUSH_NUMBER_BYTE_RANGE_END);
+
+  context_p->last_cbc_opcode = opcode;
+  context_p->last_cbc.value = (uint16_t) (value - 1);
+} /* parser_emit_cbc_push_number */
+
+#ifdef JERRY_ENABLE_LINE_INFO
+
+/**
+ * Append a line info data
+ */
+void
+parser_emit_line_info (parser_context_t *context_p, /**< context */
+                       uint32_t line, /**< current line */
+                       bool flush_cbc) /**< flush last byte code */
+{
+  if (JERRY_CONTEXT (resource_name) == ECMA_VALUE_UNDEFINED)
+  {
+    return;
+  }
+
+  if (flush_cbc && context_p->last_cbc_opcode != PARSER_CBC_UNAVAILABLE)
   {
     parser_flush_cbc (context_p);
   }
 
-  cbc_opcode_t opcode = is_negative_number ? CBC_PUSH_NUMBER_NEG_BYTE : CBC_PUSH_NUMBER_POS_BYTE;
-
-  JERRY_ASSERT (value > 0 && value <= CBC_PUSH_NUMBER_BYTE_RANGE_END);
-  JERRY_ASSERT (CBC_STACK_ADJUST_VALUE (cbc_flags[opcode]) == 1);
-
-  context_p->stack_depth++;
-
 #ifdef PARSER_DUMP_BYTE_CODE
   if (context_p->is_show_opcodes)
   {
-    int real_value = value;
-
-    if (is_negative_number)
-    {
-      real_value = -real_value;
-    }
-
-    JERRY_DEBUG_MSG ("  [%3d] %s number:%d\n",
-                     (int) context_p->stack_depth,
-                     cbc_names[opcode],
-                     real_value);
+    JERRY_DEBUG_MSG ("  [%3d] CBC_EXT_LINE %d\n", (int) context_p->stack_depth, line);
   }
 #endif /* PARSER_DUMP_BYTE_CODE */
 
-  parser_emit_two_bytes (context_p, opcode, (uint8_t) (value - 1));
-
+  parser_emit_two_bytes (context_p, CBC_EXT_OPCODE, CBC_EXT_LINE);
   context_p->byte_code_size += 2;
 
-  if (context_p->stack_depth > context_p->stack_limit)
+  context_p->last_line_info_line = line;
+
+  const uint32_t max_shift_plus_7 = 7 * 5;
+  uint32_t shift = 7;
+
+  while (shift < max_shift_plus_7 && (line >> shift) > 0)
   {
-    context_p->stack_limit = context_p->stack_depth;
-    if (context_p->stack_limit > PARSER_MAXIMUM_STACK_LIMIT)
-    {
-      parser_raise_error (context_p, PARSER_ERR_STACK_LIMIT_REACHED);
-    }
+    shift += 7;
   }
-} /* parser_emit_cbc_push_number */
+
+  do
+  {
+    shift -= 7;
+
+    uint8_t byte = (uint8_t) ((line >> shift) & CBC_LOWER_SEVEN_BIT_MASK);
+
+    if (shift > 0)
+    {
+      byte = (uint8_t) (byte | CBC_HIGHEST_BIT_MASK);
+    }
+
+    PARSER_APPEND_TO_BYTE_CODE (context_p, byte);
+    context_p->byte_code_size++;
+  }
+  while (shift > 0);
+} /* parser_emit_line_info */
+
+#endif /* JERRY_ENABLE_LINE_INFO */
 
 /**
  * Append a byte code with a branch argument
@@ -398,14 +491,9 @@ parser_emit_cbc_forward_branch (parser_context_t *context_p, /**< context */
 #ifdef PARSER_DUMP_BYTE_CODE
   if (context_p->is_show_opcodes)
   {
-    if (extra_byte_code_increase == 0)
-    {
-      JERRY_DEBUG_MSG ("  [%3d] %s\n", (int) context_p->stack_depth, cbc_names[opcode]);
-    }
-    else
-    {
-      JERRY_DEBUG_MSG ("  [%3d] %s\n", (int) context_p->stack_depth, cbc_ext_names[opcode]);
-    }
+    JERRY_DEBUG_MSG ("  [%3d] %s\n",
+                     (int) context_p->stack_depth,
+                     extra_byte_code_increase == 0 ? cbc_names[opcode] : cbc_ext_names[opcode]);
   }
 #endif /* PARSER_DUMP_BYTE_CODE */
 
@@ -440,7 +528,9 @@ parser_emit_cbc_forward_branch (parser_context_t *context_p, /**< context */
 } /* parser_emit_cbc_forward_branch */
 
 /**
- * Append a branch byte code and create an item
+ * Append a branch byte code and create an item.
+ *
+ * @return newly created parser branch node
  */
 parser_branch_node_t *
 parser_emit_cbc_forward_branch_item (parser_context_t *context_p, /**< context */
@@ -577,7 +667,7 @@ parser_set_branch_to_current_position (parser_context_t *context_p, /**< context
     parser_flush_cbc (context_p);
   }
 
-  context_p->status_flags &= ~PARSER_NO_END_LABEL;
+  context_p->status_flags &= (uint32_t) ~PARSER_NO_END_LABEL;
 
   JERRY_ASSERT (context_p->byte_code_size > (branch_p->offset >> 8));
 
@@ -808,6 +898,24 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Case statement must be in a switch block.";
     }
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+    case PARSER_ERR_MULTIPLE_CLASS_CONSTRUCTORS:
+    {
+      return "Multiple constructors are not allowed.";
+    }
+    case PARSER_ERR_CLASS_CONSTRUCTOR_AS_ACCESSOR:
+    {
+      return "Class constructor may not be an accessor.";
+    }
+    case PARSER_ERR_CLASS_STATIC_PROTOTYPE:
+    {
+      return "Classes may not have a static property called 'prototype'.";
+    }
+    case PARSER_ERR_UNEXPECTED_SUPER_REFERENCE:
+    {
+      return "Super is not allowed to be used here.";
+    }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
     case PARSER_ERR_LEFT_PAREN_EXPECTED:
     {
       return "Expected '(' token.";
@@ -824,6 +932,12 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Expected ']' token.";
     }
+#ifndef CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS
+    case PARSER_ERR_RIGHT_BRACE_EXPECTED:
+    {
+      return "Expected '}' token.";
+    }
+#endif /* !CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS */
     case PARSER_ERR_COLON_EXPECTED:
     {
       return "Expected ':' token.";
@@ -924,6 +1038,12 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Duplicated label.";
     }
+#ifndef CONFIG_DISABLE_ES2015_FUNCTION_PARAMETER_INITIALIZER
+    case PARSER_ERR_DUPLICATED_ARGUMENT_NAMES:
+    {
+      return "Duplicated function argument names are not allowed here.";
+    }
+#endif /* !CONFIG_DISABLE_ES2015_FUNCTION_PARAMETER_INITIALIZER */
     case PARSER_ERR_OBJECT_PROPERTY_REDEFINED:
     {
       return "Property of object literal redefined.";
@@ -947,4 +1067,4 @@ parser_error_to_string (parser_error_t error) /**< error code */
  * @}
  */
 
-#endif /* JERRY_JS_PARSER */
+#endif /* !JERRY_DISABLE_JS_PARSER */

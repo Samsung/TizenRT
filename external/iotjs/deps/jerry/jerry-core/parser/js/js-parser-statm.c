@@ -15,11 +15,9 @@
 
 #include "js-parser-internal.h"
 
-#if JERRY_JS_PARSER
-
-#ifdef JERRY_DEBUGGER
+#ifndef JERRY_DISABLE_JS_PARSER
 #include "jcontext.h"
-#endif /*JERRY_DEBUGGER */
+#include "lit-char-helpers.h"
 
 /** \addtogroup parser Parser
  * @{
@@ -31,9 +29,13 @@
  * @{
  */
 
-/* Strict mode string literal in directive prologues */
+/**
+ * @{
+ * Strict mode string literal in directive prologues
+ */
 #define PARSER_USE_STRICT_LITERAL  "use strict"
 #define PARSER_USE_STRICT_LENGTH   10
+/** @} */
 
 /**
  * Parser statement types.
@@ -253,6 +255,8 @@ parser_stack_iterator_init (parser_context_t *context_p, /**< context */
 
 /**
  * Read the next byte from the stack.
+ *
+ * @return byte
  */
 static inline uint8_t
 parser_stack_iterator_read_uint8 (parser_stack_iterator_t *iterator) /**< iterator */
@@ -314,13 +318,11 @@ parser_parse_var_statement (parser_context_t *context_p) /**< context */
     JERRY_ASSERT (context_p->token.type == LEXER_LITERAL
                   && context_p->token.lit_location.type == LEXER_IDENT_LITERAL);
 
-#ifdef JERRY_DEBUGGER
+#if defined (JERRY_DEBUGGER) || defined (JERRY_ENABLE_LINE_INFO)
     parser_line_counter_t ident_line_counter = context_p->token.line;
-#endif /* JERRY_DEBUGGER */
+#endif /* JERRY_DEBUGGER || JERRY_ENABLE_LINE_INFO */
 
     context_p->lit_object.literal_p->status_flags |= LEXER_FLAG_VAR;
-
-    parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
 
     lexer_next_token (context_p);
 
@@ -330,32 +332,25 @@ parser_parse_var_statement (parser_context_t *context_p) /**< context */
       if ((JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
           && ident_line_counter != context_p->last_breakpoint_line)
       {
-        JERRY_ASSERT (context_p->last_cbc_opcode == CBC_PUSH_LITERAL);
-
-        cbc_argument_t last_cbc = context_p->last_cbc;
-        context_p->last_cbc_opcode = PARSER_CBC_UNAVAILABLE;
-
         parser_emit_cbc (context_p, CBC_BREAKPOINT_DISABLED);
         parser_flush_cbc (context_p);
 
         parser_append_breakpoint_info (context_p, JERRY_DEBUGGER_BREAKPOINT_LIST, ident_line_counter);
 
-        context_p->last_cbc_opcode = CBC_PUSH_LITERAL;
-        context_p->last_cbc = last_cbc;
-
         context_p->last_breakpoint_line = ident_line_counter;
       }
 #endif /* JERRY_DEBUGGER */
 
+#ifdef JERRY_ENABLE_LINE_INFO
+      if (ident_line_counter != context_p->last_line_info_line)
+      {
+        parser_emit_line_info (context_p, ident_line_counter, false);
+      }
+#endif /* JERRY_ENABLE_LINE_INFO */
+
+      parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
       parser_parse_expression (context_p,
                                PARSE_EXPR_STATEMENT | PARSE_EXPR_NO_COMMA | PARSE_EXPR_HAS_LITERAL);
-    }
-    else
-    {
-      JERRY_ASSERT (context_p->last_cbc_opcode == CBC_PUSH_LITERAL
-                    && context_p->last_cbc.literal_type == LEXER_IDENT_LITERAL);
-      /* We don't need to assign anything to this variable. */
-      context_p->last_cbc_opcode = PARSER_CBC_UNAVAILABLE;
     }
 
     if (context_p->token.type != LEXER_COMMA)
@@ -406,6 +401,7 @@ parser_parse_function_statement (parser_context_t *context_p) /**< context */
   if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
   {
     jerry_debugger_send_string (JERRY_DEBUGGER_FUNCTION_NAME,
+                                JERRY_DEBUGGER_NO_SUBTYPE,
                                 name_p->u.char_p,
                                 name_p->prop.length);
 
@@ -417,7 +413,7 @@ parser_parse_function_statement (parser_context_t *context_p) /**< context */
 
   if (name_p->status_flags & LEXER_FLAG_INITIALIZED)
   {
-    if (!(name_p->status_flags & (LEXER_FLAG_FUNCTION_NAME | LEXER_FLAG_FUNCTION_ARGUMENT)))
+    if (!(name_p->status_flags & LEXER_FLAG_FUNCTION_ARGUMENT))
     {
       /* Overwrite the previous initialization. */
       ecma_compiled_code_t *compiled_code_p;
@@ -488,6 +484,9 @@ parser_parse_if_statement_start (parser_context_t *context_p) /**< context */
 
 /**
  * Parse if statement (ending part).
+ *
+ * @return true  - if parsing an 'else' statement
+ *         false - otherwise
  */
 static bool
 parser_parse_if_statement_end (parser_context_t *context_p) /**< context */
@@ -587,7 +586,7 @@ parser_parse_with_statement_end (parser_context_t *context_p) /**< context */
 
     if (type == PARSER_STATEMENT_START)
     {
-      context_p->status_flags &= ~PARSER_INSIDE_WITH;
+      context_p->status_flags &= (uint32_t) ~PARSER_INSIDE_WITH;
       return;
     }
 
@@ -599,6 +598,68 @@ parser_parse_with_statement_end (parser_context_t *context_p) /**< context */
     parser_stack_iterator_skip (&iterator, parser_statement_length (type));
   }
 } /* parser_parse_with_statement_end */
+
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+/**
+ * Parse super class context like a with statement (starting part).
+ */
+void
+parser_parse_super_class_context_start (parser_context_t *context_p) /**< context */
+{
+  JERRY_ASSERT (context_p->token.type == LEXER_KEYW_EXTENDS);
+
+  parser_with_statement_t with_statement;
+
+  lexer_next_token (context_p);
+
+  /* NOTE: Currently there is no proper way to check whether the currently parsed expression
+     is a valid lefthand-side expression or not, so we do not throw syntax error and parse
+     the class extending value as an expression. */
+  parser_parse_expression (context_p, PARSE_EXPR | PARSE_EXPR_NO_COMMA);
+
+#ifndef JERRY_NDEBUG
+  PARSER_PLUS_EQUAL_U16 (context_p->context_stack_depth, PARSER_SUPER_CLASS_CONTEXT_STACK_ALLOCATION);
+#endif /* !JERRY_NDEBUG */
+
+  context_p->status_flags |= PARSER_CLASS_HAS_SUPER;
+  parser_emit_cbc_ext_forward_branch (context_p,
+                                      CBC_EXT_SUPER_CLASS_CREATE_CONTEXT,
+                                      &with_statement.branch);
+
+  parser_stack_push (context_p, &with_statement, sizeof (parser_with_statement_t));
+  parser_stack_push_uint8 (context_p, PARSER_STATEMENT_WITH);
+} /* parser_parse_super_class_context_start */
+
+/**
+ * Parse super class context like a with statement (ending part).
+ */
+void
+parser_parse_super_class_context_end (parser_context_t *context_p, /**< context */
+                                      bool is_statement) /**< true - if class is parsed as a statement
+                                                          *   false - otherwise (as an expression) */
+{
+  parser_with_statement_t with_statement;
+  parser_stack_pop_uint8 (context_p);
+  parser_stack_pop (context_p, &with_statement, sizeof (parser_with_statement_t));
+
+  parser_flush_cbc (context_p);
+  PARSER_MINUS_EQUAL_U16 (context_p->stack_depth, PARSER_SUPER_CLASS_CONTEXT_STACK_ALLOCATION);
+#ifndef JERRY_NDEBUG
+  PARSER_MINUS_EQUAL_U16 (context_p->context_stack_depth, PARSER_SUPER_CLASS_CONTEXT_STACK_ALLOCATION);
+#endif /* !JERRY_NDEBUG */
+
+  if (is_statement)
+  {
+    parser_emit_cbc (context_p, CBC_CONTEXT_END);
+  }
+  else
+  {
+    parser_emit_cbc_ext (context_p, CBC_EXT_CLASS_EXPR_CONTEXT_END);
+  }
+
+  parser_set_branch_to_current_position (context_p, &with_statement.branch);
+} /* parser_parse_super_class_context_end */
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
 
 /**
  * Parse do-while statement (ending part).
@@ -643,7 +704,7 @@ parser_parse_do_while_statement_end (parser_context_t *context_p) /**< context *
     parser_stack_iterator_skip (&iterator, sizeof (parser_loop_statement_t));
     parser_stack_iterator_read (&iterator, &do_while_statement, sizeof (parser_do_while_statement_t));
 
-    parser_emit_cbc_backward_branch (context_p, opcode, do_while_statement.start_offset);
+    parser_emit_cbc_backward_branch (context_p, (uint16_t) opcode, do_while_statement.start_offset);
   }
   else
   {
@@ -693,7 +754,7 @@ parser_parse_while_statement_start (parser_context_t *context_p) /**< context */
 /**
  * Parse while statement (ending part).
  */
-static void __attr_noinline___
+static void JERRY_ATTR_NOINLINE
 parser_parse_while_statement_end (parser_context_t *context_p) /**< context */
 {
   parser_while_statement_t while_statement;
@@ -704,10 +765,13 @@ parser_parse_while_statement_end (parser_context_t *context_p) /**< context */
 
   JERRY_ASSERT (context_p->stack_top_uint8 == PARSER_STATEMENT_WHILE);
 
-  parser_stack_pop_uint8 (context_p);
-  parser_stack_pop (context_p, &loop, sizeof (parser_loop_statement_t));
-  parser_stack_pop (context_p, &while_statement, sizeof (parser_while_statement_t));
-  parser_stack_iterator_init (context_p, &context_p->last_statement);
+  parser_stack_iterator_t iterator;
+  parser_stack_iterator_init (context_p, &iterator);
+
+  parser_stack_iterator_skip (&iterator, 1);
+  parser_stack_iterator_read (&iterator, &loop, sizeof (parser_loop_statement_t));
+  parser_stack_iterator_skip (&iterator, sizeof (parser_loop_statement_t));
+  parser_stack_iterator_read (&iterator, &while_statement, sizeof (parser_while_statement_t));
 
   parser_save_range (context_p, &range, context_p->source_end_p);
   current_token = context_p->token;
@@ -736,7 +800,10 @@ parser_parse_while_statement_end (parser_context_t *context_p) /**< context */
     opcode = CBC_JUMP_BACKWARD;
   }
 
-  parser_emit_cbc_backward_branch (context_p, opcode, while_statement.start_offset);
+  parser_stack_pop (context_p, NULL, 1 + sizeof (parser_loop_statement_t) + sizeof (parser_while_statement_t));
+  parser_stack_iterator_init (context_p, &context_p->last_statement);
+
+  parser_emit_cbc_backward_branch (context_p, (uint16_t) opcode, while_statement.start_offset);
   parser_set_breaks_to_current_position (context_p, loop.branch_list_p);
 
   parser_set_range (context_p, &range);
@@ -933,7 +1000,7 @@ parser_parse_for_statement_start (parser_context_t *context_p) /**< context */
 /**
  * Parse for statement (ending part).
  */
-static void __attr_noinline___
+static void JERRY_ATTR_NOINLINE
 parser_parse_for_statement_end (parser_context_t *context_p) /**< context */
 {
   parser_for_statement_t for_statement;
@@ -1004,7 +1071,7 @@ parser_parse_for_statement_end (parser_context_t *context_p) /**< context */
   parser_stack_pop (context_p, NULL, 1 + sizeof (parser_loop_statement_t) + sizeof (parser_for_statement_t));
   parser_stack_iterator_init (context_p, &context_p->last_statement);
 
-  parser_emit_cbc_backward_branch (context_p, opcode, for_statement.start_offset);
+  parser_emit_cbc_backward_branch (context_p, (uint16_t) opcode, for_statement.start_offset);
   parser_set_breaks_to_current_position (context_p, loop.branch_list_p);
 
   parser_set_range (context_p, &range);
@@ -1014,7 +1081,7 @@ parser_parse_for_statement_end (parser_context_t *context_p) /**< context */
 /**
  * Parse switch statement (starting part).
  */
-static void __attr_noinline___
+static void JERRY_ATTR_NOINLINE
 parser_parse_switch_statement_start (parser_context_t *context_p) /**< context */
 {
   parser_switch_statement_t switch_statement;
@@ -1073,6 +1140,10 @@ parser_parse_switch_statement_start (parser_context_t *context_p) /**< context *
   switch_case_was_found = false;
   default_case_was_found = false;
 
+#ifdef JERRY_ENABLE_LINE_INFO
+  uint32_t last_line_info_line = context_p->last_line_info_line;
+#endif /* JERRY_ENABLE_LINE_INFO */
+
   while (true)
   {
     parser_scan_until (context_p, &unused_range, LEXER_KEYW_CASE);
@@ -1127,6 +1198,13 @@ parser_parse_switch_statement_start (parser_context_t *context_p) /**< context *
 
       lexer_next_token (context_p);
 
+#ifdef JERRY_ENABLE_LINE_INFO
+      if (context_p->token.line != context_p->last_line_info_line)
+      {
+        parser_emit_line_info (context_p, context_p->token.line, true);
+      }
+#endif /* JERRY_ENABLE_LINE_INFO */
+
       parser_parse_expression (context_p, PARSE_EXPR);
 
       if (context_p->token.type != LEXER_COLON)
@@ -1140,6 +1218,10 @@ parser_parse_switch_statement_start (parser_context_t *context_p) /**< context *
   }
 
   JERRY_ASSERT (switch_case_was_found || default_case_was_found);
+
+#ifdef JERRY_ENABLE_LINE_INFO
+  context_p->last_line_info_line = last_line_info_line;
+#endif /* JERRY_ENABLE_LINE_INFO */
 
   if (!switch_case_was_found)
   {
@@ -1207,13 +1289,11 @@ parser_parse_try_statement_end (parser_context_t *context_p) /**< context */
         try_statement.type = parser_finally_block;
       }
     }
-    else if (try_statement.type == parser_try_block)
+    else if (try_statement.type == parser_try_block
+             && context_p->token.type != LEXER_KEYW_CATCH
+             && context_p->token.type != LEXER_KEYW_FINALLY)
     {
-      if (context_p->token.type != LEXER_KEYW_CATCH
-          && context_p->token.type != LEXER_KEYW_FINALLY)
-      {
-        parser_raise_error (context_p, PARSER_ERR_CATCH_FINALLY_EXPECTED);
-      }
+      parser_raise_error (context_p, PARSER_ERR_CATCH_FINALLY_EXPECTED);
     }
   }
 
@@ -1361,7 +1441,7 @@ parser_parse_break_statement (parser_context_t *context_p) /**< context */
   lexer_next_token (context_p);
   parser_stack_iterator_init (context_p, &iterator);
 
-  if (!context_p->token.was_newline
+  if (!(context_p->token.flags & LEXER_WAS_NEWLINE)
       && context_p->token.type == LEXER_LITERAL
       && context_p->token.lit_location.type == LEXER_IDENT_LITERAL)
   {
@@ -1391,7 +1471,7 @@ parser_parse_break_statement (parser_context_t *context_p) /**< context */
         if (lexer_compare_identifier_to_current (context_p, &label_statement.label_ident))
         {
           label_statement.break_list_p = parser_emit_cbc_forward_branch_item (context_p,
-                                                                              opcode,
+                                                                              (uint16_t) opcode,
                                                                               label_statement.break_list_p);
           parser_stack_iterator_write (&iterator, &label_statement, sizeof (parser_label_statement_t));
           lexer_next_token (context_p);
@@ -1434,7 +1514,7 @@ parser_parse_break_statement (parser_context_t *context_p) /**< context */
       parser_stack_iterator_skip (&iterator, 1);
       parser_stack_iterator_read (&iterator, &loop, sizeof (parser_loop_statement_t));
       loop.branch_list_p = parser_emit_cbc_forward_branch_item (context_p,
-                                                                opcode,
+                                                                (uint16_t) opcode,
                                                                 loop.branch_list_p);
       parser_stack_iterator_write (&iterator, &loop, sizeof (parser_loop_statement_t));
       return;
@@ -1456,7 +1536,7 @@ parser_parse_continue_statement (parser_context_t *context_p) /**< context */
   lexer_next_token (context_p);
   parser_stack_iterator_init (context_p, &iterator);
 
-  if (!context_p->token.was_newline
+  if (!(context_p->token.flags & LEXER_WAS_NEWLINE)
       && context_p->token.type == LEXER_LITERAL
       && context_p->token.lit_location.type == LEXER_IDENT_LITERAL)
   {
@@ -1490,7 +1570,7 @@ parser_parse_continue_statement (parser_context_t *context_p) /**< context */
           parser_stack_iterator_skip (&loop_iterator, 1);
           parser_stack_iterator_read (&loop_iterator, &loop, sizeof (parser_loop_statement_t));
           loop.branch_list_p = parser_emit_cbc_forward_branch_item (context_p,
-                                                                    opcode,
+                                                                    (uint16_t) opcode,
                                                                     loop.branch_list_p);
           loop.branch_list_p->branch.offset |= CBC_HIGHEST_BIT_MASK;
           parser_stack_iterator_write (&loop_iterator, &loop, sizeof (parser_loop_statement_t));
@@ -1547,7 +1627,7 @@ parser_parse_continue_statement (parser_context_t *context_p) /**< context */
       parser_stack_iterator_skip (&iterator, 1);
       parser_stack_iterator_read (&iterator, &loop, sizeof (parser_loop_statement_t));
       loop.branch_list_p = parser_emit_cbc_forward_branch_item (context_p,
-                                                                opcode,
+                                                                (uint16_t) opcode,
                                                                 loop.branch_list_p);
       loop.branch_list_p->branch.offset |= CBC_HIGHEST_BIT_MASK;
       parser_stack_iterator_write (&iterator, &loop, sizeof (parser_loop_statement_t));
@@ -1568,8 +1648,7 @@ parser_parse_continue_statement (parser_context_t *context_p) /**< context */
  * Parse label statement.
  */
 static void
-parser_parse_label (parser_context_t *context_p, /**< context */
-                    lexer_lit_location_t *label_literal_p) /**< saved literal */
+parser_parse_label (parser_context_t *context_p) /**< context */
 {
   parser_stack_iterator_t iterator;
   parser_label_statement_t label_statement;
@@ -1601,7 +1680,7 @@ parser_parse_label (parser_context_t *context_p, /**< context */
     }
   }
 
-  label_statement.label_ident = *label_literal_p;
+  label_statement.label_ident = context_p->token.lit_location;
   label_statement.break_list_p = NULL;
   parser_stack_push (context_p, &label_statement, sizeof (parser_label_statement_t));
   parser_stack_push_uint8 (context_p, PARSER_STATEMENT_LABEL);
@@ -1628,14 +1707,20 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
   }
 #endif /* JERRY_DEBUGGER */
 
+#ifdef JERRY_ENABLE_LINE_INFO
+  if (JERRY_CONTEXT (resource_name) != ECMA_VALUE_UNDEFINED)
+  {
+    parser_emit_cbc_ext (context_p, CBC_EXT_RESOURCE_NAME);
+    parser_flush_cbc (context_p);
+  }
+  context_p->last_line_info_line = 0;
+#endif /* JERRY_ENABLE_LINE_INFO */
+
   while (context_p->token.type == LEXER_LITERAL
          && context_p->token.lit_location.type == LEXER_STRING_LITERAL)
   {
     lexer_lit_location_t lit_location;
     uint32_t status_flags = context_p->status_flags;
-#ifdef PARSER_DUMP_BYTE_CODE
-    bool switch_to_strict_mode = false;
-#endif /* PARSER_DUMP_BYTE_CODE */
 
     JERRY_ASSERT (context_p->stack_depth == 0);
 
@@ -1646,52 +1731,50 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
         && memcmp (PARSER_USE_STRICT_LITERAL, lit_location.char_p, PARSER_USE_STRICT_LENGTH) == 0)
     {
       context_p->status_flags |= PARSER_IS_STRICT;
-
-#ifdef PARSER_DUMP_BYTE_CODE
-      switch_to_strict_mode = true;
-#endif /* PARSER_DUMP_BYTE_CODE */
     }
 
     lexer_next_token (context_p);
 
     if (context_p->token.type != LEXER_SEMICOLON
-        && context_p->token.type != LEXER_RIGHT_BRACE)
+        && context_p->token.type != LEXER_RIGHT_BRACE
+        && (!(context_p->token.flags & LEXER_WAS_NEWLINE)
+            || LEXER_IS_BINARY_OP_TOKEN (context_p->token.type)
+            || context_p->token.type == LEXER_LEFT_PAREN
+            || context_p->token.type == LEXER_LEFT_SQUARE
+            || context_p->token.type == LEXER_DOT))
     {
-      if (!context_p->token.was_newline
-          || LEXER_IS_BINARY_OP_TOKEN (context_p->token.type)
-          || context_p->token.type == LEXER_LEFT_PAREN
-          || context_p->token.type == LEXER_LEFT_SQUARE
-          || context_p->token.type == LEXER_DOT)
-      {
-        /* The string is part of an expression statement. */
-        context_p->status_flags = status_flags;
+      /* The string is part of an expression statement. */
+      context_p->status_flags = status_flags;
 
 #ifdef JERRY_DEBUGGER
-        if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
-        {
-          JERRY_ASSERT (context_p->last_breakpoint_line == 0);
+      if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
+      {
+        JERRY_ASSERT (context_p->last_breakpoint_line == 0);
 
-          parser_emit_cbc (context_p, CBC_BREAKPOINT_DISABLED);
-          parser_flush_cbc (context_p);
+        parser_emit_cbc (context_p, CBC_BREAKPOINT_DISABLED);
+        parser_flush_cbc (context_p);
 
-          parser_append_breakpoint_info (context_p, JERRY_DEBUGGER_BREAKPOINT_LIST, context_p->token.line);
+        parser_append_breakpoint_info (context_p, JERRY_DEBUGGER_BREAKPOINT_LIST, context_p->token.line);
 
-          context_p->last_breakpoint_line = context_p->token.line;
-        }
-#endif /* JERRY_DEBUGGER */
-
-        lexer_construct_literal_object (context_p, &lit_location, LEXER_STRING_LITERAL);
-        parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
-        /* The extra_value is used for saving the token. */
-        context_p->token.extra_value = context_p->token.type;
-        context_p->token.type = LEXER_EXPRESSION_START;
-        break;
+        context_p->last_breakpoint_line = context_p->token.line;
       }
+#endif /* JERRY_DEBUGGER */
+#ifdef JERRY_ENABLE_LINE_INFO
+      parser_emit_line_info (context_p, context_p->token.line, false);
+#endif /* JERRY_ENABLE_LINE_INFO */
+
+      lexer_construct_literal_object (context_p, &lit_location, LEXER_STRING_LITERAL);
+      parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
+      /* The extra_value is used for saving the token. */
+      context_p->token.extra_value = context_p->token.type;
+      context_p->token.type = LEXER_EXPRESSION_START;
+      break;
     }
 
 #ifdef PARSER_DUMP_BYTE_CODE
     if (context_p->is_show_opcodes
-        && switch_to_strict_mode)
+        && !(status_flags & PARSER_IS_STRICT)
+        && (context_p->status_flags & PARSER_IS_STRICT))
     {
       JERRY_DEBUG_MSG ("  Note: switch to strict mode\n\n");
     }
@@ -1703,16 +1786,14 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
     }
 
     /* The last directive prologue can be the result of the script. */
-    if (!(context_p->status_flags & PARSER_IS_FUNCTION))
+    if (!(context_p->status_flags & PARSER_IS_FUNCTION)
+        && (context_p->token.type != LEXER_LITERAL
+            || context_p->token.lit_location.type != LEXER_STRING_LITERAL))
     {
-      if (context_p->token.type != LEXER_LITERAL
-          || context_p->token.lit_location.type != LEXER_STRING_LITERAL)
-      {
-        lexer_construct_literal_object (context_p, &lit_location, LEXER_STRING_LITERAL);
-        parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
-        parser_emit_cbc (context_p, CBC_POP_BLOCK);
-        parser_flush_cbc (context_p);
-      }
+      lexer_construct_literal_object (context_p, &lit_location, LEXER_STRING_LITERAL);
+      parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
+      parser_emit_cbc (context_p, CBC_POP_BLOCK);
+      parser_flush_cbc (context_p);
     }
   }
 
@@ -1748,6 +1829,20 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
       context_p->last_breakpoint_line = context_p->token.line;
     }
 #endif /* JERRY_DEBUGGER */
+
+#ifdef JERRY_ENABLE_LINE_INFO
+    if (context_p->token.line != context_p->last_line_info_line
+        && context_p->token.type != LEXER_SEMICOLON
+        && context_p->token.type != LEXER_LEFT_BRACE
+        && context_p->token.type != LEXER_RIGHT_BRACE
+        && context_p->token.type != LEXER_KEYW_VAR
+        && context_p->token.type != LEXER_KEYW_FUNCTION
+        && context_p->token.type != LEXER_KEYW_CASE
+        && context_p->token.type != LEXER_KEYW_DEFAULT)
+    {
+      parser_emit_line_info (context_p, context_p->token.line, true);
+    }
+#endif /* JERRY_ENABLE_LINE_INFO */
 
     switch (context_p->token.type)
     {
@@ -1785,6 +1880,14 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
         parser_parse_var_statement (context_p);
         break;
       }
+
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+      case LEXER_KEYW_CLASS:
+      {
+        parser_parse_class (context_p, true);
+        continue;
+      }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
 
       case LEXER_KEYW_FUNCTION:
       {
@@ -1894,7 +1997,7 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
       case LEXER_KEYW_THROW:
       {
         lexer_next_token (context_p);
-        if (context_p->token.was_newline)
+        if (context_p->token.flags & LEXER_WAS_NEWLINE)
         {
           parser_raise_error (context_p, PARSER_ERR_EXPRESSION_EXPECTED);
         }
@@ -1911,53 +2014,79 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
         }
 
         lexer_next_token (context_p);
-        if (context_p->token.was_newline
+
+        if ((context_p->token.flags & LEXER_WAS_NEWLINE)
             || context_p->token.type == LEXER_SEMICOLON
             || context_p->token.type == LEXER_RIGHT_BRACE)
         {
-          parser_emit_cbc (context_p, CBC_RETURN_WITH_BLOCK);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+          if (JERRY_UNLIKELY (PARSER_IS_CLASS_CONSTRUCTOR_SUPER (context_p->status_flags)))
+          {
+            parser_emit_cbc_ext (context_p, CBC_EXT_PUSH_CONSTRUCTOR_THIS);
+            parser_emit_cbc (context_p, CBC_RETURN);
+          }
+          else
+          {
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+            parser_emit_cbc (context_p, CBC_RETURN_WITH_BLOCK);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+          }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
           break;
         }
 
         parser_parse_expression (context_p, PARSE_EXPR);
-        if (context_p->last_cbc_opcode == CBC_PUSH_LITERAL)
+
+        bool return_with_literal = (context_p->last_cbc_opcode == CBC_PUSH_LITERAL);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+        return_with_literal = return_with_literal && !PARSER_IS_CLASS_CONSTRUCTOR_SUPER (context_p->status_flags);
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+
+        if (return_with_literal)
         {
           context_p->last_cbc_opcode = CBC_RETURN_WITH_LITERAL;
         }
         else
         {
-          parser_emit_cbc (context_p, CBC_RETURN);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+          if (JERRY_UNLIKELY (PARSER_IS_CLASS_CONSTRUCTOR_SUPER (context_p->status_flags)))
+          {
+            parser_emit_cbc_ext (context_p, CBC_EXT_CONSTRUCTOR_RETURN);
+          }
+          else
+          {
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+            parser_emit_cbc (context_p, CBC_RETURN);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+          }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
         }
         break;
       }
 
       case LEXER_KEYW_DEBUGGER:
       {
-        parser_emit_cbc_ext (context_p, CBC_EXT_DEBUGGER);
+#ifdef JERRY_DEBUGGER
+        /* This breakpoint location is not reported to the
+         * debugger, so it is impossible to disable it. */
+        if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
+        {
+          parser_emit_cbc (context_p, CBC_BREAKPOINT_ENABLED);
+        }
+#endif /* JERRY_DEBUGGER */
         lexer_next_token (context_p);
         break;
       }
-
       case LEXER_LITERAL:
       {
-        if (context_p->token.lit_location.type == LEXER_IDENT_LITERAL)
+        if (context_p->token.lit_location.type == LEXER_IDENT_LITERAL
+            && lexer_check_next_character (context_p, LIT_CHAR_COLON))
         {
-          lexer_lit_location_t lit_location = context_p->token.lit_location;
-
+          parser_parse_label (context_p);
           lexer_next_token (context_p);
-
-          if (context_p->token.type == LEXER_COLON)
-          {
-            parser_parse_label (context_p, &lit_location);
-            lexer_next_token (context_p);
-            continue;
-          }
-
-          lexer_construct_literal_object (context_p, &lit_location, LEXER_IDENT_LITERAL);
-          parser_emit_cbc_literal_from_token (context_p, CBC_PUSH_LITERAL);
-          /* The extra_value is used for saving the token. */
-          context_p->token.extra_value = context_p->token.type;
-          context_p->token.type = LEXER_EXPRESSION_START;
+          JERRY_ASSERT (context_p->token.type == LEXER_COLON);
+          lexer_next_token (context_p);
+          continue;
         }
         /* FALLTHRU */
       }
@@ -2031,6 +2160,15 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
 #endif /* !JERRY_NDEBUG */
           /* There is no lexer_next_token here, since the
            * next token belongs to the parent context. */
+
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+          if (JERRY_UNLIKELY (PARSER_IS_CLASS_CONSTRUCTOR_SUPER (context_p->status_flags)))
+          {
+            parser_emit_cbc_ext (context_p, CBC_EXT_PUSH_CONSTRUCTOR_THIS);
+            parser_emit_cbc (context_p, CBC_RETURN);
+            parser_flush_cbc (context_p);
+          }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
           return;
         }
         parser_raise_error (context_p, PARSER_ERR_INVALID_RIGHT_SQUARE);
@@ -2041,7 +2179,7 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
       lexer_next_token (context_p);
     }
     else if (context_p->token.type != LEXER_EOS
-             && !context_p->token.was_newline)
+             && !(context_p->token.flags & LEXER_WAS_NEWLINE))
     {
       parser_raise_error (context_p, PARSER_ERR_SEMICOLON_EXPECTED);
     }
@@ -2164,7 +2302,7 @@ parser_parse_statements (parser_context_t *context_p) /**< context */
 /**
  * Free jumps stored on the stack if a parse error is occured.
  */
-void __attr_noinline___
+void JERRY_ATTR_NOINLINE
 parser_free_jumps (parser_stack_iterator_t iterator) /**< iterator position */
 {
   while (true)
@@ -2249,4 +2387,4 @@ parser_free_jumps (parser_stack_iterator_t iterator) /**< iterator position */
  * @}
  */
 
-#endif /* JERRY_JS_PARSER */
+#endif /* !JERRY_DISABLE_JS_PARSER */

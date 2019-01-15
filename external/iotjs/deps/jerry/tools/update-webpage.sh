@@ -33,6 +33,8 @@ CODING_STANDARDS_MD="08.CODING-STANDARDS.md"
 EXT_REFERENCE_ARG_MD="09.EXT-REFERENCE-ARG.md"
 EXT_REFERENCE_HANDLER_MD="10.EXT-REFERENCE-HANDLER.md"
 EXT_REFERENCE_AUTORELEASE_MD="11.EXT-REFERENCE-AUTORELEASE.md"
+EXT_REFERENCE_MODULE_MD="12.EXT-REFERENCE-MODULE.md"
+DEBUGGER_TRANSPORT_MD="13.DEBUGGER-TRANSPORT.md"
 
 declare -A titles
 
@@ -47,6 +49,8 @@ titles[$CODING_STANDARDS_MD]="Coding Standards"
 titles[$EXT_REFERENCE_ARG_MD]="'Extension API: Argument Validation'"
 titles[$EXT_REFERENCE_HANDLER_MD]="'Extension API: External Function Handlers'"
 titles[$EXT_REFERENCE_AUTORELEASE_MD]="'Extension API: Autorelease Values'"
+titles[$EXT_REFERENCE_MODULE_MD]="'Extension API: Module Support'"
+titles[$DEBUGGER_TRANSPORT_MD]="'Debugger Transport'"
 
 for docfile in $docs_dir/*.md; do
   docfile_base=`basename $docfile`
@@ -91,6 +95,9 @@ for docfile in $docs_dir/*.md; do
   # fix image links
   sed -i -r -e 's/^!\[.*\]\(/&{{ site.github.url }}\//' $gh_pages_dir/$docfile_base
   sed -i -r -e 's/^!\[.*\]\(\{\{ site\.github\.url \}\}\/img.*$/&{: class="thumbnail center-block img-responsive" }/' $gh_pages_dir/$docfile_base
+
+  # turn filenames into permalinks
+  sed -i -r -e 's/docs\/[0-9]+\.(.*)\.md/\L\1/g' $gh_pages_dir/$docfile_base
 
   # replace span tags to div
   sed -i 's/<span class=/<div class=/g' $gh_pages_dir/$docfile_base

@@ -37,44 +37,61 @@ print_npm_dep()
   echo ""
 }
 
-check_architecture()
+print_usage()
 {
-  architecture=$(uname -m)
-  case $architecture in
-    i386|i686|x86_32)
-      ;;
-    *)
-      echo "Error: You can measure test coverage only on x86 32-bit."
-      exit 1
-  esac
+  echo "Measure JavaScript and C coverage and create a html report"
+  echo "out of the results"
+  echo ""
+  echo "Usage: measure_coverage.sh [ARGUMENTS]"
+  echo ""
+  echo "Optional Arguments:"
+  echo "  --node-modules-dir  Specifies the node_module directory, where"
+  echo "                      the nodejs dependencies are installed."
+  echo ""
+  echo "  --target-board      Specifies the target board, where the"
+  echo "                      coverage measurement will happen."
+  echo "                      Possible values: rpi2"
+  echo ""
+  echo "The created html reports can be found in the 'coverage' directory,"
+  echo "which will be created in the IoT.js project source dir. The C and"
+  echo "JavaScript coverage reports are in the 'c' and 'js' subdirectories"
+  echo "respectively. The reports can be viewed by opening the 'index.html'"
+  echo "file in a web browser of your choice."
+  echo ""
+  echo "Running the script will require some additional dependencies."
+  echo ""
+  print_dep
+  print_nvm_dep
+  print_npm_dep
+  exit 0
 }
 
-if [ "$#" -gt "0" ] && ( [ "$1" == "-h" ] || [ "$1" == "--help" ] ); then
-    echo "Measure JavaScript and C coverage and create a html report"
-    echo "out of the results"
-    echo ""
-    echo "Usage: $0 [NODE_MODULES_DIR]"
-    echo ""
-    echo "Optional Arguments:"
-    echo "  NODE_MODULES_DIR    Specifies the node_module directory, where"
-    echo "                      the nodejs dependencies are installed."
-    echo ""
-    echo "The created html reports can be found in the 'coverage' directory,"
-    echo "which will be created in the IoT.js project source dir. The C and"
-    echo "JavaScript coverage reports are in the 'c' and 'js' subdirectories"
-    echo "respectively. The reports can be viewed by opening the 'index.html'"
-    echo "file in a web browser of your choice."
-    echo ""
-    echo "Running the script will require some additional dependencies."
-    echo ""
-    print_dep
-    print_nvm_dep
-    print_npm_dep
-    exit 0
-fi
+fail_with_msg()
+{
+  echo "$1"
+  exit 1
+}
 
-# Don't run this script on x86_64 architecture, only on x86_32
-check_architecture
+# Parse the given arguments.
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        --node-modules-dir)
+            node_modules_dir="$2"
+            shift
+            ;;
+        --target-board)
+            target_board="$2"
+            shift
+            ;;
+        *)
+            print_usage
+            ;;
+    esac
+    shift
+done
 
 tools_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 iotjs_root=$(readlink -f "$tools_dir/..")
@@ -91,7 +108,12 @@ fi
 . ~/.profile
 
 # Istanbul and babel require node version > 4.0.
-nvm install 6.11.0
+nvm ls 4.0.0 >> /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+    nvm install 4.0
+else
+    nvm use 4.0
+fi
 
 dpkg -l lcov >> /dev/null 2>&1 && \
 dpkg -l gcc-multilib >> /dev/null 2>&1
@@ -103,11 +125,11 @@ fi
 
 modules_dir=$(readlink -f "$(npm bin)/..")
 
-if [ "$#" -gt "0" ]; then
-    path=$(readlink -f $1)
+if [ -v node_modules_dir ];
+then
+    path=$(readlink -f $node_modules_dir)
     if [ ! -d "$path" ] || [ $(basename "$path") != "node_modules" ]; then
-        echo "'$1' is not a node_modules directory"
-        exit 1
+        fail_with_msg "'$node_modules_dir' is not a node_modules directory"
     fi
 
     test -e $path/.bin/nyc && \
@@ -142,11 +164,36 @@ mv src/cover_js src/js
 # Build iot.js
 # We need to use the system allocator to have enough memory, for now this can
 # only be done with a 32-bit build
-tools/build.py --jerry-cmake-param="-DFEATURE_SYSTEM_ALLOCATOR=ON" \
-    --target-arch=x86 --compile-flag="-coverage" --no-snapshot --no-check-test
+common_build_opts="--jerry-cmake-param=-DFEATURE_SYSTEM_ALLOCATOR=ON
+--compile-flag=-coverage
+--no-snapshot"
 
-# Run tests
-build/i686-linux/debug/bin/iotjs tools/check_test.js -- output-coverage=yes
+if ! [ -v target_board ];
+then
+    tools/build.py $common_build_opts --target-arch=x86 \
+    --profile=test/profiles/host-linux.profile
+
+    if [ $? -ne 0 ]; then
+        fail_with_msg "x86 build failed."
+    fi
+
+    build_path=${PWD}/build/i686-linux/debug
+elif [ $target_board = "rpi2" ];
+then
+    tools/build.py $common_build_opts --target-arch=arm --target-board=rpi2 \
+    --profile=test/profiles/rpi2-linux.profile
+
+    if [ $? -ne 0 ]; then
+        fail_with_msg "RPi2 build failed."
+    fi
+
+    build_path=${PWD}/build/arm-linux/debug
+else
+    fail_with_msg "Not supported target-board: $target_board"
+fi
+
+# Run the appropriate testrunner.
+python tools/testrunner.py ${build_path}/bin/iotjs --quiet --coverage
 
 # Revert to original module files
 rm -rf src/js
@@ -162,7 +209,7 @@ rm -rf coverage/js
 mv coverage/lcov-report coverage/js
 
 # Generate c coverage report
-lcov -t "c_coverage" -o ".c-coverage.info" -c -d build/i686-linux/debug/
+lcov -t "c_coverage" -o ".c-coverage.info" -c -d $build_path
 lcov --remove ".c-coverage.info" 'iotjs/deps/*' -o ".c-coverage.info"
 genhtml -o coverage/c .c-coverage.info
 rm .c-coverage.info

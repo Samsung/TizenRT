@@ -126,7 +126,7 @@ enum
 static ecma_value_t
 ecma_builtin_date_prototype_to_json (ecma_value_t this_arg) /**< this argument */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   ECMA_TRY_CATCH (obj,
@@ -145,18 +145,17 @@ ecma_builtin_date_prototype_to_json (ecma_value_t this_arg) /**< this argument *
 
     if (ecma_number_is_nan (num_value) || ecma_number_is_infinity (num_value))
     {
-      ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
+      ret_value = ECMA_VALUE_NULL;
     }
   }
 
   if (ecma_is_value_empty (ret_value))
   {
-    ecma_string_t *to_iso_str_p = ecma_get_magic_string (LIT_MAGIC_STRING_TO_ISO_STRING_UL);
     ecma_object_t *value_obj_p = ecma_get_object_from_value (obj);
 
     /* 4. */
     ECMA_TRY_CATCH (to_iso,
-                    ecma_op_object_get (value_obj_p, to_iso_str_p),
+                    ecma_op_object_get_by_magic_id (value_obj_p, LIT_MAGIC_STRING_TO_ISO_STRING_UL),
                     ret_value);
 
     /* 5. */
@@ -172,8 +171,6 @@ ecma_builtin_date_prototype_to_json (ecma_value_t this_arg) /**< this argument *
     }
 
     ECMA_FINALIZE (to_iso);
-
-    ecma_deref_ecma_string (to_iso_str_p);
   }
 
   ECMA_FINALIZE (tv);
@@ -195,8 +192,7 @@ ecma_builtin_date_prototype_dispatch_get (uint16_t builtin_routine_id, /**< buil
 {
   if (ecma_number_is_nan (date_num))
   {
-    ecma_string_t *nan_str_p = ecma_get_magic_string (LIT_MAGIC_STRING_NAN);
-    return ecma_make_string_value (nan_str_p);
+    return ecma_make_magic_string_value (LIT_MAGIC_STRING_NAN);
   }
 
   switch (builtin_routine_id)
@@ -263,6 +259,7 @@ ecma_builtin_date_prototype_dispatch_get (uint16_t builtin_routine_id, /**< buil
     default:
     {
       JERRY_ASSERT (builtin_routine_id == ECMA_DATE_PROTOTYPE_GET_UTC_TIMEZONE_OFFSET);
+
       date_num = ecma_date_timezone_offset (date_num);
       break;
     }
@@ -346,6 +343,7 @@ ecma_builtin_date_prototype_dispatch_set (uint16_t builtin_routine_id, /**< buil
     {
       JERRY_ASSERT (builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_HOURS
                     || builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_UTC_HOURS);
+
       conversions = 4;
       break;
     }
@@ -433,6 +431,7 @@ ecma_builtin_date_prototype_dispatch_set (uint16_t builtin_routine_id, /**< buil
       {
         JERRY_ASSERT (builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_DATE
                       || builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_UTC_DATE);
+
         day = converted_number[0];
         break;
       }
@@ -515,6 +514,7 @@ ecma_builtin_date_prototype_dispatch_set (uint16_t builtin_routine_id, /**< buil
       {
         JERRY_ASSERT (builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_UTC_MILLISECONDS
                       || builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_MILLISECONDS);
+
         ms = converted_number[0];
         break;
       }
@@ -555,7 +555,7 @@ ecma_builtin_date_prototype_dispatch_routine (uint16_t builtin_routine_id, /**< 
                                                                                     *   passed to routine */
                                               ecma_length_t arguments_number) /**< length of arguments' list */
 {
-  if (unlikely (builtin_routine_id == ECMA_DATE_PROTOTYPE_TO_JSON))
+  if (JERRY_UNLIKELY (builtin_routine_id == ECMA_DATE_PROTOTYPE_TO_JSON))
   {
     return ecma_builtin_date_prototype_to_json (this_arg);
   }
@@ -580,9 +580,9 @@ ecma_builtin_date_prototype_dispatch_routine (uint16_t builtin_routine_id, /**< 
   if (builtin_routine_id == ECMA_DATE_PROTOTYPE_SET_TIME)
   {
     ecma_value_t time = (arguments_number >= 1 ? arguments_list[0]
-                                               : ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED));
+                                               : ECMA_VALUE_UNDEFINED);
 
-    ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+    ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
     /* 1. */
     ECMA_OP_TO_NUMBER_TRY_CATCH (time_num, time, ret_value);
@@ -600,7 +600,7 @@ ecma_builtin_date_prototype_dispatch_routine (uint16_t builtin_routine_id, /**< 
 
     if (!BUILTIN_DATE_FUNCTION_IS_UTC (builtin_routine_id))
     {
-      this_num += ecma_date_local_time_zone (this_num);
+      this_num += ecma_date_local_time_zone_adjustment (this_num);
     }
 
     if (builtin_routine_id <= ECMA_DATE_PROTOTYPE_GET_UTC_TIMEZONE_OFFSET)
@@ -627,8 +627,7 @@ ecma_builtin_date_prototype_dispatch_routine (uint16_t builtin_routine_id, /**< 
 
   if (ecma_number_is_nan (*prim_value_p))
   {
-    ecma_string_t *magic_str_p = ecma_get_magic_string (LIT_MAGIC_STRING_INVALID_DATE_UL);
-    return ecma_make_string_value (magic_str_p);
+    return ecma_make_magic_string_value (LIT_MAGIC_STRING_INVALID_DATE_UL);
   }
 
   switch (builtin_routine_id)
@@ -648,6 +647,7 @@ ecma_builtin_date_prototype_dispatch_routine (uint16_t builtin_routine_id, /**< 
     default:
     {
       JERRY_ASSERT (builtin_routine_id == ECMA_DATE_PROTOTYPE_TO_UTC_STRING);
+
       return ecma_date_value_to_utc_string (*prim_value_p);
     }
   }

@@ -167,14 +167,14 @@ static void on_connection(uv_stream_t* server, int status) {
     TUV_ASSERT(r == 0);
     break;
 
-/*
-  case PIPE:
+#ifdef TUV_FEATURE_PIPE
+  case TEST_PIPE:
     stream = (uv_stream_t*)malloc(sizeof(uv_pipe_t));
     TUV_ASSERT(stream != NULL);
-    r = uv_pipe_init(loop, (uv_pipe_t*)stream, 0);
+    r = uv_pipe_init(&loop, (uv_pipe_t*)stream, 0);
     TUV_ASSERT(r == 0);
     break;
-*/
+#endif
 
   default:
     TUV_ASSERT(0 && "Bad serverType");

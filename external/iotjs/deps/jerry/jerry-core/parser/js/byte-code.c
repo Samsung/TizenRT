@@ -21,7 +21,7 @@ JERRY_STATIC_ASSERT ((sizeof (cbc_uint8_arguments_t) % sizeof (jmem_cpointer_t))
 JERRY_STATIC_ASSERT ((sizeof (cbc_uint16_arguments_t) % sizeof (jmem_cpointer_t)) == 0,
                      sizeof_cbc_uint16_arguments_t_must_be_divisible_by_sizeof_jmem_cpointer_t);
 
-#if JERRY_JS_PARSER
+#ifndef JERRY_DISABLE_JS_PARSER
 
 /** \addtogroup parser Parser
  * @{
@@ -33,6 +33,9 @@ JERRY_STATIC_ASSERT ((sizeof (cbc_uint16_arguments_t) % sizeof (jmem_cpointer_t)
  * @{
  */
 
+/**
+ * Compact bytecode definition
+ */
 #define CBC_OPCODE(arg1, arg2, arg3, arg4) \
   ((arg2) | (((arg3) + CBC_STACK_ADJUST_BASE) << CBC_STACK_ADJUST_SHIFT)),
 
@@ -84,4 +87,4 @@ const char * const cbc_ext_names[] =
  * @}
  */
 
-#endif /* JERRY_JS_PARSER */
+#endif /* !JERRY_DISABLE_JS_PARSER */

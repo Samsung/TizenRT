@@ -2,21 +2,22 @@
 
 The following shows Buffer module APIs available for each platform.
 
-|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) |
-| :---: | :---: | :---: | :---: |
-| buf.compare | O | O | O |
-| buf.copy | O | O | O |
-| buf.equals | O | O | O |
-| buf.fill | O | O | O |
-| buf.slice | O | O | O |
-| buf.toString | O | O | O |
-| buf.write | O | O | O |
-| buf.writeUInt8 | O | O | O |
-| buf.writeUInt16LE | O | O | O |
-| buf.writeUInt32LE | O | O | O |
-| buf.readInt8 | O | O | O |
-| buf.readUInt8 | O | O | O |
-| buf.readUInt16LE | O | O | O |
+|  | Linux<br/>(Ubuntu) | Tizen<br/>(Raspberry Pi) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) | TizenRT<br/>(Artik053) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| buf.compare | O | O | O | O | O |
+| buf.copy | O | O | O | O | O |
+| buf.equals | O | O | O | O | O |
+| buf.fill | O | O | O | O | O |
+| buf.from | O | O | O | O | O |
+| buf.slice | O | O | O | O | O |
+| buf.toString | O | O | O | O | O |
+| buf.write | O | O | O | O | O |
+| buf.writeUInt8 | O | O | O | O | O |
+| buf.writeUInt16LE | O | O | O | O | O |
+| buf.writeUInt32LE | O | O | O | O | O |
+| buf.readInt8 | O | O | O | O | O |
+| buf.readUInt8 | O | O | O | O | O |
+| buf.readUInt16LE | O | O | O | O | O |
 
 
 # Buffer
@@ -33,15 +34,16 @@ UInt8Array in the future.
 var Buffer = require('buffer');
 
 // Creates a zero-filled Buffer of length 10.
-var buf1 = Buffer(10);
+var buf1 = new Buffer(10);
 
 // Creates a Buffer containing [0x1, 0x2, 0x3].
-var buf2 = Buffer([1, 2, 3]);
+var buf2 = new Buffer([1, 2, 3]);
 
 // Creates a Buffer containing UTF-8 bytes [0x74, 0xc3, 0xa9, 0x73, 0x74].
-var buf3 = Buffer('tést');
+var buf3 = new Buffer('tést');
 ```
 
+## Class: Buffer
 
 ### new Buffer(size)
 * `size` {integer} Size of the new buffer.
@@ -87,22 +89,22 @@ and these pairs are converted to bytes.
 ```js
 var Buffer = require('buffer');
 
-var buffer = new Buffer(String.fromCharCode(65))
+var buffer = new Buffer(String.fromCharCode(65));
 
 // prints: 1
 console.log(buffer);
 
-var buffer = new Buffer(String.fromCharCode(128))
+var buffer = new Buffer(String.fromCharCode(128));
 
 // prints: 2
 console.log(buffer);
 
-var buffer = new Buffer(String.fromCharCode(2048))
+var buffer = new Buffer(String.fromCharCode(2048));
 
 // prints: 3
 console.log(buffer);
 
-var buffer = new Buffer('4142', 'hex')
+var buffer = new Buffer('4142', 'hex');
 
 // prints: AB
 console.log(buffer);
@@ -119,7 +121,7 @@ numbers are converted to integers first and their modulo
 **Example**
 
 ```js
-var buffer = new Buffer([65, 256 + 65, 65 - 256, 65.1])
+var buffer = new Buffer([65, 256 + 65, 65 - 256, 65.1]);
 
 // prints: AAAA
 console.log(buffer);
@@ -181,6 +183,84 @@ console.log(buffer);
 ```
 
 
+### Buffer.from(array)
+* `array` {Array} Array of numbers.
+* Returns: {Buffer} containing the elements from `array`
+
+Creates a new Buffer from an array of numbers. The numbers are converted to integers first and their modulo 256 remainder is used for constructing the buffer.
+
+**Example**
+
+```js
+var Buffer = require('buffer');
+
+var source = new Buffer[65, 66, 67];
+var buffer = Buffer.from(source);
+
+//prints: ABC
+console.log(buffer.toString());
+```
+
+
+### Buffer.from(string[,encoding])
+* `str` {String} Source string.
+* `encoding` {String} Encoding format.
+* Returns: {Buffer} containing the elements from `str`
+
+Creates a new buffer which contains the CESU-8 representation of the str string argument. If encoding optional argument is present its value must be hex. When this encoding is specified the str argument must be a sequence of hexadecimal digit pairs, and these pairs are converted to bytes.
+
+**Example**
+
+```js
+var Buffer = require('buffer');
+
+var buffer = Buffer.from('4142','hex');
+
+//prints: AB
+console.log(buffer.toString());
+```
+
+
+### Buffer.from(buffer)
+* `buffer` {Buffer} Source buffer.
+* Returns: {Buffer} which is the copy of `buffer`
+Creates a copy of an existing buffer. The buffer data is not shared between the two buffers.
+
+**Example**
+
+```js
+var Buffer = require('buffer');
+
+var source = new Buffer(12);
+var buffer = Buffer.from(source);
+```
+
+
+### Buffer.from(arrayBuffer[, byteOffset[, length]])
+* `arrayBuffer` {ArrayBuffer} Arraybuffer, or a buffer of a TypedArray
+* `byteOffset` {Number} Index of first byte to expose. Default: 0.
+* `length` {Number} Number of bytes to expose. Default: arrayBuffer.length - byteOffset.
+* Returns: {Buffer} containing the data of `arraybuffer` from read `offset` with `length`
+
+**Example**
+
+```js
+var source = new ArrayBuffer(12);
+var buffer = Buffer.from(source, 0, 2);
+
+//prints: 2
+console.log(buffer.length);
+```
+
+```js
+var typed_source = new Uint8Array([65,66]);
+var arr_buff = Buffer.from(typed_source1.buffer, 0, 2);
+
+//prints: AB
+console.log(buff.toString('utf-8'));
+```
+
+
 ### Buffer.isBuffer(obj)
 * `obj` {Object}
 * Returns: {boolean}
@@ -214,7 +294,7 @@ this value.
 ```js
 var Buffer = require('buffer');
 
-var buffer = new Buffer([0xc8, 0x80])
+var buffer = new Buffer([0xc8, 0x80]);
 
 // prints: 2
 console.log(buffer.length);

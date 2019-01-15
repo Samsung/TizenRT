@@ -373,14 +373,11 @@ lit_read_code_point_from_utf8 (const lit_utf8_byte_t *buf_p, /**< buffer with ch
     bytes_count = 3;
     ret = ((lit_code_point_t) (c & LIT_UTF8_LAST_4_BITS_MASK));
   }
-  else if ((c & LIT_UTF8_4_BYTE_MASK) == LIT_UTF8_4_BYTE_MARKER)
-  {
-    bytes_count = 4;
-    ret = ((lit_code_point_t) (c & LIT_UTF8_LAST_3_BITS_MASK));
-  }
   else
   {
-    JERRY_ASSERT (false);
+    JERRY_ASSERT ((c & LIT_UTF8_4_BYTE_MASK) == LIT_UTF8_4_BYTE_MARKER);
+    bytes_count = 4;
+    ret = ((lit_code_point_t) (c & LIT_UTF8_LAST_3_BITS_MASK));
   }
 
   JERRY_ASSERT (buf_size >= bytes_count);
@@ -557,7 +554,7 @@ lit_utf8_decr (const lit_utf8_byte_t **buf_p) /**< [in,out] buffer with characte
  *
  * @return ecma-string's hash
  */
-inline lit_string_hash_t __attr_always_inline___
+inline lit_string_hash_t JERRY_ATTR_ALWAYS_INLINE
 lit_utf8_string_hash_combine (lit_string_hash_t hash_basis, /**< hash to be combined with */
                               const lit_utf8_byte_t *utf8_buf_p, /**< characters buffer */
                               lit_utf8_size_t utf8_buf_size) /**< number of characters in the buffer */
@@ -580,7 +577,7 @@ lit_utf8_string_hash_combine (lit_string_hash_t hash_basis, /**< hash to be comb
  *
  * @return ecma-string's hash
  */
-inline lit_string_hash_t __attr_always_inline___
+inline lit_string_hash_t JERRY_ATTR_ALWAYS_INLINE
 lit_utf8_string_calc_hash (const lit_utf8_byte_t *utf8_buf_p, /**< characters buffer */
                            lit_utf8_size_t utf8_buf_size) /**< number of characters in the buffer */
 {
@@ -621,7 +618,7 @@ lit_utf8_string_code_unit_at (const lit_utf8_byte_t *utf8_buf_p, /**< utf-8 stri
  *
  * @return number of bytes occupied in CESU-8
  */
-inline lit_utf8_size_t __attr_always_inline___
+inline lit_utf8_size_t JERRY_ATTR_ALWAYS_INLINE
 lit_get_unicode_char_size_by_utf8_first_byte (const lit_utf8_byte_t first_byte) /**< buffer with characters */
 {
   if ((first_byte & LIT_UTF8_1_BYTE_MASK) == LIT_UTF8_1_BYTE_MARKER)

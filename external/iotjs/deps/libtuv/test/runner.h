@@ -46,6 +46,7 @@
 extern "C" {
 #endif
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #if defined(__NUTTX__) || defined(__TUV_RAW__)
 #define EMBED_LOW_MEMORY
@@ -79,6 +80,15 @@ typedef struct {
   int run_helper_##name(void);                                                \
   int run_helper_##name(void)
 
+#ifdef _WIN32
+# define TEST_PIPENAME "\\\\?\\pipe\\uv-test"
+# define TEST_PIPENAME_2 "\\\\?\\pipe\\uv-test2"
+# define TEST_PIPENAME_3 "\\\\?\\pipe\\uv-test3"
+#else
+# define TEST_PIPENAME "/tmp/uv-test-sock"
+# define TEST_PIPENAME_2 "/tmp/uv-test-sock2"
+# define TEST_PIPENAME_3 "/tmp/uv-test-sock3"
+#endif
 
 /* Have our own assert, so we are sure it does not get optimized away in
  * a release build.

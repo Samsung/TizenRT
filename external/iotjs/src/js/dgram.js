@@ -15,8 +15,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
-
-var UDP = process.binding(process.binding.udp);
+var Udp = require('udp');
 
 var BIND_STATE_UNBOUND = 0;
 var BIND_STATE_BINDING = 1;
@@ -40,7 +39,7 @@ function lookup4(address, callback) {
 
 function newHandle(type) {
   if (type == 'udp4') {
-    var handle = new UDP();
+    var handle = new Udp();
     handle.lookup = lookup4;
     return handle;
   }
@@ -103,8 +102,6 @@ Socket.prototype.bind = function(port, address, callback) {
 
   this._bindState = BIND_STATE_BINDING;
 
-  var address;
-
   if (util.isFunction(port)) {
     callback = port;
     port = 0;
@@ -139,7 +136,7 @@ Socket.prototype.bind = function(port, address, callback) {
 
     self._handle._reuseAddr = self._reuseAddr;
 
-    var err = self._handle.bind(ip, port | 0);
+    err = self._handle.bind(ip, port | 0);
     if (err) {
       var ex = util.exceptionWithHostPort(err, 'bind', ip, port);
       self.emit('error', ex);
@@ -152,7 +149,7 @@ Socket.prototype.bind = function(port, address, callback) {
   });
 
   return self;
-}
+};
 
 
 // thin wrapper around `send`, here for compatibility with dgram_legacy.js
@@ -242,11 +239,11 @@ Socket.prototype.send = function(buffer, offset, length, port, address,
 
   if (!util.isArray(buffer)) {
     if (util.isString(buffer)) {
-      list = [ new Buffer(buffer) ];
+      list = [new Buffer(buffer)];
     } else if (!util.isBuffer(buffer)) {
       throw new TypeError('First argument must be a buffer or a string');
     } else {
-      list = [ buffer ];
+      list = [buffer];
     }
   } else if (!(list = fixBufferList(buffer))) {
     throw new TypeError('Buffer list arguments must be buffers or strings');
@@ -298,7 +295,7 @@ function doSend(ex, self, ip, list, address, port, callback) {
 
   var buf = Buffer.concat(list);
 
-  var err = self._handle.send(buf, port, ip, function (err, length) {
+  var err = self._handle.send(buf, port, ip, function(err, length) {
     if (err) {
       err = util.exceptionWithHostPort(err, 'send', address, port);
     } else {
@@ -312,7 +309,7 @@ function doSend(ex, self, ip, list, address, port, callback) {
 
   if (err && callback) {
     // don't emit as error, dgram_legacy.js compatibility
-    var ex = exceptionWithHostPort(err, 'send', address, port);
+    ex = util.exceptionWithHostPort(err, 'send', address, port);
     process.nextTick(callback, ex);
   }
 }
@@ -353,8 +350,18 @@ Socket.prototype.address = function() {
 };
 
 
+// These object represents the different config types that
+// this._handle.configure can do.
+// The order of these must match the order in the udp C module.
+var configTypes = {
+  'BROADCAST': 0,
+  'TTL': 1,
+  'MULTICASTTTL': 2,
+  'MULTICASTLOOPBACK': 3,
+};
+
 Socket.prototype.setBroadcast = function(arg) {
-  var err = this._handle.setBroadcast(arg ? 1 : 0);
+  var err = this._handle.configure(configTypes.BROADCAST, arg ? 1 : 0);
   if (err) {
     throw util.errnoException(err, 'setBroadcast');
   }
@@ -366,7 +373,7 @@ Socket.prototype.setTTL = function(arg) {
     throw new TypeError('Argument must be a number');
   }
 
-  var err = this._handle.setTTL(arg);
+  var err = this._handle.configure(configTypes.TTL, arg);
   if (err) {
     throw util.errnoException(err, 'setTTL');
   }
@@ -380,7 +387,7 @@ Socket.prototype.setMulticastTTL = function(arg) {
     throw new TypeError('Argument must be a number');
   }
 
-  var err = this._handle.setMulticastTTL(arg);
+  var err = this._handle.configure(configTypes.MULTICASTTTL, arg);
   if (err) {
     throw util.errnoException(err, 'setMulticastTTL');
   }
@@ -390,7 +397,8 @@ Socket.prototype.setMulticastTTL = function(arg) {
 
 
 Socket.prototype.setMulticastLoopback = function(arg) {
-  var err = this._handle.setMulticastLoopback(arg ? 1 : 0);
+  var err = this._handle.configure(configTypes.MULTICASTLOOPBACK,
+                                   arg ? 1 : 0);
   if (err) {
     throw util.errnoException(err, 'setMulticastLoopback');
   }
@@ -448,7 +456,7 @@ Socket.prototype._stopReceiving = function() {
 function onMessage(nread, handle, buf, rinfo) {
   var self = handle.owner;
   if (nread < 0) {
-    return self.emit('error', errnoException(nread, 'recvmsg'));
+    return self.emit('error', util.errnoException(nread, 'recvmsg'));
   }
 
   rinfo.size = buf.length; // compatibility

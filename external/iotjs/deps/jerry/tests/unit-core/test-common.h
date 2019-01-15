@@ -28,7 +28,7 @@
 #define TEST_ASSERT(x) \
   do \
   { \
-    if (unlikely (!(x))) \
+    if (JERRY_UNLIKELY (!(x))) \
     { \
       jerry_port_log (JERRY_LOG_LEVEL_ERROR, \
                       "TEST: Assertion '%s' failed at %s(%s):%lu.\n", \
@@ -47,25 +47,15 @@
 #define TEST_INIT() \
 do \
 { \
-  FILE *f_rnd = fopen ("/dev/urandom", "r"); \
- \
-  if (f_rnd == NULL) \
-  { \
-    return 1; \
-  } \
- \
-  uint32_t seed; \
- \
-  size_t bytes_read = fread (&seed, 1, sizeof (seed), f_rnd); \
- \
- fclose (f_rnd); \
- \
-  if (bytes_read != sizeof (seed)) \
-  { \
-    return 1; \
-  } \
- \
-  srand (seed); \
+  srand ((unsigned) jerry_port_get_current_time ()); \
 } while (0)
 
-#endif /* TEST_COMMON_H */
+/**
+ * Dummy macro to enable the breaking of long string literals into multiple
+ * substrings on separate lines. (Style checker doesn't allow it without putting
+ * the whole literal into parentheses but the compiler warns about parenthesized
+ * string constants.)
+ */
+#define TEST_STRING_LITERAL(x) x
+
+#endif /* !TEST_COMMON_H */

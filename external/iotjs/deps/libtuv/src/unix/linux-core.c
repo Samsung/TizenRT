@@ -459,3 +459,26 @@ uint64_t uv__hrtime(uv_clocktype_t type) {
 
   return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
+
+// { TUV_CHANGES@20180803:
+//   Made signal build time configurable }
+#if TUV_FEATURE_PROCESS
+int uv_exepath(char* buffer, size_t* size) {
+  ssize_t n;
+
+  if (buffer == NULL || size == NULL || *size == 0)
+    return -EINVAL;
+
+  n = *size - 1;
+  if (n > 0)
+    n = readlink("/proc/self/exe", buffer, n);
+
+  if (n == -1)
+    return -errno;
+
+  buffer[n] = '\0';
+  *size = n;
+
+  return 0;
+}
+#endif /* TUV_FEATURE_PROCESS */

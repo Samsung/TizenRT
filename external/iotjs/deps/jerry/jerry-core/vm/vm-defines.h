@@ -26,9 +26,13 @@
  */
 
 /**
- * Helpers for updating uint16_t values.
+ * Helper for += on uint16_t values.
  */
 #define VM_PLUS_EQUAL_U16(base, value) (base) = (uint16_t) ((base) + (value))
+
+/**
+ * Helper for -= on uint16_t values.
+ */
 #define VM_MINUS_EQUAL_U16(base, value) (base) = (uint16_t) ((base) - (value))
 
 /**
@@ -46,11 +50,15 @@ typedef struct vm_frame_ctx_t
   uint8_t *byte_code_start_p;                         /**< byte code start pointer */
   ecma_value_t *registers_p;                          /**< register start pointer */
   ecma_value_t *stack_top_p;                          /**< stack top pointer */
-  jmem_cpointer_t *literal_start_p;                   /**< literal list start pointer */
+  ecma_value_t *literal_start_p;                      /**< literal list start pointer */
   ecma_object_t *lex_env_p;                           /**< current lexical environment */
   struct vm_frame_ctx_t *prev_context_p;              /**< previous context */
   ecma_value_t this_binding;                          /**< this binding */
-  ecma_value_t call_block_result;                     /**< preserve block result during a call */
+  ecma_value_t block_result;                          /**< block result */
+#ifdef JERRY_ENABLE_LINE_INFO
+  ecma_value_t resource_name;                         /**< current resource name (usually a file name) */
+  uint32_t current_line;                              /**< currently executed line */
+#endif /* JERRY_ENABLE_LINE_INFO */
   uint16_t context_depth;                             /**< current context depth */
   uint8_t is_eval_code;                               /**< eval mode flag */
   uint8_t call_operation;                             /**< perform a call or construct operation */

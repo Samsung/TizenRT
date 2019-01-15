@@ -14,10 +14,12 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "shell.h"
 #include "jerryscript.h"
 #include "jerryscript-ext/handler.h"
+#include "jerryscript-port.h"
 
 /**
  * Standalone Jerry exit codes
@@ -34,7 +36,7 @@ register_js_function (const char *name_p, /**< name of the function */
 {
   jerry_value_t result_val = jerryx_handler_register_global ((const jerry_char_t *) name_p, handler_p);
 
-  if (jerry_value_has_error_flag (result_val))
+  if (jerry_value_is_error (result_val))
   {
     printf ("Warning: failed to register '%s' method.", name_p);
   }
@@ -54,7 +56,6 @@ int test_jerry (int argc, char **argv)
   jerry_value_t ret_value = jerry_create_undefined ();
 
   const jerry_char_t script[] = "print ('Hello, World!');";
-  size_t script_size = strlen ((const char *) script);
   printf ("This test run the following script code: [%s]\n\n", script);
 
   /* Initialize engine */
@@ -64,9 +65,9 @@ int test_jerry (int argc, char **argv)
   register_js_function ("print", jerryx_handler_print);
 
   /* Setup Global scope code */
-  ret_value = jerry_parse (script, script_size, false);
+  ret_value = jerry_parse (NULL, 0, script, sizeof (script) - 1, JERRY_PARSE_NO_OPTS);
 
-  if (!jerry_value_has_error_flag (ret_value))
+  if (!jerry_value_is_error (ret_value))
   {
     /* Execute the parsed source code in the Global scope */
     ret_value = jerry_run (ret_value);
@@ -74,7 +75,7 @@ int test_jerry (int argc, char **argv)
 
   int ret_code = JERRY_STANDALONE_EXIT_CODE_OK;
 
-  if (jerry_value_has_error_flag (ret_value))
+  if (jerry_value_is_error (ret_value))
   {
     printf ("Script Error!");
 
@@ -97,6 +98,7 @@ const shell_command_t shell_commands[] = {
 
 int main (void)
 {
+  srand ((unsigned) jerry_port_get_current_time ());
   printf ("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
   printf ("This board features a(n) %s MCU.\n", RIOT_MCU);
 

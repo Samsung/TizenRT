@@ -1,9 +1,12 @@
 ![](https://github.com/jerryscript-project/jerryscript/blob/master/LOGO.png)
 # JerryScript: JavaScript engine for the Internet of Things
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
-[![Build Status](https://travis-ci.org/jerryscript-project/jerryscript.svg?branch=master)](https://travis-ci.org/jerryscript-project/jerryscript)
+[![Travis CI Build Status](https://travis-ci.org/jerryscript-project/jerryscript.svg?branch=master)](https://travis-ci.org/jerryscript-project/jerryscript)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/ct8reap35u2vooa5/branch/master?svg=true)](https://ci.appveyor.com/project/jerryscript-project/jerryscript/branch/master)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/12127/badge.svg)](https://scan.coverity.com/projects/jerryscript-project)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fjerryscript-project%2Fjerryscript.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fjerryscript-project%2Fjerryscript?ref=badge_shield)
+[![SonarQube](https://sonarcloud.io/api/project_badges/measure?project=jerryscript&metric=ncloc)](https://sonarcloud.io/dashboard?id=jerryscript)
+[![IRC Channel](https://img.shields.io/badge/chat-on%20freenode-brightgreen.svg)](https://kiwiirc.com/client/irc.freenode.net/#jerryscript)
 
 JerryScript is a lightweight JavaScript engine for resource-constrained devices such as microcontrollers. It can run on devices with less than 64 KB of RAM and less than 200 KB of flash memory.
 
@@ -17,7 +20,16 @@ Key characteristics of JerryScript:
 
 Additional information can be found on our [project page](http://jerryscript.net) and [Wiki](https://github.com/jerryscript-project/jerryscript/wiki).
 
-IRC channel: #jerryscript on [freenode](https://freenode.net)  
+Memory usage and Binary footprint are measured at [here](https://jerryscript-project.github.io/jerryscript-test-results) with real target daily.
+
+The following table shows the latest results on the devices:
+
+|  STM32F4-Discovery  | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fjerryscript%2Fstm32f4dis.svg?alt=media&token=1)](https://jerryscript-project.github.io/jerryscript-test-results/?view=stm32f4dis) |
+|        :---:        |                                             :---:                                                                                         |
+|  **Raspberry Pi 2** | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fjerryscript%2Frpi2.svg?alt=media&token=1)](https://jerryscript-project.github.io/jerryscript-test-results/?view=rpi2)       |
+|  **Artik053** | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fjerryscript%2Fartik053.svg?alt=media&token=1)](https://jerryscript-project.github.io/jerryscript-test-results/?view=artik053)       |
+
+IRC channel: #jerryscript on [freenode](https://freenode.net)
 Mailing list: jerryscript-dev@groups.io, you can subscribe [here](https://groups.io/g/jerryscript-dev) and access the mailing list archive [here](https://groups.io/g/jerryscript-dev/topics).
 
 ## Quick Start

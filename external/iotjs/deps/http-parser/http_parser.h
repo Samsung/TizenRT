@@ -280,6 +280,7 @@ struct http_parser_url {
 };
 
 
+#ifndef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
 /* Returns the library version. Bits 16-23 contain the major version number,
  * bits 8-15 the minor version number and bits 0-7 the patch level.
  * Usage example:
@@ -291,6 +292,7 @@ struct http_parser_url {
  *   printf("http_parser v%u.%u.%u\n", major, minor, patch);
  */
 unsigned long http_parser_version(void);
+#endif
 
 void http_parser_init(http_parser *parser, enum http_parser_type type);
 
@@ -322,6 +324,7 @@ const char *http_method_str(enum http_method m);
 /* Return a string name of the given error */
 const char *http_errno_name(enum http_errno err);
 
+#ifndef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
 /* Return a string description of the given error */
 const char *http_errno_description(enum http_errno err);
 
@@ -329,12 +332,15 @@ const char *http_errno_description(enum http_errno err);
 int http_parser_parse_url(const char *buf, size_t buflen,
                           int is_connect,
                           struct http_parser_url *u);
+#endif
 
 /* Pause or un-pause the parser; a nonzero value pauses */
 void http_parser_pause(http_parser *parser, int paused);
 
+#ifndef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
 /* Checks if this is the final chunk of the body. */
 int http_body_is_final(const http_parser *parser);
+#endif
 
 #ifdef __cplusplus
 }

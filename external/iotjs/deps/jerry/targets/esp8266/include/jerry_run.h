@@ -16,12 +16,14 @@
 #ifndef __JERRY_RUN_H__
 #define __JERRY_RUN_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-int js_entry (const char *source_p, const size_t source_size);
+void js_entry (void);
 int js_eval (const char *source_p, const size_t source_size);
 int js_loop (uint32_t ticknow);
 void js_exit (void);

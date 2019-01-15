@@ -17,7 +17,6 @@
 #include "ecma-gc.h"
 #include "ecma-helpers.h"
 #include "ecma-init-finalize.h"
-#include "ecma-lcache.h"
 #include "ecma-lex-env.h"
 #include "ecma-literal-storage.h"
 #include "jmem.h"
@@ -36,14 +35,13 @@
 void
 ecma_init (void)
 {
-  ecma_lcache_init ();
   ecma_init_global_lex_env ();
 
   jmem_register_free_unused_memory_callback (ecma_free_unused_memory);
 
 #ifndef CONFIG_ECMA_PROPERTY_HASHMAP_DISABLE
   JERRY_CONTEXT (ecma_prop_hashmap_alloc_state) = ECMA_PROP_HASHMAP_ALLOC_ON;
-  JERRY_CONTEXT (ecma_prop_hashmap_alloc_last_is_hs_gc) = false;
+  JERRY_CONTEXT (status_flags) &= (uint32_t) ~ECMA_STATUS_HIGH_SEV_GC;
 #endif /* !CONFIG_ECMA_PROPERTY_HASHMAP_DISABLE */
 
 #ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN

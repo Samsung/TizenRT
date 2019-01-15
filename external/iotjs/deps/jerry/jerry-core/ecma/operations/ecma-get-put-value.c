@@ -50,7 +50,7 @@ ecma_op_get_value_lex_env_base (ecma_object_t *ref_base_lex_env_p, /**< referenc
   const bool is_unresolvable_reference = (ref_base_lex_env_p == NULL);
 
   /* 3. */
-  if (unlikely (is_unresolvable_reference))
+  if (JERRY_UNLIKELY (is_unresolvable_reference))
   {
 #ifdef JERRY_ENABLE_ERROR_MESSAGES
     ecma_value_t var_name_val = ecma_make_string_value (var_name_string_p);
@@ -98,15 +98,14 @@ ecma_op_get_value_object_base (ecma_value_t base_value, /**< base value */
                 || ecma_is_value_number (base_value)
                 || ecma_is_value_string (base_value));
 
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
-
-  ECMA_TRY_CATCH (object_base, ecma_op_to_object (base_value), ret_value);
+  ecma_value_t object_base = ecma_op_to_object (base_value);
+  JERRY_ASSERT (!ECMA_IS_VALUE_ERROR (object_base));
 
   ecma_object_t *object_p = ecma_get_object_from_value (object_base);
   JERRY_ASSERT (object_p != NULL
                 && !ecma_is_lexical_environment (object_p));
 
-  ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  ecma_value_t ret_value = ECMA_VALUE_UNDEFINED;
 
   /* Circular reference is possible in JavaScript and testing it is complicated. */
   int max_depth = ECMA_PROPERTY_SEARCH_DEPTH_LIMIT;
@@ -130,7 +129,7 @@ ecma_op_get_value_object_base (ecma_value_t base_value, /**< base value */
   }
   while (object_p != NULL);
 
-  ECMA_FINALIZE (object_base);
+  ecma_free_value (object_base);
 
   return ret_value;
 } /* ecma_op_get_value_object_base */
@@ -152,7 +151,7 @@ ecma_op_put_value_lex_env_base (ecma_object_t *ref_base_lex_env_p, /**< referenc
   const bool is_unresolvable_reference = (ref_base_lex_env_p == NULL);
 
   /* 3. */
-  if (unlikely (is_unresolvable_reference))
+  if (JERRY_UNLIKELY (is_unresolvable_reference))
   {
     /* 3.a. */
     if (is_strict)
@@ -170,18 +169,16 @@ ecma_op_put_value_lex_env_base (ecma_object_t *ref_base_lex_env_p, /**< referenc
     else
     {
       /* 3.b. */
-      ecma_object_t *global_object_p = ecma_builtin_get (ECMA_BUILTIN_ID_GLOBAL);
+      ecma_object_t *global_object_p = ecma_builtin_get_global ();
 
       ecma_value_t completion = ecma_op_object_put (global_object_p,
                                                     var_name_string_p,
                                                     value,
                                                     false);
 
-      ecma_deref_object (global_object_p);
-
       JERRY_ASSERT (ecma_is_value_boolean (completion));
 
-      return ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+      return ECMA_VALUE_EMPTY;
     }
   }
 

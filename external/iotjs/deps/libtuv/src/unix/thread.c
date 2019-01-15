@@ -592,3 +592,24 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
   abort();
   return -EINVAL;  /* Satisfy the compiler. */
 }
+
+
+#ifdef TUV_FEATURE_PIPE
+int uv_barrier_init(uv_barrier_t* barrier, unsigned int count) {
+  return -pthread_barrier_init(barrier, NULL, count);
+}
+
+
+void uv_barrier_destroy(uv_barrier_t* barrier) {
+  if (pthread_barrier_destroy(barrier))
+    abort();
+}
+
+
+int uv_barrier_wait(uv_barrier_t* barrier) {
+  int r = pthread_barrier_wait(barrier);
+  if (r && r != PTHREAD_BARRIER_SERIAL_THREAD)
+    abort();
+  return r == PTHREAD_BARRIER_SERIAL_THREAD;
+}
+#endif

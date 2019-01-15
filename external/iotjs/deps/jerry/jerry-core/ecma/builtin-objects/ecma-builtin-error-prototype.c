@@ -55,7 +55,7 @@
 static ecma_value_t
 ecma_builtin_error_prototype_object_to_string (ecma_value_t this_arg) /**< this argument */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 2. */
   if (!ecma_is_value_object (this_arg))
@@ -65,51 +65,44 @@ ecma_builtin_error_prototype_object_to_string (ecma_value_t this_arg) /**< this 
   else
   {
     ecma_object_t *obj_p = ecma_get_object_from_value (this_arg);
-    ecma_string_t *name_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_NAME);
 
     ECMA_TRY_CATCH (name_get_ret_value,
-                    ecma_op_object_get (obj_p, name_magic_string_p),
+                    ecma_op_object_get_by_magic_id (obj_p, LIT_MAGIC_STRING_NAME),
                     ret_value);
 
     ecma_value_t name_to_str_completion;
 
     if (ecma_is_value_undefined (name_get_ret_value))
     {
-      ecma_string_t *error_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_ERROR_UL);
-
-      name_to_str_completion = ecma_make_string_value (error_magic_string_p);
+      name_to_str_completion = ecma_make_magic_string_value (LIT_MAGIC_STRING_ERROR_UL);
     }
     else
     {
       name_to_str_completion = ecma_op_to_string (name_get_ret_value);
     }
 
-    if (unlikely (ECMA_IS_VALUE_ERROR (name_to_str_completion)))
+    if (JERRY_UNLIKELY (ECMA_IS_VALUE_ERROR (name_to_str_completion)))
     {
       ret_value = ecma_copy_value (name_to_str_completion);
     }
     else
     {
-      ecma_string_t *message_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_MESSAGE);
-
       ECMA_TRY_CATCH (msg_get_ret_value,
-                      ecma_op_object_get (obj_p, message_magic_string_p),
+                      ecma_op_object_get_by_magic_id (obj_p, LIT_MAGIC_STRING_MESSAGE),
                       ret_value);
 
       ecma_value_t msg_to_str_completion;
 
       if (ecma_is_value_undefined (msg_get_ret_value))
       {
-        ecma_string_t *empty_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING__EMPTY);
-
-        msg_to_str_completion = ecma_make_string_value (empty_magic_string_p);
+        msg_to_str_completion = ecma_make_magic_string_value (LIT_MAGIC_STRING__EMPTY);
       }
       else
       {
         msg_to_str_completion = ecma_op_to_string (msg_get_ret_value);
       }
 
-      if (unlikely (ECMA_IS_VALUE_ERROR (msg_to_str_completion)))
+      if (JERRY_UNLIKELY (ECMA_IS_VALUE_ERROR (msg_to_str_completion)))
       {
         ret_value = ecma_copy_value (msg_to_str_completion);
       }
@@ -173,15 +166,11 @@ ecma_builtin_error_prototype_object_to_string (ecma_value_t this_arg) /**< this 
       ecma_free_value (msg_to_str_completion);
 
       ECMA_FINALIZE (msg_get_ret_value);
-
-      ecma_deref_ecma_string (message_magic_string_p);
     }
 
     ecma_free_value (name_to_str_completion);
 
     ECMA_FINALIZE (name_get_ret_value);
-
-    ecma_deref_ecma_string (name_magic_string_p);
   }
 
   return ret_value;

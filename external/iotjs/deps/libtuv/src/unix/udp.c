@@ -69,6 +69,15 @@
 # define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 #endif
 
+#if defined(__TIZENRT__)
+/* Although TizenRT does not support IPv6, in order to minimize
+ * libtuv source change, I added following macro definitions.
+ */
+#define IPV6_UNICAST_HOPS   16
+#define IPV6_MULTICAST_IF   17
+#define IPV6_MULTICAST_HOPS 18
+#define IPV6_MULTICAST_LOOP 19
+#endif
 
 static void uv__udp_run_completed(uv_udp_t* handle);
 static void uv__udp_io(uv_loop_t* loop, uv__io_t* w, unsigned int revents);
@@ -271,8 +280,6 @@ static void uv__udp_sendmsg(uv_udp_t* handle) {
   QUEUE* q;
 #if !defined(__NUTTX__) && !defined(__TIZENRT__)
   struct msghdr h;
-#else
-  socklen_t addrlen;
 #endif
   ssize_t size;
 
@@ -299,7 +306,7 @@ static void uv__udp_sendmsg(uv_udp_t* handle) {
     do {
       size = sendto(handle->io_watcher.fd, req->bufs->base,
                     req->bufs->len, 0, (struct sockaddr*)&req->addr,
-                    addrlen);
+                    sizeof(req->addr));
     } while (size == -1 && errno == EINTR);
 #endif
     if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
@@ -330,7 +337,7 @@ static void uv__udp_sendmsg(uv_udp_t* handle) {
 static int uv__set_reuse(int fd) {
   int yes;
 
-#if defined(SO_REUSEPORT) && !defined(__linux__)
+#if defined(SO_REUSEPORT) && !defined(__linux__) && !defined(__TIZENRT__)
   yes = 1;
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
     return -errno;
@@ -430,6 +437,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
     addrlen = sizeof *addr;
     break;
   }
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
   case AF_INET6:
   {
     struct sockaddr_in6* addr = (void*)&taddr;
@@ -439,6 +447,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
     addrlen = sizeof *addr;
     break;
   }
+#endif
   default:
     assert(0 && "unsupported address family");
     abort();
@@ -552,7 +561,7 @@ int uv__udp_try_send(uv_udp_t* handle,
 }
 
 
-#if !defined(__NUTTX__) && !defined(__TIZENRT__)
+#if !defined(__NUTTX__)
 static int uv__udp_set_membership4(uv_udp_t* handle,
                                    const struct sockaddr_in* multicast_addr,
                                    const char* interface_addr,
@@ -598,8 +607,10 @@ static int uv__udp_set_membership4(uv_udp_t* handle,
 
   return 0;
 }
+#endif /* !defined(__NUTTX__) */
 
 
+#if !defined(__NUTTX__) && !defined(__TIZENRT__)
 static int uv__udp_set_membership6(uv_udp_t* handle,
                                    const struct sockaddr_in6* multicast_addr,
                                    const char* interface_addr,
@@ -645,7 +656,7 @@ static int uv__udp_set_membership6(uv_udp_t* handle,
 
   return 0;
 }
-#endif
+#endif /* !defined(__NUTTX__) && !defined(__TIZENRT__) */
 
 
 int uv_udp_init_ex(uv_loop_t* loop, uv_udp_t* handle, unsigned int flags) {
@@ -732,6 +743,26 @@ int uv_udp_set_membership(uv_udp_t* handle,
 }
 #endif
 
+
+#if defined(__TIZENRT__)
+int uv_udp_set_membership(uv_udp_t* handle,
+                          const char* multicast_addr,
+                          const char* interface_addr,
+                          uv_membership membership) {
+  int err;
+  struct sockaddr_in addr4;
+
+  if (uv_ip4_addr(multicast_addr, 0, &addr4) == 0) {
+    err = uv__udp_maybe_deferred_bind(handle, AF_INET, UV_UDP_REUSEADDR);
+    if (err)
+      return err;
+    return uv__udp_set_membership4(handle, &addr4, interface_addr, membership);
+  } else {
+    return -EINVAL;
+  }
+}
+#endif /* defined(__TIZENRT__) */
+
 static int uv__setsockopt(uv_udp_t* handle,
                          int option4,
                          int option6,
@@ -789,7 +820,7 @@ int uv_udp_set_broadcast(uv_udp_t* handle, int on) {
 }
 
 
-#if !defined(__NUTTX__) && !defined(__TIZENRT__)
+#if !defined(__NUTTX__)
 int uv_udp_set_ttl(uv_udp_t* handle, int ttl) {
   if (ttl < 1 || ttl > 255)
     return -EINVAL;

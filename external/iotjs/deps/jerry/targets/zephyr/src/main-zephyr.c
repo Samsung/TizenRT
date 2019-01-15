@@ -36,7 +36,7 @@ register_js_function (const char *name_p, /**< name of the function */
 {
   jerry_value_t result_val = jerryx_handler_register_global ((const jerry_char_t *) name_p, handler_p);
 
-  if (jerry_value_has_error_flag (result_val))
+  if (jerry_value_is_error (result_val))
   {
     jerry_port_log (JERRY_LOG_LEVEL_WARNING, "Warning: failed to register '%s' method.", name_p);
   }
@@ -50,9 +50,9 @@ static int shell_cmd_handler (char *source_buffer)
 
   ret_val = jerry_eval ((jerry_char_t *) source_buffer,
     strlen (source_buffer),
-    false);
+    JERRY_PARSE_NO_OPTS);
 
-  if (jerry_value_has_error_flag (ret_val))
+  if (jerry_value_is_error (ret_val))
   {
     /* User-friendly error messages require at least "cp" JerryScript
        profile. Include a message prefix in case "cp_minimal" profile
@@ -60,10 +60,10 @@ static int shell_cmd_handler (char *source_buffer)
     printf ("Error executing statement: ");
     /* Clear error flag, otherwise print call below won't produce any
        output. */
-    jerry_value_clear_error_flag (&ret_val);
+    ret_val = jerry_get_value_from_error (ret_val, true);
   }
 
-  if (!jerry_value_has_error_flag (print_function))
+  if (!jerry_value_is_error (print_function))
   {
     jerry_value_t ret_val_print = jerry_call_function (print_function,
       jerry_create_undefined (),
@@ -79,6 +79,7 @@ static int shell_cmd_handler (char *source_buffer)
 
 void main (void)
 {
+  srand ((unsigned) jerry_port_get_current_time ());
   uint32_t zephyr_ver = sys_kernel_version_get ();
   printf ("JerryScript build: " __DATE__ " " __TIME__ "\n");
   printf ("JerryScript API %d.%d\n", JERRY_API_MAJOR_VERSION, JERRY_API_MINOR_VERSION);
@@ -95,7 +96,7 @@ void main (void)
   print_function = jerry_get_property (global_obj_val, print_func_name_val);
   jerry_release_value (print_func_name_val);
   jerry_release_value (global_obj_val);
-  if (jerry_value_has_error_flag (print_function))
+  if (jerry_value_is_error (print_function))
   {
     printf ("Error: could not look up print function, expression results won't be printed\n");
   }

@@ -23,34 +23,6 @@
 #include "jrt-types.h"
 
 /*
- * Attributes
- */
-#define __noreturn __attribute__((noreturn))
-#define __attr_noinline___ __attribute__((noinline))
-#define __attr_return_value_should_be_checked___ __attribute__((warn_unused_result))
-#define __attr_hot___ __attribute__((hot))
-#ifndef __attr_always_inline___
-#define __attr_always_inline___ __attribute__((always_inline))
-#endif /* !__attr_always_inline___ */
-#ifndef __attr_const___
-#define __attr_const___ __attribute__((const))
-#endif /* !__attr_const___ */
-#ifndef __attr_pure___
-#define __attr_pure___ __attribute__((pure))
-#endif /* !__attr_pure___ */
-
-/*
- * Conditions' likeliness, unlikeliness.
- */
-#ifdef __GNUC__
-#define likely(x)       __builtin_expect(!!(x), 1)
-#define unlikely(x)     __builtin_expect(!!(x), 0)
-#else /* !__GNUC__ */
-#define likely(x)       (x)
-#define unlikely(x)     (x)
-#endif /* __GNUC__ */
-
-/*
  * Normally compilers store const(ant)s in ROM. Thus saving RAM.
  * But if your compiler does not support it then the directive below can force it.
  *
@@ -71,6 +43,19 @@
  */
 #define JERRY_UNUSED(x) ((void) (x))
 
+#define JERRY_UNUSED_1(_1)                 JERRY_UNUSED (_1)
+#define JERRY_UNUSED_2(_1, _2)             JERRY_UNUSED (_1), JERRY_UNUSED_1 (_2)
+#define JERRY_UNUSED_3(_1, _2, _3)         JERRY_UNUSED (_1), JERRY_UNUSED_2 (_2, _3)
+#define JERRY_UNUSED_4(_1, _2, _3, _4)     JERRY_UNUSED (_1), JERRY_UNUSED_3 (_2, _3, _4)
+#define JERRY_UNUSED_5(_1, _2, _3, _4, _5) JERRY_UNUSED (_1), JERRY_UNUSED_4 (_2, _3, _4, _5)
+
+#define JERRY_VA_ARGS_NUM_IMPL(_1, _2, _3, _4, _5, N, ...) N
+#define JERRY_VA_ARGS_NUM(...) JERRY_VA_ARGS_NUM_IMPL (__VA_ARGS__, 5, 4, 3, 2, 1, 0)
+
+#define JERRY_UNUSED_ALL_IMPL_(nargs) JERRY_UNUSED_ ## nargs
+#define JERRY_UNUSED_ALL_IMPL(nargs) JERRY_UNUSED_ALL_IMPL_ (nargs)
+#define JERRY_UNUSED_ALL(...) JERRY_UNUSED_ALL_IMPL (JERRY_VA_ARGS_NUM (__VA_ARGS__)) (__VA_ARGS__)
+
 /*
  * Asserts
  *
@@ -85,13 +70,15 @@
   enum { JERRY_STATIC_ASSERT_GLUE (static_assertion_failed_, __LINE__, msg) = 1 / (!!(x)) }
 
 #ifndef JERRY_NDEBUG
-void __noreturn jerry_assert_fail (const char *assertion, const char *file, const char *function, const uint32_t line);
-void __noreturn jerry_unreachable (const char *file, const char *function, const uint32_t line);
+void JERRY_ATTR_NORETURN
+jerry_assert_fail (const char *assertion, const char *file, const char *function, const uint32_t line);
+void JERRY_ATTR_NORETURN
+jerry_unreachable (const char *file, const char *function, const uint32_t line);
 
 #define JERRY_ASSERT(x) \
   do \
   { \
-    if (unlikely (!(x))) \
+    if (JERRY_UNLIKELY (!(x))) \
     { \
       jerry_assert_fail (#x, __FILE__, __func__, __LINE__); \
     } \
@@ -114,23 +101,37 @@ void __noreturn jerry_unreachable (const char *file, const char *function, const
 
 #ifdef __GNUC__
 #define JERRY_UNREACHABLE() __builtin_unreachable ()
-#else /* !__GNUC__ */
-#define JERRY_UNREACHABLE()
 #endif /* __GNUC__ */
+
+#ifdef _MSC_VER
+#define JERRY_UNREACHABLE()  _assume (0)
+#endif /* _MSC_VER */
+
+#ifndef JERRY_UNREACHABLE
+#define JERRY_UNREACHABLE()
+#endif /* !JERRY_UNREACHABLE */
+
 #endif /* !JERRY_NDEBUG */
 
 /**
  * Exit on fatal error
  */
-void __noreturn jerry_fatal (jerry_fatal_code_t code);
+void JERRY_ATTR_NORETURN jerry_fatal (jerry_fatal_code_t code);
 
 /*
  * Logging
  */
+#ifdef JERRY_ENABLE_LOGGING
 #define JERRY_ERROR_MSG(...) jerry_port_log (JERRY_LOG_LEVEL_ERROR, __VA_ARGS__)
 #define JERRY_WARNING_MSG(...) jerry_port_log (JERRY_LOG_LEVEL_WARNING, __VA_ARGS__)
 #define JERRY_DEBUG_MSG(...) jerry_port_log (JERRY_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define JERRY_TRACE_MSG(...) jerry_port_log (JERRY_LOG_LEVEL_TRACE, __VA_ARGS__)
+#else /* !JERRY_ENABLE_LOGGING */
+#define JERRY_ERROR_MSG(...) do { if (false) { JERRY_UNUSED_ALL (__VA_ARGS__); } } while (0)
+#define JERRY_WARNING_MSG(...) do { if (false) { JERRY_UNUSED_ALL (__VA_ARGS__); } } while (0)
+#define JERRY_DEBUG_MSG(...) do { if (false) { JERRY_UNUSED_ALL (__VA_ARGS__); } } while (0)
+#define JERRY_TRACE_MSG(...) do { if (false) { JERRY_UNUSED_ALL (__VA_ARGS__); } } while (0)
+#endif /* JERRY_ENABLE_LOGGING */
 
 /**
  * Size of struct member
@@ -149,5 +150,14 @@ void __noreturn jerry_fatal (jerry_fatal_code_t code);
  */
 #define JERRY_MIN(v1, v2) (((v1) < (v2)) ? (v1) : (v2))
 #define JERRY_MAX(v1, v2) (((v1) < (v2)) ? (v2) : (v1))
+
+/**
+ * Calculate the index of the first non-zero bit of a 32 bit integer value
+ */
+#define JERRY__LOG2_1(n) (((n) >= 2) ? 1 : 0)
+#define JERRY__LOG2_2(n) (((n) >= 1 << 2) ? (2 + JERRY__LOG2_1 ((n) >> 2)) : JERRY__LOG2_1 (n))
+#define JERRY__LOG2_4(n) (((n) >= 1 << 4) ? (4 + JERRY__LOG2_2 ((n) >> 4)) : JERRY__LOG2_2 (n))
+#define JERRY__LOG2_8(n) (((n) >= 1 << 8) ? (8 + JERRY__LOG2_4 ((n) >> 8)) : JERRY__LOG2_4 (n))
+#define JERRY_LOG2(n) (((n) >= 1 << 16) ? (16 + JERRY__LOG2_8 ((n) >> 16)) : JERRY__LOG2_8 (n))
 
 #endif /* !JRT_H */

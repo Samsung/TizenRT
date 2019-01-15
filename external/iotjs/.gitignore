@@ -5,7 +5,10 @@
 /src/iotjs_js.h
 /src/iotjs_js.c
 /src/iotjs_string_ext.inl.h
+/src/iotjs_module_inl.h
 /test/tmp/*
+/test/dynamicmodule/build/*
+eslint.log
 
 # IDE related files
 nbproject
@@ -25,6 +28,13 @@ vgcore.*
 .tags*
 cscope.*
 *.pyc
+
+# Dependency directories
+node_modules/
+iotjs_modules/
+
+# Coverage directory used by tools like istanbul
+coverage
 
 # ctags and ID database
 tags

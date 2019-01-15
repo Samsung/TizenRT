@@ -52,7 +52,9 @@
 #include <netdb.h>
 
 #include <termios.h>
+#if !defined(__NUTTX__) && !defined(__TIZENRT__)
 #include <pwd.h>
+#endif
 
 #include <semaphore.h>
 #include <pthread.h>

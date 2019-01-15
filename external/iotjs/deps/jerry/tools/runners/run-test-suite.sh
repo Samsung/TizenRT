@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Usage:
-#       ./tools/runners/run-test-suite.sh ENGINE TESTS [--skip-list=item1,item2] [--snapshot] ENGINE_ARGS....
+#       ./tools/runners/run-test-suite.sh ENGINE TESTS [-q] [--skip-list=item1,item2] [--snapshot] ENGINE_ARGS....
 
 TIMEOUT=${TIMEOUT:=5}
 TIMEOUT_CMD=`which timeout`
@@ -37,10 +37,23 @@ TEST_FILES=$OUTPUT_DIR/$TESTS_BASENAME.files
 TEST_FAILED=$OUTPUT_DIR/$TESTS_BASENAME.failed
 TEST_PASSED=$OUTPUT_DIR/$TESTS_BASENAME.passed
 
+TERM_NORMAL="\033[0m"
+TERM_RED="\033[1;31m"
+TERM_GREEN="\033[1;32m"
+
+trap 'exit' SIGINT
+
+VERBOSE=1
+if [[ "$1" == "-q" ]]
+then
+    unset VERBOSE
+    shift
+fi
+
 if [[ "$1" =~ ^--skip-list=.* ]]
 then
     SKIP_LIST=${1#--skip-list=}
-    SKIP_LIST=(${SKIP_LIST//,/ })
+    SKIP_LIST=${SKIP_LIST//,/ }
     shift
 fi
 
@@ -49,7 +62,14 @@ then
     TEST_FILES="$TEST_FILES.snapshot"
     TEST_FAILED="$TEST_FAILED.snapshot"
     TEST_PASSED="$TEST_PASSED.snapshot"
-    IS_SNAPSHOT=true;
+    IS_SNAPSHOT=true
+
+    SNAPSHOT_TOOL=${ENGINE}-snapshot
+    if [ ! -x $SNAPSHOT_TOOL ]
+    then
+        echo "$0: $SNAPSHOT_TOOL: not an executable"
+        exit 1
+    fi
     shift
 fi
 
@@ -65,7 +85,7 @@ if [ -d $TESTS ]
 then
     TESTS_DIR=$TESTS
 
-    ( cd $TESTS; find . -name "[^N]*.js" ) | sort > $TEST_FILES
+    ( cd $TESTS; find . -name "*.js" ) | sort > $TEST_FILES
 elif [ -f $TESTS ]
 then
     TESTS_DIR=`dirname $TESTS`
@@ -77,7 +97,7 @@ else
 fi
 
 # Remove the skipped tests from list
-for TEST in "${SKIP_LIST[@]}"
+for TEST in ${SKIP_LIST}
 do
     ( sed -i -r "/$TEST/d" $TEST_FILES )
 done
@@ -134,29 +154,29 @@ do
         # Testing snapshot
         SNAPSHOT_TEMP=`mktemp $(basename -s .js $test).snapshot.XXXXXXXXXX`
 
-        cmd_line="${ENGINE#$ROOT_DIR} $ENGINE_ARGS --save-snapshot-for-global $SNAPSHOT_TEMP ${full_test#$ROOT_DIR}"
-        $TIMEOUT_CMD $TIMEOUT $ENGINE $ENGINE_ARGS --save-snapshot-for-global $SNAPSHOT_TEMP $full_test &> $ENGINE_TEMP
+        $TIMEOUT_CMD $TIMEOUT $RUNTIME $SNAPSHOT_TOOL generate -o $SNAPSHOT_TEMP $full_test &> $ENGINE_TEMP
         status_code=$?
+        comment=" (generate snapshot)"
 
         if [ $status_code -eq 0 ]
         then
-            echo "[$tested/$TOTAL] $cmd_line: PASS"
+            test $VERBOSE && printf "[%4d/%4d] %bPASS: %s%s%b\n" "$tested" "$TOTAL" "$TERM_GREEN" "${full_test#$ROOT_DIR}" "$comment" "$TERM_NORMAL"
 
-            cmd_line="${ENGINE#$ROOT_DIR} $ENGINE_ARGS --exec-snapshot $SNAPSHOT_TEMP"
-            $TIMEOUT_CMD $TIMEOUT $ENGINE $ENGINE_ARGS --exec-snapshot $SNAPSHOT_TEMP &> $ENGINE_TEMP
+            $TIMEOUT_CMD $TIMEOUT $RUNTIME $ENGINE $ENGINE_ARGS --exec-snapshot $SNAPSHOT_TEMP &> $ENGINE_TEMP
             status_code=$?
+            comment=" (execute snapshot)"
         fi
 
         rm -f $SNAPSHOT_TEMP
     else
-        cmd_line="${ENGINE#$ROOT_DIR} $ENGINE_ARGS ${full_test#$ROOT_DIR}"
-        $TIMEOUT_CMD $TIMEOUT $ENGINE $ENGINE_ARGS $full_test &> $ENGINE_TEMP
+        $TIMEOUT_CMD $TIMEOUT $RUNTIME $ENGINE $ENGINE_ARGS $full_test &> $ENGINE_TEMP
         status_code=$?
+        comment=""
     fi
 
     if [ $status_code -ne $error_code ]
     then
-        echo "[$tested/$TOTAL] $cmd_line: FAIL ($status_code)"
+        printf "[%4d/%4d] %bFAIL (%d): %s%s%b\n" "$tested" "$TOTAL" "$TERM_RED" "$status_code" "${full_test#$ROOT_DIR}" "$comment" "$TERM_NORMAL"
         cat $ENGINE_TEMP
 
         echo "$status_code: $test" >> $TEST_FAILED
@@ -168,8 +188,7 @@ do
 
         failed=$((failed+1))
     else
-        echo "[$tested/$TOTAL] $cmd_line: $PASS"
-
+        test $VERBOSE && printf "[%4d/%4d] %b%s: %s%s%b\n" "$tested" "$TOTAL" "$TERM_GREEN" "$PASS" "${full_test#$ROOT_DIR}" "$comment" "$TERM_NORMAL"
         echo "$test" >> $TEST_PASSED
 
         passed=$((passed+1))
@@ -181,13 +200,23 @@ done
 rm -f $ENGINE_TEMP
 
 ratio=$(echo $passed*100/$TOTAL | bc)
+if [ $passed -eq $TOTAL ]
+then
+    success_color=$TERM_GREEN
+else
+    success_color=$TERM_RED
+fi
 
 if [ "$IS_SNAPSHOT" == true ]
 then
     ENGINE_ARGS="--snapshot $ENGINE_ARGS"
 fi
 
-echo "[summary] ${ENGINE#$ROOT_DIR} $ENGINE_ARGS ${TESTS#$ROOT_DIR}: $passed PASS, $failed FAIL, $TOTAL total, $ratio% success"
+echo -e "\n[summary] ${ENGINE#$ROOT_DIR} $ENGINE_ARGS ${TESTS#$ROOT_DIR}\n"
+echo -e "TOTAL: $TOTAL"
+echo -e "${TERM_GREEN}PASS: $passed${TERM_NORMAL}"
+echo -e "${TERM_RED}FAIL: $failed${TERM_NORMAL}\n"
+echo -e "${success_color}Success: $ratio%${TERM_NORMAL}\n"
 
 if [ $failed -ne 0 ]
 then

@@ -44,9 +44,9 @@ jerry_value_t print_function;
 
 void jerry_resolve_error (jerry_value_t ret_value)
 {
-  if (jerry_value_has_error_flag (ret_value))
+  if (jerry_value_is_error (ret_value))
   {
-    jerry_value_clear_error_flag (&ret_value);
+    ret_value = jerry_get_value_from_error (ret_value, true);
     jerry_value_t err_str_val = jerry_value_to_string (ret_value);
     jerry_size_t err_str_size = jerry_get_string_size (err_str_val);
     jerry_char_t *err_str_buf = (jerry_char_t *) balloc (err_str_size, NULL);
@@ -111,9 +111,9 @@ void eval_jerry_script (int argc, char *argv[], struct tcmd_handler_ctx *ctx)
     }
     *p = '\0';
 
-    jerry_value_t eval_ret = jerry_eval (buffer, str_total_length - 1, false);
+    jerry_value_t eval_ret = jerry_eval (buffer, str_total_length - 1, JERRY_PARSE_NO_OPTS);
 
-    if (jerry_value_has_error_flag (eval_ret))
+    if (jerry_value_is_error (eval_ret))
     {
       jerry_resolve_error (eval_ret);
       TCMD_RSP_ERROR (ctx, NULL);
@@ -136,6 +136,7 @@ void eval_jerry_script (int argc, char *argv[], struct tcmd_handler_ctx *ctx)
 
 void jerry_start ()
 {
+  srand ((unsigned) jerry_port_get_current_time ());
   jerry_init (JERRY_INIT_EMPTY);
   jerry_value_t global_obj_val = jerry_get_global_object ();
   jerry_value_t print_func_name_val = jerry_create_string ((jerry_char_t *) "print");

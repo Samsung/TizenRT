@@ -100,7 +100,7 @@ ecma_builtin_arraybuffer_prototype_object_slice (ecma_value_t this_arg, /**< thi
 
   ecma_length_t start = 0, end = len;
 
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   ECMA_OP_TO_NUMBER_TRY_CATCH (start_num,
                                arg1,
@@ -120,6 +120,11 @@ ecma_builtin_arraybuffer_prototype_object_slice (ecma_value_t this_arg, /**< thi
   }
 
   ECMA_OP_TO_NUMBER_FINALIZE (start_num);
+
+  if (ret_value != ECMA_VALUE_EMPTY)
+  {
+    return ret_value;
+  }
 
   JERRY_ASSERT (start <= len && end <= len);
   ecma_length_t new_len = (end >= start) ? (end - start) : 0;

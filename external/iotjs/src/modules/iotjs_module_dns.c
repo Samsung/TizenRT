@@ -15,111 +15,117 @@
 
 #include "iotjs_def.h"
 
-#include "iotjs_module_dns.h"
+#include "iotjs_uv_request.h"
 
-#include "iotjs_reqwrap.h"
-#include "uv.h"
-
-
-#define THIS iotjs_getaddrinfo_reqwrap_t* getaddrinfo_reqwrap
-
-iotjs_getaddrinfo_reqwrap_t* iotjs_getaddrinfo_reqwrap_create(
-    const iotjs_jval_t* jcallback) {
-  iotjs_getaddrinfo_reqwrap_t* getaddrinfo_reqwrap =
-      IOTJS_ALLOC(iotjs_getaddrinfo_reqwrap_t);
-  IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_getaddrinfo_reqwrap_t,
-                                     getaddrinfo_reqwrap);
-  iotjs_reqwrap_initialize(&_this->reqwrap, jcallback, (uv_req_t*)&_this->req);
-  return getaddrinfo_reqwrap;
+#if !defined(__NUTTX__)
+char* getaddrinfo_error_str(int status) {
+  switch (status) {
+    case UV__EAI_ADDRFAMILY:
+      return "EAI_ADDRFAMILY, address family for hostname not supported";
+    case UV__EAI_AGAIN:
+      return "EAI_AGAIN, temporary failure in name resolution";
+    case UV__EAI_BADFLAGS:
+      return "EAI_BADFLAGS, bad flags";
+    case UV__EAI_FAIL:
+      return "EAI_FAIL, Non-recoverable failure in name resolution";
+    case UV__EAI_FAMILY:
+      return "EAI_FAMILY, family not supported";
+    case UV__EAI_CANCELED:
+      return "EAI_CANCELED, request canceled";
+    case UV__EAI_MEMORY:
+      return "EAI_MEMORY, memory allocation failure";
+    case UV__EAI_NODATA:
+      return "EAI_NODATA, no address association with hostname";
+    case UV__EAI_NONAME:
+      return "EAI_NONAME, name or service not known";
+    case UV__EAI_OVERFLOW:
+      return "EAI_OVERFLOW, argument buffer overflow";
+    case UV__EAI_SERVICE:
+      return "EAI_SERVICE, service not supported";
+    case UV__EAI_SOCKTYPE:
+      return "EAI_SOCKTYPE, socktype not supported";
+    case UV__EAI_PROTOCOL:
+      return "EAI_PROTOCOL, unknown error";
+    default:
+      return "unknown error";
+  }
 }
 
-
-static void iotjs_getaddrinfo_reqwrap_destroy(THIS) {
-  IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_getaddrinfo_reqwrap_t,
-                                    getaddrinfo_reqwrap);
-  iotjs_reqwrap_destroy(&_this->reqwrap);
-  IOTJS_RELEASE(getaddrinfo_reqwrap);
-}
-
-
-void iotjs_getaddrinfo_reqwrap_dispatched(THIS) {
-  IOTJS_VALIDATABLE_STRUCT_METHOD_VALIDATE(iotjs_getaddrinfo_reqwrap_t,
-                                           getaddrinfo_reqwrap);
-  iotjs_getaddrinfo_reqwrap_destroy(getaddrinfo_reqwrap);
-}
-
-
-uv_getaddrinfo_t* iotjs_getaddrinfo_reqwrap_req(THIS) {
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_getaddrinfo_reqwrap_t,
-                                getaddrinfo_reqwrap);
-  return &_this->req;
-}
-
-
-const iotjs_jval_t* iotjs_getaddrinfo_reqwrap_jcallback(THIS) {
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_getaddrinfo_reqwrap_t,
-                                getaddrinfo_reqwrap);
-  return iotjs_reqwrap_jcallback(&_this->reqwrap);
-}
-
-#undef THIS
-
-
-#if !defined(__NUTTX__) && !defined(__TIZENRT__)
 static void AfterGetAddrInfo(uv_getaddrinfo_t* req, int status,
                              struct addrinfo* res) {
-  iotjs_getaddrinfo_reqwrap_t* req_wrap =
-      (iotjs_getaddrinfo_reqwrap_t*)(req->data);
+  size_t argc = 0;
+  jerry_value_t args[3] = { 0 };
 
-  iotjs_jargs_t args = iotjs_jargs_create(3);
-  iotjs_jargs_append_number(&args, status);
-
-  if (status == 0) {
+  if (status == 0 && res != NULL) {
     char ip[INET6_ADDRSTRLEN];
     int family;
     const char* addr;
+    struct addrinfo* info;
 
-    // Only first address is used
-    if (res->ai_family == AF_INET) {
-      struct sockaddr_in* sockaddr = (struct sockaddr_in*)(res->ai_addr);
+    /* search for the first AF_INET entry */
+    for (info = res; info != NULL; info = info->ai_next) {
+      if (info->ai_family == AF_INET) {
+        break;
+      }
+    }
+
+    if (info == NULL) {
+      /* Did not find an AF_INET addr, using the first one */
+      info = res;
+    }
+
+    IOTJS_ASSERT(info != NULL);
+
+    if (info->ai_family == AF_INET) {
+      struct sockaddr_in* sockaddr = (struct sockaddr_in*)(info->ai_addr);
       addr = (char*)(&(sockaddr->sin_addr));
       family = 4;
     } else {
-      struct sockaddr_in6* sockaddr = (struct sockaddr_in6*)(res->ai_addr);
+      struct sockaddr_in6* sockaddr = (struct sockaddr_in6*)(info->ai_addr);
       addr = (char*)(&(sockaddr->sin6_addr));
       family = 6;
     }
 
-    int err = uv_inet_ntop(res->ai_family, addr, ip, INET6_ADDRSTRLEN);
+    int err = uv_inet_ntop(info->ai_family, addr, ip, INET6_ADDRSTRLEN);
     if (err) {
       ip[0] = 0;
+      args[argc++] = iotjs_jval_create_error_without_error_flag(
+          "EAFNOSUPPORT, DNS could not resolve hostname");
+    } else {
+      args[argc++] = jerry_create_null();
     }
 
-    iotjs_jargs_append_string_raw(&args, ip);
-    iotjs_jargs_append_number(&args, family);
+    args[argc++] = jerry_create_string_from_utf8((const jerry_char_t*)ip);
+    args[argc++] = jerry_create_number(family);
+  } else {
+    args[argc++] = iotjs_jval_create_error_without_error_flag(
+        getaddrinfo_error_str(status));
   }
 
   uv_freeaddrinfo(res);
 
   // Make the callback into JavaScript
-  iotjs_make_callback(iotjs_getaddrinfo_reqwrap_jcallback(req_wrap),
-                      iotjs_jval_get_undefined(), &args);
+  jerry_value_t jcallback = *IOTJS_UV_REQUEST_JSCALLBACK(req);
+  iotjs_invoke_callback(jcallback, jerry_create_undefined(), args, argc);
 
-  iotjs_jargs_destroy(&args);
+  for (size_t i = 0; i < argc; i++) {
+    jerry_release_value(args[i]);
+  }
 
-  iotjs_getaddrinfo_reqwrap_dispatched(req_wrap);
+  iotjs_uv_request_destroy((uv_req_t*)req);
 }
 #endif
 
 
-JHANDLER_FUNCTION(GetAddrInfo) {
-  DJHANDLER_CHECK_THIS(object);
-  DJHANDLER_CHECK_ARGS(4, string, number, number, function);
+JS_FUNCTION(GetAddressInfo) {
+  DJS_CHECK_THIS();
+  DJS_CHECK_ARGS(4, string, number, number, function);
 
-  iotjs_string_t hostname = JHANDLER_GET_ARG(0, string);
-  int option = JHANDLER_GET_ARG(1, number);
-  int flags = JHANDLER_GET_ARG(2, number);
-  const iotjs_jval_t* jcallback = JHANDLER_GET_ARG(3, function);
+  iotjs_string_t hostname = JS_GET_ARG(0, string);
+  int option = JS_GET_ARG(1, number);
+  int flags = JS_GET_ARG(2, number);
+  int error = 0;
+  const jerry_value_t jcallback = JS_GET_ARG(3, function);
 
   int family;
   if (option == 0) {
@@ -133,39 +139,47 @@ JHANDLER_FUNCTION(GetAddrInfo) {
   } else if (option == 6) {
     family = AF_INET6;
   } else {
-    JHANDLER_THROW(TYPE, "bad address family");
-    return;
+    iotjs_string_destroy(&hostname);
+    return JS_CREATE_ERROR(TYPE, "bad address family");
   }
 
-#if defined(__NUTTX__) || defined(__TIZENRT__)
-  iotjs_jargs_t args = iotjs_jargs_create(3);
-  int err = 0;
-  char ip[INET6_ADDRSTRLEN];
+#if defined(__NUTTX__)
+  char ip[INET6_ADDRSTRLEN] = "";
   const char* hostname_data = iotjs_string_data(&hostname);
 
   if (strcmp(hostname_data, "localhost") == 0) {
-    strcpy(ip, "127.0.0.1");
+    strncpy(ip, "127.0.0.1", strlen("127.0.0.1") + 1);
   } else {
     struct sockaddr_in addr;
-    int result = inet_pton(family, hostname_data, &(addr.sin_addr));
 
-    if (result != 1) {
-      err = errno;
-    } else {
+    if (inet_pton(family, hostname_data, &(addr.sin_addr)) == 1) {
       inet_ntop(family, &(addr.sin_addr), ip, INET6_ADDRSTRLEN);
+    } else {
+      error = EAFNOSUPPORT;
     }
   }
 
-  iotjs_jargs_append_number(&args, err);
-  iotjs_jargs_append_string_raw(&args, ip);
-  iotjs_jargs_append_number(&args, option);
+  size_t argc = 0;
+  jerry_value_t args[3] = { 0 };
 
-  iotjs_make_callback(jcallback, iotjs_jval_get_undefined(), &args);
-  iotjs_jargs_destroy(&args);
+  if (error) {
+    args[argc++] = iotjs_jval_create_error_without_error_flag(
+        "EAFNOSUPPORT, could not resolve hostname");
+  } else {
+    args[argc++] = jerry_create_null();
+  }
+
+  args[argc++] = jerry_create_string_from_utf8((const jerry_char_t*)ip);
+  args[argc++] = jerry_create_number(option);
+
+  iotjs_invoke_callback(jcallback, jerry_create_undefined(), args, argc);
+  for (size_t i = 0; i < argc; i++) {
+    jerry_release_value(args[i]);
+  }
   IOTJS_UNUSED(flags);
 #else
-  iotjs_getaddrinfo_reqwrap_t* req_wrap =
-      iotjs_getaddrinfo_reqwrap_create(jcallback);
+  uv_req_t* req_addr =
+      iotjs_uv_request_create(sizeof(uv_getaddrinfo_t), jcallback, 0);
 
   static const struct addrinfo empty_hints;
   struct addrinfo hints = empty_hints;
@@ -173,19 +187,19 @@ JHANDLER_FUNCTION(GetAddrInfo) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = flags;
 
-  int err =
-      uv_getaddrinfo(iotjs_environment_loop(iotjs_environment_get()),
-                     iotjs_getaddrinfo_reqwrap_req(req_wrap), AfterGetAddrInfo,
-                     iotjs_string_data(&hostname), NULL, &hints);
+  error = uv_getaddrinfo(iotjs_environment_loop(iotjs_environment_get()),
+                         (uv_getaddrinfo_t*)req_addr, AfterGetAddrInfo,
+                         iotjs_string_data(&hostname), NULL, &hints);
 
-  if (err) {
-    iotjs_getaddrinfo_reqwrap_dispatched(req_wrap);
+  if (error) {
+    iotjs_uv_request_destroy(req_addr);
   }
 #endif
 
-  iotjs_jhandler_return_number(jhandler, err);
 
   iotjs_string_destroy(&hostname);
+
+  return jerry_create_number(error);
 }
 
 
@@ -195,12 +209,12 @@ JHANDLER_FUNCTION(GetAddrInfo) {
   } while (0)
 
 
-iotjs_jval_t InitDns() {
-  iotjs_jval_t dns = iotjs_jval_create_object();
+jerry_value_t InitDns() {
+  jerry_value_t dns = jerry_create_object();
 
-  iotjs_jval_set_method(&dns, IOTJS_MAGIC_STRING_GETADDRINFO, GetAddrInfo);
-  SET_CONSTANT(&dns, AI_ADDRCONFIG);
-  SET_CONSTANT(&dns, AI_V4MAPPED);
+  iotjs_jval_set_method(dns, IOTJS_MAGIC_STRING_GETADDRINFO, GetAddressInfo);
+  SET_CONSTANT(dns, AI_ADDRCONFIG);
+  SET_CONSTANT(dns, AI_V4MAPPED);
 
   return dns;
 }

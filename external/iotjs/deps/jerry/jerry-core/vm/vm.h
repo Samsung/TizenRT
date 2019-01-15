@@ -41,7 +41,8 @@
  */
 
 /**
- * Branch argument is a backward branch
+ * If VM_OC_GET_ARGS_INDEX(opcode) == VM_OC_GET_BRANCH,
+ * this flag signals that the branch is a backward branch.
  */
 #define VM_OC_BACKWARD_BRANCH 0x4000
 
@@ -102,22 +103,28 @@ typedef enum
  */
 typedef enum
 {
-  VM_OC_NONE,                    /**< do nothing */
   VM_OC_POP,                     /**< pop from stack */
   VM_OC_POP_BLOCK,               /**< pop block */
-  VM_OC_PUSH,                    /**< push one element  */
-  VM_OC_PUSH_TWO,                /**< push two elements onto the stack */
-  VM_OC_PUSH_THREE,              /**< push three elements onto the stack */
+  VM_OC_PUSH,                    /**< push one literal  */
+  VM_OC_PUSH_TWO,                /**< push two literals */
+  VM_OC_PUSH_THREE,              /**< push three literals */
   VM_OC_PUSH_UNDEFINED,          /**< push undefined value */
   VM_OC_PUSH_TRUE,               /**< push true value */
   VM_OC_PUSH_FALSE,              /**< push false value */
   VM_OC_PUSH_NULL,               /**< push null value */
   VM_OC_PUSH_THIS,               /**< push this */
-  VM_OC_PUSH_NUMBER_0,           /**< push number zero */
-  VM_OC_PUSH_NUMBER_POS_BYTE,    /**< push number between 1 and 256 */
-  VM_OC_PUSH_NUMBER_NEG_BYTE,    /**< push number between -1 and -256 */
+  VM_OC_PUSH_0,                  /**< push number zero */
+  VM_OC_PUSH_POS_BYTE,           /**< push number between 1 and 256 */
+  VM_OC_PUSH_NEG_BYTE,           /**< push number between -1 and -256 */
+  VM_OC_PUSH_LIT_0,              /**< push literal and number zero */
+  VM_OC_PUSH_LIT_POS_BYTE,       /**< push literal and number between 1 and 256 */
+  VM_OC_PUSH_LIT_NEG_BYTE,       /**< push literal and number between -1 and -256 */
   VM_OC_PUSH_OBJECT,             /**< push object */
+  VM_OC_PUSH_NAMED_FUNC_EXPR,    /**< push named function expression */
   VM_OC_SET_PROPERTY,            /**< set property */
+#ifndef CONFIG_DISABLE_ES2015_OBJECT_INITIALIZER
+  VM_OC_SET_COMPUTED_PROPERTY,   /**< set computed property */
+#endif /* !CONFIG_DISABLE_ES2015_OBJECT_INITIALIZER */
   VM_OC_SET_GETTER,              /**< set getter */
   VM_OC_SET_SETTER,              /**< set setter */
   VM_OC_PUSH_UNDEFINED_BASE,     /**< push undefined base */
@@ -152,6 +159,8 @@ typedef enum
   VM_OC_EVAL,                    /**< eval */
   VM_OC_CALL,                    /**< call */
   VM_OC_NEW,                     /**< new */
+  VM_OC_RESOLVE_BASE_FOR_CALL,   /**< resolve base value before call */
+  VM_OC_ERROR,                   /**< error while the vm_loop is suspended */
 
   VM_OC_JUMP,                    /**< jump */
   VM_OC_BRANCH_IF_STRICT_EQUAL,  /**< branch if stric equal */
@@ -203,9 +212,65 @@ typedef enum
   VM_OC_FINALLY,                 /**< finally */
   VM_OC_CONTEXT_END,             /**< context end */
   VM_OC_JUMP_AND_EXIT_CONTEXT,   /**< jump and exit context */
-  VM_OC_BREAKPOINT_ENABLED,       /**< enabled breakpoint for debugger */
-  VM_OC_BREAKPOINT_DISABLED,      /**< disabled breakpoint for debugger */
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+  VM_OC_CLASS_HERITAGE,          /**< create a super class context */
+  VM_OC_CLASS_INHERITANCE,       /**< inherit properties from the 'super' class */
+  VM_OC_PUSH_CLASS_CONSTRUCTOR,  /**< push class constructor */
+  VM_OC_SET_CLASS_CONSTRUCTOR,   /**< set class constructor to the given function literal */
+  VM_OC_PUSH_IMPL_CONSTRUCTOR,   /**< create implicit class constructor */
+  VM_OC_CLASS_EXPR_CONTEXT_END,  /**< class expression heritage context end */
+  VM_OC_CLASS_EVAL,              /**< eval inside a class */
+  VM_OC_SUPER_CALL,              /**< call the 'super' constructor */
+  VM_OC_SUPER_PROP_REFERENCE,    /**< resolve super property reference */
+  VM_OC_PUSH_SUPER,              /**< push resolvable super reference */
+  VM_OC_PUSH_CONSTRUCTOR_SUPER,  /**< push 'super' inside a class constructor */
+  VM_OC_PUSH_CONSTRUCTOR_THIS,   /**< push 'this' inside a class constructor */
+  VM_OC_CONSTRUCTOR_RET,         /**< explicit return from a class constructor */
+#endif /* !CONFIG_DISABLE_ES2015 */
+#ifdef JERRY_DEBUGGER
+  VM_OC_BREAKPOINT_ENABLED,      /**< enabled breakpoint for debugger */
+  VM_OC_BREAKPOINT_DISABLED,     /**< disabled breakpoint for debugger */
+#endif /* JERRY_DEBUGGER */
+#ifdef JERRY_ENABLE_LINE_INFO
+  VM_OC_RESOURCE_NAME,           /**< resource name of the current function */
+  VM_OC_LINE,                    /**< line number of the next statement */
+#endif /* JERRY_ENABLE_LINE_INFO */
+  VM_OC_NONE,                    /**< a special opcode for unsupported byte codes */
 } vm_oc_types;
+
+/**
+ * Unused opcodes, but required by byte-code types.
+ */
+typedef enum
+{
+#ifdef CONFIG_DISABLE_ES2015_OBJECT_INITIALIZER
+  VM_OC_SET_COMPUTED_PROPERTY = VM_OC_NONE,   /**< set computed property is unused */
+#endif /* CONFIG_DISABLE_ES2015_OBJECT_INITIALIZER */
+#ifndef JERRY_DEBUGGER
+  VM_OC_BREAKPOINT_ENABLED = VM_OC_NONE,      /**< enabled breakpoint for debugger is unused */
+  VM_OC_BREAKPOINT_DISABLED = VM_OC_NONE,     /**< disabled breakpoint for debugger is unused */
+#endif /* !JERRY_DEBUGGER */
+#ifndef JERRY_ENABLE_LINE_INFO
+  VM_OC_RESOURCE_NAME = VM_OC_NONE,           /**< resource name of the current function is unused */
+  VM_OC_LINE = VM_OC_NONE,                    /**< line number of the next statement is unused */
+#endif /* !JERRY_ENABLE_LINE_INFO */
+#ifdef CONFIG_DISABLE_ES2015_CLASS
+  VM_OC_CLASS_HERITAGE = VM_OC_NONE,          /**< create a super class context */
+  VM_OC_CLASS_INHERITANCE = VM_OC_NONE,       /**< inherit properties from the 'super' class */
+  VM_OC_PUSH_CLASS_CONSTRUCTOR = VM_OC_NONE,  /**< push class constructor */
+  VM_OC_SET_CLASS_CONSTRUCTOR = VM_OC_NONE,   /**< set class constructor to the given function literal */
+  VM_OC_PUSH_IMPL_CONSTRUCTOR = VM_OC_NONE,   /**< create implicit class constructor */
+  VM_OC_CLASS_EXPR_CONTEXT_END = VM_OC_NONE,  /**< class expression heritage context end */
+  VM_OC_CLASS_EVAL = VM_OC_NONE,              /**< eval inside a class */
+  VM_OC_SUPER_CALL = VM_OC_NONE,              /**< call the 'super' constructor */
+  VM_OC_SUPER_PROP_REFERENCE = VM_OC_NONE,    /**< resolve super property reference */
+  VM_OC_PUSH_SUPER = VM_OC_NONE,              /**< push resolvable super reference */
+  VM_OC_PUSH_CONSTRUCTOR_SUPER = VM_OC_NONE,  /**< push 'super' inside a class constructor */
+  VM_OC_PUSH_CONSTRUCTOR_THIS = VM_OC_NONE,   /**< push 'this' inside a class constructor */
+  VM_OC_CONSTRUCTOR_RET = VM_OC_NONE,         /**< explicit return from a class constructor */
+#endif /* CONFIG_DISABLE_ES2015 */
+  VM_OC_UNUSED = VM_OC_NONE                   /**< placeholder if the list is empty */
+} vm_oc_unused_types;
 
 /**
  * Decrement operator.
@@ -231,6 +296,16 @@ typedef enum
  * Branch optimized for logical and/or opcodes.
  */
 #define VM_OC_LOGICAL_BRANCH_FLAG 0x2
+
+/**
+ * Bit index shift for non-static property initializers.
+ */
+#define VM_OC_NON_STATIC_SHIFT 14
+
+/**
+ * This flag is set for static property initializers.
+ */
+#define VM_OC_NON_STATIC_FLAG (0x1 << VM_OC_NON_STATIC_SHIFT)
 
 /**
  * Position of "put result" opcode.
@@ -273,18 +348,21 @@ typedef enum
 {
   VM_NO_EXEC_OP,                 /**< do nothing */
   VM_EXEC_CALL,                  /**< invoke a function */
+  VM_EXEC_SUPER_CALL,            /**< invoke a function through 'super' keyword */
   VM_EXEC_CONSTRUCT,             /**< construct a new object */
 } vm_call_operation;
 
 ecma_value_t vm_run_global (const ecma_compiled_code_t *bytecode_p);
-ecma_value_t vm_run_eval (ecma_compiled_code_t *bytecode_data_p, bool is_direct);
+ecma_value_t vm_run_eval (ecma_compiled_code_t *bytecode_data_p, uint32_t parse_opts);
 
 ecma_value_t vm_run (const ecma_compiled_code_t *bytecode_header_p, ecma_value_t this_binding_value,
-                     ecma_object_t *lex_env_p, bool is_eval_code, const ecma_value_t *arg_list_p,
+                     ecma_object_t *lex_env_p, uint32_t parse_opts, const ecma_value_t *arg_list_p,
                      ecma_length_t arg_list_len);
 
 bool vm_is_strict_mode (void);
 bool vm_is_direct_eval_form_call (void);
+
+ecma_value_t vm_get_backtrace (uint32_t max_depth);
 
 /**
  * @}

@@ -16,27 +16,37 @@ cmake_minimum_required (VERSION 2.8.12)
 set(JERRY_CORE_NAME jerry-core)
 project (${JERRY_CORE_NAME} C)
 
+# Optional build settings
+set(ENABLE_ALL_IN_ONE          OFF     CACHE BOOL   "Enable all-in-one build?")
+
 # Optional features
-set(FEATURE_CPOINTER_32_BIT  OFF     CACHE BOOL   "Enable 32 bit compressed pointers?")
-set(FEATURE_DEBUGGER         OFF     CACHE BOOL   "Enable JerryScript debugger?")
-set(FEATURE_DEBUGGER_PORT    "5001"  CACHE STRING "Set debugger port number (default: 5001)")
-set(FEATURE_ERROR_MESSAGES   OFF     CACHE BOOL   "Enable error messages?")
-set(FEATURE_EXTERNAL_CONTEXT OFF     CACHE BOOL   "Enable external context?")
-set(FEATURE_JS_PARSER        ON      CACHE BOOL   "Enable js-parser?")
-set(FEATURE_MEM_STATS        OFF     CACHE BOOL   "Enable memory statistics?")
-set(FEATURE_MEM_STRESS_TEST  OFF     CACHE BOOL   "Enable mem-stress test?")
-set(FEATURE_PARSER_DUMP      OFF     CACHE BOOL   "Enable parser byte-code dumps?")
-set(FEATURE_PROFILE          "es5.1" CACHE STRING "Use default or other profile?")
-set(FEATURE_REGEXP_DUMP      OFF     CACHE BOOL   "Enable regexp byte-code dumps?")
-set(FEATURE_SNAPSHOT_EXEC    OFF     CACHE BOOL   "Enable executing snapshot files?")
-set(FEATURE_SNAPSHOT_SAVE    OFF     CACHE BOOL   "Enable saving snapshot files?")
-set(FEATURE_SYSTEM_ALLOCATOR OFF     CACHE BOOL   "Enable system allocator?")
-set(FEATURE_VALGRIND         OFF     CACHE BOOL   "Enable Valgrind support?")
-set(FEATURE_VALGRIND_FREYA   OFF     CACHE BOOL   "Enable Valgrind-Freya support?")
-set(FEATURE_VM_EXEC_STOP     OFF     CACHE BOOL   "Enable VM execution stopping?")
-set(MEM_HEAP_SIZE_KB         "512"   CACHE STRING "Size of memory heap, in kilobytes")
+set(FEATURE_CPOINTER_32_BIT    OFF     CACHE BOOL   "Enable 32 bit compressed pointers?")
+set(FEATURE_DEBUGGER           OFF     CACHE BOOL   "Enable JerryScript debugger?")
+set(FEATURE_ERROR_MESSAGES     OFF     CACHE BOOL   "Enable error messages?")
+set(FEATURE_EXTERNAL_CONTEXT   OFF     CACHE BOOL   "Enable external context?")
+set(FEATURE_JS_PARSER          ON      CACHE BOOL   "Enable js-parser?")
+set(FEATURE_LINE_INFO          OFF     CACHE BOOL   "Enable line info?")
+set(FEATURE_LOGGING            OFF     CACHE BOOL   "Enable logging?")
+set(FEATURE_MEM_STATS          OFF     CACHE BOOL   "Enable memory statistics?")
+set(FEATURE_MEM_STRESS_TEST    OFF     CACHE BOOL   "Enable mem-stress test?")
+set(FEATURE_PARSER_DUMP        OFF     CACHE BOOL   "Enable parser byte-code dumps?")
+set(FEATURE_PROFILE            "es5.1" CACHE STRING "Use default or other profile?")
+set(FEATURE_REGEXP_STRICT_MODE OFF     CACHE BOOL   "Enable regexp strict mode?")
+set(FEATURE_REGEXP_DUMP        OFF     CACHE BOOL   "Enable regexp byte-code dumps?")
+set(FEATURE_SNAPSHOT_EXEC      OFF     CACHE BOOL   "Enable executing snapshot files?")
+set(FEATURE_SNAPSHOT_SAVE      OFF     CACHE BOOL   "Enable saving snapshot files?")
+set(FEATURE_SYSTEM_ALLOCATOR   OFF     CACHE BOOL   "Enable system allocator?")
+set(FEATURE_VALGRIND           OFF     CACHE BOOL   "Enable Valgrind support?")
+set(FEATURE_VM_EXEC_STOP       OFF     CACHE BOOL   "Enable VM execution stopping?")
+set(MEM_HEAP_SIZE_KB           "512"   CACHE STRING "Size of memory heap, in kilobytes")
 
 # Option overrides
+if(USING_MSVC)
+  set(ENABLE_ALL_IN_ONE ON) # FIXME: This should not be needed but right now it is. To be tracked down and followed up.
+
+  set(ENABLE_ALL_IN_ONE_MESSAGE " (FORCED BY COMPILER)")
+endif()
+
 if(FEATURE_SYSTEM_ALLOCATOR)
   set(FEATURE_CPOINTER_32_BIT ON)
 
@@ -51,28 +61,43 @@ if(NOT FEATURE_JS_PARSER)
   set(FEATURE_PARSER_DUMP_MESSAGE   " (FORCED BY DISABLED JS PARSER)")
 endif()
 
+if(JERRY_CMDLINE_SNAPSHOT)
+  set(FEATURE_SNAPSHOT_SAVE ON)
+
+  set(FEATURE_SNAPSHOT_SAVE_MESSAGE " (FORCED BY SNAPSHOT TOOL)")
+endif()
+
+if(FEATURE_MEM_STATS OR FEATURE_PARSER_DUMP OR FEATURE_REGEXP_DUMP)
+  set(FEATURE_LOGGING ON)
+
+  set(FEATURE_LOGGING_MESSAGE " (FORCED BY STATS OR DUMP)")
+endif()
+
 # Status messages
-message(STATUS "FEATURE_CPOINTER_32_BIT   " ${FEATURE_CPOINTER_32_BIT} ${FEATURE_CPOINTER_32_BIT_MESSAGE})
-message(STATUS "FEATURE_DEBUGGER          " ${FEATURE_DEBUGGER})
-message(STATUS "FEATURE_DEBUGGER_PORT     " ${FEATURE_DEBUGGER_PORT})
-message(STATUS "FEATURE_ERROR_MESSAGES    " ${FEATURE_ERROR_MESSAGES})
-message(STATUS "FEATURE_EXTERNAL_CONTEXT  " ${FEATURE_EXTERNAL_CONTEXT})
-message(STATUS "FEATURE_JS_PARSER         " ${FEATURE_JS_PARSER})
-message(STATUS "FEATURE_MEM_STATS         " ${FEATURE_MEM_STATS})
-message(STATUS "FEATURE_MEM_STRESS_TEST   " ${FEATURE_MEM_STRESS_TEST})
-message(STATUS "FEATURE_PARSER_DUMP       " ${FEATURE_PARSER_DUMP} ${FEATURE_PARSER_DUMP_MESSAGE})
-message(STATUS "FEATURE_PROFILE           " ${FEATURE_PROFILE})
-message(STATUS "FEATURE_REGEXP_DUMP       " ${FEATURE_REGEXP_DUMP})
-message(STATUS "FEATURE_SNAPSHOT_EXEC     " ${FEATURE_SNAPSHOT_EXEC} ${FEATURE_SNAPSHOT_EXEC_MESSAGE})
-message(STATUS "FEATURE_SNAPSHOT_SAVE     " ${FEATURE_SNAPSHOT_SAVE})
-message(STATUS "FEATURE_SYSTEM_ALLOCATOR  " ${FEATURE_SYSTEM_ALLOCATOR})
-message(STATUS "FEATURE_VALGRIND          " ${FEATURE_VALGRIND})
-message(STATUS "FEATURE_VALGRIND_FREYA    " ${FEATURE_VALGRIND_FREYA})
-message(STATUS "FEATURE_VM_EXEC_STOP      " ${FEATURE_VM_EXEC_STOP})
-message(STATUS "MEM_HEAP_SIZE_KB          " ${MEM_HEAP_SIZE_KB})
+message(STATUS "ENABLE_ALL_IN_ONE           " ${ENABLE_ALL_IN_ONE} ${ENABLE_ALL_IN_ONE_MESSAGE})
+message(STATUS "FEATURE_CPOINTER_32_BIT     " ${FEATURE_CPOINTER_32_BIT} ${FEATURE_CPOINTER_32_BIT_MESSAGE})
+message(STATUS "FEATURE_DEBUGGER            " ${FEATURE_DEBUGGER})
+message(STATUS "FEATURE_ERROR_MESSAGES      " ${FEATURE_ERROR_MESSAGES})
+message(STATUS "FEATURE_EXTERNAL_CONTEXT    " ${FEATURE_EXTERNAL_CONTEXT})
+message(STATUS "FEATURE_JS_PARSER           " ${FEATURE_JS_PARSER})
+message(STATUS "FEATURE_LINE_INFO           " ${FEATURE_LINE_INFO})
+message(STATUS "FEATURE_LOGGING             " ${FEATURE_LOGGING} ${FEATURE_LOGGING_MESSAGE})
+message(STATUS "FEATURE_MEM_STATS           " ${FEATURE_MEM_STATS})
+message(STATUS "FEATURE_MEM_STRESS_TEST     " ${FEATURE_MEM_STRESS_TEST})
+message(STATUS "FEATURE_PARSER_DUMP         " ${FEATURE_PARSER_DUMP} ${FEATURE_PARSER_DUMP_MESSAGE})
+message(STATUS "FEATURE_PROFILE             " ${FEATURE_PROFILE})
+message(STATUS "FEATURE_REGEXP_STRICT_MODE  " ${FEATURE_REGEXP_STRICT_MODE})
+message(STATUS "FEATURE_REGEXP_DUMP         " ${FEATURE_REGEXP_DUMP})
+message(STATUS "FEATURE_SNAPSHOT_EXEC       " ${FEATURE_SNAPSHOT_EXEC} ${FEATURE_SNAPSHOT_EXEC_MESSAGE})
+message(STATUS "FEATURE_SNAPSHOT_SAVE       " ${FEATURE_SNAPSHOT_SAVE} ${FEATURE_SNAPSHOT_SAVE_MESSAGE})
+message(STATUS "FEATURE_SYSTEM_ALLOCATOR    " ${FEATURE_SYSTEM_ALLOCATOR})
+message(STATUS "FEATURE_VALGRIND            " ${FEATURE_VALGRIND})
+message(STATUS "FEATURE_VM_EXEC_STOP        " ${FEATURE_VM_EXEC_STOP})
+message(STATUS "MEM_HEAP_SIZE_KB            " ${MEM_HEAP_SIZE_KB})
 
 # Include directories
-set(INCLUDE_CORE
+set(INCLUDE_CORE_PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(INCLUDE_CORE_PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/api"
     "${CMAKE_CURRENT_SOURCE_DIR}/debugger"
@@ -80,7 +105,6 @@ set(INCLUDE_CORE
     "${CMAKE_CURRENT_SOURCE_DIR}/ecma/builtin-objects"
     "${CMAKE_CURRENT_SOURCE_DIR}/ecma/builtin-objects/typedarray"
     "${CMAKE_CURRENT_SOURCE_DIR}/ecma/operations"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/jcontext"
     "${CMAKE_CURRENT_SOURCE_DIR}/jmem"
     "${CMAKE_CURRENT_SOURCE_DIR}/jrt"
@@ -88,6 +112,9 @@ set(INCLUDE_CORE
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/js"
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/regexp"
     "${CMAKE_CURRENT_SOURCE_DIR}/vm")
+
+set(INCLUDE_CORE_PUBLIC ${INCLUDE_CORE_PUBLIC} PARENT_SCOPE) # for jerry-port
+set(INCLUDE_CORE_PRIVATE ${INCLUDE_CORE_PRIVATE} PARENT_SCOPE) # for tests/unit-core
 
 # Sources
 # Jerry core
@@ -138,9 +165,7 @@ endif()
 set(INCLUDE_THIRD_PARTY_VALGRIND "${CMAKE_SOURCE_DIR}/third-party/valgrind")
 
 # build mode specific compile/link flags
-if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_NDEBUG)
-endif()
+set(DEFINES_JERRY ${DEFINES_JERRY} $<$<NOT:$<CONFIG:Debug>>:JERRY_NDEBUG>)
 
 # Jerry heap-section
 if(DEFINED JERRY_HEAP_SECTION_ATTR)
@@ -164,10 +189,18 @@ if(FEATURE_EXTERNAL_CONTEXT)
 endif()
 
 # JS-Parser
-if(FEATURE_JS_PARSER)
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_JS_PARSER=1)
-else()
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_JS_PARSER=0)
+if(NOT FEATURE_JS_PARSER)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_DISABLE_JS_PARSER)
+endif()
+
+# JS line info
+if(FEATURE_LINE_INFO)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ENABLE_LINE_INFO)
+endif()
+
+# Logging
+if(FEATURE_LOGGING)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ENABLE_LOGGING)
 endif()
 
 # Memory statistics
@@ -177,12 +210,7 @@ endif()
 
 # Enable debugger
 if(FEATURE_DEBUGGER)
-  if(JERRY_LIBC)
-    message(FATAL_ERROR "This configuration is not supported. Please build against your system libc to enable the JerryScript debugger.")
-  endif()
-
   set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_DEBUGGER)
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_DEBUGGER_PORT=${FEATURE_DEBUGGER_PORT})
 endif()
 
 # Memory management stress-test mode
@@ -209,8 +237,9 @@ else()
   message(FATAL_ERROR "Profile file: '${FEATURE_PROFILE}' doesn't exist!")
 endif()
 
-if(JERRY_LIBC AND FEATURE_SYSTEM_ALLOCATOR)
-  MESSAGE(FATAL_ERROR "This configuration is not supported. Please build against your system libc to enable the system allocator.")
+# RegExp strict mode
+if(FEATURE_REGEXP_STRICT_MODE)
+  set(DEFINES_JERRY ${DEFINES_JERRY} ENABLE_REGEXP_STRICT_MODE)
 endif()
 
 # RegExp byte-code dumps
@@ -236,13 +265,7 @@ endif()
 # Valgrind
 if(FEATURE_VALGRIND)
   set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_VALGRIND)
-  set(INCLUDE_CORE ${INCLUDE_CORE} ${INCLUDE_THIRD_PARTY_VALGRIND})
-endif()
-
-# Valgrind Freya
-if(FEATURE_VALGRIND_FREYA)
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_VALGRIND_FREYA)
-  set(INCLUDE_CORE ${INCLUDE_CORE} ${INCLUDE_THIRD_PARTY_VALGRIND})
+  set(INCLUDE_CORE_PRIVATE ${INCLUDE_CORE_PRIVATE} ${INCLUDE_THIRD_PARTY_VALGRIND})
 endif()
 
 # Enable VM execution stopping
@@ -254,17 +277,14 @@ endif()
 math(EXPR MEM_HEAP_AREA_SIZE "${MEM_HEAP_SIZE_KB} * 1024")
 set(DEFINES_JERRY ${DEFINES_JERRY} CONFIG_MEM_HEAP_AREA_SIZE=${MEM_HEAP_AREA_SIZE})
 
-add_library(${JERRY_CORE_NAME} STATIC ${SOURCE_CORE_FILES})
+add_library(${JERRY_CORE_NAME} ${SOURCE_CORE_FILES})
 
 target_compile_definitions(${JERRY_CORE_NAME} PUBLIC ${DEFINES_JERRY})
-target_include_directories(${JERRY_CORE_NAME} PUBLIC ${INCLUDE_CORE})
+target_include_directories(${JERRY_CORE_NAME} PUBLIC ${INCLUDE_CORE_PUBLIC})
+target_include_directories(${JERRY_CORE_NAME} PRIVATE ${INCLUDE_CORE_PRIVATE})
 
 if(JERRY_LIBM)
   target_link_libraries(${JERRY_CORE_NAME} jerry-libm)
-endif()
-
-if(JERRY_LIBC)
-  target_link_libraries(${JERRY_CORE_NAME} jerry-libc)
 endif()
 
 separate_arguments(EXTERNAL_LINK_LIBS)
@@ -273,4 +293,4 @@ foreach(EXT_LIB ${EXTERNAL_LINK_LIBS})
 endforeach()
 
 install(TARGETS ${JERRY_CORE_NAME} DESTINATION lib)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include)
+install(DIRECTORY ${INCLUDE_CORE_PUBLIC}/ DESTINATION include)

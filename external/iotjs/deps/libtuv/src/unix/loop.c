@@ -46,6 +46,10 @@ int uv_loop_init(uv_loop_t* loop) {
   void* saved_data;
   int err;
 
+#ifdef TUV_FEATURE_SIGNAL
+  uv__signal_global_once_init();
+#endif
+
   saved_data = loop->data;
   memset(loop, 0, sizeof(*loop));
   loop->data = saved_data;
@@ -68,6 +72,10 @@ int uv_loop_init(uv_loop_t* loop) {
   loop->closing_handles = NULL;
   uv__update_time(loop);
   uv__async_init(&loop->async_watcher);
+#ifdef TUV_FEATURE_SIGNAL
+  loop->signal_pipefd[0] = -1;
+  loop->signal_pipefd[1] = -1;
+#endif
   loop->backend_fd = -1;
   loop->emfile_fd = -1;
 
@@ -77,6 +85,12 @@ int uv_loop_init(uv_loop_t* loop) {
   err = uv__platform_loop_init(loop);
   if (err)
     return err;
+
+#ifdef TUV_FEATURE_SIGNAL
+  err = uv_signal_init(loop, &loop->child_watcher);
+  if (err)
+    goto fail_signal_init;
+#endif
 
   uv__handle_unref(&loop->child_watcher);
   loop->child_watcher.flags |= UV__HANDLE_INTERNAL;
@@ -106,6 +120,11 @@ fail_mutex_init:
   uv_rwlock_destroy(&loop->cloexec_lock);
 
 fail_rwlock_init:
+#ifdef TUV_FEATURE_SIGNAL
+  uv__signal_loop_cleanup(loop);
+#endif
+
+fail_signal_init:
   uv__platform_loop_delete(loop);
 
   return err;
@@ -113,6 +132,9 @@ fail_rwlock_init:
 
 
 void uv__loop_close(uv_loop_t* loop) {
+#ifdef TUV_FEATURE_SIGNAL
+  uv__signal_loop_cleanup(loop);
+#endif
   uv__platform_loop_delete(loop);
   uv__async_stop(loop, &loop->async_watcher);
 

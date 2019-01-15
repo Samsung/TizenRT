@@ -3,18 +3,16 @@ Inside IoT.js
 
 * [Design](#design)
 * [Javascript Binding](#javascript-binding)
-  * iotjs_jval_t
-  * iotjs_jobjectwrap_t
-  * Native handler
-  * Embedding API
+  * [jerry_value_t](#jerry_value_t)
+  * [Native handler](#native-handler)
+  * [Embedding API](#embedding-api)
 * [libuv Binding](#libuv-binding)
-  * iotjs_handlewrap_t
-  * iotjs_reqwrap_t
+  * [iotjs_handlewrap_t](#iotjs_handlewrap_t)
+  * [iotjs_reqwrap_t](#iotjs_reqwrap_t)
 * [IoT.js Core](#iotjscoe)
-  * Life cycle of IoT.js
-  * Builtin
-  * Native module
-  * Event loop
+  * [Life cycle of IoT.js](#life-cycle-of-iot.js)
+  * [Builtin modules](#builtin-modules)
+  * [Event loop](#event-loop)
 
 # Design
 
@@ -37,9 +35,9 @@ Although IoT.js only supports JerryScript for now, there will be a chance that w
 For this reason, we want to keep the layer independent from a specific Javascript engine.
 You can see interface of the layer in [iotjs_binding.h](../../src/iotjs_binding.h).
 
-## iotjs_jval_t
+## jerry_value_t
 
-`iotjs_jval_t` struct stands for a real Javascript object. Upper layers will access Javascript object via this struct.
+`jerry_value_t` struct stands for a real Javascript object. Upper layers will access Javascript object via this struct.
 This struct provides following functionalities:
 
 * Creating a Javascript object using `iotjs_jval_create_*()` constructor.
@@ -54,45 +52,6 @@ This struct provides following functionalities:
 * Calling a Javascript function.
 * Evaluating a Javascript script.
 * Set and Get corresponding native data to the Javascript object.
-
-## iotjs_jobjectwrap_t
-
-You can refer Javascript object from C code side using `iotjs_jval_t` as saw above.
-When a reference for a Javascript object was made using `iotjs_jval_t`, it will increase the reference count and will decrease the count when it goes out of scope.
-
-```c
-{
-  // Create JavaScript object
-  // It increases reference count in JerryScript side.
-  iotjs_jval_t jobject = iotjs_jval_create();
-
-  // Use `jobject`
-  ...
-
-  // Before jobject goes out of scope, destroy it.
-  // It decreases reference count in JerryScript side so that it can be GC-ed.
-  iotjs_jval_destroy(&jobject)
-}
-```
-
-But the situation is different if you want to refer a Javascript object through out program execution until the object is live.
-You may write code like this:
-
-```c
-  iotjs_jval_t* jobject = (iotjs_jval_t*)malloc(sizeof(iotjs_jval_t)); // Not allowed
-```
-
-Unfortunately, we strongly do not recommend that kind of pattern. We treat pointer-types variables in special way. (See [Validated Struct](Inside-IoT.js-Validated-Struct.md) for more details.)
-
-To achieve your wish, we recommend using `iotjs_jobjectwrap_t` for that purpose.
-`iotjs_jobjectwrap_t` is kind of weak pointer to a Javascript Object.
-It refers a Javascript object but never increase reference count so that Javascript engine can collect the object when it turns into garbage.
-The `iotjs_jobjectwrap_t` instance will be released at the time the corresponding Javascript object is being reclaimed.
-
-Do not hold pointer to the wrapper in native code side globally because even if you are holding a wrapper by pointer, Javascript engine probably releases the corresponding Javascript object resulting deallocation of wrapper. Consequentially your pointer will turned into dangling.
-
-The only safe way to get wrapper is to get it from Javascript object. When a wrapper is being created, it links itself with corresponding Javascript object with `iotjs_jval_set_object_native_handle()` method of `iotjs_jval_t`. And you can get the wrapper from the object with `iotjs_jval_get_object_native_handle()` method of `iotjs_jval_t` later when you need it.
-
 
 ## Native handler
 
@@ -110,7 +69,7 @@ Whereas native handler does know that it is being called from Javascript (actual
 
 ## Embedding API
 
-Many Javascript engines these days provide embedding API. IoT.js uses the API to create [builtin module](#builtin) and [native handler](#native-handler). See following link if you want further information about the API:
+Many Javascript engines these days provide embedding API. IoT.js uses the API to create [builtin module](#builtin-modules) and [native handler](#native-handler). See following link if you want further information about the API:
  * [JerryScript API](http://jerryscript.net/api-reference)
  * [Duktape API](http://duktape.org/api.html)
  * [V8 embedder's guide](https://developers.google.com/v8/embed)
@@ -128,7 +87,7 @@ You can read [libuv design document](http://docs.libuv.org/en/v1.x/design.html) 
 `iotjs_handlewrap_t` is to bind a Javascript object and a libuv handle (e.g. file descriptor) together.
 `iotjs_handlewrap_t` inherits `iotjs_jobjectwrap_t` since it is linked with a Javascript object.
 
-Unlike `iotjs_jobjectwrap_t`, `iotjs_jobjectwrap_t` increases RC for the Javascript object when an instance of it is created to prevent GC while the handle is alive. The reference counter will be decreased after the handle is closed, allowing GC.
+Unlike `iotjs_jobjectwrap_t`, `iotjs_handlewrap_t` increases RC for the Javascript object when an instance of it is created to prevent GC while the handle is alive. The reference counter will be decreased after the handle is closed, allowing GC.
 
 ## iotjs_reqwrap_t
 
@@ -176,23 +135,18 @@ The process of IoT.js can be summarized as follow:
 6. Run [event loop](#event-loop) until there are no more events to be handled.
 7. Clean up.
 
-## Builtin
+## Builtin modules
 
-"Builtin" is Javascript objects fully implemented in C using [embedding API](#embedding-api).
-The list of builtin objects can be found at `MAP_MODULE_LIST` macro in ['iotjs_module.h'](../../src/iotjs_module.h).
+"Builtin" is Javascript objects implemented in C using [embedding API](#embedding-api), in Javascript or both.
+The list of builtin objects can be found in ['modules.json'](../../src/modules.json).
 
-Because methods of builtin modules are implemented as [native handler](#native-handler),
+Native parts of builtin modules are implemented as [native handler](#native-handler), so they
 are able to access underlying system using libuv, C library, and system call.
-Also, builtin modules could be used for optimizing performance of CPU bound routine or reduce binary size.
 
-Builtin modules are initialized during [intializing step of IoT.js](#life-cycle-of-iotjs) and released just before program terminates.
 
-## Native module
-
-The [basic modules and extended modules](../api/IoT.js-API-reference.md) provided by IoT.js are called 'native module' because it will be included IoT.js as binary format.(not as script).
-There is a [tool](../../tools/js2c.py) that transfer Javascript script source file into C file.
-
-Usually a native module needs help from couple of [builtin](#builtin) modules which are implemented in C thus able to access underlying system.
+The [basic modules and extended modules](../api/IoT.js-API-reference.md) provided by IoT.js are called 'Builtin module' because it will be included in the IoT.js binary.
+There is a [tool](../../tools/js2c.py) that transfer Javascript script source file into C file
+and this C file will be compiled into the IoT.js binary.
 
 Some native modules are bound to global object while others are on demand.
 On demand modules will be created at the moment when it is first required and will not released until the program terminates.
@@ -257,7 +211,7 @@ And calling the javascript callback function with the result.
 
 ```c
   iotjs_fsreqwrap_t* req_wrap = (iotjs_fsreqwrap_t*)(req->data); // get request wrapper
-  const iotjs_jval_t* cb = iotjs_fsreqwrap_jcallback(req_wrap); // javascript callback function
+  const jerry_value_t* cb = iotjs_fsreqwrap_jcallback(req_wrap); // javascript callback function
 
   iotjs_jargs_t jarg = iotjs_jargs_create(2);
   iotjs_jargs_append_null(&jarg); // in case of success.

@@ -53,7 +53,7 @@ bool iotjs_systemio_open_write_close(const char* path, const char* value) {
   int fd = uv_fs_open(loop, &fs_req, path, O_WRONLY, 0666, NULL);
   uv_fs_req_cleanup(&fs_req);
   if (fd < 0) {
-    DDLOG("%s - open %s failed: %d", __func__, path, fd);
+    DLOG("%s - open %s failed: %d", __func__, path, fd);
     return false;
   }
 
@@ -68,12 +68,12 @@ bool iotjs_systemio_open_write_close(const char* path, const char* value) {
   uv_fs_req_cleanup(&fs_req);
 
   if (write_err < 0) {
-    DDLOG("%s - write %s %s failed: %d", __func__, path, value, write_err);
+    DLOG("%s - write %s %s failed: %d", __func__, path, value, write_err);
     return false;
   }
 
   if (close_err < 0) {
-    DDLOG("%s - close failed: %d", __func__, close_err);
+    DLOG("%s - close failed: %d", __func__, close_err);
     return false;
   }
 
@@ -93,7 +93,7 @@ bool iotjs_systemio_open_read_close(const char* path, char* buffer,
   int fd = uv_fs_open(loop, &fs_open_req, path, O_RDONLY, 0666, NULL);
   uv_fs_req_cleanup(&fs_open_req);
   if (fd < 0) {
-    DDLOG("%s - open %s failed: %d", __func__, path, fd);
+    DLOG("%s - open %s failed: %d", __func__, path, fd);
     return false;
   }
 
@@ -103,7 +103,7 @@ bool iotjs_systemio_open_read_close(const char* path, char* buffer,
   int err = uv_fs_read(loop, &fs_write_req, fd, &uvbuf, 1, 0, NULL);
   uv_fs_req_cleanup(&fs_write_req);
   if (err < 0) {
-    DDLOG("%s - read failed: %d", __func__, err);
+    DLOG("%s - read failed: %d", __func__, err);
     return false;
   }
 
@@ -114,7 +114,7 @@ bool iotjs_systemio_open_read_close(const char* path, char* buffer,
   err = uv_fs_close(loop, &fs_close_req, fd, NULL);
   uv_fs_req_cleanup(&fs_close_req);
   if (err < 0) {
-    DDLOG("%s - close failed: %d", __func__, err);
+    DLOG("%s - close failed: %d", __func__, err);
     return false;
   }
 
@@ -132,7 +132,7 @@ bool iotjs_systemio_device_open(const char* export_path, uint32_t value,
     return true;
   }
 
-  DDLOG("%s - path: %s", __func__, export_path);
+  DDDLOG("%s - path: %s", __func__, export_path);
 
   // Write export pin.
   char buff[DEVICE_IO_PIN_BUFFER_SIZE] = { 0 };
@@ -147,21 +147,17 @@ bool iotjs_systemio_device_open(const char* export_path, uint32_t value,
   int count_limit = created_files_length * 10;
   char buffer[DEVICE_IO_PIN_BUFFER_SIZE];
   char path[DEVICE_IO_PATH_BUFFER_SIZE] = { 0 };
-  char check_format[DEVICE_IO_PATH_BUFFER_SIZE] = { 0 };
 
   while (!iotjs_systemio_check_path(exported_path) && count < count_limit) {
     usleep(100 * 1000); // sleep 100 miliseconds.
     count++;
   }
 
-  strcat(check_format, exported_path);
-  strcat(check_format, "%s");
-
   for (int i = 0; i < created_files_length; i++) {
-    snprintf(path, DEVICE_IO_PATH_BUFFER_SIZE - 1, check_format,
+    snprintf(path, DEVICE_IO_PATH_BUFFER_SIZE - 1, "%s%s", exported_path,
              created_files[i]);
 
-    DDLOG("%s - created file: %s", __func__, path);
+    DDDLOG("%s - created file: %s", __func__, path);
 
     while (!iotjs_systemio_open_read_close(path, buffer,
                                            DEVICE_IO_PIN_BUFFER_SIZE) &&

@@ -26,7 +26,7 @@
  * If !JERRY_NDEBUG and code != 0, print status code with description
  * and call assertion fail handler.
  */
-void __noreturn
+void JERRY_ATTR_NORETURN
 jerry_fatal (jerry_fatal_code_t code) /**< status code */
 {
 #ifndef JERRY_NDEBUG
@@ -45,6 +45,11 @@ jerry_fatal (jerry_fatal_code_t code) /**< status code */
     case ERR_REF_COUNT_LIMIT:
     {
       JERRY_ERROR_MSG ("Error: ERR_REF_COUNT_LIMIT\n");
+      break;
+    }
+    case ERR_DISABLED_BYTE_CODE:
+    {
+      JERRY_ERROR_MSG ("Error: ERR_DISABLED_BYTE_CODE\n");
       break;
     }
     case ERR_FAILED_INTERNAL_ASSERTION:
@@ -67,7 +72,7 @@ jerry_fatal (jerry_fatal_code_t code) /**< status code */
 /**
  * Handle failed assertion
  */
-void __noreturn
+void JERRY_ATTR_NORETURN
 jerry_assert_fail (const char *assertion, /**< assertion condition string */
                    const char *file, /**< file name */
                    const char *function, /**< function name */
@@ -85,7 +90,7 @@ jerry_assert_fail (const char *assertion, /**< assertion condition string */
 /**
  * Handle execution of control path that should be unreachable
  */
-void __noreturn
+void JERRY_ATTR_NORETURN
 jerry_unreachable (const char *file, /**< file name */
                    const char *function, /**< function name */
                    const uint32_t line) /**< line */

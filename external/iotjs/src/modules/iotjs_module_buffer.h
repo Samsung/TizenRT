@@ -17,27 +17,21 @@
 #define IOTJS_MODULE_BUFFER_H
 
 
-#include "iotjs_objectwrap.h"
-
-
 typedef struct {
-  iotjs_jobjectwrap_t jobjectwrap;
-  char* buffer;
+  jerry_value_t jobject;
   size_t length;
-} IOTJS_VALIDATED_STRUCT(iotjs_bufferwrap_t);
+  char buffer[];
+} iotjs_bufferwrap_t;
 
-
-iotjs_bufferwrap_t* iotjs_bufferwrap_create(const iotjs_jval_t* jbuiltin,
+size_t iotjs_base64_decode(char** out_buff, const char* src,
+                           const size_t srcLen);
+size_t iotjs_base64_encode(unsigned char** out_buff, const uint8_t* data,
+                           size_t length);
+iotjs_bufferwrap_t* iotjs_bufferwrap_create(const jerry_value_t jbuiltin,
                                             size_t length);
 
-iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuiltin(
-    const iotjs_jval_t* jbuiltin);
-iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuffer(const iotjs_jval_t* jbuffer);
+iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuffer(const jerry_value_t jbuffer);
 
-iotjs_jval_t* iotjs_bufferwrap_jbuiltin(iotjs_bufferwrap_t* bufferwrap);
-iotjs_jval_t iotjs_bufferwrap_jbuffer(iotjs_bufferwrap_t* bufferwrap);
-
-char* iotjs_bufferwrap_buffer(iotjs_bufferwrap_t* bufferwrap);
 size_t iotjs_bufferwrap_length(iotjs_bufferwrap_t* bufferwrap);
 
 int iotjs_bufferwrap_compare(const iotjs_bufferwrap_t* bufferwrap,
@@ -45,9 +39,10 @@ int iotjs_bufferwrap_compare(const iotjs_bufferwrap_t* bufferwrap,
 
 size_t iotjs_bufferwrap_copy(iotjs_bufferwrap_t* bufferwrap, const char* src,
                              size_t len);
+iotjs_bufferwrap_t* iotjs_jbuffer_get_bufferwrap_ptr(const jerry_value_t);
 
-// Create buffer object.
-iotjs_jval_t iotjs_bufferwrap_create_buffer(size_t len);
+// Fail-safe creation of Buffer object.
+jerry_value_t iotjs_bufferwrap_create_buffer(size_t len);
 
 
 #endif /* IOTJS_MODULE_BUFFER_H */

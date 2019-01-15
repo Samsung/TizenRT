@@ -14,9 +14,9 @@
  */
 
 
-var Stream = require('stream').Stream;
+var Stream = require('stream_internal');
+var Writable = require('stream_writable');
 var util = require('util');
-var assert = require('assert');
 
 
 function ReadableState(options) {
@@ -38,7 +38,7 @@ function ReadableState(options) {
 
   // become `true` just before emit 'end' event.
   this.endEmitted = false;
-};
+}
 
 
 function Readable(options) {
@@ -49,7 +49,7 @@ function Readable(options) {
   this._readableState = new ReadableState(options);
 
   Stream.call(this);
-};
+}
 
 util.inherits(Readable, Stream);
 
@@ -68,10 +68,6 @@ Readable.prototype.read = function(n) {
     res = readBuffer(this, n);
   } else {
     res = null;
-  }
-
-  if (state.ended && state.length == 0) {
-    emitEnd(this);
   }
 
   return res;
@@ -106,9 +102,7 @@ Readable.prototype.resume = function() {
   var state = this._readableState;
   if (!state.flowing) {
     state.flowing = true;
-    if (state.length > 0) {
-      emitData(this, readBuffer(this));
-    }
+    this.read();
   }
   return this;
 };
@@ -122,7 +116,7 @@ Readable.prototype.error = function(error) {
 Readable.prototype.push = function(chunk, encoding) {
   var state = this._readableState;
 
-  if (util.isNull(chunk)) {
+  if (chunk === null) {
     onEof(this);
   } else if (!util.isString(chunk) &&
              !util.isBuffer(chunk)) {
@@ -145,6 +139,76 @@ Readable.prototype.push = function(chunk, encoding) {
 };
 
 
+Readable.prototype.pipe = function(destination, options) {
+  if (!(destination instanceof Writable || isDuplex(destination))) {
+    throw new TypeError('pipe excepts stream.Writable or' +
+                        ' stream.Duplex as argument');
+  }
+
+  options = options || {'end': true};
+
+  var listeners = {
+    readableListener: readableListener.bind(this),
+    dataListener: dataListener.bind(destination),
+    endListener: endListener.bind(destination),
+  };
+
+  this.on('readable', listeners.readableListener);
+  this.on('data', listeners.dataListener);
+
+  if (options.end) {
+    this.on('end', listeners.endListener);
+  }
+
+  this._piped = this._piped || [];
+  this._piped.push(destination);
+
+  this._piped_listeners = this._piped_listeners || [];
+  this._piped_listeners.push(listeners);
+
+  return destination;
+};
+
+
+Readable.prototype.unpipe = function(destination) {
+  if (destination === undefined) {
+    this.removeAllListeners();
+    this._piped = undefined;
+    this._piped_listeners = undefined;
+    return;
+  }
+
+  var idx = this._piped.indexOf(destination);
+  if (idx === -1) {
+    return;
+  }
+
+  this._piped.splice(idx, 1);
+  var listeners = this._piped_listeners.splice(idx, 1)[0];
+
+  this.removeListener('readable', listeners.readableListener);
+  this.removeListener('data', listeners.dataListener);
+  this.removeListener('end', listeners.endListener);
+
+  return destination;
+};
+
+
+function readableListener() {
+  this.resume();
+}
+
+
+function dataListener(data) {
+  this.write(data);
+}
+
+
+function endListener() {
+  this.end();
+}
+
+
 function readBuffer(stream, n) {
   var state = stream._readableState;
   var res;
@@ -159,12 +223,13 @@ function readBuffer(stream, n) {
     res = Buffer.concat(state.buffer);
     state.buffer = [];
     state.length = 0;
+    emitData(stream, res);
   } else {
     throw new Error('not implemented');
   }
 
   return res;
-};
+}
 
 
 function emitEnd(stream) {
@@ -177,19 +242,20 @@ function emitEnd(stream) {
     state.endEmitted = true;
     stream.emit('end');
   }
-};
+}
 
 
 function emitData(stream, data) {
   var state = stream._readableState;
 
-  assert.equal(readBuffer(stream), null);
-  stream.emit('data', data);
+  if (state.buffer.length === 0 || state.length === 0) {
+    stream.emit('data', data);
+  }
 
   if (state.ended && state.length == 0) {
     emitEnd(stream);
   }
-};
+}
 
 
 function onEof(stream) {
@@ -200,7 +266,24 @@ function onEof(stream) {
   if (state.length == 0) {
     emitEnd(stream);
   }
-};
+}
+
+
+function isDuplex(stream) {
+  if (!(stream instanceof Readable)) {
+    return false;
+  }
+
+  var wr_keys = Object.keys(Writable.prototype);
+  for (var i = 0; i < wr_keys.length; i++) {
+      var wr_key = wr_keys[i];
+      if (!stream[wr_key]) {
+          return false;
+      }
+  }
+
+  return true;
+}
 
 
 module.exports = Readable;

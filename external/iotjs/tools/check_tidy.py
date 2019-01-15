@@ -22,18 +22,20 @@ import functools
 import os
 import subprocess
 import tempfile
+import re
 
 from distutils import spawn
 
 from check_license import CheckLicenser
 from common_py.system.filesystem import FileSystem as fs
 from common_py.system.executor import Executor as ex
+from common_py.system.executor import Terminal
 
 
 def parse_option():
     parser = argparse.ArgumentParser()
     parser.add_argument('--autoedit', action='store_true', default=False,
-        help='Automatically edit the detected clang format errors.'
+        help='Automatically edit the detected clang format and eslint errors.'
         'No diffs will be displayed')
 
     option = parser.parse_args()
@@ -48,6 +50,8 @@ class StyleChecker(object):
         self.count_lines = 0
         self.count_empty_lines = 0
         self.errors = []
+        self.rules = []
+        self.err_msgs = []
 
     @property
     def error_count(self):
@@ -62,25 +66,30 @@ class StyleChecker(object):
         line = fileinput.filelineno()
         self.errors.append("%s:%d: %s" % (name, line, msg))
 
+    def set_rules(self):
+        limit = StyleChecker.column_limit
+        self.rules.append(re.compile(r"[\t]"))
+        self.err_msgs.append("TAB character")
+        self.rules.append(re.compile(r"[\r]"))
+        self.err_msgs.append("CR character")
+        self.rules.append(re.compile(r"[ \t]+[\n]$"))
+        self.err_msgs.append("Trailing Whitespace")
+        self.rules.append(re.compile(r"[^\n]\Z"))
+        self.err_msgs.append("Line ends without NEW LINE character")
+        self.rules.append(re.compile("^.{" + str(limit+1) + ",}"))
+        self.err_msgs.append("Line exceeds %d characters" % limit)
+        # append additional rules
+
     def check(self, files):
         for line in fileinput.input(files):
-            if '\t' in line:
-                self.report_error('TAB character')
-            if '\r' in line:
-                self.report_error('CR character')
-            if line.endswith(' \n') or line.endswith('\t\n'):
-                self.report_error('trailing whitespace')
-            if not line.endswith('\n'):
-                self.report_error('line ends without NEW LINE character')
-
-            if len(line) - 1 > StyleChecker.column_limit:
-                self.report_error('line exceeds %d characters'
-                                  % StyleChecker.column_limit)
+            for i, rule in enumerate(self.rules):
+                mc = rule.search(line)
+                if mc:
+                    self.report_error(self.err_msgs[i])
 
             if fileinput.isfirstline():
                 if not CheckLicenser.check(fileinput.filename()):
                     self.report_error('incorrect license')
-
 
             self.count_lines += 1
             if not line.strip():
@@ -94,7 +103,7 @@ class ClangFormat(object):
         self._extensions = extensions
         self._skip_files = skip_files
         self._options = options
-        self._check_clang_format("clang-format-3.8")
+        self._check_clang_format("clang-format-3.9")
 
     def _check_clang_format(self, base):
         clang_format = spawn.find_executable(base)
@@ -102,11 +111,12 @@ class ClangFormat(object):
         if not clang_format:
             clang_format = spawn.find_executable("clang-format")
             if clang_format:
-                print("%sUsing %s instead of %s%s"
-                      % (ex._TERM_YELLOW, clang_format, base, ex._TERM_EMPTY))
+                Terminal.pprint(
+                    "Using %s instead of %s" % (clang_format, base),
+                    Terminal.yellow)
             else:
-                print("%sNo %s found, skipping checks!%s"
-                      % (ex._TERM_RED, base, ex._TERM_EMPTY))
+                Terminal.pprint("No %s found, skipping checks!" % base,
+                    Terminal.red)
 
         self._clang_format = clang_format
 
@@ -126,9 +136,8 @@ class ClangFormat(object):
             args = ['-style=file', file]
             if self._options and self._options.autoedit:
                 args.append('-i')
-            output = ex.run_cmd_output(self._clang_format,
-                                       args,
-                                       quiet=True)
+            output = ex.check_run_cmd_output(self._clang_format,
+                                       args, quiet=True)
 
             if output:
                 with tempfile.NamedTemporaryFile() as temp:
@@ -144,6 +153,41 @@ class ClangFormat(object):
             # this error will be generated and we can extract
             # the diff from that it. Otherwise nothing to do.
             self.diffs.append(error.output.decode())
+
+class EslintChecker(object):
+
+    def __init__(self, options=None):
+        self._check_eslint()
+        self._options = options
+
+    def _check_eslint(self):
+        self._node = spawn.find_executable('node')
+        if not self._node:
+            Terminal.pprint('No node found,', Terminal.red)
+            return
+
+        self._eslint = spawn.find_executable('node_modules/.bin/eslint')
+        if not self._eslint:
+            self._eslint = spawn.find_executable('eslint')
+            if not self._eslint:
+                Terminal.pprint('No eslint found.', Terminal.red)
+
+    def check(self):
+        self.error_count = 0
+
+        if not self._node or not self._eslint:
+            return
+        args = ['src', '-f', 'codeframe']
+        if self._options and self._options.autoedit:
+             args.append('--fix')
+
+        output = ex.run_cmd_output(self._eslint, args, quiet=True)
+        match = re.search('(\d+) error', output)
+        if match:
+            self.error_count = int(match.group(1))
+
+        # Delete unnecessary error messages.
+        self.errors = output.split('\n')[:-4]
 
 
 class FileFilter(object):
@@ -168,9 +212,11 @@ def check_tidy(src_dir, options=None):
     allowed_exts = ['.c', '.h', '.js', '.py', '.sh', '.cmake']
     allowed_files = ['CMakeLists.txt']
     clang_format_exts = ['.c', '.h']
-    skip_dirs = ['deps', 'build', '.git', 'node_modules', 'coverage']
+    skip_dirs = ['deps', 'build', '.git', 'node_modules', 'coverage',
+                 'iotjs_modules', 'IoTjsApp']
     skip_files = ['check_signed_off.sh', '__init__.py',
                   'iotjs_js.c', 'iotjs_js.h', 'iotjs_string_ext.inl.h',
+                  "iotjs_module_inl.h",
                   'ble.js',
                   'ble_hci_socket_acl_stream.js',
                   'ble_hci_socket_smp.js',
@@ -181,16 +227,20 @@ def check_tidy(src_dir, options=None):
                   'ble_hci_socket_bindings.js',
                   'ble_characteristic.js',
                   'test_ble_setservices.js',
+                  '.eslintrc.js'
                   ]
 
     style = StyleChecker()
+    style.set_rules()
     clang = ClangFormat(clang_format_exts, skip_files, options)
+    eslint = EslintChecker(options)
 
     file_filter = FileFilter(allowed_exts, allowed_files, skip_files)
     files = fs.files_under(src_dir, skip_dirs, file_filter)
 
     clang.check(files)
     style.check(files)
+    eslint.check()
 
     if clang.error_count:
         print("Detected clang-format problems:")
@@ -202,17 +252,24 @@ def check_tidy(src_dir, options=None):
         print("\n".join(style.errors))
         print()
 
-    total_errors = style.error_count + clang.error_count
+    if eslint.error_count:
+        print("Detected eslint problems:")
+        print("\n".join(eslint.errors))
+        print()
+
+    total_errors = style.error_count + clang.error_count + eslint.error_count
     print("* total lines of code: %d" % style.count_lines)
     print("* total non-blank lines of code: %d" % style.count_valid_lines)
     print("* style errors: %d" % style.error_count)
     print("* clang-format errors: %d" % clang.error_count)
+    print("* eslint errors: %d" % eslint.error_count)
 
-    msg_color = ex._TERM_RED if total_errors > 0 else ex._TERM_GREEN
-    print("%s* total errors: %d%s" % (msg_color, total_errors, ex._TERM_EMPTY))
+    msg_color = Terminal.red if total_errors > 0 else Terminal.green
+    Terminal.pprint("* total errors: %d" % (total_errors), msg_color)
     print()
 
-    return total_errors == 0
+    if total_errors:
+        ex.fail("Failed tidy check")
 
 
 

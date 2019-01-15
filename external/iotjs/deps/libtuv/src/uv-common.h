@@ -239,7 +239,7 @@ void uv__fs_scandir_cleanup(uv_fs_t* req);
 
 /* Allocator prototypes */
 void *uv__calloc(size_t count, size_t size);
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32) || defined(TUV_FEATURE_PIPE)
 char *uv__strdup(const char* s);
 #endif
 void* uv__malloc(size_t size);

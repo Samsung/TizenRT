@@ -122,7 +122,7 @@ ecma_builtin_math_object_max_min (bool is_max, /**< 'max' or 'min' operation */
       ecma_fast_free_value (value);
     }
 
-    if (unlikely (ecma_number_is_nan (arg_num)))
+    if (JERRY_UNLIKELY (ecma_number_is_nan (arg_num)))
     {
       result_num = arg_num;
       break;
@@ -213,27 +213,25 @@ ecma_builtin_math_dispatch_routine (uint16_t builtin_routine_id, /**< built-in w
       }
     }
 
-    if (builtin_routine_id >= ECMA_MATH_OBJECT_ATAN2)
+    if (builtin_routine_id >= ECMA_MATH_OBJECT_ATAN2
+        && arguments_number >= 2)
     {
-      if (arguments_number >= 2)
+      if (ecma_is_value_number (arguments_list[1]))
       {
-        if (ecma_is_value_number (arguments_list[1]))
+        y = ecma_get_number_from_value (arguments_list[1]);
+      }
+      else
+      {
+        ecma_value_t value = ecma_op_to_number (arguments_list[1]);
+
+        if (ECMA_IS_VALUE_ERROR (value))
         {
-          y = ecma_get_number_from_value (arguments_list[1]);
+          return value;
         }
-        else
-        {
-          ecma_value_t value = ecma_op_to_number (arguments_list[1]);
 
-          if (ECMA_IS_VALUE_ERROR (value))
-          {
-            return value;
-          }
+        y = ecma_get_number_from_value (value);
 
-          y = ecma_get_number_from_value (value);
-
-          ecma_fast_free_value (value);
-        }
+        ecma_fast_free_value (value);
       }
     }
 
@@ -295,7 +293,7 @@ ecma_builtin_math_dispatch_routine (uint16_t builtin_routine_id, /**< built-in w
         else if (ecma_number_is_negative (x)
                  && x >= -ECMA_NUMBER_HALF)
         {
-          x = ecma_number_negate (ECMA_NUMBER_ZERO);
+          x = -ECMA_NUMBER_ZERO;
         }
         else
         {

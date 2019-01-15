@@ -2,36 +2,38 @@
 
 The following shows fs module APIs available for each platform.
 
-|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) |
-| :---: | :---: | :---: | :---: |
-| fs.close | O | O | O |
-| fs.closeSync | O | O | O |
-| fs.exists | O | O | O |
-| fs.existsSync | O | O | O |
-| fs.fstat | O | O | X |
-| fs.fstatSync | O | O | X |
-| fs.mkdir | O | O | O |
-| fs.mkdirSync | O | O | O |
-| fs.open | O | O | O |
-| fs.openSync | O | O | O |
-| fs.read | O | O | O |
-| fs.readSync | O | O | O |
-| fs.readdir | O | O | X |
-| fs.readdirSync | O | O | X |
-| fs.readFile | O | O | O |
-| fs.readFileSync | O | O | O |
-| fs.rename | O | O | O |
-| fs.renameSync | O | O | O |
-| fs.rmdir | O | O | O |
-| fs.rmdirSync | O | O | O |
-| fs.stat | O | O | O |
-| fs.statSync | O | O | O |
-| fs.unlink | O | O | O |
-| fs.unlinkSync | O | O | O |
-| fs.write | O | O | O |
-| fs.writeSync | O | O | O |
-| fs.writeFile | O | O | O |
-| fs.writeFileSync | O | O | O |
+|  | Linux<br/>(Ubuntu) | Tizen<br/>(Raspberry Pi) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) | TizenRT<br/>(Artik053) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| fs.close | O | O | O | O | O |
+| fs.closeSync | O | O | O | O | O |
+| fs.createReadStream | O | O | O | O | O |
+| fs.createWriteStream | O | O | O | O | O |
+| fs.exists | O | O | O | O | O |
+| fs.existsSync | O | O | O | O | O |
+| fs.fstat | O | O | O | X | X |
+| fs.fstatSync | O | O | O | X | X |
+| fs.mkdir | O | O | O | O | O |
+| fs.mkdirSync | O | O | O | O | O |
+| fs.open | O | O | O | O | O |
+| fs.openSync | O | O | O | O | O |
+| fs.read | O | O | O | O | O |
+| fs.readSync | O | O | O | O | O |
+| fs.readdir | O | O | O | O | O |
+| fs.readdirSync | O | O | O | O | O |
+| fs.readFile | O | O | O | O | O |
+| fs.readFileSync | O | O | O | O | O |
+| fs.rename | O | O | O | O | O |
+| fs.renameSync | O | O | O | O | O |
+| fs.rmdir | O | O | O | O | O |
+| fs.rmdirSync | O | O | O | O | O |
+| fs.stat | O | O | O | O | O |
+| fs.statSync | O | O | O | O | O |
+| fs.unlink | O | O | O | O | O |
+| fs.unlinkSync | O | O | O | O | O |
+| fs.write | O | O | O | O | O |
+| fs.writeSync | O | O | O | O | O |
+| fs.writeFile | O | O | O | O | O |
+| fs.writeFileSync | O | O | O | O | O |
 
 ※ On NuttX path should be passed with a form of **absolute path**.
 
@@ -109,6 +111,168 @@ var fs = require('fs');
 var fd = fs.openSync('test.txt', 'r');
 // do something
 fs.closeSync(fd);
+```
+
+
+## Class: fs.ReadStream
+
+A successful call to `fs.createReadStream()` will return a new `fs.ReadStream`
+object.
+
+`fs.ReadStream` inherits from `stream.Readable`.
+
+
+### Event: 'open'
+* `fd` {integer} File descriptor used by the `fs.ReadStream`.
+
+Emitted when the `fs.ReadStream`'s file descriptor has been opened.
+
+
+### Event: 'ready'
+
+Emitted when the `fs.ReadStream` is ready to be used. Emitted immediately
+after `open`.
+
+
+### Event: 'data'
+* `chunk` {Buffer|string}
+
+Inherited from `stream.Readable`. Emitted when the stream passes the ownership
+of the data to a consumer. Only streams in flowing mode emit this event.
+
+A stream can be switched to flowing mode by calling the readable.resume()
+function or by adding a 'data' event handler.
+
+
+### Event: 'close'
+
+Emitted when the `fs.ReadStream`'s file descriptor has been closed.
+
+
+### ReadStream.bytesRead
+* {integer}
+
+Number of bytes that have been read so far.
+
+
+### ReadStream.path
+* {string}
+
+The path to the file of the `fs.ReadStream`.
+
+
+### fs.createReadStream(path[, options])
+* `path` {string} File path to open for reading.
+* `options` {Object}
+  * `flags` {string} Flags to open file with. **Default:** `'r'`
+  * `encoding` {string} **Default:** `null`
+  * `fd` {integer} File descriptor to be used. **Default:** `null`
+  * `mode` {integer} Permission mode. **Default:** `0666`
+  * `autoClose` {boolean} Should the file be closed automatically. **Default:** `true`
+  * `bufferSize` {integer} Size of buffer in bytes. **Default:** `4096`
+* Returns: `fs.ReadStream`
+
+If `fd` is specified, `path` will be ignored and the specified file
+descriptor will be used instead.
+
+If `autoClose` is `false`, the file will not be closed automatically,
+even if there is an error, it will be the application's responsibility.
+If it is `true` (as by default), the file will be closed automatically
+when end of file is reached or the stream ends.
+
+**Example**
+
+```js
+var fs = require('fs');
+
+var rStream = fs.createReadStream('example.txt');
+rStream.on('data', function(data) {
+  console.log(data.toString());
+});
+```
+
+`fs.ReadStream` inherits from `stream.Readable`, so it is possible to pipe
+it into any `stream.Writable`.
+
+**Example**
+
+```js
+var fs = require('fs');
+
+var readableFileStream = fs.createReadStream('in.txt');
+var writableFileStream = fs.createWriteStream('out.txt');
+
+// The content of in.txt will be copied to out.txt
+readableFileStream.pipe(writableFileStream);
+```
+
+
+## Class: fs.WriteStream
+
+A successful call to `fs.createWriteStream()` will return a new `fs.WriteStream`
+object.
+
+`fs.WriteStream` inherits from `stream.Writable`.
+
+
+### Event: 'open'
+* `fd` {integer} File descriptor used by the `fs.WriteStream`.
+
+Emitted when the `fs.WriteStream`'s file descriptor has been opened.
+
+
+### Event: 'ready'
+
+Emitted when the `fs.WriteStream` is ready to be used. Emitted immediately
+after `open`.
+
+
+### Event: 'close'
+
+Emitted when the `fs.WriteStream`'s file descriptor has been closed.
+
+
+### WriteStream.bytesWritten
+
+The number of bytes written so far. Does not include data that is still queued
+for writing.
+
+
+### WriteStream.path
+
+The path to the file of the `fs.WriteStream`.
+
+
+### fs.createWriteStream
+* `path` {string} File path to be opened for writing.
+* `options` {Object}
+  * `flags` {string} Flags to open the file with. **Default:** `'w'`
+  * `fd` {integer} File descriptor to be used. **Default:** `null`
+  * `mode` {integer} Permission mode. **Default:** `0666`
+  * `autoClose` {boolean} Should the file be closed automatically. **Default:** `true`
+* Returns `fs.WriteStream`
+
+Works similarly to `fs.createReadStream()`, but returns an `fs.WriteStream`.
+
+If `fd` is specified, `path` will be ignored and the specified file
+descriptor will be used instead.
+
+If `autoClose` is `false`, the file will not be closed automatically,
+even if there is an error, it will be the application's responsibility.
+If it is `true` (as by default), the file will be closed automatically
+when end of file is reached or the stream ends.
+
+**Example**
+
+```js
+var fs = require('fs');
+
+var wStream = fs.createWriteStream('example.txt');
+
+wStream.on('ready', function() {
+  wStream.write('test data');
+  // 'test data' will be written into example.txt
+});
 ```
 
 

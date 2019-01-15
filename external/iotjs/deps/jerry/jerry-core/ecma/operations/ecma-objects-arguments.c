@@ -20,7 +20,6 @@
 #include "ecma-gc.h"
 #include "ecma-globals.h"
 #include "ecma-helpers.h"
-#include "ecma-lcache.h"
 #include "ecma-lex-env.h"
 #include "ecma-objects.h"
 #include "ecma-objects-arguments.h"
@@ -51,23 +50,18 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
   bool is_strict = (bytecode_data_p->status_flags & CBC_CODE_FLAGS_STRICT_MODE) != 0;
 
   ecma_length_t formal_params_number;
-  jmem_cpointer_t *literal_p;
 
   if (bytecode_data_p->status_flags & CBC_CODE_FLAGS_UINT16_ARGUMENTS)
   {
     cbc_uint16_arguments_t *args_p = (cbc_uint16_arguments_t *) bytecode_data_p;
-    uint8_t *byte_p = (uint8_t *) bytecode_data_p;
 
     formal_params_number = args_p->argument_end;
-    literal_p = (jmem_cpointer_t *) (byte_p + sizeof (cbc_uint16_arguments_t));
   }
   else
   {
     cbc_uint8_arguments_t *args_p = (cbc_uint8_arguments_t *) bytecode_data_p;
-    uint8_t *byte_p = (uint8_t *) bytecode_data_p;
 
     formal_params_number = args_p->argument_end;
-    literal_p = (jmem_cpointer_t *) (byte_p + sizeof (cbc_uint8_arguments_t));
   }
 
   ecma_object_t *prototype_p = ecma_builtin_get (ECMA_BUILTIN_ID_OBJECT_PROTOTYPE);
@@ -76,7 +70,7 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
 
   if (!is_strict && arguments_number > 0 && formal_params_number > 0)
   {
-    size_t formal_params_size = formal_params_number * sizeof (jmem_cpointer_t);
+    size_t formal_params_size = formal_params_number * sizeof (ecma_value_t);
 
     obj_p = ecma_create_object (prototype_p,
                                 sizeof (ecma_extended_object_t) + formal_params_size,
@@ -90,15 +84,19 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
 
     ext_object_p->u.pseudo_array.u1.length = (uint16_t) formal_params_number;
 
-    jmem_cpointer_t *arg_Literal_p = (jmem_cpointer_t *) (ext_object_p + 1);
+    ecma_value_t *arg_Literal_p = (ecma_value_t *) (ext_object_p + 1);
 
-    memcpy (arg_Literal_p, literal_p, formal_params_size);
+    uint8_t *byte_p = (uint8_t *) bytecode_data_p;
+    byte_p += ((size_t) bytecode_data_p->size) << JMEM_ALIGNMENT_LOG;
+    byte_p -= formal_params_size;
+
+    memcpy (arg_Literal_p, byte_p, formal_params_size);
 
     for (ecma_length_t i = 0; i < formal_params_number; i++)
     {
-      if (arg_Literal_p[i] != JMEM_CP_NULL)
+      if (arg_Literal_p[i] != ECMA_VALUE_EMPTY)
       {
-        ecma_string_t *name_p = JMEM_CP_GET_NON_NULL_POINTER (ecma_string_t, arg_Literal_p[i]);
+        ecma_string_t *name_p = ecma_get_string_from_value (arg_Literal_p[i]);
         ecma_ref_ecma_string (name_p);
       }
     }
@@ -111,54 +109,44 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
     ext_object_p->u.class_prop.class_id = LIT_MAGIC_STRING_ARGUMENTS_UL;
   }
 
-  ecma_deref_object (prototype_p);
-
   ecma_property_value_t *prop_value_p;
 
   /* 11.a, 11.b */
-  for (ecma_length_t indx = 0;
-       indx < arguments_number;
-       indx++)
+  for (ecma_length_t index = 0;
+       index < arguments_number;
+       index++)
   {
-    ecma_string_t *indx_string_p = ecma_new_ecma_string_from_uint32 (indx);
+    ecma_string_t *index_string_p = ecma_new_ecma_string_from_uint32 (index);
 
     prop_value_p = ecma_create_named_data_property (obj_p,
-                                                    indx_string_p,
+                                                    index_string_p,
                                                     ECMA_PROPERTY_CONFIGURABLE_ENUMERABLE_WRITABLE,
                                                     NULL);
 
-    prop_value_p->value = ecma_copy_value_if_not_object (arguments_list_p[indx]);
+    prop_value_p->value = ecma_copy_value_if_not_object (arguments_list_p[index]);
 
-    ecma_deref_ecma_string (indx_string_p);
+    ecma_deref_ecma_string (index_string_p);
   }
 
   /* 7. */
-  ecma_string_t *length_magic_string_p = ecma_new_ecma_length_string ();
-
   prop_value_p = ecma_create_named_data_property (obj_p,
-                                                  length_magic_string_p,
+                                                  ecma_get_magic_string (LIT_MAGIC_STRING_LENGTH),
                                                   ECMA_PROPERTY_CONFIGURABLE_WRITABLE,
                                                   NULL);
 
   prop_value_p->value = ecma_make_uint32_value (arguments_number);
-
-  ecma_deref_ecma_string (length_magic_string_p);
 
   ecma_property_descriptor_t prop_desc = ecma_make_empty_property_descriptor ();
 
   /* 13. */
   if (!is_strict)
   {
-    ecma_string_t *callee_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_CALLEE);
-
     prop_value_p = ecma_create_named_data_property (obj_p,
-                                                    callee_magic_string_p,
+                                                    ecma_get_magic_string (LIT_MAGIC_STRING_CALLEE),
                                                     ECMA_PROPERTY_CONFIGURABLE_WRITABLE,
                                                     NULL);
 
     prop_value_p->value = ecma_make_object_value (func_obj_p);
-
-    ecma_deref_ecma_string (callee_magic_string_p);
   }
   else
   {
@@ -180,25 +168,18 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
       prop_desc.is_configurable = false;
     }
 
-    ecma_string_t *callee_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_CALLEE);
-
     ecma_value_t completion = ecma_op_object_define_own_property (obj_p,
-                                                                  callee_magic_string_p,
+                                                                  ecma_get_magic_string (LIT_MAGIC_STRING_CALLEE),
                                                                   &prop_desc,
                                                                   false);
 
     JERRY_ASSERT (ecma_is_value_true (completion));
-    ecma_deref_ecma_string (callee_magic_string_p);
 
-    ecma_string_t *caller_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_CALLER);
     completion = ecma_op_object_define_own_property (obj_p,
-                                                     caller_magic_string_p,
+                                                     ecma_get_magic_string (LIT_MAGIC_STRING_CALLER),
                                                      &prop_desc,
                                                      false);
     JERRY_ASSERT (ecma_is_value_true (completion));
-    ecma_deref_ecma_string (caller_magic_string_p);
-
-    ecma_deref_object (thrower_p);
   }
 
   ecma_string_t *arguments_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_ARGUMENTS);
@@ -224,7 +205,6 @@ ecma_op_create_arguments_object (ecma_object_t *func_obj_p, /**< callee function
     JERRY_ASSERT (ecma_is_value_empty (completion));
   }
 
-  ecma_deref_ecma_string (arguments_string_p);
   ecma_deref_object (obj_p);
 } /* ecma_op_create_arguments_object */
 
@@ -270,20 +250,20 @@ ecma_op_arguments_object_define_own_property (ecma_object_t *object_p, /**< the 
     return ret_value;
   }
 
-  jmem_cpointer_t *arg_Literal_p = (jmem_cpointer_t *) (ext_object_p + 1);
+  ecma_value_t *arg_Literal_p = (ecma_value_t *) (ext_object_p + 1);
 
-  if (arg_Literal_p[index] == JMEM_CP_NULL)
+  if (arg_Literal_p[index] == ECMA_VALUE_EMPTY)
   {
     return ret_value;
   }
 
-  ecma_string_t *name_p = JMEM_CP_GET_NON_NULL_POINTER (ecma_string_t, arg_Literal_p[index]);
+  ecma_string_t *name_p = ecma_get_string_from_value (arg_Literal_p[index]);
 
   if (property_desc_p->is_get_defined
       || property_desc_p->is_set_defined)
   {
     ecma_deref_ecma_string (name_p);
-    arg_Literal_p[index] = JMEM_CP_NULL;
+    arg_Literal_p[index] = ECMA_VALUE_EMPTY;
   }
   else
   {
@@ -305,7 +285,7 @@ ecma_op_arguments_object_define_own_property (ecma_object_t *object_p, /**< the 
         && !property_desc_p->is_writable)
     {
       ecma_deref_ecma_string (name_p);
-      arg_Literal_p[index] = JMEM_CP_NULL;
+      arg_Literal_p[index] = ECMA_VALUE_EMPTY;
     }
   }
 
@@ -347,18 +327,18 @@ ecma_op_arguments_object_delete (ecma_object_t *object_p, /**< the object */
 
       if (index < ext_object_p->u.pseudo_array.u1.length)
       {
-        jmem_cpointer_t *arg_Literal_p = (jmem_cpointer_t *) (ext_object_p + 1);
+        ecma_value_t *arg_Literal_p = (ecma_value_t *) (ext_object_p + 1);
 
-        if (arg_Literal_p[index] != JMEM_CP_NULL)
+        if (arg_Literal_p[index] != ECMA_VALUE_EMPTY)
         {
-          ecma_string_t *name_p = JMEM_CP_GET_NON_NULL_POINTER (ecma_string_t, arg_Literal_p[index]);
+          ecma_string_t *name_p = ecma_get_string_from_value (arg_Literal_p[index]);
           ecma_deref_ecma_string (name_p);
-          arg_Literal_p[index] = JMEM_CP_NULL;
+          arg_Literal_p[index] = ECMA_VALUE_EMPTY;
         }
       }
     }
 
-    ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_TRUE);
+    ret_value = ECMA_VALUE_TRUE;
   }
 
   return ret_value;

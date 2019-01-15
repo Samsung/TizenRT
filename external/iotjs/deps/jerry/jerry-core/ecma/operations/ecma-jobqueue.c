@@ -46,7 +46,7 @@ typedef struct
 {
   ecma_value_t promise; /**< promise to be resolved */
   ecma_value_t thenable; /**< thenbale object */
-  ecma_value_t then; /** 'then' function */
+  ecma_value_t then; /**< 'then' function */
 } ecma_job_promise_resolve_thenable_t;
 
 /**
@@ -145,15 +145,15 @@ ecma_process_promise_reaction_job (void *obj_p) /**< the job to be operated */
   ecma_job_promise_reaction_t *job_p = (ecma_job_promise_reaction_t *) obj_p;
   ecma_object_t *reaction_p = ecma_get_object_from_value (job_p->reaction);
 
-  ecma_string_t *str_capability = ecma_new_ecma_string_from_uint32 (ECMA_PROMISE_PROPERTY_CAPABILITY);
-  ecma_string_t *str_handler = ecma_new_ecma_string_from_uint32 (ECMA_PROMISE_PROPERTY_HANDLER);
-  ecma_string_t *str_resolve = ecma_new_ecma_string_from_uint32 (ECMA_PROMISE_PROPERTY_RESOLVE);
-  ecma_string_t *str_reject = ecma_new_ecma_string_from_uint32 (ECMA_PROMISE_PROPERTY_REJECT);
+  ecma_string_t *capability_str_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_CAPABILITY);
+  ecma_string_t *handler_str_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_HANDLER);
+  ecma_string_t *resolve_str_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_RESOLVE);
+  ecma_string_t *reject_str_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_REJECT);
 
   /* 2. */
-  ecma_value_t capability = ecma_op_object_get (reaction_p, str_capability);
+  ecma_value_t capability = ecma_op_object_get (reaction_p, capability_str_p);
   /* 3. */
-  ecma_value_t handler = ecma_op_object_get (reaction_p, str_handler);
+  ecma_value_t handler = ecma_op_object_get (reaction_p, handler_str_p);
 
   JERRY_ASSERT (ecma_is_value_boolean (handler) || ecma_op_is_callable (handler));
 
@@ -168,7 +168,7 @@ ecma_process_promise_reaction_job (void *obj_p) /**< the job to be operated */
   {
     /* 6. */
     handler_result = ecma_op_function_call (ecma_get_object_from_value (handler),
-                                            ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED),
+                                            ECMA_VALUE_UNDEFINED,
                                             &(job_p->argument),
                                             1);
   }
@@ -179,16 +179,16 @@ ecma_process_promise_reaction_job (void *obj_p) /**< the job to be operated */
   {
     if (ECMA_IS_VALUE_ERROR (handler_result))
     {
-      handler_result = ecma_get_value_from_error_value (handler_result);
+      handler_result = JERRY_CONTEXT (error_value);
     }
 
     /* 7. */
-    ecma_value_t reject = ecma_op_object_get (ecma_get_object_from_value (capability), str_reject);
+    ecma_value_t reject = ecma_op_object_get (ecma_get_object_from_value (capability), reject_str_p);
 
     JERRY_ASSERT (ecma_op_is_callable (reject));
 
     status = ecma_op_function_call (ecma_get_object_from_value (reject),
-                                    ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED),
+                                    ECMA_VALUE_UNDEFINED,
                                     &handler_result,
                                     1);
     ecma_free_value (reject);
@@ -196,12 +196,12 @@ ecma_process_promise_reaction_job (void *obj_p) /**< the job to be operated */
   else
   {
     /* 8. */
-    ecma_value_t resolve = ecma_op_object_get (ecma_get_object_from_value (capability), str_resolve);
+    ecma_value_t resolve = ecma_op_object_get (ecma_get_object_from_value (capability), resolve_str_p);
 
     JERRY_ASSERT (ecma_op_is_callable (resolve));
 
     status = ecma_op_function_call (ecma_get_object_from_value (resolve),
-                                    ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED),
+                                    ECMA_VALUE_UNDEFINED,
                                     &handler_result,
                                     1);
     ecma_free_value (resolve);
@@ -210,10 +210,6 @@ ecma_process_promise_reaction_job (void *obj_p) /**< the job to be operated */
   ecma_free_value (handler_result);
   ecma_free_value (handler);
   ecma_free_value (capability);
-  ecma_deref_ecma_string (str_capability);
-  ecma_deref_ecma_string (str_handler);
-  ecma_deref_ecma_string (str_resolve);
-  ecma_deref_ecma_string (str_reject);
   ecma_free_promise_reaction_job (job_p);
 
   return status;
@@ -232,14 +228,21 @@ ecma_process_promise_resolve_thenable_job (void *obj_p) /**< the job to be opera
 {
   ecma_job_promise_resolve_thenable_t *job_p = (ecma_job_promise_resolve_thenable_t *) obj_p;
   ecma_object_t *promise_p = ecma_get_object_from_value (job_p->promise);
-  ecma_string_t str_resolve, str_reject;
-  ecma_init_ecma_magic_string (&str_resolve, LIT_INTERNAL_MAGIC_STRING_RESOLVE_FUNCTION);
-  ecma_init_ecma_magic_string (&str_reject, LIT_INTERNAL_MAGIC_STRING_REJECT_FUNCTION);
+  ecma_promise_resolving_functions_t *funcs = ecma_promise_create_resolving_functions (promise_p);
 
-  ecma_value_t resolve = ecma_op_object_get (promise_p, &str_resolve);
-  ecma_value_t reject = ecma_op_object_get (promise_p, &str_reject);
+  ecma_string_t *str_resolve_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_RESOLVE_FUNCTION);
+  ecma_string_t *str_reject_p = ecma_get_magic_string (LIT_INTERNAL_MAGIC_STRING_REJECT_FUNCTION);
 
-  ecma_value_t argv[] = { resolve, reject };
+  ecma_op_object_put (promise_p,
+                      str_resolve_p,
+                      funcs->resolve,
+                      false);
+  ecma_op_object_put (promise_p,
+                      str_reject_p,
+                      funcs->reject,
+                      false);
+
+  ecma_value_t argv[] = { funcs->resolve, funcs->reject };
   ecma_value_t ret;
   ecma_value_t then_call_result = ecma_op_function_call (ecma_get_object_from_value (job_p->then),
                                                          job_p->thenable,
@@ -250,16 +253,17 @@ ecma_process_promise_resolve_thenable_job (void *obj_p) /**< the job to be opera
 
   if (ECMA_IS_VALUE_ERROR (then_call_result))
   {
-    ret = ecma_op_function_call (ecma_get_object_from_value (reject),
-                                 ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED),
+    then_call_result = JERRY_CONTEXT (error_value);
+
+    ret = ecma_op_function_call (ecma_get_object_from_value (funcs->reject),
+                                 ECMA_VALUE_UNDEFINED,
                                  &then_call_result,
                                  1);
 
     ecma_free_value (then_call_result);
   }
 
-  ecma_free_value (resolve);
-  ecma_free_value (reject);
+  ecma_promise_free_resolving_functions (funcs);
   ecma_free_promise_resolve_thenable_job (job_p);
 
   return ret;
@@ -324,7 +328,7 @@ ecma_enqueue_promise_resolve_thenable_job (ecma_value_t promise, /**< promise to
 ecma_value_t
 ecma_process_all_enqueued_jobs (void)
 {
-  ecma_value_t ret = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  ecma_value_t ret = ECMA_VALUE_UNDEFINED;
 
   while (JERRY_CONTEXT (job_queue_head_p) != NULL && !ECMA_IS_VALUE_ERROR (ret))
   {
@@ -341,6 +345,23 @@ ecma_process_all_enqueued_jobs (void)
 
   return ret;
 } /* ecma_process_all_enqueued_jobs */
+
+/**
+ * Release enqueued Promise jobs.
+ */
+void
+ecma_free_all_enqueued_jobs (void)
+{
+  while (JERRY_CONTEXT (job_queue_head_p) != NULL)
+  {
+    ecma_job_queueitem_t *item_p = JERRY_CONTEXT (job_queue_head_p);
+    JERRY_CONTEXT (job_queue_head_p) = item_p->next_p;
+    void *job_p = item_p->job_p;
+    jmem_heap_free_block (item_p, sizeof (ecma_job_queueitem_t));
+
+    ecma_free_promise_reaction_job (job_p);
+  }
+} /* ecma_free_all_enqueued_jobs */
 
 /**
  * @}

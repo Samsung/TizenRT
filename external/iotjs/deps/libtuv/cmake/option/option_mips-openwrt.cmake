@@ -14,28 +14,4 @@
 
 # linux common
 include("cmake/option/option_unix_common.cmake")
-
-set(TUV_PLATFORM_PATH "linux")
-set(BUILDTESTER "no")
-set(BUILDAPIEMULTESTER "no")
-
-# linux specific source files
-set(LINUX_PATH "${SOURCE_ROOT}/${TUV_PLATFORM_PATH}")
-
-set(PLATFORM_SRCFILES ${PLATFORM_SRCFILES}
-                      "${LINUX_PATH}/uv_linux.c"
-                      "${LINUX_PATH}/uv_linux_loop.c"
-                      "${LINUX_PATH}/uv_linux_clock.c"
-                      "${LINUX_PATH}/uv_linux_io.c"
-                      "${LINUX_PATH}/uv_linux_syscall.c"
-                      "${LINUX_PATH}/uv_linux_thread.c"
-                      )
-
-set(PLATFORM_TESTFILES "${TEST_ROOT}/runner_linux.c"
-                       )
-
-set(TUV_LINK_LIBS "pthread")
-
-# mips-linux specific
-if(DEFINED TARGET_BOARD)
-endif()
+include("cmake/option/option_linux_common.cmake")

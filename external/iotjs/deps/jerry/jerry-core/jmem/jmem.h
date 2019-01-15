@@ -25,13 +25,6 @@
  * @{
  */
 
-#ifndef JERRY_ENABLE_EXTERNAL_CONTEXT
-/**
- * Size of heap
- */
-#define JMEM_HEAP_SIZE ((size_t) (CONFIG_MEM_HEAP_AREA_SIZE))
-#endif /* !JERRY_ENABLE_EXTERNAL_CONTEXT */
-
 /**
  * Logarithm of required alignment for allocated units/blocks
  */
@@ -151,7 +144,6 @@ typedef struct
   size_t free_iter_count; /**< Number of iterations required for inserting free blocks */
 } jmem_heap_stats_t;
 
-void jmem_stats_print (void);
 void jmem_stats_allocate_byte_code_bytes (size_t property_size);
 void jmem_stats_free_byte_code_bytes (size_t property_size);
 void jmem_stats_allocate_string_bytes (size_t string_size);
@@ -161,10 +153,11 @@ void jmem_stats_free_object_bytes (size_t string_size);
 void jmem_stats_allocate_property_bytes (size_t property_size);
 void jmem_stats_free_property_bytes (size_t property_size);
 
+void jmem_heap_get_stats (jmem_heap_stats_t *);
 #endif /* JMEM_STATS */
 
-jmem_cpointer_t jmem_compress_pointer (const void *pointer_p) __attr_pure___;
-void *jmem_decompress_pointer (uintptr_t compressed_pointer) __attr_pure___;
+jmem_cpointer_t JERRY_ATTR_PURE jmem_compress_pointer (const void *pointer_p);
+void * JERRY_ATTR_PURE jmem_decompress_pointer (uintptr_t compressed_pointer);
 
 /**
  * A free memory callback routine type.
@@ -216,7 +209,7 @@ void jmem_run_free_unused_memory_callbacks (jmem_free_unused_memory_severity_t s
  * Get value of pointer from specified compressed pointer value
  */
 #define JMEM_CP_GET_POINTER(type, cp_value) \
-  (((unlikely ((cp_value) == JMEM_CP_NULL)) ? NULL : JMEM_CP_GET_NON_NULL_POINTER (type, cp_value)))
+  (((JERRY_UNLIKELY ((cp_value) == JMEM_CP_NULL)) ? NULL : JMEM_CP_GET_NON_NULL_POINTER (type, cp_value)))
 
 /**
  * Set value of non-null compressed pointer so that it will correspond
@@ -234,7 +227,7 @@ void jmem_run_free_unused_memory_callbacks (jmem_free_unused_memory_severity_t s
   { \
     void *ptr_value = (void *) non_compressed_pointer; \
     \
-    if (unlikely ((ptr_value) == NULL)) \
+    if (JERRY_UNLIKELY ((ptr_value) == NULL)) \
     { \
       (cp_value) = JMEM_CP_NULL; \
     } \

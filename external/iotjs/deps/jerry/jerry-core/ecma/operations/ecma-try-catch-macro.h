@@ -30,7 +30,7 @@
  *      statement with same argument as corresponding ECMA_TRY_CATCH's first argument.
  */
 #define ECMA_TRY_CATCH(var, op, return_value) \
-  JERRY_ASSERT (return_value == ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY)); \
+  JERRY_ASSERT (return_value == ECMA_VALUE_EMPTY); \
   ecma_value_t var ## _completion = op; \
   if (ECMA_IS_VALUE_ERROR (var ## _completion)) \
   { \
@@ -65,24 +65,11 @@
  *      statement with same argument as corresponding ECMA_OP_TO_NUMBER_TRY_CATCH's first argument.
  */
 #define ECMA_OP_TO_NUMBER_TRY_CATCH(num_var, value, return_value) \
-  JERRY_ASSERT (return_value == ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY)); \
-  ecma_number_t num_var = ecma_number_make_nan (); \
-  if (ecma_is_value_number (value)) \
-  { \
-    num_var = ecma_get_number_from_value (value); \
-  } \
-  else \
-  { \
-    ECMA_TRY_CATCH (to_number_value, \
-                    ecma_op_to_number (value), \
-                    return_value); \
-    \
-    num_var = ecma_get_number_from_value (to_number_value); \
-    \
-    ECMA_FINALIZE (to_number_value); \
-  } \
+  JERRY_ASSERT (return_value == ECMA_VALUE_EMPTY); \
+  ecma_number_t num_var; \
+  return_value = ecma_get_number (value, &num_var); \
   \
-  if (ecma_is_value_empty (return_value)) \
+  if (JERRY_LIKELY (ecma_is_value_empty (return_value))) \
   {
 
 /**
@@ -92,10 +79,6 @@
  *      Each ECMA_OP_TO_NUMBER_TRY_CATCH should be followed by ECMA_OP_TO_NUMBER_FINALIZE
  *      with same argument as corresponding ECMA_OP_TO_NUMBER_TRY_CATCH's first argument.
  */
-#define ECMA_OP_TO_NUMBER_FINALIZE(num_var) } \
-  else \
-  { \
-    JERRY_ASSERT (ecma_number_is_nan (num_var)); \
-  }
+#define ECMA_OP_TO_NUMBER_FINALIZE(num_var) }
 
 #endif /* !ECMA_TRY_CATCH_MACRO_H */

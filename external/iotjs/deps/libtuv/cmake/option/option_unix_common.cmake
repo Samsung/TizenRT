@@ -47,11 +47,9 @@ set(PLATFORM_SRCFILES
       ${UNIX_PATH}/internal.h
       ${UNIX_PATH}/loop.c
       ${UNIX_PATH}/loop-watcher.c
-#     ${UNIX_PATH}/pipe.c
       ${UNIX_PATH}/poll.c
       ${UNIX_PATH}/process.c
 #     ${UNIX_PATH}/proctitle.c
-#     ${UNIX_PATH}/signal.c
       ${UNIX_PATH}/spinlock.h
       ${UNIX_PATH}/stream.c
       ${UNIX_PATH}/tcp.c
@@ -79,7 +77,48 @@ set(TEST_UNITFILES
       "${TEST_ROOT}/test_active.c"
       "${TEST_ROOT}/test_walk_handles.c"
       "${TEST_ROOT}/test_async.c"
-      )
+    )
+
+# { TUV_CHANGES@20180803:
+#   Made signal build time configurable }
+if(TUV_FEATURE_PROCESS)
+      set(TUV_FEATURE_PIPE ON)
+      set(TUV_FEATURE_SIGNAL ON)
+      set(FLAGS_COMMON "${FLAGS_COMMON}" "-DTUV_FEATURE_PROCESS=1")
+      set(TEST_UNITFILES "${TEST_UNITFILES}"
+            "${TEST_ROOT}/test_ipc.c"
+            "${TEST_ROOT}/test_spawn.c")
+endif()
+
+
+# { TUV_CHANGES@20180724:
+#   Made pipe build time configurable }
+if(TUV_FEATURE_PIPE)
+      set(PLATFORM_SRCFILES "${PLATFORM_SRCFILES}"
+            ${UNIX_PATH}/pipe.c)
+      set(FLAGS_COMMON "${FLAGS_COMMON}" "-DTUV_FEATURE_PIPE=1")
+      set(TEST_UNITFILES "${TEST_UNITFILES}"
+            "${TEST_ROOT}/test_pipe_bind_error.c"
+            "${TEST_ROOT}/test_pipe_close_stdout_read_stdin.c"
+            "${TEST_ROOT}/test_pipe_connect_error.c"
+            "${TEST_ROOT}/test_pipe_connect_multiple.c"
+            "${TEST_ROOT}/test_pipe_connect_prepare.c"
+            "${TEST_ROOT}/test_pipe_getsockname.c"
+            "${TEST_ROOT}/test_pipe_pending_instances.c"
+            "${TEST_ROOT}/test_pipe_sendmsg.c"
+            "${TEST_ROOT}/test_pipe_server_close.c"
+            "${TEST_ROOT}/test_pipe_set_non_blocking.c"
+           )
+endif()
+
+# { TUV_CHANGES@20180723:
+#   Made signal build time configurable }
+if(TUV_FEATURE_SIGNAL)
+      set(PLATFORM_SRCFILES "${PLATFORM_SRCFILES}"
+            ${UNIX_PATH}/signal.c)
+      set(FLAGS_COMMON "${FLAGS_COMMON}" "-DTUV_FEATURE_SIGNAL=1")
+      set(TEST_UNITFILES "${TEST_UNITFILES}" "${TEST_ROOT}/test_signal.c")
+endif()
 
 # configuration values
 set(CONFIG_FILESYSTEM 1)

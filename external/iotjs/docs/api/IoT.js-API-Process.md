@@ -2,12 +2,12 @@
 
 The following shows process module APIs available for each platform.
 
-|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) |
-| :---: | :---: | :---: | :---: |
-| process.nextTick | O | O | O |
-| process.exit | O | O | O |
-| process.cwd | O | O | O |
-| process.chdir | O | O | O |
+|  | Linux<br/>(Ubuntu) | Tizen<br/>(Raspberry Pi) | Raspbian<br/>(Raspberry Pi) | NuttX<br/>(STM32F4-Discovery) | TizenRT<br/>(Artik053) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| process.nextTick | O | O | O | O | O |
+| process.exit | O | O | O | O | O |
+| process.cwd | O | O | O | O | O |
+| process.chdir | O | O | O | O | O |
 
 ※ On NuttX, you should pass absolute path to `process.chdir`.
 
@@ -47,6 +47,8 @@ The `env` property returns an object containing a few environment variables.
 The following environment elements can be accessed:
 * `HOME`
 * `IOTJS_PATH` which is set to `/mnt/sdcard` on NuttX by default.
+* `IOTJS_WORKING_DIR_PATH` is the specified current working directory path to change the root of the module load.
+* `IOTJS_EXTRA_MODULE_PATH` contains the paths to be additionally referenced to load any module.
 * `env` contains `'experimental'` if the IoT.js was build with experimental support.
 
 **Example**
@@ -69,13 +71,14 @@ Specifying an exit code for the `process.exit()` call will override any previous
 
 The `iotjs` property holds IoT.js related information in an object.
 The following keys can be accessed via this property:
-* `board` specifies the device type on which the IoT.js is running currently. For instance `'STM32F4DIS'`, `'RP2'`, or `'unknown'`.
+* `board` specifies the device type on which the IoT.js is running currently.
+For instance `'artik05x'`, `'artik10'`, `'rpi2'`,`'stm32f4dis'`, or `'unknown'`.
 
 **Example**
 
 ```js
 console.log(process.iotjs.board);
-// on Raspberry 2 it prints: RP2
+// on Raspberry 2 it prints: rpi2
 ```
 
 ### process.platform
@@ -146,8 +149,9 @@ doSomeWork()
 process.exitCode = 1;
 ```
 
-### process.nextTick(callback)
+### process.nextTick(callback, [...args])
 * `callback` {Function}
+* `...args` {any} Additional arguments to pass when invoking the callback
 
 The `nextTick` method adds the `callback` method to the "next tick queue".
 Once the current turn of the event loop is completed, all callbacks currently in the next tick queue will be called.
@@ -165,6 +169,18 @@ console.log('step 3');
 // step 1
 // step 3
 // step 2
+```
+
+### process.version
+* {string}
+
+The `version` property returns the version numbering of the currently running IoT.js process as a string.
+
+**Example**
+```js
+console.log(process.version);
+// prints: (in case of version 1.0.0)
+// 1.0.0
 ```
 
 ### Event: 'exit'

@@ -14,7 +14,7 @@
  */
 
 #include "lit-char-helpers.h"
-#include "lit/lit-unicode-ranges.inc.h"
+#include "lit-unicode-ranges.inc.h"
 #include "lit-strings.h"
 
 #ifndef CONFIG_DISABLE_UNICODE_CASE_CONVERSION
@@ -100,20 +100,6 @@ search_char_in_interval_array (ecma_char_t c,               /**< code unit */
 
   return false;
 } /* search_char_in_interval_array */
-
-/**
- * Check if specified character is one of the Format-Control characters
- *
- * @return true - if the character is one of characters, listed in ECMA-262 v5, Table 1,
- *         false - otherwise
- */
-bool
-lit_char_is_format_control (ecma_char_t c) /**< code unit */
-{
-  return (c == LIT_CHAR_ZWNJ
-          || c == LIT_CHAR_ZWJ
-          || c == LIT_CHAR_BOM);
-} /* lit_char_is_format_control */
 
 /**
  * Check if specified character is one of the Whitespace characters including those
@@ -226,6 +212,14 @@ lit_char_is_identifier_start (const uint8_t *src_p) /**< pointer to a vaild UTF8
     return lit_char_is_identifier_start_character (*src_p);
   }
 
+  /* ECMAScript 2015 specification allows some code points in supplementary plane.
+   * However, we don't permit characters in supplementary characters as start of identifier.
+   */
+  if ((*src_p & LIT_UTF8_4_BYTE_MASK) == LIT_UTF8_4_BYTE_MARKER)
+  {
+    return false;
+  }
+
   return lit_char_is_identifier_start_character (lit_utf8_peek_next (src_p));
 } /* lit_char_is_identifier_start */
 
@@ -260,6 +254,14 @@ lit_char_is_identifier_part (const uint8_t *src_p) /**< pointer to a vaild UTF8 
   if (*src_p <= LIT_UTF8_1_BYTE_CODE_POINT_MAX)
   {
     return lit_char_is_identifier_part_character (*src_p);
+  }
+
+  /* ECMAScript 2015 specification allows some code points in supplementary plane.
+   * However, we don't permit characters in supplementary characters as part of identifier.
+   */
+  if ((*src_p & LIT_UTF8_4_BYTE_MASK) == LIT_UTF8_4_BYTE_MARKER)
+  {
+    return false;
   }
 
   return lit_char_is_identifier_part_character (lit_utf8_peek_next (src_p));
@@ -371,7 +373,6 @@ lit_char_to_utf8_bytes (uint8_t *dst_p, /**< destination buffer */
     return 2;
   }
 
-  JERRY_ASSERT (!(chr & ~LIT_UTF8_3_BYTE_CODE_POINT_MAX));
   /* zzzzyyyy yyxxxxxx -> 1110zzzz 10yyyyyy 10xxxxxx */
   *(dst_p++) = (uint8_t) (LIT_UTF8_3_BYTE_MARKER | ((chr >> 12) & LIT_UTF8_LAST_4_BITS_MASK));
   *(dst_p++) = (uint8_t) (LIT_UTF8_EXTRA_BYTE_MARKER | ((chr >> 6) & LIT_UTF8_LAST_6_BITS_MASK));
@@ -400,7 +401,6 @@ lit_char_get_utf8_length (ecma_char_t chr) /**< EcmaScript character */
   }
 
   /* zzzzyyyy yyxxxxxx */
-  JERRY_ASSERT (!(chr & ~LIT_UTF8_3_BYTE_CODE_POINT_MAX));
   return 3;
 } /* lit_char_get_utf8_length */
 
@@ -414,7 +414,7 @@ lit_char_get_utf8_length (ecma_char_t chr) /**< EcmaScript character */
 bool
 lit_read_code_unit_from_hex (const lit_utf8_byte_t *buf_p, /**< buffer with characters */
                              lit_utf8_size_t number_of_characters, /**< number of characters to be read */
-                             ecma_char_ptr_t out_code_unit_p) /**< [out] decoded result */
+                             ecma_char_t *out_code_unit_p) /**< [out] decoded result */
 {
   ecma_char_t code_unit = LIT_CHAR_NULL;
 

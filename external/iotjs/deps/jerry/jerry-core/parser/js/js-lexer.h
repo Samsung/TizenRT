@@ -39,6 +39,9 @@ typedef enum
   LEXER_LIT_TRUE,                /**< true (not a keyword!) */
   LEXER_LIT_FALSE,               /**< false (not a keyword!) */
   LEXER_LIT_NULL,                /**< null (not a keyword!) */
+#ifndef CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS
+  LEXER_TEMPLATE_LITERAL,        /**< multi segment template literal */
+#endif /* !CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS */
 
   /* Unary operators
    * IMPORTANT: update CBC_UNARY_OP_TOKEN_TO_OPCODE and
@@ -115,6 +118,9 @@ typedef enum
   LEXER_SEMICOLON,               /**< ";" */
   LEXER_COLON,                   /**< ":" */
   LEXER_COMMA,                   /**< "," */
+#ifndef CONFIG_DISABLE_ES2015_ARROW_FUNCTION
+  LEXER_ARROW,                   /**< "=>" */
+#endif /* !CONFIG_DISABLE_ES2015_ARROW_FUNCTION */
 
   LEXER_KEYW_BREAK,              /**< break */
   LEXER_KEYW_DO,                 /**< do */
@@ -143,30 +149,61 @@ typedef enum
   LEXER_PROPERTY_SETTER,         /**< property setter function */
   LEXER_COMMA_SEP_LIST,          /**< comma separated bracketed expression list */
   LEXER_SCAN_SWITCH,             /**< special value for switch pre-scan */
+  LEXER_CLASS_CONSTRUCTOR,       /**< special value for class constructor method */
 
+#ifdef CONFIG_DISABLE_ES2015
   /* Future reserved words: these keywords
    * must form a group after all other keywords. */
 #define LEXER_FIRST_FUTURE_RESERVED_WORD LEXER_KEYW_CLASS
+#endif /* CONFIG_DISABLE_ES2015 */
   LEXER_KEYW_CLASS,              /**< class */
-  LEXER_KEYW_ENUM,               /**< enum */
   LEXER_KEYW_EXTENDS,            /**< extends */
   LEXER_KEYW_SUPER,              /**< super */
   LEXER_KEYW_CONST,              /**< const */
   LEXER_KEYW_EXPORT,             /**< export */
   LEXER_KEYW_IMPORT,             /**< import */
+#ifndef CONFIG_DISABLE_ES2015
+  /* Future reserved words: these keywords
+   * must form a group after all other keywords.
+   * Note:
+   *      Tokens from LEXER_KEYW_CLASS to LEXER_KEYW_IMPORT
+   *      are no longer future reserved words in ES2015. */
+#define LEXER_FIRST_FUTURE_RESERVED_WORD LEXER_KEYW_ENUM
+#endif /* !CONFIG_DISABLE_ES2015 */
+  LEXER_KEYW_ENUM,               /**< enum */
+#ifndef CONFIG_DISABLE_ES2015
+  LEXER_KEYW_AWAIT,              /**< await */
+#endif /* !CONFIG_DISABLE_ES2015 */
 
   /* Future strict reserved words: these keywords
    * must form a group after future reserved words. */
 #define LEXER_FIRST_FUTURE_STRICT_RESERVED_WORD LEXER_KEYW_IMPLEMENTS
   LEXER_KEYW_IMPLEMENTS,         /**< implements */
-  LEXER_KEYW_LET,                /**< let */
   LEXER_KEYW_PRIVATE,            /**< private */
   LEXER_KEYW_PUBLIC,             /**< public */
-  LEXER_KEYW_YIELD,              /**< yield */
   LEXER_KEYW_INTERFACE,          /**< interface */
   LEXER_KEYW_PACKAGE,            /**< package */
   LEXER_KEYW_PROTECTED,          /**< protected */
+
+#ifndef CONFIG_DISABLE_ES2015
+  /* Context dependent strict reserved words:
+   * See also: ECMA-262 v6, 11.6.2.1 */
+#define LEXER_FIRST_CONTEXT_DEPENDENT_RESERVED_WORD LEXER_KEYW_STATIC
   LEXER_KEYW_STATIC,             /**< static */
+#else /* CONFIG_DISABLE_ES2015 */
+  /* Context dependent strict reserved words:
+   * See also: ECMA-262 v6, 11.6.2.1 */
+#define LEXER_FIRST_CONTEXT_DEPENDENT_RESERVED_WORD
+#endif /* !CONFIG_DISABLE_ES2015 */
+
+  /* Context dependent future strict reserved words:
+   * See also: ECMA-262 v6, 11.6.2.1 */
+#define LEXER_FIRST_CONTEXT_DEPENDENT_FUTURE_RESERVED_WORD LEXER_KEYW_LET
+  LEXER_KEYW_LET,                /**< let */
+  LEXER_KEYW_YIELD,              /**< yield */
+#ifdef CONFIG_DISABLE_ES2015
+  LEXER_KEYW_STATIC,             /**< static */
+#endif /* CONFIG_DISABLE_ES2015 */
 } lexer_token_type_t;
 
 #define LEXER_NEWLINE_LS_PS_BYTE_1 0xe2
@@ -191,6 +228,25 @@ typedef enum
 
 #define LEXER_BINARY_LVALUE_OP_TOKEN_TO_OPCODE(token_type) \
    ((cbc_opcode_t) ((((token_type) - LEXER_ASSIGN_ADD) * 2) + CBC_ASSIGN_ADD))
+
+/**
+ * Lexer newline flags.
+ */
+typedef enum
+{
+  LEXER_WAS_NEWLINE = (1u << 0),             /**< newline was seen */
+  LEXER_NO_SKIP_SPACES = (1u << 1)           /**< ignore skip spaces */
+} lexer_newline_flags_t;
+
+/**
+ * Lexer object identifier parse options.
+ */
+typedef enum
+{
+  LEXER_OBJ_IDENT_NO_OPTS = (1u << 0),          /**< no options */
+  LEXER_OBJ_IDENT_ONLY_IDENTIFIERS = (1u << 1), /**< only identifiers are accepted */
+  LEXER_OBJ_IDENT_CLASS_METHOD = (1u << 2),     /**< expect identifier inside a class body */
+} lexer_obj_ident_opts_t;
 
 /**
  * Lexer literal object types.
@@ -218,7 +274,7 @@ typedef enum
 typedef struct
 {
   const uint8_t *char_p;                     /**< start of identifier or string token */
-  uint16_t length;                           /**< length or index of a literal */
+  prop_length_t length;                      /**< length or index of a literal */
   uint8_t type;                              /**< type of the current literal */
   uint8_t has_escape;                        /**< has escape sequences */
 } lexer_lit_location_t;
@@ -243,7 +299,7 @@ typedef struct
   uint8_t literal_is_reserved;               /**< future reserved keyword
                                               *   (when char_literal.type is LEXER_IDENT_LITERAL) */
   uint8_t extra_value;                       /**< helper value for different purposes */
-  uint8_t was_newline;                       /**< newline occured before this token */
+  uint8_t flags;                             /**< flag bits for the current token */
   parser_line_counter_t line;                /**< token start line */
   parser_line_counter_t column;              /**< token start column */
   lexer_lit_location_t lit_location;         /**< extra data for character literals */

@@ -21,7 +21,6 @@ function IncomingMessage(socket) {
   stream.Readable.call(this);
 
   this.socket = socket;
-  this.connection = socket;
 
   this.readable = true;
 
@@ -32,6 +31,7 @@ function IncomingMessage(socket) {
   // for request (server)
   this.url = '';
   this.method = null;
+  this.httpVersion = '';
 
   // for response (client)
   this.statusCode = null;

@@ -54,13 +54,18 @@ dns.lookup('localhost', function(err, ip, family) {
 // Test with invalid hostname.
 dns.lookup('invalid', 4, function(err, ip, family) {
   assert.notEqual(err, null);
-  assert.equal(err.code == -3008 || err.code == -3007, true);
 });
 
 // Test with empty hostname.
 dns.lookup('', 4, function(err, ip, family) {
-  assert.notEqual(err, null);
-  assert.equal(err.code == -3008 || err.code == -3007, true);
+  if (process.platform === "windows") {
+    /* On windows the empty dns name can be resolved. */
+    assert.equal(err, null);
+    assert.notEqual(ip, null);
+    assert.notEqual(family, null);
+  } else {
+    assert.notEqual(err, null);
+  }
 });
 
 // Test with non string hostname.

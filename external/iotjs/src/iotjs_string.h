@@ -20,7 +20,7 @@
 typedef struct {
   size_t size;
   char* data;
-} IOTJS_VALIDATED_STRUCT(iotjs_string_t);
+} iotjs_string_t;
 
 // Create new string
 iotjs_string_t iotjs_string_create();
@@ -32,9 +32,6 @@ void iotjs_string_destroy(iotjs_string_t* str);
 
 // Check if string is empty
 bool iotjs_string_is_empty(const iotjs_string_t* str);
-
-// Make string empty
-void iotjs_string_make_empty(iotjs_string_t* str);
 
 // Append `data` to tail of the string.
 void iotjs_string_append(iotjs_string_t* str, const char* data, size_t size);

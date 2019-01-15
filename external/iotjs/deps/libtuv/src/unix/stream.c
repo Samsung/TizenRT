@@ -598,7 +598,9 @@ int uv_accept(uv_stream_t* server, uv_stream_t* client) {
     return -EAGAIN;
 
   switch (client->type) {
+#ifdef TUV_FEATURE_PIPE
     case UV_NAMED_PIPE:
+#endif
     case UV_TCP:
       err = uv__stream_open(client,
                             server->accepted_fd,
@@ -661,6 +663,12 @@ int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb) {
   case UV_TCP:
     err = uv_tcp_listen((uv_tcp_t*)stream, backlog, cb);
     break;
+
+#ifdef TUV_FEATURE_PIPE
+  case UV_NAMED_PIPE:
+    err = uv_pipe_listen((uv_pipe_t*)stream, backlog, cb);
+    break;
+#endif
 
   default:
     err = -EINVAL;
@@ -993,8 +1001,11 @@ uv_handle_type uv__handle_type(int fd) {
       return UV_NAMED_PIPE;
 #endif
     switch (ss.ss_family) {
+
+#ifdef AF_UNIX
       case AF_UNIX:
         return UV_NAMED_PIPE;
+#endif
       case AF_INET:
       case AF_INET6:
         return UV_TCP;
@@ -1155,9 +1166,9 @@ static void uv__read(uv_stream_t* stream) {
 
     buf = uv_buf_init(NULL, 0);
 #if defined(__NUTTX__) || defined(__TIZENRT__)
-    stream->alloc_cb((uv_handle_t*)stream, 64 * 1024, &buf);
-#else
     stream->alloc_cb((uv_handle_t*)stream, 2 * 1024, &buf);
+#else
+    stream->alloc_cb((uv_handle_t*)stream, 64 * 1024, &buf);
 #endif
     if (buf.base == NULL || buf.len == 0) {
       /* User indicates it can't or won't handle the read. */
@@ -1590,6 +1601,16 @@ int uv_read_stop(uv_stream_t* stream) {
 }
 
 
+int uv_is_readable(const uv_stream_t* stream) {
+  return !!(stream->flags & UV_STREAM_READABLE);
+}
+
+
+int uv_is_writable(const uv_stream_t* stream) {
+  return !!(stream->flags & UV_STREAM_WRITABLE);
+}
+
+
 #if defined(__APPLE__)
 int uv___stream_fd(const uv_stream_t* handle) {
   const uv__stream_select_t* s;
@@ -1660,3 +1681,12 @@ void uv__stream_close(uv_stream_t* handle) {
   assert(!uv__io_active(&handle->io_watcher, POLLIN | POLLOUT));
 }
 
+
+#ifdef TUV_FEATURE_PIPE
+int uv_stream_set_blocking(uv_stream_t* handle, int blocking) {
+  /* Don't need to check the file descriptor, uv__nonblock()
+   * will fail with EBADF if it's not valid.
+   */
+  return uv__nonblock(uv__stream_fd(handle), !blocking);
+}
+#endif

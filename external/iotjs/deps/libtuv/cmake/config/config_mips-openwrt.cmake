@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include(CMakeForceCompiler)
-
 set(CMAKE_SYSTEM_NAME Openwrt)
 set(CMAKE_SYSTEM_PROCESSOR mips)
 
-SET(CMAKE_C_COMPILER   mipsel-openwrt-linux-gcc)
+set(CMAKE_C_COMPILER mips-openwrt-linux-gcc)

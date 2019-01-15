@@ -86,18 +86,17 @@ ecma_builtin_object_prototype_object_value_of (ecma_value_t this_arg) /**< this 
 static ecma_value_t
 ecma_builtin_object_prototype_object_to_locale_string (ecma_value_t this_arg) /**< this argument */
 {
-  ecma_value_t return_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t return_value = ECMA_VALUE_EMPTY;
   /* 1. */
   ECMA_TRY_CATCH (obj_val,
                   ecma_op_to_object (this_arg),
                   return_value);
 
   ecma_object_t *obj_p = ecma_get_object_from_value (obj_val);
-  ecma_string_t *to_string_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_TO_STRING_UL);
 
   /* 2. */
   ECMA_TRY_CATCH (to_string_val,
-                  ecma_op_object_get (obj_p, to_string_magic_string_p),
+                  ecma_op_object_get_by_magic_id (obj_p, LIT_MAGIC_STRING_TO_STRING_UL),
                   return_value);
 
   /* 3. */
@@ -111,10 +110,8 @@ ecma_builtin_object_prototype_object_to_locale_string (ecma_value_t this_arg) /*
     ecma_object_t *to_string_func_obj_p = ecma_get_object_from_value (to_string_val);
     return_value = ecma_op_function_call (to_string_func_obj_p, this_arg, NULL, 0);
   }
+
   ECMA_FINALIZE (to_string_val);
-
-  ecma_deref_ecma_string (to_string_magic_string_p);
-
   ECMA_FINALIZE (obj_val);
 
   return return_value;
@@ -133,7 +130,7 @@ static ecma_value_t
 ecma_builtin_object_prototype_object_has_own_property (ecma_value_t this_arg, /**< this argument */
                                                        ecma_value_t arg) /**< first argument */
 {
-  ecma_value_t return_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t return_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   ECMA_TRY_CATCH (to_string_val,
@@ -175,10 +172,10 @@ ecma_builtin_object_prototype_object_is_prototype_of (ecma_value_t this_arg, /**
   /* 1. Is the argument an object? */
   if (!ecma_is_value_object (arg))
   {
-    return ecma_make_simple_value (ECMA_SIMPLE_VALUE_FALSE);
+    return ECMA_VALUE_FALSE;
   }
 
-  ecma_value_t return_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t return_value = ECMA_VALUE_EMPTY;
 
   /* 2. ToObject(this) */
   ECMA_TRY_CATCH (obj_value,
@@ -195,8 +192,7 @@ ecma_builtin_object_prototype_object_is_prototype_of (ecma_value_t this_arg, /**
   ecma_object_t *v_obj_p = ecma_get_object_from_value (v_obj_value);
 
   bool is_prototype_of = ecma_op_object_is_prototype_of (obj_p, v_obj_p);
-  return_value = ecma_make_simple_value (is_prototype_of ? ECMA_SIMPLE_VALUE_TRUE
-                                                         : ECMA_SIMPLE_VALUE_FALSE);
+  return_value = ecma_make_boolean_value (is_prototype_of);
   ECMA_FINALIZE (v_obj_value);
 
   ECMA_FINALIZE (obj_value);
@@ -217,7 +213,7 @@ static ecma_value_t
 ecma_builtin_object_prototype_object_property_is_enumerable (ecma_value_t this_arg, /**< this argument */
                                                              ecma_value_t arg) /**< routine's first argument */
 {
-  ecma_value_t return_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t return_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   ECMA_TRY_CATCH (to_string_val,
@@ -248,7 +244,7 @@ ecma_builtin_object_prototype_object_property_is_enumerable (ecma_value_t this_a
   }
   else
   {
-    return_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_FALSE);
+    return_value = ECMA_VALUE_FALSE;
   }
 
   ECMA_FINALIZE (obj_val);

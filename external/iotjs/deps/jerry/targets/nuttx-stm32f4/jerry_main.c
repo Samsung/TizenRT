@@ -18,9 +18,9 @@
 #include <stdlib.h>
 
 #include "jerryscript.h"
+#include "jerryscript-ext/debugger.h"
 #include "jerryscript-ext/handler.h"
 #include "jerryscript-port.h"
-#include "jmem.h"
 #include "setjmp.h"
 
 /**
@@ -53,6 +53,7 @@ print_help (char *name)
           "  --mem-stats-separate\n"
           "  --show-opcodes\n"
           "  --start-debug-server\n"
+          "  --debug-server-port [port]\n"
           "\n",
           name);
 } /* print_help */
@@ -93,7 +94,7 @@ read_file (const char *file_name, /**< source code */
 
   rewind (file);
 
-  uint8_t *buffer = jmem_heap_alloc_block_null_on_error (script_len);
+  uint8_t *buffer = (uint8_t *) malloc (script_len);
 
   if (buffer == NULL)
   {
@@ -107,7 +108,7 @@ read_file (const char *file_name, /**< source code */
   if (!bytes_read || bytes_read != script_len)
   {
     jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: failed to read file: %s\n", file_name);
-    jmem_heap_free_block ((void*) buffer, script_len);
+    free ((void*) buffer);
 
     fclose (file);
     return NULL;
@@ -118,51 +119,6 @@ read_file (const char *file_name, /**< source code */
   *out_size_p = bytes_read;
   return (const uint8_t *) buffer;
 } /* read_file */
-
-/**
- * Check whether an error is a SyntaxError or not
- *
- * @return true - if param is SyntaxError
- *         false - otherwise
- */
-static bool
-jerry_value_is_syntax_error (jerry_value_t error_value) /**< error value */
-{
-  assert (jerry_is_feature_enabled (JERRY_FEATURE_ERROR_MESSAGES));
-
-  if (!jerry_value_is_object (error_value))
-  {
-    return false;
-  }
-
-  jerry_value_t prop_name = jerry_create_string ((const jerry_char_t *)"name");
-  jerry_value_t error_name = jerry_get_property (error_value, prop_name);
-  jerry_release_value (prop_name);
-
-  if (jerry_value_has_error_flag (error_name)
-      || !jerry_value_is_string (error_name))
-  {
-    return false;
-  }
-
-  jerry_size_t err_str_size = jerry_get_string_size (error_name);
-  jerry_char_t err_str_buf[err_str_size];
-
-  jerry_size_t sz = jerry_string_to_char_buffer (error_name, err_str_buf, err_str_size);
-  jerry_release_value (error_name);
-
-  if (sz == 0)
-  {
-    return false;
-  }
-
-  if (!strcmp ((char *) err_str_buf, "SyntaxError"))
-  {
-    return true;
-  }
-
-  return false;
-} /* jerry_value_is_syntax_error */
 
 /**
  * Convert string into unsigned integer
@@ -195,12 +151,14 @@ static void
 print_unhandled_exception (jerry_value_t error_value, /**< error value */
                            const jerry_char_t *source_p) /**< source_p */
 {
-  assert (jerry_value_has_error_flag (error_value));
+  assert (jerry_value_is_error (error_value));
 
-  jerry_value_clear_error_flag (&error_value);
+  error_value = jerry_get_value_from_error (error_value, false);
   jerry_value_t err_str_val = jerry_value_to_string (error_value);
   jerry_size_t err_str_size = jerry_get_string_size (err_str_val);
   jerry_char_t err_str_buf[256];
+
+  jerry_release_value (error_value);
 
   if (err_str_size >= 256)
   {
@@ -214,7 +172,8 @@ print_unhandled_exception (jerry_value_t error_value, /**< error value */
     assert (sz == err_str_size);
     err_str_buf[err_str_size] = 0;
 
-    if (jerry_is_feature_enabled (JERRY_FEATURE_ERROR_MESSAGES) && jerry_value_is_syntax_error (error_value))
+    if (jerry_is_feature_enabled (JERRY_FEATURE_ERROR_MESSAGES)
+        && jerry_get_error_type (error_value) == JERRY_ERROR_SYNTAX)
     {
       uint32_t err_line = 0;
       uint32_t err_col = 0;
@@ -321,7 +280,7 @@ register_js_function (const char *name_p, /**< name of the function */
 {
   jerry_value_t result_val = jerryx_handler_register_global ((const jerry_char_t *) name_p, handler_p);
 
-  if (jerry_value_has_error_flag (result_val))
+  if (jerry_value_is_error (result_val))
   {
     jerry_port_log (JERRY_LOG_LEVEL_WARNING, "Warning: failed to register '%s' method.", name_p);
   }
@@ -357,6 +316,8 @@ int jerry_main (int argc, char *argv[])
   const char *file_names[JERRY_MAX_COMMAND_LINE_ARGS];
   int i;
   int files_counter = 0;
+  bool start_debug_server = false;
+  uint16_t debug_port = 5001;
 
   jerry_init_flag_t flags = JERRY_INIT_EMPTY;
 
@@ -396,7 +357,19 @@ int jerry_main (int argc, char *argv[])
     }
     else if (!strcmp ("--start-debug-server", argv[i]))
     {
-      flags |= JERRY_INIT_DEBUGGER;
+      start_debug_server = true;
+    }
+    else if (!strcmp ("--debug-server-port", argv[i]))
+    {
+      if (++i < argc)
+      {
+        debug_port = str_to_uint (argv[i]);
+      }
+      else
+      {
+        jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: wrong format or invalid argument\n");
+        return JERRY_STANDALONE_EXIT_CODE_FAIL;
+      }
     }
     else
     {
@@ -405,6 +378,12 @@ int jerry_main (int argc, char *argv[])
   }
 
   jerry_init (flags);
+
+  if (start_debug_server)
+  {
+    jerryx_debugger_after_connect (jerryx_debugger_tcp_create (debug_port)
+                                   && jerryx_debugger_ws_create ());
+  }
 
   register_js_function ("assert", jerryx_handler_assert);
   register_js_function ("gc", jerryx_handler_gc);
@@ -416,11 +395,10 @@ int jerry_main (int argc, char *argv[])
   {
     printf ("No input files, running a hello world demo:\n");
     const jerry_char_t script[] = "var str = 'Hello World'; print(str + ' from JerryScript')";
-    size_t script_size = strlen ((const char *) script);
 
-    ret_value = jerry_parse (script, script_size, false);
+    ret_value = jerry_parse (NULL, 0, script, sizeof (script) - 1, JERRY_PARSE_NO_OPTS);
 
-    if (!jerry_value_has_error_flag (ret_value))
+    if (!jerry_value_is_error (ret_value))
     {
       ret_value = jerry_run (ret_value);
     }
@@ -438,28 +416,28 @@ int jerry_main (int argc, char *argv[])
         return JERRY_STANDALONE_EXIT_CODE_FAIL;
       }
 
-      ret_value = jerry_parse_named_resource ((jerry_char_t *) file_names[i],
-                                              strlen (file_names[i]),
-                                              source_p,
-                                              source_size,
-                                              false);
+      ret_value = jerry_parse ((jerry_char_t *) file_names[i],
+                               strlen (file_names[i]),
+                               source_p,
+                               source_size,
+                               JERRY_PARSE_NO_OPTS);
 
-      if (!jerry_value_has_error_flag (ret_value))
+      if (!jerry_value_is_error (ret_value))
       {
         jerry_value_t func_val = ret_value;
         ret_value = jerry_run (func_val);
         jerry_release_value (func_val);
       }
 
-      if (jerry_value_has_error_flag (ret_value))
+      if (jerry_value_is_error (ret_value))
       {
         print_unhandled_exception (ret_value, source_p);
-        jmem_heap_free_block ((void*) source_p, source_size);
+        free ((void*) source_p);
 
         break;
       }
 
-      jmem_heap_free_block ((void*) source_p, source_size);
+      free ((void*) source_p);
 
       jerry_release_value (ret_value);
       ret_value = jerry_create_undefined ();
@@ -468,7 +446,16 @@ int jerry_main (int argc, char *argv[])
 
   int ret_code = JERRY_STANDALONE_EXIT_CODE_OK;
 
-  if (jerry_value_has_error_flag (ret_value))
+  if (jerry_value_is_error (ret_value))
+  {
+    ret_code = JERRY_STANDALONE_EXIT_CODE_FAIL;
+  }
+
+  jerry_release_value (ret_value);
+
+  ret_value = jerry_run_all_enqueued_jobs ();
+
+  if (jerry_value_is_error (ret_value))
   {
     ret_code = JERRY_STANDALONE_EXIT_CODE_FAIL;
   }
@@ -505,19 +492,16 @@ jerry_port_log (jerry_log_level_t level, /**< log level */
 } /* jerry_port_log */
 
 /**
- * Dummy function to get the time zone.
+ * Dummy function to get the time zone adjustment.
  *
- * @return true
+ * @return 0
  */
-bool
-jerry_port_get_time_zone (jerry_time_zone_t *tz_p)
+double
+jerry_port_get_local_time_zone_adjustment (double unix_ms, bool is_utc)
 {
   /* We live in UTC. */
-  tz_p->offset = 0;
-  tz_p->daylight_saving_time = 0;
-
-  return true;
-} /* jerry_port_get_time_zone */
+  return 0;
+} /* jerry_port_get_local_time_zone_adjustment */
 
 /**
  * Dummy function to get the current time.

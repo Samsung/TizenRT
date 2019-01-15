@@ -18,6 +18,7 @@
 #include "debugger.h"
 #include "ecma-alloc.h"
 #include "ecma-array-object.h"
+#include "ecma-arraybuffer-object.h"
 #include "ecma-builtin-helpers.h"
 #include "ecma-builtins.h"
 #include "ecma-exceptions.h"
@@ -30,16 +31,21 @@
 #include "ecma-literal-storage.h"
 #include "ecma-objects.h"
 #include "ecma-objects-general.h"
+#include "ecma-regexp-object.h"
 #include "ecma-promise-object.h"
+#include "ecma-typedarray-object.h"
 #include "jcontext.h"
 #include "jerryscript.h"
+#include "jerryscript-debugger-transport.h"
+#include "jmem.h"
 #include "js-parser.h"
 #include "re-compiler.h"
 
 JERRY_STATIC_ASSERT (sizeof (jerry_value_t) == sizeof (ecma_value_t),
                      size_of_jerry_value_t_must_be_equal_to_size_of_ecma_value_t);
 
-JERRY_STATIC_ASSERT ((int) ECMA_ERROR_COMMON == (int) JERRY_ERROR_COMMON
+JERRY_STATIC_ASSERT ((int) ECMA_ERROR_NONE == (int) JERRY_ERROR_NONE
+                     && (int) ECMA_ERROR_COMMON == (int) JERRY_ERROR_COMMON
                      && (int) ECMA_ERROR_EVAL == (int) JERRY_ERROR_EVAL
                      && (int) ECMA_ERROR_RANGE == (int) JERRY_ERROR_RANGE
                      && (int) ECMA_ERROR_REFERENCE == (int) JERRY_ERROR_REFERENCE
@@ -51,15 +57,19 @@ JERRY_STATIC_ASSERT ((int) ECMA_ERROR_COMMON == (int) JERRY_ERROR_COMMON
 JERRY_STATIC_ASSERT ((int) ECMA_INIT_EMPTY == (int) JERRY_INIT_EMPTY
                      && (int) ECMA_INIT_SHOW_OPCODES == (int) JERRY_INIT_SHOW_OPCODES
                      && (int) ECMA_INIT_SHOW_REGEXP_OPCODES == (int) JERRY_INIT_SHOW_REGEXP_OPCODES
-                     && (int) ECMA_INIT_MEM_STATS == (int) JERRY_INIT_MEM_STATS
-                     && (int) ECMA_INIT_DEBUGGER == (int) JERRY_INIT_DEBUGGER,
+                     && (int) ECMA_INIT_MEM_STATS == (int) JERRY_INIT_MEM_STATS,
                      ecma_init_flag_t_must_be_equal_to_jerry_init_flag_t);
 
-#ifndef JERRY_JS_PARSER
-#error JERRY_JS_PARSER must be defined with 0 (disabled) or 1 (enabled)
-#elif !JERRY_JS_PARSER && !defined (JERRY_ENABLE_SNAPSHOT_EXEC)
-#error JERRY_JS_PARSER or JERRY_ENABLE_SNAPSHOT_EXEC must be defined!
-#endif /* !JERRY_JS_PARSER */
+#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+JERRY_STATIC_ASSERT ((int) RE_FLAG_GLOBAL == (int) JERRY_REGEXP_FLAG_GLOBAL
+                     && (int) RE_FLAG_MULTILINE == (int) JERRY_REGEXP_FLAG_MULTILINE
+                     && (int) RE_FLAG_IGNORE_CASE == (int) JERRY_REGEXP_FLAG_IGNORE_CASE,
+                     re_flags_t_must_be_equal_to_jerry_regexp_flags_t);
+#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+
+#if defined JERRY_DISABLE_JS_PARSER && !defined JERRY_ENABLE_SNAPSHOT_EXEC
+#error JERRY_ENABLE_SNAPSHOT_EXEC must be defined if JERRY_DISABLE_JS_PARSER is defined!
+#endif /* JERRY_DISABLE_JS_PARSER && !JERRY_ENABLE_SNAPSHOT_EXEC */
 
 #ifdef JERRY_ENABLE_ERROR_MESSAGES
 
@@ -83,10 +93,10 @@ static const char * const wrong_args_msg_p = "wrong type of argument";
  * Assert that it is correct to call API in current state.
  *
  * Note:
- *         By convention, there can be some states when API could not be invoked.
+ *         By convention, there are some states when API could not be invoked.
  *
- *         While, API can be invoked jerry_api_available flag is set,
- *         and while it is incorrect to invoke API - it is not set.
+ *         The API can be and only be invoked when the ECMA_STATUS_API_AVAILABLE
+ *         flag is set.
  *
  *         This procedure checks whether the API is available, and terminates
  *         the engine if it is unavailable. Otherwise it is a no-op.
@@ -96,45 +106,57 @@ static const char * const wrong_args_msg_p = "wrong type of argument";
  *           - before jerry_init and after jerry_cleanup
  *           - between enter to and return from a native free callback
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 jerry_assert_api_available (void)
 {
-  if (unlikely (!JERRY_CONTEXT (jerry_api_available)))
-  {
-    /* Terminates the execution. */
-    JERRY_UNREACHABLE ();
-  }
+  JERRY_ASSERT (JERRY_CONTEXT (status_flags) & ECMA_STATUS_API_AVAILABLE);
 } /* jerry_assert_api_available */
 
 /**
  * Turn on API availability
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 jerry_make_api_available (void)
 {
-  JERRY_CONTEXT (jerry_api_available) = true;
+  JERRY_CONTEXT (status_flags) |= ECMA_STATUS_API_AVAILABLE;
 } /* jerry_make_api_available */
 
 /**
  * Turn off API availability
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 jerry_make_api_unavailable (void)
 {
-  JERRY_CONTEXT (jerry_api_available) = false;
+  JERRY_CONTEXT (status_flags) &= (uint32_t) ~ECMA_STATUS_API_AVAILABLE;
 } /* jerry_make_api_unavailable */
 
 /**
- * Construct new TypeError object
+ * Create an API compatible return value.
  *
- * @return TypeError object value
+ * @return return value for Jerry API functions
  */
 static jerry_value_t
-jerry_create_type_error (void)
+jerry_return (jerry_value_t value) /**< return value */
 {
-  ecma_object_t *type_error_obj_p = ecma_new_standard_error (ECMA_ERROR_TYPE);
-  return ecma_make_error_obj_value (type_error_obj_p);
-} /* jerry_create_type_error */
+  if (ECMA_IS_VALUE_ERROR (value))
+  {
+    value = ecma_create_error_reference_from_context ();
+  }
+
+  return value;
+} /* jerry_return */
+
+/**
+ * Throw an API compatible return value.
+ *
+ * @return return value for Jerry API functions
+ */
+static inline jerry_value_t JERRY_ATTR_ALWAYS_INLINE
+jerry_throw (jerry_value_t value) /**< return value */
+{
+  JERRY_ASSERT (ECMA_IS_VALUE_ERROR (value));
+  return ecma_create_error_reference_from_context ();
+} /* jerry_throw */
 
 /**
  * Jerry engine initialization
@@ -142,14 +164,12 @@ jerry_create_type_error (void)
 void
 jerry_init (jerry_init_flag_t flags) /**< combination of Jerry flags */
 {
-  if (unlikely (JERRY_CONTEXT (jerry_api_available)))
-  {
-    /* This function cannot be called twice unless jerry_cleanup is called. */
-    JERRY_UNREACHABLE ();
-  }
+  /* This function cannot be called twice unless jerry_cleanup is called. */
+  JERRY_ASSERT (!(JERRY_CONTEXT (status_flags) & ECMA_STATUS_API_AVAILABLE));
 
-  /* Zero out all members. */
-  memset (&JERRY_CONTEXT (JERRY_CONTEXT_FIRST_MEMBER), 0, sizeof (jerry_context_t));
+  /* Zero out all non-external members. */
+  memset (&JERRY_CONTEXT (JERRY_CONTEXT_FIRST_MEMBER), 0,
+          sizeof (jerry_context_t) - offsetof (jerry_context_t, JERRY_CONTEXT_FIRST_MEMBER));
 
   JERRY_CONTEXT (jerry_init_flags) = flags;
 
@@ -157,13 +177,6 @@ jerry_init (jerry_init_flag_t flags) /**< combination of Jerry flags */
 
   jmem_init ();
   ecma_init ();
-
-#ifdef JERRY_DEBUGGER
-  if (flags & JERRY_INIT_DEBUGGER)
-  {
-    jerry_debugger_accept_connection ();
-  }
-#endif /* JERRY_DEBUGGER */
 } /* jerry_init */
 
 /**
@@ -174,26 +187,42 @@ jerry_cleanup (void)
 {
   jerry_assert_api_available ();
 
+#ifdef JERRY_DEBUGGER
+  if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
+  {
+    jerry_debugger_transport_close ();
+  }
+#endif /* JERRY_DEBUGGER */
+
+  for (jerry_context_data_header_t *this_p = JERRY_CONTEXT (context_data_p);
+       this_p != NULL;
+       this_p = this_p->next_p)
+  {
+    if (this_p->manager_p->deinit_cb)
+    {
+      this_p->manager_p->deinit_cb (JERRY_CONTEXT_DATA_HEADER_USER_DATA (this_p));
+    }
+  }
+
+#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+  ecma_free_all_enqueued_jobs ();
+#endif /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+  ecma_finalize ();
+  jerry_make_api_unavailable ();
+
   for (jerry_context_data_header_t *this_p = JERRY_CONTEXT (context_data_p), *next_p = NULL;
        this_p != NULL;
        this_p = next_p)
   {
     next_p = this_p->next_p;
-    this_p->manager_p->deinit_cb (JERRY_CONTEXT_DATA_HEADER_USER_DATA (this_p));
+    if (this_p->manager_p->finalize_cb)
+    {
+      this_p->manager_p->finalize_cb (JERRY_CONTEXT_DATA_HEADER_USER_DATA (this_p));
+    }
     jmem_heap_free_block (this_p, sizeof (jerry_context_data_header_t) + this_p->manager_p->bytes_needed);
   }
 
-  ecma_finalize ();
-
-#ifdef JERRY_DEBUGGER
-  if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
-  {
-    jerry_debugger_close_connection ();
-  }
-#endif /* JERRY_DEBUGGER */
-
   jmem_finalize ();
-  jerry_make_api_unavailable ();
 } /* jerry_cleanup */
 
 /**
@@ -237,38 +266,63 @@ jerry_get_context_data (const jerry_context_data_manager_t *manager_p)
  * Register external magic string array
  */
 void
-jerry_register_magic_strings (const jerry_char_ptr_t *ex_str_items_p, /**< character arrays, representing
-                                                                       *   external magic strings' contents */
+jerry_register_magic_strings (const jerry_char_t * const *ex_str_items_p, /**< character arrays, representing
+                                                                           *   external magic strings' contents */
                               uint32_t count, /**< number of the strings */
                               const jerry_length_t *str_lengths_p) /**< lengths of all strings */
 {
   jerry_assert_api_available ();
 
-  lit_magic_strings_ex_set ((const lit_utf8_byte_t **) ex_str_items_p, count, (const lit_utf8_size_t *) str_lengths_p);
+  lit_magic_strings_ex_set ((const lit_utf8_byte_t * const *) ex_str_items_p,
+                            count,
+                            (const lit_utf8_size_t *) str_lengths_p);
 } /* jerry_register_magic_strings */
-
-/**
- * Get Jerry configured memory limits
- */
-void
-jerry_get_memory_limits (size_t *out_data_bss_brk_limit_p, /**< [out] Jerry's maximum usage of
-                                                            *         data + bss + brk sections */
-                         size_t *out_stack_limit_p) /**< [out] Jerry's maximum usage of stack */
-{
-  *out_data_bss_brk_limit_p = CONFIG_MEM_HEAP_AREA_SIZE + CONFIG_MEM_DATA_LIMIT_MINUS_HEAP_SIZE;
-  *out_stack_limit_p = CONFIG_MEM_STACK_LIMIT;
-} /* jerry_get_memory_limits */
 
 /**
  * Run garbage collection
  */
 void
-jerry_gc (void)
+jerry_gc (jerry_gc_mode_t mode) /**< operational mode */
 {
   jerry_assert_api_available ();
 
-  ecma_gc_run (JMEM_FREE_UNUSED_MEMORY_SEVERITY_LOW);
+  ecma_gc_run (mode == JERRY_GC_SEVERITY_LOW ? JMEM_FREE_UNUSED_MEMORY_SEVERITY_LOW
+                                             : JMEM_FREE_UNUSED_MEMORY_SEVERITY_HIGH);
 } /* jerry_gc */
+
+/**
+ * Get heap memory stats.
+ *
+ * @return true - get the heap stats successful
+ *         false - otherwise. Usually it is because the MEM_STATS feature is not enabled.
+ */
+bool
+jerry_get_memory_stats (jerry_heap_stats_t *out_stats_p) /**< [out] heap memory stats */
+{
+#ifdef JMEM_STATS
+  if (out_stats_p == NULL)
+  {
+    return false;
+  }
+
+  jmem_heap_stats_t jmem_heap_stats;
+  memset (&jmem_heap_stats, 0, sizeof (jmem_heap_stats));
+  jmem_heap_get_stats (&jmem_heap_stats);
+
+  *out_stats_p = (jerry_heap_stats_t)
+  {
+    .version = 1,
+    .size = jmem_heap_stats.size,
+    .allocated_bytes = jmem_heap_stats.allocated_bytes,
+    .peak_allocated_bytes = jmem_heap_stats.peak_allocated_bytes
+  };
+
+  return true;
+#else
+  JERRY_UNUSED (out_stats_p);
+  return false;
+#endif
+} /* jerry_get_memory_stats */
 
 /**
  * Simple Jerry runner
@@ -285,13 +339,13 @@ jerry_run_simple (const jerry_char_t *script_source_p, /**< script source */
 
   jerry_init (flags);
 
-  jerry_value_t parse_ret_val = jerry_parse (script_source_p, script_source_size, false);
+  jerry_value_t parse_ret_val = jerry_parse (NULL, 0, script_source_p, script_source_size, JERRY_PARSE_NO_OPTS);
 
-  if (!ECMA_IS_VALUE_ERROR (parse_ret_val))
+  if (!ecma_is_value_error_reference (parse_ret_val))
   {
     jerry_value_t run_ret_val = jerry_run (parse_ret_val);
 
-    if (!ECMA_IS_VALUE_ERROR (run_ret_val))
+    if (!ecma_is_value_error_reference (run_ret_val))
     {
       result = true;
     }
@@ -313,73 +367,142 @@ jerry_run_simple (const jerry_char_t *script_source_p, /**< script source */
  *         thrown error - otherwise
  */
 jerry_value_t
-jerry_parse (const jerry_char_t *source_p, /**< script source */
+jerry_parse (const jerry_char_t *resource_name_p, /**< resource name (usually a file name) */
+             size_t resource_name_length, /**< length of resource name */
+             const jerry_char_t *source_p, /**< script source */
              size_t source_size, /**< script source size */
-             bool is_strict) /**< strict mode */
+             uint32_t parse_opts) /**< jerry_parse_opts_t option bits */
 {
-#if JERRY_JS_PARSER
+#if defined JERRY_DEBUGGER && !defined JERRY_DISABLE_JS_PARSER
+  if ((JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
+      && resource_name_length > 0)
+  {
+    jerry_debugger_send_string (JERRY_DEBUGGER_SOURCE_CODE_NAME,
+                                JERRY_DEBUGGER_NO_SUBTYPE,
+                                resource_name_p,
+                                resource_name_length);
+  }
+#else /* !(JERRY_DEBUGGER && !JERRY_DISABLE_JS_PARSER) */
+  JERRY_UNUSED (resource_name_p);
+  JERRY_UNUSED (resource_name_length);
+#endif /* JERRY_DEBUGGER && !JERRY_DISABLE_JS_PARSER */
+
+#ifndef JERRY_DISABLE_JS_PARSER
   jerry_assert_api_available ();
+
+#if defined JERRY_ENABLE_LINE_INFO && !defined JERRY_DISABLE_JS_PARSER
+  JERRY_CONTEXT (resource_name) = ecma_find_or_create_literal_string (resource_name_p,
+                                                                      (lit_utf8_size_t) resource_name_length);
+#endif /* JERRY_ENABLE_LINE_INFO && !JERRY_DISABLE_JS_PARSER */
 
   ecma_compiled_code_t *bytecode_data_p;
   ecma_value_t parse_status;
 
-  parse_status = parser_parse_script (source_p,
+  parse_status = parser_parse_script (NULL,
+                                      0,
+                                      source_p,
                                       source_size,
-                                      is_strict,
+                                      parse_opts,
                                       &bytecode_data_p);
 
   if (ECMA_IS_VALUE_ERROR (parse_status))
   {
-    return parse_status;
+    return ecma_create_error_reference_from_context ();
   }
 
   ecma_free_value (parse_status);
 
-  is_strict = ((bytecode_data_p->status_flags & CBC_CODE_FLAGS_STRICT_MODE) != 0);
   ecma_object_t *lex_env_p = ecma_get_global_environment ();
   ecma_object_t *func_obj_p = ecma_op_create_function_object (lex_env_p,
-                                                              is_strict,
                                                               bytecode_data_p);
   ecma_bytecode_deref (bytecode_data_p);
 
   return ecma_make_object_value (func_obj_p);
-#else /* !JERRY_JS_PARSER */
+#else /* JERRY_DISABLE_JS_PARSER */
   JERRY_UNUSED (source_p);
   JERRY_UNUSED (source_size);
-  JERRY_UNUSED (is_strict);
+  JERRY_UNUSED (parse_opts);
 
-  return ecma_raise_syntax_error (ECMA_ERR_MSG ("The parser has been disabled."));
-#endif /* JERRY_JS_PARSER */
+  return jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("The parser has been disabled.")));
+#endif /* !JERRY_DISABLE_JS_PARSER */
 } /* jerry_parse */
 
 /**
- * Parse script and construct an ECMAScript function. The lexical
- * environment is set to the global lexical environment. The name
- * (usually a file name) is also passed to this function which is
- * used by the debugger to find the source code.
+ * Parse function and construct an EcmaScript function. The lexical
+ * environment is set to the global lexical environment.
  *
  * @return function object value - if script was parsed successfully,
  *         thrown error - otherwise
  */
 jerry_value_t
-jerry_parse_named_resource (const jerry_char_t *name_p, /**< name (usually a file name) */
-                            size_t name_length, /**< length of name */
-                            const jerry_char_t *source_p, /**< script source */
-                            size_t source_size, /**< script source size */
-                            bool is_strict) /**< strict mode */
+jerry_parse_function (const jerry_char_t *resource_name_p, /**< resource name (usually a file name) */
+                      size_t resource_name_length, /**< length of resource name */
+                      const jerry_char_t *arg_list_p, /**< script source */
+                      size_t arg_list_size, /**< script source size */
+                      const jerry_char_t *source_p, /**< script source */
+                      size_t source_size, /**< script source size */
+                      uint32_t parse_opts) /**< jerry_parse_opts_t option bits */
 {
-#ifdef JERRY_DEBUGGER
+#if defined JERRY_DEBUGGER && !defined JERRY_DISABLE_JS_PARSER
   if (JERRY_CONTEXT (debugger_flags) & JERRY_DEBUGGER_CONNECTED)
   {
-    jerry_debugger_send_string (JERRY_DEBUGGER_SOURCE_CODE_NAME, name_p, name_length);
+    jerry_debugger_send_string (JERRY_DEBUGGER_SOURCE_CODE_NAME,
+                                JERRY_DEBUGGER_NO_SUBTYPE,
+                                resource_name_p,
+                                resource_name_length);
   }
-#else /* JERRY_DEBUGGER */
-  JERRY_UNUSED (name_p);
-  JERRY_UNUSED (name_length);
-#endif /* JERRY_DEBUGGER */
+#else /* !(JERRY_DEBUGGER && !JERRY_DISABLE_JS_PARSER) */
+  JERRY_UNUSED (resource_name_p);
+  JERRY_UNUSED (resource_name_length);
+#endif /* JERRY_DEBUGGER && !JERRY_DISABLE_JS_PARSER */
 
-  return jerry_parse (source_p, source_size, is_strict);
-} /* jerry_parse_named_resource */
+#ifndef JERRY_DISABLE_JS_PARSER
+  jerry_assert_api_available ();
+
+  ecma_compiled_code_t *bytecode_data_p;
+  ecma_value_t parse_status;
+
+#ifdef JERRY_ENABLE_LINE_INFO
+  JERRY_CONTEXT (resource_name) = ecma_find_or_create_literal_string (resource_name_p,
+                                                                      (lit_utf8_size_t) resource_name_length);
+#endif /* JERRY_ENABLE_LINE_INFO */
+
+  if (arg_list_p == NULL)
+  {
+    /* Must not be a NULL value. */
+    arg_list_p = (const jerry_char_t *) "";
+  }
+
+  parse_status = parser_parse_script (arg_list_p,
+                                      arg_list_size,
+                                      source_p,
+                                      source_size,
+                                      parse_opts,
+                                      &bytecode_data_p);
+
+  if (ECMA_IS_VALUE_ERROR (parse_status))
+  {
+    return ecma_create_error_reference_from_context ();
+  }
+
+  ecma_free_value (parse_status);
+
+  ecma_object_t *lex_env_p = ecma_get_global_environment ();
+  ecma_object_t *func_obj_p = ecma_op_create_function_object (lex_env_p,
+                                                              bytecode_data_p);
+  ecma_bytecode_deref (bytecode_data_p);
+
+  return ecma_make_object_value (func_obj_p);
+#else /* JERRY_DISABLE_JS_PARSER */
+  JERRY_UNUSED (arg_list_p);
+  JERRY_UNUSED (arg_list_size);
+  JERRY_UNUSED (source_p);
+  JERRY_UNUSED (source_size);
+  JERRY_UNUSED (parse_opts);
+
+  return jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("The parser has been disabled.")));
+#endif /* !JERRY_DISABLE_JS_PARSER */
+} /* jerry_parse_function */
 
 /**
  * Run an EcmaScript function created by jerry_parse.
@@ -397,7 +520,7 @@ jerry_run (const jerry_value_t func_val) /**< function to run */
 
   if (!ecma_is_value_object (func_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   ecma_object_t *func_obj_p = ecma_get_object_from_value (func_val);
@@ -405,7 +528,7 @@ jerry_run (const jerry_value_t func_val) /**< function to run */
   if (ecma_get_object_type (func_obj_p) != ECMA_OBJECT_TYPE_FUNCTION
       || ecma_get_object_is_builtin (func_obj_p))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   ecma_extended_object_t *ext_func_p = (ecma_extended_object_t *) func_obj_p;
@@ -415,14 +538,10 @@ jerry_run (const jerry_value_t func_val) /**< function to run */
 
   if (scope_p != ecma_get_global_environment ())
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
-  const ecma_compiled_code_t *bytecode_data_p;
-  bytecode_data_p = ECMA_GET_INTERNAL_VALUE_POINTER (const ecma_compiled_code_t,
-                                                     ext_func_p->u.function.bytecode_cp);
-
-  return vm_run_global (bytecode_data_p);
+  return jerry_return (vm_run_global (ecma_op_function_get_compiled_code (ext_func_p)));
 } /* jerry_run */
 
 /**
@@ -436,14 +555,13 @@ jerry_run (const jerry_value_t func_val) /**< function to run */
 jerry_value_t
 jerry_eval (const jerry_char_t *source_p, /**< source code */
             size_t source_size, /**< length of source code */
-            bool is_strict) /**< source must conform with strict mode */
+            uint32_t parse_opts) /**< jerry_parse_opts_t option bits */
 {
   jerry_assert_api_available ();
 
-  return ecma_op_eval_chars_buffer ((const lit_utf8_byte_t *) source_p,
-                                    source_size,
-                                    false,
-                                    is_strict);
+  return jerry_return (ecma_op_eval_chars_buffer ((const lit_utf8_byte_t *) source_p,
+                                                  source_size,
+                                                  parse_opts));
 } /* jerry_eval */
 
 /**
@@ -462,7 +580,7 @@ jerry_run_all_enqueued_jobs (void)
 #ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
   return ecma_process_all_enqueued_jobs ();
 #else /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
-  return ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  return ECMA_VALUE_UNDEFINED;
 #endif /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
 } /* jerry_run_all_enqueued_jobs */
 
@@ -478,9 +596,31 @@ jerry_value_t
 jerry_get_global_object (void)
 {
   jerry_assert_api_available ();
-
-  return ecma_make_object_value (ecma_builtin_get (ECMA_BUILTIN_ID_GLOBAL));
+  ecma_object_t *global_obj_p = ecma_builtin_get_global ();
+  ecma_ref_object (global_obj_p);
+  return ecma_make_object_value (global_obj_p);
 } /* jerry_get_global_object */
+
+/**
+ * Check if the specified value is an abort value.
+ *
+ * @return true  - if both the error and abort values are set,
+ *         false - otherwise
+ */
+bool
+jerry_value_is_abort (const jerry_value_t value) /**< api value */
+{
+  jerry_assert_api_available ();
+
+  if (!ecma_is_value_error_reference (value))
+  {
+    return false;
+  }
+
+  ecma_error_reference_t *error_ref_p = ecma_get_error_reference_from_value (value);
+
+  return (error_ref_p->refs_and_flags & ECMA_ERROR_REF_ABORT) != 0;
+} /* jerry_value_is_abort */
 
 /**
  * Check if the specified value is an array object value.
@@ -524,6 +664,20 @@ jerry_value_is_constructor (const jerry_value_t value) /**< jerry api value */
 
   return ecma_is_constructor (value);
 } /* jerry_value_is_constructor */
+
+/**
+ * Check if the specified value is an error or abort value.
+ *
+ * @return true  - if the specified value is an error value,
+ *         false - otherwise
+ */
+bool
+jerry_value_is_error (const jerry_value_t value) /**< api value */
+{
+  jerry_assert_api_available ();
+
+  return ecma_is_value_error_reference (value);
+} /* jerry_value_is_error */
 
 /**
  * Check if the specified value is a function object value.
@@ -581,8 +735,6 @@ jerry_value_is_object (const jerry_value_t value) /**< api value */
   return ecma_is_value_object (value);
 } /* jerry_value_is_object */
 
-#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
-
 /**
  * Check if the specified value is promise.
  *
@@ -593,12 +745,14 @@ bool
 jerry_value_is_promise (const jerry_value_t value) /**< api value */
 {
   jerry_assert_api_available ();
-
+#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
   return (ecma_is_value_object (value)
           && ecma_is_promise (ecma_get_object_from_value (value)));
-} /* jerry_value_is_promise */
-
+#else /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+  JERRY_UNUSED (value);
+  return false;
 #endif /* !CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+} /* jerry_value_is_promise */
 
 /**
  * Check if the specified value is string.
@@ -629,12 +783,66 @@ jerry_value_is_undefined (const jerry_value_t value) /**< api value */
 } /* jerry_value_is_undefined */
 
 /**
+ * Perform the base type of the JavaScript value.
+ *
+ * @return jerry_type_t value
+ */
+jerry_type_t
+jerry_value_get_type (const jerry_value_t value) /**< input value to check */
+{
+  jerry_assert_api_available ();
+
+  if (ecma_is_value_error_reference (value))
+  {
+    return JERRY_TYPE_ERROR;
+  }
+
+  lit_magic_string_id_t lit_id = ecma_get_typeof_lit_id (value);
+
+  JERRY_ASSERT (lit_id != LIT_MAGIC_STRING__EMPTY);
+
+  switch (lit_id)
+  {
+    case LIT_MAGIC_STRING_UNDEFINED:
+    {
+      return JERRY_TYPE_UNDEFINED;
+    }
+    case LIT_MAGIC_STRING_BOOLEAN:
+    {
+      return JERRY_TYPE_BOOLEAN;
+    }
+    case LIT_MAGIC_STRING_NUMBER:
+    {
+      return JERRY_TYPE_NUMBER;
+    }
+    case LIT_MAGIC_STRING_STRING:
+    {
+      return JERRY_TYPE_STRING;
+    }
+    case LIT_MAGIC_STRING_FUNCTION:
+    {
+      return JERRY_TYPE_FUNCTION;
+    }
+    default:
+    {
+      JERRY_ASSERT (lit_id == LIT_MAGIC_STRING_OBJECT);
+
+      /* Based on the ECMA 262 5.1 standard the 'null' value is an object.
+       * Thus we'll do an extra check for 'null' here.
+       */
+      return ecma_is_value_null (value) ? JERRY_TYPE_NULL : JERRY_TYPE_OBJECT;
+    }
+  }
+} /* jerry_value_get_type */
+
+/**
  * Check if the specified feature is enabled.
  *
  * @return true  - if the specified feature is enabled,
  *         false - otherwise
  */
-bool jerry_is_feature_enabled (const jerry_feature_t feature)
+bool
+jerry_is_feature_enabled (const jerry_feature_t feature) /**< feature to check */
 {
   JERRY_ASSERT (feature < JERRY_FEATURE__COUNT);
 
@@ -645,9 +853,9 @@ bool jerry_is_feature_enabled (const jerry_feature_t feature)
 #ifdef JERRY_ENABLE_ERROR_MESSAGES
           || feature == JERRY_FEATURE_ERROR_MESSAGES
 #endif /* JERRY_ENABLE_ERROR_MESSAGES */
-#if JERRY_JS_PARSER
+#ifndef JERRY_DISABLE_JS_PARSER
           || feature == JERRY_FEATURE_JS_PARSER
-#endif /* JERRY_JS_PARSER */
+#endif /* !JERRY_DISABLE_JS_PARSER */
 #ifdef JMEM_STATS
           || feature == JERRY_FEATURE_MEM_STATS
 #endif /* JMEM_STATS */
@@ -669,44 +877,155 @@ bool jerry_is_feature_enabled (const jerry_feature_t feature)
 #ifdef JERRY_VM_EXEC_STOP
           || feature == JERRY_FEATURE_VM_EXEC_STOP
 #endif /* JERRY_VM_EXEC_STOP */
+#ifndef CONFIG_DISABLE_JSON_BUILTIN
+          || feature == JERRY_FEATURE_JSON
+#endif /* !CONFIG_DISABLE_JSON_BUILTIN */
+#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+          || feature == JERRY_FEATURE_PROMISE
+#endif /* !CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+          || feature == JERRY_FEATURE_TYPEDARRAY
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+#ifndef CONFIG_DISABLE_DATE_BUILTIN
+          || feature == JERRY_FEATURE_DATE
+#endif /* !CONFIG_DISABLE_DATE_BUILTIN */
+#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+          || feature == JERRY_FEATURE_REGEXP
+#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+#ifdef JERRY_ENABLE_LINE_INFO
+          || feature == JERRY_FEATURE_LINE_INFO
+#endif /* JERRY_ENABLE_LINE_INFO */
+#ifdef JERRY_ENABLE_LOGGING
+          || feature == JERRY_FEATURE_LOGGING
+#endif /* JERRY_ENABLE_LOGGING */
           );
 } /* jerry_is_feature_enabled */
 
 /**
- * Check if the specified value is an error value.
+ * Create abort from an api value.
  *
- * @return true  - if the error flag of the specified value is true,
- *         false - otherwise
+ * Create abort value from an api value. If the second argument is true
+ * it will release the input api value.
+ *
+ * @return api abort value
  */
-bool
-jerry_value_has_error_flag (const jerry_value_t value) /**< api value */
+jerry_value_t
+jerry_create_abort_from_value (jerry_value_t value, /**< api value */
+                               bool release) /**< release api value */
 {
   jerry_assert_api_available ();
 
-  return ECMA_IS_VALUE_ERROR (value);
-} /* jerry_value_has_error_flag */
+  if (JERRY_UNLIKELY (ecma_is_value_error_reference (value)))
+  {
+    /* This is a rare case so it is optimized for
+     * binary size rather than performance. */
+    if (jerry_value_is_abort (value))
+    {
+      return release ? value : jerry_acquire_value (value);
+    }
+
+    value = jerry_get_value_from_error (value, release);
+    release = true;
+  }
+
+  if (!release)
+  {
+    value = ecma_copy_value (value);
+  }
+
+  return ecma_create_error_reference (value, false);
+} /* jerry_create_abort_from_value */
 
 /**
- * Clear the error flag
+ * Create error from an api value.
+ *
+ * Create error value from an api value. If the second argument is true
+ * it will release the input api value.
+ *
+ * @return api error value
  */
-void
-jerry_value_clear_error_flag (jerry_value_t *value_p)
+jerry_value_t
+jerry_create_error_from_value (jerry_value_t value, /**< api value */
+                               bool release) /**< release api value */
 {
   jerry_assert_api_available ();
 
-  *value_p = (*value_p) & ~ECMA_VALUE_ERROR_FLAG;
-} /* jerry_value_clear_error_flag */
+  if (JERRY_UNLIKELY (ecma_is_value_error_reference (value)))
+  {
+    /* This is a rare case so it is optimized for
+     * binary size rather than performance. */
+    if (!jerry_value_is_abort (value))
+    {
+      return release ? value : jerry_acquire_value (value);
+    }
+
+    value = jerry_get_value_from_error (value, release);
+    release = true;
+  }
+
+  if (!release)
+  {
+    value = ecma_copy_value (value);
+  }
+
+  return ecma_create_error_reference (value, true);
+} /* jerry_create_error_from_value */
 
 /**
- * Set the error flag.
+ * Get the value from an error value.
+ *
+ * Extract the api value from an error. If the second argument is true
+ * it will release the input error value.
+ *
+ * Note:
+ *      returned value must be freed with jerry_release_value, when it is no longer needed.
+ *
+ * @return jerry_value_t value
  */
-void
-jerry_value_set_error_flag (jerry_value_t *value_p)
+jerry_value_t
+jerry_get_value_from_error (jerry_value_t value, /**< api value */
+                            bool release) /**< release api value */
 {
   jerry_assert_api_available ();
 
-  *value_p = (*value_p) | ECMA_VALUE_ERROR_FLAG;
-} /* jerry_value_set_error_flag */
+  if (!ecma_is_value_error_reference (value))
+  {
+    return release ? value : ecma_copy_value (value);
+  }
+
+  jerry_value_t ret_val = jerry_acquire_value (ecma_get_error_reference_from_value (value)->value);
+
+  if (release)
+  {
+    jerry_release_value (value);
+  }
+  return ret_val;
+} /* jerry_get_value_from_error */
+
+/**
+ * Return the type of the Error object if possible.
+ *
+ * @return one of the jerry_error_t value as the type of the Error object
+ *         JERRY_ERROR_NONE - if the input value is not an Error object
+ */
+jerry_error_t
+jerry_get_error_type (jerry_value_t value) /**< api value */
+{
+  if (JERRY_UNLIKELY (ecma_is_value_error_reference (value)))
+  {
+    value = ecma_get_error_reference_from_value (value)->value;
+  }
+
+  if (!ecma_is_value_object (value))
+  {
+    return JERRY_ERROR_NONE;
+  }
+
+  ecma_object_t *object_p = ecma_get_object_from_value (value);
+  ecma_standard_error_t error_type = ecma_get_error_type (object_p);
+
+  return (jerry_error_t) error_type;
+} /* jerry_get_error_type */
 
 /**
  * Get boolean from the specified value.
@@ -717,11 +1036,6 @@ bool
 jerry_get_boolean_value (const jerry_value_t value) /**< api value */
 {
   jerry_assert_api_available ();
-
-  if (!jerry_value_is_boolean (value))
-  {
-    return false;
-  }
 
   return ecma_is_value_true (value);
 } /* jerry_get_boolean_value */
@@ -736,7 +1050,7 @@ jerry_get_number_value (const jerry_value_t value) /**< api value */
 {
   jerry_assert_api_available ();
 
-  if (!jerry_value_is_number (value))
+  if (!ecma_is_value_number (value))
   {
     return 0;
   }
@@ -755,7 +1069,7 @@ jerry_value_to_boolean (const jerry_value_t value) /**< input value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value))
+  if (ecma_is_value_error_reference (value))
   {
     return false;
   }
@@ -777,12 +1091,12 @@ jerry_value_to_number (const jerry_value_t value) /**< input value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value))
+  if (ecma_is_value_error_reference (value))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
   }
 
-  return ecma_op_to_number (value);
+  return jerry_return (ecma_op_to_number (value));
 } /* jerry_value_to_number */
 
 /**
@@ -799,12 +1113,12 @@ jerry_value_to_object (const jerry_value_t value) /**< input value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value))
+  if (ecma_is_value_error_reference (value))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
   }
 
-  return ecma_op_to_object (value);
+  return jerry_return (ecma_op_to_object (value));
 } /* jerry_value_to_object */
 
 /**
@@ -821,12 +1135,12 @@ jerry_value_to_primitive (const jerry_value_t value) /**< input value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value))
+  if (ecma_is_value_error_reference (value))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
   }
 
-  return ecma_op_to_primitive (value, ECMA_PREFERRED_TYPE_NO);
+  return jerry_return (ecma_op_to_primitive (value, ECMA_PREFERRED_TYPE_NO));
 } /* jerry_value_to_primitive */
 
 /**
@@ -844,12 +1158,12 @@ jerry_value_to_string (const jerry_value_t value) /**< input value */
 
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value))
+  if (ecma_is_value_error_reference (value))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
   }
 
-  return ecma_op_to_string (value);
+  return jerry_return (ecma_op_to_string (value));
 } /* jerry_value_to_string */
 
 /**
@@ -865,6 +1179,12 @@ jerry_acquire_value (jerry_value_t value) /**< API value */
 {
   jerry_assert_api_available ();
 
+  if (JERRY_UNLIKELY (ecma_is_value_error_reference (value)))
+  {
+    ecma_ref_error_reference (ecma_get_error_reference_from_value (value));
+    return value;
+  }
+
   return ecma_copy_value (value);
 } /* jerry_acquire_value */
 
@@ -875,6 +1195,12 @@ void
 jerry_release_value (jerry_value_t value) /**< API value */
 {
   jerry_assert_api_available ();
+
+  if (JERRY_UNLIKELY (ecma_is_value_error_reference (value)))
+  {
+    ecma_deref_error_reference (ecma_get_error_reference_from_value (value));
+    return;
+  }
 
   ecma_free_value (value);
 } /* jerry_release_value */
@@ -894,7 +1220,7 @@ jerry_create_array (uint32_t size) /**< size of array */
 
   ecma_value_t array_length = ecma_make_uint32_value (size);
 
-  jerry_length_t argument_size = 1;
+  const jerry_length_t argument_size = 1;
   ecma_value_t array_value = ecma_op_create_array_object (&array_length, argument_size, true);
   ecma_free_value (array_length);
 
@@ -913,7 +1239,7 @@ jerry_create_boolean (bool value) /**< bool value from which a jerry_value_t wil
 {
   jerry_assert_api_available ();
 
-  return ecma_make_boolean_value (value);
+  return jerry_return (ecma_make_boolean_value (value));
 } /* jerry_create_boolean */
 
 /**
@@ -954,7 +1280,7 @@ jerry_create_error_sz (jerry_error_t error_type, /**< type of error */
 
   if (message_p == NULL || message_size == 0)
   {
-    return ecma_make_error_obj_value (ecma_new_standard_error ((ecma_standard_error_t) error_type));
+    return ecma_create_error_object_reference (ecma_new_standard_error ((ecma_standard_error_t) error_type));
   }
   else
   {
@@ -966,7 +1292,7 @@ jerry_create_error_sz (jerry_error_t error_type, /**< type of error */
 
     ecma_deref_ecma_string (message_string_p);
 
-    return ecma_make_error_obj_value (error_object_p);
+    return ecma_create_error_object_reference (error_object_p);
   }
 } /* jerry_create_error_sz */
 
@@ -1038,6 +1364,19 @@ jerry_create_number_nan (void)
 } /* jerry_create_number_nan */
 
 /**
+ * Creates a jerry_value_t representing an undefined value.
+ *
+ * @return value of undefined
+ */
+jerry_value_t
+jerry_create_undefined (void)
+{
+  jerry_assert_api_available ();
+
+  return ECMA_VALUE_UNDEFINED;
+} /* jerry_create_undefined */
+
+/**
  * Creates and returns a jerry_value_t with type null object.
  *
  * @return jerry_value_t representing null
@@ -1047,7 +1386,7 @@ jerry_create_null (void)
 {
   jerry_assert_api_available ();
 
-  return ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
+  return ECMA_VALUE_NULL;
 } /* jerry_create_null */
 
 /**
@@ -1066,8 +1405,6 @@ jerry_create_object (void)
   return ecma_make_object_value (ecma_op_create_object_object_noarg ());
 } /* jerry_create_object */
 
-#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
-
 /**
  * Create an empty Promise object which can be resolve/reject later
  * by calling jerry_resolve_or_reject_promise.
@@ -1082,10 +1419,12 @@ jerry_create_promise (void)
 {
   jerry_assert_api_available ();
 
-  return ecma_op_create_promise_object (ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY), ECMA_PROMISE_EXECUTOR_EMPTY);
-} /* jerry_create_promise */
-
+#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+  return ecma_op_create_promise_object (ECMA_VALUE_EMPTY, ECMA_PROMISE_EXECUTOR_EMPTY);
+#else /* !CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("Promise not supported.")));
 #endif /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+} /* jerry_create_promise */
 
 /**
  * Create string from a valid UTF-8 string
@@ -1155,17 +1494,50 @@ jerry_create_string_sz (const jerry_char_t *str_p, /**< pointer to string */
 } /* jerry_create_string_sz */
 
 /**
- * Creates a jerry_value_t representing an undefined value.
+ * Calculates the size of the given pattern and creates a RegExp object.
  *
- * @return value of undefined
+ * @return value of the constructed RegExp object.
  */
 jerry_value_t
-jerry_create_undefined (void)
+jerry_create_regexp (const jerry_char_t *pattern_p, /**< zero-terminated UTF-8 string as RegExp pattern */
+                     jerry_regexp_flags_t flags) /**< optional RegExp flags */
+{
+  return jerry_create_regexp_sz (pattern_p, lit_zt_utf8_string_size (pattern_p), flags);
+} /* jerry_create_regexp */
+
+/**
+ * Creates a RegExp object with the given pattern and flags.
+ *
+ * @return value of the constructed RegExp object.
+ */
+jerry_value_t
+jerry_create_regexp_sz (const jerry_char_t *pattern_p, /**< zero-terminated UTF-8 string as RegExp pattern */
+                        jerry_size_t pattern_size, /**< length of the pattern */
+                        jerry_regexp_flags_t flags) /**< optional RegExp flags */
 {
   jerry_assert_api_available ();
 
-  return ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
-} /* jerry_create_undefined */
+#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+  if (!lit_is_valid_utf8_string (pattern_p, pattern_size))
+  {
+    return jerry_throw (ecma_raise_common_error (ECMA_ERR_MSG ("Input must be a valid utf8 string")));
+  }
+
+  ecma_string_t *ecma_pattern = ecma_new_ecma_string_from_utf8 (pattern_p, pattern_size);
+
+  jerry_value_t ret_val = ecma_op_create_regexp_object (ecma_pattern, flags);
+
+  ecma_deref_ecma_string (ecma_pattern);
+  return ret_val;
+
+#else /* CONFIG_DISABLE_REGEXP_BUILTIN */
+  JERRY_UNUSED (pattern_p);
+  JERRY_UNUSED (pattern_size);
+  JERRY_UNUSED (flags);
+
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("RegExp is not supported.")));
+#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+} /* jerry_create_regexp_sz */
 
 /**
  * Get length of an array object
@@ -1176,7 +1548,7 @@ jerry_create_undefined (void)
  * @return length of the given array
  */
 uint32_t
-jerry_get_array_length (const jerry_value_t value)
+jerry_get_array_length (const jerry_value_t value) /**< api value */
 {
   jerry_assert_api_available ();
 
@@ -1185,14 +1557,10 @@ jerry_get_array_length (const jerry_value_t value)
     return 0;
   }
 
-  jerry_length_t length = 0;
-  ecma_string_t magic_string_length;
-  ecma_init_ecma_length_string (&magic_string_length);
+  ecma_value_t len_value = ecma_op_object_get_by_magic_id (ecma_get_object_from_value (value),
+                                                           LIT_MAGIC_STRING_LENGTH);
 
-  ecma_value_t len_value = ecma_op_object_get (ecma_get_object_from_value (value),
-                                               &magic_string_length);
-
-  length = ecma_number_to_uint32 (ecma_get_number_from_value (len_value));
+  jerry_length_t length = ecma_number_to_uint32 (ecma_get_number_from_value (len_value));
   ecma_free_value (len_value);
 
   return length;
@@ -1228,7 +1596,7 @@ jerry_get_string_size (const jerry_value_t value) /**< input string */
  * @return number of bytes in the buffer needed to represent the UTF-8 encoded string
  */
 jerry_size_t
-jerry_get_utf8_string_size (const jerry_value_t value)
+jerry_get_utf8_string_size (const jerry_value_t value) /**< input string */
 {
   jerry_assert_api_available ();
 
@@ -1290,6 +1658,11 @@ jerry_get_utf8_string_length (const jerry_value_t value) /**< input string */
  *      Returns 0, if the value parameter is not a string or
  *      the buffer is not large enough for the whole string.
  *
+ * Note:
+ *      If the size of the string in jerry value is larger than the size of the
+ *      target buffer, the copy will fail.
+ *      To copy substring use jerry_substring_to_char_buffer() instead.
+ *
  * @return number of bytes, actually copied to the buffer.
  */
 jerry_size_t
@@ -1323,6 +1696,11 @@ jerry_string_to_char_buffer (const jerry_value_t value, /**< input string value 
  *      The '\0' character could occur anywhere in the returned string
  *      Returns 0, if the value parameter is not a string or the buffer
  *      is not large enough for the whole string.
+ *
+ * Note:
+ *      If the size of the string in jerry value is larger than the size of the
+ *      target buffer, the copy will fail.
+ *      To copy a substring use jerry_substring_to_utf8_char_buffer() instead.
  *
  * @return number of bytes copied to the buffer.
  */
@@ -1433,7 +1811,7 @@ jerry_has_property (const jerry_value_t obj_val, /**< object value */
   if (!ecma_is_value_object (obj_val)
       || !ecma_is_value_string (prop_name_val))
   {
-    return false;
+    return ECMA_VALUE_FALSE;
   }
 
   bool has_property = ecma_op_object_has_property (ecma_get_object_from_value (obj_val),
@@ -1457,7 +1835,7 @@ jerry_has_own_property (const jerry_value_t obj_val, /**< object value */
   if (!ecma_is_value_object (obj_val)
       || !ecma_is_value_string (prop_name_val))
   {
-    return false;
+    return ECMA_VALUE_FALSE;
   }
 
   bool has_property = ecma_op_object_has_own_property (ecma_get_object_from_value (obj_val),
@@ -1491,6 +1869,32 @@ jerry_delete_property (const jerry_value_t obj_val, /**< object value */
 } /* jerry_delete_property */
 
 /**
+ * Delete indexed property from the specified object.
+ *
+ * @return true  - if property was deleted successfully
+ *         false - otherwise
+ */
+bool
+jerry_delete_property_by_index (const jerry_value_t obj_val, /**< object value */
+                                uint32_t index) /**< index to be written */
+{
+  jerry_assert_api_available ();
+
+  if (!ecma_is_value_object (obj_val))
+  {
+    return false;
+  }
+
+  ecma_string_t *str_idx_p = ecma_new_ecma_string_from_uint32 (index);
+  ecma_value_t ret_value = ecma_op_object_delete (ecma_get_object_from_value (obj_val),
+                                                  str_idx_p,
+                                                  false);
+  ecma_deref_ecma_string (str_idx_p);
+
+  return ecma_is_value_true (ret_value);
+} /* jerry_delete_property_by_index */
+
+/**
  * Get value of a property to the specified object with the given name.
  *
  * Note:
@@ -1508,11 +1912,12 @@ jerry_get_property (const jerry_value_t obj_val, /**< object value */
   if (!ecma_is_value_object (obj_val)
       || !ecma_is_value_string (prop_name_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
-  return ecma_op_object_get (ecma_get_object_from_value (obj_val),
-                             ecma_get_string_from_value (prop_name_val));
+  jerry_value_t ret_value = ecma_op_object_get (ecma_get_object_from_value (obj_val),
+                                                ecma_get_string_from_value (prop_name_val));
+  return jerry_return (ret_value);
 } /* jerry_get_property */
 
 /**
@@ -1532,14 +1937,14 @@ jerry_get_property_by_index (const jerry_value_t obj_val, /**< object value */
 
   if (!ecma_is_value_object (obj_val))
   {
-    return jerry_create_type_error ();
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
-  ecma_string_t str_idx;
-  ecma_init_ecma_string_from_uint32 (&str_idx, index);
-  ecma_value_t ret_value = ecma_op_object_get (ecma_get_object_from_value (obj_val), &str_idx);
+  ecma_string_t *str_idx_p = ecma_new_ecma_string_from_uint32 (index);
+  ecma_value_t ret_value = ecma_op_object_get (ecma_get_object_from_value (obj_val), str_idx_p);
+  ecma_deref_ecma_string (str_idx_p);
 
-  return ret_value;
+  return jerry_return (ret_value);
 } /* jerry_get_property_by_index */
 
 /**
@@ -1558,17 +1963,17 @@ jerry_set_property (const jerry_value_t obj_val, /**< object value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value_to_set)
+  if (ecma_is_value_error_reference (value_to_set)
       || !ecma_is_value_object (obj_val)
       || !ecma_is_value_string (prop_name_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
-  return ecma_op_object_put (ecma_get_object_from_value (obj_val),
-                             ecma_get_string_from_value (prop_name_val),
-                             value_to_set,
-                             true);
+  return jerry_return (ecma_op_object_put (ecma_get_object_from_value (obj_val),
+                                           ecma_get_string_from_value (prop_name_val),
+                                           value_to_set,
+                                           true));
 } /* jerry_set_property */
 
 /**
@@ -1587,10 +1992,10 @@ jerry_set_property_by_index (const jerry_value_t obj_val, /**< object value */
 {
   jerry_assert_api_available ();
 
-  if (ECMA_IS_VALUE_ERROR (value_to_set)
+  if (ecma_is_value_error_reference (value_to_set)
       || !ecma_is_value_object (obj_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   ecma_string_t *str_idx_p = ecma_new_ecma_string_from_uint32 ((uint32_t) index);
@@ -1600,7 +2005,7 @@ jerry_set_property_by_index (const jerry_value_t obj_val, /**< object value */
                                                true);
   ecma_deref_ecma_string (str_idx_p);
 
-  return ret_value;
+  return jerry_return (ret_value);
 } /* jerry_set_property_by_index */
 
 /**
@@ -1610,7 +2015,7 @@ void
 jerry_init_property_descriptor_fields (jerry_property_descriptor_t *prop_desc_p) /**< [out] property descriptor */
 {
   prop_desc_p->is_value_defined = false;
-  prop_desc_p->value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  prop_desc_p->value = ECMA_VALUE_UNDEFINED;
   prop_desc_p->is_writable_defined = false;
   prop_desc_p->is_writable = false;
   prop_desc_p->is_enumerable_defined = false;
@@ -1618,9 +2023,9 @@ jerry_init_property_descriptor_fields (jerry_property_descriptor_t *prop_desc_p)
   prop_desc_p->is_configurable_defined = false;
   prop_desc_p->is_configurable = false;
   prop_desc_p->is_get_defined = false;
-  prop_desc_p->getter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  prop_desc_p->getter = ECMA_VALUE_UNDEFINED;
   prop_desc_p->is_set_defined = false;
-  prop_desc_p->setter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  prop_desc_p->setter = ECMA_VALUE_UNDEFINED;
 } /* jerry_init_property_descriptor_fields */
 
 /**
@@ -1642,38 +2047,41 @@ jerry_define_own_property (const jerry_value_t obj_val, /**< object value */
   if (!ecma_is_value_object (obj_val)
       || !ecma_is_value_string (prop_name_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   if ((prop_desc_p->is_writable_defined || prop_desc_p->is_value_defined)
       && (prop_desc_p->is_get_defined || prop_desc_p->is_set_defined))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   ecma_property_descriptor_t prop_desc = ecma_make_empty_property_descriptor ();
 
-  prop_desc.is_enumerable_defined = prop_desc_p->is_enumerable_defined;
-  prop_desc.is_enumerable = prop_desc_p->is_enumerable_defined ? prop_desc_p->is_enumerable : false;
+  prop_desc.is_enumerable_defined = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_enumerable_defined);
+  prop_desc.is_enumerable = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_enumerable_defined ? prop_desc_p->is_enumerable
+                                                                                      : false);
 
-  prop_desc.is_configurable_defined = prop_desc_p->is_configurable_defined;
-  prop_desc.is_configurable = prop_desc_p->is_configurable_defined ? prop_desc_p->is_configurable : false;
+  prop_desc.is_configurable_defined = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_configurable_defined);
+  prop_desc.is_configurable = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_configurable_defined ? prop_desc_p->is_configurable
+                                                                                          : false);
 
   /* Copy data property info. */
-  prop_desc.is_value_defined = prop_desc_p->is_value_defined;
+  prop_desc.is_value_defined = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_value_defined);
 
   if (prop_desc_p->is_value_defined)
   {
-    if (ECMA_IS_VALUE_ERROR (prop_desc_p->value))
+    if (ecma_is_value_error_reference (prop_desc_p->value))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
     }
 
     prop_desc.value = prop_desc_p->value;
   }
 
-  prop_desc.is_writable_defined = prop_desc_p->is_writable_defined;
-  prop_desc.is_writable = prop_desc_p->is_writable_defined ? prop_desc_p->is_writable : false;
+  prop_desc.is_writable_defined = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_writable_defined);
+  prop_desc.is_writable = ECMA_BOOL_TO_BITFIELD (prop_desc_p->is_writable_defined ? prop_desc_p->is_writable
+                                                                                  : false);
 
   /* Copy accessor property info. */
   if (prop_desc_p->is_get_defined)
@@ -1681,9 +2089,9 @@ jerry_define_own_property (const jerry_value_t obj_val, /**< object value */
     ecma_value_t getter = prop_desc_p->getter;
     prop_desc.is_get_defined = true;
 
-    if (ECMA_IS_VALUE_ERROR (getter))
+    if (ecma_is_value_error_reference (getter))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
     }
 
     if (ecma_op_is_callable (getter))
@@ -1692,7 +2100,7 @@ jerry_define_own_property (const jerry_value_t obj_val, /**< object value */
     }
     else if (!ecma_is_value_null (getter))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
     }
   }
 
@@ -1701,9 +2109,9 @@ jerry_define_own_property (const jerry_value_t obj_val, /**< object value */
     ecma_value_t setter = prop_desc_p->setter;
     prop_desc.is_set_defined = true;
 
-    if (ECMA_IS_VALUE_ERROR (setter))
+    if (ecma_is_value_error_reference (setter))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
     }
 
     if (ecma_op_is_callable (setter))
@@ -1712,7 +2120,7 @@ jerry_define_own_property (const jerry_value_t obj_val, /**< object value */
     }
     else if (!ecma_is_value_null (setter))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
     }
   }
 
@@ -1762,9 +2170,9 @@ jerry_get_own_property_descriptor (const jerry_value_t  obj_val, /**< object val
   prop_desc_p->is_get_defined = prop_desc.is_get_defined;
   prop_desc_p->is_set_defined = prop_desc.is_set_defined;
 
-  prop_desc_p->value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
-  prop_desc_p->getter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
-  prop_desc_p->setter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  prop_desc_p->value = ECMA_VALUE_UNDEFINED;
+  prop_desc_p->getter = ECMA_VALUE_UNDEFINED;
+  prop_desc_p->setter = ECMA_VALUE_UNDEFINED;
 
   if (prop_desc.is_value_defined)
   {
@@ -1779,7 +2187,7 @@ jerry_get_own_property_descriptor (const jerry_value_t  obj_val, /**< object val
     }
     else
     {
-      prop_desc_p->getter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
+      prop_desc_p->getter = ECMA_VALUE_NULL;
     }
   }
 
@@ -1791,7 +2199,7 @@ jerry_get_own_property_descriptor (const jerry_value_t  obj_val, /**< object val
     }
     else
     {
-      prop_desc_p->setter = ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
+      prop_desc_p->setter = ECMA_VALUE_NULL;
     }
   }
 
@@ -1806,17 +2214,17 @@ jerry_free_property_descriptor_fields (const jerry_property_descriptor_t *prop_d
 {
   if (prop_desc_p->is_value_defined)
   {
-    ecma_free_value (prop_desc_p->value);
+    jerry_release_value (prop_desc_p->value);
   }
 
   if (prop_desc_p->is_get_defined)
   {
-    ecma_free_value (prop_desc_p->getter);
+    jerry_release_value (prop_desc_p->getter);
   }
 
   if (prop_desc_p->is_set_defined)
   {
-    ecma_free_value (prop_desc_p->setter);
+    jerry_release_value (prop_desc_p->setter);
   }
 } /* jerry_free_property_descriptor_fields */
 
@@ -1841,17 +2249,17 @@ jerry_invoke_function (bool is_invoke_as_constructor, /**< true - invoke functio
 {
   JERRY_ASSERT (args_count == 0 || args_p != NULL);
 
-  if (ECMA_IS_VALUE_ERROR (func_obj_val)
-      || ECMA_IS_VALUE_ERROR (this_val))
+  if (ecma_is_value_error_reference (func_obj_val)
+      || ecma_is_value_error_reference (this_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
   }
 
   for (uint32_t i = 0; i < args_count; i++)
   {
-    if (ECMA_IS_VALUE_ERROR (args_p[i]))
+    if (ecma_is_value_error_reference (args_p[i]))
     {
-      return ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p));
+      return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (error_value_msg_p)));
     }
   }
 
@@ -1859,18 +2267,19 @@ jerry_invoke_function (bool is_invoke_as_constructor, /**< true - invoke functio
   {
     JERRY_ASSERT (jerry_value_is_constructor (func_obj_val));
 
-    return ecma_op_function_construct (ecma_get_object_from_value (func_obj_val),
-                                       args_p,
-                                       args_count);
+    return jerry_return (ecma_op_function_construct (ecma_get_object_from_value (func_obj_val),
+                                                     ECMA_VALUE_UNDEFINED,
+                                                     args_p,
+                                                     args_count));
   }
   else
   {
     JERRY_ASSERT (jerry_value_is_function (func_obj_val));
 
-    return ecma_op_function_call (ecma_get_object_from_value (func_obj_val),
-                                  this_val,
-                                  args_p,
-                                  args_count);
+    return jerry_return (ecma_op_function_call (ecma_get_object_from_value (func_obj_val),
+                                                this_val,
+                                                args_p,
+                                                args_count));
   }
 } /* jerry_invoke_function */
 
@@ -1896,7 +2305,7 @@ jerry_call_function (const jerry_value_t func_obj_val, /**< function object to c
     return jerry_invoke_function (false, func_obj_val, this_val, args_p, args_count);
   }
 
-  return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
 } /* jerry_call_function */
 
 /**
@@ -1918,11 +2327,11 @@ jerry_construct_object (const jerry_value_t func_obj_val, /**< function object t
 
   if (jerry_value_is_constructor (func_obj_val))
   {
-    ecma_value_t this_val = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+    ecma_value_t this_val = ECMA_VALUE_UNDEFINED;
     return jerry_invoke_function (true, func_obj_val, this_val, args_p, args_count);
   }
 
-  return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
 } /* jerry_construct_object */
 
 /**
@@ -1941,7 +2350,7 @@ jerry_get_object_keys (const jerry_value_t obj_val) /**< object value */
 
   if (!ecma_is_value_object (obj_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   return ecma_builtin_helper_object_get_properties (ecma_get_object_from_value (obj_val), true);
@@ -1960,14 +2369,14 @@ jerry_get_prototype (const jerry_value_t obj_val) /**< object value */
 
   if (!ecma_is_value_object (obj_val))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   ecma_object_t *proto_obj_p = ecma_get_object_prototype (ecma_get_object_from_value (obj_val));
 
   if (proto_obj_p == NULL)
   {
-    return ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
+    return ECMA_VALUE_NULL;
   }
 
   return ecma_make_object_value (proto_obj_p);
@@ -1986,10 +2395,10 @@ jerry_set_prototype (const jerry_value_t obj_val, /**< object value */
   jerry_assert_api_available ();
 
   if (!ecma_is_value_object (obj_val)
-      || ECMA_IS_VALUE_ERROR (proto_obj_val)
+      || ecma_is_value_error_reference (proto_obj_val)
       || (!ecma_is_value_object (proto_obj_val) && !ecma_is_value_null (proto_obj_val)))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
   if (ecma_is_value_null (proto_obj_val))
@@ -2002,71 +2411,75 @@ jerry_set_prototype (const jerry_value_t obj_val, /**< object value */
                       ecma_get_object_from_value (proto_obj_val));
   }
 
-  return ecma_make_simple_value (ECMA_SIMPLE_VALUE_TRUE);
+  return ECMA_VALUE_TRUE;
 } /* jerry_set_prototype */
 
 /**
- * Get native handle, associated with specified object.
+ * Traverse objects.
  *
- * Note: This API is deprecated, please use jerry_get_object_native_pointer instaed.
- *
- * @return true - if there is an associated handle (handle is returned through out_handle_p),
- *         false - otherwise
+ * @return true - traversal was interrupted by the callback.
+ *         false - otherwise - traversal visited all objects.
  */
 bool
-jerry_get_object_native_handle (const jerry_value_t obj_val, /**< object to get handle from */
-                                uintptr_t *out_handle_p) /**< [out] handle value */
+jerry_objects_foreach (jerry_objects_foreach_t foreach_p, /**< function pointer of the iterator function */
+                       void *user_data_p) /**< pointer to user data */
 {
   jerry_assert_api_available ();
 
-  if (!ecma_is_value_object (obj_val))
+  JERRY_ASSERT (foreach_p != NULL);
+
+  for (ecma_object_t *iter_p = JERRY_CONTEXT (ecma_gc_objects_p);
+       iter_p != NULL;
+       iter_p = ECMA_GET_POINTER (ecma_object_t, iter_p->gc_next_cp))
   {
-    return false;
+    if (!ecma_is_lexical_environment (iter_p)
+        && !foreach_p (ecma_make_object_value (iter_p), user_data_p))
+    {
+      return true;
+    }
   }
 
-  ecma_native_pointer_t *native_pointer_p;
-  native_pointer_p = ecma_get_native_pointer_value (ecma_get_object_from_value (obj_val),
-                                                    LIT_INTERNAL_MAGIC_STRING_NATIVE_HANDLE);
-
-  if (native_pointer_p == NULL)
-  {
-    return false;
-  }
-
-  *out_handle_p = (uintptr_t) native_pointer_p->data_p;
-  return true;
-} /* jerry_get_object_native_handle */
+  return false;
+} /* jerry_objects_foreach */
 
 /**
- * Set native handle and an optional free callback for the specified object.
+ * Traverse objects having a given native type info.
  *
- * Note: This API is deprecated, please use jerry_set_object_native_pointer instaed.
- *
- * Note:
- *      If native handle was already set for the object, its value is updated.
- *
- * Note:
- *      If a non-NULL free callback is specified, it will be called
- *      by the garbage collector when the object is freed. The free
- *      callback always overwrites the previous value, so passing
- *      a NULL value deletes the current free callback.
+ * @return true - traversal was interrupted by the callback.
+ *         false - otherwise - traversal visited all objects.
  */
-void
-jerry_set_object_native_handle (const jerry_value_t obj_val, /**< object to set handle in */
-                                uintptr_t handle_p, /**< handle value */
-                                jerry_object_free_callback_t freecb_p) /**< object free callback or NULL */
+bool
+jerry_objects_foreach_by_native_info (const jerry_object_native_info_t *native_info_p, /**< the type info
+                                                                                        *   of the native pointer */
+                                      jerry_objects_foreach_by_native_info_t foreach_p, /**< function to apply for
+                                                                                         *   each matching object */
+                                      void *user_data_p) /**< pointer to user data */
 {
   jerry_assert_api_available ();
 
-  if (ecma_is_value_object (obj_val))
-  {
-    ecma_object_t *object_p = ecma_get_object_from_value (obj_val);
+  JERRY_ASSERT (native_info_p != NULL);
+  JERRY_ASSERT (foreach_p != NULL);
 
-    ecma_create_native_handle_property (object_p,
-                                        (void *) handle_p,
-                                        (void *) (ecma_external_pointer_t) freecb_p);
+  ecma_native_pointer_t *native_pointer_p;
+
+  for (ecma_object_t *iter_p = JERRY_CONTEXT (ecma_gc_objects_p);
+       iter_p != NULL;
+       iter_p = ECMA_GET_POINTER (ecma_object_t, iter_p->gc_next_cp))
+  {
+    if (!ecma_is_lexical_environment (iter_p))
+    {
+      native_pointer_p = ecma_get_native_pointer_value (iter_p);
+      if (native_pointer_p
+          && ((const jerry_object_native_info_t *) native_pointer_p->info_p) == native_info_p
+          && !foreach_p (ecma_make_object_value (iter_p), native_pointer_p->data_p, user_data_p))
+      {
+        return true;
+      }
+    }
   }
-} /* jerry_set_object_native_handle */
+
+  return false;
+} /* jerry_objects_foreach_by_native_info */
 
 /**
  * Get native pointer and its type information, associated with specified object.
@@ -2092,8 +2505,7 @@ jerry_get_object_native_pointer (const jerry_value_t obj_val, /**< object to get
   }
 
   ecma_native_pointer_t *native_pointer_p;
-  native_pointer_p = ecma_get_native_pointer_value (ecma_get_object_from_value (obj_val),
-                                                    LIT_INTERNAL_MAGIC_STRING_NATIVE_POINTER);
+  native_pointer_p = ecma_get_native_pointer_value (ecma_get_object_from_value (obj_val));
 
   if (native_pointer_p == NULL)
   {
@@ -2107,7 +2519,7 @@ jerry_get_object_native_pointer (const jerry_value_t obj_val, /**< object to get
 
   if (out_native_info_p != NULL)
   {
-    *out_native_info_p = (const jerry_object_native_info_t *) native_pointer_p->u.info_p;
+    *out_native_info_p = (const jerry_object_native_info_t *) native_pointer_p->info_p;
   }
 
   return true;
@@ -2157,19 +2569,23 @@ jerry_foreach_object_property (const jerry_value_t obj_val, /**< object value */
 {
   jerry_assert_api_available ();
 
-  ecma_collection_iterator_t names_iter;
-  ecma_object_t *object_p = ecma_get_object_from_value (obj_val);
-  ecma_collection_header_t *names_p = ecma_op_object_get_property_names (object_p, false, true, true);
-  ecma_collection_iterator_init (&names_iter, names_p);
+  if (!ecma_is_value_object (obj_val))
+  {
+    return false;
+  }
 
-  ecma_value_t property_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_object_t *object_p = ecma_get_object_from_value (obj_val);
+  ecma_collection_header_t *names_p = ecma_op_object_get_property_names (object_p, ECMA_LIST_ENUMERABLE_PROTOTYPE);
+  ecma_value_t *ecma_value_p = ecma_collection_iterator_init (names_p);
+
+  ecma_value_t property_value = ECMA_VALUE_EMPTY;
 
   bool continuous = true;
 
-  while (continuous
-         && ecma_collection_iterator_next (&names_iter))
+  while (continuous && ecma_value_p != NULL)
   {
-    ecma_string_t *property_name_p = ecma_get_string_from_value (*names_iter.current_value_p);
+    ecma_string_t *property_name_p = ecma_get_string_from_value (*ecma_value_p);
+
     property_value = ecma_op_object_get (object_p, property_name_p);
 
     if (ECMA_IS_VALUE_ERROR (property_value))
@@ -2177,22 +2593,22 @@ jerry_foreach_object_property (const jerry_value_t obj_val, /**< object value */
       break;
     }
 
-    continuous = foreach_p (*names_iter.current_value_p, property_value, user_data_p);
+    continuous = foreach_p (*ecma_value_p, property_value, user_data_p);
     ecma_free_value (property_value);
+
+    ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
   }
 
-  ecma_free_values_collection (names_p, true);
+  ecma_free_values_collection (names_p, 0);
 
   if (!ECMA_IS_VALUE_ERROR (property_value))
   {
     return true;
   }
 
-  ecma_free_value (property_value);
+  ecma_free_value (JERRY_CONTEXT (error_value));
   return false;
 } /* jerry_foreach_object_property */
-
-#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
 
 /**
  * Resolve or reject the promise with an argument.
@@ -2207,35 +2623,33 @@ jerry_resolve_or_reject_promise (jerry_value_t promise, /**< the promise value *
 {
   jerry_assert_api_available ();
 
+#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
   if (!ecma_is_value_object (promise) || !ecma_is_promise (ecma_get_object_from_value (promise)))
   {
-    return ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p));
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG (wrong_args_msg_p)));
   }
 
-  ecma_string_t str;
+  lit_magic_string_id_t prop_name = (is_resolve ? LIT_INTERNAL_MAGIC_STRING_RESOLVE_FUNCTION
+                                                : LIT_INTERNAL_MAGIC_STRING_REJECT_FUNCTION);
 
-  if (is_resolve)
-  {
-    ecma_init_ecma_magic_string (&str, LIT_INTERNAL_MAGIC_STRING_RESOLVE_FUNCTION);
-  }
-  else
-  {
-    ecma_init_ecma_magic_string (&str, LIT_INTERNAL_MAGIC_STRING_REJECT_FUNCTION);
-  }
-
-  ecma_value_t function = ecma_op_object_get (ecma_get_object_from_value (promise), &str);
+  ecma_value_t function = ecma_op_object_get_by_magic_id (ecma_get_object_from_value (promise), prop_name);
 
   ecma_value_t ret = ecma_op_function_call (ecma_get_object_from_value (function),
-                                            ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED),
+                                            ECMA_VALUE_UNDEFINED,
                                             &argument,
                                             1);
 
   ecma_free_value (function);
 
   return ret;
-} /* jerry_resolve_or_reject_promise */
+#else /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+  JERRY_UNUSED (promise);
+  JERRY_UNUSED (argument);
+  JERRY_UNUSED (is_resolve);
 
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("Promise not supported.")));
 #endif /* !CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+} /* jerry_resolve_or_reject_promise */
 
 /**
  * Validate UTF-8 string
@@ -2265,21 +2679,52 @@ jerry_is_valid_cesu8_string (const jerry_char_t *cesu8_buf_p, /**< CESU-8 string
                                     (lit_utf8_size_t) buf_size);
 } /* jerry_is_valid_cesu8_string */
 
-/*
- * Create a jerry instance for external context.
+/**
+ * Allocate memory on the engine's heap.
  *
- * @return the pointer to the instance.
+ * Note:
+ *      This function may take away memory from the executed JavaScript code.
+ *      If any other dynamic memory allocation API is available (e.g., libc
+ *      malloc), it should be used instead.
+ *
+ * @return allocated memory on success
+ *         NULL otherwise
  */
-jerry_instance_t *
-jerry_create_instance (uint32_t heap_size, /**< the size of heap */
-                       jerry_instance_alloc_t alloc, /**< the alloc function */
-                       void *cb_data_p) /**< the cb_data for alloc function */
+void *
+jerry_heap_alloc (size_t size) /**< size of the memory block */
+{
+  jerry_assert_api_available ();
+
+  return jmem_heap_alloc_block_null_on_error (size);
+} /* jerry_heap_alloc */
+
+/**
+ * Free memory allocated on the engine's heap.
+ */
+void
+jerry_heap_free (void *mem_p, /**< value returned by jerry_heap_alloc */
+                 size_t size) /**< same size as passed to jerry_heap_alloc */
+{
+  jerry_assert_api_available ();
+
+  jmem_heap_free_block (mem_p, size);
+} /* jerry_heap_free */
+
+/**
+ * Create an external engine context.
+ *
+ * @return the pointer to the context.
+ */
+jerry_context_t *
+jerry_create_context (uint32_t heap_size, /**< the size of heap */
+                      jerry_context_alloc_t alloc, /**< the alloc function */
+                      void *cb_data_p) /**< the cb_data for alloc function */
 {
   JERRY_UNUSED (heap_size);
 
 #ifdef JERRY_ENABLE_EXTERNAL_CONTEXT
 
-  size_t total_size = sizeof (jerry_instance_t) + JMEM_ALIGNMENT;
+  size_t total_size = sizeof (jerry_context_t) + JMEM_ALIGNMENT;
 
 #ifndef JERRY_SYSTEM_ALLOCATOR
   heap_size = JERRY_ALIGNUP (heap_size, JMEM_ALIGNMENT);
@@ -2293,41 +2738,32 @@ jerry_create_instance (uint32_t heap_size, /**< the size of heap */
   total_size += heap_size;
 #endif /* !JERRY_SYSTEM_ALLOCATOR */
 
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
-  total_size += sizeof (jerry_hash_table_t);
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
-
   total_size = JERRY_ALIGNUP (total_size, JMEM_ALIGNMENT);
 
-  jerry_instance_t *instance_p = (jerry_instance_t *) alloc (total_size, cb_data_p);
+  jerry_context_t *context_p = (jerry_context_t *) alloc (total_size, cb_data_p);
 
-  if (instance_p == NULL)
+  if (context_p == NULL)
   {
     return NULL;
   }
 
-  memset (instance_p, 0, total_size);
+  memset (context_p, 0, total_size);
 
-  uintptr_t instance_ptr = ((uintptr_t) instance_p) + sizeof (jerry_instance_t);
-  instance_ptr = JERRY_ALIGNUP (instance_ptr, (uintptr_t) JMEM_ALIGNMENT);
+  uintptr_t context_ptr = ((uintptr_t) context_p) + sizeof (jerry_context_t);
+  context_ptr = JERRY_ALIGNUP (context_ptr, (uintptr_t) JMEM_ALIGNMENT);
 
-  uint8_t *byte_p = (uint8_t *) instance_ptr;
+  uint8_t *byte_p = (uint8_t *) context_ptr;
 
 #ifndef JERRY_SYSTEM_ALLOCATOR
-  instance_p->heap_p = (jmem_heap_t *) byte_p;
-  instance_p->heap_size = heap_size;
+  context_p->heap_p = (jmem_heap_t *) byte_p;
+  context_p->heap_size = heap_size;
   byte_p += heap_size;
 #endif /* !JERRY_SYSTEM_ALLOCATOR */
 
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
-  instance_p->lcache_p = byte_p;
-  byte_p += sizeof (jerry_hash_table_t);
-#endif /* !JERRY_SYSTEM_ALLOCATOR */
-
-  JERRY_ASSERT (byte_p <= ((uint8_t *) instance_p) + total_size);
+  JERRY_ASSERT (byte_p <= ((uint8_t *) context_p) + total_size);
 
   JERRY_UNUSED (byte_p);
-  return instance_p;
+  return context_p;
 
 #else /* !JERRY_ENABLE_EXTERNAL_CONTEXT */
 
@@ -2337,7 +2773,7 @@ jerry_create_instance (uint32_t heap_size, /**< the size of heap */
   return NULL;
 
 #endif /* JERRY_ENABLE_EXTERNAL_CONTEXT */
-} /* jerry_create_instance */
+} /* jerry_create_context */
 
 /**
  * If JERRY_VM_EXEC_STOP is defined the callback passed to this function is
@@ -2365,6 +2801,628 @@ jerry_set_vm_exec_stop_callback (jerry_vm_exec_stop_callback_t stop_cb, /**< per
   JERRY_UNUSED (frequency);
 #endif /* JERRY_VM_EXEC_STOP */
 } /* jerry_set_vm_exec_stop_callback */
+
+/**
+ * Get backtrace. The backtrace is an array of strings where
+ * each string contains the position of the corresponding frame.
+ * The array length is zero if the backtrace is not available.
+ *
+ * @return array value
+ */
+jerry_value_t
+jerry_get_backtrace (uint32_t max_depth) /**< depth limit of the backtrace */
+{
+  return vm_get_backtrace (max_depth);
+} /* jerry_get_backtrace */
+
+/**
+ * Check if the given value is an ArrayBuffer object.
+ *
+ * @return true - if it is an ArrayBuffer object
+ *         false - otherwise
+ */
+bool
+jerry_value_is_arraybuffer (const jerry_value_t value) /**< value to check if it is an ArrayBuffer */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  return ecma_is_arraybuffer (value);
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+  return false;
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_value_is_arraybuffer */
+
+/**
+ * Creates an ArrayBuffer object with the given length (size).
+ *
+ * Notes:
+ *      * the length is specified in bytes.
+ *      * returned value must be freed with jerry_release_value, when it is no longer needed.
+ *      * if the typed arrays are disabled this will return a TypeError.
+ *
+ * @return value of the constructed ArrayBuffer object
+ */
+jerry_value_t
+jerry_create_arraybuffer (const jerry_length_t size) /**< size of the ArrayBuffer to create */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  return jerry_return (ecma_make_object_value (ecma_arraybuffer_new_object (size)));
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (size);
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("ArrayBuffer not supported.")));
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_create_arraybuffer */
+
+/**
+ * Creates an ArrayBuffer object with user specified buffer.
+ *
+ * Notes:
+ *     * the size is specified in bytes.
+ *     * the buffer passed should be at least the specified bytes big.
+ *     * if the typed arrays are disabled this will return a TypeError.
+ *     * if the size is zero or the buffer_p is a null pointer this will return a RangeError.
+ *
+ * @return value of the construced ArrayBuffer object
+ */
+jerry_value_t
+jerry_create_arraybuffer_external (const jerry_length_t size, /**< size of the buffer to used */
+                                   uint8_t *buffer_p, /**< buffer to use as the ArrayBuffer's backing */
+                                   jerry_object_native_free_callback_t free_cb) /**< buffer free callback */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (size == 0 || buffer_p == NULL)
+  {
+    return jerry_throw (ecma_raise_range_error (ECMA_ERR_MSG ("invalid buffer size or storage reference")));
+  }
+
+  ecma_object_t *arraybuffer = ecma_arraybuffer_new_object_external (size,
+                                                                     buffer_p,
+                                                                     (ecma_object_native_free_callback_t) free_cb);
+  return jerry_return (ecma_make_object_value (arraybuffer));
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (size);
+  JERRY_UNUSED (buffer_p);
+  JERRY_UNUSED (free_cb);
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("ArrayBuffer not supported.")));
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_create_arraybuffer_external */
+
+/**
+ * Copy bytes into the ArrayBuffer from a buffer.
+ *
+ * Note:
+ *     * if the object passed is not an ArrayBuffer will return 0.
+ *
+ * @return number of bytes copied into the ArrayBuffer.
+ */
+jerry_length_t
+jerry_arraybuffer_write (const jerry_value_t value, /**< target ArrayBuffer */
+                         jerry_length_t offset, /**< start offset of the ArrayBuffer */
+                         const uint8_t *buf_p, /**< buffer to copy from */
+                         jerry_length_t buf_size) /**< number of bytes to copy from the buffer */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (!ecma_is_arraybuffer (value))
+  {
+    return 0;
+  }
+
+  ecma_object_t *buffer_p = ecma_get_object_from_value (value);
+  jerry_length_t length = ecma_arraybuffer_get_length (buffer_p);
+
+  if (offset >= length)
+  {
+    return 0;
+  }
+
+  jerry_length_t copy_count = JERRY_MIN (length - offset, buf_size);
+
+  if (copy_count > 0)
+  {
+    lit_utf8_byte_t *mem_buffer_p = ecma_arraybuffer_get_buffer (buffer_p);
+
+    memcpy ((void *) (mem_buffer_p + offset), (void *) buf_p, copy_count);
+  }
+
+  return copy_count;
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+  JERRY_UNUSED (offset);
+  JERRY_UNUSED (buf_p);
+  JERRY_UNUSED (buf_size);
+  return 0;
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_arraybuffer_write */
+
+/**
+ * Copy bytes from a buffer into an ArrayBuffer.
+ *
+ * Note:
+ *     * if the object passed is not an ArrayBuffer will return 0.
+ *
+ * @return number of bytes read from the ArrayBuffer.
+ */
+jerry_length_t
+jerry_arraybuffer_read (const jerry_value_t value, /**< ArrayBuffer to read from */
+                        jerry_length_t offset, /**< start offset of the ArrayBuffer */
+                        uint8_t *buf_p, /**< destination buffer to copy to */
+                        jerry_length_t buf_size) /**< number of bytes to copy into the buffer */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (!ecma_is_arraybuffer (value))
+  {
+    return 0;
+  }
+
+  ecma_object_t *buffer_p = ecma_get_object_from_value (value);
+  jerry_length_t length = ecma_arraybuffer_get_length (buffer_p);
+
+  if (offset >= length)
+  {
+    return 0;
+  }
+
+  jerry_length_t copy_count = JERRY_MIN (length - offset, buf_size);
+
+  if (copy_count > 0)
+  {
+    lit_utf8_byte_t *mem_buffer_p = ecma_arraybuffer_get_buffer (buffer_p);
+
+    memcpy ((void *) buf_p, (void *) (mem_buffer_p + offset), copy_count);
+  }
+
+  return copy_count;
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+  JERRY_UNUSED (offset);
+  JERRY_UNUSED (buf_p);
+  JERRY_UNUSED (buf_size);
+  return 0;
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_arraybuffer_read */
+
+/**
+ * Get the length (size) of the ArrayBuffer in bytes.
+ *
+ * Note:
+ *     This is the 'byteLength' property of an ArrayBuffer.
+ *
+ * @return the length of the ArrayBuffer in bytes.
+ */
+jerry_length_t
+jerry_get_arraybuffer_byte_length (const jerry_value_t value) /**< ArrayBuffer */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (ecma_is_arraybuffer (value))
+  {
+    ecma_object_t *buffer_p = ecma_get_object_from_value (value);
+    return ecma_arraybuffer_get_length (buffer_p);
+  }
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  return 0;
+} /* jerry_get_arraybuffer_byte_length */
+
+/**
+ * Get a pointer for the start of the ArrayBuffer.
+ *
+ * Note:
+ *    * Only valid for ArrayBuffers created with jerry_create_arraybuffer_external.
+ *    * This is a high-risk operation as the bounds are not checked
+ *      when accessing the pointer elements.
+ *    * jerry_release_value must be called on the ArrayBuffer when the pointer is no longer needed.
+ *
+ * @return pointer to the back-buffer of the ArrayBuffer.
+ *         pointer is NULL if the parameter is not an ArrayBuffer with external memory
+             or it is not an ArrayBuffer at all.
+ */
+uint8_t *
+jerry_get_arraybuffer_pointer (const jerry_value_t value) /**< Array Buffer to use */
+{
+  jerry_assert_api_available ();
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (!ecma_is_arraybuffer (value))
+  {
+    return NULL;
+  }
+
+  ecma_object_t *buffer_p = ecma_get_object_from_value (value);
+  if (ECMA_ARRAYBUFFER_HAS_EXTERNAL_MEMORY (buffer_p))
+  {
+    jerry_acquire_value (value);
+    lit_utf8_byte_t *mem_buffer_p = ecma_arraybuffer_get_buffer (buffer_p);
+    return (uint8_t *const) mem_buffer_p;
+  }
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+
+  return NULL;
+} /* jerry_get_arraybuffer_pointer */
+
+
+/**
+ * TypedArray related functions
+ */
+
+/**
+ * Check if the given value is a TypedArray object.
+ *
+ * @return true - if it is a TypedArray object
+ *         false - otherwise
+ */
+bool
+jerry_value_is_typedarray (jerry_value_t value) /**< value to check if it is a TypedArray */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  return ecma_is_typedarray (value);
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+  return false;
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_value_is_typedarray */
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+/**
+ * TypedArray mapping type
+ */
+typedef struct
+{
+  jerry_typedarray_type_t api_type; /**< api type */
+  ecma_builtin_id_t prototype_id; /**< prototype ID */
+  lit_magic_string_id_t lit_id; /**< literal ID */
+  uint8_t element_size_shift; /**< element size shift */
+} jerry_typedarray_mapping_t;
+
+/**
+ * List of TypedArray mappings
+ */
+static jerry_typedarray_mapping_t jerry_typedarray_mappings[] =
+{
+#define TYPEDARRAY_ENTRY(NAME, LIT_NAME, SIZE_SHIFT) \
+  { JERRY_TYPEDARRAY_ ## NAME, ECMA_BUILTIN_ID_ ## NAME ## ARRAY_PROTOTYPE, \
+    LIT_MAGIC_STRING_ ## LIT_NAME ## _ARRAY_UL, SIZE_SHIFT }
+
+  TYPEDARRAY_ENTRY (UINT8, UINT8, 0),
+  TYPEDARRAY_ENTRY (UINT8CLAMPED, UINT8_CLAMPED, 0),
+  TYPEDARRAY_ENTRY (INT8, INT8, 0),
+  TYPEDARRAY_ENTRY (UINT16, UINT16, 1),
+  TYPEDARRAY_ENTRY (INT16, INT16, 1),
+  TYPEDARRAY_ENTRY (UINT32, UINT32, 2),
+  TYPEDARRAY_ENTRY (INT32, INT32, 2),
+  TYPEDARRAY_ENTRY (FLOAT32, FLOAT32, 2),
+#if CONFIG_ECMA_NUMBER_TYPE == CONFIG_ECMA_NUMBER_FLOAT64
+  TYPEDARRAY_ENTRY (FLOAT64, FLOAT64, 3),
+#endif
+
+#undef TYPEDARRAY_ENTRY
+};
+
+/**
+ * Helper function to get the TypedArray prototype, literal id, and element size shift
+ * information.
+ *
+ * @return true - if the TypedArray information was found
+ *         false - if there is no such TypedArray type
+ */
+static bool
+jerry_typedarray_find_by_type (jerry_typedarray_type_t type_name, /**< type of the TypedArray */
+                               ecma_builtin_id_t *prototype_id, /**< [out] found prototype object id */
+                               lit_magic_string_id_t *lit_id, /**< [out] found literal id */
+                               uint8_t *element_size_shift) /**< [out] found element size shift value */
+{
+  JERRY_ASSERT (prototype_id != NULL);
+  JERRY_ASSERT (lit_id != NULL);
+  JERRY_ASSERT (element_size_shift != NULL);
+
+  for (uint32_t i = 0; i < sizeof (jerry_typedarray_mappings) / sizeof (jerry_typedarray_mappings[0]); i++)
+  {
+    if (type_name == jerry_typedarray_mappings[i].api_type)
+    {
+      *prototype_id = jerry_typedarray_mappings[i].prototype_id;
+      *lit_id = jerry_typedarray_mappings[i].lit_id;
+      *element_size_shift = jerry_typedarray_mappings[i].element_size_shift;
+      return true;
+    }
+  }
+
+  return false;
+} /* jerry_typedarray_find_by_type */
+
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+
+/**
+ * Create a TypedArray object with a given type and length.
+ *
+ * Notes:
+ *      * returns TypeError if an incorrect type (type_name) is specified.
+ *      * byteOffset property will be set to 0.
+ *      * byteLength property will be a multiple of the length parameter (based on the type).
+ *
+ * @return - new TypedArray object
+ */
+jerry_value_t
+jerry_create_typedarray (jerry_typedarray_type_t type_name, /**< type of TypedArray to create */
+                         jerry_length_t length) /**< element count of the new TypedArray */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  ecma_builtin_id_t prototype_id = 0;
+  lit_magic_string_id_t lit_id = 0;
+  uint8_t element_size_shift = 0;
+
+  if (!jerry_typedarray_find_by_type (type_name, &prototype_id, &lit_id, &element_size_shift))
+  {
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("incorrect type for TypedArray.")));
+  }
+
+  ecma_object_t *prototype_obj_p = ecma_builtin_get (prototype_id);
+
+  ecma_value_t array_value = ecma_typedarray_create_object_with_length (length,
+                                                                        prototype_obj_p,
+                                                                        element_size_shift,
+                                                                        lit_id);
+
+  JERRY_ASSERT (!ECMA_IS_VALUE_ERROR (array_value));
+
+  return array_value;
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (type_name);
+  JERRY_UNUSED (length);
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("TypedArray not supported.")));
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_create_typedarray */
+
+/**
+ * Create a TypedArray object using the given arraybuffer and size information.
+ *
+ * Notes:
+ *      * returns TypeError if an incorrect type (type_name) is specified.
+ *      * this is the 'new %TypedArray%(arraybuffer, byteOffset, length)' equivalent call.
+ *
+ * @return - new TypedArray object
+ */
+jerry_value_t
+jerry_create_typedarray_for_arraybuffer_sz (jerry_typedarray_type_t type_name, /**< type of TypedArray to create */
+                                            const jerry_value_t arraybuffer, /**< ArrayBuffer to use */
+                                            jerry_length_t byte_offset, /**< offset for the ArrayBuffer */
+                                            jerry_length_t length) /**< number of elements to use from ArrayBuffer */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  ecma_builtin_id_t prototype_id = 0;
+  lit_magic_string_id_t lit_id = 0;
+  uint8_t element_size_shift = 0;
+
+  if (!jerry_typedarray_find_by_type (type_name, &prototype_id, &lit_id, &element_size_shift))
+  {
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("incorrect type for TypedArray.")));
+  }
+
+  if (!ecma_is_arraybuffer (arraybuffer))
+  {
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an ArrayBuffer")));
+  }
+
+  ecma_object_t *prototype_obj_p = ecma_builtin_get (prototype_id);
+  ecma_value_t arguments_p[3] =
+  {
+    arraybuffer,
+    ecma_make_uint32_value (byte_offset),
+    ecma_make_uint32_value (length)
+  };
+
+  ecma_value_t array_value = ecma_op_create_typedarray (arguments_p, 3, prototype_obj_p, element_size_shift, lit_id);
+  ecma_free_value (arguments_p[1]);
+  ecma_free_value (arguments_p[2]);
+
+  return jerry_return (array_value);
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (type_name);
+  JERRY_UNUSED (arraybuffer);
+  JERRY_UNUSED (byte_offset);
+  JERRY_UNUSED (length);
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("TypedArray not supported.")));
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_create_typedarray_for_arraybuffer_sz */
+
+/**
+ * Create a TypedArray object using the given arraybuffer and size information.
+ *
+ * Notes:
+ *      * returns TypeError if an incorrect type (type_name) is specified.
+ *      * this is the 'new %TypedArray%(arraybuffer)' equivalent call.
+ *
+ * @return - new TypedArray object
+ */
+jerry_value_t
+jerry_create_typedarray_for_arraybuffer (jerry_typedarray_type_t type_name, /**< type of TypedArray to create */
+                                         const jerry_value_t arraybuffer) /**< ArrayBuffer to use */
+{
+  jerry_assert_api_available ();
+  jerry_length_t byteLength = jerry_get_arraybuffer_byte_length (arraybuffer);
+  return jerry_create_typedarray_for_arraybuffer_sz (type_name, arraybuffer, 0, byteLength);
+} /* jerry_create_typedarray_for_arraybuffer */
+
+/**
+ * Get the type of the TypedArray.
+ *
+ * @return - type of the TypedArray
+ *         - JERRY_TYPEDARRAY_INVALID if the argument is not a TypedArray
+ */
+jerry_typedarray_type_t
+jerry_get_typedarray_type (jerry_value_t value) /**< object to get the TypedArray type */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (!ecma_is_typedarray (value))
+  {
+    return JERRY_TYPEDARRAY_INVALID;
+  }
+
+  ecma_object_t *array_p = ecma_get_object_from_value (value);
+
+  lit_magic_string_id_t class_name_id = ecma_object_get_class_name (array_p);
+  for (uint32_t i = 0; i < sizeof (jerry_typedarray_mappings) / sizeof (jerry_typedarray_mappings[0]); i++)
+  {
+    if (class_name_id == jerry_typedarray_mappings[i].lit_id)
+    {
+      return jerry_typedarray_mappings[i].api_type;
+    }
+  }
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+
+  return JERRY_TYPEDARRAY_INVALID;
+} /* jerry_get_typedarray_type */
+
+/**
+ * Get the element count of the TypedArray.
+ *
+ * @return length of the TypedArray.
+ */
+jerry_length_t
+jerry_get_typedarray_length (jerry_value_t value) /**< TypedArray to query */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (ecma_is_typedarray (value))
+  {
+    ecma_object_t *array_p = ecma_get_object_from_value (value);
+    return ecma_typedarray_get_length (array_p);
+  }
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+
+  return 0;
+} /* jerry_get_typedarray_length */
+
+/**
+ * Get the underlying ArrayBuffer from a TypedArray.
+ *
+ * Additionally the byteLength and byteOffset properties are also returned
+ * which were specified when the TypedArray was created.
+ *
+ * Note:
+ *     the returned value must be freed with a jerry_release_value call
+ *
+ * @return ArrayBuffer of a TypedArray
+ *         TypeError if the object is not a TypedArray.
+ */
+jerry_value_t
+jerry_get_typedarray_buffer (jerry_value_t value, /**< TypedArray to get the arraybuffer from */
+                             jerry_length_t *byte_offset, /**< [out] byteOffset property */
+                             jerry_length_t *byte_length) /**< [out] byteLength property */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+  if (!ecma_is_typedarray (value))
+  {
+    return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("Object is not a TypedArray.")));
+  }
+
+  ecma_object_t *array_p = ecma_get_object_from_value (value);
+  uint8_t shift = ecma_typedarray_get_element_size_shift (array_p);
+
+  if (byte_length != NULL)
+  {
+    *byte_length = (jerry_length_t) (ecma_typedarray_get_length (array_p) << shift);
+  }
+
+  if (byte_offset != NULL)
+  {
+    *byte_offset = (jerry_length_t) ecma_typedarray_get_offset (array_p);
+  }
+
+  ecma_object_t *arraybuffer_p = ecma_typedarray_get_arraybuffer (array_p);
+  ecma_ref_object (arraybuffer_p);
+  return jerry_return (ecma_make_object_value (arraybuffer_p));
+#else /* CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+  JERRY_UNUSED (value);
+  JERRY_UNUSED (byte_length);
+  JERRY_UNUSED (byte_offset);
+  return jerry_throw (ecma_raise_type_error (ECMA_ERR_MSG ("TypedArray is not supported.")));
+#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+} /* jerry_get_typedarray_buffer */
+
+/**
+ * Create an object from JSON
+ *
+ * Note:
+ *      The returned value must be freed with jerry_release_value
+ * @return jerry_value_t from json formated string or an error massage
+ */
+jerry_value_t
+jerry_json_parse (const jerry_char_t *string_p, /**< json string */
+                  jerry_size_t string_size) /**< json string size */
+{
+  jerry_assert_api_available ();
+
+#ifndef CONFIG_DISABLE_JSON_BUILTIN
+  ecma_value_t ret_value = ecma_builtin_json_parse_buffer (string_p, string_size);
+
+  if (ecma_is_value_undefined (ret_value))
+  {
+    ret_value = jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("JSON string parse error.")));
+  }
+
+  return ret_value;
+#else /* CONFIG_DISABLE_JSON_BUILTIN */
+  JERRY_UNUSED (string_p);
+  JERRY_UNUSED (string_size);
+
+  return jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("The JSON has been disabled.")));
+#endif /* !CONFIG_DISABLE_JSON_BUILTIN */
+} /* jerry_json_parse */
+
+/**
+ * Create a Json formated string from an object
+ *
+ * Note:
+ *      The returned value must be freed with jerry_release_value
+ * @return json formated jerry_value_t or an error massage
+ */
+jerry_value_t
+jerry_json_stringify (const jerry_value_t object_to_stringify) /**< a jerry_object_t to stringify */
+{
+  jerry_assert_api_available ();
+#ifndef CONFIG_DISABLE_JSON_BUILTIN
+  ecma_value_t ret_value = ecma_builtin_json_string_from_object (object_to_stringify);
+
+  if (ecma_is_value_undefined (ret_value))
+  {
+    ret_value = jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("JSON stringify error.")));
+  }
+
+  return ret_value;
+#else /* CONFIG_DISABLE_JSON_BUILTIN */
+  JERRY_UNUSED (object_to_stringify);
+
+  return jerry_throw (ecma_raise_syntax_error (ECMA_ERR_MSG ("The JSON has been disabled.")));
+#endif /* !CONFIG_DISABLE_JSON_BUILTIN */
+} /* jerry_json_stringify */
 
 /**
  * @}

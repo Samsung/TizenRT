@@ -114,7 +114,7 @@ static void uv__getaddrinfo_work(struct uv__work* w) {
   int err;
 
   req = container_of(w, uv_getaddrinfo_t, work_req);
-#if defined(__NUTTX__) || defined(__TIZENRT__)
+#if defined(__NUTTX__)
   err = 0;
 #else
   /* Only IPv4 is supported now. (Not support IPv6.)*/
@@ -220,7 +220,7 @@ int uv_getaddrinfo(uv_loop_t* loop,
 
 
 void uv_freeaddrinfo(struct addrinfo* ai) {
-#if !defined(__NUTTX__) && !defined(__TIZENRT__)
+#if !defined(__NUTTX__)
   if (ai)
     freeaddrinfo(ai);
 #endif

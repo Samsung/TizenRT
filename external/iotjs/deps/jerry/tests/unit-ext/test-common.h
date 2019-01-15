@@ -18,6 +18,8 @@
 
 #include "jerryscript-port.h"
 
+#define ARRAY_SIZE(array) ((unsigned long) (sizeof (array) / sizeof ((array)[0])))
+
 #define TEST_ASSERT(x) \
   do \
   { \
@@ -33,4 +35,6 @@
     } \
   } while (0)
 
-#endif /* TEST_COMMON_H */
+#define TEST_STRING_LITERAL(x) x
+
+#endif /* !TEST_COMMON_H */

@@ -56,11 +56,11 @@
 #include <sys/time.h>
 #if !defined(__TIZENRT__)
 # include <sys/uio.h> /* writev */
+# include <utime.h>
 #endif
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <utime.h>
 #include <poll.h>
 
 #if defined(__DragonFly__)        ||                                      \
@@ -365,44 +365,88 @@ done:
 #endif
 
 
-#if !defined(__NUTTX__) && !defined(__TIZENRT__)
 static int uv__fs_scandir_filter(UV_CONST_DIRENT* dent) {
   return strcmp(dent->d_name, ".") != 0 && strcmp(dent->d_name, "..") != 0;
 }
 
 
+#if defined(__NUTTX__) || defined(__TIZENRT__)
+static uv__dirent_t* uv__fs_scandir_copy_entry(UV_CONST_DIRENT* dent) {
+  uv__dirent_t* ent = (uv__dirent_t*) malloc(sizeof(uv__dirent_t));
+  memcpy(ent, dent, sizeof(uv__dirent_t));
+  return ent;
+}
+
+
+static int uv__fs_scandir_sort(const void* a, const void* b) {
+    return strcmp((*(uv__dirent_t**)a)->d_name, (*(uv__dirent_t**)b)->d_name);
+}
+#else
 static int uv__fs_scandir_sort(UV_CONST_DIRENT** a, UV_CONST_DIRENT** b) {
   return strcmp((*a)->d_name, (*b)->d_name);
 }
 #endif
 
-static ssize_t uv__fs_scandir(uv_fs_t* req) {
-#if defined(__NUTTX__) || defined(__TIZENRT__)
-  return -1;
-#else
-  uv__dirent_t **dents;
-  int n;
 
-  dents = NULL;
-  n = scandir(req->path, &dents, uv__fs_scandir_filter, uv__fs_scandir_sort);
+static ssize_t uv__fs_scandir(uv_fs_t* req) {
+  uv__dirent_t **dents = NULL;
+  int cnt = 0;
+#if defined(__NUTTX__) || defined(__TIZENRT__)
+  DIR* dir = NULL;
+  uv__dirent_t* dent = NULL;
+  unsigned idx = 0;
+
+  dir = opendir(req->path);
+  if (dir == NULL) {
+    cnt = -1;
+    goto error;
+  }
+
+  while ((dent = readdir(dir)) != NULL) {
+    if (uv__fs_scandir_filter(dent))
+      cnt++;
+  }
+
+  /* Allocate memory for the directory entries. */
+  dents = (uv__dirent_t**) malloc(sizeof (uv__dirent_t*) * cnt);
+
+  if (cnt > 0 && dents == NULL) {
+      closedir(dir);
+      cnt = -1;
+      goto error;
+  }
+
+  rewinddir(dir);
+
+  while ((dent = readdir(dir)) != NULL) {
+    if (uv__fs_scandir_filter(dent))
+      dents[idx++] = uv__fs_scandir_copy_entry(dent);
+  }
+
+  closedir(dir);
+
+  qsort (dents, cnt, sizeof (uv__dirent_t*), uv__fs_scandir_sort);
+error:
+#else
+  cnt = scandir(req->path, &dents, uv__fs_scandir_filter, uv__fs_scandir_sort);
+#endif
 
   /* NOTE: We will use nbufs as an index field */
   req->nbufs = 0;
 
-  if (n == 0) {
+  if (cnt == 0) {
     /* Memory was allocated using the system allocator, so use free() here. */
     if (dents != NULL) {
       free(dents);
       dents = NULL;
     }
   }
-  else if (n == -1)
-    return n;
+  else if (cnt == -1)
+    return cnt;
 
   req->ptr = dents;
 
-  return n;
-#endif
+  return cnt;
 }
 
 
@@ -534,8 +578,8 @@ static void uv__to_stat(struct stat* src, uv_stat_t* dst) {
   dst->st_birthtim.tv_nsec = src->st_ctimensec;
   dst->st_flags = 0;
   dst->st_gen = 0;
-#elif !defined(_AIX) && (       \
-    defined(_GNU_SOURCE)     || \
+#elif !defined(_AIX) && !defined(__NUTTX__) && \
+    (defined(_GNU_SOURCE)    || \
     defined(_BSD_SOURCE)     || \
     defined(_SVID_SOURCE)    || \
     defined(_XOPEN_SOURCE)   || \

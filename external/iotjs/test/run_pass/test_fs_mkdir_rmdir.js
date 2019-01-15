@@ -16,6 +16,14 @@
 var fs = require('fs');
 var assert = require('assert');
 
+var testRoot = process.cwd() + "/resources";
+
+// TizenRT tests are performed from ROM
+// Files should be stored in other path
+if (process.platform === 'tizenrt') {
+  testRoot = "/mnt";
+}
+
 function unlink(path) {
   try {
     fs.rmdirSync(path);
@@ -25,9 +33,9 @@ function unlink(path) {
 }
 
 {
-  var root = process.cwd() + "/resources/test_dir";
-  var sub1 = process.cwd() + "/resources/test_dir/file1";
-  var sub2 = process.cwd() + "/resources/test_dir/file2";
+  var root = testRoot + "/test_dir";
+  var sub1 = root + "/file1";
+  var sub2 = root + "/file2";
 
   unlink(sub1);
   unlink(sub2);
@@ -46,40 +54,33 @@ function unlink(path) {
 
     fs.rmdir(root, function() {
       assert.equal(fs.existsSync(root), false);
-    });
+      var root2 = testRoot + "/test_dir2";
 
-    var root2 = process.cwd() + "/resources/test_dir2";
+      fs.mkdir(root2, 777, function(err) {
+        assert.equal(err, null);
+        assert.equal(fs.existsSync(root2), true);
 
-    fs.mkdir(root2, 777, function(err) {
-      assert.equal(err, null);
-      assert.equal(fs.existsSync(root2), true);
-
-      fs.rmdir(root2, function(){
-        assert.equal(fs.existsSync(root2), false);
-      });
-
-      // Run read-only directory test only on linux
-      // NuttX does not support read-only attribute.
-      if (process.platform === 'linux') {
-        // Try to create a folder in a read-only directory.
-        fs.mkdir(root, '0444', function(err) {
-          assert.equal(fs.existsSync(root), true);
-
-          var dirname = root + "/permission_test";
-          try {
-            fs.mkdirSync(dirname);
-            assert.assert(false);
-          } catch (e) {
-            assert.equal(e instanceof Error, true);
-            assert.equal(e instanceof assert.AssertionError, false);
-          }
-
-          assert.equal(fs.existsSync(dirname), false);
-          fs.rmdir(root, function() {
-            assert.equal(fs.existsSync(root), false);
-          });
+        fs.rmdir(root2, function() {
+          assert.equal(fs.existsSync(root2), false);
         });
-      }
+
+        // Run read-only directory test only on linux and Tizen
+        // NuttX does not support read-only attribute.
+        if (process.platform === 'linux' || process.platform === 'tizen') {
+          var testMode = '0444';
+          fs.mkdir(root, testMode, function(err) {
+            assert.equal(err, null);
+            assert.equal(fs.existsSync(root), true);
+
+            var mode = fs.statSync(root).mode;
+            assert.strictEqual(mode.toString(8).slice(-4), testMode);
+
+            fs.rmdir(root, function() {
+              assert.equal(fs.existsSync(root), false);
+            });
+          });
+        }
+      });
     });
   });
 }

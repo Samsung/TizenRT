@@ -16,6 +16,7 @@
 #include "rtos.h"
 
 #include "jerry-core/include/jerryscript.h"
+#include "jerry-core/include/jerryscript-port.h"
 
 #include "jerryscript-mbed-event-loop/EventLoop.h"
 
@@ -41,23 +42,25 @@ static int load_javascript() {
         const jerry_char_t* code = reinterpret_cast<const jerry_char_t*>(js_codes[src].source);
         const size_t length = js_codes[src].length;
 
-        jerry_value_t parsed_code = jerry_parse(code, length, false);
+        jerry_value_t parsed_code = jerry_parse(NULL, 0, code, length, JERRY_PARSE_NO_OPTS);
 
-        if (jerry_value_has_error_flag(parsed_code)) {
+        if (jerry_value_is_error(parsed_code)) {
             LOG_PRINT_ALWAYS("jerry_parse failed [%s]\r\n", js_codes[src].name);
+            jerry_release_value(parsed_code);
             jsmbed_js_exit();
             return -1;
         }
 
         jerry_value_t returned_value = jerry_run(parsed_code);
+        jerry_release_value(parsed_code);
 
-        if (jerry_value_has_error_flag(returned_value)) {
+        if (jerry_value_is_error(returned_value)) {
             LOG_PRINT_ALWAYS("jerry_run failed [%s]\r\n", js_codes[src].name);
+            jerry_release_value(returned_value);
             jsmbed_js_exit();
             return -1;
         }
 
-        jerry_release_value(parsed_code);
         jerry_release_value(returned_value);
     }
 
@@ -65,6 +68,7 @@ static int load_javascript() {
 }
 
 int jsmbed_js_init() {
+    srand ((unsigned) jerry_port_get_current_time());
     jerry_init_flag_t flags = JERRY_INIT_EMPTY;
     jerry_init(flags);
 

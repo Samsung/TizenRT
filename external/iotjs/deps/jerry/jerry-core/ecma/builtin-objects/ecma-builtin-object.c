@@ -14,7 +14,6 @@
  */
 
 #include "ecma-alloc.h"
-#include "ecma-array-object.h"
 #include "ecma-builtin-helpers.h"
 #include "ecma-builtins.h"
 #include "ecma-conversion.h"
@@ -55,7 +54,7 @@ ecma_builtin_object_dispatch_call (const ecma_value_t *arguments_list_p, /**< ar
 {
   JERRY_ASSERT (arguments_list_len == 0 || arguments_list_p != NULL);
 
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (arguments_list_len == 0
       || ecma_is_value_undefined (arguments_list_p[0])
@@ -108,29 +107,42 @@ ecma_builtin_object_object_get_prototype_of (ecma_value_t this_arg, /**< 'this' 
                                              ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
+  bool was_object = ecma_is_value_object (arg);
 
   /* 1. */
-  if (!ecma_is_value_object (arg))
+  if (!was_object)
   {
-    ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
+#ifndef CONFIG_DISABLE_ES2015_BUILTIN
+    arg = ecma_op_to_object (arg);
+    if (ECMA_IS_VALUE_ERROR (arg))
+    {
+      return arg;
+    }
+#else /* CONFIG_DISABLE_ES2015_BUILTIN */
+    return ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
+#endif /* !CONFIG_DISABLE_ES2015_BUILTIN */
+  }
+  /* 2. */
+  ecma_object_t *obj_p = ecma_get_object_from_value (arg);
+  ecma_object_t *prototype_p = ecma_get_object_prototype (obj_p);
+
+  if (prototype_p)
+  {
+    ret_value = ecma_make_object_value (prototype_p);
+    ecma_ref_object (prototype_p);
   }
   else
   {
-    /* 2. */
-    ecma_object_t *obj_p = ecma_get_object_from_value (arg);
-    ecma_object_t *prototype_p = ecma_get_object_prototype (obj_p);
-
-    if (prototype_p)
-    {
-      ret_value = ecma_make_object_value (prototype_p);
-      ecma_ref_object (prototype_p);
-    }
-    else
-    {
-      ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_NULL);
-    }
+    ret_value = ECMA_VALUE_NULL;
   }
+
+#ifndef CONFIG_DISABLE_ES2015_BUILTIN
+  if (!was_object)
+  {
+    ecma_free_value (arg);
+  }
+#endif /* !CONFIG_DISABLE_ES2015_BUILTIN */
 
   return ret_value;
 } /* ecma_builtin_object_object_get_prototype_of */
@@ -141,6 +153,9 @@ ecma_builtin_object_object_get_prototype_of (ecma_value_t this_arg, /**< 'this' 
  *
  * See also:
  *          ES2015 9.1.2
+ *
+ * @return true  - if success
+ *         false - otherwise
  */
 static bool
 ecma_set_prototype_of (ecma_value_t o_value, /**< O */
@@ -210,7 +225,7 @@ ecma_builtin_object_object_set_prototype_of (ecma_value_t this_arg, /**< 'this' 
                                              ecma_value_t arg2) /**< routine's second argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1., 2. */
   ECMA_TRY_CATCH (unused_value,
@@ -270,7 +285,7 @@ ecma_builtin_object_object_get_own_property_names (ecma_value_t this_arg, /**< '
                                                    ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (!ecma_is_value_object (arg))
   {
@@ -301,7 +316,7 @@ ecma_builtin_object_object_seal (ecma_value_t this_arg, /**< 'this' argument */
                                  ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   if (!ecma_is_value_object (arg))
@@ -313,15 +328,14 @@ ecma_builtin_object_object_seal (ecma_value_t this_arg, /**< 'this' argument */
     /* 2. */
     ecma_object_t *obj_p = ecma_get_object_from_value (arg);
 
-    ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, false, false, false);
+    ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, ECMA_LIST_NO_OPTS);
 
-    ecma_collection_iterator_t iter;
-    ecma_collection_iterator_init (&iter, props_p);
+    ecma_value_t *ecma_value_p = ecma_collection_iterator_init (props_p);
 
-    while (ecma_collection_iterator_next (&iter)
-           && ecma_is_value_empty (ret_value))
+    while (ecma_value_p != NULL && ecma_is_value_empty (ret_value))
     {
-      ecma_string_t *property_name_p = ecma_get_string_from_value (*iter.current_value_p);
+      ecma_string_t *property_name_p = ecma_get_string_from_value (*ecma_value_p);
+      ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
 
       /* 2.a */
       ecma_property_descriptor_t prop_desc;
@@ -346,7 +360,7 @@ ecma_builtin_object_object_seal (ecma_value_t this_arg, /**< 'this' argument */
       ecma_free_property_descriptor (&prop_desc);
     }
 
-    ecma_free_values_collection (props_p, true);
+    ecma_free_values_collection (props_p, 0);
 
     if (ecma_is_value_empty (ret_value))
     {
@@ -375,7 +389,7 @@ ecma_builtin_object_object_freeze (ecma_value_t this_arg, /**< 'this' argument *
                                    ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   if (!ecma_is_value_object (arg))
@@ -387,16 +401,14 @@ ecma_builtin_object_object_freeze (ecma_value_t this_arg, /**< 'this' argument *
     /* 2. */
     ecma_object_t *obj_p = ecma_get_object_from_value (arg);
 
-    ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, false, false, false);
+    ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, ECMA_LIST_NO_OPTS);
 
+    ecma_value_t *ecma_value_p = ecma_collection_iterator_init (props_p);
 
-    ecma_collection_iterator_t iter;
-    ecma_collection_iterator_init (&iter, props_p);
-
-    while (ecma_collection_iterator_next (&iter)
-           && ecma_is_value_empty (ret_value))
+    while (ecma_value_p != NULL && ecma_is_value_empty (ret_value))
     {
-      ecma_string_t *property_name_p = ecma_get_string_from_value (*iter.current_value_p);
+      ecma_string_t *property_name_p = ecma_get_string_from_value (*ecma_value_p);
+      ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
 
       /* 2.a */
       ecma_property_descriptor_t prop_desc;
@@ -427,7 +439,7 @@ ecma_builtin_object_object_freeze (ecma_value_t this_arg, /**< 'this' argument *
       ecma_free_property_descriptor (&prop_desc);
     }
 
-    ecma_free_values_collection (props_p, true);
+    ecma_free_values_collection (props_p, 0);
 
     if (ecma_is_value_empty (ret_value))
     {
@@ -456,7 +468,7 @@ ecma_builtin_object_object_prevent_extensions (ecma_value_t this_arg, /**< 'this
                                                ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (!ecma_is_value_object (arg))
   {
@@ -474,6 +486,83 @@ ecma_builtin_object_object_prevent_extensions (ecma_value_t this_arg, /**< 'this
 } /* ecma_builtin_object_object_prevent_extensions */
 
 /**
+ * Common helper code for the 'isFrozen' and 'isSealed' fuctions of Object.
+ *
+ * See also:
+ *         Object.isFrozen
+ *         Object.isSealed
+ *
+ * @return ecma value
+ *         Returned value must be freed with ecma_free_value.
+ */
+static ecma_value_t
+ecma_builtin_object_frozen_or_sealed_helper (ecma_value_t this_arg, /**< 'this' argument */
+                                             ecma_value_t arg, /**< routine's argument */
+                                             bool frozen_mode) /**< routine mode */
+{
+  JERRY_UNUSED (this_arg);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
+
+  /* 1. */
+  if (!ecma_is_value_object (arg))
+  {
+    ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
+  }
+  else
+  {
+    ecma_object_t *obj_p = ecma_get_object_from_value (arg);
+
+    /* 3. */
+    if (ecma_get_object_extensible (obj_p))
+    {
+      ret_value = ECMA_VALUE_FALSE;
+    }
+    else
+    {
+      /* the value can be updated in the loop below */
+      ret_value = ECMA_VALUE_TRUE;
+
+      /* 2. */
+      ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, ECMA_LIST_NO_OPTS);
+
+      ecma_value_t *ecma_value_p = ecma_collection_iterator_init (props_p);
+
+      while (ecma_value_p != NULL)
+      {
+        ecma_string_t *property_name_p = ecma_get_string_from_value (*ecma_value_p);
+        ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
+
+        /* 2.a */
+        ecma_property_t property = ecma_op_object_get_own_property (obj_p,
+                                                                    property_name_p,
+                                                                    NULL,
+                                                                    ECMA_PROPERTY_GET_NO_OPTIONS);
+
+        /* 2.b for isFrozen */
+        if (frozen_mode
+            && ECMA_PROPERTY_GET_TYPE (property) != ECMA_PROPERTY_TYPE_NAMEDACCESSOR
+            && ecma_is_property_writable (property))
+        {
+          ret_value = ECMA_VALUE_FALSE;
+          break;
+        }
+
+        /* 2.b for isSealed, 2.c for isFrozen */
+        if (ecma_is_property_configurable (property))
+        {
+          ret_value = ECMA_VALUE_FALSE;
+          break;
+        }
+      }
+
+      ecma_free_values_collection (props_p, 0);
+    }
+  }
+
+  return ret_value;
+} /* ecma_builtin_object_frozen_or_sealed_helper */
+
+/**
  * The Object object's 'isSealed' routine
  *
  * See also:
@@ -486,63 +575,7 @@ static ecma_value_t
 ecma_builtin_object_object_is_sealed (ecma_value_t this_arg, /**< 'this' argument */
                                       ecma_value_t arg) /**< routine's argument */
 {
-  JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
-
-  /* 1. */
-  if (!ecma_is_value_object (arg))
-  {
-    ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
-  }
-  else
-  {
-    ecma_object_t *obj_p = ecma_get_object_from_value (arg);
-
-    bool is_sealed;
-
-    /* 3. */
-    if (ecma_get_object_extensible (obj_p))
-    {
-      is_sealed = false;
-    }
-    else
-    {
-      /* the value can be updated in the loop below */
-      is_sealed = true;
-
-      /* 2. */
-      ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, false, false, false);
-
-      ecma_collection_iterator_t iter;
-      ecma_collection_iterator_init (&iter, props_p);
-
-      while (ecma_collection_iterator_next (&iter))
-      {
-        ecma_string_t *property_name_p = ecma_get_string_from_value (*iter.current_value_p);
-
-        /* 2.a */
-        ecma_property_t property = ecma_op_object_get_own_property (obj_p,
-                                                                    property_name_p,
-                                                                    NULL,
-                                                                    ECMA_PROPERTY_GET_NO_OPTIONS);
-
-        /* 2.b */
-        if (ecma_is_property_configurable (property))
-        {
-          is_sealed = false;
-          break;
-        }
-      }
-
-      ecma_free_values_collection (props_p, true);
-    }
-
-    /* 4. */
-    ret_value = ecma_make_simple_value (is_sealed ? ECMA_SIMPLE_VALUE_TRUE
-                                                  : ECMA_SIMPLE_VALUE_FALSE);
-  }
-
-  return ret_value;
+  return ecma_builtin_object_frozen_or_sealed_helper (this_arg, arg, false);
 } /* ecma_builtin_object_object_is_sealed */
 
 /**
@@ -558,70 +591,7 @@ static ecma_value_t
 ecma_builtin_object_object_is_frozen (ecma_value_t this_arg, /**< 'this' argument */
                                       ecma_value_t arg) /**< routine's argument */
 {
-  JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
-
-  /* 1. */
-  if (!ecma_is_value_object (arg))
-  {
-    ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
-  }
-  else
-  {
-    ecma_object_t *obj_p = ecma_get_object_from_value (arg);
-
-    bool is_frozen;
-
-    /* 3. */
-    if (ecma_get_object_extensible (obj_p))
-    {
-      is_frozen = false;
-    }
-    else
-    {
-      is_frozen = true;
-
-      /* 2. */
-      ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, false, false, false);
-
-      ecma_collection_iterator_t iter;
-      ecma_collection_iterator_init (&iter, props_p);
-
-      while (ecma_collection_iterator_next (&iter))
-      {
-        ecma_string_t *property_name_p = ecma_get_string_from_value (*iter.current_value_p);
-
-        /* 2.a */
-        ecma_property_t property = ecma_op_object_get_own_property (obj_p,
-                                                                    property_name_p,
-                                                                    NULL,
-                                                                    ECMA_PROPERTY_GET_NO_OPTIONS);
-
-        /* 2.b */
-        if (ECMA_PROPERTY_GET_TYPE (property) != ECMA_PROPERTY_TYPE_NAMEDACCESSOR
-            && ecma_is_property_writable (property))
-        {
-          is_frozen = false;
-          break;
-        }
-
-        /* 2.c */
-        if (ecma_is_property_configurable (property))
-        {
-          is_frozen = false;
-          break;
-        }
-      }
-
-      ecma_free_values_collection (props_p, true);
-    }
-
-    /* 4 */
-    ret_value = ecma_make_simple_value (is_frozen ? ECMA_SIMPLE_VALUE_TRUE
-                                                  : ECMA_SIMPLE_VALUE_FALSE);
-  }
-
-  return ret_value;
+  return ecma_builtin_object_frozen_or_sealed_helper (this_arg, arg, true);
 } /* ecma_builtin_object_object_is_frozen */
 
 /**
@@ -638,23 +608,14 @@ ecma_builtin_object_object_is_extensible (ecma_value_t this_arg, /**< 'this' arg
                                           ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
 
   if (!ecma_is_value_object (arg))
   {
-    ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
-  }
-  else
-  {
-    ecma_object_t *obj_p = ecma_get_object_from_value (arg);
-
-    bool extensible = ecma_get_object_extensible (obj_p);
-
-    ret_value = ecma_make_simple_value (extensible ? ECMA_SIMPLE_VALUE_TRUE
-                                                   : ECMA_SIMPLE_VALUE_FALSE);
+    return ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
   }
 
-  return ret_value;
+  ecma_object_t *obj_p = ecma_get_object_from_value (arg);
+  return ecma_make_boolean_value (ecma_get_object_extensible (obj_p));
 } /* ecma_builtin_object_object_is_extensible */
 
 /**
@@ -671,7 +632,7 @@ ecma_builtin_object_object_keys (ecma_value_t this_arg, /**< 'this' argument */
                                  ecma_value_t arg) /**< routine's argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (!ecma_is_value_object (arg))
   {
@@ -703,7 +664,7 @@ ecma_builtin_object_object_get_own_property_descriptor (ecma_value_t this_arg, /
                                                         ecma_value_t arg2) /**< routine's second argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   if (!ecma_is_value_object (arg1))
@@ -735,7 +696,7 @@ ecma_builtin_object_object_get_own_property_descriptor (ecma_value_t this_arg, /
   }
   else
   {
-    ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+    ret_value = ECMA_VALUE_UNDEFINED;
   }
 
   ECMA_FINALIZE (name_str_value);
@@ -757,7 +718,7 @@ ecma_builtin_object_object_create (ecma_value_t this_arg, /**< 'this' argument *
                                    ecma_value_t arg1, /**< routine's first argument */
                                    ecma_value_t arg2) /**< routine's second argument */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   if (!ecma_is_value_object (arg1) && !ecma_is_value_null (arg1))
@@ -813,7 +774,7 @@ ecma_builtin_object_object_define_properties (ecma_value_t this_arg, /**< 'this'
                                               ecma_value_t arg2) /**< routine's second argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 1. */
   if (!ecma_is_value_object (arg1))
@@ -831,23 +792,21 @@ ecma_builtin_object_object_define_properties (ecma_value_t this_arg, /**< 'this'
 
     ecma_object_t *props_p = ecma_get_object_from_value (props);
     /* 3. */
-    ecma_collection_header_t *prop_names_p = ecma_op_object_get_property_names (props_p, false, true, false);
-    uint32_t property_number = prop_names_p->unit_number;
+    ecma_collection_header_t *prop_names_p = ecma_op_object_get_property_names (props_p, ECMA_LIST_ENUMERABLE);
+    uint32_t property_number = prop_names_p->item_count;
 
-    ecma_collection_iterator_t iter;
-    ecma_collection_iterator_init (&iter, prop_names_p);
+    ecma_value_t *ecma_value_p = ecma_collection_iterator_init (prop_names_p);
 
     /* 4. */
     JMEM_DEFINE_LOCAL_ARRAY (property_descriptors, property_number, ecma_property_descriptor_t);
 
     uint32_t property_descriptor_number = 0;
 
-    while (ecma_collection_iterator_next (&iter)
-           && ecma_is_value_empty (ret_value))
+    while (ecma_value_p != NULL && ecma_is_value_empty (ret_value))
     {
       /* 5.a */
       ECMA_TRY_CATCH (desc_obj,
-                      ecma_op_object_get (props_p, ecma_get_string_from_value (*iter.current_value_p)),
+                      ecma_op_object_get (props_p, ecma_get_string_from_value (*ecma_value_p)),
                       ret_value);
 
       /* 5.b */
@@ -860,25 +819,27 @@ ecma_builtin_object_object_define_properties (ecma_value_t this_arg, /**< 'this'
 
       ECMA_FINALIZE (conv_result);
       ECMA_FINALIZE (desc_obj);
+
+      ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
     }
 
     /* 6. */
-    ecma_collection_iterator_init (&iter, prop_names_p);
+    ecma_value_p = ecma_collection_iterator_init (prop_names_p);
+
     for (uint32_t index = 0;
          index < property_number && ecma_is_value_empty (ret_value);
          index++)
     {
-      bool is_next = ecma_collection_iterator_next (&iter);
-      JERRY_ASSERT (is_next);
-
       ECMA_TRY_CATCH (define_own_prop_ret,
                       ecma_op_object_define_own_property (obj_p,
-                                                          ecma_get_string_from_value (*iter.current_value_p),
+                                                          ecma_get_string_from_value (*ecma_value_p),
                                                           &property_descriptors[index],
                                                           true),
                       ret_value);
 
       ECMA_FINALIZE (define_own_prop_ret);
+
+      ecma_value_p = ecma_collection_iterator_next (ecma_value_p);
     }
 
     /* Clean up. */
@@ -891,7 +852,7 @@ ecma_builtin_object_object_define_properties (ecma_value_t this_arg, /**< 'this'
 
     JMEM_FINALIZE_LOCAL_ARRAY (property_descriptors);
 
-    ecma_free_values_collection (prop_names_p, true);
+    ecma_free_values_collection (prop_names_p, 0);
 
     /* 7. */
     if (ecma_is_value_empty (ret_value))
@@ -921,7 +882,7 @@ ecma_builtin_object_object_define_property (ecma_value_t this_arg, /**< 'this' a
                                             ecma_value_t arg3) /**< routine's third argument */
 {
   JERRY_UNUSED (this_arg);
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (!ecma_is_value_object (arg1))
   {

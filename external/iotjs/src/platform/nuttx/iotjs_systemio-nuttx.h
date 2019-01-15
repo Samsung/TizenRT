@@ -13,12 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef IOTJS_SYSTEMIO_ARM_NUTTX_H
-#define IOTJS_SYSTEMIO_ARM_NUTTX_H
+#ifndef IOTJS_SYSTEMIO_NUTTX_H
+#define IOTJS_SYSTEMIO_NUTTX_H
 
 #include <stdint.h>
 
+#include "iotjs_def.h"
+
+void iotjs_gpio_config_nuttx(uint32_t pin);
 void iotjs_gpio_unconfig_nuttx(uint32_t pin);
+void iotjs_gpio_write_nuttx(uint32_t pin, bool value);
 
 
 #if ENABLE_MODULE_ADC || ENABLE_MODULE_PWM
@@ -65,4 +69,13 @@ struct pwm_lowerhalf_s* iotjs_pwm_config_nuttx(int timer, uint32_t pin);
 #endif /* ENABLE_MODULE_PWM */
 
 
-#endif /* IOTJS_SYSTEMIO_ARM_NUTTX_H */
+#if ENABLE_MODULE_SPI
+
+#include <nuttx/spi/spi.h>
+
+struct spi_dev_s* iotjs_spi_config_nuttx(int bus, uint32_t cs_chip);
+
+#endif /* ENABLE_MODULE_SPI */
+
+
+#endif /* IOTJS_SYSTEMIO_NUTTX_H */

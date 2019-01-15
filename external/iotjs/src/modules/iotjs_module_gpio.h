@@ -19,18 +19,14 @@
 
 
 #include "iotjs_def.h"
-#include "iotjs_objectwrap.h"
-#include "iotjs_reqwrap.h"
+#include "iotjs_module_periph_common.h"
 
-#if defined(__TIZENRT__)
-#include <iotbus_gpio.h>
-#endif
 
 typedef enum {
   kGpioDirectionIn = 0,
   kGpioDirectionOut,
+  __kGpioDirectionMax
 } GpioDirection;
-
 
 typedef enum {
   kGpioModeNone = 0,
@@ -39,76 +35,41 @@ typedef enum {
   kGpioModeFloat,
   kGpioModePushpull,
   kGpioModeOpendrain,
+  __kGpioModeMax
 } GpioMode;
-
 
 typedef enum {
   kGpioEdgeNone = 0,
   kGpioEdgeRising,
   kGpioEdgeFalling,
   kGpioEdgeBoth,
+  __kGpioEdgeMax
 } GpioEdge;
 
-
-typedef enum {
-  kGpioOpOpen,
-  kGpioOpWrite,
-  kGpioOpRead,
-  kGpioOpClose,
-} GpioOp;
-
-
-typedef struct {
-  bool value;
-  bool result;
-  GpioOp op;
-} iotjs_gpio_reqdata_t;
-
+typedef struct iotjs_gpio_platform_data_s iotjs_gpio_platform_data_t;
 
 // This Gpio class provides interfaces for GPIO operation.
 typedef struct {
-  iotjs_jobjectwrap_t jobjectwrap;
+  jerry_value_t jobject;
+  iotjs_gpio_platform_data_t* platform_data;
+
+  bool value;
   uint32_t pin;
   GpioDirection direction;
   GpioMode mode;
   GpioEdge edge;
-#if defined(__linux__)
-  int value_fd;
-  uv_thread_t thread;
-  uv_mutex_t mutex;
-#elif defined(__TIZENRT__)
-  iotbus_gpio_context_h gpio_context;
-#endif
-} IOTJS_VALIDATED_STRUCT(iotjs_gpio_t);
+} iotjs_gpio_t;
 
-
-typedef struct {
-  iotjs_reqwrap_t reqwrap;
-  uv_work_t req;
-  iotjs_gpio_reqdata_t req_data;
-  iotjs_gpio_t* gpio_instance;
-} IOTJS_VALIDATED_STRUCT(iotjs_gpio_reqwrap_t);
-
-
-#define THIS iotjs_gpio_reqwrap_t* gpio_reqwrap
-
-iotjs_gpio_reqwrap_t* iotjs_gpio_reqwrap_from_request(uv_work_t* req);
-iotjs_gpio_reqdata_t* iotjs_gpio_reqwrap_data(THIS);
-
-iotjs_gpio_t* iotjs_gpio_instance_from_reqwrap(THIS);
-
-#undef THIS
-
-
-#define GPIO_WORKER_INIT                                                      \
-  iotjs_gpio_reqwrap_t* req_wrap = iotjs_gpio_reqwrap_from_request(work_req); \
-  iotjs_gpio_reqdata_t* req_data = iotjs_gpio_reqwrap_data(req_wrap);         \
-  iotjs_gpio_t* gpio = iotjs_gpio_instance_from_reqwrap(req_wrap);
-
-
-void iotjs_gpio_open_worker(uv_work_t* work_req);
-bool iotjs_gpio_write(iotjs_gpio_t* gpio, bool value);
-int iotjs_gpio_read(iotjs_gpio_t* gpio);
+bool iotjs_gpio_open(iotjs_gpio_t* gpio);
+bool iotjs_gpio_write(iotjs_gpio_t* gpio);
+bool iotjs_gpio_read(iotjs_gpio_t* gpio);
 bool iotjs_gpio_close(iotjs_gpio_t* gpio);
+bool iotjs_gpio_set_direction(iotjs_gpio_t* gpio);
+
+// Platform-related functions; they are implemented
+// by platform code (i.e.: linux, nuttx, tizen).
+void iotjs_gpio_create_platform_data(iotjs_gpio_t* gpio);
+void iotjs_gpio_destroy_platform_data(
+    iotjs_gpio_platform_data_t* platform_data);
 
 #endif /* IOTJS_MODULE_GPIO_H */

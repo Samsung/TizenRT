@@ -64,9 +64,9 @@ ecma_value_t
 ecma_builtin_regexp_dispatch_construct (const ecma_value_t *arguments_list_p, /**< arguments list */
                                         ecma_length_t arguments_list_len) /**< number of arguments */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
-  ecma_value_t pattern_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
-  ecma_value_t flags_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
+  ecma_value_t pattern_value = ECMA_VALUE_UNDEFINED;
+  ecma_value_t flags_value = ECMA_VALUE_UNDEFINED;
 
   if (arguments_list_len > 0)
   {
@@ -96,28 +96,7 @@ ecma_builtin_regexp_dispatch_construct (const ecma_value_t *arguments_list_p, /*
     ecma_string_t *pattern_string_p = NULL;
     ecma_string_t *flags_string_p = NULL;
 
-    if (!ecma_is_value_undefined (pattern_value))
-    {
-      ECMA_TRY_CATCH (regexp_str_value,
-                      ecma_op_to_string (pattern_value),
-                      ret_value);
-
-      if (ecma_string_is_empty (ecma_get_string_from_value (regexp_str_value)))
-      {
-        pattern_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_EMPTY_NON_CAPTURE_GROUP);
-      }
-      else
-      {
-        pattern_string_p = ecma_get_string_from_value (regexp_str_value);
-        ecma_ref_ecma_string (pattern_string_p);
-      }
-
-      ECMA_FINALIZE (regexp_str_value);
-    }
-    else
-    {
-      pattern_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_EMPTY_NON_CAPTURE_GROUP);
-    }
+    ret_value = ecma_regexp_read_pattern_str_helper (pattern_value, &pattern_string_p);
 
     if (ecma_is_value_empty (ret_value) && !ecma_is_value_undefined (flags_value))
     {
@@ -131,9 +110,15 @@ ecma_builtin_regexp_dispatch_construct (const ecma_value_t *arguments_list_p, /*
       ECMA_FINALIZE (flags_str_value);
     }
 
+    uint16_t flags = 0;
+    if (ecma_is_value_empty (ret_value) && (flags_string_p != NULL))
+    {
+      ret_value = re_parse_regexp_flags (flags_string_p, &flags);
+    }
+
     if (ecma_is_value_empty (ret_value))
     {
-      ret_value = ecma_op_create_regexp_object (pattern_string_p, flags_string_p);
+      ret_value = ecma_op_create_regexp_object (pattern_string_p, flags);
     }
 
     if (pattern_string_p != NULL)

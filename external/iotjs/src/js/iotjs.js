@@ -13,156 +13,168 @@
  * limitations under the License.
  */
 
-this.global = this;
-
-function Native(id) {
-  this.id = id;
-  this.filename = id + '.js';
-  this.exports = {};
-}
-
-
-Native.cache = {};
-
-
-Native.require = function(id) {
-  if (id == 'native') {
-    return Native;
-  }
-
-  if (Native.cache[id]) {
-    return Native.cache[id].exports;
-  }
-
-  var nativeMod = new Native(id);
-
-  Native.cache[id] = nativeMod;
-  nativeMod.compile();
-
-  return nativeMod.exports;
-}
-
-
-Native.prototype.compile = function() {
-  // process.native_sources has a list of pointers to
-  // the source strings defined in 'iotjs_js.h', not
-  // source strings.
-
-  var fn = process.compileNativePtr(this.id);
-  fn(this.exports, Native.require, this);
-}
-
-global.console = Native.require('console');
-global.Buffer = Native.require('buffer');
-
 (function() {
+  this.global = this;
+
+  function Module(id) {
+    this.id = id;
+    this.exports = {};
+  }
+
+  Module.cache = {};
+  Module.builtin_modules = {};
+
+  mixin(Module.builtin_modules, process.builtin_modules);
+  mixin(Module, process._private);
+  process._private = undefined;
+
+  Module.require = function(id) {
+    if (id === 'builtin') {
+      return Module;
+    }
+
+    if (Module.cache[id]) {
+      return Module.cache[id].exports;
+    }
+
+    var module = new Module(id);
+
+    Module.cache[id] = module;
+    module.compile();
+
+    return module.exports;
+  };
+
+
+  Module.prototype.compile = function() {
+    Module.compileModule(this, Module.require);
+  };
+
+
+  global.console = Module.require('console');
+  global.Buffer = Module.require('buffer');
+
   var timers = undefined;
 
   var _timeoutHandler = function(mode) {
     if (timers == undefined) {
-      timers = Native.require('timers');
+      timers = Module.require('timers');
     }
     return timers[mode].apply(this, Array.prototype.slice.call(arguments, 1));
-  }
+  };
 
   global.setTimeout = _timeoutHandler.bind(this, 'setTimeout');
   global.setInterval = _timeoutHandler.bind(this, 'setInterval');
   global.clearTimeout = _timeoutHandler.bind(this, 'clearTimeout');
   global.clearInterval = _timeoutHandler.bind(this, 'clearInterval');
-})();
 
-var EventEmitter = Native.require('events').EventEmitter;
+  var EventEmitter = Module.require('events').EventEmitter;
 
-EventEmitter.call(process);
+  EventEmitter.call(process);
 
-var keys = Object.keys(EventEmitter.prototype);
-var keysLength = keys.length;
-for (var i = 0; i < keysLength; ++i) {
-  var key = keys[i];
-  if (!process[key]) {
-    process[key] = EventEmitter.prototype[key];
-  }
-}
+  mixin(process, EventEmitter.prototype);
 
-var nextTickQueue = [];
-
-process.nextTick = nextTick;
-process._onNextTick = _onNextTick;
-
-
-function _onNextTick() {
-  // clone nextTickQueue to new array object, and calls function
-  // iterating the cloned array. This is because,
-  // during processing nextTick
-  // a callback could add another next tick callback using
-  // `process.nextTick()`, if we calls back iterating original
-  // `nextTickQueue` that could turn into infinite loop.
-
-  var callbacks = nextTickQueue.slice(0);
-  nextTickQueue = [];
-
-  var len = callbacks.length;
-  for (var i = 0; i < len; ++i) {
-    try {
-      callbacks[i]();
-    } catch (e) {
-      process._onUncaughtException(e);
+  function mixin(target, source) {
+    for (var prop in source) {
+      if (source.hasOwnProperty(prop) && !target[prop]) {
+        target[prop] = source[prop];
+      }
     }
   }
 
-  return nextTickQueue.length > 0;
-}
+  var nextTickQueue = [];
+
+  process.nextTick = nextTick;
+  process._onNextTick = _onNextTick;
 
 
-function nextTick(callback) {
-  nextTickQueue.push(callback);
-}
+  function _onNextTick() {
+    // clone nextTickQueue to new array object, and calls function
+    // iterating the cloned array. This is because,
+    // during processing nextTick
+    // a callback could add another next tick callback using
+    // `process.nextTick()`, if we calls back iterating original
+    // `nextTickQueue` that could turn into infinite loop.
+
+    var callbacks = nextTickQueue.slice(0);
+    nextTickQueue = [];
+
+    var len = callbacks.length;
+    for (var i = 0; i < len; ++i) {
+      try {
+        callbacks[i]();
+      } catch (e) {
+        process._onUncaughtException(e);
+      }
+    }
+
+    return nextTickQueue.length > 0;
+  }
 
 
-process._onUncaughtException = _onUncaughtException;
-function _onUncaughtException(error) {
-  var event = 'uncaughtException';
-  if (process._events[event] && process._events[event].length > 0) {
-    try {
-      // Emit uncaughtException event.
-      process.emit('uncaughtException', error);
-    } catch (e) {
-      // Even uncaughtException handler thrown, that could not be handled.
-      console.error('uncaughtException handler throws: ' + e);
+  function nextTick(callback) {
+    var args = Array.prototype.slice.call(arguments);
+    args[0] = null;
+    nextTickQueue.push(Function.prototype.bind.apply(callback, args));
+  }
+
+
+  process._onUncaughtException = _onUncaughtException;
+  function _onUncaughtException(error) {
+    var event = 'uncaughtException';
+    if (process._events[event] && process._events[event].length > 0) {
+      try {
+        // Emit uncaughtException event.
+        process.emit('uncaughtException', error);
+      } catch (e) {
+        // Even uncaughtException handler thrown, that could not be handled.
+        console.error('uncaughtException handler throws: ' + e);
+        process.exit(1);
+      }
+    } else {
+      // Exit if there are no handler for uncaught exception.
+      console.error(error);
+      if (Array.isArray(error.stack)) {
+        error.stack.forEach(function(line) {
+          console.log('    at ' + line);
+        });
+      }
+
       process.exit(1);
     }
-  } else {
-    // Exit if there are no handler for uncaught exception.
-    console.error('uncaughtException: ' + error);
-    process.exit(1);
   }
-}
 
 
-process.exitCode = 0;
-process._exiting = false;
-process.emitExit = function(code) {
-  if (!process._exiting) {
-    process._exiting = true;
-    if (code || code == 0) {
-      process.exitCode = code;
+  process.exitCode = 0;
+  process._exiting = false;
+  process.emitExit = function(code) {
+    code = code || process.exitCode;
+    if (typeof code !== 'number') {
+      code = 0;
     }
-    process.emit('exit', process.exitCode || 0);
-  }
-}
+    if (!process._exiting) {
+      process._exiting = true;
+      if (code || code == 0) {
+        process.exitCode = code;
+      }
+      process.emit('exit', process.exitCode);
+    }
+  };
 
 
-process.exit = function(code) {
-  try {
-    process.emitExit(code);
-  } catch (e) {
-    process.exitCode = 1;
-    process._onUncaughtException(e);
-  } finally {
-    process.doExit(process.exitCode || 0);
-  }
-}
+  process.exit = function(code) {
+    if (!process._exiting) {
+      try {
+        process.emitExit(code);
+      } catch (e) {
+        process.exitCode = 1;
+        process._onUncaughtException(e);
+      } finally {
+        process.doExit(process.exitCode);
+      }
+    }
+  };
 
-
-var module = Native.require('module');
-module.runMain();
+  var module = Module.require('module');
+  module.runMain();
+})();

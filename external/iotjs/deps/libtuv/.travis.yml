@@ -2,18 +2,25 @@ language: c
 
 os: linux
 dist: trusty
-sudo: required
 
-before_install:
-  - tools/check-signed-off.sh --travis
-  - tools/apt-get-install-deps.sh
-  - if [[ "$INSTALL_ARM_DEPS" == "yes" ]]; then tools/apt-get-install-arm.sh; fi
+before_install: tools/apt-get-install-deps.sh
+script: make run_test $OPT
 
-install:
+matrix:
+  include:
+    - name: "Check"
+      before_install: skip
+      script: tools/check-signed-off.sh --travis
 
-script: "make run_test $OPT"
+    - name: "x86-64 Debug"
+      env:
+        - OPT="TUV_BUILD_TYPE=debug"
 
-env:
-  - OPT="TUV_BUILD_TYPE=debug"
-  - OPT="TUV_BUILD_TYPE=release"
-  - OPT="TUV_PLATFORM=arm-linux TUV_BOARD=rpi2" INSTALL_ARM_DEPS=yes
+    - name: "x86-64 Release"
+      env:
+        - OPT="TUV_BUILD_TYPE=release"
+
+    - name: "ARM RPi2"
+      env:
+        - OPT="TUV_PLATFORM=arm-linux TUV_BOARD=rpi2"
+      install: tools/apt-get-install-arm.sh

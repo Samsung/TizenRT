@@ -17,46 +17,20 @@
 var fs = exports;
 var constants = require('constants');
 var util = require('util');
-var fsBuiltin = process.binding(process.binding.fs);
-
-fs.Stats = function(stat) {
-  this.dev = stat.dev;
-  this.mode = stat.mode;
-  this.nlink = stat.nlink;
-  this.uid = stat.uid;
-  this.gid = stat.gid;
-  this.rdev = stat.rdev;
-  this.blksize = stat.blksize;
-  this.ino = stat.ino;
-  this.size = stat.size;
-  this.blocks = stat.blocks;
-};
-
-
-fs.Stats.prototype.isDirectory = function() {
-  return ((this.mode & constants.S_IFMT) === constants.S_IFDIR);
-};
-
-
-fs.Stats.prototype.isFile = function() {
-  return ((this.mode & constants.S_IFMT) === constants.S_IFREG);
-};
-
-
-fsBuiltin._createStat = function(stat) {
-  return new fs.Stats(stat);
-};
-
+var fsBuiltin = native;
 
 fs.exists = function(path, callback) {
+  if (!(util.isString(path)) && !(util.isBuffer(path))) {
+    throw new TypeError('Path should be a string or a buffer');
+  }
   if (!path || !path.length) {
-    process.nextTick(function () {
+    process.nextTick(function() {
       if (callback) callback(false);
     });
     return;
   }
 
-  var cb = function(err, stat) {
+  var cb = function(err/* , stat */) {
     if (callback) callback(err ? false : true);
   };
 
@@ -112,7 +86,7 @@ fs.closeSync = function(fd) {
 };
 
 
-fs.open = function(path, flags, mode, callback) {
+fs.open = function(path, flags, mode/* , callback */) {
   fsBuiltin.open(checkArgString(path, 'path'),
                  convertFlags(flags),
                  convertMode(mode, 438),
@@ -242,7 +216,7 @@ fs.readFile = function(path, callback) {
     fs.close(fd, function(err) {
       return callback(err, Buffer.concat(buffers));
     });
-  }
+  };
 };
 
 
@@ -406,6 +380,166 @@ fs.readdir = function(path, callback) {
 fs.readdirSync = function(path) {
   return fsBuiltin.readdir(checkArgString(path, 'path'));
 };
+
+
+try {
+  var stream = require('stream');
+  var Readable = stream.Readable;
+  var Writable = stream.Writable;
+
+
+  function ReadStream(path, options) {
+    if (!(this instanceof ReadStream)) {
+      return new ReadStream(path, options);
+    }
+
+    options = options || {};
+
+    Readable.call(this, {defaultEncoding: options.encoding || null});
+
+    this.bytesRead = 0;
+    this.path = path;
+    this._autoClose = util.isNullOrUndefined(options.autoClose) ||
+                                             options.autoClose;
+    this._fd = options.fd;
+    this._buff = new Buffer(options.bufferSize || 4096);
+
+    var self = this;
+    if (util.isNullOrUndefined(this._fd)) {
+      fs.open(this.path, options.flags || 'r', options.mode || 438,
+              function(err, _fd) {
+        if (err) {
+          throw err;
+        }
+        self._fd = _fd;
+        self.emit('open', self._fd);
+        self.doRead();
+      });
+    }
+
+    this.once('open', function(/* _fd */) {
+      this.emit('ready');
+    });
+
+    if (this._autoClose) {
+      this.on('end', function() {
+        closeFile(self);
+      });
+    }
+  }
+
+
+  util.inherits(ReadStream, Readable);
+
+
+  ReadStream.prototype.doRead = function() {
+    var self = this;
+    fs.read(this._fd, this._buff, 0, this._buff.length, null,
+            function(err, bytes_read/* , buffer*/) {
+      if (err) {
+        if (self._autoClose) {
+          closeFile(self);
+        }
+        throw err;
+      }
+
+      self.bytesRead += bytes_read;
+      if (bytes_read === 0) {
+        // Reached end of file.
+        // null must be pushed so the 'end' event will be emitted.
+        self.push(null);
+      } else {
+        self.push(bytes_read == self._buff.length ?
+                  self._buff : self._buff.slice(0, bytes_read));
+        self.doRead();
+      }
+    });
+  };
+
+
+  fs.createReadStream = function(path, options) {
+    return new ReadStream(path, options);
+  };
+
+
+  function WriteStream(path, options) {
+    if (!(this instanceof WriteStream)) {
+      return new WriteStream(path, options);
+    }
+
+    options = options || {};
+
+    Writable.call(this);
+
+    this._fd = options._fd;
+    this._autoClose = util.isNullOrUndefined(options.autoClose) ||
+                                             options.autoClose;
+    this.bytesWritten = 0;
+
+    var self = this;
+    if (!this._fd) {
+      fs.open(path, options.flags || 'w', options.mode || 438,
+              function(err, _fd) {
+        if (err) {
+          throw err;
+        }
+        self._fd = _fd;
+        self.emit('open', self._fd);
+      });
+    }
+
+    this.once('open', function(/* _fd */) {
+      self.emit('ready');
+    });
+
+    if (this._autoClose) {
+      this.on('finish', function() {
+        closeFile(self);
+      });
+    }
+
+    this._readyToWrite();
+  }
+
+
+  util.inherits(WriteStream, Writable);
+
+
+  WriteStream.prototype._write = function(chunk, callback, onwrite) {
+    var self = this;
+    fs.write(this._fd, chunk, 0, chunk.length,
+             function(err, bytes_written/* , buffer */) {
+      if (err) {
+        if (self._autoClose) {
+          closeFile(self);
+        }
+        throw err;
+      }
+      this.bytesWritten += bytes_written;
+
+      if (callback) {
+        callback();
+      }
+      onwrite();
+    });
+  };
+
+
+  fs.createWriteStream = function(path, options) {
+    return new WriteStream(path, options);
+  };
+
+
+  function closeFile(stream) {
+    fs.close(stream._fd, function(err) {
+      if (err) {
+        throw err;
+      }
+      stream.emit('close');
+    });
+  }
+} catch(e) {
+}
 
 
 function convertFlags(flag) {

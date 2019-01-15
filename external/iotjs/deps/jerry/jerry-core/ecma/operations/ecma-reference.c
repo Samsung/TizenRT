@@ -59,6 +59,29 @@ ecma_op_resolve_reference_base (ecma_object_t *lex_env_p, /**< starting lexical 
   return NULL;
 } /* ecma_op_resolve_reference_base */
 
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+/**
+ * Resolve super reference.
+ *
+ * @return value of the reference
+ */
+ecma_object_t *
+ecma_op_resolve_super_reference_value (ecma_object_t *lex_env_p) /**< starting lexical environment */
+{
+  while (true)
+  {
+    JERRY_ASSERT (lex_env_p != NULL);
+
+    if (ecma_get_lex_env_type (lex_env_p) == ECMA_LEXICAL_ENVIRONMENT_SUPER_OBJECT_BOUND)
+    {
+      return ecma_get_lex_env_binding_object (lex_env_p);
+    }
+
+    lex_env_p = ecma_get_lex_env_outer_reference (lex_env_p);
+  }
+} /* ecma_op_resolve_super_reference_value */
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+
 /**
  * Resolve value corresponding to reference.
  *
@@ -72,7 +95,9 @@ ecma_op_resolve_reference_value (ecma_object_t *lex_env_p, /**< starting lexical
 
   while (lex_env_p != NULL)
   {
-    if (ecma_get_lex_env_type (lex_env_p) == ECMA_LEXICAL_ENVIRONMENT_DECLARATIVE)
+    ecma_lexical_environment_type_t lex_env_type = ecma_get_lex_env_type (lex_env_p);
+
+    if (lex_env_type == ECMA_LEXICAL_ENVIRONMENT_DECLARATIVE)
     {
       ecma_property_t *property_p = ecma_find_named_property (lex_env_p, name_p);
 
@@ -81,13 +106,11 @@ ecma_op_resolve_reference_value (ecma_object_t *lex_env_p, /**< starting lexical
         return ecma_fast_copy_value (ECMA_PROPERTY_VALUE_PTR (property_p)->value);
       }
     }
-    else
+    else if (lex_env_type == ECMA_LEXICAL_ENVIRONMENT_THIS_OBJECT_BOUND)
     {
-      JERRY_ASSERT (ecma_get_lex_env_type (lex_env_p) == ECMA_LEXICAL_ENVIRONMENT_OBJECT_BOUND
-                    || ecma_get_lex_env_type (lex_env_p) == ECMA_LEXICAL_ENVIRONMENT_THIS_OBJECT_BOUND);
-
       ecma_object_t *binding_obj_p = ecma_get_lex_env_binding_object (lex_env_p);
 
+#ifndef CONFIG_ECMA_LCACHE_DISABLE
       ecma_property_t *property_p = ecma_lcache_lookup (binding_obj_p, name_p);
 
       if (property_p != NULL)
@@ -105,12 +128,13 @@ ecma_op_resolve_reference_value (ecma_object_t *lex_env_p, /**< starting lexical
 
         if (getter_p == NULL)
         {
-          return ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+          return ECMA_VALUE_UNDEFINED;
         }
 
         ecma_value_t base_value = ecma_make_object_value (binding_obj_p);
         return ecma_op_function_call (getter_p, base_value, NULL, 0);
       }
+#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 
       ecma_value_t prop_value = ecma_op_object_find (binding_obj_p, name_p);
 
@@ -118,6 +142,14 @@ ecma_op_resolve_reference_value (ecma_object_t *lex_env_p, /**< starting lexical
       {
         return prop_value;
       }
+    }
+    else
+    {
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+      JERRY_ASSERT (lex_env_type == ECMA_LEXICAL_ENVIRONMENT_SUPER_OBJECT_BOUND);
+#else /* CONFIG_DISABLE_ES2015_CLASS */
+      JERRY_UNREACHABLE ();
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
     }
 
     lex_env_p = ecma_get_lex_env_outer_reference (lex_env_p);

@@ -81,7 +81,10 @@ extern "C" {
 
 /* Expand this list if necessary. */
 #define UV_ERRNO_MAP(XX)                                                      \
+  XX(E2BIG, "argument list too long")                                         \
+  XX(EACCES, "permission denied")                                             \
   XX(EADDRINUSE, "address already in use")                                    \
+  XX(EADDRNOTAVAIL, "address not available")                                  \
   XX(EAFNOSUPPORT, "address family not supported")                            \
   XX(EAGAIN, "resource temporarily unavailable")                              \
   XX(EAI_ADDRFAMILY, "address family not supported")                          \
@@ -99,21 +102,44 @@ extern "C" {
   XX(EAI_SERVICE, "service not available for socket type")                    \
   XX(EAI_SOCKTYPE, "socket type not supported")                               \
   XX(EALREADY, "connection already in progress")                              \
+  XX(EBADF, "bad file descriptor")                                            \
   XX(EBUSY, "resource busy or locked")                                        \
   XX(ECANCELED, "operation canceled")                                         \
+  XX(ECHARSET, "invalid Unicode character")                                   \
+  XX(ECONNABORTED, "software caused connection abort")                        \
   XX(ECONNREFUSED, "connection refused")                                      \
+  XX(ECONNRESET, "connection reset by peer")                                  \
+  XX(EEXIST, "file already exists")                                           \
+  XX(EFAULT, "bad address in system call argument")                           \
+  XX(EHOSTUNREACH, "host is unreachable")                                     \
   XX(EINVAL, "invalid argument")                                              \
   XX(EIO, "i/o error")                                                        \
+  XX(EISCONN, "socket is already connected")                                  \
+  XX(EISDIR, "illegal operation on a directory")                              \
   XX(ELOOP, "too many symbolic links encountered")                            \
+  XX(EMFILE, "too many open files")                                           \
+  XX(EMSGSIZE, "message too long")                                            \
   XX(ENAMETOOLONG, "name too long")                                           \
+  XX(ENETUNREACH, "network is unreachable")                                   \
   XX(ENOBUFS, "no buffer space available")                                    \
   XX(ENOENT, "no such file or directory")                                     \
   XX(ENOMEM, "not enough memory")                                             \
   XX(ENOSPC, "no space left on device")                                       \
+  XX(ENOSYS, "function not implemented")                                      \
+  XX(ENOTCONN, "socket is not connected")                                     \
   XX(ENOTDIR, "not a directory")                                              \
+  XX(ENOTEMPTY, "directory not empty")                                        \
+  XX(ENOTSOCK, "socket operation on non-socket")                              \
+  XX(ENOTSUP, "operation not supported on socket")                            \
   XX(EPERM, "operation not permitted")                                        \
+  XX(EPIPE, "broken pipe")                                                    \
+  XX(ESRCH, "no such process")                                                \
+  XX(EPROTONOSUPPORT, "protocol not supported")                               \
+  XX(EROFS, "read-only file system")                                          \
   XX(ETIMEDOUT, "connection timed out")                                       \
+  XX(EXDEV, "cross-device link not permitted")                                \
   XX(EOF, "end of file")                                                      \
+  XX(UNKNOWN, "unknown error")                                                \
 
 #define UV_HANDLE_TYPE_MAP(XX)                                                \
   XX(ASYNC, async)                                                            \

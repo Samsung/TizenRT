@@ -347,6 +347,14 @@ int main(int argc, char *argv[]) {
 
 #else
 
+int ipc_helper(int listen_after_write);
+int ipc_helper_tcp_connection(void);
+// int ipc_send_recv_helper(void);
+int ipc_helper_bind_twice(void);
+// int stdio_over_pipes_helper(void);
+int spawn_stdin_stdout(void);
+
+static int maybe_run_test(int argc, char **argv);
 static pthread_t tid = 0;
 
 
@@ -387,20 +395,152 @@ int run_test_one(task_entry_t* task) {
   return run_test_part(task->task_name, task->process_name);
 }
 
-int main(int argc, char *argv[]) {
-  int result;
+
+int main(int argc, char **argv) {
+  if (platform_init(argc, argv))
+    return 1;
 
   InitDebugSettings();
 
-  platform_init(argc, argv);
+  switch (argc) {
+  case 1: return run_tests();
+  case 2: return maybe_run_test(argc, argv);
+  case 3: return run_test_part(argv[1], argv[2]);
+  default:
+    ReleaseDebugSettings();
 
-  if (argc>2) {
-    return run_test_part(argv[1], argv[2]);
+    fprintf(stderr, "Too many arguments.\n");
+    fflush(stderr);
+    return 1;
   }
-  result = run_tests();
+
   ReleaseDebugSettings();
 
-  return result;
+  return 0;
+}
+
+static int maybe_run_test(int argc, char **argv) {
+#if TUV_FEATURE_PROCESS
+  if (strcmp(argv[1], "ipc_helper_listen_before_write") == 0) {
+    return ipc_helper(0);
+  }
+
+  if (strcmp(argv[1], "ipc_helper_listen_after_write") == 0) {
+    return ipc_helper(1);
+  }
+
+  // if (strcmp(argv[1], "ipc_send_recv_helper") == 0) {
+  //   return ipc_send_recv_helper();
+  // }
+
+  if (strcmp(argv[1], "ipc_helper_tcp_connection") == 0) {
+    return ipc_helper_tcp_connection();
+  }
+
+  if (strcmp(argv[1], "ipc_helper_bind_twice") == 0) {
+    return ipc_helper_bind_twice();
+  }
+
+  // if (strcmp(argv[1], "stdio_over_pipes_helper") == 0) {
+  //   return stdio_over_pipes_helper();
+  // }
+
+  if (strcmp(argv[1], "spawn_helper1") == 0) {
+    return 1;
+  }
+
+  if (strcmp(argv[1], "spawn_helper2") == 0) {
+    printf("hello world\n");
+    return 1;
+  }
+
+  if (strcmp(argv[1], "spawn_helper3") == 0) {
+    char buffer[256];
+    TUV_ASSERT(buffer == fgets(buffer, sizeof(buffer) - 1, stdin));
+    buffer[sizeof(buffer) - 1] = '\0';
+    fputs(buffer, stdout);
+    return 1;
+  }
+
+  if (strcmp(argv[1], "spawn_helper4") == 0) {
+    /* Never surrender, never return! */
+    while (1) uv_sleep(10000);
+  }
+
+  if (strcmp(argv[1], "spawn_helper5") == 0) {
+    const char out[] = "fourth stdio!\n";
+#ifdef _WIN32
+    DWORD bytes;
+    WriteFile((HANDLE) _get_osfhandle(3), out, sizeof(out) - 1, &bytes, NULL);
+#else
+    {
+      ssize_t r;
+
+      do
+        r = write(3, out, sizeof(out) - 1);
+      while (r == -1 && errno == EINTR);
+
+      fsync(3);
+    }
+#endif
+    return 1;
+  }
+
+  if (strcmp(argv[1], "spawn_helper6") == 0) {
+    int r;
+
+    r = fprintf(stdout, "hello world\n");
+    TUV_ASSERT(r > 0);
+
+    r = fprintf(stderr, "hello errworld\n");
+    TUV_ASSERT(r > 0);
+
+    return 1;
+  }
+
+  if (strcmp(argv[1], "spawn_helper7") == 0) {
+    int r;
+    char *test;
+    /* Test if the test value from the parent is still set */
+    test = getenv("ENV_TEST");
+    TUV_ASSERT(test != NULL);
+
+    r = fprintf(stdout, "%s", test);
+    TUV_ASSERT(r > 0);
+
+    return 1;
+  }
+
+#ifndef _WIN32
+  if (strcmp(argv[1], "spawn_helper8") == 0) {
+    int fd;
+    TUV_ASSERT(sizeof(fd) == read(0, &fd, sizeof(fd)));
+    TUV_ASSERT(fd > 2);
+    TUV_ASSERT(-1 == write(fd, "x", 1));
+
+    return 1;
+  }
+#endif  /* !_WIN32 */
+
+  if (strcmp(argv[1], "spawn_helper9") == 0) {
+    return spawn_stdin_stdout();
+  }
+
+#ifndef _WIN32
+  if (strcmp(argv[1], "spawn_helper_setuid_setgid") == 0) {
+    uv_uid_t uid = atoi(argv[2]);
+    uv_gid_t gid = atoi(argv[3]);
+
+    TUV_ASSERT(uid == getuid());
+    TUV_ASSERT(gid == getgid());
+
+    return 1;
+  }
+#endif  /* !_WIN32 */
+
+#endif /* TUV_FEATURE_PROCESS */
+  // return run_test(argv[1], 0, 1);
+  return 1;
 }
 
 #endif

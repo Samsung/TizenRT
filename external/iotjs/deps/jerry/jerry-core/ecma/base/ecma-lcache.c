@@ -33,24 +33,10 @@
  */
 #define ECMA_LCACHE_HASH_MASK (ECMA_LCACHE_HASH_ROWS_COUNT - 1)
 
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
-
-/**
- * Initialize LCache
- */
-void
-ecma_lcache_init (void)
-{
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
-  memset (JERRY_HASH_TABLE_CONTEXT (table), 0, sizeof (jerry_hash_table_t));
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
-} /* ecma_lcache_init */
-
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
 /**
  * Invalidate specified LCache entry
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 ecma_lcache_invalidate_entry (ecma_lcache_hash_entry_t *entry_p) /**< entry to invalidate */
 {
   JERRY_ASSERT (entry_p != NULL);
@@ -66,7 +52,7 @@ ecma_lcache_invalidate_entry (ecma_lcache_hash_entry_t *entry_p) /**< entry to i
  *
  * @return row index
  */
-static inline size_t __attr_always_inline___
+static inline size_t JERRY_ATTR_ALWAYS_INLINE
 ecma_lcache_row_index (jmem_cpointer_t object_cp, /**< compressed pointer to object */
                        lit_string_hash_t name_hash) /**< property name hash */
 {
@@ -74,7 +60,6 @@ ecma_lcache_row_index (jmem_cpointer_t object_cp, /**< compressed pointer to obj
    * so properties of different objects with the same name can be cached effectively. */
   return (size_t) ((name_hash ^ object_cp) & ECMA_LCACHE_HASH_MASK);
 } /* ecma_lcache_row_index */
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 
 /**
  * Insert an entry into LCache
@@ -87,16 +72,16 @@ ecma_lcache_insert (ecma_object_t *object_p, /**< object */
   JERRY_ASSERT (object_p != NULL);
   JERRY_ASSERT (prop_p != NULL && !ecma_is_property_lcached (prop_p));
   JERRY_ASSERT (ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDDATA
-                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDACCESSOR);
+                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDACCESSOR
+                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_INTERNAL);
 
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
   jmem_cpointer_t object_cp;
 
   ECMA_SET_NON_NULL_POINTER (object_cp, object_p);
 
   lit_string_hash_t name_hash = ecma_string_get_property_name_hash (*prop_p, name_cp);
   size_t row_index = ecma_lcache_row_index (object_cp, name_hash);
-  ecma_lcache_hash_entry_t *entries_p = JERRY_HASH_TABLE_CONTEXT (table)[row_index];
+  ecma_lcache_hash_entry_t *entries_p = JERRY_CONTEXT (lcache) [row_index];
 
   uint32_t entry_index;
   for (entry_index = 0; entry_index < ECMA_LCACHE_HASH_ROW_LENGTH; entry_index++)
@@ -127,61 +112,7 @@ ecma_lcache_insert (ecma_object_t *object_p, /**< object */
   entry_p->prop_p = prop_p;
 
   ecma_set_property_lcached (entry_p->prop_p, true);
-#else  /* CONFIG_ECMA_LCACHE_DISABLE */
-  JERRY_UNUSED (name_cp);
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 } /* ecma_lcache_insert */
-
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
-
-/**
- * Converts a string into a property name
- *
- * @return the compressed pointer part of the name
- */
-static inline jmem_cpointer_t __attr_always_inline___
-ecma_string_to_lcache_property_name (const ecma_string_t *prop_name_p, /**< property name */
-                                     ecma_property_t *name_type_p) /**< [out] property name type */
-{
-  ecma_string_container_t container = ECMA_STRING_GET_CONTAINER (prop_name_p);
-
-  switch (container)
-  {
-    case ECMA_STRING_CONTAINER_UINT32_IN_DESC:
-    case ECMA_STRING_CONTAINER_MAGIC_STRING:
-    case ECMA_STRING_CONTAINER_MAGIC_STRING_EX:
-    {
-#ifdef JERRY_CPOINTER_32_BIT
-
-      *name_type_p = (ecma_property_t) container;
-      return (jmem_cpointer_t) prop_name_p->u.uint32_number;
-
-#else /* !JERRY_CPOINTER_32_BIT */
-
-      if (prop_name_p->u.uint32_number < (UINT16_MAX + 1))
-      {
-        *name_type_p = (ecma_property_t) container;
-        return (jmem_cpointer_t) prop_name_p->u.uint32_number;
-      }
-
-#endif /* JERRY_CPOINTER_32_BIT */
-
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-
-  *name_type_p = ECMA_PROPERTY_NAME_TYPE_STRING;
-
-  jmem_cpointer_t prop_name_cp;
-  ECMA_SET_NON_NULL_POINTER (prop_name_cp, prop_name_p);
-  return prop_name_cp;
-} /* ecma_string_to_lcache_property_name */
-
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 
 /**
  * Lookup property in the LCache
@@ -189,23 +120,45 @@ ecma_string_to_lcache_property_name (const ecma_string_t *prop_name_p, /**< prop
  * @return a pointer to an ecma_property_t if the lookup is successful
  *         NULL otherwise
  */
-inline ecma_property_t * __attr_always_inline___
+inline ecma_property_t * JERRY_ATTR_ALWAYS_INLINE
 ecma_lcache_lookup (ecma_object_t *object_p, /**< object */
                     const ecma_string_t *prop_name_p) /**< property's name */
 {
   JERRY_ASSERT (object_p != NULL);
   JERRY_ASSERT (prop_name_p != NULL);
 
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
   jmem_cpointer_t object_cp;
   ECMA_SET_NON_NULL_POINTER (object_cp, object_p);
 
-  size_t row_index = ecma_lcache_row_index (object_cp, ecma_string_hash (prop_name_p));
-  ecma_lcache_hash_entry_t *entry_p = JERRY_HASH_TABLE_CONTEXT (table) [row_index];
-  ecma_lcache_hash_entry_t *entry_end_p = entry_p + ECMA_LCACHE_HASH_ROW_LENGTH;
-
   ecma_property_t prop_name_type;
-  jmem_cpointer_t prop_name_cp = ecma_string_to_lcache_property_name (prop_name_p, &prop_name_type);
+  jmem_cpointer_t prop_name_cp;
+  lit_string_hash_t name_hash;
+
+  if (ECMA_IS_DIRECT_STRING (prop_name_p))
+  {
+    prop_name_type = (ecma_property_t) ECMA_GET_DIRECT_STRING_TYPE (prop_name_p);
+
+    uintptr_t value = ECMA_GET_DIRECT_STRING_VALUE (prop_name_p);
+    prop_name_cp = (jmem_cpointer_t) value;
+    name_hash = (lit_string_hash_t) value;
+
+    if (prop_name_type == ECMA_DIRECT_STRING_MAGIC_EX)
+    {
+      name_hash = (lit_string_hash_t) (name_hash + LIT_MAGIC_STRING__COUNT);
+    }
+  }
+  else
+  {
+    prop_name_type = ECMA_DIRECT_STRING_PTR;
+
+    ECMA_SET_NON_NULL_POINTER (prop_name_cp, prop_name_p);
+    name_hash = prop_name_p->hash;
+  }
+
+  size_t row_index = ecma_lcache_row_index (object_cp, name_hash);
+
+  ecma_lcache_hash_entry_t *entry_p = JERRY_CONTEXT (lcache) [row_index];
+  ecma_lcache_hash_entry_t *entry_end_p = entry_p + ECMA_LCACHE_HASH_ROW_LENGTH;
 
   while (entry_p < entry_end_p)
   {
@@ -228,7 +181,6 @@ ecma_lcache_lookup (ecma_object_t *object_p, /**< object */
 
     entry_p++;
   }
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 
   return NULL;
 } /* ecma_lcache_lookup */
@@ -244,18 +196,21 @@ ecma_lcache_invalidate (ecma_object_t *object_p, /**< object */
   JERRY_ASSERT (object_p != NULL);
   JERRY_ASSERT (prop_p != NULL && ecma_is_property_lcached (prop_p));
   JERRY_ASSERT (ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDDATA
-                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDACCESSOR);
+                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_NAMEDACCESSOR
+                || ECMA_PROPERTY_GET_TYPE (*prop_p) == ECMA_PROPERTY_TYPE_INTERNAL);
 
-#ifndef CONFIG_ECMA_LCACHE_DISABLE
   jmem_cpointer_t object_cp;
   ECMA_SET_NON_NULL_POINTER (object_cp, object_p);
 
   lit_string_hash_t name_hash = ecma_string_get_property_name_hash (*prop_p, name_cp);
   size_t row_index = ecma_lcache_row_index (object_cp, name_hash);
-  ecma_lcache_hash_entry_t *entry_p = JERRY_HASH_TABLE_CONTEXT (table) [row_index];
+  ecma_lcache_hash_entry_t *entry_p = JERRY_CONTEXT (lcache) [row_index];
 
-  for (uint32_t entry_index = 0; entry_index < ECMA_LCACHE_HASH_ROW_LENGTH; entry_index++)
+  while (true)
   {
+    /* The property must be present. */
+    JERRY_ASSERT (entry_p - JERRY_CONTEXT (lcache) [row_index] < ECMA_LCACHE_HASH_ROW_LENGTH);
+
     if (entry_p->object_cp != ECMA_NULL_POINTER && entry_p->prop_p == prop_p)
     {
       JERRY_ASSERT (entry_p->object_cp == object_cp);
@@ -265,13 +220,9 @@ ecma_lcache_invalidate (ecma_object_t *object_p, /**< object */
     }
     entry_p++;
   }
-
-  /* The property must be present. */
-  JERRY_UNREACHABLE ();
-#else  /* CONFIG_ECMA_LCACHE_DISABLE */
-  JERRY_UNUSED (name_cp);
-#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 } /* ecma_lcache_invalidate */
+
+#endif /* !CONFIG_ECMA_LCACHE_DISABLE */
 
 /**
  * @}

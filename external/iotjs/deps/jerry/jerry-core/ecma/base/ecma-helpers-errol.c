@@ -54,11 +54,17 @@
  */
 
 /**
- * Floating point format definitions
+ * Floating point format definitions (next float value)
  */
 #define ECMA_NEXT_FLOAT(value) (nextafter ((value), INFINITY))
+/**
+ * Floating point format definitions (previous float value)
+ */
 #define ECMA_PREV_FLOAT(value) (nextafter ((value), -INFINITY))
 
+/**
+ * Value of epsilon
+ */
 #define ERROL0_EPSILON 0.0000001
 
 /**
@@ -73,7 +79,7 @@ typedef struct
 /**
  * Normalize the number by factoring in the error.
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 ecma_normalize_high_prec_data (ecma_high_prec_t *hp_data_p) /**< [in, out] float pair */
 {
   double val = hp_data_p->value;
@@ -85,7 +91,7 @@ ecma_normalize_high_prec_data (ecma_high_prec_t *hp_data_p) /**< [in, out] float
 /**
  * Multiply the high-precision number by ten.
  */
-static inline void __attr_always_inline___
+static inline void JERRY_ATTR_ALWAYS_INLINE
 ecma_multiply_high_prec_by_10 (ecma_high_prec_t *hp_data_p) /**< [in, out] high-precision number */
 {
   double value = hp_data_p->value;
@@ -127,7 +133,7 @@ ecma_divide_high_prec_by_10 (ecma_high_prec_t *hp_data_p) /**< [in, out] high-pr
  *
  * @return number of generated digits
  */
-inline lit_utf8_size_t __attr_always_inline___
+inline lit_utf8_size_t JERRY_ATTR_ALWAYS_INLINE
 ecma_errol0_dtoa (double val, /**< ecma number */
                   lit_utf8_byte_t *buffer_p, /**< buffer to generate digits into */
                   int32_t *exp_p) /**< [out] exponent */

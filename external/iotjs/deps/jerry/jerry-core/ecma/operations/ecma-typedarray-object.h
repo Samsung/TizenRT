@@ -43,6 +43,11 @@ ecma_value_t ecma_op_create_typedarray (const ecma_value_t *arguments_list_p,
                                         uint8_t element_size_shift,
                                         lit_magic_string_id_t class_id);
 bool ecma_is_typedarray (ecma_value_t target);
+void ecma_set_typedarray_element (lit_utf8_byte_t *dst_p,
+                                  ecma_number_t value,
+                                  lit_magic_string_id_t class_id);
+ecma_number_t ecma_get_typedarray_element (lit_utf8_byte_t *src,
+                                           lit_magic_string_id_t class_id);
 void ecma_op_typedarray_list_lazy_property_names (ecma_object_t *obj_p,
                                                   ecma_collection_header_t *main_collection_p);
 ecma_value_t ecma_op_typedarray_get_index_prop (ecma_object_t *obj_p, uint32_t index);
@@ -52,6 +57,10 @@ bool ecma_op_typedarray_define_index_prop (ecma_object_t *obj_p,
 bool ecma_op_typedarray_set_index_prop (ecma_object_t *obj_p, uint32_t index, ecma_value_t value);
 ecma_value_t ecma_op_create_typedarray_with_type_and_length (ecma_object_t *obj_p,
                                                              ecma_length_t array_length);
+ecma_value_t ecma_typedarray_create_object_with_length (ecma_length_t array_length,
+                                                        ecma_object_t *proto_p,
+                                                        uint8_t element_size_shift,
+                                                        lit_magic_string_id_t class_id);
 
 /**
  * @}

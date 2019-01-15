@@ -61,7 +61,7 @@ void InitDebugSettings() {
 
 void ReleaseDebugSettings() {
 #ifdef ENABLE_DEBUG_LOG
-  if (tuv_log_stream != stderr || tuv_log_stream != stdout) {
+  if (tuv_log_stream != stderr && tuv_log_stream != stdout) {
     fclose(tuv_log_stream);
   }
   // some embed systems(ex, nuttx) may need this

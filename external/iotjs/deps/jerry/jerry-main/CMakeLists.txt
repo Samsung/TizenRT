@@ -19,7 +19,7 @@ project (jerry-main C)
 set(ENABLE_LINK_MAP OFF CACHE BOOL "Enable generating a link map file?")
 
 # Status messages
-message(STATUS "ENABLE_LINK_MAP           " ${ENABLE_LINK_MAP})
+message(STATUS "ENABLE_LINK_MAP             " ${ENABLE_LINK_MAP})
 
 # Generate map file
 if(ENABLE_LINK_MAP)
@@ -54,17 +54,18 @@ macro(jerry_create_executable JERRY_NAME)
   install(TARGETS ${JERRY_NAME} DESTINATION bin)
 endmacro()
 
-if(JERRY_LIBC AND FEATURE_EXTERNAL_CONTEXT)
-  MESSAGE(FATAL_ERROR "This configuration is not supported for jerry-main. Please build against your system libc to enable the external context.")
-endif()
-
 # Jerry standalones
 if(JERRY_CMDLINE)
   jerry_create_executable("jerry" "main-unix.c" "cli.c")
   target_link_libraries("jerry" jerry-ext jerry-port-default)
 endif()
 
-if(JERRY_CMDLINE_MINIMAL)
-  jerry_create_executable("jerry-minimal" "main-unix-minimal.c")
-  target_link_libraries("jerry-minimal" jerry-port-default-minimal)
+if(JERRY_CMDLINE_TEST)
+  jerry_create_executable("jerry-test" "main-unix-test.c" "benchmarking.c")
+  target_link_libraries("jerry-test" jerry-port-default-minimal)
+endif()
+
+if(JERRY_CMDLINE_SNAPSHOT)
+  jerry_create_executable("jerry-snapshot" "main-unix-snapshot.c" "cli.c")
+  target_link_libraries("jerry-snapshot" jerry-port-default)
 endif()

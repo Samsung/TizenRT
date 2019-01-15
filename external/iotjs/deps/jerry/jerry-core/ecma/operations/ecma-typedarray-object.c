@@ -26,6 +26,7 @@
 #include "ecma-gc.h"
 #include "ecma-globals.h"
 #include "ecma-helpers.h"
+#include "jcontext.h"
 
 #ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 
@@ -49,9 +50,9 @@
  *
  * @return ecma_number_t: the value of the element
  */
-static ecma_number_t
-get_typedarray_element (lit_utf8_byte_t *src, /**< the location in the internal arraybuffer */
-                        lit_magic_string_id_t class_id) /**< class name of the typedarray */
+ecma_number_t
+ecma_get_typedarray_element (lit_utf8_byte_t *src, /**< the location in the internal arraybuffer */
+                             lit_magic_string_id_t class_id) /**< class name of the typedarray */
 {
   switch (class_id)
   {
@@ -93,20 +94,19 @@ get_typedarray_element (lit_utf8_byte_t *src, /**< the location in the internal 
     default:
     {
       JERRY_UNREACHABLE ();
-      return 0;
     }
   }
-} /* get_typedarray_element */
+} /* ecma_get_typedarray_element */
 
 #undef GET_ELEMENT
 
 /**
  * set typedarray's element value
  */
-static void
-set_typedarray_element (lit_utf8_byte_t *dst_p, /**< the location in the internal arraybuffer */
-                        ecma_number_t value, /**< the number value to set */
-                        lit_magic_string_id_t class_id) /**< class name of the typedarray */
+void
+ecma_set_typedarray_element (lit_utf8_byte_t *dst_p, /**< the location in the internal arraybuffer */
+                             ecma_number_t value, /**< the number value to set */
+                             lit_magic_string_id_t class_id) /**< class name of the typedarray */
 {
   switch (class_id)
   {
@@ -215,7 +215,7 @@ set_typedarray_element (lit_utf8_byte_t *dst_p, /**< the location in the interna
       JERRY_UNREACHABLE ();
     }
   }
-} /* set_typedarray_element */
+} /* ecma_set_typedarray_element */
 
 /**
  * Create a TypedArray object by given array_length
@@ -225,7 +225,7 @@ set_typedarray_element (lit_utf8_byte_t *dst_p, /**< the location in the interna
  * @return ecma value of the new typedarray object
  *         Returned value must be freed with ecma_free_value
  */
-static ecma_value_t
+ecma_value_t
 ecma_typedarray_create_object_with_length (ecma_length_t array_length, /**< length of the typedarray */
                                            ecma_object_t *proto_p, /**< prototype object */
                                            uint8_t element_size_shift, /**< the size shift of the element length */
@@ -249,7 +249,7 @@ ecma_typedarray_create_object_with_length (ecma_length_t array_length, /**< leng
                                                 ECMA_OBJECT_TYPE_PSEUDO_ARRAY);
 
   ecma_extended_object_t *ext_object_p = (ecma_extended_object_t *) object_p;
-  ext_object_p->u.pseudo_array.u1.class_id = class_id;
+  ext_object_p->u.pseudo_array.u1.class_id = (uint16_t) class_id;
   ext_object_p->u.pseudo_array.type = ECMA_PSEUDO_ARRAY_TYPEDARRAY;
   ext_object_p->u.pseudo_array.extra_info = element_size_shift;
   ext_object_p->u.pseudo_array.u2.arraybuffer = new_arraybuffer_p;
@@ -257,7 +257,7 @@ ecma_typedarray_create_object_with_length (ecma_length_t array_length, /**< leng
   ecma_free_value (new_arraybuffer_p);
 
   return ecma_make_object_value (object_p);
-} /* !ecma_typedarray_create_object_with_length */
+} /* ecma_typedarray_create_object_with_length */
 
 /**
  * Create a TypedArray object by given buffer, offset, and array_length
@@ -285,7 +285,7 @@ ecma_typedarray_create_object_with_buffer (ecma_object_t *arraybuffer_p, /**< th
   ecma_object_t *object_p = ecma_create_object (proto_p, object_size, ECMA_OBJECT_TYPE_PSEUDO_ARRAY);
 
   ecma_extended_object_t *ext_object_p = (ecma_extended_object_t *) object_p;
-  ext_object_p->u.pseudo_array.u1.class_id = class_id;
+  ext_object_p->u.pseudo_array.u1.class_id = (uint16_t) class_id;
   ext_object_p->u.pseudo_array.type = ECMA_PSEUDO_ARRAY_TYPEDARRAY;
   ext_object_p->u.pseudo_array.extra_info = element_size_shift;
   ext_object_p->u.pseudo_array.u2.arraybuffer = ecma_make_object_value (arraybuffer_p);
@@ -352,8 +352,8 @@ ecma_typedarray_create_object_with_typedarray (ecma_object_t *typedarray_p, /**<
     for (uint32_t i = 0; i < array_length; i++)
     {
       /* Convert values from source to destination format. */
-      ecma_number_t tmp = get_typedarray_element (src_buf_p, src_class_id);
-      set_typedarray_element (dst_buf_p, tmp, class_id);
+      ecma_number_t tmp = ecma_get_typedarray_element (src_buf_p, src_class_id);
+      ecma_set_typedarray_element (dst_buf_p, tmp, class_id);
 
       src_buf_p += src_element_size;
       dst_buf_p += dst_element_size;
@@ -379,7 +379,7 @@ ecma_op_typedarray_from (ecma_value_t items_val, /**< the source array-like obje
                          uint8_t element_size_shift, /**< the size shift of the element length */
                          lit_magic_string_id_t class_id) /**< class name of the typedarray */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   /* 3 */
   JERRY_ASSERT (ecma_op_is_callable (map_fn_val) || ecma_is_value_undefined (map_fn_val));
@@ -398,11 +398,8 @@ ecma_op_typedarray_from (ecma_value_t items_val, /**< the source array-like obje
   ecma_object_t *arraylike_object_p = ecma_get_object_from_value (arraylike_object_val);
 
   /* 12 */
-  ecma_string_t magic_string_length;
-  ecma_init_ecma_length_string (&magic_string_length);
-
   ECMA_TRY_CATCH (len_value,
-                  ecma_op_object_get (arraylike_object_p, &magic_string_length),
+                  ecma_op_object_get_by_magic_id (arraylike_object_p, LIT_MAGIC_STRING_LENGTH),
                   ret_value);
 
   ECMA_OP_TO_NUMBER_TRY_CATCH (len_number, len_value, ret_value);
@@ -417,65 +414,67 @@ ecma_op_typedarray_from (ecma_value_t items_val, /**< the source array-like obje
 
   if (ECMA_IS_VALUE_ERROR (new_typedarray))
   {
-    ret_value = ecma_copy_value (new_typedarray);
-  }
-
-  ecma_object_t *new_typedarray_p = ecma_get_object_from_value (new_typedarray);
-
-  /* 17 */
-  ecma_value_t current_index;
-
-  for (uint32_t index = 0; index < len && ecma_is_value_empty (ret_value); index++)
-  {
-    /* 17.a */
-    ecma_string_t *index_str_p = ecma_new_ecma_string_from_uint32 (index);
-
-    /* 17.b */
-    ECMA_TRY_CATCH (current_value, ecma_op_object_find (arraylike_object_p, index_str_p), ret_value);
-
-    if (ecma_is_value_found (current_value))
-    {
-      if (func_object_p != NULL)
-      {
-        /* 17.d 17.f */
-        current_index = ecma_make_uint32_value (index);
-        ecma_value_t call_args[] = { current_value, current_index};
-
-        ECMA_TRY_CATCH (mapped_value, ecma_op_function_call (func_object_p, this_val, call_args, 2), ret_value);
-
-        bool set_status = ecma_op_typedarray_set_index_prop (new_typedarray_p, index, mapped_value);
-
-        if (!set_status)
-        {
-          ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Invalid argument type."));;
-        }
-
-        ECMA_FINALIZE (mapped_value);
-      }
-      else
-      {
-        /* 17.e 17.f */
-        bool set_status = ecma_op_typedarray_set_index_prop (new_typedarray_p, index, current_value);
-
-        if (!set_status)
-        {
-          ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Invalid argument type."));;
-        }
-      }
-    }
-
-    ECMA_FINALIZE (current_value);
-
-    ecma_deref_ecma_string (index_str_p);
-  }
-
-  if (ecma_is_value_empty (ret_value))
-  {
-    ret_value = ecma_make_object_value (new_typedarray_p);
+    ret_value = new_typedarray;
   }
   else
   {
-    ecma_deref_object (new_typedarray_p);
+    ecma_object_t *new_typedarray_p = ecma_get_object_from_value (new_typedarray);
+
+    /* 17 */
+    ecma_value_t current_index;
+
+    for (uint32_t index = 0; index < len && ecma_is_value_empty (ret_value); index++)
+    {
+      /* 17.a */
+      ecma_string_t *index_str_p = ecma_new_ecma_string_from_uint32 (index);
+
+      /* 17.b */
+      ECMA_TRY_CATCH (current_value, ecma_op_object_find (arraylike_object_p, index_str_p), ret_value);
+
+      if (ecma_is_value_found (current_value))
+      {
+        if (func_object_p != NULL)
+        {
+          /* 17.d 17.f */
+          current_index = ecma_make_uint32_value (index);
+          ecma_value_t call_args[] = { current_value, current_index};
+
+          ECMA_TRY_CATCH (mapped_value, ecma_op_function_call (func_object_p, this_val, call_args, 2), ret_value);
+
+          bool set_status = ecma_op_typedarray_set_index_prop (new_typedarray_p, index, mapped_value);
+
+          if (!set_status)
+          {
+            ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Invalid argument type."));;
+          }
+
+          ECMA_FINALIZE (mapped_value);
+        }
+        else
+        {
+          /* 17.e 17.f */
+          bool set_status = ecma_op_typedarray_set_index_prop (new_typedarray_p, index, current_value);
+
+          if (!set_status)
+          {
+            ret_value = ecma_raise_type_error (ECMA_ERR_MSG ("Invalid argument type."));;
+          }
+        }
+      }
+
+      ECMA_FINALIZE (current_value);
+
+      ecma_deref_ecma_string (index_str_p);
+    }
+
+    if (ecma_is_value_empty (ret_value))
+    {
+      ret_value = ecma_make_object_value (new_typedarray_p);
+    }
+    else
+    {
+      ecma_deref_object (new_typedarray_p);
+    }
   }
 
   ECMA_OP_TO_NUMBER_FINALIZE (len_number);
@@ -486,11 +485,11 @@ ecma_op_typedarray_from (ecma_value_t items_val, /**< the source array-like obje
 } /* ecma_op_typedarray_from */
 
 /**
- * Get the array length of the typedarray object
+ * Get the arraybuffer of the typedarray object
  *
  * @return the pointer to the internal arraybuffer
  */
-inline ecma_object_t * __attr_always_inline___
+inline ecma_object_t * JERRY_ATTR_ALWAYS_INLINE
 ecma_typedarray_get_arraybuffer (ecma_object_t *typedarray_p) /**< the pointer to the typedarray object */
 {
   JERRY_ASSERT (ecma_is_typedarray (ecma_make_object_value (typedarray_p)));
@@ -597,7 +596,7 @@ ecma_op_create_typedarray (const ecma_value_t *arguments_list_p, /**< the arg li
 {
   JERRY_ASSERT (arguments_list_len == 0 || arguments_list_p != NULL);
 
-  ecma_value_t ret = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret = ECMA_VALUE_EMPTY;
 
   if (arguments_list_len == 0)
   {
@@ -646,10 +645,10 @@ ecma_op_create_typedarray (const ecma_value_t *arguments_list_p, /**< the arg li
       /* 22.2.1.5 */
       ecma_object_t *arraybuffer_p = ecma_get_object_from_value (arguments_list_p[0]);
       ecma_value_t arg2 = ((arguments_list_len > 1) ? arguments_list_p[1]
-                                                    : ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED));
+                                                    : ECMA_VALUE_UNDEFINED);
 
       ecma_value_t arg3 = ((arguments_list_len > 2) ? arguments_list_p[2]
-                                                    : ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED));
+                                                    : ECMA_VALUE_UNDEFINED);
 
       ECMA_OP_TO_NUMBER_TRY_CATCH (num2, arg2, ret);
 
@@ -689,12 +688,14 @@ ecma_op_create_typedarray (const ecma_value_t *arguments_list_p, /**< the arg li
           {
             ret = ecma_raise_range_error (ECMA_ERR_MSG ("Maximum typedarray size is reached."));
           }
-
-          new_byte_length = (ecma_length_t) new_length << element_size_shift;
-
-          if (new_byte_length + offset > buf_byte_length)
+          else
           {
-            ret = ecma_raise_range_error (ECMA_ERR_MSG ("Invalid length."));
+            new_byte_length = (ecma_length_t) new_length << element_size_shift;
+
+            if (new_byte_length + offset > buf_byte_length)
+            {
+              ret = ecma_raise_range_error (ECMA_ERR_MSG ("Invalid length."));
+            }
           }
 
           ECMA_OP_TO_NUMBER_FINALIZE (num3);
@@ -717,7 +718,7 @@ ecma_op_create_typedarray (const ecma_value_t *arguments_list_p, /**< the arg li
     else
     {
       /* 22.2.1.4 */
-      ecma_value_t undef = ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+      ecma_value_t undef = ECMA_VALUE_UNDEFINED;
       ret = ecma_op_typedarray_from (arguments_list_p[0],
                                      undef,
                                      undef,
@@ -775,7 +776,7 @@ ecma_op_typedarray_list_lazy_property_names (ecma_object_t *obj_p, /**< a TypedA
   {
     ecma_string_t *name_p = ecma_new_ecma_string_from_uint32 (i);
 
-    ecma_append_to_values_collection (main_collection_p, ecma_make_string_value (name_p), true);
+    ecma_append_to_values_collection (main_collection_p, ecma_make_string_value (name_p), 0);
 
     ecma_deref_ecma_string (name_p);
   }
@@ -799,7 +800,7 @@ ecma_op_typedarray_get_index_prop (ecma_object_t *obj_p, /**< a TypedArray objec
 
   if (index >= array_length)
   {
-    return ecma_make_simple_value (ECMA_SIMPLE_VALUE_UNDEFINED);
+    return ECMA_VALUE_UNDEFINED;
   }
 
   ecma_object_t *arraybuffer_p = ecma_typedarray_get_arraybuffer (obj_p);
@@ -808,7 +809,7 @@ ecma_op_typedarray_get_index_prop (ecma_object_t *obj_p, /**< a TypedArray objec
   ecma_length_t byte_pos = (index << shift) + offset;
   lit_magic_string_id_t class_id = ecma_object_get_class_name (obj_p);
   lit_utf8_byte_t *target_p = ecma_arraybuffer_get_buffer (arraybuffer_p) + byte_pos;
-  ecma_number_t value = get_typedarray_element (target_p, class_id);
+  ecma_number_t value = ecma_get_typedarray_element (target_p, class_id);
 
   return ecma_make_number_value (value);
 } /* ecma_op_typedarray_get_index_prop */
@@ -877,7 +878,7 @@ ecma_op_typedarray_set_index_prop (ecma_object_t *obj_p, /**< a TypedArray objec
     return false;
   }
 
-  ecma_value_t error = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t error = ECMA_VALUE_EMPTY;
 
   ECMA_OP_TO_NUMBER_TRY_CATCH (value_num, value, error);
 
@@ -887,16 +888,18 @@ ecma_op_typedarray_set_index_prop (ecma_object_t *obj_p, /**< a TypedArray objec
   ecma_length_t byte_pos = (index << shift) + offset;
   lit_magic_string_id_t class_id = ecma_object_get_class_name (obj_p);
   lit_utf8_byte_t *target_p = ecma_arraybuffer_get_buffer (arraybuffer_p) + byte_pos;
-  set_typedarray_element (target_p, value_num, class_id);
+  ecma_set_typedarray_element (target_p, value_num, class_id);
 
   ECMA_OP_TO_NUMBER_FINALIZE (value_num);
 
-  if (ecma_is_value_empty (error))
+  if (ECMA_IS_VALUE_ERROR (error))
   {
-    return true;
+    ecma_free_value (JERRY_CONTEXT (error_value));
+    return false;
   }
 
-  return false;
+  JERRY_ASSERT (ecma_is_value_empty (error));
+  return true;
 } /* ecma_op_typedarray_set_index_prop */
 
 /**
@@ -913,7 +916,7 @@ ecma_op_create_typedarray_with_type_and_length (ecma_object_t *obj_p, /**< Typed
   JERRY_ASSERT (ecma_is_typedarray (ecma_make_object_value (obj_p)));
 
   ecma_extended_object_t *ext_object_p = (ecma_extended_object_t *) obj_p;
-  lit_magic_string_id_t class_id = ext_object_p->u.pseudo_array.u1.class_id;
+  lit_magic_string_id_t class_id = (lit_magic_string_id_t) ext_object_p->u.pseudo_array.u1.class_id;
   ecma_object_t *proto_p;
   uint8_t element_size_shift = 0;
 
@@ -981,12 +984,41 @@ ecma_op_create_typedarray_with_type_and_length (ecma_object_t *obj_p, /**< Typed
     }
   }
 
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+  ecma_value_t constructor_value = ecma_op_object_get_by_magic_id (obj_p, LIT_MAGIC_STRING_CONSTRUCTOR);
+
+  if (ECMA_IS_VALUE_ERROR (constructor_value)
+      || !ecma_is_value_object (constructor_value)
+      || !ecma_is_constructor (constructor_value))
+  {
+    ecma_free_value (constructor_value);
+    return ecma_raise_type_error (ECMA_ERR_MSG ("object.constructor is not a constructor."));
+  }
+
+  ecma_object_t *constructor_object_p = ecma_get_object_from_value (constructor_value);
+  ecma_value_t constructor_prototype = ecma_op_object_get_by_magic_id (constructor_object_p,
+                                                                       LIT_MAGIC_STRING_PROTOTYPE);
+
+  ecma_deref_object (constructor_object_p);
+
+  if (ECMA_IS_VALUE_ERROR (constructor_prototype))
+  {
+    return constructor_prototype;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+
   ecma_value_t new_obj = ecma_typedarray_create_object_with_length (array_length,
                                                                     proto_p,
                                                                     element_size_shift,
                                                                     class_id);
 
-  ecma_deref_object (proto_p);
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+  ecma_object_t *constructor_prototype_object_p = ecma_get_object_from_value (constructor_prototype);
+  ecma_object_t *new_obj_p = ecma_get_object_from_value (new_obj);
+  ECMA_SET_POINTER (new_obj_p->prototype_or_outer_reference_cp, constructor_prototype_object_p);
+
+  ecma_deref_object (constructor_prototype_object_p);
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
 
   return new_obj;
 } /* ecma_op_create_typedarray_with_type_and_length */

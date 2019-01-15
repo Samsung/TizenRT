@@ -17,22 +17,12 @@
  * Float64Array prototype description
  */
 
-#include "ecma-builtin-helpers-macro-defines.inc.h"
-
 #ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 #if CONFIG_ECMA_NUMBER_TYPE == CONFIG_ECMA_NUMBER_FLOAT64
 
-/* ES2015 22.2.3.4 */
-OBJECT_VALUE (LIT_MAGIC_STRING_CONSTRUCTOR,
-              ECMA_BUILTIN_ID_FLOAT64ARRAY,
-              ECMA_PROPERTY_CONFIGURABLE_WRITABLE)
-
-/* ES2015 22.2.6.1 */
-NUMBER_VALUE (LIT_MAGIC_STRING_BYTES_PER_ELEMENT_U,
-              8,
-              ECMA_PROPERTY_FIXED)
+#define TYPEDARRAY_BYTES_PER_ELEMENT 8
+#define TYPEDARRAY_BUILTIN_ID ECMA_BUILTIN_ID_FLOAT64ARRAY
+#include "ecma-builtin-typedarray-prototype-template.inc.h"
 
 #endif /* CONFIG_ECMA_NUMBER_TYPE == CONFIG_ECMA_NUMBER_FLOAT64 */
 #endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
-
-#include "ecma-builtin-helpers-macro-undefs.inc.h"

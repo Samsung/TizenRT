@@ -123,7 +123,7 @@ do {                                                                 \
     FOR##_mark = NULL;                                               \
   }                                                                  \
 } while (0)
-  
+
 /* Run the data callback FOR and consume the current byte */
 #define CALLBACK_DATA(FOR)                                           \
     CALLBACK_DATA_(FOR, p - FOR##_mark, p - data + 1)
@@ -171,7 +171,7 @@ do {                                                                 \
 #define CLOSE "close"
 
 
-static const char *method_strings[] =
+static const char * const method_strings[] =
   {
 #define XX(num, name, string) #string,
   HTTP_METHOD_MAP(XX)
@@ -453,11 +453,15 @@ do {                                                                 \
 
 
 /* Map errno values to strings for human-readable output */
+#ifdef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
+#define HTTP_STRERROR_GEN(n, s) { "HPE_" #n, "" },
+#else
 #define HTTP_STRERROR_GEN(n, s) { "HPE_" #n, s },
+#endif
 static struct {
   const char *name;
   const char *description;
-} http_strerror_tab[] = {
+} const http_strerror_tab[] = {
   HTTP_ERRNO_MAP(HTTP_STRERROR_GEN)
 };
 #undef HTTP_STRERROR_GEN
@@ -2157,6 +2161,7 @@ http_errno_name(enum http_errno err) {
   return http_strerror_tab[err].name;
 }
 
+#ifndef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
 const char *
 http_errno_description(enum http_errno err) {
   assert(((size_t) err) <
@@ -2406,6 +2411,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 
   return 0;
 }
+#endif
 
 void
 http_parser_pause(http_parser *parser, int paused) {
@@ -2421,6 +2427,7 @@ http_parser_pause(http_parser *parser, int paused) {
   }
 }
 
+#ifndef HTTPPARSER_ENABLE_MEMORY_CONSTRAINTS
 int
 http_body_is_final(const struct http_parser *parser) {
     return parser->state == s_message_done;
@@ -2432,3 +2439,4 @@ http_parser_version(void) {
          HTTP_PARSER_VERSION_MINOR * 0x00100 |
          HTTP_PARSER_VERSION_PATCH * 0x00001;
 }
+#endif

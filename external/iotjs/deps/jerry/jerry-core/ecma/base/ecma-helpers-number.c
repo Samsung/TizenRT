@@ -31,7 +31,9 @@ JERRY_STATIC_ASSERT (ECMA_DIRECT_SHIFT == ECMA_VALUE_SHIFT + 1,
 
 JERRY_STATIC_ASSERT (((1 << (ECMA_DIRECT_SHIFT - 1)) | ECMA_TYPE_DIRECT) == ECMA_DIRECT_TYPE_SIMPLE_VALUE,
                      currently_directly_encoded_values_start_after_direct_type_simple_value);
-
+/**
+ * Position of the sign bit in ecma-numbers
+ */
 #define ECMA_NUMBER_SIGN_POS (ECMA_NUMBER_FRACTION_WIDTH + \
                               ECMA_NUMBER_BIASED_EXP_WIDTH)
 
@@ -238,7 +240,7 @@ ecma_number_get_sign_field (ecma_number_t num) /**< ecma-number */
                   fraction is filled with anything but not all zero bits,
  *         false - otherwise
  */
-inline bool __attr_always_inline___
+inline bool JERRY_ATTR_ALWAYS_INLINE
 ecma_number_is_nan (ecma_number_t num) /**< ecma-number */
 {
   bool is_nan = (num != num);
@@ -291,7 +293,7 @@ ecma_number_make_infinity (bool sign) /**< true - for negative Infinity,
  * @return true - if sign bit of ecma-number is set
  *         false - otherwise
  */
-inline bool __attr_always_inline___
+inline bool JERRY_ATTR_ALWAYS_INLINE
 ecma_number_is_negative (ecma_number_t num) /**< ecma-number */
 {
   JERRY_ASSERT (!ecma_number_is_nan (num));
@@ -349,7 +351,7 @@ ecma_number_is_infinity (ecma_number_t num) /**< ecma-number */
  *
  * @return shift of dot in the fraction
  */
-int32_t
+static int32_t
 ecma_number_get_fraction_and_exponent (ecma_number_t num, /**< ecma-number */
                                        uint64_t *out_fraction_p, /**< [out] fraction of the number */
                                        int32_t *out_exponent_p) /**< [out] exponent of the number */
@@ -360,7 +362,7 @@ ecma_number_get_fraction_and_exponent (ecma_number_t num, /**< ecma-number */
   uint64_t fraction = ecma_number_get_fraction_field (num);
   int32_t exponent;
 
-  if (unlikely (biased_exp == 0))
+  if (JERRY_UNLIKELY (biased_exp == 0))
   {
     /* IEEE-754 2008, 3.4, d */
     if (ecma_number_is_zero (num))
@@ -408,7 +410,7 @@ ecma_number_get_fraction_and_exponent (ecma_number_t num, /**< ecma-number */
  *
  * @return ecma-number
  */
-ecma_number_t
+static ecma_number_t
 ecma_number_make_normal_positive_from_fraction_and_exponent (uint64_t fraction, /**< fraction */
                                                              int32_t exponent) /**< exponent */
 {
@@ -520,7 +522,7 @@ ecma_number_get_prev (ecma_number_t num) /**< ecma-number */
 
   if (ecma_number_is_negative (num))
   {
-    return ecma_number_negate (ecma_number_get_next (num));
+    return -ecma_number_get_next (num);
   }
 
   uint32_t biased_exp = ecma_number_get_biased_exponent_field (num);
@@ -555,7 +557,7 @@ ecma_number_get_next (ecma_number_t num) /**< ecma-number */
 
   if (ecma_number_is_negative (num))
   {
-    return ecma_number_negate (ecma_number_get_prev (num));
+    return -ecma_number_get_prev (num);
   }
 
   uint32_t biased_exp = ecma_number_get_biased_exponent_field (num);
@@ -580,35 +582,6 @@ ecma_number_get_next (ecma_number_t num) /**< ecma-number */
                            biased_exp,
                            fraction);
 } /* ecma_number_get_next */
-
-/**
- * Negate ecma-number
- *
- * @return negated number
- */
-ecma_number_t
-ecma_number_negate (ecma_number_t num) /**< ecma-number */
-{
-  ecma_number_t negated = -num;
-
-#ifndef JERRY_NDEBUG
-  bool sign;
-  uint32_t biased_exp;
-  uint64_t fraction;
-
-  ecma_number_unpack (num, &sign, &biased_exp, &fraction);
-
-  sign = !sign;
-
-  ecma_number_t negated_ieee754 = ecma_number_pack (sign, biased_exp, fraction);
-
-  JERRY_ASSERT (negated == negated_ieee754
-                || (ecma_number_is_nan (negated)
-                    && ecma_number_is_nan (negated_ieee754)));
-#endif /* !JERRY_NDEBUG */
-
-  return negated;
-} /* ecma_number_negate */
 
 /**
  * Truncate fractional part of the number
@@ -637,7 +610,7 @@ ecma_number_trunc (ecma_number_t num) /**< ecma-number */
                                                                                      exponent);
     if (sign)
     {
-      return ecma_number_negate (tmp);
+      return -tmp;
     }
     else
     {
@@ -670,65 +643,42 @@ ecma_number_calc_remainder (ecma_number_t left_num, /**< left operand */
                 && !ecma_number_is_zero (right_num)
                 && !ecma_number_is_infinity (right_num));
 
-  const ecma_number_t q = ecma_number_trunc (ecma_number_divide (left_num, right_num));
-  ecma_number_t r = ecma_number_substract (left_num, ecma_number_multiply (right_num, q));
+  const ecma_number_t q = ecma_number_trunc (left_num / right_num);
+  ecma_number_t r = left_num - right_num * q;
 
   if (ecma_number_is_zero (r)
       && ecma_number_is_negative (left_num))
   {
-    r = ecma_number_negate (r);
+    r = -r;
   }
 
   return r;
 } /* ecma_number_calc_remainder */
 
 /**
- * ECMA-number addition.
- *
- * @return number - result of addition.
- */
-ecma_number_t
-ecma_number_add (ecma_number_t left_num, /**< left operand */
-                 ecma_number_t right_num) /**< right operand */
-{
-  return left_num + right_num;
-} /* ecma_number_add */
-
-/**
- * ECMA-number substraction.
- *
- * @return number - result of substraction.
- */
-ecma_number_t
-ecma_number_substract (ecma_number_t left_num, /**< left operand */
-                       ecma_number_t right_num) /**< right operand */
-{
-  return ecma_number_add (left_num, ecma_number_negate (right_num));
-} /* ecma_number_substract */
-
-/**
- * ECMA-number multiplication.
+ * ECMA-integer number multiplication.
  *
  * @return number - result of multiplication.
  */
-ecma_number_t
-ecma_number_multiply (ecma_number_t left_num, /**< left operand */
-                      ecma_number_t right_num) /**< right operand */
+inline ecma_value_t JERRY_ATTR_ALWAYS_INLINE
+ecma_integer_multiply (ecma_integer_value_t left_integer, /**< left operand */
+                       ecma_integer_value_t right_integer) /**< right operand */
 {
-  return left_num * right_num;
-} /* ecma_number_multiply */
-
-/**
- * ECMA-number division.
- *
- * @return number - result of division.
- */
-ecma_number_t
-ecma_number_divide (ecma_number_t left_num, /**< left operand */
-                    ecma_number_t right_num) /**< right operand */
-{
-  return left_num / right_num;
-} /* ecma_number_divide */
+#if defined (__GNUC__) || defined (__clang__)
+  /* Check if left_integer is power of 2 */
+  if (JERRY_UNLIKELY ((left_integer & (left_integer - 1)) == 0))
+  {
+    /* Right shift right_integer with log2 (left_integer) */
+    return ecma_make_integer_value (right_integer << (__builtin_ctz ((unsigned int) left_integer)));
+  }
+  else if (JERRY_UNLIKELY ((right_integer & (right_integer - 1)) == 0))
+  {
+    /* Right shift left_integer with log2 (right_integer) */
+    return ecma_make_integer_value (left_integer << (__builtin_ctz ((unsigned int) right_integer)));
+  }
+#endif /* defined (__GNUC__) || defined (__clang__) */
+  return ecma_make_integer_value (left_integer * right_integer);
+} /* ecma_integer_multiply */
 
 /**
  * @}

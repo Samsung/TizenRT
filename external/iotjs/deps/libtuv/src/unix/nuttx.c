@@ -217,12 +217,13 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     if (nfd == -1) {
       int err = get_errno();
-      if (err == EAGAIN ) {
+      if (err == EAGAIN) {
         set_errno(0);
       }
-      else if ( err != EINTR) {
+      else if (err != EINTR) {
+        // poll of which the watchers is null should be removed
         TDLOG("uv__io_poll abort for errno(%d)", err);
-        ABORT();
+        goto handle_poll;
       }
       if (timeout == -1) {
         continue;
@@ -233,21 +234,22 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       goto update_timeout;
     }
 
+handle_poll:
     nevents = 0;
 
     for (i = 0; i < loop->npollfds; ++i) {
       pe = &loop->pollfds[i];
+      w = loop->watchers[pe->fd];
 
-      if (pe->fd >= 0) {
-        if (pe->revents & (POLLIN | POLLOUT | POLLHUP)) {
-          w = loop->watchers[pe->fd];
-          if (w == NULL) {
-            uv__rem_pollfd(loop, pe);
-          } else {
-            w->cb(loop, w, pe->revents);
-            ++nevents;
-          }
-        }
+      if (w == NULL) {
+        uv__rem_pollfd(loop, pe);
+        --i;
+        continue;
+      }
+
+      if (pe->fd >= 0 && (pe->revents & (POLLIN | POLLOUT | POLLHUP))) {    
+        w->cb(loop, w, pe->revents);
+        ++nevents;
       }
     }
 
@@ -274,4 +276,3 @@ update_timeout:
     timeout -= diff;
   }
 }
-

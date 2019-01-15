@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include(CMakeForceCompiler)
-
 set(CMAKE_SYSTEM_NAME mbed)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-SET(CMAKE_C_COMPILER   arm-none-eabi-g++)
-
-# need to force compiler,
-# else it'll try to check and exit with 'unedefined _exit()
-CMAKE_FORCE_C_COMPILER(${CMAKE_C_COMPILER} GNU)
+set(CMAKE_C_COMPILER arm-none-eabi-g++)
+set(CMAKE_C_COMPILER_WORKS TRUE)

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+var Buffer = require('buffer');
+
 
 function isNull(arg) {
   return arg === null;
@@ -25,7 +27,7 @@ function isUndefined(arg) {
 
 
 function isNullOrUndefined(arg) {
-  return isNull(arg) || isUndefined(arg);
+  return arg === null || arg === undefined;
 }
 
 
@@ -57,53 +59,97 @@ function isFunction(arg) {
 }
 
 
-function isBuffer(arg) {
-  return arg instanceof Buffer;
-}
-
-
 function inherits(ctor, superCtor) {
   ctor.prototype = Object.create(superCtor.prototype, {
     constructor: {
       value: ctor,
       enumerable: false,
       writable: true,
-      configurable: true
-    }
+      configurable: true,
+    },
   });
-};
+}
 
+
+function mixin(target) {
+  if (isNullOrUndefined(target)) {
+    throw new TypeError('target cannot be null or undefined');
+  }
+
+  for (var i = 1; i < arguments.length; ++i) {
+    var source = arguments[i];
+    if (!isNullOrUndefined(source)) {
+      for (var prop in source) {
+        if (source.hasOwnProperty(prop)) {
+          target[prop] = source[prop];
+        }
+      }
+    }
+  }
+
+  return target;
+}
 
 function format(s) {
+  var i;
   if (!isString(s)) {
     var arrs = [];
-    for (var i = 0; i < arguments.length; ++i) {
-        arrs.push(formatValue(arguments[i]));
+    for (i = 0; i < arguments.length; ++i) {
+      arrs.push(formatValue(arguments[i]));
     }
     return arrs.join(' ');
   }
 
-  var i = 1;
+  i = 1;
   var args = arguments;
-  var str = String(s).replace(/%[sdj%]/g, function(m) {
-    if (m === '%%') {
-      return '%';
+  var arg_string;
+  var str = '';
+  var start = 0;
+  var end = 0;
+
+  while (end < s.length) {
+    if (s.charAt(end) !== '%') {
+      end++;
+      continue;
     }
-    if (i >= args.length) {
-      return m;
-    }
-    switch (m) {
-      case '%s': return String(args[i++]);
-      case '%d': return Number(args[i++]);
-      case '%j':
+
+    str += s.slice(start, end);
+
+    switch (s.charAt(end + 1)) {
+      case 's':
+        arg_string = String(args[i]);
+        break;
+      case 'd':
+        arg_string = Number(args[i]);
+        break;
+      case 'j':
         try {
-          return JSON.stringify(args[i++]);
+          arg_string = JSON.stringify(args[i]);
         } catch (_) {
-          return '[Circular]';
+          arg_string = '[Circular]';
         }
-      default: return m;
+        break;
+      case '%':
+        str += '%';
+        start = end = end + 2;
+        continue;
+      default:
+        str = str + '%' + s.charAt(end + 1);
+        start = end = end + 2;
+        continue;
     }
-  });
+
+    if (i >= args.length) {
+      str = str + '%' + s.charAt(end + 1);
+    } else {
+      i++;
+      str += arg_string;
+    }
+
+    start = end = end + 2;
+  }
+
+  str += s.slice(start, end);
 
   while (i < args.length) {
     str += ' ' + formatValue(args[i++]);
@@ -113,18 +159,30 @@ function format(s) {
 }
 
 function formatValue(v) {
-  if (isUndefined(v)) {
+  if (v === undefined) {
     return 'undefined';
-  } else if (isNull(v)) {
+  } else if (v === null) {
     return 'null';
+  } else if (Array.isArray(v)) {
+    return '[' + v.toString() + ']';
+  } else if (v instanceof Error) {
+    return v.toString();
+  } else if (typeof v === 'object') {
+    return JSON.stringify(v, null, 2);
   } else {
     return v.toString();
   }
 }
 
 
+function stringToNumber(value, default_value) {
+  var num = Number(value);
+  return isNaN(num) ? default_value : num;
+}
+
+
 function errnoException(err, syscall, original) {
-  var errname = "error"; // uv.errname(err);
+  var errname = 'error'; // uv.errname(err);
   var message = syscall + ' ' + errname;
 
   if (original)
@@ -136,7 +194,7 @@ function errnoException(err, syscall, original) {
   e.syscall = syscall;
 
   return e;
-};
+}
 
 
 function exceptionWithHostPort(err, syscall, address, port, additional) {
@@ -158,7 +216,7 @@ function exceptionWithHostPort(err, syscall, address, port, additional) {
   }
 
   return ex;
-};
+}
 
 
 exports.isNull = isNull;
@@ -170,11 +228,11 @@ exports.isString = isString;
 exports.isObject = isObject;
 exports.isFinite = isFinite;
 exports.isFunction = isFunction;
-exports.isBuffer = isBuffer;
+exports.isBuffer = Buffer.isBuffer;
 exports.isArray = Array.isArray;
 exports.exceptionWithHostPort = exceptionWithHostPort;
 exports.errnoException = errnoException;
-
+exports.stringToNumber = stringToNumber;
 exports.inherits = inherits;
-
+exports.mixin = mixin;
 exports.format = format;

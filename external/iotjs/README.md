@@ -1,20 +1,32 @@
 # IoT.js: Platform for Internet of Things with JavaScript
-[![Join the chat at https://gitter.im/Samsung/iotjs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Samsung/iotjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
-[![Build Status](https://travis-ci.org/Samsung/iotjs.svg?branch=master)](https://travis-ci.org/Samsung/iotjs)
-[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/12140.svg)](https://scan.coverity.com/projects/samsung-iotjs)
+[![Build Status](https://travis-ci.org/pando-project/iotjs.svg?branch=master)](https://travis-ci.org/pando-project/iotjs)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/12140/badge.svg)](https://scan.coverity.com/projects/samsung-iotjs)
+[![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=samsung.iot.js&metric=alert_status)](https://sonarcloud.io/dashboard?id=samsung.iot.js)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FSamsung%2Fiotjs.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FSamsung%2Fiotjs?ref=badge_shield)
+[![IRC Channel](https://img.shields.io/badge/chat-on%20freenode-brightgreen.svg)](https://kiwiirc.com/client/irc.freenode.net/#iotjs)
 
-You can find project details on our [project page](http://samsung.github.io/iotjs/) and [wiki](https://github.com/Samsung/iotjs/wiki).
+You can find project details on our [project page](http://pando-project.github.io/iotjs/) and [wiki](https://github.com/pando-project/iotjs/wiki).
 
-IRC channel: #iotjs on [freenode](https://freenode.net)  
+Memory usage and Binary footprint are measured at [here](https://pando-project.github.io/iotjs-test-results) with real target daily.
+
+The following table shows the latest results on the devices:
+
+|      Artik053         | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fiotjs%2Fartik053.svg?alt=media&token=1)](https://pando-project.github.io/iotjs-test-results/?view=artik053)  |
+|        :---:          |                                             :---:                                                                                                |
+| **Artik530**    | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fiotjs%2Fartik530.svg?alt=media&token=1)](https://pando-project.github.io/iotjs-test-results/?view=artik530)          |
+| **Raspberry Pi 2**    | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fiotjs%2Frpi2.svg?alt=media&token=1)](https://pando-project.github.io/iotjs-test-results/?view=rpi2)          |
+| **STM32F4-Discovery** | [![Remote Testrunner](https://firebasestorage.googleapis.com/v0/b/jsremote-testrunner.appspot.com/o/status%2Fiotjs%2Fstm32f4dis.svg?alt=media&token=1)](https://pando-project.github.io/iotjs-test-results/?view=stm32f4dis)   |
+
+
+IRC channel: #iotjs on [freenode](https://freenode.net)
 Mailing list: iotjs-dev@groups.io, you can subscribe [here](https://groups.io/g/iotjs-dev) and access the mailing list archive [here](https://groups.io/g/iotjs-dev/topics).
 
 ## Quick Start
 ### Getting the sources
 
 ```bash
-git clone https://github.com/Samsung/iotjs.git
+git clone https://github.com/pando-project/iotjs.git
 cd iotjs
 ```
 
@@ -27,14 +39,14 @@ tools/build.py
 ### How to Test
 
 ```bash
-build/x86_64-linux/debug/bin/iotjs tools/check_test.js
+tools/testrunner.py build/x86_64-linux/debug/bin/iotjs
 ```
 
 
-For Additional information see [Getting Started](docs/help/Getting-Started.md).
+For Additional information see [Getting Started](docs/Getting-Started.md).
 
 ## Documentation
-- [Getting Started](docs/help/Getting-Started.md)
+- [Getting Started](docs/Getting-Started.md)
 - [API Reference](docs/api/IoT.js-API-reference.md)
 
 ## License

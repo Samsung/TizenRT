@@ -45,7 +45,7 @@ do_number_arithmetic (number_arithmetic_op op, /**< number arithmetic operation 
                       ecma_value_t left_value, /**< left value */
                       ecma_value_t right_value) /**< right value */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   ECMA_OP_TO_NUMBER_TRY_CATCH (num_left, left_value, ret_value);
   ECMA_OP_TO_NUMBER_TRY_CATCH (num_right, right_value, ret_value);
@@ -56,17 +56,17 @@ do_number_arithmetic (number_arithmetic_op op, /**< number arithmetic operation 
   {
     case NUMBER_ARITHMETIC_SUBSTRACTION:
     {
-      result = ecma_number_substract (num_left, num_right);
+      result = num_left - num_right;
       break;
     }
     case NUMBER_ARITHMETIC_MULTIPLICATION:
     {
-      result = ecma_number_multiply (num_left, num_right);
+      result = num_left * num_right;
       break;
     }
     case NUMBER_ARITHMETIC_DIVISION:
     {
-      result = ecma_number_divide (num_left, num_right);
+      result = num_left / num_right;
       break;
     }
     case NUMBER_ARITHMETIC_REMAINDER:
@@ -127,30 +127,41 @@ opfunc_addition (ecma_value_t left_value, /**< left value */
     }
   }
 
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   if (ecma_is_value_string (left_value)
       || ecma_is_value_string (right_value))
   {
-    ECMA_TRY_CATCH (str_left_value, ecma_op_to_string (left_value), ret_value);
-    ECMA_TRY_CATCH (str_right_value, ecma_op_to_string (right_value), ret_value);
+    ecma_value_t str_left_value = ecma_op_to_string (left_value);
+
+    if (ECMA_IS_VALUE_ERROR (str_left_value))
+    {
+      return str_left_value;
+    }
 
     ecma_string_t *string1_p = ecma_get_string_from_value (str_left_value);
+
+    ecma_value_t str_right_value = ecma_op_to_string (right_value);
+
+    if (ECMA_IS_VALUE_ERROR (str_right_value))
+    {
+      ecma_deref_ecma_string (string1_p);
+      return str_right_value;
+    }
+
     ecma_string_t *string2_p = ecma_get_string_from_value (str_right_value);
 
-    ecma_string_t *concat_str_p = ecma_concat_ecma_strings (string1_p, string2_p);
+    string1_p = ecma_concat_ecma_strings (string1_p, string2_p);
+    ret_value = ecma_make_string_value (string1_p);
 
-    ret_value = ecma_make_string_value (concat_str_p);
-
-    ECMA_FINALIZE (str_right_value);
-    ECMA_FINALIZE (str_left_value);
+    ecma_deref_ecma_string (string2_p);
   }
   else
   {
     ECMA_OP_TO_NUMBER_TRY_CATCH (num_left, left_value, ret_value);
     ECMA_OP_TO_NUMBER_TRY_CATCH (num_right, right_value, ret_value);
 
-    ret_value = ecma_make_number_value (ecma_number_add (num_left, num_right));
+    ret_value = ecma_make_number_value (num_left + num_right);
 
     ECMA_OP_TO_NUMBER_FINALIZE (num_right);
     ECMA_OP_TO_NUMBER_FINALIZE (num_left);
@@ -170,52 +181,29 @@ opfunc_addition (ecma_value_t left_value, /**< left value */
 } /* opfunc_addition */
 
 /**
- * 'Unary "+"' opcode handler.
+ * Unary operation opcode handler.
  *
- * See also: ECMA-262 v5, 11.4, 11.4.6
- *
- * @return ecma value
- *         Returned value must be freed with ecma_free_value
- */
-ecma_value_t
-opfunc_unary_plus (ecma_value_t left_value) /**< left value */
-{
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
-
-  ECMA_OP_TO_NUMBER_TRY_CATCH (num_var_value,
-                               left_value,
-                               ret_value);
-
-  ret_value = ecma_make_number_value (num_var_value);
-
-  ECMA_OP_TO_NUMBER_FINALIZE (num_var_value);
-
-  return ret_value;
-} /* opfunc_unary_plus */
-
-/**
- * 'Unary "-"' opcode handler.
- *
- * See also: ECMA-262 v5, 11.4, 11.4.7
+ * See also: ECMA-262 v5, 11.4, 11.4.6, 11.4.7
  *
  * @return ecma value
  *         Returned value must be freed with ecma_free_value
  */
 ecma_value_t
-opfunc_unary_minus (ecma_value_t left_value) /**< left value */
+opfunc_unary_operation (ecma_value_t left_value, /**< left value */
+                        bool is_plus) /**< unary plus flag */
 {
-  ecma_value_t ret_value = ecma_make_simple_value (ECMA_SIMPLE_VALUE_EMPTY);
+  ecma_value_t ret_value = ECMA_VALUE_EMPTY;
 
   ECMA_OP_TO_NUMBER_TRY_CATCH (num_var_value,
                                left_value,
                                ret_value);
 
-  ret_value = ecma_make_number_value (ecma_number_negate (num_var_value));
+  ret_value = ecma_make_number_value (is_plus ? num_var_value : -num_var_value);
 
   ECMA_OP_TO_NUMBER_FINALIZE (num_var_value);
 
   return ret_value;
-} /* opfunc_unary_minus */
+} /* opfunc_unary_operation */
 
 /**
  * @}

@@ -26,11 +26,6 @@
  */
 
 /**
- * Number of ecma values inlined into stack frame
- */
-#define VM_STACK_FRAME_INLINED_VALUES_NUMBER CONFIG_VM_STACK_FRAME_INLINED_VALUES_NUMBER
-
-/**
  * Header of a ECMA stack frame's chunk
  */
 typedef struct
@@ -62,6 +57,9 @@ typedef enum
   VM_CONTEXT_TRY,                             /**< try context */
   VM_CONTEXT_CATCH,                           /**< catch context */
   VM_CONTEXT_WITH,                            /**< with context */
+#ifndef CONFIG_DISABLE_ES2015_CLASS
+  VM_CONTEXT_SUPER_CLASS,                     /**< super class context */
+#endif /* !CONFIG_DISABLE_ES2015_CLASS */
   VM_CONTEXT_FOR_IN,                          /**< for-in context */
 } vm_stack_context_type_t;
 

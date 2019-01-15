@@ -85,7 +85,7 @@ typedef enum
 typedef struct
 {
   ecma_compiled_code_t header;       /**< compiled code header */
-  jmem_cpointer_t pattern_cp;        /**< original RegExp pattern */
+  ecma_value_t pattern;              /**< original RegExp pattern */
   uint32_t num_of_captures;          /**< number of capturing brackets */
   uint32_t num_of_non_captures;      /**< number of non capturing brackets */
 } re_compiled_code_t;
@@ -103,7 +103,7 @@ typedef struct
 re_opcode_t re_get_opcode (uint8_t **bc_p);
 ecma_char_t re_get_char (uint8_t **bc_p);
 uint32_t re_get_value (uint8_t **bc_p);
-uint32_t re_get_bytecode_length (re_bytecode_ctx_t *bc_ctx_p) __attr_pure___;
+uint32_t JERRY_ATTR_PURE re_get_bytecode_length (re_bytecode_ctx_t *bc_ctx_p);
 
 void re_append_opcode (re_bytecode_ctx_t *bc_ctx_p, re_opcode_t opcode);
 void re_append_u32 (re_bytecode_ctx_t *bc_ctx_p, uint32_t value);

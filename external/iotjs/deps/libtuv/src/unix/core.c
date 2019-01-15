@@ -54,8 +54,8 @@
 #include <limits.h> /* INT_MAX, PATH_MAX, IOV_MAX */
 #if !defined(__TIZENRT__)
 # include <sys/uio.h> /* writev */
+# include <pwd.h>
 #endif
-#include <pwd.h>
 
 #ifdef __sun
 # include <sys/filio.h>
@@ -115,6 +115,12 @@ void uv_close(uv_handle_t* handle, uv_close_cb close_cb) {
   handle->close_cb = close_cb;
 
   switch (handle->type) {
+#ifdef TUV_FEATURE_PIPE
+  case UV_NAMED_PIPE:
+    uv__pipe_close((uv_pipe_t*)handle);
+    break;
+#endif
+
   case UV_TTY:
     uv__stream_close((uv_stream_t*)handle);
     break;
@@ -139,9 +145,25 @@ void uv_close(uv_handle_t* handle, uv_close_cb close_cb) {
     uv__timer_close((uv_timer_t*)handle);
     break;
 
+// { TUV_CHANGES@20180803:
+//   Made signal build time configurable }
+#if TUV_FEATURE_PROCESS
+  case UV_PROCESS:
+    uv__process_close((uv_process_t*)handle);
+    break;
+#endif
+
   case UV_POLL:
     uv__poll_close((uv_poll_t*)handle);
     break;
+
+#ifdef TUV_FEATURE_SIGNAL
+  case UV_SIGNAL:
+    uv__signal_close((uv_signal_t*) handle);
+    /* Signal handles may not be closed immediately. The signal code will */
+    /* itself close uv__make_close_pending whenever appropriate. */
+    return;
+#endif
 
   default:
     assert(0);
@@ -195,11 +217,11 @@ static void uv__finish_close(uv_handle_t* handle) {
     case UV_IDLE:
     case UV_ASYNC:
     case UV_TIMER:
-    // case UV_PROCESS:
+    case UV_PROCESS:
     // case UV_FS_EVENT:
     // case UV_FS_POLL:
     case UV_POLL:
-    // case UV_SIGNAL:
+    case UV_SIGNAL:
       break;
 
     case UV_NAMED_PIPE:
