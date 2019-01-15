@@ -19,7 +19,8 @@
  * \file ecjpake.h
  *
  * \brief Elliptic curve J-PAKE
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -60,6 +61,8 @@
 #include "ecp.h"
 #include "md.h"
 
+#if !defined(MBEDTLS_ECJPAKE_ALT)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,8 +71,8 @@ extern "C" {
  * Roles in the EC J-PAKE exchange
  */
 typedef enum {
-	MBEDTLS_ECJPAKE_CLIENT = 0,		/**< Client                         */
-	MBEDTLS_ECJPAKE_SERVER,			/**< Server                         */
+    MBEDTLS_ECJPAKE_CLIENT = 0,         /**< Client                         */
+    MBEDTLS_ECJPAKE_SERVER,             /**< Server                         */
 } mbedtls_ecjpake_role;
 
 /**
@@ -83,23 +86,23 @@ typedef enum {
  * convetion from the Thread v1.0 spec. Correspondance is indicated in the
  * description as a pair C: client name, S: server name
  */
-typedef struct {
-	const mbedtls_md_info_t *md_info;
-	/**< Hash to use                    */
-	mbedtls_ecp_group grp;			/**< Elliptic curve                 */
-	mbedtls_ecjpake_role role;		/**< Are we client or server?       */
-	int point_format;				/**< Format for point export        */
+typedef struct
+{
+    const mbedtls_md_info_t *md_info;   /**< Hash to use                    */
+    mbedtls_ecp_group grp;              /**< Elliptic curve                 */
+    mbedtls_ecjpake_role role;          /**< Are we client or server?       */
+    int point_format;                   /**< Format for point export        */
 
-	mbedtls_ecp_point Xm1;			/**< My public key 1   C: X1, S: X3 */
-	mbedtls_ecp_point Xm2;			/**< My public key 2   C: X2, S: X4 */
-	mbedtls_ecp_point Xp1;			/**< Peer public key 1 C: X3, S: X1 */
-	mbedtls_ecp_point Xp2;			/**< Peer public key 2 C: X4, S: X2 */
-	mbedtls_ecp_point Xp;			/**< Peer public key   C: Xs, S: Xc */
+    mbedtls_ecp_point Xm1;              /**< My public key 1   C: X1, S: X3 */
+    mbedtls_ecp_point Xm2;              /**< My public key 2   C: X2, S: X4 */
+    mbedtls_ecp_point Xp1;              /**< Peer public key 1 C: X3, S: X1 */
+    mbedtls_ecp_point Xp2;              /**< Peer public key 2 C: X4, S: X2 */
+    mbedtls_ecp_point Xp;               /**< Peer public key   C: Xs, S: Xc */
 
-	mbedtls_mpi xm1;				/**< My private key 1  C: x1, S: x3 */
-	mbedtls_mpi xm2;				/**< My private key 2  C: x2, S: x4 */
+    mbedtls_mpi xm1;                    /**< My private key 1  C: x1, S: x3 */
+    mbedtls_mpi xm2;                    /**< My private key 2  C: x2, S: x4 */
 
-	mbedtls_mpi s;					/**< Pre-shared secret (passphrase) */
+    mbedtls_mpi s;                      /**< Pre-shared secret (passphrase) */
 } mbedtls_ecjpake_context;
 
 /**
@@ -108,7 +111,7 @@ typedef struct {
  *
  * \param ctx       context to initialize
  */
-void mbedtls_ecjpake_init(mbedtls_ecjpake_context *ctx);
+void mbedtls_ecjpake_init( mbedtls_ecjpake_context *ctx );
 
 /**
  * \brief           Set up a context for use
@@ -126,9 +129,14 @@ void mbedtls_ecjpake_init(mbedtls_ecjpake_context *ctx);
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_setup(mbedtls_ecjpake_context *ctx, mbedtls_ecjpake_role role, mbedtls_md_type_t hash, mbedtls_ecp_group_id curve, const unsigned char *secret, size_t len);
+int mbedtls_ecjpake_setup( mbedtls_ecjpake_context *ctx,
+                           mbedtls_ecjpake_role role,
+                           mbedtls_md_type_t hash,
+                           mbedtls_ecp_group_id curve,
+                           const unsigned char *secret,
+                           size_t len );
 
-/*
+/**
  * \brief           Check if a context is ready for use
  *
  * \param ctx       Context to check
@@ -136,7 +144,7 @@ int mbedtls_ecjpake_setup(mbedtls_ecjpake_context *ctx, mbedtls_ecjpake_role rol
  * \return          0 if the context is ready for use,
  *                  MBEDTLS_ERR_ECP_BAD_INPUT_DATA otherwise
  */
-int mbedtls_ecjpake_check(const mbedtls_ecjpake_context *ctx);
+int mbedtls_ecjpake_check( const mbedtls_ecjpake_context *ctx );
 
 /**
  * \brief           Generate and write the first round message
@@ -153,7 +161,10 @@ int mbedtls_ecjpake_check(const mbedtls_ecjpake_context *ctx);
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_write_round_one(mbedtls_ecjpake_context *ctx, unsigned char *buf, size_t len, size_t *olen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecjpake_write_round_one( mbedtls_ecjpake_context *ctx,
+                            unsigned char *buf, size_t len, size_t *olen,
+                            int (*f_rng)(void *, unsigned char *, size_t),
+                            void *p_rng );
 
 /**
  * \brief           Read and process the first round message
@@ -167,7 +178,9 @@ int mbedtls_ecjpake_write_round_one(mbedtls_ecjpake_context *ctx, unsigned char 
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_read_round_one(mbedtls_ecjpake_context *ctx, const unsigned char *buf, size_t len);
+int mbedtls_ecjpake_read_round_one( mbedtls_ecjpake_context *ctx,
+                                    const unsigned char *buf,
+                                    size_t len );
 
 /**
  * \brief           Generate and write the second round message
@@ -183,7 +196,10 @@ int mbedtls_ecjpake_read_round_one(mbedtls_ecjpake_context *ctx, const unsigned 
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_write_round_two(mbedtls_ecjpake_context *ctx, unsigned char *buf, size_t len, size_t *olen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecjpake_write_round_two( mbedtls_ecjpake_context *ctx,
+                            unsigned char *buf, size_t len, size_t *olen,
+                            int (*f_rng)(void *, unsigned char *, size_t),
+                            void *p_rng );
 
 /**
  * \brief           Read and process the second round message
@@ -196,7 +212,9 @@ int mbedtls_ecjpake_write_round_two(mbedtls_ecjpake_context *ctx, unsigned char 
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_read_round_two(mbedtls_ecjpake_context *ctx, const unsigned char *buf, size_t len);
+int mbedtls_ecjpake_read_round_two( mbedtls_ecjpake_context *ctx,
+                                    const unsigned char *buf,
+                                    size_t len );
 
 /**
  * \brief           Derive the shared secret
@@ -212,25 +230,43 @@ int mbedtls_ecjpake_read_round_two(mbedtls_ecjpake_context *ctx, const unsigned 
  * \return          0 if successfull,
  *                  a negative error code otherwise
  */
-int mbedtls_ecjpake_derive_secret(mbedtls_ecjpake_context *ctx, unsigned char *buf, size_t len, size_t *olen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecjpake_derive_secret( mbedtls_ecjpake_context *ctx,
+                            unsigned char *buf, size_t len, size_t *olen,
+                            int (*f_rng)(void *, unsigned char *, size_t),
+                            void *p_rng );
 
 /**
  * \brief           Free a context's content
  *
  * \param ctx       context to free
  */
-void mbedtls_ecjpake_free(mbedtls_ecjpake_context *ctx);
+void mbedtls_ecjpake_free( mbedtls_ecjpake_context *ctx );
+
+#ifdef __cplusplus
+}
+#endif
+
+#else  /* MBEDTLS_ECJPAKE_ALT */
+#include "ecjpake_alt.h"
+#endif /* MBEDTLS_ECJPAKE_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if a test failed
  */
-int mbedtls_ecjpake_self_test(int verbose);
-#endif
+int mbedtls_ecjpake_self_test( int verbose );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* ecjpake.h */
+
+#endif /* MBEDTLS_SELF_TEST */
+
+#endif /* ecjpake.h */

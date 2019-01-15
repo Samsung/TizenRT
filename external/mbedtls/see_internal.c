@@ -129,7 +129,7 @@ int see_compute_ecdh_param_internal(struct sECC_KEY *ecc_pub, unsigned char *key
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
 }
-#endif /* CONFIG_HW_ECDH_PARAM */
+#endif							/* CONFIG_HW_ECDH_PARAM */
 
 #if defined(CONFIG_HW_DH_PARAM)
 int see_supported_dhm_size(int size)
@@ -211,7 +211,7 @@ int see_compute_dhm_param_internal(struct sDH_PARAM *d_param, unsigned char *key
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
 }
-#endif /* CONFIG_HW_DH_PARAM */
+#endif							/* CONFIG_HW_DH_PARAM */
 
 int see_setup_key_internal(unsigned char *key_der, unsigned int key_len, unsigned int key_type, unsigned char *key_buf)
 {
@@ -283,7 +283,7 @@ int see_verify_ecdsa_signature_internal(struct sECC_SIGN *ecc_sign, unsigned cha
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
 }
-#endif /* CONFIG_HW_ECDSA_VERIFICATION */
+#endif							/* CONFIG_HW_ECDSA_VERIFICATION */
 
 #if defined(CONFIG_HW_RSA_VERIFICATION)
 int see_verify_rsa_signature_internal(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned char *key_buf)

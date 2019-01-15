@@ -308,7 +308,7 @@ int see_mutex_unlock(see_mutex_t *m)
 int see_check_certindex(unsigned int index)
 {
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
-	if (index >= MIN_CERT_INDEX && index < SEE_MAX_CERT_INDEX) {
+	if (index < SEE_MAX_CERT_INDEX) {
 		return SEE_OK;
 	}
 #endif
@@ -355,7 +355,7 @@ int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int
 	}
 
 	ISP_CHECKBUSY();
-	if (cert_index >= MIN_CERT_INDEX && cert_index < MAX_CERT_INDEX) {
+	if (cert_index >= SEE_MIN_CERT_INDEX && cert_index < SEE_MAX_CERT_INDEX) {
 		r = isp_write_cert(cert, cert_len, cert_index);
 		if (r != 0) {
 			isp_clear(0);
@@ -388,7 +388,7 @@ int see_write_secure_storage(unsigned char *data, unsigned int data_len, unsigne
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (index >= MAX_DATA_INDEX || data_len > MAX_DATA_SIZE) {
+	if (index >= SEE_MAX_DATA_INDEX || data_len > SEE_MAX_DATA_SIZE) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -424,11 +424,11 @@ int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigne
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (index >= MAX_DATA_INDEX) {
+	if (index >= SEE_MAX_DATA_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	t_buf = malloc(MAX_DATA_SIZE);
+	t_buf = malloc(SEE_MAX_DATA_SIZE);
 
 	if (t_buf == NULL) {
 		return SEE_ALLOC_ERROR;
@@ -540,7 +540,7 @@ int see_generate_key(unsigned int key_type, unsigned int key_index, unsigned int
 	unsigned int key = key_type & 0xFF0000;
 	unsigned int object_id = key_type & 0xFF;
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -595,7 +595,7 @@ int see_setup_key(unsigned char *key_der, unsigned int key_len, unsigned int key
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -632,7 +632,7 @@ int see_remove_key(unsigned int key_index, unsigned int key_type)
 {
 	int r;
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -747,7 +747,7 @@ int see_get_hmac(struct sHMAC_MSG *hmac_msg, unsigned char *output, unsigned int
 		return SEE_ERROR;
 	}
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -818,7 +818,7 @@ int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index)
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -855,7 +855,7 @@ int see_compute_dhm_param(struct sDH_PARAM *d_param, unsigned int key_index, uns
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (key_index >= MAX_KEY_INDEX) {
+	if (key_index >= SEE_MAX_KEY_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -1162,7 +1162,7 @@ int see_generate_certificate(struct cert_opt opt, unsigned char *out_buf, unsign
 	mbedtls_x509write_cert crt;
 	mbedtls_mpi serial;
 
-	if (opt.cert_index < MIN_CERT_INDEX || opt.cert_index >= MAX_CERT_INDEX) {
+	if (opt.cert_index < SEE_MIN_CERT_INDEX || opt.cert_index >= SEE_MAX_CERT_INDEX) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
@@ -1177,7 +1177,11 @@ int see_generate_certificate(struct cert_opt opt, unsigned char *out_buf, unsign
 	mbedtls_x509write_crt_set_md_alg(&crt, MBEDTLS_MD_SHA256);
 	mbedtls_mpi_init(&serial);
 
-	mbedtls_pk_setup(&issuer_key, &mbedtls_rsa_info);
+	r = mbedtls_pk_setup(&issuer_key, &mbedtls_rsa_info);
+	if (r != 0) {
+		SEE_DEBUG("mbedtls_pk_setup -0x%x\n", -r);
+		return SEE_ERROR;
+	}
 
 	/* Check mandatory params */
 	if (!opt.subject_key_index && !opt.issuer_key_index) {
