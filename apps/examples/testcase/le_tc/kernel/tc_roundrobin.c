@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
 #include "../../../../../os/kernel/clock/clock.h"
 #include "tc_internal.h"
 
@@ -161,17 +163,22 @@ static void write_log(void)
 {
 	int prev = -1;
 	int timeslice_cnt = 0;
-	volatile struct tcb_s *cur_tcb = sched_self();
+	int timeslice;
+	int pid;
+	int fd;
+	fd = tc_get_drvfd();
+	pid = getpid();
 	do {
 		usleep(1);
 	} while (start < created);
 	while (timeslice_cnt < LOOP) {
-		if (prev != cur_tcb->timeslice) {
-			log_pid[logidx] = PIDHASH(cur_tcb->pid);
-			log_timeslice[logidx] = cur_tcb->timeslice;
+		timeslice = ioctl(fd, TESTIOC_GET_TCB_TIMESLICE, pid);
+		if (prev != timeslice) {
+			log_pid[logidx] = PIDHASH(pid);
+			log_timeslice[logidx] = timeslice;
 			logidx++;
 			timeslice_cnt++;
-			prev = cur_tcb->timeslice;
+			prev = timeslice;
 		}
 	}
 }
@@ -263,6 +270,8 @@ static void tc_roundrobin_rr_task(void)
 {
 	int tc;
 	int ret;
+	int fd;
+	fd = tc_get_drvfd();
 	ret = pthread_attr_set();
 	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
 
@@ -286,8 +295,7 @@ static void tc_roundrobin_rr_task(void)
 
 		for (task_cnt = 0; task_cnt < NTHREAD; task_cnt++) {
 			if (task_pid[task_cnt] != ERROR) {
-				FAR struct tcb_s *ptr;
-				while ((ptr = sched_gettcb(task_pid[task_cnt])) != NULL) {
+				while (ioctl(fd, TESTIOC_IS_ALIVE_THREAD, task_pid[task_cnt]) != ERROR) {
 					usleep(100);
 				}
 			}

@@ -98,6 +98,6 @@ int itc_semaphore_main(void);
 int itc_sched_main(void);
 int itc_timer_main(void);
 int itc_pthread_main(void);
-
+int tc_get_drvfd(void);
 
 #endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */

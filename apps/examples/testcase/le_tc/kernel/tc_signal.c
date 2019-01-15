@@ -29,6 +29,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
 #include "../../os/kernel/signal/signal.h"
 #include "tc_internal.h"
 
@@ -162,10 +164,12 @@ static void tc_signal_sigaction(void)
 	struct sigaction st_oact;
 	FAR sigactq_t *sigact_before;
 	FAR sigactq_t *sigact_after;
+	int fd;
+	fd = tc_get_drvfd();
 
 	/* save orginal action */
-	sigact_before = sig_findaction(sched_self(), SIGINT);
-
+	sigact_before = (FAR sigactq_t *)ioctl(fd, TESTIOC_GET_SIG_FINDACTION_ADD, SIGINT);
+	TC_ASSERT_EQ("sig_findaction", sigact_before, NULL);
 	st_act.sa_handler = sigaction_handler;
 	st_act.sa_flags = 0;
 	sigemptyset(&st_act.sa_mask);
@@ -181,7 +185,8 @@ static void tc_signal_sigaction(void)
 	TC_ASSERT_EQ("sigaction", st_act.sa_handler, sigaction_handler);
 
 	/* make sure action is not changed */
-	sigact_after = sig_findaction(sched_self(), SIGINT);
+	sigact_after = (FAR sigactq_t *)ioctl(fd, TESTIOC_GET_SIG_FINDACTION_ADD, SIGINT);
+	TC_ASSERT_EQ("sig_findaction", sigact_after, NULL);
 	TC_ASSERT_EQ("sig_findaction", sigact_before, sigact_after);
 
 	TC_SUCCESS_RESULT();
@@ -264,12 +269,15 @@ static void tc_signal_nanosleep(void)
 static void tc_signal_pause(void)
 {
 	int ret_chk = ERROR;
+	int fd;
 
 	sigset_t saved;
 	sigset_t newmask;
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
 	clockid_t clock_id = CLOCK_REALTIME;
+
+	fd = tc_get_drvfd();
 	g_sig_pid = getpid();
 
 	sigemptyset(&newmask);
@@ -285,9 +293,8 @@ static void tc_signal_pause(void)
 
 	/* Wait for a signal */
 
-	ret_chk = pause();
-	TC_ASSERT_EQ("pause", ret_chk, ERROR);
-	TC_ASSERT_EQ("pause", get_errno(), EINTR);
+	ret_chk = ioctl(fd, TESTIOC_SIGNAL_PAUSE, 0);
+	TC_ASSERT_EQ("pause", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_final_timespec);
 	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec < SEC_5) {
@@ -297,7 +304,7 @@ static void tc_signal_pause(void)
 
 	/* Restore sigprocmask */
 
-	ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
+	ret_chk = sigprocmask(SIG_SETMASK, &saved, 0);
 	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
@@ -530,23 +537,30 @@ static void tc_signal_sighold_sigrelse(void)
 	sigset_t org_set;
 	sigset_t hold_set;
 	sigset_t relse_set;
-	struct tcb_s *cur_tcb;
 	int ret_chk;
+	int fd;
+	int pid = getpid();
 
-	cur_tcb = sched_self();
-	org_set = cur_tcb->sigprocmask;
+	fd = tc_get_drvfd();
+	ret_chk = ioctl(fd, TESTIOC_GET_TCB_SIGPROCMASK, pid);
+	TC_ASSERT_NEQ("sigprocmask", ret_chk, ERROR);
+	org_set = (sigset_t)ret_chk;
 
 	ret_chk = sighold(SIGUSR1);
 
 	TC_ASSERT_EQ("sighold", ret_chk, OK);
 
-	hold_set = cur_tcb->sigprocmask;
+	ret_chk = ioctl(fd, TESTIOC_GET_TCB_SIGPROCMASK, pid);
+	TC_ASSERT_NEQ("sigprocmask", ret_chk, ERROR);
+	hold_set = (sigset_t)ret_chk;
 	TC_ASSERT_NEQ("sighold", org_set, hold_set);
 
 	ret_chk = sigrelse(SIGUSR1);
 	TC_ASSERT_EQ("sigrelease", ret_chk, OK);
 
-	relse_set = cur_tcb->sigprocmask;
+	ret_chk = ioctl(fd, TESTIOC_GET_TCB_SIGPROCMASK, pid);
+	TC_ASSERT_NEQ("sigprocmask", ret_chk, ERROR);
+	relse_set = (sigset_t)ret_chk;
 	TC_ASSERT_NEQ("sighold", hold_set, relse_set);
 	TC_ASSERT_EQ("Sigrelease", org_set, relse_set);
 
