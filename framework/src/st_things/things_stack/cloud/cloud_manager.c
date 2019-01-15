@@ -655,6 +655,14 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 
 		esm_save_easysetup_state(ES_COMPLETE);
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+		if (getSecureStorageType() == 1) {
+			THINGS_LOG_D(TAG, "Secure Data Sync");
+			secure_sync();
+			setSecureStorageType(0);
+		}
+#endif
+
 		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
 
 		// [ysy] Plublish resources to cloud

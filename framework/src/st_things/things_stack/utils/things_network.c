@@ -458,8 +458,9 @@ int things_network_initialize(void)
 {
 	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
 		THINGS_LOG_E(TAG, "Failed to initialize WiFi manager");
-		return 0;
+		return 1;
 	}
+	return 0;
 }
 
 

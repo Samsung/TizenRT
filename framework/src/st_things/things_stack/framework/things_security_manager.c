@@ -40,17 +40,19 @@
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
+#include "things_data_manager.h"
 
 #include <wifi_manager/wifi_manager.h>
 
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
 #include <mbedtls/see_api.h>
-#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
-#define USE_SSS
-#endif
 #endif
 
 #define TAG "[OIC_SEC_MGR]"
+
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+#include "security/sss_security/sss_storage_server.h"
+#endif
 
 typedef enum {
 	OIC_SEC_OK = 0,
@@ -174,12 +176,21 @@ const unsigned char OIC_SVR_DB_DOXM_PAYLOAD[] = {
 	0x65, 0xFF, 0xFF
 };
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+FILE *server_secure_fopen(const char *path, const char *mode)	// pkss
+{
+	THINGS_LOG_D(TAG, "F SVR DB File Path : %s", SVR_DB_PATH);
+	(void)path;
+	return secure_fopen(SVR_DB_PATH, mode);
+}
+#else
 FILE *server_fopen(const char *path, const char *mode)	// pkss
 {
 	THINGS_LOG_D(TAG, "F SVR DB File Path : %s", SVR_DB_PATH);
 	(void)path;
 	return fopen(SVR_DB_PATH, mode);
 }
+#endif
 
 size_t server_fread(FAR void *ptr, size_t size, size_t n_items, FAR FILE *stream)
 {
@@ -443,7 +454,7 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 		}
 	}
 
-#ifdef USE_SSS
+#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (dm_get_easy_setup_use_artik_crt()) {
 		oc_res = save_signed_asymmetric_key(device_id);
 		if (OC_STACK_OK != oc_res) {
@@ -633,7 +644,15 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		g_is_mfg_cert_required = true;
 	}
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+	static OCPersistentStorage ps = { server_secure_fopen,
+		secure_fread,
+		secure_fwrite,
+		secure_fclose,
+		server_unlink };
+#else
 	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, server_unlink };
+#endif
 	res = SM_InitSvrDb(&ps);
 	if (OIC_SEC_OK != res) {
 		THINGS_LOG_E(TAG, "Failed to create SVR DB.");
@@ -699,7 +718,7 @@ int SM_InitSvrDb(OCPersistentStorage *ps)
 	return OIC_SEC_OK;
 }
 
-int sm_reset_svrdb()
+int sm_reset_svrdb(void)
 {
 	THINGS_LOG_D(TAG, "In %s", __func__);
 	OCStackResult oc_res = ResetSecureResourceInPS();
@@ -794,6 +813,8 @@ const unsigned char g_regional_test_root_ca[] = {
  *
  * NOTE : This API should be invoked after sm_generate_mac_based_device_id invoked.
  */
+static bool g_b_init_key;
+static bool g_b_init_cert;
 
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 {
@@ -822,17 +843,19 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	THINGS_LOG_D(TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
 #endif
 
-#ifdef USE_SSS
+#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (dm_get_easy_setup_use_artik_crt()) {
-		if (things_sss_key_handler_init() < 0) {
+		if (!g_b_init_key && things_sss_key_handler_init() < 0) {
 			THINGS_LOG_E(TAG, "InitializeSSSKeyHandlers() Fail");
 			return OC_STACK_ERROR;
 		}
+		g_b_init_key = true;
 
-		if (things_sss_rootca_handler_init(subject_uuid) < 0) {
+		if (!g_b_init_cert && things_sss_rootca_handler_init(subject_uuid) < 0) {
 			THINGS_LOG_E(TAG, "SSSRootCAHandler() Fail");
 			return OC_STACK_ERROR;
 		}
+		g_b_init_cert = true;
 	} else
 #endif
 	{

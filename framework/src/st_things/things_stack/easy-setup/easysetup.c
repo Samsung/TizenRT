@@ -303,7 +303,7 @@ es_result_e es_set_cloud_error_code(ci_error_code_e es_err_code)
 	return ES_OK;
 }
 
-es_result_e es_terminate_enrollee()
+es_result_e es_terminate_enrollee(void)
 {
 	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_terminate_enrollee IN");
 

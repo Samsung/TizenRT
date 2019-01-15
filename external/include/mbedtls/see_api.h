@@ -88,7 +88,7 @@ typedef enum {
 #define ISP_CHECKBUSY()
 #endif
 
-#ifdef CONFIG_SUPPORT_FULL_SECURITY
+#ifdef CONFIG_TLS_WITH_SSS
 
 /* Key type */
 #define AES_KEY           0x010000

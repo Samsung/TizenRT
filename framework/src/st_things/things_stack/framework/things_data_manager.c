@@ -337,7 +337,7 @@ static const char *internal_resource_json_str = "{\n\
 		]\n\
 	}";
 
-static struct things_attribute_info_s *create_property()
+static struct things_attribute_info_s *create_property(void)
 {
 	struct things_attribute_info_s *property = things_malloc(sizeof(things_attribute_info_s));
 
@@ -349,7 +349,7 @@ static struct things_attribute_info_s *create_property()
 	return property;
 }
 
-static struct st_resource_type_s *create_resource_type()
+static struct st_resource_type_s *create_resource_type(void)
 {
 	struct st_resource_type_s *type = things_malloc(sizeof(st_resource_type_s));
 
@@ -396,7 +396,7 @@ static void delete_resource_type_map(void)
 	things_free(keyset);
 }
 
-static struct things_resource_info_s *create_resource()
+static struct things_resource_info_s *create_resource(void)
 {
 	struct things_resource_info_s *resource = things_malloc(sizeof(things_resource_info_s));
 
@@ -415,7 +415,7 @@ static struct things_resource_info_s *create_resource()
 	return resource;
 }
 
-static st_device_s *create_device()
+static st_device_s *create_device(void)
 {
 	st_device_s *device = things_malloc(sizeof(st_device_s));
 
@@ -1930,10 +1930,8 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data)
 
 const char *dm_get_things_device_type(int device_id)
 {
-	if (strncmp(g_device->device_id, device_id, MAX_DEVICE_ID_LENGTH) != 0) {
-		THINGS_LOG_V(TAG, "unknown device_id : %d", device_id);
+	if (device_id != 0)
 		return NULL;
-	}
 
 	return g_device->type;
 }
@@ -2005,37 +2003,23 @@ bool dm_register_device_id(void)
 {
 	int i = 0;
 	char *id = NULL;
-	st_device_s **dev_list = NULL;
 
-	if ((dev_list = (st_device_s **)things_malloc(sizeof(st_device_s *))) == NULL) {
-		THINGS_LOG_E(TAG, "st_device_s mem allocation is failed.");
-		return false;
-	}
 	// Set Main-Device ID
 	iotivity_api_lock();
 	id = OCGetServerInstanceIDString();
 	iotivity_api_unlock();
-	dev_list[0] = dm_get_info_of_dev(0);
-
-	if (id == NULL || dev_list[0] == NULL) {
-		THINGS_LOG_V(TAG, "Error : id = %s, Main-device =0x%X", id, dev_list[0]);
-		goto GOTO_ERROR;
+	if (id == NULL) {
+		THINGS_LOG_V(TAG, "Error : id is NULL");
+		return false;
 	}
 
-	if (dev_list[0]->device_id != NULL) {
-		things_free(dev_list[0]->device_id);
-	}
-	dev_list[0]->device_id = things_malloc(sizeof(char) * (strlen(id) + 1));
-	strncpy(dev_list[0]->device_id, id, strlen(id) + 1);
+	if (g_device->device_id)
+		things_free(g_device->device_id);
 
-	things_free(dev_list);
-	dev_list = NULL;
+	g_device->device_id = things_malloc(sizeof(char) * (strlen(id) + 1));
+	strncpy(g_device->device_id, id, strlen(id) + 1);
+
 	return true;
-
-GOTO_ERROR:
-	things_free(dev_list);
-	dev_list = NULL;
-	return false;
 }
 
 int dm_register_resource(things_server_builder_s *p_builder)
@@ -2291,17 +2275,17 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 	return 0;
 }
 
-const int dm_get_wifi_property_interface()
+const int dm_get_wifi_property_interface(void)
 {
 	return g_wifi_interface;
 }
 
-const wifi_freq_e dm_get_wifi_property_freq()
+const wifi_freq_e dm_get_wifi_property_freq(void)
 {
 	return g_wifi_freq;
 }
 
-const int dm_get_ownership_transfer_method()
+const int dm_get_ownership_transfer_method(void)
 {
 	THINGS_LOG_V(TAG, "ownership_transfer_method : %d", g_ownership_transfer_method);
 	return g_ownership_transfer_method;
@@ -2405,22 +2389,22 @@ char *dm_get_mnid()
 	return g_device->mnid;
 }
 
-char *dm_get_firmware_version()
+char *dm_get_firmware_version(void)
 {
 	return g_firmware_version;
 }
 
-char *dm_get_vendor_id()
+char *dm_get_vendor_id(void)
 {
 	return g_device->vid;
 }
 
-char *dm_get_model_number()
+char *dm_get_model_number(void)
 {
 	return g_model_number;
 }
 
-char *dm_get_access_token()
+char *dm_get_access_token(void)
 {
 	es_cloud_signup_s *cloud_data = NULL;
 	char *cloud_access_token = NULL;
@@ -2433,7 +2417,7 @@ char *dm_get_access_token()
 	return cloud_access_token;
 }
 
-char *dm_get_uid()
+char *dm_get_uid(void)
 {
 	es_cloud_signup_s *cloud_data = NULL;
 	char *cloud_uid = NULL;

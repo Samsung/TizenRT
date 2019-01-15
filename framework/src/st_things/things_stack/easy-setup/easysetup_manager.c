@@ -41,12 +41,15 @@
 #include "framework/things_data_manager.h"
 #include "utils/things_malloc.h"
 #include "utils/things_rtos_util.h"
-#include "framework/things_data_manager.h"
 
 #ifdef __SECURED__
 #include "pinoxmcommon.h"
 #include "oxmverifycommon.h"
 #endif							// #ifdef __SECURED__
+
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+#include "security/sss_security/sss_storage_server.h"
+#endif
 
 #define TAG "[ezsetup-mg]"
 #define MAX_REFRESHCHECK_CNT    30	// 30 times
@@ -63,9 +66,6 @@ static pin_close_func_type g_pin_close_cb = NULL;
 static user_confirm_result_func_type g_user_confirm_cb = NULL;
 
 int esm_continue = 0;
-#ifdef __ST_THINGS_RTOS__
-int ci_token_expire_fds[2] = { -1, -1 };
-#endif
 static pthread_t gthread_id_network_status_check = 0;
 static pthread_t gthread_id_cloud_refresh_check = 0;
 
@@ -318,6 +318,12 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	SetVerifyOption(USER_CONFIRM);
 #endif //#ifdef __SECURED__
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+	if (getSecureStorageType() == 0) {
+		THINGS_LOG_D(TAG, "Secure Storage Set to 1");
+		setSecureStorageType(1);
+	}
+#endif
 	es_set_state(ES_STATE_INIT);
 	es_set_error_code(ES_ERRCODE_NO_ERROR);
 

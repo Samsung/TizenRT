@@ -262,7 +262,11 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	if (es_state != ES_COMPLETE) {
 		esm_save_easysetup_state(ES_NOT_COMPLETE);
 		THINGS_LOG_D(TAG, "delete svrdb");
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+		secure_remove(NULL);
+#else
 		unlink(dm_get_svrdb_file_path());
+#endif
 	}
 
 #ifdef CONFIG_ST_THINGS_FOTA
@@ -384,7 +388,7 @@ int things_start_stack(void)
 	return 1;
 }
 
-int things_start_scanning_ap()
+int things_start_scanning_ap(void)
 {
 	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
 		THINGS_LOG_E(TAG, "Failed to create thread");
