@@ -111,6 +111,9 @@ uintptr_t STUB_task_create(int nbr, uintptr_t parm1, uintptr_t parm2,
 						   uintptr_t parm3, uintptr_t parm4, uintptr_t parm5);
 uintptr_t STUB_task_delete(int nbr, uintptr_t parm1);
 uintptr_t STUB_task_restart(int nbr, uintptr_t parm1);
+uintptr_t STUB_task_testcancel(int nbr);
+uintptr_t STUB_task_setcancelstate(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_task_setcanceltype(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_up_assert(int nbr, uintptr_t parm1, uintptr_t parm2);
 
 /* The following can be individually enabled */
@@ -191,6 +194,10 @@ uintptr_t STUB_aio_read(int nbr, uintptr_t parm1);
 uintptr_t STUB_aio_write(int nbr, uintptr_t parm1);
 uintptr_t STUB_aio_fsync(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_aio_cancel(int nbr, uintptr_t parm1, uintptr_t parm2);
+
+/* Board support */
+
+uintptr-t STUB_boardctl(int nbr, uintptr_t parm1, uinptr_1 parm2);
 
 /* The following are defined if file descriptors are enabled */
 

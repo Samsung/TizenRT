@@ -144,8 +144,18 @@
 
 #define SYS_task_delete                __SYS_task_delete
 #define SYS_task_restart               (__SYS_task_delete + 1)
-#define SYS_up_assert                  (__SYS_task_delete + 2)
-#define __SYS_vfork                    (__SYS_task_delete + 3)
+#ifdef CONFIG_CANCELLATION_POINTS
+#define SYS_task_testcancel            (__SYS_task_delete + 2)
+#define SYS_task_setcanceltype         (__SYS_task_delete + 3)
+#define SYS_task_setcancelstate        (__SYS_task_delete + 4)
+#define SYS_up_assert                  (__SYS_task_delete + 5)
+#define __SYS_vfork                    (__SYS_task_delete + 6)
+#else
+#define SYS_task_setcancelstate        (__SYS_task_delete + 2)
+#define SYS_up_assert                  (__SYS_task_delete + 3)
+#define __SYS_vfork                    (__SYS_task_delete + 4)
+#endif
+
 
 /* The following can be individually enabled */
 
@@ -258,12 +268,20 @@
 #ifndef CONFIG_DISABLE_POLL
 #define SYS_poll                       __SYS_poll
 #define SYS_select                     (__SYS_poll + 1)
-#define __SYS_filedesc                 (__SYS_poll + 2)
+#define __SYS_boardctl                 (__SYS_poll + 2)
 #else
-#define __SYS_filedesc                 __SYS_poll
+#define __SYS_boardctl                 __SYS_poll
 #endif
 #else
-#define __SYS_filedesc                 __SYS_descriptors
+#define __SYS_boardctl                 __SYS_descriptors
+#endif
+
+/* Board support */
+#ifdef CONFIG_LIB_BOARDCTL
+#define SYS_boardctl                  __SYS_boardctl
+#define __SYS_filedesc                (__SYS_boardctl + 1)
+#else
+#define __SYS_filedesc                __SYS_boardctl
 #endif
 
 /* The following are defined if file descriptors are enabled */
