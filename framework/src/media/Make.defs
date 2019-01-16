@@ -31,17 +31,13 @@ CFLAGS += -D__TINYARA__
 ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
-CXXSRCS += MediaUtils.cpp
+CXXSRCS += MediaUtils.cpp remix.cpp
 CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
-
-ifeq ($(CONFIG_CODEC_LIBOPUS), y)
-CSRCS += opus_encoder_api.c opus_decoder_api.c
 DEPPATH += --dep-path src/media/codecs
 VPATH += :src/media/codecs
-endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
@@ -51,7 +47,10 @@ CXXSRCS += HttpInputDataSource.cpp
 ifeq ($(CONFIG_ENABLE_CURL), y)
 CXXSRCS += HttpStream.cpp
 endif
-CXXSRCS += Decoder.cpp audio_decoder.cpp
+CXXSRCS += Decoder.cpp audio_decoder.cpp wav_decoder_api.cpp
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_decoder_api.c
+endif
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
@@ -60,6 +59,9 @@ CXXSRCS += OutputHandler.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp
+endif
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_encoder_api.c
 endif
 endif
 

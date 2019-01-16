@@ -63,7 +63,7 @@ bool FileInputDataSource::open()
 
 		mFp = fopen(mDataPath.c_str(), "rb");
 		if (!mFp) {
-			medvdbg("file open failed error : %d\n", errno);
+			meddbg("file open failed error : %d\n", errno);
 			return false;
 		}
 
@@ -73,7 +73,7 @@ bool FileInputDataSource::open()
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
 			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
-				medvdbg("header parsing failed\n");
+				meddbg("header parsing failed\n");
 				return false;
 			}
 			setSampleRate(sampleRate);
@@ -81,11 +81,7 @@ bool FileInputDataSource::open()
 			break;
 		case AUDIO_TYPE_WAVE:
 			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
-				medvdbg("header parsing failed\n");
-				return false;
-			}
-			if (fseek(mFp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
-				medvdbg("file seek failed error\n");
+				meddbg("header parsing failed\n");
 				return false;
 			}
 			setSampleRate(sampleRate);

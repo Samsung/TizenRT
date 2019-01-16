@@ -27,6 +27,7 @@
 #include <debug.h>
 #include "audio_decoder.h"
 #include "../utils/internal_defs.h"
+#include "../audio/resample/samplerate.h"
 
 namespace media {
 
@@ -143,6 +144,7 @@ struct priv_data_s {
 	ssize_t mCurrentPos;        /* read position when decoding */
 	uint32_t mFixedHeader;      /* mp3 frame header */
 	pcm_data_t pcm;             /* a recorder of pcm data info */
+	src_handle_t mResampler;    /* resampler handle */
 };
 
 typedef struct priv_data_s priv_data_t;
@@ -780,6 +782,10 @@ int _get_audio_type(rbstream_p rbsp)
 		return AUDIO_TYPE_AAC;
 	}
 
+	if (wav_check_type(rbsp)) {
+		return AUDIO_TYPE_WAVE;
+	}
+
 #ifdef CONFIG_CODEC_LIBOPUS
 	if (opus_check_type(rbsp)) {
 		return AUDIO_TYPE_OPUS;
@@ -805,6 +811,12 @@ bool _get_frame(audio_decoder_p decoder)
 		return aac_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
 	}
 
+	case AUDIO_TYPE_WAVE: {
+		wav_dec_external_t *wav_ext = (wav_dec_external_t *) decoder->dec_ext;
+		wav_ext->inputBufferCurrentLength = wav_ext->inputBufferMaxLength;
+		return wav_get_frame(decoder->rbsp, &priv->mCurrentPos, decoder->dec_mem, (void *)wav_ext->pInputBuffer, (uint32_t *)&wav_ext->inputBufferCurrentLength);
+	}
+
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *opus_ext = (opus_dec_external_t *) decoder->dec_ext;
@@ -820,14 +832,6 @@ bool _get_frame(audio_decoder_p decoder)
 
 int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 {
-	priv_data_p priv = (priv_data_p) decoder->priv_data;
-	assert(priv != NULL);
-
-	// Init private data
-	priv->mCurrentPos = 0;
-	priv->mFixedHeader = 0;
-	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
-
 	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
 		int ret = mp3_init(decoder, dec_ext);
@@ -837,6 +841,12 @@ int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 
 	case AUDIO_TYPE_AAC: {
 		int ret = aac_init(decoder, dec_ext);
+		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
+		break;
+	}
+
+	case AUDIO_TYPE_WAVE: {
+		int ret = wav_init(decoder, dec_ext);
 		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
@@ -894,6 +904,19 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 		break;
 	}
 
+	case AUDIO_TYPE_WAVE: {
+		priv_data_p priv = (priv_data_p)decoder->priv_data;
+		wav_dec_external_p wav_ext = (wav_dec_external_p)decoder->dec_ext;
+		int err = wav_decode_frame(wav_ext, decoder->dec_mem, &priv->mResampler);
+		RETURN_VAL_IF_FAIL((err == AUDIO_DECODER_OK), AUDIO_DECODER_ERROR);
+
+		pcm->channels = wav_ext->desiredChannels;
+		pcm->samplerate = wav_ext->samplingRate;
+		pcm->length = wav_ext->outputFrameSize * wav_ext->desiredChannels;
+		pcm->samples = wav_ext->pOutputBuffer;
+		break;
+	}
+
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *opus_ext = (opus_dec_external_t *) decoder->dec_ext;
@@ -940,6 +963,7 @@ bool audio_decoder_check_audio_type(int audio_type)
 	switch (audio_type) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
+	case AUDIO_TYPE_WAVE:
 		return true;
 
 #ifdef CONFIG_CODEC_LIBOPUS
@@ -1078,6 +1102,8 @@ int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 	// init private data
 	priv->mCurrentPos = 0;
 	priv->mFixedHeader = 0;
+	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
+	priv->mResampler = NULL;
 
 	// init decoder data
 	decoder->cb_data = NULL;
@@ -1132,6 +1158,11 @@ int audio_decoder_finish(audio_decoder_p decoder)
 
 	// free private data buffer
 	if (decoder->priv_data != NULL) {
+		priv_data_p priv = (priv_data_p)decoder->priv_data;
+		if (priv->mResampler != NULL) {
+			src_destroy(priv->mResampler);
+			priv->mResampler = NULL;
+		}
 		free(decoder->priv_data);
 		decoder->priv_data = NULL;
 	}

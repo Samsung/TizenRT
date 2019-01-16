@@ -93,7 +93,7 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 #ifdef CONFIG_AUDIO_CODEC
 	size_t rmax = getAvailSpace();
 	if (size > rmax) {
-		meddbg("Error!! data is larger than rmax\n");
+		medwdbg("Warning!! data size %u is larger than rmax %u\n", size, rmax);
 		size = rmax;
 	}
 
@@ -133,6 +133,11 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 
 	*size = audio_decoder_get_frames(&mDecoder, buf, *size, sampleRate, channels);
 	if (*size == 0) {
+		return false;
+	}
+
+	if (mChannels != *channels) {
+		meddbg("Error! Number of channels does not match user's request!\n");
 		return false;
 	}
 
@@ -192,6 +197,20 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.aacPlusEnabled = 1;
 
 		if (audio_decoder_configure(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_configure failed!\n");
+			return false;
+		}
+		break;
+	}
+
+	case AUDIO_TYPE_WAVE: {
+		wav_dec_external_t wav_ext = {0};
+		wav_ext.pInputBuffer = inputBuf;
+		wav_ext.inputBufferMaxLength = sizeof(inputBuf);
+		wav_ext.pOutputBuffer = outputBuf;
+		wav_ext.outputBufferMaxLength = sizeof(outputBuf);
+		wav_ext.desiredChannels = mChannels;
+		if (audio_decoder_configure(&mDecoder, audioType, &wav_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_configure failed!\n");
 			return false;
 		}

@@ -23,6 +23,12 @@
 namespace media {
 namespace utils {
 
+#ifdef __GNUC__
+#define POPCOUNT(x) __builtin_popcount(x)
+#else
+#define POPCOUNT(x) popcount(x)
+#endif
+
 // Mine-Type for audio stream
 static const std::string AAC_MIME_TYPE = "audio/aac";
 static const std::string AACP_MIME_TYPE = "audio/aacp";
@@ -621,6 +627,67 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	}
 
 	return true;
+}
+
+#ifndef __GNUC__
+static int32_t popcount(uint32_t x)
+{
+	x -= (x >> 1) & 0x55555555;
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x + (x >> 4)) & 0x0F0F0F0F;
+	x += x >> 8;
+	x += x >> 16;
+	return x & 0x0000003F;
+}
+#endif
+
+unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...)
+{
+	uint32_t ret = 0;
+	if (stream == NULL) {
+		meddbg("invalid audio stream!\n");
+		return ret;
+	}
+
+	uint32_t spf = POPCOUNT(layout); // samples per frame
+	uint32_t mask, i, j;
+	const int16_t *sdata;
+	int16_t *buffer;
+
+	va_list ap;
+	va_start(ap, channels);
+
+	for (i = 0; i < channels; i++) {
+		mask = va_arg(ap, uint32_t);
+		buffer = va_arg(ap, int16_t *);
+
+		// Check params validation
+		if (POPCOUNT(mask) != 1) {
+			meddbg("specified channel must be a single channel! i:%u, mask:0x%x\n", i, mask);
+			continue;
+		}
+
+		if ((layout & mask) == 0) {
+			meddbg("specified channel does not exist! layout: 0x%x, i:%u, mask:0x%x\n", layout, i, mask);
+			continue;
+		}
+
+		if (buffer == NULL) {
+			meddbg("invalid output buffer! i:%u, mask:0x%x\n", i, mask);
+			continue;
+		}
+
+		sdata = stream + POPCOUNT(layout & (mask - 1));
+		for (j = 0; j < frames; j++) {
+			*buffer++ = *sdata;
+			sdata += spf;
+		}
+
+		ret |= mask;
+	}
+
+	va_end(ap);
+	return ret;
 }
 } // namespace util
 } // namespace media
