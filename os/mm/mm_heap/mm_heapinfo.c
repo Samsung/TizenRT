@@ -53,12 +53,15 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/sched.h>
-#include <tinyara/mm/mm.h>
-#include <tinyara/arch.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <tinyara/sched.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/arch.h>
+#include <tinyara/kdbg_drv.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <string.h>
 #include <tinyara/mm/heapinfo_internal.h>
@@ -71,15 +74,33 @@
 #define HEAPINFO_INT INT16_MAX
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
+#define TCB_ALIVE     0
+#define TCB_NOT_ALIVE 1
+
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 int max_group;
 struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
 struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 #endif
+extern int g_heapinfo_fd;
 
 #if CONFIG_MM_NHEAPS > 1
 heapinfo_total_info_t total_info;
 #endif
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static int heapinfo_tcb_isalive(pid_t pid)
+{
+	int ret;
+	ret = sched_getscheduler(pid);
+	if (ret == ERROR) {
+		return TCB_NOT_ALIVE;
+	} else {
+		return TCB_ALIVE;
+	}
+}
 
 /****************************************************************************
  * Public Functions
@@ -159,9 +180,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #if CONFIG_TASK_NAME_SIZE > 0
 				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
-				} else if (node->pid < 0 && sched_gettcb((-1) * (node->pid)) != NULL) {
+				} else if (node->pid < 0 && heapinfo_tcb_isalive((-1) * (node->pid)) == TCB_ALIVE) {
 					stack_resource += node->size;
-				} else if (sched_gettcb(node->pid) == NULL) {
+				} else if (heapinfo_tcb_isalive(node->pid) == TCB_NOT_ALIVE) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
 					nonsched_size[MM_PIDHASH(node->pid)] += node->size;
 					nonsched_resource += node->size;
@@ -288,13 +309,14 @@ static void heapinfo_update_group(mmsize_t size, pid_t pid)
  ****************************************************************************/
 void heapinfo_add_size(pid_t pid, mmsize_t size)
 {
-	struct tcb_s *rtcb = sched_gettcb(pid);
-	if (rtcb) {
-		rtcb->curr_alloc_size += size;
-		rtcb->num_alloc_free++;
-		if (rtcb->curr_alloc_size > rtcb->peak_alloc_size) {
-			rtcb->peak_alloc_size = rtcb->curr_alloc_size;
-		}
+	int ret;
+	heapinfo_data_t data;
+	data.pid = pid;
+	data.size = size;
+
+	ret = ioctl(g_heapinfo_fd, KDBGIOC_HEAPINFO_ADDSIZE, (int)&data);
+	if (ret == ERROR) {
+		return;
 	}
 }
 
@@ -306,11 +328,14 @@ void heapinfo_add_size(pid_t pid, mmsize_t size)
  ****************************************************************************/
 void heapinfo_subtract_size(pid_t pid, mmsize_t size)
 {
-	struct tcb_s *rtcb = sched_gettcb(pid);
+	int ret;
+	heapinfo_data_t data;
+	data.pid = pid;
+	data.size = size;
 
-	if (rtcb) {
-		rtcb->curr_alloc_size -= size;
-		rtcb->num_alloc_free--;
+	ret = ioctl(g_heapinfo_fd, KDBGIOC_HEAPINFO_SUBSIZE, (int)&data);
+	if (ret == ERROR) {
+		return;
 	}
 }
 
@@ -363,14 +388,15 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
  ****************************************************************************/
 void heapinfo_exclude_stacksize(void *stack_ptr)
 {
+	int ret;
 	struct mm_allocnode_s *node;
-	struct tcb_s *rtcb;
 
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
-	rtcb = sched_gettcb(node->pid);
 
-	ASSERT(rtcb);
-	rtcb->curr_alloc_size -= node->size;
+	ret = ioctl(g_heapinfo_fd, KDBGIOC_HEAPINFO_EXCLUDE_STACKSIZE, (int)node->pid);
+	if (ret == ERROR) {
+		return;
+	}
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	int check_idx;

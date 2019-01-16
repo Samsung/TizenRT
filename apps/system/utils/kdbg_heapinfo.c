@@ -15,13 +15,16 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <tinyara/sched.h>
-#include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/kdbg_drv.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <stdbool.h>
 #include <tinyara/mm/heapinfo_internal.h>
@@ -46,6 +49,8 @@ extern int regionx_heap_idx[CONFIG_MM_REGIONS];
 #if CONFIG_MM_NHEAPS > 1
 extern heapinfo_total_info_t total_info;
 #endif
+
+int g_heapinfo_fd;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 static void kdbg_heapinfo_init(FAR struct tcb_s *tcb, FAR void *arg)
@@ -127,6 +132,12 @@ int kdbg_heapinfo(int argc, char **args)
 
 	if (argc >= 2 && !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
+	}
+
+	g_heapinfo_fd = open(KDBG_DRVPATH, O_RDWR);
+	if (g_heapinfo_fd < 0) {
+		printf("Failed to open kdbg driver %d\n", errno);
+		return ERROR;
 	}
 
 #if CONFIG_MM_NHEAPS > 1

@@ -75,6 +75,9 @@
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
+#ifdef CONFIG_KERNEL_CMDS
+#include <tinyara/kdbg_drv.h>
+#endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"
 #ifdef CONFIG_PAGING
@@ -274,6 +277,10 @@ static inline void os_do_appstart(void)
 	if (pid < 0) {
 		svdbg("Failed to create Task Manager\n");
 	}
+#endif
+
+#ifdef CONFIG_KERNEL_CMDS
+	kdbg_drv_register();
 #endif
 
 	svdbg("Starting application main thread\n");

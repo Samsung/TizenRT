@@ -75,6 +75,7 @@ include audio$(DELIM)Make.defs
 include bch$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
+include kdbg$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include net$(DELIM)Make.defs
 include pipes$(DELIM)Make.defs

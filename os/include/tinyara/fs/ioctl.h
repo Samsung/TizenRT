@@ -94,6 +94,7 @@
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
+#define _KDBGBASE       (0x2200)	/* Kdbg ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -368,6 +369,14 @@
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
 #define TMIOC_PTHREAD_PARENT       _TMIOC(0x0008)
 #endif
+
+/* Kdbg driver ioctl definitions *******************************************/
+#define _KDBGIOCVALID(c)   (_IOC_TYPE(c) == _KDBGBASE)
+#define _KDBGIOC(nr)       _IOC(_KDBGBASE, nr)
+
+#define KDBGIOC_HEAPINFO_ADDSIZE           _KDBGIOC(0x0001)
+#define KDBGIOC_HEAPINFO_SUBSIZE           _KDBGIOC(0x0002)
+#define KDBGIOC_HEAPINFO_EXCLUDE_STACKSIZE _KDBGIOC(0x0003)
 
 /****************************************************************************
  * Public Type Definitions
