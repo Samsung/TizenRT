@@ -587,6 +587,7 @@ char *get_json_string_from_file(const char *filename)
 #ifdef CONFIG_ST_THINGS_SECURESTORAGE
 char *get_json_string_from_securestorage(void)
 {
+	cJSON *root = NULL;
 	int ret = 1;
 	char *empty = "";
 	char *json_str = NULL;
@@ -616,7 +617,12 @@ char *get_json_string_from_securestorage(void)
 	}
 	cert_data[cert_size + 1] = 0;
 
-	cJSON *root = cJSON_Parse(read_data);
+	root = cJSON_Parse(read_data);
+	if (root == NULL) {
+		THINGS_LOG_E(TAG, "root cJSON is NULL.");
+		ret = 0;
+		goto GOTO_OUT;
+	}
 	cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 	if (cloud == NULL) {
 		THINGS_LOG_E(TAG, "cloud cJSON is NULL.");
