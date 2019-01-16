@@ -912,7 +912,7 @@ int slsi_udp_client(void)
 		}
 		UNUSED(nBytes);
 		nlldbg("Received from server: %s\n", buffer);
-		up_mdelay(3000);
+		sleep(3);
 
 	}
 	close(clientSocket);
