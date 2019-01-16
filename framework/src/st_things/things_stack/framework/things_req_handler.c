@@ -305,46 +305,6 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 	return eh_result;
 }
 
-static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_resource, bool reset)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-	bool isOwned;
-
-	iotivity_api_lock();
-	OCGetDeviceOwnedState(&isOwned);
-	iotivity_api_unlock();
-
-	if (isOwned == false) {
-		return OC_EH_NOT_ACCEPTABLE;
-	}
-
-	THINGS_LOG_D(TAG, "==> RESET : %s", (reset == true ? "YES" : "NO"));
-
-	if (reset == true) {
-		things_resource_s *clone_resource = things_clone_resource_inst(target_resource);
-		int res = things_reset((void *)clone_resource, RST_NEED_CONFIRM);
-
-		switch (res) {
-		case 1:
-			THINGS_LOG_D(TAG, "Reset Thread create is success.");
-			eh_result = OC_EH_SLOW;
-			break;
-		case 0:
-			THINGS_LOG_V(TAG, "Already Run Reset-Process.");
-			eh_result = OC_EH_NOT_ACCEPTABLE;
-		default:
-			things_release_resource_inst(clone_resource);
-			clone_resource = NULL;
-			break;
-		}
-	} else {
-		THINGS_LOG_D(TAG, "reset = %d, So, can not reset start.", reset);
-		eh_result = OC_EH_OK;
-	}
-
-	return eh_result;
-}
-
 static OCEntityHandlerResult process_post_request(things_resource_s **target_res)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;

@@ -20,7 +20,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-int ess_process(void);
+int ess_process(bool stop);
 
 #ifdef __cplusplus
 }

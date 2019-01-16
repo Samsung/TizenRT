@@ -40,7 +40,7 @@ extern "C" {
 #endif							/* __cplusplus */
 
 /**
- * @brief Initializes things stack and returns whether easy-setup is completed or not.
+ * @brief Initializes things stack, parses the thing definition and returns whether easy-setup is completed or not.
  *        Easy-setup enable users to acquire the ownership of things and to connect the things with the cloud.
  *        After performing easy-setup, users can access things from anywhere through the cloud.
  *        In things stack, easy-setup is a primary and the first operation to be performed on the thing.
@@ -61,10 +61,9 @@ extern "C" {
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
  * @retval #ST_THINGS_ERROR_STACK_ALREADY_INITIALIZED Stack already initialized.
- *         To initialize again, stack should be deinitilized first by calling st_things_deinitialize().
+ *         To re-initialize, stack should be deinitilized first by calling st_things_deinitialize().
  * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
- *         To initialize again, stack should be stopped first by calling st_things_stop()
- *         and then deinitialized by calling st_things_deinitialize().
+ *         To re-initialize, stack should be deinitilized first by calling st_things_deinitialize().
  * @since TizenRT v1.1
  */
 int st_things_initialize(const char *json_path, bool *easysetup_complete);
@@ -78,10 +77,8 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete);
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not yet initialized.
  *         Initialize the stack by calling st_things_initialize().
- * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
- *         Before deinitialize, stack needs to be stopped by calling st_things_stop().
  */
 int st_things_deinitialize(void);
 //@endcond
@@ -128,10 +125,8 @@ typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_ms
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb);
 
 /**
- * @brief Starts things stack.
- *        Parses the thing definition(whose path is passed to st_things_initialize(), configures the thing,
- *        creates the resources and prepares it for easy-setup.
- *        If easy-setup is not done yet, onboarding will be started using either SoftAP or BLE connection.
+ * @brief Starts things stack, creates resources and configures the stack for easy-setup.
+ *        If easy-setup is not done yet, SoftAP will be created for onboarding.
  *        Onboarding creates an ad-hoc network between the thing and the client for performing easy-setup.
  *        If easy-setup is already done, thing will be connected with the cloud.
  *        Application can know whether easy-setup is done or not through st_things_initialize API.

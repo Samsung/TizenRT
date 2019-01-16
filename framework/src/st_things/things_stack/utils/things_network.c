@@ -463,6 +463,14 @@ int things_network_initialize(void)
 	return 1;
 }
 
+int things_network_deinitialize(void)
+{
+	if (wifi_manager_deinit() != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_E(TAG, "Failed to de-initialize WiFi manager");
+		return 0;
+	}
+	return 1;
+}
 
 /*****************************************************************************
  *

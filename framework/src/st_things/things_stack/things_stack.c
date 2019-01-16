@@ -49,6 +49,7 @@
 #include "utils/things_network.h"
 #include "utils/things_rtos_util.h"
 #include "utils/things_network.h"
+#include "utils/things_wifi_scan.h"
 
 #include "easy-setup/easysetup_manager.h"
 
@@ -64,7 +65,7 @@
 #endif
 
 #define TAG "[things_stack]"
-#define SCAN_AP_INTERVAL 60
+
 typedef void *(*pthread_func_type)(void *);
 volatile static int is_things_module_initialized = 0;
 
@@ -72,9 +73,6 @@ typedef struct reset_args_s {
 	things_resource_s *remote_owner;
 	things_es_enrollee_reset_e resetType;
 } reset_args_s;
-
-static void *auto_scanning_loop(void);
-static pthread_t h_thread_things_scan_ap;
 
 things_server_builder_s *g_server_builder = NULL;
 things_request_handler_s *g_req_handler = NULL;
@@ -166,6 +164,11 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
+	if (is_things_module_initialized) {
+		THINGS_LOG_E(TAG, "Stack already initialized");
+		return 0;
+	}
+
 	THINGS_LOG_D(TAG, "Make a file path to match device type.");
 	char *abs_json_path = NULL;
 	if (json_path == NULL) {
@@ -231,11 +234,6 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_V(TAG, "Success to create the device resource file");
 	}
 #endif
-	if (is_things_module_initialized) {
-		THINGS_LOG_E(TAG, "Stack already initialized");
-		things_free(abs_json_path);
-		return 0;
-	}
 
 	init_iotivity_api_lock();
 
@@ -254,6 +252,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		things_log_shutdown();
 		return 0;
 	}
+
 	is_things_module_initialized = 1;
 
 	int es_state = esm_read_easysetup_state();
@@ -283,12 +282,14 @@ int things_deinitialize_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	dm_termiate_module();
+	dm_terminate_module();
 	things_log_shutdown();
+	(void)things_network_deinitialize();
 	deinit_iotivity_api_lock();
 
 	is_things_module_initialized = 0;
 
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return 1;
 }
 
@@ -373,7 +374,7 @@ int things_start_stack(void)
 				return 0;
 			}
 			//call wifi scan ap.
-			if (!things_start_scanning_ap())
+			if (!things_start_wifi_scan())
 				return 0;
 		} else if (!things_network_connect_home_ap()) {
 			return 0;
@@ -388,34 +389,9 @@ int things_start_stack(void)
 	return 1;
 }
 
-int things_start_scanning_ap(void)
-{
-	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, (pthread_func_type)auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
-		THINGS_LOG_E(TAG, "Failed to create thread");
-		return 0;
-	}
-	return 1;
-}
-
-static void *__attribute__((optimize("O0"))) auto_scanning_loop(void)
-{
-	while (!things_is_connected_ap()) {
-		if (!things_wifi_scan_ap()) {
-			THINGS_LOG_E(TAG, "Things failed to call wifi_scan_ap");
-		}
-		// Wifi scan is doing in every 60sec.
-		sleep(SCAN_AP_INTERVAL);
-	}
-	return NULL;
-}
-
 int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
-
-	if (resetType == RST_AUTO_RESET) {
-		things_network_turn_on_soft_ap();
-	}
 
 	int res = -1;
 
@@ -456,7 +432,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 			res = -1;
 			goto GOTO_OUT;
 		}
-		pthread_detach(h_thread_things_reset);
+
 		THINGS_LOG_D(TAG, "Reset Thread handler = 0x%X", h_thread_things_reset);
 		res = 1;
 	} else {
@@ -476,13 +452,16 @@ int things_stop_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	pthread_mutex_lock(&g_things_stop_mutex);
+
+	things_stop_wifi_scan();
+
 	pthread_mutex_lock(&m_thread_oic_reset);
 
 	if (b_thread_things_reset == true) {
 		b_reset_continue_flag = false;
 
+		pthread_cancel(h_thread_things_reset);
 		pthread_join(h_thread_things_reset, NULL);
-		pthread_detach(h_thread_things_reset);
 		h_thread_things_reset = 0;
 		b_thread_things_reset = false;
 	}
@@ -510,9 +489,6 @@ int things_stop_stack(void)
 		g_req_handler = NULL;
 	}
 
-	dm_termiate_module();
-
-	// [Jay] Need to add memory release for the Queue..
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	pthread_mutex_unlock(&g_things_stop_mutex);
@@ -756,8 +732,10 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 
 	THINGS_LOG_D(TAG, "Reset Success.");
 	result = 1;
-	// After completed reset of device doing wifi scan
-	things_start_scanning_ap();
+
+	(void)things_network_turn_on_soft_ap();
+
+	(void)things_start_wifi_scan();
 
 GOTO_OUT:
 	// 10. All Module Enable.

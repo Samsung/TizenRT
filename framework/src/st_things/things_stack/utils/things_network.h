@@ -27,6 +27,8 @@
 
 int things_network_initialize(void);
 
+int things_network_deinitialize(void);
+
 wifi_manager_ap_config_s *things_network_get_homeap_config(void);
 
 bool things_network_turn_on_soft_ap(void);

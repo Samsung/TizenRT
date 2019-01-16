@@ -115,8 +115,20 @@ static bool handle_set_request(st_things_set_request_message_s *req_msg, st_thin
 	return false;
 }
 
-int ess_process(void)
+int ess_process(bool stop)
 {
+	if (stop) {
+		st_things_error_e res = st_things_deinitialize();
+		if (res == ST_THINGS_ERROR_NONE) {
+			printf("[%s]=====================================================\n", TAG);
+			printf("[%s]                    Stack Stopped & Deinitialized                    \n", TAG);
+			printf("[%s]=====================================================\n", TAG);
+		} else {
+			printf("[%s]Failed to stop & deinitialize the stack. Error code: %d\n", TAG, res);
+		}
+		return 0;
+	}
+
 #ifdef CONFIG_RESET_BUTTON
 	if (!check_reset_button_pin_number()) {
 		printf("Error : Invalid pin number.\n");
@@ -133,7 +145,16 @@ int ess_process(void)
 #endif
 
 	bool easysetup_complete = false;
-	st_things_initialize("device_def.json", &easysetup_complete);
+	st_things_error_e err_code = st_things_initialize("device_def.json", &easysetup_complete);
+	if (err_code == ST_THINGS_ERROR_NONE) {
+		printf("[%s]=====================================================\n", TAG);
+		printf("[%s]                    Stack Initialized                    \n", TAG);
+		printf("[%s]=====================================================\n", TAG);
+	} else {
+		printf("[%s]Failed to initialize. Error code: %d\n", TAG, err_code);
+		return 0;
+	}
+
 	st_things_register_request_cb(handle_get_request, handle_set_request);
 	st_things_register_reset_cb(handle_reset_request, handle_reset_result);
 	st_things_register_user_confirm_cb(handle_ownership_transfer_request);
@@ -143,6 +164,8 @@ int ess_process(void)
 		printf("[%s]=====================================================\n", TAG);
 		printf("[%s]                    Stack Started                    \n", TAG);
 		printf("[%s]=====================================================\n", TAG);
+	} else {
+		printf("[%s]Failed to start. Error code: %d\n", TAG, err_code);
 	}
 
 	return 0;

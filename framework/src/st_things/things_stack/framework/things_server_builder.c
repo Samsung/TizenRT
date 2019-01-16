@@ -304,8 +304,7 @@ void deinit_builder(things_server_builder_s *builder)
 		g_quit_flag = 1;
 		pthread_cancel(g_thread_id_server);
 		pthread_join(g_thread_id_server, NULL);
-		pthread_detach(g_thread_id_server);
-		g_thread_id_server = 0;
+		g_thread_id_server = PTHREAD_ONCE_INIT;
 
 		// 1.    Need to unregister those registered resource in the Stack
 		// 2.    Free the payload of each resources

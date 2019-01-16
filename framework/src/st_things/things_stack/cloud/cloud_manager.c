@@ -2263,13 +2263,13 @@ void *es_cloud_init(things_server_builder_s *server_builder)
 
 void es_cloud_terminate(void)
 {
+	CAUnregisterNetworkMonitorHandler((CAAdapterStateChangedCB) things_adapter_state_cb, (CAConnectionStateChangedCB) things_tcp_session_state_cb);
+
 	force_session_stop(CISESS_NULL);
 	ci_cp_del_pended_data();
 	ci_cp_del_is_there_cp();
 
-	CAUnregisterNetworkMonitorHandler((CAAdapterStateChangedCB) things_adapter_state_cb, (CAConnectionStateChangedCB) things_tcp_session_state_cb);
-
-	esm_get_network_status();
+	things_ping_terminate();
 
 	es_cloud_signup_clear(signed_up_data);
 	signed_up_data = NULL;
@@ -2284,8 +2284,6 @@ void es_cloud_terminate(void)
 	// gDelDeviceCompletFunc = NULL;
 	send_cnt_sign_up = 0;
 	retranslate_rsc_publish_cnt = 0;
-
-	things_ping_terminate();
 }
 static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_code_e *err)
 {

@@ -19,7 +19,10 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <string.h>
 #include "st_things_sample.h"
+
+#define CMD_STOP "stop"
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -28,8 +31,14 @@ int st_things_sample_main(int argc, char *argv[])
 #endif
 {
 	printf("st_things_sample!!\n");
-	
-	ess_process();
-	
+
+	if (argc == 2 && strncmp(argv[1], CMD_STOP, strlen(argv[1])) == 0) {
+		ess_process(true);
+	} else if (argc == 1) {
+		ess_process(false);
+	} else {
+		printf("Usage: st_things_sample\n   or: st_things_sample stop\n Start, or Stop st_things sample\n");
+	}
+
 	return 0;
 }

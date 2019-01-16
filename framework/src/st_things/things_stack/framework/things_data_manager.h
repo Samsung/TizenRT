@@ -94,9 +94,9 @@ typedef struct st_device_s {
 
 size_t get_json_file_size(const char *filename);
 char *get_json_string_from_file(const char *filename);
-int dm_init_module(const char *info_Path);
 
-int dm_termiate_module(void);
+int dm_init_module(const char *info_path);
+int dm_terminate_module(void);
 
 const char *dm_get_svrdb_file_path(void);
 const char *dm_get_certificate_file_path(void);

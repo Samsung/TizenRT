@@ -278,32 +278,26 @@ int st_things_deinitialize(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	if (STACK_INITIALIZED != g_stack_status) {
-		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
-		switch (g_stack_status) {
-		case STACK_NOT_INITIALIZED:
-			THINGS_LOG_E(TAG, "Stack is not initialized.");
-			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
-			break;
-		case STACK_STARTED:
-			THINGS_LOG_E(TAG, "Stack is currently running. Stop the stack before deinitializing it.");
-			ret_val = ST_THINGS_ERROR_STACK_RUNNING;
-			break;
-		default:
-			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
-			break;
-		}
+	if (STACK_INITIALIZED == g_stack_status) {
+		THINGS_LOG_D(TAG, "Stack is initialized.");
+	}
 
+	int result = 0;
+	if (1 != (result = things_stop_stack())) {
+		THINGS_LOG_E(TAG, "things_stop_stack failed (result:%d)", result);
 		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
-		return ret_val;
+		return ST_THINGS_ERROR_OPERATION_FAILED;
+	}
+
+	if (1 != (result = things_deinitialize_stack())) {
+		THINGS_LOG_E(TAG, "things_deinitialize_stack failed (result:%d)", result);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
+		return ST_THINGS_ERROR_OPERATION_FAILED;
 	}
 
 	g_stack_status = STACK_NOT_INITIALIZED;
 
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
-
-	(void)things_deinitialize_stack();
-
 	return ST_THINGS_ERROR_NONE;
 }
 
