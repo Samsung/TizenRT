@@ -233,6 +233,15 @@ public:
 	 */
 	bool operator==(const MediaRecorder& rhs);
 
+	/**
+	 * @brief Get whether the Recorder is Recording
+	 * @details @b #include <media/MediaRecorder.h>
+	 * This function is a synchronous API
+	 * @return true if Recorder is Recording
+	 * @since TizenRT v2.1 PRE
+	 */
+	bool isRecording();
+
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;
 	uint64_t mId;

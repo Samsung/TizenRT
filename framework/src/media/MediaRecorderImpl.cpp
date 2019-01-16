@@ -565,6 +565,28 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 	notifySync();
 }
 
+bool MediaRecorderImpl::isRecording()
+{
+	bool ret = false;
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorder isRecording\n");
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		return ret;
+	}
+
+	/* Wait for other commands to complete. */
+	mrw.enQueue([&]() {
+		if (getState() == RECORDER_STATE_RECORDING) {
+			ret = true;
+		}
+		notifySync();
+	});
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
 recorder_result_t MediaRecorderImpl::setDuration(int second)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
