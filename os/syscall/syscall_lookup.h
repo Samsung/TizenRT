@@ -102,6 +102,11 @@ SYSCALL_LOOKUP(pgalloc,                   2, STUB_pgalloc)
 #endif
 SYSCALL_LOOKUP(task_delete,               1, STUB_task_delete)
 SYSCALL_LOOKUP(task_restart,              1, STUB_task_restart)
+#ifdef CONFIG_CANCELLATION_POINTS
+SYSCALL_LOOKUP(task_testcancel,           0, STUB_task_testcancel)
+SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_task_setcanceltype)
+#endif
+SYSCALL_LOOKUP(task_setcancelstate,       2, STUB_task_setcancelstate)
 SYSCALL_LOOKUP(up_assert,                 2, STUB_up_assert)
 
 /* The following can be individually enabled */
@@ -187,6 +192,11 @@ SYSCALL_LOOKUP(aio_cancel,              2, SYS_aio_cancel)
 SYSCALL_LOOKUP(poll,                    3, STUB_poll)
 SYSCALL_LOOKUP(select,                  5, STUB_select)
 #  endif
+#endif
+
+/* Board support */
+#ifdef CONFIG_LIB_BOARDCTL
+SYSCALL_LOOKUP(boardctl,                2, STUB_boardctl)
 #endif
 
 /* The following are defined if file descriptors are enabled */
