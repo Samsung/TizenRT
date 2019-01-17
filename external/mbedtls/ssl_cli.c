@@ -3179,7 +3179,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
             return( ret );
         }
 
-#if !defined(CONFIG_HW_DH_PARAM)
+#if !defined(MBEDTLS_DHM_ALT)
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &ssl->handshake->dhm_ctx.X  );
 #endif
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GX", &ssl->handshake->dhm_ctx.GX );
