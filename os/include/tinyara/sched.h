@@ -573,12 +573,6 @@ struct tcb_s {
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
 #endif
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	int curr_alloc_size;
-	int peak_alloc_size;
-	int num_alloc_free;
-#endif
 };
 
 /* struct task_tcb_s *************************************************************/

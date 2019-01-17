@@ -72,6 +72,9 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
+#ifdef CONFIG_KERNEL_CMDS
+#include <tinyara/heapinfo_drv.h>
+#endif
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
@@ -261,6 +264,10 @@ static inline void os_do_appstart(void)
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
 	}
+#endif
+
+#ifdef CONFIG_KERNEL_CMDS
+	heapinfo_drv_register();
 #endif
 
 #ifdef CONFIG_TASK_MANAGER
