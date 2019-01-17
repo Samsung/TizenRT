@@ -158,7 +158,10 @@ config ENABLE_KILL_CMD
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
-		Send a signal to processes or process groups
+		Send a signal to processes or process groups.
+		When SIGKILL(9) is sent, a task/pthread which received signal will be terminated without any garbage collection.
+		Users can register their own handler for SIGKILL to free the allocated memory.
+		CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
 
 config ENABLE_KILLALL_CMD
 	bool "killall"
