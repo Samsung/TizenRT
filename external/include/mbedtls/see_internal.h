@@ -58,16 +58,6 @@ int see_compute_ecdh_param_internal(struct sECC_KEY *ecc_pub, unsigned char *key
                                     unsigned char *output, unsigned int *olen);
 #endif /* CONFIG_HW_ECDH_PARAM */
 
-#if defined(CONFIG_HW_DH_PARAM)
-int see_supported_dhm_size(int size);
-
-int see_generate_dhm_params_internal(struct sDH_PARAM *d_param, unsigned char *key_buf);
-
-
-int see_compute_dhm_param_internal(struct sDH_PARAM *d_param, unsigned char *key_buf,
-                                   unsigned char *output, unsigned int *olen);
-#endif /* CONFIG_HW_DH_PARAM */
-
 int see_setup_key_internal(unsigned char *key_der, unsigned int key_len,
                            unsigned int key_type, unsigned char *key_buf);
 
