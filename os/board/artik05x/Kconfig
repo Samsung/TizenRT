@@ -59,19 +59,18 @@ config ARTIK05X_FLASH_MINOR
 		device.
 
 config ARTIK05X_FLASH_PART_LIST
-	string "Flash partition size list (in KBytes)"
+	string "Flash partition size list (in 4KB blocks)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
 	depends on ARTIK05X_FLASH_PART
 	---help---
-		Comma separated list of partition sizes in KB.
+		Comma separated partitions in 4KB blocks.
 
 config ARTIK05X_FLASH_PART_TYPE
 	string "Flash partition type list"
 	default "none,none,none,none,none,none,none,none,smartfs,config,none,"
 	depends on ARTIK05X_FLASH_PART
 	---help---
-		Comma separated list of partition types that can be one of
-		followings: none, smartfs, config
+		Comma separated partition types(none, smartfs, config)
 
 config ARTIK05X_FLASH_PART_NAME
 	string "Flash partition name list"
