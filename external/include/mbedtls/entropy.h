@@ -296,6 +296,7 @@ int mbedtls_entropy_self_test( int verbose );
  * \return         0 if successful, or 1 if a test failed
  */
 int mbedtls_entropy_source_self_test( int verbose );
+
 #endif /* MBEDTLS_ENTROPY_HARDWARE_ALT & CONFIG_HW_RNG */
 #endif /* MBEDTLS_SELF_TEST */
 
