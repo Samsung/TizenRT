@@ -89,19 +89,19 @@ void SetClosePinDisplayCB(ClosePinDisplayCallback closeCB);
  * Function to unset the input PIN callback.
  * NOTE : Do not call this function while PIN based ownership transfer.
  */
-void UnsetInputPinCB();
+void UnsetInputPinCB(void);
 
 /**
  * Function to unset the PIN generation callback.
  * NOTE : Do not call this function while PIN based ownership transfer.
  */
-void UnsetGeneratePinCB();
+void UnsetGeneratePinCB(void);
 
 /**
  * Function to unset the PIN close callback.
  * NOTE : Do not call this function while PIN based ownership transfer is in progress.
  */
-void UnsetClosePinCB();
+void UnsetClosePinCB(void);
 
 /**
  * Function to generate random PIN.
@@ -128,7 +128,7 @@ OCStackResult InputPin(char* pinBuffer, size_t bufferSize);
  * Function to invoke the callback for close a PIN dispaly.
  * NOTE : This function will be invoked from SRM while OTM
  */
-void ClosePinDisplay();
+void ClosePinDisplay(void);
 
 #ifdef MULTIPLE_OWNER
 /**

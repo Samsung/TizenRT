@@ -2478,7 +2478,7 @@ exit:
     return result;
 }
 
-OCStackResult OCStop()
+OCStackResult OCStop(void)
 {
     OIC_LOG(INFO, TAG, "Entering OCStop");
 
@@ -2538,7 +2538,7 @@ OCStackResult OCStop()
     return OC_STACK_OK;
 }
 
-OCStackResult OCStartMulticastServer()
+OCStackResult OCStartMulticastServer(void)
 {
     if(stackState != OC_STACK_INITIALIZED)
     {
@@ -2554,7 +2554,7 @@ OCStackResult OCStartMulticastServer()
     return OC_STACK_OK;
 }
 
-OCStackResult OCStopMulticastServer()
+OCStackResult OCStopMulticastServer(void)
 {
     CAResult_t ret = CAStopListeningServer();
     if (CA_STATUS_OK != ret)
@@ -3243,7 +3243,7 @@ OCStackResult OCRegisterPersistentStorageHandler(OCPersistentStorage* persistent
 
 #ifdef WITH_PRESENCE
 
-OCStackResult OCProcessPresence()
+OCStackResult OCProcessPresence(void)
 {
     OCStackResult result = OC_STACK_OK;
 
@@ -3415,7 +3415,7 @@ OCStackResult OCStartPresence(const uint32_t ttl)
             OC_PRESENCE_TRIGGER_CREATE);
 }
 
-OCStackResult OCStopPresence()
+OCStackResult OCStopPresence(void)
 {
     OIC_LOG(INFO, TAG, "Entering OCStopPresence");
     OCStackResult result = OC_STACK_ERROR;
@@ -4328,7 +4328,7 @@ const OCDPDev_t* OCDiscoverDirectPairingDevices(unsigned short waittime)
     return (const OCDPDev_t*)DPGetDiscoveredDevices();
 }
 
-const OCDPDev_t* OCGetDirectPairedDevices()
+const OCDPDev_t* OCGetDirectPairedDevices(void)
 {
     return (const OCDPDev_t*)DPGetPairedDevices();
 }
@@ -5452,12 +5452,12 @@ OCStackResult OCGetDeviceOwnedState(bool *isOwned)
     return ret;
 }
 
-void OCClearCallBackList()
+void OCClearCallBackList(void)
 {
     DeleteClientCBList();
 }
 
-void OCClearObserverlist()
+void OCClearObserverlist(void)
 {
     DeleteObserverList();
 }

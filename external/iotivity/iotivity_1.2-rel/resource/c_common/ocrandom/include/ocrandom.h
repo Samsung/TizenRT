@@ -52,13 +52,13 @@ typedef enum
  * Android and Linux uses current time. Arduino uses Analog reading on pin ANALOG_IN
  * @retval 0 for Success, otherwise some error value
  */
-int8_t OCSeedRandom();
+int8_t OCSeedRandom(void);
 
 /**
  * Generate a uniformly [0,2^32] distributed random number
  * @retval On Success, it returns the random value.
  */
-uint32_t OCGetRandom();
+uint32_t OCGetRandom(void);
 
 /**
  * Generate a uniformly [0,2^8] distributed random number

@@ -73,7 +73,7 @@ CAResult_t CAUnsetAutoConnectionDeviceInfo(const char *address)
 /**
  * initialize client connection manager
  */
-CAResult_t CAUtilClientInitialize()
+CAResult_t CAUtilClientInitialize(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilClientInitialize");
 
@@ -95,7 +95,7 @@ CAResult_t CAUtilClientInitialize()
 /**
  * terminate client connection manager
  */
-CAResult_t CAUtilClientTerminate()
+CAResult_t CAUtilClientTerminate(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilClientTerminate");
 #ifdef LE_ADAPTER
@@ -106,7 +106,7 @@ CAResult_t CAUtilClientTerminate()
 #endif
 }
 
-CAResult_t CAUtilStopLEScan()
+CAResult_t CAUtilStopLEScan(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilStopLEScan");
 #ifdef LE_ADAPTER
@@ -118,7 +118,7 @@ CAResult_t CAUtilStopLEScan()
 #endif
 }
 
-CAResult_t CAUtilStartLEScan()
+CAResult_t CAUtilStartLEScan(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilStartLEScan");
 #ifdef LE_ADAPTER
@@ -351,7 +351,7 @@ CAResult_t CAUtilSetLEScanInterval(jint intervalTime, jint workingCount)
 #endif
 }
 
-CAResult_t CAUtilStopLEScan()
+CAResult_t CAUtilStopLEScan(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilStopLEScan");
 #ifdef LE_ADAPTER
@@ -364,7 +364,7 @@ CAResult_t CAUtilStopLEScan()
 }
 #endif // __ANDROID__
 
-CAResult_t CAUtilStartLEAdvertising()
+CAResult_t CAUtilStartLEAdvertising(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilStartLEAdvertising");
 #if (defined(__ANDROID__) || defined(__TIZEN__)) && defined(LE_ADAPTER)
@@ -375,7 +375,7 @@ CAResult_t CAUtilStartLEAdvertising()
 #endif
 }
 
-CAResult_t CAUtilStopLEAdvertising()
+CAResult_t CAUtilStopLEAdvertising(void)
 {
     OIC_LOG(DEBUG, TAG, "CAUtilStopLEAdvertising");
 #if (defined(__ANDROID__) || defined(__TIZEN__)) && defined(LE_ADAPTER)

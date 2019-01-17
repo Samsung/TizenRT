@@ -81,7 +81,7 @@ CAResult_t CAInitialize(CATransportAdapter_t transportType)
     return CA_STATUS_OK;
 }
 
-void CATerminate()
+void CATerminate(void)
 {
     OIC_LOG(DEBUG, TAG, "CATerminate");
 
@@ -94,7 +94,7 @@ void CATerminate()
     }
 }
 
-CAResult_t CAStartListeningServer()
+CAResult_t CAStartListeningServer(void)
 {
     OIC_LOG(DEBUG, TAG, "CAStartListeningServer");
 
@@ -106,7 +106,7 @@ CAResult_t CAStartListeningServer()
     return CAStartListeningServerAdapters();
 }
 
-CAResult_t CAStopListeningServer()
+CAResult_t CAStopListeningServer(void)
 {
     OIC_LOG(DEBUG, TAG, "CAStopListeningServer");
 
@@ -118,7 +118,7 @@ CAResult_t CAStopListeningServer()
     return CAStopListeningServerAdapters();
 }
 
-CAResult_t CAStartDiscoveryServer()
+CAResult_t CAStartDiscoveryServer(void)
 {
     OIC_LOG(DEBUG, TAG, "CAStartDiscoveryServer");
 
@@ -481,7 +481,7 @@ CAResult_t CAUnSelectNetwork(CATransportAdapter_t nonInterestedNetwork)
     return res;
 }
 
-CAResult_t CAHandleRequestResponse()
+CAResult_t CAHandleRequestResponse(void)
 {
     if (!g_isInitialized)
     {
