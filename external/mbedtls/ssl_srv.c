@@ -3223,7 +3223,7 @@ static int ssl_write_server_key_exchange( mbedtls_ssl_context *ssl )
         p += len;
         n += len;
 
-#if !defined(CONFIG_HW_DH_PARAM)
+#if !defined(MBEDTLS_DHM_ALT)
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &ssl->handshake->dhm_ctx.X  );
 #endif
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &ssl->handshake->dhm_ctx.P  );
