@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <tinyara/spi/spi.h>
 
 #define LIS3LV02DQ_CONF_REG_1	0x20
@@ -148,6 +149,6 @@ void lis3lv02qd_main(int argc, char *argv[])
 
 		printf("x(0x%04x), y(0x%04x), z(0x%04x)\n", x, y, z);
 
-		up_mdelay(500);
+		usleep(500000);
 	}
 }

@@ -51,6 +51,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <tinyara/i2c.h>
 
@@ -98,7 +99,7 @@ static int mpu9250_get_axis(uint16_t *x, uint16_t *y, uint16_t *z)
 		return -ret;
 	}
 
-	up_mdelay(1);
+	usleep(1000);
 
 	ret = i2c_read(i2c_dev, &configs, data, 6);
 	if (ret < 0) {
@@ -176,7 +177,7 @@ int mpu9250_main(int argc, char *argv[])
 			printf("ACC:      %-10d%-10d%-10d\n", (int16_t)data[0], (int16_t)data[1], (int16_t)data[2]);
 		}
 
-		up_mdelay(500);
+		usleep(500000);
 	}
 
 	return OK;
