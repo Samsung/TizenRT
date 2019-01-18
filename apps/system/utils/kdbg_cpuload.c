@@ -19,17 +19,25 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <sched.h>
 #include <stdio.h>
 #include <string.h>
-#include <sched.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <dirent.h>
 #ifdef CONFIG_ENABLE_CPULOAD_MONITOR
 #include <pthread.h>
+#endif
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+#include <errno.h>
+#include <sys/mount.h>
 #endif
 #include <sys/types.h>
 #include <tinyara/clock.h>
 #include <tinyara/sched.h>
+#include <tinyara/fs/fs.h>
+
 #include "kdbg_utils.h"
 
 /****************************************************************************
@@ -59,33 +67,28 @@ static volatile bool is_started = false;
 static pthread_t cpuloadmon;
 #endif
 
+#define CPULOAD_BUFLEN 64
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void cpuload_print_task(struct tcb_s *tcb, void *arg)
+static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 {
-	struct cpuload_s cpuload;
-	uint32_t intpart;
-	uint32_t fracpart;
-	int cpuload_idx;
-	uint32_t tmp;
+	int ret;
+	char *filepath;
+	char buf[CPULOAD_BUFLEN];
 
-	printf("  %d    ", tcb->pid);
-	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-
-		(void)clock_cpuload(tcb->pid, cpuload_idx, &cpuload);
-
-		if (cpuload.total > 0) {
-			tmp = (1000 * cpuload.active) / cpuload.total;
-			intpart = tmp / 10;
-			fracpart = tmp - 10 * intpart;
-		} else {
-			intpart = 0;
-			fracpart = 0;
-		}
-		printf("%3d.%d %%   ", intpart, fracpart);
+	printf("  %s	", entryp->d_name);
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "loadavg");
+	ret = kdbg_readfile(filepath, buf, CPULOAD_BUFLEN, NULL);
+	free(filepath);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
 	}
 	printf("\n");
+
+	return OK;
 }
 
 static void cpuload_print_tasklist(void)
@@ -114,7 +117,7 @@ static void cpuload_print_tasklist(void)
 #endif
 
 	/* Print cpu load for each task */
-	sched_foreach(cpuload_print_task, NULL);
+	kdbg_proc_pid_foreach(cpuload_read_proc);
 
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 	printf("=====================================\n");
@@ -126,11 +129,36 @@ static void cpuload_print_tasklist(void)
 #ifdef CONFIG_ENABLE_CPULOAD_MONITOR
 static void *cpuloadmonitor_daemon(void *args)
 {
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	int ret;
+	bool is_mounted;
+
+	is_mounted = false;
+
+	/* Mount Procfs to use */
+	ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+	if (ret == ERROR) {
+		if (errno == EEXIST) {
+			is_mounted = true;
+		} else {
+			printf("Failed to mount procfs : %d\n", errno);
+			return NULL;
+		}
+	}
+#endif
+
 	/* Loop until we detect that there is a request to stop. */
 	while (is_started) {
-		cpuload_print_tasklist();		
+		cpuload_print_tasklist();
 		sleep(CONFIG_CPULOADMONITOR_INTERVAL);
 	}
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
+	}
+#endif
 
 	return NULL;
 }
@@ -197,14 +225,39 @@ static void show_usage(void)
  ****************************************************************************/
 int kdbg_cpuload(int argc, char **args)
 {
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	int ret;
+	bool is_mounted;
+
+	is_mounted = false;
+#endif
 	if (argc > 2) {
 		show_usage();
 		return ERROR;
 	}
 
 	if (argc == 1) {
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+		/* Mount Procfs to use */
+		ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+		if (ret == ERROR) {
+			if (errno == EEXIST) {
+				is_mounted = true;
+			} else {
+				printf("Failed to mount procfs : %d\n", errno);
+				return ERROR;
+			}
+		}
+#endif
 		/* Print CPU load once */
 		cpuload_print_tasklist();
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+		if (!is_mounted) {
+			/* Detach mounted Procfs */
+			(void)umount(PROCFS_MOUNT_POINT);
+		}
+#endif
 #ifdef CONFIG_ENABLE_CPULOAD_MONITOR
 	} else if (!strncmp(args[1], "start", strlen("start") + 1)) {
 		/* Start the cpuload monitor */

@@ -15,19 +15,57 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+#include <errno.h>
+#include <stdbool.h>
+#include <sys/mount.h>
+#endif
+#include <tinyara/fs/fs.h>
 
-#include <tinyara/config.h>
-#include <tinyara/irq.h>
-#include <sys/types.h>
+#include "kdbg_utils.h"
 
+#define IRQ_BUFLEN 64
 
 int kdbg_irqinfo(int argc, char **args)
 {
-#ifdef CONFIG_DEBUG_IRQ_INFO
-	irq_info();
-	return OK;
-#else
-#error "Note : CONFIG_ENABLE_IRQINFO is Enabled but CONFIG_DEBUG and CONFIG_DEBUG_IRQ_INFO is not enabled"
-	return ERROR;
+	int ret;
+	char *filepath;
+	char buf[IRQ_BUFLEN];
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	bool is_mounted;
+
+	is_mounted = false;
+
+	/* Mount Procfs to use */
+	ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+	if (ret == ERROR) {
+		if (errno == EEXIST) {
+			is_mounted = true;
+		} else {
+			printf("Failed to mount procfs : %d\n", errno);
+			return ERROR;
+		}
+	}
 #endif
+
+	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs");
+	ret = kdbg_readfile(filepath, buf, IRQ_BUFLEN, NULL);
+	free(filepath);
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
+	}
+#endif
+
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+	printf("\n");
+
+	return OK;
 }
