@@ -47,16 +47,7 @@
  * Public Function Prototypes
  ****************************************************************************/
 
-#if defined(CONFIG_HW_ECDH_PARAM)
-int see_generate_key_internal(unsigned int key_type, unsigned char *key_buf,
-                              unsigned int key_len, unsigned int pukey_e);
 
-int see_get_ecc_publickey_internal(struct sECC_KEY *ecc_pub, unsigned char *key_buf,
-                                   unsigned int object_id);
-
-int see_compute_ecdh_param_internal(struct sECC_KEY *ecc_pub, unsigned char *key_buf,
-                                    unsigned char *output, unsigned int *olen);
-#endif /* CONFIG_HW_ECDH_PARAM */
 
 int see_setup_key_internal(unsigned char *key_der, unsigned int key_len,
                            unsigned int key_type, unsigned char *key_buf);
