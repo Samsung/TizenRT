@@ -164,7 +164,6 @@ libarch$(LIBEXT): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 board/libboard$(LIBEXT):
-	#$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" all EXTRADEFINES=$(EXTRADEFINES)
 
 $(BIN_DIR)/tinyara$(EXEEXT): $(STARTUP_OBJS) board/libboard$(LIBEXT)
