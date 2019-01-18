@@ -171,7 +171,7 @@ typedef struct
     void *t_data;                       /*!< unused                         */
     mbedtls_ecp_point *T;       /*!<  pre-computed points for ecp_mul_comb()        */
     size_t T_size;      /*!<  number for pre-computed points                */
-#if defined(CONFIG_HW_ECDH_PARAM)
+#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
 	unsigned char *key_buf;
 #endif
 #if defined(CONFIG_TLS_WITH_SSS)
