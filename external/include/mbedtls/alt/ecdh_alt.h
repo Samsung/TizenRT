@@ -50,14 +50,23 @@
 #ifndef MBEDTLS_ECDH_ALT_H
 #define MBEDTLS_ECDH_ALT_H
 
+<<<<<<< HEAD
 #include "ecp.h"
+=======
+#include "../ecp.h"
+
+#include "common.h"
+>>>>>>> ae4043bd6... external/mbedtls: Modify dependency of CONFIG_HW_ECDH_PARAM
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
+<<<<<<< HEAD
 #include "alt/common.h"
+=======
+>>>>>>> ae4043bd6... external/mbedtls: Modify dependency of CONFIG_HW_ECDH_PARAM
 
 /*
  * ECDH Error codes
@@ -72,14 +81,22 @@ int mbedtls_ecp_gen_keypair_alt( mbedtls_ecp_group *grp, mbedtls_mpi *d,
 							mbedtls_ecp_point *Q );
 int mbedtls_generate_key_alt( unsigned int key_type, unsigned char *key_buf,
 							unsigned int key_len, unsigned int pukey_e );
+<<<<<<< HEAD
 int mbedtls_get_ecc_publickey_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+=======
+int mbedtls_get_ecc_publickey_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned char *key_buf,
+>>>>>>> ae4043bd6... external/mbedtls: Modify dependency of CONFIG_HW_ECDH_PARAM
 							unsigned int object_id );
 #endif
 
 #if defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
 int mbedtls_ecdh_compute_shared_alt( mbedtls_ecp_group *grp,
 							mbedtls_mpi *z, const mbedtls_ecp_point *Q );
+<<<<<<< HEAD
 int mbedtls_compute_ecdh_param_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+=======
+int mbedtls_compute_ecdh_param_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned int key_buf,
+>>>>>>> ae4043bd6... external/mbedtls: Modify dependency of CONFIG_HW_ECDH_PARAM
 							unsigned char *output, unsigned int *olen );
 #endif
 
