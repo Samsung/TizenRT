@@ -162,7 +162,7 @@ static const struct procfs_entry_s g_procfsentries[] = {
 	{NULL, NULL}
 };
 
-static const uint8_t g_procfsentrycount = sizeof(g_procfsentries) / sizeof(struct procfs_entry_s);
+static const uint8_t g_procfsentrycount = sizeof(g_procfsentries) / sizeof(struct procfs_entry_s) - 1;
 
 /****************************************************************************
  * Private Function Prototypes
