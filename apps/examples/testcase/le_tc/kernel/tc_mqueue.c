@@ -619,7 +619,7 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* Wake up the receiver thread with a signal */
 
-	pthread_kill(receiver, 9);
+	pthread_kill(receiver, SIGUSR1);
 
 	/* Wait a bit to see if the thread exits on its own */
 
