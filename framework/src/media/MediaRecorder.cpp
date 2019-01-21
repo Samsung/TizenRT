@@ -102,6 +102,11 @@ bool MediaRecorder::operator==(const MediaRecorder& rhs)
 	return this->mId == rhs.mId;
 }
 
+bool MediaRecorder::isRecording()
+{
+	return mPMrImpl->isRecording();
+}
+
 MediaRecorder::~MediaRecorder()
 {
 }

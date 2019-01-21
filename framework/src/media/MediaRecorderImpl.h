@@ -99,6 +99,7 @@ public:
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	bool isRecording();
 	recorder_result_t setDuration(int second);
 	recorder_result_t setFileSize(int byte);
 	void notifySync();
