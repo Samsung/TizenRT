@@ -1149,7 +1149,7 @@
 	j		90f
 99 : 
 # endif
-99 : 
+90 : 
 #endif
 		.endm
 
@@ -1211,7 +1211,7 @@
 	j		90f
 99 : 
 # endif
-99 : 
+90 : 
 #endif
 	.endm
 

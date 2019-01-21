@@ -241,8 +241,6 @@ void up_initialize(void)
 		syslog_initialize();
 #endif
 
-	syslog_initialize(SYSLOG_INIT_EARLY);
-
 #if defined(CONFIG_CRYPTO)
 	/* Initialize the HW crypto and /dev/crypto */
 

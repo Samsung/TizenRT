@@ -73,6 +73,18 @@ config ARCH_BOARD_STM32F429I_DISCO
 	---help---
 		STMicro STM32F429I-Discovery board based on the STMicro STM32F429ZIT6 MCU.
 
+config ARCH_BOARD_ESP32_DEVKITC
+	bool "Espressif ESP32-DevKitC board"
+	depends on ARCH_CHIP_ESP32
+	---help---
+		Espressif esp32 WIFI/BLE MCU
+
+config ARCH_BOARD_ESP_WROVER_KIT
+	bool "Espressif ESP-WROVER-KIT board"
+	depends on ARCH_CHIP_ESP32
+	---help---
+		Espressif esp32 WIFI/BLE LCDs MCU
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -87,7 +99,9 @@ config ARCH_BOARD
 	default "cy4390x"            if ARCH_BOARD_CY4390x
 	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
-
+	default "esp32_DevKitC"      if ARCH_BOARD_ESP32_DEVKITC
+	default "esp_wrover_kit"     if ARCH_BOARD_ESP_WROVER_KIT
+	
 comment "Common Board Options"
 
 config ARCH_HAVE_LEDS
@@ -231,4 +245,10 @@ source board/sidk_s5jt200/Kconfig
 endif
 if ARCH_BOARD_STM32F429I_DISCO
 source board/stm32f429i-disco/Kconfig
+endif
+if ARCH_BOARD_ESP32_DEVKITC
+source board/esp32_DevKitC/Kconfig
+endif
+if ARCH_BOARD_ESP_WROVER_KIT
+source board/esp_wrover_kit/Kconfig
 endif

@@ -117,9 +117,11 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 static void xtensa_assert(int errorcode) noreturn_function;
 static void xtensa_assert(int errorcode)
 {
+#ifdef CONFIG_DEBUG_ERROR
 	/* Dump the processor state */
 
 	xtensa_dumpstate();
+#endif
 
 #ifdef CONFIG_ARCH_USBDUMP
 	/* Dump USB trace data */
