@@ -15,50 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * examples/avs_test/avs_test_main.cpp
- *
- *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <tinyara/init.h>
-#include <apps/platform/cxxinitialize.h>
-
 #include <fcntl.h>
 #include <wifi_manager/wifi_manager.h>
-
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+#include <protocols/ntpclient.h>
+#include <time.h>
+#endif
+#include <pthread.h>
 #include <iostream>
-
 #include <avs-device-sdk/avs-device-sdk.h>
 
 #ifndef CONFIG_EXAMPLES_AVS_TEST_SSID
@@ -74,39 +41,118 @@
 #define CONFIG_EXAMPLES_AVS_TEST_CRYPTO 3
 #endif
 
-#define SAY_OK_OR_ERROR(condition) if (ret == (condition)) { printf("Ok\n"); } else { printf("Error\n"); }
+#ifndef CONFIG_AVS_TEST_THREAD_STACKSIZE
+#define CONFIG_AVS_TEST_THREAD_STACKSIZE 16384
+#endif
 
 extern "C" {
 
-static void wifi_sta_connected(wifi_manager_result_e result) {
-	printf("%s\n", __FUNCTION__);
-}
+#ifdef CONFIG_NETUTILS_NTPCLIENT
 
-static void wifi_sta_disconnected() {
-	printf("%s\n", __FUNCTION__);
-}
-
-static wifi_manager_cb_s wifi_callbacks = {
-	wifi_sta_connected,
-	wifi_sta_disconnected,
-	NULL,
-	NULL,
-	NULL,
+static struct ntpc_server_conn_s server_conn[] = {
+	{"0.ubuntu.pool.ntp.org", CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT},
+	{CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER, CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT}
 };
 
-int avs_test_main(int argc, char **argv)
+static void ntp_link_error(void)
 {
-#ifdef CONFIG_EXAMPLES_AVS_TEST_CXXINITIALIZE
-	up_cxxinitialize();
-#endif	
-	
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	printf("ntp_link_error() callback is called\n");
+}
+
+static bool sync_time_from_ntp(int guarantee_secs)
+{
+	printf("[%s] guarantee_secs %d\n", __FUNCTION__, guarantee_secs);
+	bool time_sync = false;
+
+	if (ntpc_get_status() != NTP_RUNNING) {
+		struct timespec pre_tp;
+		clock_gettime(CLOCK_REALTIME, &pre_tp);
+
+		struct timespec init_tp;
+		init_tp.tv_sec = 0;
+		init_tp.tv_nsec = 0;
+		clock_settime(CLOCK_REALTIME, &init_tp);
+
+		if (ntpc_start(server_conn, sizeof(server_conn) / sizeof(server_conn[0]), 0, (void *)ntp_link_error) < 0) {
+			printf("ntpc_start() failed\n");
+		} else {
+			printf("ntpc_start() succeed\n");
+
+			while (1) {
+				struct timespec sync_tp;
+				clock_gettime(CLOCK_REALTIME, &sync_tp);
+				if ((init_tp.tv_sec + 1000) < sync_tp.tv_sec) {
+					time_sync = true;
+					break;
+				} else if ((init_tp.tv_sec + guarantee_secs) < sync_tp.tv_sec) {
+					break;
+				}
+				usleep(100000);
+			}
+
+			if (time_sync) {
+				printf("ntpc_time sync done\n");
+			} else {
+				printf("ntpc_time sync fail\n");
+				clock_settime(CLOCK_REALTIME, &pre_tp);
+			}
+		}
+	} else {
+		printf("ntpc already running\n");
+	}
+
+	return time_sync;
+}
+#endif
+
+
+static bool sgIsWifiConnected = false;
+static std::mutex sgWifiMutex;
+static std::condition_variable sgWifiCondv;
+
+#define WIFI_CONNECTED_RESETFLAG() sgIsWifiConnected = false
+
+#define WIFI_CONNECTED_CHECKFLAG() sgIsWifiConnected
+
+#define WIFI_CONNECTED_NOTIFY() \
+	do {\
+		std::lock_guard<std::mutex> lock(sgWifiMutex);\
+		sgIsWifiConnected = true;\
+		sgWifiCondv.notify_one();\
+	} while (0)
+
+#define WIFI_CONNECTED_WAIT() \
+	do {\
+		std::unique_lock<std::mutex> lock(sgWifiMutex);\
+		sgWifiCondv.wait_for(lock, std::chrono::seconds(10), []{return sgIsWifiConnected;});\
+	} while (0)
+
+static void wifi_sta_connected(wifi_manager_result_e result) {
+	printf("[%s] result %d\n", __FUNCTION__, (int)result);
+	WIFI_CONNECTED_NOTIFY();
+}
+
+static void wifi_sta_disconnected(wifi_manager_disconnect_e result) {
+	printf("[%s] result %d\n", __FUNCTION__, (int)result);
+}
+
+static int wifi_connect()
+{
+	static wifi_manager_cb_s wifi_callbacks = {
+		wifi_sta_connected,
+		wifi_sta_disconnected,
+		NULL,
+		NULL,
+		NULL,
+	};
+
+	wifi_manager_result_e ret = wifi_manager_init(&wifi_callbacks);
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_init failed, ret %d\n", (int)ret);
+		return -1;
+	}
+
 	wifi_manager_ap_config_s config;
-
-	printf("wifi_manager_init()...\n");
-	ret = wifi_manager_init(&wifi_callbacks);
-	SAY_OK_OR_ERROR(WIFI_MANAGER_SUCCESS);
-
 	config.ssid_length = strlen(CONFIG_EXAMPLES_AVS_TEST_SSID);
 	config.passphrase_length = strlen(CONFIG_EXAMPLES_AVS_TEST_PASSPHRASE);
 	strncpy(config.ssid, CONFIG_EXAMPLES_AVS_TEST_SSID, config.ssid_length + 1);
@@ -114,26 +160,84 @@ int avs_test_main(int argc, char **argv)
 	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_AVS_TEST_AUTHENTICATION;
 	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_AVS_TEST_CRYPTO;
 
-	printf("AP config: %s(%d) %s(%d) %d, %d\n",
-		config.ssid,
-		config.ssid_length,
-		config.passphrase,
-		config.passphrase_length,
-		config.ap_auth_type,
-		config.ap_crypto_type
-	);
+	WIFI_CONNECTED_RESETFLAG();
 
-	/* current wifi mode is station, then this try will succeed */
-	printf("wifi_manager_connect_ap()...\n");
+	printf("wifi_manager_connect_ap...\n");
 	ret = wifi_manager_connect_ap(&config);
-	SAY_OK_OR_ERROR(WIFI_MANAGER_SUCCESS);
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_connect_ap failed, ret %d\n", (int)ret);
+		wifi_manager_deinit();
+		return -1;
+	}
 
-	printf("AVS Device SDK SampleApplication returned %d\n", avsSampleAppEntry());
+	printf("WIFI_CONNECTED_WAIT...\n");
 
-	printf("wifi_manager_deinit()...\n");
-	ret = wifi_manager_deinit();
-	SAY_OK_OR_ERROR(WIFI_MANAGER_SUCCESS);
-	
+	WIFI_CONNECTED_WAIT();
+	if (!WIFI_CONNECTED_CHECKFLAG()) {
+		printf("wifi connect failed, timeout!\n");
+		wifi_manager_deinit();
+		return -1;
+	}
+
+	return 0;
+}
+
+static int wifi_disconnect()
+{
+	wifi_manager_result_e ret = wifi_manager_deinit();
+	if (ret != WIFI_MANAGER_SUCCESS) {
+		printf("wifi_manager_deinit failed, ret %d\n", (int)ret);
+		return -1;
+	}
+
+	return 0;
+}
+
+void *avs_test_entry(void *param)
+{
+	if (wifi_connect() != 0) {
+		return NULL;
+	}
+
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+	if (!sync_time_from_ntp(16)) {
+		// time hasn't been synced.
+	}
+#endif
+
+	int ret = avsSampleAppEntry();
+	printf("AVS Device SDK SampleApplication returned %d\n", ret);
+
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+#ifndef CONFIG_DISABLE_SIGNALS
+	ntpc_stop();
+#endif
+#endif
+
+	wifi_disconnect();
+	return NULL;
+}
+
+int avs_test_main(int argc, char **argv)
+{
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	sparam.sched_priority = 100;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, CONFIG_AVS_TEST_THREAD_STACKSIZE);
+	pthread_attr_setschedparam(&attr, &sparam);
+
+	int status;
+	pthread_t thread;
+	status = pthread_create(&thread, &attr, avs_test_entry, NULL);
+	if (status != 0) {
+		printf("[%s] pthread_create failed, status=%d\n", __FUNCTION__, status);
+		return 0;
+	}
+
+	pthread_setname_np(thread, "avs_test_main");
+	pthread_join(thread, NULL);
 	return 0;
 }
 
