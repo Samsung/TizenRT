@@ -72,6 +72,12 @@ bool FileOutputDataSource::open()
 		case AUDIO_TYPE_WAVE:
 			if (!utils::createWavHeader(mFp)) {
 				meddbg("wav header create failed\n");
+				if (fclose(mFp) == OK) {
+					mFp = nullptr;
+				} else {
+					meddbg("file close failed error : %d\n", errno);
+				}
+				return false;
 			}
 			break;
 		default:
@@ -88,17 +94,19 @@ bool FileOutputDataSource::open()
 bool FileOutputDataSource::close()
 {
 	switch (getAudioType()) {
-		case AUDIO_TYPE_WAVE:
-			unsigned int fileSize;
-			fileSize = ftell(mFp);
-			if (fileSize < 0) {
-				meddbg("file size could not be found\n");
+		case AUDIO_TYPE_WAVE: {
+			fflush(mFp);
+			long ret = ftell(mFp);
+			if (ret < 0) {
+				meddbg("file size could not be found errno : %d\n", errno);
 				break;
 			}
+			unsigned int fileSize = (unsigned int)ret;
 			if (!utils::writeWavHeader(mFp, getChannels(), getSampleRate(), getPcmFormat(), fileSize)) {
 				meddbg("wav header write to failed\n");
 			}
 			break;
+		}
 		default:
 			/* Don't set any encoder for unsupported formats */
 			break;

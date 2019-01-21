@@ -516,9 +516,6 @@ bool createWavHeader(FILE *fp)
 	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	if (!header) {
 		meddbg("fail to malloc buffer\n");
-		if (fclose(fp) == 0) {
-			fp = nullptr;
-		}
 		return false;
 	}
 
@@ -527,15 +524,16 @@ bool createWavHeader(FILE *fp)
 	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
+		free(header);
 		return false;
 	}
 	if (fseek(fp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
 		meddbg("file seek failed error\n");
+		free(header);
 		return false;
 	}
-	if (header != NULL) {
-		free(header);
-	}
+
+	free(header);
 	return true;
 }
 
@@ -553,8 +551,6 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 		return false;
 	}
 
-	struct wav_header_s *header;
-	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	uint32_t byteRate = 0;
 	uint16_t bitPerSample = 0;
 	uint16_t blockAlign = 0;
@@ -574,17 +570,19 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	blockAlign = channel * (bitPerSample >> 3);
 	byteRate = sampleRate * blockAlign;
 
+	struct wav_header_s *header;
+	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	if (header == NULL) {
 		meddbg("malloc failed error\n");
 		return false;
 	}
 
-	strcpy(header->headerRiff, "RIFF");
+	strncpy(header->headerRiff, "RIFF", 4);
 
 	header->riffSize = fileSize - 8;
 
-	strcpy(header->headerWave, "WAVE");
-	strcpy(header->headerFmt, "fmt ");
+	strncpy(header->headerWave, "WAVE", 4);
+	strncpy(header->headerFmt, "fmt ", 4);
 
 	header->fmtSize = 16;
 	header->format = 1;
@@ -594,7 +592,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	header->blockAlign = blockAlign;
 	header->bitPerSample = bitPerSample;
 
-	strcpy(header->headerData, "data");
+	strncpy(header->headerData, "data", 4);
 
 	header->dataSize = fileSize - WAVE_HEADER_LENGTH;
 
@@ -603,12 +601,11 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
+		free(header);
 		return false;
 	}
-	if (header != NULL) {
-		free(header);
-	}
 
+	free(header);
 	return true;
 }
 } // namespace util
