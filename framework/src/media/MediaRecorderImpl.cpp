@@ -72,13 +72,6 @@ void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = init_audio_stream_in();
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Fail to initialize input audio stream : %d\n", result);
-		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
 	mCurState = RECORDER_STATE_IDLE;
 	notifySync();
 }

@@ -127,30 +127,6 @@ typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
 audio_manager_result_t audio_manager_init(void);
 
 /****************************************************************************
- * Name: init_audio_stream_in
- *
- * Description:
- *   Find all available audio cards for input stream and initialize the
- *   mutexes of each card. The one of the audio cards is set as the active one.
- *
- * Return Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
- ****************************************************************************/
-audio_manager_result_t init_audio_stream_in(void);
-
-/****************************************************************************
- * Name: init_audio_stream_out
- *
- * Description:
- *   Find all available audio cards for output stream and initialize the
- *   mutexes of the cards. The one of the audio cards is set as the active one.
- *
- * Return Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
- ****************************************************************************/
-audio_manager_result_t init_audio_stream_out(void);
-
-/****************************************************************************
  * Name: set_audio_stream_in
  *
  * Description:
