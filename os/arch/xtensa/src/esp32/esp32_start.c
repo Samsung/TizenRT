@@ -53,6 +53,11 @@
 #include <tinyara/init.h>
 #include <tinyara/irq.h>
 
+#include <arch/chip/tie.h>
+#include <arch/xtensa/xtensa_coproc.h>
+
+#include "sched/sched.h"
+
 #include "xtensa.h"
 #include "xtensa_attr.h"
 
@@ -89,6 +94,8 @@ const uint32_t g_idle_topstack = (uint32_t)(g_idlestack + IDLETHREAD_STACKWORDS)
  *   up_cpu_start() is called later in the bring-up sequeuence.
  *
  ****************************************************************************/
+volatile uint32_t cpstate = 0;
+volatile struct xtensa_cpstate_s g_cpstate = { 0 };
 
 void IRAM_ATTR __start(void)
 {
@@ -154,6 +161,14 @@ void IRAM_ATTR __start(void)
 	regval = getreg32(DPORT_APPCPU_CTRL_B_REG);
 	regval &= ~DPORT_APPCPU_CLKGATE_EN;
 	putreg32(regval, DPORT_APPCPU_CTRL_B_REG);
+
+#if XTENSA_CP_ALLSET != 0
+	/* Set initial co-processor state */
+	g_cpstate.cpasa = (uint32_t *)&cpstate;
+	g_cpstate.cpenable = xtensa_get_cpenable();
+	g_cpstate.cpstored = g_cpstate.cpenable;
+	xtensa_coproc_enable((struct xtensa_cpstate_s *)&g_cpstate, XTENSA_CP_ALLSET);
+#endif
 
 	/* Set CPU frequency configured in board.h */
 
