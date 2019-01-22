@@ -234,7 +234,7 @@ static const char g_nullstring[] = "";
  */
 
 #if CONFIG_VERSION_MAJOR != 0 || CONFIG_VERSION_MINOR != 0
-const char g_tzshgreeting[] = "\nNuttShell (TZSH) NuttX-" CONFIG_VERSION_STRING "\n";
+const char g_tzshgreeting[] = "\nNuttShell (TZSH) TizenRT-" CONFIG_VERSION_STRING "\n";
 #else
 const char g_tzshgreeting[] = "\nTinyAraShell (TASH)\n";
 #endif
@@ -249,7 +249,7 @@ const char g_tzshmotd[] = CONFIG_TZSH_MOTD_STRING;
 
 #ifdef CONFIG_TZSH_LOGIN
 #if defined(CONFIG_TZSH_TELNET_LOGIN) && defined(CONFIG_TZSH_TELNET)
-const char g_telnetgreeting[] = "\nWelcome to NuttShell(TZSH) Telnet Server...\n";
+const char g_telnetgreeting[] = "\nWelcome to TizenShell(TZSH) Telnet Server...\n";
 #endif
 const char g_userprompt[] = "login: ";
 const char g_passwordprompt[] = "password: ";
