@@ -68,13 +68,6 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = init_audio_stream_out();
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Fail to initialize output audio stream : %d\n", result);
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
 	mCurState = PLAYER_STATE_IDLE;
 	notifySync();
 }
