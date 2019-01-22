@@ -43,8 +43,11 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+<<<<<<< HEAD
 #include "mbedtls/alt/common.h"
 
+=======
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 #if defined(MBEDTLS_PK_C)
 #include "mbedtls/pk_internal.h"
 
@@ -74,6 +77,12 @@
 
 #include "mbedtls/asn1.h"
 
+<<<<<<< HEAD
+=======
+#include "mbedtls/alt/common.h"
+#include "mbedtls/alt/pk_alt.h"
+
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 int mbedtls_setup_key_alt(unsigned char *key_der, unsigned int key_len, unsigned int key_type, unsigned char *key_buf)
 {
 	int r;
@@ -96,7 +105,11 @@ int mbedtls_setup_key_alt(unsigned char *key_der, unsigned int key_len, unsigned
 	return( 0 );
 }
 
+<<<<<<< HEAD
 int mbedtls_get_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign, unsigned char *hash,
+=======
+int mbedtls_get_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign, unsigned char *hash,
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 				unsigned int hash_len, unsigned int key_index )
 {
 	int r;
@@ -106,7 +119,11 @@ int mbedtls_get_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign, unsigned char *
 	}
 
 	ISP_CHECKBUSY();
+<<<<<<< HEAD
 	if ((r = isp_ecdsa_sign_md_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
+=======
+	if ((r = isp_ecdsa_sign_md_securekey( (struct sECC_SIGN *)ecc_sign, hash, hash_len, key_index)) != 0) {
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 		isp_clear(0);
 		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
 	}
@@ -114,7 +131,11 @@ int mbedtls_get_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign, unsigned char *
 	return( 0 );
 }
 
+<<<<<<< HEAD
 int mbedtls_get_rsa_signature_alt( struct sRSA_SIGN *rsa_sign, unsigned char *hash,
+=======
+int mbedtls_get_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign, unsigned char *hash,
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 				unsigned int hash_len, unsigned int key_index )
 {
 	int r;
@@ -124,7 +145,11 @@ int mbedtls_get_rsa_signature_alt( struct sRSA_SIGN *rsa_sign, unsigned char *ha
 	}
 
 	ISP_CHECKBUSY();
+<<<<<<< HEAD
 	r = isp_rsa_sign_md_securekey(rsa_sign, hash, hash_len, key_index);
+=======
+	r = isp_rsa_sign_md_securekey( (struct sRSA_SIGN *)rsa_sign, hash, hash_len, key_index);
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 	if (r != 0) {
 		isp_clear(0);
 		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
@@ -160,7 +185,11 @@ int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
 #if defined(MBEDTLS_RSA_C)
 
 #if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
+<<<<<<< HEAD
 int mbedtls_verify_rsa_signature_alt( struct sRSA_SIGN *rsa_sign,
+=======
+int mbedtls_verify_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign,
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 				unsigned char *hash, unsigned int hash_len,
 				unsigned char *key_buf )
 {
@@ -171,7 +200,11 @@ int mbedtls_verify_rsa_signature_alt( struct sRSA_SIGN *rsa_sign,
 	}
 	
 	ISP_CHECKBUSY();
+<<<<<<< HEAD
 	r = isp_rsa_verify_md_encryptedkey(rsa_sign, hash, hash_len, key_buf);
+=======
+	r = isp_rsa_verify_md_encryptedkey( (struct sRSA_SIGN *)rsa_sign, hash, hash_len, key_buf);
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 	if (r != 0) {
 		isp_clear(0);
 		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
@@ -188,7 +221,11 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	unsigned char *key_buf = NULL;
 	unsigned char *der_buf = NULL;
 	unsigned char *t_hash = (unsigned char *) hash;
+<<<<<<< HEAD
 	struct sRSA_SIGN rsa_sign;
+=======
+	struct mbedtls_sRSA_SIGN rsa_sign;
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 	unsigned int padding;
 
 	( (void) md_alg );
@@ -233,7 +270,11 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		goto cleanup;
 	}
 
+<<<<<<< HEAD
 	memset( &rsa_sign, 0, sizeof(struct sRSA_SIGN) );
+=======
+	memset( &rsa_sign, 0, sizeof(struct mbedtls_sRSA_SIGN) );
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 	/*
 	 * 2. Choose digest algorithm.
@@ -290,12 +331,21 @@ static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 {
     mbedtls_rsa_context * rsa = (mbedtls_rsa_context *) ctx;
 	int ret;
+<<<<<<< HEAD
 	unsigned int padding = ctx->padding;
 	unsigned int key_index;
 	struct sRSA_SIGN rsa_sign;
 	unsigned char *t_hash = (unsigned char *) hash;
 
 	memset( &rsa_sign, 0, sizeof( struct sRSA_SIGN ) );
+=======
+	unsigned int padding = rsa->padding;
+	unsigned int key_index;
+	struct mbedtls_sRSA_SIGN rsa_sign;
+	unsigned char *t_hash = (unsigned char *) hash;
+
+	memset( &rsa_sign, 0, sizeof( struct mbedtls_sRSA_SIGN ) );
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 #if SIZE_MAX > UINT_MAX
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len ) {
@@ -427,7 +477,11 @@ static int rsa_decrypt_wrap( void *ctx,
                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
     mbedtls_rsa_context * rsa = (mbedtls_rsa_context *) ctx;
+<<<<<<< HEAD
 	unsigned int padding = ctx->padding;
+=======
+	unsigned int padding = rsa->padding;
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 	unsigned char *t_input = (unsigned char *) input;
     unsigned int key_index;
 
@@ -609,8 +663,14 @@ const mbedtls_pk_info_t mbedtls_rsa_info = {
 #endif /* MBEDTLS_RSA_C */
 
 
+<<<<<<< HEAD
 #if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
 int mbedtls_verify_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign,
+=======
+#if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
+#if defined(MBEDTLS_ECP_C)
+int mbedtls_verify_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign,
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
                                         unsigned char *hash, unsigned int hash_len,
                                         unsigned char *key_buf )
 {
@@ -621,7 +681,11 @@ int mbedtls_verify_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign,
 	}
 
 	ISP_CHECKBUSY();
+<<<<<<< HEAD
 	r = isp_ecdsa_verify_md_encryptedkey(ecc_sign, hash, hash_len, key_buf);
+=======
+	r = isp_ecdsa_verify_md_encryptedkey( (struct sECC_SIGN *)ecc_sign, hash, hash_len, key_buf);
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 	if (r != 0) {
 		isp_clear(0);
 		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
@@ -684,7 +748,11 @@ int eckey_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	const unsigned char *end = sig + sig_len;
 	unsigned char *p = (unsigned char *) sig;
 	unsigned char *t_hash = (unsigned char *) hash;
+<<<<<<< HEAD
 	struct sECC_SIGN ecc_sign;
+=======
+	struct mbedtls_sECC_SIGN ecc_sign;
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 	( (void) md_alg );
 
@@ -727,7 +795,11 @@ int eckey_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	/*
 	 * 2. Seperate 'r' and 's' from received signature.
 	 */
+<<<<<<< HEAD
 	memset( &ecc_sign, 0, sizeof(struct sECC_SIGN) );
+=======
+	memset( &ecc_sign, 0, sizeof(struct mbedtls_sECC_SIGN) );
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 	if( mbedtls_asn1_get_tag( &p, end, &len, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
@@ -847,7 +919,13 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 
     mbedtls_ecdsa_init( &ecdsa );
 
+<<<<<<< HEAD
     if( ( ret = mbedtls_ecdsa_from_keypair( &ecdsa, ctx ) ) == 0 )
+=======
+	mbedtls_mpi r, s;
+
+	if( ( ret = mbedtls_ecdsa_from_keypair( &ecdsa, ctx ) ) == 0 )
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
     {
 		unsigned int key_index = ( ( mbedtls_ecp_keypair *) ctx )->key_index;
 		unsigned int curve = ecdsa.grp.id;
@@ -858,9 +936,15 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		/*
 		 * 1. Check hash algorithm and sign curve
 		 */
+<<<<<<< HEAD
 		mbedtls_mpi r, s;
 		struct sECC_SIGN ecc_sign;
 		memset( &ecc_sign, 0, sizeof( struct sECC_SIGN ) );
+=======
+
+		struct mbedtls_sECC_SIGN ecc_sign;
+		memset( &ecc_sign, 0, sizeof( struct mbedtls_sECC_SIGN ) );
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 		ecc_sign.s = s_buf;
 		ecc_sign.r = r_buf;
@@ -952,6 +1036,34 @@ const mbedtls_pk_info_t mbedtls_eckey_info = {
     eckey_debug,
 };
 
+<<<<<<< HEAD
+=======
+/*
+ * EC key restricted to ECDH
+ */
+static int eckeydh_can_do( mbedtls_pk_type_t type )
+{
+    return( type == MBEDTLS_PK_ECKEY ||
+            type == MBEDTLS_PK_ECKEY_DH );
+}
+
+const mbedtls_pk_info_t mbedtls_eckeydh_info = {
+    MBEDTLS_PK_ECKEY_DH,
+    "EC_DH",
+    eckey_get_bitlen,         /* Same underlying key structure */
+    eckeydh_can_do,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    eckey_check_pair,
+    eckey_alloc_wrap,       /* Same underlying key structure */
+    eckey_free_wrap,        /* Same underlying key structure */
+    eckey_debug,            /* Same underlying key structure */
+};
+#endif /* MBEDTLS_ECP_C */
+
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 #if defined(MBEDTLS_ECDSA_C)
 static int ecdsa_can_do( mbedtls_pk_type_t type )
 {
@@ -1015,6 +1127,10 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 };
 #endif /* MBEDTLS_ECDSA_C */
 
+<<<<<<< HEAD
 #endif /* MBEDTLS_PK_ECDSA_VERIFY_ALT &  MBEDTLS_ECP_C */
+=======
+#endif /* MBEDTLS_PK_ECDSA_VERIFY_ALT */
+>>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 #endif /* MBEDTLS_PK_C */
