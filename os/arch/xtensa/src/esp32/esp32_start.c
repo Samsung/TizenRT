@@ -17,7 +17,7 @@
  ******************************************************************/
 
 /****************************************************************************
- * arch/xtensa/src/xtensa/esp32_start.c
+ * arch/xtensa/src/esp32/esp32_start.c
  *
  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -70,6 +70,8 @@
 
 uint32_t g_idlestack[IDLETHREAD_STACKWORDS]
 __attribute__((aligned(16) section(".noinit")));
+
+const uint32_t g_idle_topstack = (uint32_t)(g_idlestack + IDLETHREAD_STACKWORDS);
 
 /****************************************************************************
  * Public Functions
@@ -133,7 +135,7 @@ void IRAM_ATTR __start(void)
 	 */
 
 	sp = (uint32_t) g_idlestack + IDLETHREAD_STACKSIZE;
-	__asm__ __volatile__("mov sp, %0\n" :: "r" (sp));
+	__asm__ __volatile__("mov sp, %0\n" : : "r" (sp));
 
 	/* Make page 0 access raise an exception */
 
@@ -141,7 +143,7 @@ void IRAM_ATTR __start(void)
 
 	/* Move CPU0 exception vectors to IRAM */
 
-	asm volatile("wsr %0, vecbase\n" :: "r" (&_init_start));
+	asm volatile("wsr %0, vecbase\n" : : "r" (&_init_start));
 
 	/* Set .bss to zero */
 
