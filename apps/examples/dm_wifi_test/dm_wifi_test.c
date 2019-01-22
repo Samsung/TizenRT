@@ -219,7 +219,7 @@ int wifi_test_proc(int argc, char *argv[])
 		if (sendto(fd, payload, strlen(payload), 0, (struct sockaddr *)&dest, sizeof(struct sockaddr_in)) == -1) {
 			printf("[WiFi] Failed to sendto UDP.\n");
 			ret = -1;
-			closesocket(fd);
+			close(fd);
 			goto error_out;
 		}
 		/* Type in code to free WiFi scan data. Do check and
