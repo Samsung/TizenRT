@@ -2930,6 +2930,21 @@
 #endif
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+#define MBEDTLS_PK_ECDSA_VERIFY_ALT
+#endif
+
+#if defined(CONFIG_HW_RSA_VERIFICATION)
+#define MBEDTLS_PK_RSA_VERIFY_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+#if defined(CONFIG_HW_RSA_ENC)
+#define MBEDTLS_PK_RSA_ENCRYPT_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+
 /**
  * Complete list of ciphersuites to use, in order of preference.
  *
