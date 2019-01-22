@@ -41,6 +41,7 @@
 
 #if defined(MBEDTLS_PK_C)
 #include "mbedtls/pk.h"
+#include "mbedtls/alt/pk_alt.h"
 #include "mbedtls/pk_internal.h"
 
 #if defined(MBEDTLS_RSA_C)
