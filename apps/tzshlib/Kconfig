@@ -14,7 +14,7 @@ config TZSH_LIBRARY
 	select READLINE_HAVE_EXTMATCH
 	---help---
 		Build the TZSH support library.  This is used, for example, by
-		system/tzsh in order to implement the full NuttShell (TZSH).
+		system/tzsh in order to implement the full TizenShell (TZSH).
 
 if TZSH_LIBRARY
 

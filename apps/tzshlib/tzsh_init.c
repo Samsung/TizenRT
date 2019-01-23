@@ -83,7 +83,7 @@ static const struct extmatch_vtable_s g_tzsh_extmatch = {
  * Name: tzsh_initialize
  *
  * Description:
- *   This nterfaces is used to initialize the NuttShell (TZSH).
+ *   This nterfaces is used to initialize the TizenShell (TZSH).
  *   tzsh_initialize() should be called one during application start-up prior
  *   to executing either tzsh_consolemain() or tzsh_telnetstart().
  *

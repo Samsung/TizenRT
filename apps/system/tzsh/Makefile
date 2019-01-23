@@ -37,7 +37,7 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# NuttShell (TZSH) Example
+# TizenShell (TZSH) Example
 
 ASRCS =
 CSRCS =

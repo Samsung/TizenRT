@@ -1,7 +1,7 @@
 apps/tzshlib
 ^^^^^^^^^^^
 
-  This directory contains the NuttShell (TZSH) library.  This library can be
+  This directory contains the TizenShell (TZSH) library.  This library can be
   linked with other logic to provide a simple shell application for NuttX.
 
   - Console/TZSH Front End
@@ -28,7 +28,7 @@ Console/TZSH Front End
   or BOTH.  When TZSH is started, you will see the following welcome on
   either console:
 
-    NuttShell (TZSH)
+    TizenShell (TZSH)
     tzsh>
 
   'tzsh>' is the TZSH prompt and indicates that you may enter a command
@@ -37,7 +37,7 @@ Console/TZSH Front End
 Command Overview
 ^^^^^^^^^^^^^^^^
 
-  This directory contains the NuttShell (TZSH).  This is a simple
+  This directory contains the TizenShell (TZSH).  This is a simple
   shell-like application.  At present, TZSH supports the following commands
   forms:
 

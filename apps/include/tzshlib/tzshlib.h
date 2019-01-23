@@ -113,7 +113,7 @@ extern "C" {
  * Name: tzsh_initialize
  *
  * Description:
- *   This interface is used to initialize the NuttShell (TZSH).
+ *   This interface is used to initialize the TizenShell (TZSH).
  *   tzsh_initialize() should be called one during application start-up prior
  *   to executing either tzsh_consolemain() or tzsh_telnetstart().
  *

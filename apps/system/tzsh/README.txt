@@ -4,7 +4,7 @@ README
   Basic Configuration
   -------------------
   This directory provides an example of how to configure and use
-  the NuttShell (TZSH) application.  TZSH is a simple shell
+  the TizenShell (TZSH) application.  TZSH is a simple shell
   application.  TZSH is described in its own README located at
   apps/nshlib/README.txt.  This function is enabled with:
 

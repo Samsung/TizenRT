@@ -234,7 +234,7 @@ static const char g_nullstring[] = "";
  */
 
 #if CONFIG_VERSION_MAJOR != 0 || CONFIG_VERSION_MINOR != 0
-const char g_tzshgreeting[] = "\nNuttShell (TZSH) TizenRT-" CONFIG_VERSION_STRING "\n";
+const char g_tzshgreeting[] = "\nTizenShell (TZSH) TizenRT-" CONFIG_VERSION_STRING "\n";
 #else
 const char g_tzshgreeting[] = "\nTinyAraShell (TASH)\n";
 #endif

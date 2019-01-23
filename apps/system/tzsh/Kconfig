@@ -4,7 +4,7 @@ config SYSTEM_TZSH
 	select TZSH_LIBRARY
 	select SYSTEM_READLINE
 	---help---
-		Enable the NuttShell (TZSH) example
+		Enable the TizenShell (TZSH) example
 
 if SYSTEM_TZSH
 
