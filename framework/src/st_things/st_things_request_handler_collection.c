@@ -25,6 +25,7 @@
 #include "things_api.h"
 #include "ocpayload.h"
 
+// Logging tag for module name.
 #define TAG "[st_things_sdk]"
 
 static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types, int *count)

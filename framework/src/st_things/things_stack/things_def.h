@@ -21,7 +21,10 @@
 
 #define ST_THINGS_STACK_VERSION      "ST_THINGS_1.0_18.1.30"
 
-/* Resource Types */
+//--------------------------------------------------------------------------------
+/**
+ * Resource Types
+ */
 #define OIC_INTERFACE_BASELINE          "oic.if.baseline"
 #define OIC_INTERFACE_LINKEDLIST        "oic.if.ll"
 #define OIC_INTERFACE_LINKEDBATCH       "oic.if.lb"
@@ -44,27 +47,40 @@
 #define SEC_ATTRIBUTE_PROV_TARGET_RT        "x.com.samsung.targetRt"
 #define SEC_ATTRIBUTE_PROV_TARGET_PUBED     "x.com.samsung.published"
 
-/* Resource Attribute's names for AccessPoint List*/
+//--------------------------------------------------------------------------------
+/**
+ * Resource Attribute's names for AccessPoint List
+ */
 #define SEC_ATTRIBUTE_AP_ITEMS              "x.com.samsung.accesspoint.items"
 #define SEC_ATTRIBUTE_AP_MACADDR            "x.com.samsung.macAddress"
 #define SEC_ATTRIBUTE_AP_RSSI               "x.com.samsung.rssi"
 #define SEC_ATTRIBUTE_AP_SSID               "x.com.samsung.ssid"
 #define SEC_ATTRIBUTE_AP_SECTYPE            "x.com.samsung.securityType"
 #define SEC_ATTRIBUTE_AP_ENCTYPE            "x.com.samsung.encryptionType"
-/* Resource URI */
+
+//--------------------------------------------------------------------------------
+/**
+ * Resource URI
+ */
 #define URI_SEC                         "/sec"
 #define URI_PROVINFO                    "/provisioninginfo"
 #define URI_DEVICE_COL                  "/device"
 #define URI_FIRMWARE                    "/firmware"
 #define URI_ACCESSPOINTLIST             "/accesspointlist"
 
-/* SecType value */
+//--------------------------------------------------------------------------------
+/**
+ * SecType value
+ */
 #define SEC_TYPE_WEP                    "WEP"
 #define SEC_TYPE_WPA_PSK                "WPA-PSK"
 #define SEC_TYPE_WPA2_PSK               "WPA2-PSK"
 #define SEC_TYPE_NONE                   "NONE"
 
-/* EncType value */
+//--------------------------------------------------------------------------------
+/**
+ * EncType value
+ */
 #define ENC_TYPE_WEP_64                 "WEP-64"
 #define ENC_TYPE_WEP_128                "WEP-128"
 #define ENC_TYPE_TKIP                   "TKIP"

@@ -32,6 +32,7 @@
 #include "octypes.h"
 #include "ocstack.h"
 
+//Logging tag for module name.
 #define TAG "[st_things_sdk]"
 
 #define SEC_ATRRIBUTE_PUSH_MESG_MSGID        "x.org.iotivity.ns.messageid"
@@ -49,14 +50,19 @@ static st_things_user_confirm_cb g_handle_user_confirm_cb = NULL;
 
 static st_things_status_change_cb g_handle_things_status_change_cb = NULL;
 
+/**
+ * Holds the value of stack status.
+ */
 typedef enum {
 	STACK_NOT_INITIALIZED = 0,
 	STACK_INITIALIZED,
 	STACK_STARTED
 } stack_status_e;
 
+// Holds the status of stack
 static stack_status_e g_stack_status = STACK_NOT_INITIALIZED;
 
+//--------------------------------------------------------------------------------
 /**
  * This callback will be invoked by DA Stack with the result of reset.
  * Result will be passed to the application through its registered callback.
@@ -72,6 +78,7 @@ void get_reset_result_cb(int result)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
+//--------------------------------------------------------------------------------
 /**
  * This callback will be registered with the DA Stack to get the request for user's confirmation for reset.
  * Application's callback will be invoked to get the user's opinion.
@@ -109,6 +116,7 @@ int get_reset_confirm_cb(things_reset_result_func_type *func_carrier, things_es_
 	return 1;
 }
 
+//--------------------------------------------------------------------------------
 /**
  * This callback will be registered with the DA Stack to recieve easy-setup events.
  * The status will be passed to the application through the callback registered by the application.
@@ -120,28 +128,28 @@ void get_things_status_cb(things_es_enrollee_state_e state)
 	bool handled = true;
 	st_things_status_e status = ST_THINGS_STATUS_INIT;
 	switch (state) {
-	case ES_STATE_INIT:
+	case ES_STATE_INIT:							// Default state
 		status = ST_THINGS_STATUS_INIT;
 		break;
-	case ES_STATE_CONNECTING_TO_ENROLLER:
+	case ES_STATE_CONNECTING_TO_ENROLLER:					// Connecting to target AP
 		status = ST_THINGS_STATUS_CONNECTING_TO_AP;
 		break;
-	case ES_STATE_CONNECTED_TO_ENROLLER:
+	case ES_STATE_CONNECTED_TO_ENROLLER:					// Connnected to target AP
 		status = ST_THINGS_STATUS_CONNECTED_TO_AP;
 		break;
-	case ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER:
+	case ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER:				// Failed to connect target AP
 		status = ST_THINGS_STATUS_CONNECTING_TO_AP_FAILED;
 		break;
-	case ES_STATE_PUBLISHING_RESOURCES_TO_CLOUD:
+	case ES_STATE_PUBLISHING_RESOURCES_TO_CLOUD:				// Registering resource to cloud
 		status = ST_THINGS_STATUS_REGISTERING_TO_CLOUD;
 		break;
-	case ES_STATE_FAILED_TO_REGISTER_TO_CLOUD:
+	case ES_STATE_FAILED_TO_REGISTER_TO_CLOUD:				// Failed to register resource to cloud
 		status = ST_THINGS_STATUS_REGISTERING_FAILED_ON_SIGN_IN;
 		break;
-	case ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD:
+	case ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD:			// Failed to publish resource on cloud
 		status = ST_THINGS_STATUS_REGISTERING_FAILED_ON_PUB_RES;
 		break;
-	case ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD:
+	case ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD:				// Successful resource publish on cloud
 		status = ST_THINGS_STATUS_REGISTERED_TO_CLOUD;
 		break;
 	default:
@@ -156,6 +164,7 @@ void get_things_status_cb(things_es_enrollee_state_e state)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
+//--------------------------------------------------------------------------------
 /**
  * DA Stack invokes this callback for providing ownership transfer states.
  */
@@ -186,6 +195,7 @@ void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uu
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
+//--------------------------------------------------------------------------------
 /**
  * Callback for getting users confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer
  */
@@ -204,6 +214,7 @@ int get_user_confirm_cb(void)
 	return confirm ? 1 : 0;
 }
 
+//--------------------------------------------------------------------------------
 /**
  * Callback for getting the pin for random pin based ownership transfer.
  */
@@ -228,6 +239,10 @@ void close_pin_display_cb(void)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for st things initialize which call the initialize things stack api.
+ */
 int st_things_initialize(const char *json_path, bool *easysetup_complete)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -235,11 +250,11 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete)
 	if (STACK_NOT_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
-		case STACK_INITIALIZED:
+		case STACK_INITIALIZED:					// Stack already initialized
 			THINGS_LOG_E(TAG, "Stack initialized already.");
 			ret_val = ST_THINGS_ERROR_STACK_ALREADY_INITIALIZED;
 			break;
-		case STACK_STARTED:
+		case STACK_STARTED:					// Stack currently running
 			THINGS_LOG_E(TAG, "Stack is currently running.");
 			ret_val = ST_THINGS_ERROR_STACK_RUNNING;
 			break;
@@ -261,6 +276,7 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete)
 	THINGS_LOG_D(TAG, "JSON file path: %s", json_path);
 
 	int result = 0;
+	// Initialize things stack.
 	if (1 != (result = things_initialize_stack(json_path, easysetup_complete))) {
 		THINGS_LOG_E(TAG, "things_initialize_stack failed (result:%d)", result);
 		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
@@ -274,6 +290,10 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete)
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for deinitialize things stack.
+ */
 int st_things_deinitialize(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -281,11 +301,11 @@ int st_things_deinitialize(void)
 	if (STACK_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
-		case STACK_NOT_INITIALIZED:
+		case STACK_NOT_INITIALIZED:				// Stack not initialized.
 			THINGS_LOG_E(TAG, "Stack is not initialized.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
-		case STACK_STARTED:
+		case STACK_STARTED:					// Stack currently running.
 			THINGS_LOG_E(TAG, "Stack is currently running. Stop the stack before deinitializing it.");
 			ret_val = ST_THINGS_ERROR_STACK_RUNNING;
 			break;
@@ -298,15 +318,22 @@ int st_things_deinitialize(void)
 		return ret_val;
 	}
 
+	// Set the stack status is not initialized.
 	g_stack_status = STACK_NOT_INITIALIZED;
 
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
+	// Call API to deinitialize things stack.
 	(void)things_deinitialize_stack();
 
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * This function starts things stack and parse the thing definition, configure the thing,
+   creates the resource and prepares it for easy setup
+ */
 int st_things_start(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -314,11 +341,11 @@ int st_things_start(void)
 	if (STACK_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
-		case STACK_NOT_INITIALIZED:
+		case STACK_NOT_INITIALIZED:				// Stack not initialized.
 			THINGS_LOG_E(TAG, "Stack is not initialized.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
-		case STACK_STARTED:
+		case STACK_STARTED:					// Stack currently running.
 			THINGS_LOG_D(TAG, "Stack started already.");
 			ret_val = ST_THINGS_ERROR_NONE;
 			break;
@@ -384,20 +411,34 @@ error:
 	return ST_THINGS_ERROR_OPERATION_FAILED;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for Send representation of a resource through push service to Samsung Connect client.
+ */
 int st_things_push_notification_to_cloud(const char *target_uri, st_things_representation_s *resp_rep)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	int push_ret = 0;
-	OCRepPayload *payload = OCRepPayloadCreate();
+	OCRepPayload *payload = OCRepPayloadCreate();			// Create payload for things representation
 	if (!payload) {
 		THINGS_LOG_E(TAG, "Failed to allocate Payload");
 		return 0;
 	} else {
+		// Set target uri
 		OCRepPayloadSetUri(resp_rep->payload, target_uri);
+
+		// Set message id
 		OCRepPayloadSetPropInt(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_MSGID, 0);
+
+		//Set provider id
 		OCRepPayloadSetPropString(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_PROVIDERID, OCGetServerInstanceIDString());
+
 		OCRepPayloadSetPropString(payload, SEC_ATRRIBUTE_PUSH_MESG_ET, "device.changed");
+
+		//Set things payload into st things representatin payload.
 		OCRepPayloadSetPropObject(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_DATA, payload);
+
+		//Send notification detail to cloud
 		push_ret = push_notification_to_cloud(target_uri, resp_rep->payload);
 		THINGS_LOG_V(TAG, "push_ret [%d]", push_ret);
 	}
@@ -405,6 +446,10 @@ int st_things_push_notification_to_cloud(const char *target_uri, st_things_repre
 	return push_ret;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for register handling request callback
+ */
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -417,6 +462,10 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
 	return register_request_handler_cb(get_cb, set_cb);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for register reset handling callback.
+ */
 int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things_reset_result_cb result_cb)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -432,6 +481,11 @@ int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function Definition for st things reset.It call the things reset api,which delete
+ * all the data related to security and cloud from the things stack.
+ */
 int st_things_reset(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -457,6 +511,7 @@ int st_things_reset(void)
 	}
 
 	int result = 0;
+	// Call the things reset api
 	if (1 != (result = things_reset(NULL, RST_AUTO_RESET))) {
 		THINGS_LOG_E(TAG, "things_reset failed (result:%d)", result);
 		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
@@ -467,6 +522,10 @@ int st_things_reset(void)
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Defination for register pin handling callback for random generated pin
+ */
 int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, st_things_pin_display_close_cb close_cb)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -482,6 +541,10 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for register user confirm callback regarding mutual verification.
+ */
 int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -496,6 +559,10 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb)
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for register callback for getting current state of ST Things.
+ */
 int st_things_register_things_status_change_cb(st_things_status_change_cb status_cb)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -510,6 +577,10 @@ int st_things_register_things_status_change_cb(st_things_status_change_cb status
 	return ST_THINGS_ERROR_NONE;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Definition for notify observers of a specific resource.
+ */
 int st_things_notify_observers(const char *resource_uri)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -541,6 +612,7 @@ int st_things_notify_observers(const char *resource_uri)
 	}
 
 	int result = 0;
+	// Call the things notify observers api
 	if (1 != (result = things_notify_observers(resource_uri))) {
 		THINGS_LOG_E(TAG, "things_notify_observers failed (result:%d)", result);
 		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
@@ -551,7 +623,11 @@ int st_things_notify_observers(const char *resource_uri)
 	return ST_THINGS_ERROR_NONE;
 }
 
-st_things_representation_s *st_things_create_representation_inst(void)
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for create an instance of representation
+ */
+st_things_representation_s *st_things_create_representation_inst()
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	st_things_representation_s *rep = create_representation_inst();
@@ -559,6 +635,10 @@ st_things_representation_s *st_things_create_representation_inst(void)
 	return rep;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for deleting an instance of representation.
+ */
 void st_things_destroy_representation_inst(st_things_representation_s *rep)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);

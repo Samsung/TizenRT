@@ -22,8 +22,13 @@
 #include "logging/things_logger.h"
 #include "ocpayload.h"
 
+// Logging tag for module name.
 #define TAG "[st_things_sdk]"
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the string type property with a key.
+ */
 bool get_str_value(struct _st_things_representation *rep, const char *key, char **value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -34,6 +39,10 @@ bool get_str_value(struct _st_things_representation *rep, const char *key, char 
 	return OCRepPayloadGetPropString((OCRepPayload *) rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the bool type property with a key.
+ */
 bool get_bool_value(struct _st_things_representation *rep, const char *key, bool *value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -44,6 +53,10 @@ bool get_bool_value(struct _st_things_representation *rep, const char *key, bool
 	return OCRepPayloadGetPropBool((OCRepPayload *) rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the int type property with a key.
+ */
 bool get_int_value(struct _st_things_representation *rep, const char *key, int64_t *value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -54,6 +67,10 @@ bool get_int_value(struct _st_things_representation *rep, const char *key, int64
 	return OCRepPayloadGetPropInt((OCRepPayload *)rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the double type property with a key.
+ */
 bool get_double_value(struct _st_things_representation *rep, const char *key, double *value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -64,6 +81,10 @@ bool get_double_value(struct _st_things_representation *rep, const char *key, do
 	return OCRepPayloadGetPropDouble((OCRepPayload *) rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the byte type property with a key.
+ */
 bool get_byte_value(struct _st_things_representation *rep, const char *key, uint8_t **value, size_t *size)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -83,6 +104,10 @@ bool get_byte_value(struct _st_things_representation *rep, const char *key, uint
 	return true;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the object type property with a key.
+ */
 bool get_object_value(struct _st_things_representation *rep, const char *key, struct _st_things_representation **value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -103,6 +128,10 @@ bool get_object_value(struct _st_things_representation *rep, const char *key, st
 	return result;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the string type property with a key.
+ */
 bool set_str_value(struct _st_things_representation *rep, const char *key, const char *value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -113,6 +142,10 @@ bool set_str_value(struct _st_things_representation *rep, const char *key, const
 	return OCRepPayloadSetPropString(rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the bool type property with a key.
+ */
 bool set_bool_value(struct _st_things_representation *rep, const char *key, bool value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -122,6 +155,10 @@ bool set_bool_value(struct _st_things_representation *rep, const char *key, bool
 	return OCRepPayloadSetPropBool(rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the integer type property with a key.
+ */
 bool set_int_value(struct _st_things_representation *rep, const char *key, int64_t value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -131,6 +168,10 @@ bool set_int_value(struct _st_things_representation *rep, const char *key, int64
 	return OCRepPayloadSetPropInt(rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the double type property with a key.
+ */
 bool set_double_value(struct _st_things_representation *rep, const char *key, double value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -140,6 +181,10 @@ bool set_double_value(struct _st_things_representation *rep, const char *key, do
 	return OCRepPayloadSetPropDouble(rep->payload, key, value);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the byte type property with a key.
+ */
 bool set_byte_value(struct _st_things_representation *rep, const char *key, const uint8_t *value, size_t size)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -152,6 +197,10 @@ bool set_byte_value(struct _st_things_representation *rep, const char *key, cons
 	return OCRepPayloadSetPropByteString(rep->payload, key, bVal);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the object type property with a key.
+ */
 bool set_object_value(struct _st_things_representation *rep, const char *key, const struct _st_things_representation *value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -163,6 +212,10 @@ bool set_object_value(struct _st_things_representation *rep, const char *key, co
 	return OCRepPayloadSetPropObject(rep->payload, key, value->payload);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the string array type property with a key.
+ */
 bool get_str_array_value(struct _st_things_representation *rep, const char *key, char ***array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -180,6 +233,10 @@ bool get_str_array_value(struct _st_things_representation *rep, const char *key,
 	return ret;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the integer array type property with a key.
+ */
 bool get_int_array_value(struct _st_things_representation *rep, const char *key, int64_t **array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -197,6 +254,10 @@ bool get_int_array_value(struct _st_things_representation *rep, const char *key,
 	return ret;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the double array type property with a key.
+ */
 bool get_double_array_value(struct _st_things_representation *rep, const char *key, double **array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -214,6 +275,10 @@ bool get_double_array_value(struct _st_things_representation *rep, const char *k
 	return ret;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for getting the object array type property with a key.
+ */
 bool get_object_array_value(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -270,6 +335,10 @@ bool get_object_array_value(struct _st_things_representation *rep, const char *k
 	return true;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the string array property with a key.
+ */
 bool set_str_array_value(struct _st_things_representation *rep, const char *key, const char **array, size_t length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -282,6 +351,10 @@ bool set_str_array_value(struct _st_things_representation *rep, const char *key,
 	return OCRepPayloadSetStringArray(rep->payload, key, array, dimensions);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the integer array type property with a key.
+ */
 bool set_int_array_value(struct _st_things_representation *rep, const char *key, const int64_t *array, size_t length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -294,6 +367,10 @@ bool set_int_array_value(struct _st_things_representation *rep, const char *key,
 	return OCRepPayloadSetIntArray(rep->payload, key, array, dimensions);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the double array type property with a key.
+ */
 bool set_double_array_value(struct _st_things_representation *rep, const char *key, const double *array, size_t length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -306,6 +383,10 @@ bool set_double_array_value(struct _st_things_representation *rep, const char *k
 	return OCRepPayloadSetDoubleArray(rep->payload, key, array, dimensions);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for setting the object array type property with a key.
+ */
 bool set_object_array_value(struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -342,6 +423,10 @@ bool set_object_array_value(struct _st_things_representation *rep, const char *k
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for creating the instance of representation internally.
+ */
 st_things_representation_s *create_representation_inst_internal(OCRepPayload *payload)
 {
 	st_things_representation_s *rep = (st_things_representation_s *) things_malloc(sizeof(st_things_representation_s));
@@ -387,11 +472,20 @@ st_things_representation_s *create_representation_inst_internal(OCRepPayload *pa
 	return rep;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for creating instance of payload.Internally it call the api by
+ * passing payload with NULL value.
+ */
 st_things_representation_s *create_representation_inst(void)
 {
 	return create_representation_inst_internal(NULL);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Api definition for deleting an instance of representation internally.
+ */
 void destroy_representation_inst_internal(st_things_representation_s *rep, bool destroy_payload)
 {
 	RET_IF_PARAM_IS_NULL(TAG, rep);
@@ -410,6 +504,11 @@ void destroy_representation_inst_internal(st_things_representation_s *rep, bool 
 	things_free(rep);
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Api definition for delete instance of payload.Internally it call the
+ * destroy_representation_inst_internal api for delete instance of payload.
+ */
 void destroy_representation_inst(st_things_representation_s *rep)
 {
 	destroy_representation_inst_internal(rep, true);

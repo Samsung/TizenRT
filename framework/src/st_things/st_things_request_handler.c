@@ -47,13 +47,19 @@
 #define PROPERTY_KEY_DELIMITER ';'
 #define KEY_VALUE_SEPARATOR '='
 
+// Logging tag for module name
 #define TAG "[st_things_sdk]"
 
 static st_things_get_request_cb g_handle_get_req_cb = NULL;
 static st_things_set_request_cb g_handle_set_req_cb = NULL;
 
+//--------------------------------------------------------------------------------
+/**
+ * API defnition for getting value from query parameter.
+ */
 bool get_query_value_internal(const char *query, const char *key, char **value, bool *found)
 {
+	// Check validation of query, key and value.
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, (NULL == query || strlen(query) < 1), "Invalid query.");
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, (NULL == key || strlen(key) < 1), "Invalid key.");
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, value);
@@ -69,6 +75,7 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 	char *p_origin = NULL;
 	char *p_ptr = NULL;
 
+	// Allocate memory to get specific value from query.
 	p_buff = (char *)things_malloc(query_len + 1);
 	if (NULL == p_buff) {
 		THINGS_LOG_E(TAG, "Failed to allocate memory to get a specific value from query.");
@@ -79,6 +86,7 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 	memset(p_buff, 0, query_len + 1);
 	memcpy(p_buff, query, query_len);
 
+	// Store the sequence of tokens
 	p_ptr = strtok(p_buff, QUERY_DELIMITER);
 	if (NULL == p_ptr) {
 		THINGS_LOG_E(TAG, "Failed to tokenize the query.");
@@ -88,12 +96,13 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 
 	bool res = false;
 	while (p_ptr != NULL) {
-		if (strncmp(p_ptr, key, key_len) == 0) {
+		if (strncmp(p_ptr, key, key_len) == 0) {	// Compare the token with key
 			THINGS_LOG_D(TAG, "Key(%s) exists in query parameter(%s).", key, query);
 			if (NULL != found) {
 				*found = true;
 			}
 
+			// Clone the token into value.
 			*value = things_clone_string(p_ptr + key_len + 1);
 			if (NULL == *value) {
 				THINGS_LOG_E(TAG, "Failed to clone the query value.");
@@ -117,20 +126,33 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for getting query value from get request message.
+ */
 bool get_query_value_for_get_req(struct _st_things_get_request_message *req_msg, const char *key, char **value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg);
 	return get_query_value_internal(req_msg->query, key, value, NULL);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for getting query value from post request message.
+ */
 bool get_query_value_for_post_req(struct _st_things_set_request_message *req_msg, const char *key, char **value)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg);
 	return get_query_value_internal(req_msg->query, key, value, NULL);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for checking, if request message's property key exist in key or not.
+ */
 bool is_property_key_exist(struct _st_things_get_request_message *req_msg, const char *key)
 {
+	// Check validation of request message, req_msg key and key.
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg->property_key);
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, strlen(req_msg->property_key) < 1, "Property key in request message is empty.");
@@ -142,6 +164,7 @@ bool is_property_key_exist(struct _st_things_get_request_message *req_msg, const
 	char *key_ptr = req_msg->property_key;
 	while (NULL != key_ptr && !exist) {
 		key_ptr = strstr(key_ptr, key);
+		// Property key did not contain the key
 		if (NULL == key_ptr) {
 			break;
 		}
@@ -164,29 +187,39 @@ bool is_property_key_exist(struct _st_things_get_request_message *req_msg, const
 	return exist;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for getting resource types from things resource.
+ */
 static bool get_resource_types(things_resource_s *rsrc, char ***res_types, int *count)
 {
+	// Check the validation of things resource, resource types and resource count.
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rsrc);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, res_types);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, count);
 
+	// Store number of resource types.
 	int rt_count = rsrc->things_get_num_of_res_types(rsrc);
 	THINGS_LOG_D(TAG, "Resource(%s) has %d resource type(s).", rsrc->uri, rt_count);
+	// Check validation of resource type count.
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, rt_count < 1, "No resource types in resource.");
 
 	char **types = (char **)things_calloc(rt_count, sizeof(char *));
 	RET_FALSE_IF_NULL(TAG, types, "Failed to allocate memory for resource types.");
 
 	bool result = true;
+	// Get the reource types from things resource and store them in res_type variable.
 	for (int i = 0; i < rt_count; i++) {
 		const char *res_type = rsrc->things_get_res_type(rsrc, i);
 		if (NULL == res_type || strlen(res_type) < 1) {
 			THINGS_LOG_E(TAG, "Resource type at index(%d) is invalid.", i);
+			// Release memory allocated for resource types.
 			things_free_str_array(types, i);
 			result = false;
 			break;
 		}
 
+		// Temporary store the result.
 		types[i] = things_clone_string(res_type);
 		if (NULL == types[i]) {
 			THINGS_LOG_E(TAG, "Failed to clone resource type(%s).", res_type);
@@ -197,27 +230,34 @@ static bool get_resource_types(things_resource_s *rsrc, char ***res_types, int *
 	}
 
 	if (result) {
-		*count = rt_count;
-		*res_types = types;
+		*count = rt_count;		// Copy the resource type count.
+		*res_types = types;		// Copy the resource type
 	}
 
 	return result;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for getting interface types from things resource.
+ */
 static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *count)
 {
+	// Check the validation of things resource, resource types and resource count.
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rsrc);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, if_types);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, count);
 
 	int if_count = rsrc->things_get_num_of_inf_types(rsrc);
 	THINGS_LOG_D(TAG, "Resource(%s) has %d interface type(s).", rsrc->uri, if_count);
+	// Check validation of resource type count.
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, if_count < 1, "No interface types in resource.");
 
 	char **types = (char **)things_calloc(if_count, sizeof(char *));
 	RET_VAL_IF_NULL(TAG, types, "Failed to allocate memory for inteface types.", false);
 
 	bool result = true;
+	// Get the reource types from things resource and store them in res_type variable.
 	for (int i = 0; i < if_count; i++) {
 		const char *if_type = rsrc->things_get_inf_type(rsrc, i);
 		if (NULL == if_type || strlen(if_type) < 1) {
@@ -226,10 +266,11 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
 			result = false;
 			break;
 		}
-
+		// Temporary store the result.
 		types[i] = things_clone_string(if_type);
 		if (NULL == types[i]) {
 			THINGS_LOG_E(TAG, "Failed to clone inteface type(%s).", if_type);
+			// Release memory allocated for interface types.
 			things_free_str_array(types, i);
 			result = false;
 			break;
@@ -237,14 +278,15 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
 	}
 
 	if (result) {
-		*count = if_count;
-		*if_types = types;
+		*count = if_count;		// Copy the interface.
+		*if_types = types;		// Copy the interface types
 	}
 
 	return result;
 }
 
-/*
+//--------------------------------------------------------------------------------
+/**
  * Adds the common properties of resource such as 'rt', 'if'.
  * 'links' property will be added in the response payload for collection resources.
  * If it fails for any reason, the resp_payload which is partially updated by this function will not be reset.
@@ -252,17 +294,20 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
  */
 bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *resp_payload)
 {
+	// Check the validation of things resource and resource resource payload.
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rsrc);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, resp_payload);
 
 	// Set resource types.
 	int rt_count = 0;
 	char **res_types = NULL;
+	// Get the resource types of the given resource.
 	if (!get_resource_types(rsrc, &res_types, &rt_count)) {
 		THINGS_LOG_E(TAG, "Failed to get the resource types of the given resource(%s).", rsrc->uri);
 		return false;
 	}
 
+	// Add resource types in response payload.
 	for (int i = 0; i < rt_count; i++) {
 		if (!OCRepPayloadAddResourceType(resp_payload, res_types[i])) {
 			THINGS_LOG_E(TAG, "Failed to add the resource type in the response payload.");
@@ -276,11 +321,13 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 	// Set interface types.
 	int if_count = 0;
 	char **if_types = NULL;
+	// Get the interface types of the given resource.
 	if (!get_interface_types(rsrc, &if_types, &if_count)) {
 		THINGS_LOG_E(TAG, "Failed to get the interface types of the given resource(%s).", rsrc->uri);
 		return false;
 	}
 
+	// Add resource interface in response payload.
 	for (int i = 0; i < if_count; i++) {
 		if (!OCRepPayloadAddInterface(resp_payload, if_types[i])) {
 			THINGS_LOG_E(TAG, "Failed to add the interface type in the response payload.");
@@ -317,7 +364,10 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 	return true;
 }
 
-// To get the properties of a resource based on either resource type or resource uri.
+//--------------------------------------------------------------------------------
+/**
+ * To get the properties of a resource based on either resource type or resource uri.
+ */
 static bool get_supported_properties(const char *res_type, const char *res_uri, int *count, things_attribute_info_s ***properties, bool *destroy_props)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, count);
@@ -328,6 +378,7 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 
 	// Get the properties based on resource type.
 	if (NULL != res_type && strlen(res_type) > 0) {
+		// Get attribute of resource by resource type.
 		int res = things_get_attributes_by_resource_type(res_type, count, properties);
 		THINGS_LOG_D(TAG, "Get attributes by resource type(%s): %s.", res_type, (1 == res) ? "Success" : "Failed");
 		return res ? true : false;
@@ -374,6 +425,7 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 			*count += prop_count[index];
 		}
 
+		// Print total number of properties.
 		THINGS_LOG_D(TAG, "Total number of properties: %d.", *count);
 
 		*properties = (things_attribute_info_s **) things_calloc(*count, sizeof(things_attribute_info_s *));
@@ -413,7 +465,9 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 		}
 
 		*destroy_props = true;
+		// Delete allocated memory for prop_count.
 		things_free(prop_count);
+		// Delete allocated memory for props.
 		things_free(props);
 	} else {
 		THINGS_LOG_E(TAG, "Resource type and URI are invalid.");
@@ -436,8 +490,13 @@ EXIT_WITH_ERROR:
 	return false;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for remove 'rt' and 'if' from query parameters.
+ */
 static void remove_query_parameter(char *query, char *key)
 {
+	// Check the validation of query and key parameters.
 	RET_IF_EXPR_IS_TRUE(TAG, (NULL == query || strlen(query) < 1), "Invalid parameter: query.");
 	RET_IF_EXPR_IS_TRUE(TAG, (NULL == key || strlen(key) < 1), "Invalid parameter: key.");
 
@@ -461,20 +520,32 @@ static void remove_query_parameter(char *query, char *key)
 	}
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for add property key in get request message.
+ */
 static void add_property_key_in_get_req_msg(st_things_get_request_message_s *req_msg, char *prop_key)
 {
+	// Check the validation of req message,reg message property key and property key.
 	RET_IF_PARAM_IS_NULL(TAG, req_msg);
 	RET_IF_PARAM_IS_NULL(TAG, req_msg->property_key);
 	RET_IF_PARAM_IS_NULL(TAG, prop_key);
 
+	// Add property key value in request message.
 	strncat(req_msg->property_key, prop_key, strlen(prop_key));
 	int prop_len = strlen(req_msg->property_key);
+	//Add delimiter ';' at the end of request message's property key.
 	req_msg->property_key[prop_len] = PROPERTY_KEY_DELIMITER;
 	req_msg->property_key[prop_len + 1] = '\0';
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for add property key in post request message.
+ */
 static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_msg, OCRepPayload *req_payload, things_attribute_info_s *prop)
 {
+	// Check validation of request message, request payload and things properties.
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg->rep);
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, req_msg->rep->payload);
@@ -492,7 +563,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	switch (prop->type) {
 	case BOOL_ID: {
 		bool value = false;
+		// Get the boolean type property for the request message's payload.
 		if (OCRepPayloadGetPropBool(req_payload, prop->key, &value)) {
+			// Set the boolean type property in request message's payload.
 			result = OCRepPayloadSetPropBool(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the boolean value of '%s' in request message.", prop->key);
@@ -504,7 +577,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	break;
 	case INT_ID: {
 		int64_t value = 0;
+		// Get the integer type property for the request message's payload.
 		if (OCRepPayloadGetPropInt(req_payload, prop->key, &value)) {
+			// Set the integer type property in request message's payload.
 			result = OCRepPayloadSetPropInt(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the integer value of '%s' in request message", prop->key);
@@ -516,7 +591,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	break;
 	case DOUBLE_ID: {
 		double value = 0.0;
+		// Get the double type property for the request message's payload
 		if (OCRepPayloadGetPropDouble(req_payload, prop->key, &value)) {
+			// Set the boolean type property in the request message's payload.
 			result = OCRepPayloadSetPropDouble(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the double value of '%s' in request message", prop->key);
@@ -528,7 +605,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	break;
 	case STRING_ID: {
 		char *value = NULL;
+		// Get the string type property for the request message's payload.
 		if (OCRepPayloadGetPropString(req_payload, prop->key, &value)) {
+			// Set the string type property in the request messges's payload.
 			result = OCRepPayloadSetPropString(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the string value of '%s' in request message", prop->key);
@@ -542,7 +621,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	break;
 	case OBJECT_ID: {
 		OCRepPayload *value = NULL;
+		// Get the object type property for the request message's payload.
 		if (OCRepPayloadGetPropObject(req_payload, prop->key, &value)) {
+			// Set the object type property in the request messges's payload.
 			result = OCRepPayloadSetPropObject(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the object value of '%s' in request message", prop->key);
@@ -556,7 +637,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	break;
 	case BYTE_ID: {
 		OCByteString byte_value;
+		// Get the byte string type property for the request message's payload.
 		if (OCRepPayloadGetPropByteString(req_payload, prop->key, &byte_value)) {
+			// Set the byte string type property in the request message's payload.
 			result = OCRepPayloadSetPropByteString(resp_payload, prop->key, byte_value);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the byte string value of '%s' in request message", prop->key);
@@ -571,7 +654,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case INT_ARRAY_ID: {
 		int64_t *value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		// Get the integer array type property for the request message's payload.
 		if (OCRepPayloadGetIntArray(req_payload, prop->key, &value, dimensions)) {
+			// Set the integer array type property for the request message's payload.
 			result = OCRepPayloadSetIntArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the integer array value of '%s' in request message", prop->key);
@@ -586,7 +671,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case DOUBLE_ARRAY_ID: {
 		double *value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		// Get the double array type property for the request message's payload.
 		if (OCRepPayloadGetDoubleArray(req_payload, prop->key, &value, dimensions)) {
+			// Set the double array type property for the request message's payload.
 			result = OCRepPayloadSetDoubleArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the double array value of '%s' in request message", prop->key);
@@ -601,6 +688,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case STRING_ARRAY_ID: {
 		char **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		// Get the string array type property for the request message's payload.
 		if (OCRepPayloadGetStringArray(req_payload, prop->key, &value, dimensions)) {
 			result = OCRepPayloadSetStringArray(resp_payload, prop->key, (const char **)value, dimensions);
 			if (!result) {
@@ -617,7 +705,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case OBJECT_ARRAY_ID: {
 		OCRepPayload **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		// Get the object array type property for the request message's payload.
 		if (OCRepPayloadGetPropObjectArray(req_payload, prop->key, &value, dimensions)) {
+			// Set the object array type property for the request message's payload.
 			result = OCRepPayloadSetPropObjectArray(resp_payload, prop->key, (const OCRepPayload **)value, dimensions);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the object array value of '%s' in request message", prop->key);
@@ -641,6 +731,11 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	return result;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for destroy request message instance for get request.It will
+ * free all get request message type property.
+ */
 static void destroy_req_msg_inst_for_get(st_things_get_request_message_s *req_msg)
 {
 	RET_IF_PARAM_IS_NULL(TAG, req_msg);
@@ -658,6 +753,11 @@ static void destroy_req_msg_inst_for_get(st_things_get_request_message_s *req_ms
 	things_free(req_msg);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for destroy request message instance for set request.It will
+ * free all set request message type property.
+ */
 static void destroy_req_msg_inst_for_post(st_things_set_request_message_s *req_msg, bool destroy_payload)
 {
 	RET_IF_PARAM_IS_NULL(TAG, req_msg);
@@ -677,11 +777,16 @@ static void destroy_req_msg_inst_for_post(st_things_set_request_message_s *req_m
 	things_free(req_msg);
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for setup the get request message type information.
+ */
 static st_things_get_request_message_s *create_req_msg_inst_for_get(const char *res_uri, const char *query)
 {
 	st_things_get_request_message_s *req_msg = (st_things_get_request_message_s *) things_malloc(sizeof(st_things_get_request_message_s));
 	RET_VAL_IF_NULL(TAG, req_msg, "Failed to allocate memory for GET request message.", NULL);
 
+	// Copy the resource uri.
 	req_msg->resource_uri = things_clone_string(res_uri);
 	RET_VAL_IF_NULL(TAG, req_msg->resource_uri, "Failed to clone the resource uri.", NULL);
 
@@ -696,11 +801,16 @@ static st_things_get_request_message_s *create_req_msg_inst_for_get(const char *
 	return req_msg;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for setup the set request message type information.
+ */
 static st_things_set_request_message_s *create_req_msg_inst_for_post(const char *res_uri, const char *query, OCRepPayload *req_payload)
 {
 	st_things_set_request_message_s *req_msg = (st_things_set_request_message_s *) things_malloc(sizeof(st_things_set_request_message_s));
 	RET_VAL_IF_NULL(TAG, req_msg, "Failed to allocate memory for SET request message.", NULL);
 
+	// Copy the resource uri.
 	req_msg->resource_uri = things_clone_string(res_uri);
 	RET_VAL_IF_NULL(TAG, req_msg->resource_uri, "Failed to clone the resource uri.", NULL);
 
@@ -721,7 +831,8 @@ static st_things_set_request_message_s *create_req_msg_inst_for_post(const char 
 	return req_msg;
 }
 
-/*
+//--------------------------------------------------------------------------------
+/**
  * Helper method to get the response from application for GET requests.
  * The 'resp_payload' parameter will be used to get the response.
  * Common properties of the resource such as rt, if and links will not be set by this method.
@@ -859,6 +970,11 @@ bool handle_get_req_helper(const char *res_uri, const char *query, OCRepPayload 
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for handle get request callback for single resource.It will
+ * setup the resoruce uri, query, interface type in response payload.
+ */
 static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 {
 	RET_VAL_IF_PARAM_IS_NULL(TAG, single_rsrc, 0);
@@ -867,6 +983,7 @@ static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 	things_representation_s *resp_rep = things_create_representation_inst(NULL);
 	RET_VAL_IF_NULL(TAG, resp_rep, "Failed to create response representation.", 0);
 
+	// Setup resource uri.
 	bool result = OCRepPayloadSetUri(resp_rep->payload, single_rsrc->uri);
 	if (!result) {
 		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", single_rsrc->uri);
@@ -911,7 +1028,8 @@ static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 	return 1;
 }
 
-/*
+//-----------------------------------------------------------------------------------------
+/**
  * Helper method to get the response from application for POST requests.
  * The 'resp_payload' parameter will be used to get the response.
  * Common properties of the resource such as rt, if and links will not be set by this method.
@@ -1029,6 +1147,11 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 	return true;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for handle set request callback for single resource.It will
+ * setup the resoruce uri, query, interface type in response payload.
+ */
 static int handle_post_req_on_single_rsrc(things_resource_s *single_rsrc)
 {
 	RET_VAL_IF_PARAM_IS_NULL(TAG, single_rsrc, 0);
@@ -1088,6 +1211,10 @@ static int handle_post_req_on_single_rsrc(things_resource_s *single_rsrc)
 	return res ? 1 : 0;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for handle get request callback.
+ */
 int handle_get_request_cb(struct things_resource_s *resource)
 {
 	THINGS_LOG_D(TAG, "Received a GET request callback");
@@ -1098,8 +1225,10 @@ int handle_get_request_cb(struct things_resource_s *resource)
 
 	int result = 0;
 #ifdef CONFIG_ST_THINGS_COLLECTION
+	// Handle get request for collection resource.
 	bool collection = things_is_collection_resource(resource->uri);
 #else
+	// Handle get request for single resource.
 	bool collection = false;
 #endif
 
@@ -1123,6 +1252,10 @@ int handle_get_request_cb(struct things_resource_s *resource)
 	return result;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for handle set request callback.
+ */
 int handle_set_request_cb(struct things_resource_s *resource)
 {
 	THINGS_LOG_D(TAG, "Received a SET request callback");
@@ -1133,8 +1266,10 @@ int handle_set_request_cb(struct things_resource_s *resource)
 
 	int result = 0;
 #ifdef CONFIG_ST_THINGS_COLLECTION
+	// Handle set request for collection resource.
 	bool collection = things_is_collection_resource(resource->uri);
 #else
+	// Handle set request for single resource.
 	bool collection = false;
 #endif
 
@@ -1158,6 +1293,11 @@ int handle_set_request_cb(struct things_resource_s *resource)
 	return result;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition of callback(get and set) registration for handling request
+ * message.
+ */
 int register_request_handler_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb)
 {
 	if (NULL == get_cb) {

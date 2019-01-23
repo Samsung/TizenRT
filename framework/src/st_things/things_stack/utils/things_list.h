@@ -24,8 +24,19 @@
 #include "octypes.h"
 #include "things_node.h"
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief Prototype for compare two value.
+ * @param src_key : 1st value
+ * @param dest_key : 2nd value
+ * @return : If both are matched return 1, otherwise return 0
+ */
 typedef int (*key_compare)(void *src_key, const void *dest_key);
 
+//--------------------------------------------------------------------------------
+/**
+ * Data structure for holding DLL information
+ */
 typedef struct list_s {
 	things_node_s *head;
 	things_node_s *tail;
@@ -65,6 +76,11 @@ typedef struct list_s {
  */
 list_s *create_list(void);
 
+//-----------------------------------------------------------------------------
+/**
+ * @brief Prototype for deleting the list.
+ * @param list : head pinter of the list
+ */
 void terminate_list(list_s *list);
 
 #endif							// _OICLIST_H_

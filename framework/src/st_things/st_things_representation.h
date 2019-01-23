@@ -22,12 +22,37 @@
 #include "st_things_types.h"
 #include "octypes.h"
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for creating instance of payload.Internally it call the api by
+ * passing payload with NULL value.
+ * @param none
+ * @return st_things_representation_s * : Instance of resource representation.
+ */
 st_things_representation_s *create_representation_inst(void);
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for creating instance of payload internally.
+ * @param OCRepPayload *	: Instance of target resource.
+ * @return st_things_representation_s * : Instance of resource representation.
+ */
 st_things_representation_s *create_representation_inst_internal(OCRepPayload *payload);
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for delete instance of payload.Internally it call the api for delete
+ * instance of payload.
+ * @param st_things_representation_s * : Instance of representation to delete.
+ */
 void destroy_representation_inst(st_things_representation_s *rep);
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for delete instance of payload internally.
+ * @param st_things_representation_s * : Instance of representation to delete.
+ * @param destroy_payload		: (true = enable, false = disable)
+ */
 void destroy_representation_inst_internal(st_things_representation_s *rep, bool destroy_payload);
 
 #endif							// __ST_THINGS_REPRESENTATION_H__

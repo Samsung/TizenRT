@@ -19,6 +19,10 @@
 #ifndef THINGS_CLOUD_PING_H_
 #define THINGS_CLOUD_PING_H_
 
+//-------------------------------------------------------------------------------
+/**
+ * Structure to hold ping state value
+ */
 typedef enum ping_state_e {
 	PING_ST_INIT = 0,			// Ping initialization
 	PING_ST_ISCLOUD = 1,		// remote client is Cloud CIserver
@@ -33,12 +37,38 @@ typedef enum ping_state_e {
 	PING_ALL_FLAG = 0xFFFFFFFF
 } ping_state_e;
 
+//-------------------------------------------------------------------------------
+/**
+ * @brief API for initialize OIC device keepAlive for ping resource.
+ * @return res : success = true, otherwise false.
+ */
 bool things_ping_init(void);
 
-bool things_ping_terminate(void);
+//-------------------------------------------------------------------------------
+/**
+ * @brief API for terminate OIC device keepALive for ping resource.When cloud module
+ * is terminate at that time this api is called.It deleted the ping thread and also
+ * destroy the Queue.
+ */
+void things_ping_terminate(void);
 
+//-------------------------------------------------------------------------------
+/**
+ * @brief API for setting mask for things_ping.
+ * @param remote addr : Address of remote device.
+ * @parma port :	Port number of device.
+ * @param state :	Ping state.
+ * @return : success = true, failure = false
+ */
 bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e state);
 
+//-------------------------------------------------------------------------------
+/**
+ * @brief API for unset mask for things_ping.
+ * @param remoteAddr : Address of remote device.
+ * @param state : Ping state.
+ * @return : success = true, failure = false
+ */
 bool things_ping_unset_mask(const char *remoteAddr, ping_state_e state);
 
 #endif							/* THINGS_CLOUD_PING_H_ */

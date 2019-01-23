@@ -41,6 +41,7 @@
 #include "easy-setup/resource_handler.h"
 #include "cloud/cloud_manager.h"
 
+// Logging tag for module name.
 #define TAG "[things_ping]"
 
 #define DEFAULT_CONTEXT_VALUE   0x99
@@ -52,6 +53,10 @@
 #define KEEPALIVE_RESOURCE_URI "/oic/ping"
 
 typedef void *(*pthread_func_type)(void *);
+
+/**
+ * Holds ping thread information
+ */
 typedef struct things_ping_s {
 	pthread_mutex_t mutex_state;	// mutex for State variable.
 	ping_state_e bit_mask_state;	// State of Ping
@@ -69,43 +74,199 @@ typedef struct things_ping_s {
 
 
 pthread_mutex_t mutex_ping_list;
+
+// Start with empty queue.
 static list_s *list = NULL;
 static const char INTERVAL_ARRAY[] = "inarray";
 static const char INTERVAL[] = "in";
+// Start with empty things_ping_s.
 things_ping_s* p_ping = NULL;
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for creating thd_ping_loop thread.
+ * @param ping : Structure of things_ping_s
+ */
 static void *thd_ping_loop(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for handle ping resource discovery.
+ * @param ctx : context value
+ * @param handle : Handle to an OCDoResource invocation.
+ * @param client_response : response from peer.
+ * @return OCStackApplicationResult : application result.
+ */
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for handle ping request.
+ * @param ctx : context value
+ * @param handle : Handle to an OCDoResource invocation.
+ * @param client_response : response from peer.
+ * @return OCStackApplicationResult : application result.
+ */
 static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
 
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for creating things_ping_s.
+ * @param remote_addr : Remote address
+ * @param port : port number
+ * @return structure of things_ping_s
+ */
 static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16_t port);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief State type prototype for terminate things_ping_s.
+ * @param ping : Structure of things_ping_s
+ */
 static void terminate_things_ping_s(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for matching ip.
+ * @param ping : Structure of things_ping_s
+ * @param target_ip : IP of target device.
+ * @return success = 1, otherwise 0.
+ */
 static int is_ip_key_equal(things_ping_s *ping, const char *target_ip);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for checking ping thread. Creating ping thread or
+ * destroy ping thread like that.
+ * @param ping : Structure of things_ping_s
+ */
 static void check_ping_thread(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @biref Static type prototype for set the state of Ping of things_ping_s.
+ * @param ping : Structure of things_ping_s
+ * @param state : State of Ping of things_ping_s
+ */
 static void set_mask(things_ping_s *ping, ping_state_e state);
+
+//--------------------------------------------------------------------------------
+/**
+ * @biref Static type prototype for get the state of Ping of things_ping_s.
+ * @param ping : Structure of things_ping_s
+ * @param state : State of Ping of things_ping_s
+ * @return success = true, failure = false.
+ */
 static bool get_mask(things_ping_s *ping, ping_state_e state);
+
+//--------------------------------------------------------------------------------
+/**
+ * @biref Static type prototype for set the state of Ping of things_ping_s.
+ * @param ping : Structure of things_ping_s
+ * @param preState : State of Ping of things_ping_s
+ * @param preStateThen : bool value
+ * @param post_state : State of Ping of things_ping_s
+ * @return success = true, failure = false.
+ */
 static bool cas_mask(things_ping_s *ping, ping_state_e preState, bool preStateThen, ping_state_e post_state);
+
+//--------------------------------------------------------------------------------
+/**
+ * @biref Static type prototype for unset the state of Ping of things_ping_s.
+ * @param ping : Structure of things_ping_s
+ * @param state : State of Ping of things_ping_s
+ */
 static void unset_mask(things_ping_s *ping, ping_state_e state);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for find ping resource to cloud.
+ * @param ping : Structure of things_ping_s
+ * @return 1 = TCP_session not connected, error case return sleeptime.
+ */
 static int find_resource_oic_ping(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for sending common-Ping request for /oic/ping to Cloud.
+ * @parma ping : Structure of things_ping_s
+ * @return success = sleeptime, failure = 0.
+ */
 static int send_things_ping_request(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static type prototype for setting interval value in things_ping_s interval array.
+ * @param ping : Structure of things_ping_s
+ * @param intervals : Array of intervals
+ * @param int_ea : Estmated interval value
+ * @param confirm_state : State of ping
+ * @return success = true, failure = false
+ */
 static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, ping_state_e confirm_state);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static prototype for defined the interval value for things_ping_s ping interval array.
+ * @param ping : Structure of things_ping_s
+ * @return success = true, failure = false
+ */
 static bool set_def_interval(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static prototype for creating ping thread.
+ * @param ping : Structure of things_ping_s
+ * @return success = true, failure = false
+ */
 static bool things_ping_create_thread(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static prototype for destroy ping thread.
+ * @param ping : Structure of things_ping_set_maskr
+ * @return success = true, failure = false
+ */
 static bool things_ping_destroy_thread(things_ping_s *ping);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static prototype for printing response value of payload.
+ * @param value : Structure of OC response payload
+ * @return success = true, failure = false
+ */
 static void things_rep_payload_value_print(OCRepPayloadValue *value);
+
+//--------------------------------------------------------------------------------
+/**
+ * @brief Static prototype for making host address.
+ * @param ip : IP address
+ * @param port : Port number
+ * @return : string value, failure return NULL value
+ */
 static char *make_host_addr(const char *ip, const uint16_t port);
 
+//-------------------------------------------------------------------------------
+/* Enable things Ping. */
 #ifdef THINGS_PING_ENABLE
+
+/**
+ * Function definition for initialize OIC device keepAlive for ping resource.
+ */
 bool things_ping_init(void)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
 	bool res = false;
 
+	// Create a pthread mutex.
 	pthread_mutex_init(&mutex_ping_list, NULL);
+
+	// Lock the mutex.
 	pthread_mutex_lock(&mutex_ping_list);
 
 	if (list == NULL) {
+		// Create and initiate a Queue.
 		if ((list = create_list()) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
 			pthread_mutex_unlock(&mutex_ping_list);
@@ -116,6 +277,7 @@ bool things_ping_init(void)
 	} else {
 		res = true;
 	}
+	// Unlock the mutex.
 	pthread_mutex_unlock(&mutex_ping_list);
 
 	p_ping = NULL;
@@ -123,10 +285,15 @@ bool things_ping_init(void)
 	return res;
 }
 
-bool things_ping_terminate(void)
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for terminate OIC device keepAlive for ping resource.
+ */
+void things_ping_terminate(void)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
+	// Lock the mutex.
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list) {
 		THINGS_LOG_D(TAG, "things_ping_s terminate.");
@@ -134,35 +301,46 @@ bool things_ping_terminate(void)
 		while ((ping = (things_ping_s *) list->pop(list)) != NULL) {
 			THINGS_LOG_D(TAG, "Terminate ping.(%s)", ping->addr);
 			if (cas_mask(ping, PING_ST_STARTTHREAD, true, PING_ST_INIT) == true) {
+				// Destroy ping thread.
 				things_ping_destroy_thread(ping);
 			}
+			// Terminate the ping.
 			terminate_things_ping_s(ping);
 		}
 
 		THINGS_LOG_D(TAG, "Terminate ping-list.");
+		// Terminate the queue.
 		terminate_list(list);
 		list = NULL;
 	}
 
+	// Unlock the mutex.
 	pthread_mutex_unlock(&mutex_ping_list);
 	pthread_mutex_destroy(&mutex_ping_list);
 
 	THINGS_LOG_D(TAG, "Exit.");
-	return true;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for setting mask for things_ping.
+ */
 bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e state)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
+	// Make a empty list.
 	things_node_s *node = NULL;
+	// Initialize things_ping structure with NULL.
 	things_ping_s *ping = NULL;
 
+	// Check the validation of remote address.
 	if (remote_addr == NULL || strlen(remote_addr) == 0) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(remote_addr=%s, state=%d)", remote_addr, state);
 		return false;
 	}
 
+	// Lock the mutex.
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
@@ -170,19 +348,26 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		return false;
 	}
 
+	// Find the things_node for remote address in Queue?
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
+	// If things node for remote address is not persent in Queue.
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s). So, Create Node.", remote_addr);
+		// Create things_ping.
 		if ((ping = create_things_ping_s(remote_addr, port)) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
 			pthread_mutex_unlock(&mutex_ping_list);
 			return false;
 		}
+		// Insert the things node in Queue.
 		list->insert(list, (void *)ping);
 	} else {
+		// Found the things_node for remote address in Queue.
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
+		// Set the item of things node in things_ping_s.
 		ping = node->item;
 	}
+	// Unlock the mutex.
 	pthread_mutex_unlock(&mutex_ping_list);
 
 	if (ping == NULL) {
@@ -190,28 +375,43 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		return false;
 	}
 
+	// Set the port number in things_ping_s.
 	if (port != 0) {
 		ping->port = port;
 	}
 
+	// Set the bit mask state.
 	set_mask(ping, state);
+
+	/**
+	 * check the ping thread.Based on the bit mask.It will create the ping thread,
+	 * destroy the ping thread and terminate the things_ping_s.
+	 */
 	check_ping_thread(ping);
 
 	THINGS_LOG_D(TAG, "Exit.");
 	return true;
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for unset mask for things_ping.
+ */
 bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 {
 	THINGS_LOG_D(TAG, "Enter.");
+	// Make a empty list.
 	things_node_s *node = NULL;
+	// Initialize things_ping structure with NULL.
 	things_ping_s *ping = NULL;
 
+	// Check the validation of remote address.
 	if (remote_addr == NULL || strlen(remote_addr) == 0) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(remote_addr=%s, state=%d)", remote_addr, state);
 		return false;
 	}
 
+	// Lock the mutex.
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
@@ -219,15 +419,21 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		return false;
 	}
 
+	// Find the things_node for remote address in Queue?
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
+
+	// If things node for remote address is not persent in Queue.
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s).", remote_addr);
 		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	} else {
+		// Found the things_node for remote address in Queue.
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
+		// Set the item of things node in things_ping_s.
 		ping = node->item;
 	}
+	// Unlock the mutex.
 	pthread_mutex_unlock(&mutex_ping_list);
 
 	if (ping == NULL) {
@@ -235,46 +441,70 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		return false;
 	}
 
+	// Unset the bit mask state.
 	unset_mask(ping, state);
 
+	/**
+	 * Check the ping thread.Based on the bit mask.It will create the ping thread,
+	 * destroy the ping thread and terminate the things_ping_s.
+	 */
 	check_ping_thread(ping);
 	THINGS_LOG_D(TAG, "Exit.");
 	return true;
 }
 
+//-------------------------------------------------------------------------------
+/* Disable things ping. */
 #else
+
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for initialize OIC device keepAlive for ping resource.
+ */
 bool things_ping_init(void)
 {
 	return true;
 }
 
-bool things_ping_terminate(void)
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for terminate OIC device keepAlive for ping resource.
+ */
+void things_ping_terminate(void)
 {
-	return true;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for setting mask for things_ping.
+ */
 bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e state)
 {
 	return true;
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for unset mask for things_ping.
+ */
 bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 {
 	return true;
 }
 #endif
 
-/***************************************************************************************
- *
+//-------------------------------------------------------------------------------
+/**
  * Interval Ping-Thread Definition Function.
  *
- ***************************************************************************************/
+ */
 static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
 	int sleepMinute = 0;
 
+	// Check validation of things ping and ping's address.
 	if (ping == NULL || ping->addr == NULL) {
 		THINGS_LOG_E(TAG, "[Error]: Invalid arguments.(pint=0x%X)", ping);
 		return NULL;
@@ -282,6 +512,7 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 
 	THINGS_LOG_D(TAG, "IP=%s, handle=0x%X, State=0x%X", ping->addr, ping->handle_thread, ping->bit_mask_state);
 
+	// Lock the mutex.
 	pthread_mutex_lock(&ping->mutex_int);
 	for (int i = 0; i < MAX_INTERVAL_EA; i++) {
 		THINGS_LOG_D(TAG, "Interval[%d]=%lld", i, ping->interval[i]);
@@ -295,11 +526,16 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 		pthread_mutex_unlock(&ping->mutex_int);
 		return NULL;
 	}
+	// Unlock the mutex.
 	pthread_mutex_unlock(&ping->mutex_int);
 
+	// Start to find resource for ping resource uri "/oic/ping" to cloud.
 	THINGS_LOG_D(TAG, "Start FindResource for /oic/ping to Cloud(%s)", ping->addr);
+	// Set the retry count value is 10.
 	int retry_cnt = MAX_RETRY_CNT;
 	do {						// /oic/ping Resource Finding Start
+		/* /oic/ping resource discovery into cloud.If it is success.Then set the
+		 * sleepTime is 5. */
 		int sleepTime = find_resource_oic_ping(ping);
 		sleep(sleepTime);
 	} while (!ping->continue_thread && ping->handle_thread && (retry_cnt--) > 0);
@@ -311,6 +547,7 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	while (ping->continue_thread) {	// common-ping request Sending Start
 
 		if (sleepMinute == 0) {
+			// Sending common-Ping request for /oic/ping to Cloud.
 			sleepMinute = send_things_ping_request(ping);
 		}
 
@@ -356,6 +593,10 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	return (void *)1;
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Callback definition for handle ping resource discovery.
+ */
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -395,7 +636,7 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 		}
 		// Result processing.
 		switch (client_response->result) {
-		case OC_STACK_OK:
+		case OC_STACK_OK:			// Discovery Success.
 			THINGS_LOG_D(TAG, "Discovery Success.");
 			if (interval == NULL || interval[0] == 0 || dimensions[0] == 0) {
 				THINGS_LOG_V(TAG, "Invalid received remote interval or dimensions.");
@@ -406,10 +647,11 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 				ping->continue_thread = true;
 			}
 			break;
-		case OC_STACK_TIMEOUT:
+		case OC_STACK_TIMEOUT:			// Ping resource Time-Out.
 			THINGS_LOG_E(TAG, "Occurred Time-Out Event.");
 			unset_mask(ping, PING_ST_SIGNIN|PING_ST_TCPCONNECT);
 			check_ping_thread(ping);
+			// Disconnect the TCP session.
 			CAUtilTCPDisconnectSession(ping->addr, ping->port, 64);
 			THINGS_LOG_E(TAG, "DISCOVER PING RESOURCE TIME OUT, CLOUD DISCONNECT");
 			break;
@@ -430,23 +672,30 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 	return OC_STACK_DELETE_TRANSACTION;
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Callback definition for handle ping request.
+ */
 static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
 	things_ping_s *ping = (things_ping_s *) ctx;
 
+	// Check the validation of content value.
 	if (ctx == (void *) DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
 		THINGS_LOG_D(TAG, "content value is invalid.(ctx=0x%X)", ctx);
 		return OC_STACK_DELETE_TRANSACTION;
 	}
 
+	// Handle the response from client side of server's query.
 	if (client_response) {
 		THINGS_LOG_D(TAG, "ctx=0x%X", ctx);
 		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
 
 		THINGS_LOG_D(TAG, "Device =============> Discovered @ %s:%d", client_response->devAddr.addr, client_response->devAddr.port);
 
+		// Compare the ping's address and client response device address.
 		if (strncmp(ping->addr, client_response->devAddr.addr, strlen(client_response->devAddr.addr)) != 0) {
 			THINGS_LOG_E(TAG, "[Error]: Mismatching address.(ping->addr=%s, recvAddr=%s)", ping->addr, client_response->devAddr.addr);
 			return OC_STACK_DELETE_TRANSACTION;
@@ -461,16 +710,22 @@ static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handl
 		}
 		// Result processing.
 		switch (client_response->result) {
-		case OC_STACK_OK:
+		case OC_STACK_OK:			// Common-ping request Success
 			THINGS_LOG_V(TAG, "common-ping request Success.");
+
+			/**
+			 * Get the status of ping.If time-out occured. Then unset the mask value of ping
+			 * for common-ping request to cloud.
+			 */
 			if (get_mask(ping, PING_ST_REQUEST) == true && get_mask(ping, PING_ST_TIMEOUT) == false) {
 				unset_mask(ping, PING_ST_REQUEST);
 			}
 			break;
-		case OC_STACK_TIMEOUT:
+		case OC_STACK_TIMEOUT:			// Ping resource Time-Out.
 			THINGS_LOG_E(TAG, "Occurred Time-Out Event.");
 			unset_mask(ping, PING_ST_SIGNIN|PING_ST_TCPCONNECT);
 			check_ping_thread(ping);
+			// Disconnect the TCP session.
 			CAUtilTCPDisconnectSession(ping->addr, ping->port, 64);
 			THINGS_LOG_E(TAG, "SEND PING TIME OUT, CLOUD DISCONNECT");
 			break;
@@ -486,43 +741,58 @@ static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handl
 	return OC_STACK_DELETE_TRANSACTION;
 }
 
-/***************************************************************************************
- *
+//--------------------------------------------------------------------------------
+/**
  * Interval Function Definition Collection.
- *
- ***************************************************************************************/
+ */
 static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16_t port)
 {
+	// Initialize things_ping structure with NULL.
 	things_ping_s *ping = NULL;
 
+	// Check the validation of remote address.
 	if (remote_addr == NULL || strlen(remote_addr) == 0) {
 		THINGS_LOG_E(TAG, "remote addr is NULL.");
 		return NULL;
 	}
 
+	// Allocate dynamic memory for ping.
 	ping = (things_ping_s *) things_malloc(sizeof(things_ping_s));
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "memory allocation is failed.");
 		return NULL;
 	}
 
+	// Set the remote address in OICping.
 	ping->addr = things_strdup(remote_addr);
+	// Set the port number in OICPing.
 	ping->port = port;
 	ping->continue_thread = false;
+	// Create mutex for interval varaible.
 	pthread_mutex_init(&ping->mutex_int, NULL);
+	// Create mutex for state variable.
 	pthread_mutex_init(&ping->mutex_state, NULL);
+	// Create mutex for handle thread variable.
 	pthread_mutex_init(&ping->mutex_thread, NULL);
 
+	// Lock the mutex thread variable.
 	pthread_mutex_lock(&ping->mutex_thread);
+	// Initialize ping thread-handler with 0.
 	ping->handle_thread = 0;
+	// Unlock the mutex thread variable.
 	pthread_mutex_unlock(&ping->mutex_thread);
 
 	set_def_interval(ping);
 
+	// Set the mask for Ping as Ping initialization.
 	set_mask(ping, PING_ST_INIT);
 	return ping;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for terminate things_ping_s.
+ */
 static void terminate_things_ping_s(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -533,35 +803,51 @@ static void terminate_things_ping_s(things_ping_s *ping)
 	}
 
 	THINGS_LOG_D(TAG, "ping thread destroy check.");
+	/**
+	 * Check the ping thread destory.If TCP connection is disabled and Ping thread created.
+	 * Then need to destory the ping-thread.
+	 */
 	if (get_mask(ping, PING_ST_TCPCONNECT) == false && get_mask(ping, PING_ST_STARTTHREAD) == true) {	// need to destroy ping-thread.
 		things_ping_destroy_thread(ping);
 	}
 
+	// Set the mask for Ping as Ping initialization
 	set_mask(ping, PING_ST_INIT);
 
+	// Destory the mutex of interval variable.
 	pthread_mutex_destroy(&ping->mutex_int);
+	// Destory the mutex of state variable.
 	pthread_mutex_destroy(&ping->mutex_state);
+	// Destory the mutex of thread variable.
 	pthread_mutex_destroy(&ping->mutex_thread);
 
+	// Free the memory of pings's address.
 	if (ping->addr) {
 		THINGS_LOG_D(TAG, "ping->addr memory free.");
 		things_free(ping->addr);
 		ping->addr = NULL;
 	}
 
+	// Free the memory of things_ping_s.
 	things_free(ping);
 
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for matching IP
+ */
 static int is_ip_key_equal(things_ping_s *ping, const char *targetIP)
 {
 	int res = 0;
+	// Check validation of ping,ping's address and target IP.
 	if (ping == NULL || ping->addr == NULL || targetIP == NULL || strlen(targetIP) == 0) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(ping=0x%X, targetIP=%s)", ping, targetIP);
 		return res;
 	}
 
+	// Compare the ping's IP address and target IP address.
 	if (strncmp(ping->addr, targetIP, strlen(targetIP)) == 0) {
 		THINGS_LOG_D(TAG, "Found ping-struct(%s) for targetIP(%s)", ping->addr, targetIP);
 		res = 1;
@@ -570,10 +856,15 @@ static int is_ip_key_equal(things_ping_s *ping, const char *targetIP)
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ *  Function defnition for checking ping thread.
+ */
 static void check_ping_thread(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
+	// Check validation of Ping and Ping's address.
 	if (ping == NULL || ping->addr == NULL) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(ping=0x%X)", ping);
 		return;
@@ -586,16 +877,33 @@ static void check_ping_thread(things_ping_s *ping)
 		return;
 	}
 
+	/**
+	 * Get the state of Ping.If TCP session is connected and Ping thread is not created.
+	 * Then need to create the ping thread.
+	 */
 	if (get_mask(ping, PING_ST_TCPCONNECT) == true && get_mask(ping, PING_ST_STARTTHREAD) == false) {	// need to create ping-thread.
-		if (get_mask(ping, PING_ST_ISCLOUD) == false || (get_mask(ping, PING_ST_ISCLOUD) == true && get_mask(ping, PING_ST_SIGNIN) == true)) {	// create thread
+
+		/**
+		 * If the remote client is not cloud CIserver or remote client is cloud CIserver
+		 * and Sign_In is complete.Then create ping thread.
+		 */
+		if (get_mask(ping, PING_ST_ISCLOUD) == false || (get_mask(ping, PING_ST_ISCLOUD) == true && get_mask(ping, PING_ST_SIGNIN) == true)) {	// create ping thread
 			things_ping_create_thread(ping);
 		}
 	}
 
+	/**
+	 * Get the state of Ping.If the TCP session is disabled and ping-thread is created.
+	 * Than need to destory ping-thread.
+	 */
 	if (get_mask(ping, PING_ST_TCPCONNECT) == false && get_mask(ping, PING_ST_STARTTHREAD) == true) {	// need to destroy ping-thread.
 		things_ping_destroy_thread(ping);
 	}
 
+	/**
+	 * Get the state of Ping.If the bitwise or value of remote client is cloud CIserver,Sign-IN complete and TCP session connected is not
+	 * matched with the state of Ping.Then no need of things_ping_s. and terminate it.
+	 */
 	if (get_mask(ping, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT) == false) {
 		THINGS_LOG_D(TAG, "Not need things_ping_s, So, Terminate things_ping_s.(IP=%s)", ping->addr);
 		if ((ping = list->erase_by_key(list, (key_compare)is_ip_key_equal, ping->addr)) != NULL) {
@@ -609,6 +917,10 @@ static void check_ping_thread(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for set the state of Ping of things_ping_s.
+ */
 static void set_mask(things_ping_s *ping, ping_state_e state)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -616,8 +928,14 @@ static void set_mask(things_ping_s *ping, ping_state_e state)
 		return;
 	}
 
+	// Lock the mutex of state variable.
 	pthread_mutex_lock(&ping->mutex_state);
 	THINGS_LOG_D(TAG, "(B) bit_mask_state = 0x%X", ping->bit_mask_state);
+
+	/**
+	 * If the ping's state is not equal to Ping initialization.Then set the things's ping with
+	 * bitwise OR ping's state.Otherwise directly assign the value.
+	 */
 	if (state != PING_ST_INIT) {
 		ping->bit_mask_state |= state;
 	} else {
@@ -629,15 +947,21 @@ static void set_mask(things_ping_s *ping, ping_state_e state)
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for get the state of ping of things_ping_s.
+ */
 static bool get_mask(things_ping_s *ping, ping_state_e state)
 {
 	bool res = true;
 
+	// Check the validation of Ping.
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "ping is NULL.");
 		return false;
 	}
 
+	// Lock the mutex of state variable.
 	pthread_mutex_lock(&ping->mutex_state);
 	res = (ping->bit_mask_state & state) != 0 ? true : false;
 	pthread_mutex_unlock(&ping->mutex_state);
@@ -645,6 +969,10 @@ static bool get_mask(things_ping_s *ping, ping_state_e state)
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for set the state of ping of things_ping_s.
+ */
 static bool cas_mask(things_ping_s *ping, ping_state_e preState, bool preStateThen, ping_state_e postState)
 {
 	bool res = false;
@@ -672,6 +1000,10 @@ static bool cas_mask(things_ping_s *ping, ping_state_e preState, bool preStateTh
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for unset the ping state of things_ping_s.
+ */
 static void unset_mask(things_ping_s *ping, ping_state_e state)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -693,19 +1025,27 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 }
 
 #ifdef THINGS_PING_ENABLE
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for find ping resource to cloud.
+ */
 static int find_resource_oic_ping(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
+	// If the state of ping is not TCP session connected than nothing to do.
 	if (get_mask(ping, PING_ST_TCPCONNECT) == false) {
 		return 1;
 	}
 
 	int sleepTime = 1;			// seconds
+	// Request handler to discover ping resource.
 	OCDoHandle g_req_handle = NULL;
+	// Callback to pass information from application to OC stack.
 	OCCallbackData cb;
 	char *hostAddr = NULL;
 
+	// call the callback to handle discovery of ping resource.
 	cb.cb = discover_ping_resource_handler;
 	cb.cd = NULL;
 	cb.context = (void *)ping;
@@ -717,6 +1057,7 @@ static int find_resource_oic_ping(things_ping_s *ping)
 
 	THINGS_LOG_D(TAG, "cb.context=0x%X", cb.context);
 
+	// Make host address.
 	if ((hostAddr = make_host_addr(ping->addr, ping->port)) == NULL) {
 		THINGS_LOG_E(TAG, "Memory Allocation is failed.");
 		goto error;
@@ -726,15 +1067,18 @@ static int find_resource_oic_ping(things_ping_s *ping)
 	//	sleep(1);				// sleep 1 second
 	//}
 
+	// Check if the state of ping is not occured time-out with regard to any request.
 	if (get_mask(ping, PING_ST_TIMEOUT) == true) {
 		THINGS_LOG_E(TAG, "Ping thread timeout");
 		goto error;
 	}
 
+	// Set the state of ping is doing discovery in cloud.
 	set_mask(ping, PING_ST_DISCOVERY);
 
 	THINGS_LOG_D(TAG, "Send OCFindKeepAliveResouce request to %s.", hostAddr);
 	iotivity_api_lock();
+	// Send request to discovers  /oic/ping resource on host address.
 	OCStackResult res = OCFindKeepAliveResource(&g_req_handle, hostAddr, &cb);
 	iotivity_api_unlock();
 	if (res == OC_STACK_OK) {
@@ -754,6 +1098,10 @@ error:
 	return sleepTime;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for sending common-Ping request for /oic/ping to Cloud.
+ */
 static int send_things_ping_request(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -805,12 +1153,13 @@ static int send_things_ping_request(things_ping_s *ping)
 
 	pthread_mutex_lock(&ping->mutex_int);
 	interval = ping->interval[ping->int_seq];
-	// period send request to Cloud for interval hand-shaking /oic/ping resource.
+	// Period send request to Cloud for interval hand-shaking /oic/ping resource.
 	OCRepPayloadSetPropInt(payload, INTERVAL, interval);
 	THINGS_LOG_D(TAG, "interval = %lld", interval);
 
 	THINGS_LOG_D(TAG, "Send OCSendKeepAliveRequest request to %s.", hostAddr);
 	iotivity_api_lock();
+	// Send common-Ping request message to remote endpoint address.
 	result = OCSendKeepAliveRequest(&g_req_handle, hostAddr, (OCPayload *)payload, &cb);
 	iotivity_api_unlock();
 	if (result == OC_STACK_OK)
@@ -840,17 +1189,29 @@ error:
 	return sleepTime;
 }
 #else
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for find ping resource to cloud.
+ */
 static int find_resource_oic_ping(things_ping_s *ping)
 {
 	return 1;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for sending common-Ping request for /oic/ping to Cloud.
+ */
 static int send_things_ping_request(things_ping_s *ping)
 {
 	return 1;
 }
 #endif
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for find minimum interval value from interval array.
+ */
 int64_t find_minimum_from_intervals(int64_t *intervals, int int_ea)
 {
 	int64_t min = 32768;
@@ -865,6 +1226,10 @@ int64_t find_minimum_from_intervals(int64_t *intervals, int int_ea)
 	return min;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for setting interval value in things_ping_s interval array.
+ */
 static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, ping_state_e confirmState)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -888,9 +1253,12 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 
 	pthread_mutex_lock(&ping->mutex_int);
 	if (get_mask(ping, confirmState) == true && get_mask(ping, PING_ST_TIMEOUT) == false) {
+		// Find minimum interval value from interval array.
 		min_interval = find_minimum_from_intervals(intervals, int_ea);
 		memset(ping->interval, 0, sizeof(int64_t) * MAX_INTERVAL_EA);
 		int i = 0;
+
+		// Set the things_ping_s interval array.
 		for (i = 0; i < int_ea; i++) {
 			THINGS_LOG_D(TAG, "Setting interval[%d]=%d", i, min_interval);
 			ping->interval[i] = min_interval;
@@ -912,6 +1280,10 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for defined the interval value for things_ping_s ping interval array.
+ */
 static bool set_def_interval(things_ping_s *ping)
 {
 	if (ping == NULL) {
@@ -931,12 +1303,17 @@ static bool set_def_interval(things_ping_s *ping)
 	return true;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for creating ping thread.
+ */
 static bool things_ping_create_thread(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
 	bool res = false;
 
+	// Check the validation of ping, ping's address and ping's port no.
 	if (ping == NULL || ping->addr == NULL || ping->port == 0) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(ping=0x%X)", ping);
 		if (ping) {
@@ -947,6 +1324,7 @@ static bool things_ping_create_thread(things_ping_s *ping)
 
 	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread == 0) {
+		// Create pthread for ping.
 		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, THINGS_STACK_PING_THREAD) != 0) {
 			THINGS_LOG_E(TAG, "Create thd_ping_loop thread is failed.");
 			ping->handle_thread = 0;
@@ -963,11 +1341,16 @@ GOTO_OUT:
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for destory ping thread.
+ */
 static bool things_ping_destroy_thread(things_ping_s *ping)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 	bool res = false;
 
+	// Check the validation of ping, ping's address.
 	if (ping == NULL || ping->addr == NULL) {
 		THINGS_LOG_E(TAG, "Invalid arguments.(ping=0x%X)", ping);
 		return res;
@@ -1002,6 +1385,10 @@ static bool things_ping_destroy_thread(things_ping_s *ping)
 	return res;
 }
 
+//--------------------------------------------------------------------------------
+/**
+ * Function definition for printing response value of payload.
+ */
 static void things_rep_payload_value_print(OCRepPayloadValue *value)
 {
 	switch (value->type) {
@@ -1066,20 +1453,28 @@ static void things_rep_payload_value_print(OCRepPayloadValue *value)
 	}
 }
 
+//-------------------------------------------------------------------------------
+/**
+ * Function definition for making host address.
+ */
 static char *make_host_addr(const char *ip, const uint16_t port)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
+	// Initialize a host string with NULL
 	char *host = NULL;
 	int length = 0;
 
+	// Print IP address and port number.
 	THINGS_LOG_D(TAG, "ip=%s, port=%d", ip, port);
 	if (ip == NULL || strlen(ip) == 0 || port == 0) {
 		THINGS_LOG_E(TAG, "Invalid arguments.");
 		return NULL;
 	}
 
+	// Calculate length to assign memory for host.
 	length = strlen(ip) + 7 + strlen(DEFAULT_COAP_TCP_HOST);
+	// Create dynamic memory for host.
 	if ((host = (char *)things_malloc(sizeof(char) * length)) == NULL) {
 		THINGS_LOG_E(TAG, "memory allocation is failed.");
 		return NULL;
@@ -1092,6 +1487,7 @@ static char *make_host_addr(const char *ip, const uint16_t port)
 		host = NULL;
 	}
 
+	// Print the host address.
 	THINGS_LOG_D(TAG, "host = %s", host);
 
 	THINGS_LOG_D(TAG, "Exit.");

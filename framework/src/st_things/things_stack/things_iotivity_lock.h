@@ -21,20 +21,32 @@
 
 #include <pthread.h>
 
-/* Initializes the mutex variables. Returns 'true' if initialization is successful.
-This function should not be called more than once. */
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for Initializes the mutex variables.
+ * This function should not be called more than once.
+ */
 void init_iotivity_api_lock(void);
 
-/* Locks the mutex. Returns 'true' if lock is successful.
-This function should be called after init_iotivity_api_lock(). */
+//--------------------------------------------------------------------------------
+/**
+ * @brief API for Locks the mutex.
+ * This function should be called after init_iotivity_api_lock().
+ */
 void iotivity_api_lock(void);
 
-/* Unlocks the mutex. Returns 'true' if unlock is successful.
-This function should be called after init_iotivity_api_lock(). */
+//--------------------------------------------------------------------------------
+/**
+ * @brief Unlocks the mutex.
+ * This function should be called after init_iotivity_api_lock().
+ */
 void iotivity_api_unlock(void);
 
-/* De-initializes the mutex variables. Returns 'true' if de-initialization is successful.
-This function should be called after init_iotivity_api_lock(). */
+//--------------------------------------------------------------------------------
+/**
+ * @brief  De-initializes the mutex variables.
+ * This function should be called after init_iotivity_api_lock().
+ */
 void deinit_iotivity_api_lock(void);
 
 #endif // THINGS_IOTIVITY_LOCK_H_

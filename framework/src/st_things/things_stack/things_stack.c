@@ -63,11 +63,17 @@
 #define DEVICE_DEF_FILE_ROOT PATH_ROM
 #endif
 
+/**
+ * Logging tag for module name
+ */
 #define TAG "[things_stack]"
 #define SCAN_AP_INTERVAL 60
 typedef void *(*pthread_func_type)(void *);
 volatile static int is_things_module_initialized = 0;
 
+/**
+ * Holds things resource and reset Type information
+*/
 typedef struct reset_args_s {
 	things_resource_s *remote_owner;
 	things_es_enrollee_reset_e resetType;
@@ -92,6 +98,10 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for register callback for check the status of easysetup
+ */
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
 	int res = 0;
@@ -104,6 +114,10 @@ int things_register_easysetup_state_func(things_get_easysetup_state_func_type fu
 	return res;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Owner ship transfer method callback.
+ */
 static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int event)
 {
 	switch (event) {
@@ -131,6 +145,10 @@ static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int 
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Check that device path is convert into '/rom/' or not.
+ */
 static bool things_has_abs_device_def_path(const char *json_path)
 {
 	if (json_path != NULL) {
@@ -144,6 +162,10 @@ static bool things_has_abs_device_def_path(const char *json_path)
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Convert the device path into '/rom/' format
+ */
 static char *things_make_abs_device_def_path(const char *json_path)
 {
 	char *abs_json_path = NULL;
@@ -162,6 +184,10 @@ static char *things_make_abs_device_def_path(const char *json_path)
 	return abs_json_path;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Initialize the things stack
+ */
 int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -172,6 +198,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_V(TAG, "json_path could not be null.");
 		return 0;
 	} else {
+		// Convert the device path
 		abs_json_path = things_make_abs_device_def_path(json_path);
 		THINGS_LOG_V(TAG, "Origin path(%s), converted path(%s).", json_path, abs_json_path);
 	}
@@ -231,6 +258,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_V(TAG, "Success to create the device resource file");
 	}
 #endif
+	// Check things stack initialized or not.
 	if (is_things_module_initialized) {
 		THINGS_LOG_E(TAG, "Stack already initialized");
 		things_free(abs_json_path);
@@ -239,15 +267,22 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 
 	init_iotivity_api_lock();
 
-	if (!things_network_initialize()) {
-		THINGS_LOG_E(TAG, "ERROR things_network initialize");
+	// This api initialize the WiFi Manager api.
+	if (things_network_initialize() != 0) {
+		THINGS_LOG_E(TAG, "Failed to initialize network");
 		things_free(abs_json_path);
 		return 0;
 	}
 
+	// Initialize the p_version variable
 	things_log_init();
+	/**
+	 * Set the ST_things stack varsion into p_version variable
+	 * which can see in logs.
+	 */
 	things_log_set_version(ST_THINGS_STACK_VERSION);
 
+	// Internally call the api for parsing the json file and store the information.
 	if (!dm_init_module(abs_json_path)) {
 		THINGS_LOG_E(TAG, "dm_init_module() failed");
 		things_free(abs_json_path);
@@ -256,15 +291,18 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	}
 	is_things_module_initialized = 1;
 
+	// Get the easysetup state which is stored in easysetup file.
 	int es_state = esm_read_easysetup_state();
 	*easysetup_completed = ((es_state == ES_COMPLETE) ? true : false);
 
 	if (es_state != ES_COMPLETE) {
+		//Remove the easysetup file from mountpoint.
 		esm_save_easysetup_state(ES_NOT_COMPLETE);
 		THINGS_LOG_D(TAG, "delete svrdb");
 #ifdef CONFIG_SVR_DB_SECURESTORAGE
 		secure_remove(NULL);
 #else
+		// Remove artik server secured file from mountpoint.
 		unlink(dm_get_svrdb_file_path());
 #endif
 	}
@@ -279,23 +317,32 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	return 1;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Deinitialize the things stack
+ */
 int things_deinitialize_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	dm_termiate_module();
+	dm_termiate_module();		// Delete the device information
 	things_log_shutdown();
 	deinit_iotivity_api_lock();
 
-	is_things_module_initialized = 0;
+	is_things_module_initialized = 0;	// Make things stack not initialized.
 
 	return 1;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Start the things stack
+ */
 int things_start_stack(void)
 {
 	THINGS_LOG_V(TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
+	// Check if things stack initialized or not.
 	if (!is_things_module_initialized) {
 		THINGS_LOG_E(TAG, "Initialize failed. You must initialize it first.");
 		return 0;
@@ -303,6 +350,7 @@ int things_start_stack(void)
 	// Enable Security Features
 #ifdef __SECURED__
 	int auty_type = AUTH_UNKNOW;
+	// Check the user authentication type method.
 	switch (dm_get_ownership_transfer_method()) {
 	case 1:					// PIN
 		auty_type = AUTH_RANDOM_PIN;
@@ -314,12 +362,15 @@ int things_start_stack(void)
 		auty_type = AUTH_RANDOM_PIN + AUTH_CERTIFICATE_CONFIRM;
 		break;
 	}
+	// Security Manager initialize OICSecurity feature.
 	if (0 != sm_init_things_security(auty_type, dm_get_svrdb_file_path())) {
 		THINGS_LOG_E(TAG, "Failed to initialize OICSecurity features");
 		return 0;
 	}
+	//Security Manager set the otm event on server side.
 	sm_set_otm_event_handler(otm_event_cb);
 #endif
+	// Initiate request handler callback
 	g_req_handler = get_handler_instance();
 	if (NULL == g_req_handler) {
 		THINGS_LOG_E(TAG, "Failed to initialize Request Handler");
@@ -345,12 +396,13 @@ int things_start_stack(void)
 	}
 #endif
 
-	// Register Device-ID & Resources
+	// Register Device-ID.
 	if (dm_register_device_id() == false) {
 		THINGS_LOG_E(TAG, "Failed to register Device ID");
 		return 0;
 	}
 
+	// Register Resource.
 	if (!dm_register_resource(g_server_builder)) {
 		THINGS_LOG_E(TAG, "Failed to register Resource");
 		return 0;
@@ -360,19 +412,21 @@ int things_start_stack(void)
 		THINGS_LOG_E(TAG, "Failed to initialize Easy-Setup Module");
 		return 0;
 	}
-	// Register Callback
+	// Register cloud Callback
 	esm_register_cloud_cb(cloud_data_cb_esm);
 
+	// Initiate Cloud
 	if (es_cloud_init(g_server_builder) == NULL) {
 		THINGS_LOG_E(TAG, "Failed to initialize Cloud");
 		return 0;
 	}
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
 		if (dm_is_es_complete() == false) {
+			// Turn on soft ap.
 			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}
-			//call wifi scan ap.
+			// Call wifi scan ap.
 			if (!things_start_scanning_ap())
 				return 0;
 		} else if (!things_network_connect_home_ap()) {
@@ -388,8 +442,16 @@ int things_start_stack(void)
 	return 1;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for start scanning near by wifi ap.
+ */
 int things_start_scanning_ap(void)
 {
+	/**
+	 * Create a thread which is call wifi scan api at every 60sec interval
+	 * till things is not connected to target ap.
+	 */
 	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, (pthread_func_type)auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
 		THINGS_LOG_E(TAG, "Failed to create thread");
 		return 0;
@@ -397,6 +459,7 @@ int things_start_scanning_ap(void)
 	return 1;
 }
 
+//----------------------------------------------------------------------------------
 static void *__attribute__((optimize("O0"))) auto_scanning_loop(void)
 {
 	while (!things_is_connected_ap()) {
@@ -409,10 +472,15 @@ static void *__attribute__((optimize("O0"))) auto_scanning_loop(void)
 	return NULL;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for handling result of reset.
+ */
 int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
+	// If reset type is Auto reset than turn on soft ap. After reset the things.
 	if (resetType == RST_AUTO_RESET) {
 		things_network_turn_on_soft_ap();
 	}
@@ -447,6 +515,9 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		b_thread_things_reset = true;
 		b_reset_continue_flag = true;
 
+		/**
+		 * Create a thread for reset the things.
+		 */
 		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0) {
 			THINGS_LOG_E(TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
@@ -472,6 +543,10 @@ GOTO_OUT:
 	return res;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * definition of API for stop things stack.
+ */
 int things_stop_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -490,9 +565,11 @@ int things_stop_stack(void)
 	pthread_mutex_unlock(&m_thread_oic_reset);
 
 	THINGS_LOG_D(TAG, "Terminate Cloud Session Managing");
+	// Terminate cloud connection.
 	es_cloud_terminate();
 
 	THINGS_LOG_D(TAG, "Terminate EasySetup");
+	// Terminate easysetup
 	esm_terminate_easysetup();
 
 #ifdef __SECURED__
@@ -519,6 +596,10 @@ int things_stop_stack(void)
 	return 1;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function  defination for reset confirmation
+ */
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func)
 {
 	if (func != NULL) {
@@ -529,6 +610,10 @@ int things_register_confirm_reset_start_func(things_reset_confirm_func_type func
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function defination for notify observers
+ */
 int things_notify_observers(const char *uri)
 {
 	if (g_req_handler == NULL) {
@@ -538,6 +623,10 @@ int things_notify_observers(const char *uri)
 	return g_req_handler->notify_things_observers(uri);
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function defination for pin generation for ownership transfer.
+ */
 int things_register_pin_generated_func(things_pin_generated_func_type func)
 {
 	if (NULL != func) {
@@ -552,6 +641,10 @@ int things_register_pin_generated_func(things_pin_generated_func_type func)
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function defination for close pin display
+ */
 int things_register_pin_display_close_func(things_pin_display_close_func_type func)
 {
 	if (NULL != func) {
@@ -566,6 +659,10 @@ int things_register_pin_display_close_func(things_pin_display_close_func_type fu
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for register user confirmation during ownership transfer.
+ */
 int things_register_user_confirm_func(things_get_user_confirm_func_type func)
 {
 	if (NULL != func) {
@@ -580,6 +677,10 @@ int things_register_user_confirm_func(things_get_user_confirm_func_type func)
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for register get and post handle request.
+ */
 int things_register_handle_request_func(things_handle_request_func_type get_func, things_handle_request_func_type set_func)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -591,9 +692,10 @@ int things_register_handle_request_func(things_handle_request_func_type get_func
 	return 1;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Functions Definition for Security feature
-//////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------------
+/**
+ * Functions Definition for Security feature
+ */
 int things_register_otm_event_handler(things_sec_otm_state_func_type otmEventCallback)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -610,9 +712,10 @@ int things_register_otm_event_handler(things_sec_otm_state_func_type otmEventCal
 	return 1;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Functions Definition for Reset Handling.
-//////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------------
+/**
+ * Functions Definition for Reset Handling.
+ */
 static void things_set_reset_mask(rst_state_e value)
 {
 	if (value != RST_COMPLETE) {
@@ -622,11 +725,19 @@ static void things_set_reset_mask(rst_state_e value)
 	}
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function definition for getting reset mask.Is it completed or not.
+ */
 bool things_get_reset_mask(rst_state_e value)
 {
 	return (int)(m_reset_bit_mask & value) != 0 ? true : false;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function defination for user opinion for reset
+ */
 int things_return_user_opinion_for_reset(int reset)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -646,6 +757,7 @@ int things_return_user_opinion_for_reset(int reset)
 	return result;
 }
 
+//----------------------------------------------------------------------------------
 static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *args)
 {
 	THINGS_LOG_D(TAG, "Enter. Handler=0x%X", h_thread_things_reset);
@@ -725,12 +837,14 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 
 	// 7. Security Reset.
 #ifdef __SECURED__
+	// 7.1. Reset the Secure Virtual Resource.
 	if (0 != sm_reset_svrdb()) {
 		THINGS_LOG_E(TAG, "Failed to initialize OICSecurity features.");
 		goto GOTO_OUT;
 	}
 	THINGS_LOG_V(TAG, "Reset done: security resources");
 
+	// 7.2. Generate deive id.
 	if (0 != sm_generate_device_id()) {
 		THINGS_LOG_E(TAG, "Failed to generate device_id.");
 		goto GOTO_OUT;
@@ -745,9 +859,11 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 		THINGS_LOG_E(TAG, "Easy-Setup Module initialization failed");
 		goto GOTO_OUT;
 	}
+
+	// 9. Register cloud callback.
 	esm_register_cloud_cb(cloud_data_cb_esm);
 
-	// 9. Cloud Manager : Initialization.
+	// 10. Cloud Manager : Initialization.
 	THINGS_LOG_D(TAG, "Initial Cloud Module.");
 	if (es_cloud_init(g_server_builder) == NULL) {
 		THINGS_LOG_D(TAG, "It's failed Cloud_Module initialization.");
@@ -756,21 +872,21 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 
 	THINGS_LOG_D(TAG, "Reset Success.");
 	result = 1;
-	// After completed reset of device doing wifi scan
+	// 11. After completed reset of device doing wifi scan
 	things_start_scanning_ap();
 
 GOTO_OUT:
-	// 10. All Module Enable.
+	// 12. All Module Enable.
 	things_set_reset_mask(RST_COMPLETE);
 
 	/*SVACE warning fix */
 	if (args) {
-		// 11. If reset-processing is triggered by remote-owner, then Notify result of Reset.
+		// 13. If reset-processing is triggered by remote-owner, then Notify result of Reset.
 		THINGS_LOG_D(TAG, "Notify result of reset to remote-client.(mobile)");
 		notify_result_of_reset(args->remote_owner, result);
 		things_free(args);
 	}
-	// 12. If there is Reset Result Call-Back Function, then Notify result of Reset to st_things-Application.
+	// 14. If there is Reset Result Call-Back Function, then Notify result of Reset to st_things-Application.
 	if (things_cb_func_for_reset_result) {	// Notify result of reset to st_things.
 		THINGS_LOG_D(TAG, "Notify result of reset to st_things.");
 		things_cb_func_for_reset_result(result);
@@ -785,6 +901,10 @@ GOTO_OUT:
 	return NULL;
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Function defination for check thing stack initialization
+ */
 int things_is_things_module_initialized(void)
 {
 	return is_things_module_initialized;

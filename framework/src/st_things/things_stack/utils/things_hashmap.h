@@ -19,13 +19,18 @@
 #ifndef _THINGS_HASHMAP_H
 #define _THINGS_HASHMAP_H
 
-/** Hashmap structure (forward declaration) */
+/**
+ * Hashmap Entry structure (forward declaration)
+ */
 typedef struct {
 	void *data;
 	int flags;
 	long key;
 } h_entry_s;
 
+/**
+ * Hashmap structure
+ */
 typedef struct hashmap_s {
 	h_entry_s *table;
 	long size, count;
@@ -34,21 +39,51 @@ typedef struct hashmap_s {
 // struct s_hashmap;
 // typedef struct s_hashmap hashmap;
 
-/** Creates a new hashmap near the given size. */
+//---------------------------------------------------------------------------------
+/**
+ * @brief Creates a new hashmap near the given size.
+ * @param startsize : Size of the hashmap
+ */
 extern struct hashmap_s *hashmap_create(int startsize);
 
-/** Inserts a new element into the hashmap. */
+//---------------------------------------------------------------------------------
+/**
+ * @brief Inserts a new element into the hashmap.
+ * @param struct hashmap_s * : pointer to map for resource types
+ * @param data : data to be inserted into hashmap
+ * @param key  : Index in the hashmap.
+ */
 extern void hashmap_insert(struct hashmap_s *, const void *data, unsigned long key);
 
-/** Returns the element for the key. */
+//---------------------------------------------------------------------------------
+/**
+ * @brief Returns the element for the key.
+ * @param struct hashmap_s * : pointer to map for resource types
+ * @param key : Index in the hashmap.
+ */
 extern void *hashmap_get(struct hashmap_s *, unsigned long key);
 
-/** Returns the number of saved elements. */
+//---------------------------------------------------------------------------------
+/**
+ * @brief get the number of saved elements in hashmap.
+ * @param struct hashmap_s * : pointer to map for resource types
+ * @Returns the number of saved elements.
+ */
 extern long hashmap_count(struct hashmap_s *);
 
-/** Removes the hashmap structure. */
+//---------------------------------------------------------------------------------
+/**
+ * @brief Removes the hashmap structure.
+ * @param struct hashmap_s * : pointer to map for resource types
+ */
 extern void hashmap_delete(struct hashmap_s *);
 
+//---------------------------------------------------------------------------------
+/**
+ * @brief get index for particular resource type in hashmap.
+ * @param str : string value
+ * @return index number in hashmap
+ */
 extern unsigned long hashmap_get_hashval(unsigned char *str);
 
 extern unsigned long* hashmap_get_keyset(struct hashmap_s *);

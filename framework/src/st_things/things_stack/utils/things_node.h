@@ -19,6 +19,9 @@
 #ifndef _THINGS_NODE_H_
 #define _THINGS_NODE_H_
 
+/**
+ * Data structure for hold the information of node.
+ */
 typedef struct things_node_s {
 	int req;					// 0 : Message, 1 : MsgInfo
 	void *item;
