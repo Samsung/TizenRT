@@ -38,16 +38,16 @@ int board_ledc_setup(void)
 		if (!ledc) {
 			lldbg("Failed to get the PWM lower half\n");
 			return -ENODEV;
-		}   
+		}
 
-		snprintf(path, sizeof(path), "/dev/ledc%d", i); 
+		snprintf(path, sizeof(path), "/dev/ledc%d", i);
 
 		ret = ledc_register(path, ledc);
 		if (ret < 0) {
 			lldbg("ledc_register failed: %d\n", ret);
 			return ret;
-		}   
-	}   
+		}
+	}
 #endif
-    return OK; 
+	return OK;
 }

@@ -76,18 +76,24 @@ config ARCH_BOARD_STM32F429I_DISCO
 config ARCH_BOARD_ESP32_DEVKITC
 	bool "Espressif ESP32-DevKitC board"
 	depends on ARCH_CHIP_ESP32
+	select ARCH_BOARD_ESP32_FAMILY
 	---help---
 		Espressif esp32 WIFI/BLE MCU
 
 config ARCH_BOARD_ESP_WROVER_KIT
 	bool "Espressif ESP-WROVER-KIT board"
 	depends on ARCH_CHIP_ESP32
+	select ARCH_BOARD_ESP32_FAMILY
 	---help---
 		Espressif esp32 WIFI/BLE LCDs MCU
 
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
+    bool
+    default n
+
+config ARCH_BOARD_ESP32_FAMILY
     bool
     default n
 
@@ -99,8 +105,7 @@ config ARCH_BOARD
 	default "cy4390x"            if ARCH_BOARD_CY4390x
 	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
-	default "esp32_DevKitC"      if ARCH_BOARD_ESP32_DEVKITC
-	default "esp_wrover_kit"     if ARCH_BOARD_ESP_WROVER_KIT
+	default "esp32_devkit"       if ARCH_BOARD_ESP32_FAMILY
 	
 comment "Common Board Options"
 
@@ -246,9 +251,6 @@ endif
 if ARCH_BOARD_STM32F429I_DISCO
 source board/stm32f429i-disco/Kconfig
 endif
-if ARCH_BOARD_ESP32_DEVKITC
-source board/esp32_DevKitC/Kconfig
-endif
-if ARCH_BOARD_ESP_WROVER_KIT
-source board/esp_wrover_kit/Kconfig
+if ARCH_BOARD_ESP32_FAMILY
+source board/esp32_devkit/Kconfig
 endif
