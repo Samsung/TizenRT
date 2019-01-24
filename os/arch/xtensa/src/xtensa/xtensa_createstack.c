@@ -229,7 +229,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		/* Initialize the coprocessor save area (see xtensa_coproc.h) */
 
 		xcp = &tcb->xcp;
-		xcp->cpstate.cpenable = 0;	/* No coprocessors active for this thread */
+		xcp->cpstate.cpenable = xtensa_get_cpenable();	/* Update coprocessors active status for this thread */
 		xcp->cpstate.cpstored = 0;	/* No coprocessors saved for this thread */
 		xcp->cpstate.cpasa = (uint32_t *)cpstart;	/* Start of aligned save area */
 #endif

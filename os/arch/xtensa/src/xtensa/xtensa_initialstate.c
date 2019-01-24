@@ -122,7 +122,7 @@ void up_initial_state(struct tcb_s *tcb)
 #ifdef CONFIG_XTENSA_CP_LAZY
 	xcp->cpstate.cpenable = 0;	/* No co-processors are enabled */
 #else
-	xcp->cpstate.cpenable = 0;
+	xcp->cpstate.cpenable = xtensa_get_cpenable();	/* Update coprocessors active status for this thread */
 #endif
 	xcp->cpstate.cpstored = 0;	/* No co-processors haved state saved */
 #endif
