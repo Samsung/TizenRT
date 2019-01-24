@@ -29,6 +29,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define ISP_CHECKBUSY() while (isp_get_status()) {}
+
 #define MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT  (1280)
 #define MBEDTLS_MAX_ECP_KEY_SIZE_ALT  (68)
 #define MBEDTLS_MAX_RANDOM_SIZE		(256)
