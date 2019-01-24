@@ -85,7 +85,7 @@ static void tc_timer_timer_create_delete(void)
 	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
 
 	st_ret_prt = (struct posix_timer_s *)timer_id;
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_sigevent.sigev_value.sival_ptr, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_event.sigev_value.sival_ptr, st_sigevent.sigev_value.sival_ptr, timer_delete(timer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_signo, st_sigevent.sigev_signo, timer_delete(timer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, timer_delete(timer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), timer_delete(timer_id));
@@ -108,7 +108,7 @@ static void tc_timer_timer_create_delete(void)
 
 	st_ret_prt = (struct posix_timer_s *)gtimer_id;
 
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_ret_prt, timer_delete(gtimer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_event.sigev_value.sival_ptr, st_ret_prt, timer_delete(gtimer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, timer_delete(gtimer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), timer_delete(gtimer_id));
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_delay, 0, timer_delete(gtimer_id));
