@@ -151,6 +151,11 @@ CONTEXTDIRS += mm
 USERDIRS =
 OTHERDIRS = $(LIBRARIES_DIR)
 
+# Add SE Module
+ifeq ($(CONFIG_SE),y)
+NONFSDIRS += se
+endif
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 
 USERDIRS += $(LIB_DIR)$(DELIM)libc mm $(USER_ADDONS)
