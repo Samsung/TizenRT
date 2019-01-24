@@ -37,7 +37,11 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
@@ -643,7 +647,7 @@ static int check_pointer( void *p )
     return( 0 );
 }
 
-static int check_all_free( void )
+static int check_all_free( )
 {
     if(
 #if defined(MBEDTLS_MEMORY_DEBUG)

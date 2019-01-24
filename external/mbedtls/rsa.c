@@ -55,7 +55,11 @@
  *
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_RSA_C)
 
@@ -484,7 +488,7 @@ void mbedtls_rsa_init( mbedtls_rsa_context *ctx,
 #if defined(MBEDTLS_THREADING_C)
     mbedtls_mutex_init( &ctx->mutex );
 #endif
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
 	ctx->key_index = 0xFF;
 
 #endif
