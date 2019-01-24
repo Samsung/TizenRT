@@ -96,22 +96,7 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 # Add libraries for iotivity support
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-endif
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-endif
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
 endif
 
 # Add libraries for audio module

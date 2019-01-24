@@ -96,16 +96,7 @@ endif
 
 # Add libraries for iotivity support
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-endif
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
 endif
 
 # Add libraries for power management module
