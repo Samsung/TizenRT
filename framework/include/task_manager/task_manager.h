@@ -191,7 +191,7 @@ int task_manager_register_builtin(char *name, int permission, int timeout);
 int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout);
 /**
  * @brief Request to register a pthread which is not in built-in list
- * @details @b #include <task_manager/task_manager.h>\n
+ * @details @b #include <task_manager/task_manager.h>
  * @param[in] name the name of pthread to be registered
  * @param[in] attr the attribute of pthread to be registered
  * @param[in] start_routine the entry function pointer
@@ -267,7 +267,7 @@ int task_manager_pause(int handle, int timeout);
 int task_manager_resume(int handle, int timeout);
 /**
  * @brief Request to restart the task
- * @details @b #include <task_manager/task_manager.h>
+ * @details @b #include <task_manager/task_manager.h>\n
  * It cannot guarantee the resource de-allocation.
  * @param[in] handle the handle id of task to be restarted
  * @param[in] timeout returnable flag. It can be one of the below.\n
@@ -318,7 +318,7 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout);
 /**
  * @brief Set unicast callback function API
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] func the callback function which handle the msg\n
+ * @param[in] func the callback function which handle the msg
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0
  */
@@ -403,7 +403,7 @@ tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout);
 /**
  * @brief Get the handle through pid
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] pid the pid which to get its task information\n
+ * @param[in] pid the pid which to get its task information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds\n
@@ -447,7 +447,7 @@ int task_manager_alloc_broadcast_msg(void);
 /**
  * @brief Unregister callback function which was used for a certain broadcast message.
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] msg the broadcast message corresponding to the callback function to be unregistered\n
+ * @param[in] msg the broadcast message corresponding to the callback function to be unregistered
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -459,7 +459,7 @@ int task_manager_unset_broadcast_cb(int msg, int timeout);
 /**
  * @brief Remove the broadcast message which was allocated by using task_manager_alloc_broadcast_msg() API.
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] msg the message which to be removed.\n
+ * @param[in] msg the message which to be removed.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
