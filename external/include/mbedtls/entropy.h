@@ -281,7 +281,7 @@ int mbedtls_entropy_update_seed_file( mbedtls_entropy_context *ctx, const char *
  */
 int mbedtls_entropy_self_test( int verbose );
 
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT) && defined(CONFIG_HW_RNG)
+#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
 /**
  * \brief          Checkup routine
  *
@@ -297,7 +297,7 @@ int mbedtls_entropy_self_test( int verbose );
  */
 int mbedtls_entropy_source_self_test( int verbose );
 
-#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT & CONFIG_HW_RNG */
+#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 #endif /* MBEDTLS_SELF_TEST */
 
 #ifdef __cplusplus

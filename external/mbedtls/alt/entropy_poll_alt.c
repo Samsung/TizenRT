@@ -29,7 +29,7 @@
 
 #include "mbedtls/alt/common.h"
 
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT) && defined(CONFIG_HW_RNG)
+#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
 static int mbedtls_generate_random_alt( unsigned int *data, unsigned int len )
 {
 	int r;
@@ -73,6 +73,6 @@ int mbedtls_hardware_poll( void *data,
 
 	return( 0 );
 }
-#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT & CONFIG_HW_RNG */
+#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
 #endif /* MBEDTLS_ENTROPY_C */

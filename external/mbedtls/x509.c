@@ -47,7 +47,11 @@
  *  http://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_X509_USE_C)
 

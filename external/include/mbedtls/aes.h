@@ -86,11 +86,6 @@ extern "C" {
 
 /**
  * \brief The AES context-type definition.
- *
- * \note           buf is able to hold 32 extra bytes, which can be used:
- *                 - for alignment purposes if VIA padlock is used, and/or
- *                 - to simplify key expansion in the 256-bit case by
- *                 generating an extra round key
  */
 typedef struct
 {

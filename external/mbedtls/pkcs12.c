@@ -43,7 +43,11 @@
  *  ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-12/pkcs-12v1-1.asn
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_PKCS12_C)
 
