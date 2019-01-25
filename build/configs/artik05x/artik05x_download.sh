@@ -27,6 +27,9 @@ OS_DIR_PATH=${THIS_PATH}/../../../os
 
 source ${OS_DIR_PATH}/.config
 
+BOARD_NAME=${CONFIG_ARCH_BOARD}
+PARTMAP_DIR_PATH=${THIS_PATH}
+BOARD_KCONFIG=${OS_DIR_PATH}/board/${BOARD_NAME}/Kconfig
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
@@ -81,53 +84,6 @@ Options:
 EOF
 }
 
-compute_fw_parts()
-{
-	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0; ota=0;
-	case $1 in
-		ALL|all)
-			bl1=1; bl2=1; sssfw=1; wlanfw=1; os=1;
-			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
-				rom=1
-			fi
-			;;
-		BL1|bl1)
-			bl1=1
-			;;
-		BL2|bl2)
-			bl2=1
-			;;
-		SSSFW|sssfw)
-			sssfw=1
-			;;
-		WLANFW|wlanfw)
-			wlanfw=1
-			;;
-		ROMFS|romfs)
-			rom=1
-			;;
-		OS|os)
-			os=1
-			;;
-        OTA|ota)
-            ota=1
-            ;;
-		*)
-			echo "$1 is not supported"
-			exit 1
-			;;
-	esac
-
-	parts=
-	for var in bl1 bl2 sssfw wlanfw os rom ota; do
-		eval value='${'${var}:-}
-		if [ "x${value:-}" == x1 ]; then
-			parts+=" ${var}"
-		fi
-	done
-	[ -z "${parts}" ] || echo ${parts}
-}
-
 # Exit if the file is not there
 ensure_file()
 {
@@ -135,6 +91,15 @@ ensure_file()
 		echo "missing file $1"
 		exit 1
 	fi
+}
+
+# Check if the file is present
+is_file_present()
+{
+	if [ ! -f "${1:?}" ]; then
+	    return 0
+	fi
+	return 1
 }
 
 compute_ocd_commands()
@@ -155,16 +120,24 @@ compute_ocd_commands()
 				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
 				;;
 			ota)
-				ensure_file ${OUTPUT_BINARY_PATH}/ota.bin
-				commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/ota.bin ${VERIFY}; "
+			        is_file_present ${OUTPUT_BINARY_PATH}/ota.bin
+			        if [[ $? -eq 1 ]]; then
+				    commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/ota.bin ${VERIFY}; "
+			         else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/ota.bin is NOT present";
+				fi
 				;;
 			rom)
-				ensure_file ${OUTPUT_BINARY_PATH}/romfs.img
-				commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
+			         is_file_present ${OUTPUT_BINARY_PATH}/romfs.img
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
+				 fi
 				;;
 			*)
-				echo "Unrecognized firmware part ${part}"
-				exit 1
+				echo "#NOTE#: No binary available for ${part}"
+
 				;;
 		esac
 	done
@@ -173,11 +146,11 @@ compute_ocd_commands()
 
 download()
 {
-	# Make a list which part should be flashed
-	parts=$(compute_fw_parts $1)
-	echo "The \"${parts}\" partition(s) will be flashed"
+        parts_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+        parts2=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${parts_default}}
+        parts=`echo $parts2 | sed "s/,/ /g"`
 
-	# Make Openocd commands for parts
+        # Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
 	echo "ocd command to run: ${commands}"
 
