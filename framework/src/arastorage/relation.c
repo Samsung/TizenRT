@@ -317,9 +317,8 @@ relation_t *relation_create(char *name, db_direction_t dir)
 
 db_result_t relation_rename(char *old_name, char *new_name)
 {
-	relation_t *rel = relation_load(new_name);
-
-	if (DB_ERROR(relation_remove(rel, 1)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
+	DB_LOG_D("old_name is %s, new_name is %s\n", old_name, new_name);
+	if (DB_ERROR(storage_rename_relation(old_name, new_name))) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -418,7 +417,28 @@ db_result_t relation_set_primary_key(relation_t *rel, char *name)
 	return DB_OK;
 }
 
-db_result_t relation_remove(relation_t *rel, int remove_tuples)
+//remove relation file and tuple file, but not index file. 
+db_result_t relation_remove_tuple(relation_t *rel, int remove_tuples)
+{
+	db_result_t result;
+
+	if (rel == NULL) {
+		return DB_OK;
+	}
+
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	/* Flush insert buffer to make sure of writing tuples before removing relation */
+	if (DB_SUCCESS(storage_flush_insert_buffer())) {
+		DB_LOG_D("DB : flush insert buffer!!\n");
+	}
+#endif
+
+	result = storage_drop_relation(rel, remove_tuples);
+	relation_free(rel);
+	return result;
+}
+
+db_result_t relation_remove_index(relation_t *rel, int remove_tuples)
 {
 	db_result_t result;
 	attribute_t *attr;
@@ -426,17 +446,9 @@ db_result_t relation_remove(relation_t *rel, int remove_tuples)
 	char *filename;
 
 	if (rel == NULL) {
-		/*
-		 * Attempt to remove an inexistent relation. To allow for this
-		 * operation to be used for setting up repeatable tests and
-		 * experiments, we do not signal an error.
-		 */
 		return DB_OK;
 	}
 
-	if (rel->references > 1) {
-		return DB_BUSY_ERROR;
-	}
 #ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
 	/* Flush insert buffer to make sure of writing tuples before removing relation */
 	if (DB_SUCCESS(storage_flush_insert_buffer())) {
@@ -467,8 +479,32 @@ db_result_t relation_remove(relation_t *rel, int remove_tuples)
 		DB_LOG_E("DB: Index file unlinking failed\n");
 	}
 
-	result = storage_drop_relation(rel, remove_tuples);
-	relation_free(rel);
+	return DB_OK;
+}
+
+db_result_t relation_remove(relation_t *rel, int remove_tuples)
+{
+	db_result_t result;
+
+	if (rel == NULL) {
+		/*
+		 * Attempt to remove an inexistent relation. To allow for this
+		 * operation to be used for setting up repeatable tests and
+		 * experiments, we do not signal an error.
+		 */
+		return DB_OK;
+	}
+
+	if (rel->references > 1) {
+		return DB_BUSY_ERROR;
+	}
+
+	if (DB_ERROR(relation_remove_index(rel, remove_tuples))) {
+		DB_LOG_E("DB: Index file remove failed\n");
+	}
+
+	result = relation_remove_tuple(rel, remove_tuples);
+	
 	return result;
 }
 
@@ -703,6 +739,27 @@ static void relation_index_clear(relation_t *rel)
 		attr_ptr = attr_ptr->next;
 	}
 	free(filename);
+}
+
+static void relation_delete_index_item(db_handle_t **handle, unsigned char *row_ptr, int update_index)
+{
+	attribute_t *from_attr;
+	attribute_value_t index_key;
+	tuple_id_t tuple_id;
+
+	from_attr = list_head((*handle)->rel->attributes);
+	while (from_attr != NULL) {
+		if (from_attr->index != NULL) {
+			if (relation_get_value((*handle)->rel, from_attr, row_ptr, &index_key) == DB_OK) {
+				index_delete(from_attr->index, &index_key);
+				if (update_index) { //update with new tuple_id
+					tuple_id = (*handle)->result_rel->cardinality - 1; //cardinality increased when storage_put_row
+					index_insert(from_attr->index, &index_key, tuple_id);
+				}
+			}
+		}
+		from_attr = from_attr->next;
+	}
 }
 
 static db_result_t generate_selection_result(db_handle_t **handle, relation_t *rel)
@@ -945,6 +1002,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	source_dest_map_t *attr_map_ptr, *attr_map_end;
 	char name[RELATION_NAME_LENGTH + 1];
 	int i;
+	tuple_id_t nrows;
 
 	if ((*handle)->tuple == NULL) {
 		return DB_ALLOCATION_ERROR;
@@ -998,6 +1056,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 			DB_LOG_E("DB: Failed to store a row in the result relation!\n");
 			goto errout;
 		}
+		relation_delete_index_item(handle, row, true);
 
 		(*handle)->current_row++;
 		if (row != NULL) {
@@ -1006,6 +1065,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 		return DB_GOT_ROW;
 	}
 
+	relation_delete_index_item(handle, row, false);
 	if (row != NULL) {
 		free(row);
 	}
@@ -1014,7 +1074,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 end_removal:
 	DB_LOG_E("DB: Finished removing tuples. Result relation has %d tuples\n", (*handle)->result_rel->cardinality);
 	memcpy(name, (*handle)->rel->name, sizeof(name));
-	relation_remove((*handle)->rel, 1);
+	relation_remove_tuple((*handle)->rel, 1);
 
 	/* Rename the name of new relation to old relation */
 	result = relation_rename((*handle)->result_rel->name, name);
@@ -1023,6 +1083,9 @@ end_removal:
 		goto errout;
 	}
 	memcpy((*handle)->result_rel->name, (*handle)->rel->name, sizeof((*handle)->result_rel->name));
+	if (storage_get_row_amount((*handle)->result_rel, &nrows) == DB_OK) {
+		DB_LOG_D("AFter Finish remove, result_rel tuple rows %d\n", nrows);
+	}
 
 	/* Process finished, we allocate cursor for result of remove */
 	if (DB_ERROR(cursor_init(&cursor, (*handle)->result_rel)) || DB_ERROR(cursor_data_set(cursor, (*handle)->attr_map, (*handle)->result_rel->attribute_count))) {
