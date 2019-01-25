@@ -148,7 +148,7 @@ download()
 {
         parts_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
         parts2=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${parts_default}}
-        parts=`echo $parts2 | sed "s/,/ /g"`
+	parts=`echo $parts2 | sed "s/,/ /g"`
 
         # Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
@@ -176,6 +176,7 @@ erase()
 			;;
 		ALL|all)
 			PART_NAME=all
+			NEED_PROTECTCMD=y
 			;;
 		*)
 			echo "${optarg} is not supported"
@@ -183,12 +184,16 @@ erase()
 			;;
 	esac
 
+	if [ "${NEED_PROTECTCMD}" == "y" ]; then
+		PROTECT_OFFCMD="flash_protect off"
+		PROTECT_ONCMD="flash_protect on"
+	fi
+
 	# Generate Partition Map
 	${SCRIPTS_PATH}/partition_gen.sh
-
-	# Download all binaries using openocd script
+	# Download
 	pushd ${OPENOCD_DIR_PATH} > /dev/null
-	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "flash_erase_part ${PART_NAME};	exit" || exit 1
+	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "${PROTECT_OFFCMD}; flash_erase_part ${PART_NAME}; ${PROTECT_ONCMD}; exit" || exit 1
 	popd > /dev/null
 }
 
