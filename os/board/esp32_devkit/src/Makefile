@@ -51,7 +51,7 @@
 
 -include $(TOPDIR)/Make.defs
 
-SCRIPTDIR = $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts
+SCRIPTDIR = $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ESP32_DEVKIT_TYPE)$(DELIM)scripts
 CONFIGFILE = $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)config.h
 
 ASRCS =
