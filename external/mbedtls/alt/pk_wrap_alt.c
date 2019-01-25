@@ -57,6 +57,7 @@
 
 #if defined(MBEDTLS_ECDSA_C)
 #include "mbedtls/ecdsa.h"
+#include "mbedtls/asn1write.h"
 #endif
 
 #if defined(MBEDTLS_PLATFORM_C)
@@ -612,6 +613,30 @@ const mbedtls_pk_info_t mbedtls_rsa_info = {
 
 #if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
 #if defined(MBEDTLS_ECP_C)
+/*
+ * Convert a signature (given by context) to ASN.1
+ */
+static int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
+                                    unsigned char *sig, size_t *slen )
+{
+	int ret;
+    unsigned char buf[MBEDTLS_ECDSA_MAX_LEN];
+    unsigned char *p = buf + sizeof( buf );
+    size_t len = 0;
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &p, buf, s ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &p, buf, r ) );
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &p, buf, len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &p, buf,
+                                       MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) );
+
+    memcpy( sig, p, len );
+    *slen = len;
+
+    return( 0 );
+}
+
 int mbedtls_verify_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign,
                                         unsigned char *hash, unsigned int hash_len,
                                         unsigned char *key_buf )

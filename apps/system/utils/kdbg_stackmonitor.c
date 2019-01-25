@@ -56,16 +56,23 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+#include <sys/mount.h>
+#endif
 #include <stdio.h>
+#include <dirent.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <sched.h>
+#include <stdbool.h>
 #include <pthread.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#include <tinyara/fs/fs.h>
 
 #include "kdbg_utils.h"
 
@@ -74,6 +81,7 @@
  ****************************************************************************/
 #define STKMON_PREFIX "Stack Monitor: "
 
+#define STKMON_BUFLEN 64
 /* Configuration ************************************************************/
 
 #define STACKMONITOR_STACKSIZE 1024
@@ -85,7 +93,7 @@
 #ifndef CONFIG_STACKMONITOR_INTERVAL
 #define CONFIG_STACKMONITOR_INTERVAL 5
 #endif
-extern const uint32_t g_idle_topstack;
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -100,83 +108,149 @@ static int stkmon_chk_idx;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void stkmon_title_print(void)
+static void stkmon_print_title(void)
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	printf("%5s | %8s | %8s | %10s | %10s | %7s | ", "PID", "STATUS", "SIZE", "PEAK_STACK", "PEAK_HEAP", "TIME");
-#else
-	printf("%5s | %8s | %8s | %10s | %10s | ", "PID", "STATUS", "SIZE", "PEAK_STACK", "TIME");
-#endif
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("THREAD NAME\n");
-#else
-	printf("\n");
-#endif
-}
+	printf("%5s | %8s | %8s", "PID", "STATUS", "SIZE");
 
-static void stkmon_inactive_check(void)
+#ifdef CONFIG_STACK_COLORATION
+	printf(" | %10s", "PEAK_STACK");
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	printf(" | %10s", "PEAK_HEAP");
+#endif
+	printf(" | %7s", "TIME");
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	printf(" | THREAD NAME");
+#endif
+	printf("\n");
+}
+static void stkmon_print_inactive_list(void)
 {
 	int inactive_idx;
 	for (inactive_idx = 0; inactive_idx < CONFIG_MAX_TASKS * 2; inactive_idx++) {
 		if (stkmon_arr[inactive_idx].timestamp != 0) {
+			printf("%5d | %8s | %8d", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize);
+#ifdef CONFIG_STACK_COLORATION
+			printf(" | %10d", stkmon_arr[inactive_idx].chk_peaksize);
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-			printf("%5d | %8s | %8d | %10d | %10d | %7lld | ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, stkmon_arr[inactive_idx].chk_peakheap, (uint64_t)((clock_t)stkmon_arr[inactive_idx].timestamp));
-#else
-			printf("%5d | %8s | %8d | %10d | %10lld | ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((clock_t)stkmon_arr[inactive_idx].timestamp));
+			printf(" | %10d", stkmon_arr[inactive_idx].chk_peakheap);
 #endif
+			printf(" | %7lld", (uint64_t)((clock_t)stkmon_arr[inactive_idx].timestamp));
 #if (CONFIG_TASK_NAME_SIZE > 0)
-			printf("%s\n", stkmon_arr[inactive_idx].chk_name);
-#else
-			printf("\n");
+			printf(" | %s", stkmon_arr[inactive_idx].chk_name);
 #endif
+			printf("\n");
 			stkmon_arr[inactive_idx].timestamp = 0;
 		}
 	}
 }
 
-static void stkmon_active_check(struct tcb_s *tcb, void *arg)
+static void stkmon_print_active_values(char *buf)
 {
-	if (tcb->pid == 0) {
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
-		tcb->stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
+	int i;
+	stat_data stat_info[PROC_STAT_MAX];
+
+	stat_info[0] = strtok(buf, " ");
+
+	for (i = 1; i < PROC_STAT_MAX; i++) {
+		stat_info[i] = strtok(NULL, " ");
 	}
+	printf("%5s | %8s | %8s", stat_info[PROC_STAT_PID], "ACTIVE", stat_info[PROC_STAT_TOTALSTACK]);
+#ifdef CONFIG_STACK_COLORATION
+	printf(" | %10s", stat_info[PROC_STAT_PEAKSTACK]);
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	printf("%5d | %8s | %8d | %10d | %10d | %7lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((clock_t)clock()));
-#else
-	printf("%5d | %8s | %8d | %10d | %10lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)(clock()));
+	printf(" | %10s", stat_info[PROC_STAT_PEAKHEAP]);
 #endif
+	printf(" | %7lld", (uint64_t)((clock_t)clock()));
 #if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("%s\n", tcb->name);
-#else
-	printf("\n");
+	printf(" | %s", stat_info[PROC_STAT_NAME]);
 #endif
+	printf("\n");
+}
+
+static int stkmon_read_proc(FAR struct dirent *entryp, FAR void *arg)
+{
+	int ret;
+	char *filepath;
+	char buf[STKMON_BUFLEN];
+
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
+	ret = kdbg_readfile(filepath, buf, STKMON_BUFLEN, stkmon_print_active_values);
+	free(filepath);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+
+	return OK;
 }
 
 static void *stackmonitor_daemon(void *arg)
 {
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	int ret;
+	bool is_mounted;
+
+	is_mounted = false;
+
+	/* Mount Procfs to use */
+	ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+	if (ret == ERROR) {
+		if (errno == EEXIST) {
+			is_mounted = true;
+		} else {
+			printf("Failed to mount procfs : %d\n", errno);
+			return NULL;
+		}
+	}
+#endif
+
 #ifndef CONFIG_DISABLE_SIGNALS
 	printf(STKMON_PREFIX "Running\n");
 
 	/* Loop until we detect that there is a request to stop. */
 	while (stkmon_started) {
 #endif
-		printf("\n=============================================================================\n");
-		stkmon_title_print();
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		printf("------|----------|----------|------------|------------|---------|------------\n");
-#else
-		printf("------|----------|----------|------------|------------|------------\n");
+		printf("\n\n");
+		stkmon_print_title();
+		printf("------|----------|----------");
+#ifdef CONFIG_STACK_COLORATION
+		printf("|------------");
 #endif
-		stkmon_inactive_check();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		printf("------|----------|----------|------------|------------|---------|------------\n");
-#else
-		printf("------|----------|----------|------------|------------|------------\n");
+		printf("|------------");
 #endif
-		sched_foreach(stkmon_active_check, NULL);
+		printf("|---------");
+#if (CONFIG_TASK_NAME_SIZE > 0)
+		printf("|------------");
+#endif
+		printf("\n");
+		stkmon_print_inactive_list();
+		printf("------|----------|----------");
+#ifdef CONFIG_STACK_COLORATION
+		printf("|------------");
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		printf("|------------");
+#endif
+		printf("|---------");
+#if (CONFIG_TASK_NAME_SIZE > 0)
+		printf("|------------");
+#endif
+		printf("\n");
+		kdbg_proc_pid_foreach(stkmon_read_proc);
 #ifndef CONFIG_DISABLE_SIGNALS
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
+	}
+#endif
 
 	/* Stopped */
 	printf(STKMON_PREFIX "Stopped well\n");
@@ -210,7 +284,9 @@ void stkmon_logging(struct tcb_s *tcb)
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].timestamp = clock();
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_pid = tcb->pid;
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_stksize = tcb->adj_stack_size;
+#ifdef CONFIG_STACK_COLORATION
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peaksize = up_check_tcbstack(tcb);
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peakheap = tcb->peak_alloc_size;
 #endif

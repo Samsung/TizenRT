@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <sys/mount.h>
 #include <debug.h>
+#include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
 
@@ -91,7 +92,7 @@ void fs_auto_mount(void)
 		const char *fs_mountpoint;
 	} fs_automount[] = {
 #ifdef CONFIG_FS_AUTOMOUNT_PROCFS
-		{"procfs", "/proc"},
+		{PROCFS_FSTYPE, PROCFS_MOUNT_POINT},
 #endif
 #ifdef CONFIG_FS_AUTOMOUNT_TMPFS
 		{TMPFS_FSTYPE, TMPFS_MOUNT_POINT},

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2019 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# kernel/irq/Make.defs
+# se/konai/Make.defs
 #
-#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
+# 3. Neither the name Gregory Nutt nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -50,13 +50,8 @@
 #
 ############################################################################
 
-CSRCS += irq_initialize.c irq_attach.c irq_dispatch.c irq_unexpectedisr.c
-
-ifeq ($(CONFIG_DEBUG_IRQ_INFO),y)
-CSRCS += irq_procfs.c
+ifeq ($(CONFIG_SE_KONAI),y)
+SE_PATH = konai
+SE_CSRCS += konai.c
+SE_LIB += libkonai.a
 endif
-
-# Include irq build support
-
-DEPPATH += --dep-path irq
-VPATH += :irq

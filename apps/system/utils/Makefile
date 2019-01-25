@@ -156,6 +156,14 @@ ifeq ($(CONFIG_ENABLE_UPTIME_CMD),y)
 CSRCS += kdbg_uptime.c
 endif
 
+ifeq ($(CONFIG_ENABLE_CPULOAD_CMD),y)
+CSRCS += kdbg_utils.c
+else ifeq ($(CONFIG_ENABLE_PS_CMD),y)
+CSRCS += kdbg_utils.c
+else ifeq ($(CONFIG_ENABLE_STACKMONITOR_CMD),y)
+CSRCS += kdbg_utils.c
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))

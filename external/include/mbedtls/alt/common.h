@@ -20,7 +20,7 @@
 // @brief common ALT header
 
 // NEED TO BE CHANGED TO A GENERIC HAL API LIST
-#include "../../../../os/arch/arm/src/s5j/sss/isp_custom.h"
+#include "../../../../os/se/sss/isp_custom.h"
 
 #ifndef MBEDTLS_COMMON_ALT_H
 #define MBEDTLS_COMMON_ALT_H

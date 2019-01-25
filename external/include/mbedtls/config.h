@@ -2923,7 +2923,7 @@
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_SE)
 #define MBEDTLS_ENABLE_HARDWARE_ALT
 
 #if defined(CONFIG_HW_RNG)
@@ -2955,7 +2955,7 @@
 #undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #endif
 
-#endif /* CONFIG_TLS_WITH_SSS */
+#endif /* CONFIG_SE */
 
 /**
  * Complete list of ciphersuites to use, in order of preference.

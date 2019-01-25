@@ -53,7 +53,7 @@ endif #NET_CMDS
 config ENABLE_CPULOAD_CMD
 	bool "cpuload"
 	default y
-	depends on SCHED_CPULOAD
+	depends on SCHED_CPULOAD && !FS_PROCFS_EXCLUDE_CPULOAD
 	---help---
 		Display current cpuload or start/stop CPU load monitor.
 		CPU load monitor is a daemon that will periodically assess
@@ -148,7 +148,7 @@ endif
 config ENABLE_IRQINFO_CMD
 	bool "irqinfo"
 	default n
-	depends on TASH && !BUILD_PROTECTED && !BUILD_KERNEL
+	depends on TASH && !FS_PROCFS_EXCLUDE_IRQS
 	select DEBUG_IRQ_INFO if DEBUG
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
@@ -158,7 +158,10 @@ config ENABLE_KILL_CMD
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
-		Send a signal to processes or process groups
+		Send a signal to processes or process groups.
+		When SIGKILL(9) is sent, a task/pthread which received signal will be terminated without any garbage collection.
+		Users can register their own handler for SIGKILL to free the allocated memory.
+		CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
 
 config ENABLE_KILLALL_CMD
 	bool "killall"
@@ -170,14 +173,14 @@ config ENABLE_KILLALL_CMD
 config ENABLE_PS_CMD
 	bool "ps"
 	default y
-	depends on !BUILD_PROTECTED
+	depends on !FS_PROCFS_EXCLUDE_PROCESS
 	---help---
 		List of tasks/threads
 
 config ENABLE_STACKMONITOR_CMD
 	bool "Stack monitor"
 	default n
-	depends on !BUILD_PROTECTED && !BUILD_KERNEL
+	depends on !FS_PROCFS_EXCLUDE_PROCESS
 	select STACK_COLORATION
 	---help---
 		The stack monitor is a daemon that will periodically assess
