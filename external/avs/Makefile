@@ -113,6 +113,7 @@ CXXFLAGS += -I$(AVS_TOP)/ThirdParty/MultipartParser
 CXXFLAGS += -I$(AVS_TOP)/ThirdParty/rapidjson/rapidjson-1.1.0/include
 CXXFLAGS += -I$(AVS_TOP)/MediaPlayer/include
 
+ifeq ($(CONFIG_AVS_DEVICE_SDK),y)
 CXXSRCS += $(shell find $(AVS_TOP)/ACL/src -name "*.cpp")
 CXXSRCS += $(shell find $(AVS_TOP)/ADSL/src -name "*.cpp")
 CXXSRCS += $(shell find $(AVS_TOP)/AFML/src -name "*.cpp")
@@ -144,6 +145,7 @@ CXXSRCS += $(shell find $(AVS_TOP)/RegistrationManager/src -name "*.cpp")
 CXXSRCS += $(shell find $(AVS_TOP)/Storage/SQLiteStorage/src -name "*.cpp")
 CXXSRCS += $(shell find $(AVS_TOP)/Storage/AraStorage/src -name "*.cpp")
 CXXSRCS += $(shell find $(AVS_TOP)/SampleApp/src -name "*.cpp")
+endif
 
 AOBJS		= $(ASRCS:.S=$(AVS_OBJEXT))
 COBJS		= $(CSRCS:.c=$(AVS_OBJEXT))
