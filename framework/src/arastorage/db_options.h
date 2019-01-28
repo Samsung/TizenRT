@@ -165,7 +165,7 @@
 
 /* The maximum number of tuples in a relation. */
 #ifndef DB_TUPLE_LIMIT
-#define DB_TUPLE_LIMIT          256
+#define DB_TUPLE_LIMIT          1000
 #endif							/* DB_TUPLE_LIMIT */
 
 /* The number of int array in a cursor. */
