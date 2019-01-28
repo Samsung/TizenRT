@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <tinyara/gpio.h>
 
@@ -119,7 +120,7 @@ void starterled_main(int argc, char *argv[])
 			gpio_write(b_led, 0);
 		}
 
-		up_mdelay(500);
+		usleep(500000);
 	}
 	gpio_write(r_led, 0);
 	gpio_write(b_led, 0);

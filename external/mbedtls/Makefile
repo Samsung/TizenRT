@@ -84,11 +84,14 @@ SRC_TLS_CSRCS =       debug.c         net_sockets.c           ssl_cache.c       
                       ssl_cli.c       ssl_cookie.c    ssl_srv.c                      \
                       ssl_ticket.c    easy_tls.c
 
+SRC_ALT_CSRCS =       alt/dhm_alt.c                   alt/ecdh_alt.c                 \
+                      alt/entropy_poll_alt.c              alt/pk_wrap_alt.c
+
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
-SRC_SEE_CSRCS += see_api.c	see_internal.c  see_misc.c  sss_storage.c
+SRC_SEE_CSRCS += see_api.c	see_misc.c  sss_storage.c
 endif
 
-TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
+TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS) ${SRC_ALT_CSRCS}
 
 CSRCS += $(TLS_CSRCS)
 

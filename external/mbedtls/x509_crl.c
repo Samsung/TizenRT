@@ -47,7 +47,11 @@
  *  http://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_X509_CRL_PARSE_C)
 
@@ -558,7 +562,7 @@ int mbedtls_x509_crl_parse( mbedtls_x509_crl *chain, const unsigned char *buf, s
 {
 #if defined(MBEDTLS_PEM_PARSE_C)
     int ret;
-    size_t use_len = 0;
+    size_t use_len;
     mbedtls_pem_context pem;
     int is_pem = 0;
 

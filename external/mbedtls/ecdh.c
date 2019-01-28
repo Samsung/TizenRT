@@ -191,6 +191,7 @@ int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
     return( 0 );
 }
 
+#if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) && !defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
 /*
  * Get parameters from a keypair
  */
@@ -214,13 +215,9 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypai
         ( ret = mbedtls_mpi_copy( &ctx->d, &key->d ) ) != 0 )
         return( ret );
 
-#if defined(CONFIG_TLS_WITH_SSS)
-	ctx->grp.key_index = key->key_index;
-#endif
-
     return( 0 );
 }
-
+#endif
 /*
  * Setup and export the client public value
  */

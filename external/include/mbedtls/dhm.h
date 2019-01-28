@@ -304,7 +304,7 @@ int mbedtls_dhm_parse_dhmfile( mbedtls_dhm_context *dhm, const char *path );
 #endif
 
 #else /* MBEDTLS_DHM_ALT */
-#include "dhm_alt.h"
+#include "alt/dhm_alt.h"
 #endif /* MBEDTLS_DHM_ALT */
 
 #ifdef __cplusplus

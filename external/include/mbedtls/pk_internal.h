@@ -49,7 +49,7 @@
 #endif
 
 #include "pk.h"
-#if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT) || defined(MBEDTLS_PK_RSA_ENCRYPT_ALT) || define (MBEDTLS_PK_RSA_VERIFY_ALT)
+#if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT) || defined(MBEDTLS_PK_RSA_ENCRYPT_ALT) || defined(MBEDTLS_PK_RSA_VERIFY_ALT)
 #include "alt/pk_alt.h"
 #endif
 

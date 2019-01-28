@@ -56,8 +56,9 @@
 
 #include <string.h>
 
-#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
+#include "mbedtls/alt/common.h"
 
+#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)>> mbedtls_config
 #include "mbedtls/alt/ecdh_alt.h"
 
 /*
@@ -65,8 +66,9 @@
  */
 void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
 {
-    if( ctx == NULL )
+    if( ctx == NULL ) {
         return;
+	}
 
 	if( ctx->grp.key_buf ) {
 		memset( ctx->grp.key_buf, 0, MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT );
@@ -84,12 +86,35 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
     mbedtls_mpi_free( &ctx->_d );
 }
 
-#if defined(CONFIG_TLS_WITH_SSS)
-	ctx->grp.key_index = key->key_index;
-#endif
+/*
+ * Get parameters from a keypair
+ */
+int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair *key,
+                     mbedtls_ecdh_side side )
+{
+    int ret;
 
-	return( 0 );
+    if( ( ret = mbedtls_ecp_group_copy( &ctx->grp, &key->grp ) ) != 0 )
+        return( ret );
+
+    /* If it's not our key, just import the public part as Qp */
+    if( side == MBEDTLS_ECDH_THEIRS )
+        return( mbedtls_ecp_copy( &ctx->Qp, &key->Q ) );
+
+    /* Our key: import public (as Q) and private parts */
+    if( side != MBEDTLS_ECDH_OURS )
+        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+
+    if( ( ret = mbedtls_ecp_copy( &ctx->Q, &key->Q ) ) != 0 ||
+        ( ret = mbedtls_mpi_copy( &ctx->d, &key->d ) ) != 0 ) {
+        return( ret );
+	}
+
+	ctx->grp.key_index = key->key_index;
+
+    return( 0 );
 }
+
 #endif /* MBEDTLS_ECDH_GEN_PUBLIC_ALT | MBEDTLS_ECDH_COMPUTE_SHARED_ALT */
 
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
@@ -106,9 +131,9 @@ int mbedtls_ecp_gen_keypair_alt( mbedtls_ecp_group *grp, mbedtls_mpi *d,
 	unsigned int ret;
 	unsigned int key_type = ECC_KEY;
 	unsigned int curve;
-	struct sECC_KEY ecc_pub;
+	struct mbedtls_sECC_KEY ecc_pub;
 
-	memset( &ecc_pub, 0, sizeof( struct sECC_KEY ) );
+	memset( &ecc_pub, 0, sizeof( struct mbedtls_sECC_KEY ) );
 
 	switch( grp->id ) {
 	case MBEDTLS_ECP_DP_SECP192R1:
@@ -202,7 +227,7 @@ int mbedtls_generate_key_alt( unsigned int key_type, unsigned char *key_buf,
 	return( 0 );
 }
 
-int mbedtls_get_ecc_publickey_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+int mbedtls_get_ecc_publickey_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned char *key_buf,
 							unsigned int object_id )
 {
 	unsigned int r;
@@ -212,7 +237,7 @@ int mbedtls_get_ecc_publickey_alt( struct sECC_KEY *ecc_pub, unsigned char *key_
 	}
 
 	ISP_CHECKBUSY();
-	r = isp_ecdsa_get_publickey_encryptedkey(ecc_pub, object_id, key_buf);
+	r = isp_ecdsa_get_publickey_encryptedkey( (struct sECC_KEY *)ecc_pub, object_id, key_buf );
 	if (r != 0) {
 		isp_clear(0);
 		return( MBEDTLS_ERR_ECDH_HW_ACCEL_FAILED );
@@ -235,11 +260,11 @@ int mbedtls_ecdh_compute_shared_alt( mbedtls_ecp_group *grp,
 							mbedtls_mpi *z, const mbedtls_ecp_point *Q )
 {
 	int ret;
-	struct sECC_KEY ecc_pub;
+	struct mbedtls_sECC_KEY ecc_pub;
 	unsigned int olen = MBEDTLS_MAX_ECP_KEY_SIZE_ALT;
 	unsigned char output[MBEDTLS_MAX_ECP_KEY_SIZE_ALT];
 
-	memset( &ecc_pub, 0, sizeof( struct sECC_KEY ) );
+	memset( &ecc_pub, 0, sizeof( struct mbedtls_sECC_KEY ) );
 
 	ecc_pub.x_byte_len = mbedtls_mpi_size( &Q->X );
 	ecc_pub.y_byte_len = mbedtls_mpi_size( &Q->Y );
@@ -280,7 +305,6 @@ int mbedtls_ecdh_compute_shared_alt( mbedtls_ecp_group *grp,
 		goto cleanup;
 	}
 
-#if defined(CONFIG_TLS_WITH_SSS)
 	/* Compute P  = d * Q */
 	if( grp->key_buf == NULL )
 	{
@@ -288,13 +312,6 @@ int mbedtls_ecdh_compute_shared_alt( mbedtls_ecp_group *grp,
 		if( ( ret = mbedtls_compute_ecdh_param_alt( &ecc_pub, grp->key_index, output, &olen ) ) != 0 )
 			goto cleanup;
 	} else
-#endif
-	{
-		/* compute ECC shared secret with generated key (temporary) */
-		if( ( ret = mbedtls_compute_ecdh_param_alt( &ecc_pub, grp->key_buf, output, &olen ) ) != 0 )
-			goto cleanup;
-	}
-
 	MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( z, output, olen ) );
 
 cleanup:
@@ -307,19 +324,19 @@ cleanup:
 	return( ret );
 }
 
-int mbedtls_compute_ecdh_param_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+int mbedtls_compute_ecdh_param_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned int key_index,
 							unsigned char *output, unsigned int *olen )
 {
 	int r;
 
-	if (ecc_pub == NULL || output == NULL || olen == NULL || key_buf == NULL) {
-		return( MBEDTLS_ERR_ECDH_BAD_INPT_DATA );
+	if( ecc_pub == NULL || output == NULL || olen == NULL ) {
+		return( MBEDTLS_ERR_ECDH_BAD_INPUT_DATA );
 	}
 
 	ISP_CHECKBUSY();
-	r = isp_compute_ecdh_encryptedkey(output, olen, *ecc_pub, key_buf);
-	if (r != 0) {
-		isp_clear(0);
+	r = isp_compute_ecdh_securekey(output, olen, *(struct sECC_KEY *)ecc_pub, key_index);
+	if( r != 0 ) {
+		isp_clear( 0 );
 		return( MBEDTLS_ERR_ECDH_HW_ACCEL_FAILED );
 	}
 

@@ -43,7 +43,11 @@
  *  http://www.ietf.org/rfc/rfc1319.txt
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_MD2_C)
 

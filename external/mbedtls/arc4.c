@@ -42,7 +42,11 @@
  *  http://groups.google.com/group/sci.crypt/msg/10a300c9d21afca0
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_ARC4_C)
 

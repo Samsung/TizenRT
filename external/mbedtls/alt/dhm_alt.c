@@ -75,7 +75,10 @@
 #define mbedtls_free       free
 #endif
 
+#include "mbedtls/alt/common.h"
+
 #if defined(MBEDTLS_DHM_ALT) && defined(CONFIG_HW_DH_PARAM)
+#include "mbedtls/alt/dhm_alt.h"
 
 #define DHM_MPI_EXPORT( X, n )                                          \
     do {                                                                \
@@ -320,9 +323,6 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-    int ret;
-    mbedtls_mpi GYb;
-
     if( ctx == NULL || output_size < ctx->len )
         return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
 
@@ -530,13 +530,13 @@ int mbedtls_generate_dhm_param_alt( mbedtls_dhm_context *ctx, int x_size,
 	int ret = 0;
 	unsigned int n1, n2;
 	unsigned char *p;
-	struct sDH_PARAM d_param;
+	struct mbedtls_sDH_PARAM d_param;
 
 	if( mbedtls_mpi_cmp_int( &ctx->P, 0 ) == 0 ) {
 		return (MBEDTLS_ERR_DHM_BAD_INPUT_DATA);
 	}
 
-	memset( &d_param, 0, sizeof( struct sDH_PARAM ) );
+	memset( &d_param, 0, sizeof( struct mbedtls_sDH_PARAM ) );
 
 	if( ctx->key_buf == NULL ) {
 		ctx->key_buf = malloc( MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT );
@@ -626,13 +626,14 @@ int mbedtls_generate_dhm_public_alt( mbedtls_dhm_context *ctx, int x_size,
 							unsigned char *output, size_t olen )
 {
 	int n2, ret = 0;
-	struct sDH_PARAM d_param;
+	struct mbedtls_sDH_PARAM d_param;
+
 
 	if( ctx == NULL || olen < 1 || olen > ctx->len ) {
 		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
 	}
 
-	memset( &d_param, 0, sizeof( struct sDH_PARAM ) );
+	memset( &d_param, 0, sizeof( struct mbedtls_sDH_PARAM ) );
 
 	if( ctx->key_buf == NULL ) {
 		ctx->key_buf = malloc( MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT );
@@ -709,8 +710,8 @@ int mbedtls_calculate_dhm_secret_alt( mbedtls_dhm_context *ctx, unsigned char *o
 {
 	int ret = 0;
 	unsigned int n1, n2, n3;
-	struct sDH_PARAM d_param;
-	memset( &d_param, 0, sizeof( struct sDH_PARAM ) );
+	struct mbedtls_sDH_PARAM d_param;
+	memset( &d_param, 0, sizeof( struct mbedtls_sDH_PARAM ) );
 
 	/*
 	 *  1. Initialize G, P, GX context.
@@ -797,16 +798,17 @@ int mbedtls_supported_dhm_size_alt( int size )
 }
 
 /* Generate G, P, GX (G^X mod P) */
-int mbedtls_generate_dhm_params_alt( struct sDH_PARAM *d_param,
-						unsigned char *key_buf );
+int mbedtls_generate_dhm_params_alt( struct mbedtls_sDH_PARAM *d_param,
+						unsigned char *key_buf )
 {
 	int r;
 
 	if (d_param == NULL || key_buf == NULL) {
 		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	}
 
 	ISP_CHECKBUSY();
-	r = isp_dh_generate_keypair_userparam_encryptedkey(d_param, key_buf);
+	r = isp_dh_generate_keypair_userparam_encryptedkey( (struct sDH_PARAM *)d_param, key_buf );
 	if (r != 0) {
 		isp_clear(0);
 		return( MBEDTLS_ERR_DHM_HW_ACCEL_FAILED );
@@ -816,8 +818,9 @@ int mbedtls_generate_dhm_params_alt( struct sDH_PARAM *d_param,
 }
 
 /* Compute shared secret key = GXY ((G^Y)^X mod P) */
-int mbedtls_compute_dhm_param_alt( struct sDH_PARAM *d_param, unsigned char *key_buf,
-						unsigned char *output, unsigned int *olen );
+
+int mbedtls_compute_dhm_param_alt( struct mbedtls_sDH_PARAM *d_param, unsigned char *key_buf,
+						unsigned char *output, unsigned int *olen )
 {
 	int r;
 
@@ -826,7 +829,7 @@ int mbedtls_compute_dhm_param_alt( struct sDH_PARAM *d_param, unsigned char *key
 	}
 
 	ISP_CHECKBUSY();
-	r = isp_dh_compute_shared_secret_encryptedkey(output, olen, *d_param, key_buf);
+	r = isp_dh_compute_shared_secret_encryptedkey(output, olen, *((struct sDH_PARAM *)d_param), key_buf);
 	if (r != 0) {
 		isp_clear(0);
 		return( MBEDTLS_ERR_DHM_HW_ACCEL_FAILED );

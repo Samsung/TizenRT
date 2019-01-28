@@ -138,7 +138,6 @@ static int find_signal(char *ptr)
 static int send_signal(pid_t pid, int signo)
 {
 	int ret = ERROR;
-	FAR struct tcb_s *tcb;
 
 	/* Send the signal.  Kill return values:
 	 *
@@ -149,39 +148,12 @@ static int send_signal(pid_t pid, int signo)
 	 *   ENOSYS Do not support sending signals to process groups.
 	 */
 
-	if (signo == SIGKILL) {
-		tcb = sched_gettcb(pid);
-		if (tcb == NULL) {
-			set_errno(ESRCH);
-			ret = ERROR;
-		} else {
-			switch ((tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
-			case TCB_FLAG_TTYPE_TASK:
-			case TCB_FLAG_TTYPE_KERNEL:
-				/* tasks and kernel threads has to use this interface */
-				ret = task_delete(pid) == OK ? OK : ERROR;
-				break;
-#ifndef CONFIG_DISABLE_PTHREAD
-			case TCB_FLAG_TTYPE_PTHREAD:
-				ret = pthread_cancel(pid) == OK ? OK : ERROR;
-				pthread_join(pid, NULL);
-				break;
-#endif
-			default:
-				set_errno(EINVAL);
-				ret = ERROR;
-				break;
-			}
-		}
-	}
 #ifndef CONFIG_DISABLE_SIGNALS
-	else if (kill(pid, signo) != OK) {
-		ret = ERROR;
-	}
+	ret = kill(pid, signo);
 #endif
 
-	if (ret == ERROR) {
-		printf("send_signal failed. errno : %d\n", get_errno());
+	if (ret != OK) {
+		printf("Send_signal failed. errno : %d\n", get_errno());
 	}
 
 	return ret;

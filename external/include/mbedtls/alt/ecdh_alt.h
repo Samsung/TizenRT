@@ -50,14 +50,16 @@
 #ifndef MBEDTLS_ECDH_ALT_H
 #define MBEDTLS_ECDH_ALT_H
 
-#include "ecp.h"
+#include "../ecp.h"
+
+#include "common.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
-#include "alt/common.h"
 
 /*
  * ECDH Error codes
@@ -72,14 +74,14 @@ int mbedtls_ecp_gen_keypair_alt( mbedtls_ecp_group *grp, mbedtls_mpi *d,
 							mbedtls_ecp_point *Q );
 int mbedtls_generate_key_alt( unsigned int key_type, unsigned char *key_buf,
 							unsigned int key_len, unsigned int pukey_e );
-int mbedtls_get_ecc_publickey_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+int mbedtls_get_ecc_publickey_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned char *key_buf,
 							unsigned int object_id );
 #endif
 
 #if defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
 int mbedtls_ecdh_compute_shared_alt( mbedtls_ecp_group *grp,
 							mbedtls_mpi *z, const mbedtls_ecp_point *Q );
-int mbedtls_compute_ecdh_param_alt( struct sECC_KEY *ecc_pub, unsigned char *key_buf,
+int mbedtls_compute_ecdh_param_alt( struct mbedtls_sECC_KEY *ecc_pub, unsigned int key_buf,
 							unsigned char *output, unsigned int *olen );
 #endif
 

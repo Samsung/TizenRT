@@ -136,6 +136,10 @@
 #endif
 #endif
 
+/* When SIGKILL is sent, a task/pthread which received signal will be terminated without any garbage collection.
+ * For freeing the allocated memory, user's own handler for SIGKILL is needed.
+ * CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
+ */		
 #ifndef CONFIG_SIG_SIGKILL
 #define SIGKILL       9			/* Sent to cause process to terminate */
 #else

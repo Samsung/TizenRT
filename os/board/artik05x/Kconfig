@@ -168,7 +168,7 @@ config ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT
 config SVR_DB_SECURESTORAGE
 	bool "Enable storing SVR DB inside secure storage partition"
 	default n
-	depends on (SUPPORT_FULL_SECURITY && ARTIK05X_AUTOMOUNT_SSSRW && TLS_WITH_SSS)
+	depends on (SUPPORT_FULL_SECURITY && ARTIK05X_AUTOMOUNT_SSSRW)
 	---help---
 		If enabled, SVR DB is stored in secure storage partion
 		mounted at the specified mount point.

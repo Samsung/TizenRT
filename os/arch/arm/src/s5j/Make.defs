@@ -183,14 +183,6 @@ ifeq ($(CONFIG_S5J_I2S),y)
 CHIP_CSRCS += s5j_i2s.c
 endif
 
-ifeq ($(CONFIG_S5J_SSS),y)
-VPATH += chip/sss
-CHIP_CSRCS += sss_driver_io.c	sssro_verify.c
-
-# built-in static library
-EXTRA_LIBS += chip/sss/libispdriver.a
-endif
-
 ifeq ($(CONFIG_S5J_SENSOR_PPD42NS),y)
 CHIP_CSRCS += s5j_ppd42ns.c
 endif
