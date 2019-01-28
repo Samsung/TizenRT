@@ -62,7 +62,9 @@ ifeq ($(CONFIG_NET_ROUTE),y)
 CSRCS += lib_addroute.c lib_delroute.c
 endif
 
-CSRCS += lib_etherntoa.c
+CSRCS += lib_etherntoa.c lib_htonl.c lib_htons.c
+CSRCS += lib_inetaddr.c lib_inetaton.c lib_inetntoa.c
+CSRCS += lib_inetntop.c lib_inetpton.c
 
 # Add the net directory to the build
 
