@@ -58,6 +58,7 @@
 "imaxabs", "inttypes.h", "", "intmax_t", "intmax_t"
 "imaxdiv", "inttypes.h", "", "intmax_t", "intmax_t", "imaxdiv_t"
 "inet_addr", "arpa/inet.h", "", "in_addr_t", "FAR const char "
+"inet_aton", "arpa/inet.h", "", "int", "FAR const char *", "FAR struct in_addr *"
 "inet_ntoa", "arpa/inet.h", "defined(CONFIG_NET_IPv4) && defined(CONFIG_CAN_PASS_STRUCTS)", "FAR char", "struct in_addr"
 "inet_ntop", "arpa/inet.h", "", "FAR const char", "int", "FAR const void *", "FAR char *", "socklen_t"
 "inet_pton", "arpa/inet.h", "", "int", "int", "FAR const char *", "FAR void *"
