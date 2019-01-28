@@ -36,6 +36,8 @@
 
 #define RT_MSG(msg) printf("%s: %s\n", __BASE_FILE__, msg)
 sem_t g_err_sem;
+sem_t g_sem1;
+sem_t g_sem2;
 uint8_t g_err_nscenarios;
 uint8_t g_err_nsuccess;
 
@@ -84,7 +86,7 @@ uint8_t g_err_nsuccess;
  * WiFi Manager callback prototypes
  */
 static void prv_sta_connected(wifi_manager_result_e);
-static void prv_sta_disconnected(void);
+static void prv_sta_disconnected(wifi_manager_disconnect_e res);
 static void prv_softap_sta_join(void);
 static void prv_softap_sta_leave(void);
 static void prv_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
@@ -98,7 +100,7 @@ static void prv_sta_connected(wifi_manager_result_e res)
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_sta_disconnected(void)
+static void prv_sta_disconnected(wifi_manager_disconnect_e res)
 {
 	sleep(2);
 	printf(" [RT] T%d --> %s\n", getpid(), __FUNCTION__);
@@ -162,7 +164,7 @@ static void error_report_single(const char *endpoint)
 	char readbuf[1024];
 	int nbytes_read = 0;
 	int nbytes_sent = 0;
-
+	error_report_init();
 	res = wifi_manager_init(&wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		printf(" wifi_manager_init fail\n");
@@ -191,6 +193,7 @@ done:
 	wifi_manager_disconnect_ap();
 	ERR_REPORT_TEST_WAIT;
 	wifi_manager_deinit();
+	error_report_deinit();
 	ERR_REPORT_TC_END_CHECK(nbytes_sent > 0);
 }
 
@@ -207,6 +210,7 @@ static void error_report_multiple(const char *endpoint)
 	int sock_cnt = 0;
 	int sock_fds[CONFIG_NSOCKET_DESCRIPTORS];
 
+	error_report_init();
 	res = wifi_manager_init(&wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		printf(" wifi_manager_init fail\n");
@@ -259,6 +263,7 @@ done:
 	wifi_manager_disconnect_ap();
 	ERR_REPORT_TEST_WAIT;
 	wifi_manager_deinit();
+	error_report_deinit();
 	ERR_REPORT_TC_END_CHECK(nbytes_sent > 0);
 }
 
@@ -273,6 +278,67 @@ static void error_report_queue_underflow(void)
 	ERR_REPORT_TC_END_CHECK(nbytes_read == 0);
 }
 
+static int prv_thread1(void *args)
+{
+	sem_wait(&g_sem1);
+	sem_post(&g_sem2);
+	return 0;
+}
+
+static int prv_thread2(void *args)
+{
+	sem_wait(&g_sem2);
+	sem_post(&g_sem1);
+	return 0;
+}
+
+static void error_report_infinity_wait(const char *endpoint)
+{
+	ERR_REPORT_TC_START;
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+	wifi_manager_ap_config_s apconfig = { "Gorani", 6, "jonbeo1@", 8, WIFI_MANAGER_AUTH_WPA2_PSK, WIFI_MANAGER_CRYPTO_AES };
+	pthread_t thread1;
+	pthread_t thread2;
+	int r;
+	int scenario_success = -1;
+	error_report_init();
+
+	error_report_start_infinitywait();
+	res = wifi_manager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf(" wifi_manager_init fail\n");
+		goto done;
+	}
+
+	res = wifi_manager_connect_ap(&apconfig);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf(" AP connect failed\n");
+		goto done;
+	}
+	/* Wait for DHCP connection */
+	ERR_REPORT_TEST_WAIT;
+	sem_init(&g_sem1, 0, 0);
+	sem_init(&g_sem2, 0, 0);
+	if ((r = pthread_create(&thread1, NULL, (pthread_startroutine_t)prv_thread1, NULL)) != 0) {
+		goto done;
+	}
+
+	pthread_create(&thread2, NULL, (pthread_startroutine_t) prv_thread2, NULL);
+	/* Sleep for a sufficient amount of time, after which the infinity wait should be seen */
+	sleep(CONFIG_ERROR_REPORT_INFINITE_CHECK_TIMER * (CONFIG_ERROR_REPORT_INFINITE_CHECK_THRESHOLD + 1));
+	scenario_success = 1;
+done:
+	wifi_manager_disconnect_ap();
+	ERR_REPORT_TEST_WAIT;
+	wifi_manager_deinit();
+	error_report_deinit();
+	pthread_cancel(thread1);
+	pthread_join(thread1, NULL);
+	pthread_cancel(thread2);
+	pthread_join(thread2, NULL);
+	ERR_REPORT_TC_END_CHECK(scenario_success > 0);
+}
+
 static void error_report_test(const char *endpoint)
 {
 	ERR_REPORT_LOG_START;
@@ -285,6 +351,10 @@ static void error_report_test(const char *endpoint)
 	/* Verify multiple errors across WiFi Manager */
 	error_report_multiple(endpoint);
 
+	/* Verify Infinite Wait */
+#ifdef CONFIG_ERROR_REPORT_INFINITE_WAIT
+	error_report_infinity_wait(endpoint);
+#endif
 	ERR_REPORT_PRINT_STATS;
 	ERR_REPORT_LOG_END;
 }

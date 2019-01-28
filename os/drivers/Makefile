@@ -73,6 +73,7 @@ endif
 include analog$(DELIM)Make.defs
 include audio$(DELIM)Make.defs
 include bch$(DELIM)Make.defs
+include error_report$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs

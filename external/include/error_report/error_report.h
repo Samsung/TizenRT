@@ -37,6 +37,7 @@ enum error_module_id_e {
 	ERRMOD_WPA_SUPPLICANT,
 	ERRMOD_LWIP_CORE,
 	ERRMOD_LWIP_SOCKET,
+	ERRMOD_INFINITE_WAIT,
 };
 
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
@@ -62,33 +63,50 @@ typedef enum error_code_wifi_manager_e error_code_wifi_manager_t;
 #endif
 
 typedef struct {
-	struct timeval timestamp;
+	uint8_t	error_type;
+	uint8_t module_id;
+	int16_t error_code;
 	uint32_t pc_value;
 	uint32_t task_addr;
-	int16_t error_code;
-	uint16_t module_id;
+	struct timeval timestamp;
 } error_data_t;
+
+typedef struct {
+	uint8_t	error_type;
+	uint8_t ncalls;
+	uint16_t task_state;
+	uint32_t backtrace[CONFIG_ERROR_REPORT_BACKTRACE_MAX_DEPTH];
+	uint32_t task_addr;
+	struct timeval timestamp;
+} error_infwait_data_t;
 
 typedef enum {
 	ERR_FAIL = -1,
 	ERR_SUCCESS,
 } err_status_t;
 
+typedef enum {
+	ERRTYPE_SERVICE,
+	ERRTYPE_HANGING,
+} err_type_t;
+
 /**
  * @file error_report/error_report.h
  * @brief Provides APIs for Error Reporting Module
  */
 err_status_t error_report_init(void);
+err_status_t error_report_start_infinitywait(void);
 err_status_t error_report_deinit(void);
-error_data_t *error_report_data_create(int module_id, int error_code, uint32_t pc_value);
+error_data_t *error_report_data_create(int err_type, int module_id, int error_code, uint32_t pc_value, uint32_t task_addr);
 int error_report_data_read(char *readbuf);
 int error_report_send(const char *ep, char *readbuf, int readbuf_len);
 
 #define ERR_DATA_CREATE(module_id, reason_code)	    \
 do {                                                                   \
 	uint32_t pc_value;                                                 \
-	__asm volatile ("mov %[result], r15":[result] "=r" (pc_value));    \
-	if (error_report_data_create(module_id, reason_code, pc_value) == NULL) {\
+	__asm volatile ("mov %[result], r15":[result] "=r" (pc_value));\
+	printf("Inside ERR_DATA_CREATE\n");             \
+	if (error_report_data_create(ERRTYPE_SERVICE, module_id, reason_code, pc_value, 0) == NULL) {\
 		printf("Failed to create error log\n");                        \
 	}                                                                  \
 } while(0)

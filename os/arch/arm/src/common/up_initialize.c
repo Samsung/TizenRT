@@ -257,10 +257,6 @@ void up_initialize(void)
 	(void)telnet_initialize();
 #endif
 
-#ifdef CONFIG_ERROR_REPORT
-	/* Initialize Error Reporting for network */
-	error_report_init();
-#endif
 	/* Initialize the network */
 
 	up_netinitialize();

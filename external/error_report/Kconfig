@@ -63,5 +63,39 @@ config EPORT_ERROR_REPORT
 	default "5001"
 	---help---
 		Enter Port of endpoint server where error logs will be gathered
-	
+
+config ERROR_REPORT_INFINITE_WAIT
+	bool "Report error for infinitely waiting threads"
+	default n
+	select SCHED_CPULOAD
+	---help---
+		Report error if threads wait infinitely long
+
+if ERROR_REPORT_INFINITE_WAIT
+
+config ERROR_REPORT_INFINITE_CHECK_TIMER
+	int "Timeout in seconds to check for infinite wait"
+	default 6
+	---help---
+		Specify timeout value after which to check for infinite waits
+
+config ERROR_REPORT_INFINITE_CHECK_THRESHOLD
+	int "Number of observed interations of thread inactivity"
+	default 3
+	---help---
+		Specify number of iterations of thread inactivity after which to report as error
+
+config ERROR_REPORT_NTHREADS_IN_WAIT
+	int "Number of threads (max) to be reported as waiting"
+	default 8
+	---help---
+		Specify number of threads (max) in wait
+
+config ERROR_REPORT_BACKTRACE_MAX_DEPTH
+	int "Number of functions to report from callstack"
+	default 6
+	---help---
+		Specify depth of the backtrace
+
+endif #ERROR_REPORT_INFINITE_WAIT
 endif # ERROR_REPORT
