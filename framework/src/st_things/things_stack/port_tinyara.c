@@ -27,7 +27,6 @@
 #include <net/lwip/netif.h>
 #include <ocstack.h>
 #include "uuid/uuid.h"
-#include "securevirtualresourcetypes.h"
 
 #if CONFIG_NSOCKET_DESCRIPTORS > 0
 extern struct netif *g_netdevices;
@@ -46,29 +45,9 @@ void uuid_generate_random(uuid_t out)
 	out[8] = (out[8] & 0x3F) | 0x80;
 }
 
-#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
-static void uuid_get_from_artik(uuid_t out)
-{
-	OicUuid_t device_id;
-	unsigned char uuid_str[((UUID_LENGTH * 2) + 4 + 1)];
-	unsigned int uuid_len;
-
-	memset(uuid_str, 0, sizeof(uuid_str));
-	get_artik_crt_uuid(uuid_str, &uuid_len);
-
-	ConvertStrToUuid(uuid_str, &device_id);
-
-	memcpy(out, device_id.id, sizeof(uuid_t));
-}
-#endif
-
 void uuid_generate(uuid_t out)
 {
-#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
-	uuid_get_from_artik(out);
-#else
 	uuid_generate_random(out);
-#endif
 }
 
 void uuid_unparse_lower(const uuid_t uu, char *out)
@@ -114,10 +93,4 @@ error:
 unsigned int if_nametoindex(const char *ifname)
 {
 	return 0;					// TODO: Now supports only 1 device
-}
-
-const char *gai_strerror(int errcode)
-{
-	static const char *n_str = "null";
-	return n_str;
 }

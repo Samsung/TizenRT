@@ -146,7 +146,7 @@
 
 typedef int8_t INT8;
 
-static volatile int resource_type_cnt = 0;
+static volatile int g_resource_type_cnt = 0;
 
 static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
@@ -157,7 +157,6 @@ static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
 static st_device_s *g_device;
 static char *g_firmware_version;
-static char *g_vid;
 static char *g_model_number;
 
 static char *g_setup_id;
@@ -392,7 +391,7 @@ static void delete_resource_type_map(void)
 	}
 	hashmap_delete(g_resource_type_hmap);
 	g_resource_type_hmap = NULL;
-	resource_type_cnt = 0;
+	g_resource_type_cnt = 0;
 	things_free(keyset);
 }
 
@@ -876,7 +875,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	} else
 #endif
 	{
-		snprintf(ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+		snprintf((char *)ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 	}
 
 	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_device->mnid, g_setup_id, ssid_type, ext_value);
@@ -1157,13 +1156,13 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 
 	if (resource_types_user == NULL) {
 		THINGS_LOG_E(TAG, "resource_types_user is null");
-		goto JSON_ERROR;
+		return ret;
 	}
 
 	cJSON *json_internal_root = cJSON_Parse((const char *)internal_resource_json_str);
 	if (json_internal_root == NULL) {
 		THINGS_LOG_E(TAG, "json_internal_root is null");
-		goto JSON_ERROR;
+		return ret;
 	}
 
 	cJSON *resource_types_internal = cJSON_GetObjectItem(json_internal_root, KEY_RESOURCES_TYPE);
@@ -1182,9 +1181,9 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 	int resource_type_cnt_user = cJSON_GetArraySize(resource_types_user);
 	int resource_type_cnt_internal = cJSON_GetArraySize(resource_types_internal);
 
-	resource_type_cnt = resource_type_cnt_user + resource_type_cnt_internal;
-	g_resource_type_hmap = hashmap_create(resource_type_cnt);
-	THINGS_LOG_V(TAG, "Resource Types Cnt : %d (itn : %d, user : %d)", resource_type_cnt, resource_type_cnt_internal, resource_type_cnt_user);
+	g_resource_type_cnt = resource_type_cnt_user + resource_type_cnt_internal;
+	g_resource_type_hmap = hashmap_create(g_resource_type_cnt);
+	THINGS_LOG_V(TAG, "Resource Types Cnt : %d (itn : %d, user : %d)", g_resource_type_cnt, resource_type_cnt_internal, resource_type_cnt_user);
 	for (int i = 0; i < 2; i++) {
 		if (i == 0) {
 			resource_types = resource_types_internal;
@@ -1252,9 +1251,9 @@ JSON_ERROR:
 	return ret;
 }
 
-void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int user_single_cnt, int internal_single_cnt)
+static int parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int user_single_cnt, int internal_single_cnt)
 {
-	int ret = 1;
+	int ret = 0;
 	int i = 0;
 	int rsr_cnt = 0;
 
@@ -1271,12 +1270,13 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 		}
 
 		if (single == NULL) {
+			ret = 0;
 			goto JSON_ERROR;
 		}
 
 		for (int iter = 0; iter < iter_cnt; iter++) {
 			cJSON *res = cJSON_GetArrayItem(single, iter);
-			if (res->type != NULL) {
+			if (res->type != 0) {
 				cJSON *uri = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_URI);
 				if (uri != NULL) {
 					memcpy(g_device->single[rsr_cnt].uri, uri->valuestring, strlen(uri->valuestring) + 1);
@@ -1293,6 +1293,7 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					}
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource type is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				cJSON *interfaces = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_INTERFACES);
@@ -1306,6 +1307,7 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					}
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource interface is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				cJSON *policy = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_POLICY);
@@ -1313,10 +1315,12 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					g_device->single[rsr_cnt].policy = policy->valueint;
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource policy is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				rsr_cnt++;
 			} else {
+				ret = 0;
 				goto JSON_ERROR;
 			}
 		}
@@ -1359,7 +1363,10 @@ static int parse_resource_json(cJSON *device)
 				THINGS_LOG_D(TAG, "[SINGLE] resource is NULL");
 				goto JSON_ERROR;
 			}
-			parse_resource_with_internal(single, internal_single, user_single_cnt, internal_single_cnt);
+			if (parse_resource_with_internal(single, internal_single, user_single_cnt, internal_single_cnt) == 0) {
+				THINGS_LOG_E(TAG, "parse_resource_with_internal fail");
+				goto JSON_ERROR;
+			}
 
 			THINGS_LOG_V(TAG, "[SINGLE] Resources for Single Usage Cnt : %d", g_device->sig_cnt);
 		} else {
@@ -1928,10 +1935,12 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data)
 	return ret;
 }
 
-const char *dm_get_things_device_type(int device_id)
+const char *dm_get_things_device_type(const char* device_id)
 {
-	if (device_id != 0)
+	if (strncmp(g_device->device_id, device_id, MAX_DEVICE_ID_LENGTH) != 0) {
+		THINGS_LOG_V(TAG, "unknown device_id : %s", device_id);
 		return NULL;
+	}
 
 	return g_device->type;
 }
@@ -2001,25 +2010,38 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 
 bool dm_register_device_id(void)
 {
-	int i = 0;
-	char *id = NULL;
+	const char *id = NULL;
+	st_device_s **dev_list = NULL;
 
+	if ((dev_list = (st_device_s **)things_malloc(sizeof(st_device_s *))) == NULL) {
+		THINGS_LOG_E(TAG, "st_device_s mem allocation is failed.");
+		return false;
+	}
 	// Set Main-Device ID
 	iotivity_api_lock();
 	id = OCGetServerInstanceIDString();
 	iotivity_api_unlock();
-	if (id == NULL) {
-		THINGS_LOG_V(TAG, "Error : id is NULL");
-		return false;
+	dev_list[0] = dm_get_info_of_dev(0);
+
+	if (id == NULL || dev_list[0] == NULL) {
+		THINGS_LOG_V(TAG, "Error : id = %s, Main-device =0x%X", id, dev_list[0]);
+		goto GOTO_ERROR;
 	}
 
-	if (g_device->device_id)
-		things_free(g_device->device_id);
+	if (dev_list[0]->device_id != NULL) {
+		things_free(dev_list[0]->device_id);
+	}
+	dev_list[0]->device_id = things_malloc(sizeof(char) * (strlen(id) + 1));
+	strncpy(dev_list[0]->device_id, id, strlen(id) + 1);
 
-	g_device->device_id = things_malloc(sizeof(char) * (strlen(id) + 1));
-	strncpy(g_device->device_id, id, strlen(id) + 1);
-
+	things_free(dev_list);
+	dev_list = NULL;
 	return true;
+
+GOTO_ERROR:
+	things_free(dev_list);
+	dev_list = NULL;
+	return false;
 }
 
 int dm_register_resource(things_server_builder_s *p_builder)
@@ -2164,7 +2186,7 @@ bool dm_is_es_complete(void)
 	return ret;
 }
 
-int dm_validate_attribute_in_request(char *rt, const void *payload)
+int dm_validate_attribute_in_request(const char *rt, const void *payload)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	int ret = 0;
@@ -2298,18 +2320,18 @@ int things_get_attributes_by_resource_type(const char *res_type, int *count, thi
 
 	if (resource_type_cnt > 0) {
 
-		int index = hashmap_get_hashval(res_type);
-		struct st_resource_type_s *res_type = (struct st_resource_type_s *)hashmap_get(g_resource_type_hmap, index);
-		if (res_type == NULL) {
-			THINGS_LOG_V(TAG, "res_type Not Exist");
+		int index = hashmap_get_hashval((unsigned char *)res_type);
+		struct st_resource_type_s *res_type_internal = (struct st_resource_type_s *)hashmap_get(g_resource_type_hmap, index);
+		if (res_type_internal == NULL) {
+			THINGS_LOG_V(TAG, "res_type_internal Not Exist");
 			return 0;
 		}
 
-		THINGS_LOG_D(TAG, "res_type : %s, res_type : %s", res_type->rt, res_type);
-		if (strncmp(res_type->rt, res_type, strlen(res_type)) == 0) {
-			THINGS_LOG_D(TAG, "res_type->prop_cnt : %d", res_type->prop_cnt);
-			(*count) = res_type->prop_cnt;
-			(*attributes) = res_type->prop;
+		THINGS_LOG_D(TAG, "res_type_internal : %s, res_type : %s", res_type_internal->rt, res_type);
+		if (strncmp(res_type_internal->rt, res_type, strlen(res_type)) == 0) {
+			THINGS_LOG_D(TAG, "res_type_internal->prop_cnt : %d", res_type_internal->prop_cnt);
+			(*count) = res_type_internal->prop_cnt;
+			(*attributes) = res_type_internal->prop;
 			return 1;
 		}
 	}
@@ -2371,7 +2393,7 @@ int dm_init_module(const char *devJsonPath)
 	return Parse_things_files(devJsonPath);
 }
 
-int dm_termiate_module()
+int dm_termiate_module(void)
 {
 	st_device_s *device = dm_get_info_of_dev(0);
 	delete_device(device);
@@ -2379,12 +2401,12 @@ int dm_termiate_module()
 	return 1;
 }
 
-bool dm_get_easy_setup_use_artik_crt()
+bool dm_get_easy_setup_use_artik_crt(void)
 {
 	return is_artik;
 }
 
-char *dm_get_mnid()
+char *dm_get_mnid(void)
 {
 	return g_device->mnid;
 }

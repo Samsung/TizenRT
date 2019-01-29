@@ -86,7 +86,7 @@ static pthread_mutex_t g_things_stop_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool b_reset_continue_flag = false;
 static bool b_thread_things_reset = false;
-static pthread_t h_thread_things_reset = NULL;
+static pthread_t h_thread_things_reset = PTHREAD_ONCE_INIT;
 static pthread_mutex_t m_thread_oic_reset = PTHREAD_MUTEX_INITIALIZER;
 static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
@@ -158,7 +158,7 @@ static char *things_make_abs_device_def_path(const char *json_path)
 		abs_json_path = (char *)things_malloc(len_of_path * sizeof(char));
 		strncpy(abs_json_path, json_path, len_of_path);
 	}
-	abs_json_path[len_of_path] = NULL;
+	abs_json_path[len_of_path] = '\0';
 	return abs_json_path;
 }
 
@@ -175,7 +175,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		abs_json_path = things_make_abs_device_def_path(json_path);
 		THINGS_LOG_V(TAG, "Origin path(%s), converted path(%s).", json_path, abs_json_path);
 	}
-#if CONFIG_ST_THINGS_FOTA
+#ifdef CONFIG_ST_THINGS_FOTA
 	THINGS_LOG_D(TAG, "Create a file regarding the device's resource");
 	int ret = 0;
 	int size_d = sizeof(deviceDef);
@@ -239,7 +239,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 
 	init_iotivity_api_lock();
 
-	if (things_network_initialize() != 0) {
+	if (!things_network_initialize()) {
 		THINGS_LOG_E(TAG, "ERROR things_network initialize");
 		things_free(abs_json_path);
 		return 0;
@@ -390,7 +390,7 @@ int things_start_stack(void)
 
 int things_start_scanning_ap(void)
 {
-	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
+	if (pthread_create_rtos(&h_thread_things_scan_ap, NULL, (pthread_func_type)auto_scanning_loop, NULL, THINGS_STACK_AP_SCAN_THREAD) != 0) {
 		THINGS_LOG_E(TAG, "Failed to create thread");
 		return 0;
 	}
@@ -400,11 +400,13 @@ int things_start_scanning_ap(void)
 static void *__attribute__((optimize("O0"))) auto_scanning_loop(void)
 {
 	while (!things_is_connected_ap()) {
-		if (!things_wifi_scan_ap())
-			return NULL;
+		if (!things_wifi_scan_ap()) {
+			THINGS_LOG_E(TAG, "Things failed to call wifi_scan_ap");
+		}
 		// Wifi scan is doing in every 60sec.
 		sleep(SCAN_AP_INTERVAL);
 	}
+	return NULL;
 }
 
 int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
@@ -554,7 +556,7 @@ int things_register_pin_display_close_func(things_pin_display_close_func_type fu
 {
 	if (NULL != func) {
 #ifdef __SECURED__
-		return esm_register_pin_close_cb(func);
+		return esm_register_pin_close_cb((pin_close_func_type)func);
 #else
 		THINGS_LOG_E(TAG, "Stack is in UNSECURED Mode");
 		return 0;

@@ -60,9 +60,9 @@ typedef enum {
 	OIC_SEC_INVALID_PARAM = 2
 } OICSecurityResult;
 
-#if __MIPS__
+#if defined(__MIPS__)
 #define STRING_SVR_DB_PATH "/data1/oic_svr_db_server.dat"
-#elif __TIZEN__
+#elif defined(__TIZEN__)
 #define STRING_SVR_DB_PATH "/opt/data/ocfData/oic_svr_db_server.dat"
 #else
 #define STRING_SVR_DB_PATH "./oic_svr_db_server.dat"
@@ -244,7 +244,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 	}
 
 	if (encoding == OIC_ENCODING_UNKNOW) {
-		char *file_ext;
+		const char *file_ext;
 		int filename_len = strlen(filename);
 		file_ext = filename + filename_len;
 
@@ -493,9 +493,6 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
 {
-	struct ifaddrs *ifaddr = NULL;
-	struct ifaddrs *ifa = NULL;
-
 	THINGS_LOG_D(TAG, "In %s", __func__);
 
 #ifdef __ST_THINGS_RTOS__
@@ -510,6 +507,9 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 
 	snprintf((char *)p_id_buf, MAC_BUF_SIZE - 1, "%02X%02X%02X%02X%02X%02X", st_wifi_info.mac_address[0], st_wifi_info.mac_address[1], st_wifi_info.mac_address[2], st_wifi_info.mac_address[3], st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 #else
+	struct ifaddrs *ifaddr = NULL;
+	struct ifaddrs *ifa = NULL;
+
 	if (getifaddrs(&ifaddr) == -1) {
 		THINGS_LOG_E(TAG, "Failed to read network address information.");
 		return OIC_SEC_ERROR;
@@ -737,7 +737,7 @@ static OicSecKey_t primary_cert;
 static OicSecKey_t primary_key;
 
 //Samsung_OCF_RootCA.der
-const unsigned char g_regional_root_ca[] = {
+unsigned char g_regional_root_ca[] = {
 	0x30, 0x82, 0x02, 0x5D, 0x30, 0x82, 0x02, 0x01, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x01, 0x01, 0x30, 0x0C, 0x06, 0x08,
 	0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02, 0x05, 0x00, 0x30, 0x6B, 0x31, 0x28, 0x30, 0x26, 0x06, 0x03, 0x55, 0x04,
 	0x03, 0x13, 0x1F, 0x53, 0x61, 0x6D, 0x73, 0x75, 0x6E, 0x67, 0x20, 0x45, 0x6C, 0x65, 0x63, 0x74, 0x72, 0x6F, 0x6E, 0x69,
@@ -772,7 +772,7 @@ const unsigned char g_regional_root_ca[] = {
 };
 
 #ifdef CONFIG_ST_THINGS_STG_MODE
-const unsigned char g_regional_test_root_ca[] = {
+unsigned char g_regional_test_root_ca[] = {
 	0x30, 0x82, 0x02, 0x68, 0x30, 0x82, 0x02, 0x0C, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x01, 0x02, 0x30, 0x0C, 0x06, 0x08,
 	0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02, 0x05, 0x00, 0x30, 0x70, 0x31, 0x2D, 0x30, 0x2B, 0x06, 0x03, 0x55, 0x04,
 	0x03, 0x13, 0x24, 0x53, 0x61, 0x6D, 0x73, 0x75, 0x6E, 0x67, 0x20, 0x45, 0x6C, 0x65, 0x63, 0x74, 0x72, 0x6F, 0x6E, 0x69,
@@ -813,8 +813,10 @@ const unsigned char g_regional_test_root_ca[] = {
  *
  * NOTE : This API should be invoked after sm_generate_mac_based_device_id invoked.
  */
+#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 static bool g_b_init_key;
 static bool g_b_init_cert;
+#endif
 
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 {
@@ -835,7 +837,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	}
 	THINGS_LOG_D(TAG, "Samsung_OCF_Test_RootCA.der saved w/ cred ID=%d", cred_id);
 #else
-	OCStackResult res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
+	OCStackResult res = CredSaveTrustCertChain(subject_uuid, (uint8_t *)g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
 		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #1 error");
 		return res;

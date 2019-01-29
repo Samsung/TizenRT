@@ -36,7 +36,7 @@ static int g_thread_running = 0;
 static pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
-void fmwup_internal_propagate_timed_wait()
+void fmwup_internal_propagate_timed_wait(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
@@ -68,7 +68,7 @@ void fmwup_internal_propagate_timed_wait()
 	return;
 }
 
-void fmwup_internal_propagate_cond_signal()
+void fmwup_internal_propagate_cond_signal(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	pthread_mutex_lock(&_lock);

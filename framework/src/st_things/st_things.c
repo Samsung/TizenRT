@@ -30,6 +30,7 @@
 #include "things_resource.h"
 #include "ocpayload.h"
 #include "octypes.h"
+#include "ocstack.h"
 
 #define TAG "[st_things_sdk]"
 
@@ -550,7 +551,7 @@ int st_things_notify_observers(const char *resource_uri)
 	return ST_THINGS_ERROR_NONE;
 }
 
-st_things_representation_s *st_things_create_representation_inst()
+st_things_representation_s *st_things_create_representation_inst(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	st_things_representation_s *rep = create_representation_inst();

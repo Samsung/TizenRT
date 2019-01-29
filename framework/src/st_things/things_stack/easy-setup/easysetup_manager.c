@@ -55,6 +55,7 @@
 #define MAX_REFRESHCHECK_CNT    30	// 30 times
 
 #define FILE_ES_STATE "easysetup_state.dat"
+#define DEF_DEVICE_NAME "ST_Things Device"
 
 es_dev_conf_prov_data_s *g_dev_conf_prov_data = NULL;
 es_wifi_prov_data_s *g_wifi_prov_data = NULL;
@@ -74,7 +75,6 @@ static const int i_fail_sleep_sec = 60;	// 60 sec
 static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static es_device_property device_property;
-static const char *def_device_name = "ST_Things Device";
 
 static int g_es_state = 0; // 0 : EasySetup Need, 1 : Easysetup Done
 
@@ -170,7 +170,7 @@ int esm_set_device_property(char *name, const wifi_mode_e *mode, int ea_mode, co
 	}
 
 	if (name == NULL) {
-		name = def_device_name;
+		name = DEF_DEVICE_NAME;
 	}
 
 	if (ea_mode > NUM_WIFIMODE - 1) {
@@ -337,7 +337,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	return ESM_OK;
 }
 
-esm_result_e esm_terminate_easysetup()
+esm_result_e esm_terminate_easysetup(void)
 {
 	THINGS_LOG_D(TAG, "Terminate EasySetup");
 	esm_continue = 0;
