@@ -242,7 +242,12 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 	do { \
 		asm volatile ("mov %0,lr\n" : "=r" (retaddr));\
 	} while (0);
-
+#elif defined(CONFIG_ARCH_XTENSA)
+#define ARCH_GET_RET_ADDRESS \
+	mmaddress_t retaddr = 0; \
+	do { \
+		asm volatile ("mov %0,a0\n" : "=&r" (retaddr));\
+	} while (0);
 #else
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
