@@ -112,7 +112,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 {
 	irqstate_t flags;
 
-	vdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
+	svdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
 
 	/* Make sure that interrupts are disabled */
 
@@ -125,7 +125,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 		 * to the currently executing task.
 		 */
 
-		vdbg("rtcb=0x%p CURRENT_REGS=0x%p\n", this_task(), CURRENT_REGS);
+		svdbg("rtcb=0x%p CURRENT_REGS=0x%p\n", this_task(), CURRENT_REGS);
 
 		if (tcb == this_task()) {
 			/* CASE 1:  We are not in an interrupt handler and a task is
@@ -221,7 +221,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 	int cpu;
 	int me;
 
-	vdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
+	svdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
 
 	/* Make sure that interrupts are disabled */
 
@@ -234,7 +234,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 		 * to task that is currently executing on any CPU.
 		 */
 
-		vdbg("rtcb=0x%p CURRENT_REGS=0x%p\n", this_task(), CURRENT_REGS);
+		svdbg("rtcb=0x%p CURRENT_REGS=0x%p\n", this_task(), CURRENT_REGS);
 
 		if (tcb->task_state == TSTATE_TASK_RUNNING) {
 			me = this_cpu();
