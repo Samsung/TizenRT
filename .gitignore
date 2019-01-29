@@ -25,3 +25,4 @@ tags
 /tmp/
 *.tmp
 *.tmp.*
+/external/security/hal/test/.sconsign.dblite

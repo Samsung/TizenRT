@@ -38,7 +38,7 @@ typedef enum {
 	HAL_DH_2048,
 } hal_dh_algo;
 
-// from sDH_PARAM 
+// from sDH_PARAM
 typedef struct _hal_dh_data {
 	hal_dh_algo mode;
 	unsigned int modules_p_byte_len;
@@ -58,9 +58,6 @@ typedef enum {
 	HAL_ECDSA_SEC_P256R1,
 	HAL_ECDSA_SEC_P384R1,
 	HAL_ECDSA_SEC_P521R1,
-	HAL_ECDSA_BRAINPOOL_P256R1, // for Post Provision : Not used now
-	HAL_ECDSA_SEC_P256R1,
-	HAL_ECDSA_BRAINPOOL_P256R1, // for Artik credential
 } hal_ecdsa_curve;
 
 typedef enum{
@@ -105,7 +102,7 @@ typedef struct _hal_aes_param {
 // from sRSA_KEY
 typedef struct _hal_rsa_key{
 	hal_rsa_algo mode;
-	unsigned char *modules;
+	unsigned char *modules;  // ???
 	unsigned int modules_byte_len;
 	unsigned char *publickey;
 	unsigned int publickey_byte_len;
@@ -142,10 +139,7 @@ typedef enum {
 	HAL_RSASSA_PKCS1_PSS_MGF1_SHA256,
 	HAL_RSASSA_PKCS1_PSS_MGF1_SHA384,
 	HAL_RSASSA_PKCS1_PSS_MGF1_SHA512,
-	HAL_RSASSA_PKCS1_V1_5_SHA256, // for Post Provision
-	HAL_RSASSA_PKCS1_PSS_MGF1_SHA256,
 } hal_rsa_mode;
-
 
 typedef struct _hal_ss_info {
 	unsigned int size;
@@ -156,6 +150,53 @@ typedef struct _hal_data {
 	void *data;
 	uint32_t data_len;
 } hal_data;
+
+typedef enum {
+	HAL_ECP_DP_SECP192R1,	/*!< 192-bits NIST curve  */
+	HAL_ECP_DP_SECP224R1,	/*!< 224-bits NIST curve  */
+	HAL_ECP_DP_SECP256R1,	/*!< 256-bits NIST curve  */
+	HAL_ECP_DP_SECP384R1,	/*!< 384-bits NIST curve  */
+	HAL_ECP_DP_SECP521R1,	/*!< 521-bits NIST curve  */
+	HAL_ECP_DP_BP256R1,	/*!< 256-bits Brainpool curve */
+	HAL_ECP_DP_BP384R1,	/*!< 384-bits Brainpool curve */
+	HAL_ECP_DP_BP512R1,	/*!< 512-bits Brainpool curve */
+	HAL_ECP_DP_CURVE25519,	/*!< Curve25519               */
+	HAL_ECP_DP_SECP192K1,	/*!< 192-bits "Koblitz" curve */
+	HAL_ECP_DP_SECP224K1,	/*!< 224-bits "Koblitz" curve */
+	HAL_ECP_DP_SECP256K1,	/*!< 256-bits "Koblitz" curve */
+} hal_ecc_algo;
+
+typedef enum {
+	/*  AES */
+	HAL_KEY_AES_128,// 128 bits aes algorithm
+	HAL_KEY_AES_192, // 192 bits aes algorithm
+	HAL_KEY_AES_256, // 256 bits aes algorithm
+	/*  RSA */
+	HAL_KEY_RSA_1024, // 1024 bits rsa algorithm
+	HAL_KEY_RSA_2048, // 2048 bits rsa algorithm
+	HAL_KEY_RSA_3072, // 3072 bits rsa algorithm
+	/*  ECC: it doesn't support whole algorithm that mbedTLS support. it's have to be added*/
+	HAL_KEY_ECC_BRAINPOOL_P256R1, // ecc brainpool curve for p256r1
+	HAL_KEY_ECC_BRAINPOOL_P384R1, // ecc brainpool curve for p384r1
+	HAL_KEY_ECC_BRAINPOOL_P512R1, // ecc brainpool curve for p512r1
+	HAL_KEY_ECC_SEC_P256R1, // nist curve for p256r1
+	HAL_KEY_ECC_SEC_P384R1, // nist curve for p384r1
+	HAL_KEY_ECC_SEC_P521R1, // nist curve for p521r1
+	/*  Hash */
+	HAL_KEY_HASH_MD5, // md5 hash algorithm
+	HAL_KEY_HASH_SHA1, // sha1 hash algorithm
+	HAL_KEY_HASH_SHA224, // sha224 hash algorithm
+	HAL_KEY_HASH_SHA256, // sha256 hash algorithm
+	HAL_KEY_HASH_SHA384, // sha384 hash algorithm
+	HAL_KEY_HASH_SHA512, // sha512 hash algorithm
+	/*  Hmac */
+	HAL_KEY_HMAC_MD5, // hmac with md5
+	HAL_KEY_HMAC_SHA1, // hmac with sha1
+	HAL_KEY_HMAC_SHA224, // hmac with sha224
+	HAL_KEY_HMAC_SHA256, // hmac with sha256
+	HAL_KEY_HMAC_SHA384, // hmac with sha384
+	HAL_KEY_HMAC_SHA512, // hmac with sha512
+} hal_key_type;
 
 // ======================================
 // Function
@@ -169,15 +210,17 @@ typedef struct _hal_data {
 /**
  * Key Manager
  */
-int hal_set_key(_IN_ uint8_t *key, _IN_ uint8_t key_byte_len, _IN_ uint32_t key_type, _IN_ uint32_t key_idx);
+int hal_set_key(_IN_ hal_data *key, _IN_ hal_key_type key_type, _IN_ uint32_t key_idx);
 
-int hal_remove_key(_IN_ uint32_t key_type, _IN_ uint32_t key_idx);
+int hal_remove_key(_IN_ hal_key_type key_type, _IN_ uint32_t key_idx);
 
-int hal_hmac_generate_key(_IN_ uint32_t key_byte_len, _IN_ uint32_t key_idx, _OUT_ uint8_t *key);
+int hal_hmac_generate_key(_IN_ hal_hmac_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
-int hal_rsa_generate_key(_IN_ hal_rsa_algo mode, _IN_ uint32_t key_idx, _OUT_ uint8_t *key);
+int hal_rsa_generate_key(_IN_ hal_rsa_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
-int hal_ecdsa_get_pubkey(_IN_ hal_ecc_key *ecc_pubkey, _IN_ uint32_t obj_id, _IN_ uint32_t key_idx, _OUT_ uint8_t *key);
+int hal_ecc_generate_key(_IN_ hal_ecc_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
+
+int hal_ecdsa_get_pubkey(_IN_ hal_ecc_algo key_type, _IN_ uint32_t key_idx, _OUT_ hal_ecc_key *ecc_pubkey);
 
 int hal_rsa_get_pubkey(_IN_ uint32_t key_idx, _OUT_ hal_rsa_key *rsa_key);
 
@@ -207,7 +250,7 @@ int hal_delete_storage(_IN_ uint32_t ss_idx);
 // arTik see_compute_ecdh key doesn't require slot
 int hal_compute_ecdh(_IN_ hal_ecc_key *key, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
-int hal_dh_compute_shared_secret(_IN_ hal_dh_algo dh_pubkey, _IN_ hal_dh_data, param, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
+int hal_dh_compute_shared_secret(_IN_ hal_dh_algo dh_pubkey, _IN_ hal_dh_data param, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
 /* Generate key at slot of index */
 int hal_dh_generate_param(_IN_ hal_dh_algo mode, _IN_ uint32_t dh_idx, _OUT_ hal_dh_data *dh_param);
@@ -227,3 +270,4 @@ int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t ke
 int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign);
 
 int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
+#endif // __SECURITY_HAL_H__
