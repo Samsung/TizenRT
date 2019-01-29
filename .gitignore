@@ -28,3 +28,4 @@ tags
 *.tmp.*
 *.log
 *.log.old
+/external/security/hal/test/.sconsign.dblite
