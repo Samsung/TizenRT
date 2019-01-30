@@ -107,7 +107,7 @@
 #if defined(CONFIG_INIT_ENTRYPOINT)
 /* Initialize by starting a task at an entry point */
 
-#ifndef CONFIG_USER_ENTRYPOINT
+#if !defined(CONFIG_USER_ENTRYPOINT) && !defined(CONFIG_TASH)
 /* Entry point name must have been provided */
 
 #error CONFIG_USER_ENTRYPOINT must be defined
@@ -286,9 +286,10 @@ static inline void os_do_appstart(void)
 	svdbg("Starting application main thread\n");
 
 #ifdef CONFIG_BUILD_PROTECTED
-	DEBUGASSERT(USERSPACE->us_entrypoint != NULL);
-	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
-#else
+	if (USERSPACE->us_entrypoint != NULL) {
+		pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
+	}
+#elif defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
 	ASSERT(pid > 0);
