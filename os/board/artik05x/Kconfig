@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config BOOT_FAILURE_DETECTION
+config ARTIK05X_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
 	default y
 	---help---
@@ -16,7 +16,7 @@ config BOOT_FAILURE_DETECTION
 config BOOT_COUNTS_ADDR
 	hex "Address of scratch pad register to store the bootcount"
 	default 0x80090810
-	depends on BOOT_FAILURE_DETECTION
+	depends on ARTIK05X_BOOT_FAILURE_DETECTION
 	---help---
 		The number of tries to boot will be stored in this address.
 		On successful boot, it is cleared to zero. The register should

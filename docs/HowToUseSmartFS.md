@@ -115,7 +115,7 @@ smart device can be initialized as shown below,
                         char partref[4];
 
                         snprintf(partref, sizeof(partref), "p%d", partno);
-                        smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
+                        smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
                 }
 #endif
 
@@ -171,22 +171,22 @@ SmartFS filesystem can be mounted on smart mtd device.
 Before mounting, smart device is formatted to smartfs using mksmartfs tool.  
 Example snippet for formatting and mounting SmartFS:
 ```
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
+#ifdef CONFIG_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
-	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n",
-				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+				AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
-				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
+		ret = mount(AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
-					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+					AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
+#endif /* CONFIG_AUTOMOUNT_USERFS */
 ```
 Smart FS can also be mounted in TASH Shell as shown below:  
 1. Format the partition using mksmartfs command

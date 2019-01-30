@@ -146,8 +146,8 @@ compute_ocd_commands()
 
 download()
 {
-        parts_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-        parts2=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${parts_default}}
+        parts_default=`grep -A 2 'config FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+        parts2=${CONFIG_FLASH_PART_NAME:=${parts_default}}
         parts=`echo $parts2 | sed "s/,/ /g"`
 
         # Make Openocd commands for parts
