@@ -70,6 +70,9 @@
 #include <net/lwip/ip6_addr.h>
 #endif
 
+/* This is to disable some lwip APIs temporarily to use libc */
+#define USE_LIBC	1
+
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	return lwip_bind(s, name, namelen);
@@ -174,32 +177,32 @@ static int socket_argument_validation(int domain, int type, int protocol)
 		return -1;
 	}
 	switch (protocol) {
-		case IPPROTO_UDP:
-		case IPPROTO_UDPLITE:
-			if (type != SOCK_DGRAM && type != SOCK_RAW) {
-				return -1;
-			}
-			break;
-		case IPPROTO_TCP:
-			if (type != SOCK_STREAM) {
-				return -1;
-			}
-			break;
-		case IPPROTO_ICMP:
-		case IPPROTO_IGMP:
-		case IPPROTO_ICMPV6:
-			if (type != SOCK_RAW) {
-				return -1;
-			}
-			break;
-		case IPPROTO_IP:
-			if (type == SOCK_RAW) {
-				return -1;
-			}
-			break;
-		default:
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+		if (type != SOCK_DGRAM && type != SOCK_RAW) {
 			return -1;
-			break;
+		}
+		break;
+	case IPPROTO_TCP:
+		if (type != SOCK_STREAM) {
+			return -1;
+		}
+		break;
+	case IPPROTO_ICMP:
+	case IPPROTO_IGMP:
+	case IPPROTO_ICMPV6:
+		if (type != SOCK_RAW) {
+			return -1;
+		}
+		break;
+	case IPPROTO_IP:
+		if (type == SOCK_RAW) {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+		break;
 	}
 	return 0;
 }
@@ -229,6 +232,7 @@ int ioctlsocket(int s, long cmd, void *argp)
 	return lwip_ioctl(s, cmd, argp);
 }
 
+#ifndef USE_LIBC
 uint16_t htons(uint16_t hs)
 {
 #if BYTE_ORDER == BIG_ENDIAN
@@ -265,9 +269,9 @@ uint32_t htonl(uint32_t nl)
 #endif
 }
 
-FAR char* inet_ntoa(struct in_addr in)
+FAR char *inet_ntoa(struct in_addr in)
 {
-	return ip4addr_ntoa((const ip4_addr_t*)&(in));
+	return ip4addr_ntoa((const ip4_addr_t *)&(in));
 }
 
 in_addr_t inet_addr(FAR const char *cp)
@@ -277,21 +281,20 @@ in_addr_t inet_addr(FAR const char *cp)
 
 int inet_aton(const char *cp, struct in_addr *inp)
 {
-	return ip4addr_aton(cp, (ip4_addr_t*)inp);
+	return ip4addr_aton(cp, (ip4_addr_t *)inp);
 }
 
 FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t size)
 {
-
 #ifdef CONFIG_NET_IPv4
-	if (af == AF_INET)
-		return ip4addr_ntoa_r((const ip4_addr_t*)(src), ((char *)(dest)), (size));
-	else
+	if (af == AF_INET) {
+		return ip4addr_ntoa_r((const ip4_addr_t *)(src), ((char *)(dest)), (size));
+	} else
 #endif
 #ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6)
-		return ip6addr_ntoa_r((const ip6_addr_t*)(src), ((char *)(dest)), (size));
-	else
+	if (af == AF_INET6) {
+		return ip6addr_ntoa_r((const ip6_addr_t *)(src), ((char *)(dest)), (size));
+	} else
 #endif
 		return NULL;
 }
@@ -299,19 +302,20 @@ FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t
 int inet_pton(int af, FAR const char *src, FAR void *dest)
 {
 #ifdef CONFIG_NET_IPv4
-	if (af == AF_INET)
-		return ip4addr_aton(((const char *)(src)), (ip4_addr_t*)((char *)(dest)));
-	else
+	if (af == AF_INET) {
+		return ip4addr_aton(((const char *)(src)), (ip4_addr_t *)((char *)(dest)));
+	} else
 #endif
 #ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6)
-		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t*)(dest)));
-	else
+	if (af == AF_INET6) {
+		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t *)(dest)));
+	} else
 #endif
 	{
 		return -1;
 	}
 }
+#endif
 
 #ifdef CONFIG_NET_LWIP_NETDB
 struct hostent *gethostbyname(const char *name)
@@ -334,8 +338,8 @@ int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t host
 {
 	return lwip_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
 }
-#endif /* LWIP_COMPAT_SOCKETS */
+#endif							/* LWIP_COMPAT_SOCKETS */
 
-#endif /* NET_LWIP_NETDB */
+#endif							/* NET_LWIP_NETDB */
 
 #endif
