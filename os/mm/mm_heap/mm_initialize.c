@@ -229,7 +229,12 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	/* Add the initial region of memory to the heap */
 
 	mm_addregion(heap, heapstart, heapsize);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
+		heap->alloc_list[i].pid = HEAPINFO_INIT_INFO;
+	}
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group_info(-1, -1, HEAPINFO_INIT_INFO);
+#endif
 #endif
 }

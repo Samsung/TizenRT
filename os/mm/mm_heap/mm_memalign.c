@@ -148,7 +148,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	node = (FAR struct mm_allocnode_s *)(rawchunk - SIZEOF_MM_ALLOCNODE);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_subtract_size(node->pid, node->size);
+		heapinfo_subtract_size(heap, node->pid, node->size);
 		heapinfo_update_total_size(heap, ((-1) * (node->size)), node->pid);
 #endif
 	/* Find the aligned subregion */
@@ -236,7 +236,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	heapinfo_update_node(node, caller_retaddr);
 
-	heapinfo_add_size(node->pid, node->size);
+	heapinfo_add_size(heap, node->pid, node->size);
 	heapinfo_update_total_size(heap, node->size, node->pid);
 #endif
 	mm_givesemaphore(heap);

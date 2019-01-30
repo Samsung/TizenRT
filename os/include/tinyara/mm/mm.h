@@ -205,7 +205,8 @@
 #define HEAPINFO_DETAIL_FREE 4
 #define HEAPINFO_DETAIL_SPECIFIC_HEAP 5
 #define HEAPINFO_PID_ALL -1
-#define HEAPINFO_INIT_INFO 0
+
+#define HEAPINFO_INIT_INFO -1
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
@@ -213,6 +214,9 @@
 #define REGION_SIZE  regionx_size[0]
 #define REGION_END (REGION_START + REGION_SIZE)
 #define INVALID_HEAP_IDX -1
+
+#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
+#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
 
 /* Determines the size of the chunk size/offset type */
 
@@ -314,6 +318,14 @@ struct mm_freenode_s {
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+struct heapinfo_tcb_info_s {
+	int pid;
+	int curr_alloc_size;
+	int peak_alloc_size;
+	int num_alloc_free;
+};
+typedef struct heapinfo_tcb_info_s heapinfo_tcb_info_t;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 struct heapinfo_group_info_s {
 	int pid;
@@ -327,6 +339,7 @@ struct heapinfo_group_s {
 	int stack_size;
 	int heap_size;
 };
+#endif
 #endif
 /* This describes one heap (possibly with multiple regions) */
 
@@ -349,6 +362,8 @@ struct mm_heap_s {
 	int max_group;
 	struct heapinfo_group_s group[HEAPINFO_USER_GROUP_NUM];
 #endif
+	/* Linked List for heap information per pid */
+	heapinfo_tcb_info_t alloc_list[CONFIG_MAX_TASKS];
 #endif
 
 	/* This is the first and last nodes of the heap */
@@ -652,10 +667,11 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 
-void heapinfo_add_size(pid_t pid, mmsize_t size);
-void heapinfo_subtract_size(pid_t pid, mmsize_t size);
+void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
+void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
+void heapinfo_peak_init(struct mm_heap_s *heap);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);

@@ -162,6 +162,8 @@ else ifeq ($(CONFIG_ENABLE_PS_CMD),y)
 CSRCS += kdbg_utils.c
 else ifeq ($(CONFIG_ENABLE_STACKMONITOR_CMD),y)
 CSRCS += kdbg_utils.c
+else ifeq ($(CONFIG_ENABLE_HEAPINFO_CMD),y)
+CSRCS += kdbg_utils.c
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
