@@ -25,11 +25,11 @@ comment "ST_Things Config Parameters"
 
 config ST_THINGS_ARTIK_HW_CERT_KEY
 	bool "Enable Artik H/W Certificate & Key"
-	depends on ARCH_BOARD_ARTIK05X_FAMILY
+	depends on ARCH_BOARD_ARTIK05X_FAMILY && ST_THINGS_SECURESTORAGE
 	default n
 	select TLS_WITH_SSS
 	---help---
-		Build ST Things for STG Server
+		Build ST Things to save hardware certification to securestorage(limited under 8KB)
 
 config ST_THINGS_SECURESTORAGE
 	bool "Enable Secure Storage"
