@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * board/artik05x/src/artik05x.h
+ * board/common/common.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
@@ -50,22 +50,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
-#define __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
+#ifndef __BOARD_COMMON_H__
+#define __BOARD_COMMON_H__
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#ifdef CONFIG_MTD_CONFIG
-enum configdata_id {
-	/* Application-specific */
-	CONFIGDATA_APPLICATION = 0x0000,
+void configure_partitions(void);
 
-	/* Platform-specific */
-	CONFIGDATA_PLATFORM = 0xff00,
-	CONFIGDATA_WIFI_NVRAM,
-};
-#endif
+#endif /*__BOARD_COMMON_H__ */
 
-#endif /* __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__ */

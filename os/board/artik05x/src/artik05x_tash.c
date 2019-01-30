@@ -80,15 +80,16 @@
 
 #include <apps/shell/tash.h>
 
+#include "common.h"
 #include "artik05x.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME"d1"
+#define AUTOMOUNT_USERFS_DEVNAME  CONFIG_AUTOMOUNT_USERFS_DEVNAME"d1"
 #else
-#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#define AUTOMOUNT_USERFS_DEVNAME  CONFIG_AUTOMOUNT_USERFS_DEVNAME
 #endif
 /****************************************************************************
  * Private Functions
@@ -127,117 +128,6 @@ int artik05x_adc_setup(void)
 #endif /* CONFIG_S5J_ADC */
 
 	return OK;
-}
-
-static void artik05x_configure_partitions(void)
-{
-#if defined(CONFIG_ARTIK05X_FLASH_PART)
-	int partno;
-	int partoffset;
-	const char *parts = CONFIG_ARTIK05X_FLASH_PART_LIST;
-	const char *types = CONFIG_ARTIK05X_FLASH_PART_TYPE;
-#if defined(CONFIG_MTD_PARTITION_NAMES)
-	const char *names = CONFIG_ARTIK05X_FLASH_PART_NAME;
-#endif
-	FAR struct mtd_dev_s *mtd;
-	FAR struct mtd_geometry_s geo;
-
-	mtd = progmem_initialize();
-	if (!mtd) {
-		lldbg("ERROR: progmem_initialize failed\n");
-		return;
-	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return;
-	}
-
-	partno = 0;
-	partoffset = 0;
-
-	while (*parts) {
-		FAR struct mtd_dev_s *mtd_part;
-		int partsize;
-
-		partsize = strtoul(parts, NULL, 0) << 10;
-
-		if (partsize < geo.erasesize) {
-			lldbg("ERROR: Partition size is lesser than erasesize\n");
-			return;
-		}
-
-		if (partsize % geo.erasesize != 0) {
-			lldbg("ERROR: Partition size is not multiple of erasesize\n");
-			return;
-		}
-
-		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
-		partoffset += partsize / geo.blocksize;
-
-		if (!mtd_part) {
-			lldbg("ERROR: failed to create partition.\n");
-			return;
-		}
-#if defined(CONFIG_MTD_FTL)
-		if (!strncmp(types, "ftl,", 4)) {
-			if (ftl_initialize(partno, mtd_part)) {
-				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
-			}
-		} else
-#endif
-#if defined(CONFIG_MTD_CONFIG)
-		if (!strncmp(types, "config,", 7)) {
-			mtdconfig_register(mtd_part);
-		} else
-#endif
-#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "smartfs,", 8)) {
-			char partref[4];
-
-			snprintf(partref, sizeof(partref), "p%d", partno);
-			smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
-		} else
-#endif
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "romfs,", 6)) {
-			ftl_initialize(partno, mtd_part);
-		} else
-
-#endif
-		{
-		}
-
-#if defined(CONFIG_MTD_PARTITION_NAMES)
-		if (strcmp(names, "")) {
-			mtd_setpartitionname(mtd_part, names);
-		}
-
-		while (*names != ',' && *names) {
-			names++;
-		}
-		if (*names == ',') {
-			names++;
-		}
-#endif
-
-		while (*parts != ',' && *parts) {
-			parts++;
-		}
-		if (*parts == ',') {
-			parts++;
-		}
-
-		while (*types != ',' && *types) {
-			types++;
-		}
-		if (*types == ',') {
-			types++;
-		}
-
-		partno++;
-	}
-#endif /* CONFIG_ARTIK05X_FLASH_PART */
 }
 
 static void scsc_wpa_ctrl_iface_init(void)
@@ -279,64 +169,64 @@ static void scsc_wpa_ctrl_iface_init(void)
 int board_app_initialize(void)
 {
 	int ret;
-#if defined(CONFIG_ARTIK05X_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
+#if defined(CONFIG_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_RAMMTD_NEBLOCKS;
 	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
 #endif /* CONFIG_RAMMTD */
 
-	artik05x_configure_partitions();
+	configure_partitions();
 
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
+#ifdef CONFIG_AUTOMOUNT
+#ifdef CONFIG_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+	ret = mksmartfs(AUTOMOUNT_USERFS_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(AUTOMOUNT_USERFS_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n",
-				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+				AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
-				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
+		ret = mount(AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
-					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+					AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
+#endif /* CONFIG_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_SSSRW
+#ifdef CONFIG_AUTOMOUNT_SSSRW
 	/* Initialize and mount secure storage partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME, 1, false);
+	ret = mksmartfs(CONFIG_AUTOMOUNT_SSSRW_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME, false);
+	ret = mksmartfs(CONFIG_AUTOMOUNT_SSSRW_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n",
-				CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME);
+				CONFIG_AUTOMOUNT_SSSRW_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME,
-				CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT,
+		ret = mount(CONFIG_AUTOMOUNT_SSSRW_DEVNAME,
+				CONFIG_AUTOMOUNT_SSSRW_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
-					CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME);
+					CONFIG_AUTOMOUNT_SSSRW_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT_SSSRW */
+#endif /* CONFIG_AUTOMOUNT_SSSRW */
 
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME,
-			CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
+#ifdef CONFIG_AUTOMOUNT_ROMFS
+	ret = mount(CONFIG_AUTOMOUNT_ROMFS_DEVNAME,
+			CONFIG_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
 
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
-			  CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME);
+			  CONFIG_AUTOMOUNT_ROMFS_DEVNAME);
 	}
 #endif
 
@@ -350,21 +240,21 @@ int board_app_initialize(void)
 			lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
 			free(rambuf);
 		} else {
-			ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
+			ret = smart_initialize(CONFIG_RAMMTD_DEV_NUMBER, mtd, NULL);
 			if (ret < 0) {
 				lldbg("ERROR: FAILED TO smart_initialize\n");
 				free(rambuf);
 			} else {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, 1, false);
+				ret = mksmartfs(CONFIG_RAMMTD_DEV_POINT, 1, false);
 #else
-				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
+				ret = mksmartfs(CONFIG_RAMMTD_DEV_POINT, false);
 #endif
 				if (ret != OK) {
-					lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
+					lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_RAMMTD_DEV_POINT);
 					free(rambuf);
 				} else {
-					ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+					ret = mount(CONFIG_RAMMTD_DEV_POINT, CONFIG_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
 					if (ret < 0) {
 						lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
 						free(rambuf);
@@ -374,7 +264,7 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT */
+#endif /* CONFIG_AUTOMOUNT */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{

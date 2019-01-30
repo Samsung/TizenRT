@@ -63,7 +63,7 @@
  ****************************************************************************/
 size_t up_progmem_npages(void)
 {
-	return CONFIG_ARTIK05X_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
+	return CONFIG_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
 }
 
 bool up_progmem_isuniform(void)
@@ -78,5 +78,5 @@ size_t up_progmem_pagesize(size_t page)
 
 size_t up_progmem_blocksize(void)
 {
-	return CONFIG_ARTIK05X_FLASH_PAGE_SIZE;
+	return CONFIG_FLASH_PAGE_SIZE;
 }

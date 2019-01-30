@@ -175,7 +175,7 @@ static void board_wdt_initialize(void)
  ****************************************************************************/
 static void artik05x_clear_bootcount(void)
 {
-#ifdef CONFIG_ARTIK05X_BOOT_COUNTS_ADDR
+#ifdef CONFIG_BOOT_COUNTS_ADDR
 	/*
 	 * As BL2 sets up a watchdog before it jumps to secondary OS,
 	 * we should disable the watchdog to prevent it from barking.
@@ -185,7 +185,7 @@ static void artik05x_clear_bootcount(void)
 	putreg32(0, 0x80030000);
 
 	/* then, clear the boot count */
-	putreg32(0, CONFIG_ARTIK05X_BOOT_COUNTS_ADDR);
+	putreg32(0, CONFIG_BOOT_COUNTS_ADDR);
 #endif
 }
 

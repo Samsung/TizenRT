@@ -77,7 +77,7 @@ unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
 		return false;
 	}
 
-	config.id = ARTIK05X_CONFIGDATA_WIFI_NVRAM;
+	config.id = CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;
@@ -103,7 +103,7 @@ unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
 		return false;
 	}
 
-	config.id = ARTIK05X_CONFIGDATA_WIFI_NVRAM;
+	config.id = CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;
