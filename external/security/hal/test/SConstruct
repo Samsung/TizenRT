@@ -20,10 +20,9 @@
 
 import os
 
-test_file = ["hal_test.c", "hal_keymgr_test.c"]
+test_file = ["hal_test.c", "hal_keymgr_test.c", "hal_test_utils.c"]
 
 hal_files = ["../security_hal.c"]
-
 
 sttool_file = ["../../../stress_tool/st_perf.c"]
 

@@ -22,6 +22,8 @@
 #include <stdint.h>
 #define _IN_
 #define _OUT_
+#define _INOUT_
+
 
 // from sECC_KEY
 typedef struct _hal_ecc_key {
@@ -59,6 +61,14 @@ typedef enum {
 	HAL_ECDSA_SEC_P384R1,
 	HAL_ECDSA_SEC_P521R1,
 } hal_ecdsa_curve;
+
+typedef struct _hal_ecc_sign {
+	hal_ecdsa_curve sign_type;
+	unsigned char *r;
+	unsigned char r_byte_len;
+	unsigned char *s;
+	unsigned char s_byte_len;
+} hal_ecc_sign;
 
 typedef enum{
 	HAL_RSA_1024,
@@ -149,6 +159,7 @@ typedef struct _hal_ss_info {
 typedef struct _hal_data {
 	void *data;
 	uint32_t data_len;
+	void *priv;
 } hal_data;
 
 typedef enum {
@@ -184,7 +195,7 @@ typedef enum {
 	HAL_KEY_ECC_SEC_P521R1, // nist curve for p521r1
 	/*  Hash */
 	HAL_KEY_HASH_MD5, // md5 hash algorithm
-	HAL_KEY_HASH_SHA1, // sha1 hash algorithm
+	HAL_KEY_HASH_SHA1, // sha1 hash algorithm``
 	HAL_KEY_HASH_SHA224, // sha224 hash algorithm
 	HAL_KEY_HASH_SHA256, // sha256 hash algorithm
 	HAL_KEY_HASH_SHA384, // sha384 hash algorithm
@@ -203,26 +214,142 @@ typedef enum {
 // ======================================
 
 /**
- * Check Status
+ * Common
  */
+int hal_data_free(_IN_ hal_data *data);
+
+/*
+ * return value: busy, not initialized, ...
+ */
+
+int hal_get_status(void);
+
 // Is checking status necessary?
 
 /**
  * Key Manager
  */
-int hal_set_key(_IN_ hal_data *key, _IN_ hal_key_type key_type, _IN_ uint32_t key_idx);
+/*
+ * Reference
+ * Desc: If key type is asymmetric then private key can be stored.
+ * Artik SEE API: int see_set_key(see_algorithm algo, const char *key_name, see_data key);
+ * TizenRT SEE API: 
+ * ISP: 
+ */
+int hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *key, _IN_ hal_data *prikey);
 
+
+/*
+ * Reference
+ * Desc: 
+ * Artik SEE API: int see_get_pubkey(see_algorithm algo, const char *key_name, see_data *pub_key);
+ * TizenRT SEE API: 
+ * ISP: 
+ */
+int hal_get_key(_IN_ uint32_t key_idx, _OUT_ hal_data *key);
+
+
+/*
+ * Reference
+ * Desc: 
+ * Artik SEE API: int see_remove_key(see_algorithm algo, const char *key_name);
+ * TizenRT SEE API: 
+ * ISP: 
+ */
 int hal_remove_key(_IN_ hal_key_type key_type, _IN_ uint32_t key_idx);
 
-int hal_hmac_generate_key(_IN_ hal_hmac_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
-int hal_rsa_generate_key(_IN_ hal_rsa_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
+/*
+ * Reference
+ * Desc: 
+ * Artik SEE API: int see_generate_key(see_algorithm algo, const char *key_name, see_data *pub_key)
+ * TizenRT SEE API: 
+ * ISP: 
+ */
+int hal_generate_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
 
-int hal_ecc_generate_key(_IN_ hal_ecc_algo mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
-int hal_ecdsa_get_pubkey(_IN_ hal_ecc_algo key_type, _IN_ uint32_t key_idx, _OUT_ hal_ecc_key *ecc_pubkey);
+/**
+ * Authenticate
+ */
 
-int hal_rsa_get_pubkey(_IN_ uint32_t key_idx, _OUT_ hal_rsa_key *rsa_key);
+/*
+ * Reference
+ * Desc: Generate random
+ * Artik SEE API: int see_generate_random(unsigned int size, see_data *random)
+ * TizenRT SEE API: int see_generate_random(unsigned int *data, unsigned int len)
+ * ISP: int isp_generate_random(unsigned int *random, unsigned int wlen);
+ */
+int hal_generate_random(_IN_ uint32_t len, _OUT_ uint8_t *random);
+
+/*
+ * Reference
+ * Desc: Get HASH
+ * Artik SEE API: int see_get_hash(see_algorithm algo, see_data data, see_data *hash);
+ * TizenRT SEE API: int see_get_hash(struct sHASH_MSG *h_param, unsigned char *hash, unsigned int mode)
+ * ISP: int isp_hash(unsigned char *hash, struct sHASH_MSG *hash_msg, unsigned int object_id);
+ */
+int hal_get_hash(_IN_ hal_hash_algo algo, _IN_ hal_data *input, _OUT_ hal_data *hash);
+
+/*
+ * Reference
+ * Desc: Get HMAC
+ * Artik SEE API: int see_get_hmac(see_algorithm algo, const char *key_name, see_data data, see_data *hmac);
+ * TizenRT SEE API: int see_get_hmac(struct sHMAC_MSG *hmac_msg, unsigned char *output, unsigned int object_id, unsigned int key_index)
+ * ISP: int isp_hmac_securekey(unsigned char *mac, struct sHMAC_MSG *hmac_msg, unsigned int object_id, unsigned int key_index)
+ */
+int hal_get_hmac(_IN_ hal_hmac_algo algo, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac);
+
+/*
+ * Reference
+ * Desc: 
+ * Artik SEE API: int see_get_rsa_signature(see_rsa_mode mode, const char *key_name, see_data hash, see_data *sign)
+ * TizenRT SEE API: int see_get_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
+ * ISP: int isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+ */
+int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t key_idx, _OUT_ hal_data *md);
+
+int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign);
+
+/*
+ * Reference
+ * Desc: Get signature
+ * Artik SEE API: int see_get_ecdsa_signature(see_ecdsa_curve curve, const char *key_name, see_data hash, see_data *sign)
+ * TizenRT SEE API: int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
+ * ISP: int isp_ecdsa_sign_md_securekey(struct sECC_SIGN *ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+ */
+int hal_ecdsa_sign_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
+
+/*
+ * Reference
+ * Artik SEE API: 
+ * TizenRT SEE API: int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index)
+ * ISP: isp_ecdsa_verify_md_securekey()
+ */
+int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _IN_ hal_data *sign);
+
+int hal_compute_ecdh(_IN_ hal_ecc_key *key, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
+
+/*
+ * Reference
+ * Desc: Generate key at slot of index
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index)
+ * ISP: int isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index);
+ */
+int hal_dh_generate_param(_IN_ hal_dh_algo mode, _IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param);
+
+/*
+ * Reference
+ * Desc: Get shared secret
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_compute_dhm_param(struct sDH_PARAM *d_param, unsigned int key_index, unsigned char *output, unsigned int *olen)
+ * ISP: int isp_dh_compute_shared_secret_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sDH_PARAM dh_publickey, unsigned int key_index);
+ */
+int hal_dh_compute_shared_secret(_IN_ hal_dh_algo dh_pubkey, _IN_ hal_dh_data param, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
+
+int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
+
 
 /**
  * Crypto
@@ -244,30 +371,5 @@ int hal_write_storage(_IN_ uint32_t ss_idx, _IN_ hal_data *data);
 
 int hal_delete_storage(_IN_ uint32_t ss_idx);
 
-/**
- * Authenticate
- */
-// arTik see_compute_ecdh key doesn't require slot
-int hal_compute_ecdh(_IN_ hal_ecc_key *key, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
-int hal_dh_compute_shared_secret(_IN_ hal_dh_algo dh_pubkey, _IN_ hal_dh_data param, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
-
-/* Generate key at slot of index */
-int hal_dh_generate_param(_IN_ hal_dh_algo mode, _IN_ uint32_t dh_idx, _OUT_ hal_dh_data *dh_param);
-
-int hal_ecdsa_sign_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
-
-int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _IN_ hal_data *sign);
-
-int hal_generate_random(_IN_ uint32_t len, _OUT_ uint8_t *random);
-
-int hal_get_hash(_IN_ hal_hash_algo algo, _IN_ hal_data *input, _OUT_ hal_data *hash);
-
-int hal_get_hmac(_IN_ hal_hmac_algo algo, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac);
-
-int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t key_idx, _OUT_ hal_data *md);
-
-int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign);
-
-int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
 #endif // __SECURITY_HAL_H__
