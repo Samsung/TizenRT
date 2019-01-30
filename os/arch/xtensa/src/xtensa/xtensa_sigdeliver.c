@@ -108,7 +108,7 @@ void xtensa_sig_deliver(void)
 
 	board_autoled_on(LED_SIGNAL);
 
-	vdbg("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n", rtcb, rtcb->xcp.sigdeliver, rtcb->sigpendactionq.head);
+	svdbg("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n", rtcb, rtcb->xcp.sigdeliver, rtcb->sigpendactionq.head);
 	ASSERT(rtcb->xcp.sigdeliver != NULL);
 
 	/* Save the real return state on the stack. */
@@ -160,7 +160,7 @@ void xtensa_sig_deliver(void)
 	 * errno that is needed by the user logic (it is probably EINTR).
 	 */
 
-	vdbg("Resuming\n");
+	svdbg("Resuming\n");
 	(void)up_irq_save();
 
 	/* Restore the saved errno value */
