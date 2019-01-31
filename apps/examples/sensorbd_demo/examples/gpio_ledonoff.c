@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <tinyara/gpio.h>
 
@@ -120,7 +121,7 @@ void ledonoff_main(int argc, char *argv[])
 		}
 		printf("\n");
 
-		up_mdelay(500);
+		usleep(500000);
 	}
 	gpio_write(51, 0);
 	gpio_write(52, 0);

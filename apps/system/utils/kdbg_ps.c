@@ -52,7 +52,20 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
+#include <stdlib.h>
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+#include <errno.h>
+#include <stdbool.h>
+#include <sys/mount.h>
+#endif
 #include <tinyara/sched.h>
+#include <tinyara/fs/fs.h>
+
+#include "kdbg_utils.h"
+
+#define PS_BUFLEN 64
 
 static const char *kdbg_statenames[] = {
 	"INVALID ",
@@ -77,26 +90,97 @@ static const char *kdbg_ttypenames[4] = {
 	"--?--  "
 };
 
-static void kdbg_pseach(FAR struct tcb_s *tcb, FAR void *arg)
+static void ps_print_values(char *buf)
 {
-	printf("%5d | %4d | %4s | %7s | %c%c | %8s", tcb->pid, tcb->sched_priority, tcb->flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", kdbg_ttypenames[(tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], tcb->flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', tcb->flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', kdbg_statenames[tcb->task_state]);
-#if CONFIG_TASK_NAME_SIZE > 0
-	printf(" | %s", tcb->name);
-#endif
+	int i;
+	int flags;
+	int state;
+	stat_data stat_info[PROC_STAT_MAX];
+
+	stat_info[0] = strtok(buf, " ");
+
+	for (i = 1; i < PROC_STAT_MAX; i++) {
+		stat_info[i] = strtok(NULL, " ");
+	}
+
+	flags = atoi(stat_info[PROC_STAT_FLAG]);
+	if (flags <= 0) {
+		return;
+	}
+
+	state = atoi(stat_info[PROC_STAT_STATE]);
+	if (state <= 0) {
+		return;
+	}
+
+	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
+		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", kdbg_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
+		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
+		kdbg_statenames[state]);
+
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
+#else
 	printf("\n");
+#endif
+
+}
+
+static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
+{
+	int ret;
+	char *filepath;
+	char buf[PS_BUFLEN];
+
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
+	ret = kdbg_readfile(filepath, buf, PS_BUFLEN, ps_print_values);
+	free(filepath);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+
+	return OK;
 }
 
 int kdbg_ps(int argc, char **args)
 {
-#if CONFIG_TASK_NAME_SIZE > 0
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	int ret;
+	bool is_mounted;
+
+	is_mounted = false;
+
+	/* Mount Procfs to use */
+	ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+	if (ret == ERROR) {
+		if (errno == EEXIST) {
+			is_mounted = true;
+		} else {
+			printf("Failed to mount procfs : %d\n", errno);
+			return ERROR;
+		}
+	}
+
+#endif
+
 	printf("\n");
+#if (CONFIG_TASK_NAME_SIZE > 0)
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
 	printf("------|------|------|---------|----|----------|----------\n");
 #else
-	printf("\n");
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS\n");
-	printf("------|------|------|---------|----|--------\n");
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  \n");
+	printf("------|------|------|---------|----|----------\n");
 #endif
-	sched_foreach(kdbg_pseach, NULL);
-	return 0;
+	/* Print information for each task/thread */
+	kdbg_proc_pid_foreach(ps_read_proc);
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
+	}
+#endif
+
+	return OK;
 }

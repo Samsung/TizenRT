@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <tinyara/pwm.h>
 
@@ -91,13 +92,13 @@ void pwmbuzzer_main(int argc, char *argv[])
 		ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd, PWMIOC_START);
 
-		up_mdelay(400);
+		usleep(400000);
 	}
 
 	ioctl(fd, PWMIOC_STOP);
 	close(fd);
 
-	up_mdelay(1000);
+	sleep(1);
 
 	/* device 0 channel 2 */
 	fd = open("/dev/pwm2", O_RDWR);
@@ -112,7 +113,7 @@ void pwmbuzzer_main(int argc, char *argv[])
 		ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd, PWMIOC_START);
 
-		up_mdelay(400);
+		usleep(400000);
 	}
 
 	ioctl(fd, PWMIOC_STOP);

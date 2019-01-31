@@ -43,26 +43,27 @@
 #define MBEDTLS_PK_ALT_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "config.h"
+#include "../config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#include "md.h"
+#include "../md.h"
 
 #if defined(MBEDTLS_RSA_C)
-#include "rsa.h"
+#include "../rsa.h"
 #endif
 
 #if defined(MBEDTLS_ECP_C)
-#include "ecp.h"
+#include "../ecp.h"
 #endif
 
 #if defined(MBEDTLS_ECDSA_C)
-#include "ecdsa.h"
+#include "../ecdsa.h"
 #endif
 
-#include "alt/common.h"
+#include "common.h"
+
 
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
@@ -77,10 +78,10 @@ extern "C" {
 int mbedtls_setup_key_alt( unsigned char *key_der, unsigned int key_len,
                            unsigned int key_type, unsigned char *key_buf );
 
-int mbedtls_get_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign, unsigned char *hash,
+int mbedtls_get_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign, unsigned char *hash,
 				unsigned int hash_len, unsigned int key_index );
 
-int mbedtls_get_rsa_signature_alt( struct sRSA_SIGN *rsa_sign, unsigned char *hash,
+int mbedtls_get_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign, unsigned char *hash,
 				unsigned int hash_len, unsigned int key_index );
 
 int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
@@ -88,7 +89,7 @@ int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
 				unsigned char *input, unsigned int inlen );
 
 #if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
-int mbedtls_verify_rsa_signature_alt( struct sRSA_SIGN *rsa_sign,
+int mbedtls_verify_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign,
 				unsigned char *hash, unsigned int hash_len,
 				unsigned char *key_buf );
 #endif
@@ -100,7 +101,7 @@ int mbedtls_rsa_encryption_alt( unsigned char *key_buf, unsigned int pad_type,
 #endif
 
 #if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
-int mbedtls_verify_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign,
+int mbedtls_verify_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign,
                                         unsigned char *hash, unsigned int hash_len,
                                         unsigned char *key_buf );
 #endif

@@ -19,6 +19,10 @@
 /// @file mbedtls/alt/common.h
 // @brief common ALT header
 
+// NEED TO BE CHANGED TO A GENERIC HAL API LIST
+#include "../../../../os/se/sss/isp_custom.h"
+
+
 #ifndef MBEDTLS_COMMON_ALT_H
 #define MBEDTLS_COMMON_ALT_H
 
@@ -26,19 +30,60 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define ISP_CHECKBUSY() while (isp_get_status()) {}
+
 #define MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT  (1280)
 #define MBEDTLS_MAX_ECP_KEY_SIZE_ALT  (68)
+#define MBEDTLS_MAX_RANDOM_SIZE		(256)
+#define MBEDTLS_MAX_BUF_SIZE		(4096)
+
 
 #define DHM_1024 (128)
 #define DHM_2048 (256)
 #define DHM_4096 (512)
 
+// Secure Storage
+#define SECURE_STORAGE_TYPE_FACTORYKEY_KEY			(0x00)
+#define SECURE_STORAGE_TYPE_FACTORYKEY_DATA			(0x01)
+#define SECURE_STORAGE_TYPE_KEY_AES				(0x0A)
+#define SECURE_STORAGE_TYPE_KEY_HMAC			(0x0B)
+#define SECURE_STORAGE_TYPE_KEY_RSA				(0x0C)
+#define SECURE_STORAGE_TYPE_KEY_DH				(0x0D)
+#define SECURE_STORAGE_TYPE_KEY_ECC				(0x0E)
+#define SECURE_STORAGE_TYPE_DATA				(0x10)
+#define SECURE_STORAGE_TYPE_CERT				(0x11)
+
+/* Key type */
+#define AES_KEY		0x010000
+#define HMAC_KEY	0x020000
+#define RSA_KEY		0x030000
+#define ECC_KEY		0x040000
+
+#define AES_KEY_128       ((AES_KEY)  | (0x1))
+#define AES_KEY_256       ((AES_KEY)  | (0x2))
+#define HMAC_KEY_128      ((HMAC_KEY) | (0x1))
+#define HMAC_KEY_256      ((HMAC_KEY) | (0x2))
+#define RSA_KEY_1024      ((RSA_KEY)  | (0xB1))
+#define RSA_KEY_2048      ((RSA_KEY)  | (0xB2))
+
+#define ECC_KEY_BP256     ((ECC_KEY) | (0x53))
+
+#define ECC_KEY_NIST192   ((ECC_KEY) | (0x21))
+#define ECC_KEY_NIST224   ((ECC_KEY) | (0x22))
+#define ECC_KEY_NIST256   ((ECC_KEY) | (0x23))
+#define ECC_KEY_NIST384   ((ECC_KEY) | (0x24))
+#define ECC_KEY_NIST512   ((ECC_KEY) | (0x25))
+
+/* cert type */
+#define CERT_DER      0x01
+#define CERT_PEM      0x02
+
 // ======================================
 // Structure
 // ======================================
-//! @struct sECC_KEY
+//! @struct mbedtls_sECC_KEY
 //! @brief struct of ECDSA Key parameter
-struct sECC_KEY {
+struct mbedtls_sECC_KEY {
 	unsigned int curve;
 	unsigned char *privatekey;
 	unsigned char *publickey_x;
@@ -47,9 +92,9 @@ struct sECC_KEY {
 	unsigned char y_byte_len;
 };
 
-//! @struct sECC_SIGN
+//! @struct mbedtls_sECC_SIGN
 //! @brief struct of ECDSA Signature
-struct sECC_SIGN {
+struct mbedtls_sECC_SIGN {
 	unsigned int sign_type;
 	unsigned char *r;
 	unsigned char r_byte_len;
@@ -57,9 +102,9 @@ struct sECC_SIGN {
 	unsigned char s_byte_len;
 };
 
-//! @struct sRSA_KEY
+//! @struct mbedtls_sRSA_KEY
 //! @brief struct of RSA Key parameter
-struct sRSA_KEY {
+struct mbedtls_sRSA_KEY {
 	unsigned int object_id;
 	unsigned char *modules;
 	unsigned int modules_byte_len;
@@ -68,18 +113,18 @@ struct sRSA_KEY {
 	unsigned char *privatekey;
 };
 
-//! @struct sRSA_SIGN
+//! @struct mbedtls_sRSA_SIGN
 //! @brief struct of RSA Signature
-struct sRSA_SIGN {
+struct mbedtls_sRSA_SIGN {
 	unsigned int signature_byte_len;
 	unsigned char *signature;
 	unsigned int salt_byte_len;
 	unsigned int alg_type;
 };
 
-//! @struct sAES_PARAM
+//! @struct mbedtls_sAES_PARAM
 //! @brief struct of AES parameter
-struct sAES_PARAM {
+struct mbedtls_sAES_PARAM {
 	unsigned char *pu8Plaintext;
 	unsigned int u32Plaintext_byte_len;
 	unsigned char *pu8Ciphertext;
@@ -97,9 +142,9 @@ struct sAES_PARAM {
 	unsigned int u32Mode;
 };
 
-//! @struct sHMAC_MSG
+//! @struct mbedtls_sHMAC_MSG
 //! @brief struct of message for HMAC
-struct sHMAC_MSG {
+struct mbedtls_sHMAC_MSG {
 	unsigned int addr_low;
 	unsigned int addr_high;
 	unsigned int descriptor_byte_len;
@@ -107,9 +152,9 @@ struct sHMAC_MSG {
 	unsigned int msg_type;
 };
 
-//! @struct sHASH_MSG
+//! @struct mbedtls_sHASH_MSG
 //! @brief struct of message for Hash
-struct sHASH_MSG {
+struct mbedtls_sHASH_MSG {
 	unsigned int addr_low;
 	unsigned int addr_high;
 	unsigned int descriptor_byte_len;
@@ -117,9 +162,9 @@ struct sHASH_MSG {
 	unsigned int msg_type;
 };
 
-//! @struct sDH_PARAM
+//! @struct mbedtls_sDH_PARAM
 //! @brief struct of DH parameter
-struct sDH_PARAM {
+struct mbedtls_sDH_PARAM {
 	unsigned int object_id;
 	unsigned int modules_p_byte_len;
 	unsigned char *modules_p;

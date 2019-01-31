@@ -510,17 +510,6 @@ struct wav_header_s {
 	uint32_t dataSize;
 };
 
-uint32_t convertLittleEndian(unsigned int num, unsigned short byte)
-{
-	unsigned int ret = 0;
-	for (int i = 0; i < byte; ++i) {
-		ret |= (num & 0xff);
-		num >>= 8;
-		ret <<= 8;
-	}
-	return ret;
-}
-
 bool createWavHeader(FILE *fp)
 {
 	struct wav_header_s *header;
@@ -592,22 +581,22 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 
 	strcpy(header->headerRiff, "RIFF");
 
-	header->riffSize = convertLittleEndian(fileSize - 8, 4);
+	header->riffSize = fileSize - 8;
 
 	strcpy(header->headerWave, "WAVE");
 	strcpy(header->headerFmt, "fmt ");
 
-	header->fmtSize = convertLittleEndian(16, 4);
-	header->format = convertLittleEndian(1, 2);
-	header->channels = convertLittleEndian(channel, 2);
-	header->sampleRate = convertLittleEndian(sampleRate, 4);
-	header->byteRate = convertLittleEndian(byteRate, 4);
-	header->blockAlign = convertLittleEndian(blockAlign, 2);
-	header->bitPerSample = convertLittleEndian(bitPerSample, 2);
+	header->fmtSize = 16;
+	header->format = 1;
+	header->channels = channel;
+	header->sampleRate = sampleRate;
+	header->byteRate = byteRate;
+	header->blockAlign = blockAlign;
+	header->bitPerSample = bitPerSample;
 
 	strcpy(header->headerData, "data");
 
-	header->dataSize = convertLittleEndian(fileSize - WAVE_HEADER_LENGTH, 4);
+	header->dataSize = fileSize - WAVE_HEADER_LENGTH;
 
 	int ret = 0;
 	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);

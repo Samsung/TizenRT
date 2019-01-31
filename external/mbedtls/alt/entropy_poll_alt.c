@@ -27,11 +27,33 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/entropy_poll.h"
 
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT) && defined(CONFIG_HW_RNG)
 #include "mbedtls/alt/common.h"
 
+#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
+static int mbedtls_generate_random_alt( unsigned int *data, unsigned int len )
+{
+	int r;
+
+	if (data == NULL || len > MBEDTLS_MAX_RANDOM_SIZE) {
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
+	/* Change length to word number */
+	if (len & 0x3) {
+		len = len + 4 - (len & 0x3);
+	}
+
+	ISP_CHECKBUSY();
+	if ((r = isp_generate_random(data, len / 4)) != 0) {
+		isp_clear(0);
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
+	return( 0 );
+}
+
 int mbedtls_hardware_poll( void *data,
-                           unsigned char *output, size_t len, size_t *olen );
+                           unsigned char *output, size_t len, size_t *olen )
 {
 	unsigned int inlen = MBEDTLS_MAX_RANDOM_SIZE;
 	unsigned int inbuf[MBEDTLS_MAX_RANDOM_SIZE];
@@ -51,6 +73,6 @@ int mbedtls_hardware_poll( void *data,
 
 	return( 0 );
 }
-#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT & CONFIG_HW_RNG */
+#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
 #endif /* MBEDTLS_ENTROPY_C */

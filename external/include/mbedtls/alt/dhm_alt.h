@@ -77,12 +77,12 @@
 #define MBEDTLS_DHM_ALT_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "config.h"
+#include "../config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-#include "bignum.h"
-#include "alt/common.h"
+#include "../bignum.h"
+#include "common.h"
 
 /*
  * DHM Error codes
@@ -311,10 +311,10 @@ int mbedtls_calculate_dhm_secret_alt( mbedtls_dhm_context *ctx,
 
 int mbedtls_supported_dhm_size_alt( int size );
 
-int mbedtls_generate_dhm_params_alt( struct sDH_PARAM *d_param,
+int mbedtls_generate_dhm_params_alt( struct mbedtls_sDH_PARAM *d_param,
 						unsigned char *key_buf );
 
-int mbedtls_compute_dhm_param_alt( struct sDH_PARAM *d_param, unsigned char *key_buf,
+int mbedtls_compute_dhm_param_alt( struct mbedtls_sDH_PARAM *d_param, unsigned char *key_buf,
 						unsigned char *output, unsigned int *olen );
 
 #ifdef __cplusplus

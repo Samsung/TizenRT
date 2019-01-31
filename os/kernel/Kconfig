@@ -372,6 +372,13 @@ config SCHED_WAITPID
 		compliant) and will enable the waitid() and wait() interfaces as
 		well.
 
+config SIGKILL_HANDLER
+	bool "Enable user defined SIGKILL handler"
+	default y
+	---help---
+		SIGKILL terminates the task/pthread, but allocated memory is not freed by default.
+		User can register user's own signal handler for SIGKILL to free the allocates.
+
 endmenu # Tasks and Scheduling
 
 menu "Pthread Options"

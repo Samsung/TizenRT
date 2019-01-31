@@ -2923,6 +2923,17 @@
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
+#if defined(CONFIG_SE)
+#define MBEDTLS_ENABLE_HARDWARE_ALT
+
+#if defined(CONFIG_HW_RNG)
+#define MBEDTLS_ENTROPY_HARDWARE_ALT
+#endif
+
+#if defined(CONFIG_HW_DH_PARAM)
+#define MBEDTLS_DHM_ALT
+#endif
+
 #if defined(CONFIG_HW_ECDH_PARAM)
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 #define MBEDTLS_ECDH_GEN_PUBLIC_ALT
@@ -2944,6 +2955,7 @@
 #undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #endif
 
+#endif /* CONFIG_SE */
 
 /**
  * Complete list of ciphersuites to use, in order of preference.

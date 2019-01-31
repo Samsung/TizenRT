@@ -550,6 +550,9 @@ struct tcb_s {
 	sq_queue_t sigpendactionq;	/* List of pending signal actions      */
 	sq_queue_t sigpostedq;		/* List of posted signals              */
 	siginfo_t sigunbinfo;		/* Signal info when task unblocked     */
+#ifdef CONFIG_SIGKILL_HANDLER
+	_sa_sigaction_t sigkillusrhandler; /* User defined SIGKILL handler      */
+#endif
 #endif
 
 	/* POSIX Named Message Queue Fields ****************************************** */

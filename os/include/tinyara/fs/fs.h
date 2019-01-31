@@ -86,6 +86,11 @@
 #define CONFIG_MOUNT_POINT "/mnt/"
 #endif
 
+#ifdef CONFIG_FS_PROCFS
+#define PROCFS_FSTYPE "procfs"
+#define PROCFS_MOUNT_POINT "/proc"
+#endif
+
 #ifdef CONFIG_FS_TMPFS
 #define TMPFS_FSTYPE "tmpfs"
 #define TMPFS_MOUNT_POINT "/tmp"

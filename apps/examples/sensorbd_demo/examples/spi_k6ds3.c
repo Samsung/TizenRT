@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <tinyara/spi/spi.h>
 
 #define K6DS3_FACTORY_ID		0x69
@@ -169,6 +170,6 @@ void k6ds3_main(int argc, char *argv[])
 
 		printf("ACCEL:x(0x%04X) y(0x%04X) z(0x%04X) GYRO:x(0x%04X) y(0x%04X) z(0x%04X)\n", ax, ay, az, gx, gy, gz);
 
-		up_mdelay(500);
+		usleep(500000);
 	}
 }

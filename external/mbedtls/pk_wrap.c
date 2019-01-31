@@ -426,7 +426,6 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 };
 #endif /* MBEDTLS_ECDSA_C */
 #endif /* MBEDTLS_PK_ECDSA_VERIFY_ALT */
-_
 #if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
 /*
  * Support for alternative RSA-private implementations
