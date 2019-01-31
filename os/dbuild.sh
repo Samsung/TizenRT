@@ -296,6 +296,7 @@ function BUILD()
 		DOCKER_OPT="-i"
 	fi
 	
+	docker pull tizenrt/tizenrt
 	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
 
 	if [ "$1" == "distclean" ]; then
