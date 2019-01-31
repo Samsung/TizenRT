@@ -22,8 +22,20 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <tinyara/testcase_drv.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/fs/ioctl.h>
 #include "tc_common.h"
 #include "tc_internal.h"
+
+static int g_tc_fd;
+
+int tc_get_drvfd(void)
+{
+	return g_tc_fd;
+}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -32,6 +44,12 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 {
 	if (tc_handler(TC_START, "Kernel TC") == ERROR) {
+		return ERROR;
+	}
+
+	g_tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
+	if (g_tc_fd < 0) {
+		tckndbg("Failed to open testcase driver %d\n", errno);
 		return ERROR;
 	}
 
@@ -211,6 +229,9 @@ int tc_kernel_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_KERNEL_PTHREAD
 	itc_pthread_main();
 #endif
+
+	close(g_tc_fd);
+	g_tc_fd = -1;
 
 	(void)tc_handler(TC_END, "Kernel TC");
 

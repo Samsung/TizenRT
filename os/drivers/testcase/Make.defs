@@ -21,6 +21,8 @@ ifeq ($(CONFIG_KERNEL_TEST_DRV),y)
 
 CSRCS += testcase_drv.c
 
+CFLAGS += -I$(TOPDIR)/kernel
+
 # Include testcase driver support
 
 DEPPATH += --dep-path testcase

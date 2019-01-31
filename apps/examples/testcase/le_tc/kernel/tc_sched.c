@@ -31,8 +31,9 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-
+#include <sys/ioctl.h>
 #include <tinyara/sched.h>
+#include <tinyara/testcase_drv.h>
 
 #include "tc_internal.h"
 
@@ -377,29 +378,6 @@ static void tc_sched_waitpid(void)
 #endif
 
 /**
-* @fn                   :tc_sched_sched_gettcb
-* @brief                :Given a tsk id, this function will return pointer to corresponding TCB or null if no such task id
-* @scenario             :return pointer to corresponding TCB or null for given task id
-* API's covered         :gettcb
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-static void tc_sched_sched_gettcb(void)
-{
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(INVALID_PID);
-	TC_ASSERT_EQ("sched_gettcb", tcb, NULL);
-
-	tcb = sched_gettcb(PID_IDLE);
-	TC_ASSERT_NEQ("sched_gettcb", tcb, NULL);
-	TC_ASSERT_EQ("sched_gettcb", tcb->pid, PID_IDLE);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @fn                   :tc_sched_sched_lock_unlock
 * @brief                :sched_lock disables context switching by disabling addition of new tasks,
 *                        to the task list and increment lock count, sched_unlock decrements preemption lock count
@@ -414,19 +392,15 @@ static void tc_sched_sched_lock_unlock(void)
 {
 	int ret_chk = ERROR;
 	int cntlock;
-	struct tcb_s *st_tcb = NULL;
 
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
-
-	cntlock = st_tcb->lockcount;
+	cntlock = sched_lockcount();
 
 	ret_chk = sched_lock();
 	TC_ASSERT_NEQ("sched_lock", ret_chk, ERROR);
 
 	/* after sched_lock, lock count gets incremented */
 	ret_chk = cntlock;
-	cntlock = st_tcb->lockcount;
+	cntlock = sched_lockcount();
 	TC_ASSERT_EQ("sched_lock", ret_chk, cntlock - 1);
 
 	ret_chk = sched_lock();
@@ -434,7 +408,7 @@ static void tc_sched_sched_lock_unlock(void)
 
 	/* after sched_lock, lock count gets incremented */
 	ret_chk = cntlock;
-	cntlock = st_tcb->lockcount;
+	cntlock = sched_lockcount();
 	TC_ASSERT_EQ("sched_lock", ret_chk, cntlock - 1);
 
 	ret_chk = sched_unlock();
@@ -442,7 +416,7 @@ static void tc_sched_sched_lock_unlock(void)
 
 	/* after sched_unlock, lock count gets decremented */
 	ret_chk = cntlock;
-	cntlock = st_tcb->lockcount;
+	cntlock = sched_lockcount();
 	TC_ASSERT_EQ("sched_unlock", ret_chk, cntlock + 1);
 
 	ret_chk = sched_unlock();
@@ -450,10 +424,24 @@ static void tc_sched_sched_lock_unlock(void)
 
 	/* after sched_unlock, lock count gets decremented */
 	ret_chk = cntlock;
-	cntlock = st_tcb->lockcount;
+	cntlock = sched_lockcount();
 	TC_ASSERT_EQ("sched_unlock", ret_chk, cntlock + 1);
 
 	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :pthread_sched_self
+* @description          :Function for tc_sched_sched_self
+* @return               :int
+*/
+
+static int pthread_sched_self(void *args)
+{
+	int fd;
+	fd = tc_get_drvfd();
+
+	return ioctl(fd, TESTIOC_GET_SELF_PID, 0);
 }
 
 /**
@@ -465,19 +453,19 @@ static void tc_sched_sched_lock_unlock(void)
 * Postconditions        :none
 * @return               :void
 */
+
 static void tc_sched_sched_self(void)
 {
-	struct tcb_s *st_tcbself;
-	struct tcb_s *st_tcbpid;
-	/* get process id */
+	int ret;
+	int pid;
+	pthread_t tid;
+	ret = pthread_create(&tid, NULL, (pthread_startroutine_t)pthread_sched_self, NULL);
+	TC_ASSERT_NEQ("pthread_create", ret, ERROR);
 
-	st_tcbpid = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcbpid, NULL);
-
-	/* should return tcb for current process */
-	st_tcbself = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcbself, NULL);
-	TC_ASSERT_EQ("sched_self", st_tcbself->pid, st_tcbpid->pid);
+	/* Wait for the threads to stop */
+	ret = pthread_join(tid, (void **)&pid);
+	TC_ASSERT_NEQ("pthread_join", ret, ERROR);
+	TC_ASSERT_EQ("sched_self", tid, pid);
 
 	TC_SUCCESS_RESULT();
 }
@@ -494,12 +482,12 @@ static void tc_sched_sched_self(void)
 static void tc_sched_sched_foreach(void)
 {
 	g_callback = false;
-	struct tcb_s *st_tcb;
-	st_tcb = sched_self();
-	g_task_pid = st_tcb->pid;
+	int fd;
+	fd = tc_get_drvfd();
+	g_task_pid = getpid();
 
 	/* provides TCB to user callback function "sched_foreach_callback" */
-	sched_foreach(sched_foreach_callback, NULL);
+	(void)ioctl(fd, TESTIOC_SCHED_FOREACH, (unsigned long)sched_foreach_callback);
 	TC_ASSERT_EQ("sched_foreach", g_callback, true);
 
 	TC_SUCCESS_RESULT();
@@ -520,10 +508,6 @@ static void tc_sched_sched_lockcount(void)
 	int ret_chk = ERROR;
 	int prev_cnt;
 	int cur_cnt;
-	struct tcb_s *st_tcb = NULL;
-
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	prev_cnt = sched_lockcount();
 	ret_chk = sched_lock();
@@ -708,7 +692,6 @@ int sched_main(void)
 	tc_sched_sched_setget_scheduler_param();
 	tc_sched_sched_rr_get_interval();
 	tc_sched_sched_yield();
-	tc_sched_sched_gettcb();
 	tc_sched_sched_lock_unlock();
 	tc_sched_sched_self();
 	tc_sched_sched_foreach();

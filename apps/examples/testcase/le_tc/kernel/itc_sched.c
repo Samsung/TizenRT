@@ -25,13 +25,15 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <tinyara/config.h>
-#include "tc_internal.h"
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <sys/wait.h>
 #include <sched.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
+#include "tc_internal.h"
 
 #define WAIT_TIME 1
 #define ARRLEN 2
@@ -46,17 +48,20 @@ static bool g_pthread_callback;
 */
 static void *thread_schedself_cb(void *param)
 {
-	struct tcb_s *st_tcbself;
-	struct tcb_s *st_tcbpid;
-	st_tcbpid = sched_self();
-	if (st_tcbpid == NULL) {
+	int pre_self_pid;
+	int self_pid;
+	int fd;
+	fd = tc_get_drvfd();
+
+	pre_self_pid = ioctl(fd, TESTIOC_GET_SELF_PID, 0);
+	if (pre_self_pid == ERROR) {
 		g_pthread_callback = false;
 		return NULL;
 	}
 
 	/* should return tcb for current process */
-	st_tcbself = sched_self();
-	if (st_tcbself == NULL || st_tcbself->pid != st_tcbpid->pid) {
+	self_pid = ioctl(fd, TESTIOC_GET_SELF_PID, 0);
+	if (self_pid == ERROR || pre_self_pid != self_pid) {
 		g_pthread_callback = false;
 		return NULL;
 	}

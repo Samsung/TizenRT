@@ -21,6 +21,8 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
 #include "../../os/kernel/timer/timer.h"
 #include "tc_internal.h"
 
@@ -264,6 +266,9 @@ static void tc_timer_timer_initialize(void)
 	FAR struct posix_timer_s *timer;
 	FAR struct posix_timer_s *next;
 
+	int fd;
+	fd = tc_get_drvfd();
+
 	int initalloc_cnt = 0;
 	int initfree_cnt = 0;
 	int createalloc_cnt = 0;
@@ -277,7 +282,7 @@ static void tc_timer_timer_initialize(void)
 	st_sigevent.sigev_value.sival_ptr = &timer_id;
 
 	/* check the count for g_alloctimers and g_freetimers after timer_initialize */
-	timer_initialize();
+	(void)ioctl(fd, TESTIOC_TIMER_INITIALIZE, 0);
 
 	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
 		next = timer->flink;
@@ -305,7 +310,7 @@ static void tc_timer_timer_initialize(void)
 	}
 
 	/* check the count for g_alloctimers and g_freetimers after timer_initialize now they change to original value */
-	timer_initialize();
+	(void)ioctl(fd, TESTIOC_TIMER_INITIALIZE, 0);
 
 	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
 		next = timer->flink;
