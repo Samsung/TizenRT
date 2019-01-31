@@ -24,6 +24,7 @@ TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
 BINFILE="${BINDIR}/tinyara.bin"
+BINFILE_ESP32="${BINDIR}/tinyara.elf.bin"
 CONFIGDIR="${BUILDDIR}/configs"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
@@ -62,7 +63,7 @@ function SELECT_OPTION()
 			echo "  \"3. Menuconfig\""
 			echo "  \"4. Build Clean\""
 			echo "  \"5. Build Dist-Clean\""
-			if [ -f ${BINDIR}/tinyara.bin ]; then
+			if [ -f ${BINDIR}/tinyara.bin -o -f ${BINDIR}/tinyara.elf.bin ]; then
 				echo "  \"d. Download\""
 			fi
 			echo "  \"x. Exit\""
@@ -328,7 +329,7 @@ function CHECK_STATUS()
 {
 	if [ ! -f ${CONFIGFILE} ]; then
 		STATUS=NOT_CONFIGURED
-	elif [ -f ${BINFILE} ]; then
+	elif [ -f ${BINFILE} -o -f ${BINFILE_ESP32} ]; then
 		STATUS=BUILT
 	else
 		STATUS=CONFIGURED
