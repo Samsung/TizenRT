@@ -25,15 +25,14 @@
 #define _INOUT_
 
 
-// from sECC_KEY
-typedef struct _hal_ecc_key {
-	unsigned int curve;
-	unsigned char *privatekey;
-	unsigned char *publickey_x;
-	unsigned char x_byte_len;
-	unsigned char *publickey_y;
-	unsigned char y_byte_len;
-} hal_ecc_key;
+/*
+ * Common
+ */
+typedef struct _hal_data {
+	void *data;
+	uint32_t data_len;
+	void *priv;
+} hal_data;
 
 typedef enum {
 	HAL_DH_1024,
@@ -43,14 +42,9 @@ typedef enum {
 // from sDH_PARAM
 typedef struct _hal_dh_data {
 	hal_dh_algo mode;
-	unsigned int modules_p_byte_len;
-	unsigned char *modules_p;
-	unsigned int generator_g_byte_len;
-	unsigned char *generator_g;
-	unsigned int order_q_byte_len;
-	unsigned char *order_q;
-	unsigned int publickey_byte_len;
-	unsigned char *publickey;
+	hal_data G;
+	hal_data P;
+	hal_data pubkey;
 } hal_dh_data;
 
 typedef enum {
@@ -156,11 +150,7 @@ typedef struct _hal_ss_info {
 	struct _hal_ss_info *next;
 } hal_ss_info;
 
-typedef struct _hal_data {
-	void *data;
-	uint32_t data_len;
-	void *priv;
-} hal_data;
+
 
 typedef enum {
 	HAL_ECP_DP_SECP192R1,	/*!< 192-bits NIST curve  */
@@ -216,15 +206,24 @@ typedef enum {
 /**
  * Common
  */
+/*
+ * Reference
+ * Desc: free memory allocated within HAL 
+ * Artik SEE API: 
+ * TizenRT SEE API: 
+ * ISP: 
+ */
 int hal_data_free(_IN_ hal_data *data);
 
 /*
- * return value: busy, not initialized, ...
- */
-
+ * Reference
+ * Desc: free memory allocated within HAL 
+ * Artik SEE API: 
+ * TizenRT SEE API: 
+ * ISP: 
+ * return value: busy, not initialized, ... 
+*/
 int hal_get_status(void);
-
-// Is checking status necessary?
 
 /**
  * Key Manager
@@ -302,13 +301,20 @@ int hal_get_hmac(_IN_ hal_hmac_algo algo, _IN_ hal_data *input, _IN_ uint32_t ke
 
 /*
  * Reference
- * Desc: 
+ * Desc: get signature using RSA key
  * Artik SEE API: int see_get_rsa_signature(see_rsa_mode mode, const char *key_name, see_data hash, see_data *sign)
  * TizenRT SEE API: int see_get_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
  * ISP: int isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  */
 int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t key_idx, _OUT_ hal_data *md);
 
+/*
+ * Reference
+ * Desc: 
+ * Artik SEE API: int see_verify_rsa_signature(see_rsa_mode mode, const char *key_name, see_data hash, see_data sign)
+ * TizenRT SEE API: int see_verify_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
+ * ISP: int isp_rsa_verify_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
+ */
 int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign);
 
 /*
@@ -328,7 +334,6 @@ int hal_ecdsa_sign_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint
  */
 int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _IN_ hal_data *sign);
 
-int hal_compute_ecdh(_IN_ hal_ecc_key *key, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
 /*
  * Reference
@@ -337,7 +342,12 @@ int hal_compute_ecdh(_IN_ hal_ecc_key *key, _IN_ uint32_t key_idx, _OUT_ hal_dat
  * TizenRT SEE API: int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index)
  * ISP: int isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index);
  */
-int hal_dh_generate_param(_IN_ hal_dh_algo mode, _IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param);
+/*
+ * The function generates GX (G^X mod P) which is pubkey in dh_param with given G, P
+ * X will be generate and will be protected inside slot in SE
+ * X have to be removed by using hal_remove_key()
+ */
+int hal_dh_generate_param(_IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param);
 
 /*
  * Reference
@@ -346,7 +356,16 @@ int hal_dh_generate_param(_IN_ hal_dh_algo mode, _IN_ uint32_t dh_idx, _INOUT_ h
  * TizenRT SEE API: int see_compute_dhm_param(struct sDH_PARAM *d_param, unsigned int key_index, unsigned char *output, unsigned int *olen)
  * ISP: int isp_dh_compute_shared_secret_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sDH_PARAM dh_publickey, unsigned int key_index);
  */
-int hal_dh_compute_shared_secret(_IN_ hal_dh_algo dh_pubkey, _IN_ hal_dh_data param, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
+int hal_dh_compute_shared_secret(_IN_ hal_dh_data *param, _IN_ uint32_t dh_idx, _OUT_ hal_data *shared_secret);
+
+/*
+ * Reference
+ * Desc: Get ECDH shared secret
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, unsigned char *output, unsigned int *olen)
+ * ISP: int isp_compute_ecdh_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned int key_index);
+ */
+int hal_ecdh_compute_shared_secret(_IN_ hal_data *pubkey, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
 int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
 
