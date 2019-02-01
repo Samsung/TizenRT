@@ -76,7 +76,7 @@ char *fmwup_data_get_update_string(int64_t cmd)
 	return "";
 }
 
-int key_manager_init()
+int key_manager_init(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	int is_valid = 1;
@@ -202,7 +202,7 @@ int key_manager_remove_data(const char *name)
 	return 0;
 }
 
-int key_manager_save_data()
+int key_manager_save_data(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
@@ -215,7 +215,7 @@ int key_manager_save_data()
 	return 0;
 }
 
-int key_manager_reset_data()
+int key_manager_reset_data(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
@@ -271,7 +271,7 @@ char *platform_get_data(const char *name)
 	return NULL;
 }
 
-fmwup_data_s *fmwup_data_get_properties()
+fmwup_data_s *fmwup_data_get_properties(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 

@@ -46,7 +46,7 @@ void SetDisplayNumCB(void * ptr, DisplayNumCallback displayNumCB)
     OIC_LOG(DEBUG, TAG, "OUT SetDisplayNumCB");
 }
 
-void* UnsetDisplayNumCB()
+void* UnsetDisplayNumCB(void)
 {
     OIC_LOG(DEBUG, TAG, "IN UnsetDisplayNumCB");
     void *prevctx = gDisplayNumContext.context;
@@ -69,7 +69,7 @@ void SetUserConfirmCB(void * ptr, UserConfirmCallback userConfirmCB)
     OIC_LOG(DEBUG, TAG, "OUT SetUserConfirmCB");
 }
 
-void* UnsetUserConfirmCB()
+void* UnsetUserConfirmCB(void)
 {
     OIC_LOG(DEBUG, TAG, "IN UnsetUserConfirmCB");
     void *prevctx = gUserConfirmContext.context;

@@ -118,7 +118,7 @@ uint8_t GetRandomBit()
 }
 #endif
 
-int8_t OCSeedRandom()
+int8_t OCSeedRandom(void)
 {
 #ifndef ARDUINO
     // Get current time to Seed.
@@ -197,7 +197,7 @@ void OCFillRandomMem(uint8_t * location, uint16_t len)
     }
 }
 
-uint32_t OCGetRandom()
+uint32_t OCGetRandom(void)
 {
     uint32_t result = 0;
     OCFillRandomMem((uint8_t*) &result, 4);

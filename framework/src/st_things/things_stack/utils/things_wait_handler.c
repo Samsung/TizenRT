@@ -220,7 +220,7 @@ unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check
 		return 0;
 	}
 
-	pTimeOutManager->gthreadId = NULL;
+	pTimeOutManager->gthreadId = (pthread_t)0;
 	pTimeOutManager->handleVal = hadler;
 	pTimeOutManager->funcName = CallFunc;
 	if (timeOut == NULL) {

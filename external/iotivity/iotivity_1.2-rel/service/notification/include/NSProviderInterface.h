@@ -82,7 +82,7 @@ NSResult NSStartProvider(NSProviderConfig config);
  * Terminate notification service for provider
  * @return ::NS_OK if the action is requested succesfully
  */
-NSResult NSStopProvider();
+NSResult NSStopProvider(void);
 
 /**
  * Request to publish resource using remote relay server
@@ -138,7 +138,7 @@ NSResult NSProviderSendSyncInfo(uint64_t messageId, NSSyncType type);
  * Service sets mandatory fields which message id and provider(device) id are filled with.
  * @return ::NSMessage *
  */
-NSMessage * NSCreateMessage();
+NSMessage * NSCreateMessage(void);
 
 /**
  * Add topic to topic list which is located in provider service storage
@@ -181,7 +181,7 @@ NSTopicLL * NSProviderGetConsumerTopics(const char * consumerId);
  * Request topics list already registered by provider user
  * @return :: Topic list
  */
-NSTopicLL * NSProviderGetTopics();
+NSTopicLL * NSProviderGetTopics(void);
 
 #ifdef __cplusplus
 }

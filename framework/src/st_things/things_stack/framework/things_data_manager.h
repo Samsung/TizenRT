@@ -102,7 +102,7 @@ const char *dm_get_svrdb_file_path(void);
 const char *dm_get_certificate_file_path(void);
 const char *dm_get_privatekey_file_path(void);
 const char *dm_get_filename(int filenum);
-const char *dm_get_things_device_type(int device_id);
+const char *dm_get_things_device_type(const char* device_id);
 const char *dm_get_things_cloud_address(char *customized_ci_server);
 
 const int dm_get_file_id(int filenum);
@@ -147,7 +147,7 @@ char *dm_get_access_token(void);
  */
 char *dm_get_uid(void);
 
-int dm_validate_attribute_in_request(char *res_type, const void *payload);
+int dm_validate_attribute_in_request(const char *res_type, const void *payload);
 
 char *dm_get_firmware_version(void);
 char *dm_get_vendor_id(void);

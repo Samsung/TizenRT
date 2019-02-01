@@ -35,7 +35,7 @@ extern "C" {
  * @return ::OC_STACK_OK, if initialization is successful, else ::OC_STACK_ERROR if
  * initialization fails.
  */
-OCStackResult InitCredResource();
+OCStackResult InitCredResource(void);
 
 /**
  * Perform cleanup for credential resources.
@@ -44,7 +44,7 @@ OCStackResult InitCredResource();
  * ::OC_STACK_NO_RESOURCE, if resource not found.
  * ::OC_STACK_INVALID_PARAM, if invalid param.
  */
-OCStackResult DeInitCredResource();
+OCStackResult DeInitCredResource(void);
 
 /**
  * This method is used by tinydtls/SRM to retrieve credential for given subject.
@@ -182,7 +182,7 @@ OCStackResult AddTmpPskWithPIN(const OicUuid_t* tmpSubject, OicSecCredType_t cre
  *
  * @return ::credential list
  */
-const OicSecCred_t* GetCredList();
+OicSecCred_t* GetCredList(void);
 
 /**
  * Function to deallocate allocated memory to OicSecCred_t.

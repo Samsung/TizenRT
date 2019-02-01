@@ -241,7 +241,7 @@ void register_dev_conf_rsrc_event_callback(es_dev_conf_cb cb)
 	g_dev_conf_rsrc_evt_cb = cb;
 }
 
-void unregister_resource_event_callback()
+void unregister_resource_event_callback(void)
 {
 	if (g_wifi_rsrc_evt_cb) {
 		g_wifi_rsrc_evt_cb = NULL;
@@ -570,7 +570,7 @@ bool update_cloud_resource(OCRepPayload *input)
 		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.accesstoken %s", g_cloud_resource.accesstoken);
 	}
 
-	int accesstokenType = NULL;
+	int64_t accesstokenType = 0;
 	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, &accesstokenType)) {
 		g_cloud_resource.actoken_type = accesstokenType;
 		g_cloud_data.actoken_type = accesstokenType;
@@ -1196,7 +1196,7 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 	return res;
 }
 
-OCStackResult delete_easysetup_resources()
+OCStackResult delete_easysetup_resources(void)
 {
 	iotivity_api_lock();
 	OCStackResult res = OC_STACK_ERROR;
@@ -1539,6 +1539,8 @@ OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state)
 			THINGS_LOG_V(ES_RH_TAG, "State(%s) is not allowed by Status Policy.(pre-status: %s)", get_prov_status(es_state), get_prov_status(g_prov_resource.status));
 			goto GOTO_OUT;
 		}
+		break;
+	default:
 		break;
 	}
 

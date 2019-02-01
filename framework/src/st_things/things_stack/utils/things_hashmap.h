@@ -51,4 +51,6 @@ extern void hashmap_delete(struct hashmap_s *);
 
 extern unsigned long hashmap_get_hashval(unsigned char *str);
 
+extern unsigned long* hashmap_get_keyset(struct hashmap_s *);
+
 #endif							//_THINGS_HASHMAP_H

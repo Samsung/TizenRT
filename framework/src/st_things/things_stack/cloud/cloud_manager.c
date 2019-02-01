@@ -33,6 +33,7 @@
 #include "cacommon.h"
 #include "utils/things_string.h"
 #include "things_def.h"
+#include "things_api.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "utils/things_string.h"
@@ -310,7 +311,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 		if (strchr(t_domain, ':') != NULL) {
 			ip_port = strchr(t_domain, ':');
 			if (ip_port) {
-				*ip_port = NULL;
+				*ip_port = '\0';
 			}
 			ip_port++;
 		} else {
@@ -1311,7 +1312,7 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 	OCStackResult res = OC_STACK_ERROR;
 	OCClientResponseHandler callback = NULL;
 	things_check_time_out_call_func calltimeout = NULL;
-	char *device_id = NULL;
+	const char *device_id = NULL;
 
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
 		THINGS_LOG_E(TAG, "No Session Key Retrived from the Cloud ");
@@ -1356,7 +1357,7 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 			things_strncpy(g_cloud_port, signed_up_data->port, IP_PORT);
 
 			port = atoi(g_cloud_port);
-			if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
+			if (g_cloud_ip[0] == 0 || g_cloud_port[0] == 0 || 0 >= port || port > 65535) {
 				THINGS_LOG_E(TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
 				goto GOTO_OUT;
 			}
@@ -1438,7 +1439,7 @@ OCStackResult find_cloud_resource(void)
 	char *sz_query_uri = NULL;
 	int length = MAX_CI_ADDRESS;
 	int length_query = 0;
-	char *device_id = NULL;
+	const char *device_id = NULL;
 
 	iotivity_api_lock();
 	device_id = OCGetServerInstanceIDString();
@@ -1502,7 +1503,7 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 		signed_up_data = NULL;
 	}
 
-	if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL) {
+	if (g_cloud_ip[0] == 0 || g_cloud_port[0] == 0) {
 		THINGS_LOG_E(TAG, "g_cloud_ip is NULL or g_cloud_port is NULL");
 		return res;
 	}
@@ -1520,7 +1521,7 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 	things_ping_set_mask(g_cloud_ip, (uint16_t) port, PING_ST_ISCLOUD);
 
 	// Get Session Key
-	char *device_id = NULL;
+	const char *device_id = NULL;
 	iotivity_api_lock();
 	device_id = OCGetServerInstanceIDString();
 	iotivity_api_unlock();
@@ -1544,7 +1545,7 @@ OCStackResult refresh_token_into_cloud(void)
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
 		THINGS_LOG_E(TAG, "No Session Key Retrived from the Cloud ");
 	} else {
-		char *device_id = NULL;
+		const char *device_id = NULL;
 		iotivity_api_lock();
 		device_id = OCGetServerInstanceIDString();
 		iotivity_api_unlock();
@@ -2126,6 +2127,8 @@ static int es_cloud_state_set_and_notify(things_cloud_status_e state, es_error_c
 		break;
 	case ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD:
 		ci_finish_cloud_con(1);
+		break;
+	default:
 		break;
 	}
 
