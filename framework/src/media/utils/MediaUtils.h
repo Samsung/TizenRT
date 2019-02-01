@@ -97,6 +97,18 @@ bool createWavHeader(FILE *fp);
  * @since TizenRT v2.1 PRE
  */
 bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, audio_format_type_t pcmFormat, unsigned int fileSize);
+/*
+ * @brief Split specified channels from an input audio stream into separated output buffers.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] layout: the channel layout of the input audio stream
+ * @param[in] stream: pointer to the input audio stream
+ * @param[in] frames: number of frames in input stream
+ * @param[in] channels: number of channels to split from input audio stream
+ * @param[in] ...: variable arguments in pairs <uint32_t, int16_t *> to tell channel masks and output buffers
+ * @return channel masks to tell the channels split successfully
+ * @since TizenRT v2.1 PRE
+ */
+unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...);
 } // namespace utils
 } // namespace media
 

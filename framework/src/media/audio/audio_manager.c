@@ -414,13 +414,14 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 	unsigned int resampled_frames = 0;
 	src_data_t srcData = { 0, };
 
-	if ((srcData.channels_num = pcm_get_channels(card->pcm)) == 0) {
+	if ((srcData.origin_channel_num = pcm_get_channels(card->pcm)) == 0) {
 		meddbg("Fail to get channel number\n");
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 
 	srcData.origin_sample_rate = pcm_get_rate(card->pcm);
 	srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+	srcData.desired_channel_num = srcData.origin_channel_num; // FIXME: card->resample.user_channel
 	srcData.desired_sample_rate = card->resample.user_sample_rate;
 	srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
 	srcData.input_frames_used = 0;
@@ -464,9 +465,10 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 	}
 	rechanneling_ratio = device_channel_num / (float)card->resample.user_channel;
 
-	srcData.channels_num = 2;	// ToDo: Playback with mono will be added later.
+	srcData.origin_channel_num = 2; // ToDo: Playback with mono will be added later. FIXME: card->resample.user_channel
 	srcData.origin_sample_rate = card->resample.user_sample_rate;
 	srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+	srcData.desired_channel_num = srcData.origin_channel_num; // FIXME: device_channel_num
 	srcData.desired_sample_rate = pcm_get_rate(card->pcm);
 	srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
 	srcData.input_frames_used = 0;
