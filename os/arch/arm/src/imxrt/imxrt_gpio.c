@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt_gpio.c
+ * os/arch/arm/src/imxrt/imxrt_gpio.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -276,10 +276,10 @@ static FAR const uint8_t *g_gpio_padmux[IMXRT_GPIO_NPORTS + 1] = {
 	g_gpio4_padmux,				/* GPIO4 */
 	g_gpio5_padmux,				/* GPIO5 */
 #if IMXRT_GPIO_NPORTS > 5
-  g_gpio1_padmux,                             /* GPIO6 */
-  g_gpio2_padmux,                             /* GPIO7 */
-  g_gpio3_padmux,                             /* GPIO8 */
-  g_gpio4_padmux,                             /* GPIO9 */
+	g_gpio1_padmux,                             /* GPIO6 */
+	g_gpio2_padmux,                             /* GPIO7 */
+	g_gpio3_padmux,                             /* GPIO8 */
+	g_gpio4_padmux,                             /* GPIO9 */
 #endif
 	NULL						/* End of list */
 };
@@ -305,16 +305,16 @@ uintptr_t g_gpio_base[IMXRT_GPIO_NPORTS] = {
 	, IMXRT_GPIO5_BASE
 #endif
 #if IMXRT_GPIO_NPORTS > 5
-  , IMXRT_GPIO6_BASE
+	, IMXRT_GPIO6_BASE
 #endif
 #if IMXRT_GPIO_NPORTS > 6
-  , IMXRT_GPIO7_BASE
+	, IMXRT_GPIO7_BASE
 #endif
 #if IMXRT_GPIO_NPORTS > 7
-  , IMXRT_GPIO8_BASE
+	, IMXRT_GPIO8_BASE
 #endif
 #if IMXRT_GPIO_NPORTS > 8
-  , IMXRT_GPIO9_BASE
+	, IMXRT_GPIO9_BASE
 #endif
 };
 
@@ -329,10 +329,9 @@ uintptr_t g_gpio_base[IMXRT_GPIO_NPORTS] = {
 static uintptr_t imxrt_padmux_address(unsigned int index)
 {
 #if defined(IMXRT_PAD1MUX_OFFSET)
-  if (index >= IMXRT_PADMUX_GPIO_SPI_B0_00_INDEX)
-    {
-      return (IMXRT_PAD1MUX_OFFSET(index - IMXRT_PADMUX_GPIO_SPI_B0_00_INDEX));
-    }
+	if (index >= IMXRT_PADMUX_GPIO_SPI_B0_00_INDEX) {
+		return (IMXRT_PAD1MUX_OFFSET(index - IMXRT_PADMUX_GPIO_SPI_B0_00_INDEX));
+	}
 #endif
 	if (index >= IMXRT_PADMUX_WAKEUP_INDEX) {
 		return (IMXRT_PADMUX_ADDRESS_SNVS(index - IMXRT_PADMUX_WAKEUP_INDEX));
@@ -348,10 +347,9 @@ static uintptr_t imxrt_padmux_address(unsigned int index)
 static uintptr_t imxrt_padctl_address(unsigned int index)
 {
 #if defined(IMXRT_PAD1CTL_OFFSET)
-  if (index >= IMXRT_PADCTL_GPIO_SPI_B0_00_INDEX)
-    {
-      return (IMXRT_PAD1CTL_OFFSET(index - IMXRT_PADCTL_GPIO_SPI_B0_00_INDEX));
-    }
+	if (index >= IMXRT_PADCTL_GPIO_SPI_B0_00_INDEX) {
+		return (IMXRT_PAD1CTL_OFFSET(index - IMXRT_PADCTL_GPIO_SPI_B0_00_INDEX));
+	}
 #endif
 	if (index >= IMXRT_PADCTL_WAKEUP_INDEX) {
 		return (IMXRT_PADCTL_ADDRESS_SNVS(index - IMXRT_PADCTL_WAKEUP_INDEX));
@@ -425,38 +423,34 @@ static inline bool imxrt_gpio_getinput(int port, int pin)
 static inline int imxrt_gpio_select(int port, int pin)
 {
 #if IMXRT_GPIO_NPORTS > 5
-  uint32_t gpr = port;
-  uint32_t setbits = 1 << pin;
-  uint32_t clearbits = 1 << pin;
-  uintptr_t regaddr = (uintptr_t) IMXRT_IOMUXC_GPR_GPR26;
+	uint32_t gpr = port;
+	uint32_t setbits = 1 << pin;
+	uint32_t clearbits = 1 << pin;
+	uintptr_t regaddr = (uintptr_t) IMXRT_IOMUXC_GPR_GPR26;
 
-  if (port != GPIO5)
-    {
-      /* Uses GPR26 as the base */
+	if (port != GPIO5) {
+		/* Uses GPR26 as the base */
 
-      if (port >= GPIO6)
-        {
-          /* Map port to correct gpr index and set the GPIO_MUX3_GPIO[b]_SEL
-           * bit
-           */
+		if (port >= GPIO6) {
+			/* Map port to correct gpr index and set the GPIO_MUX3_GPIO[b]_SEL
+			* bit
+			*/
 
-          gpr = port - GPIO6;
-          clearbits = 0;
-        }
-      else
-        {
-          /* The port is correct gpr index, so just clear the
-           * GPIO_MUX3_GPIO[b]_SEL bit.
-           */
+			gpr = port - GPIO6;
+			clearbits = 0;
+		} else {
+			/* The port is correct gpr index, so just clear the
+			* GPIO_MUX3_GPIO[b]_SEL bit.
+			*/
 
-          setbits = 0;
-        }
+			setbits = 0;
+		}
 
-      regaddr |= gpr * sizeof(uint32_t);
-      modifyreg32(regaddr, clearbits, setbits);
-    }
+		regaddr |= gpr * sizeof(uint32_t);
+		modifyreg32(regaddr, clearbits, setbits);
+	}
 #endif
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -493,7 +487,7 @@ static int imxrt_gpio_configinput(gpio_pinset_t pinset)
 	regaddr = imxrt_padmux_address(index);
 	putreg32(PADMUX_MUXMODE_ALT5, regaddr);
 
-  imxrt_gpio_select(port, pin);
+	imxrt_gpio_select(port, pin);
 	/* Configure pin pad settings */
 
 	index = imxrt_padmux_map(index);
@@ -534,38 +528,37 @@ static inline int imxrt_gpio_configoutput(gpio_pinset_t pinset)
 
 static inline int imxrt_gpio_configperiph(gpio_pinset_t pinset)
 {
-  iomux_pinset_t ioset;
-  uintptr_t regaddr;
-  uint32_t regval;
-  uint32_t alt;
-  unsigned int index;
+	iomux_pinset_t ioset;
+	uintptr_t regaddr;
+	uint32_t regval;
+	uint32_t alt;
+	unsigned int index;
 
-  /* Configure pin as a peripheral via SW MUX Control Register */
+	/* Configure pin as a peripheral via SW MUX Control Register */
 
-  index   = ((pinset & GPIO_PADMUX_MASK) >> GPIO_PADMUX_SHIFT);
-  regaddr = imxrt_padmux_address(index);
+	index   = ((pinset & GPIO_PADMUX_MASK) >> GPIO_PADMUX_SHIFT);
+	regaddr = imxrt_padmux_address(index);
 
-  alt     = (pinset & GPIO_ALT_MASK) >> GPIO_ALT_SHIFT;
-  regval  = alt << PADMUX_MUXMODE_SHIFT;
-  regval |= (pinset & GPIO_SION_MASK) ? PADMUX_SION : 0;
+	alt     = (pinset & GPIO_ALT_MASK) >> GPIO_ALT_SHIFT;
+	regval  = alt << PADMUX_MUXMODE_SHIFT;
+	regval |= (pinset & GPIO_SION_MASK) ? PADMUX_SION : 0;
 
-  putreg32(regval, regaddr);
+	putreg32(regval, regaddr);
 
-  /* Configure pin Daisy Select Input Daisy Register */
+	/* Configure pin Daisy Select Input Daisy Register */
 
-  imxrt_daisy_select(index, alt);
+	imxrt_daisy_select(index, alt);
 
-  /* Configure pin pad settings SW PAD Control Register*/
+	/* Configure pin pad settings SW PAD Control Register*/
 
-  index = imxrt_padmux_map(index);
-  if (index >= IMXRT_PADCTL_NREGISTERS)
-    {
-      return -EINVAL;
-    }
+	index = imxrt_padmux_map(index);
+	if (index >= IMXRT_PADCTL_NREGISTERS) {
+		return -EINVAL;
+	}
 
-  regaddr = imxrt_padctl_address(index);
-  ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
-  return imxrt_iomux_configure(regaddr, ioset);
+	regaddr = imxrt_padctl_address(index);
+	ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
+	return imxrt_iomux_configure(regaddr, ioset);
 }
 
 /****************************************************************************
@@ -587,7 +580,7 @@ int imxrt_config_gpio(gpio_pinset_t pinset)
 
 	/* Configure the pin as an input initially to avoid any spurious outputs */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 	/* Configure based upon the pin mode */
 
@@ -601,8 +594,8 @@ int imxrt_config_gpio(gpio_pinset_t pinset)
 
 	case GPIO_OUTPUT: {
 		/* First configure the pin as a GPIO input to avoid output
-		 * glitches.
-		 */
+			* glitches.
+			*/
 
 		ret = imxrt_gpio_configinput(pinset);
 		if (ret >= 0) {
@@ -637,7 +630,7 @@ int imxrt_config_gpio(gpio_pinset_t pinset)
 		break;
 	}
 
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return ret;
 }
 
@@ -657,9 +650,9 @@ void imxrt_gpio_write(gpio_pinset_t pinset, bool value)
 
 	DEBUGASSERT((unsigned int)port < IMXRT_GPIO_NPORTS);
 
-	flags = enter_critical_section();
+	flags = irqsave();
 	imxrt_gpio_setoutput(port, pin, value);
-	leave_critical_section(flags);
+	irqrestore(flags);
 }
 
 /************************************************************************************
@@ -679,8 +672,8 @@ bool imxrt_gpio_read(gpio_pinset_t pinset)
 
 	DEBUGASSERT((unsigned int)port < IMXRT_GPIO_NPORTS);
 
-	flags = enter_critical_section();
+	flags = irqsave();
 	value = imxrt_gpio_getinput(port, pin);
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return value;
 }

@@ -1,4 +1,3 @@
-./imxrt_lpsrtc.c
 ./imxrt_lowputc.h
 ./chip/imxrt_ccm.h
 ./chip/imxrt_usbhost.h

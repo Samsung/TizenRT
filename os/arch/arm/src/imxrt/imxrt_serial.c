@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt_serial.c
+ * os/arch/arm/src/imxrt/imxrt_serial.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
@@ -356,20 +356,20 @@ struct imxrt_uart_s {
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
 	uint8_t bits;				/* Number of bits (7 or 8) */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  const uint32_t rts_gpio;  /* U[S]ART RTS GPIO pin configuration */
+	const uint32_t rts_gpio;  /* U[S]ART RTS GPIO pin configuration */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  const uint32_t cts_gpio;  /* U[S]ART CTS GPIO pin configuration */
+	const uint32_t cts_gpio;  /* U[S]ART CTS GPIO pin configuration */
 #endif
 
-  uint8_t  stopbits2:1; /* 1: Configure with 2 stop bits vs 1 */
+	uint8_t  stopbits2:1; /* 1: Configure with 2 stop bits vs 1 */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  uint8_t  iflow:1;     /* input flow control (RTS) enabled */
+	uint8_t  iflow:1;     /* input flow control (RTS) enabled */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  uint8_t  oflow:1;     /* output flow control (CTS) enabled */
+	uint8_t  oflow:1;     /* output flow control (CTS) enabled */
 #endif
-  uint8_t  reserved:(7 - IFLOW + OFLOW);
+	uint8_t  reserved:(7 - IFLOW + OFLOW);
 };
 
 /****************************************************************************
@@ -477,12 +477,12 @@ static struct imxrt_uart_s g_uart1priv = {
 	.bits = CONFIG_LPUART1_BITS,
 	.stopbits2 = CONFIG_LPUART1_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART1_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART1_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART1_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART1_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART1_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART1_RTS,
 #endif
 };
 
@@ -511,12 +511,12 @@ static struct imxrt_uart_s g_uart2priv = {
 	.bits = CONFIG_LPUART2_BITS,
 	.stopbits2 = CONFIG_LPUART2_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART2_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART2_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART2_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART2_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART2_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART2_RTS,
 #endif
 };
 
@@ -543,12 +543,12 @@ static struct imxrt_uart_s g_uart3priv = {
 	.bits = CONFIG_LPUART3_BITS,
 	.stopbits2 = CONFIG_LPUART3_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART3_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART3_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART3_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART3_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART3_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART3_RTS,
 #endif
 };
 
@@ -575,12 +575,12 @@ static struct imxrt_uart_s g_uart4priv = {
 	.bits = CONFIG_LPUART4_BITS,
 	.stopbits2 = CONFIG_LPUART4_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART4_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART4_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART4_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART4_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART4_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART4_RTS,
 #endif
 };
 
@@ -607,12 +607,12 @@ static struct imxrt_uart_s g_uart5priv = {
 	.bits = CONFIG_LPUART5_BITS,
 	.stopbits2 = CONFIG_LPUART5_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART5_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART5_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART5_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART5_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART5_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART5_RTS,
 #endif
 };
 
@@ -639,12 +639,12 @@ static struct imxrt_uart_s g_uart6priv = {
 	.bits = CONFIG_LPUART6_BITS,
 	.stopbits2 = CONFIG_LPUART6_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART6_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART6_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART6_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART6_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART6_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART6_RTS,
 #endif
 };
 
@@ -671,12 +671,12 @@ static struct imxrt_uart_s g_uart7priv = {
 	.bits = CONFIG_LPUART7_BITS,
 	.stopbits2 = CONFIG_LPUART7_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART7_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART7_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART7_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART7_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART7_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART7_RTS,
 #endif
 };
 
@@ -703,12 +703,12 @@ static struct imxrt_uart_s g_uart8priv = {
 	.bits = CONFIG_LPUART8_BITS,
 	.stopbits2 = CONFIG_LPUART8_2STOP,
 #if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_LPUART8_OFLOWCONTROL)
-  .oflow        = 1,
-  .cts_gpio     = GPIO_LPUART8_CTS,
+	.oflow        = 1,
+	.cts_gpio     = GPIO_LPUART8_CTS,
 #endif
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART8_IFLOWCONTROL)
-  .iflow        = 1,
-  .rts_gpio     = GPIO_LPUART8_RTS,
+	.iflow        = 1,
+	.rts_gpio     = GPIO_LPUART8_RTS,
 #endif
 };
 
@@ -764,7 +764,7 @@ static inline void imxrt_disableuartint(struct imxrt_uart_s *priv, uint32_t *ie)
 	irqstate_t flags;
 	uint32_t regval;
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 	regval = imxrt_serialin(priv, IMXRT_LPUART_CTRL_OFFSET);
 
 	/* Return the current Rx and Tx interrupt state */
@@ -775,7 +775,7 @@ static inline void imxrt_disableuartint(struct imxrt_uart_s *priv, uint32_t *ie)
 
 	regval &= ~LPUART_ALL_INTS;
 	imxrt_serialout(priv, IMXRT_LPUART_CTRL_OFFSET, regval);
-	arm_spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -791,12 +791,12 @@ static inline void imxrt_restoreuartint(struct imxrt_uart_s *priv, uint32_t ie)
 	 * enabled/disabled.
 	 */
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 	regval = imxrt_serialin(priv, IMXRT_LPUART_CTRL_OFFSET);
 	regval &= ~LPUART_ALL_INTS;
 	regval |= ie;
 	imxrt_serialout(priv, IMXRT_LPUART_CTRL_OFFSET, regval);
-	arm_spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -1026,15 +1026,15 @@ static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 		termiosp->c_cflag |= (priv->stopbits2) ? CSTOPB : 0;
 
-        /* Return flow control */
+		/* Return flow control */
 
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-        termiosp->c_cflag |= ((priv->oflow) ? CCTS_OFLOW : 0);
+		termiosp->c_cflag |= ((priv->oflow) ? CCTS_OFLOW : 0);
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-        termiosp->c_cflag |= ((priv->iflow) ? CRTS_IFLOW : 0);
+		termiosp->c_cflag |= ((priv->iflow) ? CRTS_IFLOW : 0);
 #endif
-        /* Return number of bits */
+		/* Return number of bits */
 
 		switch (priv->bits) {
 		case 5:
@@ -1070,15 +1070,14 @@ static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg)
 		uint8_t nbits;
 		bool stop2;
 
-        if ((!termiosp)
+		if ((!termiosp)
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-            || ((termiosp->c_cflag & CCTS_OFLOW) && (priv->cts_gpio == 0))
+			|| ((termiosp->c_cflag & CCTS_OFLOW) && (priv->cts_gpio == 0))
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-            || ((termiosp->c_cflag & CRTS_IFLOW) && (priv->rts_gpio == 0))
+			|| ((termiosp->c_cflag & CRTS_IFLOW) && (priv->rts_gpio == 0))
 #endif
-           )
-          {
+		) {
 			ret = -EINVAL;
 			break;
 		}
@@ -1128,7 +1127,7 @@ static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 		stop2 = (termiosp->c_cflag & CSTOPB) != 0;
 
-        /* Verify that all settings are valid before committing */
+		/* Verify that all settings are valid before committing */
 
 		if (ret == OK) {
 			/* Commit */
@@ -1138,10 +1137,10 @@ static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg)
 			priv->bits = nbits;
 			priv->stopbits2 = stop2;
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-            priv->oflow     = (termiosp->c_cflag & CCTS_OFLOW) != 0;
+			priv->oflow     = (termiosp->c_cflag & CCTS_OFLOW) != 0;
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-            priv->iflow     = (termiosp->c_cflag & CRTS_IFLOW) != 0;
+			priv->iflow     = (termiosp->c_cflag & CRTS_IFLOW) != 0;
 #endif
 			/* effect the changes immediately - note that we do not
 			 * implement TCSADRAIN / TCSAFLUSH
@@ -1205,7 +1204,7 @@ static void imxrt_rxint(struct uart_dev_s *dev, bool enable)
 
 	/* Enable interrupts for data available at Rx */
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
 		priv->ie |= LPUART_CTRL_RIE | LPUART_CTRL_FEIE | LPUART_CTRL_ORIE;
@@ -1218,7 +1217,7 @@ static void imxrt_rxint(struct uart_dev_s *dev, bool enable)
 	regval &= ~LPUART_ALL_INTS;
 	regval |= priv->ie;
 	imxrt_serialout(priv, IMXRT_LPUART_CTRL_OFFSET, regval);
-	arm_spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -1270,7 +1269,7 @@ static void imxrt_txint(struct uart_dev_s *dev, bool enable)
 
 	/* Enable interrupt for TX complete */
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
 		priv->ie |= LPUART_CTRL_TCIE;
@@ -1283,7 +1282,7 @@ static void imxrt_txint(struct uart_dev_s *dev, bool enable)
 	regval &= ~LPUART_ALL_INTS;
 	regval |= priv->ie;
 	imxrt_serialout(priv, IMXRT_LPUART_CTRL_OFFSET, regval);
-	arm_spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -1446,7 +1445,7 @@ void up_earlyserialinit(void)
 
 #ifdef CONSOLE_DEV
 	CONSOLE_DEV.isconsole = true;
-	imxrt_setup(&CONSOLE_DEV);
+	CONSOLE_DEV.ops->setup(&CONSOLE_DEV);
 #endif
 }
 
@@ -1511,7 +1510,7 @@ void up_serialinit(void)
 
 int up_putc(int ch)
 {
-#ifdef HAVE_USART_CONSOLE
+#ifdef HAVE_SERIAL_CONSOLE
 	struct lpc54_dev_s *priv = (struct lpc54_dev_s *)CONSOLE_DEV.priv;
 	uint32_t ie;
 

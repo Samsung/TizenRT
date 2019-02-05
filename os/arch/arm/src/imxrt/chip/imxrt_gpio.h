@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /********************************************************************************************
- * arch/arm/src/imxrt/imxrt_gpio.h
+ * os/arch/arm/src/imxrt/chip/imxrt_gpio.h
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
@@ -60,7 +60,7 @@
 
 #include <tinyara/config.h>
 
-#if defined(CONFIG_ARCH_FAMILY_IMXRT105x)
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #include "chip/imxrt105x_gpio.h"
 #else
 #error Unrecognized i.MX RT architecture

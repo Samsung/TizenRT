@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt_wdog.c
+ * os/arch/arm/src/imxrt/imxrt_wdog.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author:  Janne Rosberg <janne@offcode.fi>
@@ -92,24 +92,21 @@ void imxrt_wdog_disable_all(void)
 	uint32_t reg;
 	irqstate_t flags;
 
-  reg = getreg16(IMXRT_WDOG1_WCR);
-  if (reg & WDOG_WCR_WDE)
-    {
-      reg &= ~WDOG_WCR_WDE;
-      putreg16(reg, IMXRT_WDOG1_WCR);
-    }
+	reg = getreg16(IMXRT_WDOG1_WCR);
+	if (reg & WDOG_WCR_WDE) {
+		reg &= ~WDOG_WCR_WDE;
+		putreg16(reg, IMXRT_WDOG1_WCR);
+	}
 
-  reg = getreg16(IMXRT_WDOG2_WCR);
-  if (reg & WDOG_WCR_WDE)
-  {
-    reg &= ~WDOG_WCR_WDE;
-    putreg16(reg, IMXRT_WDOG2_WCR);
-  }
+	reg = getreg16(IMXRT_WDOG2_WCR);
+	if (reg & WDOG_WCR_WDE) {
+		reg &= ~WDOG_WCR_WDE;
+		putreg16(reg, IMXRT_WDOG2_WCR);
+	}
 
-	flags = enter_critical_section();
+	flags = irqsave();
 	putreg32(RTWDOG_UPDATE_KEY, IMXRT_RTWDOG_CNT);
 	putreg32(0xFFFF, IMXRT_RTWDOG_TOVAL);
 	modifyreg32(IMXRT_RTWDOG_CS, RTWDOG_CS_EN, RTWDOG_CS_UPDATE);
-	leave_critical_section(flags);
-
+	irqrestore(flags);
 }

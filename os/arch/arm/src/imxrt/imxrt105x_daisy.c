@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt105x_daisy.c
+ * os/arch/arm/src/imxrt/imxrt105x_daisy.c
  *
  *   Copyright (C) 2019 Gregory Nutt. All rights reserved.
  *   Author: David Sidrane <david_s5@nscdg.com>

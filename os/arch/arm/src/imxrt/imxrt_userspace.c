@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt_userspace.c
+ * os/arch/arm/src/imxrt/imxrt_userspace.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -94,8 +94,8 @@ void imxrt_userspace(void)
 
 	DEBUGASSERT(USERSPACE->us_bssstart != 0 && USERSPACE->us_bssend != 0 && USERSPACE->us_bssstart <= USERSPACE->us_bssend);
 
-	dest = (uint8_t *) USERSPACE->us_bssstart;
-	end = (uint8_t *) USERSPACE->us_bssend;
+	dest = (uint8_t *)USERSPACE->us_bssstart;
+	end = (uint8_t *)USERSPACE->us_bssend;
 
 	while (dest != end) {
 		*dest++ = 0;
@@ -105,9 +105,9 @@ void imxrt_userspace(void)
 
 	DEBUGASSERT(USERSPACE->us_datasource != 0 && USERSPACE->us_datastart != 0 && USERSPACE->us_dataend != 0 && USERSPACE->us_datastart <= USERSPACE->us_dataend);
 
-	src = (uint8_t *) USERSPACE->us_datasource;
-	dest = (uint8_t *) USERSPACE->us_datastart;
-	end = (uint8_t *) USERSPACE->us_dataend;
+	src = (uint8_t *)USERSPACE->us_datasource;
+	dest = (uint8_t *)USERSPACE->us_datastart;
+	end = (uint8_t *)USERSPACE->us_dataend;
 
 	while (dest != end) {
 		*dest++ = *src++;

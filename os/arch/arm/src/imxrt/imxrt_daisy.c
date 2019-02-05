@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/imxrt/imxrt_daisy.c
+ * os/arch/arm/src/imxrt/imxrt_daisy.c
  *
  *   Copyright (C) 2019 Gregory Nutt. All rights reserved.
  *   Author: David Sidrane <david_s5@nscdg.com>
@@ -96,7 +96,7 @@ struct imxrt_daisy_t
 
 /* Include chip-specific daisy input selection */
 
-#if defined(CONFIG_ARCH_FAMILY_IMXRT105x)
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #  include "imxrt105x_daisy.c"
 #else
 #  error Unrecognized i.MX RT architecture

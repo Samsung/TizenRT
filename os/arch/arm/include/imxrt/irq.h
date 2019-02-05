@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************************
- * arch/arm/include/imxrt/irq.h
+ * os/arch/arm/include/imxrt/irq.h
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -51,7 +51,7 @@
  ****************************************************************************************/
 
 /* This file should never be included directed but, rather, only indirectly through
- * nuttx/irq.h
+ * tinyara/irq.h
  */
 
 #ifndef __ARCH_ARM_INCLUDE_IMXRT_IRQ_H
@@ -94,7 +94,7 @@
 
 #define IMXRT_IRQ_EXTINT        (16)	/* Vector number of the first external interrupt */
 
-#if defined(CONFIG_ARCH_FAMILY_IMXRT105x)
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #include <arch/imxrt/imxrt105x_irq.h>
 #else
 #error Unrecognized i.MX RT architecture

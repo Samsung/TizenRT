@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see the file kconfig-language.txt in the TinyARA tools repository.
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
 if ARCH_CHIP_IMXRT
@@ -26,7 +26,7 @@ config ARCH_CHIP_MIMXRT1052DVL6A
 
 config ARCH_CHIP_MIMXRT1052CVL5A
 	bool "MIMXRT1052DVL6A"
-	select ARCH_FAMILY_MIMXRT1052CVL5A
+	select ARCH_FAMILY_MIMXRT105xCVL5A
 
 endchoice # i.MX RT Chip Selection
 
@@ -35,18 +35,18 @@ endchoice # i.MX RT Chip Selection
 config ARCH_FAMILY_MXRT105xDVL6A
 	bool
 	default n
-	select ARCH_FAMILY_IMXRT105x
+	select ARCH_CHIP_FAMILY_IMXRT105x
 	---help---
 		i.MX RT1050 Crossover Processors for Consumer Products
 
-config ARCH_FAMILY_MIMXRT1052CVL5A
+config ARCH_FAMILY_MIMXRT105xCVL5A
 	bool
 	default n
-	select ARCH_FAMILY_IMXRT105x
+	select ARCH_CHIP_FAMILY_IMXRT105x
 	---help---
 		i.MX RT1050 Crossover Processors for Industrial Products
 
-config ARCH_FAMILY_IMXRT105x
+config ARCH_CHIP_FAMILY_IMXRT105x
 	bool
 	default n
 	select ARCH_HAVE_FPU
