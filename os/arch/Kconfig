@@ -31,17 +31,6 @@ config ARCH
 source arch/arm/Kconfig
 source arch/xtensa/Kconfig
 
-config ARCH_TOOLCHAIN_GNU
-	bool
-	default n
-
-config ARCH_GNU_NO_WEAKFUNCTIONS
-	bool
-	depends on ARCH_TOOLCHAIN_GNU
-	default n
-	---help---
-		Disable support for weak functions.
-
 comment "Architecture Options"
 
 config ARCH_NOINTC

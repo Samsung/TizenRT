@@ -136,8 +136,7 @@
  * some configurations.
  */
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || \
-    defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
 
 /* If the floating point unit is present and enabled, then save the
  * floating point registers as well as normal ARM registers.  This only
@@ -187,26 +186,6 @@
 #endif
 #define up_restorestate(regs) up_copyfullstate((uint32_t*)current_regs, regs)
 
-#endif
-
-/* Toolchain dependent, linker defined section addresses */
-
-#if defined(__ICCARM__)
-#  define _START_TEXT  __sfb(".text")
-#  define _END_TEXT    __sfe(".text")
-#  define _START_BSS   __sfb(".bss")
-#  define _END_BSS     __sfe(".bss")
-#  define _DATA_INIT   __sfb(".data_init")
-#  define _START_DATA  __sfb(".data")
-#  define _END_DATA    __sfe(".data")
-#else
-#  define _START_TEXT  &_stext
-#  define _END_TEXT    &_etext
-#  define _START_BSS   &_sbss
-#  define _END_BSS     &_ebss
-#  define _DATA_INIT   &_eronly
-#  define _START_DATA  &_sdata
-#  define _END_DATA    &_edata
 #endif
 
 /* This is the value used to mark the stack for subsequent stack monitoring
@@ -369,8 +348,7 @@ void up_pminitialize(void);
 #define up_pminitialize()
 #endif
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || \
-    defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
 void up_systemreset(void) noreturn_function;
 #endif
 
@@ -388,8 +366,7 @@ uint32_t *arm_doirq(int irq, uint32_t *regs);
 
 /* Exception handling logic unique to the Cortex-M family */
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || \
-    defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
 
 /* Interrupt acknowledge and dispatch */
 
@@ -401,8 +378,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs);
 int up_svcall(int irq, FAR void *context, FAR void *arg);
 int up_hardfault(int irq, FAR void *context, FAR void *arg);
 
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || \
-      defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
 
 int up_memfault(int irq, FAR void *context, FAR void *arg);
 

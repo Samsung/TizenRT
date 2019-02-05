@@ -172,10 +172,6 @@ VPATH += chip
 VPATH += common
 VPATH += $(ARCH_SUBDIR)
 
-#ifeq ($(CONFIG_ARCH_TOOLCHAIN_GNU),y)
-#  VPATH += $(ARCH_SUBDIR)$(DELIM)gnu
-#endif
-
 all: $(HEAD_OBJ) $(BIN)
 
 .PHONY: board$(DELIM)libboard$(LIBEXT)

@@ -56,7 +56,6 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/boardctl.h>
 #include <stdint.h>
 #include <errno.h>
@@ -122,20 +121,6 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 		ret = board_app_initialize();
 		break;
 
-#ifdef CONFIG_BOARDCTL_FINALINIT
-		/* CMD:           BOARDIOC_FINALINIT
-		 * DESCRIPTION:   Perform one-time application initialization after
-		 *                start-up script.
-		 * ARG:           The argument has no meaning
-		 * CONFIGURATION: CONFIG_BOARDCTL_FINALINIT
-		 * DEPENDENCIES:  Board logic must provide board_app_finalinitialize
-		 */
-
-	case BOARDIOC_FINALINIT:
-		ret = board_app_finalinitialize(arg);
-		break;
-#endif
-
 #ifdef CONFIG_BOARDCTL_POWEROFF
 	/*
 	 * CMD:           BOARDIOC_POWEROFF
@@ -178,17 +163,7 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 #endif
 
 	default:
-#ifdef CONFIG_BOARDCTL_IOCTL
-			/* Boards may also select CONFIG_BOARDCTL_IOCTL=y to enable board-
-			 * specific commands.  In this case, all commands not recognized
-			 * by boardctl() will be forwarded to the board-provided board_ioctl()
-			 * function.
-			 */
-
-			ret = board_ioctl(cmd, arg);
-#else
-			ret = -ENOTTY;
-#endif
+		ret = -ENOTTY;
 		break;
 	}
 
