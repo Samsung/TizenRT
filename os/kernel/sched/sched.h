@@ -93,6 +93,28 @@
 #define this_cpu()             (0)
 #define this_task()            (current_task(this_cpu()))
 
+/* This macro returns the running task which may different from this_task()
+ * during interrupt level context switches.
+ */
+
+#define running_task()       this_task()
+
+/* List attribute flags */
+
+#define TLIST_ATTR_PRIORITIZED   (1 << 0)	/* Bit 0: List is prioritized */
+#define TLIST_ATTR_INDEXED       (1 << 1)	/* Bit 1: List is indexed by CPU */
+#define TLIST_ATTR_RUNNABLE      (1 << 2)	/* Bit 2: List includes running tasks */
+
+#define __TLIST_ATTR(s)          g_tasklisttable[s].attr
+#define TLIST_ISPRIORITIZED(s)   ((__TLIST_ATTR(s) & TLIST_ATTR_PRIORITIZED) != 0)
+#define TLIST_ISINDEXED(s)       ((__TLIST_ATTR(s) & TLIST_ATTR_INDEXED) != 0)
+#define TLIST_ISRUNNABLE(s)      ((__TLIST_ATTR(s) & TLIST_ATTR_RUNNABLE) != 0)
+
+#define __TLIST_HEAD(s)          (FAR dq_queue_t *)g_tasklisttable[s].list
+#define __TLIST_HEADINDEXED(s,c) (&(__TLIST_HEAD(s))[c])
+
+#define TLIST_HEAD(s)            __TLIST_HEAD(s)
+#define TLIST_BLOCKED(s)         __TLIST_HEAD(s)
 
 /****************************************************************************
  * Public Type Definitions

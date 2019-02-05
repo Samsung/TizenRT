@@ -119,9 +119,14 @@
 #define HUGE_VAL    INFINITY
 #define PI	    b16PI
 
+#define INFINITY_F  (1.0F/0.0F)
+#define NAN_F       (0.0F/0.0F)
+
 #define isnan(x)    ((x) != (x))
 #define isinf(x)    (((x) == INFINITY) || ((x) == -INFINITY))
-#define isfinite(x) (!(isinf(x)) && (x != NAN))
+#define isfinite(x) (!(isinf(x) || isnan(x)))
+
+#define isinf_f(x)  (((x) == INFINITY_F) || ((x) == -INFINITY_F))
 
 static __inline unsigned __FLOAT_BITS(float __f)
 {
@@ -168,6 +173,9 @@ static __inline unsigned long long __DOUBLE_BITS(double __f)
 #define M_1_PI     0.3183098861837906715377675267450287
 #define M_2_PI     0.6366197723675813430755350534900574
 #define M_2_SQRTPI 1.1283791670955125738961589031215452
+
+#define M_PI_F     ((float)M_PI)
+#define M_PI_2_F   ((float)M_PI_2)
 
 /****************************************************************************
  * Public Function Prototypes
@@ -261,6 +269,24 @@ double round(double x);
  * @since TizenRT v1.1
  */
 long double roundl(long double x);
+#endif
+
+#define lroundf(x) ((long)roundf(x))
+#ifdef CONFIG_HAVE_DOUBLE
+#define lround(x)  ((long)round(x))
+#endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+#define lroundl(x) ((long)roundl(x))
+#endif
+
+#ifdef CONFIG_HAVE_LONG_LONG
+#define llroundf(x) ((long long)roundf(x))
+#ifdef CONFIG_HAVE_DOUBLE
+#define llround(x)  ((long long)round(x))
+#endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+#define llroundl(x) ((long long)roundl(x))
+#endif
 #endif
 /**
  * @ingroup MATH_LIBC

@@ -65,6 +65,26 @@
 
 /* NVIC base address ************************************************************************/
 
+/* Vector  0: Reset stack pointer value */
+/* Vector  1: Reset */
+#define NVIC_IRQ_NMI                    (2)	/* Vector  2: Non-Maskable Interrupt (NMI) */
+#define NVIC_IRQ_HARDFAULT              (3)	/* Vector  3: Hard fault */
+#define NVIC_IRQ_MEMFAULT               (4)	/* Vector  4: Memory management (MPU) */
+#define NVIC_IRQ_BUSFAULT               (5)	/* Vector  5: Bus fault */
+#define NVIC_IRQ_USAGEFAULT             (6)	/* Vector  6: Usage fault */
+/* Vectors 7-10: Reserved */
+#define NVIC_IRQ_SVCALL                 (11)	/* Vector 11: SVC call */
+#define NVIC_IRQ_DBGMONITOR             (12)	/* Vector 12: Debug Monitor */
+/* Vector 13: Reserved */
+#define NVIC_IRQ_PENDSV                 (14)	/* Vector 14: Pendable system service request */
+#define NVIC_IRQ_SYSTICK                (15)	/* Vector 15: System tick */
+
+/* External interrupts (vectors >= 16).  These definitions are chip-specific */
+
+#define NVIC_IRQ_FIRST                  (16)	/* Vector number of the first interrupt */
+
+/* NVIC base address ************************************************************************/
+
 #define ARMV7M_NVIC_BASE                0xe000e000
 
 /* NVIC register offsets ********************************************************************/
@@ -219,6 +239,10 @@
 #define NVIC_ISAR2_OFFSET               0x0d68	/* ISA feature register 2 */
 #define NVIC_ISAR3_OFFSET               0x0d6c	/* ISA feature register 3 */
 #define NVIC_ISAR4_OFFSET               0x0d70	/* ISA feature register 4 */
+#define NVIC_CLIDR_OFFSET               0x0d78	/* Cache Level ID register (Cortex-M7) */
+#define NVIC_CTR_OFFSET                 0x0d7c	/* Cache Type register (Cortex-M7) */
+#define NVIC_CCSIDR_OFFSET              0x0d80	/* Cache Size ID Register (Cortex-M7) */
+#define NVIC_CSSELR_OFFSET              0x0d84	/* Cache Size Selection Register (Cortex-M7) */
 #define NVIC_CPACR_OFFSET               0x0d88	/* Coprocessor Access Control Register */
 #define NVIC_DHCSR_OFFSET               0x0df0	/* Debug Halting Control and Status Register */
 #define NVIC_DCRSR_OFFSET               0x0df4	/* Debug Core Register Selector Register */
@@ -230,6 +254,22 @@
 #define NVIC_FPDSCR_OFFSET              0x0f3c	/* Floating-point Default Status Control Register */
 #define NVIC_MVFR0_OFFSET               0x0f40	/* Media and VFP Feature Register 0 */
 #define NVIC_MVFR1_OFFSET               0x0f44	/* Media and VFP Feature Register 1 */
+#define NVIC_MVFR2_OFFSET               0x0f48	/* Media and VFP Feature Register 2 */
+#define NVIC_ICIALLU_OFFSET             0x0f50	/* I-Cache Invalidate All to PoU (Cortex-M7) */
+#define NVIC_ICIMVAU_OFFSET             0x0f58	/* I-Cache Invalidate by MVA to PoU (Cortex-M7) */
+#define NVIC_DCIMVAU_OFFSET             0x0f5c	/* D-Cache Invalidate by MVA to PoC (Cortex-M7) */
+#define NVIC_DCISW_OFFSET               0x0f60	/* D-Cache Invalidate by Set-way (Cortex-M7) */
+#define NVIC_DCCMVAU_OFFSET             0x0f64	/* D-Cache Clean by MVA to PoU (Cortex-M7) */
+#define NVIC_DCCMVAC_OFFSET             0x0f68	/* D-Cache Clean by MVA to PoC (Cortex-M7) */
+#define NVIC_DCCSW_OFFSET               0x0f6c	/* D-Cache Clean by Set-way (Cortex-M7) */
+#define NVIC_DCCIMVAC_OFFSET            0x0f70	/* D-Cache Clean and Invalidate by MVA to PoC (Cortex-M7) */
+#define NVIC_DCCISW_OFFSET              0x0f74	/* D-Cache Clean and Invalidate by Set-way (Cortex-M7) */
+#define NVIC_ITCMCR_OFFSET              0x0f90	/* Instruction Tightly-Coupled Memory Control Register */
+#define NVIC_DTCMCR_OFFSET              0x0f94	/* Data Tightly-Coupled Memory Control Registers */
+#define NVIC_AHBPCR_OFFSET              0x0f98	/* AHBP Control Register */
+#define NVIC_CACR_OFFSET                0x0f9c	/* L1 Cache Control Register */
+#define NVIC_AHBSCR_OFFSET              0x0fa0	/* AHB Slave Control Register */
+#define NVIC_ABFSR_OFFSET               0x0fa8	/* Auxiliary Bus Fault Status */
 #define NVIC_PID4_OFFSET                0x0fd0	/* Peripheral identification register (PID4) */
 #define NVIC_PID5_OFFSET                0x0fd4	/* Peripheral identification register (PID5) */
 #define NVIC_PID6_OFFSET                0x0fd8	/* Peripheral identification register (PID6) */
@@ -392,6 +432,10 @@
 #define NVIC_ISAR2                      (ARMV7M_NVIC_BASE + NVIC_ISAR2_OFFSET)
 #define NVIC_ISAR3                      (ARMV7M_NVIC_BASE + NVIC_ISAR3_OFFSET)
 #define NVIC_ISAR4                      (ARMV7M_NVIC_BASE + NVIC_ISAR4_OFFSET)
+#define NVIC_CLIDR                      (ARMV7M_NVIC_BASE + NVIC_CLIDR_OFFSET)
+#define NVIC_CTR                        (ARMV7M_NVIC_BASE + NVIC_CTR_OFFSET)
+#define NVIC_CCSIDR                     (ARMV7M_NVIC_BASE + NVIC_CCSIDR_OFFSET)
+#define NVIC_CSSELR                     (ARMV7M_NVIC_BASE + NVIC_CSSELR_OFFSET)
 #define NVIC_CPACR                      (ARMV7M_NVIC_BASE + NVIC_CPACR_OFFSET)
 #define NVIC_DHCSR                      (ARMV7M_NVIC_BASE + NVIC_DHCSR_OFFSET)
 #define NVIC_DCRSR                      (ARMV7M_NVIC_BASE + NVIC_DCRSR_OFFSET)
@@ -399,6 +443,21 @@
 #define NVIC_DEMCR                      (ARMV7M_NVIC_BASE + NVIC_DEMCR_OFFSET)
 #define NVIC_STIR                       (ARMV7M_NVIC_BASE + NVIC_STIR_OFFSET)
 #define NVIC_FPCCR                      (ARMV7M_NVIC_BASE + NVIC_FPCCR_OFFSET)
+#define NVIC_ICIALLU                    (ARMV7M_NVIC_BASE + NVIC_ICIALLU_OFFSET)
+#define NVIC_ICIMVAU                    (ARMV7M_NVIC_BASE + NVIC_ICIMVAU_OFFSET)
+#define NVIC_DCIMVAU                    (ARMV7M_NVIC_BASE + NVIC_DCIMVAU_OFFSET)
+#define NVIC_DCISW                      (ARMV7M_NVIC_BASE + NVIC_DCISW_OFFSET)
+#define NVIC_DCCMVAU                    (ARMV7M_NVIC_BASE + NVIC_DCCMVAU_OFFSET)
+#define NVIC_DCCMVAC                    (ARMV7M_NVIC_BASE + NVIC_DCCMVAC_OFFSET)
+#define NVIC_DCCSW                      (ARMV7M_NVIC_BASE + NVIC_DCCSW_OFFSET)
+#define NVIC_DCCIMVAC                   (ARMV7M_NVIC_BASE + NVIC_DCCIMVAC_OFFSET)
+#define NVIC_DCCISW                     (ARMV7M_NVIC_BASE + NVIC_DCCISW_OFFSET)
+#define NVIC_ITCMCR                     (ARMV7M_NVIC_BASE + NVIC_ITCMCR_OFFSET)
+#define NVIC_DTCMCR                     (ARMV7M_NVIC_BASE + NVIC_DTCMCR_OFFSET)
+#define NVIC_AHBPCR                     (ARMV7M_NVIC_BASE + NVIC_AHBPCR_OFFSET)
+#define NVIC_CACR                       (ARMV7M_NVIC_BASE + NVIC_CACR_OFFSET)
+#define NVIC_AHBSCR                     (ARMV7M_NVIC_BASE + NVIC_AHBSCR_OFFSET)
+#define NVIC_ABFSR                      (ARMV7M_NVIC_BASE + NVIC_ABFSR_OFFSET)
 #define NVIC_PID4                       (ARMV7M_NVIC_BASE + NVIC_PID4_OFFSET)
 #define NVIC_PID5                       (ARMV7M_NVIC_BASE + NVIC_PID5_OFFSET)
 #define NVIC_PID6                       (ARMV7M_NVIC_BASE + NVIC_PID6_OFFSET)
@@ -465,6 +524,19 @@
 /* Bit 3:  Reserved */
 #define NVIC_SYSCON_SEVONPEND           (1 << 4)	/* Bit 4: Send Event on Pending bit */
 /* Bits 5-31: Reserved */
+
+/* System handler 4-7 priority register */
+
+#define NVIC_CFGCON_NONBASETHRDENA      (1 << 0)	/* Bit 0: How processor enters thread mode */
+#define NVIC_CFGCON_USERSETMPEND        (1 << 1)	/* Bit 1: Enables unprivileged access to STIR */
+#define NVIC_CFGCON_UNALIGNTRP          (1 << 3)	/* Bit 3: Enables unaligned access traps */
+#define NVIC_CFGCON_DIV0TRP             (1 << 4)	/* Bit 4: Enables fault on divide-by-zero */
+#define NVIC_CFGCON_BFHFNMIGN           (1 << 8)	/* Bit 8: Disables data bus faults */
+#define NVIC_CFGCON_STKALIGN            (1 << 9)	/* Bit 9: Indicates stack alignment on exeption */
+/* Cortex-M7: */
+#define NVIC_CFGCON_DC                  (1 << 16)	/* Bit 16: Data cache enable */
+#define NVIC_CFGCON_IC                  (1 << 17)	/* Bit 17: Instruction cache enable */
+#define NVIC_CFGCON_BP                  (1 << 18)	/* Bit 18: Branch prediction enable */
 
 /* System handler 4-7 priority register */
 
@@ -539,6 +611,57 @@
 
 /* Debug Exception and Monitor Control Register (DEMCR) */
 
+#define NVIC_CLIDR_L1CT_SHIFT           (0)	/* Bits 0-2: Level 1 cache type */
+#define NVIC_CLIDR_L1CT_MASK            (7 << NVIC_CLIDR_L1CT_SHIFT)
+#define NVIC_CLIDR_L1CT_ICACHE        (1 << NVIC_CLIDR_LOC_SHIFT)
+#define NVIC_CLIDR_L1CT_DCACHE        (2 << NVIC_CLIDR_LOC_SHIFT)
+#define NVIC_CLIDR_LOC_SHIFT            (24)	/* Bits 24-26: Level of Coherency */
+#define NVIC_CLIDR_LOC_MASK             (7 << NVIC_CLIDR_LOC_SHIFT)
+#define NVIC_CLIDR_LOC_IMPLEMENTED    (1 << NVIC_CLIDR_LOC_SHIFT)
+#define NVIC_CLIDR_LOC_UNIMPLEMENTED  (0 << NVIC_CLIDR_LOC_SHIFT)
+#define NVIC_CLIDR_LOUU_SHIFT           (27)	/* Bits 27-29: Level of Unification Uniprocessor */
+#define NVIC_CLIDR_LOUU_MASK            (7 << NVIC_CLIDR_LOUU_SHIFT)
+#define NVIC_CLIDR_LOUU_IMPLEMENTED   (1 << NVIC_CLIDR_LOUU_SHIFT)
+#define NVIC_CLIDR_LOUU_UNIMPLEMENTED (0 << NVIC_CLIDR_LOUU_SHIFT)
+
+/* Cache Type register (Cortex-M7) */
+
+#define NVIC_CTR_IMINLINE_SHIFT         (0)	/* Bits 0-3: ImInLine */
+#define NVIC_CTR_IMINLINE_MASK          (15 << NVIC_CTR_IMINLINE_SHIFT)
+#define NVIC_CTR_DMINLINE_SHIFT         (16)	/* Bits 16-19: DmInLine */
+#define NVIC_CTR_DMINLINE_MASK          (15 << NVIC_CTR_DMINLINE_SHIFT)
+#define NVIC_CTR_ERG_SHIFT              (20)	/* Bits 20-23: ERG */
+#define NVIC_CTR_ERG_MASK               (15 << NVIC_CTR_ERG_SHIFT)
+#define NVIC_CTR_CWG_SHIFT              (24)	/* Bits 24-27: ERG */
+#define NVIC_CTR_CWG_MASK               (15 << NVIC_CTR_CWG_SHIFT)
+#define NVIC_CTR_FORMAT_SHIFT           (29)	/* Bits 29-31: Format */
+#define NVIC_CTR_FORMAT_MASK            (7 << NVIC_CTR_FORMAT_SHIFT)
+
+/* Cache Size ID Register (Cortex-M7) */
+
+#define NVIC_CCSIDR_LINESIZE_SHIFT      (0)	/* Bits 0-2: Number of words in each cache line */
+#define NVIC_CCSIDR_LINESIZE_MASK       (7 << NVIC_CCSIDR_LINESIZE_SHIFT)
+#define NVIC_CCSIDR_ASSOCIATIVITY_SHIFT (3)	/* Bits 3-12: Number of ways - 1 */
+#define NVIC_CCSIDR_ASSOCIATIVITY_MASK  (0x3ff << NVIC_CCSIDR_ASSOCIATIVITY_SHIFT)
+#define NVIC_CCSIDR_NUMSETS_SHIFT       (13)	/* Bits 13-27: Number of sets - 1 */
+#define NVIC_CCSIDR_NUMSETS_MASK        (0x7fff << NVIC_CCSIDR_NUMSETS_SHIFT)
+#define NVIC_CCSIDR_WA_SHIFT            (1 << 28)	/* Bits 28: Write Allocation support */
+#define NVIC_CCSIDR_RA_SHIFT            (1 << 29)	/* Bits 29: Read Allocation support */
+#define NVIC_CCSIDR_WB_SHIFT            (1 << 30)	/* Bits 30: Write-Back support */
+#define NVIC_CCSIDR_WT_SHIFT            (1 << 31)	/* Bits 31: Write-Through support */
+
+/* Cache Size Selection Register (Cortex-M7) */
+
+#define NVIC_CSSELR_IND                 (1 << 0)	/* Bit 0: Selects either instruction or data cache */
+#define NVIC_CSSELR_IND_ICACHE        (0 << 0)	/*   0=Instruction Cache */
+#define NVIC_CSSELR_IND_DCACHE        (1 << 0)	/*   1=Data Cache */
+
+#define NVIC_CSSELR_LEVEL_SHIFT         (1)	/* Bit 1-3: Selects cache level */
+#define NVIC_CSSELR_LEVEL_MASK          (7 << NVIC_CSSELR_LEVEL_SHIFT)
+#define NVIC_CSSELR_LEVEL_1           (0 << NVIC_CSSELR_LEVEL_SHIFT)
+
+/* Debug Exception and Monitor Control Register (DEMCR) */
+
 #define NVIC_DEMCR_VCCORERESET          (1 << 0)	/* Bit 0:  Reset Vector Catch */
 #define NVIC_DEMCR_VCMMERR              (1 << 4)	/* Bit 4:  Debug trap on Memory Management faults */
 #define NVIC_DEMCR_VCNOCPERR            (1 << 5)	/* Bit 5:  Debug trap on Usage Fault access to non-present coprocessor */
@@ -552,6 +675,46 @@
 #define NVIC_DEMCR_MONSTEP              (1 << 18)	/* Bit 18: Steps the core */
 #define NVIC_DEMCR_MONREQ               (1 << 19)	/* Bit 19: Monitor wake-up mode */
 #define NVIC_DEMCR_TRCENA               (1 << 24)	/* Bit 24: Enable trace and debug blocks */
+
+/* Instruction Tightly-Coupled Memory Control Register (ITCMCR) */
+/* Data Tightly-Coupled Memory Control Registers (DTCMCR */
+
+#define NVIC_TCMCR_EN                   (1 << 0)	/* Bit 9:  TCM enable */
+#define NVIC_TCMCR_RMW                  (1 << 1)	/* Bit 1:  Read-Modify-Write (RMW) enable */
+#define NVIC_TCMCR_RETEN                (1 << 2)	/* Bit 2:  Retry phase enable */
+#define NVIC_TCMCR_SZ_SHIFT             (3)	/* Bits 3-6: Size of the TCM */
+#define NVIC_TCMCR_SZ_MASK              (15 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_NONE            (0 << NVIC_TCMCR_SZ_SHIFT)	/* No TCM implemented */
+#define NVIC_TCMCR_SZ_4KB             (3 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_8KB             (4 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_16KB            (5 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_32KB            (6 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_64KB            (7 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_128KB           (8 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_256KB           (9 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_512KB           (10 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_1MB             (11 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_2MB             (12 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_4MB             (13 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_8MB             (14 << NVIC_TCMCR_SZ_SHIFT)
+#define NVIC_TCMCR_SZ_16MB            (15 << NVIC_TCMCR_SZ_SHIFT)
+
+/* AHBP Control Register (AHBPCR, Cortex-M7) */
+
+#define NVIC_AHBPCR_EN                  (1 << 0)	/* Bit 0: AHBP enable */
+#define NVIC_AHBPCR_SZ_SHIFT            (1)	/* Bits 1-3: AHBP size */
+#define NVIC_AHBPCR_SZ_MASK             (7 << NVIC_AHBPCR_SZ_SHIFT)
+#define NVIC_AHBPCR_SZ_DISABLED       (0 << NVIC_AHBPCR_SZ_SHIFT)
+#define NVIC_AHBPCR_SZ_64MB           (1 << NVIC_AHBPCR_SZ_SHIFT)
+#define NVIC_AHBPCR_SZ_128MB          (2 << NVIC_AHBPCR_SZ_SHIFT)
+#define NVIC_AHBPCR_SZ_256MB          (3 << NVIC_AHBPCR_SZ_SHIFT)
+#define NVIC_AHBPCR_SZ_512MB          (4 << NVIC_AHBPCR_SZ_SHIFT)
+
+/* L1 Cache Control Register (CACR, Cortex-M7) */
+
+#define NVIC_CACR_SIWT                  (1 << 0)	/* Bit 0:  Shared cacheable-is-WT for data cache */
+#define NVIC_CACR_ECCDIS                (1 << 1)	/* Bit 1:  Enables ECC in the instruction and data cache */
+#define NVIC_CACR_FORCEWT               (1 << 2)	/* Bit 2:  Enables Force Write-Through in the data cache */
 
 /********************************************************************************************
  * Public Types

@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_NXP_DEMO
+	bool "NXP Demos example"
+	default n
+	---help---
+		Enable the NXP demo example
+
+config USER_ENTRYPOINT
+	string
+	default "nxp_demo_sample_main" if EXAMPLES_NXP_DEMO

@@ -86,6 +86,16 @@ config ARCH_BOARD_ESP_WROVER_KIT
 	select ARCH_BOARD_ESP32_FAMILY
 	---help---
 		Espressif esp32 WIFI/BLE LCDs MCU
+		
+config ARCH_BOARD_IMXRT1050_EVK
+	bool "NXP i.MX RT 1050 EVK"
+	depends on ARCH_CHIP_MIMXRT1052DVL6A
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		This is the board configuration for the port of TinyARA to the NXP i.MXRT
+		evaluation kit, MIMXRT1050-EVKB.  This board features the MIMXRT1052DVL6A MCU.
 
 endchoice
 
@@ -106,6 +116,8 @@ config ARCH_BOARD
 	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
 	default "esp32_devkit"       if ARCH_BOARD_ESP32_FAMILY
+	default "esp_wrover_kit"     if ARCH_BOARD_ESP_WROVER_KIT
+	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	
 comment "Common Board Options"
 
@@ -254,7 +266,10 @@ endif
 if ARCH_BOARD_ESP32_FAMILY
 source board/esp32_devkit/Kconfig
 endif
-
+if ARCH_BOARD_IMXRT1050_EVK
+source board/imxrt1050-evk/Kconfig
+endif
 comment "Board-Partition Options"
 
 source board/common/Kconfig
+

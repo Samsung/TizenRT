@@ -817,6 +817,77 @@ void task_vforkabort(FAR struct task_tcb_s *child, int errcode);
 /**
  * @endcond
  */
+
+/****************************************************************************
+ * Name: group_exitinfo
+ *
+ * Description:
+ *   This function may be called to when a task is loaded into memory.  It
+ *   will setup the to automatically unload the module when the task exits.
+ *
+ * Input Parameters:
+ *   pid     - The task ID of the newly loaded task
+ *   bininfo - This structure allocated with kmm_malloc().  This memory
+ *             persists until the task exits and will be used unloads
+ *             the module from memory.
+ *
+ * Returned Value:
+ *   This is a NuttX internal function so it follows the convention that
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BINFMT_LOADABLE
+struct binary_s;  /* Forward reference */
+int group_exitinfo(pid_t pid, FAR struct binary_s *bininfo);
+#endif
+
+/********************************************************************************
+ * Name: sched_resume_scheduler
+ *
+ * Description:
+ *   Called by architecture specific implementations that block task execution.
+ *   This function prepares the scheduler for the thread that is about to be
+ *   restarted.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread to be restarted.
+ *
+ * Returned Value:
+ *   None
+ *
+ ********************************************************************************/
+
+#if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC) || \
+    defined(CONFIG_SCHED_INSTRUMENTATION) || defined(CONFIG_SMP)
+void sched_resume_scheduler(FAR struct tcb_s *tcb);
+#else
+#define sched_resume_scheduler(tcb)
+#endif
+
+/********************************************************************************
+ * Name: sched_suspend_scheduler
+ *
+ * Description:
+ *   Called by architecture specific implementations to resume task execution.
+ *   This function performs scheduler operations for the thread that is about to
+ *   be suspended.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread to be restarted.
+ *
+ * Returned Value:
+ *   None
+ *
+ ********************************************************************************/
+
+#if defined(CONFIG_SCHED_SPORADIC) || defined(CONFIG_SCHED_INSTRUMENTATION)
+void sched_suspend_scheduler(FAR struct tcb_s *tcb);
+#else
+#define sched_suspend_scheduler(tcb)
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
