@@ -1,22 +1,22 @@
+/* ****************************************************************
+*
+* Copyright 2019 NXP Semiconductors All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+******************************************************************/
 /****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-/****************************************************************************
- * configs/imxrt1050-evk/kernel/imxrt_userspace.c
+ * os/board/imxrt1050-evk/userspace/imxrt_userspace.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -108,7 +108,7 @@ int CONFIG_USER_ENTRYPOINT(int argc, char *argv[]);
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
 
-	.us_entrypoint = (main_t) CONFIG_USER_ENTRYPOINT, .us_textstart = (uintptr_t) &_stext, .us_textend = (uintptr_t) &_etext, .us_datasource = (uintptr_t) &_eronly, .us_datastart = (uintptr_t) &_sdata, .us_dataend = (uintptr_t) &_edata, .us_bssstart = (uintptr_t) &_sbss, .us_bssend = (uintptr_t) &_ebss,
+	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT, .us_textstart = (uintptr_t)&_stext, .us_textend = (uintptr_t)&_etext, .us_datasource = (uintptr_t)&_eronly, .us_datastart = (uintptr_t)&_sdata, .us_dataend = (uintptr_t)&_edata, .us_bssstart = (uintptr_t)&_sbss, .us_bssend = (uintptr_t)&_ebss,
 	/* Memory manager heap structure */
 	.us_heap = &g_mmheap,
 	/* Task/thread startup routines */

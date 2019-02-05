@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 NXP Semiconductors All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * config/imxrt1050-evk/src/imxrt_flexspi_nor_boot.c
+ * os/board/imxrt1050-evk/src/imxrt_flexspi_nor_boot.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
@@ -65,10 +65,10 @@ const struct ivt_s image_vector_table = {
 	IVT_HEADER,					/* IVT Header */
 	0x60002000,					/* Image  Entry Function */
 	IVT_RSVD,					/* Reserved = 0 */
-	(uint32_t) DCD_ADDRESS,		/* Address where DCD information is stored */
-	(uint32_t) BOOT_DATA_ADDRESS,	/* Address where BOOT Data Structure is stored */
-	(uint32_t) &image_vector_table,	/* Pointer to IVT Self (absolute address */
-	(uint32_t) CSF_ADDRESS,		/* Address where CSF file is stored */
+	(uint32_t)DCD_ADDRESS,		/* Address where DCD information is stored */
+	(uint32_t)BOOT_DATA_ADDRESS,	/* Address where BOOT Data Structure is stored */
+	(uint32_t)&image_vector_table,	/* Pointer to IVT Self (absolute address */
+	(uint32_t)CSF_ADDRESS,		/* Address where CSF file is stored */
 	IVT_RSVD					/* Reserved = 0 */
 };
 

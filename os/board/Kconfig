@@ -116,7 +116,6 @@ config ARCH_BOARD
 	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
 	default "esp32_devkit"       if ARCH_BOARD_ESP32_FAMILY
-	default "esp_wrover_kit"     if ARCH_BOARD_ESP_WROVER_KIT
 	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	
 comment "Common Board Options"
