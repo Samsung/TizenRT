@@ -102,31 +102,12 @@
  * ARG:           A writable array of size CONFIG_BOARDCTL_UNIQUEID_SIZE in
  *                which to receive the board unique ID.
  * DEPENDENCIES:  Board logic must provide the board_uniqueid() interface.
- *
- * CMD:           BOARDIOC_APP_SYMTAB
- * DESCRIPTION:   Select the application symbol table.  This symbol table
- *                provides the symbol definitions exported to application
- *                code from application space.
- * ARG:           A pointer to an instance of struct boardioc_symtab_s
- * CONFIGURATION: CONFIG_BOARDCTL_APP_SYMTAB
- * DEPENDENCIES:  None
- *
- * CMD:           BOARDIOC_OS_SYMTAB
- * DESCRIPTION:   Select the OS symbol table.  This symbol table provides
- *                the symbol definitions exported by the OS to kernel
- *                modules.
- * ARG:           A pointer to an instance of struct boardioc_symtab_s
- * CONFIGURATION: CONFIG_BOARDCTL_OS_SYMTAB
- * DEPENDENCIES:  None
  */
 
 #define BOARDIOC_INIT              _BOARDIOC(0x0001)
-#define BOARDIOC_FINALINIT         _BOARDIOC(0x0002)
-#define BOARDIOC_POWEROFF          _BOARDIOC(0x0003)
-#define BOARDIOC_RESET             _BOARDIOC(0x0004)
-#define BOARDIOC_UNIQUEID          _BOARDIOC(0x0005)
-#define BOARDIOC_APP_SYMTAB        _BOARDIOC(0x0006)
-#define BOARDIOC_OS_SYMTAB         _BOARDIOC(0x0007)
+#define BOARDIOC_POWEROFF          _BOARDIOC(0x0002)
+#define BOARDIOC_RESET             _BOARDIOC(0x0003)
+#define BOARDIOC_UNIQUEID          _BOARDIOC(0x0004)
 
 /* If CONFIG_BOARDCTL_IOCTL=y, then boad-specific commands will be support.
  * In this case, all commands not recognized by boardctl() will be forwarded

@@ -162,9 +162,7 @@ void board_initialize(void);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BOARD_INITIALIZE
 int board_app_initialize(void);
-#endif
 
 /****************************************************************************
  * Name: board_power_off

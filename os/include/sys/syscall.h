@@ -268,18 +268,11 @@
 #ifndef CONFIG_DISABLE_POLL
 #define SYS_poll                       __SYS_poll
 #define SYS_select                     (__SYS_poll + 1)
-#define __SYS_termios                 (__SYS_poll + 2)
+#define __SYS_boardctl                 (__SYS_poll + 2)
 #else
-#define __SYS_termios                 __SYS_poll
-#endif
-#ifdef CONFIG_SERIAL_TERMIOS
-#define SYS_tcdrain            i       __SYS_termios
-#define __SYS_boardctl                 (__SYS_termios + 1)
-#else
-#define __SYS_boardctl                 __SYS_termios
+#define __SYS_boardctl                 __SYS_poll
 #endif
 #else
-#define __SYS_filedesc                 __SYS_descriptors
 #define __SYS_boardctl                 __SYS_descriptors
 #endif
 
