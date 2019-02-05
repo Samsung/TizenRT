@@ -57,26 +57,7 @@ config ARMV7M_USEBASEPRI
 		usually results in hardfaults when supervisor calls are made.
 		Though, these hardfaults are properly handled by the RTOS, the
 		hardfaults can confuse some debuggers. With the BASEPRI
-		register, these hardfaults, will be avoided. For more details see
-		http://www.nuttx.org/doku.php?id=wiki:nxinternal:svcall
-
-config ARMV7M_BASEPRI_WAR
-	bool "Cortex-M7 r0p1 Errata 837070 Workaround"
-	default n
-	depends on ARMV7M_USEBASEPRI && ARCH_CORTEXM7
-	---help---
-		Enable workaround for r0p1 Errata 837070: Increasing priority using
-		write to BASEPRI does not take effect immediately.
-
-		This update is required to be serialized to the instruction stream
-		meaning that after this update completes, it takes effect
-		immediately and no exceptions of lower priority than the new boosted
-		priority can pre-empt execution.  Because of this erratum, the
-		priority boosting does not take place immediately, allowing the
-		instruction after the MSR to be interrupted by an exception of
-		lower priority than the new boosted priority. This effect is only
-		limited to the next instruction. Subsequent instructions are
-		guaranteed to see the new boosted priority.
+		register, these hardfaults, will be avoided.
 
 config ARMV7M_ICACHE
 	bool "Use I-Cache"
@@ -234,8 +215,3 @@ config ARMV7M_ITMSYSLOG_SWODIV
 
 endif # ARMV7M_ITMSYSLOG
 
-config ARMV7M_SYSTICK
-	bool "SysTick timer driver"
-	depends on TIMER
-	---help---
-		Enable SysTick timer driver.

@@ -149,14 +149,6 @@ void up_sigdeliver(void)
 	irqrestore((uint16_t)regs[REG_PRIMASK]);
 #endif
 
-#ifndef CONFIG_SUPPRESS_INTERRUPTS
-	/* Then make sure that interrupts are enabled.  Signal handlers must always
-	 * run with interrupts enabled.
-	 */
-
-	irqenable();
-#endif
-
 	/* Deliver the signal */
 
 	sigdeliver(rtcb);

@@ -61,7 +61,6 @@
 #include <arch/irq.h>
 
 #include "up_internal.h"
-#include "chip.h"
 
 #ifdef CONFIG_ARCH_RAMVECTORS
 

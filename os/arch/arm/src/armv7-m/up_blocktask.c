@@ -61,7 +61,6 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"
