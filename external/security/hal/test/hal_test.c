@@ -8,8 +8,8 @@ int main(void)
 	int res = 0;
 	res = hal_keymgr_test();
 	res = hal_auth_test();
-	/* res = hal_ss_test(); */
-	/* res = hal_crypto_test(); */
+	res = hal_ss_test();
+	res = hal_crypto_test();
 
 	return 0;
 }

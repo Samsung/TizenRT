@@ -384,10 +384,32 @@ int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_da
 /**
  * Secure Storage
  */
-int hal_read_storage(_IN_ uint32_t ss_idx, _OUT_ hal_data *data);
 
+/*
+ * Reference
+ * Desc: write data in secure storage of ss_idx
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigned index)
+ * ISP: int isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+ */
 int hal_write_storage(_IN_ uint32_t ss_idx, _IN_ hal_data *data);
 
+/*
+ * Reference
+ * Desc: Read data from secure storage of ss_idx
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigned index)
+ * ISP: int isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+ */
+int hal_read_storage(_IN_ uint32_t ss_idx, _OUT_ hal_data *data);
+
+/*
+ * Reference
+ * Desc: Delete data in secure storage of ss_idx
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigned index)
+ * ISP: int isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+ */
 int hal_delete_storage(_IN_ uint32_t ss_idx);
 
 
