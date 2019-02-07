@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <security_hal.h>
 #include <stress_tool/st_perf.h>
+#include "hal_test_utils.h"
 
 
 /*  Configuration */
-#define HAL_KEYMGR_TEST_TRIAL 1
+#define HAL_KEYMGR_TEST_TRIAL 5
 #define HAL_KEYMGR_TEST_LIMIT_TIME 100000000
 
 /*
@@ -72,7 +73,7 @@ TEST_TEARDOWN(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_data_free(&g_aes_key));
+	ST_EXPECT(0, hal_free_data(&g_aes_key));
 
 	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
@@ -138,7 +139,7 @@ TEST_TEARDOWN(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -147,7 +148,7 @@ TEST_F(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_AES256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT(0, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }

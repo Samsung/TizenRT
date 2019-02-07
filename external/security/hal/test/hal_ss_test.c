@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <security_hal.h>
 #include <stress_tool/st_perf.h>
+#include "hal_test_utils.h"
 
 /*  Configuration */
-#define HAL_SS_TEST_TRIAL 1
+#define HAL_SS_TEST_TRIAL 5
 #define HAL_SS_TEST_LIMIT_TIME 100000000
 
 #define HAL_TEST_SECURE_STORAGE_MAX_SLOT_INDEX 8
@@ -36,7 +37,6 @@ TEST_TEARDOWN(write_storage)
 	for (uint32_t i = 0; i < HAL_TEST_SECURE_STORAGE_MAX_SLOT_INDEX; i++) {
 		ST_EXPECT(0, hal_delete_storage(i));
 	}
-	hal_test_free_buffer(&g_input);
 
 	ST_END_TEST;
 }
@@ -79,7 +79,6 @@ TEST_TEARDOWN(read_storage)
 		ST_EXPECT(0, hal_delete_storage(i));
 		hal_free_data(&g_output[i]);
 	}
-	hal_test_free_buffer(&g_input);
 
 	ST_END_TEST;
 }
@@ -117,8 +116,6 @@ TEST_SETUP(delete_storage)
 TEST_TEARDOWN(delete_storage)
 {
 	ST_START_TEST;
-
-	hal_test_free_buffer(&g_input);
 
 	ST_END_TEST;
 }

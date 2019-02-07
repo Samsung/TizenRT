@@ -20,7 +20,7 @@
 
 import os
 
-test_file = ["hal_test.c", "hal_keymgr_test.c", "hal_test_utils.c"]
+test_file = ["hal_test.c", "hal_auth_test.c", "hal_keymgr_test.c", "hal_ss_test.c", "hal_crypto_test.c", "hal_test_utils.c"]
 
 hal_files = ["../security_hal.c"]
 

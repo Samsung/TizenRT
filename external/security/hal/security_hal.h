@@ -28,6 +28,34 @@
 /*
  * Common
  */
+enum hal_result_e {
+	HAL_SUCCESS,
+
+	HAL_NOT_INITIALIZED,
+	HAL_INVALID_ARGS,
+
+	HAL_INVALID_SLOT_RANGE,
+	HAL_INVALID_SLOT_TYPE, //ex. request to save key into cert slot
+	HAL_EMPTY_SLOT,
+
+	HAL_BAD_KEY,
+	HAL_BAD_KEY_PAIR, //public and private keys do not match
+	HAL_BAD_CERT,
+	HAL_BAD_CERTKEY_PAIR, //certificate and key do not match
+
+	HAL_NOT_ENOUGH_MEMORY,
+	HAL_KEY_IN_USE,
+	HAL_CERT_IN_USE,
+	HAL_DATA_IN_USE,
+
+	HAL_NOT_SUPPORTED,
+	HAL_NOT_IMPLEMENTED,
+
+	HAL_BUSY,
+	HAL_FAIL,
+};
+
+
 typedef struct _hal_data {
 	void *data;
 	uint32_t data_len;
@@ -191,6 +219,9 @@ typedef enum {
 	HAL_KEY_HMAC_SHA256, // hmac with sha256
 	HAL_KEY_HMAC_SHA384, // hmac with sha384
 	HAL_KEY_HMAC_SHA512, // hmac with sha512
+	/* DH */
+	HAL_KEY_DH_1024,
+	HAL_KEY_DH_2048,
 } hal_key_type;
 
 // ======================================
@@ -200,14 +231,26 @@ typedef enum {
 /**
  * Common
  */
+
 /*
  * Reference
- * Desc: free memory allocated within HAL 
+ * Desc: Initialize HAL 
+ * Artik SEE API: 
+ * TizenRT SEE API: 
+ * ISP:
+ * NOTE: Initialize secure channel
+ */
+int hal_init(void);
+
+/*
+ * Reference
+ * Desc: Deinitialize HAL 
  * Artik SEE API: 
  * TizenRT SEE API: 
  * ISP: 
+ * NOTE: Deinitialize secure channel
  */
-int hal_data_free(_IN_ hal_data *data);
+int hal_deinit(void);
 
 /*
  * Reference
@@ -215,8 +258,18 @@ int hal_data_free(_IN_ hal_data *data);
  * Artik SEE API: 
  * TizenRT SEE API: 
  * ISP: 
+ */
+int hal_free_data(_IN_ hal_data *data);
+
+/*
+ * Reference
+ * Desc: get status of SE
+ * Artik SEE API: 
+ * TizenRT SEE API: 
+ * ISP: 
  * return value: busy, not initialized, ... 
-*/
+ * NOTE: BUSY/IDLE check should be conducted within each HAL APIs as well.
+ */
 int hal_get_status(void);
 
 /**
@@ -237,7 +290,8 @@ int hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *ke
  * Desc: 
  * Artik SEE API: int see_get_pubkey(see_algorithm algo, const char *key_name, see_data *pub_key);
  * TizenRT SEE API: 
- * ISP: 
+ * ISP:
+ * NOTE: Return key type in key->priv
  */
 int hal_get_key(_IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
@@ -273,7 +327,7 @@ int hal_generate_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
  * TizenRT SEE API: int see_generate_random(unsigned int *data, unsigned int len)
  * ISP: int isp_generate_random(unsigned int *random, unsigned int wlen);
  */
-int hal_generate_random(_IN_ uint32_t len, _OUT_ uint8_t *random);
+int hal_generate_random(_IN_ uint32_t len, _OUT_ hal_data *random);
 
 /*
  * Reference
@@ -300,7 +354,7 @@ int hal_get_hmac(_IN_ hal_hmac_algo algo, _IN_ hal_data *input, _IN_ uint32_t ke
  * TizenRT SEE API: int see_get_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
  * ISP: int isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  */
-int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t key_idx, _OUT_ hal_data *md);
+int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *md);
 
 /*
  * Reference
@@ -309,7 +363,7 @@ int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint8_t ke
  * TizenRT SEE API: int see_verify_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
  * ISP: int isp_rsa_verify_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
  */
-int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign);
+int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
 /*
  * Reference
@@ -326,7 +380,7 @@ int hal_ecdsa_sign_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint
  * TizenRT SEE API: int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index)
  * ISP: isp_ecdsa_verify_md_securekey()
  */
-int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _IN_ hal_data *sign);
+int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
 
 /*
@@ -358,6 +412,7 @@ int hal_dh_compute_shared_secret(_IN_ hal_dh_data *param, _IN_ uint32_t dh_idx, 
  * Artik SEE API: -
  * TizenRT SEE API: int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, unsigned char *output, unsigned int *olen)
  * ISP: int isp_compute_ecdh_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned int key_index);
+ * NOTE: pubkey denotes a public key from the target which tries to share a secret
  */
 int hal_ecdh_compute_shared_secret(_IN_ hal_data *pubkey, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
@@ -367,6 +422,8 @@ int hal_ecdh_compute_shared_secret(_IN_ hal_data *pubkey, _IN_ uint32_t key_idx,
  * Artik SEE API: -
  * TizenRT SEE API: int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int cert_index, unsigned int cert_type)
  * ISP: int isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index)
+ * NOTE: When cert_in consists of chains, cert_in->data represents the last certificate, and then, cert_in->priv denotes the next chain formatted hal_data.
+ * (Root CA has to be the end of hal_data)
  */
 int hal_set_certificate(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in);
 
@@ -376,16 +433,18 @@ int hal_set_certificate(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in);
  * Artik SEE API: -
  * TizenRT SEE API: int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned int cert_index, unsigned int cert_type)
  * ISP: int isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
+ * NOTE: When cert_out consists of chains, cert_out->data represents the last certificate, and then, cert_out->priv denotes the next chain formatted hal_data.
+ * (Root CA has to be the end of hal_data)
  */
 int hal_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out);
 /*
  * Reference
- * Desc: Delete certificate in secure storage
+ * Desc: Remove certificate in secure storage
  * Artik SEE API: -
  * TizenRT SEE API: -
  * ISP: -
  */
-int hal_delete_certificate(_IN_ uint32_t cert_idx);
+int hal_remove_certificate(_IN_ uint32_t cert_idx);
 
 /*
  * Reference
@@ -394,7 +453,7 @@ int hal_delete_certificate(_IN_ uint32_t cert_idx);
  * TizenRT SEE API: int see_get_publickey(unsigned char *key_der, unsigned int *key_len)
  * ISP: int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
  */
-int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
+int hal_get_factorykey_data(_IN_ uint32_t key_idx, _IN_ hal_data *data);
 
 
 /**
