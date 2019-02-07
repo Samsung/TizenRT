@@ -111,6 +111,23 @@ enum audio_device_process_unit_subtype_e {
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
 
+typedef struct audio_stream_info_s audio_stream_info_t;
+
+typedef enum {
+	AUDIO_STREAM_FOCUS_STATE_RELEASED,   /**< Focus state for release */
+	AUDIO_STREAM_FOCUS_STATE_ACQUIRED,   /**< Focus state for acquisition */
+} audio_stream_focus_state_e;
+
+typedef void (*audio_stream_focus_state_changed_cb)(audio_stream_info_t *stream_info,
+													audio_stream_focus_state_e focus_state,
+													void *user_data);
+
+struct audio_stream_info_s {
+	audio_stream_focus_state_changed_cb user_cb;
+	void *user_data;
+};
+
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -125,6 +142,11 @@ typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
 audio_manager_result_t audio_manager_init(void);
+
+audio_manager_result_t audio_manager_create_stream_information(audio_manager_stream_policy_t stream_type, audio_stream_focus_state_changed_cb callback, void *user_data, audio_stream_info_t **stream_info);
+audio_manager_result_t audio_manager_destroy_stream_information(audio_stream_info_t *stream_info);
+audio_manager_result_t audio_manager_acquire_focus(audio_stream_info_t *stream_info);
+audio_manager_result_t audio_manager_release_focus(audio_stream_info_t *stream_info);
 
 /****************************************************************************
  * Name: set_audio_stream_in
@@ -194,7 +216,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Return Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, unsigned int frames);
+int start_audio_stream_out(audio_stream_info_t *stream_info, void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: pause_audio_stream_in

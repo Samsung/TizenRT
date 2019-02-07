@@ -158,6 +158,22 @@ typedef enum audio_io_direction_e audio_io_direction_t;
 typedef struct audio_device_config_s audio_config_t;
 typedef struct audio_card_info_s audio_card_info_t;
 
+static pthread_mutex_t g_audio_manager_mutex;
+
+struct audio_focus_node_s {
+	audio_stream_info_t *stream_info;
+	struct audio_focus_node_s *prev;
+	struct audio_focus_node_s *next;
+};
+typedef struct audio_focus_node_s audio_focus_node_t;
+
+struct audio_focus_list_s {
+	struct audio_focus_node_s *top;
+};
+
+typedef struct audio_focus_list_s audio_focus_list_t;
+static audio_focus_list_t g_audio_manager_focus_list;
+
 static audio_card_info_t g_audio_in_cards[CONFIG_AUDIO_MAX_INPUT_CARD_NUM];
 static audio_card_info_t g_audio_out_cards[CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM];
 
@@ -644,6 +660,9 @@ audio_manager_result_t audio_manager_init(void)
 
 	am_initialized = 1;
 
+	pthread_mutex_init(&g_audio_manager_mutex, NULL);
+	g_audio_manager_focus_list.top = (audio_focus_node_t *)calloc(1, sizeof(audio_focus_node_t));
+
 	for (card_id = 0; card_id < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; card_id++) {
 		pthread_mutex_init(&(g_audio_in_cards[card_id].card_mutex), NULL);
 	}
@@ -662,6 +681,135 @@ audio_manager_result_t audio_manager_init(void)
 		return ret;
 	}
 
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t audio_manager_create_stream_information(audio_manager_stream_policy_t stream_type, audio_stream_focus_state_changed_cb callback, void *user_data, audio_stream_info_t **stream_info)
+{
+	*stream_info = (audio_stream_info_t *)malloc(sizeof(audio_stream_info_t));
+	if (*stream_info == NULL) {
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+
+	(*stream_info)->user_cb = callback;
+	(*stream_info)->user_data = user_data;
+	medvdbg("stream_info[%p] is created\n", *stream_info);
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t audio_manager_destroy_stream_information(audio_stream_info_t *stream_info)
+{
+	if (stream_info == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	audio_manager_release_focus(stream_info);
+	free(stream_info);
+	medvdbg("stream_info[%p] is destroyed\n", stream_info);
+	stream_info = NULL;
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t audio_manager_acquire_focus(audio_stream_info_t *stream_info)
+{
+	medvdbg("stream_info[%p] acquires focus\n", stream_info);
+	if (stream_info == NULL) {
+		meddbg("stream_info is nullptr\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if (g_audio_manager_focus_list.top->stream_info == stream_info) {
+		medvdbg("Already focused\n");
+		return AUDIO_MANAGER_SUCCESS;
+	}
+
+	pthread_mutex_lock(&g_audio_manager_mutex);
+	audio_focus_node_t *iter = g_audio_manager_focus_list.top;
+	while (iter != NULL && iter->stream_info != stream_info) {
+		iter = iter->next;
+	}
+
+	audio_focus_node_t *new_focused;
+	if (iter != NULL) {
+		if (iter->prev) {
+			iter->prev->next = iter->next;
+		}
+		if (iter->next) {
+			iter->next->prev = iter->prev;
+		}
+		new_focused = iter;
+		medvdbg("stream_info[%p] node is found. Take this node[%p]\n", stream_info, iter, new_focused);
+	} else {
+		new_focused = (audio_focus_node_t *)malloc(sizeof(audio_focus_node_t));
+		new_focused->stream_info = stream_info;
+		medvdbg("stream_info[%p] node is not found. Make new node[%p]\n", stream_info, new_focused);
+	}
+
+	audio_focus_node_t *prev_focused = g_audio_manager_focus_list.top;
+	new_focused->prev = NULL;
+	new_focused->next = prev_focused;
+	g_audio_manager_focus_list.top = new_focused;
+
+	if (prev_focused != NULL) {
+		medvdbg("There is an previous focused node\n");
+		prev_focused->prev = new_focused;
+		if (prev_focused->stream_info && prev_focused->stream_info->user_cb != NULL) {
+			medvdbg("Previous focused node has callback. Call release callback\n");
+			prev_focused->stream_info->user_cb(prev_focused->stream_info, AUDIO_STREAM_FOCUS_STATE_RELEASED, prev_focused->stream_info->user_data);
+		}
+	}
+
+	if (new_focused->stream_info->user_cb != NULL) {
+		medvdbg("New focused node has callback. Call acquire callback\n");
+		new_focused->stream_info->user_cb(new_focused->stream_info, AUDIO_STREAM_FOCUS_STATE_ACQUIRED, new_focused->stream_info->user_data);
+	}
+	pthread_mutex_unlock(&g_audio_manager_mutex);
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t audio_manager_release_focus(audio_stream_info_t *stream_info)
+{
+	medvdbg("stream_info[%p] releases focus\n", stream_info);
+	if (stream_info == NULL) {
+		meddbg("stream_info is nullptr\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	pthread_mutex_lock(&g_audio_manager_mutex);
+	audio_focus_node_t *iter = g_audio_manager_focus_list.top;
+	if (iter->stream_info == stream_info) {
+		medvdbg("focused stream_info node[%p] is released\n", iter);
+		if (iter->stream_info->user_cb != NULL) {
+			iter->stream_info->user_cb(iter->stream_info, AUDIO_STREAM_FOCUS_STATE_RELEASED, iter->stream_info->user_data);
+		}
+		if (iter->next) {
+			if (iter->next->stream_info && iter->next->stream_info->user_cb != NULL) {
+				iter->next->stream_info->user_cb(iter->next->stream_info, AUDIO_STREAM_FOCUS_STATE_ACQUIRED, iter->next->stream_info->user_data);
+			}
+		}
+		g_audio_manager_focus_list.top = iter->next;
+	}
+
+	while (iter != NULL && iter->stream_info != stream_info) {
+		iter = iter->next;
+	}
+
+	if (iter == NULL) {
+		medvdbg("No node has stream_info[%p]\n", stream_info);
+		pthread_mutex_unlock(&g_audio_manager_mutex);
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if (iter->prev) {
+		iter->prev->next = iter->next;
+	}
+	if (iter->next) {
+		iter->next->prev = iter->prev;
+	}
+
+	medvdbg("Free the released node[%p]\n", iter);
+	free(iter);
+	pthread_mutex_unlock(&g_audio_manager_mutex);
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -980,8 +1128,12 @@ error_with_lock:
 	return ret;
 }
 
-int start_audio_stream_out(void *data, unsigned int frames)
+int start_audio_stream_out(audio_stream_info_t *stream_info, void *data, unsigned int frames)
 {
+	if (g_audio_manager_focus_list.top->stream_info != stream_info) {
+		meddbg("g_audio_manager_focus_list.top->stream_info : %p, stream_info : %p\n", g_audio_manager_focus_list.top->stream_info, stream_info);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
 	int ret = 0;
 	unsigned int resampled_frames = 0;
 	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
@@ -1131,6 +1283,11 @@ audio_manager_result_t pause_audio_stream_out(void)
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
 
+	if (g_audio_manager_focus_list.top->stream_info != NULL) {
+		medvdbg("audio_manager is still used\n");
+		return AUDIO_MANAGER_SUCCESS;
+	}
+
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -1193,6 +1350,11 @@ audio_manager_result_t stop_audio_stream_out(void)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
+
+	if (g_audio_manager_focus_list.top->stream_info != NULL) {
+		medvdbg("audio_manager is still used\n");
+		return AUDIO_MANAGER_SUCCESS;
+	}
 
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("Found no active output audio card\n");

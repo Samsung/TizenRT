@@ -35,6 +35,7 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
 	mBufSize = 0;
+	mStream_info = nullptr;
 }
 
 player_result_t MediaPlayerImpl::create()
@@ -57,6 +58,28 @@ player_result_t MediaPlayerImpl::create()
 	return ret;
 }
 
+static void foucs_callback(audio_stream_info_t *stream_info,
+						   audio_stream_focus_state_e focus_state,
+						   void *user_data)
+{
+	auto &mpw = PlayerWorker::getWorker();
+	auto player = *((std::shared_ptr<MediaPlayerImpl> *)user_data);
+	switch (focus_state) {
+	case AUDIO_STREAM_FOCUS_STATE_ACQUIRED:
+		medvdbg("AUDIO_STREAM_FOCUS_STATE_ACQUIRED\n");
+		mpw.setPlayer(player);
+		break;
+	case AUDIO_STREAM_FOCUS_STATE_RELEASED:
+		medvdbg("AUDIO_STREAM_FOCUS_STATE_RELEASED\n");
+		if (mpw.getPlayer() == player) {
+			mpw.setPlayer(nullptr);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 void MediaPlayerImpl::createPlayer(player_result_t &ret)
 {
 	LOG_STATE_INFO(mCurState);
@@ -68,6 +91,8 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 		return notifySync();
 	}
 
+	auto param = new std::shared_ptr<MediaPlayerImpl>(shared_from_this());
+	audio_manager_create_stream_information(AUDIO_MANAGER_STREAM_TYPE_MEDIA, foucs_callback, (void *)(param), (audio_stream_info_t **)(&mStream_info));
 	mCurState = PLAYER_STATE_IDLE;
 	notifySync();
 }
@@ -112,6 +137,9 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 		return notifySync();
 	}
 
+	auto param = (std::shared_ptr<MediaPlayerImpl> *)((audio_stream_info_t *)mStream_info)->user_data;
+	audio_manager_destroy_stream_information((audio_stream_info_t *)mStream_info);
+	delete param;
 	mCurState = PLAYER_STATE_NONE;
 	notifySync();
 }
@@ -289,7 +317,6 @@ void MediaPlayerImpl::startPlayer()
 {
 	LOG_STATE_INFO(mCurState);
 
-	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
@@ -307,15 +334,7 @@ void MediaPlayerImpl::startPlayer()
 		}
 	}
 
-	auto prevPlayer = mpw.getPlayer();
-	auto curPlayer = shared_from_this();
-	if (prevPlayer != curPlayer) {
-		if (prevPlayer) {
-			/** TODO Should be considered Audiofocus later **/
-			prevPlayer->pausePlayer();
-		}
-		mpw.setPlayer(curPlayer);
-	}
+	audio_manager_acquire_focus((audio_stream_info_t *)mStream_info);
 
 	mCurState = PLAYER_STATE_PLAYING;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_STARTED);
@@ -341,7 +360,6 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 {
 	LOG_STATE_INFO(mCurState);
 
-	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (ret == PLAYER_OK && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
@@ -349,6 +367,7 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 		return;
 	}
 
+	audio_manager_release_focus((audio_stream_info_t *)mStream_info);
 	audio_manager_result_t result = stop_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
@@ -358,7 +377,6 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 		}
 	}
 
-	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_STOPPED);
 }
@@ -383,7 +401,6 @@ void MediaPlayerImpl::pausePlayer()
 {
 	LOG_STATE_INFO(mCurState);
 
-	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_PLAYING) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
@@ -391,6 +408,7 @@ void MediaPlayerImpl::pausePlayer()
 		return;
 	}
 
+	audio_manager_release_focus((audio_stream_info_t *)mStream_info);
 	audio_manager_result_t result = pause_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
@@ -398,11 +416,6 @@ void MediaPlayerImpl::pausePlayer()
 		return;
 	}
 
-	auto prevPlayer = mpw.getPlayer();
-	auto curPlayer = shared_from_this();
-	if (prevPlayer == curPlayer) {
-		mpw.setPlayer(nullptr);
-	}
 	mCurState = PLAYER_STATE_PAUSED;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSED);
 }
@@ -742,7 +755,7 @@ void MediaPlayerImpl::playback()
 	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
 	medvdbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
+		int ret = start_audio_stream_out((audio_stream_info_t *)mStream_info, mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
 			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			PlayerWorker &mpw = PlayerWorker::getWorker();

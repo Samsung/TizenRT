@@ -139,6 +139,7 @@ private:
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
+	void *mStream_info;
 };
 } // namespace media
 #endif
