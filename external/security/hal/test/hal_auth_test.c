@@ -448,6 +448,164 @@ TEST_F(ecdh_compute_shared_secret)
 	ST_END_TEST;
 }
 
+/*
+ * Desc: Save certificate in secure storage
+ * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ */
+#define HAL_TEST_CERT_SLOT 2
+static const char test_crt[] =
+		"-----BEGIN CERTIFICATE-----\r\n"
+		"MIICaDCCAgygAwIBAgIBAjAMBggqhkjOPQQDAgUAMHAxLTArBgNVBAMTJFNhbXN1\r\n"
+		"bmcgRWxlY3Ryb25pY3MgT0NGIFJvb3QgQ0EgVEVTVDEUMBIGA1UECxMLT0NGIFJv\r\n"
+		"b3QgQ0ExHDAaBgNVBAoTE1NhbXN1bmcgRWxlY3Ryb25pY3MxCzAJBgNVBAYTAktS\r\n"
+		"MCAXDTE2MTEyNDAyNDcyN1oYDzIwNjkxMjMxMTQ1OTU5WjBwMS0wKwYDVQQDEyRT\r\n"
+		"YW1zdW5nIEVsZWN0cm9uaWNzIE9DRiBSb290IENBIFRFU1QxFDASBgNVBAsTC09D\r\n"
+		"RiBSb290IENBMRwwGgYDVQQKExNTYW1zdW5nIEVsZWN0cm9uaWNzMQswCQYDVQQG\r\n"
+		"EwJLUjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBzzury7p8HANVn+v4CIa2h/\r\n"
+		"R/SAt3VVst+vTv4/kR+lgU1OEiT3t9+mOWE7J+oddpRofFW2DdeJkpfQUVOn4NOj\r\n"
+		"gZIwgY8wDgYDVR0PAQH/BAQDAgHGMC4GA1UdHwQnMCUwI6AhoB+GHWh0dHA6Ly9j\r\n"
+		"YS5zYW1zdW5naW90cy5jb20vY3JsMA8GA1UdEwEB/wQFMAMBAf8wPAYIKwYBBQUH\r\n"
+		"AQEEMDAuMCwGCCsGAQUFBzABhiBodHRwOi8vb2NzcC10ZXN0LnNhbXN1bmdpb3Rz\r\n"
+		"LmNvbTAMBggqhkjOPQQDAgUAA0gAMEUCIQCIsi3BcOQMXO/pCiUA+S75bYFWS27E\r\n"
+		"GAq9e2E3+hQ2TAIgWrTieFAZ5xRH3BnSHG+XEF2HPD99y/SYSa6T59YW+jE=\r\n"
+		"-----END CERTIFICATE-----\r\n\0";
+static hal_data g_cert_in;
+static hal_data g_cert_out;
+TEST_SETUP(set_certificate)
+{
+	ST_START_TEST;
+
+	g_cert_in.data = (unsigned char *)malloc(sizeof(test_crt));
+	ST_EXPECT_NEQ(NULL, g_cert_in.data);
+	memcpy(g_cert_in.data, test_crt, sizeof(test_crt));
+	g_cert_in.data_len = sizeof(test_crt);
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(set_certificate)
+{
+	ST_START_TEST;
+
+	hal_test_free_buffer(&g_cert_in);
+	ST_EXPECT(0, hal_delete_certificate(HAL_TEST_CERT_SLOT);
+
+	ST_END_TEST;
+}
+
+TEST_F(set_certificate)
+{
+	ST_START_TEST;
+
+	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in);
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Load certificate in secure storage
+ * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ */
+TEST_SETUP(get_certificate)
+{
+	ST_START_TEST;
+
+	g_cert_in.data = (unsigned char *)malloc(sizeof(test_crt));
+	ST_EXPECT_NEQ(NULL, g_cert_in.data);
+	memcpy(g_cert_in.data, test_crt, sizeof(test_crt));
+	g_cert_in.data_len = sizeof(test_crt);
+	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in);
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(get_certificate)
+{
+	ST_START_TEST;
+
+	hal_test_free_buffer(&g_cert_in);
+	hal_free_data(&g_cert_out);
+	ST_EXPECT(0, hal_delete_certificate(HAL_TEST_CERT_SLOT);
+
+	ST_END_TEST;
+}
+
+TEST_F(get_certificate)
+{
+	ST_START_TEST;
+
+	ST_EXPECT(0, hal_get_certificate(HAL_TEST_CERT_SLOT, &g_cert_out));
+	ST_EXPECT(0, memcmp(g_cert_out.data, g_cert_in.data, g_cert_out.data_len));
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Delete certificate in secure storage
+ * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ */
+TEST_SETUP(delete_certificate)
+{
+	ST_START_TEST;
+
+	g_cert_in.data = (unsigned char *)malloc(sizeof(test_crt));
+	ST_EXPECT_NEQ(NULL, g_cert_in.data);
+	memcpy(g_cert_in.data, test_crt, sizeof(test_crt));
+	g_cert_in.data_len = sizeof(test_crt);
+	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in);
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(delete_certificate)
+{
+	ST_START_TEST;
+
+	hal_test_free_buffer(&g_cert_in);
+
+	ST_END_TEST;
+}
+
+TEST_F(delete_certificate)
+{
+	ST_START_TEST;
+
+	ST_EXPECT(0, hal_delete_certificate(HAL_TEST_CERT_SLOT));
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Get factorykey data
+ * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ */
+static hal_data g_factory_key_data;
+#define HAL_TEST_FACTORYKEY_DATA_SLOT 5
+TEST_SETUP(get_factorykey_data)
+{
+	ST_START_TEST;
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(get_factorykey_data)
+{
+	ST_START_TEST;
+
+	hal_free_data(&g_factorykey_data);
+
+	ST_END_TEST;
+}
+
+TEST_F(get_factorykey_data)
+{
+	ST_START_TEST;
+
+	ST_EXPECT(0, hal_get_factorykey_data(HAL_TEST_FACTORYKEY_DATA_SLOT, &g_factorykey_data));
+
+	ST_END_TEST;
+}
+
 ST_SET_SMOKE_TAIL(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate_random", generate_random);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hash", get_hash, generate_random);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hmac", get_hmac, get_hash);
@@ -458,7 +616,11 @@ ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "ECDSA verification"
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate DH parameters", dh_generate_param, ecdsa_verify);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret, dh_generate_param);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret, dh_compute_shared_secret);
-ST_SET_PACK(hal_auth, ecdh_compute_shared_secret);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Set certificate", set_certificate, ecdh_compute_shared_secret);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get certificate", get_certificate, set_certificate);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Delete certificate", delete_certificate, get_certificate);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factorykey data", get_factorykey_data, delete_certificate);
+ST_SET_PACK(hal_auth, get_factorykey_data);
 
 int hal_auth_test(void)
 {

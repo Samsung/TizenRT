@@ -361,6 +361,39 @@ int hal_dh_compute_shared_secret(_IN_ hal_dh_data *param, _IN_ uint32_t dh_idx, 
  */
 int hal_ecdh_compute_shared_secret(_IN_ hal_data *pubkey, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
+/*
+ * Reference
+ * Desc: Set certificate in secure storage
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int cert_index, unsigned int cert_type)
+ * ISP: int isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index)
+ */
+int hal_set_certificate(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in);
+
+/*
+ * Reference
+ * Desc: Get certificate in secure storage
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned int cert_index, unsigned int cert_type)
+ * ISP: int isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
+ */
+int hal_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out);
+/*
+ * Reference
+ * Desc: Delete certificate in secure storage
+ * Artik SEE API: -
+ * TizenRT SEE API: -
+ * ISP: -
+ */
+int hal_delete_certificate(_IN_ uint32_t cert_idx);
+
+/*
+ * Reference
+ * Desc: Get factorykey data
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_get_publickey(unsigned char *key_der, unsigned int *key_len)
+ * ISP: int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
+ */
 int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
 
 
@@ -403,6 +436,7 @@ int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_da
  * ISP:
  */
 int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+
 
 /**
  * Secure Storage
