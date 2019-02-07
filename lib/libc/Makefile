@@ -92,6 +92,7 @@ include mqueue/Make.defs
 include math/Make.defs
 include fixedmath/Make.defs
 include net/Make.defs
+include netdb/Make.defs
 include time/Make.defs
 include inttypes/Make.defs
 include libgen/Make.defs

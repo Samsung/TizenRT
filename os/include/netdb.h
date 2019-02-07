@@ -123,6 +123,24 @@ struct servent_data {
 	char *line;
 };
 
+#if CONFIG_NET_LWIP
+typedef enum {
+	GETADDRINFO,
+	FREEADDRINFO
+} req_type;
+
+/* To send a request to lwip stack by ioctl() use */
+struct req_lwip_data {
+	req_type type;
+	const char *host_name;
+	const char *serv_name;
+	const struct addrinfo *ai_hint;
+	struct addrinfo *ai_res;
+	struct addrinfo *ai;
+	int req_res;
+};
+#endif
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
