@@ -95,12 +95,6 @@ typedef struct _hal_aes_param {
 
 	unsigned char *iv;
 	unsigned int iv_len;
-
-	unsigned char *aad;
-	unsigned int aad_len;
-
-	unsigned char *tag;
-	unsigned int tag_len;
 } hal_aes_param;
 
 // from sRSA_KEY
@@ -373,13 +367,42 @@ int hal_get_factorykey_data(_IN_ uint32_t key_id, _IN_ uint8_t *data);
 /**
  * Crypto
  */
-int hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
+/*
+ * Reference
+ * Desc: Encrypt data using AES
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_aes_encrypt(unsigned int key_index, struct sAES_PARAM *aes_param)
+ * ISP: int isp_aes_encrypt_securekey(struct sAES_PARAM *aes_param, unsigned int key_index)
+ */
 int hal_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
 
-int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+/*
+ * Reference
+ * Desc: Decrypt data using AES
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_aes_decrypt(unsigned int key_index, struct sAES_PARAM *aes_param)
+ * ISP: int isp_aes_decrypt_securekey(struct sAES_PARAM *aes_param, unsigned int key_index)
+ */
+int hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
+/*
+ * Reference
+ * Desc: Encrypt data using RSA
+ * Artik SEE API: -
+ * TizenRT SEE API: int see_rsa_encryption(unsigned int key_index, unsigned int pad_type, unsigned char *output, unsigned int *outlen, unsigned char *input, unsigned int inlen)
+ * ISP: int isp_rsa_encrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
+ */
 int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
+
+/*
+ * Reference
+ * Desc: Decrypt data using RSA
+ * Artik SEE API: -
+ * TizenRT SEE API:
+ * ISP:
+ */
+int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
 /**
  * Secure Storage
