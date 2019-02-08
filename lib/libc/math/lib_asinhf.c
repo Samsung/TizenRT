@@ -62,5 +62,9 @@
 
 float asinhf(float x)
 {
+	if (x == -INFINITY) {
+		return -INFINITY;
+	}
+
 	return logf(x + sqrtf(x * x + 1));
 }

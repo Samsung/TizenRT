@@ -47,7 +47,6 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -59,6 +58,14 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double atan(double x)
 {
+	if (x == INFINITY) {
+		return (PI / 2);
+	}
+
+	if (x == -INFINITY) {
+		return -(PI / 2);
+	}
+
 	return asin(x / sqrt(x * x + 1));
 }
 #endif

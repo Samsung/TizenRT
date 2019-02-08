@@ -57,6 +57,22 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double atan2l(long double y, long double x)
 {
+	if (y == INFINITY && x == INFINITY) {
+		return 0.785398163397448;
+	}
+
+	if (y == INFINITY && x == -INFINITY) {
+		return 2.356194490192345;
+	}
+
+	if (y == -INFINITY && x == INFINITY) {
+		return -0.785398163397448;
+	}
+
+	if (y == -INFINITY && x == -INFINITY) {
+		return -2.356194490192345;
+	}
+
 	if (x > 0) {
 		return atanl(y / x);
 	} else if (y >= 0 && x < 0) {

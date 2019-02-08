@@ -106,6 +106,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
+#include <fixedmath.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -116,6 +117,7 @@
 #define INFINITY    (1.0/0.0)
 #define NAN         (0.0/0.0)
 #define HUGE_VAL    INFINITY
+#define PI	    b16PI
 
 #define isnan(x)    ((x) != (x))
 #define isinf(x)    (((x) == INFINITY) || ((x) == -INFINITY))
@@ -757,7 +759,7 @@ long double asinl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief 
+ * @brief
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.1
@@ -1131,7 +1133,7 @@ long double fdiml(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief 
+ * @brief
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.1

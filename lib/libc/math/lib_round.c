@@ -40,7 +40,14 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double round(double x)
 {
-	double f = modf(x, &x);
+	double f;
+
+	if (isnan(x)) {
+		return NAN;
+	}
+
+	f = modf(x, &x);
+
 	if (x <= 0.0 && f <= -0.5) {
 		x -= 1.0;
 	}

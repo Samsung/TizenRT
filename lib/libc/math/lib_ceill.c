@@ -59,6 +59,10 @@ long double ceill(long double x)
 {
 	long double x1 = x;
 
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	modfl(x, &x);
 	if (x1 > 0.0 && fabsl(x1 - x) > 0.0) {
 		x += 1.0;
