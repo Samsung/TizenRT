@@ -83,8 +83,8 @@ uint8_t g_err_nsuccess;
 /*
  * WiFi Manager callback prototypes
  */
-static void prv_sta_connected(wifi_manager_result_e);
-static void prv_sta_disconnected(void);
+static void prv_sta_connected(wifi_manager_result_e res);
+static void prv_sta_disconnected(wifi_manager_disconnect_e res);
 static void prv_softap_sta_join(void);
 static void prv_softap_sta_leave(void);
 static void prv_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
@@ -98,10 +98,10 @@ static void prv_sta_connected(wifi_manager_result_e res)
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_sta_disconnected(void)
+static void prv_sta_disconnected(wifi_manager_disconnect_e res)
 {
 	sleep(2);
-	printf(" [RT] T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
