@@ -97,10 +97,10 @@ static void ps_print_values(char *buf)
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
 
-	stat_info[0] = strtok(buf, " ");
+	stat_info[0] = buf;
 
-	for (i = 1; i < PROC_STAT_MAX; i++) {
-		stat_info[i] = strtok(NULL, " ");
+	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
+		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
 	}
 
 	flags = atoi(stat_info[PROC_STAT_FLAG]);

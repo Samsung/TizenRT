@@ -154,11 +154,12 @@ static void stkmon_print_active_values(char *buf)
 	int i;
 	stat_data stat_info[PROC_STAT_MAX];
 
-	stat_info[0] = strtok(buf, " ");
+	stat_info[0] = buf;
 
-	for (i = 1; i < PROC_STAT_MAX; i++) {
-		stat_info[i] = strtok(NULL, " ");
+	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
+		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
 	}
+
 	printf("%5s | %8s | %8s", stat_info[PROC_STAT_PID], "ACTIVE", stat_info[PROC_STAT_TOTALSTACK]);
 #ifdef CONFIG_STACK_COLORATION
 	printf(" | %10s", stat_info[PROC_STAT_PEAKSTACK]);
