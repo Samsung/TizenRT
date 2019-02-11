@@ -767,9 +767,7 @@ config RAM_REGIONx_HEAP_INDEX
 config FS_TMPFS_HEAP_INDEX
 	int "TMPFS Heap index"
 	default 1
-	depends on FS_TMPFS
-	depends on MM_NHEAPS > 1
-	depends on MM_REGIONS > 1
+	depends on FS_TMPFS && MM_NHEAPS != 1
 	---help---
 		when tmpfs uses an independent memory region.
 		Specifies the index of the heap to allocate.
