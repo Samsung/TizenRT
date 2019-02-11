@@ -70,9 +70,6 @@
 #include <net/lwip/ip6_addr.h>
 #endif
 
-/* This is to disable some lwip APIs temporarily to use libc */
-#define USE_LIBC	1
-
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	return lwip_bind(s, name, namelen);
@@ -232,105 +229,10 @@ int ioctlsocket(int s, long cmd, void *argp)
 	return lwip_ioctl(s, cmd, argp);
 }
 
-#ifndef USE_LIBC
-uint16_t htons(uint16_t hs)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return hs;
-#else
-	return lwip_htons(hs);
-#endif
-}
-
-uint16_t ntohs(uint16_t ns)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return ns;
-#else
-	return lwip_htons(ns);
-#endif
-}
-
-uint32_t ntohl(uint32_t nl)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return nl;
-#else
-	return lwip_htonl(nl);
-#endif
-}
-
-uint32_t htonl(uint32_t nl)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return nl;
-#else
-	return lwip_htonl(nl);
-#endif
-}
-
-FAR char *inet_ntoa(struct in_addr in)
-{
-	return ip4addr_ntoa((const ip4_addr_t *)&(in));
-}
-
-in_addr_t inet_addr(FAR const char *cp)
-{
-	return ipaddr_addr(cp);
-}
-
-int inet_aton(const char *cp, struct in_addr *inp)
-{
-	return ip4addr_aton(cp, (ip4_addr_t *)inp);
-}
-
-FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t size)
-{
-#ifdef CONFIG_NET_IPv4
-	if (af == AF_INET) {
-		return ip4addr_ntoa_r((const ip4_addr_t *)(src), ((char *)(dest)), (size));
-	} else
-#endif
-#ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6) {
-		return ip6addr_ntoa_r((const ip6_addr_t *)(src), ((char *)(dest)), (size));
-	} else
-#endif
-		return NULL;
-}
-
-int inet_pton(int af, FAR const char *src, FAR void *dest)
-{
-#ifdef CONFIG_NET_IPv4
-	if (af == AF_INET) {
-		return ip4addr_aton(((const char *)(src)), (ip4_addr_t *)((char *)(dest)));
-	} else
-#endif
-#ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6) {
-		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t *)(dest)));
-	} else
-#endif
-	{
-		return -1;
-	}
-}
-#endif
-
 #ifdef CONFIG_NET_LWIP_NETDB
 struct hostent *gethostbyname(const char *name)
 {
 	return lwip_gethostbyname(name);
-}
-
-void freeaddrinfo(struct addrinfo *ai)
-{
-	lwip_freeaddrinfo(ai);
-}
-
-int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
-{
-	return lwip_getaddrinfo(nodename, servname, hints, res);
 }
 
 #if LWIP_COMPAT_SOCKETS

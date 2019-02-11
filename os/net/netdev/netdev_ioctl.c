@@ -66,6 +66,8 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <netdb.h>
+
 #include <tinyara/net/net.h>
 #include <tinyara/net/ip.h>
 
@@ -77,6 +79,7 @@
 #include <net/lwip/netif.h>
 #include <net/lwip/netifapi.h>
 #include <net/lwip/igmp.h>
+
 
 #ifdef CONFIG_NET_IGMP
 #include "sys/sockio.h"
@@ -846,7 +849,7 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 		if (num_copy > 0) {
 			ret = OK;
 		} else {
-			ret = ERROR;
+			ret = -EINVAL;
 		}
 		break;
 #ifdef CONFIG_NET_STATS
@@ -1003,6 +1006,69 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 }
 #endif							/* CONFIG_NET_ROUTE */
 
+#if CONFIG_NET_LWIP
+/****************************************************************************
+ * Function: lwip_func_ioctl
+ *
+ * Description:
+ *   Call lwip API
+ *
+ * Parameters:
+ *   sock     Socket structure
+ *   cmd      The ioctl command
+ *   arg      Type of the information to get
+ *
+ * Returned Value:
+ *   0 on success, negated errno on failure.
+ *
+ ****************************************************************************/
+
+int lwip_func_ioctl(FAR struct socket *sock, int cmd, void  *arg)
+{
+	int ret = -EINVAL;
+	struct req_lwip_data *in_arg = (struct req_lwip_data *)arg;
+	if (!in_arg) {
+		return ret;
+	}
+	if (cmd != SIOCLWIP) {
+		return -ENOTTY;
+	}
+
+	const char *hostname = NULL;
+	const char *servname = NULL;
+	const struct addrinfo *hints = NULL;
+	struct addrinfo *res = NULL;
+	struct addrinfo *ai = NULL;
+
+	switch (in_arg->type) {
+	case GETADDRINFO:
+		hostname = in_arg->host_name;
+		servname = in_arg->serv_name;
+		hints = in_arg->ai_hint;
+		ret = lwip_getaddrinfo(hostname, servname, hints, &res);
+		if (ret != 0) {
+			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
+			in_arg->req_res = ret;
+			ret = -EINVAL;
+		}
+		if (res) {
+			in_arg->ai_res = res;
+		}
+		break;
+	case FREEADDRINFO:
+		ai = in_arg->ai;
+		lwip_freeaddrinfo(ai);
+		ret = 0;
+		break;
+	default:
+		printf("Wrong request type: %d\n", in_arg->type);
+		break;
+	}
+
+	return ret;
+}
+#endif							/* CONFIG_NET_LWIP */
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1041,7 +1107,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 {
 	FAR struct socket *sock = NULL;
-	int ret = -1;
+	int ret = -ENOTTY;
 
 	/* Check if this is a valid command.  In all cases, arg is a pointer that has
 	 * been cast to unsigned long.  Verify that the value of the to-be-pointer is
@@ -1063,7 +1129,12 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Execute the command */
-	ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+#ifdef CONFIG_NET_LWIP
+	ret = lwip_func_ioctl(sock, cmd, (void *)((uintptr_t)arg));
+#endif
+	if (ret == -ENOTTY) {
+		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+	}
 #ifdef CONFIG_NET_NETMON
 	if (ret == -ENOTTY) {
 		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
