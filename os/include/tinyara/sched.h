@@ -553,6 +553,9 @@ struct tcb_s {
 #ifdef CONFIG_SIGKILL_HANDLER
 	_sa_sigaction_t sigkillusrhandler; /* User defined SIGKILL handler      */
 #endif
+#ifdef HAVE_GROUP_MEMBERS
+	sigset_t sighandlemask;		/* Signals that are blocked for handling */
+#endif
 #endif
 
 	/* POSIX Named Message Queue Fields ****************************************** */
