@@ -436,7 +436,7 @@ CONFIG_UART1_2STOP=0
 # Wireless Device Options
 #
 # CONFIG_DRIVERS_WIRELESS is not set
-# CONFIG_KERNEL_TEST_DRV is not set
+CONFIG_KERNEL_TEST_DRV=y
 
 #
 # Networking Support
