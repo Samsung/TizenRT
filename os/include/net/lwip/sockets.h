@@ -388,7 +388,7 @@ typedef struct ip_mreq {
 #define IPTOS_PREC_ROUTINE              0x00
 
 /*
- * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
+ * Commands for ioctl(),  taken from the BSD file fcntl.h.
  * lwip_ioctl only supports FIONREAD and FIONBIO, for now
  *
  * Ioctl's have the command encoded in the lower word,

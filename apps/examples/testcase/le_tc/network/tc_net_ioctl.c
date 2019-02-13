@@ -30,10 +30,10 @@
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 
 #include "tc_internal.h"
 
-extern int ioctlsocket(int s, long cmd, void *argp);
 
 /**
    * @testcase		   :tc_net_ioctl_p
@@ -52,9 +52,8 @@ static void tc_net_ioctl_p(void)
 		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
-	long a = 0;
-
-	int ret = ioctlsocket(fd, FIONBIO, &a);
+	int dummy = 0;
+	int ret = ioctl(fd, FIONBIO, (unsigned long)&dummy);
 	close(fd);
 
 	TC_ASSERT_NEQ("ioctl", ret, -1);
@@ -79,9 +78,8 @@ static void tc_net_ioctl_fionread_n(void)
 		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
-	long a = 10;
-
-	int ret = ioctlsocket(fd, FIONREAD, &a);
+	int dummy = 10;
+	int ret = ioctl(fd, FIONREAD, (unsigned long)&dummy);
 	close(fd);
 
 	TC_ASSERT_NEQ("ioctl", ret, 0);
@@ -101,7 +99,7 @@ static void tc_net_ioctl_n(void)
 {
 
 	int fd = -1;
-	int ret = ioctlsocket(fd, FIONBIO, 0);
+	int ret = ioctl(fd, FIONBIO, 0);
 
 	TC_ASSERT_NEQ("ioctl", ret, 0);
 	TC_SUCCESS_RESULT();

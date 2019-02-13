@@ -1,6 +1,8 @@
 #include <tinyara/config.h>
 #include <sys/select.h>
 
+#define ioctlsocket(x,y,z) ioctl(x,y,z)
+
 /* lib/curl_config.h.  Generated from curl_config.h.in by configure.  */
 /* lib/curl_config.h.in.  Generated from configure.ac by autoheader.  */
 
