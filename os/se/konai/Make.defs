@@ -53,5 +53,5 @@
 ifeq ($(CONFIG_SE_KONAI),y)
 SE_PATH = konai
 SE_CSRCS += konai.c
-SE_LIB += libkonai.a
+#SE_LIB += libkonai.a
 endif

@@ -1,0 +1,552 @@
+echo "create .version file"; \
+tools/version.sh -v 2.0 .version; \
+chmod 755 .version
+create .version file
+LN: include/arch/board to board/esp32_devkit/include
+LN: include/arch/chip to arch/xtensa/include/esp32
+LN: arch/xtensa/src/chip to arch/xtensa/src/esp32
+LN: include/apps to ../apps/include
+make[1]: Entering directory '/root/tizenrt/apps'
+make[2]: Entering directory '/root/tizenrt/apps/examples'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mtdpart'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mtdpart'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ntpclient_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ntpclient_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/helloxx'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/helloxx'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mqtt_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mqtt_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotbus_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotbus_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mpu'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mpu'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libcoap_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libcoap_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediastreamer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediastreamer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/grpc_greeter_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/grpc_greeter_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotjs_startup'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotjs_startup'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_benchmark'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_benchmark'
+make[3]: Entering directory '/root/tizenrt/apps/examples/sensorbd_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/sensorbd_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dtls_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dtls_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wakaama_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wakaama_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/speech_detector_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/speech_detector_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/task_manager_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/task_manager_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/cy4390x_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/cy4390x_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smart'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smart'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dnsclient_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dnsclient_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/select_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/select_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ttrace'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ttrace'
+make[3]: Entering directory '/root/tizenrt/apps/examples/eventloop'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/eventloop'
+make[3]: Entering directory '/root/tizenrt/apps/examples/webserver'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/webserver'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wave_gen'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wave_gen'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smart_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smart_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/kernel_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/kernel_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/err_report_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/err_report_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ftpc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ftpc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/telnetd'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/telnetd'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dm_wifi_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dm_wifi_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/fota_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/fota_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smtp_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smtp_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wifi_manager_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wifi_manager_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_selftest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_selftest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/avs_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/avs_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/aws'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/aws'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ftpd'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ftpd'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/grpc_route_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/grpc_route_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libcoap_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libcoap_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/lwm2m_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/lwm2m_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/fs_helper'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/fs_helper'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediaplayer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediaplayer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/websocket'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/websocket'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf'
+make[3]: Entering directory '/root/tizenrt/apps/examples/nettest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/nettest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/st_things'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/st_things'
+make[3]: Entering directory '/root/tizenrt/apps/examples/i2schar'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/i2schar'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediarecorder'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediarecorder'
+make[3]: Entering directory '/root/tizenrt/apps/examples/setjmp'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/setjmp'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dtls_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dtls_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/testcase'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/testcase'
+make[3]: Entering directory '/root/tizenrt/apps/examples/security_test'
+Register: security_test
+make[3]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotivity_simpleserver'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotivity_simpleserver'
+make[3]: Entering directory '/root/tizenrt/apps/examples/xmlrpc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/xmlrpc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/timer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/timer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/artik_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/artik_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/eeprom_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/eeprom_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf_enc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf_enc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mdns_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mdns_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libtuv'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libtuv'
+make[3]: Entering directory '/root/tizenrt/apps/examples/webclient'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/webclient'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/proc_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/proc_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/cxxtest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/cxxtest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/curl_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/curl_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/hello'
+Register: hello
+make[3]: Leaving directory '/root/tizenrt/apps/examples/hello'
+make[2]: Leaving directory '/root/tizenrt/apps/examples'
+make[2]: Entering directory '/root/tizenrt/apps'
+make[3]: Entering directory '/root/tizenrt/apps/examples/security_test'
+Register: security_test
+make[3]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/hello'
+Register: hello
+make[3]: Leaving directory '/root/tizenrt/apps/examples/hello'
+make[3]: Entering directory '/root/tizenrt/apps/builtin'
+make[4]: Entering directory '/root/tizenrt/apps/builtin/registry'
+make[4]: Nothing to be done for 'context'.
+make[4]: Leaving directory '/root/tizenrt/apps/builtin/registry'
+make[3]: Leaving directory '/root/tizenrt/apps/builtin'
+make[3]: Entering directory '/root/tizenrt/apps/shell'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/shell'
+make[3]: Entering directory '/root/tizenrt/apps/system/vi'
+Register: vi
+make[3]: Leaving directory '/root/tizenrt/apps/system/vi'
+make[3]: Entering directory '/root/tizenrt/apps/system/sysinfo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/sysinfo'
+make[3]: Entering directory '/root/tizenrt/apps/system/utils'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/utils'
+make[3]: Entering directory '/root/tizenrt/apps/system/init'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/init'
+make[3]: Entering directory '/root/tizenrt/apps/platform'
+LN: platform/board to /root/tizenrt/apps/platform/dummy
+make[3]: Leaving directory '/root/tizenrt/apps/platform'
+make[2]: Leaving directory '/root/tizenrt/apps'
+make[1]: Leaving directory '/root/tizenrt/apps'
+make[1]: Entering directory '/root/tizenrt/tools'
+make[1]: Nothing to be done for 'context'.
+make[1]: Leaving directory '/root/tizenrt/tools'
+make[1]: Entering directory '/root/tizenrt/os/mm'
+make[1]: Leaving directory '/root/tizenrt/os/mm'
+make[1]: Entering directory '/root/tizenrt/os/kernel'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/os/kernel'
+make[1]: Entering directory '/root/tizenrt/os/arch/xtensa/src'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/os/arch/xtensa/src'
+make[1]: Entering directory '/root/tizenrt/apps'
+make[2]: Entering directory '/root/tizenrt/apps/examples'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mtdpart'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mtdpart'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ntpclient_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ntpclient_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/helloxx'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/helloxx'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mqtt_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mqtt_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotbus_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotbus_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mpu'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mpu'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libcoap_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libcoap_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediastreamer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediastreamer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/grpc_greeter_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/grpc_greeter_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotjs_startup'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotjs_startup'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_benchmark'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_benchmark'
+make[3]: Entering directory '/root/tizenrt/apps/examples/sensorbd_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/sensorbd_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dtls_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dtls_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wakaama_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wakaama_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/speech_detector_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/speech_detector_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/task_manager_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/task_manager_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/cy4390x_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/cy4390x_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smart'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smart'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dnsclient_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dnsclient_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/select_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/select_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ttrace'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ttrace'
+make[3]: Entering directory '/root/tizenrt/apps/examples/eventloop'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/eventloop'
+make[3]: Entering directory '/root/tizenrt/apps/examples/webserver'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/webserver'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wave_gen'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wave_gen'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smart_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smart_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/kernel_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/kernel_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/err_report_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/err_report_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ftpc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ftpc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/telnetd'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/telnetd'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dm_wifi_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dm_wifi_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/fota_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/fota_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/smtp_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/smtp_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/wifi_manager_sample'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/wifi_manager_sample'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_selftest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_selftest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/avs_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/avs_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/aws'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/aws'
+make[3]: Entering directory '/root/tizenrt/apps/examples/ftpd'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/ftpd'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/grpc_route_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/grpc_route_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libcoap_server'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libcoap_server'
+make[3]: Entering directory '/root/tizenrt/apps/examples/lwm2m_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/lwm2m_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/fs_helper'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/fs_helper'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediaplayer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediaplayer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/websocket'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/websocket'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf'
+make[3]: Entering directory '/root/tizenrt/apps/examples/nettest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/nettest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/st_things'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/st_things'
+make[3]: Entering directory '/root/tizenrt/apps/examples/i2schar'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/i2schar'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mediarecorder'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mediarecorder'
+make[3]: Entering directory '/root/tizenrt/apps/examples/setjmp'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/setjmp'
+make[3]: Entering directory '/root/tizenrt/apps/examples/dtls_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/dtls_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/testcase'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/testcase'
+make[3]: Entering directory '/root/tizenrt/apps/examples/security_test'
+Register: security_test
+make[3]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/iotivity_simpleserver'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/iotivity_simpleserver'
+make[3]: Entering directory '/root/tizenrt/apps/examples/xmlrpc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/xmlrpc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/timer'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/timer'
+make[3]: Entering directory '/root/tizenrt/apps/examples/artik_demo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/artik_demo'
+make[3]: Entering directory '/root/tizenrt/apps/examples/eeprom_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/eeprom_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/protobuf_enc'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/protobuf_enc'
+make[3]: Entering directory '/root/tizenrt/apps/examples/mdns_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/mdns_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/libtuv'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/libtuv'
+make[3]: Entering directory '/root/tizenrt/apps/examples/webclient'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/webclient'
+make[3]: Entering directory '/root/tizenrt/apps/examples/tls_client'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/tls_client'
+make[3]: Entering directory '/root/tizenrt/apps/examples/proc_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/proc_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/cxxtest'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/cxxtest'
+make[3]: Entering directory '/root/tizenrt/apps/examples/curl_test'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/examples/curl_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/hello'
+Register: hello
+make[3]: Leaving directory '/root/tizenrt/apps/examples/hello'
+make[2]: Leaving directory '/root/tizenrt/apps/examples'
+make[2]: Entering directory '/root/tizenrt/apps'
+make[3]: Entering directory '/root/tizenrt/apps/examples/security_test'
+Register: security_test
+make[3]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+make[3]: Entering directory '/root/tizenrt/apps/examples/hello'
+Register: hello
+make[3]: Leaving directory '/root/tizenrt/apps/examples/hello'
+make[3]: Entering directory '/root/tizenrt/apps/builtin'
+make[4]: Entering directory '/root/tizenrt/apps/builtin/registry'
+make[4]: Nothing to be done for 'context'.
+make[4]: Leaving directory '/root/tizenrt/apps/builtin/registry'
+make[3]: Leaving directory '/root/tizenrt/apps/builtin'
+make[3]: Entering directory '/root/tizenrt/apps/shell'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/shell'
+make[3]: Entering directory '/root/tizenrt/apps/system/vi'
+Register: vi
+make[3]: Leaving directory '/root/tizenrt/apps/system/vi'
+make[3]: Entering directory '/root/tizenrt/apps/system/sysinfo'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/sysinfo'
+make[3]: Entering directory '/root/tizenrt/apps/system/utils'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/utils'
+make[3]: Entering directory '/root/tizenrt/apps/system/init'
+make[3]: Nothing to be done for 'context'.
+make[3]: Leaving directory '/root/tizenrt/apps/system/init'
+make[3]: Entering directory '/root/tizenrt/apps/platform'
+LN: platform/board to /root/tizenrt/apps/platform/dummy
+make[3]: Leaving directory '/root/tizenrt/apps/platform'
+make[2]: Leaving directory '/root/tizenrt/apps'
+make[2]: Entering directory '/root/tizenrt/apps/examples/security_test'
+./hal_auth_test.c:5:33: fatal error: stress_tool/st_perf.h: No such file or directory
+compilation terminated.
+ERROR: xtensa-esp32-elf-gcc failed: 1
+       command: xtensa-esp32-elf-gcc -M -fno-builtin -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -mlongcalls -MMD -MP -Wall -Wstrict-prototypes -Wshadow -Wundef -g -I. -isystem /root/tizenrt/os/include -D__KERNEL__ -pipe -I/root/tizenrt/os/../external/security/hal ./hal_auth_test.c
+Makefile:146: recipe for target '.depend' failed
+make[2]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+make[2]: *** [.depend] Error 1
+Makefile:112: recipe for target 'examples/security_test/_depend' failed
+make[1]: Leaving directory '/root/tizenrt/apps'
+make[1]: *** [examples/security_test/_depend] Error 2
+make[1]: Entering directory '/root/tizenrt/external'
+make[1]: Leaving directory '/root/tizenrt/external'
+make[1]: Entering directory '/root/tizenrt/framework'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/framework'
+make[1]: Entering directory '/root/tizenrt/tools'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/tools'
+make[1]: Entering directory '/root/tizenrt/lib/libc'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/lib/libc'
+make[1]: Entering directory '/root/tizenrt/os/mm'
+make[1]: Leaving directory '/root/tizenrt/os/mm'
+make[1]: Entering directory '/root/tizenrt/os/fs'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/os/fs'
+make[1]: Entering directory '/root/tizenrt/os/drivers'
+make[1]: Nothing to be done for 'depend'.
+make[1]: Leaving directory '/root/tizenrt/os/drivers'
+make[1]: Entering directory '/root/tizenrt/os/kernel'
+make[1]: 'libkernel.a' is up to date.
+make[1]: Leaving directory '/root/tizenrt/os/kernel'
+make[1]: Entering directory '/root/tizenrt/lib/libc'
+make[1]: 'libc.a' is up to date.
+make[1]: Leaving directory '/root/tizenrt/lib/libc'
+make[1]: Entering directory '/root/tizenrt/os/mm'
+CC:  mm_heap/mm_heap_regioninfo.c
+AR:    bin/mm_initialize.o  bin/mm_sem.o  bin/mm_addfreechunk.o  bin/mm_size2ndx.o  bin/mm_shrinkchunk.o  bin/mm_brkaddr.o  bin/mm_calloc.o  bin/mm_extend.o  bin/mm_free.o  bin/mm_mallinfo.o  bin/mm_malloc.o  bin/mm_memalign.o  bin/mm_realloc.o  bin/mm_zalloc.o  bin/mm_heap_regioninfo.o  bin/mm_getheap.o  bin/umm_initialize.o  bin/umm_addregion.o  bin/umm_sem.o  bin/umm_brkaddr.o  bin/umm_calloc.o  bin/umm_extend.o  bin/umm_free.o  bin/umm_mallinfo.o  bin/umm_malloc.o  bin/umm_memalign.o  bin/umm_realloc.o  bin/umm_zalloc.o
+make[1]: Leaving directory '/root/tizenrt/os/mm'
+make[1]: Entering directory '/root/tizenrt/os/arch/xtensa/src'
+make[1]: 'libarch.a' is up to date.
+make[1]: Leaving directory '/root/tizenrt/os/arch/xtensa/src'
+make[1]: Entering directory '/root/tizenrt/apps'
+make[2]: Entering directory '/root/tizenrt/apps/examples/security_test'
+CC:  hal_auth_test.c
+hal_auth_test.c:5:33: fatal error: stress_tool/st_perf.h: No such file or directory
+compilation terminated.
+make[2]: *** [hal_auth_test.o] Error 1
+Makefile:115: recipe for target 'hal_auth_test.o' failed
+make[2]: Leaving directory '/root/tizenrt/apps/examples/security_test'
+Makefile:109: recipe for target 'examples/security_test/_all' failed
+make[1]: Leaving directory '/root/tizenrt/apps'
+make[1]: *** [examples/security_test/_all] Error 2
+LibTargets.mk:170: recipe for target '../apps/libapps.a' failed
+make: *** [../apps/libapps.a] Error 2
