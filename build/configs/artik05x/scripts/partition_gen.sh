@@ -29,18 +29,17 @@ OS_DIR_PATH=${THIS_PATH}/../../../../os
 source ${OS_DIR_PATH}/.config
 
 # Path ENV
-BOARD_NAME=${CONFIG_ARCH_BOARD}
 PARTMAP_DIR_PATH=${THIS_PATH}
-BOARD_KCONFIG=${OS_DIR_PATH}/board/${BOARD_NAME}/Kconfig
+PARTITION_KCONFIG=${OS_DIR_PATH}/board/common/Kconfig
 
 # FLASH BASE ADDRESS (Can it be made to read dynamically from .config?)
 FLASH_BASE=0x04000000
 
 # Partition information
-partsize_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_LIST' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partsize_list=${CONFIG_ARTIK05X_FLASH_PART_LIST:=${partsize_list_default}}
-partname_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partname_list=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${partname_list_default}}
+partsize_list_default=`grep -A 2 'config FLASH_PART_LIST' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partsize_list=${CONFIG_FLASH_PART_LIST:=${partsize_list_default}}
+partname_list_default=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partname_list=${CONFIG_FLASH_PART_NAME:=${partname_list_default}}
 
 # OpenOCD cfg file to be created for flashing
 PARTITION_MAP_CFG=${PARTMAP_DIR_PATH}/partition_map.cfg

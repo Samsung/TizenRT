@@ -351,6 +351,7 @@ config S5J_WDT_DEFTIMEOUT
 config S5J_SFLASH
 	bool "SFLASH"
 	default y
+	select ARCH_USE_FLASH
 	depends on S5J_HAVE_SFLASH
 
 config S5J_SENSOR_PPD42NS
