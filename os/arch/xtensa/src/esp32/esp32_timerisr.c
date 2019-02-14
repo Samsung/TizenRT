@@ -115,7 +115,7 @@ static inline uint32_t xtensa_getcompare(void)
 
 static inline void xtensa_setcompare(uint32_t compare)
 {
-	__asm__ __volatile__("wsr %0, %1" :: "r"(compare), "I"(XT_CCOMPARE));
+	__asm__ __volatile__("wsr %0, %1" : : "r"(compare), "I"(XT_CCOMPARE));
 }
 
 int64_t get_instant_time(void)
@@ -125,8 +125,8 @@ int64_t get_instant_time(void)
 	compare = xtensa_getcompare();
 	diff = xtensa_getcount() - compare;
 	int ticks = clock_systimer();
-    int64_t ms = TICK2MSEC(ticks) + (diff*1000) / g_tick_divisor;
-    return ms;
+	int64_t ms = TICK2MSEC(ticks) + (diff * 1000) / g_tick_divisor;
+	return ms;
 }
 
 /****************************************************************************
