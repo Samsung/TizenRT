@@ -57,19 +57,6 @@ enum audio_manager_result_e {
 typedef enum audio_manager_result_e audio_manager_result_t;
 
 /**
- * @brief Stream Policy of Audio Manager, high value means higher priority
- */
-enum audio_manager_stream_policy_e {
-	AUDIO_MANAGER_STREAM_TYPE_MEDIA = 0,
-	AUDIO_MANAGER_STREAM_TYPE_VOIP = 1,
-	AUDIO_MANAGER_STREAM_TYPE_NOTIFY = 2,
-	AUDIO_MANAGER_STREAM_TYPE_VOICE_RECOGNITION = 3,
-	AUDIO_MANAGER_STREAM_TYPE_EMERGENCY = 4
-};
-
-typedef enum audio_manager_stream_policy_e audio_manager_stream_policy_t;
-
-/**
  * @brief Type of device
  */
 enum audio_device_type_e {
