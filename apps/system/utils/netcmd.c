@@ -211,7 +211,7 @@ int cmd_ifdown(int argc, char **argv)
 int cmd_ifconfig(int argc, char **argv)
 {
 	struct in_addr addr;
-	in_addr_t gip;
+	in_addr_t gip = 0;
 	int i;
 	FAR char *intf = NULL;
 	FAR char *hostip = NULL;
@@ -354,44 +354,9 @@ int cmd_ifconfig(int argc, char **argv)
 			}
 #ifdef CONFIG_NET_IPv6
 			else if (strstr(hostip, ":") != NULL) {
-				ip6_addr_t temp;
-				s8_t idx;
-
-				netif = netif_find(intf);
-				if (netif) {
-					inet_pton(AF_INET6, hostip, &temp);
-					idx = netif_get_ip6_addr_match(netif, &temp);
-					if (idx != -1) {
-#ifdef CONFIG_NET_IPv6_MLD
-						ip6_addr_t solicit_addr;
-
-						/* leaving MLD6 group */
-						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-						mld6_leavegroup_netif(netif, &solicit_addr);
-						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-						/* delete static ipv6 address if the same ip address exists */
-						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
-						return OK;
-					}
-#ifdef CONFIG_NET_IPv6_AUTOCONFIG
-					/* enable IPv6 address stateless autoconfiguration */
-					netif_set_ip6_autoconfig_enabled(netif, 1);
-#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
-					/* add static ipv6 address */
-					(void)netif_add_ip6_address(netif, &temp, &idx);
-
-#ifdef CONFIG_NET_IPv6_MLD
-					ip6_addr_t solicit_addr;
-
-					/* set MLD6 group to receive solicit multicast message */
-					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-					mld6_joingroup_netif(netif, &solicit_addr);
-					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-				}
-
-				return OK;
+				struct in6_addr addr6;
+				inet_pton(AF_INET6, hostip, &addr6);
+				netlib_set_ipv6addr(intf, &addr6);
 			}
 #endif /* CONFIG_NET_IPv6 */
 			else {

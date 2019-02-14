@@ -319,7 +319,7 @@ static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
 #ifdef CONFIG_NET_LWIP
 static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, ip6_addr_t * inaddr)
 #else							/* CONFIG_NET_LWIP */
-static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
+	static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
 #endif							/* CONFIG_NET_LWIP */
 {
 	FAR struct sockaddr_in6 *dest = (FAR struct sockaddr_in6 *)outaddr;
@@ -350,6 +350,7 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
 }
 #endif							/* CONFIG_NET_IPV4 */
 
+
 /****************************************************************************
  * Name: ioctl_setipv6addr
  *
@@ -367,11 +368,13 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
 #ifdef CONFIG_NET_LWIP
 static void ioctl_setipv6addr(ip6_addr_t * outaddr, FAR const struct sockaddr_storage *inaddr)
 #else							/* CONFIG_NET_LWIP */
-static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
+	static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
 #endif							/* CONFIG_NET_LWIP */
 {
 	FAR const struct sockaddr_in6 *src = (FAR const struct sockaddr_in6 *)inaddr;
 	memcpy(outaddr, src->sin6_addr.s6_addr, 16);
+
+
 }
 #endif							/* CONFIG_NET_IPV6 */
 
@@ -412,6 +415,76 @@ static int ioctl_siocgifconf(FAR struct ifconf *ifc)
 	}
 
 	return ret;
+}
+
+/****************************************************************************
+ * Name: netdev_setipv6addr
+ *
+ * Description:
+ *   Set IPv6 address to netdev and join multicast group
+ *
+ * Parameters:
+ *   dev - NIC
+ *   inaddr - the address to set
+ *
+ * Return:
+ *
+ ****************************************************************************/
+static void netdev_setipv6addr(struct netif *dev, FAR const struct sockaddr_storage *inaddr)
+{
+	ip6_addr_t temp;
+	s8_t idx;
+
+	if (!dev || !inaddr) {
+		ndbg("Invalid parameters\n");
+		return;
+	}
+
+	struct sockaddr_in6 *src = (struct sockaddr_in6 *)inaddr;
+	memcpy(&temp, src->sin6_addr.s6_addr, 16);
+
+	idx = netif_get_ip6_addr_match(dev, &temp);
+	if (idx != -1) {
+#ifdef CONFIG_NET_IPv6_MLD
+		ip6_addr_t solicit_addr;
+
+		/* leaving MLD6 group */
+		ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
+		mld6_leavegroup_netif(dev, &solicit_addr);
+		ndbg("MLD6 group left - %X : %X : %X : %X\n",
+			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+		/* delete static ipv6 address if the same ip address exists */
+		netif_ip6_addr_set_state(dev, idx, IP6_ADDR_INVALID);
+		return;
+	}
+
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+	/* enable IPv6 address stateless auto-configuration */
+	netif_set_ip6_autoconfig_enabled(dev, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+
+	/* add static ipv6 address */
+	(void)netif_add_ip6_address(dev, &temp, &idx);
+
+#ifdef CONFIG_NET_IPv6_MLD
+	ip6_addr_t solicit_addr;
+
+	/* set MLD6 group to receive solicit multicast message */
+	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
+	mld6_joingroup_netif(dev, &solicit_addr);
+	ndbg("MLD6 group added - %X : %X : %X : %X\n",
+		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+
+#ifdef CONFIG_NET_LWIP
+	ioctl_setipv6addr(ip_2_ip6(&dev->ip_addr), inaddr);
+#else							/* CONFIG_NET_LWIP */
+	ioctl_setipv6addr(dev->d_ipv6addr, inaddr);
+#endif							/* CONFIG_NET_LWIP */
+	return;
 }
 
 /****************************************************************************
@@ -558,7 +631,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	break;
 #endif							/* CONFIG_NET_IPV4 */
 
-	/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
+		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 
 #ifdef CONFIG_NET_IPv6
 	case SIOCGLIFADDR: {		/* Get IP address */
@@ -580,11 +653,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
 			netdev_ifdown(dev);
-#ifdef CONFIG_NET_LWIP
-			ioctl_setipv6addr(ip_2_ip6(&dev->ip_addr), &lreq->lifr_addr);
-#else							/* CONFIG_NET_LWIP */
-			ioctl_setipv6addr(dev->d_ipv6addr, &lreq->lifr_addr);
-#endif							/* CONFIG_NET_LWIP */
+			netdev_setipv6addr(dev, &lreq->lifr_addr);
 			netdev_ifup(dev);
 			ret = OK;
 		}
@@ -699,7 +768,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-	/* MAC address operations only make sense if Ethernet is supported */
+		/* MAC address operations only make sense if Ethernet is supported */
 
 #ifdef CONFIG_NET_ETHERNET
 	case SIOCGIFHWADDR: {		/* Get hardware address */
