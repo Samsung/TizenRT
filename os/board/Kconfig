@@ -254,3 +254,7 @@ endif
 if ARCH_BOARD_ESP32_FAMILY
 source board/esp32_devkit/Kconfig
 endif
+
+comment "Board-Partition Options"
+
+source board/common/Kconfig

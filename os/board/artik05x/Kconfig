@@ -39,52 +39,10 @@ config ARTIK05X_FLASH_PAGE_SIZE
 		ARTIK-05x Series Starter Kit board. It can be the size of erase
 		unit flash memory supports.
 
-config ARTIK05X_FLASH_PART
-	bool "Enable partition support on FLASH"
-	default n
-	select MTD
-	select MTD_PARTITION
-	select MTD_PROGMEM
-	depends on S5J_SFLASH
-	depends on NFILE_DESCRIPTORS != 0
-	---help---
-		Enables creation of partitions on the FLASH
-
-config ARTIK05X_FLASH_MINOR
-	int "Minor number for the FLASH device"
-	default 0
-	depends on ARTIK05X_FLASH_PART
-	---help---
-		Sets the minor number for /dev node of the external flash
-		device.
-
-config ARTIK05X_FLASH_PART_LIST
-	string "Flash partition size list (in KBytes)"
-	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
-	depends on ARTIK05X_FLASH_PART
-	---help---
-		Comma separated list of partition sizes in KB.
-
-config ARTIK05X_FLASH_PART_TYPE
-	string "Flash partition type list"
-	default "none,none,none,none,none,none,none,none,smartfs,config,none,"
-	depends on ARTIK05X_FLASH_PART
-	---help---
-		Comma separated list of partition types that can be one of
-		followings: none, smartfs, config
-
-config ARTIK05X_FLASH_PART_NAME
-	string "Flash partition name list"
-	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
-	depends on MTD_PARTITION_NAMES
-	depends on ARTIK05X_FLASH_PART
-	---help---
-		Comma separated list of partition names.
-
 config ARTIK05X_AUTOMOUNT
 	bool "Automount partitions"
 	default n
-	depends on ARTIK05X_FLASH_PART
+	depends on FLASH_PARTITION
 	depends on !DISABLE_MOUNTPOINT
 	---help---
 		If enabled, mount userrw and sssrw partitions at boot.
