@@ -143,7 +143,7 @@ struct audio_card_info_s {
 	uint8_t device_id;			//current device id
 	struct audio_device_config_s config[CONFIG_AUDIO_MAX_DEVICE_NUM];
 	struct pcm *pcm;
-	audio_manager_stream_policy_t policy;
+	stream_policy_t policy;
 	struct audio_resample_s resample;
 	pthread_mutex_t card_mutex;
 };
@@ -1262,7 +1262,7 @@ audio_manager_result_t reset_audio_stream_in(void)
 	}
 
 	card->config[card->device_id].status = AUDIO_CARD_IDLE;
-	card->policy = AUDIO_MANAGER_STREAM_TYPE_MEDIA;
+	card->policy = STREAM_TYPE_MEDIA;
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	return ret;
@@ -1305,7 +1305,7 @@ audio_manager_result_t reset_audio_stream_out(void)
 	}
 
 	card->config[card->device_id].status = AUDIO_CARD_IDLE;
-	card->policy = AUDIO_MANAGER_STREAM_TYPE_MEDIA;
+	card->policy = STREAM_TYPE_MEDIA;
 
 	pthread_mutex_unlock(&(card->card_mutex));
 
@@ -2029,7 +2029,7 @@ audio_manager_result_t change_stream_out_device(int card_id, int device_id)
 }
 
 /* TODO policy should be merged logic of focus manager */
-audio_manager_result_t set_stream_policy(audio_manager_stream_policy_t policy, audio_io_direction_t direct)
+audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direction_t direct)
 {
 	audio_card_info_t *card;
 
@@ -2058,7 +2058,7 @@ audio_manager_result_t set_stream_policy(audio_manager_stream_policy_t policy, a
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t get_stream_policy(audio_manager_stream_policy_t *policy, audio_io_direction_t direct)
+audio_manager_result_t get_stream_policy(stream_policy_t *policy, audio_io_direction_t direct)
 {
 	audio_card_info_t *card;
 
@@ -2078,22 +2078,22 @@ audio_manager_result_t get_stream_policy(audio_manager_stream_policy_t *policy, 
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy)
+audio_manager_result_t set_stream_in_policy(stream_policy_t policy)
 {
 	return set_stream_policy(policy, INPUT);
 }
 
-audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t policy)
+audio_manager_result_t set_stream_out_policy(stream_policy_t policy)
 {
 	return set_stream_policy(policy, OUTPUT);
 }
 
-audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *policy)
+audio_manager_result_t get_stream_in_policy(stream_policy_t *policy)
 {
 	return get_stream_policy(policy, INPUT);
 }
 
-audio_manager_result_t get_stream_out_policy(audio_manager_stream_policy_t *policy)
+audio_manager_result_t get_stream_out_policy(stream_policy_t *policy)
 {
 	return get_stream_policy(policy, OUTPUT);
 }
