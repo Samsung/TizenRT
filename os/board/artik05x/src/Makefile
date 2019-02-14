@@ -84,6 +84,11 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += artik05x_wlan.c
 endif
 
+ifeq ($(CONFIG_FLASH_PARTITION),y)
+VPATH += :$(TOPDIR)/board/common
+CSRCS += partitions.c
+endif
+
 # boardctl support
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 DEPPATH += --dep-path $(TOPDIR)/arch

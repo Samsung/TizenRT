@@ -190,6 +190,20 @@ static void artik05x_clear_bootcount(void)
 }
 
 /****************************************************************************
+ * Name: up_flashinitialize
+ *
+ * Description:
+ *   Create an initialized MTD device instance for internal flash.
+ *   Initialize MTD master & each of partitions here.
+ *   Each of partition classfied according to TAG number
+ *
+ ****************************************************************************/
+FAR struct mtd_dev_s *up_flashinitialize(void)
+{
+	return NULL;
+}
+
+/****************************************************************************
  * Name: s5j_board_initialize
  *
  * Description:

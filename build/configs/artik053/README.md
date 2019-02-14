@@ -159,15 +159,15 @@ Before executing below board-specific steps, execute [generic steps](../../../to
 
 3. Modify partition configs and enable the automount config through *menuconfig*  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  
-    1. Split user partition size from (1400) to (1000, 400) in ARTIK05X_FLASH_PART_LIST
+    1. Split user partition size from (1400) to (1000, 400) in FLASH_PART_LIST
         ```bash
         Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
         ```
-    2. Append "romfs" at next of *smartfs* to ARTIK05X_FLASH_PART_TYPE
+    2. Append "romfs" at next of *smartfs* to FLASH_PART_TYPE
         ```bash
         Hardware Configuration -> Board Selection -> append string at Flash partition type list
         ```
-    3. Append "rom" at next of *user* to ARTIK05X_FLASH_PART_NAME
+    3. Append "rom" at next of *user* to FLASH_PART_NAME
         ```bash
         Hardware Configuration -> Board Selection -> append string at FLash partition name list
         ```
