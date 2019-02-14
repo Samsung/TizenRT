@@ -23,7 +23,7 @@ static hal_data g_aes_key;
 static hal_aes_param g_aes_param;
 static hal_data g_aes_input;
 static hal_data g_aes_output;
-const static unsigned char *test_aes = "1234567890123456";
+const static unsigned char test_aes[] = "1234567890123456";
 TEST_SETUP(aes_encrypt)
 {
 	ST_START_TEST;

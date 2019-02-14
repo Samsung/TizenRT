@@ -2,6 +2,8 @@
 
 extern int hal_keymgr_test(void);
 extern int hal_auth_test(void);
+extern int hal_ss_test(void);
+extern int hal_crypto_test(void);
 
 int main(void)
 {

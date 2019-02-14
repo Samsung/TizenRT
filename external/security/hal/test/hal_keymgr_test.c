@@ -84,7 +84,7 @@ TEST_F(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_key(HAL_TEST_KEY_SLOT, &g_aes_key));
+	ST_EXPECT(0, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key));
 
 	ST_END_TEST;
 }
