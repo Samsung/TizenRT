@@ -169,7 +169,7 @@ static int esp32_timerisr(int irq, uint32_t *regs, FAR void *arg)
 		 */
 
 		diff = xtensa_getcount() - compare;
-	} while (diff < divisor);
+	} while (diff >= divisor);
 
 	return OK;
 }
