@@ -1,3 +1,6 @@
 [submodule "external/avs/avs-device-sdk"]
 	path = external/avs/avs-device-sdk
 	url = https://github.com/alexa/avs-device-sdk.git
+[submodule "build/tools/esp32/esptool_py/esptool"]
+	path = build/tools/esp32/esptool_py/esptool
+	url = https://github.com/espressif/esptool.git
