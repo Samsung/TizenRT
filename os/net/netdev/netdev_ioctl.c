@@ -109,6 +109,23 @@
  * Private Functions
  ****************************************************************************/
 
+static void netdev_soft_ifup(FAR struct netif *dev)
+{
+	err_t res = netifapi_netif_set_up(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft ifup fail\n");
+	}
+}
+
+static void netdev_soft_ifdown(FAR struct netif *dev)
+{
+	err_t res = netifapi_netif_set_down(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft ifdown fail\n");
+	}
+}
+
+
 /****************************************************************************
  * Name: ioctl_addipv4route
  *
@@ -652,9 +669,9 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-			netdev_ifdown(dev);
+			netdev_soft_ifdown(dev);
 			netdev_setipv6addr(dev, &lreq->lifr_addr);
-			netdev_ifup(dev);
+			netdev_soft_ifup(dev);
 			ret = OK;
 		}
 	}
@@ -1245,46 +1262,70 @@ void netdev_ifup(FAR struct netif *dev)
 {
 	/* Make sure that the device supports the d_ifup() method */
 
-	if (dev->d_ifup) {
-		/* Is the interface already up? */
+	if (!dev->d_ifup) {
+		return;
+	}
 
-		if ((dev->d_flags & IFF_UP) == 0) {
-			/* No, bring the interface up now */
+	/* Is the interface already up? */
+	if ((dev->d_flags & IFF_UP) != 0) {
+		/* No, bring the interface up now */
+		return;
+	}
 
-			if (dev->d_ifup(dev) == OK) {
-				/* Mark the interface as up */
+	if (dev->d_ifup(dev) != OK) {
+		ndbg("fail to ifup %s:%d\n", __FILE__, __LINE__);
+		return;
+	}
 
-				dev->d_flags |= IFF_UP;
-				/* netdev_ifdown is blocked function, but some API that is mapping d_ifup
-				 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
-				 */
-				sleep(3);
-				netif_set_up(dev);
-				netif_set_link_up(dev);
-			}
-		}
+	/* Mark the interface as up */
+	dev->d_flags |= IFF_UP;
+
+	/* netdev_ifdown is a blocked function, but some API that is mapping d_ifup
+	 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
+	 */
+	sleep(3);
+	err_t res = netifapi_netif_set_up(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft if up fail\n");
+	}
+
+	res = netifapi_netif_set_link_up(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft link up fail\n");
 	}
 }
+
 
 void netdev_ifdown(FAR struct netif *dev)
 {
 	/* Make sure that the device supports the d_ifdown() method */
+	if (!dev->d_ifdown) {
+		return;
+	}
 
-	if (dev->d_ifdown) {
-		/* Is the interface already down? */
+	/* Is the interface already down? */
+	err_t res = netifapi_netif_set_link_down(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft link down fail\n");
+	}
 
-		netif_set_link_down(dev);
-		netif_set_down(dev);
-		if ((dev->d_flags & IFF_UP) != 0) {
-			/* No, take the interface down now */
+	res = netifapi_netif_set_down(dev);
+	if (res != ERR_OK) {
+		ndbg("netdev soft if down fail\n");
+	}
 
-			if (dev->d_ifdown(dev) == OK) {
-				/* Mark the interface as down */
+	if ((dev->d_flags & IFF_UP) == 0) {
+		/* No, take the interface down now */
+		return;
+	}
 
-				dev->d_flags &= ~IFF_UP;
-			}
-		}
+	if (dev->d_ifdown(dev) == OK) {
+		/* Mark the interface as down */
+		ndbg("fail to ifdown %s:%d\n", __FILE__, __LINE__);
+		dev->d_flags &= ~IFF_UP;
 	}
 }
 
-#endif	/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */											   // kps_igmp
+
+
+#endif	/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
