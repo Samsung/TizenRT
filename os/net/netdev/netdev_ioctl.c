@@ -79,7 +79,10 @@
 #include <net/lwip/netif.h>
 #include <net/lwip/netifapi.h>
 #include <net/lwip/igmp.h>
-
+#include <net/lwip/dhcp.h>
+#include <net/lwip/mld6.h>
+#include <net/lwip/ip6.h>
+#include <net/lwip/stats.h>
 
 #ifdef CONFIG_NET_IGMP
 #include "sys/sockio.h"
@@ -124,7 +127,6 @@ static void netdev_soft_ifdown(FAR struct netif *dev)
 		ndbg("netdev soft ifdown fail\n");
 	}
 }
-
 
 /****************************************************************************
  * Name: ioctl_addipv4route
@@ -336,7 +338,7 @@ static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
 #ifdef CONFIG_NET_LWIP
 static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, ip6_addr_t * inaddr)
 #else							/* CONFIG_NET_LWIP */
-	static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
+static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
 #endif							/* CONFIG_NET_LWIP */
 {
 	FAR struct sockaddr_in6 *dest = (FAR struct sockaddr_in6 *)outaddr;
@@ -385,13 +387,11 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
 #ifdef CONFIG_NET_LWIP
 static void ioctl_setipv6addr(ip6_addr_t * outaddr, FAR const struct sockaddr_storage *inaddr)
 #else							/* CONFIG_NET_LWIP */
-	static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
+static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
 #endif							/* CONFIG_NET_LWIP */
 {
 	FAR const struct sockaddr_in6 *src = (FAR const struct sockaddr_in6 *)inaddr;
 	memcpy(outaddr, src->sin6_addr.s6_addr, 16);
-
-
 }
 #endif							/* CONFIG_NET_IPV6 */
 
@@ -447,6 +447,7 @@ static int ioctl_siocgifconf(FAR struct ifconf *ifc)
  * Return:
  *
  ****************************************************************************/
+#ifdef CONFIG_NET_IPv6
 static void netdev_setipv6addr(struct netif *dev, FAR const struct sockaddr_storage *inaddr)
 {
 	ip6_addr_t temp;
@@ -503,7 +504,7 @@ static void netdev_setipv6addr(struct netif *dev, FAR const struct sockaddr_stor
 #endif							/* CONFIG_NET_LWIP */
 	return;
 }
-
+#endif // CONFIG_NET_IPv6
 /****************************************************************************
  * Name: netdev_ifrdev
  *
@@ -568,21 +569,19 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-
 	case SIOCSIFADDR: {			/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
+			netdev_soft_ifdown(dev);
 #ifdef CONFIG_NET_LWIP
-			netifapi_netif_set_down(dev);
 			ip_addr_t ipaddr, netmask, gw;
 			ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&ipaddr)), &req->ifr_addr);
 			netmask = dev->netmask;
 			gw = dev->gw;
 			netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-			netifapi_netif_set_up(dev);
-
-			ret = OK;
 #endif							/* CONFIG_NET_LWIP */
+			netdev_soft_ifup(dev);
+			ret = OK;
 		}
 	}
 	break;
@@ -648,8 +647,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	break;
 #endif							/* CONFIG_NET_IPV4 */
 
-		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
-
+	/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 #ifdef CONFIG_NET_IPv6
 	case SIOCGLIFADDR: {		/* Get IP address */
 		dev = netdev_ifrdev(req);
@@ -664,7 +662,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-
 	case SIOCSLIFADDR: {		/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
@@ -676,7 +673,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-
 	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
@@ -739,7 +735,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-#endif							/* CONFIG_NET_IPV6 */
+#endif							/* CONFIG_NET_IPv6 */
 
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
@@ -766,7 +762,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 
 			else if (req->ifr_flags & IFF_DOWN) {
 				/* Yes.. take the interface down */
-
 				netdev_ifdown(dev);
 			}
 		}
@@ -785,8 +780,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-		/* MAC address operations only make sense if Ethernet is supported */
-
+	/* MAC address operations only make sense if Ethernet is supported */
 #ifdef CONFIG_NET_ETHERNET
 	case SIOCGIFHWADDR: {		/* Get hardware address */
 		dev = netdev_ifrdev(req);
@@ -1293,6 +1287,36 @@ void netdev_ifup(FAR struct netif *dev)
 	if (res != ERR_OK) {
 		ndbg("netdev soft link up fail\n");
 	}
+
+	/* Below logic is not processed by lwIP thread.
+	 * So it can cause conflict to lwIP thread later.
+	 * But now there are no APIs that can manage IPv6 auto-config.
+	 * this will be handled carefully later.
+	 */
+#ifdef CONFIG_NET_IPv6
+	/* IPV6 auto configuration : Link-Local address */
+	nvdbg("IPV6 link local address auto config\n");
+
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+	/* enable IPv6 address stateless auto-configuration */
+	netif_set_ip6_autoconfig_enabled(dev, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+	/* To auto-config linklocal address, dev should have mac address already */
+	netif_create_ip6_linklocal_address(dev, 1);
+	ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n",
+		 PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[3]));
+#ifdef CONFIG_NET_IPv6_MLD
+	ip6_addr_t solicit_addr;
+
+	/* set MLD6 group to receive solicit multicast message */
+	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[3]);
+	mld6_joingroup_netif(dev, &solicit_addr);
+	ndbg("MLD6 group added - %X : %X : %X : %X\n",
+		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+
+#endif /* CONFIG_NET_IPv6 */
 }
 
 
@@ -1325,7 +1349,4 @@ void netdev_ifdown(FAR struct netif *dev)
 		dev->d_flags &= ~IFF_UP;
 	}
 }
-
-
-
 #endif	/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
