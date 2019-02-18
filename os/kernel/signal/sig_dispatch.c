@@ -414,7 +414,10 @@ int sig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info)
  *
  *     With HAVE_GROUP_MEMBERS defined:
  *     - Get the TCB associated with the pid.
- *     - If the TCB was found, get the group from the TCB.
+ *     - If the TCB was found and can receive the signal, pick the TCB.
+ *     - If the TCB was found but was blocked because of handling the previous same signal,
+ *       pick the TCB and add to the list of pending signals.
+ *     - If the TCB was found but cannot receive the signal, get the group from the TCB.
  *     - If the PID has already exited, lookup the group that that was
  *       started by this task.
  *     - Use the group to pick the TCB to receive the signal
@@ -440,6 +443,15 @@ int sig_dispatch(pid_t pid, FAR siginfo_t *info)
 
 	stcb = sched_gettcb(pid);
 	if (stcb) {
+
+		/* There are two cases which can send signal to stcb directly.
+		 * 1. stcb is not blocked the signo signal.
+		 * 2. stcb is blocked the signo signal, because of handling the previous signo signal.
+		 */
+		if (!sigismember(&stcb->sigprocmask, info->si_signo) || sigismember(&stcb->sigrecvmask, info->si_signo)) {
+			return sig_tcbdispatch(stcb, info);
+		}
+
 		/* The task/thread associated with this PID is still active.  Get its
 		 * task group.
 		 */
