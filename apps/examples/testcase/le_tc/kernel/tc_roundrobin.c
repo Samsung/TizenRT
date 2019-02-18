@@ -45,6 +45,7 @@
 #endif
 #define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
 #define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
+#define TEST_STACK_SIZE     (1024)
 /****************************************************************************
 * Private Data
 ****************************************************************************/
@@ -69,7 +70,7 @@ struct sched_param param;
 static int pthread_attr_set(void)
 {
 	int status;
-	if (attr.stacksize == 512 && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
+	if (attr.stacksize == TEST_STACK_SIZE && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
 		return OK;
 	} else {
 		status = pthread_attr_init(&attr);
@@ -77,7 +78,7 @@ static int pthread_attr_set(void)
 			return ERROR;
 		}
 
-		status = pthread_attr_setstacksize(&attr, 512);
+		status = pthread_attr_setstacksize(&attr, TEST_STACK_SIZE);
 		if (status != OK) {
 			return ERROR;
 		}

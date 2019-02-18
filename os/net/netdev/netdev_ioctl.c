@@ -1014,7 +1014,6 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
  *   Call lwip API
  *
  * Parameters:
- *   sock     Socket structure
  *   cmd      The ioctl command
  *   arg      Type of the information to get
  *
@@ -1023,7 +1022,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
  *
  ****************************************************************************/
 
-int lwip_func_ioctl(FAR struct socket *sock, int cmd, void  *arg)
+int lwip_func_ioctl(int cmd, void *arg)
 {
 	int ret = -EINVAL;
 	struct req_lwip_data *in_arg = (struct req_lwip_data *)arg;
@@ -1063,6 +1062,39 @@ int lwip_func_ioctl(FAR struct socket *sock, int cmd, void  *arg)
 	default:
 		printf("Wrong request type: %d\n", in_arg->type);
 		break;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Function: lwipioctl
+ *
+ * Description:
+ *   Call lwip_ioctl() with FIONREAD/FIONBIO commands or
+ *   call lwip API with SIOCLWIP command
+ *
+ * Parameters:
+ *   sockfd   Socket file descriptor
+ *   cmd      The ioctl command
+ *   arg      Type of the information to get
+ *
+ * Returned Value:
+ *   0 on success, negated errno on failure.
+ *
+ ****************************************************************************/
+
+int lwipioctl(int sockfd, int cmd, void *arg)
+{
+	int ret = -ENOTTY;
+
+	if (cmd == FIONREAD || cmd == FIONBIO) {
+		ret = lwip_ioctl(sockfd, (long)cmd, arg);
+		if (ret == -1) {
+			return -get_errno();
+		}
+	} else if (cmd == SIOCLWIP) {
+		return lwip_func_ioctl(cmd, arg);
 	}
 
 	return ret;
@@ -1114,7 +1146,7 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	 * non-NULL.
 	 */
 
-	if (!_SIOCVALID(cmd)) {
+	if (!((cmd == FIONREAD) || (cmd == FIONBIO) || (_SIOCVALID(cmd)))) {
 		ret = -ENOTTY;
 		goto errout;
 	}
@@ -1130,7 +1162,7 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 
 	/* Execute the command */
 #ifdef CONFIG_NET_LWIP
-	ret = lwip_func_ioctl(sock, cmd, (void *)((uintptr_t)arg));
+	ret = lwipioctl(sockfd, cmd, (void *)((uintptr_t)arg));
 #endif
 	if (ret == -ENOTTY) {
 		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));

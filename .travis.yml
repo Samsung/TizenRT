@@ -1,11 +1,18 @@
-
 sudo: false
 dist: trusty
+
+git:
+  submodules: false
 
 language: c
 
 services:
 - docker
+
+branches:
+  only:
+  - master
+  - protection
 
 env:
   global:
