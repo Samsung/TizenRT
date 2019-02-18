@@ -24,7 +24,6 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
-#include <netutils/netlib.h>
 #include <netdb.h>
 
 #include <errno.h>
@@ -57,7 +56,7 @@ void freeaddrinfo(FAR struct addrinfo *ai)
 	int ret = -1;
 	struct req_lwip_data req;
 
-	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
 		printf("socket() failed with errno: %d\n", errno);
 		return;
