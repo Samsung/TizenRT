@@ -50,7 +50,7 @@ int hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *ke
 	return 0;
 }
 
-int hal_get_key(_IN_ uint32_t key_idx, _OUT_ hal_data *key)
+int hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key)
 {
 	return 0;
 }
@@ -73,12 +73,12 @@ int hal_generate_random(_IN_ uint32_t len, _OUT_ hal_data *random)
 	return 0;
 }
 
-int hal_get_hash(_IN_ hal_hash_algo algo, _IN_ hal_data *input, _OUT_ hal_data *hash)
+int hal_get_hash(_IN_ hal_hash_type mode, _IN_ hal_data *input, _OUT_ hal_data *hash)
 {
 	return 0;
 }
 
-int hal_get_hmac(_IN_ hal_hmac_algo algo, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac)
+int hal_get_hmac(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac)
 {
 	return 0;
 }
@@ -93,12 +93,12 @@ int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data
 	return 0;
 }
 
-int hal_ecdsa_sign_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign)
+int hal_ecdsa_sign_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign)
 {
 	return 0;
 }
 
-int hal_ecdsa_verify_md(_IN_ hal_ecdsa_curve curve, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx)
+int hal_ecdsa_verify_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx)
 {
 	return 0;
 }
@@ -113,7 +113,7 @@ int hal_dh_compute_shared_secret(_IN_ hal_dh_data *param, _IN_ uint32_t dh_idx, 
 	return 0;
 }
 
-int hal_ecdh_compute_shared_secret(_IN_ hal_data *pubkey, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret)
+int hal_ecdh_compute_shared_secret(_IN_ hal_ecdh_data *ecdh_mode, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret)
 {
 	return 0;
 }
