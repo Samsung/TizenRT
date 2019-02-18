@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <security_hal.h>
+#include <security/hal/security_hal.h>
 #include "hal_test_utils.h"
 
 void hal_test_free_buffer(hal_data *data)

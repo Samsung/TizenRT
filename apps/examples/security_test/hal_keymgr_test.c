@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <security_hal.h>
+#include <security/hal/security_hal.h>
 #include <stress_tool/st_perf.h>
 #include "hal_test_utils.h"
 

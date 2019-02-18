@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <security_hal.h>
+#include <security/hal/security_hal.h>
 #define _IN_
 #define _OUT_
 #define _INOUT_
