@@ -224,11 +224,6 @@ int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, st
 }
 #endif
 
-int ioctlsocket(int s, long cmd, void *argp)
-{
-	return lwip_ioctl(s, cmd, argp);
-}
-
 #ifdef CONFIG_NET_LWIP_NETDB
 struct hostent *gethostbyname(const char *name)
 {
