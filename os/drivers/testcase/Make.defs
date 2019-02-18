@@ -15,15 +15,15 @@
 # language governing permissions and limitations under the License.
 #
 ############################################################################
-# Include testcase drivers
+# Include kernel testcase drivers
 
 ifeq ($(CONFIG_KERNEL_TEST_DRV),y)
 
-CSRCS += testcase_drv.c
+CSRCS += kernel_testcase_drv.c
 
 CFLAGS += -I$(TOPDIR)/kernel
 
-# Include testcase driver support
+# Include kernel testcase driver support
 
 DEPPATH += --dep-path testcase
 VPATH += :testcase

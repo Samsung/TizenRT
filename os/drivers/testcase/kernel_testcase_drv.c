@@ -35,20 +35,20 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
-static ssize_t testdrv_read(FAR struct file *filep, FAR char *buffer, size_t len);
-static ssize_t testdrv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
+static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
+static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations testdrv_fops = {
+static const struct file_operations kernel_test_drv_fops = {
 	0,                                                   /* open */
 	0,                                                   /* close */
-	testdrv_read,                                        /* read */
-	testdrv_write,                                       /* write */
+	kernel_test_drv_read,                                /* read */
+	kernel_test_drv_write,                               /* write */
 	0,                                                   /* seek */
-	testdrv_ioctl                                        /* ioctl */
+	kernel_test_drv_ioctl                                /* ioctl */
 #ifndef CONFIG_DISABLE_POLL
 	, 0                                                  /* poll */
 #endif
@@ -59,13 +59,13 @@ static const struct file_operations testdrv_fops = {
  ****************************************************************************/
 
 /************************************************************************************
- * Name: testdrv_ioctl
+ * Name: kernel_test_drv_ioctl
  *
  * Description:  The standard ioctl method.
  *
  ************************************************************************************/
 
-static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	struct timespec base_time;
@@ -181,12 +181,12 @@ static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 
-static ssize_t testdrv_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	return 0;                                       /* Return EOF */
 }
 
-static ssize_t testdrv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
 {
 	return len;                                     /* Say that everything was written */
 }
@@ -196,14 +196,14 @@ static ssize_t testdrv_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 
 /****************************************************************************
- * Name: test_drv_register
+ * Name: kernel_test_drv_register
  *
  * Description:
  *   Register /dev/testcase
  *
  ****************************************************************************/
 
-void test_drv_register(void)
+void kernel_test_drv_register(void)
 {
-	(void)register_driver(TESTCASE_DRVPATH, &testdrv_fops, 0666, NULL);
+	(void)register_driver(KERNEL_TC_DRVPATH, &kernel_test_drv_fops, 0666, NULL);
 }
