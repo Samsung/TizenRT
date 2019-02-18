@@ -61,13 +61,22 @@ To implement SE chip on TizenRT, The every library and files sholud be in *os/se
     ifeq ($(CONFIG_SE_CHIP1),y)
     SE_PATH = chip1
     SE_CSRCS += chip1_code_1.c chip1_code_2.c
-    SE_LIB += libchip1.a
+    SE_LIB = libchip1.a
+    SE_LIB_GEN = private_code1.c private_code2.c
+    SE_LIB_OUT = libprivate.a
     endif
     ```
     At the first, check the chip config is enabled.\
     **SE_PATH** is the folder name of the chip files, and 
     **SE_CSRCS** includes source codes if needed. \
     **SE_LIB** defines SE library which can be set *only 1 file*.
+    > Note1: the static library sholud be stored with gcc name such as *libchip1_arm.a* or *libchip1_xtensa.a* for cross compilation.
+    
+    > Note2: TizenRT will use **SE_LIB** following each compiler automatically.
+    So you should set **SE_LIB** with common name.
+
+    **SE_LIB_GEN** is only for private sources.
+    If **SE_LIB_GEN** exists, the static library will be generated in **SE_LIB_OUT** following each compiler. (ex. libprivate_arm.a, libprivate_xtensa.a)
 
 3. Create **Kconfig**
    ```

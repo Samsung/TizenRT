@@ -52,6 +52,8 @@
 
 ifeq ($(CONFIG_SE_SSS),y)
 SE_PATH = sss
-SE_CSRCS += sss_driver_io.c sssro_verify.c security_hal_wrapper.c
-SE_LIB += libispdriver.a
+SE_CSRCS = sss_driver_io.c sssro_verify.c security_hal_wrapper.c
+SE_LIB = libispdriver.a
+SE_LIB_GEN =
+SE_LIB_OUT =
 endif

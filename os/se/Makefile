@@ -22,6 +22,7 @@
 DEPPATH = --dep-path .
 SE_PATH		=
 SE_CSRCS	=
+SE_SRCS		=
 SE_LIB 	=
 SE_LIB_OBJS =
 VPATH = .
@@ -37,8 +38,18 @@ endef
 $(foreach SDIR, $(SE_DIRS), $(eval $(call ADD_SE_MAKE_DEF, $(SDIR))))
 
 ifneq ($(SE_CSRCS),)
-SE_SRCS := $(addprefix $(SE_PATH)/, $(SE_CSRCS))
+SE_SRCS = $(addprefix $(SE_PATH)/, $(SE_CSRCS))
 SE_OBJS = $(SE_SRCS:.c=$(OBJEXT))
+endif
+
+ifneq ($(SE_LIB_GEN),)
+SE_LIB_SRCS = $(addprefix $(SE_PATH)/, $(SE_LIB_GEN))
+SE_LIB_OBJS = $(SE_LIB_SRCS:.c=$(OBJEXT))
+SE_SRCS += $(SE_LIB_SRCS)
+endif
+
+ifneq ($(SE_LIB),)
+SE_LIB_NAME=$(patsubst %$(LIBEXT), %_$(CONFIG_ARCH)$(LIBEXT), $(SE_LIB))
 endif
 
 SE_BIN	= libse$(LIBEXT)
@@ -46,15 +57,21 @@ SE_BIN	= libse$(LIBEXT)
 all: $(SE_BIN)
 .PHONY: depend clean distclean
 
-preconfig:
-ifneq ($(SE_LIB),)
-	cp $(addprefix $(SE_PATH)/, $(SE_LIB)) $(SE_BIN)
-endif
+$(SE_LIB_OUT):
+	$(call ARCHIVE, $(patsubst %$(LIBEXT), %_$(CONFIG_ARCH)$(LIBEXT), $@), $(SE_LIB_OBJS))
+	$(Q) $(CROSSDEV)strip -d $(patsubst %$(LIBEXT), %_$(CONFIG_ARCH)$(LIBEXT), $@)
 
+$(SE_LIB):
+ifneq (, $(wildcard $(addprefix $(SE_PATH)/, $(SE_LIB_NAME))))
+	$(Q) cp $(addprefix $(SE_PATH)/, $(SE_LIB_NAME)) $(SE_BIN)
+else
+	$(error "$(addprefix $(SE_PATH)/, $(SE_LIB_NAME)) should exist to build SE.")
+endif
+	
 $(SE_OBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(SE_BIN): preconfig $(SE_OBJS)
+$(SE_BIN): $(SE_LIB) $(SE_OBJS) $(SE_LIB_OUT)
 	$(call ARCHIVE, $@, $(SE_OBJS))
 
 .depend: Makefile $(SE_SRCS)
