@@ -19,9 +19,6 @@
 /// @file mbedtls/alt/common.h
 // @brief common ALT header
 
-// NEED TO BE CHANGED TO A GENERIC HAL API LIST
-#include "../../../../os/arch/arm/src/s5j/sss/isp_custom.h"
-
 #ifndef MBEDTLS_COMMON_ALT_H
 #define MBEDTLS_COMMON_ALT_H
 
@@ -29,12 +26,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define ISP_CHECKBUSY() while (isp_get_status()) {}
-
-#define MBEDTLS_MAX_ENCRYPTED_KEY_SIZE_ALT  (1280)
-#define MBEDTLS_MAX_ECP_KEY_SIZE_ALT  (68)
-#define MBEDTLS_MAX_RANDOM_SIZE		(256)
-#define MBEDTLS_MAX_BUF_SIZE		(4096)
+#define MBEDTLS_MAX_ECP_KEY_SIZE_ALT                  (68)
+#define MBEDTLS_MAX_BUF_SIZE_ALT                      (4096)
 
 #define DHM_1024 (128)
 #define DHM_2048 (256)

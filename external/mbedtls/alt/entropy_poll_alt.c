@@ -22,53 +22,47 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include <security/hal/security_hal.h>
+
 #if defined(MBEDTLS_ENTROPY_C)
 
 #include "mbedtls/entropy.h"
 #include "mbedtls/entropy_poll.h"
 #include "mbedtls/alt/common.h"
 
+
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
 static int mbedtls_generate_random_alt( unsigned int *data, unsigned int len )
 {
-	int r;
+	int ret;
 
-	if (data == NULL || len > MBEDTLS_MAX_RANDOM_SIZE) {
+	hal_data random;
+	random.data = data;
+	random.data_len = len;
+
+	ret = hal_generate_random(len, &random);
+
+	if (ret != HAL_SUCCESS) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
 
-	/* Change length to word number */
-	if (len & 0x3) {
-		len = len + 4 - (len & 0x3);
-	}
-
-	ISP_CHECKBUSY();
-	if ((r = isp_generate_random(data, len / 4)) != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	return( 0 );
+	return HAL_SUCCESS;
 }
+
 
 int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
-	unsigned int inlen = MBEDTLS_MAX_RANDOM_SIZE;
-	unsigned int inbuf[MBEDTLS_MAX_RANDOM_SIZE];
+	unsigned int inbuf[len];
 
 	((void) data);
 
-	if (mbedtls_generate_random_alt( inbuf, inlen ) < 0) {
+	if (mbedtls_generate_random_alt( inbuf, len ) < 0) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
 
-	if (len < inlen) {
-		inlen = len;
-	}
-
-	memcpy(output, inbuf, inlen);
-	*olen = inlen;
+	memcpy(output, inbuf, len);
+	*olen = len;
 
 	return( 0 );
 }

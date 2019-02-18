@@ -43,32 +43,11 @@
 #define MBEDTLS_PK_ALT_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-<<<<<<< HEAD
-#include "config.h"
-=======
 #include "../config.h"
->>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-<<<<<<< HEAD
-#include "md.h"
-
-#if defined(MBEDTLS_RSA_C)
-#include "rsa.h"
-#endif
-
-#if defined(MBEDTLS_ECP_C)
-#include "ecp.h"
-#endif
-
-#if defined(MBEDTLS_ECDSA_C)
-#include "ecdsa.h"
-#endif
-
-#include "alt/common.h"
-=======
 #include "../md.h"
 
 #if defined(MBEDTLS_RSA_C)
@@ -84,7 +63,6 @@
 #endif
 
 #include "common.h"
->>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
@@ -96,20 +74,10 @@
 extern "C" {
 #endif
 
-int mbedtls_setup_key_alt( unsigned char *key_der, unsigned int key_len,
-                           unsigned int key_type, unsigned char *key_buf );
-
-<<<<<<< HEAD
-int mbedtls_get_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign, unsigned char *hash,
-				unsigned int hash_len, unsigned int key_index );
-
-int mbedtls_get_rsa_signature_alt( struct sRSA_SIGN *rsa_sign, unsigned char *hash,
-=======
 int mbedtls_get_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign, unsigned char *hash,
 				unsigned int hash_len, unsigned int key_index );
 
 int mbedtls_get_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign, unsigned char *hash,
->>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 				unsigned int hash_len, unsigned int key_index );
 
 int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
@@ -117,11 +85,7 @@ int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
 				unsigned char *input, unsigned int inlen );
 
 #if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
-<<<<<<< HEAD
-int mbedtls_verify_rsa_signature_alt( struct sRSA_SIGN *rsa_sign,
-=======
 int mbedtls_verify_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign,
->>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
 				unsigned char *hash, unsigned int hash_len,
 				unsigned char *key_buf );
 #endif
@@ -133,11 +97,7 @@ int mbedtls_rsa_encryption_alt( unsigned char *key_buf, unsigned int pad_type,
 #endif
 
 #if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
-<<<<<<< HEAD
-int mbedtls_verify_ecdsa_signature_alt( struct sECC_SIGN *ecc_sign,
-=======
 int mbedtls_verify_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign,
->>>>>>> 3b68429fb... external/mbedtls: Modify dependency of remaming HW accel configs
                                         unsigned char *hash, unsigned int hash_len,
                                         unsigned char *key_buf );
 #endif
