@@ -42,7 +42,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT(api_name, var) TC_ASSERT_CLEANUP(api_name, var, )
+#define TC_ASSERT(api_name, var) TC_ASSERT_CLEANUP(api_name, var, ((void)0))
 
 #define TC_ASSERT_EQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -73,7 +73,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_EQ(api_name, var, ref) TC_ASSERT_EQ_RETURN(api_name, var, ref, )
+#define TC_ASSERT_EQ(api_name, var, ref) TC_ASSERT_EQ_RETURN(api_name, var, ref, ((void)0))
 
 #define TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -85,7 +85,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_NEQ(api_name, var, ref) TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, )
+#define TC_ASSERT_NEQ(api_name, var, ref) TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, ((void)0))
 
 #define TC_ASSERT_GT_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -97,7 +97,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_GT(api_name, var, ref) TC_ASSERT_GT_CLEANUP(api_name, var, ref, )
+#define TC_ASSERT_GT(api_name, var, ref) TC_ASSERT_GT_CLEANUP(api_name, var, ref, ((void)0))
 
 #define TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -109,7 +109,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_GEQ(api_name, var, ref) TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, )
+#define TC_ASSERT_GEQ(api_name, var, ref) TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, ((void)0))
 
 #define TC_ASSERT_LT_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -121,7 +121,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_LT(api_name, var, ref) TC_ASSERT_LT_CLEANUP(api_name, var, ref, )
+#define TC_ASSERT_LT(api_name, var, ref) TC_ASSERT_LT_CLEANUP(api_name, var, ref, ((void)0))
 
 #define TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -133,7 +133,7 @@ extern int total_fail;
 	} \
 }
 
-#define TC_ASSERT_LEQ(api_name, var, ref) TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, )
+#define TC_ASSERT_LEQ(api_name, var, ref) TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, ((void)0))
 
 #define TC_SUCCESS_RESULT() \
 {\
@@ -143,7 +143,7 @@ extern int total_fail;
 
 #define TC_FREE_MEMORY(buffer) \
 {\
-	if ((buffer) != NULL) {\
+	if ((buffer) != NULL) { \
 		free(buffer); \
 		buffer = NULL; \
 	} \
@@ -158,5 +158,4 @@ int tc_handler(tc_op_type_t type, const char *tc_name);
 #ifdef __cplusplus
 }
 #endif
-
 #endif

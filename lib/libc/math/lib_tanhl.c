@@ -57,8 +57,19 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double tanhl(long double x)
 {
-	long double x0 = exp(x);
-	long double x1 = 1.0 / x0;
+	long double x0;
+	long double x1;
+
+	if (x == INFINITY) {
+		return (1.0);
+	}
+
+	if (x == -INFINITY) {
+		return (-1.0);
+	}
+
+	x0 = exp(x);
+	x1 = 1.0 / x0;
 
 	return ((x0 - x1) / (x0 + x1));
 }

@@ -152,15 +152,18 @@ things_es_enrollee_state_e es_get_state(void)
 
 bool es_get_cloud_login_state(void)
 {
+	bool res;
 	switch (get_enrollee_state()) {
 	case ES_STATE_REGISTERED_TO_CLOUD:
 	case ES_STATE_PUBLISHING_RESOURCES_TO_CLOUD:
 	case ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD:
 	case ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD:
-		return true;
+		res = true;
+	default:
+		res = false;
 	}
 
-	return false;
+	return res;
 }
 
 es_result_e es_set_device_property(es_device_property *device_property)

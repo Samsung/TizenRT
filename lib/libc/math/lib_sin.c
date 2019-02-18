@@ -80,6 +80,12 @@ double sin(double x)
 	double sin_x;
 	size_t i;
 
+	/* When x is INFINITY, -INFINITY and NAN  */
+	if (isnan(x) || x == INFINITY || x == -INFINITY) {
+
+		return NAN;
+	}
+
 	/* Move x to [-pi, pi) */
 
 	x = fmod(x, 2 * M_PI);

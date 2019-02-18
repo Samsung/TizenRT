@@ -59,6 +59,10 @@ double ceil(double x)
 {
 	double x1 = x;
 
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	modf(x, &x);
 	if (x1 > 0.0 && fabs(x1 - x) > 0.0) {
 		x += 1.0;

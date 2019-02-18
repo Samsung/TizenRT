@@ -1435,6 +1435,84 @@ static void utc_arastorage_cursor_get_string_value_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @brief  test example for bplustree indexing
+* @scenario :
+		utc_arastorage_db_init_p();
+		utc_arastorage_db_index_exec();
+		utc_arastorage_db_deinit_p();
+* @precondition	 none
+* @postcondition    none
+*/
+static void utc_arastorage_db_index_exec(void)
+{
+	db_result_t res;
+	char query[QUERY_LENGTH];
+	int i;
+
+	/*=========================REMOVE & CREATE==========================*/
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
+	db_exec(query);
+
+	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	/*=========================CREATE ATTRIBUTE==========================*/
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN long IN %s;", g_attribute_set[1], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN string(32) IN %s;", g_attribute_set[2], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[3], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	/*=========================INSERT TUPLE==========================*/
+	for (i = 0; i < 240; i++) {
+		memset(query, 0, QUERY_LENGTH);
+		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld, \'%s\', %d) INTO %s;",
+			i, g_arastorage_data_set[i%DATA_SET_NUM].long_value,
+			g_arastorage_data_set[i%DATA_SET_NUM].string_value, /*1000 - i*/rand()%500, RELATION_NAME1);
+		res = db_exec(query);
+		TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+	}
+
+	/*=========================CREATE INDEX==========================*/
+	memset(query, 0, QUERY_LENGTH);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[3], INDEX_BPLUS);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "SELECT ALL FROM %s WHERE value < 100 AND value >= 10;", RELATION_NAME1);
+	g_cursor = db_query(query);
+	utc_arastorage_db_print_tuple_p();
+
+	/*=========================REMOVE TUPLE==========================*/
+	snprintf(query, QUERY_LENGTH, "REMOVE FROM %s WHERE value < 200 AND value > 100;", RELATION_NAME1);
+	g_cursor = db_query(query);
+	utc_arastorage_db_print_tuple_p();
+
+	/*=========================SELECT After REMOVE==========================*/
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "SELECT ALL FROM %s WHERE value < 500 AND value >= 0;", RELATION_NAME1);
+	g_cursor = db_query(query);
+	utc_arastorage_db_print_tuple_p();
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else

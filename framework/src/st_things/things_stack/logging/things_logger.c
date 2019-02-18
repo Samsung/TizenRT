@@ -37,7 +37,6 @@
 static const char *LEVEL[] __attribute__((unused)) = {
 	"DEBUG", "INFOR", "WARNING", "ERROR", "FATAL"
 };
-static char ts_buf[64] = { 0 };
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 

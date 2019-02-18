@@ -157,14 +157,14 @@ static void inode_insert(FAR struct inode *node, FAR struct inode *peer, FAR str
  * Name: select_last_inode
  ****************************************************************************/
 
-static void* select_last_inode(FAR const char *name)
+static void *select_last_inode(FAR const char *name)
 {
 	const char *tmp = name;
 	void *last = NULL;
 
 	while (*tmp && *tmp != '\0') {
 		if (*tmp == '/') {
-			last = (void*)tmp;
+			last = (void *)tmp;
 		}
 		tmp++;
 	}
@@ -230,7 +230,7 @@ int inode_reserve(FAR const char *path, FAR struct inode **inode)
 		return -EEXIST;
 	}
 
-	/* Now we now where to insert the subtree */
+	/* Now we know the exact position to insert the subtree */
 
 	for (;;) {
 		FAR struct inode *node;

@@ -94,6 +94,7 @@
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
+#define _HEAPINFOBASE   (0x2200)	/* Heapinfo ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -368,6 +369,17 @@
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
 #define TMIOC_PTHREAD_PARENT       _TMIOC(0x0008)
 #endif
+
+/* Heapinfo driver ioctl definitions ******************************************/
+#define _HEAPINFOIOCVALID(c)   (_IOC_TYPE(c) == _HEAPINFOBASE)
+#define _HEAPINFOIOC(nr)       _IOC(_HEAPINFOBASE, nr)
+
+#define HEAPINFOGIOC_PARSE            _HEAPINFOIOC(0x0001)
+#define HEAPINFOIOC_NREGION           _HEAPINFOIOC(0x0002)
+#define HEAPINFOIOC_PPID              _HEAPINFOIOC(0x0003)
+#define HEAPINFOIOC_STKSIZE           _HEAPINFOIOC(0x0004)
+#define HEAPINFOIOC_TASKNAME          _HEAPINFOIOC(0x0005)
+#define HEAPINFOIOC_INIT_KHEAP        _HEAPINFOIOC(0x0006)
 
 /****************************************************************************
  * Public Type Definitions

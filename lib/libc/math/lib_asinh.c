@@ -65,6 +65,10 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double asinh(double x)
 {
+	if (x == -INFINITY) {
+		return -INFINITY;
+	}
+
 	return log(x + sqrt(x * x + 1));
 }
 #endif

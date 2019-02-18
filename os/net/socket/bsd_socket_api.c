@@ -174,32 +174,32 @@ static int socket_argument_validation(int domain, int type, int protocol)
 		return -1;
 	}
 	switch (protocol) {
-		case IPPROTO_UDP:
-		case IPPROTO_UDPLITE:
-			if (type != SOCK_DGRAM && type != SOCK_RAW) {
-				return -1;
-			}
-			break;
-		case IPPROTO_TCP:
-			if (type != SOCK_STREAM) {
-				return -1;
-			}
-			break;
-		case IPPROTO_ICMP:
-		case IPPROTO_IGMP:
-		case IPPROTO_ICMPV6:
-			if (type != SOCK_RAW) {
-				return -1;
-			}
-			break;
-		case IPPROTO_IP:
-			if (type == SOCK_RAW) {
-				return -1;
-			}
-			break;
-		default:
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+		if (type != SOCK_DGRAM && type != SOCK_RAW) {
 			return -1;
-			break;
+		}
+		break;
+	case IPPROTO_TCP:
+		if (type != SOCK_STREAM) {
+			return -1;
+		}
+		break;
+	case IPPROTO_ICMP:
+	case IPPROTO_IGMP:
+	case IPPROTO_ICMPV6:
+		if (type != SOCK_RAW) {
+			return -1;
+		}
+		break;
+	case IPPROTO_IP:
+		if (type == SOCK_RAW) {
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+		break;
 	}
 	return 0;
 }
@@ -224,109 +224,10 @@ int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, st
 }
 #endif
 
-int ioctlsocket(int s, long cmd, void *argp)
-{
-	return lwip_ioctl(s, cmd, argp);
-}
-
-uint16_t htons(uint16_t hs)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return hs;
-#else
-	return lwip_htons(hs);
-#endif
-}
-
-uint16_t ntohs(uint16_t ns)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return ns;
-#else
-	return lwip_htons(ns);
-#endif
-}
-
-uint32_t ntohl(uint32_t nl)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return nl;
-#else
-	return lwip_htonl(nl);
-#endif
-}
-
-uint32_t htonl(uint32_t nl)
-{
-#if BYTE_ORDER == BIG_ENDIAN
-	return nl;
-#else
-	return lwip_htonl(nl);
-#endif
-}
-
-FAR char* inet_ntoa(struct in_addr in)
-{
-	return ip4addr_ntoa((const ip4_addr_t*)&(in));
-}
-
-in_addr_t inet_addr(FAR const char *cp)
-{
-	return ipaddr_addr(cp);
-}
-
-int inet_aton(const char *cp, struct in_addr *inp)
-{
-	return ip4addr_aton(cp, (ip4_addr_t*)inp);
-}
-
-FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t size)
-{
-
-#ifdef CONFIG_NET_IPv4
-	if (af == AF_INET)
-		return ip4addr_ntoa_r((const ip4_addr_t*)(src), ((char *)(dest)), (size));
-	else
-#endif
-#ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6)
-		return ip6addr_ntoa_r((const ip6_addr_t*)(src), ((char *)(dest)), (size));
-	else
-#endif
-		return NULL;
-}
-
-int inet_pton(int af, FAR const char *src, FAR void *dest)
-{
-#ifdef CONFIG_NET_IPv4
-	if (af == AF_INET)
-		return ip4addr_aton(((const char *)(src)), (ip4_addr_t*)((char *)(dest)));
-	else
-#endif
-#ifdef CONFIG_NET_IPv6
-	if (af == AF_INET6)
-		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t*)(dest)));
-	else
-#endif
-	{
-		return -1;
-	}
-}
-
 #ifdef CONFIG_NET_LWIP_NETDB
 struct hostent *gethostbyname(const char *name)
 {
 	return lwip_gethostbyname(name);
-}
-
-void freeaddrinfo(struct addrinfo *ai)
-{
-	lwip_freeaddrinfo(ai);
-}
-
-int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
-{
-	return lwip_getaddrinfo(nodename, servname, hints, res);
 }
 
 #if LWIP_COMPAT_SOCKETS
@@ -334,8 +235,8 @@ int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t host
 {
 	return lwip_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
 }
-#endif /* LWIP_COMPAT_SOCKETS */
+#endif							/* LWIP_COMPAT_SOCKETS */
 
-#endif /* NET_LWIP_NETDB */
+#endif							/* NET_LWIP_NETDB */
 
 #endif

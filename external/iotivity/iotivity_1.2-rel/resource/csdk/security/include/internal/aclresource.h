@@ -30,13 +30,13 @@ extern "C" {
  *
  * @return ::OC_STACK_OK for Success, otherwise some error value.
  */
-OCStackResult InitACLResource();
+OCStackResult InitACLResource(void);
 
 /**
  * Perform cleanup for ACL resources.
  *
  */
-OCStackResult DeInitACLResource();
+OCStackResult DeInitACLResource(void);
 
 /**
  * This method is used by PolicyEngine to retrieve ACL for a Subject.
@@ -146,7 +146,7 @@ OCStackResult AppendACL2(const OicSecAcl_t* acl);
  *
  * @retval OC_STACK_OK for Success, otherwise some error value
  */
-OCStackResult UpdateDefaultSecProvACE();
+OCStackResult UpdateDefaultSecProvACE(void);
 
 /**
  * Internal function to update resource owner

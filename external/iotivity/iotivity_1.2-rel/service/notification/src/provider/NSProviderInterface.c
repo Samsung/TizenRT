@@ -117,7 +117,7 @@ NSResult NSStartProvider(NSProviderConfig config)
     return NS_OK;
 }
 
-NSResult NSStopProvider()
+NSResult NSStopProvider(void)
 {
     NS_LOG(DEBUG, "NSStopProvider - IN");
     pthread_mutex_lock(&nsInitMutex);
@@ -309,7 +309,7 @@ NSResult NSAcceptSubscription(const char * consumerId, bool accepted)
     return NS_OK;
 }
 
-NSMessage * NSCreateMessage()
+NSMessage * NSCreateMessage(void)
 {
     NS_LOG(DEBUG, "NSCreateMessage - IN");
     pthread_mutex_lock(&nsInitMutex);
@@ -350,7 +350,7 @@ NSTopicLL * NSProviderGetConsumerTopics(const char * consumerId)
     return topicSync.topics;
 }
 
-NSTopicLL * NSProviderGetTopics()
+NSTopicLL * NSProviderGetTopics(void)
 {
     NS_LOG(DEBUG, "NSProviderGetTopics - IN");
     pthread_mutex_lock(&nsInitMutex);

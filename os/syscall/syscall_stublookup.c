@@ -207,6 +207,8 @@ uintptr_t STUB_dup2(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_fcntl(int nbr, uintptr_t parm1, uintptr_t parm2,
 					 uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
 					 uintptr_t parm6);
+uintptr_t STUB_fstat(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_fstatfs(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_lseek(int nbr, uintptr_t parm1, uintptr_t parm2,
 					 uintptr_t parm3);
 uintptr_t STUB_mkfifo(int nbr, uintptr_t parm1, uintptr_t parm2);
@@ -328,6 +330,10 @@ uintptr_t STUB_bind(int nbr, uintptr_t parm1, uintptr_t parm2,
 					uintptr_t parm3);
 uintptr_t STUB_connect(int nbr, uintptr_t parm1, uintptr_t parm2,
 					   uintptr_t parm3);
+uintptr_t STUB_getpeername(int nbr, uintptr_t parm1, uintptr_t parm2,
+					   uintptr_t parm3);
+uintptr_t STUB_getsockname(int nbr, uintptr_t parm1, uintptr_t parm2,
+					   uintptr_t parm3);
 uintptr_t STUB_getsockopt(int nbr, uintptr_t parm1, uintptr_t parm2,
 						  uintptr_t parm3, uintptr_t parm4, uintptr_t parm5);
 uintptr_t STUB_listen(int nbr, uintptr_t parm1, uintptr_t parm2);
@@ -343,6 +349,7 @@ uintptr_t STUB_sendto(int nbr, uintptr_t parm1, uintptr_t parm2,
 					  uintptr_t parm6);
 uintptr_t STUB_setsockopt(int nbr, uintptr_t parm1, uintptr_t parm2,
 						  uintptr_t parm3, uintptr_t parm4, uintptr_t parm5);
+uintptr_t STUB_shutdown(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_socket(int nbr, uintptr_t parm1, uintptr_t parm2,
 					  uintptr_t parm3);
 

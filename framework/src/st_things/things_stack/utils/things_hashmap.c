@@ -203,7 +203,7 @@ unsigned long hashmap_get_hashval(unsigned char *str)
 	unsigned long hash = 5381;
 	int c = 0;
 
-	while (c = *str++) {
+	while ((c = *str++)) {
 		hash = ((hash << 5) + hash) + c;	/* hash * 33 + c */
 	}
 

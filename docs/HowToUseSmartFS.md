@@ -97,7 +97,7 @@ File Systems -> Memory Technology Device (MTD) Support -> Enable on-chip program
 
 Refer to *os/board/artik05x/src/artik05x_tash.c* for example of MTD driver initialization
 ```
-artik05x_configure_partitions() -> progmem_initialize ();
+configure_partitions() -> progmem_initialize ();
 ```
 
 ## SMART MTD Driver
@@ -115,7 +115,7 @@ smart device can be initialized as shown below,
                         char partref[4];
 
                         snprintf(partref, sizeof(partref), "p%d", partno);
-                        smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
+                        smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
                 }
 #endif
 

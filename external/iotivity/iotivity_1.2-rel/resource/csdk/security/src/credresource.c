@@ -2256,7 +2256,7 @@ OCStackResult CreateCredResource()
     return ret;
 }
 
-OCStackResult InitCredResource()
+OCStackResult InitCredResource(void)
 {
     OCStackResult ret = OC_STACK_ERROR;
     OicSecCred_t* cred = NULL;
@@ -2334,7 +2334,7 @@ exit:
     return ret;
 }
 
-OCStackResult DeInitCredResource()
+OCStackResult DeInitCredResource(void)
 {
     OCStackResult result = OCDeleteResource(gCredHandle);
     DeleteCredList(gCred);
@@ -2361,7 +2361,7 @@ OicSecCred_t* GetCredResourceData(const OicUuid_t* subject)
     return NULL;
 }
 
-const OicSecCred_t* GetCredList()
+OicSecCred_t* GetCredList(void)
 {
     return gCred;
 }

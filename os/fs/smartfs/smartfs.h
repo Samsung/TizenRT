@@ -297,7 +297,7 @@ struct smartfs_entry_s {
 	uint32_t datlen;			/* Length of inode data */
 };
 
-/* This is an on-device representation of the SMART inode it esists on
+/* This is an on-device representation of the SMART inode which exists on
  * the FLASH.
  */
 
@@ -369,7 +369,7 @@ struct smartfs_mountpt_s {
 	struct smartfs_mountpt_s *fs_next;	/* Pointer to next SMART filesystem */
 #endif
 	FAR struct inode *fs_blkdriver;	/* Our underlying block device */
-	sem_t *fs_sem;			/* Used to assure thread-safe access */
+	sem_t *fs_sem;				/* Used to assure thread-safe access */
 	FAR struct smartfs_ofile_s
 			*fs_head;					/* A singly-linked list of open files */
 	bool fs_mounted;			/* true: The file system is ready */
@@ -425,8 +425,8 @@ struct smartfs_logging_entry_s {
 								 */
 
 	uint8_t crc16[2];			/*      For CRC value to check validation of journal entry
-							     *      First 8bits for entry, next 8bits for entry + data
-							     */
+								 *      First 8bits for entry, next 8bits for entry + data
+								 */
 
 	uint16_t curr_sector;		/*      Transaction type : Use
 								 *        1) T_WRITE  : sector number of sector to be written.
@@ -472,14 +472,14 @@ struct smartfs_logging_entry_s {
   This structure provides the transaction manager for all journaling operations
 */
 struct journal_transaction_manager_s {
-	bool enabled;               /* State value to check journaling enabled or not */
-	int8_t jarea;				/* 0 or 1. Specifies which journal area is usable */
+	bool enabled;				/* State value to check whether journaling is enabled or not */
+	int8_t jarea;				/* 0 or 1. Specify which journal area is usable */
 	uint16_t sector;			/* Sector number where next logging entry has to be written */
 	uint16_t offset;			/* Offset in the sector above */
 	uint16_t availbytes;		/* Total space in a logging sector to write entries */
-	uint8_t *buffer;			/* buffer to hold logging entry header and data */
-	uint8_t *active_sectors;	/* map to mark sectors which are written but not yet synced */
-	struct active_write_node_s *list;	/* linked list to hold information about writes which need sync */
+	uint8_t *buffer;			/* Buffer to hold logging entry header and data */
+	uint8_t *active_sectors;	/* Map to mark sectors which are written but not yet synced */
+	struct active_write_node_s *list;	/* Linked list to hold information about writes which need sync */
 };
 #endif
 /****************************************************************************

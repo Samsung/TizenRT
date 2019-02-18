@@ -162,6 +162,18 @@ int task_activate(FAR struct tcb_s *tcb)
 		sdbg("Fail to set SIGKILL handler for activating tcb.\n");
 	}
 #endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t hash_pid;
+	struct mm_heap_s *heap = mm_get_heap(tcb->stack_alloc_ptr);
+
+	hash_pid = PID_HASH(tcb->pid);
+	if (heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO) {
+		heap->alloc_list[hash_pid].pid = tcb->pid;
+		heap->alloc_list[hash_pid].curr_alloc_size = 0;
+		heap->alloc_list[hash_pid].peak_alloc_size = 0;
+		heap->alloc_list[hash_pid].num_alloc_free = 0;
+	}
+#endif
 	up_unblock_task(tcb);
 	irqrestore(flags);
 	return OK;

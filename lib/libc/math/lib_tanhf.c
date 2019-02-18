@@ -54,8 +54,19 @@
 
 float tanhf(float x)
 {
-	float x0 = expf(x);
-	float x1 = 1.0 / x0;
+	float x0;
+	float x1;
+
+	if (x == INFINITY) {
+		return (1.0);
+	}
+
+	if (x == -INFINITY) {
+		return (-1.0);
+	}
+
+	x0 = expf(x);
+	x1 = 1.0 / x0;
 
 	return ((x0 - x1) / (x0 + x1));
 }

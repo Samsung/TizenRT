@@ -286,15 +286,18 @@ static void heapinfo_update_group(mmsize_t size, pid_t pid)
  * Description:
  * Add the allocated size in tcb
  ****************************************************************************/
-void heapinfo_add_size(pid_t pid, mmsize_t size)
+void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size)
 {
-	struct tcb_s *rtcb = sched_gettcb(pid);
-	if (rtcb) {
-		rtcb->curr_alloc_size += size;
-		rtcb->num_alloc_free++;
-		if (rtcb->curr_alloc_size > rtcb->peak_alloc_size) {
-			rtcb->peak_alloc_size = rtcb->curr_alloc_size;
-		}
+	pid_t hash_pid;
+
+	hash_pid = PID_HASH(pid);
+	if (heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO || heap->alloc_list[hash_pid].pid == pid) {
+			heap->alloc_list[hash_pid].pid = pid;
+			heap->alloc_list[hash_pid].curr_alloc_size += size;
+			if (heap->alloc_list[hash_pid].curr_alloc_size > heap->alloc_list[hash_pid].peak_alloc_size) {
+				heap->alloc_list[hash_pid].peak_alloc_size = heap->alloc_list[hash_pid].curr_alloc_size;
+			}
+			heap->alloc_list[hash_pid].num_alloc_free++;
 	}
 }
 
@@ -304,13 +307,14 @@ void heapinfo_add_size(pid_t pid, mmsize_t size)
  * Description:
  * Subtract the allocated size in tcb
  ****************************************************************************/
-void heapinfo_subtract_size(pid_t pid, mmsize_t size)
+void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size)
 {
-	struct tcb_s *rtcb = sched_gettcb(pid);
+	pid_t hash_pid;
 
-	if (rtcb) {
-		rtcb->curr_alloc_size -= size;
-		rtcb->num_alloc_free--;
+	hash_pid = PID_HASH(pid);
+	if (heap->alloc_list[hash_pid].pid == pid) {
+			heap->alloc_list[hash_pid].curr_alloc_size -= size;
+			heap->alloc_list[hash_pid].num_alloc_free--;
 	}
 }
 
@@ -364,14 +368,12 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 void heapinfo_exclude_stacksize(void *stack_ptr)
 {
 	struct mm_allocnode_s *node;
-	struct tcb_s *rtcb;
+	struct mm_heap_s *heap = mm_get_heap(stack_ptr);
+	pid_t hash_pid;
 
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
-	rtcb = sched_gettcb(node->pid);
-
-	ASSERT(rtcb);
-	rtcb->curr_alloc_size -= node->size;
-
+	hash_pid = PID_HASH(node->pid);
+	heap->alloc_list[hash_pid].curr_alloc_size -= node->size;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	int check_idx;
 	int group_num;
@@ -480,4 +482,22 @@ void heapinfo_check_group_list(pid_t pid, char *name)
 	}
 }
 #endif /* CONFIG_HEAPINFO_USER_GROUP */
+
+/****************************************************************************
+ * Name: heapinfo_peak_init
+ *
+ * Description:
+ * initialize the peak allocation size in heap
+ ****************************************************************************/
+void heapinfo_peak_init(struct mm_heap_s *heap)
+{
+	int tcb_idx;
+	int heap_idx;
+
+	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+		for (tcb_idx = 0; tcb_idx < CONFIG_MAX_TASKS; tcb_idx++) {
+			heap[heap_idx].alloc_list[tcb_idx].peak_alloc_size = 0;
+		}
+	}
+}
 #endif

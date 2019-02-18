@@ -43,9 +43,8 @@
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
-#include <net/lwip/dhcp.h>
-#include <net/lwip/mld6.h>
-#include <net/lwip/stats.h>
+//#include <net/lwip/dhcp.h>
+//#include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
@@ -211,7 +210,7 @@ int cmd_ifdown(int argc, char **argv)
 int cmd_ifconfig(int argc, char **argv)
 {
 	struct in_addr addr;
-	in_addr_t gip;
+	in_addr_t gip = 0;
 	int i;
 	FAR char *intf = NULL;
 	FAR char *hostip = NULL;
@@ -224,7 +223,6 @@ int cmd_ifconfig(int argc, char **argv)
 	FAR char *dns = NULL;
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
-	struct netif *netif;
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -289,7 +287,6 @@ int cmd_ifconfig(int argc, char **argv)
 					}
 				}
 			}
-			netif = netif_find(intf);
 		}
 	}
 
@@ -317,33 +314,7 @@ int cmd_ifconfig(int argc, char **argv)
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
 			netlib_set_ipv4addr(intf, &addr);
-#ifdef CONFIG_NET_IPv6
-		} else if (!strcmp(hostip, "auto")) {
-			/* IPV6 auto configuration : Link-Local address */
 
-			ndbg("IPV6 link local address auto config\n");
-			netif = netif_find(intf);
-
-			if (netif) {
-#ifdef CONFIG_NET_IPv6_AUTOCONFIG
-				/* enable IPv6 address stateless autoconfiguration */
-				netif_set_ip6_autoconfig_enabled(netif, 1);
-#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
-				/* To auto-config linklocal address, netif should have mac address already */
-				netif_create_ip6_linklocal_address(netif, 1);
-				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
-#ifdef CONFIG_NET_IPv6_MLD
-				ip6_addr_t solicit_addr;
-
-				/* set MLD6 group to receive solicit multicast message */
-				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
-				mld6_joingroup_netif(netif, &solicit_addr);
-				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-			}
-
-			return OK;
-#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
@@ -354,44 +325,9 @@ int cmd_ifconfig(int argc, char **argv)
 			}
 #ifdef CONFIG_NET_IPv6
 			else if (strstr(hostip, ":") != NULL) {
-				ip6_addr_t temp;
-				s8_t idx;
-
-				netif = netif_find(intf);
-				if (netif) {
-					inet_pton(AF_INET6, hostip, &temp);
-					idx = netif_get_ip6_addr_match(netif, &temp);
-					if (idx != -1) {
-#ifdef CONFIG_NET_IPv6_MLD
-						ip6_addr_t solicit_addr;
-
-						/* leaving MLD6 group */
-						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-						mld6_leavegroup_netif(netif, &solicit_addr);
-						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-						/* delete static ipv6 address if the same ip address exists */
-						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
-						return OK;
-					}
-#ifdef CONFIG_NET_IPv6_AUTOCONFIG
-					/* enable IPv6 address stateless autoconfiguration */
-					netif_set_ip6_autoconfig_enabled(netif, 1);
-#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
-					/* add static ipv6 address */
-					(void)netif_add_ip6_address(netif, &temp, &idx);
-
-#ifdef CONFIG_NET_IPv6_MLD
-					ip6_addr_t solicit_addr;
-
-					/* set MLD6 group to receive solicit multicast message */
-					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-					mld6_joingroup_netif(netif, &solicit_addr);
-					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-				}
-
-				return OK;
+				struct in6_addr addr6;
+				inet_pton(AF_INET6, hostip, &addr6);
+				netlib_set_ipv6addr(intf, &addr6);
 			}
 #endif /* CONFIG_NET_IPv6 */
 			else {

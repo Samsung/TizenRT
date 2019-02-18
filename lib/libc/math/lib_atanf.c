@@ -54,5 +54,13 @@
 
 float atanf(float x)
 {
+	if (x == INFINITY) {
+		return (PI / 2);
+	}
+
+	if (x == -INFINITY) {
+		return -(PI / 2);
+	}
+
 	return asinf(x / sqrtf(x * x + 1));
 }

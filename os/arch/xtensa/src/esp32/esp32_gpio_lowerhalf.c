@@ -144,8 +144,10 @@ static int esp32_gpio_setdir(FAR struct gpio_lowerhalf_s *lower, unsigned long a
 	priv->pincfg &= ~FUNCTION_MASK;
 
 	if (arg == GPIO_DIRECTION_OUT) {
+		priv->pincfg &= ~INPUT;
 		priv->pincfg |= OUTPUT;
 	} else {
+		priv->pincfg &= ~OUTPUT;
 		priv->pincfg |= INPUT;
 	}
 

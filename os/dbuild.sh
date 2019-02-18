@@ -23,7 +23,6 @@ CONFIGFILE="${OSDIR}/.config"
 TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
-BINFILE="${BINDIR}/tinyara.bin"
 CONFIGDIR="${BUILDDIR}/configs"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
@@ -46,6 +45,29 @@ if ! which docker > /dev/null; then
 	exit 1
 fi
 
+# Board Specific output files
+#
+# When new board uses another file to program, let's modify FIND_BINFILE function only.
+#
+BINFILE=
+function FIND_BINFILE()
+{
+	source ${CONFIGFILE}
+	BOARDNAME=${CONFIG_ARCH_BOARD}
+
+	if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
+		BINFILE="${BINDIR}/tinyara.elf.bin"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
+		BINFILE="${BINDIR}/tinyara.hex"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
+		BINFILE="${BINDIR}/tinyara_head.bin"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
+		BINFILE="${BINDIR}/tinyara_master_strip"
+	else
+		BINFILE="${BINDIR}/tinyara.bin"
+	fi
+}
+
 function SELECT_OPTION()
 {
 	unset SELECTED_START
@@ -62,7 +84,7 @@ function SELECT_OPTION()
 			echo "  \"3. Menuconfig\""
 			echo "  \"4. Build Clean\""
 			echo "  \"5. Build Dist-Clean\""
-			if [ -f ${BINDIR}/tinyara.bin ]; then
+			if [ "${STATUS}" == "BUILT" ]; then
 				echo "  \"d. Download\""
 			fi
 			echo "  \"x. Exit\""
@@ -93,6 +115,8 @@ function SELECT_OPTION()
 		d|download)
 			if [ "${STATUS}" == "BUILT" ]; then
 				STATUS=PREPARE_DL
+			else
+				echo "No output file"
 			fi
 			;;
 		x|exit)
@@ -284,29 +308,6 @@ function SELECT_DL
 	fi
 }
 
-function BUILD()
-{
-	if [ -f build.log ]; then
-		mv build.log build.log.old
-	fi
-
-	if [ "$1" == "menuconfig" ]; then
-		DOCKER_OPT="-it -e COLUMNS=$(tput cols) -e LINES=$(tput lines)"
-	else
-		DOCKER_OPT="-i"
-	fi
-	
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
-
-	if [ "$1" == "distclean" ]; then
-		STATUS=NOT_CONFIGURED
-	elif [ "$1" == "clean" ]; then
-		STATUS=CONFIGURED
-	else
-		STATUS=BUILT
-	fi
-}
-
 function CONFIGURE()
 {
 	${OSDIR}/tools/configure.sh $1 || exit 1
@@ -323,15 +324,36 @@ function DOWNLOAD()
 	exit 0
 }
 
-function CHECK_STATUS()
+function UPDATE_STATUS()
 {
 	if [ ! -f ${CONFIGFILE} ]; then
 		STATUS=NOT_CONFIGURED
-	elif [ -f ${BINFILE} ]; then
-		STATUS=BUILT
 	else
-		STATUS=CONFIGURED
+		FIND_BINFILE
+		if [ -f ${BINFILE} ]; then
+			STATUS=BUILT
+		else
+			STATUS=CONFIGURED
+		fi
 	fi
+}
+
+function BUILD()
+{
+	if [ -f build.log ]; then
+		mv build.log build.log.old
+	fi
+
+	if [ "$1" == "menuconfig" ]; then
+		DOCKER_OPT="-it -e COLUMNS=$(tput cols) -e LINES=$(tput lines)"
+	else
+		DOCKER_OPT="-i"
+	fi
+	
+	docker pull tizenrt/tizenrt
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
+
+	UPDATE_STATUS
 }
 
 function MENU()
@@ -356,7 +378,7 @@ function MENU()
 	done
 }
 
-CHECK_STATUS
+UPDATE_STATUS
 if [ -z "$1" ]; then
 	if [ "$STATUS" != "NOT_CONFIGURED" ]; then
 		BUILD

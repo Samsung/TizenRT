@@ -57,6 +57,14 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double atanl(long double x)
 {
+	if (x == INFINITY) {
+		return (PI / 2);
+	}
+
+	if (x == -INFINITY) {
+		return -(PI / 2);
+	}
+
 	return asinl(x / sqrtl(x * x + 1));
 }
 #endif

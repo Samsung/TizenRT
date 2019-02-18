@@ -1,4 +1,4 @@
-/******************************************************************
+/****************************************************************************
  *
  * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
@@ -6,19 +6,19 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ******************************************************************/
-
+ ****************************************************************************/
 /****************************************************************************
+ * lib/libc/net/lib_inetntoa.c
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2008, 2011-2012, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,50 +50,49 @@
  *
  ****************************************************************************/
 
-#ifndef __CONFIGS_ESP32_CORE_SRC_ESP32_CORE_H
-#define __CONFIGS_ESP32_CORE_SRC_ESP32_CORE_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/compiler.h>
-#include <stdint.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#include <stdio.h>
 
-/****************************************************************************
- * Public Types
- ****************************************************************************/
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
-/****************************************************************************
- * Public data
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
+#if defined(CONFIG_NET_IPv4)
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: esp32_bringup
+ * Name: inet_ntoa
  *
  * Description:
- *   Perform architecture-specific initialization
- *
- *   CONFIG_BOARD_INITIALIZE=y :
- *     Called from board_initialize().
- *
- *   CONFIG_BOARD_INITIALIZE=y && CONFIG_LIB_BOARDCTL=y :
- *     Called from the NSH library via board_app_initialize()
+ *   The inet_ntoa() function converts the Internet host address given in
+ *   network byte order to a string in standard numbers-and-dots notation.
+ *   The string is returned in a statically allocated buffer, which subsequent
+ *   calls will overwrite.
  *
  ****************************************************************************/
 
-int esp32_bringup(void);
-
-#endif							/* __ASSEMBLY__ */
-#endif							/* __CONFIGS_ESP32_CORE_SRC_ESP32_CORE_H */
+#ifdef CONFIG_CAN_PASS_STRUCTS
+FAR char *inet_ntoa(struct in_addr in)
+{
+	static char buffer[INET_ADDRSTRLEN + 2];
+	FAR unsigned char *ptr = (FAR unsigned char *)&in.s_addr;
+	sprintf(buffer, "%u.%u.%u.%u", ptr[0], ptr[1], ptr[2], ptr[3]);
+	return buffer;
+}
+#else
+FAR char *_inet_ntoa(in_addr_t in)
+{
+	static char buffer[INET_ADDRSTRLEN + 2];
+	FAR unsigned char *ptr = (FAR unsigned char *)&in;
+	sprintf(buffer, "%u.%u.%u.%u", ptr[0], ptr[1], ptr[2], ptr[3]);
+	return buffer;
+}
+#endif
+#endif							/* CONFIG_NET_IPv4 */

@@ -71,6 +71,9 @@
 #include <errno.h>
 #include <debug.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/kmalloc.h>
@@ -356,9 +359,14 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	size_t copysize;
 	size_t totalsize;
 
+	size_t curr_heap;
 	size_t peak_heap;
 	size_t peak_stack;
-
+	pid_t ppid;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	struct mm_heap_s *heap;
+	pid_t hash_pid;
+#endif
 	if (tcb->pid == 0) {
 		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 		tcb->stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
@@ -373,13 +381,23 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	peak_stack = -1;
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	peak_heap = tcb->peak_alloc_size;
-#else
+	curr_heap = -1;
 	peak_heap = -1;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	hash_pid = PID_HASH(tcb->pid);
+	heap = mm_get_heap(tcb->stack_alloc_ptr);
+	if (heap->alloc_list[hash_pid].pid == tcb->pid) {
+		curr_heap = heap->alloc_list[hash_pid].curr_alloc_size;
+		peak_heap = heap->alloc_list[hash_pid].peak_alloc_size;
+	}
 #endif
 
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d", tcb->pid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, peak_heap);
+#if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
+	ppid = tcb->ppid;
+#else
+	ppid = -1;
+#endif
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 

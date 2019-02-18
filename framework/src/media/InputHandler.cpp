@@ -90,9 +90,19 @@ bool InputHandler::open()
 		setStreamBuffer(streamBuffer);
 	}
 
-	if (mInputDataSource->open() && registerDecoder(mInputDataSource->getAudioType(), mInputDataSource->getChannels(), mInputDataSource->getSampleRate())) {
-		start();
-		return true;
+	if (mInputDataSource->open()) {
+		/* Media f/w playback supports only mono and stereo.
+		 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
+		 */
+		if (mInputDataSource->getChannels() > 2) {
+			medvdbg("Set multiple channel %u to stereo forcely!\n", mInputDataSource->getChannels());
+			mInputDataSource->setChannels(2);
+		}
+
+		if (registerDecoder(mInputDataSource->getAudioType(), mInputDataSource->getChannels(), mInputDataSource->getSampleRate())) {
+			start();
+			return true;
+		}
 	}
 
 	return false;
@@ -339,6 +349,7 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
+	case AUDIO_TYPE_WAVE:
 	case AUDIO_TYPE_OPUS: {
 		auto decoder = Decoder::create(audioType, channels, sampleRate);
 		if (!decoder) {
@@ -350,9 +361,6 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 	}
 	case AUDIO_TYPE_PCM:
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
-		return true;
-	case AUDIO_TYPE_WAVE:
-		medvdbg("AUDIO_TYPE_WAVE does not need the decoder\n");
 		return true;
 	case AUDIO_TYPE_FLAC:
 		/* To be supported */

@@ -98,6 +98,12 @@ long double rintl(long double x)
 	long double fremainder;
 	long double ret;
 
+	/* If x is  +0, -0, NaN, or infinite, x itself is returned */
+
+	if (x == INFINITY || x == -INFINITY || isnan(x)) {
+		return x;
+	}
+
 	/* If the current rounding mode rounds toward negative
 	 * infinity, rint() is identical to floor().  If the current
 	 * rounding mode rounds toward positive infinity, rint() is

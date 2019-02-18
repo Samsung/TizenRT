@@ -57,6 +57,21 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double frexp(double x, int *exponent)
 {
+	if (x == INFINITY) {
+		*exponent = 0;
+		return INFINITY;
+	}
+
+	if (x == -INFINITY) {
+		*exponent = 0;
+		return -INFINITY;
+	}
+
+	if (x == 0) {
+		*exponent = 0;
+		return 0;
+	}
+
 	*exponent = (int)ceil(log2(x));
 	return x / ldexp(1.0, *exponent);
 }
