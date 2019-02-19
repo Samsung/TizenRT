@@ -88,6 +88,10 @@
 #include "socket/socket.h"
 #include "netdev/netdev.h"
 
+#if LWIP_DNS
+extern void dns_setserver(u8_t numdns, const ip_addr_t * dnsserver);
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -1029,36 +1033,29 @@ int lwip_func_ioctl(int cmd, void *arg)
 	if (!in_arg) {
 		return ret;
 	}
-	if (cmd != SIOCLWIP) {
-		return -ENOTTY;
-	}
 
-	const char *hostname = NULL;
-	const char *servname = NULL;
-	const struct addrinfo *hints = NULL;
 	struct addrinfo *res = NULL;
-	struct addrinfo *ai = NULL;
 
 	switch (in_arg->type) {
+#if LWIP_DNS
 	case GETADDRINFO:
-		hostname = in_arg->host_name;
-		servname = in_arg->serv_name;
-		hints = in_arg->ai_hint;
-		ret = lwip_getaddrinfo(hostname, servname, hints, &res);
+		ret = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
 		if (ret != 0) {
 			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
 			in_arg->req_res = ret;
-			ret = -EINVAL;
+			return -EINVAL;
 		}
-		if (res) {
-			in_arg->ai_res = res;
-		}
+		in_arg->ai_res = res;
 		break;
 	case FREEADDRINFO:
-		ai = in_arg->ai;
-		lwip_freeaddrinfo(ai);
+		lwip_freeaddrinfo(in_arg->ai);
 		ret = 0;
 		break;
+	case DNSSETSERVER:
+		dns_setserver(in_arg->num_dns, in_arg->dns_server);
+		ret = 0;
+		break;
+#endif
 	default:
 		printf("Wrong request type: %d\n", in_arg->type);
 		break;
