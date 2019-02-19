@@ -39,7 +39,6 @@ $(foreach SDIR, $(SE_DIRS), $(eval $(call ADD_SE_MAKE_DEF, $(SDIR))))
 
 ifneq ($(SE_CSRCS),)
 SE_SRCS = $(addprefix $(SE_PATH)/, $(SE_CSRCS))
-SE_OBJS = $(SE_SRCS:.c=$(OBJEXT))
 endif
 
 ifneq ($(SE_LIB_GEN),)
@@ -52,6 +51,7 @@ ifneq ($(SE_LIB),)
 SE_LIB_NAME=$(patsubst %$(LIBEXT), %_$(CONFIG_ARCH)$(LIBEXT), $(SE_LIB))
 endif
 
+SE_OBJS = $(SE_SRCS:.c=$(OBJEXT))
 SE_BIN	= libse$(LIBEXT)
 
 all: $(SE_BIN)
