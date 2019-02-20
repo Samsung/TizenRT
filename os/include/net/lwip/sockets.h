@@ -412,9 +412,6 @@ typedef struct ip_mreq {
 #define _IOW(x, y, t)     (IOC_IN | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
 #endif							/* !defined(FIONREAD) || !defined(FIONBIO) */
 
-#ifndef FIONREAD
-#define FIONREAD    _IOR('f', 127, unsigned long)	/* get # bytes to read */
-#endif
 #ifndef FIONBIO
 #define FIONBIO     _IOW('f', 126, unsigned long)	/* set/clear non-blocking i/o */
 #endif
