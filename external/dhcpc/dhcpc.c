@@ -60,7 +60,9 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 
+#include <netdb.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -663,7 +665,27 @@ static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 #else
     dns_addr.addr = presult->dnsaddr.s_addr;
 #endif
-    dns_setserver(0, &dns_addr);
+	struct req_lwip_data req;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		ndbg("dnsclient : socket() failed with errno: %d\n", errno);
+		return ERROR;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.type = DNSSETSERVER;
+	req.num_dns = 0;
+	req.dns_server = &dns_addr;
+
+	int ioctl_ret = ioctl(sock, SIOCLWIP, (unsigned long)&req);
+	if (ioctl_ret == ERROR) {
+		ndbg("dnsclient : ioctl() failed with errno: %d\n", errno);
+		close(sock);
+		return ioctl_ret;
+	}
+
+	close(sock);
 #endif /*  CONFIG_NET_LWIP */
 
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)

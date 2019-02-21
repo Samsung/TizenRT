@@ -64,10 +64,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #include <tinyara/net/dns.h>
 #include <netdb.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -147,7 +150,27 @@ int dnsclient_main(int argc, FAR char *argv[])
 #else
 		dns_addr.addr = inet_addr(argv[2]);
 #endif /* CONFIG_NET_IPv6 */
-		dns_setserver(0, &dns_addr);
+		struct req_lwip_data req;
+
+		int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+		if (sockfd < 0) {
+			printf("dnsclient : socket() failed with errno: %d\n", errno);
+			return -1;
+		}
+
+		memset(&req, 0, sizeof(req));
+		req.type = DNSSETSERVER;
+		req.num_dns = 0;
+		req.dns_server = &dns_addr;
+
+		int ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+		if (ret == ERROR) {
+			printf("dnsclient : ioctl() failed with errno: %d\n", errno);
+			close(sockfd);
+			return -1;
+		}
+
+		close(sockfd);
 	}
 
 	memset(hostname, 0x00, DNS_NAME_MAXSIZE);
