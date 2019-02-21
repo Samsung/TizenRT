@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <media/stream_info.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -55,19 +56,6 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
-
-/**
- * @brief Stream Policy of Audio Manager, high value means higher priority
- */
-enum audio_manager_stream_policy_e {
-	AUDIO_MANAGER_STREAM_TYPE_MEDIA = 0,
-	AUDIO_MANAGER_STREAM_TYPE_VOIP = 1,
-	AUDIO_MANAGER_STREAM_TYPE_NOTIFY = 2,
-	AUDIO_MANAGER_STREAM_TYPE_VOICE_RECOGNITION = 3,
-	AUDIO_MANAGER_STREAM_TYPE_EMERGENCY = 4
-};
-
-typedef enum audio_manager_stream_policy_e audio_manager_stream_policy_t;
 
 /**
  * @brief Type of device
@@ -593,7 +581,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
  * Description:
  *   Set policy to prevent the current stream in from being stopped by another operation
  *   when the current operation is more important.
- *   The policy follows priority based on audio_manager_stream_policy_e
+ *   The policy follows priority based on stream_policy_t
  *
  * Input parameter:
  *   policy : policy to set as a current stream's policy
@@ -601,7 +589,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy);
+audio_manager_result_t set_stream_in_policy(stream_policy_t policy);
 
 /****************************************************************************
  * Name: set_stream_out_policy
@@ -609,7 +597,7 @@ audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy
  * Description:
  *   Set policy to prevent the current stream out from being stopped by another operation
  *   when the current operation is more important.
- *   The policy follows priority based on audio_manager_stream_policy_e
+ *   The policy follows priority based on stream_policy_t
  *
  * Input parameter:
  *   policy : policy to set as a current stream's policy
@@ -617,7 +605,7 @@ audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t policy);
+audio_manager_result_t set_stream_out_policy(stream_policy_t policy);
 
 /****************************************************************************
  * Name: get_stream_in_policy
@@ -631,7 +619,7 @@ audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t polic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *policy);
+audio_manager_result_t get_stream_in_policy(stream_policy_t *policy);
 
 /****************************************************************************
  * Name: get_stream_out_policy
@@ -645,7 +633,7 @@ audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *polic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_stream_out_policy(audio_manager_stream_policy_t *policy);
+audio_manager_result_t get_stream_out_policy(stream_policy_t *policy);
 
 /****************************************************************************
  * Name: change_stream_in_device
