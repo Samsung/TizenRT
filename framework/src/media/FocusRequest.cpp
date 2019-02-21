@@ -47,8 +47,8 @@ std::shared_ptr<FocusRequest> FocusRequest::Builder::build()
 	ss << static_cast<const void *>(focusRequest.get());
 	ss << static_cast<const void *>(mListener.get());
 	mId = ss.str();
-	focusRequest.get()->mId = mId;
-	focusRequest.get()->mListener = mListener;
+	focusRequest->mId = mId;
+	focusRequest->mListener = mListener;
 	return focusRequest;
 }
 } // namespace media
