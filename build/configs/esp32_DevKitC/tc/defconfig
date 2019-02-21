@@ -351,6 +351,7 @@ CONFIG_GPIO=y
 # CONFIG_WATCHDOG is not set
 # CONFIG_TIMER is not set
 # CONFIG_ANALOG is not set
+CONFIG_KERNEL_TEST_DRV=y
 # CONFIG_PIPES is not set
 # CONFIG_POWER is not set
 CONFIG_SERIAL=y
@@ -436,7 +437,6 @@ CONFIG_UART1_2STOP=0
 # Wireless Device Options
 #
 # CONFIG_DRIVERS_WIRELESS is not set
-CONFIG_KERNEL_TEST_DRV=y
 
 #
 # Networking Support

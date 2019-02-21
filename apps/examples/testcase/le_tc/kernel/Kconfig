@@ -6,6 +6,7 @@
 menuconfig EXAMPLES_TESTCASE_KERNEL
 	bool "Kernel TestCase Example"
 	default y
+	select KERNEL_TEST_DRV
 	---help---
 		Enable the Kernel TestCase Example
 

@@ -390,6 +390,8 @@ if ANALOG
 source drivers/analog/Kconfig
 endif # ANALOG
 
+source drivers/testcase/Kconfig
+
 menuconfig NETDEVICES
 	bool "Network Device/PHY Support"
 	default n if !ARCH_HAVE_PHY
@@ -481,4 +483,3 @@ menuconfig DRIVERS_WIRELESS
 		Drivers for various wireless devices.
 
 source drivers/wireless/Kconfig
-source drivers/testcase/Kconfig
