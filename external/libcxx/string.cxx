@@ -83,9 +83,15 @@ as_integer_helper(const string& func, const S& str, size_t* idx, int base, F f)
     typename S::value_type* ptr = nullptr;
     const typename S::value_type* const p = str.c_str();
     typename remove_reference<decltype(errno)>::type errno_save = errno;
-    errno = 0;
+    typename remove_reference<decltype(errno)>::type errno_tmp;
+    set_errno(0);
     V r = f(p, &ptr, base);
-    swap(errno, errno_save);
+
+    /* swap errno */
+    errno_tmp = errno_save;
+    errno_save = errno;
+    set_errno(errno_tmp);
+
     if (errno_save == ERANGE)
         throw_from_string_out_of_range(func);
     if (ptr == p)
@@ -200,9 +206,15 @@ as_float_helper(const string& func, const S& str, size_t* idx, F f )
     typename S::value_type* ptr = nullptr;
     const typename S::value_type* const p = str.c_str();
     typename remove_reference<decltype(errno)>::type errno_save = errno;
-    errno = 0;
+    typename remove_reference<decltype(errno)>::type errno_tmp;
+    set_errno(0);
     V r = f(p, &ptr);
-    swap(errno, errno_save);
+
+    /* swap errno */
+    errno_tmp = errno_save;
+    errno_save = errno;
+    set_errno(errno_tmp);
+
     if (errno_save == ERANGE)
         throw_from_string_out_of_range(func);
     if (ptr == p)
