@@ -142,6 +142,10 @@ void sig_deliver(FAR struct tcb_s *stcb)
 
 		savesigprocmask = stcb->sigprocmask;
 		stcb->sigprocmask = savesigprocmask | sigq->mask | SIGNO2SET(sigq->info.si_signo);
+#ifdef HAVE_GROUP_MEMBERS
+		/* Turn on the mask for checking which signo is blocked for handling the signal. */
+		stcb->sigrecvmask |= SIGNO2SET(sigq->info.si_signo);
+#endif
 
 		/* Deliver the signal.  In the kernel build this has to be handled
 		 * differently if we are dispatching to a signal handler in a user-
@@ -174,6 +178,10 @@ void sig_deliver(FAR struct tcb_s *stcb)
 		/* Restore the original sigprocmask */
 
 		stcb->sigprocmask = savesigprocmask;
+#ifdef HAVE_GROUP_MEMBERS
+		/* Turn off the checking mask. */
+		stcb->sigrecvmask &= ~SIGNO2SET(sigq->info.si_signo);
+#endif
 
 		/* Now, handle the (rare?) case where (a) a blocked signal was
 		 * received while the signal handling executed but (b) restoring the
