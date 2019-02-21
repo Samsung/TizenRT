@@ -31,7 +31,13 @@ static void utc_media_FocusManager_getFocusManager_p(void)
 
 static void utc_media_FocusManager_requestFocus_p(void)
 {
-	auto focusRequest = media::FocusRequest::Builder().build();
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
+	auto focusRequest = media::FocusRequest::Builder()
+							.setStreamInfo(stream_info)
+							.build();
 	auto &focusManger = media::FocusManager::getFocusManager();
 	auto ret = focusManger.requestFocus(focusRequest);
 	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS);
@@ -52,7 +58,13 @@ static void utc_media_FocusManager_requestFocus_n(void)
 
 static void utc_media_FocusManager_abandonFocus_p(void)
 {
-	auto focusRequest = media::FocusRequest::Builder().build();
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
+	auto focusRequest = media::FocusRequest::Builder()
+							.setStreamInfo(stream_info)
+							.build();
 	auto &focusManger = media::FocusManager::getFocusManager();
 	focusManger.requestFocus(focusRequest);
 	auto ret = focusManger.abandonFocus(focusRequest);

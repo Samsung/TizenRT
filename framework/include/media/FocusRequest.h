@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <string>
+#include <media/stream_info.h>
 #include <media/FocusChangeListener.h>
 
 namespace media {
@@ -67,6 +68,14 @@ public:
 		 */
 		Builder &setFocusChangeListener(std::shared_ptr<FocusChangeListener> listener);
 		/**
+		 * @brief set stream_info of FocusRequest
+		 * @details @b #include <media/FocusRequest.h>
+		 * param[in] stream_info shared_ptr of stream_info_t
+		 * @return FocusRequest::Builder instance
+		 * @since TizenRT v2.1
+		 */
+		Builder &setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
+		/**
 		 * @brief build FocusRequest instance
 		 * @details @b #include <media/FocusRequest.h>
 	 	 * @return shared_ptr of FocusRequest
@@ -75,7 +84,7 @@ public:
 		std::shared_ptr<FocusRequest> build();
 
 	private:
-		std::string mId;
+		std::shared_ptr<stream_info_t> mStreamInfo;
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
@@ -95,7 +104,7 @@ public:
 	std::shared_ptr<FocusChangeListener> getListener();
 
 private:
-	std::string mId;
+	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<FocusChangeListener> mListener;
 };
 } // namespace media
