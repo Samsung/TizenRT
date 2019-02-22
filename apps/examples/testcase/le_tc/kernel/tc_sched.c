@@ -297,7 +297,7 @@ static void tc_sched_waitid(void)
 
 	/* Check for The TCB corresponding to this PID is not our child. */
 
-	ret_chk = waitid(P_GID, 0, &info, WEXITED);
+	ret_chk = waitid(P_PID, 0, &info, WEXITED);
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
