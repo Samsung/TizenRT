@@ -329,11 +329,9 @@ static void tc_sched_waitid(void)
 	TC_ASSERT_EQ("waitid", errno, ENOSYS);
 
 	/* Check for options != WEXITED */
-#ifdef CONFIG_DEBUG
 	ret_chk = waitid(P_PID, child1_pid, &info, 0);
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ENOSYS);
-#endif
 
 	TC_SUCCESS_RESULT();
 }

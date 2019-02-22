@@ -208,18 +208,16 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	DEBUGASSERT(stat_loc);
 
-	/* waitpid() is a cancellation point */
-	(void)enter_cancellation_point();
 
 	/* None of the options are supported */
 
-#ifdef CONFIG_DEBUG
 	if (options != 0) {
 		set_errno(ENOSYS);
-		leave_cancellation_point();
 		return ERROR;
 	}
-#endif
+
+	/* waitpid() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Disable pre-emption so that nothing changes in the following tests */
 
@@ -308,18 +306,15 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	DEBUGASSERT(stat_loc);
 
-	/* waitpid() is a cancellation point */
-	(void)enter_cancellation_point();
-
 	/* None of the options are supported */
 
-#ifdef CONFIG_DEBUG
 	if (options != 0) {
 		set_errno(ENOSYS);
-		leave_cancellation_point();
 		return ERROR;
 	}
-#endif
+
+	/* waitpid() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Create a signal set that contains only SIGCHLD */
 
