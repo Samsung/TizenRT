@@ -387,6 +387,7 @@ CONFIG_WATCHDOG=y
 CONFIG_WATCHDOG_DEVPATH="/dev/watchdog0"
 # CONFIG_TIMER is not set
 # CONFIG_ANALOG is not set
+# CONFIG_KERNEL_TEST_DRV is not set
 # CONFIG_NETDEVICES is not set
 # CONFIG_PIPES is not set
 # CONFIG_DEV_PIPE_SIZE=1024
@@ -487,7 +488,6 @@ CONFIG_UART2_2STOP=0
 # Wireless Device Options
 #
 CONFIG_DRIVERS_WIRELESS=y
-# CONFIG_KERNEL_TEST_DRV is not set
 
 #
 # Networking Support

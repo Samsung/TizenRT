@@ -133,17 +133,11 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	mm_takesemaphore(heap);
 
-	/* Get the location in the node list to start the search. Special case
-	 * really big allocations
+	/* Get the location in the node list to start the search
+	 * by converting the request size into a nodelist index.
 	 */
 
-	if (size >= MM_MAX_CHUNK) {
-		ndx = MM_NNODES - 1;
-	} else {
-		/* Convert the request size into a nodelist index */
-
-		ndx = mm_size2ndx(size);
-	}
+	ndx = mm_size2ndx(size);
 
 	/* Search for a large enough chunk in the list of nodes. This list is
 	 * ordered by size, but will have occasional zero sized nodes as we visit

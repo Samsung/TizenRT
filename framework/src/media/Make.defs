@@ -33,6 +33,7 @@ CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
 CXXSRCS += MediaUtils.cpp remix.cpp
 CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
+CSRCS += stream_info.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
 DEPPATH += --dep-path src/media/codecs

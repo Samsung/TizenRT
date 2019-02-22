@@ -126,7 +126,8 @@ struct servent_data {
 #if CONFIG_NET_LWIP
 typedef enum {
 	GETADDRINFO,
-	FREEADDRINFO
+	FREEADDRINFO,
+	DNSSETSERVER
 } req_type;
 
 /* To send a request to lwip stack by ioctl() use */
@@ -138,6 +139,8 @@ struct req_lwip_data {
 	struct addrinfo *ai_res;
 	struct addrinfo *ai;
 	int req_res;
+	u8_t num_dns;
+	ip_addr_t *dns_server;
 };
 #endif
 

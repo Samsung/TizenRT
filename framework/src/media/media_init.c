@@ -22,6 +22,7 @@
 
 int media_init(void)
 {
+	stream_info_init();
 	audio_manager_init();
 	return 0;
 }

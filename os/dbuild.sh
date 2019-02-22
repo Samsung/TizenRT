@@ -24,6 +24,7 @@ TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
 CONFIGDIR="${BUILDDIR}/configs"
+DOCKER_VERSION="1.5.0"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
 BUILD_CMD=make
@@ -350,8 +351,23 @@ function BUILD()
 		DOCKER_OPT="-i"
 	fi
 	
-	docker pull tizenrt/tizenrt
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
+	DOCKER_IMAGES=`docker images | grep tizenrt/tizenrt | awk '{print $2}'`
+	for im in $DOCKER_IMAGES
+	do
+		if [ "$im" == "$DOCKER_VERSION" ]; then
+			DOCKER_IMAGE_EXIST="true"
+			break
+		fi
+	done
+
+	if [ "$DOCKER_IMAGE_EXIST" != "true" ]; then
+		docker pull tizenrt/tizenrt:${DOCKER_VERSION}
+		if [ ! $? -eq 0 ]; then
+			DOCKER_VERSION="latest"
+		fi
+	fi
+	echo "Docker Image Version : ${DOCKER_VERSION}"
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
 
 	UPDATE_STATUS
 }

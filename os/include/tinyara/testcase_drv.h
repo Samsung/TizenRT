@@ -64,7 +64,7 @@
 #define TESTIOC_SIGNAL_PAUSE                   _TESTIOC(10)
 #define TESTIOC_TIMER_INITIALIZE               _TESTIOC(11)
 
-#define TESTCASE_DRVPATH                       "/dev/testcase"
+#define KERNEL_TC_DRVPATH                       "/dev/testcase"
 
 /****************************************************************************
  * Public Data
@@ -82,7 +82,7 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: test_drv_register
+ * Name: kernel_test_drv_register
  *
  * Description:
  *   This function creates a device node like "/dev/testcase" which will be used
@@ -91,7 +91,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-void test_drv_register(void);
+void kernel_test_drv_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus

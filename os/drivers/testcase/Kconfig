@@ -4,8 +4,7 @@
 #
 
 config KERNEL_TEST_DRV
-	bool "Testcase driver Support"
+	bool
 	default n
-	depends on EXAMPLES_TESTCASE_DRIVERS || EXAMPLES_TESTCASE_KERNEL
 	---help---
 		Enables overall support for Kernel testcase driver library.

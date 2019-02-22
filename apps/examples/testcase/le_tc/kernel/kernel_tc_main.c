@@ -47,7 +47,7 @@ int tc_kernel_main(int argc, char *argv[])
 		return ERROR;
 	}
 
-	g_tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
+	g_tc_fd = open(KERNEL_TC_DRVPATH, O_WRONLY);
 	if (g_tc_fd < 0) {
 		tckndbg("Failed to open testcase driver %d\n", errno);
 		return ERROR;

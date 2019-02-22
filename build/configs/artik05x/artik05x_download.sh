@@ -145,11 +145,19 @@ compute_ocd_commands()
 
 download()
 {
-        parts_default=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-        parts2=${CONFIG_FLASH_PART_NAME:=${parts_default}}
-        parts=`echo $parts2 | sed "s/,/ /g"`
+	parts=$1;
 
-        # Make Openocd commands for parts
+	if [[ -n $parts ]] && [[ "$parts" != "all" ]] && [[ "$parts" != "ALL" ]]
+	then
+		echo "##Download $parts"
+		parts=$(echo $parts | tr '[:upper:]' '[:lower:]')
+	else
+	        default_parts=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+		configured_parts=${CONFIG_FLASH_PART_NAME:=${default_parts}}
+		parts=`echo $configured_parts | sed "s/,/ /g"`
+	fi
+
+	# Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
 	echo "ocd command to run: ${commands}"
 
