@@ -393,7 +393,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
-	ppid = tcb->ppid;
+	ppid = tcb->group->tg_ppid;
 #else
 	ppid = -1;
 #endif
