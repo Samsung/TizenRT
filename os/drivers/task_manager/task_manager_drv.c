@@ -164,7 +164,7 @@ static int taskmgr_pthread_ppid_change(pid_t parent_pid, pid_t child_pid)
 		return ERROR;
 	}
 
-	ptcb->cmn.ppid = parent_pid;
+	ptcb->cmn.group->tg_ppid = parent_pid;
 	return OK;
 }
 #endif			/* CONFIG_SCHED_HAVE_PARENT && !HAVE_GROUP_MEMBERS */
