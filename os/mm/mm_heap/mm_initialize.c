@@ -107,6 +107,18 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 #define IDX 0
 #endif
 
+#ifdef CONFIG_SMALL_MEMORY_ISOLATION
+	size_t seg_size = MM_ALIGN_UP(CONFIG_SIZEOF_SMALL_MEMORY); /* changed to 2^n */
+	size_t remain = CONFIG_SIZEOF_ISOLATION_SPACE;
+
+	/* To garantee one small memory segment can be divided into
+	 * multiple minimal memory segments whose size is MM_MIN_CHUNK */
+	seg_size += seg_size / MM_MIN_CHUNK * SIZEOF_MM_FREENODE;
+
+	DEBUGASSERT(seg_size < remain);
+	DEBUGASSERT(remain < heapsize);
+#endif
+
 	/* If the MCU handles wide addresses but the memory manager is configured
 	 * for a small heap, then verify that the caller is  not doing something
 	 * crazy.
@@ -146,6 +158,55 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], 0xDEAD);
 #endif
 
+#ifdef CONFIG_SMALL_MEMORY_ISOLATION
+	/* Divide one large chunk of memory into two chuncks of memory.
+	 * One is dedicated to being used for allocating small memory
+	 * and the other one is used for allocating larger memeory
+	 */
+
+	/* This memory block is the first one for small memory segments */
+	node			= (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
+	node->size		= seg_size;
+	node->preceding = SIZEOF_MM_ALLOCNODE;
+	mm_addfreechunk(heap, node);
+	remain -= seg_size;
+
+	while (remain >= seg_size) {
+		node			= (FAR struct mm_freenode_s *)(((char *)node) + seg_size);
+		node->size		= seg_size;
+		node->preceding = seg_size;
+		remain -= seg_size;
+		mm_addfreechunk(heap, node);
+	}
+
+	/* There should be a delimiter between the isolated space for small memory segments
+	 * and the other one. This delimiter will be used to block merging two adjacent
+	 * memory segments across this delimiter.
+	 */
+	node			= (FAR struct mm_freenode_s *)(((char *)node) + seg_size);
+	node->size		= SIZEOF_MM_ALLOCNODE;
+	node->preceding = seg_size | MM_ALLOC_BIT;
+	heap->mm_delimiter = (FAR struct mm_allocnode_s *)node;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Fill magic number 0xDEADDEAD as malloc info */
+	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_delimiter, 0xDEADDEAD);
+#endif
+
+	/* This memory block is the second one for larger memory segments */
+	node			= (FAR struct mm_freenode_s *)(((char *)node) + SIZEOF_MM_ALLOCNODE);
+	node->size		= heapsize - 3 * SIZEOF_MM_ALLOCNODE - CONFIG_SIZEOF_ISOLATION_SPACE + remain;
+	node->preceding = SIZEOF_MM_ALLOCNODE;
+	mm_addfreechunk(heap, node);
+
+	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
+	heap->mm_heapend[IDX]->size      = SIZEOF_MM_ALLOCNODE;
+	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
+	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
+#endif
+#else // ~CONFIG_SMALL_MEMORY_ISOLATION
+
 	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
 	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
 	node->preceding = SIZEOF_MM_ALLOCNODE;
@@ -157,16 +218,16 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
 #endif
+	/* Add the single, large free node to the nodelist */
+
+	mm_addfreechunk(heap, node);
+#endif
 
 #undef IDX
 
 #if CONFIG_MM_REGIONS > 1
 	heap->mm_nregions++;
 #endif
-
-	/* Add the single, large free node to the nodelist */
-
-	mm_addfreechunk(heap, node);
 }
 
 /****************************************************************************

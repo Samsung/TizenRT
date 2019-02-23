@@ -149,7 +149,19 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Check if the following node is free and, if so, merge it */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
+#ifdef CONFIG_SMALL_MEMORY_ISOLATION
+	/* The delimiter between the isolated space for small memory segments and the other one
+	 * has been established. By preventing merging two adjacent memory segments
+	 * across this delimiter, the isolated space can be maintained for small memory segments.
+	 * Logic : if (Con1 && ((Con2.1.1 && Con2.1.2) || Con2.2))
+	 */
+	if (((next->preceding & MM_ALLOC_BIT) == 0) /* Condition 1 */
+			&& (((next < (FAR struct mm_freenode_s *)heap->mm_delimiter) /* Condition 2.1.1 */
+			&& (node->size + next->size <= CONFIG_SIZEOF_SMALL_MEMORY)) /* Condition 2.1.2 */
+			|| (node > (FAR struct mm_freenode_s *)heap->mm_delimiter))) { /* Condition 2.2 */
+#else
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
+#endif
 		FAR struct mm_allocnode_s *andbeyond;
 
 		/* Get the node following the next node (which will
@@ -181,7 +193,19 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	 */
 
 	prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
+#ifdef CONFIG_SMALL_MEMORY_ISOLATION
+	/* The delimiter between the isolated space for small memory segments and the other one
+	 * has been established. By preventing merging two adjacent memory segments
+	 * across this delimiter, the isolated space can be maintained for small memory segments.
+	 * Logic : if (Con1 && ((Con2.1.1 && Con2.1.2) || Con2.2))
+	 */
+	if (((prev->preceding & MM_ALLOC_BIT) == 0) /* Condition 1 */
+			&& (((node < (FAR struct mm_freenode_s *)heap->mm_delimiter) /* Condition 2.1.1 */
+			&& (node->size + prev->size <= CONFIG_SIZEOF_SMALL_MEMORY)) /* Condition 2.1.2 */
+			|| (prev > (FAR struct mm_freenode_s *)heap->mm_delimiter))) { /* Condition 2.2 */
+#else
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
+#endif
 		/* Remove the node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */

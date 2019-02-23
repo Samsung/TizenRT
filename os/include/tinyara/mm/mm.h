@@ -378,6 +378,10 @@ struct mm_heap_s {
 	int mm_nregions;
 #endif
 
+#ifdef CONFIG_SMALL_MEMORY_ISOLATION
+	FAR struct mm_allocnode_s *mm_delimiter;
+#endif
+
 	/* All free nodes are maintained in a doubly linked list.  This
 	 * array provides some hooks into the list at various points to
 	 * speed searches for free nodes.

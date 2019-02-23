@@ -119,6 +119,41 @@ config DEBUG_GRAN
 		Just like DEBUG_MM, but only generates output from the gran
 		allocation logic.
 
+config SMALL_MEMORY_ISOLATION
+	bool "Isolate small memory segments to mitigate fragmentation"
+	default n
+	---help---
+		The main cause of fragmentation is the mix-up of small and large
+		memory segments at the same heap space. A common solution is memory pool
+		where small memory segments are forced to be allocated. To realize
+		a memory pool implementation in a simple way, this config just
+		monopolizes a certain amount of memory space for small memory segments
+		of which the size is smaller than or equal to SIZEOF_SMALL_MEMORY.
+
+config SIZEOF_ISOLATION_SPACE
+	int "Total size of isolated memory space for small memory segments"
+	default 20480
+	depends on SMALL_MEMORY_ISOLATION
+	---help---
+		All small memory segments are allocated within this space.
+		This value may be a form of 2^n. If you set other value,
+		for example, 2^n < your_value < 2^(n+1),
+		it will be changed to 2^(n+1).
+		This value along with SIZEOF_SMALL_MEMORY
+		should be carefully determined after thoroughly profiling
+		memory usage in terms of size and lifetime.
+
+config SIZEOF_SMALL_MEMORY
+	int "The maximum size of small memory segments"
+	default 64
+	depends on SMALL_MEMORY_ISOLATION
+	---help---
+		This value is the maximum size of small memory segments that
+		are allowed to be allocated within the isolated space defined by
+		MEMORY_ISOLATION_SIZE. This value along with SIZEOF_ISOLATION_SPACE
+		should be carefully determined after thoroughly profiling
+		memory usage in terms of size and lifetime.
+
 config MM_PGALLOC
 	bool "Enable Page Allocator"
 	default n
