@@ -599,6 +599,13 @@ config DEBUG_MM_HEAPINFO
 	---help---
 		Enable task wise malloc debug.
 
+config DEBUG_CHECK_FRAGMENTATION
+	bool "Show where and how memory is fragmented"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	---help---
+		Count the number of freed memory segments with the range from size 2^n to 2^(n+1).
+
 config DEBUG_IRQ
 	bool "Interrupt Controller Debug Output"
 	default n

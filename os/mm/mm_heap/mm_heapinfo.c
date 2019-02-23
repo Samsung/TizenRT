@@ -112,6 +112,14 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #else
 #define region 0
 #endif
+
+#ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
+	int ndx;
+	int nodelist_cnt[MM_NNODES] = {0, };
+	size_t nodelist_size[MM_NNODES] = {0, };
+	FAR struct mm_freenode_s *fnode;
+#endif
+
 	/* initialize the heap, stack and nonsched resource */
 	nonsched_resource = 0;
 	heap_resource = 0;
@@ -233,6 +241,25 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("(*)  Alive allocation by dead threads might be used by others or might be a leakage.\n");
 	printf("(**) Only Idle task has a separate stack region,\n");
 	printf("  rest are all allocated on the heap region.\n");
+
+#ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
+	printf("\nAvailable fragmented memory segments in heap memory\n");
+
+	mm_takesemaphore(heap);
+
+	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
+		for (fnode = heap->mm_nodelist[ndx].flink; fnode && fnode->size; fnode = fnode->flink) {
+			++nodelist_cnt[ndx];
+			nodelist_size[ndx] += fnode->size;
+		}
+	}
+
+	mm_givesemaphore(heap);
+
+	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
+		printf("Nodelist[%d] (less than %d) : num %d, size %d [Bytes]\n", ndx, 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
+	}
+#endif
 
 	if (mode != HEAPINFO_SIMPLE) {
 		printf("\n< by Dead Threads >\n");
