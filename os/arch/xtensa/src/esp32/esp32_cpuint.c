@@ -555,7 +555,7 @@ void esp32_free_cpuint(int cpuint)
 	uint32_t *freeints;
 	uint32_t bitmask;
 
-	DEBUGASSERT(cpuint >= 0 && cpuint < ESP32_CPUINT_NEDGEPERIPHS);
+	DEBUGASSERT(cpuint >= 0 && cpuint < ESP32_NCPUINTS);
 
 	/* Mark the CPU interrupt as available */
 
