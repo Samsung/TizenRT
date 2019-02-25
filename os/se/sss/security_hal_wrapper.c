@@ -27,7 +27,7 @@
 
 #define MBEDTLS_MAX_RANDOM_SIZE 256
 #define MBEDTLS_MAX_ECP_KEY_SIZE_ALT 68
-#define MAX_BUF_SIZE 4096
+#define MAX_BUF_SIZE 2048
 
 #define AES_ECB_MODE		(0x0008)
 #define AES_CBC_MODE		(0x0108)
@@ -56,6 +56,9 @@ int hal_free_data(hal_data *data)
 		if(data->data) {
 			free(data->data);
 		}
+		if(data->priv) {
+			free(data->priv);
+		}
 	}
 	return HAL_SUCCESS;
 
@@ -72,7 +75,7 @@ int hal_get_status(void)
 int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey)
 {
 	if (prikey != NULL) {
-		return HAL_INVALID_ARGS;
+		return HAL_NOT_SUPPORTED;
 	}
 
 	unsigned int key_type;
@@ -113,9 +116,10 @@ int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *pr
 	}
 
 	ISP_CHECKBUSY();
-	int r = isp_set_securekey(key->data, key->data_len, key_type, key_idx);
-	if (r != 0) {
+	int ret = isp_set_securekey(key->data, key->data_len, key_type, key_idx);
+	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;;
 	}
 
@@ -124,39 +128,43 @@ int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *pr
 
 int hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 {
-	int ret;
+	uint32_t ret;
 	if (key_idx == FACTORYKEY_ARTIK_DEVICE) {
-		ISP_CHECKBUSY();
-		ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
-		if (ret != 0) {
-			isp_clear(0);
-			return HAL_FAIL;
+		if (mode <= HAL_KEY_ECC_SEC_P512R1 && mode >= HAL_KEY_ECC_BRAINPOOL_P256R1 ) {
+			struct sECC_KEY ecc_key;
+			unsigned char r[68];
+			unsigned char s[68];
+			ecc_key.publickey_x = r;
+			ecc_key.x_byte_len = sizeof(r);
+			ecc_key.publickey_y = s;
+			ecc_key.y_byte_len = sizeof(s);
+			ISP_CHECKBUSY();
+			ret = isp_ecdsa_get_publickey_securekey(&ecc_key, key_idx, OID_ECC_P256);
+			if (ret != 0) {
+				isp_clear(0);
+				printf("ISP failed (%zu)\n", ret);
+				return HAL_FAIL;
+			}
+			key->data = (unsigned char*)malloc(ecc_key.x_byte_len);
+			memcpy(key->data, &ecc_key.publickey_x, ecc_key.x_byte_len);
+			key->priv = (unsigned char*)malloc(ecc_key.y_byte_len);
+			memcpy(key->priv, &ecc_key.publickey_y, ecc_key.y_byte_len);
+		} else {
+			ISP_CHECKBUSY();
+			key->data = (unsigned char *)malloc(MAX_BUF_SIZE);
+			key->data_len = MAX_BUF_SIZE;
+			ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
+			if (ret != 0) {
+				isp_clear(0);
+				printf("ISP failed (%zu)\n", ret);
+				return HAL_FAIL;
+			}
 		}
 	} else {
-		switch (mode) {
-			case HAL_KEY_ECC_BRAINPOOL_P256R1:
-			case HAL_KEY_ECC_BRAINPOOL_P384R1:
-			case HAL_KEY_ECC_BRAINPOOL_P512R1:
-			case HAL_KEY_ECC_SEC_P256R1:
-			case HAL_KEY_ECC_SEC_P384R1:
-			case HAL_KEY_ECC_SEC_P512R1:
-				if (key->priv == NULL) {
-					return HAL_INVALID_ARGS;
-				}
-				struct sECC_KEY *ecc_key;
-				ecc_key = (struct sECC_KEY *)key->priv;
-				//key->priv will point out sECC_KEY structure which includes all keys
-				ISP_CHECKBUSY();
-				ret = isp_ecdsa_get_publickey_securekey(ecc_key, key_idx, ecc_key->curve);
-				if (ret != 0) {
-					isp_clear(0);
-					return HAL_FAIL;
-				}
-				break;
-			default:
-				return HAL_NOT_SUPPORTED;
-		}
+		//ARTIK does not provide a function to get publickey from sss
+		return HAL_NOT_SUPPORTED;
 	}
+
 	return HAL_SUCCESS;
 }
 
@@ -202,7 +210,7 @@ static int hal_get_key_type(hal_key_type mode, unsigned int *key_type)
 int hal_remove_key(hal_key_type mode, uint32_t key_idx)
 {
 	unsigned int key_type;
-	int ret;
+	uint32_t ret;
 
 	ret = hal_get_key_type(mode, &key_type);
 	if (ret != HAL_SUCCESS) {
@@ -211,6 +219,7 @@ int hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	ret = isp_remove_key(key_type, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 	return HAL_SUCCESS;
@@ -218,18 +227,17 @@ int hal_remove_key(hal_key_type mode, uint32_t key_idx)
 
 int hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
-	int ret;
-
+	uint32_t ret;
 	ISP_CHECKBUSY();
 	switch (mode) {
 		case HAL_KEY_AES_128:
-			ret = isp_aes_generate_key_securekey(128, key_idx);
+			ret = isp_aes_generate_key_securekey(16, key_idx);
 			break;
 		case HAL_KEY_AES_192:
-			ret = isp_aes_generate_key_securekey(192, key_idx);
+			ret = isp_aes_generate_key_securekey(24, key_idx);
 			break;
 		case HAL_KEY_AES_256:
-			ret = isp_aes_generate_key_securekey(256, key_idx);
+			ret = isp_aes_generate_key_securekey(32, key_idx);
 			break;
 		case HAL_KEY_RSA_1024:
 			ret = isp_rsa_generate_key_securekey(key_idx, 0xB1, 0);
@@ -262,26 +270,26 @@ int hal_generate_key(hal_key_type mode, uint32_t key_idx)
 			break;
 		case HAL_KEY_HMAC_MD5:
 		case HAL_KEY_HMAC_SHA1:
-			ret = isp_hmac_generate_key_securekey(128, key_idx);
+			ret = isp_hmac_generate_key_securekey(64, key_idx);
 			break;
 		case HAL_KEY_HMAC_SHA224:
-			ret = isp_hmac_generate_key_securekey(224, key_idx);
+			ret = isp_hmac_generate_key_securekey(64, key_idx);
 			break;
 		case HAL_KEY_HMAC_SHA256:
-			ret = isp_hmac_generate_key_securekey(256, key_idx);
+			ret = isp_hmac_generate_key_securekey(128, key_idx);
 			break;
 		case HAL_KEY_HMAC_SHA384:
-			ret = isp_hmac_generate_key_securekey(384, key_idx);
+			ret = isp_hmac_generate_key_securekey(128, key_idx);
 			break;
 		case HAL_KEY_HMAC_SHA512:
-			ret = isp_hmac_generate_key_securekey(512, key_idx);
+			ret = isp_hmac_generate_key_securekey(64, key_idx);
 			break;
 		default:
 			return HAL_NOT_SUPPORTED;
 	}
-
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -294,35 +302,39 @@ int hal_generate_key(hal_key_type mode, uint32_t key_idx)
 
 int hal_generate_random(uint32_t len, hal_data *random)
 {
-	int ret;
-	unsigned int inlen = MBEDTLS_MAX_RANDOM_SIZE;
+	uint32_t ret;
 	unsigned int inbuf[MBEDTLS_MAX_RANDOM_SIZE];
 
-	if (random->data == NULL || len > MBEDTLS_MAX_RANDOM_SIZE) {
+	if (len > MBEDTLS_MAX_RANDOM_SIZE) {
 		return HAL_INVALID_ARGS;
 	}
 
+	if (len & 0x3) {
+		len = len + 4 - (len & 0x3);
+	}
+
 	ISP_CHECKBUSY();
-	if ((ret = isp_generate_random(inbuf, inlen / 4)) != 0) {
+	ret = isp_generate_random(inbuf, len / 4);
+	if(ret !=0 ) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
-	if (len < inlen) {
-		inlen = len;
-	}
-
-	memcpy(random->data, inbuf, inlen);
-	random->data_len = inlen;
+	random->data = (unsigned char *)malloc(sizeof(inbuf));
+	memcpy(random->data, inbuf, sizeof(inbuf));
+	random->data_len = sizeof(inbuf);
 
 	return HAL_SUCCESS;
 }
 
 int hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
-	int ret;
+	uint32_t ret;
 	struct sHASH_MSG h_param;
 	unsigned int object_id;
+	int hash_len = 64;
+
 
 	switch (mode) {
 		case HAL_HASH_MD5:
@@ -337,75 +349,89 @@ int hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 			break;
 		case HAL_HASH_SHA384:
 			object_id = SHA2_384;
+			hash_len = 128;
 			break;
 		case HAL_HASH_SHA512:
 			object_id = SHA2_512;
+			hash_len = 128;
 			break;
 		default:
 			return HAL_NOT_SUPPORTED;
 	}
 
+	unsigned char output[hash_len];
 	memset(&h_param, 0, sizeof(struct sHASH_MSG));
 
 	h_param.addr_low = (unsigned int) input->data;
 	h_param.msg_byte_len = input->data_len;
 
-	ret = isp_hash(hash->data, &h_param, object_id);
+	ret = isp_hash(output, &h_param, object_id);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	hash->data_len = strlen(hash->data);
+	hash->data = (unsigned char *)malloc(hash_len);
+	memcpy(hash->data, output, hash_len);
+	hash->data_len = hash_len;
 	return HAL_SUCCESS;
 }
 
 int hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, hal_data *hmac)
 {
-	int ret;
-	struct sHMAC_MSG hmac_msg;
-	unsigned int object_id;
+	/* isp_hmac_securekey returns ERROR_SSTORAGE_SFS_FREAD */
+	/*
+	   uint32_t ret;
+	   struct sHMAC_MSG hmac_msg;
+	   unsigned int object_id;
+	   unsigned char output[MAX_BUF_SIZE];
 
-	switch (mode) {
-		case HAL_HMAC_MD5:
-			return HAL_NOT_SUPPORTED;
-		case HAL_HMAC_SHA1:
-			object_id = HMAC_SHA1_160;
-			break;
-		case HAL_HMAC_SHA224:
-			return HAL_NOT_SUPPORTED;
-		case HAL_HMAC_SHA256:
-			object_id = HMAC_SHA2_256;
-			break;
-		case HAL_HMAC_SHA384:
-			object_id = HMAC_SHA2_384;
-			break;
-		case HAL_HMAC_SHA512:
-			object_id = HMAC_SHA2_512;
-			break;
-		default:
-			return HAL_NOT_SUPPORTED;
-	}
+	   switch (mode) {
+	   case HAL_HMAC_MD5:
+	   return HAL_NOT_SUPPORTED;
+	   case HAL_HMAC_SHA1:
+	   object_id = HMAC_SHA1_160;
+	   break;
+	   case HAL_HMAC_SHA224:
+	   return HAL_NOT_SUPPORTED;
+	   case HAL_HMAC_SHA256:
+	   object_id = HMAC_SHA2_256;
+	   break;
+	   case HAL_HMAC_SHA384:
+	   object_id = HMAC_SHA2_384;
+	   break;
+	   case HAL_HMAC_SHA512:
+	   object_id = HMAC_SHA2_512;
+	   break;
+	   default:
+	   return HAL_NOT_SUPPORTED;
+	   }
 
-	memset(&hmac_msg, 0, sizeof(struct sHMAC_MSG));
+	   memset(&hmac_msg, 0, sizeof(struct sHMAC_MSG));
 
-	hmac_msg.addr_low = (unsigned int) input->data;
-	hmac_msg.msg_byte_len = input->data_len;
+	   hmac_msg.addr_low = (unsigned int) input->data;
+	   hmac_msg.msg_byte_len = input->data_len;
 
-	ret = isp_hmac_securekey(hmac->data, &hmac_msg, object_id, key_idx);
-	if (ret != 0) {
-		isp_clear(0);
-		return HAL_FAIL;
-	}
-	hmac->data_len = strlen(hmac->data);
-	return HAL_SUCCESS;
-
+	   ret = isp_hmac_securekey(output, &hmac_msg, object_id, key_idx);
+	   if (ret != 0) {
+	   isp_clear(0);
+	   printf("ISP failed (%zu)\n", ret);
+	   return HAL_FAIL;
+	   }
+	   hmac->data = (unsigned char *)malloc(input->data_len);
+	   memcpy(hmac->data, output, input->data_len);
+	   hmac->data_len = input->data_len;
+	   return HAL_SUCCESS;
+	   */
+	return HAL_NOT_SUPPORTED;
 }
 
 int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
-	int ret;
+	uint32_t ret;
 	unsigned int padding = 0;
 	struct sRSA_SIGN rsa_sign;
+	unsigned char sig_out[1024];
 
 	memset(&rsa_sign, 0, sizeof(struct sRSA_SIGN));
 
@@ -430,10 +456,14 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 			return HAL_NOT_SUPPORTED;
 	}
 
+	rsa_sign.signature = sig_out;
+	rsa_sign.signature_byte_len = 1024;
+
 	ISP_CHECKBUSY();
 	ret = isp_rsa_sign_md_securekey(&rsa_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -441,22 +471,26 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 		return HAL_FAIL;
 	}
 
+	sign->data = (unsigned char *)malloc(rsa_sign.signature_byte_len);
+	memcpy(sign->data, rsa_sign.signature, rsa_sign.signature_byte_len);
 	sign->data_len = rsa_sign.signature_byte_len;
-	sign->data = rsa_sign.signature;
+	sign->priv = (unsigned int *)malloc(sizeof(unsigned int));
+	memcpy(sign->priv, &rsa_sign.salt_byte_len, sizeof(unsigned int));
 
 	return HAL_SUCCESS;
 }
 
 int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
-	int ret;
+	uint32_t ret;
 	unsigned int padding = 0;
 	struct sRSA_SIGN rsa_sign;
 
 	memset(&rsa_sign, 0, sizeof(struct sRSA_SIGN));
 
-	rsa_sign.signature = (unsigned char*)sign->data;
+	rsa_sign.signature = (unsigned char *)sign->data;
 	rsa_sign.signature_byte_len = sign->data_len;
+	rsa_sign.salt_byte_len = *((unsigned int *)sign->priv);
 
 	if (mode.rsa_a == HAL_RSASSA_PKCS1_PSS_MGF1) {
 		padding = 1;
@@ -481,9 +515,13 @@ int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_
 
 	ISP_CHECKBUSY();
 	ret = isp_rsa_verify_md_securekey(&rsa_sign, hash->data, hash->data_len, key_idx);
-
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
+		printf("################################################\n");
+		printf("sig: %x(%d, salt %d), hash: %x(%d), padding %d\n", rsa_sign.signature, rsa_sign.signature_byte_len, rsa_sign.salt_byte_len,
+				hash->data, hash->data_len, padding);
+		printf("################################################\n");
 		return HAL_FAIL;
 	}
 
@@ -550,9 +588,9 @@ static int hal_asn1_get_tag(unsigned char **p, const unsigned char *end, unsigne
 	return hal_asn1_get_len(p, end, len);
 }
 
-int hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
+int hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, hal_data *sign)
 {
-	int ret;
+	uint32_t ret;
 	unsigned char s_buf[MBEDTLS_MAX_ECP_KEY_SIZE_ALT];
 	unsigned char r_buf[MBEDTLS_MAX_ECP_KEY_SIZE_ALT];
 
@@ -560,7 +598,74 @@ int hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal
 	memset(&ecc_sign, 0, sizeof(struct sECC_SIGN));
 
 	ecc_sign.s = s_buf;
+	ecc_sign.s_byte_len = MBEDTLS_MAX_ECP_KEY_SIZE_ALT;
 	ecc_sign.r = r_buf;
+	ecc_sign.r_byte_len = MBEDTLS_MAX_ECP_KEY_SIZE_ALT;
+
+	switch (mode->hash_t) {
+		case HAL_HASH_MD5:
+			ecc_sign.sign_type |= OID_SHA1_160;
+			break;
+		case HAL_HASH_SHA256:
+			ecc_sign.sign_type |= OID_SHA2_256;
+			break;
+		case HAL_HASH_SHA384:
+			ecc_sign.sign_type |= OID_SHA2_384;
+			break;
+		case HAL_HASH_SHA512:
+			ecc_sign.sign_type |= OID_SHA2_512;
+			break;
+		default:
+			return HAL_INVALID_ARGS;
+	}
+
+	switch (mode->curve) {
+		case HAL_ECDSA_SEC_P256R1:
+			ecc_sign.sign_type |= OID_ECC_P256;
+			break;
+		case HAL_ECDSA_SEC_P384R1:
+			ecc_sign.sign_type |= OID_ECC_P384;
+			break;
+		case HAL_ECDSA_SEC_P512R1:
+			ecc_sign.sign_type |= OID_ECC_P521;
+			break;
+		case HAL_ECDSA_BRAINPOOL_P256R1:
+			ecc_sign.sign_type |= OID_ECC_BP256;
+			break;
+		default:
+			return HAL_INVALID_ARGS;
+	}
+
+	ISP_CHECKBUSY();
+
+	ret = isp_ecdsa_sign_md_securekey(&ecc_sign, hash->data, hash->data_len, key_idx);
+	if (ret != 0) {
+		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
+		return HAL_FAIL;
+	}
+
+	//ARTIK ISP does not directly extract signature value, but obtains 'r' and 's'
+	mode->r->data = (unsigned char*)malloc(ecc_sign.r_byte_len);
+	memcpy(mode->r->data, ecc_sign.r, ecc_sign.r_byte_len);
+	mode->r->data_len = ecc_sign.r_byte_len;
+	mode->s->data = (unsigned char*)malloc(ecc_sign.s_byte_len);
+	memcpy(mode->s->data, ecc_sign.s, ecc_sign.s_byte_len);
+	mode->s->data_len = ecc_sign.s_byte_len;
+
+	return HAL_SUCCESS;
+}
+int hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
+{
+	uint32_t ret;
+
+	struct sECC_SIGN ecc_sign;
+	memset(&ecc_sign, 0, sizeof(struct sECC_SIGN));
+
+	ecc_sign.s = mode.s->data;
+	ecc_sign.s_byte_len = mode.s->data_len;
+	ecc_sign.r = mode.r->data;
+	ecc_sign.r_byte_len = mode.r->data_len;
 
 	switch (mode.hash_t) {
 		case HAL_HASH_MD5:
@@ -597,120 +702,10 @@ int hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal
 	}
 
 	ISP_CHECKBUSY();
-
-	ret = isp_ecdsa_sign_md_securekey(&ecc_sign, hash->data, hash->data_len, key_idx);
-	if (ret != 0) {
-		isp_clear(0);
-		return HAL_FAIL;
-	}
-
-	/*
-	 * 3. Generate signature from 'r' and 's'
-	 */
-
-	mode.r->data = ecc_sign.r;
-	mode.r->data_len = ecc_sign.r_byte_len;
-	mode.s->data = ecc_sign.s;
-	mode.s->data_len = ecc_sign.s_byte_len;
-
-	return HAL_SUCCESS;
-}
-int hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
-{
-	int ret;
-	unsigned int len;	
-	unsigned char *sig = sign->data;
-	unsigned int sig_len = sign->data_len;
-	unsigned char *p = (unsigned char *) sig;
-	unsigned char *end = sig + sig_len;
-
-	struct sECC_SIGN ecc_sign;
-	memset(&ecc_sign, 0, sizeof(struct sECC_SIGN));
-	/*
-	 * Seperate 'r' and 's' from received signature.
-	 */
-	if (hal_asn1_get_tag( &p, end, &len, 0x30)) {
-		return HAL_INVALID_ARGS;
-	}
-
-	if (p + len != end) {
-		return HAL_INVALID_ARGS;
-	}
-
-	unsigned int n, tmp = 0;
-
-	/*
-	 * 2-1 Get 'r' value
-	 */
-	if (hal_asn1_get_tag( &p, end, &tmp, 0x02)) {
-		return HAL_INVALID_ARGS;
-	}
-
-	for (n = 0; n < tmp; n++) {
-		if (p[n] != 0) {
-			break;
-		}
-	}
-
-	ecc_sign.r = p + n;
-	ecc_sign.r_byte_len = tmp - n;
-	p += tmp;
-
-	/*
-	 * 2-2 Get 's' value
-	 */
-	if (hal_asn1_get_tag(&p, end, &tmp, 0x02)) {
-		return HAL_INVALID_ARGS;
-	}
-
-	for (n = 0; n < tmp; n++) {
-		if (p[n] != 0) {
-			break;
-		}
-	}
-
-	ecc_sign.s = p + n;
-	ecc_sign.s_byte_len = tmp - n;
-	p += tmp;
-
-	switch (mode.hash_t) {
-		case HAL_HASH_SHA1:
-			ecc_sign.sign_type |= OID_SHA1_160;
-			break;
-		case HAL_HASH_SHA256:
-			ecc_sign.sign_type |= OID_SHA2_256;
-			break;
-		case HAL_HASH_SHA384:
-			ecc_sign.sign_type |= OID_SHA2_384;
-			break;
-		case HAL_HASH_SHA512:
-			ecc_sign.sign_type |= OID_SHA2_512;
-			break;
-		default:
-			return HAL_INVALID_ARGS;
-	}
-
-	switch (mode.curve) {
-		case HAL_ECDSA_SEC_P256R1:
-			ecc_sign.sign_type |= OID_ECC_P256;
-			break;
-		case HAL_ECDSA_SEC_P384R1:
-			ecc_sign.sign_type |= OID_ECC_P384;
-			break;
-		case HAL_ECDSA_SEC_P512R1:
-			ecc_sign.sign_type |= OID_ECC_P521;
-			break;
-		case HAL_ECDSA_BRAINPOOL_P256R1:
-			ecc_sign.sign_type |= OID_ECC_BP256;
-			break;
-		default:
-			return HAL_INVALID_ARGS;
-	}
-
-	ISP_CHECKBUSY();
 	ret = isp_ecdsa_verify_md_securekey(&ecc_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -719,7 +714,7 @@ int hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uin
 
 int hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 {
-	int ret;
+	uint32_t ret;
 	struct sDH_PARAM d_param;
 	unsigned int pubkey_len;
 	memset(&d_param, 0, sizeof(struct sDH_PARAM));
@@ -751,17 +746,19 @@ int hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	ret = isp_dh_generate_keypair_userparam_securestorage(&d_param, dh_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
 	dh_param->pubkey->data = d_param.publickey;
+	dh_param->pubkey->data_len = d_param.publickey_byte_len;
 
 	return HAL_SUCCESS;
 }
 
 int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_data *shared_secret)
 {
-	int ret;
+	uint32_t ret;
 	struct sDH_PARAM d_param;
 	memset(&d_param, 0, sizeof(struct sDH_PARAM));
 	switch (dh_param->mode) {
@@ -774,7 +771,6 @@ int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_dat
 		default:
 			return HAL_INVALID_ARGS;
 	}
-
 	d_param.modules_p_byte_len = dh_param->P->data_len;
 	d_param.modules_p = dh_param->P->data;
 	d_param.generator_g_byte_len = dh_param->G->data_len;;
@@ -782,19 +778,25 @@ int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_dat
 	d_param.publickey = dh_param->pubkey->data;
 	d_param.publickey_byte_len = dh_param->pubkey->data_len;
 
+	unsigned char output[300];
+
 	ISP_CHECKBUSY();
-	ret = isp_dh_compute_shared_secret_securekey(shared_secret->data, &shared_secret->data_len, d_param, dh_idx);
+	ret = isp_dh_compute_shared_secret_securekey(output, &shared_secret->data_len, d_param, dh_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
+
+	shared_secret->data = (unsigned char *)malloc(shared_secret->data_len);
+	memcpy(shared_secret->data, output, shared_secret->data_len);
 
 	return HAL_SUCCESS;
 }
 
 int hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, hal_data *shared_secret)
 {
-	int ret;
+	uint32_t ret;
 	struct sECC_KEY ecc_pub;
 
 	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
@@ -820,19 +822,25 @@ int hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, 
 	ecc_pub.publickey_y = ecdh_param->pubkey_y->data;
 	ecc_pub.y_byte_len = ecdh_param->pubkey_y->data_len;
 
+	unsigned char output[300];
+
 	ISP_CHECKBUSY();
-	ret = isp_compute_ecdh_securekey(shared_secret->data, &shared_secret->data_len, ecc_pub, key_idx);
+	ret = isp_compute_ecdh_securekey(output, &shared_secret->data_len, ecc_pub, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
+
+	shared_secret->data = (unsigned char *)malloc(shared_secret->data_len);
+	memcpy(shared_secret->data, output, shared_secret->data_len);
 
 	return HAL_SUCCESS;
 }
 
 int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 {
-	int ret;
+	uint32_t ret;
 	unsigned char *cert = cert_in->data;
 	unsigned int cert_len = cert_in->data_len;
 
@@ -840,6 +848,7 @@ int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 	ret = isp_write_cert(cert, cert_len, cert_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -848,7 +857,7 @@ int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 
 int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 {
-	int ret;
+	uint32_t ret;
 	unsigned char *buf;
 	unsigned int buf_len;
 
@@ -862,12 +871,14 @@ int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 		ret = isp_get_factorykey_data(buf, &buf_len, cert_idx);
 		if (ret != 0) {
 			isp_clear(0);
+			printf("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
 		ret = isp_read_cert(buf, &buf_len, cert_idx);
 		if (ret != 0) {
 			isp_clear(0);
+			printf("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	}
@@ -879,21 +890,22 @@ int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 
 int hal_remove_certificate(uint32_t cert_idx)
 {
-	return HAL_NOT_IMPLEMENTED;
+	return HAL_NOT_SUPPORTED;
 }
 
 int hal_get_factorykey_data(uint32_t key_idx, hal_data *data)
 {
-	int ret;
+	uint32_t ret;
 	if (key_idx == FACTORYKEY_ARTIK_DEVICE) {
 		ISP_CHECKBUSY();
 		ret = isp_get_factorykey_data(data->data, &data->data_len, key_idx);
 		if (ret != 0) {
 			isp_clear(0);
+			printf("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
-		return HAL_INVALID_SLOT_RANGE;
+		return HAL_NOT_SUPPORTED;
 	}
 
 	return HAL_SUCCESS;
@@ -905,7 +917,7 @@ int hal_get_factorykey_data(uint32_t key_idx, hal_data *data)
 
 int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *enc_data)
 {
-	int ret;
+	uint32_t ret;
 	struct sAES_PARAM param;
 	unsigned char aes_output[MAX_BUF_SIZE];
 
@@ -914,7 +926,7 @@ int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_i
 	param.pu8Plaintext = dec_data->data;
 	param.u32Plaintext_byte_len = dec_data->data_len;
 	param.pu8Ciphertext = aes_output;
-	param.u32Ciphertext_byte_len = sizeof(aes_output);
+	param.u32Ciphertext_byte_len = MAX_BUF_SIZE;
 	switch (aes_param->mode) {
 		case HAL_AES_ECB_NOPAD:
 		case HAL_AES_ECB_ISO9797_M1:
@@ -941,9 +953,10 @@ int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_i
 	ret = isp_aes_encrypt_securekey(&param, key_idx);;
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-
+	enc_data->data = (unsigned char *)malloc(param.u32Ciphertext_byte_len);
 	memcpy(enc_data->data, param.pu8Ciphertext, param.u32Ciphertext_byte_len);
 	enc_data->data_len = param.u32Ciphertext_byte_len;
 
@@ -952,7 +965,7 @@ int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_i
 
 int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *dec_data)
 {
-	int ret;
+	uint32_t ret;
 	struct sAES_PARAM param;
 	unsigned char aes_output[MAX_BUF_SIZE];
 
@@ -961,7 +974,7 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 	param.pu8Plaintext = enc_data->data;
 	param.u32Plaintext_byte_len = enc_data->data_len;
 	param.pu8Ciphertext = aes_output;
-	param.u32Ciphertext_byte_len = sizeof(aes_output);
+	param.u32Ciphertext_byte_len = MAX_BUF_SIZE;
 	switch (aes_param->mode) {
 		case HAL_AES_ECB_NOPAD:
 		case HAL_AES_ECB_ISO9797_M1:
@@ -988,10 +1001,12 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 	ret = isp_aes_decrypt_securekey(&param, key_idx);;
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
-	memcpy(dec_data->data, param.pu8Ciphertext, param.u32Ciphertext_byte_len);
+	dec_data->data = (unsigned char *)malloc(param.u32Ciphertext_byte_len);
+	memcpy(dec_data->data, aes_output, param.u32Ciphertext_byte_len);
 	dec_data->data_len = param.u32Ciphertext_byte_len;
 
 	return HAL_SUCCESS;
@@ -999,28 +1014,35 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 
 int hal_rsa_encrypt(hal_data *dec_data, uint32_t key_idx, hal_data *enc_data)
 {
-	int ret;
+	uint32_t ret;
+	unsigned char output[MAX_BUF_SIZE];
 
 	ISP_CHECKBUSY();
-	ret = isp_rsa_encrypt_securekey(enc_data->data, &enc_data->data_len, dec_data->data, dec_data->data_len, key_idx);
+	ret = isp_rsa_encrypt_securekey(output, &enc_data->data_len, dec_data->data, dec_data->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
+	enc_data->data = (unsigned char *)malloc(enc_data->data_len);
+	memcpy(enc_data->data, output, enc_data->data_len);
 
 	return HAL_SUCCESS;
 }
 
 int hal_rsa_decrypt(hal_data *enc_data, uint32_t key_idx, hal_data *dec_data)
 {
-	int ret;
+	uint32_t ret;
+	unsigned char output[MAX_BUF_SIZE];
 	ISP_CHECKBUSY();
-
-	ret = isp_rsa_decrypt_securekey(dec_data->data, &dec_data->data_len, enc_data->data, enc_data->data_len, key_idx);
+	ret = isp_rsa_decrypt_securekey(output, &dec_data->data_len, enc_data->data, enc_data->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
+	dec_data->data = (unsigned char *)malloc(dec_data->data_len);
+	memcpy(dec_data->data, output, dec_data->data_len);
 
 	return HAL_SUCCESS;
 }
@@ -1031,12 +1053,13 @@ int hal_rsa_decrypt(hal_data *enc_data, uint32_t key_idx, hal_data *dec_data)
 
 int hal_write_storage(uint32_t ss_idx, hal_data *data)
 {
-	int ret;
+	uint32_t ret;
 
 	ISP_CHECKBUSY();
 	ret = isp_write_storage(data->data, data->data_len, ss_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1045,20 +1068,24 @@ int hal_write_storage(uint32_t ss_idx, hal_data *data)
 
 int hal_read_storage(uint32_t ss_idx, hal_data *data)
 {
-	int ret;
+	uint32_t ret;
+	unsigned char output[MAX_BUF_SIZE];
 
 	ISP_CHECKBUSY();
-	ret = isp_read_storage(data->data, &data->data_len, ss_idx);
+	ret = isp_read_storage(output, &data->data_len, ss_idx);
 	if (ret != 0) {
 		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
+	data->data = (unsigned char *)malloc(data->data_len);
+	memcpy(data->data, output, data->data_len);
 
 	return HAL_SUCCESS;
 }
 
 int hal_delete_storage(uint32_t ss_idx)
 {
-	return HAL_NOT_IMPLEMENTED;
+	return HAL_NOT_SUPPORTED;
 }
 
