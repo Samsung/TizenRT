@@ -16,13 +16,12 @@
  *
  ******************************************************************/
 
-#include <sstream>
 #include <media/FocusRequest.h>
 
 namespace media {
 std::string FocusRequest::getId()
 {
-	return mId;
+	return std::to_string(mStreamInfo->id);
 }
 
 std::shared_ptr<FocusChangeListener> FocusRequest::getListener()
@@ -30,7 +29,7 @@ std::shared_ptr<FocusChangeListener> FocusRequest::getListener()
 	return mListener;
 }
 
-FocusRequest::Builder::Builder() : mId(""), mListener(nullptr)
+FocusRequest::Builder::Builder()
 {
 }
 
@@ -40,14 +39,21 @@ FocusRequest::Builder &FocusRequest::Builder::setFocusChangeListener(std::shared
 	return *this;
 }
 
+FocusRequest::Builder &FocusRequest::Builder::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	mStreamInfo = stream_info;
+	return *this;
+}
+
 std::shared_ptr<FocusRequest> FocusRequest::Builder::build()
 {
+	if (mStreamInfo == nullptr) {
+		return nullptr;
+	}
+
 	auto focusRequest = std::make_shared<FocusRequest>();
-	std::stringstream ss;
-	ss << static_cast<const void *>(focusRequest.get());
-	ss << static_cast<const void *>(mListener.get());
-	mId = ss.str();
-	focusRequest->mId = mId;
+
+	focusRequest->mStreamInfo = mStreamInfo;
 	focusRequest->mListener = mListener;
 	return focusRequest;
 }
