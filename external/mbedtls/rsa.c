@@ -489,7 +489,7 @@ void mbedtls_rsa_init( mbedtls_rsa_context *ctx,
     mbedtls_mutex_init( &ctx->mutex );
 #endif
 #if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
-	ctx->key_index = 0xFF;
+	ctx->key_index = 0x01;
 
 #endif
 }

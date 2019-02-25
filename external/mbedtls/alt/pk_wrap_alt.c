@@ -224,6 +224,7 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	unsigned char *pubkey_buf = NULL;
 	unsigned int pubkey_buflen = MBEDTLS_MAX_BUF_SIZE_ALT;
 	unsigned int key_idx;
+	hal_key_type key_type;
 	hal_rsa_mode rsa_mode;
 	( (void) md_alg );
 
@@ -238,7 +239,6 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	if( ctx == NULL ) {
 		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
 	}
-
 	/*
 	 * 1. Encrypt publickey for using HW accelator.
 	 */
@@ -266,21 +266,22 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	}
 	memcpy(pubkey.data, pubkey_buf + pubkey_buflen - len, len);
 
-	switch( len ) {
-	case 1024:
-		ret = hal_set_key(HAL_KEY_RSA_1024, key_idx, &pubkey, NULL);
-		break;
-	case 2048:
-		ret = hal_set_key(HAL_KEY_RSA_2048, key_idx, &pubkey, NULL);
-		break;
-	case 4096:
-		ret = hal_set_key(HAL_KEY_RSA_4096, key_idx, &pubkey, NULL);
-		break;
-	default:
+	if( len <= 1024 ) {
+		key_type = HAL_KEY_RSA_1024;
+	}
+	else if( len <= 2048 ) {
+		key_type = HAL_KEY_RSA_2048;
+	}
+	else if( len <= 4096 ) {
+		key_type = HAL_KEY_RSA_4096;
+	}
+	else {
 		free(pubkey_buf);
 		free(pubkey.data);
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
+	ret = hal_set_key(key_type, key_idx, &pubkey, NULL);
+
 	free(pubkey_buf);
 	free(pubkey.data);
 	if( ret != HAL_SUCCESS ) {
@@ -291,30 +292,40 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	 * 2. Choose digest algorithm.
 	 */
 	ret = rsa_get_mode(md_alg, &rsa_mode);
-	if(ret) {
+	if( ret ) {
 		return ret;
 	}
 
 	/*
 	 *  3. Verify signature with public key.
 	 */
-	hal_data signature;
 	hal_data t_hash;
-
-	signature.data = (unsigned char *)sig;
-	signature.data_len = sig_len;
-
-	t_hash.data = (unsigned char *)hash;
+	t_hash.data = (unsigned char*)malloc(hash_len);
+	if( t_hash.data == NULL ) {
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+	memcpy(t_hash.data, hash, hash_len);
 	t_hash.data_len = hash_len;
 
-	ret = hal_rsa_verify_md(rsa_mode, &t_hash, &signature, key_idx);
+	hal_data t_sig;
+	t_sig.data = (unsigned char*)malloc(sig_len);
+	if( t_sig.data == NULL ) {
+		free(t_hash.data);
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+	memcpy(t_sig.data, sig, sig_len);
+	t_sig.data_len = sig_len;
+
+	ret = hal_rsa_verify_md(rsa_mode, &t_hash, &t_sig, key_idx);
+
+	free(t_hash.data);
+	free(t_sig.data);
 
 	if( ret != HAL_SUCCESS ) {
 		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
 	}
 
 	return( 0 );
-
 }
 
 static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
@@ -324,8 +335,9 @@ static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 {
 	int ret;
 	unsigned int key_idx;
+
 	hal_data t_hash;
-	hal_data signature;
+	hal_data t_sig;
 	hal_rsa_mode rsa_mode;
 
 #if SIZE_MAX > UINT_MAX
@@ -334,24 +346,29 @@ static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	}
 #endif
 
-	t_hash.data = (unsigned char *)hash;
+	t_hash.data = (unsigned char*)malloc(hash_len);
+	if( t_hash.data == NULL ) {
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+	memcpy(t_hash.data, hash, hash_len);
 	t_hash.data_len = hash_len;
+
 	key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
 
 	ret = rsa_get_mode(md_alg, &rsa_mode);
-	if(ret) {
+	if( ret ) {
 		return ret;
 	}
 
-	ret = hal_rsa_sign_md(rsa_mode, &t_hash, key_idx, &signature);
-
+	ret = hal_rsa_sign_md(rsa_mode, &t_hash, key_idx, &t_sig);
+	free( t_hash.data );
 	if( ret != HAL_SUCCESS) {
-		free( t_hash.data );
+		hal_free_data( &t_sig );
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
-	*sig_len = signature.data_len;
-	sig = signature.data;
+	*sig_len = t_sig.data_len;
+	sig = t_sig.data;
 
     return( 0 );
 }
@@ -454,6 +471,7 @@ static int rsa_encrypt_wrap( void *ctx, const unsigned char *input, size_t ilen,
 	unsigned char *pubkey_buf = NULL;
 	unsigned int pubkey_buflen = MBEDTLS_MAX_BUF_SIZE_ALT;
 	unsigned int key_idx;
+	hal_key_type key_type;
 	unsigned int  padding = ( (mbedtls_rsa_context *) ctx )->padding;
 
 	if( ctx == NULL || padding != MBEDTLS_RSA_PKCS_V15 ) {
@@ -490,21 +508,22 @@ static int rsa_encrypt_wrap( void *ctx, const unsigned char *input, size_t ilen,
 	}
 	memcpy(pubkey.data, pubkey_buf + pubkey_buflen - len, len);
 
-	switch( len ) {
-	case 1024:
-		ret = hal_set_key(HAL_KEY_RSA_1024, key_idx, &pubkey, NULL);
-		break;
-	case 2048:
-		ret = hal_set_key(HAL_KEY_RSA_2048, key_idx, &pubkey, NULL);
-		break;
-	case 4096:
-		ret = hal_set_key(HAL_KEY_RSA_4096, key_idx, &pubkey, NULL);
-		break;
-	default:
+	if( len <= 1024 ) {
+		key_type = HAL_KEY_RSA_1024;
+	}
+	else if( len <= 2048 ) {
+		key_type = HAL_KEY_RSA_2048;
+	}
+	else if( len <= 4096 ) {
+		key_type = HAL_KEY_RSA_4096;
+	}
+	else {
 		free(pubkey_buf);
 		free(pubkey.data);
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
+	ret = hal_set_key(key_type, key_idx, &pubkey, NULL);
+
 	free(pubkey_buf);
 	free(pubkey.data);
 	if( ret != HAL_SUCCESS ) {
@@ -851,7 +870,7 @@ int eckey_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	 * 2. Choose digest algorithm and curve type.
 	 */
 	ret = ecdsa_get_mode( md_alg, curve, &ecdsa_mode );
-	if(ret) {
+	if( ret ) {
 		return ret;
 	}
 
@@ -859,14 +878,25 @@ int eckey_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	 *  3. Verify signature with public key.
 	 */
 	hal_data t_hash;
-	hal_data signature;
-	t_hash.data = (unsigned char *)hash;
+	t_hash.data = (unsigned char*)malloc(hash_len);
+	if( t_hash.data == NULL ) {
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+	memcpy(t_hash.data, hash, hash_len);
 	t_hash.data_len = hash_len;
-	signature.data = (unsigned char *)sig;
-	signature.data_len = sig_len;
 
-	ret = hal_ecdsa_verify_md(ecdsa_mode, &t_hash, &signature, key_idx);
+	hal_data t_sig;
+	t_sig.data = (unsigned char*)malloc(sig_len);
+	if( t_sig.data == NULL ) {
+		free(t_hash.data);
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+	memcpy(t_sig.data, sig, sig_len);
+	t_sig.data_len = sig_len;
 
+	ret = hal_ecdsa_verify_md(ecdsa_mode, &t_hash, &t_sig, key_idx);
+	free(t_hash.data);
+	free(t_sig.data);
 	if (ret != HAL_SUCCESS) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
@@ -881,16 +911,22 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 {
     int ret;
     mbedtls_ecdsa_context ecdsa;
+	hal_ecdsa_mode ecdsa_mode;
+	mbedtls_mpi r, s;
     mbedtls_ecdsa_init( &ecdsa );
 
 	if( ( ret = mbedtls_ecdsa_from_keypair( &ecdsa, ctx ) ) == 0 )
     {
 		unsigned int key_idx = ( ( mbedtls_ecp_keypair *) ctx )->key_index;
 		unsigned int curve = ecdsa.grp.id;
-		hal_ecdsa_mode ecdsa_mode;
+
 		hal_data t_hash;
 
-		t_hash.data = (unsigned char *)hash;
+		t_hash.data = (unsigned char*)malloc(hash_len);
+		if( t_hash.data == NULL ) {
+			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		}
+		memcpy(t_hash.data, hash, hash_len);
 		t_hash.data_len = hash_len;
 
 		mbedtls_ecdsa_free( &ecdsa );
@@ -899,7 +935,8 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		 */
 
 		ret = ecdsa_get_mode( md_alg, curve, &ecdsa_mode );
-		if(ret) {
+		if( ret ) {
+			free( t_hash.data );
 			return ret;
 		}
 
@@ -907,41 +944,48 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		 * 2. Sign
 		 */
 		hal_data sign;
-		sign.data = NULL;
-		sign.data_len = 0;
+		ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
+		if( ecdsa_mode.r == NULL ) {
+			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		}
+		ecdsa_mode.r->data = NULL;
+		ecdsa_mode.r->data_len = 0;
+		ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
+		if( ecdsa_mode.r == NULL ) {
+			free( ecdsa_mode.r );
+			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		}
+		ecdsa_mode.s->data = NULL;
+		ecdsa_mode.s->data_len = 0;
+
 		ret = hal_ecdsa_sign_md( &t_hash, key_idx, &ecdsa_mode, &sign );
+		free( t_hash.data );
+
 		if( ret != HAL_SUCCESS ) {
+			hal_free_data( ecdsa_mode.r );
+			hal_free_data( ecdsa_mode.s );
+			free( ecdsa_mode.r );
+			free( ecdsa_mode.s );
 			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		}
 
 		/* Use r and s to generate signature */
 		if( sign.data == NULL ) {
-			mbedtls_mpi r, s;
+
 			mbedtls_mpi_init( &r );
 			mbedtls_mpi_init( &s );
 
 			ret = mbedtls_mpi_read_binary( &r, ecdsa_mode.r->data, ecdsa_mode.r->data_len );
-			if(ret) {
-				hal_free_data( ecdsa_mode.r );
-				hal_free_data( ecdsa_mode.s );
-				mbedtls_mpi_free( &r );
-				mbedtls_mpi_free( &s );
-				return ret;
+			if( ret ) {
+				goto cleanup;
 			}
 			ret = mbedtls_mpi_read_binary( &s, ecdsa_mode.s->data, ecdsa_mode.s->data_len );
-			if(ret) {
-				hal_free_data( ecdsa_mode.r );
-				hal_free_data( ecdsa_mode.s );
-				mbedtls_mpi_free( &r );
-				mbedtls_mpi_free( &s );
-				return ret;
+			if( ret ) {
+				goto cleanup;
 			}
 
 			ecdsa_signature_to_asn1( &r, &s, sig, sig_len );
-			hal_free_data( ecdsa_mode.r );
-			hal_free_data( ecdsa_mode.s );
-			mbedtls_mpi_free( &r );
-			mbedtls_mpi_free( &s );
+			goto cleanup;
 		} else {
 			sig = sign.data;
 			*sig_len = sign.data_len;
@@ -949,9 +993,17 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 
 		return( ret );
 	} 
-	mbedtls_ecdsa_free( &ecdsa );
 
 	return( MBEDTLS_ERR_ECP_INVALID_KEY );
+
+cleanup:
+	hal_free_data( ecdsa_mode.r );
+	hal_free_data( ecdsa_mode.s );
+	free( ecdsa_mode.r );
+	free( ecdsa_mode.s );
+	mbedtls_mpi_free( &r );
+	mbedtls_mpi_free( &s );
+	return ret;
 }
 
 const mbedtls_pk_info_t mbedtls_eckey_info = {

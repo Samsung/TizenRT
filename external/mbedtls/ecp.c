@@ -324,7 +324,7 @@ void mbedtls_ecp_keypair_init( mbedtls_ecp_keypair *key )
     mbedtls_mpi_init( &key->d );
     mbedtls_ecp_point_init( &key->Q );
 #if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
-	key->key_index = 0xFF;
+	key->key_index = 0x01;
 #endif
 }
 
