@@ -227,7 +227,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|OTA|all|os|romfs|bl1|bl2|sssfw|wlanfw|ota)
+		ALL|OS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|all|os|rom|bl1|bl2|sssfw|wlanfw|ota)
 			download $1
 			;;
 		ERASE_*)
