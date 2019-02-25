@@ -429,7 +429,7 @@ int ping_process(int count, const char *taddr, int size)
 	printf("PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, size, count);
 
 	/* get address information */
-	if (lwip_getaddrinfo(taddr, NULL, &hints, &result) != 0) {
+	if (getaddrinfo(taddr, NULL, &hints, &result) != 0) {
 		printf("ping_process: fail to get addrinfo\n");
 		return ERROR;
 	}
