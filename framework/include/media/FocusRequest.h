@@ -35,6 +35,7 @@
 #include <media/FocusChangeListener.h>
 
 namespace media {
+class FocusManager;
 /**
  * @class 
  * @brief This class is focus request
@@ -88,22 +89,10 @@ public:
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
-	/**
-	 * @brief Get FocusRequest Id
-	 * @details @b #include <media/FocusRequest.h>
-	 * @return FocusRequest Id
-	 * @since TizenRT v2.0
-	 */
-	std::string getId();
-	/**
-	 * @brief Get FocusChangeListener of FocusRequest
-	 * @details @b #include <media/FocusRequest.h>
-	 * @return shared_ptr of FocusChangeListener
-	 * @since TizenRT v2.0
-	 */
-	std::shared_ptr<FocusChangeListener> getListener();
-
 private:
+	friend class FocusManager;
+	std::shared_ptr<stream_info_t> getStreamInfo();
+	std::shared_ptr<FocusChangeListener> getListener();
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<FocusChangeListener> mListener;
 };

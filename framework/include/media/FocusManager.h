@@ -78,18 +78,18 @@ private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener);
-		bool hasSameId(std::string id);
+		FocusRequester(stream_info_id_t id, std::shared_ptr<FocusChangeListener> listener);
+		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		void notify(int focusChange);
 
 	private:
-		std::string mId;
+		stream_info_id_t mId;
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
 	FocusManager() = default;
 	virtual ~FocusManager() = default;
-	void removeFocusElement(std::string id);
+	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;
 };
