@@ -321,9 +321,9 @@ int hal_generate_random(uint32_t len, hal_data *random)
 		return HAL_FAIL;
 	}
 
-	random->data = (unsigned char *)malloc(sizeof(inbuf));
-	memcpy(random->data, inbuf, sizeof(inbuf));
-	random->data_len = sizeof(inbuf);
+	random->data = (unsigned char *)malloc(len);
+	memcpy(random->data, inbuf, len);
+	random->data_len = len;
 
 	return HAL_SUCCESS;
 }

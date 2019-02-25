@@ -937,7 +937,7 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 				return ret;
 			}
 
-			ecdsa_signature_to_ans1( &r, &s, sig, sig_len );
+			ecdsa_signature_to_asn1( &r, &s, sig, sig_len );
 			hal_free_data( ecdsa_mode.r );
 			hal_free_data( ecdsa_mode.s );
 			mbedtls_mpi_free( &r );

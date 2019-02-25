@@ -181,7 +181,7 @@ pthread_addr_t tls_selftest_cb(void *args)
  * Without HW entropy, there is no strong entropy source and
  * it will make failure the selftest.
  */
-#if defined(MBEDTLS_ENTROPY_C) && defined(CONFIG_HW_RNG)
+#if defined(MBEDTLS_ENTROPY_C)
 	DO_TLS_TEST(mbedtls_entropy_self_test, v);
 #endif
 #if defined(MBEDTLS_PKCS5_C)

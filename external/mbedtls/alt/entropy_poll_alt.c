@@ -32,19 +32,20 @@
 
 
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
-static int mbedtls_generate_random_alt( unsigned int *data, unsigned int len )
+static int mbedtls_generate_random_alt( unsigned char *data, unsigned int len )
 {
 	int ret;
 
 	hal_data random;
-	random.data = data;
-	random.data_len = len;
 
 	ret = hal_generate_random(len, &random);
 
 	if (ret != HAL_SUCCESS) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
+	memcpy(data, random.data, len);
+
+	hal_free_data(&random);
 
 	return HAL_SUCCESS;
 }
@@ -53,8 +54,7 @@ static int mbedtls_generate_random_alt( unsigned int *data, unsigned int len )
 int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
-	unsigned int inbuf[len];
-
+	unsigned char inbuf[len];
 	((void) data);
 
 	if (mbedtls_generate_random_alt( inbuf, len ) < 0) {
