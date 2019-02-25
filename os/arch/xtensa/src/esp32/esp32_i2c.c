@@ -108,6 +108,9 @@
 #define ESP32_I2C1_DEFAULT_SDA_PIN          19
 #define ESP32_I2C1_DEFAULT_SDA_PULLUP_EN    0
 
+#define ESP32_I2C_FREQUENCY_STD (100 * 1000)
+#define ESP32_I2C_FREQUENCY_FAST (400 * 1000)
+
 #ifndef min
 #define min(a, b)       (((a) < (b)) ? (a) : (b))
 #endif
@@ -548,7 +551,6 @@ static int i2c_esp32_transmit(struct i2c_dev_s *dev)
 	}
 	ret = sem_timedwait(&priv->sem_isr, &abstime);
 	if (ret < 0) {
-		ret = get_errno();
 		return -ETIMEDOUT;
 	}
 
@@ -561,7 +563,7 @@ static int i2c_esp32_transmit(struct i2c_dev_s *dev)
 	}
 #endif
 
-	return 0;
+	return ret;
 }
 
 static int i2c_esp32_transmit_wait(struct i2c_dev_s *dev, volatile struct i2c_esp32_cmd *wait_cmd)
@@ -586,6 +588,7 @@ static int i2c_esp32_read_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_m
 	volatile struct i2c_esp32_cmd *cmd = (void *)I2C_COMD0_REG(priv->i2c_num);
 	uint32_t i;
 	int ret;
+	uint32_t read_count = 0;
 
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
@@ -644,7 +647,7 @@ static int i2c_esp32_read_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_m
 
 		ret = i2c_esp32_transmit_wait(dev, wait_cmd);
 		if (ret < 0) {
-			return ret;
+			return ret;  //return error code.
 		}
 		for (i = 0; i < to_read; i++) {
 			uint32_t v = I2C[priv->i2c_num]->fifo_data.val;
@@ -652,11 +655,12 @@ static int i2c_esp32_read_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_m
 			*msg->buffer++ = v;
 		}
 		msg->length -= to_read;
+		read_count += to_read;
 
 		i2c_esp32_reset_txfifo(priv->i2c_num);
 	}
 
-	return 0;
+	return read_count;
 }
 
 static int i2c_esp32_write_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_msg_s *msg)
@@ -664,6 +668,7 @@ static int i2c_esp32_write_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_
 	struct esp32_i2c_priv_s *priv = (struct esp32_i2c_priv_s *)dev;
 	volatile struct i2c_esp32_cmd *cmd = (void *)I2C_COMD0_REG(priv->i2c_num);
 	int addrSent = 0;
+	uint32_t send_count = 0;
 
 	/* I2C_ESP32_OP_RSTART must be the first one;
 	 * if I2C_M_NOSTART, it means the i2c-frame is too long to be handled in one msg!
@@ -701,6 +706,7 @@ static int i2c_esp32_write_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_
 			 .ack_en = true,
 		};
 
+		send_count += to_send;
 		msg->length -= to_send;
 
 		/*stop when end of msgdata and no more msg to excute */
@@ -717,13 +723,13 @@ static int i2c_esp32_write_msg(struct i2c_dev_s *dev, uint16_t addr, struct i2c_
 
 		ret = i2c_esp32_transmit_wait(dev, cmd);
 		if (ret < 0) {
-			return ret;
+			return ret;  //return error code.
 		}
 
 		i2c_esp32_reset_txfifo(priv->i2c_num);
 	}
 
-	return 0;
+	return send_count;
 }
 
 static int esp32_i2c_initialize(struct esp32_i2c_priv_s *priv)
@@ -807,6 +813,10 @@ uint32_t esp32_i2c_setclock(FAR struct i2c_dev_s *dev, uint32_t frequency)
 {
 	struct esp32_i2c_priv_s *priv = (struct esp32_i2c_priv_s *)dev;
 	int i2c_num = priv->i2c_num;
+
+	if ((ESP32_I2C_FREQUENCY_STD != frequency) && (ESP32_I2C_FREQUENCY_FAST != frequency)) {
+		return ERROR;
+	}
 
 	if (priv != NULL && priv->xfer_speed != frequency) {
 		sem_wait(&priv->sem_excl);
