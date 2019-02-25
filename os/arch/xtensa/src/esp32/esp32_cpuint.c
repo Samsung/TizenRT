@@ -224,7 +224,7 @@ static inline void xtensa_disable_all(void)
 {
 	__asm__ __volatile__("movi a2, 0\n"
 						 "xsr a2, INTENABLE\n"
-						 ::: "a2");
+						 : : : "a2");
 }
 
 /****************************************************************************
