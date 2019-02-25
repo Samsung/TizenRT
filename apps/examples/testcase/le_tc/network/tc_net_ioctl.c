@@ -62,14 +62,14 @@ static void tc_net_ioctl_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_ioctl_fionread_n
+   * @testcase		   :tc_net_ioctl_fionread_p
    * @brief		   :
    * @scenario		   :
    * @apicovered	   :ioctl()
    * @precondition	   :
    * @postcondition	   :
    */
-static void tc_net_ioctl_fionread_n(void)
+static void tc_net_ioctl_fionread_p(void)
 {
 
 	int fd = -1;
@@ -82,7 +82,7 @@ static void tc_net_ioctl_fionread_n(void)
 	int ret = ioctl(fd, FIONREAD, (unsigned long)&dummy);
 	close(fd);
 
-	TC_ASSERT_NEQ("ioctl", ret, 0);
+	TC_ASSERT_NEQ("ioctl", ret, -1);
 	TC_SUCCESS_RESULT();
 
 }
@@ -114,7 +114,7 @@ int net_ioctl_main(void)
 {
 
 	tc_net_ioctl_p();
-	tc_net_ioctl_fionread_n();
+	tc_net_ioctl_fionread_p();
 
 	tc_net_ioctl_n();
 
