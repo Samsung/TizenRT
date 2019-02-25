@@ -449,7 +449,6 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 /* Functions contained in umm_initialize.c **********************************/
 
-void umm_initialize(FAR void *heap_start, size_t heap_size);
 
 /* Functions contained in kmm_initialize.c **********************************/
 
@@ -460,6 +459,7 @@ void kmm_initialize(FAR void *heap_start, size_t heap_size);
 /* Functions contained in umm_addregion.c ***********************************/
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+void umm_initialize(FAR void *heap_start, size_t heap_size);
 void umm_addregion(FAR void *heapstart, size_t heapsize);
 #endif
 
