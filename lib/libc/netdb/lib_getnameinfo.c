@@ -34,35 +34,31 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: getaddrinfo
+ * Name: getnameinfo
  *
  * Description:
- *   Translates the name of a service location (for example, a host name) and/or
- *   a service name and returns a set of socket addresses and associated
- *   information to be used in creating a socket with which to address the
- *   specified service.
- *
- *   Due to a limitation in dns_gethostbyname, only the first address of a
- *   host is returned.
- *   Also, service names are not supported (only port numbers)!
+ *   Translates the socket addresses and returns the string.
+ *   This is the dummy function to support compatibility for iotivity.
  *
  * Input Parameters:
- *   hostname - descriptive name or address string of the host
- *                 (may be NULL -> local address)
- *   servname - port number as string of NULL
- *   hint - structure containing input values that set socktype and protocol
- *   res - pointer to a pointer where to store the result (set to NULL on failure)
- *
+ *   sa - socket address to translate
+ *   salen - length of the socket address
+ *   host - host string pointer to be returned
+ *   hostlen - length of the host name buffer
+ *   serv - service string pointer to be returned
+ *   servlen - length of the service name buffer
+ *   flags - takes NI_NUMERICHOST and NI_NUMERICSERV
+ * 
  * Returned Value:
  *   0 on success, non-zero on failure
  *
  ****************************************************************************/
 
 /****************************************************************************
- * Name: getaddrinfo
+ * Name: getnameinfo
  ****************************************************************************/
-#ifdef CONFIG_NET_LWIP_NETDB
-int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const struct addrinfo *hint, FAR struct addrinfo **res)
+#if defined(CONFIG_NET_LWIP_NETDB) && defined(LWIP_COMPAT_SOCKETS)
+int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
 {
 	int ret = -1;
 	struct req_lwip_data req;
@@ -74,11 +70,14 @@ int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const st
 	}
 
 	memset(&req, 0, sizeof(req));
-	req.type = GETADDRINFO;
-	req.host_name = hostname;
-	req.serv_name = servname;
-	req.ai_hint = hint;
-	req.ai_res = NULL;
+	req.type = GETNAMEINFO;
+	req.sa = sa;
+	req.sa_len = salen;
+	req.host_name = host;
+	req.host_len = hostlen;
+	req.serv_name = serv;
+	req.serv_len = servlen;
+	req.flags = flags;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -88,7 +87,6 @@ int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const st
 	}
 
 	ret = req.req_res;
-	*res = (struct addrinfo *)req.ai_res;
 	close(sockfd);
 	return ret;
 }

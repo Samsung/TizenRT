@@ -19,7 +19,7 @@ ifeq ($(CONFIG_NET_LWIP_NETDB),y)
 
 # Add the netdb C files to the build
 
-CSRCS += lib_freeaddrinfo.c lib_getaddrinfo.c
+CSRCS += lib_freeaddrinfo.c lib_getaddrinfo.c lib_gethostbyname.c lib_getnameinfo.c
 
 # Add the netdb directory to the build
 
