@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  arch/arm/src/armv7-r/arm_initialstate.c
+ * arch/arm/src/common/up_userspace.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,13 +57,11 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-#include <string.h>
+#include <assert.h>
 
-#include <tinyara/arch.h>
+#include <tinyara/userspace.h>
 
-#include "arm.h"
-#include "up_internal.h"
-#include "up_arch.h"
+#ifdef CONFIG_BUILD_PROTECTED
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -82,75 +80,47 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_initial_state
+ * Name: up_userspace
  *
  * Description:
- *   A new thread is being started and a new TCB has been created. This
- *   function is called to initialize the processor specific portions of
- *   the new TCB.
- *
- *   This function must setup the initial architecture registers and/or
- *   stack so that execution will begin at tcb->start on the next context
- *   switch.
+ *   For the case of the separate user-/kernel-space build, perform whatever
+ *   platform specific initialization of the user memory is required.
+ *   Normally this just means initializing the user space .data and .bss
+ *   segments.
  *
  ****************************************************************************/
 
-void up_initial_state(struct tcb_s *tcb)
+void up_userspace(void)
 {
-	struct xcptcontext *xcp = &tcb->xcp;
-	uint32_t cpsr;
+	uint8_t	*src;
+	uint8_t	*dest;
+	uint8_t	*end;
 
-	/* Initialize the initial exception register context structure */
+	/* Clear all of user-space .bss */
 
-	memset(xcp, 0, sizeof(struct xcptcontext));
+	DEBUGASSERT(USERSPACE->us_bssstart != 0 && USERSPACE->us_bssend != 0 &&
+			USERSPACE->us_bssstart <= USERSPACE->us_bssend);
 
-	/* Save the initial stack pointer */
+	dest = (uint8_t *)USERSPACE->us_bssstart;
+	end  = (uint8_t *)USERSPACE->us_bssend;
 
-	xcp->regs[REG_SP] = (uint32_t)tcb->adj_stack_ptr;
-
-	/* Save the task entry point */
-
-	xcp->regs[REG_PC] = (uint32_t)tcb->start;
-
-	/* If this task is running PIC, then set the PIC base register to the
-	 * address of the allocated D-Space region.
-	 */
-
-#ifdef CONFIG_PIC
-	if (tcb->dspace != NULL) {
-		/* Set the PIC base register (probably R10) to the address of the
-		 * alloacated D-Space region.
-		 */
-
-		xcp->regs[REG_PIC] = (uint32_t)tcb->dspace->region;
+	while (dest != end) {
+		*dest++ = 0;
 	}
-#endif
 
-	/* Set supervisor-mode and disable FIQs, regardless of how TinyAra is
-	 * configured and of what kind of thread is being started.  That is
-	 * because all threads, even user-mode threads will start in kernel
-	 * trampoline at task_start() or pthread_start().  The thread's
-	 * privileges will be dropped before transitioning to user code.
-	 */
+	/* Initialize all of user-space .data */
 
-	cpsr = PSR_MODE_SVC;
+	DEBUGASSERT(USERSPACE->us_datasource != 0 &&
+			USERSPACE->us_datastart != 0 && USERSPACE->us_dataend != 0 &&
+			USERSPACE->us_datastart <= USERSPACE->us_dataend);
 
-	/* Enable or disable interrupts, based on user configuration */
+	src  = (uint8_t *)USERSPACE->us_datasource;
+	dest = (uint8_t *)USERSPACE->us_datastart;
+	end  = (uint8_t *)USERSPACE->us_dataend;
 
-#ifdef CONFIG_SUPPRESS_INTERRUPTS
-	/* Disable interrupts (both IRQs and FIQs) */
+	while (dest != end) {
+		*dest++ = *src++;
+	}
 
-	cpsr |= (PSR_I_BIT | PSR_F_BIT);
-
-#else							/* CONFIG_SUPPRESS_INTERRUPTS */
-	/* Leave IRQs enabled (Also FIQs if CONFIG_ARMV7R_DECODEFIQ is selected) */
-
-#ifndef CONFIG_ARMV7R_DECODEFIQ
-
-	cpsr |= PSR_F_BIT;
-
-#endif							/* !CONFIG_ARMV7R_DECODEFIQ */
-#endif							/* CONFIG_SUPPRESS_INTERRUPTS */
-
-	xcp->regs[REG_CPSR] = cpsr;
 }
+#endif /* CONFIG_BUILD_PROTECTED */
