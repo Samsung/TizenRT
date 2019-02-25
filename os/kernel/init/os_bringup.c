@@ -266,7 +266,7 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
-#ifdef CONFIG_KERNEL_CMDS
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_KERNEL_CMDS)
 	heapinfo_drv_register();
 #endif
 
