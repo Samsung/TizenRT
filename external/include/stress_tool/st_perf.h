@@ -112,7 +112,8 @@
 
 #define ST_EXPECT_2(val1, val2, exp)			\
 	do {										\
-		if (exp != val1 && exp != val2) {		\
+		int ret = exp;							\
+		if (ret != val1 && ret != val2) {		\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\
 		}										\
