@@ -909,7 +909,7 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		hal_data sign;
 		sign.data = NULL;
 		sign.data_len = 0;
-		ret = hal_ecdsa_sign_md( ecdsa_mode, &t_hash, key_idx, &sign );
+		ret = hal_ecdsa_sign_md( &t_hash, key_idx, &ecdsa_mode, &sign );
 		if( ret != HAL_SUCCESS ) {
 			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		}

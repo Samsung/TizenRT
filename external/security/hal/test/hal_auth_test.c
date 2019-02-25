@@ -6,7 +6,7 @@
 #include "hal_test_utils.h"
 
 /*  Configuration */
-#define HAL_AUTH_TEST_TRIAL 5
+#define HAL_AUTH_TEST_TRIAL 10
 #define HAL_AUTH_TEST_LIMIT_TIME 100000000
 /*
  * Desc: Generate random
@@ -34,7 +34,7 @@ TEST_F(generate_random)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_random(100, &g_rand));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_random(128, &g_rand));
 
 	ST_END_TEST;
 }
@@ -45,12 +45,15 @@ TEST_F(generate_random)
  */
 static hal_data g_plain_text;
 static hal_data g_hash;
+#define HASH_INPUT_SIZE 64
 TEST_SETUP(get_hash)
 {
 	ST_START_TEST;
 
-	g_plain_text.data = "01234567890123456789";
-	g_plain_text.data_len = 20;
+	g_plain_text.data = (unsigned char *)malloc(HASH_INPUT_SIZE);
+	ST_EXPECT_NEQ(NULL, g_plain_text.data);
+	memset(g_plain_text.data, 1, HASH_INPUT_SIZE);
+	g_plain_text.data_len = HASH_INPUT_SIZE;
 
 	ST_END_TEST;
 }
@@ -59,6 +62,7 @@ TEST_TEARDOWN(get_hash)
 {
 	ST_START_TEST;
 
+	hal_test_free_buffer(&g_plain_text);
 	hal_free_data(&g_hash);
 
 	ST_END_TEST;
@@ -68,7 +72,7 @@ TEST_F(get_hash)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_hash(HAL_HASH_SHA256, &g_plain_text, &g_hash));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_hash(HAL_HASH_SHA256, &g_plain_text, &g_hash));
 
 	ST_END_TEST;
 }
@@ -77,16 +81,18 @@ TEST_F(get_hash)
  * Desc: Get hmac
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define HAL_TEST_HMAC_KEY_SLOT 1
+#define HAL_TEST_HMAC_KEY_SLOT 3
 static hal_data g_hmac;
 TEST_SETUP(get_hmac)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
+	g_plain_text.data = (unsigned char *)malloc(HASH_INPUT_SIZE);
+	ST_EXPECT_NEQ(NULL, g_plain_text.data);
+	memset(g_plain_text.data, 1, HASH_INPUT_SIZE);
+	g_plain_text.data_len = HASH_INPUT_SIZE;
 
-	g_plain_text.data = "01234567890123456789";
-    g_plain_text.data_len = 20;
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -95,7 +101,8 @@ TEST_TEARDOWN(get_hmac)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
+	hal_test_free_buffer(&g_plain_text);
 	hal_free_data(&g_hmac);
 
 	ST_END_TEST;
@@ -105,7 +112,7 @@ TEST_F(get_hmac)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_hmac(HAL_HMAC_SHA256, &g_plain_text, HAL_TEST_HMAC_KEY_SLOT, &g_hmac));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_hmac(HAL_HMAC_SHA256, &g_plain_text, HAL_TEST_HMAC_KEY_SLOT, &g_hmac));
 
 	ST_END_TEST;
 }
@@ -114,19 +121,25 @@ TEST_F(get_hmac)
  * Desc: Get RSA signagure
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_hash;
-static hal_data g_sign;
-#define HAL_TEST_RSA_HASH_LEN 100
+static hal_data g_rsa_hash;
+static hal_data g_rsa_signature;
+hal_rsa_mode g_rsa_mode;
+#define HAL_TEST_RSA_HASH_LEN 32
 #define HAL_TEST_RSA_KEY_SLOT 1
 TEST_SETUP(rsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
 
-	g_hash.data = (uint8_t *)malloc(HAL_TEST_RSA_HASH_LEN);
-	ST_EXPECT_NEQ(NULL, g_hash.data);
-	memset(g_hash.data, 0xa5, 100);
+	g_rsa_hash.data = (unsigned char *)malloc(HAL_TEST_RSA_HASH_LEN);
+	g_rsa_hash.data_len = HAL_TEST_RSA_HASH_LEN;
+	ST_EXPECT_NEQ(NULL, g_rsa_hash.data);
+
+	memset(g_rsa_hash.data, 0xa5, HAL_TEST_RSA_HASH_LEN);
+
+	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
+	g_rsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_END_TEST;
 }
@@ -135,11 +148,12 @@ TEST_TEARDOWN(rsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
 
-	/*  g_hash is not allocated from hal API so it'd be better to free here */
-	hal_test_free_buffer(&g_hash);
-	hal_free_data(&g_sign);
+	/*  g_rsa_hash is not allocated from hal API so it'd be better to free here */
+	hal_test_free_buffer(&g_rsa_hash);
+
+	hal_free_data(&g_rsa_signature);
 
 	ST_END_TEST;
 }
@@ -147,10 +161,9 @@ TEST_TEARDOWN(rsa_sign)
 TEST_F(rsa_sign)
 {
 	ST_START_TEST;
-	hal_rsa_mode mode;
-	mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
-	mode.hash_t = HAL_HASH_SHA256;
-	ST_EXPECT(0, hal_rsa_sign_md(mode, &g_hash, HAL_TEST_RSA_KEY_SLOT, &g_sign));
+
+
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_sign_md(g_rsa_mode, &g_rsa_hash, HAL_TEST_RSA_KEY_SLOT, &g_rsa_signature));
 
 	ST_END_TEST;
 }
@@ -163,18 +176,18 @@ TEST_SETUP(rsa_verify)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
 
-	g_hash.data = (uint8_t *)malloc(HAL_TEST_RSA_HASH_LEN);
-	ST_EXPECT_NEQ(NULL, g_hash.data);
+	g_rsa_hash.data = (unsigned char *)malloc(HAL_TEST_RSA_HASH_LEN);
+	g_rsa_hash.data_len = HAL_TEST_RSA_HASH_LEN;
+	ST_EXPECT_NEQ(NULL, g_rsa_hash.data);
 
-	memset(g_hash.data, 0xa5, HAL_TEST_RSA_HASH_LEN);
+	memset(g_rsa_hash.data, 0xa5, HAL_TEST_RSA_HASH_LEN);
 
-	hal_rsa_mode mode;
-	mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
-	mode.hash_t = HAL_HASH_SHA256;
+	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
+	g_rsa_mode.hash_t = HAL_HASH_SHA256;
 
-	ST_EXPECT(0, hal_rsa_sign_md(mode, &g_hash, HAL_TEST_RSA_KEY_SLOT, &g_sign));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_sign_md(g_rsa_mode, &g_rsa_hash, HAL_TEST_RSA_KEY_SLOT, &g_rsa_signature));
 
 	ST_END_TEST;
 }
@@ -183,12 +196,12 @@ TEST_TEARDOWN(rsa_verify)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_RSA_1024, HAL_TEST_RSA_KEY_SLOT));
 
-	/*  g_hash is not allocated from hal API so it'd be better to free here */
-	hal_test_free_buffer(&g_hash);
+	/*  g_rsa_hash is not allocated from hal API so it'd be better to free here */
+	hal_test_free_buffer(&g_rsa_hash);
 
-	hal_free_data(&g_sign);
+	hal_free_data(&g_rsa_signature);
 
 	ST_END_TEST;
 }
@@ -197,11 +210,7 @@ TEST_F(rsa_verify)
 {
 	ST_START_TEST;
 
-	hal_rsa_mode mode;
-	mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
-	mode.hash_t = HAL_HASH_SHA256;
-
-	ST_EXPECT(0, hal_rsa_verify_md(mode, &g_hash, &g_sign, HAL_TEST_RSA_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_verify_md(g_rsa_mode, &g_rsa_hash, &g_rsa_signature, HAL_TEST_RSA_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -211,21 +220,34 @@ TEST_F(rsa_verify)
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 #define HAL_TEST_ECC_KEY_SLOT 1
-#define HAL_TEST_ECC_HASH_LEN 100
-hal_ecdsa_mode mode;
+#define HAL_TEST_ECC_HASH_LEN 32
+hal_ecdsa_mode ecdsa_mode;
+static hal_data g_ecdsa_hash;
+static hal_data g_ecdsa_signature;
 TEST_SETUP(ecdsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
 
-	g_hash.data = (uint8_t *)malloc(HAL_TEST_ECC_HASH_LEN);
-	ST_EXPECT_NEQ(NULL, g_hash.data);
+	g_ecdsa_hash.data = (unsigned char *)malloc(HAL_TEST_ECC_HASH_LEN);
 
-	memset(g_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
+	g_ecdsa_hash.data_len = HAL_TEST_ECC_HASH_LEN;
+	ST_EXPECT_NEQ(NULL, g_ecdsa_hash.data);
 
-	mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	mode.hash_t = HAL_HMAC_SHA256;
+	memset(g_ecdsa_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
+
+	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
+	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+
+	ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdsa_mode.r);
+	ecdsa_mode.r->data = NULL;
+	ecdsa_mode.r->data_len = 0;
+	ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdsa_mode.s);
+	ecdsa_mode.s->data = NULL;
+	ecdsa_mode.s->data_len = 0;
 
 	ST_END_TEST;
 }
@@ -234,13 +256,12 @@ TEST_TEARDOWN(ecdsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
 
-	hal_test_free_buffer(&g_hash);
-
-	hal_free_data(&g_sign);
-	hal_free_data(mode.r);
-	hal_free_data(mode.s);
+	hal_test_free_buffer(&g_ecdsa_hash);
+	hal_free_data(&g_ecdsa_signature);
+	free(ecdsa_mode.r);
+	free(ecdsa_mode.s);
 
 	ST_END_TEST;
 }
@@ -249,7 +270,7 @@ TEST_F(ecdsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_ecdsa_sign_md(mode, &g_hash, HAL_TEST_ECC_KEY_SLOT, &g_sign));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdsa_sign_md(&g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &ecdsa_mode, &g_ecdsa_signature));
 
 	ST_END_TEST;
 }
@@ -262,18 +283,28 @@ TEST_F(ecdsa_sign)
 TEST_SETUP(ecdsa_verify)
 {
 	ST_START_TEST;
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
+	g_ecdsa_hash.data = (unsigned char *)malloc(HAL_TEST_ECC_HASH_LEN);
 
-	g_hash.data = (uint8_t *)malloc(HAL_TEST_ECC_HASH_LEN);
-	ST_EXPECT_NEQ(NULL, g_hash.data);
+	g_ecdsa_hash.data_len = HAL_TEST_ECC_HASH_LEN;
+	ST_EXPECT_NEQ(NULL, g_ecdsa_hash.data);
 
-	memset(g_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
+	memset(g_ecdsa_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
 
-	mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	mode.hash_t = HAL_HMAC_SHA256;
+	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
+	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
 
-	ST_EXPECT(0, hal_ecdsa_sign_md(mode, &g_hash, HAL_TEST_ECC_KEY_SLOT, &g_sign));
+	ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdsa_mode.r);
+	ecdsa_mode.r->data = NULL;
+	ecdsa_mode.r->data_len = 0;
+	ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdsa_mode.s);
+	ecdsa_mode.s->data = NULL;
+	ecdsa_mode.s->data_len = 0;
+
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdsa_sign_md(&g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &ecdsa_mode, &g_ecdsa_signature));
 
 	ST_END_TEST;
 }
@@ -281,12 +312,12 @@ TEST_SETUP(ecdsa_verify)
 TEST_TEARDOWN(ecdsa_verify)
 {
 	ST_START_TEST;
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
 
-	hal_test_free_buffer(&g_hash);
-	hal_free_data(mode.r);
-	hal_free_data(mode.s);
-	hal_free_data(&g_sign);
+	hal_test_free_buffer(&g_ecdsa_hash);
+	hal_free_data(&g_ecdsa_signature);
+	free(ecdsa_mode.r);
+	free(ecdsa_mode.s);
 
 	ST_END_TEST;
 }
@@ -295,7 +326,7 @@ TEST_F(ecdsa_verify)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_ecdsa_verify_md(mode, &g_hash, &g_sign, HAL_TEST_ECC_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdsa_verify_md(ecdsa_mode, &g_ecdsa_hash, &g_ecdsa_signature, HAL_TEST_ECC_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -338,12 +369,19 @@ TEST_SETUP(dh_generate_param)
 
 	g_dh_data.mode = HAL_DH_1024;
 	g_dh_data.G = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.G);
 	g_dh_data.G->data = g_buf_1024;
 	g_dh_data.G->data_len = sizeof(g_buf_1024);
 
 	g_dh_data.P = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.P);
 	g_dh_data.P->data = p_buf_1024;
 	g_dh_data.P->data_len = sizeof(p_buf_1024);
+
+	g_dh_data.pubkey = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.pubkey);
+	g_dh_data.pubkey->data = NULL;
+	g_dh_data.pubkey->data_len = 0;
 
 	ST_END_TEST;
 }
@@ -352,11 +390,10 @@ TEST_TEARDOWN(dh_generate_param)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_DH_1024, HAL_TEST_DH_X_SLOT));
-
 	free(g_dh_data.G);
 	free(g_dh_data.P);
 	hal_free_data(g_dh_data.pubkey);
+	free(g_dh_data.pubkey);
 
 	ST_END_TEST;
 }
@@ -365,7 +402,7 @@ TEST_F(dh_generate_param)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_dh_generate_param(HAL_TEST_DH_X_SLOT, &g_dh_data));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_dh_generate_param(HAL_TEST_DH_X_SLOT, &g_dh_data));
 
 	ST_END_TEST;
 }
@@ -374,37 +411,29 @@ TEST_F(dh_generate_param)
  * Desc: Compute DH shared secret
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_shared_secret_a;
-static hal_data g_shared_secret_b;
-static hal_dh_data g_dh_data_a;
-static hal_dh_data g_dh_data_b;
+static hal_data g_dh_shared_secret_a;
 TEST_SETUP(dh_compute_shared_secret)
 {
 	ST_START_TEST;
 
-	g_dh_data_a.mode = HAL_DH_1024;
+	g_dh_data.mode = HAL_DH_1024;
 
-	g_dh_data_a.G = (hal_data *)malloc(sizeof(hal_data));
-	g_dh_data_a.G->data = g_buf_1024;
-	g_dh_data_a.G->data_len = sizeof(g_buf_1024);
+	g_dh_data.G = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.G);
+	g_dh_data.G->data = g_buf_1024;
+	g_dh_data.G->data_len = sizeof(g_buf_1024);
 
-	g_dh_data_a.P = (hal_data *)malloc(sizeof(hal_data));
-	g_dh_data_a.P->data = p_buf_1024;
-	g_dh_data_a.P->data_len = sizeof(p_buf_1024);
+	g_dh_data.P = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.P);
+	g_dh_data.P->data = p_buf_1024;
+	g_dh_data.P->data_len = sizeof(p_buf_1024);
 
-	ST_EXPECT(0, hal_dh_generate_param(HAL_TEST_DH_X_SLOT, &g_dh_data_a));
+	g_dh_data.pubkey = (hal_data *)malloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_dh_data.pubkey);
+	g_dh_data.pubkey->data = NULL;
+	g_dh_data.pubkey->data_len = 0;
 
-	g_dh_data_b.mode = HAL_DH_1024;
-
-	g_dh_data_b.G = (hal_data *)malloc(sizeof(hal_data));
-	g_dh_data_b.G->data = g_buf_1024;
-	g_dh_data_b.G->data_len = sizeof(g_buf_1024);
-
-	g_dh_data_b.P = (hal_data *)malloc(sizeof(hal_data));
-	g_dh_data_b.P->data = p_buf_1024;
-	g_dh_data_b.P->data_len = sizeof(p_buf_1024);
-
-	ST_EXPECT(0, hal_dh_generate_param(HAL_TEST_DH_Y_SLOT, &g_dh_data_b));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_dh_generate_param(HAL_TEST_DH_X_SLOT, &g_dh_data));
 
 	ST_END_TEST;
 }
@@ -413,17 +442,12 @@ TEST_TEARDOWN(dh_compute_shared_secret)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_DH_1024, HAL_TEST_DH_X_SLOT));
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_DH_1024, HAL_TEST_DH_Y_SLOT));
+	free(g_dh_data.G);
+	free(g_dh_data.P);
+	hal_free_data(g_dh_data.pubkey);
+	free(g_dh_data.pubkey);
 
-	free(g_dh_data_a.G);	
-	free(g_dh_data_a.P);	
-	free(g_dh_data_b.G);	
-	free(g_dh_data_b.P);	
-	hal_free_data(g_dh_data_a.pubkey);
-	hal_free_data(g_dh_data_b.pubkey);
-	hal_free_data(&g_shared_secret_a);
-	hal_free_data(&g_shared_secret_b);
+	hal_free_data(&g_dh_shared_secret_a);
 
 	ST_END_TEST;
 }
@@ -432,11 +456,7 @@ TEST_F(dh_compute_shared_secret)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_dh_compute_shared_secret(&g_dh_data_a, HAL_TEST_DH_Y_SLOT, &g_shared_secret_a));
-	ST_EXPECT(0, hal_dh_compute_shared_secret(&g_dh_data_b, HAL_TEST_DH_X_SLOT, &g_shared_secret_b));
-
-	ST_EXPECT(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
-	ST_EXPECT(0, memcmp(&g_shared_secret_a.data, &g_shared_secret_b.data, g_shared_secret_a.data_len));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_dh_compute_shared_secret(&g_dh_data, HAL_TEST_DH_X_SLOT, &g_dh_shared_secret_a));
 
 	ST_END_TEST;
 }
@@ -450,19 +470,18 @@ TEST_F(dh_compute_shared_secret)
 #define HAL_TEST_ECDH_KEY_SLOT_B 2
 static hal_data g_shared_secret_a;
 static hal_data g_shared_secret_b;
-static hal_ecdh_data ecdh_a;
-static hal_ecdh_data ecdh_b;
+static hal_ecdh_data ecdh_a = {0, NULL, NULL};
+static hal_ecdh_data ecdh_b = {0, NULL, NULL};
 TEST_SETUP(ecdh_compute_shared_secret)
 {
 	ST_START_TEST;
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A, ecdh_a.pubkey_x));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B, ecdh_b.pubkey_x));
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A));
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B));
-	ST_EXPECT(0, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A, ecdh_a.pubkey_x));
-	ST_EXPECT(0, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B, ecdh_b.pubkey_x));
-
-	ST_EXPECT(0, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A, ecdh_b.pubkey_y));
-	ST_EXPECT(0, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B, ecdh_a.pubkey_y));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A, ecdh_b.pubkey_y));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B, ecdh_a.pubkey_y));
 
 	ecdh_a.curve = HAL_KEY_ECC_BRAINPOOL_P256R1;
 	ecdh_b.curve = HAL_KEY_ECC_BRAINPOOL_P256R1;
@@ -474,8 +493,8 @@ TEST_TEARDOWN(ecdh_compute_shared_secret)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A));
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_A));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECDH_KEY_SLOT_B));
 
 	hal_free_data(ecdh_a.pubkey_x);
 	hal_free_data(ecdh_b.pubkey_x);
@@ -490,11 +509,14 @@ TEST_TEARDOWN(ecdh_compute_shared_secret)
 TEST_F(ecdh_compute_shared_secret)
 {
 	ST_START_TEST;
+
 	// A<--B, B<--A
-	ST_EXPECT(0, hal_ecdh_compute_shared_secret(&ecdh_a, HAL_TEST_ECDH_KEY_SLOT_A, &g_shared_secret_a));
-	ST_EXPECT(0, hal_ecdh_compute_shared_secret(&ecdh_b, HAL_TEST_ECDH_KEY_SLOT_B, &g_shared_secret_b));
-	ST_EXPECT(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
-	ST_EXPECT(0, memcmp(&g_shared_secret_a.data, &g_shared_secret_b.data, g_shared_secret_a.data_len));
+	if (ecdh_a.pubkey_x != NULL && ecdh_b.pubkey_x != NULL) {
+		ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdh_compute_shared_secret(&ecdh_a, HAL_TEST_ECDH_KEY_SLOT_A, &g_shared_secret_a));
+		ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdh_compute_shared_secret(&ecdh_b, HAL_TEST_ECDH_KEY_SLOT_B, &g_shared_secret_b));
+		ST_EXPECT(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
+		ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, memcmp(&g_shared_secret_a.data, &g_shared_secret_b.data, g_shared_secret_a.data_len));
+	}
 
 	ST_END_TEST;
 }
@@ -539,7 +561,7 @@ TEST_TEARDOWN(set_certificate)
 	ST_START_TEST;
 
 	hal_test_free_buffer(&g_cert_in);
-	ST_EXPECT(0, hal_remove_certificate(HAL_TEST_CERT_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_certificate(HAL_TEST_CERT_SLOT));
 
 	ST_END_TEST;
 }
@@ -548,7 +570,7 @@ TEST_F(set_certificate)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
 
 	ST_END_TEST;
 }
@@ -565,7 +587,7 @@ TEST_SETUP(get_certificate)
 	ST_EXPECT_NEQ(NULL, g_cert_in.data);
 	memcpy(g_cert_in.data, test_crt, sizeof(test_crt));
 	g_cert_in.data_len = sizeof(test_crt);
-	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
 
 	ST_END_TEST;
 }
@@ -576,7 +598,7 @@ TEST_TEARDOWN(get_certificate)
 
 	hal_test_free_buffer(&g_cert_in);
 	hal_free_data(&g_cert_out);
-	ST_EXPECT(0, hal_remove_certificate(HAL_TEST_CERT_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_certificate(HAL_TEST_CERT_SLOT));
 
 	ST_END_TEST;
 }
@@ -585,8 +607,8 @@ TEST_F(get_certificate)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_certificate(HAL_TEST_CERT_SLOT, &g_cert_out));
-	ST_EXPECT(0, memcmp(g_cert_out.data, g_cert_in.data, g_cert_out.data_len));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_certificate(HAL_TEST_CERT_SLOT, &g_cert_out));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, memcmp(g_cert_out.data, g_cert_in.data, g_cert_out.data_len));
 
 	ST_END_TEST;
 }
@@ -603,7 +625,7 @@ TEST_SETUP(remove_certificate)
 	ST_EXPECT_NEQ(NULL, g_cert_in.data);
 	memcpy(g_cert_in.data, test_crt, sizeof(test_crt));
 	g_cert_in.data_len = sizeof(test_crt);
-	ST_EXPECT(0, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_certificate(HAL_TEST_CERT_SLOT, &g_cert_in));
 
 	ST_END_TEST;
 }
@@ -621,7 +643,7 @@ TEST_F(remove_certificate)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_certificate(HAL_TEST_CERT_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_certificate(HAL_TEST_CERT_SLOT));
 
 	ST_END_TEST;
 }
@@ -652,7 +674,7 @@ TEST_F(get_factorykey_data)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_factorykey_data(HAL_TEST_FACTORYKEY_DATA_SLOT, &g_factorykey_data));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_factorykey_data(HAL_TEST_FACTORYKEY_DATA_SLOT, &g_factorykey_data));
 
 	ST_END_TEST;
 }
@@ -669,7 +691,7 @@ ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute DH shared s
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret, dh_compute_shared_secret);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Set certificate", set_certificate, ecdh_compute_shared_secret);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get certificate", get_certificate, set_certificate);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Delete certificate", remove_certificate, get_certificate);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Remove certificate", remove_certificate, get_certificate);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factorykey data", get_factorykey_data, remove_certificate);
 ST_SET_PACK(hal_auth, get_factorykey_data);
 

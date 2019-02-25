@@ -7,7 +7,7 @@
 
 
 /*  Configuration */
-#define HAL_KEYMGR_TEST_TRIAL 5
+#define HAL_KEYMGR_TEST_TRIAL 10
 #define HAL_KEYMGR_TEST_LIMIT_TIME 100000000
 
 /*
@@ -34,7 +34,7 @@ TEST_SETUP(set_key)
 TEST_TEARDOWN(set_key)
 {
 	ST_START_TEST;
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 	hal_test_free_buffer(&g_aes_key);
 	ST_END_TEST;
 }
@@ -42,7 +42,7 @@ TEST_TEARDOWN(set_key)
 TEST_F(set_key)
 {
 	ST_START_TEST;
-	ST_EXPECT(0, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
 	ST_END_TEST;
 }
 
@@ -62,7 +62,7 @@ TEST_SETUP(get_key)
 
 	memset(g_aes_key.data, 0xa5, HAL_TEST_KEY_LEN);
 
-	ST_EXPECT(0, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
 
 	hal_test_free_buffer(&g_aes_key);
 
@@ -73,9 +73,11 @@ TEST_TEARDOWN(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_free_data(&g_aes_key));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_free_data(&g_aes_key));
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	hal_free_data(&g_aes_key);
+
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -84,7 +86,7 @@ TEST_F(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key));
 
 	ST_END_TEST;
 }
@@ -103,7 +105,7 @@ TEST_SETUP(remove_key)
 
 	memset(g_aes_key.data, 0xa5, HAL_TEST_KEY_LEN);
 
-	ST_EXPECT(0, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
 
 	ST_END_TEST;
 }
@@ -120,7 +122,7 @@ TEST_TEARDOWN(remove_key)
 TEST_F(remove_key)
 {
 	ST_START_TEST;
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_128, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 	ST_END_TEST;
 }
 
@@ -139,7 +141,7 @@ TEST_TEARDOWN(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -148,7 +150,7 @@ TEST_F(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }

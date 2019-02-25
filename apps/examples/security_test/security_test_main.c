@@ -75,9 +75,21 @@ int security_test_main(int argc, char *argv[])
 {
 	int res = 0;
 	res = hal_keymgr_test();
+	if (res < 0) {
+		printf("hal key manager test fail\n");
+	}
 	res = hal_auth_test();
+	if (res < 0) {
+		printf("hal authenticate test fail\n");
+	}
 	res = hal_ss_test();
+	if (res < 0) {
+		printf("hal secure storage test fail\n");
+	}
 	res = hal_crypto_test();
+	if (res < 0) {
+		printf("hal crypto test fail\n");
+	}
 
 	return 0;
 }
