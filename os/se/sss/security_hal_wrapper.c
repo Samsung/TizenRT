@@ -458,6 +458,7 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 
 	rsa_sign.signature = sig_out;
 	rsa_sign.signature_byte_len = 1024;
+	rsa_sign.salt_byte_len = mode.salt_byte_len;
 
 	ISP_CHECKBUSY();
 	ret = isp_rsa_sign_md_securekey(&rsa_sign, hash->data, hash->data_len, key_idx);
@@ -474,8 +475,6 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 	sign->data = (unsigned char *)malloc(rsa_sign.signature_byte_len);
 	memcpy(sign->data, rsa_sign.signature, rsa_sign.signature_byte_len);
 	sign->data_len = rsa_sign.signature_byte_len;
-	sign->priv = (unsigned int *)malloc(sizeof(unsigned int));
-	memcpy(sign->priv, &rsa_sign.salt_byte_len, sizeof(unsigned int));
 
 	return HAL_SUCCESS;
 }
@@ -490,7 +489,7 @@ int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_
 
 	rsa_sign.signature = (unsigned char *)sign->data;
 	rsa_sign.signature_byte_len = sign->data_len;
-	rsa_sign.salt_byte_len = *((unsigned int *)sign->priv);
+	rsa_sign.salt_byte_len = mode.salt_byte_len;
 
 	if (mode.rsa_a == HAL_RSASSA_PKCS1_PSS_MGF1) {
 		padding = 1;
@@ -518,10 +517,6 @@ int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_
 	if (ret != 0) {
 		isp_clear(0);
 		printf("ISP failed (%zu)\n", ret);
-		printf("################################################\n");
-		printf("sig: %x(%d, salt %d), hash: %x(%d), padding %d\n", rsa_sign.signature, rsa_sign.signature_byte_len, rsa_sign.salt_byte_len,
-				hash->data, hash->data_len, padding);
-		printf("################################################\n");
 		return HAL_FAIL;
 	}
 
@@ -1012,7 +1007,7 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 	return HAL_SUCCESS;
 }
 
-int hal_rsa_encrypt(hal_data *dec_data, uint32_t key_idx, hal_data *enc_data)
+int hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *enc_data)
 {
 	uint32_t ret;
 	unsigned char output[MAX_BUF_SIZE];
@@ -1030,7 +1025,7 @@ int hal_rsa_encrypt(hal_data *dec_data, uint32_t key_idx, hal_data *enc_data)
 	return HAL_SUCCESS;
 }
 
-int hal_rsa_decrypt(hal_data *enc_data, uint32_t key_idx, hal_data *dec_data)
+int hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *dec_data)
 {
 	uint32_t ret;
 	unsigned char output[MAX_BUF_SIZE];

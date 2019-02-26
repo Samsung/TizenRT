@@ -158,6 +158,7 @@ typedef struct _hal_data {
 typedef struct _hal_rsa_mode {
 	hal_rsa_algo rsa_a;
 	hal_hash_type hash_t;
+	uint32_t salt_byte_len;
 } hal_rsa_mode;
 
 typedef struct _hal_aes_param {
@@ -454,7 +455,7 @@ int hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_
  * TizenRT SEE API: int see_rsa_encryption(unsigned int key_index, unsigned int pad_type, unsigned char *output, unsigned int *outlen, unsigned char *input, unsigned int inlen)
  * ISP: int isp_rsa_encrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
  */
-int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
+int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
 
 /*
  * Reference
@@ -463,7 +464,7 @@ int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_da
  * TizenRT SEE API:
  * ISP:
  */
-int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
 
 /**

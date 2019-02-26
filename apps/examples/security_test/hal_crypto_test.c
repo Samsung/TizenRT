@@ -112,6 +112,7 @@ TEST_F(aes_decrypt)
  */
 static hal_data g_rsa_input;
 static hal_data g_rsa_output;
+static hal_rsa_mode g_rsa_mode;
 TEST_SETUP(rsa_encrypt)
 {
 	ST_START_TEST;
@@ -121,6 +122,10 @@ TEST_SETUP(rsa_encrypt)
 	ST_EXPECT_NEQ(NULL, g_rsa_input.data);
 	memset(g_rsa_input.data, 1, HAL_TEST_RSA_DATA_LEN);
 	g_rsa_input.data_len = HAL_TEST_RSA_DATA_LEN;
+
+	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
+	g_rsa_mode.hash_t = HAL_HASH_SHA256;
+	g_rsa_mode.salt_byte_len = 64;
 
 	ST_END_TEST;
 }
@@ -140,7 +145,7 @@ TEST_F(rsa_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_rsa_encrypt(&g_rsa_input, HAL_TEST_KEY_SLOT, &g_rsa_output));
+	ST_EXPECT(0, hal_rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
 
 	ST_END_TEST;
 }
@@ -150,16 +155,22 @@ TEST_F(rsa_encrypt)
  * Refered https://developer.artik.io/documentation/security-api/see-encdec-test_8c-example.html
  */
 static hal_data g_rsa_final;
+static hal_rsa_mode g_rsa_mode;
 TEST_SETUP(rsa_decrypt)
 {
 	ST_START_TEST;
-	
+
 	ST_EXPECT(0, hal_generate_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
 	g_rsa_input.data = (unsigned char *)malloc(HAL_TEST_RSA_DATA_LEN);
 	ST_EXPECT_NEQ(NULL, g_rsa_input.data);
 	memset(g_rsa_input.data, 1, HAL_TEST_RSA_DATA_LEN);
 	g_rsa_input.data_len = HAL_TEST_RSA_DATA_LEN;
-	ST_EXPECT(0, hal_rsa_encrypt(&g_rsa_input, HAL_TEST_KEY_SLOT, &g_rsa_output));
+
+	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
+	g_rsa_mode.hash_t = HAL_HASH_SHA256;
+	g_rsa_mode.salt_byte_len = 64;
+
+	ST_EXPECT(0, hal_rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
 
 	ST_END_TEST;
 }
@@ -180,7 +191,7 @@ TEST_F(rsa_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT(0, hal_rsa_decrypt(&g_rsa_output, HAL_TEST_KEY_SLOT, &g_rsa_final));
+	ST_EXPECT(0, hal_rsa_decrypt(&g_rsa_output, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_final));
 	ST_EXPECT(0, memcmp(g_rsa_input.data, g_rsa_final.data, g_rsa_final.data_len));
 
 	ST_END_TEST;

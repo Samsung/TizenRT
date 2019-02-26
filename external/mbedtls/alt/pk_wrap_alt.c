@@ -187,21 +187,27 @@ static int rsa_get_mode(mbedtls_md_type_t md_alg, hal_rsa_mode *rsa_mode)
 		break;
 	case MBEDTLS_MD_MD5:
 		rsa_mode->hash_t = HAL_HASH_MD5;
+		rsa_mode->salt_byte_len = 32;
 		break;
 	case MBEDTLS_MD_SHA1:
 		rsa_mode->hash_t = HAL_HASH_SHA1;
+		rsa_mode->salt_byte_len = 32;
 		break;
 	case MBEDTLS_MD_SHA224:
 		rsa_mode->hash_t = HAL_HASH_SHA224;
+		rsa_mode->salt_byte_len = 32;
 		break;
 	case MBEDTLS_MD_SHA256:
 		rsa_mode->hash_t = HAL_HASH_SHA256;
+		rsa_mode->salt_byte_len = 32;
 		break;
 	case MBEDTLS_MD_SHA384:
 		rsa_mode->hash_t = HAL_HASH_SHA384;
+		rsa_mode->salt_byte_len = 64;
 		break;
 	case MBEDTLS_MD_SHA512:
 		rsa_mode->hash_t = HAL_HASH_SHA512;
+		rsa_mode->salt_byte_len = 64;
 		break;
 	default:
 		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
@@ -434,15 +440,22 @@ static int rsa_decrypt_wrap( void *ctx,
                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
 	int ret;
-    unsigned int key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
-	unsigned int  padding = ( (mbedtls_rsa_context *) ctx )->padding;
+	hal_rsa_mode rsa_mode;
+	unsigned int key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
 
-	if( ctx == NULL || padding != MBEDTLS_RSA_PKCS_V15 ) {
-		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	if( ((mbedtls_rsa_context *) ctx)->padding == MBEDTLS_RSA_PKCS_V15 ) {
+		rsa_mode.rsa_a = HAL_RSASSA_PKCS1_V1_5;
+	} else {
+		rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
 	}
 
-    if( ilen != mbedtls_rsa_get_len( (mbedtls_rsa_context *)ctx ) ) {
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+	ret = rsa_get_mode(( (mbedtls_rsa_context *) ctx )->hash_id, &rsa_mode);
+	if( ret ) {
+		return ret;
+	}
+
+	if( ilen != mbedtls_rsa_get_len( (mbedtls_rsa_context *)ctx ) ) {
+		return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 	}
 
 	hal_data enc_data;
@@ -451,7 +464,7 @@ static int rsa_decrypt_wrap( void *ctx,
 	enc_data.data = (unsigned char *)input;
 	enc_data.data_len = ilen;
 
-	ret = hal_rsa_decrypt(&enc_data, key_idx, &dec_data);
+	ret = hal_rsa_decrypt(&enc_data, &rsa_mode, key_idx, &dec_data);
 
 	if (ret != HAL_SUCCESS) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
@@ -460,25 +473,31 @@ static int rsa_decrypt_wrap( void *ctx,
 	output = dec_data.data;
 	*olen = dec_data.data_len;
 
-    return( 0 );
+	return( 0 );
 }
 
 static int rsa_encrypt_wrap( void *ctx, const unsigned char *input, size_t ilen,
-			unsigned char *output, size_t *olen, size_t osize,
-			int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+		unsigned char *output, size_t *olen, size_t osize,
+		int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
 	int ret;
 	unsigned char *pubkey_buf = NULL;
 	unsigned int pubkey_buflen = MBEDTLS_MAX_BUF_SIZE_ALT;
-	unsigned int key_idx;
 	hal_key_type key_type;
-	unsigned int  padding = ( (mbedtls_rsa_context *) ctx )->padding;
+	hal_rsa_mode rsa_mode;
+	unsigned int key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
 
-	if( ctx == NULL || padding != MBEDTLS_RSA_PKCS_V15 ) {
-		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	if( ((mbedtls_rsa_context *) ctx)->padding == MBEDTLS_RSA_PKCS_V15 ) {
+		rsa_mode.rsa_a = HAL_RSASSA_PKCS1_V1_5;
+	}
+	else {
+		rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
 	}
 
-	key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
+	ret = rsa_get_mode(((mbedtls_rsa_context *) ctx)->hash_id, &rsa_mode);
+	if( ret ) {
+		return ret;
+	}
 
 	/*
 	 * 1. Encrypt publickey for using HW accelator.
@@ -539,7 +558,7 @@ static int rsa_encrypt_wrap( void *ctx, const unsigned char *input, size_t ilen,
 	dec_data.data = (unsigned char *)input;
 	dec_data.data_len = ilen;
 
-	ret = hal_rsa_encrypt(&dec_data, key_idx, &enc_data);
+	ret = hal_rsa_encrypt(&dec_data, &rsa_mode, key_idx, &enc_data);
 
 	if (ret != HAL_SUCCESS) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
