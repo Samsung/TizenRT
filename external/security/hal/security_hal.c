@@ -52,7 +52,14 @@ int hal_free_data(_IN_ hal_data *data)
 
 int hal_get_status(void)
 {
-	return HAL_SUCCESS;
+	return 0;
+}
+
+int hal_init(_IN_ hal_init_param *params)
+{
+	VH_ENTER;
+
+	return 0;
 }
 
 /**

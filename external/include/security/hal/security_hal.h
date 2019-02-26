@@ -149,6 +149,11 @@ typedef enum {
 } hal_key_type;
 
 /* Structure */
+typedef struct _hal_init_param {
+	uint32_t i2c_port;
+	uint32_t gpio;
+} hal_init_param;
+
 typedef struct _hal_data {
 	void *data;
 	uint32_t data_len;
@@ -209,7 +214,7 @@ typedef struct _hal_ss_info {
  * ISP:
  * NOTE: Initialize secure channel
  */
-int hal_init(void);
+int hal_init(_IN_ hal_init_param *params);
 
 /*
  * Reference

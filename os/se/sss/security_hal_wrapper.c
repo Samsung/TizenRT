@@ -40,7 +40,7 @@
 /**
  * Common
  */
-int hal_init(void)
+int hal_init(hal_init_param *params)
 {
 	return HAL_NOT_SUPPORTED;
 }
