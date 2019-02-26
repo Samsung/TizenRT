@@ -888,12 +888,12 @@ int hal_remove_certificate(uint32_t cert_idx)
 	return HAL_NOT_SUPPORTED;
 }
 
-int hal_get_factorykey_data(uint32_t key_idx, hal_data *data)
+int hal_get_factory_key(uint32_t key_idx, hal_data *key)
 {
 	uint32_t ret;
 	if (key_idx == FACTORYKEY_ARTIK_DEVICE) {
 		ISP_CHECKBUSY();
-		ret = isp_get_factorykey_data(data->data, &data->data_len, key_idx);
+		ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
 		if (ret != 0) {
 			isp_clear(0);
 			printf("ISP failed (%zu)\n", ret);
@@ -905,6 +905,30 @@ int hal_get_factorykey_data(uint32_t key_idx, hal_data *data)
 
 	return HAL_SUCCESS;
 }
+
+int hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
+{
+	uint32_t ret;
+	if (cert_idx == FACTORYKEY_ARTIK_CERT) {
+		ISP_CHECKBUSY();
+		ret = isp_get_factorykey_data(cert->data, &cert->data_len, cert_idx);
+		if (ret != 0) {
+			isp_clear(0);
+			printf("ISP failed (%zu)\n", ret);
+			return HAL_FAIL;
+		}
+	} else {
+		return HAL_NOT_SUPPORTED;
+	}
+
+	return HAL_SUCCESS;
+}
+
+int hal_get_factory_data(uint32_t data_idx, hal_data *data)
+{
+	return HAL_NOT_SUPPORTED;
+}
+
 
 /**
  * Crypto

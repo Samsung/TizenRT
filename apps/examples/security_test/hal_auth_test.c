@@ -654,29 +654,40 @@ TEST_F(remove_certificate)
  * Desc: Get factorykey data
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_factorykey_data;
-#define HAL_TEST_FACTORYKEY_DATA_SLOT 5
-TEST_SETUP(get_factorykey_data)
+static hal_data g_factory_key;
+static hal_data g_factory_cert;
+static hal_data g_factory_data;
+
+#define HAL_TEST_FACTORY_KEY_SLOT 3
+#define HAL_TEST_FACTORY_CERT_SLOT 4
+#define HAL_TEST_FACTORY_DATA_SLOT 5
+
+
+TEST_SETUP(get_factory)
 {
 	ST_START_TEST;
 
 	ST_END_TEST;
 }
 
-TEST_TEARDOWN(get_factorykey_data)
+TEST_TEARDOWN(get_factory)
 {
 	ST_START_TEST;
 
-	hal_free_data(&g_factorykey_data);
+	hal_free_data(&g_factory_key);
+	hal_free_data(&g_factory_cert);
+	hal_free_data(&g_factory_data);
 
 	ST_END_TEST;
 }
 
-TEST_F(get_factorykey_data)
+TEST_F(get_factory)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_factorykey_data(HAL_TEST_FACTORYKEY_DATA_SLOT, &g_factorykey_data));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_factory_key(HAL_TEST_FACTORY_KEY_SLOT, &g_factory_key));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_factory_cert(HAL_TEST_FACTORY_CERT_SLOT, &g_factory_cert));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_factory_data(HAL_TEST_FACTORY_DATA_SLOT, &g_factory_data));
 
 	ST_END_TEST;
 }
@@ -694,8 +705,8 @@ ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute ECDH shared
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Set certificate", set_certificate, ecdh_compute_shared_secret);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get certificate", get_certificate, set_certificate);
 ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Remove certificate", remove_certificate, get_certificate);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factorykey data", get_factorykey_data, remove_certificate);
-ST_SET_PACK(hal_auth, get_factorykey_data);
+ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factory key/cert/data", get_factory, remove_certificate);
+ST_SET_PACK(hal_auth, get_factory);
 
 int hal_auth_test(void)
 {

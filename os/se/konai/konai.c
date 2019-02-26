@@ -146,7 +146,23 @@ int hal_remove_certificate(_IN_ uint32_t cert_idx)
 }
 
 static hal_data factory_s = {"factory", 7, NULL};
-int hal_get_factorykey_data(_IN_ uint32_t key_idx, _IN_ hal_data *data)
+int hal_get_factory_key(_IN_ uint32_t key_idx, _IN_ hal_data *key)
+{
+	key->data = (unsigned char *)malloc(7);
+	memcpy(key->data, factory_s.data, 7);
+
+	return 0;
+}
+
+int hal_get_factory_cert(_IN_ uint32_t cert_idx, _IN_ hal_data *cert)
+{
+	cert->data = (unsigned char *)malloc(7);
+	memcpy(cert->data, factory_s.data, 7);
+
+	return 0;
+}
+
+int hal_get_factory_data(_IN_ uint32_t data_idx, _IN_ hal_data *data)
 {
 	data->data = (unsigned char *)malloc(7);
 	memcpy(data->data, factory_s.data, 7);

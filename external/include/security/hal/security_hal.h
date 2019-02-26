@@ -423,12 +423,30 @@ int hal_remove_certificate(_IN_ uint32_t cert_idx);
 
 /*
  * Reference
- * Desc: Get factorykey data
+ * Desc: Get factory key
  * Artik SEE API: -
  * TizenRT SEE API: int see_get_publickey(unsigned char *key_der, unsigned int *key_len)
  * ISP: int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
  */
-int hal_get_factorykey_data(_IN_ uint32_t key_idx, _IN_ hal_data *data);
+
+int hal_get_factory_key(_IN_ uint32_t key_idx, _IN_ hal_data *key);
+/*
+ * Reference
+ * Desc: Get factory cert
+ * Artik SEE API: -
+ * TizenRT SEE API:
+ * ISP: int isp_get_factorykey2_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
+ */
+int hal_get_factory_cert(_IN_ uint32_t cert_idx, _IN_ hal_data *cert);
+
+/*
+ * Reference
+ * Desc: Get factory data
+ * Artik SEE API: -
+ * TizenRT SEE API:
+ * ISP: int isp_get_factorykey2_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
+ */
+int hal_get_factory_data(_IN_ uint32_t data_idx, _IN_ hal_data *data);
 
 
 /**
