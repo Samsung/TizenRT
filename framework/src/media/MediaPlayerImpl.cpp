@@ -518,6 +518,43 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 	return notifySync();
 }
 
+player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	player_result_t ret = PLAYER_OK;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer setStreamInfo\n");
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::setStreamInfo, shared_from_this(), stream_info);
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret)
+{
+	if (mCurState != PLAYER_STATE_IDLE) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
+		ret = PLAYER_ERROR_INVALID_STATE;
+		return notifySync();
+	}
+
+	if (!stream_info) {
+		meddbg("MediaPlayer setPlayerStreamInfo fail : invalid argument. stream_info should not be nullptr\n");
+		ret = PLAYER_ERROR_INVALID_PARAMETER;
+		return notifySync();
+	}
+	mStreamInfo = stream_info;
+	notifySync();
+}
+
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	player_result_t ret = PLAYER_OK;
