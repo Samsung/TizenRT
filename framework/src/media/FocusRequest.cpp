@@ -19,9 +19,9 @@
 #include <media/FocusRequest.h>
 
 namespace media {
-std::string FocusRequest::getId()
+std::shared_ptr<stream_info_t> FocusRequest::getStreamInfo()
 {
-	return std::to_string(mStreamInfo->id);
+	return mStreamInfo;
 }
 
 std::shared_ptr<FocusChangeListener> FocusRequest::getListener()
