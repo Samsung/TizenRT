@@ -59,10 +59,14 @@ else
 ifeq ($(CONFIG_ARCH_CORTEXM4),y)   # Cortex-M4 is ARMv7E-M
 ARCH_SUBDIR = armv7-m
 else
+ifeq ($(CONFIG_ARCH_CORTEXM7),y)   # Cortex-M4 is ARMv7E-M
+ARCH_SUBDIR = armv7-m
+else
 ifeq ($(CONFIG_ARCH_CORTEXR4),y)   # Cortex-R4 is ARMv7-R
 ARCH_SUBDIR = armv7-r
 else
 ARCH_SUBDIR = arm
+endif
 endif
 endif
 endif
@@ -124,6 +128,11 @@ BIN  = libarch$(LIBEXT)
 
 LDFLAGS += $(ARCHSCRIPT)
 
+# Override in Make.defs if linker is not 'ld'
+
+LDSTARTGROUP ?= --start-group
+LDENDGROUP ?= --end-group
+
 EXTRA_LIBS ?=
 EXTRA_LIBPATHS ?=
 LINKLIBS ?=
@@ -165,7 +174,7 @@ VPATH += $(ARCH_SUBDIR)
 
 all: $(HEAD_OBJ) $(BIN)
 
-.PHONY: board/libboard$(LIBEXT)
+.PHONY: board$(DELIM)libboard$(LIBEXT)
 
 $(AOBJS) $(UAOBJS) $(HEAD_OBJ): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -179,7 +188,7 @@ $(BIN) $(KBIN): $(OBJS)
 $(UBIN): $(UOBJS)
 	$(call ARCHIVE, $@, $(UOBJS))
 
-board/libboard$(LIBEXT):
+board$(DELIM)libboard$(LIBEXT):
 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
 
 $(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)

@@ -119,6 +119,18 @@ ifeq ($(filter y, \
   CONFIG_ARMV7M_TOOLCHAIN ?= GNU_EABIW
 endif
 
+ifeq ($(filter y, \
+      $(CONFIG_ARMV7M_TOOLCHAIN_CLANGL) \
+    ),y)
+  CONFIG_ARMV7M_TOOLCHAIN ?= CLANGL
+endif
+
+ifeq ($(filter y, \
+      $(CONFIG_ARMV7M_TOOLCHAIN_CLANGW) \
+    ),y)
+  CONFIG_ARMV7M_TOOLCHAIN ?= CLANGW
+endif
+
 #
 # Supported toolchains
 #
@@ -141,6 +153,40 @@ ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
   MAXOPTIMIZATION := $(CONFIG_DEBUG_OPTLEVEL)
 endif
 
+# Parametrization for ARCHCPUFLAGS
+
+ifeq ($(CONFIG_ARCH_CORTEXM4),y)
+  TOOLCHAIN_ARM7EM   := y
+  TOOLCHAIN_MCPU     := -mcpu=cortex-m4
+  TOOLCHAIN_MTUNE    := -mtune=cortex-m4
+  TOOLCHAIN_MARCH    := -march=armv7e-m
+  ifeq ($(CONFIG_ARCH_FPU),y)
+    TOOLCHAIN_MFLOAT := -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+  else
+    TOOLCHAIN_MFLOAT := -mfloat-abi=soft
+  endif
+else ifeq ($(CONFIG_ARCH_CORTEXM7),y)
+  TOOLCHAIN_ARM7EM   := y
+  TOOLCHAIN_MCPU     := -mcpu=cortex-m7
+  TOOLCHAIN_MTUNE    := -mtune=cortex-m7
+  TOOLCHAIN_MARCH    := -march=armv7e-m
+  ifeq ($(CONFIG_ARCH_FPU),y)
+  ifeq ($(CONFIG_ARCH_DPFPU),y)
+    TOOLCHAIN_MFLOAT := -mfpu=fpv5-d16 -mfloat-abi=hard
+  else
+    TOOLCHAIN_MFLOAT := -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+  endif
+  else
+    TOOLCHAIN_MFLOAT := -mfloat-abi=soft
+  endif
+else # ifeq ($(CONFIG_ARCH_CORTEXM3),y)
+  TOOLCHAIN_ARM7EM   := n
+  TOOLCHAIN_MCPU     := -mcpu=cortex-m3
+  TOOLCHAIN_MTUNE    := -mtune=cortex-m3
+  TOOLCHAIN_MARCH    := -march=armv7-m
+  TOOLCHAIN_MFLOAT   := -mfloat-abi=soft
+endif
+
 # Atollic toolchain under Windows
 
 ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),ATOLLIC)
@@ -161,7 +207,7 @@ ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),ATOLLIC)
   endif
 endif
 
-# NuttX buildroot under Linux or Cygwin
+# TinyARA buildroot under Linux or Cygwin
 
 ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),BUILDROOT)
 ifeq ($(CONFIG_ARMV7M_OABI_TOOLCHAIN),y)
@@ -284,6 +330,8 @@ ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),GNU_EABIL)
     endif
   else ifeq ($(CONFIG_ARCH_CORTEXM3),y)
     ARCHCPUFLAGS = -mcpu=cortex-m3 -mthumb -mfloat-abi=soft
+  else ifeq ($(CONFIG_ARCH_CORTEXM7),y)
+    ARCHCPUFLAGS = $(TOOLCHAIN_MCPU) -mthumb $(TOOLCHAIN_MFLOAT)
   endif
 endif
 
@@ -298,11 +346,34 @@ ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),GNU_EABIW)
       ARCHCPUFLAGS = -mcpu=cortex-m4 -mthumb -march=armv7e-m -mfpu=fpv4-sp-d16 -mfloat-abi=hard
     else
       ARCHCPUFLAGS = -mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=soft
-    endif
+  endif
   else ifeq ($(CONFIG_ARCH_CORTEXM3),y)
     ARCHCPUFLAGS = -mcpu=cortex-m3 -mthumb -mfloat-abi=soft
+  else ifeq ($(CONFIG_ARCH_CORTEXM7),y)
+    ARCHCPUFLAGS = $(TOOLCHAIN_MCPU) -mthumb $(TOOLCHAIN_MFLOAT)
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
+    WINTOOL = y
+  endif
+endif
+
+# Clang toolchain on OS X, Linux or any typical Posix system
+
+ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),CLANGL)
+  CROSSDEV ?= arm-none-eabi-
+  ARCROSSDEV ?= arm-none-eabi-
+  MAXOPTIMIZATION ?= -Os
+  ARCHCPUFLAGS = $(TOOLCHAIN_MCPU) -mthumb $(TOOLCHAIN_MFLOAT)
+endif
+
+# Clang toolchain under Windows
+
+ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),CLANGW)
+  CROSSDEV ?= arm-none-eabi-
+  ARCROSSDEV ?= arm-none-eabi-
+  MAXOPTIMIZATION ?= -Os
+  ARCHCPUFLAGS = $(TOOLCHAIN_MCPU) -mthumb $(TOOLCHAIN_MFLOAT)
+  ifeq ($(CONFIG_WINDOWS_CYGWIN),y)
     WINTOOL = y
   endif
 endif
@@ -315,5 +386,5 @@ ifeq ($(CONFIG_ARMV7M_TOOLCHAIN),RAISONANCE)
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y
   endif
-  ARCHCPUFLAGS = -mcpu=cortex-m3 -mthumb -mfloat-abi=soft
+  ARCHCPUFLAGS = $(TOOLCHAIN_MCPU) -mthumb $(TOOLCHAIN_MFLOAT)
 endif

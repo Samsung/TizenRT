@@ -4,6 +4,7 @@
 #
 
 if ARCH_ARM
+
 choice
 	prompt "ARM chip selection"
 	default ARCH_CHIP_S5J
@@ -45,6 +46,19 @@ config ARCH_CHIP_STM32
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
 		STMicro STM32 architectures (ARM Cortex-M3/4).
+		
+config ARCH_CHIP_IMXRT
+	bool "NXP/Freescale iMX.RT"
+	select ARCH_CORTEXM7
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_RAMFUNCS
+	select ARCH_HAVE_TICKLESS
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_SPI_CS_CONTROL
+	select ARM_HAVE_MPU_UNIFIED
+	select ARMV7M_HAVE_STACKCHECK
+	---help---
+		NXP i.MX RT (ARM Cortex-M7) architectures
 
 endchoice
 
@@ -54,6 +68,7 @@ config ARCH_CHIP
 	default "tiva"      if ARCH_CHIP_LM
 	default "bcm4390x"	if ARCH_CHIP_BCM4390X
 	default "stm32"		if ARCH_CHIP_STM32
+	default "imxrt"		if ARCH_CHIP_IMXRT
 
 comment "ARM Options"
 
@@ -71,6 +86,20 @@ config ARCH_CORTEXM4
 	select ARCH_HAVE_RAMVECTORS
 	select ARCH_HAVE_HIPRI_INTERRUPT
 
+config ARCH_CORTEXM7
+	bool
+	default n
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_LAZYFPU
+	select ARCH_HAVE_HIPRI_INTERRUPT
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
+	select ARCH_HAVE_HARDFAULT_DEBUG
+	select ARCH_HAVE_MEMFAULT_DEBUG
+
 config ARCH_CORTEXR4
 	bool
 	default n
@@ -80,20 +109,8 @@ config ARCH_CORTEXR4
 
 config ARCH_FAMILY
 	string
-	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4
+	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 	default "armv7-r"	if ARCH_CORTEXR4
-
-config ARMV7M_USEBASEPRI
-	bool "Use BASEPRI Register"
-	default n
-	depends on ARCH_CORTEXM3 || ARCH_CORTEXM4
-	---help---
-		Use the BASEPRI register to enable and disable interrupts. By
-		default, the PRIMASK register is used for this purpose. This
-		usually results in hardfaults when supervisor calls are made.
-		Though, these hardfaults are properly handled by the RTOS, the
-		hardfaults can confuse some debuggers. With the BASEPRI
-		register, these hardfaults, will be avoided.
 
 config ARCH_HAVE_CMNVECTOR
 	bool
@@ -112,6 +129,13 @@ config ARCH_HAVE_FPU
 	bool
 	default n
 
+config ARCH_HAVE_DPFPU
+	bool
+	default n
+
+config ARCH_HAVE_LAZYFPU
+	bool
+
 config ARCH_FPU
 	bool "FPU support"
 	default y
@@ -119,6 +143,22 @@ config ARCH_FPU
 	---help---
 		Build in support for the ARM Cortex-M4 Floating Point Unit (FPU).
 		Check your chip specifications first; not all Cortex-M4 chips support the FPU.
+
+config ARCH_DPFPU
+	bool "Double precision FPU support"
+	default y
+	depends on ARCH_FPU && ARCH_HAVE_DPFPU
+	---help---
+		Enable toolchain support for double precision (64-bit) floating
+		point if both the toolchain and the hardware support it.
+
+config ARM_HAVE_MPU_UNIFIED
+	bool
+	default n
+	---help---
+		Automatically selected to indicate that the CPU supports a
+		unified MPU for both instruction and data addresses.
+
 
 config ARMV7M_MPU
 	bool "MPU support"
@@ -131,7 +171,8 @@ config ARMV7M_MPU
 
 config ARMV7M_MPU_NREGIONS
 	int "Number of MPU regions"
-	default 8
+	default 16 if ARCH_CORTEXM7
+	default 8 if !ARCH_CORTEXM7
 	depends on ARMV7M_MPU
 	---help---
 		This is the number of protection regions supported by the MPU.
@@ -179,7 +220,7 @@ config ARCH_DABORTSTACK
 		will be used during data abort handling. Recommended data abort stack
 		size is 1K.
 
-if ARCH_CORTEXM3 || ARCH_CORTEXM4
+if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 source arch/arm/src/armv7-m/Kconfig
 endif
 if ARCH_CORTEXR4
@@ -196,6 +237,9 @@ source arch/arm/src/bcm4390x/Kconfig
 endif
 if ARCH_CHIP_STM32
 source arch/arm/src/stm32/Kconfig
+endif
+if ARCH_CHIP_IMXRT
+source arch/arm/src/imxrt/Kconfig
 endif
 
 endif
