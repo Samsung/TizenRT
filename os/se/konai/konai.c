@@ -55,7 +55,7 @@ int hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *k
 	return 0;
 }
 
-int hal_remove_key(_IN_ hal_key_type key_type, _IN_ uint32_t key_idx)
+int hal_remove_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx)
 {
 	return 0;
 }
@@ -83,7 +83,7 @@ int hal_get_hmac(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ uint32_t ke
 	return 0;
 }
 
-int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *md)
+int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign)
 {
 	return 0;
 }
@@ -93,7 +93,7 @@ int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data
 	return 0;
 }
 
-int hal_ecdsa_sign_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign)
+int hal_ecdsa_sign_md(_IN_ hal_data *hash, _IN_ uint32_t key_idx, _INOUT_ hal_ecdsa_mode *mode, _OUT_ hal_data *sign)
 {
 	return 0;
 }
@@ -108,7 +108,7 @@ int hal_dh_generate_param(_IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param)
 	return 0;
 }
 
-int hal_dh_compute_shared_secret(_IN_ hal_dh_data *param, _IN_ uint32_t dh_idx, _OUT_ hal_data *shared_secret)
+int hal_dh_compute_shared_secret(_IN_ hal_dh_data *dh_param, _IN_ uint32_t dh_idx, _OUT_ hal_data *shared_secret)
 {
 	return 0;
 }
@@ -191,7 +191,7 @@ int hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_
 	return 0;
 }
 
-int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data)
+int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data)
 {
 	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
 	memcpy(enc_data->data, dec_data->data,dec_data->data_len);
@@ -199,7 +199,7 @@ int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ uint32_t key_idx, _OUT_ hal_da
 
 	return 0;
 }
-int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data)
+int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data)
 {
 	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
 	memcpy(dec_data->data, enc_data->data,enc_data->data_len);
