@@ -130,9 +130,6 @@ static uv_signal_t* uv__signal_first_handle(int signum) {
   lookup.loop = NULL;
 
   index = PIDHASH(getpid());
-  if (index < 0 || index >= CONFIG_MAX_TASKS) {
-	  return NULL;
-  }
 
   handle = RB_NFIND(uv__signal_tree_s, &uv__signal_tree[index], &lookup);
 
@@ -153,10 +150,6 @@ static void uv__signal_handler(int signum) {
   memset(&msg, 0, sizeof msg);
 
   index = PIDHASH(getpid());
-  if (index < 0 || index >= CONFIG_MAX_TASKS) {
-    errno = saved_errno;
-    return;
-  }
 
   if (uv__signal_lock()) {
     errno = saved_errno;
@@ -319,9 +312,6 @@ int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum) {
 
   /* If index is invalid, processing signal would be failed. */
   index = PIDHASH(getpid());
-  if (index < 0 || index >= CONFIG_MAX_TASKS) {
-	  return -EINVAL;
-  }
 
   /* Short circuit: if the signal watcher is already watching {signum} don't
    * go through the process of deregistering and registering the handler.
@@ -474,9 +464,6 @@ static void uv__signal_stop(uv_signal_t* handle) {
     return;
 
   index = PIDHASH(getpid());
-  if (index < 0 || index >= CONFIG_MAX_TASKS) {
-	  return;
-  }
 
   uv__signal_block_and_lock(&saved_sigmask);
 
