@@ -167,7 +167,14 @@ bool MyMediaPlayer::init(int test)
 	testSource = test;
 	mp.setObserver(shared_from_this());
 
-	mFocusRequest = FocusRequest::Builder().setFocusChangeListener(shared_from_this()).build();
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
+	mFocusRequest = FocusRequest::Builder()
+						.setStreamInfo(stream_info)
+						.setFocusChangeListener(shared_from_this())
+						.build();
 	return true;
 }
 
