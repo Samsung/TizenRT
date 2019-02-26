@@ -21,6 +21,11 @@ Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 For more information of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
 
+Especially For Windows environment, configuring CRLF is required as below.
+```
+git config --global core.autocrlf input
+```
+
 ### 1. Installing Docker
 
 To install OS specific Docker engines, see https://docs.docker.com/install/linux/docker-ce/ubuntu/.  

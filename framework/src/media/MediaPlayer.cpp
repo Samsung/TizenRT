@@ -82,6 +82,11 @@ player_result_t MediaPlayer::setVolume(uint8_t vol)
 	return mPMpImpl->setVolume(vol);
 }
 
+player_result_t MediaPlayer::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	return mPMpImpl->setStreamInfo(stream_info);
+}
+
 player_result_t MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	return mPMpImpl->setDataSource(std::move(source));

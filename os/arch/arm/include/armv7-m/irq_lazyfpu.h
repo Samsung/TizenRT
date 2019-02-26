@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/armv7-m/irq.h
+ * arch/arm/include/armv7-m/irq_lazyfpu.h
  *
  *   Copyright (C) 2009, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

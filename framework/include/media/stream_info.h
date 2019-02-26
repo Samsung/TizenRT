@@ -56,9 +56,10 @@ enum stream_policy_e {
 };
 
 typedef enum stream_policy_e stream_policy_t;
+typedef uint64_t stream_info_id_t;
 
 struct stream_info_s {
-	uint64_t id;
+	stream_info_id_t id;
 	stream_policy_t policy;
 };
 

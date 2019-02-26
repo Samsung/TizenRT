@@ -79,14 +79,18 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/board.h>
+#include <tinyara/syslog/syslog.h>
 
 #include <arch/board/board.h>
+
+#include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
+#include "irq/irq.h"
 
 #include "up_arch.h"
-#include "sched/sched.h"
 #include "up_internal.h"
 #include "mpu.h"
 
@@ -97,6 +101,10 @@
 
 #ifndef CONFIG_USBDEV_TRACE
 #undef CONFIG_ARCH_USBDUMP
+#endif
+
+#ifndef CONFIG_BOARD_RESET_ON_ASSERT
+#define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
 /****************************************************************************
@@ -136,7 +144,7 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
 	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
 		uint32_t *ptr = (uint32_t *)stack;
 		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
 	}
 }
 #else

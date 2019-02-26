@@ -291,48 +291,47 @@ static void tc_sched_wait(void)
 static void tc_sched_waitid(void)
 {
 	int ret_chk;
-	pid_t child_pid;
+	pid_t child1_pid;
+	pid_t child2_pid;
 	siginfo_t info;
 
 	/* Check for The TCB corresponding to this PID is not our child. */
 
-	ret_chk = waitid(P_GID, 0, &info, WEXITED);
+	ret_chk = waitid(P_PID, 0, &info, WEXITED);
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
-	TC_ASSERT_GT("task_create", child_pid, 0);
+	child1_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child1_pid, 0);
 
 	/* Check for P_PID type */
 
-	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
+	ret_chk = waitid(P_PID, child1_pid, &info, WEXITED);
 	TC_ASSERT_NEQ("waitid", ret_chk, ERROR);
-	TC_ASSERT_EQ("waitid", info.si_pid, child_pid);
+	TC_ASSERT_EQ("waitid", info.si_pid, child1_pid);
 
 	/* Check for P_ALL ID type */
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
-	TC_ASSERT_GT("task_create", child_pid, 0);
+	child2_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child2_pid, 0);
 
-	ret_chk = waitid(P_ALL, child_pid, &info, WEXITED);
+	ret_chk = waitid(P_ALL, child2_pid, &info, WEXITED);
 	TC_ASSERT_NEQ("waitid", ret_chk, ERROR);
-	TC_ASSERT_EQ("waitid", info.si_pid, child_pid);
+	TC_ASSERT_EQ("waitid", (info.si_pid == child1_pid) || (info.si_pid == child2_pid), true);
 
 	/* Check for other ID types that are not supported  */
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
-	TC_ASSERT_GT("task_create", child_pid, 0);
+	child1_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child1_pid, 0);
 
-	ret_chk = waitid(P_GID, child_pid, &info, WEXITED);
+	ret_chk = waitid(P_GID, child1_pid, &info, WEXITED);
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ENOSYS);
 
 	/* Check for options != WEXITED */
-#ifdef CONFIG_DEBUG
-	ret_chk = waitid(P_PID, child_pid, &info, 0);
+	ret_chk = waitid(P_PID, child1_pid, &info, 0);
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ENOSYS);
-#endif
 
 	TC_SUCCESS_RESULT();
 }
