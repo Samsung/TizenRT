@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <tinyara/testcase_drv.h>
+#include <tinyara/sched.h>
 #include "../../../../../os/kernel/clock/clock.h"
 #include "tc_internal.h"
 
@@ -43,8 +44,6 @@
 #else
 #define NTHREAD  3
 #endif
-#define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
-#define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
 #define TEST_STACK_SIZE     (1024)
 /****************************************************************************
 * Private Data

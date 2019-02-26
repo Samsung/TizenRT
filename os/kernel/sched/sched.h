@@ -83,8 +83,6 @@
 #if CONFIG_MAX_TASKS & (CONFIG_MAX_TASKS - 1)
 #error "Max number of tasks(CONFIG_MAX_TASKS) should be power of 2"
 #endif
-#define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
-#define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
 
 /* These are macros to access the current CPU and the current task on a CPU.
  * These macros are intended to support a future SMP implementation.

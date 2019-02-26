@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <sched.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/sched.h>
 #include "tc_internal.h"
 
 #define ALLOC_SIZE_VAL 10
@@ -68,7 +69,7 @@ static void tc_umm_heap_malloc_free(void)
 	int alloc_tc_cnt;
 	pid_t hash_pid;
 	struct mm_heap_s *heap;
-	hash_pid = PID_HASH(getpid());
+	hash_pid = PIDHASH(getpid());
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
@@ -100,7 +101,7 @@ static void tc_umm_heap_calloc(void)
 	int alloc_tc_cnt;
 	pid_t hash_pid;
 	struct mm_heap_s *heap;
-	hash_pid = PID_HASH(getpid());
+	hash_pid = PIDHASH(getpid());
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
@@ -135,7 +136,7 @@ static void tc_umm_heap_realloc(void)
 	int alloc_tc_cnt;
 	pid_t hash_pid;
 	struct mm_heap_s *heap;
-	hash_pid = PID_HASH(getpid());
+	hash_pid = PIDHASH(getpid());
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
@@ -168,7 +169,7 @@ static void tc_umm_heap_memalign(void)
 	int alloc_tc_cnt;
 	pid_t hash_pid;
 	struct mm_heap_s *heap;
-	hash_pid = PID_HASH(getpid());
+	hash_pid = PIDHASH(getpid());
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
@@ -204,7 +205,7 @@ static void tc_umm_heap_random_malloc(void)
 	int allocated_size = 0;
 	pid_t hash_pid;
 	struct mm_heap_s *heap;
-	hash_pid = PID_HASH(getpid());
+	hash_pid = PIDHASH(getpid());
 
 	srand(time(NULL));
 

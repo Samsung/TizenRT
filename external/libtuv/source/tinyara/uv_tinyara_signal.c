@@ -44,6 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <tinyara/sched.h>
 
 #include <uv.h>
 
@@ -65,9 +66,6 @@ static uv_once_t uv__signal_global_init_guard = UV_ONCE_INIT;
 static struct uv__signal_tree_s uv__signal_tree[CONFIG_MAX_TASKS] =
     {RB_INITIALIZER(uv__signal_tree), };
 static sem_t uv_sig_sem;
-
-#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
-#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
 
 
 RB_GENERATE_STATIC(uv__signal_tree_s,
@@ -131,7 +129,7 @@ static uv_signal_t* uv__signal_first_handle(int signum) {
   lookup.signum = signum;
   lookup.loop = NULL;
 
-  index = PID_HASH(getpid());
+  index = PIDHASH(getpid());
   if (index < 0 || index >= CONFIG_MAX_TASKS) {
 	  return NULL;
   }
@@ -154,7 +152,7 @@ static void uv__signal_handler(int signum) {
   saved_errno = errno;
   memset(&msg, 0, sizeof msg);
 
-  index = PID_HASH(getpid());
+  index = PIDHASH(getpid());
   if (index < 0 || index >= CONFIG_MAX_TASKS) {
     errno = saved_errno;
     return;
@@ -320,7 +318,7 @@ int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum) {
     return -EINVAL;
 
   /* If index is invalid, processing signal would be failed. */
-  index = PID_HASH(getpid());
+  index = PIDHASH(getpid());
   if (index < 0 || index >= CONFIG_MAX_TASKS) {
 	  return -EINVAL;
   }
@@ -475,7 +473,7 @@ static void uv__signal_stop(uv_signal_t* handle) {
   if (handle->signum == 0)
     return;
 
-  index = PID_HASH(getpid());
+  index = PIDHASH(getpid());
   if (index < 0 || index >= CONFIG_MAX_TASKS) {
 	  return;
   }
