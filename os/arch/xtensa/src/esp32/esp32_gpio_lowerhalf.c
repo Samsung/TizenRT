@@ -163,6 +163,8 @@ static int esp32_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long arg
 		priv->pincfg |= PULLUP;
 	} else if (arg == GPIO_DRIVE_PULLDOWN) {
 		priv->pincfg |= PULLDOWN;
+	} else if (arg == GPIO_DRIVE_FLOAT) {
+		priv->pincfg &= ~(PULLDOWN | PULLUP);
 	} else {
 		return -EINVAL;
 	}

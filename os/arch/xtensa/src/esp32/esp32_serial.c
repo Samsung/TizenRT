@@ -371,12 +371,12 @@ static uart_dev_t g_uart2port = {
 };
 #endif
 
-void uart_tx_wait_idle(uint8_t uart_no) {
-    
-    int status = getreg32(UART_STATUS_REG(uart_no));
-    while((status >> 24) & UART_ST_UTX_OUT) {
-        ;   
-    }   
+void uart_tx_wait_idle(uint8_t uart_no)
+{
+	int status = getreg32(UART_STATUS_REG(uart_no));
+	while ((status >> 24) & UART_ST_UTX_OUT) {
+		;
+	}
 }
 
 /****************************************************************************
@@ -497,7 +497,7 @@ static int esp32_setup(struct uart_dev_s *dev)
 	/* OR in settings for the number of stop bits */
 
 	if (priv->stopbits2) {
-		conf0 |= 3 << UART_STOP_BIT_NUM_S;
+		conf0 |= 2 << UART_STOP_BIT_NUM_S;
 	} else {
 		conf0 |= 1 << UART_STOP_BIT_NUM_S;
 	}
@@ -531,9 +531,6 @@ static int esp32_setup(struct uart_dev_s *dev)
 #endif
 
 	/* Enable RX and error interrupts.  Clear and pending interrtupt */
-
-	regval = UART_RXFIFO_FULL_INT_ENA | UART_FRM_ERR_INT_ENA | UART_RXFIFO_TOUT_INT_ENA;
-	esp32_serialout(priv, UART_INT_ENA_OFFSET, regval);
 
 	esp32_serialout(priv, UART_INT_CLR_OFFSET, 0xffffffff);
 
@@ -570,7 +567,7 @@ static void esp32_shutdown(struct uart_dev_s *dev)
 
 	do {
 		status = esp32_serialin(priv, UART_STATUS_OFFSET);
-	} while ((status & UART_TXFIFO_CNT_M) != 0);
+	} while (((status & UART_TXFIFO_CNT_M) >> UART_TXFIFO_CNT_S) != 0);
 
 	/* Disable all UART interrupts */
 
@@ -579,17 +576,17 @@ static void esp32_shutdown(struct uart_dev_s *dev)
 	/* Revert pins to inputs and detach UART signals */
 
 	esp32_configgpio(priv->config->txpin, INPUT);
-	gpio_matrix_out(MATRIX_DETACH_OUT_SIG, priv->config->txsig, true, false);
+	gpio_matrix_out(priv->config->txpin, MATRIX_DETACH_OUT_SIG, true, false);
 
 	esp32_configgpio(priv->config->rxpin, INPUT);
-	gpio_matrix_in(MATRIX_DETACH_IN_LOW_PIN, priv->config->rxsig, false);
+	gpio_matrix_in(priv->config->rxpin, MATRIX_DETACH_IN_LOW_PIN, false);
 
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) || defined(CONFIG_SERIAL_OFLOWCONTROL)
 	esp32_configgpio(priv->config->rtspin, INPUT);
-	gpio_matrix_out(MATRIX_DETACH_OUT_SIG, priv->config->rtssig, true, false);
+	gpio_matrix_out(priv->config->rtspin, MATRIX_DETACH_OUT_SIG, true, false);
 
 	esp32_configgpio(priv->config->ctspin, INPUT);
-	gpio_matrix_in(MATRIX_DETACH_IN_LOW_PIN, priv->config->ctssig, false);
+	gpio_matrix_in(priv->config->ctspin, MATRIX_DETACH_IN_LOW_PIN, false);
 #endif
 
 	/* Unconfigure and disable the UART */
@@ -624,7 +621,7 @@ static int esp32_attach(struct uart_dev_s *dev)
 
 	/* Allocate a level-sensitive, priority 1 CPU interrupt for the UART */
 
-	priv->cpuint = esp32_alloc_levelint(1);	
+	priv->cpuint = esp32_alloc_levelint(1);
 	if (priv->cpuint < 0) {
 		/* Failed to allocate a CPU interrupt of this type */
 
@@ -1108,7 +1105,7 @@ static bool esp32_txready(struct uart_dev_s *dev)
 static bool esp32_txempty(struct uart_dev_s *dev)
 {
 	struct esp32_dev_s *priv = (struct esp32_dev_s *)dev->priv;
-	return (((esp32_serialin(priv, UART_STATUS_OFFSET) & UART_TXFIFO_CNT_M) >> UART_TXFIFO_CNT_S) > 0);
+	return (((esp32_serialin(priv, UART_STATUS_OFFSET) & UART_TXFIFO_CNT_M) >> UART_TXFIFO_CNT_S) == 0);
 }
 
 /****************************************************************************
