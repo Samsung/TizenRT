@@ -94,6 +94,7 @@ OBJS  = $(COBJS)
 # Targets:
 
 all: $(USER_BINPATH)$(DELIM)tinyara_user.elf $(USER_BINPATH)$(DELIM)User.map
+	$(call DELFILE, tinyara_user.elf)
 .PHONY: tinyara_user.elf depend clean distclean
 
 $(COBJS): %$(OBJEXT): %.c
