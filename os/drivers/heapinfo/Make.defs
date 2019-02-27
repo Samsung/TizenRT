@@ -17,7 +17,7 @@
 ##########################################################################
 # Include heapinfo drivers
 
-ifeq ($(CONFIG_KERNEL_CMDS),y)
+ifeq ($(CONFIG_ENABLE_HEAPINFO_CMD),y)
 
 CSRCS += heapinfo_drv.c
 
