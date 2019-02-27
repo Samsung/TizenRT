@@ -65,7 +65,6 @@ static int heapinfo_pid = HEAPINFO_PID_ALL;
 extern heapinfo_total_info_t total_info;
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 #if CONFIG_MM_REGIONS > 1
 static void heapinfo_print_regions(void)
 {
@@ -234,7 +233,6 @@ static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
 	}
 #endif
 }
-#endif
 
 #if CONFIG_MM_NHEAPS > 1
 static void heapinfo_init_totalinfo(void)
@@ -250,7 +248,6 @@ static void heapinfo_init_totalinfo(void)
 
 int kdbg_heapinfo(int argc, char **args)
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	int option;
 #ifdef CONFIG_MM_KERNEL_HEAP
 	bool showing_kheap = false;
@@ -446,7 +443,6 @@ usage:
 	if (showing_kheap == true) {
 		close(heapinfo_fd);
 	}
-#endif
 #endif
 	return ERROR;
 }

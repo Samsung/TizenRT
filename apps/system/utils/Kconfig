@@ -125,8 +125,7 @@ config ENABLE_FREE_CMD
 config ENABLE_HEAPINFO_CMD
 	bool "heapinfo"
 	default y
-	depends on !BUILD_PROTECTED
-	select DEBUG_MM_HEAPINFO if DEBUG
+	depends on DEBUG_MM_HEAPINFO
 	---help---
 		Show information about memory status per thread
 
