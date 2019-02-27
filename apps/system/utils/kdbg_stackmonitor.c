@@ -296,7 +296,7 @@ void stkmon_logging(struct tcb_s *tcb)
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	heap = mm_get_heap(tcb->stack_alloc_ptr);
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peakheap = heap->alloc_list[PID_HASH(tcb->pid)].peak_alloc_size;
+	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peakheap = heap->alloc_list[PIDHASH(tcb->pid)].peak_alloc_size;
 #endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	for (name_idx = 0; name_idx < CONFIG_TASK_NAME_SIZE + 1; name_idx++) {

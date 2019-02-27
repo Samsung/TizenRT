@@ -183,6 +183,9 @@
 #define KEY_NOT_INUSE   (0)
 #define KEY_INUSE       (1)
 
+#define MAX_PID_MASK	(CONFIG_MAX_TASKS - 1)
+#define PIDHASH(pid)	((pid) & MAX_PID_MASK)
+
 /********************************************************************************
  * Public Type Definitions
  ********************************************************************************/

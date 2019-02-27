@@ -22,6 +22,7 @@
 
 #include <debug.h>
 #include <unistd.h>
+#include <tinyara/sched.h>
 #include <libtuv/uv.h>
 #include <libtuv/uv__types.h>
 #include <libtuv/uv__loop.h>
@@ -31,15 +32,12 @@
 
 el_loop_t *g_loop_list[CONFIG_MAX_TASKS];
 
-#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
-#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
-
 el_loop_t *get_app_loop(void)
 {
 	int index;
 
 	/* Get a loop assigned to own task */
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	if (g_loop_list[index] == NULL) {
 		g_loop_list[index] = (el_loop_t *)EL_ALLOC(sizeof(el_loop_t));
@@ -55,7 +53,7 @@ static int release_app_loop(void)
 {
 	int index;
 
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	if (g_loop_list[index] != NULL) {
 		if (uv_loop_close(g_loop_list[index]) < 0) {
@@ -123,7 +121,7 @@ int eventloop_loop_stop(void)
 {
 	int index;
 
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	/* If app loop is already finished or not exist, EVENTLOOP_LOOP_FAIL is returned. */
 	if (g_loop_list[index] == NULL) {
