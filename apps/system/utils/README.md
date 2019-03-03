@@ -335,6 +335,11 @@ Options:
  -f           Show the free list
  -g           Show the User defined group allocation details
               (for -g option, CONFIG_HEAPINFO_GROUP is needed)
+ -e HEAP_IDX  Show the heap[HEAP_IDX] allocation details
+              (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
+ -r           Show the all region information
+              (-r option is available when CONFIG_MM_REGIONS is greater than 1)
+ -k OPTION    Show the kernel heap memory allocation details based on above options
 
 TASH>>heapinfo
 
@@ -379,7 +384,7 @@ PID |  PPID | STACK | CURR_HEAP | PEAK_HEAP | NAME
 - Owner     : The holder who allocate the memory  
 
 ### How to Enable
-Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+Enable *CONFIG_ENABLE_HEAPINFO_CMD* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] heapinfo
 ```
@@ -387,7 +392,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 #### Dependency
 Enable CONFIG_DEBUG_MM_HEAPINFO.
 ```
-Debug options -> [*] Enable Debug Output Features
+Debug options -> [*] Enable Debug Output Features -> [*] Heap Info debug option
 ```
 
 ### Heapinfo for User defined Group
@@ -408,9 +413,9 @@ Heap Allocation Information per User defined Group
 ****************************************************************
  PEAK | HEAP_ON_PEAK | STACK_ON_PEAK | THREADS_IN_GROUP
 ----------------------------------------------------------------
- 4572 |         3568 |          1004 | jckim,jckim2
- 5772 |         4768 |          1004 | jckim3
- 2940 |          896 |          2044 | asdf
+ 4572 |         3568 |          1004 | abc,def
+ 5772 |         4768 |          1004 | ghi,jklmn
+ 2940 |          896 |          2044 | opqr
 ```
 
 
@@ -427,7 +432,7 @@ TASH>>irqinfo
      4 |      90 |        36 | up_interrupt
 ```
 ### How to Enable
-Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+Enable *CONFIG_ENABLE_IRQINFO_CMD* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] irqinfo
 ```
