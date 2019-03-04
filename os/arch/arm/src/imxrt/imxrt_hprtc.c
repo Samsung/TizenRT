@@ -543,7 +543,7 @@ int imxrt_hprtc_setalarm(FAR struct timespec *ts, hprtc_alarm_callback_t cb)
 	 * interrupted or preempted.
 	 */
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 
 	now = imxrt_hprtc_time();
 
@@ -583,7 +583,7 @@ int imxrt_hprtc_setalarm(FAR struct timespec *ts, hprtc_alarm_callback_t cb)
 	/* Unconditionally enable the RTC alarm interrupt */
 
 	imxrt_hprtc_alarmenable();
-	arm_spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 	return OK;
 }
 #endif

@@ -15,11 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************************************
- * os/arch/arm/src/imxrt/chip/imxrt_dcdc.h
+/************************************************************************************
+ * os/arch/arm/src/imxrt/imxrt_flash.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author:  Janne Rosberg <janne@offcode.fi>
+ *   Copyright (C) 2011 Uros Platise. All rights reserved.
+ *   Author: Uros Platise <uros.platise@isotel.eu>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,35 +48,40 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ****************************************************************************************************/
+ ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_DCDC_H
-#define __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_DCDC_H
+#ifndef __ARCH_ARM_SRC_IMXRT_IMXRT_FLASH_H
+#define __ARCH_ARM_SRC_IMXRT_IMXRT_FLASH_H
 
-/****************************************************************************************************
+/************************************************************************************
  * Included Files
- ****************************************************************************************************/
+ ************************************************************************************/
 
 #include <tinyara/config.h>
-#include "chip/imxrt_memorymap.h"
-#include "chip/imxrt105x_config.h"
+#include <tinyara/progmem.h>
 
-/****************************************************************************************************
- * Pre-processor Definitions
- ****************************************************************************************************/
+#include "chip.h"
 
-/* Register offsets *********************************************************************************/
+#ifndef __ASSEMBLY__
 
-#define IMXRT_DCDC_REG0_OFFSET              0x0000	/* DCDC Register 0 */
-#define IMXRT_DCDC_REG1_OFFSET              0x0004	/* DCDC Register 1 */
-#define IMXRT_DCDC_REG2_OFFSET              0x0008	/* DCDC Register 2 */
-#define IMXRT_DCDC_REG3_OFFSET              0x000c	/* DCDC Register 3 */
+/************************************************************************************
+ * Public Data
+ ************************************************************************************/
 
-/* Register addresses *******************************************************************************/
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+void imxrt_flash_init(void);
 
-#define IMXRT_DCDC_REG0                     (IMXRT_DCDC_BASE + IMXRT_DCDC_REG0_OFFSET)
-#define IMXRT_DCDC_REG1                     (IMXRT_DCDC_BASE + IMXRT_DCDC_REG1_OFFSET)
-#define IMXRT_DCDC_REG2                     (IMXRT_DCDC_BASE + IMXRT_DCDC_REG2_OFFSET)
-#define IMXRT_DCDC_REG3                     (IMXRT_DCDC_BASE + IMXRT_DCDC_REG3_OFFSET)
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
 
-#endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_DCDC_H */
+#endif							/* __ASSEMBLY__ */
+
+#endif							/* __ARCH_ARM_SRC_IMXRT_IMXRT_FLASH_H */

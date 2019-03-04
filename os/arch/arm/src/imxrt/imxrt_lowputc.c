@@ -79,6 +79,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define LPUART_CTRL_PT_EVEN          (0 << 0)	/*         Even parity */
+#define LPUART_CTRL_PT_ODD           (1 << 0)	/*         Odd parity */
 
 /* Configuration ************************************************************/
 
@@ -385,7 +387,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 	uint32_t baud_diff;
 	uint32_t regval;
 
-	if ((getreg32(IMXRT_CCM_CSCDR1) & CCM_CSCDR1_UART_CLK_SEL) != 0) {
+	if ((getreg32(IMXRT_CCM_CSCDR1) & CCM_CSCDR1_UART_CLK_SEL(1U)) != 0) {
 		src_freq = BOARD_XTAL_FREQUENCY;
 	} else {
 		if ((getreg32(IMXRT_CCM_ANALOG_PLL_USB1) & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) != 0) {
@@ -458,36 +460,36 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 	/* Reset all internal logic and registers, except the Global Register */
 
 	regval = getreg32(base + IMXRT_LPUART_GLOBAL_OFFSET);
-	regval |= LPUART_GLOBAL_RST;
+	regval |= LPUART_GLOBAL_RST(1U);
 	putreg32(regval, base + IMXRT_LPUART_GLOBAL_OFFSET);
 
-	regval &= ~LPUART_GLOBAL_RST;
+	regval &= ~LPUART_GLOBAL_RST(1U);
 	putreg32(regval, base + IMXRT_LPUART_GLOBAL_OFFSET);
 
 	regval = 0;
 
 	if ((osr > 3) && (osr < 8)) {
-		regval |= LPUART_BAUD_BOTHEDGE;
+		regval |= LPUART_BAUD_BOTHEDGE(1U);
 	}
 
 	if (config->stopbits2) {
-		regval |= LPUART_BAUD_SBNS;
+		regval |= LPUART_BAUD_SBNS(1U);
 	}
 
-	regval |= LPUART_BAUD_OSR(osr) | LPUART_BAUD_SBR(sbr);
+	regval |= LPUART_BAUD_OSR(osr-1) | LPUART_BAUD_SBR(sbr);
 	putreg32(regval, base + IMXRT_LPUART_BAUD_OFFSET);
 
 	regval = 0;
 	if (config->parity == 1) {
-		regval |= LPUART_CTRL_PE | LPUART_CTRL_PT_ODD;
+		regval |= LPUART_CTRL_PE(1U) | LPUART_CTRL_PT_ODD;
 	} else if (config->parity == 2) {
-		regval |= LPUART_CTRL_PE | LPUART_CTRL_PT_EVEN;
+		regval |= LPUART_CTRL_PE(1U) | LPUART_CTRL_PT_EVEN;
 	}
 
 	if (config->bits == 8) {
-		regval &= ~LPUART_CTRL_M;
+		regval &= ~LPUART_CTRL_M(1U);
 	} else if (config->bits == 9) {
-		regval |= LPUART_CTRL_M;
+		regval |= LPUART_CTRL_M(1U);
 	} else {
 		/* Here should be added support of other bit modes. */
 
@@ -495,7 +497,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 		return ERROR;
 	}
 
-	regval |= LPUART_CTRL_RE | LPUART_CTRL_TE;
+	regval |= LPUART_CTRL_RE(1U) | LPUART_CTRL_TE(1U);
 	putreg32(regval, base + IMXRT_LPUART_CTRL_OFFSET);
 
 	return OK;

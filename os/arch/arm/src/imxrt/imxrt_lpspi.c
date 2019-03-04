@@ -81,6 +81,7 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -92,7 +93,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/spi/spi.h>
-#include <tinyara/power/pm.h>
+#include <tinyara/pm/pm.h>
 
 #include <arch/board/board.h>
 
@@ -121,18 +122,29 @@
 /* SPI interrupts */
 
 #ifdef CONFIG_IMXRT_LPSPI_INTERRUPTS
-#  error "Interrupt driven SPI not yet supported"
+#error "Interrupt driven SPI not yet supported"
 #endif
 
 #if defined(CONFIG_IMXRT_LPSPI_DMA)
-#  error "DMA mode is not yet supported"
+#error "DMA mode is not yet supported"
 #endif
 
 /* Can't have both interrupt driven SPI and SPI DMA */
 
 #if defined(CONFIG_IMXRT_LPSPI_INTERRUPTS) && defined(CONFIG_IMXRT_LPSPI_DMA)
-#  error "Cannot enable both interrupt mode and DMA mode for SPI"
+#error "Cannot enable both interrupt mode and DMA mode for SPI"
 #endif
+
+#undef spierr
+#undef spiinfo
+#if defined(DEBUG_IMX_I2C)
+#define spiinfo(format, ...)   printf(format, ##__VA_ARGS__)
+#define spierr(format, ...)   printf(format, ##__VA_ARGS__)
+#else
+#define spiinfo(format, ...)
+//#define spierr(format, ...)
+#endif
+#define spierr(format, ...)   printf(format, ##__VA_ARGS__)
 
 /************************************************************************************
  * Private Types
@@ -497,7 +509,7 @@ static inline uint16_t imxrt_lpspi_readword(FAR struct imxrt_lpspidev_s *priv)
 {
   /* Wait until the receive buffer is not empty */
 
-  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF) == 0);
+  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF(1U)) == 0);
 
   /* Then return the received byte */
 
@@ -524,7 +536,7 @@ static inline void imxrt_lpspi_writeword(FAR struct imxrt_lpspidev_s *priv,
 {
   /* Wait until the transmit buffer is empty */
 
-  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_TDF) == 0);
+  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_TDF(1U)) == 0);
 
   /* Then send the word */
 
@@ -549,7 +561,7 @@ static inline uint8_t imxrt_lpspi_readbyte(FAR struct imxrt_lpspidev_s *priv)
 {
   /* Wait until the receive buffer is not empty */
 
-  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF) == 0);
+  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF(1U)) == 0);
 
   /* Then return the received byte */
 
@@ -576,7 +588,7 @@ static inline void imxrt_lpspi_writebyte(FAR struct imxrt_lpspidev_s *priv,
 {
   /* Wait until the transmit buffer is empty */
 
-  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_TDF) == 0);
+  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_TDF(1U)) == 0);
 
   /* Then send the byte */
 
@@ -875,7 +887,7 @@ static int imxrt_lpspi_lock(FAR struct spi_dev_s *dev, bool lock)
 
       do
         {
-          ret = nxsem_wait(&priv->exclsem);
+          ret = sem_wait(&priv->exclsem);
 
           /* The only case that an error should occur here is if the wait was
            * awakened by a signal.
@@ -887,12 +899,272 @@ static int imxrt_lpspi_lock(FAR struct spi_dev_s *dev, bool lock)
     }
   else
     {
-      (void)nxsem_post(&priv->exclsem);
+      (void)sem_post(&priv->exclsem);
       ret = OK;
     }
 
   return ret;
 }
+
+#ifdef CONFIG_IMXRT_LPSPI1
+/************************************************************************************
+ * Name: imxrt_lpspi1select
+ *
+ * Description:
+ *   Enable/disable the SPI slave select. The implementation of this method
+ *   must include handshaking:  If a device is selected, it must hold off
+ *   all other attempts to select the device until the device is deselecte.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -    Device Id
+ *   selected - whether it is selected or not
+ *
+ * Returned Value: None
+ *  
+ *
+ ************************************************************************************/
+void imxrt_lpspi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+{
+  spiinfo("devid: %d CS: %s\n", (int)devid, selected ? "assert" : "de-assert");
+
+  imxrt_gpio_write(GPIO_LPSPI1_CS, !selected);
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi1status
+ *
+ * Description:
+ *   Get the lpspi status
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid  - Device ID
+ *
+ * Returned Value:
+ *   Returns the SPI status
+ *
+ ************************************************************************************/
+uint8_t imxrt_lpspi1status(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
+{
+  return 0;
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi1cmddata
+ *
+ * Description:
+ *   Send cmd to device according to devid.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -   Device ID
+ *   cmd - the command that need to be sent
+ *
+ * Returned Value:
+ *   TBD
+ *
+ ************************************************************************************/
+int imxrt_lpspi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+{
+  return 0;
+}
+#endif
+
+#ifdef CONFIG_IMXRT_LPSPI2
+/************************************************************************************
+ * Name: imxrt_lpspi2select
+ *
+ * Description:
+ *   Enable/disable the SPI slave select. The implementation of this method
+ *   must include handshaking:  If a device is selected, it must hold off
+ *   all other attempts to select the device until the device is deselecte.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -    Device Id
+ *   selected - whether it is selected or not
+ *
+ * Returned Value: None
+ *  
+ *
+ ************************************************************************************/
+void imxrt_lpspi2select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+{
+  spiinfo("devid: %d CS: %s\n", (int)devid, selected ? "assert" : "de-assert");
+
+  imxrt_gpio_write(GPIO_LPSPI2_CS, !selected);
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi2status
+ *
+ * Description:
+ *   Get the lpspi status
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid  - Device ID
+ *
+ * Returned Value:
+ *   Returns the SPI status
+ *
+ ************************************************************************************/
+uint8_t imxrt_lpspi2status(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
+{
+  return 0;
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi2cmddata
+ *
+ * Description:
+ *   Send cmd to device according to devid.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -   Device ID
+ *   cmd - the command that need to be sent
+ *
+ * Returned Value:
+ *   TBD
+ *
+ ************************************************************************************/
+int imxrt_lpspi2cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+{
+  return 0;
+}
+#endif
+
+#ifdef CONFIG_IMXRT_LPSPI3
+/************************************************************************************
+ * Name: imxrt_lpspi3select
+ *
+ * Description:
+ *   Enable/disable the SPI slave select. The implementation of this method
+ *   must include handshaking:  If a device is selected, it must hold off
+ *   all other attempts to select the device until the device is deselecte.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -    Device Id
+ *   selected - whether it is selected or not
+ *
+ * Returned Value: None
+ *  
+ *
+ ************************************************************************************/
+void imxrt_lpspi3select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+{
+  spiinfo("devid: %d CS: %s\n", (int)devid, selected ? "assert" : "de-assert");
+
+  imxrt_gpio_write(GPIO_LPSPI3_CS, !selected);
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi3status
+ *
+ * Description:
+ *   Get the lpspi status
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid  - Device ID
+ *
+ * Returned Value:
+ *   Returns the SPI status
+ *
+ ************************************************************************************/
+uint8_t imxrt_lpspi3status(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
+{
+  return 0;
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi3cmddata
+ *
+ * Description:
+ *   Send cmd to device according to devid.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -   Device ID
+ *   cmd - the command that need to be sent
+ *
+ * Returned Value:
+ *   TBD
+ *
+ ************************************************************************************/
+int imxrt_lpspi3cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+{
+  return 0;
+}
+#endif
+
+#ifdef CONFIG_IMXRT_LPSPI4
+/************************************************************************************
+ * Name: imxrt_lpspi4select
+ *
+ * Description:
+ *   Enable/disable the SPI slave select. The implementation of this method
+ *   must include handshaking:  If a device is selected, it must hold off
+ *   all other attempts to select the device until the device is deselecte.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -    Device Id
+ *   selected - whether it is selected or not
+ *
+ * Returned Value: None
+ *  
+ *
+ ************************************************************************************/
+void imxrt_lpspi4select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+{
+  spiinfo("devid: %d CS: %s\n", (int)devid, selected ? "assert" : "de-assert");
+
+  imxrt_gpio_write(GPIO_LPSPI4_CS, !selected);
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi4status
+ *
+ * Description:
+ *   Get the lpspi status
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid  - Device ID
+ *
+ * Returned Value:
+ *   Returns the SPI status
+ *
+ ************************************************************************************/
+uint8_t imxrt_lpspi4status(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
+{
+  return 0;
+}
+
+/************************************************************************************
+ * Name: imxrt_lpspi4cmddata
+ *
+ * Description:
+ *   Send cmd to device according to devid.
+ *
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   devid -   Device ID
+ *   cmd - the command that need to be sent
+ *
+ * Returned Value:
+ *   TBD
+ *
+ ************************************************************************************/
+int imxrt_lpspi4cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+{
+  return 0;
+}
+#endif
 
 /************************************************************************************
  * Name: imxrt_lpspi_setfrequency
@@ -934,10 +1206,10 @@ static uint32_t imxrt_lpspi_setfrequency(FAR struct spi_dev_s *dev,
     {
       /* Disable LPSPI if it is enabled */
 
-      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN;
+      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U);
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN, 0);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN(1U), 0);
         }
 
       if ((getreg32(IMXRT_CCM_ANALOG_PLL_USB1) &
@@ -1024,7 +1296,7 @@ static uint32_t imxrt_lpspi_setfrequency(FAR struct spi_dev_s *dev,
 
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN(1U));
         }
     }
 
@@ -1061,31 +1333,31 @@ static void imxrt_lpspi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode)
     {
       /* Disable LPSPI if it is enabled */
 
-      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN;
+      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U);
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN, 0);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN(1U), 0);
         }
 
       switch (mode)
         {
         case SPIDEV_MODE0:     /* CPOL=0; CPHA=0 */
           setbits = 0;
-          clrbits = LPSPI_TCR_CPOL | LPSPI_TCR_CPHA;
+          clrbits = LPSPI_TCR_CPOL(1U) | LPSPI_TCR_CPHA(1U);
           break;
 
         case SPIDEV_MODE1:     /* CPOL=0; CPHA=1 */
-          setbits = LPSPI_TCR_CPHA;
-          clrbits = LPSPI_TCR_CPOL;
+          setbits = LPSPI_TCR_CPHA(1U);
+          clrbits = LPSPI_TCR_CPOL(1U);
           break;
 
         case SPIDEV_MODE2:     /* CPOL=1; CPHA=0 */
-          setbits = LPSPI_TCR_CPOL;
-          clrbits = LPSPI_TCR_CPHA;
+          setbits = LPSPI_TCR_CPOL(1U);
+          clrbits = LPSPI_TCR_CPHA(1U);
           break;
 
         case SPIDEV_MODE3:     /* CPOL=1; CPHA=1 */
-          setbits = LPSPI_TCR_CPOL | LPSPI_TCR_CPHA;
+          setbits = LPSPI_TCR_CPOL(1U) | LPSPI_TCR_CPHA(1U);
           clrbits = 0;
           break;
 
@@ -1096,7 +1368,7 @@ static void imxrt_lpspi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode)
       imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_TCR_OFFSET, clrbits, setbits);
 
       while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_RSR_OFFSET) &
-              LPSPI_RSR_RXEMPTY) != LPSPI_RSR_RXEMPTY)
+              LPSPI_RSR_RXEMPTY(1U)) != LPSPI_RSR_RXEMPTY(1U))
         {
           /* Flush SPI read FIFO */
 
@@ -1111,7 +1383,7 @@ static void imxrt_lpspi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode)
 
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN(1U));
         }
     }
 }
@@ -1152,10 +1424,10 @@ static void imxrt_lpspi_setbits(FAR struct spi_dev_s *dev, int nbits)
 
       /* Disable LPSPI if it is enabled */
 
-      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN;
+      men = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U);
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN, 0);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, LPSPI_CR_MEN(1U), 0);
         }
 
       regval = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_TCR_OFFSET);
@@ -1173,7 +1445,7 @@ static void imxrt_lpspi_setbits(FAR struct spi_dev_s *dev, int nbits)
 
       if (men)
         {
-          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN);
+          imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN(1U));
         }
     }
 }
@@ -1256,8 +1528,8 @@ static uint16_t imxrt_lpspi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 
   imxrt_lpspi_writeword(priv, (uint32_t) wd);
 
-  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF) !=
-         LPSPI_SR_RDF);
+  while ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_SR_OFFSET) & LPSPI_SR_RDF(1U)) !=
+         LPSPI_SR_RDF(1U));
 
   ret = imxrt_lpspi_readword(priv);
 
@@ -1516,15 +1788,15 @@ static void imxrt_lpspi_bus_initialize(struct imxrt_lpspidev_s *priv)
 
   /* Reset to known status */
 
-  imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_RST);
+  imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_RST(1U));
   imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0,
-                          LPSPI_CR_RTF | LPSPI_CR_RRF);
+                          LPSPI_CR_RTF(1U) | LPSPI_CR_RRF(1U));
   imxrt_lpspi_putreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0x00);
 
   /* Set LPSPI to master */
 
   imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CFGR1_OFFSET, 0,
-                          LPSPI_CFGR1_MASTER);
+                          LPSPI_CFGR1_MASTER(1U));
 
   /* Set specific PCS to active high or low */
   /* TODO: Not needed for now */
@@ -1532,7 +1804,7 @@ static void imxrt_lpspi_bus_initialize(struct imxrt_lpspidev_s *priv)
   /* Set Configuration Register 1 related setting. */
 
   reg = imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CFGR1_OFFSET);
-  reg &= ~(LPSPI_CFGR1_OUTCFG | LPSPI_CFGR1_PINCFG_MASK | LPSPI_CFGR1_NOSTALL);
+  reg &= ~(LPSPI_CFGR1_OUTCFG(1U) | LPSPI_CFGR1_PINCFG_MASK | LPSPI_CFGR1_NOSTALL(1U));
   reg |= LPSPI_CFGR1_OUTCFG_RETAIN | LPSPI_CFGR1_PINCFG_SIN_SOUT;
   imxrt_lpspi_putreg32(priv, IMXRT_LPSPI_CFGR1_OFFSET, reg);
 
@@ -1553,11 +1825,11 @@ static void imxrt_lpspi_bus_initialize(struct imxrt_lpspidev_s *priv)
 
   /* Initialize the SPI semaphore that enforces mutually exclusive access */
 
-  nxsem_init(&priv->exclsem, 0, 1);
+  sem_init(&priv->exclsem, 0, 1);
 
   /* Enable LPSPI */
 
-  imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN);
+  imxrt_lpspi_modifyreg32(priv, IMXRT_LPSPI_CR_OFFSET, 0, LPSPI_CR_MEN(1U));
 }
 
 /************************************************************************************
@@ -1582,7 +1854,7 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
 {
   FAR struct imxrt_lpspidev_s *priv = NULL;
 
-  irqstate_t flags = enter_critical_section();
+  irqstate_t flags = irqsave();
 
 #ifdef CONFIG_IMXRT_LPSPI1
   if (bus == 1)
@@ -1593,13 +1865,13 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
 
       /* Only configure if the bus is not already configured */
 
-      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0)
+      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0)
         {
           /* Configure SPI1 pins: SCK, MISO, and MOSI */
 
-          (void)imxrt_config_gpio(GPIO_LPSPI1_SCK);
-          (void)imxrt_config_gpio(GPIO_LPSPI1_MISO);
-          (void)imxrt_config_gpio(GPIO_LPSPI1_MOSI);
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SDO_1);
 
           putreg32(0x1, IMXRT_INPUT_LPSPI1_SCK);
           putreg32(0x1, IMXRT_INPUT_LPSPI1_SDI);
@@ -1625,9 +1897,9 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
         {
           /* Configure SPI2 pins: SCK, MISO, and MOSI */
 
-          (void)imxrt_config_gpio(GPIO_LPSPI2_SCK);
-          (void)imxrt_config_gpio(GPIO_LPSPI2_MISO);
-          (void)imxrt_config_gpio(GPIO_LPSPI2_MOSI);
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SDO_1);
 
           /* Set up default configuration: Master, 8-bit, etc. */
 
@@ -1649,9 +1921,9 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
         {
           /* Configure SPI3 pins: SCK, MISO, and MOSI */
 
-          (void)imxrt_config_gpio(GPIO_LPSPI3_SCK);
-          (void)imxrt_config_gpio(GPIO_LPSPI3_MISO);
-          (void)imxrt_config_gpio(GPIO_LPSPI3_MOSI);
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SDO_1);
 
           /* Set up default configuration: Master, 8-bit, etc. */
 
@@ -1673,9 +1945,9 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
         {
           /* Configure SPI4 pins: SCK, MISO, and MOSI */
 
-          (void)imxrt_config_gpio(GPIO_LPSPI4_SCK);
-          (void)imxrt_config_gpio(GPIO_LPSPI4_MISO);
-          (void)imxrt_config_gpio(GPIO_LPSPI4_MOSI);
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SDO_1);
 
           /* Set up default configuration: Master, 8-bit, etc. */
 
@@ -1689,7 +1961,137 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
       return NULL;
     }
 
-  leave_critical_section(flags);
+  irqrestore(flags);
+
+  return (FAR struct spi_dev_s *)priv;
+}
+
+/************************************************************************************
+ * Name: up_spiinitialize
+ *
+ * Description:
+ *   Initialize the selected SPI bus
+ *
+ * Input Parameters:
+ *   Port number (for hardware that has mutiple SPI interfaces)
+ *
+ * Returned Value:
+ *   Valid SPI device structure reference on success; a NULL on failure
+ *
+ ************************************************************************************/
+
+FAR struct spi_dev_s *up_spiinitialize(int port)
+{
+  FAR struct imxrt_lpspidev_s *priv = NULL;
+
+  irqstate_t flags = irqsave();
+
+#ifdef CONFIG_IMXRT_LPSPI1
+  if (port == 1)
+    {
+      /* Select SPI1 */
+
+      priv = &g_lpspi1dev;
+
+      /* Only configure if the bus is not already configured */
+
+      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0)
+        {
+          /* Configure SPI1 pins: SCK, MISO, and MOSI */
+
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI1_SDO_1);
+
+          putreg32(0x1, IMXRT_INPUT_LPSPI1_SCK);
+          putreg32(0x1, IMXRT_INPUT_LPSPI1_SDI);
+          putreg32(0x1, IMXRT_INPUT_LPSPI1_SDO);
+
+          /* Set up default configuration: Master, 8-bit, etc. */
+
+          imxrt_lpspi_bus_initialize(priv);
+        }
+    }
+  else
+#endif
+#ifdef CONFIG_IMXRT_LPSPI2
+  if (port == 2)
+    {
+      /* Select SPI2 */
+
+      priv = &g_lpspi2dev;
+
+      /* Only configure if the bus is not already configured */
+
+      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0)
+        {
+          /* Configure SPI2 pins: SCK, MISO, and MOSI */
+
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI2_SDO_1);
+
+          /* Set up default configuration: Master, 8-bit, etc. */
+
+          imxrt_lpspi_bus_initialize(priv);
+        }
+    }
+  else
+#endif
+#ifdef CONFIG_IMXRT_LPSPI3
+  if (port == 3)
+    {
+      /* Select SPI3 */
+
+      priv = &g_lpspi3dev;
+
+      /* Only configure if the bus is not already configured */
+
+      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0)
+        {
+          /* Configure SPI3 pins: SCK, MISO, and MOSI */
+
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI3_SDO_1);
+
+          /* Set up default configuration: Master, 8-bit, etc. */
+
+          imxrt_lpspi_bus_initialize(priv);
+        }
+    }
+  else
+#endif
+#ifdef CONFIG_IMXRT_LPSPI4
+  if (port == 4)
+    {
+      /* Select SPI4 */
+
+      priv = &g_lpspi4dev;
+
+      /* Only configure if the bus is not already configured */
+
+      if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0)
+        {
+          /* Configure SPI4 pins: SCK, MISO, and MOSI */
+
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SCK_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SDI_1);
+          (void)imxrt_config_gpio(GPIO_LPSPI4_SDO_1);
+
+          /* Set up default configuration: Master, 8-bit, etc. */
+
+          imxrt_lpspi_bus_initialize(priv);
+        }
+    }
+  else
+#endif
+    {
+      spierr("ERROR: Unsupported SPI bus: %d\n", port);
+      return NULL;
+    }
+
+  irqrestore(flags);
 
   return (FAR struct spi_dev_s *)priv;
 }
