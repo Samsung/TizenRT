@@ -247,6 +247,10 @@ config LIB_SENDFILE_BUFSIZE
 	---help---
 		Size of the I/O buffer to allocate in sendfile().  Default: 512b
 
+config LIBC_ARCH_ELF
+	bool "Architecture support for ELF"
+	default n
+
 config ARCH_HAVE_ROMGETC
 	bool
 
@@ -421,6 +425,14 @@ config ARCH_BZERO
 		of bzero().
 
 endif # ARCH_OPTIMIZED_FUNCTIONS
+
+config LIB_ENVPATH
+        bool "Support PATH Environment Variable"
+        default n
+        depends on !DISABLE_ENVIRON
+        ---help---
+                Use the contents of the common environment variable to locate executable
+                or library files.  Default: n
 
 comment "Non-standard Library Support"
 

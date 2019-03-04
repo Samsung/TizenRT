@@ -77,6 +77,38 @@ config DEBUG_AUDIO_INFO
 
 endif #DEBUG_AUDIO
 
+config DEBUG_BINFMT
+        bool "Binary Loader Debug Features"
+        default n
+        depends on !BINFMT_DISABLE
+        ---help---
+                Enable binary loader debug features.
+
+if DEBUG_BINFMT
+
+config DEBUG_BINFMT_ERROR
+        bool "Binary Loader Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable binary loader error output to SYSLOG.
+
+config DEBUG_BINFMT_WARN
+        bool "Binary Loader Warnings Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable binary loader warning output to SYSLOG.
+
+config DEBUG_BINFMT_INFO
+        bool "Binary Loader Informational Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable binary loader informational output to SYSLOG.
+
+endif # DEBUG_BINFMT
+
 config DEBUG_LIB
 	bool "C Library Debug Output"
 	default n
