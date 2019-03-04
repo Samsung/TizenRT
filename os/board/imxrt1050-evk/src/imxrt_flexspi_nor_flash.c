@@ -92,7 +92,7 @@ const struct flexspi_nor_config_s flash_config = {
 	.is_uniform_blocksize = 1,
 };
 
-#elif defined(CONFIG_IMXRT1050_EVK_NOR_FLASH)
+#elif defined(CONFIG_IMXRT1050_EVK_QSPI_FLASH)
 __attribute__((section(".boot_hdr.conf")))
 const struct flexspi_nor_config_s flash_config = {
 	.mem_config = {

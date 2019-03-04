@@ -61,10 +61,7 @@
 
 #include "imxrt_start.h"
 #include "imxrt1050-evk.h"
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
+#include "imxrt_flash.h"
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -84,6 +81,8 @@ void imxrt_boardinitialize(void)
 #ifdef CONFIG_ARCH_LEDS
 	imxrt_autoled_initialize();
 #endif
+
+	imxrt_flash_init();
 }
 
 /****************************************************************************

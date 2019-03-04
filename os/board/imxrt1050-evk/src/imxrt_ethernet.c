@@ -69,6 +69,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <stdio.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -100,6 +101,16 @@
 #define phywarn(x...)
 #define phyinfo(x...)
 #endif
+
+#undef nerr
+#undef ninfo
+#if defined(DEBUG_IMX_ENET_DRIVER)
+#define ninfo(format, ...)   printf(format, ##__VA_ARGS__)
+#define nerr(format, ...)   printf(format, ##__VA_ARGS__)
+#else
+#define ninfo(format, ...)
+#endif
+#define nerr(format, ...)   printf(format, ##__VA_ARGS__)
 
 /************************************************************************************
  * Private Functions
@@ -231,10 +242,11 @@ int imxrt_phy_boardinitialize(int intf)
  ****************************************************************************/
 
 #ifdef CONFIG_IMXRT_GPIO1_0_15_IRQ
-int arch_phy_irq(FAR const char *intf, xcpt_t handler, void *arg, phy_enable_t *enable)
+xcpt_t arch_phy_irq(FAR const char *intf, xcpt_t handler, phy_enable_t *enable)
 {
 	irqstate_t flags;
 	phy_enable_t enabler;
+	xcpt_t rethandler = NULL;
 	int irq;
 
 	DEBUGASSERT(intf);
@@ -247,14 +259,14 @@ int arch_phy_irq(FAR const char *intf, xcpt_t handler, void *arg, phy_enable_t *
 		enabler = imxrt_enet_phy_enable;
 	} else {
 		nerr("ERROR: Unsupported interface: %s\n", intf);
-		return -EINVAL;
+		return NULL;
 	}
 
 	/* Disable interrupts until we are done.  This guarantees that the
 	 * following operations are atomic.
 	 */
 
-	flags = arm_spin_lock_irqsave();
+	flags = irqsave();
 
 	/* Configure the interrupt */
 
@@ -266,7 +278,7 @@ int arch_phy_irq(FAR const char *intf, xcpt_t handler, void *arg, phy_enable_t *
 		 */
 
 		phyinfo("Attach IRQ%d\n", irq);
-		(void)irq_attach(irq, handler, arg);
+		(void)irq_attach(irq, handler, NULL);
 	} else {
 		phyinfo("Detach IRQ%d\n", irq);
 		(void)irq_detach(irq);
@@ -285,8 +297,8 @@ int arch_phy_irq(FAR const char *intf, xcpt_t handler, void *arg, phy_enable_t *
 
 	/* Return the old handler (so that it can be restored) */
 
-	arm_spin_unlock_irqrestore(flags);
-	return OK;
+	irqrestore(flags);
+	return rethandler;
 }
 #endif							/* CONFIG_IMXRT_GPIO1_0_15_IRQ */
 
