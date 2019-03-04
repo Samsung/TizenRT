@@ -163,6 +163,7 @@ typedef struct _hal_data {
 typedef struct _hal_rsa_mode {
 	hal_rsa_algo rsa_a;
 	hal_hash_type hash_t;
+	hal_hash_type mgf;
 	uint32_t salt_byte_len;
 } hal_rsa_mode;
 

@@ -140,6 +140,7 @@ TEST_SETUP(rsa_sign)
 
 	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
 	g_rsa_mode.hash_t = HAL_HASH_SHA256;
+	g_rsa_mode.mgf = HAL_HASH_SHA256;
 	g_rsa_mode.salt_byte_len = 64;
 
 	ST_END_TEST;
@@ -187,6 +188,7 @@ TEST_SETUP(rsa_verify)
 
 	g_rsa_mode.rsa_a = HAL_RSASSA_PKCS1_PSS_MGF1;
 	g_rsa_mode.hash_t = HAL_HASH_SHA256;
+	g_rsa_mode.mgf = HAL_HASH_SHA256;
 	g_rsa_mode.salt_byte_len = 64;
 
 	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_sign_md(g_rsa_mode, &g_rsa_hash, HAL_TEST_RSA_KEY_SLOT, &g_rsa_signature));
