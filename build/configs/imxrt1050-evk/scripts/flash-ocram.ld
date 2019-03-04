@@ -65,6 +65,7 @@ EXTERN(_vectors)
 EXTERN(flash_config)
 EXTERN(image_vector_table)
 EXTERN(boot_data)
+EXTERN(dcd_data)
 
 ENTRY(_stext)
 

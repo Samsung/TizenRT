@@ -58,6 +58,7 @@ MEMORY
 	sram  (rwx) : ORIGIN = 0x20200000, LENGTH = 0x00080000
 	itcm  (rwx) : ORIGIN = 0x00000000, LENGTH = 0x00020000
 	dtcm  (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00020000
+	sdram (rwx) : ORIGIN = 0x80000000, LENGTH = 0x02000000 
 }
 
 OUTPUT_ARCH(arm)
@@ -65,6 +66,7 @@ EXTERN(_vectors)
 EXTERN(flash_config)
 EXTERN(image_vector_table)
 EXTERN(boot_data)
+EXTERN(dcd_data)
 
 ENTRY(_stext)
 
@@ -91,7 +93,7 @@ SECTIONS
 	{
 		_stext = ABSOLUTE(.);
 		*(.vectors)
-		*(.text .text.*)
+		*(EXCLUDE_FILE(*imxrt_flexspi.o *imxrt_hyperflash.o) .text*)
 		*(.fixup)
 		*(.gnu.warning)
 		*(.rodata .rodata.*)
@@ -132,6 +134,8 @@ SECTIONS
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
 		CONSTRUCTORS
+		*imxrt_flexspi.o(.text*)
+        	*imxrt_hyperflash.o(.text*)
 		_edata = ABSOLUTE(.);
 	} > dtcm AT > flash
 
