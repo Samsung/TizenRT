@@ -116,26 +116,22 @@ static struct usbhost_connection_s *g_usbconn;
 #ifdef CONFIG_USBHOST
 static int usbhost_waiter(int argc, char *argv[])
 {
-	bool connected = false;
-	int ret;
+	struct usbhost_hubport_s *hport;
 
 	uvdbg("Running\n");
 	for (;;) {
 		/* Wait for the device to change state */
 
-		ret = CONN_WAIT(g_usbconn, &connected);
-		DEBUGASSERT(ret == OK);
-		UNUSED(ret);
+		DEBUGVERIFY(CONN_WAIT(g_usbconn, &hport));
 
-		connected = !connected;
-		uvdbg("%s\n", connected ? "connected" : "disconnected");
+		uvdbg("%s\n", hport->connected ? "connected" : "disconnected");
 
 		/* Did we just become connected? */
 
-		if (connected) {
+		if (hport->connected) {
 			/* Yes.. enumerate the newly connected device */
 
-			(void)CONN_ENUMERATE(g_usbconn, 0);
+			(void)CONN_ENUMERATE(g_usbconn, hport);
 		}
 	}
 
@@ -185,8 +181,7 @@ void stm32_usbinitialize(void)
 int stm32_usbhost_initialize(void)
 {
 	int pid;
-#if defined(CONFIG_USBHOST_MSC) || defined(CONFIG_USBHOST_HIDKBD) || \
-    defined(CONFIG_USBHOST_HIDMOUSE)
+#if defined(CONFIG_USBHOST_MSC) || defined(CONFIG_USBHOST_HIDKBD) || defined(CONFIG_USBHOST_HIDMOUSE)
 	int ret;
 #endif
 
@@ -196,14 +191,35 @@ int stm32_usbhost_initialize(void)
 
 	uvdbg("Register class drivers\n");
 
+#ifdef CONFIG_USBHOST_HUB
+	/* Initialize USB hub class support */
+
+	ret = usbhost_hub_initialize();
+	if (ret < 0) {
+		udbg("ERROR: usbhost_hub_initialize failed: %d\n", ret);
+	}
+#endif
+
 #ifdef CONFIG_USBHOST_MSC
-	ret = usbhost_storageinit();
+	/* Register the USB mass storage class class */
+
+	ret = usbhost_msc_initialize();
 	if (ret != OK) {
 		udbg("Failed to register the mass storage class\n");
 	}
 #endif
 
+#ifdef CONFIG_USBHOST_CDCACM
+	/* Register the CDC/ACM serial class */
+
+	ret = usbhost_cdcacm_initialize();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register the CDC/ACM serial class: %d\n", ret);
+	}
+#endif
+
 #ifdef CONFIG_USBHOST_HIDKBD
+	/* Initialize the HID keyboard class */
 	ret = usbhost_kbdinit();
 	if (ret != OK) {
 		udbg("Failed to register the HID keyboard class\n");
@@ -211,9 +227,19 @@ int stm32_usbhost_initialize(void)
 #endif
 
 #ifdef CONFIG_USBHOST_HIDMOUSE
+	/* Initialize the HID mouse class */
 	ret = usbhost_mouse_init();
 	if (ret != OK) {
 		udbg("Failed to register the HID mouse class\n");
+	}
+#endif
+
+#ifdef CONFIG_USBHOST_XBOXCONTROLLER
+	/* Initialize the HID mouse class */
+
+	ret = usbhost_xboxcontroller_init();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register the XBox Controller class\n");
 	}
 #endif
 
@@ -284,11 +310,13 @@ void stm32_usbhost_vbusdrive(int iface, bool enable)
  *   Setup to receive an interrupt-level callback if an overcurrent condition is
  *   detected.
  *
- * Input Parameter:
+ * Input Parameters:
  *   handler - New overcurrent interrupt handler
+ *   arg     - The argument provided for the interrupt handler
  *
- * Returned value:
- *   Old overcurrent interrupt handler
+ * Returned Value:
+ *   Zero (OK) is returned on success.  Otherwise, a negated errno value is returned
+ *   to indicate the nature of the failure.
  *
  ************************************************************************************/
 
