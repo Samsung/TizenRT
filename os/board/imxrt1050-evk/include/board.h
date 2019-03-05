@@ -103,7 +103,7 @@
  *                         480Mhz = (24Mhz * 20)
  */
 
-#define BOARD_XTAL_FREQUENCY     24000000
+#define BOARD_XTAL_FREQUENCY      24000000
 #define IMXRT_PRE_PERIPH_CLK_SEL  CCM_CBCMR_PRE_PERIPH_CLK_SEL_PLL1
 #define IMXRT_PERIPH_CLK_SEL      CCM_CBCDR_PERIPH_CLK_SEL_PRE_PERIPH
 #define IMXRT_ARM_PLL_DIV_SELECT  100
@@ -211,8 +211,14 @@
 #define GPIO_LPI2C1_SDA   GPIO_LPI2C1_SDA_2	/* GPIO_AD_B1_01 */
 #define GPIO_LPI2C1_SCL   GPIO_LPI2C1_SCL_2	/* GPIO_AD_B1_00 */
 
+#define GPIO_LPI2C2_SDA   GPIO_LPI2C2_SDA_2	/* GPIO_AD_B1_01 */
+#define GPIO_LPI2C2_SCL   GPIO_LPI2C2_SCL_2	/* GPIO_AD_B1_00 */
+
 #define GPIO_LPI2C3_SDA   GPIO_LPI2C3_SDA_2	/* GPIO_AD_B1_01 */
 #define GPIO_LPI2C3_SCL   GPIO_LPI2C3_SCL_2	/* GPIO_AD_B1_00 */
+
+#define GPIO_LPI2C4_SDA   GPIO_LPI2C4_SDA_2	/* GPIO_AD_B1_01 */
+#define GPIO_LPI2C4_SCL   GPIO_LPI2C4_SCL_2	/* GPIO_AD_B1_00 */
 
 /************************************************************************************
  * Public Types

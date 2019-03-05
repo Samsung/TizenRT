@@ -89,11 +89,6 @@
 #define IMXRT_AUTOMOUNT_USERFS_DEVNAME  CONFIG_IMXRT_AUTOMOUNT_USERFS_DEVNAME
 #endif
 
-#define EXAMPLE_SECTOR 101
-#define SECTOR_SIZE 0x40000
-
-static uint8_t s_hyperflash_read_buffer[512];
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -195,12 +190,6 @@ static void imxrt_configure_partitions(void)
 			char partref[4];
 
 			IMXLOG("smart_initialize enter");
-
-			memcpy(s_hyperflash_read_buffer, (void *)up_progmem_getaddress(4096),
-            sizeof(s_hyperflash_read_buffer));
-
-			snprintf(temp_log, sizeof(temp_log), "s_hyperflash_read_buffer[0] => 0x%x", s_hyperflash_read_buffer[0]);
-			IMXLOG(temp_log);
 
 			snprintf(partref, sizeof(partref), "p%d", partno);
 			ret = smart_initialize(CONFIG_IMXRT_FLASH_MINOR, mtd_part, partref);
