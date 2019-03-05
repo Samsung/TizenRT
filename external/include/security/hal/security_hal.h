@@ -46,6 +46,7 @@ enum hal_result_e {
 	HAL_BAD_CERTKEY_PAIR, //certificate and key do not match
 
 	HAL_NOT_ENOUGH_MEMORY,
+	HAL_ALLOC_FAIL,
 	HAL_KEY_IN_USE,
 	HAL_CERT_IN_USE,
 	HAL_DATA_IN_USE,
@@ -176,8 +177,6 @@ typedef struct _hal_aes_param {
 typedef struct _hal_ecdsa_mode {
 	hal_ecdsa_curve curve;
 	hal_hash_type hash_t;
-	hal_data *r;
-	hal_data *s;
 } hal_ecdsa_mode;
 
 typedef struct _hal_dh_data {

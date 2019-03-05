@@ -244,15 +244,6 @@ TEST_SETUP(ecdsa_sign)
 	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
 	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
 
-	ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
-	ST_EXPECT_NEQ(NULL, ecdsa_mode.r);
-	ecdsa_mode.r->data = NULL;
-	ecdsa_mode.r->data_len = 0;
-	ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
-	ST_EXPECT_NEQ(NULL, ecdsa_mode.s);
-	ecdsa_mode.s->data = NULL;
-	ecdsa_mode.s->data_len = 0;
-
 	ST_END_TEST;
 }
 
@@ -264,8 +255,6 @@ TEST_TEARDOWN(ecdsa_sign)
 
 	hal_test_free_buffer(&g_ecdsa_hash);
 	hal_free_data(&g_ecdsa_signature);
-	free(ecdsa_mode.r);
-	free(ecdsa_mode.s);
 
 	ST_END_TEST;
 }
@@ -290,7 +279,6 @@ TEST_SETUP(ecdsa_verify)
 	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_ECC_BRAINPOOL_P256R1, HAL_TEST_ECC_KEY_SLOT));
 
 	g_ecdsa_hash.data = (unsigned char *)malloc(HAL_TEST_ECC_HASH_LEN);
-
 	g_ecdsa_hash.data_len = HAL_TEST_ECC_HASH_LEN;
 	ST_EXPECT_NEQ(NULL, g_ecdsa_hash.data);
 
@@ -298,15 +286,6 @@ TEST_SETUP(ecdsa_verify)
 
 	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
 	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
-
-	ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
-	ST_EXPECT_NEQ(NULL, ecdsa_mode.r);
-	ecdsa_mode.r->data = NULL;
-	ecdsa_mode.r->data_len = 0;
-	ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
-	ST_EXPECT_NEQ(NULL, ecdsa_mode.s);
-	ecdsa_mode.s->data = NULL;
-	ecdsa_mode.s->data_len = 0;
 
 	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_ecdsa_sign_md(&g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &ecdsa_mode, &g_ecdsa_signature));
 
@@ -320,8 +299,6 @@ TEST_TEARDOWN(ecdsa_verify)
 
 	hal_test_free_buffer(&g_ecdsa_hash);
 	hal_free_data(&g_ecdsa_signature);
-	free(ecdsa_mode.r);
-	free(ecdsa_mode.s);
 
 	ST_END_TEST;
 }

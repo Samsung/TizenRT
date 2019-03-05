@@ -931,7 +931,6 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
     int ret;
     mbedtls_ecdsa_context ecdsa;
 	hal_ecdsa_mode ecdsa_mode;
-	mbedtls_mpi r, s;
     mbedtls_ecdsa_init( &ecdsa );
 
 	if( ( ret = mbedtls_ecdsa_from_keypair( &ecdsa, ctx ) ) == 0 )
@@ -963,66 +962,21 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		 * 2. Sign
 		 */
 		hal_data sign;
-		ecdsa_mode.r = (hal_data *)malloc(sizeof(hal_data));
-		if( ecdsa_mode.r == NULL ) {
-			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		}
-		ecdsa_mode.r->data = NULL;
-		ecdsa_mode.r->data_len = 0;
-		ecdsa_mode.s = (hal_data *)malloc(sizeof(hal_data));
-		if( ecdsa_mode.r == NULL ) {
-			free( ecdsa_mode.r );
-			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		}
-		ecdsa_mode.s->data = NULL;
-		ecdsa_mode.s->data_len = 0;
-
 		ret = hal_ecdsa_sign_md( &t_hash, key_idx, &ecdsa_mode, &sign );
 		free( t_hash.data );
 
 		if( ret != HAL_SUCCESS ) {
-			hal_free_data( ecdsa_mode.r );
-			hal_free_data( ecdsa_mode.s );
-			free( ecdsa_mode.r );
-			free( ecdsa_mode.s );
 			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		}
 
 		/* Use r and s to generate signature */
-		if( sign.data == NULL ) {
-
-			mbedtls_mpi_init( &r );
-			mbedtls_mpi_init( &s );
-
-			ret = mbedtls_mpi_read_binary( &r, ecdsa_mode.r->data, ecdsa_mode.r->data_len );
-			if( ret ) {
-				goto cleanup;
-			}
-			ret = mbedtls_mpi_read_binary( &s, ecdsa_mode.s->data, ecdsa_mode.s->data_len );
-			if( ret ) {
-				goto cleanup;
-			}
-
-			ecdsa_signature_to_asn1( &r, &s, sig, sig_len );
-			goto cleanup;
-		} else {
-			sig = sign.data;
-			*sig_len = sign.data_len;
-		}
+		sig = sign.data;
+		*sig_len = sign.data_len;
 
 		return( ret );
 	} 
 
 	return( MBEDTLS_ERR_ECP_INVALID_KEY );
-
-cleanup:
-	hal_free_data( ecdsa_mode.r );
-	hal_free_data( ecdsa_mode.s );
-	free( ecdsa_mode.r );
-	free( ecdsa_mode.s );
-	mbedtls_mpi_free( &r );
-	mbedtls_mpi_free( &s );
-	return ret;
 }
 
 const mbedtls_pk_info_t mbedtls_eckey_info = {
