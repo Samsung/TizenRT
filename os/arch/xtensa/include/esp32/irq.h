@@ -405,12 +405,13 @@
 #define ESP32_CPUINT_TIMER1         15
 #define ESP32_CPUINT_TIMER2         16
 #define ESP32_CPUINT_SOFTWARE1      29
+#define ESP32_CPUINT_WIFI           0
 
 #define ESP32_CPUINT_NINTERNAL      6
 
 #define ESP32_NCPUINTS              32
 #define ESP32_CPUINT_MAX            (ESP32_NCPUINTS - 1)
-#define EPS32_CPUINT_PERIPHSET      0xdffe773f
+#define EPS32_CPUINT_PERIPHSET      0xdffe773e
 #define EPS32_CPUINT_INTERNALSET    0x200188c0
 
 /* Priority 1:   0-10, 12-13, 17-18    (15)

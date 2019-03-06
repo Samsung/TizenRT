@@ -367,6 +367,7 @@ int esp32_cpuint_initialize(void)
 	 *
 	 *   CPU interrupt bit           IRQ number
 	 *   --------------------------- ---------------------
+     *   ESP32_CPUINT_WIFI        0  ESP32_IRQ_MAC      4
 	 *   ESP32_CPUINT_TIMER0      6  XTENSA_IRQ_TIMER0  0
 	 *   SP32_CPUINT_SOFTWARE0    7  Not yet defined
 	 *   ESP32_CPUINT_PROFILING  11  Not yet defined
@@ -374,10 +375,10 @@ int esp32_cpuint_initialize(void)
 	 *   ESP32_CPUINT_TIMER2     16  XTENSA_IRQ_TIMER2  2
 	 *   ESP32_CPUINT_SOFTWARE1  29  Not yet defined
 	 */
-
-	intmap[ESP32_CPUINT_TIMER0] = XTENSA_IRQ_TIMER0;
-	intmap[ESP32_CPUINT_TIMER1] = XTENSA_IRQ_TIMER1;
-	intmap[ESP32_CPUINT_TIMER2] = XTENSA_IRQ_TIMER2;
+    intmap[ESP32_CPUINT_WIFI] = ESP32_IRQ_MAC;
+    intmap[ESP32_CPUINT_TIMER0] = XTENSA_IRQ_TIMER0;
+    intmap[ESP32_CPUINT_TIMER1] = XTENSA_IRQ_TIMER1;
+    intmap[ESP32_CPUINT_TIMER2] = XTENSA_IRQ_TIMER2;
 	return OK;
 }
 
