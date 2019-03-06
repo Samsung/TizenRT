@@ -26,3 +26,5 @@ tags
 /tmp/
 *.tmp
 *.tmp.*
+*.log
+*.log.old

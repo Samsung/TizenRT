@@ -143,6 +143,22 @@ static void board_i2c_initialize(void)
 }
 
 /****************************************************************************
+ * Name: board_spi_initialize
+ *
+ * Description:
+ *  Expose board dependent SPIs
+ ****************************************************************************/
+static void board_spi_initialize(void)
+{
+#if defined(CONFIG_SPI) && defined(CONFIG_S5J_SPI)
+	s5j_spi_register(0);
+	s5j_spi_register(1);
+	s5j_spi_register(2);
+	s5j_spi_register(3);
+#endif
+}
+
+/****************************************************************************
  * Name: board_audio_initialize
  *
  * Description:
@@ -278,6 +294,7 @@ void board_initialize(void)
 
 	board_gpio_initialize();
 	board_i2c_initialize();
+	board_spi_initialize();
 	board_audio_initialize();
 	board_sensor_initialize();
 	board_wdt_initialize();
