@@ -1,0 +1,58 @@
+menu "ESP32 LWIP"
+
+config ESP_DHCP_SERVER
+    bool "Enable expressif DHCP Server implement"
+    default y
+    help
+        this option enable expressif DHCP Server implement.
+ 
+config L2_TO_L3_COPY
+    bool "Enable copy between Layer2 and Layer3 packets"
+    default y
+    help
+        If this feature is enabled, all traffic from layer2(WIFI Driver) will be
+        copied to a new buffer before sending it to layer3(LWIP stack), freeing
+        the layer2 buffer.
+        Please be notified that the total layer2 receiving buffer is fixed and 
+        ESP32 currently supports 25 layer2 receiving buffer, when layer2 buffer 
+        runs out of memory, then the incoming packets will be dropped in hardware. 
+        The layer3 buffer is allocated from the heap, so the total layer3 receiving
+        buffer depends on the available heap size, when heap runs out of memory,  
+        no copy will be sent to layer3 and packet will be dropped in layer2. 
+        Please make sure you fully understand the impact of this feature before 
+        enabling it.
+
+config LWIP_IRAM_OPTIMIZATION
+    bool "Enable LWIP IRAM optimization"
+    default n
+    help
+        If this feature is enabled, some functions relating to RX/TX in LWIP will be
+        put into IRAM, it can improve UDP/TCP throughput by >10% for single core mode,
+        it doesn't help too much for dual core mode. On the other hand, it needs about
+        10KB IRAM for these optimizations.
+
+        If this feature is disabled, all lwip functions will be put into FLASH.
+
+menu "DHCP server"
+
+config LWIP_DHCPS_LEASE_UNIT
+    int "Multiplier for lease time, in seconds"
+    range 1 3600
+    default 60
+    help
+        The DHCP server is calculating lease time multiplying the sent 
+        and received times by this number of seconds per unit. 
+        The default is 60, that equals one minute.
+
+config LWIP_DHCPS_MAX_STATION_NUM
+    int "Maximum number of stations"
+    range 1 64
+    default 8
+    help
+        The maximum number of DHCP clients that are connected to the server.
+        After this number is exceeded, DHCP server removes of the oldest device
+        from it's address pool, without notification.
+
+endmenu # DHCPS
+
+endmenu
