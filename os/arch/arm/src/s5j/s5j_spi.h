@@ -91,6 +91,8 @@ typedef enum {
 	SPI_PORT_MAX,
 } SPI_PORT;
 
+void s5j_spi_register(int bus);
+
 #ifdef __cplusplus
 }
 #endif
