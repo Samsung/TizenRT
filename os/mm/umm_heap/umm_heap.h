@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * mm/umm_heap/umm_free.c
+ * mm/umm_heap/umm_heap.h
  *
- *   Copyright (C) 2007, 2009, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,42 +50,54 @@
  *
  ****************************************************************************/
 
+#ifndef __MM_UMM_HEAP_UMM_HEAP_H
+#define __MM_UMM_HEAP_UMM_HEAP_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdlib.h>
+
 #include <tinyara/mm/mm.h>
-#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+/* In the kernel build, there a multiple user heaps; one for each task
+ * group.  In this build configuration, the user heap structure lies
+ * in a reserved region at the beginning of the .bss/.data address
+ * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
+ * ARCH_DATA_RESERVE_SIZE
+ */
+
+#  include <tinyara/addrenv.h>
+#  define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+
+#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+/* In the protected mode, there are two heaps:  A kernel heap and a single
+ * user heap.  Kernel code must obtain the address of the user heap data
+ * structure from the userspace interface.
+ */
+
+#  include <tinyara/userspace.h>
+#  define USR_HEAP (USERSPACE->us_heap)
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+
+#  include <tinyara/userspace.h>
+extern struct userspace_s g_userspace;
+#  define USR_HEAP (g_userspace.us_heap)
+
+#else
+/* Otherwise, the user heap data structures are in common .bss */
+#  define USR_HEAP (g_mmheap)
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: free
- *
- * Description:
- *   Returns a chunk of user memory to the list of free nodes,  merging with
- *   adjacent free chunks if possible.
- *
- ****************************************************************************/
-
-void free(FAR void *mem)
-{
-	int heap_idx;
-	heap_idx = mm_get_heapindex(mem);
-	if (heap_idx != INVALID_HEAP_IDX) {
-		mm_free(&USR_HEAP[heap_idx], mem);
-	}
-}
-
+#endif /* __MM_UMM_HEAP_UMM_HEAP_H */

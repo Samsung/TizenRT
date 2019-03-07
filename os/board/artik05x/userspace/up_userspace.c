@@ -99,7 +99,9 @@ extern uint32_t _edata;           /* End+1 of .data */
 extern uint32_t _sbss;            /* Start of .bss */
 extern uint32_t _ebss;            /* End+1 of .bss */
 
-const struct userspace_s userspace __attribute__((section(".userspace"))) = {
+struct userspace_s g_userspace __attribute__((section(".uspace.data")));
+
+struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
 
 	.us_entrypoint    = (main_t)CONFIG_USER_ENTRYPOINT,
@@ -122,25 +124,12 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 #ifndef CONFIG_DISABLE_SIGNALS
 	.signal_handler   = up_signal_handler,
 #endif
-	/* Memory manager entry points (declared in include/tinyara/mm/mm.h) */
-
-	.mm_initialize    = umm_initialize,
-	.mm_addregion     = umm_addregion,
-	.mm_trysemaphore  = umm_trysemaphore,
-	.mm_givesemaphore = umm_givesemaphore,
-
-	/* Memory manager entry points (declared in include/stdlib.h) */
-
-	.mm_memalign      = memalign,
-	.mm_malloc        = malloc,
-	.mm_realloc       = realloc,
-	.mm_zalloc        = zalloc,
-	.mm_free          = free,
 
 	/* pre-application entry points (declared in include/tinyara/init.h) */
 
 	.preapp_start    = preapp_start,
 };
+
 
 /****************************************************************************
  * Public Functions

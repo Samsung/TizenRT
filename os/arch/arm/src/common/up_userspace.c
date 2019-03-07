@@ -60,6 +60,7 @@
 #include <assert.h>
 
 #include <tinyara/userspace.h>
+#include <tinyara/arch.h>
 
 #ifdef CONFIG_BUILD_PROTECTED
 
@@ -70,6 +71,12 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+extern uint32_t __usram_segment_start__[];
+struct userspace_s *g_k_userspace = ((FAR struct userspace_s *)CONFIG_TINYARA_USERSPACE);
 
 /****************************************************************************
  * Private Functions
@@ -97,7 +104,6 @@ void up_userspace(void)
 	uint8_t	*end;
 
 	/* Clear all of user-space .bss */
-
 	DEBUGASSERT(USERSPACE->us_bssstart != 0 && USERSPACE->us_bssend != 0 &&
 			USERSPACE->us_bssstart <= USERSPACE->us_bssend);
 
@@ -122,5 +128,14 @@ void up_userspace(void)
 		*dest++ = *src++;
 	}
 
+	/* Initialize shared userspace object */
+	src = (uint8_t *)g_k_userspace;
+	end = (uint8_t *)src + sizeof(struct userspace_s);
+	g_k_userspace = (FAR struct userspace_s *)__usram_segment_start__;
+	dest = (uint8_t *)g_k_userspace;
+
+	while (src != end) {
+		*dest++ = *src++;
+	}
 }
 #endif /* CONFIG_BUILD_PROTECTED */

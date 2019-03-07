@@ -401,7 +401,6 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 /* User heap structure:
  *
  * - Flat build:  In the FLAT build, the user heap structure is a globally
@@ -412,6 +411,25 @@ extern "C" {
  *   structure is associated with the address environment and there is
  *   no global user heap structure.
  */
+ #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+/* In the kernel build, there a multiple user heaps; one for each task
+ * group.  In this build configuration, the user heap structure lies
+ * in a reserved region at the beginning of the .bss/.data address
+ * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
+ * ARCH_DATA_RESERVE_SIZE
+ */
+
+#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+/* In the protected mode, there are two heaps:  A kernel heap and a single
+ * user heap.  In that case the user heap structure lies in the user space
+ * (with a reference in the userspace interface).
+ */
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+#include <tinyara/userspace.h>
+extern struct userspace_s g_userspace;
+#else
+/* Otherwise, the user heap data structures are in common .bss */
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #endif
 
@@ -432,6 +450,12 @@ EXTERN struct mm_heap_s g_kmmheap;
 #include <tinyara/addrenv.h>
 #define BASE_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+/*The user heap data structure is in shared userspace object */
+#define BASE_HEAP &(g_userspace.us_heap[0])
+#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+#include <tinyara/userspace.h>
+#define BASE_HEAP &(USERSPACE->us_heap[0])
 #else
 /* Otherwise, the user heap data structures are in common .bss */
 
@@ -786,6 +810,7 @@ void *zalloc_at(int heap_index, size_t size);
 #undef EXTERN
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif							/* __INCLUDE_MM_MM_H */

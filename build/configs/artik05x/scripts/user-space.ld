@@ -111,6 +111,7 @@ SECTIONS
 
     .data : {
         _sdata = ABSOLUTE(.);
+        *(.uspace.data)
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
         CONSTRUCTORS

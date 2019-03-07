@@ -374,6 +374,7 @@ void os_start(void)
 
 	sem_initialize();
 
+
 #if defined(MM_KERNEL_USRHEAP_INIT) || defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
 	/* Initialize the memory manager */
 
@@ -386,8 +387,9 @@ void os_start(void)
 		 * the user-mode memory allocator.
 		 */
 		up_allocate_heap(&heap_start, &heap_size);
+
 #if CONFIG_MM_REGIONS > 1
-		mm_initialize(&g_mmheap[regionx_heap_idx[0]], heap_start, heap_size);
+		mm_initialize(&USR_HEAP[regionx_heap_idx[0]], heap_start, heap_size);
 		heapx_is_init[regionx_heap_idx[0]] = true;
 		up_addregion();
 #else

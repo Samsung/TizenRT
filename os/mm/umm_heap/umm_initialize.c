@@ -58,8 +58,6 @@
 #include <assert.h>
 #include <tinyara/mm/mm.h>
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-
 /************************************************************************
  * Pre-processor definition
  ************************************************************************/
@@ -73,8 +71,9 @@
  ************************************************************************/
 #if !defined(CONFIG_ARCH_ADDRENV) || !defined(CONFIG_BUILD_KERNEL)
 /* Otherwise, the user heap data structures are in common .bss */
-
+#if !defined(CONFIG_BUILD_PROTECTED)
 struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#endif
 #endif
 
 /************************************************************************
@@ -134,5 +133,3 @@ void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
 	mm_initialize(BASE_HEAP, heap_start, heap_size);
 }
-
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
