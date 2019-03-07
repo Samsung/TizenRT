@@ -44,7 +44,7 @@
 #define MPU_REG_USER_DATA	MPU_REG5
 
 #ifndef __ASSEMBLY__
-typedef void (*fptr)(uintptr_t base, size_t size);
+typedef void (*fptr)(uint8_t region, uintptr_t base, size_t size);
 struct mpu_region_info {
 	fptr	call;
 	unsigned int	base;
