@@ -80,7 +80,7 @@
 #define MAX_DEFAULTS     196
 #define TAB_SIZE         4
 #define VAR_SIZE         80
-#define HTML_VAR_SIZE    (2*VAR_SIZE + 64)
+#define HTML_VAR_SIZE    (2 * VAR_SIZE + 64)
 #define NUM_DIR          5
 
 #define BODYFILE_NAME    ".k2h-body.dat"
@@ -674,7 +674,7 @@ static char *htmlize_expression(const char *src)
  *
  ****************************************************************************/
 
-static char *read_line(FILE * stream)
+static char *read_line(FILE *stream)
 {
 	char *ptr;
 	int len;
@@ -742,7 +742,7 @@ static char *read_line(FILE * stream)
  *
  ****************************************************************************/
 
-static char *kconfig_line(FILE * stream)
+static char *kconfig_line(FILE *stream)
 {
 	char *ptr;
 
@@ -1145,7 +1145,7 @@ static const char *type2str(enum config_type_e valtype)
  *
  ****************************************************************************/
 
-static inline void process_help(FILE * stream, output_t outfunc)
+static inline void process_help(FILE *stream, output_t outfunc)
 {
 	char *ptr;
 	int help_indent = 0;
@@ -1283,7 +1283,7 @@ static inline void process_help(FILE * stream, output_t outfunc)
  *
  ****************************************************************************/
 
-static void process_default(FILE * stream, struct default_s *defp)
+static void process_default(FILE *stream, struct default_s *defp)
 {
 	enum token_type_e tokid;
 	char *token;
@@ -1489,7 +1489,7 @@ static void free_dependencies(int ndependencies)
  *
  ****************************************************************************/
 
-static inline char *process_config(FILE * stream, const char *varname, const char *kconfigdir, const char *kconfigname)
+static inline char *process_config(FILE *stream, const char *varname, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct config_s config;
@@ -1785,8 +1785,8 @@ static inline char *process_config(FILE * stream, const char *varname, const cha
  *
  ****************************************************************************/
 
-static char *parse_kconfigfile(FILE * stream, const char *kconfigdir, const char *kconfigfile);	/* Forward reference */
-static inline char *process_choice(FILE * stream, const char *kconfigdir, const char *kconfigname)
+static char *parse_kconfigfile(FILE *stream, const char *kconfigdir, const char *kconfigfile);	/* Forward reference */
+static inline char *process_choice(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct choice_s choice;
@@ -1927,7 +1927,7 @@ static inline char *process_choice(FILE * stream, const char *kconfigdir, const 
  *
  ****************************************************************************/
 
-static inline char *process_menu(FILE * stream, const char *kconfigdir, const char *kconfigname)
+static inline char *process_menu(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct menu_s menu;
@@ -2038,7 +2038,7 @@ static inline char *process_menu(FILE * stream, const char *kconfigdir, const ch
  ****************************************************************************/
 
 static void process_kconfigfile(const char *kconfigdir, const char *kconfigname); /* Forward reference */
-static char *parse_kconfigfile(FILE * stream, const char *kconfigdir, const char *kconfigname)
+static char *parse_kconfigfile(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	char *token = NULL;
