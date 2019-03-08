@@ -105,7 +105,7 @@ if [ -x ./${MYNAME} ] ; then
 fi
 
 if [ ! -x tools/${MYNAME} ] ; then
-   echo "ERROR:  This file must be executed from the top-level TinyAra directory: $PWD"
+   echo "ERROR:  This file must be executed from the os directory"
    exit 1
 fi
 
