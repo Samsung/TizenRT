@@ -28,7 +28,7 @@ config FLASH_MINOR
 		Sets the minor number for /dev node of the external flash
 		device.
 
-config FLASH_PART_LIST
+config FLASH_PART_SIZE
 	string "Flash partition size list (in KBytes)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
 	---help---

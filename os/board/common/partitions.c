@@ -34,7 +34,7 @@ void configure_partitions(void)
 #if defined(CONFIG_FLASH_PARTITION)
 	int partno;
 	int partoffset;
-	const char *parts = CONFIG_FLASH_PART_LIST;
+	const char *parts = CONFIG_FLASH_PART_SIZE;
 	const char *types = CONFIG_FLASH_PART_TYPE;
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 	const char *names = CONFIG_FLASH_PART_NAME;

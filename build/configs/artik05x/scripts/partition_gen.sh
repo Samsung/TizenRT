@@ -36,8 +36,8 @@ PARTITION_KCONFIG=${OS_DIR_PATH}/board/common/Kconfig
 FLASH_BASE=0x04000000
 
 # Partition information
-partsize_list_default=`grep -A 2 'config FLASH_PART_LIST' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partsize_list=${CONFIG_FLASH_PART_LIST:=${partsize_list_default}}
+partsize_list_default=`grep -A 2 'config FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partsize_list=${CONFIG_FLASH_PART_SIZE:=${partsize_list_default}}
 partname_list_default=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
 partname_list=${CONFIG_FLASH_PART_NAME:=${partname_list_default}}
 
