@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,45 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_write.c
-/// @brief Test Case Example for write to kernel space from user space
+#ifndef __ARCH_ARM_INCLUDE_S5J_MPU_H
+#define __ARCH_ARM_INCLUDE_S5J_MPU_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
+#include <tinyara/config.h>
+#include <tinyara/irq.h>
 
-extern uint32_t __ksram_segment_start__[];
+#ifndef __ASSEMBLY__
+#include <stdint.h>
+#include <arch/arch.h>
+#endif
+
 /****************************************************************************
- * Name: read_main
+ * Pre-processor Definitions
  ****************************************************************************/
+/*
+ * Region definitions for our platform
+ */
+#define MPU_REG_ENTIRE_MAP	MPU_REG0
+#define MPU_REG_PERIPH		MPU_REG1
+#define MPU_REG_KERN_CODE	MPU_REG2
+#define MPU_REG_KERN_DATA	MPU_REG3
+#define MPU_REG_USER_CODE	MPU_REG4
+#define MPU_REG_USER_DATA	MPU_REG5
 
-int write_main(void)
-{
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
-	uint32_t dest = 0xdeadbeef;
+#ifndef __ASSEMBLY__
+typedef void (*fptr)(uintptr_t base, size_t size);
+struct mpu_region_info {
+	fptr	call;
+	unsigned int	base;
+	unsigned int	size;
+	unsigned int	rgno;
+};
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to write     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
-	printf("************************************************\n");
-
-	sleep(3);
-	*address = dest;
-
-	printf("ERR: User Task successfully accessed Kernel space\n");
-	return 0;
-}
+#ifdef CONFIG_BUILD_PROTECTED
+extern const struct mpu_region_info regions_info[];
+#endif
+#endif
+#endif /* __ARCH_ARM_INCLUDE_S5J_MPU_H */
