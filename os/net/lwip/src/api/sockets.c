@@ -74,16 +74,6 @@
 #define SOCKETADD_ERR_RECORD(reason_code)
 #endif
 
-#if defined(CONFIG_ARCH_CHIP_S5JT200) || defined(CONFIG_ARCH_CHIP_LM3S6965) || defined(CONFIG_ARCH_CHIP_BCM4390X)
-#if LWIP_HAVE_LOOPIF
-#define NET_DEVNAME "wl1"
-#else
-#define NET_DEVNAME "wl0"
-#endif
-#else
-#error "undefined CONFIG_NET_<type>, check your .config"
-#endif
-
 #if LWIP_SOCKET					/* don't build if not configured for use in lwipopts.h */
 
 #ifdef CONFIG_NET_NETMON

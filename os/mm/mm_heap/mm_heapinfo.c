@@ -67,7 +67,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define MM_PIDHASH(pid) ((pid) & (CONFIG_MAX_TASKS - 1))
 #define HEAPINFO_INT INT16_MAX
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
@@ -112,6 +111,14 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #else
 #define region 0
 #endif
+
+#ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
+	int ndx;
+	int nodelist_cnt[MM_NNODES] = {0, };
+	size_t nodelist_size[MM_NNODES] = {0, };
+	FAR struct mm_freenode_s *fnode;
+#endif
+
 	/* initialize the heap, stack and nonsched resource */
 	nonsched_resource = 0;
 	heap_resource = 0;
@@ -162,8 +169,8 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				} else if (node->pid < 0 && sched_gettcb((-1) * (node->pid)) != NULL) {
 					stack_resource += node->size;
 				} else if (sched_gettcb(node->pid) == NULL) {
-					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
-					nonsched_size[MM_PIDHASH(node->pid)] += node->size;
+					nonsched_list[PIDHASH(node->pid)] = node->pid;
+					nonsched_size[PIDHASH(node->pid)] += node->size;
 					nonsched_resource += node->size;
 				} else {
 					heap_resource += node->size;
@@ -234,6 +241,25 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("(**) Only Idle task has a separate stack region,\n");
 	printf("  rest are all allocated on the heap region.\n");
 
+#ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
+	printf("\nAvailable fragmented memory segments in heap memory\n");
+
+	mm_takesemaphore(heap);
+
+	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
+		for (fnode = heap->mm_nodelist[ndx].flink; fnode && fnode->size; fnode = fnode->flink) {
+			++nodelist_cnt[ndx];
+			nodelist_size[ndx] += fnode->size;
+		}
+	}
+
+	mm_givesemaphore(heap);
+
+	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
+		printf("Nodelist[%d] (less than %d) : num %d, size %d [Bytes]\n", ndx, 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
+	}
+#endif
+
 	if (mode != HEAPINFO_SIMPLE) {
 		printf("\n< by Dead Threads >\n");
 		printf(" Pid | Size \n");
@@ -290,7 +316,7 @@ void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size)
 {
 	pid_t hash_pid;
 
-	hash_pid = PID_HASH(pid);
+	hash_pid = PIDHASH(pid);
 	if (heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO || heap->alloc_list[hash_pid].pid == pid) {
 			heap->alloc_list[hash_pid].pid = pid;
 			heap->alloc_list[hash_pid].curr_alloc_size += size;
@@ -311,7 +337,7 @@ void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size)
 {
 	pid_t hash_pid;
 
-	hash_pid = PID_HASH(pid);
+	hash_pid = PIDHASH(pid);
 	if (heap->alloc_list[hash_pid].pid == pid) {
 			heap->alloc_list[hash_pid].curr_alloc_size -= size;
 			heap->alloc_list[hash_pid].num_alloc_free--;
@@ -372,7 +398,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 	pid_t hash_pid;
 
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
-	hash_pid = PID_HASH(node->pid);
+	hash_pid = PIDHASH(node->pid);
 	heap->alloc_list[hash_pid].curr_alloc_size -= node->size;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	int check_idx;

@@ -216,9 +216,6 @@
 #define REGION_END (REGION_START + REGION_SIZE)
 #define INVALID_HEAP_IDX -1
 
-#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
-#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
-
 /* Determines the size of the chunk size/offset type */
 
 #ifdef CONFIG_MM_SMALL

@@ -553,6 +553,10 @@ char *get_json_string_from_file(const char *filename)
 	}
 
 	json_str = (char *)things_malloc(size + 1);
+	if (json_str == NULL) {
+		THINGS_LOG_E(TAG, "Failed to allocate memory(%d).", size + 1);
+		return NULL;
+	}
 
 	// 1. File Read
 	fp = fopen(filename, "r");

@@ -1168,6 +1168,9 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan(), "fail scan\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == EVT_CONNECT) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_ALREADY_CONNECTED;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -1224,6 +1227,9 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		nvdbg("[WM] deinit\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_FAIL;
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
@@ -1240,6 +1246,9 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		ndbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_FAIL;
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
@@ -1267,6 +1276,9 @@ wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 		WIFIMGR_TERMINATE_RECONN_WORKER;
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_FAIL;
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;

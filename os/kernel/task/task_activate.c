@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 #ifndef CONFIG_DISABLE_SIGNALS
 #include <pthread.h>
 #include <unistd.h>
@@ -166,7 +167,7 @@ int task_activate(FAR struct tcb_s *tcb)
 	pid_t hash_pid;
 	struct mm_heap_s *heap = mm_get_heap(tcb->stack_alloc_ptr);
 
-	hash_pid = PID_HASH(tcb->pid);
+	hash_pid = PIDHASH(tcb->pid);
 	if (heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO) {
 		heap->alloc_list[hash_pid].pid = tcb->pid;
 		heap->alloc_list[hash_pid].curr_alloc_size = 0;

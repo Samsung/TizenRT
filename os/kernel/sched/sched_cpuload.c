@@ -60,6 +60,7 @@
 #include <assert.h>
 
 #include <tinyara/clock.h>
+#include <tinyara/sched.h>
 #include <arch/irq.h>
 
 #include "sched/sched.h"

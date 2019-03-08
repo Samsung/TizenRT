@@ -224,7 +224,7 @@ static inline void xtensa_disable_all(void)
 {
 	__asm__ __volatile__("movi a2, 0\n"
 						 "xsr a2, INTENABLE\n"
-						 ::: "a2");
+						 : : : "a2");
 }
 
 /****************************************************************************
@@ -555,7 +555,7 @@ void esp32_free_cpuint(int cpuint)
 	uint32_t *freeints;
 	uint32_t bitmask;
 
-	DEBUGASSERT(cpuint >= 0 && cpuint < ESP32_CPUINT_NEDGEPERIPHS);
+	DEBUGASSERT(cpuint >= 0 && cpuint < ESP32_NCPUINTS);
 
 	/* Mark the CPU interrupt as available */
 

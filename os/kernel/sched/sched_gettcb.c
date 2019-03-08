@@ -57,6 +57,7 @@
 #include <sys/types.h>
 
 #include <sched.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 
