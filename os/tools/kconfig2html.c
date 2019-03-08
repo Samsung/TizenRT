@@ -54,6 +54,7 @@
  * Included Files
  ****************************************************************************/
 
+#define _GNU_SOURCE 1
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,13 +74,13 @@
 
 #define LINE_SIZE        1024
 #define SCRATCH_SIZE     2048
-#define MAX_DEPENDENCIES 100
+#define MAX_DEPENDENCIES 128
 #define MAX_LEVELS       100
 #define MAX_SELECT       64
-#define MAX_DEFAULTS     128
+#define MAX_DEFAULTS     196
 #define TAB_SIZE         4
 #define VAR_SIZE         80
-#define HTML_VAR_SIZE    (2*VAR_SIZE + 64)
+#define HTML_VAR_SIZE    (2 * VAR_SIZE + 64)
 #define NUM_DIR          5
 
 #define BODYFILE_NAME    ".k2h-body.dat"
@@ -96,6 +97,7 @@ enum token_type_e {
 	TOKEN_CONFIG,
 	TOKEN_MENUCONFIG,
 	TOKEN_BOOL,
+	TOKEN_TRISTATE,
 	TOKEN_INT,
 	TOKEN_HEX,
 	TOKEN_STRING,
@@ -122,6 +124,7 @@ enum config_type_e {
 	VALUE_INT,
 	VALUE_HEX,
 	VALUE_BOOL,
+	VALUE_TRISTATE,
 	VALUE_STRING
 };
 
@@ -228,6 +231,7 @@ static struct reserved_s g_reserved[] = {
 	{ TOKEN_CONFIG,      "config" },
 	{ TOKEN_MENUCONFIG,  "menuconfig" },
 	{ TOKEN_BOOL,        "bool" },
+	{ TOKEN_TRISTATE,   "tristate" },
 	{ TOKEN_INT,         "int" },
 	{ TOKEN_HEX,         "hex" },
 	{ TOKEN_STRING,      "string" },
@@ -670,7 +674,7 @@ static char *htmlize_expression(const char *src)
  *
  ****************************************************************************/
 
-static char *read_line(FILE * stream)
+static char *read_line(FILE *stream)
 {
 	char *ptr;
 	int len;
@@ -738,7 +742,7 @@ static char *read_line(FILE * stream)
  *
  ****************************************************************************/
 
-static char *kconfig_line(FILE * stream)
+static char *kconfig_line(FILE *stream)
 {
 	char *ptr;
 
@@ -1113,6 +1117,9 @@ static const char *type2str(enum config_type_e valtype)
 	case VALUE_BOOL:
 		return "Boolean";
 
+	case VALUE_TRISTATE:
+		return "Tristate";
+
 	case VALUE_INT:
 		return "Integer";
 
@@ -1138,7 +1145,7 @@ static const char *type2str(enum config_type_e valtype)
  *
  ****************************************************************************/
 
-static inline void process_help(FILE * stream, output_t outfunc)
+static inline void process_help(FILE *stream, output_t outfunc)
 {
 	char *ptr;
 	int help_indent = 0;
@@ -1276,7 +1283,7 @@ static inline void process_help(FILE * stream, output_t outfunc)
  *
  ****************************************************************************/
 
-static void process_default(FILE * stream, struct default_s *defp)
+static void process_default(FILE *stream, struct default_s *defp)
 {
 	enum token_type_e tokid;
 	char *token;
@@ -1482,7 +1489,7 @@ static void free_dependencies(int ndependencies)
  *
  ****************************************************************************/
 
-static inline char *process_config(FILE * stream, const char *configname, const char *kconfigdir)
+static inline char *process_config(FILE *stream, const char *varname, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct config_s config;
@@ -1497,7 +1504,7 @@ static inline char *process_config(FILE * stream, const char *configname, const 
 	/* Get the configuration information */
 
 	memset(&config, 0, sizeof(struct config_s));
-	config.c_name = strdup(configname);
+	config.c_name = strdup(varname);
 
 	/* Process each line in the configuration */
 
@@ -1511,10 +1518,11 @@ static inline char *process_config(FILE * stream, const char *configname, const 
 		if (token != NULL) {
 			tokid = tokenize(token);
 			switch (tokid) {
-			case TOKEN_BOOL:{
+			case TOKEN_BOOL:
+			case TOKEN_TRISTATE:{
 					/* Save the type of the configuration variable */
 
-					config.c_type = VALUE_BOOL;
+					config.c_type = tokid == TOKEN_BOOL ? VALUE_BOOL : VALUE_TRISTATE;
 
 					/* Get the description following the type */
 
@@ -1729,9 +1737,9 @@ static inline char *process_config(FILE * stream, const char *configname, const 
 
 	print_dependencies(outfunc);
 
-	/* Show the configuration file */
+	/* Show the configuration file. */
 
-	outfunc("  <li><i>Kconfig file</i>: <code>%s/Kconfig</code>\n", kconfigdir);
+	outfunc("  <li><i>Kconfig file</i>: <code>%s/%s</code>\n", kconfigdir, kconfigname);
 
 	/* Print any help text */
 
@@ -1777,8 +1785,8 @@ static inline char *process_config(FILE * stream, const char *configname, const 
  *
  ****************************************************************************/
 
-static char *parse_kconfigfile(FILE * stream, const char *kconfigdir);	/* Forward reference */
-static inline char *process_choice(FILE * stream, const char *kconfigdir)
+static char *parse_kconfigfile(FILE *stream, const char *kconfigdir, const char *kconfigfile);	/* Forward reference */
+static inline char *process_choice(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct choice_s choice;
@@ -1867,9 +1875,12 @@ static inline char *process_choice(FILE * stream, const char *kconfigdir)
 
 	print_dependencies(body);
 
-	/* Show the configuration file */
+	/* Show the configuration file.
+	 * REVISIT: Shows wrong file name if the name of the Kconfig file is not
+	 * Kconfig.
+	 */
 
-	body("  <li><i>Kconfig file</i>: <code>%s/Kconfig</code>\n</li>", kconfigdir);
+	body("  <li><i>Kconfig file</i>: <code>%s/%s</code>\n</li>", kconfigdir, kconfigname);
 
 	/* Print any help text */
 
@@ -1882,7 +1893,7 @@ static inline char *process_choice(FILE * stream, const char *kconfigdir)
 
 	/* Then show the choice options */
 
-	body("<p><b>Choice Options:</b></p>", kconfigdir);
+	body("<p><b>Choice Options:</b></p>");
 	body("<ul>\n");
 
 	/* Free allocated memory */
@@ -1899,6 +1910,7 @@ static inline char *process_choice(FILE * stream, const char *kconfigdir)
 
 	debug("process_choice: TOKEN_CHOICE\n");
 	debug("  kconfigdir:  %s\n", kconfigdir);
+	debug("  kconfigname: %s\n", kconfigname);
 	debug("  level:       %d\n", g_level);
 
 	/* Then return in choice mode */
@@ -1915,7 +1927,7 @@ static inline char *process_choice(FILE * stream, const char *kconfigdir)
  *
  ****************************************************************************/
 
-static inline char *process_menu(FILE * stream, const char *kconfigdir)
+static inline char *process_menu(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	struct menu_s menu;
@@ -1993,7 +2005,7 @@ static inline char *process_menu(FILE * stream, const char *kconfigdir)
 
 	/* Show the configuration file */
 
-	body("  <li><i>Kconfig file</i>: <code>%s/Kconfig</code>\n", kconfigdir);
+	body("  <li><i>Kconfig file</i>: <code>%s/%s</code>\n", kconfigdir, kconfigname);
 	body("</ul>\n");
 
 	/* Free any allocated memory */
@@ -2009,6 +2021,7 @@ static inline char *process_menu(FILE * stream, const char *kconfigdir)
 
 	debug("process_menu: TOKEN_MENU\n");
 	debug("  kconfigdir:  %s\n", kconfigdir);
+	debug("  kconfigname: %s\n", kconfigname);
 	debug("  level:       %d\n", g_level);
 
 	/* Return the terminating token */
@@ -2024,8 +2037,8 @@ static inline char *process_menu(FILE * stream, const char *kconfigdir)
  *
  ****************************************************************************/
 
-static void process_kconfigfile(const char *kconfigdir);	/* Forward reference */
-static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
+static void process_kconfigfile(const char *kconfigdir, const char *kconfigname); /* Forward reference */
+static char *parse_kconfigfile(FILE *stream, const char *kconfigdir, const char *kconfigname)
 {
 	enum token_type_e tokid;
 	char *token = NULL;
@@ -2044,42 +2057,52 @@ static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
 			case TOKEN_SOURCE:{
 					/* Get the relative path from the Kconfig file line */
 
-					char *relpath = get_token();
+					char *source = get_token();
 
 					/* Remove optional quoting */
 
-					relpath = dequote(relpath);
-					if (relpath) {
-						char *subdir = dirname(relpath);
+					source = dequote(source);
+					if (source) {
+						char *configname = basename(source);
+						char *subdir = dirname(source);
 						char *dirpath = NULL;
 
-						/* Check if the directory path contains $XXXDIR */
+						/* Check for an absolute path */
 
-						for (i = 0; i < NUM_DIR; i++) {
-							char *dir = strstr(subdir, dir_info[i].name);
-							if (dir) {
-								char *tmp = dir + strlen(dir_info[i].name);
+						if (source[0] == '/') {
+							dirpath = strdup(subdir);
+						} else {
+							/* Check if the directory path contains $XXXDIR */
 
-								*dir = '\0';
-								asprintf(&dirpath, "%s/%s%s%s", g_kconfigroot, subdir, dir_info[i].rel_path, tmp);
+							for (i = 0; i < NUM_DIR; i++) {
+								char *dir = strstr(subdir, dir_info[i].name);
+								if (dir) {
+									char *tmp = dir + strlen(dir_info[i].name);
+
+									*dir = '\0';
+									asprintf(&dirpath, "%s/%s%s%s", g_kconfigroot, subdir, dir_info[i].rel_path, tmp);
+								}
+							}
+
+							if (!dirpath) {
+								asprintf(&dirpath, "%s/%s", g_kconfigroot, subdir);
 							}
 						}
 
-						if (!dirpath) {
-							asprintf(&dirpath, "%s/%s", g_kconfigroot, subdir);
-						}
-
+						configname = strdup(configname);
 
 						debug("parse_kconfigfile: Recursing for TOKEN_SOURCE\n");
-						debug("  relpath:     %s\n", relpath);
+						debug("  source:      %s\n", source);
 						debug("  subdir:      %s\n", subdir);
 						debug("  dirpath:     %s\n", dirpath);
+						debug("  configname:  %s\n", configname);
 
 						/* Then recurse */
 
-						process_kconfigfile(dirpath);
+						process_kconfigfile(dirpath, configname);
 						token = NULL;
 						free(dirpath);
+						free(configname);
 					}
 
 					/* Set the token string to NULL to indicate that we need to read the next line */
@@ -2090,8 +2113,8 @@ static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
 
 			case TOKEN_CONFIG:
 			case TOKEN_MENUCONFIG:{
-					char *configname = get_token();
-					token = process_config(stream, configname, kconfigdir);
+					char *varname = get_token();
+					token = process_config(stream, varname, kconfigdir, kconfigname);
 				}
 				break;
 
@@ -2102,12 +2125,12 @@ static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
 				break;
 
 			case TOKEN_MENU:{
-					token = process_menu(stream, kconfigdir);
+					token = process_menu(stream, kconfigdir, kconfigname);
 				}
 				break;
 
 			case TOKEN_CHOICE:{
-					token = process_choice(stream, kconfigdir);
+					token = process_choice(stream, kconfigdir, kconfigname);
 				}
 				break;
 
@@ -2155,9 +2178,9 @@ static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
 				break;
 
 			default:{
-					/* Set token to NULL to skip to the next line */
+					/* Set token to NULL to skip to the next line. */
 
-					error("File %s/Kconfig Unhandled token: %s\n", kconfigdir, token);
+					error("File %s/%s Unhandled token: %s\n", kconfigdir, kconfigname, token);
 					token = NULL;
 				}
 				break;
@@ -2176,14 +2199,14 @@ static char *parse_kconfigfile(FILE * stream, const char *kconfigdir)
  *
  ****************************************************************************/
 
-static void process_kconfigfile(const char *kconfigdir)
+static void process_kconfigfile(const char *kconfigdir, const char *kconfigname)
 {
 	FILE *stream;
 	char *kconfigpath;
 
 	/* Create the full path to the Kconfig file */
 
-	asprintf(&kconfigpath, "%s/Kconfig", kconfigdir);
+	asprintf(&kconfigpath, "%s/%s", kconfigdir, kconfigname);
 	debug("process_kconfigfile: Entry\n");
 	debug("  kconfigdir:  %s\n", kconfigdir);
 	debug("  kconfigpath: %s\n", kconfigpath);
@@ -2199,7 +2222,7 @@ static void process_kconfigfile(const char *kconfigdir)
 
 	/* Process each line in the Kconfig file */
 
-	parse_kconfigfile(stream, kconfigdir);
+	parse_kconfigfile(stream, kconfigdir, kconfigname);
 
 	/* Close the Kconfig file and release the memory holding the full path */
 
@@ -2331,7 +2354,6 @@ int main(int argc, char **argv, char **envp)
 	output("<tr align=\"center\" bgcolor=\"#e4e4e4\">\n");
 	output("<td>\n");
 	output("<h1><big><font color=\"#3c34ec\"><i>TinyAra Configuration Variables</i></font></big></h1>\n");
-	output("<p>FOR INTERNAL USE ONLY</p>\n");
 	output("<p>Last Updated: %s</p>\n", g_scratch);
 	output("</td>\n");
 	output("</tr>\n");
@@ -2422,7 +2444,7 @@ int main(int argc, char **argv, char **envp)
 
 	/* Process the Kconfig files through recursive descent */
 
-	process_kconfigfile(g_kconfigroot);
+	process_kconfigfile(g_kconfigroot, "Kconfig");
 
 	/* Terminate the table of contents */
 

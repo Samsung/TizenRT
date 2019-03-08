@@ -1,7 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
 
 config DISABLE_POLL
-	bool
-	prompt "Disable driver poll interfaces" if NFILE_DESCRIPTORS != 0
+	bool "Disable driver poll interfaces" if NFILE_DESCRIPTORS != 0
 	default n if NFILE_DESCRIPTORS != 0
 	default y if NFILE_DESCRIPTORS = 0
 	---help---
