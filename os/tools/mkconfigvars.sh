@@ -159,3 +159,7 @@ fi
 # Now re-create the configuration variable document
 
 ${KCONFIG2HTML} -a "${APPSDIR}" -o ${HTMLFILE}
+
+# Remove used execution file
+
+rm ${KCONFIG2HTML}
