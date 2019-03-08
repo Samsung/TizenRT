@@ -6,7 +6,7 @@
 if ARCH_BOARD_LM3S6965EK
 
 choice
-	bool "Build for qemu hardware"
+	prompt "Build for qemu hardware"
 	default QEMU_NONE
 
 config QEMU_SRAM
