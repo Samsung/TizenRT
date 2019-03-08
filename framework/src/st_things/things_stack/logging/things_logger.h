@@ -22,7 +22,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
+
 #include "things_def.h"
+#include "ocpayload.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,8 +94,12 @@ const char *__get_timestamp__(void);
 
 #ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
 #define THINGS_LOG_D(tag, ...)   things_logv((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#define THINGS_LOG_REQUEST(tag, flag, payload)     things_log_request((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, flag, payload);
+#define THINGS_LOG_RESPONSE(tag, payload)    things_log_response((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, payload);
 #else //CONFIG_DEBUG_ST_THINGS_DEBUG
 #define THINGS_LOG_D(tag, ...)
+#define THINGS_LOG_REQUEST(tag, flag, payload)
+#define THINGS_LOG_RESPONSE(tag, payload)
 #endif
 
 #ifdef CONFIG_DEBUG_ST_THINGS_INFO

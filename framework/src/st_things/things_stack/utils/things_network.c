@@ -428,7 +428,7 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_
 	}
 	pinfo = g_wifi_scan_info;
 	while (pinfo != NULL) {
-		THINGS_LOG_V(TAG, "WiFi AP - SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
+		THINGS_LOG_V(TAG, "WiFi AP - SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d",
 				   pinfo->e_ssid, pinfo->bss_id, pinfo->signal_level);
 		pinfo = pinfo->next;
 	}
