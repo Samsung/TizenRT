@@ -9,13 +9,14 @@ config ARCH_USE_FLASH
 	---help---
 		This shows that user enables FLASH to use.
 
+if ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+comment "Board-Partition Options"
+
 config FLASH_PARTITION
 	bool "Enable partition support on FLASH"
 	default n
 	select MTD
 	select MTD_PARTITION
-	depends on ARCH_USE_FLASH
-	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		Enables creation of partitions on the FLASH
 
@@ -48,4 +49,5 @@ config FLASH_PART_NAME
 	---help---
 		Comma separated list of partition names.
 
-endif
+endif # FLASH_PARTITION
+endif # ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
