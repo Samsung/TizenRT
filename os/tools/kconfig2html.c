@@ -2354,7 +2354,6 @@ int main(int argc, char **argv, char **envp)
 	output("<tr align=\"center\" bgcolor=\"#e4e4e4\">\n");
 	output("<td>\n");
 	output("<h1><big><font color=\"#3c34ec\"><i>TinyAra Configuration Variables</i></font></big></h1>\n");
-	output("<p>FOR INTERNAL USE ONLY</p>\n");
 	output("<p>Last Updated: %s</p>\n", g_scratch);
 	output("</td>\n");
 	output("</tr>\n");
