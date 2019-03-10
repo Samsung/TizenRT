@@ -165,6 +165,8 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 
 		THINGS_LOG_V(TAG, "\t\t\tRes. : %s ( %d )", (response.ehResult == OC_EH_OK ? "NORMAL" : "ERROR"), response.ehResult);
 
+		THINGS_LOG_RESPONSE(TAG, &response);
+
 		iotivity_api_lock();
 		OCStackResult ret = OCDoResponse(&response);
 		iotivity_api_unlock();
@@ -566,6 +568,8 @@ OCEntityHandlerResult entity_handler(OCEntityHandlerFlag flag, OCEntityHandlerRe
 	iotivity_api_lock();
 	const char *uri = OCGetResourceUri(entity_handler_request->resource);
 	iotivity_api_unlock();
+
+	THINGS_LOG_REQUEST(TAG, flag, entity_handler_request);
 
 	// Observe Request Handling
 	if (flag & OC_OBSERVE_FLAG) {
