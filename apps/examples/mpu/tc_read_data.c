@@ -15,8 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_read.c
-/// @brief Test Case Example for kernel data access from user space
 
 /****************************************************************************
  * Included Files
@@ -29,24 +27,31 @@
 #include <sys/types.h>
 
 extern uint32_t __ksram_segment_start__[];
+
 /****************************************************************************
- * Name: read_main
+ *
+ * Fucntion: read_data_main
+ *
+ * Description: Test Case Example for read kernel data space from user space
+ *
  ****************************************************************************/
 
-int read_main(void)
+int read_data_main(void)
 {
 	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
 	uint32_t dest;
 
-	printf("************************************************\n");
+	printf("\n************************************************\n");
 	printf("* Test to verify protection of Kernel data     *\n");
 	printf("* User Tasks should not be allowed to read     *\n");
 	printf("* kernel data space. MPU shall raise exception *\n");
 	printf("************************************************\n");
 
-	sleep(3);
+	sleep(1);
 	dest = *address;
 
-	printf("ERR: User Task successfully accessed Kernel space\n");
+
+	printf("INFO: User Task successfully read from Kernel data space\n");
+	printf("INFO: Read Data: %x\n", dest);
 	return 0;
 }
