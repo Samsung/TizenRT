@@ -73,7 +73,7 @@ After initialization of the netif parameters above, device driver should call ne
 
 ```
 struct netif *netif_add(struct netif *netif, 
-#ifdef LwIP_IPv4
+#ifdef LWIP_IPv4
                         const ip4_addr_t * ipaddr, const ip4_addr_t * netmask, const ip4_addr_t * gw,
 #endif
                         void *state, netif_init_fn init, netif_input_fn input);
@@ -103,9 +103,49 @@ Please note that **netif_is_up()** returns whether the netif is up or not.
 #### Further management
 
 Callback function registration (netif structure)  
-* status_callback - Status callback function is provided if you set the LwIP_NETIF_STATUS_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
-* link_callback - Link callback function is provided if you set the LwIP_NETIF_LINK_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
-* remove_callback - Remove callback function is provided if you set the LwIP_NETIF_REMOVE_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
+* status_callback - Status callback function is provided if you set the LWIP_NETIF_STATUS_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
+* link_callback - Link callback function is provided if you set the LWIP_NETIF_LINK_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
+* remove_callback - Remove callback function is provided if you set the LWIP_NETIF_REMOVE_CALLBACK in [lwipopts.h](../os/include/net/lwip/lwipopts.h)  
 
 
+### Interoperability b/w LwIP and Device Driver
+Device driver needs to manage **LwIP state flags** and **network buffer (called pbuf)**. Please refer to the below.
+
+#### LwIP state flags
+1. NETIF_LWIP_UP: When a network interface is enabled and able to process traffic, this flag should be set to true. 
+Simply, set it to true or false, according to the device driver's status; initialized or deinitialized.
+Use LwIP APIs as below (defined in netif.c) to control the flag.
+```
+void netif_set_down(struct netif *netif);
+void netif_set_up(struct netif *netif);
+```
+
+2. NETIF_LWIP_LINK_UP: This flag should be set to true or false, when the link is activated or deactivated, respectively.
+Use LwIP APIs as below (defined in netif.c) to control the flag.
+```
+void netif_set_link_down(struct netif *netif);
+void netif_set_link_up(struct netif *netif);
+```
+
+* NOTE: In general, **device driver up/down** and **link up/down** are not strictly distinguished in LwIP structure.
+However, when the device driver changes its operation mode from STATION to AP,
+both NETIF_LWIP_UP and NETIF_LWIP_LINK_UP can be set to 0 simultaneously,
+or only NETIF_LWIP_LINK_UP is set to 0 without changing NETIF_LWIP_UP, depending on the device driver structure.
+
+#### Network buffer (struct pbuf *p)
+1. INPUT: To pass a packet up the TCP/IP stack by the device driver, **netif->input** registered by netif_add() API should be called with pbuf.
+To allocate pbuf and manage it in the driver level, please refer to APIs defined in pbuf.h (LwIP pbuf APIs).
+In general, **tcpip_input()** defined in tcpip.c is used as below.
+```
+err_t tcpip_input(struct pbuf *p, struct netif *netif_in);
+```
+NOTE: Even if pbuf allocation fails due to memory pool overflow from LwIP, the driver should not discard the packet rashly.
+
+
+2. OUTPUT: To send a packet on the interface to the link, **netif->linkoutput** implemented by the device driver should be called with pbuf.
+```
+typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
+```
+NOTE: The driver can optimize its structure to manage the packets received from the pbuf.
+However, it cannot drop the packet arbitrarily, depending on the queue or status of the driver.
 
