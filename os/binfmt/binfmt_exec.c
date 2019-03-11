@@ -207,6 +207,10 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	/* TODO: How does the module get unloaded in this case? */
 #endif
 
+#ifdef CONFIG_DEBUG
+	dbg("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[0], pid);
+#endif
+
 	sched_unlock();
 	return pid;
 
