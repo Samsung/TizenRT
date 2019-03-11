@@ -521,6 +521,10 @@ menu "Event Loop Framework"
 source "$FRAMEWORK_DIR/src/eventloop/Kconfig"
 endmenu
 
+menu "Messaging Framework"
+source "$FRAMEWORK_DIR/src/messaging/Kconfig"
+endmenu
+
 menu "Things Management"
 source Kconfig.things
 endmenu

@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config MESSAGING_IPC
+	bool "Enable Messaging APIs"
+	default y
+	depends on !DISABLE_MQUEUE
+	---help---
+		Enables Messaging APIs.
+
+if MESSAGING_IPC
+config MESSAGING_UNICAST_MAXMSG
+	int "Max message number for unicast"
+	default 100
+	---help---
+		Max number of unicast messaging
+
+config MESSAGING_UNICAST_MSGSIZE
+	int "Max message size for unicast"
+	default MQ_MAXMSGSIZE
+	---help---
+		Max size of unicast messaging
+
+endif
+

@@ -764,6 +764,14 @@ Once LOGM is approved, each module should have its own index
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_MESSAGE_IPC
+#define msgdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define msglldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define msgdbg(...)
+#define msglldbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1195,6 +1203,14 @@ Once LOGM is approved, each module should have its own index
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_MESSAGE_IPC
+#define msgdbg       dbg
+#define msglldbg     lldbg
+#else
+#define msgdbg       (void)
+#define msglldbg     (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
