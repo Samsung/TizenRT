@@ -6,6 +6,7 @@
 config EXAMPLES_TESTCASE_FILESYSTEM
 	bool "FileSystem TestCase Example"
 	default n
+	depends on !BUILD_PROTECTED
 	---help---
 		Enable the FileSystem TestCase example
 

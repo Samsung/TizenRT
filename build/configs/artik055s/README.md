@@ -159,28 +159,7 @@ U-Boot 2017
 
 ## ROMFS
 
-Before executing below board-specific steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
-
-3. Modify partition configs and enable the automount config through *menuconfig*  
-    Below steps creates ROMFS partition with size 400KB at next of user partition.  
-    1. Split user partition size from (1400) to (1000, 400) in FLASH_PART_LIST
-        ```bash
-        Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
-        ```
-    2. Append "romfs" at next of *smartfs* to FLASH_PART_TYPE
-        ```bash
-        Hardware Configuration -> Board Selection -> append string at Flash partition type list
-        ```
-    3. Append "rom" at next of *user* to FLASH_PART_NAME
-        ```bash
-        Hardware Configuration -> Board Selection -> append string at FLash partition name list
-        ```
-    4. Enable the audomount config for romfs
-        ```bash
-        Hardware Configuration -> Board Selection -> Automount partitions -> [*] Automount romfs partiton
-        ````
-4. Build TizenRT and flash a binary.  
-    Refer [How to program a binary](#how-to-program-a-binary).
+>[How to set romfs partition](https://github.com/Samsung/TizenRT/blob/master/os/board/common/README.md#how-to-set-romfs-partition)
 
 ## How to use GDB
 1. Run OpenOCD daemon.

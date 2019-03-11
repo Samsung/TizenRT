@@ -34,7 +34,7 @@ void configure_partitions(void)
 #if defined(CONFIG_FLASH_PARTITION)
 	int partno;
 	int partoffset;
-	const char *parts = CONFIG_FLASH_PART_LIST;
+	const char *parts = CONFIG_FLASH_PART_SIZE;
 	const char *types = CONFIG_FLASH_PART_TYPE;
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 	const char *names = CONFIG_FLASH_PART_NAME;
@@ -91,15 +91,20 @@ void configure_partitions(void)
 			lldbg("ERROR: failed to create partition.\n");
 			return;
 		}
-#if defined(CONFIG_MTD_FTL)
-		if (!strncmp(types, "ftl,", 4)) {
+#ifdef CONFIG_MTD_FTL
+		if (!strncmp(types, "ftl,", 4)
+#ifdef CONFIG_FS_ROMFS
+		|| !strncmp(types, "romfs,", 6)
+#endif
+		) {
 			if (ftl_initialize(partno, mtd_part)) {
 				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
 				return;
 			}
 		} else
 #endif
-#if defined(CONFIG_MTD_CONFIG)
+
+#ifdef CONFIG_MTD_CONFIG
 		if (!strncmp(types, "config,", 7)) {
 			mtdconfig_register(mtd_part);
 		} else
@@ -111,12 +116,6 @@ void configure_partitions(void)
 			snprintf(partref, sizeof(partref), "p%d", partno);
 			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
 		} else
-#endif
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "romfs,", 6)) {
-			ftl_initialize(partno, mtd_part);
-		} else
-
 #endif
 		{
 		}

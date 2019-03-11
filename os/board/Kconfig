@@ -268,7 +268,6 @@ endif
 if ARCH_BOARD_IMXRT1050_EVK
 source board/imxrt1050-evk/Kconfig
 endif
-comment "Board-Partition Options"
 
 source board/common/Kconfig
 

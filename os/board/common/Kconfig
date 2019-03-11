@@ -9,13 +9,14 @@ config ARCH_USE_FLASH
 	---help---
 		This shows that user enables FLASH to use.
 
+if ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+comment "Board-Partition Options"
+
 config FLASH_PARTITION
 	bool "Enable partition support on FLASH"
 	default n
 	select MTD
 	select MTD_PARTITION
-	depends on ARCH_USE_FLASH
-	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		Enables creation of partitions on the FLASH
 
@@ -28,7 +29,7 @@ config FLASH_MINOR
 		Sets the minor number for /dev node of the external flash
 		device.
 
-config FLASH_PART_LIST
+config FLASH_PART_SIZE
 	string "Flash partition size list (in KBytes)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
 	---help---
@@ -48,4 +49,5 @@ config FLASH_PART_NAME
 	---help---
 		Comma separated list of partition names.
 
-endif
+endif # FLASH_PARTITION
+endif # ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
