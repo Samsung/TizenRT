@@ -104,6 +104,10 @@ int tls_server_main(int argc, char **argv)
 #define TLS_SERVER_STACK_SIZE   51200
 #define TLS_SERVER_SCHED_POLICY SCHED_RR
 
+#define TLS_CLIENT_PRIORITY     100
+#define TLS_CLIENT_STACK_SIZE   51200
+#define TLS_CLIENT_SCHED_POLICY SCHED_RR
+
 struct pthread_arg {
 	int argc;
 	char **argv;
@@ -425,6 +429,8 @@ struct options {
 	int retry;					/* Server retry count                       */
 	int aging;                  /* enable large data transfer test          */
 };
+
+int tls_client_cb(void *args);
 
 static struct options opt;
 
@@ -1860,7 +1866,7 @@ reset:
 	 * 4. Handshake
 	 */
 handshake:
-	mbedtls_printf("  . Performing the SSL/TLS handshake...");
+	mbedtls_printf("  [SERVER] . Performing the SSL/TLS handshake...");
 	fflush(stdout);
 
 	do {
@@ -1911,7 +1917,7 @@ handshake:
 	/*
 	 * 5. Verify the server certificate
 	 */
-	mbedtls_printf("  . Verifying peer X.509 certificate...");
+	mbedtls_printf("  [SERVER] . Verifying peer X.509 certificate...");
 
 	if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0) {
 		char vrfy_buf[512];
@@ -2255,42 +2261,80 @@ exit:
 
 int tls_server_main(int argc, char **argv)
 {
-	pthread_t tid;
-	pthread_attr_t attr;
-	struct sched_param sparam;
+	pthread_t s_tid;
+	pthread_attr_t s_attr;
+	struct sched_param s_sparam;
 	int r;
 
-	struct pthread_arg args;
-	args.argc = argc;
-	args.argv = argv;
-
+	struct pthread_arg s_args;
+	s_args.argc = argc;
+	s_args.argv = argv;
+	printf("tls_server_main started\n");
 	/* Initialize the attribute variable */
-	if ((r = pthread_attr_init(&attr)) != 0) {
+	if ((r = pthread_attr_init(&s_attr)) != 0) {
 		printf("%s: pthread_attr_init failed, status=%d\n", __func__, r);
 	}
 
 	/* 1. set a priority */
-	sparam.sched_priority = TLS_SERVER_PRIORITY;
-	if ((r = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+	s_sparam.sched_priority = TLS_SERVER_PRIORITY;
+	if ((r = pthread_attr_setschedparam(&s_attr, &s_sparam)) != 0) {
 		printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
 	}
 
-	if ((r = pthread_attr_setschedpolicy(&attr, TLS_SERVER_SCHED_POLICY)) != 0) {
+	if ((r = pthread_attr_setschedpolicy(&s_attr, TLS_SERVER_SCHED_POLICY)) != 0) {
 		printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
 	}
 
 	/* 2. set a stacksize */
-	if ((r = pthread_attr_setstacksize(&attr, TLS_SERVER_STACK_SIZE)) != 0) {
+	if ((r = pthread_attr_setstacksize(&s_attr, TLS_SERVER_STACK_SIZE)) != 0) {
 		printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
 	}
 
 	/* 3. create pthread with entry function */
-	if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t)tls_server_cb, (void *)&args)) != 0) {
+	if ((r = pthread_create(&s_tid, &s_attr, (pthread_startroutine_t)tls_server_cb, (void *)&s_args)) != 0) {
+		printf("%s: pthread_create failed, status=%d\n", __func__, r);
+	}
+
+
+	pthread_t c_tid;
+	pthread_attr_t c_attr;
+	struct sched_param c_sparam;
+
+	struct pthread_arg c_args;
+	c_args.argc = argc;
+	c_args.argv = argv;
+
+	/* Initialize the attribute variable */
+	if ((r = pthread_attr_init(&c_attr)) != 0) {
+		printf("%s: pthread_attr_init failed, status=%d\n", __func__, r);
+	}
+
+	/* 1. set a priority */
+	c_sparam.sched_priority = TLS_CLIENT_PRIORITY;
+	if ((r = pthread_attr_setschedparam(&c_attr, &c_sparam)) != 0) {
+		printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
+	}
+
+	if ((r = pthread_attr_setschedpolicy(&c_attr, TLS_CLIENT_SCHED_POLICY)) != 0) {
+		printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
+	}
+
+	/* 2. set a stacksize */
+	if ((r = pthread_attr_setstacksize(&c_attr, TLS_CLIENT_STACK_SIZE)) != 0) {
+		printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
+	}
+
+	/* 3. create pthread with entry function */
+	if ((r = pthread_create(&c_tid, &c_attr, (pthread_startroutine_t)tls_client_cb, (void *)&c_args)) != 0) {
 		printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}
 
 	/* Wait for the threads to stop */
-	pthread_join(tid, NULL);
+	pthread_detach(c_tid);
+
+
+	/* Wait for the threads to stop */
+	pthread_join(s_tid, NULL);
 
 	return 0;
 }

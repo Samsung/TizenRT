@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # tls server example
 
 ASRCS =
-CSRCS =
+CSRCS = tls_client.c
 MAINSRC = tls_server_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
