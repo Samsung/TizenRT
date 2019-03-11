@@ -132,7 +132,7 @@ int listen(int s, int backlog)
 	return lwip_listen(s, backlog);
 }
 
-int recv(int s, void *mem, size_t len, int flags)
+ssize_t recv(int s, void *mem, size_t len, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
@@ -141,7 +141,7 @@ int recv(int s, void *mem, size_t len, int flags)
 	return result;
 }
 
-int recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
+ssize_t recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
@@ -150,7 +150,7 @@ int recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, soc
 	return result;
 }
 
-int send(int s, const void *data, size_t size, int flags)
+ssize_t send(int s, const void *data, size_t size, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
@@ -159,7 +159,7 @@ int send(int s, const void *data, size_t size, int flags)
 	return result;
 }
 
-int sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
+ssize_t sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
