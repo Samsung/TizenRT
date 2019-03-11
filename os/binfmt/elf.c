@@ -78,7 +78,7 @@
  * defined or CONFIG_ELF_DUMPBUFFER does nothing.
  */
 
-#if !defined(CONFIG_DEBUG_INFO) || !defined (CONFIG_DEBUG_BINFMT)
+#if !defined(CONFIG_DEBUG_INFO) || !defined(CONFIG_DEBUG_BINFMT)
 #undef CONFIG_ELF_DUMPBUFFER
 #endif
 
@@ -87,13 +87,13 @@
 #endif
 
 #ifdef CONFIG_ELF_DUMPBUFFER
-#define elf_dumpbuffer(m,b,n) binfodumpbuffer(m,b,n)
+#define elf_dumpbuffer(m, b, n) binfodumpbuffer(m, b, n)
 #else
-#define elf_dumpbuffer(m,b,n)
+#define elf_dumpbuffer(m, b, n)
 #endif
 
 #ifndef MIN
-#define MIN(a,b) (a < b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
 #endif
 
 /****************************************************************************
@@ -217,7 +217,7 @@ static void elf_dumpentrypt(FAR struct binary_s *binp, FAR struct elf_loadinfo_s
 #endif
 }
 #else
-#define elf_dumpentrypt(b,l)
+#define elf_dumpentrypt(b, l)
 #endif
 
 /****************************************************************************

@@ -82,11 +82,11 @@
 #define ELF_ALIGNDOWN(a) ((unsigned long)(a) & ~ELF_ALIGN_MASK)
 
 #ifndef MAX
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #ifndef MIN
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 /****************************************************************************

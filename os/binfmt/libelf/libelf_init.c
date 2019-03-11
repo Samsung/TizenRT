@@ -77,14 +77,14 @@
  * defined or CONFIG_ELF_DUMPBUFFER does nothing.
  */
 
-#if !defined(CONFIG_DEBUG_INFO) || !defined (CONFIG_DEBUG_BINFMT)
+#if !defined(CONFIG_DEBUG_INFO) || !defined(CONFIG_DEBUG_BINFMT)
 #undef CONFIG_ELF_DUMPBUFFER
 #endif
 
 #ifdef CONFIG_ELF_DUMPBUFFER
-#define elf_dumpbuffer(m,b,n) binfodumpbuffer(m,b,n)
+#define elf_dumpbuffer(m, b, n) binfodumpbuffer(m, b, n)
 #else
-#define elf_dumpbuffer(m,b,n)
+#define elf_dumpbuffer(m, b, n)
 #endif
 
 /****************************************************************************

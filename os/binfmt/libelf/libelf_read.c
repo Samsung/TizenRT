@@ -101,7 +101,7 @@ static inline void elf_dumpreaddata(FAR char *buffer, int buflen)
 	}
 }
 #else
-#define elf_dumpreaddata(b,n)
+#define elf_dumpreaddata(b, n)
 #endif
 
 /****************************************************************************
