@@ -139,6 +139,14 @@ compute_ocd_commands()
 				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
 				 fi
 				;;
+			system)
+			         is_file_present ${OUTPUT_BINARY_PATH}/romfs.img
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
+				 fi
+				;;
 			*)
 				echo "#NOTE#: No binary available for ${part}"
 
@@ -232,7 +240,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota)
+		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|SYSTEM|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|system)
 			download $1
 			;;
 		ERASE_*)
