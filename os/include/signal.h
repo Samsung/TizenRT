@@ -215,6 +215,13 @@
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
 #endif
 
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_MESSAGING_UNICAST
+#define SIGMSG_UNICAST    25			/* Messaging unicast signal */
+#else
+#define SIGMSG_UNICAST    CONFIG_SIG_MESSAGING_UNICAST
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

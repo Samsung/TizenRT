@@ -1,0 +1,42 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config MESSAGING_IPC
+	bool "Enable Messaging APIs"
+	default y
+	depends on !DISABLE_MQUEUE
+	depends on !DISABLE_SIGNALS
+	---help---
+		Enables Messaging APIs.
+		Users can send and receive the data with unicast messaging IPC.
+		unicast messaging IPC supports like below.
+		send : sync/async mode
+			- sync : sender waits after sending msg
+			- async : sender just sends msg and be finished.
+		receive : block/non-block mode
+			- block : receiver waits for getting msg
+			- non-block : receiver sets msg callback func and continue to run.
+		reply : send reply msg from receiver to sender when sender sends sync msg
+			- using same port name for sending reply
+		The maximum size of unicast message is as same as MQ_MAXSIZE.
+
+
+if MESSAGING_IPC
+config MESSAGING_UNICAST_MAXMSG
+	int "Max message number for unicast"
+	default 100
+	---help---
+		Max number of unicast messaging
+
+config MESSAGING_UNICAST_MSGSIZE
+	int "Max message size for unicast"
+	range 0 MQ_MAXMSGSIZE
+	default MQ_MAXMSGSIZE
+	---help---
+		Max size of unicast messaging.
+		This can be from 0 to MQ_MAXMSGSIZE.
+
+endif
+
