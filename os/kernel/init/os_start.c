@@ -61,6 +61,7 @@
 #include  <debug.h>
 
 #include  <tinyara/arch.h>
+#include  <tinyara/binfmt/binfmt.h>
 #include  <tinyara/compiler.h>
 #include  <tinyara/sched.h>
 #include  <tinyara/fs/fs.h>
@@ -549,6 +550,12 @@ void os_start(void)
 	 */
 
 	lib_initialize();
+
+#ifndef CONFIG_BINFMT_DISABLE
+	/* Initialize the binfmt system */
+
+	binfmt_initialize();
+#endif
 
 	/* IDLE Group Initialization **********************************************/
 #ifdef HAVE_TASK_GROUP

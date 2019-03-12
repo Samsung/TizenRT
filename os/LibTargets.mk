@@ -123,6 +123,14 @@ drivers$(DELIM)libdrivers$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT): drivers$(DELIM)libdrivers$(LIBEXT)
 	$(Q) install drivers$(DELIM)libdrivers$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 
+ifneq ($(CONFIG_BINFMT_DISABLE),y)
+binfmt$(DELIM)libbinfmt$(LIBEXT): context
+	$(Q) $(MAKE) -C binfmt TOPDIR="$(TOPDIR)" libbinfmt$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT): binfmt$(DELIM)libbinfmt$(LIBEXT)
+	$(Q) install binfmt$(DELIM)libbinfmt$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
+endif
+
 # Special case
 
 syscall$(DELIM)libstubs$(LIBEXT): context
