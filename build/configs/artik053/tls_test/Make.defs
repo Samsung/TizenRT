@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# configs/artik053/nettest/Make.defs
+# configs/artik053/tls_test/Make.defs
 #
 #   Copyright (C) 2011, 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
