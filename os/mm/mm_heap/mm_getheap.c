@@ -47,8 +47,8 @@ struct mm_heap_s *mm_get_heap(void *address)
 {
 #ifdef CONFIG_MM_KERNEL_HEAP
 	if (address >= (FAR void *)g_kmmheap.mm_heapstart[0] && address < (FAR void *)g_kmmheap.mm_heapend[0]) {
-                return &g_kmmheap;
-        }
+		return &g_kmmheap;
+	}
 #endif
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 	int heap_idx;
