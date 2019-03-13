@@ -65,6 +65,9 @@
 #include <stdbool.h>
 #include <debug.h>
 #include <arch/irq.h>
+#ifdef CONFIG_BUILD_PROTECTED
+#include <chip/mpu-reg.h>
+#endif
 
 #include "up_arch.h"
 #include "cache.h"
