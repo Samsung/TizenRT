@@ -7019,16 +7019,6 @@ int mbedtls_ssl_handshake( mbedtls_ssl_context *ssl )
 {
     int ret = 0;
 
-#if defined(MBED_TIZENRT)
-    struct mallinfo data = mallinfo();
-
-    if( data.fordblks < MBEDTLS_MAXIMUM_HANDSHAKE_MEMORY_USAGE )
-    {
-        MBEDTLS_SSL_DEBUG_MSG( 2, ( "System memory is not enough to do handshake (mem: %d)", data.fordblks ) );
-        return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
-    }
-#endif
-
     if( ssl == NULL || ssl->conf == NULL )
         return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
 
