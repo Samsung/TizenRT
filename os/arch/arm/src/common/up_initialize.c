@@ -208,7 +208,7 @@ void up_initialize(void)
 	devnull_register();			/* Standard /dev/null */
 #endif
 
-#ifdef CONFIG_DEV_URANDOM
+#if defined(CONFIG_DEV_URANDOM)
 	devurandom_register();			/* /dev/urandom */
 #endif
 
