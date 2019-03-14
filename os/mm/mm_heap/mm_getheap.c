@@ -22,8 +22,13 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_MM_KERNEL_HEAP
+#include <tinyara/sched.h>
+#endif
 
+#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -40,25 +45,26 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap(void *address)
 {
-	int heap_idx;
 #ifdef CONFIG_MM_KERNEL_HEAP
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
+	if (address >= (FAR void *)g_kmmheap.mm_heapstart[0] && address < (FAR void *)g_kmmheap.mm_heapend[0]) {
 		return &g_kmmheap;
-	} else
-#endif
-	{
-		heap_idx = mm_get_heapindex(address);
-		if (heap_idx == INVALID_HEAP_IDX) {
-			mdbg("address is not in heap region.\n");
-			return NULL;
-		}
-		return &g_mmheap[heap_idx];
 	}
+#endif
+#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+	int heap_idx;
+	heap_idx = mm_get_heapindex(address);
+	if (heap_idx == INVALID_HEAP_IDX) {
+		mdbg("address is not in heap region.\n");
+		return NULL;
+	}
+	return &g_mmheap[heap_idx];
+#endif
 
+	return NULL;
 }
+
+
+#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 /****************************************************************************
  * Name: mm_get_heap_with_index
  ****************************************************************************/
@@ -87,3 +93,4 @@ int mm_get_heapindex(void *mem)
 	}
 	return INVALID_HEAP_IDX;
 }
+#endif
