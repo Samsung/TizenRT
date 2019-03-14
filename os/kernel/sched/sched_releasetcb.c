@@ -158,7 +158,7 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	int ret = OK;
 
 	if (tcb) {
-#if defined(CONFIG_ENABLE_STACKMONITOR_CMD) && defined(CONFIG_DEBUG)
+#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ENABLE_STACKMONITOR_CMD) && defined(CONFIG_DEBUG)
 		stkmon_logging(tcb);
 #endif
 
