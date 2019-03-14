@@ -81,9 +81,19 @@ int mm_get_heapindex(void *mem)
 		return 0;
 	}
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		if (mem < (void *)(g_mmheap[heap_idx].mm_heapstart + g_mmheap[heap_idx].mm_heapsize) && mem >= (void *)g_mmheap[heap_idx].mm_heapstart) {
-			return heap_idx;
+		int region = 0;
+#if CONFIG_MM_REGIONS > 1
+		for (; region < g_mmheap[heap_idx].mm_nregions; region++)
+#endif
+		{
+			/* A valid address from the user heap for this region would have to lie
+			 * between the region's two guard nodes.
+			 */
+			if ((mem > (void *)g_mmheap[heap_idx].mm_heapstart[region]) && (mem < (void *)g_mmheap[heap_idx].mm_heapend[region])) {
+				return heap_idx;
+			}
 		}
 	}
+	/* The address does not lie in the user heaps */
 	return INVALID_HEAP_IDX;
 }
