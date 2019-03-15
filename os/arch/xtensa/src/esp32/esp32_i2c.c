@@ -211,7 +211,7 @@ static const i2c_config_t esp32_i2c0_config = {
 #ifdef CONFIG_ESP32_I2C0_SDA_PIN
 	.sda_pin = CONFIG_ESP32_I2C0_SDA_PIN,
 #else
-	.sda_pin = ESP32_I2C0_DEFAULT_SDA_PIN
+	.sda_pin = ESP32_I2C0_DEFAULT_SDA_PIN,
 #endif
 #ifdef CONFIG_ESP32_I2C0_SDA_PULLUP_EN
 	.sda_pullup_en = CONFIG_ESP32_I2C0_SDA_PULLUP_EN,
