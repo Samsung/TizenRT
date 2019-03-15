@@ -62,6 +62,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <tinyara/fs/ioctl.h>
+
+#define SPIIOC_SET_CONFIG          _SPIIOC(0x0001)	/* Set SPI configurations */
+#define SPIIOC_EXCHANGE            _SPIIOC(0x0002)	/* Exchange Data */
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -389,6 +394,22 @@ enum spi_mode_e {
 	SPIDEV_MODE3				/* CPOL=1 CHPHA=1 */
 };
 
+/*
+ * Structure for a communication between kernel and user spac
+ */
+struct spi_io_config {
+	unsigned int bpw;
+	int freq; // clock speed
+	int cs;
+	enum spi_mode_e mode;
+};
+
+struct spi_io_msg {
+	unsigned char *rxbuf;
+	unsigned char *txbuf;
+	unsigned int length;
+};
+
 /* The SPI vtable */
 
 struct spi_dev_s;
@@ -419,8 +440,11 @@ struct spi_ops_s {
  * add additional, device specific fields
  */
 
+
 struct spi_dev_s {
 	FAR const struct spi_ops_s *ops;
+	FAR struct spi_io_config config;
+	FAR void *priv;
 };
 
 /****************************************************************************
@@ -470,6 +494,8 @@ extern "C" {
  ****************************************************************************/
 
 FAR struct spi_dev_s *up_spiinitialize(int port);
+
+FAR int spi_uioregister(FAR const char *path, FAR struct spi_dev_s *dev);
 
 #undef EXTERN
 #if defined(__cplusplus)
