@@ -107,6 +107,9 @@ do
 	elif [ "$pname" == "os" ]; then
 		pname_text="OS"
 		ro=0
+	elif [ "$pname" == "apps" ]; then
+		pname_text="APPS"
+		ro=0
 	elif [ "$pname" == "factory" ]; then
 		pname_text="Factory Reset"
 		ro=0
