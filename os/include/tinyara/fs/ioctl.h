@@ -95,6 +95,7 @@
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _HEAPINFOBASE   (0x2200)	/* Heapinfo ioctl commands */
+#define _SPIBASE        (0x2300)	/* SPI ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -342,6 +343,11 @@
 /* (see include/tinyara/gpio.h */
 #define _GPIOIOCVALID(c)   (_IOC_TYPE(c) == _GPIOBASE)
 #define _GPIOIOC(nr)       _IOC(_GPIOBASE, nr)
+
+/* SPI driver ioctl definitions ********************************************/
+/* (see include/tinyara/spi/spi.h */
+#define _SPIIOCVALID(c)   (_IOC_TYPE(c) == _SPIBASE)
+#define _SPIIOC(nr)       _IOC(_SPIBASE, nr)
 
 /* boardctl() command definitions *******************************************/
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)
