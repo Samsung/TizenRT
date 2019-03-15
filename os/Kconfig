@@ -488,7 +488,6 @@ source Kconfig.debug
 endmenu
 
 menu "System Call"
-	depends on BUILD_PROTECTED
 source syscall/Kconfig
 endmenu
 
@@ -499,6 +498,10 @@ endmenu
 
 menu "External Libraries"
 source "$EXTERNALDIR/Kconfig"
+endmenu
+
+menu "Binary Loader"
+source binfmt/Kconfig
 endmenu
 
 menu "Application Configuration"
