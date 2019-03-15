@@ -223,7 +223,7 @@ static ssize_t i2c_uiowrite(FAR struct file *filep, FAR const char *buffer, size
 static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int32_t ret;
-	int addr;
+	uint16_t addr;
 	int32_t freq;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct i2c_dev_s *dev = inode->i_private;
@@ -232,7 +232,7 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 	switch (cmd) {
 	case I2C_SLAVE:
 	case I2C_SLAVE_FORCE:
-		addr = *((int *)arg);
+		addr = *((uint16_t *)arg);
 		ret = I2C_SETADDRESS(dev, addr, -1);
 		break;
 	case I2C_TENBIT:
