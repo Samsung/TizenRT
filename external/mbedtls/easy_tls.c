@@ -34,8 +34,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define TLS_MALLOC(buf, size)			\
-	if ((buf = malloc(size)) == NULL) {	\
+#define TLS_MALLOC(type, buf, size)			\
+	if ((buf = (type *)malloc(size)) == NULL) {	\
 		return TLS_ALLOC_FAIL;			\
 	}
 
@@ -77,14 +77,14 @@ static int tls_context_alloc(tls_ctx *ctx)
 {
 	memset(ctx, 0, sizeof(tls_ctx));
 
-	TLS_MALLOC(ctx->conf, sizeof(mbedtls_ssl_config));
-	TLS_MALLOC(ctx->crt, sizeof(mbedtls_x509_crt));
-	TLS_MALLOC(ctx->pkey, sizeof(mbedtls_pk_context));
-	TLS_MALLOC(ctx->entropy, sizeof(mbedtls_entropy_context));
-	TLS_MALLOC(ctx->ctr_drbg, sizeof(mbedtls_ctr_drbg_context));
-	TLS_MALLOC(ctx->timer, sizeof(mbedtls_timing_delay_context));
+	TLS_MALLOC(mbedtls_ssl_config, ctx->conf, sizeof(mbedtls_ssl_config));
+	TLS_MALLOC(mbedtls_x509_crt, ctx->crt, sizeof(mbedtls_x509_crt));
+	TLS_MALLOC(mbedtls_pk_context, ctx->pkey, sizeof(mbedtls_pk_context));
+	TLS_MALLOC(mbedtls_entropy_context, ctx->entropy, sizeof(mbedtls_entropy_context));
+	TLS_MALLOC(mbedtls_ctr_drbg_context, ctx->ctr_drbg, sizeof(mbedtls_ctr_drbg_context));
+	TLS_MALLOC(mbedtls_timing_delay_context, ctx->timer, sizeof(mbedtls_timing_delay_context));
 #ifdef MBEDTLS_SSL_CACHE_C
-	TLS_MALLOC(ctx->cache, sizeof(mbedtls_ssl_cache_context));
+	TLS_MALLOC(mbedtls_ssl_cache_context, ctx->cache, sizeof(mbedtls_ssl_cache_context));
 #endif
 	return 0;
 }
@@ -329,7 +329,7 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 
 			TLS_FREE(ctx->cookie);
 
-			ctx->cookie = malloc(sizeof(mbedtls_ssl_cookie_ctx));
+			ctx->cookie = (mbedtls_ssl_cookie_ctx *)malloc(sizeof(mbedtls_ssl_cookie_ctx));
 			if (ctx->cookie == NULL) {
 				ret = TLS_ALLOC_FAIL;
 				goto errout;
@@ -498,7 +498,7 @@ tls_ctx *TLSCtx(tls_cred *cred)
 	int ret = 0;
 	tls_ctx *ctx = NULL;
 
-	ctx = malloc(sizeof(tls_ctx));
+	ctx = (tls_ctx *)malloc(sizeof(tls_ctx));
 	if (ctx == NULL) {
 		EASY_TLS_DEBUG("Input Context is Null\n");
 		return NULL;
@@ -572,7 +572,7 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 		return NULL;
 	}
 
-	session->ssl = malloc(sizeof(mbedtls_ssl_context));
+	session->ssl = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
 	if (session->ssl == NULL) {
 		EASY_TLS_DEBUG("tls ssl alloc fail\n");
 		TLS_FREE(session);
@@ -658,7 +658,7 @@ reset:
 
 		TLS_FREE(session->b_ctx.addr);
 
-		session->b_ctx.addr = malloc(n);
+		session->b_ctx.addr = (struct sockaddr *)malloc(n);
 
 		if (session->b_ctx.addr) {
 			memcpy(session->b_ctx.addr, (struct sockaddr *)&client_addr, n);
