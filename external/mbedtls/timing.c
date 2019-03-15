@@ -330,7 +330,7 @@ static void sighandler( int signum )
 
 void mbedtls_set_alarm( int seconds )
 {
-#if !defined(MBED_TIZNERT)
+#if !defined(MBED_TIZENRT)
     mbedtls_timing_alarmed = 0;
     signal( SIGALRM, sighandler );
     alarm( seconds );

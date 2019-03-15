@@ -428,7 +428,7 @@ int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigne
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	t_buf = malloc(SEE_MAX_DATA_SIZE);
+	t_buf = (unsigned char *)malloc(SEE_MAX_DATA_SIZE);
 
 	if (t_buf == NULL) {
 		return SEE_ALLOC_ERROR;
@@ -1202,8 +1202,8 @@ int see_generate_certificate(struct cert_opt opt, unsigned char *out_buf, unsign
 		opt.ns_cert_type = SEE_NS_CERT_TYPE;
 	}
 
-	subject_key_buf = malloc(subject_key_len);
-	cert_buf = malloc(cert_buflen);
+	subject_key_buf = (unsigned char *)malloc(subject_key_len);
+	cert_buf = (unsigned char *)malloc(cert_buflen);
 
 	if (subject_key_buf == NULL) {
 		goto see_exit;
