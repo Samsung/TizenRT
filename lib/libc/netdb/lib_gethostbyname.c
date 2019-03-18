@@ -34,62 +34,48 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: getaddrinfo
+ * Name: gethostbyname
  *
  * Description:
- *   Translates the name of a service location (for example, a host name) and/or
- *   a service name and returns a set of socket addresses and associated
- *   information to be used in creating a socket with which to address the
- *   specified service.
- *
- *   Due to a limitation in dns_gethostbyname, only the first address of a
- *   host is returned.
- *   Also, service names are not supported (only port numbers)!
+ *   Returns an entry containing addresses of address family AF_INET
+ *   for the host with name name.
+ *   Due to dns_gethostbyname limitations, only one address is returned.
  *
  * Input Parameters:
- *   hostname - descriptive name or address string of the host
- *                 (may be NULL -> local address)
- *   servname - port number as string of NULL
- *   hint - structure containing input values that set socktype and protocol
- *   res - pointer to a pointer where to store the result (set to NULL on failure)
- *
+ *   name - the hostname to resolve
+ * 
  * Returned Value:
- *   0 on success, non-zero on failure
+ *   an entry containing addresses of address family AF_INET
+ *   for the host with name
  *
  ****************************************************************************/
 
 /****************************************************************************
- * Name: getaddrinfo
+ * Name: gethostbyname
  ****************************************************************************/
 #ifdef CONFIG_NET_LWIP_NETDB
-int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const struct addrinfo *hint, FAR struct addrinfo **res)
+struct hostent *gethostbyname(const char *name)
 {
-	int ret = -1;
 	struct req_lwip_data req;
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
 		printf("socket() failed with errno: %d\n", errno);
-		return ret;
+		return NULL;
 	}
 
 	memset(&req, 0, sizeof(req));
-	req.type = GETADDRINFO;
-	req.host_name = hostname;
-	req.serv_name = servname;
-	req.ai_hint = hint;
-	req.ai_res = NULL;
+	req.type = GETHOSTBYNAME;
+	req.host_name = name;
 
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	int ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
 		printf("ioctl() failed with errno: %d\n", errno);
 		close(sockfd);
-		return ret;
+		return NULL;
 	}
 
-	ret = req.req_res;
-	*res = (struct addrinfo *)req.ai_res;
 	close(sockfd);
-	return ret;
+	return req.host_entry;
 }
 #endif
