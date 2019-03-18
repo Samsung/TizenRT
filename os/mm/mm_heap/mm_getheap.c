@@ -26,8 +26,17 @@
 #include <tinyara/sched.h>
 #endif
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+#include <tinyara/userspace.h>
+#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+#define USR_HEAP ((struct mm_heap_s *)_stext)
+
+#else
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#define USR_HEAP       g_mmheap
 #endif
 /****************************************************************************
  * Pre-processor Definitions
@@ -50,21 +59,17 @@ struct mm_heap_s *mm_get_heap(void *address)
 		return &g_kmmheap;
 	}
 #endif
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 	int heap_idx;
 	heap_idx = mm_get_heapindex(address);
 	if (heap_idx == INVALID_HEAP_IDX) {
 		mdbg("address is not in heap region.\n");
 		return NULL;
 	}
-	return &g_mmheap[heap_idx];
-#endif
 
-	return NULL;
+	return &USR_HEAP[heap_idx];
 }
 
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
 /****************************************************************************
  * Name: mm_get_heap_with_index
  ****************************************************************************/
@@ -74,7 +79,7 @@ struct mm_heap_s *mm_get_heap_with_index(int index)
 		mdbg("heap index is out of range.\n");
 		return NULL;
 	}
-	return &g_mmheap[index];
+	return &USR_HEAP[index];
 }
 
 /****************************************************************************
@@ -95,7 +100,7 @@ int mm_get_heapindex(void *mem)
 			/* A valid address from the user heap for this region would have to lie
 			 * between the region's two guard nodes.
 			 */
-			if ((mem > (void *)g_mmheap[heap_idx].mm_heapstart[region]) && (mem < (void *)g_mmheap[heap_idx].mm_heapend[region])) {
+			if ((mem > (void *)USR_HEAP[heap_idx].mm_heapstart[region]) && (mem < (void *)USR_HEAP[heap_idx].mm_heapend[region])) {
 				return heap_idx;
 			}
 		}
@@ -103,4 +108,3 @@ int mm_get_heapindex(void *mem)
 	/* The address does not lie in the user heaps */
 	return INVALID_HEAP_IDX;
 }
-#endif
