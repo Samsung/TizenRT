@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <tinyara/clock.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -79,12 +80,23 @@ err_status_t error_report_deinit(void)
 
 error_data_t *error_report_data_create(int module_id, int error_code, uint32_t pc_value)
 {
-	struct timeval ts;
-	gettimeofday(&ts, NULL);
 	error_data_t *ret = NULL;
-
+	struct timeval ts;
+#ifdef CONFIG_CLOCK_MONOTONIC
+	struct timespec tv;
+	int retval = clock_gettime(CLOCK_MONOTONIC, &tv);
+	if (retval == OK) {
+		/* Convert the struct timespec to a struct timeval */
+		ts.tv_sec  = tv.tv_sec;
+		ts.tv_usec = tv.tv_nsec / NSEC_PER_USEC;
+	} else {
+		ts.tv_sec  = 0;
+		ts.tv_usec = 0;
+	}
+#else
+	gettimeofday(&ts, NULL);
+#endif
 	pthread_mutex_lock(&g_err_info.err_mutex);
-
 	ret = (error_data_t *) g_error_report + g_err_info.rear;
 	ret->timestamp.tv_sec = ts.tv_sec;
 	ret->timestamp.tv_usec = ts.tv_usec;
