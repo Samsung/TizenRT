@@ -729,6 +729,9 @@ int hal_generate_random(uint32_t len, hal_data *random)
 	}
 
 	random->data = (unsigned char *)malloc(len);
+	if (random->data == NULL) {
+		return HAL_ALLOC_FAIL;
+	}
 	memcpy(random->data, inbuf, len);
 	random->data_len = len;
 
