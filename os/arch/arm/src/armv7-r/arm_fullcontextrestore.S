@@ -134,12 +134,6 @@ up_fullcontextrestore:
 	 * to either user or kernel mode.
 	 */
 
-	sub	sp, #4
-	/* restore the MPU context information */
-	str	lr,	[sp]
-	bl up_mpucontextrestore
-	ldr	lr,	[sp]
-	add	sp, #4
 	/* Perform the System call with R0=SYS_context_restore, R1=restoreregs */
 	mov		r1, r0					/* R1: restoreregs */
 	mov		r0, #SYS_context_restore	/* R0: SYS_context_restore syscall */
