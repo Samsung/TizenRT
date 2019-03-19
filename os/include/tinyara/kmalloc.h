@@ -143,15 +143,9 @@ extern "C" {
 #define kmm_trysemaphore(a)      umm_trysemaphore(a)
 #define kmm_givesemaphore(a)     umm_givesemaphore(a)
 
-#if CONFIG_MM_NHEAPS > 1 && CONFIG_MM_REGIONS > 1
-#define kmm_malloc(s)          malloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
-#define kmm_zalloc(s)          zalloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
-#define kmm_realloc(p, s)      realloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, p, s)
-#else
 #define kmm_malloc(s)          malloc(s)
 #define kmm_zalloc(s)          zalloc(s)
 #define kmm_realloc(p, s)      realloc(p, s)
-#endif
 
 #define kmm_memalign(a, s)     memalign(a, s)
 #define kmm_free(p)            free(p)
@@ -168,15 +162,9 @@ extern "C" {
 #define kmm_trysemaphore(a)     umm_trysemaphore(a)
 #define kmm_givesemaphore(a)    umm_givesemaphore(a)
 
-#if CONFIG_MM_NHEAPS > 1 && CONFIG_MM_REGIONS > 1
-#define kmm_malloc(s)          malloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
-#define kmm_zalloc(s)          zalloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
-#define kmm_realloc(p, s)      realloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, p, s)
-#else
-#define kmm_malloc(s)          malloc(s)
-#define kmm_zalloc(s)          zalloc(s)
-#define kmm_realloc(p, s)      realloc(p, s)
-#endif
+#define kmm_malloc(s)          umm_malloc(s)
+#define kmm_zalloc(s)          umm_zalloc(s)
+#define kmm_realloc(p, s)      umm_realloc(p, s)
 
 #define kmm_memalign(a, s)     umm_memalign(a, s)
 #define kmm_free(p)            umm_free(p)
