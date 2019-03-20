@@ -167,7 +167,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
 	size_t usize = REGION_END - ubase;
 
-	DEBUGASSERT(ubase < (uintptr_t)(REGION_END);
+	DEBUGASSERT(ubase < (uintptr_t)REGION_END);
 
 	/* zero initialize the user space bss section */
 	memset((void *)ubss_start, 0, (ubase - ubss_start));
