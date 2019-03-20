@@ -86,7 +86,41 @@ config IMXRT_ENET
 	default n
 	select ARCH_HAVE_PHY
 	select ARCH_PHY_INTERRUPT
-	select ARCH_HAVE_NETDEV_STATISTICS
+	select IMXRT_ENET_PHYINIT
+
+menu "Ethernet Configuration"
+	depends on IMXRT_ENET
+
+config MXRT_ENET_NRXBUFFERS
+	int "Number Rx buffers"
+	default 6
+
+config IMXRT_ENET_NTXBUFFERS
+	int "Number Tx buffers"
+	default 2
+
+config IMXRT_ENET_ENHANCEDBD
+	bool # not optional
+	default n
+
+config IMXRT_ENET_NETHIFS
+	int  # Not optional
+	default 1
+
+config IMXRT_ENET_PHYINIT
+	bool "Board-specific PHY Initialization"
+	default n
+	select IMXRT_GPIO_IRQ
+	select IMXRT_GPIO1_0_15_IRQ
+	---help---
+		Some boards require specialized initialization of the PHY before it
+		can be used.  This may include such things as configuring GPIOs,
+		resetting the PHY, etc.  If CONFIG_IMXRT_ENET_PHYINIT is defined in
+		the configuration then the board specific logic must provide
+		imxrt_phy_boardinitialize();  The i.MXRT ENET driver will call this
+		function one time before it first uses the PHY.
+
+endmenu # IMXRT_ENET
 
 menu "FlexIO Peripherals"
 
@@ -263,6 +297,22 @@ config IMXRT_LPSPI4
 
 endmenu # LPSPI Peripherals
 
+config IMXRT_I2S
+	bool "Audio I2S"
+	select I2S
+	default n
+
+if IMXRT_I2S
+
+	config IMXRT_I2S_TX
+		bool "Audio I2S_TX"
+		default n
+
+	config IMXRT_I2S_RX
+		bool "Audio I2S_RX"
+		default n
+endif # IMXRT_I2S
+
 config IMXRT_SEMC
 	bool "Smart External Memory Controller (SEMC)"
 	default n
@@ -287,7 +337,7 @@ endmenu # i.MX RT Peripheral Selection
 
 menuconfig IMXRT_GPIO_IRQ
 	bool "GPIO Interrupt Support"
-	default n
+	default y
 
 if IMXRT_GPIO_IRQ
 
@@ -372,38 +422,6 @@ config IMXRT_GPIO9_16_31_IRQ
 	depends on IMXRT_HIGHSPEED_GPIO
 
 endif # IMXRT_GPIO_IRQ
-
-menu "Ethernet Configuration"
-	depends on IMXRT_ENET
-
-config MXRT_ENET_NRXBUFFERS
-	int "Number Rx buffers"
-	default 6
-
-config IMXRT_ENET_NTXBUFFERS
-	int "Number Tx buffers"
-	default 2
-
-config IMXRT_ENET_ENHANCEDBD
-	bool # not optional
-	default n
-
-config IMXRT_ENET_NETHIFS
-	int  # Not optional
-	default 1
-
-config IMXRT_ENET_PHYINIT
-	bool "Board-specific PHY Initialization"
-	default n
-	---help---
-		Some boards require specialized initialization of the PHY before it
-		can be used.  This may include such things as configuring GPIOs,
-		resetting the PHY, etc.  If CONFIG_IMXRT_ENET_PHYINIT is defined in
-		the configuration then the board specific logic must provide
-		imxrt_phy_boardinitialize();  The i.MXRT ENET driver will call this
-		function one time before it first uses the PHY.
-
-endmenu # IMXRT_ENET
 
 menu "Memory Configuration"
 

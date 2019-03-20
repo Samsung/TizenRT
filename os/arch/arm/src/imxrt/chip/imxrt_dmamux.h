@@ -60,16 +60,13 @@
 
 #include <tinyara/config.h>
 #include "chip/imxrt_memorymap.h"
+#include "chip/imxrt105x_config.h"
 
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #include "chip/imxrt105x_dmamux.h"
 #else
 #error Unrecognized i.MX RT architecture
 #endif
-
-/************************************************************************************
- * Pre-processor definitions
- ************************************************************************************/
 
 #define IMXRT_DMAMUX_NCHAN             32
 
@@ -144,17 +141,5 @@
 #define IMXRT_DMAMUX_CHCFG29         (IMXRT_DMAMUX_BASE + IMXRT_DMAMUX_CHCFG29_OFFSET)
 #define IMXRT_DMAMUX_CHCFG30         (IMXRT_DMAMUX_BASE + IMXRT_DMAMUX_CHCFG30_OFFSET)
 #define IMXRT_DMAMUX_CHCFG31         (IMXRT_DMAMUX_BASE + IMXRT_DMAMUX_CHCFG31_OFFSET)
-
-/* DMAMUX Bit-Field Definitions *****************************************************/
-
-/* Channel configuration registers 0-31 */
-
-#define DMAMUX_CHCFG_SOURCE_SHIFT      (0)	/* Bits 0-6: Chip-specific DMA source */
-#define DMAMUX_CHCFG_SOURCE_MASK       (0x7e << DMAMUX_CHCFG_SOURCE_SHIFT)
-#define DMAMUX_CHCFG_SOURCE(n)       ((uint32_t)(n) << DMAMUX_CHCFG_SOURCE_SHIFT)
-/* Bits 7-28: Reserved */
-#define DMAMUX_CHCFG_AON               (1 << 29)	/* Bit 29: DMA Channel Always Enable */
-#define DMAMUX_CHCFG_TRIG              (1 << 30)	/* Bit 30: DMA Channel Trigger Enable */
-#define DMAMUX_CHCFG_ENBL              (1 << 31)	/* Bit 31: DMA Mux Channel Enable */
 
 #endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_DMAMUX_H */

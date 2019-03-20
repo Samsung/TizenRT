@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 
+extern void imxrt_log_print_kernelbuffer();
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -27,6 +29,8 @@ int nxp_demo_sample_main(int argc, char *argv[])
 #endif
 {
 	printf("[New] nxp_demo_sample!!\n");
+
+	imxrt_log_print_kernelbuffer();
 	
 	return 0;
 }
