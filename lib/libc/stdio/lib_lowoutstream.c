@@ -76,14 +76,11 @@
 static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
 {
 	DEBUGASSERT(this);
-#if defined(CONFIG_BUILD_PROTECTED)
-	if (putchar(ch) != EOF)
-#else
-	if (up_putc(ch) != EOF)
-#endif
-	{
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
+	if (up_putc(ch) != EOF) {
 		this->nput++;
 	}
+#endif
 }
 
 /****************************************************************************

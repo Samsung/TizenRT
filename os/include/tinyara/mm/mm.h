@@ -62,11 +62,11 @@
 #include <stdbool.h>
 #include <semaphore.h>
 #include <debug.h>
+#include <stdint.h>
 #include <tinyara/mm/heap_regioninfo.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
-
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -446,7 +446,6 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 /* Functions contained in umm_initialize.c **********************************/
 
-void umm_initialize(FAR void *heap_start, size_t heap_size);
 
 /* Functions contained in kmm_initialize.c **********************************/
 
@@ -457,6 +456,7 @@ void kmm_initialize(FAR void *heap_start, size_t heap_size);
 /* Functions contained in umm_addregion.c ***********************************/
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+void umm_initialize(FAR void *heap_start, size_t heap_size);
 void umm_addregion(FAR void *heapstart, size_t heapsize);
 #endif
 
@@ -779,6 +779,24 @@ void *zalloc_at(int heap_index, size_t size);
 /**
  * @endcond
  */
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+
+#define MM_PART_FREE    0
+#define MM_PART_USED    1
+
+struct mm_ram_partition_s {
+        uint32_t start;         /* Start address of the partition */
+        uint32_t size;          /* Size of the partition in bytes */
+        uint8_t status;         /* Current status of the partition, free / used */
+};
+
+/* Functions contained in mm_partition_mgr.c **************************************/
+void mm_initialize_ram_partitions(void);
+int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size);
+void mm_free_ram_partition(uint32_t address);
+
+#endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */
 
 #undef EXTERN
 #ifdef __cplusplus
