@@ -21,6 +21,7 @@ config IOTBUS_GPIO
 config IOTBUS_I2C
 	bool "IoTbus I2C"
 	default y
+	select I2C_USERIO
 	depends on I2C
 	---help---
 		Enables IoTbus I2C
@@ -35,6 +36,7 @@ config IOTBUS_PWM
 config IOTBUS_SPI
 	bool "IoTbus SPI"
 	default y
+	select SPI_USERIO
 	depends on SPI
 	---help---
 		Enables IoTbus SPI

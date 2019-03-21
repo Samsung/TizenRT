@@ -41,6 +41,8 @@
 
 #define TAG "THINGS_SSS"
 
+#define HASH_LENGTH 32
+
 static OicSecKey_t cacert;
 static OicSecKey_t subca;
 static OicSecKey_t devicecert;
@@ -276,8 +278,8 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	 */
 
 	// 1. sha256(CertUUID)
-	unsigned char uuid_hash[32 + 1] = { 0, };
-	memset(uuid_hash, 0, sizeof(uuid_hash));
+	unsigned char uuid_hash[HASH_LENGTH + 1] = { 0, };
+
 	mbedtls_sha256((const unsigned char *)uuid, uuid_len, uuid_hash, 0);
 
 	// 2. base64(uuid_hash)
@@ -285,7 +287,7 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	size_t written_len = 0;
 	unsigned char encode_buf[128] = { 0, };
 	if ((ret = mbedtls_base64_encode(encode_buf, sizeof(encode_buf),
-									&written_len, uuid_hash, strlen((char *)uuid_hash))) != 0) {
+									&written_len, uuid_hash, HASH_LENGTH)) != 0) {
 		THINGS_LOG_E(TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
 		return false;
 	}
@@ -296,7 +298,7 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	// 4. base64(uuid_hash)
 	unsigned char encode_buf2[128] = { 0, };
 	if ((ret = mbedtls_base64_encode(encode_buf2, sizeof(encode_buf2),
-									&written_len, uuid_hash, strlen((char *)uuid_hash))) != 0) {
+									&written_len, uuid_hash, HASH_LENGTH)) != 0) {
 		THINGS_LOG_E(TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
 		return false;
 	}

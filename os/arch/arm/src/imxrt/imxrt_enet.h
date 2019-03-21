@@ -67,6 +67,16 @@
  * Pre-processor Definitions
  ************************************************************************************/
 
+#define ENET_MSCR_HOLDTIME_1CYCLE  (0 << ENET_MSCR_HOLDTIME_SHIFT)	/* 1 internal module clock cycle */
+#define ENET_MSCR_HOLDTIME_2CYCLES (1 << ENET_MSCR_HOLDTIME_SHIFT)	/* 2 internal module clock cycles */
+#define ENET_MSCR_HOLDTIME_3CYCLES (2 << ENET_MSCR_HOLDTIME_SHIFT)	/* 3 internal module clock cycles */
+#define ENET_MSCR_HOLDTIME_8CYCLES (7 << ENET_MSCR_HOLDTIME_SHIFT)	/* 8 internal module clock cycles */
+
+#define ENET_MMFR_OP_WRNOTMII      (0 << ENET_MMFR_OP_SHIFT)	/* Write frame, not MII compliant */
+#define ENET_MMFR_OP_WRMII         (1 << ENET_MMFR_OP_SHIFT)	/* Write frame, MII management frame */
+#define ENET_MMFR_OP_RDMII         (2 << ENET_MMFR_OP_SHIFT)	/* Read frame, MII management frame */
+#define ENET_MMFR_OP_RdNOTMII      (3 << ENET_MMFR_OP_SHIFT)	/* Read frame, not MII compliant */
+
 /* Definitions for use with imxrt_phy_boardinitialize */
 
 #define EMAC_INTF 0

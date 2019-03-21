@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -36,12 +37,12 @@
  * Name: freeaddrinfo
  *
  * Description:
- * Frees one or more addrinfo structures returned by getaddrinfo(), along with
- * any additional storage associated with those structures. If the ai_next field
- * of the structure is not null, the entire list of structures is freed.
+ *   Frees one or more addrinfo structures returned by getaddrinfo(), along with
+ *   any additional storage associated with those structures. If the ai_next field
+ *   of the structure is not null, the entire list of structures is freed.
  *
  * Input Parameters:
- *   ai  - struct addrinfo to free
+ *   ai - struct addrinfo to free
  *
  ****************************************************************************/
 

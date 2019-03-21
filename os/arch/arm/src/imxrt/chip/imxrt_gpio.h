@@ -70,16 +70,16 @@
  * Pre-processor Definitions
  ********************************************************************************************/
 
-#define GPIO1                     0	/* Port 1 index */
-#define GPIO2                     1	/* Port 2 index */
-#define GPIO3                     2	/* Port 3 index */
-#define GPIO4                     3	/* Port 4 index */
-#define GPIO5                     4	/* Port 5 index */
+#define GPIO1INDEX                     0	/* Port 1 index */
+#define GPIO2INDEX                     1	/* Port 2 index */
+#define GPIO3INDEX                     2	/* Port 3 index */
+#define GPIO4INDEX                     3	/* Port 4 index */
+#define GPIO5INDEX                     4	/* Port 5 index */
 #if IMXRT_GPIO_NPORTS > 5
-#define GPIO6                     5	/* Port 6 index */
-#define GPIO7                     6	/* Port 7 index */
-#define GPIO8                     7	/* Port 8 index */
-#define GPIO9                     8	/* Port 9 index */
+#define GPIO6INDEX                     5	/* Port 6 index */
+#define GPIO7INDEX                     6	/* Port 7 index */
+#define GPIO8INDEX                     7	/* Port 8 index */
+#define GPIO9INDEX                     8	/* Port 9 index */
 #endif
 #define IMXRT_GPIO_NPINS         32	/* Up to 32 pins per port */
 

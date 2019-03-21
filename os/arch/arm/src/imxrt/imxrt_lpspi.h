@@ -66,6 +66,24 @@
 #include "chip.h"
 #include "chip/imxrt_lpspi.h"
 
+/********************************************************************************************
+ * Pre-processor Definitions
+ ********************************************************************************************/
+
+#define IOMUX_LPSPI1_CS (IOMUX_SLEW_FAST | IOMUX_DRIVE_50OHM | \
+                         IOMUX_SPEED_MEDIUM | IOMUX_PULL_UP_100K | \
+                         _IOMUX_PULL_ENABLE)
+#define GPIO_LPSPI1_CS  (GPIO_OUTPUT | GPIO_OUTPUT_ONE | \
+                         GPIO_PORT3 | GPIO_PIN13 | IOMUX_LPSPI1_CS)
+
+#define LPSPI_CFGR1_OUTCFG_RETAIN  (0 << 26) /* Output data retains last value when chip select is negated */
+#define LPSPI_CFGR1_OUTCFG_TRISTATE (1 << 26) /* Output data is tristated when chip select is negated */
+
+#define LPSPI_CFGR1_PINCFG_SIN_SOUT  (0 << LPSPI_CFGR1_PINCFG_SHIFT)  /* SIN is used for input data and SOUT is used for output data */
+#define LPSPI_CFGR1_PINCFG_SIN_SIN   (1 << LPSPI_CFGR1_PINCFG_SHIFT)  /* SIN is used for both input and output data */
+#define LPSPI_CFGR1_PINCFG_SOUT_SOUT (2 << LPSPI_CFGR1_PINCFG_SHIFT)  /* SOUT is used for both input and output data */
+#define LPSPI_CFGR1_PINCFG_SOUT_SIN  (3 << LPSPI_CFGR1_PINCFG_SHIFT)  /* SOUT is used for input data and SIN is used for output data */
+
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
@@ -129,26 +147,26 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus);
  ************************************************************************************/
 
 #ifdef CONFIG_IMXRT_LPSPI1
-void imxrt_lpspi1select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected);
-uint8_t imxrt_lpspi1status(FAR struct spi_dev_s *dev, uint32_t devid);
+void imxrt_lpspi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+uint8_t imxrt_lpspi1status(FAR struct spi_dev_s *dev, enum spi_dev_e devid);
 int imxrt_lpspi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI2
-void imxrt_lpspi2select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected);
-uint8_t imxrt_lpspi2status(FAR struct spi_dev_s *dev, uint32_t devid);
+void imxrt_lpspi2select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+uint8_t imxrt_lpspi2status(FAR struct spi_dev_s *dev, enum spi_dev_e devid);
 int imxrt_lpspi2cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI3
-void imxrt_lpspi3select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected);
-uint8_t imxrt_lpspi3status(FAR struct spi_dev_s *dev, uint32_t devid);
+void imxrt_lpspi3select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+uint8_t imxrt_lpspi3status(FAR struct spi_dev_s *dev, enum spi_dev_e devid);
 int imxrt_lpspi3cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI4
-void imxrt_lpspi4select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected);
-uint8_t imxrt_lpspi4status(FAR struct spi_dev_s *dev, uint32_t devid);
+void imxrt_lpspi4select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+uint8_t imxrt_lpspi4status(FAR struct spi_dev_s *dev, enum spi_dev_e devid);
 int imxrt_lpspi4cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 #endif
 

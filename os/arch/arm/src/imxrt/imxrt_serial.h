@@ -65,6 +65,18 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define LPUART_ALL_INTS (LPUART_CTRL_ORIE(1U) | LPUART_CTRL_NEIE(1U) | LPUART_CTRL_FEIE(1U) |  \
+                        LPUART_CTRL_PEIE(1U) | LPUART_CTRL_TIE(1U)  | LPUART_CTRL_TCIE(1U) |  \
+                        LPUART_CTRL_RIE(1U)  | LPUART_CTRL_ILIE(1U) | LPUART_CTRL_MA1IE(1U) | \
+                        LPUART_CTRL_MA2IE(1U))
+
+/* LPUART Data Register */
+
+#define LPUART_DATA_SHIFT              (0)	/* Bits 0-9: Data bits 0-9 */
+#define LPUART_DATA_MASK               (0x3ff << LPUART_DATA_SHIFT)
+/* Bit 10:  Reserved */
+#define LPUART_DATA_STATUS_SHIFT       (11)	/* Bit 11: Idle Line status */
+/* Bits 16-31:  Reserved */
 
 /****************************************************************************
  * Public Types

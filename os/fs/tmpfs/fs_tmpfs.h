@@ -75,6 +75,17 @@
 
 #define TFO_FLAG_UNLINKED (1 << 0)  /* Bit 0: File is unlinked */
 
+/* Redefine memory alloc function when using multi heap */
+
+#if CONFIG_MM_NHEAPS > 1 && CONFIG_MM_REGIONS > 1
+#undef  kmm_malloc
+#undef  kmm_zalloc
+#undef  kmm_realloc
+#define kmm_malloc(s)     malloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
+#define kmm_zalloc(s)     zalloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, s)
+#define kmm_realloc(p, s) realloc_at(CONFIG_FS_TMPFS_HEAP_INDEX, p, s)
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/

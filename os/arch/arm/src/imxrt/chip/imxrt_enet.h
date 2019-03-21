@@ -60,6 +60,7 @@
 #include <tinyara/config.h>
 
 #include "chip.h"
+#include "chip/imxrt105x_config.h"
 
 /********************************************************************************************
  * Pre-processor Definitions
@@ -202,6 +203,8 @@
 /* Bits 0-23: Reserved */
 #define ENET_TDAR                    (1 << 24)	/* Bit 24: Transmit descriptor active */
 /* Bits 25-31: Reserved */
+
+#ifdef CONFIG_DUPLICATE_DEFINE
 /* Ethernet Control Register */
 
 #define ENET_ECR_RESET               (1 << 0)	/* Bit 0:  Ethernet MAC reset */
@@ -469,6 +472,7 @@
 #define ENET_TCSR_TF                 (1 << 7)	/* Bit 7:  Timer Flag */
 /* Bits 8-31: Reserved */
 /* Timer Compare Capture Register (32-bit compare value) */
+#endif
 
 /* Buffer Descriptors ***********************************************************************/
 /* Endian-independent descriptor offsets */

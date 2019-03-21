@@ -238,6 +238,133 @@
 #define CONFIG_IMXRT_ENET_PRIO  NVIC_SYSH_PRIORITY_DEFAULT
 #endif
 
+#ifndef CONFIG_ETH0_PHY_KSZ8081
+#define CONFIG_ETH0_PHY_KSZ8081
+#endif
+
+#ifndef CONFIG_NET_ETH_PKTSIZE
+#define CONFIG_NET_ETH_PKTSIZE 590
+#endif
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL))
+#define FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL 0
+#endif
+
+/*! @brief Construct a status code value from a group and code number. */
+#define MAKE_STATUS(group, code) ((((group) * 100) + (code)))
+
+/*! @brief Construct the version number for drivers. */
+#define MAKE_VERSION(major, minor, bugfix) (((major) << 16) | ((minor) << 8) | (bugfix))
+#define FSL_SAI_DRIVER_VERSION (MAKE_VERSION(2, 1, 3)) /*!< Version 2.1.3 */
+/*@}*/
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+#ifndef   __STATIC_FORCEINLINE                 
+	#define __STATIC_FORCEINLINE                   __attribute__((always_inline)) static inline
+#endif 
+
+#define AT_NONCACHEABLE_SECTION(var) var
+#define AT_NONCACHEABLE_SECTION_ALIGN(var, alignbytes) var __attribute__((aligned(alignbytes)))
+#define AT_NONCACHEABLE_SECTION_INIT(var) var
+#define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) var __attribute__((aligned(alignbytes)))
+
+/*! @brief Generic status return codes. */
+enum _generic_status {
+	kStatus_Success = MAKE_STATUS(0, 0),
+	kStatus_Fail = MAKE_STATUS(0, 1),
+	kStatus_ReadOnly = MAKE_STATUS(0, 2),
+	kStatus_OutOfRange = MAKE_STATUS(0, 3),
+	kStatus_InvalidArgument = MAKE_STATUS(0, 4),
+	kStatus_Timeout = MAKE_STATUS(0, 5),
+	kStatus_NoTransferInProgress = MAKE_STATUS(0, 6),
+};
+
+/*! @brief Type used for all status and error return values. */
+typedef int32_t status_t;
+
+/* ###########################  Core Function Access  ########################### */
+/** \ingroup  CMSIS_Core_FunctionInterface
+    \defgroup CMSIS_Core_RegAccFunctions CMSIS Core Register Access Functions
+  @{
+ */
+
+/**
+  \brief   Get Priority Mask
+  \details Returns the current state of the priority mask bit from the Priority Mask Register.
+  \return               Priority Mask value
+ */
+__STATIC_FORCEINLINE uint32_t __get_PRIMASK(void)
+{
+	uint32_t result;
+
+	__asm__ __volatile__ ("MRS %0, primask" : "=r" (result) :: "memory");
+	return(result);
+}
+
+/**
+  \brief   Set Priority Mask
+  \details Assigns the given value to the Priority Mask Register.
+  \param [in]    priMask  Priority Mask
+ */
+__STATIC_FORCEINLINE void __set_PRIMASK(uint32_t priMask)
+{
+	__asm__ __volatile__ ("MSR primask, %0" : : "r" (priMask) : "memory");
+}
+
+/**
+  \brief   Enable IRQ Interrupts
+  \details Enables IRQ interrupts by clearing the I-bit in the CPSR.
+           Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __enable_irq(void)
+{
+	__asm__ __volatile__ ("cpsie i" : : : "memory");
+}
+
+
+/**
+  \brief   Disable IRQ Interrupts
+  \details Disables IRQ interrupts by setting the I-bit in the CPSR.
+           Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_irq(void)
+{
+	__asm__ __volatile__ ("cpsid i" : : : "memory");
+}
+
+/*!
+* @brief Disable the global IRQ
+*
+* Disable the global interrupt and return the current primask register. User is required to provided the primask
+* register for the EnableGlobalIRQ().
+*
+* @return Current primask value.
+*/
+static inline uint32_t imxrt_disableglobalirq(void)
+{
+	uint32_t regPrimask = __get_PRIMASK();
+
+	__disable_irq();
+
+	return regPrimask;
+}
+
+/*!
+* @brief Enable the global IRQ
+*
+* Set the primask register with the provided primask value but not just enable the primask. The idea is for the
+* convenience of integration of RTOS. some RTOS get its own management mechanism of primask. User is required to
+* use the EnableGlobalIRQ() and DisableGlobalIRQ() in pair.
+*
+* @param primask value of primask register to be restored. The primask value is supposed to be provided by the
+* DisableGlobalIRQ().
+*/
+static inline void imxrt_enableglobalirq(uint32_t primask)
+{
+	__set_PRIMASK(primask);
+}
+
 /************************************************************************************
  * Public Functions
  ************************************************************************************/

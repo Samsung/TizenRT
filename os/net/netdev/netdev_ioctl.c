@@ -1115,6 +1115,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 	}
 
 	struct addrinfo *res = NULL;
+	struct hostent *host_ent = NULL;
 
 	switch (in_arg->type) {
 #if LWIP_DNS
@@ -1122,10 +1123,12 @@ int lwip_func_ioctl(int cmd, void *arg)
 		ret = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
 		if (ret != 0) {
 			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
-			in_arg->req_res = ret;
-			return -EINVAL;
+			in_arg->ai_res = NULL;
+		} else {
+			in_arg->ai_res = res;
 		}
-		in_arg->ai_res = res;
+		in_arg->req_res = ret;
+		ret = 0;
 		break;
 	case FREEADDRINFO:
 		lwip_freeaddrinfo(in_arg->ai);
@@ -1133,6 +1136,22 @@ int lwip_func_ioctl(int cmd, void *arg)
 		break;
 	case DNSSETSERVER:
 		dns_setserver(in_arg->num_dns, in_arg->dns_server);
+		ret = 0;
+		break;
+	case GETHOSTBYNAME:
+		host_ent = lwip_gethostbyname(in_arg->host_name);
+		if (!host_ent) {
+			printf("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
+		}
+		in_arg->host_entry = host_ent;
+		ret = 0;
+		break;
+	case GETNAMEINFO:
+		ret = lwip_getnameinfo(in_arg->sa, in_arg->sa_len, (char *)in_arg->host_name, in_arg->host_len, (char *)in_arg->serv_name, in_arg->serv_len, in_arg->flags);
+		if (ret != 0) {
+			printf("lwip_getnameinfo() returned with the error code: %d\n", ret);
+		}
+		in_arg->req_res = ret;
 		ret = 0;
 		break;
 #endif

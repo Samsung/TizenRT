@@ -64,6 +64,7 @@
 
 #include "chip.h"
 #include "chip/imxrt_gpio.h"
+#include "chip/imxrt105x_config.h"
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -112,16 +113,16 @@
 
 #define GPIO_PORT_SHIFT        (21)      /* Bits 21-23: GPIO port index */
 #define GPIO_PORT_MASK         (15 << GPIO_PORT_SHIFT)
-#  define GPIO_PORT1           (GPIO1 << GPIO_PORT_SHIFT) /* GPIO1 */
-#  define GPIO_PORT2           (GPIO2 << GPIO_PORT_SHIFT) /* GPIO2 */
-#  define GPIO_PORT3           (GPIO3 << GPIO_PORT_SHIFT) /* GPIO3 */
-#  define GPIO_PORT4           (GPIO4 << GPIO_PORT_SHIFT) /* GPIO4 */
-#  define GPIO_PORT5           (GPIO5 << GPIO_PORT_SHIFT) /* GPIO5 */
+#define GPIO_PORT1           (GPIO1INDEX << GPIO_PORT_SHIFT) /* GPIO1 */
+#define GPIO_PORT2           (GPIO2INDEX << GPIO_PORT_SHIFT) /* GPIO2 */
+#define GPIO_PORT3           (GPIO3INDEX << GPIO_PORT_SHIFT) /* GPIO3 */
+#define GPIO_PORT4           (GPIO4INDEX << GPIO_PORT_SHIFT) /* GPIO4 */
+#define GPIO_PORT5           (GPIO5INDEX << GPIO_PORT_SHIFT) /* GPIO5 */
 #if IMXRT_GPIO_NPORTS > 5
-#  define GPIO_PORT6           (GPIO6 << GPIO_PORT_SHIFT) /* GPIO6 */
-#  define GPIO_PORT7           (GPIO7 << GPIO_PORT_SHIFT) /* GPIO7 */
-#  define GPIO_PORT8           (GPIO8 << GPIO_PORT_SHIFT) /* GPIO8 */
-#  define GPIO_PORT9           (GPIO9 << GPIO_PORT_SHIFT) /* GPIO9 */
+#define GPIO_PORT6           (GPIO6INDEX << GPIO_PORT_SHIFT) /* GPIO6 */
+#define GPIO_PORT7           (GPIO7INDEX << GPIO_PORT_SHIFT) /* GPIO7 */
+#define GPIO_PORT8           (GPIO8INDEX << GPIO_PORT_SHIFT) /* GPIO8 */
+#define GPIO_PORT9           (GPIO9INDEX << GPIO_PORT_SHIFT) /* GPIO9 */
 #endif
 /* GPIO Pin Number:
  *

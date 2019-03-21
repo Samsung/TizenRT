@@ -57,1705 +57,2346 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <semaphore.h>
 #include <errno.h>
+#include <assert.h>
+#include <queue.h>
 #include <debug.h>
 
-#include <tinyara/arch.h>
 #include <tinyara/irq.h>
-#include <tinyara/clock.h>
-#include <tinyara/semaphore.h>
-#include <tinyara/i2c/i2c_master.h>
+#include <tinyara/arch.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/wdog.h>
+#include <tinyara/wqueue.h>
+#include <tinyara/audio/audio.h>
+#include <tinyara/audio/i2s.h>
+
+#include "irq/irq.h"
 
 #include <arch/board/board.h>
-
-#include "up_arch.h"
-
+#include "imxrt_clock.h"
 #include "imxrt_lpi2c.h"
-#include "imxrt_gpio.h"
 
-#include "chip/imxrt_pinmux.h"
-#include "chip/imxrt_ccm.h"
-#include "chip/imxrt_periphclks.h"
+/*******************************************************************************
+ * Definitions
+ ******************************************************************************/
+/*! @brief Common sets of flags used by the driver. */
+enum _lpi2c_flag_constants {
+    /*! All flags which are cleared by the driver upon starting a transfer. */
+    kMasterClearFlags = kLPI2C_MasterEndOfPacketFlag | kLPI2C_MasterStopDetectFlag | kLPI2C_MasterNackDetectFlag |
+                        kLPI2C_MasterArbitrationLostFlag | kLPI2C_MasterFifoErrFlag | kLPI2C_MasterPinLowTimeoutFlag |
+                        kLPI2C_MasterDataMatchFlag,
 
-/* At least one I2C peripheral must be enabled */
+    /*! IRQ sources enabled by the non-blocking transactional API. */
+    kMasterIrqFlags = kLPI2C_MasterArbitrationLostFlag | kLPI2C_MasterTxReadyFlag | kLPI2C_MasterRxReadyFlag |
+                      kLPI2C_MasterStopDetectFlag | kLPI2C_MasterNackDetectFlag | kLPI2C_MasterPinLowTimeoutFlag |
+                      kLPI2C_MasterFifoErrFlag,
 
-#if defined(CONFIG_IMXRT_LPI2C1) || defined(CONFIG_IMXRT_LPI2C2) || \
-	defined(CONFIG_IMXRT_LPI2C3) || defined(CONFIG_IMXRT_LPI2C4)
+    /*! Errors to check for. */
+    kMasterErrorFlags = kLPI2C_MasterNackDetectFlag | kLPI2C_MasterArbitrationLostFlag | kLPI2C_MasterFifoErrFlag |
+                        kLPI2C_MasterPinLowTimeoutFlag,
 
-/************************************************************************************
- * Pre-processor Definitions
- ************************************************************************************/
+    /*! All flags which are cleared by the driver upon starting a transfer. */
+    kSlaveClearFlags = kLPI2C_SlaveRepeatedStartDetectFlag | kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveBitErrFlag |
+                       kLPI2C_SlaveFifoErrFlag,
 
-/* Configuration ********************************************************************/
-/* CONFIG_I2C_POLLED may be set so that I2C interrupts will not be used.  Instead,
- * CPU-intensive polling will be used.
+    /*! IRQ sources enabled by the non-blocking transactional API. */
+    kSlaveIrqFlags = kLPI2C_SlaveTxReadyFlag | kLPI2C_SlaveRxReadyFlag | kLPI2C_SlaveStopDetectFlag |
+                     kLPI2C_SlaveRepeatedStartDetectFlag | kLPI2C_SlaveFifoErrFlag | kLPI2C_SlaveBitErrFlag |
+                     kLPI2C_SlaveTransmitAckFlag | kLPI2C_SlaveAddressValidFlag,
+
+    /*! Errors to check for. */
+    kSlaveErrorFlags = kLPI2C_SlaveFifoErrFlag | kLPI2C_SlaveBitErrFlag,
+};
+
+/* ! @brief LPI2C master fifo commands. */
+enum _lpi2c_master_fifo_cmd {
+    kTxDataCmd = LPI2C_MTDR_CMD(0x0U), /*!< Transmit DATA[7:0] */
+    kRxDataCmd = LPI2C_MTDR_CMD(0X1U), /*!< Receive (DATA[7:0] + 1) bytes */
+    kStopCmd = LPI2C_MTDR_CMD(0x2U),   /*!< Generate STOP condition */
+    kStartCmd = LPI2C_MTDR_CMD(0x4U),  /*!< Generate(repeated) START and transmit address in DATA[[7:0] */
+};
+
+/*!
+ * @brief Default watermark values.
+ *
+ * The default watermarks are set to zero.
  */
-
-/* Interrupt wait timeout in seconds and milliseconds */
-
-#if !defined(CONFIG_IMXRT_I2CTIMEOSEC) && !defined(CONFIG_IMXRT_I2CTIMEOMS)
-#define CONFIG_IMXRT_I2CTIMEOSEC 0
-#define CONFIG_IMXRT_I2CTIMEOMS  500	/* Default is 500 milliseconds */
-#elif !defined(CONFIG_IMXRT_I2CTIMEOSEC)
-#define CONFIG_IMXRT_I2CTIMEOSEC 0	/* User provided milliseconds */
-#elif !defined(CONFIG_IMXRT_I2CTIMEOMS)
-#define CONFIG_IMXRT_I2CTIMEOMS  0	/* User provided seconds */
-#endif
-
-/* Interrupt wait time timeout in system timer ticks */
-
-#ifndef CONFIG_IMXRT_I2CTIMEOTICKS
-#define CONFIG_IMXRT_I2CTIMEOTICKS \
-	(SEC2TICK(CONFIG_IMXRT_I2CTIMEOSEC) + MSEC2TICK(CONFIG_IMXRT_I2CTIMEOMS))
-#endif
-
-#ifndef CONFIG_IMXRT_I2C_DYNTIMEO_STARTSTOP
-#define CONFIG_IMXRT_I2C_DYNTIMEO_STARTSTOP TICK2USEC(CONFIG_IMXRT_I2CTIMEOTICKS)
-#endif
-
-/* Debug ****************************************************************************/
-
-/* I2C event trace logic.  NOTE:  trace uses the internal, non-standard, low-level
- * debug interface syslog() but does not require that any other debug
- * is enabled.
- */
-
-#ifndef CONFIG_I2C_TRACE
-#define imxrt_lpi2c_tracereset(p)
-#define imxrt_lpi2c_tracenew(p,s)
-#define imxrt_lpi2c_traceevent(p,e,a)
-#define imxrt_lpi2c_tracedump(p)
-#endif
-
-#ifndef CONFIG_I2C_NTRACE
-#define CONFIG_I2C_NTRACE 32
-#endif
-
-#ifdef CONFIG_I2C_SLAVE
-#error I2C slave logic is not supported yet for IMXRT
-#endif
-
-#define LPI2C_MASTER    1
-#define LPI2C_SLAVE     2
-
-#define MKI2C_OUTPUT(p) (((p) & GPIO_PADMUX_MASK) | \
-                         IOMUX_OPENDRAIN | IOMUX_DRIVE_33OHM | \
-                         IOMUX_SLEW_SLOW | (5 << GPIO_ALT_SHIFT) | \
-                         IOMUX_PULL_NONE | GPIO_OUTPUT_ONE)
-
-#define MKI2C_INPUT(p) (((p) & GPIO_PADMUX_MASK) | \
-                        IOMUX_DRIVE_HIZ | IOMUX_SLEW_SLOW | \
-                        IOMUX_CMOS_INPUT | (5 << GPIO_ALT_SHIFT) | \
-                        IOMUX_PULL_NONE)
-
-/************************************************************************************
- * Private Types
- ************************************************************************************/
-
-/* Interrupt state */
-
-enum imxrt_intstate_e {
-	INTSTATE_IDLE = 0,			/* No I2C activity */
-	INTSTATE_WAITING,			/* Waiting for completion of interrupt activity */
-	INTSTATE_DONE,				/* Interrupt activity complete */
+enum _lpi2c_default_watermarks {
+    kDefaultTxWatermark = 0,
+    kDefaultRxWatermark = 0,
 };
 
-/* Trace events */
-
-enum imxrt_trace_e {
-	I2CEVENT_NONE = 0,			/* No events have occurred with this status */
-	I2CEVENT_SENDADDR,			/* Start/Master bit set and address sent, param = msgc */
-	I2CEVENT_SENDBYTE,			/* Send byte, param = dcnt */
-	I2CEVENT_RCVBYTE,			/* Read more dta, param = dcnt */
-	I2CEVENT_NOSTART,			/* BTF on last byte with no restart, param = msgc */
-	I2CEVENT_STARTRESTART,		/* Last byte sent, re-starting, param = msgc */
-	I2CEVENT_STOP,				/* Last byte sten, send stop, param = 0 */
-	I2CEVENT_ERROR				/* Error occurred, param = 0 */
+/*! @brief States for the state machine used by transactional APIs. */
+enum _lpi2c_transfer_states {
+    kIdleState = 0,
+    kSendCommandState,
+    kIssueReadCommandState,
+    kTransferDataState,
+    kStopState,
+    kWaitForCompletionState,
 };
 
-/* Trace data */
+/*! @brief Typedef for master interrupt handler. */
+typedef void (*lpi2c_master_isr_t)(LPI2C_Type *base, lpi2c_master_handle_t *handle);
 
-struct imxrt_trace_s {
-	uint32_t status;			/* I2C 32-bit SR2|SR1 status */
-	uint32_t count;				/* Interrupt count when status change */
-	enum imxrt_intstate_e event;	/* Last event that occurred with this status */
-	uint32_t parm;				/* Parameter associated with the event */
-	clock_t time;				/* First of event or first status */
-};
+/*! @brief Typedef for slave interrupt handler. */
+typedef void (*lpi2c_slave_isr_t)(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
 
-/* I2C Device hardware configuration */
+/*******************************************************************************
+ * Prototypes
+ ******************************************************************************/
 
-struct imxrt_lpi2c_config_s {
-	uint32_t base;				/* LPI2C base address */
-	uint16_t busy_idle;			/* LPI2C Bus Idle Timeout */
-	uint8_t filtscl;			/* Glitch Filter for SCL pin */
-	uint8_t filtsda;			/* Glitch Filter for SDA pin */
-	uint32_t scl_pin;			/* GPIO configuration for SCL as SCL */
-	uint32_t sda_pin;			/* GPIO configuration for SDA as SDA */
-	uint8_t mode;				/* Master or Slave mode */
-#ifndef CONFIG_I2C_POLLED
-	uint32_t irq;				/* Event IRQ */
-#endif
-};
+/* Not static so it can be used from fsl_lpi2c_edma.c. */
+uint32_t imxrt_lpi2c_getinstance(LPI2C_Type *base);
 
-/* I2C Device Private Data */
+static uint32_t imxrt_lpi2c_getcyclesforwidth(uint32_t sourceClock_Hz,
+                                        uint32_t width_ns,
+                                        uint32_t maxCycles,
+                                        uint32_t prescaler);
 
-struct imxrt_lpi2c_priv_s {
-	const struct i2c_ops_s *ops;	/* Standard I2C operations */
-	const struct imxrt_lpi2c_config_s *config;	/* Port configuration */
-	int refs;					/* Referernce count */
-	sem_t sem_excl;				/* Mutual exclusion semaphore */
-#ifndef CONFIG_I2C_POLLED
-	sem_t sem_isr;				/* Interrupt wait semaphore */
-#endif
-	volatile uint8_t intstate;	/* Interrupt handshake (see enum imxrt_intstate_e) */
+static status_t imxrt_lpi2c_masterwaitfortxready(LPI2C_Type *base);
 
-	uint8_t msgc;				/* Message count */
-	struct i2c_msg_s *msgv;		/* Message list */
-	uint8_t *ptr;				/* Current message buffer */
-	uint32_t frequency;			/* Current I2C frequency */
-	int dcnt;					/* Current message length */
-	uint16_t flags;				/* Current message flags */
+static status_t imxrt_lpi2c_runtransferstatemachine(LPI2C_Type *base, lpi2c_master_handle_t *handle, bool *isDone);
 
-	/* I2C trace support */
+static void imxrt_lpi2c_inittransferstatemachine(lpi2c_master_handle_t *handle);
 
-#ifdef CONFIG_I2C_TRACE
-	int tndx;					/* Trace array index */
-	clock_t start_time;			/* Time when the trace was started */
+static status_t imxrt_lpi2c_slavecheckandclearerror(LPI2C_Type *base, uint32_t flags);
 
-	/* The actual trace data */
+static void imxrt_lpi2c_commonirqhandler(LPI2C_Type *base, uint32_t instance);
 
-	struct imxrt_trace_s trace[CONFIG_I2C_NTRACE];
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+
+/*! @brief Array to map LPI2C instance number to base pointer. */
+static LPI2C_Type *const kLpi2cBases[] = LPI2C_BASE_PTRS;
+
+/*! @brief Array to map LPI2C instance number to IRQ number. */
+static IRQn_Type const kLpi2cIrqs[] = LPI2C_IRQS;
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+/*! @brief Array to map LPI2C instance number to clock gate enum. */
+static clock_ip_name_t const kLpi2cClocks[] = LPI2C_CLOCKS;
+
+#if defined(LPI2C_PERIPH_CLOCKS)
+/*! @brief Array to map LPI2C instance number to pheripheral clock gate enum. */
+static const clock_ip_name_t kLpi2cPeriphClocks[] = LPI2C_PERIPH_CLOCKS;
 #endif
 
-	uint32_t status;			/* End of transfer SR2|SR1 status */
-};
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-/************************************************************************************
- * Private Function Prototypes
- ************************************************************************************/
+/*! @brief Pointer to master IRQ handler for each instance. */
+static lpi2c_master_isr_t s_lpi2cMasterIsr;
 
-static inline uint32_t imxrt_lpi2c_getreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset);
-static inline void imxrt_lpi2c_putreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset, uint32_t value);
-static inline void imxrt_lpi2c_modifyreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset, uint32_t clearbits, uint32_t setbits);
-static inline void imxrt_lpi2c_sem_wait(FAR struct imxrt_lpi2c_priv_s *priv);
+/*! @brief Pointers to master handles for each instance. */
+static lpi2c_master_handle_t *s_lpi2cMasterHandle[ARRAY_SIZE(kLpi2cBases)];
 
-#ifdef CONFIG_IMXRT_I2C_DYNTIMEO
-static useconds_t imxrt_lpi2c_tousecs(int msgc, FAR struct i2c_msg_s *msgs);
-#endif							/* CONFIG_IMXRT_I2C_DYNTIMEO */
+/*! @brief Pointer to slave IRQ handler for each instance. */
+static lpi2c_slave_isr_t s_lpi2cSlaveIsr;
 
-static inline int imxrt_lpi2c_sem_waitdone(FAR struct imxrt_lpi2c_priv_s *priv);
-static inline void imxrt_lpi2c_sem_waitstop(FAR struct imxrt_lpi2c_priv_s *priv);
-static inline void imxrt_lpi2c_sem_post(FAR struct imxrt_lpi2c_priv_s *priv);
-static inline void imxrt_lpi2c_sem_init(FAR struct imxrt_lpi2c_priv_s *priv);
-static inline void imxrt_lpi2c_sem_destroy(FAR struct imxrt_lpi2c_priv_s *priv);
+/*! @brief Pointers to slave handles for each instance. */
+static lpi2c_slave_handle_t *s_lpi2cSlaveHandle[ARRAY_SIZE(kLpi2cBases)];
 
-#ifdef CONFIG_I2C_TRACE
-static void imxrt_lpi2c_tracereset(FAR struct imxrt_lpi2c_priv_s *priv);
-static void imxrt_lpi2c_tracenew(FAR struct imxrt_lpi2c_priv_s *priv, uint32_t status);
-static void imxrt_lpi2c_traceevent(FAR struct imxrt_lpi2c_priv_s *priv, enum imxrt_trace_e event, uint32_t parm);
-static void imxrt_lpi2c_tracedump(FAR struct imxrt_lpi2c_priv_s *priv);
-#endif							/* CONFIG_I2C_TRACE */
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
 
-static void imxrt_lpi2c_setclock(FAR struct imxrt_lpi2c_priv_s *priv, uint32_t frequency);
-static inline void imxrt_lpi2c_sendstart(FAR struct imxrt_lpi2c_priv_s *priv, uint8_t address);
-static inline void imxrt_lpi2c_sendstop(FAR struct imxrt_lpi2c_priv_s *priv);
-static inline uint32_t imxrt_lpi2c_getstatus(FAR struct imxrt_lpi2c_priv_s *priv);
-
-static int imxrt_lpi2c_isr_process(struct imxrt_lpi2c_priv_s *priv);
-
-#ifndef CONFIG_I2C_POLLED
-static int imxrt_lpi2c_isr(int irq, void *context, FAR void *arg);
-#endif							/* !CONFIG_I2C_POLLED */
-
-void imxrt_lpi2c_clock_enable(uint32_t base);
-void imxrt_lpi2c_clock_disable(uint32_t base);
-static int imxrt_lpi2c_init(FAR struct imxrt_lpi2c_priv_s *priv);
-static int imxrt_lpi2c_deinit(FAR struct imxrt_lpi2c_priv_s *priv);
-static int imxrt_lpi2c_transfer(FAR struct i2c_master_s *dev, FAR struct i2c_msg_s *msgs, int count);
-#ifdef CONFIG_I2C_RESET
-static int imxrt_lpi2c_reset(FAR struct i2c_master_s *dev);
-#endif
-
-/************************************************************************************
- * Private Data
- ************************************************************************************/
-
-/* Trace events strings */
-
-#ifdef CONFIG_I2C_TRACE
-static const char *g_trace_names[] = {
-	"NONE           ",
-	"SENDADDR       ",
-	"SENDBYTE       ",
-	"RCVBYTE        ",
-	"NOSTART        ",
-	"START/RESTART  ",
-	"STOP           ",
-	"ERROR          "
-};
-#endif
-
-/* I2C interface */
-
-static const struct i2c_ops_s imxrt_lpi2c_ops = {
-	.transfer = imxrt_lpi2c_transfer
-#ifdef CONFIG_I2C_RESET
-	, .reset = imxrt_lpi2c_reset
-#endif
-};
-
-/* I2C device structures */
-
-#ifdef CONFIG_IMXRT_LPI2C1
-static const struct imxrt_lpi2c_config_s imxrt_lpi2c1_config = {
-	.base = IMXRT_LPI2C1_BASE,
-	.busy_idle = CONFIG_LPI2C1_BUSYIDLE,
-	.filtscl = CONFIG_LPI2C1_FILTSCL,
-	.filtsda = CONFIG_LPI2C1_FILTSDA,
-	.scl_pin = GPIO_LPI2C1_SCL,
-	.sda_pin = GPIO_LPI2C1_SDA,
-#ifndef CONFIG_I2C_SLAVE
-	.mode = LPI2C_MASTER,
-#else
-	.mode = LPI2C_SLAVE,
-#endif
-#ifndef CONFIG_I2C_POLLED
-	.irq = IMXRT_IRQ_LPI2C1,
-#endif
-};
-
-static struct imxrt_lpi2c_priv_s imxrt_lpi2c1_priv = {
-	.ops = &imxrt_lpi2c_ops,
-	.config = &imxrt_lpi2c1_config,
-	.refs = 0,
-	.intstate = INTSTATE_IDLE,
-	.msgc = 0,
-	.msgv = NULL,
-	.ptr = NULL,
-	.dcnt = 0,
-	.flags = 0,
-	.status = 0
-};
-#endif
-
-#ifdef CONFIG_IMXRT_LPI2C2
-static const struct imxrt_lpi2c_config_s imxrt_lpi2c2_config = {
-	.base = IMXRT_LPI2C2_BASE,
-	.busy_idle = CONFIG_LPI2C2_BUSYIDLE,
-	.filtscl = CONFIG_LPI2C2_FILTSCL,
-	.filtsda = CONFIG_LPI2C2_FILTSDA,
-	.scl_pin = GPIO_LPI2C2_SCL,
-	.sda_pin = GPIO_LPI2C2_SDA,
-#ifndef CONFIG_I2C_SLAVE
-	.mode = LPI2C_MASTER,
-#else
-	.mode = LPI2C_SLAVE,
-#endif
-#ifndef CONFIG_I2C_POLLED
-	.irq = IMXRT_IRQ_LPI2C2,
-#endif
-};
-
-static struct imxrt_lpi2c_priv_s imxrt_lpi2c2_priv = {
-	.ops = &imxrt_lpi2c_ops,
-	.config = &imxrt_lpi2c2_config,
-	.refs = 0,
-	.intstate = INTSTATE_IDLE,
-	.msgc = 0,
-	.msgv = NULL,
-	.ptr = NULL,
-	.dcnt = 0,
-	.flags = 0,
-	.status = 0
-};
-#endif
-
-#ifdef CONFIG_IMXRT_LPI2C3
-static const struct imxrt_lpi2c_config_s imxrt_lpi2c3_config = {
-	.base = IMXRT_LPI2C3_BASE,
-	.busy_idle = CONFIG_LPI2C3_BUSYIDLE,
-	.filtscl = CONFIG_LPI2C3_FILTSCL,
-	.filtsda = CONFIG_LPI2C3_FILTSDA,
-	.scl_pin = GPIO_LPI2C3_SCL,
-	.sda_pin = GPIO_LPI2C3_SDA,
-#ifndef CONFIG_I2C_SLAVE
-	.mode = LPI2C_MASTER,
-#else
-	.mode = LPI2C_SLAVE,
-#endif
-#ifndef CONFIG_I2C_POLLED
-	.irq = IMXRT_IRQ_LPI2C3,
-#endif
-};
-
-static struct imxrt_lpi2c_priv_s imxrt_lpi2c3_priv = {
-	.ops = &imxrt_lpi2c_ops,
-	.config = &imxrt_lpi2c3_config,
-	.refs = 0,
-	.intstate = INTSTATE_IDLE,
-	.msgc = 0,
-	.msgv = NULL,
-	.ptr = NULL,
-	.dcnt = 0,
-	.flags = 0,
-	.status = 0
-};
-#endif
-
-#ifdef CONFIG_IMXRT_LPI2C4
-static const struct imxrt_lpi2c_config_s imxrt_lpi2c4_config = {
-	.base = IMXRT_LPI2C4_BASE,
-	.busy_idle = CONFIG_LPI2C4_BUSYIDLE,
-	.filtscl = CONFIG_LPI2C4_FILTSCL,
-	.filtsda = CONFIG_LPI2C4_FILTSDA,
-	.scl_pin = GPIO_LPI2C4_SCL,
-	.sda_pin = GPIO_LPI2C4_SDA,
-#ifndef CONFIG_I2C_SLAVE
-	.mode = LPI2C_MASTER,
-#else
-	.mode = LPI2C_SLAVE,
-#endif
-#ifndef CONFIG_I2C_POLLED
-	.irq = IMXRT_IRQ_LPI2C4,
-#endif
-};
-
-static struct imxrt_lpi2c_priv_s imxrt_lpi2c4_priv = {
-	.ops = &imxrt_lpi2c_ops,
-	.config = &imxrt_lpi2c4_config,
-	.refs = 0,
-	.intstate = INTSTATE_IDLE,
-	.msgc = 0,
-	.msgv = NULL,
-	.ptr = NULL,
-	.dcnt = 0,
-	.flags = 0,
-	.status = 0
-};
-#endif
-
-/************************************************************************************
- * Private Functions
- ************************************************************************************/
-
-/************************************************************************************
- * Name: imxrt_lpi2c_getreg
+/****************************************************************************
+ * Function: imxrt_lpi2c_getinstance
  *
  * Description:
- *   Get a 32-bit register value by offset
+ *   brief Returns an instance number given a base address.
  *
- ************************************************************************************/
-
-static inline uint32_t imxrt_lpi2c_getreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset)
-{
-	return getreg32(priv->config->base + offset);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_putreg
- *
- * Description:
- *  Put a 32-bit register value by offset
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_putreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset, uint32_t value)
-{
-	putreg32(value, priv->config->base + offset);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_modifyreg
- *
- * Description:
- *   Modify a 32-bit register value by offset
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_modifyreg(FAR struct imxrt_lpi2c_priv_s *priv, uint16_t offset, uint32_t clearbits, uint32_t setbits)
-{
-	modifyreg32(priv->config->base + offset, clearbits, setbits);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_wait
- *
- * Description:
- *   Take the exclusive access, waiting as necessary
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sem_wait(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	int ret;
-
-	do {
-		/* Take the semaphore (perhaps waiting) */
-
-		ret = sem_wait(&priv->sem_excl);
-
-		/* The only case that an error should occur here is if the wait was
-		 * awakened by a signal.
-		 */
-
-		DEBUGASSERT(ret == OK || ret == -EINTR);
-	} while (ret == -EINTR);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_tousecs
- *
- * Description:
- *   Return a micro-second delay based on the number of bytes left to be processed.
- *
- ************************************************************************************/
-
-#ifdef CONFIG_IMXRT_I2C_DYNTIMEO
-static useconds_t imxrt_lpi2c_tousecs(int msgc, FAR struct i2c_msg_s *msgs)
-{
-	size_t bytecount = 0;
-	int i;
-
-	/* Count the number of bytes left to process */
-
-	for (i = 0; i < msgc; i++) {
-		bytecount += msgs[i].length;
-	}
-
-	/* Then return a number of microseconds based on a user provided scaling
-	 * factor.
-	 */
-
-	return (useconds_t)(CONFIG_IMXRT_I2C_DYNTIMEO_USECPERBYTE * bytecount);
-}
-#endif
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_waitdone
- *
- * Description:
- *   Wait for a transfer to complete
- *
- ************************************************************************************/
-
-#ifndef CONFIG_I2C_POLLED
-static inline int imxrt_lpi2c_sem_waitdone(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	struct timespec abstime;
-	irqstate_t flags;
-	uint32_t regval;
-	int ret;
-
-	flags = enter_critical_section();
-
-	/* Enable Interrupts when master mode */
-
-	if (priv->config->mode == LPI2C_MASTER) {
-		if ((priv->flags & I2C_M_READ) != 0) {
-			regval = LPI2C_MIER_TDIE | LPI2C_MIER_RDIE | LPI2C_MIER_NDIE | LPI2C_MIER_ALIE | LPI2C_MIER_SDIE;
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MIER_OFFSET, regval);
-		} else {
-			regval = LPI2C_MIER_TDIE | LPI2C_MIER_NDIE | LPI2C_MIER_ALIE | LPI2C_MIER_SDIE;
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MIER_OFFSET, regval);
-		}
-
-	}
-
-	/* Enable Interrupts when slave mode */
-
-	else {
-#warning Missing logic for I2C Slave mode
-	}
-
-	/* Signal the interrupt handler that we are waiting.  NOTE:  Interrupts
-	 * are currently disabled but will be temporarily re-enabled below when
-	 * sem_timedwait() sleeps.
-	 */
-
-	priv->intstate = INTSTATE_WAITING;
-	do {
-		/* Get the current time */
-
-		(void)clock_gettime(CLOCK_REALTIME, &abstime);
-
-		/* Calculate a time in the future */
-
-#if CONFIG_IMXRT_I2CTIMEOSEC > 0
-		abstime.tv_sec += CONFIG_IMXRT_I2CTIMEOSEC;
-#endif
-
-		/* Add a value proportional to the number of bytes in the transfer */
-
-#ifdef CONFIG_IMXRT_I2C_DYNTIMEO
-		abstime.tv_nsec += 1000 * imxrt_lpi2c_tousecs(priv->msgc, priv->msgv);
-		if (abstime.tv_nsec >= 1000 * 1000 * 1000) {
-			abstime.tv_sec++;
-			abstime.tv_nsec -= 1000 * 1000 * 1000;
-		}
-#elif CONFIG_IMXRT_I2CTIMEOMS > 0
-		abstime.tv_nsec += CONFIG_IMXRT_I2CTIMEOMS * 1000 * 1000;
-		if (abstime.tv_nsec >= 1000 * 1000 * 1000) {
-			abstime.tv_sec++;
-			abstime.tv_nsec -= 1000 * 1000 * 1000;
-		}
-#endif
-
-		/* Wait until either the transfer is complete or the timeout expires */
-
-		ret = sem_timedwait(&priv->sem_isr, &abstime);
-		if (ret < 0 && ret != -EINTR) {
-			/* Break out of the loop on irrecoverable errors.  This would
-			 * include timeouts and mystery errors reported by sem_timedwait.
-			 * NOTE that we try again if we are awakened by a signal (EINTR).
-			 */
-
-			break;
-		}
-	}
-
-	/* Loop until the interrupt level transfer is complete. */
-
-	while (priv->intstate != INTSTATE_DONE);
-
-	/* Set the interrupt state back to IDLE */
-
-	priv->intstate = INTSTATE_IDLE;
-
-	/* Disable I2C interrupts */
-
-	/* Enable Interrupts when master mode */
-
-	if (priv->config->mode == LPI2C_MASTER) {
-		imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MIER_OFFSET, 0);
-	} else {
-
-		/* Enable Interrupts when slave mode */
-
-		imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_SIER_OFFSET, 0);
-	}
-
-	leave_critical_section(flags);
-	return ret;
-}
-#else
-static inline int imxrt_lpi2c_sem_waitdone(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	clock_t timeout;
-	clock_t start;
-	clock_t elapsed;
-	int ret;
-
-	/* Get the timeout value */
-
-#ifdef CONFIG_IMXRT_I2C_DYNTIMEO
-	timeout = USEC2TICK(imxrt_lpi2c_tousecs(priv->msgc, priv->msgv));
-#else
-	timeout = CONFIG_IMXRT_I2CTIMEOTICKS;
-#endif
-
-	/* Signal the interrupt handler that we are waiting.  NOTE:  Interrupts
-	 * are currently disabled but will be temporarily re-enabled below when
-	 * sem_timedwait() sleeps.
-	 */
-
-	priv->intstate = INTSTATE_WAITING;
-	start = clock_systimer();
-
-	do {
-		/* Calculate the elapsed time */
-
-		elapsed = clock_systimer() - start;
-
-		/* Poll by simply calling the timer interrupt handler until it
-		 * reports that it is done.
-		 */
-
-		imxrt_lpi2c_isr_process(priv);
-	}
-
-	/* Loop until the transfer is complete. */
-
-	while (priv->intstate != INTSTATE_DONE && elapsed < timeout);
-
-	i2cinfo("intstate: %d elapsed: %ld threshold: %ld status: %08x\n", priv->intstate, (long)elapsed, (long)timeout, priv->status);
-
-	/* Set the interrupt state back to IDLE */
-
-	ret = priv->intstate == INTSTATE_DONE ? OK : -ETIMEDOUT;
-	priv->intstate = INTSTATE_IDLE;
-	return ret;
-}
-#endif
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_waitstop
- *
- * Description:
- *   Wait for a STOP to complete
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sem_waitstop(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	clock_t start;
-	clock_t elapsed;
-	clock_t timeout;
-	uint32_t regval;
-
-	/* Select a timeout */
-
-#ifdef CONFIG_IMXRT_I2C_DYNTIMEO
-	timeout = USEC2TICK(CONFIG_IMXRT_I2C_DYNTIMEO_STARTSTOP);
-#else
-	timeout = CONFIG_IMXRT_I2CTIMEOTICKS;
-#endif
-
-	/* Wait as stop might still be in progress; but stop might also
-	 * be set because of a timeout error: "The [STOP] bit is set and
-	 * cleared by software, cleared by hardware when a Stop condition is
-	 * detected, set by hardware when a timeout error is detected."
-	 */
-
-	start = clock_systimer();
-	do {
-		/* Calculate the elapsed time */
-
-		elapsed = clock_systimer() - start;
-
-		/* Check for STOP condition */
-
-		if (priv->config->mode == LPI2C_MASTER) {
-			regval = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MSR_OFFSET);
-			if ((regval & LPI2C_MSR_SDF) == LPI2C_MSR_SDF) {
-				return;
-			}
-		}
-
-		/* Enable Interrupts when slave mode */
-
-		else {
-			regval = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_SSR_OFFSET);
-			if ((regval & LPI2C_SSR_SDF) == LPI2C_SSR_SDF) {
-				return;
-			}
-		}
-
-		/* Check for NACK error */
-
-		if (priv->config->mode == LPI2C_MASTER) {
-			regval = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MSR_OFFSET);
-			if ((regval & LPI2C_MSR_NDF) == LPI2C_MSR_NDF) {
-				return;
-			}
-		}
-
-		/* Enable Interrupts when slave mode */
-
-		else {
-#warning Missing logic for I2C Slave
-		}
-	}
-
-	/* Loop until the stop is complete or a timeout occurs. */
-
-	while (elapsed < timeout);
-
-	/* If we get here then a timeout occurred with the STOP condition
-	 * still pending.
-	 */
-
-	i2cinfo("Timeout with Status Register: %x\n", regval);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_post
- *
- * Description:
- *   Release the mutual exclusion semaphore
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sem_post(struct imxrt_lpi2c_priv_s *priv)
-{
-	sem_post(&priv->sem_excl);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_init
- *
- * Description:
- *   Initialize semaphores
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sem_init(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	sem_init(&priv->sem_excl, 0, 1);
-
-#ifndef CONFIG_I2C_POLLED
-	/* This semaphore is used for signaling and, hence, should not have
-	 * priority inheritance enabled.
-	 */
-
-	sem_init(&priv->sem_isr, 0, 0);
-	sem_setprotocol(&priv->sem_isr, SEM_PRIO_NONE);
-#endif
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sem_destroy
- *
- * Description:
- *   Destroy semaphores.
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sem_destroy(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	sem_destroy(&priv->sem_excl);
-#ifndef CONFIG_I2C_POLLED
-	sem_destroy(&priv->sem_isr);
-#endif
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_trace*
- *
- * Description:
- *   I2C trace instrumentation
- *
- ************************************************************************************/
-
-#ifdef CONFIG_I2C_TRACE
-static void imxrt_lpi2c_traceclear(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	struct imxrt_trace_s *trace = &priv->trace[priv->tndx];
-
-	trace->status = 0;			/* I2C 32-bit SR2|SR1 status */
-	trace->count = 0;			/* Interrupt count when status change */
-	trace->event = I2CEVENT_NONE;	/* Last event that occurred with this status */
-	trace->parm = 0;			/* Parameter associated with the event */
-	trace->time = 0;			/* Time of first status or event */
-}
-
-static void imxrt_lpi2c_tracereset(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	/* Reset the trace info for a new data collection */
-
-	priv->tndx = 0;
-	priv->start_time = clock_systimer();
-	imxrt_lpi2c_traceclear(priv);
-}
-
-static void imxrt_lpi2c_tracenew(FAR struct imxrt_lpi2c_priv_s *priv, uint32_t status)
-{
-	struct imxrt_trace_s *trace = &priv->trace[priv->tndx];
-
-	/* Is the current entry uninitialized?  Has the status changed? */
-
-	if (trace->count == 0 || status != trace->status) {
-		/* Yes.. Was it the status changed?  */
-
-		if (trace->count != 0) {
-			/* Yes.. bump up the trace index (unless we are out of trace entries) */
-
-			if (priv->tndx >= (CONFIG_I2C_NTRACE - 1)) {
-				i2cerr("ERROR: Trace table overflow\n");
-				return;
-			}
-
-			priv->tndx++;
-			trace = &priv->trace[priv->tndx];
-		}
-
-		/* Initialize the new trace entry */
-
-		imxrt_lpi2c_traceclear(priv);
-		trace->status = status;
-		trace->count = 1;
-		trace->time = clock_systimer();
-	} else {
-		/* Just increment the count of times that we have seen this status */
-
-		trace->count++;
-	}
-}
-
-static void imxrt_lpi2c_traceevent(FAR struct imxrt_lpi2c_priv_s *priv, enum imxrt_trace_e event, uint32_t parm)
-{
-	struct imxrt_trace_s *trace;
-
-	if (event != I2CEVENT_NONE) {
-		trace = &priv->trace[priv->tndx];
-
-		/* Initialize the new trace entry */
-
-		trace->event = event;
-		trace->parm = parm;
-
-		/* Bump up the trace index (unless we are out of trace entries) */
-
-		if (priv->tndx >= (CONFIG_I2C_NTRACE - 1)) {
-			i2cerr("ERROR: Trace table overflow\n");
-			return;
-		}
-
-		priv->tndx++;
-		imxrt_lpi2c_traceclear(priv);
-	}
-}
-
-static void imxrt_lpi2c_tracedump(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	struct imxrt_trace_s *trace;
-	int i;
-
-	syslog(LOG_DEBUG, "Elapsed time: %ld\n", (long)(clock_systimer() - priv->start_time));
-
-	for (i = 0; i <= priv->tndx; i++) {
-		trace = &priv->trace[i];
-		syslog(LOG_DEBUG, "%2d. STATUS: %08x COUNT: %3d EVENT: %s(%2d) PARM: %08x TIME: %d\n", i + 1, trace->status, trace->count, g_trace_names[trace->event], trace->event, trace->parm, trace->time - priv->start_time);
-	}
-}
-#endif							/* CONFIG_I2C_TRACE */
-
-/************************************************************************************
- * Name: imxrt_lpi2c_setclock
- *
- * Description:
- *   Set the I2C clock
- *
- ************************************************************************************/
-
-static void imxrt_lpi2c_setclock(FAR struct imxrt_lpi2c_priv_s *priv, uint32_t frequency)
-{
-	uint32_t src_freq = 0;
-	uint32_t pll3_div = 0;
-	uint32_t lpi2c_clk_div;
-	uint32_t regval;
-	uint32_t men;
-	uint32_t prescale = 0;
-	uint32_t best_prescale = 0;
-	uint32_t best_clk_hi = 0;
-	uint32_t abs_error = 0;
-	uint32_t best_error = 0xffffffff;
-	uint32_t clk_hi_cycle;
-	uint32_t computed_rate;
-	uint32_t count;
-
-	/* Has the I2C bus frequency changed? */
-
-	if (priv->config->mode == LPI2C_MASTER) {
-		if (frequency != priv->frequency) {
-			/* Disable the selected LPI2C peripheral to configure the new
-			 * clock if it is enabled.
-			 */
-
-			men = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MCR_OFFSET) & LPI2C_MCR_MEN;
-			if (men) {
-				imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCR_OFFSET, LPI2C_MCR_MEN, 0);
-			}
-
-			/* Get the LPI2C clock source frequency */
-
-			if ((getreg32(IMXRT_CCM_CSCDR2) & CCM_CSCDR2_LPI2C_CLK_SEL) == CCM_CSCDR2_LPI2C_CLK_SEL_OSC_CLK) {
-				src_freq = BOARD_XTAL_FREQUENCY;
-			} else {
-				if ((getreg32(IMXRT_CCM_ANALOG_PLL_USB1) & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) != 0) {
-					pll3_div = 22;
-				} else {
-					pll3_div = 20;
-				}
-
-				lpi2c_clk_div = (getreg32(IMXRT_CCM_CSCDR2) & CCM_CSCDR2_LPI2C_CLK_PODF_MASK) >> CCM_CSCDR2_LPI2C_CLK_PODF_SHIFT;
-				lpi2c_clk_div = lpi2c_clk_div + 1;
-				src_freq = (BOARD_XTAL_FREQUENCY * pll3_div) / (8 * lpi2c_clk_div);
-			}
-
-			/* LPI2C output frequency = (Source Clock (Hz)/ 2^prescale) / (CLKLO + 1 + CLKHI + 1 +
-			 * ROUNDDOWN((2 + FILTSCL) / 2^prescale)
-			 *
-			 * Assume  CLKLO = 2 * CLKHI, SETHOLD = CLKHI, DATAVD = CLKHI / 2
-			 */
-
-			for (prescale = 1; (prescale <= 128) && (best_error != 0); prescale *= 2) {
-				for (clk_hi_cycle = 1; clk_hi_cycle < 32; clk_hi_cycle++) {
-					if (clk_hi_cycle == 1) {
-						computed_rate = (src_freq / prescale) / (6 + (2 / prescale));
-					} else {
-						computed_rate = (src_freq / prescale) / ((3 * clk_hi_cycle + 2) + (2 / prescale));
-					}
-
-					if (frequency > computed_rate) {
-						abs_error = frequency - computed_rate;
-					} else {
-						abs_error = computed_rate - frequency;
-					}
-
-					if (abs_error < best_error) {
-						best_prescale = prescale;
-						best_clk_hi = clk_hi_cycle;
-						best_error = abs_error;
-
-						if (abs_error == 0) {
-							break;
-						}
-					}
-				}
-			}
-
-			regval = LPI2C_MCCR0_CLKHI(best_clk_hi);
-
-			if (best_clk_hi < 2) {
-				regval |= LPI2C_MCCR0_CLKLO(3) | LPI2C_MCCR0_SETHOLD(2) | LPI2C_MCCR0_DATAVD(1);
-			} else {
-				regval |= LPI2C_MCCR0_CLKLO(2 * best_clk_hi) | LPI2C_MCCR0_SETHOLD(best_clk_hi) | LPI2C_MCCR0_DATAVD(best_clk_hi / 2);
-			}
-
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCCR0_OFFSET, regval);
-
-			for (count = 0; count < 8; count++) {
-				if (best_prescale == (1 << count)) {
-					best_prescale = count;
-					break;
-				}
-			}
-
-			imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCFGR1_OFFSET, 0, LPI2C_MCFGR1_PRESCALE(best_prescale));
-
-			/* Re-enable LPI2C if it was enabled previously */
-
-			if (men) {
-				imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCR_OFFSET, 0, LPI2C_MCR_MEN);
-			}
-
-			/* Save the new LPI2C frequency */
-
-			priv->frequency = frequency;
-		}
-	}
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sendstart
- *
- * Description:
- *   Send the START conditions/force Master mode
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sendstart(FAR struct imxrt_lpi2c_priv_s *priv, uint8_t address)
-{
-	uint32_t txcount = 0;
-	uint32_t status = 0;
-	uint8_t addr;
-
-	/* Generate START condition and send the address */
-	/* Turn off auto_stop option */
-
-	imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCFGR1_OFFSET, LPI2C_MCFGR1_IGNACK, 0);
-
-	do {
-		txcount = (imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MFSR_OFFSET) & LPI2C_MFSR_TXCOUNT_MASK) >> LPI2C_MFSR_TXCOUNT_SHIFT;
-		txcount = 4 - txcount;
-
-		status = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MSR_OFFSET);
-
-		if (status & LPI2C_MSR_ERROR_MASK) {
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MSR_OFFSET, status & LPI2C_MSR_ERROR_MASK);
-		}
-	} while (txcount == 0);
-
-	if ((priv->flags & I2C_M_READ) != 0) {
-		addr = address | 0x01;
-	} else {
-		addr = address;
-	}
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MTDR_OFFSET, (LPI2C_MTDR_CMD_START | LPI2C_MTDR_DATA(addr)));
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_sendstop
- *
- * Description:
- *   Send the STOP conditions
- *
- ************************************************************************************/
-
-static inline void imxrt_lpi2c_sendstop(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MTDR_OFFSET, LPI2C_MTDR_CMD_STOP);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_getstatus
- *
- * Description:
- *   Get 32-bit status
- *
- ************************************************************************************/
-
-static inline uint32_t imxrt_lpi2c_getstatus(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	return imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MSR_OFFSET);
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_isr_process
- *
- * Description:
- *  Common Interrupt Service Routine
- *
- ************************************************************************************/
-
-static int imxrt_lpi2c_isr_process(struct imxrt_lpi2c_priv_s *priv)
-{
-	uint32_t status = imxrt_lpi2c_getstatus(priv);
-
-	/* Check for new trace setup */
-
-	imxrt_lpi2c_tracenew(priv, status);
-
-	/* Continue with either sending or reading data */
-
-	/* Check if there is more butes to send */
-
-	if (((priv->flags & I2C_M_READ) == 0) && (status & LPI2C_MSR_TDF) != 0) {
-		if (priv->dcnt > 0) {
-			imxrt_lpi2c_traceevent(priv, I2CEVENT_SENDBYTE, priv->dcnt);
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MTDR_OFFSET, LPI2C_MTDR_CMD_TXD | LPI2C_MTDR_DATA(*priv->ptr++));
-			priv->dcnt--;
-
-			if ((priv->msgc <= 0) && (priv->dcnt == 0)) {
-				imxrt_lpi2c_sendstop(priv);
-			}
-		}
-	}
-
-	/* Check if there is more bytes to read */
-
-	else if (((priv->flags & I2C_M_READ) != 0) && (status & LPI2C_MSR_RDF) != 0) {
-		/* Read a byte, if dcnt goes < 0, then read dummy bytes to ack ISRs */
-
-		if (priv->dcnt > 0) {
-			imxrt_lpi2c_traceevent(priv, I2CEVENT_RCVBYTE, priv->dcnt);
-
-			/* No interrupts or contex switches should occur in the following
-			 * seuence. Otherwise, additional bytes may be sent by the device.
-			 */
-
-#ifdef CONFIG_I2C_POLLED
-			irqstate_t flags = enter_critical_section();
-#endif
-
-			/* Receive a byte */
-
-			*priv->ptr++ = imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MRDR_OFFSET) & LPI2C_MRDR_DATA_MASK;
-			priv->dcnt--;
-
-#ifdef CONFIG_I2C_POLLED
-			leave_critical_section(flags);
-#endif
-			if ((priv->msgc <= 0) && (priv->dcnt == 0)) {
-				imxrt_lpi2c_sendstop(priv);
-			}
-		} else {
-			imxrt_lpi2c_getreg(priv, IMXRT_LPI2C_MRDR_OFFSET);
-		}
-	}
-
-	if (priv->dcnt <= 0) {
-		if (priv->msgc > 0 && priv->msgv != NULL) {
-			priv->ptr = priv->msgv->buffer;
-			priv->dcnt = priv->msgv->length;
-			priv->flags = priv->msgv->flags;
-
-			if ((priv->msgv->flags & I2C_M_NOSTART) == 0) {
-				imxrt_lpi2c_traceevent(priv, I2CEVENT_STARTRESTART, priv->msgc);
-				imxrt_lpi2c_sendstart(priv, priv->msgv->addr);
-			} else {
-				imxrt_lpi2c_traceevent(priv, I2CEVENT_NOSTART, priv->msgc);
-			}
-
-			priv->msgv++;
-			priv->msgc--;
-
-			if ((priv->flags & I2C_M_READ) != 0) {
-#ifndef CONFIG_I2C_POLLED
-				/* Stop TX interrupt */
-
-				imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MIER_OFFSET, LPI2C_MIER_TDIE, LPI2C_MIER_RDIE);
-#endif
-				/* Set LPI2C in read mode */
-				imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MTDR_OFFSET, LPI2C_MTDR_CMD_RXD | LPI2C_MTDR_DATA((priv->dcnt - 1)));
-			} else {
-				/* Send the first byte from tx buffer */
-
-				imxrt_lpi2c_traceevent(priv, I2CEVENT_SENDBYTE, priv->dcnt);
-				imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MTDR_OFFSET, LPI2C_MTDR_CMD_TXD | LPI2C_MTDR_DATA(*priv->ptr++));
-				priv->dcnt--;
-				if ((priv->msgc <= 0) && (priv->dcnt == 0)) {
-					imxrt_lpi2c_sendstop(priv);
-				}
-			}
-		} else if (priv->msgv && ((status & LPI2C_MSR_SDF) != 0)) {
-			imxrt_lpi2c_traceevent(priv, I2CEVENT_STOP, 0);
-			imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MSR_OFFSET, LPI2C_MSR_SDF);
-
-			/* Check is there thread waiting for this event (there should be) */
-
-#ifndef CONFIG_I2C_POLLED
-			if (priv->intstate == INTSTATE_WAITING) {
-				/* inform the thread that transfer is complete
-				 * and wake it up
-				 */
-
-				sem_post(&priv->sem_isr);
-				priv->intstate = INTSTATE_DONE;
-			}
-#else
-			priv->intstate = INTSTATE_DONE;
-#endif
-			/* Mark that this transaction stopped */
-
-			priv->msgv = NULL;
-		}
-#ifndef CONFIG_I2C_POLLED
-		else {
-			imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MIER_OFFSET, LPI2C_MIER_TDIE | LPI2C_MIER_RDIE, 0);
-		}
-#endif
-	}
-
-	/* Check for errors */
-
-	if ((status & LPI2C_MSR_EPF) != 0) {
-		imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MSR_OFFSET, LPI2C_MSR_EPF);
-	}
-
-	if ((status & (LPI2C_MSR_NDF | LPI2C_MSR_ALF | LPI2C_MSR_FEF)) != 0) {
-		imxrt_lpi2c_traceevent(priv, I2CEVENT_ERROR, 0);
-
-		/* Clear the error */
-
-		imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MSR_OFFSET, (status & (LPI2C_MSR_NDF | LPI2C_MSR_ALF | LPI2C_MSR_FEF)));
-
-#ifndef CONFIG_I2C_POLLED
-		if (priv->intstate == INTSTATE_WAITING) {
-			/* inform the thread that transfer is complete
-			 * and wake it up
-			 */
-
-			sem_post(&priv->sem_isr);
-			priv->intstate = INTSTATE_DONE;
-		}
-#else
-		priv->intstate = INTSTATE_DONE;
-#endif
-	}
-
-	priv->status = status;
-	return OK;
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_isr
- *
- * Description:
- *   Common I2C interrupt service routine
- *
- ************************************************************************************/
-
-#ifndef CONFIG_I2C_POLLED
-static int imxrt_lpi2c_isr(int irq, void *context, FAR void *arg)
-{
-	struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)arg;
-
-	DEBUGASSERT(priv != NULL);
-	return imxrt_lpi2c_isr_process(priv);
-}
-#endif
-
-/************************************************************************************
- * Name: imxrt_lpi2c_clock_enable
- *
- * Description:
- *   Ungate LPI2C clock
- *
- ************************************************************************************/
-
-void imxrt_lpi2c_clock_enable(uint32_t base)
-{
-	if (base == IMXRT_LPI2C1_BASE) {
-		imxrt_clockall_lpi2c1();
-	} else if (base == IMXRT_LPI2C2_BASE) {
-		imxrt_clockall_lpi2c2();
-	} else if (base == IMXRT_LPI2C3_BASE) {
-		imxrt_clockall_lpi2c3();
-	} else if (base == IMXRT_LPI2C4_BASE) {
-		imxrt_clockall_lpi2c4_serial();
-	}
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_clock_disable
- *
- * Description:
- *   Gate LPI2C clock
- *
- ************************************************************************************/
-
-void imxrt_lpi2c_clock_disable(uint32_t base)
-{
-	if (base == IMXRT_LPI2C1_BASE) {
-		imxrt_clockoff_lpi2c1();
-	} else if (base == IMXRT_LPI2C2_BASE) {
-		imxrt_clockoff_lpi2c2();
-	} else if (base == IMXRT_LPI2C3_BASE) {
-		imxrt_clockoff_lpi2c3();
-	} else if (base == IMXRT_LPI2C4_BASE) {
-		imxrt_clockoff_lpi2c4_serial();
-	}
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_init
- *
- * Description:
- *   Setup the I2C hardware, ready for operation with defaults
- *
- ************************************************************************************/
-
-static int imxrt_lpi2c_init(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	/* Power-up and configure GPIOs */
-
-	/* Configure pins */
-
-	(void)imxrt_config_gpio(priv->config->scl_pin);
-	(void)imxrt_config_gpio(priv->config->sda_pin);
-
-	/* Enable power and reset the peripheral */
-
-	imxrt_lpi2c_clock_enable(priv->config->base);
-
-	/* Reset LPI2C before configuring it */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCR_OFFSET, LPI2C_MCR_RST);
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCR_OFFSET, 0);
-
-	/* Disable doze mode (Set DOZEN bit in 1 to disable) */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCR_OFFSET, LPI2C_MCR_DOZEN);
-
-	/* Disable host request */
-
-	imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCFGR0_OFFSET, LPI2C_MCFG0_HREN | LPI2C_MCFG0_HRSEL, LPI2C_MCFG0_HRPOL);
-
-	/* Pin config and ignore NACK disable */
-
-	imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCFGR1_OFFSET, LPI2C_MCFGR1_IGNACK | LPI2C_MCFGR1_PINCFG_MASK, 0);
-
-	/* Set tx and rx watermarks */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MFCR_OFFSET, LPI2C_MFCR_TXWATER(0) | LPI2C_MFCR_RXWATER(0));
-
-	/* Force a frequency update */
-
-	priv->frequency = 0;
-	imxrt_lpi2c_setclock(priv, 100000);
-
-	/* Set scl, sda glitch filters and busy idle */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCFGR2_OFFSET, LPI2C_MCFG2_BUSIDLE(priv->config->busy_idle) | LPI2C_MCFG2_FILTSCL_CYCLES(priv->config->filtscl) | LPI2C_MCFG2_FILTSDA_CYCLES(priv->config->filtsda));
-
-	/* Set pin low cycles to 0 (disable) */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCFGR3_OFFSET, LPI2C_MCFG3_PINLOW_CYCLES(0));
-
-	/* Attach ISRs */
-
-#ifndef CONFIG_I2C_POLLED
-	irq_attach(priv->config->irq, imxrt_lpi2c_isr, priv);
-	up_enable_irq(priv->config->irq);
-#endif
-
-	/* Enable I2C */
-
-	imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCR_OFFSET, 0, LPI2C_MCR_MEN);
-	return OK;
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_deinit
- *
- * Description:
- *   Shutdown the I2C hardware
- *
- ************************************************************************************/
-
-static int imxrt_lpi2c_deinit(FAR struct imxrt_lpi2c_priv_s *priv)
-{
-	/* Disable I2C */
-
-	imxrt_lpi2c_modifyreg(priv, IMXRT_LPI2C_MCR_OFFSET, LPI2C_MCR_MEN, 0);
-
-	/* Reset LPI2C */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCR_OFFSET, LPI2C_MCR_RST);
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCR_OFFSET, 0);
-
-	/* Disable and detach interrupts */
-
-#ifndef CONFIG_I2C_POLLED
-	up_disable_irq(priv->config->irq);
-	irq_detach(priv->config->irq);
-#endif
-
-	/* Disable clocking */
-
-	imxrt_lpi2c_clock_disable(priv->config->base);
-
-	return OK;
-}
-
-/************************************************************************************
- * Device Driver Operations
- ************************************************************************************/
-
-/************************************************************************************
- * Name: imxrt_lpi2c_transfer
- *
- * Description:
- *   Generic I2C transfer function
- *
- ************************************************************************************/
-
-static int imxrt_lpi2c_transfer(FAR struct i2c_master_s *dev, FAR struct i2c_msg_s *msgs, int count)
-{
-	FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
-	uint32_t status = 0;
-
-	int ret = 0;
-
-	DEBUGASSERT(count > 0);
-
-	/* Ensure that address or flags don't change meanwhile */
-
-	imxrt_lpi2c_sem_wait(priv);
-
-	/* Clear any pending error interrupts */
-
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MSR_OFFSET, 0xffffffff);
-
-	/* Old transfers are done */
-
-	/* Reset ptr and dcnt to ensure an unexpected data interrupt doesn't
-	 * overwrite stale data.
-	 */
-
-	priv->dcnt = 0;
-	priv->ptr = NULL;
-
-	priv->msgv = msgs;
-	priv->msgc = count;
-	priv->flags = msgs->flags;
-
-	i2cinfo("Flags %d, len %d \n", msgs->flags, msgs->length);
-
-	/* Reset I2C trace logic */
-
-	imxrt_lpi2c_tracereset(priv);
-
-	/* Set I2C clock frequency */
-
-	imxrt_lpi2c_setclock(priv, msgs->frequency);
-
-	priv->status = 0;
-
-	/* Wait for an ISR, if there was a timeout, fetch latest status to get
-	 * the BUSY flag.
-	 */
-
-	if (imxrt_lpi2c_sem_waitdone(priv) < 0) {
-		status = imxrt_lpi2c_getstatus(priv);
-		ret = -ETIMEDOUT;
-
-		i2cerr("ERROR: Timed out: MCR: status: 0x%x\n", status);
-	}
-
-	/* Check for error status conditions */
-
-	if ((status & LPI2C_MSR_ERROR_MASK) != 0) {
-		/* I2C_SR1_ERRORMASK is the 'OR' of the following individual bits: */
-
-		if (status & LPI2C_MSR_BBF) {
-			/* Bus Error */
-
-			ret = -EIO;
-		} else if (status & LPI2C_MSR_ALF) {
-			/* Arbitration Lost (master mode) */
-
-			ret = -EAGAIN;
-		} else if (status & LPI2C_MSR_NDF) {
-			/* Acknowledge Failure */
-
-			ret = -ENXIO;
-		} else {
-			ret = -EINTR;
-		}
-	}
-
-	/* Dump the trace result */
-
-	imxrt_lpi2c_tracedump(priv);
-
-	/* Ensure that any ISR happening after we finish can't overwrite any user data */
-
-	priv->dcnt = 0;
-	priv->ptr = NULL;
-
-	imxrt_lpi2c_sem_post(priv);
-	return ret;
-}
-
-/************************************************************************************
- * Name: imxrt_lpi2c_reset
- *
- * Description:
- *   Perform an I2C bus reset in an attempt to break loose stuck I2C devices.
+ *   If an invalid base address is passed, debug builds will assert. Release builds will just return
+ *   instance number 0.
  *
  * Input Parameters:
- *   dev   - Device-specific state data
+ *   base The LPI2C peripheral base address.
  *
  * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
+ *   Returns LPI2C instance number starting from 0.
  *
- ************************************************************************************/
-
-#ifdef CONFIG_I2C_RESET
-static int imxrt_lpi2c_reset(FAR struct i2c_master_s *dev)
+ ****************************************************************************/
+uint32_t imxrt_lpi2c_getinstance(LPI2C_Type *base)
 {
-	FAR struct imxrt_lpi2c_priv_s *priv = (FAR struct imxrt_lpi2c_priv_s *)dev;
-	unsigned int clock_count;
-	unsigned int stretch_count;
-	uint32_t scl_gpio;
-	uint32_t sda_gpio;
-	uint32_t frequency;
-	int ret = ERROR;
+    uint32_t instance;
+    for (instance = 0; instance < ARRAY_SIZE(kLpi2cBases); ++instance) {
+        if (kLpi2cBases[instance] == base) {
+            return instance;
+        }
+    }
 
-	DEBUGASSERT(dev);
-
-	/* Our caller must own a ref */
-
-	DEBUGASSERT(priv->refs > 0);
-
-	/* Lock out other clients */
-
-	imxrt_lpi2c_sem_wait(priv);
-
-	/* Save the current frequency */
-
-	frequency = priv->frequency;
-
-	/* De-init the port */
-
-	imxrt_lpi2c_deinit(priv);
-
-	/* Use GPIO configuration to un-wedge the bus */
-
-	scl_gpio = MKI2C_OUTPUT(priv->config->scl_pin);
-	sda_gpio = MKI2C_OUTPUT(priv->config->sda_pin);
-
-	imxrt_config_gpio(scl_gpio);
-	imxrt_config_gpio(sda_gpio);
-
-	/* Let SDA go high */
-
-	imxrt_gpio_write(sda_gpio, 1);
-
-	/* Clock the bus until any slaves currently driving it let it go. */
-
-	clock_count = 0;
-	while (!imxrt_gpio_read(sda_gpio)) {
-		/* Give up if we have tried too hard */
-
-		if (clock_count++ > 10) {
-			goto out;
-		}
-
-		/* Sniff to make sure that clock stretching has finished.
-		 *
-		 * If the bus never relaxes, the reset has failed.
-		 */
-
-		stretch_count = 0;
-		while (!imxrt_gpio_read(scl_gpio)) {
-			/* Give up if we have tried too hard */
-
-			if (stretch_count++ > 10) {
-				goto out;
-			}
-
-			up_udelay(10);
-		}
-
-		/* Drive SCL low */
-
-		imxrt_gpio_write(scl_gpio, 0);
-		up_udelay(10);
-
-		/* Drive SCL high again */
-
-		imxrt_gpio_write(scl_gpio, 1);
-		up_udelay(10);
-	}
-
-	/* Generate a start followed by a stop to reset slave
-	 * state machines.
-	 */
-
-	imxrt_gpio_write(sda_gpio, 0);
-	up_udelay(10);
-	imxrt_gpio_write(scl_gpio, 0);
-	up_udelay(10);
-	imxrt_gpio_write(scl_gpio, 1);
-	up_udelay(10);
-	imxrt_gpio_write(sda_gpio, 1);
-	up_udelay(10);
-
-	/* Revert the GPIO configuration. */
-
-  sda_gpio = MKI2C_INPUT(sda_gpio);
-  scl_gpio = MKI2C_INPUT(scl_gpio);
-
-  imxrt_config_gpio(sda_gpio);
-  imxrt_config_gpio(scl_gpio);
-
-	/* Re-init the port */
-
-	imxrt_lpi2c_init(priv);
-
-	/* Restore the frequency */
-
-	imxrt_lpi2c_setclock(priv, frequency);
-	ret = OK;
-
-out:
-
-	/* Release the port for re-use by other clients */
-
-	imxrt_lpi2c_sem_post(priv);
-	return ret;
+    DEBUGASSERT(false);
+    return 0;
 }
-#endif							/* CONFIG_I2C_RESET */
 
-/************************************************************************************
- * Public Functions
- ************************************************************************************/
-
-/************************************************************************************
- * Name: imxrt_i2cbus_initialize
+/****************************************************************************
+ * Function: imxrt_imxrt_lpi2c_getcyclesforwidth
  *
  * Description:
- *   Initialize one I2C bus
+ *   brief Computes a cycle count for a given time in nanoseconds.
  *
- ************************************************************************************/
-
-FAR struct i2c_master_s *imxrt_i2cbus_initialize(int port)
+ * Input Parameters:
+ *   sourceClock_Hz LPI2C functional clock frequency in Hertz.
+ *   width_ns Desired with in nanoseconds.
+ *   maxCycles Maximum cycle count, determined by the number of bits wide the cycle count field is.
+ *   prescaler LPI2C prescaler setting. Pass 1 if the prescaler should not be used, as for slave glitch widths.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static uint32_t imxrt_imxrt_lpi2c_getcyclesforwidth(uint32_t sourceClock_Hz,
+                                        uint32_t width_ns,
+                                        uint32_t maxCycles,
+                                        uint32_t prescaler)
 {
-	struct imxrt_lpi2c_priv_s *priv = NULL;
-	irqstate_t flags;
+    DEBUGASSERT(sourceClock_Hz > 0);
+    DEBUGASSERT(prescaler > 0);
 
-	/* Get I2C private structure */
+    uint32_t busCycle_ns = 1000000 / (sourceClock_Hz / prescaler / 1000);
+    uint32_t cycles = 0;
 
-	switch (port) {
-#ifdef CONFIG_IMXRT_LPI2C1
-	case 1:
-		priv = (struct imxrt_lpi2c_priv_s *)&imxrt_lpi2c1_priv;
-		break;
-#endif
-#ifdef CONFIG_IMXRT_LPI2C2
-	case 2:
-		priv = (struct imxrt_lpi2c_priv_s *)&imxrt_lpi2c2_priv;
-		break;
-#endif
-#ifdef CONFIG_IMXRT_LPI2C3
-	case 3:
-		priv = (struct imxrt_lpi2c_priv_s *)&imxrt_lpi2c3_priv;
-		break;
-#endif
-#ifdef CONFIG_IMXRT_LPI2C4
-	case 4:
-		priv = (struct imxrt_lpi2c_priv_s *)&imxrt_lpi2c4_priv;
-		break;
-#endif
-	default:
-		return NULL;
-	}
+    /* Search for the cycle count just below the desired glitch width. */
+    while ((((cycles + 1) * busCycle_ns) < width_ns) && (cycles + 1 < maxCycles)) {
+        ++cycles;
+    }
 
-	/* Initialize private data for the first time, increment reference count,
-	 * power-up hardware and configure GPIOs.
-	 */
+    /* If we end up with zero cycles, then set the filter to a single cycle unless the */
+    /* bus clock is greater than 10x the desired glitch width. */
+    if ((cycles == 0) && (busCycle_ns <= (width_ns * 10))) {
+        cycles = 1;
+    }
 
-	flags = enter_critical_section();
-
-	if ((volatile int)priv->refs++ == 0) {
-		imxrt_lpi2c_sem_init(priv);
-		imxrt_lpi2c_init(priv);
-	}
-
-	leave_critical_section(flags);
-
-	return (struct i2c_master_s *)priv;
+    return cycles;
 }
 
-/************************************************************************************
- * Name: imxrt_i2cbus_uninitialize
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastercheckandclearerror
  *
  * Description:
- *   Uninitialize an I2C bus
+ *   brief Convert provided flags to status code, and clear any errors if present.
  *
- ************************************************************************************/
-
-int imxrt_i2cbus_uninitialize(FAR struct i2c_master_s *dev)
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   status Current status flags value that will be checked.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_PinLowTimeout
+ *   Returns #kStatus_LPI2C_ArbitrationLost
+ *   Returns #kStatus_LPI2C_Nak
+ *   Returns #kStatus_LPI2C_FifoError
+ *
+ ****************************************************************************/
+/* Not static so it can be used from fsl_lpi2c_edma.c. */
+status_t imxrt_lpi2c_mastercheckandclearerror(LPI2C_Type *base, uint32_t status)
 {
-	FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
-	irqstate_t flags;
+    status_t result = kStatus_Success;
 
-	DEBUGASSERT(dev);
+    /* Check for error. These errors cause a stop to automatically be sent. We must */
+    /* clear the errors before a new transfer can start. */
+    status &= kMasterErrorFlags;
+    if (status) {
+        /* Select the correct error code. Ordered by severity, with bus issues first. */
+        if (status & kLPI2C_MasterPinLowTimeoutFlag) {
+            result = kStatus_LPI2C_PinLowTimeout;
+        } else if (status & kLPI2C_MasterArbitrationLostFlag) {
+            result = kStatus_LPI2C_ArbitrationLost;
+        } else if (status & kLPI2C_MasterNackDetectFlag) {
+            result = kStatus_LPI2C_Nak;
+        } else if (status & kLPI2C_MasterFifoErrFlag) {
+            result = kStatus_LPI2C_FifoError;
+        } else {
+            DEBUGASSERT(false);
+        }
 
-	/* Decrement reference count and check for underflow */
+        /* Clear the flags. */
+        imxrt_lpi2c_masterclearstatusflags(base, status);
 
-	if (priv->refs == 0) {
-		return ERROR;
-	}
+        /* Reset fifos. These flags clear automatically. */
+        base->MCR |= LPI2C_MCR_RRF_MASK | LPI2C_MCR_RTF_MASK;
+    }
 
-	flags = enter_critical_section();
-
-	if (--priv->refs > 0) {
-		leave_critical_section(flags);
-		return OK;
-	}
-
-	leave_critical_section(flags);
-
-	/* Disable power and other HW resource (GPIO's) */
-
-	imxrt_lpi2c_deinit(priv);
-
-	/* Release unused resources */
-
-	imxrt_lpi2c_sem_destroy(priv);
-	return OK;
+    return result;
 }
 
-#endif							/* CONFIG_IMXRT_LPI2C1 || CONFIG_IMXRT_LPI2C2 || \
-								 * CONFIG_IMXRT_LPI2C3 || CONFIG_IMXRT_LPI2C4 */
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterwaitfortxready
+ *
+ * Description:
+ *   brief Wait until there is room in the tx fifo.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_PinLowTimeout
+ *   Returns #kStatus_LPI2C_ArbitrationLost
+ *   Returns #kStatus_LPI2C_Nak
+ *   Returns #kStatus_LPI2C_FifoError
+ *
+ ****************************************************************************/
+static status_t imxrt_lpi2c_masterwaitfortxready(LPI2C_Type *base)
+{
+    uint32_t status;
+    size_t txCount;
+    size_t txFifoSize = FSL_FEATURE_LPI2C_FIFO_SIZEn(base);
+
+#if LPI2C_WAIT_TIMEOUT
+    uint32_t waitTimes = LPI2C_WAIT_TIMEOUT;
+#endif
+    do {
+        status_t result;
+
+        /* Get the number of words in the tx fifo and compute empty slots. */
+        imxrt_lpi2c_mastergetfifocounts(base, NULL, &txCount);
+        txCount = txFifoSize - txCount;
+
+        /* Check for error flags. */
+        status = imxrt_lpi2c_mastergetstatusflags(base);
+        result = imxrt_lpi2c_mastercheckandclearerror(base, status);
+        if (result) {
+            return result;
+        }
+#if LPI2C_WAIT_TIMEOUT
+    } while ((!txCount) && (--waitTimes));
+
+    if (waitTimes == 0) {
+        return kStatus_LPI2C_Timeout;
+    }
+#else
+    } while (!txCount);
+#endif
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterwaitfortxready
+ *
+ * Description:
+ *   brief Make sure the bus isn't already busy.
+ *
+ *   A busy bus is allowed if we are the one driving it.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_Busy
+ *
+ ****************************************************************************/
+/* Not static so it can be used from fsl_lpi2c_edma.c. */
+status_t imxrt_lpi2c_checkforbusybus(LPI2C_Type *base)
+{
+    uint32_t status = imxrt_lpi2c_mastergetstatusflags(base);
+    if ((status & kLPI2C_MasterBusBusyFlag) && (!(status & kLPI2C_MasterBusyFlag))) {
+        return kStatus_LPI2C_Busy;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastergetdefaultconfig
+ *
+ * Description:
+ *   brief Provides a default configuration for the LPI2C master peripheral.
+ *
+ *   This function provides the following default configuration for the LPI2C master peripheral:
+ *   code
+ *    masterConfig->enableMaster            = true;
+ *    masterConfig->debugEnable             = false;
+ *    masterConfig->ignoreAck               = false;
+ *    masterConfig->pinConfig               = kLPI2C_2PinOpenDrain;
+ *    masterConfig->baudRate_Hz             = 100000U;
+ *    masterConfig->busIdleTimeout_ns       = 0;
+ *    masterConfig->pinLowTimeout_ns        = 0;
+ *    masterConfig->sdaGlitchFilterWidth_ns = 0;
+ *    masterConfig->sclGlitchFilterWidth_ns = 0;
+ *    masterConfig->hostRequest.enable      = false;
+ *    masterConfig->hostRequest.source      = kLPI2C_HostRequestExternalPin;
+ *    masterConfig->hostRequest.polarity    = kLPI2C_HostRequestPinActiveHigh;
+ *   endcode
+ *
+ *   After calling this function, you can override any settings in order to customize the configuration,
+ *   prior to initializing the master driver with imxrt_lpi2c_masterinit().
+ *
+ * Input Parameters:
+ *   masterConfig[out] User provided configuration structure for default values. Refer to #lpi2c_master_config_t.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_mastergetdefaultconfig(lpi2c_master_config_t *masterConfig)
+{
+    /* Initializes the configure structure to zero. */
+    memset(masterConfig, 0, sizeof(*masterConfig));
+
+    masterConfig->enableMaster = true;
+    masterConfig->debugEnable = false;
+    masterConfig->enableDoze = true;
+    masterConfig->ignoreAck = false;
+    masterConfig->pinConfig = kLPI2C_2PinOpenDrain;
+    masterConfig->baudRate_Hz = 100000U;
+    masterConfig->busIdleTimeout_ns = 0;
+    masterConfig->pinLowTimeout_ns = 0;
+    masterConfig->sdaGlitchFilterWidth_ns = 0;
+    masterConfig->sclGlitchFilterWidth_ns = 0;
+    masterConfig->hostRequest.enable = false;
+    masterConfig->hostRequest.source = kLPI2C_HostRequestExternalPin;
+    masterConfig->hostRequest.polarity = kLPI2C_HostRequestPinActiveHigh;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterinit
+ *
+ * Description:
+ *   brief Initializes the LPI2C master peripheral.
+ *
+ *   This function enables the peripheral clock and initializes the LPI2C master peripheral as described by the user
+ *   provided configuration. A software reset is performed prior to configuration.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   masterConfig User provided peripheral configuration. Use imxrt_lpi2c_mastergetdefaultconfig() to get a set of
+ *                defaults
+ *                      that you can override.
+ *   sourceClock_Hz Frequency in Hertz of the LPI2C functional clock. Used to calculate the baud rate divisors,
+ *      filter widths, and timeout periods.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_masterinit(LPI2C_Type *base, const lpi2c_master_config_t *masterConfig, uint32_t sourceClock_Hz)
+{
+    uint32_t prescaler;
+    uint32_t cycles;
+    uint32_t cfgr2;
+    uint32_t value;
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+
+    uint32_t instance = imxrt_lpi2c_getinstance(base);
+
+    /* Ungate the clock. */
+    imxrt_clock_enableclock(kLpi2cClocks[instance]);
+#if defined(LPI2C_PERIPH_CLOCKS)
+    /* Ungate the functional clock in initialize function. */
+    imxrt_clock_enableclock(kLpi2cPeriphClocks[instance]);
+#endif
+
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* Reset peripheral before configuring it. */
+    imxrt_lpi2c_masterreset(base);
+
+    /* Doze bit: 0 is enable, 1 is disable */
+    base->MCR = LPI2C_MCR_DBGEN(masterConfig->debugEnable) | LPI2C_MCR_DOZEN(!(masterConfig->enableDoze));
+
+    /* host request */
+    value = base->MCFGR0;
+    value &= (~(LPI2C_MCFGR0_HREN_MASK | LPI2C_MCFGR0_HRPOL_MASK | LPI2C_MCFGR0_HRSEL_MASK));
+    value |= LPI2C_MCFGR0_HREN(masterConfig->hostRequest.enable) |
+             LPI2C_MCFGR0_HRPOL(masterConfig->hostRequest.polarity) |
+             LPI2C_MCFGR0_HRSEL(masterConfig->hostRequest.source);
+    base->MCFGR0 = value;
+
+    /* pin config and ignore ack */
+    value = base->MCFGR1;
+    value &= ~(LPI2C_MCFGR1_PINCFG_MASK | LPI2C_MCFGR1_IGNACK_MASK);
+    value |= LPI2C_MCFGR1_PINCFG(masterConfig->pinConfig);
+    value |= LPI2C_MCFGR1_IGNACK(masterConfig->ignoreAck);
+    base->MCFGR1 = value;
+
+    imxrt_lpi2c_mastersetwatermarks(base, kDefaultTxWatermark, kDefaultRxWatermark);
+
+    imxrt_lpi2c_mastersetbaudrate(base, sourceClock_Hz, masterConfig->baudRate_Hz);
+
+    /* Configure glitch filters and bus idle and pin low timeouts. */
+    prescaler = (base->MCFGR1 & LPI2C_MCFGR1_PRESCALE_MASK) >> LPI2C_MCFGR1_PRESCALE_SHIFT;
+    cfgr2 = base->MCFGR2;
+    if (masterConfig->busIdleTimeout_ns) {
+        cycles = imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, masterConfig->busIdleTimeout_ns,
+                                         (LPI2C_MCFGR2_BUSIDLE_MASK >> LPI2C_MCFGR2_BUSIDLE_SHIFT), prescaler);
+        cfgr2 &= ~LPI2C_MCFGR2_BUSIDLE_MASK;
+        cfgr2 |= LPI2C_MCFGR2_BUSIDLE(cycles);
+    }
+    if (masterConfig->sdaGlitchFilterWidth_ns) {
+        cycles = imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, masterConfig->sdaGlitchFilterWidth_ns,
+                                         (LPI2C_MCFGR2_FILTSDA_MASK >> LPI2C_MCFGR2_FILTSDA_SHIFT), 1);
+        cfgr2 &= ~LPI2C_MCFGR2_FILTSDA_MASK;
+        cfgr2 |= LPI2C_MCFGR2_FILTSDA(cycles);
+    }
+    if (masterConfig->sclGlitchFilterWidth_ns) {
+        cycles = imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, masterConfig->sclGlitchFilterWidth_ns,
+                                         (LPI2C_MCFGR2_FILTSCL_MASK >> LPI2C_MCFGR2_FILTSCL_SHIFT), 1);
+        cfgr2 &= ~LPI2C_MCFGR2_FILTSCL_MASK;
+        cfgr2 |= LPI2C_MCFGR2_FILTSCL(cycles);
+    }
+    base->MCFGR2 = cfgr2;
+    if (masterConfig->pinLowTimeout_ns) {
+        cycles = imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, masterConfig->pinLowTimeout_ns / 256,
+                                         (LPI2C_MCFGR2_BUSIDLE_MASK >> LPI2C_MCFGR2_BUSIDLE_SHIFT), prescaler);
+        base->MCFGR3 = (base->MCFGR3 & ~LPI2C_MCFGR3_PINLOW_MASK) | LPI2C_MCFGR3_PINLOW(cycles);
+    }
+
+    imxrt_lpi2c_masterenable(base, masterConfig->enableMaster);
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterdeinit
+ *
+ * Description:
+ *   brief Deinitializes the LPI2C master peripheral.
+ *
+ *   This function disables the LPI2C master peripheral and gates the clock. It also performs a software
+ *   reset to restore the peripheral to reset conditions.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_masterdeinit(LPI2C_Type *base)
+{
+    /* Restore to reset state. */
+    imxrt_lpi2c_masterreset(base);
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+
+    uint32_t instance = imxrt_lpi2c_getinstance(base);
+
+    /* Gate clock. */
+    imxrt_clock_disableclock(kLpi2cClocks[instance]);
+#if defined(LPI2C_PERIPH_CLOCKS)
+    /* Gate the functional clock. */
+    imxrt_clock_disableclock(kLpi2cPeriphClocks[instance]);
+#endif
+
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterconfiguredatamatch
+ *
+ * Description:
+ *   brief Configures LPI2C master data match feature.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   config Settings for the data match feature.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_masterconfiguredatamatch(LPI2C_Type *base, const lpi2c_data_match_config_t *config)
+{
+    /* Disable master mode. */
+    bool wasEnabled = (base->MCR & LPI2C_MCR_MEN_MASK) >> LPI2C_MCR_MEN_SHIFT;
+    imxrt_lpi2c_masterenable(base, false);
+
+    base->MCFGR1 = (base->MCFGR1 & ~LPI2C_MCFGR1_MATCFG_MASK) | LPI2C_MCFGR1_MATCFG(config->matchMode);
+    base->MCFGR0 = (base->MCFGR0 & ~LPI2C_MCFGR0_RDMO_MASK) | LPI2C_MCFGR0_RDMO(config->rxDataMatchOnly);
+    base->MDMR = LPI2C_MDMR_MATCH0(config->match0) | LPI2C_MDMR_MATCH1(config->match1);
+
+    /* Restore master mode. */
+    if (wasEnabled) {
+        imxrt_lpi2c_masterenable(base, true);
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastersetbaudrate
+ *
+ * Description:
+ *   brief Sets the I2C bus frequency for master transactions.
+ *
+ *   The LPI2C master is automatically disabled and re-enabled as necessary to configure the baud
+ *   rate. Do not call this function during a transfer, or the transfer is aborted.
+ *
+ *   note Please note that the second parameter is the clock frequency of LPI2C module, the third
+ *   parameter means user configured bus baudrate, this implementation is different from other I2C drivers
+ *   which use baudrate configuration as second parameter and source clock frequency as third parameter.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   sourceClock_Hz LPI2C functional clock frequency in Hertz.
+ *   baudRate_Hz Requested bus frequency in Hertz.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_mastersetbaudrate(LPI2C_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Hz)
+{
+    uint32_t prescale = 0;
+    uint32_t bestPre = 0;
+    uint32_t bestClkHi = 0;
+    uint32_t absError = 0;
+    uint32_t bestError = 0xffffffffu;
+    uint32_t value;
+    uint32_t clkHiCycle;
+    uint32_t computedRate;
+    int i;
+    bool wasEnabled;
+
+    /* Disable master mode. */
+    wasEnabled = (base->MCR & LPI2C_MCR_MEN_MASK) >> LPI2C_MCR_MEN_SHIFT;
+    imxrt_lpi2c_masterenable(base, false);
+
+    /* Baud rate = (sourceClock_Hz/2^prescale)/(CLKLO+1+CLKHI+1 + ROUNDDOWN((2+FILTSCL)/2^prescale) */
+    /* Assume CLKLO = 2*CLKHI, SETHOLD = CLKHI, DATAVD = CLKHI/2. */
+    for (prescale = 1; (prescale <= 128) && (bestError != 0); prescale = 2 * prescale) {
+        for (clkHiCycle = 1; clkHiCycle < 32; clkHiCycle++) {
+            if (clkHiCycle == 1) {
+                computedRate = (sourceClock_Hz / prescale) / (1 + 3 + 2 + 2 / prescale);
+            } else {
+                computedRate = (sourceClock_Hz / prescale) / (3 * clkHiCycle + 2 + 2 / prescale);
+            }
+
+            absError = baudRate_Hz > computedRate ? baudRate_Hz - computedRate : computedRate - baudRate_Hz;
+
+            if (absError < bestError) {
+                bestPre = prescale;
+                bestClkHi = clkHiCycle;
+                bestError = absError;
+
+                /* If the error is 0, then we can stop searching because we won't find a better match. */
+                if (absError == 0) {
+                    break;
+                }
+            }
+        }
+    }
+
+    /* Standard, fast, fast mode plus and ultra-fast transfers. */
+    value = LPI2C_MCCR0_CLKHI(bestClkHi);
+
+    if (bestClkHi < 2) {
+        value |= LPI2C_MCCR0_CLKLO(3) | LPI2C_MCCR0_SETHOLD(2) | LPI2C_MCCR0_DATAVD(1);
+    } else {
+        value |= LPI2C_MCCR0_CLKLO(2 * bestClkHi) | LPI2C_MCCR0_SETHOLD(bestClkHi) | LPI2C_MCCR0_DATAVD(bestClkHi / 2);
+    }
+
+    base->MCCR0 = value;
+
+    for (i = 0; i < 8; i++) {
+        if (bestPre == (1U << i)) {
+            bestPre = i;
+            break;
+        }
+    }
+    base->MCFGR1 = (base->MCFGR1 & ~LPI2C_MCFGR1_PRESCALE_MASK) | LPI2C_MCFGR1_PRESCALE(bestPre);
+
+    /* Restore master mode. */
+    if (wasEnabled) {
+        imxrt_lpi2c_masterenable(base, true);
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterstart
+ *
+ * Description:
+ *   brief Sends a START signal and slave address on the I2C bus.
+ *
+ *   This function is used to initiate a new master mode transfer. First, the bus state is checked to ensure
+ *   that another master is not occupying the bus. Then a START signal is transmitted, followed by the
+ *   7-bit address specified in the a address parameter. Note that this function does not actually wait
+ *   until the START and address are successfully sent on the bus before returning.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   address 7-bit slave device address, in bits [6:0].
+ *   dir Master transfer direction, either #kLPI2C_Read or #kLPI2C_Write. This parameter is used to set
+ *        the R/w bit (bit 0) in the transmitted slave address.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success START signal and address were successfully enqueued in the transmit FIFO.
+ *   Returns #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_masterstart(LPI2C_Type *base, uint8_t address, lpi2c_direction_t dir)
+{
+    /* Return an error if the bus is already in use not by us. */
+    status_t result = imxrt_lpi2c_checkforbusybus(base);
+    if (result) {
+        return result;
+    }
+
+    /* Clear all flags. */
+    imxrt_lpi2c_masterclearstatusflags(base, kMasterClearFlags);
+
+    /* Turn off auto-stop option. */
+    base->MCFGR1 &= ~LPI2C_MCFGR1_AUTOSTOP_MASK;
+
+    /* Wait until there is room in the fifo. */
+    result = imxrt_lpi2c_masterwaitfortxready(base);
+    if (result) {
+        return result;
+    }
+
+    /* Issue start command. */
+    base->MTDR = kStartCmd | (((uint32_t)address << 1U) | (uint32_t)dir);
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterstop
+ *
+ * Description:
+ *   brief Sends a STOP signal on the I2C bus.
+ *
+ *   This function does not return until the STOP signal is seen on the bus, or an error occurs.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success The STOP signal was successfully sent on the bus and the transaction terminated.
+ *   Returns #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
+ *   Returns #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
+ *   Returns #kStatus_LPI2C_FifoError FIFO under run or overrun.
+ *   Returns #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
+ *   Returns #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_masterstop(LPI2C_Type *base)
+{
+    /* Wait until there is room in the fifo. */
+    status_t result = imxrt_lpi2c_masterwaitfortxready(base);
+    if (result) {
+        return result;
+    }
+
+    /* Send the STOP signal */
+    base->MTDR = kStopCmd;
+
+/* Wait for the stop detected flag to set, indicating the transfer has completed on the bus. */
+/* Also check for errors while waiting. */
+#if LPI2C_WAIT_TIMEOUT
+    uint32_t waitTimes = LPI2C_WAIT_TIMEOUT;
+#endif
+
+#if LPI2C_WAIT_TIMEOUT
+    while ((result == kStatus_Success) && (--waitTimes)) {
+#else
+    while (result == kStatus_Success) {
+#endif
+        uint32_t status = imxrt_lpi2c_mastergetstatusflags(base);
+
+        /* Check for error flags. */
+        result = imxrt_lpi2c_mastercheckandclearerror(base, status);
+
+        /* Check if the stop was sent successfully. */
+        if (status & kLPI2C_MasterStopDetectFlag) {
+            imxrt_lpi2c_masterclearstatusflags(base, kLPI2C_MasterStopDetectFlag);
+            break;
+        }
+    }
+
+#if LPI2C_WAIT_TIMEOUT
+    if (waitTimes == 0) {
+        return kStatus_LPI2C_Timeout;
+    }
+#endif
+
+    return result;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_masterreceive
+ *
+ * Description:
+ *   brief Performs a polling receive transfer on the I2C bus.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   rxBuff The pointer to the data to be transferred.
+ *   rxSize The length in bytes of the data to be transferred.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success Data was received successfully.
+ *   Returns #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
+ *   Returns #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
+ *   Returns #kStatus_LPI2C_FifoError FIFO under run or overrun.
+ *   Returns #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
+ *   Returns #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_masterreceive(LPI2C_Type *base, void *rxBuff, size_t rxSize)
+{
+    status_t result;
+    uint8_t *buf;
+
+    DEBUGASSERT(rxBuff);
+
+    /* Handle empty read. */
+    if (!rxSize) {
+        return kStatus_Success;
+    }
+
+    /* Wait until there is room in the command fifo. */
+    result = imxrt_lpi2c_masterwaitfortxready(base);
+    if (result) {
+        return result;
+    }
+
+    /* Issue command to receive data. */
+    base->MTDR = kRxDataCmd | LPI2C_MTDR_DATA(rxSize - 1);
+
+#if LPI2C_WAIT_TIMEOUT
+    uint32_t waitTimes = LPI2C_WAIT_TIMEOUT;
+#endif
+
+    /* Receive data */
+    buf = (uint8_t *)rxBuff;
+    while (rxSize--) {
+        /* Read LPI2C receive fifo register. The register includes a flag to indicate whether */
+        /* the FIFO is empty, so we can both get the data and check if we need to keep reading */
+        /* using a single register read. */
+        uint32_t value;
+        do {
+            /* Check for errors. */
+            result = imxrt_lpi2c_mastercheckandclearerror(base, imxrt_lpi2c_mastergetstatusflags(base));
+            if (result) {
+                return result;
+            }
+
+            value = base->MRDR;
+#if LPI2C_WAIT_TIMEOUT
+        } while ((value & LPI2C_MRDR_RXEMPTY_MASK) && (--waitTimes));
+        if (waitTimes == 0) {
+            return kStatus_LPI2C_Timeout;
+        }
+#else
+        } while (value & LPI2C_MRDR_RXEMPTY_MASK);
+#endif
+
+        *buf++ = value & LPI2C_MRDR_DATA_MASK;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastersend
+ *
+ * Description:
+ *   brief Performs a polling send transfer on the I2C bus.
+ *
+ *   Sends up to a txSize number of bytes to the previously addressed slave device. The slave may
+ *   reply with a NAK to any byte in order to terminate the transfer early. If this happens, this
+ *   function returns #kStatus_LPI2C_Nak.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   txBuff The pointer to the data to be transferred.
+ *   txSize The length in bytes of the data to be transferred.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success Data was sent successfully.
+ *   Returns #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
+ *   Returns #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
+ *   Returns #kStatus_LPI2C_FifoError FIFO under run or overrun.
+ *   Returns #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
+ *   Returns #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_mastersend(LPI2C_Type *base, void *txBuff, size_t txSize)
+{
+    uint8_t *buf = (uint8_t *)txBuff;
+
+    DEBUGASSERT(txBuff);
+
+    /* Send data buffer */
+    while (txSize--) {
+        /* Wait until there is room in the fifo. This also checks for errors. */
+        status_t result = imxrt_lpi2c_masterwaitfortxready(base);
+        if (result)
+        {
+            return result;
+        }
+
+        /* Write byte into LPI2C master data register. */
+        base->MTDR = *buf++;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransferblocking
+ *
+ * Description:
+ *   brief Performs a master polling transfer on the I2C bus.
+ *
+ *   note The API does not return until the transfer succeeds or fails due
+ *   to error happens during transfer.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   transfer Pointer to the transfer structure.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success Data was received successfully.
+ *   Returns #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
+ *   Returns #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
+ *   Returns #kStatus_LPI2C_FifoError FIFO under run or overrun.
+ *   Returns #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
+ *   Returns #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_mastertransferblocking(LPI2C_Type *base, lpi2c_master_transfer_t *transfer)
+{
+    status_t result = kStatus_Success;
+    uint16_t commandBuffer[7];
+    uint32_t cmdCount = 0;
+
+    DEBUGASSERT(transfer);
+    DEBUGASSERT(transfer->subaddressSize <= sizeof(transfer->subaddress));
+
+    /* Return an error if the bus is already in use not by us. */
+    result = imxrt_lpi2c_checkforbusybus(base);
+    if (result) {
+        return result;
+    }
+
+    /* Clear all flags. */
+    imxrt_lpi2c_masterclearstatusflags(base, kMasterClearFlags);
+
+    /* Turn off auto-stop option. */
+    base->MCFGR1 &= ~LPI2C_MCFGR1_AUTOSTOP_MASK;
+
+    lpi2c_direction_t direction = transfer->subaddressSize ? kLPI2C_Write : transfer->direction;
+    if (!(transfer->flags & kLPI2C_TransferNoStartFlag)) {
+        commandBuffer[cmdCount++] =
+            (uint16_t)kStartCmd | (uint16_t)((uint16_t)((uint16_t)transfer->slaveAddress << 1U) | (uint16_t)direction);
+    }
+
+    /* Subaddress, MSB first. */
+    if (transfer->subaddressSize) {
+        uint32_t subaddressRemaining = transfer->subaddressSize;
+        while (subaddressRemaining--)
+        {
+            uint8_t subaddressByte = (transfer->subaddress >> (8 * subaddressRemaining)) & 0xff;
+            commandBuffer[cmdCount++] = subaddressByte;
+        }
+    }
+
+    /* Reads need special handling. */
+    if ((transfer->dataSize) && (transfer->direction == kLPI2C_Read)) {
+        /* Need to send repeated start if switching directions to read. */
+        if (direction == kLPI2C_Write) {
+            commandBuffer[cmdCount++] =
+                (uint16_t)kStartCmd |
+                (uint16_t)((uint16_t)((uint16_t)transfer->slaveAddress << 1U) | (uint16_t)kLPI2C_Read);
+        }
+    }
+
+    /* Send command buffer */
+    uint32_t index = 0;
+    while (cmdCount--) {
+        /* Wait until there is room in the fifo. This also checks for errors. */
+        result = imxrt_lpi2c_masterwaitfortxready(base);
+        if (result) {
+            return result;
+        }
+
+        /* Write byte into LPI2C master data register. */
+        base->MTDR = commandBuffer[index];
+        index++;
+    }
+
+    /* Transmit data. */
+    if ((transfer->direction == kLPI2C_Write) && (transfer->dataSize > 0)) {
+        /* Send Data. */
+        result = imxrt_lpi2c_mastersend(base, transfer->data, transfer->dataSize);
+    }
+
+    /* Receive Data. */
+    if ((transfer->direction == kLPI2C_Read) && (transfer->dataSize > 0)) {
+        result = imxrt_lpi2c_masterreceive(base, transfer->data, transfer->dataSize);
+    }
+
+    if (result) {
+        return result;
+    }
+
+    if ((transfer->flags & kLPI2C_TransferNoStopFlag) == 0) {
+        result = imxrt_lpi2c_masterstop(base);
+    }
+
+    return result;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransfercreatehandle
+ *
+ * Description:
+ *   brief Creates a new handle for the LPI2C master non-blocking APIs.
+ *
+ *   The creation of a handle is for use with the non-blocking APIs. Once a handle
+ *   is created, there is not a corresponding destroy handle. If the user wants to
+ *   terminate a transfer, the imxrt_lpi2c_mastertransferabort() API shall be called.
+ *
+ *
+ *   note The function also enables the NVIC IRQ for the input LPI2C. Need to notice
+ *   that on some SoCs the LPI2C IRQ is connected to INTMUX, in this case user needs to
+ *   enable the associated INTMUX IRQ in application.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle[out] Pointer to the LPI2C master driver handle.
+ *   callback User provided pointer to the asynchronous callback function.
+ *   userData User provided pointer to the application callback data.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_mastertransfercreatehandle(LPI2C_Type *base,
+                                      lpi2c_master_handle_t *handle,
+                                      lpi2c_master_transfer_callback_t callback,
+                                      void *userData)
+{
+    uint32_t instance;
+
+    DEBUGASSERT(handle);
+
+    /* Clear out the handle. */
+    memset(handle, 0, sizeof(*handle));
+
+    /* Look up instance number */
+    instance = imxrt_lpi2c_getinstance(base);
+
+    /* Save base and instance. */
+    handle->completionCallback = callback;
+    handle->userData = userData;
+
+    /* Save this handle for IRQ use. */
+    s_lpi2cMasterHandle[instance] = handle;
+
+    /* Set irq handler. */
+    s_lpi2cMasterIsr = imxrt_lpi2c_mastertransferhandleirq;
+
+    /* Clear internal IRQ enables and enable NVIC IRQ. */
+    imxrt_lpi2c_masterdisableinterrupts(base, kMasterIrqFlags);
+
+    /* Enable NVIC IRQ, this only enables the IRQ directly connected to the NVIC.
+     In some cases the LPI2C IRQ is configured through INTMUX, user needs to enable
+     INTMUX IRQ in application code. */
+    up_enable_irq(kLpi2cIrqs[instance]);
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_runtransferstatemachine
+ *
+ * Description:
+ *   brief Execute states until FIFOs are exhausted.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Master nonblocking driver handle.
+ *   isDone Set to true if the transfer has completed.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_PinLowTimeout
+ *   Returns #kStatus_LPI2C_ArbitrationLost
+ *   Returns #kStatus_LPI2C_Nak
+ *   Returns #kStatus_LPI2C_FifoError
+ *
+ ****************************************************************************/
+static status_t imxrt_lpi2c_runtransferstatemachine(LPI2C_Type *base, lpi2c_master_handle_t *handle, bool *isDone)
+{
+    uint32_t status;
+    status_t result = kStatus_Success;
+    lpi2c_master_transfer_t *xfer;
+    size_t txCount;
+    size_t rxCount;
+    size_t txFifoSize = FSL_FEATURE_LPI2C_FIFO_SIZEn(base);
+    bool state_complete = false;
+
+    /* Set default isDone return value. */
+    *isDone = false;
+
+    /* Check for errors. */
+    status = imxrt_lpi2c_mastergetstatusflags(base);
+    result = imxrt_lpi2c_mastercheckandclearerror(base, status);
+    if (result) {
+        return result;
+    }
+
+    /* Get pointer to private data. */
+    xfer = &handle->transfer;
+
+    /* Get fifo counts and compute room in tx fifo. */
+    imxrt_lpi2c_mastergetfifocounts(base, &rxCount, &txCount);
+    txCount = txFifoSize - txCount;
+
+    while (!state_complete) {
+        /* Execute the state. */
+        switch (handle->state) {
+        case kSendCommandState: {
+            /* Make sure there is room in the tx fifo for the next command. */
+            if (!txCount--) {
+                state_complete = true;
+                break;
+            }
+
+            /* Issue command. buf is a uint8_t* pointing at the uint16 command array. */
+            base->MTDR = *(uint16_t *)handle->buf;
+            handle->buf += sizeof(uint16_t);
+
+            /* Count down until all commands are sent. */
+            if (--handle->remainingBytes == 0) {
+                /* Choose next state and set up buffer pointer and count. */
+                if (xfer->dataSize) {
+                    /* Either a send or receive transfer is next. */
+                    handle->state = kTransferDataState;
+                    handle->buf = (uint8_t *)xfer->data;
+                    handle->remainingBytes = xfer->dataSize;
+                    if (xfer->direction == kLPI2C_Read) {
+                        /* Disable TX interrupt */
+                        imxrt_lpi2c_masterdisableinterrupts(base, kLPI2C_MasterTxReadyFlag);
+                    }
+                } else {
+                    /* No transfer, so move to stop state. */
+                    handle->state = kStopState;
+                }
+            }
+            break;
+        }
+        case kIssueReadCommandState:
+            /* Make sure there is room in the tx fifo for the read command. */
+            if (!txCount--) {
+                state_complete = true;
+                break;
+            }
+
+            base->MTDR = kRxDataCmd | LPI2C_MTDR_DATA(xfer->dataSize - 1);
+
+            /* Move to transfer state. */
+            handle->state = kTransferDataState;
+            if (xfer->direction == kLPI2C_Read) {
+                /* Disable TX interrupt */
+                imxrt_lpi2c_masterdisableinterrupts(base, kLPI2C_MasterTxReadyFlag);
+            }
+            break;
+        case kTransferDataState:
+            if (xfer->direction == kLPI2C_Write) {
+                /* Make sure there is room in the tx fifo. */
+                if (!txCount--) {
+                    state_complete = true;
+                    break;
+                }
+
+                /* Put byte to send in fifo. */
+                base->MTDR = *(handle->buf)++;
+            } else {
+                /* XXX handle receive sizes > 256, use kIssueReadCommandState */
+                /* Make sure there is data in the rx fifo. */
+                if (!rxCount--) {
+                    state_complete = true;
+                    break;
+                }
+
+                /* Read byte from fifo. */
+                *(handle->buf)++ = base->MRDR & LPI2C_MRDR_DATA_MASK;
+            }
+
+            /* Move to stop when the transfer is done. */
+            if (--handle->remainingBytes == 0) {
+                handle->state = kStopState;
+            }
+            break;
+        case kStopState:
+            /* Only issue a stop transition if the caller requested it. */
+            if ((xfer->flags & kLPI2C_TransferNoStopFlag) == 0) {
+                /* Make sure there is room in the tx fifo for the stop command. */
+                if (!txCount--) {
+                    state_complete = true;
+                    break;
+                }
+
+                base->MTDR = kStopCmd;
+            } else {
+                /* Caller doesn't want to send a stop, so we're done now. */
+                *isDone = true;
+                state_complete = true;
+                break;
+            }
+            handle->state = kWaitForCompletionState;
+            break;
+        case kWaitForCompletionState:
+            /* We stay in this state until the stop state is detected. */
+            if (status & kLPI2C_MasterStopDetectFlag) {
+                *isDone = true;
+            }
+            state_complete = true;
+            break;
+        default:
+            DEBUGASSERT(false);
+            break;
+        }
+    }
+    return result;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_inittransferstatemachine
+ *
+ * Description:
+ *   brief Prepares the transfer state machine and fills in the command buffer.
+ *
+ * Input Parameters:
+ *   handle Master nonblocking driver handle.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static void imxrt_lpi2c_inittransferstatemachine(lpi2c_master_handle_t *handle)
+{
+    lpi2c_master_transfer_t *xfer = &handle->transfer;
+
+    /* Handle no start option. */
+    if (xfer->flags & kLPI2C_TransferNoStartFlag) {
+        if (xfer->direction == kLPI2C_Read) {
+            /* Need to issue read command first. */
+            handle->state = kIssueReadCommandState;
+        } else {
+            /* Start immediately in the data transfer state. */
+            handle->state = kTransferDataState;
+        }
+
+        handle->buf = (uint8_t *)xfer->data;
+        handle->remainingBytes = xfer->dataSize;
+    } else {
+        uint16_t *cmd = (uint16_t *)&handle->commandBuffer;
+        uint32_t cmdCount = 0;
+
+        /* Initial direction depends on whether a subaddress was provided, and of course the actual */
+        /* data transfer direction. */
+        lpi2c_direction_t direction = xfer->subaddressSize ? kLPI2C_Write : xfer->direction;
+
+        /* Start command. */
+        cmd[cmdCount++] =
+            (uint16_t)kStartCmd | (uint16_t)((uint16_t)((uint16_t)xfer->slaveAddress << 1U) | (uint16_t)direction);
+
+        /* Subaddress, MSB first. */
+        if (xfer->subaddressSize) {
+            uint32_t subaddressRemaining = xfer->subaddressSize;
+            while (subaddressRemaining--) {
+                uint8_t subaddressByte = (xfer->subaddress >> (8 * subaddressRemaining)) & 0xff;
+                cmd[cmdCount++] = subaddressByte;
+            }
+        }
+
+        /* Reads need special handling. */
+        if ((xfer->dataSize) && (xfer->direction == kLPI2C_Read)) {
+            /* Need to send repeated start if switching directions to read. */
+            if (direction == kLPI2C_Write) {
+                cmd[cmdCount++] = (uint16_t)kStartCmd |
+                                  (uint16_t)((uint16_t)((uint16_t)xfer->slaveAddress << 1U) | (uint16_t)kLPI2C_Read);
+            }
+
+            /* Read command. */
+            cmd[cmdCount++] = kRxDataCmd | LPI2C_MTDR_DATA(xfer->dataSize - 1);
+        }
+
+        /* Set up state machine for transferring the commands. */
+        handle->state = kSendCommandState;
+        handle->remainingBytes = cmdCount;
+        handle->buf = (uint8_t *)&handle->commandBuffer;
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransfernonblocking
+ *
+ * Description:
+ *   brief Performs a non-blocking transaction on the I2C bus.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to the LPI2C master driver handle.
+ *   transfer The pointer to the transfer descriptor.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success The transaction was started successfully.
+ *   Returns #kStatus_LPI2C_Busy Either another master is currently utilizing the bus, or a non-blocking
+ *           transaction is already in progress.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_mastertransfernonblocking(LPI2C_Type *base,
+                                         lpi2c_master_handle_t *handle,
+                                         lpi2c_master_transfer_t *transfer)
+{
+    status_t result;
+
+    DEBUGASSERT(handle);
+    DEBUGASSERT(transfer);
+    DEBUGASSERT(transfer->subaddressSize <= sizeof(transfer->subaddress));
+
+    /* Return busy if another transaction is in progress. */
+    if (handle->state != kIdleState) {
+        return kStatus_LPI2C_Busy;
+    }
+
+    /* Return an error if the bus is already in use not by us. */
+    result = imxrt_lpi2c_checkforbusybus(base);
+    if (result) {
+        return result;
+    }
+
+    /* Disable LPI2C IRQ sources while we configure stuff. */
+    imxrt_lpi2c_masterdisableinterrupts(base, kMasterIrqFlags);
+
+    /* Save transfer into handle. */
+    handle->transfer = *transfer;
+
+    /* Generate commands to send. */
+    imxrt_lpi2c_inittransferstatemachine(handle);
+
+    /* Clear all flags. */
+    imxrt_lpi2c_masterclearstatusflags(base, kMasterClearFlags);
+
+    /* Turn off auto-stop option. */
+    base->MCFGR1 &= ~LPI2C_MCFGR1_AUTOSTOP_MASK;
+
+    /* Enable LPI2C internal IRQ sources. NVIC IRQ was enabled in CreateHandle() */
+    imxrt_lpi2c_masterenableInterrupts(base, kMasterIrqFlags);
+
+    return result;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransfergetcount
+ *
+ * Description:
+ *   brief Returns number of bytes transferred so far.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to the LPI2C master driver handle.
+ *   count[out] Number of bytes transferred so far by the non-blocking transaction.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_mastertransfergetcount(LPI2C_Type *base, lpi2c_master_handle_t *handle, size_t *count)
+{
+    DEBUGASSERT(handle);
+
+    if (!count) {
+        return kStatus_InvalidArgument;
+    }
+
+    /* Catch when there is not an active transfer. */
+    if (handle->state == kIdleState) {
+        *count = 0;
+        return kStatus_NoTransferInProgress;
+    }
+
+    uint8_t state;
+    uint16_t remainingBytes;
+    uint32_t dataSize;
+
+    /* Cache some fields with IRQs disabled. This ensures all field values */
+    /* are synchronized with each other during an ongoing transfer. */
+    uint32_t irqs = imxrt_lpi2c_mastergetenableinterrupts(base);
+    imxrt_lpi2c_masterdisableinterrupts(base, irqs);
+    state = handle->state;
+    remainingBytes = handle->remainingBytes;
+    dataSize = handle->transfer.dataSize;
+    imxrt_lpi2c_masterenableInterrupts(base, irqs);
+
+    /* Get transfer count based on current transfer state. */
+    switch (state) {
+    case kIdleState:
+    case kSendCommandState:
+    case kIssueReadCommandState: /* XXX return correct value for this state when >256 reads are supported */
+        *count = 0;
+        break;
+    case kTransferDataState:
+        *count = dataSize - remainingBytes;
+        break;
+    case kStopState:
+    case kWaitForCompletionState:
+    default:
+        *count = dataSize;
+        break;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransferabort
+ *
+ * Description:
+ *   brief Terminates a non-blocking LPI2C master transmission early.
+ *
+ *   note It is not safe to call this function from an IRQ handler that has a higher priority than the
+ *        LPI2C peripheral's IRQ priority.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to the LPI2C master driver handle.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success A transaction was successfully aborted.
+ *   Returns #kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_mastertransferabort(LPI2C_Type *base, lpi2c_master_handle_t *handle)
+{
+    if (handle->state != kIdleState) {
+        /* Disable internal IRQ enables. */
+        imxrt_lpi2c_masterdisableinterrupts(base, kMasterIrqFlags);
+
+        /* Reset fifos. */
+        base->MCR |= LPI2C_MCR_RRF_MASK | LPI2C_MCR_RTF_MASK;
+
+        /* Send a stop command to finalize the transfer. */
+        base->MTDR = kStopCmd;
+
+        /* Reset handle. */
+        handle->state = kIdleState;
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_mastertransferhandleirq
+ *
+ * Description:
+ *   brief Reusable routine to handle master interrupts.
+ *   
+ *   note This function does not need to be called unless you are reimplementing the
+ *    nonblocking API's interrupt handler routines to add special functionality.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to the LPI2C master driver handle.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_mastertransferhandleirq(LPI2C_Type *base, lpi2c_master_handle_t *handle)
+{
+    bool isDone;
+    status_t result;
+
+    /* Don't do anything if we don't have a valid handle. */
+    if (!handle) {
+        return;
+    }
+
+    if (handle->state == kIdleState) {
+        return;
+    }
+
+    result = imxrt_lpi2c_runtransferstatemachine(base, handle, &isDone);
+
+    if (isDone || (result != kStatus_Success)) {
+        /* XXX need to handle data that may be in rx fifo below watermark level? */
+
+        /* XXX handle error, terminate xfer */
+
+        /* Disable internal IRQ enables. */
+        imxrt_lpi2c_masterdisableinterrupts(base, kMasterIrqFlags);
+
+        /* Set handle to idle state. */
+        handle->state = kIdleState;
+
+        /* Invoke callback. */
+        if (handle->completionCallback) {
+            handle->completionCallback(base, handle, result, handle->userData);
+        }
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavegetdefaultconfig
+ *
+ * Description:
+ *   brief Provides a default configuration for the LPI2C slave peripheral.
+ *
+ *   This function provides the following default configuration for the LPI2C slave peripheral:
+ *   code
+ *    slaveConfig->enableSlave               = true;
+ *    slaveConfig->address0                  = 0U;
+ *    slaveConfig->address1                  = 0U;
+ *    slaveConfig->addressMatchMode          = kLPI2C_MatchAddress0;
+ *    slaveConfig->filterDozeEnable          = true;
+ *    slaveConfig->filterEnable              = true;
+ *    slaveConfig->enableGeneralCall         = false;
+ *    slaveConfig->sclStall.enableAck        = false;
+ *    slaveConfig->sclStall.enableTx         = true;
+ *    slaveConfig->sclStall.enableRx         = true;
+ *    slaveConfig->sclStall.enableAddress    = true;
+ *    slaveConfig->ignoreAck                 = false;
+ *    slaveConfig->enableReceivedAddressRead = false;
+ *    slaveConfig->sdaGlitchFilterWidth_ns   = 0;
+ *    slaveConfig->sclGlitchFilterWidth_ns   = 0;
+ *    slaveConfig->dataValidDelay_ns         = 0;
+ *    slaveConfig->clockHoldTime_ns          = 0;
+ *   endcode
+ *
+ *   After calling this function, override any settings  to customize the configuration,
+ *   prior to initializing the master driver with imxrt_lpi2c_slaveinit(). Be sure to override at least the a
+ *   address0 member of the configuration structure with the desired slave address.
+ *
+ * Input Parameters:
+ *   slaveConfig[out] User provided configuration structure that is set to default values. Refer to
+ *                    #lpi2c_slave_config_t.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slavegetdefaultconfig(lpi2c_slave_config_t *slaveConfig)
+{
+    /* Initializes the configure structure to zero. */
+    memset(slaveConfig, 0, sizeof(*slaveConfig));
+
+    slaveConfig->enableSlave = true;
+    slaveConfig->address0 = 0U;
+    slaveConfig->address1 = 0U;
+    slaveConfig->addressMatchMode = kLPI2C_MatchAddress0;
+    slaveConfig->filterDozeEnable = true;
+    slaveConfig->filterEnable = true;
+    slaveConfig->enableGeneralCall = false;
+    slaveConfig->sclStall.enableAck = false;
+    slaveConfig->sclStall.enableTx = true;
+    slaveConfig->sclStall.enableRx = true;
+    slaveConfig->sclStall.enableAddress = false;
+    slaveConfig->ignoreAck = false;
+    slaveConfig->enableReceivedAddressRead = false;
+    slaveConfig->sdaGlitchFilterWidth_ns = 0; /* TODO determine default width values */
+    slaveConfig->sclGlitchFilterWidth_ns = 0;
+    slaveConfig->dataValidDelay_ns = 0;
+    slaveConfig->clockHoldTime_ns = 0;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slaveinit
+ *
+ * Description:
+ *   brief Initializes the LPI2C slave peripheral.
+ *
+ *   This function enables the peripheral clock and initializes the LPI2C slave peripheral as described by the user
+ *   provided configuration.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   slaveConfig User provided peripheral configuration. Use imxrt_lpi2c_slavegetdefaultconfig() to get a set of defaults
+ *               that you can override.
+ *   sourceClock_Hz Frequency in Hertz of the LPI2C functional clock. Used to calculate the filter widths,
+ *                  data valid delay, and clock hold time.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slaveinit(LPI2C_Type *base, const lpi2c_slave_config_t *slaveConfig, uint32_t sourceClock_Hz)
+{
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+
+    uint32_t instance = imxrt_lpi2c_getinstance(base);
+
+    /* Ungate the clock. */
+    imxrt_clock_enableclock(kLpi2cClocks[instance]);
+#if defined(LPI2C_PERIPH_CLOCKS)
+    /* Ungate the functional clock in initialize function. */
+    imxrt_clock_enableclock(kLpi2cPeriphClocks[instance]);
+#endif
+
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* Restore to reset conditions. */
+    imxrt_lpi2c_slavereset(base);
+
+    /* Configure peripheral. */
+    base->SAMR = LPI2C_SAMR_ADDR0(slaveConfig->address0) | LPI2C_SAMR_ADDR1(slaveConfig->address1);
+
+    base->SCFGR1 =
+        LPI2C_SCFGR1_ADDRCFG(slaveConfig->addressMatchMode) | LPI2C_SCFGR1_IGNACK(slaveConfig->ignoreAck) |
+        LPI2C_SCFGR1_RXCFG(slaveConfig->enableReceivedAddressRead) | LPI2C_SCFGR1_GCEN(slaveConfig->enableGeneralCall) |
+        LPI2C_SCFGR1_ACKSTALL(slaveConfig->sclStall.enableAck) | LPI2C_SCFGR1_TXDSTALL(slaveConfig->sclStall.enableTx) |
+        LPI2C_SCFGR1_RXSTALL(slaveConfig->sclStall.enableRx) |
+        LPI2C_SCFGR1_ADRSTALL(slaveConfig->sclStall.enableAddress);
+
+    base->SCFGR2 =
+        LPI2C_SCFGR2_FILTSDA(imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, slaveConfig->sdaGlitchFilterWidth_ns,
+                                                     (LPI2C_SCFGR2_FILTSDA_MASK >> LPI2C_SCFGR2_FILTSDA_SHIFT), 1)) |
+        LPI2C_SCFGR2_FILTSCL(imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, slaveConfig->sclGlitchFilterWidth_ns,
+                                                     (LPI2C_SCFGR2_FILTSCL_MASK >> LPI2C_SCFGR2_FILTSCL_SHIFT), 1)) |
+        LPI2C_SCFGR2_DATAVD(imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, slaveConfig->dataValidDelay_ns,
+                                                    (LPI2C_SCFGR2_DATAVD_MASK >> LPI2C_SCFGR2_DATAVD_SHIFT), 1)) |
+        LPI2C_SCFGR2_CLKHOLD(imxrt_lpi2c_getcyclesforwidth(sourceClock_Hz, slaveConfig->clockHoldTime_ns,
+                                                     (LPI2C_SCFGR2_CLKHOLD_MASK >> LPI2C_SCFGR2_CLKHOLD_SHIFT), 1));
+
+    /* Save SCR to last so we don't enable slave until it is configured */
+    base->SCR = LPI2C_SCR_FILTDZ(slaveConfig->filterDozeEnable) | LPI2C_SCR_FILTEN(slaveConfig->filterEnable) |
+                LPI2C_SCR_SEN(slaveConfig->enableSlave);
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavedeinit
+ *
+ * Description:
+ *   brief Deinitializes the LPI2C slave peripheral.
+ *
+ *   This function disables the LPI2C slave peripheral and gates the clock. It also performs a software
+ *   reset to restore the peripheral to reset conditions.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slavedeinit(LPI2C_Type *base)
+{
+    imxrt_lpi2c_slavereset(base);
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+
+    uint32_t instance = imxrt_lpi2c_getinstance(base);
+
+    /* Gate the clock. */
+    imxrt_clock_disableclock(kLpi2cClocks[instance]);
+
+#if defined(LPI2C_PERIPH_CLOCKS)
+    /* Gate the functional clock. */
+    imxrt_clock_disableclock(kLpi2cPeriphClocks[instance]);
+#endif
+
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavecheckandclearerror
+ *
+ * Description:
+ *   brief Convert provided flags to status code, and clear any errors if present.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   status Current status flags value that will be checked.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_BitError
+ *   Returns #kStatus_LPI2C_FifoError
+ *
+ ****************************************************************************/
+static status_t imxrt_lpi2c_slavecheckandclearerror(LPI2C_Type *base, uint32_t flags)
+{
+    status_t result = kStatus_Success;
+
+    flags &= kSlaveErrorFlags;
+    if (flags) {
+        if (flags & kLPI2C_SlaveBitErrFlag) {
+            result = kStatus_LPI2C_BitError;
+        } else if (flags & kLPI2C_SlaveFifoErrFlag) {
+            result = kStatus_LPI2C_FifoError;
+        } else {
+            DEBUGASSERT(false);
+        }
+
+        /* Clear the errors. */
+        imxrt_lpi2c_slaveclearstatusflags(base, flags);
+    }
+
+    return result;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavesend
+ *
+ * Description:
+ *   brief Performs a polling send transfer on the I2C bus.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   txBuff The pointer to the data to be transferred.
+ *   txSize The length in bytes of the data to be transferred.
+ *   actualTxSize[out]
+ *
+ * Returned Value:
+ *   Returns Error or success status returned by API.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_slavesend(LPI2C_Type *base, void *txBuff, size_t txSize, size_t *actualTxSize)
+{
+    uint8_t *buf = (uint8_t *)txBuff;
+    size_t remaining = txSize;
+
+    DEBUGASSERT(txBuff);
+
+#if LPI2C_WAIT_TIMEOUT
+    uint32_t waitTimes = LPI2C_WAIT_TIMEOUT;
+#endif
+
+    while (remaining) {
+        uint32_t flags;
+        status_t result;
+
+        /* Wait until we can transmit. */
+        do {
+            /* Check for errors */
+            flags = imxrt_lpi2c_slavegetstatusflags(base);
+            result = imxrt_lpi2c_slavecheckandclearerror(base, flags);
+            if (result) {
+                if (actualTxSize) {
+                    *actualTxSize = txSize - remaining;
+                }
+                return result;
+            }
+#if LPI2C_WAIT_TIMEOUT
+        } while (
+            (!(flags & (kLPI2C_SlaveTxReadyFlag | kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag))) &&
+            (--waitTimes));
+        if (waitTimes == 0) {
+            return kStatus_LPI2C_Timeout;
+        }
+#else
+        } while (
+            !(flags & (kLPI2C_SlaveTxReadyFlag | kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag)));
+#endif
+
+        /* Send a byte. */
+        if (flags & kLPI2C_SlaveTxReadyFlag) {
+            base->STDR = *buf++;
+            --remaining;
+        }
+
+        /* Exit loop if we see a stop or restart */
+        if (flags & (kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag)) {
+            imxrt_lpi2c_slaveclearstatusflags(base, kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag);
+            break;
+        }
+    }
+
+    if (actualTxSize) {
+        *actualTxSize = txSize - remaining;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavereceive
+ *
+ * Description:
+ *   brief Performs a polling receive transfer on the I2C bus.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   rxBuff The pointer to the data to be transferred.
+ *   rxSize The length in bytes of the data to be transferred.
+ *   actualRxSize[out]
+ *
+ * Returned Value:
+ *   Returns Error or success status returned by API.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_slavereceive(LPI2C_Type *base, void *rxBuff, size_t rxSize, size_t *actualRxSize)
+{
+    uint8_t *buf = (uint8_t *)rxBuff;
+    size_t remaining = rxSize;
+
+    DEBUGASSERT(rxBuff);
+
+#if LPI2C_WAIT_TIMEOUT
+    uint32_t waitTimes = LPI2C_WAIT_TIMEOUT;
+#endif
+
+    while (remaining) {
+        uint32_t flags;
+        status_t result;
+
+        /* Wait until we can receive. */
+        do {
+            /* Check for errors */
+            flags = imxrt_lpi2c_slavegetstatusflags(base);
+            result = imxrt_lpi2c_slavecheckandclearerror(base, flags);
+            if (result) {
+                if (actualRxSize)
+                {
+                    *actualRxSize = rxSize - remaining;
+                }
+                return result;
+            }
+#if LPI2C_WAIT_TIMEOUT
+        } while (
+            (!(flags & (kLPI2C_SlaveRxReadyFlag | kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag))) &&
+            (--waitTimes));
+        if (waitTimes == 0) {
+            return kStatus_LPI2C_Timeout;
+        }
+#else
+        } while (
+            !(flags & (kLPI2C_SlaveRxReadyFlag | kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag)));
+#endif
+
+        /* Receive a byte. */
+        if (flags & kLPI2C_SlaveRxReadyFlag) {
+            *buf++ = base->SRDR & LPI2C_SRDR_DATA_MASK;
+            --remaining;
+        }
+
+        /* Exit loop if we see a stop or restart */
+        if (flags & (kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag)) {
+            imxrt_lpi2c_slaveclearstatusflags(base, kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveRepeatedStartDetectFlag);
+            break;
+        }
+    }
+
+    if (actualRxSize) {
+        *actualRxSize = rxSize - remaining;
+    }
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavereceive
+ *
+ * Description:
+ *   brief Creates a new handle for the LPI2C slave non-blocking APIs.
+ *
+ *   The creation of a handle is for use with the non-blocking APIs. Once a handle
+ *   is created, there is not a corresponding destroy handle. If the user wants to
+ *   terminate a transfer, the imxrt_lpi2c_slavetransferabort() API shall be called.
+ *
+ *   note The function also enables the NVIC IRQ for the input LPI2C. Need to notice
+ *   that on some SoCs the LPI2C IRQ is connected to INTMUX, in this case user needs to
+ *   enable the associated INTMUX IRQ in application.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle[out] Pointer to the LPI2C slave driver handle.
+ *   callback User provided pointer to the asynchronous callback function.
+ *   userData User provided pointer to the application callback data.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slavetransfercreatehandle(LPI2C_Type *base,
+                                     lpi2c_slave_handle_t *handle,
+                                     lpi2c_slave_transfer_callback_t callback,
+                                     void *userData)
+{
+    uint32_t instance;
+
+    DEBUGASSERT(handle);
+
+    /* Clear out the handle. */
+    memset(handle, 0, sizeof(*handle));
+
+    /* Look up instance number */
+    instance = imxrt_lpi2c_getinstance(base);
+
+    /* Save base and instance. */
+    handle->callback = callback;
+    handle->userData = userData;
+
+    /* Save this handle for IRQ use. */
+    s_lpi2cSlaveHandle[instance] = handle;
+
+    /* Set irq handler. */
+    s_lpi2cSlaveIsr = imxrt_lpi2c_slavetransferhandleirq;
+
+    /* Clear internal IRQ enables and enable NVIC IRQ. */
+    imxrt_lpi2c_slavedisableinterrupts(base, kSlaveIrqFlags);
+    up_enable_irq(kLpi2cIrqs[instance]);
+
+    /* Nack by default. */
+    base->STAR = LPI2C_STAR_TXNACK_MASK;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavetransfernonblocking
+ *
+ * Description:
+ *   brief Starts accepting slave transfers.
+ *
+ *   Call this API after calling I2C_SlaveInit() and imxrt_lpi2c_slavetransfercreatehandle() to start processing
+ *   transactions driven by an I2C master. The slave monitors the I2C bus and pass events to the
+ *   callback that was passed into the call to imxrt_lpi2c_slavetransfercreatehandle(). The callback is always invoked
+ *   from the interrupt context.
+ *
+ *   The set of events received by the callback is customizable. To do so, set the a eventMask parameter to
+ *   the OR'd combination of #lpi2c_slave_transfer_event_t enumerators for the events you wish to receive.
+ *   The #kLPI2C_SlaveTransmitEvent and #kLPI2C_SlaveReceiveEvent events are always enabled and do not need
+ *   to be included in the mask. Alternatively, you can pass 0 to get a default set of only the transmit and
+ *   receive events that are always enabled. In addition, the #kLPI2C_SlaveAllEvents constant is provided as
+ *   a convenient way to enable all events.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to #lpi2c_slave_handle_t structure which stores the transfer state.
+ *   eventMask Bit mask formed by OR'ing together #lpi2c_slave_transfer_event_t enumerators to specify
+ *             which events to send to the callback. Other accepted values are 0 to get a default set of
+ *             only the transmit and receive events, and #kLPI2C_SlaveAllEvents to enable all events.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success Slave transfers were successfully started.
+ *   Returns #kStatus_LPI2C_Busy Slave transfers have already been started on this handle.
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_slavetransfernonblocking(LPI2C_Type *base, lpi2c_slave_handle_t *handle, uint32_t eventMask)
+{
+    uint32_t status;
+
+    DEBUGASSERT(handle);
+
+    /* Return busy if another transaction is in progress. */
+    if (handle->isBusy) {
+        return kStatus_LPI2C_Busy;
+    }
+
+    /* Return an error if the bus is already in use not by us. */
+    status = imxrt_lpi2c_slavegetstatusflags(base);
+    if ((status & kLPI2C_SlaveBusBusyFlag) && (!(status & kLPI2C_SlaveBusyFlag))) {
+        return kStatus_LPI2C_Busy;
+    }
+
+    /* Disable LPI2C IRQ sources while we configure stuff. */
+    imxrt_lpi2c_slavedisableinterrupts(base, kSlaveIrqFlags);
+
+    /* Clear transfer in handle. */
+    memset(&handle->transfer, 0, sizeof(handle->transfer));
+
+    /* Record that we're busy. */
+    handle->isBusy = true;
+
+    /* Set up event mask. tx and rx are always enabled. */
+    handle->eventMask = eventMask | kLPI2C_SlaveTransmitEvent | kLPI2C_SlaveReceiveEvent;
+
+    /* Ack by default. */
+    base->STAR = 0;
+
+    /* Clear all flags. */
+    imxrt_lpi2c_slaveclearstatusflags(base, kSlaveClearFlags);
+
+    /* Enable LPI2C internal IRQ sources. NVIC IRQ was enabled in CreateHandle() */
+    imxrt_lpi2c_slaveenableinterrupts(base, kSlaveIrqFlags);
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavetransfergetcount
+ *
+ * Description:
+ *   brief Gets the slave transfer status during a non-blocking transfer.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to i2c_slave_handle_t structure.
+ *   count[out] Pointer to a value to hold the number of bytes transferred. May be NULL if the count is not
+ *      required.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_NoTransferInProgress
+ *
+ ****************************************************************************/
+status_t imxrt_lpi2c_slavetransfergetcount(LPI2C_Type *base, lpi2c_slave_handle_t *handle, size_t *count)
+{
+    DEBUGASSERT(handle);
+
+    if (!count) {
+        return kStatus_InvalidArgument;
+    }
+
+    /* Catch when there is not an active transfer. */
+    if (!handle->isBusy) {
+        *count = 0;
+        return kStatus_NoTransferInProgress;
+    }
+
+    /* For an active transfer, just return the count from the handle. */
+    *count = handle->transferredCount;
+
+    return kStatus_Success;
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavetransferabort
+ *
+ * Description:
+ *   brief Aborts the slave non-blocking transfers.
+ *   note This API could be called at any time to stop slave for handling the bus events.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to #lpi2c_slave_handle_t structure which stores the transfer state.
+ *
+ * Returned Value:
+ *   Returns #kStatus_Success
+ *   Returns #kStatus_LPI2C_Idle
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slavetransferabort(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
+{
+    DEBUGASSERT(handle);
+
+    /* Return idle if no transaction is in progress. */
+    if (handle->isBusy) {
+        /* Disable LPI2C IRQ sources. */
+        imxrt_lpi2c_slavedisableinterrupts(base, kSlaveIrqFlags);
+
+        /* Nack by default. */
+        base->STAR = LPI2C_STAR_TXNACK_MASK;
+
+        /* Reset transfer info. */
+        memset(&handle->transfer, 0, sizeof(handle->transfer));
+
+        /* We're no longer busy. */
+        handle->isBusy = false;
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavetransferhandleirq
+ *
+ * Description:
+ *   brief Reusable routine to handle slave interrupts.
+ *   note This function does not need to be called unless you are reimplementing the
+ *      non blocking API's interrupt handler routines to add special functionality.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   handle Pointer to #lpi2c_slave_handle_t structure which stores the transfer state.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void imxrt_lpi2c_slavetransferhandleirq(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
+{
+    uint32_t flags;
+    lpi2c_slave_transfer_t *xfer;
+
+    /* Check for a valid handle in case of a spurious interrupt. */
+    if (!handle) {
+        return;
+    }
+
+    xfer = &handle->transfer;
+
+    /* Get status flags. */
+    flags = imxrt_lpi2c_slavegetstatusflags(base);
+
+    if (flags & (kLPI2C_SlaveBitErrFlag | kLPI2C_SlaveFifoErrFlag)) {
+        xfer->event = kLPI2C_SlaveCompletionEvent;
+        xfer->completionStatus = imxrt_lpi2c_slavecheckandclearerror(base, flags);
+
+        if ((handle->eventMask & kLPI2C_SlaveCompletionEvent) && (handle->callback)) {
+            handle->callback(base, xfer, handle->userData);
+        }
+        return;
+    }
+    if (flags & (kLPI2C_SlaveRepeatedStartDetectFlag | kLPI2C_SlaveStopDetectFlag)) {
+        xfer->event = (flags & kLPI2C_SlaveRepeatedStartDetectFlag) ? kLPI2C_SlaveRepeatedStartEvent :
+                                                                      kLPI2C_SlaveCompletionEvent;
+        xfer->receivedAddress = 0;
+        xfer->completionStatus = kStatus_Success;
+        xfer->transferredCount = handle->transferredCount;
+
+        if (xfer->event == kLPI2C_SlaveCompletionEvent) {
+            handle->isBusy = false;
+        }
+
+        if (handle->wasTransmit) {
+            /* Subtract one from the transmit count to offset the fact that LPI2C asserts the */
+            /* tx flag before it sees the nack from the master-receiver, thus causing one more */
+            /* count that the master actually receives. */
+            --xfer->transferredCount;
+            handle->wasTransmit = false;
+        }
+
+        /* Clear the flag. */
+        imxrt_lpi2c_slaveclearstatusflags(base, flags & (kLPI2C_SlaveRepeatedStartDetectFlag | kLPI2C_SlaveStopDetectFlag));
+
+        /* Revert to sending an Ack by default, in case we sent a Nack for receive. */
+        base->STAR = 0;
+
+        if ((handle->eventMask & xfer->event) && (handle->callback)) {
+            handle->callback(base, xfer, handle->userData);
+        }
+
+        /* Clean up transfer info on completion, after the callback has been invoked. */
+        memset(&handle->transfer, 0, sizeof(handle->transfer));
+    }
+    if (flags & kLPI2C_SlaveAddressValidFlag) {
+        xfer->event = kLPI2C_SlaveAddressMatchEvent;
+        xfer->receivedAddress = base->SASR & LPI2C_SASR_RADDR_MASK;
+
+        if ((handle->eventMask & kLPI2C_SlaveAddressMatchEvent) && (handle->callback)) {
+            handle->callback(base, xfer, handle->userData);
+        }
+    }
+    if (flags & kLPI2C_SlaveTransmitAckFlag) {
+        xfer->event = kLPI2C_SlaveTransmitAckEvent;
+
+        if ((handle->eventMask & kLPI2C_SlaveTransmitAckEvent) && (handle->callback)) {
+            handle->callback(base, xfer, handle->userData);
+        }
+    }
+
+    /* Handle transmit and receive. */
+    if (flags & kLPI2C_SlaveTxReadyFlag) {
+        handle->wasTransmit = true;
+
+        /* If we're out of data, invoke callback to get more. */
+        if ((!xfer->data) || (!xfer->dataSize)) {
+            xfer->event = kLPI2C_SlaveTransmitEvent;
+            if (handle->callback) {
+                handle->callback(base, xfer, handle->userData);
+            }
+
+            /* Clear the transferred count now that we have a new buffer. */
+            handle->transferredCount = 0;
+        }
+
+        /* Transmit a byte. */
+        if ((xfer->data) && (xfer->dataSize)) {
+            base->STDR = *xfer->data++;
+            --xfer->dataSize;
+            ++handle->transferredCount;
+        }
+    }
+    if (flags & kLPI2C_SlaveRxReadyFlag) {
+        /* If we're out of room in the buffer, invoke callback to get another. */
+        if ((!xfer->data) || (!xfer->dataSize)) {
+            xfer->event = kLPI2C_SlaveReceiveEvent;
+            if (handle->callback) {
+                handle->callback(base, xfer, handle->userData);
+            }
+
+            /* Clear the transferred count now that we have a new buffer. */
+            handle->transferredCount = 0;
+        }
+
+        /* Receive a byte. */
+        if ((xfer->data) && (xfer->dataSize)) {
+            *xfer->data++ = base->SRDR;
+            --xfer->dataSize;
+            ++handle->transferredCount;
+        } else {
+            /* We don't have any room to receive more data, so send a nack. */
+            base->STAR = LPI2C_STAR_TXNACK_MASK;
+        }
+    }
+}
+
+/****************************************************************************
+ * Function: imxrt_lpi2c_slavetransferhandleirq
+ *
+ * Description:
+ *   brief Shared IRQ handler that can call both master and slave ISRs.
+ *
+ *   The master and slave ISRs are called through function pointers in order to decouple
+ *   this code from the ISR functions. Without this, the linker would always pull in both
+ *   ISRs and every function they call, even if only the functional API was used.
+ *
+ * Input Parameters:
+ *   base The LPI2C peripheral base address.
+ *   instance The LPI2C peripheral instance number.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static void imxrt_lpi2c_commonirqhandler(LPI2C_Type *base, uint32_t instance)
+{
+    /* Check for master IRQ. */
+    if ((base->MCR & LPI2C_MCR_MEN_MASK) && s_lpi2cMasterIsr) {
+        /* Master mode. */
+        s_lpi2cMasterIsr(base, s_lpi2cMasterHandle[instance]);
+    }
+
+    /* Check for slave IRQ. */
+    if ((base->SCR & LPI2C_SCR_SEN_MASK) && s_lpi2cSlaveIsr) {
+        /* Slave mode. */
+        s_lpi2cSlaveIsr(base, s_lpi2cSlaveHandle[instance]);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+
+#if defined(LPI2C0)
+/* Implementation of LPI2C0 handler named in startup code. */
+void LPI2C0_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(LPI2C0, 0);
+}
+#endif
+
+#if defined(LPI2C1)
+/* Implementation of LPI2C1 handler named in startup code. */
+void LPI2C1_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(LPI2C1, 1);
+}
+#endif
+
+#if defined(LPI2C2)
+/* Implementation of LPI2C2 handler named in startup code. */
+void LPI2C2_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(LPI2C2, 2);
+}
+#endif
+
+#if defined(LPI2C3)
+/* Implementation of LPI2C3 handler named in startup code. */
+void LPI2C3_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(LPI2C3, 3);
+}
+#endif
+
+#if defined(LPI2C4)
+/* Implementation of LPI2C4 handler named in startup code. */
+void LPI2C4_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(LPI2C4, 4);
+}
+#endif
+
+#if defined(CM4_0__LPI2C)
+/* Implementation of CM4_0__LPI2C handler named in startup code. */
+void M4_0_LPI2C_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(CM4_0__LPI2C, imxrt_lpi2c_getinstance(CM4_0__LPI2C));
+}
+#endif
+
+#if defined(CM4__LPI2C)
+/* Implementation of CM4__LPI2C handler named in startup code. */
+void M4_LPI2C_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(CM4__LPI2C, imxrt_lpi2c_getinstance(CM4__LPI2C));
+}
+#endif
+
+#if defined(CM4_1__LPI2C)
+/* Implementation of CM4_1__LPI2C handler named in startup code. */
+void M4_1_LPI2C_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(CM4_1__LPI2C, imxrt_lpi2c_getinstance(CM4_1__LPI2C));
+}
+#endif
+
+#if defined(DMA__LPI2C0)
+/* Implementation of DMA__LPI2C0 handler named in startup code. */
+void DMA_I2C0_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(DMA__LPI2C0, imxrt_lpi2c_getinstance(DMA__LPI2C0));
+}
+#endif
+
+#if defined(DMA__LPI2C1)
+/* Implementation of DMA__LPI2C1 handler named in startup code. */
+void DMA_I2C1_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(DMA__LPI2C1, imxrt_lpi2c_getinstance(DMA__LPI2C1));
+}
+#endif
+
+#if defined(DMA__LPI2C2)
+/* Implementation of DMA__LPI2C2 handler named in startup code. */
+void DMA_I2C2_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(DMA__LPI2C2, imxrt_lpi2c_getinstance(DMA__LPI2C2));
+}
+#endif
+
+#if defined(DMA__LPI2C3)
+/* Implementation of DMA__LPI2C3 handler named in startup code. */
+void DMA_I2C3_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(DMA__LPI2C3, imxrt_lpi2c_getinstance(DMA__LPI2C3));
+}
+#endif
+
+#if defined(DMA__LPI2C4)
+/* Implementation of DMA__LPI2C3 handler named in startup code. */
+void DMA_I2C4_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(DMA__LPI2C4, imxrt_lpi2c_getinstance(DMA__LPI2C4));
+}
+#endif
+
+#if defined(ADMA__LPI2C0)
+/* Implementation of DMA__LPI2C0 handler named in startup code. */
+void ADMA_I2C0_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(ADMA__LPI2C0, imxrt_lpi2c_getinstance(ADMA__LPI2C0));
+}
+#endif
+
+#if defined(ADMA__LPI2C1)
+/* Implementation of DMA__LPI2C1 handler named in startup code. */
+void ADMA_I2C1_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(ADMA__LPI2C1, imxrt_lpi2c_getinstance(ADMA__LPI2C1));
+}
+#endif
+
+#if defined(ADMA__LPI2C2)
+/* Implementation of DMA__LPI2C2 handler named in startup code. */
+void ADMA_I2C2_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(ADMA__LPI2C2, imxrt_lpi2c_getinstance(ADMA__LPI2C2));
+}
+#endif
+
+#if defined(ADMA__LPI2C3)
+/* Implementation of DMA__LPI2C3 handler named in startup code. */
+void ADMA_I2C3_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(ADMA__LPI2C3, imxrt_lpi2c_getinstance(ADMA__LPI2C3));
+}
+#endif
+
+#if defined(ADMA__LPI2C4)
+/* Implementation of DMA__LPI2C3 handler named in startup code. */
+void ADMA_I2C4_INT_DriverIRQHandler(void)
+{
+    imxrt_lpi2c_commonirqhandler(ADMA__LPI2C4, imxrt_lpi2c_getinstance(ADMA__LPI2C4));
+}
+#endif

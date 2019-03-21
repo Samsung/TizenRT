@@ -224,19 +224,4 @@ int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, st
 }
 #endif
 
-#ifdef CONFIG_NET_LWIP_NETDB
-struct hostent *gethostbyname(const char *name)
-{
-	return lwip_gethostbyname(name);
-}
-
-#if LWIP_COMPAT_SOCKETS
-int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
-{
-	return lwip_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
-}
-#endif							/* LWIP_COMPAT_SOCKETS */
-
-#endif							/* NET_LWIP_NETDB */
-
 #endif

@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -36,17 +37,17 @@
  * Name: getaddrinfo
  *
  * Description:
- * Translates the name of a service location (for example, a host name) and/or
- * a service name and returns a set of socket addresses and associated
- * information to be used in creating a socket with which to address the
- * specified service.
+ *   Translates the name of a service location (for example, a host name) and/or
+ *   a service name and returns a set of socket addresses and associated
+ *   information to be used in creating a socket with which to address the
+ *   specified service.
  *
- * Due to a limitation in dns_gethostbyname, only the first address of a
- * host is returned.
- * Also, service names are not supported (only port numbers)!
+ *   Due to a limitation in dns_gethostbyname, only the first address of a
+ *   host is returned.
+ *   Also, service names are not supported (only port numbers)!
  *
  * Input Parameters:
- *   hostname  - descriptive name or address string of the host
+ *   hostname - descriptive name or address string of the host
  *                 (may be NULL -> local address)
  *   servname - port number as string of NULL
  *   hint - structure containing input values that set socktype and protocol
@@ -82,6 +83,7 @@ int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const st
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
 		printf("ioctl() failed with errno: %d\n", errno);
+		close(sockfd);
 		return ret;
 	}
 

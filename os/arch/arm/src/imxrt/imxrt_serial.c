@@ -87,13 +87,13 @@
 #include "chip/imxrt_pinmux.h"
 #include "imxrt_config.h"
 #include "imxrt_lowputc.h"
+#include "imxrt_serial.h"
 
 #ifdef USE_SERIALDRIVER
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 /* Which LPUART with be tty0/console and which tty1-7?  The console will
  * always be ttyS0.  If there is no console then will use the lowest
  * numbered UART.
@@ -849,7 +849,7 @@ static void imxrt_shutdown(struct uart_dev_s *dev)
 
 	/* Disable the UART */
 
-	imxrt_serialout(priv, IMXRT_LPUART_GLOBAL_OFFSET, LPUART_GLOBAL_RST);
+	imxrt_serialout(priv, IMXRT_LPUART_GLOBAL_OFFSET, LPUART_GLOBAL_RST(1U));
 }
 
 /****************************************************************************
@@ -945,28 +945,28 @@ static int imxrt_interrupt(int irq, void *context, FAR void *arg)
 		 */
 
 		usr = imxrt_serialin(priv, IMXRT_LPUART_STAT_OFFSET);
-		usr &= (LPUART_STAT_RDRF | LPUART_STAT_TC | LPUART_STAT_OR | LPUART_STAT_FE);
+		usr &= (LPUART_STAT_RDRF(1U) | LPUART_STAT_TC(1U) | LPUART_STAT_OR(1U) | LPUART_STAT_FE(1U));
 
 		/* Clear serial overrun and framing errors */
 
-		if ((usr & LPUART_STAT_OR) != 0) {
-			imxrt_serialout(priv, IMXRT_LPUART_STAT_OFFSET, LPUART_STAT_OR);
+		if ((usr & LPUART_STAT_OR(1U)) != 0) {
+			imxrt_serialout(priv, IMXRT_LPUART_STAT_OFFSET, LPUART_STAT_OR(1U));
 		}
 
-		if ((usr & LPUART_STAT_FE) != 0) {
-			imxrt_serialout(priv, IMXRT_LPUART_STAT_OFFSET, LPUART_STAT_FE);
+		if ((usr & LPUART_STAT_FE(1U)) != 0) {
+			imxrt_serialout(priv, IMXRT_LPUART_STAT_OFFSET, LPUART_STAT_FE(1U));
 		}
 
 		/* Handle incoming, receive bytes */
 
-		if ((usr & LPUART_STAT_RDRF) != 0 && (priv->ie & LPUART_CTRL_RIE) != 0) {
+		if ((usr & LPUART_STAT_RDRF(1U)) != 0 && (priv->ie & LPUART_CTRL_RIE(1U)) != 0) {
 			uart_recvchars(dev);
 			handled = true;
 		}
 
 		/* Handle outgoing, transmit bytes */
 
-		if ((usr & LPUART_STAT_TC) != 0 && (priv->ie & LPUART_CTRL_TCIE) != 0) {
+		if ((usr & LPUART_STAT_TC(1U)) != 0 && (priv->ie & LPUART_CTRL_TCIE(1U)) != 0) {
 			uart_xmitchars(dev);
 			handled = true;
 		}
@@ -1207,10 +1207,10 @@ static void imxrt_rxint(struct uart_dev_s *dev, bool enable)
 	flags = irqsave();
 	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
-		priv->ie |= LPUART_CTRL_RIE | LPUART_CTRL_FEIE | LPUART_CTRL_ORIE;
+		priv->ie |= LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U);
 #endif
 	} else {
-		priv->ie &= ~(LPUART_CTRL_RIE | LPUART_CTRL_FEIE | LPUART_CTRL_ORIE);
+		priv->ie &= ~(LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U));
 	}
 
 	regval = imxrt_serialin(priv, IMXRT_LPUART_CTRL_OFFSET);
@@ -1236,7 +1236,7 @@ static bool imxrt_rxavailable(struct uart_dev_s *dev)
 	/* Return true is data is ready in the Rx FIFO */
 
 	regval = imxrt_serialin(priv, IMXRT_LPUART_STAT_OFFSET);
-	return ((regval & LPUART_STAT_RDRF) != 0);
+	return ((regval & LPUART_STAT_RDRF(1U)) != 0);
 }
 
 /****************************************************************************
@@ -1272,10 +1272,10 @@ static void imxrt_txint(struct uart_dev_s *dev, bool enable)
 	flags = irqsave();
 	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
-		priv->ie |= LPUART_CTRL_TCIE;
+		priv->ie |= LPUART_CTRL_TCIE(1U);
 #endif
 	} else {
-		priv->ie &= ~LPUART_CTRL_TCIE;
+		priv->ie &= ~LPUART_CTRL_TCIE(1U);
 	}
 
 	regval = imxrt_serialin(priv, IMXRT_LPUART_CTRL_OFFSET);
@@ -1299,7 +1299,7 @@ static bool imxrt_txready(struct uart_dev_s *dev)
 	uint32_t regval;
 
 	regval = imxrt_serialin(priv, IMXRT_LPUART_STAT_OFFSET);
-	return ((regval & LPUART_STAT_TC) != 0);
+	return ((regval & LPUART_STAT_TC(1U)) != 0);
 }
 
 /****************************************************************************
@@ -1316,7 +1316,7 @@ static bool imxrt_txempty(struct uart_dev_s *dev)
 	uint32_t regval;
 
 	regval = imxrt_serialin(priv, IMXRT_LPUART_STAT_OFFSET);
-	return ((regval & LPUART_STAT_TDRE) != 0);
+	return ((regval & LPUART_STAT_TDRE(1U)) != 0);
 }
 
 /****************************************************************************

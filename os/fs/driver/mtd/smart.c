@@ -929,10 +929,6 @@ static int smart_geometry(FAR struct inode *inode, struct geometry *geometry)
 #endif
 
 		erasesize = dev->geo.erasesize;
-		if (erasesize == 0) {
-			erasesize = 262144;
-		}
-
 		geometry->geo_nsectors = dev->geo.neraseblocks * erasesize / dev->sectorsize;
 		geometry->geo_sectorsize = dev->sectorsize;
 
@@ -974,15 +970,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 
 	erasesize = dev->geo.erasesize;
 	dev->neraseblocks = dev->geo.neraseblocks;
-
-	/* Most FLASH devices have erase size of 64K, but geo.erasesize is only
-	 * 16 bits, so it will be zero.
-	 */
-
-	if (erasesize == 0) {
-		erasesize = 262144;
-	}
-
 	dev->erasesize = erasesize;
 	dev->sectorsize = size;
 	dev->mtdBlksPerSector = dev->sectorsize / dev->geo.blocksize;
@@ -2831,11 +2818,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 
 	/* Check for invalid format. */
 	if (dev->erasesize == 0) {
-		if (dev->geo.erasesize == 0) {
-			dev->erasesize = 262144;
-		} else {
-			dev->erasesize = dev->geo.erasesize;
-		}
+		dev->erasesize = dev->geo.erasesize;
 
 		dbg("ERROR:  Invalid geometery ... Sectors per erase block must be 256 or less\n");
 		dbg("        Erase block size    = %d\n", dev->erasesize);
