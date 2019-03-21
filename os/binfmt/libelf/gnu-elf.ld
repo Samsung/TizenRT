@@ -55,6 +55,12 @@ SECTIONS
   .text 0x00000000 :
     {
       _stext = . ;
+      /* Place holder to keep the heap object at the top
+       * 4 bytes is reserved at the top of the text segment,
+       * which can be used to place user heap object, which
+       * eventually used by user space memory allocator
+       */
+      LONG(0);
       *(.text)
       *(.text.*)
       *(.gnu.warning)
