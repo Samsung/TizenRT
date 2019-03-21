@@ -780,9 +780,9 @@ void *zalloc_at(int heap_index, size_t size);
 #define MM_PART_USED    1
 
 struct mm_ram_partition_s {
-        uint32_t start;         /* Start address of the partition */
-        uint32_t size;          /* Size of the partition in bytes */
-        uint8_t status;         /* Current status of the partition, free / used */
+	uint32_t start;         /* Start address of the partition */
+	uint32_t size;          /* Size of the partition in bytes */
+	uint8_t status;         /* Current status of the partition, free / used */
 };
 
 /* Functions contained in mm_partition_mgr.c **************************************/
