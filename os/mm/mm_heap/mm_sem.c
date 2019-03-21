@@ -239,7 +239,10 @@ void mm_is_sem_available(void *address)
 	struct mm_heap_s *heap;
 
 	heap = mm_get_heap(address);
-
+	if (heap == NULL) {
+		msemdbg("Fail to get heap.\n");
+		return;
+	}
 	mm_takesemaphore(heap);
 	mm_givesemaphore(heap);
 }
