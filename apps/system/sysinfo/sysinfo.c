@@ -57,11 +57,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <time.h>
-#ifdef CONFIG_BUILD_PROTECTED
-#include <fcntl.h>
-#else
 #include <tinyara/version.h>
-#endif
 
 /****************************************************************************
  * Definitions
