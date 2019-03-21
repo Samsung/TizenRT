@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/inode/inode.h
+ * os/fs/inode/inode.h
  *
  *   Copyright (C) 2007, 2009, 2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -116,6 +116,48 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+/* This is the type of the argument to inode_search().
+ *
+ *  path     - INPUT:  Path of inode to find
+ *             OUTPUT: Residual part of path not traversed
+ *  node     - INPUT:  (not used)
+ *             OUTPUT: On success, holds the pointer to the inode found.
+ *  peer     - INPUT:  (not used)
+ *             OUTPUT: The inode to the "left" of the inode found.
+ *  parent   - INPUT:  (not used)
+ *             OUTPUT: The inode to the "above" of the inode found.
+ *  relpath  - INPUT:  (not used)
+ *             OUTPUT: If the returned inode is a mountpoint, this is the
+ *                     relative path from the mountpoint.
+ *  linktgt  - INPUT:  (not used)
+ *             OUTPUT: If a symobolic link into a mounted file system is
+ *                     detected while traversing the path, then the link
+ *                     will be converted to a mountpoint inode if the
+ *                     mountpoint link is in an intermediate node of the
+ *                     path or at the final node of the path with nofollow=true.
+ *  nofollow - INPUT:  true: terminal node is returned; false: if the
+ *                     terminal is a soft link, then return the inode of
+ *                     the link target.
+ *           - OUTPUT: (not used)
+ *  buffer   - INPUT:  Not used
+ *           - OUTPUT: May hold an allocated intermediate path which is
+ *                     probably of no interest to the caller unless it holds
+ *                     the relpath.
+ */
+
+struct inode_search_s {
+	FAR const char *path;      /* Path of inode to find */
+	FAR struct inode *node;    /* Pointer to the inode found */
+	FAR struct inode *peer;    /* Node to the "left" for the found inode */
+	FAR struct inode *parent;  /* Node "above" the found inode */
+	FAR const char *relpath;   /* Relative path into the mountpoint */
+#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+	FAR const char *linktgt;   /* Target of symbolic link if linked to a directory */
+	FAR char *buffer;          /* Path expansion buffer */
+	bool nofollow;             /* true: Don't follow terminal soft link */
+#endif
+};
+
 
 /* Callback used by foreach_inode to traverse all inodes in the pseudo-
  * file system.

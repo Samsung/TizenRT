@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * os/include/tinyara/fs/dirent.h
  *
  *   Copyright (C) 2007, 2009, 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -86,6 +87,18 @@ struct fs_pseudodir_s {
 };
 
 #ifndef CONFIG_DISABLE_MOUNTPOINT
+#ifdef CONFIG_FS_FAT
+/* For fat, we need to return the start cluster, current cluster, current
+ * sector and current directory index.
+ */
+
+struct fs_fatdir_s {
+	off_t        fd_startcluster;        /* Start cluster number of the directory */
+	off_t        fd_currcluster;         /* Current cluster number being read */
+	off_t        fd_currsector;          /* Current sector being read */
+	unsigned int fd_index;               /* Current index of the directory entry to read */
+};
+#endif /* CONFIG_FS_FAT */
 
 #ifdef CONFIG_FS_ROMFS
 /* For ROMFS, we need to return the offset to the current and start positions
@@ -159,6 +172,9 @@ struct fs_dirent_s {
 		/* Private data used by other file systems */
 
 #ifndef CONFIG_DISABLE_MOUNTPOINT
+#ifdef CONFIG_FS_FAT
+	struct fs_fatdir_s fat;
+#endif
 #ifdef CONFIG_FS_ROMFS
 		struct fs_romfsdir_s romfs;
 #endif

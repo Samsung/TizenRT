@@ -210,6 +210,7 @@ const struct mountpt_operations procfs_operations = {
 	NULL,						/* sync */
 	procfs_dup,					/* dup */
 	NULL,						/* fstat */
+	NULL,						/* truncate */
 
 	procfs_opendir,				/* opendir */
 	procfs_closedir,			/* closedir */

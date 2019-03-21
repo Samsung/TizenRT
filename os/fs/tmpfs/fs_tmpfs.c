@@ -194,6 +194,7 @@ const struct mountpt_operations tmpfs_operations = {
 	NULL,             /* sync */
 	tmpfs_dup,        /* dup */
 	tmpfs_fstat,      /* fstat */
+	NULL,             /* truncate */
 
 	tmpfs_opendir,    /* opendir */
 	tmpfs_closedir,   /* closedir */

@@ -86,7 +86,7 @@
  * These file systems all require block drivers:
  */
 
-#if defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_ROMFS)
+#if defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_ROMFS) || defined(CONFIG_FS_FAT)
 #define BDFS_SUPPORT 1
 #endif
 
@@ -121,6 +121,9 @@ struct fsmap_t {
  *
  */
 
+#ifdef CONFIG_FS_FAT
+extern const struct mountpt_operations fat_operations;
+#endif
 #ifdef CONFIG_FS_SMARTFS
 extern const struct mountpt_operations smartfs_operations;
 #endif
@@ -132,6 +135,9 @@ static const struct fsmap_t g_bdfsmap[] = {
 	 * For a new file system you have to add { "new_file_system", &operations }
 	 * here. If no file system exists then you have to add { NULL, NULL }
 	 */
+#ifdef CONFIG_FS_FAT
+	{"vfat", &fat_operations},
+#endif
 #ifdef CONFIG_FS_SMARTFS
 	{"smartfs", &smartfs_operations},
 #endif

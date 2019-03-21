@@ -195,7 +195,7 @@ struct mountpt_operations {
 	int (*sync)(FAR struct file *filep);
 	int (*dup)(FAR const struct file *oldp, FAR struct file *newp);
 	int (*fstat)(FAR const struct file *filep, FAR struct stat *buf);
-
+	int (*truncate)(FAR struct file *filep, off_t length);
 	/* Directory operations */
 
 	int (*opendir)(FAR struct inode *mountpt, FAR const char *relpath, FAR struct fs_dirent_s *dir);
