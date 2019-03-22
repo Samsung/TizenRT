@@ -62,7 +62,7 @@
 #define TESTIOC_GET_TCB_TIMESLICE              _TESTIOC(8)
 #define TESTIOC_SCHED_FOREACH                  _TESTIOC(9)
 #define TESTIOC_SIGNAL_PAUSE                   _TESTIOC(10)
-#define TESTIOC_TIMER_INITIALIZE               _TESTIOC(11)
+#define TESTIOC_TIMER_INITIALIZE_TEST          _TESTIOC(11)
 #define TESTIOC_SEM_TICK_WAIT_TEST             _TESTIOC(12)
 
 #define KERNEL_TC_DRVPATH                       "/dev/testcase"
