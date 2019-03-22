@@ -167,8 +167,106 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	}
 	break;
 
-	case TESTIOC_TIMER_INITIALIZE: {
+	case TESTIOC_TIMER_INITIALIZE_TEST: {
+		timer_t timer_id;
+		struct sigevent st_sigevent;
+		FAR struct posix_timer_s *timer;
+		FAR struct posix_timer_s *next;
+
+		int initalloc_cnt = 0;
+		int initfree_cnt = 0;
+		int createalloc_cnt = 0;
+		int createfree_cnt = 0;
+		int finalalloc_cnt = 0;
+		int finalfree_cnt = 0;
+
+		/* Set and enable alarm */
+		st_sigevent.sigev_notify = SIGEV_SIGNAL;
+		st_sigevent.sigev_signo = SIGRTMIN;
+		st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+		/* check the count for g_alloctimers and g_freetimers after timer_initialize */
 		timer_initialize();
+
+		for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
+			next = timer->flink;
+			initalloc_cnt++;
+		}
+
+		for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
+			next = timer->flink;
+			initfree_cnt++;
+		}
+
+		/* check the count for g_alloctimers and g_freetimers after create now they change */
+		ret_chk = timer_create(CLOCK_REALTIME, &st_sigevent, &timer_id);
+		if (ret_chk == ERROR) {
+			dbg("timer_create failed.");
+			ret = ERROR;
+			break;
+		}
+
+		if (timer_id == NULL) {
+			dbg("timer_create failed.");
+			ret = ERROR;
+			break;
+		}
+
+		for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
+			next = timer->flink;
+			createalloc_cnt++;
+		}
+
+		for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
+			next = timer->flink;
+			createfree_cnt++;
+		}
+
+		/* check the count for g_alloctimers and g_freetimers after timer_initialize now they change to original value */
+		timer_initialize();
+
+		for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
+			next = timer->flink;
+			finalalloc_cnt++;
+		}
+
+		for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
+			next = timer->flink;
+			finalfree_cnt++;
+		}
+
+		ret_chk = timer_delete(timer_id);
+
+		if (ret_chk == ERROR) {
+			dbg("timer_delete failed.");
+			ret = ERROR;
+			break;
+		}
+
+		if (initalloc_cnt != finalalloc_cnt) {
+			dbg("timer_initialise failed.");
+			ret = ERROR;
+			break;
+		}
+
+		if (initfree_cnt != finalfree_cnt) {
+			dbg("timer_initialise failed.");
+			ret = ERROR;
+			break;
+		}
+
+		if (createalloc_cnt == finalalloc_cnt) {
+			dbg("timer_initialise failed.");
+			ret = ERROR;
+			break;
+		}
+
+		if (createfree_cnt == finalfree_cnt) {
+			dbg("timer_initialise failed.");
+			ret = ERROR;
+			break;
+		}
+
 		ret = OK;
 	}
 	break;

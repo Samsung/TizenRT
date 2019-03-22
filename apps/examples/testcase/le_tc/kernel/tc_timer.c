@@ -29,8 +29,6 @@
 #define USECINT 10000000
 
 int sig_no = SIGRTMIN;
-extern volatile sq_queue_t g_freetimers;
-extern volatile sq_queue_t g_alloctimers;
 
 /**
 * @fn                   :tc_timer_timer_create_delete
@@ -259,75 +257,13 @@ static void tc_timer_timer_set_get_time(void)
 */
 static void tc_timer_timer_initialize(void)
 {
-	int ret_chk;
-	timer_t timer_id;
-	clockid_t clockid = CLOCK_REALTIME;
-	struct sigevent st_sigevent;
-	FAR struct posix_timer_s *timer;
-	FAR struct posix_timer_s *next;
-
 	int fd;
+	int ret_chk;
 	fd = tc_get_drvfd();
 
-	int initalloc_cnt = 0;
-	int initfree_cnt = 0;
-	int createalloc_cnt = 0;
-	int createfree_cnt = 0;
-	int finalalloc_cnt = 0;
-	int finalfree_cnt = 0;
+	ret_chk = ioctl(fd, TESTIOC_TIMER_INITIALIZE_TEST, 0);
+	TC_ASSERT_EQ("timer_initialize", ret_chk, OK);
 
-	/* Set and enable alarm */
-	st_sigevent.sigev_notify = SIGEV_SIGNAL;
-	st_sigevent.sigev_signo = sig_no;
-	st_sigevent.sigev_value.sival_ptr = &timer_id;
-
-	/* check the count for g_alloctimers and g_freetimers after timer_initialize */
-	(void)ioctl(fd, TESTIOC_TIMER_INITIALIZE, 0);
-
-	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
-		next = timer->flink;
-		initalloc_cnt++;
-	}
-
-	for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
-		next = timer->flink;
-		initfree_cnt++;
-	}
-
-	/* check the count for g_alloctimers and g_freetimers after create now they change */
-	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
-	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
-	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
-
-	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
-		next = timer->flink;
-		createalloc_cnt++;
-	}
-
-	for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
-		next = timer->flink;
-		createfree_cnt++;
-	}
-
-	/* check the count for g_alloctimers and g_freetimers after timer_initialize now they change to original value */
-	(void)ioctl(fd, TESTIOC_TIMER_INITIALIZE, 0);
-
-	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
-		next = timer->flink;
-		finalalloc_cnt++;
-	}
-
-	for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
-		next = timer->flink;
-		finalfree_cnt++;
-	}
-
-	TC_ASSERT_EQ_CLEANUP("timer_initialise", initalloc_cnt, finalalloc_cnt, timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_initialise", initfree_cnt, finalfree_cnt, timer_delete(timer_id));
-	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createalloc_cnt, finalalloc_cnt, timer_delete(timer_id));
-	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createfree_cnt, finalfree_cnt, timer_delete(timer_id));
-
-	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();
 }
 
