@@ -99,6 +99,8 @@
 #define MBEDTLS_ERR_DHM_HW_ACCEL_FAILED                   -0x3500  /**< DHM hardware accelerator failed. */
 #define MBEDTLS_ERR_DHM_SET_GROUP_FAILED                  -0x3580  /**< Setting the modulus and generator failed. */
 
+#define MBEDTLS_DHM_KEY_INDEX_ALT 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,7 +121,7 @@ typedef struct
     mbedtls_mpi Vi;     /*!<  The blinding value. */
     mbedtls_mpi Vf;     /*!<  The unblinding value. */
     mbedtls_mpi pX;     /*!<  The previous \c X. */
-	unsigned char *key_buf;
+	unsigned int key_index;
 }
 mbedtls_dhm_context;
 
@@ -299,23 +301,6 @@ int mbedtls_dhm_parse_dhm( mbedtls_dhm_context *dhm, const unsigned char *dhmin,
 int mbedtls_dhm_parse_dhmfile( mbedtls_dhm_context *dhm, const char *path );
 #endif /* MBEDTLS_FS_IO */
 #endif /* MBEDTLS_ASN1_PARSE_C */
-
-int mbedtls_generate_dhm_param_alt( mbedtls_dhm_context *ctx,
-						int x_size, unsigned char *output, size_t *olen );
-
-int mbedtls_generate_dhm_public_alt( mbedtls_dhm_context *ctx,
-						int x_size, unsigned char *output, size_t olen );
-
-int mbedtls_calculate_dhm_secret_alt( mbedtls_dhm_context *ctx,
-						unsigned char *output, size_t output_size, size_t *olen );
-
-int mbedtls_supported_dhm_size_alt( int size );
-
-int mbedtls_generate_dhm_params_alt( struct mbedtls_sDH_PARAM *d_param,
-						unsigned char *key_buf );
-
-int mbedtls_compute_dhm_param_alt( struct mbedtls_sDH_PARAM *d_param, unsigned char *key_buf,
-						unsigned char *output, unsigned int *olen );
 
 #ifdef __cplusplus
 }

@@ -516,6 +516,7 @@ int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *pr
 			break;
 		case HAL_KEY_DH_1024:
 		case HAL_KEY_DH_2048:
+		case HAL_KEY_DH_4096:
 			key_type = SECURE_STORAGE_TYPE_KEY_DH;
 			break;
 		default:
@@ -606,6 +607,7 @@ static int hal_get_key_type(hal_key_type mode, unsigned int *key_type)
 			break;
 		case HAL_KEY_DH_1024:
 		case HAL_KEY_DH_2048:
+		case HAL_KEY_DH_4096:
 			*key_type = SECURE_STORAGE_TYPE_KEY_DH;
 			break;
 		default:

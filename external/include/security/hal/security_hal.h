@@ -70,6 +70,7 @@ typedef enum {
 typedef enum {
 	HAL_DH_1024,
 	HAL_DH_2048,
+	HAL_DH_4096,
 } hal_dh_key_type;
 
 typedef enum{
@@ -147,6 +148,8 @@ typedef enum {
 	/* DH */
 	HAL_KEY_DH_1024,
 	HAL_KEY_DH_2048,
+	HAL_KEY_DH_4096,
+	HAL_KEY_UNKNOWN,
 } hal_key_type;
 
 /* Structure */

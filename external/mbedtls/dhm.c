@@ -75,7 +75,7 @@
 #define mbedtls_free       free
 #endif
 
-#if !defined(MBEDTLS_DHM_ALT) && !defined(CONFIG_HW_DH_PARAM)
+#if !defined(MBEDTLS_DHM_ALT)
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
     volatile unsigned char *p = v; while( n-- ) *p++ = 0;
