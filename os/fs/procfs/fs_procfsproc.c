@@ -384,8 +384,17 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	curr_heap = -1;
 	peak_heap = -1;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	if (tcb->pid == 0) {
+		/* Idle task normally uses heap with index 0. */
+		heap = mm_get_heap_with_index(0);
+	} else {
+		heap = mm_get_heap(tcb->stack_alloc_ptr);
+	}
+	if (heap == NULL) {
+		return -1;
+	}
+
 	hash_pid = PIDHASH(tcb->pid);
-	heap = mm_get_heap(tcb->stack_alloc_ptr);
 	if (heap->alloc_list[hash_pid].pid == tcb->pid) {
 		curr_heap = heap->alloc_list[hash_pid].curr_alloc_size;
 		peak_heap = heap->alloc_list[hash_pid].peak_alloc_size;

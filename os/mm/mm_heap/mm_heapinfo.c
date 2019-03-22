@@ -394,9 +394,11 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 void heapinfo_exclude_stacksize(void *stack_ptr)
 {
 	struct mm_allocnode_s *node;
-	struct mm_heap_s *heap = mm_get_heap(stack_ptr);
 	pid_t hash_pid;
-
+	struct mm_heap_s *heap = mm_get_heap(stack_ptr);
+	if (heap == NULL) {
+		return;
+	}
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
 	hash_pid = PIDHASH(node->pid);
 	heap->alloc_list[hash_pid].curr_alloc_size -= node->size;

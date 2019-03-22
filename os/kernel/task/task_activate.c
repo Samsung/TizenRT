@@ -168,7 +168,7 @@ int task_activate(FAR struct tcb_s *tcb)
 	struct mm_heap_s *heap = mm_get_heap(tcb->stack_alloc_ptr);
 
 	hash_pid = PIDHASH(tcb->pid);
-	if (heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO) {
+	if (heap && heap->alloc_list[hash_pid].pid == HEAPINFO_INIT_INFO) {
 		heap->alloc_list[hash_pid].pid = tcb->pid;
 		heap->alloc_list[hash_pid].curr_alloc_size = 0;
 		heap->alloc_list[hash_pid].peak_alloc_size = 0;

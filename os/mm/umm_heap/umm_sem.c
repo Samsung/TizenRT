@@ -55,6 +55,7 @@
  ************************************************************************/
 
 #include <tinyara/config.h>
+#include <errno.h>
 #include <tinyara/mm/mm.h>
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
@@ -99,7 +100,11 @@ int umm_trysemaphore(void *address)
 {
 	struct mm_heap_s *heap;
 	heap = mm_get_heap(address);
-	return mm_trysemaphore(heap);
+	if (heap) {
+		return mm_trysemaphore(heap);
+	}
+	set_errno(EFAULT);
+	return EFAULT;
 }
 
 /************************************************************************
@@ -122,6 +127,10 @@ void umm_givesemaphore(void *address)
 {
 	struct mm_heap_s *heap;
 	heap = mm_get_heap(address);
+	if (!heap) {
+		set_errno(EFAULT);
+		return;
+	}
 	mm_givesemaphore(heap);
 }
 
