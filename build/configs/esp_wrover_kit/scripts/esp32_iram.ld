@@ -91,34 +91,6 @@ SECTIONS
 
   /* Shared RAM */
 
-  .dram0.bss (NOLOAD) :
-  {
-    /* .bss initialized on power-up */
-
-    . = ALIGN (8);
-    _sbss = ABSOLUTE(.);
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    KEEP (*(.bss))
-    *(.bss.*)
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    _ebss = ABSOLUTE(.);
-
-    /* Uninitialized .bss */
-
-    *(.noinit)
-  } >dram0_0_seg
-
   .dram0.data :
   {
     /* .data initialized on power-up in ROMed configurations. */
@@ -183,11 +155,39 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
+
+  } >dram0_0_seg
+
+  .dram0.bss (NOLOAD) :
+  {
+    /* .bss initialized on power-up */
+
+    . = ALIGN (8);
+    _sbss = ABSOLUTE(.);
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+    KEEP (*(.bss))
+    *(.bss.*)
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    _ebss = ABSOLUTE(.);
+
+    /* Uninitialized .bss */
+    *(.noinit)
+
     . = ALIGN(4);
-
     /* Heap starts at the end of .data */
-
     _sheap = ABSOLUTE(.);
+
   } >dram0_0_seg
 
   .rtc.text :

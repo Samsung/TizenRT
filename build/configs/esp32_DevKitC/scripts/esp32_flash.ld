@@ -81,6 +81,30 @@ SECTIONS
 
   /* Shared RAM */
 
+  .dram0.data :
+  {
+    /* .data initialized on power-up in ROMed configurations. */
+
+    _sdata = ABSOLUTE(.);
+    KEEP (*(.data))
+    KEEP (*(.data.*))
+    KEEP (*(.gnu.linkonce.d.*))
+    KEEP (*(.data1))
+    KEEP (*(.sdata))
+    KEEP (*(.sdata.*))
+    KEEP (*(.gnu.linkonce.s.*))
+    KEEP (*(.sdata2))
+    KEEP (*(.sdata2.*))
+    KEEP (*(.gnu.linkonce.s2.*))
+    KEEP (*(.jcr))
+    *(.dram1 .dram1.*)
+    *libesp32.a:panic.*(.rodata .rodata.*)
+    *libphy.a:(.rodata .rodata.*)
+    *libsoc.a:rtc_clk.*(.rodata .rodata.*)
+    _edata = ABSOLUTE(.);
+
+  } >dram0_0_seg
+
   .dram0.bss (NOLOAD) :
   {
     /* .bss initialized on power-up */
@@ -105,36 +129,12 @@ SECTIONS
     _ebss = ABSOLUTE(.);
 
     /* Uninitialized .bss */
-
     *(.noinit)
-  } >dram0_0_seg
 
-  .dram0.data :
-  {
-    /* .data initialized on power-up in ROMed configurations. */
-
-    _sdata = ABSOLUTE(.);
-    KEEP (*(.data))
-    KEEP (*(.data.*))
-    KEEP (*(.gnu.linkonce.d.*))
-    KEEP (*(.data1))
-    KEEP (*(.sdata))
-    KEEP (*(.sdata.*))
-    KEEP (*(.gnu.linkonce.s.*))
-    KEEP (*(.sdata2))
-    KEEP (*(.sdata2.*))
-    KEEP (*(.gnu.linkonce.s2.*))
-    KEEP (*(.jcr))
-    *(.dram1 .dram1.*)
-    *libesp32.a:panic.*(.rodata .rodata.*)
-    *libphy.a:(.rodata .rodata.*)
-    *libsoc.a:rtc_clk.*(.rodata .rodata.*)  
-    _edata = ABSOLUTE(.);
     . = ALIGN(4);
-
     /* Heap starts at the end of .data */
-
     _sheap = ABSOLUTE(.);
+
   } >dram0_0_seg
 
   .flash.rodata :
