@@ -910,7 +910,6 @@ int parse_things_cloud_json(const char *filename)
 	json_str = get_json_string_from_file(filename);
 #endif
 
-
 	if (json_str == NULL) {
 		THINGS_LOG_V(TAG, "cloud file initialization.");
 #ifdef CONFIG_ST_THINGS_SECURESTORAGE
@@ -924,25 +923,26 @@ int parse_things_cloud_json(const char *filename)
 			return 0;
 		}
 #endif
+	} else {
+		if (strlen(json_str) > 0) {
+			cJSON *root = cJSON_Parse((const char *)json_str);
+			if (root != NULL) {
+				cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+				if (cloud != NULL) {
+					cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
+					if (address != NULL) {
+						memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
+						memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
+						THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
+						ret = 1;
+					}
+				}
+				cJSON_Delete(root);
+			}
+		}
+		things_free(json_str);
 	}
 
-	if (strlen(json_str) > 0) {
-		cJSON *root = cJSON_Parse((const char *)json_str);
-		if (root != NULL) {
-			cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-			if (cloud != NULL) {
-				cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
-				if (address != NULL) {
-					memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
-					memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
-					THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
-					ret = 1;
-				}
-			}
-			cJSON_Delete(root);
-		}
-	}
-	things_free(json_str);
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ret;
 }
