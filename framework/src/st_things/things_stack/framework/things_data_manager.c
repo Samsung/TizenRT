@@ -1741,7 +1741,7 @@ static int parse_things_info_json(const char *filename)
 	}
 
 	if (parse_things_cloud_json(g_things_cloud_file_path) == 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "cloud data parsing error");
+		THINGS_LOG_D(TAG, "cloud data parsing error");
 	}
 
 	ret = 1;
