@@ -70,6 +70,12 @@ config WIFIMGR_DISABLE_AUTO_GET_IP
 	bool "disable auto get ip (ipv4 dhcp)"
 	default n
 
+config WIFIMGR_DISABLE_DHCPS
+	bool "disable auto run dhcp server(ipv4 dhcp server)"
+	default n
+    help
+        if say yes,it allows WiFi vendor to run dhcp server. 
+
 config DISABLE_EXTERNAL_AUTOCONNECT
 	bool "disable external autoconnect"
 	default n

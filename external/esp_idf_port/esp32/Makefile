@@ -28,7 +28,7 @@ CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32
 CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32/chip
 CFLAGS += -fno-builtin -ffunction-sections -fdata-sections -pipe -mlongcalls 
 
-ESP32_CSRCS += esp32_wifi_os_adapter.c event_groups.c esp32_queue_api.c mq_tryreceive.c 
+ESP32_CSRCS += esp32_wifi_os_adapter.c event_groups.c esp32_queue_api.c mq_tryreceive.c esp32_wifi_utils.c  
 CFLAGS += -I$(TOPDIR)/kernel
 CFLAGS += -I$(TOPDIR)/../framework/src/wifi_manager
 
