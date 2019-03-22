@@ -23,7 +23,7 @@ DEPPATH	= --dep-path .
 VPATH = .
 CXXSRCS =
 
-SUBDIRS =  soc esp32 
+SUBDIRS =  soc esp32 spi_flash
 
 CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32
 CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32/chip
@@ -123,6 +123,7 @@ $(COBJS): %$(OBJEXT): %.c
 clean: 
 	$(MAKE) clean -C soc
 	$(MAKE) clean -C esp32
+	$(MAKE) clean -C spi_flash
 	$(call DELFILE, $(OBJS))
 	$(call DELFILE, .built)
 

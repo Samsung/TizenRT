@@ -216,3 +216,19 @@ config ESPTOOLPY_AFTER
 	string
 	default "hard_reset" if ESPTOOLPY_AFTER_RESET
 	default "no_reset" if ESPTOOLPY_AFTER_NORESET
+
+config ESP32_AUTOMOUNT_USERFS_DEVNAME
+    string "Device name of the partition for user r/w file system"
+    default "/dev/smart0p0"
+    ---help---
+        Specifies the device name (/dev/smart0pX) of the partition
+        for user r/w file system.
+        when SMARTFS_MULTI_ROOT_DIRS is enabled the device name
+        will be appended by "d1" (/dev/smart0pxd1).
+
+config ESP32_AUTOMOUNT_USERFS_MOUNTPOINT
+    string "Mountpoint of the partition for user r/w file system"
+    default "/mnt"
+    ---help---
+        Specifies the mount point where user r/w file system
+        will be mounted at.
