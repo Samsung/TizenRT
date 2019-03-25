@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <fcntl.h>
 
 /* Output debug info if stack dump is selected -- even if debug is not
  * selected.
@@ -920,7 +921,7 @@ static void _up_assert(int errorcode)
 {
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (g_upassert || current_regs || (this_task())->pid == 0) {
+	if (current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -945,6 +946,12 @@ static void _up_assert(int errorcode)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
+#ifdef CONFIG_FAULT_MGR
+	int ret;
+	mqd_t fault_queue;
+	pid_t pid;
+#endif
+
 	board_autoled_on(LED_ASSERTION);
 #ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 	/* First time, when code reaches here abort_mode will be false and
@@ -955,6 +962,7 @@ void up_assert(const uint8_t *filename, int lineno)
 		recursive_abort = true;
 	}
 	abort_mode = true;
+
 #endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
@@ -972,5 +980,19 @@ void up_assert(const uint8_t *filename, int lineno)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 
+#ifdef CONFIG_FAULT_MGR
+	fault_queue = mq_open("fault_queue", O_WRONLY | O_CREAT,  0666, 0);
+	if (fault_queue == (mqd_t)ERROR) {
+		svdbg("Can't open message queue\n");
+	}
+
+	pid = getpid();
+
+	ret = mq_send(fault_queue, (const char *)&pid, sizeof(pid), 0);
+	if (ret < 0)
+	{
+		svdbg("failed to send the message\n");
+	}
+#endif
 	_up_assert(EXIT_FAILURE);
 }

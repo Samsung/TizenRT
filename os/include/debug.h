@@ -340,6 +340,14 @@ Once LOGM is approved, each module should have its own index
 #define pglldbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_FAULT_MGR
+#define fmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define fmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define fmdbg(...)
+#define fmlldbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_PAGING_WARN
 #define pgwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define pgllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
