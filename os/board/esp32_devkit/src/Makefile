@@ -56,6 +56,7 @@ CONFIGFILE = $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)config.h
 
 ASRCS =
 CSRCS = esp32_boot.c esp32_bringup.c esp32_led.c
+CSRCS += ../../common/partitions.c
 
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += esp32_appinit.c

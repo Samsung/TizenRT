@@ -422,7 +422,9 @@ static void _wifi_utils_disconnect_event(void *arg);
 static void _wifi_utils_join_event(void *arg); // it needs arg which contains sta infomation joined
 static void _wifi_utils_leave_event(void *arg); // it needs arg which contains a sta info left
 static void _wifi_utils_scan_done(wifi_utils_result_e result, wifi_utils_scan_list_s *slist, void *arg);
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 static void _wifi_dhcpd_event(void); // join event from dhcpd
+#endif
 
 //
 // internal APIs
@@ -430,9 +432,14 @@ static void _wifi_dhcpd_event(void); // join event from dhcpd
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list_s *wu_scan_list);
 static void _free_scan_info(wifi_manager_scan_info_s *wm_scan_list);
 static void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _wifimgr_state_e state);
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 static wifi_manager_result_e _start_dhcps(void);
 static wifi_manager_result_e _stop_dhcps(void);
+#endif
+
+#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
 static wifi_manager_result_e _get_ipaddr_dhcpc(void);
+#endif
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
@@ -666,7 +673,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	}
 }
 
-
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 wifi_manager_result_e _start_dhcps(void)
 {
 	struct in_addr ip = {.s_addr = 0x012fa8c0 };
@@ -687,7 +694,6 @@ wifi_manager_result_e _start_dhcps(void)
 	return wret;
 }
 
-
 wifi_manager_result_e _stop_dhcps(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
@@ -702,8 +708,9 @@ wifi_manager_result_e _stop_dhcps(void)
 	}
 	return wret;
 }
+#endif
 
-
+#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
 wifi_manager_result_e _get_ipaddr_dhcpc(void)
 {
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
@@ -729,6 +736,7 @@ wifi_manager_result_e _get_ipaddr_dhcpc(void)
 	wret = WIFI_MANAGER_SUCCESS;
 	return wret;
 }
+#endif
 
 void _close_ipaddr_dhcpc(void)
 {
@@ -856,8 +864,10 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
+    /*Sometimes WiFi vender run dhcp server*/
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WIFIMGR_CHECK_RESULT(_start_dhcps(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
-
+#endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
 	g_manager_info.num_sta = 0;
@@ -875,7 +885,9 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 {
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), "[WM] Stoping softap failed", WIFI_MANAGER_FAIL);
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WIFIMGR_CHECK_RESULT(_stop_dhcps(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
+#endif
 	return WIFI_MANAGER_SUCCESS;
 }
 

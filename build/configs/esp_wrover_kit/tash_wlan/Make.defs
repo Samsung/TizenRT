@@ -1,0 +1,153 @@
+###########################################################################
+#
+# Copyright 2019 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2016-2017 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+include ${TOPDIR}/.config
+include ${TOPDIR}/tools/Config.mk
+include ${TOPDIR}/arch/xtensa/src/lx6/Toolchain.defs
+
+CONFIG_ESP32_DEVKIT_TYPE := $(patsubst "%",%,$(strip $(CONFIG_ESP32_DEVKIT_TYPE)))
+
+LDSCRIPT1 = $(TOPDIR)/../build/configs/$(CONFIG_ESP32_DEVKIT_TYPE)/scripts/esp32_out.ld
+LDSCRIPT3 = $(TOPDIR)/../build/configs/$(CONFIG_ESP32_DEVKIT_TYPE)/scripts/esp32_rom.ld
+LDSCRIPT4 = $(TOPDIR)/../build/configs/$(CONFIG_ESP32_DEVKIT_TYPE)/scripts/esp32_peripherals.ld
+
+ifeq ($(CONFIG_ESP32CORE_RUN_IRAM),y)
+  LDSCRIPT2 = $(TOPDIR)/../build/configs/$(CONFIG_ESP32_DEVKIT_TYPE)/scripts/esp32_iram.ld
+else
+  LDSCRIPT2 = $(TOPDIR)/../build/configs/$(CONFIG_ESP32_DEVKIT_TYPE)/scripts/esp32_flash.ld
+endif
+
+ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
+EXTRA_LIBPATHS += -L"$(TOPDIR)/../external/esp_idf_port/soc"
+EXTRA_LIBS += -lsoc
+
+EXTRA_LIBPATHS += -L"$(TOPDIR)/../external/esp_idf_port/esp32"
+EXTRA_LIBS += -lesp32
+
+EXTRA_LIBPATHS += -L"$(TOPDIR)/../external/esp_idf_port/spi_flash"
+EXTRA_LIBS += -lspiflash
+endif
+
+ifeq ($(WINTOOL),y)
+  # Windows-native toolchains
+  DIRLINK = $(TOPDIR)/tools/copydir.sh
+  DIRUNLINK = $(TOPDIR)/tools/unlink.sh
+  MKDEP = $(TOPDIR)/tools/mkwindeps.sh
+  ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}"
+  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}"
+  ARCHSCRIPT = -T "${shell cygpath -w $(LDSCRIPT1)}"
+  ARCHSCRIPT += -T "${shell cygpath -w $(LDSCRIPT2)}"
+  ARCHSCRIPT += -T "${shell cygpath -w $(LDSCRIPT3)}"
+  ARCHSCRIPT += -T "${shell cygpath -w $(LDSCRIPT4)}"
+else
+  # Linux/Cygwin-native toolchain
+  MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
+  ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx
+  ARCHSCRIPT = -T$(LDSCRIPT1) -T$(LDSCRIPT2) -T$(LDSCRIPT3) -T$(LDSCRIPT4)
+endif
+
+CC = $(CROSSDEV)gcc
+CXX = $(CROSSDEV)g++
+CPP = $(CROSSDEV)gcc -E
+LD = $(CROSSDEV)ld
+STRIP = $(CROSSDEV)strip --strip-unneeded
+AR = $(ARCROSSDEV)ar rcs
+NM = $(ARCROSSDEV)nm
+OBJCOPY = $(CROSSDEV)objcopy
+OBJDUMP = $(CROSSDEV)objdump
+
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  ARCHOPTIMIZATION = -g
+endif
+
+ifneq ($(CONFIG_DEBUG_NOOPT),y)
+  ARCHOPTIMIZATION += $(MAXOPTIMIZATION) -fno-strict-aliasing -fno-strength-reduce -fomit-frame-pointer
+endif
+
+ARCHCFLAGS = -fno-builtin -ffunction-sections -fdata-sections
+ARCHCXXFLAGS =  -fno-builtin
+ARCHWARNINGS = -Wall -Wundef
+ARCHWARNINGSXX = -Wall
+ARCHDEFINES =
+ARCHPICFLAGS = -fpic
+
+CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -mlongcalls
+CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
+CXXFLAGS  = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES)
+CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=gnu++11 -DCLOCK_MONOTONIC -D__TINYARA__
+CXXFLAGS += -fno-exceptions -fcheck-new  -Og -ggdb
+CXXFLAGS += -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
+CXXFLAGS += -D_LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS -fpermissive -mlongcalls
+
+CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
+CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
+AFLAGS = $(CFLAGS) -D__ASSEMBLY__
+
+ASMEXT = .S
+OBJEXT = .o
+LIBEXT = .a
+EXEEXT = .elf
+
+LDFLAGS += -nostartfiles -nodefaultlibs --gc-sections
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  LDFLAGS += -g
+endif
+
+HOSTCC = gcc
+HOSTINCLUDES = -I.
+HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
+HOSTLDFLAGS =
+
+define DOWNLOAD
+	@echo "$(1)"
+	make -C ../build/tools/esp32 $(1)
+endef

@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ESP32_WIFI_SUPPORT
+    bool "ESP32 Wireless Module support"
+    default n
+    depends on ARCH_BOARD_ESP32_FAMILY
+    ---help---
+        Enable support for ESP32 WiFi driver
+
+
+if ESP32_WIFI_SUPPORT
+source "$EXTERNALDIR/esp_idf_port/esp32/Kconfig"
+source "$EXTERNALDIR/esp_idf_port/log/Kconfig"
+source "$EXTERNALDIR/esp_idf_port/esp_lwip/Kconfig"
+source "$EXTERNALDIR/esp_idf_port/tcpip_adapter/Kconfig"
+source "$EXTERNALDIR/esp_idf_port/spi_flash/Kconfig"
+endif

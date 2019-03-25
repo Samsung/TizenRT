@@ -1,0 +1,108 @@
+/******************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************/
+
+/*
+ * EAP-PEAP common routines
+ * Copyright (c) 2008-2011, Jouni Malinen <j@w1.fi>
+ *
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
+ */
+
+#ifdef EAP_PEAP
+
+#include "wpa/includes.h"
+
+#include "wpa/common.h"
+#include "crypto/sha1.h"
+#include "wpa2/eap_peer/eap_peap_common.h"
+
+int
+peap_prfplus(int version, const u8 *key, size_t key_len,
+	     const char *label, const u8 *seed, size_t seed_len,
+	     u8 *buf, size_t buf_len)
+{
+	unsigned char counter = 0;
+	size_t pos, plen;
+	u8 hash[SHA1_MAC_LEN];
+	size_t label_len = os_strlen(label);
+	u8 extra[2];
+	const unsigned char *addr[5];
+	size_t len[5];
+
+	addr[0] = hash;
+	len[0] = 0;
+	addr[1] = (unsigned char *) label;
+	len[1] = label_len;
+	addr[2] = seed;
+	len[2] = seed_len;
+
+	if (version == 0) {
+		/*
+		 * PRF+(K, S, LEN) = T1 | T2 | ... | Tn
+		 * T1 = HMAC-SHA1(K, S | 0x01 | 0x00 | 0x00)
+		 * T2 = HMAC-SHA1(K, T1 | S | 0x02 | 0x00 | 0x00)
+		 * ...
+		 * Tn = HMAC-SHA1(K, Tn-1 | S | n | 0x00 | 0x00)
+		 */
+
+		extra[0] = 0;
+		extra[1] = 0;
+
+		addr[3] = &counter;
+		len[3] = 1;
+		addr[4] = extra;
+		len[4] = 2;
+	} else {
+		/*
+		 * PRF (K,S,LEN) = T1 | T2 | T3 | T4 | ... where:
+		 * T1 = HMAC-SHA1(K, S | LEN | 0x01)
+		 * T2 = HMAC-SHA1 (K, T1 | S | LEN | 0x02)
+		 * T3 = HMAC-SHA1 (K, T2 | S | LEN | 0x03)
+		 * T4 = HMAC-SHA1 (K, T3 | S | LEN | 0x04)
+		 *   ...
+		 */
+
+		extra[0] = buf_len & 0xff;
+
+		addr[3] = extra;
+		len[3] = 1;
+		addr[4] = &counter;
+		len[4] = 1;
+	}
+
+	pos = 0;
+	while (pos < buf_len) {
+		counter++;
+		plen = buf_len - pos;
+		if (hmac_sha1_vector(key, key_len, 5, addr, len, hash) < 0)
+			return -1;
+		if (plen >= SHA1_MAC_LEN) {
+			os_memcpy(&buf[pos], hash, SHA1_MAC_LEN);
+			pos += SHA1_MAC_LEN;
+		} else {
+			os_memcpy(&buf[pos], hash, plen);
+			break;
+		}
+		len[0] = SHA1_MAC_LEN;
+	}
+
+	return 0;
+}
+
+#endif /* EAP_PEAP */
