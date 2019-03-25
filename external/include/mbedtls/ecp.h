@@ -172,9 +172,6 @@ typedef struct
     mbedtls_ecp_point *T;       /*!<  pre-computed points for ecp_mul_comb()        */
     size_t T_size;      /*!<  number for pre-computed points                */
 #if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
-#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
-	unsigned char *key_buf;
-#endif
 	unsigned int key_index;
 #endif
 }

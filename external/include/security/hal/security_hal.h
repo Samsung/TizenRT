@@ -97,6 +97,8 @@ typedef enum {
 	HAL_ECDSA_BRAINPOOL_P256R1,
 	HAL_ECDSA_BRAINPOOL_P384R1,
 	HAL_ECDSA_BRAINPOOL_P512R1,
+	HAL_ECDSA_SEC_P192R1,
+	HAL_ECDSA_SEC_P224R1,
 	HAL_ECDSA_SEC_P256R1,
 	HAL_ECDSA_SEC_P384R1,
 	HAL_ECDSA_SEC_P512R1,
@@ -135,6 +137,8 @@ typedef enum {
 	HAL_KEY_ECC_BRAINPOOL_P256R1, // ecc brainpool curve for p256r1
 	HAL_KEY_ECC_BRAINPOOL_P384R1, // ecc brainpool curve for p384r1
 	HAL_KEY_ECC_BRAINPOOL_P512R1, // ecc brainpool curve for p512r1
+	HAL_KEY_ECC_SEC_P192R1, // nist curve for p192r1
+	HAL_KEY_ECC_SEC_P224R1, // nist curve for p224r1
 	HAL_KEY_ECC_SEC_P256R1, // nist curve for p256r1
 	HAL_KEY_ECC_SEC_P384R1, // nist curve for p384r1
 	HAL_KEY_ECC_SEC_P512R1, // nist curve for p512r1
@@ -162,6 +166,7 @@ typedef struct _hal_data {
 	void *data;
 	uint32_t data_len;
 	void *priv;
+	uint32_t priv_len;
 } hal_data;
 
 typedef struct _hal_rsa_mode {
