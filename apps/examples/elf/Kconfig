@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ELF
+	bool "ELF Loader Example"
+	default n
+	select LIBC_EXECFUNCS
+	depends on ELF
+	---help---
+		Enable the ELF Loader Example
+
+if EXAMPLES_ELF
+
+config EXAMPLES_ELF_FULLYLINKED
+	bool "Fully Linked ELF application support"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable Fully Linked ELF application support
+
+endif
