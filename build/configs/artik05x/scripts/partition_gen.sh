@@ -126,6 +126,10 @@ do
 	elif [ "$pname" == "sssrw" ]; then
 		pname_text="SSS R/W Key"
 		ro=1
+	elif [ "$pname" == "pt" ]; then
+		pname_text="Partition Table"
+		ro=0
+
 	fi
 
 	pstart="$(printf 0x"%08X" $((${part_start[$id]} + ${FLASH_BASE})))"

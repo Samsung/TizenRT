@@ -110,9 +110,13 @@ compute_ocd_commands()
 				ensure_file ${FW_DIR_PATH}/${part}.bin
 				commands+="flash_protect off; flash_write bl1 ${FW_DIR_PATH}/bl1.bin ${VERIFY}; flash_protect on; "
 				;;
-			bl2|sssfw|wlanfw)
+			bl2)
 				ensure_file ${FW_DIR_PATH}/${part}.bin
-				commands+="flash_write ${part} ${FW_DIR_PATH}/${part}.bin ${VERIFY}; "
+				commands+="flash_protect off; flash_write ${part} ${FW_DIR_PATH}/${part}.bin ${VERIFY}; flash_protect on;"
+				;;
+			sssfw|wlanfw)
+				ensure_file ${FW_DIR_PATH}/${part}.bin
+				commands+="flash_write ${part} ${FW_DIR_PATH}/${part}.bin ${VERIFY};"
 				;;
 			os)
 				ensure_file ${TIZENRT_BIN}
