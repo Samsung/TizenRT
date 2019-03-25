@@ -71,6 +71,10 @@
 #include "mqueue/mqueue.h"
 #include "group/group.h"
 
+#ifdef CONFIG_BINFMT_LOADABLE
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #ifdef HAVE_TASK_GROUP
 
 /*****************************************************************************
@@ -277,6 +281,18 @@ static inline void group_release(FAR struct task_group_s *group)
 		sched_kfree(group->tg_streamlist);
 	}
 #endif
+#endif
+
+#ifdef CONFIG_BINFMT_LOADABLE
+	/* If the exiting task was loaded into RAM from a file, then we need to
+	 * lease all of the memory resource when the last thread exits the task
+	 * group.
+	 */
+
+	if (group->tg_bininfo != NULL) {
+		binfmt_exit(group->tg_bininfo);
+		group->tg_bininfo = NULL;
+	}
 #endif
 
 	/* Release the group container itself */
