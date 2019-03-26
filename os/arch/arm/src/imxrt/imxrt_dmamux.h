@@ -20,7 +20,13 @@
 #define _IMXRT_DMAMUX_H_
 
 #include "imxrt_config.h"
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "chip/imxrt102x_features.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #include "chip/imxrt105x_features.h"
+#else
+#error Unrecognized i.MX RT architecture
+#endif
 
 /*!
  * @addtogroup dmamux

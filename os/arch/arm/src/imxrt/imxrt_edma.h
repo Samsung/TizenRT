@@ -61,8 +61,15 @@
 #define __ARCH_ARM_SRC_IMXRT_IMXRT_EDMAC_H
 
 #include <stddef.h>
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include <chip/imxrt102x_features.h>
+#include "chip/imxrt102x_config.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #include <chip/imxrt105x_features.h>
-#include <chip/imxrt105x_config.h>
+#include "chip/imxrt105x_config.h"
+#else
+#error Unrecognized i.MX RT architecture
+#endif
 
 #include "imxrt_config.h"
 
