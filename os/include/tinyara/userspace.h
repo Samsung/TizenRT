@@ -102,8 +102,8 @@
 #if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
 #define umm_initialize(b, s) USERSPACE->mm_initialize(b, s)
 #define umm_addregion(b, s)  USERSPACE->mm_addregion(b, s)
-#define umm_trysemaphore()   USERSPACE->mm_trysemaphore()
-#define umm_givesemaphore()  USERSPACE->mm_givesemaphore()
+#define umm_trysemaphore(a)   USERSPACE->mm_trysemaphore(a)
+#define umm_givesemaphore(a)  USERSPACE->mm_givesemaphore(a)
 #define umm_malloc(s)        USERSPACE->mm_malloc(s)
 #define umm_zalloc(s)        USERSPACE->mm_zalloc(s)
 #define umm_realloc(p, s)    USERSPACE->mm_realloc(p, s)
@@ -150,8 +150,8 @@ struct userspace_s {
 
 	void (*mm_initialize)(FAR void *heap_start, size_t heap_size);
 	void (*mm_addregion)(FAR void *heap_start, size_t heap_size);
-	int (*mm_trysemaphore)(void);
-	void (*mm_givesemaphore)(void);
+	int (*mm_trysemaphore)(void *address);
+	void (*mm_givesemaphore)(void *address);
 
 	FAR void *(*mm_malloc)(size_t size);
 	FAR void *(*mm_realloc)(FAR void *oldmem, size_t newsize);
