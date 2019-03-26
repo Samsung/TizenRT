@@ -177,13 +177,11 @@ int exec_module(FAR const struct binary_s *binp)
 	}
 #endif
 
-	/* Allocate the stack for the new task.
-	 *
-	 * REVISIT:  This allocation is currently always from the user heap.  That
-	 * will need to change if/when we want to support dynamic stack allocation.
-	 */
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize);
+#else
 	stack = (FAR uint32_t *)kumm_malloc(binp->stacksize);
+#endif
 	if (!stack) {
 		ret = -ENOMEM;
 		goto errout_with_addrenv;
@@ -293,7 +291,11 @@ int exec_module(FAR const struct binary_s *binp)
 errout_with_tcbinit:
 	tcb->cmn.stack_alloc_ptr = NULL;
 	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_free(binp->uheap, stack);
+#else
 	kumm_free(stack);
+#endif
 	return ret;
 
 errout_with_addrenv:

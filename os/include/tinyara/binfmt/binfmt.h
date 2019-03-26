@@ -63,6 +63,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#include <tinyara/mm/mm.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -93,6 +94,11 @@ struct binary_s {
 	/* Information provided to the loader to load and bind a module */
 
 	FAR const char *filename;	/* Full path to the binary to be loaded (See NOTE 1 above) */
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	struct mm_heap_s *uheap;	/* User heap pointer to allocate memory for sections */
+#endif
+
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 	FAR char *argbuffer;		/* Allocated argument list */
 	FAR char **argv;			/* Copy of argument list */

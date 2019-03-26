@@ -175,7 +175,11 @@ int elf_loadctors(FAR struct elf_loadinfo_s *loadinfo)
 		if ((shdr->sh_flags & SHF_ALLOC) == 0) {
 			/* Allocate memory to hold a copy of the .ctor section */
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			loadinfo->ctoralloc = (binfmt_ctor_t *)mm_malloc(loadinfo->uheap, ctorsize);
+#else
 			loadinfo->ctoralloc = (binfmt_ctor_t *)kumm_malloc(ctorsize);
+#endif
 			if (!loadinfo->ctoralloc) {
 				berr("Failed to allocate memory for .ctors\n");
 				return -ENOMEM;

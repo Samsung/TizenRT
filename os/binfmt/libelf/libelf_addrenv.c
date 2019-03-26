@@ -144,7 +144,11 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 #else
 	/* Allocate memory to hold the ELF image */
 
-	loadinfo->textalloc = (uintptr_t) kumm_malloc(textsize + datasize);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	loadinfo->textalloc = (uintptr_t)mm_malloc(loadinfo->uheap, textsize + datasize);
+#else
+	loadinfo->textalloc = (uintptr_t)kumm_malloc(textsize + datasize);
+#endif
 	if (!loadinfo->textalloc) {
 		return -ENOMEM;
 	}
@@ -187,7 +191,11 @@ void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo)
 	/* If there is an allocation for the ELF image, free it */
 
 	if (loadinfo->textalloc != 0) {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		mm_free(loadinfo->uheap, (FAR void *)loadinfo->textalloc);
+#else
 		kumm_free((FAR void *)loadinfo->textalloc);
+#endif
 	}
 #endif
 

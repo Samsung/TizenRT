@@ -141,6 +141,14 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	int errcode;
 	int ret;
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* Allocate the RAM partition to load the app into */
+	uint32_t *start_addr;
+	uint32_t size;
+
+	mm_allocate_ram_partition(&start_addr, &size);
+#endif
+
 	/* Allocate the load information */
 
 	bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
@@ -155,6 +163,9 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	bin->filename = filename;
 	bin->exports = exports;
 	bin->nexports = nexports;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin->uheap = (struct mm_heap_s *)start_addr;
+#endif
 
 	/* Copy the argv[] list */
 
@@ -180,6 +191,15 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	 */
 
 	sched_lock();
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* The first 4 bytes of the text section of the application must contain a
+        pointer to the application's mm_heap object. Here we will store the mm_heap
+        pointer to the start of the text section */
+	*(uint32_t *)(bin->alloc[0]) = (uint32_t)start_addr;
+	tcb = (struct tcb_s*)sched_self();
+	tcb->ram_start = (uint32_t)start_addr;
+#endif
 
 	/* Then start the module */
 
@@ -222,6 +242,9 @@ errout_with_argv:
 errout_with_bin:
 	kmm_free(bin);
 errout:
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_free_ram_partition((uint32_t)start_addr);
+#endif
 	set_errno(errcode);
 	return ERROR;
 

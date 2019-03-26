@@ -103,6 +103,10 @@ int binfmt_exit(FAR struct binary_s *bin)
 		berr("ERROR: unload_module() failed: %d\n", ret);
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* Free the RAM partition into which this app was loaded */
+	mm_free_ram_partition((uint32_t)bin->uheap);
+#endif
 	/* Free the load structure */
 
 	kmm_free(bin);
