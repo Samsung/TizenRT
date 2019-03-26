@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sidk_s5jt200/userspace/up_userspace.c
+ * mm/umm_heap/umm_heap.h
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name tinyara nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -50,86 +50,50 @@
  *
  ****************************************************************************/
 
+#ifndef __MM_UMM_HEAP_UMM_HEAP_H
+#define __MM_UMM_HEAP_UMM_HEAP_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <stdlib.h>
-
-#include <tinyara/userspace.h>
-#include <tinyara/arch.h>
-#include <tinyara/wqueue.h>
 #include <tinyara/mm/mm.h>
-#include <tinyara/init.h>
-
-#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
 
-#ifndef CONFIG_TINYARA_USERSPACE
-#  error "CONFIG_TINYARA_USERSPACE not defined"
-#endif
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/* These 'addresses' of these values are setup by the linker script.  They are
- * not actual uint32_t storage locations! They are only used meaningfully in the
- * following way:
- *
- *  - The linker script defines, for example, the symbol_sdata.
- *  - The declareion extern uint32_t _sdata; makes C happy.  C will believe
- *    that the value _sdata is the address of a uint32_t variable _data (it is
- *    not!).
- *  - We can recoved the linker value then by simply taking the address of
- *    of _data.  like:  uint32_t *pdata = &_sdata;
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+/* In the kernel build, there a multiple user heaps; one for each task
+ * group.  In this build configuration, the user heap structure lies
+ * in a reserved region at the beginning of the .bss/.data address
+ * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
+ * ARCH_DATA_RESERVE_SIZE
  */
+#  include <tinyara/addrenv.h>
+#  define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
-extern uint32_t _stext;           /* Start of .text */
-extern uint32_t _etext;           /* End_1 of .text + .rodata */
-extern const uint32_t _eronly;    /* End+1 of read only section (.text + .rodata) */
-extern uint32_t _sdata;           /* Start of .data */
-extern uint32_t _edata;           /* End+1 of .data */
-extern uint32_t _sbss;            /* Start of .bss */
-extern uint32_t _ebss;            /* End+1 of .bss */
+#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+/* In the protected mode, there are two heaps:  A kernel heap and a single
+ * user heap.  Kernel code must obtain the address of the user heap data
+ * structure from the userspace interface.
+ */
+#  include <tinyara/userspace.h>
+#  define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
 
-const struct userspace_s userspace __attribute__((section(".userspace"))) = {
-	/* General memory map */
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+#  define USR_HEAP ((struct mm_heap_s *)_stext)
 
-	.us_entrypoint    = (main_t)CONFIG_USER_ENTRYPOINT,
-	.us_textstart     = (uintptr_t)&_stext,
-	.us_textend       = (uintptr_t)&_etext,
-	.us_datasource    = (uintptr_t)&_eronly,
-	.us_datastart     = (uintptr_t)&_sdata,
-	.us_dataend       = (uintptr_t)&_edata,
-	.us_bssstart      = (uintptr_t)&_sbss,
-	.us_bssend        = (uintptr_t)&_ebss,
-
-	/* Task/thread startup routines */
-	.task_startup     = task_startup,
-#ifndef CONFIG_DISABLE_PTHREAD
-	.pthread_startup  = pthread_startup,
+#else
+/* Otherwise, the user heap data structures are in common .bss */
+#  define USR_HEAP (g_mmheap)
 #endif
-
-	/* Signal handler trampoline */
-
-#ifndef CONFIG_DISABLE_SIGNALS
-	.signal_handler   = up_signal_handler,
-#endif
-
-	/* pre-application entry points (declared in include/tinyara/init.h) */
-
-	.preapp_start    = preapp_start,
-};
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-#endif /* CONFIG_BUILD_PROTECTED && !__KERNEL__ */
+#endif /* __MM_UMM_HEAP_UMM_HEAP_H */

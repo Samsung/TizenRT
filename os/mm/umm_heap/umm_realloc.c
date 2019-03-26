@@ -58,8 +58,7 @@
 #include <stdlib.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -94,9 +93,9 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_realloc(&g_mmheap[heap_index], oldmem, size, retaddr);
+	return mm_realloc(&USR_HEAP[heap_index], oldmem, size, retaddr);
 #else
-	return mm_realloc(&g_mmheap[heap_index], oldmem, size);
+	return mm_realloc(&USR_HEAP[heap_index], oldmem, size);
 #endif
 }
 #endif
@@ -128,9 +127,9 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(&g_mmheap[heap_idx], oldmem, size, retaddr);
+	ret = mm_realloc(&USR_HEAP[heap_idx], oldmem, size, retaddr);
 #else
-	ret = mm_realloc(&g_mmheap[heap_idx], oldmem, size);
+	ret = mm_realloc(&USR_HEAP[heap_idx], oldmem, size);
 #endif
 	if (ret != NULL) {
 		return ret;
@@ -140,15 +139,14 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	prev_heap_idx = heap_idx;
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&g_mmheap[heap_idx], size, retaddr);
+		ret = mm_malloc(&USR_HEAP[heap_idx], size, retaddr);
 #else
-		ret = mm_malloc(&g_mmheap[heap_idx], size);
+		ret = mm_malloc(&USR_HEAP[heap_idx], size);
 #endif
 		if (ret != NULL) {
-			mm_free(&g_mmheap[prev_heap_idx], oldmem);
+			mm_free(&USR_HEAP[prev_heap_idx], oldmem);
 			return ret;
 		}
 	}
 	return NULL;
 }
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

@@ -78,6 +78,7 @@ SECTIONS
 
     .text : {
         _stext = ABSOLUTE(.);
+        *(.usrheapptr)
         *(.text .text.*)
         *(.fixup)
         *(.gnu.warning)

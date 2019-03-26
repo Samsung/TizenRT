@@ -398,20 +398,6 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-/* User heap structure:
- *
- * - Flat build:  In the FLAT build, the user heap structure is a globally
- *   accessible variable.
- * - Protected build:  The user heap structure is directly available only
- *   in user space.
- * - Kernel build: There are multiple heaps, one per process.  The heap
- *   structure is associated with the address environment and there is
- *   no global user heap structure.
- */
-extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#endif
-
 #ifdef CONFIG_MM_KERNEL_HEAP
 /* This is the kernel heap */
 
@@ -425,14 +411,22 @@ EXTERN struct mm_heap_s g_kmmheap;
  * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
  * ARCH_DATA_RESERVE_SIZE
  */
-
 #include <tinyara/addrenv.h>
 #define BASE_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+#define BASE_HEAP ((struct mm_heap_s *)_stext)
+
+#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+#include <tinyara/userspace.h>
+#define BASE_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+
 #else
 /* Otherwise, the user heap data structures are in common .bss */
-
+extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #define BASE_HEAP &g_mmheap[0]
+
 #endif
 
 /****************************************************************************
@@ -786,9 +780,9 @@ void *zalloc_at(int heap_index, size_t size);
 #define MM_PART_USED    1
 
 struct mm_ram_partition_s {
-        uint32_t start;         /* Start address of the partition */
-        uint32_t size;          /* Size of the partition in bytes */
-        uint8_t status;         /* Current status of the partition, free / used */
+	uint32_t start;         /* Start address of the partition */
+	uint32_t size;          /* Size of the partition in bytes */
+	uint8_t status;         /* Current status of the partition, free / used */
 };
 
 /* Functions contained in mm_partition_mgr.c **************************************/
@@ -801,6 +795,7 @@ void mm_free_ram_partition(uint32_t address);
 #undef EXTERN
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif							/* __INCLUDE_MM_MM_H */
