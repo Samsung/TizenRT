@@ -4,7 +4,7 @@
 #
 
 config ARCH_USE_FLASH
-	bool
+	bool "Enable/Disable FLASH usage for user"
 	default n
 	---help---
 		This shows that user enables FLASH to use.

@@ -66,23 +66,8 @@
 #define BOARD_XTAL_FREQUENCY  40000000
 #endif
 
-/* Clock reconfiguration is currently disabled, so the CPU will be running
- * at the XTAL frequency or at two times the XTAL frequency, depending upon
- * how we load the code:
- *
- * - If we load the code into FLASH at address 0x1000 where it is started by
- *   the second level bootloader, then the frequency is the crystal
- *   frequency.
- * - If we load the code into IRAM after the second level bootloader has run
- *   this frequency will be  twice the crystal frequency.
- *
- * Don't ask me for an explanation.
- */
+/*  CPU will be running at the XTAL frequency or at two times the XTAL frequency*/
 
-#ifdef CONFIG_ESP32CORE_RUN_IRAM
 #define BOARD_CLOCK_FREQUENCY (2 * BOARD_XTAL_FREQUENCY)
-#else
-#define BOARD_CLOCK_FREQUENCY BOARD_XTAL_FREQUENCY
-#endif
 
 #endif							/* __CONFIGS_ESP32_CORE_INCLUDE_BOARD_H */

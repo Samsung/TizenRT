@@ -58,7 +58,7 @@ int stream_info_create(stream_policy_t stream_policy, stream_info_t **stream_inf
 	}
 
 	*stream_info = (stream_info_t *)calloc(1, sizeof(stream_info_t));
-	if (stream_info == NULL) {
+	if (*stream_info == NULL) {
 		return -ENOMEM;
 	}
 	(*stream_info)->id = stream_info_id_generate();

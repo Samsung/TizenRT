@@ -85,7 +85,7 @@ static void heapinfo_dealloc_tcbinfo(void *address, pid_t pid)
 	pid_t hash_pid;
 	struct mm_heap_s *heap = mm_get_heap(address);
 	hash_pid = PIDHASH(pid);
-	if (heap->alloc_list[hash_pid].pid == pid) {
+	if (heap && heap->alloc_list[hash_pid].pid == pid) {
 		heap->alloc_list[hash_pid].pid = HEAPINFO_INIT_INFO;
 		heap->alloc_list[hash_pid].curr_alloc_size = 0;
 		heap->alloc_list[hash_pid].peak_alloc_size = 0;
