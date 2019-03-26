@@ -145,6 +145,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
 	uint32_t size;
+	struct tcb_s *tcb;
 
 	mm_allocate_ram_partition(&start_addr, &size);
 #endif
@@ -194,8 +195,8 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* The first 4 bytes of the text section of the application must contain a
-        pointer to the application's mm_heap object. Here we will store the mm_heap
-        pointer to the start of the text section */
+	pointer to the application's mm_heap object. Here we will store the mm_heap
+	pointer to the start of the text section */
 	*(uint32_t *)(bin->alloc[0]) = (uint32_t)start_addr;
 	tcb = (struct tcb_s*)sched_self();
 	tcb->ram_start = (uint32_t)start_addr;
@@ -209,6 +210,14 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
 		goto errout_with_lock;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	tcb->ram_start = 0;
+	tcb = sched_gettcb(pid);
+	tcb->ram_start = (uint32_t)start_addr;
+	tcb->ram_size = size;
+#endif
+
 #ifdef CONFIG_BINFMT_LOADABLE
 	/* Set up to unload the module (and free the binary_s structure)
 	 * when the task exists.

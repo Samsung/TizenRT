@@ -67,6 +67,8 @@
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
+
+#include <tinyara/sched.h>
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -419,8 +421,16 @@ extern uint32_t _stext;
 #define BASE_HEAP ((struct mm_heap_s *)_stext)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+
 #include <tinyara/userspace.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define BASE_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#else
 #define BASE_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#endif
 
 #else
 /* Otherwise, the user heap data structures are in common .bss */

@@ -72,24 +72,29 @@
  * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
  * ARCH_DATA_RESERVE_SIZE
  */
-#  include <tinyara/addrenv.h>
-#  define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+#include <tinyara/addrenv.h>
+#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
-/* In the protected mode, there are two heaps:  A kernel heap and a single
- * user heap.  Kernel code must obtain the address of the user heap data
- * structure from the userspace interface.
- */
-#  include <tinyara/userspace.h>
-#  define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+
+#include <tinyara/userspace.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/sched.h>
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#else
+#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#endif
 
 #elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 extern uint32_t _stext;
-#  define USR_HEAP ((struct mm_heap_s *)_stext)
+#define USR_HEAP ((struct mm_heap_s *)_stext)
 
 #else
 /* Otherwise, the user heap data structures are in common .bss */
-#  define USR_HEAP (g_mmheap)
+#define USR_HEAP (g_mmheap)
 #endif
 
 /****************************************************************************
