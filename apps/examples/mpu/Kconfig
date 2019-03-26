@@ -14,15 +14,25 @@ if EXAMPLES_MPU_TEST
 config TC_MPU_ALL
 	bool "All"
 	default n
-	select TC_MPU_READ
-	select TC_MPU_WRITE
+	select TC_MPU_READ_CODE
+	select TC_MPU_WRITE_CODE
+	select TC_MPU_READ_DATA
+	select TC_MPU_WRITE_DATA
 
-config TC_MPU_READ
-	bool "Read"
+config TC_MPU_READ_CODE
+	bool "Read Kernel Code"
 	default n
 
-config TC_MPU_WRITE
-	bool "Write"
+config TC_MPU_WRITE_CODE
+	bool "Write Kernel Code"
+	default n
+
+config TC_MPU_READ_DATA
+	bool "Read Kernel Data"
+	default n
+
+config TC_MPU_WRITE_DATA
+	bool "Write Kernel Data"
 	default n
 
 endif #EXAMPLES_MPU_TEST
