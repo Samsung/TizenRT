@@ -59,7 +59,7 @@
 #include <debug.h>
 #include <tinyara/mm/mm.h>
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,9 +90,9 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_calloc(&g_mmheap[heap_index], n, elem_size, retaddr);
+	return mm_calloc(&USR_HEAP[heap_index], n, elem_size, retaddr);
 #else
-	return mm_calloc(&g_mmheap[heap_index], n, elem_size);
+	return mm_calloc(&USR_HEAP[heap_index], n, elem_size);
 #endif
 }
 #endif
@@ -113,9 +113,9 @@ FAR void *calloc(size_t n, size_t elem_size)
 #endif
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size, retaddr);
+		ret = mm_calloc(&USR_HEAP[heap_idx], n, elem_size, retaddr);
 #else
-		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size);
+		ret = mm_calloc(&USR_HEAP[heap_idx], n, elem_size);
 #endif
 		if (ret != NULL) {
 			return ret;
@@ -124,4 +124,3 @@ FAR void *calloc(size_t n, size_t elem_size)
 	return NULL;
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
