@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FSCMD_DRV
+	bool "File System Command Driver"
+	default y
+	depends on FS_CMDS
+	---help---
+		Support Kernel Context Access to File System Commands Used in the Tash Shell.

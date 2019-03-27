@@ -64,6 +64,10 @@
 #include <sys/statfs.h>
 #include <sys/stat.h>
 #include <tinyara/fs/fs_utils.h>
+#include <tinyara/fs/ioctl.h>
+#ifdef CONFIG_FSCMD_DRV
+#include <tinyara/fscmd_drv.h>
+#endif
 #ifdef CONFIG_TASH
 #include <apps/shell/tash.h>
 #endif
@@ -753,6 +757,7 @@ static int tash_mkdir(int argc, char **args)
 #endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
+#ifdef CONFIG_FSCMD_DRV
 /****************************************************************************
  * Name: tash_mkrd
  *
@@ -772,6 +777,7 @@ static int tash_mkrd(int argc, char **args)
 	int sectsize = 512;
 	int minor = 0;
 	int ret;
+	int fd;
 
 	/* Get the mkrd options */
 
@@ -846,7 +852,22 @@ static int tash_mkrd(int argc, char **args)
 
 	/* Then register the ramdisk */
 
-	ret = ramdisk_register(minor, buffer, nsectors, sectsize, RDFLAG_WRENABLED | RDFLAG_FUNLINK);
+	fd = open(FSCMD_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		FSCMD_OUTPUT(CMD_FAILED, "open", FSCMD_DRVPATH);
+		return ERROR;
+	}
+
+	struct ramdisk_info_s info;
+	info.minor = minor;
+	info.buffer = buffer;
+	info.nsectors = nsectors;
+	info.sectsize = sectsize;
+	info.rdflags = RDFLAG_WRENABLED | RDFLAG_FUNLINK;
+
+	ret = ioctl(fd, FCIOC_RAMDISK_REGISTER, (unsigned long)&info);
+	close(fd);
+
 	if (ret < 0) {
 		FSCMD_OUTPUT(CMD_FAILED, args[0], "ramdisk_register");
 		free(buffer);
@@ -860,9 +881,11 @@ errout_with_fmt:
 
 	return ERROR;
 }
+#endif							/* END OF CONFIG_FSCMD_DRV */
 #endif							/* END OF CONFIG_RAMDISK */
 
 #ifdef CONFIG_FS_SMARTFS
+#ifdef CONFIG_FSCMD_DRV
 /****************************************************************************
  * Name: tash_mksmartfs
  *
@@ -875,18 +898,20 @@ errout_with_fmt:
  ****************************************************************************/
 static int tash_mksmartfs(int argc, char **args)
 {
-	const char *src;
+	struct mksmartfs_info_s info;
 	const char *fmt;
-	bool force = false;
+	int fd;
 	int option;
+	int ret;
+	info.force = false;
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	int nrootdirs = 1;
+	info.nrootdirs = 1;
 #endif
 	optind = -1;
 	while ((option = getopt(argc, args, "f")) != ERROR) {
 		switch (option) {
 		case 'f':
-			force = true;
+			info.force = true;
 			break;
 		case '?':
 		default:
@@ -901,13 +926,13 @@ static int tash_mksmartfs(int argc, char **args)
 	}
 
 	/* Set path for registered block driver */
-	src = args[optind];
+	info.pathname = args[optind];
 
 	if (optind + 1 < argc) {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-		nrootdirs = atoi(args[optind++]);
+		info.nrootdirs = atoi(args[optind++]);
 	}
-	if (nrootdirs > 8 || nrootdirs < 1) {
+	if (info.nrootdirs > 8 || info.nrootdirs < 1) {
 		FSCMD_OUTPUT(INVALID_ARGS "Invalid number of root directories specified\n", args[0]);
 		return ERROR;
 	}
@@ -917,11 +942,13 @@ static int tash_mksmartfs(int argc, char **args)
 		goto errout_with_fmt;
 	}
 
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	return mksmartfs(src, nrootdirs, force);
-#else
-	return mksmartfs(src, force);
-#endif
+	fd = open(FSCMD_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		FSCMD_OUTPUT(CMD_FAILED, "open", FSCMD_DRVPATH);
+	}
+	ret = ioctl(fd, FCIOC_MAKE_SMARTFS, (unsigned long)&info);
+	close(fd);
+	return ret;
 
 errout_with_fmt:
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -931,9 +958,11 @@ errout_with_fmt:
 #endif
 	return ERROR;
 }
-#endif							/* END OF CONFIG FS_SMARTFS */
+#endif							/* END OF CONFIG_FSCMD_DRV */
+#endif							/* END OF CONFIG_FS_SMARTFS */
 
 #ifndef CONFIG_DISABLE_ENVIRON
+#ifdef CONFIG_FSCMD_DRV
 static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	char *fstype;
@@ -963,7 +992,23 @@ static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf,
 
 static int mount_show(foreach_mountpoint_t handler, FAR void *arg)
 {
-	return foreach_mountpoint(handler, arg);
+	int fd;
+	int ret;
+	struct foreach_mountpoint_s info;
+
+	fd = open(FSCMD_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		FSCMD_OUTPUT(CMD_FAILED, "open", FSCMD_DRVPATH);
+		reutrn ERROR;
+	}
+
+	info.handler = handler;
+	info.arg = arg;
+
+	ret = ioctl(fd, FCIOC_FOREACH_MOUNTPOINT, (unsigned long)&info);
+
+	close(fd);
+	return ret;
 }
 
 /****************************************************************************
@@ -1064,6 +1109,7 @@ errout:
 
 	return ret;
 }
+#endif							/* END OF CONFIG_FSCMD_DRV */
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
@@ -1164,12 +1210,15 @@ static int tash_rmdir(int argc, char **args)
 	return ret;
 }
 #endif
+#ifdef CONFIG_FSCMD_DRV
 static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	printf("%6ld %8ld %8ld  %8ld %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
 
 	return OK;
 }
+#endif
+#ifdef CONFIG_FSCMD_DRV
 static const char *get_fstype(FAR struct statfs *statbuf)
 {
 	FAR const char *fstype;
@@ -1244,7 +1293,8 @@ static const char *get_fstype(FAR struct statfs *statbuf)
 
 	return fstype;
 }
-
+#endif
+#ifdef CONFIG_FSCMD_DRV
 static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	uint32_t size;
@@ -1294,25 +1344,42 @@ static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs
 
 	return OK;
 }
+#endif
 
 /****************************************************************************
  * Name: tash_df
  ****************************************************************************/
 
 #ifndef CONFIG_DISABLE_MOUNTPOINT
+#ifdef CONFIG_FSCMD_DRV
 static int tash_df(int argc, char **args)
 {
+	int fd;
+	struct foreach_mountpoint_s info;
+
+	fd = open(FSCMD_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		FSCMD_OUTPUT(CMD_FAILED, "open", FSCMD_DRVPATH);
+	}
+
 	if (argc > 1 && strcmp(args[1], "-h") == 0) {
 		printf("Filesystem    Size      Used  Available Mounted on\n");
-		return foreach_mountpoint(df_man_readable_handler, NULL);
+		info.handler = df_man_readable_handler;
+		info.arg = NULL;
+
+		return ioctl(fd, FCIOC_FOREACH_MOUNTPOINT, (unsigned long)&info);
 	} else {
 		printf("  Block  Number\n");
 		printf("  Size   Blocks     Used Available Mounted on\n");
-		return foreach_mountpoint(df_handler, NULL);
+		info.handler = df_handler;
+		info.arg = NULL;
+
+		return ioctl(fd, FCIOC_FOREACH_MOUNTPOINT, (unsigned long)&info);
 	}
 
 	return 0;
 }
+#endif
 #endif
 
 const static tash_cmdlist_t fs_utilcmds[] = {
@@ -1333,13 +1400,19 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
+#ifdef CONFIG_FSCMD_DRV
 	{"mkrd",      tash_mkrd,      TASH_EXECMD_SYNC},
 #endif
-#ifdef CONFIG_FS_SMARTFS
+#endif
+#ifdef CONFIG_FS_SMARTFS	
+#ifdef CONFIG_FSCMD_DRV
 	{"mksmartfs", tash_mksmartfs, TASH_EXECMD_SYNC},
 #endif
+#endif
 #ifndef CONFIG_DISABLE_ENVIRON
+#ifdef CONFIG_FSCMD_DRV
 	{"mount",     tash_mount,     TASH_EXECMD_SYNC},
+#endif
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"umount",    tash_umount,    TASH_EXECMD_SYNC},
@@ -1355,7 +1428,9 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
+#ifdef CONFIG_FSCMD_DRV
 	{"df",        tash_df,        TASH_EXECMD_SYNC},
+#endif
 #endif
 	{NULL,        NULL,           0}
 };

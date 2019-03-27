@@ -96,6 +96,7 @@
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _HEAPINFOBASE   (0x2200)	/* Heapinfo ioctl commands */
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
+#define _FCBASE         (0x2400)	/* Tash Filesystem Function ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -170,6 +171,19 @@
 #define DIOC_SETKEY     _DIOC(0X0004)	/* IN:  Encryption key
 										 * OUT: None
 										 */
+
+/* TinyAra Filesystem command driver ioctl definitions *********************/
+
+#define _FCIOCVALID(c)			(_IOC_TYPE(c) == _FCBASE)
+#define _FCIOC(nr)			_IOC(_FCBASE, nr)
+
+#define FCIOC_FOREACH_MOUNTPOINT	_FCIOC(0x0001)
+#define FCIOC_RAMDISK_REGISTER		_FCIOC(0x0002)
+#define FCIOC_MAKE_SMARTFS		_FCIOC(0x0003)
+#define FCIOC_RAM_MTD_INITIALIZE	_FCIOC(0x0004)
+#define FCIOC_FTL_INITIALIZE		_FCIOC(0x0005)
+#define FCIOC_MTD_PARTITION		_FCIOC(0x0006)
+#define UNREGISTER_BLOCKDRIVER		_FCIOC(0x0007)
 
 /* TinyAra block driver ioctl definitions *************************************/
 

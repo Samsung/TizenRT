@@ -78,6 +78,9 @@
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
+#ifdef CONFIG_FSCMD_DRV
+#include <tinyara/fscmd_drv.h>
+#endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"
 #ifdef CONFIG_PAGING
@@ -268,6 +271,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_ENABLE_HEAPINFO_CMD
 	heapinfo_drv_register();
+#endif
+
+#ifdef CONFIG_FSCMD_DRV
+	fscmd_drv_register();
 #endif
 
 #ifdef CONFIG_TASK_MANAGER

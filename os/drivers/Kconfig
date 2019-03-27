@@ -496,3 +496,4 @@ menuconfig DRIVERS_WIRELESS
 		Drivers for various wireless devices.
 
 source drivers/wireless/Kconfig
+source drivers/fscmd/Kconfig
