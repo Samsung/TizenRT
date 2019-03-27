@@ -98,10 +98,6 @@
 #define CONFIG_USBDEV_SETUP_MAXDATASIZE CONFIG_USBDEV_EP0_MAXSIZE
 #endif
 
-#ifndef CONFIG_USB_PRI
-#define CONFIG_USB_PRI NVIC_SYSH_PRIORITY_DEFAULT
-#endif
-
 /* USB Interrupts.  Should be re-mapped if CAN is used. */
 
 #ifdef CONFIG_STM32_STM32F30XX
@@ -336,10 +332,10 @@ struct stm32_ep_s {
 	struct stm32_req_s *head;	/* Request list for this endpoint */
 	struct stm32_req_s *tail;
 	uint8_t bufno;				/* Allocated buffer number */
-	uint8_t stalled: 1;			/* true: Endpoint is stalled */
-	uint8_t halted: 1;			/* true: Endpoint feature halted */
-	uint8_t txbusy: 1;			/* true: TX endpoint FIFO full */
-	uint8_t txnullpkt: 1;		/* Null packet needed at end of transfer */
+	uint8_t stalled:1;			/* true: Endpoint is stalled */
+	uint8_t halted:1;			/* true: Endpoint feature halted */
+	uint8_t txbusy:1;			/* true: TX endpoint FIFO full */
+	uint8_t txnullpkt:1;		/* Null packet needed at end of transfer */
 };
 
 struct stm32_usbdev_s {
@@ -359,8 +355,8 @@ struct stm32_usbdev_s {
 	uint8_t ep0state;			/* State of EP0 (see enum stm32_ep0state_e) */
 	uint8_t rsmstate;			/* Resume state (see enum stm32_rsmstate_e) */
 	uint8_t nesofs;				/* ESOF counter (for resume support) */
-	uint8_t rxpending: 1;		/* 1: OUT data in PMA, but no read requests */
-	uint8_t selfpowered: 1;		/* 1: Device is self powered */
+	uint8_t rxpending:1;		/* 1: OUT data in PMA, but no read requests */
+	uint8_t selfpowered:1;		/* 1: Device is self powered */
 	uint8_t epavail;			/* Bitset of available endpoints */
 	uint8_t bufavail;			/* Bitset of available buffers */
 	uint16_t rxstatus;			/* Saved during interrupt processing */
@@ -468,8 +464,8 @@ static void stm32_ep0out(struct stm32_usbdev_s *priv);
 static void stm32_ep0in(struct stm32_usbdev_s *priv);
 static inline void stm32_ep0done(struct stm32_usbdev_s *priv, uint16_t istr);
 static void stm32_lptransfer(struct stm32_usbdev_s *priv);
-static int stm32_hpinterrupt(int irq, void *context);
-static int stm32_lpinterrupt(int irq, void *context);
+static int stm32_hpinterrupt(int irq, void *context, FAR void *arg);
+static int stm32_lpinterrupt(int irq, void *context, FAR void *arg);
 
 /* Endpoint helpers *********************************************************/
 
@@ -1731,7 +1727,6 @@ static void stm32_ep0setup(struct stm32_usbdev_s *priv)
 					usbtrace(TRACE_DEVERROR(STM32_TRACEERR_BADEPGETSTATUS), epno);
 					priv->ep0state = EP0STATE_STALLED;
 				} else {
-					privep = &priv->eplist[epno];
 					response.w = 0;	/* Not stalled */
 					nbytes = 2;	/* Response size: 2 bytes */
 
@@ -1874,11 +1869,11 @@ static void stm32_ep0setup(struct stm32_usbdev_s *priv)
 	break;
 
 	case USB_REQ_GETDESCRIPTOR:
-		/* type:  device-to-host; recipient = device
-		 * value: descriptor type and index
-		 * index: 0 or language ID;
-		 * len:   descriptor len; data = descriptor
-		 */
+	/* type:  device-to-host; recipient = device
+	 * value: descriptor type and index
+	 * index: 0 or language ID;
+	 * len:   descriptor len; data = descriptor
+	 */
 	case USB_REQ_SETDESCRIPTOR:
 		/* type:  host-to-device; recipient = device
 		 * value: descriptor type and index
@@ -1888,15 +1883,10 @@ static void stm32_ep0setup(struct stm32_usbdev_s *priv)
 
 	{
 		usbtrace(TRACE_INTDECODE(STM32_TRACEINTID_GETSETDESC), priv->ctrl.type);
-		if ((priv->ctrl.type & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_DEVICE) {
-			/* The request seems valid... let the class implementation handle it */
+		/* The request seems valid... let the class implementation handle it */
 
-			stm32_dispatchrequest(priv);
-			handled = true;
-		} else {
-			usbtrace(TRACE_DEVERROR(STM32_TRACEERR_BADGETSETDESC), 0);
-			priv->ep0state = EP0STATE_STALLED;
-		}
+		stm32_dispatchrequest(priv);
+		handled = true;
 	}
 	break;
 
@@ -1943,11 +1933,11 @@ static void stm32_ep0setup(struct stm32_usbdev_s *priv)
 	break;
 
 	case USB_REQ_GETINTERFACE:
-		/* type:  device-to-host; recipient = interface
-		 * value: 0
-		 * index: interface;
-		 * len:   1; data = alt interface
-		 */
+	/* type:  device-to-host; recipient = interface
+	 * value: 0
+	 * index: interface;
+	 * len:   1; data = alt interface
+	 */
 	case USB_REQ_SETINTERFACE:
 		/* type:  host-to-device; recipient = interface
 		 * value: alternate setting
@@ -2237,7 +2227,7 @@ static void stm32_lptransfer(struct stm32_usbdev_s *priv)
  * Name: stm32_hpinterrupt
  ****************************************************************************/
 
-static int stm32_hpinterrupt(int irq, void *context)
+static int stm32_hpinterrupt(int irq, void *context, FAR void *arg)
 {
 	/* For now there is only one USB controller, but we will always refer to
 	 * it using a pointer to make any future ports to multiple USB controllers
@@ -2278,7 +2268,7 @@ static int stm32_hpinterrupt(int irq, void *context)
  * Name: stm32_lpinterrupt
  ****************************************************************************/
 
-static int stm32_lpinterrupt(int irq, void *context)
+static int stm32_lpinterrupt(int irq, void *context, FAR void *arg)
 {
 	/* For now there is only one USB controller, but we will always refer to
 	 * it using a pointer to make any future ports to multiple USB controllers
@@ -2488,7 +2478,7 @@ static void stm32_esofpoll(struct stm32_usbdev_s *priv)
 	/* Called periodically from ESOF interrupt after RSMSTATE_STARTED */
 
 	switch (priv->rsmstate) {
-		/* One ESOF after internal resume requested */
+	/* One ESOF after internal resume requested */
 
 	case RSMSTATE_STARTED:
 		regval = stm32_getreg(STM32_USB_CNTR);
@@ -2498,7 +2488,7 @@ static void stm32_esofpoll(struct stm32_usbdev_s *priv)
 		priv->nesofs = 10;
 		break;
 
-		/* Countdown before completing the operation */
+	/* Countdown before completing the operation */
 
 	case RSMSTATE_WAITING:
 		priv->nesofs--;
@@ -2941,7 +2931,7 @@ static int stm32_epstall(struct usbdev_ep_s *ep, bool resume)
 {
 	struct stm32_ep_s *privep;
 	struct stm32_usbdev_s *priv;
-	uint8_t epno = USB_EPNO(ep->eplog);
+	uint8_t epno;
 	uint16_t status;
 	irqstate_t flags;
 
@@ -3104,7 +3094,6 @@ static struct usbdev_ep_s *stm32_allocep(struct usbdev_s *dev, uint8_t epno, boo
 		usbtrace(TRACE_DEVERROR(STM32_TRACEERR_EPRESERVE), (uint16_t)epset);
 		goto errout;
 	}
-	epno = USB_EPNO(privep->ep.eplog);
 
 	/* Allocate a PMA buffer for this endpoint */
 
@@ -3605,13 +3594,6 @@ int usbdev_register(struct usbdevclass_driver_s *driver)
 
 		up_enable_irq(STM32_IRQ_USBHP);
 		up_enable_irq(STM32_IRQ_USBLP);
-
-#ifdef CONFIG_ARCH_IRQPRIO
-		/* Set the interrupt priority */
-
-		up_prioritize_irq(STM32_IRQ_USBHP, CONFIG_USB_PRI);
-		up_prioritize_irq(STM32_IRQ_USBLP, CONFIG_USB_PRI);
-#endif
 
 		/* Enable pull-up to connect the device.  The host should enumerate us
 		 * some time after this

@@ -462,6 +462,12 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 	cfglen = (unsigned int)usbhost_getle16(((struct usb_cfgdesc_s *)buffer)->totallen);
 	uvdbg("sizeof config data: %d\n", cfglen);
 
+	if (cfglen > maxlen) {
+		udbg("ERROR: Configuration doesn't fit in buffer, length=%d, maxlen=%d\n", cfglen, maxlen);
+		ret = -E2BIG;
+		goto errout;
+	}
+
 	/* Get all of the configuration descriptor data, index == 0 (Should not be
 	 * hard-coded!)
 	 */
@@ -513,14 +519,36 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	usleep(100 * 1000);
 
-	/* Parse the configuration descriptor and bind to the class instance for the
-	 * device.  This needs to be the last thing done because the class driver
-	 * will begin configuring the device.
+#ifdef CONFIG_USBHOST_COMPOSITE
+	/* Check if the device attached to the downstream port if a USB composite
+	 * device and, if so, create the composite device wrapper and bind it to
+	 * the HCD.
+	 *
+	 * usbhost_composite() will return a negated errno value is on any
+	 * failure.  The value -ENOENT, in particular means that the attached
+	 * device is not a composite device.  Other values would indicate other
+	 * various, unexpected failures.  We make no real distinction here.
 	 */
 
-	ret = usbhost_classbind(hport, buffer, cfglen, &id, devclass);
-	if (ret < 0) {
-		udbg("ERROR: usbhost_classbind failed %d\n", ret);
+	ret = usbhost_composite(hport, buffer, cfglen, &id, devclass);
+	if (ret >= 0) {
+		uinfo("usbhost_composite has bound the composite device\n");
+	}
+
+	/* Apparently this is not a composite device */
+
+	else
+#endif
+	{
+		/* Parse the configuration descriptor and bind to the class instance
+		 * for the device.  This needs to be the last thing done because the
+		 * class driver will begin configuring the device.
+		 */
+
+		ret = usbhost_classbind(hport, buffer, cfglen, &id, devclass);
+		if (ret < 0) {
+			udbg("ERROR: usbhost_classbind failed %d\n", ret);
+		}
 	}
 
 errout:
