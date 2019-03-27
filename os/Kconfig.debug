@@ -695,6 +695,32 @@ config DEBUG_SPI
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+if DEBUG_SPI
+
+config DEBUG_SPI_ERROR
+	bool "SPI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable SPI error debug SYSLOG output.
+
+config DEBUG_SPI_WARN
+	bool "SPI Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable SPI warning debug SYSLOG output.
+
+config DEBUG_SPI_INFO
+	bool "SPI Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable SPI informational debug SYSLOG output.
+
+endif #DEBUG_SPI
+
+
 config DEBUG_TIMER
 	bool "Timer Debug Output"
 	default n

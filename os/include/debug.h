@@ -550,6 +550,30 @@ Once LOGM is approved, each module should have its own index
 #define snllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_SPI_ERROR
+#define spidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define spilldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define spidbg(...)
+#define spilldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SPI_WARN
+#define spiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define spillwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define spiwdbg(...)
+#define spillwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SPI_INFO
+#define spivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define spillvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define spivdbg(...)
+#define spillvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_ANALOG_ERROR
 #define adbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define alldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
