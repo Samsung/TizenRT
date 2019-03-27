@@ -1160,21 +1160,19 @@ static int mtdconfig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	FAR struct mtdconfig_struct_s *dev = inode->i_private;
 	FAR struct config_data_s *pdata;
 	int ret = -ENOSYS;
+	pdata = (FAR struct config_data_s *)arg;
+	if(!pdata) {
+		return ret;
+	}
 
 	switch (cmd) {
 	case CFGDIOC_SETCONFIG:
-
 		/* Set the config item */
-
-		pdata = (FAR struct config_data_s *)arg;
 		ret = mtdconfig_setconfig(dev, pdata);
 		break;
 
 	case CFGDIOC_GETCONFIG:
-
 		/* Get the config item */
-
-		pdata = (FAR struct config_data_s *)arg;
 		ret = mtdconfig_getconfig(dev, pdata);
 		break;
 	}
