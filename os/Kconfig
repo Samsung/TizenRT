@@ -198,6 +198,31 @@ config BUILD_KERNEL
 
 endchoice # Build configuration
 
+
+config APP_BINARY_SEPARATION
+	bool "Application binary separation build"
+	depends on BUILD_PROTECTED
+	default n
+	---help---
+		Enables application binary separation.
+		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected
+		build is selected, then selecting this config generates separate binary for
+		each user space application, apart from a separate kernel binary. Selecting
+		config also applies MPU based memory isolation and protection for each app.
+
+if APP_BINARY_SEPARATION
+
+config NUM_APPS
+	int "Number of application binaries"
+	default 2
+	---help---
+		Indicates the number of user applications to be built. The available RAM might
+		constrain the max number of applications. It is the developer's responsibility
+		to make sure that the NUM_APPS lies withing the memory constraints.
+
+endif # APP_BINARY_SEPARATION
+
+
 config BUILD_2PASS
 	bool "Two pass build"
 	default n
@@ -488,7 +513,6 @@ source Kconfig.debug
 endmenu
 
 menu "System Call"
-	depends on BUILD_PROTECTED
 source syscall/Kconfig
 endmenu
 
@@ -499,6 +523,10 @@ endmenu
 
 menu "External Libraries"
 source "$EXTERNALDIR/Kconfig"
+endmenu
+
+menu "Binary Loader"
+source binfmt/Kconfig
 endmenu
 
 menu "Application Configuration"
