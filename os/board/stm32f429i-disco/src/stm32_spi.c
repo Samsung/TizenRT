@@ -71,7 +71,7 @@
 #include "stm32f429i-disco.h"
 
 #if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || defined(CONFIG_STM32_SPI3) ||\
-    defined(CONFIG_STM32_SPI4) || defined(CONFIG_STM32_SPI5)
+	defined(CONFIG_STM32_SPI4) || defined(CONFIG_STM32_SPI5)
 
 /************************************************************************************
  * Definitions
