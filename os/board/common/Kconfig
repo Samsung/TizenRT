@@ -31,20 +31,23 @@ config FLASH_MINOR
 
 config FLASH_PART_SIZE
 	string "Flash partition size list (in KBytes)"
-	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
+	default "16,48,192,32,512,2400,1536,1536,1400,8,512," if !BUILD_PROTECTED
+	default "16,48,192,32,512,1200,1200,1536,1536,1400,8,512," if BUILD_PROTECTED
 	---help---
 		Comma separated list of partition sizes in KB.
 
 config FLASH_PART_TYPE
 	string "Flash partition type list"
-	default "none,none,none,none,none,none,none,none,smartfs,config,none,"
+	default "none,none,none,none,none,none,none,none,smartfs,config,none," if !BUILD_PROTECTED
+	default "none,none,none,none,none,none,none,none,none,smartfs,config,none," if BUILD_PROTECTED
 	---help---
 		Comma separated list of partition types that can be one of
 		followings: none, smartfs, config
 
 config FLASH_PART_NAME
 	string "Flash partition name list"
-	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw," if !BUILD_PROTECTED
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,user,nvram,sssrw," if BUILD_PROTECTED
 	depends on MTD_PARTITION_NAMES
 	---help---
 		Comma separated list of partition names.
