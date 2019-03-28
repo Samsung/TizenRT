@@ -137,9 +137,6 @@ void up_initialize(void)
 
 	up_calibratedelay();
 
-	/* Add any extra memory fragments to the memory manager */
-
-	xtensa_add_region();
 
 	/* Initialize the interrupt subsystem */
 
