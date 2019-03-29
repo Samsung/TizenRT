@@ -117,7 +117,14 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
 {
 	unsigned int ret;
 	hal_key_type key_type;
-	hal_data key;
+	unsigned char pubkey_x[MBEDTLS_MAX_BUF_SIZE_ALT];
+	unsigned char pubkey_y[MBEDTLS_MAX_BUF_SIZE_ALT];
+	hal_data key = {0, };
+	key.data = pubkey_x;
+	key.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
+	key.priv = pubkey_y;
+	key.priv_len = MBEDTLS_MAX_BUF_SIZE_ALT;
+
 
 	switch( grp->id ) {
 		case MBEDTLS_ECP_DP_SECP192R1:
@@ -170,8 +177,6 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
 	ret = 0;
 
 cleanup:
-	hal_free_data( &key );
-
 	return( ret );
 }
 
@@ -205,6 +210,9 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 	int ret;
 	hal_ecdh_data ecc_pub = {0,};
 	hal_data shared_secret = {0,};
+	unsigned char shared_secret_data[MBEDTLS_MAX_BUF_SIZE_ALT];
+	shared_secret.data = shared_secret_data;
+	shared_secret.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
 
 	memset( &ecc_pub, 0, sizeof( hal_ecdh_data ) );
 
@@ -285,8 +293,6 @@ cleanup:
 		}
 		free( ecc_pub.pubkey_y );
 	}
-
-	hal_free_data( &shared_secret );
 
 	return( ret );
 }

@@ -9,24 +9,21 @@
 /*  Configuration */
 #define HAL_KEYMGR_TEST_TRIAL 10
 #define HAL_KEYMGR_TEST_LIMIT_TIME 100000000
+#define HAL_KEYMGR_TEST_MEM_SIZE 4096
 
 /*
  * Desc: Set key
  */
 #define HAL_TEST_KEY_LEN 32
 #define HAL_TEST_KEY_SLOT 1
-static hal_data g_aes_key;
+static hal_data g_aes_key_in;
 TEST_SETUP(set_key)
 {
 	ST_START_TEST;
 
-	g_aes_key.data = (unsigned char *)malloc(HAL_TEST_KEY_LEN);
-
-	ST_EXPECT_NEQ(NULL, g_aes_key.data);
-
-	g_aes_key.data_len = HAL_TEST_KEY_LEN;
-
-	memset(g_aes_key.data, 0xa5, HAL_TEST_KEY_LEN);
+	ST_EXPECT(0, hal_test_malloc_buffer(&g_aes_key_in, HAL_KEYMGR_TEST_MEM_SIZE));
+	g_aes_key_in.data_len = HAL_TEST_KEY_LEN;
+	memset(g_aes_key_in.data, 0xa5, HAL_TEST_KEY_LEN);
 
 	ST_END_TEST;
 }
@@ -35,14 +32,14 @@ TEST_TEARDOWN(set_key)
 {
 	ST_START_TEST;
 	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
-	hal_test_free_buffer(&g_aes_key);
+	hal_test_free_buffer(&g_aes_key_in);
 	ST_END_TEST;
 }
 
 TEST_F(set_key)
 {
 	ST_START_TEST;
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 	ST_END_TEST;
 }
 
@@ -50,21 +47,18 @@ TEST_F(set_key)
  * Desc: Get key
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
+static hal_data g_aes_key_out;
 TEST_SETUP(get_key)
 {
 	ST_START_TEST;
 
-	g_aes_key.data = (unsigned char *)malloc(HAL_TEST_KEY_LEN);
+	ST_EXPECT(0, hal_test_malloc_buffer(&g_aes_key_in, HAL_KEYMGR_TEST_MEM_SIZE));
+	g_aes_key_in.data_len = HAL_TEST_KEY_LEN;
+	memset(g_aes_key_in.data, 0xa5, HAL_TEST_KEY_LEN);
 
-	ST_EXPECT_NEQ(NULL, g_aes_key.data);
+	ST_EXPECT(0, hal_test_malloc_buffer(&g_aes_key_out, HAL_KEYMGR_TEST_MEM_SIZE));
 
-	g_aes_key.data_len = HAL_TEST_KEY_LEN;
-
-	memset(g_aes_key.data, 0xa5, HAL_TEST_KEY_LEN);
-
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
-
-	hal_test_free_buffer(&g_aes_key);
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 
 	ST_END_TEST;
 }
@@ -73,9 +67,8 @@ TEST_TEARDOWN(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_free_data(&g_aes_key));
-
-	hal_free_data(&g_aes_key);
+	hal_test_free_buffer(&g_aes_key_in);
+	hal_test_free_buffer(&g_aes_key_out);
 
 	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
@@ -86,7 +79,7 @@ TEST_F(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_out));
 
 	ST_END_TEST;
 }
@@ -97,15 +90,12 @@ TEST_F(get_key)
 TEST_SETUP(remove_key)
 {
 	ST_START_TEST;
-	g_aes_key.data = (unsigned char *)malloc(HAL_TEST_KEY_LEN);
 
-	ST_EXPECT_NEQ(NULL, g_aes_key.data);
+	ST_EXPECT(0, hal_test_malloc_buffer(&g_aes_key_in, HAL_KEYMGR_TEST_MEM_SIZE));
+	g_aes_key_in.data_len = HAL_TEST_KEY_LEN;
+	memset(g_aes_key_in.data, 0xa5, HAL_TEST_KEY_LEN);
 
-	g_aes_key.data_len = HAL_TEST_KEY_LEN;
-
-	memset(g_aes_key.data, 0xa5, HAL_TEST_KEY_LEN);
-
-	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key, NULL));
+	ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 
 	ST_END_TEST;
 }
@@ -114,7 +104,7 @@ TEST_TEARDOWN(remove_key)
 {
 	ST_START_TEST;
 
-	hal_test_free_buffer(&g_aes_key);
+	hal_test_free_buffer(&g_aes_key_in);
 
 	ST_END_TEST;
 }

@@ -532,7 +532,7 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
 	unsigned int generator = 0;
 	unsigned int pubkey = 0;
 	hal_dh_data d_param;
-	hal_data shared_secret;
+	hal_data shared_secret = {0, };
 
     if( ctx == NULL || output_size < ctx->len ) {
         return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
@@ -589,12 +589,12 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
 		/*
 		 *  2. Calculate shared secret(K) from sss.
 		 */
+		shared_secret.data = output;
 		ret = hal_dh_compute_shared_secret(&d_param, ctx->key_index, &shared_secret);
 
 		/*
 		 *  3. Export K
 		 */
-		output = shared_secret.data;
 		*olen = shared_secret.data_len;
 
 		MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &ctx->K, output, *olen ) );
@@ -612,8 +612,6 @@ cleanup:
 	if( d_param.pubkey->data ) {
 		free( d_param.pubkey->data );
 	}
-
-	hal_free_data( &shared_secret );
 
 	if( ret != 0 ) {
 		return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED + ret );

@@ -273,7 +273,7 @@ int hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *ke
  * Artik SEE API: int see_get_pubkey(see_algorithm algo, const char *key_name, see_data *pub_key);
  * TizenRT SEE API: 
  * ISP:
- * NOTE: Return key type in key->priv
+ * NOTE: Return pubkey_X to key->data and pubkey_Y to key->priv for ECC
  */
 int hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
@@ -374,7 +374,7 @@ int hal_ecdsa_verify_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ hal_
  * ISP: int isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index);
  */
 /*
- * The function generates GX (G^X mod P) which is pubkey in dh_param with given G, P
+ * The function generates GX (G^X mod P) which is pubkey in dh_param with given input G, P
  * X will be generate and will be protected inside slot in SE
  * X have to be removed by using hal_remove_key()
  */

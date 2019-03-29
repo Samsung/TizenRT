@@ -39,6 +39,24 @@
 #define AES_GCM_MODE		(0x1108)
 #define AES_KW_MODE			(0x1208)
 
+#define HAL_COPY_DATA(in, out, len)                     \
+	do {                                                \
+		if (in->data == NULL) {                         \
+			return HAL_INVALID_ARGS;                    \
+		}                                               \
+		memcpy(in->data, out, len);                     \
+		in->data_len = len;                             \
+	} while (0)
+
+#define HAL_COPY_PRIV_DATA(in, out, len)                \
+	do {                                                \
+		if (in->priv == NULL) {                         \
+			return HAL_INVALID_ARGS;                    \
+		}                                               \
+		memcpy(in->priv, out, len);                     \
+		in->priv_len = len;                             \
+	} while (0)
+
 /**
  * ASN.1
  */
@@ -584,26 +602,13 @@ int hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 		}
 
 		//data: publickey_x, priv: publickey_y
-		key->data = (unsigned char*)malloc(ecc_key.x_byte_len);
-		key->data_len = ecc_key.x_byte_len;
-		if( !key->data ) {
-			return HAL_ALLOC_FAIL;
-		}
-		memcpy(key->data, ecc_key.publickey_x, ecc_key.x_byte_len);
-
-		key->priv = (unsigned char*)malloc(ecc_key.y_byte_len);
-		key->priv_len = ecc_key.y_byte_len;
-		if( !key->priv ) {
-			free( key->data );
-			return HAL_ALLOC_FAIL;
-		}
-		memcpy(key->priv, ecc_key.publickey_y, ecc_key.y_byte_len);
+		HAL_COPY_DATA(key, ecc_key.publickey_x, ecc_key.x_byte_len);
+		HAL_COPY_PRIV_DATA(key, ecc_key.publickey_y, ecc_key.y_byte_len);
 
 	} else if( key_idx == FACTORYKEY_ARTIK_DEVICE ) {
 		ISP_CHECKBUSY();
-		key->data = (unsigned char *)malloc(HAL_MAX_BUF_SIZE);
 		if (!key->data) {
-			return HAL_ALLOC_FAIL;
+			return HAL_INVALID_ARGS;
 		}
 		key->data_len = HAL_MAX_BUF_SIZE;
 		ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
@@ -781,12 +786,7 @@ int hal_generate_random(uint32_t len, hal_data *random)
 		return HAL_FAIL;
 	}
 
-	random->data = (unsigned char *)malloc(len);
-	if (random->data == NULL) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(random->data, inbuf, len);
-	random->data_len = len;
+	HAL_COPY_DATA(random, inbuf, len);
 
 	return HAL_SUCCESS;
 }
@@ -834,61 +834,57 @@ int hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	hash->data = (unsigned char *)malloc(hash_len);
-	if (!hash->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(hash->data, output, hash_len);
-	hash->data_len = hash_len;
+
+	HAL_COPY_DATA(hash, output, hash_len);
+
 	return HAL_SUCCESS;
 }
 
 int hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, hal_data *hmac)
 {
 	/* isp_hmac_securekey returns ERROR_SSTORAGE_SFS_FREAD */
-	/*
-	   uint32_t ret;
-	   struct sHMAC_MSG hmac_msg;
-	   unsigned int object_id;
-	   unsigned char output[HAL_MAX_BUF_SIZE];
+/*
+	uint32_t ret;
+	struct sHMAC_MSG hmac_msg;
+	unsigned int object_id;
+	unsigned char output[HAL_MAX_BUF_SIZE];
 
-	   switch (mode) {
-	   case HAL_HMAC_MD5:
-	   return HAL_NOT_SUPPORTED;
-	   case HAL_HMAC_SHA1:
-	   object_id = HMAC_SHA1_160;
-	   break;
-	   case HAL_HMAC_SHA224:
-	   return HAL_NOT_SUPPORTED;
-	   case HAL_HMAC_SHA256:
-	   object_id = HMAC_SHA2_256;
-	   break;
-	   case HAL_HMAC_SHA384:
-	   object_id = HMAC_SHA2_384;
-	   break;
-	   case HAL_HMAC_SHA512:
-	   object_id = HMAC_SHA2_512;
-	   break;
-	   default:
-	   return HAL_NOT_SUPPORTED;
-	   }
+	switch (mode) {
+		case HAL_HMAC_MD5:
+			return HAL_NOT_SUPPORTED;
+		case HAL_HMAC_SHA1:
+			object_id = HMAC_SHA1_160;
+			break;
+		case HAL_HMAC_SHA224:
+			return HAL_NOT_SUPPORTED;
+		case HAL_HMAC_SHA256:
+			object_id = HMAC_SHA2_256;
+			break;
+		case HAL_HMAC_SHA384:
+			object_id = HMAC_SHA2_384;
+			break;
+		case HAL_HMAC_SHA512:
+			object_id = HMAC_SHA2_512;
+			break;
+		default:
+			return HAL_NOT_SUPPORTED;
+	}
 
-	   memset(&hmac_msg, 0, sizeof(struct sHMAC_MSG));
+	memset(&hmac_msg, 0, sizeof(struct sHMAC_MSG));
 
-	   hmac_msg.addr_low = (unsigned int) input->data;
-	   hmac_msg.msg_byte_len = input->data_len;
+	hmac_msg.addr_low = (unsigned int) input->data;
+	hmac_msg.msg_byte_len = input->data_len;
 
-	   ret = isp_hmac_securekey(output, &hmac_msg, object_id, key_idx);
-	   if (ret != 0) {
-	   isp_clear(0);
-	   printf("ISP failed (%zu)\n", ret);
-	   return HAL_FAIL;
-	   }
-	   hmac->data = (unsigned char *)malloc(input->data_len);
-	   memcpy(hmac->data, output, input->data_len);
-	   hmac->data_len = input->data_len;
-	   return HAL_SUCCESS;
-	   */
+	ret = isp_hmac_securekey(output, &hmac_msg, object_id, key_idx);
+	if (ret != 0) {
+		isp_clear(0);
+		printf("ISP failed (%zu)\n", ret);
+		return HAL_FAIL;
+	}
+	HAL_COPY_DATA(hmac, output, input->data_len);
+
+	return HAL_SUCCESS;
+*/
 	return HAL_NOT_SUPPORTED;
 }
 
@@ -938,12 +934,7 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 		return HAL_FAIL;
 	}
 
-	sign->data = (unsigned char *)malloc(rsa_sign.signature_byte_len);
-	if (!sign->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(sign->data, rsa_sign.signature, rsa_sign.signature_byte_len);
-	sign->data_len = rsa_sign.signature_byte_len;
+	HAL_COPY_DATA(sign, rsa_sign.signature, rsa_sign.signature_byte_len);
 
 	return HAL_SUCCESS;
 }
@@ -1067,13 +1058,10 @@ int hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, ha
 
 	hal_ecdsa_signature_to_asn1(&r, &s, sign_buf, &sign->data_len);
 
-	sign->data = (unsigned char *)malloc(sign->data_len);
-	if (sign->data == NULL) {
-		ret = HAL_ALLOC_FAIL;
-		goto cleanup;
-	}
+	hal_mpi_free( &r );
+	hal_mpi_free( &s );
 
-	memcpy(sign->data, sign_buf, sign->data_len);
+	HAL_COPY_DATA(sign, sign_buf, sign->data_len);
 
 	return HAL_SUCCESS;
 
@@ -1083,6 +1071,7 @@ cleanup:
 
 	return HAL_FAIL;
 }
+
 int hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
 	uint32_t ret;
@@ -1229,8 +1218,14 @@ int hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 		return HAL_FAIL;
 	}
 
-	dh_param->pubkey->data = d_param.publickey;
+	if (!dh_param->pubkey->data) {
+		free(d_param.publickey);
+		return HAL_INVALID_ARGS;
+	}
+	memcpy(dh_param->pubkey->data, d_param.publickey, d_param.publickey_byte_len);
 	dh_param->pubkey->data_len = d_param.publickey_byte_len;
+
+	free(d_param.publickey);
 
 	return HAL_SUCCESS;
 }
@@ -1267,11 +1262,7 @@ int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_dat
 		return HAL_FAIL;
 	}
 
-	shared_secret->data = (unsigned char *)malloc(shared_secret->data_len);
-	if (!shared_secret->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(shared_secret->data, output, shared_secret->data_len);
+	HAL_COPY_DATA(shared_secret, output, shared_secret->data_len);
 
 	return HAL_SUCCESS;
 }
@@ -1320,11 +1311,7 @@ int hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, 
 		return HAL_FAIL;
 	}
 
-	shared_secret->data = (unsigned char *)malloc(shared_secret->data_len);
-	if (!shared_secret->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(shared_secret->data, output, shared_secret->data_len);
+	HAL_COPY_DATA(shared_secret, output, shared_secret->data_len);
 
 	return HAL_SUCCESS;
 }
@@ -1349,13 +1336,8 @@ int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 {
 	uint32_t ret;
-	unsigned char *buf;
+	unsigned char buf[HAL_MAX_BUF_SIZE];
 	unsigned int buf_len;
-
-	buf = (unsigned char *)malloc(HAL_MAX_BUF_SIZE);
-	if (buf == NULL) {
-		return HAL_NOT_ENOUGH_MEMORY;
-	}
 
 	ISP_CHECKBUSY();
 	if (cert_idx == FACTORYKEY_ARTIK_CERT) {
@@ -1373,8 +1355,8 @@ int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 			return HAL_FAIL;
 		}
 	}
-	cert_out->data = buf;
-	cert_out->data_len = buf_len;
+
+	HAL_COPY_DATA(cert_out, buf, buf_len);
 
 	return HAL_SUCCESS;
 }
@@ -1471,12 +1453,8 @@ int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_i
 		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	enc_data->data = (unsigned char *)malloc(param.u32Ciphertext_byte_len);
-	if (!enc_data->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(enc_data->data, param.pu8Ciphertext, param.u32Ciphertext_byte_len);
-	enc_data->data_len = param.u32Ciphertext_byte_len;
+
+	HAL_COPY_DATA(enc_data, aes_output, param.u32Ciphertext_byte_len);
 
 	return HAL_SUCCESS;
 }
@@ -1523,12 +1501,7 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 		return HAL_FAIL;
 	}
 
-	dec_data->data = (unsigned char *)malloc(param.u32Ciphertext_byte_len);
-	if (!dec_data->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(dec_data->data, aes_output, param.u32Ciphertext_byte_len);
-	dec_data->data_len = param.u32Ciphertext_byte_len;
+	HAL_COPY_DATA(dec_data, aes_output, param.u32Ciphertext_byte_len);
 
 	return HAL_SUCCESS;
 }
@@ -1545,11 +1518,8 @@ int hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx
 		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	enc_data->data = (unsigned char *)malloc(enc_data->data_len);
-	if (!enc_data->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(enc_data->data, output, enc_data->data_len);
+
+	HAL_COPY_DATA(enc_data, output, enc_data->data_len);
 
 	return HAL_SUCCESS;
 }
@@ -1565,11 +1535,8 @@ int hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx
 		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	dec_data->data = (unsigned char *)malloc(dec_data->data_len);
-	if (!dec_data->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(dec_data->data, output, dec_data->data_len);
+
+	HAL_COPY_DATA(dec_data, output, dec_data->data_len);
 
 	return HAL_SUCCESS;
 }
@@ -1605,11 +1572,8 @@ int hal_read_storage(uint32_t ss_idx, hal_data *data)
 		printf("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
-	data->data = (unsigned char *)malloc(data->data_len);
-	if (!data->data) {
-		return HAL_ALLOC_FAIL;
-	}
-	memcpy(data->data, output, data->data_len);
+
+	HAL_COPY_DATA(data, output, data->data_len);
 
 	return HAL_SUCCESS;
 }

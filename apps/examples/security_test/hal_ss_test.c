@@ -8,9 +8,11 @@
 /*  Configuration */
 #define HAL_SS_TEST_TRIAL 10
 #define HAL_SS_TEST_LIMIT_TIME 100000000
+#define HAL_SS_TEST_MEM_SIZE 4096
 
 #define HAL_TEST_SECURE_STORAGE_MAX_SLOT_INDEX 8
 #define HAL_TEST_SECURE_STORAGE_MAX_DATA 64
+
 
 /*
  * Desc: Write data in secure storage
@@ -77,7 +79,7 @@ TEST_TEARDOWN(read_storage)
 
 	for (uint32_t i = 0; i < HAL_TEST_SECURE_STORAGE_MAX_SLOT_INDEX; i++) {
 		ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_delete_storage(i));
-		hal_free_data(&g_output[i]);
+		hal_test_free_buffer(&g_output[i]);
 	}
 
 	ST_END_TEST;
@@ -88,6 +90,7 @@ TEST_F(read_storage)
 	ST_START_TEST;
 
 	for (uint32_t i = 0; i < HAL_TEST_SECURE_STORAGE_MAX_SLOT_INDEX; i++) {
+		ST_EXPECT(0, hal_test_malloc_buffer(&g_output[i], HAL_SS_TEST_MEM_SIZE)); 
 		ST_EXPECT_2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_read_storage(i, &g_output[i]));
 	}
 
