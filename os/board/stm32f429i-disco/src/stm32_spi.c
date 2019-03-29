@@ -71,29 +71,11 @@
 #include "stm32f429i-disco.h"
 
 #if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || defined(CONFIG_STM32_SPI3) ||\
-    defined(CONFIG_STM32_SPI4) || defined(CONFIG_STM32_SPI5)
+	defined(CONFIG_STM32_SPI4) || defined(CONFIG_STM32_SPI5)
 
 /************************************************************************************
  * Definitions
  ************************************************************************************/
-
-/* Enables debug output from this file (needs CONFIG_DEBUG too) */
-
-#undef SPI_DEBUG				/* Define to enable debug */
-#undef SPI_VERBOSE				/* Define to enable verbose debug */
-
-#ifdef SPI_DEBUG
-#define spidbg  lldbg
-#ifdef SPI_VERBOSE
-#define spivdbg lldbg
-#else
-#define spivdbg(x...)
-#endif
-#else
-#undef SPI_VERBOSE
-#define spidbg(x...)
-#define spivdbg(x...)
-#endif
 
 /************************************************************************************
  * Private Data
