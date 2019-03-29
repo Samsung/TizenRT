@@ -27,21 +27,57 @@ int mpu_tc_main(int argc, char *argv[])
 #endif
 {
 	char ch;
-	printf("=== TINYARA MPU TC START! ===\n");
-	printf("Press R - For Read Test\n");
+	printf("\nPress R - For Read Test\n");
 	printf("Press W - For Write Test\n");
 
 	ch = getchar();
-	if (ch == 'R' || ch == 'r')
-#ifdef CONFIG_TC_MPU_READ
-		read_main();
-#endif
-	else if (ch == 'W' || ch == 'w')
-#ifdef CONFIG_TC_MPU_WRITE
-		write_main();
-#endif
+	if (ch == 'R' || ch == 'r') {
+		printf("\nPress C - For Read Kernel Code Test\n");
+		printf("Press D - For Read Kernel Data Test\n");
 
-	printf("\n=== TINYARA MPU TC COMPLETE ===\n");
+		ch = getchar();
+		if (ch == 'C' || ch == 'c') {
+#ifdef CONFIG_TC_MPU_READ_CODE
+			read_code_main();
+#else
+			printf("\nCan't Run Test: CONFIG_TC_MPU_READ_CODE is not set\n");
+#endif
+		} else if (ch == 'D' || ch == 'd') {
+#ifdef CONFIG_TC_MPU_READ_DATA
+			read_data_main();
+#else
+			printf("\nCan't Run Test: CONFIG_TC_MPU_READ_DATA is not set\n");
+#endif
+		} else {
+			goto out;
+		}
+	} else if (ch == 'W' || ch == 'w') {
+		printf("\nPress C - For Write Kernel Code Test\n");
+		printf("Press D - For Write Kernel Data Test\n");
+
+		ch = getchar();
+		if (ch == 'C' || ch == 'c') {
+#ifdef CONFIG_TC_MPU_WRITE_CODE
+			write_code_main();
+#else
+			printf("\nCan't Run Test: CONFIG_TC_MPU_WRITE_CODE is not set\n");
+#endif
+		} else if (ch == 'D' || ch == 'd') {
+#ifdef CONFIG_TC_MPU_WRITE_DATA
+			write_data_main();
+#else
+			printf("\nCan't Run Test: CONFIG_TC_MPU_WRITE_DATA is not set\n");
+#endif
+		} else {
+			goto out;
+		}
+	} else {
+		goto out;
+	}
 
 	return 0;
+
+out:
+	printf("\nEntered An Invalid Key!!\nExiting...\n");
+	return ERROR;
 }
