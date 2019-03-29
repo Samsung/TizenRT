@@ -1637,7 +1637,7 @@ static void tc_driver_mtd_config_ops(void)
 	int fd;
 	int ret;
 	struct config_data_s config;
-	char *buf = "test";
+	char buf[8] = "test";
 
 	fd = open(MTD_CONFIG_PATH, O_RDOK);
 	TC_ASSERT_GEQ("open", fd, 0);
