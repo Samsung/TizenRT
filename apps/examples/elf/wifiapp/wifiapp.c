@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_read.c
-/// @brief Test Case Example for kernel data access from user space
 
 /****************************************************************************
  * Included Files
@@ -24,29 +22,48 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <unistd.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <time.h>
+#include <sys/time.h>
 
-extern uint32_t __ksram_segment_start__[];
 /****************************************************************************
- * Name: read_main
+ * Public Functions
  ****************************************************************************/
 
-int read_main(void)
+int main(int argc, char **argv)
 {
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
-	uint32_t dest;
+	struct timeval tv;
+	struct tm *ptm = NULL;
+	char tformat[32] = { 0 };
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to read     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
-	printf("************************************************\n");
+	/* stdout and stderr stream test */
 
-	sleep(3);
-	dest = *address;
+	fprintf(stdout, "%15s: Hello, World!! on stdout\n", argv[0]);
+	fprintf(stderr, "%15s: Hello, World!! on stderr\n", argv[0]);
 
-	printf("ERR: User Task successfully accessed Kernel space\n");
+	while (1) {
+		/* Get current time of day */
+		if (gettimeofday(&tv, NULL)) {
+			printf("gettimeofday failed with errno = %d\n", errno);
+			exit(EXIT_FAILURE);
+		}
+
+		/* Format date & time */
+		ptm = localtime(&tv.tv_sec);
+		if (!ptm) {
+			printf("localtime failed\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (strftime(tformat, sizeof(tformat), "%H:%M:%S", ptm) == 0) {
+			printf("strftime failed\n");
+			exit(EXIT_FAILURE);
+		}
+
+		printf("%s \talive at %s.%03ld\n", argv[0], tformat, tv.tv_usec / 1000);
+		sleep(5);
+	}
+
 	return 0;
 }
