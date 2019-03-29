@@ -198,14 +198,6 @@
 #define CLASS_RESUME(drvr, dev)  \
 	do { if ((drvr)->ops->resume) (drvr)->ops->resume(drvr, dev); } while (0)
 
-/* Device speeds */
-
-#define USB_SPEED_UNKNOWN         0	/* Transfer rate not yet set */
-#define USB_SPEED_LOW             1	/* USB 1.1 */
-#define USB_SPEED_FULL            2	/* USB 1.1 */
-#define USB_SPEED_HIGH            3	/* USB 2.0 */
-#define USB_SPEED_VARIABLE        4	/* Wireless USB 2.5 */
-
 /* Maximum size of a request buffer */
 
 #define USBDEV_MAXREQUEUST        UINT16_MAX
@@ -220,6 +212,46 @@
  ************************************************************************************/
 
 /* USB Controller Structures ********************************************************/
+
+/* usbdev_devinfo_s - describes the low level bindings of an usb device */
+
+struct usbdev_devinfo_s {
+	int ninterfaces;			/* Number of interfaces in the configuration */
+	int ifnobase;				/* Offset to Interface-IDs */
+
+	int nstrings;				/* Number of Strings */
+	int strbase;				/* Offset to String Numbers */
+
+	int nendpoints;				/* Number of Endpoints referenced in the following allay */
+	int epno[5];				/* Array holding the endpoint configuration for this device */
+};
+
+#ifdef CONFIG_USBDEV_COMPOSITE
+struct composite_devdesc_s {
+#ifdef CONFIG_USBDEV_DUALSPEED
+	CODE int16_t(*mkconfdesc)(FAR uint8_t *buf, FAR struct usbdev_devinfo_s *devinfo, uint8_t speed, uint8_t type);
+#else
+	CODE int16_t(*mkconfdesc)(FAR uint8_t *buf, FAR struct usbdev_devinfo_s *devinfo);
+#endif
+
+	CODE int (*mkstrdesc)(uint8_t id, FAR struct usb_strdesc_s *strdesc);
+	CODE int (*classobject)(int minor, FAR struct usbdev_devinfo_s *devinfo, FAR struct usbdevclass_driver_s **classdev);
+	CODE void (*uninitialize)(FAR struct usbdevclass_driver_s *classdev);
+
+	int nconfigs;				/* Number of configurations supported */
+	int configid;				/* The only supported configuration ID */
+
+	int cfgdescsize;			/* The size of the config descriptor */
+	int minor;
+
+#ifdef CONFIG_COMPOSITE_MSFT_OS_DESCRIPTORS
+	uint8_t msft_compatible_id[8];
+	uint8_t msft_sub_id[8];
+#endif
+
+	struct usbdev_devinfo_s devinfo;
+};
+#endif
 
 /* struct usbdev_req_s - describes one i/o request */
 

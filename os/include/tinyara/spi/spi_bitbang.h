@@ -57,8 +57,8 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <semaphore.h>
+#include <debug.h>
 
 #include <tinyara/spi/spi.h>
 
@@ -67,27 +67,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Debug ********************************************************************/
-/* Check if SPI debut is enabled (non-standard.. no support in
- * include/debug.h
- */
-
-#ifndef CONFIG_DEBUG
-#undef CONFIG_DEBUG_VERBOSE
-#undef CONFIG_DEBUG_SPI
-#endif
-
-#ifdef CONFIG_DEBUG_SPI
-#define spidbg lldbg
-#ifdef CONFIG_DEBUG_VERBOSE
-#define spivdbg lldbg
-#else
-#define spivdbg(...)
-#endif
-#else
-#define spidbg(...)
-#define spivdbg(...)
-#endif
 
 /****************************************************************************
  * Private Types

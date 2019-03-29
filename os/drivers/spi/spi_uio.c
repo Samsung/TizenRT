@@ -31,7 +31,6 @@
 
 #include <semaphore.h>
 
-#define spidbg dbg
 #define SPI_ENTRY spidbg("-->%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__)
 /******************************************************************************
  * Private Variables

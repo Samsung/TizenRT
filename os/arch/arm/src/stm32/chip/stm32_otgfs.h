@@ -483,25 +483,25 @@
 #define OTGFS_GINT_NPTXFE               (1 << 5)	/* Bit 5:  Non-periodic TxFIFO empty */
 #define OTGFS_GINT_GINAKEFF             (1 << 6)	/* Bit 6:  Global IN non-periodic NAK effective */
 #define OTGFS_GINT_GONAKEFF             (1 << 7)	/* Bit 7:  Global OUT NAK effective */
-/* Bits 8-9: Reserved, must be kept at reset value */
+#define OTGFS_GINT_RES89                (3 << 8)	/* Bits 8-9: Reserved, must be kept at reset value */
 #define OTGFS_GINT_ESUSP                (1 << 10)	/* Bit 10: Early suspend */
 #define OTGFS_GINT_USBSUSP              (1 << 11)	/* Bit 11: USB suspend */
 #define OTGFS_GINT_USBRST               (1 << 12)	/* Bit 12: USB reset */
 #define OTGFS_GINT_ENUMDNE              (1 << 13)	/* Bit 13: Enumeration done */
 #define OTGFS_GINT_ISOODRP              (1 << 14)	/* Bit 14: Isochronous OUT packet dropped interrupt */
 #define OTGFS_GINT_EOPF                 (1 << 15)	/* Bit 15: End of periodic frame interrupt */
-/* Bits 16 Reserved, must be kept at reset value */
+#define OTGFS_GINT_RES16                (1 << 16)	/* Bit 16  Reserved, must be kept at reset value */
 #define OTGFS_GINTMSK_EPMISM            (1 << 17)	/* Bit 17: Endpoint mismatch interrupt mask */
 #define OTGFS_GINT_IEP                  (1 << 18)	/* Bit 18: IN endpoint interrupt */
 #define OTGFS_GINT_OEP                  (1 << 19)	/* Bit 19: OUT endpoint interrupt */
 #define OTGFS_GINT_IISOIXFR             (1 << 20)	/* Bit 20: Incomplete isochronous IN transfer */
 #define OTGFS_GINT_IISOOXFR             (1 << 21)	/* Bit 21: Incomplete isochronous OUT transfer (device) */
 #define OTGFS_GINT_IPXFR                (1 << 21)	/* Bit 21: Incomplete periodic transfer (host) */
-/* Bits 22-23: Reserved, must be kept at reset value */
+#define OTGFS_GINT_RES2223              (3 << 22)	/* Bits 22-23: Reserved, must be kept at reset value */
 #define OTGFS_GINT_HPRT                 (1 << 24)	/* Bit 24: Host port interrupt */
 #define OTGFS_GINT_HC                   (1 << 25)	/* Bit 25: Host channels interrupt */
 #define OTGFS_GINT_PTXFE                (1 << 26)	/* Bit 26: Periodic TxFIFO empty */
-/* Bit 27 Reserved, must be kept at reset value */
+#define OTGFS_GINT_RES27                (1 << 27)	/* Bit 27 Reserved, must be kept at reset value */
 #define OTGFS_GINT_CIDSCHG              (1 << 28)	/* Bit 28: Connector ID status change */
 #define OTGFS_GINT_DISC                 (1 << 29)	/* Bit 29: Disconnect detected interrupt */
 #define OTGFS_GINT_SRQ                  (1 << 30)	/* Bit 30: Session request/new session detected interrupt */
