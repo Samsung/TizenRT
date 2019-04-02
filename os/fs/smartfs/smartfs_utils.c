@@ -1713,8 +1713,8 @@ struct smartfs_mountpt_s *smartfs_get_first_mount(void)
 /****************************************************************************
  * Name: smartfs_examine_sector
  *
- * Description: Recursively read sectors, find out its children and mark the
- *              sectors valid.
+ * Description: Recursively read sectors, find out their children and mark the
+ *              sectors as valid.
  *
  ****************************************************************************/
 int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int *nusedsectors)
@@ -1724,10 +1724,7 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 	uint16_t entrysize;
 	uint16_t logsector;
 	uint16_t nextsector;
-	uint16_t firstsector;
 	uint8_t *sectordata;
-	uint8_t type;
-	uint8_t entrytype;
 	struct sector_queue_s *node;
 	struct smart_read_write_s readwrite;
 	struct smartfs_entry_header_s *entry;
@@ -1751,11 +1748,10 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 			goto errout;
 		}
 		logsector = node->sector;
-		type = node->type;
 		kmm_free(node);
 		while (logsector != SMARTFS_ERASEDSTATE_16BIT) {
 
-			/* Read the curent sector into our buffer */
+			/* Read the current sector data using a buffer */
 			readwrite.logsector = logsector;
 			readwrite.offset = 0;
 			readwrite.buffer = sectordata;
@@ -1771,11 +1767,19 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 			header = (struct smartfs_chain_header_s *)sectordata;
 			nextsector = SMARTFS_NEXTSECTOR(header);
 
-			if (type == SMARTFS_SECTOR_TYPE_DIR) {
-				if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
-					(*nusedsectors)++;
-				}
+			if (!(node->type == SMARTFS_SECTOR_TYPE_DIR || node->type == SMARTFS_SECTOR_TYPE_FILE)) {
+				ret = -EINVAL_SECTOR;
+				fdbg("Error!! illegal node type %d\n", type);
+				goto errout;
+			}
 
+			if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
+				(*nusedsectors)++;
+			} else {
+				continue;
+			}
+
+			if (node->type == SMARTFS_SECTOR_TYPE_DIR) {
 				offset = sizeof(struct smartfs_chain_header_s);
 
 				/* Test if this entry is valid and active */
@@ -1783,21 +1787,8 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 					entry = (struct smartfs_entry_header_s *)&sectordata[offset];
 					if (!(ENTRY_VALID(entry))) {
 						/* This entry isn't valid, skip it */
-
 						offset += entrysize;
 						continue;
-					}
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-					firstsector = smartfs_rdle16(&entry->firstsector);
-					if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
-#else
-					firstsector = entry->firstsector;
-					if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
-#endif
-					{
-						entrytype = SMARTFS_SECTOR_TYPE_FILE;
-					} else {
-						entrytype = SMARTFS_SECTOR_TYPE_DIR;
 					}
 
 					node = (struct sector_queue_s *)kmm_malloc(sizeof(struct sector_queue_s));
@@ -1805,14 +1796,22 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 						ret = -ENOMEM;
 						goto errout;
 					}
-					node->sector = firstsector;
-					node->type = entrytype;
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+					node->sector = smartfs_rdle16(&entry->firstsector);
+					if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
+#else
+					node->sector = entry->firstsector;
+					if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
+#endif
+					{
+						node->type = SMARTFS_SECTOR_TYPE_FILE;
+					} else {
+						node->type = SMARTFS_SECTOR_TYPE_DIR;
+					}
+
 					sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
+
 					offset += entrysize;
-				}
-			} else if (type == SMARTFS_SECTOR_TYPE_FILE) {
-				if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
-					(*nusedsectors)++;
 				}
 			}
 			logsector = nextsector;
@@ -1829,7 +1828,7 @@ errout:
 /****************************************************************************
  * Name: smartfs_recover
  *
- * Description: Recovery after  a power failure
+ * Description: Recover sectors after power failures occur.
  *
  ****************************************************************************/
 int smartfs_recover(struct smartfs_mountpt_s *fs)
@@ -1849,7 +1848,7 @@ int smartfs_recover(struct smartfs_mountpt_s *fs)
 	validsectors = (char *)kmm_malloc(nsectors / 8 + 1);
 	if (!validsectors) {
 		ret = -ENOMEM;
-		goto errout_with_semaphore;
+		goto errout;
 	}
 	for (i = 0; i < (nsectors / 8 + 1); i++) {
 		validsectors[i] = 0;
@@ -1859,7 +1858,7 @@ int smartfs_recover(struct smartfs_mountpt_s *fs)
 	node = (struct sector_queue_s *)kmm_malloc(sizeof(struct sector_queue_s));
 	if (!node) {
 		ret = -ENOMEM;
-		goto errout_with_semaphore;
+		goto errout;
 	}
 	node->sector = rootsector;
 	node->type = SMARTFS_SECTOR_TYPE_DIR;
@@ -1868,14 +1867,14 @@ int smartfs_recover(struct smartfs_mountpt_s *fs)
 	nusedsectors = 0;
 	ret = smartfs_examine_sector(fs, validsectors, &nusedsectors);
 	if (ret != OK) {
-		goto errout_with_semaphore;
+		goto errout;
 	}
 
 	nobsolete = 0;
 	nrecovered = 0;
 	ret = smart_recoversectors(fs->fs_blkdriver, validsectors, &nobsolete, &nrecovered);
 	if (ret != OK) {
-		goto errout_with_semaphore;
+		goto errout;
 	}
 	fdbg("###############################\n");
 	fdbg("#      FS Recovery Report     #\n");
@@ -1886,7 +1885,7 @@ int smartfs_recover(struct smartfs_mountpt_s *fs)
 	fdbg("Obsoleted Sectors : %d\n", nobsolete);
 	fdbg("Recovered Sectors : %d\n\n", nrecovered);
 
-errout_with_semaphore:
+errout:
 	if (validsectors) {
 		kmm_free(validsectors);
 	}
