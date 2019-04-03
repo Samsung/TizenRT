@@ -36,14 +36,14 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
+#include <tinyara/config.h>
+#include <tinyara/security_hal.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-
-#include <security/hal/security_hal.h>
 
 #if defined(MBEDTLS_PK_C)
 #include "mbedtls/pk_internal.h"
@@ -59,6 +59,7 @@
 
 #if defined(MBEDTLS_ECDSA_C)
 #include "mbedtls/ecdsa.h"
+#include "mbedtls/asn1write.h"
 #endif
 
 #if defined(MBEDTLS_PLATFORM_C)
@@ -75,107 +76,6 @@
 
 #include "mbedtls/alt/common.h"
 
-int mbedtls_setup_key_alt(unsigned char *key_der, unsigned int key_len, unsigned int key_type, unsigned char *key_buf)
-{
-	int r;
-
-	if (key_der == NULL) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-
-	if (key_type < SECURE_STORAGE_TYPE_KEY_AES || key_type > SECURE_STORAGE_TYPE_KEY_ECC) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;;
-	}
-
-	ISP_CHECKBUSY();
-	r = isp_set_encryptedkey(key_der, key_len, key_type, key_buf);
-	if (r != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
-	}
-
-	return( 0 );
-}
-
-int mbedtls_get_ecdsa_signature_alt( struct mbedtls_sECC_SIGN *ecc_sign, unsigned char *hash,
-				unsigned int hash_len, unsigned int key_index )
-{
-	int r;
-
-	if (ecc_sign == NULL || hash == NULL || hash_len == 0) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-
-	ISP_CHECKBUSY();
-	if ((r = isp_ecdsa_sign_md_securekey( (struct sECC_SIGN *)ecc_sign, hash, hash_len, key_index)) != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
-	}
-	
-	return( 0 );
-}
-
-int mbedtls_get_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign, unsigned char *hash,
-				unsigned int hash_len, unsigned int key_index )
-{
-	int r;
-
-	if (rsa_sign == NULL || hash == NULL || hash_len == 0) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-
-	ISP_CHECKBUSY();
-	r = isp_rsa_sign_md_securekey( (struct sRSA_SIGN *)rsa_sign, hash, hash_len, key_index);
-	if (r != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
-	}
-
-	return( 0 );
-}
-
-int mbedtls_rsa_decryption_alt( unsigned int key_index, unsigned int pad_type,
-				unsigned char *output, unsigned int *outlen,
-				unsigned char *input, unsigned int inlen )
-{
-	int r;
-
-	if (input == NULL || output == NULL || inlen == 0) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-
-	if (pad_type != MBEDTLS_RSA_PKCS_V15) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-
-	ISP_CHECKBUSY();
-	r = isp_rsa_decrypt_securekey(output, outlen, input, inlen, key_index);
-	if (r != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
-	}
-
-	return( 0 );
-}
-
-#if defined(MBEDTLS_RSA_C)
-
-#if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
-int mbedtls_verify_rsa_signature_alt( struct mbedtls_sRSA_SIGN *rsa_sign,
-				unsigned char *hash, unsigned int hash_len,
-				unsigned char *key_buf )
-{
-	int r;
-
-	if (rsa_sign == NULL || hash == NULL || hash_len == 0 || key_buf == NULL) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-	
-	ISP_CHECKBUSY();
-	r = isp_rsa_verify_md_encryptedkey( (struct sRSA_SIGN *)rsa_sign, hash, hash_len, key_buf);
-	if (r != 0) {
-		isp_clear(0);
-		return MBEDTLS_ERR_PK_HW_ACCEL_FAILED;
 #if defined(MBEDTLS_RSA_C)
 
 #if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
@@ -293,6 +193,7 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 	if( ret != HAL_SUCCESS ) {
 		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
 	}
+
 
 	/*
 	 * 2. Choose digest algorithm.
@@ -737,7 +638,6 @@ static int ecdsa_get_mode(mbedtls_md_type_t md_alg, unsigned int curve, hal_ecds
 
 	return( 0 );
 }
-
 /*
  * Convert a signature (given by context) to ASN.1
  */
@@ -956,7 +856,6 @@ int eckey_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 		/*
 		 * 1. Check hash algorithm and sign curve
 		 */
-
 		ret = ecdsa_get_mode( md_alg, curve, &ecdsa_mode );
 		if( ret ) {
 			free( t_hash.data );

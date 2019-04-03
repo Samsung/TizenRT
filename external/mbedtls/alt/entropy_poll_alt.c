@@ -22,7 +22,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#include <security/hal/security_hal.h>
+#include <tinyara/security_hal.h>
 
 #if defined(MBEDTLS_ENTROPY_C)
 
