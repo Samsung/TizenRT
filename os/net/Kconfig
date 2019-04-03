@@ -137,9 +137,9 @@ config NET_SECURITY_TLS
 	default n
 	depends on NET_LWIP_NETDB
 
-if NET_SECURITY_TLS
-source "$EXTERNALDIR/mbedtls/Kconfig.protocol"
-endif #NET_SECURITY_TLS
+#if NET_SECURITY_TLS
+#source "$EXTERNALDIR/mbedtls/Kconfig.protocol"
+#endif #NET_SECURITY_TLS
 
 endmenu #Protocols
 
