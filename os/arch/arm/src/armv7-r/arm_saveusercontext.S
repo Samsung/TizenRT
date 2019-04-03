@@ -140,16 +140,6 @@ up_saveusercontext:
 	vmrs	r2, fpscr				/* Fetch the FPCSR */
 	str		r2, [r1], #4			/* Save the floating point control and status register */
 #endif
-	/* Save the MPU register information into the context structure */
-
-#if defined(CONFIG_BUILD_PROTECTED)
-	sub	sp, #4
-	str	lr,	[sp]
-	bl	up_mpucontextsave
-	ldr	lr,	[sp]
-	add	sp, #4
-#endif
-
 	/* Return 0 now indicating that this return is not a context switch */
 	mov		r0, #0			/* Return value == 0 */
 	mov		pc, lr			/* Return */
