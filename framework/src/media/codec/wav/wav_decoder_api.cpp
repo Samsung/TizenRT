@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include <debug.h>
 #include <media/MediaTypes.h>
-#include "../utils/internal_defs.h"
-#include "../utils/rbs.h"
-#include "../streaming/audio_decoder.h"
-#include "../audio/resample/samplerate.h"
+#include "../../utils/internal_defs.h"
+#include "../../utils/rbs.h"
+#include "../../audio/resample/samplerate.h"
+#include "../audio_decoder.h"
 #include "wav_decoder_api.h"
 
 namespace media {
