@@ -215,9 +215,9 @@ static bool _parse_header(uint32_t header, size_t *frame_size)
 	RETURN_VAL_IF_FAIL((sampling_rate_index != SAMPLE_RATE_IDX_UNDEFINED), false);
 
 	int sampling_rate;
-	if (version == MPEG_VERSION_1)
+	if (version == MPEG_VERSION_1) {
 		sampling_rate = kSamplingRateV1[sampling_rate_index];
-	else if (version == MPEG_VERSION_2) {
+	} else if (version == MPEG_VERSION_2) {
 		sampling_rate = kSamplingRateV2[sampling_rate_index];
 	} else { // MPEG_VERSION_2_5
 		sampling_rate = kSamplingRateV2_5[sampling_rate_index];
