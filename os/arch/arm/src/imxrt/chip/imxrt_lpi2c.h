@@ -220,5 +220,4 @@
 #define IMXRT_LPI2C4_STDR                   (IMXRT_LPI2C4_BASE + IMXRT_LPI2C_STDR_OFFSET)	/* Slave Transmit Data Register  */
 #define IMXRT_LPI2C4_SRDR                   (IMXRT_LPI2C4_BASE + IMXRT_LPI2C_SRDR_OFFSET)	/* Slave Receive Data Register  */
 
-
 #endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_LPI2C_H */

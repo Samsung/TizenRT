@@ -185,3 +185,7 @@ CHIP_CSRCS += imxrt_hyperflash.c
 else
 CHIP_CSRCS += imxrt_norflash.c
 endif
+
+ifeq ($(CONFIG_USBHOST),y)
+CHIP_CSRCS += imxrt_usbhost.c imxrt_ehci.c
+endif

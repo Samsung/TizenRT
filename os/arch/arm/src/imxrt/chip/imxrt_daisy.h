@@ -76,4 +76,3 @@
 void imxrt_daisy_select(unsigned int index, unsigned int alt);
 
 #endif  /* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_DAISY_H */
-
