@@ -58,9 +58,11 @@ extern int regionx_heap_idx[CONFIG_MM_REGIONS];
 #ifdef CONFIG_MM_KERNEL_HEAP
 static int heapinfo_fd;
 #endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
 static int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 static int heapinfo_mode = HEAPINFO_SIMPLE;
 static int heapinfo_pid = HEAPINFO_PID_ALL;
+#endif
 #if CONFIG_MM_NHEAPS > 1
 extern heapinfo_total_info_t total_info;
 #endif
