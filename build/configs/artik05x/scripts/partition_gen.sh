@@ -107,6 +107,9 @@ do
 	elif [ "$pname" == "os" ]; then
 		pname_text="OS"
 		ro=0
+	elif [ "$pname" == "apps" ]; then
+		pname_text="APPS"
+		ro=0
 	elif [ "$pname" == "factory" ]; then
 		pname_text="Factory Reset"
 		ro=0
@@ -120,6 +123,9 @@ do
 		pname_text="ROM FS"
 		ro=0
 		romfs_part_exist=1
+	elif [ "$pname" == "system" ]; then
+		pname_text="SYSTEM"
+		ro=0
 	elif [ "$pname" == "nvram" ]; then
 		pname_text="WiFi NVRAM"
 		ro=1
