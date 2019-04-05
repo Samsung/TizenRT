@@ -31,7 +31,7 @@
 #include "mbedtls/alt/common.h"
 
 
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
+#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT) && defined(CONFIG_SE)
 static int mbedtls_generate_random_alt( unsigned char *data, unsigned int len )
 {
 	int ret;
@@ -50,7 +50,6 @@ static int mbedtls_generate_random_alt( unsigned char *data, unsigned int len )
 
 	return HAL_SUCCESS;
 }
-
 
 int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )

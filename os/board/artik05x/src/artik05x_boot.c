@@ -299,7 +299,7 @@ void board_initialize(void)
 	board_sensor_initialize();
 	board_wdt_initialize();
 
-#ifdef CONFIG_S5J_SSS
+#if defined(CONFIG_S5J_SSS) && defined(CONFIG_SE_SSS)
 	/* verify ARTIK Key */
 	sssro_verify();
 #endif
