@@ -757,6 +757,14 @@ Once LOGM is approved, each module should have its own index
 #define medllvdbg(...)
 #endif
 
+#ifdef CONFIG_MESSAGE_IPC
+#define msgdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define msglldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define msgdbg(...)
+#define msglldbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
 #define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
 #define tmlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
@@ -1187,6 +1195,14 @@ Once LOGM is approved, each module should have its own index
 #else
 #define medllvdbg   (void)
 #define medllvdbg   (...)
+#endif
+
+#ifdef CONFIG_MESSAGE_IPC
+#define msgdbg       dbg
+#define msglldbg     lldbg
+#else
+#define msgdbg       (void)
+#define msglldbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
