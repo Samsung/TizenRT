@@ -91,6 +91,7 @@
  ****************************************************************************/
 #define I2C_NUM_MAX         2
 
+#define I2C_ADDRESS_TENBITS             (10)
 #define I2C_IO_INIT_LEVEL               (1)
 #define ESP32_DEFAULT_I2CXFER_CLOCK     (100 * 1000)	/* 100Khz */
 #define ESP32_DEFAULT_I2C_TIMEOUT		(500)
@@ -144,6 +145,7 @@ struct esp32_i2c_priv_s {
 
 	int xfer_speed;
 	uint32_t slave_addr;
+	uint8_t slave_addr_bits;
 	uint32_t timeout;
 
 	uint32_t initialized;
@@ -855,8 +857,8 @@ int esp32_i2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 	if (addr > 0) {
 		priv->slave_addr = addr;
 	}
-	if (nbits > 0 && priv->config != NULL) {
-		;
+	if (nbits > 0) {
+		priv->slave_addr_bits = nbits;
 	}
 	sem_post(&priv->sem_excl);
 	return OK;
@@ -955,10 +957,7 @@ int esp32_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen)
 {
 	struct esp32_i2c_priv_s *priv = (struct esp32_i2c_priv_s *)dev;
 	struct i2c_msg_s msg;
-	unsigned int flags;
-
-	flags = 0;
-
+	uint16_t flags = (priv->slave_addr_bits == I2C_ADDRESS_TENBITS) ? I2C_M_TEN : 0;
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr;
 	msg.flags = (flags | I2C_M_READ);
@@ -980,9 +979,10 @@ int esp32_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int bu
 	struct esp32_i2c_priv_s *priv = (struct esp32_i2c_priv_s *)dev;
 	struct i2c_msg_s msg;
 
+	uint16_t flags = (priv->slave_addr_bits == I2C_ADDRESS_TENBITS) ? I2C_M_TEN : 0;
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr;
-	msg.flags = 0;
+	msg.flags = flags;
 	msg.buffer = (FAR uint8_t *)buffer;	/* Override const */
 	msg.length = buflen;
 
