@@ -50,13 +50,13 @@
 ############################################################################
 
 -include $(TOPDIR)/Make.defs
-
+DEPPATH = --dep-path .
 SCRIPTDIR = $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ESP32_DEVKIT_TYPE)$(DELIM)scripts
 CONFIGFILE = $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)config.h
 
 ASRCS =
 CSRCS = esp32_boot.c esp32_bringup.c esp32_led.c
-CSRCS += ../../common/partitions.c
+CSRCS += partitions.c
 
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += esp32_appinit.c
@@ -116,4 +116,6 @@ $(SCRIPTOUT): $(SCRIPTIN) $(CONFIGFILE)
 
 context: $(SCRIPTOUT)
 
+VPATH += ../../common
+DEPPATH += --dep-path ../../common
 -include Make.dep

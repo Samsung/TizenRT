@@ -105,34 +105,42 @@
 #define CONSOLE_DEV         g_uart1port	/* LPUART1 is console */
 #define TTYS0_DEV           g_uart1port	/* LPUART1 is ttyS0 */
 #define UART1_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART2_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart2port	/* LPUART2 is console */
 #define TTYS0_DEV           g_uart2port	/* LPUART2 is ttyS0 */
 #define UART2_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART3_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart3port	/* LPUART3 is console */
 #define TTYS0_DEV           g_uart3port	/* LPUART3 is ttyS0 */
 #define UART3_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART4_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart4port	/* LPUART4 is console */
 #define TTYS0_DEV           g_uart4port	/* LPUART4 is ttyS0 */
 #define UART4_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART5_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart5port	/* LPUART5 is console */
 #define TTYS0_DEV           g_uart5port /* LPUART5 is ttyS0 */
 #define UART5_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART6_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart6port	/* LPUART6 is console */
 #define TTYS0_DEV           g_uart6port /* LPUART6 is ttyS0 */
 #define UART6_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART7_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart7port	/* LPUART7 is console */
 #define TTYS0_DEV           g_uart7port /* LPUART7 is ttyS0 */
 #define UART7_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #elif defined(CONFIG_LPUART8_SERIAL_CONSOLE)
 #define CONSOLE_DEV         g_uart8port	/* LPUART8 is console */
 #define TTYS0_DEV           g_uart8port /* LPUART8 is ttyS0 */
 #define UART8_ASSIGNED      1
+#define HAVE_SERIAL_CONSOLE 1
 #else
 #undef CONSOLE_DEV				/* No console */
 #if defined(CONFIG_IMXRT_LPUART1)
@@ -1520,12 +1528,11 @@ int up_putc(int ch)
 
 	if (ch == '\n') {
 		/* Add CR */
-
-		up_lowputc('\r');
+		imxrt_lowputc('\r');
 	}
 
-	up_lowputc(ch);
-	imxrt_restoreuartint(priv, intset);
+	imxrt_lowputc(ch);
+	imxrt_restoreuartint(priv, ie);
 #endif
 
 	return ch;
