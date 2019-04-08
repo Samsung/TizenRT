@@ -514,10 +514,10 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
  *
  ************************************************************************************/
 
-#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG_FEATURES)
+#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
 void imxrt_lowputc(int ch)
 {
-	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE) == 0) {
+	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
 	}
 
 	/* If the character to output is a newline, then pre-pend a carriage return */
@@ -531,7 +531,7 @@ void imxrt_lowputc(int ch)
 		 * the TX Buffer FIFO is empty.
 		 */
 
-		while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE) == 0) {
+		while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
 		}
 	}
 
@@ -543,7 +543,7 @@ void imxrt_lowputc(int ch)
 	 * the TX Buffer FIFO is empty.
 	 */
 
-	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE) == 0) {
+	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
 	}
 }
 #endif

@@ -68,6 +68,7 @@
 #include "chip.h"
 #include "imxrt_config.h"
 
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -122,7 +123,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
  *
  ************************************************************************************/
 
-#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG_FEATURES)
+#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
 void imxrt_lowputc(int ch);
 #else
 #define imxrt_lowputc(ch)
