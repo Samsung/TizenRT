@@ -78,7 +78,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define PART_NAME_MAX           15
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -108,7 +107,7 @@ struct mtd_partition_s {
 	uint16_t tagnumber;			/* Number of tag to classify each MTD driver */
 	struct mtd_partition_s *pnext;	/* Pointer to next partition struct */
 #ifdef CONFIG_MTD_PARTITION_NAMES
-	char name[PART_NAME_MAX + 1];   /* Name of the partition */
+	char name[MTD_PARTNAME_LEN + 1];   /* Name of the partition */
 #endif
 };
 
@@ -119,10 +118,6 @@ struct part_procfs_file_s {
 	struct procfs_file_s base;	/* Base open file structure */
 	struct mtd_partition_s *nextpart;
 };
-#endif
-
-#ifdef CONFIG_MTD_PARTITION_NAMES
-#define MTD_PARTNAME_LEN 11
 #endif
 
 /****************************************************************************
@@ -534,7 +529,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	/* Output a header before the first entry */
 	if (filep->f_pos == 0) {
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		total = snprintf(buffer, buflen, "%-*s  Start    Size   MTD\n", PART_NAME_MAX, "Name");
+		total = snprintf(buffer, buflen, "%-*s  Start    Size   MTD\n", MTD_PARTNAME_LEN, "Name");
 #else
 		total = snprintf(buffer, buflen, "  Start    Size");
 #endif
