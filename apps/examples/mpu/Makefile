@@ -54,17 +54,27 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# mpu test! built-in application info
+# MPU test! built-in application info
 
 APPNAME = mpu_test
 FUNCNAME = mpu_tc_main
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_SYNC
 
 # mpu test! Example
 
 ASRCS =
-CSRCS = tc_read.c tc_write.c
+ifeq ($(CONFIG_TC_MPU_READ_CODE), y)
+CSRCS += tc_read_code.c
+endif
+ifeq ($(CONFIG_TC_MPU_WRITE_CODE), y)
+CSRCS += tc_write_code.c
+endif
+ifeq ($(CONFIG_TC_MPU_READ_DATA), y)
+CSRCS += tc_read_data.c
+endif
+ifeq ($(CONFIG_TC_MPU_WRITE_DATA), y)
+CSRCS += tc_write_data.c
+endif
 MAINSRC = mpu_tc_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -129,7 +139,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MPU_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
