@@ -584,7 +584,10 @@ static int i2c_esp32_transmit(struct i2c_dev_s *dev)
 	struct timespec abstime = { 0 };
 
 	(void)clock_gettime(CLOCK_REALTIME, &abstime);
-	abstime.tv_nsec += priv->timeout * NS_COUNT_IN_MS;
+	uint32_t timeout_s = priv->timeout / 1000;
+	uint32_t timeout_ms = priv->timeout % 1000;
+	abstime.tv_nsec += timeout_ms * NS_COUNT_IN_MS;
+	abstime.tv_sec += timeout_s;
 	if (abstime.tv_nsec >= NS_COUNT_IN_S) {
 		abstime.tv_nsec %= NS_COUNT_IN_S;
 		abstime.tv_sec++;
