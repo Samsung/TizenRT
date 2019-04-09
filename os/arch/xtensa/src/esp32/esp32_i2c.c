@@ -323,7 +323,7 @@ static int i2c_get_timeout(i2c_port_t i2c_num, int* timeout)
 static int i2c_esp32_check_bus(struct esp32_i2c_priv_s *priv)
 {
 	uint32_t i = 0;
-	while (I2C[priv->i2c_num]->status_reg.bus_busy){
+	while (I2C[priv->i2c_num]->status_reg.bus_busy) {
 		i++;
 		if (i > ESP32_I2C_MAX_DELAY_LOOP) {
 			return ESP32_BUS_BUSY;
@@ -682,7 +682,8 @@ static void i2c_esp32_get_i2c_data(struct esp32_i2c_priv_s *priv)
 static int i2c_esp32_send_write_cmd(struct esp32_i2c_priv_s *priv, int addr_bytes, int cmd_start_index)
 {
 	struct i2c_msg_s *msg = priv->transfer_msg;
-	uint32_t i, to_send = 0;
+	uint32_t i;
+	uint32_t to_send = 0;
 
 	volatile struct i2c_esp32_cmd *cmd = (void *)I2C_COMD0_REG(priv->i2c_num);
 	cmd += cmd_start_index;
@@ -723,6 +724,9 @@ static int i2c_esp32_send_write_cmd(struct esp32_i2c_priv_s *priv, int addr_byte
 static int i2c_esp32_send_read_cmd(struct esp32_i2c_priv_s *priv, int addr_bytes, int cmd_start_index)
 {
 	struct i2c_msg_s *msg = priv->transfer_msg;
+	int length;
+	uint32_t to_read;
+
 	volatile struct i2c_esp32_cmd *cmd = (void *)I2C_COMD0_REG(priv->i2c_num);
 	cmd += cmd_start_index;
 
@@ -738,12 +742,12 @@ static int i2c_esp32_send_read_cmd(struct esp32_i2c_priv_s *priv, int addr_bytes
 		return ESP32_I2C_READ_ERROR;
 	}
 
-	int length = msg->length;
+	length = msg->length;
 	if (I2C_M_NORESTART != (msg->flags & I2C_M_NORESTART)) {
 		length--;
 	}
 
-	uint32_t to_read = min(I2C_ESP32_BUFFER_SIZE, length);
+	to_read = min(I2C_ESP32_BUFFER_SIZE, length);
 
 	/* Might be the last byte, in which case, `to_read` will
 	 * be 0 here.  See comment below.
