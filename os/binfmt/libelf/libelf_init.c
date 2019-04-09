@@ -161,16 +161,15 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 
 	binfo("filename: %s loadinfo: %p\n", filename, loadinfo);
 
-	/* Clear the load info structure */
+	/* Read size in case of FS, size will be passed in load_binary api otherwise */
+	if (loadinfo->filelen == 0) {
+		/* Get the length of the file. */
 
-	memset(loadinfo, 0, sizeof(struct elf_loadinfo_s));
-
-	/* Get the length of the file. */
-
-	ret = elf_filelen(loadinfo, filename);
-	if (ret < 0) {
-		berr("elf_filelen failed: %d\n", ret);
-		return ret;
+		ret = elf_filelen(loadinfo, filename);
+		if (ret < 0) {
+			berr("elf_filelen failed: %d\n", ret);
+			return ret;
+		}
 	}
 
 	/* Open the binary file for reading (only) */
