@@ -72,6 +72,11 @@
 /*******************************************************************************
  * Variables for BOARD_BootClockRUN configuration
  ******************************************************************************/
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+const clock_enet_pll_config_t enetPllConfig_BOARD_BootClockRUN = {
+    .enableClkOutput500M = true,
+};
+#endif
 const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
     .loopDivider = 100, /* PLL loop divider, Fout = Fin * 50 */
     .src = 0,           /* Bypass clock source, 0 - OSC 24M, 1 - CLK1_P and CLK1_N */
@@ -108,8 +113,111 @@ void imxrt_clockconfig(void)
 	 * clocking and SDRAM.  We are pretty much committed to using things the
 	 * way that the bootloader has left them.
 	 */
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+  /* Init RTC OSC clock frequency. */
+    imxrt_clock_setrtcxtalfreq(32768U);
+    /* Set XTAL 24MHz clock frequency. */
+    imxrt_clock_setxtalfreq(24000000U);
+    /* Setting PeriphClk2Mux and PeriphMux to provide stable clock before PLLs are initialed */
+    imxrt_clock_setmux(kCLOCK_PeriphClk2Mux, 0x1); /* Set PERIPH_CLK2 MUX to OSC */
+    imxrt_clock_setmux(kCLOCK_PeriphMux, 0x1);     /* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 
-#ifndef CONFIG_IMXRT_BOOT_SDRAM
+    DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(0x12);
+    /* Set AHB_PODF. */
+    imxrt_clock_setdiv(kCLOCK_AhbDiv, 0x0);
+    /* Set ARM_PODF. */
+    imxrt_clock_setdiv(kCLOCK_ArmDiv, 0x0);
+    /* Set IPG_PODF. */
+    imxrt_clock_setdiv(kCLOCK_IpgDiv, 0x3);
+    /* Set PERCLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_PerclkDiv, 0x1);
+    /* Set per clock source. */
+    imxrt_clock_setmux(kCLOCK_PerclkMux, 0x0);
+    /* Set USDHC1_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Usdhc1Div, 0x2);
+    /* Set Usdhc1 clock source. */
+    imxrt_clock_setmux(kCLOCK_Usdhc1Mux, 0x0);
+    /* Set USDHC2_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Usdhc2Div, 0x2);
+    /* Set Usdhc2 clock source. */
+    imxrt_clock_setmux(kCLOCK_Usdhc2Mux, 0x0);
+#ifndef SKIP_SYSCLK_INIT
+    /* Set Semc alt clock source. */
+    imxrt_clock_setmux(kCLOCK_SemcAltMux, 0x0);
+    /* Set SEMC_PODF. */
+    imxrt_clock_setdiv(kCLOCK_SemcDiv, 0x7);
+    /* Set Semc clock source. */
+    imxrt_clock_setmux(kCLOCK_SemcMux, 0x0);
+#endif
+    /* Set LPSPI_PODF. */
+    imxrt_clock_setdiv(kCLOCK_LpspiDiv, 0x4);
+    /* Set Lpspi clock source. */
+    imxrt_clock_setmux(kCLOCK_LpspiMux, 0x2);
+    /* Set TRACE_PODF. */
+    imxrt_clock_setdiv(kCLOCK_TraceDiv, 0x2);
+    /* Set Trace clock source. */
+    imxrt_clock_setmux(kCLOCK_TraceMux, 0x2);
+    /* Set SAI1_CLK_PRED. */
+    imxrt_clock_setdiv(kCLOCK_Sai1PreDiv, 0x3);
+    /* Set SAI1_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Sai1Div, 0x1);
+    /* Set Sai1 clock source. */
+    imxrt_clock_setmux(kCLOCK_Sai1Mux, 0x0);
+    /* Set SAI2_CLK_PRED. */
+    imxrt_clock_setdiv(kCLOCK_Sai2PreDiv, 0x3);
+    /* Set SAI2_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Sai2Div, 0x1);
+    /* Set Sai2 clock source. */
+    imxrt_clock_setmux(kCLOCK_Sai2Mux, 0x0);
+    /* Set SAI3_CLK_PRED. */
+    imxrt_clock_setdiv(kCLOCK_Sai3PreDiv, 0x3);
+    /* Set SAI3_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Sai3Div, 0x1);
+    /* Set Sai3 clock source. */
+    imxrt_clock_setmux(kCLOCK_Sai3Mux, 0x0);
+    /* Set LPI2C_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Lpi2cDiv, 0x0);
+    /* Set Lpi2c clock source. */
+    imxrt_clock_setmux(kCLOCK_Lpi2cMux, 0x0);
+    /* Set CAN_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_CanDiv, 0x1);
+    /* Set Can clock source. */
+    imxrt_clock_setmux(kCLOCK_CanMux, 0x2);
+    /* Set SPDIF0_CLK_PRED. */
+    imxrt_clock_setdiv(kCLOCK_Spdif0PreDiv, 0x1);
+    /* Set SPDIF0_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Spdif0Div, 0x7);
+    /* Set Spdif clock source. */
+    imxrt_clock_setmux(kCLOCK_SpdifMux, 0x3);
+    /* Set FLEXIO1_CLK_PRED. */
+    imxrt_clock_setdiv(kCLOCK_Flexio1PreDiv, 0x1);
+    /* Set FLEXIO1_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_Flexio1Div, 0x7);
+    /* Set Flexio1 clock source. */
+    imxrt_clock_setmux(kCLOCK_Flexio1Mux, 0x3);
+    /* Set Pll3 sw clock source. */
+    imxrt_clock_setmux(kCLOCK_Pll3SwMux, 0x0);
+    /* Set UART_CLK_PODF. */
+    imxrt_clock_setdiv(kCLOCK_UartDiv, 0x0);
+    /* Set Uart clock source. */
+    imxrt_clock_setmux(kCLOCK_UartMux, 0x0);
+
+#ifndef SKIP_SYSCLK_INIT
+    /* Init System PLL (PLL2). */
+    imxrt_clock_initsyspll(&sysPllConfig_BOARD_BootClockRUN);
+    imxrt_clock_initsyspfd(kCLOCK_Pfd2, 18);
+    imxrt_clock_initsyspfd(kCLOCK_Pfd3, 18);
+#endif
+    imxrt_clock_initenetpll(&enetPllConfig_BOARD_BootClockRUN);
+    /* Set preperiph clock source. */
+    imxrt_clock_setmux(kCLOCK_PrePeriphMux, 0x3);
+    /* Set periph clock source. */
+    imxrt_clock_setmux(kCLOCK_PeriphMux, 0x0);
+    /* Set PERIPH_CLK2_PODF. */
+    imxrt_clock_setdiv(kCLOCK_PeriphClk2Div, 0x0);
+    /* Set periph clock2 clock source. */
+    imxrt_clock_setmux(kCLOCK_PeriphClk2Mux, 0x0);
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 	/* Init RTC OSC clock frequency. */
     imxrt_clock_setrtcxtalfreq(32768U);
     /* Enable 1MHz clock output. */

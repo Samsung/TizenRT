@@ -64,8 +64,20 @@
  ************************************************************************************/
 
 /* Get customizations for each supported chip */
+#if defined(CONFIG_ARCH_CHIP_MIMXRT1021CAF4A) || \
+	 defined(CONFIG_ARCH_CHIP_MIMXRT1021CAG4A) || \
+	 defined(CONFIG_ARCH_CHIP_MIMXRT1021DAF5A) || \
+	 defined(CONFIG_ARCH_CHIP_MIMXRT1021DAG5A)
+/* MIMXRT1021CAF4A 
+ * MIMXRT1021CAG4A 
+ * MIMXRT1021DAF5A
+ * MIMXRT1021DAG5A
+ */
 
-#if defined(CONFIG_ARCH_CHIP_MIMXRT1051DVL6A) || \
+#define IMXRT_OCRAM_SIZE            (256 * 1024)	/* 256Kb OCRAM */
+#define IMXRT_GPIO_NPORTS            5	/* Five total ports */
+
+#elif defined(CONFIG_ARCH_CHIP_MIMXRT1051DVL6A) || \
 	 defined(CONFIG_ARCH_CHIP_MIMXRT1051CVL5A) || \
 	 defined(CONFIG_ARCH_CHIP_MIMXRT1052DVL6A) || \
 	 defined(CONFIG_ARCH_CHIP_MIMXRT1052CVL5A)
