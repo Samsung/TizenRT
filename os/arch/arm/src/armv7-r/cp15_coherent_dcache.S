@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/src/armv7-r/cp15_coherent_dcache.S
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015, 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * References:
@@ -144,8 +144,10 @@ cp15_coherent_dcache:
 	blo		1b
 
 	mov		r0, #0
+#ifdef CONFIG_SMP
 	mcr		CP15_BPIALLIS(r0)		/* Invalidate entire branch predictor array Inner Shareable */
-	mcr		CP15_BPIALL(r0)			/* Invalidate entire branch predictor array Inner Shareable */
+#endif
+	mcr		CP15_BPIALL(r0)			/* Invalidate entire branch predictors */
 
 	dsb
 	isb
