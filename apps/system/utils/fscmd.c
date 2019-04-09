@@ -751,6 +751,7 @@ static int tash_mkdir(int argc, char **args)
 	return ret;
 }
 #endif
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
 /****************************************************************************
@@ -861,7 +862,9 @@ errout_with_fmt:
 	return ERROR;
 }
 #endif							/* END OF CONFIG_RAMDISK */
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 
+#ifdef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_FS_SMARTFS
 /****************************************************************************
  * Name: tash_mksmartfs
@@ -932,6 +935,7 @@ errout_with_fmt:
 	return ERROR;
 }
 #endif							/* END OF CONFIG FS_SMARTFS */
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 
 #ifndef CONFIG_DISABLE_ENVIRON
 static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
@@ -961,11 +965,14 @@ static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf,
 	return OK;
 }
 
+#ifdef CONFIG_BUILD_PROTECTED
 static int mount_show(foreach_mountpoint_t handler, FAR void *arg)
 {
 	return foreach_mountpoint(handler, arg);
 }
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 
+#ifdef CONFIG_BUILD_PROTECTED
 /****************************************************************************
  * Name: tash_mount
  *
@@ -1065,6 +1072,8 @@ errout:
 	return ret;
 }
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_umount
@@ -1091,6 +1100,7 @@ static int tash_umount(int argc, char **args)
 	return ret;
 }
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 #endif							/* END OF CONFIG_DISABLE_MOUNTPOINT */
 
 #ifndef CONFIG_DISABLE_ENVIRON
@@ -1164,12 +1174,15 @@ static int tash_rmdir(int argc, char **args)
 	return ret;
 }
 #endif
+#ifdef CONFIG_BUILD_PROTECTED
 static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	printf("%6ld %8ld %8ld  %8ld %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
 
 	return OK;
 }
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 static const char *get_fstype(FAR struct statfs *statbuf)
 {
 	FAR const char *fstype;
@@ -1244,7 +1257,8 @@ static const char *get_fstype(FAR struct statfs *statbuf)
 
 	return fstype;
 }
-
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	uint32_t size;
@@ -1294,11 +1308,13 @@ static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs
 
 	return OK;
 }
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 
 /****************************************************************************
  * Name: tash_df
  ****************************************************************************/
 
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 static int tash_df(int argc, char **args)
 {
@@ -1314,6 +1330,7 @@ static int tash_df(int argc, char **args)
 	return 0;
 }
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 
 const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
@@ -1331,19 +1348,27 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"mkdir",     tash_mkdir,     TASH_EXECMD_SYNC},
 #endif
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
 	{"mkrd",      tash_mkrd,      TASH_EXECMD_SYNC},
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_FS_SMARTFS
 	{"mksmartfs", tash_mksmartfs, TASH_EXECMD_SYNC},
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"mount",     tash_mount,     TASH_EXECMD_SYNC},
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"umount",    tash_umount,    TASH_EXECMD_SYNC},
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"pwd",       tash_pwd,       TASH_EXECMD_SYNC},
@@ -1354,9 +1379,11 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
 #endif
+#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 	{"df",        tash_df,        TASH_EXECMD_SYNC},
 #endif
+#endif							/* END OF CONFIG_BUILD_PROTECTED */
 	{NULL,        NULL,           0}
 };
 
