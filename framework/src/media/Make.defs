@@ -23,8 +23,6 @@ VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-DEPPATH += --dep-path src/media/streaming
-VPATH += :src/media/streaming
 
 CFLAGS += -D__TINYARA__
 
@@ -36,8 +34,18 @@ CSRCS += rb.c rbs.c
 CSRCS += stream_info.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
-DEPPATH += --dep-path src/media/codecs
-VPATH += :src/media/codecs
+DEPPATH += --dep-path src/media/codec
+VPATH += :src/media/codec
+DEPPATH += --dep-path src/media/codec/mp3
+VPATH += :src/media/codec/mp3
+DEPPATH += --dep-path src/media/codec/aac
+VPATH += :src/media/codec/aac
+DEPPATH += --dep-path src/media/codec/wav
+VPATH += :src/media/codec/wav
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+DEPPATH += --dep-path src/media/codec/opus
+VPATH += :src/media/codec/opus
+endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp

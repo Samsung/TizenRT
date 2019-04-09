@@ -19,14 +19,14 @@
 #ifndef STREAMING_DECODER_H
 #define STREAMING_DECODER_H
 
+#include <media/MediaTypes.h>
 #include "../utils/rb.h"
 #include "../utils/rbs.h"
-#include <audiocodec/mp3dec/pvmp3decoder_api.h>
-#include <audiocodec/aacdec/pvmp4audiodecoder_api.h>
-#include <media/MediaTypes.h>
-#include "../codecs/wav_decoder_api.h"
+#include "mp3/pvmp3decoder_api.h"
+#include "aac/pvmp4audiodecoder_api.h"
+#include "wav/wav_decoder_api.h"
 #ifdef CONFIG_CODEC_LIBOPUS
-#include "../codecs/opus_decoder_api.h"
+#include "opus/opus_decoder_api.h"
 #endif
 
 #define AUDIO_DECODER_OK 0

@@ -19,7 +19,7 @@
 #ifndef WAV_DECODER_API_H
 #define WAV_DECODER_API_H
 
-#include "../utils/rbs.h"
+#include "../../utils/rbs.h"
 #include <stdint.h>
 
 namespace media {
