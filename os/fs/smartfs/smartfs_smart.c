@@ -893,6 +893,15 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 #endif
 
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+
+#ifdef CONFIG_SMARTFS_JOURNALING
+			retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
+			if (retj != OK) {
+				fdbg("Error in finishing transactions\n");
+				ret = retj;
+				goto errout_with_semaphore;
+			}
+#endif
 			if (ret < 0) {
 				fdbg("Error %d writing sector %d data\n", ret, sf->currsector);
 				goto errout_with_semaphore;
