@@ -1060,8 +1060,7 @@ void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
     }
 
     #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    if (config->enableClkOutput500M)
-    {
+    if (config->enableClkOutput500M) {
         enet_pll |= CCM_ANALOG_PLL_ENET_ENET_500M_REF_EN_MASK;
     }
     #endif

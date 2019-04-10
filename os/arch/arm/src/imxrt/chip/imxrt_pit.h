@@ -115,7 +115,7 @@
 
 #define PIT_MCR_FRZ                (1 << 0)  /* Bit 0:  Freeze */
 #define PIT_MCR_MDIS               (1 << 1)  /* Bit 1:  Module Disable */
-                                             /* Bits 2-31: Reserved */
+                                            	/* Bits 2-31: Reserved */
 
 /* Timer Load Value Register (32-bit Timer Start Value Bits) */
 /* Current Timer Value Register (32-bit Current Timer Value) */
@@ -124,14 +124,14 @@
 
 #define PIT_TCTRL_TEN              (1 << 0)  /* Bit 0:  Timer Enable Bit */
 #define PIT_TCTRL_TIE              (1 << 1)  /* Bit 1:  Timer Interrupt Enable Bit */
-                                             /* Bits 2-31: Reserved */
+                                            	/* Bits 2-31: Reserved */
 #define PIT_TCTRL_CHN              (1 << 2)  /* Bit 2:  Chain Mode */
-                                             /* Bits 3-31: Reserved */
+                                            	/* Bits 3-31: Reserved */
 
 /* Timer Flag Register */
 
 #define PIT_TFLG_TIF               (1 << 0)  /* Bit 0:  Timer Interrupt Flag */
-                                             /* Bits 1-31: Reserved */
+                                            	/* Bits 1-31: Reserved */
 
 /************************************************************************************
  * Public Types

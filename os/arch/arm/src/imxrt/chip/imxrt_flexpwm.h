@@ -1163,14 +1163,14 @@
 
 /* Fractional Control Register */
 
-                                                        /* Bit: 0 Reserved */
+                                                    	/* Bit: 0 Reserved */
 #define SMFRCTRL_FRAC1_EN                    (1 << 1)   /* Bit: 1  Fractional Cycle PWM Period Enable */
 #define SMFRCTRL_FRAC23_EN                   (1 << 2)   /* Bit: 2  Fractional Cycle Placement Enable for PWM_A */
-                                                        /* Bit: 3 Reserved */
+                                                    	/* Bit: 3 Reserved */
 #define SMFRCTRL_FRAC45_EN                   (1 << 4)   /* Bit: 4  Fractional Cycle Placement Enable for PWM_B */
-                                                        /* Bits: 5-7 Reserved */
+                                                    	/* Bits: 5-7 Reserved */
 #define SMFRCTRL_FRAC_PU                     (1 << 8)   /* Bit: 8  Fractional Delay Circuit Power Up */
-                                                        /* Bits: 9-15 Reserved */
+                                                    	/* Bits: 9-15 Reserved */
 #define SMFRCTRL_TEST                        (1 << 15)  /* Bit: 15 Test Status Bit */
 
 /* Output Control Register */
@@ -1193,11 +1193,11 @@
 #  define SMOCTRL_PWMAFS_0                   (0 << SMOCTRL_PWMAFS_SHIFT)  /* Output is forced to logic 0 state prior to consideration of output polarity control. */
 #  define SMOCTRL_PWMAFS_1                   (1 << SMOCTRL_PWMAFS_SHIFT)  /* Output is forced to logic 1 state prior to consideration of output polarity control. */
 #  define SMOCTRL_PWMAFS_TRISTATE            (2 << SMOCTRL_PWMAFS_SHIFT)  /* Output is tristated. */
-                                                        /* Bits: 6-7 Reserved */
+                                                    	/* Bits: 6-7 Reserved */
 #define SMOCTRL_POLX                         (1 << 8)   /* Bit: 8  PWM_X Output Polarity */
 #define SMOCTRL_POLB                         (1 << 9)   /* Bit: 9  PWM_B Output Polarity */
 #define SMOCTRL_POLA                         (1 << 10)  /* Bit: 10 PWM_A Output Polarity */
-                                                        /* Bits: 11-12 Reserved */
+                                                    	/* Bits: 11-12 Reserved */
 #define SMOCTRL_PWMX_IN                      (1 << 13)  /* Bit: 13 PWM_X Input */
 #define SMOCTRL_PWMB_IN                      (1 << 14)  /* Bit: 14 PWM_B Input */
 #define SMOCTRL_PWMA_IN                      (1 << 15)  /* Bit: 15 PWM_A Input */
@@ -1243,7 +1243,7 @@
 #define SMINTEN_CA1IE                        (1 << 11)  /* Bit: 11 Capture A 1 Interrupt Enable */
 #define SMINTEN_RIE                          (1 << 12)  /* Bit: 12 Reload Interrupt Enable */
 #define SMINTEN_REIE                         (1 << 13)  /* Bit: 13 Reload Error Interrupt Enable */
-                                                        /* Bits: 14-15 Reserved */
+                                                    	/* Bits: 14-15 Reserved */
 
 /* DMA Enable Register */
 
@@ -1262,7 +1262,7 @@
 #  define SMDMAEN_CAPTDE_RELOAD              (3 << SMDMAEN_CAPTDE_SHIFT)  /* A local reload (STS[RF] being set) sets the read DMA request. */
 #define SMDMAEN_FAND                         (1 << 8)   /* Bit: 8  FIFO Watermark AND Control */
 #define SMDMAEN_VALDE                        (1 << 9)   /* Bit: 9  Value Registers DMA Enable */
-                                                        /* Bits: 10-15 Reserved */
+                                                    	/* Bits: 10-15 Reserved */
 
 /* Output Trigger Control Register */
 
@@ -1275,9 +1275,9 @@
 #  define SMT_OUT_TRIG_EN_VAL3               (8 << SMT_OUT_TRIG_EN_SHIFT)   /* PWM_OUT_TRIGx will set when the counter value matches the VAL3 value */
 #  define SMT_OUT_TRIG_EN_VAL4               (16 << SMT_OUT_TRIG_EN_SHIFT)  /* PWM_OUT_TRIGx will set when the counter value matches the VAL4 value */
 #  define SMT_OUT_TRIG_EN_VAL5               (32 << SMT_OUT_TRIG_EN_SHIFT)  /* PWM_OUT_TRIGx will set when the counter value matches the VAL5 value */
-                                                        /* Bits: 6-11 Reserved */
+                                                    	/* Bits: 6-11 Reserved */
 #define SMT_TRGFRQ                           (1 << 12)  /* Bit: 12 Trigger frequency */
-                                                        /* Bit: 13 Reserved */
+                                                    	/* Bit: 13 Reserved */
 #define SMT_PWBOT1                           (1 << 14)  /* Bit: 14 Output Trigger 1 Source Select */
 #  define SMT_PWBOT1_OUT_TRIG1               (0 << 14)  /* Route the PWM_OUT_TRIG1 signal to PWM_OUT_TRIG1 port */
 #  define SMT_PWBOT1_PWMMB                   (1 << 14)  /* Route the PWMB output to the PWM_OUT_TRIG1 port */
@@ -1308,7 +1308,7 @@
 #  define SMD_DIS0X_FAULT1                   (2 << SMD_DIS0X_SHIFT)  /* FAULT1 inputs of fault channel 0. */
 #  define SMD_DIS0X_FAULT2                   (4 << SMD_DIS0X_SHIFT)  /* FAULT2 inputs of fault channel 0. */
 #  define SMD_DIS0X_FAULT3                   (8 << SMD_DIS0X_SHIFT)  /* FAULT3 inputs of fault channel 0. */
-                                                        /* Bits: 12-15 Reserved */
+                                                    	/* Bits: 12-15 Reserved */
 
 /* Fault Disable Mapping Register 1 */
 
@@ -1333,7 +1333,7 @@
 #  define SMD_DIS1X_FAULT1                   (2 << SMD_DIS1X_SHIFT)  /* FAULT1 inputs of fault channel 1. */
 #  define SMD_DIS1X_FAULT2                   (4 << SMD_DIS1X_SHIFT)  /* FAULT2 inputs of fault channel 1. */
 #  define SMD_DIS1X_FAULT3                   (8 << SMD_DIS1X_SHIFT)  /* FAULT3 inputs of fault channel 1. */
-                                                        /* Bits: 12-15 Reserved */
+                                                    	/* Bits: 12-15 Reserved */
 
 /* Capture Control A Register */
 
@@ -1516,37 +1516,37 @@
 
 #define SMC_CVAL0CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL0CYC */
 #define SMC_CVAL0CYC_MASK                    (0xf << SMC_CVAL0CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Capture Value 1 Cycle Register */
 
 #define SMC_CVAL1CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL1CYC */
 #define SMC_CVAL1CYC_MASK                    (0xf << SMC_CVAL1CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Capture Value 2 Cycle Register */
 
 #define SMC_CVAL2CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL2CYC */
 #define SMC_CVAL2CYC_MASK                    (0xf << SMC_CVAL2CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Capture Value 3 Cycle Register */
 
 #define SMC_CVAL3CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL3CYC */
 #define SMC_CVAL3CYC_MASK                    (0xf << SMC_CVAL3CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Capture Value 4 Cycle Register */
 
 #define SMC_CVAL4CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL4CYC */
 #define SMC_CVAL4CYC_MASK                    (0xf << SMC_CVAL4CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Capture Value 5 Cycle Register */
 
 #define SMC_CVAL5CYC_SHIFT                   (0)        /* Bits: 0-3  CVAL5CYC */
 #define SMC_CVAL5CYC_MASK                    (0xf << SMC_CVAL5CYC_SHIFT)
-                                                        /* Bits: 4-15 Reserved */
+                                                    	/* Bits: 4-15 Reserved */
 
 /* Output Enable Register */
 
@@ -1577,7 +1577,7 @@
 #  define OUTEN_PWMA_EN_SM2                  (4 << OUTEN_PWMA_EN_SHIFT)  /* Enable the PWM_A outputs of submodules 2 */
 #  define OUTEN_PWMA_EN_SM3                  (8 << OUTEN_PWMA_EN_SHIFT)  /* Enable the PWM_A outputs of submodules 3 */
 #  define OUTEN_PWMA_EN_ALL                  (0xf << OUTEN_PWMA_EN_SHIFT)  /* All enabled */
-                                                        /* Bits: 12-15 Reserved */
+                                                    	/* Bits: 12-15 Reserved */
 
 /* Mask Register */
 
@@ -1620,7 +1620,7 @@
 #define SWCOUT_SM2OUT23                      (1 << 5)   /* Bit: 5  Submodule 2 Software Controlled Output 23 */
 #define SWCOUT_SM3OUT45                      (1 << 6)   /* Bit: 6  Submodule 3 Software Controlled Output 45 */
 #define SWCOUT_SM3OUT23                      (1 << 7)   /* Bit: 7  Submodule 3 Software Controlled Output 23 */
-                                                        /* Bits: 8-15 Reserved */
+                                                    	/* Bits: 8-15 Reserved */
 
 /* PWM Source Select Register */
 
@@ -1812,13 +1812,13 @@
 #  define FFILT_FILT_CNT_8                   (5 << FFILT_FILT_CNT_SHIFT)  /* */
 #  define FFILT_FILT_CNT_9                   (6 << FFILT_FILT_CNT_SHIFT)  /* */
 #  define FFILT_FILT_CNT_10                  (7 << FFILT_FILT_CNT_SHIFT)  /* */
-                                                        /* Bits: 11-14 Reserved */
+                                                    	/* Bits: 11-14 Reserved */
 #define FFILT_GSTR                           (1 << 15)  /* Bit: 15 Fault Glitch Stretch Enable */
 
 /* Fault Test Register */
 
 #define FTST0_FTEST                          (1 << 0)   /* Bit: 0  Fault Test */
-                                                        /* Bits: 1-15 Reserved */
+                                                    	/* Bits: 1-15 Reserved */
 
 /* Fault Control 2 Register */
 

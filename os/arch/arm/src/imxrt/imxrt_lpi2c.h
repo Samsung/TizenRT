@@ -316,15 +316,15 @@ typedef struct _lpi2c_slave_config {
     bool enableGeneralCall;                       /*!< Enable general call address matching. */
     struct {
         bool enableAck;     /*!< Enables SCL clock stretching during slave-transmit address byte(s)
-                                        and slave-receiver address and data byte(s) to allow software to
-                                        write the Transmit ACK Register before the ACK or NACK is transmitted.
-                                        Clock stretching occurs when transmitting the 9th bit. When
-                                        enableAckSCLStall is enabled, there is no need to set either
-                                        enableRxDataSCLStall or enableAddressSCLStall. */
+								and slave-receiver address and data byte(s) to allow software to
+								write the Transmit ACK Register before the ACK or NACK is transmitted.
+								Clock stretching occurs when transmitting the 9th bit. When
+								enableAckSCLStall is enabled, there is no need to set either
+								enableRxDataSCLStall or enableAddressSCLStall. */
         bool enableTx;      /*!< Enables SCL clock stretching when the transmit data flag is set
-                                         during a slave-transmit transfer. */
+								during a slave-transmit transfer. */
         bool enableRx;      /*!< Enables SCL clock stretching when receive data flag is set during
-                                         a slave-receive transfer. */
+								a slave-receive transfer. */
         bool enableAddress; /*!< Enables SCL clock stretching when the address valid flag is asserted. */
     } sclStall;
     bool ignoreAck;                   /*!< Continue transfers after a NACK is detected. */
@@ -348,9 +348,9 @@ typedef struct _lpi2c_slave_config {
 typedef enum _lpi2c_slave_transfer_event {
     kLPI2C_SlaveAddressMatchEvent = 0x01U,  /*!< Received the slave address after a start or repeated start. */
     kLPI2C_SlaveTransmitEvent = 0x02U,      /*!< Callback is requested to provide data to transmit
-                                                 (slave-transmitter role). */
+												(slave-transmitter role). */
     kLPI2C_SlaveReceiveEvent = 0x04U,       /*!< Callback is requested to provide a buffer in which to place received
-                                                  data (slave-receiver role). */
+												data (slave-receiver role). */
     kLPI2C_SlaveTransmitAckEvent = 0x08U,   /*!< Callback needs to either transmit an ACK or NACK. */
     kLPI2C_SlaveRepeatedStartEvent = 0x10U, /*!< A repeated start was detected. */
     kLPI2C_SlaveCompletionEvent = 0x20U,    /*!< A stop was detected, completing the transfer. */
@@ -367,7 +367,7 @@ typedef struct _lpi2c_slave_transfer {
     uint8_t *data;                      /*!< Transfer buffer */
     size_t dataSize;                    /*!< Transfer size */
     status_t completionStatus; /*!< Success or error code describing how the transfer completed. Only applies for
-                                  #kLPI2C_SlaveCompletionEvent. */
+									#kLPI2C_SlaveCompletionEvent. */
     size_t transferredCount;   /*!< Number of bytes actually transferred since start or last repeated start. */
 } lpi2c_slave_transfer_t;
 
@@ -563,8 +563,8 @@ status_t imxrt_lpi2c_checkforbusybus(LPI2C_Type *base);
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterreset(LPI2C_Type *base)
 {
-    base->MCR = LPI2C_MCR_RST_MASK;
-    base->MCR = 0;
+	base->MCR = LPI2C_MCR_RST_MASK;
+	base->MCR = 0;
 }
 
 /****************************************************************************
@@ -583,7 +583,7 @@ static inline void imxrt_lpi2c_masterreset(LPI2C_Type *base)
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterenable(LPI2C_Type *base, bool enable)
 {
-    base->MCR = (base->MCR & ~LPI2C_MCR_MEN_MASK) | LPI2C_MCR_MEN(enable);
+	base->MCR = (base->MCR & ~LPI2C_MCR_MEN_MASK) | LPI2C_MCR_MEN(enable);
 }
 
 /*@}*/
@@ -612,7 +612,7 @@ static inline void imxrt_lpi2c_masterenable(LPI2C_Type *base, bool enable)
  ****************************************************************************/
 static inline uint32_t imxrt_lpi2c_mastergetstatusflags(LPI2C_Type *base)
 {
-    return base->MSR;
+	return base->MSR;
 }
 
 /****************************************************************************
@@ -644,7 +644,7 @@ static inline uint32_t imxrt_lpi2c_mastergetstatusflags(LPI2C_Type *base)
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterclearstatusflags(LPI2C_Type *base, uint32_t statusMask)
 {
-    base->MSR = statusMask;
+	base->MSR = statusMask;
 }
 
 /*@}*/
@@ -672,7 +672,7 @@ static inline void imxrt_lpi2c_masterclearstatusflags(LPI2C_Type *base, uint32_t
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterenableinterrupts(LPI2C_Type *base, uint32_t interruptMask)
 {
-    base->MIER |= interruptMask;
+	base->MIER |= interruptMask;
 }
 
 /****************************************************************************
@@ -695,7 +695,7 @@ static inline void imxrt_lpi2c_masterenableinterrupts(LPI2C_Type *base, uint32_t
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterdisableinterrupts(LPI2C_Type *base, uint32_t interruptMask)
 {
-    base->MIER &= ~interruptMask;
+	base->MIER &= ~interruptMask;
 }
 
 /****************************************************************************
@@ -714,7 +714,7 @@ static inline void imxrt_lpi2c_masterdisableinterrupts(LPI2C_Type *base, uint32_
  ****************************************************************************/
 static inline uint32_t imxrt_lpi2c_mastergetenableinterrupts(LPI2C_Type *base)
 {
-    return base->MIER;
+	return base->MIER;
 }
 
 /*@}*/
@@ -739,7 +739,7 @@ static inline uint32_t imxrt_lpi2c_mastergetenableinterrupts(LPI2C_Type *base)
  ****************************************************************************/
 static inline void imxrt_lpi2c_masterenabledma(LPI2C_Type *base, bool enableTx, bool enableRx)
 {
-    base->MDER = LPI2C_MDER_TDDE(enableTx) | LPI2C_MDER_RDDE(enableRx);
+	base->MDER = LPI2C_MDER_TDDE(enableTx) | LPI2C_MDER_RDDE(enableRx);
 }
 
 /****************************************************************************
@@ -757,7 +757,7 @@ static inline void imxrt_lpi2c_masterenabledma(LPI2C_Type *base, bool enableTx, 
  ****************************************************************************/
 static inline uint32_t imxrt_lpi2c_mastergettxfifoaddress(LPI2C_Type *base)
 {
-    return (uint32_t)&base->MTDR;
+	return (uint32_t)&base->MTDR;
 }
 
 /****************************************************************************
@@ -775,7 +775,7 @@ static inline uint32_t imxrt_lpi2c_mastergettxfifoaddress(LPI2C_Type *base)
  ****************************************************************************/
 static inline uint32_t imxrt_lpi2c_mastergetrxfifoaddress(LPI2C_Type *base)
 {
-    return (uint32_t)&base->MRDR;
+	return (uint32_t)&base->MRDR;
 }
 
 /*@}*/
@@ -804,7 +804,7 @@ static inline uint32_t imxrt_lpi2c_mastergetrxfifoaddress(LPI2C_Type *base)
  ****************************************************************************/
 static inline void imxrt_lpi2c_mastersetwatermarks(LPI2C_Type *base, size_t txWords, size_t rxWords)
 {
-    base->MFCR = LPI2C_MFCR_TXWATER(txWords) | LPI2C_MFCR_RXWATER(rxWords);
+	base->MFCR = LPI2C_MFCR_TXWATER(txWords) | LPI2C_MFCR_RXWATER(rxWords);
 }
 
 /****************************************************************************

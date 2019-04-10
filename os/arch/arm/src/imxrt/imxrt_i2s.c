@@ -133,7 +133,7 @@
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX)
 
 #ifndef MIN
-#define MIN(a,b) a < b ? a : b
+#define MIN(a, b) a < b ? a : b
 #endif
 
 #define OVER_SAMPLE_RATE (384U)

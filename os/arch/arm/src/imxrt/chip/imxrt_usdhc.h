@@ -174,7 +174,7 @@
 #define USDHC_BLKATTR_SIZE_SHIFT         (0)           /* Bits 0-12: Transfer Block Size */
 #define USDHC_BLKATTR_SIZE_MASK          (0x1fff << USDHC_BLKATTR_SIZE_SHIFT)
 #  define USDHC_BLKATTR_SIZE(n)          ((n) << USDHC_BLKATTR_SIZE_SHIFT)
-                                                       /* Bits 13-15: Reserved */
+                                                    	/* Bits 13-15: Reserved */
 #define USDHC_BLKATTR_CNT_SHIFT          (16)          /* Bits 16-31: Blocks Count For Current Transfer */
 #define USDHC_BLKATTR_CNT_MASK           (0xffff << USDHC_BLKATTR_CNT_SHIFT)
 #  define USDHC_BLKATTR_CNT(n)           ((n) << USDHC_BLKATTR_CNT_SHIFT)
@@ -183,14 +183,14 @@
 
 /* Transfer Type Register */
 
-                                                       /* Bits 0-15: Reserved */
+                                                    	/* Bits 0-15: Reserved */
 #define USDHC_XFERTYP_RSPTYP_SHIFT       (16)          /* Bits 16-17: Response Type Select */
 #define USDHC_XFERTYP_RSPTYP_MASK        (3 << USDHC_XFERTYP_RSPTYP_SHIFT)
 #  define USDHC_XFERTYP_RSPTYP_NONE      (0 << USDHC_XFERTYP_RSPTYP_SHIFT) /* No response */
 #  define USDHC_XFERTYP_RSPTYP_LEN136    (1 << USDHC_XFERTYP_RSPTYP_SHIFT) /* Response length 136 */
 #  define USDHC_XFERTYP_RSPTYP_LEN48     (2 << USDHC_XFERTYP_RSPTYP_SHIFT) /* Response length 48 */
 #  define USDHC_XFERTYP_RSPTYP_LEN48BSY  (3 << USDHC_XFERTYP_RSPTYP_SHIFT) /* Response length 48, check busy */
-                                                       /* Bit 18: Reserved */
+                                                    	/* Bit 18: Reserved */
 #define USDHC_XFERTYP_CCCEN              (1 << 19)     /* Bit 19: Command CRC Check Enable */
 #define USDHC_XFERTYP_CICEN              (1 << 20)     /* Bit 20: Command Index Check Enable */
 #define USDHC_XFERTYP_DPSEL              (1 << 21)     /* Bit 21: Data Present Select */
@@ -202,7 +202,7 @@
 #  define USDHC_XFERTYP_CMDTYP_ABORT     (3 << USDHC_XFERTYP_CMDTYP_SHIFT) /* Abort CMD12, CMD52 for writing I/O abort in CCCR */
 #define USDHC_XFERTYP_CMDINX_SHIFT       (24)          /* Bits 24-29: Command Index */
 #define USDHC_XFERTYP_CMDINX_MASK        (0x3f << USDHC_XFERTYP_CMDINX_SHIFT)
-                                                       /* Bits 30-31: Reserved */
+                                                    	/* Bits 30-31: Reserved */
 
 /* Command Response 0-3 (32-bit response data) */
 
@@ -223,7 +223,7 @@
 #define USDHC_PRSSTAT_BWEN               (1 << 10)    /* Bit 10: Buffer Write Enable */
 #define USDHC_PRSSTAT_BREN               (1 << 11)    /* Bit 11: Buffer Read Enable */
 #define USDHC_PRSSTAT_RTR                (1 << 12)    /* Bit 12: Retuning request */
-                                                      /* Bits 13-14: Reserved */
+                                                    	/* Bits 13-14: Reserved */
 #define USDHC_PRSSTAT_TSCD               (1 << 15)    /* Bit 15: Tape Select Change Done */
 #define USDHC_PRSSTAT_CINS               (1 << 16)    /* Bit 16: Card Inserted */
                                                       /* Bit 17: Reserved */
@@ -263,7 +263,7 @@
 #  define USDHC_PROCTL_DMAS_NODMA        (0 << USDHC_PROCTL_DMAS_SHIFT) /* No DMA or simple DMA is selected */
 #  define USDHC_PROCTL_DMAS_ADMA1        (1 << USDHC_PROCTL_DMAS_SHIFT) /* ADMA1 is selected */
 #  define USDHC_PROCTL_DMAS_ADMA2        (2 << USDHC_PROCTL_DMAS_SHIFT) /* ADMA2 is selected */
-                                                      /* Bits 10-15: Reserved */
+                                                    	/* Bits 10-15: Reserved */
 #define USDHC_PROCTL_SABGREQ             (1 << 16)    /* Bit 16: Stop At Block Gap Request */
 #define USDHC_PROCTL_CREQ                (1 << 17)    /* Bit 17: Continue Request */
 #define USDHC_PROCTL_RWCTL               (1 << 18)    /* Bit 18: Read Wait Control */
@@ -279,7 +279,7 @@
 #  define USDHC_PROCTL_BURST_4816        (2 << USDHC_PROCTL_BURST_SHIFT) /* Burst for 4/8/16 */
 #  define USDHC_PROCTL_BURST_4W8W16W     (4 << USDHC_PROCTL_BURST_SHIFT) /* Burst for 4w/8w/16w */
 #define USDHC_PROTCTL_NEBLKRD            (1 << 30)    /* Bit 30: Non-exect block read */
-                                                      /* Bit 31: Reserved */
+                                                    	/* Bit 31: Reserved */
 /* System Control Register */
 
 #define USDHC_SYSCTL_RES0                (0x0F << 0)  /* Bit 0-3:  Reserved, set to 1 */
@@ -300,14 +300,14 @@
 #define USDHC_SYSCTL_DTOCV_SHIFT         (16)         /* Bits 16-19: Data Timeout Counter Value */
 #define USDHC_SYSCTL_DTOCV_MASK          (0x0f << USDHC_SYSCTL_DTOCV_SHIFT)
 #  define USDHC_SYSCTL_DTOCV_MUL(n)      (((n) - 213) << USDHC_SYSCTL_DTOCV_SHIFT) /* SDCLK x n, n=213..227 */
-                                                      /* Bits 20-22: Reserved */
+                                                    	/* Bits 20-22: Reserved */
 #define USDHC_SYSCTL_IPPRSTN             (1 << 23)    /* Bit 23: Card /reset (default 1) */
 #define USDHC_SYSCTL_RSTA                (1 << 24)    /* Bit 24: Software Reset For ALL */
 #define USDHC_SYSCTL_RSTC                (1 << 25)    /* Bit 25: Software Reset For CMD Line */
 #define USDHC_SYSCTL_RSTD                (1 << 26)    /* Bit 26: Software Reset For DAT Line */
 #define USDHC_SYSCTL_INITA               (1 << 27)    /* Bit 27: Initialization Active */
 #define USDHC_SYSCTL_RSTT                (1 << 28)    /* Bit 28: Reset tuning */
-                                                      /* Bits 29-31: Reserved */
+                                                    	/* Bits 29-31: Reserved */
 
 /* Interrupt Status Register, Interrupt Status Enable Register and Interrupt Signal Enable Register
  * Common interrupt bit definitions
@@ -322,11 +322,11 @@
 #define USDHC_INT_CINS                   (1 << 6)     /* Bit 6:  Card Insertion */
 #define USDHC_INT_CRM                    (1 << 7)     /* Bit 7:  Card Removal */
 #define USDHC_INT_CINT                   (1 << 8)     /* Bit 8:  Card Interrupt */
-                                                      /* Bits 9-11: Reserved */
+                                                    	/* Bits 9-11: Reserved */
 #define USDHC_INT_RTR                    (1 << 12)    /* Bit 12: Re-tuning event */
-                                                      /* Bit 13: Reserved */
+                                                    	/* Bit 13: Reserved */
 #define USDHC_INT_TP                     (1 << 14)    /* Bit 14: Tuning pass */
-                                                      /* Bit 15: Reserved */
+                                                    	/* Bit 15: Reserved */
 #define USDHC_INT_CTOE                   (1 << 16)    /* Bit 16: Command Timeout Error */
 #define USDHC_INT_CCE                    (1 << 17)    /* Bit 17: Command CRC Error */
 #define USDHC_INT_CEBE                   (1 << 18)    /* Bit 18: Command End Bit Error */
@@ -334,13 +334,13 @@
 #define USDHC_INT_DTOE                   (1 << 20)    /* Bit 20: Data Timeout Error */
 #define USDHC_INT_DCE                    (1 << 21)    /* Bit 21: Data CRC Error */
 #define USDHC_INT_DEBE                   (1 << 22)    /* Bit 22: Data End Bit Error */
-                                                      /* Bit 23: Reserved */
+                                                    	/* Bit 23: Reserved */
 #define USDHC_INT_AC12E                  (1 << 24)    /* Bit 24: Auto CMD12 Error */
-                                                      /* Bit 25: Reserved */
+                                                    	/* Bit 25: Reserved */
 #define USDHC_INT_TNE                    (1 << 25)    /* Bit 26: Tuning error */
-                                                      /* Bit 27: Reserved */
+                                                    	/* Bit 27: Reserved */
 #define USDHC_INT_DMAE                   (1 << 28)    /* Bit 28: DMA Error */
-                                                      /* Bits 29-31: Reserved */
+                                                    	/* Bits 29-31: Reserved */
 #define USDHC_INT_ALL                    0x117f01ff
 
 /* Auto CMD12 Error Status Register */
@@ -350,19 +350,19 @@
 #define USDHC_AC12ERR_EBE                (1 << 2)     /* Bit 2:  Auto CMD12 End Bit Error */
 #define USDHC_AC12ERR_CE                 (1 << 3)     /* Bit 3:  Auto CMD12 CRC Error */
 #define USDHC_AC12ERR_IE                 (1 << 4)     /* Bit 4:  Auto CMD12 Index Error */
-                                                      /* Bits 5-6: Reserved */
+                                                    	/* Bits 5-6: Reserved */
 #define USDHC_AC12ERR_CNI                (1 << 7)     /* Bit 7: Command Not Issued By Auto CMD12 Error */
-                                                      /* Bits 8-21: Reserved */
+                                                    	/* Bits 8-21: Reserved */
 #define USDHC_AC12ERR_EXECUTE_TUNING     (1 << 22)    /* Bit 22: Execute Tuning */
 #define USDHC_AC12ERR_SMP_CLK_SEL        (1 << 23)    /* Bit 23: Sample clock sel */
-                                                      /* Bits 24-31: Reserved */
+                                                    	/* Bits 24-31: Reserved */
 
 /* Host Controller Capabilities */
 
 #define USDHC_HTCAPBLT_SDR50             (1 << 0)     /* Bit 0: SDR50 support indication */
 #define USDHC_HTCAPBLT_SDR104            (1 << 1)     /* Bit 1: SDR104 support indication */
 #define USDHC_HTCAPBLT_DDR50             (1 << 2)     /* Bit 2: DDR50 support indication */
-                                                      /* Bits 3-7: Reserved */
+                                                    	/* Bits 3-7: Reserved */
 #define USDHC_HTCAPBLT_TCR_SHIFT         (8)          /* Bits 8-11: Time count retuning */
 #define USDHC_HTCAPBLT_TCR_MASK          (0xF << USDHC_HTCAPBLT_TCR_SHIFT)
 #  define USDHC_HTCAPBLT_TCR(n)          ((n) << USDHC_HTCAPBLT_TCR_SHIFT)
@@ -378,7 +378,7 @@
 #  define USDHC_HTCAPBLT_MBL_1KB         (1 << USDHC_HTCAPBLT_MBL_SHIFT)
 #  define USDHC_HTCAPBLT_MBL_2KB         (2 << USDHC_HTCAPBLT_MBL_SHIFT)
 #  define USDHC_HTCAPBLT_MBL_4KB         (3 << USDHC_HTCAPBLT_MBL_SHIFT)
-                                                      /* Bit 19: Reserved */
+                                                    	/* Bit 19: Reserved */
 #define USDHC_HTCAPBLT_ADMAS             (1 << 20)    /* Bit 20: ADMA Support */
 #define USDHC_HTCAPBLT_HSS               (1 << 21)    /* Bit 21: High Speed Support */
 #define USDHC_HTCAPBLT_DMAS              (1 << 22)    /* Bit 22: DMA Support */
@@ -386,7 +386,7 @@
 #define USDHC_HTCAPBLT_VS33              (1 << 24)    /* Bit 24: Voltage Support 3.3 V */
 #define USDHC_HTCAPBLT_VS30              (1 << 25)    /* Bit 25: Voltage Support 3.0 V */
 #define USDHC_HTCAPBLT_VS18              (1 << 26)    /* Bit 26: Voltage Support 1.8 */
-                                                      /* Bits 27-31: Reserved */
+                                                    	/* Bits 27-31: Reserved */
 
 /* Watermark Level Register */
 
@@ -396,14 +396,14 @@
 #define USDHC_WML_RD_BL_SHIFT            (8)          /* Bits 8-12: Read Watermark Burst Length */
 #define USDHC_WML_RD_BL_MASK             (0x1f << USDHC_WML_RD_BL_SHIFT)
 #  define USDHC_WML_RD_BL(n)             ((n) << SDHC_WML_RD_BLL_SHIFT)
-                                                      /* Bits 13-15: Reserved */
+                                                    	/* Bits 13-15: Reserved */
 #define USDHC_WML_WR_SHIFT               (16)         /* Bits 16-23: Write Watermark Level */
 #define USDHC_WML_WR_MASK                (0xff << USDHC_WML_WRWML_SHIFT)
 #  define USDHC_WML_WR(n)                ((n) << SDHC_WML_WRWML_SHIFT)
 #define USDHC_WML_WR_BL_SHIFT            (24)         /* Bits 24-28: Write Watermark Burst Length */
 #define USDHC_WML_WR_BL_MASK             (0x1f << USDHC_WML_WD_BL_SHIFT)
 #  define USDHC_WML_WR_BL(n)             ((n) << SDHC_WML_WD_BLL_SHIFT)
-                                                      /* Bits 29-31: Reserved */
+                                                    	/* Bits 29-31: Reserved */
 
 /* Mixer Control Register */
 
@@ -416,12 +416,12 @@
 #define USDHC_MC_MSBSEL                  (1 << 5)     /* Bit 5: Multi/single block select */
 #define USDHC_MC_NIBBLE_POS              (1 << 6)     /* Bit 6: Nibble position for DDR 4 bit */
 #define USDHC_MC_AC23EN                  (1 << 7)     /* Bit 7: Auto CMD23 Enable */
-                                                      /* Bits 8-21: Reserved */
+                                                    	/* Bits 8-21: Reserved */
 #define USDHC_MC_EXE_TUNE                (1 << 22)    /* Bit 22: Execute Tuning */
 #define USDHC_MC_SMP_CLK_SEL             (1 << 23)    /* Bit 23: SMP Clock Sel */
 #define USDHC_MC_AUTO_TUNE_EN            (1 << 24)    /* Bit 24: Auto tune enable */
 #define USDHC_MC_FBCLK_SEL               (1 << 25)    /* Bit 25: Feedback clock source selection */
-                                                      /* Bits 26-31: reserved */
+                                                    	/* Bits 26-31: reserved */
 
 /* Force Event Register */
 
@@ -430,9 +430,9 @@
 #define USDHC_FEVT_AC12CE                (1 << 2)     /* Bit 2:  Force Event Auto Command 12 CRC Error */
 #define USDHC_FEVT_AC12EBE               (1 << 3)     /* Bit 3:  Force Event Auto Command 12 End Bit Error */
 #define USDHC_FEVT_AC12IE                (1 << 4)     /* Bit 4:  Force Event Auto Command 12 Index Error */
-                                                      /* Bits 5-6: Reserved */
+                                                    	/* Bits 5-6: Reserved */
 #define USDHC_FEVT_CNIBAC12E             (1 << 7)     /* Bit 7:  Force Event Command Not Executed By Auto Command 12 Error */
-                                                      /* Bits 8-15: Reserved */
+                                                    	/* Bits 8-15: Reserved */
 #define USDHC_FEVT_CTOE                  (1 << 16)    /* Bit 16: Force Event Command Time Out Error */
 #define USDHC_FEVT_CCE                   (1 << 17)    /* Bit 17: Force Event Command CRC Error */
 #define USDHC_FEVT_CEBE                  (1 << 18)    /* Bit 18: Force Event Command End Bit Error */
@@ -440,13 +440,13 @@
 #define USDHC_FEVT_DTOE                  (1 << 20)    /* Bit 20: Force Event Data Time Out Error */
 #define USDHC_FEVT_DCE                   (1 << 21)    /* Bit 21: Force Event Data CRC Error */
 #define USDHC_FEVT_DEBE                  (1 << 22)    /* Bit 22: Force Event Data End Bit Error */
-                                                      /* Bit 23: Reserved */
+                                                    	/* Bit 23: Reserved */
 #define USDHC_FEVT_AC12E                 (1 << 24)    /* Bit 24: Force Event Auto Command 12 Error */
-                                                      /* Bit 25: Reserved */
+                                                    	/* Bit 25: Reserved */
 #define USDHC_FEVT_TTNE                  (1 << 26)    /* Bit 26: Force tuning error */
-                                                      /* Bit 27: reserved */
+                                                    	/* Bit 27: reserved */
 #define USDHC_FEVT_DMAE                  (1 << 28)    /* Bit 28: Force Event DMA Error */
-                                                      /* Bits 29-30: Reserved */
+                                                    	/* Bits 29-30: Reserved */
 #define USDHC_FEVT_CINT                  (1 << 31)    /* Bit 31: Force Event Card Interrupt */
 
 /* ADMA Error Status Register */
@@ -459,7 +459,7 @@
 #  define USDHC_ADMAES_TFR               (3 << USDHC_ADMAES_ADMAES_SHIFT) /* Transfer data */
 #define USDHC_ADMAES_LME                 (1 << 2)     /* Bit 2:  ADMA Length Mismatch Error */
 #define USDHC_ADMAES_DCE                 (1 << 3)     /* Bit 3:  ADMA Descriptor Error */
-                                                      /* Bits 4-31: Reserved */
+                                                    	/* Bits 4-31: Reserved */
 /* ADMA System Address Register */
 
 #define USDHC_ADSADDR_SHIFT              (0)          /* Bits 1-31: ADMA System Address */
@@ -499,7 +499,7 @@
 #define USDHC_DL_STAT_REF_SEL_SHIFT      (9)           /* Bits 9-15: Reference delay line select taps */
 #define USDHC_DL_STAT_REF_SEL_MASK       (0x7f << USDHC_DL_STAT_REF_SEL_SHIFT)
 #  define USDHC_DL_STAT_REF_SEL(n)       ((n) << USDHC_DL_STAT_REF_SEL_SHIFT)
-                                                      /* Bits 16-31: Reserved */
+                                                    	/* Bits 16-31: Reserved */
 
 /* Clk tuning control and status */
 
@@ -525,21 +525,21 @@
 #define USDHC_MMCBOOT_BOOTEN             (1 << 6)     /* Bit 6:  Boot mode enable */
 #define USDHC_MMCBOOT_AUTOSABGEN         (1 << 7)     /* Bit 7:  Enable auto stop at block gap function */
 #define USDHC_MMCBOOT_DISABLETO          (1 << 8)
-                                                      /* Bits 8-15: Reserved */
+                                                    	/* Bits 8-15: Reserved */
 #define USDHC_MMCBOOT_BOOTBLKCNT_SHIFT   (16)         /* Bits 16-31: Stop at block gap value of automatic mode */
 #define USDHC_MMCBOOT_BOOTBLKCNT_MASK    (0xffff << USDHC_MMCBOOT_BOOTBLKCNT_SHIFT)
 
 /* Vendor specific register 2 */
-                                                      /* Bits 0-2: Reserved */
+                                                    	/* Bits 0-2: Reserved */
 #define USDHC_VS2_CARDINTD3              (1 << 3)     /* Bit 3: Card interrupt detection test */
 #define USDHC_VS2_TUNING8BITEN           (1 << 4)     /* Bit 4: Tuning 8 bit enable */
 #define USDHC_VS2_TUNING1BITEN           (1 << 5)     /* Bit 5: Tuning 1 bit enable */
 #define USDHC_VS2_TUNINGCMDBITEN         (1 << 6)     /* Bit 6: Tuning CMD bit enable */
-                                                      /* Bits 7-11: Reserved */
+                                                    	/* Bits 7-11: Reserved */
 #define USDHC_VS2_ACMD23ARGU2            (1 << 12)    /* Bit 12: Argument 2 register enable for ACMD23 */
 #define USDHC_VS2_PARTDLLDEBUG           (1 << 13)    /* Bit 13: Part DLL debug */
 #define USDHC_VS2_BUSRESET               (1 << 14)    /* Bit 14: Bus reset */
-                                                      /* Bits 15-31: Reserved */
+                                                    	/* Bits 15-31: Reserved */
 
 /* Tuning Control Register */
 
@@ -549,13 +549,13 @@
 #define USDHC_TC_COUNT_SHIFT             (8)          /* Bits 8-25: Count for CMD19 tuning */
 #define USDHC_TC_COUNT_MASK              (0xff << USDHC_TC_COUNT_SHIFT)
 #  define USDHC_TC_COUNT(n)              ((n) << USDHC_TC_COUNT_SHIFT)
-                                                      /* Bit 19: Reserved */
+                                                    	/* Bit 19: Reserved */
 #define USDHC_TC_WINDOW_SHIFT            (20)         /* Bits 20-22: Tuning window */
 #define USDHC_TC_WINDOW_MASK             (0x7 << USDHC_TC_WINDOWS_SHIFT)
 #  define USDHC_TC_WINDOW(n)             ((n) << USDHC_TC_WINDOW_SHIFT)
                                                       /* Bit 23: Reserved */
 #define USDHC_TC_TUNINGEN                (1 << 24)    /* Bit 24: Tuning enable */
-                                                      /* Bits 25-31: Reserved */
+                                                    	/* Bits 25-31: Reserved */
 
 /************************************************************************************
  * Public Types

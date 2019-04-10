@@ -1121,20 +1121,20 @@ extern "C" {
  */
 static inline void imxrt_clock_setmux(clock_mux_t mux, uint32_t value)
 {
-    uint32_t busyShift;
+	uint32_t busyShift;
 
-    busyShift = CCM_TUPLE_BUSY_SHIFT(mux);
-    CCM_TUPLE_REG(CCM, mux) = (CCM_TUPLE_REG(CCM, mux) & (~CCM_TUPLE_MASK(mux))) |
-                              (((uint32_t)((value) << CCM_TUPLE_SHIFT(mux))) & CCM_TUPLE_MASK(mux));
+	busyShift = CCM_TUPLE_BUSY_SHIFT(mux);
+	CCM_TUPLE_REG(CCM, mux) = (CCM_TUPLE_REG(CCM, mux) & (~CCM_TUPLE_MASK(mux))) |
+								(((uint32_t)((value) << CCM_TUPLE_SHIFT(mux))) & CCM_TUPLE_MASK(mux));
 
-    DEBUGASSERT(busyShift <= CCM_NO_BUSY_WAIT);
+	DEBUGASSERT(busyShift <= CCM_NO_BUSY_WAIT);
 
-    /* Clock switch need Handshake? */
-    if (CCM_NO_BUSY_WAIT != busyShift) {
-        /* Wait until CCM internal handshake finish. */
-        while (CCM->CDHIPR & (1U << busyShift)) {
-        }
-    }
+	/* Clock switch need Handshake? */
+	if (CCM_NO_BUSY_WAIT != busyShift) {
+		/* Wait until CCM internal handshake finish. */
+		while (CCM->CDHIPR & (1U << busyShift)) {
+		}
+	}
 }
 
 /*!
@@ -1145,7 +1145,7 @@ static inline void imxrt_clock_setmux(clock_mux_t mux, uint32_t value)
  */
 static inline uint32_t imxrt_clock_getmux(clock_mux_t mux)
 {
-    return (CCM_TUPLE_REG(CCM, mux) & CCM_TUPLE_MASK(mux)) >> CCM_TUPLE_SHIFT(mux);
+	return (CCM_TUPLE_REG(CCM, mux) & CCM_TUPLE_MASK(mux)) >> CCM_TUPLE_SHIFT(mux);
 }
 
 /*!

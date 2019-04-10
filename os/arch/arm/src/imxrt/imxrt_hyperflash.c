@@ -573,7 +573,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_erasepage called: page[%d] ", page);
     IMXLOG(tempLog);
 
-	address= up_progmem_getaddress(page);
+	address = up_progmem_getaddress(page);
 
     /* Write enable */
     status = imxrt_flexspi_hyper_write_enable(IMXRT_FLEXSPI, address);

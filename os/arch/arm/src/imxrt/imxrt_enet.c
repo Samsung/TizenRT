@@ -255,7 +255,7 @@
  * locking up of the Ethernet interface.
  */
 
-#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR )
+#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR)
 
 /* This is a helper pointer for accessing the contents of the Ethernet header */
 
@@ -671,10 +671,9 @@ static int imxrt_txpoll(struct netif *dev)
 		#ifdef CONFIG_NET_MULTIBUFFER
 		priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 		#else
-		if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+		if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 			memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
-		}
-		else {
+		} else {
 			/* code */
 		}
 		#endif
@@ -868,7 +867,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			priv->dev.d_len = imxrt_swap16(rxdesc->length);
 			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)rxdesc->data);
 			#else
-			if(rxdesc->length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+			if (rxdesc->length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)rxdesc->data), rxdesc->length);
 			} else {
 				/* code */
@@ -895,7 +894,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			#ifdef CONFIG_NET_MULTIBUFFER
 			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 			#else
-			if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+			if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
 			} else {
 				/* code */
@@ -2281,10 +2280,9 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	#ifdef CONFIG_NET_MULTIBUFFER
 	priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 	#else
-	if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+	if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 		memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
-	}
-	else {
+	} else {
 		/* code */
 	}
 	#endif

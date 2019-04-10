@@ -122,7 +122,7 @@
 #  define GPT_CR_CLKSRC_IPG_24M    (5 << GPT_CR_CLKSRC_SHIFT)  /* Crystal oscillator as Reference Clock (ipg_clk_24M) */
 #define GPT_CR_FRR                 (1 << 9)   /* Bit: 9  Free-Run or Restart mode. */
 #define GPT_CR_EN_24M              (1 << 10)  /* Bit: 10 Enable 24 MHz clock input from crystal. */
-                                              /* Bits: 11-14  Reserved */
+                                            	/* Bits: 11-14  Reserved */
 #define GPT_CR_SWR                 (1 << 15)  /* Bit: 15 Software reset. */
 #define GPT_CR_IM1_SHIFT           (16)       /* Bits: 16-17  See IM2 */
 #define GPT_CR_IM1_MASK            (3 << GPT_CR_IM1_SHIFT)
@@ -174,7 +174,7 @@
 #define GPT_PR_PRESCALER24M_SHIFT  (12)       /* Bits: 12-15  Prescaler bits. */
 #define GPT_PR_PRESCALER24M_MASK   (0xf << GPT_PR_PRESCALER24M_SHIFT)
 #  define GPT_PR_PRESCALER24M(n)   ((uint32_t)(n) << GPT_PR_PRESCALER24M_SHIFT)
-                                              /* Bits: 16-31  Reserved */
+                                            	/* Bits: 16-31  Reserved */
 
 /* GPT Status Register */
 
@@ -184,7 +184,7 @@
 #define GPT_SR_IF1                 (1 << 3)   /* Bit: 3  Input capture 1 Flag */
 #define GPT_SR_IF2                 (1 << 4)   /* Bit: 4  Input capture 2 Flag */
 #define GPT_SR_ROV                 (1 << 5)   /* Bit: 5  Rollover Flag. */
-                                              /* Bits: 6-31  Reserved */
+                                            	/* Bits: 6-31  Reserved */
 
 /* GPT Interrupt Register */
 
@@ -194,6 +194,6 @@
 #define GPT_IR_IF1IE               (1 << 3)   /* Bit: 3  Input capture 1 Interrupt Enable */
 #define GPT_IR_IF2IE               (1 << 4)   /* Bit: 4  Input capture 2 Interrupt Enable */
 #define GPT_IR_ROVIE               (1 << 5)   /* Bit: 5  Rollover Interrupt Enable. */
-                                              /* Bits: 6-31  Reserved */
+                                            	/* Bits: 6-31  Reserved */
 
 #endif /* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_GPT_H */

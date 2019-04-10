@@ -151,34 +151,34 @@
 
 #define ADC_HC_ADCH_SHIFT                    (0)        /* Bits: 0-4  Input Channel Select */
 #define ADC_HC_ADCH_MASK                     (31 << ADC_HC_ADCH_SHIFT)
-#  define ADC_HC_ADCH(n)                     ((uint32_t)(n) << ADC_HC_ADCH_SHIFT)
-#  define ADC_HC_ADCH_EXT_0                  (0 << ADC_HC_ADCH_SHIFT)  /* External channels 0 */
-#  define ADC_HC_ADCH_EXT_1                  (1 << ADC_HC_ADCH_SHIFT)  /* External channels 1 */
-#  define ADC_HC_ADCH_EXT_2                  (2 << ADC_HC_ADCH_SHIFT)  /* External channels 2 */
-#  define ADC_HC_ADCH_EXT_3                  (3 << ADC_HC_ADCH_SHIFT)  /* External channels 3 */
-#  define ADC_HC_ADCH_EXT_4                  (4 << ADC_HC_ADCH_SHIFT)  /* External channels 4 */
-#  define ADC_HC_ADCH_EXT_5                  (5 << ADC_HC_ADCH_SHIFT)  /* External channels 5 */
-#  define ADC_HC_ADCH_EXT_6                  (6 << ADC_HC_ADCH_SHIFT)  /* External channels 6 */
-#  define ADC_HC_ADCH_EXT_7                  (7 << ADC_HC_ADCH_SHIFT)  /* External channels 7 */
-#  define ADC_HC_ADCH_EXT_8                  (8 << ADC_HC_ADCH_SHIFT)  /* External channels 8 */
-#  define ADC_HC_ADCH_EXT_9                  (9 << ADC_HC_ADCH_SHIFT)  /* External channels 9 */
-#  define ADC_HC_ADCH_EXT_10                 (10 << ADC_HC_ADCH_SHIFT)  /* External channels 10 */
-#  define ADC_HC_ADCH_EXT_11                 (11 << ADC_HC_ADCH_SHIFT)  /* External channels 11 */
-#  define ADC_HC_ADCH_EXT_12                 (12 << ADC_HC_ADCH_SHIFT)  /* External channels 12 */
-#  define ADC_HC_ADCH_EXT_13                 (13 << ADC_HC_ADCH_SHIFT)  /* External channels 13 */
-#  define ADC_HC_ADCH_EXT_14                 (14 << ADC_HC_ADCH_SHIFT)  /* External channels 14 */
-#  define ADC_HC_ADCH_EXT_15                 (15 << ADC_HC_ADCH_SHIFT)  /* External channels 15 */
-#  define ADC_HC_ADCH_EXT_ADC_ETC            (16 << ADC_HC_ADCH_SHIFT)  /* External channel selection from ADC_ETC */
-#  define ADC_HC_ADCH_VREFSH                 (25 << ADC_HC_ADCH_SHIFT)  /* internal channel, for ADC self-test, hard connected to VRH internally */
-#  define ADC_HC_ADCH_DIS                    (31 << ADC_HC_ADCH_SHIFT)  /* */
-                                                         /* Bits: 5-6 Reserved */
+#define ADC_HC_ADCH(n)                     ((uint32_t)(n) << ADC_HC_ADCH_SHIFT)
+#define ADC_HC_ADCH_EXT_0                  (0 << ADC_HC_ADCH_SHIFT)  /* External channels 0 */
+#define ADC_HC_ADCH_EXT_1                  (1 << ADC_HC_ADCH_SHIFT)  /* External channels 1 */
+#define ADC_HC_ADCH_EXT_2                  (2 << ADC_HC_ADCH_SHIFT)  /* External channels 2 */
+#define ADC_HC_ADCH_EXT_3                  (3 << ADC_HC_ADCH_SHIFT)  /* External channels 3 */
+#define ADC_HC_ADCH_EXT_4                  (4 << ADC_HC_ADCH_SHIFT)  /* External channels 4 */
+#define ADC_HC_ADCH_EXT_5                  (5 << ADC_HC_ADCH_SHIFT)  /* External channels 5 */
+#define ADC_HC_ADCH_EXT_6                  (6 << ADC_HC_ADCH_SHIFT)  /* External channels 6 */
+#define ADC_HC_ADCH_EXT_7                  (7 << ADC_HC_ADCH_SHIFT)  /* External channels 7 */
+#define ADC_HC_ADCH_EXT_8                  (8 << ADC_HC_ADCH_SHIFT)  /* External channels 8 */
+#define ADC_HC_ADCH_EXT_9                  (9 << ADC_HC_ADCH_SHIFT)  /* External channels 9 */
+#define ADC_HC_ADCH_EXT_10                 (10 << ADC_HC_ADCH_SHIFT)  /* External channels 10 */
+#define ADC_HC_ADCH_EXT_11                 (11 << ADC_HC_ADCH_SHIFT)  /* External channels 11 */
+#define ADC_HC_ADCH_EXT_12                 (12 << ADC_HC_ADCH_SHIFT)  /* External channels 12 */
+#define ADC_HC_ADCH_EXT_13                 (13 << ADC_HC_ADCH_SHIFT)  /* External channels 13 */
+#define ADC_HC_ADCH_EXT_14                 (14 << ADC_HC_ADCH_SHIFT)  /* External channels 14 */
+#define ADC_HC_ADCH_EXT_15                 (15 << ADC_HC_ADCH_SHIFT)  /* External channels 15 */
+#define ADC_HC_ADCH_EXT_ADC_ETC            (16 << ADC_HC_ADCH_SHIFT)  /* External channel selection from ADC_ETC */
+#define ADC_HC_ADCH_VREFSH                 (25 << ADC_HC_ADCH_SHIFT)  /* internal channel, for ADC self-test, hard connected to VRH internally */
+#define ADC_HC_ADCH_DIS                    (31 << ADC_HC_ADCH_SHIFT)  /* */
+																		/* Bits: 5-6 Reserved */
 #define ADC_HC_AIEN                          (1 << 7)   /* Bit: 7  Conversion Complete Interrupt Enable/Disable Control */
-                                                        /* Bits: 8-31 Reserved */
+                                                						/* Bits: 8-31 Reserved */
 
 /* Status register for HW triggers */
 
 #define ADC_HS_COCO0                         (1 << 0)   /* Bit: 0  Conversion Complete Flag */
-                                                        /* Bits: 1-31 Reserved */
+                                                    	/* Bits: 1-31 Reserved */
 
 /* Data result register for HW & SW triggers */
 
@@ -189,49 +189,49 @@
 
 #define ADC_CFG_ADICLK_SHIFT                 (0)        /* Bits: 0-1  Input Clock Select */
 #define ADC_CFG_ADICLK_MASK                  (3 << ADC_CFG_ADICLK_SHIFT)
-#  define ADC_CFG_ADICLK(n)                  ((uint32_t)(n) << ADC_CFG_ADICLK_SHIFT)
-#  define ADC_CFG_ADICLK_IPG                 (0 << ADC_CFG_ADICLK_SHIFT)  /* IPG clock */
-#  define ADC_CFG_ADICLK_IPGDIV2             (1 << ADC_CFG_ADICLK_SHIFT)  /* IPG clock divided by 2 */
-#  define ADC_CFG_ADICLK_ADACK               (3 << ADC_CFG_ADICLK_SHIFT)  /* Asynchronous clock (ADACK) */
+#define ADC_CFG_ADICLK(n)                  ((uint32_t)(n) << ADC_CFG_ADICLK_SHIFT)
+#define ADC_CFG_ADICLK_IPG                 (0 << ADC_CFG_ADICLK_SHIFT)  /* IPG clock */
+#define ADC_CFG_ADICLK_IPGDIV2             (1 << ADC_CFG_ADICLK_SHIFT)  /* IPG clock divided by 2 */
+#define ADC_CFG_ADICLK_ADACK               (3 << ADC_CFG_ADICLK_SHIFT)  /* Asynchronous clock (ADACK) */
 #define ADC_CFG_MODE_SHIFT                   (2)        /* Bits: 2-3  Conversion Mode Selection */
 #define ADC_CFG_MODE_MASK                    (3 << ADC_CFG_MODE_SHIFT)
-#  define ADC_CFG_MODE(n)                    ((uint32_t)(n) << ADC_CFG_MODE_SHIFT)
-#  define ADC_CFG_MODE_8BIT                  (0 << ADC_CFG_MODE_SHIFT)  /* 8-bit conversion */
-#  define ADC_CFG_MODE_10BIT                 (1 << ADC_CFG_MODE_SHIFT)  /* 10-bit conversion */
-#  define ADC_CFG_MODE_12BIT                 (2 << ADC_CFG_MODE_SHIFT)  /* 12-bit conversion */
+#define ADC_CFG_MODE(n)                    ((uint32_t)(n) << ADC_CFG_MODE_SHIFT)
+#define ADC_CFG_MODE_8BIT                  (0 << ADC_CFG_MODE_SHIFT)  /* 8-bit conversion */
+#define ADC_CFG_MODE_10BIT                 (1 << ADC_CFG_MODE_SHIFT)  /* 10-bit conversion */
+#define ADC_CFG_MODE_12BIT                 (2 << ADC_CFG_MODE_SHIFT)  /* 12-bit conversion */
 #define ADC_CFG_ADLSMP                       (1 << 4)   /* Bit: 4  Long Sample Time Configuration */
 #define ADC_CFG_ADIV_SHIFT                   (5)        /* Bits: 5-6  Clock Divide Select */
 #define ADC_CFG_ADIV_MASK                    (3 << ADC_CFG_ADIV_SHIFT)
-#  define ADC_CFG_ADIV(n)                    ((uint32_t)(n) << ADC_CFG_ADIV_SHIFT)
-#  define ADC_CFG_ADIV_DIV1                  (0 << ADC_CFG_ADIV_SHIFT)  /* Input clock */
-#  define ADC_CFG_ADIV_DIV2                  (1 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 2 */
-#  define ADC_CFG_ADIV_DIV4                  (2 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 4 */
-#  define ADC_CFG_ADIV_DIV8                  (3 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 8 */
+#define ADC_CFG_ADIV(n)                    ((uint32_t)(n) << ADC_CFG_ADIV_SHIFT)
+#define ADC_CFG_ADIV_DIV1                  (0 << ADC_CFG_ADIV_SHIFT)  /* Input clock */
+#define ADC_CFG_ADIV_DIV2                  (1 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 2 */
+#define ADC_CFG_ADIV_DIV4                  (2 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 4 */
+#define ADC_CFG_ADIV_DIV8                  (3 << ADC_CFG_ADIV_SHIFT)  /* Input clock / 8 */
 #define ADC_CFG_ADLPC                        (1 << 7)   /* Bit: 7  Low-Power Configuration */
 #define ADC_CFG_ADSTS_SHIFT                  (8)        /* Bits: 8-9  Defines the sample time duration. */
 #define ADC_CFG_ADSTS_MASK                   (3 << ADC_CFG_ADSTS_SHIFT)
-#  define ADC_CFG_ADSTS(n)                   ((uint32_t)(n) << ADC_CFG_ADSTS_SHIFT)
-#  define ADC_CFG_ADSTS_2_12                 (0 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 2 if ADLSMP=0b, 12 if ADLSMP=1b  */
-#  define ADC_CFG_ADSTS_4_16                 (1 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 4 if ADLSMP=0b, 16 if ADLSMP=1b  */
-#  define ADC_CFG_ADSTS_6_20                 (2 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 6 if ADLSMP=0b, 20 if ADLSMP=1b  */
-#  define ADC_CFG_ADSTS_8_24                 (3 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 8 if ADLSMP=0b, 24 if ADLSMP=1b  */
+#define ADC_CFG_ADSTS(n)                   ((uint32_t)(n) << ADC_CFG_ADSTS_SHIFT)
+#define ADC_CFG_ADSTS_2_12                 (0 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 2 if ADLSMP=0b, 12 if ADLSMP=1b  */
+#define ADC_CFG_ADSTS_4_16                 (1 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 4 if ADLSMP=0b, 16 if ADLSMP=1b  */
+#define ADC_CFG_ADSTS_6_20                 (2 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 6 if ADLSMP=0b, 20 if ADLSMP=1b  */
+#define ADC_CFG_ADSTS_8_24                 (3 << ADC_CFG_ADSTS_SHIFT)  /* Sample period (ADC clocks) = 8 if ADLSMP=0b, 24 if ADLSMP=1b  */
 #define ADC_CFG_ADHSC                        (1 << 10)  /* Bit: 10 High Speed Configuration*/
 #define ADC_CFG_REFSEL_SHIFT                 (11)       /* Bits: 11-12  Voltage Reference Selection */
 #define ADC_CFG_REFSEL_MASK                  (3 << ADC_CFG_REFSEL_SHIFT)
-#  define ADC_CFG_REFSEL(n)                  ((uint32_t)(n) << ADC_CFG_REFSEL_SHIFT)
-#  define ADC_CFG_REFSEL_VREF                (0 << ADC_CFG_REFSEL_SHIFT)  /* Selects VREFH/VREFL as reference voltage. */
+#define ADC_CFG_REFSEL(n)                  ((uint32_t)(n) << ADC_CFG_REFSEL_SHIFT)
+#define ADC_CFG_REFSEL_VREF                (0 << ADC_CFG_REFSEL_SHIFT)  /* Selects VREFH/VREFL as reference voltage. */
 #define ADC_CFG_ADTRG                        (1 << 13)  /* Bit: 13 Conversion Trigger Select */
-#  define ADC_CFG_ADTRG_SW                   (0 << 13)  /* SW trigger selected */
-#  define ADC_CFG_ADTRG_HW                   (1 << 13)  /* HW trigger selected */
+#define ADC_CFG_ADTRG_SW                   (0 << 13)  /* SW trigger selected */
+#define ADC_CFG_ADTRG_HW                   (1 << 13)  /* HW trigger selected */
 #define ADC_CFG_AVGS_SHIFT                   (14)       /* Bits: 14-15  Hardware Average select */
 #define ADC_CFG_AVGS_MASK                    (3 << ADC_CFG_AVGS_SHIFT)
-#  define ADC_CFG_AVGS(n)                    ((uint32_t)(n) << ADC_CFG_AVGS_SHIFT)
-#  define ADC_CFG_AVGS_4SMPL                 (0 << ADC_CFG_AVGS_SHIFT)  /* 4 samples averaged */
-#  define ADC_CFG_AVGS_8SMPL                 (1 << ADC_CFG_AVGS_SHIFT)  /* 8 samples averaged */
-#  define ADC_CFG_AVGS_16SMPL                (2 << ADC_CFG_AVGS_SHIFT)  /* 16 samples averaged */
-#  define ADC_CFG_AVGS_32SMPL                (3 << ADC_CFG_AVGS_SHIFT)  /* 32 samples averaged */
+#define ADC_CFG_AVGS(n)                    ((uint32_t)(n) << ADC_CFG_AVGS_SHIFT)
+#define ADC_CFG_AVGS_4SMPL                 (0 << ADC_CFG_AVGS_SHIFT)  /* 4 samples averaged */
+#define ADC_CFG_AVGS_8SMPL                 (1 << ADC_CFG_AVGS_SHIFT)  /* 8 samples averaged */
+#define ADC_CFG_AVGS_16SMPL                (2 << ADC_CFG_AVGS_SHIFT)  /* 16 samples averaged */
+#define ADC_CFG_AVGS_32SMPL                (3 << ADC_CFG_AVGS_SHIFT)  /* 32 samples averaged */
 #define ADC_CFG_OVWREN                       (1 << 16)  /* Bit: 16 Data Overwrite Enable */
-                                                        /* Bits: 17-31  Reserved */
+                                                    	/* Bits: 17-31  Reserved */
 
 /* General control register */
 
@@ -250,31 +250,31 @@
 #define ADC_GS_ADACT                         (1 << 0)   /* Bit: 0  Conversion Active */
 #define ADC_GS_CALF                          (1 << 1)   /* Bit: 1  Calibration Failed Flag */
 #define ADC_GS_AWKST                         (1 << 2)   /* Bit: 2  Asynchronous wakeup interrupt status */
-                                                        /* Bits: 3-31  Reserved */
+                                                    	/* Bits: 3-31  Reserved */
 
 /* Compare value register */
 
 #define ADC_CV_CV1_SHIFT                     (0)        /* Bits: 0-11  Compare Value 1 */
 #define ADC_CV_CV1_MASK                      (0xfff << ADC_CV_CV1_SHIFT)
-#  define ADC_CV_CV1(n)                      ((uint32_t)(n) << ADC_CV_CV1_SHIFT)
+#define ADC_CV_CV1(n)                      ((uint32_t)(n) << ADC_CV_CV1_SHIFT)
                                                         /* Bits: 12-15  Reserved */
 #define ADC_CV_CV2_SHIFT                     (16)       /* Bits: 16-27  Compare Value 2 */
 #define ADC_CV_CV2_MASK                      (0xfff << ADC_CV_CV2_SHIFT)
-#  define ADC_CV_CV2(n)                      ((uint32_t)(n) << ADC_CV_CV2_SHIFT)
-                                                        /* Bits: 28-31  Reserved */
+#define ADC_CV_CV2(n)                      ((uint32_t)(n) << ADC_CV_CV2_SHIFT)
+                                                    	/* Bits: 28-31  Reserved */
 
 /* Offset correction value register */
 
 #define ADC_OFS_OFS_SHIFT                    (0)        /* Bits: 0-11  Offset value */
 #define ADC_OFS_OFS_MASK                     (0xfff << ADC_OFS_OFS_SHIFT)
-#  define ADC_OFS_OFS(n)                     ((uint32_t)(n) << ADC_OFS_OFS_SHIFT)
+#define ADC_OFS_OFS(n)                     ((uint32_t)(n) << ADC_OFS_OFS_SHIFT)
 #define ADC_OFS_SIGN                         (1 << 12)  /* Bit: 12 Sign bit */
-                                                        /* Bits: 13-31  Reserved */
+                                                    	/* Bits: 13-31  Reserved */
 
 /* Calibration value register */
 
 #define ADC_CAL_CAL_CODE_SHIFT               (0)        /* Bits: 0-3  Calibration Result Value */
 #define ADC_CAL_CAL_CODE_MASK                (0xf << ADC_CAL_CAL_CODE_SHIFT)
-                                                        /* Bits: 4-31  Reserved */
+                                                    	/* Bits: 4-31  Reserved */
 
 #endif /* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_ADC_H */

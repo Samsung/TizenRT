@@ -594,7 +594,7 @@
 #define TMR_CSCTRL_TCF2                (1 << 5)   /* Bit: 5  Timer Compare 2 Interrupt Flag */
 #define TMR_CSCTRL_TCF1EN              (1 << 6)   /* Bit: 6  Timer Compare 1 Interrupt Enable */
 #define TMR_CSCTRL_TCF2EN              (1 << 7)   /* Bit: 7  Timer Compare 2 Interrupt Enable */
-                                                  /* Bit: 8  This field is reserved. */
+                                                	/* Bit: 8  This field is reserved. */
 #define TMR_CSCTRL_UP                  (1 << 9)   /* Bit: 9  Counting Direction Indicator */
 #define TMR_CSCTRL_TCI                 (1 << 10)  /* Bit: 10 Triggered Count Initialization Control */
 #define TMR_CSCTRL_ROC                 (1 << 11)  /* Bit: 11 Reload on Capture */
@@ -624,14 +624,14 @@
 #  define TMR_FILT_FILT_CNT_8          (5 << TMR_FILT_FILT_CNT_SHIFT)  /* of FILT_CNT affects the input latency. */
 #  define TMR_FILT_FILT_CNT_9          (6 << TMR_FILT_FILT_CNT_SHIFT)
 #  define TMR_FILT_FILT_CNT_10         (7 << TMR_FILT_FILT_CNT_SHIFT)
-                                                  /* Bits: 11-15  Reserved */
+                                                	/* Bits: 11-15  Reserved */
 
 /* Timer Channel DMA Enable Register */
 
 #define TMR_DMA_IEFDE                  (1 << 0)   /* Bit: 0  Input Edge Flag DMA Enable */
 #define TMR_DMA_CMPLD1DE               (1 << 1)   /* Bit: 1  Comparator Preload Register 1 DMA Enable */
 #define TMR_DMA_CMPLD2DE               (1 << 2)   /* Bit: 2  Comparator Preload Register 2 DMA Enable */
-                                                  /* Bits: 3-15  Reserved */
+                                                	/* Bits: 3-15  Reserved */
 
 /* Timer Channel Enable Register */
 
@@ -642,6 +642,6 @@
 #  define TMR_ENBL_CHN1                (2 << TMR_ENBL_ENBL_SHIFT)  /* Channel 1 enable */
 #  define TMR_ENBL_CHN3                (4 << TMR_ENBL_ENBL_SHIFT)  /* Channel 2 enable */
 #  define TMR_ENBL_CHN4                (8 << TMR_ENBL_ENBL_SHIFT)  /* Channel 3 enable */
-                                                  /* Bits: 4-15  Reserved */
+                                                	/* Bits: 4-15  Reserved */
 
 #endif /* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_TMR_H */

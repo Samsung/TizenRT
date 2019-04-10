@@ -198,20 +198,20 @@ typedef enum _edma_transfer_type {
 enum _edma_transfer_status {
     kStatus_EDMA_QueueFull = MAKE_STATUS(51, 0), /*!< TCD queue is full. */
     kStatus_EDMA_Busy = MAKE_STATUS(51, 1),      /*!< Channel is busy and can't handle the
-                                                                     transfer request. */
+                                                                	transfer request. */
 };
 
 /*! @brief eDMA global configuration structure.*/
 typedef struct _edma_config {
     bool enableContinuousLinkMode;    /*!< Enable (true) continuous link mode. Upon minor loop completion, the channel
-                                           activates again if that channel has a minor loop channel link enabled and
-                                           the link channel is itself. */
+                                        	activates again if that channel has a minor loop channel link enabled and
+                                        	the link channel is itself. */
     bool enableHaltOnError;           /*!< Enable (true) transfer halt on error. Any error causes the HALT bit to set.
-                                           Subsequently, all service requests are ignored until the HALT bit is cleared.*/
+                                        	Subsequently, all service requests are ignored until the HALT bit is cleared.*/
     bool enableRoundRobinArbitration; /*!< Enable (true) round robin channel arbitration method or fixed priority
-                                           arbitration is used for channel selection */
+                                        	arbitration is used for channel selection */
     bool enableDebugMode; /*!< Enable(true) eDMA debug mode. When in debug mode, the eDMA stalls the start of
-                               a new channel. Executing channels are allowed to complete. */
+                            	a new channel. Executing channels are allowed to complete. */
 } edma_config_t;
 
 /*!
@@ -225,9 +225,9 @@ typedef struct _edma_transfer_config {
     edma_transfer_size_t srcTransferSize;  /*!< Source data transfer size. */
     edma_transfer_size_t destTransferSize; /*!< Destination data transfer size. */
     int16_t srcOffset;                     /*!< Sign-extended offset applied to the current source address to
-                                                form the next-state value as each source read is completed. */
+                                            	form the next-state value as each source read is completed. */
     int16_t destOffset;                    /*!< Sign-extended offset applied to the current destination address to
-                                                form the next-state value as each destination write is completed. */
+                                            	form the next-state value as each destination write is completed. */
     uint32_t minorLoopBytes;               /*!< Bytes to transfer in a minor loop*/
     uint32_t majorLoopCounts;              /*!< Major loop iteration count. */
 } edma_transfer_config_t;
@@ -299,7 +299,7 @@ typedef struct _edma_handle {
     volatile int8_t header; /*!< The first TCD index. Should point to the next TCD to be loaded into the eDMA engine. */
     volatile int8_t tail;   /*!< The last TCD index. Should point to the next TCD to be stored into the memory pool. */
     volatile int8_t tcdUsed; /*!< The number of used TCD slots. Should reflect the number of TCDs can be used/loaded in
-                                the memory. */
+                            	the memory. */
     volatile int8_t tcdSize; /*!< The total number of TCD slots in the queue. */
     uint8_t flags;           /*!< The status of the current channel. */
 } edma_handle_t;
