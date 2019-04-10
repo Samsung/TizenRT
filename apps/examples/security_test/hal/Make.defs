@@ -16,4 +16,6 @@
 #
 ###########################################################################
 
-include $(wildcard examples/security_test/*/Make.defs)
+ifeq ($(CONFIG_EXAMPLES_SECURITY_HAL_TEST),y)
+CONFIGURED_APPS += examples/security_test/hal/
+endif
