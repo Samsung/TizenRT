@@ -813,6 +813,24 @@ Once LOGM is approved, each module should have its own index
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
+#else
+#  define berr(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
+#else
+#  define bwarn(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#  define binfo(x...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1244,6 +1262,24 @@ Once LOGM is approved, each module should have its own index
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#define berr  dbg
+#else
+#define berr  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#define bwarn  wdbg
+#else
+#define bwarn  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#define binfo  vdbg
+#else
+#define binfo  (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
