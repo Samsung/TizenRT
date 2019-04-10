@@ -65,6 +65,10 @@ ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
 CSRCS += mm_heapinfo.c
 endif
 
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+CSRCS += mm_partition_mgr.c
+endif
+
 # Add the core heap directory to the build
 
 DEPPATH += --dep-path mm_heap
