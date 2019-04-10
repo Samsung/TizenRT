@@ -20,6 +20,7 @@
 #define __SECURITY_HAL_H__
 
 #include <stdint.h>
+
 #define _IN_
 #define _OUT_
 #define _INOUT_
@@ -212,62 +213,69 @@ typedef struct _hal_ss_info {
 
 /*
  * Reference
- * Desc: Initialize HAL
+ * Desc: Initialize SE HAL 
+ * Return value: hal_result_e
  * NOTE: Initialize secure channel
  */
-typedef int (*hal_init)(_IN_ hal_init_param *params);
+int hal_init(_IN_ hal_init_param *params);
 
 /*
  * Reference
- * Desc: Deinitialize HAL
+ * Desc: Deinitialize SE HAL 
+ * Return value: hal_result_e
  * NOTE: Deinitialize secure channel
  */
-typedef int (*hal_deinit)(void);
+int hal_deinit(void);
 
 /*
  * Reference
- * Desc: free memory allocated within HAL
+ * Desc: Free memory allocated within HAL 
  */
-typedef int (*hal_free_data)(_IN_ hal_data *data);
+int hal_free_data(_IN_ hal_data *data);
 
 /*
  * Reference
- * Desc: get status of SE
- * return value: busy, not initialized, ...
+ * Desc: Get status of SE
+ * Return value: hal_result_e
  * NOTE: BUSY/IDLE check should be conducted within each HAL APIs as well.
  */
-typedef int (*hal_get_status)(void);
+int hal_get_status(void);
 
 /**
  * Key Manager
  */
 /*
  * Reference
- * Desc: If key type is asymmetric then private key can be stored.
+ * Desc: Sey key in SE
+ * Return value: hal_result_e
+ * Note: If key type is asymmetric then private key can be stored.
  */
-typedef int (*hal_set_key)(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *key, _IN_ hal_data *prikey);
+int hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *key, _IN_ hal_data *prikey);
 
 
 /*
  * Reference
- * Desc: Get key
+ * Desc: Get key from SE
+ * Return value: hal_result_e
  * NOTE: Return pubkey_X to key->data and pubkey_Y to key->priv for ECC
  */
-typedef int (*hal_get_key)(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
+int hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key);
 
 
 /*
  * Reference
- * Desc: Remove key
+ * Desc: Remove key in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_remove_key)(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
+int hal_remove_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
 
 
 /*
  * Reference
- * Desc: Generate key
+ * Desc: Generate key in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_generate_key)(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
+int hal_generate_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
 
 
 /**
@@ -277,109 +285,122 @@ typedef int (*hal_generate_key)(_IN_ hal_key_type mode, _IN_ uint32_t key_idx);
 /*
  * Reference
  * Desc: Generate random
+ * Return value: hal_result_e
  */
-typedef int (*hal_generate_random)(_IN_ uint32_t len, _OUT_ hal_data *random);
+int hal_generate_random(_IN_ uint32_t len, _OUT_ hal_data *random);
 
 /*
  * Reference
  * Desc: Get HASH
+ * Return value: hal_result_e
  */
-typedef int (*hal_get_hash)(_IN_ hal_hash_type mode, _IN_ hal_data *input, _OUT_ hal_data *hash);
+int hal_get_hash(_IN_ hal_hash_type mode, _IN_ hal_data *input, _OUT_ hal_data *hash);
 
 /*
  * Reference
  * Desc: Get HMAC
+ * Return value: hal_result_e
+ * w
  */
-typedef int (*hal_get_hmac)(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac);
+int hal_get_hmac(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ uint32_t key_idx, _OUT_ hal_data *hmac);
 
 /*
  * Reference
- * Desc: Get signature using RSA key
+ * Desc: Get signature using RSA
+ * Return value: hal_result_e
  */
-typedef int (*hal_rsa_sign_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
+int hal_rsa_sign_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
 
 /*
  * Reference
- * Desc: Verify RSA MD
+ * Desc: Verify message digest (signature) using RSA
+ * Return value: hal_result_e
  */
-typedef int (*hal_rsa_verify_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
+int hal_rsa_verify_md(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
 /*
  * Reference
- * Desc: Get ECDSA signature
+ * Desc: Get signature using ECC
+ * Return value: hal_result_e
  */
-typedef int (*hal_ecdsa_sign_md)(_IN_ hal_data *hash, _IN_ uint32_t key_idx, _INOUT_ hal_ecdsa_mode *mode, _OUT_ hal_data *sign);
+int hal_ecdsa_sign_md(_IN_ hal_data *hash, _IN_ uint32_t key_idx, _INOUT_ hal_ecdsa_mode *mode, _OUT_ hal_data *sign);
 
 /*
  * Reference
- * Desc: Verify ECDSA MD
+ * Desc: Verify message digest (signature) using ECC
+ * Return value: hal_result_e
  */
-typedef int (*hal_ecdsa_verify_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
+int hal_ecdsa_verify_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
 
 /*
  * Reference
- * Desc: Generate key at slot of index
- */
-/*
- * The function generates GX (G^X mod P) which is pubkey in dh_param with given input G, P
+ * Desc: Generate DH parameters
+ * Note: The function generates GX (G^X mod P) which is pubkey in dh_param with given input G, P
  * X will be generate and will be protected inside slot in SE
- * X have to be removed by using hal_remove_key
+ *       X have to be removed by using hal_remove_key()
+ * Return value: hal_result_e
  */
-typedef int (*hal_dh_generate_param)(_IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param);
+int hal_dh_generate_param(_IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param);
 
 /*
  * Reference
- * Desc: Get shared secret
+ * Desc: Compute DH shared secret
+ * Return value: hal_result_e
  */
-typedef int (*hal_dh_compute_shared_secret)(_IN_ hal_dh_data *dh_param, _IN_ uint32_t dh_idx, _OUT_ hal_data *shared_secret);
+int hal_dh_compute_shared_secret(_IN_ hal_dh_data *dh_param, _IN_ uint32_t dh_idx, _OUT_ hal_data *shared_secret);
 
 /*
  * Reference
  * Desc: Get ECDH shared secret
- * NOTE: pubkey denotes a public key from the target which tries to share a secret
+ * NOTE: Pubkey denotes a public key from the target which tries to share a secret
+ * Return value: hal_result_e
  */
-typedef int (*hal_ecdh_compute_shared_secret)(_IN_ hal_ecdh_data *ecdh_mode, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
+int hal_ecdh_compute_shared_secret(_IN_ hal_ecdh_data *ecdh_mode, _IN_ uint32_t key_idx, _OUT_ hal_data *shared_secret);
 
 /*
  * Reference
- * Desc: Set certificate in secure storage
- * NOTE: When cert_in consists of chains, cert_in->data represents the last certificate, and then, cert_in->priv denotes the next chain formatted hal_data.
- * (Root CA has to be the end of hal_data)
+ * Desc: Set certificate in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_set_certificate)(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in);
+int hal_set_certificate(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in);
 
 /*
  * Reference
- * Desc: Get certificate in secure storage
- * NOTE: When cert_out consists of chains, cert_out->data represents the last certificate, and then, cert_out->priv denotes the next chain formatted hal_data.
- * (Root CA has to be the end of hal_data)
+ * Desc: Get certificate in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_get_certificate)(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out);
+int hal_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out);
 /*
  * Reference
- * Desc: Remove certificate in secure storage
+ * Desc: Remove certificate in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_remove_certificate)(_IN_ uint32_t cert_idx);
+int hal_remove_certificate(_IN_ uint32_t cert_idx);
 
 /*
  * Reference
  * Desc: Get factory key
+ * Return value: hal_result_e
  */
 
-typedef int (*hal_get_factory_key)(_IN_ uint32_t key_idx, _IN_ hal_data *key);
+int hal_get_factory_key(_IN_ uint32_t key_idx, _IN_ hal_data *key);
 /*
  * Reference
  * Desc: Get factory cert
+ * Artik SEE API: -
+ * TizenRT SEE API:
+ * ISP: int isp_get_factorykey2_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
+ * Return value: hal_result_e
  */
-typedef int (*hal_get_factory_cert)(_IN_ uint32_t cert_idx, _IN_ hal_data *cert);
+int hal_get_factory_cert(_IN_ uint32_t cert_idx, _IN_ hal_data *cert);
 
 /*
  * Reference
  * Desc: Get factory data
+ * Return value: hal_result_e
  */
-typedef int (*hal_get_factory_data)(_IN_ uint32_t data_idx, _IN_ hal_data *data);
-
+int hal_get_factory_data(_IN_ uint32_t data_idx, _IN_ hal_data *data);
 
 /**
  * Crypto
@@ -388,26 +409,30 @@ typedef int (*hal_get_factory_data)(_IN_ uint32_t data_idx, _IN_ hal_data *data)
 /*
  * Reference
  * Desc: Encrypt data using AES
+ * Return value: hal_result_e
  */
-typedef int (*hal_aes_encrypt)(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
+int hal_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
 
 /*
  * Reference
  * Desc: Decrypt data using AES
+ * Return value: hal_result_e
  */
-typedef int (*hal_aes_decrypt)(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+int hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
 /*
  * Reference
  * Desc: Encrypt data using RSA
+ * Return value: hal_result_e
  */
-typedef int (*hal_rsa_encrypt)(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
+int hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
 
 /*
  * Reference
  * Desc: Decrypt data using RSA
+ * Return value: hal_result_e
  */
-typedef int (*hal_rsa_decrypt)(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+int hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
 
 /**
@@ -416,56 +441,24 @@ typedef int (*hal_rsa_decrypt)(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode,
 
 /*
  * Reference
- * Desc: write data in secure storage of ss_idx
+ * Desc: Write data in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_write_storage)(_IN_ uint32_t ss_idx, _IN_ hal_data *data);
+int hal_write_storage(_IN_ uint32_t ss_idx, _IN_ hal_data *data);
 
 /*
  * Reference
- * Desc: Read data from secure storage of ss_idx
+ * Desc: Read data from SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_read_storage)(_IN_ uint32_t ss_idx, _OUT_ hal_data *data);
+int hal_read_storage(_IN_ uint32_t ss_idx, _OUT_ hal_data *data);
 
 /*
  * Reference
- * Desc: Delete data in secure storage of ss_idx
+ * Desc: Delete data in SE
+ * Return value: hal_result_e
  */
-typedef int (*hal_delete_storage)(_IN_ uint32_t ss_idx);
+int hal_delete_storage(_IN_ uint32_t ss_idx);
 
-struct sec_ops_s {
-	hal_init init;
-	hal_deinit deinit;
-	hal_free_data free_data;
-	hal_get_status get_status;
-	hal_set_key set_key;
-	hal_get_key get_key;
-	hal_remove_key remove_key;
-	hal_generate_key generate_key;
-	hal_generate_random generate_random;
-	hal_get_hash get_hash;
-	hal_get_hmac get_hmac;
-	hal_rsa_sign_md rsa_sign_md;
-	hal_rsa_verify_md rsa_verify_md;
-	hal_ecdsa_sign_md ecdsa_sign_md;
-	hal_ecdsa_verify_md ecdsa_verify_md;
-	hal_dh_generate_param dh_generate_param;
-	hal_dh_compute_shared_secret dh_compute_shared_secret;
-	hal_ecdh_compute_shared_secret ecdh_compute_shared_secret;
-	hal_set_certificate set_certificate;
-	hal_get_certificate get_certificate;
-	hal_remove_certificate remove_certificate;
-	hal_get_factory_key get_factory_key;
-	hal_get_factory_cert get_factory_cert;
-	hal_get_factory_data get_factory_data;
-	hal_aes_encrypt aes_encrypt;
-	hal_aes_decrypt aes_decrypt;
-	hal_rsa_encrypt rsa_encrypt;
-	hal_rsa_decrypt rsa_decrypt;
-	hal_write_storage write_storage;
-	hal_read_storage read_storage;
-	hal_delete_storage delete_storage;
-};
-
-int se_initialize(void);
 
 #endif // __SECURITY_HAL_H__
