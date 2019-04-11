@@ -81,8 +81,6 @@ void imxrt_boardinitialize(void)
 #ifdef CONFIG_ARCH_LEDS
 	imxrt_autoled_initialize();
 #endif
-
-	imxrt_flash_init();
 }
 
 /****************************************************************************
