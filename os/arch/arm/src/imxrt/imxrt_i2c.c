@@ -1662,15 +1662,15 @@ static int imxrt_lpi2c_transfer(FAR struct i2c_dev_s *dev, FAR struct i2c_msg_s 
 	if ((status & LPI2C_MSR_ERROR_MASK) != 0) {
 		/* I2C_SR1_ERRORMASK is the 'OR' of the following individual bits: */
 
-		if (status & LPI2C_MSR_BBF) {
+		if (status & LPI2C_MSR_BBF(1U)) {
 			/* Bus Error */
 
 			ret = -EIO;
-		} else if (status & LPI2C_MSR_ALF) {
+		} else if (status & LPI2C_MSR_ALF(1U)) {
 			/* Arbitration Lost (master mode) */
 
 			ret = -EAGAIN;
-		} else if (status & LPI2C_MSR_NDF) {
+		} else if (status & LPI2C_MSR_NDF(1U)) {
 			/* Acknowledge Failure */
 
 			ret = -ENXIO;

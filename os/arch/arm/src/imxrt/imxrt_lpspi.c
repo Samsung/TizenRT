@@ -1805,7 +1805,7 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI2 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI2_SCK_1);
@@ -1826,7 +1826,7 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI3 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI3_SCK_1);
@@ -1847,7 +1847,7 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI4 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI4_SCK_1);
@@ -1923,7 +1923,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI2 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI2_SCK_1);
@@ -1944,7 +1944,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI3 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI3_SCK_1);
@@ -1965,7 +1965,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		/* Only configure if the bus is not already configured */
 
-		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN) == 0) {
+		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI4 pins: SCK, MISO, and MOSI */
 
 			(void)imxrt_config_gpio(GPIO_LPSPI4_SCK_1);
