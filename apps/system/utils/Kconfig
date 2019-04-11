@@ -125,7 +125,7 @@ config ENABLE_FREE_CMD
 config ENABLE_HEAPINFO_CMD
 	bool "heapinfo"
 	default y
-	depends on DEBUG_MM_HEAPINFO
+	depends on DEBUG_MM_HEAPINFO && FS_PROCFS
 	---help---
 		Show information about memory status per thread
 
@@ -172,7 +172,7 @@ config ENABLE_KILLALL_CMD
 config ENABLE_PS_CMD
 	bool "ps"
 	default y
-	depends on !FS_PROCFS_EXCLUDE_PROCESS
+	depends on FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS
 	---help---
 		List of tasks/threads
 
