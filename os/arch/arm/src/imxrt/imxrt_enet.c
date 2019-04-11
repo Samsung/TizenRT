@@ -575,7 +575,7 @@ static int imxrt_transmit(FAR struct imxrt_driver_s *priv)
 #endif
 	txdesc->status1 |= (TXDESC_R | TXDESC_L | TXDESC_TC);
 
-	buf = (uint8_t *) imxrt_swap32((uint32_t)priv->dev.d_buf);
+	buf = (uint8_t *)imxrt_swap32((uint32_t)priv->dev.d_buf);
 	if (priv->rxdesc[priv->rxtail].data == buf) {
 		struct enet_desc_s *rxdesc = &priv->rxdesc[priv->rxtail];
 
@@ -669,7 +669,7 @@ static int imxrt_txpoll(struct netif *dev)
 
 		imxrt_transmit(priv);
 		#ifdef CONFIG_NET_MULTIBUFFER
-		priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
+		priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 		#else
 		if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 			memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
@@ -866,7 +866,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			
 			#ifdef CONFIG_NET_MULTIBUFFER
 			priv->dev.d_len = imxrt_swap16(rxdesc->length);
-			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)rxdesc->data);
+			priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)rxdesc->data);
 			#else
 			if(rxdesc->length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)rxdesc->data), rxdesc->length);
@@ -893,7 +893,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			 */
 
 			#ifdef CONFIG_NET_MULTIBUFFER
-			priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
+			priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 			#else
 			if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
@@ -2245,7 +2245,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	for (i = 0; i < CONFIG_IMXRT_ENET_NTXBUFFERS; i++) {
 		priv->txdesc[i].status1 = 0;
 		priv->txdesc[i].length = 0;
-		priv->txdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t)addr);
+		priv->txdesc[i].data = (uint8_t *)imxrt_swap32((uint32_t)addr);
 #ifdef CONFIG_IMXRT_ENETENHANCEDBD
 		priv->txdesc[i].status2 = TXDESC_IINS | TXDESC_PINS;
 #endif
@@ -2257,7 +2257,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	for (i = 0; i < CONFIG_IMXRT_ENET_NRXBUFFERS; i++) {
 		priv->rxdesc[i].status1 = RXDESC_E;
 		priv->rxdesc[i].length = 0;
-		priv->rxdesc[i].data = (uint8_t *) imxrt_swap32((uint32_t)addr);
+		priv->rxdesc[i].data = (uint8_t *)imxrt_swap32((uint32_t)addr);
 #ifdef CONFIG_IMXRT_ENETENHANCEDBD
 		priv->rxdesc[i].bdu = 0;
 		priv->rxdesc[i].status2 = RXDESC_INT;
@@ -2279,7 +2279,7 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	/* Initialize the packet buffer, which is used when sending */
 
 	#ifdef CONFIG_NET_MULTIBUFFER
-	priv->dev.d_buf = (uint8_t *) imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
+	priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 	#else
 	if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 		memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);

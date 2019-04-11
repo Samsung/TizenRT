@@ -928,33 +928,30 @@ typedef uint16_t iomux_pinset_t;
 #define IOMUXC_GPR_SAIMCLK_LOWBITMASK (0x7U)
 #define IOMUXC_GPR_SAIMCLK_HIGHBITMASK (0x3U)
 
-typedef enum _iomuxc_gpr_mode
-{
-    kIOMUXC_GPR_GlobalInterruptRequest = IOMUXC_GPR_GPR1_GINT_MASK,
-    kIOMUXC_GPR_ENET1RefClkMode = IOMUXC_GPR_GPR1_ENET1_CLK_SEL_MASK,
-    kIOMUXC_GPR_USBExposureMode = IOMUXC_GPR_GPR1_USB_EXP_MODE_MASK,
-    kIOMUXC_GPR_ENET1TxClkOutputDir = IOMUXC_GPR_GPR1_ENET1_TX_CLK_DIR_MASK,
-    kIOMUXC_GPR_SAI1MClkOutputDir = IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK,
-    kIOMUXC_GPR_SAI2MClkOutputDir = IOMUXC_GPR_GPR1_SAI2_MCLK_DIR_MASK,
-    kIOMUXC_GPR_SAI3MClkOutputDir = IOMUXC_GPR_GPR1_SAI3_MCLK_DIR_MASK,
-    kIOMUXC_GPR_ExcMonitorSlavErrResponse = IOMUXC_GPR_GPR1_EXC_MON_MASK,
-    kIOMUXC_GPR_ENETIpgClkOn = IOMUXC_GPR_GPR1_ENET_IPG_CLK_S_EN_MASK,
-    kIOMUXC_GPR_AHBClockEnable = (int)IOMUXC_GPR_GPR1_CM7_FORCE_HCLK_EN_MASK,
+typedef enum _iomuxc_gpr_mode {
+	kIOMUXC_GPR_GlobalInterruptRequest = IOMUXC_GPR_GPR1_GINT_MASK,
+	kIOMUXC_GPR_ENET1RefClkMode = IOMUXC_GPR_GPR1_ENET1_CLK_SEL_MASK,
+	kIOMUXC_GPR_USBExposureMode = IOMUXC_GPR_GPR1_USB_EXP_MODE_MASK,
+	kIOMUXC_GPR_ENET1TxClkOutputDir = IOMUXC_GPR_GPR1_ENET1_TX_CLK_DIR_MASK,
+	kIOMUXC_GPR_SAI1MClkOutputDir = IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK,
+	kIOMUXC_GPR_SAI2MClkOutputDir = IOMUXC_GPR_GPR1_SAI2_MCLK_DIR_MASK,
+	kIOMUXC_GPR_SAI3MClkOutputDir = IOMUXC_GPR_GPR1_SAI3_MCLK_DIR_MASK,
+	kIOMUXC_GPR_ExcMonitorSlavErrResponse = IOMUXC_GPR_GPR1_EXC_MON_MASK,
+	kIOMUXC_GPR_ENETIpgClkOn = IOMUXC_GPR_GPR1_ENET_IPG_CLK_S_EN_MASK,
+	kIOMUXC_GPR_AHBClockEnable = (int)IOMUXC_GPR_GPR1_CM7_FORCE_HCLK_EN_MASK,
 } iomuxc_gpr_mode_t;
 
-typedef enum _iomuxc_gpr_saimclk
-{
-    kIOMUXC_GPR_SAI1MClk1Sel = IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_SHIFT,
-    kIOMUXC_GPR_SAI1MClk2Sel = IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_SHIFT,
-    kIOMUXC_GPR_SAI1MClk3Sel = IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_SHIFT,
-    kIOMUXC_GPR_SAI2MClk3Sel = IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_SHIFT,
-    kIOMUXC_GPR_SAI3MClk3Sel = IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_SHIFT,
+typedef enum _iomuxc_gpr_saimclk {
+	kIOMUXC_GPR_SAI1MClk1Sel = IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_SHIFT,
+	kIOMUXC_GPR_SAI1MClk2Sel = IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_SHIFT,
+	kIOMUXC_GPR_SAI1MClk3Sel = IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_SHIFT,
+	kIOMUXC_GPR_SAI2MClk3Sel = IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_SHIFT,
+	kIOMUXC_GPR_SAI3MClk3Sel = IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_SHIFT,
 } iomuxc_gpr_saimclk_t;
 
-typedef enum _iomuxc_mqs_pwm_oversample_rate
-{
-    kIOMUXC_MqsPwmOverSampleRate32 = 0, /* MQS PWM over sampling rate 32. */
-    kIOMUXC_MqsPwmOverSampleRate64 = 1  /* MQS PWM over sampling rate 64. */
+typedef enum _iomuxc_mqs_pwm_oversample_rate {
+	kIOMUXC_MqsPwmOverSampleRate32 = 0, /* MQS PWM over sampling rate 32. */
+	kIOMUXC_MqsPwmOverSampleRate64 = 1  /* MQS PWM over sampling rate 64. */
 } iomuxc_mqs_pwm_oversample_rate_t;
 
 /*@}*/
@@ -988,19 +985,18 @@ extern "C" {
  * @param inputOnfield   Software input on field.
  */
 static inline void imxrt_iomuxc_setpinmux(uint32_t muxRegister,
-                                    uint32_t muxMode,
-                                    uint32_t inputRegister,
-                                    uint32_t inputDaisy,
-                                    uint32_t configRegister,
-                                    uint32_t inputOnfield)
+					  uint32_t muxMode,
+					  uint32_t inputRegister,
+					  uint32_t inputDaisy,
+					  uint32_t configRegister,
+					  uint32_t inputOnfield)
 {
-    *((volatile uint32_t *)muxRegister) =
-        IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(muxMode) | IOMUXC_SW_MUX_CTL_PAD_SION(inputOnfield);
+	*((volatile uint32_t *)muxRegister) =
+		IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(muxMode) | IOMUXC_SW_MUX_CTL_PAD_SION(inputOnfield);
 
-    if (inputRegister)
-    {
-        *((volatile uint32_t *)inputRegister) = inputDaisy;
-    }
+	if (inputRegister) {
+		*((volatile uint32_t *)inputRegister) = inputDaisy;
+	}
 }
 
 /*!
@@ -1020,16 +1016,15 @@ static inline void imxrt_iomuxc_setpinmux(uint32_t muxRegister,
  * @param configValue   The pin config value.
  */
 static inline void imxrt_iomuxc_setpinconfig(uint32_t muxRegister,
-                                       uint32_t muxMode,
-                                       uint32_t inputRegister,
-                                       uint32_t inputDaisy,
-                                       uint32_t configRegister,
-                                       uint32_t configValue)
+					     uint32_t muxMode,
+					     uint32_t inputRegister,
+					     uint32_t inputDaisy,
+					     uint32_t configRegister,
+					     uint32_t configValue)
 {
-    if (configRegister)
-    {
-        *((volatile uint32_t *)configRegister) = configValue;
-    }
+	if (configRegister) {
+		*((volatile uint32_t *)configRegister) = configValue;
+	}
 }
 
 /*!
@@ -1041,18 +1036,15 @@ static inline void imxrt_iomuxc_setpinconfig(uint32_t muxRegister,
  */
 static inline void imxrt_iomuxc_enablemode(IOMUXC_GPR_Type *base, uint32_t mode, bool enable)
 {
-    mode &= ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK | IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_MASK |
-              IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_MASK | IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_MASK |
-              IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_MASK);
+	mode &= ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK | IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_MASK |
+		  IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_MASK | IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_MASK |
+		  IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_MASK);
 
-    if (enable)
-    {
-        base->GPR1 |= mode;
-    }
-    else
-    {
-        base->GPR1 &= ~mode;
-    }
+	if (enable) {
+		base->GPR1 |= mode;
+	} else {
+		base->GPR1 &= ~mode;
+	}
 }
 
 /*!
@@ -1064,18 +1056,15 @@ static inline void imxrt_iomuxc_enablemode(IOMUXC_GPR_Type *base, uint32_t mode,
  */
 static inline void imxrt_iomuxc_setsaimclkclocksource(IOMUXC_GPR_Type *base, iomuxc_gpr_saimclk_t mclk, uint8_t clkSrc)
 {
-    uint32_t gpr;
+	uint32_t gpr;
 
-    if (mclk > kIOMUXC_GPR_SAI1MClk2Sel)
-    {
-        gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_HIGHBITMASK << mclk);
-        base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_HIGHBITMASK) << mclk) | gpr;
-    }
-    else
-    {
-        gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_LOWBITMASK << mclk);
-        base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_LOWBITMASK) << mclk) | gpr;
-    }
+	if (mclk > kIOMUXC_GPR_SAI1MClk2Sel) {
+		gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_HIGHBITMASK << mclk);
+		base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_HIGHBITMASK) << mclk) | gpr;
+	} else {
+		gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_LOWBITMASK << mclk);
+		base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_LOWBITMASK) << mclk) | gpr;
+	}
 }
 
 /*!
@@ -1086,14 +1075,11 @@ static inline void imxrt_iomuxc_setsaimclkclocksource(IOMUXC_GPR_Type *base, iom
  */
 static inline void imxrt_iomuxc_mqsentersoftwarereset(IOMUXC_GPR_Type *base, bool enable)
 {
-    if (enable)
-    {
-        base->GPR2 |= IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
-    }
-    else
-    {
-        base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
-    }
+	if (enable) {
+		base->GPR2 |= IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
+	} else {
+		base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
+	}
 }
 
 /*!
@@ -1104,14 +1090,11 @@ static inline void imxrt_iomuxc_mqsentersoftwarereset(IOMUXC_GPR_Type *base, boo
  */
 static inline void imxrt_iomuxc_mqsenable(IOMUXC_GPR_Type *base, bool enable)
 {
-    if (enable)
-    {
-        base->GPR2 |= IOMUXC_GPR_GPR2_MQS_EN_MASK;
-    }
-    else
-    {
-        base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_EN_MASK;
-    }
+	if (enable) {
+		base->GPR2 |= IOMUXC_GPR_GPR2_MQS_EN_MASK;
+	} else {
+		base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_EN_MASK;
+	}
 }
 
 /*!
@@ -1124,9 +1107,9 @@ static inline void imxrt_iomuxc_mqsenable(IOMUXC_GPR_Type *base, bool enable)
 
 static inline void imxrt_iomuxc_mqsconfig(IOMUXC_GPR_Type *base, iomuxc_mqs_pwm_oversample_rate_t rate, uint8_t divider)
 {
-    uint32_t gpr = base->GPR2 & ~(IOMUXC_GPR_GPR2_MQS_OVERSAMPLE_MASK | IOMUXC_GPR_GPR2_MQS_CLK_DIV_MASK);
+	uint32_t gpr = base->GPR2 & ~(IOMUXC_GPR_GPR2_MQS_OVERSAMPLE_MASK | IOMUXC_GPR_GPR2_MQS_CLK_DIV_MASK);
 
-    base->GPR2 = gpr | IOMUXC_GPR_GPR2_MQS_OVERSAMPLE(rate) | IOMUXC_GPR_GPR2_MQS_CLK_DIV(divider);
+	base->GPR2 = gpr | IOMUXC_GPR_GPR2_MQS_OVERSAMPLE(rate) | IOMUXC_GPR_GPR2_MQS_CLK_DIV(divider);
 }
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 
@@ -2127,29 +2110,29 @@ static inline void imxrt_iomuxc_mqsconfig(IOMUXC_GPR_Type *base, iomuxc_mqs_pwm_
 #define IOMUXC_GPR_SAIMCLK_HIGHBITMASK (0x3U)
 
 typedef enum _iomuxc_gpr_mode {
-    kIOMUXC_GPR_GlobalInterruptRequest = IOMUXC_GPR_GPR1_GINT_MASK,
-    kIOMUXC_GPR_ENET1RefClkMode = IOMUXC_GPR_GPR1_ENET1_CLK_SEL_MASK,
-    kIOMUXC_GPR_USBExposureMode = IOMUXC_GPR_GPR1_USB_EXP_MODE_MASK,
-    kIOMUXC_GPR_ENET1TxClkOutputDir = IOMUXC_GPR_GPR1_ENET1_TX_CLK_DIR_MASK,
-    kIOMUXC_GPR_SAI1MClkOutputDir = IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK,
-    kIOMUXC_GPR_SAI2MClkOutputDir = IOMUXC_GPR_GPR1_SAI2_MCLK_DIR_MASK,
-    kIOMUXC_GPR_SAI3MClkOutputDir = IOMUXC_GPR_GPR1_SAI3_MCLK_DIR_MASK,
-    kIOMUXC_GPR_ExcMonitorSlavErrResponse = IOMUXC_GPR_GPR1_EXC_MON_MASK,
-    kIOMUXC_GPR_ENETIpgClkOn = IOMUXC_GPR_GPR1_ENET_IPG_CLK_S_EN_MASK,
-    kIOMUXC_GPR_AHBClockEnable = (int)IOMUXC_GPR_GPR1_CM7_FORCE_HCLK_EN_MASK,
+	kIOMUXC_GPR_GlobalInterruptRequest = IOMUXC_GPR_GPR1_GINT_MASK,
+	kIOMUXC_GPR_ENET1RefClkMode = IOMUXC_GPR_GPR1_ENET1_CLK_SEL_MASK,
+	kIOMUXC_GPR_USBExposureMode = IOMUXC_GPR_GPR1_USB_EXP_MODE_MASK,
+	kIOMUXC_GPR_ENET1TxClkOutputDir = IOMUXC_GPR_GPR1_ENET1_TX_CLK_DIR_MASK,
+	kIOMUXC_GPR_SAI1MClkOutputDir = IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK,
+	kIOMUXC_GPR_SAI2MClkOutputDir = IOMUXC_GPR_GPR1_SAI2_MCLK_DIR_MASK,
+	kIOMUXC_GPR_SAI3MClkOutputDir = IOMUXC_GPR_GPR1_SAI3_MCLK_DIR_MASK,
+	kIOMUXC_GPR_ExcMonitorSlavErrResponse = IOMUXC_GPR_GPR1_EXC_MON_MASK,
+	kIOMUXC_GPR_ENETIpgClkOn = IOMUXC_GPR_GPR1_ENET_IPG_CLK_S_EN_MASK,
+	kIOMUXC_GPR_AHBClockEnable = (int)IOMUXC_GPR_GPR1_CM7_FORCE_HCLK_EN_MASK,
 } iomuxc_gpr_mode_t;
 
 typedef enum _iomuxc_gpr_saimclk {
-    kIOMUXC_GPR_SAI1MClk1Sel = IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_SHIFT,
-    kIOMUXC_GPR_SAI1MClk2Sel = IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_SHIFT,
-    kIOMUXC_GPR_SAI1MClk3Sel = IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_SHIFT,
-    kIOMUXC_GPR_SAI2MClk3Sel = IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_SHIFT,
-    kIOMUXC_GPR_SAI3MClk3Sel = IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_SHIFT,
+	kIOMUXC_GPR_SAI1MClk1Sel = IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_SHIFT,
+	kIOMUXC_GPR_SAI1MClk2Sel = IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_SHIFT,
+	kIOMUXC_GPR_SAI1MClk3Sel = IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_SHIFT,
+	kIOMUXC_GPR_SAI2MClk3Sel = IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_SHIFT,
+	kIOMUXC_GPR_SAI3MClk3Sel = IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_SHIFT,
 } iomuxc_gpr_saimclk_t;
 
 typedef enum _iomuxc_mqs_pwm_oversample_rate {
-    kIOMUXC_MqsPwmOverSampleRate32 = 0, /* MQS PWM over sampling rate 32. */
-    kIOMUXC_MqsPwmOverSampleRate64 = 1  /* MQS PWM over sampling rate 64. */
+	kIOMUXC_MqsPwmOverSampleRate32 = 0, /* MQS PWM over sampling rate 32. */
+	kIOMUXC_MqsPwmOverSampleRate64 = 1  /* MQS PWM over sampling rate 64. */
 } iomuxc_mqs_pwm_oversample_rate_t;
 
 /*@}*/
@@ -2195,18 +2178,18 @@ extern "C" {
  *
  ****************************************************************************/
 static inline void imxrt_iomuxc_setpinmux(uint32_t muxRegister,
-                                        uint32_t muxMode,
-                                        uint32_t inputRegister,
-                                        uint32_t inputDaisy,
-                                        uint32_t configRegister,
-                                        uint32_t inputOnfield)
+					  uint32_t muxMode,
+					  uint32_t inputRegister,
+					  uint32_t inputDaisy,
+					  uint32_t configRegister,
+					  uint32_t inputOnfield)
 {
-    *((volatile uint32_t *)muxRegister) =
-        IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(muxMode) | IOMUXC_SW_MUX_CTL_PAD_SION(inputOnfield);
+	*((volatile uint32_t *)muxRegister) =
+		IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(muxMode) | IOMUXC_SW_MUX_CTL_PAD_SION(inputOnfield);
 
-    if (inputRegister) {
-        *((volatile uint32_t *)inputRegister) = inputDaisy;
-    }
+	if (inputRegister) {
+		*((volatile uint32_t *)inputRegister) = inputDaisy;
+	}
 }
 
 /****************************************************************************
@@ -2234,15 +2217,15 @@ static inline void imxrt_iomuxc_setpinmux(uint32_t muxRegister,
  *
  ****************************************************************************/
 static inline void imxrt_iomuxc_setpinconfig(uint32_t muxRegister,
-                                            uint32_t muxMode,
-                                            uint32_t inputRegister,
-                                            uint32_t inputDaisy,
-                                            uint32_t configRegister,
-                                            uint32_t configValue)
+					     uint32_t muxMode,
+					     uint32_t inputRegister,
+					     uint32_t inputDaisy,
+					     uint32_t configRegister,
+					     uint32_t configValue)
 {
-    if (configRegister) {
-        *((volatile uint32_t *)configRegister) = configValue;
-    }
+	if (configRegister) {
+		*((volatile uint32_t *)configRegister) = configValue;
+	}
 }
 
 /****************************************************************************
@@ -2262,15 +2245,15 @@ static inline void imxrt_iomuxc_setpinconfig(uint32_t muxRegister,
  ****************************************************************************/
 static inline void imxrt_iomuxc_enablemode(IOMUXC_GPR_Type *base, uint32_t mode, bool enable)
 {
-    mode &= ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK | IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_MASK |
-              IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_MASK | IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_MASK |
-              IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_MASK);
+	mode &= ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK | IOMUXC_GPR_GPR1_SAI1_MCLK2_SEL_MASK |
+		  IOMUXC_GPR_GPR1_SAI1_MCLK3_SEL_MASK | IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_MASK |
+		  IOMUXC_GPR_GPR1_SAI3_MCLK3_SEL_MASK);
 
-    if (enable) {
-        base->GPR1 |= mode;
-    } else {
-        base->GPR1 &= ~mode;
-    }
+	if (enable) {
+		base->GPR1 |= mode;
+	} else {
+		base->GPR1 &= ~mode;
+	}
 }
 
 /****************************************************************************
@@ -2290,15 +2273,15 @@ static inline void imxrt_iomuxc_enablemode(IOMUXC_GPR_Type *base, uint32_t mode,
  ****************************************************************************/
 static inline void imxrt_iomuxc_setsaimclkclocksource(IOMUXC_GPR_Type *base, iomuxc_gpr_saimclk_t mclk, uint8_t clkSrc)
 {
-    uint32_t gpr;
+	uint32_t gpr;
 
-    if (mclk > kIOMUXC_GPR_SAI1MClk2Sel) {
-        gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_HIGHBITMASK << mclk);
-        base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_HIGHBITMASK) << mclk) | gpr;
-    } else {
-        gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_LOWBITMASK << mclk);
-        base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_LOWBITMASK) << mclk) | gpr;
-    }
+	if (mclk > kIOMUXC_GPR_SAI1MClk2Sel) {
+		gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_HIGHBITMASK << mclk);
+		base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_HIGHBITMASK) << mclk) | gpr;
+	} else {
+		gpr = base->GPR1 & ~(IOMUXC_GPR_SAIMCLK_LOWBITMASK << mclk);
+		base->GPR1 = ((clkSrc & IOMUXC_GPR_SAIMCLK_LOWBITMASK) << mclk) | gpr;
+	}
 }
 
 /****************************************************************************
@@ -2317,11 +2300,11 @@ static inline void imxrt_iomuxc_setsaimclkclocksource(IOMUXC_GPR_Type *base, iom
  ****************************************************************************/
 static inline void imxrt_iomuxc_mqsentersoftwarereset(IOMUXC_GPR_Type *base, bool enable)
 {
-    if (enable) {
-        base->GPR2 |= IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
-    } else {
-        base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
-    }
+	if (enable) {
+		base->GPR2 |= IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
+	} else {
+		base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_SW_RST_MASK;
+	}
 }
 
 /****************************************************************************
@@ -2340,11 +2323,11 @@ static inline void imxrt_iomuxc_mqsentersoftwarereset(IOMUXC_GPR_Type *base, boo
  ****************************************************************************/
 static inline void imxrt_iomuxc_mqsenable(IOMUXC_GPR_Type *base, bool enable)
 {
-    if (enable) {
-        base->GPR2 |= IOMUXC_GPR_GPR2_MQS_EN_MASK;
-    } else {
-        base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_EN_MASK;
-    }
+	if (enable) {
+		base->GPR2 |= IOMUXC_GPR_GPR2_MQS_EN_MASK;
+	} else {
+		base->GPR2 &= ~IOMUXC_GPR_GPR2_MQS_EN_MASK;
+	}
 }
 
 /****************************************************************************
@@ -2364,9 +2347,9 @@ static inline void imxrt_iomuxc_mqsenable(IOMUXC_GPR_Type *base, bool enable)
  ****************************************************************************/
 static inline void imxrt_iomuxc_mqsconfig(IOMUXC_GPR_Type *base, iomuxc_mqs_pwm_oversample_rate_t rate, uint8_t divider)
 {
-    uint32_t gpr = base->GPR2 & ~(IOMUXC_GPR_GPR2_MQS_OVERSAMPLE_MASK | IOMUXC_GPR_GPR2_MQS_CLK_DIV_MASK);
+	uint32_t gpr = base->GPR2 & ~(IOMUXC_GPR_GPR2_MQS_OVERSAMPLE_MASK | IOMUXC_GPR_GPR2_MQS_CLK_DIV_MASK);
 
-    base->GPR2 = gpr | IOMUXC_GPR_GPR2_MQS_OVERSAMPLE(rate) | IOMUXC_GPR_GPR2_MQS_CLK_DIV(divider);
+	base->GPR2 = gpr | IOMUXC_GPR_GPR2_MQS_OVERSAMPLE(rate) | IOMUXC_GPR_GPR2_MQS_CLK_DIV(divider);
 }
 
 #else

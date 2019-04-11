@@ -127,8 +127,8 @@
 
 #ifndef CONFIG_I2C_TRACE
 #define imxrt_lpi2c_tracereset(p)
-#define imxrt_lpi2c_tracenew(p,s)
-#define imxrt_lpi2c_traceevent(p,e,a)
+#define imxrt_lpi2c_tracenew(p, s)
+#define imxrt_lpi2c_traceevent(p, e, a)
 #define imxrt_lpi2c_tracedump(p)
 #endif
 
@@ -144,14 +144,14 @@
 #define LPI2C_SLAVE     2
 
 #define MKI2C_OUTPUT(p) (((p) & GPIO_PADMUX_MASK) | \
-                         IOMUX_OPENDRAIN | IOMUX_DRIVE_33OHM | \
-                         IOMUX_SLEW_SLOW | (5 << GPIO_ALT_SHIFT) | \
-                         IOMUX_PULL_NONE | GPIO_OUTPUT_ONE)
+			 IOMUX_OPENDRAIN | IOMUX_DRIVE_33OHM | \
+			 IOMUX_SLEW_SLOW | (5 << GPIO_ALT_SHIFT) | \
+			 IOMUX_PULL_NONE | GPIO_OUTPUT_ONE)
 
 #define MKI2C_INPUT(p) (((p) & GPIO_PADMUX_MASK) | \
-                        IOMUX_DRIVE_HIZ | IOMUX_SLEW_SLOW | \
-                        IOMUX_CMOS_INPUT | (5 << GPIO_ALT_SHIFT) | \
-                        IOMUX_PULL_NONE)
+			IOMUX_DRIVE_HIZ | IOMUX_SLEW_SLOW | \
+			IOMUX_CMOS_INPUT | (5 << GPIO_ALT_SHIFT) | \
+			IOMUX_PULL_NONE)
 
 #undef i2cerr
 #undef i2cinfo
@@ -952,7 +952,9 @@ static void imxrt_lpi2c_tracedump(FAR struct imxrt_lpi2c_priv_s *priv)
 
 	for (i = 0; i <= priv->tndx; i++) {
 		trace = &priv->trace[i];
-		syslog(LOG_DEBUG, "%2d. STATUS: %08x COUNT: %3d EVENT: %s(%2d) PARM: %08x TIME: %d\n", i + 1, trace->status, trace->count, g_trace_names[trace->event], trace->event, trace->parm, trace->time - priv->start_time);
+		syslog(LOG_DEBUG, "%2d. STATUS: %08x COUNT: %3d EVENT: %s(%2d) PARM: %08x TIME: %d\n",
+		       i + 1, trace->status, trace->count, g_trace_names[trace->event], trace->event,
+		       trace->parm, trace->time - priv->start_time);
 	}
 }
 #endif							/* CONFIG_I2C_TRACE */
@@ -1406,7 +1408,8 @@ static int imxrt_lpi2c_init(FAR struct imxrt_lpi2c_priv_s *priv)
 
 	/* Set scl, sda glitch filters and busy idle */
 
-	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCFGR2_OFFSET, LPI2C_MCFG2_BUSIDLE(priv->config->busy_idle) | LPI2C_MCFG2_FILTSCL_CYCLES(priv->config->filtscl) | LPI2C_MCFG2_FILTSDA_CYCLES(priv->config->filtsda));
+	imxrt_lpi2c_putreg(priv, IMXRT_LPI2C_MCFGR2_OFFSET, LPI2C_MCFG2_BUSIDLE(priv->config->busy_idle) |
+			   LPI2C_MCFG2_FILTSCL_CYCLES(priv->config->filtscl) | LPI2C_MCFG2_FILTSDA_CYCLES(priv->config->filtsda));
 
 	/* Set pin low cycles to 0 (disable) */
 
@@ -1470,7 +1473,7 @@ static int imxrt_lpi2c_deinit(FAR struct imxrt_lpi2c_priv_s *priv)
  ************************************************************************************/
 static uint32_t imxrt_lpi2c_setfrequency(FAR struct i2c_dev_s *dev, uint32_t frequency)
 {
-    FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
+	FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
 
 	imxrt_lpi2c_sem_wait(priv);
 
@@ -1490,7 +1493,7 @@ static uint32_t imxrt_lpi2c_setfrequency(FAR struct i2c_dev_s *dev, uint32_t fre
 
 static int imxrt_lpi2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 {
-    FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
+	FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
 
 	imxrt_lpi2c_sem_wait(priv);
 
@@ -1515,7 +1518,7 @@ static int imxrt_lpi2c_write(FAR struct i2c_dev_s *dev, const uint8_t *buffer, i
 
 	imxrt_lpi2c_sem_wait(priv);	/* ensure that address or flags don't change meanwhile */
 
-    priv->msgv[0].addr = priv->address;
+	priv->msgv[0].addr = priv->address;
 	priv->msgv[0].flags = priv->flags;
 	priv->msgv[0].buffer = (uint8_t *)buffer;
 	priv->msgv[0].length = buflen;
@@ -1539,7 +1542,7 @@ static int imxrt_lpi2c_write(FAR struct i2c_dev_s *dev, const uint8_t *buffer, i
 
 static int imxrt_lpi2c_read(FAR struct i2c_dev_s *dev, uint8_t *buffer, int buflen)
 {
-    FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
+	FAR struct imxrt_lpi2c_priv_s *priv = (struct imxrt_lpi2c_priv_s *)dev;
 
 	imxrt_lpi2c_sem_wait(priv);	/* ensure that address or flags don't change meanwhile */
 
@@ -1891,11 +1894,11 @@ int up_i2creset(FAR struct i2c_dev_s *dev)
 
 	/* Revert the GPIO configuration. */
 
-  sda_gpio = MKI2C_INPUT(sda_gpio);
-  scl_gpio = MKI2C_INPUT(scl_gpio);
+	sda_gpio = MKI2C_INPUT(sda_gpio);
+	scl_gpio = MKI2C_INPUT(scl_gpio);
 
-  imxrt_config_gpio(sda_gpio);
-  imxrt_config_gpio(scl_gpio);
+	imxrt_config_gpio(sda_gpio);
+	imxrt_config_gpio(scl_gpio);
 
 	/* Re-init the port */
 
