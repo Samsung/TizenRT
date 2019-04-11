@@ -224,9 +224,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
-#endif
 	}
 	break;
 
@@ -272,9 +269,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
-#endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 	}
