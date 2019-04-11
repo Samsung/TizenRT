@@ -232,3 +232,20 @@ config ESP32_AUTOMOUNT_USERFS_MOUNTPOINT
     ---help---
         Specifies the mount point where user r/w file system
         will be mounted at.
+
+config ESP32_AUTOMOUNT_ROMFS_DEVNAME
+    string "Device name of the partition for rom read only file system"
+    default "/dev/mtdblock1"
+    depends on FS_ROMFS
+    ---help---
+	Specifies the block device name of rom readonly file system.
+	the device name starts with "/dev/mtdblock", and the index is
+	its sequency(begin with 0) in partition list.
+
+config ESP32_AUTOMOUNT_ROMFS_MOUNTPOINT
+    string "Mountpoint of the partition for rom read only file system"
+    default "/rom"
+    depends on FS_ROMFS
+    ---help---
+        Specifies the mount point where rom readonly file system
+        will be mounted at.

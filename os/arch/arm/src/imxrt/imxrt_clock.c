@@ -128,8 +128,12 @@ static uint32_t imxrt_clock_getperiphclkfreq(void)
             break;
         /* PLL1 divided(/2) ---> Pre_Periph_clk ---> Periph_clk */
         case CCM_CBCMR_PRE_PERIPH_CLK_SEL(3U):
+            #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+            freq = 500000000U;
+            #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
             freq = imxrt_clock_getpllfreq(kCLOCK_PllArm) /
                     (((CCM->CACRR & CCM_CACRR_ARM_PODF_MASK) >> CCM_CACRR_ARM_PODF_SHIFT) + 1U);
+            #endif
             break;
         default:
             freq = 0U;
@@ -397,9 +401,11 @@ uint32_t imxrt_clock_getfreq(clock_name_t name)
     case kCLOCK_RtcClk:
         freq = imxrt_clock_getrtcfreq();
         break;
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_ArmPllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllArm);
         break;
+    #endif
     case kCLOCK_Usb1PllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
         break;
@@ -415,9 +421,11 @@ uint32_t imxrt_clock_getfreq(clock_name_t name)
     case kCLOCK_Usb1PllPfd3Clk:
         freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd3);
         break;
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_Usb2PllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb2);
         break;
+    #endif
     case kCLOCK_SysPllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
         break;
@@ -433,18 +441,32 @@ uint32_t imxrt_clock_getfreq(clock_name_t name)
     case kCLOCK_SysPllPfd3Clk:
         freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd3);
         break;
+    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+    case kCLOCK_EnetPllClk:
+        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
+        break;
+    case kCLOCK_EnetPll25MClk:
+        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
+        break;
+    case kCLOCK_EnetPll500MClk:
+        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet500M);
+        break;
+    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
     case kCLOCK_EnetPll0Clk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
         break;
     case kCLOCK_EnetPll1Clk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
         break;
+    #endif
     case kCLOCK_AudioPllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllAudio);
         break;
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_VideoPllClk:
         freq = imxrt_clock_getpllfreq(kCLOCK_PllVideo);
         break;
+    #endif
     default:
         freq = 0U;
         break;
@@ -475,7 +497,11 @@ uint32_t imxrt_clock_getfreq(clock_name_t name)
 bool imxrt_clock_enableusbhs0clock(clock_usb_src_t src, uint32_t freq)
 {
     CCM->CCGR6 |= CCM_CCGR6_CG0_MASK;
+    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+    USB->USBCMD |= USBHS_USBCMD_RST_MASK;
+    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
     USB1->USBCMD |= USBHS_USBCMD_RST_MASK;
+    #endif
     for (volatile uint32_t i = 0; i < 400000; i++) {/* Add a delay between RST and RS so make sure there is a DP pullup sequence*/
         __asm("nop");
     }
@@ -484,6 +510,7 @@ bool imxrt_clock_enableusbhs0clock(clock_usb_src_t src, uint32_t freq)
     return true;
 }
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /****************************************************************************
  * Function: imxrt_clock_enableusbhs1clock
  *
@@ -514,6 +541,7 @@ bool imxrt_clock_enableusbhs1clock(clock_usb_src_t src, uint32_t freq)
                    (PMU_REG_3P0_OUTPUT_TRG(0x17) | PMU_REG_3P0_ENABLE_LINREG_MASK);
     return true;
 }
+#endif
 
 /****************************************************************************
  * Function: imxrt_clock_enableusbhs0phypllclock
@@ -540,12 +568,22 @@ bool imxrt_clock_enableusbhs0phypllclock(clock_usb_phy_src_t src, uint32_t freq)
     } else {
         imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
     }
+
+    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+    USBPHY->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
+    USBPHY->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
+
+    USBPHY->PWD = 0;
+    USBPHY->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
+                    USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
+    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
     USBPHY1->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
     USBPHY1->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
 
     USBPHY1->PWD = 0;
     USBPHY1->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
                      USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
+    #endif
     return true;
 }
 
@@ -567,9 +605,14 @@ bool imxrt_clock_enableusbhs0phypllclock(clock_usb_phy_src_t src, uint32_t freq)
 void imxrt_clock_disableusbhs0phypllclock(void)
 {
     CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
+    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+    USBPHY->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
+    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
     USBPHY1->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
+    #endif
 }
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /****************************************************************************
  * Function: imxrt_clock_initarmpll
  *
@@ -619,6 +662,7 @@ void imxrt_clock_deinitarmpll(void)
 {
     CCM_ANALOG->PLL_ARM = CCM_ANALOG_PLL_ARM_POWERDOWN_MASK;
 }
+#endif
 
 /****************************************************************************
  * Function: imxrt_clock_initsyspll
@@ -635,6 +679,7 @@ void imxrt_clock_deinitarmpll(void)
  *   None
  *
  ****************************************************************************/
+
 void imxrt_clock_initsyspll(const clock_sys_pll_config_t *config)
 {
     /* Bypass PLL first */
@@ -729,6 +774,7 @@ void imxrt_clock_deinitusb1pll(void)
     CCM_ANALOG->PLL_USB1 = 0U;
 }
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /****************************************************************************
  * Function: imxrt_clock_initusb2pll
  *
@@ -744,6 +790,7 @@ void imxrt_clock_deinitusb1pll(void)
  *   None
  *
  ****************************************************************************/
+
 void imxrt_clock_initusb2pll(const clock_usb_pll_config_t *config)
 {
     /* Bypass PLL first */
@@ -778,6 +825,7 @@ void imxrt_clock_deinitusb2pll(void)
 {
     CCM_ANALOG->PLL_USB2 = 0U;
 }
+#endif
 
 /****************************************************************************
  * Function: imxrt_clock_initaudiopll
@@ -794,6 +842,7 @@ void imxrt_clock_deinitusb2pll(void)
  *   None
  *
  ****************************************************************************/
+
 void imxrt_clock_initaudiopll(const clock_audio_pll_config_t *config)
 {
     uint32_t pllAudio;
@@ -878,6 +927,7 @@ void imxrt_clock_deinitaudiopll(void)
     CCM_ANALOG->PLL_AUDIO = CCM_ANALOG_PLL_AUDIO_POWERDOWN_MASK;
 }
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /****************************************************************************
  * Function: imxrt_clock_initvideopll
  *
@@ -893,6 +943,7 @@ void imxrt_clock_deinitaudiopll(void)
  *   None
  *
  ****************************************************************************/
+
 void imxrt_clock_initvideopll(const clock_video_pll_config_t *config)
 {
     uint32_t pllVideo;
@@ -975,6 +1026,7 @@ void imxrt_clock_deinitvideopll(void)
 {
     CCM_ANALOG->PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_POWERDOWN_MASK;
 }
+#endif
 
 /****************************************************************************
  * Function: imxrt_clock_initenetpll
@@ -991,6 +1043,7 @@ void imxrt_clock_deinitvideopll(void)
  *   None
  *
  ****************************************************************************/
+
 void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
 {
     uint32_t enet_pll = CCM_ANALOG_PLL_ENET_DIV_SELECT(config->loopDivider);
@@ -1005,6 +1058,13 @@ void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
     if (config->enableClkOutput25M) {
         enet_pll |= CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_MASK;
     }
+
+    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+    if (config->enableClkOutput500M)
+    {
+        enet_pll |= CCM_ANALOG_PLL_ENET_ENET_500M_REF_EN_MASK;
+    }
+    #endif
 
     CCM_ANALOG->PLL_ENET =
         (CCM_ANALOG->PLL_ENET & (~(CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK | CCM_ANALOG_PLL_ENET_POWERDOWN_MASK))) |
@@ -1080,11 +1140,13 @@ uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
     }
 
     switch (pll) {
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_PllArm:
         freq = ((freq * ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
                             CCM_ANALOG_PLL_ARM_DIV_SELECT_SHIFT)) >>
                 1U);
         break;
+    #endif
     case kCLOCK_PllSys:
         /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
         freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_SYS_NUM))) /
@@ -1150,6 +1212,7 @@ uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
         }
         break;
 
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_PllVideo:
         /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
         divSelect =
@@ -1198,6 +1261,7 @@ uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
             break;
         }
         break;
+    #endif
     case kCLOCK_PllEnet:
         divSelect =
             (CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_ENET_DIV_SELECT_SHIFT;
@@ -1207,9 +1271,11 @@ uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
         /* ref_enetpll1 if fixed at 25MHz. */
         freq = 25000000UL;
         break;
+    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     case kCLOCK_PllUsb2:
         freq = (freq * ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK) ? 22U : 20U));
         break;
+    #endif
     default:
         freq = 0U;
         break;
@@ -1406,6 +1472,7 @@ uint32_t imxrt_clock_getusb1pfdfreq(clock_pfd_t pfd)
     return freq;
 }
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /****************************************************************************
  * Function: imxrt_clock_enableusbhs1phypllclock
  *
@@ -1423,6 +1490,7 @@ uint32_t imxrt_clock_getusb1pfdfreq(clock_pfd_t pfd)
  *   Returns false The clock source is invalid to get proper USB HS clock.
  *
  ****************************************************************************/
+
 bool imxrt_clock_enableusbhs1phypllclock(clock_usb_phy_src_t src, uint32_t freq)
 {
     const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
@@ -1457,3 +1525,4 @@ void imxrt_clock_disableusbhs1phypllclock(void)
     CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK;
     USBPHY2->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
 }
+#endif

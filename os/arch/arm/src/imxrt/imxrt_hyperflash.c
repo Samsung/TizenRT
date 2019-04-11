@@ -78,7 +78,7 @@
 
 #include "imxrt_clock.h"
 #include "imxrt_iomuxc.h"
-#include "chip/imxrt105x_memorymap.h"
+#include "chip/imxrt_memorymap.h"
 
 
 /************************************************************************************
@@ -614,6 +614,7 @@ ssize_t up_progmem_ispageerased(size_t page)
 	}
 
 	/* Verify */
+
 	for (addr = up_progmem_getaddress(page), count = up_progmem_pagesize(page); count; count--, addr++) {
 		if (getreg8(addr) != 0xff) {
 			bwritten++;

@@ -66,11 +66,11 @@ int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem)
 	int32_t frame_size;
 
 	frame_size = opus_decode(st, \
-  							pExt->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
-  							pExt->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
-  							pExt->pOutputBuffer, \
-  							pExt->outputBufferMaxLength / sizeof(signed short), \
-  							0);
+							pExt->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
+							pExt->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
+							pExt->pOutputBuffer, \
+							pExt->outputBufferMaxLength / sizeof(signed short), \
+							0);
 
 	if (frame_size < 0) {
 		pExt->outputFrameSize = 0;

@@ -42,6 +42,8 @@ BIN_NAME = tinyara
 APP_ELF:=$(BUILD_DIR_BASE)/$(BIN_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
+ROMFS_IMG:=$(BUILD_DIR_BASE)/romfs.img
+ROMFS_OFFSET = $(shell esptool_py/romfs_flash_address.sh)
 
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
@@ -75,6 +77,14 @@ ESPTOOL_ALL_FLASH_ARGS += $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 ALL:flash
 
 APP:app-flash
+
+ROMFS:romfs
+
+romfs: $(ROMFS_IMG) $(ESPTOOLPY_SRC)
+ifneq ($(ROMFS_OFFSET),-1)
+	@echo "Flashing romfs image to serial port $(ESPPORT), offset $(ROMFS_OFFSET)..."
+	$(ESPTOOLPY_WRITE_FLASH) $(ROMFS_OFFSET) $(ROMFS_IMG)
+endif
 
 BOOTLOADER:
 	@echo "Flashing bootloader to serial port $(ESPPORT) (app at offset $(BOOTLOADER_OFFSET))..."

@@ -95,11 +95,12 @@ struct imxrt_daisy_t
 };
 
 /* Include chip-specific daisy input selection */
-
-#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-#  include "imxrt105x_daisy.c"
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "imxrt102x_daisy.c"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#include "imxrt105x_daisy.c"
 #else
-#  error Unrecognized i.MX RT architecture
+#error Unrecognized i.MX RT architecture
 #endif
 
 /****************************************************************************

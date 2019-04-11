@@ -23,7 +23,7 @@
 #include "../utils/rbs.h"
 #include <media/MediaTypes.h>
 #ifdef CONFIG_CODEC_LIBOPUS
-#include "../codecs/opus_encoder_api.h"
+#include "opus/opus_encoder_api.h"
 #endif
 
 #define AUDIO_ENCODER_OK 0
