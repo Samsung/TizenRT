@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/simxrt1050-evk/scripts/memory.ld
+ * build/configs/imxrt1050-evk/scripts/user-space.ld
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,60 +50,102 @@
  *
  ****************************************************************************/
 
-/* The i.MXRT1050-EVK has 64Mb of Hyper FLASH beginning at address,
- * 0x0060:0000, 512Kb of DTCM RAM beginning at 0x2000:0000, and 512Kb OCRAM
- * beginning at 0x2020:0000.  Neither DTCM or SDRAM are used in this
- * configuratin.
- *
- * The user and kernel space partitions will be spanned with a single
- * region of size 2**n bytes.  As a consequence, as the partitions increase
- * in size, the alignment requirement also increases.  The sizes below give
- * the largest possible user address spaces (but leave far too much for the
- * OS).
- *
- * The solution to this wasted memory is to (1) use more than one region to
- * span the user spaces, or (2) poke holes in a larger region (via sub-
- * regions) to trim it to fit better.
- *
- * A detailed memory map for the 512KB SRAM region is as follows:
- *
- *   0x2020 0000:  Kernel .data region.  Typical size: 0.1KB
- *   ------ ----   Kernel .bss  region.  Typical size: 1.8KB
- *   0x2020 0800:  Kernel IDLE thread stack (approximate).  Size is
- *                 determined by CONFIG_IDLETHREAD_STACKSIZE and
- *                 adjustments for alignment.  Typical is 1KB.
- *   ------ ----   Padded to 4KB
- *   0x2040 0000:  User .data region.  Size is variable.
- *   ------- ----  User .bss region  Size is variable.
- *   0x2042 0000:  Beginning of kernel heap.  Size determined by
- *                 CONFIG_MM_KERNEL_HEAPSIZE.
- *   ------ ----   Beginning of user heap.  Can vary with other settings.
- *   0x2080 0000:  End+1 of mappable OCRAM
+/* NOTE:  This depends on the memory.ld script having been included prior to
+ * this script.
  */
 
-/* Specify the memory areas */
+/* Make sure that the critical memory management functions are in user-space.
+ * the user heap memory manager will reside in user-space but be usable both
+ * by kernel- and user-space code
+ */
 
-MEMORY
+EXTERN(umm_initialize)
+EXTERN(umm_addregion)
+EXTERN(umm_trysemaphore)
+EXTERN(umm_givesemaphore)
+
+EXTERN(malloc)
+EXTERN(realloc)
+EXTERN(zalloc)
+EXTERN(free)
+
+OUTPUT_ARCH(arm)
+SECTIONS
 {
-  /* 64Mb of HyperFLASH */
+  .userspace :
+  {
+    *(.userspace)
+  } > uflash
 
-  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 512K
-  uflash (rx)  : ORIGIN = 0x60080000, LENGTH = 512K
-  flash  (rx)  : ORIGIN = 0x60400000, LENGTH = 62M
+  .text :
+  {
+    _stext = ABSOLUTE(.);
+    *(.usrheapptr)
+    *(.text .text.*)
+    *(.fixup)
+    *(.gnu.warning)
+    *(.rodata .rodata.*)
+    *(.gnu.linkonce.t.*)
+    *(.glue_7)
+    *(.glue_7t)
+    *(.got)
+    *(.gcc_except_table)
+    *(.gnu.linkonce.r.*)
+    _etext = ABSOLUTE(.);
+  } > uflash
 
-  /* 512Kb of OCRAM */
+  .init_section :
+  {
+    _sinit = ABSOLUTE(.);
+    *(.init_array .init_array.*)
+    _einit = ABSOLUTE(.);
+  } > uflash
 
-  kdtcm   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
-  udtcm   (rwx) : ORIGIN = 0x20010000, LENGTH = 64K
-  kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 256K
-  uocram (rwx) : ORIGIN = 0x20240000, LENGTH = 256K
+  .ARM.extab :
+  {
+    *(.ARM.extab*)
+  } > uflash
+
+  __exidx_start = ABSOLUTE(.);
+  .ARM.exidx :
+  {
+    *(.ARM.exidx*)
+  } > uflash
+
+  __exidx_end = ABSOLUTE(.);
+
+  _eronly = ABSOLUTE(.);
+
+  .data :
+  {
+    _sdata = ABSOLUTE(.);
+    *(.data .data.*)
+    *(.gnu.linkonce.d.*)
+    CONSTRUCTORS
+    _edata = ABSOLUTE(.);
+  } > udtcm AT > uflash
+
+  .bss :
+  {
+    _sbss = ABSOLUTE(.);
+    *(.bss .bss.*)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    _ebss = ABSOLUTE(.);
+  } > udtcm
+
+  /* Stabs debugging sections */
+
+  .stab 0 : { *(.stab) }
+  .stabstr 0 : { *(.stabstr) }
+  .stab.excl 0 : { *(.stab.excl) }
+  .stab.exclstr 0 : { *(.stab.exclstr) }
+  .stab.index 0 : { *(.stab.index) }
+  .stab.indexstr 0 : { *(.stab.indexstr) }
+  .comment 0 : { *(.comment) }
+  .debug_abbrev 0 : { *(.debug_abbrev) }
+  .debug_info 0 : { *(.debug_info) }
+  .debug_line 0 : { *(.debug_line) }
+  .debug_pubnames 0 : { *(.debug_pubnames) }
+  .debug_aranges 0 : { *(.debug_aranges) }
 }
-
-__kflash_segment_start__  = ORIGIN(kflash);
-__kflash_segment_size__   = LENGTH(kflash);
-__uflash_segment_start__  = ORIGIN(uflash);
-__uflash_segment_size__   = LENGTH(uflash);
-__ksram_segment_start__   = ORIGIN(kdtcm);
-__ksram_segment_size__    = LENGTH(kdtcm);
-__usram_segment_start__   = ORIGIN(udtcm);
-__usram_segment_size__    = LENGTH(udtcm);
