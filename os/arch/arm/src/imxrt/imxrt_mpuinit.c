@@ -95,7 +95,7 @@
 
 void imxrt_mpu_initialize(void)
 {
-#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_ARMV7M_MPU
 	uintptr_t datastart;
 	uintptr_t dataend;
 #endif
@@ -117,7 +117,7 @@ void imxrt_mpu_initialize(void)
 #endif
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_ARMV7M_MPU
 	/* Configure user flash and SRAM space */
 
 	DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart);
@@ -130,11 +130,11 @@ void imxrt_mpu_initialize(void)
 	DEBUGASSERT(dataend >= datastart);
 
 	mpu_user_intsram(datastart, dataend - datastart);
-#endif
 
 	/* Then enable the MPU */
 
 	mpu_control(true, false, true);
+#endif
 }
 
 /****************************************************************************
@@ -147,7 +147,7 @@ void imxrt_mpu_initialize(void)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_ARMV7M_MPU
 void imxrt_mpu_uheap(uintptr_t start, size_t size)
 {
 	mpu_user_intsram(start, size);
