@@ -374,7 +374,6 @@ void __start(void)
 	 */
 
 	imxrt_userspace();
-#endif
 
 #ifdef  CONFIG_ARMV7M_MPU
 	/* Configure the MPU to permit user-space access to its FLASH and RAM (for
@@ -383,6 +382,7 @@ void __start(void)
 	 */
 
 	imxrt_mpu_initialize();
+#endif
 #endif
 
 	/* Enable I- and D-Caches */
