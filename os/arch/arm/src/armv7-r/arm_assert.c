@@ -95,12 +95,21 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
-#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+#ifdef CONFIG_FAULT_MGR
+#include <mqueue.h>
+#include "fault_manager/fault_manager.h"
+#endif
+
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_FAULT_MGR)
 #include <stdio.h>
 bool abort_mode = false;
 static bool recursive_abort = false;
 #endif
 
+#ifdef CONFIG_FAULT_MGR
+extern uint32_t g_assertpc[];
+uint32_t assert_pc;
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -919,9 +928,63 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+#ifdef CONFIG_FAULT_MGR
+	int ret;
+	mqd_t fault_queue;
+	pid_t pid;
+	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
+	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
+
+
+	/* Check if the PC lies within kernel context */
+
+	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
+
+		/* Reboot the system if fault is in kernel context */
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+		(void)irqsave();
+		for (;;) {
+#ifdef CONFIG_ARCH_LEDS
+			board_autoled_on(LED_PANIC);
+			up_mdelay(250);
+			board_autoled_off(LED_PANIC);
+			up_mdelay(250);
+#endif
+		}
+#endif
+	} else {
+		fault_queue = mq_open(FAULT_MGR_MQ, O_WRONLY, 0666, 0);
+		DEBUGASSERT(fault_queue != (mqd_t)ERROR);
+
+		pid = getpid();
+
+		/* Check if the fault is due to data/prefetch/undef abort or
+		   due to direct call to up_assert */
+
+		if (current_regs) {
+
+			/* if fault is due to any kind of abort,
+			   enable the interrupts to schedule to next task */
+
+			current_regs = NULL;
+			irqenable();
+		}
+
+		/* Send a message to fault manager with pid of the faulty task */
+
+		ret = mq_send(fault_queue, (const char *)&pid, sizeof(pid), 0);
+		DEBUGASSERT(ret == 0);
+
+		exit(errorcode);
+	}
+#else
+
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (current_regs || (this_task())->pid == 0) {
+	if (g_upassert || current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -934,6 +997,7 @@ static void _up_assert(int errorcode)
 	} else {
 		exit(errorcode);
 	}
+#endif
 }
 
 /****************************************************************************
@@ -946,14 +1010,9 @@ static void _up_assert(int errorcode)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-#ifdef CONFIG_FAULT_MGR
-	int ret;
-	mqd_t fault_queue;
-	pid_t pid;
-#endif
 
 	board_autoled_on(LED_ASSERTION);
-#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_FAULT_MGR)
 	/* First time, when code reaches here abort_mode will be false and
 	   for next iteration (recursive abort case), abort_mode is already
 	   set to true and thus we can assume that we are in recursive abort
@@ -962,7 +1021,16 @@ void up_assert(const uint8_t *filename, int lineno)
 		recursive_abort = true;
 	}
 	abort_mode = true;
+#endif
 
+#ifdef CONFIG_FAULT_MGR
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_LR];
+	} else {
+		assert_pc = (uint32_t)g_assertpc[0];
+	}
 #endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
@@ -972,27 +1040,12 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	up_dumpstate();
 
-#ifdef CONFIG_BOARD_CRASHDUMP
+#if defined(CONFIG_BOARD_CRASHDUMP) && !defined(CONFIG_FAULT_MGR)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_FAULT_MGR)
 	(void)boardctl(BOARDIOC_RESET, 0);
-#endif
-
-#ifdef CONFIG_FAULT_MGR
-	fault_queue = mq_open("fault_queue", O_WRONLY | O_CREAT,  0666, 0);
-	if (fault_queue == (mqd_t)ERROR) {
-		svdbg("Can't open message queue\n");
-	}
-
-	pid = getpid();
-
-	ret = mq_send(fault_queue, (const char *)&pid, sizeof(pid), 0);
-	if (ret < 0)
-	{
-		svdbg("failed to send the message\n");
-	}
 #endif
 	_up_assert(EXIT_FAILURE);
 }

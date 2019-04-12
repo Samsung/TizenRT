@@ -173,7 +173,8 @@ config BOARD_ASSERT_AUTORESET
 	depends on BOARDCTL_RESET
 	---help---
 		Some cases do not need to stay assert status. This supports
-		board reset.
+		board reset. When fault manager is enabled this will reset the
+		system only when fault is in kernel context.
 
 config LIB_BOARDCTL
 	bool "Enable boardctl() interface"
