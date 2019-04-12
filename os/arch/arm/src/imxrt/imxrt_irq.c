@@ -288,35 +288,35 @@ static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit, uintptr_t o
 			*bit = 1 << extint;
 		} else
 #if IMXRT_IRQ_NEXTINT > 32
-			if (extint < 64) {
-				*regaddr = (NVIC_IRQ32_63_ENABLE + offset);
-				*bit = 1 << (extint - 32);
-			} else
+		if (extint < 64) {
+			*regaddr = (NVIC_IRQ32_63_ENABLE + offset);
+			*bit = 1 << (extint - 32);
+		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 64
-				if (extint < 96) {
-					*regaddr = (NVIC_IRQ64_95_ENABLE + offset);
-					*bit = 1 << (extint - 64);
-				} else
+		if (extint < 96) {
+			*regaddr = (NVIC_IRQ64_95_ENABLE + offset);
+			*bit = 1 << (extint - 64);
+		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 96
-					if (extint < 128) {
-						*regaddr = (NVIC_IRQ96_127_ENABLE + offset);
-						*bit = 1 << (extint - 96);
-					} else
+		if (extint < 128) {
+			*regaddr = (NVIC_IRQ96_127_ENABLE + offset);
+			*bit = 1 << (extint - 96);
+		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 128
-						if (extint < 160) {
-							*regaddr = (NVIC_IRQ128_159_ENABLE + offset);
-							*bit = 1 << (extint - 128);
-						} else
+		if (extint < 160) {
+			*regaddr = (NVIC_IRQ128_159_ENABLE + offset);
+			*bit = 1 << (extint - 128);
+		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 160
 #error Missing logic
 #endif
-						{
-							return ERROR;		/* Invalid interrupt */
-						}
+		{
+			return ERROR;		/* Invalid interrupt */
+		}
 	}
 
 	/* Handle processor exceptions.  Only a few can be disabled */

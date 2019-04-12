@@ -83,15 +83,13 @@
  * Private Data
  ****************************************************************************/
 
-struct imxrt_daisy_entry_t
-{
-  uint8_t   index;
-  uint8_t   sel;
+struct imxrt_daisy_entry_t {
+	uint8_t   index;
+	uint8_t   sel;
 };
 
-struct imxrt_daisy_t
-{
-  struct imxrt_daisy_entry_t alts[10];
+struct imxrt_daisy_t {
+	struct imxrt_daisy_entry_t alts[10];
 };
 
 /* Include chip-specific daisy input selection */
@@ -113,15 +111,14 @@ struct imxrt_daisy_t
 
 void imxrt_daisy_select(unsigned int index, unsigned int alt)
 {
-  uintptr_t address;
-  const struct imxrt_daisy_t *daisy = &g_daisy_select[index];
+	uintptr_t address;
+	const struct imxrt_daisy_t *daisy = &g_daisy_select[index];
 
-  index = daisy->alts[alt].index;
-  if (index != DAISY_INDEX_INVALID)
-    {
-      alt = daisy->alts[alt].sel;
-      address = IMXRT_IOMUXC_BASE + IMXRT_INPUT_INDEX2OFFSET(index);
-      putreg32(alt, address);
-    }
+	index = daisy->alts[alt].index;
+	if (index != DAISY_INDEX_INVALID) {
+		alt = daisy->alts[alt].sel;
+		address = IMXRT_IOMUXC_BASE + IMXRT_INPUT_INDEX2OFFSET(index);
+		putreg32(alt, address);
+	}
 }
 

@@ -170,10 +170,10 @@ static void up_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e p
 {
 	switch (pmstate) {
 	case (PM_NORMAL): {
-			/* Logic for PM_NORMAL goes here */
+		/* Logic for PM_NORMAL goes here */
 
-		}
-		break;
+	}
+	break;
 
 	case (PM_IDLE): {
 		/* Logic for PM_IDLE goes here */
