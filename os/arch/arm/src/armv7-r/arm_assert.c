@@ -982,9 +982,11 @@ static void _up_assert(int errorcode)
 	}
 #else
 
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (g_upassert || current_regs || (this_task())->pid == 0) {
+#endif
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -994,9 +996,11 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
 	} else {
 		exit(errorcode);
 	}
+#endif
 #endif
 }
 
