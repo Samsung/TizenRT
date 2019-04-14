@@ -295,7 +295,7 @@ static int send_cmds(FILE *file, int cmd)
 	return ret;
 }
 
-int kdbg_ttrace(int argc, char **args)
+int utils_ttrace(int argc, char **args)
 {
 	FILE *file = NULL;
 	int cmd = 0;

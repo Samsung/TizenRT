@@ -29,7 +29,7 @@
 #endif
 #endif
 
-int kdbg_dmesg(int argc, char **args)
+int utils_dmesg(int argc, char **args)
 {
 #if defined(CONFIG_SYSLOG) && defined(CONFIG_RAMLOG_SYSLOG)
 	const char *relpath = CONFIG_SYSLOG_DEVPATH;

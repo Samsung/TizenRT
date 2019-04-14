@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <tinyara/clock.h>
 
-int kdbg_uptime(int argc, char **args)
+int utils_uptime(int argc, char **args)
 {
 	clock_t ticktime;
 #if defined(CONFIG_HAVE_DOUBLE) && defined(CONFIG_LIBC_FLOATINGPOINT)

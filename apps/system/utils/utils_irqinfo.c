@@ -24,11 +24,11 @@
 #endif
 #include <tinyara/fs/fs.h>
 
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 
 #define IRQ_BUFLEN 64
 
-int kdbg_irqinfo(int argc, char **args)
+int utils_irqinfo(int argc, char **args)
 {
 	int ret;
 	char *filepath;
@@ -51,7 +51,7 @@ int kdbg_irqinfo(int argc, char **args)
 #endif
 
 	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs");
-	ret = kdbg_readfile(filepath, buf, IRQ_BUFLEN, NULL);
+	ret = utils_readfile(filepath, buf, IRQ_BUFLEN, NULL);
 	free(filepath);
 
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
