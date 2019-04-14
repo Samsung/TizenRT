@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <apps/shell/tash.h>
 #ifdef CONFIG_SYSTEM_CMDS
-#include "system_utils.h"
+#include <apps/system/utils.h>
 #endif
 
 #ifdef CONFIG_SYSTEM_CMDS
