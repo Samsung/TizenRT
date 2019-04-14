@@ -19,9 +19,8 @@
 #define __APPS_INCLUDE_SYSTEM_UTILS_H
 #include <tinyara/config.h>
 
-#ifdef CONFIG_TASH
-#ifdef CONFIG_KERNEL_CMDS
-void kernel_register_utilcmds(void);
+#ifdef CONFIG_SYSTEM_CMDS
+void system_register_utilcmds(void);
 #endif
 #ifdef CONFIG_FS_CMDS
 void fs_register_utilcmds(void);
@@ -30,7 +29,6 @@ void fs_register_utilcmds(void);
 void net_register_utilcmds(void);
 void net_register_appcmds(void);
 #endif
-#endif							/* CONFIG_TASH */
 
 #ifdef CONFIG_ENABLE_STACKMONITOR_CMD
 void stkmon_logging(struct tcb_s *);

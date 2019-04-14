@@ -34,7 +34,7 @@
 #include <tinyara/fs/ioctl.h>
 #endif
 #include <tinyara/heapinfo_drv.h>
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 extern int max_group;
@@ -144,7 +144,7 @@ static int heapinfo_read_proc(pid_t pid)
 	char buf[HEAPINFO_BUFLEN];
 
 	asprintf(&filepath, "%s/%d/%s", PROCFS_MOUNT_POINT, pid, "stat");
-	ret = kdbg_readfile(filepath, buf, HEAPINFO_BUFLEN, heapinfo_print_values);
+	ret = utils_readfile(filepath, buf, HEAPINFO_BUFLEN, heapinfo_print_values);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -246,7 +246,7 @@ static void heapinfo_init_totalinfo(void)
 }
 #endif
 
-int kdbg_heapinfo(int argc, char **args)
+int utils_heapinfo(int argc, char **args)
 {
 	int option;
 #ifdef CONFIG_MM_KERNEL_HEAP

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/utils/kdbg_kill.c
+ * apps/system/utils/utils_kill.c
  *
  *   Copyright (C) 2007-2009, 2011-2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -59,16 +59,16 @@
 #include <sched.h>
 #include <pthread.h>
 
-#if defined(CONFIG_ENABLE_KILLALL_CMD) && (CONFIG_TASK_NAME_SIZE <= 0)
+#if defined(CONFIG_ENABLE_KILLALL) && (CONFIG_TASK_NAME_SIZE <= 0)
 #error If you want to use killall, CONFIG_TASK_NAME_SIZE should be > 0
 #endif
 
-struct kdbg_sig_s {
+struct utils_sig_s {
 	const char *signame;
 	int signo;
 };
 
-static const struct kdbg_sig_s kdbg_sig[] = {
+static const struct utils_sig_s utils_sig[] = {
 #ifndef CONFIG_DISABLE_SIGNALS
 	{"SIGUSR1",         SIGUSR1},
 	{"SIGUSR2",         SIGUSR2},
@@ -92,8 +92,8 @@ static const struct kdbg_sig_s kdbg_sig[] = {
 	{NULL,              0}
 };
 
-#if defined(CONFIG_ENABLE_KILLALL_CMD)
-struct kdbg_killall_arg_s {
+#if defined(CONFIG_ENABLE_KILLALL)
+struct utils_killall_arg_s {
 	int signo;
 	char name[CONFIG_TASK_NAME_SIZE + 1];
 	int count;
@@ -115,18 +115,18 @@ static int find_signal(char *ptr)
 		/* Extract the signal number */
 
 		signo = strtol(&ptr[1], &endptr, 0);
-		for (sigidx = 0; kdbg_sig[sigidx].signo != 0; sigidx++) {
-			if (kdbg_sig[sigidx].signo == signo) {
-				ret = kdbg_sig[sigidx].signo;
+		for (sigidx = 0; utils_sig[sigidx].signo != 0; sigidx++) {
+			if (utils_sig[sigidx].signo == signo) {
+				ret = utils_sig[sigidx].signo;
 				break;
 			}
 		}
 	} else {
 		/* Find the signal number using signal name */
 
-		for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
-			if (strcasecmp(&ptr[1], kdbg_sig[sigidx].signame) == 0) {
-				ret = kdbg_sig[sigidx].signo;
+		for (sigidx = 0; utils_sig[sigidx].signame != NULL; sigidx++) {
+			if (strcasecmp(&ptr[1], utils_sig[sigidx].signame) == 0) {
+				ret = utils_sig[sigidx].signo;
 				break;
 			}
 		}
@@ -163,8 +163,8 @@ static int send_signal(pid_t pid, int signo)
  * Public Functions
  ****************************************************************************/
 
-#if defined(CONFIG_ENABLE_KILL_CMD)
-int kdbg_kill(int argc, char **args)
+#if defined(CONFIG_ENABLE_KILL)
+int utils_kill(int argc, char **args)
 {
 	int signo;
 	int sigidx;
@@ -187,8 +187,8 @@ int kdbg_kill(int argc, char **args)
 		ptr = args[1];
 		if (!strncmp(ptr, "-l", strlen("-l") + 1)) {
 			/* List signal numbers and it's name */
-			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
-				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+			for (sigidx = 0; utils_sig[sigidx].signame != NULL; sigidx++) {
+				printf("%2d) %-15s\n", utils_sig[sigidx].signo, utils_sig[sigidx].signame);
 			}
 			return OK;
 		}
@@ -234,10 +234,10 @@ usage:
 }
 #endif
 
-#if defined(CONFIG_ENABLE_KILLALL_CMD)
-static void kdbg_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
+#if defined(CONFIG_ENABLE_KILLALL)
+static void utils_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
 {
-	struct kdbg_killall_arg_s *killall_arg = (struct kdbg_killall_arg_s *)arg;
+	struct utils_killall_arg_s *killall_arg = (struct utils_killall_arg_s *)arg;
 
 	if (strncmp(tcb->name, killall_arg->name, CONFIG_TASK_NAME_SIZE) == 0) {
 		killall_arg->count++;
@@ -247,12 +247,12 @@ static void kdbg_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
 	}
 }
 
-int kdbg_killall(int argc, char **args)
+int utils_killall(int argc, char **args)
 {
 	int signo;
 	int sigidx;
 	char *ptr;
-	struct kdbg_killall_arg_s arg;
+	struct utils_killall_arg_s arg;
 
 	if (argc < 2 || argc > 3) {
 		printf("Invalid argument\n");
@@ -269,8 +269,8 @@ int kdbg_killall(int argc, char **args)
 		ptr = args[1];
 		if (!strncmp(ptr, "-l", strlen("-l") + 1)) {
 			/* List signal numbers and it's name */
-			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
-				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+			for (sigidx = 0; utils_sig[sigidx].signame != NULL; sigidx++) {
+				printf("%2d) %-15s\n", utils_sig[sigidx].signo, utils_sig[sigidx].signame);
 			}
 			return OK;
 		} else if (ptr[0] == '-') {
@@ -296,7 +296,7 @@ int kdbg_killall(int argc, char **args)
 	arg.count = 0;
 	arg.ret = OK;
 
-	sched_foreach(kdbg_killall_handler, (FAR void *)&arg);
+	sched_foreach(utils_killall_handler, (FAR void *)&arg);
 	if (arg.count == 0) {
 		printf("%s: no thread found\n", arg.name);
 		return ERROR;
