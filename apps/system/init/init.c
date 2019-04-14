@@ -63,7 +63,7 @@ extern void iotjs_register_cmds(void);
 #ifdef CONFIG_TASH
 static void tash_register_cmds(void)
 {
-#if defined(CONFIG_SYSTEM_CMDS) && !defined(CONFIG_BUILD_PROTECTED)
+#if defined(CONFIG_SYSTEM_CMDS)
 	system_register_utilcmds();
 #endif
 
