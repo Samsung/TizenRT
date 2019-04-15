@@ -40,6 +40,20 @@ done;
 #echo $IMXRT1050_USB_PATH
 #echo $OS_DIR_PATH
 
-cp $OS_DIR_PATH/../build/output/bin/tinyara.hex $IMXRT1050_USB_PATH
+CONFIG=${OS_DIR_PATH}/.config
+if [ ! -f ${CONFIG} ]; then
+        echo "No .config file"
+        exit 1
+fi
 
-echo "Waiting until detecting usb memory again!!!"
+source ${CONFIG}
+
+if [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
+sed '$d' $OS_DIR_PATH/../build/output/bin/tinyara.hex > $OS_DIR_PATH/../build/output/bin/tinyara_temp.hex
+cat $OS_DIR_PATH/../build/output/bin/tinyara_temp.hex $OS_DIR_PATH/../build/output/bin/tinyara_user.hex > $OS_DIR_PATH/../build/output/bin/tinyara_prot.hex
+echo "Downloading tinyara_prot.hex for Protected build"
+cp $OS_DIR_PATH/../build/output/bin/tinyara_prot.hex $IMXRT1050_USB_PATH
+else
+echo "Downloading tinyara.hex for Flat build"
+cp $OS_DIR_PATH/../build/output/bin/tinyara.hex $IMXRT1050_USB_PATH
+fi

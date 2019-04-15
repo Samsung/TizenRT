@@ -185,12 +185,33 @@
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #define SYS_wait                       (__SYS_waitpid + 1)
 #define SYS_waitid                     (__SYS_waitpid + 2)
-#define __SYS_signals                  (__SYS_waitpid + 3)
+#define __SYS_exec                     (__SYS_waitpid + 3)
 #else
-#define __SYS_signals                  (__SYS_waitpid + 1)
+#define __SYS_exec                     (__SYS_waitpid + 1)
 #endif
 #else
-#define __SYS_signals                   __SYS_waitpid
+#define __SYS_exec                     __SYS_waitpid
+#endif
+
+/* The following can only be defined if we are configured to execute
+ * programs from a file system.
+ */
+
+#ifndef CONFIG_BINFMT_DISABLE
+#ifndef CONFIG_BUILD_KERNEL
+#define SYS_exec                       __SYS_exec
+#define __SYS_execv                    (__SYS_exec + 1)
+#else
+#define __SYS_execv                    __SYS_exec
+#endif
+#ifdef CONFIG_LIBC_EXECFUNCS
+#define SYS_execv                      __SYS_execv
+#define __SYS_signals                  (__SYS_execv + 1)
+#else
+#define __SYS_signals                  __SYS_execv
+#endif
+#else
+#define __SYS_signals                  __SYS_exec
 #endif
 
 /* The following are only defined is signals are supported in the TinyAra

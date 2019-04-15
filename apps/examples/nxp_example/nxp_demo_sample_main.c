@@ -30,7 +30,8 @@ int nxp_demo_sample_main(int argc, char *argv[])
 {
 	printf("[New] nxp_demo_sample!!\n");
 
+#ifndef CONFIG_BUILD_PROTECTED
 	imxrt_log_print_kernelbuffer();
-	
+#endif
 	return 0;
 }
