@@ -27,8 +27,17 @@
 #endif
 
 #if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+
 #include <tinyara/userspace.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/sched.h>
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#else
 #define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#endif
 
 #elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 extern uint32_t _stext;

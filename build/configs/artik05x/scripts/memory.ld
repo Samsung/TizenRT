@@ -60,7 +60,7 @@ MEMORY
     /* 112Kb of contiguous SRAM */
 
     ksram (rwx)      : ORIGIN = 0x02023800, LENGTH = 242K
-    usram (rwx)      : ORIGIN = 0x02060000, LENGTH = 480K
+    usram (rwx)      : ORIGIN = 0x02060000, LENGTH = 128K
 }
 __kflash_segment_start__  = ORIGIN(kflash);
 __kflash_segment_size__   = LENGTH(kflash);

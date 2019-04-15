@@ -419,6 +419,14 @@ void os_start(void)
 	}
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* If app binary separation is enabled, then each application will have its own RAM
+	 * area called as the ram partition. The app's text, data, stack and heap will all be
+	 * allocated from this partition. The following call initializes the ram partition manager
+	 */
+	mm_initialize_ram_partitions();
+#endif
+
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Initialize tasking data structures */
 

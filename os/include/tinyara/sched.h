@@ -588,6 +588,11 @@ struct tcb_s {
 
 	struct xcptcontext xcp;		/* Interrupt register save area        */
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t ram_start;		/* Start address of RAM partition for this app */
+	uint32_t ram_size;		/* Size of RAM partition for this app */
+#endif
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
 #endif

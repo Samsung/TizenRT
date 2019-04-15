@@ -42,13 +42,13 @@ will throw an error here
 #error "Unable to handle APP RAM PARTITIONS for CONFIG_MM_NHEAPS > 1"
 #endif
 
-#define ALIGN_EVEN_MASK		2
-#define ALIGN_EVEN(a)		((a) + ALIGN_EVEN_MASK) & ~ALIGN_EVEN_MASK
+#define ALIGN_UP_MASK		3
+#define ALIGN_UP(a)		((a) + ALIGN_UP_MASK) & ~ALIGN_UP_MASK
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-extern uint32_t __ksram_segment_start__[];
-extern uint32_t __ksram_segment_size__[];
+extern uint32_t __usram_segment_start__[];
+extern uint32_t __usram_segment_size__[];
 
 /****************************************************************************
  * Private variables
@@ -83,13 +83,15 @@ void mm_initialize_ram_partitions(void)
 	uint32_t start;
 	uint32_t size;
 
-	start = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
-	size = (REGION_SIZE - (uint32_t)__ksram_segment_size__) / CONFIG_NUM_APPS;
+	start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
+	size = (REGION_END - start) / CONFIG_NUM_APPS;
 	for (i = 0; i < CONFIG_NUM_APPS; i++) {
-		g_mempartitions[i].start = ALIGN_EVEN(start);
+		g_mempartitions[i].start = ALIGN_UP(start);
 		g_mempartitions[i].size = size;
 		g_mempartitions[i].status = MM_PART_FREE;
 		start += size;
+
+		mvdbg("App RAM partition_%d start = 0x%x size = %u\n", i, g_mempartitions[i].start, g_mempartitions[i].size);
 	}
 }
 
@@ -120,7 +122,12 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 			g_mempartitions[i].status = MM_PART_USED;
 			*start_addr = (uint32_t *)g_mempartitions[i].start;
 			*size = g_mempartitions[i].size;
-			mvdbg("Allocated partition Start = 0x%x Size = %dbytes\n", *start_addr, *size);
+			mvdbg("Allocated partition Start = 0x%x Size = %u bytes\n", *start_addr, *size);
+
+			/* struct mm_heap_s will be situated at start of partition
+			and heap will be initialized after this */
+			mm_initialize((struct mm_heap_s *)*start_addr, *start_addr + sizeof(struct mm_heap_s), *size - sizeof(struct mm_heap_s));
+
 			return OK;
 		}
 	}

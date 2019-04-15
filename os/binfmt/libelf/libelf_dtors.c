@@ -175,7 +175,11 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo)
 		if ((shdr->sh_flags & SHF_ALLOC) == 0) {
 			/* Allocate memory to hold a copy of the .dtor section */
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			loadinfo->dtoralloc = (binfmt_dtor_t *)mm_malloc(loadinfo->uheap, dtorsize);
+#else
 			loadinfo->dtoralloc = (binfmt_dtor_t *)kumm_malloc(dtorsize);
+#endif
 			if (!loadinfo->dtoralloc) {
 				berr("Failed to allocate memory for .dtors\n");
 				return -ENOMEM;

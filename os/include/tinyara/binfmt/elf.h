@@ -154,6 +154,10 @@ struct elf_loadinfo_s {
 	save_addrenv_t oldenv;		/* Saved address environment */
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	struct mm_heap_s *uheap;		/* User heap pointer to allocate memory for sections */
+#endif
+
 	uint16_t symtabidx;			/* Symbol table section index */
 	uint16_t strtabidx;			/* String table section index */
 	uint16_t buflen;			/* size of iobuffer[] */

@@ -239,6 +239,9 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	/* Initialize the ELF library to load the program binary. */
 
 	ret = elf_init(binp->filename, &loadinfo);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	loadinfo.uheap = binp->uheap;
+#endif
 	elf_dumploadinfo(&loadinfo);
 	if (ret != 0) {
 		berr("Failed to initialize for load of ELF program: %d\n", ret);
