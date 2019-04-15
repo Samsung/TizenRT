@@ -73,11 +73,11 @@
  ****************************************************************************/
 
 #ifndef MAX
-#define MAX(a,b) a > b ? a : b
+#define MAX(a, b) a > b ? a : b
 #endif
 
 #ifndef MIN
-#define MIN(a,b) a < b ? a : b
+#define MIN(a, b) a < b ? a : b
 #endif
 
 /****************************************************************************
@@ -95,7 +95,7 @@
 
 void imxrt_mpu_initialize(void)
 {
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_BUILD_PROTECTED
 	uintptr_t datastart;
 	uintptr_t dataend;
 #endif
@@ -117,7 +117,7 @@ void imxrt_mpu_initialize(void)
 #endif
 #endif
 
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_BUILD_PROTECTED
 	/* Configure user flash and SRAM space */
 
 	DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart);
@@ -147,7 +147,7 @@ void imxrt_mpu_initialize(void)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_BUILD_PROTECTED
 void imxrt_mpu_uheap(uintptr_t start, size_t size)
 {
 	mpu_user_intsram(start, size);
