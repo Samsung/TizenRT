@@ -443,6 +443,10 @@ menu "Board Selection"
 source board/Kconfig
 endmenu
 
+menu "SE Selection"
+source se/Kconfig
+endmenu
+
 menu "Crypto Module"
 source crypto/Kconfig
 endmenu
@@ -529,7 +533,4 @@ menu "IoTBus Framework"
 source "$FRAMEWORK_DIR/src/iotbus/Kconfig"
 endmenu
 
-menu "SE"
-source se/Kconfig
-endmenu
 

@@ -11,4 +11,3 @@ config HW_RSA_ENC
 	---help---
 		Encrypts a data based on hardware.
 		Supporting key size : 1024, 2048
-		

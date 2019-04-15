@@ -55,4 +55,5 @@ SE_PATH = sss
 SE_CSRCS = security_hal_wrapper.c
 SE_LIB_GEN =
 SE_LIB_OUT =
+CFLAGS += -I$(TOPDIR)/arch/arm/src/s5j/sss/
 endif

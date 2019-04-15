@@ -41,12 +41,12 @@
  */
 
 #include <tinyara/config.h>
+#include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "isp_custom.h"
 
 #define ISP_CHECKBUSY() while (isp_get_status()) {}
