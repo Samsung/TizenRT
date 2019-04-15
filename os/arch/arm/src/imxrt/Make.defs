@@ -134,11 +134,11 @@ CHIP_CSRCS += imxrt_gpioirq.c
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
-ifeq ($(CONFIG_ARMV7M_MPU),y)
-CHIP_CSRCS += imxrt_mpuinit.c
+CHIP_CSRCS += imxrt_userspace.c
 endif
 
-CHIP_CSRCS += imxrt_userspace.c
+ifeq ($(CONFIG_ARMV7M_MPU),y)
+CHIP_CSRCS += imxrt_mpuinit.c
 endif
 
 ifeq ($(CONFIG_IMXRT_EDMA),y)

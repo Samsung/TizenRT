@@ -159,34 +159,9 @@
 #define SW_FPU_REGS       (0)
 #endif
 
-#if defined(CONFIG_ARMV7M_MPU)
-#define REG_USR_CFG1       (SW_INT_REGS + SW_FPU_REGS)
-#define REG_RNUM           (REG_USR_CFG1 + 0)
-#define REG_RBASE          (REG_USR_CFG1 + 1)
-#define REG_RATTR          (REG_USR_CFG1 + 2)
-
-#define REG_USR_CFG0       (REG_RATTR + 1)
-#define REG_RNUM_0         (REG_USR_CFG0 + 0)
-#define REG_RBASE_0        (REG_USR_CFG0 + 1)
-#define REG_RATTR_0        (REG_USR_CFG0 + 2)
-
-#define REG_USR_STK        (REG_RATTR_0 + 1)
-#define REG_RNUM_STK       (REG_USR_STK + 0)
-#define REG_RBASE_STK      (REG_USR_STK + 1)
-#define REG_RATTR_STK      (REG_USR_STK + 2)
-
-/* Total number of regions for user, including the user task region */
-#define MPU_TOTAL_USER_REG  (REG_RATTR_STK - REG_USR_CFG1 + 1)
-
-#define MPU_CONTEXT_REGS    (4 * MPU_TOTAL_USER_REG)	/* user configurable registers are available */
-#define MPU_CONTEXT_SIZE    (4 * MPU_CONTEXT_REGS)	/* 3 regions, each region has 4 info, each info is 4 byte */
-#else
-#define MPU_CONTEXT_REGS    (0)
-#endif
-
 /* The total number of registers saved by software */
 
-#define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS + MPU_CONTEXT_REGS)
+#define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS)
 #define SW_XCPT_SIZE        (4 * SW_XCPT_REGS)
 
 /* On entry into an IRQ, the hardware automatically saves the following
