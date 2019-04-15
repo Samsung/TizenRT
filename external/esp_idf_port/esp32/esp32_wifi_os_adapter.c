@@ -424,7 +424,7 @@ static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *p
 	ETSTimer *etimer = (ETSTimer *) ptimer;
 
 	if (etimer->timer_period != TIMER_INITIALIZED_VAL) {
-		memset(ptimer, 0, sizeof(*ptimer));
+		memset(etimer, 0, sizeof(ETSTimer));
 		etimer->timer_period = TIMER_INITIALIZED_VAL;
 	}
 
@@ -435,7 +435,7 @@ static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *p
 		}
 		etimer->timer_func = pfunction;
 		etimer->timer_expire = (uint32_t) parg;
-		etimer->timer_next = (struct work_s *)malloc(sizeof(struct work_s));
+		etimer->timer_next = (struct work_s *)zalloc(sizeof(struct work_s));
 	}
 }
 
