@@ -143,6 +143,8 @@ struct binary_s {
 
 	uint8_t priority;			/* Task execution priority */
 	size_t stacksize;			/* Size of the stack in bytes (unallocated) */
+	size_t filelen;                 /* Size of binary size, used only when underlying is MTD */
+	size_t offset;                  /* Offset of binary from partition start*/
 
 	/* Unload module callback */
 
@@ -354,6 +356,33 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 #ifdef CONFIG_BINFMT_LOADABLE
 int binfmt_exit(FAR struct binary_s *bin);
 #endif
+/****************************************************************************
+ * Name: load_binary
+ *
+ * Description:
+ *   This is a convenience function that wraps load_module and exec_module into
+ *   one call.  If CONFIG_BINFMT_LOADABLE is defined, this function will
+ *   schedule to unload the module when task exits.
+ *
+ * Input Parameters:
+ *   filename - The path to the program to be executed. If
+ *              CONFIG_LIB_ENVPATH is defined in the configuration, then
+ *              this may be a relative path from the current working
+ *              directory. Otherwise, path must be the absolute path to the
+ *              program.
+ *
+ *   binsize  - The size of ELF binary to be loaded, if this value is less than
+ *              will return with invalid parameter.
+ *
+ *   offset   - The offset from which ELF binary has to be read in MTD partition.
+ *
+ * Returned Value:
+ *   This is an end-user function, so it follows the normal convention:
+ *   It returns the PID of the exec'ed module.  On failure, it returns
+ *   -1 (ERROR) and sets errno appropriately.
+ *
+ ****************************************************************************/
+int load_binary(FAR const char *filename, size_t binsize, size_t offset);
 
 #undef EXTERN
 #if defined(__cplusplus)

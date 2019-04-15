@@ -236,7 +236,14 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 
 	binfo("Loading file: %s\n", binp->filename);
 
+	/* Clear the load info structure */
+
+	memset(&loadinfo, 0, sizeof(struct elf_loadinfo_s));
+
 	/* Initialize the ELF library to load the program binary. */
+	loadinfo.offset = binp->offset;
+	loadinfo.filelen = binp->filelen;
+
 
 	ret = elf_init(binp->filename, &loadinfo);
 #ifdef CONFIG_APP_BINARY_SEPARATION
