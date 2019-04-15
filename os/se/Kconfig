@@ -1,0 +1,42 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SE
+	bool "Enable embedded SE"
+
+if SE
+choice
+	prompt "SE selection"
+	default SE_SSS
+
+config SE_SSS
+	bool "Samsung SSS"
+	---help---
+		Samsung SE chip
+
+config SE_KONAI
+	bool "KONAI"
+	---help---
+		KONAI SE chip
+
+config SE_VIRTUAL
+	bool "Virtual SE chip"
+	---help---
+		Enable Virtual SE chip for testing
+endchoice
+
+if SE_SSS
+source se/sss/Kconfig
+endif
+
+if SE_KONAI
+source se/konai/Kconfig
+endif
+
+if SE_VIRTUAL
+source se/virtual/Kconfig
+endif
+
+endif
