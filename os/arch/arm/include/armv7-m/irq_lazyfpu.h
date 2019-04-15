@@ -159,7 +159,7 @@
 #define SW_FPU_REGS       (0)
 #endif
 
-#if defined(CONFIG_BUILD_PROTECTED)
+#if defined(CONFIG_ARMV7M_MPU)
 #define REG_USR_CFG1       (SW_INT_REGS + SW_FPU_REGS)
 #define REG_RNUM           (REG_USR_CFG1 + 0)
 #define REG_RBASE          (REG_USR_CFG1 + 1)

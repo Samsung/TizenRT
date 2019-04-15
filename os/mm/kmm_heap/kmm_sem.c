@@ -93,8 +93,7 @@
  *   OK on success; a negated errno on failure
  *
  ************************************************************************/
-
-int kmm_trysemaphore(void)
+int kmm_trysemaphore(void *dummy_addr)
 {
 	return mm_trysemaphore(&g_kmmheap);
 }
@@ -112,8 +111,7 @@ int kmm_trysemaphore(void)
  *   OK on success; a negated errno on failure
  *
  ************************************************************************/
-
-void kmm_givesemaphore(void)
+void kmm_givesemaphore(void *dummy_addr)
 {
 	return mm_givesemaphore(&g_kmmheap);
 }

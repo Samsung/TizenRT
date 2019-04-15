@@ -122,9 +122,11 @@ void up_copyarmstate(uint32_t *dest, uint32_t *src)
 		src += SW_FPU_REGS;
 		dest += SW_FPU_REGS;
 
+#ifdef CONFIG_ARMV7M_MPU
 		for (i = 0; i < MPU_CONTEXT_REGS; i++) {
 			*dest++ = *src++;
 		}
+#endif
 
 		for (i = 0; i < HW_XCPT_REGS; i++) {
 			*dest++ = *src++;

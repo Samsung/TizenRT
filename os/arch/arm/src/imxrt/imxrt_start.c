@@ -366,7 +366,6 @@ void __start(void)
 
 	imxrt_boardinitialize();
 
-#ifdef CONFIG_ARMV7M_MPU
 #ifdef CONFIG_BUILD_PROTECTED
 	/* For the case of the separate user-/kernel-space build, perform whatever
 	 * platform specific initialization of the user memory is required.
@@ -375,14 +374,15 @@ void __start(void)
 	 */
 
 	imxrt_userspace();
-#endif
 
+#ifdef  CONFIG_ARMV7M_MPU
 	/* Configure the MPU to permit user-space access to its FLASH and RAM (for
 	 * CONFIG_BUILD_PROTECTED) or to manage cache properties in external
 	 * memory regions.
 	 */
 
 	imxrt_mpu_initialize();
+#endif
 #endif
 
 	/* Enable I- and D-Caches */
