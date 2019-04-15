@@ -19,12 +19,13 @@
 # -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-DEPPATH = --dep-path .
-SE_PATH		=
+SE_PATH	=
 SE_CSRCS	=
-SE_SRCS		=
-SE_LIB 	=
-SE_LIB_OBJS =
+SE_SRCS	=
+SE_LIB	=
+SE_LIB_OBJS	=
+
+DEPPATH = --dep-path .
 VPATH = .
 
 CFLAGS += -I$(TOPDIR)/../external/include/security/hal/
@@ -67,7 +68,7 @@ ifneq (, $(wildcard $(addprefix $(SE_PATH)/, $(SE_LIB_NAME))))
 else
 	$(error "$(addprefix $(SE_PATH)/, $(SE_LIB_NAME)) should exist to build SE.")
 endif
-	
+
 $(SE_OBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
