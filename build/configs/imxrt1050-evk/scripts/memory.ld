@@ -87,16 +87,16 @@ MEMORY
 {
   /* 64Mb of HyperFLASH */
 
-  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 512K
-  uflash (rx)  : ORIGIN = 0x60080000, LENGTH = 512K
+  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 256K
+  uflash (rx)  : ORIGIN = 0x60040000, LENGTH = 256K
   flash  (rx)  : ORIGIN = 0x60400000, LENGTH = 62M
 
   /* 512Kb of OCRAM */
 
   kdtcm   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
-  udtcm   (rwx) : ORIGIN = 0x20010000, LENGTH = 64K
-  kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 256K
-  uocram (rwx) : ORIGIN = 0x20240000, LENGTH = 256K
+  udtcm   (rwx) : ORIGIN = 0x20010000, LENGTH = 16K
+  kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 64K
+  uocram (rwx) : ORIGIN = 0x20240000, LENGTH = 64K
 }
 
 __kflash_segment_start__  = ORIGIN(kflash);
