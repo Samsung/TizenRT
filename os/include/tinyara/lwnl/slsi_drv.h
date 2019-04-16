@@ -28,9 +28,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 #ifdef CONFIG_LWNL80211_SLSI_DEBUG
-#define SLSIDRV_LOG printf
+#define SLSIDRV_LOG(format, ...) printf(format, ##__VA_ARGS__)
 #else
-#define SLSIDRV_LOG ndbg
+#define SLSIDRV_LOG(a, ...) (void)0
 #endif
 
 #define SLSIDRV_TAG "[SLSIDRV]"
