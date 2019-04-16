@@ -280,13 +280,13 @@ static void go_os_start(void *pv, unsigned int nbytes)
 	 */
 
 	__asm__ __volatile__("\tmovs r1, r1, lsr #2\n"	/* R1 = nwords = nbytes >> 2 */
-                         "\tcmp  r1, #0\n"           /* Check (nwords == 0) */
+			"\tcmp  r1, #0\n"           /* Check (nwords == 0) */
 						 "\tbeq  2f\n"	/* (should not happen) */
 						 "\tbic  r0, r0, #3\n"	/* R0 = Aligned stackptr */
 						 "\tmovw r2, #0xbeef\n"	/* R2 = STACK_COLOR = 0xdeadbeef */
-                         "\tmovt r2, #0xdead\n"
+			"\tmovt r2, #0xdead\n"
 
-                         "1:\n"                      /* Top of the loop */
+			"1:\n"                      /* Top of the loop */
 						 "\tsub  r1, r1, #1\n"	/* R1 nwords-- */
 						 "\tcmp  r1, #0\n"	/* Check (nwords == 0) */
 						 "\tstr  r2, [r0], #4\n"	/* Save stack color word, increment stackptr */
@@ -318,7 +318,7 @@ void __start(void)
 #ifdef CONFIG_ARMV7M_STACKCHECK
 	/* Set the stack limit before we attempt to call any functions */
 
-	__asm__ volatile("sub r10, sp, %0"::"r"(CONFIG_IDLETHREAD_STACKSIZE - 64):);
+	__asm__ volatile("sub r10, sp, %0" : : "r"(CONFIG_IDLETHREAD_STACKSIZE - 64) : );
 #endif
 
 	/* Clear .bss.  We'll do this inline (vs. calling memset) just to be
@@ -366,7 +366,6 @@ void __start(void)
 
 	imxrt_boardinitialize();
 
-#ifdef CONFIG_ARMV7M_MPU
 #ifdef CONFIG_BUILD_PROTECTED
 	/* For the case of the separate user-/kernel-space build, perform whatever
 	 * platform specific initialization of the user memory is required.
@@ -377,6 +376,7 @@ void __start(void)
 	imxrt_userspace();
 #endif
 
+#ifdef  CONFIG_ARMV7M_MPU
 	/* Configure the MPU to permit user-space access to its FLASH and RAM (for
 	 * CONFIG_BUILD_PROTECTED) or to manage cache properties in external
 	 * memory regions.
