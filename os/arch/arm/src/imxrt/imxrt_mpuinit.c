@@ -73,11 +73,11 @@
  ****************************************************************************/
 
 #ifndef MAX
-#define MAX(a,b) a > b ? a : b
+#define MAX(a, b) a > b ? a : b
 #endif
 
 #ifndef MIN
-#define MIN(a,b) a < b ? a : b
+#define MIN(a, b) a < b ? a : b
 #endif
 
 /****************************************************************************
@@ -130,11 +130,11 @@ void imxrt_mpu_initialize(void)
 	DEBUGASSERT(dataend >= datastart);
 
 	mpu_user_intsram(datastart, dataend - datastart);
-#endif
 
 	/* Then enable the MPU */
 
 	mpu_control(true, false, true);
+#endif
 }
 
 /****************************************************************************
