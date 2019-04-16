@@ -71,6 +71,10 @@
 #include "sched/sched.h"
 #include "binfmt.h"
 
+#ifdef CONFIG_FAULT_MGR
+#include "fault_manager/fault_manager.h"
+#endif
+
 #ifndef CONFIG_BINFMT_DISABLE
 
 /****************************************************************************
@@ -268,6 +272,12 @@ int exec_module(FAR const struct binary_s *binp)
 
 	pid = tcb->cmn.pid;
 
+#ifdef CONFIG_FAULT_MGR
+	/* Register the appliation to the fault manager */
+
+	ret = fm_register_binary(tcb->cmn.pid, binp->filename);
+	DEBUGASSERT(ret != ERROR);
+#endif
 	/* Then activate the task at the provided priority */
 
 	ret = task_activate((FAR struct tcb_s *)tcb);
@@ -289,6 +299,12 @@ int exec_module(FAR const struct binary_s *binp)
 	return (int)pid;
 
 errout_with_tcbinit:
+#ifdef CONFIG_FAULT_MGR
+	/* Deregister the application with from fault manager */
+
+	ret = fm_deregister_binary(tcb->cmn.pid);
+	DEBUGASSERT(ret != ERROR);
+#endif
 	tcb->cmn.stack_alloc_ptr = NULL;
 	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
 #ifdef CONFIG_APP_BINARY_SEPARATION
