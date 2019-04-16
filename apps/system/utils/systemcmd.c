@@ -15,83 +15,67 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __APPS_INCLUDE_SYSTEM_UTILS_H
-#define __APPS_INCLUDE_SYSTEM_UTILS_H
+
 #include <tinyara/config.h>
+#include <sys/types.h>
+#include <apps/shell/tash.h>
+#ifdef CONFIG_SYSTEM_CMDS
+#include <apps/system/utils.h>
+#endif
 
 #ifdef CONFIG_SYSTEM_CMDS
-void system_register_utilcmds(void);
-#endif
-#ifdef CONFIG_FS_CMDS
-void fs_register_utilcmds(void);
-#endif
-#ifdef CONFIG_NET_CMDS
-void net_register_utilcmds(void);
-void net_register_appcmds(void);
-#endif
-
-#ifdef CONFIG_ENABLE_STACKMONITOR_CMD
-void stkmon_logging(struct tcb_s *);
-#endif
-
+const static tash_cmdlist_t system_cmds[] = {
 #if defined(CONFIG_ENABLE_CPULOAD)
-int utils_cpuload(int argc, char **args);
+	{"cpuload",  utils_cpuload,      TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_DATE)
-int utils_date(int argc, char **args);
+	{"date",     utils_date,         TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_DMESG)
-int utils_dmesg(int argc, char **args);
+	{"dmesg",    utils_dmesg,        TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_ENV_GET)
-int utils_env_get(int argc, char **args);
+	{"getenv",   utils_env_get,      TASH_EXECMD_SYNC},
 #endif
-
-#if defined(CONFIG_ENABLE_ENV_SET)
-int utils_env_set(int argc, char **args);
-#endif
-
-#if defined(CONFIG_ENABLE_ENV_UNSET)
-int utils_env_unset(int argc, char **args);
-#endif
-
 #if defined(CONFIG_ENABLE_FREE)
-int utils_free(int argc, char **args);
+	{"free",     utils_free,         TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_HEAPINFO)
-int utils_heapinfo(int argc, char **args);
+	{"heapinfo", utils_heapinfo,     TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_IRQINFO)
-int utils_irqinfo(int argc, char **args);
+	{"irqinfo",   utils_irqinfo,      TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_KILL)
-int utils_kill(int argc, char **args);
+	{"kill",     utils_kill,         TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_KILLALL)
-int utils_killall(int argc, char **args);
+	{"killall",  utils_killall,      TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_ENABLE_PS)
-int utils_ps(int argc, char **args);
+	{"ps",       utils_ps,           TASH_EXECMD_SYNC},
 #endif
-
+#if defined(CONFIG_ENABLE_ENV_SET)
+	{"setenv",   utils_env_set,      TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_STACKMONITOR)
-int utils_stackmonitor(int argc, char **args);
+	{"stkmon",   utils_stackmonitor, TASH_EXECMD_SYNC},
 #endif
-
 #if defined(CONFIG_TTRACE)
-int utils_ttrace(int argc, char **args);
+	{"ttrace",   utils_ttrace,       TASH_EXECMD_SYNC},
 #endif
-
+#if defined(CONFIG_ENABLE_ENV_UNSET)
+	{"unsetenv", utils_env_unset,    TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_UPTIME)
-int utils_uptime(int argc, char **args);
+	{"uptime",   utils_uptime,       TASH_EXECMD_SYNC},
+#endif
+	{NULL,       NULL,              0}
+};
+
+void system_register_utilcmds(void)
+{
+	tash_cmdlist_install(system_cmds);
+}
 #endif
 
-#endif							/* __APPS_INCLUDE_SYSTEM_UTILS_H */

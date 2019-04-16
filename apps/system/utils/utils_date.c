@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/utils/kdbg_date.c
+ * apps/system/utils/utils_date.c
  *
  *   Copyright (C) 2011-2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -311,7 +311,7 @@ errout_bad_parm:
  * Public Functions
  ****************************************************************************/
 
-int kdbg_date(int argc, char **args)
+int utils_date(int argc, char **args)
 {
 	int ret;
 

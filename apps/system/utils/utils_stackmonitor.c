@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/utils/kdbg_stackmonitor.c
+ * apps/system/utils/utils_stackmonitor.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -77,7 +77,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/fs/fs.h>
 
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -181,7 +181,7 @@ static int stkmon_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	char buf[STKMON_BUFLEN];
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
-	ret = kdbg_readfile(filepath, buf, STKMON_BUFLEN, stkmon_print_active_values);
+	ret = utils_readfile(filepath, buf, STKMON_BUFLEN, stkmon_print_active_values);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -244,7 +244,7 @@ static void *stackmonitor_daemon(void *arg)
 		printf("|------------");
 #endif
 		printf("\n");
-		kdbg_proc_pid_foreach(stkmon_read_proc);
+		utils_proc_pid_foreach(stkmon_read_proc);
 #ifndef CONFIG_DISABLE_SIGNALS
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
@@ -310,7 +310,7 @@ void stkmon_logging(struct tcb_s *tcb)
 	stkmon_chk_idx++;
 }
 
-int kdbg_stackmonitor(int argc, char **args)
+int utils_stackmonitor(int argc, char **args)
 {
 #ifndef CONFIG_DISABLE_SIGNALS
 	pthread_t stkmon;

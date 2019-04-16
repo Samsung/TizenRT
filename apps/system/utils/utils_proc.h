@@ -16,12 +16,12 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_SYSTEM_UTILS_KDBG_UTILS_H
-#define __APPS_SYSTEM_UTILS_KDBG_UTILS_H
+#ifndef __APPS_SYSTEM_UTILS_UTILS_PROC_H
+#define __APPS_SYSTEM_UTILS_UTILS_PROC_H
 
 #include <tinyara/config.h>
 #include <dirent.h>
-#ifdef CONFIG_ENABLE_STACKMONITOR_CMD
+#ifdef CONFIG_ENABLE_STACKMONITOR
 #include <tinyara/clock.h>
 #include <sys/types.h>
 
@@ -39,7 +39,7 @@ struct stkmon_save_s {
 };
 #endif
 
-#if defined(CONFIG_ENABLE_IRQINFO_CMD) || defined(CONFIG_ENABLE_IRQINFO_CMD) || defined(CONFIG_ENABLE_PS_CMD) || defined(CONFIG_ENABLE_STACKMONITOR_CMD) || defined(CONFIG_ENABLE_HEAPINFO_CMD)
+#if defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_PS) || defined(CONFIG_ENABLE_STACKMONITOR) || defined(CONFIG_ENABLE_HEAPINFO)
 #define ENABLE_PROC_UTILS
 #endif
 
@@ -62,11 +62,11 @@ enum proc_stat_data_e {
 
 typedef char *stat_data;
 typedef int (*procentry_handler_t)(FAR struct dirent *entryp, FAR void *arg);
-typedef void (*kdbg_print_t)(char *buf);
+typedef void (*utils_print_t)(char *buf);
 
-int kdbg_proc_pid_foreach(procentry_handler_t handler);
-int kdbg_readfile(FAR const char *filepath, char *buf, int buflen, kdbg_print_t print_func);
+int utils_proc_pid_foreach(procentry_handler_t handler);
+int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_t print_func);
 
 #endif
 
-#endif							/* __APPS_SYSTEM_UTILS_KDBG_UTILS_H */
+#endif							/* __APPS_SYSTEM_UTILS_UTILS_PROC_H */
