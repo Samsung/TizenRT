@@ -34,9 +34,9 @@
 /*
  * Definition for handling pthread
  */
-#define SECURITY_TEST_PRIORITY     100
-#define SECURITY_TEST_STACK_SIZE   51200
-#define SECURITY_TEST_SCHED_POLICY SCHED_RR
+#define SEE_TEST_PRIORITY     100
+#define SEE_TEST_STACK_SIZE   51200
+#define SEE_TEST_SCHED_POLICY SCHED_RR
 
 struct pthread_arg {
 	int argc;
@@ -794,7 +794,7 @@ unsigned int TC_see_generate_dhm_params(void)
 	d_param.modules_p_byte_len = 128;
 	d_param.generator_g_byte_len = 128;
 
-	d_param.publickey = malloc(d_param.modules_p_byte_len);
+	d_param.publickey = (unsigned char *)malloc(d_param.modules_p_byte_len);
 	d_param.publickey_byte_len = d_param.modules_p_byte_len;
 
 	memset(d_param.publickey, 0, d_param.publickey_byte_len);
@@ -823,7 +823,7 @@ unsigned int TC_see_generate_dhm_params(void)
 	d_param.modules_p_byte_len = 256;
 	d_param.generator_g_byte_len = 256;
 
-	d_param.publickey = malloc(d_param.modules_p_byte_len);
+	d_param.publickey = (unsigned char *)malloc(d_param.modules_p_byte_len);
 	d_param.publickey_byte_len = d_param.modules_p_byte_len;
 
 	memset(d_param.publickey, 0, d_param.publickey_byte_len);
@@ -1457,7 +1457,7 @@ void TC_puf_key_test(int debug_mode)
 	}
 }
 
-pthread_addr_t security_test_cb(void *args)
+pthread_addr_t see_test_cb(void *args)
 {
 	int i;
 	int test_result = 0;
@@ -1610,7 +1610,7 @@ pthread_addr_t security_test_cb(void *args)
 	return NULL;
 }
 
-int security_test_main(int argc, char **argv)
+int security_see_test_main(int argc, char **argv)
 {
 	pthread_t tid;
 	pthread_attr_t attr;
@@ -1629,25 +1629,25 @@ int security_test_main(int argc, char **argv)
 	}
 
 	/* 1. set a priority */
-	sparam.sched_priority = SECURITY_TEST_PRIORITY;
+	sparam.sched_priority = SEE_TEST_PRIORITY;
 	r = pthread_attr_setschedparam(&attr, &sparam);
 	if (r != 0) {
 		printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
 	}
 
-	r = pthread_attr_setschedpolicy(&attr, SECURITY_TEST_SCHED_POLICY);
+	r = pthread_attr_setschedpolicy(&attr, SEE_TEST_SCHED_POLICY);
 	if (r != 0) {
 		printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
 	}
 
 	/* 2. set a stacksize */
-	r = pthread_attr_setstacksize(&attr, SECURITY_TEST_STACK_SIZE);
+	r = pthread_attr_setstacksize(&attr, SEE_TEST_STACK_SIZE);
 	if (r != 0) {
 		printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
 	}
 
 	/* 3. create pthread with entry function */
-	r = pthread_create(&tid, &attr, security_test_cb, (void *)&args);
+	r = pthread_create(&tid, &attr, see_test_cb, (void *)&args);
 	if (r != 0) {
 		printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}
