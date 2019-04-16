@@ -78,6 +78,15 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 		goto errout;
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* Allocate the RAM partition to load the app into */
+	uint32_t *start_addr;
+	uint32_t size;
+	struct tcb_s *tcb;
+
+	mm_allocate_ram_partition(&start_addr, &size);
+#endif
+
 	/* Allocate the load information */
 
 	bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
@@ -94,6 +103,9 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 	bin->nexports = 0;
 	bin->filelen = binsize;
 	bin->offset = offset;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin->uheap = (struct mm_heap_s *)start_addr;
+#endif
 
 	/* Load the module into memory */
 
@@ -111,6 +123,15 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 
 	sched_lock();
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* The first 4 bytes of the text section of the application must contain a
+	pointer to the application's mm_heap object. Here we will store the mm_heap
+	pointer to the start of the text section */
+	*(uint32_t *)(bin->alloc[0]) = (uint32_t)start_addr;
+	tcb = (struct tcb_s *)sched_self();
+	tcb->ram_start = (uint32_t)start_addr;
+#endif
+
 	/* Then start the module */
 
 	pid = exec_module(bin);
@@ -119,6 +140,13 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
 		goto errout_with_lock;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	tcb->ram_start = 0;
+	tcb = sched_gettcb(pid);
+	tcb->ram_start = (uint32_t)start_addr;
+	tcb->ram_size = size;
+#endif
 
 #ifdef CONFIG_BINFMT_LOADABLE
 	/* Set up to unload the module (and free the binary_s structure)
@@ -149,6 +177,9 @@ errout_with_lock:
 errout_with_bin:
 	kmm_free(bin);
 errout:
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_free_ram_partition((uint32_t)start_addr);
+#endif
 	set_errno(errcode);
 	return ERROR;
 
