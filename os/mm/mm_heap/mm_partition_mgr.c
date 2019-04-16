@@ -126,7 +126,7 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 
 			/* struct mm_heap_s will be situated at start of partition
 			and heap will be initialized after this */
-			mm_initialize((struct mm_heap_s *)*start_addr, *start_addr + sizeof(struct mm_heap_s), *size - sizeof(struct mm_heap_s));
+			mm_initialize((struct mm_heap_s *)*start_addr, (uint8_t *)*start_addr + sizeof(struct mm_heap_s), *size - sizeof(struct mm_heap_s));
 
 			return OK;
 		}
