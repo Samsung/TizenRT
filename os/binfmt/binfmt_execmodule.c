@@ -68,6 +68,10 @@
 #include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
+
 #include "sched/sched.h"
 #include "binfmt.h"
 
@@ -182,7 +186,12 @@ int exec_module(FAR const struct binary_s *binp)
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize, retaddr);
+#else
 	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize);
+#endif
 #else
 	stack = (FAR uint32_t *)kumm_malloc(binp->stacksize);
 #endif

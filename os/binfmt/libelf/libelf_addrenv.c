@@ -62,6 +62,10 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
+
 #include "libelf.h"
 
 /****************************************************************************
@@ -145,7 +149,12 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	/* Allocate memory to hold the ELF image */
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	loadinfo->textalloc = (uintptr_t)mm_malloc(loadinfo->uheap, textsize + datasize, retaddr);
+#else
 	loadinfo->textalloc = (uintptr_t)mm_malloc(loadinfo->uheap, textsize + datasize);
+#endif
 #else
 	loadinfo->textalloc = (uintptr_t)kumm_malloc(textsize + datasize);
 #endif

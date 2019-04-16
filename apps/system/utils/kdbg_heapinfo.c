@@ -55,6 +55,7 @@ extern size_t regionx_size[CONFIG_MM_REGIONS];
 extern int regionx_heap_idx[CONFIG_MM_REGIONS];
 #endif
 
+extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #ifdef CONFIG_MM_KERNEL_HEAP
 static int heapinfo_fd;
 #endif
@@ -271,7 +272,11 @@ int kdbg_heapinfo(int argc, char **args)
 #if CONFIG_MM_NHEAPS > 1
 	heapinfo_init_totalinfo();
 #endif
+#ifdef CONFIG_MM_KERNEL_HEAP
+	struct mm_heap_s *heap = g_kmmheap;
+#else
 	struct mm_heap_s *heap = g_mmheap;
+#endif
 	while ((option = getopt(argc, args, "iap:fge:rk")) != ERROR) {
 #if CONFIG_MM_NHEAPS > 1
 		summary_option = false;
