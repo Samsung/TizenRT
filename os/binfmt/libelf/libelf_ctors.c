@@ -176,7 +176,12 @@ int elf_loadctors(FAR struct elf_loadinfo_s *loadinfo)
 			/* Allocate memory to hold a copy of the .ctor section */
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			ARCH_GET_RET_ADDRESS
+			loadinfo->ctoralloc = (binfmt_ctor_t *)mm_malloc(loadinfo->uheap, ctorsize, retaddr);
+#else
 			loadinfo->ctoralloc = (binfmt_ctor_t *)mm_malloc(loadinfo->uheap, ctorsize);
+#endif
 #else
 			loadinfo->ctoralloc = (binfmt_ctor_t *)kumm_malloc(ctorsize);
 #endif
