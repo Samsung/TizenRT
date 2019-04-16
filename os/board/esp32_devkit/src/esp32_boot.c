@@ -69,9 +69,7 @@
 #include "esp32_core.h"
 #include "esp32_i2c.h"
 #include <tinyara/gpio.h>
-#ifdef CONFIG_SPIRAM_USE_CAPS_ALLOC
-#include <esp_heap_caps.h>
-#endif
+#include <../xtensa/xtensa.h>
 
 #if defined(CONFIG_ADC)
 #include "esp32_adc.h"
@@ -225,7 +223,7 @@ void board_initialize(void)
 {
 	/* Perform board-specific initialization */
 	(void)esp32_bringup();
-    configure_partitions();
+	configure_partitions();
 	esp32_devKit_mount_partions();
 	board_gpio_initialize();
 	board_i2c_initialize();
@@ -241,19 +239,11 @@ void board_initialize(void)
 	esp_spiram_init();
 #endif
 
-	/*no-os heap configure*/
-#ifdef CONFIG_SPIRAM_USE_CAPS_ALLOC
-	esp_spiram_add_to_heapalloc();
-	//Assgin DMA memory for drivers*/
-	uint8_t *dma_heap = (uint8_t *)malloc(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-	if (!dma_heap) {
-		return;
-	}
-	uint32_t caps[] = { MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT };
-	heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap + CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL - 1);
-
-	/*enable heaps */
-	heap_caps_enable_nonos_stack_heaps();
+//memory management of tizenrt
+#if CONFIG_MM_REGIONS > 1
+/*addregion after spiram init, to replace common up_addregion in os_start*/
+	xtensa_up_addregion();
 #endif
+
 }
 #endif
