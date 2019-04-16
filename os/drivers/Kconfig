@@ -496,3 +496,14 @@ menuconfig DRIVERS_WIRELESS
 		Drivers for various wireless devices.
 
 source drivers/wireless/Kconfig
+
+menuconfig LWNL80211
+	bool "Enable light-weight netlink for 80211"
+	default n
+	depends on NETUTILS_WIFI
+	---help---
+		Lwnl80211 provides a driver interface for 802.11 WiFi hardware.
+
+if LWNL80211
+source drivers/lwnl/Kconfig
+endif
