@@ -81,12 +81,14 @@ ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip/chip}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip/rom}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_DIR)/include}"
+  CFLAGS += -I "${shell cygpath -w $(TOPDIR)/board/common}"
 else
   CFLAGS += -I$(ARCH_SRCDIR)/chip
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/chip/chip
   CFLAGS += -I$(ARCH_SRCDIR)/chip/rom
   CFLAGS += -I$(BOARD_DIR)/include
+  CFLAGS += -I$(TOPDIR)/board/common
 endif
 
 all: depend context libboard$(LIBEXT) depend context

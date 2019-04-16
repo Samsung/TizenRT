@@ -68,6 +68,7 @@
 #include "esp32_gpio.h"
 #include "esp32_core.h"
 #include "esp32_i2c.h"
+#include "common.h"
 #include <tinyara/gpio.h>
 #ifdef CONFIG_SPIRAM_USE_CAPS_ALLOC
 #include <esp_heap_caps.h>
@@ -225,7 +226,7 @@ void board_initialize(void)
 {
 	/* Perform board-specific initialization */
 	(void)esp32_bringup();
-    configure_partitions();
+	configure_partitions();
 	esp32_devKit_mount_partions();
 	board_gpio_initialize();
 	board_i2c_initialize();
