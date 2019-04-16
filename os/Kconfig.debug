@@ -109,6 +109,31 @@ config DEBUG_BINFMT_INFO
 
 endif # DEBUG_BINFMT
 
+config DEBUG_BINMGR
+        bool "Binary Manager Debug Features"
+        default n
+        depends on BINARY_MANAGER
+        ---help---
+                Enable binary manager debug features.
+
+if DEBUG_BINMGR
+
+config DEBUG_BINMGR_ERROR
+	bool "Enable Error logs of Binary Manager"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enables error logs for Binary Manager interface.
+
+config DEBUG_BINMGR_INFO
+	bool "Enable Debug logs of Binary Manager"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enables debug logs for Binary Manager interface.
+
+endif # DEBUG_BINMGR
+
 config DEBUG_LIB
 	bool "C Library Debug Feature"
 	default n

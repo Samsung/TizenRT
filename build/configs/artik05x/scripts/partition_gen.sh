@@ -123,8 +123,11 @@ do
 		pname_text="ROM FS"
 		ro=0
 		romfs_part_exist=1
-	elif [ "$pname" == "system" ]; then
-		pname_text="SYSTEM"
+	elif [ "$pname" == "micom" ]; then
+		pname_text="MICOM"
+		ro=0
+	elif [ "$pname" == "wifi" ]; then
+		pname_text="WIFI"
 		ro=0
 	elif [ "$pname" == "nvram" ]; then
 		pname_text="WiFi NVRAM"

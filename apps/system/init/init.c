@@ -43,15 +43,6 @@
 #include <media/media_init.h>
 #endif
 
-#if defined(CONFIG_EXAMPLES_ELF)
-/* Loadable APPS configuration */
-#define NUM_APPS	2
-static const char *loadable_apps_name[NUM_APPS] = {
-	"/system/bin/micomapp",
-	"/system/bin/wifiapp"
-};
-#endif	/*CONFIG_EXAMPLES_ELF */
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -143,14 +134,6 @@ int preapp_start(int argc, char *argv[])
 
 	tash_register_cmds();
 #endif
-
-#if defined(CONFIG_EXAMPLES_ELF)
-	for (i = 0; i < NUM_APPS; i++) {
-		if ((pid = exec(loadable_apps_name[i], NULL, NULL, 0)) <= 0) {
-			dbg("ERROR: exec(%s) failed", loadable_apps_name[i]);
-		}
-	}
-#endif /* CONFIG_EXAMPLES_ELF */
 
 #ifdef CONFIG_EVENTLOOP
 	pid = eventloop_task_start();

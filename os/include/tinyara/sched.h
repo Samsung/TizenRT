@@ -124,6 +124,8 @@
 #define HAVE_TASK_GROUP   1		/* Address environment */
 #elif defined(CONFIG_MM_SHM)
 #define HAVE_TASK_GROUP   1		/* Shared memory */
+#elif defined(CONFIG_BINARY_MANAGER)
+#define HAVE_TASK_GROUP   1		/* Binary management */
 #endif
 #endif
 
@@ -355,6 +357,10 @@ struct task_group_s {
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
 	pid_t tg_task;				/* The ID of the task within the group      */
 #endif
+#if defined(CONFIG_BINARY_MANAGER)
+	pid_t tg_loadtask;			/* The ID of the main task in binary        */
+#endif
+
 	uint8_t tg_flags;			/* See GROUP_FLAG_* definitions             */
 
 	/* Group membership ********************************************************** */

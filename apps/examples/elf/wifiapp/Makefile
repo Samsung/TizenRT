@@ -84,8 +84,14 @@ LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
 
-BIN = wifiapp
+BIN = wifi
 BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)/$(BIN) | wc -l)
+# need to update
+BIN_TYPE = ELF
+BIN_VER = 20190412
+DYNAMIC_RAM_SIZE = 51200
+KERNEL_VER = 2.0
+
 SRCS = wifiapp.c
 OBJS = $(SRCS:.c=$(OBJEXT))
 
@@ -102,12 +108,13 @@ $(BIN): $(OBJS)
 
 clean:
 	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
+	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
 	$(call CLEAN)
 
 install:
-	$(Q) mkdir -p $(SYSTEM_BIN_DIR)
-	$(Q) install $(BIN) $(SYSTEM_BIN_DIR)/$(BIN)
+	$(Q) mkdir -p $(USER_BIN_DIR)
+	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE)
 
 verify:
 ifneq ($(BIN_CHECK),0)
@@ -118,4 +125,3 @@ ifneq ($(BIN_CHECK),0)
 	$(call CLEAN)
 	exit 1
 endif
-

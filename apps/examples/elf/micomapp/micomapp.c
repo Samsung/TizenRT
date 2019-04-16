@@ -21,47 +21,15 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 int main(int argc, char **argv)
 {
-	struct timeval tv;
-	struct tm *ptm = NULL;
-	char tformat[32] = { 0 };
-
-	/* stdout and stderr stream test */
-
-	fprintf(stdout, "%15s: Hello, World!! on stdout\n", argv[0]);
-	fprintf(stderr, "%15s: Hello, World!! on stderr\n", argv[0]);
-
 	while (1) {
-		/* Get current time of day */
-		if (gettimeofday(&tv, NULL)) {
-			printf("gettimeofday failed with errno = %d\n", errno);
-			exit(EXIT_FAILURE);
-		}
-
-		/* Format date & time */
-		ptm = localtime(&tv.tv_sec);
-		if (!ptm) {
-			printf("localtime failed\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (strftime(tformat, sizeof(tformat), "%H:%M:%S", ptm) == 0) {
-			printf("strftime failed\n");
-			exit(EXIT_FAILURE);
-		}
-
-		printf("%s \talive at %s.%03ld\n", argv[0], tformat, tv.tv_usec / 1000);
+		printf("%s \t MICOM alive! \n", argv[0]);
 		sleep(10);
 	}
 

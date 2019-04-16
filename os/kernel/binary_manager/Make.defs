@@ -16,13 +16,19 @@
 #
 ###########################################################################
 
-# Add Fault Manager related files to the build
+# Add binary manager files
 
-ifeq ($(CONFIG_FAULT_MGR),y)
-CSRCS += fault_manager.c
-endif
+ifeq ($(CONFIG_BINARY_MANAGER),y)
 
-# Include Fault Mnagaer build support
+CSRCS += binary_manager.c binary_manager_load.c binary_manager_getinfo.c
 
-DEPPATH += --dep-path fault_manager
-VPATH += :fault_manager
+ifeq ($(CONFIG_BINMGR_RECOVERY),y)
+CSRCS += binary_manager_recovery.c
+endif # CONFIG_BINMGR_RECOVERY
+
+# Include binary manager build support
+
+DEPPATH += --dep-path binary_manager
+VPATH += :binary_manager
+
+endif # CONFIG_BINARY_MANAGER

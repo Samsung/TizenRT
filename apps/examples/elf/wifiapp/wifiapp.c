@@ -24,8 +24,76 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <time.h>
-#include <sys/time.h>
+#include <sched.h>
+#include <pthread.h>
+
+static void *assert_thread(void *index)
+{
+	printf("[%d] %dth thread, assert!\n", getpid(), (int)index);
+
+	PANIC();
+	return 0;
+}
+
+static void *normal_thread(void *index)
+{
+	printf("[%d] %dth thread, normal thread\n", getpid(), (int)index);
+
+	while (1);
+	return 0;
+}
+
+static int assert_group_main_task(int argc, char *argv[])
+{
+	int count;
+	pthread_t thd;
+	pthread_attr_t attr;
+
+	printf("[%d] assert_group_main_task \n", getpid());
+
+	pthread_attr_init(&attr);
+
+	for (count = 0; count < 2; count++) {
+		pthread_create(&thd, &attr, (pthread_startroutine_t)normal_thread, (pthread_addr_t)count);
+	}
+	pthread_create(&thd, &attr, (pthread_startroutine_t)assert_thread, (pthread_addr_t)count);
+
+	while (1);
+
+	return 0;
+}
+
+static int normal_task(int argc, char *argv[])
+{
+	printf("[%d] normal_task \n", getpid());
+
+	while (1);
+
+	return 0;
+}
+
+static int make_children_task(int argc, char *argv[])
+{
+	int pid;
+
+	printf("[%d] make_children_task \n", getpid());
+
+	pid	= task_create("normal", 100, 1024, normal_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		printf("task create FAIL\n");
+		return 0;
+	}
+
+	pid	= task_create("assert_group_main", 100, 1024, assert_group_main_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		printf("task create FAIL\n");
+		return 0;
+	}
+
+	while (1);
+
+	return 0;
+}
 
 /****************************************************************************
  * Public Functions
@@ -33,37 +101,18 @@
 
 int main(int argc, char **argv)
 {
-	struct timeval tv;
-	struct tm *ptm = NULL;
-	char tformat[32] = { 0 };
+	int pid;
 
-	/* stdout and stderr stream test */
-
-	fprintf(stdout, "%15s: Hello, World!! on stdout\n", argv[0]);
-	fprintf(stderr, "%15s: Hello, World!! on stderr\n", argv[0]);
+	pid = task_create("mkchildren", 100, 1024, make_children_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		printf("task create FAIL\n");
+		return 0;
+	}
+	printf("I'm WIFI main! create mkchildren task %d\n", pid);
 
 	while (1) {
-		/* Get current time of day */
-		if (gettimeofday(&tv, NULL)) {
-			printf("gettimeofday failed with errno = %d\n", errno);
-			exit(EXIT_FAILURE);
-		}
-
-		/* Format date & time */
-		ptm = localtime(&tv.tv_sec);
-		if (!ptm) {
-			printf("localtime failed\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (strftime(tformat, sizeof(tformat), "%H:%M:%S", ptm) == 0) {
-			printf("strftime failed\n");
-			exit(EXIT_FAILURE);
-		}
-
-		printf("%s \talive at %s.%03ld\n", argv[0], tformat, tv.tv_usec / 1000);
-		sleep(5);
+		printf("WIFI ALIVE!\n");
+		sleep(10);
 	}
-
 	return 0;
 }

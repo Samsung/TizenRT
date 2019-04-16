@@ -1089,25 +1089,29 @@ config SCHED_LPWORKSTACKSIZE
 endif # SCHED_LPWORK
 endmenu # Work Queue Support
 
-menu "fault Manager"
-config FAULT_MGR
-	bool "Enable Fault Manager"
+menu "Binary Manager"
+config BINARY_MANAGER
+	bool "Enable Binary Manager"
 	default n
 	depends on APP_BINARY_SEPARATION
 	---help---
-		This interface is used to manage any fault occurs in a system.
-		It will either restart app or reboot the system according to
-		the configuration.
+		This is kernel thread which manages binaries.
+		It loads/unloads binaries and recovers any fault occurs in a system.
 
-if FAULT_MGR
-config DEBUG_FAULT_MGR
-	bool "Enable Debug logs of Fault Manager"
-	default n
-	depends on DEBUG
+if BINARY_MANAGER
+
+config BINMGR_RECOVERY
+	bool "Enable Recovery Management"
+	default y
+	depends on APP_BINARY_SEPARATION
 	---help---
-		Enables debug logs for Fault Manager interface.
-endif
-endmenu
+		Enable the recovery management.
+		If any fault occurs in a system, it will either restart binary or reboot the system
+		accroding to the configuration.
+
+endif # BINARY_MANAGER
+
+endmenu # Binary Manager Support
 
 menu "Stack size information"
 

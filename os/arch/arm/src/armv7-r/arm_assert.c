@@ -95,18 +95,19 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 #include <mqueue.h>
-#include "fault_manager/fault_manager.h"
+#include <tinyara/binary_manager.h>
+#include "binary_manager/binary_manager.h"
 #endif
 
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_FAULT_MGR)
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 #include <stdio.h>
 bool abort_mode = false;
 static bool recursive_abort = false;
 #endif
 
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc[];
 uint32_t assert_pc;
 #endif
@@ -928,10 +929,10 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 	int ret;
-	mqd_t fault_queue;
-	pid_t pid;
+	mqd_t binmgr_mq;
+	binmgr_request_t request_msg;
 	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
 	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
@@ -956,10 +957,11 @@ static void _up_assert(int errorcode)
 		}
 #endif
 	} else {
-		fault_queue = mq_open(FAULT_MGR_MQ, O_WRONLY, 0666, 0);
-		DEBUGASSERT(fault_queue != (mqd_t)ERROR);
+		binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
+		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
 
-		pid = getpid();
+		request_msg.cmd = BINMGR_FAULT;
+		request_msg.pid = getpid();
 
 		/* Check if the fault is due to data/prefetch/undef abort or
 		   due to direct call to up_assert */
@@ -975,7 +977,7 @@ static void _up_assert(int errorcode)
 
 		/* Send a message to fault manager with pid of the faulty task */
 
-		ret = mq_send(fault_queue, (const char *)&pid, sizeof(pid), 0);
+		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(request_msg), BINMGR_FAULT_PRIO);
 		DEBUGASSERT(ret == 0);
 
 		exit(errorcode);
@@ -1016,7 +1018,7 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 
 	board_autoled_on(LED_ASSERTION);
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_FAULT_MGR)
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 	/* First time, when code reaches here abort_mode will be false and
 	   for next iteration (recursive abort case), abort_mode is already
 	   set to true and thus we can assume that we are in recursive abort
@@ -1027,7 +1029,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	abort_mode = true;
 #endif
 
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (current_regs) {
@@ -1044,11 +1046,11 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	up_dumpstate();
 
-#if defined(CONFIG_BOARD_CRASHDUMP) && !defined(CONFIG_FAULT_MGR)
+#if defined(CONFIG_BOARD_CRASHDUMP) && !defined(CONFIG_BINMGR_RECOVERY)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
-#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_FAULT_MGR)
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_BINMGR_RECOVERY)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);
