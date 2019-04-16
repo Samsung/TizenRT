@@ -69,12 +69,6 @@
 #endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #include <sys/mount.h>
-#ifdef CONFIG_FS_SMARTFS
-#include <tinyara/fs/mksmartfs.h>
-#endif
-#ifdef CONFIG_RAMDISK
-#include <tinyara/fs/ramdisk.h>
-#endif
 #endif
 
 /****************************************************************************
@@ -751,188 +745,8 @@ static int tash_mkdir(int argc, char **args)
 	return ret;
 }
 #endif
+
 #ifndef CONFIG_DISABLE_MOUNTPOINT
-#ifdef CONFIG_RAMDISK
-/****************************************************************************
- * Name: tash_mkrd
- *
- * Description:
- *   Make RAM or ROM disk if m is not specified, default is '0' and if s is
- *   not specified, default is 512bytes
- *
- * Usage:
- *   mkrd [-m <minor>] [-s <sector-size>] <nsectors> or mkrd <nsectors>
- ****************************************************************************/
-static int tash_mkrd(int argc, char **args)
-{
-	const char *fmt;
-	uint8_t *buffer;
-	uint32_t nsectors;
-	bool badarg = false;
-	int sectsize = 512;
-	int minor = 0;
-	int ret;
-
-	/* Get the mkrd options */
-
-	int option;
-	optind = -1;
-	while ((option = getopt(argc, args, ":m:s:")) != ERROR) {
-		switch (option) {
-		case 'm':
-			minor = atoi(optarg);
-			if (minor < 0 || minor > 255) {
-				FSCMD_OUTPUT(OUT_OF_RANGE, args[0]);
-				badarg = true;
-			}
-			break;
-
-		case 's':
-			sectsize = atoi(optarg);
-			if (minor < 0 || minor > 16384) {
-				FSCMD_OUTPUT(OUT_OF_RANGE, args[0]);
-				badarg = true;
-			}
-			break;
-
-		case ':':
-			FSCMD_OUTPUT(MISSING_ARGS, args[0]);
-			badarg = true;
-			break;
-
-		case '?':
-		default:
-			FSCMD_OUTPUT(INVALID_ARGS, args[0]);
-			badarg = true;
-			break;
-		}
-	}
-
-	/*
-	 * If a bad argument was encountered,
-	 * then return without processing the command
-	 */
-
-	if (badarg) {
-		return ERROR;
-	}
-
-	/* There should be exactly one parameter left on the command-line */
-
-	if (optind == argc - 1) {
-		nsectors = (uint32_t)atoi(args[optind]);
-	} else if (optind >= argc) {
-		fmt = TOO_MANY_ARGS;
-		goto errout_with_fmt;
-	} else {
-		fmt = MISSING_ARGS;
-		goto errout_with_fmt;
-	}
-
-	if (nsectors < 1) {
-		FSCMD_OUTPUT(INVALID_ARGS, args[0]);
-		return ERROR;
-	}
-	/* Allocate the memory backing up the ramdisk */
-	buffer = (uint8_t *)malloc(sectsize * nsectors);
-	if (!buffer) {
-		fmt = OUT_OF_MEMORY;
-		goto errout_with_fmt;
-	}
-#ifdef CONFIG_DEBUG_VERBOSE
-	memset(buffer, 0, sectsize * nsectors);
-#endif
-	dbg("RAMDISK at %p\n", buffer);
-
-	/* Then register the ramdisk */
-
-	ret = ramdisk_register(minor, buffer, nsectors, sectsize, RDFLAG_WRENABLED | RDFLAG_FUNLINK);
-	if (ret < 0) {
-		FSCMD_OUTPUT(CMD_FAILED, args[0], "ramdisk_register");
-		free(buffer);
-		return ERROR;
-	}
-
-	return ret;
-
-errout_with_fmt:
-	FSCMD_OUTPUT(fmt, args[0]);
-
-	return ERROR;
-}
-#endif							/* END OF CONFIG_RAMDISK */
-
-#ifdef CONFIG_FS_SMARTFS
-/****************************************************************************
- * Name: tash_mksmartfs
- *
- * Description:
- *   Make SmartFS file system on the specified block device.
- *   Put -f option will LLFORMAT smartfs by force.
- *
- * Usage:
- *   mksmartfs <source directory> [-f] <target directory>
- ****************************************************************************/
-static int tash_mksmartfs(int argc, char **args)
-{
-	const char *src;
-	const char *fmt;
-	bool force = false;
-	int option;
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	int nrootdirs = 1;
-#endif
-	optind = -1;
-	while ((option = getopt(argc, args, "f")) != ERROR) {
-		switch (option) {
-		case 'f':
-			force = true;
-			break;
-		case '?':
-		default:
-			fmt = INVALID_ARGS;
-			goto errout_with_fmt;
-		}
-	}
-
-	if (optind >= argc) {
-		fmt = MISSING_ARGS;
-		goto errout_with_fmt;
-	}
-
-	/* Set path for registered block driver */
-	src = args[optind];
-
-	if (optind + 1 < argc) {
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-		nrootdirs = atoi(args[optind++]);
-	}
-	if (nrootdirs > 8 || nrootdirs < 1) {
-		FSCMD_OUTPUT(INVALID_ARGS "Invalid number of root directories specified\n", args[0]);
-		return ERROR;
-	}
-	if (optind + 1 < argc) {
-#endif
-		fmt = TOO_MANY_ARGS;
-		goto errout_with_fmt;
-	}
-
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	return mksmartfs(src, nrootdirs, force);
-#else
-	return mksmartfs(src, force);
-#endif
-
-errout_with_fmt:
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	FSCMD_OUTPUT(fmt, " : [-f] <source> [<nrootdir>]\n", args[0]);
-#else
-	FSCMD_OUTPUT(fmt, " : [-f] <source>\n", args[0]);
-#endif
-	return ERROR;
-}
-#endif							/* END OF CONFIG FS_SMARTFS */
-
 #ifndef CONFIG_DISABLE_ENVIRON
 static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
@@ -1332,12 +1146,6 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 	{"mkdir",     tash_mkdir,     TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
-#ifdef CONFIG_RAMDISK
-	{"mkrd",      tash_mkrd,      TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_FS_SMARTFS
-	{"mksmartfs", tash_mksmartfs, TASH_EXECMD_SYNC},
-#endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"mount",     tash_mount,     TASH_EXECMD_SYNC},
 #endif
