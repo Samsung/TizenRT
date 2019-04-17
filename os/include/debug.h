@@ -365,6 +365,14 @@
 #define pglldbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_FAULT_MGR
+#define fmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define fmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define fmdbg(...)
+#define fmlldbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_PAGING_WARN
 #define pgwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define pgllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
@@ -813,6 +821,24 @@
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
+#else
+#  define berr(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
+#else
+#  define bwarn(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#  define binfo(x...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1244,6 +1270,24 @@
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#define berr  dbg
+#else
+#define berr  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#define bwarn  wdbg
+#else
+#define bwarn  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#define binfo  vdbg
+#else
+#define binfo  (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

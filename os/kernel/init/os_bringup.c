@@ -83,6 +83,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
+#ifdef CONFIG_FAULT_MGR
+#include "fault_manager/fault_manager.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -169,6 +172,34 @@ static inline void os_pgworker(void)
 #define os_pgworker()
 
 #endif							/* CONFIG_PAGING */
+
+/****************************************************************************
+ * Name: os_faultmanager
+ *
+ * Description:
+ *   Start the fault manager kernel thread which will handle the fault in system.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_FAULT_MGR
+static inline void os_faultmanager(void)
+{
+	pid_t pid;
+
+	/* Start the fault manager kernel thread which will handle the fault in system. */
+
+	fmlldbg("Starting fault manager\n");
+
+	pid = kernel_thread("fault_manager", FAULTMGR_PRIORITY, FAULTMGR_STACK_SIZE, fault_manager, (FAR char *const *)NULL);
+	DEBUGASSERT(pid > 0);
+}
+#endif /* CONFIG_FAULT_MGR */
 
 /****************************************************************************
  * Name: os_workqueues
@@ -419,6 +450,14 @@ int os_bringup(void)
 	 */
 
 	os_pgworker();
+
+	/* Start the fault manager kernel thread that will handle the faults in
+	 * the system.
+	 */
+
+#ifdef CONFIG_FAULT_MGR
+	os_faultmanager();
+#endif
 
 	/* Start the worker thread that will serve as the device driver "bottom-
 	 * half" and will perform misc garbage clean-up.
