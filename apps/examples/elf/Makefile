@@ -63,7 +63,7 @@ $(1)_$(2):
 endef
 
 all: build install
-.PHONY: all build clean install
+.PHONY: all build clean install distclean
 
 $(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),build, all)))
 $(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),clean,clean)))
@@ -86,6 +86,10 @@ depend:
 # Clean each subdirectory
 clean: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_clean)
 	$(Q) rm -rf $(SYSTEM_BIN_DIR)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
 
 -include Make.dep
 .PHONY: preconfig
