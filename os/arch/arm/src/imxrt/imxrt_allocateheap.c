@@ -363,22 +363,11 @@ void up_addregion(void)
 
 	kumm_addregion((FAR void *)REGION1_RAM_START, REGION1_RAM_SIZE);
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-	/* Allow user-mode access to region 1 */
-
-	imxrt_mpu_uheap((uintptr_t)REGION1_RAM_START, REGION1_RAM_SIZE);
-#endif
-
 #if CONFIG_MM_REGIONS > 2
 	/* Add region 2 to the user heap */
 
 	kumm_addregion((FAR void *)REGION2_RAM_START, REGION2_RAM_SIZE);
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-	/* Allow user-mode access to region 2 */
-
-	imxrt_mpu_uheap((uintptr_t)REGION2_RAM_START, REGION2_RAM_SIZE);
-#endif
 #endif							/* CONFIG_MM_REGIONS > 2 */
 }
 #endif							/* CONFIG_MM_REGIONS > 1 */
