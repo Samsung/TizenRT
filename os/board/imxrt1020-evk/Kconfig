@@ -16,7 +16,6 @@ config IMXRT_FLASH_PART
 	default n
 	select MTD
 	select MTD_PARTITION
-	select MTD_PROGMEM
 	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		Enables creation of partitions on the FLASH

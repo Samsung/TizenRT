@@ -130,11 +130,29 @@ static void imxrt_configure_partitions(void)
 
 	IMXLOG("imxrt_configure_partitions");
 
+	#ifdef CONFIG_MTD_PROGMEM
 	mtd = progmem_initialize();
 	if (!mtd) {
-		IMXLOG("ERROR: progmem_initialize failed");
+		lldbg("ERROR: progmem_initialize failed\n");
 		return;
 	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return;
+	}
+#else
+	mtd = up_flashinitialize();
+	if (!mtd) {
+		lldbg("ERROR : up_flashinitializ failed\n");
+		return;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return;
+	}
+#endif
 
 	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
 		IMXLOG("ERROR: mtd->ioctl failed");
