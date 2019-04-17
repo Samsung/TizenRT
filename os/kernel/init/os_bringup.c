@@ -72,7 +72,7 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
-#ifdef CONFIG_ENABLE_HEAPINFO_CMD
+#ifdef CONFIG_ENABLE_HEAPINFO
 #include <tinyara/heapinfo_drv.h>
 #endif
 #ifdef CONFIG_TASK_MANAGER
@@ -297,7 +297,7 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
-#ifdef CONFIG_ENABLE_HEAPINFO_CMD
+#ifdef CONFIG_ENABLE_HEAPINFO
 	heapinfo_drv_register();
 #endif
 

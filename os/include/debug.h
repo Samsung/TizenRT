@@ -132,8 +132,8 @@
 
 #ifdef CONFIG_DEBUG
 /* Temporary LOGM macros to route all dbg messages.
-Once LOGM is approved, each module should have its own index
-*/
+ * Once LOGM is approved, each module should have its own index
+ */
 #define LOGM_IDX (0)
 
 #ifdef CONFIG_DEBUG_ERROR
@@ -155,8 +155,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define dbg(format, ...) \
 	lldbg(format, ##__VA_ARGS__)
 #else
@@ -201,8 +201,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define wdbg(format, ...) \
 	llwdbg(format, ##__VA_ARGS__)
 #else
@@ -244,8 +244,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define vdbg(format, ...) \
 	llvdbg(format, ##__VA_ARGS__)
 #else

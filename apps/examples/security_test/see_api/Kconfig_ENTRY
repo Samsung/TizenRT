@@ -1,0 +1,3 @@
+config ENTRY_SECURITY_SEE_TEST
+	bool "Security SEE API test"
+	depends on EXAMPLES_SECURITY_SEE_TEST

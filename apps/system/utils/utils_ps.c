@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/utils/kdbg_ps.c
+ * apps/system/utils/utils_ps.c
  *
  *   Copyright (C) 2007-2009, 2011-2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -63,11 +63,11 @@
 #include <tinyara/sched.h>
 #include <tinyara/fs/fs.h>
 
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 
 #define PS_BUFLEN 64
 
-static const char *kdbg_statenames[] = {
+static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
 	"READY   ",
@@ -83,7 +83,7 @@ static const char *kdbg_statenames[] = {
 #endif
 };
 
-static const char *kdbg_ttypenames[4] = {
+static const char *utils_ttypenames[4] = {
 	"TASK   ",
 	"PTHREAD",
 	"KTHREAD",
@@ -114,9 +114,9 @@ static void ps_print_values(char *buf)
 	}
 
 	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
-		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", kdbg_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
+		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
-		kdbg_statenames[state]);
+		utils_statenames[state]);
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
@@ -133,7 +133,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	char buf[PS_BUFLEN];
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
-	ret = kdbg_readfile(filepath, buf, PS_BUFLEN, ps_print_values);
+	ret = utils_readfile(filepath, buf, PS_BUFLEN, ps_print_values);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -143,7 +143,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	return OK;
 }
 
-int kdbg_ps(int argc, char **args)
+int utils_ps(int argc, char **args)
 {
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
@@ -173,7 +173,7 @@ int kdbg_ps(int argc, char **args)
 	printf("------|------|------|---------|----|----------\n");
 #endif
 	/* Print information for each task/thread */
-	kdbg_proc_pid_foreach(ps_read_proc);
+	utils_proc_pid_foreach(ps_read_proc);
 
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {

@@ -28,7 +28,7 @@
 
 #include <tinyara/fs/fs.h>
 
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 
 #define BUFFER_LEN 128
 
@@ -50,7 +50,7 @@ static bool is_numeric_name(const char *name)
 	return true;
 }
 
-int kdbg_proc_pid_foreach(procentry_handler_t handler)
+int utils_proc_pid_foreach(procentry_handler_t handler)
 {
 	DIR *dirp;
 	struct dirent *entryp;
@@ -91,7 +91,7 @@ int kdbg_proc_pid_foreach(procentry_handler_t handler)
 	return ret;
 }
 
-int kdbg_readfile(FAR const char *filepath, char *buf, int buflen, kdbg_print_t print_func)
+int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_t print_func)
 {
 	int fd;
 	ssize_t nread;

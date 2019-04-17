@@ -115,9 +115,9 @@ void imxrt_dmamux_deinit(DMAMUX_Type *base);
  ****************************************************************************/
 static inline void imxrt_dmamux_enablechannel(DMAMUX_Type *base, uint32_t channel)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] |= DMAMUX_CHCFG_ENBL_MASK;
+	base->CHCFG[channel] |= DMAMUX_CHCFG_ENBL_MASK;
 }
 
 /****************************************************************************
@@ -140,9 +140,9 @@ static inline void imxrt_dmamux_enablechannel(DMAMUX_Type *base, uint32_t channe
  ****************************************************************************/
 static inline void imxrt_dmamux_disablechannel(DMAMUX_Type *base, uint32_t channel)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] &= ~DMAMUX_CHCFG_ENBL_MASK;
+	base->CHCFG[channel] &= ~DMAMUX_CHCFG_ENBL_MASK;
 }
 
 /****************************************************************************
@@ -162,9 +162,9 @@ static inline void imxrt_dmamux_disablechannel(DMAMUX_Type *base, uint32_t chann
  ****************************************************************************/
 static inline void imxrt_dmamux_setsource(DMAMUX_Type *base, uint32_t channel, uint32_t source)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] = ((base->CHCFG[channel] & ~DMAMUX_CHCFG_SOURCE_MASK) | DMAMUX_CHCFG_SOURCE(source));
+	base->CHCFG[channel] = ((base->CHCFG[channel] & ~DMAMUX_CHCFG_SOURCE_MASK) | DMAMUX_CHCFG_SOURCE(source));
 }
 
 #if defined(FSL_FEATURE_DMAMUX_HAS_TRIG) && FSL_FEATURE_DMAMUX_HAS_TRIG > 0U
@@ -186,9 +186,9 @@ static inline void imxrt_dmamux_setsource(DMAMUX_Type *base, uint32_t channel, u
  ****************************************************************************/
 static inline void imxrt_dmamux_enableperiodtrigger(DMAMUX_Type *base, uint32_t channel)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] |= DMAMUX_CHCFG_TRIG_MASK;
+	base->CHCFG[channel] |= DMAMUX_CHCFG_TRIG_MASK;
 }
 
 /****************************************************************************
@@ -209,9 +209,9 @@ static inline void imxrt_dmamux_enableperiodtrigger(DMAMUX_Type *base, uint32_t 
  ****************************************************************************/
 static inline void imxrt_dmamux_disableperiodtrigger(DMAMUX_Type *base, uint32_t channel)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] &= ~DMAMUX_CHCFG_TRIG_MASK;
+	base->CHCFG[channel] &= ~DMAMUX_CHCFG_TRIG_MASK;
 }
 #endif /* FSL_FEATURE_DMAMUX_HAS_TRIG */
 
@@ -235,13 +235,13 @@ static inline void imxrt_dmamux_disableperiodtrigger(DMAMUX_Type *base, uint32_t
  ****************************************************************************/
 static inline void imxrt_dmamux_enablealwayon(DMAMUX_Type *base, uint32_t channel, bool enable)
 {
-    DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+	DEBUGASSERT(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    if (enable) {
-        base->CHCFG[channel] |= DMAMUX_CHCFG_A_ON_MASK;
-    } else {
-        base->CHCFG[channel] &= ~DMAMUX_CHCFG_A_ON_MASK;
-    }
+	if (enable) {
+		base->CHCFG[channel] |= DMAMUX_CHCFG_A_ON_MASK;
+	} else {
+		base->CHCFG[channel] &= ~DMAMUX_CHCFG_A_ON_MASK;
+	}
 }
 #endif /* FSL_FEATURE_DMAMUX_HAS_A_ON */
 

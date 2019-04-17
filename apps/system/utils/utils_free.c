@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/utils/kdbg_free.c
+ * apps/system/utils/utils_free.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -60,7 +60,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int kdbg_free(int argc, char **args)
+int utils_free(int argc, char **args)
 {
 	struct mallinfo data;
 

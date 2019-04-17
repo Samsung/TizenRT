@@ -22,12 +22,12 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-APPNAME = security_test
+APPNAME = security_see_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
-MAINSRC = security_test_main.c
+MAINSRC = see_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -41,12 +41,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
+  BIN = ..\..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\..\\libapps$(LIBEXT)
 else
-  BIN = ../../libapps$(LIBEXT)
+  BIN = ../../../libapps$(LIBEXT)
 endif
 endif
 
@@ -56,8 +56,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME ?= security_test$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME)
+CONFIG_EXAMPLES_SECURITY_SEE_TEST_PROGNAME ?= security_see_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_SECURITY_SEE_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -91,7 +91,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECURITY_TEST),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECURITY_SEE_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

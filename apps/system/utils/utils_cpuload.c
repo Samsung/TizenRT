@@ -38,7 +38,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/fs/fs.h>
 
-#include "kdbg_utils.h"
+#include "utils_proc.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -80,7 +80,7 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 	printf("  %s	", entryp->d_name);
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "loadavg");
-	ret = kdbg_readfile(filepath, buf, CPULOAD_BUFLEN, NULL);
+	ret = utils_readfile(filepath, buf, CPULOAD_BUFLEN, NULL);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -117,7 +117,7 @@ static void cpuload_print_tasklist(void)
 #endif
 
 	/* Print cpu load for each task */
-	kdbg_proc_pid_foreach(cpuload_read_proc);
+	utils_proc_pid_foreach(cpuload_read_proc);
 
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 	printf("=====================================\n");
@@ -223,7 +223,7 @@ static void show_usage(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int kdbg_cpuload(int argc, char **args)
+int utils_cpuload(int argc, char **args)
 {
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
