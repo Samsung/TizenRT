@@ -162,7 +162,7 @@ struct seclink_req {
 
 /*  Common */
 int sl_init(sl_ctx *hnd);
-int sl_deinit(sl_ctx hnd);
+void sl_deinit(sl_ctx hnd);
 
 /*  key manager */
 int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey);

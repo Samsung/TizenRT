@@ -131,20 +131,19 @@ int sl_init(sl_ctx *hnd)
 	return SECLINK_OK;
 }
 
-int sl_deinit(sl_ctx hnd)
+void sl_deinit(sl_ctx hnd)
 {
 	SL_ENTER;
 
-	SL_CHECK_VALID(hnd);
+	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {	 
+		struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+		SL_CLOSE(sl->fd);
+		free(sl);
+		free(g_mem.mem);
+		free(g_mem.mem_priv);
+	}
 
-	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
-	SL_CLOSE(sl->fd);
-
-	free(sl);
-	free(g_mem.mem);
-	free(g_mem.mem_priv);
-
-	return SECLINK_OK;
+	return;
 }
 
 /*  key manager */

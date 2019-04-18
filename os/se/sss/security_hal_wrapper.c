@@ -969,7 +969,7 @@ int sss_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uin
 	return HAL_SUCCESS;
 }
 
-int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, hal_data *sign)
+int sss_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
 	HWRAP_ENTER;
 	uint32_t ret;
@@ -985,7 +985,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 	ecc_sign.r = r_buf;
 	ecc_sign.r_byte_len = HAL_MAX_ECP_KEY_SIZE_ALT;
 	
-	switch (mode->hash_t) {
+	switch (mode.hash_t) {
 	case HAL_HASH_MD5:
 		ecc_sign.sign_type |= OID_SHA1_160;
 		break;
@@ -1002,7 +1002,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 		return HAL_INVALID_ARGS;
 	}
 
-	switch (mode->curve) {
+	switch (mode.curve) {
 	case HAL_ECDSA_SEC_P256R1:
 		ecc_sign.sign_type |= OID_ECC_P256;
 		break;

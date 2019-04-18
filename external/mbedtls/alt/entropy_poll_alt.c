@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/seclink.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -38,17 +39,26 @@ static int mbedtls_generate_random_alt( unsigned char *data, unsigned int len )
 {
 	int ret;
 	unsigned char random_data[MBEDTLS_MAX_BUF_SIZE_ALT];
+	sl_ctx shnd;
 
 	hal_data random = {0, };
 	random.data = random_data;
 	random.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
 
-	ret = hal_generate_random(len, &random);
-
-	if (ret != HAL_SUCCESS) {
+	ret = sl_init(&shnd);
+	if( ret != SECLINK_OK ) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
+
+	ret = sl_generate_random(shnd, len, &random);
+	if( ret != HAL_SUCCESS ) {
+		sl_deinit(shnd);
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
 	memcpy(data, random.data, random.data_len);
+
+	sl_deinit(shnd);
 
 	return HAL_SUCCESS;
 }

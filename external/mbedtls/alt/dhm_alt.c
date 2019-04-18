@@ -46,6 +46,7 @@
  */
 
 #include <tinyara/config.h>
+#include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -78,7 +79,7 @@
 
 #include "mbedtls/alt/common.h"
 #include "mbedtls/alt/dhm_alt.h"
-#include "../../../os/se/sss/isp_oid.h"
+#include "../../../os/arch/arm/src/s5j/sss/isp_oid.h"
 
 #if defined(MBEDTLS_DHM_ALT)
 #include "mbedtls/alt/dhm_alt.h"
@@ -210,6 +211,7 @@ int mbedtls_dhm_make_params( mbedtls_dhm_context *ctx, int x_size,
 	unsigned int generator = 0;
 	unsigned char *p;
 	hal_dh_data d_param;
+	sl_ctx shnd;
 
 	if( mbedtls_mpi_cmp_int( &ctx->P, 0 ) == 0 ) {
 		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
@@ -265,8 +267,14 @@ int mbedtls_dhm_make_params( mbedtls_dhm_context *ctx, int x_size,
 		/*
 		 *  2. Generate X values and calculate GX from sss.
 		 */
-		ret = hal_dh_generate_param( ctx->key_index, &d_param );
+		ret = sl_init(&shnd);
+		if( ret != SECLINK_OK ) {
+			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+			goto cleanup;
+		}
 
+		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
+		sl_deinit(shnd);
 		if( ret != HAL_SUCCESS ) {
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
@@ -360,6 +368,7 @@ int mbedtls_dhm_make_public( mbedtls_dhm_context *ctx, int x_size,
 	int ret = 0;
 	int generator = 0;
 	hal_dh_data d_param;
+	sl_ctx shnd;
 
 	if( ctx == NULL || olen < 1 || olen > ctx->len ) {
 		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
@@ -413,8 +422,14 @@ int mbedtls_dhm_make_public( mbedtls_dhm_context *ctx, int x_size,
 		/*
 		 *  2. Generate X values and calculate GX from sss.
 		 */
-		ret = hal_dh_generate_param( ctx->key_index, &d_param );
+		ret = sl_init(&shnd);
+		if( ret != SECLINK_OK ) {
+			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+			goto cleanup;
+		}
 
+		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
+		sl_deinit(shnd);
 		if( ret != HAL_SUCCESS ) {
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
@@ -533,6 +548,7 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
 	unsigned int pubkey = 0;
 	hal_dh_data d_param;
 	hal_data shared_secret = {0, };
+	sl_ctx shnd;
 
     if( ctx == NULL || output_size < ctx->len ) {
         return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
@@ -590,7 +606,18 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
 		 *  2. Calculate shared secret(K) from sss.
 		 */
 		shared_secret.data = output;
-		ret = hal_dh_compute_shared_secret(&d_param, ctx->key_index, &shared_secret);
+		ret = sl_init(&shnd);
+		if( ret != SECLINK_OK ) {
+			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+			goto cleanup;
+		}
+
+		ret = sl_dh_compute_shared_secret(shnd, &d_param, ctx->key_index, &shared_secret);
+		sl_deinit(shnd);
+		if( ret != HAL_SUCCESS ) {
+			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+			goto cleanup;
+		}
 
 		/*
 		 *  3. Export K

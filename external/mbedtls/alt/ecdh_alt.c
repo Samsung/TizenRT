@@ -45,6 +45,7 @@
  */
 
 #include <tinyara/config.h>
+#include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -119,6 +120,8 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
 	hal_key_type key_type;
 	unsigned char pubkey_x[MBEDTLS_MAX_BUF_SIZE_ALT];
 	unsigned char pubkey_y[MBEDTLS_MAX_BUF_SIZE_ALT];
+	sl_ctx shnd;
+
 	hal_data key = {0, };
 	key.data = pubkey_x;
 	key.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
@@ -156,14 +159,22 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
 			goto cleanup;
 	}
 
-	ret = hal_generate_key( key_type, grp->key_index );
+	ret = sl_init(&shnd);
+	if( ret != SECLINK_OK ) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
+	}
+
+	ret = sl_generate_key( shnd, key_type, grp->key_index );
 	if( ret != HAL_SUCCESS ) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+		sl_deinit(shnd);
 		goto cleanup;
 	}
 
 	/* Get Public value from sss */
-	ret = hal_get_key( key_type, grp->key_index, &key);
+	ret = sl_get_key( shnd, key_type, grp->key_index, &key);
+	sl_deinit(shnd);
 	if( ret != HAL_SUCCESS ) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto cleanup;
@@ -210,6 +221,8 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 	int ret;
 	hal_ecdh_data ecc_pub = {0,};
 	hal_data shared_secret = {0,};
+	sl_ctx shnd;
+
 	unsigned char shared_secret_data[MBEDTLS_MAX_BUF_SIZE_ALT];
 	shared_secret.data = shared_secret_data;
 	shared_secret.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
@@ -270,7 +283,14 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
 	/* Compute P  = d * Q */
 	/* compute ECC shared secret with stored key (permanent) */
-	ret = hal_ecdh_compute_shared_secret( &ecc_pub, grp->key_index, &shared_secret );
+	ret = sl_init(&shnd);
+	if( ret != SECLINK_OK ) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
+	}
+
+	ret = sl_ecdh_compute_shared_secret( shnd, &ecc_pub, grp->key_index, &shared_secret );
+	sl_deinit(shnd);
 	if( ret != HAL_SUCCESS ) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto cleanup;
@@ -280,7 +300,7 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 	ret = 0;
 
 cleanup:
-	
+
 	if( ecc_pub.pubkey_x ) {
 		if( ecc_pub.pubkey_x->data ) {
 			free( ecc_pub.pubkey_x->data );
