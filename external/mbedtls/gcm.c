@@ -47,7 +47,11 @@
  * [MGV] 4.1, pp. 12-13, to enhance speed without using too much memory.
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_GCM_C)
 
