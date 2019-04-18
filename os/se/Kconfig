@@ -5,6 +5,8 @@
 
 config SE
 	bool "Enable embedded SE"
+	select TLS_WITH_SSS
+	select SECURITY_LINK_DRV
 
 if SE
 choice
