@@ -476,7 +476,7 @@
  *
  * Uncomment to use your own hardware entropy collector.
  */
-#define MBEDTLS_ENTROPY_HARDWARE_ALT
+//#define MBEDTLS_ENTROPY_HARDWARE_ALT
 
 /**
  * \def MBEDTLS_AES_ROM_TABLES
@@ -1001,7 +1001,9 @@
  *
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
+#if !defined(CONFIG_DEV_URANDOM)
 #define MBEDTLS_NO_PLATFORM_ENTROPY
+#endif
 
 /**
  * \def MBEDTLS_ENTROPY_FORCE_SHA256
@@ -2923,11 +2925,40 @@
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
+#if defined(CONFIG_SE)
+#define MBEDTLS_ENABLE_HARDWARE_ALT
+
+#if defined(CONFIG_HW_RNG)
+#define MBEDTLS_ENTROPY_HARDWARE_ALT
+#endif
+
+#if defined(CONFIG_HW_DH_PARAM)
+#define MBEDTLS_DHM_ALT
+#endif
+
 #if defined(CONFIG_HW_ECDH_PARAM)
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
+#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
 #endif
 
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+#define MBEDTLS_PK_ECDSA_VERIFY_ALT
+#endif
+
+#if defined(CONFIG_HW_RSA_VERIFICATION)
+#define MBEDTLS_PK_RSA_VERIFY_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+#if defined(CONFIG_HW_RSA_ENC)
+#define MBEDTLS_PK_RSA_ENCRYPT_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+#endif /* CONFIG_SE */
 
 /**
  * Complete list of ciphersuites to use, in order of preference.
