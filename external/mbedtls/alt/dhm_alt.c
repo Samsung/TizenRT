@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,9 @@
  *
  */
 
+#include <tinyara/config.h>
+#include <tinyara/security_hal.h>
+
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -52,8 +55,6 @@
 #endif
 
 #if defined(MBEDTLS_DHM_C)
-
-#include "mbedtls/dhm.h"
 
 #include <string.h>
 
@@ -75,6 +76,13 @@
 #define mbedtls_free       free
 #endif
 
+#include "mbedtls/alt/common.h"
+#include "mbedtls/alt/dhm_alt.h"
+#include "../../../os/se/sss/isp_oid.h"
+
+#if defined(MBEDTLS_DHM_ALT)
+#include "mbedtls/alt/dhm_alt.h"
+
 #define DHM_MPI_EXPORT( X, n )                                          \
     do {                                                                \
         MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( ( X ),               \
@@ -85,12 +93,23 @@
         p += ( n );                                                     \
     } while( 0 )
 
-#if !defined(MBEDTLS_DHM_ALT)
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
     volatile unsigned char *p = v; while( n-- ) *p++ = 0;
 }
 
+static int mbedtls_supported_dhm_size_alt( int size )
+{
+	switch (size) {
+	case DHM_1024:
+	case DHM_2048:
+	//case DHM_4096:
+		return( 1 );
+	default:
+		return( 0 );
+	}
+	return( 0 );
+}
 /*
  * helper to validate the mbedtls_mpi size and import it
  */
@@ -153,6 +172,7 @@ cleanup:
 void mbedtls_dhm_init( mbedtls_dhm_context *ctx )
 {
     memset( ctx, 0, sizeof( mbedtls_dhm_context ) );
+	ctx->key_index = MBEDTLS_DHM_KEY_INDEX_ALT;
 }
 
 /*
@@ -185,59 +205,109 @@ int mbedtls_dhm_make_params( mbedtls_dhm_context *ctx, int x_size,
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-    int ret, count = 0;
-    size_t n1, n2, n3;
-    unsigned char *p;
+	int ret = 0;
+	unsigned int moduler = 0;
+	unsigned int generator = 0;
+	unsigned char *p;
+	hal_dh_data d_param;
 
-    if( mbedtls_mpi_cmp_int( &ctx->P, 0 ) == 0 )
-        return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	if( mbedtls_mpi_cmp_int( &ctx->P, 0 ) == 0 ) {
+		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	}
 
-    /*
-     * Generate X as large as possible ( < P )
-     */
-    do
-    {
-        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &ctx->X, x_size, f_rng, p_rng ) );
+	memset( &d_param, 0, sizeof( hal_dh_data ) );
 
-        while( mbedtls_mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-            MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &ctx->X, 1 ) );
+	if ( mbedtls_supported_dhm_size_alt( x_size ) )
+	{
+		/*
+		 *  1. Initialize G, P, GX context.
+		 */
+		moduler = mbedtls_mpi_size( &ctx->P );
+		generator = mbedtls_mpi_size( &ctx->G );
 
-        if( count++ > 10 )
-            return( MBEDTLS_ERR_DHM_MAKE_PARAMS_FAILED );
-    }
-    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
+		d_param.P->data_len = moduler;
+		d_param.P->data = (unsigned char *)malloc( moduler );
+		if( d_param.P->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.G->data_len = generator;
+		d_param.G->data = (unsigned char *)malloc( generator );
+		if( d_param.G->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
 
-    /*
-     * Calculate GX = G^X mod P
-     */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
-                          &ctx->P , &ctx->RP ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->P, d_param.P->data, moduler ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->G, d_param.G->data, generator ) );
 
-    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
-        return( ret );
+		d_param.pubkey->data = (unsigned char *)malloc( x_size );
+		if( d_param.pubkey->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.pubkey->data_len = x_size;
+		switch( x_size ) {
+			case DHM_1024:
+				d_param.mode = HAL_DH_1024;
+				break;
+			case DHM_2048:
+				d_param.mode = HAL_DH_2048;
+				break;
+			case DHM_4096:
+				d_param.mode = HAL_DH_4096;
+				break;
+			default:
+				ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
+				goto cleanup;
+		}
 
-    /*
-     * export P, G, GX
-     */
-    n1 = mbedtls_mpi_size( &ctx->P  );
-    n2 = mbedtls_mpi_size( &ctx->G  );
-    n3 = mbedtls_mpi_size( &ctx->GX );
+		/*
+		 *  2. Generate X values and calculate GX from sss.
+		 */
+		ret = hal_dh_generate_param( ctx->key_index, &d_param );
 
-    p = output;
-    DHM_MPI_EXPORT( &ctx->P , n1 );
-    DHM_MPI_EXPORT( &ctx->G , n2 );
-    DHM_MPI_EXPORT( &ctx->GX, n3 );
+		if( ret != HAL_SUCCESS ) {
+			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+			goto cleanup;
+		}
 
-    *olen = p - output;
+		/*
+		 *  3. Export GX from unsigned binary data
+		 */
+		MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &ctx->GX, d_param.pubkey->data, d_param.pubkey->data_len ) );
 
-    ctx->len = n1;
+		/*
+		 *  4. Export G, P, GX
+		 */
+		p = output;
+		DHM_MPI_EXPORT( &ctx->P , d_param.P->data_len );
+		DHM_MPI_EXPORT( &ctx->G , d_param.G->data_len );
+		DHM_MPI_EXPORT( &ctx->GX, d_param.pubkey->data_len );
 
+		*olen  = p - output;
+		ctx->len = d_param.P->data_len;
+	}
+	else {
+		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+	}
 cleanup:
+	if( d_param.P->data ) {
+		free( d_param.P->data );
+	}
+	if( d_param.G->data ) {
+		free( d_param.G->data );
+	}
+	if( d_param.pubkey->data ) {
+		free( d_param.pubkey->data );
+	}
 
-    if( ret != 0 )
-        return( MBEDTLS_ERR_DHM_MAKE_PARAMS_FAILED + ret );
+	if( ret != 0 ) {
+		return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED + ret );
+	}
 
-    return( 0 );
+	return( 0 );
+
 }
 
 /*
@@ -283,47 +353,105 @@ int mbedtls_dhm_read_public( mbedtls_dhm_context *ctx,
  * Create own private value X and export G^X
  */
 int mbedtls_dhm_make_public( mbedtls_dhm_context *ctx, int x_size,
-                     unsigned char *output, size_t olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
-                     void *p_rng )
+		unsigned char *output, size_t olen,
+		int (*f_rng)(void *, unsigned char *, size_t),
+		void *p_rng )
 {
-    int ret, count = 0;
+	int ret = 0;
+	int generator = 0;
+	hal_dh_data d_param;
 
-    if( ctx == NULL || olen < 1 || olen > ctx->len )
-        return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	if( ctx == NULL || olen < 1 || olen > ctx->len ) {
+		return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	}
 
-    if( mbedtls_mpi_cmp_int( &ctx->P, 0 ) == 0 )
-        return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	memset( &d_param, 0, sizeof( hal_dh_data ) );
 
-    /*
-     * generate X and calculate GX = G^X mod P
-     */
-    do
-    {
-        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &ctx->X, x_size, f_rng, p_rng ) );
+	if( mbedtls_supported_dhm_size_alt( x_size ) ) {
+		/*
+		 *  1. Initialize G, P, GX context.
+		 */
+		generator = mbedtls_mpi_size( &ctx->G );
 
-        while( mbedtls_mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-            MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &ctx->X, 1 ) );
+		d_param.P->data_len = x_size;
+		d_param.P->data = (unsigned char *)malloc( x_size );
+		if( d_param.P->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.G->data_len = generator;
+		d_param.G->data = (unsigned char *)malloc( generator );
+		if( d_param.G->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
 
-        if( count++ > 10 )
-            return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED );
-    }
-    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->P, d_param.P->data, x_size ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->G, d_param.G->data, generator ) );
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
-                          &ctx->P , &ctx->RP ) );
+		d_param.pubkey->data = (unsigned char *)malloc( x_size );
+		if( d_param.pubkey->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.pubkey->data_len = x_size;
+		switch( x_size ) {
+			case DHM_1024:
+				d_param.mode = HAL_DH_1024;
+				break;
+			case DHM_2048:
+				d_param.mode = HAL_DH_2048;
+				break;
+			case DHM_4096:
+				d_param.mode = HAL_DH_4096;
+				break;
+			default:
+				ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
+				goto cleanup;
+		}
 
-    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
-        return( ret );
+		/*
+		 *  2. Generate X values and calculate GX from sss.
+		 */
+		ret = hal_dh_generate_param( ctx->key_index, &d_param );
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->GX, output, olen ) );
+		if( ret != HAL_SUCCESS ) {
+			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+			goto cleanup;
+		}
+
+		/*
+		 *  3. Export GX from unsigned binary data
+		 */
+		MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &ctx->GX, d_param.pubkey->data, d_param.pubkey->data_len ) );
+
+		if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 ) {
+			goto cleanup;
+		}
+
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->GX, output, olen ) );
+
+	} else {
+		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+	}
 
 cleanup:
+	if( d_param.P->data ) {
+		free( d_param.P->data );
+	}
+	if( d_param.G->data ) {
+		free( d_param.G->data );
+	}
+	if( d_param.pubkey->data ) {
+		free( d_param.pubkey->data );
+	}
 
-    if( ret != 0 )
-        return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED + ret );
+	if( ret != 0 ) {
+		return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED + ret );
+	}
 
-    return( 0 );
+	return( 0 );
+
 }
 
 /*
@@ -399,49 +527,98 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-    int ret;
-    mbedtls_mpi GYb;
+	int ret = 0;
+	unsigned int moduler = 0;
+	unsigned int generator = 0;
+	unsigned int pubkey = 0;
+	hal_dh_data d_param;
+	hal_data shared_secret = {0, };
 
-    if( ctx == NULL || output_size < ctx->len )
+    if( ctx == NULL || output_size < ctx->len ) {
         return( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+	}
 
-    if( ( ret = dhm_check_range( &ctx->GY, &ctx->P ) ) != 0 )
-        return( ret );
+	memset( &d_param, 0, sizeof( hal_dh_data ) );
 
-    mbedtls_mpi_init( &GYb );
+    if( mbedtls_supported_dhm_size_alt( ctx->len ) ) {
+		/*
+		 *  1. Initialize G, P, GX context.
+		 */
+		moduler = mbedtls_mpi_size( &ctx->P );
+		generator = mbedtls_mpi_size( &ctx->G );
+		pubkey = mbedtls_mpi_size( &ctx->GY );
 
-    /* Blind peer's value */
-    if( f_rng != NULL )
-    {
-        MBEDTLS_MPI_CHK( dhm_update_blinding( ctx, f_rng, p_rng ) );
-        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &GYb, &ctx->GY, &ctx->Vi ) );
-        MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &GYb, &GYb, &ctx->P ) );
-    }
-    else
-        MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &GYb, &ctx->GY ) );
+		d_param.P->data_len = moduler;
+		d_param.P->data = (unsigned char *)malloc( moduler );
+		if( d_param.P->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.G->data_len = generator;
+		d_param.G->data = (unsigned char *)malloc( generator );
+		if( d_param.G->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
+		d_param.pubkey->data_len = pubkey;
+		d_param.pubkey->data = (unsigned char *)malloc( pubkey );
+		if( d_param.pubkey->data == NULL ) {
+			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
+			goto cleanup;
+		}
 
-    /* Do modular exponentiation */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &ctx->K, &GYb, &ctx->X,
-                          &ctx->P, &ctx->RP ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->P, d_param.P->data, moduler ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->G, d_param.G->data, generator ) );
+		MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->GY, d_param.pubkey->data, pubkey ) );
 
-    /* Unblind secret value */
-    if( f_rng != NULL )
-    {
-        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &ctx->K, &ctx->K, &ctx->Vf ) );
-        MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &ctx->K, &ctx->K, &ctx->P ) );
-    }
+		switch( ctx->len ) {
+			case DHM_1024:
+				d_param.mode = HAL_DH_1024;
+				break;
+			case DHM_2048:
+				d_param.mode = HAL_DH_2048;
+				break;
+			case DHM_4096:
+				d_param.mode = HAL_DH_4096;
+				break;
+			default:
+				ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
+				goto cleanup;
+		}
 
-    *olen = mbedtls_mpi_size( &ctx->K );
+		/*
+		 *  2. Calculate shared secret(K) from sss.
+		 */
+		shared_secret.data = output;
+		ret = hal_dh_compute_shared_secret(&d_param, ctx->key_index, &shared_secret);
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &ctx->K, output, *olen ) );
+		/*
+		 *  3. Export K
+		 */
+		*olen = shared_secret.data_len;
 
+		MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &ctx->K, output, *olen ) );
+	}
+	else {
+		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
+	}
 cleanup:
-    mbedtls_mpi_free( &GYb );
+	if( d_param.P->data ) {
+		free( d_param.P->data );
+	}
+	if( d_param.G->data ) {
+		free( d_param.G->data );
+	}
+	if( d_param.pubkey->data ) {
+		free( d_param.pubkey->data );
+	}
 
-    if( ret != 0 )
-        return( MBEDTLS_ERR_DHM_CALC_SECRET_FAILED + ret );
+	if( ret != 0 ) {
+		return( MBEDTLS_ERR_DHM_MAKE_PUBLIC_FAILED + ret );
+	}
 
-    return( 0 );
+	return( 0 );
+
 }
 
 /*
@@ -449,13 +626,13 @@ cleanup:
  */
 void mbedtls_dhm_free( mbedtls_dhm_context *ctx )
 {
-    mbedtls_mpi_free( &ctx->pX ); mbedtls_mpi_free( &ctx->Vf );
-    mbedtls_mpi_free( &ctx->Vi ); mbedtls_mpi_free( &ctx->RP );
-    mbedtls_mpi_free( &ctx->K  ); mbedtls_mpi_free( &ctx->GY );
-    mbedtls_mpi_free( &ctx->GX ); mbedtls_mpi_free( &ctx->X  );
-    mbedtls_mpi_free( &ctx->G  ); mbedtls_mpi_free( &ctx->P  );
+    mbedtls_mpi_free( &ctx->pX); mbedtls_mpi_free( &ctx->Vf );
+	mbedtls_mpi_free( &ctx->Vi ); mbedtls_mpi_free( &ctx->RP );
+	mbedtls_mpi_free( &ctx->K ); mbedtls_mpi_free( &ctx->GY );
+    mbedtls_mpi_free( &ctx->GX ); mbedtls_mpi_free( &ctx->X );
+	mbedtls_mpi_free( &ctx->G ); mbedtls_mpi_free( &ctx->P );
 
-    mbedtls_zeroize( ctx, sizeof( mbedtls_dhm_context ) );
+	mbedtls_zeroize( ctx, sizeof( mbedtls_dhm_context ) );
 }
 
 #if defined(MBEDTLS_ASN1_PARSE_C)
@@ -628,54 +805,10 @@ int mbedtls_dhm_parse_dhmfile( mbedtls_dhm_context *dhm, const char *path )
 
     return( ret );
 }
+
 #endif /* MBEDTLS_FS_IO */
 #endif /* MBEDTLS_ASN1_PARSE_C */
-#endif /* MBEDTLS_DHM_ALT */
 
-#if defined(MBEDTLS_SELF_TEST)
-
-static const char mbedtls_test_dhm_params[] =
-"-----BEGIN DH PARAMETERS-----\r\n"
-"MIGHAoGBAJ419DBEOgmQTzo5qXl5fQcN9TN455wkOL7052HzxxRVMyhYmwQcgJvh\r\n"
-"1sa18fyfR9OiVEMYglOpkqVoGLN7qd5aQNNi5W7/C+VBdHTBJcGZJyyP5B3qcz32\r\n"
-"9mLJKudlVudV0Qxk5qUJaPZ/xupz0NyoVpviuiBOI1gNi8ovSXWzAgEC\r\n"
-"-----END DH PARAMETERS-----\r\n";
-
-static const size_t mbedtls_test_dhm_params_len = sizeof( mbedtls_test_dhm_params );
-
-/*
- * Checkup routine
- */
-int mbedtls_dhm_self_test( int verbose )
-{
-    int ret;
-    mbedtls_dhm_context dhm;
-
-    mbedtls_dhm_init( &dhm );
-
-    if( verbose != 0 )
-        mbedtls_printf( "  DHM parameter load: " );
-
-    if( ( ret = mbedtls_dhm_parse_dhm( &dhm,
-                    (const unsigned char *) mbedtls_test_dhm_params,
-                    mbedtls_test_dhm_params_len ) ) != 0 )
-    {
-        if( verbose != 0 )
-            mbedtls_printf( "failed\n" );
-
-        ret = 1;
-        goto exit;
-    }
-
-    if( verbose != 0 )
-        mbedtls_printf( "passed\n\n" );
-
-exit:
-    mbedtls_dhm_free( &dhm );
-
-    return( ret );
-}
-
-#endif /* MBEDTLS_SELF_TEST */
+#endif /* MBEDTLS_DHM_ALT & CONFIG_HW_DH_PARAM */
 
 #endif	/* MBEDTLS_DHM_C */
