@@ -516,7 +516,7 @@ static inline int imxrt_gpio_select(int port, int pin)
 	uint32_t gpr = port;
 	uint32_t setbits = 1 << pin;
 	uint32_t clearbits = 1 << pin;
-	uintptr_t regaddr = (uintptr_t) IMXRT_IOMUXC_GPR_GPR26;
+	uintptr_t regaddr = (uintptr_t)IMXRT_IOMUXC_GPR_GPR26;
 
 	if (port != GPIO5) {
 		/* Uses GPR26 as the base */

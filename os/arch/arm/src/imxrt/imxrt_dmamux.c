@@ -63,18 +63,18 @@ static const clock_ip_name_t s_dmamuxClockName[] = DMAMUX_CLOCKS;
  ****************************************************************************/
 static uint32_t imxrt_dmamux_getinstance(DMAMUX_Type *base)
 {
-    uint32_t instance;
+	uint32_t instance;
 
-    /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < ARRAY_SIZE(s_dmamuxBases); instance++) {
-        if (s_dmamuxBases[instance] == base) {
-            break;
-        }
-    }
+	/* Find the instance index from base address mappings. */
+	for (instance = 0; instance < ARRAY_SIZE(s_dmamuxBases); instance++) {
+		if (s_dmamuxBases[instance] == base) {
+			break;
+		}
+	}
 
-    assert(instance < ARRAY_SIZE(s_dmamuxBases));
+	assert(instance < ARRAY_SIZE(s_dmamuxBases));
 
-    return instance;
+	return instance;
 }
 
 /****************************************************************************
@@ -95,7 +95,7 @@ static uint32_t imxrt_dmamux_getinstance(DMAMUX_Type *base)
 void imxrt_dmamux_init(DMAMUX_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    imxrt_clock_enableclock(s_dmamuxClockName[imxrt_dmamux_getinstance(base)]);
+	imxrt_clock_enableclock(s_dmamuxClockName[imxrt_dmamux_getinstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
@@ -117,6 +117,6 @@ void imxrt_dmamux_init(DMAMUX_Type *base)
 void imxrt_dmamux_deinit(DMAMUX_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    imxrt_clock_disableclock(s_dmamuxClockName[imxrt_dmamux_getinstance(base)]);
+	imxrt_clock_disableclock(s_dmamuxClockName[imxrt_dmamux_getinstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }

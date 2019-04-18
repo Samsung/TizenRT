@@ -68,6 +68,9 @@
  * Pre-Processor Definitions
  ****************************************************************************/
 
+#ifdef CONFIG_MTD_PARTITION_NAMES
+#define MTD_PARTNAME_LEN       15
+#endif
 /* Macros to hide implementation */
 
 #define MTD_ERASE(d, s, n)     ((d)->erase  ? (d)->erase(d, s, n)     : (-ENOSYS))

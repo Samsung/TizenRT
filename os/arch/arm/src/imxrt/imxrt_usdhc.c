@@ -129,17 +129,17 @@
 /* Data transfer / Event waiting interrupt mask bits */
 
 #define USDHC_RESPERR_INTS  (USDHC_INT_CCE | USDHC_INT_CTOE | \
-                             USDHC_INT_CEBE | USDHC_INT_CIE)
+			     USDHC_INT_CEBE | USDHC_INT_CIE)
 #define USDHC_RESPDONE_INTS (USDHC_RESPERR_INTS | USDHC_INT_CC)
 
 #define USDHC_XFRERR_INTS   (USDHC_INT_DCE | USDHC_INT_DTOE | \
-                             USDHC_INT_DEBE)
+			     USDHC_INT_DEBE)
 #define USDHC_RCVDONE_INTS  (USDHC_XFRERR_INTS | USDHC_INT_BRR | \
-                             USDHC_INT_TC)
+			     USDHC_INT_TC)
 #define USDHC_SNDDONE_INTS  (USDHC_XFRERR_INTS | USDHC_INT_BWR | \
-                             USDHC_INT_TC)
+			     USDHC_INT_TC)
 #define USDHC_XFRDONE_INTS  (USDHC_XFRERR_INTS | USDHC_INT_BRR | \
-                             USDHC_INT_BWR | USDHC_INT_TC)
+			     USDHC_INT_BWR | USDHC_INT_TC)
 
 /* For DMA operations DINT is not interesting TC will indicate completions */
 
@@ -147,7 +147,7 @@
 #define USDHC_DMADONE_INTS  (USDHC_DMAERR_INTS | USDHC_INT_TC)
 
 #define USDHC_WAITALL_INTS  (USDHC_RESPDONE_INTS | USDHC_XFRDONE_INTS | \
-                             USDHC_DMADONE_INTS)
+			     USDHC_DMADONE_INTS)
 
 /* Register logging support */
 
@@ -164,79 +164,77 @@
 
 /* This structure defines the state of the Imxrt SDIO interface */
 
-struct imxrt_dev_s
-{
-  struct sdio_dev_s  dev;        /* Standard, base SDIO interface */
+struct imxrt_dev_s {
+	struct sdio_dev_s  dev;        /* Standard, base SDIO interface */
 
-  /* Imxrt-specific extensions */
-  /* Event support */
+	/* Imxrt-specific extensions */
+	/* Event support */
 
-  sem_t              waitsem;    /* Implements event waiting */
-  sdio_eventset_t    waitevents; /* Set of events to be waited for */
-  uint32_t           waitints;   /* Interrupt enables for event waiting */
-  volatile sdio_eventset_t wkupevent; /* The event that caused the wakeup */
-  WDOG_ID            waitwdog;   /* Watchdog that handles event timeouts */
+	sem_t              waitsem;    /* Implements event waiting */
+	sdio_eventset_t    waitevents; /* Set of events to be waited for */
+	uint32_t           waitints;   /* Interrupt enables for event waiting */
+	volatile sdio_eventset_t wkupevent; /* The event that caused the wakeup */
+	WDOG_ID            waitwdog;   /* Watchdog that handles event timeouts */
 
-  /* Callback support */
+	/* Callback support */
 
-  sdio_statset_t     cdstatus;   /* Card status */
-  sdio_eventset_t    cbevents;   /* Set of events to be cause callbacks */
-  worker_t           callback;   /* Registered callback function */
-  void              *cbarg;      /* Registered callback argument */
-  struct work_s      cbwork;     /* Callback work queue structure */
+	sdio_statset_t     cdstatus;   /* Card status */
+	sdio_eventset_t    cbevents;   /* Set of events to be cause callbacks */
+	worker_t           callback;   /* Registered callback function */
+	void              *cbarg;      /* Registered callback argument */
+	struct work_s      cbwork;     /* Callback work queue structure */
 
-  /* Interrupt mode data transfer support */
+	/* Interrupt mode data transfer support */
 
-  uint32_t          *buffer;     /* Address of current R/W buffer */
-  size_t             remaining;  /* Number of bytes remaining in the transfer */
-  uint32_t           xfrints;    /* Interrupt enables for data transfer */
+	uint32_t          *buffer;     /* Address of current R/W buffer */
+	size_t             remaining;  /* Number of bytes remaining in the transfer */
+	uint32_t           xfrints;    /* Interrupt enables for data transfer */
 
-  /* DMA data transfer support */
+	/* DMA data transfer support */
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  volatile uint8_t   xfrflags;   /* Used to synchronize SDIO and DMA
-                                  * completion events */
-  uint32_t          *bufferend;  /* Far end of R/W buffer for cache
-                                  * invalidation purposes */
+	volatile uint8_t   xfrflags;   /* Used to synchronize SDIO and DMA
+					* completion events */
+	uint32_t          *bufferend;  /* Far end of R/W buffer for cache
+					* invalidation purposes */
 #endif
 };
 
 /* Register logging support */
 
 #ifdef CONFIG_SDIO_XFRDEBUG
-struct imxrt_sdhcregs_s
-{
-  /* All read-able USDHC registers */
+struct imxrt_sdhcregs_s {
+	/* All read-able USDHC registers */
 
-  uint32_t dsaddr;     /* DMA System Address Register */
-  uint32_t blkattr;    /* Block Attributes Register */
-  uint32_t cmdarg;     /* Command Argument Register */
-  uint32_t xferty;     /* Transfer Type Register */
-  uint32_t cmdrsp0;    /* Command Response 0 */
-  uint32_t cmdrsp1;    /* Command Response 1 */
-  uint32_t cmdrsp2;    /* Command Response 2 */
-  uint32_t cmdrsp3;    /* Command Response 3 */
-  uint32_t dbap;       /* Data buffer access port */
-  uint32_t prsstat;    /* Present State Register */
-  uint32_t proctl;     /* Protocol Control Register */
-  uint32_t sysctl;     /* System Control Register */
-  uint32_t irqstat;    /* Interrupt Status Register */
-  uint32_t irqstaten;  /* Interrupt Status Enable Register */
-  uint32_t irqsigen;   /* Interrupt Signal Enable Register */
-  uint32_t ac12err;    /* Auto CMD12 Error Status Register */
-  uint32_t htcapblt;   /* Host Controller Capabilities */
-  uint32_t wml;        /* Watermark Level Register */
-  uint32_t mixctrl;    /* Mixer Control */
-  uint32_t fevent;     /* Force Event */
-  uint32_t admaes;     /* ADMA Error Status Register */
-  uint32_t adsaddr;    /* ADMA System Address Register */
-  uint32_t dllctrl;    /* Delay line control */
-  uint32_t dllstat;    /* Delay line status */
-  uint32_t clktune;    /* Clock tune and control */
-  uint32_t vendor;     /* Vendor Specific Register */
-  uint32_t mmcboot;    /* MMC Boot Register */
-  uint32_t vendor2;    /* Vendor Specific Register 2 */
-  uint32_t tuningctrl; /* Tuning Control */
+	uint32_t dsaddr;     /* DMA System Address Register */
+	uint32_t blkattr;    /* Block Attributes Register */
+	uint32_t cmdarg;     /* Command Argument Register */
+	uint32_t xferty;     /* Transfer Type Register */
+	uint32_t cmdrsp0;    /* Command Response 0 */
+	uint32_t cmdrsp1;    /* Command Response 1 */
+	uint32_t cmdrsp2;    /* Command Response 2 */
+	uint32_t cmdrsp3;    /* Command Response 3 */
+	uint32_t dbap;       /* Data buffer access port */
+	uint32_t prsstat;    /* Present State Register */
+	uint32_t proctl;     /* Protocol Control Register */
+	uint32_t sysctl;     /* System Control Register */
+	uint32_t irqstat;    /* Interrupt Status Register */
+	uint32_t irqstaten;  /* Interrupt Status Enable Register */
+	uint32_t irqsigen;   /* Interrupt Signal Enable Register */
+	uint32_t ac12err;    /* Auto CMD12 Error Status Register */
+	uint32_t htcapblt;   /* Host Controller Capabilities */
+	uint32_t wml;        /* Watermark Level Register */
+	uint32_t mixctrl;    /* Mixer Control */
+	uint32_t fevent;     /* Force Event */
+	uint32_t admaes;     /* ADMA Error Status Register */
+	uint32_t adsaddr;    /* ADMA System Address Register */
+	uint32_t dllctrl;    /* Delay line control */
+	uint32_t dllstat;    /* Delay line status */
+	uint32_t clktune;    /* Clock tune and control */
+	uint32_t vendor;     /* Vendor Specific Register */
+	uint32_t mmcboot;    /* MMC Boot Register */
+	uint32_t vendor2;    /* Vendor Specific Register 2 */
+	uint32_t tuningctrl; /* Tuning Control */
 };
 #endif
 
@@ -249,7 +247,7 @@ struct imxrt_sdhcregs_s
 static void imxrt_takesem(struct imxrt_dev_s *priv);
 #define     imxrt_givesem(priv) (nxsem_post(&priv->waitsem))
 static void imxrt_configwaitints(struct imxrt_dev_s *priv, uint32_t waitints,
-              sdio_eventset_t waitevents, sdio_eventset_t wkupevents);
+		sdio_eventset_t waitevents, sdio_eventset_t wkupevents);
 static void imxrt_configxfrints(struct imxrt_dev_s *priv, uint32_t xfrints);
 
 /* DMA Helpers **************************************************************/
@@ -259,7 +257,7 @@ static void imxrt_sampleinit(void);
 static void imxrt_sdhcsample(struct imxrt_sdhcregs_s *regs);
 static void imxrt_sample(struct imxrt_dev_s *priv, int index);
 static void imxrt_dumpsample(struct imxrt_dev_s *priv,
-              struct imxrt_sdhcregs_s *regs, const char *msg);
+		struct imxrt_sdhcregs_s *regs, const char *msg);
 static void imxrt_dumpsamples(struct imxrt_dev_s *priv);
 static void imxrt_showregs(struct imxrt_dev_s *priv, const char *msg);
 #else
@@ -272,16 +270,16 @@ static void imxrt_showregs(struct imxrt_dev_s *priv, const char *msg);
 /* Data Transfer Helpers ****************************************************/
 
 static void imxrt_dataconfig(struct imxrt_dev_s *priv, bool bwrite,
-              unsigned int dataLen, unsigned int timeout);
+		unsigned int dataLen, unsigned int timeout);
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static void imxrt_transmit(struct imxrt_dev_s *priv);
 static void imxrt_receive(struct imxrt_dev_s *priv);
 #endif
 static void imxrt_eventtimeout(int argc, uint32_t arg);
 static void imxrt_endwait(struct imxrt_dev_s *priv,
-              sdio_eventset_t wkupevent);
+		sdio_eventset_t wkupevent);
 static void imxrt_endtransfer(struct imxrt_dev_s *priv,
-              sdio_eventset_t wkupevent);
+		sdio_eventset_t wkupevent);
 
 /* Interrupt Handling *******************************************************/
 
@@ -305,54 +303,54 @@ static void imxrt_widebus(FAR struct sdio_dev_s *dev, bool enable);
 static void imxrt_frequency(FAR struct sdio_dev_s *dev, uint32_t frequency);
 #endif
 static void imxrt_clock(FAR struct sdio_dev_s *dev,
-              enum sdio_clock_e rate);
+		enum sdio_clock_e rate);
 static int  imxrt_attach(FAR struct sdio_dev_s *dev);
 
 /* Command/Status/Data Transfer */
 
 static int  imxrt_sendcmd(FAR struct sdio_dev_s *dev, uint32_t cmd,
-              uint32_t arg);
+		uint32_t arg);
 #ifdef CONFIG_SDIO_BLOCKSETUP
 static void imxrt_blocksetup(FAR struct sdio_dev_s *dev,
-              unsigned int blocklen, unsigned int nblocks);
+		unsigned int blocklen, unsigned int nblocks);
 #endif
 
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static int  imxrt_recvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
-              size_t nbytes);
+		size_t nbytes);
 static int  imxrt_sendsetup(FAR struct sdio_dev_s *dev,
-              FAR const uint8_t *buffer, uint32_t nbytes);
+		FAR const uint8_t *buffer, uint32_t nbytes);
 #endif
 static int  imxrt_cancel(FAR struct sdio_dev_s *dev);
 
 static int  imxrt_waitresponse(FAR struct sdio_dev_s *dev, uint32_t cmd);
 static int  imxrt_recvshortcrc(FAR struct sdio_dev_s *dev, uint32_t cmd,
-              uint32_t *rshort);
+		uint32_t *rshort);
 static int  imxrt_recvlong(FAR struct sdio_dev_s *dev, uint32_t cmd,
-              uint32_t rlong[4]);
+		uint32_t rlong[4]);
 static int  imxrt_recvshort(FAR struct sdio_dev_s *dev, uint32_t cmd,
-              uint32_t *rshort);
+		uint32_t *rshort);
 static int  imxrt_recvnotimpl(FAR struct sdio_dev_s *dev, uint32_t cmd,
-              uint32_t *rnotimpl);
+		uint32_t *rnotimpl);
 
 /* EVENT handler */
 
 static void imxrt_waitenable(FAR struct sdio_dev_s *dev,
-              sdio_eventset_t eventset);
+		sdio_eventset_t eventset);
 static sdio_eventset_t
-            imxrt_eventwait(FAR struct sdio_dev_s *dev, uint32_t timeout);
+		imxrt_eventwait(FAR struct sdio_dev_s *dev, uint32_t timeout);
 static void imxrt_callbackenable(FAR struct sdio_dev_s *dev,
-              sdio_eventset_t eventset);
+		sdio_eventset_t eventset);
 static int  imxrt_registercallback(FAR struct sdio_dev_s *dev,
-              worker_t callback, void *arg);
+		worker_t callback, void *arg);
 
 /* DMA */
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
 static int  imxrt_dmarecvsetup(FAR struct sdio_dev_s *dev,
-              FAR uint8_t *buffer, size_t buflen);
+		FAR uint8_t *buffer, size_t buflen);
 static int  imxrt_dmasendsetup(FAR struct sdio_dev_s *dev,
-              FAR const uint8_t *buffer, size_t buflen);
+		FAR const uint8_t *buffer, size_t buflen);
 #endif
 
 /* Initialization/uninitialization/reset ************************************/
@@ -363,54 +361,52 @@ static void imxrt_callback(void *arg);
  * Private Data
  ****************************************************************************/
 
-struct imxrt_dev_s g_sdhcdev =
-{
-  .dev =
-  {
+struct imxrt_dev_s g_sdhcdev = {
+	.dev = {
 #ifdef CONFIG_SDIO_MUXBUS
-    .lock             = imxrt_lock,
+		.lock             = imxrt_lock,
 #endif
-    .reset            = imxrt_reset,
-    .capabilities     = imxrt_capabilities,
-    .status           = imxrt_status,
-    .widebus          = imxrt_widebus,
-    .clock            = imxrt_clock,
-    .attach           = imxrt_attach,
-    .sendcmd          = imxrt_sendcmd,
+		.reset            = imxrt_reset,
+		.capabilities     = imxrt_capabilities,
+		.status           = imxrt_status,
+		.widebus          = imxrt_widebus,
+		.clock            = imxrt_clock,
+		.attach           = imxrt_attach,
+		.sendcmd          = imxrt_sendcmd,
 #ifdef CONFIG_SDIO_BLOCKSETUP
-    .blocksetup       = imxrt_blocksetup,
+		.blocksetup       = imxrt_blocksetup,
 #endif
 
 #ifndef CONFIG_IMXRT_USDHC_DMA
-    .recvsetup        = imxrt_recvsetup,
-    .sendsetup        = imxrt_sendsetup,
+		.recvsetup        = imxrt_recvsetup,
+		.sendsetup        = imxrt_sendsetup,
 #else
-    .recvsetup        = imxrt_dmarecvsetup,
-    .sendsetup        = imxrt_dmasendsetup,
+		.recvsetup        = imxrt_dmarecvsetup,
+		.sendsetup        = imxrt_dmasendsetup,
 #endif
-    .cancel           = imxrt_cancel,
-    .waitresponse     = imxrt_waitresponse,
-    .recvR1           = imxrt_recvshortcrc,
-    .recvR2           = imxrt_recvlong,
-    .recvR3           = imxrt_recvshort,
-    .recvR4           = imxrt_recvnotimpl,
-    .recvR5           = imxrt_recvnotimpl,
-    .recvR6           = imxrt_recvshortcrc,
-    .recvR7           = imxrt_recvshort,
-    .waitenable       = imxrt_waitenable,
-    .eventwait        = imxrt_eventwait,
-    .callbackenable   = imxrt_callbackenable,
-    .registercallback = imxrt_registercallback,
+		.cancel           = imxrt_cancel,
+		.waitresponse     = imxrt_waitresponse,
+		.recvR1           = imxrt_recvshortcrc,
+		.recvR2           = imxrt_recvlong,
+		.recvR3           = imxrt_recvshort,
+		.recvR4           = imxrt_recvnotimpl,
+		.recvR5           = imxrt_recvnotimpl,
+		.recvR6           = imxrt_recvshortcrc,
+		.recvR7           = imxrt_recvshort,
+		.waitenable       = imxrt_waitenable,
+		.eventwait        = imxrt_eventwait,
+		.callbackenable   = imxrt_callbackenable,
+		.registercallback = imxrt_registercallback,
 #ifdef CONFIG_SDIO_DMA
 #ifdef CONFIG_IMXRT_USDHC_DMA
-    .dmarecvsetup     = imxrt_dmarecvsetup,
-    .dmasendsetup     = imxrt_dmasendsetup,
+		.dmarecvsetup     = imxrt_dmarecvsetup,
+		.dmasendsetup     = imxrt_dmasendsetup,
 #else
-    .dmarecvsetup     = imxrt_recvsetup,
-    .dmasendsetup     = imxrt_sendsetup,
+		.dmarecvsetup     = imxrt_recvsetup,
+		.dmasendsetup     = imxrt_sendsetup,
 #endif
 #endif
-  },
+	},
 };
 
 /* Register logging support */
@@ -440,21 +436,19 @@ static struct imxrt_sdhcregs_s g_sampleregs[DEBUG_NSAMPLES];
 
 static void imxrt_takesem(struct imxrt_dev_s *priv)
 {
-  int ret;
+	int ret;
 
-  do
-    {
-      /* Take the semaphore (perhaps waiting) */
+	do {
+		/* Take the semaphore (perhaps waiting) */
 
-      ret = nxsem_wait(&priv->waitsem);
+		ret = nxsem_wait(&priv->waitsem);
 
-      /* The only case that an error should occur here is if the wait was
-       * awakened by a signal.
-       */
+		/* The only case that an error should occur here is if the wait was
+		 * awakened by a signal.
+		 */
 
-      DEBUGASSERT(ret == OK || ret == -EINTR);
-    }
-  while (ret == -EINTR);
+		DEBUGASSERT(ret == OK || ret == -EINTR);
+	} while (ret == -EINTR);
 }
 
 /****************************************************************************
@@ -475,24 +469,24 @@ static void imxrt_takesem(struct imxrt_dev_s *priv)
  ****************************************************************************/
 
 static void imxrt_configwaitints(struct imxrt_dev_s *priv, uint32_t waitints,
-                                 sdio_eventset_t waitevents,
-                                 sdio_eventset_t wkupevent)
+				sdio_eventset_t waitevents,
+				sdio_eventset_t wkupevent)
 {
-  irqstate_t flags;
+	irqstate_t flags;
 
-  /* Save all of the data and set the new interrupt mask in one, atomic
-   * operation.
-   */
+	/* Save all of the data and set the new interrupt mask in one, atomic
+	 * operation.
+	 */
 
-  flags            = enter_critical_section();
-  priv->waitevents = waitevents;
-  priv->wkupevent  = wkupevent;
-  priv->waitints   = waitints;
+	flags            = enter_critical_section();
+	priv->waitevents = waitevents;
+	priv->wkupevent  = wkupevent;
+	priv->waitints   = waitints;
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  priv->xfrflags   = 0;
+	priv->xfrflags   = 0;
 #endif
-  putreg32(priv->xfrints | priv->waitints, IMXRT_USDHC1_IRQSIGEN);
-  leave_critical_section(flags);
+	putreg32(priv->xfrints | priv->waitints, IMXRT_USDHC1_IRQSIGEN);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -512,12 +506,12 @@ static void imxrt_configwaitints(struct imxrt_dev_s *priv, uint32_t waitints,
 
 static void imxrt_configxfrints(struct imxrt_dev_s *priv, uint32_t xfrints)
 {
-  irqstate_t flags;
+	irqstate_t flags;
 
-  flags = enter_critical_section();
-  priv->xfrints = xfrints;
-  putreg32(priv->xfrints | priv->waitints, IMXRT_USDHC1_IRQSIGEN);
-  leave_critical_section(flags);
+	flags = enter_critical_section();
+	priv->xfrints = xfrints;
+	putreg32(priv->xfrints | priv->waitints, IMXRT_USDHC1_IRQSIGEN);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -531,7 +525,7 @@ static void imxrt_configxfrints(struct imxrt_dev_s *priv, uint32_t xfrints)
 #ifdef CONFIG_SDIO_XFRDEBUG
 static void imxrt_sampleinit(void)
 {
-  memset(g_sampleregs, 0xff, DEBUG_NSAMPLES * sizeof(struct imxrt_sdhcregs_s));
+	memset(g_sampleregs, 0xff, DEBUG_NSAMPLES * sizeof(struct imxrt_sdhcregs_s));
 }
 #endif
 
@@ -546,27 +540,27 @@ static void imxrt_sampleinit(void)
 #ifdef CONFIG_SDIO_XFRDEBUG
 static void imxrt_sdhcsample(struct imxrt_sdhcregs_s *regs)
 {
-  regs->dsaddr    = getreg32(IMXRT_USDHC1_DSADDR);    /* DMA System Address Register */
-  regs->blkattr   = getreg32(IMXRT_USDHC1_BLKATTR);   /* Block Attributes Register */
-  regs->cmdarg    = getreg32(IMXRT_USDHC1_CMDARG);    /* Command Argument Register */
-  regs->xferty    = getreg32(IMXRT_USDHC1_XFERTYP);   /* Transfer Type Register */
-  regs->cmdrsp0   = getreg32(IMXRT_USDHC1_CMDRSP0);   /* Command Response 0 */
-  regs->cmdrsp1   = getreg32(IMXRT_USDHC1_CMDRSP1);   /* Command Response 1 */
-  regs->cmdrsp2   = getreg32(IMXRT_USDHC1_CMDRSP2);   /* Command Response 2 */
-  regs->cmdrsp3   = getreg32(IMXRT_USDHC1_CMDRSP3);   /* Command Response 3 */
-  regs->prsstat   = getreg32(IMXRT_USDHC1_PRSSTAT);   /* Present State Register */
-  regs->proctl    = getreg32(IMXRT_USDHC1_PROCTL);    /* Protocol Control Register */
-  regs->sysctl    = getreg32(IMXRT_USDHC1_SYSCTL);    /* System Control Register */
-  regs->irqstat   = getreg32(IMXRT_USDHC1_IRQSTAT);   /* Interrupt Status Register */
-  regs->irqstaten = getreg32(IMXRT_USDHC1_IRQSTATEN); /* Interrupt Status Enable Register */
-  regs->irqsigen  = getreg32(IMXRT_USDHC1_IRQSIGEN);  /* Interrupt Signal Enable Register */
-  regs->ac12err   = getreg32(IMXRT_USDHC1_AC12ERR);   /* Auto CMD12 Error Status Register */
-  regs->htcapblt  = getreg32(IMXRT_USDHC1_HTCAPBLT);  /* Host Controller Capabilities */
-  regs->wml       = getreg32(IMXRT_USDHC1_WML);       /* Watermark Level Register */
-  regs->admaes    = getreg32(IMXRT_USDHC1_ADMAES);    /* ADMA Error Status Register */
-  regs->adsaddr   = getreg32(IMXRT_USDHC1_ADSADDR);   /* ADMA System Address Register */
-  regs->vendor    = getreg32(IMXRT_USDHC1_VENDOR);    /* Vendor Specific Register */
-  regs->mmcboot   = getreg32(IMXRT_USDHC1_MMCBOOT);   /* MMC Boot Register */
+	regs->dsaddr    = getreg32(IMXRT_USDHC1_DSADDR);    /* DMA System Address Register */
+	regs->blkattr   = getreg32(IMXRT_USDHC1_BLKATTR);   /* Block Attributes Register */
+	regs->cmdarg    = getreg32(IMXRT_USDHC1_CMDARG);    /* Command Argument Register */
+	regs->xferty    = getreg32(IMXRT_USDHC1_XFERTYP);   /* Transfer Type Register */
+	regs->cmdrsp0   = getreg32(IMXRT_USDHC1_CMDRSP0);   /* Command Response 0 */
+	regs->cmdrsp1   = getreg32(IMXRT_USDHC1_CMDRSP1);   /* Command Response 1 */
+	regs->cmdrsp2   = getreg32(IMXRT_USDHC1_CMDRSP2);   /* Command Response 2 */
+	regs->cmdrsp3   = getreg32(IMXRT_USDHC1_CMDRSP3);   /* Command Response 3 */
+	regs->prsstat   = getreg32(IMXRT_USDHC1_PRSSTAT);   /* Present State Register */
+	regs->proctl    = getreg32(IMXRT_USDHC1_PROCTL);    /* Protocol Control Register */
+	regs->sysctl    = getreg32(IMXRT_USDHC1_SYSCTL);    /* System Control Register */
+	regs->irqstat   = getreg32(IMXRT_USDHC1_IRQSTAT);   /* Interrupt Status Register */
+	regs->irqstaten = getreg32(IMXRT_USDHC1_IRQSTATEN); /* Interrupt Status Enable Register */
+	regs->irqsigen  = getreg32(IMXRT_USDHC1_IRQSIGEN);  /* Interrupt Signal Enable Register */
+	regs->ac12err   = getreg32(IMXRT_USDHC1_AC12ERR);   /* Auto CMD12 Error Status Register */
+	regs->htcapblt  = getreg32(IMXRT_USDHC1_HTCAPBLT);  /* Host Controller Capabilities */
+	regs->wml       = getreg32(IMXRT_USDHC1_WML);       /* Watermark Level Register */
+	regs->admaes    = getreg32(IMXRT_USDHC1_ADMAES);    /* ADMA Error Status Register */
+	regs->adsaddr   = getreg32(IMXRT_USDHC1_ADSADDR);   /* ADMA System Address Register */
+	regs->vendor    = getreg32(IMXRT_USDHC1_VENDOR);    /* Vendor Specific Register */
+	regs->mmcboot   = getreg32(IMXRT_USDHC1_MMCBOOT);   /* MMC Boot Register */
 }
 #endif
 
@@ -597,28 +591,28 @@ static void imxrt_sample(struct imxrt_dev_s *priv, int index)
 static void imxrt_dumpsample(struct imxrt_dev_s *priv,
                                struct imxrt_sdhcregs_s *regs, const char *msg)
 {
-  mcinfo("USDHC Registers: %s\n", msg);
-  mcinfo("   DSADDR[%08x]: %08x\n", IMXRT_USDHC1_DSADDR,    regs->dsaddr);
-  mcinfo("  BLKATTR[%08x]: %08x\n", IMXRT_USDHC1_BLKATTR,   regs->blkattr);
-  mcinfo("   CMDARG[%08x]: %08x\n", IMXRT_USDHC1_CMDARG,    regs->cmdarg);
-  mcinfo("   XFERTY[%08x]: %08x\n", IMXRT_USDHC1_XFERTYP,   regs->xferty);
-  mcinfo("  CMDRSP0[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP0,   regs->cmdrsp0);
-  mcinfo("  CMDRSP1[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP1,   regs->cmdrsp1);
-  mcinfo("  CMDRSP2[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP2,   regs->cmdrsp2);
-  mcinfo("  CMDRSP3[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP3,   regs->cmdrsp3);
-  mcinfo("  PRSSTAT[%08x]: %08x\n", IMXRT_USDHC1_PRSSTAT,   regs->prsstat);
-  mcinfo("   PROCTL[%08x]: %08x\n", IMXRT_USDHC1_PROCTL,    regs->proctl);
-  mcinfo("   SYSCTL[%08x]: %08x\n", IMXRT_USDHC1_SYSCTL,    regs->sysctl);
-  mcinfo("  IRQSTAT[%08x]: %08x\n", IMXRT_USDHC1_IRQSTAT,   regs->irqstat);
-  mcinfo("IRQSTATEN[%08x]: %08x\n", IMXRT_USDHC1_IRQSTATEN, regs->irqstaten);
-  mcinfo(" IRQSIGEN[%08x]: %08x\n", IMXRT_USDHC1_IRQSIGEN,  regs->irqsigen);
-  mcinfo("  AC12ERR[%08x]: %08x\n", IMXRT_USDHC1_AC12ERR,   regs->ac12err);
-  mcinfo(" HTCAPBLT[%08x]: %08x\n", IMXRT_USDHC1_HTCAPBLT,  regs->htcapblt);
-  mcinfo("      WML[%08x]: %08x\n", IMXRT_USDHC1_WML,       regs->wml);
-  mcinfo("   ADMAES[%08x]: %08x\n", IMXRT_USDHC1_ADMAES,    regs->admaes);
-  mcinfo("  ADSADDR[%08x]: %08x\n", IMXRT_USDHC1_ADSADDR,   regs->adsaddr);
-  mcinfo("   VENDOR[%08x]: %08x\n", IMXRT_USDHC1_VENDOR,    regs->vendor);
-  mcinfo("  MMCBOOT[%08x]: %08x\n", IMXRT_USDHC1_MMCBOOT,   regs->mmcboot);
+	mcinfo("USDHC Registers: %s\n", msg);
+	mcinfo("   DSADDR[%08x]: %08x\n", IMXRT_USDHC1_DSADDR,    regs->dsaddr);
+	mcinfo("  BLKATTR[%08x]: %08x\n", IMXRT_USDHC1_BLKATTR,   regs->blkattr);
+	mcinfo("   CMDARG[%08x]: %08x\n", IMXRT_USDHC1_CMDARG,    regs->cmdarg);
+	mcinfo("   XFERTY[%08x]: %08x\n", IMXRT_USDHC1_XFERTYP,   regs->xferty);
+	mcinfo("  CMDRSP0[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP0,   regs->cmdrsp0);
+	mcinfo("  CMDRSP1[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP1,   regs->cmdrsp1);
+	mcinfo("  CMDRSP2[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP2,   regs->cmdrsp2);
+	mcinfo("  CMDRSP3[%08x]: %08x\n", IMXRT_USDHC1_CMDRSP3,   regs->cmdrsp3);
+	mcinfo("  PRSSTAT[%08x]: %08x\n", IMXRT_USDHC1_PRSSTAT,   regs->prsstat);
+	mcinfo("   PROCTL[%08x]: %08x\n", IMXRT_USDHC1_PROCTL,    regs->proctl);
+	mcinfo("   SYSCTL[%08x]: %08x\n", IMXRT_USDHC1_SYSCTL,    regs->sysctl);
+	mcinfo("  IRQSTAT[%08x]: %08x\n", IMXRT_USDHC1_IRQSTAT,   regs->irqstat);
+	mcinfo("IRQSTATEN[%08x]: %08x\n", IMXRT_USDHC1_IRQSTATEN, regs->irqstaten);
+	mcinfo(" IRQSIGEN[%08x]: %08x\n", IMXRT_USDHC1_IRQSIGEN,  regs->irqsigen);
+	mcinfo("  AC12ERR[%08x]: %08x\n", IMXRT_USDHC1_AC12ERR,   regs->ac12err);
+	mcinfo(" HTCAPBLT[%08x]: %08x\n", IMXRT_USDHC1_HTCAPBLT,  regs->htcapblt);
+	mcinfo("      WML[%08x]: %08x\n", IMXRT_USDHC1_WML,       regs->wml);
+	mcinfo("   ADMAES[%08x]: %08x\n", IMXRT_USDHC1_ADMAES,    regs->admaes);
+	mcinfo("  ADSADDR[%08x]: %08x\n", IMXRT_USDHC1_ADSADDR,   regs->adsaddr);
+	mcinfo("   VENDOR[%08x]: %08x\n", IMXRT_USDHC1_VENDOR,    regs->vendor);
+	mcinfo("  MMCBOOT[%08x]: %08x\n", IMXRT_USDHC1_MMCBOOT,   regs->mmcboot);
 }
 #endif
 
@@ -633,12 +627,12 @@ static void imxrt_dumpsample(struct imxrt_dev_s *priv,
 #ifdef CONFIG_SDIO_XFRDEBUG
 static void  imxrt_dumpsamples(struct imxrt_dev_s *priv)
 {
-  imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_BEFORE_SETUP],
-                   "Before setup");
-  imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_AFTER_SETUP],
-                   "After setup");
-  imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_END_TRANSFER],
-                   "End of transfer");
+	imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_BEFORE_SETUP],
+			"Before setup");
+	imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_AFTER_SETUP],
+			"After setup");
+	imxrt_dumpsample(priv, &g_sampleregs[SAMPLENDX_END_TRANSFER],
+			"End of transfer");
 }
 #endif
 
@@ -653,10 +647,10 @@ static void  imxrt_dumpsamples(struct imxrt_dev_s *priv)
 #ifdef CONFIG_SDIO_XFRDEBUG
 static void imxrt_showregs(struct imxrt_dev_s *priv, const char *msg)
 {
-  struct imxrt_sdhcregs_s regs;
+	struct imxrt_sdhcregs_s regs;
 
-  imxrt_sdhcsample(&regs);
-  imxrt_dumpsample(priv, &regs, msg);
+	imxrt_sdhcsample(&regs);
+	imxrt_dumpsample(priv, &regs, msg);
 }
 #endif
 
@@ -673,61 +667,57 @@ static void imxrt_showregs(struct imxrt_dev_s *priv, const char *msg)
  ****************************************************************************/
 
 static void imxrt_dataconfig(struct imxrt_dev_s *priv, bool bwrite,
-                             unsigned int dataLen, unsigned int timeout)
+			unsigned int dataLen, unsigned int timeout)
 {
-  unsigned int watermark;
-  uint32_t regval = 0;
+	unsigned int watermark;
+	uint32_t regval = 0;
 
-  /* Set the data timeout value in the USDHC_SYSCTL field to the selected
-   * value.
-   */
+	/* Set the data timeout value in the USDHC_SYSCTL field to the selected
+	 * value.
+	 */
 
-  regval  = getreg32(IMXRT_USDHC1_SYSCTL);
-  regval &= ~USDHC_SYSCTL_DTOCV_MASK;
-  regval |= timeout << USDHC_SYSCTL_DTOCV_SHIFT;
-  putreg32(regval, IMXRT_USDHC1_SYSCTL);
+	regval  = getreg32(IMXRT_USDHC1_SYSCTL);
+	regval &= ~USDHC_SYSCTL_DTOCV_MASK;
+	regval |= timeout << USDHC_SYSCTL_DTOCV_SHIFT;
+	putreg32(regval, IMXRT_USDHC1_SYSCTL);
 
-  /* Set the watermark level */
+	/* Set the watermark level */
 
-  /* Set the Read Watermark Level to the dataLen to be read
-   * (limited to half of the maximum watermark value).  BRR will be
-   * set when the number of queued words is greater than or equal
-   * to this value.
-   */
+	/* Set the Read Watermark Level to the dataLen to be read
+	 * (limited to half of the maximum watermark value).  BRR will be
+	 * set when the number of queued words is greater than or equal
+	 * to this value.
+	 */
 
-  watermark = (dataLen + 3) >> 2;
-  if (watermark > (USDHC_MAX_WATERMARK / 2))
-    {
-      watermark = (USDHC_MAX_WATERMARK / 2);
-    }
+	watermark = (dataLen + 3) >> 2;
+	if (watermark > (USDHC_MAX_WATERMARK / 2)) {
+		watermark = (USDHC_MAX_WATERMARK / 2);
+	}
 
-  /* When the watermark level requirement is met in data transfer, and the
-   * internal DMA is enabled, the data buffer block sends a DMA request to
-   * the crossbar switch interface.
-   */
+	/* When the watermark level requirement is met in data transfer, and the
+	 * internal DMA is enabled, the data buffer block sends a DMA request to
+	 * the crossbar switch interface.
+	 */
 
-  if (bwrite)
-    {
-      /* The USDHC will not start data transmission until the number of
-       * words set in the WML register can be held in the buffer. If the
-       * buffer is empty and the host system does not write data in time,
-       * the USDHC will stop the SD_CLK to avoid the data buffer under-run
-       * situation.
-       */
+	if (bwrite) {
+		/* The USDHC will not start data transmission until the number of
+		 * words set in the WML register can be held in the buffer. If the
+		 * buffer is empty and the host system does not write data in time,
+		 * the USDHC will stop the SD_CLK to avoid the data buffer under-run
+		 * situation.
+		 */
 
-      putreg32(watermark << USDHC_WML_WR_SHIFT, IMXRT_USDHC1_WML);
-    }
-  else
-    {
-      /* The USDHC will not start data transmission until the number of
-       * words set in the WML register are in the buffer. If the buffer
-       * is full and the Host System does not read data in time, the
-       * USDHC will stop the USDHC_DCLK to avoid the data buffer over-run
-       * situation.
-       */
+		putreg32(watermark << USDHC_WML_WR_SHIFT, IMXRT_USDHC1_WML);
+	} else {
+		/* The USDHC will not start data transmission until the number of
+		 * words set in the WML register are in the buffer. If the buffer
+		 * is full and the Host System does not read data in time, the
+		 * USDHC will stop the USDHC_DCLK to avoid the data buffer over-run
+		 * situation.
+		 */
 
-      putreg32(watermark << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
-    }
+		putreg32(watermark << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
+	}
 }
 
 /****************************************************************************
@@ -747,64 +737,58 @@ static void imxrt_dataconfig(struct imxrt_dev_s *priv, bool bwrite,
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static void imxrt_transmit(struct imxrt_dev_s *priv)
 {
-  union
-  {
-    uint32_t w;
-    uint8_t  b[4];
-  } data;
+	union {
+		uint32_t w;
+		uint8_t  b[4];
+	} data;
 
-  /* Loop while there is more data to be sent, while buffer write enable
-   * (PRSSTAT.BWEN)
-   */
+	/* Loop while there is more data to be sent, while buffer write enable
+	 * (PRSSTAT.BWEN)
+	 */
 
-  mcinfo("Entry: remaining: %d IRQSTAT: %08x\n",
-         priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
+	mcinfo("Entry: remaining: %d IRQSTAT: %08x\n",
+		priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
 
-  while (priv->remaining > 0 &&
-         (getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_BWEN) != 0)
-    {
-      /* Is there a full word remaining in the user buffer? */
+	while (priv->remaining > 0 &&
+		(getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_BWEN) != 0) {
+		/* Is there a full word remaining in the user buffer? */
 
-      if (priv->remaining >= sizeof(uint32_t))
-        {
-          /* Yes, transfer the word to the TX FIFO */
+		if (priv->remaining >= sizeof(uint32_t)) {
+			/* Yes, transfer the word to the TX FIFO */
 
-          data.w           = *priv->buffer++;
-          priv->remaining -= sizeof(uint32_t);
-        }
-      else
-        {
-          /* No.. transfer just the bytes remaining in the user buffer,
-           * padding with zero as necessary to extend to a full word.
-           */
+			data.w           = *priv->buffer++;
+			priv->remaining -= sizeof(uint32_t);
+		} else {
+			/* No.. transfer just the bytes remaining in the user buffer,
+			 * padding with zero as necessary to extend to a full word.
+			 */
 
-          uint8_t *ptr = (uint8_t *)priv->remaining;
-          int i;
+			uint8_t *ptr = (uint8_t *)priv->remaining;
+			int i;
 
-          data.w = 0;
-          for (i = 0; i < priv->remaining; i++)
-            {
-               data.b[i] = *ptr++;
-            }
+			data.w = 0;
+			for (i = 0; i < priv->remaining; i++) {
+				data.b[i] = *ptr++;
+			}
 
-          /* Now the transfer is finished */
+			/* Now the transfer is finished */
 
-          priv->remaining = 0;
-        }
+			priv->remaining = 0;
+		}
 
-      /* Put the word in the FIFO */
+		/* Put the word in the FIFO */
 
-      putreg32(data.w, IMXRT_USDHC1_DATPORT);
-    }
+		putreg32(data.w, IMXRT_USDHC1_DATPORT);
+	}
 
-  /* Clear BWR.  If there is more data in the buffer, writing to the
-   * buffer should reset BWR.
-   */
+	/* Clear BWR.  If there is more data in the buffer, writing to the
+	 * buffer should reset BWR.
+	 */
 
-  putreg32(USDHC_INT_BWR, IMXRT_USDHC1_IRQSTAT);
+	putreg32(USDHC_INT_BWR, IMXRT_USDHC1_IRQSTAT);
 
-  mcinfo("Exit: remaining: %d IRQSTAT: %08x\n",
-         priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
+	mcinfo("Exit: remaining: %d IRQSTAT: %08x\n",
+		priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
 }
 #endif
 
@@ -825,78 +809,71 @@ static void imxrt_transmit(struct imxrt_dev_s *priv)
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static void imxrt_receive(struct imxrt_dev_s *priv)
 {
-  unsigned int watermark;
-  union
-  {
-    uint32_t w;
-    uint8_t  b[4];
-  } data;
+	unsigned int watermark;
+	union {
+		uint32_t w;
+		uint8_t  b[4];
+	} data;
 
-  /* Set the Read Watermark Level to 1:  BRR will be set when the number of
-   * queued words is greater than or equal to 1.
-   */
+	/* Set the Read Watermark Level to 1:  BRR will be set when the number of
+	 * queued words is greater than or equal to 1.
+	 */
 
-  putreg32(1 << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
+	putreg32(1 << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
 
-  /* Loop while there is space to store the data, waiting for buffer read
-   * ready (BRR)
-   */
+	/* Loop while there is space to store the data, waiting for buffer read
+	 * ready (BRR)
+	 */
 
-  mcinfo("Entry: remaining: %d IRQSTAT: %08x\n",
-         priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
+	mcinfo("Entry: remaining: %d IRQSTAT: %08x\n",
+		priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT));
 
-  while (priv->remaining > 0 &&
-         (getreg32(IMXRT_USDHC1_IRQSTAT) & USDHC_INT_BRR) != 0)
-    {
-      /* Clear BRR.  If there is more data in the buffer, reading from the
-       * buffer should reset BRR.
-       */
+	while (priv->remaining > 0 &&
+		(getreg32(IMXRT_USDHC1_IRQSTAT) & USDHC_INT_BRR) != 0) {
+		/* Clear BRR.  If there is more data in the buffer, reading from the
+		 * buffer should reset BRR.
+		 */
 
-      putreg32(USDHC_INT_BRR, IMXRT_USDHC1_IRQSTAT);
+		putreg32(USDHC_INT_BRR, IMXRT_USDHC1_IRQSTAT);
 
-      /* Read the next word from the RX buffer */
+		/* Read the next word from the RX buffer */
 
-      data.w = getreg32(IMXRT_USDHC1_DATPORT);
-      if (priv->remaining >= sizeof(uint32_t))
-        {
-          /* Transfer the whole word to the user buffer */
+		data.w = getreg32(IMXRT_USDHC1_DATPORT);
+		if (priv->remaining >= sizeof(uint32_t)) {
+			/* Transfer the whole word to the user buffer */
 
-          *priv->buffer++  = data.w;
-          priv->remaining -= sizeof(uint32_t);
-        }
-      else
-        {
-          /* Transfer any trailing fractional word */
+			*priv->buffer++  = data.w;
+			priv->remaining -= sizeof(uint32_t);
+		} else {
+			/* Transfer any trailing fractional word */
 
-          uint8_t *ptr = (uint8_t *)priv->buffer;
-          int i;
+			uint8_t *ptr = (uint8_t *)priv->buffer;
+			int i;
 
-          for (i = 0; i < priv->remaining; i++)
-            {
-               *ptr++ = data.b[i];
-            }
+			for (i = 0; i < priv->remaining; i++) {
+				*ptr++ = data.b[i];
+			}
 
-          /* Now the transfer is finished */
+			/* Now the transfer is finished */
 
-          priv->remaining = 0;
-        }
-    }
+			priv->remaining = 0;
+		}
+	}
 
-  /* Set the Read Watermark Level either the number of remaining words to be
-   * read (limited to half of the maximum watermark value)
-   */
+	/* Set the Read Watermark Level either the number of remaining words to be
+	 * read (limited to half of the maximum watermark value)
+	 */
 
-  watermark = ((priv->remaining + 3) >> 2);
-  if (watermark > (USDHC_MAX_WATERMARK / 2))
-    {
-      watermark = (USDHC_MAX_WATERMARK / 2);
-    }
+	watermark = ((priv->remaining + 3) >> 2);
+	if (watermark > (USDHC_MAX_WATERMARK / 2)) {
+		watermark = (USDHC_MAX_WATERMARK / 2);
+	}
 
-  putreg32(watermark << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
+	putreg32(watermark << USDHC_WML_RD_SHIFT, IMXRT_USDHC1_WML);
 
-  mcinfo("Exit: remaining: %d IRQSTAT: %08x WML: %08x\n",
-         priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT),
-         getreg32(IMXRT_USDHC1_WML));
+	mcinfo("Exit: remaining: %d IRQSTAT: %08x WML: %08x\n",
+		priv->remaining, getreg32(IMXRT_USDHC1_IRQSTAT),
+		getreg32(IMXRT_USDHC1_WML));
 }
 #endif
 
@@ -921,24 +898,23 @@ static void imxrt_receive(struct imxrt_dev_s *priv)
 
 static void imxrt_eventtimeout(int argc, uint32_t arg)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)arg;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)arg;
 
-  DEBUGASSERT(argc == 1 && priv != NULL);
-  DEBUGASSERT((priv->waitevents & SDIOWAIT_TIMEOUT) != 0);
+	DEBUGASSERT(argc == 1 && priv != NULL);
+	DEBUGASSERT((priv->waitevents & SDIOWAIT_TIMEOUT) != 0);
 
-  /* Is a data transfer complete event expected? */
+	/* Is a data transfer complete event expected? */
 
-  if ((priv->waitevents & SDIOWAIT_TIMEOUT) != 0)
-    {
-      /* Yes.. Sample registers at the time of the timeout */
+	if ((priv->waitevents & SDIOWAIT_TIMEOUT) != 0) {
+		/* Yes.. Sample registers at the time of the timeout */
 
-      imxrt_sample(priv, SAMPLENDX_END_TRANSFER);
+		imxrt_sample(priv, SAMPLENDX_END_TRANSFER);
 
-      /* Wake up any waiting threads */
+		/* Wake up any waiting threads */
 
-      imxrt_endwait(priv, SDIOWAIT_TIMEOUT);
-      mcerr("ERROR: Timeout: remaining: %d\n", priv->remaining);
-    }
+		imxrt_endwait(priv, SDIOWAIT_TIMEOUT);
+		mcerr("ERROR: Timeout: remaining: %d\n", priv->remaining);
+	}
 }
 
 /****************************************************************************
@@ -960,19 +936,19 @@ static void imxrt_eventtimeout(int argc, uint32_t arg)
  ****************************************************************************/
 
 static void imxrt_endwait(struct imxrt_dev_s *priv,
-                          sdio_eventset_t wkupevent)
+			sdio_eventset_t wkupevent)
 {
-  /* Cancel the watchdog timeout */
+	/* Cancel the watchdog timeout */
 
-  (void)wd_cancel(priv->waitwdog);
+	(void)wd_cancel(priv->waitwdog);
 
-  /* Disable event-related interrupts */
+	/* Disable event-related interrupts */
 
-  imxrt_configwaitints(priv, 0, 0, wkupevent);
+	imxrt_configwaitints(priv, 0, 0, wkupevent);
 
-  /* Wake up the waiting thread */
+	/* Wake up the waiting thread */
 
-  imxrt_givesem(priv);
+	imxrt_givesem(priv);
 }
 
 /****************************************************************************
@@ -996,38 +972,37 @@ static void imxrt_endwait(struct imxrt_dev_s *priv,
  ****************************************************************************/
 
 static void imxrt_endtransfer(struct imxrt_dev_s *priv,
-                              sdio_eventset_t wkupevent)
+			sdio_eventset_t wkupevent)
 {
 
-  /* Disable all transfer related interrupts */
+	/* Disable all transfer related interrupts */
 
-  imxrt_configxfrints(priv, 0);
+	imxrt_configxfrints(priv, 0);
 
-  /* Clearing pending interrupt status on all transfer related interrupts */
+	/* Clearing pending interrupt status on all transfer related interrupts */
 
-  putreg32(USDHC_XFRDONE_INTS | USDHC_DMADONE_INTS, IMXRT_USDHC1_IRQSTAT);
+	putreg32(USDHC_XFRDONE_INTS | USDHC_DMADONE_INTS, IMXRT_USDHC1_IRQSTAT);
 
-  /* Mark the transfer finished */
+	/* Mark the transfer finished */
 
-  priv->remaining = 0;
+	priv->remaining = 0;
 
-  /* DMA modified the buffer, so we need to flush its cache lines. */
+	/* DMA modified the buffer, so we need to flush its cache lines. */
 
-  arch_invalidate_dcache((uintptr_t)priv->buffer,
-                         (uintptr_t)priv->bufferend);
+	arch_invalidate_dcache((uintptr_t)priv->buffer,
+				(uintptr_t)priv->bufferend);
 
-  /* Debug instrumentation */
+	/* Debug instrumentation */
 
-  imxrt_sample(priv, SAMPLENDX_END_TRANSFER);
+	imxrt_sample(priv, SAMPLENDX_END_TRANSFER);
 
-  /* Is a thread wait for these data transfer complete events? */
+	/* Is a thread wait for these data transfer complete events? */
 
-  if ((priv->waitevents & wkupevent) != 0)
-    {
-      /* Yes.. wake up any waiting threads */
+	if ((priv->waitevents & wkupevent) != 0) {
+		/* Yes.. wake up any waiting threads */
 
-      imxrt_endwait(priv, wkupevent);
-    }
+		imxrt_endwait(priv, wkupevent);
+	}
 }
 
 /****************************************************************************
@@ -1046,112 +1021,103 @@ static void imxrt_endtransfer(struct imxrt_dev_s *priv,
 
 static int imxrt_interrupt(int irq, void *context, FAR void *arg)
 {
-  struct imxrt_dev_s *priv = &g_sdhcdev;
-  uint32_t enabled;
-  uint32_t pending;
-  uint32_t regval;
+	struct imxrt_dev_s *priv = &g_sdhcdev;
+	uint32_t enabled;
+	uint32_t pending;
+	uint32_t regval;
 
-  /* Check the USDHC IRQSTAT register.  Mask out all bits that don't
-   * correspond to enabled interrupts.  (This depends on the fact that bits
-   * are ordered the same in both the IRQSTAT and IRQSIGEN registers).  If
-   * there are non-zero bits remaining, then we have work to do here.
-   */
+	/* Check the USDHC IRQSTAT register.  Mask out all bits that don't
+	 * correspond to enabled interrupts.  (This depends on the fact that bits
+	 * are ordered the same in both the IRQSTAT and IRQSIGEN registers).  If
+	 * there are non-zero bits remaining, then we have work to do here.
+	 */
 
-  regval  = getreg32(IMXRT_USDHC1_IRQSIGEN);
-  enabled = getreg32(IMXRT_USDHC1_IRQSTAT) & regval;
+	regval  = getreg32(IMXRT_USDHC1_IRQSIGEN);
+	enabled = getreg32(IMXRT_USDHC1_IRQSTAT) & regval;
 
-  mcinfo("IRQSTAT: %08x IRQSIGEN %08x enabled: %08x\n",
-         getreg32(IMXRT_USDHC1_IRQSTAT), regval, enabled);
+	mcinfo("IRQSTAT: %08x IRQSIGEN %08x enabled: %08x\n",
+		getreg32(IMXRT_USDHC1_IRQSTAT), regval, enabled);
 
-  /* Clear all pending interrupts */
+	/* Clear all pending interrupts */
 
-  putreg32(enabled, IMXRT_USDHC1_IRQSTAT);
+	putreg32(enabled, IMXRT_USDHC1_IRQSTAT);
 
-  /* Handle in progress, interrupt driven data transfers ********************/
+	/* Handle in progress, interrupt driven data transfers ********************/
 
-  pending  = enabled & priv->xfrints;
-  if (pending != 0)
-    {
+	pending  = enabled & priv->xfrints;
+	if (pending != 0) {
 #ifndef CONFIG_IMXRT_USDHC_DMA
-      /* Is the RX buffer read ready?  Is so then we must be processing a
-       * non-DMA receive transaction.
-       */
+		/* Is the RX buffer read ready?  Is so then we must be processing a
+		 * non-DMA receive transaction.
+		 */
 
-      if ((pending & USDHC_INT_BRR) != 0)
-        {
-          /* Receive data from the RX buffer */
+		if ((pending & USDHC_INT_BRR) != 0) {
+			/* Receive data from the RX buffer */
 
-          imxrt_receive(priv);
-        }
+			imxrt_receive(priv);
+		}
 
-      /* Otherwise, Is the TX buffer write ready? If so we must
-       * be processing a non-DMA send transaction.  NOTE:  We can't be
-       * processing both!
-       */
+		/* Otherwise, Is the TX buffer write ready? If so we must
+		 * be processing a non-DMA send transaction.  NOTE:  We can't be
+		 * processing both!
+		 */
 
-      else if ((pending & USDHC_INT_BWR) != 0)
-        {
-          /* Send data via the TX FIFO */
+		else if ((pending & USDHC_INT_BWR) != 0) {
+			/* Send data via the TX FIFO */
 
-          imxrt_transmit(priv);
-        }
+			imxrt_transmit(priv);
+		}
 #endif
 
-      /* Handle transfer complete events */
+		/* Handle transfer complete events */
 
-      if ((pending & USDHC_INT_TC) != 0)
-        {
-          /* Terminate the transfer */
+		if ((pending & USDHC_INT_TC) != 0) {
+			/* Terminate the transfer */
 
-          imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE);
-        }
+			imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE);
+		}
 
-      /* Handle data block send/receive CRC failure */
+		/* Handle data block send/receive CRC failure */
 
-      else if ((pending & USDHC_INT_DCE) != 0)
-        {
-          /* Terminate the transfer with an error */
+		else if ((pending & USDHC_INT_DCE) != 0) {
+			/* Terminate the transfer with an error */
 
-          mcerr("ERROR: Data block CRC failure, remaining: %d\n", priv->remaining);
-          imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE | SDIOWAIT_ERROR);
-        }
+			mcerr("ERROR: Data block CRC failure, remaining: %d\n", priv->remaining);
+			imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE | SDIOWAIT_ERROR);
+		}
 
-      /* Handle data timeout error */
+		/* Handle data timeout error */
 
-      else if ((pending & USDHC_INT_DTOE) != 0)
-        {
-          /* Terminate the transfer with an error */
+		else if ((pending & USDHC_INT_DTOE) != 0) {
+			/* Terminate the transfer with an error */
 
-          mcerr("ERROR: Data timeout, remaining: %d\n", priv->remaining);
-          imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE | SDIOWAIT_TIMEOUT);
-        }
-    }
+			mcerr("ERROR: Data timeout, remaining: %d\n", priv->remaining);
+			imxrt_endtransfer(priv, SDIOWAIT_TRANSFERDONE | SDIOWAIT_TIMEOUT);
+		}
+	}
 
-  /* Handle wait events *****************************************************/
+	/* Handle wait events *****************************************************/
 
-  pending  = enabled & priv->waitints;
-  if (pending != 0)
-    {
-      /* Is this a response completion event? */
+	pending  = enabled & priv->waitints;
+	if (pending != 0) {
+		/* Is this a response completion event? */
 
-      if ((pending & USDHC_RESPDONE_INTS) != 0)
-        {
-          /* Yes.. Is their a thread waiting for response done? */
+		if ((pending & USDHC_RESPDONE_INTS) != 0) {
+			/* Yes.. Is their a thread waiting for response done? */
 
-          if ((priv->waitevents & (SDIOWAIT_CMDDONE | SDIOWAIT_RESPONSEDONE)) != 0)
-            {
-              /* Yes.. mask further interrupts and wake the thread up */
+			if ((priv->waitevents & (SDIOWAIT_CMDDONE | SDIOWAIT_RESPONSEDONE)) != 0) {
+				/* Yes.. mask further interrupts and wake the thread up */
 
-              regval = getreg32(IMXRT_USDHC1_IRQSIGEN);
-              regval &= ~USDHC_RESPDONE_INTS;
-              putreg32(regval, IMXRT_USDHC1_IRQSIGEN);
+				regval = getreg32(IMXRT_USDHC1_IRQSIGEN);
+				regval &= ~USDHC_RESPDONE_INTS;
+				putreg32(regval, IMXRT_USDHC1_IRQSIGEN);
 
-              imxrt_endwait(priv, SDIOWAIT_RESPONSEDONE);
-            }
-        }
-    }
+				imxrt_endwait(priv, SDIOWAIT_RESPONSEDONE);
+			}
+		}
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -1177,12 +1143,12 @@ static int imxrt_interrupt(int irq, void *context, FAR void *arg)
 #ifdef CONFIG_SDIO_MUXBUS
 static int imxrt_lock(FAR struct sdio_dev_s *dev, bool lock)
 {
-  /* Single SDIO instance so there is only one possibility.  The multiplex
-   * bus is part of board support package.
-   */
+	/* Single SDIO instance so there is only one possibility.  The multiplex
+	 * bus is part of board support package.
+	 */
 
-  imxrt_muxbus_sdio_lock(lock);
-  return OK;
+	imxrt_muxbus_sdio_lock(lock);
+	return OK;
 }
 #endif
 
@@ -1202,67 +1168,65 @@ static int imxrt_lock(FAR struct sdio_dev_s *dev, bool lock)
 
 static void imxrt_reset(FAR struct sdio_dev_s *dev)
 {
-  FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
+	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
 
-  /* Disable all interrupts so that nothing interferes with the following. */
+	/* Disable all interrupts so that nothing interferes with the following. */
 
-  putreg32(0, IMXRT_USDHC1_IRQSIGEN);
+	putreg32(0, IMXRT_USDHC1_IRQSIGEN);
 
-  /* Reset the USDHC block, putting registers in their default, reset state.
-   * Initiate the reset by setting the RSTA bit in the SYSCTL register.
-   */
+	/* Reset the USDHC block, putting registers in their default, reset state.
+	 * Initiate the reset by setting the RSTA bit in the SYSCTL register.
+	 */
 
-  modifyreg32(IMXRT_USDHC1_VENDOR2, 0, USDHC_VS2_BUSRESET);
-  modifyreg32(IMXRT_USDHC1_SYSCTL , 0, USDHC_SYSCTL_RSTA);
-  modifyreg32(IMXRT_USDHC1_VENDOR2,
-              USDHC_VS2_BUSRESET | USDHC_VS2_ACMD23ARGU2, 0);
+	modifyreg32(IMXRT_USDHC1_VENDOR2, 0, USDHC_VS2_BUSRESET);
+	modifyreg32(IMXRT_USDHC1_SYSCTL , 0, USDHC_SYSCTL_RSTA);
+	modifyreg32(IMXRT_USDHC1_VENDOR2,
+			USDHC_VS2_BUSRESET | USDHC_VS2_ACMD23ARGU2, 0);
 
-  /* The USDHC will reset the RSTA bit to 0 when the capabilities
-   * registers are valid and the host driver can read them.
-   */
+	/* The USDHC will reset the RSTA bit to 0 when the capabilities
+	 * registers are valid and the host driver can read them.
+	 */
 
-  while ((getreg32(IMXRT_USDHC1_SYSCTL) & USDHC_SYSCTL_RSTA) != 0)
-    {
-    }
+	while ((getreg32(IMXRT_USDHC1_SYSCTL) & USDHC_SYSCTL_RSTA) != 0) {}
 
-  mcinfo("Reset complete\n");
+	mcinfo("Reset complete\n");
 
-  /* Make sure that all clocking is disabled */
+	/* Make sure that all clocking is disabled */
 
-  imxrt_clock(dev, CLOCK_SDIO_DISABLED);
+	imxrt_clock(dev, CLOCK_SDIO_DISABLED);
 
-  /* Enable all status bits (these could not all be potential sources of
-   * interrupts.
-   */
+	/* Enable all status bits (these could not all be potential sources of
+	 * interrupts.
+	 */
 
-  putreg32(USDHC_INT_ALL, IMXRT_USDHC1_IRQSTATEN);
+	putreg32(USDHC_INT_ALL, IMXRT_USDHC1_IRQSTATEN);
 
-  mcinfo("SYSCTL: %08x PRSSTAT: %08x IRQSTATEN: %08x\n",
-         getreg32(IMXRT_USDHC1_SYSCTL), getreg32(IMXRT_USDHC1_PRSSTAT),
-         getreg32(IMXRT_USDHC1_IRQSTATEN));
+	mcinfo("SYSCTL: %08x PRSSTAT: %08x IRQSTATEN: %08x\n",
+		getreg32(IMXRT_USDHC1_SYSCTL), getreg32(IMXRT_USDHC1_PRSSTAT),
+		getreg32(IMXRT_USDHC1_IRQSTATEN));
 
-  /* The next phase of the hardware reset would be to set the SYSCTRL INITA
-   * bit to send 80 clock ticks for card to power up and then reset the card
-   * with CMD0.  This is done elsewhere.
-   */
+	/* The next phase of the hardware reset would be to set the SYSCTRL INITA
+	 * bit to send 80 clock ticks for card to power up and then reset the card
+	 * with CMD0.  This is done elsewhere.
+	 */
 
-  /* Reset state data */
+	/* Reset state data */
 
-  priv->waitevents = 0;      /* Set of events to be waited for */
-  priv->waitints   = 0;      /* Interrupt enables for event waiting */
-  priv->wkupevent  = 0;      /* The event that caused the wakeup */
+	priv->waitevents = 0;      /* Set of events to be waited for */
+	priv->waitints   = 0;      /* Interrupt enables for event waiting */
+	priv->wkupevent  = 0;      /* The event that caused the wakeup */
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  priv->xfrflags   = 0;      /* Used to synchronize SDIO and DMA completion
-                              * events */
+	priv->xfrflags   = 0;      /* Used to synchronize SDIO and DMA completion
+				    * events */
 #endif
 
-  wd_cancel(priv->waitwdog); /* Cancel any timeouts */
+	wd_cancel(priv->waitwdog); /* Cancel any timeouts */
 
-  /* Interrupt mode data transfer support */
+	/* Interrupt mode data transfer support */
 
-  priv->buffer     = 0;      /* Address of current R/W buffer */
-  priv->remaining  = 0;      /* Number of bytes remaining in the transfer */
-  priv->xfrints    = 0;      /* Interrupt enables for data transfer */
+	priv->buffer     = 0;      /* Address of current R/W buffer */
+	priv->remaining  = 0;      /* Number of bytes remaining in the transfer */
+	priv->xfrints    = 0;      /* Interrupt enables for data transfer */
 }
 
 /****************************************************************************
@@ -1281,17 +1245,17 @@ static void imxrt_reset(FAR struct sdio_dev_s *dev)
 
 static sdio_capset_t imxrt_capabilities(FAR struct sdio_dev_s *dev)
 {
-  sdio_capset_t caps = 0;
+	sdio_capset_t caps = 0;
 
 #ifdef CONFIG_IMXRT_USDHC_WIDTH_D1_ONLY
-  caps |= SDIO_CAPS_1BIT_ONLY;
+	caps |= SDIO_CAPS_1BIT_ONLY;
 #endif
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  caps |= SDIO_CAPS_DMASUPPORTED;
+	caps |= SDIO_CAPS_DMASUPPORTED;
 #endif
-  caps |= SDIO_CAPS_DMABEFOREWRITE;
+	caps |= SDIO_CAPS_DMABEFOREWRITE;
 
-  return caps;
+	return caps;
 }
 
 /****************************************************************************
@@ -1310,24 +1274,21 @@ static sdio_capset_t imxrt_capabilities(FAR struct sdio_dev_s *dev)
 
 static sdio_statset_t imxrt_status(FAR struct sdio_dev_s *dev)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  /* This register reflects the state of CD no matter if it's a separate pin
-   * or DAT3
-   */
+	/* This register reflects the state of CD no matter if it's a separate pin
+	 * or DAT3
+	 */
 
-  if ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_CINS) != 0)
-    {
-      priv->cdstatus |= SDIO_STATUS_PRESENT;
-    }
-  else
-    {
-      priv->cdstatus &= ~SDIO_STATUS_PRESENT;
-    }
+	if ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_CINS) != 0) {
+		priv->cdstatus |= SDIO_STATUS_PRESENT;
+	} else {
+		priv->cdstatus &= ~SDIO_STATUS_PRESENT;
+	}
 
-  mcinfo("cdstatus=%02x\n", priv->cdstatus);
+	mcinfo("cdstatus=%02x\n", priv->cdstatus);
 
-  return priv->cdstatus;
+	return priv->cdstatus;
 }
 /****************************************************************************
  * Name: imxrt_widebus
@@ -1348,22 +1309,19 @@ static sdio_statset_t imxrt_status(FAR struct sdio_dev_s *dev)
 
 static void imxrt_widebus(FAR struct sdio_dev_s *dev, bool wide)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Set the Data Transfer Width (DTW) field in the PROCTL register. */
+	/* Set the Data Transfer Width (DTW) field in the PROCTL register. */
 
-  regval = getreg32(IMXRT_USDHC1_PROCTL);
-  regval &= ~USDHC_PROCTL_DTW_MASK;
-  if (wide)
-    {
-      regval |= USDHC_PROCTL_DTW_4BIT;
-    }
-  else
-    {
-      regval |= USDHC_PROCTL_DTW_1BIT;
-    }
+	regval = getreg32(IMXRT_USDHC1_PROCTL);
+	regval &= ~USDHC_PROCTL_DTW_MASK;
+	if (wide) {
+		regval |= USDHC_PROCTL_DTW_4BIT;
+	} else {
+		regval |= USDHC_PROCTL_DTW_1BIT;
+	}
 
-  putreg32(regval, IMXRT_USDHC1_PROCTL);
+	putreg32(regval, IMXRT_USDHC1_PROCTL);
 }
 
 /****************************************************************************
@@ -1384,121 +1342,106 @@ static void imxrt_widebus(FAR struct sdio_dev_s *dev, bool wide)
 #ifdef CONFIG_IMXRT_USDHC_ABSFREQ
 static void imxrt_frequency(FAR struct sdio_dev_s *dev, uint32_t frequency)
 {
-  uint32_t sdclkfs;
-  uint32_t prescaled;
-  uint32_t regval;
-  unsigned int prescaler;
-  unsigned int divisor;
+	uint32_t sdclkfs;
+	uint32_t prescaled;
+	uint32_t regval;
+	unsigned int prescaler;
+	unsigned int divisor;
 
-  /* The SDCLK frequency is determined by (1) the frequency of the base clock
-   * that was selected as the input clock, and (2) by a prescaler and a
-   * divisor that are selected here:
-   *
-   * SDCLK  frequency = (base clock) / (prescaler * divisor)
-   *
-   * The prescaler is avalable only for the values:  2, 4, 8, 16, 32, 64, 128,
-   * and 256.  Pick the smallest value of SDCLKFS that would result in an
-   * in-range frequency.
-   *
-   * For example, if the base clock frequency is 96 MHz, and the target
-   * frequency is 25 MHz, the following logic will select prescaler.
-   *
-   *   96MHz / 2  <= 25MHz <= 96MHz / 2 /16       -- YES, prescaler == 2
-   *
-   * If the target frequency is 400 kHz, the following logic will select
-   * prescaler:
-   *
-   *   96MHz / 2  <= 400KHz <= 96MHz / 2 / 16     -- NO
-   *   96MHz / 4  <= 400KHz <= 96MHz / 4 / 16     -- NO
-   *   96MHz / 8  <= 400KHz <= 96MHz / 8 / 16     -- NO
-   *   96MHz / 16 <= 400KHz <= 96MHz / 16 / 16    -- YES, prescaler == 16
-   */
+	/* The SDCLK frequency is determined by (1) the frequency of the base clock
+	 * that was selected as the input clock, and (2) by a prescaler and a
+	 * divisor that are selected here:
+	 *
+	 * SDCLK  frequency = (base clock) / (prescaler * divisor)
+	 *
+	 * The prescaler is avalable only for the values:  2, 4, 8, 16, 32, 64, 128,
+	 * and 256.  Pick the smallest value of SDCLKFS that would result in an
+	 * in-range frequency.
+	 *
+	 * For example, if the base clock frequency is 96 MHz, and the target
+	 * frequency is 25 MHz, the following logic will select prescaler.
+	 *
+	 *   96MHz / 2  <= 25MHz <= 96MHz / 2 /16       -- YES, prescaler == 2
+	 *
+	 * If the target frequency is 400 kHz, the following logic will select
+	 * prescaler:
+	 *
+	 *   96MHz / 2  <= 400KHz <= 96MHz / 2 / 16     -- NO
+	 *   96MHz / 4  <= 400KHz <= 96MHz / 4 / 16     -- NO
+	 *   96MHz / 8  <= 400KHz <= 96MHz / 8 / 16     -- NO
+	 *   96MHz / 16 <= 400KHz <= 96MHz / 16 / 16    -- YES, prescaler == 16
+	 */
 
-  if (/* frequency >= (BOARD_CORECLK_FREQ / 2) && */
-      frequency <= (BOARD_CORECLK_FREQ / 2 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV2;
-      prescaler = 2;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 4) &&
-           frequency <= (BOARD_CORECLK_FREQ / 4 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV4;
-      prescaler = 4;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 8) &&
-           frequency <= (BOARD_CORECLK_FREQ / 8 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV8;
-      prescaler = 8;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 16) &&
-           frequency <= (BOARD_CORECLK_FREQ / 16 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV16;
-      prescaler = 16;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 32) &&
-           frequency <= (BOARD_CORECLK_FREQ / 32 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV32;
-      prescaler = 32;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 64) &&
-           frequency <= (BOARD_CORECLK_FREQ / 64 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV64;
-      prescaler = 64;
-    }
-  else if (frequency >= (BOARD_CORECLK_FREQ / 128) &&
-           frequency <= (BOARD_CORECLK_FREQ / 128 / 16))
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV128;
-      prescaler = 128;
-    }
-  else /* if (frequency >= (BOARD_CORECLK_FREQ / 256) &&
-        *     frequency <= (BOARD_CORECLK_FREQ / 256 / 16)) */
-    {
-      sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV256;
-      prescaler = 256;
-    }
+	if (/* frequency >= (BOARD_CORECLK_FREQ / 2) && */
+	    frequency <= (BOARD_CORECLK_FREQ / 2 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV2;
+		prescaler = 2;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 4) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 4 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV4;
+		prescaler = 4;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 8) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 8 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV8;
+		prescaler = 8;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 16) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 16 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV16;
+		prescaler = 16;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 32) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 32 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV32;
+		prescaler = 32;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 64) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 64 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV64;
+		prescaler = 64;
+	} else if (frequency >= (BOARD_CORECLK_FREQ / 128) &&
+	    frequency <= (BOARD_CORECLK_FREQ / 128 / 16)) {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV128;
+		prescaler = 128;
+	} else /* if (frequency >= (BOARD_CORECLK_FREQ / 256) &&
+		*     frequency <= (BOARD_CORECLK_FREQ / 256 / 16)) */ {
+		sdclkfs   = USDHC_SYSCTL_SDCLKFS_DIV256;
+		prescaler = 256;
+	}
 
-  /* The optimal divider can than be calculated.
-   *
-   * For example, if the base clock frequency is 96 MHz, the target
-   * frequency is 25 MHz, and the selected prescaler value is 2, then
-   *
-   *   prescaled = 96MHz / 2 = 48MHz
-   *   divisor   = (48MHz + 12.5HMz/ 25MHz = 2
-   *
-   * And the resulting frequency will be 24MHz.
-   *
-   * Or, for example, if the target frequency is 400 kHz and the selected
-   * prescaler is 16, the following* logic will select prescaler:
-   *
-   *   prescaled = 96MHz / 16 = 6MHz
-   *   divisor   = (6MHz + 200KHz) / 400KHz = 15
-   *
-   * And the restuling frequency will be exactly 400KHz.
-   */
+	/* The optimal divider can than be calculated.
+	 *
+	 * For example, if the base clock frequency is 96 MHz, the target
+	 * frequency is 25 MHz, and the selected prescaler value is 2, then
+	 *
+	 *   prescaled = 96MHz / 2 = 48MHz
+	 *   divisor   = (48MHz + 12.5HMz/ 25MHz = 2
+	 *
+	 * And the resulting frequency will be 24MHz.
+	 *
+	 * Or, for example, if the target frequency is 400 kHz and the selected
+	 * prescaler is 16, the following* logic will select prescaler:
+	 *
+	 *   prescaled = 96MHz / 16 = 6MHz
+	 *   divisor   = (6MHz + 200KHz) / 400KHz = 15
+	 *
+	 * And the restuling frequency will be exactly 400KHz.
+	 */
 
-  prescaled = frequency / prescaler;
-  divisor   = (prescaled + (frequency >> 1)) / frequency;
+	prescaled = frequency / prescaler;
+	divisor   = (prescaled + (frequency >> 1)) / frequency;
 
-  /* Set the new divisor information and enable all clocks in the SYSCTRL
-   * register.
-   *
-   * TODO:  Investigate using the automatically gated clocks to reduce power
-   *        consumption.
-   */
+	/* Set the new divisor information and enable all clocks in the SYSCTRL
+	 * register.
+	 *
+	 * TODO:  Investigate using the automatically gated clocks to reduce power
+	 *        consumption.
+	 */
 
-  regval  = getreg32(IMXRT_USDHC1_SYSCTL);
-  regval &= ~(USDHC_SYSCTL_SDCLKFS_MASK | USDHC_SYSCTL_DVS_MASK);
-  regval |= (sdclkfs | USDHC_SYSCTL_DVS_DIV(divisor));
-  regval |= (USDHC_SYSCTL_SDCLKEN | USDHC_SYSCTL_PEREN | USDHC_SYSCTL_HCKEN |
-             USDHC_SYSCTL_IPGEN);
-  putreg32(regval, IMXRT_USDHC1_SYSCTL);
-  mcinfo("SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
+	regval  = getreg32(IMXRT_USDHC1_SYSCTL);
+	regval &= ~(USDHC_SYSCTL_SDCLKFS_MASK | USDHC_SYSCTL_DVS_MASK);
+	regval |= (sdclkfs | USDHC_SYSCTL_DVS_DIV(divisor));
+	regval |= (USDHC_SYSCTL_SDCLKEN | USDHC_SYSCTL_PEREN | USDHC_SYSCTL_HCKEN |
+		   USDHC_SYSCTL_IPGEN);
+	putreg32(regval, IMXRT_USDHC1_SYSCTL);
+	mcinfo("SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
 }
 #endif
 
@@ -1519,78 +1462,75 @@ static void imxrt_frequency(FAR struct sdio_dev_s *dev, uint32_t frequency)
 
 static void imxrt_clock(FAR struct sdio_dev_s *dev, enum sdio_clock_e rate)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Clear the old prescaler and divisor values so that new ones can be ORed
-   * in.
-   */
+	/* Clear the old prescaler and divisor values so that new ones can be ORed
+	 * in.
+	 */
 
-  regval = getreg32(IMXRT_USDHC1_SYSCTL);
-  regval &= ~(USDHC_SYSCTL_SDCLKFS_MASK | USDHC_SYSCTL_DVS_MASK);
+	regval = getreg32(IMXRT_USDHC1_SYSCTL);
+	regval &= ~(USDHC_SYSCTL_SDCLKFS_MASK | USDHC_SYSCTL_DVS_MASK);
 
-  /* Select the new prescaler and divisor values based on the requested mode
-   * and the settings from the board.h file.
-   *
-   * Clocks are automatically gated by the driver when not needed.
-   *
-   */
+	/* Select the new prescaler and divisor values based on the requested mode
+	 * and the settings from the board.h file.
+	 *
+	 * Clocks are automatically gated by the driver when not needed.
+	 *
+	 */
 
-  switch (rate)
-    {
-      default:
-      case CLOCK_SDIO_DISABLED :     /* Clock is disabled */
-        {
-          /* Clear the prescaler and divisor settings */
+	switch (rate) {
+	default:
+	case CLOCK_SDIO_DISABLED :     /* Clock is disabled */
+	{
+		/* Clear the prescaler and divisor settings */
 
-          putreg32(regval, IMXRT_USDHC1_SYSCTL);
-          mcinfo("DISABLED, SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
-          return;
-        }
+		putreg32(regval, IMXRT_USDHC1_SYSCTL);
+		mcinfo("DISABLED, SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
+		return;
+	}
 
-      case CLOCK_IDMODE :            /* Initial ID mode clocking (<400KHz) */
-        mcinfo("IDMODE\n");
+	case CLOCK_IDMODE :            /* Initial ID mode clocking (<400KHz) */
+		mcinfo("IDMODE\n");
 
-        /* Put out an additional 80 clocks in case this is a power-up sequence */
+		/* Put out an additional 80 clocks in case this is a power-up sequence */
 
-        regval |= (BOARD_USDHC_IDMODE_PRESCALER |
-                   BOARD_USDHC_IDMODE_DIVISOR | USDHC_SYSCTL_INITA);
-        break;
+		regval |= (BOARD_USDHC_IDMODE_PRESCALER |
+			   BOARD_USDHC_IDMODE_DIVISOR | USDHC_SYSCTL_INITA);
+		break;
 
-      case CLOCK_MMC_TRANSFER :      /* MMC normal operation clocking */
-        mcinfo("MMCTRANSFER\n");
+	case CLOCK_MMC_TRANSFER :      /* MMC normal operation clocking */
+		mcinfo("MMCTRANSFER\n");
 
-        regval |= (BOARD_USDHC_MMCMODE_PRESCALER |
-                   BOARD_USDHC_MMCMODE_DIVISOR);
-        break;
+		regval |= (BOARD_USDHC_MMCMODE_PRESCALER |
+			   BOARD_USDHC_MMCMODE_DIVISOR);
+		break;
 
-      case CLOCK_SD_TRANSFER_1BIT :  /* SD normal operation clocking (narrow
-                                      * 1-bit mode) */
+	case CLOCK_SD_TRANSFER_1BIT :  /* SD normal operation clocking (narrow
+					* 1-bit mode) */
 #ifndef CONFIG_IMXRT_USDHC_WIDTH_D1_ONLY
-        mcinfo("1BITTRANSFER\n");
+		mcinfo("1BITTRANSFER\n");
 
-        regval |= (BOARD_USDHC_SD1MODE_PRESCALER |
-                   BOARD_USDHC_SD1MODE_DIVISOR);
-        break;
+		regval |= (BOARD_USDHC_SD1MODE_PRESCALER |
+			   BOARD_USDHC_SD1MODE_DIVISOR);
+		break;
 #endif
 
-      case CLOCK_SD_TRANSFER_4BIT :  /* SD normal operation clocking (wide
-                                      * 4-bit mode) */
-        mcinfo("4BITTRANSFER\n");
+	case CLOCK_SD_TRANSFER_4BIT :  /* SD normal operation clocking (wide
+					* 4-bit mode) */
+		mcinfo("4BITTRANSFER\n");
 
-        regval |= (BOARD_USDHC_SD4MODE_PRESCALER |
-                   BOARD_USDHC_SD4MODE_DIVISOR);
-        break;
-    }
+		regval |= (BOARD_USDHC_SD4MODE_PRESCALER |
+			   BOARD_USDHC_SD4MODE_DIVISOR);
+		break;
+	}
 
-  putreg32(regval, IMXRT_USDHC1_SYSCTL);
+	putreg32(regval, IMXRT_USDHC1_SYSCTL);
 
-  /* Wait for clock to become stable */
+	/* Wait for clock to become stable */
 
-  while ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_SDSTB) == 0)
-    {
-    }
+	while ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_SDSTB) == 0) {}
 
-  mcinfo("SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
+	mcinfo("SYSCTRL: %08x\n", getreg32(IMXRT_USDHC1_SYSCTL));
 }
 
 /****************************************************************************
@@ -1609,28 +1549,27 @@ static void imxrt_clock(FAR struct sdio_dev_s *dev, enum sdio_clock_e rate)
 
 static int imxrt_attach(FAR struct sdio_dev_s *dev)
 {
-  int ret;
+	int ret;
 
-  /* Attach the SDIO interrupt handler */
+	/* Attach the SDIO interrupt handler */
 
-  ret = irq_attach(IMXRT_IRQ_USDHC1, imxrt_interrupt, NULL);
-  if (ret == OK)
-    {
-      /* Disable all interrupts at the SDIO controller and clear all pending
-       * interrupts.
-       */
+	ret = irq_attach(IMXRT_IRQ_USDHC1, imxrt_interrupt, NULL);
+	if (ret == OK) {
+		/* Disable all interrupts at the SDIO controller and clear all pending
+		 * interrupts.
+		 */
 
-      putreg32(0 ,            IMXRT_USDHC1_IRQSIGEN);
-      putreg32(USDHC_INT_ALL, IMXRT_USDHC1_IRQSTAT);
+		putreg32(0 ,            IMXRT_USDHC1_IRQSIGEN);
+		putreg32(USDHC_INT_ALL, IMXRT_USDHC1_IRQSTAT);
 
-      /* Enable SDIO interrupts at the NVIC.  They can now be enabled at
-       * the SDIO controller as needed.
-       */
+		/* Enable SDIO interrupts at the NVIC.  They can now be enabled at
+		 * the SDIO controller as needed.
+		 */
 
-      up_enable_irq(IMXRT_IRQ_USDHC1);
-    }
+		up_enable_irq(IMXRT_IRQ_USDHC1);
+	}
 
-  return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -1650,152 +1589,144 @@ static int imxrt_attach(FAR struct sdio_dev_s *dev)
  ****************************************************************************/
 
 static int imxrt_sendcmd(FAR struct sdio_dev_s *dev, uint32_t cmd,
-                         uint32_t arg)
+			uint32_t arg)
 {
-  clock_t timeout;
-  clock_t start;
-  clock_t elapsed;
-  uint32_t regval;
-  uint32_t mcrregval;
-  uint32_t cmdidx;
+	clock_t timeout;
+	clock_t start;
+	clock_t elapsed;
+	uint32_t regval;
+	uint32_t mcrregval;
+	uint32_t cmdidx;
 
-  /* Initialize the command index */
+	/* Initialize the command index */
 
-  cmdidx    = (cmd & MMCSD_CMDIDX_MASK) >> MMCSD_CMDIDX_SHIFT;
-  regval    = cmdidx << USDHC_XFERTYP_CMDINX_SHIFT;
-  mcrregval = USDHC_MC_DEFAULTVAL;
+	cmdidx    = (cmd & MMCSD_CMDIDX_MASK) >> MMCSD_CMDIDX_SHIFT;
+	regval    = cmdidx << USDHC_XFERTYP_CMDINX_SHIFT;
+	mcrregval = USDHC_MC_DEFAULTVAL;
 
-  /* Check if a data transfer accompanies the command */
+	/* Check if a data transfer accompanies the command */
 
-  switch (cmd & MMCSD_DATAXFR_MASK)
-    {
-      default:
-      case MMCSD_NODATAXFR : /* No.. no data transfer */
-          break;
+	switch (cmd & MMCSD_DATAXFR_MASK) {
+	default:
+	case MMCSD_NODATAXFR : /* No.. no data transfer */
+		break;
 
-      /* The following two cases are probably missing some setup logic */
+	/* The following two cases are probably missing some setup logic */
 
-      case MMCSD_RDSTREAM :  /* Yes.. streaming read data transfer */
-          regval |= USDHC_XFERTYP_DPSEL;
-          mcrregval |= USDHC_MC_DTDSEL;
-          break;
+	case MMCSD_RDSTREAM :  /* Yes.. streaming read data transfer */
+		regval |= USDHC_XFERTYP_DPSEL;
+		mcrregval |= USDHC_MC_DTDSEL;
+		break;
 
-      case MMCSD_WRSTREAM :  /* Yes.. streaming write data transfer */
-          regval |= USDHC_XFERTYP_DPSEL;
-          break;
+	case MMCSD_WRSTREAM :  /* Yes.. streaming write data transfer */
+		regval |= USDHC_XFERTYP_DPSEL;
+		break;
 
-      case MMCSD_RDDATAXFR : /* Yes.. normal read data transfer */
-          regval |= USDHC_XFERTYP_DPSEL;
-          mcrregval |= USDHC_MC_DTDSEL;
-          break;
+	case MMCSD_RDDATAXFR : /* Yes.. normal read data transfer */
+		regval |= USDHC_XFERTYP_DPSEL;
+		mcrregval |= USDHC_MC_DTDSEL;
+		break;
 
-      case MMCSD_WRDATAXFR : /* Yes.. normal write data transfer */
-          regval |= USDHC_XFERTYP_DPSEL;
-          break;
-    }
+	case MMCSD_WRDATAXFR : /* Yes.. normal write data transfer */
+		regval |= USDHC_XFERTYP_DPSEL;
+		break;
+	}
 
-  /* Is it a multi-block transfer? */
+	/* Is it a multi-block transfer? */
 
-  if ((cmd & MMCSD_MULTIBLOCK) != 0)
-    {
-      /* Yes.. should the transfer be stopped with ACMD12? */
+	if ((cmd & MMCSD_MULTIBLOCK) != 0) {
+		/* Yes.. should the transfer be stopped with ACMD12? */
 
-      if ((cmd & MMCSD_STOPXFR) != 0)
-        {
-          /* Yes.. Indefinite block transfer */
+		if ((cmd & MMCSD_STOPXFR) != 0) {
+			/* Yes.. Indefinite block transfer */
 
-          mcrregval |= USDHC_MC_MSBSEL | USDHC_MC_AC12EN;
-        }
-      else
-        {
-          /* No.. Fixed block transfer */
+			mcrregval |= USDHC_MC_MSBSEL | USDHC_MC_AC12EN;
+		} else {
+			/* No.. Fixed block transfer */
 
-          mcrregval |= USDHC_MC_MSBSEL | USDHC_MC_BCEN;
-        }
-    }
+			mcrregval |= USDHC_MC_MSBSEL | USDHC_MC_BCEN;
+		}
+	}
 
-  /* Configure response type bits */
+	/* Configure response type bits */
 
-  switch (cmd & MMCSD_RESPONSE_MASK)
-    {
-      case MMCSD_NO_RESPONSE:                /* No response */
-        regval |= USDHC_XFERTYP_RSPTYP_NONE;
-        break;
+	switch (cmd & MMCSD_RESPONSE_MASK) {
+	case MMCSD_NO_RESPONSE:                /* No response */
+		regval |= USDHC_XFERTYP_RSPTYP_NONE;
+		break;
 
       case MMCSD_R1B_RESPONSE:              /* Response length 48, check busy & cmdindex */
-        regval |= (USDHC_XFERTYP_RSPTYP_LEN48BSY | USDHC_XFERTYP_CICEN |
-                   USDHC_XFERTYP_CCCEN);
-        break;
+		regval |= (USDHC_XFERTYP_RSPTYP_LEN48BSY | USDHC_XFERTYP_CICEN |
+			   USDHC_XFERTYP_CCCEN);
+		break;
 
       case MMCSD_R1_RESPONSE:              /* Response length 48, check cmdindex */
       case MMCSD_R5_RESPONSE:
       case MMCSD_R6_RESPONSE:
-        regval |= (USDHC_XFERTYP_RSPTYP_LEN48 | USDHC_XFERTYP_CICEN |
-                   USDHC_XFERTYP_CCCEN);
-        break;
+		regval |= (USDHC_XFERTYP_RSPTYP_LEN48 | USDHC_XFERTYP_CICEN |
+			   USDHC_XFERTYP_CCCEN);
+		break;
 
       case MMCSD_R2_RESPONSE:              /* Response length 136, check CRC */
-        regval |= (USDHC_XFERTYP_RSPTYP_LEN136 | USDHC_XFERTYP_CCCEN);
-        break;
+		regval |= (USDHC_XFERTYP_RSPTYP_LEN136 | USDHC_XFERTYP_CCCEN);
+		break;
 
       case MMCSD_R3_RESPONSE:              /* Response length 48 */
       case MMCSD_R4_RESPONSE:
       case MMCSD_R7_RESPONSE:
-        regval |= USDHC_XFERTYP_RSPTYP_LEN48;
-        break;
-    }
+		regval |= USDHC_XFERTYP_RSPTYP_LEN48;
+		break;
+	}
 
-  /* Enable DMA */
+	/* Enable DMA */
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  /* Internal DMA is used */
+	/* Internal DMA is used */
 
-  mcrregval |= USDHC_MC_DMAEN;
+	mcrregval |= USDHC_MC_DMAEN;
 #endif
 
-  /* Other bits? What about CMDTYP? */
+	/* Other bits? What about CMDTYP? */
 
-  mcinfo("cmd: %08x arg: %08x regval: %08x mcrval: %08x\n",
-         cmd, arg, regval, mcrregval);
+	mcinfo("cmd: %08x arg: %08x regval: %08x mcrval: %08x\n",
+		cmd, arg, regval, mcrregval);
 
-  /* The Command Inhibit (CIHB) bit is set in the PRSSTAT bit immediately
-   * after the transfer type register is written.  This bit is cleared when
-   * the command response is received.  If this status bit is 0, it
-   * indicates that the CMD line is not in use and the USDHC can issue a
-   * SD/MMC Command using the CMD line.
-   *
-   * CIHB should always be clear before this function is called, but this
-   * check is performed here to provide overlap and maximum performance.
-   */
+	/* The Command Inhibit (CIHB) bit is set in the PRSSTAT bit immediately
+	 * after the transfer type register is written.  This bit is cleared when
+	 * the command response is received.  If this status bit is 0, it
+	 * indicates that the CMD line is not in use and the USDHC can issue a
+	 * SD/MMC Command using the CMD line.
+	 *
+	 * CIHB should always be clear before this function is called, but this
+	 * check is performed here to provide overlap and maximum performance.
+	 */
 
-  timeout = USDHC_CMDTIMEOUT;
-  start   = clock_systimer();
+	timeout = USDHC_CMDTIMEOUT;
+	start   = clock_systimer();
 
-  while ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_CIHB) != 0)
-    {
-      /* Calculate the elapsed time */
+	while ((getreg32(IMXRT_USDHC1_PRSSTAT) & USDHC_PRSSTAT_CIHB) != 0) {
+		/* Calculate the elapsed time */
 
-      elapsed = clock_systimer() - start;
-      if (elapsed >= timeout)
-        {
-          mcerr("ERROR: Timeout (waiting CIHB) cmd: %08x PRSSTAT: %08x\n",
-                cmd, getreg32(IMXRT_USDHC1_PRSSTAT));
+		elapsed = clock_systimer() - start;
+		if (elapsed >= timeout) {
+			mcerr("ERROR: Timeout (waiting CIHB) cmd: %08x PRSSTAT: %08x\n",
+				cmd, getreg32(IMXRT_USDHC1_PRSSTAT));
 
-          return -EBUSY;
-        }
-    }
+			return -EBUSY;
+		}
+	}
 
-  /* Set the USDHC Argument value */
+	/* Set the USDHC Argument value */
 
-  putreg32(arg, IMXRT_USDHC1_CMDARG);
+	putreg32(arg, IMXRT_USDHC1_CMDARG);
 
-  /* Clear interrupt status and write the USDHC CMD */
+	/* Clear interrupt status and write the USDHC CMD */
 
-  putreg32(USDHC_RESPDONE_INTS, IMXRT_USDHC1_IRQSTAT);
-  putreg32(mcrregval, IMXRT_USDHC1_MIX);
-  putreg32(regval, IMXRT_USDHC1_XFERTYP);
+	putreg32(USDHC_RESPDONE_INTS, IMXRT_USDHC1_IRQSTAT);
+	putreg32(mcrregval, IMXRT_USDHC1_MIX);
+	putreg32(regval, IMXRT_USDHC1_XFERTYP);
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -1816,15 +1747,15 @@ static int imxrt_sendcmd(FAR struct sdio_dev_s *dev, uint32_t cmd,
 
 #ifdef CONFIG_SDIO_BLOCKSETUP
 static void imxrt_blocksetup(FAR struct sdio_dev_s *dev,
-                             unsigned int blocklen, unsigned int nblocks)
+			unsigned int blocklen, unsigned int nblocks)
 {
-  mcinfo("blocklen=%ld, total transfer=%ld (%ld blocks)\n",
-         blocklen, blocklen * nblocks, nblocks);
+	mcinfo("blocklen=%ld, total transfer=%ld (%ld blocks)\n",
+		blocklen, blocklen * nblocks, nblocks);
 
-  /* Configure block size for next transfer */
+	/* Configure block size for next transfer */
 
-  putreg32(USDHC_BLKATTR_SIZE(blocklen) | USDHC_BLKATTR_CNT(nblocks),
-           IMXRT_USDHC1_BLKATTR);
+	putreg32(USDHC_BLKATTR_SIZE(blocklen) | USDHC_BLKATTR_CNT(nblocks),
+		IMXRT_USDHC1_BLKATTR);
 }
 #endif
 
@@ -1851,34 +1782,34 @@ static void imxrt_blocksetup(FAR struct sdio_dev_s *dev,
 
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static int imxrt_recvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
-                             size_t nbytes)
+			size_t nbytes)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  DEBUGASSERT(priv != NULL && buffer != NULL && nbytes > 0);
-  DEBUGASSERT(((uint32_t)buffer & 3) == 0);
+	DEBUGASSERT(priv != NULL && buffer != NULL && nbytes > 0);
+	DEBUGASSERT(((uint32_t)buffer & 3) == 0);
 
-  /* Reset the DPSM configuration */
+	/* Reset the DPSM configuration */
 
-  imxrt_sampleinit();
-  imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
+	imxrt_sampleinit();
+	imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
 
-  /* Save the destination buffer information for use by the interrupt handler
-   * and DMA memory invalidation.
-   */
+	/* Save the destination buffer information for use by the interrupt handler
+	 * and DMA memory invalidation.
+	 */
 
-  priv->buffer    = (uint32_t *)buffer;
-  priv->remaining = nbytes;
+	priv->buffer    = (uint32_t *)buffer;
+	priv->remaining = nbytes;
 
-  /* Then set up the SDIO data path */
+	/* Then set up the SDIO data path */
 
-  imxrt_dataconfig(priv, false, nbytes, USDHC_DTOCV_MAXTIMEOUT);
+	imxrt_dataconfig(priv, false, nbytes, USDHC_DTOCV_MAXTIMEOUT);
 
-  /* And enable interrupts */
+	/* And enable interrupts */
 
-  imxrt_configxfrints(priv, USDHC_RCVDONE_INTS);
-  imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
-  return OK;
+	imxrt_configxfrints(priv, USDHC_RCVDONE_INTS);
+	imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
+	return OK;
 }
 #endif
 
@@ -1903,32 +1834,32 @@ static int imxrt_recvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
 
 #ifndef CONFIG_IMXRT_USDHC_DMA
 static int imxrt_sendsetup(FAR struct sdio_dev_s *dev,
-                           FAR const uint8_t *buffer, size_t nbytes)
+			FAR const uint8_t *buffer, size_t nbytes)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  DEBUGASSERT(priv != NULL && buffer != NULL && nbytes > 0);
-  DEBUGASSERT(((uint32_t)buffer & 3) == 0);
+	DEBUGASSERT(priv != NULL && buffer != NULL && nbytes > 0);
+	DEBUGASSERT(((uint32_t)buffer & 3) == 0);
 
-  /* Reset the DPSM configuration */
+	/* Reset the DPSM configuration */
 
-  imxrt_sampleinit();
-  imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
+	imxrt_sampleinit();
+	imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
 
-  /* Save the source buffer information for use by the interrupt handler */
+	/* Save the source buffer information for use by the interrupt handler */
 
-  priv->buffer    = (uint32_t *)buffer;
-  priv->remaining = nbytes;
+	priv->buffer    = (uint32_t *)buffer;
+	priv->remaining = nbytes;
 
-  /* Then set up the SDIO data path */
+	/* Then set up the SDIO data path */
 
-  imxrt_dataconfig(priv, true, nbytes, USDHC_DTOCV_MAXTIMEOUT);
+	imxrt_dataconfig(priv, true, nbytes, USDHC_DTOCV_MAXTIMEOUT);
 
-  /* Enable TX interrupts */
+	/* Enable TX interrupts */
 
-  imxrt_configxfrints(priv, USDHC_SNDDONE_INTS);
-  imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
-  return OK;
+	imxrt_configxfrints(priv, USDHC_SNDDONE_INTS);
+	imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
+	return OK;
 }
 #endif
 
@@ -1951,40 +1882,40 @@ static int imxrt_sendsetup(FAR struct sdio_dev_s *dev,
 
 static int imxrt_cancel(FAR struct sdio_dev_s *dev)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  uint32_t regval;
+	uint32_t regval;
 #endif
 
-  /* Disable all transfer- and event- related interrupts */
+	/* Disable all transfer- and event- related interrupts */
 
-  imxrt_configxfrints(priv, 0);
-  imxrt_configwaitints(priv, 0, 0, 0);
+	imxrt_configxfrints(priv, 0);
+	imxrt_configwaitints(priv, 0, 0, 0);
 
-  /* Clearing pending interrupt status on all transfer- and event- related
-   * interrupts
-   */
+	/* Clearing pending interrupt status on all transfer- and event- related
+	 * interrupts
+	 */
 
-  putreg32(USDHC_WAITALL_INTS, IMXRT_USDHC1_IRQSTAT);
+	putreg32(USDHC_WAITALL_INTS, IMXRT_USDHC1_IRQSTAT);
 
-  /* Cancel any watchdog timeout */
+	/* Cancel any watchdog timeout */
 
-  (void)wd_cancel(priv->waitwdog);
+	(void)wd_cancel(priv->waitwdog);
 
-  /* If this was a DMA transfer, make sure that DMA is stopped */
+	/* If this was a DMA transfer, make sure that DMA is stopped */
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  /* Stop the DMA by resetting the data path */
+	/* Stop the DMA by resetting the data path */
 
-  regval = getreg32(IMXRT_USDHC1_SYSCTL);
-  regval |= USDHC_SYSCTL_RSTD;
-  putreg32(regval, IMXRT_USDHC1_SYSCTL);
+	regval = getreg32(IMXRT_USDHC1_SYSCTL);
+	regval |= USDHC_SYSCTL_RSTD;
+	putreg32(regval, IMXRT_USDHC1_SYSCTL);
 #endif
 
-  /* Mark no transfer in progress */
+	/* Mark no transfer in progress */
 
-  priv->remaining = 0;
-  return OK;
+	priv->remaining = 0;
+	return OK;
 }
 
 /****************************************************************************
@@ -2007,75 +1938,71 @@ static int imxrt_cancel(FAR struct sdio_dev_s *dev)
 
 static int imxrt_waitresponse(FAR struct sdio_dev_s *dev, uint32_t cmd)
 {
-  clock_t timeout;
-  clock_t start;
-  clock_t elapsed;
-  uint32_t errors;
-  int ret = OK;
+	clock_t timeout;
+	clock_t start;
+	clock_t elapsed;
+	uint32_t errors;
+	int ret = OK;
 
-  switch (cmd & MMCSD_RESPONSE_MASK)
-    {
-      case MMCSD_NO_RESPONSE:
-        timeout = USDHC_CMDTIMEOUT;
-        errors  = 0;
-        return OK;
+	switch (cmd & MMCSD_RESPONSE_MASK) {
+	case MMCSD_NO_RESPONSE:
+		timeout = USDHC_CMDTIMEOUT;
+		errors  = 0;
+		return OK;
 
-      case MMCSD_R1_RESPONSE:
-      case MMCSD_R1B_RESPONSE:
-      case MMCSD_R2_RESPONSE:
-      case MMCSD_R6_RESPONSE:
-        timeout = USDHC_LONGTIMEOUT;
-        errors  = USDHC_RESPERR_INTS;
-        break;
+	case MMCSD_R1_RESPONSE:
+	case MMCSD_R1B_RESPONSE:
+	case MMCSD_R2_RESPONSE:
+	case MMCSD_R6_RESPONSE:
+		timeout = USDHC_LONGTIMEOUT;
+		errors  = USDHC_RESPERR_INTS;
+		break;
 
-      case MMCSD_R4_RESPONSE:
-      case MMCSD_R5_RESPONSE:
-        return -ENOSYS;
+	case MMCSD_R4_RESPONSE:
+	case MMCSD_R5_RESPONSE:
+		return -ENOSYS;
 
-      case MMCSD_R3_RESPONSE:
-      case MMCSD_R7_RESPONSE:
-        timeout = USDHC_CMDTIMEOUT;
-        errors  = USDHC_RESPERR_INTS;
-        break;
+	case MMCSD_R3_RESPONSE:
+	case MMCSD_R7_RESPONSE:
+		timeout = USDHC_CMDTIMEOUT;
+		errors  = USDHC_RESPERR_INTS;
+		break;
 
-      default:
-        return -EINVAL;
-    }
+	default:
+		return -EINVAL;
+	}
 
-  /* Then wait for the Command Complete (CC) indication (or timeout).  The
-   * CC bit is set when the end bit of the command response is received
-   * (except Auto CMD12).
-   */
+	/* Then wait for the Command Complete (CC) indication (or timeout).  The
+	 * CC bit is set when the end bit of the command response is received
+	 * (except Auto CMD12).
+	 */
 
-  start = clock_systimer();
+	start = clock_systimer();
 
-  while ((getreg32(IMXRT_USDHC1_IRQSTAT) & USDHC_INT_CC) == 0)
-    {
-      /* Calculate the elapsed time */
+	while ((getreg32(IMXRT_USDHC1_IRQSTAT) & USDHC_INT_CC) == 0) {
+		/* Calculate the elapsed time */
 
-      elapsed = clock_systimer() - start;
-      if (elapsed >= timeout)
-        {
-          mcerr("ERROR: Timeout cmd: %08x IRQSTAT: %08x\n",
-                cmd, getreg32(IMXRT_USDHC1_IRQSTAT));
+		elapsed = clock_systimer() - start;
+		if (elapsed >= timeout) {
+			mcerr("ERROR: Timeout cmd: %08x IRQSTAT: %08x\n",
+				cmd, getreg32(IMXRT_USDHC1_IRQSTAT));
 
-          return -ETIMEDOUT;
-        }
-    }
+			return -ETIMEDOUT;
+		}
+	}
 
-  /* Check for hardware detected errors */
+	/* Check for hardware detected errors */
 
-  if ((getreg32(IMXRT_USDHC1_IRQSTAT) & errors) != 0)
-    {
-      mcerr("ERROR: cmd: %08x errors: %08x IRQSTAT: %08x\n",
-            cmd, errors, getreg32(IMXRT_USDHC1_IRQSTAT));
-      ret = -EIO;
-    }
+	if ((getreg32(IMXRT_USDHC1_IRQSTAT) & errors) != 0) {
+		mcerr("ERROR: cmd: %08x errors: %08x IRQSTAT: %08x\n",
+			cmd, errors, getreg32(IMXRT_USDHC1_IRQSTAT));
+		ret = -EIO;
+	}
 
-  /* Clear the response wait status bits */
+	/* Clear the response wait status bits */
 
-  putreg32(USDHC_RESPDONE_INTS, IMXRT_USDHC1_IRQSTAT);
-  return ret;
+	putreg32(USDHC_RESPDONE_INTS, IMXRT_USDHC1_IRQSTAT);
+	return ret;
 }
 
 /****************************************************************************
@@ -2101,198 +2028,182 @@ static int imxrt_waitresponse(FAR struct sdio_dev_s *dev, uint32_t cmd)
  ****************************************************************************/
 
 static int imxrt_recvshortcrc(FAR struct sdio_dev_s *dev, uint32_t cmd,
-                                uint32_t *rshort)
+			uint32_t *rshort)
 {
-  uint32_t regval;
-  int ret = OK;
+	uint32_t regval;
+	int ret = OK;
 
-  /* R1  Command response (48-bit)
-   *     47        0               Start bit
-   *     46        0               Transmission bit (0=from card)
-   *     45:40     bit5   - bit0   Command index (0-63)
-   *     39:8      bit31  - bit0   32-bit card status
-   *     7:1       bit6   - bit0   CRC7
-   *     0         1               End bit
-   *
-   * R1b Identical to R1 with the additional busy signalling via the data
-   *     line.
-   *
-   * R6  Published RCA Response (48-bit, SD card only)
-   *     47        0               Start bit
-   *     46        0               Transmission bit (0=from card)
-   *     45:40     bit5   - bit0   Command index (0-63)
-   *     39:8      bit31  - bit0   32-bit Argument Field, consisting of:
-   *                               [31:16] New published RCA of card
-   *                               [15:0]  Card status bits {23,22,19,12:0}
-   *     7:1       bit6   - bit0   CRC7
-   *     0         1               End bit
-   */
+	/* R1  Command response (48-bit)
+	 *     47        0               Start bit
+	 *     46        0               Transmission bit (0=from card)
+	 *     45:40     bit5   - bit0   Command index (0-63)
+	 *     39:8      bit31  - bit0   32-bit card status
+	 *     7:1       bit6   - bit0   CRC7
+	 *     0         1               End bit
+	 *
+	 * R1b Identical to R1 with the additional busy signalling via the data
+	 *     line.
+	 *
+	 * R6  Published RCA Response (48-bit, SD card only)
+	 *     47        0               Start bit
+	 *     46        0               Transmission bit (0=from card)
+	 *     45:40     bit5   - bit0   Command index (0-63)
+	 *     39:8      bit31  - bit0   32-bit Argument Field, consisting of:
+	 *                               [31:16] New published RCA of card
+	 *                               [15:0]  Card status bits {23,22,19,12:0}
+	 *     7:1       bit6   - bit0   CRC7
+	 *     0         1               End bit
+	 */
 
 #ifdef CONFIG_DEBUG_FEATURES
-  if (!rshort)
-    {
-      mcerr("ERROR: rshort=NULL\n");
-      ret = -EINVAL;
-    }
+	if (!rshort) {
+		mcerr("ERROR: rshort=NULL\n");
+		ret = -EINVAL;
+	}
 
-  /* Check that this is the correct response to this command */
+	/* Check that this is the correct response to this command */
 
-  else if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R1_RESPONSE &&
-           (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R1B_RESPONSE &&
-           (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R6_RESPONSE)
-    {
-      mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
-      ret = -EINVAL;
-    }
-  else
+	else if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R1_RESPONSE &&
+		 (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R1B_RESPONSE &&
+		 (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R6_RESPONSE) {
+		mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
+		ret = -EINVAL;
+	} else
 #endif
-    {
-      /* Check if a timeout or CRC error occurred */
+	{
+		/* Check if a timeout or CRC error occurred */
 
-      regval = getreg32(IMXRT_USDHC1_IRQSTAT);
-      if ((regval & USDHC_INT_CTOE) != 0)
-        {
-          mcerr("ERROR: Command timeout: %08x\n", regval);
-          ret = -ETIMEDOUT;
-        }
-      else if ((regval & USDHC_INT_CCE) != 0)
-        {
-          mcerr("ERROR: CRC failure: %08x\n", regval);
-          ret = -EIO;
-        }
-    }
+		regval = getreg32(IMXRT_USDHC1_IRQSTAT);
+		if ((regval & USDHC_INT_CTOE) != 0) {
+			mcerr("ERROR: Command timeout: %08x\n", regval);
+			ret = -ETIMEDOUT;
+		} else if ((regval & USDHC_INT_CCE) != 0) {
+			mcerr("ERROR: CRC failure: %08x\n", regval);
+			ret = -EIO;
+		}
+	}
 
-  /* Return the R1/R1b/R6 response.  These responses are returned in
-   * CDMRSP0.  NOTE: This is not true for R1b (Auto CMD12 response) which
-   * is returned in CMDRSP3.
-   */
+	/* Return the R1/R1b/R6 response.  These responses are returned in
+	 * CDMRSP0.  NOTE: This is not true for R1b (Auto CMD12 response) which
+	 * is returned in CMDRSP3.
+	 */
 
-  *rshort = getreg32(IMXRT_USDHC1_CMDRSP0);
-  return ret;
+	*rshort = getreg32(IMXRT_USDHC1_CMDRSP0);
+	return ret;
 }
 
 static int imxrt_recvlong(FAR struct sdio_dev_s *dev, uint32_t cmd,
-                            uint32_t rlong[4])
+			uint32_t rlong[4])
 {
-  uint32_t regval;
-  int ret = OK;
+	uint32_t regval;
+	int ret = OK;
 
-  /* R2  CID, CSD register (136-bit)
-   *     135       0               Start bit
-   *     134       0               Transmission bit (0=from card)
-   *     133:128   bit5   - bit0   Reserved
-   *     127:1     bit127 - bit1   127-bit CID or CSD register
-   *                               (including internal CRC)
-   *     0         1               End bit
-   */
+	/* R2  CID, CSD register (136-bit)
+	 *     135       0               Start bit
+	 *     134       0               Transmission bit (0=from card)
+	 *     133:128   bit5   - bit0   Reserved
+	 *     127:1     bit127 - bit1   127-bit CID or CSD register
+	 *                               (including internal CRC)
+	 *     0         1               End bit
+	 */
 
 #ifdef CONFIG_DEBUG_FEATURES
-  /* Check that R1 is the correct response to this command */
+	/* Check that R1 is the correct response to this command */
 
-  if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R2_RESPONSE)
-    {
-      mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
-      ret = -EINVAL;
-    }
-  else
+	if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R2_RESPONSE) {
+		mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
+		ret = -EINVAL;
+	} else
 #endif
-    {
-      /* Check if a timeout or CRC error occurred */
+	{
+		/* Check if a timeout or CRC error occurred */
 
-      regval = getreg32(IMXRT_USDHC1_IRQSTAT);
-      if (regval & USDHC_INT_CTOE)
-        {
-          mcerr("ERROR: Timeout IRQSTAT: %08x\n", regval);
-          ret = -ETIMEDOUT;
-        }
-      else if (regval & USDHC_INT_CCE)
-        {
-          mcerr("ERROR: CRC fail IRQSTAT: %08x\n", regval);
-          ret = -EIO;
-        }
-    }
+		regval = getreg32(IMXRT_USDHC1_IRQSTAT);
+		if (regval & USDHC_INT_CTOE) {
+			mcerr("ERROR: Timeout IRQSTAT: %08x\n", regval);
+			ret = -ETIMEDOUT;
+		} else if (regval & USDHC_INT_CCE) {
+			mcerr("ERROR: CRC fail IRQSTAT: %08x\n", regval);
+			ret = -EIO;
+		}
+	}
 
-  /* Return the long response in CMDRSP3..0 */
+	/* Return the long response in CMDRSP3..0 */
 
-  if (rlong)
-    {
+	if (rlong) {
 #if 0
-      rlong[0] = getreg32(IMXRT_USDHC1_CMDRSP3);
-      rlong[1] = getreg32(IMXRT_USDHC1_CMDRSP2);
-      rlong[2] = getreg32(IMXRT_USDHC1_CMDRSP1);
-      rlong[3] = getreg32(IMXRT_USDHC1_CMDRSP0);
+		rlong[0] = getreg32(IMXRT_USDHC1_CMDRSP3);
+		rlong[1] = getreg32(IMXRT_USDHC1_CMDRSP2);
+		rlong[2] = getreg32(IMXRT_USDHC1_CMDRSP1);
+		rlong[3] = getreg32(IMXRT_USDHC1_CMDRSP0);
 #else
-      uint32_t rsp3 = getreg32(IMXRT_USDHC1_CMDRSP3);
-      uint32_t rsp2 = getreg32(IMXRT_USDHC1_CMDRSP2);
-      uint32_t rsp1 = getreg32(IMXRT_USDHC1_CMDRSP1);
-      uint32_t rsp0 = getreg32(IMXRT_USDHC1_CMDRSP0);
+		uint32_t rsp3 = getreg32(IMXRT_USDHC1_CMDRSP3);
+		uint32_t rsp2 = getreg32(IMXRT_USDHC1_CMDRSP2);
+		uint32_t rsp1 = getreg32(IMXRT_USDHC1_CMDRSP1);
+		uint32_t rsp0 = getreg32(IMXRT_USDHC1_CMDRSP0);
 
-      rlong[0] = rsp3 << 8 | rsp2 >> 24;
-      rlong[1] = rsp2 << 8 | rsp1 >> 24;
-      rlong[2] = rsp1 << 8 | rsp0 >> 24;
-      rlong[3] = rsp0 << 8;
+		rlong[0] = rsp3 << 8 | rsp2 >> 24;
+		rlong[1] = rsp2 << 8 | rsp1 >> 24;
+		rlong[2] = rsp1 << 8 | rsp0 >> 24;
+		rlong[3] = rsp0 << 8;
 #endif
-    }
+	}
 
-  return ret;
+	return ret;
 }
 
 static int imxrt_recvshort(FAR struct sdio_dev_s *dev, uint32_t cmd,
-                             uint32_t *rshort)
+			uint32_t *rshort)
 {
-  uint32_t regval;
-  int ret = OK;
+	uint32_t regval;
+	int ret = OK;
 
-  /* R3  OCR (48-bit)
-   *     47        0               Start bit
-   *     46        0               Transmission bit (0=from card)
-   *     45:40     bit5   - bit0   Reserved
-   *     39:8      bit31  - bit0   32-bit OCR register
-   *     7:1       bit6   - bit0   Reserved
-   *     0         1               End bit
-   */
+	/* R3  OCR (48-bit)
+	 *     47        0               Start bit
+	 *     46        0               Transmission bit (0=from card)
+	 *     45:40     bit5   - bit0   Reserved
+	 *     39:8      bit31  - bit0   32-bit OCR register
+	 *     7:1       bit6   - bit0   Reserved
+	 *     0         1               End bit
+	 */
 
-  /* Check that this is the correct response to this command */
+	/* Check that this is the correct response to this command */
 
 #ifdef CONFIG_DEBUG_FEATURES
-  if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R3_RESPONSE &&
-      (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R7_RESPONSE)
-    {
-      mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
-      ret = -EINVAL;
-    }
-  else
+	if ((cmd & MMCSD_RESPONSE_MASK) != MMCSD_R3_RESPONSE &&
+	    (cmd & MMCSD_RESPONSE_MASK) != MMCSD_R7_RESPONSE) {
+		mcerr("ERROR: Wrong response CMD=%08x\n", cmd);
+		ret = -EINVAL;
+	} else
 #endif
-    {
-      /* Check if a timeout occurred (Apparently a CRC error can terminate
-       * a good response)
-       */
+	{
+		/* Check if a timeout occurred (Apparently a CRC error can terminate
+		 * a good response)
+		 */
 
-      regval = getreg32(IMXRT_USDHC1_IRQSTAT);
-      if (regval & USDHC_INT_CTOE)
-        {
-          mcerr("ERROR: Timeout IRQSTAT: %08x\n", regval);
-          ret = -ETIMEDOUT;
-        }
-    }
+		regval = getreg32(IMXRT_USDHC1_IRQSTAT);
+		if (regval & USDHC_INT_CTOE) {
+			mcerr("ERROR: Timeout IRQSTAT: %08x\n", regval);
+			ret = -ETIMEDOUT;
+		}
+	}
 
-  /* Return the short response in CMDRSP0 */
+	/* Return the short response in CMDRSP0 */
 
-  if (rshort)
-    {
-      *rshort = getreg32(IMXRT_USDHC1_CMDRSP0);
-    }
+	if (rshort) {
+		*rshort = getreg32(IMXRT_USDHC1_CMDRSP0);
+	}
 
-  return ret;
+	return ret;
 }
 
 /* MMC responses not supported */
 
 static int imxrt_recvnotimpl(FAR struct sdio_dev_s *dev, uint32_t cmd, uint32_t *rnotimpl)
 {
-  /* Just return an error */
+	/* Just return an error */
 
-  return -ENOSYS;
+	return -ENOSYS;
 }
 
 /****************************************************************************
@@ -2320,40 +2231,38 @@ static int imxrt_recvnotimpl(FAR struct sdio_dev_s *dev, uint32_t cmd, uint32_t 
  ****************************************************************************/
 
 static void imxrt_waitenable(FAR struct sdio_dev_s *dev,
-                             sdio_eventset_t eventset)
+			sdio_eventset_t eventset)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
-  uint32_t waitints;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	uint32_t waitints;
 
-  DEBUGASSERT(priv != NULL);
+	DEBUGASSERT(priv != NULL);
 
-  /* Disable event-related interrupts */
+	/* Disable event-related interrupts */
 
-  imxrt_configwaitints(priv, 0, 0, 0);
+	imxrt_configwaitints(priv, 0, 0, 0);
 
-  /* Select the interrupt mask that will give us the appropriate wakeup
-   * interrupts.
-   */
+	/* Select the interrupt mask that will give us the appropriate wakeup
+	 * interrupts.
+	 */
 
-  waitints = 0;
-  if ((eventset & (SDIOWAIT_CMDDONE | SDIOWAIT_RESPONSEDONE)) != 0)
-    {
-      waitints |= USDHC_RESPDONE_INTS;
-    }
+	waitints = 0;
+	if ((eventset & (SDIOWAIT_CMDDONE | SDIOWAIT_RESPONSEDONE)) != 0) {
+		waitints |= USDHC_RESPDONE_INTS;
+	}
 
-  if ((eventset & SDIOWAIT_TRANSFERDONE) != 0)
-    {
+	if ((eventset & SDIOWAIT_TRANSFERDONE) != 0) {
 #ifdef CONFIG_IMXRT_USDHC_DMA
 
-      waitints |= USDHC_DMADONE_INTS;
+		waitints |= USDHC_DMADONE_INTS;
 #else
-      waitints |= USDHC_XFRDONE_INTS;
+		waitints |= USDHC_XFRDONE_INTS;
 #endif
-    }
+	}
 
-  /* Enable event-related interrupts */
+	/* Enable event-related interrupts */
 
-  imxrt_configwaitints(priv, waitints, eventset, 0);
+	imxrt_configwaitints(priv, waitints, eventset, 0);
 }
 
 /****************************************************************************
@@ -2378,81 +2287,76 @@ static void imxrt_waitenable(FAR struct sdio_dev_s *dev,
  ****************************************************************************/
 
 static sdio_eventset_t imxrt_eventwait(FAR struct sdio_dev_s *dev,
-                                       uint32_t timeout)
+				uint32_t timeout)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
-  sdio_eventset_t wkupevent = 0;
-  int ret;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	sdio_eventset_t wkupevent = 0;
+	int ret;
 
-  /* There is a race condition here... the event may have completed before
-   * we get here.  In this case waitevents will be zero, but wkupevents will
-   * be non-zero (and, hopefully, the semaphore count will also be non-zero.
-   */
+	/* There is a race condition here... the event may have completed before
+	 * we get here.  In this case waitevents will be zero, but wkupevents will
+	 * be non-zero (and, hopefully, the semaphore count will also be non-zero.
+	 */
 
-  DEBUGASSERT((priv->waitevents != 0 && priv->wkupevent == 0) ||
-              (priv->waitevents == 0 && priv->wkupevent != 0));
+	DEBUGASSERT((priv->waitevents != 0 && priv->wkupevent == 0) ||
+		    (priv->waitevents == 0 && priv->wkupevent != 0));
 
-  /* Check if the timeout event is specified in the event set */
+	/* Check if the timeout event is specified in the event set */
 
-  if ((priv->waitevents & SDIOWAIT_TIMEOUT) != 0)
-    {
-      int delay;
+	if ((priv->waitevents & SDIOWAIT_TIMEOUT) != 0) {
+		int delay;
 
-      /* Yes.. Handle a corner case */
+		/* Yes.. Handle a corner case */
 
-      if (!timeout)
-        {
-          return SDIOWAIT_TIMEOUT;
-        }
+		if (!timeout) {
+			return SDIOWAIT_TIMEOUT;
+		}
 
-      /* Start the watchdog timer */
+		/* Start the watchdog timer */
 
-      delay = MSEC2TICK(timeout);
-      ret   = wd_start(priv->waitwdog, delay, (wdentry_t)imxrt_eventtimeout,
-                       1, (uint32_t)priv);
-      if (ret < 0)
-        {
-          mcerr("ERROR: wd_start failed: %d\n", ret);
-        }
-    }
+		delay = MSEC2TICK(timeout);
+		ret   = wd_start(priv->waitwdog, delay, (wdentry_t)imxrt_eventtimeout,
+				 1, (uint32_t)priv);
+		if (ret < 0) {
+			mcerr("ERROR: wd_start failed: %d\n", ret);
+		}
+	}
 
-  /* Loop until the event (or the timeout occurs). Race conditions are avoided
-   * by calling imxrt_waitenable prior to triggering the logic that will cause
-   * the wait to terminate.  Under certain race conditions, the waited-for
-   * may have already occurred before this function was called!
-   */
+	/* Loop until the event (or the timeout occurs). Race conditions are avoided
+	 * by calling imxrt_waitenable prior to triggering the logic that will cause
+	 * the wait to terminate.  Under certain race conditions, the waited-for
+	 * may have already occurred before this function was called!
+	 */
 
-  for (; ; )
-    {
-      /* Wait for an event in event set to occur.  If this the event has already
-       * occurred, then the semaphore will already have been incremented and
-       * there will be no wait.
-       */
+	for (; ; ) {
+		/* Wait for an event in event set to occur.  If this the event has already
+		 * occurred, then the semaphore will already have been incremented and
+		 * there will be no wait.
+		 */
 
-      imxrt_takesem(priv);
-      wkupevent = priv->wkupevent;
+		imxrt_takesem(priv);
+		wkupevent = priv->wkupevent;
 
-      /* Check if the event has occurred.  When the event has occurred, then
-       * evenset will be set to 0 and wkupevent will be set to a non-zero value.
-       */
+		/* Check if the event has occurred.  When the event has occurred, then
+		 * evenset will be set to 0 and wkupevent will be set to a non-zero value.
+		 */
 
-      if (wkupevent != 0)
-        {
-          /* Yes... break out of the loop with wkupevent non-zero */
+		if (wkupevent != 0) {
+			/* Yes... break out of the loop with wkupevent non-zero */
 
-          break;
-        }
-    }
+			break;
+		}
+	}
 
-  /* Disable event-related interrupts */
+	/* Disable event-related interrupts */
 
-  imxrt_configwaitints(priv, 0, 0, 0);
+	imxrt_configwaitints(priv, 0, 0, 0);
 #ifdef CONFIG_IMXRT_USDHC_DMA
-  priv->xfrflags   = 0;
+	priv->xfrflags   = 0;
 #endif
 
-  imxrt_dumpsamples(priv);
-  return wkupevent;
+	imxrt_dumpsamples(priv);
+	return wkupevent;
 }
 
 /****************************************************************************
@@ -2478,15 +2382,15 @@ static sdio_eventset_t imxrt_eventwait(FAR struct sdio_dev_s *dev,
  ****************************************************************************/
 
 static void imxrt_callbackenable(FAR struct sdio_dev_s *dev,
-                                 sdio_eventset_t eventset)
+			sdio_eventset_t eventset)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  mcinfo("eventset: %02x\n", eventset);
-  DEBUGASSERT(priv != NULL);
+	mcinfo("eventset: %02x\n", eventset);
+	DEBUGASSERT(priv != NULL);
 
-  priv->cbevents = eventset;
-  imxrt_callback(priv);
+	priv->cbevents = eventset;
+	imxrt_callback(priv);
 }
 
 /****************************************************************************
@@ -2512,19 +2416,19 @@ static void imxrt_callbackenable(FAR struct sdio_dev_s *dev,
  ****************************************************************************/
 
 static int imxrt_registercallback(FAR struct sdio_dev_s *dev,
-                                  worker_t callback, void *arg)
+			worker_t callback, void *arg)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  /* Disable callbacks and register this callback and is argument */
+	/* Disable callbacks and register this callback and is argument */
 
-  mcinfo("Register %p(%p)\n", callback, arg);
-  DEBUGASSERT(priv != NULL);
+	mcinfo("Register %p(%p)\n", callback, arg);
+	DEBUGASSERT(priv != NULL);
 
-  priv->cbevents = 0;
-  priv->cbarg    = arg;
-  priv->callback = callback;
-  return OK;
+	priv->cbevents = 0;
+	priv->cbarg    = arg;
+	priv->callback = callback;
+	return OK;
 }
 
 /****************************************************************************
@@ -2548,37 +2452,37 @@ static int imxrt_registercallback(FAR struct sdio_dev_s *dev,
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
 static int imxrt_dmarecvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
-                              size_t buflen)
+			size_t buflen)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
-  DEBUGASSERT(((uint32_t)buffer & 3) == 0);
+	DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
+	DEBUGASSERT(((uint32_t)buffer & 3) == 0);
 
-  /* Begin sampling register values */
+	/* Begin sampling register values */
 
-  imxrt_sampleinit();
-  imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
+	imxrt_sampleinit();
+	imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
 
-  /* Save the destination buffer information for use by the interrupt handler */
+	/* Save the destination buffer information for use by the interrupt handler */
 
-  priv->buffer    = (uint32_t *)buffer;
-  priv->remaining = buflen;
-  priv->bufferend = (uint32_t *)(buffer + buflen);
+	priv->buffer    = (uint32_t *)buffer;
+	priv->remaining = buflen;
+	priv->bufferend = (uint32_t *)(buffer + buflen);
 
-  /* Then set up the SDIO data path */
+	/* Then set up the SDIO data path */
 
-  imxrt_dataconfig(priv, false, buflen, USDHC_DTOCV_MAXTIMEOUT);
+	imxrt_dataconfig(priv, false, buflen, USDHC_DTOCV_MAXTIMEOUT);
 
-  /* Configure the RX DMA */
+	/* Configure the RX DMA */
 
-  imxrt_configxfrints(priv, USDHC_DMADONE_INTS);
-  putreg32((uint32_t)buffer, IMXRT_USDHC1_DSADDR);
+	imxrt_configxfrints(priv, USDHC_DMADONE_INTS);
+	putreg32((uint32_t)buffer, IMXRT_USDHC1_DSADDR);
 
-  /* Sample the register state */
+	/* Sample the register state */
 
-  imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
-  return OK;
+	imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
+	return OK;
 }
 #endif
 
@@ -2603,39 +2507,39 @@ static int imxrt_dmarecvsetup(FAR struct sdio_dev_s *dev, FAR uint8_t *buffer,
 
 #ifdef CONFIG_IMXRT_USDHC_DMA
 static int imxrt_dmasendsetup(FAR struct sdio_dev_s *dev,
-                              FAR const uint8_t *buffer, size_t buflen)
+			FAR const uint8_t *buffer, size_t buflen)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)dev;
 
-  DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
-  DEBUGASSERT(((uint32_t)buffer & 3) == 0);
+	DEBUGASSERT(priv != NULL && buffer != NULL && buflen > 0);
+	DEBUGASSERT(((uint32_t)buffer & 3) == 0);
 
-  /* Begin sampling register values */
+	/* Begin sampling register values */
 
-  imxrt_sampleinit();
-  imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
+	imxrt_sampleinit();
+	imxrt_sample(priv, SAMPLENDX_BEFORE_SETUP);
 
-  /* Save the source buffer information for use by the interrupt handler */
+	/* Save the source buffer information for use by the interrupt handler */
 
-  priv->buffer    = (uint32_t *)buffer;
-  priv->remaining = buflen;
+	priv->buffer    = (uint32_t *)buffer;
+	priv->remaining = buflen;
 
-  /* Then set up the SDIO data path */
+	/* Then set up the SDIO data path */
 
-  imxrt_dataconfig(priv, true, buflen, USDHC_DTOCV_MAXTIMEOUT);
+	imxrt_dataconfig(priv, true, buflen, USDHC_DTOCV_MAXTIMEOUT);
 
-  /* Configure the TX DMA */
+	/* Configure the TX DMA */
 
-  putreg32((uint32_t)buffer, IMXRT_USDHC1_DSADDR);
+	putreg32((uint32_t)buffer, IMXRT_USDHC1_DSADDR);
 
-  /* Sample the register state */
+	/* Sample the register state */
 
-  imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
+	imxrt_sample(priv, SAMPLENDX_AFTER_SETUP);
 
-  /* Enable TX interrupts */
+	/* Enable TX interrupts */
 
-  imxrt_configxfrints(priv, USDHC_DMADONE_INTS);
-  return OK;
+	imxrt_configxfrints(priv, USDHC_DMADONE_INTS);
+	return OK;
 }
 #endif
 
@@ -2654,71 +2558,61 @@ static int imxrt_dmasendsetup(FAR struct sdio_dev_s *dev,
 
 static void imxrt_callback(void *arg)
 {
-  struct imxrt_dev_s *priv = (struct imxrt_dev_s *)arg;
+	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)arg;
 
-  /* Is a callback registered? */
+	/* Is a callback registered? */
 
-  DEBUGASSERT(priv != NULL);
-  mcinfo("Callback %p(%p) cbevents: %02x cdstatus: %02x\n",
-         priv->callback, priv->cbarg, priv->cbevents, priv->cdstatus);
+	DEBUGASSERT(priv != NULL);
+	mcinfo("Callback %p(%p) cbevents: %02x cdstatus: %02x\n",
+		priv->callback, priv->cbarg, priv->cbevents, priv->cdstatus);
 
-  if (priv->callback)
-    {
-      /* Yes.. Check for enabled callback events */
+	if (priv->callback) {
+		/* Yes.. Check for enabled callback events */
 
-      if ((priv->cdstatus & SDIO_STATUS_PRESENT) != 0)
-        {
-          /* Media is present.  Is the media inserted event enabled? */
+		if ((priv->cdstatus & SDIO_STATUS_PRESENT) != 0) {
+			/* Media is present.  Is the media inserted event enabled? */
 
-          if ((priv->cbevents & SDIOMEDIA_INSERTED) == 0)
-            {
-              /* No... return without performing the callback */
+			if ((priv->cbevents & SDIOMEDIA_INSERTED) == 0) {
+				/* No... return without performing the callback */
 
-              return;
-            }
-        }
-      else
-        {
-          /* Media is not present.  Is the media eject event enabled? */
+				return;
+			}
+		} else {
+			/* Media is not present.  Is the media eject event enabled? */
 
-          if ((priv->cbevents & SDIOMEDIA_EJECTED) == 0)
-            {
-              /* No... return without performing the callback */
+			if ((priv->cbevents & SDIOMEDIA_EJECTED) == 0) {
+				/* No... return without performing the callback */
 
-              return;
-            }
-        }
+				return;
+			}
+		}
 
-      /* Perform the callback, disabling further callbacks.  Of course, the
-       * the callback can (and probably should) re-enable callbacks.
-       */
+		/* Perform the callback, disabling further callbacks.  Of course, the
+		 * the callback can (and probably should) re-enable callbacks.
+		 */
 
-      priv->cbevents = 0;
+		priv->cbevents = 0;
 
-      /* Callbacks cannot be performed in the context of an interrupt handler.
-       * If we are in an interrupt handler, then queue the callback to be
-       * performed later on the work thread.
-       */
+		/* Callbacks cannot be performed in the context of an interrupt handler.
+		 * If we are in an interrupt handler, then queue the callback to be
+		 * performed later on the work thread.
+		 */
 
-      if (up_interrupt_context())
-        {
-          /* Yes.. queue it */
+		if (up_interrupt_context()) {
+			/* Yes.. queue it */
 
-           mcinfo("Queuing callback to %p(%p)\n",
-                  priv->callback, priv->cbarg);
+			mcinfo("Queuing callback to %p(%p)\n", priv->callback, priv->cbarg);
 
-          (void)work_queue(HPWORK, &priv->cbwork, (worker_t)priv->callback,
-                           priv->cbarg, 0);
-        }
-      else
-        {
-          /* No.. then just call the callback here */
+			(void)work_queue(HPWORK, &priv->cbwork, (worker_t)priv->callback,
+					 priv->cbarg, 0);
+		} else {
+			/* No.. then just call the callback here */
 
-          mcinfo("Callback to %p(%p)\n", priv->callback, priv->cbarg);
+			mcinfo("Callback to %p(%p)\n", priv->callback, priv->cbarg);
 
-          priv->callback(priv->cbarg);
-        }
-    }
+			priv->callback(priv->cbarg);
+		}
+	}
 }
 
 /****************************************************************************
@@ -2741,76 +2635,76 @@ static void imxrt_callback(void *arg)
 
 FAR struct sdio_dev_s *imxrt_usdhc_initialize(int slotno)
 {
-  /* There is only one slot */
+	/* There is only one slot */
 
-  struct imxrt_dev_s *priv = &g_sdhcdev;
-  DEBUGASSERT(slotno == 0);
+	struct imxrt_dev_s *priv = &g_sdhcdev;
+	DEBUGASSERT(slotno == 0);
 
-  /* Initialize the USDHC slot structure data structure */
-  /* Initialize semaphores */
+	/* Initialize the USDHC slot structure data structure */
+	/* Initialize semaphores */
 
-  nxsem_init(&priv->waitsem, 0, 0);
+	nxsem_init(&priv->waitsem, 0, 0);
 
-  /* The waitsem semaphore is used for signaling and, hence, should not have
-   * priority inheritance enabled.
-   */
+	/* The waitsem semaphore is used for signaling and, hence, should not have
+	 * priority inheritance enabled.
+	 */
 
-  nxsem_setprotocol(&priv->waitsem, SEM_PRIO_NONE);
+	nxsem_setprotocol(&priv->waitsem, SEM_PRIO_NONE);
 
-  /* Create a watchdog timer */
+	/* Create a watchdog timer */
 
-  priv->waitwdog = wd_create();
-  DEBUGASSERT(priv->waitwdog);
+	priv->waitwdog = wd_create();
+	DEBUGASSERT(priv->waitwdog);
 
-  /* Configure pins for 1 or 4-bit, wide-bus operation (the chip is capable
-   * of 8-bit wide bus operation but D4-D7 are not configured).
-   *
-   * If bus is multiplexed then there is a custom bus configuration utility
-   * in the scope of the board support package.
-   */
+	/* Configure pins for 1 or 4-bit, wide-bus operation (the chip is capable
+	 * of 8-bit wide bus operation but D4-D7 are not configured).
+	 *
+	 * If bus is multiplexed then there is a custom bus configuration utility
+	 * in the scope of the board support package.
+	 */
 
 #ifndef CONFIG_SDIO_MUXBUS
-  /* Data width 1, 4 or 8 */
+	/* Data width 1, 4 or 8 */
 
-  (void)imxrt_config_gpio(PIN_USDHC1_D0);
+	(void)imxrt_config_gpio(PIN_USDHC1_D0);
 
-  /* Data width 4 or 8 */
+	/* Data width 4 or 8 */
 
 #ifndef CONFIG_IMXRT_USDHC_WIDTH_D1_ONLY
-  (void)imxrt_config_gpio(PIN_USDHC1_D1);
-  (void)imxrt_config_gpio(PIN_USDHC1_D2);
-  (void)imxrt_config_gpio(PIN_USDHC1_D3);
+	(void)imxrt_config_gpio(PIN_USDHC1_D1);
+	(void)imxrt_config_gpio(PIN_USDHC1_D2);
+	(void)imxrt_config_gpio(PIN_USDHC1_D3);
 
-  /* Data width 8 (not supported) */
+	/* Data width 8 (not supported) */
 
 #if 0
-  (void)imxrt_config_gpio(PIN_USDHC1_D4);
-  (void)imxrt_config_gpio(PIN_USDHC1_D5);
-  (void)imxrt_config_gpio(PIN_USDHC1_D6);
-  (void)imxrt_config_gpio(PIN_USDHC1_D7);
+	(void)imxrt_config_gpio(PIN_USDHC1_D4);
+	(void)imxrt_config_gpio(PIN_USDHC1_D5);
+	(void)imxrt_config_gpio(PIN_USDHC1_D6);
+	(void)imxrt_config_gpio(PIN_USDHC1_D7);
 #endif
 #endif
 
-  /* Clocking and CMD pins (all data widths) */
+	/* Clocking and CMD pins (all data widths) */
 
-  (void)imxrt_config_gpio(PIN_USDHC1_DCLK);
-  (void)imxrt_config_gpio(PIN_USDHC1_CMD);
+	(void)imxrt_config_gpio(PIN_USDHC1_DCLK);
+	(void)imxrt_config_gpio(PIN_USDHC1_CMD);
 #endif
 
 #if defined(CONFIG_MMCSD_HAVE_CARDDETECT) && defined(PIN_USDHC1_CD)
-  (void)imxrt_config_gpio(PIN_USDHC1_CD);
+	(void)imxrt_config_gpio(PIN_USDHC1_CD);
 #endif
 
-  /* Reset the card and assure that it is in the initial, unconfigured
-   * state.
-   */
+	/* Reset the card and assure that it is in the initial, unconfigured
+	 * state.
+	 */
 
-  imxrt_clockall_usdhc1();
+	imxrt_clockall_usdhc1();
 
-  imxrt_reset(&priv->dev);
-  imxrt_showregs(priv, "After reset");
+	imxrt_reset(&priv->dev);
+	imxrt_showregs(priv, "After reset");
 
-  return &g_sdhcdev.dev;
+	return &g_sdhcdev.dev;
 }
 
 #endif /* CONFIG_IMXRT_USDHC */

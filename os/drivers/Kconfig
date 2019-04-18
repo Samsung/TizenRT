@@ -507,3 +507,5 @@ menuconfig LWNL80211
 if LWNL80211
 source drivers/lwnl/Kconfig
 endif
+
+source drivers/seclink/Kconfig

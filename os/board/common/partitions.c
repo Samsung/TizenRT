@@ -38,6 +38,8 @@ void configure_partitions(void)
 	const char *types = CONFIG_FLASH_PART_TYPE;
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 	const char *names = CONFIG_FLASH_PART_NAME;
+	char part_name[MTD_PARTNAME_LEN + 1];
+	int index = 0;
 #endif
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
@@ -121,17 +123,32 @@ void configure_partitions(void)
 		}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
+
 		if (*names) {
-			mtd_setpartitionname(mtd_part, names);
+			while (*names) {
+				if (*names == ',') {
+					part_name[index] = '\0';
+					index = 0;
+					names++;
+					break;
+				}
+				if (index < MTD_PARTNAME_LEN) {
+					part_name[index++] = *(names++);
+				} else {
+					part_name[index] = '\0';
+					index = 0;
+					lldbg("ERROR: Partition name is so long. Please make it smaller than %d\n", MTD_PARTNAME_LEN);
+					while (*names) {
+						if (*(names++) == ',') {
+							break;
+						}
+					}
+					break;
+				}
+			}
+			mtd_setpartitionname(mtd_part, part_name);
 		}
 
-		while (*names) {
-			if (*names == ',') {
-				names++;
-				break;
-			}
-			names++;
-		}
 #endif
 
 		while (*parts) {

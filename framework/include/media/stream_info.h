@@ -29,6 +29,10 @@
 #ifndef __STREAM_INFO_H
 #define __STREAM_INFO_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -67,5 +71,8 @@ int stream_info_init(void);
 int stream_info_create(stream_policy_t stream_policy, stream_info_t **stream_info);
 int stream_info_destroy(stream_info_t *stream_info);
 
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif
 #endif
 /** @} */ // end of MEDIA group
