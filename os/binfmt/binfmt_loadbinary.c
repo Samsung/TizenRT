@@ -58,13 +58,15 @@
  *
  *   offset   - The offset from which ELF binary has to be read in MTD partition.
  *
+ *   ram_size - The size of RAM partition required by this app
+ *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
  *   It returns the PID of the exec'ed module.  On failure, it returns
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset)
+int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size)
 {
 	FAR struct binary_s *bin;
 	int pid;
@@ -81,10 +83,14 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
-	uint32_t size;
+	uint32_t size = ram_size;
 	struct tcb_s *tcb;
 
-	mm_allocate_ram_partition(&start_addr, &size);
+	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
+		berr("ERROR: Failed to allocate RAM partition\n");
+		errcode = ENOMEM;
+		goto errout;
+	}
 #endif
 
 	/* Allocate the load information */
@@ -93,7 +99,7 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset)
 	if (!bin) {
 		berr("ERROR: Failed to allocate binary_s\n");
 		errcode = ENOMEM;
-		goto errout;
+		goto err_free_partition;
 	}
 
 	/* Initialize the binary structure */
@@ -176,10 +182,11 @@ errout_with_lock:
 	(void)unload_module(bin);
 errout_with_bin:
 	kmm_free(bin);
-errout:
+err_free_partition:
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	mm_free_ram_partition((uint32_t)start_addr);
 #endif
+errout:
 	set_errno(errcode);
 	return ERROR;
 

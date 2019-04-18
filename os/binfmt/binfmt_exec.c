@@ -144,10 +144,14 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
-	uint32_t size;
+	uint32_t size = 0;
 	struct tcb_s *tcb;
 
-	mm_allocate_ram_partition(&start_addr, &size);
+	if(mm_allocate_ram_partition(&start_addr, &size) < 0) {
+		berr("ERROR: Failed to allocate RAM partition\n");
+		errcode = ENOMEM;
+		goto errout;
+	}
 #endif
 
 	/* Allocate the load information */
@@ -156,7 +160,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	if (!bin) {
 		berr("ERROR: Failed to allocate binary_s\n");
 		errcode = ENOMEM;
-		goto errout;
+		goto err_free_partition;
 	}
 
 	/* Initialize the binary structure */
@@ -250,9 +254,10 @@ errout_with_argv:
 	binfmt_freeargv(bin);
 errout_with_bin:
 	kmm_free(bin);
-errout:
+err_free_partition:
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	mm_free_ram_partition((uint32_t)start_addr);
+errout:
 #endif
 	set_errno(errcode);
 	return ERROR;
