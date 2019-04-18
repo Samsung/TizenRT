@@ -47,7 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "isp_custom.h"
+#include "../../arch/arm/src/s5j/sss/isp_custom.h"
 
 #define ISP_CHECKBUSY() while (isp_get_status()) {}
 
