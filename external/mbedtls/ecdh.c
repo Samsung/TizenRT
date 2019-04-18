@@ -112,7 +112,6 @@ void mbedtls_ecdh_init( mbedtls_ecdh_context *ctx )
     memset( ctx, 0, sizeof( mbedtls_ecdh_context ) );
 }
 
-#if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) && !defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
 /*
  * Free context
  */
@@ -130,7 +129,6 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
     mbedtls_mpi_free( &ctx->z  );
     mbedtls_mpi_free( &ctx->_d );
 }
-#endif
 
 /*
  * Setup and write the ServerKeyExhange parameters (RFC 4492)
@@ -191,7 +189,7 @@ int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
     return( 0 );
 }
 
-#if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) && !defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
+
 /*
  * Get parameters from a keypair
  */
@@ -215,9 +213,12 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypai
         ( ret = mbedtls_mpi_copy( &ctx->d, &key->d ) ) != 0 )
         return( ret );
 
+#if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT)
+	ctx->grp.key_index = key->key_index;
+#endif
+
     return( 0 );
 }
-#endif
 /*
  * Setup and export the client public value
  */

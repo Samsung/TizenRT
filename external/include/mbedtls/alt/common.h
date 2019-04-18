@@ -25,11 +25,14 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define SECLINK_PATH "/dev/seclink"
+
 #define ECP_KEY_INDEX (1)
 #define RSA_KEY_INDEX (2)
 
-#define MBEDTLS_MAX_ECP_KEY_SIZE_ALT                  (68)
-#define MBEDTLS_MAX_BUF_SIZE_ALT                      (4096)
+#define MBEDTLS_MAX_ECP_KEY_SIZE_ALT       (68)
+#define MBEDTLS_MAX_BUF_SIZE_ALT           (4096)
+#define MBEDTLS_MAX_KEY_SIZE_ALT           (256)
 
 #define DHM_1024 (128)
 #define DHM_2048 (256)

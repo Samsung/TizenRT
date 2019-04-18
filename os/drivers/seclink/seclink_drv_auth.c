@@ -67,7 +67,7 @@ int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 		req->res = se->ops->rsa_verify_md(info->auth_type.rsa_type, info->data, info->auth_data.data, info->key_idx);
 		break;
 	case SECLINKIOC_ECDSASIGNMD:
-		req->res = se->ops->ecdsa_sign_md(info->data, info->key_idx, &info->auth_type.ecdsa_type, info->auth_data.data);
+		req->res = se->ops->ecdsa_sign_md(info->auth_type.ecdsa_type, info->data, info->key_idx, info->auth_data.data);
 		break;
 	case SECLINKIOC_ECDSAVERIFYMD:
 		req->res = se->ops->ecdsa_verify_md(info->auth_type.ecdsa_type, info->data, info->auth_data.data, info->key_idx);

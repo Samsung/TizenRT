@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/seclink.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -32,43 +33,44 @@
 
 #include "mbedtls/alt/common.h"
 
-
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
-static int mbedtls_generate_random_alt( unsigned char *data, unsigned int len )
+static int mbedtls_generate_random_alt(unsigned char *data, unsigned int len)
 {
 	int ret;
-	unsigned char random_data[MBEDTLS_MAX_BUF_SIZE_ALT];
+	sl_ctx shnd;
 
-	hal_data random = {0, };
-	random.data = random_data;
-	random.data_len = MBEDTLS_MAX_BUF_SIZE_ALT;
+	hal_data random = {data, len, NULL, 0};
 
-	ret = hal_generate_random(len, &random);
-
-	if (ret != HAL_SUCCESS) {
+	ret = sl_init(&shnd);
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
-	memcpy(data, random.data, random.data_len);
+
+	ret = sl_generate_random(shnd, len, &random);
+
+	if ((ret != HAL_SUCCESS) || random.data == NULL) {
+		sl_deinit(shnd);
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
+	sl_deinit(shnd);
 
 	return HAL_SUCCESS;
 }
 
-
-int mbedtls_hardware_poll( void *data,
-                           unsigned char *output, size_t len, size_t *olen )
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
 	unsigned char inbuf[len];
-	((void) data);
 
-	if (mbedtls_generate_random_alt( inbuf, len ) < 0) {
+	if (mbedtls_generate_random_alt(inbuf, len) < 0) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
 
 	memcpy(output, inbuf, len);
 	*olen = len;
 
-	return( 0 );
+	return 0;
 }
-#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
+#endif							/* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
-#endif /* MBEDTLS_ENTROPY_C */
+#endif							/* MBEDTLS_ENTROPY_C */

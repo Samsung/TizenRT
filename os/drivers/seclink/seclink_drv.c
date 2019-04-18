@@ -123,7 +123,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		res = hd_handle_common_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_AUTH_REQ(cmd)) {
 		res = hd_handle_auth_request(cmd, arg, (void *)upper->lower);
-	} else if (SL_IS_AUTH_REQ(cmd)) {
+	} else if (SL_IS_KEYMGR_REQ(cmd)) {
 		res = hd_handle_key_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_SS_REQ(cmd)) {
 		res = hd_handle_ss_request(cmd, arg, (void *)upper->lower);
