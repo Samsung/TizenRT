@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2019 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,19 +16,14 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_WIFI_MANAGER), y)
-CSRCS += wifi_manager.c 
-CSRCS += wifi_profile.c
+# Include lwnl drivers
+ifeq ($(CONFIG_LWNL80211),y)
+	CSRCS += lwnl80211.c
+	ifeq ($(CONFIG_LWNL80211_SLSI),y)
+		CSRCS += slsi_drv.c
+	endif
 
-ifeq ($(CONFIG_SLSI_WPA_SUPPLICANT), y)
-ifeq ($(CONFIG_LWNL80211), y)
-CSRCS += slsi_wifi_utils_lwnl80211.c
-else
-CSRCS += slsi_wifi_utils.c
-endif
-endif
+DEPPATH += --dep-path lwnl
+VPATH += :lwnl
 
-DEPPATH += --dep-path src/wifi_manager
-VPATH += :src/wifi_manager
 endif
-

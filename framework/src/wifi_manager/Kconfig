@@ -14,9 +14,9 @@ if WIFI_MANAGER
 
 choice
 	prompt "WiFi library"
-	default SELECT_WPA_SUPPLICANT
+	default SLSI_WPA_SUPPLICANT
 
-config SELECT_WPA_SUPPLICANT
+config SLSI_WPA_SUPPLICANT
 	bool "select wpa_supplicant"
 	select WPA_SUPPLICANT
 	select NETUTILS_WIFI
@@ -47,10 +47,10 @@ config SELECT_PROPIETARY_WLAN
 
 endchoice # WiFi driver choice
 
-if SELECT_WPA_SUPPLICANT
+if SLSI_WPA_SUPPLICANT
 source "$EXTERNALDIR/slsi_wifi/Kconfig"
 source "$EXTERNALDIR/wpa_supplicant/Kconfig"
-endif #SELECT_WPA_SUPPLICANT
+endif #SLSI_WPA_SUPPLICANT
 
 config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"

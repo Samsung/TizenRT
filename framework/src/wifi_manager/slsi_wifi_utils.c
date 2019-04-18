@@ -445,7 +445,7 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info)
+wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 {
 	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
 	if (wifi_info) {
