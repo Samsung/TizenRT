@@ -22,6 +22,43 @@ set(INCLUDE_PORT_DEFAULT "${CMAKE_CURRENT_SOURCE_DIR}/include")
 # Source directories
 file(GLOB SOURCE_PORT_DEFAULT *.c)
 
+# "Single" JerryScript source/header build.
+#  The process will create the following files:
+#   * jerryscript-port-default.c
+#   * jerryscript-port-default.h
+if(ENABLE_ALL_IN_ONE_SOURCE)
+  file(GLOB HEADER_PORT_DEFAULT *.h)
+  set(ALL_IN_FILE "${CMAKE_BINARY_DIR}/jerryscript-port-default.c")
+  set(ALL_IN_FILE_H "${CMAKE_BINARY_DIR}/jerryscript-port-default.h")
+  add_custom_command(OUTPUT ${ALL_IN_FILE}
+                     COMMAND python ${CMAKE_SOURCE_DIR}/tools/srcmerger.py
+                             --base-dir ${CMAKE_CURRENT_SOURCE_DIR}
+                             --output ${ALL_IN_FILE}
+                             --append-c-files
+                             --remove-include jerryscript-port.h
+                             --remove-include jerryscript-port-default.h
+                             --remove-include jerryscript-debugger.h
+                             --push-include jerryscript.h
+                             --push-include jerryscript-port-default.h
+                     DEPENDS ${SOURCE_PORT_DEFAULT} ${ALL_IN_FILE_H}
+  )
+
+  add_custom_command(OUTPUT ${ALL_IN_FILE_H}
+                     COMMAND python ${CMAKE_SOURCE_DIR}/tools/srcmerger.py
+                               --base-dir ${CMAKE_CURRENT_SOURCE_DIR}/
+                               --input ${CMAKE_CURRENT_SOURCE_DIR}/include/jerryscript-port-default.h
+                               --output ${ALL_IN_FILE_H}
+                               --remove-include jerryscript-port.h
+                               --remove-include jerryscript.h
+                               --push-include jerryscript.h
+                    DEPENDS ${HEADER_PORT_DEFAULT}
+  )
+  add_custom_target(generate-single-source-port DEPENDS ${ALL_IN_FILE} ${ALL_IN_FILE_H})
+  add_dependencies(generate-single-source generate-single-source-port)
+
+  set(SOURCE_PORT_DEFAULT ${ALL_IN_FILE} ${ALL_IN_FILE_H})
+endif()
+
 # Define _BSD_SOURCE and _DEFAULT_SOURCE
 # (should only be necessary if we used compiler default libc but not checking that)
 set(DEFINES_PORT_DEFAULT _BSD_SOURCE _DEFAULT_SOURCE)
@@ -64,5 +101,9 @@ endforeach()
 target_compile_definitions(${JERRY_PORT_DEFAULT_NAME}-minimal PRIVATE DISABLE_EXTRA_API)
 
 # Installation
+configure_file(libjerry-port-default.pc.in libjerry-port-default.pc @ONLY)
+configure_file(libjerry-port-default-minimal.pc.in libjerry-port-default-minimal.pc @ONLY)
+
 install(TARGETS ${JERRY_PORT_DEFAULT_NAME} ${JERRY_PORT_DEFAULT_NAME}-minimal DESTINATION lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libjerry-port-default.pc ${CMAKE_CURRENT_BINARY_DIR}/libjerry-port-default-minimal.pc DESTINATION lib/pkgconfig)
 install(DIRECTORY ${INCLUDE_PORT_DEFAULT}/ DESTINATION include)

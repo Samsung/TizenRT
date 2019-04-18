@@ -22,6 +22,8 @@
 #include "iotjs_module_websocket.h"
 
 
+IOTJS_DEFINE_NATIVE_HANDLE_INFO_THIS_MODULE(wsclient);
+
 static void iotjs_wsclient_destroy(iotjs_wsclient_t *wsclient) {
   IOTJS_RELEASE(wsclient->tcp_buff.buffer);
   IOTJS_RELEASE(wsclient->ws_buff.data);
@@ -29,14 +31,10 @@ static void iotjs_wsclient_destroy(iotjs_wsclient_t *wsclient) {
   IOTJS_RELEASE(wsclient);
 }
 
-static const jerry_object_native_info_t wsclient_native_info = {
-  .free_cb = (jerry_object_native_free_callback_t)iotjs_wsclient_destroy
-};
-
 iotjs_wsclient_t *iotjs_wsclient_create(const jerry_value_t jobject) {
   iotjs_wsclient_t *wsclient = IOTJS_ALLOC(iotjs_wsclient_t);
 
-  jerry_set_object_native_pointer(jobject, wsclient, &wsclient_native_info);
+  jerry_set_object_native_pointer(jobject, wsclient, &this_module_native_info);
   return wsclient;
 }
 
@@ -139,10 +137,8 @@ static unsigned char *iotjs_make_handshake_key(char *client_key,
 static bool iotjs_check_handshake_key(char *server_key, jerry_value_t jsref) {
   bool ret_val = true;
   void *native_p;
-  JNativeInfoType *out_native_info;
-  bool has_p =
-      jerry_get_object_native_pointer(jsref, &native_p, &out_native_info);
-  if (!has_p || out_native_info != &wsclient_native_info) {
+  if (!jerry_get_object_native_pointer(jsref, &native_p,
+                                       &this_module_native_info)) {
     ret_val = false;
   }
 
@@ -299,9 +295,9 @@ JS_FUNCTION(PrepareHandshakeRequest) {
     return JS_CREATE_ERROR(COMMON, "Invalid host and/or path arguments!");
   };
 
-  iotjs_wsclient_t *wsclient = (iotjs_wsclient_t *)
-      iotjs_jval_get_object_native_handle(jsref, &wsclient_native_info);
-  if (wsclient == NULL) {
+  iotjs_wsclient_t *wsclient = NULL;
+  if (!jerry_get_object_native_pointer(jsref, (void **)&wsclient,
+                                       &this_module_native_info)) {
     return iotjs_websocket_check_error(WS_ERR_NATIVE_POINTER_ERR);
   }
 
@@ -505,10 +501,9 @@ static uint8_t iotjs_websocket_decode_frame(iotjs_wsclient_t *wsclient,
 
         buff_ptr += 2;
         payload_len -= 2;
-        uint8_t ret_code_str_size = 4;
+        size_t ret_code_str_size = 4;
         char ret_code_str[ret_code_str_size + 1];
-        sprintf(ret_code_str, "%d", ret_code);
-        ret_code_str[ret_code_str_size] = '\0';
+        snprintf(ret_code_str, ret_code_str_size + 1, "%d", ret_code);
 
         jerry_value_t ret_buff =
             iotjs_bufferwrap_create_buffer(payload_len + ret_code_str_size);
@@ -557,9 +552,9 @@ JS_FUNCTION(WsReceive) {
 
   jerry_value_t jsref = JS_GET_ARG(0, object);
 
-  iotjs_wsclient_t *wsclient = (iotjs_wsclient_t *)
-      iotjs_jval_get_object_native_handle(jsref, &wsclient_native_info);
-  if (wsclient == NULL) {
+  iotjs_wsclient_t *wsclient = NULL;
+  if (!jerry_get_object_native_pointer(jsref, (void **)&wsclient,
+                                       &this_module_native_info)) {
     return iotjs_websocket_check_error(WS_ERR_NATIVE_POINTER_ERR);
   }
 
@@ -609,16 +604,20 @@ JS_FUNCTION(WsReceive) {
       payload_len = (uint16_t)(current_buffer[0] << 8 | current_buffer[1]);
       current_buffer += sizeof(uint16_t);
     } else if (!(payload_byte ^ WS_THREE_BYTES_LENGTH)) {
+      uint64_t payload_64bit_len;
       if (current_buffer + sizeof(uint64_t) > current_buffer_end) {
         break;
       }
-      if ((*(uint64_t *)current_buffer & UINT32_MAX) > UINT32_MAX) {
-        return WS_ERR_FRAME_SIZE_LIMIT;
-      }
       for (uint8_t i = 0; i < sizeof(uint64_t); i++) {
-        memcpy((uint8_t *)&payload_len + i,
+        memcpy((uint8_t *)&payload_64bit_len + i,
                current_buffer + sizeof(uint64_t) - 1 - i, sizeof(uint8_t));
       }
+
+      if (payload_64bit_len > UINT32_MAX) {
+        return WS_ERR_FRAME_SIZE_LIMIT;
+      }
+      payload_len = (uint32_t)payload_64bit_len;
+
       current_buffer += sizeof(uint64_t);
     } else {
       payload_len = payload_byte;

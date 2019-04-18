@@ -16,7 +16,7 @@
 #ifndef ECMA_REGEXP_OBJECT_H
 #define ECMA_REGEXP_OBJECT_H
 
-#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+#if ENABLED (JERRY_BUILTIN_REGEXP)
 
 #include "ecma-globals.h"
 #include "re-compiler.h"
@@ -27,6 +27,46 @@
  * \addtogroup ecmaregexpobject ECMA RegExp object related routines
  * @{
  */
+
+#ifdef REGEXP_RECURSION_LIMIT
+/**
+ * Decrease the recursion counter and test it.
+ * If the counter reaches the limit of the recursion depth
+ * it will return with a range error.
+ */
+#define REGEXP_RECURSION_COUNTER_DECREASE_AND_TEST() \
+  do \
+  { \
+    if (--re_ctx_p->recursion_counter == 0) \
+    { \
+      return ecma_raise_range_error (ECMA_ERR_MSG ("RegExp recursion limit is exceeded.")); \
+    } \
+  } \
+  while (0)
+/**
+ * Increase the recursion counter.
+ */
+#define REGEXP_RECURSION_COUNTER_INCREASE() (++re_ctx_p->recursion_counter)
+/**
+ * Set the recursion counter to the max depth of the recursion.
+ */
+#define REGEXP_RECURSION_COUNTER_INIT() (re_ctx.recursion_counter = REGEXP_RECURSION_LIMIT)
+#else /* !REGEXP_RECURSION_LIMIT */
+/**
+ * Decrease the recursion counter and test it.
+ * If the counter reaches the limit of the recursion depth
+ * it will return with a range error.
+ */
+#define REGEXP_RECURSION_COUNTER_DECREASE_AND_TEST()
+/**
+ * Increase the recursion counter.
+ */
+#define REGEXP_RECURSION_COUNTER_INCREASE()
+/**
+ * Set the recursion counter to the max depth of the recursion.
+ */
+#define REGEXP_RECURSION_COUNTER_INIT()
+#endif /* REGEXP_RECURSION_LIMIT */
 
 /**
  * RegExp flags
@@ -48,6 +88,9 @@ typedef struct
   const lit_utf8_byte_t **saved_p;      /**< saved result string pointers, ECMA 262 v5, 15.10.2.1, State */
   const lit_utf8_byte_t *input_start_p; /**< start of input pattern string */
   const lit_utf8_byte_t *input_end_p;   /**< end of input pattern string */
+#ifdef REGEXP_RECURSION_LIMIT
+  uint32_t recursion_counter;           /**< RegExp recursion counter */
+#endif /* REGEXP_RECURSION_LIMIT */
   uint32_t num_of_captures;             /**< number of capture groups */
   uint32_t num_of_non_captures;         /**< number of non-capture groups */
   uint32_t *num_of_iterations_p;        /**< number of iterations */
@@ -69,5 +112,5 @@ void re_initialize_props (ecma_object_t *re_obj_p, ecma_string_t *source_p, uint
  * @}
  */
 
-#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+#endif /* ENABLED (JERRY_BUILTIN_REGEXP) */
 #endif /* !ECMA_REGEXP_OBJECT_H */

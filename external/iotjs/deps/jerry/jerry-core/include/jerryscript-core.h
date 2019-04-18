@@ -92,6 +92,8 @@ typedef enum
   JERRY_FEATURE_REGEXP, /**< Regexp support */
   JERRY_FEATURE_LINE_INFO, /**< line info available */
   JERRY_FEATURE_LOGGING, /**< logging */
+  JERRY_FEATURE_SYMBOL, /**< symbol support */
+  JERRY_FEATURE_DATAVIEW, /**< DataView support */
   JERRY_FEATURE__COUNT /**< number of features. NOTE: must be at the end of the list */
 } jerry_feature_t;
 
@@ -309,6 +311,20 @@ typedef struct
 typedef struct jerry_context_t jerry_context_t;
 
 /**
+ * Enum that contains the supported binary operation types
+ */
+typedef enum
+{
+  JERRY_BIN_OP_EQUAL = 0u,    /**< equal comparison (==) */
+  JERRY_BIN_OP_STRICT_EQUAL,  /**< strict equal comparison (===) */
+  JERRY_BIN_OP_LESS,          /**< less relation (<) */
+  JERRY_BIN_OP_LESS_EQUAL,    /**< less or equal relation (<=) */
+  JERRY_BIN_OP_GREATER,       /**< greater relation (>) */
+  JERRY_BIN_OP_GREATER_EQUAL, /**< greater or equal relation (>=)*/
+  JERRY_BIN_OP_INSTANCEOF,    /**< instanceof operation */
+} jerry_binary_operation_t;
+
+/**
  * General engine functions.
  */
 void jerry_init (jerry_init_flag_t flags);
@@ -354,6 +370,7 @@ bool jerry_value_is_null (const jerry_value_t value);
 bool jerry_value_is_object (const jerry_value_t value);
 bool jerry_value_is_promise (const jerry_value_t value);
 bool jerry_value_is_string (const jerry_value_t value);
+bool jerry_value_is_symbol (const jerry_value_t value);
 bool jerry_value_is_undefined (const jerry_value_t value);
 
 /**
@@ -370,6 +387,7 @@ typedef enum
   JERRY_TYPE_OBJECT,    /**< object type */
   JERRY_TYPE_FUNCTION,  /**< function type */
   JERRY_TYPE_ERROR,     /**< error/abort type */
+  JERRY_TYPE_SYMBOL,    /**< symbol type */
 } jerry_type_t;
 
 jerry_type_t jerry_value_get_type (const jerry_value_t value);
@@ -378,6 +396,13 @@ jerry_type_t jerry_value_get_type (const jerry_value_t value);
  * Checker function of whether the specified compile feature is enabled.
  */
 bool jerry_is_feature_enabled (const jerry_feature_t feature);
+
+/**
+ * Binary operations
+ */
+jerry_value_t jerry_binary_operation (jerry_binary_operation_t op,
+                                      const jerry_value_t lhs,
+                                      const jerry_value_t rhs);
 
 /**
  * Error manipulation functions.
@@ -458,13 +483,13 @@ jerry_value_t jerry_create_number_nan (void);
 jerry_value_t jerry_create_null (void);
 jerry_value_t jerry_create_object (void);
 jerry_value_t jerry_create_promise (void);
-jerry_value_t jerry_create_regexp (const jerry_char_t *pattern, jerry_regexp_flags_t flags);
-jerry_value_t jerry_create_regexp_sz (const jerry_char_t *pattern, jerry_size_t pattern_size,
-                                      jerry_regexp_flags_t flags);
+jerry_value_t jerry_create_regexp (const jerry_char_t *pattern, uint16_t flags);
+jerry_value_t jerry_create_regexp_sz (const jerry_char_t *pattern, jerry_size_t pattern_size, uint16_t flags);
 jerry_value_t jerry_create_string_from_utf8 (const jerry_char_t *str_p);
 jerry_value_t jerry_create_string_sz_from_utf8 (const jerry_char_t *str_p, jerry_size_t str_size);
 jerry_value_t jerry_create_string (const jerry_char_t *str_p);
 jerry_value_t jerry_create_string_sz (const jerry_char_t *str_p, jerry_size_t str_size);
+jerry_value_t jerry_create_symbol (const jerry_value_t value);
 jerry_value_t jerry_create_undefined (void);
 
 /**
@@ -503,10 +528,12 @@ jerry_value_t jerry_set_prototype (const jerry_value_t obj_val, const jerry_valu
 
 bool jerry_get_object_native_pointer (const jerry_value_t obj_val,
                                       void **out_native_pointer_p,
-                                      const jerry_object_native_info_t **out_pointer_info_p);
+                                      const jerry_object_native_info_t *native_pointer_info_p);
 void jerry_set_object_native_pointer (const jerry_value_t obj_val,
                                       void *native_pointer_p,
                                       const jerry_object_native_info_t *native_info_p);
+bool jerry_delete_object_native_pointer (const jerry_value_t obj_val,
+                                         const jerry_object_native_info_t *native_info_p);
 
 bool jerry_objects_foreach (jerry_objects_foreach_t foreach_p,
                             void *user_data);
@@ -521,6 +548,11 @@ bool jerry_foreach_object_property (const jerry_value_t obj_val, jerry_object_pr
  * Promise resolve/reject functions.
  */
 jerry_value_t jerry_resolve_or_reject_promise (jerry_value_t promise, jerry_value_t argument, bool is_resolve);
+
+/**
+ * Symbol functions.
+ */
+jerry_value_t jerry_get_symbol_descriptive_string (const jerry_value_t symbol);
 
 /**
  * Input validator functions.
@@ -564,6 +596,21 @@ jerry_length_t jerry_arraybuffer_read (const jerry_value_t value,
 jerry_length_t jerry_get_arraybuffer_byte_length (const jerry_value_t value);
 uint8_t *jerry_get_arraybuffer_pointer (const jerry_value_t value);
 
+/**
+ * DataView functions.
+ */
+jerry_value_t
+jerry_create_dataview (const jerry_value_t value,
+                       const jerry_length_t byte_offset,
+                       const jerry_length_t byte_length);
+
+bool
+jerry_value_is_dataview (const jerry_value_t value);
+
+jerry_value_t
+jerry_get_dataview_buffer (const jerry_value_t dataview,
+                           jerry_length_t *byte_offset,
+                           jerry_length_t *byte_length);
 
 /**
  * TypedArray functions.

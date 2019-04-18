@@ -15,9 +15,9 @@
 
 #ifndef ECMA_TYPEDARRAY_HELPERS_H
 #define ECMA_TYPEDARRAY_HELPERS_H
-#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
-
 #include "ecma-globals.h"
+
+#if ENABLED (JERRY_ES2015_BUILTIN_TYPEDARRAY)
 
 /** \addtogroup ecma ECMA
  * @{
@@ -29,7 +29,7 @@
 bool ecma_typedarray_helper_is_typedarray (uint8_t builtin_id);
 uint8_t ecma_typedarray_helper_get_shift_size (uint8_t builtin_id);
 uint8_t ecma_typedarray_helper_get_builtin_id (ecma_object_t *obj_p);
-uint8_t ecma_typedarray_helper_get_magic_string (uint8_t builtin_id);
+lit_magic_string_id_t ecma_typedarray_helper_get_magic_string (uint8_t builtin_id);
 uint8_t ecma_typedarray_helper_get_prototype_id (uint8_t builtin_id);
 
 ecma_value_t
@@ -42,5 +42,5 @@ ecma_typedarray_helper_dispatch_construct (const ecma_value_t *arguments_list_p,
  * @}
  */
 
-#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_TYPEDARRAY) */
 #endif /* !ECMA_TYPEDARRAY_HELPERS_H */

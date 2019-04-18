@@ -6,7 +6,6 @@ dist: trusty
 services:
   - docker
 
-before_install: if [[ "$RUN_DOCKER" == "yes" ]]; then docker pull iotjs/ubuntu:0.9; fi
 script: tools/travis_script.py
 
 matrix:
@@ -14,54 +13,53 @@ matrix:
     - name: "Linux/x86-64 Build & Correctness Tests"
       env:
       - OPTS="host-linux"
-      - RUN_DOCKER=yes
 
     - name: "Mock Linux Build & Correctness Tests"
       env:
       - OPTS="mock-linux"
-      - RUN_DOCKER=yes
+
+    - name: "Linux/x86-64 Build with N-API support & Correctness Tests"
+      env:
+      - OPTS="n-api"
+      install:
+        - npm install
 
     - name: "Raspberry Pi 2 Build Test"
       env:
       - OPTS="rpi2"
-      - RUN_DOCKER=yes
 
     - name: "STM32f4 Discovery with Nuttx Build Test"
       env:
       - OPTS="stm32f4dis"
-      - RUN_DOCKER=yes
 
     - name: "Artik053 with TizenRT Build Test"
       env:
       - OPTS="artik053"
-      - RUN_DOCKER=yes
 
     - name: "Tizen Build Test"
       env:
       - OPTS="tizen"
-      - RUN_DOCKER=yes
 
     - name: "ECMAScript 2015 features Build & Correctness Tests"
       env:
       - OPTS="es2015"
-      - RUN_DOCKER=yes
 
     - name: "External modules Build & Correctness Tests"
       env:
       - OPTS="external-modules"
-      - RUN_DOCKER=yes
 
     - name: "Linux/x86-64 without snapshot Build & Correctness Tests"
       env:
       - OPTS="no-snapshot"
-      - RUN_DOCKER=yes
 
     - name: "Misc checks (e.g. style checker)"
       env:
       - OPTS="misc"
       addons:
         apt:
-          packages: [valgrind, clang-format-3.9]
+          packages: [clang-format-3.9, npm, valgrind]
+      install:
+        - npm install eslint
 
     - name: "OSX/x86-64 Build & Correctness Tests"
       env:
@@ -74,12 +72,10 @@ matrix:
     - name: "ASAN Tests"
       env:
       - OPTS="asan"
-      - RUN_DOCKER=yes
 
     - name: "UBSAN Tests"
       env:
       - OPTS="ubsan"
-      - RUN_DOCKER=yes
 
     - name: "Coverity Scan"
       env:
@@ -99,9 +95,7 @@ matrix:
     - name: "SonarQube"
       addons:
         sonarcloud:
-          organization: "samsung-iotjs"
-          token:
-            secure: "u9HWNQNhAqQQdgl3yldKcQVH8plMQRwIdpzjsM4j3GBC4Wrh9u8guLJB3o003i0UsyaGg2knYFdLgOmEsgcvXAo2aIUyzf9CfK9RLRw5RtIuPMpmR7UjHdlf+QfCF+nY+BB2j0nAiWnxHve95du7sZflNxi+eNJJzquyBh1Wm8eqwoiRpCgiDzjRDEAUoz0FWMNny/x5545E970jpQ2bjHGx98tCMUO8ikINeL8sC99sumffaFONG8GVpwLjc8McfQfYpWbk0e0OPxZtGDyqKcyMxcbAGctklsigtsBZKlpj69uba3w4OSA3zJPCdQ4dKwCyBOcAAP8qeF5Jf0eLI8WLEgnKir2Pfc/rKkY0owuz7S+tUmizm3+T06wDFgwpLu0/PcA5oOcp4WpGXbAX7WujaAHB7YKAEsk324XC7Bdf+39OuZ0dbKWMiwU7rYV4NOYNPjN2BCb1XqyE0Ung41Ls6P4t/zwzYRZtiovhr6ibNBcwLVclfQZ/tbyBDuh++8dh7Ixe+x5RFiiCB0w/fiKqqXYM8/we4JU3f71y4DK6fP+nSN/vIYttvkN28HCCvBVSdyuuvPRM6Ro1yLNw9U9PHCJ1CIgcx8+I8Mep3PzBhDILXWjzlVu4sa/+aIoEq7MvWBDMhrFEP6RX+M6CiPmgj5+Lu/GZNivbu51RASI="
+          organization: "pando-project"
       script: ./tools/check_sonarqube.sh
       cache:
         directories:

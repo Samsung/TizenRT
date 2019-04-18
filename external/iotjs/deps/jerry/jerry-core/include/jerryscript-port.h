@@ -48,7 +48,6 @@ extern "C"
 typedef enum
 {
   ERR_OUT_OF_MEMORY = 10,
-  ERR_SYSCALL = 11,
   ERR_REF_COUNT_LIMIT = 12,
   ERR_DISABLED_BYTE_CODE = 13,
   ERR_FAILED_INTERNAL_ASSERTION = 120
@@ -126,7 +125,7 @@ void JERRY_ATTR_FORMAT (printf, 2, 3) jerry_port_log (jerry_log_level_t level, c
  *
  * Note:
  *      This port function is called by jerry-core when
- *      CONFIG_DISABLE_DATE_BUILTIN is _not_ defined. Otherwise this function is
+ *      JERRY_BUILTIN_DATE is defined to 1. Otherwise this function is
  *      not used.
  *
  * @param unix_ms The unix timestamp we want an offset for, given in
@@ -148,7 +147,7 @@ double jerry_port_get_local_time_zone_adjustment (double unix_ms, bool is_utc);
  *
  * Note:
  *      This port function is called by jerry-core when
- *      CONFIG_DISABLE_DATE_BUILTIN is _not_ defined. It is also common practice
+ *      JERRY_BUILTIN_DATE is defined to 1. It is also common practice
  *      in application code to use this function for the initialization of the
  *      random number generator.
  *
@@ -179,6 +178,42 @@ struct jerry_context_t *jerry_port_get_current_context (void);
  * @param sleep_time milliseconds to sleep.
  */
 void jerry_port_sleep (uint32_t sleep_time);
+
+/**
+ * Print a single character.
+ *
+ * Note:
+ *      This port function is here so the jerry-ext components would have
+ *      a common way to print out information.
+ *      If possible do not use from the jerry-core.
+ *
+ * @param c the character to print.
+ */
+void jerry_port_print_char (char c);
+
+/**
+ * Open a source file and read its contents into a buffer.
+ *
+ * Note:
+ *      This port function is called by jerry-core when JERRY_ES2015_MODULE_SYSTEM
+ *      is enabled. The path is specified in the import statement's 'from "..."'
+ *      section.
+ *
+ *  @param file_name_p Path that points to the EcmaScript file in the
+ *                     filesystem.
+ *  @param out_size_p The opened file's size in bytes.
+ *
+ *  @return the pointer to the buffer which contains the content of the file.
+ */
+uint8_t *jerry_port_read_source (const char *file_name_p, size_t *out_size_p);
+
+/**
+ * Frees the allocated buffer after the contents of the file are not needed
+ * anymore.
+ *
+ * @param buffer_p The pointer the allocated buffer.
+ */
+void jerry_port_release_source (uint8_t *buffer_p);
 
 /**
  * @}

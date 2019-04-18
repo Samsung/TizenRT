@@ -64,19 +64,19 @@
 
 #define CBC_HAS_POP_STACK_BYTE_ARG (CBC_HAS_BYTE_ARG | CBC_POP_STACK_BYTE_ARG)
 
-#ifndef CONFIG_DISABLE_ES2015_CLASS
+#if ENABLED (JERRY_ES2015_CLASS)
 /**
  * Checks whether the current opcode is a super constructor call
  */
 #define CBC_SUPER_CALL_OPERATION(opcode) \
   ((opcode) >= PARSER_TO_EXT_OPCODE (CBC_EXT_SUPER_CALL) \
     && (opcode) <= PARSER_TO_EXT_OPCODE (CBC_EXT_SUPER_CALL_BLOCK))
-#else /* CONFIG_DISABLE_ES2015_CLASS */
+#else /* !ENABLED (JERRY_ES2015_CLASS) */
 /**
  * Checks whether the current opcode is a super constructor call
  */
 #define CBC_SUPER_CALL_OPERATION(opcode) false
-#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+#endif /* ENABLED (JERRY_ES2015_CLASS) */
 
 /* Debug macro. */
 #define CBC_ARGS_EQ(op, types) \
@@ -116,27 +116,7 @@
   CBC_OPCODE (name ## _IDENT_BLOCK, CBC_HAS_LITERAL_ARG, 0, \
               (VM_OC_ ## group) | VM_OC_GET_LITERAL | VM_OC_PUT_IDENT | VM_OC_PUT_BLOCK)
 
-#define CBC_BINARY_LVALUE_OPERATION(name, group) \
-  CBC_OPCODE (name, CBC_NO_FLAG, -4, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_STACK | VM_OC_PUT_REFERENCE) \
-  CBC_OPCODE (name ## _LITERAL, CBC_HAS_LITERAL_ARG, -3, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_LITERAL | VM_OC_PUT_REFERENCE) \
-
-#define CBC_EXT_BINARY_LVALUE_OPERATION(name, group) \
-  CBC_OPCODE (name ## _PUSH_RESULT, CBC_NO_FLAG, -3, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_STACK | VM_OC_PUT_REFERENCE | VM_OC_PUT_STACK) \
-  CBC_OPCODE (name ## _LITERAL_PUSH_RESULT, CBC_HAS_LITERAL_ARG, -2, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_LITERAL | VM_OC_PUT_REFERENCE | VM_OC_PUT_STACK) \
-
-#define CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION(name, group) \
-  CBC_OPCODE (name ## _BLOCK, CBC_NO_FLAG, -4, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_STACK | VM_OC_PUT_REFERENCE | VM_OC_PUT_BLOCK) \
-  CBC_OPCODE (name ## _LITERAL_BLOCK, CBC_HAS_LITERAL_ARG, -3, \
-              (VM_OC_ ## group) | VM_OC_GET_STACK_LITERAL | VM_OC_PUT_REFERENCE | VM_OC_PUT_BLOCK) \
-
 #define CBC_UNARY_LVALUE_WITH_IDENT 3
-
-#define CBC_BINARY_LVALUE_WITH_LITERAL 1
 
 #define CBC_BINARY_WITH_LITERAL 1
 #define CBC_BINARY_WITH_TWO_LITERALS 2
@@ -161,12 +141,6 @@
  */
 #define CBC_NO_RESULT_OPERATION(opcode) \
   (((opcode) >= CBC_PRE_INCR && (opcode) < CBC_END) || CBC_SUPER_CALL_OPERATION ((opcode)))
-
-#define CBC_NO_RESULT_BLOCK(opcode) \
-  (((opcode) >= CBC_PRE_INCR && (opcode) < CBC_ASSIGN_ADD) || CBC_SUPER_CALL_OPERATION ((opcode)))
-
-#define CBC_NO_RESULT_COMPOUND_ASSIGMENT(opcode) \
-  ((opcode) >= CBC_ASSIGN_ADD && (opcode) < CBC_END && !CBC_SUPER_CALL_OPERATION ((opcode)))
 
 /**
  * Branch instructions are organized in group of 8 opcodes.
@@ -497,30 +471,6 @@
   CBC_OPCODE (CBC_ASSIGN_PROP_THIS_LITERAL_BLOCK, CBC_HAS_LITERAL_ARG, -1, \
               VM_OC_ASSIGN_PROP_THIS | VM_OC_GET_LITERAL | VM_OC_PUT_REFERENCE | VM_OC_PUT_BLOCK) \
   \
-  /* Binary compound assignment opcodes. */ \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_ADD, \
-                               ADD) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_SUBTRACT, \
-                               SUB) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_MULTIPLY, \
-                               MUL) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_DIVIDE, \
-                               DIV) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_MODULO, \
-                               MOD) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_LEFT_SHIFT, \
-                               LEFT_SHIFT) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_RIGHT_SHIFT, \
-                               RIGHT_SHIFT) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_UNS_RIGHT_SHIFT, \
-                               UNS_RIGHT_SHIFT) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_BIT_AND, \
-                               BIT_AND) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_BIT_OR, \
-                               BIT_OR) \
-  CBC_BINARY_LVALUE_OPERATION (CBC_ASSIGN_BIT_XOR, \
-                               BIT_XOR) \
-  \
   /* Last opcode (not a real opcode). */ \
   CBC_OPCODE (CBC_END, CBC_NO_FLAG, 0, \
               VM_OC_NONE)
@@ -631,54 +581,6 @@
   CBC_OPCODE (CBC_EXT_ERROR, CBC_NO_FLAG, 0, \
               VM_OC_ERROR) \
   \
-  /* Binary compound assignment opcodes with pushing the result. */ \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_ADD, \
-                                   ADD) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_SUBTRACT, \
-                                   SUB) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_MULTIPLY, \
-                                   MUL) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_DIVIDE, \
-                                   DIV) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_MODULO, \
-                                   MOD) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_LEFT_SHIFT, \
-                                   LEFT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_RIGHT_SHIFT, \
-                                   RIGHT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_UNS_RIGHT_SHIFT, \
-                                   UNS_RIGHT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_BIT_AND, \
-                                   BIT_AND) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_BIT_OR, \
-                                   BIT_OR) \
-  CBC_EXT_BINARY_LVALUE_OPERATION (CBC_EXT_ASSIGN_BIT_XOR, \
-                                   BIT_XOR) \
-  \
-  /* Binary compound assignment opcodes with saving the result. */ \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_ADD, \
-                                         ADD) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_SUBTRACT, \
-                                         SUB) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_MULTIPLY, \
-                                         MUL) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_DIVIDE, \
-                                         DIV) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_MODULO, \
-                                         MOD) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_LEFT_SHIFT, \
-                                         LEFT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_RIGHT_SHIFT, \
-                                         RIGHT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_UNS_RIGHT_SHIFT, \
-                                         UNS_RIGHT_SHIFT) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_BIT_AND, \
-                                         BIT_AND) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_BIT_OR, \
-                                         BIT_OR) \
-  CBC_EXT_BINARY_LVALUE_BLOCK_OPERATION (CBC_EXT_ASSIGN_BIT_XOR, \
-                                         BIT_XOR) \
-  \
   /* Last opcode (not a real opcode). */ \
   CBC_OPCODE (CBC_EXT_END, CBC_NO_FLAG, 0, \
               VM_OC_NONE)
@@ -746,6 +648,7 @@ typedef enum
   CBC_CODE_FLAGS_STATIC_FUNCTION = (1u << 7), /**< this function is a static snapshot function */
   CBC_CODE_FLAGS_DEBUGGER_IGNORE = (1u << 8), /**< this function should be ignored by debugger */
   CBC_CODE_FLAGS_CONSTRUCTOR = (1u << 9), /**< this function is a constructor */
+  CBC_CODE_FLAGS_REST_PARAMETER = (1u << 10), /**< this function has rest parameter */
 } cbc_code_flags;
 
 /**

@@ -30,11 +30,13 @@ void jerryx_debugger_after_connect (bool success);
  * Message transmission interfaces.
  */
 bool jerryx_debugger_tcp_create (uint16_t port);
+bool jerryx_debugger_serial_create (const char *config);
 
 /*
  * Message encoding interfaces.
  */
 bool jerryx_debugger_ws_create (void);
+bool jerryx_debugger_rp_create (void);
 
 #ifdef __cplusplus
 }

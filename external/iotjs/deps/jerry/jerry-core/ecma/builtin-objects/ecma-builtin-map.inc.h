@@ -19,7 +19,7 @@
 
 #include "ecma-builtin-helpers-macro-defines.inc.h"
 
-#ifndef CONFIG_DISABLE_ES2015_MAP_BUILTIN
+#if ENABLED (JERRY_ES2015_BUILTIN_MAP)
 
 /* Number properties:
  *  (property name, number value, writable, enumerable, configurable) */
@@ -29,6 +29,11 @@ NUMBER_VALUE (LIT_MAGIC_STRING_LENGTH,
               0,
               ECMA_PROPERTY_FIXED)
 
+/* ECMA-262 v6, 23.1 */
+STRING_VALUE (LIT_MAGIC_STRING_NAME,
+              LIT_MAGIC_STRING_MAP_UL,
+              ECMA_PROPERTY_FLAG_CONFIGURABLE)
+
 /* Object properties:
  *  (property name, object pointer getter) */
 
@@ -37,6 +42,6 @@ OBJECT_VALUE (LIT_MAGIC_STRING_PROTOTYPE,
               ECMA_BUILTIN_ID_MAP_PROTOTYPE,
               ECMA_PROPERTY_FIXED)
 
-#endif /* !CONFIG_DISABLE_ES2015_MAP_BUILTIN */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_MAP) */
 
 #include "ecma-builtin-helpers-macro-undefs.inc.h"

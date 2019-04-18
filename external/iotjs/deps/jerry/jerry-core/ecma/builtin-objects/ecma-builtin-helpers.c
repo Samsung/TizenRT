@@ -21,7 +21,9 @@
 #include "ecma-conversion.h"
 #include "ecma-function-object.h"
 #include "ecma-exceptions.h"
+#include "ecma-gc.h"
 #include "ecma-helpers.h"
+#include "jmem.h"
 #include "ecma-objects.h"
 #include "ecma-try-catch-macro.h"
 #include "lit-magic-strings.h"
@@ -32,6 +34,69 @@
  * \addtogroup ecmabuiltinhelpers ECMA builtin helper operations
  * @{
  */
+
+#if ENABLED (JERRY_ES2015_BUILTIN_SYMBOL)
+/**
+ * Helper function for Object.prototype.toString routine when
+ * the @@toStringTag property is present
+ *
+ * See also:
+ *          ECMA-262 v6, 19.1.3.6
+ *
+ * @return ecma value
+ *         Returned value must be freed with ecma_free_value.
+ */
+static ecma_value_t
+ecma_builtin_helper_object_to_string_tag_helper (ecma_value_t tag_value) /**< string tag */
+{
+  JERRY_ASSERT (ecma_is_value_string (tag_value));
+
+  ecma_string_t *tag_str_p = ecma_get_string_from_value (tag_value);
+  ecma_string_t *ret_string_p;
+
+  /* Building string "[object #@@toStringTag#]"
+     The string size will be size("[object ") + size(#@@toStringTag#) + size ("]"). */
+  const lit_utf8_size_t buffer_size = 9 + ecma_string_get_size (tag_str_p);
+  JMEM_DEFINE_LOCAL_ARRAY (str_buffer, buffer_size, lit_utf8_byte_t);
+
+  lit_utf8_byte_t *buffer_ptr = str_buffer;
+
+  const lit_magic_string_id_t magic_string_ids[] =
+  {
+    LIT_MAGIC_STRING_LEFT_SQUARE_CHAR,
+    LIT_MAGIC_STRING_OBJECT,
+    LIT_MAGIC_STRING_SPACE_CHAR,
+  };
+
+  /* Copy to buffer the "[object " string */
+  for (uint32_t i = 0; i < sizeof (magic_string_ids) / sizeof (lit_magic_string_id_t); ++i)
+  {
+    buffer_ptr = lit_copy_magic_string_to_buffer (magic_string_ids[i], buffer_ptr,
+                                                  (lit_utf8_size_t) ((str_buffer + buffer_size) - buffer_ptr));
+
+    JERRY_ASSERT (buffer_ptr <= str_buffer + buffer_size);
+  }
+
+  /* Copy to buffer the #@@toStringTag# string */
+  buffer_ptr += ecma_string_copy_to_cesu8_buffer (tag_str_p, buffer_ptr,
+                                                  (lit_utf8_size_t) ((str_buffer + buffer_size) - buffer_ptr));
+
+  JERRY_ASSERT (buffer_ptr <= str_buffer + buffer_size);
+
+  /* Copy to buffer the "]" string */
+  buffer_ptr = lit_copy_magic_string_to_buffer (LIT_MAGIC_STRING_RIGHT_SQUARE_CHAR, buffer_ptr,
+                                                (lit_utf8_size_t) ((str_buffer + buffer_size) - buffer_ptr));
+
+  JERRY_ASSERT (buffer_ptr <= str_buffer + buffer_size);
+
+  ret_string_p = ecma_new_ecma_string_from_utf8 (str_buffer, (lit_utf8_size_t) (buffer_ptr - str_buffer));
+
+  JMEM_FINALIZE_LOCAL_ARRAY (str_buffer);
+  ecma_deref_ecma_string (tag_str_p);
+
+  return ecma_make_string_value (ret_string_p);
+} /* ecma_builtin_helper_object_to_string_tag_helper */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_SYMBOL) */
 
 /**
  * Common implementation of the Object.prototype.toString routine
@@ -75,7 +140,25 @@ ecma_builtin_helper_object_to_string (const ecma_value_t this_arg) /**< this arg
 
     type_string = ecma_object_get_class_name (obj_p);
 
-    ecma_free_value (obj_this);
+#if ENABLED (JERRY_ES2015_BUILTIN_SYMBOL)
+    ecma_value_t tag_value = ecma_op_object_get_by_symbol_id (obj_p, LIT_MAGIC_STRING_TO_STRING_TAG);
+
+    if (ECMA_IS_VALUE_ERROR (tag_value))
+    {
+      ecma_deref_object (obj_p);
+      return tag_value;
+    }
+
+    if (ecma_is_value_string (tag_value))
+    {
+      ecma_deref_object (obj_p);
+      return ecma_builtin_helper_object_to_string_tag_helper (tag_value);
+    }
+
+    ecma_free_value (tag_value);
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_SYMBOL) */
+
+    ecma_deref_object (obj_p);
   }
 
   ecma_string_t *ret_string_p;
@@ -187,7 +270,7 @@ ecma_builtin_helper_get_to_locale_string_at_index (ecma_object_t *obj_p, /**< th
  */
 ecma_value_t
 ecma_builtin_helper_object_get_properties (ecma_object_t *obj_p, /**< object */
-                                           bool only_enumerable_properties) /**< list enumerable properties? */
+                                           uint32_t opts) /**< any combination of ecma_list_properties_options_t */
 {
   JERRY_ASSERT (obj_p != NULL);
 
@@ -197,9 +280,7 @@ ecma_builtin_helper_object_get_properties (ecma_object_t *obj_p, /**< object */
 
   uint32_t index = 0;
 
-  ecma_collection_header_t *props_p;
-  props_p = ecma_op_object_get_property_names (obj_p,
-                                               only_enumerable_properties ? ECMA_LIST_ENUMERABLE : ECMA_LIST_NO_OPTS);
+  ecma_collection_header_t *props_p = ecma_op_object_get_property_names (obj_p, opts);
 
   ecma_value_t *ecma_value_p = ecma_collection_iterator_init (props_p);
 

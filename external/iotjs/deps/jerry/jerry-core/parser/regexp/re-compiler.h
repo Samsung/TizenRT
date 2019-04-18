@@ -16,7 +16,7 @@
 #ifndef RE_COMPILER_H
 #define RE_COMPILER_H
 
-#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+#if ENABLED (JERRY_BUILTIN_REGEXP)
 
 #include "ecma-globals.h"
 #include "re-bytecode.h"
@@ -41,6 +41,9 @@ typedef struct
   uint32_t num_of_captures;          /**< number of capture groups */
   uint32_t num_of_non_captures;      /**< number of non-capture groups */
   uint32_t highest_backref;          /**< highest backreference */
+#ifdef REGEXP_RECURSION_LIMIT
+  uint32_t recursion_counter;        /**< RegExp recursion counter */
+#endif /* REGEXP_RECURSION_LIMIT */
   re_bytecode_ctx_t *bytecode_ctx_p; /**< pointer of RegExp bytecode context */
   re_token_t current_token;          /**< current token */
   re_parser_ctx_t *parser_ctx_p;     /**< pointer of RegExp parser context */
@@ -57,5 +60,5 @@ void re_cache_gc_run (void);
  * @}
  */
 
-#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+#endif /* ENABLED (JERRY_BUILTIN_REGEXP) */
 #endif /* !RE_COMPILER_H */

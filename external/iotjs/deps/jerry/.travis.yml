@@ -1,13 +1,8 @@
 language: c
 
-# Default environment: Container-based (sudo-less) Ubuntu Trusty 14.04.
+# Default environment: Ubuntu Trusty 14.04.
 os: linux
 dist: trusty
-sudo: false
-
-# Default dependency installation step: nop intentionally.
-# Jobs can add their own dependencies by redefinig the 'install' stage in the matrix below.
-install: skip
 
 # Default job task: run tests as defined in the $OPT environment variable.
 # Jobs can redefine the 'script' stage in the matrix below.
@@ -17,9 +12,10 @@ script: tools/run-tests.py $OPTS
 matrix:
   include:
     - name: "Checks"
-      env:
-        - OPTS="--check-signed-off=travis --check-cppcheck --check-doxygen --check-vera --check-license --check-magic-strings --check-pylint"
       install: pip install --user pylint==1.6.5
+      script:
+        - tools/run-tests.py --check-signed-off=travis --check-doxygen --check-vera --check-license --check-magic-strings --check-pylint
+        - travis_wait 40 tools/run-tests.py --check-cppcheck
       addons:
         apt:
           packages: [doxygen, cppcheck, vera++]
@@ -48,7 +44,9 @@ matrix:
       env:
         - OPTS="--quiet --jerry-tests --jerry-test-suite --unittests"
       os: osx
-      install: tools/brew-install-deps.sh
+      addons:
+        homebrew:
+          packages: [cmake, cppcheck, vera++]
 
     - name: "Build Tests"
       env:
@@ -113,21 +111,18 @@ matrix:
     - name: "SonarQube"
       addons:
         sonarcloud:
-          organization: "jerryscript-project"
-          token:
-            secure: "C1QD99nllAQndSDj4uIQPWCK0jBYrC5P0IrpdhfG7li7uvdzphUM++z3zkhYeeTJR3flw/cr8d9saYlbMjGw2eZ7AdJPFy4FJ1doBXD2amIuepaG1e829SLnJner9VA+d/8j28m7lZNtvZF5efbrS4KOicijNixmJy2PKG0K2035fs6MHLdywF8cJhyMaoRiMvYahIZEjXMvPBSgG1m4+A3PpzyN8XijwOT47cVtCLav4L21Mc7LcHsrc3LeyhtEJ+cs7Lx9WDQDwXX9iCRTA5ByqrXsS4rBV/N3lJI5M9p68Yj94Qy2OvVeCmUZ4ezwuuwkX00vBUk2f4eZx3oFAp973ekA8EGm/5qEvHVcbjHoHLbfUxsAKQHVoExXGdM5r1KeVgxLDT2FSQnBZLoxIrtGOUqFEOL4WX5YaQNoUKvYFO+CNvsMQkNg65QzLinRfqcH20KjzAsVeFwVI/j87J2VjooM8910savpw53iVBNPqmO/lG3kzFL7L2p1FeOuyEg9ANAbMhAXt3SL2srT0xni+ysg4Iwq+IkU+hkQWsvM8Voz+QJmiotFsi1Pzakcu3IOlT8lVVyn5q0z59YVDht/6if7acqkZ3X5vldeNIZYkImmYhMebScxVhzAa8AS6/81A+zJ8lW1+RWJQtP3uPM1+Dq18iFkPrCEMZwtoXI="
+          organization: "pando-project"
       script: tools/check-sonarqube.sh
       cache:
         directories:
           - '${HOME}/.sonar/cache'
 
     - name: "ESP8266 Build Test"
-      cache: ccache
       install: make -f ./targets/esp8266/Makefile.travis install-noapt
       script: make -f ./targets/esp8266/Makefile.travis script
       addons:
         apt:
-          packages: [gperf, texinfo, wget]
+          packages: [wget]
 
     - name: "Mbed OS 5/K64F Build Test"
       addons:
@@ -135,6 +130,8 @@ matrix:
           sources:
             - sourceline: ppa:team-gcc-arm-embedded/ppa
           packages: [gcc-arm-embedded]
+      language: python # NOTE: only way to ensure python>=2.7.10 on Trusty image
+      python: 2.7
       install: make -f ./targets/mbedos5/Makefile.travis install
       script: make -f ./targets/mbedos5/Makefile.travis script
 
@@ -160,7 +157,7 @@ matrix:
         apt:
           sources:
             - sourceline: ppa:team-gcc-arm-embedded/ppa
-          packages: [gcc-arm-embedded]
+          packages: [gcc-arm-embedded, genromfs]
       install: make -f ./targets/tizenrt-artik053/Makefile.travis install
       script: make -f ./targets/tizenrt-artik053/Makefile.travis script
 

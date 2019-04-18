@@ -30,7 +30,7 @@
 #include "ecma-gc.h"
 #include "jmem.h"
 
-#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+#if ENABLED (JERRY_ES2015_BUILTIN_TYPEDARRAY)
 
 #define ECMA_BUILTINS_INTERNAL
 #include "ecma-builtins-internal.h"
@@ -139,6 +139,28 @@ ecma_builtin_typedarray_prototype_length_getter (ecma_value_t this_arg) /**< thi
 
   return ecma_raise_type_error (ECMA_ERR_MSG ("Argument 'this' is not a TypedArray."));
 } /* ecma_builtin_typedarray_prototype_length_getter */
+
+#if ENABLED (JERRY_ES2015_BUILTIN_SYMBOL)
+/**
+ * The %TypedArray%.prototype[Symbol.toStringTag] accessor
+ *
+ * See also:
+ *          ES2015, 22.2.3.31
+ *
+ * @return ecma value
+ *         Returned value must be freed with ecma_free_value.
+ */
+static ecma_value_t
+ecma_builtin_typedarray_prototype_to_string_tag_getter (ecma_value_t this_arg) /**< this argument */
+{
+  if (!ecma_is_typedarray (this_arg))
+  {
+    return ECMA_VALUE_UNDEFINED;
+  }
+
+  return ecma_make_magic_string_value (ecma_object_get_class_name (ecma_get_object_from_value (this_arg)));
+} /* ecma_builtin_typedarray_prototype_to_string_tag_getter */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_SYMBOL) */
 
 /**
  * Type of routine.
@@ -686,7 +708,7 @@ ecma_op_typedarray_set_with_typedarray (ecma_value_t this_arg, /**< this argumen
 
   /* 9. targetBuffer */
   ecma_object_t *target_arraybuffer_p = ecma_typedarray_get_arraybuffer (target_typedarray_p);
-  lit_utf8_byte_t *target_buffer_p = ecma_typedarray_get_buffer (target_typedarray_p);
+  lit_utf8_byte_t *target_buffer_p = ecma_arraybuffer_get_buffer (target_arraybuffer_p);
 
   /* 11. targetLength */
   ecma_length_t target_length = ecma_typedarray_get_length (target_typedarray_p);
@@ -730,6 +752,12 @@ ecma_op_typedarray_set_with_typedarray (ecma_value_t this_arg, /**< this argumen
   if ((int64_t) src_length_uint32 + target_offset_uint32 > target_length)
   {
     return ecma_raise_range_error (ECMA_ERR_MSG ("Invalid range of index"));
+  }
+
+  /* Fast path first. If the source and target arrays are the same we do not need to copy anything. */
+  if (this_arg == arr_val)
+  {
+    return ECMA_VALUE_UNDEFINED;
   }
 
   /* 24.d, 25. srcByteIndex */
@@ -1027,6 +1055,7 @@ ecma_builtin_typedarray_prototype_join (ecma_value_t this_arg, /**< this argumen
         ecma_value_t next_string_value = ecma_op_typedarray_get_to_string_at_index (obj_p, k);
         if (ECMA_IS_VALUE_ERROR (next_string_value))
         {
+          ecma_deref_ecma_string (return_string_p);
           ecma_free_value (first_value);
           ecma_free_value (separator_value);
           ecma_free_value (length_value);
@@ -1051,9 +1080,9 @@ ecma_builtin_typedarray_prototype_join (ecma_value_t this_arg, /**< this argumen
   }
   ecma_free_value (separator_value);
 
+  ECMA_OP_TO_NUMBER_FINALIZE (length_number);
   ecma_free_value (length_value);
   ecma_free_value (obj_value);
-  ECMA_OP_TO_NUMBER_FINALIZE (length_number);
   return ret_value;
 } /* ecma_builtin_typedarray_prototype_join */
 
@@ -1545,4 +1574,4 @@ ecma_builtin_typedarray_prototype_find (ecma_value_t this_arg, /**< this argumen
  * @}
  */
 
-#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_TYPEDARRAY) */

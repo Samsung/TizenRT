@@ -28,6 +28,7 @@
 #include "vm-defines.h"
 #include "jerryscript.h"
 #include "jerryscript-debugger-transport.h"
+#include "js-parser-internal.h"
 
 /** \addtogroup context Context
  * @{
@@ -66,6 +67,17 @@ typedef struct jerry_context_data_header
  */
 #define JERRY_CONTEXT_FIRST_MEMBER ecma_builtin_objects
 
+#if ENABLED (JERRY_ES2015_MODULE_SYSTEM)
+/**
+ * Contains the lexical environments of the loaded modules.
+ */
+typedef struct ecma_module_lex_envs
+{
+  ecma_object_t *lex_env_p; /**< pointer to loaded module's lexical environment */
+  struct ecma_module_lex_envs *next_p; /**< pointer to the next item in the linked list */
+} ecma_module_lex_envs_t;
+#endif /* ENABLED (JERRY_ES2015_MODULE_SYSTEM) */
+
 /**
  * JerryScript context
  *
@@ -84,9 +96,9 @@ struct jerry_context_t
 
   /* Update JERRY_CONTEXT_FIRST_MEMBER if the first non-external member changes */
   ecma_object_t *ecma_builtin_objects[ECMA_BUILTIN_ID__COUNT]; /**< pointer to instances of built-in objects */
-#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+#if ENABLED (JERRY_BUILTIN_REGEXP)
   const re_compiled_code_t *re_cache[RE_CACHE_SIZE]; /**< regex cache */
-#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+#endif /* ENABLED (JERRY_BUILTIN_REGEXP) */
   ecma_object_t *ecma_gc_objects_p; /**< List of currently alive objects. */
   jmem_heap_free_t *jmem_heap_list_skip_p; /**< This is used to speed up deallocation. */
   jmem_pools_chunk_t *jmem_free_8_byte_chunk_p; /**< list of free eight byte pool chunks */
@@ -97,8 +109,17 @@ struct jerry_context_t
   const lit_utf8_byte_t * const *lit_magic_string_ex_array; /**< array of external magic strings */
   const lit_utf8_size_t *lit_magic_string_ex_sizes; /**< external magic string lengths */
   ecma_lit_storage_item_t *string_list_first_p; /**< first item of the literal string list */
+#if ENABLED (JERRY_ES2015_BUILTIN_SYMBOL)
+  ecma_lit_storage_item_t *symbol_list_first_p; /**< first item of the global symbol list */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_SYMBOL) */
   ecma_lit_storage_item_t *number_list_first_p; /**< first item of the literal number list */
   ecma_object_t *ecma_global_lex_env_p; /**< global lexical environment */
+
+#if ENABLED (JERRY_ES2015_MODULE_SYSTEM)
+  ecma_module_lex_envs_t *ecma_module_lex_envs_p; /**< list of module's lexical environments */
+  parser_module_context_t *module_top_context_p; /**< top (current) module parser context */
+#endif /* ENABLED (JERRY_ES2015_MODULE_SYSTEM) */
+
   vm_frame_ctx_t *vm_top_context_p; /**< top (current) interpreter context */
   jerry_context_data_header_t *context_data_p; /**< linked list of user-provided context-specific pointers */
   size_t ecma_gc_objects_number; /**< number of currently allocated objects */
@@ -116,14 +137,14 @@ struct jerry_context_t
                                           *   if !0 property hashmap allocation is disabled */
 #endif /* !CONFIG_ECMA_PROPERTY_HASHMAP_DISABLE */
 
-#ifndef CONFIG_DISABLE_REGEXP_BUILTIN
+#if ENABLED (JERRY_BUILTIN_REGEXP)
   uint8_t re_cache_idx; /**< evicted item index when regex cache is full (round-robin) */
-#endif /* !CONFIG_DISABLE_REGEXP_BUILTIN */
+#endif /* ENABLED (JERRY_BUILTIN_REGEXP) */
 
-#ifndef CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+#if ENABLED (JERRY_ES2015_BUILTIN_PROMISE)
   ecma_job_queueitem_t *job_queue_head_p; /**< points to the head item of the jobqueue */
   ecma_job_queueitem_t *job_queue_tail_p; /**< points to the tail item of the jobqueue*/
-#endif /* CONFIG_DISABLE_ES2015_PROMISE_BUILTIN */
+#endif /* ENABLED (JERRY_ES2015_BUILTIN_PROMISE) */
 
 #ifdef JERRY_VM_EXEC_STOP
   uint32_t vm_exec_stop_frequency; /**< reset value for vm_exec_stop_counter */
@@ -132,6 +153,10 @@ struct jerry_context_t
   ecma_vm_exec_stop_callback_t vm_exec_stop_cb; /**< user function which returns whether the
                                                  *   ECMAScript execution should be stopped */
 #endif /* JERRY_VM_EXEC_STOP */
+
+#ifdef VM_RECURSION_LIMIT
+  uint32_t vm_recursion_counter;  /**< VM recursion counter */
+#endif /* VM_RECURSION_LIMIT */
 
 #ifdef JERRY_DEBUGGER
   uint8_t debugger_send_buffer[JERRY_DEBUGGER_TRANSPORT_MAX_BUFFER_SIZE]; /**< buffer for sending messages */

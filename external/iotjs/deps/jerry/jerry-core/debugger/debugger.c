@@ -38,9 +38,9 @@ typedef struct
  * The number of message types in the debugger should reflect the
  * debugger versioning.
  */
-JERRY_STATIC_ASSERT (JERRY_DEBUGGER_MESSAGES_OUT_MAX_COUNT == 32
+JERRY_STATIC_ASSERT (JERRY_DEBUGGER_MESSAGES_OUT_MAX_COUNT == 33
                      && JERRY_DEBUGGER_MESSAGES_IN_MAX_COUNT == 21
-                     && JERRY_DEBUGGER_VERSION == 8,
+                     && JERRY_DEBUGGER_VERSION == 9,
                      debugger_version_correlates_to_message_type_count);
 
 /**
@@ -271,11 +271,12 @@ jerry_debugger_send_scope_chain (void)
 
 /**
  * Get type of the scope variable property.
+ * @return (jerry_debugger_scope_variable_type_t)
  */
-static jerry_debugger_scope_variable_type_t
+static uint8_t
 jerry_debugger_get_variable_type (ecma_value_t value) /**< input ecma value */
 {
-  jerry_debugger_scope_variable_type_t ret_value = JERRY_DEBUGGER_VALUE_NONE;
+  uint8_t ret_value = JERRY_DEBUGGER_VALUE_NONE;
 
   if (ecma_is_value_undefined (value))
   {
@@ -321,11 +322,12 @@ jerry_debugger_get_variable_type (ecma_value_t value) /**< input ecma value */
  *
  * It will copies the given scope values type, length and value into the outgoing message string.
  *
+ * @param variable_type type (jerry_debugger_scope_variable_type_t)
  * @return true - if the copy was successfully
  *         false - otherwise
  */
 static bool
-jerry_debugger_copy_variables_to_string_message (jerry_debugger_scope_variable_type_t variable_type, /**< type */
+jerry_debugger_copy_variables_to_string_message (uint8_t variable_type, /**< type */
                                                  ecma_string_t *value_str, /**< property name or value string */
                                                  jerry_debugger_send_string_t *message_string_p, /**< msg pointer */
                                                  size_t *buffer_pos) /**< string data position of the message */
@@ -494,7 +496,7 @@ jerry_debugger_send_scope_variables (const uint8_t *recv_buffer_p) /**< pointer 
         ecma_property_value_t prop_value_p = prop_pair_p->values[i];
         ecma_value_t property_value;
 
-        jerry_debugger_scope_variable_type_t variable_type = jerry_debugger_get_variable_type (prop_value_p.value);
+        uint8_t variable_type = jerry_debugger_get_variable_type (prop_value_p.value);
 
         property_value = ecma_op_to_string (prop_value_p.value);
 
@@ -1418,7 +1420,7 @@ jerry_debugger_exception_object_to_string (ecma_value_t exception_obj_value) /**
 
   switch (((ecma_extended_object_t *) prototype_p)->u.built_in.id)
   {
-#ifndef CONFIG_DISABLE_ERROR_BUILTINS
+#if ENABLED (JERRY_BUILTIN_ERRORS)
     case ECMA_BUILTIN_ID_EVAL_ERROR_PROTOTYPE:
     {
       string_id = LIT_MAGIC_STRING_EVAL_ERROR_UL;
@@ -1449,7 +1451,7 @@ jerry_debugger_exception_object_to_string (ecma_value_t exception_obj_value) /**
       string_id = LIT_MAGIC_STRING_URI_ERROR_UL;
       break;
     }
-#endif /* !CONFIG_DISABLE_ERROR_BUILTINS */
+#endif /* ENABLED (JERRY_BUILTIN_ERRORS) */
     case ECMA_BUILTIN_ID_ERROR_PROTOTYPE:
     {
       string_id = LIT_MAGIC_STRING_ERROR_UL;

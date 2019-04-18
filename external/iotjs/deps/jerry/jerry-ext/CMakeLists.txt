@@ -33,18 +33,13 @@ if(FEATURE_INIT_FINI)
 endif()
 
 # Source directories
-file(GLOB SOURCE_EXT_ARG        arg/*.c)
-file(GLOB SOURCE_EXT_COMMON     common/*.c)
-file(GLOB SOURCE_EXT_DEBUGGER   debugger/*.c)
-file(GLOB SOURCE_EXT_HANDLER    handler/*.c)
-file(GLOB SOURCE_EXT_MODULE     module/*.c)
-
-set(SOURCE_EXT
-    ${SOURCE_EXT_ARG}
-    ${SOURCE_EXT_COMMON}
-    ${SOURCE_EXT_DEBUGGER}
-    ${SOURCE_EXT_HANDLER}
-    ${SOURCE_EXT_MODULE})
+file(GLOB SOURCE_EXT
+     arg/*.c
+     common/*.c
+     debugger/*.c
+     handle-scope/*.c
+     handler/*.c
+     module/*.c)
 
 add_library(${JERRY_EXT_NAME} ${SOURCE_EXT})
 
@@ -53,5 +48,15 @@ target_include_directories(${JERRY_EXT_NAME} PRIVATE ${INCLUDE_EXT_PRIVATE})
 target_compile_definitions(${JERRY_EXT_NAME} PUBLIC ${DEFINES_EXT})
 target_link_libraries(${JERRY_EXT_NAME} jerry-core)
 
+set(JERRY_EXT_PKGCONFIG_LIBS)
+
+if(USING_MSVC AND FEATURE_DEBUGGER)
+  target_link_libraries(${JERRY_EXT_NAME} ws2_32)
+  set(JERRY_EXT_PKGCONFIG_LIBS -lws2_32)
+endif()
+
+configure_file(libjerry-ext.pc.in libjerry-ext.pc @ONLY)
+
 install(TARGETS ${JERRY_EXT_NAME} DESTINATION lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libjerry-ext.pc DESTINATION lib/pkgconfig)
 install(DIRECTORY ${INCLUDE_EXT_PUBLIC}/ DESTINATION include)

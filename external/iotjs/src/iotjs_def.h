@@ -33,8 +33,8 @@
 #ifdef NDEBUG
 #define IOTJS_ASSERT(x) ((void)(x))
 #else /* !NDEBUG */
-extern void print_stacktrace();
-extern void force_terminate();
+extern void print_stacktrace(void);
+extern void force_terminate(void);
 #define IOTJS_ASSERT(x)                                                      \
   do {                                                                       \
     if (!(x)) {                                                              \
@@ -89,6 +89,10 @@ extern void force_terminate();
 #if !defined(TARGET_BOARD)
 #define TARGET_BOARD "unknown"
 #endif /* TARGET_BOARD */
+
+#define NODE_MAJOR_VERSION 1
+#define NODE_MINOR_VERSION 0
+#define NODE_PATCH_VERSION 0
 
 /* Avoid compiler warnings if needed. */
 #define IOTJS_UNUSED(x) ((void)(x))

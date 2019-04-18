@@ -210,7 +210,7 @@ print_unhandled_exception (jerry_value_t error_value) /**< error value */
         unsigned int pos = 0;
 
         /* 2. seek and print */
-        while (buffer[pos] != '\0')
+        while ((pos < JERRY_BUFFER_SIZE) && (buffer[pos] != '\0'))
         {
           if (buffer[pos] == '\n')
           {
@@ -317,6 +317,9 @@ typedef enum
   OPT_SHOW_RE_OP,
   OPT_DEBUG_SERVER,
   OPT_DEBUG_PORT,
+  OPT_DEBUG_CHANNEL,
+  OPT_DEBUG_PROTOCOL,
+  OPT_DEBUG_SERIAL_CONFIG,
   OPT_DEBUGGER_WAIT_SOURCE,
   OPT_EXEC_SNAP,
   OPT_EXEC_SNAP_FUNC,
@@ -346,6 +349,12 @@ static const cli_opt_t main_opts[] =
                .help = "start debug server and wait for a connecting client"),
   CLI_OPT_DEF (.id = OPT_DEBUG_PORT, .longopt = "debug-port", .meta = "NUM",
                .help = "debug server port (default: 5001)"),
+  CLI_OPT_DEF (.id = OPT_DEBUG_CHANNEL, .longopt = "debug-channel", .meta = "[websocket|rawpacket]",
+               .help = "Specify the debugger transmission channel (default: websocket)"),
+  CLI_OPT_DEF (.id = OPT_DEBUG_PROTOCOL, .longopt = "debug-protocol", .meta = "PROTOCOL",
+               .help = "Specify the transmission protocol over the communication channel (tcp|serial, default: tcp)"),
+  CLI_OPT_DEF (.id = OPT_DEBUG_SERIAL_CONFIG, .longopt = "serial-config", .meta = "OPTIONS_STRING",
+               .help = "Configure parameters for serial port (default: /dev/ttyS0,115200,8,N,1)"),
   CLI_OPT_DEF (.id = OPT_DEBUGGER_WAIT_SOURCE, .longopt = "debugger-wait-source",
                .help = "wait for an executable source from the client"),
   CLI_OPT_DEF (.id = OPT_EXEC_SNAP, .longopt = "exec-snapshot", .meta = "FILE",
@@ -418,14 +427,35 @@ context_alloc (size_t size,
  */
 static void
 init_engine (jerry_init_flag_t flags, /**< initialized flags for the engine */
-             bool debug_server, /**< enable the debugger init or not */
-             uint16_t debug_port) /**< the debugger port */
+             char *debug_channel, /**< enable the debugger init or not */
+             char *debug_protocol, /**< enable the debugger init or not */
+             uint16_t debug_port, /**< the debugger port for tcp protocol */
+             char *debug_serial_config) /**< configuration string for serial protocol */
 {
   jerry_init (flags);
-  if (debug_server)
+  if (strcmp (debug_channel, ""))
   {
-    jerryx_debugger_after_connect (jerryx_debugger_tcp_create (debug_port)
-                                   && jerryx_debugger_ws_create ());
+    bool protocol = false;
+
+    if (!strcmp (debug_protocol, "tcp"))
+    {
+      protocol = jerryx_debugger_tcp_create (debug_port);
+    }
+    else
+    {
+      assert (!strcmp (debug_protocol, "serial"));
+      protocol = jerryx_debugger_serial_create (debug_serial_config);
+    }
+
+    if (!strcmp (debug_channel, "rawpacket"))
+    {
+      jerryx_debugger_after_connect (protocol && jerryx_debugger_rp_create ());
+    }
+    else
+    {
+      assert (!strcmp (debug_channel, "websocket"));
+      jerryx_debugger_after_connect (protocol && jerryx_debugger_ws_create ());
+    }
   }
 
   register_js_function ("assert", jerryx_handler_assert);
@@ -451,6 +481,9 @@ main (int argc,
 
   bool start_debug_server = false;
   uint16_t debug_port = 5001;
+  char *debug_channel = "websocket";
+  char *debug_protocol = "tcp";
+  char *debug_serial_config = "/dev/ttyS0,115200,8,N,1";
 
   bool is_repl_mode = false;
   bool is_wait_mode = false;
@@ -516,6 +549,34 @@ main (int argc,
         if (check_feature (JERRY_FEATURE_DEBUGGER, cli_state.arg))
         {
           debug_port = (uint16_t) cli_consume_int (&cli_state);
+        }
+        break;
+      }
+      case OPT_DEBUG_CHANNEL:
+      {
+        if (check_feature (JERRY_FEATURE_DEBUGGER, cli_state.arg))
+        {
+          debug_channel = (char *) cli_consume_string (&cli_state);
+          check_usage (!strcmp (debug_channel, "websocket") || !strcmp (debug_channel, "rawpacket"),
+                       argv[0], "Error: invalid value for --debug-channel: ", cli_state.arg);
+        }
+        break;
+      }
+      case OPT_DEBUG_PROTOCOL:
+      {
+        if (check_feature (JERRY_FEATURE_DEBUGGER, cli_state.arg))
+        {
+          debug_protocol = (char *) cli_consume_string (&cli_state);
+          check_usage (!strcmp (debug_protocol, "tcp") || !strcmp (debug_protocol, "serial"),
+                       argv[0], "Error: invalid value for --debug-protocol: ", cli_state.arg);
+        }
+        break;
+      }
+      case OPT_DEBUG_SERIAL_CONFIG:
+      {
+        if (check_feature (JERRY_FEATURE_DEBUGGER, cli_state.arg))
+        {
+          debug_serial_config = (char *) cli_consume_string (&cli_state);
         }
         break;
       }
@@ -612,7 +673,12 @@ main (int argc,
 
 #endif /* JERRY_ENABLE_EXTERNAL_CONTEXT */
 
-  init_engine (flags, start_debug_server, debug_port);
+  if (!start_debug_server)
+  {
+    debug_channel = "";
+  }
+
+  init_engine (flags, debug_channel, debug_protocol, debug_port, debug_serial_config);
 
   jerry_value_t ret_value = jerry_create_undefined ();
 
@@ -730,7 +796,7 @@ main (int argc,
             break;
           }
 
-          init_engine (flags, true, debug_port);
+          init_engine (flags, debug_channel, debug_protocol, debug_port, debug_serial_config);
 
           ret_value = jerry_create_undefined ();
         }
@@ -774,7 +840,7 @@ main (int argc,
 
     jerry_cleanup ();
 
-    init_engine (flags, true, debug_port);
+    init_engine (flags, debug_channel, debug_protocol, debug_port, debug_serial_config);
 
     ret_value = jerry_create_undefined ();
   }

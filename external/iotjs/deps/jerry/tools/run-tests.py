@@ -36,6 +36,7 @@ def skip_if(condition, desc):
 OPTIONS_PROFILE_MIN = ['--profile=minimal']
 OPTIONS_PROFILE_ES51 = [] # NOTE: same as ['--profile=es5.1']
 OPTIONS_PROFILE_ES2015 = ['--profile=es2015-subset']
+OPTIONS_VM_RECURSION_LIMIT = ['--vm-recursion-limit=1000']
 OPTIONS_DEBUG = ['--debug']
 OPTIONS_SNAPSHOT = ['--snapshot-save=on', '--snapshot-exec=on', '--jerry-cmdline-snapshot=on']
 OPTIONS_UNITTESTS = ['--unittests=on', '--jerry-cmdline=off', '--error-messages=on',
@@ -67,21 +68,22 @@ JERRY_UNITTESTS_OPTIONS = [
 # Test options for jerry-tests
 JERRY_TESTS_OPTIONS = [
     Options('jerry_tests-es5.1',
-            OPTIONS_PROFILE_ES51),
+            OPTIONS_PROFILE_ES51 + OPTIONS_VM_RECURSION_LIMIT),
     Options('jerry_tests-es5.1-snapshot',
-            OPTIONS_PROFILE_ES51 + OPTIONS_SNAPSHOT,
+            OPTIONS_PROFILE_ES51 + OPTIONS_SNAPSHOT + OPTIONS_VM_RECURSION_LIMIT,
             ['--snapshot']),
     Options('jerry_tests-es5.1-debug',
-            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG),
+            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG + OPTIONS_VM_RECURSION_LIMIT),
     Options('jerry_tests-es5.1-debug-snapshot',
-            OPTIONS_PROFILE_ES51 + OPTIONS_SNAPSHOT + OPTIONS_DEBUG,
+            OPTIONS_PROFILE_ES51 + OPTIONS_SNAPSHOT + OPTIONS_DEBUG + OPTIONS_VM_RECURSION_LIMIT,
             ['--snapshot']),
     Options('jerry_tests-es5.1-debug-cpointer_32bit',
-            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG + ['--cpointer-32bit=on', '--mem-heap=1024']),
+            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG + OPTIONS_VM_RECURSION_LIMIT
+            + ['--cpointer-32bit=on', '--mem-heap=1024']),
     Options('jerry_tests-es5.1-debug-external_context',
-            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG + ['--external-context=on']),
+            OPTIONS_PROFILE_ES51 + OPTIONS_DEBUG + OPTIONS_VM_RECURSION_LIMIT + ['--external-context=on']),
     Options('jerry_tests-es2015_subset-debug',
-            OPTIONS_PROFILE_ES2015 + OPTIONS_DEBUG),
+            OPTIONS_PROFILE_ES2015 + OPTIONS_DEBUG + OPTIONS_VM_RECURSION_LIMIT),
 ]
 
 # Test options for jerry-test-suite
@@ -109,13 +111,14 @@ JERRY_TEST_SUITE_OPTIONS.extend([
 
 # Test options for test262
 TEST262_TEST_SUITE_OPTIONS = [
-    Options('test262_tests')
+    Options('test262_tests'),
+    Options('test262_tests-debug', OPTIONS_DEBUG)
 ]
 
 # Test options for jerry-debugger
 DEBUGGER_TEST_OPTIONS = [
     Options('jerry_debugger_tests',
-            ['--debug', '--jerry-debugger=on'])
+            OPTIONS_DEBUG + ['--jerry-debugger=on'])
 ]
 
 # Test options for buildoption-test
@@ -142,6 +145,8 @@ JERRY_BUILDOPTIONS = [
                 platform.system() != 'Linux' or (platform.machine() != 'i386' and platform.machine() != 'x86_64'),
                 '-m32 is only supported on x86[-64]-linux')
            ),
+    Options('buildoption_test-no_jerry_libm',
+            ['--jerry-libm=off', '--link-lib=m']),
     Options('buildoption_test-no_lcache_prophashmap',
             ['--compile-flag=-DCONFIG_ECMA_LCACHE_DISABLE', '--compile-flag=-DCONFIG_ECMA_PROPERTY_HASHMAP_DISABLE']),
     Options('buildoption_test-external_context',
@@ -152,6 +157,12 @@ JERRY_BUILDOPTIONS = [
             ['--jerry-cmdline-test=on']),
     Options('buildoption_test-cmdline_snapshot',
             ['--jerry-cmdline-snapshot=on']),
+    Options('buildoption_test-regexp_recursion_limit',
+            ['--regexp-recursion-limit=1000']),
+    Options('buildoption_test-vm_recursion_limit',
+            OPTIONS_VM_RECURSION_LIMIT),
+    Options('buildoption_test-single-source',
+            ['--cmake-param=-DENABLE_ALL_IN_ONE_SOURCE=ON']),
 ]
 
 def get_arguments():
@@ -318,21 +329,23 @@ def run_jerry_debugger_tests(options):
         if ret_build:
             break
 
-        for test_file in os.listdir(settings.DEBUGGER_TESTS_DIR):
-            if test_file.endswith(".cmd"):
-                test_case, _ = os.path.splitext(test_file)
-                test_case_path = os.path.join(settings.DEBUGGER_TESTS_DIR, test_case)
-                test_cmd = [
-                    settings.DEBUGGER_TEST_RUNNER_SCRIPT,
-                    get_binary_path(build_dir_path),
-                    settings.DEBUGGER_CLIENT_SCRIPT,
-                    os.path.relpath(test_case_path, settings.PROJECT_DIR)
-                ]
+        for channel in ["websocket", "rawpacket"]:
+            for test_file in os.listdir(settings.DEBUGGER_TESTS_DIR):
+                if test_file.endswith(".cmd"):
+                    test_case, _ = os.path.splitext(test_file)
+                    test_case_path = os.path.join(settings.DEBUGGER_TESTS_DIR, test_case)
+                    test_cmd = [
+                        settings.DEBUGGER_TEST_RUNNER_SCRIPT,
+                        get_binary_path(build_dir_path),
+                        channel,
+                        settings.DEBUGGER_CLIENT_SCRIPT,
+                        os.path.relpath(test_case_path, settings.PROJECT_DIR)
+                    ]
 
-                if job.test_args:
-                    test_cmd.extend(job.test_args)
+                    if job.test_args:
+                        test_cmd.extend(job.test_args)
 
-                ret_test |= run_check(test_cmd)
+                    ret_test |= run_check(test_cmd)
 
     return ret_build | ret_test
 

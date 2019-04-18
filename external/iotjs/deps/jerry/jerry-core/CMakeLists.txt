@@ -39,6 +39,8 @@ set(FEATURE_SYSTEM_ALLOCATOR   OFF     CACHE BOOL   "Enable system allocator?")
 set(FEATURE_VALGRIND           OFF     CACHE BOOL   "Enable Valgrind support?")
 set(FEATURE_VM_EXEC_STOP       OFF     CACHE BOOL   "Enable VM execution stopping?")
 set(MEM_HEAP_SIZE_KB           "512"   CACHE STRING "Size of memory heap, in kilobytes")
+set(REGEXP_RECURSION_LIMIT     "0"     CACHE STRING "Limit of regexp recursion depth")
+set(VM_RECURSION_LIMIT         "0"     CACHE STRING "Limit of VM recursion depth")
 
 # Option overrides
 if(USING_MSVC)
@@ -94,6 +96,8 @@ message(STATUS "FEATURE_SYSTEM_ALLOCATOR    " ${FEATURE_SYSTEM_ALLOCATOR})
 message(STATUS "FEATURE_VALGRIND            " ${FEATURE_VALGRIND})
 message(STATUS "FEATURE_VM_EXEC_STOP        " ${FEATURE_VM_EXEC_STOP})
 message(STATUS "MEM_HEAP_SIZE_KB            " ${MEM_HEAP_SIZE_KB})
+message(STATUS "REGEXP_RECURSION_LIMIT      " ${REGEXP_RECURSION_LIMIT})
+message(STATUS "VM_RECURSION_LIMIT          " ${VM_RECURSION_LIMIT})
 
 # Include directories
 set(INCLUDE_CORE_PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -118,34 +122,20 @@ set(INCLUDE_CORE_PRIVATE ${INCLUDE_CORE_PRIVATE} PARENT_SCOPE) # for tests/unit-
 
 # Sources
 # Jerry core
-file(GLOB SOURCE_CORE_API                       api/*.c)
-file(GLOB SOURCE_CORE_DEBUGGER                  debugger/*.c)
-file(GLOB SOURCE_CORE_ECMA_BASE                 ecma/base/*.c)
-file(GLOB SOURCE_CORE_ECMA_BUILTINS             ecma/builtin-objects/*.c)
-file(GLOB SOURCE_CORE_ECMA_BUILTINS_TYPEDARRAY  ecma/builtin-objects/typedarray/*.c)
-file(GLOB SOURCE_CORE_ECMA_OPERATIONS           ecma/operations/*.c)
-file(GLOB SOURCE_CORE_JCONTEXT                  jcontext/*.c)
-file(GLOB SOURCE_CORE_JMEM                      jmem/*.c)
-file(GLOB SOURCE_CORE_JRT                       jrt/*.c)
-file(GLOB SOURCE_CORE_LIT                       lit/*.c)
-file(GLOB SOURCE_CORE_PARSER_JS                 parser/js/*.c)
-file(GLOB SOURCE_CORE_PARSER_REGEXP             parser/regexp/*.c)
-file(GLOB SOURCE_CORE_VM                        vm/*.c)
-
-set(SOURCE_CORE_FILES
-    ${SOURCE_CORE_API}
-    ${SOURCE_CORE_DEBUGGER}
-    ${SOURCE_CORE_ECMA_BASE}
-    ${SOURCE_CORE_ECMA_BUILTINS}
-    ${SOURCE_CORE_ECMA_BUILTINS_TYPEDARRAY}
-    ${SOURCE_CORE_ECMA_OPERATIONS}
-    ${SOURCE_CORE_JCONTEXT}
-    ${SOURCE_CORE_JMEM}
-    ${SOURCE_CORE_JRT}
-    ${SOURCE_CORE_LIT}
-    ${SOURCE_CORE_PARSER_JS}
-    ${SOURCE_CORE_PARSER_REGEXP}
-    ${SOURCE_CORE_VM})
+file(GLOB SOURCE_CORE_FILES
+     api/*.c
+     debugger/*.c
+     ecma/base/*.c
+     ecma/builtin-objects/*.c
+     ecma/builtin-objects/typedarray/*.c
+     ecma/operations/*.c
+     jcontext/*.c
+     jmem/*.c
+     jrt/*.c
+     lit/*.c
+     parser/js/*.c
+     parser/regexp/*.c
+     vm/*.c)
 
 # All-in-one build
 if(ENABLE_ALL_IN_ONE)
@@ -158,6 +148,56 @@ if(ENABLE_ALL_IN_ONE)
   endforeach()
 
   set(SOURCE_CORE_FILES ${ALL_IN_FILE})
+endif()
+
+# "Single" JerryScript source/header build.
+#  The process will create the following files:
+#   * jerryscript.c
+#   * jerryscript.h
+#   * jerryscript-config.h
+if(ENABLE_ALL_IN_ONE_SOURCE)
+  # Create a default configuration
+  set(JERRYSCRIPT_CONFIG_H "${CMAKE_BINARY_DIR}/jerryscript-config.h")
+  set(JERRYSCRIPT_SOURCE_CONFIG_H "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
+  add_custom_command(OUTPUT ${JERRYSCRIPT_CONFIG_H}
+                     COMMAND ${CMAKE_COMMAND} -E copy ${JERRYSCRIPT_SOURCE_CONFIG_H} ${JERRYSCRIPT_CONFIG_H}
+                     DEPENDS ${JERRYSCRIPT_SOURCE_CONFIG_H})
+
+  # Create single C file
+  file(GLOB HEADER_CORE_FILES *.h)
+  set(ALL_IN_FILE "${CMAKE_BINARY_DIR}/jerryscript.c")
+  set(ALL_IN_FILE_H "${CMAKE_BINARY_DIR}/jerryscript.h")
+  add_custom_command(OUTPUT ${ALL_IN_FILE}
+                     COMMAND python ${CMAKE_SOURCE_DIR}/tools/srcmerger.py
+                             --base-dir ${CMAKE_CURRENT_SOURCE_DIR}
+                             --input ${CMAKE_CURRENT_SOURCE_DIR}/api/jerry.c
+                             --output ${ALL_IN_FILE}
+                             --append-c-files
+                             --remove-include jerryscript.h
+                             --remove-include jerryscript-port.h
+                             --remove-include jerryscript-compiler.h
+                             --remove-include jerryscript-core.h
+                             --remove-include jerryscript-debugger.h
+                             --remove-include jerryscript-debugger-transport.h
+                             --remove-include jerryscript-port.h
+                             --remove-include jerryscript-snapshot.h
+                             --remove-include config.h
+                             --push-include jerryscript.h
+                    DEPENDS ${SOURCE_CORE_FILES} ${ALL_IN_FILE_H} ${JERRYSCRIPT_CONFIG_H}
+  )
+  add_custom_command(OUTPUT ${ALL_IN_FILE_H}
+                     COMMAND python ${CMAKE_SOURCE_DIR}/tools/srcmerger.py
+                             --base-dir ${CMAKE_CURRENT_SOURCE_DIR}
+                             --input ${CMAKE_CURRENT_SOURCE_DIR}/include/jerryscript.h
+                             --output ${ALL_IN_FILE_H}
+                             --remove-include config.h
+                             --push-include jerryscript-config.h
+                     DEPENDS ${HEADER_CORE_FILES} ${JERRYSCRIPT_CONFIG_H}
+  )
+  add_custom_target(generate-single-source-jerry DEPENDS ${ALL_IN_FILE} ${ALL_IN_FILE_H})
+  add_custom_target(generate-single-source DEPENDS generate-single-source-jerry)
+
+  set(SOURCE_CORE_FILES ${ALL_IN_FILE} ${ALL_IN_FILE_H})
 endif()
 
 # Third-party
@@ -239,7 +279,17 @@ endif()
 
 # RegExp strict mode
 if(FEATURE_REGEXP_STRICT_MODE)
-  set(DEFINES_JERRY ${DEFINES_JERRY} ENABLE_REGEXP_STRICT_MODE)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_REGEXP_STRICT_MODE=1)
+endif()
+
+# RegExp recursion depth limit
+if(REGEXP_RECURSION_LIMIT)
+  set(DEFINES_JERRY ${DEFINES_JERRY} REGEXP_RECURSION_LIMIT=${REGEXP_RECURSION_LIMIT})
+endif()
+
+# VM recursion depth limit
+if(VM_RECURSION_LIMIT)
+  set(DEFINES_JERRY ${DEFINES_JERRY} VM_RECURSION_LIMIT=${VM_RECURSION_LIMIT})
 endif()
 
 # RegExp byte-code dumps
@@ -283,14 +333,22 @@ target_compile_definitions(${JERRY_CORE_NAME} PUBLIC ${DEFINES_JERRY})
 target_include_directories(${JERRY_CORE_NAME} PUBLIC ${INCLUDE_CORE_PUBLIC})
 target_include_directories(${JERRY_CORE_NAME} PRIVATE ${INCLUDE_CORE_PRIVATE})
 
+set(JERRY_CORE_PKGCONFIG_REQUIRES)
+set(JERRY_CORE_PKGCONFIG_LIBS)
+
 if(JERRY_LIBM)
   target_link_libraries(${JERRY_CORE_NAME} jerry-libm)
+  set(JERRY_CORE_PKGCONFIG_REQUIRES libjerry-libm)
 endif()
 
 separate_arguments(EXTERNAL_LINK_LIBS)
 foreach(EXT_LIB ${EXTERNAL_LINK_LIBS})
   target_link_libraries(${JERRY_CORE_NAME} ${EXT_LIB})
+  set(JERRY_CORE_PKGCONFIG_LIBS "${JERRY_CORE_PKGCONFIG_LIBS} -l${EXT_LIB}")
 endforeach()
 
+configure_file(libjerry-core.pc.in libjerry-core.pc @ONLY)
+
 install(TARGETS ${JERRY_CORE_NAME} DESTINATION lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libjerry-core.pc DESTINATION lib/pkgconfig)
 install(DIRECTORY ${INCLUDE_CORE_PUBLIC}/ DESTINATION include)

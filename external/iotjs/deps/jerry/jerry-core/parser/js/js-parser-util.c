@@ -898,7 +898,7 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Case statement must be in a switch block.";
     }
-#ifndef CONFIG_DISABLE_ES2015_CLASS
+#if ENABLED (JERRY_ES2015_CLASS)
     case PARSER_ERR_MULTIPLE_CLASS_CONSTRUCTORS:
     {
       return "Multiple constructors are not allowed.";
@@ -915,7 +915,7 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Super is not allowed to be used here.";
     }
-#endif /* !CONFIG_DISABLE_ES2015_CLASS */
+#endif /* ENABLED (JERRY_ES2015_CLASS) */
     case PARSER_ERR_LEFT_PAREN_EXPECTED:
     {
       return "Expected '(' token.";
@@ -932,12 +932,12 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Expected ']' token.";
     }
-#ifndef CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS
+#if ENABLED (JERRY_ES2015_TEMPLATE_STRINGS)
     case PARSER_ERR_RIGHT_BRACE_EXPECTED:
     {
       return "Expected '}' token.";
     }
-#endif /* !CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS */
+#endif /* ENABLED (JERRY_ES2015_TEMPLATE_STRINGS) */
     case PARSER_ERR_COLON_EXPECTED:
     {
       return "Expected ':' token.";
@@ -1038,12 +1038,24 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Duplicated label.";
     }
-#ifndef CONFIG_DISABLE_ES2015_FUNCTION_PARAMETER_INITIALIZER
+#if ((ENABLED (JERRY_ES2015_FUNCTION_PARAMETER_INITIALIZER)) \
+     || (ENABLED (JERRY_ES2015_FUNCTION_REST_PARAMETER)))
     case PARSER_ERR_DUPLICATED_ARGUMENT_NAMES:
     {
       return "Duplicated function argument names are not allowed here.";
     }
-#endif /* !CONFIG_DISABLE_ES2015_FUNCTION_PARAMETER_INITIALIZER */
+#endif /* ((ENABLED (JERRY_ES2015_FUNCTION_PARAMETER_INITIALIZER))
+           || (ENABLED (JERRY_ES2015_FUNCTION_REST_PARAMETER))) */
+#if ENABLED (JERRY_ES2015_FUNCTION_PARAMETER_INITIALIZER)
+    case PARSER_ERR_FORMAL_PARAM_AFTER_REST_PARAMETER:
+    {
+      return "Rest parameter must be the last formal parameter.";
+    }
+    case PARSER_ERR_REST_PARAMETER_DEFAULT_INITIALIZER:
+    {
+      return "Rest parameter may not have a default initializer.";
+    }
+#endif /* ENABLED (JERRY_ES2015_FUNCTION_PARAMETER_INITIALIZER) */
     case PARSER_ERR_OBJECT_PROPERTY_REDEFINED:
     {
       return "Property of object literal redefined.";
@@ -1052,6 +1064,46 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Non-strict argument definition.";
     }
+
+#if ENABLED (JERRY_ES2015_MODULE_SYSTEM)
+    case PARSER_ERR_MODULE_REQUEST_NOT_FOUND:
+    {
+      return "Import request not found in the module.";
+    }
+    case PARSER_ERR_FILE_NOT_FOUND:
+    {
+      return "Requested module not found.";
+    }
+    case PARSER_ERR_NOT_IMPLEMENTED:
+    {
+      return "Requested feature is not implemented yet.";
+    }
+    case PARSER_ERR_LEFT_PAREN_MULTIPLY_LITERAL_EXPECTED:
+    {
+      return "Expected '{' or '*' or literal token.";
+    }
+    case PARSER_ERR_RIGHT_PAREN_COMMA_FROM_EXPECTED:
+    {
+      return "Expected '}' or 'as' or 'from' literal token.";
+    }
+    case PARSER_ERR_FROM_EXPECTED:
+    {
+      return "Expected 'from' token.";
+    }
+    case PARSER_ERR_STRING_EXPECTED:
+    {
+      return "Expected a string.";
+    }
+    case PARSER_ERR_MODULE_REQUEST_LIMIT_REACHED:
+    {
+      return "Maximum module request count reached.";
+    }
+    case PARSER_ERR_MODULE_UNEXPECTED:
+    {
+      return "Import and export statements must be in the global context.";
+    }
+#endif /* ENABLED (JERRY_ES2015_MODULE_SYSTEM) */
+
     default:
     {
       JERRY_ASSERT (error == PARSER_ERR_NO_ERROR);

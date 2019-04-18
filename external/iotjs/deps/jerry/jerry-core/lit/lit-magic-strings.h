@@ -46,6 +46,19 @@ typedef enum
   LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_INDEX, /**< [[Index]] property */
   LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_VALUE, /**< [[Values]] property */
   LIT_INTERNAL_MAGIC_STRING_PROMISE_PROPERTY_REMAINING_ELEMENT, /**< [[RemainingElement]] property */
+  LIT_INTERNAL_MAGIC_STRING_ITERATOR_NEXT_INDEX, /**< [[%Iterator%NextIndex]] property */
+  /* List of well known symbols */
+  LIT_GLOBAL_SYMBOL_HAS_INSTANCE, /**< @@hasInstance well known symbol */
+  LIT_GLOBAL_SYMBOL_IS_CONCAT_SPREADABLE, /**< @@isConcatSpreadable well known symbol */
+  LIT_GLOBAL_SYMBOL_ITERATOR, /**< @@iterator well known symbol */
+  LIT_GLOBAL_SYMBOL_MATCH, /**< @@match well known symbol */
+  LIT_GLOBAL_SYMBOL_REPLACE, /**< @@replace well known symbol */
+  LIT_GLOBAL_SYMBOL_SEARCH, /**< @@search well known symbol */
+  LIT_GLOBAL_SYMBOL_SPECIES, /**< @@species well known symbol */
+  LIT_GLOBAL_SYMBOL_SPLIT, /**< @@split well known symbol */
+  LIT_GLOBAL_SYMBOL_TO_PRIMITIVE, /**< @@toPrimitive well known symbol */
+  LIT_GLOBAL_SYMBOL_TO_STRING_TAG, /**< @@toStringTag well known symbol */
+  LIT_GLOBAL_SYMBOL_UNSCOPABLES, /**< @@unscopables well known symbol */
   LIT_GC_MARK_REQUIRED_MAGIC_STRING__COUNT,  /**< number of internal magic strings which will be used as
                                               *   property names, and their values need to be marked during gc. */
   LIT_INTERNAL_MAGIC_STRING_DELETED = LIT_GC_MARK_REQUIRED_MAGIC_STRING__COUNT, /**< special value for
@@ -65,11 +78,11 @@ typedef uint32_t lit_magic_string_ex_id_t;
 
 uint32_t lit_get_magic_string_ex_count (void);
 
-const lit_utf8_byte_t *lit_get_magic_string_utf8 (lit_magic_string_id_t id);
-lit_utf8_size_t lit_get_magic_string_size (lit_magic_string_id_t id);
+const lit_utf8_byte_t *lit_get_magic_string_utf8 (uint32_t id);
+lit_utf8_size_t lit_get_magic_string_size (uint32_t id);
 
-const lit_utf8_byte_t *lit_get_magic_string_ex_utf8 (lit_magic_string_ex_id_t id);
-lit_utf8_size_t lit_get_magic_string_ex_size (lit_magic_string_ex_id_t id);
+const lit_utf8_byte_t *lit_get_magic_string_ex_utf8 (uint32_t id);
+lit_utf8_size_t lit_get_magic_string_ex_size (uint32_t id);
 
 void lit_magic_strings_ex_set (const lit_utf8_byte_t * const *ex_str_items,
                                uint32_t count,
