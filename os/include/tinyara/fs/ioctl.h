@@ -96,6 +96,7 @@
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _HEAPINFOBASE   (0x2200)	/* Heapinfo ioctl commands */
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
+#define _SECLINKBASE    (0x2400)	/* seclink ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -353,6 +354,10 @@
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)
 #define _BOARDIOC(nr)      _IOC(_BOARDBASE, nr)
 
+/* seclink driver ioctl definitions ********************************************/
+/* (see include/tinyara/seclink.h */
+#define _SECLINKIOCVALID(c)   (_IOC_TYPE(c) == _SECLINKBASE)
+#define _SECLINKIOC(nr)       _IOC(_SECLINKBASE, nr)
 
 /* Kernel_tc driver ioctl definitions *************************************/
 /* (see tinyara/testcase_drv.h) */

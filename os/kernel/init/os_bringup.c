@@ -239,6 +239,10 @@ static inline void os_do_appstart(void)
 	board_initialize();
 #endif
 
+#ifdef CONFIG_SE
+	se_initialize();
+#endif
+
 #ifdef CONFIG_NET
 	/* Initialize the network system & Create network task if required */
 
