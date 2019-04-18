@@ -69,6 +69,10 @@ ifeq ($(CONFIG_USBHOST_CDCACM),y)
 CSRCS += usbhost_cdcacm.c
 endif
 
+ifeq ($(CONFIG_USBHOST_HIDMOUSE),y)
+CSRCS += usbhost_hidmouse.c
+endif
+
 # HCD debug/trace logic
 
 ifeq ($(CONFIG_USBHOST_TRACE),y)
