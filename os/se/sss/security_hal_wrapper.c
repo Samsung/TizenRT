@@ -1635,3 +1635,15 @@ int se_initialize(void)
 
 	return 0;
 }
+
+/*
+ * It should not be used to general case.
+ * It's for testing HAL APIs in user space.
+ * Furthermore it wouldn't be used if binary separation is enabled.
+ * Because user space couldn't access kernel space variable directly.
+ * So it is protected by CONFIG after binary separation is applied.
+ */
+struct sec_lowerhalf_s *se_get_device(void)
+{
+	return &g_sss_lower;
+}

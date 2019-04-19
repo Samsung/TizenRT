@@ -24,7 +24,7 @@
 
 void hal_test_free_buffer(hal_data *data)
 {
-	if (*data == NULL) {
+	if (data == NULL) {
 		return;
 	}
 

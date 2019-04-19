@@ -34,14 +34,14 @@
 
 #define VH_ENTER														\
 	do {																\
-		VH_LOG(VH_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__ ); \
+		VH_LOG(VH_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
 
 #define VH_ERR(fd)														\
 	do {																\
 		VH_LOG("[ERR:%s] %s %s:%d ret(%d) code(%s)\n",					\
 			   VH_TAG, __FUNCTION__, __FILE__, __LINE__, fd); \
-	} while(0)
+	} while (0)
 
 #define SECLINK_PATH "/dev/seclink"
 
@@ -51,8 +51,8 @@
 //NOTE: THIS FILE IS AN EMPTY SHELL.
 int virtual_hal_free_data(_IN_ hal_data *data)
 {
-	if(data) {
-		if(data->data) {
+	if (data) {
+		if (data->data) {
 			free(data->data);
 		}
 	}
@@ -271,7 +271,7 @@ int virtual_hal_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_par
 	VH_ENTER;
 
 	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
-	memcpy(enc_data->data, dec_data->data,dec_data->data_len);
+	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
 	return 0;
@@ -282,7 +282,7 @@ int virtual_hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_par
 	VH_ENTER;
 
 	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
-	memcpy(dec_data->data, enc_data->data,enc_data->data_len);
+	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 
 	return 0;
@@ -293,7 +293,7 @@ int virtual_hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _I
 	VH_ENTER;
 
 	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
-	memcpy(enc_data->data, dec_data->data,dec_data->data_len);
+	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
 	return 0;
@@ -304,7 +304,7 @@ int virtual_hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _I
 	VH_ENTER;
 
 	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
-	memcpy(dec_data->data, enc_data->data,enc_data->data_len);
+	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 
 	return 0;
@@ -376,4 +376,16 @@ int se_initialize(void)
 	}
 
 	return 0;
+}
+
+/*
+ * It should not be used to general case.
+ * It's for testing HAL APIs in user space.
+ * Furthermore it wouldn't be used if binary separation is enabled.
+ * Because user space couldn't access kernel space variable directly.
+ * So it is protected by CONFIG after binary separation is applied.
+ */
+struct sec_lowerhalf_s *se_get_device(void)
+{
+	return &g_virtual_lower;
 }
