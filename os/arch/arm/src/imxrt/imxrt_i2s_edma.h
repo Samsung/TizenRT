@@ -52,19 +52,19 @@ typedef void (*sai_edma_callback_t)(I2S_Type *base, sai_edma_handle_t *handle, s
 
 /*! @brief SAI DMA transfer handle, users should not touch the content of the handle.*/
 struct _sai_edma_handle {
-    edma_handle_t *dmaHandle;     /*!< DMA handler for SAI send */
-    uint8_t nbytes;               /*!< eDMA minor byte transfer count initially configured. */
-    uint8_t bytesPerFrame;        /*!< Bytes in a frame */
-    uint8_t channel;              /*!< Which data channel */
-    uint8_t count;                /*!< The transfer data count in a DMA request */
-    uint32_t state;               /*!< Internal state for SAI eDMA transfer */
-    sai_edma_callback_t callback; /*!< Callback for users while transfer finish or error occurs */
-    void *userData;               /*!< User callback parameter */
-    uint8_t tcd[(SAI_XFER_QUEUE_SIZE + 1U) * sizeof(edma_tcd_t)]; /*!< TCD pool for eDMA transfer. */
-    sai_transfer_t saiQueue[SAI_XFER_QUEUE_SIZE];                 /*!< Transfer queue storing queued transfer. */
-    size_t transferSize[SAI_XFER_QUEUE_SIZE];                     /*!< Data bytes need to transfer */
-    volatile uint8_t queueUser;                                   /*!< Index for user to queue transfer. */
-    volatile uint8_t queueDriver; /*!< Index for driver to get the transfer data and size */
+	edma_handle_t *dmaHandle;     /*!< DMA handler for SAI send */
+	uint8_t nbytes;               /*!< eDMA minor byte transfer count initially configured. */
+	uint8_t bytesPerFrame;        /*!< Bytes in a frame */
+	uint8_t channel;              /*!< Which data channel */
+	uint8_t count;                /*!< The transfer data count in a DMA request */
+	uint32_t state;               /*!< Internal state for SAI eDMA transfer */
+	sai_edma_callback_t callback; /*!< Callback for users while transfer finish or error occurs */
+	void *userData;               /*!< User callback parameter */
+	uint8_t tcd[(SAI_XFER_QUEUE_SIZE + 1U) * sizeof(edma_tcd_t)]; /*!< TCD pool for eDMA transfer. */
+	sai_transfer_t saiQueue[SAI_XFER_QUEUE_SIZE];                 /*!< Transfer queue storing queued transfer. */
+	size_t transferSize[SAI_XFER_QUEUE_SIZE];                     /*!< Data bytes need to transfer */
+	volatile uint8_t queueUser;                                   /*!< Index for user to queue transfer. */
+	volatile uint8_t queueDriver; /*!< Index for driver to get the transfer data and size */
 };
 
 /*******************************************************************************
@@ -101,7 +101,7 @@ extern "C" {
  *
  ****************************************************************************/
 void imxrt_i2s_transfertxcreatehandleedma(
-    I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
+	I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
 
 /****************************************************************************
  * Function: imxrt_i2s_transfertxcreatehandleedma
@@ -125,7 +125,7 @@ void imxrt_i2s_transfertxcreatehandleedma(
  *
  ****************************************************************************/
 void imxrt_i2s_transferrxcreatehandleedma(
-    I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
+	I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
 
 /****************************************************************************
  * Function: imxrt_i2s_transfertxsetformatedma
@@ -150,10 +150,10 @@ void imxrt_i2s_transferrxcreatehandleedma(
  *
  ****************************************************************************/
 void imxrt_i2s_transfertxsetformatedma(I2S_Type *base,
-                                 sai_edma_handle_t *handle,
-                                 sai_transfer_format_t *format,
-                                 uint32_t mclkSourceClockHz,
-                                 uint32_t bclkSourceClockHz);
+				sai_edma_handle_t *handle,
+				sai_transfer_format_t *format,
+				uint32_t mclkSourceClockHz,
+				uint32_t bclkSourceClockHz);
 
 /****************************************************************************
  * Function: imxrt_i2s_transferrxsetformatedma
@@ -178,10 +178,10 @@ void imxrt_i2s_transfertxsetformatedma(I2S_Type *base,
  *
  ****************************************************************************/
 void imxrt_i2s_transferrxsetformatedma(I2S_Type *base,
-                                 sai_edma_handle_t *handle,
-                                 sai_transfer_format_t *format,
-                                 uint32_t mclkSourceClockHz,
-                                 uint32_t bclkSourceClockHz);
+				sai_edma_handle_t *handle,
+				sai_transfer_format_t *format,
+				uint32_t mclkSourceClockHz,
+				uint32_t bclkSourceClockHz);
 
 /****************************************************************************
  * Function: imxrt_i2s_transfersendedma

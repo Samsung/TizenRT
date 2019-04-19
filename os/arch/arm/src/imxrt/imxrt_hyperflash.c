@@ -108,22 +108,22 @@ struct mtd_partition_size_info psize_info[] = {
 #endif
 
 flexspi_device_config_t deviceconfig = {
-    .flexspiRootClk = 42000000, /* 42MHZ SPI serial clock */
-    .isSck2Enabled = false,
-    .flashSize = IMXRT_FLASH_SIZE,
-    .CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
-    .CSInterval = 2,
-    .CSHoldTime = 0,
-    .CSSetupTime = 3,
-    .dataValidTime = 1,
-    .columnspace = 3,
-    .enableWordAddress = true,
-    .AWRSeqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA,
-    .AWRSeqNumber = 1,
-    .ARDSeqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_READDATA,
-    .ARDSeqNumber = 1,
-    .AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
-    .AHBWriteWaitInterval = 20,
+	.flexspiRootClk = 42000000, /* 42MHZ SPI serial clock */
+	.isSck2Enabled = false,
+	.flashSize = IMXRT_FLASH_SIZE,
+	.CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
+	.CSInterval = 2,
+	.CSHoldTime = 0,
+	.CSSetupTime = 3,
+	.dataValidTime = 1,
+	.columnspace = 3,
+	.enableWordAddress = true,
+	.AWRSeqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA,
+	.AWRSeqNumber = 1,
+	.ARDSeqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_READDATA,
+	.ARDSeqNumber = 1,
+	.AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
+	.AHBWriteWaitInterval = 20,
 };
 
 const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
@@ -222,7 +222,6 @@ const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
-
 /************************************************************************************
  * Name: flexspi_pins_init
  *
@@ -232,7 +231,7 @@ const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
  ************************************************************************************/
 static inline void flexspi_pins_init(void)
 {
-    imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
+	imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
 
 	imxrt_iomuxc_setpinmux(
 		IOMUXC_GPIO_SD_B1_00_FLEXSPIB_DATA03,   /* GPIO_SD_B1_00 is configured as FLEXSPIB_DATA03 */
@@ -401,12 +400,12 @@ static inline void flexspi_pins_init(void)
  ************************************************************************************/
 static inline void flexspi_clock_init(void)
 {
-    const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
+	const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
 
-    imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
-    imxrt_clock_initusb1pfd(kCLOCK_Pfd0, 26);   /* Set PLL3 PFD0 clock 332MHZ. */
-    imxrt_clock_setmux(kCLOCK_FlexspiMux, 0x3); /* Choose PLL3 PFD0 clock as flexspi source clock. */
-    imxrt_clock_setdiv(kCLOCK_FlexspiDiv, 3);   /* flexspi clock 83M, DDR mode, internal clock 42M. */
+	imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
+	imxrt_clock_initusb1pfd(kCLOCK_Pfd0, 26);   /* Set PLL3 PFD0 clock 332MHZ. */
+	imxrt_clock_setmux(kCLOCK_FlexspiMux, 0x3); /* Choose PLL3 PFD0 clock as flexspi source clock. */
+	imxrt_clock_setdiv(kCLOCK_FlexspiDiv, 3);   /* flexspi clock 83M, DDR mode, internal clock 42M. */
 }
 
 /************************************************************************************
@@ -694,7 +693,7 @@ size_t up_progmem_pagesize(size_t page)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_pagesize called: page[%d] ", page);
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 	return IMXRT_FLASH_PAGE_SIZE;
 }
 
@@ -703,8 +702,8 @@ size_t up_progmem_blocksize(void)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_blocksize called ");
-    IMXLOG(tempLog);
-    return IMXRT_BLOCK_SIZE;
+	IMXLOG(tempLog);
+	return IMXRT_BLOCK_SIZE;
 }
 
 ssize_t up_progmem_getpage(size_t addr)
@@ -712,7 +711,7 @@ ssize_t up_progmem_getpage(size_t addr)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_getpage called: addr[%d] ", addr);
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
 	if (addr < IMXRT_FLASH_BASE) {
 		return 0;
@@ -730,7 +729,7 @@ size_t up_progmem_getaddress(size_t page)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_getaddress called: page[%d] size_t[%d]", page, sizeof(size_t));
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
 	if (page >= (IMXRT_FLASH_TOTAL_SIZE/IMXRT_FLASH_PAGE_SIZE)) {
 		return SIZE_MAX;
@@ -741,10 +740,10 @@ size_t up_progmem_getaddress(size_t page)
 
 size_t up_progmem_npages(void)
 {
-    char tempLog[128];
+	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_npages called ");
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
 	return (IMXRT_FLASH_TOTAL_SIZE/IMXRT_FLASH_PAGE_SIZE);
 }
@@ -754,7 +753,7 @@ bool up_progmem_isuniform(void)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_isuniform called ");
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 #ifdef IMXRT_FLASH_PAGE_SIZE
 	return true;
 #else
@@ -765,37 +764,37 @@ bool up_progmem_isuniform(void)
 ssize_t up_progmem_erasepage(size_t page)
 {
 	status_t status;
-    flexspi_transfer_t flashXfer;
+	flexspi_transfer_t flashXfer;
 	uint32_t address;
 
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_erasepage called: page[%d] ", page);
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
 	address= up_progmem_getaddress(page);
 
     /* Write enable */
     status = imxrt_flexspi_nor_write_enable(IMXRT_FLEXSPI, address);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    flashXfer.deviceAddress = address;
-    flashXfer.port = kFLEXSPI_PortA1;
-    flashXfer.cmdType = kFLEXSPI_Command;
-    flashXfer.SeqNumber = 4;
-    flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_ERASESECTOR;
-    status = imxrt_flexspi_transferblocking(IMXRT_FLEXSPI, &flashXfer);
+	flashXfer.deviceAddress = address;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 4;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_ERASESECTOR;
+	status = imxrt_flexspi_transferblocking(IMXRT_FLEXSPI, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
     status = imxrt_flexspi_nor_wait_bus_busy(IMXRT_FLEXSPI);
 
-    return up_progmem_blocksize();
+	return up_progmem_blocksize();
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
@@ -807,7 +806,7 @@ ssize_t up_progmem_ispageerased(size_t page)
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_ispageerased called : page[%d]", page);
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
 	if (page >= IMXRT_FLASH_PAGE_SIZE) {
 		return -EFAULT;
@@ -827,27 +826,27 @@ ssize_t up_progmem_ispageerased(size_t page)
 ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 {
 	flexspi_transfer_t flashXfer;
-    status_t status;
+	status_t status;
 
 	char tempLog[128];
 
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_write called :addr[%d]", addr);
-    IMXLOG(tempLog);
+	IMXLOG(tempLog);
 
-    flashXfer.deviceAddress = addr * 2;
-    flashXfer.port = kFLEXSPI_PortA1;
-    flashXfer.cmdType = kFLEXSPI_Write;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA;
-    flashXfer.data = (uint32_t *)buf;
-    flashXfer.dataSize = count;
-    status = imxrt_flexspi_transferblocking(IMXRT_FLEXSPI, &flashXfer);
+	flashXfer.deviceAddress = addr * 2;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Write;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA;
+	flashXfer.data = (uint32_t *)buf;
+	flashXfer.dataSize = count;
+	status = imxrt_flexspi_transferblocking(IMXRT_FLEXSPI, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    return count;
+	return count;
 }
 #else
 /************************************************************************************
@@ -929,27 +928,27 @@ void imxrt_flash_init(void)
 	flexspi_clock_init();
 
 	/*Get FLEXSPI default settings and configure the flexspi. */
-    imxrt_flexspi_getdefaultconfig(&config);
+	imxrt_flexspi_getdefaultconfig(&config);
 	
-    /*Set AHB buffer size for reading data through AHB bus. */
-    config.ahbConfig.enableAHBPrefetch = true;
-    /*Allow AHB read start address do not follow the alignment requirement. */
-    config.ahbConfig.enableReadAddressOpt = true;
-    config.ahbConfig.enableAHBBufferable = true;
-    config.ahbConfig.enableAHBCachable = true;
-    /* enable diff clock and DQS */
-    config.enableSckBDiffOpt = true;
-    config.rxSampleClock = kFLEXSPI_ReadSampleClkExternalInputFromDqsPad;
-    config.enableCombination = true;
-    imxrt_flexspi_init(IMXRT_FLEXSPI, &config);
+	/*Set AHB buffer size for reading data through AHB bus. */
+	config.ahbConfig.enableAHBPrefetch = true;
+	/*Allow AHB read start address do not follow the alignment requirement. */
+	config.ahbConfig.enableReadAddressOpt = true;
+	config.ahbConfig.enableAHBBufferable = true;
+	config.ahbConfig.enableAHBCachable = true;
+	/* enable diff clock and DQS */
+	config.enableSckBDiffOpt = true;
+	config.rxSampleClock = kFLEXSPI_ReadSampleClkExternalInputFromDqsPad;
+	config.enableCombination = true;
+	imxrt_flexspi_init(IMXRT_FLEXSPI, &config);
 
-    /* Configure flash settings according to serial flash feature. */
-    imxrt_flexspi_setflashconfig(IMXRT_FLEXSPI, &deviceconfig, kFLEXSPI_PortA1);
+	/* Configure flash settings according to serial flash feature. */
+	imxrt_flexspi_setflashconfig(IMXRT_FLEXSPI, &deviceconfig, kFLEXSPI_PortA1);
 
-    /* Update LUT table. */
-    imxrt_flexspi_updatelut(IMXRT_FLEXSPI, 0, customLUT, CUSTOM_LUT_LENGTH);
+	/* Update LUT table. */
+	imxrt_flexspi_updatelut(IMXRT_FLEXSPI, 0, customLUT, CUSTOM_LUT_LENGTH);
 
-    /* Do software reset. */
-    imxrt_flexspi_softwarereset(IMXRT_FLEXSPI);
+	/* Do software reset. */
+	imxrt_flexspi_softwarereset(IMXRT_FLEXSPI);
 }
 

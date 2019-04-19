@@ -143,9 +143,9 @@
  ****************************************************************************/
 
 enum _sai_transfer_state {
-    kSAI_Busy = 0x0U, /*!< SAI is busy */
-    kSAI_Idle,        /*!< Transfer is done. */
-    kSAI_Error        /*!< Transfer error occured. */
+	kSAI_Busy = 0x0U, /*!< SAI is busy */
+	kSAI_Idle,        /*!< Transfer is done. */
+	kSAI_Error        /*!< Transfer error occured. */
 };
 
 /* I2S configuration parameters for i2s_param_config function */
@@ -165,35 +165,35 @@ typedef struct {
 /* The state of the one I2S peripheral */
 
 struct imxrt_i2s_s {
-	struct i2s_dev_s dev;		/* Externally visible I2S interface, must the first element!! */
+	struct i2s_dev_s dev;           /* Externally visible I2S interface, must the first element!! */
 
-	i2s_port_t i2s_num;			/* I2S controller register base address */
+	i2s_port_t i2s_num;             /* I2S controller register base address */
 	I2S_Type * i2s_base;
 
 	int intrupt_level;
-	int tx_isr_num;				/* isr tx number */
-	int rx_isr_num;             /* isr rx number */
-	xcpt_t isr_handler;			/* irs handler */
+	int tx_isr_num;                 /* isr tx number */
+	int rx_isr_num;                 /* isr rx number */
+	xcpt_t isr_handler;             /* irs handler */
 
-	i2s_err_cb_t err_cb;		/* registered error callback function */
-	void *err_cb_arg;			/* argiment to return with err cb call */
+	i2s_err_cb_t err_cb;            /* registered error callback function */
+	void *err_cb_arg;               /* argiment to return with err cb call */
 
-	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
+	sem_t exclsem;                  /* Assures mutually exclusive acess to I2S */
 
-	uint8_t rxenab:1;			/* True: RX transfers enabled */
-	uint8_t txenab:1;			/* True: TX transfers enabled */
+	uint8_t rxenab:1;               /* True: RX transfers enabled */
+	uint8_t txenab:1;               /* True: TX transfers enabled */
 
-	i2s_mode_t mode;			/*!< I2S work mode */
-	int sample_rate;			/*!< I2S sample rate */
-	int channel_num;			/*!< Number of channels */
-	int bytes_per_sample;		/*!< Bytes per sample */
-	int bits_per_sample;		/*!< Bits per sample */
+	i2s_mode_t mode;                /*!< I2S work mode */
+	int sample_rate;                /*!< I2S sample rate */
+	int channel_num;                /*!< Number of channels */
+	int bytes_per_sample;           /*!< Bytes per sample */
+	int bits_per_sample;            /*!< Bits per sample */
 
-	bool use_apll;				/*!< I2S use APLL clock */
-	int fixed_mclk;				/*!< I2S fixed MLCK clock */
+	bool use_apll;                  /*!< I2S use APLL clock */
+	int fixed_mclk;                 /*!< I2S fixed MLCK clock */
 
-	sai_handle_t   si_tx_handle;      /*!< Bits per sample */
-    sai_handle_t   si_rx_handle;
+	sai_handle_t   si_tx_handle;    /*!< Bits per sample */
+	sai_handle_t   si_rx_handle;
 };
 
 /****************************************************************************
@@ -333,18 +333,18 @@ static struct imxrt_i2s_s *g_i2sdevice[I2S_NUM_MAX] = {NULL};
  */
 void i2s_tx_reset(I2S_Type *base)
 {
-    /* Set the software reset and FIFO reset to clear internal state */
-    base->TCSR = I2S_TCSR_SR_MASK | I2S_TCSR_FR_MASK;
+	/* Set the software reset and FIFO reset to clear internal state */
+	base->TCSR = I2S_TCSR_SR_MASK | I2S_TCSR_FR_MASK;
 
-    /* Clear software reset bit, this should be done by software */
-    base->TCSR &= ~I2S_TCSR_SR_MASK;
+	/* Clear software reset bit, this should be done by software */
+	base->TCSR &= ~I2S_TCSR_SR_MASK;
 
-    /* Reset all Tx register values */
-    base->TCR2 = 0;
-    base->TCR3 = 0;
-    base->TCR4 = 0;
-    base->TCR5 = 0;
-    base->TMR = 0;
+	/* Reset all Tx register values */
+	base->TCR2 = 0;
+	base->TCR3 = 0;
+	base->TCR4 = 0;
+	base->TCR5 = 0;
+	base->TMR = 0;
 }
 
 /*!
@@ -356,18 +356,18 @@ void i2s_tx_reset(I2S_Type *base)
  */
 void i2s_rx_reset(I2S_Type *base)
 {
-    /* Set the software reset and FIFO reset to clear internal state */
-    base->RCSR = I2S_RCSR_SR_MASK | I2S_RCSR_FR_MASK;
+	/* Set the software reset and FIFO reset to clear internal state */
+	base->RCSR = I2S_RCSR_SR_MASK | I2S_RCSR_FR_MASK;
 
-    /* Clear software reset bit, this should be done by software */
-    base->RCSR &= ~I2S_RCSR_SR_MASK;
+	/* Clear software reset bit, this should be done by software */
+	base->RCSR &= ~I2S_RCSR_SR_MASK;
 
-    /* Reset all Rx register values */
-    base->RCR2 = 0;
-    base->RCR3 = 0;
-    base->RCR4 = 0;
-    base->RCR5 = 0;
-    base->RMR = 0;
+	/* Reset all Rx register values */
+	base->RCR2 = 0;
+	base->RCR3 = 0;
+	base->RCR4 = 0;
+	base->RCR5 = 0;
+	base->RMR = 0;
 }
 
 /*! @} */
@@ -385,7 +385,7 @@ void i2s_rx_reset(I2S_Type *base)
  */
 static inline uint32_t i2s_tx_getstatusflag(I2S_Type *base)
 {
-    return base->TCSR;
+	return base->TCSR;
 }
 
 /*!
@@ -399,7 +399,7 @@ static inline uint32_t i2s_tx_getstatusflag(I2S_Type *base)
  */
 static inline void i2s_tx_clearstatusflag(I2S_Type *base, uint32_t mask)
 {
-    base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
+	base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
 }
 
 /*!
@@ -410,7 +410,7 @@ static inline void i2s_tx_clearstatusflag(I2S_Type *base, uint32_t mask)
  */
 static inline uint32_t i2s_rx_getstatusflag(I2S_Type *base)
 {
-    return base->RCSR;
+	return base->RCSR;
 }
 
 /*!
@@ -424,7 +424,7 @@ static inline uint32_t i2s_rx_getstatusflag(I2S_Type *base)
  */
 static inline void i2s_rx_clearstatusflags(I2S_Type *base, uint32_t mask)
 {
-    base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
+	base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
 }
 
 /*!
@@ -440,10 +440,10 @@ static inline void i2s_rx_clearstatusflags(I2S_Type *base, uint32_t mask)
  */
 void i2s_tx_softwarereset(I2S_Type *base, sai_reset_type_t type)
 {
-    base->TCSR |= (uint32_t)type;
+	base->TCSR |= (uint32_t)type;
 
-    /* Clear the software reset */
-    base->TCSR &= ~I2S_TCSR_SR_MASK;
+	/* Clear the software reset */
+	base->TCSR &= ~I2S_TCSR_SR_MASK;
 }
 
 /*!
@@ -459,10 +459,10 @@ void i2s_tx_softwarereset(I2S_Type *base, sai_reset_type_t type)
  */
 void i2s_rx_softwarereset(I2S_Type *base, sai_reset_type_t type)
 {
-    base->RCSR |= (uint32_t)type;
+	base->RCSR |= (uint32_t)type;
 
-    /* Clear the software reset */
-    base->RCSR &= ~I2S_RCSR_SR_MASK;
+	/* Clear the software reset */
+	base->RCSR &= ~I2S_RCSR_SR_MASK;
 }
 
 /*!
@@ -474,8 +474,8 @@ void i2s_rx_softwarereset(I2S_Type *base, sai_reset_type_t type)
  */
 void i2s_tx_setchannel_fifomask(I2S_Type *base, uint8_t mask)
 {
-    base->TCR3 &= ~I2S_TCR3_TCE_MASK;
-    base->TCR3 |= I2S_TCR3_TCE(mask);
+	base->TCR3 &= ~I2S_TCR3_TCE_MASK;
+	base->TCR3 |= I2S_TCR3_TCE(mask);
 }
 
 /*!
@@ -487,8 +487,8 @@ void i2s_tx_setchannel_fifomask(I2S_Type *base, uint8_t mask)
  */
 void i2s_rx_setchannel_fifomask(I2S_Type *base, uint8_t mask)
 {
-    base->RCR3 &= ~I2S_RCR3_RCE_MASK;
-    base->RCR3 |= I2S_RCR3_RCE(mask);
+	base->RCR3 &= ~I2S_RCR3_RCE_MASK;
+	base->RCR3 |= I2S_RCR3_RCE(mask);
 }
 
 /*! @} */
@@ -512,7 +512,7 @@ void i2s_rx_setchannel_fifomask(I2S_Type *base, uint8_t mask)
  */
 static inline void i2s_tx_enableinterrupts(I2S_Type *base, uint32_t mask)
 {
-    base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
+	base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
 }
 
 /*!
@@ -529,7 +529,7 @@ static inline void i2s_tx_enableinterrupts(I2S_Type *base, uint32_t mask)
  */
 static inline void i2s_rx_enableinterrupts(I2S_Type *base, uint32_t mask)
 {
-    base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
+	base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
 }
 
 /*!
@@ -546,7 +546,7 @@ static inline void i2s_rx_enableinterrupts(I2S_Type *base, uint32_t mask)
  */
 static inline void i2s_tx_disableinterrupts(I2S_Type *base, uint32_t mask)
 {
-    base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~mask));
+	base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~mask));
 }
 
 /*!
@@ -563,7 +563,7 @@ static inline void i2s_tx_disableinterrupts(I2S_Type *base, uint32_t mask)
  */
 static inline void i2s_rx_disableinterrupts(I2S_Type *base, uint32_t mask)
 {
-    base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~mask));
+	base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~mask));
 }
 
 /*! @} */
@@ -584,11 +584,11 @@ static inline void i2s_rx_disableinterrupts(I2S_Type *base, uint32_t mask)
  */
 static inline void i2s_tx_enabledma(I2S_Type *base, uint32_t mask, bool enable)
 {
-    if (enable) {
-        base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
-    } else {
-        base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~mask));
-    }
+	if (enable) {
+		base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | mask);
+	} else {
+		base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~mask));
+	}
 }
 
 /*!
@@ -602,11 +602,11 @@ static inline void i2s_tx_enabledma(I2S_Type *base, uint32_t mask, bool enable)
  */
 static inline void i2s_rx_enabledma(I2S_Type *base, uint32_t mask, bool enable)
 {
-    if (enable) {
-        base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
-    } else {
-        base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~mask));
-    }
+	if (enable) {
+		base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
+	} else {
+		base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~mask));
+	}
 }
 
 /*!
@@ -620,7 +620,7 @@ static inline void i2s_rx_enabledma(I2S_Type *base, uint32_t mask, bool enable)
  */
 static inline uint32_t i2s_tx_getdataregisteraddress(I2S_Type *base, uint32_t channel)
 {
-    return (uint32_t)(&(base->TDR)[channel]);
+	return (uint32_t)(&(base->TDR)[channel]);
 }
 
 /*!
@@ -634,7 +634,7 @@ static inline uint32_t i2s_tx_getdataregisteraddress(I2S_Type *base, uint32_t ch
  */
 static inline uint32_t i2s_rx_getdataregisteraddress(I2S_Type *base, uint32_t channel)
 {
-    return (uint32_t)(&(base->RDR)[channel]);
+	return (uint32_t)(&(base->RDR)[channel]);
 }
 
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
@@ -650,58 +650,58 @@ static inline uint32_t i2s_rx_getdataregisteraddress(I2S_Type *base, uint32_t ch
  */
 static void i2s_setmasterclockdivider(I2S_Type *base, uint32_t mclk_Hz, uint32_t mclkSrcClock_Hz)
 {
-    uint32_t freq = mclkSrcClock_Hz;
-    uint16_t fract, divide;
-    uint32_t remaind = 0;
-    uint32_t current_remainder = 0xFFFFFFFFU;
-    uint16_t current_fract = 0;
-    uint16_t current_divide = 0;
-    uint32_t mul_freq = 0;
-    uint32_t max_fract = 256;
+	uint32_t freq = mclkSrcClock_Hz;
+	uint16_t fract, divide;
+	uint32_t remaind = 0;
+	uint32_t current_remainder = 0xFFFFFFFFU;
+	uint16_t current_fract = 0;
+	uint16_t current_divide = 0;
+	uint32_t mul_freq = 0;
+	uint32_t max_fract = 256;
 
-    /*In order to prevent overflow */
-    freq /= 100;
-    mclk_Hz /= 100;
+	/*In order to prevent overflow */
+	freq /= 100;
+	mclk_Hz /= 100;
 
-    /* Compute the max fract number */
-    max_fract = mclk_Hz * 4096 / freq + 1;
-    if (max_fract > 256) {
-        max_fract = 256;
-    }
+	/* Compute the max fract number */
+	max_fract = mclk_Hz * 4096 / freq + 1;
+	if (max_fract > 256) {
+		max_fract = 256;
+	}
 
-    /* Looking for the closet frequency */
-    for (fract = 1; fract < max_fract; fract++) {
-        mul_freq = freq * fract;
-        remaind = mul_freq % mclk_Hz;
-        divide = mul_freq / mclk_Hz;
+	/* Looking for the closet frequency */
+	for (fract = 1; fract < max_fract; fract++) {
+		mul_freq = freq * fract;
+		remaind = mul_freq % mclk_Hz;
+		divide = mul_freq / mclk_Hz;
 
-        /* Find the exactly frequency */
-        if (remaind == 0) {
-            current_fract = fract;
-            current_divide = mul_freq / mclk_Hz;
-            break;
-        }
+		/* Find the exactly frequency */
+		if (remaind == 0) {
+			current_fract = fract;
+			current_divide = mul_freq / mclk_Hz;
+			break;
+		}
 
-        /* Closer to next one, set the closest to next data */
-        if (remaind > mclk_Hz / 2) {
-            remaind = mclk_Hz - remaind;
-            divide += 1;
-        }
+		/* Closer to next one, set the closest to next data */
+		if (remaind > mclk_Hz / 2) {
+			remaind = mclk_Hz - remaind;
+			divide += 1;
+		}
 
-        /* Update the closest div and fract */
-        if (remaind < current_remainder) {
-            current_fract = fract;
-            current_divide = divide;
-            current_remainder = remaind;
-        }
-    }
+		/* Update the closest div and fract */
+		if (remaind < current_remainder) {
+			current_fract = fract;
+			current_divide = divide;
+			current_remainder = remaind;
+		}
+	}
 
-    /* Fill the computed fract and divider to registers */
-    base->MDR = I2S_MDR_DIVIDE(current_divide - 1) | I2S_MDR_FRACT(current_fract - 1);
+	/* Fill the computed fract and divider to registers */
+	base->MDR = I2S_MDR_DIVIDE(current_divide - 1) | I2S_MDR_FRACT(current_fract - 1);
 
-    /* Waiting for the divider updated */
-    while (base->MCR & I2S_MCR_DUF_MASK) {
-    }
+	/* Waiting for the divider updated */
+	while (base->MCR & I2S_MCR_DUF_MASK) {
+	}
 }
 #endif /* FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER */
 
@@ -712,18 +712,18 @@ static void i2s_setmasterclockdivider(I2S_Type *base, uint32_t mclk_Hz, uint32_t
  */
 uint32_t i2s_getinstance(I2S_Type *base)
 {
-    uint32_t instance;
+	uint32_t instance;
 
-    /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < ARRAY_SIZE(s_saiBases); instance++) {
-        if (s_saiBases[instance] == base) {
-            break;
-        }
-    }
+	/* Find the instance index from base address mappings. */
+	for (instance = 0; instance < ARRAY_SIZE(s_saiBases); instance++) {
+		if (s_saiBases[instance] == base) {
+			break;
+		}
+	}
 
-    DEBUGASSERT(instance < ARRAY_SIZE(s_saiBases));
+	DEBUGASSERT(instance < ARRAY_SIZE(s_saiBases));
 
-    return instance;
+	return instance;
 }
 
 /*!
@@ -737,21 +737,21 @@ uint32_t i2s_getinstance(I2S_Type *base)
  */
 static void i2s_write_nonblocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
-    uint8_t j = 0;
-    uint8_t bytesPerWord = bitWidth / 8U;
-    uint32_t data = 0;
-    uint32_t temp = 0;
+	uint32_t i = 0;
+	uint8_t j = 0;
+	uint8_t bytesPerWord = bitWidth / 8U;
+	uint32_t data = 0;
+	uint32_t temp = 0;
 
-    for (i = 0; i < size / bytesPerWord; i++) {
-        for (j = 0; j < bytesPerWord; j++) {
-            temp = (uint32_t)(*buffer);
-            data |= (temp << (8U * j));
-            buffer++;
-        }
-        base->TDR[channel] = data;
-        data = 0;
-    }
+	for (i = 0; i < size / bytesPerWord; i++) {
+		for (j = 0; j < bytesPerWord; j++) {
+			temp = (uint32_t)(*buffer);
+			data |= (temp << (8U * j));
+			buffer++;
+		}
+		base->TDR[channel] = data;
+		data = 0;
+	}
 }
 
 /*!
@@ -765,18 +765,18 @@ static void i2s_write_nonblocking(I2S_Type *base, uint32_t channel, uint32_t bit
  */
 static void i2s_read_nonblocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
-    uint8_t j = 0;
-    uint8_t bytesPerWord = bitWidth / 8U;
-    uint32_t data = 0;
+	uint32_t i = 0;
+	uint8_t j = 0;
+	uint8_t bytesPerWord = bitWidth / 8U;
+	uint32_t data = 0;
 
-    for (i = 0; i < size / bytesPerWord; i++) {
-        data = base->RDR[channel];
-        for (j = 0; j < bytesPerWord; j++) {
-            *buffer = (data >> (8U * j)) & 0xFF;
-            buffer++;
-        }
-    }
+	for (i = 0; i < size / bytesPerWord; i++) {
+		data = base->RDR[channel];
+		for (j = 0; j < bytesPerWord; j++) {
+			*buffer = (data >> (8U * j)) & 0xFF;
+			buffer++;
+		}
+	}
 }
 
 /*!
@@ -787,21 +787,21 @@ static void i2s_read_nonblocking(I2S_Type *base, uint32_t channel, uint32_t bitW
  */
 void i2s_tx_enable(I2S_Type *base, bool enable)
 {
-    if (enable) {
-        /* If clock is sync with Rx, should enable RE bit. */
-        if (((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) == 0x1U) {
-            base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | I2S_RCSR_RE_MASK);
-        }
-        base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | I2S_TCSR_TE_MASK);
-        /* Also need to clear the FIFO error flag before start */
-        i2s_tx_clearstatusflag(base, kSAI_FIFOErrorFlag);
-    } else {
-        /* If RE not sync with TE, than disable TE, otherwise, shall not disable TE */
-        if (((base->RCR2 & I2S_RCR2_SYNC_MASK) >> I2S_RCR2_SYNC_SHIFT) != 0x1U) {
-            /* Should not close RE even sync with Rx */
-            base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~I2S_TCSR_TE_MASK));
-        }
-    }
+	if (enable) {
+		/* If clock is sync with Rx, should enable RE bit. */
+		if (((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) == 0x1U) {
+			base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | I2S_RCSR_RE_MASK);
+		}
+		base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | I2S_TCSR_TE_MASK);
+		/* Also need to clear the FIFO error flag before start */
+		i2s_tx_clearstatusflag(base, kSAI_FIFOErrorFlag);
+	} else {
+		/* If RE not sync with TE, than disable TE, otherwise, shall not disable TE */
+		if (((base->RCR2 & I2S_RCR2_SYNC_MASK) >> I2S_RCR2_SYNC_SHIFT) != 0x1U) {
+			/* Should not close RE even sync with Rx */
+			base->TCSR = ((base->TCSR & 0xFFE3FFFFU) & (~I2S_TCSR_TE_MASK));
+		}
+	}
 }
 
 /*!
@@ -812,20 +812,20 @@ void i2s_tx_enable(I2S_Type *base, bool enable)
  */
 void i2s_rx_enable(I2S_Type *base, bool enable)
 {
-    if (enable) {
-        /* If clock is sync with Tx, should enable TE bit. */
-        if (((base->RCR2 & I2S_RCR2_SYNC_MASK) >> I2S_RCR2_SYNC_SHIFT) == 0x1U) {
-            base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | I2S_TCSR_TE_MASK);
-        }
-        base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | I2S_RCSR_RE_MASK);
-        /* Also need to clear the FIFO error flag before start */
-        i2s_rx_clearstatusflags(base, kSAI_FIFOErrorFlag);
-    } else {
-        /* While TX is not sync with RX, close RX */
-        if (((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) != 0x1U) {
-            base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~I2S_RCSR_RE_MASK));
-        }
-    }
+	if (enable) {
+		/* If clock is sync with Tx, should enable TE bit. */
+		if (((base->RCR2 & I2S_RCR2_SYNC_MASK) >> I2S_RCR2_SYNC_SHIFT) == 0x1U) {
+			base->TCSR = ((base->TCSR & 0xFFE3FFFFU) | I2S_TCSR_TE_MASK);
+		}
+		base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | I2S_RCSR_RE_MASK);
+		/* Also need to clear the FIFO error flag before start */
+		i2s_rx_clearstatusflags(base, kSAI_FIFOErrorFlag);
+	} else {
+		/* While TX is not sync with RX, close RX */
+		if (((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) != 0x1U) {
+			base->RCSR = ((base->RCSR & 0xFFE3FFFFU) & (~I2S_RCSR_RE_MASK));
+		}
+	}
 }
 
 /*!
@@ -849,96 +849,96 @@ void i2s_rx_enable(I2S_Type *base, bool enable)
 */
 void i2s_tx_init(I2S_Type *base, const sai_config_t *config)
 {
-    uint32_t val = 0;
+	uint32_t val = 0;
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Enable the SAI clock */
-    imxrt_clock_enableclock(s_saiClock[i2s_getinstance(base)]);
+	/* Enable the SAI clock */
+	imxrt_clock_enableclock(s_saiClock[i2s_getinstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    /* Master clock source setting */
-    val = (base->MCR & ~I2S_MCR_MICS_MASK);
-    base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
+	/* Master clock source setting */
+	val = (base->MCR & ~I2S_MCR_MICS_MASK);
+	base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
 
-    /* Configure Master clock output enable */
-    val = (base->MCR & ~I2S_MCR_MOE_MASK);
-    base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
+	/* Configure Master clock output enable */
+	val = (base->MCR & ~I2S_MCR_MOE_MASK);
+	base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
-    /* Configure audio protocol */
-    switch (config->protocol) {
-    case kSAI_BusLeftJustified:
-        base->TCR2 |= I2S_TCR2_BCP_MASK;
-        base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
-        base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
-        break;
-    case kSAI_BusRightJustified:
-        base->TCR2 |= I2S_TCR2_BCP_MASK;
-        base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
-        base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
-        break;
-    case kSAI_BusI2S:
-        base->TCR2 |= I2S_TCR2_BCP_MASK;
-        base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
-        base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(1U) | I2S_TCR4_FSP(1U) | I2S_TCR4_FRSZ(1U);
-        break;
-    case kSAI_BusPCMA:
-        base->TCR2 &= ~I2S_TCR2_BCP_MASK;
-        base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
-        base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(0U) | I2S_TCR4_FSE(1U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
-        break;
-    case kSAI_BusPCMB:
-        base->TCR2 &= ~I2S_TCR2_BCP_MASK;
-        base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
-        base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(0U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
-        break;
-    default:
-        break;
-    }
+	/* Configure audio protocol */
+	switch (config->protocol) {
+	case kSAI_BusLeftJustified:
+		base->TCR2 |= I2S_TCR2_BCP_MASK;
+		base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
+		base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
+		break;
+	case kSAI_BusRightJustified:
+		base->TCR2 |= I2S_TCR2_BCP_MASK;
+		base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
+		base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
+		break;
+	case kSAI_BusI2S:
+		base->TCR2 |= I2S_TCR2_BCP_MASK;
+		base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
+		base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(31U) | I2S_TCR4_FSE(1U) | I2S_TCR4_FSP(1U) | I2S_TCR4_FRSZ(1U);
+		break;
+	case kSAI_BusPCMA:
+		base->TCR2 &= ~I2S_TCR2_BCP_MASK;
+		base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
+		base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(0U) | I2S_TCR4_FSE(1U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
+		break;
+	case kSAI_BusPCMB:
+		base->TCR2 &= ~I2S_TCR2_BCP_MASK;
+		base->TCR3 &= ~I2S_TCR3_WDFL_MASK;
+		base->TCR4 = I2S_TCR4_MF(1U) | I2S_TCR4_SYWD(0U) | I2S_TCR4_FSE(0U) | I2S_TCR4_FSP(0U) | I2S_TCR4_FRSZ(1U);
+		break;
+	default:
+		break;
+	}
 
-    /* Set master or slave */
-    if (config->masterSlave == kSAI_Master) {
-        base->TCR2 |= I2S_TCR2_BCD_MASK;
-        base->TCR4 |= I2S_TCR4_FSD_MASK;
+	/* Set master or slave */
+	if (config->masterSlave == kSAI_Master) {
+		base->TCR2 |= I2S_TCR2_BCD_MASK;
+		base->TCR4 |= I2S_TCR4_FSD_MASK;
 
-        /* Bit clock source setting */
-        val = base->TCR2 & (~I2S_TCR2_MSEL_MASK);
-        base->TCR2 = (val | I2S_TCR2_MSEL(config->bclkSource));
-    } else {
-        base->TCR2 &= ~I2S_TCR2_BCD_MASK;
-        base->TCR4 &= ~I2S_TCR4_FSD_MASK;
-    }
+		/* Bit clock source setting */
+		val = base->TCR2 & (~I2S_TCR2_MSEL_MASK);
+		base->TCR2 = (val | I2S_TCR2_MSEL(config->bclkSource));
+	} else {
+		base->TCR2 &= ~I2S_TCR2_BCD_MASK;
+		base->TCR4 &= ~I2S_TCR4_FSD_MASK;
+	}
 
-    /* Set Sync mode */
-    switch (config->syncMode) {
-    case kSAI_ModeAsync:
-        val = base->TCR2;
-        val &= ~I2S_TCR2_SYNC_MASK;
-        base->TCR2 = (val | I2S_TCR2_SYNC(0U));
-        break;
-    case kSAI_ModeSync:
-        val = base->TCR2;
-        val &= ~I2S_TCR2_SYNC_MASK;
-        base->TCR2 = (val | I2S_TCR2_SYNC(1U));
-        /* If sync with Rx, should set Rx to async mode */
-        val = base->RCR2;
-        val &= ~I2S_RCR2_SYNC_MASK;
-        base->RCR2 = (val | I2S_RCR2_SYNC(0U));
-        break;
-    case kSAI_ModeSyncWithOtherTx:
-        val = base->TCR2;
-        val &= ~I2S_TCR2_SYNC_MASK;
-        base->TCR2 = (val | I2S_TCR2_SYNC(2U));
-        break;
-    case kSAI_ModeSyncWithOtherRx:
-        val = base->TCR2;
-        val &= ~I2S_TCR2_SYNC_MASK;
-        base->TCR2 = (val | I2S_TCR2_SYNC(3U));
-        break;
-    default:
-        break;
-    }
+	/* Set Sync mode */
+	switch (config->syncMode) {
+	case kSAI_ModeAsync:
+		val = base->TCR2;
+		val &= ~I2S_TCR2_SYNC_MASK;
+		base->TCR2 = (val | I2S_TCR2_SYNC(0U));
+		break;
+	case kSAI_ModeSync:
+		val = base->TCR2;
+		val &= ~I2S_TCR2_SYNC_MASK;
+		base->TCR2 = (val | I2S_TCR2_SYNC(1U));
+		/* If sync with Rx, should set Rx to async mode */
+		val = base->RCR2;
+		val &= ~I2S_RCR2_SYNC_MASK;
+		base->RCR2 = (val | I2S_RCR2_SYNC(0U));
+		break;
+	case kSAI_ModeSyncWithOtherTx:
+		val = base->TCR2;
+		val &= ~I2S_TCR2_SYNC_MASK;
+		base->TCR2 = (val | I2S_TCR2_SYNC(2U));
+		break;
+	case kSAI_ModeSyncWithOtherRx:
+		val = base->TCR2;
+		val &= ~I2S_TCR2_SYNC_MASK;
+		base->TCR2 = (val | I2S_TCR2_SYNC(3U));
+		break;
+	default:
+		break;
+	}
 }
 
 /*!
@@ -957,96 +957,96 @@ void i2s_tx_init(I2S_Type *base, const sai_config_t *config)
  */
 void i2s_rx_init(I2S_Type *base, const sai_config_t *config)
 {
-    uint32_t val = 0;
+	uint32_t val = 0;
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Enable SAI clock first. */
+	/* Enable SAI clock first. */
 	imxrt_clock_enableclock(s_saiClock[i2s_getinstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    /* Master clock source setting */
-    val = (base->MCR & ~I2S_MCR_MICS_MASK);
-    base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
+	/* Master clock source setting */
+	val = (base->MCR & ~I2S_MCR_MICS_MASK);
+	base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
 
-    /* Configure Master clock output enable */
-    val = (base->MCR & ~I2S_MCR_MOE_MASK);
-    base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
+	/* Configure Master clock output enable */
+	val = (base->MCR & ~I2S_MCR_MOE_MASK);
+	base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
-    /* Configure audio protocol */
-    switch (config->protocol) {
-    case kSAI_BusLeftJustified:
-        base->RCR2 |= I2S_RCR2_BCP_MASK;
-        base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
-        base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
-        break;
-    case kSAI_BusRightJustified:
-        base->RCR2 |= I2S_RCR2_BCP_MASK;
-        base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
-        base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
-        break;
-    case kSAI_BusI2S:
-        base->RCR2 |= I2S_RCR2_BCP_MASK;
-        base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
-        base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(1U) | I2S_RCR4_FSP(1U) | I2S_RCR4_FRSZ(1U);
-        break;
-    case kSAI_BusPCMA:
-        base->RCR2 &= ~I2S_RCR2_BCP_MASK;
-        base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
-        base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(0U) | I2S_RCR4_FSE(1U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
-        break;
-    case kSAI_BusPCMB:
-        base->RCR2 &= ~I2S_RCR2_BCP_MASK;
-        base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
-        base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(0U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
-        break;
-    default:
-        break;
-    }
+	/* Configure audio protocol */
+	switch (config->protocol) {
+	case kSAI_BusLeftJustified:
+		base->RCR2 |= I2S_RCR2_BCP_MASK;
+		base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
+		base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
+		break;
+	case kSAI_BusRightJustified:
+		base->RCR2 |= I2S_RCR2_BCP_MASK;
+		base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
+		base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
+		break;
+	case kSAI_BusI2S:
+		base->RCR2 |= I2S_RCR2_BCP_MASK;
+		base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
+		base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(31U) | I2S_RCR4_FSE(1U) | I2S_RCR4_FSP(1U) | I2S_RCR4_FRSZ(1U);
+		break;
+	case kSAI_BusPCMA:
+		base->RCR2 &= ~I2S_RCR2_BCP_MASK;
+		base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
+		base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(0U) | I2S_RCR4_FSE(1U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
+		break;
+	case kSAI_BusPCMB:
+		base->RCR2 &= ~I2S_RCR2_BCP_MASK;
+		base->RCR3 &= ~I2S_RCR3_WDFL_MASK;
+		base->RCR4 = I2S_RCR4_MF(1U) | I2S_RCR4_SYWD(0U) | I2S_RCR4_FSE(0U) | I2S_RCR4_FSP(0U) | I2S_RCR4_FRSZ(1U);
+		break;
+	default:
+		break;
+	}
 
-    /* Set master or slave */
-    if (config->masterSlave == kSAI_Master) {
-        base->RCR2 |= I2S_RCR2_BCD_MASK;
-        base->RCR4 |= I2S_RCR4_FSD_MASK;
+	/* Set master or slave */
+	if (config->masterSlave == kSAI_Master) {
+		base->RCR2 |= I2S_RCR2_BCD_MASK;
+		base->RCR4 |= I2S_RCR4_FSD_MASK;
 
-        /* Bit clock source setting */
-        val = base->RCR2 & (~I2S_RCR2_MSEL_MASK);
-        base->RCR2 = (val | I2S_RCR2_MSEL(config->bclkSource));
-    } else {
-        base->RCR2 &= ~I2S_RCR2_BCD_MASK;
-        base->RCR4 &= ~I2S_RCR4_FSD_MASK;
-    }
+		/* Bit clock source setting */
+		val = base->RCR2 & (~I2S_RCR2_MSEL_MASK);
+		base->RCR2 = (val | I2S_RCR2_MSEL(config->bclkSource));
+	} else {
+		base->RCR2 &= ~I2S_RCR2_BCD_MASK;
+		base->RCR4 &= ~I2S_RCR4_FSD_MASK;
+	}
 
-    /* Set Sync mode */
-    switch (config->syncMode) {
-    case kSAI_ModeAsync:
-        val = base->RCR2;
-        val &= ~I2S_RCR2_SYNC_MASK;
-        base->RCR2 = (val | I2S_RCR2_SYNC(0U));
-        break;
-    case kSAI_ModeSync:
-        val = base->RCR2;
-        val &= ~I2S_RCR2_SYNC_MASK;
-        base->RCR2 = (val | I2S_RCR2_SYNC(1U));
-        /* If sync with Tx, should set Tx to async mode */
-        val = base->TCR2;
-        val &= ~I2S_TCR2_SYNC_MASK;
-        base->TCR2 = (val | I2S_TCR2_SYNC(0U));
-        break;
-    case kSAI_ModeSyncWithOtherTx:
-        val = base->RCR2;
-        val &= ~I2S_RCR2_SYNC_MASK;
-        base->RCR2 = (val | I2S_RCR2_SYNC(2U));
-        break;
-    case kSAI_ModeSyncWithOtherRx:
-        val = base->RCR2;
-        val &= ~I2S_RCR2_SYNC_MASK;
-        base->RCR2 = (val | I2S_RCR2_SYNC(3U));
-        break;
-    default:
-        break;
-    }
+	/* Set Sync mode */
+	switch (config->syncMode) {
+	case kSAI_ModeAsync:
+		val = base->RCR2;
+		val &= ~I2S_RCR2_SYNC_MASK;
+		base->RCR2 = (val | I2S_RCR2_SYNC(0U));
+		break;
+	case kSAI_ModeSync:
+		val = base->RCR2;
+		val &= ~I2S_RCR2_SYNC_MASK;
+		base->RCR2 = (val | I2S_RCR2_SYNC(1U));
+		/* If sync with Tx, should set Tx to async mode */
+		val = base->TCR2;
+		val &= ~I2S_TCR2_SYNC_MASK;
+		base->TCR2 = (val | I2S_TCR2_SYNC(0U));
+		break;
+	case kSAI_ModeSyncWithOtherTx:
+		val = base->RCR2;
+		val &= ~I2S_RCR2_SYNC_MASK;
+		base->RCR2 = (val | I2S_RCR2_SYNC(2U));
+		break;
+	case kSAI_ModeSyncWithOtherRx:
+		val = base->RCR2;
+		val &= ~I2S_RCR2_SYNC_MASK;
+		base->RCR2 = (val | I2S_RCR2_SYNC(3U));
+		break;
+	default:
+		break;
+	}
 }
 
 /*!
@@ -1065,13 +1065,13 @@ void i2s_rx_init(I2S_Type *base, const sai_config_t *config)
  */
 void i2s_tx_getdefaultconfig(sai_config_t *config)
 {
-    config->bclkSource = kSAI_BclkSourceMclkDiv;
-    config->masterSlave = kSAI_Master;
-    config->mclkSource = kSAI_MclkSourceSysclk;
-    config->protocol = kSAI_BusLeftJustified;
-    config->syncMode = kSAI_ModeAsync;
+	config->bclkSource = kSAI_BclkSourceMclkDiv;
+	config->masterSlave = kSAI_Master;
+	config->mclkSource = kSAI_MclkSourceSysclk;
+	config->protocol = kSAI_BusLeftJustified;
+	config->syncMode = kSAI_ModeAsync;
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    config->mclkOutputEnable = true;
+	config->mclkOutputEnable = true;
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 }
 
@@ -1091,13 +1091,13 @@ void i2s_tx_getdefaultconfig(sai_config_t *config)
  */
 void i2s_rx_getdefaultconfig(sai_config_t *config)
 {
-    config->bclkSource = kSAI_BclkSourceMclkDiv;
-    config->masterSlave = kSAI_Master;
-    config->mclkSource = kSAI_MclkSourceSysclk;
-    config->protocol = kSAI_BusLeftJustified;
-    config->syncMode = kSAI_ModeSync;
+	config->bclkSource = kSAI_BclkSourceMclkDiv;
+	config->masterSlave = kSAI_Master;
+	config->mclkSource = kSAI_MclkSourceSysclk;
+	config->protocol = kSAI_BusLeftJustified;
+	config->syncMode = kSAI_ModeSync;
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    config->mclkOutputEnable = true;
+	config->mclkOutputEnable = true;
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 }
 
@@ -1111,8 +1111,8 @@ void i2s_rx_getdefaultconfig(sai_config_t *config)
 */
 void i2s_deinit(I2S_Type *base)
 {
-    i2s_tx_enable(base, false);
-    i2s_rx_enable(base, false);
+	i2s_tx_enable(base, false);
+	i2s_rx_enable(base, false);
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 	imxrt_clock_disableclock(s_saiClock[i2s_getinstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
@@ -1138,59 +1138,59 @@ void i2s_deinit(I2S_Type *base)
  * clock, this value should equal the masterClockHz.
 */
 void i2s_tx_setformat(I2S_Type *base,
-                     sai_transfer_format_t *format,
-                     uint32_t mclkSourceClockHz,
-                     uint32_t bclkSourceClockHz)
+		     sai_transfer_format_t *format,
+		     uint32_t mclkSourceClockHz,
+		     uint32_t bclkSourceClockHz)
 {
-    uint32_t bclk = 0;
-    uint32_t val = 0;
-    uint32_t channels = 2U;
+	uint32_t bclk = 0;
+	uint32_t val = 0;
+	uint32_t channels = 2U;
 
-    if (format->stereo != kSAI_Stereo) {
-        channels = 1U;
-    }
+	if (format->stereo != kSAI_Stereo) {
+		channels = 1U;
+	}
 
-    if (format->isFrameSyncCompact) {
-        bclk = format->sampleRate_Hz * format->bitWidth * channels;
-        val = (base->TCR4 & (~I2S_TCR4_SYWD_MASK));
-        val |= I2S_TCR4_SYWD(format->bitWidth - 1U);
-        base->TCR4 = val;
-    } else {
-        bclk = format->sampleRate_Hz * 32U * 2U;
-    }
+	if (format->isFrameSyncCompact) {
+		bclk = format->sampleRate_Hz * format->bitWidth * channels;
+		val = (base->TCR4 & (~I2S_TCR4_SYWD_MASK));
+		val |= I2S_TCR4_SYWD(format->bitWidth - 1U);
+		base->TCR4 = val;
+	} else {
+		bclk = format->sampleRate_Hz * 32U * 2U;
+	}
 
 /* Compute the mclk */
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
-    /* Check if master clock divider enabled, then set master clock divider */
-    if (base->MCR & I2S_MCR_MOE_MASK) {
-        i2s_setmasterclockdivider(base, format->masterClockHz, mclkSourceClockHz);
-    }
+	/* Check if master clock divider enabled, then set master clock divider */
+	if (base->MCR & I2S_MCR_MOE_MASK) {
+		i2s_setmasterclockdivider(base, format->masterClockHz, mclkSourceClockHz);
+	}
 #endif /* FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER */
 
-    /* Set bclk if needed */
-    if (base->TCR2 & I2S_TCR2_BCD_MASK) {
-        base->TCR2 &= ~I2S_TCR2_DIV_MASK;
-        base->TCR2 |= I2S_TCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
-    }
+	/* Set bclk if needed */
+	if (base->TCR2 & I2S_TCR2_BCD_MASK) {
+		base->TCR2 &= ~I2S_TCR2_DIV_MASK;
+		base->TCR2 |= I2S_TCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
+	}
 
-    /* Set bitWidth */
-    val = (format->isFrameSyncCompact) ? (format->bitWidth - 1) : 31U;
-    if (format->protocol == kSAI_BusRightJustified) {
-        base->TCR5 = I2S_TCR5_WNW(val) | I2S_TCR5_W0W(val) | I2S_TCR5_FBT(val);
-    } else {
-        base->TCR5 = I2S_TCR5_WNW(val) | I2S_TCR5_W0W(val) | I2S_TCR5_FBT(format->bitWidth - 1);
-    }
+	/* Set bitWidth */
+	val = (format->isFrameSyncCompact) ? (format->bitWidth - 1) : 31U;
+	if (format->protocol == kSAI_BusRightJustified) {
+		base->TCR5 = I2S_TCR5_WNW(val) | I2S_TCR5_W0W(val) | I2S_TCR5_FBT(val);
+	} else {
+		base->TCR5 = I2S_TCR5_WNW(val) | I2S_TCR5_W0W(val) | I2S_TCR5_FBT(format->bitWidth - 1);
+	}
 
-    /* Set mono or stereo */
-    base->TMR = (uint32_t)format->stereo;
+	/* Set mono or stereo */
+	base->TMR = (uint32_t)format->stereo;
 
-    /* Set data channel */
-    base->TCR3 &= ~I2S_TCR3_TCE_MASK;
-    base->TCR3 |= I2S_TCR3_TCE(1U << format->channel);
+	/* Set data channel */
+	base->TCR3 &= ~I2S_TCR3_TCE_MASK;
+	base->TCR3 |= I2S_TCR3_TCE(1U << format->channel);
 
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Set watermark */
-    base->TCR1 = format->watermark;
+	/* Set watermark */
+	base->TCR1 = format->watermark;
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT  */
 }
 
@@ -1207,59 +1207,59 @@ void i2s_tx_setformat(I2S_Type *base,
  * clock, this value should equal the masterClockHz.
 */
 void i2s_rx_setformat(I2S_Type *base,
-                     sai_transfer_format_t *format,
-                     uint32_t mclkSourceClockHz,
-                     uint32_t bclkSourceClockHz)
+		     sai_transfer_format_t *format,
+		     uint32_t mclkSourceClockHz,
+		     uint32_t bclkSourceClockHz)
 {
-    uint32_t bclk = 0;
-    uint32_t val = 0;
-    uint32_t channels = 2U;
+	uint32_t bclk = 0;
+	uint32_t val = 0;
+	uint32_t channels = 2U;
 
-    if (format->stereo != kSAI_Stereo) {
-        channels = 1U;
-    }
+	if (format->stereo != kSAI_Stereo) {
+		channels = 1U;
+	}
 
-    if (format->isFrameSyncCompact) {
-        bclk = format->sampleRate_Hz * format->bitWidth * channels;
-        val = (base->RCR4 & (~I2S_RCR4_SYWD_MASK));
-        val |= I2S_RCR4_SYWD(format->bitWidth - 1U);
-        base->RCR4 = val;
-    } else {
-        bclk = format->sampleRate_Hz * 32U * 2U;
-    }
+	if (format->isFrameSyncCompact) {
+		bclk = format->sampleRate_Hz * format->bitWidth * channels;
+		val = (base->RCR4 & (~I2S_RCR4_SYWD_MASK));
+		val |= I2S_RCR4_SYWD(format->bitWidth - 1U);
+		base->RCR4 = val;
+	} else {
+		bclk = format->sampleRate_Hz * 32U * 2U;
+	}
 
 /* Compute the mclk */
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
-    /* Check if master clock divider enabled */
-    if (base->MCR & I2S_MCR_MOE_MASK) {
-        i2s_setmasterclockdivider(base, format->masterClockHz, mclkSourceClockHz);
-    }
+	/* Check if master clock divider enabled */
+	if (base->MCR & I2S_MCR_MOE_MASK) {
+		i2s_setmasterclockdivider(base, format->masterClockHz, mclkSourceClockHz);
+	}
 #endif /* FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER */
 
-    /* Set bclk if needed */
-    if (base->RCR2 & I2S_RCR2_BCD_MASK) {
-        base->RCR2 &= ~I2S_RCR2_DIV_MASK;
-        base->RCR2 |= I2S_RCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
-    }
+	/* Set bclk if needed */
+	if (base->RCR2 & I2S_RCR2_BCD_MASK) {
+		base->RCR2 &= ~I2S_RCR2_DIV_MASK;
+		base->RCR2 |= I2S_RCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
+	}
 
-    /* Set bitWidth */
-    val = (format->isFrameSyncCompact) ? (format->bitWidth - 1) : 31U;
-    if (format->protocol == kSAI_BusRightJustified) {
-        base->RCR5 = I2S_RCR5_WNW(val) | I2S_RCR5_W0W(val) | I2S_RCR5_FBT(val);
-    } else {
-        base->RCR5 = I2S_RCR5_WNW(val) | I2S_RCR5_W0W(val) | I2S_RCR5_FBT(format->bitWidth - 1);
-    }
+	/* Set bitWidth */
+	val = (format->isFrameSyncCompact) ? (format->bitWidth - 1) : 31U;
+	if (format->protocol == kSAI_BusRightJustified) {
+		base->RCR5 = I2S_RCR5_WNW(val) | I2S_RCR5_W0W(val) | I2S_RCR5_FBT(val);
+	} else {
+		base->RCR5 = I2S_RCR5_WNW(val) | I2S_RCR5_W0W(val) | I2S_RCR5_FBT(format->bitWidth - 1);
+	}
 
-    /* Set mono or stereo */
-    base->RMR = (uint32_t)format->stereo;
+	/* Set mono or stereo */
+	base->RMR = (uint32_t)format->stereo;
 
-    /* Set data channel */
-    base->RCR3 &= ~I2S_RCR3_RCE_MASK;
-    base->RCR3 |= I2S_RCR3_RCE(1U << format->channel);
+	/* Set data channel */
+	base->RCR3 &= ~I2S_RCR3_RCE_MASK;
+	base->RCR3 |= I2S_RCR3_RCE(1U << format->channel);
 
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Set watermark */
-    base->RCR1 = format->watermark;
+	/* Set watermark */
+	base->RCR1 = format->watermark;
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT  */
 }
 
@@ -1276,22 +1276,22 @@ void i2s_rx_setformat(I2S_Type *base,
  */
 void i2s_write_blocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
-    uint8_t bytesPerWord = bitWidth / 8U;
+	uint32_t i = 0;
+	uint8_t bytesPerWord = bitWidth / 8U;
 
-    while (i < size) {
-        /* Wait until it can write data */
-        while (!(base->TCSR & I2S_TCSR_FWF_MASK)) {
-        }
+	while (i < size) {
+		/* Wait until it can write data */
+		while (!(base->TCSR & I2S_TCSR_FWF_MASK)) {
+		}
 
-        i2s_write_nonblocking(base, channel, bitWidth, buffer, bytesPerWord);
-        buffer += bytesPerWord;
-        i += bytesPerWord;
-    }
+		i2s_write_nonblocking(base, channel, bitWidth, buffer, bytesPerWord);
+		buffer += bytesPerWord;
+		i += bytesPerWord;
+	}
 
-    /* Wait until the last data is sent */
-    while (!(base->TCSR & I2S_TCSR_FWF_MASK)) {
-    }
+	/* Wait until the last data is sent */
+	while (!(base->TCSR & I2S_TCSR_FWF_MASK)) {
+	}
 }
 
 /*!
@@ -1303,7 +1303,7 @@ void i2s_write_blocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uin
  */
 static inline void i2s_writedata(I2S_Type *base, uint32_t channel, uint32_t data)
 {
-    base->TDR[channel] = data;
+	base->TDR[channel] = data;
 }
 
 /*!
@@ -1319,18 +1319,18 @@ static inline void i2s_writedata(I2S_Type *base, uint32_t channel, uint32_t data
  */
 void i2s_read_blocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
-    uint8_t bytesPerWord = bitWidth / 8U;
+	uint32_t i = 0;
+	uint8_t bytesPerWord = bitWidth / 8U;
 
-    while (i < size) {
-        /* Wait until data is received */
-        while (!(base->RCSR & I2S_RCSR_FWF_MASK)) {
-        }
+	while (i < size) {
+		/* Wait until data is received */
+		while (!(base->RCSR & I2S_RCSR_FWF_MASK)) {
+		}
 
-        i2s_read_nonblocking(base, channel, bitWidth, buffer, bytesPerWord);
-        buffer += bytesPerWord;
-        i += bytesPerWord;
-    }
+		i2s_read_nonblocking(base, channel, bitWidth, buffer, bytesPerWord);
+		buffer += bytesPerWord;
+		i += bytesPerWord;
+	}
 }
 
 /*!
@@ -1342,7 +1342,7 @@ void i2s_read_blocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
  */
 static inline uint32_t i2s_readdata(I2S_Type *base, uint32_t channel)
 {
-    return base->RDR[channel];
+	return base->RDR[channel];
 }
 
 /*! @} */
@@ -1366,27 +1366,27 @@ static inline uint32_t i2s_readdata(I2S_Type *base, uint32_t channel)
  * @return Status of this function. Return value is the status_t.
 */
 status_t i2s_transfer_tx_setformat(I2S_Type *base,
-                                 sai_handle_t *handle,
-                                 sai_transfer_format_t *format,
-                                 uint32_t mclkSourceClockHz,
-                                 uint32_t bclkSourceClockHz)
+				 sai_handle_t *handle,
+				 sai_transfer_format_t *format,
+				 uint32_t mclkSourceClockHz,
+				 uint32_t bclkSourceClockHz)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz)) {
-        return kStatus_InvalidArgument;
-    }
+	if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz)) {
+		return kStatus_InvalidArgument;
+	}
 
-    /* Copy format to handle */
-    handle->bitWidth = format->bitWidth;
+	/* Copy format to handle */
+	handle->bitWidth = format->bitWidth;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    handle->watermark = format->watermark;
+	handle->watermark = format->watermark;
 #endif
-    handle->channel = format->channel;
+	handle->channel = format->channel;
 
-    i2s_tx_setformat(base, format, mclkSourceClockHz, bclkSourceClockHz);
+	i2s_tx_setformat(base, format, mclkSourceClockHz, bclkSourceClockHz);
 
-    return kStatus_Success;
+	return kStatus_Success;
 }
 
 /*!
@@ -1404,27 +1404,27 @@ status_t i2s_transfer_tx_setformat(I2S_Type *base,
  * @return Status of this function. Return value is one of status_t.
 */
 status_t i2s_transfer_rx_setformat(I2S_Type *base,
-                                 sai_handle_t *handle,
-                                 sai_transfer_format_t *format,
-                                 uint32_t mclkSourceClockHz,
-                                 uint32_t bclkSourceClockHz)
+				 sai_handle_t *handle,
+				 sai_transfer_format_t *format,
+				 uint32_t mclkSourceClockHz,
+				 uint32_t bclkSourceClockHz)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz)) {
-        return kStatus_InvalidArgument;
-    }
+	if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz)) {
+		return kStatus_InvalidArgument;
+	}
 
-    /* Copy format to handle */
-    handle->bitWidth = format->bitWidth;
+	/* Copy format to handle */
+	handle->bitWidth = format->bitWidth;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    handle->watermark = format->watermark;
+	handle->watermark = format->watermark;
 #endif
-    handle->channel = format->channel;
+	handle->channel = format->channel;
 
-    i2s_rx_setformat(base, format, mclkSourceClockHz, bclkSourceClockHz);
+	i2s_rx_setformat(base, format, mclkSourceClockHz, bclkSourceClockHz);
 
-    return kStatus_Success;
+	return kStatus_Success;
 }
 
 /*!
@@ -1444,34 +1444,34 @@ status_t i2s_transfer_rx_setformat(I2S_Type *base,
  */
 status_t i2s_transfer_send_nonblocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Check if the queue is full */
-    if (handle->saiQueue[handle->queueUser].data) {
-        return kStatus_SAI_QueueFull;
-    }
+	/* Check if the queue is full */
+	if (handle->saiQueue[handle->queueUser].data) {
+		return kStatus_SAI_QueueFull;
+	}
 
-    /* Add into queue */
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->saiQueue[handle->queueUser].data = xfer->data;
-    handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
+	/* Add into queue */
+	handle->transferSize[handle->queueUser] = xfer->dataSize;
+	handle->saiQueue[handle->queueUser].data = xfer->data;
+	handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
+	handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
-    /* Set the state to busy */
-    handle->state = kSAI_Busy;
+	/* Set the state to busy */
+	handle->state = kSAI_Busy;
 
 /* Enable interrupt */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error*/
-    i2s_tx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
+	/* Use FIFO request interrupt and fifo error*/
+	i2s_tx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_tx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_tx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* Enable Tx transfer */
-    i2s_tx_enable(base, true);
+	/* Enable Tx transfer */
+	i2s_tx_enable(base, true);
 
-    return kStatus_Success;
+	return kStatus_Success;
 }
 
 /*!
@@ -1491,34 +1491,34 @@ status_t i2s_transfer_send_nonblocking(I2S_Type *base, sai_handle_t *handle, sai
  */
 status_t i2s_transfer_receive_nonblocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Check if the queue is full */
-    if (handle->saiQueue[handle->queueUser].data) {
-        return kStatus_SAI_QueueFull;
-    }
+	/* Check if the queue is full */
+	if (handle->saiQueue[handle->queueUser].data) {
+		return kStatus_SAI_QueueFull;
+	}
 
-    /* Add into queue */
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->saiQueue[handle->queueUser].data = xfer->data;
-    handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
+	/* Add into queue */
+	handle->transferSize[handle->queueUser] = xfer->dataSize;
+	handle->saiQueue[handle->queueUser].data = xfer->data;
+	handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
+	handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
-    /* Set state to busy */
-    handle->state = kSAI_Busy;
+	/* Set state to busy */
+	handle->state = kSAI_Busy;
 
 /* Enable interrupt */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error*/
-    i2s_rx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
+	/* Use FIFO request interrupt and fifo error*/
+	i2s_rx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_rx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_rx_enableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* Enable Rx transfer */
-    i2s_rx_enable(base, true);
+	/* Enable Rx transfer */
+	i2s_rx_enable(base, true);
 
-    return kStatus_Success;
+	return kStatus_Success;
 }
 
 /*!
@@ -1532,17 +1532,17 @@ status_t i2s_transfer_receive_nonblocking(I2S_Type *base, sai_handle_t *handle, 
  */
 status_t i2s_transfer_getsendcount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    status_t status = kStatus_Success;
+	status_t status = kStatus_Success;
 
-    if (handle->state != kSAI_Busy) {
-        status = kStatus_NoTransferInProgress;
-    } else {
-        *count = (handle->transferSize[handle->queueDriver] - handle->saiQueue[handle->queueDriver].dataSize);
-    }
+	if (handle->state != kSAI_Busy) {
+		status = kStatus_NoTransferInProgress;
+	} else {
+		*count = (handle->transferSize[handle->queueDriver] - handle->saiQueue[handle->queueDriver].dataSize);
+	}
 
-    return status;
+	return status;
 }
 
 /*!
@@ -1556,17 +1556,17 @@ status_t i2s_transfer_getsendcount(I2S_Type *base, sai_handle_t *handle, size_t 
  */
 status_t i2s_transfer_getreceivecount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    status_t status = kStatus_Success;
+	status_t status = kStatus_Success;
 
-    if (handle->state != kSAI_Busy) {
-        status = kStatus_NoTransferInProgress;
-    } else {
-        *count = (handle->transferSize[handle->queueDriver] - handle->saiQueue[handle->queueDriver].dataSize);
-    }
+	if (handle->state != kSAI_Busy) {
+		status = kStatus_NoTransferInProgress;
+	} else {
+		*count = (handle->transferSize[handle->queueDriver] - handle->saiQueue[handle->queueDriver].dataSize);
+	}
 
-    return status;
+	return status;
 }
 
 /*!
@@ -1580,23 +1580,23 @@ status_t i2s_transfer_getreceivecount(I2S_Type *base, sai_handle_t *handle, size
  */
 void i2s_transfer_abortsend(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Stop Tx transfer and disable interrupt */
-    i2s_tx_enable(base, false);
+	/* Stop Tx transfer and disable interrupt */
+	i2s_tx_enable(base, false);
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error */
-    i2s_tx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
+	/* Use FIFO request interrupt and fifo error */
+	i2s_tx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_tx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_tx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    handle->state = kSAI_Idle;
+	handle->state = kSAI_Idle;
 
-    /* Clear the queue */
-    memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
-    handle->queueDriver = 0;
-    handle->queueUser = 0;
+	/* Clear the queue */
+	memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
+	handle->queueDriver = 0;
+	handle->queueUser = 0;
 }
 
 /*!
@@ -1610,23 +1610,23 @@ void i2s_transfer_abortsend(I2S_Type *base, sai_handle_t *handle)
  */
 void i2s_transfer_abortreceive(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Stop Tx transfer and disable interrupt */
-    i2s_rx_enable(base, false);
+	/* Stop Tx transfer and disable interrupt */
+	i2s_rx_enable(base, false);
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error */
-    i2s_rx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
+	/* Use FIFO request interrupt and fifo error */
+	i2s_rx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_rx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_rx_disableinterrupts(base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    handle->state = kSAI_Idle;
+	handle->state = kSAI_Idle;
 
-    /* Clear the queue */
-    memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
-    handle->queueDriver = 0;
-    handle->queueUser = 0;
+	/* Clear the queue */
+	memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
+	handle->queueDriver = 0;
+	handle->queueUser = 0;
 }
 
 /*!
@@ -1640,16 +1640,16 @@ void i2s_transfer_abortreceive(I2S_Type *base, sai_handle_t *handle)
  */
 void i2s_transferterminatesend(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Abort the current transfer */
-    i2s_transfer_abortsend(base, handle);
+	/* Abort the current transfer */
+	i2s_transfer_abortsend(base, handle);
 
-    /* Clear all the internal information */
-    memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
-    memset(handle->transferSize, 0U, sizeof(handle->transferSize));
-    handle->queueUser = 0U;
-    handle->queueDriver = 0U;
+	/* Clear all the internal information */
+	memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
+	memset(handle->transferSize, 0U, sizeof(handle->transferSize));
+	handle->queueUser = 0U;
+	handle->queueDriver = 0U;
 }
 
 /*!
@@ -1663,16 +1663,16 @@ void i2s_transferterminatesend(I2S_Type *base, sai_handle_t *handle)
  */
 void i2s_transferterminatereceive(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    /* Abort the current transfer */
-    i2s_transfer_abortreceive(base, handle);
+	/* Abort the current transfer */
+	i2s_transfer_abortreceive(base, handle);
 
-    /* Clear all the internal information */
-    memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
-    memset(handle->transferSize, 0U, sizeof(handle->transferSize));
-    handle->queueUser = 0U;
-    handle->queueDriver = 0U;
+	/* Clear all the internal information */
+	memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
+	memset(handle->transferSize, 0U, sizeof(handle->transferSize));
+	handle->queueUser = 0U;
+	handle->queueDriver = 0U;
 }
 
 /*!
@@ -1683,66 +1683,66 @@ void i2s_transferterminatereceive(I2S_Type *base, sai_handle_t *handle)
  */
 void i2s_transfer_tx_handleirq(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
-    uint8_t dataSize = handle->bitWidth / 8U;
+	uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
+	uint8_t dataSize = handle->bitWidth / 8U;
 
-    /* Handle Error */
-    if (base->TCSR & I2S_TCSR_FEF_MASK) {
-        /* Clear FIFO error flag to continue transfer */
-        i2s_tx_clearstatusflag(base, kSAI_FIFOErrorFlag);
+	/* Handle Error */
+	if (base->TCSR & I2S_TCSR_FEF_MASK) {
+		/* Clear FIFO error flag to continue transfer */
+		i2s_tx_clearstatusflag(base, kSAI_FIFOErrorFlag);
 
-        /* Reset FIFO for safety */
-        i2s_tx_softwarereset(base, kSAI_ResetTypeFIFO);
+		/* Reset FIFO for safety */
+		i2s_tx_softwarereset(base, kSAI_ResetTypeFIFO);
 
-        /* Call the callback */
-        if (handle->callbackParam[handle->queueDriver].callback) {
-            (handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, -1);
-        }
-    }
+		/* Call the callback */
+		if (handle->callbackParam[handle->queueDriver].callback) {
+			(handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, -1);
+		}
+	}
 
 /* Handle transfer */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    if (base->TCSR & I2S_TCSR_FRF_MASK) {
-        /* Judge if the data need to transmit is less than space */
-        uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize),
-                           (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - handle->watermark) * dataSize));
+	if (base->TCSR & I2S_TCSR_FRF_MASK) {
+		/* Judge if the data need to transmit is less than space */
+		uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize),
+				   (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - handle->watermark) * dataSize));
 
-        /* Copy the data from sai buffer to FIFO */
-        i2s_write_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
+		/* Copy the data from sai buffer to FIFO */
+		i2s_write_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
 
-        /* Update the internal counter */
-        handle->saiQueue[handle->queueDriver].dataSize -= size;
-        handle->saiQueue[handle->queueDriver].data += size;
-    }
+		/* Update the internal counter */
+		handle->saiQueue[handle->queueDriver].dataSize -= size;
+		handle->saiQueue[handle->queueDriver].data += size;
+	}
 #else
-    if (base->TCSR & I2S_TCSR_FWF_MASK) {
-        uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
+	if (base->TCSR & I2S_TCSR_FWF_MASK) {
+		uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
 
-        i2s_write_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
+		i2s_write_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
 
-        /* Update internal counter */
-        handle->saiQueue[handle->queueDriver].dataSize -= size;
-        handle->saiQueue[handle->queueDriver].data += size;
-    }
+		/* Update internal counter */
+		handle->saiQueue[handle->queueDriver].dataSize -= size;
+		handle->saiQueue[handle->queueDriver].data += size;
+	}
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* If finished a blcok, call the callback function */
-    if (handle->saiQueue[handle->queueDriver].dataSize == 0U) {
-        memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
-        handle->queueDriver = (handle->queueDriver + 1) % SAI_XFER_QUEUE_SIZE;
+	/* If finished a blcok, call the callback function */
+	if (handle->saiQueue[handle->queueDriver].dataSize == 0U) {
+		memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
+		handle->queueDriver = (handle->queueDriver + 1) % SAI_XFER_QUEUE_SIZE;
 
 		/* Call the callback */
-        if (handle->callbackParam[handle->queueDriver].callback) {
-            (handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, OK);
-        }
-    }
+		if (handle->callbackParam[handle->queueDriver].callback) {
+			(handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, OK);
+		}
+	}
 
-    /* If all data finished, just stop the transfer */
-    if (handle->saiQueue[handle->queueDriver].data == NULL) {
-        i2s_transfer_abortsend(base, handle);
-    }
+	/* If all data finished, just stop the transfer */
+	if (handle->saiQueue[handle->queueDriver].data == NULL) {
+		i2s_transfer_abortsend(base, handle);
+	}
 }
 
 /*!
@@ -1753,65 +1753,65 @@ void i2s_transfer_tx_handleirq(I2S_Type *base, sai_handle_t *handle)
  */
 void i2s_transfer_rx_handleirq(I2S_Type *base, sai_handle_t *handle)
 {
-    DEBUGASSERT(handle);
+	DEBUGASSERT(handle);
 
-    uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
-    uint8_t dataSize = handle->bitWidth / 8U;
+	uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
+	uint8_t dataSize = handle->bitWidth / 8U;
 
-    /* Handle Error */
-    if (base->RCSR & I2S_RCSR_FEF_MASK) {
-        /* Clear FIFO error flag to continue transfer */
-        i2s_rx_clearstatusflags(base, kSAI_FIFOErrorFlag);
+	/* Handle Error */
+	if (base->RCSR & I2S_RCSR_FEF_MASK) {
+		/* Clear FIFO error flag to continue transfer */
+		i2s_rx_clearstatusflags(base, kSAI_FIFOErrorFlag);
 
-        /* Reset FIFO for safety */
-        i2s_rx_softwarereset(base, kSAI_ResetTypeFIFO);
+		/* Reset FIFO for safety */
+		i2s_rx_softwarereset(base, kSAI_ResetTypeFIFO);
 
-        /* Call the callback */
-        if (handle->callbackParam[handle->queueDriver].callback) {
-            (handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, -1);
-        }
-    }
+		/* Call the callback */
+		if (handle->callbackParam[handle->queueDriver].callback) {
+			(handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, -1);
+		}
+	}
 
 /* Handle transfer */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    if (base->RCSR & I2S_RCSR_FRF_MASK) {
-        /* Judge if the data need to transmit is less than space */
-        uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), (handle->watermark * dataSize));
+	if (base->RCSR & I2S_RCSR_FRF_MASK) {
+		/* Judge if the data need to transmit is less than space */
+		uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), (handle->watermark * dataSize));
 
-        /* Copy the data from sai buffer to FIFO */
-        i2s_read_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
+		/* Copy the data from sai buffer to FIFO */
+		i2s_read_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
 
-        /* Update the internal counter */
-        handle->saiQueue[handle->queueDriver].dataSize -= size;
-        handle->saiQueue[handle->queueDriver].data += size;
-    }
+		/* Update the internal counter */
+		handle->saiQueue[handle->queueDriver].dataSize -= size;
+		handle->saiQueue[handle->queueDriver].data += size;
+	}
 #else
-    if (base->RCSR & I2S_RCSR_FWF_MASK) {
-        uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
+	if (base->RCSR & I2S_RCSR_FWF_MASK) {
+		uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
 
-        i2s_read_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
+		i2s_read_nonblocking(base, handle->channel, handle->bitWidth, buffer, size);
 
-        /* Update internal state */
-        handle->saiQueue[handle->queueDriver].dataSize -= size;
-        handle->saiQueue[handle->queueDriver].data += size;
-    }
+		/* Update internal state */
+		handle->saiQueue[handle->queueDriver].dataSize -= size;
+		handle->saiQueue[handle->queueDriver].data += size;
+	}
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* If finished a blcok, call the callback function */
-    if (handle->saiQueue[handle->queueDriver].dataSize == 0U) {
-        memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
-        handle->queueDriver = (handle->queueDriver + 1) % SAI_XFER_QUEUE_SIZE;
+	/* If finished a blcok, call the callback function */
+	if (handle->saiQueue[handle->queueDriver].dataSize == 0U) {
+		memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
+		handle->queueDriver = (handle->queueDriver + 1) % SAI_XFER_QUEUE_SIZE;
 
 		/* Call the callback */
-        if (handle->callbackParam[handle->queueDriver].callback) {
-            (handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, OK);
-        }
-    }
+		if (handle->callbackParam[handle->queueDriver].callback) {
+			(handle->callbackParam[handle->queueDriver].callback)((FAR struct i2s_dev_s *)handle->callbackParam[handle->queueDriver].dev_ptr, handle->callbackParam[handle->queueDriver].apb, handle->callbackParam[handle->queueDriver].arg, OK);
+		}
+	}
 
-    /* If all data finished, just stop the transfer */
-    if (handle->saiQueue[handle->queueDriver].data == NULL) {
-        i2s_transfer_abortreceive(base, handle);
-    }
+	/* If all data finished, just stop the transfer */
+	if (handle->saiQueue[handle->queueDriver].data == NULL) {
+		i2s_transfer_abortreceive(base, handle);
+	}
 }
 
 /*! @} */
@@ -1925,17 +1925,17 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	}
 
 	/* Check if the queue is full */
-    if (priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].data) {
-        return -EAGAIN;
-    }
+	if (priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].data) {
+		return -EAGAIN;
+	}
 
 	/* Get exclusive access to the I2S driver data */
 	i2s_exclsem_take(priv);
 	i2sinfo("RX Exclusive Enter\n");
 
 	priv->si_rx_handle.transferSize[priv->si_rx_handle.queueUser] = apb->nmaxbytes;
-    priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].data = apb->samp;;
-    priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].dataSize = apb->nmaxbytes;
+	priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].data = apb->samp;;
+	priv->si_rx_handle.saiQueue[priv->si_rx_handle.queueUser].dataSize = apb->nmaxbytes;
 	priv->si_rx_handle.callbackParam[priv->si_rx_handle.queueUser].dev_ptr = (void *)dev;
 	priv->si_rx_handle.callbackParam[priv->si_rx_handle.queueUser].apb = apb;
 	priv->si_rx_handle.callbackParam[priv->si_rx_handle.queueUser].arg = arg;
@@ -1944,14 +1944,14 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	priv->si_rx_handle.queueUser = (priv->si_rx_handle.queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
 	/* Set state to busy */
-    priv->si_rx_handle.state = kSAI_Busy;
+	priv->si_rx_handle.state = kSAI_Busy;
 
 	/* Enable interrupt */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error*/
-    i2s_rx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
+	/* Use FIFO request interrupt and fifo error*/
+	i2s_rx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_rx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_rx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
 	/* Enable Rx transfer */
@@ -2060,18 +2060,18 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 	}
 
 	/* Check if the queue is full */
-    if (priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].data) {
-        return kStatus_SAI_QueueFull;
-    }
+	if (priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].data) {
+		return kStatus_SAI_QueueFull;
+	}
 
 	/* Get exclusive access to the I2S driver data */
 	i2s_exclsem_take(priv);
 	i2sinfo("TX Exclusive Enter\n");
 
 	/* Add into queue */
-    priv->si_tx_handle.transferSize[priv->si_tx_handle.queueUser] = apb->nbytes - apb->curbyte;
-    priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].data = &apb->samp[apb->curbyte];
-    priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].dataSize = apb->nbytes - apb->curbyte;
+	priv->si_tx_handle.transferSize[priv->si_tx_handle.queueUser] = apb->nbytes - apb->curbyte;
+	priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].data = &apb->samp[apb->curbyte];
+	priv->si_tx_handle.saiQueue[priv->si_tx_handle.queueUser].dataSize = apb->nbytes - apb->curbyte;
 	priv->si_tx_handle.callbackParam[priv->si_tx_handle.queueUser].dev_ptr = (void *)dev;
 	priv->si_tx_handle.callbackParam[priv->si_tx_handle.queueUser].apb = apb;
 	priv->si_tx_handle.callbackParam[priv->si_tx_handle.queueUser].arg = arg;
@@ -2079,18 +2079,18 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 	priv->si_tx_handle.callbackParam[priv->si_tx_handle.queueUser].timeout = timeout;
 	priv->si_tx_handle.queueUser = (priv->si_tx_handle.queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
-    /* Set the state to busy */
-    priv->si_tx_handle.state = kSAI_Busy;
+	/* Set the state to busy */
+	priv->si_tx_handle.state = kSAI_Busy;
 
 	/* Enable interrupt */
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    /* Use FIFO request interrupt and fifo error*/
+	/* Use FIFO request interrupt and fifo error*/
 	i2s_tx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFORequestInterruptEnable);
 #else
-    i2s_tx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
+	i2s_tx_enableinterrupts(priv->i2s_base, kSAI_FIFOErrorInterruptEnable | kSAI_FIFOWarningInterruptEnable);
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* Enable Tx transfer */
+	/* Enable Tx transfer */
 	i2s_tx_enable(priv->i2s_base, true);
 
 	i2s_exclsem_give(priv);
@@ -2309,32 +2309,32 @@ int i2s_set_clk(struct imxrt_i2s_s *priv, uint32_t rate, i2s_bits_per_sample_t b
 	}
 
 	/* Configure the audio format */
-    format.bitWidth = priv->bits_per_sample;
-    format.channel = priv->channel_num;
-    format.sampleRate_Hz = priv->sample_rate;
-    format.masterClockHz = OVER_SAMPLE_RATE * format.sampleRate_Hz;
-    format.protocol = kSAI_BusI2S;
-    format.stereo = kSAI_Stereo;
-    format.isFrameSyncCompact = false;
+	format.bitWidth = priv->bits_per_sample;
+	format.channel = priv->channel_num;
+	format.sampleRate_Hz = priv->sample_rate;
+	format.masterClockHz = OVER_SAMPLE_RATE * format.sampleRate_Hz;
+	format.protocol = kSAI_BusI2S;
+	format.stereo = kSAI_Stereo;
+	format.isFrameSyncCompact = false;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    format.watermark = FSL_FEATURE_SAI_FIFO_COUNT / 2U;
+	format.watermark = FSL_FEATURE_SAI_FIFO_COUNT / 2U;
 #endif
 
 	/* Copy format to handle */
-    priv->si_tx_handle.bitWidth = format.bitWidth;
+	priv->si_tx_handle.bitWidth = format.bitWidth;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    priv->si_tx_handle.watermark = format.watermark;
+	priv->si_tx_handle.watermark = format.watermark;
 #endif
-    priv->si_tx_handle.channel = format.channel;
+	priv->si_tx_handle.channel = format.channel;
 	mclkSourceClockHz = OVER_SAMPLE_RATE * format.sampleRate_Hz;
 	i2s_tx_setformat(priv->i2s_base, &format, mclkSourceClockHz, format.masterClockHz);
 
-    /* Copy format to handle */
-    priv->si_rx_handle.bitWidth = format.bitWidth;
+	/* Copy format to handle */
+	priv->si_rx_handle.bitWidth = format.bitWidth;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
-    priv->si_rx_handle.watermark = format.watermark;
+	priv->si_rx_handle.watermark = format.watermark;
 #endif
-    priv->si_rx_handle.channel = format.channel;
+	priv->si_rx_handle.channel = format.channel;
 	mclkSourceClockHz = OVER_SAMPLE_RATE * format.sampleRate_Hz;
 	i2s_rx_setformat(priv->i2s_base, &format, mclkSourceClockHz, format.masterClockHz);
 
@@ -2442,131 +2442,131 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 
 void imxrt_i2s_initpins(void)
 {
-    imxrt_iomuxc_setpinmux(
-      IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL,        /* GPIO_AD_B1_00 is configured as LPI2C1_SCL */
-      1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_00 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA,        /* GPIO_AD_B1_01 is configured as LPI2C1_SDA */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_01 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_09_SAI1_MCLK,         /* GPIO_AD_B1_09 is configured as SAI1_MCLK */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_09 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_12_SAI1_RX_DATA00,    /* GPIO_AD_B1_12 is configured as SAI1_RX_DATA00 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_12 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_13_SAI1_TX_DATA00,    /* GPIO_AD_B1_13 is configured as SAI1_TX_DATA00 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_13 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_14_SAI1_TX_BCLK,      /* GPIO_AD_B1_14 is configured as SAI1_TX_BCLK */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_14 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_AD_B1_15_SAI1_TX_SYNC,      /* GPIO_AD_B1_15 is configured as SAI1_TX_SYNC */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_15 */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL,        /* GPIO_AD_B1_00 PAD functional properties : */
-        0xD8B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Enabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 22K Ohm Pull Up
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA,        /* GPIO_AD_B1_01 PAD functional properties : */
-        0xD8B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Enabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 22K Ohm Pull Up
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_09_SAI1_MCLK,         /* GPIO_AD_B1_09 PAD functional properties : */
-        0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_12_SAI1_RX_DATA00,    /* GPIO_AD_B1_12 PAD functional properties : */
-        0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_13_SAI1_TX_DATA00,    /* GPIO_AD_B1_13 PAD functional properties : */
-        0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_14_SAI1_TX_BCLK,      /* GPIO_AD_B1_14 PAD functional properties : */
-        0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_AD_B1_15_SAI1_TX_SYNC,      /* GPIO_AD_B1_15 PAD functional properties : */
-        0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: medium(100MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL,        /* GPIO_AD_B1_00 is configured as LPI2C1_SCL */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_00 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA,        /* GPIO_AD_B1_01 is configured as LPI2C1_SDA */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_01 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_09_SAI1_MCLK,         /* GPIO_AD_B1_09 is configured as SAI1_MCLK */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_09 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_12_SAI1_RX_DATA00,    /* GPIO_AD_B1_12 is configured as SAI1_RX_DATA00 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_12 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_13_SAI1_TX_DATA00,    /* GPIO_AD_B1_13 is configured as SAI1_TX_DATA00 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_13 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_14_SAI1_TX_BCLK,      /* GPIO_AD_B1_14 is configured as SAI1_TX_BCLK */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_14 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_15_SAI1_TX_SYNC,      /* GPIO_AD_B1_15 is configured as SAI1_TX_SYNC */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_AD_B1_15 */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL,        /* GPIO_AD_B1_00 PAD functional properties : */
+		0xD8B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Enabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 22K Ohm Pull Up
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA,        /* GPIO_AD_B1_01 PAD functional properties : */
+		0xD8B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Enabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 22K Ohm Pull Up
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_09_SAI1_MCLK,         /* GPIO_AD_B1_09 PAD functional properties : */
+		0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_12_SAI1_RX_DATA00,    /* GPIO_AD_B1_12 PAD functional properties : */
+		0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_13_SAI1_TX_DATA00,    /* GPIO_AD_B1_13 PAD functional properties : */
+		0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_14_SAI1_TX_BCLK,      /* GPIO_AD_B1_14 PAD functional properties : */
+		0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_15_SAI1_TX_SYNC,      /* GPIO_AD_B1_15 PAD functional properties : */
+		0x10B0u);                               /* Slew Rate Field: Slow Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: medium(100MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 }
 
 void imxrt_i2s_clock_init(void)
 {
-    imxrt_clock_initaudiopll(&audioPllConfig);
-    /*Clock setting for LPI2C*/
-    imxrt_clock_setmux(kCLOCK_Lpi2cMux, DEMO_LPI2C_CLOCK_SOURCE_SELECT);
-    imxrt_clock_setdiv(kCLOCK_Lpi2cDiv, DEMO_LPI2C_CLOCK_SOURCE_DIVIDER);
+	imxrt_clock_initaudiopll(&audioPllConfig);
+	/*Clock setting for LPI2C*/
+	imxrt_clock_setmux(kCLOCK_Lpi2cMux, DEMO_LPI2C_CLOCK_SOURCE_SELECT);
+	imxrt_clock_setdiv(kCLOCK_Lpi2cDiv, DEMO_LPI2C_CLOCK_SOURCE_DIVIDER);
 
-    /*Clock setting for SAI1*/
-    imxrt_clock_setmux(kCLOCK_Sai1Mux, DEMO_SAI1_CLOCK_SOURCE_SELECT);
-    imxrt_clock_setdiv(kCLOCK_Sai1PreDiv, DEMO_SAI1_CLOCK_SOURCE_PRE_DIVIDER);
-    imxrt_clock_setdiv(kCLOCK_Sai1Div, DEMO_SAI1_CLOCK_SOURCE_DIVIDER);
+	/*Clock setting for SAI1*/
+	imxrt_clock_setmux(kCLOCK_Sai1Mux, DEMO_SAI1_CLOCK_SOURCE_SELECT);
+	imxrt_clock_setdiv(kCLOCK_Sai1PreDiv, DEMO_SAI1_CLOCK_SOURCE_PRE_DIVIDER);
+	imxrt_clock_setdiv(kCLOCK_Sai1Div, DEMO_SAI1_CLOCK_SOURCE_DIVIDER);
 
-    IOMUXC_GPR->GPR1 |= IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK;
+	IOMUXC_GPR->GPR1 |= IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK;
 }
 
 #ifdef IMXRT_AUDIO_CODEC
 void BOARD_Codec_I2C_Init(void)
 {
-    BOARD_LPI2C_Init(BOARD_CODEC_I2C_BASEADDR, BOARD_CODEC_I2C_CLOCK_FREQ);
+	BOARD_LPI2C_Init(BOARD_CODEC_I2C_BASEADDR, BOARD_CODEC_I2C_CLOCK_FREQ);
 }
 
 status_t BOARD_Codec_I2C_Send(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, const uint8_t *txBuff, uint8_t txBuffSize)
+	uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, const uint8_t *txBuff, uint8_t txBuffSize)
 {
-    return BOARD_LPI2C_Send(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, (uint8_t *)txBuff,
-                            txBuffSize);
+	return BOARD_LPI2C_Send(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, (uint8_t *)txBuff,
+				txBuffSize);
 }
 
 status_t BOARD_Codec_I2C_Receive(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
+	uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
 {
-    return BOARD_LPI2C_Receive(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, rxBuff, rxBuffSize);
+	return BOARD_LPI2C_Receive(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, rxBuff, rxBuffSize);
 }
 #endif
 
@@ -2612,8 +2612,8 @@ struct i2s_dev_s *imxrt_i2s_initialize(uint16_t port)
 		return NULL;
 	}
 
-    imxrt_i2s_initpins();
-    imxrt_i2s_clock_init();
+	imxrt_i2s_initpins();
+	imxrt_i2s_clock_init();
 
 	/* Initialize the I2S priv device structure  */
 	sem_init(&priv->exclsem, 0, 1);

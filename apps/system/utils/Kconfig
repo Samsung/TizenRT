@@ -2,12 +2,15 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
-config KERNEL_CMDS
-	bool "Kernel shell commands"
+config SYSTEM_CMDS
+	bool "System shell commands"
 	default y
 	depends on TASH
 	---help---
-		register shell commands for kernel
+		Register system TASH commands enabled (ps, heapinfo, free, stackmonitor and etc).
+		This configuration just registers enabled system commands in TASH, not enables
+		system commands. Because they can be used without TASH by function calling.
+		Let's enable system commands at each configuration.
 
 config FS_CMDS
 	bool "FS shell commands"
@@ -50,7 +53,7 @@ config NET_PING_CMD_ICOUNT
 
 endif #NET_CMDS
 
-config ENABLE_CPULOAD_CMD
+config ENABLE_CPULOAD
 	bool "cpuload"
 	default y
 	depends on SCHED_CPULOAD && !FS_PROCFS_EXCLUDE_CPULOAD
@@ -62,7 +65,7 @@ config ENABLE_CPULOAD_CMD
 config ENABLE_CPULOAD_MONITOR
 	bool "cpuload monitor"
 	default y
-	depends on ENABLE_CPULOAD_CMD && !CONFIG_DISABLE_PTHREAD && !CONFIG_DISABLE_SIGNALS
+	depends on ENABLE_CPULOAD && !CONFIG_DISABLE_PTHREAD && !CONFIG_DISABLE_SIGNALS
 	---help---
 		The CPU load monitor is a daemon that will periodically assess
 		CPU usage by all live tasks and threads in the system.
@@ -83,13 +86,13 @@ config CPULOADMONITOR_INTERVAL
 		The rate in seconds that the CPU load monitor will wait before dumping
 		the next set CPU load usage information.  Default:  5 seconds.
 
-config ENABLE_DATE_CMD
+config ENABLE_DATE
 	bool "date"
 	default y
 	---help---
 		Display or set time
 
-config ENABLE_DMESG_CMD
+config ENABLE_DMESG
 	bool "dmesg"
 	default y
 	depends on SYSLOG && RAMLOG_SYSLOG
@@ -97,39 +100,39 @@ config ENABLE_DMESG_CMD
 		Print the contents of log message buffer
 
 if !DISABLE_ENVIRON
-config ENABLE_ENV_GET_CMD
+config ENABLE_ENV_GET
 	bool "env get"
 	default y
 	---help---
 		print the current contents of env
 
-config ENABLE_ENV_SET_CMD
+config ENABLE_ENV_SET
 	bool "env set"
 	default y
 	---help---
 		set a env variable
 
-config ENABLE_ENV_UNSET_CMD
+config ENABLE_ENV_UNSET
 	bool "env unset"
 	default y
 	---help---
 		unset a specific env variable
 endif #!DISABLE_ENVIRON
 
-config ENABLE_FREE_CMD
+config ENABLE_FREE
 	bool "free"
 	default y
 	---help---
 		Show information about memory status
 
-config ENABLE_HEAPINFO_CMD
+config ENABLE_HEAPINFO
 	bool "heapinfo"
 	default y
-	depends on DEBUG_MM_HEAPINFO
+	depends on DEBUG_MM_HEAPINFO && FS_PROCFS
 	---help---
 		Show information about memory status per thread
 
-if ENABLE_HEAPINFO_CMD
+if ENABLE_HEAPINFO
 config HEAPINFO_USER_GROUP
 	bool "Enable User defined Group Memory Usage"
 	default n
@@ -144,7 +147,7 @@ config HEAPINFO_USER_GROUP_LIST
 endif
 endif
 
-config ENABLE_IRQINFO_CMD
+config ENABLE_IRQINFO
 	bool "irqinfo"
 	default n
 	depends on TASH && !FS_PROCFS_EXCLUDE_IRQS
@@ -152,7 +155,7 @@ config ENABLE_IRQINFO_CMD
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
 
-config ENABLE_KILL_CMD
+config ENABLE_KILL
 	bool "kill"
 	default y
 	depends on !BUILD_PROTECTED
@@ -162,21 +165,21 @@ config ENABLE_KILL_CMD
 		Users can register their own handler for SIGKILL to free the allocated memory.
 		CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
 
-config ENABLE_KILLALL_CMD
+config ENABLE_KILLALL
 	bool "killall"
 	default y
 	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to all processes running any of the specified commands
 
-config ENABLE_PS_CMD
+config ENABLE_PS
 	bool "ps"
 	default y
-	depends on !FS_PROCFS_EXCLUDE_PROCESS
+	depends on FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS
 	---help---
 		List of tasks/threads
 
-config ENABLE_STACKMONITOR_CMD
+config ENABLE_STACKMONITOR
 	bool "Stack monitor"
 	default n
 	depends on !FS_PROCFS_EXCLUDE_PROCESS
@@ -187,7 +190,7 @@ config ENABLE_STACKMONITOR_CMD
 		feature depends on internal OS features and, hence, is
 		not available if the kernel build or protected build is selected.
 
-if ENABLE_STACKMONITOR_CMD
+if ENABLE_STACKMONITOR
 config STACKMONITOR_PRIORITY
 	int "Stack monitor daemon priority"
 	default 100
@@ -201,9 +204,9 @@ config STACKMONITOR_INTERVAL
 		The rate in seconds that the stack monitor will wait before dumping
 		the next set stack usage information.  Default:  2 seconds.
 
-endif #ENABLE_STACKMONITOR_CMD
+endif #ENABLE_STACKMONITOR
 
-config ENABLE_UPTIME_CMD
+config ENABLE_UPTIME
 	bool "uptime"
 	default y
 	---help---

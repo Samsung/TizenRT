@@ -279,6 +279,7 @@ void imxrt_clockconfig(void)
 	imxrt_clock_initsyspll(&sysPllConfig_BOARD_BootClockRUN);
 	imxrt_clock_initsyspfd(kCLOCK_Pfd2, 18);
 	imxrt_clock_initsyspfd(kCLOCK_Pfd3, 18);
+
 #endif
 	imxrt_clock_initenetpll(&enetPllConfig_BOARD_BootClockRUN);
 	/* Set preperiph clock source. */
@@ -295,6 +296,7 @@ void imxrt_clockconfig(void)
 	imxrt_clock_enableusbhs0clock(kCLOCK_Usb480M, 480000000U);
 	imxrt_usb_ehciphyinit(24000000U, &PhyConfig);
 #endif
+
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 	/* Init RTC OSC clock frequency. */
 	imxrt_clock_setrtcxtalfreq(32768U);
@@ -576,6 +578,7 @@ void imxrt_clockconfig(void)
 	imxrt_clock_enableusbhs0clock(kCLOCK_Usb480M, 480000000U);
 	imxrt_usb_ehciphyinit(24000000U, &PhyConfig);
 #endif
+
 #else
 	uint32_t reg;
 
@@ -650,14 +653,14 @@ void imxrt_clockconfig(void)
 	reg |= CCM_CBCDR_SEMC_PODF(CCM_PODF_FROM_DIVISOR(IMXRT_SEMC_PODF_DIVIDER));
 	putreg32(reg, IMXRT_CCM_CBCDR);
 
-  /* Set PRE_PERIPH_CLK to Board Selection */
+	/* Set PRE_PERIPH_CLK to Board Selection */
 
 	reg = getreg32(IMXRT_CCM_CBCMR);
 	reg &= ~CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK;
 	reg |= CCM_CBCMR_PRE_PERIPH_CLK_SEL(IMXRT_PRE_PERIPH_CLK_SEL);
 	putreg32(reg, IMXRT_CCM_CBCMR);
 
-  /* Set PERIPH_CLK MUX to Board Selection */
+	/* Set PERIPH_CLK MUX to Board Selection */
 
 	reg = getreg32(IMXRT_CCM_CBCDR);
 	reg &= ~CCM_CBCDR_PERIPH_CLK_SEL_MASK;
@@ -691,7 +694,7 @@ void imxrt_clockconfig(void)
 	putreg32(reg, IMXRT_CCM_CSCDR1);
 
 #ifdef CONFIG_IMXRT_LPI2C
-  /* Set LPI2C source to PLL3 60M */
+	/* Set LPI2C source to PLL3 60M */
 
 	reg = getreg32(IMXRT_CCM_CSCDR2);
 	reg &= ~CCM_CSCDR2_LPI2C_CLK_SEL(1U);
@@ -701,7 +704,7 @@ void imxrt_clockconfig(void)
 	while ((getreg32(IMXRT_CCM_CDHIPR) & CCM_CDHIPR_PERIPH_CLK_SEL_BUSY(1U)) != 0) {
 	}
 
-  /* Set LPI2C divider to 5  for 12 Mhz */
+	/* Set LPI2C divider to 5  for 12 Mhz */
 
 	reg = getreg32(IMXRT_CCM_CSCDR2);
 	reg &= ~CCM_CSCDR2_LPI2C_CLK_PODF_MASK;
@@ -741,7 +744,7 @@ void imxrt_clockconfig(void)
 #endif
 	putreg32(reg, IMXRT_CCM_CSCMR1);
 
-  /* Now divide down clocks by IMXRT_USDHC[1|2]_PODF_DIVIDER */
+	/* Now divide down clocks by IMXRT_USDHC[1|2]_PODF_DIVIDER */
 
 	reg  = getreg32(IMXRT_CCM_CSCDR1);
 	reg &= ~(CCM_CSCDR1_USDHC1_PODF_MASK | CCM_CSCDR1_USDHC2_PODF_MASK);

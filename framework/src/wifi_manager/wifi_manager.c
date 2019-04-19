@@ -999,7 +999,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	};
 
 	wifi_utils_register_callback(&util_cb);
-	wifi_utils_info info;
+	wifi_utils_info_s info;
 	wifi_utils_result_e wres = wifi_utils_get_info(&info);
 	if (wres != WIFI_UTILS_SUCCESS) {
 		ndbg("[WM] wifi_utils_get_info fail");
@@ -1537,7 +1537,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 	memcpy(info->mac_address, g_manager_info.mac_address, WIFIMGR_MACADDR_LEN);
 	/* Get RSSI */
-	wifi_utils_info info_utils;
+	wifi_utils_info_s info_utils;
 	wifi_utils_result_e wres = wifi_utils_get_info(&info_utils);
 	if (wres != WIFI_UTILS_FAIL) {
 		g_manager_info.rssi = info_utils.rssi;
