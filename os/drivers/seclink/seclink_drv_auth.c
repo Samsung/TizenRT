@@ -31,7 +31,7 @@
 #endif
 #define SLDRV_TAG "[SECLINK_DRV_AUTH]"
 
-int hd_handle_auth_reqeust(int cmd, unsigned long arg, void *lower)
+int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
 

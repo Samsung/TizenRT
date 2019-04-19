@@ -4,7 +4,6 @@
 #
 config EXAMPLES_SECURITY_HAL_TEST
 	bool "Security HAL Test"
-	depends on TLS_WITH_SSS && SUPPORT_FULL_SECURITY
 	select STRESS_TOOL
 	default n
 
