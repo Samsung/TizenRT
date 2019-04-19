@@ -5,3 +5,4 @@
 
 source "$APPSDIR/examples/security_test/see_api/Kconfig_ENTRY"
 source "$APPSDIR/examples/security_test/hal/Kconfig_ENTRY"
+source "$APPSDIR/examples/security_test/mbedtls_self/Kconfig_ENTRY"
