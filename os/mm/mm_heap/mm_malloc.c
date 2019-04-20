@@ -141,19 +141,30 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	ndx = mm_size2ndx(size);
 
-	/* Search for a large enough chunk in the list of nodes. This list is
-	 * ordered by size, but will have occasional zero sized nodes as we visit
-	 * other mm_nodelist[] entries.
+	/* Search for a large enough chunk in the list of nodes.
+	 * This list is ordered by size in a descending order.
+	 * If this list does not have free nodes whose size is large enough
+	 * to accomodate the requested size, malloc() will fail due to no more space.
 	 */
 
-	for (node = heap->mm_nodelist[ndx].flink; node && node->size < size; node = node->flink) ;
+	node = heap->mm_nodelist[ndx].flink;
+	if (!(node && node->size >= size)) {
+		while (++ndx < MM_NNODES && !(node = heap->mm_nodelist[ndx].flink)) ;
+	}
+
+	/* If node is not NULL, there exists a free node big enough to allocate. */
+	FAR struct mm_freenode_s *prev = &heap->mm_nodelist[ndx];
+	for ( ; node && node->size > size; prev = node, node = node->flink) ;
+	if (!(node && node->size == size)) {
+		node = prev;
+	}
 
 	/* If we found a node with non-zero size, then this is one to use. Since
 	 * the list is ordered, we know that is must be best fitting chunk
 	 * available.
 	 */
 
-	if (node) {
+	if (node->size) {
 		FAR struct mm_freenode_s *remainder;
 		FAR struct mm_freenode_s *next;
 		size_t remaining;
