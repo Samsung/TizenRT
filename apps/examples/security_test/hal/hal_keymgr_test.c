@@ -17,16 +17,20 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/security_hal.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-
+#include <tinyara/seclink_drv.h>
+#include <tinyara/security_hal.h>
 #include <stress_tool/st_perf.h>
 #include "hal_test_utils.h"
 #include "hal_test.h"
+
+extern struct sec_lowerhalf_s *se_get_device(void);
+
+static struct sec_lowerhalf_s *g_se = NULL;
 
 /*
  * Desc: Set key
@@ -46,7 +50,7 @@ TEST_SETUP(set_key)
 TEST_TEARDOWN(set_key)
 {
 	ST_START_TEST;
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 	hal_test_free_buffer(&g_aes_key_in);
 	ST_END_TEST;
 }
@@ -54,7 +58,7 @@ TEST_TEARDOWN(set_key)
 TEST_F(set_key)
 {
 	ST_START_TEST;
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 	ST_END_TEST;
 }
 
@@ -73,7 +77,7 @@ TEST_SETUP(get_key)
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_aes_key_out, HAL_KEYMGR_TEST_MEM_SIZE));
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 
 	ST_END_TEST;
 }
@@ -85,7 +89,7 @@ TEST_TEARDOWN(get_key)
 	hal_test_free_buffer(&g_aes_key_in);
 	hal_test_free_buffer(&g_aes_key_out);
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -94,7 +98,7 @@ TEST_F(get_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_out));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->get_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_out));
 
 	ST_END_TEST;
 }
@@ -110,7 +114,7 @@ TEST_SETUP(remove_key)
 	g_aes_key_in.data_len = HAL_TEST_KEY_LEN;
 	memset(g_aes_key_in.data, 0xa5, HAL_TEST_KEY_LEN);
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->set_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT, &g_aes_key_in, NULL));
 
 	ST_END_TEST;
 }
@@ -127,7 +131,7 @@ TEST_TEARDOWN(remove_key)
 TEST_F(remove_key)
 {
 	ST_START_TEST;
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 	ST_END_TEST;
 }
 
@@ -146,7 +150,7 @@ TEST_TEARDOWN(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -155,7 +159,7 @@ TEST_F(generate_key)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -166,8 +170,11 @@ ST_SET_SMOKE(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Remove key", re
 ST_SET_SMOKE(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Generate key", generate_key, remove_key);
 ST_SET_PACK(hal_keymgr, generate_key);
 
+
 pthread_addr_t hal_keymgr_test(void)
 {
+	g_se = se_get_device();
+
 	ST_RUN_TEST(hal_keymgr);
 	ST_RESULT_TEST(hal_keymgr);
 

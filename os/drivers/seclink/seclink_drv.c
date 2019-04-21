@@ -122,7 +122,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	if (SL_IS_COMMON_REQ(cmd)) {
 		res = hd_handle_common_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_AUTH_REQ(cmd)) {
-		res = hd_handle_auth_reqeust(cmd, arg, (void *)upper->lower);
+		res = hd_handle_auth_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_AUTH_REQ(cmd)) {
 		res = hd_handle_key_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_SS_REQ(cmd)) {
@@ -133,6 +133,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	return res;
 }
+
 
 /****************************************************************************
  * Name: se_register

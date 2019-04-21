@@ -17,16 +17,20 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/security_hal.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-
 #include <stress_tool/st_perf.h>
+#include <tinyara/seclink_drv.h>
+#include <tinyara/security_hal.h>
 #include "hal_test_utils.h"
 #include "hal_test.h"
+
+extern struct sec_lowerhalf_s *se_get_device(void);
+
+static struct sec_lowerhalf_s *g_se = NULL;
 
 /*
  * Desc: Encrypt data using AES
@@ -39,7 +43,7 @@ TEST_SETUP(aes_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	g_aes_param.mode = HAL_AES_ECB_NOPAD;
 	g_aes_param.iv = NULL;
@@ -58,7 +62,7 @@ TEST_TEARDOWN(aes_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	hal_test_free_buffer(&g_aes_input);
 	hal_test_free_buffer(&g_aes_output);
@@ -73,7 +77,7 @@ TEST_F(aes_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_aes_encrypt(&g_aes_input, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_output));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->aes_encrypt(&g_aes_input, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_output));
 
 	ST_END_TEST;
 }
@@ -87,7 +91,7 @@ TEST_SETUP(aes_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	g_aes_param.mode = HAL_AES_ECB_NOPAD;
 	g_aes_param.iv = NULL;
@@ -101,7 +105,7 @@ TEST_SETUP(aes_decrypt)
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_aes_final, HAL_CRYPTO_TEST_MEM_SIZE));
 
-	ST_EXPECT_EQ(0, hal_aes_encrypt(&g_aes_input, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_output));
+	ST_EXPECT_EQ(0, g_se->ops->aes_encrypt(&g_aes_input, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_output));
 
 	ST_END_TEST;
 }
@@ -110,7 +114,7 @@ TEST_TEARDOWN(aes_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_AES_256, HAL_TEST_KEY_SLOT));
 
 	hal_test_free_buffer(&g_aes_input);
 	hal_test_free_buffer(&g_aes_output);
@@ -126,7 +130,7 @@ TEST_F(aes_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_aes_decrypt(&g_aes_output, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_final));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->aes_decrypt(&g_aes_output, &g_aes_param, HAL_TEST_KEY_SLOT, &g_aes_final));
 	ST_EXPECT_EQ(0, memcmp(g_aes_input.data, g_aes_final.data, g_aes_final.data_len));
 
 	ST_END_TEST;
@@ -143,7 +147,7 @@ TEST_SETUP(rsa_encrypt)
 {
 	ST_START_TEST;
 	
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_rsa_input, HAL_CRYPTO_TEST_MEM_SIZE));
 	memset(g_rsa_input.data, 1, HAL_TEST_RSA_DATA_LEN);
@@ -162,7 +166,7 @@ TEST_TEARDOWN(rsa_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
 
 	hal_test_free_buffer(&g_rsa_input);
 	hal_test_free_buffer(&g_rsa_output);
@@ -174,7 +178,7 @@ TEST_F(rsa_encrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
 
 	ST_END_TEST;
 }
@@ -188,7 +192,7 @@ TEST_SETUP(rsa_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_generate_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_rsa_input, HAL_CRYPTO_TEST_MEM_SIZE));
 	memset(g_rsa_input.data, 1, HAL_TEST_RSA_DATA_LEN);
@@ -202,7 +206,7 @@ TEST_SETUP(rsa_decrypt)
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_rsa_final, HAL_CRYPTO_TEST_MEM_SIZE));
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->rsa_encrypt(&g_rsa_input, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_output));
 
 	ST_END_TEST;
 }
@@ -211,7 +215,7 @@ TEST_TEARDOWN(rsa_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_remove_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_RSA_2048, HAL_TEST_KEY_SLOT));
 
 	hal_test_free_buffer(&g_rsa_input);
 	hal_test_free_buffer(&g_rsa_output);
@@ -224,7 +228,7 @@ TEST_F(rsa_decrypt)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_rsa_decrypt(&g_rsa_output, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_final));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->rsa_decrypt(&g_rsa_output, &g_rsa_mode, HAL_TEST_KEY_SLOT, &g_rsa_final));
 	ST_EXPECT_EQ(0, memcmp(g_rsa_input.data, g_rsa_final.data, g_rsa_final.data_len));
 
 	ST_END_TEST;
@@ -238,6 +242,8 @@ ST_SET_PACK(hal_crypto, rsa_decrypt);
 
 pthread_addr_t hal_crypto_test(void)
 {
+	g_se = se_get_device();
+
 	ST_RUN_TEST(hal_crypto);
 	ST_RESULT_TEST(hal_crypto);
 
