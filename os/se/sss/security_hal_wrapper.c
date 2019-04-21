@@ -51,7 +51,12 @@
 
 #define ISP_CHECKBUSY() while (isp_get_status()) {}
 
-#define HWRAP_LOG printf
+#ifdef CONFIG_HAL_WRAPPER_DEBUG
+#define HWRAP_LOG(format, ...) printf(format, ##__VA_ARGS__)
+#else
+#define HWRAP_LOG(a, ...) (void)0
+#endif
+
 #define HWRAP_TAG "[HAL_WRAPPER]"
 #define HWRAP_ENTER                                                         \
 	do {                                                                    \

@@ -1,3 +1,9 @@
+config HAL_WRAPPER_DEBUG
+	bool "Enable debug of security hal wrapper"
+	default n
+	---help---
+		Enable debug msg for security hal wrapper of sss
+
 config HW_RNG
 	bool "HW RNG"
 	default n
