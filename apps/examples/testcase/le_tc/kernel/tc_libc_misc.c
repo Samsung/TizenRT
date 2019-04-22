@@ -44,9 +44,9 @@
 #define VAL_213 213
 #define VAL_255 255
 #define VAL_65380 65380
-#define VAL_CRC32_1 1256170817UL
-#define VAL_CRC32_2 3369554304UL
-#define VAL_CRC32_3 1742555852UL
+#define VAL_CRC32_1 2564639436UL
+#define VAL_CRC32_2 450215437UL
+#define VAL_CRC32_3 3051332929UL
 
 /**
  * @fn                  :tc_libc_misc_crc8
