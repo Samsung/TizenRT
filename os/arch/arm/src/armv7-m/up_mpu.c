@@ -207,25 +207,6 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mpu_allocregion
- *
- * Description:
- *   Allocate the next region
- *
- * Assumptions:
- *   - Regions are never deallocated
- *   - Regions are only allocated early in initialization, so no special
- *     protection against re-entrancy is required;
- *
- ****************************************************************************/
-
-unsigned int mpu_allocregion(void)
-{
-	DEBUGASSERT(g_region < CONFIG_ARMV7M_MPU_NREGIONS);
-	return (unsigned int)g_region++;
-}
-
-/****************************************************************************
  * Name: mpu_log2regionceil
  *
  * Description:
