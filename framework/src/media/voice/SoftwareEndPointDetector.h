@@ -52,8 +52,6 @@ public:
 
 private:
 	SpeexPreprocessState *mState;
-	int mPreviousVAD;
-	int mVAD;
 	sem_t mSem;
 };
 
