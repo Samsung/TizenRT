@@ -153,16 +153,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define dbg(format, ...) \
-	lldbg(format, ##__VA_ARGS__)
-#else
+
 #define dbg(format, ...) \
 	syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #define dbg_noarg(format, ...) \
 	syslog(LOG_ERR, format, ##__VA_ARGS__)
@@ -199,16 +192,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define wdbg(format, ...) \
-	llwdbg(format, ##__VA_ARGS__)
-#else
+
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -242,16 +228,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define vdbg(format, ...) \
-	llvdbg(format, ##__VA_ARGS__)
-#else
+
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
