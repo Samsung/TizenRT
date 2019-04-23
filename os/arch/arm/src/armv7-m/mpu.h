@@ -237,7 +237,7 @@ static inline void mpu_showtype(void)
 {
 #if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_ERROR)
 	uint32_t regval = getreg32(MPU_TYPE);
-	dbg("%s MPU Regions: data=%d instr=%d\n",
+	lldbg("%s MPU Regions: data=%d instr=%d\n",
 		(regval & MPU_TYPE_SEPARATE) != 0 ? "Separate" : "Unified",
 		(regval & MPU_TYPE_DREGION_MASK) >> MPU_TYPE_DREGION_SHIFT,
 		(regval & MPU_TYPE_IREGION_MASK) >> MPU_TYPE_IREGION_SHIFT);
