@@ -23,10 +23,15 @@ import struct
 #
 # header information :
 #
-# / header size (2byte) / binary type (2byte) / binary size (4byte)
-# / Binary name (16byte) / Binary version (16byte)
-# / Kernel version (8byte) / Jump address (4byte)
-# header size is 52byte.
+# total header size is 56bytes.
+# +------------------------------------------------------------------------
+# | Header size | Binary type | Binary size | Binary name | Binary version
+# |   (2bytes)  |   (2bytes)  |   (4bytes)  |  (16bytes)  |    (16bytes)
+# +------------------------------------------------------------------------
+# ---------------------------------------------------+
+#  | Binary ram size | Kernel version | Jump address |
+#  |    (16bytes)    |    (8bytes)    |   (4bytes)   |
+# ---------------------------------------------------+
 #
 # parameter information :
 #
@@ -35,6 +40,7 @@ import struct
 # argv[3] is kernel version.
 # argv[4] is binary name.
 # argv[5] is binary version.
+# argv[6] is a ram size required to run this binary.
 #
 ############################################################################
 
@@ -43,20 +49,21 @@ binary_type = sys.argv[2]
 kernel_ver = sys.argv[3]
 binary_name = sys.argv[4]
 binary_ver = sys.argv[5]
+binary_ram_size = sys.argv[6]
 
 # This path is only for dbuild.
 tinyara_path = 'root/tizenrt/build/output/bin/tinyara'
 
-START = 0
-HEADER_SIZE_S = 2
-BINARY_TYPE_S = 2
-BINARY_SIZE_S = 4
-BINARY_NAME_S = 16
-BINARY_VERSION_S = 16
-KERNEL_VERSION_S = 8
-JUMP_ADDRESS_S = 4
+SIZE_OF_HEADERSIZE = 2
+SIZE_OF_BINTYPE = 2
+SIZE_OF_BINSIZE = 4
+SIZE_OF_BINNAME = 16
+SIZE_OF_BINVER = 16
+SIZE_OF_BINRAMSIZE = 4
+SIZE_OF_KERNELVER = 8
+SIZE_OF_JUMPADDR = 4
 
-header_size = HEADER_SIZE_S + BINARY_TYPE_S + BINARY_SIZE_S + BINARY_NAME_S + BINARY_VERSION_S + KERNEL_VERSION_S + JUMP_ADDRESS_S
+header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
 
 ELF = 1
 BIN = 2
@@ -79,9 +86,10 @@ with open(file_path, 'rb') as fp:
 
     fp.write(struct.pack('h', bin_type))
     fp.write(struct.pack('I', file_size))
-    fp.write('{:{}{}.{}}'.format(binary_name, '<', BINARY_NAME_S, BINARY_NAME_S - 1).replace(' ','\0'))
-    fp.write('{:{}{}.{}}'.format(binary_ver, '<', BINARY_VERSION_S, BINARY_VERSION_S - 1).replace(' ','\0'))
-    fp.write('{:{}{}.{}}'.format(kernel_ver, '<', KERNEL_VERSION_S, KERNEL_VERSION_S - 1).replace(' ','\0'))
+    fp.write('{:{}{}.{}}'.format(binary_name, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
+    fp.write('{:{}{}.{}}'.format(binary_ver, '<', SIZE_OF_BINVER, SIZE_OF_BINVER - 1).replace(' ','\0'))
+    fp.write(struct.pack('I', int(binary_ram_size)))
+    fp.write('{:{}{}.{}}'.format(kernel_ver, '<', SIZE_OF_KERNELVER, SIZE_OF_KERNELVER - 1).replace(' ','\0'))
 
     # parsing _vector_start address from elf information.
     # _vector_start is only for ARM architecture. so it
