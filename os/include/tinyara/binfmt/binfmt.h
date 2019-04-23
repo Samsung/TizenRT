@@ -376,13 +376,15 @@ int binfmt_exit(FAR struct binary_s *bin);
  *
  *   offset   - The offset from which ELF binary has to be read in MTD partition.
  *
+ *   ram_size - The size of RAM partition required to run this app
+ *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
  *   It returns the PID of the exec'ed module.  On failure, it returns
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset);
+int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size);
 
 #undef EXTERN
 #if defined(__cplusplus)

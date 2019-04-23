@@ -307,11 +307,12 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
+	uintptr_t user_end = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
 	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
-	size_t usize = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__ - ubase;
+	size_t usize = (uint32_t)user_end - ubase;
 
 
-	DEBUGASSERT(ubase < (uintptr_t)PRIMARY_RAM_END);
+	DEBUGASSERT(ubase < (uintptr_t)user_end);
 
 	/* Return the user-space heap settings */
 

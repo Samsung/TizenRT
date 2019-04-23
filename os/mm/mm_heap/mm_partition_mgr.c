@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <debug.h>
+#include <errno.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -53,7 +55,9 @@ extern uint32_t __usram_segment_size__[];
 /****************************************************************************
  * Private variables
  ****************************************************************************/
-static struct mm_ram_partition_s g_mempartitions[CONFIG_NUM_APPS];
+uint32_t g_default_size;
+struct mm_heap_s g_pheap;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -79,20 +83,18 @@ static struct mm_ram_partition_s g_mempartitions[CONFIG_NUM_APPS];
 
 void mm_initialize_ram_partitions(void)
 {
-	int i = 0;
-	uint32_t start;
-	uint32_t size;
+	uint32_t start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
+	
+	/* We will calculate a overhead value for default partition size.
+	 * The overhead value will include the size of mm_heap_s and the
+	 * allocation node and also a 100 byte buffer for future change in mm.
+	 */
+	uint32_t overhead = CONFIG_NUM_APPS * (SIZEOF_MM_ALLOCNODE + sizeof(struct mm_heap_s) + 100); 
+	g_default_size = (REGION_END - start - overhead) / CONFIG_NUM_APPS;
+	mvdbg("Default RAM partition size set to %u\n", g_default_size);
 
-	start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
-	size = (REGION_END - start) / CONFIG_NUM_APPS;
-	for (i = 0; i < CONFIG_NUM_APPS; i++) {
-		g_mempartitions[i].start = ALIGN_UP(start);
-		g_mempartitions[i].size = size;
-		g_mempartitions[i].status = MM_PART_FREE;
-		start += size;
-
-		mvdbg("App RAM partition_%d start = 0x%x size = %u\n", i, g_mempartitions[i].start, g_mempartitions[i].size);
-	}
+	mm_initialize(&g_pheap, start, (uint32_t)(REGION_END - start));
+	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, (uint32_t)(REGION_END - start));
 }
 
 /****************************************************************************
@@ -104,7 +106,7 @@ void mm_initialize_ram_partitions(void)
  *
  * Parameters:
  *   start_addr : OUT param to hold start address of allocated partition
- *   size	: OUT param to hold size of allocated partition
+ *   size	: IN/OUT  param to hold size of allocated partition
  *
  * Return Value:
  *   success: Zero value if partition was successfuly allocated.
@@ -115,24 +117,27 @@ void mm_initialize_ram_partitions(void)
 
 int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NUM_APPS; i++) {
-		if (g_mempartitions[i].status == MM_PART_FREE) {
-			g_mempartitions[i].status = MM_PART_USED;
-			*start_addr = (uint32_t *)g_mempartitions[i].start;
-			*size = g_mempartitions[i].size;
-			mvdbg("Allocated partition Start = 0x%x Size = %u bytes\n", *start_addr, *size);
-
-			/* struct mm_heap_s will be situated at start of partition
-			and heap will be initialized after this */
-			mm_initialize((struct mm_heap_s *)*start_addr, *start_addr + sizeof(struct mm_heap_s), *size - sizeof(struct mm_heap_s));
-
-			return OK;
-		}
+	if (*size == 0) {
+		*size = g_default_size;
 	}
 
-	return ERROR;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s), retaddr);
+#else
+	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s));
+#endif
+
+	if (*start_addr == NULL) {
+		mdbg("Failed to allocate RAM partition of size %u\n", *size);
+		return -ENOMEM;
+	}
+
+	/* struct mm_heap_s will be situated at start of partition and heap will be initialized after this */
+	mm_initialize((struct mm_heap_s *)*start_addr, (uint8_t *)*start_addr + sizeof(struct mm_heap_s), *size);
+
+	mvdbg("Allocated RAM partition with start = 0x%x size = %u\n", *start_addr, *size);
+	return OK;
 }
 
 /****************************************************************************
@@ -154,15 +159,8 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 
 void mm_free_ram_partition(uint32_t address)
 {
-	int i;
-	for (i = 0; i < CONFIG_NUM_APPS; i++) {
-		if (g_mempartitions[i].start == address) {
-			g_mempartitions[i].status = MM_PART_FREE;
-			return;
-		}
-	}
-
-	mdbg("ERROR: Could not free partition for address 0x%x\n", address);
+	mm_free(&g_pheap, address);
+	mvdbg("Freed RAM partition at 0x%x\n", address);
 }
 
 #endif /* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */

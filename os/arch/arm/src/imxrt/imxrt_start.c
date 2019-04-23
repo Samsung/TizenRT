@@ -76,6 +76,7 @@
 #include "imxrt_userspace.h"
 #include "imxrt_start.h"
 #include "imxrt_gpio.h"
+#include "chip/imxrt105x_config.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -303,6 +304,58 @@ static void go_os_start(void *pv, unsigned int nbytes)
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: imxrt_configure_ocram
+ *
+ * Description:
+ *   Make configuration to use the entire 512KB FlexRAM as OCRAM
+ *
+ ****************************************************************************/
+
+void imxrt_configure_ocram()
+{
+	/* Configure FlexRAM banks for OCRAM*/
+	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x55555555);
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
+
+	/* Disable DTCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0x0);
+
+	/* Disable ITCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(0x0);
+}
+
+/****************************************************************************
+ * Name: imxrt_configure_dtcm
+ *
+ * Description:
+ *   Make configuration to use the entire 512KB FlexRAM as DTCM
+ *
+ ****************************************************************************/
+
+void imxrt_configure_dtcm()
+{
+	/* Configure FlexRAM banks for DTCM*/
+	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0xaaaaaaaa);
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
+
+	/* Configure and enable DTCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0xa);
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+
+	/* Disable ITCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(0x0);
+}
+
+
+/****************************************************************************
  * Name: _start
  *
  * Description:
@@ -314,6 +367,12 @@ void __start(void)
 {
 	const uint32_t *src;
 	uint32_t *dest;
+
+#ifdef CONFIG_ARMV7M_DTCM
+	imxrt_configure_dtcm();
+#else
+	imxrt_configure_ocram();
+#endif
 
 #ifdef CONFIG_ARMV7M_STACKCHECK
 	/* Set the stack limit before we attempt to call any functions */
