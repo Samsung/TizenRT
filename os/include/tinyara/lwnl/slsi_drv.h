@@ -23,27 +23,22 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <debug.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#ifdef CONFIG_LWNL80211_SLSI_DEBUG
-#define SLSIDRV_LOG(format, ...) printf(format, ##__VA_ARGS__)
-#else
-#define SLSIDRV_LOG(a, ...) (void)0
-#endif
-
 #define SLSIDRV_TAG "[SLSIDRV]"
 
-#define SLSIDRV_ERR 													\
-	do {																\
-		SLSIDRV_LOG(SLSIDRV_TAG"[ERR:%s] %s %s: %d line err(%s)\n",			\
-				  SLSIDRV_TAG, __FUNCTION__, __FILE__, __LINE__, strerror(errno)); \
-	} while(0)
+#define SLSIDRV_ERR                                                         \
+	do {                                                                    \
+		sddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
+				  __FILE__, __LINE__, strerror(errno));                     \
+	} while (0)
 
-#define SLSIDRV_ENTER														\
-	do {																\
-		SLSIDRV_LOG(SLSIDRV_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+#define SLSIDRV_ENTER                                                       \
+	do {                                                                    \
+		sddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
 	} while (0)
 
 /****************************************************************************

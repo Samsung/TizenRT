@@ -143,20 +143,20 @@ fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_sc
 		while (wifi_scan_iter) {
 #if SLSI_DRV_SCAN_DEBUG
 			/* Debug */
-			ndbg("SSID (");
+			sddbg("SSID (");
 			int i = 0;
 			for (; i < wifi_scan_iter->ssid_len; i++) {
-				ndbg("%c", wifi_scan_iter->ssid[i]);
+				sddbg("%c", wifi_scan_iter->ssid[i]);
 			}
-			ndbg(")\n");
-			ndbg("rssi(%d)\n", wifi_scan_iter->rssi);
-			ndbg("beacon_period(%d)\n", wifi_scan_iter->beacon_period);
-			ndbg("channel(%d)\n", wifi_scan_iter->channel);
-			ndbg("physical mode(%d)\n", wifi_scan_iter->phy_mode);
-			ndbg("bss type(%d)\n", wifi_scan_iter->bss_type);
-			ndbg("wps support(%d)\n", wifi_scan_iter->wps_support);
-			ndbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
-			ndbg("-----------------------------------------------\n");
+			sddbg(")\n");
+			sddbg("rssi(%d)\n", wifi_scan_iter->rssi);
+			sddbg("beacon_period(%d)\n", wifi_scan_iter->beacon_period);
+			sddbg("channel(%d)\n", wifi_scan_iter->channel);
+			sddbg("physical mode(%d)\n", wifi_scan_iter->phy_mode);
+			sddbg("bss type(%d)\n", wifi_scan_iter->bss_type);
+			sddbg("wps support(%d)\n", wifi_scan_iter->wps_support);
+			sddbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
+			sddbg("-----------------------------------------------\n");
 #endif
 			cur = (lwnl80211_scan_list_s *)malloc(sizeof(lwnl80211_scan_list_s));
 			if (!cur) {
@@ -189,10 +189,10 @@ fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_sc
 			wifi_scan_iter = wifi_scan_iter->next;
 			cnt++;
 		}
-		ndbg("%d records scanned\n", cnt);
+		sddbg("%d records scanned\n", cnt);
 		result = LWNL80211_SUCCESS;
 	} else {
-		ndbg("Scanning result is null...\n");
+		sddbg("Scanning result is null...\n");
 	}
 	return result;
 }
@@ -206,43 +206,43 @@ static int slsi_drv_callback_handler(void *arg)
 	lwnl80211_cb_status status;
 
 	if (!g_dev) {
-		SLSIDRV_LOG("Failed to find upper driver\n");
+		sddbg("Failed to find upper driver\n");
 		free(type);
 		return -1;
 	}
 
 	if (!g_dev->cbk) {
-		SLSIDRV_LOG("Failed to find callback function\n");
+		sddbg("Failed to find callback function\n");
 		free(type);
 		return -1;
 	}
 
-	SLSIDRV_LOG("Got callback from SLSI drv (%d)\n", status);
+	sddbg("Got callback from SLSI drv (%d)\n", status);
 	switch (*type) {
-		case 1:
-			status = LWNL80211_STA_CONNECTED;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
-		case 2:
-			status = LWNL80211_STA_CONNECT_FAILED;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
-		case 3:
-			status = LWNL80211_SOFTAP_STA_JOINED;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
-		case 4:
-			status = LWNL80211_STA_DISCONNECTED;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
-		case 5:
-			status = LWNL80211_SOFTAP_STA_LEFT;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
-		default:
-			status = LWNL80211_UNKNOWN;
-			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-			break;
+	case 1:
+		status = LWNL80211_STA_CONNECTED;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
+	case 2:
+		status = LWNL80211_STA_CONNECT_FAILED;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
+	case 3:
+		status = LWNL80211_SOFTAP_STA_JOINED;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
+	case 4:
+		status = LWNL80211_STA_DISCONNECTED;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
+	case 5:
+		status = LWNL80211_SOFTAP_STA_LEFT;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
+	default:
+		status = LWNL80211_UNKNOWN;
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		break;
 	}
 
 	free(type);
@@ -254,7 +254,7 @@ static void linkup_handler(slsi_reason_t *reason)
 {
 	int *type = (int *)malloc(sizeof(int));
 	if (type == NULL) {
-		ndbg("[LWNL80211_SLSI_DRV] malloc error\n");
+		sddbg("malloc error\n");
 		return;
 	}
 
@@ -270,7 +270,7 @@ static void linkup_handler(slsi_reason_t *reason)
 	pthread_t tid;
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
 	if (ret != 0) {
-		ndbg("[LWNL80211_SLSI_DRV] pthread create fail(%d)\n", errno);
+		sddbg("pthread create fail(%d)\n", errno);
 		free(type);
 		return;
 	}
@@ -282,7 +282,7 @@ static void linkdown_handler(slsi_reason_t *reason)
 {
 	int *type = (int *)malloc(sizeof(int));
 	if (type == NULL) {
-		ndbg("[LWNL80211_SLSI_DRV] malloc error linkdown\n");
+		sddbg("malloc error linkdown\n");
 		return;
 	}
 	*type = 4;
@@ -294,7 +294,7 @@ static void linkdown_handler(slsi_reason_t *reason)
 	pthread_t tid;
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
 	if (ret != 0) {
-		ndbg("[LWNL80211_SLSI_DRV] pthread create fail(%d)\n", errno);
+		sddbg("pthread create fail(%d)\n", errno);
 		free(type);
 		return;
 	}
@@ -308,13 +308,13 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	lwnl80211_scan_list_s *scan_list = NULL;
 	lwnl80211_cb_status status;
 	if (!g_dev) {
-		SLSIDRV_LOG("Failed to find upper driver\n");
+		sddbg("Failed to find upper driver\n");
 		return -1;
 	}
-	SLSIDRV_LOG("Got scan callback from SLSI drv (%d)\n", status);
+	sddbg("Got scan callback from SLSI drv (%d)\n", status);
 
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
-		SLSIDRV_LOG("Scan failed %d\n");
+		sddbg("Scan failed %d\n");
 		status = LWNL80211_SCAN_FAILED;
 		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
 		return SLSI_STATUS_ERROR;
@@ -349,28 +349,28 @@ lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
 		int ret = SLSI_STATUS_SUCCESS;
 		ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
 		if (ret != SLSI_STATUS_SUCCESS) {
-			ndbg("[LWNL80211_SLSI_DRV] Failed to start STA mode\n");
+			sddbg("Failed to start STA mode\n");
 			return result;
 		}
 		g_mode = SLSI_WIFI_STATION_IF;
 
 		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 		if (ret != SLSI_STATUS_SUCCESS) {
-			ndbg("[LWNL80211_SLSI_DRV] Link callback handles: register failed !\n");
+			sddbg("Link callback handles: register failed !\n");
 			return result;
 		} else {
-			nvdbg("[LWNL80211_SLSI_DRV] Link callback handles: registered\n");
+			sdvdbg("Link callback handles: registered\n");
 		}
 
 		ret = WiFiRegisterScanCallback(&slsi_drv_scan_callback_handler);
 		if (ret != SLSI_STATUS_SUCCESS) {
-			ndbg("[LWNL80211_SLSI_DRV] [ERR] Register Scan Callback(%d)\n", ret);
+			sddbg("[ERR] Register Scan Callback(%d)\n", ret);
 			return result;
 		}
 		g_dev = dev;
 		result = LWNL80211_SUCCESS;
 	} else {
-		ndbg("Already %d\n", g_mode);
+		sddbg("Already %d\n", g_mode);
 	}
 	return result;
 }
@@ -385,7 +385,7 @@ lwnl80211_result_e slsidrv_deinit(void)
 		result = LWNL80211_SUCCESS;
 		g_dev = NULL;
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] Failed to stop STA mode\n");
+		sddbg("Failed to stop STA mode\n");
 	}
 	return result;
 }
@@ -396,16 +396,16 @@ lwnl80211_result_e slsidrv_scan_ap(void *arg)
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int8_t ret = WiFiRegisterScanCallback(&slsi_drv_scan_callback_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] [ERR] Register Scan Callback(%d)\n", ret);
+		sddbg("[ERR] Register Scan Callback(%d)\n", ret);
 		return result;
 	}
 	ret = WiFiScanNetwork();
 	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] [ERR] WiFi scan fail(%d)\n", ret);
+		sddbg("[ERR] WiFi scan fail(%d)\n", ret);
 		return result;
 	}
 	result = LWNL80211_SUCCESS;
-	ndbg("[LWNL80211_SLSI_DRV] WIFi Scan success\n");
+	sddbg("WIFi Scan success\n");
 	return result;
 }
 
@@ -424,7 +424,7 @@ lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, 
 	if (ap_connect_config->passphrase_length > 0) {
 		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
-			ndbg("[LWNL80211_SLSI_DRV] Memory allocation failed!\n");
+			sddbg("Memory allocation failed!\n");
 			goto connect_ap_fail;
 		}
 
@@ -467,26 +467,26 @@ lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, 
 			}
 		} else {
 			/* wrong security type */
-			ndbg("[LWNL80211_SLSI_DRV] Wrong security type\n");
+			sddbg("Wrong security type\n");
 			goto connect_ap_fail;
 		}
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] No passphrase!\n");
+		sddbg("No passphrase!\n");
 		goto connect_ap_fail;
 	}
 
 	ret = WiFiNetworkJoin((uint8_t *)ap_connect_config->ssid, ap_connect_config->ssid_length, NULL, config);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		if (ret == SLSI_STATUS_ALREADY_CONNECTED) {
-			nvdbg("[LWNL80211_SLSI_DRV] WiFiNetworkJoin already connected\n");
+			sdvdbg("WiFiNetworkJoin already connected\n");
 			result = LWNL80211_ALREADY_CONNECTED;
 		} else {
-			ndbg("[LWNL80211_SLSI_DRV] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
+			sddbg("WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
 			goto connect_ap_fail;
 		}
 	} else {
 		result = LWNL80211_SUCCESS;
-		nvdbg("[LWNL80211_SLSI_DRV] Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
+		sdvdbg("Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
 			  ap_connect_config->ssid_length);
 	}
 
@@ -505,10 +505,10 @@ lwnl80211_result_e slsidrv_disconnect_ap(void *arg)
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret = WiFiNetworkLeave();
 	if (ret == SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] WiFiNetworkLeave success\n");
+		sddbg("WiFiNetworkLeave success\n");
 		result = LWNL80211_SUCCESS;
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] WiFiNetworkLeave fail because of %d\n", ret);
+		sddbg("WiFiNetworkLeave fail because of %d\n", ret);
 	}
 
 	return result;
@@ -540,10 +540,10 @@ lwnl80211_result_e slsidrv_get_info(lwnl80211_info *wifi_info)
 				}
 				result = LWNL80211_SUCCESS;
 			} else {
-				ndbg("[LWNL80211_SLSI_DRV] no MAC exists\n");
+				sddbg("no MAC exists\n");
 			}
 		} else {
-			ndbg("[LWNL80211_SLSI_DRV] need to init... get info fail\n");
+			sddbg("need to init... get info fail\n");
 		}
 	}
 	return result;
@@ -562,7 +562,7 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 
 	ap_config = (slsi_ap_config_t *)zalloc(sizeof(slsi_ap_config_t));
 	if (!ap_config) {
-		ndbg("[LWNL80211_SLSI_DRV] Memory allocation failed!\n");
+		sddbg("Memory allocation failed!\n");
 		return LWNL80211_FAIL;
 	}
 
@@ -572,7 +572,7 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 	ap_config->phy_mode = 1; //1 for 11n, 0 for legacy
 
 	if (softap_config->channel > 14 || softap_config->channel < 1) {
-		ndbg("[LWNL80211_SLSI_DRV] Channel needs to be between 1 and 14" " (highest channel depends on regulatory of countries)\n");
+		sddbg("Channel needs to be between 1 and 14" " (highest channel depends on regulatory of countries)\n");
 		goto start_soft_ap_fail;
 	} else {
 		ap_config->channel = softap_config->channel;
@@ -590,7 +590,7 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 	} else {
 		security_config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (!security_config) {
-			ndbg("[LWNL80211_SLSI_DRV] Memory allocation failed!\n");
+			sddbg("Memory allocation failed!\n");
 			goto start_soft_ap_fail;
 		}
 		memcpy(security_config->passphrase, softap_config->passphrase, softap_config->passphrase_length);
@@ -607,29 +607,29 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 		security_config->secmode = (SLSI_SEC_MODE_WPA_MIXED | SLSI_SEC_MODE_WPA2_MIXED);
 	} else {
 		// if not WPA-TKIP, WPA2-AES, WPA/WPA2 TKIP/AES/MIXED, return fail.
-		ndbg("[LWNL80211_SLSI_DRV] Wrong security config. Match proper auth and crypto.\n");
+		sddbg("Wrong security config. Match proper auth and crypto.\n");
 		goto start_soft_ap_fail;
 	}
 	ap_config->security = security_config;
 
 	if (WiFiStart(SLSI_WIFI_SOFT_AP_IF, ap_config) != SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] Failed to start AP mode\n");
+		sddbg("Failed to start AP mode\n");
 		goto start_soft_ap_fail;
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
-	nvdbg("[LWNL80211_SLSI_DRV] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
+	sdvdbg("SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
 
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] Link callback handles: register failed !\n");
+		sddbg("Link callback handles: register failed !\n");
 		return LWNL80211_FAIL;
 	} else {
-		nvdbg("[LWNL80211_SLSI_DRV] Link callback handles: registered\n");
+		sdvdbg("Link callback handles: registered\n");
 	}
 
 	ret = WiFiRegisterScanCallback(&slsi_drv_scan_callback_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[LWNL80211_SLSI_DRV] [ERR] Register Scan Callback(%d)\n", ret);
+		sddbg("[ERR] Register Scan Callback(%d)\n", ret);
 		return LWNL80211_FAIL;
 	}
 
@@ -657,19 +657,19 @@ lwnl80211_result_e slsidrv_start_sta(void)
 		g_mode = SLSI_WIFI_STATION_IF;
 		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 		if (ret == SLSI_STATUS_SUCCESS) {
-			nvdbg("[LWNL80211_SLSI_DRV] Link callback handles: registered\n");
+			sdvdbg("Link callback handles: registered\n");
 			ret = WiFiRegisterScanCallback(&slsi_drv_scan_callback_handler);
 			if (ret == SLSI_STATUS_SUCCESS) {
-				nvdbg("[LWNL80211_SLSI_DRV] Scan callback handles: registered\n");
+				sdvdbg("Scan callback handles: registered\n");
 				result = LWNL80211_SUCCESS;
 			} else {
-				ndbg("[LWNL80211_SLSI_DRV] [ERR] Register Scan Callback(%d)\n", ret);
+				sddbg("[ERR] Register Scan Callback(%d)\n", ret);
 			}
 		} else {
-			ndbg("[LWNL80211_SLSI_DRV] [ERR] Register Link Callback(%d)\n", ret);
+			sddbg("[ERR] Register Link Callback(%d)\n", ret);
 		}
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] Failed to start STA mode\n");
+		sddbg("Failed to start STA mode\n");
 	}
 	return result;
 }
@@ -683,12 +683,12 @@ lwnl80211_result_e slsidrv_stop_softap(void)
 		ret = WiFiStop();
 		if (ret == SLSI_STATUS_SUCCESS) {
 			result = LWNL80211_SUCCESS;
-			ndbg("[LWNL80211_SLSI_DRV] Stop AP mode successfully\n");
+			sddbg("Stop AP mode successfully\n");
 		} else {
-			ndbg("[LWNL80211_SLSI_DRV] Stop AP mode fail\n");
+			sddbg("Stop AP mode fail\n");
 		}
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] Mode is not AP mode\n");
+		sddbg("Mode is not AP mode\n");
 	}
 	return result;
 }
@@ -700,9 +700,9 @@ lwnl80211_result_e slsidrv_set_autoconnect(uint8_t check)
 	int ret = WiFiSetAutoconnect(check);
 	if (ret == SLSI_STATUS_SUCCESS) {
 		result = LWNL80211_SUCCESS;
-		ndbg("[LWNL80211_SLSI_DRV] External Autoconnect set to %d\n", check);
+		sddbg("External Autoconnect set to %d\n", check);
 	} else {
-		ndbg("[LWNL80211_SLSI_DRV] External Autoconnect failed to set %d", check);
+		sddbg("External Autoconnect failed to set %d", check);
 	}
 	return result;
 }
