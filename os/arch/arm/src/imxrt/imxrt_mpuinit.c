@@ -99,6 +99,13 @@ const struct mpu_region_info regions_info[] = {
 #endif
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
+uint32_t g_app_mpu_region;
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -137,10 +144,14 @@ void imxrt_mpu_initialize(void)
 		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
 	}
 
+	/* Save the APP MPU region to be used later when loading apps */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	g_app_mpu_region = MPU_REG_APP;
+#endif
+#endif
 	/* Then enable the MPU */
 
 	mpu_control(true, false, true);
-#endif
 }
 
 #endif							/* CONFIG_ARMV7M_MPU */

@@ -457,6 +457,14 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		rtcb = this_task();
 		tcb->ram_start = rtcb->ram_start;
 		tcb->ram_size = rtcb->ram_size;
+
+		/* Copy the MPU register values from parent to child task */
+#ifdef CONFIG_ARMV7M_MPU
+		tcb->mpu_regs[REG_RNR] = rtcb->mpu_regs[REG_RNR];
+		tcb->mpu_regs[REG_RBAR] = rtcb->mpu_regs[REG_RBAR];
+		tcb->mpu_regs[REG_RASR] = rtcb->mpu_regs[REG_RASR];
+#endif
+
 #endif
 
 		/* Add the task to the inactive task list */

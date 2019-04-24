@@ -72,7 +72,9 @@
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
-
+#ifdef CONFIG_ARMV7M_MPU
+#include "mpu.h"
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -251,6 +253,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	case SYS_restore_context: {
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
+
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+		up_set_mpu_app_configuration(sched_self());
+#endif
 	}
 	break;
 
@@ -277,6 +284,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
+
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+		up_set_mpu_app_configuration(sched_self());
+#endif
 	}
 	break;
 
@@ -348,6 +360,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		regs[REG_R0] = regs[REG_R1];	/* Task entry */
 		regs[REG_R1] = regs[REG_R2];	/* argc */
 		regs[REG_R2] = regs[REG_R3];	/* argv */
+
 	}
 	break;
 #endif
