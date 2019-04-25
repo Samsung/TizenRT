@@ -1,0 +1,3 @@
+config ENTRY_UPDATE_TEST
+	bool "\"Update Test!\" example"
+	depends on EXAMPLES_UPDATE_TEST

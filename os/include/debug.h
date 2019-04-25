@@ -153,16 +153,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define dbg(format, ...) \
-	lldbg(format, ##__VA_ARGS__)
-#else
+
 #define dbg(format, ...) \
 	syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #define dbg_noarg(format, ...) \
 	syslog(LOG_ERR, format, ##__VA_ARGS__)
@@ -199,16 +192,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define wdbg(format, ...) \
-	llwdbg(format, ##__VA_ARGS__)
-#else
+
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -242,16 +228,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define vdbg(format, ...) \
-	llvdbg(format, ##__VA_ARGS__)
-#else
+
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -363,6 +342,14 @@
 #else
 #define pgdbg(...)
 #define pglldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_FAULT_MGR
+#define fmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define fmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define fmdbg(...)
+#define fmlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_WARN
@@ -813,6 +800,24 @@
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
+#else
+#  define berr(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
+#else
+#  define bwarn(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#  define binfo(x...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1244,6 +1249,24 @@
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#define berr  dbg
+#else
+#define berr  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#define bwarn  wdbg
+#else
+#define bwarn  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#define binfo  vdbg
+#else
+#define binfo  (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

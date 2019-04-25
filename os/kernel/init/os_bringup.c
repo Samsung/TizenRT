@@ -83,6 +83,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
+#ifdef CONFIG_FAULT_MGR
+#include "fault_manager/fault_manager.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -169,6 +172,34 @@ static inline void os_pgworker(void)
 #define os_pgworker()
 
 #endif							/* CONFIG_PAGING */
+
+/****************************************************************************
+ * Name: os_faultmanager
+ *
+ * Description:
+ *   Start the fault manager kernel thread which will handle the fault in system.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_FAULT_MGR
+static inline void os_faultmanager(void)
+{
+	pid_t pid;
+
+	/* Start the fault manager kernel thread which will handle the fault in system. */
+
+	fmlldbg("Starting fault manager\n");
+
+	pid = kernel_thread("fault_manager", FAULTMGR_PRIORITY, FAULTMGR_STACK_SIZE, fault_manager, (FAR char *const *)NULL);
+	DEBUGASSERT(pid > 0);
+}
+#endif /* CONFIG_FAULT_MGR */
 
 /****************************************************************************
  * Name: os_workqueues
@@ -297,6 +328,26 @@ static inline void os_do_appstart(void)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
 	ASSERT(pid > 0);
+
+
+	/* Code for testing loadable apps in NXP using flash partitions.
+	 * This is a temporary implementation. In the final implementation the apps will
+	 * be loaded by the Binary manager. This code will be removed after implementation
+	 * of Binary Manager module.
+	 *
+	 * The mtdblock and size of elf file has been hardcoded here.
+	 * If there is a change in elf file size during build, the below value needs modification.
+	 * When Binary Manager is implemented, these values will be obtained from the
+	 * binary header and passed to the elf loader.
+	 */
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_BOARD_IMXRT1050_EVK)
+	pid = load_binary("/dev/mtdblock2", 148096, 0, 20 * 1024);
+	svdbg("Loaded Micomapp pid = %d\n", pid);
+
+	pid = load_binary("/dev/mtdblock3", 148096, 0, 20 * 1024);
+	svdbg("Loaded Wifiapp pid = %d\n", pid);
+#endif
 }
 
 #elif defined(CONFIG_INIT_NONE)
@@ -423,6 +474,14 @@ int os_bringup(void)
 	 */
 
 	os_pgworker();
+
+	/* Start the fault manager kernel thread that will handle the faults in
+	 * the system.
+	 */
+
+#ifdef CONFIG_FAULT_MGR
+	os_faultmanager();
+#endif
 
 	/* Start the worker thread that will serve as the device driver "bottom-
 	 * half" and will perform misc garbage clean-up.

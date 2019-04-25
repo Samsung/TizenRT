@@ -59,8 +59,7 @@
 #include <unistd.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -112,9 +111,9 @@ void *malloc_at(int heap_index, size_t size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_malloc(&g_mmheap[heap_index], size, retaddr);
+	return mm_malloc(&USR_HEAP[heap_index], size, retaddr);
 #else
-	return mm_malloc(&g_mmheap[heap_index], size);
+	return mm_malloc(&USR_HEAP[heap_index], size);
 #endif
 }
 #endif
@@ -225,5 +224,3 @@ FAR void *malloc(size_t size)
 	return ret;
 #endif /* CONFIG_BUILD_KERNEL */
 }
-
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
