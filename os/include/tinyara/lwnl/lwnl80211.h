@@ -25,35 +25,31 @@
 #include <stdbool.h>
 #include <mqueue.h>
 #include <semaphore.h>
+#include <debug.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 #define LWNL80211_PATH "/dev/lwnl80211"
 
-#ifdef CONFIG_LWNL80211_DEBUG
-#define LWNL80211_LOG(format, ...) printf(format, ##__VA_ARGS__)
-#else
-#define LWNL80211_LOG(a, ...) (void)0
-#endif
-
 #define LWNL80211_TAG "[LWNL80211]"
 
-#define LWNL80211_ERR 													\
-	do {																\
-		LWNL80211_LOG(LWNL80211_TAG"[ERR:%s] %s %s: %d line err(%s)\n",			\
-				  LWNL80211_TAG, __FUNCTION__, __FILE__, __LINE__, strerror(errno)); \
-	} while(0)
-
-#define LWNL80211_ENTER														\
-	do {																\
-		LWNL80211_LOG(LWNL80211_TAG"--->%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+#define LWNL80211_ERR                                                            \
+	do {                                                                         \
+		nldbg(LWNL80211_TAG"[ERR] %s: %d line err(%s)\n",                        \
+				  __FILE__, __LINE__, strerror(errno));                          \
 	} while (0)
 
-#define LWNL80211_LEAVE														\
-	do {																\
-		LWNL80211_LOG(LWNL80211_TAG"<---%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+#define LWNL80211_ENTER                                                          \
+	do {                                                                         \
+		nldbg(LWNL80211_TAG"--->%s:%d\n", __FILE__, __LINE__);                   \
 	} while (0)
+
+#define LWNL80211_LEAVE                                                          \
+	do {                                                                         \
+		nldbg(LWNL80211_TAG"<---%s:%d\n", __FILE__, __LINE__);                   \
+	} while (0)
+
 #define LWNL80211_MQUEUE_PRIORITY        100
 #define LWNL80211_MQUEUE_MAX_DATA_LEN    1024
 #define LWNL80211_MQUEUE_MAX_DATA_NUM    128
