@@ -62,12 +62,13 @@ $(1)_$(2):
 	$(Q) $(MAKE) -C $(1) $(3) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" SYSTEM_BIN_DIR="$(SYSTEM_BIN_DIR)" CROSSDEV=$(CROSSDEV)
 endef
 
-all: build install
-.PHONY: all build clean install distclean
+all: build verify install
+.PHONY: all build clean install distclean verify
 
 $(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),build, all)))
 $(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),clean,clean)))
 $(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),install,install)))
+$(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),verify,verify)))
 
 # Build program(s) in each sub-directory
 
@@ -76,6 +77,10 @@ build: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_build)
 # Install each program in the romfs directory
 
 install: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_install)
+
+# Verify each program for undefined symbols
+
+verify: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_verify)
 
 # context
 context:

@@ -85,12 +85,12 @@ LDLIBS += $(LIBGCC)
 endif
 
 BIN = wifiapp
-
+BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)/$(BIN) | wc -l)
 SRCS = wifiapp.c
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 all: $(BIN)
-.PHONY: clean install
+.PHONY: clean install verify
 
 $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
@@ -108,3 +108,14 @@ clean:
 install:
 	$(Q) mkdir -p $(SYSTEM_BIN_DIR)
 	$(Q) install $(BIN) $(SYSTEM_BIN_DIR)/$(BIN)
+
+verify:
+ifneq ($(BIN_CHECK),0)
+	@echo "Undefined Symbols"
+	$(Q) $(NM) -u -l $(BIN)
+	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+	exit 1
+endif
+
