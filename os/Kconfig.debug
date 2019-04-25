@@ -462,6 +462,13 @@ config DEBUG_TASK_MANAGER_INFO
 
 endif #DEBUG_TASK_MANAGER
 
+config DEBUG_MESSAGING_IPC
+	bool "Messaging Framework Debug Feature"
+	default n
+	depends on MESSAGING_IPC
+	---help---
+		Enable Messaging debug feature.
+
 config DEBUG_EVENTLOOP
 	bool "EventLoop Debug Feature"
 	default n

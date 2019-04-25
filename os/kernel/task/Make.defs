@@ -84,6 +84,10 @@ CSRCS += task_execv.c
 endif
 endif
 
+ifeq ($(CONFIG_MESSAGING_IPC),y)
+CFLAGS += -I$(TOPDIR)/../framework/include/messaging
+endif
+
 # Include task build support
 
 DEPPATH += --dep-path task

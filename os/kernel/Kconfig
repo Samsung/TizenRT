@@ -885,6 +885,15 @@ config SIG_SIGEL_EVENT
 		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
 		Default: 24
 
+config SIG_MESSAGING_UNICAST
+	int "MESSAGE RECV SIGNAL"
+	default 25
+	depends on MESSAGING_IPC
+	---help---
+		SIG_MESSAGING_UNICAST is a non-standard signal used to notify to message receiver.
+		This setting specifies the signal number that will be used for SIG_MESSAGING_UNICAST.
+		Default: 25
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"
