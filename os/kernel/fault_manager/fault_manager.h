@@ -34,12 +34,13 @@
 #define CONFIG_NUM_BINARIES	CONFIG_NUM_APPS /* Total number of binaries available */
 #define MAX_MSG			32		/* Maximum number of messages on queue */
 
-/* This structure is used to store the mapping between binary id and binary path
+/* This structure is used to store the mapping between binary id, binary path and binary size
  * Its value is filled at time of registering the binary with fault manager
  */
 struct fm_binary_table_s {
 	pid_t binid;
 	char bin_path[PATH_LEN];
+	int bin_size;
 };
 
 typedef struct fm_binary_table_s fm_binary_table_t;
@@ -57,12 +58,13 @@ typedef struct fm_binary_table_s fm_binary_table_t;
  * Input parameters:
  *   pid    - The pid of the binary to be registered
  *   result - Binary path to be registered with the fault manager
+ *   bin_size - Binary size to be registered with the fault manager
  *
  * Returned Value:
  *   Zero (OK) on success; otherwise a -1 (ERROR) value is returned.
  *
  ****************************************************************************/
-int fm_register_bianry(pid_t pid, const char *path);
+int fm_register_bianry(pid_t pid, const char *path, int bin_size);
 
 /****************************************************************************
  * Name: fm_deregister_binary

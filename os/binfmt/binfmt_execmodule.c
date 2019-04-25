@@ -284,7 +284,7 @@ int exec_module(FAR const struct binary_s *binp)
 #ifdef CONFIG_FAULT_MGR
 	/* Register the appliation to the fault manager */
 
-	ret = fm_register_binary(tcb->cmn.pid, binp->filename);
+	ret = fm_register_binary(tcb->cmn.pid, binp->filename, binp->filelen);
 	DEBUGASSERT(ret != ERROR);
 #endif
 	/* Then activate the task at the provided priority */
