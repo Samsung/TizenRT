@@ -338,14 +338,15 @@ void imxrt_configure_ocram()
 
 void imxrt_configure_dtcm()
 {
-	/* Configure FlexRAM banks for DTCM*/
-	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0xaaaaaaaa);
+	/* Configure FlexRAM banks for DTCM and 64KB OCRAM */
+	/* It is mandatory to have at least 64KB as OCRAM to boot the board */
+	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x55aaaaaa);
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
 
-	/* Configure and enable DTCM */
+	/* Configure and enable DTCM for 256KB */
 	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
 	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
-	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0xa);
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0x9);
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
 
 	/* Disable ITCM */
