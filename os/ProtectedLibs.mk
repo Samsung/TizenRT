@@ -105,6 +105,11 @@ ifeq ($(CONFIG_AUDIO),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
+# Add libraries for se module
+ifeq ($(CONFIG_SE),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
+endif
+
 # Add libraries for crypto module
 
 ifeq ($(CONFIG_CRYPTO),y)

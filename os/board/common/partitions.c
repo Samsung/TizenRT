@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>

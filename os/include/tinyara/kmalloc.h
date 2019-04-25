@@ -104,9 +104,15 @@ extern "C" {
 #define kumm_trysemaphore(a)      umm_trysemaphore(a)
 #define kumm_givesemaphore(a)     umm_givesemaphore(a)
 
+#ifdef CONFIG_KMM_FORCE_ALLOC_AT
+#define kumm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kumm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kumm_realloc(p, s)      realloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, p, s)
+#else
 #define kumm_malloc(s)          malloc(s)
 #define kumm_zalloc(s)          zalloc(s)
 #define kumm_realloc(p, s)      realloc(p, s)
+#endif
 #define kumm_memalign(a, s)     memalign(a, s)
 #define kumm_free(p)            free(p)
 #define kumm_mallinfo()         mallinfo()
@@ -123,9 +129,15 @@ extern "C" {
 #define kmm_trysemaphore(a)      umm_trysemaphore(a)
 #define kmm_givesemaphore(a)     umm_givesemaphore(a)
 
+#ifdef CONFIG_KMM_FORCE_ALLOC_AT
+#define kmm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kmm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kmm_realloc(p, s)      realloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, p, s)
+#else
 #define kmm_malloc(s)          malloc(s)
 #define kmm_zalloc(s)          zalloc(s)
 #define kmm_realloc(p, s)      realloc(p, s)
+#endif
 
 #define kmm_memalign(a, s)     memalign(a, s)
 #define kmm_free(p)            free(p)

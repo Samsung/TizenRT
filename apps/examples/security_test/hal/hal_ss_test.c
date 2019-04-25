@@ -17,16 +17,20 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/security_hal.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-
+#include <tinyara/seclink_drv.h>
+#include <tinyara/security_hal.h>
 #include <stress_tool/st_perf.h>
 #include "hal_test_utils.h"
 #include "hal_test.h"
+
+extern struct sec_lowerhalf_s *se_get_device(void);
+
+static struct sec_lowerhalf_s *g_se = NULL;
 
 /*
  * Desc: Write data in secure storage
@@ -51,7 +55,7 @@ TEST_TEARDOWN(write_storage)
 	ST_START_TEST;
 
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_delete_storage(i));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->delete_storage(i));
 	}
 
 	ST_END_TEST;
@@ -62,7 +66,7 @@ TEST_F(write_storage)
 	ST_START_TEST;
 
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_write_storage(i, &g_input));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->write_storage(i, &g_input));
 	}
 
 	ST_END_TEST;
@@ -81,7 +85,7 @@ TEST_SETUP(read_storage)
 	g_input.data = input;
 	g_input.data_len = HAL_TEST_MAX_DATA;
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_write_storage(i, &g_input));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->write_storage(i, &g_input));
 	}
 
 	ST_END_TEST;
@@ -92,7 +96,7 @@ TEST_TEARDOWN(read_storage)
 	ST_START_TEST;
 
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_delete_storage(i));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->delete_storage(i));
 		hal_test_free_buffer(&g_output[i]);
 	}
 
@@ -105,7 +109,7 @@ TEST_F(read_storage)
 
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
 		ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_output[i], HAL_SS_TEST_MEM_SIZE)); 
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_read_storage(i, &g_output[i]));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->read_storage(i, &g_output[i]));
 	}
 
 	ST_END_TEST;
@@ -124,7 +128,7 @@ TEST_SETUP(delete_storage)
 	g_input.data = input;
 	g_input.data_len = HAL_TEST_MAX_DATA;;
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_write_storage(1, &g_input));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->write_storage(1, &g_input));
 	}
 
 	ST_END_TEST;
@@ -142,7 +146,7 @@ TEST_F(delete_storage)
 	ST_START_TEST;
 
 	for (uint32_t i = 0; i < HAL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, hal_delete_storage(i));
+		ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->delete_storage(i));
 	}
 
 	ST_END_TEST;
@@ -155,6 +159,8 @@ ST_SET_PACK(hal_ss, delete_storage);
 
 pthread_addr_t hal_ss_test(void)
 {
+	g_se = se_get_device();
+
 	ST_RUN_TEST(hal_ss);
 	ST_RESULT_TEST(hal_ss);
 

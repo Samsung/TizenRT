@@ -83,7 +83,7 @@ Accordingly, please modify the *framework/src/wifi_manager/Kconfig* as shown in 
 if WIFI_MANAGER
 choice
 	prompt "WiFi library"
-	default SELECT_WPA_SUPPLICANT
+	default SLSI_WPA_SUPPLICANT
 
 ...
 config SELECT_<SUPPLICANT_LIBRARY_NAME>

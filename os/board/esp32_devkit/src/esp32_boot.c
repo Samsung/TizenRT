@@ -68,6 +68,7 @@
 #include "esp32_gpio.h"
 #include "esp32_core.h"
 #include "esp32_i2c.h"
+#include "common.h"
 #include <tinyara/gpio.h>
 #include <../xtensa/xtensa.h>
 

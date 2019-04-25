@@ -118,6 +118,42 @@ void *malloc_at(int heap_index, size_t size)
 }
 #endif
 
+#ifndef CONFIG_BUILD_KERNEL
+/************************************************************************
+ * Name: heap_malloc
+ *
+ * Description:
+ *   Traverse the user heap arrays by index, and try to alloc memory.
+ *
+ * Parameters:
+ *   size - Size (in bytes) of the memory region to be allocated.
+ *   s     - Start index
+ *   e     - End index
+ *   retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+static void *heap_malloc(size_t size, int s, int e, size_t retaddr)
+{
+	int heap_idx;
+	void *ret;
+
+	for (heap_idx = s; heap_idx < e; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_malloc(&g_mmheap[heap_idx], size, retaddr);
+#else
+		ret = mm_malloc(&g_mmheap[heap_idx], size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
+#endif
+
 /************************************************************************
  * Name: malloc
  *
@@ -162,21 +198,29 @@ FAR void *malloc(size_t size)
 	return mem;
 #else /* CONFIG_BUILD_KERNEL */
 
-	int heap_idx;
-	void *ret;
+	int heap_idx = 0;
+	void *ret = NULL;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-#endif
-	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&USR_HEAP[heap_idx], size, retaddr);
 #else
-		ret = mm_malloc(&USR_HEAP[heap_idx], size);
+	size_t retaddr = 0;
 #endif
-		if (ret != NULL) {
-			return ret;
-		}
+
+#ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
+	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
+#endif
+
+	ret = heap_malloc(size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	if (ret != NULL) {
+		return ret;
 	}
-	return NULL;
+
+#if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
+	/* Try to mm_calloc to other heaps */
+	ret = heap_malloc(size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+#endif
+
+	return ret;
 #endif /* CONFIG_BUILD_KERNEL */
 }

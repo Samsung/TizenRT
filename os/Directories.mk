@@ -253,3 +253,8 @@ KERNDEPDIRS += logm
 endif
 CLEANDIRS += logm
 
+ifeq ($(CONFIG_LOGM),y)
+KERNDEPDIRS += se
+endif
+CLEANDIRS += se
+
