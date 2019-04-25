@@ -84,6 +84,9 @@
 
 #define INSN_SVC0        0xdf00	/* insn: svc 0 */
 
+#ifdef CONFIG_FAULT_MGR
+uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -111,10 +114,13 @@
 
 int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
-#if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV7M_USEBASEPRI)
+#if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV7M_USEBASEPRI) || defined(CONFIG_FAULT_MGR)
 	uint32_t *regs = (uint32_t *)context;
 #endif
 
+#ifdef CONFIG_FAULT_MGR
+	g_assertpc = regs[REG_R14];
+#endif
 	/* Get the value of the program counter where the fault occurred */
 
 #ifndef CONFIG_ARMV7M_USEBASEPRI
