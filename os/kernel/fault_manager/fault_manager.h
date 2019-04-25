@@ -64,7 +64,7 @@ typedef struct fm_binary_table_s fm_binary_table_t;
  *   Zero (OK) on success; otherwise a -1 (ERROR) value is returned.
  *
  ****************************************************************************/
-int fm_register_bianry(pid_t pid, const char *path, int bin_size);
+int fm_register_binary(pid_t pid, const char *path, int bin_size);
 
 /****************************************************************************
  * Name: fm_deregister_binary
