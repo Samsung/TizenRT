@@ -139,12 +139,28 @@ compute_ocd_commands()
 				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
 				 fi
 				;;
-			system)
-			         is_file_present ${OUTPUT_BINARY_PATH}/romfs.img
+			loadparam)
+			         is_file_present ${OUTPUT_BINARY_PATH}/loadparam
 				 if [[ $? -eq 1 ]]; then
-				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/loadparam ${VERIFY}; "
 				 else
-				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/loadparam is NOT present";
+				 fi
+				;;
+			micom)
+			         is_file_present ${OUTPUT_BINARY_PATH}/micom
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/micom ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/micom is NOT present";
+				 fi
+				;;
+			wifi)
+			         is_file_present ${OUTPUT_BINARY_PATH}/wifi
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/wifi ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/wifi is NOT present";
 				 fi
 				;;
 			*)
@@ -240,7 +256,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|SYSTEM|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|system)
+		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|MICOM|WIFI|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi)
 			download $1
 			;;
 		ERASE_*)

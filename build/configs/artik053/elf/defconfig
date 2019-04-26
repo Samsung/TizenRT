@@ -248,9 +248,10 @@ CONFIG_ARTIK05X_AUTOMOUNT_USERFS=y
 CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME="/dev/smart0p9"
 CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT="/mnt"
 # CONFIG_ARTIK05X_AUTOMOUNT_SSSRW is not set
-CONFIG_ARTIK05X_AUTOMOUNT_ROMFS=y
-CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME="/dev/mtdblock10"
-CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT="/system"
+
+#
+# Board-Partition Options
+#
 CONFIG_ARCH_USE_FLASH=y
 
 #
@@ -258,9 +259,9 @@ CONFIG_ARCH_USE_FLASH=y
 #
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
-CONFIG_FLASH_PART_SIZE="16,48,192,32,512,1200,1200,1536,1536,400,1000,8,512,"
-CONFIG_FLASH_PART_TYPE="none,ftl,none,none,none,none,none,none,ftl,smartfs,romfs,config,none,"
-CONFIG_FLASH_PART_NAME="bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,user,system,nvram,sssrw,"
+CONFIG_FLASH_PART_SIZE="16,48,192,32,512,1200,1200,1536,1536,192,300,300,300,300,8,512,8,"
+CONFIG_FLASH_PART_TYPE="none,ftl,none,none,none,kernel,none,none,kernel,smartfs,bin,bin,bin,bin,config,none,loadparam,"
+CONFIG_FLASH_PART_NAME="bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,user,micom,micom,wifi,wifi,nvram,sssrw,loadparam,"
 
 #
 # Crypto Module
@@ -369,9 +370,10 @@ CONFIG_SCHED_HPWORKSTACKSIZE=2048
 # CONFIG_SCHED_LPWORK is not set
 
 #
-# fault Manager
+# Binary Manager
 #
-CONFIG_FAULT_MGR=y
+CONFIG_BINARY_MANAGER=y
+CONFIG_BINMGR_RECOVERY=y
 
 #
 # Stack size information
@@ -627,7 +629,7 @@ CONFIG_FS_PROCFS=y
 # CONFIG_FS_PROCFS_EXCLUDE_MTD is not set
 # CONFIG_FS_PROCFS_EXCLUDE_PARTITIONS is not set
 # CONFIG_FS_PROCFS_EXCLUDE_SMARTFS is not set
-CONFIG_FS_ROMFS=y
+# CONFIG_FS_ROMFS is not set
 # CONFIG_FS_TMPFS is not set
 
 #
@@ -712,6 +714,7 @@ CONFIG_DEBUG_VERBOSE=y
 # Subsystem Debug Options
 #
 # CONFIG_DEBUG_BINFMT is not set
+# CONFIG_DEBUG_BINMGR is not set
 # CONFIG_DEBUG_LIB is not set
 # CONFIG_DEBUG_FS is not set
 # CONFIG_DEBUG_IOTBUS is not set

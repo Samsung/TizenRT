@@ -92,7 +92,7 @@
 #define svcdbg(...)
 #endif
 
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc;
 #endif
 /****************************************************************************
@@ -183,7 +183,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 	g_assertpc = regs[REG_R14];
 #endif
 

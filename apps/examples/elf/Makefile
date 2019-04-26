@@ -55,11 +55,11 @@
 
 BUILD_SUBDIRS = micomapp wifiapp
 
-SYSTEM_BIN_DIR = $(APPDIR)/../tools/fs/contents/bin
+USER_BIN_DIR = $(APPDIR)/../build/output/bin
 
 define DIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(3) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" SYSTEM_BIN_DIR="$(SYSTEM_BIN_DIR)" CROSSDEV=$(CROSSDEV)
+	$(Q) $(MAKE) -C $(1) $(3) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" USER_BIN_DIR="$(USER_BIN_DIR)" CROSSDEV=$(CROSSDEV)
 endef
 
 all: build verify install
@@ -90,7 +90,6 @@ depend:
 
 # Clean each subdirectory
 clean: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_clean)
-	$(Q) rm -rf $(SYSTEM_BIN_DIR)
 
 distclean: clean
 	$(call DELFILE, Make.dep)

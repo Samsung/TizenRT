@@ -67,7 +67,7 @@ include task/Make.defs
 include errno/Make.defs
 include wdog/Make.defs
 include semaphore/Make.defs
-include fault_manager/Make.defs
+include binary_manager/Make.defs
 include signal/Make.defs
 include pthread/Make.defs
 include messaging/Make.defs

@@ -344,14 +344,6 @@
 #define pglldbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_FAULT_MGR
-#define fmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#define fmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#else
-#define fmdbg(...)
-#define fmlldbg(...)
-#endif
-
 #ifdef CONFIG_DEBUG_PAGING_WARN
 #define pgwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define pgllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
@@ -824,6 +816,22 @@
 #  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
 #else
 #  define binfo(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_ERROR
+#define bmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define bmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define bmdbg(...)
+#define bmlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_INFO
+#define bmvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define bmllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
+#else
+#define bmvdbg(...)
+#define bmllvdbg(...)
 #endif
 
 #else							/* CONFIG_CPP_HAVE_VARARGS */

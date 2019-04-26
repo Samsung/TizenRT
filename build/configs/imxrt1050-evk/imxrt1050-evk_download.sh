@@ -55,45 +55,56 @@ echo "Downloading tinyara_flash.bin for App binary separation"
 
 # Prepare the binary paths
 
-BIN_PATH=${OS_DIR_PATH}/../build/output/bin/
+BIN_PATH=${OS_DIR_PATH}/../build/output/bin
 KERN_IMG=${BIN_PATH}/tinyara.bin
 USER_IMG=${BIN_PATH}/tinyara_user.bin
-APP1_IMG=${OS_DIR_PATH}/../apps/examples/elf/micomapp/micomapp
-APP2_IMG=${OS_DIR_PATH}/../apps/examples/elf/wifiapp/wifiapp
+APP1_IMG1=${OS_DIR_PATH}/../apps/examples/elf/micomapp/micom
+APP1_IMG2=${BIN_PATH}/micom
+APP2_IMG1=${OS_DIR_PATH}/../apps/examples/elf/wifiapp/wifi
+APP2_IMG2=${BIN_PATH}/wifi
 FLASH_IMG=${BIN_PATH}/tinyara_flash.bin
 
 # Set the flash partition sizes. This value needs to be modified whenever
 # there is a change in flash partition size in the project.
 
 let OS_PART=256*1024
-let USER_PART=256*1024
-let APP_PART=256*1024
+let USER_PART=128*1024
+let APP_PART=128*1024
 
 # Fetch the binary file sizes
 
 KERN_SIZE=$(stat -c%s "$KERN_IMG")
 USER_SIZE=$(stat -c%s "$USER_IMG")
-APP1_SIZE=$(stat -c%s "$APP1_IMG")
-APP2_SIZE=$(stat -c%s "$APP2_IMG")
+APP1_SIZE1=$(stat -c%s "$APP1_IMG1")
+APP1_SIZE2=$(stat -c%s "$APP1_IMG2")
+APP2_SIZE1=$(stat -c%s "$APP2_IMG1")
+APP2_SIZE2=$(stat -c%s "$APP2_IMG2")
 
 # Calculate padding sizes. Padding is required to adjust the binary size with
 # the flash partition size.
 
-let padding_kern="$OS_PART - $KERN_SIZE"
-let padding_user="$USER_PART - $USER_SIZE"
-let padding_app1="$APP_PART - $APP1_SIZE"
-
+let kern_padding="$OS_PART - $KERN_SIZE"
+let user_padding="$USER_PART - $USER_SIZE"
+let app1_padding1="$APP_PART - $APP1_SIZE1"
+let app1_padding2="$APP_PART - $APP1_SIZE2"
+let app2_padding1="$APP_PART - $APP2_SIZE1"
+let app2_padding2="$APP_PART - $APP2_SIZE2"
 
 # Create a temporary flash img file by concatenation of all binaries and padding
 
 (
-head -c$KERN_SIZE $KERN_IMG ;
-head -c$padding_kern /dev/zero ;
-head -c$USER_SIZE $USER_IMG ;
-head -c$padding_user /dev/zero ;
-head -c$APP1_SIZE $APP1_IMG ;
-head -c$padding_app1 /dev/zero ;
-head -c$APP2_SIZE $APP2_IMG ;
+head -c $KERN_SIZE $KERN_IMG ;
+head -c $kern_padding /dev/zero ;
+head -c $USER_SIZE $USER_IMG ;
+head -c $user_padding /dev/zero ;
+head -c $APP1_SIZE1 $APP1_IMG1 ;
+head -c $app1_padding1 /dev/zero ;
+head -c $APP1_SIZE2 $APP1_IMG2 ;
+head -c $app1_padding2 /dev/zero ;
+head -c $APP2_SIZE1 $APP2_IMG1 ;
+head -c $app2_padding1 /dev/zero ;
+head -c $APP2_SIZE2 $APP2_IMG2 ;
+head -c $app2_padding2 /dev/zero ;
 ) > $FLASH_IMG
 
 # Flash the flash img file onto device

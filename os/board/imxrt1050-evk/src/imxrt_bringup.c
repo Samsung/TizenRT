@@ -72,6 +72,9 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mksmartfs.h>
 #endif
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include <syslog.h>
 #include <tinyara/i2c.h>
@@ -123,6 +126,8 @@ static void imxrt_configure_partitions(void)
 	const char *types = CONFIG_IMXRT_FLASH_PART_TYPE;
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 	const char *names = CONFIG_IMXRT_FLASH_PART_NAME;
+	char part_name[MTD_PARTNAME_LEN + 1];
+	int index = 0;
 #endif
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
@@ -173,10 +178,15 @@ static void imxrt_configure_partitions(void)
 
 		IMXLOG("mtd_partition success");
 
-#if defined(CONFIG_MTD_FTL)
-		if (!strncmp(types, "ftl,", 4)) {
+#ifdef CONFIG_MTD_FTL
+		if (!strncmp(types, "ftl,", 4)
+#ifdef CONFIG_BINARY_MANAGER
+		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4) || !strncmp(types, "loadparam,", 10)
+#endif
+		) {
 			if (ftl_initialize(partno, mtd_part)) {
-				IMXLOG("ERROR: failed to initialise mtd ftl");
+				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+				return;
 			}
 		} else
 #endif
@@ -215,16 +225,40 @@ static void imxrt_configure_partitions(void)
 		}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
-		if (strcmp(names, "")) {
-			mtd_setpartitionname(mtd_part, names);
+		if (*names) {
+			while (*names) {
+				if (*names == ',') {
+					part_name[index] = '\0';
+					index = 0;
+					names++;
+					break;
+				}
+				if (index < MTD_PARTNAME_LEN) {
+					part_name[index++] = *(names++);
+				} else {
+					part_name[index] = '\0';
+					index = 0;
+					lldbg("ERROR: Partition name is so long. Please make it smaller than %d\n", MTD_PARTNAME_LEN);
+					while (*names) {
+						if (*(names++) == ',') {
+							break;
+						}
+					}
+					break;
+				}
+			}
+			mtd_setpartitionname(mtd_part, part_name);
+#ifdef CONFIG_BINARY_MANAGER
+			if (!strncmp(types, "kernel,", 7)) {
+				binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
+			} else if (!strncmp(types, "bin,", 4)) {
+				binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
+			} else if (!strncmp(types, "loadparam,", 10)) {
+				binary_manager_register_partition(partno, BINMGR_PART_LOADPARAM, part_name, partsize);
+			}
+#endif
 		}
 
-		while (*names != ',' && *names) {
-			names++;
-		}
-		if (*names == ',') {
-			names++;
-		}
 #endif
 
 		while (*parts != ',' && *parts) {

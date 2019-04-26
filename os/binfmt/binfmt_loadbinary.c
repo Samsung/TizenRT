@@ -29,6 +29,9 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "binfmt.h"
 
@@ -137,7 +140,10 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	tcb = (struct tcb_s *)sched_self();
 	tcb->ram_start = (uint32_t)start_addr;
 #endif
-
+#ifdef CONFIG_BINARY_MANAGER
+	/* Temp code*/
+	bin->priority = BINMGR_LOAD_PRIORITY_DEFAULT;
+#endif
 	/* Then start the module */
 
 	pid = exec_module(bin);

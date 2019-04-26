@@ -83,8 +83,14 @@ LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
 
-BIN = micomapp
+BIN = micom
 BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)/$(BIN) | wc -l)
+# need to update
+BIN_TYPE = ELF
+DYNAMIC_RAM_SIZE = 20480
+BIN_VER = 20190421
+KERNEL_VER = 2.0
+
 SRCS = micomapp.c
 OBJS = $(SRCS:.c=$(OBJEXT))
 
@@ -101,12 +107,13 @@ $(BIN): $(OBJS)
 
 clean:
 	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
+	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
 	$(call CLEAN)
 
 install:
-	$(Q) mkdir -p $(SYSTEM_BIN_DIR)
-	$(Q) install $(BIN) $(SYSTEM_BIN_DIR)/$(BIN)
+	$(Q) mkdir -p $(USER_BIN_DIR)
+	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE)
 
 verify:
 ifneq ($(BIN_CHECK),0)

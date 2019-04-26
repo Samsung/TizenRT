@@ -94,7 +94,7 @@ g_fiqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
 #endif
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 	.globl	g_assertpc
 	.type	g_assertpc, object
 g_assertpc:
@@ -317,7 +317,7 @@ arm_vectorsvc:
 
 #ifdef CONFIG_BUILD_PROTECTED
 	push	{lr}
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 	ldr		lr, .Lassertpc
 	ldr		r10, [sp]
 	str		r10, [lr]
@@ -455,7 +455,7 @@ arm_vectorsvc:
 .Lsvctmp:
 	.word	g_svctmp
 
-#ifdef CONFIG_FAULT_MGR
+#ifdef CONFIG_BINMGR_RECOVERY
 .Lassertpc:
 	.word	g_assertpc
 #endif
