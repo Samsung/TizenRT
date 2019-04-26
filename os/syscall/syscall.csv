@@ -155,7 +155,7 @@
 "umount", "sys/mount.h", "CONFIG_NFILE_DESCRIPTORS > 0 && !defined(CONFIG_DISABLE_MOUNTPOINT)", "int", "const char*"
 "unlink", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0 && !defined(CONFIG_DISABLE_MOUNTPOINT)", "int", "FAR const char*"
 "unsetenv", "stdlib.h", "!defined(CONFIG_DISABLE_ENVIRON)", "int", "const char*"
-"up_assert", "assert.h", "", "void", "FAR const uint8_t*", "int"
+"up_assert", "assert.h", "", "int", "FAR const uint8_t*", "int"
 #"up_assert","assert.h","","void"
 "vfork", "unistd.h", "defined(CONFIG_ARCH_HAVE_VFORK) && defined(CONFIG_SCHED_WAITPID)", "pid_t"
 "wait", "sys/wait.h", "defined(CONFIG_SCHED_WAITPID) && defined(CONFIG_SCHED_HAVE_PARENT)", "pid_t", "int*"

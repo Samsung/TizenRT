@@ -404,14 +404,16 @@ static void up_dumpstate(void)
  * Name: _up_assert
  ****************************************************************************/
 
-static void _up_assert(int errorcode) noreturn_function;
-static void _up_assert(int errorcode)
+static int _up_assert(int errorcode);
+static int _up_assert(int errorcode)
 {
 #ifdef CONFIG_BINMGR_RECOVERY
 	int ret;
 	mqd_t binmgr_mq;
 	binmgr_request_t request_msg;
 	pid_t pid;
+	struct tcb_s *tcb;
+
 	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
 	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
@@ -440,11 +442,25 @@ static void _up_assert(int errorcode)
 		request_msg.cmd = BINMGR_FAULT;
 		request_msg.pid = getpid();
 
+		if (current_regs) {
+			tcb = sched_self();
+			sched_removereadytorun(tcb);
+			tcb->timeslice = 0;
+			tcb->sched_priority = SCHED_PRIORITY_MIN;
+			sched_addreadytorun(tcb);
+		}
+
 		/* Send a message to fault manager with pid of the faulty task */
 		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 		DEBUGASSERT(ret == 0);
+
+		if (current_regs) {
+			tcb = sched_self();
+			current_regs = tcb->xcp.regs;
+		}
 		mq_close(binmgr_mq);
-		exit(errorcode);
+
+		return OK;
 	}
 #else
 
@@ -491,7 +507,7 @@ void dump_all_stack(void)
  * Name: up_assert
  ****************************************************************************/
 
-void up_assert(const uint8_t *filename, int lineno)
+int up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
@@ -523,4 +539,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);
+
+	return OK;
 }
