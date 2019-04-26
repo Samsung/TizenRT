@@ -313,11 +313,12 @@ wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
 	for (; i < list_size; i++) {
 		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (strcmp(result[0], wifi_test_auth_method[i]) == 0)) {
-			if (strcmp(result[2], "ent") == 0) {
-				return auth_type_table[i + 2];
-			} else {
-				return auth_type_table[i];
+			if (result[2] != NULL) {		
+				if (strcmp(result[2], "ent") == 0) {
+					return auth_type_table[i + 3];
+				}
 			}
+			return auth_type_table[i];
 		}
 	}
 	return WIFI_MANAGER_AUTH_UNKNOWN;
