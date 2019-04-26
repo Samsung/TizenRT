@@ -307,24 +307,35 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 	unsigned char *header;
 	unsigned char tag[2];
 	bool isHeader;
+	int ret;
 
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 		isHeader = false;
-		while (fread(tag, sizeof(unsigned char), 1, fp) > 0) {
-			if (tag[0] == 0xFF) {
+		while (fread(tag, sizeof(unsigned char), 2, fp) == 2) {
+			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
+			if ((tag[0] == 0xFF) && ((tag[1] & 0xF0) == 0xF0)) {
 				isHeader = true;
 				break;
+			} else {
+				/* If isn't the header information, go back 1byte and then check 2bytes again */
+				ret = fseek(fp, -1, SEEK_CUR);
+				if (ret != OK) {
+					meddbg("file seek failed errno : %d\n", errno);
+					free(header);
+					return false;
+				}
 			}
 		}
 		if (isHeader) {
 			header = (unsigned char *)malloc(sizeof(unsigned char) * (MP3_HEADER_LENGTH + 1));
+			
 			if (header == NULL) {
 				meddbg("malloc failed error\n");
 				return false;
 			}
-			int ret;
-			ret = fseek(fp, -1, SEEK_CUR);
+
+			ret = fseek(fp, -2, SEEK_CUR);
 			if (ret != OK) {
 				meddbg("file seek failed errno : %d\n", errno);
 				free(header);
@@ -420,7 +431,8 @@ bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t
 		isHeader = false;
 		headPoint = 0;
 		while (headPoint < bufferSize) {
-			if (buffer[headPoint] == 0xFF) {
+			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
+			if ((buffer[headPoint]) == 0xFF && ((buffer[headPoint + 1] & 0xF0) == 0xF0)) {
 				isHeader = true;
 				break;
 			}

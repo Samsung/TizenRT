@@ -127,33 +127,33 @@ typedef enum {
  * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
-	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
-	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
-	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode               */
-	WIFI_MANAGER_AUTH_WPS,					 /**<  WPS mode                       */
-	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
+	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                                 */
+	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)                  */
+	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                              */
+	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                             */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode            */
+	WIFI_MANAGER_AUTH_WPA_PSK_ENT,             /**<  Enterprise WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,            /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,    /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode                          */
+	WIFI_MANAGER_AUTH_WPS,                     /**<  WPS mode                                  */
+	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                              */
 } wifi_manager_ap_auth_type_e;
 
 /**
  * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
  */
 typedef enum {
-	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
-	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
-	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
-	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_AES_ENT,				 /**<  Enterprise AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP_ENT,				 /**<  Enterprise TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,		 /**<  Enterprise TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
+	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                           */
+	WIFI_MANAGER_CRYPTO_WEP_64,                /**<  WEP encryption wep-40                     */
+	WIFI_MANAGER_CRYPTO_WEP_128,               /**<  WEP encryption wep-104                    */
+	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                            */
+	WIFI_MANAGER_CRYPTO_TKIP,                  /**<  TKIP encryption                           */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,          /**<  TKIP and AES mixed encryption             */
+	WIFI_MANAGER_CRYPTO_AES_ENT,               /**<  Enterprise AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP_ENT,              /**<  Enterprise TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,      /**<  Enterprise TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption                        */
 } wifi_manager_ap_crypto_type_e;
 
 /**

@@ -800,6 +800,38 @@
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define nllldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define nldbg(...)
+#define nllldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define nlllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define nlvdbg(...)
+#define nlllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define sdlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define sddbg(...)
+#define sdlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sdvdbg(...)
+#define sdllvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_BINFMT_ERROR
 #  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
 #else
@@ -1273,6 +1305,38 @@
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg      dbg
+#define nllldbg    lldbg
+#else
+#define nldbg      (void)
+#define nllldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg     vdbg
+#define nlllvdbg   llvdbg
+#else
+#define nlvdbg     (void)
+#define nlllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg      dbg
+#define sdlldbg    lldbg
+#else
+#define sddbg      (void)
+#define sdlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg     vdbg
+#define sdllvdbg   llvdbg
+#else
+#define sdvdbg     (void)
+#define sdllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_ERROR

@@ -26,6 +26,7 @@
 #include "mbedtls/timing.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "mbedtls/see_api.h"

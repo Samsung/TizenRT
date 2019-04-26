@@ -56,10 +56,10 @@
 			attr.mq_curmsgs = 0;                                                      \
 			upper->usermq = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);    \
 			if (upper->usermq == NULL) {                                              \
-				LWNL80211_LOG("Failed to open mq\n");                                 \
+				nldbg("Failed to open mq\n");                                 \
 				ret = -ENOSYS;                                                        \
 			} else {                                                                  \
-				LWNL80211_LOG("Open mq with %s\n", upper->mqname);                    \
+				nldbg("Open mq with %s\n", upper->mqname);                    \
 				ret = OK;                                                             \
 			}                                                                         \
 		}                                                                             \
@@ -203,10 +203,10 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		memcpy(upper->mqname, (char *)(data_in->data), data_in->data_len);
 		upper->usermq = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);
 		if (upper->usermq == NULL) {
-			LWNL80211_LOG("Failed to open mq\n");
+			nldbg("Failed to open mq\n");
 			ret = -ENOSYS;
 		} else {
-			LWNL80211_LOG("Open mq with %s\n", upper->mqname);
+			nldbg("Open mq with %s\n", upper->mqname);
 			ret = OK;
 		}
 	}
@@ -371,7 +371,7 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 	default:
 	{
 		if (lower->ops->drv_ioctl != NULL) {
-			 LWNL80211_LOG("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
+			 nldbg("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
 			 ret = lower->ops->drv_ioctl(cmd, arg);
 		 } else {
 			 ret = -ENOSYS;
