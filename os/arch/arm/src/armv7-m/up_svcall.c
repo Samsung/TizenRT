@@ -92,6 +92,9 @@
 #define svcdbg(...)
 #endif
 
+#ifdef CONFIG_FAULT_MGR
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -180,6 +183,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
+#ifdef CONFIG_FAULT_MGR
+	g_assertpc = regs[REG_R14];
+#endif
 
 #if defined(CONFIG_DEBUG_SYSCALL) || defined(CONFIG_DEBUG_SVCALL)
 #ifndef CONFIG_DEBUG_SVCALL
@@ -223,9 +229,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
-#endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
 #endif
 	}
 	break;
@@ -272,9 +275,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
-#endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 	}

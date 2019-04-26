@@ -88,12 +88,22 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
+#ifdef CONFIG_FAULT_MGR
+#include <fcntl.h>
+#include <mqueue.h>
+#include "fault_manager/fault_manager.h"
+#endif
 #include "irq/irq.h"
 
 #include "up_arch.h"
 #include "up_internal.h"
 #include "mpu.h"
 
+#ifdef CONFIG_FAULT_MGR
+bool abort_mode = false;
+uint32_t assert_pc;
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -397,8 +407,49 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-	/* Are we in an interrupt handler or the idle task? */
+#ifdef CONFIG_FAULT_MGR
+	int ret;
+	mqd_t fault_queue;
+	pid_t pid;
+	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
+	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
+	/* Check if the PC lies within kernel context */
+	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
+
+		/* Reboot the system if fault is in kernel context */
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+		(void)irqsave();
+		for (;;) {
+#ifdef CONFIG_ARCH_LEDS
+			board_autoled_on(LED_PANIC);
+			up_mdelay(250);
+			board_autoled_off(LED_PANIC);
+			up_mdelay(250);
+#endif
+		}
+#endif
+	} else {
+		fault_queue = mq_open(FAULT_MGR_MQ, O_WRONLY, 0666, 0);
+		DEBUGASSERT(fault_queue != (mqd_t)ERROR);
+
+		pid = getpid();
+
+		/* Send a message to fault manager with pid of the faulty task */
+		ret = mq_send(fault_queue, (const char *)&pid, sizeof(pid), 0);
+		DEBUGASSERT(ret == 0);
+
+		ret = mq_close(fault_queue);
+		DEBUGASSERT(ret == 0);
+
+		exit(errorcode);
+	}
+#else
+
+	/* Are we in an interrupt handler or the idle task? */
 	if (current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
@@ -412,6 +463,7 @@ static void _up_assert(int errorcode)
 	} else {
 		exit(errorcode);
 	}
+#endif
 }
 
 /****************************************************************************
@@ -444,14 +496,31 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_FAULT_MGR)
+	abort_mode = true;
+#endif
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
+#ifdef CONFIG_FAULT_MGR
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_R14];
+	} else {
+		assert_pc = (uint32_t)g_assertpc;
+	}
+#endif
+
+#ifndef CONFIG_FAULT_MGR
 	up_dumpstate();
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#endif
+
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_FAULT_MGR)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);

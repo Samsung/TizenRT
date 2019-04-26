@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MESSAGING_SAMPLE
+	bool "Messaging Framework sample"
+	default n
+	depends on MESSAGING_IPC
+	---help---
+		Enable the Messaging Framework sample
+
+if EXAMPLES_MESSAGING_SAMPLE
+config EXAMPLES_MESSAGING_SAMPLE_LOOPS
+	int "Loop count for running sample"
+	default 1
+	---help---
+		Used to control the number of executions of the sample. If undefined, the test
+		executes one time.
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "messaging_main" if ENTRY_MESSAGING_SAMPLE

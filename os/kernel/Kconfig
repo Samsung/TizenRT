@@ -885,6 +885,15 @@ config SIG_SIGEL_EVENT
 		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
 		Default: 24
 
+config SIG_MESSAGING_UNICAST
+	int "MESSAGE RECV SIGNAL"
+	default 25
+	depends on MESSAGING_IPC
+	---help---
+		SIG_MESSAGING_UNICAST is a non-standard signal used to notify to message receiver.
+		This setting specifies the signal number that will be used for SIG_MESSAGING_UNICAST.
+		Default: 25
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"
@@ -1079,6 +1088,26 @@ config SCHED_LPWORKSTACKSIZE
 
 endif # SCHED_LPWORK
 endmenu # Work Queue Support
+
+menu "fault Manager"
+config FAULT_MGR
+	bool "Enable Fault Manager"
+	default n
+	depends on APP_BINARY_SEPARATION
+	---help---
+		This interface is used to manage any fault occurs in a system.
+		It will either restart app or reboot the system according to
+		the configuration.
+
+if FAULT_MGR
+config DEBUG_FAULT_MGR
+	bool "Enable Debug logs of Fault Manager"
+	default n
+	depends on DEBUG
+	---help---
+		Enables debug logs for Fault Manager interface.
+endif
+endmenu
 
 menu "Stack size information"
 
