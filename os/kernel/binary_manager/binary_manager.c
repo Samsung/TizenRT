@@ -49,6 +49,7 @@
 binmgr_bininfo_t bin_table[BINARY_COUNT];
 int g_bin_count;
 int g_loadparam_part;
+mqd_t g_binmgr_mq_fd;
 
 /****************************************************************************
  * Public Functions
@@ -118,7 +119,6 @@ int binary_manager(int argc, char *argv[])
 	sigset_t sigset;
 	loading_data_t loading_data;
 	binmgr_request_t request_msg;
-	mqd_t binmgr_mq_fd;
 
 	struct mq_attr attr;
 	attr.mq_maxmsg = BINMGR_MAX_MSG;
@@ -133,8 +133,8 @@ int binary_manager(int argc, char *argv[])
 	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
 
 	/* Create binary manager message queue */
-	binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDONLY | O_CREAT, 0666, &attr);
-	if (binmgr_mq_fd < 0) {		
+	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
+	if (g_binmgr_mq_fd < 0) {
 		bmdbg("Failed to open message queue\n");
 		return 0;
 	}
@@ -152,7 +152,7 @@ int binary_manager(int argc, char *argv[])
 		ret = ERROR;
 		bmvdbg("Wait for message\n");
 
-		nbytes = mq_receive(binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
+		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
 		if (nbytes <= 0) {
 			bmdbg("receive ERROR %d, errno %d, retry!\n", nbytes, errno);
 			continue;
@@ -189,7 +189,7 @@ int binary_manager(int argc, char *argv[])
 binary_manager_exit:
 	bmvdbg("Recovery Manager EXITED\n");
 
-	mq_close(binmgr_mq_fd);
+	mq_close(g_binmgr_mq_fd);
 	mq_unlink(BINMGR_REQUEST_MQ);
 
 	return 0;
