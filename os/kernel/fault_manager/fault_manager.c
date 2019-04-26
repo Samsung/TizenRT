@@ -43,8 +43,9 @@
  * Global Data
  ****************************************************************************/
 
-/* This structure is used to store the mapping between binary id and binary path
- * Its value is filled at time of registering the binary with fault manager
+/* This structure is used to store the mapping between binary id, binary path
+ * and binary size. Its value is filled at time of registering the binary with
+ * fault manager
  */
 fm_binary_table_t reg_table[CONFIG_NUM_BINARIES];
 
@@ -58,18 +59,20 @@ fm_binary_table_t reg_table[CONFIG_NUM_BINARIES];
  * Input parameters:
  *   pid    - The pid of the binary to be registered
  *   result - Binary path to be registered with the fault manager
+ *   bin_size - Binary size to be registered with the fault manager
  *
  * Returned Value:
  *   Zero (OK) on success; otherwise a -1 (ERROR) value is returned.
  *
  ****************************************************************************/
-int fm_register_binary(pid_t pid, const char *path)
+int fm_register_binary(pid_t pid, const char *path, int bin_size)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NUM_BINARIES; i++) {
 		if (!(strncmp(reg_table[i].bin_path, path, strnlen(path, PATH_LEN) + 1))) {
 			reg_table[i].binid = pid;
+			reg_table[i].bin_size = bin_size;
 			return OK;
 		}
 	}
@@ -78,6 +81,7 @@ int fm_register_binary(pid_t pid, const char *path)
 		if (reg_table[i].binid == -1) {
 			reg_table[i].binid = pid;
 			strncpy(reg_table[i].bin_path, path, strnlen(path, PATH_LEN) + 1);
+			reg_table[i].bin_size = bin_size;
 			return OK;
 		}
 	}
@@ -111,6 +115,7 @@ int fm_deregister_binary(pid_t pid)
 		if (reg_table[i].binid == pid) {
 			reg_table[i].binid = -1;
 			reg_table[i].bin_path[0] = '\0';
+			reg_table[i].bin_size = -1;
 			return OK;
 		}
 	}
@@ -138,9 +143,9 @@ void fm_printbinarytable(void)
 	int i;
 
 	lldbg("-------------------------------------\n");
-	lldbg("BIN_ID	BIN_PATH\n");
+	lldbg("BIN_ID	BIN_PATH   BIN_SIZE\n");
 	for (i = 0; i < CONFIG_NUM_BINARIES; i++) {
-		lldbg("%d\t%s\n", reg_table[i].binid, reg_table[i].bin_path);
+		lldbg("%d\t%s\t%d\n", reg_table[i].binid, reg_table[i].bin_path, reg_table[i].bin_size);
 	}
 	lldbg("-------------------------------------\n");
 
@@ -224,11 +229,13 @@ int fault_manager(int argc, char *argv[])
 	pid_t bin_id;
 	struct mq_attr attr;
 	char restart_bin[PATH_LEN] = " ";
+	int restart_binsize = -1;
 
 	/* Initialize the binary table with default value */
 	for (i = 0; i < CONFIG_NUM_BINARIES; i++) {
 		reg_table[i].binid = -1;
 		reg_table[i].bin_path[0] = '\0';
+		reg_table[i].bin_size = -1;
 	}
 
 	attr.mq_maxmsg = MAX_MSG;
@@ -261,6 +268,7 @@ int fault_manager(int argc, char *argv[])
 		/* Check if the binary is registered with fault manager */
 		if (index >= 0 && index < CONFIG_NUM_BINARIES) {
 			strncpy(restart_bin, reg_table[index].bin_path, strnlen(reg_table[index].bin_path, PATH_LEN) + 1);
+			restart_binsize = reg_table[index].bin_size;
 
 			/* Kill the binary and all its child processes */
 			ret = kill_binary(bin_id);
@@ -274,9 +282,11 @@ int fault_manager(int argc, char *argv[])
 			sleep(1);
 
 			/* Restart the killed binary */
-			pid_restart = exec(restart_bin, NULL, NULL, 0);
+			pid_restart = load_binary(restart_bin, restart_binsize, 0, 20 * 1024);
 			DEBUGASSERT(pid_restart > 0);
+
 		} else {
+
 			fmlldbg("Binary is not registered.\n");
 
 			/* Reboot the board if the binary is not registered with the fault manager */
