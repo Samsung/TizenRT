@@ -76,6 +76,11 @@
 #include "esp32_adc.h"
 #include <tinyara/analog/adc.h>
 #endif
+#ifdef CONFIG_SPIRAM_SUPPORT
+extern void esp_spiram_init_cache();
+extern int esp_spiram_init();
+#endif
+
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -128,6 +133,11 @@ void esp32_devKit_mount_partions(void)
 
 void esp32_board_initialize(void)
 {
+	/*Init SPI RAM*/
+#ifdef CONFIG_SPIRAM_SUPPORT
+	esp_spiram_init_cache();
+	esp_spiram_init();
+#endif
 }
 
 static void board_gpio_initialize(void)
@@ -232,18 +242,6 @@ void board_initialize(void)
 
 #if defined(CONFIG_ADC)
 	board_adc_initialize();
-#endif
-
-	/*Init SPI RAM*/
-#ifdef CONFIG_SPIRAM_SUPPORT
-	esp_spiram_init_cache();
-	esp_spiram_init();
-#endif
-
-//memory management of tizenrt
-#if CONFIG_MM_REGIONS > 1
-/*addregion after spiram init, to replace common up_addregion in os_start*/
-	xtensa_up_addregion();
 #endif
 
 }
