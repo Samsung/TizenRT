@@ -144,7 +144,7 @@ int messaging_send(const char *port_name, msg_send_data_t *send_data);
  * @param[in] reply_data\n
  *		  msg      : The message to be sent\n
  *		  msglen   : The length of message to be sent\n
- * 		  priority : For replying, priority is set to default.
+ *		  priority : For replying, priority is set to default.
  * @return On success, OK is returned. On failure, ERROR is returned.
  * @since TizenRT v3.0
  */

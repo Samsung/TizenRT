@@ -147,7 +147,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	uint32_t size = 0;
 	struct tcb_s *tcb;
 
-	if(mm_allocate_ram_partition(&start_addr, &size) < 0) {
+	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		errcode = ENOMEM;
 		goto errout;
