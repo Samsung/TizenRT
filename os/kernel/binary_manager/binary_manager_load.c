@@ -24,6 +24,8 @@
 #include <debug.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <crc32.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
 
@@ -55,6 +57,42 @@ typedef struct binary_header_s binary_header_t;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static int binary_manager_verify_checksum(int fd, int file_size, uint32_t crc_hash)
+{
+	int read_size;
+	uint32_t check_crc = 0;
+	uint8_t crc_buffer[CRC_BUFFER_SIZE];
+
+	if (lseek(fd, CHECKSUM_SIZE, 0) < 0) {
+		bmdbg("Failed to lseek : errno %d\n", errno);
+		return ERROR;
+	}
+
+	while (file_size > 0) {
+		if (file_size > CRC_BUFFER_SIZE) {
+			read_size = read(fd, (FAR uint8_t *)crc_buffer, CRC_BUFFER_SIZE);
+		} else {
+			read_size = read(fd, (FAR uint8_t *)crc_buffer, file_size);
+		}
+
+		if (read_size == ERROR) {
+			bmdbg("Failed to read : %d, errno %d\n", read_size, errno);
+			return ERROR;
+		}
+
+		check_crc = crc32part(crc_buffer, read_size, check_crc);
+		file_size -= read_size;
+	}
+
+	if (check_crc != crc_hash) {
+		bmdbg("Failed to crc check : %u != %u\n", check_crc, crc_hash);
+		return ERROR;
+	}
+
+	return OK;
+}
+
 static int binary_manager_verify_header(binary_header_t *header_data)
 {
 	if (header_data == NULL) {
@@ -80,7 +118,9 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 {
 	int fd;
 	int ret;
+	int file_size;
 	char devname[BINMGR_DEVNAME_LEN];
+	uint32_t crc_hash = 0;
 
 	memset(header_data, 0, sizeof(binary_header_t));
 
@@ -91,17 +131,38 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 		return ERROR;
 	}
 
+	/* Read the checksum */
+	ret = read(fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
+	if (ret != CHECKSUM_SIZE) {
+		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
+		close(fd);
+		return ERROR;
+	}
+
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
-	close(fd);
-
 	if (ret != sizeof(binary_header_t)) {
 		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
+		close(fd);
 		return ERROR;
 	}
 
 	/* Verify header data */
-	return binary_manager_verify_header(header_data);
+	if (binary_manager_verify_header(header_data) == ERROR) {
+		close(fd);
+		return ERROR;
+	}
+
+	file_size = header_data->header_size + header_data->bin_size;
+
+	if (binary_manager_verify_checksum(fd, file_size, crc_hash) == ERROR) {
+		close(fd);
+		return ERROR;
+	}
+
+	close(fd);
+
+	return OK;
 }
 
 /* Read binary header and update binary table */
@@ -140,7 +201,7 @@ static int binary_manager_load_bininfo(int bin_idx)
 	BIN_USEIDX(bin_idx) = latest_idx;
 	BIN_SIZE(bin_idx) = header_data[latest_idx].bin_size;
 	BIN_RAMSIZE(bin_idx) = header_data[latest_idx].ram_size;
-	BIN_OFFSET(bin_idx) = header_data[latest_idx].header_size;
+	BIN_OFFSET(bin_idx) = CHECKSUM_SIZE + header_data[latest_idx].header_size;
 	strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
 	strncpy(BIN_KERNEL_VER(bin_idx), header_data[latest_idx].kernel_ver, KERNEL_VER_MAX);
 	strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);

@@ -115,6 +115,7 @@ install:
 	$(Q) mkdir -p $(USER_BIN_DIR)
 	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE)
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
 verify:
 ifneq ($(BIN_CHECK),0)
