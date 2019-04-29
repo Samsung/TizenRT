@@ -104,23 +104,6 @@ extern "C" {
 #define kumm_trysemaphore(a)      umm_trysemaphore(a)
 #define kumm_givesemaphore(a)     umm_givesemaphore(a)
 
-#ifdef CONFIG_BUILD_PROTECTED
-/* In the kernel-phase of the protected build, the these macros are defined
- * in userspace.h.  These macros version call into user-space via a header
- * at the beginning of the user-space blob.
- */
-
-#define kumm_malloc(s)         umm_malloc(s)
-#define kumm_zalloc(s)         umm_zalloc(s)
-#define kumm_realloc(p, s)     umm_realloc(p, s)
-#define kumm_memalign(a, s)    umm_memalign(a, s)
-#define kumm_free(p)           umm_free(p)
-#define kumm_mallinfo()        umm_mallinfo()
-#else
-/* In the flat build (CONFIG_BUILD_FLAT) and in the kernel build
- * (CONFIG_BUILD_KERNEL), the following are declared in stdlib.h and are
- * directly callable.
- */
 #ifdef CONFIG_KMM_FORCE_ALLOC_AT
 #define kumm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
 #define kumm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
@@ -133,8 +116,6 @@ extern "C" {
 #define kumm_memalign(a, s)     memalign(a, s)
 #define kumm_free(p)            free(p)
 #define kumm_mallinfo()         mallinfo()
-
-#endif
 
 /* This family of allocators is used to manage kernel protected memory */
 
