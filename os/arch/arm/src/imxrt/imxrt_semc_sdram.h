@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/imxrt1050-evk/src/imxrt_boot.c
+ * os/arch/arm/src/imxrt/imxrt_semc_dram.h
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+ *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name TinyARA nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -50,61 +50,36 @@
  *
  ****************************************************************************/
 
+#ifndef __ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H
+#define __ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/sdio.h>
 
-#include <tinyara/board.h>
-#include <arch/board/board.h>
-
-#include "imxrt_start.h"
-#include "imxrt1050-evk.h"
-#include "imxrt_flash.h"
-#include "imxrt_semc_sdram.h"
+#include "chip.h"
 
 /****************************************************************************
- * Name: imxrt_boardinitialize
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: imxrt_semc_sdram_init
  *
  * Description:
- *   All i.MX RT architectures must provide the following entry point.  This
- *   entry point is called early in the initialization -- after clocking and
- *   memory have been configured but before caches have been enabled and
- *   before any devices have been initialized.
+ *   Initialize SEMC for operation.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None
  *
  ****************************************************************************/
 
-void imxrt_boardinitialize(void)
-{
-	/* Configure on-board LEDs if LED support has been selected. */
+FAR void imxrt_semc_sdram_init(void);
 
-#ifdef CONFIG_ARCH_LEDS
-	imxrt_autoled_initialize();
-#endif
-
-	imxrt_semc_sdram_init();
-	imxrt_flash_init();
-}
-
-/****************************************************************************
- * Name: board_initialize
- *
- * Description:
- *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
- *   initialization call will be performed in the boot-up sequence to a
- *   function called board_initialize().  board_initialize() will be
- *   called immediately after up_intitialize() is called and just before the
- *   initial application is started.  This additional initialization phase
- *   may be used, for example, to initialize board-specific device drivers.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BOARD_INITIALIZE
-void board_initialize(void)
-{
-	/* Perform board initialization */
-
-	(void)imxrt_bringup();
-}
-#endif							/* CONFIG_BOARD_INITIALIZE */
+#endif /*__ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H */
