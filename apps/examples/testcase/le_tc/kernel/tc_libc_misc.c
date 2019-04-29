@@ -44,9 +44,9 @@
 #define VAL_213 213
 #define VAL_255 255
 #define VAL_65380 65380
-#define VAL_CRC32_1 1256170817UL
-#define VAL_CRC32_2 3369554304UL
-#define VAL_CRC32_3 1742555852UL
+#define VAL_CRC32_1 2564639436UL
+#define VAL_CRC32_2 450215437UL
+#define VAL_CRC32_3 3051332929UL
 
 /**
  * @fn                  :tc_libc_misc_crc8
@@ -257,6 +257,7 @@ static void tc_libc_misc_dbg(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_BUILD_PROTECTED
 /**
  * @fn                  :tc_libc_misc_lldbg
  * @brief               :Identical to [a-z]dbg() except this is uses special interfaces provided by architecture-specific logic to \n
@@ -317,6 +318,7 @@ static void tc_libc_misc_llvdbg(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
  * @fn                  :tc_libc_misc_vdbg
@@ -435,16 +437,16 @@ int libc_misc_main(void)
 #ifdef CONFIG_DEBUG_ERROR
 	tc_libc_misc_dbg();
 	tc_libc_misc_lib_dumpbuffer();
+#ifndef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_ARCH_LOWPUTC
 	tc_libc_misc_lldbg();
+	tc_libc_misc_llvdbg();
 #endif
+#endif /* CONFIG_BUILD_PROTECTED */
 #endif
 
 #ifdef CONFIG_DEBUG_VERBOSE
 	tc_libc_misc_vdbg();
-#ifdef CONFIG_ARCH_LOWPUTC
-	tc_libc_misc_llvdbg();
-#endif
 #endif
 #endif /* CONFIG_DEBUG */
 	tc_libc_misc_match();
