@@ -75,7 +75,9 @@ ifeq ($(CONFIG_SYSTEM_CMDS),y)
 CSRCS += systemcmd.c
 
 ifeq ($(CONFIG_FS_CMDS),y)
+ifneq ($(CONFIG_BUILD_PROTECTED), y)
 CSRCS += fscmd.c
+endif
 endif
 
 ifeq ($(CONFIG_NET_CMDS),y)
