@@ -62,6 +62,7 @@
 #include "imxrt_start.h"
 #include "imxrt1020-evk.h"
 #include "imxrt_flash.h"
+#include "imxrt_semc_sdram.h"
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -82,6 +83,7 @@ void imxrt_boardinitialize(void)
 	imxrt_autoled_initialize();
 #endif
 
+	imxrt_semc_sdram_init();
 	imxrt_flash_init();
 }
 
