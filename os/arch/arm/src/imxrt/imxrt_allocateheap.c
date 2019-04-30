@@ -343,8 +343,16 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	*heap_start = CONFIG_IMXRT_SDRAM_START;
+	*heap_size = CONFIG_MM_KERNEL_HEAPSIZE;
+
+	DEBUGASSERT(*heap_start != 0);
+	DEBUGASSERT(*heap_size != 0);
+#else
 	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
 	*heap_size = (uint32_t)((uintptr_t)__usram_segment_start__) - (uint32_t)(*heap_start);
+#endif
 }
 #endif
 
