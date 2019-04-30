@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include "cache.h"
