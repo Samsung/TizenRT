@@ -67,9 +67,10 @@ FLASH_IMG=${BIN_PATH}/tinyara_flash.bin
 # Set the flash partition sizes. This value needs to be modified whenever
 # there is a change in flash partition size in the project.
 
-let OS_PART=256*1024
+let OS_PART=128*1024
 let USER_PART=128*1024
-let APP_PART=128*1024
+let APP1_PART=128*1024
+let APP2_PART=256*1024
 
 # Fetch the binary file sizes
 
@@ -85,10 +86,10 @@ APP2_SIZE2=$(stat -c%s "$APP2_IMG2")
 
 let kern_padding="$OS_PART - $KERN_SIZE"
 let user_padding="$USER_PART - $USER_SIZE"
-let app1_padding1="$APP_PART - $APP1_SIZE1"
-let app1_padding2="$APP_PART - $APP1_SIZE2"
-let app2_padding1="$APP_PART - $APP2_SIZE1"
-let app2_padding2="$APP_PART - $APP2_SIZE2"
+let app1_padding1="$APP1_PART - $APP1_SIZE1"
+let app1_padding2="$APP1_PART - $APP1_SIZE2"
+let app2_padding1="$APP2_PART - $APP2_SIZE1"
+let app2_padding2="$APP2_PART - $APP2_SIZE2"
 
 # Create a temporary flash img file by concatenation of all binaries and padding
 

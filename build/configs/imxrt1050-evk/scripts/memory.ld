@@ -87,8 +87,8 @@ MEMORY
 {
   /* 64Mb of HyperFLASH */
 
-  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 256K
-  uflash (rx)  : ORIGIN = 0x60040000, LENGTH = 256K
+  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 128K
+  uflash (rx)  : ORIGIN = 0x60020000, LENGTH = 256K
   flash  (rx)  : ORIGIN = 0x60400000, LENGTH = 62M
 
   /* 512Kb of OCRAM */

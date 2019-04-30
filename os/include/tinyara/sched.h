@@ -79,6 +79,12 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
+#ifdef CONFIG_ARMV7M_MPU
+#define REG_RNR		0
+#define REG_RBAR	1
+#define REG_RASR	2
+#define MPU_REGS	3
+#endif
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
 
@@ -597,6 +603,10 @@ struct tcb_s {
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t ram_start;		/* Start address of RAM partition for this app */
 	uint32_t ram_size;		/* Size of RAM partition for this app */
+
+#ifdef CONFIG_ARMV7M_MPU
+	uint32_t mpu_regs[MPU_REGS];
+#endif
 #endif
 
 #if CONFIG_TASK_NAME_SIZE > 0

@@ -37,6 +37,11 @@
 
 #ifndef CONFIG_BINFMT_DISABLE
 
+#ifdef CONFIG_ARMV7M_MPU
+extern uint32_t g_app_mpu_region;
+extern void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs);
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -139,6 +144,12 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	*(uint32_t *)(bin->alloc[0]) = (uint32_t)start_addr;
 	tcb = (struct tcb_s *)sched_self();
 	tcb->ram_start = (uint32_t)start_addr;
+
+	/* Initialize the MPU registers in tcb with suitable protection values */
+#ifdef CONFIG_ARMV7M_MPU
+	mpu_user_intsram_context(g_app_mpu_region, start_addr, size, tcb->mpu_regs);
+#endif
+
 #endif
 #ifdef CONFIG_BINARY_MANAGER
 	/* Temp code*/
