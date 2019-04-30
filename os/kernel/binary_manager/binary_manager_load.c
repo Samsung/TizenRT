@@ -39,8 +39,6 @@
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
-#define BINMGR_DEVNAME_FMT "/dev/mtdblock%d"
-#define BINMGR_DEVNAME_LEN 16
 
 struct binary_header_s {
 	uint16_t header_size;

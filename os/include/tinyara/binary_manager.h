@@ -31,7 +31,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 #define BINMGR_REQUEST_MQ               "bin_req_mq"
-#define BINMGR_RESPONSE_MQ              "bin_res_mq"
+#define BINMGR_RESPONSE_MQ_PREFIX       "bin_res_mq"
 
 /* Maximum number of messages on queue */
 #define BINMGR_MAX_MSG                   32
@@ -45,6 +45,12 @@
 
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
+
+/* The maximum length of version name */
+#define BIN_VERSION_MAX                  16
+
+/* The length of dev name */
+#define BINMGR_DEVNAME_LEN               16
 
 /* Default priority of task loaded by binary manager */
 #define BINMGR_LOAD_PRIORITY_DEFAULT     150
@@ -67,22 +73,33 @@ enum binmgr_request_msg_type {
 #endif
 };
 
+/* Response message type for binary manager */
+enum binmgr_response_msg_type {
+	BINMGR_RESPONSE_DONE,
+	BINMGR_RESPONSE_CONTINUE,
+	BINMGR_RESPONSE_INVALID,
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 struct binmgr_request_s {
 	int cmd;
 	int pid;
-	char data[BIN_NAME_MAX];
-	char res_qname[BIN_PRIVMQ_LEN];
+	char b_name[BIN_NAME_MAX];
+	char q_name[BIN_PRIVMQ_LEN];
 };
 typedef struct binmgr_request_s binmgr_request_t;
 
 struct binmgr_response_s {
 	int cmd;
-	char data[BIN_NAME_MAX];
+	int part_size;
+	char name[BIN_NAME_MAX];
+	char dev_path[BINMGR_DEVNAME_LEN];
+	char version[BIN_VERSION_MAX];
 };
 typedef struct binmgr_response_s binmgr_response_t;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

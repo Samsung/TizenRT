@@ -64,6 +64,8 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
+#define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
+
 /* Loading thread cmd types */
 enum loading_thread_cmd {
 	LOADCMD_LOAD_ALL = 0,
@@ -128,11 +130,11 @@ void binary_manager_recovery(int pid);
 #endif
 
 int binary_manager_load_binary(int bin_idx);
-int binary_manager_loading(int type, void *data);
+int binary_manager_loading(int type, void *b_name);
 int binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
-int binary_manager_get_info_with_name(char *bin_name);
-int binary_manager_get_info_all(void);
+int binary_manager_get_info_with_name(char *b_name, char *q_name);
+int binary_manager_get_info_all(char *q_name);
 
 /****************************************************************************
  * Binary Manager Main Thread

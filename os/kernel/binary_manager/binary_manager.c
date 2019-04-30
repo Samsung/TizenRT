@@ -155,13 +155,13 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		case BINMGR_GET_INFO:
-			ret = binary_manager_get_info_with_name(request_msg.data);
+			ret = binary_manager_get_info_with_name(request_msg.b_name, request_msg.q_name);
 			break;
 		case BINMGR_GET_INFO_ALL:
-			ret = binary_manager_get_info_all();
+			ret = binary_manager_get_info_all(request_msg.q_name);
 			break;
 		case BINMGR_RELOAD:
-			ret = binary_manager_loading(LOADCMD_RELOAD, request_msg.data);
+			ret = binary_manager_loading(LOADCMD_RELOAD, request_msg.b_name);
 			break;
 
 		default:
