@@ -69,6 +69,23 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+/* USB PHY condfiguration */
+#define BOARD_USB_PHY_D_CAL (0x0CU)
+#define BOARD_USB_PHY_TXCAL45DP (0x06U)
+#define BOARD_USB_PHY_TXCAL45DM (0x06U)
+
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#define IMXRT_USBPHY_BASE USBPHY_BASE
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#define IMXRT_USBPHY_BASE USBPHY1_BASE
+#endif            
+
+typedef struct _usb_phy_config_struct {
+	uint8_t D_CAL;				/* Decode to trim the nominal 17.78mA current source */
+	uint8_t TXCAL45DP;			/* Decode to trim the nominal 45-Ohm series termination resistance to the USB_DP output pin */
+	uint8_t TXCAL45DM;			/* Decode to trim the nominal 45-Ohm series termination resistance to the USB_DM output pin */
+} usb_phy_config_struct_t;
+
 /*******************************************************************************
  * Variables for BOARD_BootClockRUN configuration
  ******************************************************************************/
@@ -91,6 +108,61 @@ const clock_usb_pll_config_t usb1PllConfig_BOARD_BootClockRUN = {
 	.loopDivider = 0, /* PLL loop divider, Fout = Fin * 20 */
 	.src = 0,         /* Bypass clock source, 0 - OSC 24M, 1 - CLK1_P and CLK1_N */
 };
+
+const usb_phy_config_struct_t PhyConfig = {
+	BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
+};
+
+/****************************************************************************
+ * Function: imxrt_edma_getinstance
+ *
+ * Description:
+ *   brief ehci phy initialization.
+ *
+ *   This function initialize ehci phy IP.
+ *
+ * Input Parameters:
+ *   freq   the external input clock.
+ *          for example: if the external input clock is 16M, the parameter freq should be 16000000.
+ *
+ * Returned Value:
+ *   Returns kStatus_USB_Success      cancel successfully.
+ *   Returns kStatus_USB_Error        the freq value is incorrect.
+ *
+ ****************************************************************************/
+uint32_t imxrt_usb_ehciphyinit(uint32_t freq, usb_phy_config_struct_t *phyConfig)
+{
+#if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
+
+#if ((defined FSL_FEATURE_SOC_ANATOP_COUNT) && (FSL_FEATURE_SOC_ANATOP_COUNT > 0U))
+	ANATOP->HW_ANADIG_REG_3P0.RW = (ANATOP->HW_ANADIG_REG_3P0.RW & (~(ANATOP_HW_ANADIG_REG_3P0_OUTPUT_TRG(0x1F) | ANATOP_HW_ANADIG_REG_3P0_ENABLE_ILIMIT_MASK))) | ANATOP_HW_ANADIG_REG_3P0_OUTPUT_TRG(0x17) | ANATOP_HW_ANADIG_REG_3P0_ENABLE_LINREG_MASK;
+	ANATOP->HW_ANADIG_USB2_CHRG_DETECT.SET = ANATOP_HW_ANADIG_USB2_CHRG_DETECT_CHK_CHRG_B_MASK | ANATOP_HW_ANADIG_USB2_CHRG_DETECT_EN_B_MASK;
+#endif
+
+#if (defined USB_ANALOG)
+	USB_ANALOG->INSTANCE[controllerId - kUSB_ControllerEhci0].CHRG_DETECT_SET = USB_ANALOG_CHRG_DETECT_CHK_CHRG_B(1) | USB_ANALOG_CHRG_DETECT_EN_B(1);
+#endif
+
+#if ((!(defined FSL_FEATURE_SOC_CCM_ANALOG_COUNT)) && (!(defined FSL_FEATURE_SOC_ANATOP_COUNT)))
+
+	IMXRT_USBPHY_BASE->TRIM_OVERRIDE_EN = 0x001fU;	/* override IFR value */
+#endif
+	IMXRT_USBPHY_BASE->CTRL |= USBPHY_CTRL_SET_ENUTMILEVEL2_MASK;	/* support LS device. */
+	IMXRT_USBPHY_BASE->CTRL |= USBPHY_CTRL_SET_ENUTMILEVEL3_MASK;	/* support external FS Hub with LS device connected. */
+	/* PWD register provides overall control of the PHY power state */
+	IMXRT_USBPHY_BASE->PWD = 0U;
+	if ((kUSB_ControllerIp3516Hs0 == controllerId) || (kUSB_ControllerIp3516Hs1 == controllerId) || (kUSB_ControllerLpcIp3511Hs0 == controllerId) || (kUSB_ControllerLpcIp3511Hs0 == controllerId)) {
+		IMXRT_USBPHY_BASE->CTRL_SET = USBPHY_CTRL_SET_ENAUTOCLR_CLKGATE_MASK;
+		IMXRT_USBPHY_BASE->CTRL_SET = USBPHY_CTRL_SET_ENAUTOCLR_PHY_PWD_MASK;
+	}
+	if (NULL != phyConfig) {
+		/* Decode to trim the nominal 17.78mA current source for the High Speed TX drivers on USB_DP and USB_DM. */
+		IMXRT_USBPHY_BASE->TX = ((IMXRT_USBPHY_BASE->TX & (~(USBPHY_TX_D_CAL_MASK | USBPHY_TX_TXCAL45DM_MASK | USBPHY_TX_TXCAL45DP_MASK))) | (USBPHY_TX_D_CAL(phyConfig->D_CAL) | USBPHY_TX_TXCAL45DP(phyConfig->TXCAL45DP) | USBPHY_TX_TXCAL45DM(phyConfig->TXCAL45DM)));
+	}
+#endif
+
+	return 0;
+}
 
 /****************************************************************************
  * Public Functions
@@ -217,6 +289,12 @@ void imxrt_clockconfig(void)
 	imxrt_clock_setdiv(kCLOCK_PeriphClk2Div, 0x0);
 	/* Set periph clock2 clock source. */
 	imxrt_clock_setmux(kCLOCK_PeriphClk2Mux, 0x0);
+
+#ifdef HAVE_USBHOST
+	imxrt_clock_enableusbhs0phypllclock(kCLOCK_Usbphy480M, 480000000U);
+	imxrt_clock_enableusbhs0clock(kCLOCK_Usb480M, 480000000U);
+	imxrt_usb_ehciphyinit(24000000U, &PhyConfig);
+#endif
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 	/* Init RTC OSC clock frequency. */
 	imxrt_clock_setrtcxtalfreq(32768U);
@@ -492,6 +570,12 @@ void imxrt_clockconfig(void)
 	imxrt_clock_setdiv(kCLOCK_PeriphClk2Div, 0);
 	/* Set periph clock2 clock source. */
 	imxrt_clock_setmux(kCLOCK_PeriphClk2Mux, 0);
+
+#ifdef HAVE_USBHOST
+	imxrt_clock_enableusbhs0phypllclock(kCLOCK_Usbphy480M, 480000000U);
+	imxrt_clock_enableusbhs0clock(kCLOCK_Usb480M, 480000000U);
+	imxrt_usb_ehciphyinit(24000000U, &PhyConfig);
+#endif
 #else
 	uint32_t reg;
 

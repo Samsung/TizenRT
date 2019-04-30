@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * os/arch/arm/src/imxrt/chip.h
+ * arch/arm/src/imxrt/imxrt_ehci.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2012, 2015 Gregory Nutt. All rights reserved.
+ *   Authors: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,36 +50,15 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_CHIP_H
-#define __ARCH_ARM_SRC_IMXRT_CHIP_H
+#ifndef __ARCH_ARM_SRC_IMXRT_EHCI_H
+#define __ARCH_ARM_SRC_IMXRT_EHCI_H
 
 /************************************************************************************
  * Included Files
  ************************************************************************************/
 
 #include <tinyara/config.h>
-
-/* Include the memory map and the chip definitions file.  Other chip hardware files
- * should then include this file for the proper setup.
- */
-
-#include <arch/irq.h>
-#include <arch/imxrt/chip.h>
-#include "chip/imxrt_memorymap.h"
-
-/* If the common ARMv7-M vector handling logic is used, then it expects the following
- * definition in this file that provides the number of supported vectors external
- * interrupts.
- */
-
-#define ARMV7M_PERIPHERAL_INTERRUPTS IMXRT_IRQ_NEXTINT
-
-/* Cache line sizes (in bytes)for the i.MX RT */
-
-#define ARMV7M_DCACHE_LINESIZE 32	/* 32 bytes (8 words) */
-#define ARMV7M_ICACHE_LINESIZE 32	/* 32 bytes (8 words) */
-
-#define HAVE_USBHOST    1
+#include "chip.h"
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -89,12 +68,58 @@
  * Public Types
  ************************************************************************************/
 
+#ifndef __ASSEMBLY__
+
 /************************************************************************************
  * Public Data
  ************************************************************************************/
 
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 /************************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ************************************************************************************/
 
-#endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_H */
+/************************************************************************************
+ * Name: lpc31_ehci_initialize
+ *
+ * Description:
+ *   Initialize USB EHCI host controller hardware.
+ *
+ * Input Parameters:
+ *   controller -- If the device supports more than one EHCI interface, then
+ *     this identifies which controller is being initializeed.  Normally, this
+ *     is just zero.
+ *
+ * Returned Value:
+ *   And instance of the USB host interface.  The controlling task should
+ *   use this interface to (1) call the wait() method to wait for a device
+ *   to be connected, and (2) call the enumerate() method to bind the device
+ *   to a class driver.
+ *
+ * Assumptions:
+ * - This function should called in the initialization sequence in order
+ *   to initialize the USB device functionality.
+ * - Class drivers should be initialized prior to calling this function.
+ *   Otherwise, there is a race condition if the device is already connected.
+ *
+ ************************************************************************************/
+
+#if defined(CONFIG_IMXRT_USBOTG) && defined(CONFIG_USBHOST)
+struct usbhost_connection_s;
+FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller);
+#endif
+
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif							/* __ASSEMBLY__ */
+#endif							/* __ARCH_ARM_SRC_IMXRT_EHCI_H */

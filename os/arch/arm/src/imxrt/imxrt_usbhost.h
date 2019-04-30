@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * os/arch/arm/src/imxrt/chip.h
+ * arch/arm/src/imxrt/imxrt_usbhost.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,36 +50,14 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_CHIP_H
-#define __ARCH_ARM_SRC_IMXRT_CHIP_H
+#ifndef __ARCH_ARM_SRC_IMXRT_USBHOST_H
+#define __ARCH_ARM_SRC_IMXRT_USBHOST_H
 
 /************************************************************************************
  * Included Files
  ************************************************************************************/
 
 #include <tinyara/config.h>
-
-/* Include the memory map and the chip definitions file.  Other chip hardware files
- * should then include this file for the proper setup.
- */
-
-#include <arch/irq.h>
-#include <arch/imxrt/chip.h>
-#include "chip/imxrt_memorymap.h"
-
-/* If the common ARMv7-M vector handling logic is used, then it expects the following
- * definition in this file that provides the number of supported vectors external
- * interrupts.
- */
-
-#define ARMV7M_PERIPHERAL_INTERRUPTS IMXRT_IRQ_NEXTINT
-
-/* Cache line sizes (in bytes)for the i.MX RT */
-
-#define ARMV7M_DCACHE_LINESIZE 32	/* 32 bytes (8 words) */
-#define ARMV7M_ICACHE_LINESIZE 32	/* 32 bytes (8 words) */
-
-#define HAVE_USBHOST    1
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -89,6 +67,8 @@
  * Public Types
  ************************************************************************************/
 
+#ifndef __ASSEMBLY__
+
 /************************************************************************************
  * Public Data
  ************************************************************************************/
@@ -97,4 +77,66 @@
  * Public Functions
  ************************************************************************************/
 
-#endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_H */
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
+/***********************************************************************************
+ * Name: imxrt_usbhost_vbusdrive
+ *
+ * Description:
+ *   Enable/disable driving of VBUS 5V output.  This function must be provided by
+ *   each platform that implements the EHCI host interface
+ *
+ * Input Parameters:
+ *   rhport - Selects root hub port to be powered host interface.  This is not used
+ *      with the IMXRT since it supports only a single root hub port.
+ *   enable - true: enable VBUS power; false: disable VBUS power
+ *
+ * Returned Value:
+ *   None
+ *
+ ***********************************************************************************/
+
+#if defined(CONFIG_IMXRT_USBOTG) && defined(CONFIG_USBHOST)
+void imxrt_usbhost_vbusdrive(int rhport, bool enable);
+#endif
+
+/************************************************************************************
+ * Name: imxrt_usbhost_bootinitialize
+ *
+ * Description:
+ *   Called from imxrt_boardinitialize very early in inialization to setup USB
+ *   host-related GPIO pins for the LPC-H3131 board.
+ *
+ ************************************************************************************/
+
+#ifdef HAVE_USBHOST
+void weak_function imxrt_usbhost_bootinitialize(void);
+#endif
+
+/***********************************************************************************
+ * Name: imxrt_usbhost_initialize
+ *
+ * Description:
+ *   Called at application startup time to initialize the USB host functionality.
+ *   This function will start a thread that will monitor for device
+ *   connection/disconnection events.
+ *
+ ***********************************************************************************/
+
+#ifdef HAVE_USBHOST
+int imxrt_usbhost_initialize(void);
+#endif
+
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif							/* __ASSEMBLY__ */
+#endif							/* __ARCH_ARM_SRC_IMXRT_USBHOST_H */
