@@ -407,7 +407,12 @@ int binary_manager_loading(int type, void *data)
 	argv[2] = NULL;
 
 	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, (char * const *)argv);
-	free(argv);
+	if (ret > 0) {
+		bmvdbg("Execute loading thread with pid %d\n", ret);
+	} else {
+		bmdbg("Loading Fail\n");
+	}
+	kmm_free(argv);
 
 	return ret;
 }
