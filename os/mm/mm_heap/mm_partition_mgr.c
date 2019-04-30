@@ -83,18 +83,32 @@ struct mm_heap_s g_pheap;
 
 void mm_initialize_ram_partitions(void)
 {
-	uint32_t start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
-	
 	/* We will calculate a overhead value for default partition size.
 	 * The overhead value will include the size of mm_heap_s and the
 	 * allocation node and also a 100 byte buffer for future change in mm.
 	 */
 	uint32_t overhead = CONFIG_NUM_APPS * (SIZEOF_MM_ALLOCNODE + sizeof(struct mm_heap_s) + 100); 
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	uint32_t start = CONFIG_IMXRT_SDRAM_START + CONFIG_MM_KERNEL_HEAPSIZE;
+	uint32_t size = CONFIG_IMXRT_SDRAM_SIZE - CONFIG_MM_KERNEL_HEAPSIZE;
+	g_default_size = (size - overhead) / CONFIG_NUM_APPS;
+
+	DEBUGASSERT(start != 0);
+	DEBUGASSERT(size != 0);
+	DEBUGASSERT(g_default_size > 0);
+
+	mm_initialize(&g_pheap, start, size);
+	mvdbg("Default RAM partition size set to %u\n", g_default_size);
+	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, size);
+#else
+	uint32_t start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
+
 	g_default_size = (REGION_END - start - overhead) / CONFIG_NUM_APPS;
 	mvdbg("Default RAM partition size set to %u\n", g_default_size);
 
 	mm_initialize(&g_pheap, start, (uint32_t)(REGION_END - start));
 	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, (uint32_t)(REGION_END - start));
+#endif
 }
 
 /****************************************************************************
