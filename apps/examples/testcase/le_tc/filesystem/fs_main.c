@@ -170,6 +170,10 @@
 static int g_thread_result;
 #endif
 
+#ifndef CONFIG_DISABLE_ENVIRON
+extern int mount_show(void);
+#endif
+
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
 * @fn               mkfifo_test_listener
@@ -249,37 +253,7 @@ static int make_long_file(void)
 	printf("finished!\n");
 	return ret;
 }
-#ifndef CONFIG_DISABLE_ENVIRON
-static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
-{
-	char *fstype;
 
-	switch (statbuf->f_type) {
-	case SMARTFS_MAGIC:
-		fstype = SMARTFS_TYPE;
-		break;
-	case ROMFS_MAGIC:
-		fstype = ROMFS_TYPE;
-		break;
-	case PROCFS_MAGIC:
-		fstype = PROCFS_TYPE;
-		break;
-	case TMPFS_MAGIC:
-		fstype = TMPFS_TYPE;
-		break;
-	default:
-		fstype = NONEFS_TYPE;
-		break;
-	}
-	UNUSED(fstype);
-	return OK;
-
-}
-static int mount_show(foreach_mountpoint_t mount_handler, FAR void *arg)
-{
-	return foreach_mountpoint(mount_handler, arg);
-}
-#endif
 /**
 * @testcase         tc_fs_vfs_mount
 * @brief            Mount file system
@@ -298,7 +272,7 @@ static void tc_fs_vfs_mount(void)
 	/*For each mountpt operation*/
 
 #ifndef CONFIG_DISABLE_ENVIRON
-	ret = mount_show(handler, NULL);
+	ret = mount_show();
 	TC_ASSERT_EQ("mount_show", ret, OK);
 #endif
 	TC_SUCCESS_RESULT();
