@@ -121,6 +121,17 @@ config IMXRT_EDMA
 	default n
 	select ARCH_DMA
 
+config IMXRT_USBHOST
+	bool "USB host"
+	select USBHOST
+	select USBHOST_HAVE_ASYNCH
+	default n
+
+config IMXRT_USBOTG
+	bool "USB OTG"
+	default n
+	depends on IMXRT_USBHOST
+
 config IMXRT_ENET
 	bool "Ethernet"
 	default n

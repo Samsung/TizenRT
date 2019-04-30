@@ -346,7 +346,7 @@ include/arch: Make.defs
 
 # Link the configs/<board-name>/include directory to include/arch/board
 
-include/arch/board: include/arch Make.defs include/arch
+include/arch/board: include/arch Make.defs 
 	@echo "LN: include/arch/board to $(BOARD_DIR)/include"
 	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_DIR)/include include/arch/board
 

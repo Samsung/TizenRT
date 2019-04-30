@@ -93,7 +93,7 @@
  *
  ****************************************************************************/
 
-int board_app_initialize(uintptr_t arg)
+int board_app_initialize(void)
 {
 #ifndef CONFIG_BOARD_INITIALIZE
 	/* Perform board initialization */

@@ -864,6 +864,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		/*
 		* 2. Save the key for D2S (primary cert & key)
 		*/
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 		res = seckey_setup(dm_get_certificate_file_path(), &primary_cert, OIC_ENCODING_UNKNOW);
 		if (OC_STACK_OK != res) {
 			THINGS_LOG_E(TAG, "seckey_setup error");
@@ -880,7 +881,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 			return res;
 		}
 		THINGS_LOG_D(TAG, "Primary cert & key saved w/ cred ID=%d", cred_id);
-
+#endif
 		// For D2D
 		if (g_is_mfg_cert_required) {
 			/*

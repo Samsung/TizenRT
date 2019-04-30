@@ -52,7 +52,7 @@ config IMXRT_AUTOMOUNT_USERFS
 
 config IMXRT_AUTOMOUNT_USERFS_DEVNAME
 	string "Device name of the partition for user r/w file system"
-	default "/dev/smart0p8"
+	default "/dev/smart0p1"
 	depends on IMXRT_AUTOMOUNT_USERFS
 	---help---
 		Specifies the device name (/dev/smart0pX) of the partition
@@ -94,7 +94,7 @@ config IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT
 
 config IMXRT_AUTOMOUNT_ROMFS
 	bool "Automount romfs partiton"
-	default y
+	default n
 	depends on IMXRT_AUTOMOUNT
 	depends on FS_ROMFS
 	---help---

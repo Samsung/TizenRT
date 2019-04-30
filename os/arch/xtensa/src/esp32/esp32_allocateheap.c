@@ -99,7 +99,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 }
 
 /****************************************************************************
- * Name: xtensa_up_addregion
+ * Name: up_addregion
  *
  * Description:
  *   Memory may be added in non-contiguous chunks.  Additional chunks are
@@ -112,13 +112,6 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
  ****************************************************************************/
 void up_addregion(void)
 {
-}
-
-/****************************************************************************
- * Name: up_addregion after spiram initialized
- ****************************************************************************/
-void xtensa_up_addregion(void)
-{
 	int region_cnt;
 
 	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
@@ -129,6 +122,5 @@ void xtensa_up_addregion(void)
 		}
 		mm_addregion(&g_mmheap[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 	}
-
 }
 #endif

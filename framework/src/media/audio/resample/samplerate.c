@@ -490,33 +490,36 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 		output_frames_gen = ret;
 		input_frames_used = output_frames_gen;
 	} else {
-		int frames_num = 0; // number of frames in internal input buffer
-
 		// move remaining frames
-		if (src->left_frames > 0) {
+		if ((src->used_frames > 0) && (src->left_frames > 0)) {
 			memcpy((void *)src->in_buffer,\
 				(const void *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src->used_frames)),\
 				NEW_FRAMES_TO_BYTES(src->left_frames));
-			frames_num += src->left_frames;
+			src->used_frames = 0;
 		}
 
-		// calculate number of frames, according to capabilities of internal-input and external-output buffers.
-		int ratio = new_sample_rate / old_sample_rate;
-		if ((new_sample_rate % old_sample_rate) != 0) {
-			ratio += 1;
+		// due to out buffer frames capability, there's a limit of input frames need.
+		float input_frames_need = (float)src->out_buffer_frames / src_ratio;
+		if (input_frames_need - (int)input_frames_need > 0) {
+			input_frames_need = (int)input_frames_need + 1;
 		}
-		int in_buffer_frames_adjust = MINIMUM(src->in_buffer_frames, src->out_buffer_frames / ratio);
+
+		// also to consider internal buffer capabbility
+		input_frames_need = MINIMUM(src->in_buffer_frames, (int)input_frames_need);
+		RETURN_VAL_IF_FAIL(((int)input_frames_need >= src->left_frames), SRC_ERR_BAD_PARAMS);
 
 		// accept input frames as much as possible
-		input_frames_used = MINIMUM(src_data->input_frames, (in_buffer_frames_adjust - frames_num));
+		input_frames_used = MINIMUM(src_data->input_frames, ((int)input_frames_need - src->left_frames));
 
 		// append(rechannel/copy) some new input frames
 		int32_t ret;
 		ret = rechannel(ch2layout(old_channel_num), ch2layout(new_channel_num),\
 				(const int16_t *)src_data->data_in, input_frames_used,\
-				(int16_t *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(frames_num)), input_frames_used);
+				(int16_t *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src->left_frames)), input_frames_used);
 		RETURN_VAL_IF_FAIL((ret == input_frames_used), SRC_ERR_UNKNOWN);
-		frames_num += input_frames_used;
+		src->left_frames += input_frames_used;
+
+		int frames_num = src->left_frames; // number of frames in internal input buffer
 
 		// resample ...
 		if (old_sample_rate > new_sample_rate) {

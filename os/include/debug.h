@@ -832,6 +832,22 @@
 #define sdllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg(format, ...)     dbg(format, ##__VA_ARGS__)
+#define selldbg(format, ...)   lldbg(format, ##__VA_ARGS__)
+#else
+#define sedbg(...)
+#define selldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sellvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sevdbg(...)
+#define sellvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_BINFMT_ERROR
 #  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
 #else
@@ -1337,6 +1353,23 @@
 #else
 #define sdvdbg     (void)
 #define sdllvdbg   (void)
+#endif
+
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg      dbg
+#define selldbg    lldbg
+#else
+#define sedbg      (void)
+#define selldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg     vdbg
+#define sellvdbg   llvdbg
+#else
+#define sevdbg     (void)
+#define sellvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_ERROR

@@ -80,6 +80,7 @@
 #include "common.h"
 #endif
 #include "imxrt1020-evk.h"
+#include "imxrt_usbhost.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -227,11 +228,11 @@ void weak_function imxrt_spidev_initialize(void)
 {
 #if 0 //TO-DO
 #ifdef CONFIG_IMXRT_LPSPI1
-  (void)imxrt_config_gpio(GPIO_LPSPI1_CS); /* LPSPI1 chip select */
-  (void)imxrt_config_gpio(GPIO_MMCSD_EN);
+	(void)imxrt_config_gpio(GPIO_LPSPI1_CS); /* LPSPI1 chip select */
+	(void)imxrt_config_gpio(GPIO_MMCSD_EN);
 #endif
 #ifdef CONFIG_IMXRT_LPSPI3
-  (void)imxrt_config_gpio(GPIO_LPSPI3_CS); /* LPSPI3 chip select */
+	(void)imxrt_config_gpio(GPIO_LPSPI3_CS); /* LPSPI3 chip select */
 #endif
 #endif
 }
@@ -279,6 +280,19 @@ int imxrt_bringup(void)
 #endif
 #if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C4)
 	imxrt_i2c_register(4);
+#endif
+
+#ifdef CONFIG_USBHOST
+	/* Initialize USB host operation.  imxrt_usbhost_initialize() starts a thread
+	* will monitor for USB connection and disconnection events.
+	*/
+
+	IMXLOG("Start USB host services\n");
+	ret = imxrt_usbhost_initialize();
+	if (ret != OK) {
+		IMXLOG("ERROR: Failed to start USB host services\n");
+		return ret;
+	}
 #endif
 
 #ifdef CONFIG_MMCSD_SPI

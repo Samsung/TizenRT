@@ -353,9 +353,6 @@ void weak_function xtensa_dma_initialize(void);
 
 /* Memory management */
 
-#if CONFIG_MM_REGIONS > 1
-void xtensa_up_addregion(void); //add region after spiram initialized
-#endif
 
 /* Serial output */
 
