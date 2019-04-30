@@ -58,9 +58,9 @@ echo "Downloading tinyara_flash.bin for App binary separation"
 BIN_PATH=${OS_DIR_PATH}/../build/output/bin
 KERN_IMG=${BIN_PATH}/tinyara.bin
 USER_IMG=${BIN_PATH}/tinyara_user.bin
-APP1_IMG1=${OS_DIR_PATH}/../apps/examples/elf/micomapp/micom
+APP1_IMG1=${BIN_PATH}/micom
 APP1_IMG2=${BIN_PATH}/micom
-APP2_IMG1=${OS_DIR_PATH}/../apps/examples/elf/wifiapp/wifi
+APP2_IMG1=${BIN_PATH}/wifi
 APP2_IMG2=${BIN_PATH}/wifi
 FLASH_IMG=${BIN_PATH}/tinyara_flash.bin
 

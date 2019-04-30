@@ -226,7 +226,7 @@ void binary_manager_recovery(int pid)
 
 		ret = kernel_thread(RECOVERYTHD_NAME, RECOVERYTHD_PRIORITY, RECOVERYTHD_STACKSIZE, recovery_thread, (char * const *)argv);
 		if (ret > 0) {
-			free(argv);
+			kmm_free(argv);
 			bmllvdbg("Execute recovery thread with pid %d\n", pid);
 			return;
 		}
