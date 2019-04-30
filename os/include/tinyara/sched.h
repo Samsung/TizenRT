@@ -124,6 +124,8 @@
 #define HAVE_TASK_GROUP   1		/* Address environment */
 #elif defined(CONFIG_MM_SHM)
 #define HAVE_TASK_GROUP   1		/* Shared memory */
+#elif defined(CONFIG_BINARY_MANAGER)
+#define HAVE_TASK_GROUP   1		/* Binary management */
 #endif
 #endif
 
@@ -339,6 +341,10 @@ struct dspace_s {
 struct join_s;					/* Forward reference                        */
 /* Defined in kernel/pthread/pthread.h       */
 #endif
+
+#ifdef CONFIG_BINFMT_LOADABLE
+struct binary_s;				/* Forward reference                        */
+#endif
 /** @brief Structure for Task Group Information */
 struct task_group_s {
 #if defined(HAVE_GROUP_MEMBERS) || defined(CONFIG_ARCH_ADDRENV)
@@ -351,6 +357,10 @@ struct task_group_s {
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
 	pid_t tg_task;				/* The ID of the task within the group      */
 #endif
+#if defined(CONFIG_BINARY_MANAGER)
+	pid_t tg_loadtask;			/* The ID of the main task in binary        */
+#endif
+
 	uint8_t tg_flags;			/* See GROUP_FLAG_* definitions             */
 
 	/* Group membership ********************************************************** */
@@ -370,6 +380,12 @@ struct task_group_s {
 #ifdef CONFIG_SCHED_ONEXIT
 	/* on_exit support ********************************************************** */
 	sq_queue_t tg_onexitfunc;
+#endif
+
+#ifdef CONFIG_BINFMT_LOADABLE
+	/* Loadable module support *************************************************** */
+
+	FAR struct binary_s *tg_bininfo;	/* Describes resources used by program      */
 #endif
 
 #ifdef CONFIG_SCHED_HAVE_PARENT
@@ -577,6 +593,11 @@ struct tcb_s {
 	/* The form and content of these fields are platform-specific.                */
 
 	struct xcptcontext xcp;		/* Interrupt register save area        */
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t ram_start;		/* Start address of RAM partition for this app */
+	uint32_t ram_size;		/* Size of RAM partition for this app */
+#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
@@ -822,6 +843,32 @@ pid_t task_vforkstart(FAR struct task_tcb_s *child);
  * @internal
  */
 void task_vforkabort(FAR struct task_tcb_s *child, int errcode);
+
+#ifdef CONFIG_BINFMT_LOADABLE
+/****************************************************************************
+ * Name: group_exitinfo
+ *
+ * Description:
+ *   This function may be called to when a task is loaded into memory.  It
+ *   will setup the to automatically unload the module when the task exits.
+ *
+ * Input Parameters:
+ *   pid     - The task ID of the newly loaded task
+ *   bininfo - This structure allocated with kmm_malloc().  This memory
+ *             persists until the task exits and will be used unloads
+ *             the module from memory.
+ *
+ * Returned Value:
+ *   This is a NuttX internal function so it follows the convention that
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+/**
+ * @internal
+ */
+int group_exitinfo(pid_t pid, FAR struct binary_s *bininfo);
+#endif
 /**
  * @endcond
  */
