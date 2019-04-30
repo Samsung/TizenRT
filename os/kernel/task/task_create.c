@@ -215,6 +215,12 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	pid = (int)tcb->cmn.pid;
 
+#ifdef CONFIG_BINARY_MANAGER
+	FAR struct tcb_s *rtcb = this_task();
+	/* Set main task id in a binary for recovery */
+	tcb->cmn.group->tg_loadtask = rtcb->group->tg_loadtask;
+#endif
+
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_check_group_list(pid, tcb->cmn.name);
 #endif
