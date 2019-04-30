@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include "cache.h"
@@ -48,8 +49,8 @@
 /* OCRAM relocate definition */
 //#define IMXRT_OCRAM_SIZE (256 * 1024U)
 #define IMXRT_OCRAM_ALLOCATE_BANK_NUM 2
-#define IMXRT_ITCM_ALLOCATE_BANK_NUM 4
-#define IMXRT_DTCM_ALLOCATE_BANK_NUM 2
+#define IMXRT_ITCM_ALLOCATE_BANK_NUM  4
+#define IMXRT_DTCM_ALLOCATE_BANK_NUM  2
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 #define IMXRT_FLEXRAM_OCRAM_START_ADDR 0x20200000
 #define IMXRT_FLEXRAM_OCRAM_MAGIC_ADDR 0x202000A0
@@ -63,12 +64,11 @@
 /* OCRAM relocate definition */
 //#define IMXRT_OCRAM_SIZE (512 * 1024U)
 #define IMXRT_OCRAM_ALLOCATE_BANK_NUM 16
-#define IMXRT_ITCM_ALLOCATE_BANK_NUM 0
-#define IMXRT_DTCM_ALLOCATE_BANK_NUM 0
+#define IMXRT_ITCM_ALLOCATE_BANK_NUM  0
+#define IMXRT_DTCM_ALLOCATE_BANK_NUM  0
 #else
 #error Unrecognized i.MX RT architecture
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -99,7 +99,7 @@ static FLEXRAM_Type *const s_flexramBases[] = FLEXRAM_BASE_PTRS;
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to FLEXRAM clocks for each instance. */
 static const clock_ip_name_t s_flexramClocks[] = FLEXRAM_CLOCKS;
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif	/* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -119,20 +119,18 @@ static const clock_ip_name_t s_flexramClocks[] = FLEXRAM_CLOCKS;
  ****************************************************************************/
 static uint32_t imxrt_flexram_getinstance(FLEXRAM_Type *base)
 {
-    uint32_t instance;
+	uint32_t instance;
 
-    /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < ARRAY_SIZE(s_flexramBases); instance++)
-    {
-        if (s_flexramBases[instance] == base)
-        {
-            break;
-        }
-    }
+	/* Find the instance index from base address mappings. */
+	for (instance = 0; instance < ARRAY_SIZE(s_flexramBases); instance++) {
+		if (s_flexramBases[instance] == base) {
+			break;
+		}
+	}
 
-    assert(instance < ARRAY_SIZE(s_flexramBases));
+	assert(instance < ARRAY_SIZE(s_flexramBases));
 
-    return instance;
+	return instance;
 }
 
 /****************************************************************************
@@ -151,16 +149,18 @@ static uint32_t imxrt_flexram_getinstance(FLEXRAM_Type *base)
 void imxrt_flexram_init(FLEXRAM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Ungate ENET clock. */
-    imxrt_clock_enableclock(s_flexramClocks[imxrt_flexram_getinstance(base)]);
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+	/* Ungate ENET clock. */
+	imxrt_clock_enableclock(s_flexramClocks[imxrt_flexram_getinstance(base)]);
+#endif	/* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-    /* enable all the interrupt status */
-    base->INT_STAT_EN |= kFLEXRAM_InterruptStatusAll;
-    /* clear all the interrupt status */
-    base->INT_STATUS |= kFLEXRAM_InterruptStatusAll;
-    /* disable all the interrpt */
-    base->INT_SIG_EN = 0U;
+	/* enable all the interrupt status */
+	base->INT_STAT_EN |= kFLEXRAM_InterruptStatusAll;
+
+	/* clear all the interrupt status */
+	base->INT_STATUS |= kFLEXRAM_InterruptStatusAll;
+
+	/* disable all the interrpt */
+	base->INT_SIG_EN = 0U;
 }
 
 /****************************************************************************
@@ -179,9 +179,9 @@ void imxrt_flexram_init(FLEXRAM_Type *base)
 void imxrt_flexram_deinit(FLEXRAM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Ungate ENET clock. */
-    imxrt_clock_disableclock(s_flexramClocks[imxrt_flexram_getinstance(base)]);
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+	/* Ungate ENET clock. */
+	imxrt_clock_disableclock(s_flexramClocks[imxrt_flexram_getinstance(base)]);
+#endif	/* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 /****************************************************************************
@@ -199,34 +199,29 @@ void imxrt_flexram_deinit(FLEXRAM_Type *base)
  ****************************************************************************/
 static uint8_t imxrt_flexram_maptcmsizetoregister(uint8_t tcmBankNum)
 {
-    uint8_t tcmSizeConfig = 0U;
-    uint32_t totalTcmSize = 0U;
+	uint8_t tcmSizeConfig = 0U;
+	uint32_t totalTcmSize = 0U;
 
-    /* if bank number is a odd value, use a new bank number which bigger than target */
-    do
-    {
-        if ((tcmBankNum & (tcmBankNum - 1U)) == 0U)
-        {
-            break;
-        }
-    } while (++tcmBankNum < FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
+	/* if bank number is a odd value, use a new bank number which bigger than target */
+	do {
+		if ((tcmBankNum & (tcmBankNum - 1U)) == 0U) {
+			break;
+		}
+	} while (++tcmBankNum < FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
 
-    totalTcmSize = tcmBankNum * (FSL_FEATURE_FLEXRAM_INTERNAL_RAM_BANK_SIZE >> 10U);
-    /* get bit '1' position */
-    while (totalTcmSize)
-    {
-        if ((totalTcmSize & 1U) == 0U)
-        {
-            tcmSizeConfig++;
-        }
-        else
-        {
-            break;
-        }
-        totalTcmSize >>= 1U;
-    }
+	totalTcmSize = tcmBankNum * (FSL_FEATURE_FLEXRAM_INTERNAL_RAM_BANK_SIZE >> 10U);
 
-    return tcmSizeConfig + 1U;
+	/* get bit '1' position */
+	while (totalTcmSize) {
+		if ((totalTcmSize & 1U) == 0U) {
+			tcmSizeConfig++;
+		} else {
+			break;
+		}
+		totalTcmSize >>= 1U;
+	}
+
+	return tcmSizeConfig + 1U;
 }
 
 /****************************************************************************
@@ -245,49 +240,43 @@ static uint8_t imxrt_flexram_maptcmsizetoregister(uint8_t tcmBankNum)
  ****************************************************************************/
 void imxrt_flexram_settcmsize(uint8_t itcmBankNum, uint8_t dtcmBankNum)
 {
-    char tempLog[128];
-    uint8_t size = 0;
+	char tempLog[128];
+	uint8_t size = 0;
 
-    assert(itcmBankNum <= FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
-    assert(dtcmBankNum <= FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
+	assert(itcmBankNum <= FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
+	assert(dtcmBankNum <= FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS);
 
-    IMXLOG("imxrt_flexram_settcmsize:");
-    snprintf(tempLog, sizeof(tempLog), "itcmBankNum %d", itcmBankNum);
-    IMXLOG(tempLog);
-    snprintf(tempLog, sizeof(tempLog), "dtcmBankNum %d", dtcmBankNum);
-    IMXLOG(tempLog);
+	IMXLOG("imxrt_flexram_settcmsize:");
+	snprintf(tempLog, sizeof(tempLog), "itcmBankNum %d", itcmBankNum);
+	IMXLOG(tempLog);
+	snprintf(tempLog, sizeof(tempLog), "dtcmBankNum %d", dtcmBankNum);
+	IMXLOG(tempLog);
 
-    size = imxrt_flexram_maptcmsizetoregister(dtcmBankNum);
-    snprintf(tempLog, sizeof(tempLog), "dtcm size %d", size);
-    IMXLOG(tempLog);
+	size = imxrt_flexram_maptcmsizetoregister(dtcmBankNum);
+	snprintf(tempLog, sizeof(tempLog), "dtcm size %d", size);
+	IMXLOG(tempLog);
 
-    /* dtcm configuration */
-    if (dtcmBankNum != 0U)
-    {
-        IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
-        IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(imxrt_flexram_maptcmsizetoregister(dtcmBankNum));
-        IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
-    }
-    else
-    {
-        IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
-    }
+	/* dtcm configuration */
+	if (dtcmBankNum != 0U) {
+		IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
+		IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(imxrt_flexram_maptcmsizetoregister(dtcmBankNum));
+		IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+	} else {
+		IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+	}
 
-    size = imxrt_flexram_maptcmsizetoregister(itcmBankNum);
-    snprintf(tempLog, sizeof(tempLog), "itcm size %d", size);
-    IMXLOG(tempLog);
+	size = imxrt_flexram_maptcmsizetoregister(itcmBankNum);
+	snprintf(tempLog, sizeof(tempLog), "itcm size %d", size);
+	IMXLOG(tempLog);
 
-    /* itcm configuration */
-    if (itcmBankNum != 0U)
-    {
-        IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
-        IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(imxrt_flexram_maptcmsizetoregister(itcmBankNum));
-        IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
-    }
-    else
-    {
-        //IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
-    }
+	/* itcm configuration */
+	if (itcmBankNum != 0U) {
+		IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
+		IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(imxrt_flexram_maptcmsizetoregister(itcmBankNum));
+		IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
+	} else {
+		//IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
+	}
 }
 
 /****************************************************************************
@@ -308,47 +297,45 @@ void imxrt_flexram_settcmsize(uint8_t itcmBankNum, uint8_t dtcmBankNum)
  ****************************************************************************/
 status_t imxrt_flexram_allocateram(flexram_allocate_ram_t *config)
 {
-    assert(config != NULL);
+	assert(config != NULL);
 
-    uint8_t dtcmBankNum = config->dtcmBankNum;
-    uint8_t itcmBankNum = config->itcmBankNum;
-    uint8_t ocramBankNum = config->ocramBankNum;
-    uint32_t bankCfg = 0U, i = 0U;
+	uint8_t dtcmBankNum = config->dtcmBankNum;
+	uint8_t itcmBankNum = config->itcmBankNum;
+	uint8_t ocramBankNum = config->ocramBankNum;
+	uint32_t bankCfg = 0U, i = 0U;
 
-    /* check the arguments */
-    if (FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS < (dtcmBankNum + itcmBankNum + ocramBankNum))
-    {
-        return kStatus_InvalidArgument;
-    }
+	/* check the arguments */
+	if (FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS < (dtcmBankNum + itcmBankNum + ocramBankNum)) {
+		return kStatus_InvalidArgument;
+	}
 
-    /* flexram bank config value */
-    for (i = 0U; i < FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS; i++)
-    {
-        if (i < ocramBankNum)
-        {
-            bankCfg |= ((uint32_t)kFLEXRAM_BankOCRAM) << (i * 2);
-            continue;
-        }
+	/* flexram bank config value */
+	for (i = 0U; i < FSL_FEATURE_FLEXRAM_INTERNAL_RAM_TOTAL_BANK_NUMBERS; i++) {
+		if (i < ocramBankNum) {
+			bankCfg |= ((uint32_t)kFLEXRAM_BankOCRAM) << (i * 2);
+			continue;
+		}
 
-        if (i < (dtcmBankNum + ocramBankNum))
-        {
-            bankCfg |= ((uint32_t)kFLEXRAM_BankDTCM) << (i * 2);
-            continue;
-        }
+		if (i < (dtcmBankNum + ocramBankNum)) {
+			bankCfg |= ((uint32_t)kFLEXRAM_BankDTCM) << (i * 2);
+			continue;
+		}
 
-        if (i < (dtcmBankNum + ocramBankNum + itcmBankNum))
-        {
-            bankCfg |= ((uint32_t)kFLEXRAM_BankITCM) << (i * 2);
-            continue;
-        }
-    }
-    IOMUXC_GPR->GPR17 = bankCfg;
-    /* set TCM size */
-    imxrt_flexram_settcmsize(itcmBankNum, dtcmBankNum);
-    /* select ram allocate source from FLEXRAM_BANK_CFG */
-    imxrt_flexram_setallocateramsrc(kFLEXRAM_BankAllocateThroughBankCfg);
+		if (i < (dtcmBankNum + ocramBankNum + itcmBankNum)) {
+			bankCfg |= ((uint32_t)kFLEXRAM_BankITCM) << (i * 2);
+			continue;
+		}
+	}
 
-    return kStatus_Success;
+	IOMUXC_GPR->GPR17 = bankCfg;
+
+	/* set TCM size */
+	imxrt_flexram_settcmsize(itcmBankNum, dtcmBankNum);
+
+	/* select ram allocate source from FLEXRAM_BANK_CFG */
+	imxrt_flexram_setallocateramsrc(kFLEXRAM_BankAllocateThroughBankCfg);
+
+	return kStatus_Success;
 }
 
 /****************************************************************************
@@ -369,33 +356,30 @@ status_t imxrt_flexram_allocateram(flexram_allocate_ram_t *config)
  ****************************************************************************/
 static status_t imxrt_ocram_reallocate(void)
 {
-    char tempLog[128];
+	char tempLog[128];
 
-    flexram_allocate_ram_t ramAllocate = {
-        .ocramBankNum = IMXRT_OCRAM_ALLOCATE_BANK_NUM,
-        .dtcmBankNum = IMXRT_ITCM_ALLOCATE_BANK_NUM,
-        .itcmBankNum = IMXRT_DTCM_ALLOCATE_BANK_NUM,
-    };
+	flexram_allocate_ram_t ramAllocate = {
+		.ocramBankNum = IMXRT_OCRAM_ALLOCATE_BANK_NUM,
+		.dtcmBankNum = IMXRT_ITCM_ALLOCATE_BANK_NUM,
+		.itcmBankNum = IMXRT_DTCM_ALLOCATE_BANK_NUM,
+	};
 
-    IMXLOG("Allocate on-chip ram:");
-    snprintf(tempLog, sizeof(tempLog), "OCRAM bank numbers %d", ramAllocate.ocramBankNum);
-    IMXLOG(tempLog);
-    snprintf(tempLog, sizeof(tempLog), "DTCM  bank numbers %d", ramAllocate.dtcmBankNum);
-    IMXLOG(tempLog);
-    snprintf(tempLog, sizeof(tempLog), "ITCM  bank numbers %d", ramAllocate.itcmBankNum);
-    IMXLOG(tempLog);
+	IMXLOG("Allocate on-chip ram:");
+	snprintf(tempLog, sizeof(tempLog), "OCRAM bank numbers %d", ramAllocate.ocramBankNum);
+	IMXLOG(tempLog);
+	snprintf(tempLog, sizeof(tempLog), "DTCM  bank numbers %d", ramAllocate.dtcmBankNum);
+	IMXLOG(tempLog);
+	snprintf(tempLog, sizeof(tempLog), "ITCM  bank numbers %d", ramAllocate.itcmBankNum);
+	IMXLOG(tempLog);
 
-    if (imxrt_flexram_allocateram(&ramAllocate) != kStatus_Success)
-    {
-        IMXLOG("Allocate on-chip ram fail");
-        return kStatus_Fail;
-    }
-    else
-    {
-        IMXLOG("Allocate on-chip ram success");
-    }
+	if (imxrt_flexram_allocateram(&ramAllocate) != kStatus_Success) {
+		IMXLOG("Allocate on-chip ram fail");
+		return kStatus_Fail;
+	} else {
+		IMXLOG("Allocate on-chip ram success");
+	}
 
-    return kStatus_Success;
+	return kStatus_Success;
 }
 
 /****************************************************************************
@@ -413,11 +397,11 @@ static status_t imxrt_ocram_reallocate(void)
  ****************************************************************************/
 void imxrt_flexram_initialize(void)
 {
-    arch_disable_dcache();
+	arch_disable_dcache();
 
-    up_enable_irq(IMXRT_IRQ_CM7FR);
+	up_enable_irq(IMXRT_IRQ_CM7FR);
 
-    imxrt_ocram_reallocate();
+	imxrt_ocram_reallocate();
 
-    imxrt_flexram_init(FLEXRAM);
+	imxrt_flexram_init(FLEXRAM);
 }

@@ -50,21 +50,19 @@
  * Definitions.
  *****************************************************************************/
 /*! @brief flexram write read sel */
-enum _flexram_wr_rd_sel
-{
-    kFLEXRAM_Read = 0U,  /*!< read */
-    kFLEXRAM_Write = 1U, /*!< write */
+enum _flexram_wr_rd_sel {
+	kFLEXRAM_Read  = 0U, /*!< read */
+	kFLEXRAM_Write = 1U, /*!< write */
 };
 
 /*! @brief Interrupt status flag mask */
-enum _flexram_interrupt_status
-{
-    kFLEXRAM_OCRAMAccessError = FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK, /*!< ocram access unallocated address */
-    kFLEXRAM_DTCMAccessError = FLEXRAM_INT_STATUS_DTCM_ERR_STATUS_MASK,   /*!< dtcm access unallocated address */
-    kFLEXRAM_ITCMAccessError = FLEXRAM_INT_STATUS_ITCM_ERR_STATUS_MASK,   /*!< itcm access unallocated address */
+enum _flexram_interrupt_status {
+	kFLEXRAM_OCRAMAccessError = FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK, /*!< ocram access unallocated address */
+	kFLEXRAM_DTCMAccessError  = FLEXRAM_INT_STATUS_DTCM_ERR_STATUS_MASK,  /*!< dtcm access unallocated address */
+	kFLEXRAM_ITCMAccessError  = FLEXRAM_INT_STATUS_ITCM_ERR_STATUS_MASK,  /*!< itcm access unallocated address */
 
-    kFLEXRAM_InterruptStatusAll = FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK | FLEXRAM_INT_STATUS_DTCM_ERR_STATUS_MASK |
-                                  FLEXRAM_INT_STATUS_ITCM_ERR_STATUS_MASK, /*!< all the interrupt status mask */
+	kFLEXRAM_InterruptStatusAll = FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK | FLEXRAM_INT_STATUS_DTCM_ERR_STATUS_MASK |
+								  FLEXRAM_INT_STATUS_ITCM_ERR_STATUS_MASK, /*!< all the interrupt status mask */
 };
 
 /*! @brief FLEXRAM TCM access mode
@@ -74,44 +72,39 @@ enum _flexram_interrupt_status
 * the cpu clock too fast to finish tcm access in 1-cycle.
 * Normally, fast mode is the default mode, the efficiency of the tcm access will better.
 */
-typedef enum _flexram_tcm_access_mode
-{
-    kFLEXRAM_TCMAccessFastMode = 0U, /*!< fast access mode */
-    kFLEXRAM_TCMAccessWaitMode = 1U, /*!< wait access mode */
+typedef enum _flexram_tcm_access_mode {
+	kFLEXRAM_TCMAccessFastMode = 0U, /*!< fast access mode */
+	kFLEXRAM_TCMAccessWaitMode = 1U, /*!< wait access mode */
 } flexram_tcm_access_mode_t;
 
 /*! @brief FLEXRAM bank type */
-enum _flexram_bank_type
-{
-    kFLEXRAM_BankNotUsed = 0U, /*!< bank is not used */
-    kFLEXRAM_BankOCRAM = 1U,   /*!< bank is OCRAM */
-    kFLEXRAM_BankDTCM = 2U,    /*!< bank is DTCM */
-    kFLEXRAM_BankITCM = 3U,    /*!< bank is ITCM */
+enum _flexram_bank_type {
+	kFLEXRAM_BankNotUsed = 0U, /*!< bank is not used */
+	kFLEXRAM_BankOCRAM   = 1U, /*!< bank is OCRAM */
+	kFLEXRAM_BankDTCM    = 2U, /*!< bank is DTCM */
+	kFLEXRAM_BankITCM    = 3U, /*!< bank is ITCM */
 };
 
 /*! @brief FLEXRAM tcm support size */
-enum _flexram_tcm_size
-{
-    kFLEXRAM_TCMSize32KB = 32 * 1024U,   /*!< TCM total size 32KB */
-    kFLEXRAM_TCMSize64KB = 64 * 1024U,   /*!< TCM total size 64KB */
-    kFLEXRAM_TCMSize128KB = 128 * 1024U, /*!< TCM total size 128KB */
-    kFLEXRAM_TCMSize256KB = 256 * 1024U, /*!< TCM total size 256KB */
-    kFLEXRAM_TCMSize512KB = 512 * 1024U, /*!< TCM total size 512KB */
+enum _flexram_tcm_size {
+	kFLEXRAM_TCMSize32KB  =  32 * 1024U, /*!< TCM total size 32KB */
+	kFLEXRAM_TCMSize64KB  =  64 * 1024U, /*!< TCM total size 64KB */
+	kFLEXRAM_TCMSize128KB = 128 * 1024U, /*!< TCM total size 128KB */
+	kFLEXRAM_TCMSize256KB = 256 * 1024U, /*!< TCM total size 256KB */
+	kFLEXRAM_TCMSize512KB = 512 * 1024U, /*!< TCM total size 512KB */
 };
 
 /*! @brief FLEXRAM bank allocate source */
-typedef enum _flexram_bank_allocate_src
-{
-    kFLEXRAM_BankAllocateThroughHardwareFuse = 0U, /*!< allocate ram through hardware fuse value */
-    kFLEXRAM_BankAllocateThroughBankCfg = 1U,      /*!< allocate ram through FLEXRAM_BANK_CFG */
+typedef enum _flexram_bank_allocate_src {
+	kFLEXRAM_BankAllocateThroughHardwareFuse = 0U, /*!< allocate ram through hardware fuse value */
+	kFLEXRAM_BankAllocateThroughBankCfg      = 1U, /*!< allocate ram through FLEXRAM_BANK_CFG */
 } flexram_bank_allocate_src_t;
 
 /*! @brief FLEXRAM allocate ocram, itcm, dtcm size */
-typedef struct _flexram_allocate_ram
-{
-    const uint8_t ocramBankNum; /*!< ocram banknumber which the SOC support */
-    const uint8_t dtcmBankNum;  /*!< dtcm bank number to allocate, the number should be power of 2 */
-    const uint8_t itcmBankNum;  /*!< itcm bank number to allocate, the number should be power of 2 */
+typedef struct _flexram_allocate_ram {
+	const uint8_t ocramBankNum;	/*!< ocram banknumber which the SOC support */
+	const uint8_t dtcmBankNum;	/*!< dtcm bank number to allocate, the number should be power of 2 */
+	const uint8_t itcmBankNum;	/*!< itcm bank number to allocate, the number should be power of 2 */
 } flexram_allocate_ram_t;
 
 /*******************************************************************************
@@ -178,7 +171,7 @@ void imxrt_flexram_deinit(FLEXRAM_Type *base);
  ****************************************************************************/
 static inline uint32_t imxrt_flexram_getinterruptstatus(FLEXRAM_Type *base)
 {
-    return base->INT_STATUS & kFLEXRAM_InterruptStatusAll;
+	return base->INT_STATUS & kFLEXRAM_InterruptStatusAll;
 }
 
 /****************************************************************************
@@ -197,7 +190,7 @@ static inline uint32_t imxrt_flexram_getinterruptstatus(FLEXRAM_Type *base)
  ****************************************************************************/
 static inline void imxrt_flexram_clearinterruptstatus(FLEXRAM_Type *base, uint32_t status)
 {
-    base->INT_STATUS |= status;
+	base->INT_STATUS |= status;
 }
 
 /****************************************************************************
@@ -216,7 +209,7 @@ static inline void imxrt_flexram_clearinterruptstatus(FLEXRAM_Type *base, uint32
  ****************************************************************************/
 static inline void imxrt_flexram_enableinterruptstatus(FLEXRAM_Type *base, uint32_t status)
 {
-    base->INT_STAT_EN |= status;
+	base->INT_STAT_EN |= status;
 }
 
 /****************************************************************************
@@ -235,7 +228,7 @@ static inline void imxrt_flexram_enableinterruptstatus(FLEXRAM_Type *base, uint3
  ****************************************************************************/
 static inline void imxrt_flexram_disableinterruptstatus(FLEXRAM_Type *base, uint32_t status)
 {
-    base->INT_STAT_EN &= ~status;
+	base->INT_STAT_EN &= ~status;
 }
 
 /* @} */
@@ -261,7 +254,7 @@ static inline void imxrt_flexram_disableinterruptstatus(FLEXRAM_Type *base, uint
  ****************************************************************************/
 static inline void imxrt_flexram_enableinterruptsignal(FLEXRAM_Type *base, uint32_t status)
 {
-    base->INT_SIG_EN |= status;
+	base->INT_SIG_EN |= status;
 }
 
 /****************************************************************************
@@ -280,7 +273,7 @@ static inline void imxrt_flexram_enableinterruptsignal(FLEXRAM_Type *base, uint3
  ****************************************************************************/
 static inline void imxrt_flexram_disableinterruptsignal(FLEXRAM_Type *base, uint32_t status)
 {
-    base->INT_SIG_EN &= ~status;
+	base->INT_SIG_EN &= ~status;
 }
 /* @} */
 
@@ -305,8 +298,8 @@ static inline void imxrt_flexram_disableinterruptsignal(FLEXRAM_Type *base, uint
  ****************************************************************************/
 static inline void imxrt_flexram_settcmreadaccessmode(FLEXRAM_Type *base, flexram_tcm_access_mode_t mode)
 {
-    base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_TCM_RWAIT_EN_MASK;
-    base->TCM_CTRL |= mode;
+	base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_TCM_RWAIT_EN_MASK;
+	base->TCM_CTRL |= mode;
 }
 
 /****************************************************************************
@@ -325,8 +318,8 @@ static inline void imxrt_flexram_settcmreadaccessmode(FLEXRAM_Type *base, flexra
  ****************************************************************************/
 static inline void imxrt_flexram_settcmwriteaccessmode(FLEXRAM_Type *base, flexram_tcm_access_mode_t mode)
 {
-    base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_TCM_WWAIT_EN_MASK;
-    base->TCM_CTRL |= mode;
+	base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_TCM_WWAIT_EN_MASK;
+	base->TCM_CTRL |= mode;
 }
 
 /****************************************************************************
@@ -345,14 +338,11 @@ static inline void imxrt_flexram_settcmwriteaccessmode(FLEXRAM_Type *base, flexr
  ****************************************************************************/
 static inline void imxrt_flexram_enableforceramclockon(FLEXRAM_Type *base, bool enable)
 {
-    if (enable)
-    {
-        base->TCM_CTRL |= FLEXRAM_TCM_CTRL_FORCE_CLK_ON_MASK;
-    }
-    else
-    {
-        base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_FORCE_CLK_ON_MASK;
-    }
+	if (enable) {
+		base->TCM_CTRL |= FLEXRAM_TCM_CTRL_FORCE_CLK_ON_MASK;
+	} else {
+		base->TCM_CTRL &= ~FLEXRAM_TCM_CTRL_FORCE_CLK_ON_MASK;
+	}
 }
 
 /****************************************************************************
@@ -388,8 +378,8 @@ status_t imxrt_flexram_allocateram(flexram_allocate_ram_t *config);
  ****************************************************************************/
 static inline void imxrt_flexram_setallocateramsrc(flexram_bank_allocate_src_t src)
 {
-    IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL_MASK;
-    IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(src);
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL_MASK;
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(src);
 }
 
 /****************************************************************************
