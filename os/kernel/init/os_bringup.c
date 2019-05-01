@@ -83,6 +83,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -257,6 +260,11 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
+#ifdef CONFIG_BINARY_MANAGER
+	pid = kernel_thread(BINARY_MANAGER_NAME, BINARY_MANAGER_PRIORITY, BINARY_MANAGER_STACKSIZE, binary_manager, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start binary manager");
+	}
 
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
@@ -287,6 +295,8 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
+#else //binary manager
+
 	svdbg("Starting application main thread\n");
 
 #ifdef CONFIG_BUILD_PROTECTED
@@ -295,6 +305,8 @@ static inline void os_do_appstart(void)
 	}
 #elif defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
+#endif
+
 #endif
 	ASSERT(pid > 0);
 }

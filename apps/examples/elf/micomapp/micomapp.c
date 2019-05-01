@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,23 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_read.c
-/// @brief Test Case Example for kernel data access from user space
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
+#include <unistd.h>
 
-extern uint32_t __ksram_segment_start__[];
 /****************************************************************************
- * Name: read_main
+ * Public Functions
  ****************************************************************************/
-
-int read_main(void)
+int main(int argc, char **argv)
 {
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
-	uint32_t dest;
+	while (1) {
+		printf("%s \t MICOM alive! \n", argv[0]);
+		sleep(10);
+	}
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to read     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
-	printf("************************************************\n");
-
-	sleep(3);
-	dest = *address;
-
-	printf("ERR: User Task successfully accessed Kernel space\n");
 	return 0;
 }

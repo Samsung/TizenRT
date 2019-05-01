@@ -82,9 +82,10 @@ void imxrt_boardinitialize(void)
 #ifdef CONFIG_ARCH_LEDS
 	imxrt_autoled_initialize();
 #endif
-
 	imxrt_semc_sdram_init();
+#if 0 // FIXME When this is added, board is not bootup with BUILD_PROTECTED.
 	imxrt_flash_init();
+#endif
 }
 
 /****************************************************************************
