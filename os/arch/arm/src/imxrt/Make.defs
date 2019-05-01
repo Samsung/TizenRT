@@ -58,7 +58,7 @@ HEAD_ASRC  =
 CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S
 CMN_ASRCS += up_fetchadd.S vfork.S
 
-CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c
+CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c up_coherent_dcache.c
 CMN_CSRCS += up_createstack.c up_mdelay.c up_udelay.c up_exit.c
 CMN_CSRCS += up_initialize.c up_initialstate.c up_interruptcontext.c
 CMN_CSRCS += up_memfault.c up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
@@ -134,11 +134,12 @@ ifeq ($(CONFIG_IMXRT_GPIO_IRQ),y)
 CHIP_CSRCS += imxrt_gpioirq.c
 endif
 
-ifeq ($(CONFIG_ARMV7M_MPU),y)
-CHIP_CSRCS += imxrt_mpuinit.c
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CHIP_CSRCS += imxrt_userspace.c
 endif
+
+ifeq ($(CONFIG_ARMV7M_MPU),y)
+CHIP_CSRCS += imxrt_mpuinit.c
 endif
 
 ifeq ($(CONFIG_IMXRT_EDMA),y)

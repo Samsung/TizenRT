@@ -1,0 +1,78 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config BINFMT_DISABLE
+	bool "Disable BINFMT support"
+	default n
+	---help---
+		By default, support for loadable binary formats is built.  This logic
+		may be suppressed be defining this setting.
+
+if !BINFMT_DISABLE
+
+config PATH_INITIAL
+	string "Initial PATH Value"
+	default ""
+	depends on LIB_ENVPATH
+	---help---
+		The initial value of the PATH variable.  This is the colon-separated
+		list of absolute paths.  E.g., "/bin:/usr/bin:/sbin"
+
+config BINFMT_LOADABLE
+	bool
+	default n
+	---help---
+		Automatically selected if a loadable binary format is selected.
+
+config ELF
+	bool "Enable the ELF Binary Format"
+	default n
+	select BINFMT_LOADABLE
+	select LIBC_ARCH_ELF
+	---help---
+		Enable support for the ELF binary format.  Default: n
+
+if ELF
+source binfmt/libelf/Kconfig
+endif
+
+config BUILTIN
+	bool "Support Builtin Applications"
+	default n
+	depends on (!BUILD_PROTECTED && !BUILD_KERNEL) || EXPERIMENTAL
+	---help---
+		Enable support for builtin applications.  This features assigns a string
+		name to an application and in addition if FS_BINFS is defined, retaining
+		those names in a file system from which they can be executed.  This feature
+		is also the underlying requirement to support built-in applications in the
+		NuttShell (NSH).
+
+		ISSUES:  This feature is highly coupled with logic in the apps/
+		sub-directory and, as a consequence, cannot be used in environments
+		that do not include the standard apps/ nor in build
+		configurations using BUILD_PROTECTED or BUILD_KERNEL.
+
+if BUILTIN
+source binfmt/libbuiltin/Kconfig
+endif
+
+endif
+
+config BINFMT_CONSTRUCTORS
+	bool "C++ Static Constructor Support"
+	default n
+	depends on HAVE_CXX && SCHED_STARTHOOK && ELF
+	---help---
+		Build in support for C++ constructors in loaded modules.  Currently
+		only support for ELF binary formats.
+
+config SYMTAB_ORDEREDBYNAME
+	bool "Symbol Tables Ordered by Name"
+	default n
+	---help---
+		Select if the symbol table is ordered by symbol name.  In this case,
+		the logic can perform faster lookups using a binary search.
+		Otherwise, the symbol table is assumed to be un-ordered an only
+		slow, linear searches are supported.
