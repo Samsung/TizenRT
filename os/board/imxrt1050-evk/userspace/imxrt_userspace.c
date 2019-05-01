@@ -100,7 +100,11 @@ extern uint32_t _ebss;			/* End+1 of .bss */
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
 
+#ifdef CONFIG_USER_ENTRYPOINT
 	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
+#else
+	.us_entrypoint = (main_t)NULL,
+#endif
 	.us_textstart = (uintptr_t)&_stext,
 	.us_textend = (uintptr_t)&_etext,
 	.us_datasource = (uintptr_t)&_eronly,
