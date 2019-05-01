@@ -33,24 +33,18 @@
 
 #define HALF_SECOND_USEC_USEC   500000L
 
-#ifdef CONFIG_LWNL80211_DEBUG
-#define WU_LOG(format, ...) printf(format, ##__VA_ARGS__)
-#else
-#define WU_LOG(a, ...) (void)0
-#endif
-
 #define WU_TAG "[WU]"
 
 #define WU_ERR                                                                  \
 	do {                                                                        \
-		WU_LOG(WU_TAG"[ERR:%s] %s %s:%d code(%s)\n",                            \
-			   WU_TAG, __FUNCTION__, __FILE__, __LINE__, strerror(errno));      \
+		ndbg(WU_TAG"[ERR] %s:%d code(%s)\n",                                    \
+			   __FILE__, __LINE__, strerror(errno));                            \
 	} while (0)
 
 #define WU_ERR_FD(fd)                                                           \
 	do {                                                                        \
-		WU_LOG(WU_TAG"[ERR:%s] %s %s:%d fd(%d) code(%s)\n",                     \
-			   WU_TAG, __FUNCTION__, __FILE__, __LINE__, fd, strerror(errno));  \
+		ndbg(WU_TAG"[ERR] %s:%d fd(%d) code(%s)\n",                             \
+			   __FILE__, __LINE__, fd, strerror(errno));                        \
 	} while (0)
 
 #define WU_CHECK_ERR(arg)                                    \
@@ -63,7 +57,7 @@
 
 #define WU_ENTER                                                                \
 	do {                                                                        \
-		WU_LOG(WU_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);          \
+		ndbg(WU_TAG"%s:%d\n", __FILE__, __LINE__);                              \
 	} while (0)
 
 #define WU_CALL(fd, hnd, code, param)                                           \
@@ -121,7 +115,7 @@ static wifi_utils_result_e receive_scan_data(mqd_t mq, wifi_utils_scan_list_s *s
 		wifi_utils_scan_list_s *cur = NULL;
 		nbytes = mq_receive(mq, (char *)&msg, msglen, &prio);
 		if (nbytes < 0 || nbytes != msglen) {
-			WU_LOG("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
+			ndbg("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
 			WU_ERR;
 			ret = WIFI_UTILS_FAIL;
 			break;
@@ -147,7 +141,7 @@ static wifi_utils_result_e receive_scan_data(mqd_t mq, wifi_utils_scan_list_s *s
 		prev = cur;
 
 		if (msg.md == 0 || cnt >= LWNL80211_MQUEUE_MAX_DATA_NUM) {
-			WU_LOG("End of scanning (%d data)\n", cnt);
+			ndbg("End of scanning (%d data)\n", cnt);
 			ret = WIFI_UTILS_SUCCESS;
 			break;
 		}
@@ -172,7 +166,7 @@ void *wifi_utils_callback_handler(void *arg)
 
 		nbytes = mq_receive(g_hnd.mq, (char *)&msg, msglen, &prio);
 		if (nbytes < 0 || nbytes != msglen) {
-			WU_LOG("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
+			ndbg("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
 			WU_ERR;
 			break;
 		}
@@ -220,7 +214,7 @@ void *wifi_utils_callback_handler(void *arg)
 			break;
 		}
 		default:
-			WU_LOG("Bad status received (%d)\n", msg.status);
+			ndbg("Bad status received (%d)\n", msg.status);
 			WU_ERR;
 			break;
 		}
@@ -251,7 +245,7 @@ wifi_utils_result_e wifi_utils_init(void)
 	g_hnd.mq = mq_open(g_hnd.mqname, O_RDWR | O_CREAT, 0666, &attr);
 	if (g_hnd.mq == NULL) {
 		close(fd);
-		WU_LOG("Failed to open mq\n");
+		ndbg("Failed to open mq\n");
 		return WIFI_UTILS_FAIL;
 	}
 
@@ -260,7 +254,7 @@ wifi_utils_result_e wifi_utils_init(void)
 	data_in.data_len = sizeof(g_hnd.mqname);
 	data_in.data = (mqd_t *)malloc(data_in.data_len);
 	if (!data_in.data) {
-		WU_LOG("Failed to alloc lw80211_data input\n");
+		ndbg("Failed to alloc lw80211_data input\n");
 		ret = WIFI_UTILS_FAIL;
 		goto errout;
 	}
@@ -320,7 +314,7 @@ wifi_utils_result_e wifi_utils_deinit(void)
 
 	status = pthread_cancel(g_hnd.cb_receiver);
 	if (status == ESRCH) {
-		WU_LOG("Callback receiver thread already closed successfully\n");
+		ndbg("Callback receiver thread already closed successfully\n");
 	} else if (status != 0) {
 		WU_ERR;
 		WU_CLOSE(fd);
@@ -363,7 +357,7 @@ wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 		g_cbk = *cbk;
 		wuret = WIFI_UTILS_SUCCESS;
 	} else {
-		WU_LOG("WiFi callback register failure (no callback)\n");
+		ndbg("WiFi callback register failure (no callback)\n");
 	}
 	return wuret;
 }

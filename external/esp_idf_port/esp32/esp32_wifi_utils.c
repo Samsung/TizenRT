@@ -56,7 +56,7 @@
 #include "nvs_flash.h"
 #include "esp_wifi_internal.h"
 
-#define WIFI_MAX_BEACON_INTERVAL        60000
+#define WIFI_DEFAULT_BEACON_INTERVAL        100
 #define WIFI_MAX_STA_CONN           4
 
 #ifndef CONFIG_MAX_STA_CONN
@@ -615,7 +615,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 			.channel = softap_config->channel,
 			.max_connection = CONFIG_MAX_STA_CONN,
 			.authmode = mode,
-			.beacon_interval = WIFI_MAX_BEACON_INTERVAL,
+			.beacon_interval = WIFI_DEFAULT_BEACON_INTERVAL,
 		}
 		,
 	};

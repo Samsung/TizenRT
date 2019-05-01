@@ -15,11 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * os/arch/arm/src/imxrt/chip.h
+/****************************************************************************
+ * os/arch/arm/src/imxrt/imxrt_semc_dram.h
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,53 +48,38 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_CHIP_H
-#define __ARCH_ARM_SRC_IMXRT_CHIP_H
+#ifndef __ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H
+#define __ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/sdio.h>
 
-/* Include the memory map and the chip definitions file.  Other chip hardware files
- * should then include this file for the proper setup.
- */
+#include "chip.h"
 
-#include <arch/irq.h>
-#include <arch/imxrt/chip.h>
-#include "chip/imxrt_memorymap.h"
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
-/* If the common ARMv7-M vector handling logic is used, then it expects the following
- * definition in this file that provides the number of supported vectors external
- * interrupts.
- */
+/****************************************************************************
+ * Name: imxrt_semc_sdram_init
+ *
+ * Description:
+ *   Initialize SEMC for operation.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 
-#define ARMV7M_PERIPHERAL_INTERRUPTS IMXRT_IRQ_NEXTINT
+FAR void imxrt_semc_sdram_init(void);
 
-/* Cache line sizes (in bytes)for the i.MX RT */
-
-#define ARMV7M_DCACHE_LINESIZE 32	/* 32 bytes (8 words) */
-#define ARMV7M_ICACHE_LINESIZE 32	/* 32 bytes (8 words) */
-
-#define HAVE_USBHOST    1
-
-/************************************************************************************
- * Pre-processor Definitions
- ************************************************************************************/
-
-/************************************************************************************
- * Public Types
- ************************************************************************************/
-
-/************************************************************************************
- * Public Data
- ************************************************************************************/
-
-/************************************************************************************
- * Public Functions
- ************************************************************************************/
-
-#endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_H */
+#endif /*__ARCH_ARM_SRC_IMXRT_IMX_SEMC_DRAM_H */
