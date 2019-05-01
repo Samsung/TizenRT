@@ -307,10 +307,12 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
-	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-	size_t usize = PRIMARY_RAM_END - ubase;
+	uintptr_t user_end = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
+	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
+	size_t usize = (uint32_t)user_end - ubase;
 
-	DEBUGASSERT(ubase < (uintptr_t)PRIMARY_RAM_END);
+
+	DEBUGASSERT(ubase < (uintptr_t)user_end);
 
 	/* Return the user-space heap settings */
 
@@ -341,20 +343,16 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
-	/* Get the unaligned size and position of the user-space heap.
-	 * This heap begins after the user-space .bss section at an offset
-	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
-	 */
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	*heap_start = CONFIG_IMXRT_SDRAM_START;
+	*heap_size = CONFIG_MM_KERNEL_HEAPSIZE;
 
-	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-	DEBUGASSERT(ubase < (uintptr_t)PRIMARY_RAM_END);
-
-	/* Return the kernel heap settings (i.e., the part of the heap region
-	 * that was not dedicated to the user heap).
-	 */
-
-	*heap_start = (FAR void *)USERSPACE->us_bssend;
-	*heap_size = ubase - (uintptr_t)USERSPACE->us_bssend;
+	DEBUGASSERT(*heap_start != 0);
+	DEBUGASSERT(*heap_size != 0);
+#else
+	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
+	*heap_size = (uint32_t)((uintptr_t)__usram_segment_start__) - (uint32_t)(*heap_start);
+#endif
 }
 #endif
 
@@ -374,22 +372,11 @@ void up_addregion(void)
 
 	kumm_addregion((FAR void *)REGION1_RAM_START, REGION1_RAM_SIZE);
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-	/* Allow user-mode access to region 1 */
-
-	imxrt_mpu_uheap((uintptr_t)REGION1_RAM_START, REGION1_RAM_SIZE);
-#endif
-
 #if CONFIG_MM_REGIONS > 2
 	/* Add region 2 to the user heap */
 
 	kumm_addregion((FAR void *)REGION2_RAM_START, REGION2_RAM_SIZE);
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-	/* Allow user-mode access to region 2 */
-
-	imxrt_mpu_uheap((uintptr_t)REGION2_RAM_START, REGION2_RAM_SIZE);
-#endif
 #endif							/* CONFIG_MM_REGIONS > 2 */
 }
 #endif							/* CONFIG_MM_REGIONS > 1 */

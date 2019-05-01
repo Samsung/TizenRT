@@ -22,59 +22,21 @@ endchoice # Boot Flash
 config IMXRT_HYPERFLASH
 	bool "Enable Hyperflash"
 	default n
+	select ARCH_USE_FLASH
 	---help---
 		Enables Hyperflash
 
 config IMXRT_NORFLASH
 	bool "Enable Norflash"
 	default n
+	select ARCH_USE_FLASH
 	---help---
 		Enables Norflash
-
-config IMXRT_FLASH_PART
-	bool "Enable partition support on FLASH"
-	default n
-	select MTD
-	select MTD_PARTITION
-	select MTD_PROGMEM
-	depends on NFILE_DESCRIPTORS != 0
-	---help---
-		Enables creation of partitions on the FLASH
-
-config IMXRT_FLASH_MINOR
-	int "Minor number for the FLASH device"
-	default 0
-	depends on IMXRT_FLASH_PART
-	---help---
-		Sets the minor number for /dev node of the external flash
-		device.
-
-config IMXRT_FLASH_PART_LIST
-	string "Flash partition size list (in KBytes)"
-	default "2048,4096,"
-	depends on IMXRT_FLASH_PART
-	---help---
-		Comma separated list of partition sizes in KB.
-
-config IMXRT_FLASH_PART_TYPE
-	string "Flash partition type list"
-	default "none,smartfs,"
-	---help---
-		Comma separated list of partition types that can be
-		one of followings: none, smartfs, config
-
-config IMXRT_FLASH_PART_NAME
-	string "FLash partition name list"
-	default "kernel,imxrt,"
-	depends on MTD_PARTITION_NAMES
-	depends on IMXRT_FLASH_PART
-	---help---
-		Comma separated list of partition names.
 
 config IMXRT_AUTOMOUNT
 	bool "Automount partitions"
 	default n
-	depends on IMXRT_FLASH_PART
+	depends on FLASH_PARTITION
 	depends on !DISABLE_MOUNTPOINT
 	---help---
 		If enabled, mount userrw and sssrw partitions at boot.

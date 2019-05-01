@@ -95,10 +95,6 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = g_kmmheap.mm_nregions;
 		break;
 #endif
-	case HEAPINFOIOC_INIT_KHEAP:
-		heapinfo_init(g_kmmheap);
-		ret = OK;
-		break;
 #endif
 	default:
 		break;
