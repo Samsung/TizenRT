@@ -35,7 +35,7 @@ namespace stream {
  * @class
  * @brief This class is buffer observer data structure
  * @details @b #include <media/BufferObserverInterface.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 class BufferObserverInterface
 {
@@ -47,19 +47,19 @@ public:
 	/**
 	 * @brief Called when buffer overrun
 	 * @details @b #include <media/BufferObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onBufferOverrun() = 0;
 	/**
 	 * @brief Called when buffer underrun
 	 * @details @b #include <media/BufferObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onBufferUnderrun() = 0;
 	/**
 	 * @brief Called when buffer updated
 	 * @details @b #include <media/BufferObserverInterface.h>
-	 * @since TizenRT v2.0 PRE
+	 * @since TizenRT v2.0
 	 */
 	virtual void onBufferUpdated(ssize_t change, size_t current) = 0;
 };

@@ -39,6 +39,7 @@
 #include "logging/things_logger.h"
 #include "easy-setup/es_common.h"
 #include "cloud_connector.h"
+#include "things_iotivity_lock.h"
 #include "utils/things_wait_handler.h"
 #include "framework/things_data_manager.h"
 #include <wifi_manager/wifi_manager.h>
@@ -56,13 +57,12 @@ int CICheckDomain(const char *DomainName, char **pIP)
 {
 	char ipbuffer[20];
 	memset(ipbuffer, 0, 20);
-	char bytes[4];
-	struct hostent *shost;
 	unsigned int ip4_address = 0;
 
 	if (DomainName != NULL) {
-		shost = gethostbyname((const char *)DomainName);
+		struct hostent *shost = gethostbyname((const char *)DomainName);
 		if (shost != NULL) {
+			char bytes[4];
 			memcpy(&ip4_address, shost->h_addr, sizeof(in_addr_t));
 			bytes[0] = ip4_address & 0XFF;
 			bytes[1] = (ip4_address >> 8) & 0XFF;
@@ -78,7 +78,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
 			}
 			return 0;
 		}
-	} 
+	}
 
 	THINGS_LOG_E(TAG, " Failed to get the IP");
 
@@ -94,8 +94,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
  */
 int ci_connection_pre_check(const char *DomainName, char **pIP)
 {
-	int n_err = -1;
-	n_err = CICheckDomain("samsung.com", NULL);
+	int n_err = CICheckDomain("samsung.com", NULL);
 	if (n_err != 0) {
 		THINGS_LOG_E(TAG, "AP is Not Connected to Internet");
 		return n_err;
@@ -131,7 +130,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	OCCallbackData cb_data;
 	OCRepPayload *registerPayload = NULL;
 	OCRepPayload *aafPayload = NULL;
-	char *mnid = NULL;	
+	char *mnid = NULL;
 
 	if (host == NULL || device_id == NULL || event_data == NULL || (event_data->accesstoken[0] == 0 && event_data->auth_code[0] == 0)) {
 		THINGS_LOG_E(TAG, "Invalid event_data.");
@@ -196,13 +195,10 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 		OCRepPayloadSetPropObject(registerPayload, "aaf", aafPayload);
 	}
 
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
-
 	if (things_is_empty_request_handle() == true) {
+		iotivity_api_lock();
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) registerPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
-
+		iotivity_api_unlock();
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
 			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_E(TAG, "[Error] ReqHandles array space is small.");
@@ -264,7 +260,10 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 		goto no_memory;
 	}
 
-	if (OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer) != OC_STACK_OK || (IoTivityVer = things_strdup(IOTIVITY_VERSION)) == NULL)
+	iotivity_api_lock();
+	OCStackResult getPropRes = OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer);
+	iotivity_api_unlock();
+	if (getPropRes != OC_STACK_OK || (IoTivityVer = things_strdup(IOTIVITY_VERSION)) == NULL)
 //            OCGetPropertyValue(PAYLOAD_TYPE_PLATFORM, OC_RSRVD_PLATFORM_VERSION, (void**)&IoTivityVer) != OC_STACK_OK )
 	{
 		THINGS_LOG_E(TAG, "Getting Core_Spec_Ver or IoTivity_Ver is failed.");
@@ -283,13 +282,10 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 	OCRepPayloadSetPropString(loginoutPayload, KEY_ICORE_VER, coreVer);
 	OCRepPayloadSetPropString(loginoutPayload, KEY_IOTIVITY_VER, IoTivityVer);
 
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
-
 	if (things_is_empty_request_handle() == true) {
+		iotivity_api_lock();
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) loginoutPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
-
+		iotivity_api_unlock();
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
 			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_E(TAG, "[Error] ReqHandles array space is small.");
@@ -359,6 +355,7 @@ OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int
 	}
 
 	uint8_t numResource = 0;
+	iotivity_api_lock();
 	OCGetNumberOfResources(&numResource);
 	if (numResource > 0) {
 		for (uint8_t index = 0; index < numResource; index++) {
@@ -372,13 +369,13 @@ OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int
 			}
 		}
 	}
-
 	if (things_is_empty_request_handle() == true) {
 		result = OCRDPublish(&g_req_handle, host, CT_ADAPTER_TCP, resourceHandles, iter, &cb_data, OC_LOW_QOS);
 
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
 			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_E(TAG, "[Error] ReqHandles array space is small.");
+				iotivity_api_unlock();
 				return OC_STACK_ERROR;
 			}
 
@@ -386,6 +383,7 @@ OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int
 		}
 	}
 
+	iotivity_api_unlock();
 	return result;
 }
 
@@ -412,7 +410,9 @@ OCStackResult things_cloud_rsc_publish_with_device_id(char *host, const char *id
 	}
 
 	if (iter > 0) {
+		iotivity_api_lock();
 		result = OCRDPublishWithDeviceId(&g_req_handle, host, id, CT_ADAPTER_TCP, resourceHandles, iter, &cb_data, OC_LOW_QOS);
+		iotivity_api_unlock();
 	}
 //    if(result == OC_STACK_OK && timeoutHandler != NULL )
 //    {
@@ -450,8 +450,6 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	OCDoHandle g_req_handle = NULL;
 	OCStackResult result = OC_STACK_ERROR;
 	char targetUri[MAX_URI_LENGTH * 2] = { 0, };
-	char *coreVer = NULL;
-	char *IoTivityVer = NULL;
 
 	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, OC_RSRVD_ACCOUNT_DEVPROFILE_URI);
 
@@ -492,11 +490,12 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	}
 
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { cntArrayPayload, 0, 0 };
-	OCRepPayloadSetPropObjectArray(payload, "devices", arrayPayload, dimensions);
+	OCRepPayloadSetPropObjectArray(payload, "devices", (const OCRepPayload **)arrayPayload, dimensions);
 
 	if (things_is_empty_request_handle() == true) {
+		iotivity_api_lock();
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) payload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
-
+		iotivity_api_unlock();
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
 			if (things_add_request_handle((OCDoHandle) 1) == NULL) {
 				THINGS_LOG_E(TAG, "[Error] ReqHandles array space is small.");
@@ -582,11 +581,11 @@ OCStackResult things_cloud_refresh(const char *host, const char *uId, const char
 	THINGS_LOG_D(TAG, "granttype    =%s", VALUE_TYPE_GRANT_TOKEN);
 	THINGS_LOG_D(TAG, "refreshtoken =%s", refreshtoken);
 
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
 
-	return OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) refreshPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
+	iotivity_api_lock();
+	OCStackResult res = OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) refreshPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
+	iotivity_api_unlock();
+	return res;
 
 no_memory:
 	OCRepPayloadDestroy(refreshPayload);
@@ -608,10 +607,11 @@ OCStackResult things_cloud_topic_publish_topic(const char *host, const char *top
 	if (!message) {
 		goto no_memory;
 	}
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-	//CASelectCipherSuite(0x35, (1 << 4));
-#endif
-	return OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) message, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
+
+	iotivity_api_lock();
+	OCStackResult res = OCDoResource(NULL, OC_REST_POST, targetUri, NULL, (OCPayload *) message, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
+	iotivity_api_unlock();
+	return res;
 
 no_memory:
 	OCRepPayloadDestroy(message);
@@ -638,8 +638,10 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 		return NULL;
 	}
 
+	iotivity_api_lock();
 	if (OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer) != OC_STACK_OK) {
 		THINGS_LOG_E(TAG, "Getting CoreVersion of IoTivity is failed.");
+		iotivity_api_unlock();
 		goto GOTO_OUT;
 	}
 
@@ -647,9 +649,11 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 
 	if (OCGetPropertyValue(PAYLOAD_TYPE_PLATFORM, OC_RSRVD_MFG_NAME, (void **)&manuFactory) != OC_STACK_OK) {
 		THINGS_LOG_E(TAG, "Getting manufacturer-name is failed.");
+		iotivity_api_unlock();
 		goto GOTO_OUT;
 	}
 
+	iotivity_api_unlock();
 	OCRepPayloadSetPropString(payload, "di", dev_info->device_id);
 	OCRepPayloadSetPropString(payload, "n", dev_info->name);
 	OCRepPayloadSetPropString(payload, "icv", coreVer);

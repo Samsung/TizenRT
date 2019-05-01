@@ -65,7 +65,7 @@ void OCPayloadDestroy(OCPayload* payload)
     }
 }
 
-OCRepPayload* OCRepPayloadCreate()
+OCRepPayload* OCRepPayloadCreate(void)
 {
     OCRepPayload* payload = (OCRepPayload*)OICCalloc(1, sizeof(OCRepPayload));
 
@@ -1631,7 +1631,7 @@ void OCRepPayloadDestroy(OCRepPayload* payload)
     OICFree(payload);
 }
 
-OCDiscoveryPayload* OCDiscoveryPayloadCreate()
+OCDiscoveryPayload* OCDiscoveryPayloadCreate(void)
 {
     OCDiscoveryPayload* payload = (OCDiscoveryPayload*)OICCalloc(1, sizeof(OCDiscoveryPayload));
 
@@ -1707,7 +1707,7 @@ OCResourcePayload* OCDiscoveryPayloadGetResource(OCDiscoveryPayload* payload, si
     return NULL;
 }
 
-#ifndef TCP_ADAPTER
+#if !defined(TCP_ADAPTER) || defined(DISABLE_TCP_SERVER)
 static OCResourcePayload* OCCopyResource(const OCResource* res, uint16_t securePort)
 #else
 static OCResourcePayload* OCCopyResource(const OCResource* res, uint16_t securePort,
@@ -1812,13 +1812,13 @@ static OCResourcePayload* OCCopyResource(const OCResource* res, uint16_t secureP
                                             );
     pl->secure = (res->resourceProperties & OC_SECURE) != 0;
     pl->port = securePort;
-#ifdef TCP_ADAPTER
+#if defined(TCP_ADAPTER) && !defined(DISABLE_TCP_SERVER)
     pl->tcpPort = tcpPort;
 #endif
     return pl;
 }
 
-#ifndef TCP_ADAPTER
+#if !defined(TCP_ADAPTER) || defined(DISABLE_TCP_SERVER)
 void OCDiscoveryPayloadAddResource(OCDiscoveryPayload* payload, const OCResource* res,
                                    uint16_t securePort)
 {

@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  ******************************************************************/
+#include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -57,20 +58,6 @@ bool ci_cp_get_is_there_cp(void)	// [GET] return is_there_ci_prov value.
 
 	pthread_mutex_lock(&g_pending_mutex);
 	is_there = pending_event.is_there_ci_prov;
-	pthread_mutex_unlock(&g_pending_mutex);
-
-	return is_there;
-}
-
-bool ci_cp_cas_is_there_cp_if_false(void)	// [CAS] If is_there_ci_prov value is false, then set true and return is_there_ci_prov value.
-{
-	bool is_there = false;
-
-	pthread_mutex_lock(&g_pending_mutex);
-	is_there = pending_event.is_there_ci_prov;
-	if (is_there == false) {
-		pending_event.is_there_ci_prov = true;
-	}
 	pthread_mutex_unlock(&g_pending_mutex);
 
 	return is_there;

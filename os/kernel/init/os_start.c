@@ -95,6 +95,9 @@
 #include <tinyara/testcase_drv.h>
 #endif
 
+#include <tinyara/mm/heap_regioninfo.h>
+extern bool heapx_is_init[CONFIG_MM_NHEAPS];
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -382,9 +385,14 @@ void os_start(void)
 		/* Get the user-mode heap from the platform specific code and configure
 		 * the user-mode memory allocator.
 		 */
-
 		up_allocate_heap(&heap_start, &heap_size);
+#if CONFIG_MM_REGIONS > 1
+		mm_initialize(&g_mmheap[regionx_heap_idx[0]], heap_start, heap_size);
+		heapx_is_init[regionx_heap_idx[0]] = true;
+		up_addregion();
+#else
 		kumm_initialize(heap_start, heap_size);
+#endif
 #endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -519,7 +527,7 @@ void os_start(void)
 	fs_auto_mount();
 
 #ifdef CONFIG_KERNEL_TEST_DRV
-	test_drv_register();
+	kernel_test_drv_register();
 #endif
 
 #if defined(CONFIG_DEBUG_SYSTEM)
@@ -595,10 +603,7 @@ void os_start(void)
 		 * queue so that is done in a safer context.
 		 */
 
-		if (kmm_trysemaphore() == 0) {
-			sched_garbagecollection();
-			kmm_givesemaphore();
-		}
+		sched_garbagecollection();
 #endif
 
 		/* Perform any processor-specific idle state operations */

@@ -92,7 +92,7 @@ KBIN = libkmm$(LIBEXT)
 BIN ?= libmm$(LIBEXT)
 
 all: $(BIN)
-.PHONY: clean distclean
+.PHONY: clean distclean heap_regioninfo
 
 $(AOBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -121,17 +121,21 @@ $(KBIN):
 	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
+heap_regioninfo:
+	$(Q) $(TOPDIR)/tools/mk_heap_regioninfo.sh
+
+context: heap_regioninfo
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
-context:
 GROUP_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o '/' | wc -l}"
 THREAD_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o ',' | wc -l}"
 
-${shell echo '#define HEAPINFO_USER_GROUP_DELIM_NUM' "$(GROUP_DELIM_NUM)\n"'#define HEAPINFO_THREAD_DELIM_NUM' "$(THREAD_DELIM_NUM)\n"'#define HEAPINFO_USER_GROUP_NUM (HEAPINFO_USER_GROUP_DELIM_NUM + 1)\n#define HEAPINFO_THREAD_NUM (HEAPINFO_USER_GROUP_NUM + HEAPINFO_THREAD_DELIM_NUM)' > $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h}
+${shell printf '%s\n%s\n%s\n%s\n' "#define HEAPINFO_USER_GROUP_DELIM_NUM $(GROUP_DELIM_NUM)" "#define HEAPINFO_THREAD_DELIM_NUM $(THREAD_DELIM_NUM)" "#define HEAPINFO_USER_GROUP_NUM (HEAPINFO_USER_GROUP_DELIM_NUM + 1)" "#define HEAPINFO_THREAD_NUM (HEAPINFO_USER_GROUP_NUM + HEAPINFO_THREAD_DELIM_NUM)"> $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h}
 endif
 
 # Dependencies
 
 .depend: Makefile $(SRCS)
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 	$(Q) $(MKDEP) --obj-path ubin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make_ubin.dep
 	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >Make_kbin.dep
@@ -162,6 +166,7 @@ distclean: clean
 	$(Q) $(MAKE) -C bin  distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C ubin distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C kbin distclean TOPDIR=$(TOPDIR)
+	$(call DELFILE, $(TOPDIR)$(DELIM)mm$(DELIM)mm_heap$(DELIM)mm_heap_regioninfo.c)
 	$(call DELFILE, Make_bin.dep)
 	$(call DELFILE, Make_ubin.dep)
 	$(call DELFILE, Make_kbin.dep)

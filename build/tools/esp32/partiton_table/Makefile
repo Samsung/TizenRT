@@ -1,0 +1,139 @@
+###########################################################################
+# 
+# Copyright 2019 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###########################################################################
+
+#
+# Partition table
+#
+# The partition table is not a real component that gets linked into
+# the project. Instead, it is a standalone project to generate
+# the partition table binary as part of the build process. This
+# binary is then added to the list of files for esptool.py to flash.
+#
+.PHONY: partition_table partition_table-flash partition_table-clean partition_table_get_info
+
+
+PYTHON = python 
+ESPTOOLPY=.
+BUILD_DIR_BASE =  $(CURRENTDIR)/../../output/bin
+
+SEPARATOR:="*******************************************************************************"
+
+define dequote
+$(subst ",,$(1))
+endef
+
+CONFIG_PARTITION_TABLE_SINGLE_APP=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_singleapp.csv"
+CONFIG_PARTITION_TABLE_OFFSET=0x8000
+CONFIG_PARTITION_TABLE_MD5=y
+SECURE_BOOT_SIGNING_KEY=""
+
+
+PARTION_TABLE_PATH=$(CURRENTDIR)/partiton_table
+
+ESPSECUREPY := $(PYTHON) $(CURRENTDIR)/esptool_py/esptool/espsecure.py
+
+PARTITION_MD5_OPT :=
+ifndef CONFIG_PARTITION_TABLE_MD5
+PARTITION_MD5_OPT := "--disable-md5sum"
+endif
+
+PARTITION_FLASHSIZE_OPT :=
+ifneq ("$(CONFIG_ESPTOOLPY_FLASHSIZE)", "")
+PARTITION_FLASHSIZE_OPT := --flash-size $(CONFIG_ESPTOOLPY_FLASHSIZE)
+endif
+
+PARTITION_SECURE_OPT :=
+ifdef CONFIG_SECURE_BOOT_ENABLED
+ifndef CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+PARTITION_SECURE_OPT += --secure
+endif
+endif
+
+# Address of partition table
+PARTITION_TABLE_OFFSET := $(CONFIG_PARTITION_TABLE_OFFSET)
+PARTITION_TABLE_OFFSET_ARG := --offset $(PARTITION_TABLE_OFFSET)
+
+GEN_ESP32PART := $(PYTHON) $(PARTION_TABLE_PATH)/gen_esp32part.py -q $(PARTITION_MD5_OPT) $(PARTITION_FLASHSIZE_OPT) $(PARTITION_TABLE_OFFSET_ARG) $(PARTITION_SECURE_OPT)
+GET_PART_INFO := $(PYTHON) $(PARTION_TABLE_PATH)/parttool.py -q
+
+# if CONFIG_PARTITION_TABLE_FILENAME is unset, means we haven't re-generated config yet...
+
+ifneq ("$(CONFIG_PARTITION_TABLE_FILENAME)","")
+
+
+
+ifndef PARTITION_TABLE_CSV_PATH
+# Path to partition CSV file is relative to project path for custom
+# partition CSV files, but relative to component dir otherwise.
+PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTION_TABLE_PATH)/$(call dequote,$(CONFIG_PARTITION_TABLE_FILENAME))))
+endif
+
+PARTITION_TABLE_CSV_NAME := $(notdir $(PARTITION_TABLE_CSV_PATH))
+PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(PARTITION_TABLE_CSV_NAME:.csv=.bin)
+
+ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN:.bin=-unsigned.bin)
+# add an extra signing step for secure partition table
+$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_BIN_UNSIGNED) $(SDKCONFIG_MAKEFILE) $(SECURE_BOOT_SIGNING_KEY)
+	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+else
+# secure bootloader disabled, both files are the same
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN)
+endif
+
+$(PARTITION_TABLE_BIN_UNSIGNED): $(PARTITION_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
+	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
+	$(GEN_ESP32PART) $< $@
+
+all_binaries: $(PARTITION_TABLE_BIN) partition_table_get_info
+
+partition_table_get_info: $(PARTITION_TABLE_BIN)
+	$(eval PHY_DATA_OFFSET:=$(shell $(GET_PART_INFO) --type data --subtype phy --offset $(PARTITION_TABLE_BIN)))
+	$(eval APP_OFFSET:=$(shell $(GET_PART_INFO) --default-boot-partition --offset $(PARTITION_TABLE_BIN)))
+	$(eval OTA_DATA_SIZE := $(shell $(GET_PART_INFO) --type data --subtype ota --size $(PARTITION_TABLE_BIN) || echo 0) )
+	$(eval OTA_DATA_OFFSET := $(shell $(GET_PART_INFO) --type data --subtype ota --offset $(PARTITION_TABLE_BIN)) )
+
+export APP_OFFSET
+export PHY_DATA_OFFSET
+export OTA_DATA_OFFSET
+export OTA_DATA_SIZE
+
+PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
+
+partition_table: $(PARTITION_TABLE_BIN) partition_table_get_info
+	@echo "Partition table binary generated. Contents:"
+	@echo $(SEPARATOR)
+	$(GEN_ESP32PART) $<
+	@echo $(SEPARATOR)
+	@echo "Partition flashing command:"
+	@echo "$(PARTITION_TABLE_FLASH_CMD)"
+
+partition_table-flash: $(PARTITION_TABLE_BIN)
+	@echo "Flashing partition table..."
+	$(PARTITION_TABLE_FLASH_CMD)
+
+partition_table-clean:
+	rm -f $(PARTITION_TABLE_BIN)
+
+clean: partition_table-clean
+
+endif
+

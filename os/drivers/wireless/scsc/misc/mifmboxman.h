@@ -19,8 +19,8 @@
 #ifndef __MIFMBOXMAN_H
 #define __MIFMBOXMAN_H
 
+#include <sys/types.h>
 #include <semaphore.h>
-#include <pthread.h>
 #include "utils_misc.h"
 
 struct mifmboxman;

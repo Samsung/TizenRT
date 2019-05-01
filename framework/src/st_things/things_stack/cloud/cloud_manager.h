@@ -89,6 +89,4 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port);
 
 int push_notification_to_cloud(const char *uri, OCRepPayload *payload);
 
-void ci_stop_cloud_connection(void *cb_func);
-
 #endif							// _CLOUD_MANAGER_H_

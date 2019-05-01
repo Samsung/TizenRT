@@ -18,6 +18,7 @@
 
 #define THINGS_PING_ENABLE      1
 
+#include <sys/types.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -76,7 +77,6 @@ things_ping_s* p_ping = NULL;
 static void *thd_ping_loop(things_ping_s *ping);
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
 static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
-static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
 
 static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16_t port);
 static void terminate_things_ping_s(things_ping_s *ping);
@@ -108,6 +108,7 @@ bool things_ping_init(void)
 	if (list == NULL) {
 		if ((list = create_list()) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return res;
 		}
 
@@ -126,12 +127,10 @@ bool things_ping_terminate(void)
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-	things_ping_s *ping = NULL;
-
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list) {
 		THINGS_LOG_D(TAG, "things_ping_s terminate.");
-
+		things_ping_s *ping = NULL;
 		while ((ping = (things_ping_s *) list->pop(list)) != NULL) {
 			THINGS_LOG_D(TAG, "Terminate ping.(%s)", ping->addr);
 			if (cas_mask(ping, PING_ST_STARTTHREAD, true, PING_ST_INIT) == true) {
@@ -167,6 +166,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
 
@@ -175,6 +175,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s). So, Create Node.", remote_addr);
 		if ((ping = create_things_ping_s(remote_addr, port)) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
+			pthread_mutex_unlock(&mutex_ping_list);
 			return false;
 		}
 		list->insert(list, (void *)ping);
@@ -211,14 +212,17 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		return false;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	}
-	pthread_mutex_lock(&mutex_ping_list);
+
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s).", remote_addr);
+		pthread_mutex_unlock(&mutex_ping_list);
 		return false;
 	} else {
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
@@ -296,8 +300,7 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "Start FindResource for /oic/ping to Cloud(%s)", ping->addr);
 	int retry_cnt = MAX_RETRY_CNT;
 	do {						// /oic/ping Resource Finding Start
-		int sleepTime = 1;
-		sleepTime = find_resource_oic_ping(ping);
+		int sleepTime = find_resource_oic_ping(ping);
 		sleep(sleepTime);
 	} while (!ping->continue_thread && ping->handle_thread && (retry_cnt--) > 0);
 
@@ -358,7 +361,6 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 	THINGS_LOG_D(TAG, "Enter.");
 
 	int64_t *interval = NULL;
-	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 	things_ping_s *ping = (things_ping_s *) ctx;
 
 	if (ctx == (void *)DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
@@ -367,6 +369,7 @@ static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHa
 	}
 
 	if (client_response) {
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 		THINGS_LOG_D(TAG, "ctx=0x%X", ctx);
 		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
 
@@ -483,75 +486,6 @@ static OCStackApplicationResult handler_ping_request(void *ctx, OCDoHandle handl
 	return OC_STACK_DELETE_TRANSACTION;
 }
 
-static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	int64_t *interval = NULL;
-	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
-	things_ping_s *ping = (things_ping_s *) ctx;
-	(void *)handle;
-
-	if (ctx == (void *)DEFAULT_CONTEXT_VALUE || ctx == NULL || ping->addr == NULL) {
-		THINGS_LOG_D(TAG, "content value is invalid.(ctx=0x%X)", ctx);
-		return OC_STACK_DELETE_TRANSACTION;
-	}
-
-	if (client_response) {
-		THINGS_LOG_D(TAG, "ctx=0x%X", ctx);
-		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
-
-		THINGS_LOG_D(TAG, "Device =============> Discovered @ %s:%d", client_response->devAddr.addr, client_response->devAddr.port);
-
-		if (strncmp(ping->addr, client_response->devAddr.addr, strlen(client_response->devAddr.addr)) != 0) {
-			THINGS_LOG_E(TAG, "[Error]: Mismatching address.(ping->addr=%s, recvAddr=%s)", ping->addr, client_response->devAddr.addr);
-			return OC_STACK_DELETE_TRANSACTION;
-		}
-		// Parsing payload.
-		if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-			OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
-			while (val != NULL) {
-				things_rep_payload_value_print(val);
-				val = val->next;
-			}
-
-			OCRepPayloadGetIntArray(((const OCRepPayload *)client_response->payload), INTERVAL_ARRAY, &interval, dimensions);
-			THINGS_LOG_D(TAG, "dimension=[%d, %d, %d]", dimensions[0], dimensions[1], dimensions[2]);
-			for (int i = 0; i < dimensions[0]; i++) {
-				THINGS_LOG_D(TAG, "interval[%d]=%d", i, interval[i]);
-			}
-		}
-		// Result processing.
-		switch (client_response->result) {
-		case OC_STACK_RESOURCE_CHANGED:
-			THINGS_LOG_D(TAG, "update-Ping request Success.");
-			if (set_interval(ping, interval, dimensions[0], PING_ST_INTUPDATE) == true) {
-				THINGS_LOG_D(TAG, "Success Apply Interval.");
-			}
-			break;
-		case OC_STACK_TIMEOUT:
-			THINGS_LOG_E(TAG, "Occurred Time-Out Event.");
-			unset_mask(ping, PING_ST_SIGNIN|PING_ST_TCPCONNECT);
-			check_ping_thread(ping);
-			CAUtilTCPDisconnectSession(ping->addr, ping->port, 64);
-			THINGS_LOG_E(TAG, "SEND PING TIME OUT, CLOUD DISCONNECT");
-			break;
-		default:
-			THINGS_LOG_D(TAG, "Not Support StackResult: %s(%d)", get_result(client_response->result), client_response->result);
-			break;
-		}
-	} else {
-		THINGS_LOG_V(TAG, "handler_ping_update_request received Null client_response");
-	}
-	/*! Added by st_things for memory Leak fix
-	 */
-	if (NULL != interval) {
-		things_free(interval);
-	}
-	THINGS_LOG_D(TAG, "Exit.");
-	return OC_STACK_DELETE_TRANSACTION;
-}
-
 /***************************************************************************************
  *
  * Interval Function Definition Collection.
@@ -645,8 +579,10 @@ static void check_ping_thread(things_ping_s *ping)
 		return;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
+		pthread_mutex_unlock(&mutex_ping_list);
 		return;
 	}
 
@@ -662,11 +598,13 @@ static void check_ping_thread(things_ping_s *ping)
 
 	if (get_mask(ping, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT) == false) {
 		THINGS_LOG_D(TAG, "Not need things_ping_s, So, Terminate things_ping_s.(IP=%s)", ping->addr);
-		if ((ping = list->erase_by_key(list, is_ip_key_equal, ping->addr)) != NULL) {
+		if ((ping = list->erase_by_key(list, (key_compare)is_ip_key_equal, ping->addr)) != NULL) {
 			THINGS_LOG_D(TAG, "Erase node-element Success in List.");
 			terminate_things_ping_s(ping);
 		}
 	}
+
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	THINGS_LOG_D(TAG, "Exit.");
 }
@@ -741,6 +679,7 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		return;
 	}
 
+	pthread_mutex_lock(&ping->mutex_state);
 	THINGS_LOG_D(TAG, "(B) bit_mask_state = 0x%X", ping->bit_mask_state);
 	if (state != PING_ST_INIT) {
 		ping->bit_mask_state &= (~state);
@@ -748,6 +687,8 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		ping->bit_mask_state = state;
 	}
 	THINGS_LOG_D(TAG, "(A) bit_mask_state = 0x%X", ping->bit_mask_state);
+	pthread_mutex_unlock(&ping->mutex_state);
+
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
@@ -793,7 +734,10 @@ static int find_resource_oic_ping(things_ping_s *ping)
 	set_mask(ping, PING_ST_DISCOVERY);
 
 	THINGS_LOG_D(TAG, "Send OCFindKeepAliveResouce request to %s.", hostAddr);
-	if (OCFindKeepAliveResource(&g_req_handle, hostAddr, &cb) == OC_STACK_OK) {
+	iotivity_api_lock();
+	OCStackResult res = OCFindKeepAliveResource(&g_req_handle, hostAddr, &cb);
+	iotivity_api_unlock();
+	if (res == OC_STACK_OK) {
 		THINGS_LOG_D(TAG, "Waiting for /oic/ping Cloud-response.(%s)", ping->addr);
 		sleepTime = 5;
 	} else {
@@ -866,7 +810,10 @@ static int send_things_ping_request(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "interval = %lld", interval);
 
 	THINGS_LOG_D(TAG, "Send OCSendKeepAliveRequest request to %s.", hostAddr);
-	if ((result = OCSendKeepAliveRequest(&g_req_handle, hostAddr, payload, &cb)) == OC_STACK_OK)
+	iotivity_api_lock();
+	result = OCSendKeepAliveRequest(&g_req_handle, hostAddr, (OCPayload *)payload, &cb);
+	iotivity_api_unlock();
+	if (result == OC_STACK_OK)
 	//if( (result= SendKeepAliveRequest(hostAddr, interval, &cb)) == OC_STACK_OK )
 	{
 		THINGS_LOG_V(TAG, "\e[35mSending Success about common-Ping request.\e[m");
@@ -922,7 +869,6 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 {
 	THINGS_LOG_D(TAG, "Enter.");
 
-	int i = 0;
 	bool res = false;
 	int64_t min_interval = 0;
 
@@ -944,6 +890,7 @@ static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, pi
 	if (get_mask(ping, confirmState) == true && get_mask(ping, PING_ST_TIMEOUT) == false) {
 		min_interval = find_minimum_from_intervals(intervals, int_ea);
 		memset(ping->interval, 0, sizeof(int64_t) * MAX_INTERVAL_EA);
+		int i = 0;
 		for (i = 0; i < int_ea; i++) {
 			THINGS_LOG_D(TAG, "Setting interval[%d]=%d", i, min_interval);
 			ping->interval[i] = min_interval;

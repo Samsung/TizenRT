@@ -67,6 +67,11 @@ recorder_result_t MediaRecorder::getVolume(uint8_t *vol)
 	return mPMrImpl->getVolume(vol);
 }
 
+recorder_result_t MediaRecorder::getMaxVolume(uint8_t *vol)
+{
+	return mPMrImpl->getMaxVolume(vol);
+}
+
 recorder_result_t MediaRecorder::setVolume(uint8_t vol)
 {
 	return mPMrImpl->setVolume(vol);
@@ -87,9 +92,19 @@ recorder_result_t MediaRecorder::setDuration(int second)
 	return mPMrImpl->setDuration(second);
 }
 
+recorder_result_t MediaRecorder::setFileSize(int byte)
+{
+	return mPMrImpl->setFileSize(byte);
+}
+
 bool MediaRecorder::operator==(const MediaRecorder& rhs)
 {
 	return this->mId == rhs.mId;
+}
+
+bool MediaRecorder::isRecording()
+{
+	return mPMrImpl->isRecording();
 }
 
 MediaRecorder::~MediaRecorder()

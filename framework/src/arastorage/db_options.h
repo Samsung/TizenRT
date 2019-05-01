@@ -80,28 +80,28 @@
 
 /* The maximum number of relations loaded in memory. */
 #ifndef DB_RELATION_POOL_SIZE
-#define DB_RELATION_POOL_SIZE           5
+#define DB_RELATION_POOL_SIZE           32
 #endif							/* DB_RELATION_POOL_SIZE */
 
 /* The maximum number of attributes loaded in memory. */
 #ifndef DB_ATTRIBUTE_POOL_SIZE
-#define DB_ATTRIBUTE_POOL_SIZE          16
+#define DB_ATTRIBUTE_POOL_SIZE          128
 #endif							/* DB_ATTRIBUTE_POOL_SIZE */
 
 /* The maximum number of attributes in a relation. */
 #ifndef DB_MAX_ATTRIBUTES_PER_RELATION
-#define DB_MAX_ATTRIBUTES_PER_RELATION  6
+#define DB_MAX_ATTRIBUTES_PER_RELATION  16
 #endif							/* DB_MAX_ATTRIBUTES_PER_RELATION */
 
 /* The maximum physical storage size on an attribute value. */
 #ifndef DB_MAX_ELEMENT_SIZE
-#define DB_MAX_ELEMENT_SIZE             32
+#define DB_MAX_ELEMENT_SIZE             256
 #endif							/* DB_MAX_ELEMENT_SIZE */
 
 /* The maximum size of the LVM bytecode compiled from a
    single database query. */
 #ifndef DB_VM_BYTECODE_SIZE
-#define DB_VM_BYTECODE_SIZE             128
+#define DB_VM_BYTECODE_SIZE             256
 #endif							/* DB_VM_BYTECODE_SIZE */
 
 /*----------------------------------------------------------------------------*/
@@ -124,7 +124,7 @@
 
 /* The maximum number of attributes used in a single query. */
 #ifndef AQL_ATTRIBUTE_LIMIT
-#define AQL_ATTRIBUTE_LIMIT             6
+#define AQL_ATTRIBUTE_LIMIT             9
 #endif							/* AQL_ATTRIBUTE_LIMIT */
 
 /*----------------------------------------------------------------------------*/
@@ -145,17 +145,17 @@
 
 /* The maximum file name length to use for creating various database file. */
 #ifndef DB_MAX_FILENAME_LENGTH
-#define DB_MAX_FILENAME_LENGTH          16
+#define DB_MAX_FILENAME_LENGTH          32
 #endif							/* DB_MAX_FILENAME_LENGTH */
 
 /* The maximum length of an attribute name. */
 #ifndef ATTRIBUTE_NAME_LENGTH
-#define ATTRIBUTE_NAME_LENGTH           12
+#define ATTRIBUTE_NAME_LENGTH           32
 #endif							/* ATTRIBUTE_NAME_LENGTH */
 
 /* The maximum length on a relation name. */
 #ifndef RELATION_NAME_LENGTH
-#define RELATION_NAME_LENGTH            16
+#define RELATION_NAME_LENGTH            64
 #endif							/* RELATION_NAME_LENGTH */
 
 /* File system mount point. */
@@ -165,7 +165,7 @@
 
 /* The maximum number of tuples in a relation. */
 #ifndef DB_TUPLE_LIMIT
-#define DB_TUPLE_LIMIT          2000
+#define DB_TUPLE_LIMIT          1000
 #endif							/* DB_TUPLE_LIMIT */
 
 /* The number of int array in a cursor. */

@@ -15,6 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
+#include <tinyara/lwnl/slsi_drv.h>
+#include <stdbool.h>
 
 #include "dev.h"
 #include "hip.h"
@@ -49,6 +52,21 @@ void slsi_driver_initialize(void)
 	platform_mif_module_probe();
 	scsc_mx_module_init();
 	slsi_dev_load();
+
+#ifdef CONFIG_LWNL80211_SLSI
+	FAR struct lwnl80211_lowerhalf_s *slsi_drv;
+	int ret;
+	slsi_drv = slsi_drv_initialize();
+	if (!slsi_drv) {
+		return;
+	}
+
+	ret = lwnl80211_register(slsi_drv);
+	if (ret < 0) {
+		return;
+	}
+#endif
+
 }
 
 static void slsi_regd_init(struct slsi_dev *sdev)

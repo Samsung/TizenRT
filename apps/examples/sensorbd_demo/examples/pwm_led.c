@@ -50,6 +50,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <tinyara/pwm.h>
 
@@ -105,10 +106,10 @@ void ledpwm_main(int argc, char *argv[])
 		ioctl(fd3, PWMIOC_START);
 		ioctl(fd4, PWMIOC_START);
 
-		up_mdelay(200);
+		usleep(200000);
 	}
 
-	up_mdelay(2000);
+	sleep(2);
 	ioctl(fd1, PWMIOC_STOP);
 	ioctl(fd2, PWMIOC_STOP);
 	ioctl(fd3, PWMIOC_STOP);

@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <debug.h>
 #include <media/FileOutputDataSource.h>
 #include "utils/MediaUtils.h"
@@ -59,54 +60,58 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
+	if (!mFp) {
+		mFp = fopen(mDataPath.c_str(), "wb");
+		if (!mFp) {
+			meddbg("file open failed error : %d\n", errno);
 			return false;
 		}
 
-		setStreamBuffer(streamBuffer);
-	}
-
-	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
 		switch (getAudioType()) {
-		case AUDIO_TYPE_OPUS:
-			setEncoder(Encoder::create(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
+		case AUDIO_TYPE_WAVE:
+			if (!utils::createWavHeader(mFp)) {
+				meddbg("wav header create failed\n");
+				if (fclose(mFp) == OK) {
+					mFp = nullptr;
+				} else {
+					meddbg("file close failed error : %d\n", errno);
+				}
+				return false;
+			}
 			break;
-
 		default:
 			/* Don't set any encoder for unsupported formats */
 			break;
 		}
-
-		mFp = fopen(mDataPath.c_str(), "wb");
-		if (mFp) {
-			medvdbg("file open success\n");
-			start();
-			return true;
-		} else {
-			meddbg("file open failed error : %d\n", errno);
-			return false;
-		}
+	} else {
+		medvdbg("file already exists\n");
+		/** return true if mFp is not null, because it means it using now */
 	}
-
-	medvdbg("file already exists\n");
-	/** return true if mFp is not null, because it means it using now */
 	return true;
 }
 
 bool FileOutputDataSource::close()
 {
+	switch (getAudioType()) {
+		case AUDIO_TYPE_WAVE: {
+			fflush(mFp);
+			long ret = ftell(mFp);
+			if (ret < 0) {
+				meddbg("file size could not be found errno : %d\n", errno);
+				break;
+			}
+			unsigned int fileSize = (unsigned int)ret;
+			if (!utils::writeWavHeader(mFp, getChannels(), getSampleRate(), getPcmFormat(), fileSize)) {
+				meddbg("wav header write to failed\n");
+			}
+			break;
+		}
+		default:
+			/* Don't set any encoder for unsupported formats */
+			break;
+	}
 	if (mFp) {
-		stop();
-
 		int ret = fclose(mFp);
 		if (ret == OK) {
 			mFp = nullptr;
@@ -121,44 +126,34 @@ bool FileOutputDataSource::close()
 	return false;
 }
 
-bool FileOutputDataSource::isPrepare()
+bool FileOutputDataSource::isPrepared()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
 		return false;
 	}
 	return true;
 }
 
-ssize_t FileOutputDataSource::onStreamBufferReadable(bool isFlush)
+ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 {
-	size_t total = 0;
-	unsigned char buf[1024];
-	auto reader = getBufferReader();
+	if (size == 0) {
+		return 0;
+	}
 
-	do {
-		size_t size = sizeof(buf);
-		size = reader->read(buf, size);
-		size_t wlen = 0;
-		while (wlen < size) {
-			size_t temp = fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
-			if (!temp) {
-				// Can not write data, error occurred.
-				meddbg("fwrite failed!\n");
-				return EOF;
-			}
-			wlen += temp;
-		}
+	if (!isPrepared()) {
+		return EOF;
+	}
 
-		total += wlen;
-	} while (isFlush && (reader->sizeOfData() > 0));
+	if (buf == nullptr) {
+		return EOF;
+	}
 
-	return (ssize_t) total;
+	return fwrite(buf, sizeof(unsigned char), size, mFp);
 }
 
 FileOutputDataSource::~FileOutputDataSource()
 {
-	if (mFp) {
+	if (isPrepared()) {
 		close();
 	}
 }

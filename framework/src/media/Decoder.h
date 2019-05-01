@@ -24,7 +24,7 @@
 #include <memory>
 
 #ifdef CONFIG_AUDIO_CODEC
-#include "streaming/audio_decoder.h"
+#include "codec/audio_decoder.h"
 #endif
 
 namespace media {
@@ -45,11 +45,16 @@ public:
 
 private:
 #ifdef CONFIG_AUDIO_CODEC
-	//static int _configFunc(void *user_data, int audio_type, void *dec_ext);
 	bool mConfig(int audioType);
 	audio_decoder_t mDecoder;
+	/* Coding format type of the input audio data. */
 	audio_type_t mAudioType;
+	/* Number of channels user desired for output PCM data.
+	 * TizenRT Media Framework supports only mono and stereo audio playback.
+	 * So for multiple channel audio playback, decoder can be asked to output PCM data in stereo layout forcely.
+	 */
 	unsigned short mChannels;
+	/* Sample rate of the input audio data. */
 	unsigned int mSampleRate;
 #endif
 };

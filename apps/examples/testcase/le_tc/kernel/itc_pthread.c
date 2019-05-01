@@ -147,8 +147,11 @@ static void *task_thread(void *param)
 	timeout.tv_nsec = WAIT_TIME_0;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGUSR1);
-	pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
+	ret = pthread_sigmask(SIG_BLOCK, &mask, NULL);
+	if (ret != 0) {
+		printf("pthread_sigmask Called failed  \n");
+		return NULL;
+	}
 	ret = sigtimedwait(&mask, &info, &timeout);
 	if (ret < SIG_ERROR) {
 		printf("Signal SIGSUR1:  Not Received inside  task_thread in =%d sec  \n", timeout.tv_sec);

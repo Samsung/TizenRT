@@ -186,24 +186,34 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC),y)
 	$(Q) $(call REGISTER,sysio_itc,itc_sysio_main,TASH_EXECMD_ASYNC,100,2048)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
-	$(Q) $(call REGISTER,taskmgr_utc,utc_task_manager_main,TASH_EXECMD_ASYNC,100,2048)
+	$(Q) $(call REGISTER,taskmgr_utc,utc_taskmanager_main,TASH_EXECMD_ASYNC,100,2048)
 	$(Q) $(call REGISTER,tm_sample,tm_sample_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast1,tm_broadcast1_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast2,tm_broadcast2_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast3,tm_broadcast3_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_utc,tm_utc_main,TASH_EXECMD_ASYNC,101,1024)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC),y)
+	$(Q) $(call REGISTER,taskmgr_itc,itc_taskmanager_main,TASH_EXECMD_ASYNC,100,2048)
+	$(Q) $(call REGISTER,tm_sample_itc,taskmanager_sample_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_itc,tm_itc_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,start_itc_sampl,taskmanager_start_sample_main,TASH_EXECMD_ASYNC,101,1024)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
 	$(Q) $(call REGISTER,ttrace_tc,tc_ttrace_main,TASH_EXECMD_ASYNC,100,2048)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC),y)
-	$(Q) $(call REGISTER,wifi_manager_utc,utc_wifi_manager_main,TASH_EXECMD_ASYNC,100,4096)
+	$(Q) $(call REGISTER,wifimgr_utc,utc_wifimanager_main,TASH_EXECMD_ASYNC,100,4096)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC),y)
-	$(Q) $(call REGISTER,wifi_manager_itc,itc_wifi_manager_main,TASH_EXECMD_ASYNC,100,4096)
+	$(Q) $(call REGISTER,wifimgr_itc,itc_wifimanager_main,TASH_EXECMD_ASYNC,100,4096)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS),y)
 	$(Q) $(call REGISTER,tcp_tls_stress,tc_tcp_tls_main,TASH_EXECMD_ASYNC,100,8192)
+endif
+
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_EVENTLOOP_UTC),y)
+	$(Q) $(call REGISTER,eventloop_utc,utc_eventloop_main,TASH_EXECMD_ASYNC,100,2048)
 endif
 
 context: $(BUILTIN_REGISTRY)$(DELIM)testcase.bdat

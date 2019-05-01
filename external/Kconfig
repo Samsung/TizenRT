@@ -4,7 +4,7 @@
 #
 
 source "$EXTERNALDIR/audiocodec/Kconfig"
-source "$EXTERNALDIR/avs-device-sdk/Kconfig"
+source "$EXTERNALDIR/avs/Kconfig"
 source "$EXTERNALDIR/aws/Kconfig"
 source "$EXTERNALDIR/codecs/Kconfig"
 source "$EXTERNALDIR/curl/Kconfig"
@@ -20,3 +20,4 @@ source "$EXTERNALDIR/WICED/Kconfig"
 source "$EXTERNALDIR/libopus/Kconfig"
 source "$EXTERNALDIR/stress_tool/Kconfig"
 source "$EXTERNALDIR/swepd/Kconfig"
+source "$EXTERNALDIR/esp_idf_port/Kconfig"

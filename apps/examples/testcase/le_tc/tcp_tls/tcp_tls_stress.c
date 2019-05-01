@@ -17,13 +17,16 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wifi_manager/wifi_manager.h>
-#include <stress_tool/st_perf.h>
 #include <netdb.h>
 #include <pthread.h>
+
+#include <wifi_manager/wifi_manager.h>
+#include <stress_tool/st_perf.h>
 
 #include "mbedtls/config.h"
 #include "mbedtls/net.h"
@@ -567,14 +570,14 @@ TEST_SETUP(tls_create)
 TEST_TEARDOWN(tls_create)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
 	ST_END_TEST;
 }
 
 TEST_F(tls_create)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -584,7 +587,7 @@ TEST_F(tls_create)
 TEST_SETUP(tls_destroy)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -597,7 +600,7 @@ TEST_TEARDOWN(tls_destroy)
 TEST_F(tls_destroy)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -607,14 +610,14 @@ TEST_F(tls_destroy)
 TEST_SETUP(tls_connect)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
 	ST_END_TEST;
 }
 
 TEST_TEARDOWN(tls_connect)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -622,8 +625,8 @@ TEST_F(tls_connect)
 {
 	ST_START_TEST;
 	tls_config tls_c;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
 	ST_END_TEST;
 }
 
@@ -634,16 +637,16 @@ TEST_SETUP(tls_send)
 {
 	ST_START_TEST;
 	tls_config tls_c;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
 	ST_END_TEST;
 }
 
 TEST_TEARDOWN(tls_send)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -651,7 +654,7 @@ TEST_F(tls_send)
 {
 	ST_START_TEST;
 	unsigned int write_count = 0;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_write(&mbedtls_c, SIMPLE_GET_REQUEST, strlen((void*)SIMPLE_GET_REQUEST), &write_count));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_write(&mbedtls_c, SIMPLE_GET_REQUEST, strlen((void*)SIMPLE_GET_REQUEST), &write_count));
 	ST_END_TEST;
 }
 
@@ -663,17 +666,17 @@ TEST_SETUP(tls_recv)
 	ST_START_TEST;
 	tls_config tls_c;
 	unsigned int write_count = 0;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_write(&mbedtls_c, SIMPLE_GET_REQUEST, strlen((void*)SIMPLE_GET_REQUEST), &write_count));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_create(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_config_get(&tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_connect(&mbedtls_c, &tls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_write(&mbedtls_c, SIMPLE_GET_REQUEST, strlen((void*)SIMPLE_GET_REQUEST), &write_count));
 	ST_END_TEST;
 }
 
 TEST_TEARDOWN(tls_recv)
 {
 	ST_START_TEST;
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_destroy(&mbedtls_c));
 	ST_END_TEST;
 }
 
@@ -682,7 +685,7 @@ TEST_F(tls_recv)
 	ST_START_TEST;
 	unsigned int read_count = 0;
 	unsigned char read_buffer[320];
-	ST_EXPECT(TCP_TLS_SUCCESS, tcp_tls_read(&mbedtls_c, read_buffer, sizeof(read_buffer), &read_count, 1000));
+	ST_EXPECT_EQ(TCP_TLS_SUCCESS, tcp_tls_read(&mbedtls_c, read_buffer, sizeof(read_buffer), &read_count, 1000));
 	ST_END_TEST;
 }
 

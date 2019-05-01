@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <string.h>
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
@@ -68,6 +69,70 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: zalloc_at
+ *
+ * Description:
+ *   zalloc to the specific heap.
+ *   zalloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+
+#if CONFIG_MM_NHEAPS > 1
+void *zalloc_at(int heap_index, size_t size)
+{
+	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
+		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+		return NULL;
+	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_zalloc(&g_mmheap[heap_index], size, retaddr);
+#else
+	return mm_zalloc(&g_mmheap[heap_index], size);
+#endif
+}
+#endif
+
+#ifndef CONFIG_ARCH_ADDRENV
+/************************************************************************
+ * Name: heap_zalloc
+ *
+ * Description:
+ *   Traverse the user heap arrays by index, and try to alloc memory.
+ *
+ * Parameters:
+ *   size - Size (in bytes) of the memory region to be allocated.
+ *   s     - Start index
+ *   e     - End index
+ *   retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+static void *heap_zalloc(size_t size, int s, int e, size_t retaddr)
+{
+	int heap_idx;
+	void *ret;
+
+	for (heap_idx = s; heap_idx < e; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_zalloc(&g_mmheap[heap_idx], size, retaddr);
+#else
+		ret = mm_zalloc(&g_mmheap[heap_idx], size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
+#endif
 
 /************************************************************************
  * Name: zalloc
@@ -95,15 +160,33 @@ FAR void *zalloc(size_t size)
 
 	return alloc;
 
-#else
+#else /* CONFIG_ARCH_ADDRENV */
 	/* Use mm_zalloc() becuase it implements the clear */
+	int heap_idx = 0;
+	void *ret = NULL;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_zalloc(USR_HEAP, size, retaddr);
 #else
-	return mm_zalloc(USR_HEAP, size);
+	size_t retaddr = 0;
 #endif
+
+#ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
+	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
+
+	ret = heap_zalloc(size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	if (ret != NULL) {
+		return ret;
+	}
+
+#if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
+	/* Try to mm_calloc to other heaps */
+	ret = heap_zalloc(size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+#endif
+
+	return ret;
+#endif /* CONFIG_ARCH_ADDRENV */
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

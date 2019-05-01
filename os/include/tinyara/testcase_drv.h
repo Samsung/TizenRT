@@ -52,7 +52,20 @@
  *
  */
 
-#define TESTIOC_DRIVER_ANALOG            _TESTIOC(1)
+#define TESTIOC_ANALOG                         _TESTIOC(1)
+#define TESTIOC_CLOCK_ABSTIME2TICKS            _TESTIOC(2)
+#define TESTIOC_GET_SIG_FINDACTION_ADD         _TESTIOC(3)
+#define TESTIOC_GET_SELF_PID                   _TESTIOC(4)
+#define TESTIOC_IS_ALIVE_THREAD                _TESTIOC(5)
+#define TESTIOC_GET_TCB_SIGPROCMASK            _TESTIOC(6)
+#define TESTIOC_GET_TCB_ADJ_STACK_SIZE         _TESTIOC(7)
+#define TESTIOC_GET_TCB_TIMESLICE              _TESTIOC(8)
+#define TESTIOC_SCHED_FOREACH                  _TESTIOC(9)
+#define TESTIOC_SIGNAL_PAUSE                   _TESTIOC(10)
+#define TESTIOC_TIMER_INITIALIZE_TEST          _TESTIOC(11)
+#define TESTIOC_SEM_TICK_WAIT_TEST             _TESTIOC(12)
+
+#define KERNEL_TC_DRVPATH                       "/dev/testcase"
 
 /****************************************************************************
  * Public Data
@@ -70,7 +83,7 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: test_drv_register
+ * Name: kernel_test_drv_register
  *
  * Description:
  *   This function creates a device node like "/dev/testcase" which will be used
@@ -79,7 +92,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-void test_drv_register(void);
+void kernel_test_drv_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus

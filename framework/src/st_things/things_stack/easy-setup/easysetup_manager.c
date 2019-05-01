@@ -19,6 +19,8 @@
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE				// for the usleep
 
+#include <sys/types.h>
+#include <sys/select.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,30 +28,34 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/select.h>
 #include <time.h>
 
 #include "utils/things_network.h"
 #include "utils/things_wait_handler.h"
 #include "easysetup_manager.h"
 #include "resource_handler.h"
+#include "things_iotivity_lock.h"
 #include "cloud/cloud_manager.h"
 #include "easysetup.h"
 #include "logging/things_logger.h"
 #include "framework/things_data_manager.h"
 #include "utils/things_malloc.h"
 #include "utils/things_rtos_util.h"
-#include "framework/things_data_manager.h"
 
 #ifdef __SECURED__
 #include "pinoxmcommon.h"
 #include "oxmverifycommon.h"
 #endif							// #ifdef __SECURED__
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+#include "security/sss_security/sss_storage_server.h"
+#endif
+
 #define TAG "[ezsetup-mg]"
 #define MAX_REFRESHCHECK_CNT    30	// 30 times
 
 #define FILE_ES_STATE "easysetup_state.dat"
+#define DEF_DEVICE_NAME "ST_Things Device"
 
 es_dev_conf_prov_data_s *g_dev_conf_prov_data = NULL;
 es_wifi_prov_data_s *g_wifi_prov_data = NULL;
@@ -61,9 +67,6 @@ static pin_close_func_type g_pin_close_cb = NULL;
 static user_confirm_result_func_type g_user_confirm_cb = NULL;
 
 int esm_continue = 0;
-#ifdef __ST_THINGS_RTOS__
-int ci_token_expire_fds[2] = { -1, -1 };
-#endif
 static pthread_t gthread_id_network_status_check = 0;
 static pthread_t gthread_id_cloud_refresh_check = 0;
 
@@ -72,7 +75,6 @@ static const int i_fail_sleep_sec = 60;	// 60 sec
 static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static es_device_property device_property;
-static const char *def_device_name = "ST_Things Device";
 
 static int g_es_state = 0; // 0 : EasySetup Need, 1 : Easysetup Done
 
@@ -98,7 +100,7 @@ void generate_pin_cb(char *pin, size_t pin_size)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	if (NULL == pin || pin_size <= 0) {
+	if (NULL == pin || pin_size == 0) {
 		THINGS_LOG_E(TAG, "INVALID PIN");
 		return;
 	}
@@ -168,7 +170,7 @@ int esm_set_device_property(char *name, const wifi_mode_e *mode, int ea_mode, co
 	}
 
 	if (name == NULL) {
-		name = def_device_name;
+		name = DEF_DEVICE_NAME;
 	}
 
 	if (ea_mode > NUM_WIFIMODE - 1) {
@@ -283,7 +285,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_E(TAG, "[Error] g_server_builder is NULL.");
 		return ESM_ERROR;
 	}
-	
+
 #ifdef __SECURED__
 	bool g_is_secured = true;
 #else
@@ -316,6 +318,12 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	SetVerifyOption(USER_CONFIRM);
 #endif //#ifdef __SECURED__
 
+#ifdef CONFIG_SVR_DB_SECURESTORAGE
+	if (getSecureStorageType() == 0) {
+		THINGS_LOG_D(TAG, "Secure Storage Set to 1");
+		setSecureStorageType(1);
+	}
+#endif
 	es_set_state(ES_STATE_INIT);
 	es_set_error_code(ES_ERRCODE_NO_ERROR);
 
@@ -329,7 +337,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	return ESM_OK;
 }
 
-esm_result_e esm_terminate_easysetup()
+esm_result_e esm_terminate_easysetup(void)
 {
 	THINGS_LOG_D(TAG, "Terminate EasySetup");
 	esm_continue = 0;
@@ -408,7 +416,11 @@ static void *cloud_refresh_check_loop(void *param)
 	int *i_continue = (int *)param;
 	int hour_cnt_24 = 0;
 
+#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
+	iotivity_api_lock();
 	THINGS_LOG_D(TAG, "device ID = %s", OCGetServerInstanceIDString());
+	iotivity_api_unlock();
+#endif
 
 	// Close Loop Thread.
 	while (*i_continue) {
@@ -542,13 +554,6 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 		set_wifi_prov_state(WIFI_DONE);
 		THINGS_LOG_D(TAG, "es_set_state ES_STATE_CONNECTED_TO_ENROLLER");
 
-#ifndef __ST_THINGS_RTOS__
-		if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
-			THINGS_LOG_E(TAG, "Broadcast Presence Failed.");
-			ret = 0;
-		}
-#endif
-
 		things_del_all_request_handle();	// clear time-out thread.
 		PROFILING_TIME("WiFi Provisioning End.");
 
@@ -581,12 +586,12 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// Attention : when 64bit linux Build, runtime-error occur. (memset () at ../sysdeps/x86_64/memset.S: Not Found File or Directory)
 	// It's because of p_info.(64 bit malloc internal code flow is not support that character array data-type of access_point_info_s)
 	// TODO : Fix Bug for 64bit support.
-	memset(p_info->e_ssid, 0, MAX_SSID_LEN);
-	memset(p_info->security_key, 0, MAX_SECUIRTYKEY_LEN);
-	memset(p_info->enc_type, 0, MAX_TYPE_ENC);
-	memset(p_info->auth_type, 0, MAX_TYPE_AUTH);
+	memset(p_info->e_ssid, 0, WIFIMGR_SSID_LEN + 1);
+	memset(p_info->security_key, 0, WIFIMGR_PASSPHRASE_LEN + 1);
+	memset(p_info->enc_type, 0, MAX_TYPE_ENC + 1);
+	memset(p_info->sec_type, 0, MAX_TYPE_SEC + 1);
 	memset(p_info->channel, 0, MAX_CHANNEL);
-	memset(p_info->bss_id, 0, MAX_SSID_LEN);
+	memset(p_info->bss_id, 0, WIFIMGR_MACADDR_STR_LEN + 1);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);
 
 	if (strlen(event_data->ssid) > 0) {
@@ -597,49 +602,49 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		things_strncpy(p_info->security_key, event_data->pwd, strlen(event_data->pwd));
 	}
 
-	if (event_data->authtype >= NONE_AUTH && event_data->authtype <= WPA2_PSK) {
-		switch (event_data->authtype) {
+	if (event_data->sectype >= NONE_SEC && event_data->sectype <= WPA2_PSK) {
+		switch (event_data->sectype) {
 		case WEP:
-			things_strncpy(p_info->auth_type, "WEP", strlen("WEP"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WEP, strlen(SEC_TYPE_WEP));
 			break;
 		case WPA_PSK:
-			things_strncpy(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA_PSK, strlen(SEC_TYPE_WPA_PSK));
 			break;
 		case WPA2_PSK:
-			things_strncpy(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_WPA2_PSK, strlen(SEC_TYPE_WPA2_PSK));
 			break;
-		case NONE_AUTH:
+		case NONE_SEC:
 		default:
-			things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->auth_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->sec_type, SEC_TYPE_NONE, strlen(SEC_TYPE_NONE));
 	}
 
 	if (event_data->enctype >= NONE_ENC && event_data->enctype <= TKIP_AES) {
 		switch (event_data->enctype) {
 		case WEP_64:
-			things_strncpy(p_info->enc_type, "WEP_64", strlen("WEP_64"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_64, strlen(ENC_TYPE_WEP_64));
 			break;
 		case WEP_128:
-			things_strncpy(p_info->enc_type, "WEP_128", strlen("WEP_128"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_WEP_128, strlen(ENC_TYPE_WEP_128));
 			break;
 		case TKIP:
-			things_strncpy(p_info->enc_type, "TKIP", strlen("TKIP"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP, strlen(ENC_TYPE_TKIP));
 			break;
 		case AES:
-			things_strncpy(p_info->enc_type, "AES", strlen("AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_AES, strlen(ENC_TYPE_AES));
 			break;
 		case TKIP_AES:
-			things_strncpy(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_TKIP_AES, strlen(ENC_TYPE_TKIP_AES));
 			break;
 		default:
-			things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+			things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 			break;
 		}
 	} else {
-		things_strncpy(p_info->enc_type, "NONE", strlen("NONE"));
+		things_strncpy(p_info->enc_type, ENC_TYPE_NONE, strlen(ENC_TYPE_NONE));
 	}
 
 	if (event_data->discovery_channel != -1) {
@@ -648,14 +653,14 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 
 	THINGS_LOG_D(TAG, "e_ssid : %s", p_info->e_ssid);
 	THINGS_LOG_D(TAG, "security_key : %s", p_info->security_key);
-	THINGS_LOG_D(TAG, "auth_type : %s", p_info->auth_type);
+	THINGS_LOG_D(TAG, "sec_type : %s", p_info->sec_type);
 	THINGS_LOG_D(TAG, "enc_type : %s", p_info->enc_type);
 	THINGS_LOG_D(TAG, "channel : %s", p_info->channel);
 	THINGS_LOG_D(TAG, "Copied ssid = %s", g_wifi_prov_data->ssid);
 	THINGS_LOG_D(TAG, "Copied pwd = %s", g_wifi_prov_data->pwd);
 	THINGS_LOG_D(TAG, "Copied enctype = %d", g_wifi_prov_data->enctype);
 	THINGS_LOG_D(TAG, "Copied discovery_channel = %d", g_wifi_prov_data->discovery_channel);
-	THINGS_LOG_D(TAG, "Copied authtype = %d", g_wifi_prov_data->authtype);
+	THINGS_LOG_D(TAG, "Copied sectype = %d", g_wifi_prov_data->sectype);
 
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
@@ -834,13 +839,6 @@ void *esm_register_cloud_cb(void *func)
 	return NULL;
 }
 
-esm_result_e esm_set_wifi_conn_err(void)
-{
-	es_set_state(ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER);
-	es_set_error_code(ES_ERRCODE_UNKNOWN);
-	return ESM_OK;
-}
-
 int esm_register_pin_generated_cb(pin_generated_func_type func)
 {
 	if (func) {
@@ -878,7 +876,7 @@ int esm_save_easysetup_state(int state)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (state == ES_COMPLETE) { // Done
-		THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);		
+		THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);
 		FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "w+");
 		if (!fp) {
 			THINGS_LOG_E(TAG, "File open error(%d)", errno);
@@ -903,7 +901,7 @@ int esm_save_easysetup_state(int state)
 
 int esm_read_easysetup_state(void)
 {
-	THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);	
+	THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);
 	FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "r");
 	if (!fp) {
 		THINGS_LOG_D(TAG, "File does not exist(%d)", errno);

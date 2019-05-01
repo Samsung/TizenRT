@@ -59,6 +59,7 @@ help_vars.Add(EnumVariable('ROUTING', 'Enable routing', 'EP', allowed_values=('G
 help_vars.Add(BoolVariable('WITH_PROXY', 'CoAP-HTTP Proxy', False)) # set to 'no', 'false' or 0 for debug
 help_vars.Add(ListVariable('WITH_MQ', 'Build with MQ publisher/subscriber/broker', 'OFF', ['OFF', 'SUB', 'PUB', 'BROKER']))
 help_vars.Add(BoolVariable('WITH_TCP', 'Build with TCP', False))
+help_vars.Add(BoolVariable('DISABLE_TCP_SERVER', 'Disable TCP server', False))
 
 ######################################################################
 # Platform(build target) specific options: SDK/NDK & toolchain

@@ -15,46 +15,61 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-ifeq ($(CONFIG_AUDIO), y)
+ifeq ($(CONFIG_MEDIA), y)
+CSRCS += media_init.c
 CSRCS += audio_manager.c
 DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-DEPPATH += --dep-path src/media/streaming
-VPATH += :src/media/streaming
-endif
 
 CFLAGS += -D__TINYARA__
 
-ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
-CXXSRCS += MediaUtils.cpp
+CXXSRCS += MediaUtils.cpp remix.cpp
 CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
+CSRCS += stream_info.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
-
+DEPPATH += --dep-path src/media/codec
+VPATH += :src/media/codec
+DEPPATH += --dep-path src/media/codec/mp3
+VPATH += :src/media/codec/mp3
+DEPPATH += --dep-path src/media/codec/aac
+VPATH += :src/media/codec/aac
+DEPPATH += --dep-path src/media/codec/wav
+VPATH += :src/media/codec/wav
 ifeq ($(CONFIG_CODEC_LIBOPUS), y)
-CSRCS += opus_encoder_api.c opus_decoder_api.c
-DEPPATH += --dep-path src/media/codecs
-VPATH += :src/media/codecs
+DEPPATH += --dep-path src/media/codec/opus
+VPATH += :src/media/codec/opus
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
 CXXSRCS += InputHandler.cpp
 CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
-CXXSRCS += Decoder.cpp audio_decoder.cpp
+CXXSRCS += HttpInputDataSource.cpp
+ifeq ($(CONFIG_ENABLE_CURL), y)
+CXXSRCS += HttpStream.cpp
+endif
+CXXSRCS += Decoder.cpp audio_decoder.cpp wav_decoder_api.cpp
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_decoder_api.c
+endif
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
 CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += OutputHandler.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp
+endif
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_encoder_api.c
 endif
 endif
 
@@ -63,7 +78,6 @@ DEPPATH += --dep-path src/media/voice
 VPATH += :src/media/voice
 CXXSRCS += \
 	SpeechDetector.cpp \
-	EndPointDetector.cpp \
 	SoftwareKeywordDetector.cpp \
 	HardwareKeywordDetector.cpp \
 	SoftwareEndPointDetector.cpp \

@@ -1,77 +1,183 @@
 # How to add(port) a new board
 
-Changes in *[arch](#arch)* and *[configs](#configs)* folders are mandatory to support a new board.  
-Adding static library or expanding driver will be provided later.
+To support a new board, you should make changes on three folders, *arch*, *board* and *configs*.  
 
-## Arch
+> 1. **arch** folder includes *CPU* and *chip* architectures.  
+> 2. **board** folder includes board support package(BSP).  
+> 3. **configs** folder includes build options and flash operations.
 
-Changes in *arch* directory for a new board includes chip architecture and BSP for board.  
-Currently, TizenRT supports only ARM architecture.  
-But if new board is another architecture, new architecture folder should be added in this path.
+## Contents
 
-### BSP
+> [Folder structure](#folder-structure)  
+> [Architecture](#architecture)  
+> [Board](#board)  
+> [How to include headers](#how-to-include-arch-and-board-header-files)  
+> [Configs](#configs)
 
-There are three kinds of folders, core, chip architecture and board.  
-For example, armv7-r is a core architecture, s5j is a chip architecture and artik053 is a board.  
+## Folder structure
 
-At least, new board folder should be added.
+```
+	.
+	|- os .- arch - <cpu-familyname> .- include .- <cpu-archname>
+	|     |                    |          |
+	|     |                    |          `- <chip-name>
+	|     |                    |
+	|     |                    `- src .- <cpu-archname>
+	|     |                           |
+	|     |                           `- <chip-name>
+	|     `- board - <board-name> .- include
+	|                             |
+	|                             `- src
+	|
+	`- build - configs - <board-name>
+```
 
-### Kconfig
+## Architecture
 
-Modifications on below two Kconfigs show new board configurations on menuconfig.
+This includes *CPU* and *chip* architecture inside.  
 
-#### Chip
-Modify *os/arch/arm/Kconfig* file.
+### CPU
 
-1. Add new configurations as belows.
+```
+	.
+	`- os - arch - <cpu-familyname> .- include - <cpu-archname>
+	                          |
+	                          `- src - <cpu-archname>
+```
+**CPU** has *\<cpu-familyname\>* along with *\<cpu-archname\>* in the path.  
+> cpu-family : arm, mips (not supported yet), ...  
+> cpu-architecture : armv7-r, armv7-m, common, ...
+
+After adding source codes under *os/arch/\<cpu-familyname\>*,  
+to provide selection of new architecture, **Kconfig** on *os/arch* also need to be change like below:
 ```
 choice
-	prompt "ARM chip selection"
+	prompt "CPU Architecture"
+	default ARCH_ARM
 
-config ARCH_CHIP_<CHIP_NAME>
-	bool "XXX"
-	select ARCH_HAVE_YYY
+config ARCH_ARM
+	bool "ARM"
+	---help---
+		The ARM architectures
+
+config ARCH_<CPU-FAMILYNAME>
+	bool "<CPU-FAMILYNAME>"
+	---help---
+		The <CPU-FAMILYNAME> architecture
+
+endchoice
+
+config ARCH
+	string
+	default "arm"        if ARCH_ARM
+	default "<cpu-familyname>  if ARCH_<CPU-FAMILYNAME>
+
+source arch/arm/Kconfig
+source arch/<cpu-familyname>/Kconfig
+```
+
+Note: Value of `config ARCH` should be same as folder name of `<cpu-familyname>`.
+
+Currently, TizenRT supports only ARM architecture with *armv7-m*, *armv7-r* and *common* folders.
+
+### Chip
+
+```
+	.
+	`- os - arch - <cpu-familyname> .- include .- <cpu-archname>
+	                          |          |
+	                          |          `- <chip-name>
+	                          |
+	                          `- src .- <cpu-archname>
+	                                 |
+	                                 `- <chip-name>
+```
+
+Currently, TizenRT includes *bcm4390x*, *s5j* and *tiva* folders for chip architecture.  
+You must add new chip folders under *src* and *include* folders.  
+The chip folder of *src* should include **Make.defs** and **Kconfig** to provide configuration and compilation.
+
+Kconfig of *os/arch/<cpu-familyname>* supports selection of chip among TizenRT supported like CPU.
+```
+choice
+	prompt "<CPU-FAMILYNAME> chip selection"
+	default ARCH_CHIP_S5J
+
+config ARCH_CHIP_S5J
+	bool "Samsung S5J"
+	---help---
+		Samsung IoT SoC architectures (ARM Cortex R)
+
+config ARCH_CHIP_<CHIP-NAME>
+	bool "xxxxx"
+
 endchoice
 
 config ARCH_CHIP
 	string
-	default "<CHIP_NAME>"       if ARCH_CHIP_<CHIP_NAME>
-```
+	default "s5j"              if ARCH_CHIP_S5J
+	default "<chip-name>"      if ARCH_CHIP_<CHIP-NAME>
 
-2. Include Kconfig as belows.
-```
-if ARCH_CHIP_<CHIP_NAME>
-source arch/arm/src/<CHIP_NAME>/Kconfig
+if ARCH_CHIP_S5J
+source arch/<cpu-familyname>/src/s5j/Kconfig
 endif
+if ARCH_CHIP_<CHIP-NAME>
+source arch/<cpu-familyname>/src/<CHIP-NAME>/Kconfig
 ```
 
-#### Board
-Modify *os/arch/Kconfig.board* file.
+Like \<cpu-familyname\>, `config ARCH_CHIP` value also should be same as folder name.
 
-1. Add new configurations as belows.
+## Board
+
+```
+	.
+	|- os .- arch
+	      |
+	      `- board - <board-name> .- include
+	                              |
+	                              `- src
+```
+
+After making `<board-name>` folder, put headers into *include* folder and put source codes into *src* folder.  
+Same as CPU and chip selection, new board will be selected by **Kconfig** of *os/board*.
+
 ```
 choice
 	prompt "Select target board"
+	default ARCH_BOARD_SIDK_S5JT200
 
-config ARCH_BOARD_<BOARD_NAME>
-	bool "XXX Starter Kit"
-	depends on ARCH_CHIP_<CHIP_NAME>
-	select YYY
+config ARCH_BOARD_LM3S6965EK
+	bool "Stellaris LM3S6965 Evaluation Kit"
+
+config ARCH_BOARD_<BOARD-NAME>
+	bool "XXX"
+
 endchoice
 
 config ARCH_BOARD
 	string
-	default "<BOARD_NAME>"           if ARCH_BOARD_<BOARD_NAME>
-```
+	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
+	default "<board-name>"       if ARCH_BOARD_<BOARD-NAME>
 
-2. Include Kconfig as belows.
-```
-comment "Board-Specific Options"
-
-if ARCH_BOARD_<BOARD_NAME>
-source arch/arm/src/<BOARD_NAME>/Kconfig
+if ARCH_BOARD_LM3S6965EK
+source board/lm3s6965-ek/Kconfig
+endif
+if ARCH_BOARD_<BOARD-NAME>
+source board/<board-name>/Kconfig
 endif
 ```
+
+## How to include arch and board header files
+
+At build time, Makefile dynamically links selected chip and board folders into selected cpu folder.  
+After building, you can find *chip* and *board* folders at *os/arch/<cpu-familyname>/src* folder.
+
+Additionally, at that time, *include* folder is linked into *os/include/arch* folder to expose their public APIs and definitions.
+
+For example, to use *bcm4390x* chip API which is defined in *os/arch/arm/include/bcm4390x/chip.h*, `#include <arch/chip/chip.h>` is necessary.  
+For *os/board/artik05x/artik055_alc5658_i2c.h*, `#include <arch/board/artik055_alc5658_i2c.h>` can be used.
+
+*make distclean* command unlinks them.
 
 ## Configs
 

@@ -109,10 +109,13 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include <protocols/websocket.h>
 
@@ -126,8 +129,6 @@
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl_cache.h"
-
-#include <sys/socket.h>
 
 /****************************************************************************
  * Pre-processor Definitions

@@ -1,0 +1,3 @@
+config ENTRY_SECURITY_HAL_TEST
+	bool "Security HAL test"
+	depends on EXAMPLES_SECURITY_HAL_TEST

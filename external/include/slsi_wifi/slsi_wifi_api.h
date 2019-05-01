@@ -421,6 +421,15 @@ int8_t WiFiSetCountryCode(const char *country_code);
  */
 int8_t WiFiSaveConfig(void);
 
+/**
+ * Request to set the autoconnect of external driver.
+ *	@check		1 for enabling and 0 for disabling external autoconnect
+ * Return: Completed successfully or failed
+ *
+ *   Will set external autoconnect enabled or disabled
+ */
+int8_t WiFiSetAutoconnect(uint8_t check);
+
 #undef EXTERN
 #ifdef  __cplusplus
 }

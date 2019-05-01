@@ -23,11 +23,14 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
+
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 
-#include <tinyara/config.h>
 #include <tinyara/fs/fs_utils.h>
 
 /****************************************************************************

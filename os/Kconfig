@@ -435,8 +435,20 @@ config DEBUG_OPTLEVEL
 
 endmenu # Build Setup
 
-menu "Hardware Configuration"
+menu "Chip Selection"
 source arch/Kconfig
+endmenu
+
+menu "Board Selection"
+source board/Kconfig
+endmenu
+
+menu "SE Selection"
+source se/Kconfig
+endmenu
+
+menu "Crypto Module"
+source crypto/Kconfig
 endmenu
 
 menu "Kernel Features"
@@ -520,3 +532,5 @@ endmenu
 menu "IoTBus Framework"
 source "$FRAMEWORK_DIR/src/iotbus/Kconfig"
 endmenu
+
+

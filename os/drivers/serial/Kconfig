@@ -11,8 +11,9 @@ config DEV_LOWCONSOLE
 	---help---
 		Use the simple, low-level, write-only serial console driver (minimal support)
 
-config SERIAL_REMOVABLE
+config SERIAL_CONSOLE
 	bool
+	default n
 
 config 16550_UART
 	bool "16550 UART Chip support"
@@ -499,6 +500,11 @@ config USART8_ISUART
 	depends on ARCH_HAVE_USART8
 	select MCU_SERIAL
 
+config OTHER_UART_SERIALDRIVER
+	bool
+	default n
+	select MCU_SERIAL
+
 config MCU_SERIAL
 	bool
 	default n
@@ -596,46 +602,55 @@ config SERIAL_TERMIOS
 
 choice
 	prompt "Serial console"
-	default NO_SERIAL_CONSOLE if !ARCH_HAVE_OTHER_UART
-	default OTHER_SERIAL_CONSOLE if ARCH_HAVE_OTHER_UART
+	default NO_SERIAL_CONSOLE if !ARCH_HAVE_OTHER_UART && !OTHER_UART_SERIALDRIVER
+	default OTHER_SERIAL_CONSOLE if ARCH_HAVE_OTHER_UART || OTHER_UART_SERIALDRIVER
 	depends on MCU_SERIAL
 	#depends on DEV_CONSOLE - We may have serial console with no file system at all
 
 config UART_SERIAL_CONSOLE
 	bool "UART"
-	depends on ARCH_HAVE_UART
+	depends on ARCH_HAVE_UART ||  UART_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config UART0_SERIAL_CONSOLE
 	bool "UART0"
 	depends on ARCH_HAVE_UART0
+	select SERIAL_CONSOLE
 
 config USART0_SERIAL_CONSOLE
 	bool "USART0"
 	depends on USART0_ISUART
+	select SERIAL_CONSOLE
 
 config UART1_SERIAL_CONSOLE
 	bool "UART1"
 	depends on ARCH_HAVE_UART1
+	select SERIAL_CONSOLE
 
 config USART1_SERIAL_CONSOLE
 	bool "USART1"
 	depends on USART1_ISUART
+	select SERIAL_CONSOLE
 
 config UART2_SERIAL_CONSOLE
 	bool "UART2"
 	depends on ARCH_HAVE_UART2
+	select SERIAL_CONSOLE
 
 config USART2_SERIAL_CONSOLE
 	bool "USART2"
 	depends on USART2_ISUART
+	select SERIAL_CONSOLE
 
 config UART3_SERIAL_CONSOLE
 	bool "UART3"
 	depends on ARCH_HAVE_UART3
+	select SERIAL_CONSOLE
 
 config USART3_SERIAL_CONSOLE
 	bool "USART3"
 	depends on ARCH_HAVE_USART3
+	select SERIAL_CONSOLE
 
 config UART4_SERIAL_CONSOLE
 	bool "UART4"
@@ -688,6 +703,26 @@ config SCI1_SERIAL_CONSOLE
 config OTHER_SERIAL_CONSOLE
 	bool "Other serial console"
 
+config LPUART0_SERIAL_CONSOLE
+	bool "LPUART0"
+	depends on LPUART0_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART1_SERIAL_CONSOLE
+	bool "LPUART1"
+	depends on LPUART1_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART2_SERIAL_CONSOLE
+	bool "LPUART2"
+	depends on LPUART2_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART3_SERIAL_CONSOLE
+	bool "LPUART3"
+	depends on LPUART3_SERIALDRIVER
+	select SERIAL_CONSOLE
+
 config NO_SERIAL_CONSOLE
 	bool "No serial console"
 
@@ -698,7 +733,7 @@ endchoice
 #
 
 menu "UART Configuration"
-	depends on ARCH_HAVE_UART
+	depends on ARCH_HAVE_UART || UART_SERIALDRIVER
 
 config UART_RXBUFSIZE
 	int "Receive buffer size"
@@ -812,6 +847,9 @@ config UART0_OFLOWCONTROL
 		Enable UART0 CTS flow control
 
 endmenu
+
+source drivers/serial/Kconfig-uart
+source drivers/serial/Kconfig-lpuart
 
 menu "USART0 Configuration"
 	depends on USART0_ISUART

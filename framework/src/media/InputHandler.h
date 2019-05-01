@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <pthread.h>
+#include <sys/types.h>
 
 #include <media/InputDataSource.h>
 #include <media/BufferObserverInterface.h>
@@ -44,47 +44,48 @@ typedef enum buffer_state_e : int {
 class InputHandler : public BufferObserverInterface
 {
 public:
-    InputHandler();
-    virtual ~InputHandler() = default;
-    void setInputDataSource(std::shared_ptr<InputDataSource> source);
-    bool open();
-    bool close();
-    ssize_t read(unsigned char *buf, size_t size);
-    bool start();
-    bool stop();
-    void createWorker();
-    void destroyWorker();
-    static void *workerMain(void *arg);
-    void sleepWorker();
-    void wakenWorker();
+	InputHandler();
+	virtual ~InputHandler() = default;
+	void setInputDataSource(std::shared_ptr<InputDataSource> source);
+	bool doStandBy();
+	bool open();
+	bool close();
+	ssize_t read(unsigned char *buf, size_t size);
+	bool start();
+	bool stop();
+	void createWorker();
+	void destroyWorker();
+	static void *workerMain(void *arg);
+	void sleepWorker();
+	void wakenWorker();
 
 	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
-    void setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer);
-    void setBufferState(buffer_state_t state);
+	void setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer);
+	void setBufferState(buffer_state_t state);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
 	virtual void onBufferUpdated(ssize_t change, size_t current) override;
 
-    void setPlayer(std::shared_ptr<MediaPlayerImpl> mp) { mPlayer = mp; }
+	void setPlayer(std::shared_ptr<MediaPlayerImpl> mp) { mPlayer = mp; }
 	std::shared_ptr<MediaPlayerImpl> getPlayer() { return mPlayer.lock(); }
 
-    ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
+	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
 	bool registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate);
 	void unregisterDecoder();
 	size_t getDecodeFrames(unsigned char *buf, size_t *size);
 
-    std::shared_ptr<InputDataSource> getInputDataSource() { return mInputDataSource; }
+	std::shared_ptr<InputDataSource> getInputDataSource() { return mInputDataSource; }
 
 private:
-    std::shared_ptr<InputDataSource> mInputDataSource;
+	std::shared_ptr<InputDataSource> mInputDataSource;
 	std::shared_ptr<Decoder> mDecoder;
 	std::shared_ptr<StreamBuffer> mStreamBuffer;
 	std::shared_ptr<StreamBufferReader> mBufferReader;
 	std::shared_ptr<StreamBufferWriter> mBufferWriter;
 	pthread_t mWorker;
-    bool mIsWorkerAlive;
+	bool mIsWorkerAlive;
 	std::weak_ptr<MediaPlayerImpl> mPlayer;
 
 	buffer_state_t mState;

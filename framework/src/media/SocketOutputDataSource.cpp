@@ -92,23 +92,22 @@ bool SocketOutputDataSource::close()
 	return false;
 }
 
-bool SocketOutputDataSource::isPrepare()
+bool SocketOutputDataSource::isPrepared()
 {
 	return (mSockFd != INVALID_SOCKET);
 }
 
 ssize_t SocketOutputDataSource::write(unsigned char* buf, size_t size)
 {
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!buf) {
 		return EOF;
 	}
 
 	return send(mSockFd, buf, size, 0);
-}
-
-ssize_t SocketOutputDataSource::onStreamBufferReadable(bool isFlush)
-{
-	return 0;
 }
 
 SocketOutputDataSource::~SocketOutputDataSource()

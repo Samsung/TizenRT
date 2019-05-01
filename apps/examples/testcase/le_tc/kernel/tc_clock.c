@@ -27,7 +27,8 @@
 #include <time.h>
 #include <tinyara/time.h>
 #include <sys/time.h>
-#include "../../../../../os/kernel/clock/clock.h"
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
 #include "tc_internal.h"
 
 const long double l_day = 86400;
@@ -166,23 +167,23 @@ static void tc_clock_clock_gettimeofday(void)
  */
 static void tc_clock_clock_abstime2ticks(void)
 {
-	int ret_chk;
+	int fd;
 	int base_tick;
 	int comparison_tick;
 	struct timespec base_time;
 	struct timespec comparison_time;
 
+	fd = tc_get_drvfd();
 	clock_gettime(CLOCK_REALTIME, &base_time);
 	comparison_time.tv_sec = base_time.tv_sec + 1;
 
-	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
-	TC_ASSERT_EQ("clock_abstime2ticks", ret_chk, OK);
+	base_tick = ioctl(fd, TESTIOC_CLOCK_ABSTIME2TICKS, base_time.tv_sec);
+	TC_ASSERT_NEQ("clock_abstime2ticks", base_tick, ERROR);
 
-	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
-	TC_ASSERT_EQ("clock_abstime2ticks", ret_chk, OK);
+	comparison_tick = ioctl(fd, TESTIOC_CLOCK_ABSTIME2TICKS, comparison_time.tv_sec);
+	TC_ASSERT_NEQ("clock_abstime2ticks", comparison_tick, ERROR);
 
 	/* the difference can be 0 or 1, but should be smaller than 2 */
-
 	TC_ASSERT_GEQ("clock_abstime2ticks", comparison_tick - (base_tick * 2), 2);
 
 	TC_SUCCESS_RESULT();

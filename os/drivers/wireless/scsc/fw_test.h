@@ -19,6 +19,7 @@
 #ifndef __SLSI_FW_TEST_H__
 #define __SLSI_FW_TEST_H__
 
+#include <sys/types.h>
 #include "dev.h"
 
 struct slsi_fw_test {

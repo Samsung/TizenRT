@@ -54,7 +54,12 @@
 
 float floorf(float x)
 {
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	modff(x, &x);
+
 	if (x < 0.0) {
 		x -= 1.0;
 	}

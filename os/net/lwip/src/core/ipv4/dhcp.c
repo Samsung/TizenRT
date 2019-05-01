@@ -1892,4 +1892,18 @@ u8_t dhcp_supplied_address(const struct netif *netif)
 	return 0;
 }
 
+/** check if DHCP supplied netif->ip_addr
+ *
+ * @param netif the netif to check
+ */
+err_t dhcp_address_valid(struct netif *netif)
+{
+	u8_t is_dhcp_supplied_address;
+	is_dhcp_supplied_address = dhcp_supplied_address(netif);
+	if (!is_dhcp_supplied_address) {
+		return ERR_VAL;
+	}
+	return ERR_OK;
+}
+
 #endif							/* LWIP_IPV4 && LWIP_DHCP */

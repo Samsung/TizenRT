@@ -16,6 +16,10 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+
+#include <pthread.h>
+
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
@@ -46,6 +50,30 @@ void InputHandler::setInputDataSource(std::shared_ptr<InputDataSource> source)
 	mInputDataSource = source;
 }
 
+bool InputHandler::doStandBy()
+{
+	auto mp = getPlayer();
+	if (!mp) {
+	    meddbg("get player handle failed!\n");
+	    return false;
+	}
+
+	std::thread wk = std::thread([=]() {
+		medvdbg("InputHandler::doStandBy thread enter\n");
+		player_event_t event;
+		if (mInputDataSource->open()) {
+			event = PLAYER_EVENT_SOURCE_PREPARED;
+		} else {
+			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
+		}
+		mp->notifyAsync(event);
+		medvdbg("InputHandler::doStandBy thread exit\n");
+	});
+
+	wk.detach();
+	return true;
+}
+
 bool InputHandler::open()
 {
 	if (!getStreamBuffer()) {
@@ -62,9 +90,19 @@ bool InputHandler::open()
 		setStreamBuffer(streamBuffer);
 	}
 
-	if (mInputDataSource->open() && registerDecoder(mInputDataSource->getAudioType(), mInputDataSource->getChannels(), mInputDataSource->getSampleRate())) {
-		start();
-		return true;
+	if (mInputDataSource->open()) {
+		/* Media f/w playback supports only mono and stereo.
+		 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
+		 */
+		if (mInputDataSource->getChannels() > 2) {
+			medvdbg("Set multiple channel %u to stereo forcely!\n", mInputDataSource->getChannels());
+			mInputDataSource->setChannels(2);
+		}
+
+		if (registerDecoder(mInputDataSource->getAudioType(), mInputDataSource->getChannels(), mInputDataSource->getSampleRate())) {
+			start();
+			return true;
+		}
 	}
 
 	return false;
@@ -92,7 +130,7 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 
 bool InputHandler::start()
 {
-	if (!mInputDataSource->isPrepare()) {
+	if (!mInputDataSource->isPrepared()) {
 		return false;
 	}
 
@@ -311,6 +349,7 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
+	case AUDIO_TYPE_WAVE:
 	case AUDIO_TYPE_OPUS: {
 		auto decoder = Decoder::create(audioType, channels, sampleRate);
 		if (!decoder) {
@@ -324,7 +363,7 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
 		return true;
 	case AUDIO_TYPE_FLAC:
-	    /* To be supported */ 
+		/* To be supported */
 	default:
 		meddbg("%s[line : %d] Fail : type %d is not supported\n", __func__, __LINE__, audioType);
 		return false;
@@ -342,10 +381,7 @@ size_t InputHandler::getDecodeFrames(unsigned char *buf, size_t *size)
 	unsigned short channels = 0;
 
 	if (mDecoder->getFrame(buf, size, &sampleRate, &channels)) {
-		/* TODO set configuration should be removed when we finish implement header parser */
-		mInputDataSource->setSampleRate(sampleRate);
-		mInputDataSource->setChannels(channels);
-		medvdbg("size : %u samplerate : %d channels : %d\n", size, sampleRate, channels);
+		medvdbg("size : %u samplerate : %d channels : %d\n", *size, sampleRate, channels);
 		return *size;
 	}
 

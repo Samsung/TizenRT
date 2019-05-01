@@ -22,23 +22,22 @@
 
 #include <debug.h>
 #include <unistd.h>
+#include <tinyara/sched.h>
 #include <libtuv/uv.h>
 #include <libtuv/uv__types.h>
+#include <libtuv/uv__loop.h>
 #include <eventloop/eventloop.h>
 
 #include "eventloop_internal.h"
 
 el_loop_t *g_loop_list[CONFIG_MAX_TASKS];
 
-#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
-#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
-
 el_loop_t *get_app_loop(void)
 {
 	int index;
 
 	/* Get a loop assigned to own task */
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	if (g_loop_list[index] == NULL) {
 		g_loop_list[index] = (el_loop_t *)EL_ALLOC(sizeof(el_loop_t));
@@ -54,7 +53,7 @@ static int release_app_loop(void)
 {
 	int index;
 
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	if (g_loop_list[index] != NULL) {
 		if (uv_loop_close(g_loop_list[index]) < 0) {
@@ -96,8 +95,22 @@ int eventloop_loop_run(void)
 /* A function for closing each handle in loop called by iteration in uv_walk. */
 static void eventloop_close_handle(uv_handle_t *handle, void *data)
 {
-	if (!uv__is_closing(handle)) {
-		uv_close(handle, data);
+	if (handle == NULL || uv__is_closing(handle)) {
+		return;
+	}
+
+	switch (handle->type) {
+	case UV_TIMER:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_timer);
+		break;
+	case UV_SIGNAL:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_event_cb);
+		break;
+	case UV_ASYNC:
+		uv_close(handle, (uv_close_cb)eventloop_unregister_thread_safe_cb);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -108,7 +121,7 @@ int eventloop_loop_stop(void)
 {
 	int index;
 
-	index = PID_HASH(getpid());
+	index = PIDHASH(getpid());
 
 	/* If app loop is already finished or not exist, EVENTLOOP_LOOP_FAIL is returned. */
 	if (g_loop_list[index] == NULL) {

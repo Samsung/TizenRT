@@ -45,6 +45,6 @@ es_result_e es_set_error_code(es_error_code_e es_err_code);
 
 es_result_e es_set_cloud_error_code(ci_error_code_e es_err_code);
 
-es_result_e es_terminate_enrollee();
+es_result_e es_terminate_enrollee(void);
 
 #endif							/* EASYSETUP_ENROLLEE_H__ */

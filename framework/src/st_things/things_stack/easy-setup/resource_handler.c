@@ -19,6 +19,7 @@
 
 #include "resource_handler.h"
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -28,6 +29,7 @@
 #include <arpa/inet.h>
 #endif
 #include "things_api.h"
+#include "things_iotivity_lock.h"
 #include "octypes.h"
 #include "ocpayload.h"
 #include "logging/things_logger.h"
@@ -76,7 +78,6 @@ static pthread_mutex_t g_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 //-----------------------------------------------------------------------------
 OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *eh_request, void *callback);
 OCEntityHandlerResult process_get_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload);
 void update_prov_resource(OCEntityHandlerRequest *eh_request, OCRepPayload *input);
 void update_wifi_resource(OCRepPayload *input);
@@ -109,14 +110,14 @@ static bool compare_resource_interface(const char *from, const char *iface)
 		return ret;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Input data.(from=%s, iface=%s)", from, iface);
+	THINGS_LOG_D(ES_RH_TAG, "Input data.(from=%s, iface=%s)", from, iface);
 
 	if ((str = things_strdup(from)) == NULL) {
 		THINGS_LOG_E(ES_RH_TAG, "things_strdup function is failed.");
 		return ret;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "strFrom=%s", str);
+	THINGS_LOG_D(ES_RH_TAG, "strFrom=%s", str);
 
 	ptr = str;
 	while ((ptr = strtok(ptr, ";")) != NULL) {
@@ -125,10 +126,10 @@ static bool compare_resource_interface(const char *from, const char *iface)
 			if_ptr = strtok(ptr, "=");
 			if_ptr = strtok(NULL, "=");
 
-			THINGS_LOG_D( ES_RH_TAG, "if_ptr=%s", if_ptr);
+			THINGS_LOG_D(ES_RH_TAG, "if_ptr=%s", if_ptr);
 
 			if (if_ptr != NULL && !strncmp(if_ptr, iface, strlen(iface))) {
-				THINGS_LOG_D( ES_RH_TAG, "Found interface.(%s)", iface);
+				THINGS_LOG_D(ES_RH_TAG, "Found interface.(%s)", iface);
 				ret = true;
 				break;
 			}
@@ -188,7 +189,10 @@ static OCRepPayload *make_rep_payload(OCResourceHandle rsc_handle, OCDevAddr *de
 		things_free(resource_interface[0]);
 	}
 
+	iotivity_api_lock();
 	OCResourceProperty p = OCGetResourceProperties(rsc_handle);
+	iotivity_api_unlock();
+
 	OCRepPayload *policy = OCRepPayloadCreate();
 	if (!policy) {
 		THINGS_LOG_E(ES_RH_TAG, "Failed to allocate Payload");
@@ -213,7 +217,7 @@ void set_wifi_prov_state(wifi_prov_state_e value)
 {
 	if (es_wifi_prov_state == (value - 1) || value == WIFI_INIT) {
 		es_wifi_prov_state = value;
-		THINGS_LOG_D( ES_RH_TAG, "Set wifi_prov_state_e=%d", es_wifi_prov_state);
+		THINGS_LOG_D(ES_RH_TAG, "Set wifi_prov_state_e=%d", es_wifi_prov_state);
 	}
 }
 
@@ -237,7 +241,7 @@ void register_dev_conf_rsrc_event_callback(es_dev_conf_cb cb)
 	g_dev_conf_rsrc_evt_cb = cb;
 }
 
-void unregister_resource_event_callback()
+void unregister_resource_event_callback(void)
 {
 	if (g_wifi_rsrc_evt_cb) {
 		g_wifi_rsrc_evt_cb = NULL;
@@ -250,14 +254,6 @@ void unregister_resource_event_callback()
 	}
 }
 
-void get_target_network_info_from_prov_resource(char *name, char *pass)
-{
-	if (name != NULL && pass != NULL) {
-		things_strncpy(name, g_wifi_resource.ssid, MAX_SSID_LEN);
-		things_strncpy(pass, g_wifi_resource.cred, MAX_SECUIRTYKEY_LEN);
-	}
-}
-
 OCStackResult init_prov_resource(bool is_secured)
 {
 	es_set_state(ES_STATE_INIT);
@@ -265,6 +261,8 @@ OCStackResult init_prov_resource(bool is_secured)
 	g_prov_resource.vd_err_code = ERRCI_NO_ERROR;
 
 	OCStackResult res = OC_STACK_ERROR;
+
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_prov_resource.handle, THINGS_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
@@ -272,29 +270,34 @@ OCStackResult init_prov_resource(bool is_secured)
 	}
 
 	if (res) {
-		THINGS_LOG_D( ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceTypeToResource(g_prov_resource.handle, OC_RSRVD_RESOURCE_TYPE_COLLECTION);
 	if (res) {
-		THINGS_LOG_D( ES_RH_TAG, "Binding Resource type with result: %s", get_result(res));
+		THINGS_LOG_D(ES_RH_TAG, "Binding Resource type with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceInterfaceToResource(g_prov_resource.handle, OC_RSRVD_INTERFACE_LL);
 	if (res) {
-		THINGS_LOG_D( ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
 	res = OCBindResourceInterfaceToResource(g_prov_resource.handle, OC_RSRVD_INTERFACE_BATCH);
 	if (res) {
-		THINGS_LOG_D( ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+		iotivity_api_unlock();
 		return res;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+	THINGS_LOG_D(ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
+	iotivity_api_unlock();
 	return res;
 }
 
@@ -309,19 +312,21 @@ OCStackResult init_wifi_resource(bool is_secured)
 	g_wifi_resource.supported_mode[3] = WiFi_11N;
 	g_wifi_resource.supported_mode[4] = WiFi_11AC;
 	g_wifi_resource.num_mode = 5;
-	g_wifi_resource.auth_type = NONE_AUTH;
+	g_wifi_resource.sec_type = NONE_SEC;
 	g_wifi_resource.enc_type = NONE_ENC;
-	memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSID_LEN);
-	memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
+	memset(g_wifi_resource.ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
+	memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
 	g_wifi_resource.discovery_channel = 1;
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
-	THINGS_LOG_D( ES_RH_TAG, "Created WiFi resource with result: %s", get_result(res));
+	THINGS_LOG_D(ES_RH_TAG, "Created WiFi resource with result: %s", get_result(res));
 	return res;
 }
 
@@ -389,9 +394,9 @@ static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 		return;
 	}
 
-	memset(p_wifi_data->ssid, 0, sizeof(char) *MAX_SSID_LEN);
-	memset(p_wifi_data->pwd, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
-	p_wifi_data->authtype = -1;
+	memset(p_wifi_data->ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
+	memset(p_wifi_data->pwd, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
+	p_wifi_data->sectype = -1;
 	p_wifi_data->enctype = -1;
 	p_wifi_data->discovery_channel = -1;
 }
@@ -399,28 +404,28 @@ static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 void set_ssid_in_wifi_resource(const char *ssid)
 {
 	if (ssid == NULL) {
-		memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSID_LEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
-		g_wifi_resource.auth_type = NONE_AUTH;
+		memset(g_wifi_resource.ssid, 0, sizeof(char) *WIFIMGR_SSID_LEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
+		g_wifi_resource.sec_type = NONE_SEC;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 0;
 	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(ssid)) == 0) {
-		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *MAX_SSID_LEN);
-		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *MAX_SECUIRTYKEY_LEN);
-		g_wifi_resource.auth_type = g_wifi_data.authtype;
+		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *WIFIMGR_SSID_LEN);
+		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
+		g_wifi_resource.sec_type = g_wifi_data.sectype;
 		g_wifi_resource.enc_type = g_wifi_data.enctype;
 		g_wifi_resource.discovery_channel = g_wifi_data.discovery_channel;
 	} else {
-		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *MAX_SSID_LEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
-		g_wifi_resource.auth_type = NONE_AUTH;
+		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *WIFIMGR_SSID_LEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) *WIFIMGR_PASSPHRASE_LEN);
+		g_wifi_resource.sec_type = NONE_SEC;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 1;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Connected SSID=%s", ssid);
-	THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.ssid=%s", g_wifi_data.ssid);
-	THINGS_LOG_D( ES_RH_TAG, "g_wifi_resource.ssid=%s", g_wifi_resource.ssid);
+	THINGS_LOG_D(ES_RH_TAG, "Connected SSID=%s", ssid);
+	THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.ssid=%s", g_wifi_data.ssid);
+	THINGS_LOG_D(ES_RH_TAG, "g_wifi_resource.ssid=%s", g_wifi_resource.ssid);
 }
 
 OCStackResult init_cloud_server_resource(bool is_secured)
@@ -429,13 +434,15 @@ OCStackResult init_cloud_server_resource(bool is_secured)
 
 	init_cloud_resource_data(&g_cloud_resource);
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
-	THINGS_LOG_D( ES_RH_TAG, "Created CloudServer resource with result: %s", get_result(res));
+	THINGS_LOG_D(ES_RH_TAG, "Created CloudServer resource with result: %s", get_result(res));
 	return res;
 }
 
@@ -452,13 +459,15 @@ OCStackResult init_dev_conf_resource(bool is_secured)
 #endif
 	memset(g_dev_conf_resource.datetime, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 
+	iotivity_api_lock();
 	if (is_secured) {
 		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
 		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+	iotivity_api_unlock();
 
-	THINGS_LOG_D( ES_RH_TAG, "Created dev_conf_s resource with result: %s", get_result(res));
+	THINGS_LOG_D(ES_RH_TAG, "Created dev_conf_s resource with result: %s", get_result(res));
 	return res;
 }
 
@@ -485,41 +494,41 @@ void update_wifi_resource(OCRepPayload *input)
 		return;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Current AP SSID: %s", g_wifi_resource.ssid);
+	THINGS_LOG_D(ES_RH_TAG, "Current AP SSID: %s", g_wifi_resource.ssid);
 	if (strncmp(ssid, g_wifi_resource.ssid, strlen(ssid)) == 0) {
-		THINGS_LOG_D( ES_RH_TAG, "Already connected SSID(%s).", ssid);
+		THINGS_LOG_D(ES_RH_TAG, "Already connected SSID(%s).", ssid);
 		things_free(ssid);
 		return;
 	}
 
 	things_strncpy(g_wifi_data.ssid, ssid, sizeof(g_wifi_data.ssid));
-	THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.ssid : %s", g_wifi_data.ssid);
+	THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.ssid : %s", g_wifi_data.ssid);
 
 	char *cred = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_CRED, &cred)) {
 		things_strncpy(g_wifi_data.pwd, cred, sizeof(g_wifi_data.pwd));
-		THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.pwd %s", g_wifi_data.pwd);
+		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.pwd %s", g_wifi_data.pwd);
 	}
 
-	int64_t auth_type = -1;
-	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_AUTHTYPE, &auth_type)) {
-		g_wifi_data.authtype = auth_type;
-		THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.authtype %u", g_wifi_data.authtype);
+	int64_t sec_type = -1;
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_SECTYPE, &sec_type)) {
+		g_wifi_data.sectype = sec_type;
+		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.sectype %u", g_wifi_data.sectype);
 	}
 
 	int64_t enc_type = -1;
 	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_ENCTYPE, &enc_type)) {
 		g_wifi_data.enctype = enc_type;
-		THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.enctype %u", g_wifi_data.enctype);
+		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.enctype %u", g_wifi_data.enctype);
 	}
 
 	int64_t channel = -1;
 	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, &channel)) {
 		g_wifi_data.discovery_channel = channel;
-		THINGS_LOG_D( ES_RH_TAG, "g_wifi_data.discovery_channel %u", g_wifi_data.discovery_channel);
+		THINGS_LOG_D(ES_RH_TAG, "g_wifi_data.discovery_channel %u", g_wifi_data.discovery_channel);
 	}
 
-	if (ssid || cred || auth_type != -1 || enc_type != -1) {
+	if (ssid || cred || sec_type != -1 || enc_type != -1) {
 		THINGS_LOG_V(ES_RH_TAG, "Send WiFiRsrc Callback To ES");
 		PROFILING_TIME("WiFi Provisioning Start.");
 
@@ -551,49 +560,49 @@ bool update_cloud_resource(OCRepPayload *input)
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_AUTHCODE, &auth_code)) {
 		things_strncpy(g_cloud_resource.auth_code, auth_code, sizeof(g_cloud_resource.auth_code));
 		things_strncpy(g_cloud_data.auth_code, auth_code, sizeof(g_cloud_data.auth_code));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.auth_code %s", g_cloud_resource.auth_code);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.auth_code %s", g_cloud_resource.auth_code);
 	}
 
 	char *accesstoken = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN, &accesstoken)) {
 		things_strncpy(g_cloud_resource.accesstoken, accesstoken, sizeof(g_cloud_resource.accesstoken));
 		things_strncpy(g_cloud_data.accesstoken, accesstoken, sizeof(g_cloud_data.accesstoken));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.accesstoken %s", g_cloud_resource.accesstoken);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.accesstoken %s", g_cloud_resource.accesstoken);
 	}
 
-	int accesstokenType = NULL;
+	int64_t accesstokenType = 0;
 	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, &accesstokenType)) {
 		g_cloud_resource.actoken_type = accesstokenType;
 		g_cloud_data.actoken_type = accesstokenType;
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.actoken_type %d", g_cloud_resource.actoken_type);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.actoken_type %d", g_cloud_resource.actoken_type);
 	}
 
 	char *refreshtoken = NULL;
 	if (OCRepPayloadGetPropString(input, SC_RSRVD_ES_VENDOR_REFRESH_TOKEN, &refreshtoken)) {
 		things_strncpy(g_cloud_resource.refreshtoken, refreshtoken, sizeof(g_cloud_resource.refreshtoken));
 		things_strncpy(g_cloud_data.refreshtoken, refreshtoken, sizeof(g_cloud_data.refreshtoken));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.refreshtoken %s", g_cloud_resource.refreshtoken);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.refreshtoken %s", g_cloud_resource.refreshtoken);
 	}
 
 	char *uid = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_USER_ID, &uid)) {
 		things_strncpy(g_cloud_resource.uid, uid, sizeof(g_cloud_resource.uid));
 		things_strncpy(g_cloud_data.uid, uid, sizeof(g_cloud_data.uid));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.uid %s", g_cloud_resource.uid);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.uid %s", g_cloud_resource.uid);
 	}
 
 	char *auth_provider = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_AUTHPROVIDER, &auth_provider)) {
 		things_strncpy(g_cloud_resource.auth_provider, auth_provider, sizeof(g_cloud_resource.auth_provider));
 		things_strncpy(g_cloud_data.auth_provider, auth_provider, sizeof(g_cloud_data.auth_provider));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.auth_provider %s", g_cloud_resource.auth_provider);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.auth_provider %s", g_cloud_resource.auth_provider);
 	}
 
 	char *ci_server = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_CISERVER, &ci_server)) {
 		if (check_ci_server_ipv4(ci_server, &g_cloud_data) == 1) {
 			things_strncpy(g_cloud_resource.ci_server, ci_server, sizeof(g_cloud_resource.ci_server));
-			THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.ci_server %s", g_cloud_resource.ci_server);
+			THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.ci_server %s", g_cloud_resource.ci_server);
 		} else {
 			THINGS_LOG_V(ES_RH_TAG, "check_ci_server_ipv4 is failed.");
 			g_prov_resource.last_err_code = ER_ERRCODE_INVALID_PROV_PAYLOAD;
@@ -605,14 +614,14 @@ bool update_cloud_resource(OCRepPayload *input)
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_SERVERID, &server_id)) {
 		things_strncpy(g_cloud_resource.server_id, server_id, sizeof(g_cloud_resource.server_id));
 		things_strncpy(g_cloud_data.server_id, server_id, sizeof(g_cloud_data.server_id));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.server_id %s", g_cloud_resource.server_id);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.server_id %s", g_cloud_resource.server_id);
 	}
 
 	char *client_id = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_CLIENTID, &client_id)) {
 		things_strncpy(g_cloud_resource.client_id, client_id, sizeof(g_cloud_resource.client_id));
 		things_strncpy(g_cloud_data.client_id, client_id, sizeof(g_cloud_data.client_id));
-		THINGS_LOG_D( ES_RH_TAG, "g_cloud_resource.client_id %s", g_cloud_resource.client_id);
+		THINGS_LOG_D(ES_RH_TAG, "g_cloud_resource.client_id %s", g_cloud_resource.client_id);
 	}
 
 	if ((g_cloud_data.auth_code[0] || (g_cloud_data.accesstoken[0] && g_cloud_data.refreshtoken[0])) && g_cloud_data.auth_provider[0] && g_cloud_data.ci_server[0]) {
@@ -632,7 +641,7 @@ bool update_cloud_resource(OCRepPayload *input)
 			g_prov_resource.vd_err_code = ERRCI_NO_ERROR;
 		}
 	} else {
-		THINGS_LOG_D( ES_RH_TAG, "Cloud Provisioning Data is invalid: auth_code=%s auth_provider=%s ci_server=%s", g_cloud_data.auth_code, g_cloud_data.auth_provider, g_cloud_data.ci_server);
+		THINGS_LOG_D(ES_RH_TAG, "Cloud Provisioning Data is invalid: auth_code=%s auth_provider=%s ci_server=%s", g_cloud_data.auth_code, g_cloud_data.auth_provider, g_cloud_data.ci_server);
 	}
 
 	if (auth_code) {
@@ -676,21 +685,21 @@ void update_dev_conf_resource(OCRepPayload *input)
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_COUNTRY, &country)) {
 		things_strncpy(g_dev_conf_resource.country, country, sizeof(g_dev_conf_resource.country));
 		things_strncpy(g_dev_conf_data.country, country, sizeof(g_dev_conf_data.country));
-		THINGS_LOG_D( ES_RH_TAG, "g_dev_conf_resource.country %s", g_dev_conf_resource.country);
+		THINGS_LOG_D(ES_RH_TAG, "g_dev_conf_resource.country %s", g_dev_conf_resource.country);
 	}
 
 	char *language = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_LANGUAGE, &language)) {
 		things_strncpy(g_dev_conf_resource.language, language, sizeof(g_dev_conf_resource.language));
 		things_strncpy(g_dev_conf_data.language, language, sizeof(g_dev_conf_data.language));
-		THINGS_LOG_D( ES_RH_TAG, "g_dev_conf_resource.language %s", g_dev_conf_resource.language);
+		THINGS_LOG_D(ES_RH_TAG, "g_dev_conf_resource.language %s", g_dev_conf_resource.language);
 	}
 
 	char *datetime = NULL;
 	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME, &datetime)) {
 		things_strncpy(g_dev_conf_resource.datetime, datetime, sizeof(g_dev_conf_resource.datetime));
 		things_strncpy(g_dev_conf_data.datetime, datetime, sizeof(g_dev_conf_data.datetime));
-		THINGS_LOG_D( ES_RH_TAG, "g_dev_conf_resource.datetime %s", g_dev_conf_resource.datetime);
+		THINGS_LOG_D(ES_RH_TAG, "g_dev_conf_resource.datetime %s", g_dev_conf_resource.datetime);
 	}
 
 	if (country || language || datetime) {
@@ -725,7 +734,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 		return NULL;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "constructResponse wifi res");
+	THINGS_LOG_D(ES_RH_TAG, "constructResponse wifi res");
 	OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_WIFI);
 
 	OCRepPayload *rep_payload = NULL;
@@ -774,7 +783,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ, g_wifi_resource.supported_freq);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_SSID, g_wifi_resource.ssid);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_CRED, g_wifi_resource.cred);
-	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_AUTHTYPE, (int)g_wifi_resource.auth_type);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_SECTYPE, (int)g_wifi_resource.sec_type);
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_ENCTYPE, (int)g_wifi_resource.enc_type);
 	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, (int)g_wifi_resource.discovery_channel);
 
@@ -1115,10 +1124,8 @@ GOTO_FAILED:
 
 OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e resource_mask)
 {
-	OCStackResult res = OC_STACK_ERROR;
 	bool maskFlag = false;
-
-	res = init_prov_resource(is_secured);
+	OCStackResult res = init_prov_resource(is_secured);
 	if (res != OC_STACK_OK) {
 		// TODO: destroy logic will be added
 		THINGS_LOG_V(ES_RH_TAG, "init_prov_resource result: %s", get_result(res));
@@ -1134,7 +1141,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_wifi_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind wifi_resource_s result: %s", get_result(res));
 			return res;
@@ -1150,7 +1159,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_cloud_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind cloud_resource_s result: %s", get_result(res));
 			return res;
@@ -1165,7 +1176,9 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 			return res;
 		}
 
+		iotivity_api_lock();
 		res = OCBindResource(g_prov_resource.handle, g_dev_conf_resource.handle);
+		iotivity_api_unlock();
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V(ES_RH_TAG, "bind dev_conf_resource_s result: %s", get_result(res));
 			return res;
@@ -1178,23 +1191,14 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Created all resources with result: %s", get_result(res));
+	THINGS_LOG_D(ES_RH_TAG, "Created all resources with result: %s", get_result(res));
 
 	return res;
 }
 
-OCStackResult delete_provisioning_resource()
+OCStackResult delete_easysetup_resources(void)
 {
-	OCStackResult res = OCDeleteResource(g_prov_resource.handle);
-	if (res != OC_STACK_OK) {
-		THINGS_LOG_V(ES_RH_TAG, "Deleting Prov resource error with result: %s", get_result(res));
-	}
-
-	return res;
-}
-
-OCStackResult delete_easysetup_resources()
-{
+	iotivity_api_lock();
 	OCStackResult res = OC_STACK_ERROR;
 	if (g_wifi_resource.handle != NULL) {
 		res = OCUnBindResource(g_prov_resource.handle, g_wifi_resource.handle);
@@ -1243,6 +1247,7 @@ OCStackResult delete_easysetup_resources()
 		}
 	}
 
+	iotivity_api_unlock();
 	return res;
 }
 
@@ -1284,7 +1289,7 @@ OCEntityHandlerResult process_get_request(OCEntityHandlerRequest *eh_request, OC
 
 OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload)
 {
-	THINGS_LOG_D( ES_RH_TAG, "process_post_request enter");
+	THINGS_LOG_D(ES_RH_TAG, "process_post_request enter");
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 	if (eh_request->payload && eh_request->payload->type != PAYLOAD_TYPE_REPRESENTATION) {
 		THINGS_LOG_E(ES_RH_TAG, "Incoming payload not a representation");
@@ -1333,15 +1338,6 @@ OCEntityHandlerResult process_post_request(OCEntityHandlerRequest *eh_request, O
 	return eh_result;
 }
 
-OCEntityHandlerResult process_put_request(OCEntityHandlerRequest *eh_request, OCRepPayload **payload)
-{
-	(void)eh_request;
-	(void)payload;
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	return eh_result;
-}
-
 /**
  * This is the entity handler for the registered resource.
  * This is invoked by OCStack whenever it recevies a request for this resource.
@@ -1382,7 +1378,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 		} else {
 			THINGS_LOG_E(ES_RH_TAG, "EZ-Setup Resource not Registered Yet~!!!!!");
 		}
-		
+
 		THINGS_LOG_V(ES_RH_TAG, "\t\tRespone : (%d) ", (int)eh_ret);
 
 		response.numSendVendorSpecificHeaderOptions = 0;
@@ -1398,7 +1394,10 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 		response.persistentBufferFlag = 0;
 
 		// Send the response
-		if (OCDoResponse(&response) != OC_STACK_OK) {
+		iotivity_api_lock();
+		OCStackResult res = OCDoResponse(&response);
+		iotivity_api_unlock();
+		if (res != OC_STACK_OK) {
 			THINGS_LOG_E(ES_RH_TAG, "Error sending response");
 			eh_ret = OC_EH_ERROR;
 		}
@@ -1411,7 +1410,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 	}
 
 	if (flag & OC_OBSERVE_FLAG) {
-		THINGS_LOG_D( ES_RH_TAG, "Flag includes OC_OBSERVE_FLAG");
+		THINGS_LOG_D(ES_RH_TAG, "Flag includes OC_OBSERVE_FLAG");
 		if (OC_OBSERVE_REGISTER == entity_handler_request->obsInfo.action) {
 			THINGS_LOG_V(ES_RH_TAG, "Received OC_OBSERVE_REGISTER from client");
 		} else if (OC_OBSERVE_DEREGISTER == entity_handler_request->obsInfo.action) {
@@ -1428,6 +1427,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 
 OCStackResult prov_rsc_notify_all_observers(void)
 {
+	iotivity_api_lock();
 	OCStackResult ret = OCNotifyAllObservers(g_prov_resource.handle, OC_HIGH_QOS);
 
 	switch (ret) {
@@ -1443,6 +1443,7 @@ OCStackResult prov_rsc_notify_all_observers(void)
 	}
 
 	ret = OCNotifyAllObservers(g_cloud_resource.handle, OC_HIGH_QOS);
+	iotivity_api_unlock();
 
 	switch (ret) {
 	case OC_STACK_OK:
@@ -1472,37 +1473,37 @@ things_es_enrollee_state_e get_enrollee_state(void)
 
 OCStackResult set_device_property(es_device_property *device_property)
 {
-	THINGS_LOG_D( ES_RH_TAG, "set_device_property IN");
+	THINGS_LOG_D(ES_RH_TAG, "set_device_property IN");
 
 	g_wifi_resource.supported_freq = (device_property->WiFi).freq;
-	THINGS_LOG_D( ES_RH_TAG, "WiFi Freq : %d", g_wifi_resource.supported_freq);
+	THINGS_LOG_D(ES_RH_TAG, "WiFi Freq : %d", g_wifi_resource.supported_freq);
 
 	int mode_idx = 0;
 	while ((device_property->WiFi).mode[mode_idx] != WiFi_EOF) {
 		g_wifi_resource.supported_mode[mode_idx] = (device_property->WiFi).mode[mode_idx];
-		THINGS_LOG_D( ES_RH_TAG, "WiFi Mode : %d", g_wifi_resource.supported_mode[mode_idx]);
+		THINGS_LOG_D(ES_RH_TAG, "WiFi Mode : %d", g_wifi_resource.supported_mode[mode_idx]);
 		mode_idx++;
 	}
 	g_wifi_resource.num_mode = mode_idx;
 
 	things_strncpy(g_dev_conf_resource.devName, (device_property->dev_conf_s).device_name, MAX_DEVICELEN);
-	THINGS_LOG_D( ES_RH_TAG, "Device Name : %s", g_dev_conf_resource.devName);
+	THINGS_LOG_D(ES_RH_TAG, "Device Name : %s", g_dev_conf_resource.devName);
 
 	things_strncpy(g_dev_conf_resource.device_type, (device_property->dev_conf_s).device_type, THINGS_STRING_MAX_VALUE);
-	THINGS_LOG_D( ES_RH_TAG, "Device device_type : %s", g_dev_conf_resource.device_type);
+	THINGS_LOG_D(ES_RH_TAG, "Device device_type : %s", g_dev_conf_resource.device_type);
 
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	things_strncpy(g_dev_conf_resource.device_sub_type, (device_property->dev_conf_s).device_sub_type, THINGS_STRING_MAX_VALUE);
-	THINGS_LOG_D( ES_RH_TAG, "Sub Device device_type : %s", g_dev_conf_resource.device_sub_type);
+	THINGS_LOG_D(ES_RH_TAG, "Sub Device device_type : %s", g_dev_conf_resource.device_sub_type);
 #endif
 
-	THINGS_LOG_D( ES_RH_TAG, "set_device_property OUT");
+	THINGS_LOG_D(ES_RH_TAG, "set_device_property OUT");
 	return OC_STACK_OK;
 }
 
 OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state)
 {
-	THINGS_LOG_D( ES_RH_TAG, "set_enrollee_state IN");
+	THINGS_LOG_D(ES_RH_TAG, "set_enrollee_state IN");
 
 	pthread_mutex_lock(&g_status_mutex);
 	OCStackResult result = OC_STACK_ERROR;
@@ -1539,6 +1540,8 @@ OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state)
 			goto GOTO_OUT;
 		}
 		break;
+	default:
+		break;
 	}
 
 	if (g_prov_resource.status == es_state) {
@@ -1551,25 +1554,25 @@ OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state)
 	THINGS_LOG_V(ES_RH_TAG, "Enrollee Status : %s (%d)", get_prov_status(g_prov_resource.status), g_prov_resource.status);
 
 GOTO_OUT:
-	THINGS_LOG_D( ES_RH_TAG, "set_enrollee_state OUT");
+	THINGS_LOG_D(ES_RH_TAG, "set_enrollee_state OUT");
 	pthread_mutex_unlock(&g_status_mutex);
 	return result;
 }
 
 OCStackResult set_cloud_err_code(ci_error_code_e es_err_code)
 {
-	THINGS_LOG_D( ES_RH_TAG, "set_cloud_err_code IN");
+	THINGS_LOG_D(ES_RH_TAG, "set_cloud_err_code IN");
 
 	g_prov_resource.vd_err_code = es_err_code;
 	THINGS_LOG_V(ES_RH_TAG, "Cloud ErrorCode : %d", g_prov_resource.vd_err_code);
 
-	THINGS_LOG_D( ES_RH_TAG, "set_cloud_err_code OUT");
+	THINGS_LOG_D(ES_RH_TAG, "set_cloud_err_code OUT");
 	return OC_STACK_OK;
 }
 
 OCStackResult set_enrollee_err_code(es_error_code_e es_err_code)
 {
-	THINGS_LOG_D( ES_RH_TAG, "set_enrollee_err_code IN");
+	THINGS_LOG_D(ES_RH_TAG, "set_enrollee_err_code IN");
 
 	if (g_prov_resource.last_err_code == ER_ERRCODE_SYSTEM_ERROR) {
 		es_set_state(ES_STATE_INIT);
@@ -1580,7 +1583,7 @@ OCStackResult set_enrollee_err_code(es_error_code_e es_err_code)
 	g_prov_resource.last_err_code = es_err_code;
 	THINGS_LOG_V(ES_RH_TAG, "Enrollee ErrorCode : %s(%d)", get_prov_errcode(g_prov_resource.last_err_code), g_prov_resource.last_err_code);
 
-	THINGS_LOG_D( ES_RH_TAG, "set_enrollee_err_code OUT");
+	THINGS_LOG_D(ES_RH_TAG, "set_enrollee_err_code OUT");
 	return OC_STACK_OK;
 }
 
@@ -1624,7 +1627,7 @@ const char *get_result(OCStackResult result)
 	case OC_STACK_UNAUTHORIZED_REQ:
 		return "OC_STACK_UNAUTHORIZED_REQ";
 	default:
-		THINGS_LOG_D( ES_RH_TAG, "Not Supported result value.(%d)", result);
+		THINGS_LOG_D(ES_RH_TAG, "Not Supported result value.(%d)", result);
 		return "Not defined OCResult.";
 	}
 }
@@ -1655,7 +1658,7 @@ const char *get_prov_status(things_es_enrollee_state_e status)
 	case ES_STATE_LOGOUT_FROM_CLOUD:
 		return "ES_STATE_LOGOUT_FROM_CLOUD";
 	default:
-		THINGS_LOG_D( ES_RH_TAG, "Not Supported State value.(%d)", status);
+		THINGS_LOG_D(ES_RH_TAG, "Not Supported State value.(%d)", status);
 		return "Not defined State";
 	}
 }
@@ -1696,7 +1699,7 @@ const char *get_prov_errcode(es_error_code_e lastErrcode)
 	case ES_ERRCODE_UNKNOWN:
 		return "ES_ERRCODE_VENDOR_ERROR";
 	default:
-		THINGS_LOG_D( ES_RH_TAG, "Not Supported Error value.(%d)", lastErrcode);
+		THINGS_LOG_D(ES_RH_TAG, "Not Supported Error value.(%d)", lastErrcode);
 		return "Not Defined last_err_code";
 	}
 }
@@ -1722,12 +1725,12 @@ static int check_ci_server_ipv4(char *ci_server, es_cloud_prov_data_s *cloudData
 	ip.s_addr = 0;
 
 	if (ci_server == NULL || cloudData == NULL) {
-		THINGS_LOG_D( ES_RH_TAG, "ci_server(0x%X)/cloudData(0x%X) is NULL", ci_server, cloudData);
+		THINGS_LOG_D(ES_RH_TAG, "ci_server(0x%X)/cloudData(0x%X) is NULL", ci_server, cloudData);
 		return 0;
 	}
 
 	if (strlen(ci_server) == 0) {
-		THINGS_LOG_D( ES_RH_TAG, "ci_server's length is 0");
+		THINGS_LOG_D(ES_RH_TAG, "ci_server's length is 0");
 		return 0;
 	}
 
@@ -1737,13 +1740,13 @@ static int check_ci_server_ipv4(char *ci_server, es_cloud_prov_data_s *cloudData
 	}
 	// Port Number analysis.
 	if ((pContext = strstr(ci_server, DEFAULT_COAP_TCP_HOST)) != NULL) {
-		THINGS_LOG_D( ES_RH_TAG, "%s type format", DEFAULT_COAP_TCP_HOST);
+		THINGS_LOG_D(ES_RH_TAG, "%s type format", DEFAULT_COAP_TCP_HOST);
 
 		ci_server = pContext + strlen(DEFAULT_COAP_TCP_HOST);
 		port = DEFAULT_COAP_PORT;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "[Port] ci_server = %s, port=%s", ci_server, port);
+	THINGS_LOG_D(ES_RH_TAG, "[Port] ci_server = %s, port=%s", ci_server, port);
 
 	if ((pContext = strchr(ci_server, ':')) != NULL) {
 		if (*(pContext + 1) == 0 || strlen(pContext + 1) > 5) {
@@ -1765,31 +1768,31 @@ static int check_ci_server_ipv4(char *ci_server, es_cloud_prov_data_s *cloudData
 		return -1;
 	}
 	// ci_server analysis (IP/HostName)
-	THINGS_LOG_D( ES_RH_TAG, "[IP] ci_server = %s", ci_server);
+	THINGS_LOG_D(ES_RH_TAG, "[IP] ci_server = %s", ci_server);
 
 	if (inet_aton(ci_server, &ip) == 0 || ip.s_addr == 0) {
-		THINGS_LOG_D( ES_RH_TAG, "ci_server is Host Name.(%s)", ci_server);
+		THINGS_LOG_D(ES_RH_TAG, "ci_server is Host Name.(%s)", ci_server);
 		things_strncpy(cloudData->host_name, ci_server, sizeof(cloudData->host_name));
 		memset(cloudData->ip, 0, IP_PORT);
 		things_strncpy(cloudData->port, port, sizeof(cloudData->port));
 	} else {
-		THINGS_LOG_D( ES_RH_TAG, "ci_server is ip address.(%s)", ci_server);
+		THINGS_LOG_D(ES_RH_TAG, "ci_server is ip address.(%s)", ci_server);
 		things_strncpy(cloudData->ip, ci_server, sizeof(cloudData->ip));
 		memset(cloudData->host_name, 0, THINGS_STRING_MAX_VALUE);
 		things_strncpy(cloudData->port, port, sizeof(cloudData->port));
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "Host=%s, IP=%s, Port=%s", cloudData->host_name, cloudData->ip, cloudData->port);
+	THINGS_LOG_D(ES_RH_TAG, "Host=%s, IP=%s, Port=%s", cloudData->host_name, cloudData->ip, cloudData->port);
 
 	things_strncpy(cloudData->ci_server, ci_server, sizeof(cloudData->ci_server));
 	cloudData->ci_server[length] = ':';
 	cloudData->ci_server[length + 1] = 0;
 	if (things_strcat(cloudData->ci_server, THINGS_STRING_MAX_VALUE, (const char *)cloudData->port) == NULL) {
-		THINGS_LOG_D( ES_RH_TAG, "things_strcat is failed.");
+		THINGS_LOG_D(ES_RH_TAG, "things_strcat is failed.");
 		return -1;
 	}
 
-	THINGS_LOG_D( ES_RH_TAG, "cloudData->ci_server = %s", cloudData->ci_server);
+	THINGS_LOG_D(ES_RH_TAG, "cloudData->ci_server = %s", cloudData->ci_server);
 
 	return 1;
 }

@@ -99,10 +99,10 @@ extern "C" {
  * into user-space via a header at the beginning of the user-space blob.
  */
 
-#define kumm_initialize(h, s)    umm_initialize(h, s)
-#define kumm_addregion(h, s)     umm_addregion(h, s)
-#define kumm_trysemaphore()      umm_trysemaphore()
-#define kumm_givesemaphore()     umm_givesemaphore()
+#define kumm_initialize(h, s)     umm_initialize(h, s)
+#define kumm_addregion(h, s)      umm_addregion(h, s)
+#define kumm_trysemaphore(a)      umm_trysemaphore(a)
+#define kumm_givesemaphore(a)     umm_givesemaphore(a)
 
 #ifdef CONFIG_BUILD_PROTECTED
 /* In the kernel-phase of the protected build, the these macros are defined
@@ -121,10 +121,15 @@ extern "C" {
  * (CONFIG_BUILD_KERNEL), the following are declared in stdlib.h and are
  * directly callable.
  */
-
+#ifdef CONFIG_KMM_FORCE_ALLOC_AT
+#define kumm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kumm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kumm_realloc(p, s)      realloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, p, s)
+#else
 #define kumm_malloc(s)          malloc(s)
 #define kumm_zalloc(s)          zalloc(s)
 #define kumm_realloc(p, s)      realloc(p, s)
+#endif
 #define kumm_memalign(a, s)     memalign(a, s)
 #define kumm_free(p)            free(p)
 #define kumm_mallinfo()         mallinfo()
@@ -139,13 +144,20 @@ extern "C" {
  */
 
 #define kmm_initialize(h, s)		/* Initialization done by kumm_initialize */
-#define kmm_addregion(h, s)    umm_addregion(h, s)
-#define kmm_trysemaphore()     umm_trysemaphore()
-#define kmm_givesemaphore()    umm_givesemaphore()
+#define kmm_addregion(h, s)      umm_addregion(h, s)
+#define kmm_trysemaphore(a)      umm_trysemaphore(a)
+#define kmm_givesemaphore(a)     umm_givesemaphore(a)
 
+#ifdef CONFIG_KMM_FORCE_ALLOC_AT
+#define kmm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kmm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
+#define kmm_realloc(p, s)      realloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, p, s)
+#else
 #define kmm_malloc(s)          malloc(s)
 #define kmm_zalloc(s)          zalloc(s)
 #define kmm_realloc(p, s)      realloc(p, s)
+#endif
+
 #define kmm_memalign(a, s)     memalign(a, s)
 #define kmm_free(p)            free(p)
 #define kmm_mallinfo()         mallinfo()
@@ -157,13 +169,14 @@ extern "C" {
  */
 
 #define kmm_initialize(h, s)		/* Initialization done by kumm_initialize */
-#define kmm_addregion(h, s)    umm_addregion(h, s)
-#define kmm_trysemaphore()     umm_trysemaphore()
-#define kmm_givesemaphore()    umm_givesemaphore()
+#define kmm_addregion(h, s)     umm_addregion(h, s)
+#define kmm_trysemaphore(a)     umm_trysemaphore(a)
+#define kmm_givesemaphore(a)    umm_givesemaphore(a)
 
 #define kmm_malloc(s)          umm_malloc(s)
 #define kmm_zalloc(s)          umm_zalloc(s)
 #define kmm_realloc(p, s)      umm_realloc(p, s)
+
 #define kmm_memalign(a, s)     umm_memalign(a, s)
 #define kmm_free(p)            umm_free(p)
 #define kmm_mallinfo()         umm_mallinfo()

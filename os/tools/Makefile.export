@@ -101,8 +101,6 @@ endif
 	@echo "NM=\"$(NM)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "OBJCOPY=\"$(OBJCOPY)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "OBJDUMP=\"$(OBJDUMP)\"" >> $(EXPORTDIR)/makeinfo.sh
-	@echo "NXFLATLDFLAGS1=\"$(NXFLATLDFLAGS1)\"" >> $(EXPORTDIR)/makeinfo.sh
-	@echo "NXFLATLDFLAGS2=\"$(NXFLATLDFLAGS2)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "OBJEXT=\"$(OBJEXT)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "LIBEXT=\"$(LIBEXT)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "EXEEXT=\"$(EXEEXT)\"" >> $(EXPORTDIR)/makeinfo.sh

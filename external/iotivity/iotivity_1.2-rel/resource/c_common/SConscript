@@ -93,7 +93,6 @@ if target_os in ['tizenrt']:
 	env.AppendUnique(CCFLAGS = ['-std=c99'])
 	env.AppendUnique(CCFLAGS = ['-w'])
 	cxx_headers.remove('sys/timeb.h')
-	cxx_headers.remove('strings.h')
         cxx_headers.remove('grp.h')
         cxx_headers.remove('pwd.h')
 	config_h_body += "#include <tinyara/config.h>\n\n"

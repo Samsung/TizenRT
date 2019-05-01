@@ -30,7 +30,7 @@
 #define GDB_TRANSPORT_H__
 
 /** Uses */
-#include <tinyara/pthread.h>
+#include <sys/types.h>
 #include "mifstream.h"
 
 #define GDB_TRANSPORT_BUF_LENGTH (128)

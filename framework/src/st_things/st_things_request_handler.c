@@ -24,6 +24,7 @@
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
 #include "logging/things_logger.h"
+#include "utils/things_string.h"
 
 #include "things_api.h"
 #include "octypes.h"
@@ -68,12 +69,13 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 	char *p_origin = NULL;
 	char *p_ptr = NULL;
 
-	p_origin = p_buff = (char *)things_malloc(query_len + 1);
-	if (NULL == p_origin) {
+	p_buff = (char *)things_malloc(query_len + 1);
+	if (NULL == p_buff) {
 		THINGS_LOG_E(TAG, "Failed to allocate memory to get a specific value from query.");
 		return false;
 	}
 
+	p_origin = p_buff;  // Store the memory address to free it later.
 	memset(p_buff, 0, query_len + 1);
 	memcpy(p_buff, query, query_len);
 
@@ -176,9 +178,8 @@ static bool get_resource_types(things_resource_s *rsrc, char ***res_types, int *
 	RET_FALSE_IF_NULL(TAG, types, "Failed to allocate memory for resource types.");
 
 	bool result = true;
-	const char *res_type;
 	for (int i = 0; i < rt_count; i++) {
-		res_type = rsrc->things_get_res_type(rsrc, i);
+		const char *res_type = rsrc->things_get_res_type(rsrc, i);
 		if (NULL == res_type || strlen(res_type) < 1) {
 			THINGS_LOG_E(TAG, "Resource type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);
@@ -217,9 +218,8 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
 	RET_VAL_IF_NULL(TAG, types, "Failed to allocate memory for inteface types.", false);
 
 	bool result = true;
-	const char *if_type = NULL;
 	for (int i = 0; i < if_count; i++) {
-		if_type = rsrc->things_get_inf_type(rsrc, i);
+		const char *if_type = rsrc->things_get_inf_type(rsrc, i);
 		if (NULL == if_type || strlen(if_type) < 1) {
 			THINGS_LOG_E(TAG, "Interface type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);
@@ -356,18 +356,18 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 		// 2. Get the properties for each resource type.
 		props = (things_attribute_info_s ***) things_calloc(type_count, sizeof(things_attribute_info_s **));
 		if (NULL == props) {
-			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
 			goto EXIT_WITH_ERROR;
 		}
 		prop_count = (int *)things_calloc(type_count, sizeof(int));
 		if (NULL == prop_count) {
-			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
 			goto EXIT_WITH_ERROR;
 		}
 
 		for (int index = 0; index < type_count; index++) {
 			if (!things_get_attributes_by_resource_type(res_types[index], &prop_count[index], &props[index])) {
-				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the properties of resource type (%s).", res_types[index]);
+				THINGS_LOG_V(TAG, "Failed to get the properties of resource type (%s).", res_types[index]);
 				goto EXIT_WITH_ERROR;
 			}
 			THINGS_LOG_D(TAG, "Number of properties of resource type(%s): %d.", res_types[index], prop_count[index]);
@@ -378,21 +378,21 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 
 		*properties = (things_attribute_info_s **) things_calloc(*count, sizeof(things_attribute_info_s *));
 		if (NULL == *properties) {
-			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
 			goto EXIT_WITH_ERROR;
 		}
 
 		int cur_index = 0;
 		for (int index = 0; index < type_count; index++) {
 			if (NULL == props[index]) {
-				THINGS_LOG_V(THINGS_ERROR, TAG, "Resource type(%s) doesn't have any properties.", res_types[index]);
+				THINGS_LOG_V(TAG, "Resource type(%s) doesn't have any properties.", res_types[index]);
 				goto EXIT_WITH_ERROR;
 			}
 
 			for (int sub_index = 0; sub_index < prop_count[index]; sub_index++) {
 				things_attribute_info_s *prop = *(props[index] + sub_index);
 				if (NULL == prop) {
-					THINGS_LOG_E(THINGS_ERROR, TAG, "NULL Property.");
+					THINGS_LOG_E(TAG, "NULL Property.");
 					goto EXIT_WITH_ERROR;
 				}
 				// If this prop is already added, then ignore it and decrement the total count by 1.
@@ -602,7 +602,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		char **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetStringArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetStringArray(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetStringArray(resp_payload, prop->key, (const char **)value, dimensions);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the string array value of '%s' in request message", prop->key);
 			}
@@ -618,7 +618,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		OCRepPayload **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetPropObjectArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetPropObjectArray(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetPropObjectArray(resp_payload, prop->key, (const OCRepPayload **)value, dimensions);
 			if (!result) {
 				THINGS_LOG_E(TAG, "Failed to set the object array value of '%s' in request message", prop->key);
 			}
@@ -880,7 +880,7 @@ static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 	char *if_type = NULL;
 	if (NULL != single_rsrc->query && strlen(single_rsrc->query) > 0) {
 		bool found = false;
-		bool result = get_query_value_internal(single_rsrc->query, OC_RSRVD_INTERFACE, &if_type, &found);
+		result = get_query_value_internal(single_rsrc->query, OC_RSRVD_INTERFACE, &if_type, &found);
 		if (found && !result) {	// If query is present but API returns false.
 			THINGS_LOG_E(TAG, "Failed to get the interface type from query parameter(%s).", single_rsrc->query);
 			things_release_representation_inst(resp_rep);

@@ -19,7 +19,8 @@
  * \file threading.h
  *
  * \brief Threading abstraction layer
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -57,10 +58,12 @@ extern "C" {
 #define MBEDTLS_ERR_THREADING_MUTEX_ERROR                 -0x001E  /**< Locking / unlocking / free failed with error code. */
 
 #if defined(MBEDTLS_THREADING_PTHREAD)
+#include <sys/types.h>
 #include <pthread.h>
-typedef struct {
-	pthread_mutex_t mutex;
-	char is_valid;
+typedef struct
+{
+    pthread_mutex_t mutex;
+    char is_valid;
 } mbedtls_threading_mutex_t;
 #endif
 
@@ -86,13 +89,16 @@ typedef struct {
  * \param mutex_lock    the lock function implementation
  * \param mutex_unlock  the unlock function implementation
  */
-void mbedtls_threading_set_alt(void (*mutex_init)(mbedtls_threading_mutex_t *), void (*mutex_free)(mbedtls_threading_mutex_t *), int (*mutex_lock)(mbedtls_threading_mutex_t *), int (*mutex_unlock)(mbedtls_threading_mutex_t *));
+void mbedtls_threading_set_alt( void (*mutex_init)( mbedtls_threading_mutex_t * ),
+                       void (*mutex_free)( mbedtls_threading_mutex_t * ),
+                       int (*mutex_lock)( mbedtls_threading_mutex_t * ),
+                       int (*mutex_unlock)( mbedtls_threading_mutex_t * ) );
 
 /**
  * \brief               Free global mutexes.
  */
-void mbedtls_threading_free_alt(void);
-#endif							/* MBEDTLS_THREADING_ALT */
+void mbedtls_threading_free_alt( void );
+#endif /* MBEDTLS_THREADING_ALT */
 
 #if defined(MBEDTLS_THREADING_C)
 /*
@@ -100,19 +106,24 @@ void mbedtls_threading_free_alt(void);
  *
  * All these functions are expected to work or the result will be undefined.
  */
-extern void (*mbedtls_mutex_init)(mbedtls_threading_mutex_t *mutex);
-extern void (*mbedtls_mutex_free)(mbedtls_threading_mutex_t *mutex);
-extern int (*mbedtls_mutex_lock)(mbedtls_threading_mutex_t *mutex);
-extern int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *mutex);
+extern void (*mbedtls_mutex_init)( mbedtls_threading_mutex_t *mutex );
+extern void (*mbedtls_mutex_free)( mbedtls_threading_mutex_t *mutex );
+extern int (*mbedtls_mutex_lock)( mbedtls_threading_mutex_t *mutex );
+extern int (*mbedtls_mutex_unlock)( mbedtls_threading_mutex_t *mutex );
 
 /*
  * Global mutexes
  */
+#if defined(MBEDTLS_FS_IO)
 extern mbedtls_threading_mutex_t mbedtls_threading_readdir_mutex;
+#endif
+#if defined(MBEDTLS_HAVE_TIME_DATE)
 extern mbedtls_threading_mutex_t mbedtls_threading_gmtime_mutex;
-#endif							/* MBEDTLS_THREADING_C */
+#endif
+#endif /* MBEDTLS_THREADING_C */
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* threading.h */
+
+#endif /* threading.h */

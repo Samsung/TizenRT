@@ -152,19 +152,19 @@ static void utc_media_FileOutputDataSource_close_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_media_FileOutputDataSource_isPrepare_p(void)
+static void utc_media_FileOutputDataSource_isPrepared_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
 	dataSource.open();
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), true);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), true);
 	dataSource.close();
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_media_FileOutputDataSource_isPrepare_n(void)
+static void utc_media_FileOutputDataSource_isPrepared_n(void)
 {
 	FileOutputDataSource dataSource(filePath);
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), false);
 	TC_SUCCESS_RESULT();
 }
 
@@ -213,8 +213,8 @@ int utc_media_fileoutputdatasource_main(void)
 	utc_media_FileOutputDataSource_close_p();
 	utc_media_FileOutputDataSource_close_n();
 
-	utc_media_FileOutputDataSource_isPrepare_p();
-	utc_media_FileOutputDataSource_isPrepare_n();
+	utc_media_FileOutputDataSource_isPrepared_p();
+	utc_media_FileOutputDataSource_isPrepared_n();
 
 	utc_media_FileOutputDataSource_write_p();
 	utc_media_FileOutputDataSource_write_n();

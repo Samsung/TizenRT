@@ -180,26 +180,25 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 	int err;
 	int ret;
 
-	/* waitid() is a cancellation point */
-	(void)enter_cancellation_point();
-
 	/* MISSING LOGIC:   If WNOHANG is provided in the options, then this function
 	 * should returned immediately.  However, there is no mechanism available now
 	 * know if the thread has child:  The children remember their parents (if
 	 * CONFIG_SCHED_HAVE_PARENT) but the parents do not remember their children.
 	 */
 
-	/* None of the options are supported except for WEXITED (which must be
+	/* Verify idtype and options.
+	 * We support P_ALL and P_PID ID types only.
+	 * And none of the options are supported except for WEXITED (which must be
 	 * provided.  Currently SIGCHILD always reports CLD_EXITED so we cannot
 	 * distinguish any other events.
 	 */
-
-#ifdef CONFIG_DEBUG
-	if (options != WEXITED) {
+	if (((idtype != P_ALL) && (idtype != P_PID)) || (options != WEXITED)) {
 		set_errno(ENOSYS);
 		return ERROR;
 	}
-#endif
+
+	/* waitid() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Create a signal set that contains only SIGCHLD */
 
@@ -225,14 +224,15 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 		err = ECHILD;
 		goto errout_with_errno;
 	} else if (idtype == P_PID) {
-		/* Get the TCB corresponding to this PID and make sure it is our child. */
+		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
 
 		ctcb = sched_gettcb((pid_t)id);
 #ifdef HAVE_GROUP_MEMBERS
-		if (!ctcb || ctcb->group->tg_pgid != rtcb->group->tg_gid)
+		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
 #else
-		if (!ctcb || ctcb->ppid != rtcb->pid)
+		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
 #endif
+
 		{
 			err = ECHILD;
 			goto errout_with_errno;
@@ -252,20 +252,21 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 		}
 	}
 #else
-	if (rtcb->nchildren == 0) {
+	if (rtcb->group->tg_nchildren == 0) {
 		/* There are no children */
 
 		err = ECHILD;
 		goto errout_with_errno;
 	} else if (idtype == P_PID) {
-		/* Get the TCB corresponding to this PID and make sure it is our child. */
+		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
 
 		ctcb = sched_gettcb((pid_t)id);
 #ifdef HAVE_GROUP_MEMBERS
-		if (!ctcb || ctcb->group->tg_pgid != rtcb->group->tg_gid)
+		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
 #else
-		if (!ctcb || ctcb->ppid != rtcb->pid)
+		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
 #endif
+
 		{
 			err = ECHILD;
 			goto errout_with_errno;
@@ -340,7 +341,7 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 		 * instead).
 		 */
 
-		if (rtcb->nchildren == 0 || (idtype == P_PID && (ret = kill((pid_t)id, 0)) < 0)) {
+		if (rtcb->group->tg_nchildren == 0 || (idtype == P_PID && (ret = kill((pid_t)id, 0)) < 0)) {
 			/* We know that the child task was running okay we stared,
 			 * so we must have lost the signal.  What can we do?
 			 * Let's return ECHILD.. that is at least informative.
@@ -375,18 +376,11 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 
 			/* Are we waiting for any child to change state? */
 
-			else if (idtype == P_ALL) {
+			else {				/* if (idtype == P_ALL) */
+
 				/* Return success */
 
 				break;
-			}
-
-			/* Other ID types are not supported */
-
-			else {				/* if (idtype == P_PGID) */
-
-				set_errno(ENOSYS);
-				goto errout;
 			}
 		}
 	}

@@ -85,6 +85,7 @@
 #define nvdbg(...) printf(__VA_ARGS__)
 #endif							/* CONFIG_NETUTILS_DHCPD_HOST */
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
@@ -193,10 +194,6 @@ sem_t g_dhcpd_sem;
 
 #ifndef CONFIG_NETUTILS_DHCPD_MAXLEASETIME
 #define CONFIG_NETUTILS_DHCPD_MAXLEASETIME (60*60*24*30)	/* 30 days */
-#endif
-
-#ifndef CONFIG_NETUTILS_DHCPD_INTERFACE
-#define CONFIG_NETUTILS_DHCPD_INTERFACE "eth0"
 #endif
 
 #ifndef CONFIG_NETUTILS_DHCPD_MAXLEASES
@@ -1394,11 +1391,9 @@ static inline int dhcpd_openlistener(void)
 }
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_netif_init
  ****************************************************************************/
+
 static int dhcpd_netif_init(char *intf)
 {
 	struct in_addr server_ipaddr;
@@ -1435,11 +1430,9 @@ static int dhcpd_netif_init(char *intf)
 }
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_netif_deinit
  ****************************************************************************/
+
 static int dhcpd_netif_deinit(char *intf)
 {
 	struct in_addr server_ipaddr;
@@ -1467,23 +1460,19 @@ static int dhcpd_netif_deinit(char *intf)
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_status
  ****************************************************************************/
-int dhcpd_status(void)
+
+static int dhcpd_status(void)
 {
 	return g_dhcpd_running;
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_stop
  ****************************************************************************/
-void dhcpd_stop(void)
+
+static void dhcpd_stop(void)
 {
 	int ret = -1;
 	pthread_mutex_lock(&g_dhcpd_lock);
@@ -1519,13 +1508,10 @@ void dhcpd_stop(void)
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_run
  ****************************************************************************/
 
-int dhcpd_run(void *arg)
+static int dhcpd_run(void *arg)
 {
 	int nbytes;
 #if DHCPD_SELECT
@@ -1661,9 +1647,6 @@ exit_with_error:
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
  * Name: dhcpd_start
  ****************************************************************************/
 
@@ -1671,7 +1654,7 @@ exit_with_error:
 #define DHCPD_SCHED_PRI			100
 #define DHCPD_SCHED_POLICY		SCHED_RR
 
-int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+static int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
 	pthread_mutex_lock(&g_dhcpd_lock);
 	if (g_dhcpd_running == 1) {
@@ -1695,7 +1678,8 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	if (intf) {
 		strncpy(DHCPD_IFNAME, intf, strlen(intf));
 	} else {
-		strncpy(DHCPD_IFNAME, CONFIG_NETUTILS_DHCPD_INTERFACE, IFNAMSIZ);
+		ndbg("failed to get interface\n");
+		goto err_exit;
 	}
 
 	status = pthread_attr_init(&attr);
@@ -1745,4 +1729,36 @@ err_exit:
 	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	return -1;
+}
+
+/****************************************************************************
+ * Name: dhcps_server_status
+ ****************************************************************************/
+int dhcp_server_status(char *intf)
+{
+	return dhcpd_status();
+}
+
+/****************************************************************************
+ * Name: dhcps_server_start
+ ****************************************************************************/
+
+int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+{
+	if (dhcpd_start(intf, dhcp_join_cb) >= 0) {
+		ndbg("[DHCPS] started successfully (External app)\n");
+		return OK;
+	}
+	return -1;
+}
+
+/****************************************************************************
+ * Name: dhcps_server_stop
+ ****************************************************************************/
+
+int dhcp_server_stop(char *intf)
+{
+	dhcpd_stop();
+	ndbg("[DHCPS] stopped successfully (External app)\n");
+	return OK;
 }

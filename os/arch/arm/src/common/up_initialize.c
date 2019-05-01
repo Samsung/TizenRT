@@ -166,10 +166,6 @@ void up_initialize(void)
 
 	up_color_intstack();
 
-	/* Add any extra memory fragments to the memory manager */
-
-	up_addregion();
-
 	/* Initialize the interrupt subsystem */
 
 	up_irqinitialize();
@@ -210,6 +206,10 @@ void up_initialize(void)
 
 #if defined(CONFIG_DEV_NULL)
 	devnull_register();			/* Standard /dev/null */
+#endif
+
+#ifdef CONFIG_DEV_URANDOM
+	devurandom_register();			/* /dev/urandom */
 #endif
 
 #if defined(CONFIG_DEV_ZERO)

@@ -43,9 +43,8 @@
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
-#include <net/lwip/dhcp.h>
-#include <net/lwip/mld6.h>
-#include <net/lwip/stats.h>
+//#include <net/lwip/dhcp.h>
+//#include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
@@ -211,7 +210,7 @@ int cmd_ifdown(int argc, char **argv)
 int cmd_ifconfig(int argc, char **argv)
 {
 	struct in_addr addr;
-	in_addr_t gip;
+	in_addr_t gip = 0;
 	int i;
 	FAR char *intf = NULL;
 	FAR char *hostip = NULL;
@@ -224,7 +223,6 @@ int cmd_ifconfig(int argc, char **argv)
 	FAR char *dns = NULL;
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
-	struct netif *netif;
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -289,7 +287,6 @@ int cmd_ifconfig(int argc, char **argv)
 					}
 				}
 			}
-			netif = netif_find(intf);
 		}
 	}
 
@@ -317,33 +314,7 @@ int cmd_ifconfig(int argc, char **argv)
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
 			netlib_set_ipv4addr(intf, &addr);
-#ifdef CONFIG_NET_IPv6
-		} else if (!strcmp(hostip, "auto")) {
-			/* IPV6 auto configuration : Link-Local address */
 
-			ndbg("IPV6 link local address auto config\n");
-			netif = netif_find(intf);
-
-			if (netif) {
-#ifdef CONFIG_NET_IPv6_AUTOCONFIG
-				/* enable IPv6 address stateless autoconfiguration */
-				netif_set_ip6_autoconfig_enabled(netif, 1);
-#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
-				/* To auto-config linklocal address, netif should have mac address already */
-				netif_create_ip6_linklocal_address(netif, 1);
-				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
-#ifdef CONFIG_NET_IPv6_MLD
-				ip6_addr_t solicit_addr;
-
-				/* set MLD6 group to receive solicit multicast message */
-				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
-				mld6_joingroup_netif(netif, &solicit_addr);
-				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-			}
-
-			return OK;
-#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
@@ -354,44 +325,9 @@ int cmd_ifconfig(int argc, char **argv)
 			}
 #ifdef CONFIG_NET_IPv6
 			else if (strstr(hostip, ":") != NULL) {
-				ip6_addr_t temp;
-				s8_t idx;
-
-				netif = netif_find(intf);
-				if (netif) {
-					inet_pton(AF_INET6, hostip, &temp);
-					idx = netif_get_ip6_addr_match(netif, &temp);
-					if (idx != -1) {
-#ifdef CONFIG_NET_IPv6_MLD
-						ip6_addr_t solicit_addr;
-
-						/* leaving MLD6 group */
-						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-						mld6_leavegroup_netif(netif, &solicit_addr);
-						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-						/* delete static ipv6 address if the same ip address exists */
-						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
-						return OK;
-					}
-#ifdef CONFIG_NET_IPv6_AUTOCONFIG
-					/* enable IPv6 address stateless autoconfiguration */
-					netif_set_ip6_autoconfig_enabled(netif, 1);
-#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
-					/* add static ipv6 address */
-					(void)netif_add_ip6_address(netif, &temp, &idx);
-
-#ifdef CONFIG_NET_IPv6_MLD
-					ip6_addr_t solicit_addr;
-
-					/* set MLD6 group to receive solicit multicast message */
-					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
-					mld6_joingroup_netif(netif, &solicit_addr);
-					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
-#endif /* CONFIG_NET_IPv6_MLD */
-				}
-
-				return OK;
+				struct in6_addr addr6;
+				inet_pton(AF_INET6, hostip, &addr6);
+				netlib_set_ipv6addr(intf, &addr6);
 			}
 #endif /* CONFIG_NET_IPv6 */
 			else {
@@ -408,95 +344,26 @@ int cmd_ifconfig(int argc, char **argv)
 	/* Get the MAC address of the NIC */
 	if (!gip) {
 		int ret;
-
-#if 0 /* TODO : LWIP_DHCP */
-#define NET_CMD_DHCP_TIMEOUT 5000000
-#define NET_CMD_DHCP_CHECK_INTERVAL 10000
-		struct netif *ifcon_if = NULL;
-		int32_t timeleft = NET_CMD_DHCP_TIMEOUT;
-
-		ret = netlib_getmacaddr(intf, mac);
-		if (ret < 0) {
-			ndbg("get mac fail %s:%d\n", __FUNCTION__, __LINE__);
-		}
-
-		ifcon_if = netif_find(intf);
-		if (ifcon_if == NULL) {
-			return ERROR;
-		}
-
-		ret = dhcp_start(ifcon_if);
-		if (ret < 0) {
-			dhcp_release(ifcon_if);
-			return ERROR;
-		}
-
-		while (ifcon_if->dhcp->state != DHCP_BOUND) {
-			usleep(NET_CMD_DHCP_CHECK_INTERVAL);
-			timeleft -= NET_CMD_DHCP_CHECK_INTERVAL;
-			if (timeleft <= 0) {
-				break;
-			}
-		}
-
-		if (ifcon_if->dhcp->state == DHCP_BOUND) {
-			nvdbg("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
-			nvdbg("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
-			nvdbg("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
-		} else {
-			if (timeleft <= 0) {
-				nvdbg("DHCP Client - Timeout fail to get ip address\n");
-				return ERROR;
-			}
-		}
-#else							/* LWIP_DHCP */
-
-		FAR void *handle;
-		struct dhcpc_state ds;
-
 		ret = netlib_getmacaddr(intf, mac);
 		if (ret < 0) {
 			ndbg("get mac  fail %s:%d\n", __FUNCTION__, __LINE__);
+			return ERROR;
 		}
+		struct in_addr ip_check;
 
-		/* Set up the DHCPC modules */
-		handle = dhcpc_open(intf);
-
-		/* Get an IP address.  Note that there is no logic for renewing the IP
-		 * address in this example.  The address should be renewed in
-		 * ds.lease_time/2 seconds.
-		 */
-
-		if (!handle) {
+		ret = dhcp_client_start(intf);
+		if (ret != OK) {
+			ndbg("get IP address fail\n");
 			return ERROR;
 		}
 
-		ret = dhcpc_request(handle, &ds);
-		if (ret < 0) {
-			dhcpc_close(handle);
+		ret = netlib_get_ipv4addr(intf, &ip_check);
+		if (ret != OK) {
+			ndbg("get IP address fail\n");
 			return ERROR;
 		}
+		ndbg("get IP address %s\n", inet_ntoa(ip_check));
 
-		ret = netlib_set_ipv4addr(intf, &ds.ipaddr);
-		if (ret < 0) {
-			ndbg("Set IPv4 address fail %s:%d\n", __FUNCTION__, __LINE__);
-		}
-
-		if (ds.netmask.s_addr != 0) {
-			netlib_set_ipv4netmask(intf, &ds.netmask);
-		}
-
-		if (ds.default_router.s_addr != 0) {
-			netlib_set_dripv4addr(intf, &ds.default_router);
-		}
-		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
-		printf("Netmask %s\n", inet_ntoa(ds.netmask));
-		printf("Gateway %s\n", inet_ntoa(ds.default_router));
-#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
-		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
-#endif							/* defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP) */
-		dhcpc_close(handle);
-#endif							/* LWIP_DHCP */
 		return OK;
 	}
 

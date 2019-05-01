@@ -57,7 +57,12 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double floor(double x)
 {
-	modf(x, &x);
+	if (isnan(x)) {
+		return NAN;
+	}
+
+	 modf(x, &x);
+
 	if (x < 0.0) {
 		x -= 1.0;
 	}

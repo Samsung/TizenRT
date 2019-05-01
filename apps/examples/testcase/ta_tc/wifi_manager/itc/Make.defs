@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC),y)
-CSRCS += itc_wifi_manager_main.c
+CSRCS += itc_wifimanager_main.c
 
 DEPPATH += --dep-path ta_tc/wifi_manager/itc
 VPATH += :ta_tc/wifi_manager/itc

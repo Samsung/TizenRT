@@ -28,14 +28,16 @@ gcc ramdump_tool.c -o ramdump
 # Run Ramdump Tool
 RAMDUMP_FILE=./ramdump_0x*.bin
 rm -f ${RAMDUMP_FILE}
-sudo ./ramdump /dev/ttyUSB1
-echo "copying $(basename ${RAMDUMP_FILE}) to  $(readlink -f ${BUILD_BIN_PATH})"
+ok=true
+sudo ./ramdump /dev/ttyUSB1 || ok=false
 
+if "$ok"; then
+echo "\nCopying..."
+find ./ -iname "ramdump_0x*.bin"
+echo "to  $(readlink -f ${BUILD_BIN_PATH})\n"
 cp ${RAMDUMP_FILE} ${BUILD_BIN_PATH}
-
+fi
 
 # clean up
 rm -f ramdump
-
 #end
-

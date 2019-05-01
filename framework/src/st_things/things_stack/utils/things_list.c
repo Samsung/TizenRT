@@ -71,7 +71,7 @@ int list_size(list_s *p_list)
 //    THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	pthread_mutex_lock(&(p_list->q_mutex));
-	int n_size = p_list->list_size;
+	int n_size = (int)p_list->list_size;
 	pthread_mutex_unlock(&(p_list->q_mutex));
 
 //    THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);

@@ -98,7 +98,7 @@ struct ether_header {
  * Public Function Prototypes
  ****************************************************************************/
 
-#if LWIP_ARP || LWIP_ETHERNET
+#if defined(CONFIG_NET_LWIP) && (LWIP_ARP || LWIP_ETHERNET)
 
 /** Define this to 1 and define LWIP_ARP_FILTER_NETIF_FN(pbuf, netif, type)
  * to a filter function that returns the correct netif when using multiple
@@ -115,6 +115,6 @@ err_t ethernet_output(struct netif *netif, struct pbuf *p, const struct eth_addr
 
 extern const struct eth_addr ethbroadcast, ethzero;
 
-#endif							/* LWIP_ARP || LWIP_ETHERNET */
+#endif	/* defined(CONFIG_NET_LWIP) && (LWIP_ARP || LWIP_ETHERNET) */
 
-#endif							/*  __INCLUDE_NET_ETHERNET_H */
+#endif	/*  __INCLUDE_NET_ETHERNET_H */

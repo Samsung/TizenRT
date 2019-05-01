@@ -268,7 +268,7 @@ static struct s5j_spidev_s g_spi3dev = {
  ****************************************************************************/
 static int spi_lock(struct spi_dev_s *dev, bool lock)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	if (lock) {
 		while (sem_wait(&priv->exclsem) != 0) {
@@ -290,7 +290,7 @@ static int spi_lock(struct spi_dev_s *dev, bool lock)
  ****************************************************************************/
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	s5j_clk_set_rate(priv->freqid, (unsigned long)frequency);
 
@@ -308,7 +308,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
  ****************************************************************************/
 static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -333,7 +333,7 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
  ****************************************************************************/
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -353,7 +353,7 @@ static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
  ****************************************************************************/
 static void spi_setbits(struct spi_dev_s *dev, int nbits)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -411,7 +411,7 @@ static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
  ****************************************************************************/
 static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
 
 	size_t sent = 0;
 	size_t received = 0;
@@ -574,5 +574,30 @@ struct spi_dev_s *up_spiinitialize(int port)
 	/* Disable Interrupts */
 	putreg32(0, &pSPIRegs->SPI_INT_EN);
 
-	return (struct spi_dev_s *)priv;
+	priv->spidev.priv = (void *)priv;
+
+	return &priv->spidev;
+}
+
+/****************************************************************************
+ * Name: s5j_spi_register
+ *
+ * Description:
+ *   register SPI of s5j
+ *
+ ****************************************************************************/
+void s5j_spi_register(int bus)
+{
+	FAR struct spi_dev_s *spi;
+	spi = up_spiinitialize(bus);
+
+#ifdef CONFIG_SPI_USERIO
+	char path[16];
+	if (spi != NULL) {
+		snprintf(path, 16, "/dev/spi-%d", bus);
+		if (spi_uioregister(path, spi) < 0) {
+			lldbg("fail to register SPI");
+		}
+	}
+#endif
 }

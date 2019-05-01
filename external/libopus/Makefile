@@ -53,26 +53,26 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-DEPPATH	= --dep-path .
-VPATH		=
+DEPPATH	= --dep-path . --dep-path celt --dep-path silk --dep-path silk/fixed --dep-path src
+VPATH	= :celt :silk :silk/fixed :src
 
-ASRCS		=
-CSRCS		=
+ASRCS	=
+CSRCS	=
 
 
-CSRCS += $(wildcard celt/*.c)
-CSRCS += $(wildcard silk/*.c)
-CSRCS += $(wildcard silk/fixed/*.c)
-CSRCS += src/analysis.c \
-		 src/mlp.c \
-		 src/mlp_data.c \
-		 src/opus.c \
-		 src/opus_decoder.c \
-		 src/opus_encoder.c \
-		 src/repacketizer.c \
-		 src/opus_multistream.c \
-		 src/opus_multistream_decoder.c \
-		 src/opus_multistream_encoder.c
+CSRCS += $(notdir $(wildcard celt/*.c))
+CSRCS += $(notdir $(wildcard silk/*.c))
+CSRCS += $(notdir $(wildcard silk/fixed/*.c))
+CSRCS += analysis.c \
+	 mlp.c \
+	 mlp_data.c \
+	 opus.c \
+	 opus_decoder.c \
+	 opus_encoder.c \
+	 repacketizer.c \
+	 opus_multistream.c \
+	 opus_multistream_decoder.c \
+	 opus_multistream_encoder.c
 
 CFLAGS := -DNULL=0 -DSOCKLEN_T=socklen_t -DLOCALE_NOT_USED \
           -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 \
@@ -133,7 +133,6 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm -f $(OBJS)
 
 distclean: clean
 	$(call DELFILE, Make.dep)

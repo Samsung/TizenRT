@@ -40,6 +40,18 @@ extern "C" {
 #define WIFIMGR_MACADDR_STR_LEN    17
 #define WIFIMGR_SSID_LEN           32
 #define WIFIMGR_PASSPHRASE_LEN     64
+/**
+  * @brief <b> wifi MAC/PHY standard types
+  */
+typedef enum {
+	WIFI_MANAGER_IEEE_80211_LEGACY,             /**<  IEEE 802.11a/g/b           */
+	WIFI_MANAGER_IEEE_80211_A,                  /**<  IEEE 802.11a               */
+	WIFI_MANAGER_IEEE_80211_B,                  /**<  IEEE 802.11b               */
+	WIFI_MANAGER_IEEE_80211_G,                  /**<  IEEE 802.11g               */
+	WIFI_MANAGER_IEEE_80211_N,                  /**<  IEEE 802.11n               */
+	WIFI_MANAGER_IEEE_80211_AC,                 /**<  IEEE 802.11ac              */
+	WIFI_MANAGER_NOT_SUPPORTED,                 /**<  Driver does not report     */
+} wifi_manager_standard_type_e;
 
 /**
  * @brief Status of Wi-Fi interface such as connected or disconnected
@@ -48,6 +60,7 @@ typedef enum {
 	// STA mode status
 	AP_DISCONNECTED,
 	AP_CONNECTED,
+	AP_RECONNECTING,
 
 	// SOFT AP mode status
 	CLIENT_CONNECTED,
@@ -69,6 +82,7 @@ typedef enum {
 	WIFI_MANAGER_TIMEOUT,
 	WIFI_MANAGER_BUSY,
 	WIFI_MANAGER_ALREADY_CONNECTED,
+	WIFI_MANAGER_CALLBACK_NOT_REGISTERED,
 } wifi_manager_result_e;
 
 /**
@@ -113,25 +127,33 @@ typedef enum {
  * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
-	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
-	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
-	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
+	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                                 */
+	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)                  */
+	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                              */
+	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                             */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode            */
+	WIFI_MANAGER_AUTH_WPA_PSK_ENT,             /**<  Enterprise WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,            /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,    /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode                          */
+	WIFI_MANAGER_AUTH_WPS,                     /**<  WPS mode                                  */
+	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                              */
 } wifi_manager_ap_auth_type_e;
 
 /**
  * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
  */
 typedef enum {
-	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
-	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
-	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
-	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
+	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                           */
+	WIFI_MANAGER_CRYPTO_WEP_64,                /**<  WEP encryption wep-40                     */
+	WIFI_MANAGER_CRYPTO_WEP_128,               /**<  WEP encryption wep-104                    */
+	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                            */
+	WIFI_MANAGER_CRYPTO_TKIP,                  /**<  TKIP encryption                           */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,          /**<  TKIP and AES mixed encryption             */
+	WIFI_MANAGER_CRYPTO_AES_ENT,               /**<  Enterprise AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP_ENT,              /**<  Enterprise TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,      /**<  Enterprise TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption                        */
 } wifi_manager_ap_crypto_type_e;
 
 /**
@@ -142,7 +164,7 @@ struct wifi_manager_scan_info_s {
 	char bssid[WIFIMGR_MACADDR_STR_LEN + 1];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t rssi;		// received signal strength indication
 	uint8_t channel;	// channel/frequency
-	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	wifi_manager_standard_type_e phy_mode;  /**< Supported MAC/PHY standard                              */
 	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
 	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 	struct wifi_manager_scan_info_s *next;
@@ -240,6 +262,27 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
 wifi_manager_result_e wifi_manager_deinit(void);
 
 /**
+ * @brief Register the callback to receive wi-fi events
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ *          if it fails to register the callbacks with result WIFI_MANAGER_DEINITIALIZED
+ *          then it have to call wifi_manager_init to run Wi-Fi
+ * @param[in] wmcb callback functions called when wi-fi events happen
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
+ */
+wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb);
+
+/**
+ * @brief Unregister the callback not to receive wi-fi events
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] wmcb callback functions are used to find registered callback
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
+ */
+wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb);
+
+
+/**
  * @brief Change the Wi-Fi mode to station or AP.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] mode Wi-Fi mode (station or AP)
@@ -259,10 +302,10 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 
 /**
- * @brief Connect to an access point.
+ * @brief Connect to an access point, including re(auto)connect configuration.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
- * @param[in] reconn_config reconnect type, interval, minimum or maximun intervalis set
+ * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
+ * @param[in] reconn_config reconnect type, interval, minimum or maximum interval is set
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -271,8 +314,7 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 /**
  * @brief Connect to an access point.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
- * @param[in] conn_config reconnect type, interval, minimum or maximun intervalis set 
+ * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -302,7 +344,7 @@ wifi_manager_result_e wifi_manager_scan_ap(void);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config AP configuration information should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config);
 
@@ -311,7 +353,7 @@ wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config The pointer of AP configuration information which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
@@ -320,7 +362,7 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
  * @brief Remove the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 wifi_manager_result_e wifi_manager_remove_config(void);
 
@@ -329,7 +371,7 @@ wifi_manager_result_e wifi_manager_remove_config(void);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config The pointer of AP configuration infomation which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 
 wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config);
@@ -339,7 +381,7 @@ wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] The pointer of WiFi Manager stats information which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
 

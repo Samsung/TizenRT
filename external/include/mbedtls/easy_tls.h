@@ -23,7 +23,7 @@
 
 #include "mbedtls/config.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509_crt.h"
@@ -33,6 +33,9 @@
 #ifdef MBEDTLS_SSL_CACHE_C
 #include "mbedtls/ssl_cache.h"
 #endif
+
+#include <sys/socket.h>
+#include <sys/types.h>
 
 #define EASY_TLS_DEBUG	ndbg
 
@@ -59,6 +62,7 @@ typedef struct tls_cert_and_key {
 	unsigned int ca_certlen;
 	unsigned int dev_certlen;
 	unsigned int dev_keylen;
+	bool use_se;
 #ifdef MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED
 	unsigned char *psk;
 	char *psk_identity;
@@ -77,6 +81,7 @@ typedef struct tls_context {
 #ifdef MBEDTLS_SSL_CACHE_C
 	mbedtls_ssl_cache_context *cache;
 #endif
+	bool use_se;
 } tls_ctx;
 
 typedef struct tls_options {
@@ -86,10 +91,25 @@ typedef struct tls_options {
 	int debug_mode;				///< select debug level (0 ~ 5)
 	char *host_name;			///< set host_name (NULL or char *)
 	int force_ciphersuites[3];	///< set force ciphersuites
+	int force_curves[3];		///< set force curves
+	unsigned int recv_timeout;	///< parameter for setting tls recv timeout milisecond
+	unsigned int client_rpk:1;
+	unsigned int server_rpk:1;
+	int hs_timeout_min;
+	int hs_timeout_max;
+	int (*psk_callback)(void *, mbedtls_ssl_context *, const unsigned char *, size_t);
+	void *user_data;
 } tls_opt;
+
+typedef struct bio_context {
+	int fd;
+	struct sockaddr *addr;
+	socklen_t n;
+} bio_context;
 
 typedef struct tls_session_context {
 	mbedtls_net_context net;
+	bio_context b_ctx;
 	mbedtls_ssl_context *ssl;
 } tls_session;
 
@@ -101,7 +121,6 @@ typedef struct tls_session_context {
  * @param[in] cred     a structure pointer of key and certificates
  * @return On success, a structure pointer of tls context will be returned.
  *         On failure, NULL will be returned.
- * @since TizenRT v1.0
  *
  */
 tls_ctx *TLSCtx(tls_cred *cred);
@@ -113,7 +132,6 @@ tls_ctx *TLSCtx(tls_cred *cred);
  * @param[in] ctx	a structure pointer of tls context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since TizenRT v1.0
  *
  */
 int TLSCtx_free(tls_ctx *ctx);
@@ -128,7 +146,6 @@ int TLSCtx_free(tls_ctx *ctx);
  * @param[in] opt	a structure pointer including several tls options.
  * @return On success,	a structure pointer of tls session context will be returned.
  *         On failure,	positive value will be returned.
- * @since TizenRT v1.0
  *
  */
 tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
@@ -140,7 +157,6 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
  * @param[in] session	a structure pointer of tls session context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since TizenRT v1.0
  *
  */
 int TLSSession_free(tls_session *session);
@@ -154,10 +170,9 @@ int TLSSession_free(tls_session *session);
  * @param[in] size	send data size.
  * @return On success,	sent size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since TizenRT v1.0
  *
  */
-int TLSSend(tls_session *session, unsigned char *buf, size_t size);
+int TLSSend(tls_session *session, const unsigned char *buf, size_t size);
 
 /**
  * @brief TLSRecv()	recv security data.
@@ -168,7 +183,6 @@ int TLSSend(tls_session *session, unsigned char *buf, size_t size);
  * @param[in] size	received data size.
  * @return On success,	received size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since TizenRT v1.0
  *
  */
 int TLSRecv(tls_session *session, unsigned char *buf, size_t size);

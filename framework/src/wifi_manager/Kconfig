@@ -14,9 +14,9 @@ if WIFI_MANAGER
 
 choice
 	prompt "WiFi library"
-	default SELECT_WPA_SUPPLICANT
+	default SLSI_WPA_SUPPLICANT
 
-config SELECT_WPA_SUPPLICANT
+config SLSI_WPA_SUPPLICANT
 	bool "select wpa_supplicant"
 	select WPA_SUPPLICANT
 	select NETUTILS_WIFI
@@ -47,10 +47,10 @@ config SELECT_PROPIETARY_WLAN
 
 endchoice # WiFi driver choice
 
-if SELECT_WPA_SUPPLICANT
+if SLSI_WPA_SUPPLICANT
 source "$EXTERNALDIR/slsi_wifi/Kconfig"
 source "$EXTERNALDIR/wpa_supplicant/Kconfig"
-endif #SELECT_WPA_SUPPLICANT
+endif #SLSI_WPA_SUPPLICANT
 
 config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
@@ -69,6 +69,23 @@ config WIFIMGR_STA_IFNAME
 config WIFIMGR_DISABLE_AUTO_GET_IP
 	bool "disable auto get ip (ipv4 dhcp)"
 	default n
+
+config WIFIMGR_DISABLE_DHCPS
+	bool "disable auto run dhcp server(ipv4 dhcp server)"
+	default n
+    help
+        if say yes,it allows WiFi vendor to run dhcp server. 
+
+config DISABLE_EXTERNAL_AUTOCONNECT
+	bool "disable external autoconnect"
+	default n
+
+if DISABLE_EXTERNAL_AUTOCONNECT
+config WIFIMGR_INTERNAL_AUTOCONNECT
+	bool "enable internal auto(re)connect"
+	default y
+
+endif #WIFIMGR_DISABLE_EXTERNAL_AUTOCONNECT
 
 endif #WIFI_MANAGER
 

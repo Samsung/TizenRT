@@ -9,7 +9,7 @@ Supports Hardware Detecting(If supported by H/W) and Software Detecting.
 ### How to use in a service?
 ```sh
 void MyClass::StartVoice() {
-    SpeechDetectorInterface *speechDetector = SpeechDetectorInterface::instance();
+    SpeechDetector *speechDetector = SpeechDetector::instance();
     speechDetector->initKeywordDetect(16000, 1); // SampleRate and Channels
     speechDetector->initEndPointDetect(16000, 1);
     

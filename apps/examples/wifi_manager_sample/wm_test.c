@@ -20,6 +20,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -48,6 +49,11 @@
 	"	 wm_test mode\n\n"												\
 	"\n set a profile:\n"											\
 	"	 wm_test set [ssid] [security mode] [password]\n"			\
+	"	 security mode examples : open, wep_shared \n"						\
+	"	               wpa_aes, wpa_tkip, wpa_mixed  \n"			\
+	"	               wpa2_aes, wpa2_tkip, wpa2_mixed  \n"			\
+	"	               wpa12_aes, wpa12_tkip, wpa12_mixed  \n"		\
+	"	               (*_ent for enterprise)  \n"					\
 	"\n get a profile:\n"											\
 	"	 wm_test get\n"												\
 	"\n remove a profile:\n"										\
@@ -206,27 +212,53 @@ static int g_mode = 0; // check program is running
 static const char *wifi_test_auth_method[] = {
 	"open",
 	"wep_shared",
-	"wpa_aes",
-	"wpa2_aes",
-	"wpa2_mixed",
+	"wpa",
+	"wpa2",
+	"wpa12",
+	"wpa",
+	"wpa2",
+	"wpa12",
+	"ibss_open",
+	"wps",
+};
+
+static const char *wifi_test_crypto_method[] = {
+	"none",
+	"64",
+	"128",
+	"aes",
+	"tkip",
+	"mixed",
+	"aes_ent",
+	"tkip_ent",
+	"mixed_ent",
 };
 
 static const wifi_manager_ap_auth_type_e auth_type_table[] = {
-	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                      */
-	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)       */
-	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                   */
+	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                                 */
+	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)                  */
+	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                              */
+	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                             */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode            */
+	WIFI_MANAGER_AUTH_WPA_PSK_ENT,             /**<  Enterprise WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,            /**<  Enterprise WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,    /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode                          */
+	WIFI_MANAGER_AUTH_WPS,                     /**<  WPS mode                                  */
+	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                              */
 };
 
 static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
-	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  to be fixed            */
-	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  unknown encryption             */
+	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                           */
+	WIFI_MANAGER_CRYPTO_WEP_64,                /**<  WEP encryption wep-40                     */
+	WIFI_MANAGER_CRYPTO_WEP_128,               /**<  WEP encryption wep-104                    */
+	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                            */
+	WIFI_MANAGER_CRYPTO_TKIP,                  /**<  TKIP encryption                           */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,          /**<  TKIP and AES mixed encryption             */
+	WIFI_MANAGER_CRYPTO_AES_ENT,               /**<  Enterprise AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP_ENT,              /**<  Enterprise TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,      /**<  Enterprise TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  unknown encryption                        */
 };
 
 void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
@@ -237,10 +269,20 @@ void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	}
 	printf("------------------------------------\n");
 	printf("SSID: %s\n", config->ssid);
-	printf("SECURITY TYPE: %s\n", wifi_test_auth_method[config->ap_auth_type]);
-	/*if (config->ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		printf("PASSWORD: %s\n", config->passphrase);
-		}*/
+	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+		printf("SECURITY: unknown\n");
+	} else {
+		char security_type[20] = {0,};
+		strcat(security_type, wifi_test_auth_method[config->ap_auth_type]);
+		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
+		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			printf("SECURITY: %s\n", security_type);
+		} else {
+			strcat(security_type, "_");
+			strcat(security_type, wifi_test_crypto_method[config->ap_crypto_type]);
+			printf("SECURITY: %s\n", security_type);
+		}
+	}
 	printf("====================================\n");
 }
 
@@ -253,17 +295,29 @@ void print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title
 	printf("------------------------------------\n");
 	printf("SSID: %s\n", config->ssid);
 	printf("channel: %d\n", config->channel);
-	/*printf("PASSWORD: %s\n", config->passphrase);*/
 	printf("====================================\n");
 }
 
-
 wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 {
+	char data[20];
+	strcpy(data, method);
+
+	char *result[3];
+	char *next_ptr;
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = strtok_r(NULL, "_", &next_ptr);
+	result[2] = strtok_r(NULL, "_", &next_ptr);
+
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
 	for (; i < list_size; i++) {
-		if (strcmp(method, wifi_test_auth_method[i]) == 0) {
+		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (strcmp(result[0], wifi_test_auth_method[i]) == 0)) {
+			if (result[2] != NULL) {		
+				if (strcmp(result[2], "ent") == 0) {
+					return auth_type_table[i + 3];
+				}
+			}
 			return auth_type_table[i];
 		}
 	}
@@ -272,10 +326,18 @@ wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 
 wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 {
+	char data[20];
+	strcpy(data, method);
+
+	char *result[2];
+	char *next_ptr;
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = next_ptr;
+
 	int i = 0;
-	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
+	int list_size = sizeof(wifi_test_crypto_method)/sizeof(wifi_test_crypto_method[0]);
 	for (; i < list_size; i++) {
-		if (strcmp(method, wifi_test_auth_method[i]) == 0) {
+		if (strcmp(result[1], wifi_test_crypto_method[i]) == 0) {
 			return crypto_type_table[i];
 		}
 	}
@@ -459,8 +521,13 @@ void wm_set_info(void *arg)
 		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
 		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
-		apconfig.ap_crypto_type = ap_info->crypto_type;
+
+	} else {
+		strcpy(apconfig.passphrase, "");
+		apconfig.passphrase_length = 0;
 	}
+
+	apconfig.ap_crypto_type = ap_info->crypto_type;
 
 	print_wifi_ap_profile(&apconfig, "Set AP Info");
 
@@ -541,6 +608,10 @@ void wm_display_state(void *arg)
 			printf("rssi: %d\n", info.rssi);
 		} else if (info.status == AP_DISCONNECTED) {
 			printf("MODE: station (disconnected)\n");
+		} else if (info.status == AP_RECONNECTING) {
+			printf("MODE: station (reconnecting)\n");
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
 		}
 		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
 			goto exit;
@@ -567,7 +638,7 @@ void wm_sta_start(void *arg)
 		printf(" Set STA mode Fail\n");
 		return ;
 	}
-	printf(" Connecting to AP\n");
+	printf("Start STA mode\n");
 	WM_TEST_LOG_END;
 }
 
@@ -584,6 +655,10 @@ void wm_connect(void *arg)
 		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
 		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
+		apconfig.ap_crypto_type = ap_info->crypto_type;
+	} else{
+		apconfig.passphrase[0] = '\0';
+		apconfig.passphrase_length = 0;
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
 
@@ -1234,10 +1309,26 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
 			return -1;
 		}
-		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+			opt->password = "";
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 			return 0;
 		}
-		opt->crypto_type = get_crypto_type(argv[4]);
+
+		if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			if (strlen(argv[5]) == 13) {
+				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+			} else if (strlen(argv[5]) == 5) {
+				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+			} else {
+				return -1;
+			}
+		} else {
+			opt->crypto_type = get_crypto_type(argv[4]);
+			if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+				return -1;
+			}
+		}
 		opt->password = argv[5];
 	} else if (strcmp(argv[2], "set") == 0) {
 		if (argc < 5) {
@@ -1249,10 +1340,26 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
 			return -1;
 		}
-		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+			opt->password = "";
 			return 0;
 		}
-		opt->crypto_type = get_crypto_type(argv[4]);
+
+		if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			if (strlen(argv[5]) == 13) {
+				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+			} else if (strlen(argv[5]) == 5) {
+				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+			} else {
+				return -1;
+			}
+		} else {
+			opt->crypto_type = get_crypto_type(argv[4]);
+			if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+				return -1;
+			}
+		}
 		opt->password = argv[5];
 	} else if (strcmp(argv[2], "stats") == 0) {
 		opt->func = wm_get_stats;

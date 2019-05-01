@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <string.h>
@@ -68,6 +69,8 @@
 #define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME)
+#define TMP_MOUNT_DEV_DIR CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME
 #elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
 #define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
 #else
@@ -167,6 +170,10 @@
 static int g_thread_result;
 #endif
 
+#ifndef CONFIG_DISABLE_ENVIRON
+extern int mount_show(void);
+#endif
+
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
 * @fn               mkfifo_test_listener
@@ -246,37 +253,7 @@ static int make_long_file(void)
 	printf("finished!\n");
 	return ret;
 }
-#ifndef CONFIG_DISABLE_ENVIRON
-static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
-{
-	char *fstype;
 
-	switch (statbuf->f_type) {
-	case SMARTFS_MAGIC:
-		fstype = SMARTFS_TYPE;
-		break;
-	case ROMFS_MAGIC:
-		fstype = ROMFS_TYPE;
-		break;
-	case PROCFS_MAGIC:
-		fstype = PROCFS_TYPE;
-		break;
-	case TMPFS_MAGIC:
-		fstype = TMPFS_TYPE;
-		break;
-	default:
-		fstype = NONEFS_TYPE;
-		break;
-	}
-	UNUSED(fstype);
-	return OK;
-
-}
-static int mount_show(foreach_mountpoint_t mount_handler, FAR void *arg)
-{
-	return foreach_mountpoint(mount_handler, arg);
-}
-#endif
 /**
 * @testcase         tc_fs_vfs_mount
 * @brief            Mount file system
@@ -295,7 +272,7 @@ static void tc_fs_vfs_mount(void)
 	/*For each mountpt operation*/
 
 #ifndef CONFIG_DISABLE_ENVIRON
-	ret = mount_show(handler, NULL);
+	ret = mount_show();
 	TC_ASSERT_EQ("mount_show", ret, OK);
 #endif
 	TC_SUCCESS_RESULT();
@@ -1634,7 +1611,7 @@ static void tc_driver_mtd_config_ops(void)
 	int fd;
 	int ret;
 	struct config_data_s config;
-	char *buf = "test";
+	char buf[8] = "test";
 
 	fd = open(MTD_CONFIG_PATH, O_RDOK);
 	TC_ASSERT_GEQ("open", fd, 0);

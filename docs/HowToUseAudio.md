@@ -33,7 +33,7 @@ Depending on the board schematics, a control path (i2c, spi, etc) and a data pat
 
 Board_initialize sets up audio codec with the instance of the control path and data path.
 
-Psuedocode
+Pseudocode
 ```
 void board_initialize()  
 {  
@@ -41,7 +41,7 @@ void board_initialize()
 	i2c = initialize i2c();
 
 	/* Get an i2s instance */
-	i2s = initalize_i2s(); 
+	i2s = initialize_i2s(); 
 
 	/* Setup audio codec */
 	codec_lowerhalf = initialize_audio_codec(i2c, i2s, ..);
@@ -52,7 +52,7 @@ void board_initialize()
 
 After setting up audio codec, the codec's lowerhalf is wrapped around in an audio device upperhalf.
 
-Psuedocode
+Pseudocode
 
 ```
 	/*Embed codec device within audio device */

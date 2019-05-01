@@ -50,7 +50,7 @@ namespace media {
 /**
  * @brief Audio sample rate.
  * @details
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum audio_sample_rate_e {
 	/** Audio sample rate is 7350 */
@@ -85,7 +85,7 @@ typedef enum audio_sample_rate_e {
 /**
  * @brief Audio type.
  * @details
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum audio_type_e {
 	/** Audio type is invalid */
@@ -110,7 +110,7 @@ typedef enum audio_type_e {
  * @class
  * @brief Audio format type, each value follows pcm_format in tinyalsa.
  * @details
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum audio_format_type_e {
 	/* Signed 8 bit */

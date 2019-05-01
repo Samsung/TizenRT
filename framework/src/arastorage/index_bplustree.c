@@ -61,7 +61,6 @@
 #include "db_options.h"
 #include "db_debug.h"
 #include "storage.h"
-#include "memb.h"
 #include "random.h"
 #include "rw_locks.h"
 
@@ -274,6 +273,7 @@ static cache_result_t cache_write_bucket(tree_t *, int, bucket_t *);
 static cache_result_t modify_cache(tree_t *, int, cache_type_t, op_type_t);
 static cache_result_t cache_write_node(tree_t *, int, tree_node_t *);
 static cache_result_t cache_replace_node(tree_t *, int, tree_node_t *);
+static db_result_t delete_item_btree(index_t *index, int value);
 
 static db_result_t create(index_t *);
 static db_result_t destroy(index_t *);
@@ -319,6 +319,15 @@ int compare(const void *p1, const void *p2)
 	return 1;
 }
 
+void* bptree_malloc(size_t size)
+{
+	void *p = malloc(size);
+	if (p) {
+		memset(p, 0, size);
+	}
+	return p;
+}
+
 /****************************************************************************
  * Name: create
  *
@@ -335,8 +344,10 @@ static db_result_t create(index_t *index)
 	/* Files storing tree and bucket data */
 	char tree_filename[DB_MAX_FILENAME_LENGTH];
 	char bucket_filename[DB_MAX_FILENAME_LENGTH];
-	tree_node_t tree_node;
-	bucket_t buck;
+	tree_node_t *tree_node;
+	size_t tree_node_size = 0;
+	bucket_t *buck;
+	size_t buck_size = 0;
 	int offset = 0;
 	db_result_t result;
 	uint8_t success = 0;
@@ -344,7 +355,7 @@ static db_result_t create(index_t *index)
 
 	curtime = time(NULL);
 	random_init(curtime);
-	tree_t *tree = malloc(sizeof(tree_t));
+	tree_t *tree = bptree_malloc(sizeof(tree_t));
 	if (tree == NULL) {
 		DB_LOG_E("DB: Failed to allocate a tree\n");
 		result = DB_ALLOCATION_ERROR;
@@ -363,7 +374,8 @@ static db_result_t create(index_t *index)
 	}
 
 	memcpy(index->descriptor_file, tree_filename, sizeof(index->descriptor_file));
-	DB_LOG_D("DB: Generated the tree file \"%s\" using %lu bytes of space\n", index->descriptor_file, (unsigned long)CONFIG_NODE_LIMIT * sizeof(tree_node_t));
+	tree_node_size = CONFIG_NODE_LIMIT * sizeof(tree_node_t);
+	DB_LOG_D("DB: Generated the tree file \"%s\" using %u bytes of space\n", index->descriptor_file, tree_node_size);
 
 	/* Generating bucket file to store <key, tuple_id> pair */
 	snprintf(bucket_filename, BUCKET_FILE_LENGTH, "%s.%x\0", BUCKET_FILE_NAME, (unsigned)(random_rand() & 0xffff));
@@ -375,7 +387,8 @@ static db_result_t create(index_t *index)
 		free(tree);
 		return result;
 	}
-	DB_LOG_D("DB: Generated the bucket file \"%s\" using %lu bytes of space\n", bucket_filename, (unsigned long)CONFIG_BUCKETS_LIMIT * sizeof(bucket_t));
+	buck_size = CONFIG_BUCKETS_LIMIT * sizeof(bucket_t);
+	DB_LOG_D("DB: Generated the bucket file \"%s\" using %u bytes of space\n", bucket_filename, buck_size);
 
 	/* Initialising both tree and bucket storage files */
 	tree->tree_storage = storage_open(tree_filename, O_RDWR);
@@ -401,13 +414,22 @@ static db_result_t create(index_t *index)
 	storage_write_to(tree->tree_storage, bucket_filename, offset, sizeof(bucket_filename));
 	offset += sizeof(bucket_filename);
 	base_offset = offset;
-	storage_write_to(tree->tree_storage, &tree_node, offset, sizeof(tree_node_t));
-	buck.next_free_slot = 0;
-	buck.info[0] = CONFIG_BUCKETS_LIMIT - 1;
-	buck.info[1] = KEY_MAX;
-	buck.info[2] = 0;
-	storage_write_to(tree->bucket_storage, &buck, 0, sizeof(bucket_t));
+	tree_node = bptree_malloc(tree_node_size);
+	if (tree_node) {
+		storage_write_to(tree->tree_storage, tree_node, offset, tree_node_size);
+		free(tree_node);
+	}
 
+	buck = bptree_malloc(buck_size);
+	if (buck) {
+		buck[0].next_free_slot = 0;
+		buck[0].info[0] = CONFIG_BUCKETS_LIMIT - 1;
+		buck[0].info[1] = KEY_MAX;
+		buck[0].info[2] = 0;
+		storage_write_to(tree->bucket_storage, buck, 0, buck_size);
+		free(buck);
+	}
+	
 	/* One is the root node and one is the bucket layer */
 	tree->levels = 2;
 
@@ -416,14 +438,14 @@ static db_result_t create(index_t *index)
 	memset(&tree->lock_buckets, 0, sizeof(tree->lock_buckets));
 
 	/* Allocating node cache and initialising it */
-	tree->node_cache = malloc(sizeof(tree_cache_t));
+	tree->node_cache = bptree_malloc(sizeof(tree_cache_t));
 	if (tree->node_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->node_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -451,15 +473,15 @@ static db_result_t create(index_t *index)
 	}
 
 	/* Allocating bucket cache and initialising it */
-	tree->buck_cache = malloc(sizeof(bucket_cache_t));
+	tree->buck_cache = bptree_malloc(sizeof(bucket_cache_t));
 	success = 0;
 	if (tree->buck_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->buck_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -543,7 +565,7 @@ static db_result_t load(index_t *index)
 	db_result_t result;
 	uint8_t success = 0;
 
-	index->opaque_data = tree = malloc(sizeof(tree_t));
+	index->opaque_data = tree = bptree_malloc(sizeof(tree_t));
 	if (tree == NULL) {
 		DB_LOG_E("DB: Failed to allocate a tree while loading\n");
 		return DB_ALLOCATION_ERROR;
@@ -570,14 +592,14 @@ static db_result_t load(index_t *index)
 	}
 	storage_close(fd);
 
-	tree->node_cache = malloc(sizeof(tree_cache_t));
+	tree->node_cache = bptree_malloc(sizeof(tree_cache_t));
 	if (tree->node_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->node_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -603,15 +625,15 @@ static db_result_t load(index_t *index)
 	}
 
 	/* Allocating bucket cache and initialising it  */
-	tree->buck_cache = malloc(sizeof(bucket_cache_t));
+	tree->buck_cache = bptree_malloc(sizeof(bucket_cache_t));
 	success = 0;
 	if (tree->buck_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->buck_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -668,7 +690,6 @@ static db_result_t release(index_t *index)
 		return DB_ALLOCATION_ERROR;
 	}
 	storage_write_to(tree->tree_storage, tree, 0, sizeof(tree_t));
-
 	/* Bucket Cache being flushed */
 	tmp_node = tree->buck_cache->in_cache.head->next;
 	free(tmp_node->prev);
@@ -763,7 +784,12 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 
 static db_result_t delete(index_t *index, attribute_value_t *value)
 {
-	return DB_INDEX_ERROR;
+	int i_key;
+
+	i_key = db_value_to_long(value);
+	DB_LOG_D("delete index for value %d\n", i_key);
+
+	return delete_item_btree(index, i_key);
 }
 
 /****************************************************************************
@@ -901,11 +927,6 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 		DB_LOG_D("BUCKET ALREADY LOCKED IN GET NEXT SPINNING\n");
 		pthread_mutex_lock(&(tree->bucket_lock));
 	}
-	tree->lock_buckets[cache.bucket_id] = 1;
-	pthread_mutex_unlock(&(tree->bucket_lock));
-
-	cache.start = 0;
-	cache.end = cache.bucket->next_free_slot;
 
 	/* TODO
 	 * Absent of non-cast return handling, should be taken care in the definition
@@ -923,6 +944,13 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 		return INVALID_TUPLE;
 
 	}
+
+	tree->lock_buckets[cache.bucket_id] = 1;
+	pthread_mutex_unlock(&(tree->bucket_lock));
+
+	cache.start = 0;
+	cache.end = cache.bucket->next_free_slot;
+
 	iterator->next_item_no = 1;
 	return get_next(iterator, matched_condition);
 }
@@ -983,7 +1011,7 @@ static db_result_t vacuum(tree_t *tree, relation_t *rel)
 
 	rel->next_row = num_tuples;
 	rel->cardinality = num_tuples;
-	storage_row_t temp = malloc(sizeof(rel->row_length));
+	storage_row_t temp = bptree_malloc(sizeof(rel->row_length));
 	if (temp == NULL) {
 		return DB_ALLOCATION_ERROR;
 	}
@@ -1052,15 +1080,18 @@ static cache_result_t modify_cache(tree_t *tree, int id, cache_type_t cache, op_
 		}
 		temp = temp->prev;
 	}
-	if (temp == end) {
-		DB_LOG_E("PANIC CACHE OPERATION FOR A NON EXISTENT ENTRY\n");
-		return CACHE_NOT_EXIST;
-	}
+
 	if (cache == NODE) {
 		pthread_mutex_unlock(&(tree->node_cache_lock));
 	} else {
 		pthread_mutex_unlock(&(tree->buck_cache_lock));
 	}
+
+	if (temp == end) {
+		DB_LOG_E("PANIC CACHE OPERATION FOR A NON EXISTENT ENTRY\n");
+		return CACHE_NOT_EXIST;
+	}
+
 	return CACHE_OK;
 }
 
@@ -1075,7 +1106,7 @@ static cache_result_t cache_write_node(tree_t *tree, int id, tree_node_t *node)
 {
 	pthread_mutex_lock(&(tree->node_cache_lock));
 
-	qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
+	qnode_t *new_node = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 	if (new_node == NULL) {
 		DB_LOG_E("Failed allocation of node\n");
 		pthread_mutex_unlock(&(tree->node_cache_lock));
@@ -1163,7 +1194,7 @@ static cache_result_t cache_write_bucket(tree_t *tree, int id, bucket_t *bucket)
 {
 	pthread_mutex_lock(&(tree->buck_cache_lock));
 
-	qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
+	qnode_t *new_node = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 	if (new_node == NULL) {
 		pthread_mutex_unlock(&(tree->buck_cache_lock));
 		return CACHE_ALLOCATION_ERROR;
@@ -1249,7 +1280,7 @@ static tree_node_t *tree_read(tree_t *tree, int bucket_id)
 		pthread_mutex_unlock(&(tree->node_cache_lock));
 		return &(tree->node_cache->cache_t[iter->pos].node);
 	} else {
-		qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *new_node = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (new_node == NULL) {
 			pthread_mutex_unlock(&(tree->node_cache_lock));
 			return NULL;
@@ -1374,7 +1405,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 	hashed_key = transform_key(key);
 	bool iset;
 	int j;
-	pair_t *path = malloc(sizeof(pair_t) * ((tree->levels) + 1));
+	pair_t *path = bptree_malloc(sizeof(pair_t) * ((tree->levels) + 1));
 	if (path == NULL) {
 		return NULL;
 	}
@@ -1396,7 +1427,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 		iset = false;
 		/* If leaf is found iterate over the keys and find the appropriate bucket */
 		for (j = 0; j < node->val[BRANCH_FACTOR - 1]; j++) {
-			if (node->val[j] >= hashed_key) {
+			if (node->val[j] > hashed_key) {
 				iset = true;
 				break;
 			}
@@ -1468,11 +1499,13 @@ void tree_print(tree_t *tree, int id)
 			modify_cache(tree, node->id[i], BUCKET, UNLOCK);
 		}
 		bucket = bucket_read(tree, node->id[node->val[BRANCH_FACTOR - 1]]);
-		DB_LOG_D("Bucket id:%d\n", node->id[node->val[BRANCH_FACTOR - 1]]);
-		for (j = 0; j < bucket->next_free_slot; j++) {
-			DB_LOG_V("Key %d, Value %d\n", bucket->pairs[j].key, bucket->pairs[j].value);
+		if (bucket != NULL) {
+			DB_LOG_D("Bucket id:%d\n", node->id[node->val[BRANCH_FACTOR - 1]]);
+			for (j = 0; j < bucket->next_free_slot; j++) {
+				DB_LOG_V("Key %d, Value %d\n", bucket->pairs[j].key, bucket->pairs[j].value);
+			}
+			modify_cache(tree, node->id[node->val[BRANCH_FACTOR - 1]], BUCKET, UNLOCK);
 		}
-		modify_cache(tree, node->id[node->val[BRANCH_FACTOR - 1]], BUCKET, UNLOCK);
 
 	} else {
 		for (i = 0; i < node->val[BRANCH_FACTOR - 1]; i++) {
@@ -1521,7 +1554,7 @@ static bucket_t *bucket_read(tree_t *tree, int bucket_id)
 		return &(tree->buck_cache->cache_t[iter->pos].bucket);
 	} else {
 		/* Bucket has to be read from flash into the cache */
-		qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
+		qnode_t *new_node = (qnode_t *)bptree_malloc(sizeof(qnode_t));
 		if (new_node == NULL) {
 			pthread_mutex_unlock(&(tree->buck_cache_lock));
 			return NULL;
@@ -1948,7 +1981,7 @@ static int db_flush(tree_t *tree, relation_t *rel)
 	int num_tuples = 0;
 	rel->next_row = num_tuples;
 	rel->cardinality = num_tuples;
-	storage_row_t temp = malloc(sizeof(rel->row_length));
+	storage_row_t temp = bptree_malloc(sizeof(rel->row_length));
 	if (temp == NULL) {
 		return DB_ALLOCATION_ERROR;
 	}
@@ -2003,3 +2036,561 @@ static int db_flush(tree_t *tree, relation_t *rel)
 	return DB_OK;
 }
 #endif
+
+//caller need to free memory of rm_values
+static int bucket_remove_pair(bucket_t *bucket, int value, int **rm_values, int remove_all)
+{
+	int i;
+	int j;
+	int new_range;
+	bool bMin = false;
+	bool bMax = false;
+	int rm_cnt = 0;
+	int *removed;
+
+	DB_LOG_V("bucket_remove_pair , bucket 0x%x , value %d\n", bucket, value);
+	bMin = (bucket->info[1] == value);
+	bMax = (bucket->info[2] == value);
+	removed = (int *)bptree_malloc(bucket->next_free_slot * sizeof(int));
+	if (removed == NULL) {
+		return 0;
+	}
+
+	for (i = 0; i < bucket->next_free_slot; i++) {
+		if (bucket->pairs[i].key == value) {
+			removed[rm_cnt++] = bucket->pairs[i].value;
+			bucket->next_free_slot--;
+			for (j = i; j < bucket->next_free_slot; j++) {
+				bucket->pairs[j].key = bucket->pairs[j + 1].key;
+				bucket->pairs[j].value = bucket->pairs[j + 1].value;
+			}
+
+			if (remove_all == 0) {
+				break; //delete only one pair, make it possible to update
+			}			
+			i--; //do not break, remove all item match the value
+		}
+	}
+
+	if (bucket->next_free_slot > 0 && (bMin || bMax)) {
+		new_range = bucket->pairs[0].key;
+		for (i = 0; i < bucket->next_free_slot; i++) {
+			if (bMin && (bucket->pairs[i].key < new_range)) {
+				new_range = bucket->pairs[i].key;
+			}
+			if (bMax && (bucket->pairs[i].key > new_range)) {
+				new_range = bucket->pairs[i].key;
+			}
+		}
+
+		if (bMin) {
+			bucket->info[1] = new_range;
+		} else if (bMax) {
+			bucket->info[2] = new_range;
+		}
+	}
+
+	*rm_values = removed;
+	return rm_cnt;
+}
+
+static void tree_node_update_keys(tree_t *tree, pair_t *path, int rm_val, int level, int range_min)
+{
+	int i;
+	int node_id;
+	tree_node_t *n;
+	bool bFound = false;
+
+	node_id = path[level].key;
+	if (node_id == ROOT_NODE_PARENT) {
+		return;
+	}
+
+	n = tree_read(tree, node_id);
+	if (n == NULL) {
+		return;
+	}
+
+	for (i = 0; i < n->val[BRANCH_FACTOR - 1]; i++) {
+		if (n->val[i] == rm_val) {
+			n->val[i] = range_min;
+			bFound = true;
+			DB_LOG_D("Found keys, value %d , node_id %d\n", rm_val, node_id);
+			break;
+		}
+	}
+
+	if (level > 0 && !bFound) {
+		tree_node_update_keys(tree, path, rm_val, level-1, range_min);
+	}
+
+	modify_cache(tree, node_id, NODE, UNLOCK);
+	return;
+}
+
+//check and update if delete key is in the tree node.val
+static void bucket_update_keys(tree_t *tree, pair_t *path, int bucket_id, int rm_val)
+{
+	int i;
+	int node_id;
+	tree_node_t *n;
+	bool bLeaf = false;
+	int range_min;
+	bucket_t *first_bucket;
+
+	node_id = path[tree->levels - 1].key;
+
+	n = tree_read(tree, node_id);
+	if (n == NULL) {
+		return;
+	}
+
+	for (i = 0; i < n->val[BRANCH_FACTOR - 1]; i++) {
+		if (n->val[i] == rm_val) {
+			first_bucket = bucket_read(tree, bucket_id);
+			n->val[i] = first_bucket->info[1];
+			modify_cache(tree, bucket_id, BUCKET, UNLOCK);
+			bLeaf = true;
+			DB_LOG_D("bucket_update_keys, value %d , node_id %d\n", rm_val, node_id);
+			break;
+		}
+	}
+
+	if (!bLeaf) {
+		first_bucket = bucket_read(tree, n->id[0]);
+		if (first_bucket == NULL) {
+			modify_cache(tree, node_id, NODE, UNLOCK);
+			return;
+		}
+		range_min = first_bucket->info[1];
+		modify_cache(tree, n->id[0], BUCKET, UNLOCK);
+
+		tree_node_update_keys(tree, path, rm_val, tree->levels - 2, range_min);
+	}
+
+	modify_cache(tree, node_id, NODE, UNLOCK);
+}
+
+static int bucket_request_sibling(tree_t *tree, pair_t *path, bucket_t *bucket)
+{
+	int i;
+	int index;
+	int node_id;
+	bucket_t *left_bucket;
+	bucket_t *right_bucket;
+	tree_node_t *n;
+	int share_key;
+	int *share_value = NULL;
+	int value_cnt;
+
+	node_id = path[tree->levels - 1].key;
+	n = tree_read(tree, node_id);
+	index = path[tree->levels - 1].value;
+	//check left sibling
+	if (index) {
+		if (n->id[index - 1] < CONFIG_BUCKETS_LIMIT - 1) {
+			left_bucket = bucket_read(tree, n->id[index-1]);
+			if (left_bucket && left_bucket->next_free_slot > BUCKET_SIZE / 2) {
+				share_key = left_bucket->info[2];
+				value_cnt = bucket_remove_pair(left_bucket, share_key, &share_value, 1);
+
+				bucket->info[1] = share_key;
+				for (i = 0; i < value_cnt; i++) {
+					bucket->pairs[bucket->next_free_slot].key = share_key;
+					bucket->pairs[bucket->next_free_slot].value = share_value[i];
+					bucket->next_free_slot++;
+				}
+				free(share_value);
+
+				n->val[index - 1] = share_key;
+
+				modify_cache(tree, node_id, NODE, UNLOCK);
+				modify_cache(tree, n->id[index - 1], BUCKET, UNLOCK);
+				return 0;
+			}
+			modify_cache(tree, n->id[index - 1], BUCKET, UNLOCK);
+		}
+	}
+
+	//check right sibling
+	if (index < n->val[BRANCH_FACTOR - 1]) {
+		if (n->id[index + 1] < CONFIG_BUCKETS_LIMIT - 1) {
+			right_bucket = bucket_read(tree, n->id[index + 1]);
+			if (right_bucket && right_bucket->next_free_slot > BUCKET_SIZE / 2) {
+				share_key = right_bucket->info[1];
+				value_cnt = bucket_remove_pair(right_bucket, share_key, &share_value, 1);
+
+				bucket->info[2] = share_key;
+				for (i = 0; i < value_cnt; i++) {
+					bucket->pairs[bucket->next_free_slot].key = share_key;
+					bucket->pairs[bucket->next_free_slot].value = share_value[i];
+					bucket->next_free_slot++;
+				}
+				free(share_value);
+
+				n->val[index] = right_bucket->info[1];
+
+				modify_cache(tree, node_id, NODE, UNLOCK);
+				modify_cache(tree, n->id[index + 1], BUCKET, UNLOCK);
+				return 0;
+			}
+
+			modify_cache(tree, n->id[index + 1], BUCKET, UNLOCK);
+		}
+	}
+
+	modify_cache(tree, node_id, NODE, UNLOCK);
+	return -1;
+}
+
+static void bucket_update_next(tree_t *tree, int bucket_id, int next_id)
+{
+	bucket_t *bucket;
+
+	bucket = bucket_read(tree, bucket_id);
+	if (bucket) {
+		bucket->info[0] = next_id;
+		DB_LOG_D("set bucket %d next id %d\n", bucket_id, next_id);
+	}
+	modify_cache(tree, bucket_id, BUCKET, UNLOCK);
+}
+
+static int bucket_get_prev_id(tree_t *tree, pair_t *path)
+{
+	int node_level;
+	int pnode_id;
+	int index;
+	int sb_id;
+	int left_bucket = -1;
+	tree_node_t *pn;
+	tree_node_t *sbn = NULL;
+
+	node_level = tree->levels-1;
+	pnode_id = path[node_level - 1].key;
+	if (pnode_id == ROOT_NODE_PARENT) {
+		return -1;
+	}
+
+	index = path[node_level - 1].value;
+	//check left sibling node 
+	if (index) {
+		pn = tree_read(tree, pnode_id);	
+		sb_id = pn->id[index - 1];
+		sbn = tree_read(tree, sb_id);
+		if (sbn) {
+			left_bucket = sbn->id[sbn->val[BRANCH_FACTOR - 1]];
+		}
+
+		modify_cache(tree, pnode_id, NODE, UNLOCK);
+		modify_cache(tree, sb_id, NODE, UNLOCK);
+	}
+
+	return left_bucket;
+}
+
+static int tree_rebuild_node(tree_t *tree, pair_t *path, int level)
+{
+	int i;
+	int node_id;
+	int lsb_id = -1;
+	int rsb_id = -1;
+	int pnode_id;
+	int index;
+	int key_num;
+	int sb_key_num;
+	bool bmerge_left = false;
+	bool bmerge_right = false;
+	tree_node_t *n;
+	tree_node_t *pn;
+	tree_node_t *lsbn = NULL;
+	tree_node_t *rsbn = NULL;
+
+	node_id = path[level].key;
+	if (node_id == ROOT_NODE_PARENT) {
+		return 0;
+	}
+	n = tree_read(tree, node_id);
+
+	pnode_id = path[level - 1].key;
+	index = path[level - 1].value;
+	pn = tree_read(tree, pnode_id);
+	//check left sibling node 
+	if (index) {
+		lsb_id = pn->id[index - 1];
+		lsbn = tree_read(tree, lsb_id);
+		if (lsbn && (lsbn->val[BRANCH_FACTOR - 1] > BRANCH_FACTOR / 2)) {
+			//move own keys
+			key_num = n->val[BRANCH_FACTOR - 1] + 1;
+			for (i = key_num; i >= 1; i--) {
+				n->val[i] = n->val[i - 1];
+				n->id[i] = n->id[i - 1];
+			}
+			n->val[BRANCH_FACTOR - 1] = key_num;
+			
+			//move key, and child id, from sibling and parent
+			sb_key_num = lsbn->val[BRANCH_FACTOR - 1];
+			n->val[0] = pn->val[index - 1];
+			n->id[0] = lsbn->id[sb_key_num];
+			pn->val[index - 1] = lsbn->val[sb_key_num - 1];			
+			lsbn->val[BRANCH_FACTOR - 1] = sb_key_num - 1;
+
+			modify_cache(tree, node_id, NODE, UNLOCK);
+			modify_cache(tree, pnode_id, NODE, UNLOCK);
+			modify_cache(tree, lsb_id, NODE, UNLOCK);
+
+			return 0;
+		}
+
+		bmerge_left = (lsbn != NULL);
+	}
+	
+	//left maybe exist, but could only merge, check right sibling node
+	if (index < pn->val[BRANCH_FACTOR - 1]) {
+		rsb_id = pn->id[index + 1];
+		rsbn = tree_read(tree, rsb_id);
+		if (rsbn && (rsbn->val[BRANCH_FACTOR - 1] > BRANCH_FACTOR / 2)) {
+			//move key, and child id, from sibling and parent
+			key_num = n->val[BRANCH_FACTOR - 1];
+			n->val[key_num] = pn->val[index];
+			n->id[key_num+1] = rsbn->id[0];
+			pn->val[index] = rsbn->val[0];
+			n->val[BRANCH_FACTOR - 1] = key_num + 1;
+
+			//update sibling keys
+			sb_key_num = rsbn->val[BRANCH_FACTOR - 1];
+			for (i = 0; i < sb_key_num; i++) {
+				rsbn->val[i] = rsbn->val[i + 1];
+				rsbn->id[i] = rsbn->id[i + 1];
+			}
+			rsbn->val[BRANCH_FACTOR - 1] = sb_key_num - 1;
+
+			modify_cache(tree, node_id, NODE, UNLOCK);
+			modify_cache(tree, pnode_id, NODE, UNLOCK);
+			modify_cache(tree, rsb_id, NODE, UNLOCK);
+			if (bmerge_left) {
+				modify_cache(tree, lsb_id, NODE, UNLOCK);
+			}
+
+			return 0;
+		}
+
+		bmerge_right = (rsbn != NULL);
+	}
+
+	//need to merge node
+	if (bmerge_left || bmerge_right) {
+		//merge to left node
+		key_num = n->val[BRANCH_FACTOR - 1];
+		sb_key_num = bmerge_left ? lsbn->val[BRANCH_FACTOR - 1] : rsbn->val[BRANCH_FACTOR - 1];
+		if (bmerge_left) {
+			lsbn->val[sb_key_num++] = pn->val[index - 1];
+			for (i = 0; i < key_num; i++) {
+				lsbn->val[sb_key_num + i] = n->val[i];
+				lsbn->id[sb_key_num + i] = n->id[i];
+			}
+			lsbn->id[sb_key_num + key_num] = n->id[key_num];
+			lsbn->val[BRANCH_FACTOR - 1] = sb_key_num + key_num;
+		} else {
+			key_num++;
+			for (i = sb_key_num; i >= 0 ; i--) {
+				rsbn->val[key_num + i] = rsbn->val[i];
+				rsbn->id[key_num + i] = rsbn->id[i];
+			}
+			for (i = 0; i < key_num; i++) {
+				rsbn->val[i] = n->val[i];
+				rsbn->id[i] = n->id[i];
+			}
+			rsbn->val[key_num-1] = pn->val[index];
+			rsbn->val[BRANCH_FACTOR - 1] = sb_key_num + key_num;
+		}
+
+		//release current node
+		modify_cache(tree, node_id, NODE, INVALIDATE);
+		tree->off_nodes--;
+
+		//update parent node
+		if (pn->val[BRANCH_FACTOR - 1] == 1) {  //parent node MUST be root
+			tree->root = bmerge_left ? lsb_id : rsb_id;
+			DB_LOG_D("[tree->root]tree root change to %d\n", tree->root);
+			tree->levels--;
+			tree->off_nodes--;
+			modify_cache(tree, pnode_id, NODE, INVALIDATE);
+		} else {
+			if (bmerge_left) {
+				pn->val[index - 1] = pn->val[index];
+			}
+			for (i = index; i < pn->val[BRANCH_FACTOR - 1]; i++) {
+				pn->val[i] = pn->val[i + 1];
+				pn->id[i] = pn->id[i + 1];
+			}
+			pn->val[BRANCH_FACTOR - 1] = pn->val[BRANCH_FACTOR - 1] - 1;
+
+			if ((pnode_id != tree->root) && pn->val[BRANCH_FACTOR - 1] < BRANCH_FACTOR / 2) {
+				tree_rebuild_node(tree, path, level-1);
+			}
+		}
+	}
+
+	if (bmerge_left) {
+		modify_cache(tree, lsb_id, NODE, UNLOCK);
+	}
+	if (bmerge_right) {
+		modify_cache(tree, rsb_id, NODE, UNLOCK);
+	}
+
+	modify_cache(tree, node_id, NODE, UNLOCK);
+	modify_cache(tree, pnode_id, NODE, UNLOCK);
+
+	return 0;
+}
+
+static int bucket_merge_sibling(tree_t *tree, pair_t *path, bucket_t *bucket, int rm_val)
+{
+	int i;
+	int index;
+	int node_id;
+	int sibling_id;
+	int key_num = -1;
+	int merged = 0;
+	int left_bucket_id = -1;
+	bucket_t *left_bucket;
+	bucket_t *right_bucket;
+	tree_node_t *n;
+
+	node_id = path[tree->levels - 1].key;
+	n = tree_read(tree, node_id);
+	index = path[tree->levels - 1].value;
+	//merge left sibling
+	if (index) {
+		//merge bucket
+		sibling_id = n->id[index - 1];
+		if (sibling_id < CONFIG_BUCKETS_LIMIT - 1) {
+			left_bucket = bucket_read(tree, sibling_id);
+			for (i = 0; i < bucket->next_free_slot; i++) {
+				left_bucket->info[1] = min(left_bucket->info[1], bucket->pairs[i].key);
+				left_bucket->info[2] = max(left_bucket->info[2], bucket->pairs[i].key);
+				left_bucket->pairs[left_bucket->next_free_slot].key = bucket->pairs[i].key;
+				left_bucket->pairs[left_bucket->next_free_slot].value = bucket->pairs[i].value;
+				left_bucket->next_free_slot++;
+			}
+			left_bucket->info[0] = bucket->info[0];
+			DB_LOG_D("merge left, set bucket %d next id %d\n", sibling_id, bucket->info[0]);
+			
+			//update bucket list
+			modify_cache(tree, path[tree->levels].key, BUCKET, INVALIDATE);
+			modify_cache(tree, sibling_id, BUCKET, UNLOCK);
+
+			//update parent tree node
+			n->val[index - 1] = n->val[index];
+			key_num = n->val[BRANCH_FACTOR - 1];
+			for (i = index; i < key_num; i++) {
+				n->val[i] = n->val[i + 1];
+				n->id[i] = n->id[i + 1];
+			}
+			n->val[BRANCH_FACTOR - 1] = (--key_num);
+			modify_cache(tree, node_id, NODE, UNLOCK);
+
+			bucket_update_keys(tree, path, sibling_id, rm_val);
+			merged = 1;
+		}
+	} else if (index < n->val[BRANCH_FACTOR - 1]) {  //merge right sibling
+		//merge bucket
+		sibling_id = n->id[index + 1];
+		if (sibling_id < CONFIG_BUCKETS_LIMIT - 1) {
+			right_bucket = bucket_read(tree, sibling_id);
+			for (i = 0; i < bucket->next_free_slot; i++) {
+				right_bucket->info[1] = min(right_bucket->info[1], bucket->pairs[i].key);
+				right_bucket->info[2] = max(right_bucket->info[2], bucket->pairs[i].key);
+				right_bucket->pairs[right_bucket->next_free_slot].key = bucket->pairs[i].key;
+				right_bucket->pairs[right_bucket->next_free_slot].value = bucket->pairs[i].value;
+				right_bucket->next_free_slot++;
+			}
+
+			left_bucket_id = bucket_get_prev_id(tree, path);
+			if (left_bucket_id >= 0) {
+				DB_LOG_D("merge right, find left_bucket_id %d !!\n", left_bucket_id);
+				bucket_update_next(tree, left_bucket_id, sibling_id);
+			}
+			//update bucket list
+			modify_cache(tree, path[tree->levels].key, BUCKET, INVALIDATE);
+			modify_cache(tree, sibling_id, BUCKET, UNLOCK);
+
+			//update parent tree node
+			key_num = n->val[BRANCH_FACTOR - 1];
+			for (i = index; i < key_num; i++) {
+				n->val[i] = n->val[i + 1];
+				n->id[i] = n->id[i + 1];
+			}
+			n->val[BRANCH_FACTOR - 1] = (--key_num);
+			modify_cache(tree, node_id, NODE, UNLOCK);
+
+			bucket_update_keys(tree, path, sibling_id, rm_val);
+			merged = 1;
+		}
+	} else {
+		DB_LOG_E("ERROR: should not be here\n");
+		key_num = n->val[BRANCH_FACTOR - 1];
+	}
+
+	if (merged == 0) {
+		modify_cache(tree, node_id, NODE, UNLOCK);
+	}
+
+	//check tree node merge
+	if (key_num > 0 && key_num < BRANCH_FACTOR / 2) {
+		tree_rebuild_node(tree, path, tree->levels - 1);
+	}
+
+	return 0;
+}
+
+static db_result_t delete_item_btree(index_t *index, int value)
+{
+	db_result_t ret = DB_OK;
+	int bucket_id;
+	pair_t *path;
+	tree_t *tree;
+	bucket_t *tmp_bucket;
+	int *rm_value = NULL;
+
+	tree = (tree_t*)index->opaque_data;
+	path = tree_find(tree, value);
+	if (path == NULL) {
+		return DB_INDEX_ERROR;
+	}
+
+	bucket_id = path[tree->levels].key;
+	tmp_bucket = bucket_read(tree, bucket_id);
+	bucket_remove_pair(tmp_bucket, value, &rm_value, 0);
+	free(rm_value);
+	modify_cache(tree, bucket_id, BUCKET, UNLOCK);
+	tree->inserted--;
+
+	if (tmp_bucket->next_free_slot >= BUCKET_SIZE / 2) { //no need re-orgnize
+		bucket_update_keys(tree, path, bucket_id, value);
+	} else { //need to re-orgnize the bucket and tree node
+		if (bucket_request_sibling(tree, path, tmp_bucket) == 0) {
+			bucket_update_keys(tree, path, bucket_id, value);
+			DB_LOG_D("request from sibling bucket successfully\n");
+		} else {
+			if (bucket_merge_sibling(tree, path, tmp_bucket, value) != 0) {
+				ret = DB_INDEX_ERROR;
+			}
+		}
+	}
+
+	pthread_mutex_lock(&(tree->bucket_lock));
+	if (tree->lock_buckets[bucket_id] == 0) {
+		DB_LOG_E("PANIC EDITED BUCKET WITHOUT LOCK\n");
+		pthread_mutex_unlock(&(tree->bucket_lock));
+		rw_unlock_write(&(tree->tree_lock));
+		ret = DB_INDEX_ERROR;
+	} else {
+		tree->lock_buckets[bucket_id] = 0;
+		pthread_mutex_unlock(&(tree->bucket_lock));
+		rw_unlock_write(&(tree->tree_lock));
+	}
+
+	free(path);
+	return ret;
+}

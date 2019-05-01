@@ -69,6 +69,9 @@
 #include <algorithm>
 #include <list>
 
+#include <thread>         // std::thread, std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
+
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
 
@@ -88,6 +91,7 @@ using namespace std;
 #define CXXTEST_RTTI
 #undef CXXTEST_ISTREAM
 #define CXXTEST_EXCEPTION
+#define THREAD_TEST
 
 //***************************************************************************
 // Private Classes
@@ -384,6 +388,115 @@ static void test_exception(void)
 }
 #endif
 
+#ifdef THREAD_TEST
+
+static void pause_thread(int n)
+{
+	std::this_thread::sleep_for (std::chrono::seconds(n));
+	std::cout << "pause of " << n << " seconds ended" << std::endl;
+}
+
+static void bar_thread()
+{
+	// do stuff...
+}
+
+//***************************************************************************
+// Name: thread_operator_test (thread::operator=)
+//
+// Expected output:
+// ----------------------------------------------------
+// Spawning 5 threads...
+// Done spawning threads. Now waiting for them to join:
+// pause of 1 seconds ended
+// pause of 2 seconds ended
+// pause of 3 seconds ended
+// pause of 4 seconds ended
+// pause of 5 seconds ended
+// All threads joined!
+//***************************************************************************
+
+static int thread_operator_test(void)
+{
+	std::thread threads[5];						// default-constructed threads
+
+	std::cout << "Spawning 5 threads..." << std::endl;
+	for (int i = 0; i < 5; ++i)
+		threads[i] = std::thread(pause_thread, i + 1);   // move-assign threads
+
+	std::cout << "Done spawning threads. Now waiting for them to join:" << std::endl;
+	for (int i = 0; i < 5; ++i)
+		threads[i].join();
+
+	std::cout << "All threads joined!" << std::endl;
+
+	return 0;
+}
+
+//***************************************************************************
+// Name: thread_joinable_test (thread::joinable)
+//
+// Expected output:
+// -----------------------------
+// Joinable after construction:
+// foo: false
+// bar: true
+// Joinable after joining:
+// foo: false
+// bar: false
+//***************************************************************************
+
+int thread_joinable_test(void)
+{
+	std::thread foo;
+	std::thread bar(bar_thread);
+
+	std::cout << "Joinable after construction:\n" << std::boolalpha;
+	std::cout << "foo: " << foo.joinable() << std::endl;
+	std::cout << "bar: " << bar.joinable() << std::endl;
+
+	if (foo.joinable()) foo.join();
+	if (bar.joinable()) bar.join();
+
+	std::cout << "Joinable after joining:\n" << std::boolalpha;
+	std::cout << "foo: " << foo.joinable() << std::endl;
+	std::cout << "bar: " << bar.joinable() << std::endl;
+
+	return 0;
+}
+
+//***************************************************************************
+// Name: thread_join_test (thread::join)
+//
+// Expected output:
+// -----------------------------
+// Spawning 3 threads...
+// Done spawning threads. Now waiting for them to join:
+// pause of 1 seconds ended
+// pause of 2 seconds ended
+// pause of 3 seconds ended
+// All threads joined!
+//***************************************************************************
+
+int thread_join_test(void)
+{
+	std::cout << "Spawning 3 threads..." << std::endl;
+
+	std::thread t1 (pause_thread, 1);
+	std::thread t2 (pause_thread, 2);
+	std::thread t3 (pause_thread, 3);
+
+	std::cout << "Done spawning threads. Now waiting for them to join:" << std::endl;
+	t1.join();
+	t2.join();
+	t3.join();
+
+	std::cout << "All threads joined!" << std::endl;
+
+	return 0;
+}
+#endif
+
 //***************************************************************************
 // Public Functions
 //***************************************************************************
@@ -412,6 +525,17 @@ extern "C"
 
 #ifdef CXXTEST_EXCEPTION
 		test_exception();
+#endif
+
+#ifdef THREAD_TEST
+		cout << endl << "============ thread::operator= test =====================" << endl;
+		thread_operator_test();
+
+		cout << endl << "============ thread::joinable test ======================" << endl;
+		thread_joinable_test();
+
+		cout << endl << "============ thread::join test ==========================" << endl;
+		thread_join_test();
 #endif
 		return 0;
 	}

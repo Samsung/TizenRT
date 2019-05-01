@@ -332,7 +332,7 @@ int websocket_client_handshake(websocket_t *client, char *host, char *port, char
 	}
 
 	memset(accept_key, 0, WEBSOCKET_ACCEPT_KEY_LEN);
-	if (keyhdend - keyhdstart > WEBSOCKET_CLIENT_KEY_LEN) {
+	if (keyhdend - keyhdstart > WEBSOCKET_ACCEPT_KEY_LEN) {
 		WEBSOCKET_DEBUG("error key length\n");
 		goto EXIT_WEBSOCKET_HANDSHAKE_ERROR;
 	}

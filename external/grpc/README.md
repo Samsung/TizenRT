@@ -5,7 +5,7 @@ The following covers the pre-requisites to building grpc on TizenRT.
 
 ## Pre-Requisites
 TizenRT's version of gRPC supports only C++ binding, so it is expected that the developer should write C++ applications in order to 
-use gRPC. In that context, gRPC needs specific *cpp plugins* in order to convert certain high-level RPC specifications (covered in detail under [Using `Protobuf` to generate Service and Message Classes](#using-protobuf-to-generate-service-and-message-classes)) to C++ header and source files.
+use gRPC. In that context, gRPC needs specific *cpp plugins* in order to convert certain high-level RPC specifications (covered in detail under [Using `Protobuf` to generate Service and message classes](#using-protobuf-to-generate-service-and-message-classes)) to C++ header and source files.
 At present, TizenRT's gRPC build borrows the plugins from a native build of gRPC on the host environment (usually Linux or Mac OS). This requires building gRPC 1.9.0. The following steps describe how to do so on a linux machine:
 
 1. Install Pre-requisites
@@ -21,7 +21,7 @@ $ git clone https://github.com/grpc/grpc
 $ cd grpc
 $ git checkout v1.9.x
 ```
-3. Fetch the gRPC submodules, including `Protocol buffer` which gRPC uses for RPC specifications
+3. Fetch the gRPC submodules, including `Protocol Buffer` which gRPC uses for RPC specifications
 ```
 $ git submodule update --init
 ```
@@ -42,7 +42,7 @@ $ [sudo] make install
 $ [sudo] ldconfig
 ```
 As a reference, please consult [C++ Installation Instructions](https://github.com/google/protobuf/blob/master/src/README.md) for details on how to install `Protobuf` from source.
-After executing the steps above, you will have successfully installed the grpc and protocol buffer libraries, including cpp plugin and the protoc compiler on your host environment. The above steps are described in detail in [Installing gRPC from source](https://github.com/grpc/grpc/blob/master/BUILDING.md) In the following, we cover two main aspects of porting gRPC to TizenRT, mainly details on how to build gRPC library, and how to develop, build and run applications that use gRPC.
+After executing the steps above, you will have successfully installed the grpc and Protocol Buffer libraries, including cpp plugin and the protoc compiler on your host environment. The above steps are described in detail in [Installing gRPC from source](https://github.com/grpc/grpc/blob/master/BUILDING.md) In the following, we cover two main aspects of porting gRPC to TizenRT, mainly details on how to build gRPC library, and how to develop, build and run applications that use gRPC.
 
 ## Build gRPC in TizenRT
 The source files for gRPC are located at `external/grpc`, and the associated header files are located at 
@@ -59,16 +59,16 @@ linked together under static library `os/build/libraries/libexternal.a`.
 
 ## Develop, Build and Run TizenRT applications that use gRPC
 This section is divided into three parts, namely,
-1. Using *Protocol buffer* external module located under `external/protobuf` to convert `.proto` specifications to C++ service and message classes,
+1. Using *Protocol Buffer* external module located under `external/protobuf` to convert `.proto` specifications to C++ service and message classes,
 2. Customizing TizenRT's `Makefile` to include the `protoc` compiler along with the grpc application,
 3. TizenRT's run-time environment support for grpc application.
 
 
 Let us look in detail at the points above.
 
-### Using `Protobuf` to generate Service and Message Classes
-The C++ binding for gRPC uses Service and Message classes to implement RPC stubs. Although the Service and Message classes can be written by hand,
-the *Protocol buffer* compiler provides a convenient specification language, as well as automated C++ code generation for these classes. TizenRT has ported *Protocol buffer* under
+### Using `Protobuf` to generate service and message classes
+The C++ binding for gRPC uses Service and message classes to implement RPC stubs. Although the Service and message classes can be written by hand,
+the *Protocol Buffer* compiler provides a convenient specification language, as well as automated C++ code generation for these classes. TizenRT has ported *Protocol Buffer* under
 `external/protobuf` folder, so it is highly recommended to use this external module to generate the aforestated classes.
 Accordingly, please include `CONFIG_PROTOBUF` in your TizenRT build configuration as well. You can refer to `external/protobuf/Kconfig` for details of this configuration. In order to generate stub code from `protobuf` specifications, `gRPC` features a set of plugins, one for each programming language. TizenRT requires the `grpc-cpp-plugin` to convert `.proto` files into C++ implementation of Message and Service classes. For this purpose, additional plugins must be installed on the host build environment (your Linux machine or VM). To do so, follow the installation steps described earlier in [Pre-Requisites](#pre-requisites).
 
@@ -77,13 +77,13 @@ to include the `protoc` compilation command in TizenRT's application-level `Make
 
 ### Customizing `Makefile` for gRPC
 In order to understand the details below, please refer to `apps/examples/greeter_client/Makefile` as an example.
-In general, the application-level `Makefile` must include an additional step for auto-generating the Service and Message classes using the `protoc` compiler.
+In general, the application-level `Makefile` must include an additional step for auto-generating the Service and message classes using the `protoc` compiler.
 For convenience, developers are expected to create their `.proto` specification at the same application folder, and provide it to the `Makefile` as shown below:
 ```
 CXXPROTO	= <proto-filename>.proto
 ```
-Next, the `protoc` command will be invoked to generate the C++ Service and Message classes. The Service files have extensions `.grpc.pb.cc` (source) and `.grpc.pb.h` (header),
-while the Message files have extensions `.pb.cc` and `.pb.h` correspondingly. These Source and Message classes are generated in Makefile as shown:
+Next, the `protoc` command will be invoked to generate the C++ Service and message classes. The Service files have extensions `.grpc.pb.cc` (source) and `.grpc.pb.h` (header),
+while the Message files have extensions `.pb.cc` and `.pb.h` correspondingly. These Source and message classes are generated in Makefile as shown:
 ```
 # Message class
 $(CXXSRCS): %$(GENCXXEXT): %$(PROTOEXT)
@@ -109,7 +109,7 @@ Therefore, our TizenRT application must internally use either `pthread_create` A
 Please refer to `grpc_greeter_client` and `grpc_route_client` applications under `apps/examples` folder as examples on how to achieve this.
 
 An important consideration when running gRPC on TizenRT is the stack size allocated for its threads.
-From our initial verfication, we observe that a minimum thread stack size of 16384 bytes is necessary for the main gRPC thread to run successfully on TizenRT.
+From our initial verification, we observe that a minimum thread stack size of 16384 bytes is necessary for the main gRPC thread to run successfully on TizenRT.
 This can be achieved by either using the `pthread_attr_setstacksize` API or configuring the default pthread stacksize via menuconfig, at the location `Kernel Features -> Stack size information -> Default pthread stack size`.
 Additionally, this gRPC main thread engine uses `pthread_create` internally for its run-time procedures, for which we recommend setting a stack size of 10240 bytes or higher. In order to configure this easily, TizenRT features a menuconfig parameter at the location `Networking Support -> Protocols -> gRPC -> Set thread size for grpc modules`.
 

@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <debug.h>
 
 #include <tinyara/spi/spi_bitbang.h>
 
@@ -80,28 +81,6 @@
  * - Provide an initialization function that initializes the GPIO pins used
  *   in the bit bang interface and calls spi_create_bitbang().
  */
-
-/* Debug ********************************************************************/
-/* Check if SPI debut is enabled (non-standard.. no support in
- * include/debug.h
- */
-
-#ifndef CONFIG_DEBUG
-#undef CONFIG_DEBUG_VERBOSE
-#undef CONFIG_DEBUG_SPI
-#endif
-
-#ifdef CONFIG_DEBUG_SPI
-#define spidbg lldbg
-#ifdef CONFIG_DEBUG_VERBOSE
-#define spivdbg lldbg
-#else
-#define spivdbg(...)
-#endif
-#else
-#define spidbg(...)
-#define spivdbg(...)
-#endif
 
 /****************************************************************************
  * Private Types

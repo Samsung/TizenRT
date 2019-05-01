@@ -20,14 +20,14 @@
 
 namespace media {
 
-FocusManager::FocusRequester::FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener)
+FocusManager::FocusRequester::FocusRequester(stream_info_id_t id, std::shared_ptr<FocusChangeListener> listener)
 	: mId(id), mListener(listener)
 {
 }
 
-bool FocusManager::FocusRequester::hasSameId(std::string id)
+bool FocusManager::FocusRequester::hasSameId(std::shared_ptr<FocusRequest> focusRequest)
 {
-	return (mId.compare(id) == 0);
+	return mId == focusRequest->getStreamInfo()->id;
 }
 
 void FocusManager::FocusRequester::notify(int focusChange)
@@ -50,7 +50,7 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 		return FOCUS_REQUEST_FAIL;
 	}
 
-	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest->getId()))) {
+	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest))) {
 		auto focus = mFocusList.front();
 		mFocusList.pop_front();
 		focus->notify(FOCUS_LOSS);
@@ -58,7 +58,7 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 			mFocusList.front()->notify(FOCUS_GAIN);
 		}
 	} else {
-		removeFocusElement(focusRequest->getId());
+		removeFocusElement(focusRequest);
 	}
 
 	return FOCUS_REQUEST_SUCCESS;
@@ -71,28 +71,28 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		return FOCUS_REQUEST_FAIL;
 	}
 
-	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest->getId()))) {
+	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest))) {
 		return FOCUS_REQUEST_SUCCESS;
 	}
 
-	removeFocusElement(focusRequest->getId());
+	removeFocusElement(focusRequest);
 
 	if (!mFocusList.empty()) {
 		mFocusList.front()->notify(FOCUS_LOSS);
 	}
 
-	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getId(), focusRequest->getListener());
+	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
 	mFocusList.push_front(focusRequester);
 	focusRequester->notify(FOCUS_GAIN);
 
 	return FOCUS_REQUEST_SUCCESS;
 }
 
-void FocusManager::removeFocusElement(std::string id)
+void FocusManager::removeFocusElement(std::shared_ptr<FocusRequest> focusRequest)
 {
 	auto iterator = mFocusList.begin();
 	while (iterator != mFocusList.end()) {
-		if ((*iterator)->hasSameId(id)) {
+		if ((*iterator)->hasSameId(focusRequest)) {
 			iterator = mFocusList.erase(iterator);
 		} else {
 			++iterator;

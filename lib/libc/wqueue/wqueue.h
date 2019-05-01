@@ -59,8 +59,8 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <semaphore.h>
-#include <pthread.h>
 
 #include <tinyara/wqueue.h>
 

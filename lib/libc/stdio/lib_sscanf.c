@@ -70,7 +70,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 #define MAXLN 128
 
 #ifndef MIN
@@ -345,6 +344,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 	bool noassign;
 	int count;
 	int width;
+	int fwidth;
 	int base = 10;
 	char tmp[MAXLN];
 #ifdef CONFIG_LIBC_SCANSET
@@ -406,7 +406,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					for (tc = fmt; isdigit(*fmt); fmt++);
 					strncpy(tmp, tc, fmt - tc);
 					tmp[fmt - tc] = '\0';
-					width = MIN(sizeof(tmp) - 1, atoi(tmp));
+					width = atol(tmp);
 					fmt--;
 				}
 			}
@@ -438,14 +438,19 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						buf++;
 					}
 
-					/* Was a fieldwidth specified? */
+					/* Guess a field width using some heuristics */
 
-					if (!width) {
-						/* No... Guess a field width using some heuristics */
+					fwidth = findwidth(buf, fmt);
 
-						int tmpwidth = findwidth(buf, fmt);
-						width = MIN(sizeof(tmp) - 1, tmpwidth);
+					/* Use the actual field's width if 1) no fieldwidth
+					 * specified or 2) the actual field's width is smaller
+					 * than fieldwidth specified
+					 */
+
+					if (!width || fwidth < width) {
+						width  = fwidth;
 					}
+
 
 					/* Copy the string (if we are making an assignment) */
 
@@ -493,7 +498,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 
 					/* Guess a field width using some heuristics */
 
-					int fwidth = scansetwidth(buf, set);
+					fwidth = scansetwidth(buf, set);
 
 					/* Use the actual field's width if 1) no fieldwidth
 					* specified or 2) the actual field's width is smaller
@@ -504,7 +509,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						width  = fwidth;
 					}
 
-					width = MIN(sizeof(tmp) - 1, width);
 
 					/* Copy the string (if we are making an assignment) */
 
@@ -554,7 +558,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 
 					if (!noassign) {
 						strncpy(tv, buf, width);
-						tv[width] = '\0';
 						count++;
 					}
 
@@ -697,9 +700,11 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 				}
 			}
 
-			/* Process %f:  Floating point conversion */
+			/* Process %a, %A, %f, %F, %e, %E, %g, and %G:  Floating point
+			 * conversions
+			 */
 
-			else if (*fmt == 'f' || *fmt == 'F') {
+			else if (strchr("aAfFeEgG", *fmt) != NULL) {
 #ifdef CONFIG_HAVE_DOUBLE
 				FAR double_t *pd = NULL;
 #endif
@@ -734,6 +739,13 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 				 */
 
 				if (*buf) {
+					FAR char *endptr;
+					int errsave;
+#ifdef CONFIG_HAVE_DOUBLE
+					double dvalue;
+#endif
+					float fvalue;
+
 					/* Skip over any white space before the real string */
 
 					while (isspace(*buf)) {
@@ -743,43 +755,49 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					/* Was a fieldwidth specified? */
 
 					if (!width) {
-						/* No... Lets calculate the width */
+						/* No... Guess a field width using some heuristics */
 
-						while (isdigit(*(buf + width)) || *(buf + width) == '.') {
-							width++;
-						}
+						int tmpwidth = findwidth(buf, fmt);
+						width = MIN(sizeof(tmp) - 1, tmpwidth);
 					}
 
 					/* Copy the real string into a temporary working buffer. */
 
 					strncpy(tmp, buf, width);
 					tmp[width] = '\0';
-					buf += width;
 
 					lvdbg("vsscanf: tmp[]=\"%s\"\n", tmp);
 
+					/* Preserve the errno value */
+
+					errsave = get_errno();
+					set_errno(0);
+
 					/* Perform the floating point conversion */
 
-					if (!noassign) {
-						/* strtod always returns a double */
+#ifdef CONFIG_HAVE_DOUBLE
+					if (lflag) {
+						/* Get the converted double value */
 
-						FAR char *endptr;
-						int errsave;
-						double_t dvalue;
-
-						/* Preserve the errno value */
-
-						errsave = get_errno();
-						set_errno(0);
 						dvalue = strtod(tmp, &endptr);
+					} else
+#endif
+					{
+						fvalue = strtof(tmp, &endptr);
+					}
 
-						/* Check if the number was successfully converted */
+					/* Check if the number was successfully converted */
 
-						if (tmp == endptr || get_errno() == ERANGE) {
-							return count;
-						}
+					if (tmp == endptr || get_errno() == ERANGE) {
+						return count;
+					}
 
-						set_errno(errsave);
+					/* Move by the actual number of characters converted */
+
+					buf += (endptr - tmp);
+					set_errno(errsave);
+
+					if (!noassign) {
 
 						/* We have to check whether we need to return a float
 						 * or a double.
@@ -792,8 +810,8 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						} else
 #endif
 						{
-							lvdbg("vsscanf: Return %f to %p\n", dvalue, pf);
-							*pf = (float)dvalue;
+							lvdbg("vsscanf: Return %f to %p\n", (double)fvalue, pf);
+							*pf = fvalue;
 						}
 
 						count++;

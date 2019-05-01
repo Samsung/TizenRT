@@ -39,7 +39,8 @@
 void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
-	void *broadcast_param = NULL;
+	tm_msg_t *broadcast_param;
+	void *broadcast_data = NULL;
 	void *user_data;
 	void *cb_data;
 	int user_data_size;
@@ -65,22 +66,46 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	} else {
 		user_data = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->user_data;
 		user_data_size = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size;
-		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb_data;
+		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->cb_info)->cb_data;
 
-		if (user_data_size != 0) {
-			broadcast_param = TM_ALLOC(((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size);
+		if (user_data_size >= 0) {
+			broadcast_param = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 			if (broadcast_param == NULL) {
-				tmdbg("Fail to alloc user data\n");
+				tmdbg("Fail to alloc broadcast param\n");
 				return;
 			}
-			memcpy(broadcast_param, user_data, user_data_size);
+			if (user_data_size != 0) {
+				broadcast_data = TM_ALLOC(user_data_size);
+				if (broadcast_data == NULL) {
+					TM_FREE(broadcast_param);
+					tmdbg("Fail to alloc broadcast data\n");
+					return;
+				}
+				broadcast_param->msg = broadcast_data;
+				broadcast_param->msg_size = user_data_size;
+				memcpy(broadcast_data, user_data, user_data_size);
+			} else {
+				broadcast_param->msg = NULL;
+				broadcast_param->msg_size = 0;
+			}
+		} else {
+			broadcast_param = NULL;
 		}
 
-		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb)(broadcast_param, cb_data);
+		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->cb_info)->cb)(broadcast_param, cb_data);
 
-		TM_FREE(broadcast_param);
-		TM_FREE(user_data);
-		broadcast_param = NULL;
+		if (broadcast_param != NULL) {
+			TM_FREE(broadcast_param);
+			broadcast_param = NULL;
+		}
+		if (broadcast_data != NULL) {
+			TM_FREE(broadcast_data);
+			broadcast_data = NULL;
+		}
+		if (user_data != NULL) {
+			TM_FREE(user_data);
+			user_data = NULL;
+		}
 	}
 	TM_FREE(data->si_value.sival_ptr);
 }
@@ -89,17 +114,23 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 {
 	int taskmgr_pid;
 	union sigval msg;
-	tm_termination_info_t *info;
-	info = (tm_termination_info_t *)data->si_value.sival_ptr;
+	tm_termination_info_t *cb_info;
+	cb_info = (tm_termination_info_t *)data->si_value.sival_ptr;
 
 	/* Call callback function with callback data */
-	if (info != NULL && info->cb_data != NULL) {
-		(*info->cb)(info->cb_data->msg);
-		TM_FREE(info->cb_data->msg);
-		TM_FREE(info->cb_data);
+	if (cb_info != NULL && cb_info->cb != NULL) {
+		if (cb_info->cb_data != NULL) {
+			(*cb_info->cb)(cb_info->cb_data->msg);
+			TM_FREE(cb_info->cb_data->msg);
+			TM_FREE(cb_info->cb_data);
+		} else {
+			(*cb_info->cb)(NULL);
+		}
 	} else {
-		(*info->cb)(NULL);
+		tmdbg("stop callback information is not correct.\n");
+		return;
 	}
+	TM_FREE(cb_info);
 
 	taskmgr_pid = taskmgr_get_task_manager_pid();
 	if (taskmgr_pid == TM_TASK_MGR_NOT_ALIVE) {
@@ -114,7 +145,7 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
-int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data))
+int task_manager_set_unicast_cb(tm_unicast_callback_t func)
 {
 	int ret = OK;
 	struct sigaction act;
@@ -159,7 +190,7 @@ int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data))
 /****************************************************************************
  * task_manager_set_broadcast_cb
  ****************************************************************************/
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), tm_msg_t *cb_data)
+int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_t *cb_data)
 {
 	int status;
 	tm_request_t request_msg;
@@ -191,21 +222,26 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *d
 		return TM_OUT_OF_MEMORY;
 	}
 	((tm_broadcast_info_t *)request_msg.data)->msg = msg;
-	((tm_broadcast_info_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
+	((tm_broadcast_info_t *)request_msg.data)->cb = (tm_broadcast_callback_t)func;
 	if (cb_data != NULL) {
 		((tm_broadcast_info_t *)request_msg.data)->cb_data = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 		if (((tm_broadcast_info_t *)request_msg.data)->cb_data == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
 		}
-		((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = cb_data->msg_size;
-		((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = TM_ALLOC(cb_data->msg_size);
-		if (((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg == NULL) {
-			TM_FREE(request_msg.data);
-			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
-			return TM_OUT_OF_MEMORY;
+		if (cb_data->msg_size != 0) {
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = cb_data->msg_size;
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = TM_ALLOC(cb_data->msg_size);
+			if (((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg == NULL) {
+				TM_FREE(request_msg.data);
+				TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+				return TM_OUT_OF_MEMORY;
+			}
+			memcpy(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg, cb_data->msg, cb_data->msg_size);
+		} else {
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = 0;
+			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = NULL;
 		}
-		memcpy(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg, cb_data->msg, cb_data->msg_size);
 	} else {
 		((tm_broadcast_info_t *)request_msg.data)->cb_data = NULL;
 	}
@@ -236,7 +272,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *d
 /****************************************************************************
  * task_manager_set_exit_cb
  ****************************************************************************/
-int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
+int task_manager_set_exit_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 {
 	int ret = OK;
 	tm_request_t request_msg;
@@ -255,7 +291,7 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	REQ_CBFUNC(request_msg) = (_tm_termination_t)func;
+	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
 	if (cb_data != NULL) {
 		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
 		if (REQ_CBDATA(request_msg) == NULL) {
@@ -290,7 +326,7 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 /****************************************************************************
  * task_manager_set_stop_cb
  ****************************************************************************/
-int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data)
+int task_manager_set_stop_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 {
 	int ret = OK;
 	struct sigaction act;
@@ -326,7 +362,7 @@ int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data)
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	REQ_CBFUNC(request_msg) = (_tm_termination_t)func;
+	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
 	if (cb_data != NULL) {
 		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
 		if (REQ_CBDATA(request_msg) == NULL) {

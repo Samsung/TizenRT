@@ -18,7 +18,7 @@ Round Robin Scheduling
 Signal  
 Work Queue (High Priority and Low Priority)
 
-### File system
+### File System
 Smart FS  
 Proc FS  
 MTD

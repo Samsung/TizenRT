@@ -97,6 +97,7 @@ static inline void sched_kucleanup(void)
 {
 	irqstate_t flags;
 	FAR void *address;
+	struct mm_heap_s *heap;
 
 	/* Test if the delayed deallocation queue is empty.  No special protection
 	 * is needed because this is an atomic test.
@@ -107,6 +108,14 @@ static inline void sched_kucleanup(void)
 		 * we must disable interrupts around the queue operation.
 		 */
 
+		address = sq_peek(&g_delayed_kufree);
+		if (!address) {
+			return;
+		}
+		heap = mm_get_heap(address);
+		if (heap && heap->mm_semaphore.semcount <= 0) {
+			continue;
+		}
 		flags = irqsave();
 		address = (FAR void *)sq_remfirst((FAR sq_queue_t *)&g_delayed_kufree);
 		irqrestore(flags);

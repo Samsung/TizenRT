@@ -57,6 +57,7 @@
 
 #include <errno.h>
 #include <poll.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <netinet/in.h>
@@ -71,16 +72,6 @@
 #define SOCKETADD_ERR_RECORD(reason_code)	ERR_DATA_CREATE(ERRMOD_LWIP_SOCKET, reason_code)
 #else
 #define SOCKETADD_ERR_RECORD(reason_code)
-#endif
-
-#if defined(CONFIG_ARCH_CHIP_S5JT200) || defined(CONFIG_ARCH_CHIP_LM3S6965) || defined(CONFIG_ARCH_CHIP_BCM4390X)
-#if LWIP_HAVE_LOOPIF
-#define NET_DEVNAME "wl1"
-#else
-#define NET_DEVNAME "wl0"
-#endif
-#else
-#error "undefined CONFIG_NET_<type>, check your .config"
 #endif
 
 #if LWIP_SOCKET					/* don't build if not configured for use in lwipopts.h */
@@ -427,7 +418,13 @@ int copy_socket(void *arg)
 				set_errno(EBADF);
 				return -1;
 			}
-			struct netmon_sock *sock_info = (struct netmon_sock *) malloc(sizeof(struct netmon_sock));
+
+			struct netmon_sock *sock_info = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
+			if (!sock_info) {
+				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
+				set_errno(ENOMEM);
+				return -1;
+			}
 
 			sock_info->type = sockets[i].conn->type;
 			sock_info->state = sockets[i].conn->state;

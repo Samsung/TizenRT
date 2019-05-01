@@ -302,7 +302,7 @@ int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev);
 ### I2C Initialization  
 I2C is initialized by invoking up_i2cinitialize.  
 Initialization takes one i2c port and returns a i2c device structure.  
-Initialization is done either as part of _up_intitialize()_ or as part of _board_initialize()_.  
+Initialization is done either as part of _up_initialize()_ or as part of _board_initialize()_.  
 
 Please refer to **[i2c.h](../os/include/tinyara/i2c.h)** to know more about the i2c functions and declarations.  
 

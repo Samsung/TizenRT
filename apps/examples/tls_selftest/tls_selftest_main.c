@@ -36,10 +36,12 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#include "tinyara/config.h"
+#include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "mbedtls/config.h"
 #include "mbedtls/entropy.h"

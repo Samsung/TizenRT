@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #define _POSIX_C_SOURCE 200809L
+#include <sys/types.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -219,7 +220,7 @@ unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check
 		return 0;
 	}
 
-	pTimeOutManager->gthreadId = NULL;
+	pTimeOutManager->gthreadId = (pthread_t)0;
 	pTimeOutManager->handleVal = hadler;
 	pTimeOutManager->funcName = CallFunc;
 	if (timeOut == NULL) {

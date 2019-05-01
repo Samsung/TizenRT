@@ -24,11 +24,18 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <tinyara/mm/mm.h>
+#include <pthread.h>
+
+#include <sys/types.h>
+#include <sys/ioctl.h>
 #include <apps/shell/tash.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/testcase_drv.h>
+
 #include "tc_internal.h"
 
 #define DEFAULT_STKSIZE 1024
@@ -106,16 +113,21 @@ static void *heapinfo_free(void *mem, int info[4])
 }
 static void heapinfo_calc_stack(pid_t pid, int info[4], int type)
 {
-	struct tcb_s *tcb;
-	tcb = sched_gettcb(pid);
-
+	int fd;
+	int size;
+	fd = tc_get_drvfd();
+	size = ioctl(fd, TESTIOC_GET_TCB_ADJ_STACK_SIZE, pid);
+	if (size < 0) {
+		printf("heapinfo_calc_stack FAIL : ioctl(TESTIOC_GET_TCB_ADJ_STACK_SIZE)\n");
+		return;
+	}
 	if (type == HEAPINFO_STACK_ALLOC) {
-		info[2] += tcb->adj_stack_size;
+		info[2] += size;
 		if (info[2] > info[3]) {
 			info[3] = info[2];
 		}
 	} else {
-		info[2] -= tcb->adj_stack_size;
+		info[2] -= size;
 	}
 }
 static int heapinfo_task(int argc, char *argv[])

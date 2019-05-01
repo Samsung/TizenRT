@@ -1,4 +1,4 @@
-# How to use TinyAsla to create audio applications
+# How to use TinyAlsa to create audio applications
 
 TinyAlsa is a small library which exposes a set of API's which can be used by developers to create audio applications on TizenRT. TinyAlsa is compliant with the Linux ALSA sound framework and exposes a subset of its API's for user applications to record and playback audio data.
 
@@ -17,7 +17,7 @@ While opening an audio device, the user needs to be careful regarding which devi
 
 The flags and config parameters in the pcm_open API's may be used to configure the audio device being opened and also to indicate to TinyAlsa about the intended use of the device. If the config parameter is not passed when opening a device, then TinyAlsa will open the device with a default configuration set. Once the device is opened, its configuration cannot be modified. Hence, care has to be taken to select required configuration at the time of opening the device.
 
-The psuedocode below shows opening and closing an audio device for recording with default configuration setting:
+The pseudocode below shows opening and closing an audio device for recording with default configuration setting:
 ```
 
 #include <tinyalsa/tinyalsa.h>
@@ -102,7 +102,7 @@ At any point of time, the user is free to exit the record/play loop and close th
 **pcm_mmap_write**
 These are additional API's provided for the sake of compatibility with the ALSA API list. These API's internally make use of the mmap API's to transfer data. However, these API's require the user to allocate data buffers and then copy the data from these buffer to the mmap buffers internally. Hence, they do not provide the advantage of low latency which would be provided by using the other mmap API's directly. Hence, it is recommended to avoid the use of these API's for improving latency reduction.
 
-The psuedocode below briefly illustrates the use of mmap API's for recording audio:
+The pseudocode below briefly illustrates the use of mmap API's for recording audio:
 ```
 #include <tinyalsa/tinyalsa.h>
 ...

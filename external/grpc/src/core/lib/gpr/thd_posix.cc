@@ -117,7 +117,7 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
     free(a);
     dec_thd_count();
   } else {
-    pthread_setname_np(thread_started, a->name);
+    pthread_setname_np(p, a->name);
   }
   *t = (gpr_thd_id)p;
   return thread_started;

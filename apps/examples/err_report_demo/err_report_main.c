@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#define ERR_REPORT_BUFLEN 1024
 #define ERR_REPORT_USAGE                            \
 	"\n usage: error_report [options]\n"            \
 	"\n Send error report module:\n"                \
@@ -83,8 +84,8 @@ uint8_t g_err_nsuccess;
 /*
  * WiFi Manager callback prototypes
  */
-static void prv_sta_connected(wifi_manager_result_e);
-static void prv_sta_disconnected(void);
+static void prv_sta_connected(wifi_manager_result_e res);
+static void prv_sta_disconnected(wifi_manager_disconnect_e res);
 static void prv_softap_sta_join(void);
 static void prv_softap_sta_leave(void);
 static void prv_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
@@ -98,10 +99,10 @@ static void prv_sta_connected(wifi_manager_result_e res)
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_sta_disconnected(void)
+static void prv_sta_disconnected(wifi_manager_disconnect_e res)
 {
 	sleep(2);
-	printf(" [RT] T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
@@ -136,7 +137,7 @@ static wifi_manager_cb_s wifi_callbacks = {
 static void error_report_records(const char *endpoint)
 {
 	ERR_REPORT_LOG_START;
-	char readbuf[1024];
+	char readbuf[ERR_REPORT_BUFLEN];
 	int nbytes;
 
 	nbytes = error_report_data_read(readbuf);
@@ -159,7 +160,7 @@ static void error_report_single(const char *endpoint)
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	wifi_manager_ap_config_s bad_apconfig = { "Gorani", 6, "jonbeo2#", 8, WIFI_MANAGER_AUTH_WPA2_PSK, WIFI_MANAGER_CRYPTO_AES };
 	wifi_manager_ap_config_s good_apconfig = { "Gorani", 6, "jonbeo1@", 8, WIFI_MANAGER_AUTH_WPA2_PSK, WIFI_MANAGER_CRYPTO_AES };
-	char readbuf[1024];
+	char readbuf[ERR_REPORT_BUFLEN];
 	int nbytes_read = 0;
 	int nbytes_sent = 0;
 
@@ -200,7 +201,7 @@ static void error_report_multiple(const char *endpoint)
 
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	wifi_manager_ap_config_s apconfig = { "Gorani", 6, "jonbeo1@", 8, WIFI_MANAGER_AUTH_WPA2_PSK, WIFI_MANAGER_CRYPTO_AES };
-	char readbuf[1024];
+	char readbuf[ERR_REPORT_BUFLEN];
 	int nbytes_read;
 	int nbytes_sent = 0;
 	int i;
@@ -267,7 +268,7 @@ static void error_report_queue_underflow(void)
 	ERR_REPORT_TC_START;
 
 	int nbytes_read;
-	char readbuf[1024];
+	char readbuf[ERR_REPORT_BUFLEN];
 	nbytes_read = error_report_data_read(readbuf);
 
 	ERR_REPORT_TC_END_CHECK(nbytes_read == 0);
@@ -295,17 +296,35 @@ void error_report_process(int argc, char *argv[])
 		printf("%s", ERR_REPORT_USAGE);
 		return;
 	}
-	if (strcmp(argv[2], "send") == 0) {
+	if (strcmp(argv[2], "test") == 0) {
+		if (argc < 4) {
+			error_report_test(NULL);
+		} else {
+			error_report_test(argv[3]);
+		}
+	} else if (strcmp(argv[2], "report_send") == 0) {
 		if (argc < 4) {
 			error_report_records(NULL);
 		} else {
 			error_report_records(argv[3]);
 		}
-	} else if (strcmp(argv[2], "test") == 0) {
-		if (argc < 4) {
-			error_report_test(NULL);
-		} else {
-			error_report_test(argv[3]);
+	} else if (strcmp(argv[2], "report_print")) {
+		int nbytes_read;
+		char readbuf[ERR_REPORT_BUFLEN];
+		nbytes_read = error_report_data_read(readbuf);
+
+		if (nbytes_read > 0) {
+			unsigned i;
+			error_data_t *readptr = (error_data_t *)readbuf;
+			int nentries = nbytes_read/sizeof(error_data_t);
+			for (i = 0; i < nentries; i++) {
+				printf("| %lu.%06lu | %04x | %d | %d | %04x |\n",
+						readptr->timestamp.tv_sec,
+						readptr->timestamp.tv_usec,
+						readptr->pc_value, readptr->module_id,
+						readptr->error_code, readptr->task_addr);
+				readptr++;
+			}
 		}
 	} else {
 		printf("%s", ERR_REPORT_USAGE);

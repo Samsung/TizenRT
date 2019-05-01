@@ -102,11 +102,27 @@
 /*
  * Expect
  */
-#define ST_EXPECT(val, exp)						\
+#define ST_EXPECT_EQ(val, exp)					\
 	do {										\
 		if (exp != val) {						\
 			ST_ERROR;							\
-			res = STRESS_TC_FAIL;					\
+			res = STRESS_TC_FAIL;				\
+		}										\
+	} while (0)
+
+#define ST_EXPECT_EQ2(val1, val2, exp)			\
+	do {										\
+		if (exp != val1 && exp != val2) {		\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;				\
+		}										\
+	} while (0)
+
+#define ST_EXPECT_NEQ(val, exp)					\
+	do {										\
+		if ((exp) == val) {						\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;				\
 		}										\
 	} while (0)
 
@@ -114,7 +130,7 @@
 	do {										\
 		if ((exp) >= val) {						\
 			ST_ERROR;							\
-			res = STRESS_TC_FAIL;					\
+			res = STRESS_TC_FAIL;				\
 		}										\
 	} while (0)
 
@@ -122,7 +138,7 @@
 	do {										\
 		if (exp > val) {						\
 			ST_ERROR;							\
-			res = STRESS_TC_FAIL;					\
+			res = STRESS_TC_FAIL;				\
 		}										\
 	} while (0)
 
@@ -130,7 +146,7 @@
 	do {										\
 		if (exp <= val) {						\
 			ST_ERROR;							\
-			res = STRESS_TC_FAIL;					\
+			res = STRESS_TC_FAIL;				\
 		}										\
 	} while (0)
 
@@ -138,12 +154,12 @@
 	do {										\
 		if (exp < val) {						\
 			ST_ERROR;							\
-			res = STRESS_TC_FAIL;					\
+			res = STRESS_TC_FAIL;				\
 		}										\
 	} while (0)
 
 #define ST_START_TEST									\
-	st_tc_result res = STRESS_TC_PASS;						\
+	st_tc_result res = STRESS_TC_PASS;					\
 	struct timeval start, end;							\
 	st_elapsed_time *timer = (st_elapsed_time *)arg;	\
 	do {												\

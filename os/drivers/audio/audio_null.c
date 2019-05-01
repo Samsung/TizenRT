@@ -64,6 +64,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <semaphore.h>
 #include <string.h>
 #include <errno.h>
 #include <mqueue.h>
@@ -113,6 +114,7 @@ struct null_dev_s {
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 	pthread_t process_threadid;	/* ID of our process thread */
 	volatile bool process_terminate;	/* True : request to terminate processing */
+	sem_t processing_sem;		/* Protection for processing start */
 #endif
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
 	volatile bool terminate;	/* True: request to terminate audio operation */
@@ -336,13 +338,14 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			/* Provide capabilities of our Speech Detect */
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+			caps->ac_controls.b[0] = 0;
 
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-			caps->ac_controls.b[0] = AUDIO_SD_ENDPOINT_DETECT;
+			caps->ac_controls.b[0] |= AUDIO_SD_KEYWORD_DETECT;
 #endif
 
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-			caps->ac_controls.b[0] |= AUDIO_SD_KEYWORD_DETECT;
+			caps->ac_controls.b[0] |= AUDIO_SD_ENDPOINT_DETECT;
 #endif
 
 #else
@@ -431,18 +434,19 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 		break;
 
 	case AUDIO_PU_SPEECH_DETECT:
+		audvdbg("  AUDIO_PU_SPEECH_DETECT\n");
 		switch (caps->ac_subtype) {
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
-		case AUDIO_SD_ENDPOINT_DETECT:
+		case AUDIO_SD_KEYWORD_DETECT:
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-			priv->endpoint_detect = true;
+			priv->keyword_detect = true;
 #else
 			ret = -EINVAL;
 #endif
 			break;
-		case AUDIO_SD_KEYWORD_DETECT:
+		case AUDIO_SD_ENDPOINT_DETECT:
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-			priv->keyword_detect = true;
+			priv->endpoint_detect = true;
 #else
 			ret = -EINVAL;
 #endif
@@ -476,7 +480,7 @@ static int null_shutdown(FAR struct audio_lowerhalf_s *dev)
 }
 
 /****************************************************************************
- * Name: null_workerthread
+ * Name: null_processthread
  *
  *  This is the thread that feeds data to the chip and keeps the audio
  *  stream going.
@@ -494,11 +498,10 @@ static void *null_processthread(pthread_addr_t pvarg)
 {
 	FAR struct null_dev_s *priv = (struct null_dev_s *)pvarg;
 	struct audio_msg_s msg;
+
+	sem_wait(&priv->processing_sem);
 	while (!priv->process_terminate) {
-		audvdbg("count : %d state : %d\n", priv->frames, priv->speech_state);
-		if (priv->speech_state == AUDIO_NULL_SPEECH_STATE_NONE) {
-			continue;
-		}
+		audvdbg("count : %d state : %d kd : %d epd : %d\n", priv->frames, priv->speech_state, priv->keyword_detect, priv->endpoint_detect);
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 		if ((priv->keyword_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_IDLE)) {
 			if (priv->frames == AUDIO_NULL_KEYWORD_DETECT_THRESHOLD) {
@@ -512,7 +515,8 @@ static void *null_processthread(pthread_addr_t pvarg)
 #endif
 
 #ifdef CONFIG_AUDIO_ENDPOINT_DETECT
-		if ((priv->endpoint_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_KD)) {
+		if ((priv->endpoint_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_IDLE)) {
+			audvdbg("EPD Frames: %d\n", priv->frames);
 			if (priv->frames == AUDIO_NULL_ENDPOINT_DETECT_THRESHOLD) {
 				audvdbg("EndPoint Detected!!\n");
 				priv->speech_state = AUDIO_NULL_SPEECH_STATE_EPD;
@@ -528,6 +532,9 @@ static void *null_processthread(pthread_addr_t pvarg)
 		}
 		usleep(10 * 1000);
 	}
+
+	audvdbg("############## End of null_processthread ##############\n");
+
 	return NULL;
 }
 
@@ -625,17 +632,18 @@ static int null_unregisterprocess(FAR struct audio_lowerhalf_s *dev)
 	int ret;
 	/* Join any old worker thread we had created to prevent a memory leak */
 	ret = OK;
-	if (priv->worker_threadid != 0) {
+	if (priv->process_threadid != 0) {
 		ret = pthread_join(priv->process_threadid, &value);
 		if (ret != OK) {
 			auddbg("join failed!! ret : %d\n", ret);
 			return ret;
 		}
-		priv->worker_threadid = 0;
+		priv->process_threadid = 0;
 	}
 
+	sem_destroy(&priv->processing_sem);
+
 	if (priv->dev.process_mq != NULL) {
-		mq_close(priv->dev.process_mq);
 		priv->dev.process_mq = NULL;
 	} else {
 		auddbg("mq is null\n");
@@ -676,6 +684,8 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 		return -EBUSY;
 	}
 
+	sem_init(&priv->processing_sem, 0, 0);
+
 	/* Join any old worker thread we had created to prevent a memory leak */
 
 	if (priv->process_threadid != 0) {
@@ -688,7 +698,8 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 	pthread_attr_init(&tattr);
 	(void)pthread_attr_setstacksize(&tattr, CONFIG_AUDIO_NULL_WORKER_STACKSIZE);
 
-	audvdbg("Starting worker thread\n");
+	audvdbg("#### Starting worker thread\n");
+	priv->process_terminate = false;
 	ret = pthread_create(&priv->process_threadid, &tattr, null_processthread, (pthread_addr_t) priv);
 	if (ret != OK) {
 		auddbg("ERROR: pthread_create failed: %d\n", ret);
@@ -696,7 +707,7 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 		pthread_setname_np(priv->process_threadid, "null audio process");
 		auddbg("Created worker thread\n");
 	}
-	priv->process_terminate = false;
+
 	audvdbg("Return %d\n", ret);
 	return ret;
 }
@@ -853,7 +864,9 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
 	bool done;
 
-    audvdbg("apb=%p curbyte=%d nbytes=%d nmaxbytes %d\n", apb, apb->curbyte, apb->nbytes, apb->nmaxbytes);
+	DEBUGASSERT(priv && apb && priv->dev.upper);
+
+	audvdbg("apb=%p curbyte=%d nbytes=%d nmaxbytes %d\n", apb, apb->curbyte, apb->nbytes, apb->nmaxbytes);
 
 	/* Say that we consumed all of the data */
 
@@ -862,13 +875,9 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 	/* Check if this was the last buffer in the stream */
 	done = ((apb->flags & AUDIO_APB_FINAL) != 0);
 
-	/* And return the buffer to the upper level */
-
-	DEBUGASSERT(priv && apb && priv->dev.upper);
-
 	priv->frames++;
 
-	/* The buffer belongs to to an upper level.  Just forward the event to
+	/* The buffer belongs to an upper level.  Just forward the event to
 	 * the next level up.
 	 */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -983,6 +992,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		priv->process_terminate = false;
 		priv->speech_state = AUDIO_NULL_SPEECH_STATE_IDLE;
+		sem_post(&priv->processing_sem);
 		ret = OK;
 #else
 		auddbg("start Process Failed - Device Doesn't support\n");

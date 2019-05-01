@@ -63,7 +63,7 @@ bool FileInputDataSource::open()
 
 		mFp = fopen(mDataPath.c_str(), "rb");
 		if (!mFp) {
-			medvdbg("file open failed error : %d\n", errno);
+			meddbg("file open failed error : %d\n", errno);
 			return false;
 		}
 
@@ -73,7 +73,7 @@ bool FileInputDataSource::open()
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
 			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
-				medvdbg("header parsing failed\n");
+				meddbg("header parsing failed\n");
 				return false;
 			}
 			setSampleRate(sampleRate);
@@ -81,7 +81,7 @@ bool FileInputDataSource::open()
 			break;
 		case AUDIO_TYPE_WAVE:
 			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
-				medvdbg("header parsing failed\n");
+				meddbg("header parsing failed\n");
 				return false;
 			}
 			setSampleRate(sampleRate);
@@ -122,7 +122,7 @@ bool FileInputDataSource::close()
 	return ret;
 }
 
-bool FileInputDataSource::isPrepare()
+bool FileInputDataSource::isPrepared()
 {
 	if (mFp == nullptr) {
 		return false;
@@ -132,7 +132,7 @@ bool FileInputDataSource::isPrepare()
 
 ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	if (!isPrepare()) {
+	if (!isPrepared()) {
 		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
 		return EOF;
 	}
@@ -160,7 +160,7 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 
 FileInputDataSource::~FileInputDataSource()
 {
-	if (isPrepare()) {
+	if (isPrepared()) {
 		close();
 	}
 }

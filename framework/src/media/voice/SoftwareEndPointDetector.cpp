@@ -15,17 +15,26 @@
  * limitations under the License.
  *
  ******************************************************************/
+#include <debug.h>
 #include "SoftwareEndPointDetector.h"
 
 namespace media {
 namespace voice {
 
+SoftwareEndPointDetector::SoftwareEndPointDetector() :
+	mState(nullptr)
+{
+	sem_init(&mSem, 0, 0);
+}
+
+SoftwareEndPointDetector::~SoftwareEndPointDetector()
+{
+	sem_destroy(&mSem);
+}
+
 bool SoftwareEndPointDetector::init(uint32_t samprate, uint8_t channels)
 {
 	int adjust = 0;
-
-	mPreviousVAD = 0;
-	mVAD = 0;
 
 	/**
 	 * Currently, we don't support channel count.
@@ -45,25 +54,43 @@ void SoftwareEndPointDetector::deinit()
 	speex_preprocess_state_destroy(mState);
 }
 
-bool SoftwareEndPointDetector::processEPDFrame(short *sample, int numSample)
+bool SoftwareEndPointDetector::startEndPointDetect(int timeout)
 {
-	while (numSample > CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE) {
-		mPreviousVAD = mVAD;
-		mVAD = speex_preprocess_run(mState, sample);
+	return true;
+}
 
-		if (mPreviousVAD != mVAD) {
-			if (mVAD == 0) {
-				/**
-				 * mVAD has changed to 0 from 1.
-				 */
-				return true;
-			}
-		}
+bool SoftwareEndPointDetector::waitEndPoint(int timeout)
+{
+	int ret = -1;
 
-		numSample -= CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE;
+	if (timeout < 0) {
+		ret = sem_wait(&mSem);
+	} else {
+		struct timespec waketime;
+		clock_gettime(CLOCK_REALTIME, &waketime);
+		waketime.tv_sec += timeout;
+		ret = sem_timedwait(&mSem, &waketime);
 	}
 
-	return false;
+	return ret == 0 ? true : false;
+}
+
+bool SoftwareEndPointDetector::detectEndPoint(short *sample, int numSample)
+{
+	for (short *ptr = sample; ptr <= sample + numSample - CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE; ptr += CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE) {
+		int vad = speex_preprocess_run(mState, ptr); // vad : 0 (no speech) or 1 (speech)
+		if (vad != 0) {
+			return false;
+		}
+	}
+
+	int semVal;
+	medvdbg("#### EPD DETECTED!! ####\n");
+	if ((sem_getvalue(&mSem, &semVal) == 0) && (semVal < 0)) {
+		sem_post(&mSem);
+	}
+
+	return true;
 }
 
 } // namespace voice

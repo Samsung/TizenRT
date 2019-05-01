@@ -45,6 +45,10 @@ int utc_libcxx_main(int argc, char *argv[])
 	tc_diagnostics_main();
 #endif
 
+#if defined(CONFIG_LIBCXX_UTC_NUMERICS)
+	tc_numerics_main();
+#endif
+
 #if defined(CONFIG_LIBCXX_UTC_STDBOOL)
 	tc_depr_main();
 	tc_language_support_main();

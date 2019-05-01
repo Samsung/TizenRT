@@ -57,8 +57,19 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double tanh(double x)
 {
-	double x0 = exp(x);
-	double x1 = 1.0 / x0;
+	double x0;
+	double x1;
+
+	if (x == INFINITY) {
+		return (1.0);
+	}
+
+	if (x == -INFINITY) {
+		return (-1.0);
+	}
+
+	x0 = exp(x);
+	x1 = 1.0 / x0;
 
 	return ((x0 - x1) / (x0 + x1));
 }

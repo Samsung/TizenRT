@@ -31,6 +31,7 @@ public:
 	StreamBufferReader(std::shared_ptr<StreamBuffer> stream);
 
 public:
+	virtual size_t copy(unsigned char *buf, size_t size, size_t offset = 0);
 	virtual size_t read(unsigned char *buf, size_t size, bool sync = true);
 	virtual size_t sizeOfData();
 

@@ -19,50 +19,267 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-IOTIVITYDIR=$(TOPDIR)/$(EXTDIR)/iotivity
-ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
-IOTIVITY_LIBS=release
-else
-IOTIVITY_LIBS=debug
-endif
-IOTIVITY_TARGET_ARCH := ${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_BASE_DIR=$(IOTIVITYDIR)/iotivity_$(IOTIVITY_RELEASE)
-IOTIVITY_CONFIG_DIR=$(IOTIVITY_BASE_DIR)/resource/c_common
-IOTIVITY_LIBS_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
+IOTIVITY_DIR = ./iotivity_1.2-rel
 
-ifeq ($(Q),)
-DEBUG=1
-endif
+######################################################################
+# redefine the system build configuration
+# Building Iotivity makes prototype error. for example undef...
+######################################################################
 
-all: build
+ARCHWARNINGS = -Wall -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGSXX = -Wall
+
+ASRCS =
+CSRCS =
+CXXSRCS =
+
+
+CFLAGS += -I$(IOTIVITY_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/include/
+CFLAGS += \
+	-I$(IOTIVITY_DIR)/resource/c_common \
+	-I$(IOTIVITY_DIR)/resource/c_common/oic_malloc/include \
+	-I$(IOTIVITY_DIR)/resource/c_common \
+	-I$(IOTIVITY_DIR)/resource/c_common/oic_string/include \
+	-I$(IOTIVITY_DIR)/resource/c_common/oic_time/include \
+	-I$(IOTIVITY_DIR)/resource/csdk/connectivity/common/inc \
+	-I$(IOTIVITY_DIR)/resource/csdk/connectivity/api \
+	-I$(IOTIVITY_DIR)/resource/csdk/logger/include \
+	-I$(IOTIVITY_DIR)/resource/csdk/logger/ \
+	-I$(IOTIVITY_DIR)/resource/c_common/octhread/include \
+	-I$(IOTIVITY_DIR)/resource/c_common/ocrandom/include \
+	-I$(IOTIVITY_DIR)/resource/csdk/connectivity/inc\
+	-I$(IOTIVITY_DIR)/resource/csdk/security/include\
+	-I$(IOTIVITY_DIR)/resource/csdk/stack/include\
+	-I$(IOTIVITY_DIR)/resource/csdk/connectivity/util/inc\
+	-I$(IOTIVITY_DIR)/resource/csdk/resource-directory/include\
+	-I$(IOTIVITY_DIR)/resource/csdk/stack/include/internal\
+	-I$(IOTIVITY_DIR)/resource/csdk/security/include/internal\
+	-I$(IOTIVITY_DIR)/resource/csdk/security/provisioning/include\
+	-I$(IOTIVITY_DIR)/resource/csdk/routing/include\
+	-I$(IOTIVITY_DIR)/resource/csdk/logger/include\
+	-I$(IOTIVITY_DIR)/service/notification/include\
+	-I$(IOTIVITY_DIR)/extlibs/timer \
+	-I$(IOTIVITY_DIR)/extlibs/tinycbor/tinycbor/src
+
+
+CFLAGS += \
+	-DNDEBUG \
+	-DWITH_POSIX \
+	-D__TIZENRT__ \
+	-D__OIC_DEVICE_NAME__=\'"OIC-DEVICE"\' \
+	-DNO_EDR_ADAPTER \
+	-DNO_LE_ADAPTER \
+	-DIP_ADAPTER \
+	-DTCP_ADAPTER \
+	-DWITH_TCP \
+	-DDISABLE_TCP_SERVER \
+	-DNO_NFC_ADAPTER \
+	-D__WITH_DTLS__ \
+	-D__WITH_TLS__ \
+	-DROUTING_EP \
+	-DWITH_BWT \
+	-DRD_CLIENT \
+	-DWITH_CLOUD
+
+
+#ifeq ($(CONFIG_IOTIVITY_ROUTING) , "EP")
+#endif
+
+
+#
+# IoTivity
+#
+VPATH += :$(IOTIVITY_DIR)/resource/c_common/ocrandom/src/
+VPATH += :$(IOTIVITY_DIR)/resource/c_common/octhread/src/posix/
+VPATH += :$(IOTIVITY_DIR)/resource/c_common/oic_malloc/src/
+VPATH += :$(IOTIVITY_DIR)/resource/c_common/oic_string/src/
+VPATH += :$(IOTIVITY_DIR)/resource/c_common/oic_time/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/common/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/src/adapter_util/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/tizenrt/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/src/tcp_adapter/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/util/src/camanager/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/util/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/logger/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/resource-directory/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/routing/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/security/src/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/stack/src/
+
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/ocrandom/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/octhread/src/posix/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_malloc/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_string/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_time/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/common/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/adapter_util/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/tizenrt/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/tcp_adapter/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/util/src/camanager/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/util/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/logger/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/resource-directory/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/routing/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/security/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/stack/src/
+
+CSRCS += \
+	ocrandom.c \
+	octhread.c \
+	oic_malloc.c \
+	oic_string.c \
+	oic_time.c \
+	caremotehandler.c \
+	cathreadpool_pthreads.c \
+	uarraylist.c \
+	ulinklist.c \
+	uqueue.c \
+	ca_adapter_net_ssl.c \
+	caadapterutils.c \
+	cablockwisetransfer.c \
+	caconnectivitymanager.c \
+	cainterfacecontroller.c \
+	camessagehandler.c \
+	canetworkconfigurator.c \
+	caprotocolmessage.c \
+	caqueueingthread.c \
+	caretransmission.c \
+	caipadapter.c \
+	caipserver.c \
+	caipnwmonitor.c \
+	catcpadapter.c \
+	catcpserver.c \
+	caconnectionmanager.c \
+	camanagerutil.c \
+	camessagearbiter.c \
+	capolicymanager.c \
+	cautilinterface.c \
+	logger.c \
+	trace.c \
+	rd_client.c \
+	routingutility.c \
+	aclresource.c \
+	amaclresource.c \
+	amsmgr.c \
+	base64.c \
+	credresource.c \
+	crlresource.c \
+	directpairing.c \
+	doxmresource.c \
+	dpairingresource.c \
+	iotvticalendar.c \
+	oxmpincommon.c \
+	oxmverifycommon.c \
+	pbkdf2.c \
+	pconfresource.c \
+	pkix_interface.c \
+	policyengine.c \
+	psinterface.c \
+	psiutils.c \
+	pstatresource.c \
+	resourcemanager.c \
+	secureresourcemanager.c \
+	srmresourcestrings.c \
+	srmutility.c \
+	svcresource.c \
+	verresource.c \
+	occlientcb.c \
+	occollection.c \
+	ocobserve.c \
+	ocpayload.c \
+	ocpayloadconvert.c \
+	ocpayloadparse.c \
+	ocresource.c \
+	ocserverrequest.c \
+	ocstack.c \
+	oicgroup.c \
+	oickeepalive.c
+
+
+#
+# CBOR
+#
+DEPPATH += --dep-path $(IOTIVITY_DIR)/extlibs/tinycbor/tinycbor/src/
+VPATH += :$(IOTIVITY_DIR)/extlibs/tinycbor/tinycbor/src/
+CSRCS += \
+	cborencoder.c \
+	cborerrorstrings.c \
+	cborparser.c \
+	cborparser_dup_string.c
+
+#
+# Timer
+#
+DEPPATH += --dep-path $(IOTIVITY_DIR)/extlibs/timer/
+VPATH += :$(IOTIVITY_DIR)/extlibs/timer/
+CSRCS += \
+	timer.c
+
+#
+# COAP
+#
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/
+VPATH += :$(IOTIVITY_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/
+CSRCS += \
+	async.c \
+	block.c \
+	coap_list.c \
+	debug.c \
+	encode.c \
+	hashkey.c \
+	net.c \
+	option.c \
+	pdu.c \
+	resource.c \
+	str.c \
+	subscribe.c \
+	uri.c
+
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
+
+# Common build
+
+all: libiotivity$(LIBEXT)
+
 .PHONY: depend clean distclean
 
-build:
-	$(Q) touch $(IOTIVITY_BASE_DIR)/iotivity.built
-	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/out)
-	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/.sconf_temp)
-	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/.sconsign.dblite)
-	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
-	$(Q) echo "Launching IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" DEBUG="${DEBUG}" $(IOTIVITYDIR)/build_iotivity.sh
-	$(Q) cp $(IOTIVITY_LIBS_DIR)/*.a $(IOTIVITYDIR)
+libiotivity$(LIBEXT): $(OBJS)
+	$(call ARCHIVE, $@, $(OBJS))
 
-depend:
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
 
-context:
-	$(Q) touch $(IOTIVITY_CONFIG_DIR)/iotivity_config.h
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+$(CXXOBJS) $(MAINOBJ): %$(OBJEXT): %.cc
+	$(call COMPILEXX, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	$(Q) touch .built
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) > Make.dep
+	$(Q) touch $@
+
+depend: .depend
 
 clean:
-	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/iotivity.built)
-	$(Q) echo "Cleaning IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" DEBUG="${DEBUG}" $(IOTIVITYDIR)/clean_iotivity.sh
-	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/out)
-	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/.sconf_temp)
-	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls)
-	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o)
-	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/.sconsign.dblite)
+	$(call DELFILE, .built)
 	$(call CLEAN)
 
-distclean:
-	$(Q) $(call DELFILE, $(IOTIVITY_CONFIG_DIR)/iotivity_config.h)
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep

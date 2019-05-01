@@ -19,6 +19,7 @@
 #define __MEDIA_HARDWARE_ENDPOINT_DETECTOR_H
 
 #include <functional>
+#include <semaphore.h>
 
 #include "EndPointDetector.h"
 
@@ -28,9 +29,23 @@ namespace voice {
 class HardwareEndPointDetector : public EndPointDetector
 {
 public:
+	HardwareEndPointDetector(int normal_card, int normal_device, int sd_card, int sd_device);
+	~HardwareEndPointDetector();
+public:
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
-	bool processEPDFrame(short *sample, int numSample) override;
+	bool startEndPointDetect(int timeout) override;
+	bool detectEndPoint(short *sample, int numSample) override;
+	bool waitEndPoint(int timeout) override;
+
+private:
+	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
+	int mNormalCard;
+	int mNormalDevice;
+	/* AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR card, device id */
+	int mSdCard;
+	int mSdDevice;
+	sem_t mSem;
 };
 
 } // namespace voice

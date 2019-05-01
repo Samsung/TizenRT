@@ -42,6 +42,11 @@ player_result_t MediaPlayer::prepare()
 	return mPMpImpl->prepare();
 }
 
+player_result_t MediaPlayer::prepareAsync()
+{
+	return mPMpImpl->prepareAsync();
+}
+
 player_result_t MediaPlayer::unprepare()
 {
 	return mPMpImpl->unprepare();
@@ -67,9 +72,19 @@ player_result_t MediaPlayer::getVolume(uint8_t *vol)
 	return mPMpImpl->getVolume(vol);
 }
 
+player_result_t MediaPlayer::getMaxVolume(uint8_t *vol)
+{
+	return mPMpImpl->getMaxVolume(vol);
+}
+
 player_result_t MediaPlayer::setVolume(uint8_t vol)
 {
 	return mPMpImpl->setVolume(vol);
+}
+
+player_result_t MediaPlayer::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	return mPMpImpl->setStreamInfo(stream_info);
 }
 
 player_result_t MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSource> source)
@@ -85,6 +100,11 @@ player_result_t MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInte
 bool MediaPlayer::operator==(const MediaPlayer &rhs)
 {
 	return this->mId == rhs.mId;
+}
+
+bool MediaPlayer::isPlaying()
+{
+	return mPMpImpl->isPlaying();
 }
 
 MediaPlayer::~MediaPlayer()

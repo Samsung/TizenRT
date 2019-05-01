@@ -75,10 +75,13 @@ include audio$(DELIM)Make.defs
 include bch$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
+include heapinfo$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
+include lwnl${DELIM}Make.defs
 include net$(DELIM)Make.defs
 include pipes$(DELIM)Make.defs
 include power$(DELIM)Make.defs
+include seclink$(DELIM)Make.defs
 include sensors$(DELIM)Make.defs
 include serial$(DELIM)Make.defs
 include spi$(DELIM)Make.defs
@@ -106,6 +109,10 @@ endif
 
 ifeq ($(CONFIG_CAN),y)
   CSRCS += can.c
+endif
+
+ifeq ($(CONFIG_DEV_URANDOM),y)
+  CSRCS += dev_urandom.c
 endif
 
 ifeq ($(CONFIG_PWM),y)

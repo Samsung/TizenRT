@@ -21,6 +21,11 @@ Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 For more information of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
 
+Especially For Windows environment, configuring CRLF is required as below.
+```
+git config --global core.autocrlf input
+```
+
 ### 1. Installing Docker
 
 To install OS specific Docker engines, see https://docs.docker.com/install/linux/docker-ce/ubuntu/.  
@@ -185,8 +190,12 @@ ARTIK053S [[details]](build/configs/artik053s/README.md)
 
 ARTIK055S [[details]](build/configs/artik055s/README.md)
 
-CY4390X [[details]](build/configs/cy4390x/README.txt)
+CY4390X [[details]](build/configs/cy4390x/README.md)
 
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
+
+STM32F407-DISC1 [[details]](build/configs/stm32f407-disc1/README.md)
+
+STM32F429I-DISCO [[details]](build/configs/stm32f429i-disco/README.md)
 
 QEMU [[details]](build/configs/qemu/README.md)

@@ -40,7 +40,14 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double roundl(long double x)
 {
-	long double f = modfl(x, &x);
+	long double f;
+
+	if (isnan(x)) {
+		return NAN;
+	}
+
+	f = modfl(x, &x);
+
 	if (x <= 0.0 && f <= -0.5) {
 		x -= 1.0;
 	}

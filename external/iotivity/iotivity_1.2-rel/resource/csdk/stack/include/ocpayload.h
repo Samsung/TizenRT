@@ -68,7 +68,7 @@ typedef struct OCResource OCResource;
 void OCPayloadDestroy(OCPayload* payload);
 
 // Representation Payload
-OCRepPayload* OCRepPayloadCreate();
+OCRepPayload* OCRepPayloadCreate(void);
 
 size_t calcDimTotal(const size_t dimensions[MAX_REP_ARRAY_DEPTH]);
 
@@ -230,12 +230,12 @@ bool OCRepPayloadGetPropObjectArray(const OCRepPayload* payload, const char* nam
 void OCRepPayloadDestroy(OCRepPayload* payload);
 
 // Discovery Payload
-OCDiscoveryPayload* OCDiscoveryPayloadCreate();
+OCDiscoveryPayload* OCDiscoveryPayloadCreate(void);
 
 OCSecurityPayload* OCSecurityPayloadCreate(const uint8_t* securityData, size_t size);
 void OCSecurityPayloadDestroy(OCSecurityPayload* payload);
 
-#ifndef TCP_ADAPTER
+#if !defined(TCP_ADAPTER) || defined(DISABLE_TCP_SERVER)
 void OCDiscoveryPayloadAddResource(OCDiscoveryPayload* payload, const OCResource* res,
                                    uint16_t securePort);
 #else

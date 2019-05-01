@@ -102,7 +102,20 @@ source net/netdev/Kconfig
 
 menu "Protocols"
 
+menu "Dynamic Host Configuration Protocol (DHCP)"
+choice
+	prompt "DHCP source"
+	default NET_DHCP
+config NET_DHCP
+	bool "Default DHCP client/server application"
+config NET_LWIP_DHCP
+	bool "(Optional) Enabling LwIP DHCP client/server"
+	depends on NET_LWIP
+endchoice #DHCP
+source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
 source "$EXTERNALDIR/dhcpd/Kconfig.protocol"
+endmenu #DHCP
+
 source "$EXTERNALDIR/xmlrpc/Kconfig.protocol"
 source "$EXTERNALDIR/ntpclient/Kconfig.protocol"
 source "$EXTERNALDIR/webserver/Kconfig.protocol"
@@ -110,7 +123,6 @@ source "$EXTERNALDIR/ftpc/Kconfig.protocol"
 source "$EXTERNALDIR/mdns/Kconfig.protocol"
 source "$EXTERNALDIR/webclient/Kconfig.protocol"
 source "$EXTERNALDIR/ftpd/Kconfig.protocol"
-source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
 source "$EXTERNALDIR/websocket/Kconfig.protocol"
 source "$EXTERNALDIR/libcoap/Kconfig.protocol"
 source "$EXTERNALDIR/tftpc/Kconfig.protocol"

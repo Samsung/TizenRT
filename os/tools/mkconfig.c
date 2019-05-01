@@ -121,7 +121,7 @@ int main(int argc, char **argv, char **envp)
 	printf("#ifndef CONFIG_RR_INTERVAL\n");
 	printf("# define CONFIG_RR_INTERVAL 0\n");
 	printf("#endif\n\n");
-	printf("/* The correct way to disable filesystem supuport is to set the number of\n");
+	printf("/* The correct way to disable filesystem support is to set the number of\n");
 	printf(" * file descriptors to zero.\n");
 	printf(" */\n\n");
 	printf("#ifndef CONFIG_NFILE_DESCRIPTORS\n");
@@ -206,15 +206,6 @@ int main(int argc, char **argv, char **envp)
 	printf("#ifndef CONFIG_MM_REGIONS\n");
 	printf("# define CONFIG_MM_REGIONS 1\n");
 	printf("#endif\n\n");
-	printf("/* If the end of RAM is not specified then it is assumed to be the beginning\n");
-	printf(" * of RAM plus the RAM size.\n");
-	printf(" */\n\n");
-	printf("#ifndef CONFIG_RAM_END\n");
-	printf("#define CONFIG_RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE)\n");
-	printf("#endif\n\n");
-	printf("#ifndef CONFIG_RAM_VEND\n");
-	printf("#define CONFIG_RAM_VEND (CONFIG_RAM_VSTART + CONFIG_RAM_SIZE)\n");
-	printf("#endif\n\n");
 	printf("/* If the end of FLASH is not specified then it is assumed to be the beginning\n");
 	printf(" * of FLASH plus the FLASH size.\n");
 	printf(" */\n\n");
@@ -259,10 +250,19 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef  CONFIG_FS_WRITABLE\n");
 	printf("# define CONFIG_FS_WRITABLE 1\n");
 	printf("#endif\n\n");
+
+	printf("/* The correct way to disable socket support is to set the number of\n");
+	printf(" * socket descriptors to zero.\n");
+	printf(" */\n\n");
+	printf("#ifndef CONFIG_NSOCKET_DESCRIPTORS\n");
+	printf("#  define CONFIG_NSOCKET_DESCRIPTORS 0\n");
+	printf("#endif\n\n");
+
 	printf("/* There can be no network support with no socket descriptors */\n\n");
 	printf("#if CONFIG_NSOCKET_DESCRIPTORS <= 0\n");
 	printf("# undef CONFIG_NET\n");
 	printf("#endif\n\n");
+
 	printf("/* Conversely, if there is no network support, there is no need for\n");
 	printf(" * socket descriptors\n");
 	printf(" */\n\n");
@@ -288,12 +288,6 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef CONFIG_DEBUG_GPIO\n");
 	printf("# undef CONFIG_DEBUG_SPI\n");
 	printf("# undef CONFIG_DEBUG_HEAP\n");
-	printf("#endif\n\n");
-	printf("/* User entry point. This is provided as a fall-back to keep compatibility\n");
-	printf(" * with existing code, for builds which do not define CONFIG_USER_ENTRYPOINT.\n");
-	printf(" */\n\n");
-	printf("#ifndef CONFIG_USER_ENTRYPOINT\n");
-	printf("# define CONFIG_USER_ENTRYPOINT main\n");
 	printf("#endif\n\n");
 	printf("#endif /* __INCLUDE_CONFIG_H */\n");
 	fclose(stream);

@@ -4,7 +4,7 @@
 #
 
 config DEBUG
-	bool "Enable Debug Output Features"
+	bool "Enable Debug Features"
 	default n
 	select DEBUG_ERROR
 	---help---
@@ -46,11 +46,11 @@ config DEBUG_VERBOSE
 comment "Subsystem Debug Options"
 
 config DEBUG_AUDIO
-	bool "Audio Debug Output"
+	bool "Audio Debug Feature"
 	default n
 	depends on AUDIO
 	---help---
-		Enable Audio debug SYSLOG output (disabled by default)
+		Enable Audio debug feature.
 
 if DEBUG_AUDIO
 
@@ -78,10 +78,10 @@ config DEBUG_AUDIO_INFO
 endif #DEBUG_AUDIO
 
 config DEBUG_LIB
-	bool "C Library Debug Output"
+	bool "C Library Debug Feature"
 	default n
 	---help---
-		Enable C library debug SYSLOG output (disabled by default)
+		Enable C library debug feature.
 
 if DEBUG_LIB
 
@@ -109,10 +109,10 @@ config DEBUG_LIB_INFO
 endif #DEBUG_LIB
 
 config DEBUG_FS
-	bool "File System Debug Output"
+	bool "File System Debug Feature"
 	default n
 	---help---
-		Enable file system debug SYSLOG output (disabled by default)
+		Enable file system debug feature.
 
 if DEBUG_FS
 
@@ -140,18 +140,18 @@ config DEBUG_FS_INFO
 endif #DEBUG_FS
 
 config DEBUG_IOTBUS
-	bool "IoTbus Debug Output"
+	bool "IoTbus Debug Feature"
 	default n
 	depends on IOTBUS
 	---help---
-		This config makes ibdbg printing messages.
+		Enable IoTbus debug feature.
 
 config DEBUG_MEDIA
-	bool "Media Debug Output"
+	bool "Media Debug Feature"
 	default n
 	depends on MEDIA
 	---help---
-		Enable Media debug SYSLOG output(disable by default)
+		Enable Media debug feature.
 
 if DEBUG_MEDIA
 
@@ -179,10 +179,10 @@ config DEBUG_MEDIA_INFO
 endif #DEBUG_MEDIA
 
 config DEBUG_MM
-	bool "Memory Manager Debug Output"
+	bool "Memory Manager Debug Feature"
 	default n
 	---help---
-		Enable memory management debug SYSLOG output (disabled by default)
+		Enable memory management debug feature.
 
 if DEBUG_MM
 
@@ -220,11 +220,11 @@ config DEBUG_DOUBLE_FREE
 endif #DEBUG_MM
 
 config DEBUG_NET
-	bool "Network Debug Output"
+	bool "Network Debug Feature"
 	default n
 	depends on ARCH_HAVE_NET
 	---help---
-		Enable network debug SYSLOG output (disabled by default)
+		Enable network debug feature.
 
 if DEBUG_NET
 
@@ -252,10 +252,10 @@ config DEBUG_NET_INFO
 endif #DEBUG_NET
 
 config DEBUG_SCHED
-	bool "Scheduler Debug Output"
+	bool "Scheduler Debug Feature"
 	default n
 	---help---
-		Enable OS debug SYSLOG output (disabled by default)
+		Enable OS debug feature.
 
 if DEBUG_SCHED
 
@@ -283,11 +283,11 @@ config DEBUG_SCHED_INFO
 endif #DEBUG_SCHED
 
 config DEBUG_SHM
-	bool "Shared Memory Debug Output"
+	bool "Shared Memory Debug Feature"
 	default n
 	depends on MM_SHM
 	---help---
-		Enable shared memory management debug SYSLOG output (disabled by default)
+		Enable shared memory management debug feature.
 
 if DEBUG_SHM
 
@@ -315,11 +315,11 @@ config DEBUG_SHM_INFO
 endif #DEBUG_SHM
 
 config DEBUG_ST_THINGS
-	bool "ST Things Debug Output"
+	bool "ST Things Debug Feature"
 	default y
 	depends on ST_THINGS
 	---help---
-		Enable st things debug SYSLOG output (enabled by default)
+		Enable st things debug feature.
 
 if DEBUG_ST_THINGS
 
@@ -354,7 +354,7 @@ config DEBUG_ST_THINGS_INFO
 endif #DEBUG_ST_THINGS
 
 config DEBUG_SYSCALL
-	bool "SYSCALL Debug Output"
+	bool "SYSCALL Debug Feature"
 	default n
 	depends on LIB_SYSCALL
 	---help---
@@ -387,11 +387,11 @@ config DEBUG_SYSCALL_INFO
 endif #DEBUG_SYSCALL
 
 config DEBUG_TASH
-	bool "TASH Debug Output"
+	bool "TASH Debug Feature"
 	default n
 	depends on TASH
 	---help---
-		Enable debugging message in TASH.
+		Enable TASH debug feature.
 
 if DEBUG_TASH
 config DEBUG_TASH_ERROR
@@ -406,11 +406,11 @@ config DEBUG_TASH_INFO
 endif #DEBUG_TASH
 
 config DEBUG_TASK_MANAGER
-	bool "Task Manager Debug Output"
+	bool "Task Manager Debug Feature"
 	default n
 	depends on TASK_MANAGER
 	---help---
-		Task Manager Debug Output.
+		Enable Task Manager debug feature.
 
 if DEBUG_TASK_MANAGER
 
@@ -431,11 +431,11 @@ config DEBUG_TASK_MANAGER_INFO
 endif #DEBUG_TASK_MANAGER
 
 config DEBUG_EVENTLOOP
-	bool "EventLoop Debug Output"
+	bool "EventLoop Debug Feature"
 	default n
 	depends on EVENTLOOP
 	---help---
-		EventLoop Debug Output.
+		Enable EventLoop debug feature.
 
 if DEBUG_EVENTLOOP
 
@@ -456,11 +456,11 @@ config DEBUG_EVENTLOOP_INFO
 endif #DEBUG_EVENTLOOP
 
 config DEBUG_WLAN
-	bool "WLAN Debug Output"
+	bool "WLAN Debug Feature"
 	default y
 	depends on SCSC_WLAN
 	---help---
-		Enables debug output SLSI WLAN (assuming DEBUG features are enabled).
+		Enables SLSI WLAN debug Feature.
 		If you enable DEBUG_WLAN, all enabled debug messages for WLAN will be reported in the
 		debug SYSLOG output.
 		Info: Enabling global DEBUG flag will enable ERROR and WARNING log level per default
@@ -574,11 +574,11 @@ endif #DEBUG_WLAN
 comment "OS Function Debug Options"
 
 config DEBUG_DMA
-	bool "DMA Debug Output"
+	bool "DMA Debug Feature"
 	default n
 	depends on ARCH_DMA
 	---help---
-		Enable DMA-releated debug SYSLOG output (disabled by default).
+		Enable DMA-releated debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
@@ -599,8 +599,15 @@ config DEBUG_MM_HEAPINFO
 	---help---
 		Enable task wise malloc debug.
 
+config DEBUG_CHECK_FRAGMENTATION
+	bool "Show where and how memory is fragmented"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	---help---
+		Count the number of freed memory segments with the range from size 2^n to 2^(n+1).
+
 config DEBUG_IRQ
-	bool "Interrupt Controller Debug Output"
+	bool "Interrupt Controller Debug Feature"
 	default n
 	---help---
 		Some (but not all) architectures support debug output to verify
@@ -622,19 +629,19 @@ config DEBUG_IRQ_INFO
 endif #DEBUG_IRQ
 
 config DEBUG_PAGING
-	bool "Demand Paging Debug Output"
+	bool "Demand Paging Debug Feature"
 	default n
 	depends on PAGING
 	---help---
-		Enable demand paging debug SYSLOG output (disabled by default)
+		Enable demand paging debug Feature.
 
 comment "Driver Debug Options"
 
 config DEBUG_I2S
-        bool "I2S Device Driver Debug Output"
+        bool "I2S Device Driver Debug Feature"
         default n
         ---help---
-                Enable i2s debug logs
+                Enable i2s debug Feature.
 
 if DEBUG_I2S
 
@@ -662,38 +669,63 @@ config DEBUG_I2S_INFO
 endif #DEBUG_I2S
 
 config DEBUG_PWM
-	bool "PWM Debug Output"
+	bool "PWM Debug Feature"
 	default n
 	depends on PWM
 	---help---
-		Enable PWM driver debug SYSLOG output (disabled by default).
+		Enable PWM driver debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
 config DEBUG_RTC
-	bool "RTC Debug Output"
+	bool "RTC Debug Feature"
 	default n
 	depends on RTC
 	---help---
-		Enable RTC driver debug SYSLOG output (disabled by default).
+		Enable RTC driver debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
 config DEBUG_SPI
-	bool "SPI Debug Output"
+	bool "SPI Debug Feature"
 	default n
 	depends on SPI
 	---help---
-		Enable I2C driver debug SYSLOG output (disabled by default).
+		Enable SPI debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+if DEBUG_SPI
+
+config DEBUG_SPI_ERROR
+	bool "SPI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable SPI error debug SYSLOG output.
+
+config DEBUG_SPI_WARN
+	bool "SPI Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable SPI warning debug SYSLOG output.
+
+config DEBUG_SPI_INFO
+	bool "SPI Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable SPI informational debug SYSLOG output.
+
+endif #DEBUG_SPI
+
 config DEBUG_TIMER
-	bool "Timer Debug Output"
+	bool "Timer Debug Feature"
 	default n
 	depends on TIMER
 	---help---
-		Enable timer debug SYSLOG output (disabled by default).
+		Enable timer debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
@@ -702,14 +734,14 @@ config DEBUG_TTRACE
 	default n
 	depends on TTRACE
 	---help---
-		Enable T-trace debug SYSLOG output (disabled by default)
+		Enable T-trace debug Feature.
 
 config DEBUG_WATCHDOG
-	bool "Watchdog Timer Debug Output"
+	bool "Watchdog Timer Debug Feature"
 	default n
 	depends on WATCHDOG
 	---help---
-		Enable watchdog timer debug SYSLOG output (disabled by default).
+		Enable watchdog timer debug Feature.
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
@@ -720,7 +752,7 @@ config DEBUG_SYSTEM
 	default n
 	select DEBUG_ERROR
 	---help---
-		Enable the System debug feature
+		Enable the System debug Feature.
 
 if DEBUG_SYSTEM
 

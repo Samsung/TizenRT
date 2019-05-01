@@ -20,7 +20,6 @@
 #include <debug.h>
 #include <functional>
 
-#include "SpeechDetector.h"
 #include "SoftwareKeywordDetector.h"
 #include "SoftwareEndPointDetector.h"
 #include "HardwareKeywordDetector.h"
@@ -28,73 +27,85 @@
 
 #include "../audio/audio_manager.h"
 
+#include <media/voice/SpeechDetector.h>
+
+#define INVALID_HW_NUMBER -1
+
 namespace media {
 namespace voice {
 
-SpeechDetectorInterface *SpeechDetectorInterface::instance()
+class SpeechDetectorImpl : public SpeechDetector
 {
-	static SpeechDetector inst;
+public:
+	SpeechDetectorImpl() = default;
+	bool initKeywordDetect(uint32_t samprate, uint8_t channels) override;
+	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
+	bool deinitKeywordDetect() override;
+	bool deinitEndPointDetect() override;
+	bool startKeywordDetect(int timeout) override;
+	bool startEndPointDetect(int timeout) override;
+	bool detectEndPoint(short *sample, int numSample) override;
+	bool waitEndPoint(int timeout) override;
+
+private:
+	std::shared_ptr<KeywordDetector> mKeywordDetector;
+	std::shared_ptr<EndPointDetector> mEndPointDetector;
+};
+
+SpeechDetector *SpeechDetector::instance()
+{
+	static SpeechDetectorImpl inst;
 	return &inst;
 }
 
-SpeechDetector::SpeechDetector()
-	: mKeywordDetector(nullptr)
-	, mEndPointDetector(nullptr)
-	, mKeywordDetectorCard(-1)
-	, mKeywordDetectorDevice(-1)
-	, mEndPointDetectorCard(-1)
-	, mEndPointDetectorDevice(-1)
+bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 {
+	if (samprate == 0 || channels == 0) {
+		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
+		return false;
+	}
 
-}
-
-bool SpeechDetector::initKeywordDetect(uint32_t samprate, uint8_t channels)
-{
-	mKeywordDetectorCard = mKeywordDetectorDevice = -1;
+	int sd_card = INVALID_HW_NUMBER;
+	int sd_device = INVALID_HW_NUMBER;
 
 	audio_manager_result_t result = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_KD,
-		&mKeywordDetectorCard, &mKeywordDetectorDevice);
+		&sd_card, &sd_device);
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
-		medvdbg("KeywordDetector : card_id : %d device_id %d\n", mKeywordDetectorCard, mKeywordDetectorDevice);
-
-		result = change_stream_in_device(mKeywordDetectorCard, mKeywordDetectorDevice);
-		if (result == AUDIO_MANAGER_SUCCESS) {
-			mKeywordDetector = std::make_shared<HardwareKeywordDetector>();
-			return true;
-		} else {
-			meddbg("change_stream_in_device failed: %d\n", result);
-			return false;
-		}
+		medvdbg("KeywordDetector : card_id : %d device_id %d\n", sd_card, sd_device);
+		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
+				  currently set 0, 0 */
+		mKeywordDetector = std::make_shared<HardwareKeywordDetector>(0, 0, sd_card, sd_device);
 	} else {
+		medvdbg("Not found H/W speech detector. Use Software\n");
 		mKeywordDetector = std::make_shared<SoftwareKeywordDetector>();
 	}
 
 	return mKeywordDetector->init(samprate, channels);
 }
 
-bool SpeechDetector::initEndPointDetect(uint32_t samprate, uint8_t channels)
+bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 {
-	mEndPointDetectorCard = mEndPointDetectorDevice = -1;
+	if (samprate == 0 || channels == 0) {
+		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
+		return false;
+	}
+
+	int sd_card = INVALID_HW_NUMBER;
+	int sd_device = INVALID_HW_NUMBER;
 
 	audio_manager_result_t result = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_EPD,
-		&mEndPointDetectorCard, &mEndPointDetectorDevice);
+		&sd_card, &sd_device);
 
 	if (result == AUDIO_MANAGER_SUCCESS) {
-		medvdbg("EndPointDetector : card_id : %d device_id %d\n", mEndPointDetectorCard, mEndPointDetectorDevice);
-
-		result = change_stream_in_device(mEndPointDetectorCard, mEndPointDetectorDevice);
-		if (result == AUDIO_MANAGER_SUCCESS) {
-			mEndPointDetector = std::make_shared<HardwareEndPointDetector>();
-			return true;
-		} else {
-			meddbg("change_stream_in_device failed: %d\n", result);
-			return false;
-		}
+		medvdbg("EndPointDetector : card_id : %d device_id %d\n", sd_card, sd_device);
+		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
+				  currently set 0, 0 */
+		mEndPointDetector = std::make_shared<HardwareEndPointDetector>(0, 0, sd_card, sd_device);
 	} else {
 		mEndPointDetector = std::make_shared<SoftwareEndPointDetector>();
 	}
@@ -102,40 +113,73 @@ bool SpeechDetector::initEndPointDetect(uint32_t samprate, uint8_t channels)
 	return mEndPointDetector->init(samprate, channels);
 }
 
-void SpeechDetector::deinitKeywordDetect()
+bool SpeechDetectorImpl::deinitKeywordDetect()
 {
-	mKeywordDetectorCard = mKeywordDetectorDevice = -1;
 	if (mKeywordDetector) {
 		mKeywordDetector->deinit();
 		mKeywordDetector = nullptr;
+		return true;
+	} else {
+		meddbg("Nothing to deinit\n");
+		return false;
 	}
 }
 
-void SpeechDetector::deinitEndPointDetect()
+bool SpeechDetectorImpl::deinitEndPointDetect()
 {
-	mEndPointDetectorCard = mEndPointDetectorDevice = -1;
 	if (mEndPointDetector) {
 		mEndPointDetector->deinit();
 		mEndPointDetector = nullptr;
+		return true;
+	} else {
+		meddbg("Nothing to deinit\n");
+		return false;
 	}
 }
 
-void SpeechDetector::setEndPointDetectedDelegate(OnEndPointDetectedCallback onEndPointDetected)
+bool SpeechDetectorImpl::startKeywordDetect(int timeout)
 {
-	assert(mEndPointDetector);
-	mEndPointDetector->setEndPointDetectedDelegate(onEndPointDetected);
-}
+	if (mKeywordDetector == nullptr) {
+		meddbg("KeywordDetector is not init\n");
+		return false;
+	}
 
-bool SpeechDetector::startKeywordDetect(uint32_t timeout)
-{
-	assert(mKeywordDetector);
 	return mKeywordDetector->startKeywordDetect(timeout);
 }
 
-bool SpeechDetector::processEPDFrame(short *sample, int numSample)
+bool SpeechDetectorImpl::startEndPointDetect(int timeout)
 {
-	assert(mEndPointDetector);
-	return mEndPointDetector->processEPDFrame(sample, numSample);
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
+	return mEndPointDetector->startEndPointDetect(timeout);
+}
+
+bool SpeechDetectorImpl::detectEndPoint(short *sample, int numSample)
+{
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
+	if (sample == nullptr) {
+		meddbg("parameter sample is nullptr\n");
+		return false;
+	}
+
+	return mEndPointDetector->detectEndPoint(sample, numSample);
+}
+
+bool SpeechDetectorImpl::waitEndPoint(int timeout)
+{
+	if (mEndPointDetector == nullptr) {
+		meddbg("EndPointDetector is not init\n");
+		return false;
+	}
+
+	return mEndPointDetector->waitEndPoint(timeout);
 }
 
 } // namespace voice

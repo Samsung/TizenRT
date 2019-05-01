@@ -144,12 +144,10 @@ NONFSDIRS = kernel $(ARCH_SRC) $(TINYARA_ADDONS)
 FSDIRS = fs drivers
 CONTEXTDIRS = $(APPDIR)
 CONTEXTDIRS += $(TOOLSDIR)
-ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
 CONTEXTDIRS += mm
-endif
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-CONTEXTDIRS += $(EXTDIR)$(DELIM)iotivity
-endif
+#ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+#CONTEXTDIRS += $(EXTDIR)$(DELIM)iotivity
+#endif
 USERDIRS =
 OTHERDIRS = $(LIBRARIES_DIR)
 
@@ -224,6 +222,13 @@ KERNDEPDIRS += audio
 endif
 CLEANDIRS += audio
 
+# Add Crypto Module
+
+ifeq ($(CONFIG_CRYPTO),y)
+KERNDEPDIRS += crypto
+endif
+CLEANDIRS += crypto
+
 # Add networking directories to KERNDEPDIRS and CLEANDIRS
 
 ifeq ($(CONFIG_NET),y)
@@ -244,4 +249,9 @@ ifeq ($(CONFIG_LOGM),y)
 KERNDEPDIRS += logm
 endif
 CLEANDIRS += logm
+
+ifeq ($(CONFIG_LOGM),y)
+KERNDEPDIRS += se
+endif
+CLEANDIRS += se
 

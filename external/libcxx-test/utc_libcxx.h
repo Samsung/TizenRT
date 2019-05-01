@@ -21,5 +21,6 @@
 #include "libcxx_tc_common.h"
 
 int tc_algorithms_main(void);
+int tc_numerics_main(void);
 int tc_utilities_main(void);
 #endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */

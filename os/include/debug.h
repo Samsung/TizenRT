@@ -132,8 +132,8 @@
 
 #ifdef CONFIG_DEBUG
 /* Temporary LOGM macros to route all dbg messages.
-Once LOGM is approved, each module should have its own index
-*/
+ * Once LOGM is approved, each module should have its own index
+ */
 #define LOGM_IDX (0)
 
 #ifdef CONFIG_DEBUG_ERROR
@@ -153,8 +153,17 @@ Once LOGM is approved, each module should have its own index
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_ARCH_CHIP_IMXRT
+/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
+#define dbg(format, ...) \
+	lldbg(format, ##__VA_ARGS__)
+#else
 #define dbg(format, ...) \
 	syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#endif
+
 #define dbg_noarg(format, ...) \
 	syslog(LOG_ERR, format, ##__VA_ARGS__)
 
@@ -190,8 +199,16 @@ Once LOGM is approved, each module should have its own index
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_ARCH_CHIP_IMXRT
+/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
+#define wdbg(format, ...) \
+	llwdbg(format, ##__VA_ARGS__)
+#else
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -225,8 +242,16 @@ Once LOGM is approved, each module should have its own index
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_ARCH_CHIP_IMXRT
+/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
+#define vdbg(format, ...) \
+	llvdbg(format, ##__VA_ARGS__)
+#else
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -550,6 +575,30 @@ Once LOGM is approved, each module should have its own index
 #define snllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_SPI_ERROR
+#define spidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define spilldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define spidbg(...)
+#define spilldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SPI_WARN
+#define spiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define spillwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define spiwdbg(...)
+#define spillwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SPI_INFO
+#define spivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define spillvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define spivdbg(...)
+#define spillvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_ANALOG_ERROR
 #define adbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define alldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -762,6 +811,54 @@ Once LOGM is approved, each module should have its own index
 #else
 #define elvdbg(...)
 #define elllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define nllldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define nldbg(...)
+#define nllldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define nlllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define nlvdbg(...)
+#define nlllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define sdlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define sddbg(...)
+#define sdlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sdvdbg(...)
+#define sdllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg(format, ...)     dbg(format, ##__VA_ARGS__)
+#define selldbg(format, ...)   lldbg(format, ##__VA_ARGS__)
+#else
+#define sedbg(...)
+#define selldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sellvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sevdbg(...)
+#define sellvdbg(...)
 #endif
 
 #else							/* CONFIG_CPP_HAVE_VARARGS */
@@ -1195,6 +1292,54 @@ Once LOGM is approved, each module should have its own index
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg      dbg
+#define nllldbg    lldbg
+#else
+#define nldbg      (void)
+#define nllldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg     vdbg
+#define nlllvdbg   llvdbg
+#else
+#define nlvdbg     (void)
+#define nlllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg      dbg
+#define sdlldbg    lldbg
+#else
+#define sddbg      (void)
+#define sdlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg     vdbg
+#define sdllvdbg   llvdbg
+#else
+#define sdvdbg     (void)
+#define sdllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg      dbg
+#define selldbg    lldbg
+#else
+#define sedbg      (void)
+#define selldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg     vdbg
+#define sellvdbg   llvdbg
+#else
+#define sevdbg     (void)
+#define sellvdbg   (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

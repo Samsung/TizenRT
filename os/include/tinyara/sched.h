@@ -183,6 +183,9 @@
 #define KEY_NOT_INUSE   (0)
 #define KEY_INUSE       (1)
 
+#define MAX_PID_MASK	(CONFIG_MAX_TASKS - 1)
+#define PIDHASH(pid)	((pid) & MAX_PID_MASK)
+
 /********************************************************************************
  * Public Type Definitions
  ********************************************************************************/
@@ -369,11 +372,22 @@ struct task_group_s {
 	sq_queue_t tg_onexitfunc;
 #endif
 
-#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
+#ifdef CONFIG_SCHED_HAVE_PARENT
 	/* Child exit status ********************************************************* */
 
-	FAR struct child_status_s *tg_children;	/* Head of a list of child status     */
+#ifdef CONFIG_SCHED_CHILD_STATUS
+	FAR struct child_status_s *tg_children; /* Head of a list of child status     */
 #endif
+
+#ifndef HAVE_GROUP_MEMBERS
+	/* REVISIT: What if parent thread exits?  Should use tg_pgid. */
+
+	pid_t    tg_ppid;                 /* This is the ID of the parent thread      */
+#ifndef CONFIG_SCHED_CHILD_STATUS
+	uint16_t tg_nchildren;            /* This is the number active children       */
+#endif
+#endif /* HAVE_GROUP_MEMBERS */
+#endif /* CONFIG_SCHED_HAVE_PARENT */
 
 #if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_SCHED_HAVE_PARENT)
 	/* waitpid support *********************************************************** */
@@ -484,15 +498,6 @@ struct tcb_s {
 
 	pid_t pid;					/* This is the ID of the thread        */
 
-#ifdef CONFIG_SCHED_HAVE_PARENT	/* Support parent-child relationship   */
-#ifndef HAVE_GROUP_MEMBERS		/* Don't know pids of group members    */
-	pid_t ppid;					/* This is the ID of the parent thread */
-#ifndef CONFIG_SCHED_CHILD_STATUS	/* Retain child thread status          */
-	uint16_t nchildren;			/* This is the number active children  */
-#endif
-#endif
-#endif							/* CONFIG_SCHED_HAVE_PARENT */
-
 	start_t start;				/* Thread start function               */
 	entry_t entry;				/* Entry Point into the thread         */
 	uint8_t sched_priority;		/* Current priority of the thread      */
@@ -550,6 +555,12 @@ struct tcb_s {
 	sq_queue_t sigpendactionq;	/* List of pending signal actions      */
 	sq_queue_t sigpostedq;		/* List of posted signals              */
 	siginfo_t sigunbinfo;		/* Signal info when task unblocked     */
+#ifdef CONFIG_SIGKILL_HANDLER
+	_sa_sigaction_t sigkillusrhandler; /* User defined SIGKILL handler      */
+#endif
+#ifdef HAVE_GROUP_MEMBERS
+	sigset_t sigrecvmask;		/* Signals that are blocked by receiving signals */
+#endif
 #endif
 
 	/* POSIX Named Message Queue Fields ****************************************** */
@@ -569,12 +580,6 @@ struct tcb_s {
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
-#endif
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	int curr_alloc_size;
-	int peak_alloc_size;
-	int num_alloc_free;
 #endif
 };
 

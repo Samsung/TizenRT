@@ -73,10 +73,14 @@
 #include <tinyara/compiler.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/spi/spi.h>
-#include <queue.h>
+#include <mqueue.h>
 #include <semaphore.h>
 
 #ifdef CONFIG_AUDIO
+
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+#include <mqueue.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions

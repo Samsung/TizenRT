@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
@@ -67,6 +68,69 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: calloc_at
+ *
+ * Description:
+ *   calloc to the specific heap.
+ *   calloc_at tries to allocate memory for a specific heap which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+
+#if CONFIG_MM_NHEAPS > 1
+void *calloc_at(int heap_index, size_t n, size_t elem_size)
+{
+	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
+		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+		return NULL;
+	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_calloc(&g_mmheap[heap_index], n, elem_size, retaddr);
+#else
+	return mm_calloc(&g_mmheap[heap_index], n, elem_size);
+#endif
+}
+#endif
+
+/************************************************************************
+ * Name: heap_calloc
+ *
+ * Description:
+ *   Traverse the user heap arrays by index, and try to alloc memory.
+ *
+ * Parameters:
+ *   n     - Element number
+ *   elem_size - Size (in bytes) of each element.
+ *   s     - Start index
+ *   e     - End index
+ *   retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retaddr)
+{
+	int heap_idx;
+	void *ret;
+
+	for (heap_idx = s; heap_idx < e; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size, retaddr);
+#else
+		ret = mm_calloc(&g_mmheap[heap_idx], n, elem_size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
 
 /****************************************************************************
  * Name: calloc
@@ -78,12 +142,30 @@
 
 FAR void *calloc(size_t n, size_t elem_size)
 {
+	int heap_idx = 0;
+	void *ret = NULL;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_calloc(USR_HEAP, n, elem_size, retaddr);
 #else
-	return mm_calloc(USR_HEAP, n, elem_size);
+	size_t retaddr = 0;
 #endif
+
+#ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
+	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
+#endif
+
+	ret = heap_calloc(n, elem_size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	if (ret != NULL) {
+		return ret;
+	}
+
+#if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
+	/* Try to mm_calloc to other heaps */
+	ret = heap_calloc(n, elem_size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+#endif
+
+	return ret;
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

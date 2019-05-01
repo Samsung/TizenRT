@@ -49,9 +49,9 @@ typedef struct {
 	wifi_mode_e supported_mode[NUM_WIFIMODE];
 	uint8_t num_mode;			// the number of device's supported wifi modes
 	wifi_freq_e supported_freq;
-	char ssid[MAX_SSID_LEN];		// target network name, i.e. SSID for WLAN, MAC address for BT.
-	char cred[MAX_SECUIRTYKEY_LEN];		// credential information.
-	wifi_auth_type_e auth_type;
+	char ssid[WIFIMGR_SSID_LEN+1];		// target network name, i.e. SSID for WLAN, MAC address for BT.
+	char cred[WIFIMGR_PASSPHRASE_LEN+1];		// credential information.
+	wifi_sec_type_e sec_type;
 	wifi_enc_type_e enc_type;
 	int discovery_channel;
 } wifi_resource_s;
@@ -88,7 +88,7 @@ void set_wifi_prov_state(wifi_prov_state_e value);
 wifi_prov_state_e get_wifi_prov_state(void);
 
 OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e resource_mask);
-OCStackResult delete_easysetup_resources();
+OCStackResult delete_easysetup_resources(void);
 OCStackResult prov_rsc_notify_all_observers(void);
 
 things_es_enrollee_state_e get_enrollee_state(void);
@@ -97,7 +97,6 @@ OCStackResult set_device_property(es_device_property *device_property);
 OCStackResult set_enrollee_state(things_es_enrollee_state_e es_state);
 OCStackResult set_enrollee_err_code(es_error_code_e es_err_code);
 
-void get_target_network_info_from_prov_resource(char *, char *);
 void register_wifi_rsrc_event_callback(es_wifi_cb);
 void register_cloud_rsrc_event_callback(es_cloud_cb);
 void register_dev_conf_rsrc_event_callback(es_dev_conf_cb);

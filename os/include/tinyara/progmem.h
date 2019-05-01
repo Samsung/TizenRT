@@ -108,6 +108,16 @@ bool up_progmem_isuniform(void);
 size_t up_progmem_pagesize(size_t page);
 
 /****************************************************************************
+ * Name: up_progmem_blocksize
+ *
+ * Description:
+ *   Return block size
+ *
+ ****************************************************************************/
+
+size_t up_progmem_blocksize(void);
+
+/****************************************************************************
  * Name: up_progmem_getpage
  *
  * Description:

@@ -254,8 +254,8 @@ compatibility between releases, so it is likely that future versions of these
 libraries will *not* be usable as drop-in replacements.
 
 If your project is itself a DLL intended for use by third-party software, we
-recommend that you do NOT expose protocol buffer objects in your library's
-public interface, and that you statically link protocol buffers into your
+recommend that you do NOT expose Protocol Buffer objects in your library's
+public interface, and that you statically link Protocol Buffers into your
 library.
 
 ZLib support
@@ -323,7 +323,7 @@ well, or live with them.
 * C4996 - 'function': was declared deprecated
 
 C4251 is of particular note, if you are compiling the Protocol Buffer library
-as a DLL (see previous section).  The protocol buffer library uses templates in
+as a DLL (see previous section).  The Protocol Buffer library uses templates in
 its public interfaces.  MSVC does not provide any reasonable way to export
 template classes from a DLL.  However, in practice, it appears that exporting
 templates is not necessary anyway.  Since the complete definition of any
@@ -332,5 +332,5 @@ end up compiling instances of the templates into their own binary.  The
 Protocol Buffer implementation does not rely on static template members being
 unique, so there should be no problem with this, but MSVC prints warning
 nevertheless.  So, we disable it.  Unfortunately, this warning will also be
-produced when compiling code which merely uses protocol buffers, meaning you
+produced when compiling code which merely uses Protocol Buffers, meaning you
 may have to disable it in your code too.

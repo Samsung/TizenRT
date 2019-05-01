@@ -5,6 +5,10 @@
 
 if SPI
 
+config SPI_USERIO
+	bool "Support the SPI User/IO mode"
+	default y
+
 config SPI_OWNBUS
 	bool "SPI single device"
 	default n

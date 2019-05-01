@@ -156,7 +156,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 
 
 ## df
-This shows information about the file system on which each FILE resides, or all file systems by default.
+This shows information about the File System on which each FILE resides, or all File Systems by default.
 ```bash
 TASH>>df -h
 Filesystem    Size      Used  Available Mounted on
@@ -272,7 +272,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 
 ## getenv/setenv/unsetenv
 These commands are related with setting or getting the environment variables.  
-The **getenv** prints all of environment variables. If specific environment name is given, this prints the value of given envionment.   
+The **getenv** prints all of environment variables. If specific environment name is given, this prints the value of given environment.   
 The **setenv** save new environment variable with given value.  
 The **unsetenv** unsets environment variable with NAME.
 ```bash
@@ -335,6 +335,11 @@ Options:
  -f           Show the free list
  -g           Show the User defined group allocation details
               (for -g option, CONFIG_HEAPINFO_GROUP is needed)
+ -e HEAP_IDX  Show the heap[HEAP_IDX] allocation details
+              (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
+ -r           Show the all region information
+              (-r option is available when CONFIG_MM_REGIONS is greater than 1)
+ -k OPTION    Show the kernel heap memory allocation details based on above options
 
 TASH>>heapinfo
 
@@ -379,7 +384,7 @@ PID |  PPID | STACK | CURR_HEAP | PEAK_HEAP | NAME
 - Owner     : The holder who allocate the memory  
 
 ### How to Enable
-Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+Enable *CONFIG_ENABLE_HEAPINFO_CMD* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] heapinfo
 ```
@@ -387,7 +392,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell co
 #### Dependency
 Enable CONFIG_DEBUG_MM_HEAPINFO.
 ```
-Debug options -> [*] Enable Debug Output Features
+Debug options -> [*] Enable Debug Output Features -> [*] Heap Info debug option
 ```
 
 ### Heapinfo for User defined Group
@@ -408,9 +413,9 @@ Heap Allocation Information per User defined Group
 ****************************************************************
  PEAK | HEAP_ON_PEAK | STACK_ON_PEAK | THREADS_IN_GROUP
 ----------------------------------------------------------------
- 4572 |         3568 |          1004 | jckim,jckim2
- 5772 |         4768 |          1004 | jckim3
- 2940 |          896 |          2044 | asdf
+ 4572 |         3568 |          1004 | abc,def
+ 5772 |         4768 |          1004 | ghi,jklmn
+ 2940 |          896 |          2044 | opqr
 ```
 
 
@@ -427,7 +432,7 @@ TASH>>irqinfo
      4 |      90 |        36 | up_interrupt
 ```
 ### How to Enable
-Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+Enable *CONFIG_ENABLE_IRQINFO_CMD* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] irqinfo
 ```
@@ -573,7 +578,7 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 
 
 ## mksmartfs
-This makes SmartFS file system on the specified block device.
+This makes SmartFS File System on the specified block device.
 ```
 Usage:
    mksmartfs <source directory> [-f] <target directory>
@@ -590,7 +595,7 @@ File Systems -> [ ] Disable support for mount points
 ```
 - Enable CONFIG_FS_SMARTFS.
 ```
-File Systems -> [*] SMART file system
+File Systems -> [*] SMART File System
 ```
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```
@@ -599,7 +604,7 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 
 
 ## mount
-This mounts specific file system.
+This mounts specific File System.
 ```
 Usage:
    mount -t <filesystem name> <source directory> <target directory>
@@ -853,7 +858,7 @@ Debug Options -> [*] Stack coloration
 
 
 ## umount
-This unmounts specific file system.
+This unmounts specific File System.
 ```
 Usage:
    umount <mounted directory>

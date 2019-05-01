@@ -66,7 +66,6 @@
 #include "db_options.h"
 #include "db_debug.h"
 #include "list.h"
-#include "memb.h"
 #include "aql.h"
 #include "relation.h"
 
@@ -75,9 +74,9 @@
 ****************************************************************************/
 
 LIST(relations);
-MEMB(relations_memb, relation_t, DB_RELATION_POOL_SIZE);
-MEMB(attributes_memb, attribute_t, DB_ATTRIBUTE_POOL_SIZE);
-
+// TODO: SIZE limitation not applied
+//MEMB(relations_memb, relation_t, DB_RELATION_POOL_SIZE);
+//MEMB(attributes_memb, attribute_t, DB_ATTRIBUTE_POOL_SIZE);
 static relation_t *relation_find(char *);
 static attribute_t *attribute_find(relation_t *, char *);
 static int get_attribute_value_offset(relation_t *, attribute_t *);
@@ -138,7 +137,7 @@ static void attribute_free(relation_t *rel, attribute_t *attr)
 	if (attr->index != NULL) {
 		index_release(attr->index);
 	}
-	memb_free(&attributes_memb, attr);
+	free(attr);
 	rel->attribute_count--;
 }
 
@@ -170,10 +169,10 @@ static relation_t *relation_allocate(void)
 {
 	relation_t *rel;
 
-	rel = memb_alloc(&relations_memb);
+	rel = malloc(sizeof(relation_t));
 	if (rel == NULL) {
 		purge_relations();
-		rel = memb_alloc(&relations_memb);
+		rel = malloc(sizeof(relation_t));
 		if (rel == NULL) {
 			DB_LOG_E("DB: Failed to allocate a relation\n");
 			return NULL;
@@ -196,7 +195,7 @@ static void relation_free(relation_t *rel)
 	} while (attr != NULL);
 
 	list_remove(relations, rel);
-	memb_free(&relations_memb, rel);
+	free(rel);
 }
 
 db_result_t relation_init(void)
@@ -205,8 +204,7 @@ db_result_t relation_init(void)
 	if (list_head(relations) != NULL) {
 		return DB_RELATIONAL_ERROR;
 	}
-	memb_init(&relations_memb);
-	memb_init(&attributes_memb);
+
 	return DB_OK;
 }
 
@@ -221,6 +219,7 @@ db_result_t relation_deinit(void)
 		relation_free(rel);
 		rel = next;
 	}
+
 	return DB_OK;
 }
 
@@ -240,7 +239,7 @@ relation_t *relation_load(char *name)
 	}
 
 	if (DB_ERROR(storage_get_relation(rel, name))) {
-		memb_free(&relations_memb, rel);
+		free(rel);
 		return NULL;
 	}
 
@@ -279,22 +278,23 @@ db_result_t relation_release(relation_t *rel)
 
 relation_t *relation_create(char *name, db_direction_t dir)
 {
-	relation_t old_rel;
 	relation_t *rel;
+	
 	if (*name != '\0') {
-		relation_clear(&old_rel);
-
-		if (storage_get_relation(&old_rel, name) == DB_OK) {
-			/* Reject a creation request if the relation already exists. */
-			DB_LOG_E("DB: Attempted to create a relation that already exists (%s)\n", name);
-			return NULL;
-		}
-
 		rel = relation_allocate();
 		if (rel == NULL) {
 			return NULL;
 		}
+		relation_clear(rel);
 
+		if (storage_get_relation(rel, name) == DB_OK) {
+			/* Reject a creation request if the relation already exists. */
+			DB_LOG_E("DB: Attempted to create a relation that already exists (%s)\n", name);
+			relation_free(rel);
+			return NULL;
+		}
+
+		relation_clear(rel);
 		rel->cardinality = 0;
 		strncpy(rel->name, name, sizeof(rel->name) - 1);
 
@@ -306,7 +306,7 @@ relation_t *relation_create(char *name, db_direction_t dir)
 				list_add(relations, rel);
 				return rel;
 			}
-			memb_free(&relations_memb, rel);
+			free(rel);
 		} else {
 			list_add(relations, rel);
 			return rel;
@@ -317,9 +317,8 @@ relation_t *relation_create(char *name, db_direction_t dir)
 
 db_result_t relation_rename(char *old_name, char *new_name)
 {
-	relation_t *rel = relation_load(new_name);
-
-	if (DB_ERROR(relation_remove(rel, 1)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
+	DB_LOG_D("old_name is %s, new_name is %s\n", old_name, new_name);
+	if (DB_ERROR(storage_rename_relation(old_name, new_name))) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -342,7 +341,7 @@ attribute_t *relation_attribute_add(relation_t *rel, db_direction_t dir, char *n
 		return NULL;
 	}
 
-	attribute = memb_alloc(&attributes_memb);
+	attribute = malloc(sizeof(attribute_t));
 	if (attribute == NULL) {
 		DB_LOG_E("DB: Failed to allocate attribute \"%s\"!\n", name);
 		return NULL;
@@ -356,18 +355,17 @@ attribute_t *relation_attribute_add(relation_t *rel, db_direction_t dir, char *n
 	attribute->index = NULL;
 	attribute->flags = 0 /*ATTRIBUTE_FLAG_UNIQUE */ ;
 
-	rel->row_length += element_size;
-
-	list_add(rel->attributes, attribute);
-	rel->attribute_count++;
-
 	if (dir == DB_STORAGE) {
 		if (DB_ERROR(storage_put_attribute(rel, attribute))) {
 			DB_LOG_E("DB: Failed to store attribute %s\n", attribute->name);
-			memb_free(&attributes_memb, attribute);
+			free(attribute);
 			return NULL;
 		}
 	}
+	
+	rel->row_length += element_size;
+	list_add(rel->attributes, attribute);
+	rel->attribute_count++;
 
 	return attribute;
 }
@@ -419,7 +417,28 @@ db_result_t relation_set_primary_key(relation_t *rel, char *name)
 	return DB_OK;
 }
 
-db_result_t relation_remove(relation_t *rel, int remove_tuples)
+//remove relation file and tuple file, but not index file. 
+db_result_t relation_remove_tuple(relation_t *rel, int remove_tuples)
+{
+	db_result_t result;
+
+	if (rel == NULL) {
+		return DB_OK;
+	}
+
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	/* Flush insert buffer to make sure of writing tuples before removing relation */
+	if (DB_SUCCESS(storage_flush_insert_buffer())) {
+		DB_LOG_D("DB : flush insert buffer!!\n");
+	}
+#endif
+
+	result = storage_drop_relation(rel, remove_tuples);
+	relation_free(rel);
+	return result;
+}
+
+db_result_t relation_remove_index(relation_t *rel, int remove_tuples)
 {
 	db_result_t result;
 	attribute_t *attr;
@@ -427,17 +446,9 @@ db_result_t relation_remove(relation_t *rel, int remove_tuples)
 	char *filename;
 
 	if (rel == NULL) {
-		/*
-		 * Attempt to remove an inexistent relation. To allow for this
-		 * operation to be used for setting up repeatable tests and
-		 * experiments, we do not signal an error.
-		 */
 		return DB_OK;
 	}
 
-	if (rel->references > 1) {
-		return DB_BUSY_ERROR;
-	}
 #ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
 	/* Flush insert buffer to make sure of writing tuples before removing relation */
 	if (DB_SUCCESS(storage_flush_insert_buffer())) {
@@ -468,8 +479,32 @@ db_result_t relation_remove(relation_t *rel, int remove_tuples)
 		DB_LOG_E("DB: Index file unlinking failed\n");
 	}
 
-	result = storage_drop_relation(rel, remove_tuples);
-	relation_free(rel);
+	return DB_OK;
+}
+
+db_result_t relation_remove(relation_t *rel, int remove_tuples)
+{
+	db_result_t result;
+
+	if (rel == NULL) {
+		/*
+		 * Attempt to remove an inexistent relation. To allow for this
+		 * operation to be used for setting up repeatable tests and
+		 * experiments, we do not signal an error.
+		 */
+		return DB_OK;
+	}
+
+	if (rel->references > 1) {
+		return DB_BUSY_ERROR;
+	}
+
+	if (DB_ERROR(relation_remove_index(rel, remove_tuples))) {
+		DB_LOG_E("DB: Index file remove failed\n");
+	}
+
+	result = relation_remove_tuple(rel, remove_tuples);
+	
 	return result;
 }
 
@@ -704,6 +739,27 @@ static void relation_index_clear(relation_t *rel)
 		attr_ptr = attr_ptr->next;
 	}
 	free(filename);
+}
+
+static void relation_delete_index_item(db_handle_t **handle, unsigned char *row_ptr, int update_index)
+{
+	attribute_t *from_attr;
+	attribute_value_t index_key;
+	tuple_id_t tuple_id;
+
+	from_attr = list_head((*handle)->rel->attributes);
+	while (from_attr != NULL) {
+		if (from_attr->index != NULL) {
+			if (relation_get_value((*handle)->rel, from_attr, row_ptr, &index_key) == DB_OK) {
+				index_delete(from_attr->index, &index_key);
+				if (update_index) { //update with new tuple_id
+					tuple_id = (*handle)->result_rel->cardinality - 1; //cardinality increased when storage_put_row
+					index_insert(from_attr->index, &index_key, tuple_id);
+				}
+			}
+		}
+		from_attr = from_attr->next;
+	}
 }
 
 static db_result_t generate_selection_result(db_handle_t **handle, relation_t *rel)
@@ -946,6 +1002,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	source_dest_map_t *attr_map_ptr, *attr_map_end;
 	char name[RELATION_NAME_LENGTH + 1];
 	int i;
+	tuple_id_t nrows;
 
 	if ((*handle)->tuple == NULL) {
 		return DB_ALLOCATION_ERROR;
@@ -999,6 +1056,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 			DB_LOG_E("DB: Failed to store a row in the result relation!\n");
 			goto errout;
 		}
+		relation_delete_index_item(handle, row, true);
 
 		(*handle)->current_row++;
 		if (row != NULL) {
@@ -1007,6 +1065,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 		return DB_GOT_ROW;
 	}
 
+	relation_delete_index_item(handle, row, false);
 	if (row != NULL) {
 		free(row);
 	}
@@ -1015,7 +1074,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 end_removal:
 	DB_LOG_E("DB: Finished removing tuples. Result relation has %d tuples\n", (*handle)->result_rel->cardinality);
 	memcpy(name, (*handle)->rel->name, sizeof(name));
-	relation_remove((*handle)->rel, 1);
+	relation_remove_tuple((*handle)->rel, 1);
 
 	/* Rename the name of new relation to old relation */
 	result = relation_rename((*handle)->result_rel->name, name);
@@ -1024,6 +1083,9 @@ end_removal:
 		goto errout;
 	}
 	memcpy((*handle)->result_rel->name, (*handle)->rel->name, sizeof((*handle)->result_rel->name));
+	if (storage_get_row_amount((*handle)->result_rel, &nrows) == DB_OK) {
+		DB_LOG_D("AFter Finish remove, result_rel tuple rows %d\n", nrows);
+	}
 
 	/* Process finished, we allocate cursor for result of remove */
 	if (DB_ERROR(cursor_init(&cursor, (*handle)->result_rel)) || DB_ERROR(cursor_data_set(cursor, (*handle)->attr_map, (*handle)->result_rel->attribute_count))) {

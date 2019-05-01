@@ -41,29 +41,55 @@ namespace media {
 static const int FOCUS_REQUEST_SUCCESS = 0;
 static const int FOCUS_REQUEST_FAIL = -1;
 
+/**
+ * @class 
+ * @brief This class is focus manager
+ * @details @b #include <media/FocusManager.h>
+ * @since TizenRT v2.0
+ */
 class FocusManager
 {
 public:
+	/**
+	 * @brief Get FocusManager Instance
+	 * @details @b #include <media/FocusManager.h>
+	 * @return Instance of FocusManager
+	 * @since TizenRT v2.0
+	 */
 	static FocusManager &getFocusManager();
+	/**
+	 * @brief Abandon Focus
+	 * @details @b #include <media/FocusManager.h>
+	 * param[in] focusRequest FocusRequest to abandon
+	 * @return return FOCUS_REQUEST_SUCCESS on Success, else return FOCUS_REQUEST_FAIL
+	 * @since TizenRT v2.0
+	 */
 	int abandonFocus(std::shared_ptr<FocusRequest> focusRequest);
+	/**
+	 * @brief Request Focus
+	 * @details @b #include <media/FocusManager.h>
+	 * param[in] focusRequest FocusRequest to request
+	 * @return return FOCUS_REQUEST_SUCCESS on Success, else return FOCUS_REQUEST_FAIL
+	 * @since TizenRT v2.0
+	 */
 	int requestFocus(std::shared_ptr<FocusRequest> focusRequest);
 
 private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(std::string id, std::shared_ptr<FocusChangeListener> listener);
-		bool hasSameId(std::string id);
+		FocusRequester(stream_info_id_t id, std::shared_ptr<FocusChangeListener> listener);
+		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		void notify(int focusChange);
 
 	private:
-		std::string mId;
+		stream_info_id_t mId;
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
 	FocusManager() = default;
 	virtual ~FocusManager() = default;
-	void removeFocusElement(std::string id);
+	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;
 };

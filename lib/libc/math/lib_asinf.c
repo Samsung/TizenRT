@@ -61,6 +61,10 @@ float asinf(float x)
 
 	y = 0;
 
+	if (isnan(x) || x < -1.0 || x > 1.0) {
+		return NAN;
+	}
+
 	while (1) {
 		y_sin = sinf(y);
 		y_cos = cosf(y);

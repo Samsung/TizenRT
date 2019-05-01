@@ -535,6 +535,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 	/* Fill in the caller's structure based on requested info */
 
+	caps->ac_format.hw  = 0;
 	caps->ac_controls.w = 0;
 
 	switch (caps->ac_type) {
@@ -602,20 +603,14 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 	case AUDIO_TYPE_FEATURE:
 
-		/* If the sub-type is UNDEF, then report the Feature Units we support */
-
-		if (caps->ac_subtype == AUDIO_FU_UNDEF) {
+		switch (caps->ac_subtype) {
+		case AUDIO_FU_UNDEF:
+			/* If the sub-type is UNDEF, then report the Feature Units we support */
 			/* Fill in the ac_controls section with the Feature Units we have */
 
 			caps->ac_controls.b[0] = AUDIO_FU_VOLUME | AUDIO_FU_BASS | AUDIO_FU_TREBLE;
 			caps->ac_controls.b[1] = AUDIO_FU_BALANCE >> 8;
-		} else {
-			/* TODO:  Do we need to provide specific info for the Feature Units,
-			 * such as volume setting ranges, etc.?
-			 */
-		}
-
-		switch (caps->ac_format.hw) {
+			break;
 		case AUDIO_FU_VOLUME:
 			caps->ac_controls.hw[0] = ALC5658_HP_VOL_MAX;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
@@ -634,7 +629,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			break;
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 		case AUDIO_FU_BASS:
-			caps->ac_controls.hw[1] = priv->volume;	//ToDo: tone is currently not implemented yet.
+			caps->ac_controls.hw[1] = priv->volume; //ToDo: tone is currently not implemented yet.
 			break;
 #endif
 		default:
@@ -758,7 +753,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			alc5658_setvolume(priv);
 		break;
 #else							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
-		return -ENOSYS;
+		return -EACCES;
 #endif
 		}
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
@@ -800,7 +795,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			}
 			break;
 #else							/* CONFIG_AUDIO_EXCLUDE_GAIN */
-			return -ENOSYS;
+			return -EACCES;
 #endif
 		}
 		default:
@@ -852,7 +847,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 
 	case AUDIO_TYPE_PROCESSING:
 		break;
-	default :
+	default:
 		ret = -EINVAL;
 		break;
 	}
@@ -1612,7 +1607,7 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		goto errout_with_dev;
 	}
 
-	/* Reset and reconfigure the ALC5658 hardwaqre */
+	/* Reset and reconfigure the ALC5658 hardware */
 
 	alc5658_hw_reset(priv);
 

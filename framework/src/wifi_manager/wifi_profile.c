@@ -108,24 +108,32 @@ static int _wifi_profile_serialize(char *buf, uint32_t buf_size, wifi_manager_ap
 	return strlen(buf) + 1;
 }
 
-static void _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *buf)
+static int _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *buf)
 {
 	int pos = 0;
 	DECODE_INTEGER(buf, config->ssid_length, pos);
+	if (config->ssid_length < 0 || config->ssid_length > WIFIMGR_SSID_LEN) {
+		return -1;
+	}
 	DECODE_STRING(buf, config->ssid, pos, config->ssid_length);
 
 	int auth_type = 0;
 	DECODE_INTEGER(buf, auth_type, pos);
 	config->ap_auth_type = (wifi_manager_ap_auth_type_e)auth_type;
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_OPEN) {
-		return;
+		return 0;
 	}
 	DECODE_INTEGER(buf, config->passphrase_length, pos);
+	if (config->passphrase_length < 0 || config->passphrase_length > WIFIMGR_PASSPHRASE_LEN) {
+		return -1;
+	}
 	DECODE_STRING(buf, config->passphrase, pos, config->passphrase_length);
 
 	int crypto_type = 0;
 	DECODE_INTEGER(buf, crypto_type, pos);
 	config->ap_crypto_type = (wifi_manager_ap_crypto_type_e)crypto_type;
+
+	return 0;
 }
 
 #ifndef CONFIG_WIFI_PROFILE_SECURESTORAGE
@@ -297,7 +305,10 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #endif
-	_wifi_profile_deserialize(config, buf);
+	ret = _wifi_profile_deserialize(config, buf);
+	if (ret < 0) {
+		return WIFI_UTILS_FILE_ERROR;
+	}
 
 	return WIFI_UTILS_SUCCESS;
 }

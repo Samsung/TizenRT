@@ -47,76 +47,47 @@ static void utc_media_FocusRequest_Builder_setFocusChangeListener_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_FocusRequest_Builder_setStreamInfo_p(void)
+{
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
+
+	auto focusRequestBuilder = media::FocusRequest::Builder();
+	auto ret1 = &focusRequestBuilder;
+	auto ret2 = &focusRequestBuilder.setStreamInfo(stream_info);
+	TC_ASSERT_EQ("utc_media_FocusRequest_Builder_setStreamInfo", ret1, ret2);
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_media_FocusRequest_Builder_build_p(void)
 {
-	{
-		auto ret = media::FocusRequest::Builder()
-					   .setFocusChangeListener(nullptr)
-					   .build();
-		TC_ASSERT_NEQ("utc_media_FocusRequest_Builder_build", ret.get(), nullptr);
-	}
-	{
-		auto listener = std::make_shared<EmptyFocusChangeListener>();
-		auto ret = media::FocusRequest::Builder()
-					   .setFocusChangeListener(listener)
-					   .build();
-		TC_ASSERT_NEQ("utc_media_FocusRequest_Builder_build", ret.get(), nullptr);
-	}
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_media_FocusRequest_getId_p(void)
-{
-	{
-		auto focusRequest = media::FocusRequest::Builder()
-								.setFocusChangeListener(nullptr)
-								.build();
-		auto ret1 = focusRequest->getId();
-		auto ret2 = focusRequest->getId();
-		TC_ASSERT_EQ("utc_media_FocusRequest_getId", ret1.compare(ret2), 0);
-	}
-	{
-		auto focusRequest1 = media::FocusRequest::Builder()
-								 .setFocusChangeListener(nullptr)
-								 .build();
-		auto focusRequest2 = media::FocusRequest::Builder()
-								 .setFocusChangeListener(nullptr)
-								 .build();
-		auto ret1 = focusRequest1->getId();
-		auto ret2 = focusRequest2->getId();
-		TC_ASSERT_NEQ("utc_media_FocusRequest_getId", ret1.compare(ret2), 0);
-	}
-	{
-		auto listener = std::make_shared<EmptyFocusChangeListener>();
-		auto focusRequest1 = media::FocusRequest::Builder()
-								 .setFocusChangeListener(listener)
-								 .build();
-		auto focusRequest2 = media::FocusRequest::Builder()
-								 .setFocusChangeListener(listener)
-								 .build();
-		auto ret1 = focusRequest1->getId();
-		auto ret2 = focusRequest2->getId();
-		TC_ASSERT_NEQ("utc_media_FocusRequest_getId", ret1.compare(ret2), 0);
-	}
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_media_FocusRequest_getListener_p(void)
-{
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
 	auto listener = std::make_shared<EmptyFocusChangeListener>();
-	auto focusRequest = media::FocusRequest::Builder()
-							.setFocusChangeListener(listener)
-							.build();
-	auto ret = focusRequest->getListener();
-	TC_ASSERT_EQ("utc_media_FocusRequest_getListener", ret.get(), listener.get());
+	auto ret = media::FocusRequest::Builder()
+				   .setStreamInfo(stream_info)
+				   .setFocusChangeListener(listener)
+				   .build();
+	TC_ASSERT_NEQ("utc_media_FocusRequest_Builder_build", ret.get(), nullptr);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FocusRequest_Builder_build_n(void)
+{
+	auto ret = media::FocusRequest::Builder().build();
+	TC_ASSERT_EQ("utc_media_FocusRequest_Builder_build", ret.get(), nullptr);
 	TC_SUCCESS_RESULT();
 }
 
 int utc_media_FocusRequest_main(void)
 {
+	utc_media_FocusRequest_Builder_setStreamInfo_p();
 	utc_media_FocusRequest_Builder_setFocusChangeListener_p();
 	utc_media_FocusRequest_Builder_build_p();
-	utc_media_FocusRequest_getId_p();
-	utc_media_FocusRequest_getListener_p();
+	utc_media_FocusRequest_Builder_build_n();
 	return 0;
 }

@@ -65,6 +65,10 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double atanh(double x)
 {
+	if (isnan(x)) {
+		return NAN;
+	}
+
 	return 0.5 * log((1 + x) / (1 - x));
 }
 #endif

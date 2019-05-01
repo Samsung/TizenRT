@@ -18,6 +18,10 @@
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC),y)
 CXXSRCS += itc_media_main.cpp
+CXXSRCS += itc_media_focusrequest.cpp
+CXXSRCS += itc_media_focusmanager.cpp
+CXXSRCS += itc_media_bufferoutputdatasource.cpp
+
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
 CXXSRCS += itc_media_mediaplayer.cpp
 CXXSRCS += itc_media_fileinputdatasource.cpp

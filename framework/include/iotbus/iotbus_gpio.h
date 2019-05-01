@@ -241,7 +241,7 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *d
  * @param[in] dev handle of gpio_context
  * @param[in] edge gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 #ifndef CONFIG_DISABLE_SIGNALS
 int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);

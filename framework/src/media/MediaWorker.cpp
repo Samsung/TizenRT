@@ -17,12 +17,16 @@
  ******************************************************************/
 
 #include <debug.h>
+#include <sched.h>
+#include <pthread.h>
+
 #include "MediaWorker.h"
 
 namespace media {
 
 MediaWorker::MediaWorker() :
 	mStacksize(PTHREAD_STACK_DEFAULT),
+	mPriority(100),
 	mThreadName("MediaWorker"),
 	mIsRunning(false),
 	mRefCnt(0),
@@ -42,9 +46,12 @@ void MediaWorker::startWorker()
 	medvdbg("%s::startWorker() - increase RefCnt : %d\n", mThreadName, mRefCnt);
 	if (mRefCnt == 1) {
 		int ret;
+		struct sched_param sparam;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, mStacksize);
+		sparam.sched_priority = mPriority;
+		pthread_attr_setschedparam(&attr, &sparam);
 		mIsRunning = true;
 		ret = pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
 		if (ret != OK) {

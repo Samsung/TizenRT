@@ -19,20 +19,21 @@
 // @file tc_net_getpeername.c
 // @brief Test Case Example for getpeername() API
 #include <tinyara/config.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
 #include <stdio.h>
 #include <errno.h>
-
-#include <sys/stat.h>
+#include <pthread.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
-#include <sys/socket.h>
-
 #include "tc_internal.h"
-#include <pthread.h>
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20
@@ -235,6 +236,11 @@ void *getpeername_server(void *args)
 	}
 	getpeername_signal();
 	int connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd == -1) {
+		printf("accept fail\n");
+		close(socket_fd);
+		return 0;
+	}
 
 	close(connect_fd);
 	close(socket_fd);
@@ -276,6 +282,7 @@ void *getpeername_client(void *args)
 	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	if (ret < 0) {
 		printf("connect fail %s %d\n", __FUNCTION__, __LINE__);
+		close(mysocket);
 		return 0;
 	}
 

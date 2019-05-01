@@ -1,0 +1,53 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ARCH_USE_FLASH
+	bool "Enable/Disable FLASH usage for user"
+	default n
+	---help---
+		This shows that user enables FLASH to use.
+
+if ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+comment "Board-Partition Options"
+
+config FLASH_PARTITION
+	bool "Enable partition support on FLASH"
+	default n
+	select MTD
+	select MTD_PARTITION
+	---help---
+		Enables creation of partitions on the FLASH
+
+if FLASH_PARTITION
+
+config FLASH_MINOR
+	int "Minor number for the FLASH device"
+	default 0
+	---help---
+		Sets the minor number for /dev node of the external flash
+		device.
+
+config FLASH_PART_SIZE
+	string "Flash partition size list (in KBytes)"
+	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
+	---help---
+		Comma separated list of partition sizes in KB.
+
+config FLASH_PART_TYPE
+	string "Flash partition type list"
+	default "none,none,none,none,none,none,none,none,smartfs,config,none,"
+	---help---
+		Comma separated list of partition types that can be one of
+		followings: none, smartfs, config
+
+config FLASH_PART_NAME
+	string "Flash partition name list"
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
+	depends on MTD_PARTITION_NAMES
+	---help---
+		Comma separated list of partition names.
+
+endif # FLASH_PARTITION
+endif # ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)

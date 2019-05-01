@@ -20,11 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __ST_THINGS_RTOS__
-#include <st_things/st_things.h>
-#else
 #include "st_things.h"
-#endif							// __ST_THINGS_RTOS__
 #include "st_things_request_handler.h"
 #include "st_things_representation.h"
 #include "logging/things_logger.h"
@@ -34,8 +30,14 @@
 #include "things_resource.h"
 #include "ocpayload.h"
 #include "octypes.h"
+#include "ocstack.h"
 
 #define TAG "[st_things_sdk]"
+
+#define SEC_ATRRIBUTE_PUSH_MESG_MSGID        "x.org.iotivity.ns.messageid"
+#define SEC_ATRRIBUTE_PUSH_MESG_PROVIDERID   "x.org.iotivity.ns.providerid"
+#define SEC_ATRRIBUTE_PUSH_MESG_ET           "et"
+#define SEC_ATRRIBUTE_PUSH_MESG_DATA         "x.com.samsung.data"
 
 static st_things_reset_confirm_cb g_handle_reset_confirm_cb = NULL;
 static st_things_reset_result_cb g_handle_reset_result_cb = NULL;
@@ -296,22 +298,17 @@ int st_things_deinitialize(void)
 		return ret_val;
 	}
 
-	int result = 0;
-	if (1 != (result = things_deinitialize_stack())) {
-		THINGS_LOG_E(TAG, "things_deinitialize_stack failed (result:%d)", result);
-		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
-		return ST_THINGS_ERROR_OPERATION_FAILED;
-	}
-
 	g_stack_status = STACK_NOT_INITIALIZED;
 
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
+
+	(void)things_deinitialize_stack();
+
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_start(void)
 {
-	THINGS_LOG_INIT();
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_INITIALIZED != g_stack_status) {
@@ -385,6 +382,27 @@ int st_things_start(void)
 error:
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_OPERATION_FAILED;
+}
+
+int st_things_push_notification_to_cloud(const char *target_uri, st_things_representation_s *resp_rep)
+{
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	int push_ret = 0;
+	OCRepPayload *payload = OCRepPayloadCreate();
+	if (!payload) {
+		THINGS_LOG_E(TAG, "Failed to allocate Payload");
+		return 0;
+	} else {
+		OCRepPayloadSetUri(resp_rep->payload, target_uri);
+		OCRepPayloadSetPropInt(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_MSGID, 0);
+		OCRepPayloadSetPropString(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_PROVIDERID, OCGetServerInstanceIDString());
+		OCRepPayloadSetPropString(payload, SEC_ATRRIBUTE_PUSH_MESG_ET, "device.changed");
+		OCRepPayloadSetPropObject(resp_rep->payload, SEC_ATRRIBUTE_PUSH_MESG_DATA, payload);
+		push_ret = push_notification_to_cloud(target_uri, resp_rep->payload);
+		THINGS_LOG_V(TAG, "push_ret [%d]", push_ret);
+	}
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
+	return push_ret;
 }
 
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb)
@@ -533,7 +551,7 @@ int st_things_notify_observers(const char *resource_uri)
 	return ST_THINGS_ERROR_NONE;
 }
 
-st_things_representation_s *st_things_create_representation_inst()
+st_things_representation_s *st_things_create_representation_inst(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	st_things_representation_s *rep = create_representation_inst();

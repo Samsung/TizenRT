@@ -18,8 +18,9 @@
 /**
  * \file bignum.h
  *
- * \brief  Multi-precision integer library
- *
+ * \brief Multi-precision integer library
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -62,7 +63,7 @@
 #define MBEDTLS_ERR_MPI_NOT_ACCEPTABLE                    -0x000E  /**< The input arguments are not acceptable. */
 #define MBEDTLS_ERR_MPI_ALLOC_FAILED                      -0x0010  /**< Memory allocation failed. */
 
-#define MBEDTLS_MPI_CHK(f) do { if ((ret = f) != 0) goto cleanup; } while (0)
+#define MBEDTLS_MPI_CHK(f) do { if( ( ret = f ) != 0 ) goto cleanup; } while( 0 )
 
 /*
  * Maximum size MPIs are allowed to grow to in number of limbs.
@@ -79,21 +80,21 @@
  *
  * Reduction in size, reduces speed.
  */
-#define MBEDTLS_MPI_WINDOW_SIZE                           6		   /**< Maximum windows size used. */
-#endif							/* !MBEDTLS_MPI_WINDOW_SIZE */
+#define MBEDTLS_MPI_WINDOW_SIZE                           6        /**< Maximum windows size used. */
+#endif /* !MBEDTLS_MPI_WINDOW_SIZE */
 
 #if !defined(MBEDTLS_MPI_MAX_SIZE)
 /*
  * Maximum size of MPIs allowed in bits and bytes for user-MPIs.
  * ( Default: 512 bytes => 4096 bits, Maximum tested: 2048 bytes => 16384 bits )
  *
- * Note: Calculations can results temporarily in larger MPIs. So the number
+ * Note: Calculations can temporarily result in larger MPIs. So the number
  * of limbs required (MBEDTLS_MPI_MAX_LIMBS) is higher.
  */
-#define MBEDTLS_MPI_MAX_SIZE                              1024	   /**< Maximum number of bytes for usable MPIs. */
-#endif							/* !MBEDTLS_MPI_MAX_SIZE */
+#define MBEDTLS_MPI_MAX_SIZE                              1024     /**< Maximum number of bytes for usable MPIs. */
+#endif /* !MBEDTLS_MPI_MAX_SIZE */
 
-#define MBEDTLS_MPI_MAX_BITS                              (8 * MBEDTLS_MPI_MAX_SIZE)	  /**< Maximum number of bits for usable MPIs. */
+#define MBEDTLS_MPI_MAX_BITS                              ( 8 * MBEDTLS_MPI_MAX_SIZE )    /**< Maximum number of bits for usable MPIs. */
 
 /*
  * When reading from files with mbedtls_mpi_read_file() and writing to files with
@@ -113,43 +114,78 @@
  *  MBEDTLS_MPI_RW_BUFFER_SIZE = ceil(MBEDTLS_MPI_MAX_BITS / ln(10) * ln(2)) +
  *                                LabelSize + 6
  */
-#define MBEDTLS_MPI_MAX_BITS_SCALE100          (100 * MBEDTLS_MPI_MAX_BITS)
+#define MBEDTLS_MPI_MAX_BITS_SCALE100          ( 100 * MBEDTLS_MPI_MAX_BITS )
 #define MBEDTLS_LN_2_DIV_LN_10_SCALE100                 332
-#define MBEDTLS_MPI_RW_BUFFER_SIZE             (((MBEDTLS_MPI_MAX_BITS_SCALE100 + MBEDTLS_LN_2_DIV_LN_10_SCALE100 - 1) / MBEDTLS_LN_2_DIV_LN_10_SCALE100) + 10 + 6)
+#define MBEDTLS_MPI_RW_BUFFER_SIZE             ( ((MBEDTLS_MPI_MAX_BITS_SCALE100 + MBEDTLS_LN_2_DIV_LN_10_SCALE100 - 1) / MBEDTLS_LN_2_DIV_LN_10_SCALE100) + 10 + 6 )
 
 /*
  * Define the base integer type, architecture-wise.
  *
- * 32-bit integers can be forced on 64-bit arches (eg. for testing purposes)
- * by defining MBEDTLS_HAVE_INT32 and undefining MBEDTLS_HAVE_ASM
+ * 32 or 64-bit integer types can be forced regardless of the underlying
+ * architecture by defining MBEDTLS_HAVE_INT32 or MBEDTLS_HAVE_INT64
+ * respectively and undefining MBEDTLS_HAVE_ASM.
+ *
+ * Double-width integers (e.g. 128-bit in 64-bit architectures) can be
+ * disabled by defining MBEDTLS_NO_UDBL_DIVISION.
  */
-#if (!defined(MBEDTLS_HAVE_INT32) && \
-	  defined(_MSC_VER) && defined(_M_AMD64))
-#define MBEDTLS_HAVE_INT64
-typedef int64_t mbedtls_mpi_sint;
-typedef uint64_t mbedtls_mpi_uint;
-#else
-#if (!defined(MBEDTLS_HAVE_INT32) &&               \
-	  defined(__GNUC__) && (                          \
-	  defined(__amd64__) || defined(__x86_64__)    || \
-	  defined(__ppc64__) || defined(__powerpc64__) || \
-	  defined(__ia64__)  || defined(__alpha__)     || \
-	  (defined(__sparc__) && defined(__arch64__))  || \
-	  defined(__s390x__) || defined(__mips64)))
-#define MBEDTLS_HAVE_INT64
-typedef int64_t mbedtls_mpi_sint;
-typedef uint64_t mbedtls_mpi_uint;
-/* mbedtls_t_udbl defined as 128-bit unsigned int */
-typedef unsigned int mbedtls_t_udbl __attribute__((mode(TI)));
-#define MBEDTLS_HAVE_UDBL
-#else
-#define MBEDTLS_HAVE_INT32
-typedef int32_t mbedtls_mpi_sint;
-typedef uint32_t mbedtls_mpi_uint;
-typedef uint64_t mbedtls_t_udbl;
-#define MBEDTLS_HAVE_UDBL
-#endif							/* !MBEDTLS_HAVE_INT32 && __GNUC__ && 64-bit platform */
-#endif							/* !MBEDTLS_HAVE_INT32 && _MSC_VER && _M_AMD64 */
+#if !defined(MBEDTLS_HAVE_INT32)
+    #if defined(_MSC_VER) && defined(_M_AMD64)
+        /* Always choose 64-bit when using MSC */
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* !MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+    #elif defined(__GNUC__) && (                         \
+        defined(__amd64__) || defined(__x86_64__)     || \
+        defined(__ppc64__) || defined(__powerpc64__)  || \
+        defined(__ia64__)  || defined(__alpha__)      || \
+        ( defined(__sparc__) && defined(__arch64__) ) || \
+        defined(__s390x__) || defined(__mips64) )
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+        #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+            /* mbedtls_t_udbl defined as 128-bit unsigned int */
+            typedef unsigned int mbedtls_t_udbl __attribute__((mode(TI)));
+            #define MBEDTLS_HAVE_UDBL
+        #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+    #elif defined(__ARMCC_VERSION) && defined(__aarch64__)
+        /*
+         * __ARMCC_VERSION is defined for both armcc and armclang and
+         * __aarch64__ is only defined by armclang when compiling 64-bit code
+         */
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* !MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+        #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+            /* mbedtls_t_udbl defined as 128-bit unsigned int */
+            typedef __uint128_t mbedtls_t_udbl;
+            #define MBEDTLS_HAVE_UDBL
+        #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+    #elif defined(MBEDTLS_HAVE_INT64)
+        /* Force 64-bit integers with unknown compiler */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+    #endif
+#endif /* !MBEDTLS_HAVE_INT32 */
+
+#if !defined(MBEDTLS_HAVE_INT64)
+    /* Default to 32-bit compilation */
+    #if !defined(MBEDTLS_HAVE_INT32)
+        #define MBEDTLS_HAVE_INT32
+    #endif /* !MBEDTLS_HAVE_INT32 */
+    typedef  int32_t mbedtls_mpi_sint;
+    typedef uint32_t mbedtls_mpi_uint;
+    #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+        typedef uint64_t mbedtls_t_udbl;
+        #define MBEDTLS_HAVE_UDBL
+    #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+#endif /* !MBEDTLS_HAVE_INT64 */
 
 #ifdef __cplusplus
 extern "C" {
@@ -158,11 +194,13 @@ extern "C" {
 /**
  * \brief          MPI structure
  */
-typedef struct {
-	int s;					/*!<  integer sign      */
-	size_t n;				/*!<  total # of limbs  */
-	mbedtls_mpi_uint *p;	/*!<  pointer to limbs  */
-} mbedtls_mpi;
+typedef struct
+{
+    int s;              /*!<  integer sign      */
+    size_t n;           /*!<  total # of limbs  */
+    mbedtls_mpi_uint *p;          /*!<  pointer to limbs  */
+}
+mbedtls_mpi;
 
 /**
  * \brief           Initialize one MPI (make internal references valid)
@@ -171,14 +209,14 @@ typedef struct {
  *
  * \param X         One MPI to initialize.
  */
-void mbedtls_mpi_init(mbedtls_mpi *X);
+void mbedtls_mpi_init( mbedtls_mpi *X );
 
 /**
  * \brief          Unallocate one MPI
  *
  * \param X        One MPI to unallocate.
  */
-void mbedtls_mpi_free(mbedtls_mpi *X);
+void mbedtls_mpi_free( mbedtls_mpi *X );
 
 /**
  * \brief          Enlarge to the specified number of limbs
@@ -189,7 +227,7 @@ void mbedtls_mpi_free(mbedtls_mpi *X);
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_grow(mbedtls_mpi *X, size_t nblimbs);
+int mbedtls_mpi_grow( mbedtls_mpi *X, size_t nblimbs );
 
 /**
  * \brief          Resize down, keeping at least the specified number of limbs
@@ -200,7 +238,7 @@ int mbedtls_mpi_grow(mbedtls_mpi *X, size_t nblimbs);
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_shrink(mbedtls_mpi *X, size_t nblimbs);
+int mbedtls_mpi_shrink( mbedtls_mpi *X, size_t nblimbs );
 
 /**
  * \brief          Copy the contents of Y into X
@@ -211,7 +249,7 @@ int mbedtls_mpi_shrink(mbedtls_mpi *X, size_t nblimbs);
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_copy(mbedtls_mpi *X, const mbedtls_mpi *Y);
+int mbedtls_mpi_copy( mbedtls_mpi *X, const mbedtls_mpi *Y );
 
 /**
  * \brief          Swap the contents of X and Y
@@ -219,7 +257,7 @@ int mbedtls_mpi_copy(mbedtls_mpi *X, const mbedtls_mpi *Y);
  * \param X        First MPI value
  * \param Y        Second MPI value
  */
-void mbedtls_mpi_swap(mbedtls_mpi *X, mbedtls_mpi *Y);
+void mbedtls_mpi_swap( mbedtls_mpi *X, mbedtls_mpi *Y );
 
 /**
  * \brief          Safe conditional assignement X = Y if assign is 1
@@ -238,7 +276,7 @@ void mbedtls_mpi_swap(mbedtls_mpi *X, mbedtls_mpi *Y);
  *                 information through branch prediction and/or memory access
  *                 patterns analysis).
  */
-int mbedtls_mpi_safe_cond_assign(mbedtls_mpi *X, const mbedtls_mpi *Y, unsigned char assign);
+int mbedtls_mpi_safe_cond_assign( mbedtls_mpi *X, const mbedtls_mpi *Y, unsigned char assign );
 
 /**
  * \brief          Safe conditional swap X <-> Y if swap is 1
@@ -257,7 +295,7 @@ int mbedtls_mpi_safe_cond_assign(mbedtls_mpi *X, const mbedtls_mpi *Y, unsigned 
  *                 information through branch prediction and/or memory access
  *                 patterns analysis).
  */
-int mbedtls_mpi_safe_cond_swap(mbedtls_mpi *X, mbedtls_mpi *Y, unsigned char assign);
+int mbedtls_mpi_safe_cond_swap( mbedtls_mpi *X, mbedtls_mpi *Y, unsigned char assign );
 
 /**
  * \brief          Set value from integer
@@ -268,7 +306,7 @@ int mbedtls_mpi_safe_cond_swap(mbedtls_mpi *X, mbedtls_mpi *Y, unsigned char ass
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_lset(mbedtls_mpi *X, mbedtls_mpi_sint z);
+int mbedtls_mpi_lset( mbedtls_mpi *X, mbedtls_mpi_sint z );
 
 /**
  * \brief          Get a specific bit from X
@@ -278,7 +316,7 @@ int mbedtls_mpi_lset(mbedtls_mpi *X, mbedtls_mpi_sint z);
  *
  * \return         Either a 0 or a 1
  */
-int mbedtls_mpi_get_bit(const mbedtls_mpi *X, size_t pos);
+int mbedtls_mpi_get_bit( const mbedtls_mpi *X, size_t pos );
 
 /**
  * \brief          Set a bit of X to a specific value of 0 or 1
@@ -294,7 +332,7 @@ int mbedtls_mpi_get_bit(const mbedtls_mpi *X, size_t pos);
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if val is not 0 or 1
  */
-int mbedtls_mpi_set_bit(mbedtls_mpi *X, size_t pos, unsigned char val);
+int mbedtls_mpi_set_bit( mbedtls_mpi *X, size_t pos, unsigned char val );
 
 /**
  * \brief          Return the number of zero-bits before the least significant
@@ -304,7 +342,7 @@ int mbedtls_mpi_set_bit(mbedtls_mpi *X, size_t pos, unsigned char val);
  *
  * \param X        MPI to use
  */
-size_t mbedtls_mpi_lsb(const mbedtls_mpi *X);
+size_t mbedtls_mpi_lsb( const mbedtls_mpi *X );
 
 /**
  * \brief          Return the number of bits up to and including the most
@@ -314,14 +352,14 @@ size_t mbedtls_mpi_lsb(const mbedtls_mpi *X);
  *
  * \param X        MPI to use
  */
-size_t mbedtls_mpi_bitlen(const mbedtls_mpi *X);
+size_t mbedtls_mpi_bitlen( const mbedtls_mpi *X );
 
 /**
  * \brief          Return the total size in bytes
  *
  * \param X        MPI to use
  */
-size_t mbedtls_mpi_size(const mbedtls_mpi *X);
+size_t mbedtls_mpi_size( const mbedtls_mpi *X );
 
 /**
  * \brief          Import from an ASCII string
@@ -332,7 +370,7 @@ size_t mbedtls_mpi_size(const mbedtls_mpi *X);
  *
  * \return         0 if successful, or a MBEDTLS_ERR_MPI_XXX error code
  */
-int mbedtls_mpi_read_string(mbedtls_mpi *X, int radix, const char *s);
+int mbedtls_mpi_read_string( mbedtls_mpi *X, int radix, const char *s );
 
 /**
  * \brief          Export into an ASCII string
@@ -350,11 +388,12 @@ int mbedtls_mpi_read_string(mbedtls_mpi *X, int radix, const char *s);
  * \note           Call this function with buflen = 0 to obtain the
  *                 minimum required buffer size in *olen.
  */
-int mbedtls_mpi_write_string(const mbedtls_mpi *X, int radix, char *buf, size_t buflen, size_t *olen);
+int mbedtls_mpi_write_string( const mbedtls_mpi *X, int radix,
+                              char *buf, size_t buflen, size_t *olen );
 
 #if defined(MBEDTLS_FS_IO)
 /**
- * \brief          Read X from an opened file
+ * \brief          Read MPI from a line in an opened file
  *
  * \param X        Destination MPI
  * \param radix    Input numeric base
@@ -363,8 +402,17 @@ int mbedtls_mpi_write_string(const mbedtls_mpi *X, int radix, char *buf, size_t 
  * \return         0 if successful, MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL if
  *                 the file read buffer is too small or a
  *                 MBEDTLS_ERR_MPI_XXX error code
+ *
+ * \note           On success, this function advances the file stream
+ *                 to the end of the current line or to EOF.
+ *
+ *                 The function returns 0 on an empty line.
+ *
+ *                 Leading whitespaces are ignored, as is a
+ *                 '0x' prefix for radix 16.
+ *
  */
-int mbedtls_mpi_read_file(mbedtls_mpi *X, int radix, FILE *fin);
+int mbedtls_mpi_read_file( mbedtls_mpi *X, int radix, FILE *fin );
 
 /**
  * \brief          Write X into an opened file, or stdout if fout is NULL
@@ -378,8 +426,8 @@ int mbedtls_mpi_read_file(mbedtls_mpi *X, int radix, FILE *fin);
  *
  * \note           Set fout == NULL to print X on the console.
  */
-int mbedtls_mpi_write_file(const char *p, const mbedtls_mpi *X, int radix, FILE *fout);
-#endif							/* MBEDTLS_FS_IO */
+int mbedtls_mpi_write_file( const char *p, const mbedtls_mpi *X, int radix, FILE *fout );
+#endif /* MBEDTLS_FS_IO */
 
 /**
  * \brief          Import X from unsigned binary data, big endian
@@ -391,7 +439,7 @@ int mbedtls_mpi_write_file(const char *p, const mbedtls_mpi *X, int radix, FILE 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_read_binary(mbedtls_mpi *X, const unsigned char *buf, size_t buflen);
+int mbedtls_mpi_read_binary( mbedtls_mpi *X, const unsigned char *buf, size_t buflen );
 
 /**
  * \brief          Export X into unsigned binary data, big endian.
@@ -405,7 +453,7 @@ int mbedtls_mpi_read_binary(mbedtls_mpi *X, const unsigned char *buf, size_t buf
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL if buf isn't large enough
  */
-int mbedtls_mpi_write_binary(const mbedtls_mpi *X, unsigned char *buf, size_t buflen);
+int mbedtls_mpi_write_binary( const mbedtls_mpi *X, unsigned char *buf, size_t buflen );
 
 /**
  * \brief          Left-shift: X <<= count
@@ -416,7 +464,7 @@ int mbedtls_mpi_write_binary(const mbedtls_mpi *X, unsigned char *buf, size_t bu
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_shift_l(mbedtls_mpi *X, size_t count);
+int mbedtls_mpi_shift_l( mbedtls_mpi *X, size_t count );
 
 /**
  * \brief          Right-shift: X >>= count
@@ -427,7 +475,7 @@ int mbedtls_mpi_shift_l(mbedtls_mpi *X, size_t count);
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_shift_r(mbedtls_mpi *X, size_t count);
+int mbedtls_mpi_shift_r( mbedtls_mpi *X, size_t count );
 
 /**
  * \brief          Compare unsigned values
@@ -439,7 +487,7 @@ int mbedtls_mpi_shift_r(mbedtls_mpi *X, size_t count);
  *                -1 if |X| is lesser  than |Y| or
  *                 0 if |X| is equal to |Y|
  */
-int mbedtls_mpi_cmp_abs(const mbedtls_mpi *X, const mbedtls_mpi *Y);
+int mbedtls_mpi_cmp_abs( const mbedtls_mpi *X, const mbedtls_mpi *Y );
 
 /**
  * \brief          Compare signed values
@@ -451,7 +499,7 @@ int mbedtls_mpi_cmp_abs(const mbedtls_mpi *X, const mbedtls_mpi *Y);
  *                -1 if X is lesser  than Y or
  *                 0 if X is equal to Y
  */
-int mbedtls_mpi_cmp_mpi(const mbedtls_mpi *X, const mbedtls_mpi *Y);
+int mbedtls_mpi_cmp_mpi( const mbedtls_mpi *X, const mbedtls_mpi *Y );
 
 /**
  * \brief          Compare signed values
@@ -463,7 +511,7 @@ int mbedtls_mpi_cmp_mpi(const mbedtls_mpi *X, const mbedtls_mpi *Y);
  *                -1 if X is lesser  than z or
  *                 0 if X is equal to z
  */
-int mbedtls_mpi_cmp_int(const mbedtls_mpi *X, mbedtls_mpi_sint z);
+int mbedtls_mpi_cmp_int( const mbedtls_mpi *X, mbedtls_mpi_sint z );
 
 /**
  * \brief          Unsigned addition: X = |A| + |B|
@@ -475,7 +523,7 @@ int mbedtls_mpi_cmp_int(const mbedtls_mpi *X, mbedtls_mpi_sint z);
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_add_abs(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_add_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Unsigned subtraction: X = |A| - |B|
@@ -487,7 +535,7 @@ int mbedtls_mpi_add_abs(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_NEGATIVE_VALUE if B is greater than A
  */
-int mbedtls_mpi_sub_abs(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_sub_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Signed addition: X = A + B
@@ -499,7 +547,7 @@ int mbedtls_mpi_sub_abs(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_add_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_add_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Signed subtraction: X = A - B
@@ -511,7 +559,7 @@ int mbedtls_mpi_add_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_sub_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_sub_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Signed addition: X = A + b
@@ -523,7 +571,7 @@ int mbedtls_mpi_sub_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_add_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b);
+int mbedtls_mpi_add_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b );
 
 /**
  * \brief          Signed subtraction: X = A - b
@@ -535,7 +583,7 @@ int mbedtls_mpi_add_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_sub_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b);
+int mbedtls_mpi_sub_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b );
 
 /**
  * \brief          Baseline multiplication: X = A * B
@@ -547,7 +595,7 @@ int mbedtls_mpi_sub_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint b
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_mul_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Baseline multiplication: X = A * b
@@ -561,7 +609,7 @@ int mbedtls_mpi_mul_mpi(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_mul_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b);
+int mbedtls_mpi_mul_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b );
 
 /**
  * \brief          Division by mbedtls_mpi: A = Q * B + R
@@ -577,7 +625,7 @@ int mbedtls_mpi_mul_int(mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b
  *
  * \note           Either Q or R can be NULL.
  */
-int mbedtls_mpi_div_mpi(mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Division by int: A = Q * b + R
@@ -593,7 +641,7 @@ int mbedtls_mpi_div_mpi(mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, co
  *
  * \note           Either Q or R can be NULL.
  */
-int mbedtls_mpi_div_int(mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, mbedtls_mpi_sint b);
+int mbedtls_mpi_div_int( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, mbedtls_mpi_sint b );
 
 /**
  * \brief          Modulo: R = A mod B
@@ -607,7 +655,7 @@ int mbedtls_mpi_div_int(mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A, mb
  *                 MBEDTLS_ERR_MPI_DIVISION_BY_ZERO if B == 0,
  *                 MBEDTLS_ERR_MPI_NEGATIVE_VALUE if B < 0
  */
-int mbedtls_mpi_mod_mpi(mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_mod_mpi( mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Modulo: r = A mod b
@@ -621,7 +669,7 @@ int mbedtls_mpi_mod_mpi(mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi 
  *                 MBEDTLS_ERR_MPI_DIVISION_BY_ZERO if b == 0,
  *                 MBEDTLS_ERR_MPI_NEGATIVE_VALUE if b < 0
  */
-int mbedtls_mpi_mod_int(mbedtls_mpi_uint *r, const mbedtls_mpi *A, mbedtls_mpi_sint b);
+int mbedtls_mpi_mod_int( mbedtls_mpi_uint *r, const mbedtls_mpi *A, mbedtls_mpi_sint b );
 
 /**
  * \brief          Sliding-window exponentiation: X = A^E mod N
@@ -641,7 +689,7 @@ int mbedtls_mpi_mod_int(mbedtls_mpi_uint *r, const mbedtls_mpi *A, mbedtls_mpi_s
  *                 multiple calls, which speeds up things a bit. It can
  *                 be set to NULL if the extra performance is unneeded.
  */
-int mbedtls_mpi_exp_mod(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR);
+int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR );
 
 /**
  * \brief          Fill an MPI X with size bytes of random
@@ -653,8 +701,14 @@ int mbedtls_mpi_exp_mod(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  *
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
+ *
+ * \note           The bytes obtained from the PRNG are interpreted
+ *                 as a big-endian representation of an MPI; this can
+ *                 be relevant in applications like deterministic ECDSA.
  */
-int mbedtls_mpi_fill_random(mbedtls_mpi *X, size_t size, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
+                     int (*f_rng)(void *, unsigned char *, size_t),
+                     void *p_rng );
 
 /**
  * \brief          Greatest common divisor: G = gcd(A, B)
@@ -666,7 +720,7 @@ int mbedtls_mpi_fill_random(mbedtls_mpi *X, size_t size, int (*f_rng)(void *, un
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mbedtls_mpi_gcd(mbedtls_mpi *G, const mbedtls_mpi *A, const mbedtls_mpi *B);
+int mbedtls_mpi_gcd( mbedtls_mpi *G, const mbedtls_mpi *A, const mbedtls_mpi *B );
 
 /**
  * \brief          Modular inverse: X = A^-1 mod N
@@ -677,10 +731,10 @@ int mbedtls_mpi_gcd(mbedtls_mpi *G, const mbedtls_mpi *A, const mbedtls_mpi *B);
  *
  * \return         0 if successful,
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
- *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if N is negative or nil
- *                 MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if A has no inverse mod N
+ *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if N is <= 1,
+                   MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if A has no inverse mod N.
  */
-int mbedtls_mpi_inv_mod(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *N);
+int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *N );
 
 /**
  * \brief          Miller-Rabin primality test
@@ -693,7 +747,9 @@ int mbedtls_mpi_inv_mod(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if X is not prime
  */
-int mbedtls_mpi_is_prime(const mbedtls_mpi *X, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
+                  int (*f_rng)(void *, unsigned char *, size_t),
+                  void *p_rng );
 
 /**
  * \brief          Prime number generation
@@ -709,16 +765,19 @@ int mbedtls_mpi_is_prime(const mbedtls_mpi *X, int (*f_rng)(void *, unsigned cha
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if nbits is < 3
  */
-int mbedtls_mpi_gen_prime(mbedtls_mpi *X, size_t nbits, int dh_flag, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
+                   int (*f_rng)(void *, unsigned char *, size_t),
+                   void *p_rng );
 
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if the test failed
  */
-int mbedtls_mpi_self_test(int verbose);
+int mbedtls_mpi_self_test( int verbose );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* bignum.h */
+
+#endif /* bignum.h */

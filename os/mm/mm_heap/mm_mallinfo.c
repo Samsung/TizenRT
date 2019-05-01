@@ -77,28 +77,6 @@
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: mm_get_heap_info
- *
- * Description:
- *   returns a heap which type is matched with ttype
- *
- ****************************************************************************/
-struct mm_heap_s *mm_get_heap_info(void)
-{
-#ifdef CONFIG_MM_KERNEL_HEAP
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
-		return &g_kmmheap;
-	} else
-#endif
-	{
-		return USR_HEAP;
-	}
-
-}
-/****************************************************************************
  * Name: mm_mallinfo
  *
  * Description:
@@ -159,10 +137,18 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 	DEBUGASSERT(uordblks + fordblks == heap->mm_heapsize);
 
+#if CONFIG_MM_NHEAPS > 1
+	info->arena    += heap->mm_heapsize;
+	info->ordblks  += ordblks;
+	info->mxordblk += mxordblk;
+	info->uordblks += uordblks;
+	info->fordblks += fordblks;
+#else
 	info->arena    = heap->mm_heapsize;
 	info->ordblks  = ordblks;
 	info->mxordblk = mxordblk;
 	info->uordblks = uordblks;
 	info->fordblks = fordblks;
+#endif
 	return OK;
 }

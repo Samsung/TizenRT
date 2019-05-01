@@ -22,7 +22,8 @@
  *  for the PolarSSL naming conventions.
  *
  * \deprecated Use the new names directly instead
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -1340,7 +1341,7 @@
 #define POLARSSL_MPI_MAX_BITS_SCALE100 MBEDTLS_MPI_MAX_BITS_SCALE100
 #define POLARSSL_MPI_MAX_LIMBS MBEDTLS_MPI_MAX_LIMBS
 #define POLARSSL_MPI_RW_BUFFER_SIZE MBEDTLS_MPI_RW_BUFFER_SIZE
-#define POLARSSL_NET_H MBEDTLS_NET_H
+#define POLARSSL_NET_H MBEDTLS_NET_SOCKETS_H
 #define POLARSSL_NET_LISTEN_BACKLOG MBEDTLS_NET_LISTEN_BACKLOG
 #define POLARSSL_OID_H MBEDTLS_OID_H
 #define POLARSSL_OPERATION_NONE MBEDTLS_OPERATION_NONE
@@ -2652,5 +2653,5 @@
 #define xtea_self_test mbedtls_xtea_self_test
 #define xtea_setup mbedtls_xtea_setup
 
-#endif							/* compat-1.3.h */
-#endif							/* MBEDTLS_DEPRECATED_REMOVED */
+#endif /* compat-1.3.h */
+#endif /* MBEDTLS_DEPRECATED_REMOVED */

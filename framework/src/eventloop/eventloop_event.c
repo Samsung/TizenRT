@@ -23,6 +23,7 @@
 #include <queue.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <libtuv/uv.h>
 #include <libtuv/uv__types.h>
@@ -30,7 +31,7 @@
 
 #include "eventloop_internal.h"
 
-/* The stucture for a group of event nodes which have same event type, event_group_t */
+/* The structure for a group of event nodes which have same event type, event_group_t */
 struct event_group_s {
 	struct event_group_s *flink;
 	int type;
@@ -38,14 +39,14 @@ struct event_group_s {
 };
 typedef struct event_group_s event_group_t;
 
-/* The stucture for wrapping of event handle to be kept in a list internally. */
+/* The structure for wrapping of event handle to be kept in a list internally. */
 struct event_node_s {
 	struct event_node_s *flink;
 	el_event_t *handle;
 };
 typedef struct event_node_s event_node_t;
 
-/* The stucture which has information of event handle user registered.
+/* The structure which has information of event handle user registered.
  * The handle of event_node_t has it in data field, and use data values when calling callback function.
  */
 struct event_data_s {
@@ -156,7 +157,7 @@ static int eventloop_register_event_cb(el_event_t *handle)
 	return OK;
 }
 
-static void eventloop_unregister_event_cb(el_event_t *handle)
+void eventloop_unregister_event_cb(el_event_t *handle)
 {
 	event_group_t *event_group;
 	event_node_t *ptr;
@@ -174,9 +175,6 @@ static void eventloop_unregister_event_cb(el_event_t *handle)
 		while (ptr != NULL && ptr->handle != NULL) {
 			if (ptr->handle == handle) {
 				sq_rem((FAR sq_entry_t *)ptr, &event_group->event_list);
-				if (data->cb_data != NULL) {
-					EL_FREE(data->cb_data);
-				}
 				if (data->event_data != NULL) {
 					EL_FREE(data->event_data);
 				}
@@ -191,13 +189,6 @@ static void eventloop_unregister_event_cb(el_event_t *handle)
 			sq_rem((FAR sq_entry_t *)event_group, &g_event_list);
 			EL_FREE(event_group);
 		}
-	}
-}
-
-static void eventloop_clean_event_handle(el_event_t *handle, void *data)
-{
-	if (handle != NULL && handle->type == UV_SIGNAL) {
-		(void)eventloop_unregister_event_cb(handle);
 	}
 }
 
@@ -218,8 +209,6 @@ static void event_callback_func(el_event_t *event, int signum)
 		ret = data->func(data->cb_data, data->event_data);
 		/* It is true if eventloop_loop_stop is called in callback function. */
 		if (LOOP_IS_STOPPED(event->loop)) {
-			/* Unregister all event handles in a loop. */
-			uv_walk(event->loop, (uv_walk_cb)eventloop_clean_event_handle, NULL);
 			return;
 		}
 		/* If callback function returns EVENTLOOP_CALLBACK_STOP, close and unregister the event handler.  */
@@ -279,14 +268,14 @@ static int eventloop_send_event_sig(int type, void *event_data, int data_size)
 	return OK;
 }
 
-el_event_t *eventloop_add_event_handler(int type, event_callback func, void *data, int data_size)
+el_event_t *eventloop_add_event_handler(int type, event_callback func, void *data)
 {
 	int ret;
 	el_loop_t *loop;
 	el_event_t *handle;
 	event_data_t *event_cb;
 
-	if (type < 0 || type >= EL_EVENT_MAX || func == NULL || data_size < 0) {
+	if (type < 0 || type >= EL_EVENT_MAX || func == NULL) {
 		eldbg("Invalid Parameter\n");
 		return NULL;
 	}
@@ -314,16 +303,7 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *dat
 	event_cb->pid = getpid();
 	event_cb->event_in = -1;
 	event_cb->func = func;
-	if (data_size == 0) {
-		event_cb->cb_data = NULL;
-	} else {
-		event_cb->cb_data = EL_ALLOC(data_size);
-		if (event_cb->cb_data == NULL) {
-			eldbg("Failed to allocate callback info\n");
-			goto errout;
-		}
-		memcpy(event_cb->cb_data, data, data_size);
-	}
+	event_cb->cb_data = data;
 	event_cb->event_data = NULL;
 	handle->data = (void *)event_cb;
 
@@ -350,9 +330,6 @@ el_event_t *eventloop_add_event_handler(int type, event_callback func, void *dat
 
 	return handle;
 errout:
-	if (event_cb->cb_data != NULL) {
-		EL_FREE(event_cb->cb_data);
-	}
 	EL_FREE(event_cb);
 	EL_FREE(handle);
 

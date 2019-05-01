@@ -9,6 +9,7 @@
 #include <tinyara/config.h>
 
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -1442,7 +1443,7 @@ error_exit:
 
 	/*
 	 * deinitialize variables
-	 * optlist : without initialize optlist, new option is appened to old option existed in optlist
+	 * optlist : without initialize optlist, new option is appended to old option existed in optlist
 	 *           it can cause wrong creation of option field
 	 * ready : when NON message is continously sent to server, ready field should be deinitialized
 	 *         without deinitialization, it cannot enter select loop

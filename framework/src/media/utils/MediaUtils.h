@@ -39,14 +39,14 @@ namespace utils {
  * @brief Replace string with lowercase string.
  * @details @b #include <media/MediaUtils.h>
  * @param[out] str The str that lowercase string
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 void toLowerString(std::string& str);
 /**
  * @brief Replace string with uppercase string.
  * @details @b #include <media/MediaUtils.h>
  * @param[out] str The str that uppercase string
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 void toUpperString(std::string& str);
 /**
@@ -54,15 +54,23 @@ void toUpperString(std::string& str);
  * @details @b #include <media/MediaUtils.h>
  * @param[in] path The path of audio data
  * @return The audio type
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 audio_type_t getAudioTypeFromPath(std::string path);
+/**
+ * @brief Gets the audio type from Mime-Type.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] mimeType The string of Mime-Type
+ * @return The audio type
+ * @since TizenRT v2.0
+ */
+audio_type_t getAudioTypeFromMimeType(std::string &mimeType);
 /**
  * @brief Parsing the audio type in file.
  * @details @b #include <media/MediaUtils.h>
  * @param[in] audio file point, Audio type and channel, sample rate, pcm format adderss to receive.
  * @return ture - parsing success. false - parsing fail.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 bool header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel, unsigned int *sample_rate, audio_format_type_t *pcmFormat);
 /**
@@ -70,9 +78,37 @@ bool header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel, uns
  * @details @b #include <media/MediaUtils.h>
  * @param[in] audio file buffer, buffer size, Audio type and channel, sample rate, pcm format adderss to receive.
  * @return ture - parsing success. false - parsing fail.
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+/**
+ * @brief Create a wav header in file.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file point.
+ * @return ture - create success. false - create fail.
+ * @since TizenRT v2.1 PRE
+ */
+bool createWavHeader(FILE *fp);
+/**
+ * @brief Write a wav header in file.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file point, Audio channel and sample rate, pcm format, file data size.
+ * @return ture - write success. false - write fail.
+ * @since TizenRT v2.1 PRE
+ */
+bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, audio_format_type_t pcmFormat, unsigned int fileSize);
+/*
+ * @brief Split specified channels from an input audio stream into separated output buffers.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] layout: the channel layout of the input audio stream
+ * @param[in] stream: pointer to the input audio stream
+ * @param[in] frames: number of frames in input stream
+ * @param[in] channels: number of channels to split from input audio stream
+ * @param[in] ...: variable arguments in pairs <uint32_t, int16_t *> to tell channel masks and output buffers
+ * @return channel masks to tell the channels split successfully
+ * @since TizenRT v2.1 PRE
+ */
+unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...);
 } // namespace utils
 } // namespace media
 

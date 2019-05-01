@@ -29,6 +29,7 @@
 #include "ocstackconfig.h"
 #include "ocrandom.h"
 #include "things_def.h"
+#include "things_iotivity_lock.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
@@ -103,8 +104,11 @@
 #define KEY_CONFIGURATION_FILEPATH                              "filePath"
 #define KEY_CONFIGURATION_FILEPATH_SVRDB                        "svrdb"
 #define KEY_CONFIGURATION_FILEPATH_PROVISIONING                 "provisioning"
+
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 #define KEY_CONFIGURATION_FILEPATH_CERTIFICATE                  "certificate"
 #define KEY_CONFIGURATION_FILEPATH_PRIVATEKEY                   "privateKey"
+#endif
 
 /* provisioning info */
 #define KEY_CLOUD                                               "cloud"
@@ -145,18 +149,19 @@
 
 typedef int8_t INT8;
 
-static volatile int resource_type_cnt = 0;
+static volatile int g_resource_type_cnt = 0;
 
 static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+#endif
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
 static st_device_s *g_device;
 static char *g_firmware_version;
-static char *g_vid;
 static char *g_model_number;
 
 static char *g_setup_id;
@@ -192,6 +197,16 @@ static const char *internal_resource_json_str = "{\n\
 					],\n\
 					\"interfaces\": [\n\
 						\"oic.if.a\"\n\
+					],\n\
+					\"policy\": 3\n\
+				},\n\
+				{\n\
+					\"uri\": \"/sec/accesspointlist\",\n\
+					\"types\": [\n\
+						\"x.com.samsung.accesspointlist\"\n\
+					],\n\
+					\"interfaces\": [\n\
+						\"oic.if.s\"\n\
 					],\n\
 					\"policy\": 3\n"
 #ifdef CONFIG_ST_THINGS_FOTA
@@ -311,11 +326,22 @@ static const char *internal_resource_json_str = "{\n\
 					}\n\
 				]\n"
 #endif
-			"}\n\
+			"},\n\
+			{\n\
+				\"type\": \"x.com.samsung.accesspointlist\",\n\
+				\"properties\": [\n\
+					{\n\
+						\"key\": \"x.com.samsung.accesspoint.items\",\n\
+						\"type\": 9,\n\
+						\"mandatory\": true,\n\
+						\"rw\": 1\n\
+					}\n\
+				]\n\
+			}\n\
 		]\n\
 	}";
 
-static struct things_attribute_info_s *create_property()
+static struct things_attribute_info_s *create_property(void)
 {
 	struct things_attribute_info_s *property = things_malloc(sizeof(things_attribute_info_s));
 
@@ -327,7 +353,7 @@ static struct things_attribute_info_s *create_property()
 	return property;
 }
 
-static struct st_resource_type_s *create_resource_type()
+static struct st_resource_type_s *create_resource_type(void)
 {
 	struct st_resource_type_s *type = things_malloc(sizeof(st_resource_type_s));
 
@@ -370,11 +396,11 @@ static void delete_resource_type_map(void)
 	}
 	hashmap_delete(g_resource_type_hmap);
 	g_resource_type_hmap = NULL;
-	resource_type_cnt = 0;
+	g_resource_type_cnt = 0;
 	things_free(keyset);
 }
 
-static struct things_resource_info_s *create_resource()
+static struct things_resource_info_s *create_resource(void)
 {
 	struct things_resource_info_s *resource = things_malloc(sizeof(things_resource_info_s));
 
@@ -393,7 +419,7 @@ static struct things_resource_info_s *create_resource()
 	return resource;
 }
 
-static st_device_s *create_device()
+static st_device_s *create_device(void)
 {
 	st_device_s *device = things_malloc(sizeof(st_device_s));
 
@@ -521,10 +547,10 @@ char *get_json_string_from_file(const char *filename)
 	FILE *fp = NULL;
 	char *json_str = NULL;
 	size_t size = get_json_file_size(filename);
-	size_t readed = 0;
+	size_t read = 0;
 	int fp_acess_cnt = 0;
 
-	if (size <= 0) {
+	if (size == 0) {
 		THINGS_LOG_E(TAG, "Failed converting to JSON");
 		return NULL;
 	} else {
@@ -532,6 +558,10 @@ char *get_json_string_from_file(const char *filename)
 	}
 
 	json_str = (char *)things_malloc(size + 1);
+	if (json_str == NULL) {
+		THINGS_LOG_E(TAG, "Failed to allocate memory(%d).", size + 1);
+		return NULL;
+	}
 
 	// 1. File Read
 	fp = fopen(filename, "r");
@@ -541,22 +571,20 @@ char *get_json_string_from_file(const char *filename)
 		return NULL;
 	}
 	// 2. Json String read from the given file.
-	size_t bytes_read = 0;
-	while (readed < size && fp_acess_cnt < MAX_FILE_ACCESS_CNT) {
-		bytes_read = fread(&(json_str[readed]), 1, size - readed, fp);
-		readed += bytes_read;
-		THINGS_LOG_D(TAG, "Read Size: %d, total Size =%d", readed, size);
+	while (read < size && fp_acess_cnt < MAX_FILE_ACCESS_CNT) {
+		read += fread(&(json_str[read]), 1, size - read, fp);
+		THINGS_LOG_D(TAG, "Read Size: %d, total Size =%d", read, size);
 		fp_acess_cnt++;
 	}
 
 	if (fp_acess_cnt >= MAX_FILE_ACCESS_CNT) {
-		THINGS_LOG_V(TAG, "Access-Times is Over for File Read. (Readed Size: %d, total Size =%d)", readed, size);
+		THINGS_LOG_V(TAG, "Access-Times is Over for File Read. (Readed Size: %d, total Size =%d)", read, size);
 		things_free(json_str);
 		fclose(fp);
 		return NULL;
 	}
 
-	json_str[readed] = '\0';
+	json_str[read] = '\0';
 
 	fclose(fp);
 	fp = NULL;
@@ -567,6 +595,7 @@ char *get_json_string_from_file(const char *filename)
 #ifdef CONFIG_ST_THINGS_SECURESTORAGE
 char *get_json_string_from_securestorage(void)
 {
+	cJSON *root = NULL;
 	int ret = 1;
 	char *empty = "";
 	char *json_str = NULL;
@@ -596,7 +625,12 @@ char *get_json_string_from_securestorage(void)
 	}
 	cert_data[cert_size + 1] = 0;
 
-	cJSON *root = cJSON_Parse(read_data);
+	root = cJSON_Parse(read_data);
+	if (root == NULL) {
+		THINGS_LOG_E(TAG, "root cJSON is NULL.");
+		ret = 0;
+		goto GOTO_OUT;
+	}
 	cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 	if (cloud == NULL) {
 		THINGS_LOG_E(TAG, "cloud cJSON is NULL.");
@@ -856,7 +890,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	} else
 #endif
 	{
-		snprintf(ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+		snprintf((char *)ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 	}
 
 	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_device->mnid, g_setup_id, ssid_type, ext_value);
@@ -881,7 +915,6 @@ int parse_things_cloud_json(const char *filename)
 	json_str = get_json_string_from_file(filename);
 #endif
 
-
 	if (json_str == NULL) {
 		THINGS_LOG_V(TAG, "cloud file initialization.");
 #ifdef CONFIG_ST_THINGS_SECURESTORAGE
@@ -895,25 +928,26 @@ int parse_things_cloud_json(const char *filename)
 			return 0;
 		}
 #endif
+	} else {
+		if (strlen(json_str) > 0) {
+			cJSON *root = cJSON_Parse((const char *)json_str);
+			if (root != NULL) {
+				cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+				if (cloud != NULL) {
+					cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
+					if (address != NULL) {
+						memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
+						memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
+						THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
+						ret = 1;
+					}
+				}
+				cJSON_Delete(root);
+			}
+		}
+		things_free(json_str);
 	}
 
-	if (strlen(json_str) > 0) {
-		cJSON *root = cJSON_Parse((const char *)json_str);
-		if (root != NULL) {
-			cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-			if (cloud != NULL) {
-				cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
-				if (address != NULL) {
-					memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
-					memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
-					THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
-					ret = 1;
-				}
-			}
-			cJSON_Delete(root);
-		}
-	}
-	things_free(json_str);
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ret;
 }
@@ -1034,8 +1068,10 @@ static int parse_configuration_json(cJSON *configuration)
 
 	cJSON *svrdb = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_SVRDB);
 	cJSON *provisioning = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PROVISIONING);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	cJSON *certificate = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_CERTIFICATE);
 	cJSON *privateKey = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PRIVATEKEY);
+#endif
 
 	if (svrdb == NULL) {
 		THINGS_LOG_V(TAG, "[configuration] svrdb is null");
@@ -1045,6 +1081,7 @@ static int parse_configuration_json(cJSON *configuration)
 		THINGS_LOG_V(TAG, "[configuration] provisioning is null");
 		goto JSON_ERROR;
 	}
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (certificate == NULL) {
 		THINGS_LOG_V(TAG, "[configuration] certificate is null");
 		goto JSON_ERROR;
@@ -1053,10 +1090,13 @@ static int parse_configuration_json(cJSON *configuration)
 		THINGS_LOG_V(TAG, "[configuration] privateKey is null");
 		goto JSON_ERROR;
 	}
+#endif
 
 	memset(g_svrdb_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	memset(g_certificate_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
 	memset(g_private_key_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+#endif
 
 	if (strncmp(svrdb->valuestring, "/", 1) == 0) {
 		if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
@@ -1088,6 +1128,7 @@ static int parse_configuration_json(cJSON *configuration)
 		strcat(g_things_cloud_file_path, provisioning->valuestring);
 	}
 
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (strncmp(certificate->valuestring, "/", 1) == 0) {
 		if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 			THINGS_LOG_V(TAG, "certificate file path length exceeded");
@@ -1118,10 +1159,13 @@ static int parse_configuration_json(cJSON *configuration)
 		strcpy(g_private_key_file_path, PATH_ROM);
 		strcat(g_private_key_file_path, privateKey->valuestring);
 	}
+#endif
 
 	THINGS_LOG_V(TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	THINGS_LOG_V(TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
 	THINGS_LOG_V(TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
+#endif
 
 	ret = 1;
 JSON_ERROR:
@@ -1137,13 +1181,13 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 
 	if (resource_types_user == NULL) {
 		THINGS_LOG_E(TAG, "resource_types_user is null");
-		goto JSON_ERROR;
+		return ret;
 	}
 
 	cJSON *json_internal_root = cJSON_Parse((const char *)internal_resource_json_str);
 	if (json_internal_root == NULL) {
 		THINGS_LOG_E(TAG, "json_internal_root is null");
-		goto JSON_ERROR;
+		return ret;
 	}
 
 	cJSON *resource_types_internal = cJSON_GetObjectItem(json_internal_root, KEY_RESOURCES_TYPE);
@@ -1162,9 +1206,9 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 	int resource_type_cnt_user = cJSON_GetArraySize(resource_types_user);
 	int resource_type_cnt_internal = cJSON_GetArraySize(resource_types_internal);
 
-	resource_type_cnt = resource_type_cnt_user + resource_type_cnt_internal;
-	g_resource_type_hmap = hashmap_create(resource_type_cnt);
-	THINGS_LOG_V(TAG, "Resource Types Cnt : %d (itn : %d, user : %d)", resource_type_cnt, resource_type_cnt_internal, resource_type_cnt_user);
+	g_resource_type_cnt = resource_type_cnt_user + resource_type_cnt_internal;
+	g_resource_type_hmap = hashmap_create(g_resource_type_cnt);
+	THINGS_LOG_V(TAG, "Resource Types Cnt : %d (itn : %d, user : %d)", g_resource_type_cnt, resource_type_cnt_internal, resource_type_cnt_user);
 	for (int i = 0; i < 2; i++) {
 		if (i == 0) {
 			resource_types = resource_types_internal;
@@ -1232,9 +1276,9 @@ JSON_ERROR:
 	return ret;
 }
 
-void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int user_single_cnt, int internal_single_cnt)
+static int parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int user_single_cnt, int internal_single_cnt)
 {
-	int ret = 1;
+	int ret = 0;
 	int i = 0;
 	int rsr_cnt = 0;
 
@@ -1251,12 +1295,13 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 		}
 
 		if (single == NULL) {
+			ret = 0;
 			goto JSON_ERROR;
 		}
 
 		for (int iter = 0; iter < iter_cnt; iter++) {
 			cJSON *res = cJSON_GetArrayItem(single, iter);
-			if (res->type != NULL) {
+			if (res->type != 0) {
 				cJSON *uri = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_URI);
 				if (uri != NULL) {
 					memcpy(g_device->single[rsr_cnt].uri, uri->valuestring, strlen(uri->valuestring) + 1);
@@ -1273,6 +1318,7 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					}
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource type is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				cJSON *interfaces = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_INTERFACES);
@@ -1286,6 +1332,7 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					}
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource interface is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				cJSON *policy = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_POLICY);
@@ -1293,10 +1340,12 @@ void parse_resource_with_internal(cJSON *single_rsc, cJSON *internal_rsc, int us
 					g_device->single[rsr_cnt].policy = policy->valueint;
 				} else {
 					THINGS_LOG_D(TAG, "[SINGLE] resource policy is NULL");
+					ret = 0;
 					goto JSON_ERROR;
 				}
 				rsr_cnt++;
 			} else {
+				ret = 0;
 				goto JSON_ERROR;
 			}
 		}
@@ -1339,7 +1388,10 @@ static int parse_resource_json(cJSON *device)
 				THINGS_LOG_D(TAG, "[SINGLE] resource is NULL");
 				goto JSON_ERROR;
 			}
-			parse_resource_with_internal(single, internal_single, user_single_cnt, internal_single_cnt);
+			if (parse_resource_with_internal(single, internal_single, user_single_cnt, internal_single_cnt) == 0) {
+				THINGS_LOG_E(TAG, "parse_resource_with_internal fail");
+				goto JSON_ERROR;
+			}
 
 			THINGS_LOG_V(TAG, "[SINGLE] Resources for Single Usage Cnt : %d", g_device->sig_cnt);
 		} else {
@@ -1704,7 +1756,7 @@ static int parse_things_info_json(const char *filename)
 	}
 
 	if (parse_things_cloud_json(g_things_cloud_file_path) == 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "cloud data parsing error");
+		THINGS_LOG_D(TAG, "cloud data parsing error");
 	}
 
 	ret = 1;
@@ -1908,10 +1960,10 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data)
 	return ret;
 }
 
-const char *dm_get_things_device_type(int device_id)
+const char *dm_get_things_device_type(const char* device_id)
 {
 	if (strncmp(g_device->device_id, device_id, MAX_DEVICE_ID_LENGTH) != 0) {
-		THINGS_LOG_V(TAG, "unknown device_id : %d", device_id);
+		THINGS_LOG_V(TAG, "unknown device_id : %s", device_id);
 		return NULL;
 	}
 
@@ -1923,6 +1975,7 @@ const char *dm_get_svrdb_file_path(void)
 	return g_svrdb_file_path;
 }
 
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 const char *dm_get_certificate_file_path(void)
 {
 	return g_certificate_file_path;
@@ -1932,6 +1985,7 @@ const char *dm_get_privatekey_file_path(void)
 {
 	return g_private_key_file_path;
 }
+#endif
 
 const char *dm_get_things_cloud_address(char *customized_ci_server)
 {
@@ -1949,12 +2003,9 @@ bool dm_is_rsc_published(void)
 static things_resource_s *register_resource(things_server_builder_s *p_builder, struct things_resource_info_s *resource, const char *id)
 {
 	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
 	if (NULL != resource) {
 		THINGS_LOG_D(TAG, "RESOURCE TO REGISTER : %s", resource->uri);
-
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
+		char res_uri[MAX_URI_LENGTH + 1] = { 0 };
 		strncat(res_uri, resource->uri, MAX_URI_LENGTH);
 
 		ret = p_builder->create_resource(p_builder, res_uri, resource->resource_types[0],
@@ -1979,94 +2030,6 @@ static things_resource_s *register_resource(things_server_builder_s *p_builder, 
 	return ret;
 }
 
-static things_resource_s *register_device_resource(things_server_builder_s *p_builder, st_device_s *device, const char *id)
-{
-	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
-	if (NULL != device) {
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
-		strncat(res_uri, OC_RSRVD_DEVICE_URI, MAX_URI_LENGTH);
-
-		ret = p_builder->create_resource(p_builder, res_uri, OC_RSRVD_RESOURCE_TYPE_DEVICE, OC_RSRVD_INTERFACE_READ, 0, 0, 1);
-
-		p_builder->add_resource_type(ret, device->type);
-
-		ret->rep = things_create_representation_inst(NULL);
-		if (ret->rep) {
-			THINGS_LOG_D(TAG, "[/oic/d] name :%s", device->name);
-			THINGS_LOG_D(TAG, "[/oic/d] type :%s", device->type);
-			THINGS_LOG_D(TAG, "[/oic/d] ver. Spec :%s", OC_SPEC_VERSION);
-			THINGS_LOG_D(TAG, "[/oic/d] ver. data_model :%s", OC_DATA_MODEL_VERSION);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DEVICE_NAME, device->name);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DEVICE_ID, device->device_id);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_SPEC_VERSION, OC_SPEC_VERSION);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_DATA_MODEL_VERSION, OC_DATA_MODEL_VERSION);
-		} else {
-			THINGS_LOG_V(TAG, "Not able to create representation");
-		}
-	} else {
-		THINGS_LOG_V(TAG, "Invalid Input Param ");
-	}
-
-	return ret;
-}
-
-static things_resource_s *register_platform_resource(things_server_builder_s *p_builder, st_device_s *device, const char *id)
-{
-	things_resource_s *ret = NULL;
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-
-	if (NULL != device) {
-		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
-		strncat(res_uri, OC_RSRVD_PLATFORM_URI, MAX_URI_LENGTH);
-
-		ret = p_builder->create_resource(p_builder, res_uri, OC_RSRVD_RESOURCE_TYPE_PLATFORM, OC_RSRVD_INTERFACE_READ, 0, 0, 1);
-
-		ret->rep = things_create_representation_inst(NULL);
-		if (ret->rep) {
-			THINGS_LOG_D(TAG, "[/oic/p] platform ID :%s", device->device_id);
-			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer :%s", device->mnid);
-			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer_url :%s", device->manufacturer_url);
-			THINGS_LOG_D(TAG, "[/oic/p] Model Name :%s", device->model_num);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. Plaform :%s", device->ver_p);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. OS :%s", device->ver_os);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. HW :%s", device->ver_hw);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. FW :%s", device->ver_fw);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. vid :%s", device->vid);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_ID, device->device_id);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, device->mnid);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MODEL_NUM, device->model_num);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_VERSION, device->ver_p);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_OS_VERSION, device->ver_os);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_HARDWARE_VERSION, device->ver_hw);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_FIRMWARE_VERSION, device->ver_fw);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_URL, device->manufacturer_url);
-
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_VID, device->vid);
-		} else {
-			THINGS_LOG_V(TAG, "Not able to create representation");
-		}
-
-	} else {
-		THINGS_LOG_V(TAG, "Invalid Input Param ");
-	}
-
-	return ret;
-}
-
 st_device_s *dm_get_info_of_dev(unsigned long number)
 {
 	return g_device;
@@ -2074,8 +2037,7 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 
 bool dm_register_device_id(void)
 {
-	int i = 0;
-	char *id = NULL;
+	const char *id = NULL;
 	st_device_s **dev_list = NULL;
 
 	if ((dev_list = (st_device_s **)things_malloc(sizeof(st_device_s *))) == NULL) {
@@ -2083,7 +2045,9 @@ bool dm_register_device_id(void)
 		return false;
 	}
 	// Set Main-Device ID
+	iotivity_api_lock();
 	id = OCGetServerInstanceIDString();
+	iotivity_api_unlock();
 	dev_list[0] = dm_get_info_of_dev(0);
 
 	if (id == NULL || dev_list[0] == NULL) {
@@ -2116,14 +2080,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		return 0;
 	}
 
-	int device_num = 0;
-	char id[11] = { 0 };
-	char res_uri[MAX_URI_LENGTH] = { 0 };
-	int key = 0;
-	int n_count_of_children = 0;
-
 	st_device_s *device = NULL;
-	struct things_resource_info_s *resource = NULL;
 #ifdef CONFIG_ST_THINGS_COLLECTION
 	struct things_resource_s *p_collection_resource = NULL;
 #endif
@@ -2133,6 +2090,8 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 	device = dm_get_info_of_dev(0);
 	if (NULL != device) {
+		int n_count_of_children = 0;
+		char id[11] = { 0 };
 		snprintf(id, sizeof(id), "%d", device->no);
 		THINGS_LOG_D(TAG, "==================== Device (%s) ====================", id);
 #ifdef CONFIG_ST_THINGS_COLLECTION
@@ -2142,11 +2101,12 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		} else {
 			THINGS_LOG_V(TAG, "COLLECTION CHILDREN RESOURCE(S) CNT : %d", device->col_cnt);
 
-			memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
+			char res_uri[MAX_URI_LENGTH + 1] = { 0 };
 			strncat(res_uri, device->collection[0].uri, MAX_URI_LENGTH);
 
 			p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0]);
 
+			iotivity_api_lock();
 			for (int rt_num = 1; rt_num < device->collection[0].rt_cnt; rt_num++) {
 				OCBindResourceTypeToResource(p_builder, device->collection[0].resource_types[rt_num]);
 			}
@@ -2155,13 +2115,14 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			for (int it_num = 1; it_num < device->collection[0].if_cnt; it_num++) {
 				OCBindResourceInterfaceToResource(p_builder, device->collection[0].interface_types[it_num]);
 			}
+			iotivity_api_unlock();
 
 			THINGS_LOG_D(TAG, "AFTER REGISTERGING DEVICE RESOURCE");
 
 			if (p_collection_resource != NULL) {
 				THINGS_LOG_D(TAG, "DEVICE RESOURCE(S) CNT : %d", device->col_cnt);
 				for (int capa_num = 0; capa_num < device->collection[0].link_cnt; capa_num++) {
-					resource = device->collection[0].links[capa_num];
+					struct things_resource_info_s *resource = device->collection[0].links[capa_num];
 					device->pchild_resources[n_count_of_children++] = register_resource(p_builder, resource, id);
 				}			// End of for children resource(s) registration loop
 			}				// End of single device
@@ -2176,26 +2137,24 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 		THINGS_LOG_D(TAG, "SINGLE RESOURCE(S) CNT : %d", device->sig_cnt);
 		for (int capa_num = 0; capa_num < device->sig_cnt; capa_num++) {
-			resource = &device->single[capa_num];
+			struct things_resource_info_s *resource = &device->single[capa_num];
 			device->pchild_resources[n_count_of_children++] = register_resource(p_builder, resource, id);
 		}					// End of for single resource registration loop
 
 		// Create the Device(/oic/d) and Platform (/oic/p)
 		// ex) Aircon Multi-Model
-		if (device_num < 1) {
-			// for hosting device
-			THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO DEVICE(/oic/d).");
-			p_builder->set_device_info(p_builder, device->name, device->type);
-			THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO PLATFORM(/oic/p).");
-			p_builder->set_platform_info(p_builder, device->model_num,	// gDeviceModel,
-											device->ver_p,	// gPlatformVersion,
-											device->ver_os,	// gOSVersion,
-											device->ver_hw,	// gHWVersions,
-											device->ver_fw,	// gFWVersions,
-											device->vid,	// gVenderId
-											device->mnid,	// manufacturer_name
-											device->manufacturer_url);	// manufacturer_url
-		}
+		// for hosting device
+		THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO DEVICE(/oic/d).");
+		p_builder->set_device_info(p_builder, device->name, device->type);
+		THINGS_LOG_D(TAG, "REGISTERGING DEVICE INFO. TO PLATFORM(/oic/p).");
+		p_builder->set_platform_info(p_builder, device->model_num,	// gDeviceModel,
+										device->ver_p,	// gPlatformVersion,
+										device->ver_os,	// gOSVersion,
+										device->ver_hw,	// gHWVersions,
+										device->ver_fw,	// gFWVersions,
+										device->vid,	// gVenderId
+										device->mnid,	// manufacturer_name
+										device->manufacturer_url);	// manufacturer_url
 
 		THINGS_LOG_D(TAG,
 			"[n_count_of_children : %d] : [device_cnt : %d]",
@@ -2208,31 +2167,6 @@ int dm_register_resource(things_server_builder_s *p_builder)
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return 1;
-}
-
-struct things_resource_s *dm_get_resource_instance(const char *uri, const int id)
-{
-	things_resource_s *ret = NULL;
-	st_device_s *device = dm_get_info_of_dev(0);
-	if (device) {
-		for (int index = 0; index < device->capa_cnt; index++) {
-			if (device->pchild_resources[index] == NULL) {
-				THINGS_LOG_V(TAG, "Resource with URI : %s not exist !!!!", uri);
-				break;
-			} else if (strncmp(device->pchild_resources[index]->uri, uri, strlen(uri)) == 0) {
-				THINGS_LOG_D(TAG, "Found %s from device[%d] : %s!!!!", uri, id, device->device_id);
-
-				char *sValue = NULL;
-
-				device->pchild_resources[index]->rep->things_get_value(device->pchild_resources[index]->rep, OC_RSRVD_DEVICE_ID, &sValue);
-				ret = device->pchild_resources[index];
-				break;
-			} else {
-				THINGS_LOG_D(TAG, "[%d] Resource URI : %s", index, device->pchild_resources[index]->uri);
-			}
-		}
-	}
-	return ret;
 }
 
 int dm_update_things_cloud(es_cloud_signup_s *cl_data)
@@ -2279,7 +2213,7 @@ bool dm_is_es_complete(void)
 	return ret;
 }
 
-int dm_validate_attribute_in_request(char *rt, const void *payload)
+int dm_validate_attribute_in_request(const char *rt, const void *payload)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	int ret = 0;
@@ -2390,17 +2324,17 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 	return 0;
 }
 
-const int dm_get_wifi_property_interface()
+const int dm_get_wifi_property_interface(void)
 {
 	return g_wifi_interface;
 }
 
-const wifi_freq_e dm_get_wifi_property_freq()
+const wifi_freq_e dm_get_wifi_property_freq(void)
 {
 	return g_wifi_freq;
 }
 
-const int dm_get_ownership_transfer_method()
+const int dm_get_ownership_transfer_method(void)
 {
 	THINGS_LOG_V(TAG, "ownership_transfer_method : %d", g_ownership_transfer_method);
 	return g_ownership_transfer_method;
@@ -2413,18 +2347,18 @@ int things_get_attributes_by_resource_type(const char *res_type, int *count, thi
 
 	if (resource_type_cnt > 0) {
 
-		int index = hashmap_get_hashval(res_type);
-		struct st_resource_type_s *res_type = (struct st_resource_type_s *)hashmap_get(g_resource_type_hmap, index);
-		if (res_type == NULL) {
-			THINGS_LOG_V(TAG, "res_type Not Exist");
+		int index = hashmap_get_hashval((unsigned char *)res_type);
+		struct st_resource_type_s *res_type_internal = (struct st_resource_type_s *)hashmap_get(g_resource_type_hmap, index);
+		if (res_type_internal == NULL) {
+			THINGS_LOG_V(TAG, "res_type_internal Not Exist");
 			return 0;
 		}
 
-		THINGS_LOG_D(TAG, "res_type : %s, res_type : %s", res_type->rt, res_type);
-		if (strncmp(res_type->rt, res_type, strlen(res_type)) == 0) {
-			THINGS_LOG_D(TAG, "res_type->prop_cnt : %d", res_type->prop_cnt);
-			(*count) = res_type->prop_cnt;
-			(*attributes) = res_type->prop;
+		THINGS_LOG_D(TAG, "res_type_internal : %s, res_type : %s", res_type_internal->rt, res_type);
+		if (strncmp(res_type_internal->rt, res_type, strlen(res_type)) == 0) {
+			THINGS_LOG_D(TAG, "res_type_internal->prop_cnt : %d", res_type_internal->prop_cnt);
+			(*count) = res_type_internal->prop_cnt;
+			(*attributes) = res_type_internal->prop;
 			return 1;
 		}
 	}
@@ -2486,7 +2420,7 @@ int dm_init_module(const char *devJsonPath)
 	return Parse_things_files(devJsonPath);
 }
 
-int dm_termiate_module()
+int dm_termiate_module(void)
 {
 	st_device_s *device = dm_get_info_of_dev(0);
 	delete_device(device);
@@ -2494,27 +2428,53 @@ int dm_termiate_module()
 	return 1;
 }
 
-bool dm_get_easy_setup_use_artik_crt()
+bool dm_get_easy_setup_use_artik_crt(void)
 {
 	return is_artik;
 }
 
-char *dm_get_mnid()
+char *dm_get_mnid(void)
 {
 	return g_device->mnid;
 }
 
-char *dm_get_firmware_version()
+char *dm_get_firmware_version(void)
 {
 	return g_firmware_version;
 }
 
-char *dm_get_vendor_id()
+char *dm_get_vendor_id(void)
 {
 	return g_device->vid;
 }
 
-char *dm_get_model_number()
+char *dm_get_model_number(void)
 {
 	return g_model_number;
+}
+
+char *dm_get_access_token(void)
+{
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_access_token = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_access_token = things_strdup(cloud_data->access_token);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_access_token;
+}
+
+char *dm_get_uid(void)
+{
+	es_cloud_signup_s *cloud_data = NULL;
+	char *cloud_uid = NULL;
+
+	if (dm_load_legacy_cloud_data(&cloud_data) == 1) {
+		cloud_uid = things_strdup(cloud_data->uid);
+	}
+
+	es_cloud_signup_clear(cloud_data);
+	return cloud_uid;
 }

@@ -2297,7 +2297,7 @@ exit:
     return ret;
 }
 
-OCStackResult InitACLResource()
+OCStackResult InitACLResource(void)
 {
     OCStackResult ret = OC_STACK_ERROR;
 
@@ -2342,7 +2342,7 @@ exit:
     return ret;
 }
 
-OCStackResult DeInitACLResource()
+OCStackResult DeInitACLResource(void)
 {
     OCStackResult ret =  OCDeleteResource(gAclHandle);
     gAclHandle = NULL;
@@ -2693,7 +2693,7 @@ exit:
 
 }
 
-OCStackResult UpdateDefaultSecProvACE()
+OCStackResult UpdateDefaultSecProvACE(void)
 {
     OCStackResult ret = OC_STACK_OK;
     OicSecAce_t *ace = NULL;

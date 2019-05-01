@@ -33,11 +33,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef __ST_THINGS_RTOS__
-#include <st_things/st_things_types.h>
-#else
 #include "st_things_types.h"
-#endif							// __ST_THINGS_RTOS__
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,6 +147,17 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
  * @since TizenRT v1.1
  */
 int st_things_start(void);
+
+/**
+ * @brief Send Representation of a specific resource through push service to Samsung Connect client.
+ * @param[in]  target_uri Resource uri for which we want to send push message.
+ * @param[in]  resp_rep Representation for resource uri.
+ * @return @c 1 on success, otherwise return 0 value
+ * @retval #ST_THINGS_ERROR_NONE Successful
+ * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
+ * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ */
+int st_things_push_notification_to_cloud(const char *target_uri, st_things_representation_s *resp_rep);
 
 /**
  * @brief Callback for getting user's opinion regarding device reset.

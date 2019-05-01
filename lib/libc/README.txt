@@ -6,7 +6,7 @@ what you would expect to find in a standard C library.  The sub-directories
 in this directory contain standard interface that can be executed by user-
 mode programs.
 
-Normally, TinyAra is built with no protection and all threads running in kerne-
+Normally, TinyAra is built with no protection and all threads running in kernel-
 mode.  In that model, there is no real architectural distinction between
 what is a kernel-mode program and what is a user-mode program; the system is
 more like on multi-threaded program that all runs in kernel-mode.
@@ -43,6 +43,7 @@ we have:
   stdlib    - stdlib.h
   string    - string.h
   time      - time.h
+  uio       - sys/uio.h
   unistd    - unistd.h
   wchar     - wchar.h
   wctype    - wctype.h

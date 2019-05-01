@@ -92,7 +92,7 @@ ARCH_INC = $(ARCH_DIR)/include
 ifeq ($(CONFIG_ARCH_BOARD_CUSTOM),y)
 BOARD_DIR = $(CONFIG_ARCH_BOARD_CUSTOM_DIR)
 else
-BOARD_DIR = $(ARCH_SRC)/$(CONFIG_ARCH_BOARD)
+BOARD_DIR = board/$(CONFIG_ARCH_BOARD)
 endif
 
 # CONFIG_APPS_DIR can be over-ridden from the command line or in the .config file.
@@ -301,7 +301,7 @@ tools/mkversion$(HOSTEXEEXT):
 
 $(TOPDIR)/.version: force_build
 	echo "create .version file"; \
-	tools/version.sh -v 1.1 .version; \
+	tools/version.sh -v 2.0 .version; \
 	chmod 755 .version
 
 include/tinyara/version.h: $(TOPDIR)/.version tools/mkversion$(HOSTEXEEXT)
@@ -346,7 +346,7 @@ include/arch: Make.defs
 
 # Link the configs/<board-name>/include directory to include/arch/board
 
-include/arch/board: include/arch Make.defs include/arch
+include/arch/board: include/arch Make.defs 
 	@echo "LN: include/arch/board to $(BOARD_DIR)/include"
 	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_DIR)/include include/arch/board
 

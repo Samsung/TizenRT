@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <media/stream_info.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -57,19 +58,6 @@ enum audio_manager_result_e {
 typedef enum audio_manager_result_e audio_manager_result_t;
 
 /**
- * @brief Stream Policy of Audio Manager, high value means higher priority
- */
-enum audio_manager_stream_policy_e {
-	AUDIO_MANAGER_STREAM_TYPE_MEDIA = 0,
-	AUDIO_MANAGER_STREAM_TYPE_VOIP = 1,
-	AUDIO_MANAGER_STREAM_TYPE_NOTIFY = 2,
-	AUDIO_MANAGER_STREAM_TYPE_VOICE_RECOGNITION = 3,
-	AUDIO_MANAGER_STREAM_TYPE_EMERGENCY = 4
-};
-
-typedef enum audio_manager_stream_policy_e audio_manager_stream_policy_t;
-
-/**
  * @brief Type of device
  */
 enum audio_device_type_e {
@@ -80,8 +68,6 @@ enum audio_device_type_e {
 };
 
 typedef enum audio_device_type_e audio_device_type_t;
-
-/* TODO below constant of AUDIO should be encapsulated */
 
 /**
  * @brief Defined values for handling process of voice recognition on device, provides as a interface.
@@ -118,28 +104,15 @@ typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: init_audio_stream_in
+ * Name: audio_manager_init
  *
  * Description:
- *   Find all available audio cards for input stream and initialize the
- *   mutexes of each card. The one of the audio cards is set as the active one.
+ *   Init audio_manager
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t init_audio_stream_in(void);
-
-/****************************************************************************
- * Name: init_audio_stream_out
- *
- * Description:
- *   Find all available audio cards for output stream and initialize the
- *   mutexes of the cards. The one of the audio cards is set as the active one.
- *
- * Return Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
- ****************************************************************************/
-audio_manager_result_t init_audio_stream_out(void);
+audio_manager_result_t audio_manager_init(void);
 
 /****************************************************************************
  * Name: set_audio_stream_in
@@ -303,10 +276,11 @@ audio_manager_result_t reset_audio_stream_out(void);
 unsigned int get_input_frame_count(void);
 
 /****************************************************************************
- * Name: get_input_frames_to_byte
+ * Name: get_card_input_frames_to_byte
  *
  * Description:
- *   Get the byte size of the given frame value in input stream.
+ *   Get the byte size of the given frame value with the channel value
+ *   supported by the card for input stream.
  *
  * Input parameter:
  *   frames: the target of which byte size is returned.
@@ -314,13 +288,14 @@ unsigned int get_input_frame_count(void);
  * Return Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frames_to_byte(unsigned int frames);
+unsigned int get_card_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_input_bytes_to_frame
+ * Name: get_card_input_bytes_to_frame
  *
  * Description:
- *   Get the number of frames for the given byte size in input stream.
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for input stream.
  *
  * Input parameter:
  *   bytes: the target of which frame count is returned.
@@ -328,7 +303,37 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  * Return Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_bytes_to_frame(unsigned int bytes);
+unsigned int get_card_input_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_user_input_frames_to_byte
+ *
+ * Description:
+ *   Get the byte size of the given frame value with the channel value
+ *   specified by the user for input stream.
+ *
+ * Input parameter:
+ *   frames: the target of which byte size is returned.
+ *
+ * Return Value:
+ *   On success, the byte size of the frame in input stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_input_frames_to_byte(unsigned int frames);
+
+/****************************************************************************
+ * Name: get_user_input_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   specified by the user for input stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in input stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -342,10 +347,11 @@ unsigned int get_input_bytes_to_frame(unsigned int bytes);
 unsigned int get_output_frame_count(void);
 
 /****************************************************************************
- * Name: get_output_frames_to_byte
+ * Name: get_card_output_frames_to_byte
  *
  * Description:
- *   Get the byte size of the given frame value in output stream.
+ *   Get the byte size of the given frame value with the channel value
+ *   supported by the card for output stream.
  *
  * Input parameter:
  *   frames: the target of which byte size is returned.
@@ -353,13 +359,14 @@ unsigned int get_output_frame_count(void);
  * Return Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frames_to_byte(unsigned int frames);
+unsigned int get_card_output_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_output_bytes_to_frame
+ * Name: get_card_output_bytes_to_frame
  *
  * Description:
- *   Get the number of frames for the given byte size in output stream.
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for output stream.
  *
  * Input parameter:
  *   bytes: the target of which frame count is returned.
@@ -367,7 +374,37 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  * Return Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_bytes_to_frame(unsigned int bytes);
+unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_user_output_frames_to_byte
+ *
+ * Description:
+ *   Get the byte size of the given frame value with the channel value
+ *   specified by the user for output stream.
+ *
+ * Input parameter:
+ *   frames: the target of which byte size is returned.
+ *
+ * Return Value:
+ *   On success, the byte size of the frame in output stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_output_frames_to_byte(unsigned int frames);
+
+/****************************************************************************
+ * Name: get_user_output_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   specified by the user for output stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in output stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_max_audio_volume
@@ -493,7 +530,7 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t start_stream_in_device_process(int card_id, int device_id);
+audio_manager_result_t start_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype);
 
 /****************************************************************************
  * Name: stop_stream_in_device_process
@@ -507,7 +544,7 @@ audio_manager_result_t start_stream_in_device_process(int card_id, int device_id
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id);
+audio_manager_result_t stop_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype);
 
 /****************************************************************************
  * Name: unregister_stream_in_device_process
@@ -544,7 +581,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
  * Description:
  *   Set policy to prevent the current stream in from being stopped by another operation
  *   when the current operation is more important.
- *   The policy follows priority based on audio_manager_stream_policy_e
+ *   The policy follows priority based on stream_policy_t
  *
  * Input parameter:
  *   policy : policy to set as a current stream's policy
@@ -552,7 +589,7 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy);
+audio_manager_result_t set_stream_in_policy(stream_policy_t policy);
 
 /****************************************************************************
  * Name: set_stream_out_policy
@@ -560,7 +597,7 @@ audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy
  * Description:
  *   Set policy to prevent the current stream out from being stopped by another operation
  *   when the current operation is more important.
- *   The policy follows priority based on audio_manager_stream_policy_e
+ *   The policy follows priority based on stream_policy_t
  *
  * Input parameter:
  *   policy : policy to set as a current stream's policy
@@ -568,7 +605,7 @@ audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t policy);
+audio_manager_result_t set_stream_out_policy(stream_policy_t policy);
 
 /****************************************************************************
  * Name: get_stream_in_policy
@@ -582,7 +619,7 @@ audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t polic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *policy);
+audio_manager_result_t get_stream_in_policy(stream_policy_t *policy);
 
 /****************************************************************************
  * Name: get_stream_out_policy
@@ -596,7 +633,7 @@ audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *polic
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_stream_out_policy(audio_manager_stream_policy_t *policy);
+audio_manager_result_t get_stream_out_policy(stream_policy_t *policy);
 
 /****************************************************************************
  * Name: change_stream_in_device

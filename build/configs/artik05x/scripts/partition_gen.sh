@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ###########################################################################
 #
 # Copyright 2017 Samsung Electronics All Rights Reserved.
@@ -23,22 +22,24 @@
 # Created partition map cfg file can be included in the main openocd cfg script
 # for flashing.
 
-source .config
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
+OS_DIR_PATH=${THIS_PATH}/../../../../os
+
+source ${OS_DIR_PATH}/.config
 
 # Path ENV
-BOARD_NAME=${CONFIG_ARCH_BOARD}
-OS_DIR_PATH=${PWD}
-PARTMAP_DIR_PATH=${OS_DIR_PATH}/../build/configs/artik05x/scripts
-BOARD_KCONFIG=${OS_DIR_PATH}/arch/arm/src/${BOARD_NAME}/Kconfig
+PARTMAP_DIR_PATH=${THIS_PATH}
+PARTITION_KCONFIG=${OS_DIR_PATH}/board/common/Kconfig
 
 # FLASH BASE ADDRESS (Can it be made to read dynamically from .config?)
 FLASH_BASE=0x04000000
 
 # Partition information
-partsize_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_LIST' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partsize_list=${CONFIG_ARTIK05X_FLASH_PART_LIST:=${partsize_list_default}}
-partname_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partname_list=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${partname_list_default}}
+partsize_list_default=`grep -A 2 'config FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partsize_list=${CONFIG_FLASH_PART_SIZE:=${partsize_list_default}}
+partname_list_default=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partname_list=${CONFIG_FLASH_PART_NAME:=${partname_list_default}}
 
 # OpenOCD cfg file to be created for flashing
 PARTITION_MAP_CFG=${PARTMAP_DIR_PATH}/partition_map.cfg

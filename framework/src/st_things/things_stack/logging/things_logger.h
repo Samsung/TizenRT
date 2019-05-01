@@ -22,7 +22,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
+
 #include "things_def.h"
+#include "ocpayload.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,14 +48,14 @@ typedef enum {
 /**
  * Initialize the logger.
  */
-void things_log_init();
+void things_log_init(void);
 
 /**
  * Called to Free dyamically allocated resources used with custom logging.
  * Not necessary if default logging is used
  *
  */
-void things_log_shutdown();
+void things_log_shutdown(void);
 
 /**
  * Set the Version.
@@ -71,7 +73,7 @@ void things_log_set_version(char *version);
 void things_logv(things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *format, ...);
 //#endif //#ifdef __TIZEN__
 
-const char *__get_timestamp__();
+const char *__get_timestamp__(void);
 
 #define THINGS_LOG_INIT()   things_log_init()
 #define THINGS_LOG_SHUTDOWN()   things_log_shutdown()
@@ -92,8 +94,12 @@ const char *__get_timestamp__();
 
 #ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
 #define THINGS_LOG_D(tag, ...)   things_logv((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#define THINGS_LOG_REQUEST(tag, flag, payload)     things_log_request((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, flag, payload);
+#define THINGS_LOG_RESPONSE(tag, payload)    things_log_response((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, payload);
 #else //CONFIG_DEBUG_ST_THINGS_DEBUG
 #define THINGS_LOG_D(tag, ...)
+#define THINGS_LOG_REQUEST(tag, flag, payload)
+#define THINGS_LOG_RESPONSE(tag, payload)
 #endif
 
 #ifdef CONFIG_DEBUG_ST_THINGS_INFO

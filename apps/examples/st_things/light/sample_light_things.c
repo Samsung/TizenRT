@@ -31,6 +31,7 @@ static const char *g_res_switch = "/capability/switch/main/0";
 static const char *g_res_dimming = "/capability/switchLevel/main/0";
 static const char *g_res_temp = "/capability/colorTemperature/main/0";
 
+extern void change_switch_value(void);
 extern bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_get_request_on_dimming(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
@@ -49,6 +50,16 @@ static void gpio_callback_event(void *user_data)
 {
 	printf("gpio_callback_event!!\n");
 	printf("reset :: %d\n", st_things_reset());
+}
+#endif
+
+#ifdef CONFIG_LIGHT_SWITCH_BUTTON
+static void gpio_callback_event_trigger_light_switch(void *user_data)
+{
+	printf("gpio_callback_event to notify switch resource's observers manually!!\n");
+	change_switch_value();
+	printf("Notify to observer :: %d\n", st_things_notify_observers(g_res_switch));
+	set_rep_push_mesg();
 }
 #endif
 
@@ -87,7 +98,6 @@ static bool handle_get_request(st_things_get_request_message_s *req_msg, st_thin
 	} else {
 		printf("Not supported uri.\n");
 	}
-
 	return false;
 }
 
@@ -102,7 +112,6 @@ static bool handle_set_request(st_things_set_request_message_s *req_msg, st_thin
 	} else if (0 == strncmp(req_msg->resource_uri, g_res_temp, strlen(g_res_temp))) {
 		return handle_set_request_on_ct(req_msg, resp_rep);
 	}
-
 	return false;
 }
 
@@ -114,14 +123,17 @@ int ess_process(void)
 		return 0;
 	}
 	iotapi_initialize();
-
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(CONFIG_RESET_BUTTON_PIN_NUMBER);
 	iotbus_gpio_register_cb(m_gpio, IOTBUS_GPIO_EDGE_RISING, gpio_callback_event, (void *)m_gpio);
 #endif
 
+#ifdef CONFIG_LIGHT_SWITCH_BUTTON
+	iotbus_gpio_context_h e_gpio = iotbus_gpio_open(CONFIG_LIGHT_SWITCH_BUTTON_PIN_NUMBER);
+	iotbus_gpio_register_cb(e_gpio, IOTBUS_GPIO_EDGE_RISING, gpio_callback_event_trigger_light_switch, (void *)e_gpio);
+#endif
+
 	bool easysetup_complete = false;
 	st_things_initialize("device_def.json", &easysetup_complete);
-
 	st_things_register_request_cb(handle_get_request, handle_set_request);
 	st_things_register_reset_cb(handle_reset_request, handle_reset_result);
 	st_things_register_user_confirm_cb(handle_ownership_transfer_request);

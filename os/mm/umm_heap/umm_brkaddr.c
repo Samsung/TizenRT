@@ -78,7 +78,7 @@
 
 FAR void *umm_brkaddr(int region)
 {
-	return mm_brkaddr(USR_HEAP, region);
+	return mm_brkaddr(BASE_HEAP, region);
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

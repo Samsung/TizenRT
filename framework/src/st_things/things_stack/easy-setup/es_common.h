@@ -37,7 +37,7 @@
 #define THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ        "swf"
 #define THINGS_RSRVD_ES_SSID                     "tnn"
 #define THINGS_RSRVD_ES_CRED                     "cd"
-#define THINGS_RSRVD_ES_AUTHTYPE                 "wat"
+#define THINGS_RSRVD_ES_SECTYPE                  "wat"
 #define THINGS_RSRVD_ES_ENCTYPE                  "wet"
 #define THINGS_RSRVD_ES_AUTHCODE                 "ac"
 #define THINGS_RSRVD_ES_AUTHPROVIDER             "apn"

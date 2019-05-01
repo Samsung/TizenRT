@@ -102,6 +102,11 @@ SYSCALL_LOOKUP(pgalloc,                   2, STUB_pgalloc)
 #endif
 SYSCALL_LOOKUP(task_delete,               1, STUB_task_delete)
 SYSCALL_LOOKUP(task_restart,              1, STUB_task_restart)
+#ifdef CONFIG_CANCELLATION_POINTS
+SYSCALL_LOOKUP(task_testcancel,           0, STUB_task_testcancel)
+SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_task_setcanceltype)
+#endif
+SYSCALL_LOOKUP(task_setcancelstate,       2, STUB_task_setcancelstate)
 SYSCALL_LOOKUP(up_assert,                 2, STUB_up_assert)
 
 /* The following can be individually enabled */
@@ -146,7 +151,7 @@ SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
  * TinyAra configuration.
  */
 
-SYSCALL_LOOKUP(syscall_clock,           0, STUB_clock)
+SYSCALL_LOOKUP(clock,                   0, STUB_clock)
 SYSCALL_LOOKUP(clock_getres,            2, STUB_clock_getres)
 SYSCALL_LOOKUP(clock_gettime,           2, STUB_clock_gettime)
 SYSCALL_LOOKUP(clock_settime,           2, STUB_clock_settime)
@@ -189,6 +194,11 @@ SYSCALL_LOOKUP(select,                  5, STUB_select)
 #  endif
 #endif
 
+/* Board support */
+#ifdef CONFIG_LIB_BOARDCTL
+SYSCALL_LOOKUP(boardctl,                2, STUB_boardctl)
+#endif
+
 /* The following are defined if file descriptors are enabled */
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
@@ -196,6 +206,8 @@ SYSCALL_LOOKUP(closedir,                1, STUB_closedir)
 SYSCALL_LOOKUP(dup,                     1, STUB_dup)
 SYSCALL_LOOKUP(dup2,                    2, STUB_dup2)
 SYSCALL_LOOKUP(fcntl,                   6, STUB_fcntl)
+SYSCALL_LOOKUP(fstat,                   2, STUB_fstat)
+SYSCALL_LOOKUP(fstatfs,                 2, STUB_fstatfs)
 SYSCALL_LOOKUP(lseek,                   3, STUB_lseek)
 SYSCALL_LOOKUP(mkfifo,                  2, STUB_mkfifo)
 SYSCALL_LOOKUP(mmap,                    6, NULL)
@@ -256,6 +268,9 @@ SYSCALL_LOOKUP(pthread_mutex_init,      2, STUB_pthread_mutex_init)
 SYSCALL_LOOKUP(pthread_mutex_lock,      1, STUB_pthread_mutex_lock)
 SYSCALL_LOOKUP(pthread_mutex_trylock,   1, STUB_pthread_mutex_trylock)
 SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_pthread_mutex_unlock)
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
+#endif
 SYSCALL_LOOKUP(pthread_setcancelstate,  2, STUB_pthread_setcancelstate)
 SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_pthread_setschedparam)
 SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_pthread_setschedprio)
@@ -299,6 +314,8 @@ SYSCALL_LOOKUP(get_environ_ptr,         1, STUB_get_environ_ptr)
 SYSCALL_LOOKUP(accept,                  3, STUB_accept)
 SYSCALL_LOOKUP(bind,                    3, STUB_bind)
 SYSCALL_LOOKUP(connect,                 3, STUB_connect)
+SYSCALL_LOOKUP(getpeername,             3, STUB_getpeername)
+SYSCALL_LOOKUP(getsockname,             3, STUB_getsockname)
 SYSCALL_LOOKUP(getsockopt,              5, STUB_getsockopt)
 SYSCALL_LOOKUP(listen,                  2, STUB_listen)
 SYSCALL_LOOKUP(recv,                    4, STUB_recv)
@@ -306,6 +323,7 @@ SYSCALL_LOOKUP(recvfrom,                6, STUB_recvfrom)
 SYSCALL_LOOKUP(send,                    4, STUB_send)
 SYSCALL_LOOKUP(sendto,                  6, STUB_sendto)
 SYSCALL_LOOKUP(setsockopt,              5, STUB_setsockopt)
+SYSCALL_LOOKUP(shutdown,                2, STUB_shutdown)
 SYSCALL_LOOKUP(socket,                  3, STUB_socket)
 #endif
 

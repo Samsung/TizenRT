@@ -1,0 +1,154 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ARTIK05X_BOOT_FAILURE_DETECTION
+	bool "Clear bootcount when boot completes"
+	default y
+	---help---
+		BL2 sets up a watchdog before it jumps to TinyARA to detect
+		boot failures. On a successful boot, the secondary OS should
+		turn the watchdog off and clear the bootcount register that
+		stores the number of tries to boot. Otherwise, the watchdog
+		will bark and BL2 may go into recovery mode.
+
+config ARTIK05X_BOOT_COUNTS_ADDR
+	hex "Address of scratch pad register to store the bootcount"
+	default 0x80090810
+	depends on ARTIK05X_BOOT_FAILURE_DETECTION
+	---help---
+		The number of tries to boot will be stored in this address.
+		On successful boot, it is cleared to zero. The register should
+		be kept intact even on watchdog resets.
+
+config ARTIK05X_FLASH_CAPACITY
+	int "Size of external flash memory (in bytes)"
+	default 8388608
+	depends on S5J_SFLASH
+	---help---
+		Sets the capacity of the external flash memory
+		on the ARTIK-05x Series Starter Kit board.
+
+config ARTIK05X_FLASH_PAGE_SIZE
+	int "Page size of external flash memory (in bytes)"
+	default 4096
+	depends on S5J_SFLASH
+	---help---
+		Sets the page size of the external flash memory on the
+		ARTIK-05x Series Starter Kit board. It can be the size of erase
+		unit flash memory supports.
+
+config ARTIK05X_AUTOMOUNT
+	bool "Automount partitions"
+	default n
+	depends on FLASH_PARTITION
+	depends on !DISABLE_MOUNTPOINT
+	---help---
+		If enabled, mount userrw and sssrw partitions at boot.
+
+config ARTIK05X_AUTOMOUNT_USERFS
+	bool "Automount user r/w partiton"
+	default n
+	depends on ARTIK05X_AUTOMOUNT
+	depends on FS_SMARTFS
+	---help---
+		If enabled, user r/w partition will be mounted automatically
+		at boot.
+
+config ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+	string "Device name of the partition for user r/w file system"
+	default "/dev/smart0p8"
+	depends on ARTIK05X_AUTOMOUNT_USERFS
+	---help---
+		Specifies the device name (/dev/smart0pX) of the partition
+		for user r/w file system.
+		when SMARTFS_MULTI_ROOT_DIRS is enabled the device name
+		will be appended by "d1" (/dev/smart0pxd1).
+
+config ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT
+	string "Mountpoint of the partition for user r/w file system"
+	default "/mnt"
+	depends on ARTIK05X_AUTOMOUNT_USERFS
+	---help---
+		Specifies the mount point where user r/w file system
+		will be mounted at.
+
+config ARTIK05X_AUTOMOUNT_SSSRW
+	bool "Automount secure storage partiton"
+	default n
+	depends on ARTIK05X_AUTOMOUNT
+	---help---
+		If enabled, secure storage partition will be mounted
+		automatically at boot.
+
+config ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME
+	string "Device name of the partition for secure storage"
+	default "/dev/smart0p10"
+	depends on ARTIK05X_AUTOMOUNT_SSSRW
+	---help---
+		Specifies the device name (/dev/smart0pX) of the partition
+		for secure storage.
+
+config ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT
+	string "Mountpoint of the partition for secure storage"
+	default "/sss"
+	depends on ARTIK05X_AUTOMOUNT_SSSRW
+	---help---
+		Specifies the mount point where secure storage
+		will be mounted at.
+
+config ARTIK05X_AUTOMOUNT_ROMFS
+	bool "Automount romfs partiton"
+	default y
+	depends on ARTIK05X_AUTOMOUNT
+	depends on FS_ROMFS
+	---help---
+		If enabled, romfs partition will be mounted automatically
+		at boot.
+
+config ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME
+	string "Device name of the partition for romfs file system"
+	default "/dev/mtdblock9"
+	depends on ARTIK05X_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the device name (/dev/mtdblock9) of the partition
+		for romfs file system.
+
+config ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT
+	string "Mountpoint of the partition for romfs file system"
+	default "/rom"
+	depends on ARTIK05X_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the mount point where romfs file system
+		will be mounted at.
+
+config SVR_DB_SECURESTORAGE
+	bool "Enable storing SVR DB inside secure storage partition"
+	default n
+	depends on (SUPPORT_FULL_SECURITY && ARTIK05X_AUTOMOUNT_SSSRW)
+	---help---
+		If enabled, SVR DB is stored in secure storage partion
+		mounted at the specified mount point.
+
+if RAMMTD
+config ARTIK05X_RAMMTD_NEBLOCKS
+	int "RAM MTD erase block count"
+	default 64
+	---help---
+		Ramfs size will be RAMMTD_ERASESIZE * ARTIK05X_RAMMTD_NEBLOCKS.
+		You have to consider total ramsize to alloc ramfs size.
+
+config ARTIK05X_RAMMTD_DEV_NUMBER
+	int "device number for mtd of smartfs"
+	default 3
+
+config ARTIK05X_RAMMTD_DEV_POINT
+	string "Device name of the partition for ramfs r/w file system"
+	default "/dev/smart3"
+
+config ARTIK05X_RAMMTD_MOUNT_POINT
+	string "Mountpoint of the partition for ramfs r/w file system"
+	default "/ramfs"
+endif
+

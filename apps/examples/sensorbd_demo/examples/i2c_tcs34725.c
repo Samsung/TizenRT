@@ -52,6 +52,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <tinyara/i2c.h>
 #include <tinyara/math.h>
 
@@ -112,22 +113,22 @@ static void tcs34725_getdata(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 
 	switch (tcs34725IntegrationTime) {
 	case TCS34725_INTEGRATIONTIME_2_4MS:
-		up_mdelay(3);
+		usleep(3000);
 		break;
 	case TCS34725_INTEGRATIONTIME_24MS:
-		up_mdelay(24);
+		usleep(24000);
 		break;
 	case TCS34725_INTEGRATIONTIME_50MS:
-		up_mdelay(50);
+		usleep(50000);
 		break;
 	case TCS34725_INTEGRATIONTIME_101MS:
-		up_mdelay(101);
+		usleep(101000);
 		break;
 	case TCS34725_INTEGRATIONTIME_154MS:
-		up_mdelay(154);
+		usleep(154000);
 		break;
 	case TCS34725_INTEGRATIONTIME_700MS:
-		up_mdelay(700);
+		usleep(700000);
 		break;
 	}
 }
@@ -178,7 +179,7 @@ static void tcs34725_initialize(void)
 
 	tcs34725_read(TCS34725_ID, &reg, 1);
 	if ((reg != 0x44) && (reg != 0x10)) {
-		printf("Bad devie id(0x%02x)\n", reg);
+		printf("Bad device id(0x%02x)\n", reg);
 		return;
 	}
 	printf("Successfully read device id(0x%02x)\n", reg);
@@ -186,10 +187,10 @@ static void tcs34725_initialize(void)
 	tcs34725_write(TCS34725_ATIME, tcs34725IntegrationTime);
 	tcs34725_write(TCS34725_CONTROL, TCS34725_GAIN_4X);
 	tcs34725_write(TCS34725_ENABLE, TCS34725_ENABLE_PON);
-	up_mdelay(10);
+	usleep(10000);
 
 	tcs34725_write(TCS34725_ENABLE, TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN);
-	up_mdelay(10);
+	usleep(10000);
 }
 
 void tcs34725_main(int argc, char *argv[])
@@ -217,6 +218,6 @@ void tcs34725_main(int argc, char *argv[])
 		lux = tcs34725_calclux(r, g, b);
 
 		printf("(R:%d), (G:%d), (B:%d), (C:%d), (Color Temp:%d), (Lux:%d)\n", r, g, b, c, temp, lux);
-		up_mdelay(500);
+		usleep(500000);
 	}
 }

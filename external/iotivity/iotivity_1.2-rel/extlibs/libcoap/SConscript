@@ -50,6 +50,14 @@ libcoap_zip_file         = os.path.join(src_dir, 'extlibs', 'libcoap', libcoap_b
 libcoap_url              = libcoap_repo_url + '/archive/' + libcoap_branch + '.zip'
 libcoap_checkout_command = 'git clone ' + libcoap_repo_url + '.git extlibs/libcoap/libcoap --branch ' + libcoap_branch
 
+if GetOption('clean'):
+    lib_path = os.path.join(src_dir, 'extlibs', 'libcoap', 'libcoap.a')
+    if os.path.exists(lib_path):
+        result = os.system('rm -f %s' %lib_path)
+        if result != 0:
+            print 'Failed to remove the libcoap library in extlibs/libcoap'
+    Return('libcoap_env')
+
 if with_upstream_libcoap == '1':
     print '*** Checking for installation of libCoAP ***'
     if not os.path.exists(libcoap_dir):
@@ -167,4 +175,3 @@ else:
 libcoap = libcoap_env.StaticLibrary('coap', libcoap_src, OBJPREFIX='libcoap_')
 
 libcoap_env.InstallTarget([libcoap], 'coap')
-

@@ -6,8 +6,9 @@
 config TASK_MANAGER
 	bool "Enable Task Manager"
 	default n
-	select BUILTIN_APPS
 	select SCHED_ATEXIT
+	select SCHED_WORKQUEUE if !BUILD_PROTECTED
+	select LIB_USRWORK if BUILD_PROTECTED
 	depends on !DISABLE_SIGNALS && !DISABLE_MQUEUE && TASK_NAME_SIZE != 0
 	---help---
 		Enables Task Manager.

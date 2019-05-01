@@ -141,7 +141,7 @@ fi
 
 # Create the export directory
 
-EXPORTSUBDIR="nuttx-export${VERSION}"
+EXPORTSUBDIR="tizenrt-export${VERSION}"
 EXPORTDIR="${TOPDIR}/${EXPORTSUBDIR}"
 
 # If the export directory already exists, then remove it and create a new one
@@ -229,8 +229,6 @@ if [ "X${USRONLY}" == "Xy" ]; then
 	echo "NM               = ${NM}" >>"${EXPORTDIR}/build/Make.defs"
 	echo "OBJCOPY          = ${OBJCOPY}" >>"${EXPORTDIR}/build/Make.defs"
 	echo "OBJDUMP          = ${OBJDUMP}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "NXFLATLDFLAGS1   = ${NXFLATLDFLAGS1}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "NXFLATLDFLAGS2   = ${NXFLATLDFLAGS2}" >>"${EXPORTDIR}/build/Make.defs"
 	echo "OBJEXT           = ${OBJEXT}" >>"${EXPORTDIR}/build/Make.defs"
 	echo "LIBEXT           = ${LIBEXT}" >>"${EXPORTDIR}/build/Make.defs"
 	echo "EXEEXT           = ${EXEEXT}" >>"${EXPORTDIR}/build/Make.defs"
@@ -361,15 +359,15 @@ for lib in ${LIBLIST}; do
 		fi
 
 		# Rename each object file (to avoid collision when they are combined)
-		# and add the file to libnuttx
+		# and add the file to libtizenrt
 
 		for file in `ls`; do
 			mv "${file}" "${shortname}-${file}"
 			if [ "X${WINTOOL}" = "Xy" ]; then
-				WLIB=`cygpath -w "${EXPORTDIR}/libs/libnuttx${LIBEXT}"`
+				WLIB=`cygpath -w "${EXPORTDIR}/libs/libtizenrt${LIBEXT}"`
 				${AR} rcs "${WLIB}" "${shortname}-${file}"
 			else
-				${AR} rcs "${EXPORTDIR}/libs/libnuttx${LIBEXT}" "${shortname}-${file}"
+				${AR} rcs "${EXPORTDIR}/libs/libtizenrt${LIBEXT}" "${shortname}-${file}"
 			fi
 		done
 

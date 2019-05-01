@@ -34,7 +34,7 @@ namespace media {
 /**
  * @brief current state of MediaPlayer.
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0 PRE
+ * @since TizenRT v2.0
  */
 typedef enum player_state_e {
 	/** MediaPlayer object was created */
@@ -43,6 +43,8 @@ typedef enum player_state_e {
 	PLAYER_STATE_IDLE,
 	/** MediaPlayer datasource configured */
 	PLAYER_STATE_CONFIGURED,
+	/** MediaPlayer is preparing datasource */
+	PLAYER_STATE_PREPARING,
 	/** MediaPlayer ready to play */
 	PLAYER_STATE_READY,
 	/** MediaPlayer do playing */
@@ -55,12 +57,14 @@ const char *const player_state_names[] = {
 	"PLAYER_STATE_NONE",
 	"PLAYER_STATE_IDLE",
 	"PLAYER_STATE_CONFIGURED",
+	"PLAYER_STATE_PREPARING",
 	"PLAYER_STATE_READY",
 	"PLAYER_STATE_PLAYING",
 	"PLAYER_STATE_PAUSED",
 };
 
 typedef enum player_observer_command_e {
+	PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED,
 	PLAYER_OBSERVER_COMMAND_STARTED,
 	PLAYER_OBSERVER_COMMAND_FINISHIED,
 	PLAYER_OBSERVER_COMMAND_START_ERROR,
@@ -68,12 +72,18 @@ typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_STOP_ERROR,
 	PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR,
 	PLAYER_OBSERVER_COMMAND_PAUSED,
+	PLAYER_OBSERVER_COMMAND_STOPPED,
 	PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN,
 	PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
 	PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED,
 	PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED,
 	PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED,
 } player_observer_command_t;
+
+typedef enum player_event_e {
+	PLAYER_EVENT_SOURCE_OPEN_FAILED,
+	PLAYER_EVENT_SOURCE_PREPARED,
+} player_event_t;
 
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
@@ -84,34 +94,41 @@ public:
 	player_result_t create();
 	player_result_t destroy();
 	player_result_t prepare();
+	player_result_t prepareAsync();
 	player_result_t unprepare();
 	player_result_t start();
 	player_result_t pause();
 	player_result_t stop();
 
 	player_result_t getVolume(uint8_t *vol);
+	player_result_t getMaxVolume(uint8_t *vol);
 	player_result_t setVolume(uint8_t vol);
 
+	player_result_t setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();
+	bool isPlaying();
 
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd, ...);
-
+	void notifyAsync(player_event_t event);
 	void playback();
 
 private:
 	void createPlayer(player_result_t &ret);
 	void destroyPlayer(player_result_t &ret);
 	void preparePlayer(player_result_t &ret);
+	void prepareAsyncPlayer();
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
 	void pausePlayer();
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
+	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
+	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 
@@ -122,6 +139,7 @@ private:
 	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
+	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
 };

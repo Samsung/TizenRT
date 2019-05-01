@@ -71,12 +71,6 @@ config ENABLE_IOTIVITY_CLOUD
 	---help---
 		select to enable the cloud for iotivity stack in tinyara
 
-config IOTIVITY_RELEASE
-	bool "Set Iotivity to Release mode"
-	default y
-	---help---
-		select to build IoTivity in Release mode. Code will be optimized.
-
 config IOTIVITY_DEBUG
         bool "enable iotivity stack logs"
         default n

@@ -72,8 +72,11 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
+#ifdef CONFIG_ENABLE_HEAPINFO
+#include <tinyara/heapinfo_drv.h>
+#endif
 #ifdef CONFIG_TASK_MANAGER
-#include <tinyara/task_manager_internal.h>
+#include <tinyara/task_manager_drv.h>
 #endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"
@@ -104,7 +107,7 @@
 #if defined(CONFIG_INIT_ENTRYPOINT)
 /* Initialize by starting a task at an entry point */
 
-#ifndef CONFIG_USER_ENTRYPOINT
+#if !defined(CONFIG_USER_ENTRYPOINT) && !defined(CONFIG_TASH)
 /* Entry point name must have been provided */
 
 #error CONFIG_USER_ENTRYPOINT must be defined
@@ -236,6 +239,10 @@ static inline void os_do_appstart(void)
 	board_initialize();
 #endif
 
+#ifdef CONFIG_SE
+	se_initialize();
+#endif
+
 #ifdef CONFIG_NET
 	/* Initialize the network system & Create network task if required */
 
@@ -263,6 +270,10 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
+#ifdef CONFIG_ENABLE_HEAPINFO
+	heapinfo_drv_register();
+#endif
+
 #ifdef CONFIG_TASK_MANAGER
 #define TASKMGR_STACK_SIZE 2048
 #define TASKMGR_PRIORITY 200
@@ -279,9 +290,10 @@ static inline void os_do_appstart(void)
 	svdbg("Starting application main thread\n");
 
 #ifdef CONFIG_BUILD_PROTECTED
-	DEBUGASSERT(USERSPACE->us_entrypoint != NULL);
-	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
-#else
+	if (USERSPACE->us_entrypoint != NULL) {
+		pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
+	}
+#elif defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
 	ASSERT(pid > 0);

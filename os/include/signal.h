@@ -18,7 +18,7 @@
 /********************************************************************************
  * include/signal.h
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011, 2013-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -136,6 +136,10 @@
 #endif
 #endif
 
+/* When SIGKILL is sent, a task/pthread which received signal will be terminated without any garbage collection.
+ * For freeing the allocated memory, user's own handler for SIGKILL is needed.
+ * CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
+ */		
 #ifndef CONFIG_SIG_SIGKILL
 #define SIGKILL       9			/* Sent to cause process to terminate */
 #else
@@ -359,6 +363,53 @@ extern "C" {
 int kill(pid_t pid, int sig);
 
 /**
+ * @cond
+ * @internal
+ * @brief write signal information to standard error
+ * @details @b #include <signal.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+void psignal(int signum, FAR const char *message);
+/**
+ * @endcond
+ */
+
+/**
+ * @cond
+ * @internal
+ * @brief write signal information to standard error
+ * @details @b #include <signal.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+void psiginfo(const siginfo_t *pinfo, const char *message);
+/**
+ * @endcond
+ */
+
+/* Pthread signal management APIs */
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief send a signal to a pthread
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_kill(pthread_t thread, int sig);
+
+/**
+ * @ingroup SIGNAL_KERNEL
+ * @brief examine and change blocked signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v1.0
+ */
+int pthread_sigmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
+
+/**
  * @addtogroup SIGNAL_KERNEL
  * @{
  */
@@ -495,6 +546,22 @@ int sigsuspend(FAR const sigset_t *sigmask);
  * @since TizenRT v1.0
  */
 int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
+
+/**
+ * @cond
+ * @internal
+ * @ingroup SIGNAL_KERNEL
+ * @brief wait for queued signals
+ * @details @b #include <signal.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.1 PRE
+ */
+int sigwait(FAR const sigset_t *set, FAR int *sig);
+/**
+ * @endcond
+ */
+
 /**
  * @ingroup SIGNAL_KERNEL
  * @brief wait for queued signals

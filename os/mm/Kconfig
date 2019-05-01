@@ -64,9 +64,33 @@ config MM_REGIONS
 	default 1
 	---help---
 		If the architecture includes multiple, non-contiguous regions of
-		memory to allocate from, this specifies the number of memory regions
-		that the memory manager must handle and enables the API
-		mm_addregion(heap, start, end);
+		memory to allocate from, MM_REGIONS should be set to the number of
+		memory. Or if you want to use RAM to multiple region(heap), MM_REGIONS
+		should be set to the number of heaps.
+
+config MM_NHEAPS
+	int "Number of heaps"
+	default 1
+	---help---
+		A number of heap memory. If MM_NHEAPS sets to 1, RAM memory can be
+		used for one heap memory. If MM_NHEAPS sets more than equal to 2, it can be
+		split for multi-heap.
+		You can refer to "https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseMultiHeap.md"
+
+config KMM_FORCE_ALLOC_AT
+	bool "Force to alloc at specific mm heap for kernel"
+	default n
+	depends on MM_NHEAPS != 1
+	---help---
+		When Enable multi heap, it's possible that need to alloc memory from
+		specific heap for kernel
+
+config KMM_FORCE_ALLOC_IDX
+	int "Heap index for kernel memory"
+	default 0
+	depends on KMM_FORCE_ALLOC_AT
+	---help---
+		Index of the heap that need to alloc for kernel forcedly
 
 config GRAN
 	bool "Enable Granule Allocator"

@@ -27,6 +27,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
+#include <tinyara/sched.h>
 #include "../../../../../os/kernel/clock/clock.h"
 #include "tc_internal.h"
 
@@ -41,8 +44,7 @@
 #else
 #define NTHREAD  3
 #endif
-#define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
-#define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
+#define TEST_STACK_SIZE     (1024)
 /****************************************************************************
 * Private Data
 ****************************************************************************/
@@ -67,7 +69,7 @@ struct sched_param param;
 static int pthread_attr_set(void)
 {
 	int status;
-	if (attr.stacksize == 512 && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
+	if (attr.stacksize == TEST_STACK_SIZE && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
 		return OK;
 	} else {
 		status = pthread_attr_init(&attr);
@@ -75,7 +77,7 @@ static int pthread_attr_set(void)
 			return ERROR;
 		}
 
-		status = pthread_attr_setstacksize(&attr, 512);
+		status = pthread_attr_setstacksize(&attr, TEST_STACK_SIZE);
 		if (status != OK) {
 			return ERROR;
 		}
@@ -161,17 +163,22 @@ static void write_log(void)
 {
 	int prev = -1;
 	int timeslice_cnt = 0;
-	volatile struct tcb_s *cur_tcb = sched_self();
+	int timeslice;
+	int pid;
+	int fd;
+	fd = tc_get_drvfd();
+	pid = getpid();
 	do {
 		usleep(1);
 	} while (start < created);
 	while (timeslice_cnt < LOOP) {
-		if (prev != cur_tcb->timeslice) {
-			log_pid[logidx] = PIDHASH(cur_tcb->pid);
-			log_timeslice[logidx] = cur_tcb->timeslice;
+		timeslice = ioctl(fd, TESTIOC_GET_TCB_TIMESLICE, pid);
+		if (prev != timeslice) {
+			log_pid[logidx] = PIDHASH(pid);
+			log_timeslice[logidx] = timeslice;
 			logidx++;
 			timeslice_cnt++;
-			prev = cur_tcb->timeslice;
+			prev = timeslice;
 		}
 	}
 }
@@ -263,6 +270,8 @@ static void tc_roundrobin_rr_task(void)
 {
 	int tc;
 	int ret;
+	int fd;
+	fd = tc_get_drvfd();
 	ret = pthread_attr_set();
 	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
 
@@ -286,8 +295,7 @@ static void tc_roundrobin_rr_task(void)
 
 		for (task_cnt = 0; task_cnt < NTHREAD; task_cnt++) {
 			if (task_pid[task_cnt] != ERROR) {
-				FAR struct tcb_s *ptr;
-				while ((ptr = sched_gettcb(task_pid[task_cnt])) != NULL) {
+				while (ioctl(fd, TESTIOC_IS_ALIVE_THREAD, task_pid[task_cnt]) != ERROR) {
 					usleep(100);
 				}
 			}
@@ -304,6 +312,8 @@ static void tc_roundrobin_rr_taskNpthread(void)
 {
 	int tc;
 	int ret;
+	int fd;
+	fd = tc_get_drvfd();
 	ret = pthread_attr_set();
 	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
 
@@ -327,8 +337,7 @@ static void tc_roundrobin_rr_taskNpthread(void)
 		pid_prio[PIDHASH(task_pid)] = priority[tc][0];
 
 		if (task_pid != ERROR) {
-			FAR struct tcb_s *ptr;
-			while ((ptr = sched_gettcb(task_pid)) != NULL) {
+			while (ioctl(fd, TESTIOC_IS_ALIVE_THREAD, task_pid) != ERROR) {
 				usleep(100);
 			}
 		}

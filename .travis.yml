@@ -1,15 +1,22 @@
-
 sudo: false
 dist: trusty
+
+git:
+  submodules: false
 
 language: c
 
 services:
 - docker
 
+branches:
+  only:
+  - master
+  - protection
+
 env:
   global:
-    - TIZENRT_IMG_VERSION=1.4.6
+    - TIZENRT_IMG_VERSION=latest
   matrix:
     - BUILD_CONFIG=artik055s/audio
     - BUILD_CONFIG=artik053/grpc
@@ -19,6 +26,7 @@ env:
     - BUILD_CONFIG=artik053/minimal
     - BUILD_CONFIG=qemu/tc_64k
     - BUILD_CONFIG=qemu/build_test
+    - BUILD_CONFIG=esp_wrover_kit/hello_with_tash
 
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
