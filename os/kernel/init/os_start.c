@@ -61,6 +61,7 @@
 #include  <debug.h>
 
 #include  <tinyara/arch.h>
+#include  <tinyara/binfmt/binfmt.h>
 #include  <tinyara/compiler.h>
 #include  <tinyara/sched.h>
 #include  <tinyara/fs/fs.h>
@@ -374,6 +375,7 @@ void os_start(void)
 
 	sem_initialize();
 
+
 #if defined(MM_KERNEL_USRHEAP_INIT) || defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
 	/* Initialize the memory manager */
 
@@ -386,8 +388,9 @@ void os_start(void)
 		 * the user-mode memory allocator.
 		 */
 		up_allocate_heap(&heap_start, &heap_size);
+
 #if CONFIG_MM_REGIONS > 1
-		mm_initialize(&g_mmheap[regionx_heap_idx[0]], heap_start, heap_size);
+		mm_initialize(&USR_HEAP[regionx_heap_idx[0]], heap_start, heap_size);
 		heapx_is_init[regionx_heap_idx[0]] = true;
 		up_addregion();
 #else
@@ -414,6 +417,14 @@ void os_start(void)
 		mm_pginitialize(heap_start, heap_size);
 #endif
 	}
+#endif
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* If app binary separation is enabled, then each application will have its own RAM
+	 * area called as the ram partition. The app's text, data, stack and heap will all be
+	 * allocated from this partition. The following call initializes the ram partition manager
+	 */
+	mm_initialize_ram_partitions();
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
@@ -549,6 +560,12 @@ void os_start(void)
 	 */
 
 	lib_initialize();
+
+#ifndef CONFIG_BINFMT_DISABLE
+	/* Initialize the binfmt system */
+
+	binfmt_initialize();
+#endif
 
 	/* IDLE Group Initialization **********************************************/
 #ifdef HAVE_TASK_GROUP
