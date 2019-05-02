@@ -322,8 +322,14 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	/* Return the heap settings */
 
 	board_led_on(LED_HEAPALLOCATE);
-	*heap_start = (FAR void *)g_idle_topstack;
-	*heap_size = PRIMARY_RAM_END - g_idle_topstack;
+
+	if (g_idle_topstack >= PRIMARY_RAM_START && g_idle_topstack <= PRIMARY_RAM_END) {
+		*heap_start = (FAR void *)g_idle_topstack;
+		*heap_size  = PRIMARY_RAM_END - g_idle_topstack;
+	} else {
+		*heap_start = PRIMARY_RAM_START;
+		*heap_size  = PRIMARY_RAM_SIZE;
+	}
 #endif
 }
 
