@@ -62,7 +62,9 @@
 #include "imxrt_start.h"
 #include "imxrt1050-evk.h"
 #include "imxrt_flash.h"
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
+#endif
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -82,8 +84,9 @@ void imxrt_boardinitialize(void)
 #ifdef CONFIG_ARCH_LEDS
 	imxrt_autoled_initialize();
 #endif
-
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
 	imxrt_semc_sdram_init();
+#endif
 	imxrt_flash_init();
 }
 
