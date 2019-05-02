@@ -33,6 +33,8 @@
 #include <string.h>
 #include <debug.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <limits.h>
 #include <wifi_manager/wifi_manager.h>
 
 #ifndef CONFIG_EXAMPLES_MEDIAPLAYER_SSID
@@ -57,13 +59,10 @@ using namespace media::stream;
 //***************************************************************************/
 
 static const int TEST_PCM = 0;
-static const int TEST_MP3 = 1;
-static const int TEST_AAC = 2;
-static const int TEST_OPUS = 3;
-static const int TEST_WAVE = 4;
-static const int TEST_BUFFER = 5;
-static const int TEST_HTTP = 6;
+static const int TEST_BUFFER = 1;
+static const int TEST_HTTP = 2;
 
+static char TEST_FILE_PATH[128] = "/rom/44100.pcm";
 // We don't provide any song's URL, to avoid license issue.
 // Please fill a valid URL to `TEST_HTTP_URL` for testing!
 static const std::string TEST_HTTP_URL = "";
@@ -80,6 +79,12 @@ enum test_command_e {
 	VOLUME_UP,
 	VOLUME_DOWN
 };
+
+extern "C" {
+static int wifi_connect();
+static int wifi_disconnect();
+static int list_dir_entries(const char *dirpath, char **filelist, int max);
+}
 
 class MyMediaPlayer : public MediaPlayerObserverInterface,
 					  public FocusChangeListener,
@@ -117,31 +122,14 @@ bool MyMediaPlayer::init(int test)
 	}
 
 	switch (test) {
-	case TEST_MP3:
+	case TEST_PCM:
 		makeSource = []() {
-			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
+			source->setSampleRate(44100);
+			source->setChannels(2);
 			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 			return std::move(source);
 		};
-		break;
-	case TEST_AAC:
-		makeSource = []() {
-			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
-			return std::move(source);
-		};
-		break;
-	case TEST_OPUS:
-		makeSource = []() {
-			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
-			return std::move(source);
-		};
-		break;
-	case TEST_WAVE:
-		makeSource = []() {
-			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/Audio.wav")));
-			return std::move(source);
-		};
-		break;
 	case TEST_BUFFER:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<BufferInputDataSource>(new BufferInputDataSource()));
@@ -156,10 +144,7 @@ bool MyMediaPlayer::init(int test)
 		break;
 	default:
 		makeSource = []() {
-			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
-			source->setSampleRate(44100);
-			source->setChannels(2);
-			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource(TEST_FILE_PATH)));
 			return std::move(source);
 		};
 	}
@@ -346,36 +331,54 @@ void MyMediaPlayer::onFocusChange(int focusChange)
 class MediaPlayerController
 {
 public:
-	void start(const int test)
+	void start()
 	{
-		setUp(test);
-
 		while (true) {
-			auto player = selectPlayer();
-			if (player < 0) {
+			auto test = selectSource();
+			if (test < 0) {
 				break;
 			}
-			cout << "PLAYER " << (char)('A' + player) << " is selected" << endl;
-			auto command = selectCommand();
-			mPlayer[player]->doCommand(command);
-		}
 
-		tearDown();
+			if (!setUp(test)) {
+				continue;
+			}
+
+			while (true) {
+				auto player = selectPlayer();
+				if (player < 0) {
+					break;
+				}
+				cout << "PLAYER " << (char)('A' + player) << " is selected" << endl;
+				auto command = selectCommand();
+				mPlayer[player]->doCommand(command);
+			}
+
+			tearDown(test);
+		}
 	}
 
 private:
-	void setUp(const int test)
+	bool setUp(const int test)
 	{
+		if ((test == TEST_HTTP) && (wifi_connect() != 0)) {
+			return false;
+		}
+
 		mPlayer[0] = make_shared<MyMediaPlayer>();
 		mPlayer[0]->init(test);
 		mPlayer[1] = make_shared<MyMediaPlayer>();
 		mPlayer[1]->init(test);
+		return true;
 	}
 
-	void tearDown()
+	void tearDown(const int test)
 	{
 		mPlayer[0].reset();
 		mPlayer[1].reset();
+
+		if (test == TEST_HTTP) {
+			wifi_disconnect();
+		}
 	}
 
 	int userInput(int min, int max)
@@ -401,10 +404,37 @@ private:
 		}
 	}
 
+	int selectSource()
+	{
+		char *filelist[32] = { 0, };
+		int filenum = list_dir_entries("/rom", filelist, 32);
+
+		cout << "====================" << endl;
+		cout << " 0. Exit APP        " << endl;
+		cout << " 1. Test PCM        " << endl;
+		cout << " 2. Test BUFFER     " << endl;
+		cout << " 3. Test HTTP       " << endl;
+		int offset = 4;
+		int i;
+		for (i = 0; i < filenum; i++) {
+			cout << " " << offset + i << ". " << filelist[i] << endl;
+		}
+		cout << "====================" << endl;
+
+		int select = userInput(0, offset + filenum - 1);
+		if (select >= offset) {
+			strncpy(TEST_FILE_PATH, filelist[select - offset], sizeof(TEST_FILE_PATH));
+		}
+		for (i = 0; i < filenum; i++) {
+			free(filelist[i]);
+		}
+		return select - 1;
+	}
+
 	int selectPlayer()
 	{
 		cout << "====================" << endl;
-		cout << " 0. Exit APP        " << endl;
+		cout << " 0. Select Source   " << endl;
 		cout << " 1. Select PLAYER A " << endl;
 		cout << " 2. Select PLAYER B " << endl;
 		cout << "====================" << endl;
@@ -517,21 +547,56 @@ static int wifi_disconnect()
 	return 0;
 }
 
+/* list all files in the directory */
+static int list_dir_entries(const char *dirpath, char **filelist, int max)
+{
+	if (!filelist) {
+		meddbg("Invalid list param!\n", dirpath);
+		return -1;
+	}
+
+	DIR *dirp = opendir(dirpath);
+	if (!dirp) {
+		meddbg("Failed to open directory %s\n", dirpath);
+		return -1;
+	}
+
+	int num = 0;
+	struct dirent *entryp;
+	char path[CONFIG_PATH_MAX];
+
+	while ((entryp = readdir(dirp)) != NULL) {
+		snprintf(path, CONFIG_PATH_MAX, "%s/%s", dirpath, entryp->d_name);
+		if (!DIRENT_ISDIRECTORY(entryp->d_type)) {
+			/* this entry is a file, add it to list. */
+			if (num >= max) {
+				meddbg("Too many files, list is full.\n");
+				break;
+			}
+			filelist[num++] = strdup(path);
+		} else {
+			if (!strcmp(".", entryp->d_name) || !strcmp("..", entryp->d_name)) {
+				continue;
+			}
+			int ret = list_dir_entries(path, &filelist[num], max - num);
+			if (ret <= 0) {
+				continue;
+			}
+			num += ret;
+		}
+	}
+
+	closedir(dirp);
+	return num;
+}
+
+
 int mediaplayer_main(int argc, char *argv[])
 {
 	up_cxxinitialize();
 
-	int test = TEST_AAC;
- 	if ((test == TEST_HTTP) && (wifi_connect() != 0)) {
-		return 0;
-	}
-
 	MediaPlayerController mediaPlayerController;
-	mediaPlayerController.start(test);
-
-	if (test == TEST_HTTP) {
-		wifi_disconnect();
-	}
+	mediaPlayerController.start();
 
 	return 0;
 }

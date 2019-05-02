@@ -121,6 +121,17 @@ config IMXRT_EDMA
 	default n
 	select ARCH_DMA
 
+config IMXRT_USBHOST
+	bool "USB host"
+	select USBHOST
+	select USBHOST_HAVE_ASYNCH
+	default n
+
+config IMXRT_USBOTG
+	bool "USB OTG"
+	default n
+	depends on IMXRT_USBHOST
+
 config IMXRT_ENET
 	bool "Ethernet"
 	default n
@@ -479,16 +490,17 @@ config IMXRT_SEMC_SDRAM
 	bool "External SDRAM installed"
 	default n
 	depends on IMXRT_SEMC
+	select C99_BOOL8
 
 if IMXRT_SEMC_SDRAM
 
 config IMXRT_SDRAM_START
 	hex "SDRAM start address"
-	default 0x10000000
+	default 0x80000000
 
 config IMXRT_SDRAM_SIZE
 	int "SDRAM size (bytes)"
-	default 268435456
+	default 33554432
 
 endif # IMXRT_SEMC_SDRAM
 

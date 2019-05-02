@@ -43,7 +43,11 @@
  * SEC1 http://www.secg.org/index.php?action=secg,docs_secg
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_ECDSA_C)
 
@@ -303,8 +307,20 @@ cleanup:
 /*
  * Convert a signature (given by context) to ASN.1
  */
-int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
-                             unsigned char *sig, size_t *slen )
+/**
+ * \brief           Convert ecdsa signature to asn.1 type.
+ *
+ * \param r         First integer of the signature
+ * \param s         Second integer of the signature
+ * \param sig       Buffer that will hold the signature
+ * \param slen      Length of the signature written
+ *
+ * \return          0 if successful,
+ *                  or a MBEDTLS_ERR_ECP_XXX, MBEDTLS_ERR_MPI_XXX or
+ *                  MBEDTLS_ERR_ASN1_XXX error code
+ */
+static int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
+                                    unsigned char *sig, size_t *slen )
 {
     int ret;
     unsigned char buf[MBEDTLS_ECDSA_MAX_LEN];

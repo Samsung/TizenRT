@@ -9,6 +9,21 @@ config SE
 	select SECURITY_LINK_DRV
 
 if SE
+
+config DEBUG_SECURE_ELEMENT_ERROR
+	bool "Secure element debug ERROR"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable Secure Element ERROR Debug
+
+config DEBUG_SECURE_ELEMENT_INFO
+	bool "Secure element debug INFO"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable Secure Element INFO Debug
+
 choice
 	prompt "SE selection"
 	default SE_SSS

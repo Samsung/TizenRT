@@ -55,7 +55,11 @@
  *
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_RSA_C)
 
@@ -80,6 +84,10 @@
 #define mbedtls_printf printf
 #define mbedtls_calloc calloc
 #define mbedtls_free   free
+#endif
+
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
+#include "mbedtls/alt/common.h"
 #endif
 
 #if !defined(MBEDTLS_RSA_ALT)
@@ -484,8 +492,8 @@ void mbedtls_rsa_init( mbedtls_rsa_context *ctx,
 #if defined(MBEDTLS_THREADING_C)
     mbedtls_mutex_init( &ctx->mutex );
 #endif
-#if defined(CONFIG_TLS_WITH_SSS)
-	ctx->key_index = 0xFF;
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
+	ctx->key_index = RSA_KEY_INDEX;
 
 #endif
 }

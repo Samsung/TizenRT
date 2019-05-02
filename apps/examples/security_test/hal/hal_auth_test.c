@@ -291,7 +291,7 @@ TEST_F(ecdsa_sign)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->ecdsa_sign_md(&g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &ecdsa_mode, &g_ecdsa_signature));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->ecdsa_sign_md(ecdsa_mode, &g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature));
 
 	ST_END_TEST;
 }
@@ -315,7 +315,7 @@ TEST_SETUP(ecdsa_verify)
 	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
 	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->ecdsa_sign_md(&g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &ecdsa_mode, &g_ecdsa_signature));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->ecdsa_sign_md(ecdsa_mode, &g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature));
 
 	ST_END_TEST;
 }

@@ -79,6 +79,8 @@
 #define ARMV7M_DCACHE_LINESIZE 32	/* 32 bytes (8 words) */
 #define ARMV7M_ICACHE_LINESIZE 32	/* 32 bytes (8 words) */
 
+#define HAVE_USBHOST    1
+
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/

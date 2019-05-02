@@ -775,9 +775,69 @@ static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf,
 	return OK;
 }
 
-static int mount_show(foreach_mountpoint_t handler, FAR void *arg)
+/****************************************************************************
+ * Name: search_mountpoints
+ *
+ * Description:
+ *    Search all mount points.
+ *
+ ****************************************************************************/
+static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 {
-	return foreach_mountpoint(handler, arg);
+	int ret = OK;
+	struct statfs prev_buf = {0, };
+	DIR *dirp = opendir(dirpath);		/* Open the directory */
+	if (!dirp) {
+		/* Failed to open the directory */
+		FSCMD_OUTPUT("\t Failed to open directory: %s\n", dirpath);
+		return ERROR;
+	}
+
+	/* Read each directory entry */
+	for (;;) {
+		struct statfs buf;
+		char *fullpath;
+		struct dirent *entryp = readdir(dirp);
+		if (!entryp) {
+			/* Finished with this directory */
+			break;
+		}
+
+		/* Call statfs with the given file path */
+		fullpath = get_dirpath(dirpath, entryp->d_name);
+		ret = statfs(fullpath, &buf);
+		if (ret != OK) {
+			FSCMD_OUTPUT("statfs is failed at %s\n", fullpath);
+			return ERROR;
+		}
+
+		if ((buf.f_type == SMARTFS_MAGIC) || (buf.f_type == ROMFS_MAGIC) || (buf.f_type == PROCFS_MAGIC) || (buf.f_type == TMPFS_MAGIC)) {
+			if (prev_buf.f_type == buf.f_type) {	/* In this case, inode is not changed. */
+				continue;
+			}
+			prev_buf.f_type = buf.f_type;
+
+			ret = handler(fullpath, &buf, NULL);
+			if (ret != OK) {
+				FSCMD_OUTPUT("handler is failed at %d\n", fullpath);
+				return ERROR;
+			}
+		} else {
+			if (DIRENT_ISDIRECTORY(entryp->d_type) && !ls_specialdir(entryp->d_name)) {
+				search_mountpoints(fullpath, handler);
+			}
+		}
+
+		fscmd_free(fullpath);
+	}
+	closedir(dirp);
+
+	return ret;
+}
+
+int mount_show(void)
+{
+	return search_mountpoints(CONFIG_LIB_HOMEDIR, mount_handler);
 }
 
 /****************************************************************************
@@ -801,7 +861,7 @@ static int tash_mount(int argc, char **args)
 	bool badarg = false;
 
 	if (argc < 2) {
-		return mount_show(mount_handler, args[1]);
+		return mount_show();
 	}
 
 	optind = -1;
@@ -1118,11 +1178,11 @@ static int tash_df(int argc, char **args)
 {
 	if (argc > 1 && strcmp(args[1], "-h") == 0) {
 		printf("Filesystem    Size      Used  Available Mounted on\n");
-		return foreach_mountpoint(df_man_readable_handler, NULL);
+		return search_mountpoints(CONFIG_LIB_HOMEDIR, df_man_readable_handler);
 	} else {
 		printf("  Block  Number\n");
 		printf("  Size   Blocks     Used Available Mounted on\n");
-		return foreach_mountpoint(df_handler, NULL);
+		return search_mountpoints(CONFIG_LIB_HOMEDIR, df_handler);
 	}
 
 	return 0;

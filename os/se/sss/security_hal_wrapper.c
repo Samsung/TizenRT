@@ -51,11 +51,11 @@
 
 #define ISP_CHECKBUSY() while (isp_get_status()) {}
 
-#define HWRAP_LOG printf
 #define HWRAP_TAG "[HAL_WRAPPER]"
+
 #define HWRAP_ENTER                                                         \
 	do {                                                                    \
-		HWRAP_LOG(HWRAP_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);\
+		sedbg(HWRAP_TAG"%s:%d\n", __FILE__, __LINE__);                      \
 	} while (0)
 
 #define HAL_MAX_RANDOM_SIZE 256
@@ -567,7 +567,7 @@ int sss_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data
 	int ret = isp_set_securekey(key->data, key->data_len, key_type, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;;
 	}
 
@@ -617,7 +617,7 @@ int sss_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 		ret = isp_ecdsa_get_publickey_securekey(&ecc_key, key_idx, object_id);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 
@@ -634,7 +634,7 @@ int sss_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 		ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
@@ -700,7 +700,7 @@ int sss_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	ret = isp_remove_key(key_type, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 	return HAL_SUCCESS;
@@ -742,19 +742,19 @@ int sss_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 		return HAL_NOT_SUPPORTED;
 		break;
 	case HAL_KEY_ECC_SEC_P192R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x21);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x11);
 		break;
 	case HAL_KEY_ECC_SEC_P224R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x22);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x12);
 		break;
 	case HAL_KEY_ECC_SEC_P256R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x23);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x13);
 		break;
 	case HAL_KEY_ECC_SEC_P384R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x24);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x14);
 		break;
 	case HAL_KEY_ECC_SEC_P512R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x25);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x15);
 		break;
 	case HAL_KEY_HMAC_MD5:
 	case HAL_KEY_HMAC_SHA1:
@@ -777,7 +777,7 @@ int sss_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	}
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -806,7 +806,7 @@ int sss_hal_generate_random(uint32_t len, hal_data *random)
 	ret = isp_generate_random(inbuf, len / 4);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -856,7 +856,7 @@ int sss_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 	ret = isp_hash(output, &h_param, object_id);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -911,7 +911,7 @@ int sss_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal
 	ret = isp_rsa_sign_md_securekey(&rsa_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -962,14 +962,14 @@ int sss_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uin
 	ret = isp_rsa_verify_md_securekey(&rsa_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
 	return HAL_SUCCESS;
 }
 
-int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, hal_data *sign)
+int sss_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
 	HWRAP_ENTER;
 	uint32_t ret;
@@ -985,7 +985,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 	ecc_sign.r = r_buf;
 	ecc_sign.r_byte_len = HAL_MAX_ECP_KEY_SIZE_ALT;
 	
-	switch (mode->hash_t) {
+	switch (mode.hash_t) {
 	case HAL_HASH_MD5:
 		ecc_sign.sign_type |= OID_SHA1_160;
 		break;
@@ -1002,7 +1002,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 		return HAL_INVALID_ARGS;
 	}
 
-	switch (mode->curve) {
+	switch (mode.curve) {
 	case HAL_ECDSA_SEC_P256R1:
 		ecc_sign.sign_type |= OID_ECC_P256;
 		break;
@@ -1024,7 +1024,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 	ret = isp_ecdsa_sign_md_securekey(&ecc_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1146,7 +1146,7 @@ int sss_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign,
 	ret = isp_ecdsa_verify_md_securekey(&ecc_sign, hash->data, hash->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		ret = HAL_FAIL;
 		goto cleanup;
 	}
@@ -1202,7 +1202,7 @@ int sss_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	ret = isp_dh_generate_keypair_userparam_securestorage(&d_param, dh_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1247,7 +1247,7 @@ int sss_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal
 	ret = isp_dh_compute_shared_secret_securekey(output, &shared_secret->data_len, d_param, dh_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1261,29 +1261,29 @@ int sss_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_i
 	HWRAP_ENTER;
 	uint32_t ret;
 	struct sECC_KEY ecc_pub;
-
 	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
+
 	switch (ecdh_param->curve) {
 	case HAL_ECDSA_BRAINPOOL_P256R1:
-		ecc_pub.curve = OID_ECC_BP256;
+		ecc_pub.curve |= OID_ECC_BP256;
 		break;
 	case HAL_ECDSA_BRAINPOOL_P384R1:
 	case HAL_ECDSA_BRAINPOOL_P512R1:
 		return HAL_NOT_SUPPORTED;
 	case HAL_ECDSA_SEC_P192R1:
-		ecc_pub.curve = OID_ECC_P192;
+		ecc_pub.curve |= OID_ECC_P192;
 		break;
 	case HAL_ECDSA_SEC_P224R1:
-		ecc_pub.curve = OID_ECC_P224;
+		ecc_pub.curve |= OID_ECC_P224;
 		break;
 	case HAL_ECDSA_SEC_P256R1:
-		ecc_pub.curve = OID_ECC_P256;
+		ecc_pub.curve |= OID_ECC_P256;
 		break;
 	case HAL_ECDSA_SEC_P384R1:
-		ecc_pub.curve = OID_ECC_P384;
+		ecc_pub.curve |= OID_ECC_P384;
 		break;
 	case HAL_ECDSA_SEC_P512R1:
-		ecc_pub.curve = OID_ECC_P521;
+		ecc_pub.curve |= OID_ECC_P521;
 		break;
 	case HAL_ECDSA_UNKNOWN:
 		return HAL_INVALID_ARGS;
@@ -1299,7 +1299,7 @@ int sss_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_i
 	ret = isp_compute_ecdh_securekey(output, &shared_secret->data_len, ecc_pub, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1319,7 +1319,7 @@ int sss_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 	ret = isp_write_cert(cert, cert_len, cert_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1338,14 +1338,14 @@ int sss_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 		ret = isp_get_factorykey_data(buf, &buf_len, cert_idx);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
 		ret = isp_read_cert(buf, &buf_len, cert_idx);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	}
@@ -1370,7 +1370,7 @@ int sss_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 		ret = isp_get_factorykey_data(key->data, &key->data_len, key_idx);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
@@ -1389,7 +1389,7 @@ int sss_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 		ret = isp_get_factorykey_data(cert->data, &cert->data_len, cert_idx);
 		if (ret != 0) {
 			isp_clear(0);
-			HWRAP_LOG("ISP failed (%zu)\n", ret);
+			sedbg("ISP failed (%zu)\n", ret);
 			return HAL_FAIL;
 		}
 	} else {
@@ -1449,7 +1449,7 @@ int sss_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t k
 	ret = isp_aes_encrypt_securekey(&param, key_idx);;
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1497,7 +1497,7 @@ int sss_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t k
 	ret = isp_aes_decrypt_securekey(&param, key_idx);;
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1516,7 +1516,7 @@ int sss_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key
 	ret = isp_rsa_encrypt_securekey(output, &enc_data->data_len, dec_data->data, dec_data->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1534,7 +1534,7 @@ int sss_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key
 	ret = isp_rsa_decrypt_securekey(output, &dec_data->data_len, enc_data->data, enc_data->data_len, key_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1556,7 +1556,7 @@ int sss_hal_write_storage(uint32_t ss_idx, hal_data *data)
 	ret = isp_write_storage(data->data, data->data_len, ss_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 
@@ -1573,7 +1573,7 @@ int sss_hal_read_storage(uint32_t ss_idx, hal_data *data)
 	ret = isp_read_storage(output, &data->data_len, ss_idx);
 	if (ret != 0) {
 		isp_clear(0);
-		HWRAP_LOG("ISP failed (%zu)\n", ret);
+		sedbg("ISP failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
 

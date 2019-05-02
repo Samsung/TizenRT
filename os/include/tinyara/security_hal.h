@@ -323,7 +323,7 @@ typedef int (*hal_rsa_verify_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _I
  * Desc: Get signature using ECC
  * Return value: hal_result_e
  */
-typedef int (*hal_ecdsa_sign_md)(_IN_ hal_data *hash, _IN_ uint32_t key_idx, _INOUT_ hal_ecdsa_mode *mode, _OUT_ hal_data *sign);
+typedef int (*hal_ecdsa_sign_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
 
 /*
  * Reference
