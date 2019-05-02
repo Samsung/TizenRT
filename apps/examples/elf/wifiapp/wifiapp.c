@@ -269,8 +269,8 @@ int main(int argc, char **argv)
 	printf("I'm WIFI main! create mkchildren task %d\n", pid);
 
 	while (1) {
-		printf("WIFI ALIVE!\n");
 		sleep(10);
+		printf("[%d] WIFI ALIVE\n", getpid());
 	}
 	return 0;
 }

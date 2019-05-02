@@ -17,6 +17,6 @@
 ###########################################################################
 
 ifeq ($(CONFIG_BINARY_UPDATE),y)
-CONFIGURED_APPS += system/update
+CONFIGURED_APPS += system/binary_update
 endif
 

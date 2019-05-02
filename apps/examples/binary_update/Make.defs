@@ -16,19 +16,6 @@
 #
 ###########################################################################
 
-# Add binary manager files
-
-ifeq ($(CONFIG_BINARY_MANAGER),y)
-
-CSRCS += binary_manager.c binary_manager_load.c binary_manager_getinfo.c binary_manager_response.c
-
-ifeq ($(CONFIG_BINMGR_RECOVERY),y)
-CSRCS += binary_manager_recovery.c
-endif # CONFIG_BINMGR_RECOVERY
-
-# Include binary manager build support
-
-DEPPATH += --dep-path binary_manager
-VPATH += :binary_manager
-
-endif # CONFIG_BINARY_MANAGER
+ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE),y)
+CONFIGURED_APPS += examples/binary_update
+endif

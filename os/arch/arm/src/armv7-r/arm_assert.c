@@ -961,7 +961,7 @@ static void _up_assert(int errorcode)
 		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
 
 		request_msg.cmd = BINMGR_FAULT;
-		request_msg.pid = getpid();
+		request_msg.requester_pid = getpid();
 
 		/* Check if the fault is due to data/prefetch/undef abort or
 		   due to direct call to up_assert */

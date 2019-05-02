@@ -30,8 +30,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define BINMGR_REQUEST_MQ               "bin_req_mq"
-#define BINMGR_RESPONSE_MQ_PREFIX       "bin_res_mq"
+#define BINMGR_REQUEST_MQ                "bin_req_mq"
+#define BINMGR_RESPONSE_MQ_PREFIX        "bin_res_mq"
 
 /* Maximum number of messages on queue */
 #define BINMGR_MAX_MSG                   32
@@ -53,7 +53,18 @@
 #define BINMGR_DEVNAME_LEN               16
 
 /* Default priority of task loaded by binary manager */
-#define BINMGR_LOAD_PRIORITY_DEFAULT     150
+#define BINMGR_LOAD_PRIORITY_DEFAULT     120
+
+/* The number of User binaries */
+#ifdef CONFIG_NUM_APPS
+#define USER_BIN_COUNT                   CONFIG_NUM_APPS
+#else
+#define USER_BIN_COUNT                   2
+#endif
+#define KERNEL_BIN_COUNT                 1
+
+#define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
+
 
 /* The types of partition for binary manager */
 enum binmgr_partition_type {
@@ -73,32 +84,58 @@ enum binmgr_request_msg_type {
 #endif
 };
 
-/* Response message type for binary manager */
-enum binmgr_response_msg_type {
-	BINMGR_RESPONSE_DONE,
-	BINMGR_RESPONSE_CONTINUE,
-	BINMGR_RESPONSE_INVALID,
+/* Result values of returned from binary manager. */
+enum binmgr_response_result_type {
+	BINMGR_OK = 0,
+	BINMGR_COMMUNICATION_FAIL = -1,
+	BINMGR_OPERATION_FAIL = -2,
+	BINMGR_OUT_OF_MEMORY = -3,
+	BINMGR_INVALID_PARAM = -4,
+	BINMGR_BININFO_NOT_FOUND = -5,
 };
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+/* The structure of binary information */
+struct binary_info_s {
+	int part_size;
+	char name[BIN_NAME_MAX];
+	char version[BIN_VERSION_MAX];
+	char dev_path[BINMGR_DEVNAME_LEN];
+};
+typedef struct binary_info_s binary_info_t;
+
+/* The structure of binaries' information list */
+struct binary_info_list_s {
+	int bin_count;
+	binary_info_t bin_info[BINARY_COUNT];
+};
+typedef struct binary_info_list_s binary_info_list_t;
+
 struct binmgr_request_s {
 	int cmd;
-	int pid;
-	char b_name[BIN_NAME_MAX];
-	char q_name[BIN_PRIVMQ_LEN];
+	int requester_pid;
+	char bin_name[BIN_NAME_MAX];
 };
 typedef struct binmgr_request_s binmgr_request_t;
 
-struct binmgr_response_s {
-	int cmd;
-	int part_size;
-	char name[BIN_NAME_MAX];
-	char dev_path[BINMGR_DEVNAME_LEN];
-	char version[BIN_VERSION_MAX];
+struct binmgr_reload_response_s {
+	int result;
 };
-typedef struct binmgr_response_s binmgr_response_t;
+typedef struct binmgr_reload_response_s binmgr_reload_response_t;
+
+struct binmgr_getinfo_response_s {
+	int result;
+	binary_info_t data;
+};
+typedef struct binmgr_getinfo_response_s binmgr_getinfo_response_t;
+
+struct binmgr_getinfo_all_response_s {
+	int result;
+	binary_info_list_t data;
+};
+typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 
 /****************************************************************************
  * Public Function Prototypes

@@ -19,19 +19,48 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
+#include <debug.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <mqueue.h>
 
-#include <stdio.h>
-#include <unistd.h>
+#include <tinyara/binary_manager.h>
+
+#include "binary_manager.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int main(int argc, char **argv)
+int binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
 {
-	while (1) {
-		sleep(10);
-		printf("[%d] MICOM ALIVE\n", getpid());
+	int ret;
+	mqd_t mqfd;
+	struct mq_attr attr;
+
+	if (q_name == NULL || response_msg == NULL || msg_size < 0) {
+		bmdbg("Invalid param\n");
+		return ERROR;
 	}
 
-	return 0;
+	attr.mq_maxmsg = BINMGR_MAX_MSG;
+	attr.mq_msgsize = msg_size;
+	attr.mq_flags = 0;
+
+	mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
+	if (mqfd == (mqd_t)ERROR) {
+		bmdbg("mq_open failed!\n");
+		return ERROR;
+	}
+
+	ret = mq_send(mqfd, (char *)response_msg, msg_size, BINMGR_NORMAL_PRIO);
+	if (ret < 0) {
+		bmdbg("mq_send failed! %d\n", errno);
+		mq_close(mqfd);
+		return ERROR;
+	}
+
+	mq_close(mqfd);
+
+	return OK;
 }
