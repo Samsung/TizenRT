@@ -38,13 +38,30 @@ source ${THIS_PATH}/imxrt1050-evk_get_filename.sh
 
 MAKE_FLASHFILE() {
 	if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
-		# Set the flash partition sizes. This value needs to be modified whenever
-		# there is a change in flash partition size in the project.
+		# Extract partition sizes form CONFIG_FLASH_PART_SIZE
+		OIFS=$IFS
+		IFS=","
+		NAMES=($CONFIG_FLASH_PART_NAME)
+		SIZES=($CONFIG_FLASH_PART_SIZE)
 
-		let OS_PART=128*1024
-		let USER_PART=128*1024
-		let APP1_PART=128*1024
-		let APP2_PART=256*1024
+		# Set the flash partition sizes.
+		for i in "${!NAMES[@]}"; do
+			if [ "${NAMES[$i]}" = "kernel" ]; then
+				let OS_PART=${SIZES[$i]}*1024
+				echo "OS_PART="$OS_PART
+			elif [ "${NAMES[$i]}" = "app" ]; then
+				let USER_PART=${SIZES[$i]}*1024
+				echo "USER_PART="$USER_PART
+			elif [ "${NAMES[$i]}" = "micom" ]; then
+				let APP1_PART=${SIZES[$i]}*1024
+				echo "APP1_PART="$APP1_PART
+			elif [ "${NAMES[$i]}" = "wifi" ]; then
+				let APP2_PART=${SIZES[$i]}*1024
+				echo "APP2_PART="$APP2_PART
+			fi
+		done
+
+		IFS=$OIFS
 
 		# Fetch the binary file sizes
 
@@ -82,8 +99,43 @@ MAKE_FLASHFILE() {
 		head -c $app2_padding2 /dev/zero ;
 		) > ${FLASH_IMG}
 	elif [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
-		sed '$d' ${KERN_IMG} > ${TEMP_IMG}
-		cat ${TEMP_IMG} ${USER_IMG} > ${FLASH_IMG}
+
+		# Extract partition sizes form CONFIG_FLASH_PART_SIZE
+		OIFS=$IFS
+		IFS=","
+		NAMES=($CONFIG_FLASH_PART_NAME)
+		SIZES=($CONFIG_FLASH_PART_SIZE)
+
+		# Set the flash partition sizes.
+		for i in "${!NAMES[@]}"; do
+			if [ "${NAMES[$i]}" = "kernel" ]; then
+				let OS_PART=${SIZES[$i]}*1024
+			elif [ "${NAMES[$i]}" = "app" ]; then
+				let USER_PART=${SIZES[$i]}*1024
+			fi
+		done
+
+		IFS=$OIFS
+
+		# Fetch the binary file sizes
+
+		KERN_SIZE=$(stat -c%s "$KERN_IMG")
+		USER_SIZE=$(stat -c%s "$USER_IMG")
+
+		# Calculate padding sizes. Padding is required to adjust the binary size with
+		# the flash partition size.
+
+		let kern_padding="$OS_PART - $KERN_SIZE"
+		let user_padding="$USER_PART - $USER_SIZE"
+
+		# Create a temporary flash img file by concatenation of all binaries and padding
+
+		(
+		head -c $KERN_SIZE $KERN_IMG ;
+		head -c $kern_padding /dev/zero ;
+		head -c $USER_SIZE $USER_IMG ;
+		head -c $user_padding /dev/zero ;
+		) > $FLASH_IMG
 	fi
 }
 
