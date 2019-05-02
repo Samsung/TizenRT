@@ -64,6 +64,9 @@
 
 #include "sched/sched.h"
 #include "up_internal.h"
+#ifdef CONFIG_ARMV7M_MPU
+#include "mpu.h"
+#endif
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
 #include <tinyara/debug/sysdbg.h>
@@ -178,8 +181,12 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Save the task name which will be scheduled */
 				save_task_scheduling_status(rtcb);
 #endif
-				/* Then switch contexts */
+				/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+				up_set_mpu_app_configuration(rtcb);
+#endif
 
+				/* Then switch contexts */
 				up_restorestate(rtcb->xcp.regs);
 			}
 

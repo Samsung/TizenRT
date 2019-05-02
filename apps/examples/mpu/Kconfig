@@ -11,18 +11,47 @@ menuconfig EXAMPLES_MPU_TEST
 
 if EXAMPLES_MPU_TEST
 
+config MPUTEST_KERNEL_CODE_ADDR
+	hex "Address in kernel code range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel code address
+
+config MPUTEST_KERNEL_DATA_ADDR
+	hex "Address in kernel data range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel data address
+
+config MPUTEST_APP_ADDR
+	hex "Address in application range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this application address
+
+
 config TC_MPU_ALL
 	bool "All"
 	default n
-	select TC_MPU_READ
-	select TC_MPU_WRITE
+	select TC_MPU_READ_CODE
+	select TC_MPU_WRITE_CODE
+	select TC_MPU_READ_DATA
+	select TC_MPU_WRITE_DATA
 
-config TC_MPU_READ
-	bool "Read"
+config TC_MPU_READ_CODE
+	bool "Read Kernel Code"
 	default n
 
-config TC_MPU_WRITE
-	bool "Write"
+config TC_MPU_WRITE_CODE
+	bool "Write Kernel Code"
+	default n
+
+config TC_MPU_READ_DATA
+	bool "Read Kernel Data"
+	default n
+
+config TC_MPU_WRITE_DATA
+	bool "Write Kernel Data"
 	default n
 
 endif #EXAMPLES_MPU_TEST

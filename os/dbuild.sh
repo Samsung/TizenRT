@@ -59,7 +59,14 @@ function FIND_BINFILE()
 	if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
 		BINFILE="${BINDIR}/tinyara.elf.bin"
 	elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
-		BINFILE="${BINDIR}/tinyara.hex"
+		# This must be same as imxrt10x0-evk_download.sh in build/configs/imxrt
+		if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
+			BINFILE="${BINDIR}/tinyara_flash.bin"
+		elif [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
+			BINFILE="${BINDIR}/tinyara_prot.hex"
+		else
+			BINFILE="${BINDIR}/tinyara.hex"
+		fi
 	elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
 		BINFILE="${BINDIR}/tinyara_head.bin"
 	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then

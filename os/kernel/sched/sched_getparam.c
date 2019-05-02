@@ -128,7 +128,6 @@ int sched_getparam(pid_t pid, struct sched_param *param)
 	rtcb = this_task();
 	if ((pid == 0) || (pid == rtcb->pid)) {
 		/* Return the priority if the calling task. */
-
 		param->sched_priority = (int)rtcb->sched_priority;
 	}
 
