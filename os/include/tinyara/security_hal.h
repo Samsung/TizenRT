@@ -31,7 +31,7 @@
  */
 
 /* Enumerator */
-enum hal_result_e {
+typedef enum {
 	HAL_SUCCESS,
 
 	HAL_NOT_INITIALIZED,
@@ -57,7 +57,7 @@ enum hal_result_e {
 
 	HAL_BUSY,
 	HAL_FAIL,
-};
+} hal_result_e;
 
 typedef enum {
 	HAL_HASH_MD5,
