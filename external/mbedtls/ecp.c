@@ -58,7 +58,11 @@
  *     <http://eprint.iacr.org/2004/342.pdf>
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_ECP_C)
 
@@ -80,6 +84,10 @@
 #endif
 
 #include "mbedtls/ecp_internal.h"
+
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
+#include "mbedtls/alt/common.h"
+#endif
 
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
@@ -319,8 +327,8 @@ void mbedtls_ecp_keypair_init( mbedtls_ecp_keypair *key )
     mbedtls_ecp_group_init( &key->grp );
     mbedtls_mpi_init( &key->d );
     mbedtls_ecp_point_init( &key->Q );
-#if defined(CONFIG_TLS_WITH_SSS)
-	key->key_index = 0xFF;
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
+	key->key_index = ECP_KEY_INDEX;
 #endif
 }
 

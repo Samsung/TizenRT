@@ -1,0 +1,3 @@
+config ENTRY_MBEDTLS_SELF_TEST
+	bool "MbedTLS Self Test"
+	depends on EXAMPLES_MBEDTLS_SELF_TEST

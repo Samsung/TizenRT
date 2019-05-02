@@ -466,19 +466,6 @@
 //#define MBEDTLS_TEST_NULL_ENTROPY
 
 /**
- * \def MBEDTLS_ENTROPY_HARDWARE_ALT
- *
- * Uncomment this macro to let mbed TLS use your own implementation of a
- * hardware entropy collector.
- *
- * Your function must be called \c mbedtls_hardware_poll(), have the same
- * prototype as declared in entropy_poll.h, and accept NULL as first argument.
- *
- * Uncomment to use your own hardware entropy collector.
- */
-#define MBEDTLS_ENTROPY_HARDWARE_ALT
-
-/**
  * \def MBEDTLS_AES_ROM_TABLES
  *
  * Store the AES tables in ROM.
@@ -1001,7 +988,9 @@
  *
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
+#if !defined(CONFIG_DEV_URANDOM)
 #define MBEDTLS_NO_PLATFORM_ENTROPY
+#endif
 
 /**
  * \def MBEDTLS_ENTROPY_FORCE_SHA256
@@ -2923,11 +2912,48 @@
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
-#if defined(CONFIG_HW_ECDH_PARAM)
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+#if defined(CONFIG_SE)
+#define MBEDTLS_ENABLE_HARDWARE_ALT
+
+/**
+ * \def MBEDTLS_ENTROPY_HARDWARE_ALT
+ *
+ * Uncomment this macro to let mbed TLS use your own implementation of a
+ * hardware entropy collector.
+ *
+ * Your function must be called \c mbedtls_hardware_poll(), have the same
+ * prototype as declared in entropy_poll.h, and accept NULL as first argument.
+ *
+ * Uncomment to use your own hardware entropy collector.
+ */
+#if defined(CONFIG_HW_RNG)
+#define MBEDTLS_ENTROPY_HARDWARE_ALT
 #endif
 
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+#if defined(CONFIG_HW_DH_PARAM)
+#define MBEDTLS_DHM_ALT
+#endif
+
+#if defined(CONFIG_HW_ECDH_PARAM)
+#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
+#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
+#endif
+
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+#define MBEDTLS_PK_ECDSA_VERIFY_ALT
+#endif
+
+#if defined(CONFIG_HW_RSA_VERIFICATION)
+#define MBEDTLS_PK_RSA_VERIFY_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+#if defined(CONFIG_HW_RSA_ENC)
+#define MBEDTLS_PK_RSA_ENCRYPT_ALT
+#undef MBEDTLS_PK_RSA_ALT_SUPPORT
+#endif
+
+#endif /* CONFIG_SE */
 
 /**
  * Complete list of ciphersuites to use, in order of preference.

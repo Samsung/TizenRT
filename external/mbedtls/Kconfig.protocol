@@ -3,6 +3,7 @@ if NET_SECURITY_TLS
 config TLS_WITH_SSS
 	bool "Enable HW Accelerator(SSS)"
 	depends on S5J_SSS
+	select DEV_URANDOM
 	default n
 
 config SUPPORT_FULL_SECURITY
