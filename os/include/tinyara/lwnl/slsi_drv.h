@@ -32,13 +32,13 @@
 
 #define SLSIDRV_ERR                                                         \
 	do {                                                                    \
-		sddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
+		vddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
 				  __FILE__, __LINE__, strerror(errno));                     \
 	} while (0)
 
 #define SLSIDRV_ENTER                                                       \
 	do {                                                                    \
-		sddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
+		vddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
 	} while (0)
 
 /****************************************************************************

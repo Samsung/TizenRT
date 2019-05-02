@@ -26,15 +26,17 @@ config DEBUG_LWNL80211_INFO
 		Enable LWNL80211 INFO DEBUG
 
 if LWNL80211_SLSI
-config DEBUG_LWNL80211_SLSI_ERROR
-	bool "SLSIDRV ERROR DEBUG"
+config DEBUG_LWNL80211_VENDOR_DRV_ERROR
+	bool "Vendor-specific driver interface ERROR DEBUG"
 	default n
+	depends on DEBUG_ERROR
 	---help---
-		Enable SLSI driver ERROR DEBUG
+		Enable Vendor-Specific Driver ERROR Debug
 
 config DEBUG_LWNL80211_SLSI_INFO
-	bool "SLSIDRV INFO DEBUG"
+	bool "Vendor-specific driver interface INFO DEBUG"
 	default n
+	depends on DEBUG_VERBOSE
 	---help---
-		Enable SLSI driver INFO DEBUG
+		Enable Vendor-Specific Driver INFO Debug
 endif
