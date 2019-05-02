@@ -29,8 +29,8 @@
 int main(int argc, char **argv)
 {
 	while (1) {
-		printf("%s \t MICOM alive! \n", argv[0]);
 		sleep(10);
+		printf("[%d] MICOM ALIVE\n", getpid());
 	}
 
 	return 0;
