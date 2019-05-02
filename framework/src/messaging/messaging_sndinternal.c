@@ -148,7 +148,7 @@ int messaging_send_packet(const char *port_name, msg_send_type_t msg_type, msg_s
 	sender_pid = getpid();
 	memcpy(send_packet, &sender_pid, sizeof(pid_t));
 	/* Add data header for send type. */
-	if (msg_type == MSG_SEND_NOREPLY) {
+	if (msg_type == MSG_SEND_NOREPLY || msg_type == MSG_SEND_MULTI) {
 		send_type = MSG_REPLY_NO_REQUIRED;
 	} else if (msg_type == MSG_SEND_REPLY) {
 		send_type = MSG_SEND_REPLY;

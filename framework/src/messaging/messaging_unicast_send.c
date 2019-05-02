@@ -79,10 +79,10 @@ static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 		ret = OK;
 	}
 
-	MSG_FREE(reply_data);
-	MSG_FREE(sync_portname);
 	mq_close(sync_mqdes);
 	mq_unlink(sync_portname);
+	MSG_FREE(reply_data);
+	MSG_FREE(sync_portname);
 
 	return ret;
 }
