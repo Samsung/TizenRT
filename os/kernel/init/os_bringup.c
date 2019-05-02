@@ -252,15 +252,6 @@ static inline void os_do_appstart(void)
 	net_initialize();
 #endif
 
-#ifdef CONFIG_BINARY_MANAGER
-	svdbg("Starting binary manager thread\n");
-
-	pid = kernel_thread(BINARY_MANAGER_NAME, BINARY_MANAGER_PRIORITY, BINARY_MANAGER_STACKSIZE, binary_manager, NULL);
-	if (pid < 0) {
-		sdbg("Failed to start binary manager");
-	}
-#endif
-
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 	svdbg("Starting application init task\n");
 
@@ -272,6 +263,15 @@ static inline void os_do_appstart(void)
 #endif
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
+	}
+#endif
+
+#ifdef CONFIG_BINARY_MANAGER
+	svdbg("Starting binary manager thread\n");
+
+	pid = kernel_thread(BINARY_MANAGER_NAME, BINARY_MANAGER_PRIORITY, BINARY_MANAGER_STACKSIZE, binary_manager, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start binary manager");
 	}
 #endif
 
