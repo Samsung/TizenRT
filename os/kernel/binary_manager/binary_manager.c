@@ -25,6 +25,7 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
@@ -45,7 +46,7 @@
 #endif
 
 /* Binary table, the first data [0] is for kernel. */
-binary_info_t bin_table[USER_BIN_COUNT + 1];
+binmgr_bininfo_t bin_table[BINARY_COUNT];
 int g_bin_count;
 int g_loadparam_part;
 
@@ -77,8 +78,11 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 			/* Already registered first kernel partition, register it as second partition. */
 			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
 		} else {
+			BIN_USEIDX(KERNEL_IDX) = 0;
 			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
+			BIN_PARTNUM(KERNEL_IDX, 1) = -1;
 			BIN_PARTSIZE(KERNEL_IDX) = part_size;
+			strncpy(BIN_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
 			strncpy(BIN_KERNEL_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
 			strncpy(BIN_NAME(KERNEL_IDX), "kernel", BIN_NAME_MAX);
 		}
@@ -95,7 +99,9 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 		}
 		/* No, Register it as a new user partition */
 		g_bin_count++;
+		BIN_ID(g_bin_count) = -1;
 		BIN_PARTNUM(g_bin_count, 0) = part_num;
+		BIN_PARTNUM(g_bin_count, 1) = -1;
 		BIN_PARTSIZE(g_bin_count) = part_size;
 		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 		bmvdbg("[USER1 : %d] %s size %d %d \n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count), BIN_PARTNUM(g_bin_count, 0));
@@ -109,6 +115,8 @@ int binary_manager(int argc, char *argv[])
 {
 	int ret;
 	int nbytes;
+	sigset_t sigset;
+	loading_data_t loading_data;
 	binmgr_request_t request_msg;
 	mqd_t binmgr_mq_fd;
 
@@ -118,6 +126,11 @@ int binary_manager(int argc, char *argv[])
 	attr.mq_flags = 0;
 
 	bmvdbg("Binary Manager STARTED\n");
+
+	/* Unset all signals except for SIGKILL */
+	sigfillset(&sigset);
+	sigdelset(&sigset, SIGKILL);
+	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
 
 	/* Create binary manager message queue */
 	binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDONLY | O_CREAT, 0666, &attr);
@@ -151,17 +164,19 @@ int binary_manager(int argc, char *argv[])
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY
 		case BINMGR_FAULT:
-			binary_manager_recovery(request_msg.pid);
+			binary_manager_recovery(request_msg.requester_pid);
 			break;
 #endif
 		case BINMGR_GET_INFO:
-			ret = binary_manager_get_info_with_name(request_msg.b_name, request_msg.q_name);
+			ret = binary_manager_get_info_with_name(request_msg.requester_pid, request_msg.bin_name);
 			break;
 		case BINMGR_GET_INFO_ALL:
-			ret = binary_manager_get_info_all(request_msg.q_name);
+			ret = binary_manager_get_info_all(request_msg.requester_pid);
 			break;
 		case BINMGR_RELOAD:
-			ret = binary_manager_loading(LOADCMD_RELOAD, request_msg.b_name);
+			loading_data.pid = request_msg.requester_pid;
+			loading_data.bin_name = request_msg.bin_name;
+			ret = binary_manager_loading(LOADCMD_RELOAD, &loading_data);
 			break;
 
 		default:

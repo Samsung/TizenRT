@@ -55,11 +55,6 @@
 #define PARTS_PER_BIN              2                          /* The number of partitions per binary */
 #define BIN_VER_MAX                16                         /* The maximum length of binary version */
 #define KERNEL_VER_MAX             8                          /* The maximum length of kernel version */
-#ifdef CONFIG_NUM_APPS
-#define USER_BIN_COUNT             CONFIG_NUM_APPS
-#else
-#define USER_BIN_COUNT             2                          /* The number of User binaries */
-#endif
 
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
@@ -73,20 +68,26 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD_MAX,
 };
 
+struct loading_data_s {
+	int pid;
+	char *bin_name;
+};
+typedef struct loading_data_s loading_data_t;
+
 /* Binary data type in binary table */
-struct binary_info_s {
+struct binmgr_bininfo_s {
 	pid_t bin_id;
 	uint32_t bin_size;
 	uint32_t ram_size;
 	uint16_t bin_offset;
 	uint16_t inuse_idx;
 	uint32_t part_size;
-	uint16_t part_num[2];
+	int8_t part_num[PARTS_PER_BIN];
 	char name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
 };
-typedef struct binary_info_s binary_info_t;
+typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
 #define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
 #define BIN_SIZE(bin_idx)                               bin_table[bin_idx].bin_size
@@ -101,7 +102,7 @@ typedef struct binary_info_s binary_info_t;
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
 
-extern binary_info_t bin_table[USER_BIN_COUNT + 1];
+extern binmgr_bininfo_t bin_table[BINARY_COUNT];
 
 /****************************************************************************
  * Function Prototypes
@@ -130,11 +131,13 @@ void binary_manager_recovery(int pid);
 #endif
 
 int binary_manager_load_binary(int bin_idx);
-int binary_manager_loading(int type, void *b_name);
+int binary_manager_loading(int type, loading_data_t *data);
 int binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
-int binary_manager_get_info_with_name(char *b_name, char *q_name);
-int binary_manager_get_info_all(char *q_name);
+int binary_manager_get_info_with_name(int request_pid, char *bin_name);
+int binary_manager_get_info_all(int request_pid);
+
+int binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 
 /****************************************************************************
  * Binary Manager Main Thread

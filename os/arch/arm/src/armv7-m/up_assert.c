@@ -438,7 +438,7 @@ static void _up_assert(int errorcode)
 		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
 
 		request_msg.cmd = BINMGR_FAULT;
-		request_msg.pid = getpid();
+		request_msg.requester_pid = getpid();
 
 		/* Send a message to fault manager with pid of the faulty task */
 		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);

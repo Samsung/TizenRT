@@ -39,6 +39,8 @@
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
+/* The number of arguments for loading thread */
+#define LOADTHD_ARGC     3
 
 struct binary_header_s {
 	uint16_t header_size;
@@ -55,70 +57,17 @@ typedef struct binary_header_s binary_header_t;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static int binary_manager_verify_checksum(int fd, int file_size, uint32_t crc_hash)
-{
-	int read_size;
-	uint32_t check_crc = 0;
-	uint8_t crc_buffer[CRC_BUFFER_SIZE];
-
-	if (lseek(fd, CHECKSUM_SIZE, 0) < 0) {
-		bmdbg("Failed to lseek : errno %d\n", errno);
-		return ERROR;
-	}
-
-	while (file_size > 0) {
-		if (file_size > CRC_BUFFER_SIZE) {
-			read_size = read(fd, (FAR uint8_t *)crc_buffer, CRC_BUFFER_SIZE);
-		} else {
-			read_size = read(fd, (FAR uint8_t *)crc_buffer, file_size);
-		}
-
-		if (read_size == ERROR) {
-			bmdbg("Failed to read : %d, errno %d\n", read_size, errno);
-			return ERROR;
-		}
-
-		check_crc = crc32part(crc_buffer, read_size, check_crc);
-		file_size -= read_size;
-	}
-
-	if (check_crc != crc_hash) {
-		bmdbg("Failed to crc check : %u != %u\n", check_crc, crc_hash);
-		return ERROR;
-	}
-
-	return OK;
-}
-
-static int binary_manager_verify_header(binary_header_t *header_data)
-{
-	if (header_data == NULL) {
-		bmdbg("Header data is NULL\n");
-		return ERROR;
-	}
-
-	if (header_data->header_size < 0 || header_data->bin_size < 0 \
-	|| header_data->ram_size < 0 || header_data->bin_type != BIN_TYPE_ELF) {
-		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->ram_size, header_data->bin_type);
-		return ERROR;
-	}
-
-	// calculate and check checksum value
-
-	bmvdbg("Binary header : %d %d %d %s %s %s %d %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->kernel_ver, header_data->ram_size, header_data->jump_addr);
-
-	return OK;
-}
-
 /* Read header and Check whether header data is valid or not */
 static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t *header_data)
 {
 	int fd;
 	int ret;
+	int read_size;
 	int file_size;
-	char devname[BINMGR_DEVNAME_LEN];
 	uint32_t crc_hash = 0;
+	uint32_t check_crc = 0;
+	uint8_t crc_buffer[CRC_BUFFER_SIZE];
+	char devname[BINMGR_DEVNAME_LEN];
 
 	memset(header_data, 0, sizeof(binary_header_t));
 
@@ -133,34 +82,50 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 	ret = read(fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
 	if (ret != CHECKSUM_SIZE) {
 		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
-		close(fd);
-		return ERROR;
+		goto errout_with_fd;
 	}
 
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
 		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
-		close(fd);
-		return ERROR;
+		goto errout_with_fd;
 	}
 
 	/* Verify header data */
-	if (binary_manager_verify_header(header_data) == ERROR) {
-		close(fd);
-		return ERROR;
+	if (header_data->header_size < 0 || header_data->bin_size < 0 \
+		|| header_data->ram_size < 0 || header_data->bin_type != BIN_TYPE_ELF) {
+		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->ram_size, header_data->bin_type);
+		goto errout_with_fd;
 	}
 
-	file_size = header_data->header_size + header_data->bin_size;
-
-	if (binary_manager_verify_checksum(fd, file_size, crc_hash) == ERROR) {
-		close(fd);
-		return ERROR;
+	/* Caculate checksum and Verify it */
+	check_crc = crc32part(header_data, header_data->header_size, check_crc);
+	file_size = header_data->bin_size;
+	while (file_size > 0) {
+		read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
+		ret = read(fd, (FAR uint8_t *)crc_buffer, read_size);
+		if (ret < 0 || ret != read_size) {
+			bmdbg("Failed to read : %d, errno %d\n", ret, errno);
+			goto errout_with_fd;
+		}
+		check_crc = crc32part(crc_buffer, read_size, check_crc);
+		file_size -= read_size;
 	}
 
+	if (check_crc != crc_hash) {
+		bmdbg("Failed to crc check : %u != %u\n", check_crc, crc_hash);
+		goto errout_with_fd;
+	}
+
+	bmvdbg("Binary header : %d %d %d %s %s %d %s %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->ram_size, header_data->kernel_ver, header_data->jump_addr);
 	close(fd);
 
 	return OK;
+errout_with_fd:
+	close(fd);
+
+	return ERROR;
 }
 
 /* Read binary header and update binary table */
@@ -178,6 +143,9 @@ static int binary_manager_load_bininfo(int bin_idx)
 
 	/* Read header data of binary partitions */
 	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
+		if (BIN_PARTNUM(bin_idx, part_idx) < 0) {
+			break;
+		}
 		ret = binary_manager_read_header(bin_idx, part_idx, &header_data[part_idx]);
 		if (ret == OK) {
 			version = (int)atoi(header_data[part_idx].bin_ver);
@@ -276,7 +244,6 @@ static void reload_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
 	if (tcb->group->tg_loadtask == binid && tcb->pid != binid) {
 		bmdbg("KILL!! %d\n", tcb->pid);
 		ret = task_terminate(tcb->pid, true);
-		bmvdbg("Terminate %d ret %d\n", tcb->pid, ret);
 	}
 }
 
@@ -302,52 +269,91 @@ static int reload_kill_binary(int binid)
 	return OK;
 }
 
-static int binary_manager_reload(char *name)
+static int binary_manager_reload(pid_t requester_pid, char *bin_name)
 {
 	int ret;
-	int bin_id;
 	int bin_idx;
+	bool is_samebin;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_reload_response_t response_msg;
 	struct tcb_s *tcb;
 
-	if (name == NULL) {
-		return ERROR;
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %s\n", requester_pid);
+		return BINMGR_INVALID_PARAM;
 	}
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+
+	if (bin_name == NULL) {
+		bmdbg("Invalid bin_name %s\n", bin_name);
+		ret = BINMGR_INVALID_PARAM;
+		goto send_result;
+	}
+
+	is_samebin = false;
 
 	/* Check whether it is registered in binary manager */
-	bin_idx = binary_manager_get_index_with_name(name);
+	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
-		bmdbg("binary pid %d is not registered to binary manager\n", bin_id);
-		return ERROR;
+		bmdbg("binary %s is not registered\n", bin_name);
+		ret = BINMGR_BININFO_NOT_FOUND;
+		goto send_result;
 	}
 
-	tcb = sched_gettcb(BIN_ID(bin_idx));
+	/* Check binary id of requester and compare it with binid of binary to reload. */
+	tcb = sched_gettcb(requester_pid);
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
 		bmdbg("Failed to get pid %d binary info\n", BIN_ID(bin_idx));
-		return ERROR;
+		ret = BINMGR_BININFO_NOT_FOUND;
+		goto send_result;
 	}
 
-	bin_id = tcb->group->tg_loadtask;
-	bmvdbg("pid %d, binary id %d\n", BIN_ID(bin_idx), bin_id);
+	/* This is a case that requester restart its own binary */
+	if (tcb->group->tg_loadtask == BIN_ID(bin_idx)) {
+		is_samebin = true;
+	}
 
 	/* Kill its children and restart binary if the binary is registered with the binary manager */
-	ret = reload_kill_binary(bin_id);
-	if (ret < 0) {
-		bmdbg("Failed to kill binaries, binary pid %d, binid %d\n", BIN_ID(bin_idx), bin_id);
-		return ERROR;
+	ret = reload_kill_binary(BIN_ID(bin_idx));
+	if (ret != OK) {
+		ret = BINMGR_OPERATION_FAIL;
+		goto send_result;
 	}
+	BIN_ID(bin_idx) = -1;
+	usleep(100);
 
 	/* load binary and update binid */
-	return binary_manager_load_binary(bin_idx);
+	ret = binary_manager_load_binary(bin_idx);
+	if (ret != OK) {
+		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
+		ret = BINMGR_OPERATION_FAIL;
+	}
+
+	/* Does requester restart its own binary? */
+	if (is_samebin) {
+		/* Yes, unlink response message queue created by requester because it is already terminated. */
+		mq_unlink(q_name);
+		bmdbg("Unlink!!  %s\n", q_name);
+		return ret;
+	}
+
+send_result:
+	if (ret == OK) {
+		response_msg.result = BINMGR_OK;
+	} else {
+		response_msg.result = ret;
+	}
+
+	return binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_reload_response_t));
 }
 
 static int loading_thread(int argc, char *argv[])
 {
 	int ret;
 	int type;
-	char *name;
 
 	if (argc <= 1) {
-		bmdbg("Invalid arguements\n");
+		bmdbg("Invalid arguments\n");
 		return -1;
 	}
 
@@ -359,11 +365,12 @@ static int loading_thread(int argc, char *argv[])
 		ret = binary_manager_load_all();
 		break;
 	case LOADCMD_RELOAD:
-		if (argc > 2) {
-			name = (char *)argv[2];
-			ret = binary_manager_reload(name);
-			break;
+		if (argc <= 3) {
+			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
+			return -1;
 		}
+		ret = binary_manager_reload((pid_t)atoi(argv[2]), argv[3]);
+		break;
 	default:
 		bmdbg("Invalid loading type %d\n", type);
 		return ERROR;
@@ -383,12 +390,12 @@ static int loading_thread(int argc, char *argv[])
  *   This function create loading thread to load/unload binary.
  *
  ****************************************************************************/
-int binary_manager_loading(int type, void *data)
+int binary_manager_loading(int type, loading_data_t *data)
 {
 	int ret;
-	int argc;
 	char **argv;
-	char value[1];
+	char type_str[1];
+	char pid_str[1];
 
 	bmvdbg("Loading type %d\n", type);
 
@@ -397,12 +404,20 @@ int binary_manager_loading(int type, void *data)
 		return ERROR;
 	}
 
-	argc = 2;
-	argv = (char **)kmm_malloc(sizeof(char *) * (argc + 1));
+	argv = (char **)kmm_malloc(sizeof(char *) * (LOADTHD_ARGC + 1));
+	if (argv == NULL) {
+		bmdbg("Failed to allocate argv\n");
+		return ERROR;
+	}
+	memset(argv, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
 
-	argv[0] = itoa(type, (char *)&value, 10);
-	argv[1] = (char *)data;
-	argv[2] = NULL;
+	/* Arguments : [0] type */
+	argv[0] = itoa(type, type_str, 10);
+	if (type == LOADCMD_RELOAD) {
+		/* [1] pid, [2] bin_name for reloading */
+		argv[1] = itoa(data->pid, pid_str, 10);
+		argv[2] = data->bin_name;
+	}
 
 	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, (char * const *)argv);
 	if (ret > 0) {

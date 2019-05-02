@@ -81,7 +81,6 @@ static void recovery_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
 	if (tcb->group->tg_loadtask == info->binid && tcb->pid != info->binid && tcb->pid != info->faultid) {
 		bmllvdbg("KILL!! %d\n", tcb->pid);
 		ret = task_terminate(tcb->pid, true);
-		bmllvdbg("Terminate %d ret %d\n", tcb->pid, ret);
 	}
 }
 
@@ -166,7 +165,6 @@ int recovery_thread(int argc, char *argv[])
 		bmlldbg("Failed to get pid %d binary info\n", pid);
 		goto reboot_board;
 	}
-
 	bin_id = tcb->group->tg_loadtask;
 	bmllvdbg("pid %d, binary id %d\n", pid, bin_id);
 
@@ -179,6 +177,8 @@ int recovery_thread(int argc, char *argv[])
 	/* Kill its children and restart binary if the binary is registered with the binary manager */
 	ret = recovery_kill_binary(pid, bin_id);
 	if (ret == OK) {
+		BIN_ID(bin_idx) = -1;
+		usleep(100);
 		/* load binary and update binid */
 		ret = binary_manager_load_binary(bin_idx);
 		if (ret == OK) {
