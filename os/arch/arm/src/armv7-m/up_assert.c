@@ -88,12 +88,22 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <fcntl.h>
+#include <mqueue.h>
+#include "binary_manager/binary_manager.h"
+#endif
 #include "irq/irq.h"
 
 #include "up_arch.h"
 #include "up_internal.h"
 #include "mpu.h"
 
+#ifdef CONFIG_BINMGR_RECOVERY
+bool abort_mode = false;
+uint32_t assert_pc;
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -397,21 +407,62 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-	/* Are we in an interrupt handler or the idle task? */
+#ifdef CONFIG_BINMGR_RECOVERY
+	int ret;
+	mqd_t binmgr_mq;
+	binmgr_request_t request_msg;
+	pid_t pid;
+	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
+	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
+	/* Check if the PC lies within kernel context */
+	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
+
+		/* Reboot the system if fault is in kernel context */
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+		(void)irqsave();
+		for (;;) {
+#ifdef CONFIG_ARCH_LEDS
+			//board_autoled_on(LED_PANIC);
+			up_mdelay(250);
+			//board_autoled_off(LED_PANIC);
+			up_mdelay(250);
+#endif
+		}
+#endif
+	} else {
+		binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
+		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
+
+		request_msg.cmd = BINMGR_FAULT;
+		request_msg.requester_pid = getpid();
+
+		/* Send a message to fault manager with pid of the faulty task */
+		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+		DEBUGASSERT(ret == 0);
+		mq_close(binmgr_mq);
+		exit(errorcode);
+	}
+#else
+
+	/* Are we in an interrupt handler or the idle task? */
 	if (current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
-			board_led_on(LED_PANIC);
+			//board_led_on(LED_PANIC);
 			up_mdelay(250);
-			board_led_off(LED_PANIC);
+			//board_led_off(LED_PANIC);
 			up_mdelay(250);
 #endif
 		}
 	} else {
 		exit(errorcode);
 	}
+#endif
 }
 
 /****************************************************************************
@@ -444,14 +495,31 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
+	abort_mode = true;
+#endif
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
+#ifdef CONFIG_BINMGR_RECOVERY
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_R14];
+	} else {
+		assert_pc = (uint32_t)g_assertpc;
+	}
+#endif
+
+#ifndef CONFIG_BINMGR_RECOVERY
 	up_dumpstate();
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#endif
+
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_BINMGR_RECOVERY)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);

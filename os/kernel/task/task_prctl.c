@@ -65,6 +65,10 @@
 #include <tinyara/sched.h>
 #include <tinyara/ttrace.h>
 
+#ifdef CONFIG_MESSAGING_IPC
+#include <sys/types.h>
+#include <messaging.h>
+#endif
 #include "sched/sched.h"
 #include "task/task.h"
 
@@ -160,6 +164,51 @@ int prctl(int option, ...)
 		}
 	}
 	break;
+#ifdef CONFIG_MESSAGING_IPC
+	case PR_MSG_SAVE:
+	{
+		int ret;
+		char *port_name = va_arg(ap, char *);
+		pid_t pid = va_arg(ap, int);
+		int prio = va_arg(ap, int);
+		ret = messaging_save_receiver(port_name, pid, prio);
+		if (ret != OK) {
+			va_end(ap);
+			return ERROR;
+		}
+	}
+	break;
+	case PR_MSG_READ:
+	{
+		char *port_name = va_arg(ap, char *);
+		int *recv_arr = va_arg(ap, int *);
+		int *recv_cnt = va_arg(ap, int *);
+		int total_cnt;
+		static int curr_cnt = 0;
+		int ret;
+		ret = messaging_read_list(port_name, recv_arr, &total_cnt);
+		if (ret == ERROR) {
+			return ret;
+		}
+		curr_cnt += ret;
+		*recv_cnt = curr_cnt;
+		if (curr_cnt == total_cnt) {
+			/* Read whole receivers information. */
+			curr_cnt = 0;
+			return MSG_READ_ALL;
+		} else {
+			return MSG_READ_YET;
+		}
+	}
+	break;
+	case PR_MSG_REMOVE:
+	{
+		int ret;
+		char *port_name = va_arg(ap, char *);
+		ret = messaging_remove_list(port_name);
+		return ret;
+	}
+#endif
 #else
 	sdbg("Option not enabled: %d\n", option);
 	err = ENOSYS;

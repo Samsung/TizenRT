@@ -375,6 +375,9 @@ static inline void task_dupdspace(FAR struct tcb_s *tcb)
 static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start, CODE void *entry, uint8_t ttype)
 {
 	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	struct tcb_s *rtcb;
+#endif
 
 	if (priority < SCHED_PRIORITY_MIN || priority > SCHED_PRIORITY_MAX) {
 		set_errno(EINVAL);
@@ -448,6 +451,21 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		/* Initialize the processor-specific portion of the TCB */
 
 		up_initial_state(tcb);
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		/* Copy the parent task ram details to this task */
+		rtcb = this_task();
+		tcb->ram_start = rtcb->ram_start;
+		tcb->ram_size = rtcb->ram_size;
+
+		/* Copy the MPU register values from parent to child task */
+#ifdef CONFIG_ARMV7M_MPU
+		tcb->mpu_regs[REG_RNR] = rtcb->mpu_regs[REG_RNR];
+		tcb->mpu_regs[REG_RBAR] = rtcb->mpu_regs[REG_RBAR];
+		tcb->mpu_regs[REG_RASR] = rtcb->mpu_regs[REG_RASR];
+#endif
+
+#endif
 
 		/* Add the task to the inactive task list */
 
