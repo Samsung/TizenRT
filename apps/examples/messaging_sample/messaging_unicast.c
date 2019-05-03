@@ -72,11 +72,13 @@
 #define STACKSIZE 2048
 #define BUFFER_SIZE 10
 
+extern int fail_cnt;
 static char *sync_send_alloc;
 
 static void recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_data, void *cb_data)
 {
 	if (recv_data == NULL) {
+		fail_cnt++;
 		printf("Fail to receive unicast message with non-block mode.\n");
 		return;
 	}
@@ -94,6 +96,7 @@ int noreply_send(int argc, FAR char *argv[])
 	printf("- Send [%s] data with noreply mode.\n", TEST1_DATA);
 	ret = messaging_send(TEST1_PORT, &param);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to noreply send message.\n");
 		return ERROR;
 	}
@@ -114,6 +117,7 @@ int sync_send(int argc, FAR char *argv[])
 	reply_data.buflen = BUFFER_SIZE;
 	reply_data.buf = (char *)malloc(BUFFER_SIZE);
 	if (reply_data.buf == NULL) {
+		fail_cnt++;
 		printf("Fail to sync send message : out of memory.\n");
 		return ERROR;
 	}
@@ -122,6 +126,7 @@ int sync_send(int argc, FAR char *argv[])
 	printf("- Send [%s] data with sync mode.\n", TEST2_DATA);
 	ret = messaging_send_sync(TEST2_PORT, &send_data, &reply_data);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to sync send message.\n");
 		free(reply_data.buf);
 		return ERROR;
@@ -144,6 +149,7 @@ int nonblock_recv(int argc, FAR char *argv[])
 
 	data.buf = (char *)malloc(BUFFER_SIZE);
 	if (data.buf == NULL) {
+		fail_cnt++;
 		printf("Fail to recv nonblock message : out of memory.\n");
 		return ERROR;
 	}
@@ -151,6 +157,7 @@ int nonblock_recv(int argc, FAR char *argv[])
 
 	ret = messaging_recv_nonblock(TEST1_PORT, &data, &cb_info);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to receive with non-block mode.\n");
 		free(data.buf);
 		return ERROR;
@@ -171,6 +178,7 @@ int block_recv(int argc, FAR char *argv[])
 
 	recv_data.buf = (char *)malloc(BUFFER_SIZE);
 	if (recv_data.buf == NULL) {
+		fail_cnt++;
 		printf("Fail to receive, because out of memory.\n");
 		return ERROR;
 	}
@@ -178,6 +186,7 @@ int block_recv(int argc, FAR char *argv[])
 
 	ret = messaging_recv_block(TEST2_PORT, &recv_data);
 	if (ret < 0) {
+		fail_cnt++;
 		printf("Fail to receive with block mode.\n");
 		free(recv_data.buf);
 		return ERROR;
@@ -191,6 +200,7 @@ int block_recv(int argc, FAR char *argv[])
 	if (ret == MSG_REPLY_REQUIRED) {
 		ret = messaging_reply(TEST2_PORT, recv_data.sender_pid, &reply_data);
 		if (ret != OK) {
+			fail_cnt++;
 			printf("Fail to reply.\n");
 			free(recv_data.buf);
 			return ERROR;
@@ -212,12 +222,14 @@ void noreply_nonblock_messaging_sample(void)
 
 	receiver_pid = task_create("nonblock_recv", TASK_PRIO, STACKSIZE, nonblock_recv, NULL);
 	if (receiver_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create nonblock_recv task.\n");
 		return;
 	}
 
 	ret = task_create("noreply_send", TASK_PRIO, STACKSIZE, noreply_send, NULL);
 	if (ret < 0) {
+		fail_cnt++;
 		task_delete(receiver_pid);
 		printf("Fail to create noreply_send task.\n");
 		return;
@@ -228,6 +240,7 @@ void noreply_nonblock_messaging_sample(void)
 
 	ret = messaging_cleanup(TEST1_PORT);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to cleanup TEST1_PORT.\n");
 		return;
 	}
@@ -242,12 +255,14 @@ void sync_block_messaging_sample(void)
 
 	receiver_pid = task_create("block_recv", TASK_PRIO, STACKSIZE, block_recv, NULL);
 	if (receiver_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create block_recv task.\n");
 		return;
 	}
 
 	ret = task_create("sync_send", TASK_PRIO, STACKSIZE, sync_send, NULL);
 	if (ret < 0) {
+		fail_cnt++;
 		free(sync_send_alloc);
 		task_delete(receiver_pid);
 		printf("Fail to create sync_send task.\n");
@@ -259,6 +274,7 @@ void sync_block_messaging_sample(void)
 
 	ret = messaging_cleanup(TEST2_PORT);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to cleanup TEST2_PORT.\n");
 		return;
 	}

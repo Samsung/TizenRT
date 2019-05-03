@@ -56,38 +56,149 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
 #include "messaging_sample_internal.h"
 
+#define EXEC_NORMAL   0
+#define EXEC_INFINITE 1
+
+static volatile bool inf_flag;
+static volatile bool is_running;
+int fail_cnt = 0;
+
+static void messaging_sample_show_success_ratio(int loop_cnt)
+{
+	printf("\n=== Messaging Sample is finished. (run %d-times)\n", loop_cnt);
+	printf("- success : %d, fail : %d\n", loop_cnt - fail_cnt, fail_cnt);
+}
+
+static void messaging_sample_run(int loop_cnt)
+{
+	printf("\n==Messaging Sample %d-th Iteration!==\n", loop_cnt);
+
+	noreply_nonblock_messaging_sample();
+
+	/* Wait for finishing previous test. */
+	sleep(1);
+
+	sync_block_messaging_sample();
+
+	/* Wait for finishing previous test. */
+	sleep(1);
+
+	multicast_messaging_sample();
+
+	/* Wait for finishing previous test. */
+	sleep(1);
+}
+
+static void messaging_sample_execute_infinitely(void)
+{
+	int repetition_num;
+
+	/* messaging_sample executes infinitely until receiving stop. */
+	printf("\n=== Start Messaging Sample : executes infinitely. ===\n");
+	repetition_num = 0;
+	is_running = true;
+	while (inf_flag) {
+		repetition_num++;
+		messaging_sample_run(repetition_num);
+	}
+	messaging_sample_show_success_ratio(repetition_num);
+	is_running = false;
+}
+
+static void messaging_sample_execute_ntimes(int repetition_num)
+{
+	int loop_idx;
+	is_running = true;
+	/* messaging_sample executes multiple-times. */
+	printf("\n=== Start Messaging Sample : executes %d-times. ===\n", repetition_num);
+	for (loop_idx = 1; loop_idx <= repetition_num; loop_idx++) {
+		messaging_sample_run(loop_idx);
+	}
+	messaging_sample_show_success_ratio(repetition_num);
+	is_running = false;
+}
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int messaging_main(int argc, char *argv[])
 #endif
 {
-	int loop_cnt;
+	int repetition_num;
+	int option;
+	char *cmd_arg = NULL;
+	char *cnt_arg = NULL;
+	int execution_type = EXEC_NORMAL;
 
-	printf("=== Start Messaging Sample : %d-times will run.\n", CONFIG_EXAMPLES_MESSAGING_SAMPLE_LOOPS);
-	for (loop_cnt = 0; loop_cnt < CONFIG_EXAMPLES_MESSAGING_SAMPLE_LOOPS; loop_cnt++) {
-
-		printf("==Messaging Sample %d-th Iteration!==\n", loop_cnt + 1);
-
-		noreply_nonblock_messaging_sample();
-
-		/* Wait for finishing previous test. */
-		sleep(1);
-
-		sync_block_messaging_sample();
-
-		/* Wait for finishing previous test. */
-		sleep(1);
-
-		multicast_messaging_sample();
-
-		/* Wait for finishing previous test. */
-		sleep(1);
+	if (argc >= 4 || argc == 2) {
+		goto usage;
 	}
 
-	printf("\n=== Messaging Sample is finished! (run %d-times) ===\n", loop_cnt);
+	while ((option = getopt(argc, argv, "r:n:")) != ERROR) {
+		switch (option) {
+		case 'r':
+			execution_type = EXEC_INFINITE;
+			cmd_arg = optarg;
+			break;
+		case 'n':
+			execution_type = EXEC_NORMAL;
+			cnt_arg = optarg;
+			break;
+		case '?':
+		default:
+			goto usage;
+		}
+	}
 
+	/* Execute the messaging sample. */
+	if (execution_type == EXEC_INFINITE) {
+		if (cmd_arg && strncmp(cmd_arg, "start", strlen("start") + 1) == 0) {
+			if (is_running) {
+				goto already_running;
+			}
+			inf_flag = true;
+			messaging_sample_execute_infinitely();
+		} else if (cmd_arg && strncmp(cmd_arg, "stop", strlen("stop") + 1) == 0) {
+			if (inf_flag == false) {
+				printf("There is no infinite running Messaging sample. Cannot stop the sample.\n");
+				return -1;
+			}
+			inf_flag = false;
+		} else {
+			goto usage;
+		}
+
+	} else {
+		if (is_running) {
+			goto already_running;
+		}
+
+		if (cnt_arg != NULL) {
+			repetition_num = atoi(cnt_arg);
+			if (repetition_num <= 0) {
+				goto usage;
+			}
+		} else {
+			repetition_num = 1;
+		}
+
+		messaging_sample_execute_ntimes(repetition_num);
+	}
 	return 0;
+
+usage:
+	printf("\nUsage : messaging [OPTIONS]\n");
+	printf("Options:\n");
+	printf(" -r start : Execute messaging sample infinitely until stop cmd.\n");
+	printf("    stop  : Stop the messaging sample infinite execution.\n");
+	printf(" -n COUNT : Execute messaging sample COUNT-iterations.\n");
+	return -1;
+already_running:
+	printf("There is already running Messaging Sample.\n");
+	printf("New sample can run after that previous sample is finished.\n");
+	return -1;
 }
