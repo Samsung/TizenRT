@@ -89,6 +89,11 @@ const struct mpu_region_info regions_info[] = {
 	{
 		&mpu_privintsram, (uintptr_t)__ksram_segment_start__, (uintptr_t)__ksram_segment_size__, MPU_REG_KERN_DATA,
 	},
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	{
+		&mpu_privintsram, (uintptr_t)CONFIG_IMXRT_SDRAM_START, (uintptr_t)CONFIG_MM_KERNEL_HEAPSIZE, MPU_REG_KERN_HEAP,
+	},
+#endif
 	{
 		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
 	},
@@ -141,6 +146,7 @@ void imxrt_mpu_initialize(void)
 	int i;
 
 	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
+		lldbg("Region = %u base = 0x%x size = %u\n", regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
 		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
 	}
 

@@ -37,20 +37,19 @@
  ****************************************************************************/
 /*
  * Region definitions for our platform
- * To provide MPU based memory protection in protected build, below four
- * definations should be defined. But they can be assigned any region
- * depending on the availability of the mpu regions in the specific chip. 
+ * We use the follwoing enum to map the MPU region type to the MPU region
+ * registers.
  */
-#define MPU_REG_KERN_CODE	MPU_REG0
-#define MPU_REG_KERN_DATA	MPU_REG1
-#define MPU_REG_USER_CODE	MPU_REG2
-#define MPU_REG_USER_DATA	MPU_REG3
-/*
- * For application memory protection we will have single mpu region with
- * app's memory range, during context switch the corresponding app's
- * memory range is set.
- */
-#define MPU_REG_APP		MPU_REG4
+enum {
+	MPU_REG_KERN_CODE,
+	MPU_REG_KERN_DATA,
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	MPU_REG_KERN_HEAP,
+#endif
+	MPU_REG_USER_CODE,
+	MPU_REG_USER_DATA,
+	MPU_REG_APP
+};
 
 #ifndef __ASSEMBLY__
 typedef void (*fptr)(uint8_t region, uintptr_t base, size_t size);
