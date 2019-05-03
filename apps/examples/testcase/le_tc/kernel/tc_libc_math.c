@@ -285,7 +285,7 @@ static void tc_libc_math_asin(void)
 static void tc_libc_math_asinf(void)
 {
 	const float in_val[] = { 0.64, -0.4, ZERO, -1, 1, 1.1, -2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { 0.694498240947723, -0.411516845226288, 0, -1.5704115629196, 1.5703850984573, NAN, NAN, NAN, NAN, NAN };
+	const float sol_val[] = { 0.694498240947723, -0.411516845226288, 0, -1.5704115629196, 1.570296883583069, NAN, NAN, NAN, NAN, NAN };
 	float ret_val[SIZE(sol_val, float)];
 	int asinf_idx;
 	float compute_val;
@@ -4053,7 +4053,7 @@ static void tc_libc_math_y0(void)
 static void tc_libc_math_y0f(void)
 {
 	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-13, 0x1p-15 };
-	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -5.810329437255859, -6.692872047424316 };
+	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -5.810329437255859, -6.692871570587158 };
 	float ret_val[SIZE(sol_val, float)];
 	int y0f_idx;
 	float compute_val;
