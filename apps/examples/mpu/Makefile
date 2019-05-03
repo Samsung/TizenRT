@@ -60,22 +60,17 @@ APPNAME = mpu_test
 FUNCNAME = mpu_tc_main
 THREADEXEC = TASH_EXECMD_SYNC
 
+# Definitions to test application binary separation
+# CONFIG_MPUTEST_USE_PREBUILT_BINS
+APP1_BIN = micom
+APP2_BIN = wifi
+OUTPUT_DIR = $(TOPDIR)/../build/output/bin
+
 # mpu test! Example
 
 ASRCS =
-ifeq ($(CONFIG_TC_MPU_READ_CODE), y)
-CSRCS += tc_read_code.c
-endif
-ifeq ($(CONFIG_TC_MPU_WRITE_CODE), y)
-CSRCS += tc_write_code.c
-endif
-ifeq ($(CONFIG_TC_MPU_READ_DATA), y)
-CSRCS += tc_read_data.c
-endif
-ifeq ($(CONFIG_TC_MPU_WRITE_DATA), y)
-CSRCS += tc_write_data.c
-endif
-MAINSRC = mpu_tc_main.c
+CSRCS =
+MAINSRC = mpu_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -113,7 +108,7 @@ ROOTDEPPATH = --dep-path .
 
 VPATH =
 
-all: .built
+all: .built install
 .PHONY: clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
@@ -136,7 +131,10 @@ install: $(BIN_DIR)$(DELIM)$(PROGNAME)
 
 else
 install:
-
+ifeq ($(CONFIG_MPUTEST_USE_PREBUILT_BINS),y)
+	$(Q) install $(APP1_BIN) $(OUTPUT_DIR)$(DELIM)$(APP1_BIN)
+	$(Q) install $(APP2_BIN) $(OUTPUT_DIR)$(DELIM)$(APP2_BIN)
+endif
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MPU_TEST),yy)
