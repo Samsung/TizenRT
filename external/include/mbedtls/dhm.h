@@ -76,10 +76,15 @@
 #ifndef MBEDTLS_DHM_H
 #define MBEDTLS_DHM_H
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 #include "bignum.h"
 
 #if !defined(MBEDTLS_DHM_ALT)
+
 /*
  * DHM Error codes
  */
@@ -115,9 +120,6 @@ typedef struct
     mbedtls_mpi Vi;     /*!<  The blinding value. */
     mbedtls_mpi Vf;     /*!<  The unblinding value. */
     mbedtls_mpi pX;     /*!<  The previous \c X. */
-#if defined(CONFIG_HW_DH_PARAM)
-	unsigned char *key_buf;
-#endif
 }
 mbedtls_dhm_context;
 
@@ -303,7 +305,7 @@ int mbedtls_dhm_parse_dhmfile( mbedtls_dhm_context *dhm, const char *path );
 #endif
 
 #else /* MBEDTLS_DHM_ALT */
-#include "dhm_alt.h"
+#include "alt/dhm_alt.h"
 #endif /* MBEDTLS_DHM_ALT */
 
 #ifdef __cplusplus
@@ -316,12 +318,6 @@ extern "C" {
  * \return         \c 0 on success, or \c 1 on failure.
  */
 int mbedtls_dhm_self_test( int verbose );
-
-#if defined(CONFIG_HW_DH_PARAM)
-int hw_generate_dhm_param(mbedtls_dhm_context *ctx, int x_size, unsigned char *output, size_t *olen);
-int hw_generate_dhm_public(mbedtls_dhm_context *ctx, int x_size, unsigned char *output, size_t olen);
-int hw_calculate_dhm_secret(mbedtls_dhm_context *ctx, unsigned char *output, size_t output_size, size_t *olen);
-#endif
 
 #ifdef __cplusplus
 }

@@ -142,7 +142,7 @@ typedef struct
 #if defined(MBEDTLS_THREADING_C)
     mbedtls_threading_mutex_t mutex;    /*!<  Thread-safety mutex. */
 #endif
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(MBEDTLS_ENABLE_HARDWARE_ALT)
 	unsigned int key_index;
 #endif
 }

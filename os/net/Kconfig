@@ -136,6 +136,7 @@ config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n
 	depends on NET_LWIP_NETDB
+	select DEV_URANDOM
 
 if NET_SECURITY_TLS
 source "$EXTERNALDIR/mbedtls/Kconfig.protocol"

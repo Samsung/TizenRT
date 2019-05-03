@@ -37,7 +37,11 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_ENTROPY_C)
 
@@ -305,51 +309,5 @@ int mbedtls_nv_seed_poll( void *data,
     return( 0 );
 }
 #endif /* MBEDTLS_ENTROPY_NV_SEED */
-
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
-#if defined(CONFIG_HW_RNG)
-#include "mbedtls/see_api.h"
-
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
-{
-	unsigned int inlen = SEE_MAX_RANDOM_SIZE;
-	unsigned int inbuf[SEE_MAX_RANDOM_SIZE];
-
-	((void) data);
-
-	if (see_generate_random(inbuf, inlen) < 0) {
-		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
-	}
-
-	if (len < inlen) {
-		inlen = len;
-	}
-
-	memcpy(output, inbuf, inlen);
-	*olen = inlen;
-
-	return 0;
-}
-#else /* CONFIG_HW_RNG */
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
-{
-	/* It should be changed to hardware random generator */
-	/* Temporary entropy poll */
-
-	unsigned long timer = mbedtls_timing_hardclock();
-	((void)data);
-	*olen = 0;
-
-	if (len < sizeof(unsigned long)) {
-		return (0);
-	}
-
-	memcpy(output, &timer, sizeof(unsigned long));
-	*olen = sizeof(unsigned long);
-
-	return (0);
-}
-#endif /* CONFIG_HW_RNG */
-#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
 #endif /* MBEDTLS_ENTROPY_C */

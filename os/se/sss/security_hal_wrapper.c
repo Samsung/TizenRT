@@ -742,19 +742,19 @@ int sss_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 		return HAL_NOT_SUPPORTED;
 		break;
 	case HAL_KEY_ECC_SEC_P192R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x21);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x11);
 		break;
 	case HAL_KEY_ECC_SEC_P224R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x22);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x12);
 		break;
 	case HAL_KEY_ECC_SEC_P256R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x23);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x13);
 		break;
 	case HAL_KEY_ECC_SEC_P384R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x24);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x14);
 		break;
 	case HAL_KEY_ECC_SEC_P512R1:
-		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x25);
+		ret = isp_ecdsa_generate_key_securekey(key_idx, 0x15);
 		break;
 	case HAL_KEY_HMAC_MD5:
 	case HAL_KEY_HMAC_SHA1:
@@ -969,7 +969,7 @@ int sss_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uin
 	return HAL_SUCCESS;
 }
 
-int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, hal_data *sign)
+int sss_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
 	HWRAP_ENTER;
 	uint32_t ret;
@@ -985,7 +985,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 	ecc_sign.r = r_buf;
 	ecc_sign.r_byte_len = HAL_MAX_ECP_KEY_SIZE_ALT;
 	
-	switch (mode->hash_t) {
+	switch (mode.hash_t) {
 	case HAL_HASH_MD5:
 		ecc_sign.sign_type |= OID_SHA1_160;
 		break;
@@ -1002,7 +1002,7 @@ int sss_hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode
 		return HAL_INVALID_ARGS;
 	}
 
-	switch (mode->curve) {
+	switch (mode.curve) {
 	case HAL_ECDSA_SEC_P256R1:
 		ecc_sign.sign_type |= OID_ECC_P256;
 		break;
@@ -1261,29 +1261,29 @@ int sss_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_i
 	HWRAP_ENTER;
 	uint32_t ret;
 	struct sECC_KEY ecc_pub;
-
 	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
+
 	switch (ecdh_param->curve) {
 	case HAL_ECDSA_BRAINPOOL_P256R1:
-		ecc_pub.curve = OID_ECC_BP256;
+		ecc_pub.curve |= OID_ECC_BP256;
 		break;
 	case HAL_ECDSA_BRAINPOOL_P384R1:
 	case HAL_ECDSA_BRAINPOOL_P512R1:
 		return HAL_NOT_SUPPORTED;
 	case HAL_ECDSA_SEC_P192R1:
-		ecc_pub.curve = OID_ECC_P192;
+		ecc_pub.curve |= OID_ECC_P192;
 		break;
 	case HAL_ECDSA_SEC_P224R1:
-		ecc_pub.curve = OID_ECC_P224;
+		ecc_pub.curve |= OID_ECC_P224;
 		break;
 	case HAL_ECDSA_SEC_P256R1:
-		ecc_pub.curve = OID_ECC_P256;
+		ecc_pub.curve |= OID_ECC_P256;
 		break;
 	case HAL_ECDSA_SEC_P384R1:
-		ecc_pub.curve = OID_ECC_P384;
+		ecc_pub.curve |= OID_ECC_P384;
 		break;
 	case HAL_ECDSA_SEC_P512R1:
-		ecc_pub.curve = OID_ECC_P521;
+		ecc_pub.curve |= OID_ECC_P521;
 		break;
 	case HAL_ECDSA_UNKNOWN:
 		return HAL_INVALID_ARGS;
