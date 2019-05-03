@@ -113,7 +113,6 @@ config IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT
 config IMXRT_AUTOMOUNT_ROMFS
 	bool "Automount romfs partiton"
 	default y
-	select MTD_FTL
 	depends on IMXRT_AUTOMOUNT
 	depends on FS_ROMFS
 	---help---
