@@ -16,11 +16,11 @@ The TinyAra configuration consists of:
 o Processor architecture specific files.  These are the files contained
   in the arch/<arch-name>/ directory discussed in this README.
 
-o Chip/SoC specific files.  Each processor processor architecture
-  is embedded in chip or System-on-a-Chip (SoC) architecture.  The
-  full chip architecture includes the processor architecture plus
-  chip-specific interrupt logic, general purpose I/O (GIO) logic, and
-  specialized, internal peripherals (such as UARTs, USB, etc.).
+o Chip/SoC specific files.  Each processor architecture is embedded 
+  in chip or System-on-a-Chip (SoC) architecture.  The full chip 
+  architecture includes the processor architecture plus chip-specific 
+  interrupt logic, general purpose I/O (GIO) logic, and specialized, 
+  internal peripherals (such as UARTs, USB, etc.).
 
   These chip-specific files are contained within chip-specific
   sub-directories in the arch/<arch-name>/ directory and are selected
