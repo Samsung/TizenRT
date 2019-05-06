@@ -327,7 +327,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 		*heap_start = (FAR void *)g_idle_topstack;
 		*heap_size  = PRIMARY_RAM_END - g_idle_topstack;
 	} else {
-		*heap_start = PRIMARY_RAM_START;
+		*heap_start = (FAR void *)PRIMARY_RAM_START;
 		*heap_size  = PRIMARY_RAM_SIZE;
 	}
 #endif
