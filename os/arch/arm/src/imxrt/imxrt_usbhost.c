@@ -203,6 +203,47 @@ int imxrt_usbhost_initialize(void)
 	pid_t pid;
 	int ret;
 
+	/* First, register all of the class drivers needed to support the drivers
+	 * that we care about:
+	 */
+
+	uvdbg("Register class drivers\n");
+
+#ifdef CONFIG_USBHOST_HUB
+	/* Initialize USB hub class support */
+
+	ret = usbhost_hub_initialize();
+	if (ret < 0) {
+		udbg("ERROR: usbhost_hub_initialize failed: %d\n", ret);
+	}
+#endif
+
+#ifdef CONFIG_USBHOST_MSC
+	/* Register the USB mass storage class class */
+
+	ret = usbhost_msc_initialize();
+	if (ret != OK) {
+		udbg("Failed to register the mass storage class\n");
+	}
+#endif
+
+#ifdef CONFIG_USBHOST_CDCACM
+	/* Register the CDC/ACM serial class */
+
+	ret = usbhost_cdcacm_initialize();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register the CDC/ACM serial class: %d\n", ret);
+	}
+#endif
+
+#ifdef CONFIG_USBHOST_HIDMOUSE
+	/* Initialize the HID mouse class */
+	ret = usbhost_mouse_init();
+	if (ret != OK) {
+		udbg("Failed to register the HID mouse class\n");
+	}
+#endif
+
 	/* Then get an instance of the USB EHCI interface. */
 
 	g_ehciconn = imxrt_ehci_initialize(0);

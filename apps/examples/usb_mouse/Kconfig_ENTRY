@@ -1,0 +1,3 @@
+config ENTRY_USB_MOUSE
+	bool "USB Host HID example example"
+	depends on EXAMPLES_USB_MOUSE

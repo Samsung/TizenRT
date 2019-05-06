@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_USB_MOUSE
+	bool "USB Host HID example"
+	default n
+	depends on USBHOST_HIDMOUSE
+	---help---
+		Enable the USB Host HID example
+
+config USER_ENTRYPOINT
+	string
+	default "mouse_main" if ENTRY_USB_MOUSE
