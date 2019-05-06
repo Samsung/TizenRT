@@ -10,15 +10,6 @@ config EXAMPLES_MESSAGING_SAMPLE
 	---help---
 		Enable the Messaging Framework sample
 
-if EXAMPLES_MESSAGING_SAMPLE
-config EXAMPLES_MESSAGING_SAMPLE_LOOPS
-	int "Loop count for running sample"
-	default 1
-	---help---
-		Used to control the number of executions of the sample. If undefined, the test
-		executes one time.
-endif
-
 config USER_ENTRYPOINT
 	string
 	default "messaging_main" if ENTRY_MESSAGING_SAMPLE

@@ -68,9 +68,12 @@
 #define STACKSIZE 2048
 #define BUFFER_SIZE 10
 
+extern int fail_cnt;
+
 static void multi_recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_data, void *cb_data)
 {
 	if (recv_data == NULL) {
+		fail_cnt++;
 		printf("Fail to receive multicast message with non-block mode.\n");
 		return;
 	}
@@ -88,6 +91,7 @@ static int multi_recv_nonblock(int argc, FAR char *argv[])
 
 	data.buf = (char *)malloc(BUFFER_SIZE);
 	if (data.buf == NULL) {
+		fail_cnt++;
 		printf("Fail to recv nonblock multicast message : out of memory.\n");
 		return ERROR;
 	}
@@ -95,6 +99,7 @@ static int multi_recv_nonblock(int argc, FAR char *argv[])
 
 	ret = messaging_recv_nonblock(TEST3_PORT, &data, &cb_info);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to receive multicast with non-block mode.\n");
 		free(data.buf);
 		return ERROR;
@@ -115,12 +120,14 @@ static int multi_recv_block(int argc, FAR char *argv[])
 	msg.buflen = BUFFER_SIZE;
 	msg.buf = (char *)malloc(BUFFER_SIZE);
 	if (msg.buf == NULL) {
+		fail_cnt++;
 		printf("Fail to malloc for multi_recv1 buffer.\n");
 		return ERROR;
 	}
 
 	ret = messaging_recv_block(TEST3_PORT, &msg);
 	if (ret < 0) {
+		fail_cnt++;
 		printf("Fail to receive multicast message in multi_recv1.\n");
 		return ERROR;
 	}
@@ -142,6 +149,7 @@ static int multi_sender(int argc, FAR char *argv[])
 	printf("- Send Multicast [%s] data.\n", TEST3_DATA);
 	ret = messaging_multicast(TEST3_PORT, &data);
 	if (ret != 3) {
+		fail_cnt++;
 		printf("Fail to send multicast.\n");
 		return ERROR;
 	}
@@ -161,24 +169,28 @@ void multicast_messaging_sample(void)
 
 	recv1_pid = task_create("multi_recv3", TASK_PRIO, STACKSIZE, multi_recv_nonblock, NULL);
 	if (recv1_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create multi_recv3 task.\n");
 		return;
 	}
 
 	recv2_pid = task_create("multi_recv1", TASK_PRIO, STACKSIZE, multi_recv_block, NULL);
 	if (recv2_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create multi_recv1 task.\n");
 		return;
 	}
 
 	recv3_pid = task_create("multi_recv2", TASK_PRIO, STACKSIZE, multi_recv_block, NULL);
 	if (recv3_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create multi_recv2 task.\n");
 		return;
 	}
 
 	sender_pid = task_create("multi_sender", TASK_PRIO, STACKSIZE, multi_sender, NULL);
 	if (sender_pid < 0) {
+		fail_cnt++;
 		printf("Fail to create multi_recv3 task.\n");
 		return;
 	}
@@ -188,6 +200,7 @@ void multicast_messaging_sample(void)
 
 	ret = messaging_cleanup(TEST3_PORT);
 	if (ret != OK) {
+		fail_cnt++;
 		printf("Fail to cleanup TEST3_PORT.\n");
 		return;
 	}
