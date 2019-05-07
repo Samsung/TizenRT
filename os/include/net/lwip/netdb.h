@@ -92,6 +92,7 @@ extern "C" {
 #define NO_DATA         211
 #define NO_RECOVERY     212
 #define TRY_AGAIN       213
+#define NO_ADDRESS      214     /*  defined to support iperf2. lwIP doesn't know the value */
 #endif							/* LWIP_DNS_API_DEFINE_ERRORS */
 
 #if LWIP_DNS_API_DEFINE_FLAGS
