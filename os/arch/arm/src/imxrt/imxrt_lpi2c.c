@@ -237,7 +237,7 @@ uint32_t imxrt_lpi2c_getinstance(LPI2C_Type *base)
 }
 
 /****************************************************************************
- * Function: imxrt_imxrt_lpi2c_getcyclesforwidth
+ * Function: imxrt_lpi2c_getcyclesforwidth
  *
  * Description:
  *   brief Computes a cycle count for a given time in nanoseconds.
@@ -252,7 +252,7 @@ uint32_t imxrt_lpi2c_getinstance(LPI2C_Type *base)
  *   None
  *
  ****************************************************************************/
-static uint32_t imxrt_imxrt_lpi2c_getcyclesforwidth(uint32_t sourceClock_Hz,
+static uint32_t imxrt_lpi2c_getcyclesforwidth(uint32_t sourceClock_Hz,
 					uint32_t width_ns,
 					uint32_t maxCycles,
 					uint32_t prescaler)

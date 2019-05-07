@@ -906,7 +906,7 @@ uint32_t imxrt_edma_getremainingmajorloopcount(DMA_Type *base, uint32_t channel)
 }
 
 /****************************************************************************
- * Function: imxrt_imxrt_edma_getchannelstatusflags
+ * Function: imxrt_edma_getchannelstatusflags
  *
  * Description:
  *   brief Gets the eDMA channel status flags.
@@ -920,7 +920,7 @@ uint32_t imxrt_edma_getremainingmajorloopcount(DMA_Type *base, uint32_t channel)
  *         _edma_channel_status_flags type to decode the return variables.
  *
  ****************************************************************************/
-uint32_t imxrt_imxrt_edma_getchannelstatusflags(DMA_Type *base, uint32_t channel)
+uint32_t imxrt_edma_getchannelstatusflags(DMA_Type *base, uint32_t channel)
 {
 	DEBUGASSERT(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
 
