@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-/* The i.MXRT1050-EVK has 64Mb of Hyper FLASH beginning at address,
- * 0x0060:0000, 512Kb of DTCM RAM beginning at 0x2000:0000, and 512Kb OCRAM
+/* The i.MXRT1050-EVK has 64MB of Hyper FLASH beginning at address,
+ * 0x0060:0000, 512KB of DTCM RAM beginning at 0x2000:0000, and 512KB OCRAM
  * beginning at 0x2020:0000.  Neither DTCM or SDRAM are used in this
  * configuratin.
  *
@@ -85,13 +85,13 @@
 
 MEMORY
 {
-  /* 64Mb of HyperFLASH */
+  /* 64MB of HyperFLASH */
 
   kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 1M
   uflash (rx)  : ORIGIN = 0x60200000, LENGTH = 1M
   flash  (rx)  : ORIGIN = 0x60400000, LENGTH = 62M
 
-  /* 512Kb of OCRAM */
+  /* 512KB of OCRAM */
 
   dtcm   (rwx) : ORIGIN = 0x20000000, LENGTH = 512K
   kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 256K
