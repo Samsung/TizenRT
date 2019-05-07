@@ -190,7 +190,7 @@ config BOARD_ASSERT_AUTORESET
 config BOARD_ASSERT_SYSTEM_BLOCK
 	bool "Enable Infinite loop feature of fault manager"
 	default n
-	depends on !BOARD_ASSERT_AUTORESET && !FAULT_MGR
+	depends on !BOARD_ASSERT_AUTORESET && !BINMGR_RECOVERY
 	---help---
 		When this is enabled irrespective of any fault, system will
 		go in infinite loop. This can help to debug the system using Trace32.
