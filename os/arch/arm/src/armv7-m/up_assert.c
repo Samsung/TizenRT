@@ -457,8 +457,10 @@ static void _up_assert(int errorcode)
 	}
 #else
 
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
 	/* Are we in an interrupt handler or the idle task? */
 	if (current_regs || (this_task())->pid == 0) {
+#endif
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -468,9 +470,11 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
 	} else {
 		exit(errorcode);
 	}
+#endif
 #endif
 }
 
@@ -524,7 +528,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 #endif
 
-#ifndef CONFIG_BINMGR_RECOVERY
+#if !defined(CONFIG_BINMGR_RECOVERY) && !defined(CONFIG_BOARD_ASSERT_SYSTEM_BLOCK)
 	up_dumpstate();
 #endif
 
