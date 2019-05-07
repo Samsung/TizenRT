@@ -83,6 +83,7 @@
 #include <tinyara/syslog/syslog.h>
 
 #include <arch/board/board.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
@@ -103,6 +104,7 @@
 bool abort_mode = false;
 uint32_t assert_pc;
 extern uint32_t g_assertpc;
+extern mqd_t g_binmgr_mq_fd;
 #endif
 /****************************************************************************
  * Pre-processor Definitions
@@ -404,14 +406,12 @@ static void up_dumpstate(void)
  * Name: _up_assert
  ****************************************************************************/
 
-static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
 #ifdef CONFIG_BINMGR_RECOVERY
 	int ret;
-	mqd_t binmgr_mq;
 	binmgr_request_t request_msg;
-	pid_t pid;
+	struct tcb_s *tcb;
 	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
 	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
@@ -434,17 +434,26 @@ static void _up_assert(int errorcode)
 		}
 #endif
 	} else {
-		binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
-		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
 
 		request_msg.cmd = BINMGR_FAULT;
 		request_msg.requester_pid = getpid();
+		if (current_regs) {
+			tcb = sched_self();
+			sched_removereadytorun(tcb);
+#if CONFIG_RR_INTERVAL > 0
+			tcb->timeslice = 0;
+#endif
+			tcb->sched_priority = SCHED_PRIORITY_MIN;
+			sched_addreadytorun(tcb);
+		}
 
 		/* Send a message to fault manager with pid of the faulty task */
-		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+		ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 		DEBUGASSERT(ret == 0);
-		mq_close(binmgr_mq);
-		exit(errorcode);
+		if (current_regs) {
+			tcb = sched_self();
+			current_regs = tcb->xcp.regs;
+		}
 	}
 #else
 

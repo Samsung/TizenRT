@@ -78,7 +78,7 @@ static void recovery_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
 		return;
 	}
 
-	if (tcb->group->tg_loadtask == info->binid && tcb->pid != info->binid && tcb->pid != info->faultid) {
+	if (tcb->group->tg_loadtask == info->binid && tcb->pid != info->binid) {
 		bmllvdbg("KILL!! %d\n", tcb->pid);
 		ret = task_terminate(tcb->pid, true);
 	}
