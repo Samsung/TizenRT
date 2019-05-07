@@ -167,6 +167,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC),y)
 	$(Q) $(call REGISTER,media_itc,itc_media_main,TASH_EXECMD_ASYNC,100,8192)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_MESSAGING_UTC),y)
+	$(Q) $(call REGISTER,messaging_utc,utc_messaging_main,TASH_EXECMD_ASYNC,100,4096)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MPU),y)
 	$(Q) $(call REGISTER,mpu_tc,tc_mpu_main,TASH_EXECMD_ASYNC,100,2048)
 endif

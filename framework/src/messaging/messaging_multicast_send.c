@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,38 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_read.c
-/// @brief Test Case Example for kernel data access from user space
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <debug.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <messaging/messaging.h>
+#include "messaging_internal.h"
 
-extern uint32_t __ksram_segment_start__[];
 /****************************************************************************
- * Name: read_main
+ * private functions
  ****************************************************************************/
-
-int read_main(void)
+/****************************************************************************
+ * messaging_multicast
+ ****************************************************************************/
+int messaging_multicast(const char *port_name, msg_send_data_t *send_data)
 {
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
-	uint32_t dest;
+	int ret;
+	if (port_name == NULL) {
+		msgdbg("[Messaging] multicast send fail : no port name.\n");
+		return ERROR;
+	}
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to read     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
-	printf("************************************************\n");
+	if (send_data == NULL || send_data->msg == NULL || send_data->msglen <= 0 || send_data->priority < 0) {
+		msgdbg("[Messaging] multicast send fail : invalid param of send data.\n");
+		return ERROR;
+	}
 
-	sleep(3);
-	dest = *address;
+	ret = messaging_send_internal(port_name, MSG_SEND_MULTI, send_data, NULL, NULL);
+	if (ret == ERROR) {
+		return ERROR;
+	}
 
-	printf("ERR: User Task successfully accessed Kernel space\n");
-	return 0;
+	return ret;
 }

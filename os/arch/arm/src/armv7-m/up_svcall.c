@@ -72,7 +72,9 @@
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
-
+#ifdef CONFIG_ARMV7M_MPU
+#include "mpu.h"
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -92,6 +94,9 @@
 #define svcdbg(...)
 #endif
 
+#ifdef CONFIG_BINMGR_RECOVERY
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -180,6 +185,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
+#ifdef CONFIG_BINMGR_RECOVERY
+	g_assertpc = regs[REG_R14];
+#endif
 
 #if defined(CONFIG_DEBUG_SYSCALL) || defined(CONFIG_DEBUG_SVCALL)
 #ifndef CONFIG_DEBUG_SVCALL
@@ -224,9 +232,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
-#endif
 	}
 	break;
 
@@ -248,6 +253,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	case SYS_restore_context: {
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
+
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+		up_set_mpu_app_configuration(sched_self());
+#endif
 	}
 	break;
 
@@ -273,10 +283,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
-#endif
 		current_regs = (uint32_t *)regs[REG_R2];
+
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+		up_set_mpu_app_configuration(sched_self());
+#endif
 	}
 	break;
 
@@ -348,6 +360,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		regs[REG_R0] = regs[REG_R1];	/* Task entry */
 		regs[REG_R1] = regs[REG_R2];	/* argc */
 		regs[REG_R2] = regs[REG_R3];	/* argv */
+
 	}
 	break;
 #endif
