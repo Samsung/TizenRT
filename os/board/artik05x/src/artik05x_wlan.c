@@ -82,7 +82,7 @@ unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;
 
-	ioctl(fd, CFGDIOC_SETCONFIG, &config);
+	ioctl(fd, CFGDIOC_SETCONFIG, (unsigned long)&config);
 	close(fd);
 
 	return true;
@@ -108,7 +108,7 @@ unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;
 
-	ioctl(fd, CFGDIOC_GETCONFIG, &config);
+	ioctl(fd, CFGDIOC_GETCONFIG, (unsigned long)&config);
 	close(fd);
 
 	return true;
