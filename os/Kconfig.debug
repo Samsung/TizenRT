@@ -736,6 +736,38 @@ config DEBUG_TTRACE
 	---help---
 		Enable T-trace debug Feature.
 
+config DEBUG_USB
+        bool "USB Debug Features"
+        default n
+        depends on USBDEV || USBHOST
+        ---help---
+                Enable USB debug features.
+
+if DEBUG_USB
+
+config DEBUG_USB_ERROR
+        bool "USB Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable USB error output to SYSLOG.
+
+config DEBUG_USB_WARN
+        bool "USB Warnings Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable USB warning output to SYSLOG.
+
+config DEBUG_USB_INFO
+        bool "USB Informational Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable USB informational output to SYSLOG.
+
+endif # DEBUG_USB
+
 config DEBUG_WATCHDOG
 	bool "Watchdog Timer Debug Feature"
 	default n
