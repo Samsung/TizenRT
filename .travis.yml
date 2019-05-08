@@ -27,6 +27,8 @@ env:
     - BUILD_CONFIG=qemu/tc_64k
     - BUILD_CONFIG=qemu/build_test
     - BUILD_CONFIG=esp_wrover_kit/hello_with_tash
+    - BUILD_CONFIG=imxrt1020-evk/nxp_demo
+    - BUILD_CONFIG=imxrt1050-evk/nxp_demo
 
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
