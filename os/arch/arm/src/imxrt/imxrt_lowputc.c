@@ -248,8 +248,8 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-  (void)imxrt_config_gpio(GPIO_LPUART2_RX);
-  (void)imxrt_config_gpio(GPIO_LPUART2_TX);
+	(void)imxrt_config_gpio(GPIO_LPUART2_RX);
+	(void)imxrt_config_gpio(GPIO_LPUART2_TX);
 #ifdef CONFIG_LPUART2_OFLOWCONTROL
 	(void)imxrt_config_gpio(GPIO_LPUART2_CTS);
 #endif

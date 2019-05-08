@@ -29,7 +29,7 @@ in IDE, clock_64b_t will switch to double type automatically. only support IAR a
 #if ((defined(__ICCARM__)) || (defined(__GNUC__)))
 
 #if (__ARMVFP__ >= __ARMFPV5__) && \
-    (__ARM_FP == 0xE) /*0xe implies support for half, single and double precision operations*/
+	(__ARM_FP == 0xE) /*0xe implies support for half, single and double precision operations*/
 typedef double clock_64b_t;
 #else
 typedef uint64_t clock_64b_t;
@@ -89,59 +89,59 @@ static uint32_t imxrt_clock_getperiphclkfreq(void);
  ****************************************************************************/
 static uint32_t imxrt_clock_getperiphclkfreq(void)
 {
-    uint32_t freq;
+	uint32_t freq;
 
-    /* Periph_clk2_clk ---> Periph_clk */
-    if (CCM->CBCDR & CCM_CBCDR_PERIPH_CLK_SEL_MASK) {
-        switch (CCM->CBCMR & CCM_CBCMR_PERIPH_CLK2_SEL_MASK) {
-        /* Pll3_sw_clk ---> Periph_clk2_clk ---> Periph_clk */
-        case CCM_CBCMR_PERIPH_CLK2_SEL(0U):
-            freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
-            break;
-        /* Osc_clk ---> Periph_clk2_clk ---> Periph_clk */
-        case CCM_CBCMR_PERIPH_CLK2_SEL(1U):
-            freq = imxrt_clock_getoscfreq();
-            break;
-        case CCM_CBCMR_PERIPH_CLK2_SEL(2U):
-            freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
-            break;
-        case CCM_CBCMR_PERIPH_CLK2_SEL(3U):
-        default:
-            freq = 0U;
-            break;
-        }
+	/* Periph_clk2_clk ---> Periph_clk */
+	if (CCM->CBCDR & CCM_CBCDR_PERIPH_CLK_SEL_MASK) {
+		switch (CCM->CBCMR & CCM_CBCMR_PERIPH_CLK2_SEL_MASK) {
+		/* Pll3_sw_clk ---> Periph_clk2_clk ---> Periph_clk */
+		case CCM_CBCMR_PERIPH_CLK2_SEL(0U):
+			freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
+			break;
+		/* Osc_clk ---> Periph_clk2_clk ---> Periph_clk */
+		case CCM_CBCMR_PERIPH_CLK2_SEL(1U):
+			freq = imxrt_clock_getoscfreq();
+			break;
+		case CCM_CBCMR_PERIPH_CLK2_SEL(2U):
+			freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
+			break;
+		case CCM_CBCMR_PERIPH_CLK2_SEL(3U):
+		default:
+			freq = 0U;
+			break;
+		}
 
-        freq /= (((CCM->CBCDR & CCM_CBCDR_PERIPH_CLK2_PODF_MASK) >> CCM_CBCDR_PERIPH_CLK2_PODF_SHIFT) + 1U);
-    } else { /* Pre_Periph_clk ---> Periph_clk */
-        switch (CCM->CBCMR & CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK) {
-        /* PLL2 ---> Pre_Periph_clk ---> Periph_clk */
-        case CCM_CBCMR_PRE_PERIPH_CLK_SEL(0U):
-            freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
-            break;
-        /* PLL2 PFD2 ---> Pre_Periph_clk ---> Periph_clk */
-        case CCM_CBCMR_PRE_PERIPH_CLK_SEL(1U):
-            freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
-            break;
-        /* PLL2 PFD0 ---> Pre_Periph_clk ---> Periph_clk */
-        case CCM_CBCMR_PRE_PERIPH_CLK_SEL(2U):
-            freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd0);
-            break;
-        /* PLL1 divided(/2) ---> Pre_Periph_clk ---> Periph_clk */
-        case CCM_CBCMR_PRE_PERIPH_CLK_SEL(3U):
-            #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-            freq = 500000000U;
-            #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-            freq = imxrt_clock_getpllfreq(kCLOCK_PllArm) /
-                    (((CCM->CACRR & CCM_CACRR_ARM_PODF_MASK) >> CCM_CACRR_ARM_PODF_SHIFT) + 1U);
-            #endif
-            break;
-        default:
-            freq = 0U;
-            break;
-        }
-    }
+		freq /= (((CCM->CBCDR & CCM_CBCDR_PERIPH_CLK2_PODF_MASK) >> CCM_CBCDR_PERIPH_CLK2_PODF_SHIFT) + 1U);
+	} else { /* Pre_Periph_clk ---> Periph_clk */
+		switch (CCM->CBCMR & CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK) {
+		/* PLL2 ---> Pre_Periph_clk ---> Periph_clk */
+		case CCM_CBCMR_PRE_PERIPH_CLK_SEL(0U):
+			freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
+			break;
+		/* PLL2 PFD2 ---> Pre_Periph_clk ---> Periph_clk */
+		case CCM_CBCMR_PRE_PERIPH_CLK_SEL(1U):
+			freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
+			break;
+		/* PLL2 PFD0 ---> Pre_Periph_clk ---> Periph_clk */
+		case CCM_CBCMR_PRE_PERIPH_CLK_SEL(2U):
+			freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd0);
+			break;
+		/* PLL1 divided(/2) ---> Pre_Periph_clk ---> Periph_clk */
+		case CCM_CBCMR_PRE_PERIPH_CLK_SEL(3U):
+			#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+			freq = 500000000U;
+			#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+			freq = imxrt_clock_getpllfreq(kCLOCK_PllArm) /
+					(((CCM->CACRR & CCM_CACRR_ARM_PODF_MASK) >> CCM_CACRR_ARM_PODF_SHIFT) + 1U);
+			#endif
+			break;
+		default:
+			freq = 0U;
+			break;
+		}
+	}
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -168,16 +168,16 @@ static uint32_t imxrt_clock_getperiphclkfreq(void)
  ****************************************************************************/
 void imxrt_clock_initexternalclk(bool bypassXtalOsc)
 {
-    /* This device does not support bypass XTAL OSC. */
-    DEBUGASSERT(!bypassXtalOsc);
+	/* This device does not support bypass XTAL OSC. */
+	DEBUGASSERT(!bypassXtalOsc);
 
-    CCM_ANALOG->MISC0_CLR = CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK; /* Power up */
-    while ((XTALOSC24M->LOWPWR_CTRL & XTALOSC24M_LOWPWR_CTRL_XTALOSC_PWRUP_STAT_MASK) == 0) {
-    }
-    CCM_ANALOG->MISC0_SET = CCM_ANALOG_MISC0_OSC_XTALOK_EN_MASK; /* detect freq */
-    while ((CCM_ANALOG->MISC0 & CCM_ANALOG_MISC0_OSC_XTALOK_MASK) == 0) {
-    }
-    CCM_ANALOG->MISC0_CLR = CCM_ANALOG_MISC0_OSC_XTALOK_EN_MASK;
+	CCM_ANALOG->MISC0_CLR = CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK; /* Power up */
+	while ((XTALOSC24M->LOWPWR_CTRL & XTALOSC24M_LOWPWR_CTRL_XTALOSC_PWRUP_STAT_MASK) == 0) {
+	}
+	CCM_ANALOG->MISC0_SET = CCM_ANALOG_MISC0_OSC_XTALOK_EN_MASK; /* detect freq */
+	while ((CCM_ANALOG->MISC0 & CCM_ANALOG_MISC0_OSC_XTALOK_MASK) == 0) {
+	}
+	CCM_ANALOG->MISC0_CLR = CCM_ANALOG_MISC0_OSC_XTALOK_EN_MASK;
 }
 
 /****************************************************************************
@@ -200,7 +200,7 @@ void imxrt_clock_initexternalclk(bool bypassXtalOsc)
  ****************************************************************************/
 void imxrt_clock_deinitexternalclk(void)
 {
-    CCM_ANALOG->MISC0_SET = CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK; /* Power down */
+	CCM_ANALOG->MISC0_SET = CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK; /* Power down */
 }
 
 /****************************************************************************
@@ -220,10 +220,10 @@ void imxrt_clock_deinitexternalclk(void)
  ****************************************************************************/
 void imxrt_clock_switchosc(clock_osc_t osc)
 {
-    if (osc == kCLOCK_RcOsc)
-        XTALOSC24M->LOWPWR_CTRL_SET = XTALOSC24M_LOWPWR_CTRL_SET_OSC_SEL_MASK;
-    else
-        XTALOSC24M->LOWPWR_CTRL_CLR = XTALOSC24M_LOWPWR_CTRL_CLR_OSC_SEL_MASK;
+	if (osc == kCLOCK_RcOsc)
+		XTALOSC24M->LOWPWR_CTRL_SET = XTALOSC24M_LOWPWR_CTRL_SET_OSC_SEL_MASK;
+	else
+		XTALOSC24M->LOWPWR_CTRL_CLR = XTALOSC24M_LOWPWR_CTRL_CLR_OSC_SEL_MASK;
 }
 
 /****************************************************************************
@@ -241,7 +241,7 @@ void imxrt_clock_switchosc(clock_osc_t osc)
  ****************************************************************************/
 void imxrt_clock_initrcosc24m(void)
 {
-    XTALOSC24M->LOWPWR_CTRL |= XTALOSC24M_LOWPWR_CTRL_RC_OSC_EN_MASK;
+	XTALOSC24M->LOWPWR_CTRL |= XTALOSC24M_LOWPWR_CTRL_RC_OSC_EN_MASK;
 }
 
 /****************************************************************************
@@ -259,7 +259,7 @@ void imxrt_clock_initrcosc24m(void)
  ****************************************************************************/
 void imxrt_clock_deinitrcosc24m(void)
 {
-    XTALOSC24M->LOWPWR_CTRL &= ~XTALOSC24M_LOWPWR_CTRL_RC_OSC_EN_MASK;
+	XTALOSC24M->LOWPWR_CTRL &= ~XTALOSC24M_LOWPWR_CTRL_RC_OSC_EN_MASK;
 }
 
 /****************************************************************************
@@ -277,7 +277,7 @@ void imxrt_clock_deinitrcosc24m(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getahbfreq(void)
 {
-    return imxrt_clock_getperiphclkfreq() / (((CCM->CBCDR & CCM_CBCDR_AHB_PODF_MASK) >> CCM_CBCDR_AHB_PODF_SHIFT) + 1U);
+	return imxrt_clock_getperiphclkfreq() / (((CCM->CBCDR & CCM_CBCDR_AHB_PODF_MASK) >> CCM_CBCDR_AHB_PODF_SHIFT) + 1U);
 }
 
 /****************************************************************************
@@ -295,23 +295,23 @@ uint32_t imxrt_clock_getahbfreq(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getsemcfreq(void)
 {
-    uint32_t freq;
+	uint32_t freq;
 
-    /* SEMC alternative clock ---> SEMC Clock */
-    if (CCM->CBCDR & CCM_CBCDR_SEMC_CLK_SEL_MASK) {
-        /* PLL3 PFD1 ---> SEMC alternative clock ---> SEMC Clock */
-        if (CCM->CBCDR & CCM_CBCDR_SEMC_ALT_CLK_SEL_MASK) {
-            freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd1);
-        } else { /* PLL2 PFD2 ---> SEMC alternative clock ---> SEMC Clock */
-            freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
-        }
-    } else { /* Periph_clk ---> SEMC Clock */
-        freq = imxrt_clock_getperiphclkfreq();
-    }
+	/* SEMC alternative clock ---> SEMC Clock */
+	if (CCM->CBCDR & CCM_CBCDR_SEMC_CLK_SEL_MASK) {
+		/* PLL3 PFD1 ---> SEMC alternative clock ---> SEMC Clock */
+		if (CCM->CBCDR & CCM_CBCDR_SEMC_ALT_CLK_SEL_MASK) {
+			freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd1);
+		} else { /* PLL2 PFD2 ---> SEMC alternative clock ---> SEMC Clock */
+			freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
+		}
+	} else { /* Periph_clk ---> SEMC Clock */
+		freq = imxrt_clock_getperiphclkfreq();
+	}
 
-    freq /= (((CCM->CBCDR & CCM_CBCDR_SEMC_PODF_MASK) >> CCM_CBCDR_SEMC_PODF_SHIFT) + 1U);
+	freq /= (((CCM->CBCDR & CCM_CBCDR_SEMC_PODF_MASK) >> CCM_CBCDR_SEMC_PODF_SHIFT) + 1U);
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -329,7 +329,7 @@ uint32_t imxrt_clock_getsemcfreq(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getipgfreq(void)
 {
-    return imxrt_clock_getahbfreq() / (((CCM->CBCDR & CCM_CBCDR_IPG_PODF_MASK) >> CCM_CBCDR_IPG_PODF_SHIFT) + 1U);
+	return imxrt_clock_getahbfreq() / (((CCM->CBCDR & CCM_CBCDR_IPG_PODF_MASK) >> CCM_CBCDR_IPG_PODF_SHIFT) + 1U);
 }
 
 /****************************************************************************
@@ -347,18 +347,18 @@ uint32_t imxrt_clock_getipgfreq(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getperclkfreq(void)
 {
-    uint32_t freq;
+	uint32_t freq;
 
-    /* Osc_clk ---> PER Clock*/
-    if (CCM->CSCMR1 & CCM_CSCMR1_PERCLK_CLK_SEL_MASK) {
-        freq = imxrt_clock_getoscfreq();
-    } else { /* Periph_clk ---> AHB Clock ---> IPG Clock ---> PER Clock */
-        freq = imxrt_clock_getfreq(kCLOCK_IpgClk);
-    }
+	/* Osc_clk ---> PER Clock*/
+	if (CCM->CSCMR1 & CCM_CSCMR1_PERCLK_CLK_SEL_MASK) {
+		freq = imxrt_clock_getoscfreq();
+	} else { /* Periph_clk ---> AHB Clock ---> IPG Clock ---> PER Clock */
+		freq = imxrt_clock_getfreq(kCLOCK_IpgClk);
+	}
 
-    freq /= (((CCM->CSCMR1 & CCM_CSCMR1_PERCLK_PODF_MASK) >> CCM_CSCMR1_PERCLK_PODF_SHIFT) + 1U);
+	freq /= (((CCM->CSCMR1 & CCM_CSCMR1_PERCLK_PODF_MASK) >> CCM_CSCMR1_PERCLK_PODF_SHIFT) + 1U);
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -379,100 +379,100 @@ uint32_t imxrt_clock_getperclkfreq(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getfreq(clock_name_t name)
 {
-    uint32_t freq;
+	uint32_t freq;
 
-    switch (name) {
-    case kCLOCK_CpuClk:
-    case kCLOCK_AhbClk:
-        freq = imxrt_clock_getahbfreq();
-        break;
-    case kCLOCK_SemcClk:
-        freq = imxrt_clock_getsemcfreq();
-        break;
-    case kCLOCK_IpgClk:
-        freq = imxrt_clock_getipgfreq();
-        break;
-    case kCLOCK_PerClk:
-        freq = imxrt_clock_getperclkfreq();
-        break;
-    case kCLOCK_OscClk:
-        freq = imxrt_clock_getoscfreq();
-        break;
-    case kCLOCK_RtcClk:
-        freq = imxrt_clock_getrtcfreq();
-        break;
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_ArmPllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllArm);
-        break;
-    #endif
-    case kCLOCK_Usb1PllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
-        break;
-    case kCLOCK_Usb1PllPfd0Clk:
-        freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd0);
-        break;
-    case kCLOCK_Usb1PllPfd1Clk:
-        freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd1);
-        break;
-    case kCLOCK_Usb1PllPfd2Clk:
-        freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd2);
-        break;
-    case kCLOCK_Usb1PllPfd3Clk:
-        freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd3);
-        break;
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_Usb2PllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb2);
-        break;
-    #endif
-    case kCLOCK_SysPllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
-        break;
-    case kCLOCK_SysPllPfd0Clk:
-        freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd0);
-        break;
-    case kCLOCK_SysPllPfd1Clk:
-        freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd1);
-        break;
-    case kCLOCK_SysPllPfd2Clk:
-        freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
-        break;
-    case kCLOCK_SysPllPfd3Clk:
-        freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd3);
-        break;
-    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_EnetPllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
-        break;
-    case kCLOCK_EnetPll25MClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
-        break;
-    case kCLOCK_EnetPll500MClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet500M);
-        break;
-    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-    case kCLOCK_EnetPll0Clk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
-        break;
-    case kCLOCK_EnetPll1Clk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
-        break;
-    #endif
-    case kCLOCK_AudioPllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllAudio);
-        break;
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_VideoPllClk:
-        freq = imxrt_clock_getpllfreq(kCLOCK_PllVideo);
-        break;
-    #endif
-    default:
-        freq = 0U;
-        break;
-    }
+	switch (name) {
+	case kCLOCK_CpuClk:
+	case kCLOCK_AhbClk:
+		freq = imxrt_clock_getahbfreq();
+		break;
+	case kCLOCK_SemcClk:
+		freq = imxrt_clock_getsemcfreq();
+		break;
+	case kCLOCK_IpgClk:
+		freq = imxrt_clock_getipgfreq();
+		break;
+	case kCLOCK_PerClk:
+		freq = imxrt_clock_getperclkfreq();
+		break;
+	case kCLOCK_OscClk:
+		freq = imxrt_clock_getoscfreq();
+		break;
+	case kCLOCK_RtcClk:
+		freq = imxrt_clock_getrtcfreq();
+		break;
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_ArmPllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllArm);
+		break;
+	#endif
+	case kCLOCK_Usb1PllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
+		break;
+	case kCLOCK_Usb1PllPfd0Clk:
+		freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd0);
+		break;
+	case kCLOCK_Usb1PllPfd1Clk:
+		freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd1);
+		break;
+	case kCLOCK_Usb1PllPfd2Clk:
+		freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd2);
+		break;
+	case kCLOCK_Usb1PllPfd3Clk:
+		freq = imxrt_clock_getusb1pfdfreq(kCLOCK_Pfd3);
+		break;
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_Usb2PllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb2);
+		break;
+	#endif
+	case kCLOCK_SysPllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
+		break;
+	case kCLOCK_SysPllPfd0Clk:
+		freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd0);
+		break;
+	case kCLOCK_SysPllPfd1Clk:
+		freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd1);
+		break;
+	case kCLOCK_SysPllPfd2Clk:
+		freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd2);
+		break;
+	case kCLOCK_SysPllPfd3Clk:
+		freq = imxrt_clock_getsyspfdfreq(kCLOCK_Pfd3);
+		break;
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_EnetPllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
+		break;
+	case kCLOCK_EnetPll25MClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
+		break;
+	case kCLOCK_EnetPll500MClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet500M);
+		break;
+	#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	case kCLOCK_EnetPll0Clk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet);
+		break;
+	case kCLOCK_EnetPll1Clk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllEnet25M);
+		break;
+	#endif
+	case kCLOCK_AudioPllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllAudio);
+		break;
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_VideoPllClk:
+		freq = imxrt_clock_getpllfreq(kCLOCK_PllVideo);
+		break;
+	#endif
+	default:
+		freq = 0U;
+		break;
+	}
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -496,18 +496,18 @@ uint32_t imxrt_clock_getfreq(clock_name_t name)
  ****************************************************************************/
 bool imxrt_clock_enableusbhs0clock(clock_usb_src_t src, uint32_t freq)
 {
-    CCM->CCGR6 |= CCM_CCGR6_CG0_MASK;
-    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    USB->USBCMD |= USBHS_USBCMD_RST_MASK;
-    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-    USB1->USBCMD |= USBHS_USBCMD_RST_MASK;
-    #endif
-    for (volatile uint32_t i = 0; i < 400000; i++) {/* Add a delay between RST and RS so make sure there is a DP pullup sequence*/
-        __asm("nop");
-    }
-    PMU->REG_3P0 = (PMU->REG_3P0 & (~PMU_REG_3P0_OUTPUT_TRG_MASK)) |
-                   (PMU_REG_3P0_OUTPUT_TRG(0x17) | PMU_REG_3P0_ENABLE_LINREG_MASK);
-    return true;
+	CCM->CCGR6 |= CCM_CCGR6_CG0_MASK;
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	USB->USBCMD |= USBHS_USBCMD_RST_MASK;
+	#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	USB1->USBCMD |= USBHS_USBCMD_RST_MASK;
+	#endif
+	for (volatile uint32_t i = 0; i < 400000; i++) {/* Add a delay between RST and RS so make sure there is a DP pullup sequence*/
+		__asm("nop");
+	}
+	PMU->REG_3P0 = (PMU->REG_3P0 & (~PMU_REG_3P0_OUTPUT_TRG_MASK)) |
+				   (PMU_REG_3P0_OUTPUT_TRG(0x17) | PMU_REG_3P0_ENABLE_LINREG_MASK);
+	return true;
 }
 
 #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -532,14 +532,14 @@ bool imxrt_clock_enableusbhs0clock(clock_usb_src_t src, uint32_t freq)
  ****************************************************************************/
 bool imxrt_clock_enableusbhs1clock(clock_usb_src_t src, uint32_t freq)
 {
-    CCM->CCGR6 |= CCM_CCGR6_CG0_MASK;
-    USB2->USBCMD |= USBHS_USBCMD_RST_MASK;
-    for (volatile uint32_t i = 0; i < 400000; i++) { /* Add a delay between RST and RS so make sure there is a DP pullup sequence*/
-        __asm("nop");
-    }
-    PMU->REG_3P0 = (PMU->REG_3P0 & (~PMU_REG_3P0_OUTPUT_TRG_MASK)) |
-                   (PMU_REG_3P0_OUTPUT_TRG(0x17) | PMU_REG_3P0_ENABLE_LINREG_MASK);
-    return true;
+	CCM->CCGR6 |= CCM_CCGR6_CG0_MASK;
+	USB2->USBCMD |= USBHS_USBCMD_RST_MASK;
+	for (volatile uint32_t i = 0; i < 400000; i++) { /* Add a delay between RST and RS so make sure there is a DP pullup sequence*/
+		__asm("nop");
+	}
+	PMU->REG_3P0 = (PMU->REG_3P0 & (~PMU_REG_3P0_OUTPUT_TRG_MASK)) |
+				   (PMU_REG_3P0_OUTPUT_TRG(0x17) | PMU_REG_3P0_ENABLE_LINREG_MASK);
+	return true;
 }
 #endif
 
@@ -562,29 +562,29 @@ bool imxrt_clock_enableusbhs1clock(clock_usb_src_t src, uint32_t freq)
  ****************************************************************************/
 bool imxrt_clock_enableusbhs0phypllclock(clock_usb_phy_src_t src, uint32_t freq)
 {
-    const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
-    if (CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_ENABLE_MASK) {
-        CCM_ANALOG->PLL_USB1 |= CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
-    } else {
-        imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
-    }
+	const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
+	if (CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_ENABLE_MASK) {
+		CCM_ANALOG->PLL_USB1 |= CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
+	} else {
+		imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
+	}
 
-    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    USBPHY->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
-    USBPHY->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	USBPHY->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
+	USBPHY->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
 
-    USBPHY->PWD = 0;
-    USBPHY->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
-                    USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
-    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-    USBPHY1->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
-    USBPHY1->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
+	USBPHY->PWD = 0;
+	USBPHY->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
+			USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
+	#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	USBPHY1->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
+	USBPHY1->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
 
-    USBPHY1->PWD = 0;
-    USBPHY1->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
-                     USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
-    #endif
-    return true;
+	USBPHY1->PWD = 0;
+	USBPHY1->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
+			 USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
+	#endif
+	return true;
 }
 
 /****************************************************************************
@@ -604,12 +604,12 @@ bool imxrt_clock_enableusbhs0phypllclock(clock_usb_phy_src_t src, uint32_t freq)
  ****************************************************************************/
 void imxrt_clock_disableusbhs0phypllclock(void)
 {
-    CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
-    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    USBPHY->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
-    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-    USBPHY1->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
-    #endif
+	CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	USBPHY->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
+	#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	USBPHY1->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
+	#endif
 }
 
 #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -630,19 +630,19 @@ void imxrt_clock_disableusbhs0phypllclock(void)
  ****************************************************************************/
 void imxrt_clock_initarmpll(const clock_arm_pll_config_t *config)
 {
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_ARM = (CCM_ANALOG->PLL_ARM & (~CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC_MASK)) |
-                          CCM_ANALOG_PLL_ARM_BYPASS_MASK | CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_ARM = (CCM_ANALOG->PLL_ARM & (~CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC_MASK)) |
+			       CCM_ANALOG_PLL_ARM_BYPASS_MASK | CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_ARM =
-        (CCM_ANALOG->PLL_ARM & (~(CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK | CCM_ANALOG_PLL_ARM_POWERDOWN_MASK))) |
-        CCM_ANALOG_PLL_ARM_ENABLE_MASK | CCM_ANALOG_PLL_ARM_DIV_SELECT(config->loopDivider);
+	CCM_ANALOG->PLL_ARM =
+		(CCM_ANALOG->PLL_ARM & (~(CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK | CCM_ANALOG_PLL_ARM_POWERDOWN_MASK))) |
+		CCM_ANALOG_PLL_ARM_ENABLE_MASK | CCM_ANALOG_PLL_ARM_DIV_SELECT(config->loopDivider);
 
-    while ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_ARM &= ~CCM_ANALOG_PLL_ARM_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_ARM &= ~CCM_ANALOG_PLL_ARM_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -660,7 +660,7 @@ void imxrt_clock_initarmpll(const clock_arm_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitarmpll(void)
 {
-    CCM_ANALOG->PLL_ARM = CCM_ANALOG_PLL_ARM_POWERDOWN_MASK;
+	CCM_ANALOG->PLL_ARM = CCM_ANALOG_PLL_ARM_POWERDOWN_MASK;
 }
 #endif
 
@@ -682,28 +682,28 @@ void imxrt_clock_deinitarmpll(void)
 
 void imxrt_clock_initsyspll(const clock_sys_pll_config_t *config)
 {
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_SYS = (CCM_ANALOG->PLL_SYS & (~CCM_ANALOG_PLL_SYS_BYPASS_CLK_SRC_MASK)) |
-                          CCM_ANALOG_PLL_SYS_BYPASS_MASK | CCM_ANALOG_PLL_SYS_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_SYS = (CCM_ANALOG->PLL_SYS & (~CCM_ANALOG_PLL_SYS_BYPASS_CLK_SRC_MASK)) |
+			       CCM_ANALOG_PLL_SYS_BYPASS_MASK | CCM_ANALOG_PLL_SYS_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_SYS =
-        (CCM_ANALOG->PLL_SYS & (~(CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK | CCM_ANALOG_PLL_SYS_POWERDOWN_MASK))) |
-        CCM_ANALOG_PLL_SYS_ENABLE_MASK | CCM_ANALOG_PLL_SYS_DIV_SELECT(config->loopDivider);
+	CCM_ANALOG->PLL_SYS =
+		(CCM_ANALOG->PLL_SYS & (~(CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK | CCM_ANALOG_PLL_SYS_POWERDOWN_MASK))) |
+		CCM_ANALOG_PLL_SYS_ENABLE_MASK | CCM_ANALOG_PLL_SYS_DIV_SELECT(config->loopDivider);
 
-    /* Initialize the fractional mode */
-    CCM_ANALOG->PLL_SYS_NUM = CCM_ANALOG_PLL_SYS_NUM_A(config->numerator);
-    CCM_ANALOG->PLL_SYS_DENOM = CCM_ANALOG_PLL_SYS_DENOM_B(config->denominator);
+	/* Initialize the fractional mode */
+	CCM_ANALOG->PLL_SYS_NUM = CCM_ANALOG_PLL_SYS_NUM_A(config->numerator);
+	CCM_ANALOG->PLL_SYS_DENOM = CCM_ANALOG_PLL_SYS_DENOM_B(config->denominator);
 
-    /* Initialize the spread spectrum mode */
-    CCM_ANALOG->PLL_SYS_SS = CCM_ANALOG_PLL_SYS_SS_STEP(config->ss_step) |
-                             CCM_ANALOG_PLL_SYS_SS_ENABLE(config->ss_enable) |
-                             CCM_ANALOG_PLL_SYS_SS_STOP(config->ss_stop);
+	/* Initialize the spread spectrum mode */
+	CCM_ANALOG->PLL_SYS_SS = CCM_ANALOG_PLL_SYS_SS_STEP(config->ss_step) |
+							 CCM_ANALOG_PLL_SYS_SS_ENABLE(config->ss_enable) |
+							 CCM_ANALOG_PLL_SYS_SS_STOP(config->ss_stop);
 
-    while ((CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_SYS &= ~CCM_ANALOG_PLL_SYS_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_SYS &= ~CCM_ANALOG_PLL_SYS_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -721,7 +721,7 @@ void imxrt_clock_initsyspll(const clock_sys_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitsyspll(void)
 {
-    CCM_ANALOG->PLL_SYS = CCM_ANALOG_PLL_SYS_POWERDOWN_MASK;
+	CCM_ANALOG->PLL_SYS = CCM_ANALOG_PLL_SYS_POWERDOWN_MASK;
 }
 
 /****************************************************************************
@@ -741,19 +741,19 @@ void imxrt_clock_deinitsyspll(void)
  ****************************************************************************/
 void imxrt_clock_initusb1pll(const clock_usb_pll_config_t *config)
 {
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_USB1 = (CCM_ANALOG->PLL_USB1 & (~CCM_ANALOG_PLL_USB1_BYPASS_CLK_SRC_MASK)) |
-                           CCM_ANALOG_PLL_USB1_BYPASS_MASK | CCM_ANALOG_PLL_USB1_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_USB1 = (CCM_ANALOG->PLL_USB1 & (~CCM_ANALOG_PLL_USB1_BYPASS_CLK_SRC_MASK)) |
+				CCM_ANALOG_PLL_USB1_BYPASS_MASK | CCM_ANALOG_PLL_USB1_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_USB1 = (CCM_ANALOG->PLL_USB1 & (~CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK)) |
-                           CCM_ANALOG_PLL_USB1_ENABLE_MASK | CCM_ANALOG_PLL_USB1_POWER_MASK |
-                           CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK | CCM_ANALOG_PLL_USB1_DIV_SELECT(config->loopDivider);
+	CCM_ANALOG->PLL_USB1 = (CCM_ANALOG->PLL_USB1 & (~CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK)) |
+				CCM_ANALOG_PLL_USB1_ENABLE_MASK | CCM_ANALOG_PLL_USB1_POWER_MASK |
+				CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK | CCM_ANALOG_PLL_USB1_DIV_SELECT(config->loopDivider);
 
-    while ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -771,7 +771,7 @@ void imxrt_clock_initusb1pll(const clock_usb_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitusb1pll(void)
 {
-    CCM_ANALOG->PLL_USB1 = 0U;
+	CCM_ANALOG->PLL_USB1 = 0U;
 }
 
 #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -793,19 +793,19 @@ void imxrt_clock_deinitusb1pll(void)
 
 void imxrt_clock_initusb2pll(const clock_usb_pll_config_t *config)
 {
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_USB2 = (CCM_ANALOG->PLL_USB2 & (~CCM_ANALOG_PLL_USB2_BYPASS_CLK_SRC_MASK)) |
-                           CCM_ANALOG_PLL_USB2_BYPASS_MASK | CCM_ANALOG_PLL_USB2_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_USB2 = (CCM_ANALOG->PLL_USB2 & (~CCM_ANALOG_PLL_USB2_BYPASS_CLK_SRC_MASK)) |
+				CCM_ANALOG_PLL_USB2_BYPASS_MASK | CCM_ANALOG_PLL_USB2_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_USB2 = (CCM_ANALOG->PLL_USB2 & (~CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK)) |
-                           CCM_ANALOG_PLL_USB2_ENABLE_MASK | CCM_ANALOG_PLL_USB2_POWER_MASK |
-                           CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK | CCM_ANALOG_PLL_USB2_DIV_SELECT(config->loopDivider);
+	CCM_ANALOG->PLL_USB2 = (CCM_ANALOG->PLL_USB2 & (~CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK)) |
+				CCM_ANALOG_PLL_USB2_ENABLE_MASK | CCM_ANALOG_PLL_USB2_POWER_MASK |
+				CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK | CCM_ANALOG_PLL_USB2_DIV_SELECT(config->loopDivider);
 
-    while ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -823,7 +823,7 @@ void imxrt_clock_initusb2pll(const clock_usb_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitusb2pll(void)
 {
-    CCM_ANALOG->PLL_USB2 = 0U;
+	CCM_ANALOG->PLL_USB2 = 0U;
 }
 #endif
 
@@ -845,68 +845,68 @@ void imxrt_clock_deinitusb2pll(void)
 
 void imxrt_clock_initaudiopll(const clock_audio_pll_config_t *config)
 {
-    uint32_t pllAudio;
-    uint32_t misc2 = 0;
+	uint32_t pllAudio;
+	uint32_t misc2 = 0;
 
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_AUDIO = (CCM_ANALOG->PLL_AUDIO & (~CCM_ANALOG_PLL_AUDIO_BYPASS_CLK_SRC_MASK)) |
-                            CCM_ANALOG_PLL_AUDIO_BYPASS_MASK | CCM_ANALOG_PLL_AUDIO_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_AUDIO = (CCM_ANALOG->PLL_AUDIO & (~CCM_ANALOG_PLL_AUDIO_BYPASS_CLK_SRC_MASK)) |
+				 CCM_ANALOG_PLL_AUDIO_BYPASS_MASK | CCM_ANALOG_PLL_AUDIO_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_AUDIO_NUM = CCM_ANALOG_PLL_AUDIO_NUM_A(config->numerator);
-    CCM_ANALOG->PLL_AUDIO_DENOM = CCM_ANALOG_PLL_AUDIO_DENOM_B(config->denominator);
+	CCM_ANALOG->PLL_AUDIO_NUM = CCM_ANALOG_PLL_AUDIO_NUM_A(config->numerator);
+	CCM_ANALOG->PLL_AUDIO_DENOM = CCM_ANALOG_PLL_AUDIO_DENOM_B(config->denominator);
 
-    /*
-     * Set post divider:
-     *
-     * ------------------------------------------------------------------------
-     * | config->postDivider | PLL_AUDIO[POST_DIV_SELECT]  | MISC2[AUDIO_DIV] |
-     * ------------------------------------------------------------------------
-     * |         1           |            2                |        0         |
-     * ------------------------------------------------------------------------
-     * |         2           |            1                |        0         |
-     * ------------------------------------------------------------------------
-     * |         4           |            2                |        3         |
-     * ------------------------------------------------------------------------
-     * |         8           |            1                |        3         |
-     * ------------------------------------------------------------------------
-     * |         16          |            0                |        3         |
-     * ------------------------------------------------------------------------
-     */
-    pllAudio =
-        (CCM_ANALOG->PLL_AUDIO & (~(CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK | CCM_ANALOG_PLL_AUDIO_POWERDOWN_MASK))) |
-        CCM_ANALOG_PLL_AUDIO_ENABLE_MASK | CCM_ANALOG_PLL_AUDIO_DIV_SELECT(config->loopDivider);
+	/*
+	 * Set post divider:
+	 *
+	 * ------------------------------------------------------------------------
+	 * | config->postDivider | PLL_AUDIO[POST_DIV_SELECT]  | MISC2[AUDIO_DIV] |
+	 * ------------------------------------------------------------------------
+	 * |         1           |            2                |        0         |
+	 * ------------------------------------------------------------------------
+	 * |         2           |            1                |        0         |
+	 * ------------------------------------------------------------------------
+	 * |         4           |            2                |        3         |
+	 * ------------------------------------------------------------------------
+	 * |         8           |            1                |        3         |
+	 * ------------------------------------------------------------------------
+	 * |         16          |            0                |        3         |
+	 * ------------------------------------------------------------------------
+	 */
+	pllAudio =
+		(CCM_ANALOG->PLL_AUDIO & (~(CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK | CCM_ANALOG_PLL_AUDIO_POWERDOWN_MASK))) |
+		CCM_ANALOG_PLL_AUDIO_ENABLE_MASK | CCM_ANALOG_PLL_AUDIO_DIV_SELECT(config->loopDivider);
 
-    switch (config->postDivider) {
-    case 16:
-        pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(0);
-        misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
-        break;
-    case 8:
-        pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1);
-        misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
-        break;
-    case 4:
-        pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(2);
-        misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
-        break;
-    case 2:
-        pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1);
-        break;
-    default:
-        pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(2);
-        break;
-    }
+	switch (config->postDivider) {
+	case 16:
+		pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(0);
+		misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
+		break;
+	case 8:
+		pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1);
+		misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
+		break;
+	case 4:
+		pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(2);
+		misc2 = CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK;
+		break;
+	case 2:
+		pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1);
+		break;
+	default:
+		pllAudio |= CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(2);
+		break;
+	}
 
-    CCM_ANALOG->MISC2 =
-        (CCM_ANALOG->MISC2 & ~(CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK)) | misc2;
+	CCM_ANALOG->MISC2 =
+		(CCM_ANALOG->MISC2 & ~(CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK)) | misc2;
 
-    CCM_ANALOG->PLL_AUDIO = pllAudio;
+	CCM_ANALOG->PLL_AUDIO = pllAudio;
 
-    while ((CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_AUDIO &= ~CCM_ANALOG_PLL_AUDIO_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_AUDIO &= ~CCM_ANALOG_PLL_AUDIO_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -924,7 +924,7 @@ void imxrt_clock_initaudiopll(const clock_audio_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitaudiopll(void)
 {
-    CCM_ANALOG->PLL_AUDIO = CCM_ANALOG_PLL_AUDIO_POWERDOWN_MASK;
+	CCM_ANALOG->PLL_AUDIO = CCM_ANALOG_PLL_AUDIO_POWERDOWN_MASK;
 }
 
 #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -946,67 +946,67 @@ void imxrt_clock_deinitaudiopll(void)
 
 void imxrt_clock_initvideopll(const clock_video_pll_config_t *config)
 {
-    uint32_t pllVideo;
-    uint32_t misc2 = 0;
+	uint32_t pllVideo;
+	uint32_t misc2 = 0;
 
-    /* Bypass PLL first */
-    CCM_ANALOG->PLL_VIDEO = (CCM_ANALOG->PLL_VIDEO & (~CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC_MASK)) |
-                            CCM_ANALOG_PLL_VIDEO_BYPASS_MASK | CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC(config->src);
+	/* Bypass PLL first */
+	CCM_ANALOG->PLL_VIDEO = (CCM_ANALOG->PLL_VIDEO & (~CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC_MASK)) |
+				 CCM_ANALOG_PLL_VIDEO_BYPASS_MASK | CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC(config->src);
 
-    CCM_ANALOG->PLL_VIDEO_NUM = CCM_ANALOG_PLL_VIDEO_NUM_A(config->numerator);
-    CCM_ANALOG->PLL_VIDEO_DENOM = CCM_ANALOG_PLL_VIDEO_DENOM_B(config->denominator);
+	CCM_ANALOG->PLL_VIDEO_NUM = CCM_ANALOG_PLL_VIDEO_NUM_A(config->numerator);
+	CCM_ANALOG->PLL_VIDEO_DENOM = CCM_ANALOG_PLL_VIDEO_DENOM_B(config->denominator);
 
-    /*
-     * Set post divider:
-     *
-     * ------------------------------------------------------------------------
-     * | config->postDivider | PLL_VIDEO[POST_DIV_SELECT]  | MISC2[VIDEO_DIV] |
-     * ------------------------------------------------------------------------
-     * |         1           |            2                |        0         |
-     * ------------------------------------------------------------------------
-     * |         2           |            1                |        0         |
-     * ------------------------------------------------------------------------
-     * |         4           |            2                |        3         |
-     * ------------------------------------------------------------------------
-     * |         8           |            1                |        3         |
-     * ------------------------------------------------------------------------
-     * |         16          |            0                |        3         |
-     * ------------------------------------------------------------------------
-     */
-    pllVideo =
-        (CCM_ANALOG->PLL_VIDEO & (~(CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK | CCM_ANALOG_PLL_VIDEO_POWERDOWN_MASK))) |
-        CCM_ANALOG_PLL_VIDEO_ENABLE_MASK | CCM_ANALOG_PLL_VIDEO_DIV_SELECT(config->loopDivider);
+	/*
+	 * Set post divider:
+	 *
+	 * ------------------------------------------------------------------------
+	 * | config->postDivider | PLL_VIDEO[POST_DIV_SELECT]  | MISC2[VIDEO_DIV] |
+	 * ------------------------------------------------------------------------
+	 * |         1           |            2                |        0         |
+	 * ------------------------------------------------------------------------
+	 * |         2           |            1                |        0         |
+	 * ------------------------------------------------------------------------
+	 * |         4           |            2                |        3         |
+	 * ------------------------------------------------------------------------
+	 * |         8           |            1                |        3         |
+	 * ------------------------------------------------------------------------
+	 * |         16          |            0                |        3         |
+	 * ------------------------------------------------------------------------
+	 */
+	pllVideo =
+		(CCM_ANALOG->PLL_VIDEO & (~(CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK | CCM_ANALOG_PLL_VIDEO_POWERDOWN_MASK))) |
+		CCM_ANALOG_PLL_VIDEO_ENABLE_MASK | CCM_ANALOG_PLL_VIDEO_DIV_SELECT(config->loopDivider);
 
-    switch (config->postDivider) {
-    case 16:
-        pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0);
-        misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
-        break;
-    case 8:
-        pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1);
-        misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
-        break;
-    case 4:
-        pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(2);
-        misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
-        break;
-    case 2:
-        pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1);
-        break;
-    default:
-        pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(2);
-        break;
-    }
+	switch (config->postDivider) {
+	case 16:
+		pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0);
+		misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
+		break;
+	case 8:
+		pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1);
+		misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
+		break;
+	case 4:
+		pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(2);
+		misc2 = CCM_ANALOG_MISC2_VIDEO_DIV(3);
+		break;
+	case 2:
+		pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1);
+		break;
+	default:
+		pllVideo |= CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(2);
+		break;
+	}
 
-    CCM_ANALOG->MISC2 = (CCM_ANALOG->MISC2 & ~CCM_ANALOG_MISC2_VIDEO_DIV_MASK) | misc2;
+	CCM_ANALOG->MISC2 = (CCM_ANALOG->MISC2 & ~CCM_ANALOG_MISC2_VIDEO_DIV_MASK) | misc2;
 
-    CCM_ANALOG->PLL_VIDEO = pllVideo;
+	CCM_ANALOG->PLL_VIDEO = pllVideo;
 
-    while ((CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_LOCK_MASK) == 0) {
-    }
+	while ((CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_VIDEO &= ~CCM_ANALOG_PLL_VIDEO_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_VIDEO &= ~CCM_ANALOG_PLL_VIDEO_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -1024,7 +1024,7 @@ void imxrt_clock_initvideopll(const clock_video_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitvideopll(void)
 {
-    CCM_ANALOG->PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_POWERDOWN_MASK;
+	CCM_ANALOG->PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_POWERDOWN_MASK;
 }
 #endif
 
@@ -1046,18 +1046,18 @@ void imxrt_clock_deinitvideopll(void)
 
 void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
 {
-    uint32_t enet_pll = CCM_ANALOG_PLL_ENET_DIV_SELECT(config->loopDivider);
+	uint32_t enet_pll = CCM_ANALOG_PLL_ENET_DIV_SELECT(config->loopDivider);
 
-    CCM_ANALOG->PLL_ENET = (CCM_ANALOG->PLL_ENET & (~CCM_ANALOG_PLL_ENET_BYPASS_CLK_SRC_MASK)) |
-                           CCM_ANALOG_PLL_ENET_BYPASS_MASK | CCM_ANALOG_PLL_ENET_BYPASS_CLK_SRC(config->src);
+	CCM_ANALOG->PLL_ENET = (CCM_ANALOG->PLL_ENET & (~CCM_ANALOG_PLL_ENET_BYPASS_CLK_SRC_MASK)) |
+				CCM_ANALOG_PLL_ENET_BYPASS_MASK | CCM_ANALOG_PLL_ENET_BYPASS_CLK_SRC(config->src);
 
-    if (config->enableClkOutput) {
-        enet_pll |= CCM_ANALOG_PLL_ENET_ENABLE_MASK;
-    }
+	if (config->enableClkOutput) {
+		enet_pll |= CCM_ANALOG_PLL_ENET_ENABLE_MASK;
+	}
 
-    if (config->enableClkOutput25M) {
-        enet_pll |= CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_MASK;
-    }
+	if (config->enableClkOutput25M) {
+		enet_pll |= CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_MASK;
+	}
 
     #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
     if (config->enableClkOutput500M) {
@@ -1065,16 +1065,16 @@ void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
     }
     #endif
 
-    CCM_ANALOG->PLL_ENET =
-        (CCM_ANALOG->PLL_ENET & (~(CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK | CCM_ANALOG_PLL_ENET_POWERDOWN_MASK))) |
-        enet_pll;
+	CCM_ANALOG->PLL_ENET =
+		(CCM_ANALOG->PLL_ENET & (~(CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK | CCM_ANALOG_PLL_ENET_POWERDOWN_MASK))) |
+		enet_pll;
 
-    /* Wait for stable */
-    while ((CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_LOCK_MASK) == 0) {
-    }
+	/* Wait for stable */
+	while ((CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_LOCK_MASK) == 0) {
+	}
 
-    /* Disable Bypass */
-    CCM_ANALOG->PLL_ENET &= ~CCM_ANALOG_PLL_ENET_BYPASS_MASK;
+	/* Disable Bypass */
+	CCM_ANALOG->PLL_ENET &= ~CCM_ANALOG_PLL_ENET_BYPASS_MASK;
 }
 
 /****************************************************************************
@@ -1094,7 +1094,7 @@ void imxrt_clock_initenetpll(const clock_enet_pll_config_t *config)
  ****************************************************************************/
 void imxrt_clock_deinitenetpll(void)
 {
-    CCM_ANALOG->PLL_ENET = CCM_ANALOG_PLL_ENET_POWERDOWN_MASK;
+	CCM_ANALOG->PLL_ENET = CCM_ANALOG_PLL_ENET_POWERDOWN_MASK;
 }
 
 /****************************************************************************
@@ -1114,173 +1114,173 @@ void imxrt_clock_deinitenetpll(void)
  ****************************************************************************/
 uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
 {
-    uint32_t freq;
-    uint32_t divSelect;
-    clock_64b_t freqTmp;
+	uint32_t freq;
+	uint32_t divSelect;
+	clock_64b_t freqTmp;
 
-    const uint32_t enetRefClkFreq[] = {
-        25000000U,  /* 25M */
-        50000000U,  /* 50M */
-        100000000U, /* 100M */
-        125000000U  /* 125M */
-    };
+	const uint32_t enetRefClkFreq[] = {
+		25000000U,  /* 25M */
+		50000000U,  /* 50M */
+		100000000U, /* 100M */
+		125000000U  /* 125M */
+	};
 
-    /* check if PLL is enabled */
-    if (!imxrt_clock_ispllenabled(CCM_ANALOG, pll)) {
-        return 0U;
-    }
+	/* check if PLL is enabled */
+	if (!imxrt_clock_ispllenabled(CCM_ANALOG, pll)) {
+		return 0U;
+	}
 
-    /* get pll reference clock */
-    freq = imxrt_clock_getpllbypassrefclk(CCM_ANALOG, pll);
+	/* get pll reference clock */
+	freq = imxrt_clock_getpllbypassrefclk(CCM_ANALOG, pll);
 
-    /* check if pll is bypassed */
-    if (imxrt_clock_ispllbypassed(CCM_ANALOG, pll)) {
-        return freq;
-    }
+	/* check if pll is bypassed */
+	if (imxrt_clock_ispllbypassed(CCM_ANALOG, pll)) {
+		return freq;
+	}
 
-    switch (pll) {
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_PllArm:
-        freq = ((freq * ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
-                            CCM_ANALOG_PLL_ARM_DIV_SELECT_SHIFT)) >>
-                1U);
-        break;
-    #endif
-    case kCLOCK_PllSys:
-        /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-        freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_SYS_NUM))) /
-                    ((clock_64b_t)(CCM_ANALOG->PLL_SYS_DENOM));
+	switch (pll) {
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_PllArm:
+		freq = ((freq * ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
+				CCM_ANALOG_PLL_ARM_DIV_SELECT_SHIFT)) >>
+				1U);
+		break;
+	#endif
+	case kCLOCK_PllSys:
+		/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
+		freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_SYS_NUM))) /
+			  ((clock_64b_t)(CCM_ANALOG->PLL_SYS_DENOM));
 
-        if (CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK) {
-            freq *= 22U;
-        } else {
-            freq *= 20U;
-        }
+		if (CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK) {
+			freq *= 22U;
+		} else {
+			freq *= 20U;
+		}
 
-        freq += (uint32_t)freqTmp;
-        break;
-    case kCLOCK_PllUsb1:
-        freq = (freq * ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) ? 22U : 20U));
-        break;
-    case kCLOCK_PllAudio:
-        /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-        divSelect =
-            (CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_AUDIO_DIV_SELECT_SHIFT;
+		freq += (uint32_t)freqTmp;
+		break;
+	case kCLOCK_PllUsb1:
+		freq = (freq * ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) ? 22U : 20U));
+		break;
+	case kCLOCK_PllAudio:
+		/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
+		divSelect =
+			(CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_AUDIO_DIV_SELECT_SHIFT;
 
-        freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_NUM))) /
-                    ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_DENOM));
+		freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_NUM))) /
+					((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_DENOM));
 
-        freq = freq * divSelect + (uint32_t)freqTmp;
+		freq = freq * divSelect + (uint32_t)freqTmp;
 
-        /* AUDIO PLL output = PLL output frequency / POSTDIV. */
+		/* AUDIO PLL output = PLL output frequency / POSTDIV. */
 
-        /*
-            * Post divider:
-            *
-            * PLL_AUDIO[POST_DIV_SELECT]:
-            * 0x00: 4
-            * 0x01: 2
-            * 0x02: 1
-            *
-            * MISC2[AUDO_DIV]:
-            * 0x00: 1
-            * 0x01: 2
-            * 0x02: 1
-            * 0x03: 4
-            */
-        switch (CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT_MASK) {
-        case CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(0U):
-            freq = freq >> 2U;
-            break;
-        case CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1U):
-            freq = freq >> 1U;
-            break;
-        default:
-            break;
-        }
+		/*
+		 * Post divider:
+		 *
+		 * PLL_AUDIO[POST_DIV_SELECT]:
+		 * 0x00: 4
+		 * 0x01: 2
+		 * 0x02: 1
+		 *
+		 * MISC2[AUDO_DIV]:
+		 * 0x00: 1
+		 * 0x01: 2
+		 * 0x02: 1
+		 * 0x03: 4
+		 */
+		switch (CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT_MASK) {
+		case CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(0U):
+			freq = freq >> 2U;
+			break;
+		case CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(1U):
+			freq = freq >> 1U;
+			break;
+		default:
+			break;
+		}
 
-        switch (CCM_ANALOG->MISC2 & (CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK)) {
-        case CCM_ANALOG_MISC2_AUDIO_DIV_MSB(1) | CCM_ANALOG_MISC2_AUDIO_DIV_LSB(1):
-            freq >>= 2U;
-            break;
-        case CCM_ANALOG_MISC2_AUDIO_DIV_MSB(0) | CCM_ANALOG_MISC2_AUDIO_DIV_LSB(1):
-            freq >>= 1U;
-            break;
-        default:
-            break;
-        }
-        break;
+		switch (CCM_ANALOG->MISC2 & (CCM_ANALOG_MISC2_AUDIO_DIV_MSB_MASK | CCM_ANALOG_MISC2_AUDIO_DIV_LSB_MASK)) {
+		case CCM_ANALOG_MISC2_AUDIO_DIV_MSB(1) | CCM_ANALOG_MISC2_AUDIO_DIV_LSB(1):
+			freq >>= 2U;
+			break;
+		case CCM_ANALOG_MISC2_AUDIO_DIV_MSB(0) | CCM_ANALOG_MISC2_AUDIO_DIV_LSB(1):
+			freq >>= 1U;
+			break;
+		default:
+			break;
+		}
+		break;
 
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_PllVideo:
-        /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-        divSelect =
-            (CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT;
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_PllVideo:
+		/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
+		divSelect =
+			(CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT;
 
-        freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_NUM))) /
-                    ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_DENOM));
+		freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_NUM))) /
+					((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_DENOM));
 
-        freq = freq * divSelect + (uint32_t)freqTmp;
+		freq = freq * divSelect + (uint32_t)freqTmp;
 
-        /* VIDEO PLL output = PLL output frequency / POSTDIV. */
+		/* VIDEO PLL output = PLL output frequency / POSTDIV. */
 
-        /*
-            * Post divider:
-            *
-            * PLL_VIDEO[POST_DIV_SELECT]:
-            * 0x00: 4
-            * 0x01: 2
-            * 0x02: 1
-            *
-            * MISC2[VIDEO_DIV]:
-            * 0x00: 1
-            * 0x01: 2
-            * 0x02: 1
-            * 0x03: 4
-            */
-        switch (CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT_MASK) {
-        case CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0U):
-            freq = freq >> 2U;
-            break;
-        case CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1U):
-            freq = freq >> 1U;
-            break;
-        default:
-            break;
-        }
+		/*
+		 * Post divider:
+		 *
+		 * PLL_VIDEO[POST_DIV_SELECT]:
+		 * 0x00: 4
+		 * 0x01: 2
+		 * 0x02: 1
+		 *
+		 * MISC2[VIDEO_DIV]:
+		 * 0x00: 1
+		 * 0x01: 2
+		 * 0x02: 1
+		 * 0x03: 4
+		 */
+		switch (CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT_MASK) {
+		case CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0U):
+			freq = freq >> 2U;
+			break;
+		case CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(1U):
+			freq = freq >> 1U;
+			break;
+		default:
+			break;
+		}
 
-        switch (CCM_ANALOG->MISC2 & CCM_ANALOG_MISC2_VIDEO_DIV_MASK) {
-        case CCM_ANALOG_MISC2_VIDEO_DIV(3):
-            freq >>= 2U;
-            break;
-        case CCM_ANALOG_MISC2_VIDEO_DIV(1):
-            freq >>= 1U;
-            break;
-        default:
-            break;
-        }
-        break;
-    #endif
-    case kCLOCK_PllEnet:
-        divSelect =
-            (CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_ENET_DIV_SELECT_SHIFT;
-        freq = enetRefClkFreq[divSelect];
-        break;
-    case kCLOCK_PllEnet25M:
-        /* ref_enetpll1 if fixed at 25MHz. */
-        freq = 25000000UL;
-        break;
-    #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    case kCLOCK_PllUsb2:
-        freq = (freq * ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK) ? 22U : 20U));
-        break;
-    #endif
-    default:
-        freq = 0U;
-        break;
-    }
+		switch (CCM_ANALOG->MISC2 & CCM_ANALOG_MISC2_VIDEO_DIV_MASK) {
+		case CCM_ANALOG_MISC2_VIDEO_DIV(3):
+			freq >>= 2U;
+			break;
+		case CCM_ANALOG_MISC2_VIDEO_DIV(1):
+			freq >>= 1U;
+			break;
+		default:
+			break;
+		}
+		break;
+	#endif
+	case kCLOCK_PllEnet:
+		divSelect =
+			(CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_ENET_DIV_SELECT_SHIFT;
+		freq = enetRefClkFreq[divSelect];
+		break;
+	case kCLOCK_PllEnet25M:
+		/* ref_enetpll1 if fixed at 25MHz. */
+		freq = 25000000UL;
+		break;
+	#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	case kCLOCK_PllUsb2:
+		freq = (freq * ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK) ? 22U : 20U));
+		break;
+	#endif
+	default:
+		freq = 0U;
+		break;
+	}
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -1303,17 +1303,17 @@ uint32_t imxrt_clock_getpllfreq(clock_pll_t pll)
  ****************************************************************************/
 void imxrt_clock_initsyspfd(clock_pfd_t pfd, uint8_t pfdFrac)
 {
-    uint32_t pfdIndex = (uint32_t)pfd;
-    uint32_t pfd528;
+	uint32_t pfdIndex = (uint32_t)pfd;
+	uint32_t pfd528;
 
-    pfd528 = CCM_ANALOG->PFD_528 &
-             ~((CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK | CCM_ANALOG_PFD_528_PFD0_FRAC_MASK) << (8 * pfdIndex));
+	pfd528 = CCM_ANALOG->PFD_528 &
+			 ~((CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK | CCM_ANALOG_PFD_528_PFD0_FRAC_MASK) << (8 * pfdIndex));
 
-    /* Disable the clock output first. */
-    CCM_ANALOG->PFD_528 = pfd528 | (CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK << (8 * pfdIndex));
+	/* Disable the clock output first. */
+	CCM_ANALOG->PFD_528 = pfd528 | (CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK << (8 * pfdIndex));
 
-    /* Set the new value and enable output. */
-    CCM_ANALOG->PFD_528 = pfd528 | (CCM_ANALOG_PFD_528_PFD0_FRAC(pfdFrac) << (8 * pfdIndex));
+	/* Set the new value and enable output. */
+	CCM_ANALOG->PFD_528 = pfd528 | (CCM_ANALOG_PFD_528_PFD0_FRAC(pfdFrac) << (8 * pfdIndex));
 }
 
 /****************************************************************************
@@ -1333,7 +1333,7 @@ void imxrt_clock_initsyspfd(clock_pfd_t pfd, uint8_t pfdFrac)
  ****************************************************************************/
 void imxrt_clock_deinitsyspfd(clock_pfd_t pfd)
 {
-    CCM_ANALOG->PFD_528 |= CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK << (8 * pfd);
+	CCM_ANALOG->PFD_528 |= CCM_ANALOG_PFD_528_PFD0_CLKGATE_MASK << (8 * pfd);
 }
 
 /****************************************************************************
@@ -1356,17 +1356,17 @@ void imxrt_clock_deinitsyspfd(clock_pfd_t pfd)
  ****************************************************************************/
 void imxrt_clock_initusb1pfd(clock_pfd_t pfd, uint8_t pfdFrac)
 {
-    uint32_t pfdIndex = (uint32_t)pfd;
-    uint32_t pfd480;
+	uint32_t pfdIndex = (uint32_t)pfd;
+	uint32_t pfd480;
 
-    pfd480 = CCM_ANALOG->PFD_480 &
-             ~((CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK | CCM_ANALOG_PFD_480_PFD0_FRAC_MASK) << (8 * pfdIndex));
+	pfd480 = CCM_ANALOG->PFD_480 &
+			 ~((CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK | CCM_ANALOG_PFD_480_PFD0_FRAC_MASK) << (8 * pfdIndex));
 
-    /* Disable the clock output first. */
-    CCM_ANALOG->PFD_480 = pfd480 | (CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK << (8 * pfdIndex));
+	/* Disable the clock output first. */
+	CCM_ANALOG->PFD_480 = pfd480 | (CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK << (8 * pfdIndex));
 
-    /* Set the new value and enable output. */
-    CCM_ANALOG->PFD_480 = pfd480 | (CCM_ANALOG_PFD_480_PFD0_FRAC(pfdFrac) << (8 * pfdIndex));
+	/* Set the new value and enable output. */
+	CCM_ANALOG->PFD_480 = pfd480 | (CCM_ANALOG_PFD_480_PFD0_FRAC(pfdFrac) << (8 * pfdIndex));
 }
 
 /****************************************************************************
@@ -1386,7 +1386,7 @@ void imxrt_clock_initusb1pfd(clock_pfd_t pfd, uint8_t pfdFrac)
  ****************************************************************************/
 void imxrt_clock_deinitusb1pfd(clock_pfd_t pfd)
 {
-    CCM_ANALOG->PFD_480 |= CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK << (8 * pfd);
+	CCM_ANALOG->PFD_480 |= CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK << (8 * pfd);
 }
 
 /****************************************************************************
@@ -1406,28 +1406,28 @@ void imxrt_clock_deinitusb1pfd(clock_pfd_t pfd)
  ****************************************************************************/
 uint32_t imxrt_clock_getsyspfdfreq(clock_pfd_t pfd)
 {
-    uint32_t freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
+	uint32_t freq = imxrt_clock_getpllfreq(kCLOCK_PllSys);
 
-    switch (pfd) {
-    case kCLOCK_Pfd0:
-        freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD0_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD0_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd1:
-        freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD1_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD1_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd2:
-        freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD2_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD2_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd3:
-        freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD3_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD3_FRAC_SHIFT);
-        break;
-    default:
-        freq = 0U;
-        break;
-    }
-    freq *= 18U;
+	switch (pfd) {
+	case kCLOCK_Pfd0:
+		freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD0_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD0_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd1:
+		freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD1_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD1_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd2:
+		freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD2_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD2_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd3:
+		freq /= ((CCM_ANALOG->PFD_528 & CCM_ANALOG_PFD_528_PFD3_FRAC_MASK) >> CCM_ANALOG_PFD_528_PFD3_FRAC_SHIFT);
+		break;
+	default:
+		freq = 0U;
+		break;
+	}
+	freq *= 18U;
 
-    return freq;
+	return freq;
 }
 
 /****************************************************************************
@@ -1447,28 +1447,28 @@ uint32_t imxrt_clock_getsyspfdfreq(clock_pfd_t pfd)
  ****************************************************************************/
 uint32_t imxrt_clock_getusb1pfdfreq(clock_pfd_t pfd)
 {
-    uint32_t freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
+	uint32_t freq = imxrt_clock_getpllfreq(kCLOCK_PllUsb1);
 
-    switch (pfd) {
-    case kCLOCK_Pfd0:
-        freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD0_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD0_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd1:
-        freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD1_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD1_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd2:
-        freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD2_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD2_FRAC_SHIFT);
-        break;
-    case kCLOCK_Pfd3:
-        freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD3_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD3_FRAC_SHIFT);
-        break;
-    default:
-        freq = 0U;
-        break;
-    }
-    freq *= 18U;
+	switch (pfd) {
+	case kCLOCK_Pfd0:
+		freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD0_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD0_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd1:
+		freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD1_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD1_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd2:
+		freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD2_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD2_FRAC_SHIFT);
+		break;
+	case kCLOCK_Pfd3:
+		freq /= ((CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD3_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD3_FRAC_SHIFT);
+		break;
+	default:
+		freq = 0U;
+		break;
+	}
+	freq *= 18U;
 
-    return freq;
+	return freq;
 }
 
 #if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -1492,16 +1492,16 @@ uint32_t imxrt_clock_getusb1pfdfreq(clock_pfd_t pfd)
 
 bool imxrt_clock_enableusbhs1phypllclock(clock_usb_phy_src_t src, uint32_t freq)
 {
-    const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
-    imxrt_clock_initusb2pll(&g_ccmConfigUsbPll);
-    USBPHY2->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
-    USBPHY2->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
+	const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
+	imxrt_clock_initusb2pll(&g_ccmConfigUsbPll);
+	USBPHY2->CTRL &= ~USBPHY_CTRL_SFTRST_MASK; /* release PHY from reset */
+	USBPHY2->CTRL &= ~USBPHY_CTRL_CLKGATE_MASK;
 
-    USBPHY2->PWD = 0;
-    USBPHY2->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
-                     USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
+	USBPHY2->PWD = 0;
+	USBPHY2->CTRL |= USBPHY_CTRL_ENAUTOCLR_PHY_PWD_MASK | USBPHY_CTRL_ENAUTOCLR_CLKGATE_MASK |
+			 USBPHY_CTRL_ENUTMILEVEL2_MASK | USBPHY_CTRL_ENUTMILEVEL3_MASK;
 
-    return true;
+	return true;
 }
 
 /****************************************************************************
@@ -1521,7 +1521,7 @@ bool imxrt_clock_enableusbhs1phypllclock(clock_usb_phy_src_t src, uint32_t freq)
  ****************************************************************************/
 void imxrt_clock_disableusbhs1phypllclock(void)
 {
-    CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK;
-    USBPHY2->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
+	CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK;
+	USBPHY2->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
 }
 #endif

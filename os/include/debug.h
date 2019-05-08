@@ -132,8 +132,8 @@
 
 #ifdef CONFIG_DEBUG
 /* Temporary LOGM macros to route all dbg messages.
-Once LOGM is approved, each module should have its own index
-*/
+ * Once LOGM is approved, each module should have its own index
+ */
 #define LOGM_IDX (0)
 
 #ifdef CONFIG_DEBUG_ERROR
@@ -155,8 +155,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define dbg(format, ...) \
 	lldbg(format, ##__VA_ARGS__)
 #else
@@ -201,8 +201,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define wdbg(format, ...) \
 	llwdbg(format, ##__VA_ARGS__)
 #else
@@ -244,8 +244,8 @@ Once LOGM is approved, each module should have its own index
  */
 #ifdef CONFIG_ARCH_CHIP_IMXRT
 /* TODO: This is a temporary fix to redirect dbg messages to lldbg.
-         After IMXRT dbg implementation is fixed, this needs to be removed.
-*/
+ *       After IMXRT dbg implementation is fixed, this needs to be removed.
+ */
 #define vdbg(format, ...) \
 	llvdbg(format, ##__VA_ARGS__)
 #else
@@ -813,6 +813,54 @@ Once LOGM is approved, each module should have its own index
 #define elllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define nllldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define nldbg(...)
+#define nllldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define nlllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define nlvdbg(...)
+#define nlllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define sdlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define sddbg(...)
+#define sdlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sdvdbg(...)
+#define sdllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg(format, ...)     dbg(format, ##__VA_ARGS__)
+#define selldbg(format, ...)   lldbg(format, ##__VA_ARGS__)
+#else
+#define sedbg(...)
+#define selldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sellvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sevdbg(...)
+#define sellvdbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1244,6 +1292,54 @@ Once LOGM is approved, each module should have its own index
 #else
 #define elvdbg     (void)
 #define elllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#define nldbg      dbg
+#define nllldbg    lldbg
+#else
+#define nldbg      (void)
+#define nllldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#define nlvdbg     vdbg
+#define nlllvdbg   llvdbg
+#else
+#define nlvdbg     (void)
+#define nlllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
+#define sddbg      dbg
+#define sdlldbg    lldbg
+#else
+#define sddbg      (void)
+#define sdlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
+#define sdvdbg     vdbg
+#define sdllvdbg   llvdbg
+#else
+#define sdvdbg     (void)
+#define sdllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#define sedbg      dbg
+#define selldbg    lldbg
+#else
+#define sedbg      (void)
+#define selldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#define sevdbg     vdbg
+#define sellvdbg   llvdbg
+#else
+#define sevdbg     (void)
+#define sellvdbg   (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

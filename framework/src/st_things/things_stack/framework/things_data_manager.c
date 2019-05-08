@@ -104,8 +104,11 @@
 #define KEY_CONFIGURATION_FILEPATH                              "filePath"
 #define KEY_CONFIGURATION_FILEPATH_SVRDB                        "svrdb"
 #define KEY_CONFIGURATION_FILEPATH_PROVISIONING                 "provisioning"
+
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 #define KEY_CONFIGURATION_FILEPATH_CERTIFICATE                  "certificate"
 #define KEY_CONFIGURATION_FILEPATH_PRIVATEKEY                   "privateKey"
+#endif
 
 /* provisioning info */
 #define KEY_CLOUD                                               "cloud"
@@ -150,8 +153,10 @@ static volatile int g_resource_type_cnt = 0;
 
 static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+#endif
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
@@ -1063,8 +1068,10 @@ static int parse_configuration_json(cJSON *configuration)
 
 	cJSON *svrdb = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_SVRDB);
 	cJSON *provisioning = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PROVISIONING);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	cJSON *certificate = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_CERTIFICATE);
 	cJSON *privateKey = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PRIVATEKEY);
+#endif
 
 	if (svrdb == NULL) {
 		THINGS_LOG_V(TAG, "[configuration] svrdb is null");
@@ -1074,6 +1081,7 @@ static int parse_configuration_json(cJSON *configuration)
 		THINGS_LOG_V(TAG, "[configuration] provisioning is null");
 		goto JSON_ERROR;
 	}
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (certificate == NULL) {
 		THINGS_LOG_V(TAG, "[configuration] certificate is null");
 		goto JSON_ERROR;
@@ -1082,10 +1090,13 @@ static int parse_configuration_json(cJSON *configuration)
 		THINGS_LOG_V(TAG, "[configuration] privateKey is null");
 		goto JSON_ERROR;
 	}
+#endif
 
 	memset(g_svrdb_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	memset(g_certificate_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
 	memset(g_private_key_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+#endif
 
 	if (strncmp(svrdb->valuestring, "/", 1) == 0) {
 		if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
@@ -1117,6 +1128,7 @@ static int parse_configuration_json(cJSON *configuration)
 		strcat(g_things_cloud_file_path, provisioning->valuestring);
 	}
 
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	if (strncmp(certificate->valuestring, "/", 1) == 0) {
 		if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 			THINGS_LOG_V(TAG, "certificate file path length exceeded");
@@ -1147,10 +1159,13 @@ static int parse_configuration_json(cJSON *configuration)
 		strcpy(g_private_key_file_path, PATH_ROM);
 		strcat(g_private_key_file_path, privateKey->valuestring);
 	}
+#endif
 
 	THINGS_LOG_V(TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 	THINGS_LOG_V(TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
 	THINGS_LOG_V(TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
+#endif
 
 	ret = 1;
 JSON_ERROR:
@@ -1960,6 +1975,7 @@ const char *dm_get_svrdb_file_path(void)
 	return g_svrdb_file_path;
 }
 
+#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 const char *dm_get_certificate_file_path(void)
 {
 	return g_certificate_file_path;
@@ -1969,6 +1985,7 @@ const char *dm_get_privatekey_file_path(void)
 {
 	return g_private_key_file_path;
 }
+#endif
 
 const char *dm_get_things_cloud_address(char *customized_ci_server)
 {

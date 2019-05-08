@@ -76,7 +76,7 @@ ESPTOOL_ALL_FLASH_ARGS += $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 
 ALL:flash
 
-APP:app-flash
+OS:app-flash
 
 ROMFS:romfs
 

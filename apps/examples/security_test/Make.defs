@@ -16,6 +16,4 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_SECURITY_TEST),y)
-CONFIGURED_APPS += examples/security_test
-endif
+include $(wildcard examples/security_test/*/Make.defs)

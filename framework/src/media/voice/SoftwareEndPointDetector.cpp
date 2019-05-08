@@ -22,9 +22,7 @@ namespace media {
 namespace voice {
 
 SoftwareEndPointDetector::SoftwareEndPointDetector() :
-	mState(nullptr),
-	mPreviousVAD(0),
-	mVAD(0)
+	mState(nullptr)
 {
 	sem_init(&mSem, 0, 0);
 }
@@ -80,19 +78,19 @@ bool SoftwareEndPointDetector::waitEndPoint(int timeout)
 bool SoftwareEndPointDetector::detectEndPoint(short *sample, int numSample)
 {
 	for (short *ptr = sample; ptr <= sample + numSample - CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE; ptr += CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE) {
-		mPreviousVAD = mVAD;
-		mVAD = speex_preprocess_run(mState, ptr);	// vad : 0 (no speech) or 1 (speech)
-
-		if (mPreviousVAD == 1 && mVAD == 0) {
-			int semVal;
-			medvdbg("#### EPD DETECTED!! ####\n");
-			if ((sem_getvalue(&mSem, &semVal) == 0) && (semVal < 0)) {
-				sem_post(&mSem);
-			}
-			return true;
+		int vad = speex_preprocess_run(mState, ptr); // vad : 0 (no speech) or 1 (speech)
+		if (vad != 0) {
+			return false;
 		}
 	}
-	return false;
+
+	int semVal;
+	medvdbg("#### EPD DETECTED!! ####\n");
+	if ((sem_getvalue(&mSem, &semVal) == 0) && (semVal < 0)) {
+		sem_post(&mSem);
+	}
+
+	return true;
 }
 
 } // namespace voice

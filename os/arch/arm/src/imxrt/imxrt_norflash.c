@@ -123,180 +123,180 @@
  ******************************************************************************/
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 flexspi_device_config_t deviceconfig = {
-    .flexspiRootClk = 133000000,
-    .flashSize = IMXRT_FLASH_SIZE,
-    .CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
-    .CSInterval = 2,
-    .CSHoldTime = 3,
-    .CSSetupTime = 3,
-    .dataValidTime = 0,
-    .columnspace = 0,
-    .enableWordAddress = 0,
-    .AWRSeqIndex = 0,
-    .AWRSeqNumber = 0,
-    .ARDSeqIndex = NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD,
-    .ARDSeqNumber = 1,
-    .AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
-    .AHBWriteWaitInterval = 0,
+	.flexspiRootClk = 133000000,
+	.flashSize = IMXRT_FLASH_SIZE,
+	.CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
+	.CSInterval = 2,
+	.CSHoldTime = 3,
+	.CSSetupTime = 3,
+	.dataValidTime = 0,
+	.columnspace = 0,
+	.enableWordAddress = 0,
+	.AWRSeqIndex = 0,
+	.AWRSeqNumber = 0,
+	.ARDSeqIndex = NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD,
+	.ARDSeqNumber = 1,
+	.AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
+	.AHBWriteWaitInterval = 0,
 };
 
 const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
-        /* Normal read mode -SDR */
-        /* Normal read mode -SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x03, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Normal read mode -SDR */
+	/* Normal read mode -SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x03, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Fast read mode - SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0B, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST + 1] = FLEXSPI_LUT_SEQ(
-            kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Fast read mode - SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0B, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST + 1] = FLEXSPI_LUT_SEQ(
+	    kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Fast read quad mode - SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xEB, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD + 1] = FLEXSPI_LUT_SEQ(
-            kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x06, kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04),
+	/* Fast read quad mode - SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xEB, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD + 1] = FLEXSPI_LUT_SEQ(
+	    kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x06, kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04),
 
-        /* Read extend parameters */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READSTATUS] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Read extend parameters */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READSTATUS] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Write Enable */
-        [4 * NOR_CMD_LUT_SEQ_IDX_WRITEENABLE] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x06, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Write Enable */
+	[4 * NOR_CMD_LUT_SEQ_IDX_WRITEENABLE] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x06, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Erase Sector  */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ERASESECTOR] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xD7, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	/* Erase Sector  */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ERASESECTOR] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xD7, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
 
-        /* Page Program - single mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x02, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Page Program - single mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x02, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Page Program - quad mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x32, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Page Program - quad mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x32, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Read ID */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READID] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xAB, kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READID + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Read ID */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READID] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xAB, kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READID + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Enable Quad mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Enable Quad mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Enter QPI mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ENTERQPI] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x35, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Enter QPI mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ENTERQPI] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x35, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Exit QPI mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_EXITQPI] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_4PAD, 0xF5, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Exit QPI mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_EXITQPI] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_4PAD, 0xF5, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Read status register */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READSTATUSREG] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x05, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Read status register */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READSTATUSREG] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x05, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Erase whole chip */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ERASECHIP] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC7, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Erase whole chip */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ERASECHIP] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC7, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 };
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 flexspi_device_config_t deviceconfig = {
-    .flexspiRootClk = 120000000,
-    .flashSize = IMXRT_FLASH_SIZE,
-    .CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
-    .CSInterval = 2,
-    .CSHoldTime = 3,
-    .CSSetupTime = 3,
-    .dataValidTime = 0,
-    .columnspace = 0,
-    .enableWordAddress = 0,
-    .AWRSeqIndex = 0,
-    .AWRSeqNumber = 0,
-    .ARDSeqIndex = NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD,
-    .ARDSeqNumber = 1,
-    .AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
-    .AHBWriteWaitInterval = 0,
+	.flexspiRootClk = 120000000,
+	.flashSize = IMXRT_FLASH_SIZE,
+	.CSIntervalUnit = kFLEXSPI_CsIntervalUnit1SckCycle,
+	.CSInterval = 2,
+	.CSHoldTime = 3,
+	.CSSetupTime = 3,
+	.dataValidTime = 0,
+	.columnspace = 0,
+	.enableWordAddress = 0,
+	.AWRSeqIndex = 0,
+	.AWRSeqNumber = 0,
+	.ARDSeqIndex = NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD,
+	.ARDSeqNumber = 1,
+	.AHBWriteWaitUnit = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
+	.AHBWriteWaitInterval = 0,
 };
 
 const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
-        /* Normal read mode -SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x03, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Normal read mode -SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x03, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_NORMAL + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Fast read mode - SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0B, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST + 1] = FLEXSPI_LUT_SEQ(
-            kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Fast read mode - SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0B, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST + 1] = FLEXSPI_LUT_SEQ(
+	    kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Fast read quad mode - SDR */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xEB, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD + 1] = FLEXSPI_LUT_SEQ(
-            kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x06, kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04),
+	/* Fast read quad mode - SDR */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xEB, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD + 1] = FLEXSPI_LUT_SEQ(
+	    kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x06, kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04),
 
-        /* Read extend parameters */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READSTATUS] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Read extend parameters */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READSTATUS] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Write Enable */
-        [4 * NOR_CMD_LUT_SEQ_IDX_WRITEENABLE] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x06, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Write Enable */
+	[4 * NOR_CMD_LUT_SEQ_IDX_WRITEENABLE] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x06, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Erase Sector  */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ERASESECTOR] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xD7, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	/* Erase Sector  */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ERASESECTOR] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xD7, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
 
-        /* Page Program - single mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x02, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Page Program - single mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x02, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Page Program - quad mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x32, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Page Program - quad mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x32, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Read ID */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READID] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xAB, kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x18),
-        [4 * NOR_CMD_LUT_SEQ_IDX_READID + 1] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Read ID */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READID] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xAB, kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x18),
+	[4 * NOR_CMD_LUT_SEQ_IDX_READID + 1] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Enable Quad mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Enable Quad mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Enter QPI mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ENTERQPI] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x35, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Enter QPI mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ENTERQPI] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x35, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Exit QPI mode */
-        [4 * NOR_CMD_LUT_SEQ_IDX_EXITQPI] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_4PAD, 0xF5, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Exit QPI mode */
+	[4 * NOR_CMD_LUT_SEQ_IDX_EXITQPI] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_4PAD, 0xF5, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 
-        /* Read status register */
-        [4 * NOR_CMD_LUT_SEQ_IDX_READSTATUSREG] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x05, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
+	/* Read status register */
+	[4 * NOR_CMD_LUT_SEQ_IDX_READSTATUSREG] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x05, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04),
 
-        /* Erase whole chip */
-        [4 * NOR_CMD_LUT_SEQ_IDX_ERASECHIP] =
-            FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC7, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+	/* Erase whole chip */
+	[4 * NOR_CMD_LUT_SEQ_IDX_ERASECHIP] =
+	    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC7, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
 };
 #endif
 
@@ -312,19 +312,19 @@ const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
  ************************************************************************************/
 status_t flexspi_nor_write_enable(FLEXSPI_Type *base, uint32_t baseAddr)
 {
-    flexspi_transfer_t flashXfer;
-    status_t status;
+	flexspi_transfer_t flashXfer;
+	status_t status;
 
-    /* Write enable */
-    flashXfer.deviceAddress = baseAddr;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Command;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITEENABLE;
+	/* Write enable */
+	flashXfer.deviceAddress = baseAddr;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITEENABLE;
 
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -336,42 +336,42 @@ status_t flexspi_nor_write_enable(FLEXSPI_Type *base, uint32_t baseAddr)
  ************************************************************************************/
 status_t flexspi_nor_wait_bus_busy(FLEXSPI_Type *base)
 {
-    /* Wait status ready. */
-    bool isBusy;
-    uint32_t readValue;
-    status_t status;
-    flexspi_transfer_t flashXfer;
+	/* Wait status ready. */
+	bool isBusy;
+	uint32_t readValue;
+	status_t status;
+	flexspi_transfer_t flashXfer;
 
-    flashXfer.deviceAddress = 0;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Read;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_READSTATUSREG;
-    flashXfer.data = &readValue;
-    flashXfer.dataSize = 1;
+	flashXfer.deviceAddress = 0;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Read;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_READSTATUSREG;
+	flashXfer.data = &readValue;
+	flashXfer.dataSize = 1;
 
-    do {
-        status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	do {
+		status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-        if (status != kStatus_Success) {
-            return status;
-        }
-        if (FLASH_BUSY_STATUS_POL) {
-            if (readValue & (1U << FLASH_BUSY_STATUS_OFFSET)) {
-                isBusy = true;
-            } else {
-                isBusy = false;
-            }
-        } else {
-            if (readValue & (1U << FLASH_BUSY_STATUS_OFFSET)) {
-                isBusy = false;
-            } else {
-                isBusy = true;
-            }
-        }
-    } while (isBusy);
+		if (status != kStatus_Success) {
+			return status;
+		}
+		if (FLASH_BUSY_STATUS_POL) {
+			if (readValue & (1U << FLASH_BUSY_STATUS_OFFSET)) {
+				isBusy = true;
+			} else {
+				isBusy = false;
+			}
+		} else {
+			if (readValue & (1U << FLASH_BUSY_STATUS_OFFSET)) {
+				isBusy = false;
+			} else {
+				isBusy = true;
+			}
+		}
+	} while (isBusy);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -383,34 +383,34 @@ status_t flexspi_nor_wait_bus_busy(FLEXSPI_Type *base)
  ************************************************************************************/
 status_t flexspi_nor_enable_quad_mode(FLEXSPI_Type *base)
 {
-    flexspi_transfer_t flashXfer;
-    status_t status;
-    uint32_t writeValue = 0x40;
+	flexspi_transfer_t flashXfer;
+	status_t status;
+	uint32_t writeValue = 0x40;
 
-    /* Write enable */
-    status = flexspi_nor_write_enable(base, 0);
+	/* Write enable */
+	status = flexspi_nor_write_enable(base, 0);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    /* Enable quad mode. */
-    flashXfer.deviceAddress = 0;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Write;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG;
-    flashXfer.data = &writeValue;
-    flashXfer.dataSize = 1;
+	/* Enable quad mode. */
+	flashXfer.deviceAddress = 0;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Write;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG;
+	flashXfer.data = &writeValue;
+	flashXfer.dataSize = 1;
 
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
-    if (status != kStatus_Success) {
-        return status;
-    }
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    status = flexspi_nor_wait_bus_busy(base);
+	status = flexspi_nor_wait_bus_busy(base);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -422,36 +422,36 @@ status_t flexspi_nor_enable_quad_mode(FLEXSPI_Type *base)
  ************************************************************************************/
 status_t flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t address)
 {
-    status_t status;
-    flexspi_transfer_t flashXfer;
+	status_t status;
+	flexspi_transfer_t flashXfer;
 
-    /* Write enable */
-    flashXfer.deviceAddress = address;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Command;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITEENABLE;
+	/* Write enable */
+	flashXfer.deviceAddress = address;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITEENABLE;
 
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    flashXfer.deviceAddress = address;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Command;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_ERASESECTOR;
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	flashXfer.deviceAddress = address;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_ERASESECTOR;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    status = flexspi_nor_wait_bus_busy(base);
+	status = flexspi_nor_wait_bus_busy(base);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -463,33 +463,33 @@ status_t flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t address)
  ************************************************************************************/
 status_t flexspi_nor_flash_write(FLEXSPI_Type *base, uint32_t dstAddr, const uint32_t *src, const size_t count)
 {
-    status_t status;
-    flexspi_transfer_t flashXfer;
+	status_t status;
+	flexspi_transfer_t flashXfer;
 
-    /* Write enable */
-    status = flexspi_nor_write_enable(base, dstAddr);
+	/* Write enable */
+	status = flexspi_nor_write_enable(base, dstAddr);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    /* Prepare page program command */
-    flashXfer.deviceAddress = dstAddr;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Write;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD;
-    flashXfer.data = (uint32_t *)src;
-    flashXfer.dataSize = count;
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	/* Prepare page program command */
+	flashXfer.deviceAddress = dstAddr;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Write;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD;
+	flashXfer.data = (uint32_t *)src;
+	flashXfer.dataSize = count;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    status = flexspi_nor_wait_bus_busy(base);
+	status = flexspi_nor_wait_bus_busy(base);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -501,21 +501,21 @@ status_t flexspi_nor_flash_write(FLEXSPI_Type *base, uint32_t dstAddr, const uin
  ************************************************************************************/
 status_t flexspi_nor_get_vendor_id(FLEXSPI_Type *base, uint8_t *vendorId)
 {
-    uint32_t temp;
-    flexspi_transfer_t flashXfer;
-    flashXfer.deviceAddress = 0;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Read;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_READID;
-    flashXfer.data = &temp;
-    flashXfer.dataSize = 1;
+	uint32_t temp;
+	flexspi_transfer_t flashXfer;
+	flashXfer.deviceAddress = 0;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Read;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_READID;
+	flashXfer.data = &temp;
+	flashXfer.dataSize = 1;
 
-    status_t status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	status_t status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    *vendorId = temp;
+	*vendorId = temp;
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -527,31 +527,31 @@ status_t flexspi_nor_get_vendor_id(FLEXSPI_Type *base, uint8_t *vendorId)
  ************************************************************************************/
 status_t flexspi_nor_erase_chip(FLEXSPI_Type *base)
 {
-    status_t status;
-    flexspi_transfer_t flashXfer;
+	status_t status;
+	flexspi_transfer_t flashXfer;
 
-    /* Write enable */
-    status = flexspi_nor_write_enable(base, 0);
+	/* Write enable */
+	status = flexspi_nor_write_enable(base, 0);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    flashXfer.deviceAddress = 0;
-    flashXfer.port = kFLEXSPI_PortB1;
-    flashXfer.cmdType = kFLEXSPI_Command;
-    flashXfer.SeqNumber = 1;
-    flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_ERASECHIP;
+	flashXfer.deviceAddress = 0;
+	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_ERASECHIP;
 
-    status = imxrt_flexspi_transferblocking(base, &flashXfer);
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
-    if (status != kStatus_Success) {
-        return status;
-    }
+	if (status != kStatus_Success) {
+		return status;
+	}
 
-    status = flexspi_nor_wait_bus_busy(base);
+	status = flexspi_nor_wait_bus_busy(base);
 
-    return status;
+	return status;
 }
 
 /************************************************************************************
@@ -563,102 +563,102 @@ status_t flexspi_nor_erase_chip(FLEXSPI_Type *base)
  ************************************************************************************/
 static inline void flexspi_pins_init(void)
 {
-    #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-    imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
 
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_05_FLEXSPI_A_DQS,     /* GPIO_SD_B1_05 is configured as FLEXSPI_A_DQS */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_05 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_06_FLEXSPI_A_DATA03,  /* GPIO_SD_B1_06 is configured as FLEXSPI_A_DATA03 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_06 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_07_FLEXSPI_A_SCLK,    /* GPIO_SD_B1_07 is configured as FLEXSPI_A_SCLK */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_07 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_08_FLEXSPI_A_DATA00,  /* GPIO_SD_B1_08 is configured as FLEXSPI_A_DATA00 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_08 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_09_FLEXSPI_A_DATA02,  /* GPIO_SD_B1_09 is configured as FLEXSPI_A_DATA02 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_09 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_10_FLEXSPI_A_DATA01,  /* GPIO_SD_B1_10 is configured as FLEXSPI_A_DATA01 */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_10 */
-    imxrt_iomuxc_setpinmux(
-        IOMUXC_GPIO_SD_B1_11_FLEXSPI_A_SS0_B,   /* GPIO_SD_B1_11 is configured as FLEXSPI_A_SS0_B */
-        1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_11 */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_05_FLEXSPI_A_DQS,     /* GPIO_SD_B1_05 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_06_FLEXSPI_A_DATA03,  /* GPIO_SD_B1_06 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_07_FLEXSPI_A_SCLK,    /* GPIO_SD_B1_07 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_08_FLEXSPI_A_DATA00,  /* GPIO_SD_B1_08 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_09_FLEXSPI_A_DATA02,  /* GPIO_SD_B1_09 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_10_FLEXSPI_A_DATA01,  /* GPIO_SD_B1_10 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    imxrt_iomuxc_setpinconfig(
-        IOMUXC_GPIO_SD_B1_11_FLEXSPI_A_SS0_B,   /* GPIO_SD_B1_11 PAD functional properties : */
-        0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-                                                    Drive Strength Field: R0/6
-                                                    Speed Field: max(200MHz)
-                                                    Open Drain Enable Field: Open Drain Disabled
-                                                    Pull / Keep Enable Field: Pull/Keeper Enabled
-                                                    Pull / Keep Select Field: Keeper
-                                                    Pull Up / Down Config. Field: 100K Ohm Pull Down
-                                                    Hyst. Enable Field: Hysteresis Disabled */
-    #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-    imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_05_FLEXSPI_A_DQS,     /* GPIO_SD_B1_05 is configured as FLEXSPI_A_DQS */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_05 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_06_FLEXSPI_A_DATA03,  /* GPIO_SD_B1_06 is configured as FLEXSPI_A_DATA03 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_06 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_07_FLEXSPI_A_SCLK,    /* GPIO_SD_B1_07 is configured as FLEXSPI_A_SCLK */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_07 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_08_FLEXSPI_A_DATA00,  /* GPIO_SD_B1_08 is configured as FLEXSPI_A_DATA00 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_08 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_09_FLEXSPI_A_DATA02,  /* GPIO_SD_B1_09 is configured as FLEXSPI_A_DATA02 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_09 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_10_FLEXSPI_A_DATA01,  /* GPIO_SD_B1_10 is configured as FLEXSPI_A_DATA01 */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_10 */
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_SD_B1_11_FLEXSPI_A_SS0_B,   /* GPIO_SD_B1_11 is configured as FLEXSPI_A_SS0_B */
+		1U);                                    /* Software Input On Field: Force input path of pad GPIO_SD_B1_11 */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_05_FLEXSPI_A_DQS,     /* GPIO_SD_B1_05 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_06_FLEXSPI_A_DATA03,  /* GPIO_SD_B1_06 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_07_FLEXSPI_A_SCLK,    /* GPIO_SD_B1_07 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_08_FLEXSPI_A_DATA00,  /* GPIO_SD_B1_08 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_09_FLEXSPI_A_DATA02,  /* GPIO_SD_B1_09 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_10_FLEXSPI_A_DATA01,  /* GPIO_SD_B1_10 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_SD_B1_11_FLEXSPI_A_SS0_B,   /* GPIO_SD_B1_11 PAD functional properties : */
+		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
 
 	imxrt_iomuxc_setpinmux(
 		IOMUXC_GPIO_SD_B1_00_FLEXSPIB_DATA03,   /* GPIO_SD_B1_00 is configured as FLEXSPIB_DATA03 */
@@ -699,124 +699,124 @@ static inline void flexspi_pins_init(void)
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_00_FLEXSPIB_DATA03,   /* GPIO_SD_B1_00 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_01_FLEXSPIB_DATA02,   /* GPIO_SD_B1_01 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_02_FLEXSPIB_DATA01,   /* GPIO_SD_B1_02 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_03_FLEXSPIB_DATA00,   /* GPIO_SD_B1_03 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_04_FLEXSPIB_SCLK,     /* GPIO_SD_B1_04 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_05_FLEXSPIA_DQS,      /* GPIO_SD_B1_05 PAD functional properties : */
 		0x0130F1u);                             /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Pull
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Enabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Pull
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Enabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_06_FLEXSPIA_SS0_B,    /* GPIO_SD_B1_06 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_07_FLEXSPIA_SCLK,     /* GPIO_SD_B1_07 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													MCR0 Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * MCR0 Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_08_FLEXSPIA_DATA00,   /* GPIO_SD_B1_08 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_09_FLEXSPIA_DATA01,   /* GPIO_SD_B1_09 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_10_FLEXSPIA_DATA02,   /* GPIO_SD_B1_10 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
 	imxrt_iomuxc_setpinconfig(
 		IOMUXC_GPIO_SD_B1_11_FLEXSPIA_DATA03,   /* GPIO_SD_B1_11 PAD functional properties : */
 		0x10F1u);                               /* Slew Rate Field: Fast Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: max(200MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Enabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
-    #endif
+							 * Drive Strength Field: R0/6
+							 * Speed Field: max(200MHz)
+							 * Open Drain Enable Field: Open Drain Disabled
+							 * Pull / Keep Enable Field: Pull/Keeper Enabled
+							 * Pull / Keep Select Field: Keeper
+							 * Pull Up / Down Config. Field: 100K Ohm Pull Down
+							 * Hyst. Enable Field: Hysteresis Disabled */
+	#endif
 }
 
 /************************************************************************************
@@ -828,12 +828,12 @@ static inline void flexspi_pins_init(void)
  ************************************************************************************/
 static inline void flexspi_clock_init(void)
 {
-    const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
+	const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
 
-    imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
-    imxrt_clock_initusb1pfd(kCLOCK_Pfd0, 24);   /* Set PLL3 PFD0 clock 360MHZ. */
-    imxrt_clock_setmux(kCLOCK_FlexspiMux, 0x3); /* Choose PLL3 PFD0 clock as flexspi source clock. */
-    imxrt_clock_setdiv(kCLOCK_FlexspiDiv, 2);   /* flexspi clock 120M. */
+	imxrt_clock_initusb1pll(&g_ccmConfigUsbPll);
+	imxrt_clock_initusb1pfd(kCLOCK_Pfd0, 24);   /* Set PLL3 PFD0 clock 360MHZ. */
+	imxrt_clock_setmux(kCLOCK_FlexspiMux, 0x3); /* Choose PLL3 PFD0 clock as flexspi source clock. */
+	imxrt_clock_setdiv(kCLOCK_FlexspiDiv, 2);   /* flexspi clock 120M. */
 }
 
 /************************************************************************************
@@ -850,7 +850,7 @@ size_t up_progmem_pagesize(size_t page)
 size_t up_progmem_blocksize(void)
 {
 	printf("up_progmem_blocksize\n");
-    return IMXRT_BLOCK_SIZE;
+	return IMXRT_BLOCK_SIZE;
 }
 
 ssize_t up_progmem_getpage(size_t addr)
@@ -881,7 +881,7 @@ size_t up_progmem_getaddress(size_t page)
 
 size_t up_progmem_npages(void)
 {
-    printf("up_progmem_npages\n");
+	printf("up_progmem_npages\n");
 
 	return (IMXRT_FLASH_TOTAL_SIZE/IMXRT_FLASH_PAGE_SIZE);
 }
@@ -900,7 +900,7 @@ ssize_t up_progmem_erasepage(size_t page)
 
 	address = up_progmem_getaddress(page);
 
-    return flexspi_nor_flash_erase_sector(IMXRT_FLEXSPI, address);
+	return flexspi_nor_flash_erase_sector(IMXRT_FLEXSPI, address);
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
@@ -930,7 +930,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 {
 	printf("up_progmem_write\n");
 
-    return flexspi_nor_flash_write(IMXRT_FLEXSPI, addr, (const uint32_t *)buf, count);
+	return flexspi_nor_flash_write(IMXRT_FLEXSPI, addr, (const uint32_t *)buf, count);
 }
 #endif
 
@@ -945,27 +945,27 @@ void imxrt_flash_init(void)
 {
 	flexspi_config_t config;
 
-    flexspi_pins_init();
-    flexspi_clock_init();
+	flexspi_pins_init();
+	flexspi_clock_init();
 
 	/*Get FLEXSPI default settings and configure the flexspi. */
-    imxrt_flexspi_getdefaultconfig(&config);
+	imxrt_flexspi_getdefaultconfig(&config);
 
-    /*Set AHB buffer size for reading data through AHB bus. */
-    config.ahbConfig.enableAHBPrefetch = true;
-    config.ahbConfig.enableAHBBufferable = true;
-    config.ahbConfig.enableReadAddressOpt = true;
-    config.ahbConfig.enableAHBCachable = true;
-    config.rxSampleClock = kFLEXSPI_ReadSampleClkLoopbackFromDqsPad;
-    imxrt_flexspi_init(IMXRT_FLEXSPI, &config);
+	/*Set AHB buffer size for reading data through AHB bus. */
+	config.ahbConfig.enableAHBPrefetch = true;
+	config.ahbConfig.enableAHBBufferable = true;
+	config.ahbConfig.enableReadAddressOpt = true;
+	config.ahbConfig.enableAHBCachable = true;
+	config.rxSampleClock = kFLEXSPI_ReadSampleClkLoopbackFromDqsPad;
+	imxrt_flexspi_init(IMXRT_FLEXSPI, &config);
 
-    /* Configure flash settings according to serial flash feature. */
-    imxrt_flexspi_setflashconfig(IMXRT_FLEXSPI, &deviceconfig, kFLEXSPI_PortA1);
+	/* Configure flash settings according to serial flash feature. */
+	imxrt_flexspi_setflashconfig(IMXRT_FLEXSPI, &deviceconfig, kFLEXSPI_PortA1);
 
-    /* Update LUT table. */
-    imxrt_flexspi_updatelut(IMXRT_FLEXSPI, 0, customLUT, CUSTOM_LUT_LENGTH);
+	/* Update LUT table. */
+	imxrt_flexspi_updatelut(IMXRT_FLEXSPI, 0, customLUT, CUSTOM_LUT_LENGTH);
 
-    /* Do software reset. */
-    imxrt_flexspi_softwarereset(IMXRT_FLEXSPI);
+	/* Do software reset. */
+	imxrt_flexspi_softwarereset(IMXRT_FLEXSPI);
 }
 

@@ -16,104 +16,36 @@
 #
 ###########################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
-include $(APPDIR)/Make.defs
+SUBDIRS = $(dir $(wildcard */Makefile))
 
-# built-in application info
+all: nothing
 
-APPNAME = security_test
-THREADEXEC = TASH_EXECMD_ASYNC
+.PHONY: nothing context depend clean distclean
 
-ASRCS =
-CSRCS =
-MAINSRC = security_test_main.c
+define SDIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" EXTDIR="$(EXTDIR)"
+endef
 
-AOBJS = $(ASRCS:.S=$(OBJEXT))
-COBJS = $(CSRCS:.c=$(OBJEXT))
-MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
-OBJS = $(AOBJS) $(COBJS)
+nothing:
 
-ifneq ($(CONFIG_BUILD_KERNEL),y)
-  OBJS += $(MAINOBJ)
-endif
-
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
-else
-ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
-else
-  BIN = ../../libapps$(LIBEXT)
-endif
-endif
-
-ifeq ($(WINTOOL),y)
-  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
-else
-  INSTALL_DIR = $(BIN_DIR)
-endif
-
-CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME ?= security_test$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME)
-
-ROOTDEPPATH = --dep-path .
-
-# Common build
-
-VPATH =
-
-all: .built
-.PHONY: clean depend distclean
-
-$(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $@)
-
-$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-
-.built: $(OBJS)
-	$(call ARCHIVE, $(BIN), $(OBJS))
-	@touch .built
-
-ifeq ($(CONFIG_BUILD_KERNEL),y)
-$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
-	@echo "LD: $(PROGNAME)"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
-	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
-
-install: $(BIN_DIR)$(DELIM)$(PROGNAME)
-
-else
 install:
 
-endif
+preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
+	$(Q) $(MKKCONFIG) -m $(MENUDESC)
+	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECURITY_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
-else
-context:
-endif
+depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
 
-.depend: Makefile $(SRCS)
-	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	@touch $@
+clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
 
-depend: .depend
-
-clean:
-	$(call DELFILE, .built)
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-
--include Make.dep
-.PHONY: preconfig
-preconfig:
+distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
+	$(call DELFILE, Kconfig*)

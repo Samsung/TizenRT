@@ -71,12 +71,12 @@
  ********************************************************************************************/
 
 #define IOMUX_LPSPI1_CS (IOMUX_SLEW_FAST | IOMUX_DRIVE_50OHM | \
-                         IOMUX_SPEED_MEDIUM | IOMUX_PULL_UP_100K | \
-                         _IOMUX_PULL_ENABLE)
+			 IOMUX_SPEED_MEDIUM | IOMUX_PULL_UP_100K | \
+			 _IOMUX_PULL_ENABLE)
 #define GPIO_LPSPI1_CS  (GPIO_OUTPUT | GPIO_OUTPUT_ONE | \
-                         GPIO_PORT3 | GPIO_PIN13 | IOMUX_LPSPI1_CS)
+			 GPIO_PORT3 | GPIO_PIN13 | IOMUX_LPSPI1_CS)
 
-#define LPSPI_CFGR1_OUTCFG_RETAIN  (0 << 26) /* Output data retains last value when chip select is negated */
+#define LPSPI_CFGR1_OUTCFG_RETAIN   (0 << 26) /* Output data retains last value when chip select is negated */
 #define LPSPI_CFGR1_OUTCFG_TRISTATE (1 << 26) /* Output data is tristated when chip select is negated */
 
 #define LPSPI_CFGR1_PINCFG_SIN_SOUT  (0 << LPSPI_CFGR1_PINCFG_SHIFT)  /* SIN is used for input data and SOUT is used for output data */
@@ -93,8 +93,7 @@
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
@@ -193,22 +192,22 @@ int imxrt_lpspi4cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 #ifdef CONFIG_SPI_CALLBACK
 #ifdef CONFIG_IMXRT_LPSPI1
 int imxrt_lpspi1register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-                       FAR void *arg);
+			FAR void *arg);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI2
 int imxrt_lpspi2register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-                       FAR void *arg);
+			FAR void *arg);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI3
 int imxrt_lpspi3register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-                       FAR void *arg);
+			FAR void *arg);
 #endif
 
 #ifdef CONFIG_IMXRT_LPSPI4
 int imxrt_lpspi4register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-                       FAR void *arg);
+			FAR void *arg);
 #endif
 #endif
 

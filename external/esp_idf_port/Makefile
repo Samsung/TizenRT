@@ -48,13 +48,17 @@ CFLAGS += -I./tcpip_adapter/include
 CSRCS += tcpip_adapter_lwip.c wlanif.c  dhcpserver.c espdns.c
 
 #ESP32 wpa_supplicant crypto
-CSRCS += $(wildcard ./wpa_supplicant/port/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/crypto/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/fast_crypto/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/wps/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/tls/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/utils/*.c)
-CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/eap_peer/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/port/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/crypto/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/fast_crypto/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/wps/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/tls/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/utils/*.c)
+WPA_CSRCS += $(wildcard ./wpa_supplicant/src/wpa2/eap_peer/*.c)
+
+WPA_FILE_CSRCS =  $(shell basename --multiple $(WPA_CSRCS))
+CSRCS += $(WPA_FILE_CSRCS)
+
 CFLAGS += -I./wpa_supplicant/include
 CFLAGS += -I./wpa_supplicant/port/include
 CFLAGS += \
@@ -89,14 +93,28 @@ VPATH += :log
 VPATH += :heap
 VPATH += :esp_lwip
 VPATH += :tcpip_adapter
+VPATH += :wpa_supplicant/port
+VPATH += :wpa_supplicant/src/fast_crypto
+VPATH += :wpa_supplicant/src/crypto
+VPATH += :wpa_supplicant/src/wps
+VPATH += :wpa_supplicant/src/wpa2/tls
+VPATH += :wpa_supplicant/src/wpa2/utils
+VPATH += :wpa_supplicant/src/wpa2/eap_peer
 
 DEPPATH += --dep-path ./log
 DEPPATH += --dep-path ./heap
 DEPPATH += --dep-path ./esp_lwip
 DEPPATH += --dep-path ./tcpip_adapter
+DEPPATH += --dep-path ./wpa_supplicant/port
+DEPPATH += --dep-path ./wpa_supplicant/src/fast_crypto
+DEPPATH += --dep-path ./wpa_supplicant/src/crypto
+DEPPATH += --dep-path ./wpa_supplicant/src/wps
+DEPPATH += --dep-path ./wpa_supplicant/src/wpa2/tls
+DEPPATH += --dep-path ./wpa_supplicant/src/wpa2/utils
+DEPPATH += --dep-path ./wpa_supplicant/src/wpa2/eap_peer
 
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
-COBJS   = $(CSRCS:.c=$(OBJEXT))
+COBJS = $(patsubst %.c, esp32_%$(OBJEXT), $(CSRCS))
 
 BIN       = ../libexternal$(LIBEXT)
 OBJS        = $(CXXOBJS) $(COBJS)
@@ -117,8 +135,8 @@ $(SUBDIRS): ECHO
 $(CXXOBJS) : %$(OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
 
-$(COBJS): %$(OBJEXT): %.c 
-    $(call COMPILE, $<, $@)
+$(COBJS): esp32_%$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
 
 clean: 
 	$(MAKE) clean -C soc

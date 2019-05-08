@@ -66,18 +66,19 @@
 
 #include <debug.h>
 
-#if defined(CONFIG_IMXRT_FLASH_PART)
 #include <tinyara/configdata.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mksmartfs.h>
-#endif
 
 #include <syslog.h>
 #include <tinyara/i2c.h>
 #include <imxrt_lpi2c.h>
 #include "imxrt_log.h"
 
+#if defined(CONFIG_FLASH_PARTITION)
+#include "common.h"
+#endif
 #include "imxrt1050-evk.h"
 #include "imxrt_usbhost.h"
 
@@ -113,139 +114,6 @@ static void imxrt_i2c_register(int bus)
 }
 #endif
 
-static void imxrt_configure_partitions(void)
-{
-	int ret;
-
-#if defined(CONFIG_IMXRT_FLASH_PART)
-	int partno;
-	int partoffset;
-	const char *parts = CONFIG_IMXRT_FLASH_PART_LIST;
-	const char *types = CONFIG_IMXRT_FLASH_PART_TYPE;
-#if defined(CONFIG_MTD_PARTITION_NAMES)
-	const char *names = CONFIG_IMXRT_FLASH_PART_NAME;
-#endif
-	FAR struct mtd_dev_s *mtd;
-	FAR struct mtd_geometry_s geo;
-
-	IMXLOG("imxrt_configure_partitions");
-
-	mtd = progmem_initialize();
-	if (!mtd) {
-		IMXLOG("ERROR: progmem_initialize failed");
-		return;
-	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		IMXLOG("ERROR: mtd->ioctl failed");
-		return;
-	}
-
-	partno = 0;
-	partoffset = 0;
-
-	while (*parts) {
-		FAR struct mtd_dev_s *mtd_part;
-		int partsize;
-		char temp_log[256];
-
-		partsize = strtoul(parts, NULL, 0) << 10;
-
-		snprintf(temp_log, sizeof(temp_log), "partsize: %x, geo.erasesize: %x", partsize, geo.erasesize);
-		IMXLOG(temp_log);
-
-		if (partsize < geo.erasesize) {
-			IMXLOG("ERROR: Partition size is lesser than erasesize");
-			return;
-		}
-
-		if (partsize % geo.erasesize != 0) {
-			IMXLOG("ERROR: Partition size is not multiple of erasesize");
-			return;
-		}
-
-		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
-		partoffset += partsize / geo.blocksize;
-
-		if (!mtd_part) {
-			IMXLOG("ERROR: failed to create partition.");
-			return;
-		}
-
-		IMXLOG("mtd_partition success");
-
-#if defined(CONFIG_MTD_FTL)
-		if (!strncmp(types, "ftl,", 4)) {
-			if (ftl_initialize(partno, mtd_part)) {
-				IMXLOG("ERROR: failed to initialise mtd ftl");
-			}
-		} else
-#endif
-#if defined(CONFIG_MTD_CONFIG)
-		if (!strncmp(types, "config,", 7)) {
-			mtdconfig_register(mtd_part);
-		} else
-#endif
-#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "smartfs,", 8)) {
-			char partref[4];
-
-			IMXLOG("smart_initialize enter");
-
-			snprintf(partref, sizeof(partref), "p%d", partno);
-			ret = smart_initialize(CONFIG_IMXRT_FLASH_MINOR, mtd_part, partref);
-			if (ret != OK) {
-				IMXLOG("ERROR: smart_initialize failed");
-			} else {
-				IMXLOG("smart_initialize success");
-			}
-		} else
-#endif
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "romfs,", 6)) {
-			ret = ftl_initialize(partno, mtd_part);
-			if (ret != OK) {
-				IMXLOG("ERROR: ftl_initialize success");
-			} else {
-				IMXLOG("ftl_initialize success");
-			}
-		} else
-
-#endif
-		{
-		}
-
-#if defined(CONFIG_MTD_PARTITION_NAMES)
-		if (strcmp(names, "")) {
-			mtd_setpartitionname(mtd_part, names);
-		}
-
-		while (*names != ',' && *names) {
-			names++;
-		}
-		if (*names == ',') {
-			names++;
-		}
-#endif
-
-		while (*parts != ',' && *parts) {
-			parts++;
-		}
-		if (*parts == ',') {
-			parts++;
-		}
-		while (*types != ',' && *types) {
-			types++;
-		}
-		if (*types == ',') {
-			types++;
-		}
-
-		partno++;
-	}
-#endif /* CONFIG_IMXRT_FLASH_PART */
-}
-
 void imxrt_filesystem_initialize(void)
 {
 	int ret;
@@ -258,7 +126,9 @@ void imxrt_filesystem_initialize(void)
 
 	IMXLOG("imxrt_bringup");
 
-	imxrt_configure_partitions();
+#if defined(CONFIG_FLASH_PARTITION)
+	configure_partitions();
+#endif
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT
 #ifdef CONFIG_IMXRT_AUTOMOUNT_USERFS

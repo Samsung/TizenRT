@@ -37,7 +37,11 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_SSL_SRV_C)
 
@@ -3223,7 +3227,7 @@ static int ssl_write_server_key_exchange( mbedtls_ssl_context *ssl )
         p += len;
         n += len;
 
-#if !defined(CONFIG_HW_DH_PARAM)
+#if !defined(MBEDTLS_DHM_ALT)
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &ssl->handshake->dhm_ctx.X  );
 #endif
         MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &ssl->handshake->dhm_ctx.P  );

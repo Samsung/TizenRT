@@ -764,6 +764,15 @@ config RAM_REGIONx_HEAP_INDEX
 		It means that its region can be handled to the index-th heap. 
 		Index can be from 0 to (MM_NHEAPS-1).
 
+config RAM_MALLOC_PRIOR_INDEX
+	int "prior region index(0 MM_NHEAPS-1) of RAM used in malloc"
+	default 0
+	depends on MM_NHEAPS != 1
+	---help---
+		The prior region index of RAM used in malloc.
+		It means alloc memory from the index-th region with priority.
+		Index can be from 0 to (MM_NHEAPS-1).
+
 config FS_TMPFS_HEAP_INDEX
 	int "TMPFS Heap index"
 	default 1

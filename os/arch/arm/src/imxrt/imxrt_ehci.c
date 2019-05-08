@@ -118,7 +118,7 @@
 #endif
 
 /* Buffers must be aligned to the cache line size */
-#define DCACHE_LINEMASK (ARMV7M_DCACHE_LINESIZE -1)
+#define DCACHE_LINEMASK (ARMV7M_DCACHE_LINESIZE - 1)
 
 /* Configurable size of a request/descriptor buffers */
 
@@ -706,9 +706,9 @@ static const struct imxrt_ehci_trace_s g_trace2[TRACE2_NSTRINGS] = {
 static uint16_t imxrt_read16(const uint8_t *addr)
 {
 #ifdef CONFIG_ENDIAN_BIG
-	return (uint16_t) addr[0] << 8 | (uint16_t) addr[1];
+	return (uint16_t)addr[0] << 8 | (uint16_t)addr[1];
 #else
-	return (uint16_t) addr[1] << 8 | (uint16_t) addr[0];
+	return (uint16_t)addr[1] << 8 | (uint16_t)addr[0];
 #endif
 }
 
@@ -811,7 +811,7 @@ static uint32_t imxrt_swap32(uint32_t value)
 #ifdef CONFIG_IMXRT_EHCI_REGDEBUG
 static void imxrt_printreg(volatile uint32_t *regaddr, uint32_t regval, bool iswrite)
 {
-	uinfo("%08x%s%08x\n", (uintptr_t) regaddr, iswrite ? "<-" : "->", regval);
+	uinfo("%08x%s%08x\n", (uintptr_t)regaddr, iswrite ? "<-" : "->", regval);
 }
 #endif
 
@@ -2011,7 +2011,6 @@ static int imxrt_async_setup(struct imxrt_rhport_s *rhport, struct imxrt_epinfo_
 	uint32_t *flink;
 	uint32_t *alt;
 	uint32_t toggle;
-	uint32_t regval;
 	bool dirin = false;
 	int ret;
 
@@ -3186,7 +3185,6 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 	uint32_t usbsts;
 	uint32_t pending;
 	uint32_t regval;
-	uint32_t checkval;
 
 	/* Read Interrupt Status and mask out interrupts that are not enabled. */
 
@@ -3201,11 +3199,8 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 
 	syslog(LOG_INFO, "USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 
-	if((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0){
-		syslog(LOG_INFO, "interrupt::connect\n");
-	} else {
+	if ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0) {
 		syslog(LOG_INFO, "interrupt::disconnect\n");
-	}
 
 	/* Handle all unmasked interrupt sources */
 
@@ -3409,7 +3404,7 @@ static int imxrt_rh_enumerate(FAR struct usbhost_connection_s *conn, FAR struct 
 	 */
 
 	regval = imxrt_getreg(&HCOR->portsc[rhpndx]);
-	if((regval & EHCI_PORTSC_CCS) == 0){
+	if ((regval & EHCI_PORTSC_CCS) == 0) {
 		return -ENODEV;
 	}
 	if ((regval & EHCI_PORTSC_LSTATUS_MASK) == EHCI_PORTSC_LSTATUS_KSTATE) {
@@ -3543,7 +3538,7 @@ static int imxrt_rh_enumerate(FAR struct usbhost_connection_s *conn, FAR struct 
 	 */
 
 	regval = imxrt_getreg(&HCOR->portsc[rhpndx]);
-	if((regval & EHCI_PORTSC_CCS) == 0){
+	if ((regval & EHCI_PORTSC_CCS) == 0) {
 		return -ENODEV;
 	}
 #if 0							/* LPC31xx detects high- vs full-speed devices using the PSPD field */

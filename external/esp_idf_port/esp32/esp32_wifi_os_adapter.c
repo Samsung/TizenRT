@@ -424,7 +424,7 @@ static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *p
 	ETSTimer *etimer = (ETSTimer *) ptimer;
 
 	if (etimer->timer_period != TIMER_INITIALIZED_VAL) {
-		memset(ptimer, 0, sizeof(*ptimer));
+		memset(etimer, 0, sizeof(ETSTimer));
 		etimer->timer_period = TIMER_INITIALIZED_VAL;
 	}
 
@@ -435,7 +435,7 @@ static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *p
 		}
 		etimer->timer_func = pfunction;
 		etimer->timer_expire = (uint32_t) parg;
-		etimer->timer_next = (struct work_s *)malloc(sizeof(struct work_s));
+		etimer->timer_next = (struct work_s *)zalloc(sizeof(struct work_s));
 	}
 }
 
@@ -630,7 +630,11 @@ uint32_t IRAM_ATTR esp_get_free_heap_size(void)
 
 static void *IRAM_ATTR malloc_internal_wrapper(size_t size)
 {
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+	return malloc_at(0, size);
+#else
 	return malloc(size);
+#endif
 }
 
 static void *IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
@@ -640,13 +644,20 @@ static void *IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
 
 static void *IRAM_ATTR calloc_internal_wrapper(size_t n, size_t size)
 {
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+	return calloc_at(0, n, size);
+#else
 	return calloc(n, size);
+#endif
 }
 
 static void *IRAM_ATTR zalloc_internal_wrapper(size_t size)
 {
-	void *ptr = zalloc(size);
-	return ptr;
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+	return zalloc_at(0, size);
+#else
+	return zalloc(size);
+#endif
 }
 
 void *IRAM_ATTR wifi_malloc(size_t size)

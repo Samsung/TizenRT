@@ -111,6 +111,12 @@ audio$(DELIM)libaudio$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
 	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 
+se$(DELIM)libse$(LIBEXT): context
+	$(Q) $(MAKE) -C se TOPDIR="$(TOPDIR)" libse$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT): se$(DELIM)libse$(LIBEXT)
+	$(Q) install se$(DELIM)libse$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
+
 crypto$(DELIM)libcrypto$(LIBEXT): context
 	$(Q) $(MAKE) -C crypto TOPDIR="$(TOPDIR)" libcrypto$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 

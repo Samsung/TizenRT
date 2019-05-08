@@ -1,0 +1,40 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+
+choice LWNL80211_DRV
+	prompt"Driver selelction"
+	default LWNL80211_SLSI
+
+config LWNL80211_SLSI
+	bool "SLSI driver"
+	---help---
+		Samsung Artik WiFi driver
+
+endchoice
+
+config DEBUG_LWNL80211_ERROR
+	bool "LWNL80211 ERROR DEBUG"
+	default n
+	---help---
+		Enable LWNL80211 ERROR DEBUG
+
+config DEBUG_LWNL80211_INFO
+	bool "LWNL80211 INFO DEBUG"
+	default n
+	---help---
+		Enable LWNL80211 INFO DEBUG
+
+if LWNL80211_SLSI
+config DEBUG_LWNL80211_SLSI_ERROR
+	bool "SLSIDRV ERROR DEBUG"
+	default n
+	---help---
+		Enable SLSI driver ERROR DEBUG
+
+config DEBUG_LWNL80211_SLSI_INFO
+	bool "SLSIDRV INFO DEBUG"
+	default n
+	---help---
+		Enable SLSI driver INFO DEBUG
+endif

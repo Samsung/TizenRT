@@ -130,7 +130,7 @@ const usb_phy_config_struct_t PhyConfig = {
  *   Returns kStatus_USB_Error        the freq value is incorrect.
  *
  ****************************************************************************/
-uint32_t imxrt_usb_ehciphyinit(uint32_t freq, usb_phy_config_struct_t *phyConfig)
+uint32_t imxrt_usb_ehciphyinit(uint32_t freq, const usb_phy_config_struct_t *phyConfig)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
 
@@ -650,14 +650,14 @@ void imxrt_clockconfig(void)
 	reg |= CCM_CBCDR_SEMC_PODF(CCM_PODF_FROM_DIVISOR(IMXRT_SEMC_PODF_DIVIDER));
 	putreg32(reg, IMXRT_CCM_CBCDR);
 
-  /* Set PRE_PERIPH_CLK to Board Selection */
+	/* Set PRE_PERIPH_CLK to Board Selection */
 
 	reg = getreg32(IMXRT_CCM_CBCMR);
 	reg &= ~CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK;
 	reg |= CCM_CBCMR_PRE_PERIPH_CLK_SEL(IMXRT_PRE_PERIPH_CLK_SEL);
 	putreg32(reg, IMXRT_CCM_CBCMR);
 
-  /* Set PERIPH_CLK MUX to Board Selection */
+	/* Set PERIPH_CLK MUX to Board Selection */
 
 	reg = getreg32(IMXRT_CCM_CBCDR);
 	reg &= ~CCM_CBCDR_PERIPH_CLK_SEL_MASK;
@@ -691,7 +691,7 @@ void imxrt_clockconfig(void)
 	putreg32(reg, IMXRT_CCM_CSCDR1);
 
 #ifdef CONFIG_IMXRT_LPI2C
-  /* Set LPI2C source to PLL3 60M */
+	/* Set LPI2C source to PLL3 60M */
 
 	reg = getreg32(IMXRT_CCM_CSCDR2);
 	reg &= ~CCM_CSCDR2_LPI2C_CLK_SEL(1U);
@@ -701,7 +701,7 @@ void imxrt_clockconfig(void)
 	while ((getreg32(IMXRT_CCM_CDHIPR) & CCM_CDHIPR_PERIPH_CLK_SEL_BUSY(1U)) != 0) {
 	}
 
-  /* Set LPI2C divider to 5  for 12 Mhz */
+	/* Set LPI2C divider to 5  for 12 Mhz */
 
 	reg = getreg32(IMXRT_CCM_CSCDR2);
 	reg &= ~CCM_CSCDR2_LPI2C_CLK_PODF_MASK;
@@ -741,7 +741,7 @@ void imxrt_clockconfig(void)
 #endif
 	putreg32(reg, IMXRT_CCM_CSCMR1);
 
-  /* Now divide down clocks by IMXRT_USDHC[1|2]_PODF_DIVIDER */
+	/* Now divide down clocks by IMXRT_USDHC[1|2]_PODF_DIVIDER */
 
 	reg  = getreg32(IMXRT_CCM_CSCDR1);
 	reg &= ~(CCM_CSCDR1_USDHC1_PODF_MASK | CCM_CSCDR1_USDHC2_PODF_MASK);

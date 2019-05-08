@@ -201,7 +201,6 @@ void weak_function imxrt_usbhost_bootinitialize(void)
 int imxrt_usbhost_initialize(void)
 {
 	pid_t pid;
-	int ret;
 
 	/* Then get an instance of the USB EHCI interface. */
 
@@ -215,11 +214,9 @@ int imxrt_usbhost_initialize(void)
 	pid = task_create("EHCI Monitor", CONFIG_USBHOST_DEFPRIO, CONFIG_USBHOST_STACKSIZE, (main_t) ehci_waiter, (FAR char *const *)NULL);
 	if (pid < 0) {
 		IMXLOG("ERROR: Failed to create ehci_waiter task: %d\n");
-		return -ENODEV;
 	}
 
 	return OK;
-}
 
 /***********************************************************************************
  * Name: imxrt_usbhost_vbusdrive
@@ -245,7 +242,7 @@ void imxrt_usbhost_vbusdrive(int rhport, bool enable)
 
 	/* The LPC3131 has only a single root hub port */
 
-#if 0
+#ifdef NEED_REFERENCE 
 	if (rhport == 0) {
 		/* Then enable or disable VBUS power */
 
