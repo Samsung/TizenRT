@@ -368,8 +368,9 @@ typedef struct _lpi2c_slave_transfer {
     status_t completionStatus; /*!< Success or error code describing how the transfer completed. Only applies for
 									#kLPI2C_SlaveCompletionEvent. */
     size_t transferredCount;   /*!< Number of bytes actually transferred since start or last repeated start. */
-	lpi2c_slave_transfer_event_t event; /*!< Reason the callback is being invoked. */
-	uint8_t receivedAddress;            /*!< Matching address send by master. */
+} lpi2c_slave_transfer_t;
+
+/* Forward declaration. */
 typedef struct _lpi2c_slave_handle lpi2c_slave_handle_t;
 
 /*!
@@ -377,6 +378,7 @@ typedef struct _lpi2c_slave_handle lpi2c_slave_handle_t;
  *
  * This callback is used only for the slave non-blocking transfer API. To install a callback,
  * use the LPI2C_SlaveSetCallback() function after you have created a handle.
+ *
  * @param base Base address for the LPI2C instance on which the event occurred.
  * @param transfer Pointer to transfer descriptor containing values passed to and/or from the callback.
  * @param userData Arbitrary pointer-sized value passed from the application.

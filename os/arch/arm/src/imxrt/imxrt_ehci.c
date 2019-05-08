@@ -3200,7 +3200,10 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 	syslog(LOG_INFO, "USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 
 	if ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0) {
+		syslog(LOG_INFO, "interrupt::connect\n");
+	} else {
 		syslog(LOG_INFO, "interrupt::disconnect\n");
+	}
 
 	/* Handle all unmasked interrupt sources */
 

@@ -255,7 +255,7 @@
  * locking up of the Ethernet interface.
  */
 
-#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR)
+#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR )
 
 /* This is a helper pointer for accessing the contents of the Ethernet header */
 
@@ -671,7 +671,7 @@ static int imxrt_txpoll(struct netif *dev)
 		#ifdef CONFIG_NET_MULTIBUFFER
 		priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 		#else
-		if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+		if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 			memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
 		} else {
 			/* code */
