@@ -20,7 +20,7 @@ EXTRA_LIBS += chip/abc/libnew.a
 
 This change makes it add to TizenRT binary by Makefile which is at *os/arch/arm/src* folder.
 ```
-$(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
+$(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 	$(Q) echo "LD: tinyara"
 	$(Q) $(LD) --entry=__start $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
 		-o $(TINYARA) $(HEAD_OBJ) $(EXTRA_OBJS) \

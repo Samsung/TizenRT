@@ -103,7 +103,7 @@ EXTDIR := ${shell if exist "$(CONFIG_EXTERNAL_DIR)\Makefile" echo $(CONFIG_EXTER
 BUILD_DIR = ..\build
 OUTPUT_DIR = $(BUILD_DIR)\output
 LIBRARIES_DIR = $(OUTPUT_DIR)\libraries
-BIN_DIR = $(OUTPUT_DIR)\bin
+OUTBIN_DIR = $(OUTPUT_DIR)\bin
 LIB_DIR = ..\lib
 
 # Add-on directories.  These may or may not be in place in the
@@ -194,7 +194,7 @@ endif
 # This is the name of the final target (relative to the top level directorty)
 
 BIN_EXE = tinyara$(EXEEXT)
-BIN = $(BIN_DIR)\$(BIN_EXE)
+BIN = $(OUTBIN_DIR)\$(BIN_EXE)
 
 all: $(BIN)
 .PHONY: context clean_context check_context configenv config oldconfig menuconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean
@@ -381,8 +381,8 @@ dirlinks: include\arch include\arch\board include\arch\chip $(ARCH_SRC)\board $(
 
 context: check_context include\tinyara\config.h include\tinyara\version.h include\math.h include\float.h include\stdarg.h dirlinks
 	$(Q) if exist $(BIN) (
-		echo "Previous Build Outputs - $(BIN_DIR) - are deleted"
-		$(call DELFILE, $(BIN_DIR)\*.*)
+		echo "Previous Build Outputs - $(OUTBIN_DIR) - are deleted"
+		$(call DELFILE, $(OUTBIN_DIR)\*.*)
 	)
 	$(Q) for %%G in ($(CONTEXTDIRS)) do ( $(MAKE) -C %%G TOPDIR="$(TOPDIR)" context )
 	$(call DELFILE, $(APPDIR)\builtin\registry\*.?dat)
@@ -454,7 +454,7 @@ endif
 pass2deps: pass2dep $(TINYARALIBS)
 
 pass2: pass2deps
-	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" BIN_DIR="$(BIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" EXTRA_OBJS="$(EXTRA_OBJS)" LINKLIBS="$(LINKLIBS)" EXTRADEFINES=$(KDEFINE) $(BIN)
+	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" OUTBIN_DIR="$(OUTBIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" EXTRA_OBJS="$(EXTRA_OBJS)" LINKLIBS="$(LINKLIBS)" EXTRADEFINES=$(KDEFINE) $(BIN)
 ifeq ($(CONFIG_INTELHEX_BINARY),y)
 	@echo "CP: $(BIN_EXE).hex"
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O ihex $(BIN) $(BIN).hex
@@ -548,7 +548,7 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 endif
 
 clean: subdir_clean
-	$(call DELFILE, $(BIN_DIR)\*)
+	$(call DELFILE, $(OUTBIN_DIR)\*)
 	$(call DELFILE, _SAVED_APPS_config)
 	$(call DELFILE, tinyara-export*)
 	$(call DELFILE, tinyara_user*)
