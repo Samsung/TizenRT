@@ -21,6 +21,11 @@
 
 #include <stdint.h>
 
+#define SECURITY_MAX_BUF              1024
+#define SECURITY_MAX_KEY_BUF          256
+#define SECURITY_MAX_CERT_BUF         2048
+#define SECURITY_MAX_SS_BUF           4096
+
 struct security_ctx;
 typedef struct security_ctx *security_handle;
 
@@ -85,7 +90,7 @@ typedef enum {
 	ECDSA_SEC_P224R1,
 	ECDSA_SEC_P256R1,
 	ECDSA_SEC_P384R1,
-	ECDSA_SEC_P521R1,
+	ECDSA_SEC_P512R1,
 	ECDSA_UNKNOWN,
 } security_ecdsa_mode;
 
@@ -111,7 +116,7 @@ typedef enum {
 	KEY_ECC_SEC_P224R1,
 	KEY_ECC_SEC_P256R1,
 	KEY_ECC_SEC_P384R1,
-	KEY_ECC_SEC_P521R1,
+	KEY_ECC_SEC_P512R1,
 	KEY_HMAC_MD5,
 	KEY_HMAC_SHA1,
 	KEY_HMAC_SHA224,
