@@ -52,9 +52,6 @@
 /* The length of dev name */
 #define BINMGR_DEVNAME_LEN               16
 
-/* Default priority of task loaded by binary manager */
-#define BINMGR_LOAD_PRIORITY_DEFAULT     120
-
 /* The number of User binaries */
 #ifdef CONFIG_NUM_APPS
 #define USER_BIN_COUNT                   CONFIG_NUM_APPS

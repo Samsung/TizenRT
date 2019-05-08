@@ -23,15 +23,19 @@ import struct
 #
 # header information :
 #
-# total header size is 56bytes.
-# +------------------------------------------------------------------------
-# | Header size | Binary type | Binary size | Binary name | Binary version
-# |   (2bytes)  |   (2bytes)  |   (4bytes)  |  (16bytes)  |    (16bytes)
-# +------------------------------------------------------------------------
-# ---------------------------------------------------+
-#  | Binary ram size | Kernel version | Jump address |
-#  |    (16bytes)    |    (8bytes)    |   (4bytes)   |
-# ---------------------------------------------------+
+# total header size is 60bytes.
+# +-------------------------------------------------------------------------
+# | Header size | Binary type | Binary priority | Binary size | Binary name
+# |   (2bytes)  |   (1byte)   |     (1byte)     |  (4bytes)   |  (16bytes)
+# +-------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# | Binary version | Binary ram size | Binary stack size |  Kernel version |
+# |   (16bytes)    |    (4bytes)     |     (4bytes)      |     (8bytes)    |
+# --------------------------------------------------------------------------
+# --------------+
+#  Jump address |
+#    (4bytes)   |
+# --------------+
 #
 # parameter information :
 #
@@ -41,6 +45,8 @@ import struct
 # argv[4] is binary name.
 # argv[5] is binary version.
 # argv[6] is a dynamic ram size required to run this binary.
+# argv[7] is binary stack size.
+# argv[8] is binary priority.
 #
 ############################################################################
 
@@ -50,20 +56,24 @@ kernel_ver = sys.argv[3]
 binary_name = sys.argv[4]
 binary_ver = sys.argv[5]
 dynamic_ram_size = sys.argv[6]
+binary_stack_size = sys.argv[7]
+binary_priority = sys.argv[8]
 
 # This path is only for dbuild.
 elf_path_for_bin_type = 'root/tizenrt/build/output/bin/tinyara'
 
 SIZE_OF_HEADERSIZE = 2
-SIZE_OF_BINTYPE = 2
+SIZE_OF_BINTYPE = 1
+SIZE_OF_BINPRIORITY = 1
 SIZE_OF_BINSIZE = 4
 SIZE_OF_BINNAME = 16
 SIZE_OF_BINVER = 16
 SIZE_OF_BINRAMSIZE = 4
+SIZE_OF_BINSTACKSIZE = 4
 SIZE_OF_KERNELVER = 8
 SIZE_OF_JUMPADDR = 4
 
-header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
+header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_BINPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_BINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
 
 ELF = 1
 BIN = 2
@@ -101,6 +111,12 @@ with open(file_path, 'rb') as fp:
         print "Not supported Binary Type"
         sys.exit(1)
 
+    if 0 < int(binary_priority) <= 255 :
+        binary_priority = int(binary_priority)
+    else :
+        print "This binary priority is not valid"
+        sys.exit(1)
+
     ram_fp = open(STATIC_RAM_ESTIMATION, 'rb')
     # First line is not used for calculating RAM size. So throw away it.
     ram_fp.readline()
@@ -114,13 +130,14 @@ with open(file_path, 'rb') as fp:
 
     fp = open(file_path, 'wb')
 
-    fp.write(struct.pack('h', header_size))
-
-    fp.write(struct.pack('h', bin_type))
+    fp.write(struct.pack('H', header_size))
+    fp.write(struct.pack('B', bin_type))
+    fp.write(struct.pack('B', binary_priority))
     fp.write(struct.pack('I', file_size))
     fp.write('{:{}{}.{}}'.format(binary_name, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
     fp.write('{:{}{}.{}}'.format(binary_ver, '<', SIZE_OF_BINVER, SIZE_OF_BINVER - 1).replace(' ','\0'))
     fp.write(struct.pack('I', binary_ram_size))
+    fp.write(struct.pack('I', int(binary_stack_size)))
     fp.write('{:{}{}.{}}'.format(kernel_ver, '<', SIZE_OF_KERNELVER, SIZE_OF_KERNELVER - 1).replace(' ','\0'))
 
     # parsing _vector_start address from elf information.

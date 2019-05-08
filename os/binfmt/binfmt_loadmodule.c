@@ -192,11 +192,12 @@ int load_module(FAR struct binary_s *bin)
 	if (bin && bin->filename)
 #endif
 	{
-		/* Set the default priority of the new program. */
-
-		ret = load_default_priority(bin);
-		if (ret < 0) {
-			return ret;
+		if (bin->priority == 0) {
+			/* Set the default priority of the new program. */
+			ret = load_default_priority(bin);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		/* Were we given a relative path?  Or an absolute path to the file to
