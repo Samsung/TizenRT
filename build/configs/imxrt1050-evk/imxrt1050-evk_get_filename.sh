@@ -32,10 +32,9 @@ GET_FILENAME() {
 		APP2_IMG2=${OUTBIN_PATH}/wifi
 		FLASH_IMG=${OUTBIN_PATH}/tinyara_flash.bin
 	elif [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
-		KERN_IMG=${OUTBIN_PATH}/tinyara.hex
-		USER_IMG=${OUTBIN_PATH}/tinyara_user.hex
-		TEMP_IMG=${OUTBIN_PATH}/tinyara_temp.hex
-		FLASH_IMG=${OUTBIN_PATH}/tinyara_prot.hex
+		KERN_IMG=${OUTBIN_PATH}/tinyara.bin
+		USER_IMG=${OUTBIN_PATH}/tinyara_user.bin
+		FLASH_IMG=${OUTBIN_PATH}/tinyara_prot.bin
 	elif [[ "${CONFIG_BUILD_FLAT}" == "y" ]]; then
 		FLASH_IMG=${OUTBIN_PATH}/tinyara.hex
 	else
