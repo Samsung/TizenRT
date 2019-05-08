@@ -169,7 +169,7 @@ int sl_remove_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e 
 	return req.res;
 }
 
-int sl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e *hres)
+int gl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e *hres)
 {
 	SL_ENTER;
 

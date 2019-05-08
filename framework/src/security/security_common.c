@@ -49,7 +49,7 @@ int security_deinit(security_handle hnd)
 	SECAPI_ISHANDLE_VALID(hnd);
 
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
-	SECAPI_CALL(sl_deinit(ctx->sl_hnd));
+	sl_deinit(ctx->sl_hnd);
 
 	free(ctx);
 
