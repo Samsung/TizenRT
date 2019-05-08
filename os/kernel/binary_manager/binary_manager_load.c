@@ -39,9 +39,6 @@
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
-/* The number of arguments for loading thread */
-#define LOADTHD_ARGC     3
-
 struct binary_header_s {
 	uint16_t header_size;
 	uint16_t bin_type;
@@ -357,10 +354,19 @@ static int loading_thread(int argc, char *argv[])
 		return -1;
 	}
 
+	/* Arguments : [1] type */
 	type = (pid_t)atoi(argv[1]);
 
 	ret = ERROR;
 	switch (type) {
+	case LOADCMD_LOAD:
+		if (argc <= 2) {
+			bmdbg("Invalid arguments for loading, argc %d\n", argc);
+			return -1;
+		}
+		/* [2] bin_idx for loading */
+		ret = binary_manager_load_binary((int)atoi(argv[2]));
+		break;
 	case LOADCMD_LOAD_ALL:
 		ret = binary_manager_load_all();
 		break;
@@ -369,6 +375,7 @@ static int loading_thread(int argc, char *argv[])
 			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
 			return -1;
 		}
+		/* [2] pid, [3] bin_name for reloading */
 		ret = binary_manager_reload((pid_t)atoi(argv[2]), argv[3]);
 		break;
 	default:
@@ -390,42 +397,16 @@ static int loading_thread(int argc, char *argv[])
  *   This function create loading thread to load/unload binary.
  *
  ****************************************************************************/
-int binary_manager_loading(int type, loading_data_t *data)
+int binary_manager_loading(char *loading_data[])
 {
 	int ret;
-	char **argv;
-	char type_str[1];
-	char pid_str[1];
 
-	bmvdbg("Loading type %d\n", type);
-
-	if (type < 0 || type >= LOADCMD_LOAD_MAX) {
-		bmdbg("Invalid loading type %d\n", type);
-		return ERROR;
-	}
-
-	argv = (char **)kmm_malloc(sizeof(char *) * (LOADTHD_ARGC + 1));
-	if (argv == NULL) {
-		bmdbg("Failed to allocate argv\n");
-		return ERROR;
-	}
-	memset(argv, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-
-	/* Arguments : [0] type */
-	argv[0] = itoa(type, type_str, 10);
-	if (type == LOADCMD_RELOAD) {
-		/* [1] pid, [2] bin_name for reloading */
-		argv[1] = itoa(data->pid, pid_str, 10);
-		argv[2] = data->bin_name;
-	}
-
-	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, (char * const *)argv);
+	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, (char * const *)loading_data);
 	if (ret > 0) {
 		bmvdbg("Execute loading thread with pid %d\n", ret);
 	} else {
 		bmdbg("Loading Fail\n");
 	}
-	kmm_free(argv);
 
 	return ret;
 }

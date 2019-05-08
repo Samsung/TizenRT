@@ -129,77 +129,14 @@ static int recovery_kill_binary(pid_t pid, int binid)
 }
 
 /****************************************************************************
- * Name: recovery_thread
+ * Name: binary_manager_recovery
  *
  * Description:
  *   This function will receive the faulty pid and check if its binary id is one
  *   of the registered binary with binary manager.
  *   If the binary is registered then it will be restarted after killing its
  *   child processes, and if it is not registered then board will be rebooted.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   Zero (OK) on success; otherwise -1 (ERROR) value is returned.
- *
- * Assumptions:
- *    All the binaries of the system will be registered with the binary manager
- *
- ****************************************************************************/
-int recovery_thread(int argc, char *argv[])
-{
-	int ret;
-	pid_t pid;
-	int bin_id;
-	int bin_idx;
-	struct tcb_s *tcb;
-
-	pid = (pid_t)atoi(argv[1]);
-
-	bmllvdbg("Faulty pid is %d\n", pid);
-
-	/* Get binary id of fault task and check it is registered in binary manager */
-	tcb = sched_gettcb(pid);
-	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
-		bmlldbg("Failed to get pid %d binary info\n", pid);
-		goto reboot_board;
-	}
-	bin_id = tcb->group->tg_loadtask;
-	bmllvdbg("pid %d, binary id %d\n", pid, bin_id);
-
-	bin_idx = binary_manager_get_index_with_binid(bin_id);
-	if (bin_idx < 0) {
-		bmlldbg("binary pid %d is not registered to binary manager\n", bin_id);
-		goto reboot_board;
-	}
-
-	/* Kill its children and restart binary if the binary is registered with the binary manager */
-	ret = recovery_kill_binary(pid, bin_id);
-	if (ret == OK) {
-		BIN_ID(bin_idx) = -1;
-		usleep(100);
-		/* load binary and update binid */
-		ret = binary_manager_load_binary(bin_idx);
-		if (ret == OK) {
-			abort_mode = false;
-			return 0;
-		}
-	}
-
-reboot_board:
-	/* Reboot the board  */
-	bmlldbg("RECOVERY FAIL, BOARD RESET!!\n");
-	binary_manager_board_reset();
-
-	return -1;
-}
-
-/****************************************************************************
- * Name: binary_manager_recovery
- *
- * Description:
- *   This function create recovery thread to handle fault with pid.
+ *   And then, it creates loading thread to load binary again.
  *
  * Input parameters:
  *   pid   -   The pid of recovery message
@@ -211,27 +148,49 @@ reboot_board:
 void binary_manager_recovery(int pid)
 {
 	int ret;
-	int argc;
-	char **argv;
-	char value[1];
+	int bin_id;
+	int bin_idx;
+	char type_str[1];
+	char data_str[1];
+	struct tcb_s *tcb;
+	char *loading_data[LOADTHD_ARGC + 1];
 
 	bmllvdbg("Try to recover fault with pid %d\n", pid);
 
 	if (pid > 0) {
-		argc = 1;
-		argv = (char **)kmm_malloc(sizeof(char *) * (argc + 1));
+		/* Get binary id of fault task and check it is registered in binary manager */
+		tcb = sched_gettcb(pid);
+		if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
+			bmlldbg("Failed to get pid %d binary info\n", pid);
+			goto reboot_board;
+		}
+		bin_id = tcb->group->tg_loadtask;
+		bmllvdbg("pid %d, binary id %d\n", pid, bin_id);
 
-		argv[0] = itoa(pid, (char *)&value, 10);
-		argv[1] = NULL;
+		bin_idx = binary_manager_get_index_with_binid(bin_id);
+		if (bin_idx < 0) {
+			bmlldbg("binary pid %d is not registered to binary manager\n", bin_id);
+			goto reboot_board;
+		}
 
-		ret = kernel_thread(RECOVERYTHD_NAME, RECOVERYTHD_PRIORITY, RECOVERYTHD_STACKSIZE, recovery_thread, (char * const *)argv);
-		if (ret > 0) {
-			kmm_free(argv);
-			bmllvdbg("Execute recovery thread with pid %d\n", pid);
-			return;
+		/* Kill its children and restart binary if the binary is registered with the binary manager */
+		ret = recovery_kill_binary(pid, bin_id);
+		if (ret == OK) {
+			BIN_ID(bin_idx) = -1;
+			/* load binary and update binid */
+			memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
+			loading_data[0] = itoa(LOADCMD_LOAD, type_str, 10);
+			loading_data[1] = itoa(bin_idx, data_str, 10);
+			ret = binary_manager_loading(loading_data);
+			if (ret > 0) {
+				abort_mode = false;
+				return 0;
+			}
 		}
 	}
-	bmlldbg("Failed to recover\n");
 
+reboot_board:
+	/* Reboot the board  */
+	bmlldbg("RECOVERY FAIL, BOARD RESET!!\n");
 	binary_manager_board_reset();
 }
