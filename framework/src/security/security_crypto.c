@@ -40,7 +40,9 @@ int crypto_aes_encryption(security_handle hnd,
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_data dec = {input->data, input->length, NULL, 0};
+	int tmpbuf[SECURITY_MAX_BUF];
+
+	hal_data dec = {input->data, input->length, tmpbuf, SECURITY_MAX_BUF};
 	hal_data enc = {NULL, 0, NULL, 0};
 
 	hal_result_e hres = HAL_SUCCESS;
