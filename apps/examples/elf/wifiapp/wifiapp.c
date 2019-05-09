@@ -19,7 +19,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,11 +27,36 @@
 #include <sched.h>
 #include <pthread.h>
 
+#if !defined(CONFIG_MPU_TEST_KERNEL_CODE_ADDR) || !defined(CONFIG_MPU_TEST_APP_ADDR)
+#error "Address not defined for MPU test"
+#endif
+
 static void *assert_thread(void *index)
 {
-	printf("[%d] %dth thread, assert!\n", getpid(), (int)index);
+	int type;
+	uint32_t dest;
+	volatile uint32_t *addr;
 
-	PANIC();
+	type = getpid() % 3;
+	if (type == 0) {
+		/* PANIC */
+		printf("[%d] %dth thread, PANIC!\n", getpid(), (int)index);
+		sleep(1);
+		PANIC();
+	} else if (type == 1) {
+		/* Access kernel code */
+		addr = CONFIG_MPU_TEST_KERNEL_CODE_ADDR;
+		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, addr);
+		sleep(1);
+		*addr = 0xdeadbeef;
+	} else {
+		/* Access another binary 'micom' address */
+		addr = CONFIG_MPU_TEST_APP_ADDR;
+		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, addr);
+		sleep(1);
+		*addr = 0xdeadbeef;
+	}
+
 	return 0;
 }
 
