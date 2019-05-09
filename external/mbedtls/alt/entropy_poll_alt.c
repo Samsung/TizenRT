@@ -40,15 +40,15 @@ static int mbedtls_generate_random_alt(unsigned char *data, unsigned int len)
 	sl_ctx shnd;
 
 	hal_data random = {data, len, NULL, 0};
-
+	hal_result_e hres = HAL_FAIL;
 	ret = sl_init(&shnd);
 	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
 
-	ret = sl_generate_random(shnd, len, &random);
+	ret = sl_generate_random(shnd, len, &random, &hres);
 
-	if ((ret != HAL_SUCCESS) || random.data == NULL) {
+	if ((ret != SECLINK_OK) || (hres != HAL_SUCCESS)) {
 		sl_deinit(shnd);
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
