@@ -20,4 +20,16 @@ config EXAMPLES_ELF_FULLYLINKED
 	---help---
 		Enable Fully Linked ELF application support
 
+config MPU_TEST_KERNEL_CODE_ADDR
+	hex "Address in kernel code range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel code address
+
+config MPU_TEST_APP_ADDR
+	hex "Address in differnet application range"
+	default 0x00000000
+	depends on APP_BINARY_SEPARATION
+	---help---
+		Test MPU access protection to this application address
 endif
