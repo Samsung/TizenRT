@@ -130,6 +130,7 @@ bool MyMediaPlayer::init(int test)
 			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 			return std::move(source);
 		};
+		break;
 	case TEST_BUFFER:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<BufferInputDataSource>(new BufferInputDataSource()));
