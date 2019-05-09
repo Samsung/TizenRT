@@ -100,7 +100,7 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 	}
 
 	/* Caculate checksum and Verify it */
-	check_crc = crc32part(header_data, header_data->header_size, check_crc);
+	check_crc = crc32part((uint8_t *)header_data, header_data->header_size, check_crc);
 	file_size = header_data->bin_size;
 	while (file_size > 0) {
 		read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;

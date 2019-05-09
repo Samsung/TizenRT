@@ -170,7 +170,6 @@ int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info)
 int binary_update_get_binary_info_all(binary_info_list_t *binary_info_list)
 {
 	int ret;
-	int bin_idx;
 	binmgr_request_t request_msg;
 	binmgr_getinfo_all_response_t response_msg;
 

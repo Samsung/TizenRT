@@ -309,31 +309,7 @@ static void go_os_start(void *pv, unsigned int nbytes)
  * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: imxrt_configure_ocram
- *
- * Description:
- *   Make configuration to use the entire 512KB FlexRAM as OCRAM
- *
- ****************************************************************************/
-
-void imxrt_configure_ocram()
-{
-	/* Configure FlexRAM banks for OCRAM*/
-	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x55555555);
-	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
-
-	/* Disable DTCM */
-	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
-	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
-	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0x0);
-
-	/* Disable ITCM */
-	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
-	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
-	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(0x0);
-}
-
+#ifdef CONFIG_ARMV7M_DTCM
 /****************************************************************************
  * Name: imxrt_configure_dtcm
  *
@@ -341,8 +317,7 @@ void imxrt_configure_ocram()
  *   Make configuration to use the entire 512KB FlexRAM as DTCM
  *
  ****************************************************************************/
-
-void imxrt_configure_dtcm()
+static void imxrt_configure_dtcm(void)
 {
 	/* Configure FlexRAM banks for DTCM and 64KB OCRAM */
 	/* It is mandatory to have at least 64KB as OCRAM to boot the board */
@@ -361,6 +336,31 @@ void imxrt_configure_dtcm()
 	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(0x0);
 }
 
+#else
+/****************************************************************************
+ * Name: imxrt_configure_ocram
+ *
+ * Description:
+ *   Make configuration to use the entire 512KB FlexRAM as OCRAM
+ *
+ ****************************************************************************/
+static void imxrt_configure_ocram(void)
+{
+	/* Configure FlexRAM banks for OCRAM*/
+	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x55555555);
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
+
+	/* Disable DTCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_DTCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGDTCMSZ(0x0);
+
+	/* Disable ITCM */
+	IOMUXC_GPR->GPR16 &= ~IOMUXC_GPR_GPR16_INIT_ITCM_EN_MASK;
+	IOMUXC_GPR->GPR14 &= ~IOMUXC_GPR_GPR14_CM7_CFGITCMSZ_MASK;
+	IOMUXC_GPR->GPR14 |= IOMUXC_GPR_GPR14_CM7_CFGITCMSZ(0x0);
+}
+#endif
 
 /****************************************************************************
  * Name: _start

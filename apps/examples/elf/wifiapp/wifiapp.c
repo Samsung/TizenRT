@@ -34,7 +34,6 @@
 static void *assert_thread(void *index)
 {
 	int type;
-	uint32_t dest;
 	volatile uint32_t *addr;
 
 	type = getpid() % 3;
@@ -45,13 +44,13 @@ static void *assert_thread(void *index)
 		PANIC();
 	} else if (type == 1) {
 		/* Access kernel code */
-		addr = CONFIG_MPU_TEST_KERNEL_CODE_ADDR;
+		addr = (uint32_t *)CONFIG_MPU_TEST_KERNEL_CODE_ADDR;
 		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, addr);
 		sleep(1);
 		*addr = 0xdeadbeef;
 	} else {
 		/* Access another binary 'micom' address */
-		addr = CONFIG_MPU_TEST_APP_ADDR;
+		addr = (uint32_t *)CONFIG_MPU_TEST_APP_ADDR;
 		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, addr);
 		sleep(1);
 		*addr = 0xdeadbeef;

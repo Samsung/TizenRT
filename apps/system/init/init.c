@@ -107,10 +107,6 @@ int preapp_start(int argc, char *argv[])
 	int ret;
 #endif
 
-#if defined(CONFIG_EXAMPLES_ELF)
-	int i;
-#endif	/*CONFIG_EXAMPLES_ELF */
-
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
 #endif

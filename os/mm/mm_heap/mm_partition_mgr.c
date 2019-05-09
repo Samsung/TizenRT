@@ -97,7 +97,7 @@ void mm_initialize_ram_partitions(void)
 	DEBUGASSERT(size != 0);
 	DEBUGASSERT(g_default_size > 0);
 
-	mm_initialize(&g_pheap, start, size);
+	mm_initialize(&g_pheap, (void *)start, size);
 	mvdbg("Default RAM partition size set to %u\n", g_default_size);
 	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, size);
 #else
@@ -173,7 +173,7 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 
 void mm_free_ram_partition(uint32_t address)
 {
-	mm_free(&g_pheap, address);
+	mm_free(&g_pheap, (void *)address);
 	mvdbg("Freed RAM partition at 0x%x\n", address);
 }
 
