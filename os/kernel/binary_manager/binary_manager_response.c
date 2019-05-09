@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,52 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_write.c
-/// @brief Test Case Example for write to kernel space from user space
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <tinyara/config.h>
+#include <debug.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <fcntl.h>
+#include <mqueue.h>
 
-extern uint32_t __ksram_segment_start__[];
+#include <tinyara/binary_manager.h>
+
+#include "binary_manager.h"
+
 /****************************************************************************
- * Name: read_main
+ * Public Functions
  ****************************************************************************/
-
-int write_main(void)
+int binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
 {
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
-	uint32_t dest = 0xdeadbeef;
+	int ret;
+	mqd_t mqfd;
+	struct mq_attr attr;
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to write     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
-	printf("************************************************\n");
+	if (q_name == NULL || response_msg == NULL || msg_size < 0) {
+		bmdbg("Invalid param\n");
+		return ERROR;
+	}
 
-	sleep(3);
-	*address = dest;
+	attr.mq_maxmsg = BINMGR_MAX_MSG;
+	attr.mq_msgsize = msg_size;
+	attr.mq_flags = 0;
 
-	printf("ERR: User Task successfully accessed Kernel space\n");
-	return 0;
+	mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
+	if (mqfd == (mqd_t)ERROR) {
+		bmdbg("mq_open failed!\n");
+		return ERROR;
+	}
+
+	ret = mq_send(mqfd, (char *)response_msg, msg_size, BINMGR_NORMAL_PRIO);
+	if (ret < 0) {
+		bmdbg("mq_send failed! %d\n", errno);
+		mq_close(mqfd);
+		return ERROR;
+	}
+
+	mq_close(mqfd);
+
+	return OK;
 }

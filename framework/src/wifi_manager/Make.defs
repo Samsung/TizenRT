@@ -28,6 +28,10 @@ CSRCS += slsi_wifi_utils.c
 endif
 endif
 
+ifeq ($(CONFIG_SELECT_NO_DRIVER), y)
+CSRCS += virtual_wifi_utils.c
+endif
+
 DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
 endif

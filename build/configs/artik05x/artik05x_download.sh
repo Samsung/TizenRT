@@ -36,6 +36,7 @@ ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
 
 TIZENRT_BIN=${OUTPUT_BINARY_PATH}/tinyara_head.bin
+TIZENRT_APPS_BIN=${OUTPUT_BINARY_PATH}/tinyara_user.bin
 
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 if [[ $OSTYPE == "darwin"* ]]; then
@@ -118,6 +119,10 @@ compute_ocd_commands()
 				ensure_file ${TIZENRT_BIN}
 				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
 				;;
+			apps)
+				ensure_file ${TIZENRT_APPS_BIN}
+				commands+="flash_write ${part} ${TIZENRT_APPS_BIN} ${VERIFY}; "
+				;;
 			ota)
 			        is_file_present ${OUTPUT_BINARY_PATH}/ota.bin
 			        if [[ $? -eq 1 ]]; then
@@ -132,6 +137,30 @@ compute_ocd_commands()
 				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
 				 else
 				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
+				 fi
+				;;
+			loadparam)
+			         is_file_present ${OUTPUT_BINARY_PATH}/loadparam
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/loadparam ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/loadparam is NOT present";
+				 fi
+				;;
+			micom)
+			         is_file_present ${OUTPUT_BINARY_PATH}/micom
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/micom ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/micom is NOT present";
+				 fi
+				;;
+			wifi)
+			         is_file_present ${OUTPUT_BINARY_PATH}/wifi
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/wifi ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/wifi is NOT present";
 				 fi
 				;;
 			*)
@@ -227,7 +256,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|all|os|rom|bl1|bl2|sssfw|wlanfw|ota)
+		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|MICOM|WIFI|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi)
 			download $1
 			;;
 		ERASE_*)

@@ -83,10 +83,16 @@
 #include <tinyara/syslog/syslog.h>
 
 #include <arch/board/board.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
+#endif
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <fcntl.h>
+#include <mqueue.h>
+#include "binary_manager/binary_manager.h"
 #endif
 #include "irq/irq.h"
 
@@ -94,6 +100,12 @@
 #include "up_internal.h"
 #include "mpu.h"
 
+#ifdef CONFIG_BINMGR_RECOVERY
+bool abort_mode = false;
+uint32_t assert_pc;
+extern uint32_t g_assertpc;
+extern mqd_t g_binmgr_mq_fd;
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -394,24 +406,76 @@ static void up_dumpstate(void)
  * Name: _up_assert
  ****************************************************************************/
 
-static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-	/* Are we in an interrupt handler or the idle task? */
+#ifdef CONFIG_BINMGR_RECOVERY
+	int ret;
+	binmgr_request_t request_msg;
+	struct tcb_s *tcb;
+	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
+	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 
-	if (current_regs || (this_task())->pid == 0) {
+	/* Check if the PC lies within kernel context */
+	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
+
+		/* Reboot the system if fault is in kernel context */
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
-			board_led_on(LED_PANIC);
+			//board_autoled_on(LED_PANIC);
 			up_mdelay(250);
-			board_led_off(LED_PANIC);
+			//board_autoled_off(LED_PANIC);
 			up_mdelay(250);
 #endif
 		}
+#endif
+	} else {
+
+		request_msg.cmd = BINMGR_FAULT;
+		request_msg.requester_pid = getpid();
+		if (current_regs) {
+			tcb = sched_self();
+			sched_removereadytorun(tcb);
+#if CONFIG_RR_INTERVAL > 0
+			tcb->timeslice = 0;
+#endif
+			tcb->sched_priority = SCHED_PRIORITY_MIN;
+			sched_addreadytorun(tcb);
+		}
+
+		/* Send a message to fault manager with pid of the faulty task */
+		ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+		DEBUGASSERT(ret == 0);
+		if (current_regs) {
+			tcb = sched_self();
+			current_regs = tcb->xcp.regs;
+		}
+	}
+#else
+
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+	/* Are we in an interrupt handler or the idle task? */
+	if (current_regs || (this_task())->pid == 0) {
+#endif
+		(void)irqsave();
+		for (;;) {
+#ifdef CONFIG_ARCH_LEDS
+			//board_led_on(LED_PANIC);
+			up_mdelay(250);
+			//board_led_off(LED_PANIC);
+			up_mdelay(250);
+#endif
+		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
 	} else {
 		exit(errorcode);
 	}
+#endif
+#endif
 }
 
 /****************************************************************************
@@ -444,14 +508,31 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
+	abort_mode = true;
+#endif
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
+#ifdef CONFIG_BINMGR_RECOVERY
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_R14];
+	} else {
+		assert_pc = (uint32_t)g_assertpc;
+	}
+#endif
+
+#if !defined(CONFIG_BINMGR_RECOVERY) && !defined(CONFIG_BOARD_ASSERT_SYSTEM_BLOCK)
 	up_dumpstate();
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#endif
+
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_BINMGR_RECOVERY)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);

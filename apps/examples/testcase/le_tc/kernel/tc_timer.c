@@ -30,6 +30,7 @@
 
 int sig_no = SIGRTMIN;
 
+#ifndef CONFIG_BUILD_PROTECTED
 /**
 * @fn                   :tc_timer_timer_create_delete
 * @brief                :Create and delete a POSIX per-process timer
@@ -118,6 +119,7 @@ static void tc_timer_timer_create_delete(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif	/* CONFIG_BUILD_PROTECTED */
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 /**
@@ -273,7 +275,10 @@ static void tc_timer_timer_initialize(void)
 
 int timer_main(void)
 {
+#ifndef CONFIG_BUILD_PROTECTED
 	tc_timer_timer_create_delete();
+#endif	
+
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 	tc_timer_timer_getoverrun();
 #endif                     /* CONFIG_DISABLE_POSIX_TIMERS */
