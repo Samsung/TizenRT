@@ -213,15 +213,12 @@ endif
 
 ifeq ($(CONFIG_INTELHEX_BINARY),y)
 BIN_EXT = hex
-OBJ_OPT = ihex
 endif
 ifeq ($(CONFIG_MOTOROLA_SREC),y)
 BIN_EXT = srec
-OBJ_OPT = srec
 endif
 ifeq ($(CONFIG_RAW_BINARY),y)
 BIN_EXT = bin
-OBJ_OPT = binary
 endif
 
 # This is the name of the final target (relative to the top level directorty)
@@ -466,8 +463,18 @@ pass2: pass2deps
 		cp -f $(BIN) /tftpboot/$(BIN_EXE).${CONFIG_ARCH}; \
 	fi
 
-	$(Q) echo "CP: $(BIN_EXE).$(BIN_EXT)"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O $(OBJ_OPT) $(BIN) $(BIN).$(BIN_EXT)
+ifeq ($(CONFIG_INTELHEX_BINARY),y)
+	$(Q) echo "CP: $(BIN_EXE).hex"
+	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O ihex $(BIN) $(BIN).hex
+endif
+ifeq ($(CONFIG_MOTOROLA_SREC),y)
+	$(Q) echo "CP: $(BIN_EXE).srec"
+	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O srec $(BIN) $(BIN).srec
+endif
+ifeq ($(CONFIG_RAW_BINARY),y)
+	$(Q) echo "CP: $(BIN_EXE).bin"
+	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
+endif
 
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
