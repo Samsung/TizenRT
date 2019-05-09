@@ -35,13 +35,6 @@
 #define BINARY_MANAGER_STACKSIZE   2048                       /* Binary manager main thread stack size */
 #define BINARY_MANAGER_PRIORITY    225                        /* Binary manager main thread priority */
 
-#ifdef CONFIG_BINMGR_RECOVERY
-/* Recovery Thread information */
-#define RECOVERYTHD_NAME           "recovery_thread"          /* Recovery thread name */
-#define RECOVERYTHD_STACKSIZE      2048                       /* Recovery thread stack size */
-#define RECOVERYTHD_PRIORITY       255                        /* Recovery thread priority */
-#endif
-
 /* Loading Thread information */
 #define LOADINGTHD_NAME           "loading_thread"            /* Loading thread name */
 #define LOADINGTHD_STACKSIZE      2048                        /* Loading thread stack size */
@@ -59,20 +52,18 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
+/* The number of arguments for loading thread */
+#define LOADTHD_ARGC     3
+
 #define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
 
 /* Loading thread cmd types */
 enum loading_thread_cmd {
-	LOADCMD_LOAD_ALL = 0,
-	LOADCMD_RELOAD = 1,
+	LOADCMD_LOAD = 0,
+	LOADCMD_LOAD_ALL = 1,
+	LOADCMD_RELOAD = 2,
 	LOADCMD_LOAD_MAX,
 };
-
-struct loading_data_s {
-	int pid;
-	char *bin_name;
-};
-typedef struct loading_data_s loading_data_t;
 
 /* Binary data type in binary table */
 struct binmgr_bininfo_s {
@@ -131,7 +122,7 @@ void binary_manager_recovery(int pid);
 #endif
 
 int binary_manager_load_binary(int bin_idx);
-int binary_manager_loading(int type, loading_data_t *data);
+int binary_manager_loading(char *loading_data[]);
 int binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
 int binary_manager_get_info_with_name(int request_pid, char *bin_name);
