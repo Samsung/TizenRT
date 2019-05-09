@@ -78,6 +78,9 @@ static void heapinfo_print_regions(void)
 		printf("    %2d    | 0x%8x | 0x%8x |%8d |    %2d    \n", region_idx, regionx_start[region_idx], regionx_start[region_idx] + regionx_size[region_idx], regionx_size[region_idx], regionx_heap_idx[region_idx]);
 	}
 }
+#endif
+
+#if CONFIG_MM_NHEAPS > 1
 static void heapinfo_print_nheaps(void)
 {
 	printf("\n****************************************************************\n");
@@ -218,9 +221,19 @@ static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
 #endif
 	printf("-------|-----------|-----------|----------\n");
 
+#if CONFIG_MM_NHEAPS > 1
+	int read_flag[CONFIG_MAX_TASKS] = {0};
+#endif
+
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 		for (tcb_idx = 0; tcb_idx < CONFIG_MAX_TASKS; tcb_idx++) {
 			if (heap[heap_idx].alloc_list[tcb_idx].pid != HEAPINFO_INIT_INFO) {
+#if CONFIG_MM_NHEAPS > 1
+				if (read_flag[tcb_idx] == 1) {
+					continue;
+				}
+				read_flag[tcb_idx] = 1;
+#endif
 				heapinfo_read_proc(heap[heap_idx].alloc_list[tcb_idx].pid);
 			}
 		}
