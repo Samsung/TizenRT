@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SECURITY_API
+    bool "Security API"
+    default n
+    ---help---
+        Enable security API
+
+if SECURITY_API
+
+config SECURITY_AUTH
+    bool "Authentication"
+    default n
+    ---help---
+        Enable authentication
+
+config SECURITY_CRYPTO
+    bool "Cryptography"
+    default n
+    ---help---
+        Enable crypto
+
+config SECURITY_KEYMGR
+    bool "Key manager"
+    default n
+    ---help---
+        Enable key manager
+
+config SECURITY_SS
+    bool "Secure storage"
+    default n
+    ---help---
+        Enable secure storage
+
+endif

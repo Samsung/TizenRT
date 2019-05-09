@@ -71,10 +71,6 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mksmartfs.h>
 
-#ifdef CONFIG_BINARY_MANAGER
-#include <tinyara/binary_manager.h>
-#endif
-
 #include <syslog.h>
 #include <tinyara/i2c.h>
 #include <imxrt_lpi2c.h>

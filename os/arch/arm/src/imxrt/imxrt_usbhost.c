@@ -201,7 +201,6 @@ void weak_function imxrt_usbhost_bootinitialize(void)
 int imxrt_usbhost_initialize(void)
 {
 	pid_t pid;
-	int ret;
 
 	/* Then get an instance of the USB EHCI interface. */
 
@@ -212,7 +211,7 @@ int imxrt_usbhost_initialize(void)
 	}
 
 	/* Start a thread to handle device connection. */
-	pid = task_create("EHCI Monitor", CONFIG_USBHOST_DEFPRIO, CONFIG_USBHOST_STACKSIZE, (main_t) ehci_waiter, (FAR char *const *)NULL);
+	pid = task_create("EHCI Monitor", CONFIG_USBHOST_DEFPRIO, CONFIG_USBHOST_STACKSIZE, (main_t)ehci_waiter, (FAR char *const *)NULL);
 	if (pid < 0) {
 		IMXLOG("ERROR: Failed to create ehci_waiter task\n");
 		return pid;

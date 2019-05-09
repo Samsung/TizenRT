@@ -3,6 +3,8 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-source "$APPSDIR/examples/security_test/see_api/Kconfig"
 source "$APPSDIR/examples/security_test/hal/Kconfig"
+source "$APPSDIR/examples/security_test/security_api/Kconfig"
+source "$APPSDIR/examples/security_test/see_api/Kconfig"
 source "$APPSDIR/examples/security_test/mbedtls_self/Kconfig"
+

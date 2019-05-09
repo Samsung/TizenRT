@@ -2011,7 +2011,6 @@ static int imxrt_async_setup(struct imxrt_rhport_s *rhport, struct imxrt_epinfo_
 	uint32_t *flink;
 	uint32_t *alt;
 	uint32_t toggle;
-	uint32_t regval;
 	bool dirin = false;
 	int ret;
 
@@ -3186,7 +3185,6 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 	uint32_t usbsts;
 	uint32_t pending;
 	uint32_t regval;
-	uint32_t checkval;
 
 	/* Read Interrupt Status and mask out interrupts that are not enabled. */
 
