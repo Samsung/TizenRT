@@ -17,6 +17,11 @@ config TC_FS_PROCFS
 	default n
 	select FS_PROCFS
 
+config TC_FS_TMPFS
+	bool "Tmpfs Testcase"
+	default n
+	select FS_TMPFS
+
 config ITC_FS
 	bool "ITC Filesystem"
 	default n
