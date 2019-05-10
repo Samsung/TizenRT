@@ -76,6 +76,18 @@ typedef enum {
 	IOTBUS_GPIO_EDGE_FALLING = 3  /* Interrupt on falling only */
 } iotbus_gpio_edge_e;
 
+/**
+ * @brief Enumeration of Gpio value type
+ * @details
+ * Enumeration Details:\n
+ * IOTBUS_GPIO_HIGH = 0, 
+ * IOTBUS_GPIO_LOW = 1,
+ */
+typedef enum {
+	IOTBUS_GPIO_HIGH    = 0, /* High value on Gpio */
+	IOTBUS_GPIO_LOW    = 1, /* Low value on Gpio */
+} iotbus_gpio_val_e;
+
 struct _iotbus_gpio_s;
 
 /**
