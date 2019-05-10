@@ -62,9 +62,40 @@
 #include "imxrt_start.h"
 #include "imxrt1050-evk.h"
 #include "imxrt_flash.h"
+#include <tinyara/gpio.h>
+#include "imxrt_gpio.h"
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
+
+/****************************************************************************
+ * Name: board_gpio_initialize
+ *
+ * Description:
+ *   GPIO intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_gpio_initialize(void)
+{
+#ifdef CONFIG_GPIO
+	int i;
+	struct gpio_lowerhalf_s *lower;
+
+	struct {
+		uint8_t minor;
+		gpio_pinset_t pinset;
+	} pins[] = {
+		{
+			5, GPIO_LED
+		}, 
+	};
+
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = imxrt_gpio_lowerhalf(pins[i].pinset);
+		gpio_register(pins[i].minor, lower);
+	}
+#endif
+}
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -88,6 +119,8 @@ void imxrt_boardinitialize(void)
 	imxrt_semc_sdram_init();
 #endif
 	imxrt_flash_init();
+
+	imxrt_gpio_initialize();
 }
 
 /****************************************************************************

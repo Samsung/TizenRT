@@ -76,6 +76,10 @@
 
 /* i.MX RT 1050 GPIO Pin Definitions ****************************************/
 
+#define BOARD_NGPIOIN   0 /* Amount of GPIO Input pins */
+#define BOARD_NGPIOOUT  4 /* Amount of GPIO Output pins */
+#define BOARD_NGPIOINT  0 /* Amount of GPIO Input w/ Interruption pins */
+
 /* LEDs
  *
  * There are four LED status indicators located on the EVK Board.  The

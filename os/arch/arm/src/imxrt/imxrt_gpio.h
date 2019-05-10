@@ -385,6 +385,8 @@ int imxrt_dump_gpio(uint32_t pinset, const char *msg);
 #define imxrt_dumpgpio(p,m)
 #endif
 
+struct gpio_lowerhalf_s *imxrt_gpio_lowerhalf(gpio_pinset_t pinset);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
