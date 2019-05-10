@@ -366,6 +366,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	struct mm_heap_s *heap;
 	pid_t hash_pid;
+	int heap_idx;
 #endif
 	if (tcb->pid == 0) {
 		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
@@ -381,24 +382,24 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	peak_stack = -1;
 #endif
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	curr_heap = 0;
+	peak_heap = 0;
+	hash_pid = PIDHASH(tcb->pid);
+	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+		heap = mm_get_heap_with_index(heap_idx);
+		if (heap == NULL) {
+			continue;
+		}
+
+		if (heap->alloc_list[hash_pid].pid == tcb->pid) {
+			curr_heap += heap->alloc_list[hash_pid].curr_alloc_size;
+			peak_heap += heap->alloc_list[hash_pid].peak_alloc_size;
+		}
+	}
+#else
 	curr_heap = -1;
 	peak_heap = -1;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	if (tcb->pid == 0) {
-		/* Idle task normally uses heap with index 0. */
-		heap = mm_get_heap_with_index(0);
-	} else {
-		heap = mm_get_heap(tcb->stack_alloc_ptr);
-	}
-	if (heap == NULL) {
-		return -1;
-	}
-
-	hash_pid = PIDHASH(tcb->pid);
-	if (heap->alloc_list[hash_pid].pid == tcb->pid) {
-		curr_heap = heap->alloc_list[hash_pid].curr_alloc_size;
-		peak_heap = heap->alloc_list[hash_pid].peak_alloc_size;
-	}
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
