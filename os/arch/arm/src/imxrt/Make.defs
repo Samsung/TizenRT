@@ -168,6 +168,8 @@ endif
 
 ifeq ($(CONFIG_IMXRT_ENET),y)
 CHIP_CSRCS += imxrt_enet.c
+else
+CHIP_CSRCS += imxrt_net.c
 endif
 
 ifeq ($(CONFIG_IMXRT_LPI2C),y)
