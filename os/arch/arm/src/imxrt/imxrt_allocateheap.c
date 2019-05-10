@@ -350,7 +350,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
-	*heap_start = CONFIG_IMXRT_SDRAM_START;
+	*heap_start = (void *)CONFIG_IMXRT_SDRAM_START;
 	*heap_size = CONFIG_MM_KERNEL_HEAPSIZE;
 
 	DEBUGASSERT(*heap_start != 0);

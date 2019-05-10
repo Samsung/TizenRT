@@ -51,7 +51,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 #ifdef CONFIG_MPUTEST_APP_ADDR
 		if (ch == 'A' || ch == 'a') {
-			address = CONFIG_MPUTEST_APP_ADDR;
+			address = (uint32_t *)CONFIG_MPUTEST_APP_ADDR;
 
 			uint32_t dest;
 
@@ -77,7 +77,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				address = CONFIG_MPUTEST_KERNEL_CODE_ADDR;
+				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_CODE_ADDR;
 
 				uint32_t dest;
 
@@ -93,7 +93,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-			       address = CONFIG_MPUTEST_KERNEL_DATA_ADDR;
+			       address = (uint32_t *)CONFIG_MPUTEST_KERNEL_DATA_ADDR;
 
 				uint32_t dest;
 
@@ -121,7 +121,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 #ifdef CONFIG_MPUTEST_APP_ADDR
 		if (ch == 'A' || ch == 'a') {
-			address = CONFIG_MPUTEST_APP_ADDR;
+			address = (uint32_t *)CONFIG_MPUTEST_APP_ADDR;
 
 			uint32_t dest = 0xdeadbeef;
 
@@ -147,7 +147,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				address = CONFIG_MPUTEST_KERNEL_CODE_ADDR;
+				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_CODE_ADDR;
 				uint32_t dest = 0xdeadbeef;
 
 				printf("\n************************************************\n");
@@ -162,7 +162,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-				address = CONFIG_MPUTEST_KERNEL_DATA_ADDR;
+				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_DATA_ADDR;
 				uint32_t dest = 0xdeadbeef;
 
 				printf("\n************************************************\n");
@@ -179,4 +179,6 @@ int mpu_tc_main(int argc, char *argv[])
 			}
 		}
 	}
+
+	return OK;
 }

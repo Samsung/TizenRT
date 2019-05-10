@@ -52,7 +52,7 @@ enum {
 };
 
 #ifndef __ASSEMBLY__
-typedef void (*fptr)(uint8_t region, uintptr_t base, size_t size);
+typedef void (*fptr)(uint32_t region, uintptr_t base, size_t size);
 struct mpu_region_info {
 	fptr	call;
 	unsigned int	base;

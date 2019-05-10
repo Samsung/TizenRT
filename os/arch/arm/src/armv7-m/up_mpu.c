@@ -97,10 +97,6 @@ static const uint8_t g_ls_regionmask[9] = {
 	0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff
 };
 
-/* The next available region number */
-
-static uint8_t g_region;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
