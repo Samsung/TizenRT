@@ -47,8 +47,12 @@
  ****************************************************************************/
 
 typedef enum {
-	IOTD_UART1,
-	IOTD_UART2,
+	IOTD_INT_START = 0,
+	IOTD_UART_TX_EMPTY,
+	IOTD_UART_TX_RDY,
+	IOTD_UART_RX_AVAIL,
+	IOTD_UART_RX_RECEIVED,
+	IOTD_INT_DONE,
 } id_evt_type;
 
 #ifdef __cplusplus
