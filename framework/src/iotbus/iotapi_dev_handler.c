@@ -29,7 +29,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/select.h>
-#include <tinyara/iotdev.h>
 
 #include "iotapi_dev_handler.h"
 
@@ -66,6 +65,7 @@ struct _iotapi_cbk_queue {
 
 struct _iotapi_dev_ctx_s {
 	int fd;
+	evttype type;
 	iotapi_cbk cb;
 	struct _iotapi_cbk_entry entry;
 };
@@ -118,13 +118,15 @@ static void iotapi_remove_cbk(struct _iotapi_dev_ctx_s *ctx)
 	IOT_QUEUE_UNLOCK;
 }
 
-static void iotdev_callback(int evt)
+static void iotdev_callback(evttype evt)
 {
 	struct _iotapi_cbk_queue *queue = &g_iot_cbk_mgr;
 	IOT_QUEUE_LOCK;
 	struct _iotapi_cbk_entry *node = queue->head;
 	while (node) {
-		node->ctx->cb(evt);
+		if (node->ctx->type == evt) {
+			node->ctx->cb(evt);
+		}
 		node = node->flink;
 	}
 	IOT_QUEUE_UNLOCK;
@@ -160,15 +162,15 @@ void *iotdev_handler(void *data)
 		}
 		if (FD_ISSET(fd, &rfds)) {
 			printf("get signal from iotdev\n");
-			char buf[5];
-			int readed = read(fd, buf, 5);
+			char buf[1];
+			int readed = read(fd, buf, 1);
 			if (readed <= 0) {
 				printf("read error\n");
 				continue;
 			}
 
 			// call callbacks
-			iotdev_callback(1);
+			iotdev_callback((evttype)buf[0]);
 		}
 	}
 	close(sig);
@@ -224,7 +226,7 @@ int iotapi_dev_deinit(iotapi_hnd hnd)
 	return 0;
 }
 
-int iotapi_dev_register(iotapi_hnd hnd, iotapi_cbk cbk)
+int iotapi_dev_register(iotapi_hnd hnd, evttype evt, iotapi_cbk cbk)
 {
 	struct _iotapi_dev_ctx_s *ctx = (struct _iotapi_dev_ctx_s *)hnd;
 	if (!ctx) {
@@ -233,6 +235,7 @@ int iotapi_dev_register(iotapi_hnd hnd, iotapi_cbk cbk)
 	}
 
 	ctx->cb = cbk;
+	ctx->type = evt;
 	iotapi_insert_cbk(ctx);
 
 	return 0;

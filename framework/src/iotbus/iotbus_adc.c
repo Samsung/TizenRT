@@ -34,7 +34,7 @@
 
 struct _iotbus_adc_s {
 	int fd;
-	uint16_t channel;
+	uint8_t channel;
 	iotbus_adc_state_e state;
 	sem_t state_sem;
 	adc_read_cb callback;

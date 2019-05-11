@@ -83,11 +83,12 @@ extern "C" {
  * @brief closes the pwm_context.
  *
  * @details @b #include <iotbus/iotbus_pwm.h>
+ * @param[in] device N/A
  * @param[in] channel pwm channel number
  * @return On success, handle of pwm_context is returned. On failure, NULL is returned.
  * @since TizenRT v1.0
  */
-iotbus_pwm_context_h iotbus_pwm_open(int channel);
+iotbus_pwm_context_h iotbus_pwm_open(int device, int channel);
 
 /**
  * @brief closes the pwm_context.
