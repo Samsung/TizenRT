@@ -364,6 +364,32 @@ if IMXRT_I2S
 		default n
 endif # IMXRT_I2S
 
+config IMXRT_PWM
+	bool "PWM"
+	select PWM
+	default n
+
+if IMXRT_PWM
+
+	config IMXRT_PWM1
+		bool "PWM IMXRT_PWM1"
+		default n
+
+	config IMXRT_PWM2
+		bool "PWM IMXRT_PWM2"
+		default n
+	
+	if ARCH_CHIP_FAMILY_IMXRT102x
+	config IMXRT_PWM3
+		bool "PWM IMXRT_PWM3"
+		default n
+
+	config IMXRT_PWM4
+		bool "PWM IMXRT_PWM4"
+		default n
+	endif
+endif # IMXRT_PWM
+
 config IMXRT_SEMC
 	bool "Smart External Memory Controller (SEMC)"
 	default n
