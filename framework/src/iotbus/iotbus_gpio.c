@@ -97,7 +97,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 	}
 
 	handle->pin = gpiopin;
-	handle->drive = IOTBUS_GPIO_DRIVE_PULLUP;
+	handle->drive = IOTBUS_GPIO_DRIVE_FLOAT;
 	handle->dir = IOTBUS_GPIO_DIRECTION_OUT;
 	handle->edge = IOTBUS_GPIO_EDGE_NONE;
 	handle->fd = fd;
