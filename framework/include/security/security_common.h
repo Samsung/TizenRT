@@ -21,10 +21,10 @@
 
 #include <stdint.h>
 
-#define SECURITY_MAX_BUF              1024
 #define SECURITY_MAX_KEY_BUF          256
 #define SECURITY_MAX_CERT_BUF         2048
 #define SECURITY_MAX_SS_BUF           4096
+#define SECURITY_MAX_BUF              SECURITY_MAX_SS_BUF
 
 struct security_ctx;
 typedef struct security_ctx *security_handle;

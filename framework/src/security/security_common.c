@@ -39,7 +39,25 @@ int security_init(security_handle *hnd)
 
 	SECAPI_CALL3(sl_init(&(ctx->sl_hnd)), SECURITY_ERROR, free(ctx));
 
+	ctx->data1 = (char *)malloc(SECURITY_MAX_BUF);
+	if (!ctx->data1) {
+		sl_deinit(ctx->sl_hnd);
+		free(ctx);
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+	ctx->dlen1 = SECURITY_MAX_BUF;
+
+	ctx->data2 = (char *)malloc(SECURITY_MAX_BUF);
+	if (!ctx->data2) {
+		sl_deinit(ctx->sl_hnd);
+		free(ctx->data1);
+		free(ctx);
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+	ctx->dlen2 = SECURITY_MAX_BUF;
+
 	*hnd = ctx;
+
 	SECAPI_RETURN(SECURITY_OK);
 }
 
@@ -51,6 +69,8 @@ int security_deinit(security_handle hnd)
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 	sl_deinit(ctx->sl_hnd);
 
+	free(ctx->data2);
+	free(ctx->data1);
 	free(ctx);
 
 	SECAPI_RETURN(SECURITY_OK);
