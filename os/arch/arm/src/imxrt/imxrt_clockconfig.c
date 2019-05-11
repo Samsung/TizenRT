@@ -130,7 +130,7 @@ const usb_phy_config_struct_t PhyConfig = {
  *   Returns kStatus_USB_Error        the freq value is incorrect.
  *
  ****************************************************************************/
-uint32_t imxrt_usb_ehciphyinit(uint32_t freq, usb_phy_config_struct_t *phyConfig)
+uint32_t imxrt_usb_ehciphyinit(uint32_t freq, const usb_phy_config_struct_t *phyConfig)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
 

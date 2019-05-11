@@ -1519,7 +1519,7 @@ void up_serialinit(void)
 int up_putc(int ch)
 {
 #ifdef HAVE_SERIAL_CONSOLE
-	struct lpc54_dev_s *priv = (struct lpc54_dev_s *)CONSOLE_DEV.priv;
+	struct imxrt_uart_s *priv = CONSOLE_DEV.priv;
 	uint32_t ie;
 
 	imxrt_disableuartint(priv, &ie);

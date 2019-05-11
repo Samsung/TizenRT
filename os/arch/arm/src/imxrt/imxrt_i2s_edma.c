@@ -187,8 +187,8 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t Buffer[BUFFER_NUMBER * BUFFER_SIZE], 4);
-static uint32_t tx_index = 0U, rx_index = 0U;
+static uint32_t tx_index = 0U;
+static uint32_t rx_index = 0U;
 volatile uint32_t emptyBlock = BUFFER_NUMBER;
 #ifdef IMXRT_AUDIO_CODEC
 codec_handle_t codecHandle = {0};

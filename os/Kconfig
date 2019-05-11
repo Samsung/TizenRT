@@ -533,4 +533,8 @@ menu "IoTBus Framework"
 source "$FRAMEWORK_DIR/src/iotbus/Kconfig"
 endmenu
 
+menu "Security Framework"
+source "$FRAMEWORK_DIR/src/security/Kconfig"
+endmenu
+
 

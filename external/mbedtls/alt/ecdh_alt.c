@@ -66,6 +66,7 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	unsigned int ret;
 	hal_key_type key_type;
 	sl_ctx shnd;
+	hal_result_e hres = HAL_FAIL;
 	unsigned char key_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	unsigned char key_priv[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data key = {key_data, sizeof(key_data), key_priv, sizeof(key_priv)};
@@ -106,17 +107,16 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 		goto cleanup;
 	}
 
-	ret = sl_generate_key(shnd, key_type, grp->key_index);
-	if (ret != HAL_SUCCESS) {
+	ret = sl_generate_key(shnd, key_type, grp->key_index, &hres);
+	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		sl_deinit(shnd);
 		goto cleanup;
 	}
 
 	/* Get Public value from sss */
-	ret = sl_get_key(shnd, key_type, grp->key_index, &key);
-
-	if (ret != HAL_SUCCESS) {
+	ret = sl_get_key(shnd, key_type, grp->key_index, &key, &hres);
+	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		sl_deinit(shnd);
 		goto cleanup;
@@ -144,6 +144,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 	unsigned char shared_secret_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data shared_secret = {shared_secret_data, MBEDTLS_MAX_KEY_SIZE_ALT, NULL, 0};
 	sl_ctx shnd;
+	hal_result_e hres = HAL_FAIL;
 
 	memset(&ecc_pub, 0, sizeof(hal_ecdh_data));
 
@@ -204,9 +205,9 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 		goto cleanup;
 	}
 
-	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret);
+	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret, &hres);
 
-	if (ret != HAL_SUCCESS) {
+	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		sl_deinit(shnd);
 		goto cleanup;
