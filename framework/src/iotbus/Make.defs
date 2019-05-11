@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_IOTBUS), y)
-CSRCS += iotapi_evt_handler.c
+CSRCS += iotapi_evt_handler.c iotapi_dev_handler.c
 
 ifeq ($(CONFIG_IOTBUS_GPIO), y)
 CSRCS += iotbus_gpio.c
