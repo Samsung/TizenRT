@@ -7,7 +7,7 @@ config IOTBUS
 	bool "IoTbus framework Support"
 	default y
 	---help---
-		Enables IoTBus (GPIO, I2C, PWM, SPI, UART) framework.
+		Enables IoTBus (GPIO, I2C, PWM, SPI, UART, ADC) framework.
 
 if IOTBUS
 
@@ -47,5 +47,12 @@ config IOTBUS_UART
 	depends on SERIAL
 	---help---
 		Enables IoTbus Uart
+
+config IOTBUS_ADC
+	bool "IoTbus ADC"
+	default y
+	depends on ADC
+	---help---
+		Enables IoTbus ADC
 		
 endif

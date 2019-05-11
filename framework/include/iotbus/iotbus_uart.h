@@ -32,6 +32,8 @@
 #define IOTBUS_UART_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <iotbus/iotbus_error.h>
 
 /**
  * @brief Enumeration of UART parity type

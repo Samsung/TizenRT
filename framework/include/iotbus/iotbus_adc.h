@@ -49,8 +49,10 @@ typedef struct _iotbus_adc_wrapper_s *iotbus_adc_context_h;
  * IOTBUS_ADC_BUSY = 1, < adc device is busy
  */
 typedef enum {
-	IOTBUS_ADC_RDY = 0,
-	IOTBUS_ADC_BUSY = 1, /** adc device is busy */
+	IOTBUS_ADC_NONE = 0,
+	IOTBUS_ADC_RDY, /** adc device is ready to use */
+	IOTBUS_ADC_BUSY, /** adc device is busy */
+	IOTBUS_ADC_STOP, /** adc device is busy */
 } iotbus_adc_state_e;
 
 #ifdef __cplusplus
@@ -68,7 +70,17 @@ typedef void (*adc_read_cb)(int channel, uint32_t data);
  * @return On success, handle of adc_context is returned. On failure, NULL is returned.
  * @since TizenRT v2.0
  */
-iotbus_adc_context_h iotbus_adc_init(int bus, int channel);
+iotbus_adc_context_h iotbus_adc_init(int bus, uint8_t channel);
+
+/**
+ * @brief deinitializes adc_context.
+ *
+ * @details @b #include <iotbus/iotbus_adc.h>
+ * @param[in] hnd handle of i2c_context
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+int iotbus_adc_deinit(iotbus_adc_context_h hnd);
 
 /**
  * @brief set the ADC channel.
@@ -79,7 +91,7 @@ iotbus_adc_context_h iotbus_adc_init(int bus, int channel);
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v2.0
  */
-int iotbus_adc_set_channel(iotbus_adc_context_h hnd, int channel);
+int iotbus_adc_set_channel(iotbus_adc_context_h hnd, uint8_t channel);
 
 /**
  * @brief get the ADC channel.
@@ -110,7 +122,7 @@ int iotbus_adc_get_state(iotbus_adc_context_h hnd);
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v2.0
  */
-int iotbus_adc_start(iotbus_adc_context_h hnd, const adc_read_cb read_cb, void *user_data);
+int iotbus_adc_start(iotbus_adc_context_h hnd, const adc_read_cb read_cb);
 
 /**
  * @brief stop adc asynchronous read.
@@ -130,7 +142,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd);
  * @return On success, ADC sample value is returned. On failure, a negative value is returned.
  * @since TizenRT v2.0
  */
-int iotbus_adc_get_sample(iotbus_adc_context_h hnd);
+uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd);
 
 #ifdef __cplusplus
 }
