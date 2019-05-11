@@ -530,6 +530,10 @@ void os_start(void)
 	kernel_test_drv_register();
 #endif
 
+#ifdef CONFIG_IOTDEV
+	id_drv_register();
+#endif
+
 #if defined(CONFIG_DEBUG_SYSTEM)
 	sysdbg_init();
 #endif
