@@ -117,7 +117,7 @@ CHIP_CSRCS  = imxrt_allocateheap.c imxrt_start.c imxrt_clockconfig.c
 CHIP_CSRCS += imxrt_periphclks.c imxrt_irq.c imxrt_clrpend.c imxrt_gpio.c
 CHIP_CSRCS += imxrt_daisy.c imxrt_wdog.c imxrt_iomuxc.c imxrt_serial.c
 CHIP_CSRCS += imxrt_lowputc.c imxrt_flexspi.c imxrt_clock.c imxrt_log.c
-CHIP_CSRCS += imxrt_dmamux.c imxrt_flexram.c 
+CHIP_CSRCS += imxrt_dmamux.c imxrt_flexram.c imxrt_mtd_flash.c
 
 ifeq ($(CONFIG_IMXRT_SEMC),y)
 CHIP_CSRCS += imxrt_semc.c
