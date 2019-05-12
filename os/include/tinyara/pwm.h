@@ -130,10 +130,10 @@
  *   and return immediately.
  *
  *   ioctl argument:  None
- * 
+ *
  * PWMIOC_IDLE - Stop the pulsed and start the fixed output(high or low).
  *
- *   ioctl argument:  Idle value 
+ *   ioctl argument:  Idle value
  */
 
 #define PWMIOC_SETCHARACTERISTICS _PWMIOC(1)

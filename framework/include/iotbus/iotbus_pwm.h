@@ -57,12 +57,12 @@ typedef enum {
  * @brief Enumeration of pwm value type
  * @details
  * Enumeration Details:\n
- * IOTBUS_PWM_HIGH = 0, 
- * IOTBUS_PWM_LOW = 1,
+ * IOTBUS_PWM_LOW = 0,
+ * IOTBUS_PWM_HIGH = 1,
  */
 typedef enum {
-	IOTBUS_PWM_LOW    = 0, /* High value on Gpio */
-	IOTBUS_PWM_HIGH    = 1, /* Low value on Gpio */
+	IOTBUS_PWM_LOW    = 0, /* Low value on Gpio */
+	IOTBUS_PWM_HIGH    = 1, /* High value on Gpio */
 } iotbus_pwm_val_e;
 
 /**

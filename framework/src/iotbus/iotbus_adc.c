@@ -60,7 +60,7 @@ static void *iotbus_adc_handler(void *hnd)
 	struct adc_msg_s sample[1];
 
 	handle = (struct _iotbus_adc_s *)hnd;
-	
+
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = handle->fd;
 	fds[0].events = POLLIN | POLLERR;
@@ -101,7 +101,7 @@ static void *iotbus_adc_handler(void *hnd)
 			}
 		}
 	}
-	handle->state = IOTBUS_ADC_RDY;	
+	handle->state = IOTBUS_ADC_RDY;
 	sem_post(&handle->state_sem);
 	IOTAPI_LOG("[ADC] exit iotbus_adc handler\n");
 
@@ -173,7 +173,7 @@ int iotbus_adc_set_channel(iotbus_adc_context_h hnd, uint8_t channel)
 	}
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
-	
+
 	handle->channel = channel;
 
 	return IOTBUS_ERROR_NONE;
@@ -188,7 +188,7 @@ int iotbus_adc_get_channel(iotbus_adc_context_h hnd)
 	}
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
-	
+
 	return (int)handle->channel;
 }
 
@@ -201,14 +201,14 @@ int iotbus_adc_get_state(iotbus_adc_context_h hnd)
 	}
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
-	
+
 	return (int)handle->state;
 }
 
 int iotbus_adc_start(iotbus_adc_context_h hnd, const adc_read_cb read_cb)
 {
 	struct _iotbus_adc_s *handle;
-	
+
 	if (!hnd || !hnd->handle || !read_cb) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
@@ -230,7 +230,7 @@ int iotbus_adc_start(iotbus_adc_context_h hnd, const adc_read_cb read_cb)
 	}
 	pthread_detach(tid);
 
-	return IOTBUS_ERROR_NONE;	
+	return IOTBUS_ERROR_NONE;
 }
 
 int iotbus_adc_stop(iotbus_adc_context_h hnd)
@@ -239,7 +239,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd)
 	struct timespec abstime;
 	struct timespec before;
 	int status;
-	
+
 	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
@@ -256,7 +256,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd)
 		(void)clock_gettime(CLOCK_REALTIME, &before);
 		abstime.tv_sec  = before.tv_sec + 1;
 		abstime.tv_nsec = before.tv_nsec;
-		
+
 		status = sem_timedwait(&handle->state_sem, &abstime);
 		if (status != OK) {
 			IOTAPI_LOG("[ADC] sem_timedwait Timeout\n");
@@ -276,7 +276,7 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd)
 	struct adc_msg_s sample[1];
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
-	handle->state = IOTBUS_ADC_BUSY;	
+	handle->state = IOTBUS_ADC_BUSY;
 
 	readsize = sizeof(struct adc_msg_s);
 	nbytes = read(handle->fd, sample, readsize);
@@ -299,7 +299,7 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd)
 	}
 
 iobus_adc_read_done:
-	handle->state = IOTBUS_ADC_RDY;	
+	handle->state = IOTBUS_ADC_RDY;
 	IOTAPI_LOG("[ADC] exit iotbus_adc handler\n");
 
 	return 0;

@@ -42,6 +42,8 @@
  * IOTBUS_ERROR_TIMED_OUT = -ETIME, Time out : -62\n
  * IOTBUS_ERROR_NOT_IMPLEMENTED = -ENOSYS, Function not implemented : -38\n
  * IOTBUS_ERROR_NOT_SUPPORTED = -1101, Not supported\n
+ * IOTBUS_ERROR_DEVICE_NOT_READY = -1102, Not ready to use\n
+ * IOTBUS_ERROR_DEVICE_FAIL = -1103, Failed to use\n
  * IOTBUS_ERROR_UNKNOWN = -1999, Unknown error\n
  */
 typedef enum {
@@ -54,8 +56,8 @@ typedef enum {
 	IOTBUS_ERROR_NOT_IMPLEMENTED = -ENOSYS, /* Function not implemented : -38 */
 
 	IOTBUS_ERROR_NOT_SUPPORTED = -1101, /* Not supported */
-	IOTBUS_ERROR_DEVICE_NOT_READY = -1102, /* Device is Not ready to use */
-	IOTBUS_ERROR_DEVICE_FAIL = -1103, /* Device is Not ready to use */
+	IOTBUS_ERROR_DEVICE_NOT_READY = -1102, /* Device is not ready to use */
+	IOTBUS_ERROR_DEVICE_FAIL = -1103, /* Device is failed to use */
 
 	IOTBUS_ERROR_UNKNOWN = -1999, /* Unknown error */
 } iotbus_error_e;

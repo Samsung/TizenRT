@@ -45,14 +45,14 @@ typedef struct _iotbus_adc_wrapper_s *iotbus_adc_context_h;
  * @brief Enumeration of ADC state
  * @details
  * Enumeration Details:
- * IOTBUS_ADC_RDY = 0, < adc device is ready 
- * IOTBUS_ADC_BUSY = 1, < adc device is busy
+ * IOTBUS_ADC_RDY = 0, adc device is ready
+ * IOTBUS_ADC_BUSY = 1, adc device is busy
  */
 typedef enum {
 	IOTBUS_ADC_NONE = 0,
 	IOTBUS_ADC_RDY, /** adc device is ready to use */
 	IOTBUS_ADC_BUSY, /** adc device is busy */
-	IOTBUS_ADC_STOP, /** adc device is busy */
+	IOTBUS_ADC_STOP, /** adc device is stopped */
 } iotbus_adc_state_e;
 
 #ifdef __cplusplus

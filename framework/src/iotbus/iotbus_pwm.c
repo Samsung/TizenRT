@@ -187,7 +187,7 @@ int iotbus_pwm_set_idle(iotbus_pwm_context_h pwm, iotbus_pwm_val_e val)
 		ibdbg("ioctl(PWMIOC_IDLE) failed: %d\n", errno);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
-	
+
 	return IOTBUS_ERROR_NONE;
 }
 
