@@ -80,8 +80,8 @@
 #define BUTTON_RELEASE 0
 #define BUTTON_PRESS   1
 
-#define LED_ON  0
-#define LED_OFF 1
+#define LED_ON  IOTBUS_GPIO_LOW
+#define LED_OFF IOTBUS_GPIO_HIGH
 
 /****************************************************************************
  * iotbus_main

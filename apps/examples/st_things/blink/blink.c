@@ -18,7 +18,7 @@
 
 #include "blink.h"
 
-static int g_power = 0;
+static int g_power = IOTBUS_GPIO_LOW;
 static int is_led_chaged = 0;
 static int g_blink_led = 0;
 
@@ -53,9 +53,9 @@ static void* blink_loop(void* data)
 int set_led_power(char *power)
 {
 	if (strncmp(power, "off" , strlen("off")) == 0) {
-		g_power = 0;
+		g_power = IOTBUS_GPIO_LOW;
 	} else if (strncmp(power, "on", strlen("on")) == 0) {
-		g_power = 1;
+		g_power = IOTBUS_GPIO_HIGH;
 	} else {
 		printf("input Error");
 		return -1;
