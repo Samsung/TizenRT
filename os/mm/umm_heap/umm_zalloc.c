@@ -59,8 +59,7 @@
 #include <string.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -91,9 +90,9 @@ void *zalloc_at(int heap_index, size_t size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_zalloc(&g_mmheap[heap_index], size, retaddr);
+	return mm_zalloc(&USR_HEAP[heap_index], size, retaddr);
 #else
-	return mm_zalloc(&g_mmheap[heap_index], size);
+	return mm_zalloc(&USR_HEAP[heap_index], size);
 #endif
 }
 #endif
@@ -121,9 +120,9 @@ static void *heap_zalloc(size_t size, int s, int e, size_t retaddr)
 
 	for (heap_idx = s; heap_idx < e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_zalloc(&g_mmheap[heap_idx], size, retaddr);
+		ret = mm_zalloc(&USR_HEAP[heap_idx], size, retaddr);
 #else
-		ret = mm_zalloc(&g_mmheap[heap_idx], size);
+		ret = mm_zalloc(&USR_HEAP[heap_idx], size);
 #endif
 		if (ret != NULL) {
 			return ret;
@@ -189,4 +188,3 @@ FAR void *zalloc(size_t size)
 #endif /* CONFIG_ARCH_ADDRENV */
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
