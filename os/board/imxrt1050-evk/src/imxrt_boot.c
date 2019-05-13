@@ -86,8 +86,11 @@ static void imxrt_gpio_initialize(void)
 		gpio_pinset_t pinset;
 	} pins[] = {
 		{
-			5, GPIO_LED
-		}, 
+			45, GPIO_LED
+		},
+		{
+			49, GPIO_LED2
+		},
 	};
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
@@ -119,8 +122,6 @@ void imxrt_boardinitialize(void)
 	imxrt_semc_sdram_init();
 #endif
 	imxrt_flash_init();
-
-	imxrt_gpio_initialize();
 }
 
 /****************************************************************************
@@ -142,5 +143,7 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
+
+	imxrt_gpio_initialize();
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */
