@@ -130,12 +130,17 @@
  *   and return immediately.
  *
  *   ioctl argument:  None
+ *
+ * PWMIOC_IDLE - Stop the pulsed and start the fixed output(high or low).
+ *
+ *   ioctl argument:  Idle value
  */
 
 #define PWMIOC_SETCHARACTERISTICS _PWMIOC(1)
 #define PWMIOC_GETCHARACTERISTICS _PWMIOC(2)
 #define PWMIOC_START              _PWMIOC(3)
 #define PWMIOC_STOP               _PWMIOC(4)
+#define PWMIOC_IDLE               _PWMIOC(5)
 
 /****************************************************************************
  * Public Types
@@ -169,6 +174,7 @@ struct pwm_info_s {
 	uint32_t count;				/* The number of pulse to generate.  0 means to
 								 * generate an indefinite number of pulses */
 #endif
+	ub8_t idle;
 #endif							/* CONFIG_PWM_MULTICHAN */
 };
 
