@@ -88,7 +88,7 @@ struct id_open_s {
 #endif
 };
 
-#define IOTDEV_QUEUE_SIZE 10
+#define IOTDEV_QUEUE_SIZE 50
 
 struct id_queue {
 	int front;
@@ -282,12 +282,6 @@ static ssize_t id_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
 		return -1;
 	}
 	IOTDEV_UNLOCK(priv);
-
-	// if (evt == IOTD_UART1) {
-	// 	buffer[0] = 1;
-	// } else if (evt == IOTD_UART2) {
-	// 	buffer[0] = 2;
-	// }
 
 	buffer[0] = (char)evt;
 

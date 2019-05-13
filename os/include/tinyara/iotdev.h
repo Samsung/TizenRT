@@ -30,6 +30,8 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
 
+#include <iotbus/iotbus_common.h>
+
 #ifdef CONFIG_IOTDEV
 
 /****************************************************************************
@@ -46,14 +48,7 @@
  * Public Function Prototypes
  ****************************************************************************/
 
-typedef enum {
-	IOTD_INT_START = 0,
-	IOTD_UART_TX_EMPTY,
-	IOTD_UART_TX_RDY,
-	IOTD_UART_RX_AVAIL,
-	IOTD_UART_RX_RECEIVED,
-	IOTD_INT_DONE,
-} id_evt_type;
+typedef iotbus_int_type_e id_evt_type;
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
