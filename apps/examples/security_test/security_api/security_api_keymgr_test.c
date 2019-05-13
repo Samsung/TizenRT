@@ -30,12 +30,12 @@ void
 test_keymgr(void)
 {
 	security_handle hnd;
-	security_data hash_gen_key;
-	security_data aes_gen_key;
-	security_data rsa_gen_key;
-	security_data get_x_key;
-	security_data get_y_key;
-	security_data aes_set_key;
+	security_data hash_gen_key = {NULL, 0};
+	security_data aes_gen_key = {NULL, 0};
+	security_data rsa_gen_key = {NULL, 0};
+	security_data get_x_key = {NULL, 0};
+	security_data get_y_key = {NULL, 0};
+	security_data aes_set_key = {NULL, 0};
 
 	aes_set_key.data = "1234567890123456";
 	aes_set_key.length = 16;

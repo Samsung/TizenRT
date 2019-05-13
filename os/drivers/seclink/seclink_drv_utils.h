@@ -1,9 +1,14 @@
 #ifndef _SECLINK_DRIVER_UTILS_H__
 #define _SECLINK_DRIVER_UTILS_H__
-
+#ifndef LINUX
 #include <debug.h>
+#endif
 
+#ifndef LINUX
 #define SLDRV_LOG vdbg
+#else
+#define SLDRV_LOG printf
+#endif
 
 #define SLDRV_TAG "[SECLINK_DRV]"
 

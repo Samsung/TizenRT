@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <security/security_crypto.h>
 #include "security_internal.h"
@@ -33,7 +34,7 @@ int crypto_aes_encryption(security_handle hnd,
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
-	hal_aes_param hparam;
+	HAL_INIT_AES_PARAM(hparam);
 	SECAPI_CONVERT_AESPARAM(&param, &hparam);
 
 	// convert path
@@ -69,7 +70,7 @@ int crypto_aes_decryption(security_handle hnd,
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
-	hal_aes_param hparam;
+	HAL_INIT_AES_PARAM(hparam);
 	SECAPI_CONVERT_AESPARAM(&param, &hparam);
 
 	// convert path
@@ -104,7 +105,7 @@ int crypto_rsa_encryption(security_handle hnd,
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
-	hal_rsa_mode hmode;
+	HAL_INIT_RSA_PARAM(hmode);
 	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
 
     /* convert path */
@@ -140,7 +141,7 @@ int crypto_rsa_decryption(security_handle hnd,
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
-	hal_rsa_mode hmode;
+	HAL_INIT_RSA_PARAM(hmode);
 	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
 
 	/* convert path */

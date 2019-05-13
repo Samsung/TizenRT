@@ -829,20 +829,20 @@
 #define nlllvdbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
-#define sddbg(format, ...)      dbg(format, ##__VA_ARGS__)
-#define sdlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_ERROR
+#define vddbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define vdlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
 #else
-#define sddbg(...)
-#define sdlldbg(...)
+#define vddbg(...)
+#define vdlldbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
-#define sdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
-#define sdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#ifdef CONFIG_DEBUG_LWNL80211_VENDER_DRV_INFO
+#define vdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define vdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
 #else
-#define sdvdbg(...)
-#define sdllvdbg(...)
+#define vdvdbg(...)
+#define vdllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
@@ -1310,20 +1310,20 @@
 #define nlllvdbg   (void)
 #endif
 
-#ifdef CONFIG_DEBUG_LWNL80211_SLSI_ERROR
-#define sddbg      dbg
-#define sdlldbg    lldbg
+#ifdef CONFIG_DEBUG_LWNL80211_VENDER_DRV_ERROR
+#define vddbg      dbg
+#define vdlldbg    lldbg
 #else
-#define sddbg      (void)
-#define sdlldbg    (void)
+#define vddbg      (void)
+#define vdlldbg    (void)
 #endif
 
-#ifdef CONFIG_DEBUG_LWNL80211_SLSI_INFO
-#define sdvdbg     vdbg
-#define sdllvdbg   llvdbg
+#ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
+#define vdvdbg     vdbg
+#define vdllvdbg   llvdbg
 #else
-#define sdvdbg     (void)
-#define sdllvdbg   (void)
+#define vdvdbg     (void)
+#define vdllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR

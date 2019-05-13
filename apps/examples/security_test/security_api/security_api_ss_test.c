@@ -18,9 +18,9 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <security/security_ss.h>
 #include "security_api_utils.h"
-
 /*
  * Test Secure Storage APIs
  */
@@ -33,11 +33,10 @@ test_securestorage(void)
 	int i;
 	unsigned int storage_size;
 	unsigned int count;
-	security_data input;
-	security_data output;
 	security_storage_list list;
 	security_handle hnd;
-
+	security_data input = {NULL, 0};
+	security_data output = {NULL, 0};
 	input.data = "1234567890123456";
 	input.length = 16;
 

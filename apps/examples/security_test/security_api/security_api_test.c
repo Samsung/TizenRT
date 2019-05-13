@@ -29,10 +29,12 @@
  * security_test_main
  ****************************************************************************/
 
-/* extern void test_authenticate(void); */
+extern void test_authenticate(void);
 extern void test_crypto(void);
 extern void test_keymgr(void);
 extern void test_securestorage(void);
+
+
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -53,7 +55,7 @@ int security_api_test_main(int argc, char *argv[])
 		return 0;
 	}
 
-	/* test_authenticate(); */
+	test_authenticate();
 	test_crypto();
 	test_keymgr();
 	test_securestorage();
