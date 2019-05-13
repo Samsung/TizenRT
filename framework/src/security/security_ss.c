@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <security/security_ss.h>
 #include "security_internal.h"
@@ -41,7 +42,7 @@ int ss_read_secure_storage(security_handle hnd, const char *ss_name, unsigned in
 
 	hal_data ss = {ctx->data1, ctx->dlen1, NULL, 0};
 
-	hal_result_e hres;
+	hal_result_e hres = HAL_FAIL;
 	SECAPI_CALL(sl_read_storage(ctx->sl_hnd, ss_idx, &ss, &hres));
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);

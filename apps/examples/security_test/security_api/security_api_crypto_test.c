@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <security/security_crypto.h>
+#include <security/security_keymgr.h>
 #include "security_api_utils.h"
 
 /*	security api doesn't support key name now. it'll be supported later
@@ -35,14 +36,13 @@ void
 test_crypto(void)
 {
 	security_handle hnd;
-	security_data iv;
-	security_data input;
-	security_data aes_gen_key;
-	security_data aes_enc_data;
-	security_data aes_dec_data;
-	security_data rsa_gen_key;
-	security_data rsa_enc_data;
-	security_data rsa_dec_data;
+	security_data iv = {NULL, 0};
+	security_data input = {NULL, 0};
+	security_data aes_enc_data = {NULL, 0};
+	security_data aes_dec_data = {NULL, 0};
+	security_data rsa_gen_key = {NULL, 0};
+	security_data rsa_enc_data = {NULL, 0};
+	security_data rsa_dec_data = {NULL, 0};
 
 	iv.data = "1234567890123456";
 	iv.length = 16;
@@ -144,7 +144,6 @@ test_crypto(void)
 	printf("ok\n");
 
 exit:
-	free_security_data(&aes_gen_key);
 	free_security_data(&aes_enc_data);
 	free_security_data(&aes_dec_data);
 	free_security_data(&rsa_gen_key);
