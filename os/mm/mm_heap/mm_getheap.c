@@ -22,8 +22,31 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_MM_KERNEL_HEAP
+#include <tinyara/sched.h>
+#endif
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+
+#include <tinyara/userspace.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/sched.h>
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#else
+#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#endif
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+#define USR_HEAP ((struct mm_heap_s *)_stext)
+
+#else
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#define USR_HEAP       g_mmheap
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -40,25 +63,22 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap(void *address)
 {
-	int heap_idx;
 #ifdef CONFIG_MM_KERNEL_HEAP
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
+	if (address >= (FAR void *)g_kmmheap.mm_heapstart[0] && address < (FAR void *)g_kmmheap.mm_heapend[0]) {
 		return &g_kmmheap;
-	} else
+	}
 #endif
-	{
-		heap_idx = mm_get_heapindex(address);
-		if (heap_idx == INVALID_HEAP_IDX) {
-			mdbg("address is not in heap region.\n");
-			return NULL;
-		}
-		return &g_mmheap[heap_idx];
+	int heap_idx;
+	heap_idx = mm_get_heapindex(address);
+	if (heap_idx == INVALID_HEAP_IDX) {
+		mdbg("address is not in heap region.\n");
+		return NULL;
 	}
 
+	return &USR_HEAP[heap_idx];
 }
+
+
 /****************************************************************************
  * Name: mm_get_heap_with_index
  ****************************************************************************/
@@ -68,7 +88,7 @@ struct mm_heap_s *mm_get_heap_with_index(int index)
 		mdbg("heap index is out of range.\n");
 		return NULL;
 	}
-	return &g_mmheap[index];
+	return &USR_HEAP[index];
 }
 
 /****************************************************************************
@@ -89,7 +109,7 @@ int mm_get_heapindex(void *mem)
 			/* A valid address from the user heap for this region would have to lie
 			 * between the region's two guard nodes.
 			 */
-			if ((mem > (void *)g_mmheap[heap_idx].mm_heapstart[region]) && (mem < (void *)g_mmheap[heap_idx].mm_heapend[region])) {
+			if ((mem > (void *)USR_HEAP[heap_idx].mm_heapstart[region]) && (mem < (void *)USR_HEAP[heap_idx].mm_heapend[region])) {
 				return heap_idx;
 			}
 		}
