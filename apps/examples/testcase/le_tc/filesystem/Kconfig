@@ -17,10 +17,34 @@ config TC_FS_PROCFS
 	default n
 	select FS_PROCFS
 
-config TC_FS_TMPFS
-	bool "Tmpfs Testcase"
+config TC_FS_MOPS
+	bool "FS Mount Point Opertions"
 	default n
+	---help---
+		Enable FS Mount Point Opertions Testcase
+
+if TC_FS_MOPS
+config TC_FS_TMPFS_MOPS
+	bool "TMPFS Mount Point Opertions"
+	default y
 	select FS_TMPFS
+	---help---
+		Enable TMPFS Mount Point Opertions
+
+config TC_FS_ROMFS_MOPS
+	bool "ROMFS Mount Point Opertions"
+	default y
+	select FS_ROMFS
+	---help---
+		Enable ROMFS Mount Point Opertions
+
+config TC_FS_SMARTFS_MOPS
+	bool "SMARTFS Mount Point Opertions"
+	default y
+	select FS_SMARTFS
+	---help---
+		Enable SMARTFS Mount Point Opertions
+endif
 
 config ITC_FS
 	bool "ITC Filesystem"
