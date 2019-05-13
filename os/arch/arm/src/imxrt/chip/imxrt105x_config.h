@@ -28000,7 +28000,7 @@ typedef struct {
 /*! @} */
 
 /* The count of PWM_CNT */
-#define PWM_CNT_COUNT                            (4U)
+#define PWM_CNT_COUNT                            (2U)
 
 /*! @name INIT - Initial Count Register */
 /*! @{ */

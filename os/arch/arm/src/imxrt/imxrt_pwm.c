@@ -968,7 +968,7 @@ static int imxrt_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
  * Input parameters:
  *   dev - A reference to the lower half PWM driver state structure
  *   timer - A number identifying the timer use. The number of valid timer
- *     IDs varies with the S5J family but is somewhere in the range of
+ *     IDs varies but is somewhere in the range of
  *     {0,...,5}.
  *
  * Returned Value:
@@ -1205,7 +1205,7 @@ static void imxrt_pwm_drv_init3phpwm(int numPWM)
  *
  * Input Parameters:
  *   timer - A number identifying the timer use. The number of valid timer
- *     IDs varies with the S5J family but is somewhere in the range of
+ *     IDs varies but is somewhere in the range of
  *     {0,...,5}.
  *
  * Returned Value:

@@ -57,10 +57,22 @@
 #include <tinyara/config.h>
 
 #include <tinyara/board.h>
+#include <tinyara/pwm.h>
+#include <tinyara/gpio.h>
+
 #include <arch/board/board.h>
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "chip/imxrt102x_config.h"
+#include "imxrt1020-evk.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#include "chip/imxrt105x_config.h"
+#include "imxrt1050-evk.h"
+#else
+#error Unrecognized i.MX RT architecture
+#endif
 
 #include "imxrt_start.h"
-#include "imxrt1050-evk.h"
+#include "imxrt_pwm.h"
 #include "imxrt_flash.h"
 #include <tinyara/gpio.h>
 #include "imxrt_gpio.h"
@@ -98,6 +110,39 @@ static void imxrt_gpio_initialize(void)
 		gpio_register(pins[i].minor, lower);
 	}
 #endif
+}
+
+/****************************************************************************
+ * Name: board_pwmm_initialize
+ *
+ * Description:
+ *   PWM intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_pwm_initialize(void)
+{
+#ifdef CONFIG_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
+	int ret;
+	int i;
+
+	for (i = 0; i < PWM_CNT_COUNT; i++) {
+		pwm = imxrt_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get imxrt PWM lower half\n");
+			return;
+		}
+
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
+		if (ret < 0) {
+			lldbg("Imxrt PWM registeration failure: %d\n", ret);
+		}
+	}
+#endif
+	return;
 }
 
 /****************************************************************************
@@ -145,5 +190,7 @@ void board_initialize(void)
 	(void)imxrt_bringup();
 
 	imxrt_gpio_initialize();
+
+	imxrt_pwm_initialize();
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */
