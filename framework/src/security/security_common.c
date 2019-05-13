@@ -16,7 +16,8 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-
+#include <string.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>

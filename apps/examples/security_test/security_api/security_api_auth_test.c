@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <security/security_auth.h>
+#include <security/security_keymgr.h>
 #include "security_api_utils.h"
 
 /*
@@ -31,13 +32,13 @@
 void test_authenticate(void)
 {
 	security_handle hnd;
-	security_data rand;
-	security_data cert;
-	security_data plaintext;
-	security_data hashed;
-	security_data sign;
-	security_data hmac;
-	security_data hash_gen_key;
+	security_data rand = {NULL, 0};
+	security_data cert = {NULL, 0};
+	security_data plaintext = {NULL, 0};
+	security_data hashed = {NULL, 0};
+	security_data sign = {NULL, 0};
+	security_data hmac = {NULL, 0};
+//	security_data hash_gen_key;
 
 	plaintext.data = "01234567890123456789";
 	plaintext.length = 20;
@@ -85,7 +86,7 @@ void test_authenticate(void)
 	/*	does ecdsa require certificate to get signature? */
 	printf("  . SEC Get ECDSA Signature ...\n");
 	fflush(stdout);
-	security_ecdsa_mode mode;
+	security_ecdsa_param mode;
 	mode.curve = ECDSA_SEC_P256R1;
 	mode.hash_t = HASH_SHA256;
 
@@ -108,7 +109,7 @@ void test_authenticate(void)
 
 	printf("  . SEC Generate Key : HMAC_SHA256 ...\n");
 	fflush(stdout);
-	if (0 != keymgr_generate_key(HMAC_SHA256, HMACSHA256_KEY)) {
+	if (0 != keymgr_generate_key(hnd, HMAC_SHA256, HMACSHA256_KEY)) {
 		printf("Fail\n	! auth_generate_key\n");
 		goto exit;
 	}
@@ -128,7 +129,7 @@ void test_authenticate(void)
 
 	printf("  . SEC Remove Key : HMAC_SHA256 ...\n");
 	fflush(stdout);
-	if (0 != keymgr_remove_key(HMAC_SHA256, HMACSHA256_KEY)) {
+	if (0 != keymgr_remove_key(hnd, HMAC_SHA256, HMACSHA256_KEY)) {
 		printf("Fail\n	! auth_remove_key\n");
 		goto exit;
 	}
@@ -139,7 +140,7 @@ exit:
 	free_security_data(&hashed);
 	free_security_data(&sign);
 	free_security_data(&hmac);
-	free_security_data(&hash_gen_key);
+//	free_security_data(&hash_gen_key);
 
 	printf("  . SEC Deinitialize ...\n");
 	security_deinit(hnd);

@@ -325,7 +325,7 @@ int secutils_convert_rsaparam_s2h(security_rsa_param *sparam, hal_rsa_mode *hpar
 	return 0;
 }
 
-int secuutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode *hmode)
+int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode *hmode)
 {
 	if (!eparam || !hmode) {
 		return -1;
@@ -357,7 +357,7 @@ int secutils_convert_dhparam_s2h(security_dh_param *dparam, hal_dh_data *hdata)
 	return 0;
 }
 
-int secuutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata)
+int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata)
 {
 	if (!eparam || !hdata) {
 		return -1;

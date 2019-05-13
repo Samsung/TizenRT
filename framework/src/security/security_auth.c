@@ -18,13 +18,9 @@
 
 #include <tinyara/config.h>
 
+#include <stdlib.h>
 #include <security/security_auth.h>
 #include "security_internal.h"
-
-#include "mbedtls/pk.h"
-#include "mbedtls/pem.h"
-#include "mbedtls/x509_crt.h"
-#include "mbedtls/pk_internal.h"
 
 /**
  * Authentication
@@ -133,7 +129,7 @@ int auth_get_rsa_signature(security_handle hnd, security_rsa_param mode, const c
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_rsa_mode hmode;
+	HAL_INIT_RSA_PARAM(hmode);
 	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
@@ -164,7 +160,7 @@ int auth_verify_rsa_signature(security_handle hnd, security_rsa_param mode, cons
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_rsa_mode hmode;
+	HAL_INIT_RSA_PARAM(hmode);
 	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
@@ -186,7 +182,7 @@ int auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, con
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_ecdsa_mode hmode;
+	HAL_INIT_ECDSA_PARAM(hmode);
 	SECAPI_CONVERT_ECDSAPARAM(&mode, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
@@ -217,7 +213,7 @@ int auth_verify_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, 
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_ecdsa_mode hmode;
+	HAL_INIT_ECDSA_PARAM(hmode);
 	SECAPI_CONVERT_ECDSAPARAM(&mode, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
@@ -239,7 +235,7 @@ int auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *d
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
-	hal_hash_type h_type;
+	hal_hash_type h_type = HAL_HASH_UNKNOWN;
 	SECAPI_CONVERT_HASHMODE(mode, h_type);
 
 	hal_data input = {data->data, data->length, NULL, 0};
@@ -271,7 +267,7 @@ int auth_get_hmac(security_handle hnd, security_hmac_mode mode, const char *key_
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_hmac_type h_type;
+	hal_hmac_type h_type = HAL_HMAC_UNKNOWN;
 	SECAPI_CONVERT_HMACMODE(mode, h_type);
 
 	hal_data input  = {data->data, data->length, NULL, 0};

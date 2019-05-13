@@ -16,13 +16,11 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-
+#include <stdlib.h>
 #include <sys/types.h>
 #include <tinyara/security_hal.h>
 #include <security/security_keymgr.h>
 #include "security_internal.h"
-
-
 
 /**
  * Key Manager
@@ -64,7 +62,11 @@ int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_
 
 	// convert key
 	hal_data h_pubkey = {pubkey->data, pubkey->length, NULL, 0};
-	hal_data h_prikey = {prikey->data, prikey->length, NULL, 0};
+	hal_data h_prikey = {NULL, 0, NULL, 0};
+	if (prikey) {
+		h_prikey.data = prikey->data;
+		h_prikey.data_len = prikey->length;
+	}
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_set_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &h_prikey, &hres));
