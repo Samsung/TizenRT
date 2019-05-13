@@ -103,7 +103,6 @@ int binary_update_reload_binary(char *binary_name)
 {
 	int ret;
 	binmgr_request_t request_msg;
-	binmgr_reload_response_t response_msg;
 
 	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
 		bmdbg("load_new_binary failed : invalid binary name\n");
@@ -120,13 +119,7 @@ int binary_update_reload_binary(char *binary_name)
 		return BINMGR_COMMUNICATION_FAIL;
 	}
 
-	ret = binary_update_receive_response(&response_msg, sizeof(binmgr_reload_response_t));
-	if (ret < 0) {
-		bmdbg("Failed to receive response msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
-	}
-
-	return response_msg.result;
+	return BINMGR_OK;
 }
 
 int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info)

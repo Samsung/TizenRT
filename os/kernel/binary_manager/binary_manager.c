@@ -179,9 +179,8 @@ int binary_manager(int argc, char *argv[])
 			memset(type_str, 0, 1);
 			memset(data_str, 0, 1);
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = itoa(request_msg.requester_pid, data_str, 10);
-			loading_data[2] = request_msg.bin_name;
-			loading_data[3] = NULL;
+			loading_data[1] = request_msg.bin_name;
+			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			break;
 
