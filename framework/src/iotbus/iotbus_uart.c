@@ -23,9 +23,12 @@
 
 #include <tinyara/config.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <pthread.h>
 #include <sys/ioctl.h>
 #include <poll.h>
 #include <iotbus/iotbus_error.h>
@@ -48,7 +51,7 @@ struct _iotbus_uart_s {
 	int timeout;
 	uint8_t buf[CONFIG_IOTBUS_UART_BUF_SIZE];
 	size_t len;
-	iotbus_uart_state_e state;	
+	iotbus_uart_state_e state;
 };
 
 struct _iotbus_uart_wrapper_s {
@@ -82,7 +85,7 @@ static void *iotbus_uart_handler(void *hnd)
 	struct pollfd fds[1];
 
 	handle = (struct _iotbus_uart_s *)hnd;
-	
+
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = handle->fd;
 	fds[0].events = POLLIN | POLLERR;
@@ -96,10 +99,8 @@ static void *iotbus_uart_handler(void *hnd)
 
 		ret = poll(fds, 1, timeout);
 		if (ret < 0) {
-			IOTAPI_LOG("[UART] poll error(%d)\n", ret);
 			continue;
 		} else if (ret == 0) {
-			IOTAPI_LOG("[UART] timeout(%d)\n", timeout);
 			continue;
 		}
 
@@ -108,11 +109,11 @@ static void *iotbus_uart_handler(void *hnd)
 
 			/* Handle unexpected return values */
 			if (nbytes < 0) {
-				IOTAPI_LOG("[UART] Fail to write...\n");
+				printf("[UART] Fail to write...\n");
 				ret = IOTBUS_ERROR_UNKNOWN;
 				break;
 			} else if (nbytes == 0) {
-				IOTAPI_LOG("[UART] No data write, Ignoring\n");
+				printf("[UART] No data write, Ignoring\n");
 			} else {
 				ret = IOTBUS_ERROR_NONE;
 				break;
@@ -121,12 +122,13 @@ static void *iotbus_uart_handler(void *hnd)
 		cnt++;
 	}
 	handle->state = IOTBUS_UART_RDY;
-	handle->callback(ret);	
-	IOTAPI_LOG("[UART] exit iotbus_uart handler\n");
+	handle->callback(ret);
+	printf("[UART] exit iotbus_uart handler\n");
 
 	return 0;
 }
 
+#ifdef CONFIG_SERIAL_TERMIOS
 static int _iotbus_valid_baudrate(unsigned int rate)
 {
 	int i = 0;
@@ -136,6 +138,8 @@ static int _iotbus_valid_baudrate(unsigned int rate)
 
 	return 0;
 }
+#endif
+
 /*
  * Public Functions
  */
@@ -436,7 +440,7 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 	int ret;
 	ret = pthread_create(&tid, NULL, iotbus_uart_handler, (void *)handle);
 	if (ret < 0) {
-		IOTAPI_LOG("[UART] create iotapi handler fail(%d)\n", ret);
+		printf("[UART] create iotapi handler fail(%d)\n", ret);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 	pthread_detach(tid);
@@ -461,7 +465,7 @@ int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, b
 			if (!handle->evt_hnd[i]) {
 				iotapi_dev_init(&handle->evt_hnd[i]);
 				iotapi_dev_register(handle->evt_hnd[i], int_type, cb);
-				break;	
+				break;
 			}
 		}
 		if (i >= CONFIG_IOTBUS_UART_EVENT_SIZE) {

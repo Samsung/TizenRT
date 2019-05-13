@@ -80,7 +80,7 @@ ifeq ($(WINTOOL),y)
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
-  ARCHINCLUDES = -I. -isystem $(TOPDIR)/include
+  ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include/
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx
   ARCHSCRIPT = -T$(LDSCRIPT1) -T$(LDSCRIPT2) -T$(LDSCRIPT3) -T$(LDSCRIPT4)
 endif

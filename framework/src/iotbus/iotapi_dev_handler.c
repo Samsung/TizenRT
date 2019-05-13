@@ -32,6 +32,8 @@
 
 #include "iotapi_dev_handler.h"
 
+#ifdef CONFIG_IOTDEV
+
 #define IOTAPI_CBK_QUEUE_SIZE 10
 
 #define IOT_QUEUE_LOCK											\
@@ -76,6 +78,9 @@ static struct _iotapi_cbk_queue g_iot_cbk_mgr = {
 	NULL, NULL, PTHREAD_MUTEX_INITIALIZER, 0
 };
 
+/*
+ * Private
+ */
 static void iotapi_insert_cbk(struct _iotapi_dev_ctx_s *ctx)
 {
 	struct _iotapi_cbk_entry *node = &(ctx->entry);
@@ -179,6 +184,9 @@ void *iotdev_handler(void *data)
 	return NULL;
 }
 
+/*
+ * Public
+ */
 int iotapi_dev_init(iotapi_hnd *hnd)
 {
 	int res = pipe(g_pfd);
@@ -256,9 +264,7 @@ int iotapi_dev_unregister(iotapi_hnd hnd)
 
 iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd)
 {
-	
 	struct _iotapi_dev_ctx_s *ctx = (struct _iotapi_dev_ctx_s *)hnd;
-	
 	if (!ctx) {
 		IOTAPI_ERROR;
 		return -1;
@@ -266,3 +272,34 @@ iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd)
 
 	return ctx->type;
 }
+#else
+int iotapi_dev_init(iotapi_hnd *hnd)
+{
+	printf("Turn on IOTDEV driver");
+	return -1;
+}
+
+int iotapi_dev_deinit(iotapi_hnd hnd)
+{
+	printf("Turn on IOTDEV driver");
+	return -1;
+}
+
+int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
+{
+	printf("Turn on IOTDEV driver");
+	return -1;
+}
+
+int iotapi_dev_unregister(iotapi_hnd hnd)
+{
+	printf("Turn on IOTDEV driver");
+	return -1;
+}
+
+iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd)
+{
+	printf("Turn on IOTDEV driver");
+	return -1;
+}
+#endif
