@@ -137,6 +137,7 @@ static void tc_libc_syslog_vsyslog(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_BUILD_PROTECTED
 #if defined(CONFIG_ARCH_LOWPUTC) || defined(CONFIG_SYSLOG)
 /**
  * @fn                  :tc_libc_syslog_lowsyslog
@@ -204,6 +205,7 @@ static void tc_libc_syslog_lowvsyslog(void)
 }
 
 #endif
+#endif
 
 /****************************************************************************
  * Name: libc_syslog
@@ -214,9 +216,11 @@ int libc_syslog_main(void)
 	tc_libc_syslog_setlogmask();
 	tc_libc_syslog_syslog();
 	tc_libc_syslog_vsyslog();
+#ifndef CONFIG_BUILD_PROTECTED
 #if defined(CONFIG_ARCH_LOWPUTC) || defined(CONFIG_SYSLOG)
 	tc_libc_syslog_lowsyslog();
 	tc_libc_syslog_lowvsyslog();
+#endif
 #endif
 	return 0;
 }

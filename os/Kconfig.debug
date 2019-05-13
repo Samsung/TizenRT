@@ -77,6 +77,63 @@ config DEBUG_AUDIO_INFO
 
 endif #DEBUG_AUDIO
 
+config DEBUG_BINFMT
+        bool "Binary Loader Debug Features"
+        default n
+        depends on !BINFMT_DISABLE
+        ---help---
+                Enable binary loader debug features.
+
+if DEBUG_BINFMT
+
+config DEBUG_BINFMT_ERROR
+        bool "Binary Loader Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable binary loader error output to SYSLOG.
+
+config DEBUG_BINFMT_WARN
+        bool "Binary Loader Warnings Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable binary loader warning output to SYSLOG.
+
+config DEBUG_BINFMT_INFO
+        bool "Binary Loader Informational Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable binary loader informational output to SYSLOG.
+
+endif # DEBUG_BINFMT
+
+config DEBUG_BINMGR
+        bool "Binary Manager Debug Features"
+        default n
+        depends on BINARY_MANAGER
+        ---help---
+                Enable binary manager debug features.
+
+if DEBUG_BINMGR
+
+config DEBUG_BINMGR_ERROR
+	bool "Enable Error logs of Binary Manager"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enables error logs for Binary Manager interface.
+
+config DEBUG_BINMGR_INFO
+	bool "Enable Debug logs of Binary Manager"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enables debug logs for Binary Manager interface.
+
+endif # DEBUG_BINMGR
+
 config DEBUG_LIB
 	bool "C Library Debug Feature"
 	default n
@@ -429,6 +486,13 @@ config DEBUG_TASK_MANAGER_INFO
 		Task Manager Informational Debug Output.
 
 endif #DEBUG_TASK_MANAGER
+
+config DEBUG_MESSAGING_IPC
+	bool "Messaging Framework Debug Feature"
+	default n
+	depends on MESSAGING_IPC
+	---help---
+		Enable Messaging debug feature.
 
 config DEBUG_EVENTLOOP
 	bool "EventLoop Debug Feature"
