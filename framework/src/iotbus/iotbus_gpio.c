@@ -438,7 +438,7 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	if (value != 0 && value != 1) {
+	if (value != IOTBUS_GPIO_LOW && value != IOTBUS_GPIO_HIGH) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
