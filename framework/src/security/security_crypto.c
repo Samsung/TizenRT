@@ -40,10 +40,8 @@ int crypto_aes_encryption(security_handle hnd,
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	int tmpbuf[SECURITY_MAX_BUF];
-
-	hal_data dec = {input->data, input->length, tmpbuf, SECURITY_MAX_BUF};
-	hal_data enc = {NULL, 0, NULL, 0};
+	hal_data dec = {input->data, input->length, NULL, 0};
+	hal_data enc = {ctx->data1, ctx->dlen1, NULL, 0};
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_aes_encrypt(ctx->sl_hnd, &dec, &hparam, key_idx, &enc, &hres));
@@ -79,7 +77,7 @@ int crypto_aes_decryption(security_handle hnd,
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	hal_data enc = {input->data, input->length, NULL, 0};
-	hal_data dec = {NULL, 0, NULL, 0};
+	hal_data dec = {ctx->data1, ctx->dlen1, NULL, 0};
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_aes_decrypt(ctx->sl_hnd, &enc, &hparam, key_idx, &dec, &hres));
@@ -114,7 +112,7 @@ int crypto_rsa_encryption(security_handle hnd,
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	hal_data dec = {input->data, input->length, NULL, 0};
-	hal_data enc = {NULL, 0, NULL, 0};
+	hal_data enc = {ctx->data1, ctx->dlen1, NULL, 0};
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_rsa_encrypt(ctx->sl_hnd, &dec, &hmode, key_idx, &enc, &hres));
@@ -150,7 +148,7 @@ int crypto_rsa_decryption(security_handle hnd,
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	hal_data enc = {input->data, input->length, NULL, 0};
-	hal_data dec = {NULL, 0, NULL, 0};
+	hal_data dec = {ctx->data1, ctx->dlen1, NULL, 0};
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_rsa_decrypt(ctx->sl_hnd, &enc, &hmode, key_idx, &dec, &hres));

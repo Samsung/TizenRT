@@ -40,10 +40,12 @@ int keymgr_generate_key(security_handle hnd, security_key_type algo, const char 
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_result_e herr = HAL_SUCCESS;
-	SECAPI_CALL(sl_generate_key(ctx->sl_hnd, htype, key_idx, &herr));
-
-	SECAPI_HAL_RETURN(herr);
+	hal_result_e hres = HAL_SUCCESS;
+	SECAPI_CALL(sl_generate_key(ctx->sl_hnd, htype, key_idx, &hres));
+	if (hres != HAL_SUCCESS) {
+		SECAPI_HAL_RETURN(hres);
+	}
+	SECAPI_RETURN(SECURITY_OK);
 }
 
 int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey, security_data *prikey)
@@ -64,10 +66,12 @@ int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_
 	hal_data h_pubkey = {pubkey->data, pubkey->length, NULL, 0};
 	hal_data h_prikey = {prikey->data, prikey->length, NULL, 0};
 
-	hal_result_e herr = HAL_SUCCESS;
-	SECAPI_CALL(sl_set_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &h_prikey, &herr));
-
-	SECAPI_HAL_RETURN(herr);
+	hal_result_e hres = HAL_SUCCESS;
+	SECAPI_CALL(sl_set_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &h_prikey, &hres));
+	if (hres != HAL_SUCCESS) {
+		SECAPI_HAL_RETURN(hres);
+	}
+	SECAPI_RETURN(SECURITY_OK);
 }
 
 int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey_x, security_data *pubkey_y)
@@ -90,12 +94,11 @@ int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	// convert key
-	hal_data h_pubkey = {NULL, 0, NULL, 0};
-	hal_result_e herr = HAL_SUCCESS;
-	SECAPI_CALL(sl_get_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &herr));
-
-	if (herr != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(herr);
+	hal_data h_pubkey = {ctx->data1, ctx->dlen1, ctx->data2, ctx->dlen2};
+	hal_result_e hres = HAL_SUCCESS;
+	SECAPI_CALL(sl_get_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &hres));
+	if (hres != HAL_SUCCESS) {
+		SECAPI_HAL_RETURN(hres);
 	}
 
 	pubkey_x->data = (unsigned char *)malloc(h_pubkey.data_len);
@@ -114,7 +117,7 @@ int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_
 		SECAPI_FREE(pubkey_x);
 		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
 	}
-	SECAPI_DATA_DCOPY(h_pubkey, pubkey_x);
+	SECAPI_PRIV_DCOPY(h_pubkey, pubkey_y);
 
 	SECAPI_RETURN(SECURITY_OK);
 }
@@ -124,8 +127,7 @@ int keymgr_remove_key(security_handle hnd, security_key_type algo, const char *k
 	SECAPI_ENTER;
 
 	SECAPI_ISHANDLE_VALID(hnd);
-	struct security_ctx *ctx = (struct security_ctx
-								*)hnd;
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	//convert key type
 	hal_key_type htype = secutils_convert_key_s2h(algo);
@@ -136,6 +138,9 @@ int keymgr_remove_key(security_handle hnd, security_key_type algo, const char *k
 
 	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_remove_key(ctx->sl_hnd, htype, key_idx, &hres));
+	if (hres != HAL_SUCCESS) {
+		SECAPI_HAL_RETURN(hres);
+	}
 
-	SECAPI_HAL_RETURN(hres);
+	SECAPI_RETURN(SECURITY_OK);
 }

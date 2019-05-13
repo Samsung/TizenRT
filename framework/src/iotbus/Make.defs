@@ -34,6 +34,9 @@ endif
 ifeq ($(CONFIG_IOTBUS_UART), y)
 CSRCS += iotbus_uart.c
 endif
+ifeq ($(CONFIG_IOTBUS_ADC), y)
+CSRCS += iotbus_adc.c
+endif
 
 DEPPATH += --dep-path src/iotbus
 VPATH += :src/iotbus

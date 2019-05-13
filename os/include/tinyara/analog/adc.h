@@ -67,6 +67,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
+#include <poll.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -89,6 +90,10 @@
 #elif CONFIG_ADC_FIFOSIZE > 255
 #undef  CONFIG_ADC_FIFOSIZE
 #define CONFIG_ADC_FIFOSIZE 255
+#endif
+
+#if !defined(CONFIG_ADC_NPOLLWAITERS)
+#define CONFIG_ADC_NPOLLWAITERS 2
 #endif
 
 #define ADC_RESET(dev)         ((dev)->ad_ops->ao_reset((dev)))
@@ -207,7 +212,16 @@ struct adc_dev_s {
 	sem_t             ad_closesem;   /* Locks out new opens while close is in progress */
 	sem_t             ad_recvsem;    /* Used to wakeup user waiting for space in ad_recv.buffer */
 	struct adc_fifo_s ad_recv;       /* Describes receive FIFO */
+  /* The following is a list of poll structures of threads waiting for
+   * driver events. The 'struct pollfd' reference for each open is also
+   * retained in the f_priv field of the 'struct file'.
+   */
+
+#if !defined(CONFIG_DISABLE_POLL)
+	struct pollfd *fds[CONFIG_ADC_NPOLLWAITERS];
 #endif
+
+#endif /* CONFIG_ADC */
 
 	/* Fields provided by lower half ADC logic */
 

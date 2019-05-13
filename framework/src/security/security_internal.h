@@ -170,6 +170,12 @@
 
 struct security_ctx {
 	sl_ctx sl_hnd;
+	void *data1; // used to get data from HAL
+	unsigned int dlen1;
+	void *data2;
+	unsigned int dlen2;
+	void *data3;
+	unsigned int dlen3;
 };
 
 hal_key_type secutils_convert_key_s2h(security_key_type sec);

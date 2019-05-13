@@ -33,6 +33,18 @@
 
 #include <tinyara/config.h>
 /**
+ * @brief Enumeration of Gpio signal value
+ * @details
+ * Enumeration Details:\n
+ * IOTBUS_GPIO_LOW = 0, Low value on Gpio
+ * IOTBUS_GPIO_HIGH = 1, High value on Gpio
+ */
+typedef enum {
+	IOTBUS_GPIO_LOW    = 0, /* Low value on Gpio */
+	IOTBUS_GPIO_HIGH    = 1, /* High value on Gpio */
+} iotbus_gpio_val_e;
+
+/**
  * @brief Enumeration of Gpio output mode
  * @details
  * Enumeration Details:\n
@@ -185,7 +197,7 @@ int iotbus_gpio_read(iotbus_gpio_context_h dev);
  *
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
- * @param[in] value signal value
+ * @param[in] value Gpio signal value
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v1.0
  */
