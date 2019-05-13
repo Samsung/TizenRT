@@ -88,7 +88,7 @@ struct id_open_s {
 #endif
 };
 
-#define IOTDEV_QUEUE_SIZE 10
+#define IOTDEV_QUEUE_SIZE 50
 
 struct id_queue {
 	int front;

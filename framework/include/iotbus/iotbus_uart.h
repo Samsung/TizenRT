@@ -33,7 +33,23 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <iotbus/iotbus_common.h>
 #include <iotbus/iotbus_error.h>
+
+
+/**
+ * @brief Enumeration of UART state
+ * @details
+ * Enumeration Details:
+ * IOTBUS_UART_RDY = 1, < adc device is ready 
+ * IOTBUS_UART_BUSY = 2, < adc device is busy
+ */
+typedef enum {
+	IOTBUS_UART_NONE = 0,
+	IOTBUS_UART_RDY, /** uart device is ready to use */
+	IOTBUS_UART_BUSY, /** uart device is busy */
+	IOTBUS_UART_STOP, /** uart device is busy */
+} iotbus_uart_state_e;
 
 /**
  * @brief Enumeration of UART parity type
@@ -49,13 +65,6 @@ typedef enum {
 	IOTBUS_UART_PARITY_ODD,
 } iotbus_uart_parity_e;
 
-typedef enum {
-	IOTBUS_UART_TX_EMPTY = 1,
-	IOTBUS_UART_TX_RDY,
-	IOTBUS_UART_RX_AVAIL,
-	IOTBUS_UART_RECEIVED,
-} iotbus_uart_int_type_e;
-
 struct _iotbus_uart_s;
 
 /**
@@ -67,7 +76,7 @@ typedef struct _iotbus_uart_wrapper_s *iotbus_uart_context_h;
 extern "C" {
 #endif
 
-typedef void (*uart_isr_cb)(iotbus_uart_context_h hnd, iotbus_uart_int_type_e int_type);
+typedef void (*uart_isr_cb)(iotbus_int_type_e evt);
 typedef void (*uart_write_cb)(iotbus_error_e ret);
 
 /**
@@ -186,7 +195,7 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
  * @return On success, size is returned. On failure, a negative value is returned.
  * @since TizenRT v1.0
  */
-int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_uart_int_type_e int_type, bool enable, uart_isr_cb cb);
+int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb);
 
 #ifdef __cplusplus
 }

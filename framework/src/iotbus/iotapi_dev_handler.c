@@ -65,7 +65,7 @@ struct _iotapi_cbk_queue {
 
 struct _iotapi_dev_ctx_s {
 	int fd;
-	evttype type;
+	iotbus_int_type_e type;
 	iotapi_cbk cb;
 	struct _iotapi_cbk_entry entry;
 };
@@ -118,7 +118,7 @@ static void iotapi_remove_cbk(struct _iotapi_dev_ctx_s *ctx)
 	IOT_QUEUE_UNLOCK;
 }
 
-static void iotdev_callback(evttype evt)
+static void iotdev_callback(iotbus_int_type_e evt)
 {
 	struct _iotapi_cbk_queue *queue = &g_iot_cbk_mgr;
 	IOT_QUEUE_LOCK;
@@ -170,7 +170,7 @@ void *iotdev_handler(void *data)
 			}
 
 			// call callbacks
-			iotdev_callback((evttype)buf[0]);
+			iotdev_callback((iotbus_int_type_e)buf[0]);
 		}
 	}
 	close(sig);
@@ -226,7 +226,7 @@ int iotapi_dev_deinit(iotapi_hnd hnd)
 	return 0;
 }
 
-int iotapi_dev_register(iotapi_hnd hnd, evttype evt, iotapi_cbk cbk)
+int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
 {
 	struct _iotapi_dev_ctx_s *ctx = (struct _iotapi_dev_ctx_s *)hnd;
 	if (!ctx) {
@@ -252,4 +252,16 @@ int iotapi_dev_unregister(iotapi_hnd hnd)
 	iotapi_remove_cbk(ctx);
 
 	return 0;
+}
+
+iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd) {
+	
+	struct _iotapi_dev_ctx_s *ctx = (struct _iotapi_dev_ctx_s *)hnd;
+	
+	if (!ctx) {
+		IOTAPI_ERROR;
+		return -1;
+	}
+
+	return ctx->type;
 }
