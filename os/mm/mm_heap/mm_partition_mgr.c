@@ -109,6 +109,7 @@ void mm_initialize_ram_partitions(void)
 	mm_initialize(&g_pheap, start, (uint32_t)(REGION_END - start));
 	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, (uint32_t)(REGION_END - start));
 #endif
+	mm_initialize_app_heap();
 }
 
 /****************************************************************************
@@ -149,6 +150,7 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 
 	/* struct mm_heap_s will be situated at start of partition and heap will be initialized after this */
 	mm_initialize((struct mm_heap_s *)*start_addr, (uint8_t *)*start_addr + sizeof(struct mm_heap_s), *size);
+	mm_add_app_heap_list((struct mm_heap_s *)*start_addr);
 
 	mvdbg("Allocated RAM partition with start = 0x%x size = %u\n", *start_addr, *size);
 	return OK;
@@ -173,6 +175,7 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 
 void mm_free_ram_partition(uint32_t address)
 {
+	mm_remove_app_heap_list((struct mm_heap_s *)address);
 	mm_free(&g_pheap, (void *)address);
 	mvdbg("Freed RAM partition at 0x%x\n", address);
 }

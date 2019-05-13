@@ -52,8 +52,83 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
  ****************************************************************************/
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+#include <queue.h>
+
+typedef struct app_heap_s {
+	struct app_heap_s *flink;
+	struct app_heap_s *blink;
+	struct mm_heap_s *heap;
+} app_heap_s;
+
+static dq_queue_t app_heap_q;
+extern struct mm_heap_s g_pheap;
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+void mm_initialize_app_heap()
+{
+	dq_init(&app_heap_q);
+}
+
+void mm_add_app_heap_list(struct mm_heap_s *heap)
+{
+	app_heap_s *node = (app_heap_s *)kmm_malloc(sizeof(app_heap_s));
+	if (!node) {
+		mdbg("Error allocating heap node\n");
+		return;
+	}
+
+	node->heap = heap;
+
+	/* Add the new heap node to the head of the list*/
+	dq_addfirst((dq_entry_t *)node, &app_heap_q);
+}
+
+void mm_remove_app_heap_list(struct mm_heap_s *heap)
+{
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	/* Search the heap node in the list */
+	while (node) {
+		if (node->heap == heap) {
+			/* Remove and free the matching node */
+			dq_rem((dq_entry_t *)node, &app_heap_q);
+			kmm_free(node);
+			return;
+		}
+
+		node = dq_next(node);
+	}
+}
+
+static struct mm_heap_s *mm_get_app_heap(void *address)
+{
+	/* First, search the address in list of app heaps */
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	while (node) {
+		if ((address > (void *)node->heap->mm_heapstart[0]) && (address < (void *)node->heap->mm_heapend[0])) {
+			return node->heap;
+		}
+		node = dq_next(node);
+	}
+
+	/* If address was not found in the app heaps, then it might be in the partition heap */
+	if ((address > (void *)g_pheap.mm_heapstart[0]) && (address < (void *)g_pheap.mm_heapend[0])) {
+		return &g_pheap;
+	}
+
+	mdbg("address 0x%x is not in any app heap region.\n", address);
+	return NULL;
+}
+#endif
+
 /****************************************************************************
  * Name: mm_get_heap
  *
@@ -71,8 +146,13 @@ struct mm_heap_s *mm_get_heap(void *address)
 	int heap_idx;
 	heap_idx = mm_get_heapindex(address);
 	if (heap_idx == INVALID_HEAP_IDX) {
-		mdbg("address is not in heap region.\n");
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+		/* If address was not found in kernel or user heap, search for it in app heaps */
+		return mm_get_app_heap(address);
+#else
+		mdbg("address 0x%x is not in heap region.\n", address);
 		return NULL;
+#endif
 	}
 
 	return &USR_HEAP[heap_idx];
