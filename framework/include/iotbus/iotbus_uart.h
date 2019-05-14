@@ -32,6 +32,24 @@
 #define IOTBUS_UART_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <iotbus/iotbus_common.h>
+#include <iotbus/iotbus_error.h>
+
+
+/**
+ * @brief Enumeration of UART state
+ * @details
+ * Enumeration Details:
+ * IOTBUS_UART_RDY = 1, < adc device is ready 
+ * IOTBUS_UART_BUSY = 2, < adc device is busy
+ */
+typedef enum {
+	IOTBUS_UART_NONE = 0,
+	IOTBUS_UART_RDY, /** uart device is ready to use */
+	IOTBUS_UART_BUSY, /** uart device is busy */
+	IOTBUS_UART_STOP, /** uart device is busy */
+} iotbus_uart_state_e;
 
 /**
  * @brief Enumeration of UART parity type
@@ -57,6 +75,9 @@ typedef struct _iotbus_uart_wrapper_s *iotbus_uart_context_h;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void (*uart_isr_cb)(iotbus_int_type_e evt);
+typedef void (*uart_write_cb)(iotbus_error_e ret);
 
 /**
  * @brief initializes uart_context.
@@ -149,6 +170,32 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
  * @since TizenRT v1.0
  */
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length);
+
+/**
+ * @brief async writes data over uart bus.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] buf the pointer of data buffer
+ * @param[in] length size to write
+ * @param[in] cb callback funtion called when wrting is done.
+ * @param[in] timeout timeout value (ms).
+ * @return On success, size is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length, uart_write_cb cb, int timeout);
+
+/**
+ * @brief Set uart interrupt.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] int_type interrupt type to enable or disable
+ * @param[in] cb callback function
+ * @return On success, size is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb);
 
 #ifdef __cplusplus
 }

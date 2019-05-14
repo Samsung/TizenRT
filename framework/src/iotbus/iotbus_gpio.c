@@ -97,7 +97,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 	}
 
 	handle->pin = gpiopin;
-	handle->drive = IOTBUS_GPIO_DRIVE_PULLUP;
+	handle->drive = IOTBUS_GPIO_DRIVE_FLOAT;
 	handle->dir = IOTBUS_GPIO_DIRECTION_OUT;
 	handle->edge = IOTBUS_GPIO_EDGE_NONE;
 	handle->fd = fd;
@@ -438,7 +438,7 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	if (value != 0 && value != 1) {
+	if (value != IOTBUS_GPIO_LOW && value != IOTBUS_GPIO_HIGH) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 

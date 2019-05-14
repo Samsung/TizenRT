@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_IOTBUS), y)
-CSRCS += iotapi_evt_handler.c
+CSRCS += iotapi_evt_handler.c iotapi_dev_handler.c
 
 ifeq ($(CONFIG_IOTBUS_GPIO), y)
 CSRCS += iotbus_gpio.c
@@ -33,6 +33,9 @@ CSRCS += iotbus_pwm.c
 endif
 ifeq ($(CONFIG_IOTBUS_UART), y)
 CSRCS += iotbus_uart.c
+endif
+ifeq ($(CONFIG_IOTBUS_ADC), y)
+CSRCS += iotbus_adc.c
 endif
 
 DEPPATH += --dep-path src/iotbus

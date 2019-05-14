@@ -54,6 +54,18 @@ typedef enum {
 } iotbus_pwm_state_e;
 
 /**
+ * @brief Enumeration of pwm value type
+ * @details
+ * Enumeration Details:\n
+ * IOTBUS_PWM_LOW = 0,
+ * IOTBUS_PWM_HIGH = 1,
+ */
+typedef enum {
+	IOTBUS_PWM_LOW    = 0, /* Low value on Gpio */
+	IOTBUS_PWM_HIGH    = 1, /* High value on Gpio */
+} iotbus_pwm_val_e;
+
+/**
  *@brief Type of pwm duty cycle
  *@details Duty cycle is measured in terms of percentage
  *so uint8_t is enough to hold percentage values.
@@ -93,11 +105,22 @@ int iotbus_pwm_close(iotbus_pwm_context_h pwm);
  *
  * @details @b #include <iotbus/iotbus_pwm.h>
  * @param[in] pwm handle of pwm_context
- * @param[in] duty_cycle pwm duty cycle
+ * @param[in] duty_cycle pwm duty cycle in percent
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v1.0
  */
 int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle);
+
+/**
+ * @brief sets the pwm duty cycle with integer value.
+ *
+ * @details @b #include <iotbus/iotbus_pwm.h>
+ * @param[in] pwm handle of pwm_context
+ * @param[in] duty_cycle pwm duty cycle in integer value (0 - 65535)
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty_cycle);
 
 /**
  * @brief sets the pwm period.
@@ -109,6 +132,17 @@ int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle);
  * @since TizenRT v1.0
  */
 int iotbus_pwm_set_period(iotbus_pwm_context_h pwm, uint32_t period);
+
+/**
+ * @brief sets the pwm idle value when pwm disabled.
+ *
+ * @details @b #include <iotbus/iotbus_pwm.h>
+ * @param[in] pwm handle of pwm_context
+ * @param[in] val pwm idle value
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_pwm_set_idle(iotbus_pwm_context_h pwm, iotbus_pwm_val_e val);
 
 /**
  * @brief sets the pwm state.

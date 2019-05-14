@@ -190,7 +190,7 @@ static void utc_systemio_gpio_get_drive_mode_p(void)
 
 static void utc_systemio_gpio_write_p(void)
 {
-	TC_ASSERT_EQ("iotbus_gpio_write", iotbus_gpio_write(gpio, 1), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_write", iotbus_gpio_write(gpio, IOTBUS_GPIO_HIGH), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
@@ -241,10 +241,10 @@ static void utc_systemio_gpio_register_p(void)
 	gpio_callback_flag = 0;
 
 	int ret = iotbus_gpio_register_cb(gpio2, IOTBUS_GPIO_EDGE_RISING, gpio_callback_event, (void *)gpio2);
-	int data = 0;
+	int data = IOTBUS_GPIO_LOW;
 	iotbus_gpio_write(gpio, data);
 	sleep(1);
-	data = 1;
+	data = IOTBUS_GPIO_HIGH;
 	iotbus_gpio_write(gpio, data);
 	sleep(2);
 

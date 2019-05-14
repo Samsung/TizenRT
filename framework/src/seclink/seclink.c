@@ -17,19 +17,27 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef LINUX
 #include <debug.h>
+#endif
 #include <sys/ioctl.h>
 #include <tinyara/seclink.h>
 
 #ifdef SECLINK_PATH
 #undef SECLINK_PATH
 #endif
+
+#ifndef LINUX
 #define SECLINK_PATH "/dev/seclink"
+#else
+#define SECLINK_PATH "./seclink"
+#endif
 
 #ifdef CONFIG_SECURITY_LINK_DEBUG
 #define SL_LOG(format, ...) printf(format, ##__VA_ARGS__)
@@ -45,14 +53,28 @@
 			   SL_TAG, __FUNCTION__, __FILE__, __LINE__, fd, strerror(errno)); \
 	} while (0)
 
+#ifdef LINUX
+extern int sl_post_msg(int fd, int cmd, unsigned long arg);
+
 #define SL_CALL(hnd, code, param)										\
 	do {																\
-		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
-		if (i_res < 0) {													\
+		int i_res = sl_post_msg(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
+		if (i_res < 0) {												\
 			SL_ERR(i_res);												\
 			return SECLINK_ERROR;										\
 		}																\
 	} while (0)
+#elif
+#define SL_CALL(hnd, code, param)										\
+	do {																\
+		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
+		if (i_res < 0) {												\
+			SL_ERR(i_res);												\
+			return SECLINK_ERROR;										\
+		}																\
+	} while (0)
+#endif
+
 
 #define SL_ENTER														\
 	do {																\

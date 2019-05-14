@@ -99,14 +99,8 @@ int virtual_hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal
 	// return dummy key data to check data is sent well.
 	uint8_t pubkey_data[] = {"hal_key_sssssssssssstttttttttt"};
 	key->data_len = sizeof(pubkey_data);
-	uint8_t *data = (uint8_t *)malloc(key->data_len);
-	if (!data) {
-		return -1;
-	}
 
-	memcpy(data, pubkey_data, key->data_len);
-
-	key->data = data;
+	memcpy(key->data, pubkey_data, key->data_len);
 
 	return 0;
 }
@@ -130,9 +124,16 @@ int virtual_hal_generate_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx)
 /**
  * Authenticate
  */
+static const char *virtual_random = "random generated value";
 int virtual_hal_generate_random(_IN_ uint32_t len, _OUT_ hal_data *random)
 {
 	VH_ENTER;
+	if (random->data_len < len) {
+		return -1;
+	}
+	random->data_len = strlen(virtual_random) + 1;
+	memcpy(random->data, virtual_random, random->data_len);
+
 	return 0;
 }
 
@@ -213,7 +214,7 @@ int virtual_hal_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out
 	cert_s.data = (void *)cert_data;
 	cert_s.data_len = sizeof(cert_data);
 
-	cert_out->data = (unsigned char *)malloc(cert_s.data_len);
+	//cert_out->data = (unsigned char *)malloc(cert_s.data_len);
 	memcpy(cert_out->data, cert_s.data, cert_s.data_len);
 	cert_out->data_len = cert_s.data_len;
 
@@ -367,6 +368,7 @@ static struct sec_ops_s g_virtual_ops = {
 
 static struct sec_lowerhalf_s g_virtual_lower = {&g_virtual_ops, NULL};
 
+#ifndef LINUX
 int se_initialize(void)
 {
 	int res = se_register(SECLINK_PATH, &g_virtual_lower);
@@ -377,6 +379,7 @@ int se_initialize(void)
 
 	return 0;
 }
+#endif
 
 /*
  * It should not be used to general case.

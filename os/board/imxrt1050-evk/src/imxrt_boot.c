@@ -57,14 +57,93 @@
 #include <tinyara/config.h>
 
 #include <tinyara/board.h>
+#include <tinyara/pwm.h>
+#include <tinyara/gpio.h>
+
 #include <arch/board/board.h>
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "chip/imxrt102x_config.h"
+#include "imxrt1020-evk.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#include "chip/imxrt105x_config.h"
+#include "imxrt1050-evk.h"
+#else
+#error Unrecognized i.MX RT architecture
+#endif
 
 #include "imxrt_start.h"
-#include "imxrt1050-evk.h"
+#include "imxrt_pwm.h"
 #include "imxrt_flash.h"
+#include <tinyara/gpio.h>
+#include "imxrt_gpio.h"
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
+
+/****************************************************************************
+ * Name: board_gpio_initialize
+ *
+ * Description:
+ *   GPIO intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_gpio_initialize(void)
+{
+#ifdef CONFIG_GPIO
+	int i;
+	struct gpio_lowerhalf_s *lower;
+
+	struct {
+		uint8_t minor;
+		gpio_pinset_t pinset;
+	} pins[] = {
+		{
+			45, GPIO_LED
+		},
+		{
+			49, GPIO_LED2
+		},
+	};
+
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = imxrt_gpio_lowerhalf(pins[i].pinset);
+		gpio_register(pins[i].minor, lower);
+	}
+#endif
+}
+
+/****************************************************************************
+ * Name: board_pwmm_initialize
+ *
+ * Description:
+ *   PWM intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_pwm_initialize(void)
+{
+#ifdef CONFIG_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
+	int ret;
+	int i;
+
+	for (i = 0; i < PWM_CNT_COUNT; i++) {
+		pwm = imxrt_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get imxrt PWM lower half\n");
+			return;
+		}
+
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
+		if (ret < 0) {
+			lldbg("Imxrt PWM registeration failure: %d\n", ret);
+		}
+	}
+#endif
+	return;
+}
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -111,5 +190,9 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
+
+	imxrt_gpio_initialize();
+
+	imxrt_pwm_initialize();
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */

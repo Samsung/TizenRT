@@ -88,7 +88,7 @@ struct seclink_auth_info {
 	union {
 		hal_data *data;
 		hal_dh_data *dh_param;
-		hal_ecdh_data *ecdh_param
+		hal_ecdh_data *ecdh_param;
 	} auth_data;
 };
 

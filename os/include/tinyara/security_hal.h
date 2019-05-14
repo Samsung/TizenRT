@@ -202,6 +202,35 @@ typedef struct _hal_ss_info {
 	struct _hal_ss_info *next;
 } hal_ss_info;
 
+#define HAL_AES_PARAM_INITIALIZER				\
+	{HAL_AES_UNKNOWN, NULL, 0}
+#define HAL_INIT_AES_PARAM(param)						\
+	hal_aes_param param = HAL_AES_PARAM_INITIALIZER
+
+#define HAL_RSA_PARAM_INITIALIZER								\
+	{HAL_RSASSA_UNKNOWN, HAL_HASH_UNKNOWN, HAL_HASH_UNKNOWN, 0}
+#define HAL_INIT_RSA_PARAM(param)						\
+	hal_rsa_mode param = HAL_RSA_PARAM_INITIALIZER
+
+#define HAL_ECDSA_PARAM_INITIALIZER				\
+	{HAL_ECDSA_UNKNOWN, HAL_HASH_UNKNOWN}
+#define HAL_INIT_ECDSA_PARAM(param)							\
+	hal_ecdsa_mode param = HAL_ECDSA_PARAM_INITIALIZER
+
+#define HAL_DATA_INITIALIZER					\
+	{NULL, 0, NULL, 0}
+#define HAL_INIT_DATA(data)						\
+	hal_data data = HAL_DATA_INITIALIZER
+
+#define HAL_DH_INITIALIZER						\
+	{HAL_DH_UNKNOWN, NULL, NULL, NULL}
+#define HAL_INIT_DH(dh)							\
+	hal_dh_data dh = HAL_DH_INITIALIZER
+
+#define HAL_ECDH_INITIALIZER\
+	{HAL_ECDSA_UNKNOWN, NULL, NULL}
+#define HAL_INIT_ECDH(ecdh)\
+	hal_ecdh_data ecdh = HAL_ECDH_INITIALIZER
 
 // ======================================
 // Function

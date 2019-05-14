@@ -18,7 +18,8 @@
 
 #ifndef _SECURITY_API_INTERNAL_H__
 #define _SECURITY_API_INTERNAL_H__
-
+#include <stdio.h>
+#include <string.h>
 #include <tinyara/seclink.h>
 
 #define SECAPI_LOG printf
@@ -170,6 +171,12 @@
 
 struct security_ctx {
 	sl_ctx sl_hnd;
+	void *data1; // used to get data from HAL
+	unsigned int dlen1;
+	void *data2;
+	unsigned int dlen2;
+	void *data3;
+	unsigned int dlen3;
 };
 
 hal_key_type secutils_convert_key_s2h(security_key_type sec);
@@ -188,6 +195,6 @@ int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hpa
 int secutils_convert_rsaparam_s2h(security_rsa_param *sparam, hal_rsa_mode *hparam);
 int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode *hmode);
 int secutils_convert_dhparam_s2h(security_dh_param *dparam, hal_dh_data *hdata);
-int secuutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata);
+int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata);
 ;
 #endif // _SECURITY_API_INTERNAL_H__

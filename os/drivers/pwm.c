@@ -531,6 +531,20 @@ static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 
+	/* PWMIOC_IDLE - Stop the pulsed and start the fixed output(high or low).
+	 *
+	 *   ioctl argument:  idle value
+	 */
+
+	case PWMIOC_IDLE: {
+		unsigned long idle = (unsigned long)arg;
+		pwmvdbg("PWMIOC_IDLE: idle value %d\n", idle);
+		DEBUGASSERT(lower->ops->ioctl != NULL);
+
+		ret = lower->ops->ioctl(lower, cmd, idle);
+	}
+	break;
+
 	/* Any unrecognized IOCTL commands might be platform-specific ioctl commands */
 
 	default: {
