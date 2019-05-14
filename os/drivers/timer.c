@@ -336,7 +336,7 @@ static int timer_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/*
 	 * cmd:         TCIOC_GETSTATUS
 	 * Description: Get the status of the timer.
-	 * Argument:    A writeable pointer to struct timer_status_s.
+	 * Argument:    A writable pointer to struct timer_status_s.
 	 */
 
 	case TCIOC_GETSTATUS: {

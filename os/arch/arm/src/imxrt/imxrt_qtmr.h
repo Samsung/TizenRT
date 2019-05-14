@@ -239,7 +239,7 @@ void imxrt_qtmr_getdefaultconfig(qtmr_config_t *config);
  * @return Returns an error if there was error setting up the signal.
  */
 status_t imxrt_qtmr_setuppwm(
-    TMR_Type *base, qtmr_channel_selection_t channel, uint32_t pwmFreqHz, uint8_t dutyCyclePercent, bool outputPolarity, uint32_t srcClock_Hz);
+	TMR_Type *base, qtmr_channel_selection_t channel, uint32_t pwmFreqHz, uint8_t dutyCyclePercent, bool outputPolarity, uint32_t srcClock_Hz);
 
 /*!
  * @brief Allows the user to count the source clock cycles until a capture event arrives.
@@ -254,11 +254,11 @@ status_t imxrt_qtmr_setuppwm(
  * @param captureMode     Specifies which edge of the input signal  triggers a capture
  */
 void imxrt_qtmr_setupinputcapture(TMR_Type *base,
-                            qtmr_channel_selection_t channel,
-                            qtmr_input_source_t capturePin,
-                            bool inputPolarity,
-                            bool reloadOnCapture,
-                            qtmr_input_capture_edge_t captureMode);
+						qtmr_channel_selection_t channel,
+						qtmr_input_source_t capturePin,
+						bool inputPolarity,
+						bool reloadOnCapture,
+						qtmr_input_capture_edge_t captureMode);
 
 /*!
  * @name Interrupt Interface

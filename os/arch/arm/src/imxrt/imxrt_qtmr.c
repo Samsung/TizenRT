@@ -175,11 +175,11 @@ void imxrt_qtmr_getdefaultconfig(qtmr_config_t *config)
  * return Returns an error if there was error setting up the signal.
  */
 status_t imxrt_qtmr_setuppwm(TMR_Type *base,
-                       qtmr_channel_selection_t channel,
-                       uint32_t pwmFreqHz,
-                       uint8_t dutyCyclePercent,
-                       bool outputPolarity,
-                       uint32_t srcClock_Hz)
+					qtmr_channel_selection_t channel,
+					uint32_t pwmFreqHz,
+					uint8_t dutyCyclePercent,
+					bool outputPolarity,
+					uint32_t srcClock_Hz)
 {
 	uint32_t periodCount, highCount, lowCount, reg;
 
@@ -222,7 +222,7 @@ status_t imxrt_qtmr_setuppwm(TMR_Type *base,
 
 	reg = base->CHANNEL[channel].CTRL;
 	reg &= ~(TMR_CTRL_OUTMODE_MASK);
-	/* Count until compare value is  reached and re-initialize the counter, toggle OFLAG output
+	/* Count until compare value is reached and re-initialize the counter, toggle OFLAG output
 		* using alternating compare register
 		*/
 	reg |= (TMR_CTRL_LENGTH_MASK | TMR_CTRL_OUTMODE(kQTMR_ToggleOnAltCompareReg));
@@ -241,14 +241,14 @@ status_t imxrt_qtmr_setuppwm(TMR_Type *base,
  * param capturePin      Pin through which we receive the input signal to trigger the capture
  * param inputPolarity   true: invert polarity of the input signal, false: no inversion
  * param reloadOnCapture true: reload the counter when an input capture occurs, false: no reload
- * param captureMode     Specifies which edge of the input signal  triggers a capture
+ * param captureMode     Specifies which edge of the input signal triggers a capture
  */
 void imxrt_qtmr_setupinputcapture(TMR_Type *base,
-                            qtmr_channel_selection_t channel,
-                            qtmr_input_source_t capturePin,
-                            bool inputPolarity,
-                            bool reloadOnCapture,
-                            qtmr_input_capture_edge_t captureMode)
+							qtmr_channel_selection_t channel,
+							qtmr_input_source_t capturePin,
+							bool inputPolarity,
+							bool reloadOnCapture,
+							qtmr_input_capture_edge_t captureMode)
 {
 	uint16_t reg;
 
