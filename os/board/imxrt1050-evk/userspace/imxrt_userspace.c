@@ -61,6 +61,7 @@
 #include <tinyara/userspace.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/init.h>
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 
@@ -71,10 +72,6 @@
 
 #ifndef CONFIG_TINYARA_USERSPACE
 #error "CONFIG_TINYARA_USERSPACE not defined"
-#endif
-
-#if CONFIG_TINYARA_USERSPACE != 0x60200000
-#error "CONFIG_TINYARA_USERSPACE must be 0x60200000 to match user-space.ld"
 #endif
 
 /****************************************************************************
@@ -92,7 +89,6 @@
  *  - We can recoved the linker value then by simply taking the address of
  *    of _data.  like:  uint32_t *pdata = &_sdata;
  */
-
 extern uint32_t _stext;			/* Start of .text */
 extern uint32_t _etext;			/* End_1 of .text + .rodata */
 extern const uint32_t _eronly;	/* End+1 of read only section (.text + .rodata) */
@@ -101,16 +97,22 @@ extern uint32_t _edata;			/* End+1 of .data */
 extern uint32_t _sbss;			/* Start of .bss */
 extern uint32_t _ebss;			/* End+1 of .bss */
 
-/* This is the user space entry point */
-
-int CONFIG_USER_ENTRYPOINT(int argc, char *argv[]);
-
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
 
-	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT, .us_textstart = (uintptr_t)&_stext, .us_textend = (uintptr_t)&_etext, .us_datasource = (uintptr_t)&_eronly, .us_datastart = (uintptr_t)&_sdata, .us_dataend = (uintptr_t)&_edata, .us_bssstart = (uintptr_t)&_sbss, .us_bssend = (uintptr_t)&_ebss,
-	/* Memory manager heap structure */
-	.us_heap = &g_mmheap,
+#ifdef CONFIG_USER_ENTRYPOINT
+	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
+#else
+	.us_entrypoint = (main_t)NULL,
+#endif
+	.us_textstart = (uintptr_t)&_stext,
+	.us_textend = (uintptr_t)&_etext,
+	.us_datasource = (uintptr_t)&_eronly,
+	.us_datastart = (uintptr_t)&_sdata,
+	.us_dataend = (uintptr_t)&_edata,
+	.us_bssstart = (uintptr_t)&_sbss,
+	.us_bssend = (uintptr_t)&_ebss,
+
 	/* Task/thread startup routines */
 	.task_startup = task_startup,
 #ifndef CONFIG_DISABLE_PTHREAD
@@ -120,10 +122,10 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 #ifndef CONFIG_DISABLE_SIGNALS
 	.signal_handler = up_signal_handler,
 #endif
-	/* User-space work queue support (declared in include/nuttx/wqueue.h) */
-#ifdef CONFIG_LIB_USRWORK
-	.work_usrstart = work_usrstart,
-#endif
+
+	/* pre-application entry points (declared in include/tinyara/init.h) */
+
+	.preapp_start    = preapp_start,
 };
 
 /****************************************************************************
