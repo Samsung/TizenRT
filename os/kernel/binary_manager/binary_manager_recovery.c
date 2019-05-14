@@ -28,25 +28,20 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
+#include <tinyara/irq.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/board.h>
 
+#include "sched/sched.h"
 #include "binary_manager.h"
-#include "task/task.h"
 
 extern bool abort_mode;
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-struct binmgr_kill_data_s {
-	int binid;
-	int faultid;
-};
-typedef struct binmgr_kill_data_s binmgr_kill_data_t;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -68,62 +63,51 @@ static void binary_manager_board_reset(void)
 #endif
 }
 
-static void recovery_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
+static void recovery_exclude_scheduling_each(FAR struct tcb_s *tcb, FAR void *arg)
 {
-	int ret;
-	binmgr_kill_data_t *info;
+	int binid;
+	irqstate_t flags;
 
-	info = (binmgr_kill_data_t *)arg;
-	if (info == NULL || info->binid < 0 || info->faultid < 0) {
+	binid = (int)arg;
+	if (binid < 0) {
 		return;
 	}
 
-	if (tcb->group->tg_loadtask == info->binid && tcb->pid != info->binid) {
-		bmllvdbg("KILL!! %d\n", tcb->pid);
-		ret = task_terminate(tcb->pid, true);
+	if (tcb->group->tg_loadtask == binid) {
+		flags = irqsave();
+		(void)sched_removereadytorun(tcb);
+		sched_addblocked(tcb, TSTATE_TASK_INACTIVE);
+		irqrestore(flags);
+		bmllvdbg("Remove pid %d from readytorun list\n", tcb->pid);
 	}
 }
 
 /****************************************************************************
- * Name: recovery_kill_binary
+ * Name: recovery_exclude_scheduling
  *
  * Description:
- *   This function will kill all the task/thread created by the binary
- *   i.e input pid.
- *   If any fault occurs in the system, recovery thread will call this function to
- *   kill all the thread/task created by the input binary.
+ *   This function will remove all the tasks and threads created by the binary
+ *   i.e input pid from readytorun list.
  *
  * Input parameters:
- *   pid   -   The pid of the binary, whoes all childs to be killed
+ *   pid   -   The pid of the binary, whoes all children to be killed
  *
  * Returned Value:
  *   Zero (OK) on success; otherwise -1 (ERROR) value is returned.
  *
  ****************************************************************************/
-static int recovery_kill_binary(pid_t pid, int binid)
+static int recovery_exclude_scheduling(int binid)
 {
 	int ret;
+	irqstate_t flags;
+	FAR struct tcb_s *tcb;
 
-	binmgr_kill_data_t info;
-
-	if (pid < 0 || binid < 0) {
+	if (binid < 0) {
 		return ERROR;
 	}
 
-	/* Set binary id and faulty id */
-	info.binid = binid;
-	info.faultid = pid;
-
-	/* Search all task/pthreads created by same loaded task */
-	sched_foreach(recovery_kill_each, (FAR void *)&info);
-
-	/* Finally, unload binary */
-	ret = task_terminate(binid, true);
-	if (ret < 0) {
-		bmlldbg("Failed to unload binary %d, ret %d, errno %d\n", binid, ret, errno);
-		return ERROR;
-	}
-	bmllvdbg("Unload binary! pid %d\n", binid);
+	/* Remove all tasks and pthreads created in a binary which has 'binid' from the readytorun list */
+	sched_foreach(recovery_exclude_scheduling_each, (FAR void *)binid);
 
 	return OK;
 }
@@ -134,9 +118,9 @@ static int recovery_kill_binary(pid_t pid, int binid)
  * Description:
  *   This function will receive the faulty pid and check if its binary id is one
  *   of the registered binary with binary manager.
- *   If the binary is registered then it will be restarted after killing its
- *   child processes, and if it is not registered then board will be rebooted.
- *   And then, it creates loading thread to load binary again.
+ *   If the binary is registered, it removes its children from ready to run list
+ *   and creates loading thread which will terminate them and load binary again.
+ *   Otherwise, board will be rebooted.
  *
  * Input parameters:
  *   pid   -   The pid of recovery message
@@ -173,17 +157,18 @@ void binary_manager_recovery(int pid)
 			goto reboot_board;
 		}
 
-		/* Kill its children and restart binary if the binary is registered with the binary manager */
-		ret = recovery_kill_binary(pid, bin_id);
+		/* Remove its all children from readytorun list if the binary is registered with the binary manager */
+		ret = recovery_exclude_scheduling(bin_id);
 		if (ret == OK) {
-			BIN_ID(bin_idx) = -1;
 			/* load binary and update binid */
 			memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-			loading_data[0] = itoa(LOADCMD_LOAD, type_str, 10);
-			loading_data[1] = itoa(bin_idx, data_str, 10);
+			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
+			loading_data[1] = BIN_NAME(bin_idx);
+			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			if (ret > 0) {
 				abort_mode = false;
+				bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
 				return 0;
 			}
 		}

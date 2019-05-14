@@ -120,11 +120,6 @@ struct binmgr_request_s {
 };
 typedef struct binmgr_request_s binmgr_request_t;
 
-struct binmgr_reload_response_s {
-	int result;
-};
-typedef struct binmgr_reload_response_s binmgr_reload_response_t;
-
 struct binmgr_getinfo_response_s {
 	int result;
 	binary_info_t data;

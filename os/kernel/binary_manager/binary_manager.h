@@ -53,7 +53,7 @@
 #define CRC_BUFFER_SIZE            512
 
 /* The number of arguments for loading thread */
-#define LOADTHD_ARGC     3
+#define LOADTHD_ARGC               2
 
 #define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
 

@@ -27,7 +27,6 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
 
 #include "binary_manager.h"
@@ -163,8 +162,6 @@ int binary_manager(int argc, char *argv[])
 			continue;
 		}
 
-		sched_lock();
-
 		bmvdbg("Recevied Request msg : cmd = %d\n", request_msg);
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY
@@ -182,17 +179,14 @@ int binary_manager(int argc, char *argv[])
 			memset(type_str, 0, 1);
 			memset(data_str, 0, 1);
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = itoa(request_msg.requester_pid, data_str, 10);
-			loading_data[2] = request_msg.bin_name;
-			loading_data[3] = NULL;
+			loading_data[1] = request_msg.bin_name;
+			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			break;
 
 		default:
 			break;
 		}
-
-		sched_unlock();
 	}
 
 binary_manager_exit:

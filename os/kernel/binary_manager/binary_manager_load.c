@@ -27,6 +27,7 @@
 #include <crc32.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <sys/types.h>
 
 #include <tinyara/mm/mm.h>
@@ -201,7 +202,6 @@ int binary_manager_load_binary(int bin_idx)
 		bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
 		return ERROR;
 	}
-
 	BIN_ID(bin_idx) = pid;
 	bmvdbg("Load '%s' success! pid = %d\n", BIN_NAME(bin_idx), BIN_ID(bin_idx));
 
@@ -225,7 +225,11 @@ static int binary_manager_load_all(void)
 		}
 	}
 
-	return load_cnt;
+	if (load_cnt > 0) {
+		return load_cnt;
+	}
+
+	return BINMGR_OPERATION_FAIL;
 }
 
 static void reload_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
@@ -239,12 +243,14 @@ static void reload_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
 	}
 
 	if (tcb->group->tg_loadtask == binid && tcb->pid != binid) {
-		bmdbg("KILL!! %d\n", tcb->pid);
 		ret = task_terminate(tcb->pid, true);
+		if (ret < 0) {
+			bmdbg("Failed to terminate %d\n", tcb->pid);
+		}
 	}
 }
 
-static int reload_kill_binary(int binid)
+int reload_kill_binary(int binid)
 {
 	int ret;
 
@@ -252,96 +258,72 @@ static int reload_kill_binary(int binid)
 		return ERROR;
 	}
 
-	/* Search all task/pthreads created by same loaded task */
+	sched_lock();
+
+	/* Kill all tasks and pthreads created in a binary which has 'binid' */
 	sched_foreach(reload_kill_each, (FAR void *)binid);
 
 	/* Finally, unload binary */
 	ret = task_terminate(binid, true);
 	if (ret < 0) {
+		sched_unlock();
 		bmdbg("Failed to unload binary %d, ret %d, errno %d\n", binid, ret, errno);
 		return ERROR;
 	}
+	sched_unlock();
 	bmvdbg("Unload binary! pid %d\n", binid);
 
 	return OK;
 }
 
-static int binary_manager_reload(pid_t requester_pid, char *bin_name)
+/****************************************************************************
+ * Name: binary_manager_reload
+ *
+ * Description:
+ *   This function will terminate all the task/thread created by the binary
+ *   i.e input binary name.
+ *   If the binary is registered, it terminates its children and unloads binary.
+ *   And then, it will load the binary.
+ *
+ * Input parameters:
+ *   bin_name   -   The name of binary to be reload
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static int binary_manager_reload(char *bin_name)
 {
 	int ret;
 	int bin_idx;
-	bool is_samebin;
-	char q_name[BIN_PRIVMQ_LEN];
-	binmgr_reload_response_t response_msg;
-	struct tcb_s *tcb;
-
-	if (requester_pid < 0) {
-		bmdbg("Invalid requester pid %s\n", requester_pid);
-		return BINMGR_INVALID_PARAM;
-	}
-	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 
 	if (bin_name == NULL) {
 		bmdbg("Invalid bin_name %s\n", bin_name);
-		ret = BINMGR_INVALID_PARAM;
-		goto send_result;
+		return BINMGR_INVALID_PARAM;
 	}
-
-	is_samebin = false;
 
 	/* Check whether it is registered in binary manager */
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
 		bmdbg("binary %s is not registered\n", bin_name);
-		ret = BINMGR_BININFO_NOT_FOUND;
-		goto send_result;
-	}
-
-	/* Check binary id of requester and compare it with binid of binary to reload. */
-	tcb = sched_gettcb(requester_pid);
-	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
-		bmdbg("Failed to get pid %d binary info\n", BIN_ID(bin_idx));
-		ret = BINMGR_BININFO_NOT_FOUND;
-		goto send_result;
-	}
-
-	/* This is a case that requester restart its own binary */
-	if (tcb->group->tg_loadtask == BIN_ID(bin_idx)) {
-		is_samebin = true;
+		return BINMGR_BININFO_NOT_FOUND;
 	}
 
 	/* Kill its children and restart binary if the binary is registered with the binary manager */
 	ret = reload_kill_binary(BIN_ID(bin_idx));
 	if (ret != OK) {
-		ret = BINMGR_OPERATION_FAIL;
-		goto send_result;
+		return BINMGR_OPERATION_FAIL;
 	}
 	BIN_ID(bin_idx) = -1;
-	usleep(100);
 
 	/* load binary and update binid */
 	ret = binary_manager_load_binary(bin_idx);
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
-		ret = BINMGR_OPERATION_FAIL;
+		return BINMGR_OPERATION_FAIL;
 	}
 
-	/* Does requester restart its own binary? */
-	if (is_samebin) {
-		/* Yes, unlink response message queue created by requester because it is already terminated. */
-		mq_unlink(q_name);
-		bmdbg("Unlink!!  %s\n", q_name);
-		return ret;
-	}
-
-send_result:
-	if (ret == OK) {
-		response_msg.result = BINMGR_OK;
-	} else {
-		response_msg.result = ret;
-	}
-
-	return binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_reload_response_t));
+	return BINMGR_OK;
 }
 
 static int loading_thread(int argc, char *argv[])
@@ -355,36 +337,27 @@ static int loading_thread(int argc, char *argv[])
 	}
 
 	/* Arguments : [1] type */
-	type = (pid_t)atoi(argv[1]);
+	type = (int)atoi(argv[1]);
 
-	ret = ERROR;
+	ret = BINMGR_INVALID_PARAM;
 	switch (type) {
-	case LOADCMD_LOAD:
-		if (argc <= 2) {
-			bmdbg("Invalid arguments for loading, argc %d\n", argc);
-			return -1;
-		}
-		/* [2] bin_idx for loading */
-		ret = binary_manager_load_binary((int)atoi(argv[2]));
-		break;
 	case LOADCMD_LOAD_ALL:
 		ret = binary_manager_load_all();
 		break;
 	case LOADCMD_RELOAD:
-		if (argc <= 3) {
+		if (argc <= 2) {
 			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
-			return -1;
+			break;
 		}
-		/* [2] pid, [3] bin_name for reloading */
-		ret = binary_manager_reload((pid_t)atoi(argv[2]), argv[3]);
+		/* [2] bin_name for reloading */
+		ret = binary_manager_reload(argv[2]);
 		break;
 	default:
 		bmdbg("Invalid loading type %d\n", type);
-		return ERROR;
 	}
 	bmvdbg("Loading result %d\n", ret);
 
-	return 0;
+	return ret;
 }
 
 /****************************************************************************
