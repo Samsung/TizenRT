@@ -637,6 +637,37 @@ config DEBUG_PAGING
 
 comment "Driver Debug Options"
 
+config DEBUG_ANALOG
+	bool "Analog Device Driver Debug Feature"
+	default n
+	---help---
+		Enable Analog debug Feature.
+
+if DEBUG_ANALOG
+
+config DEBUG_ANALOG_ERROR
+	bool "Analog Error Output"
+	default y
+	depends on DEBUG_ERROR
+	---help---
+		Enable Analog error debug output.
+
+config DEBUG_ANALOG_WARN
+	bool "Analog Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable Analog warning debug output.
+
+config DEBUG_ANALOG_INFO
+	bool "Analog Infomational Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable Analog informational debug output.
+
+endif #DEBUG_ANALOG
+
 config DEBUG_I2S
         bool "I2S Device Driver Debug Feature"
         default n
