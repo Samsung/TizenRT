@@ -56,8 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -81,8 +80,7 @@ void umm_extend(FAR void *mem, size_t size, int region)
 	int heap_idx;
 	heap_idx = mm_get_heapindex(mem);
 	if (heap_idx != INVALID_HEAP_IDX) {
-		mm_extend(&g_mmheap[heap_idx], mem, size, region);
+		mm_extend(&USR_HEAP[heap_idx], mem, size, region);
 	}
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

@@ -885,6 +885,15 @@ config SIG_SIGEL_EVENT
 		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
 		Default: 24
 
+config SIG_MESSAGING_UNICAST
+	int "MESSAGE RECV SIGNAL"
+	default 25
+	depends on MESSAGING_IPC
+	---help---
+		SIG_MESSAGING_UNICAST is a non-standard signal used to notify to message receiver.
+		This setting specifies the signal number that will be used for SIG_MESSAGING_UNICAST.
+		Default: 25
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"
@@ -1079,6 +1088,30 @@ config SCHED_LPWORKSTACKSIZE
 
 endif # SCHED_LPWORK
 endmenu # Work Queue Support
+
+menu "Binary Manager"
+config BINARY_MANAGER
+	bool "Enable Binary Manager"
+	default n
+	depends on APP_BINARY_SEPARATION
+	---help---
+		This is kernel thread which manages binaries.
+		It loads/unloads binaries and recovers any fault occurs in a system.
+
+if BINARY_MANAGER
+
+config BINMGR_RECOVERY
+	bool "Enable Recovery Management"
+	default y
+	depends on APP_BINARY_SEPARATION
+	---help---
+		Enable the recovery management.
+		If any fault occurs in a system, it will either restart binary or reboot the system
+		accroding to the configuration.
+
+endif # BINARY_MANAGER
+
+endmenu # Binary Manager Support
 
 menu "Stack size information"
 
