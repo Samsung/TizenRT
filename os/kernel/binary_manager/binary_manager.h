@@ -31,14 +31,14 @@
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
-#define BINARY_MANAGER_NAME        "binary_manager"           /* Binary manager main thread name */
-#define BINARY_MANAGER_STACKSIZE   2048                       /* Binary manager main thread stack size */
-#define BINARY_MANAGER_PRIORITY    225                        /* Binary manager main thread priority */
+#define BINARY_MANAGER_NAME        "binary_manager"           /* Binary manager thread name */
+#define BINARY_MANAGER_STACKSIZE   2048                       /* Binary manager thread stack size */
+#define BINARY_MANAGER_PRIORITY    250                        /* Binary manager thread priority */
 
 /* Loading Thread information */
-#define LOADINGTHD_NAME           "loading_thread"            /* Loading thread name */
-#define LOADINGTHD_STACKSIZE      2048                        /* Loading thread stack size */
-#define LOADINGTHD_PRIORITY       220                         /* Loading thread priority */
+#define LOADINGTHD_NAME            "bm_loader"                 /* Loading thread name */
+#define LOADINGTHD_STACKSIZE       2048                        /* Loading thread stack size */
+#define LOADINGTHD_PRIORITY        200                         /* Loading thread priority */
 
 /* Supported binary types */
 #define BIN_TYPE_BIN               0                          /* 'bin' type for kernel binary */
