@@ -48,3 +48,10 @@ config ELF_EXIDX_SECTNAME
 		be loaded by the ELF binary loader.
 
 		This is needed to support exception handling on loadable ELF modules.
+
+config ELF_EXCLUDE_SYMBOLS
+	bool "Excludes symbol information from ELF file"
+	default n
+	---help---
+		If this option is enabled, then it excludes symbol information from the ELF
+		and results in a ELF of much smaller size.
