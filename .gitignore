@@ -10,6 +10,7 @@ Make.dep
 .#*
 *#
 *.orig
+*.bak
 *.rej
 .swp
 .*.swp

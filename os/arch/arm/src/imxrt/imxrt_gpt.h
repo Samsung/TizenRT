@@ -40,7 +40,7 @@
 /*! @name Driver version */
 /*@{*/
 #define FSL_GPT_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
-                                                       /*@}*/
+/*@}*/
 
 /*!
  * @brief List of clock sources
@@ -318,8 +318,8 @@ static inline uint32_t imxrt_gpt_getcurrenttimercount(GPT_Type *base)
  * @param mode GPT input capture operation mode (see @ref gpt_input_operation_mode_t typedef enumeration).
  */
 static inline void imxrt_gpt_setinputoperationmode(GPT_Type *base,
-                                             gpt_input_capture_channel_t channel,
-                                             gpt_input_operation_mode_t mode)
+								gpt_input_capture_channel_t channel,
+								gpt_input_operation_mode_t mode)
 {
 	assert(channel <= kGPT_InputCapture_Channel2);
 
@@ -363,8 +363,8 @@ static inline uint32_t imxrt_gpt_getinputcapturevalue(GPT_Type *base, gpt_input_
  * @param mode GPT output operation mode (see @ref gpt_output_operation_mode_t typedef enumeration).
  */
 static inline void imxrt_gpt_setoutputoperationmode(GPT_Type *base,
-                                              gpt_output_compare_channel_t channel,
-                                              gpt_output_operation_mode_t mode)
+								gpt_output_compare_channel_t channel,
+								gpt_output_operation_mode_t mode)
 {
 	assert(channel <= kGPT_OutputCompare_Channel3);
 
@@ -379,7 +379,7 @@ static inline void imxrt_gpt_setoutputoperationmode(GPT_Type *base,
  * @return GPT output operation mode (see @ref gpt_output_operation_mode_t typedef enumeration).
  */
 static inline gpt_output_operation_mode_t imxrt_gpt_getoutputoperationmode(GPT_Type *base,
-                                                                     gpt_output_compare_channel_t channel)
+								gpt_output_compare_channel_t channel)
 {
 	assert(channel <= kGPT_OutputCompare_Channel3);
 

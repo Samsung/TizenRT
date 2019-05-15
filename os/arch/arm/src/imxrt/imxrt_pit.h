@@ -47,20 +47,20 @@
  * @note Actual number of available channels is SoC dependent
  */
 typedef enum _pit_chnl {
-    kPIT_Chnl_0 = 0U, /*!< PIT channel number 0*/
-    kPIT_Chnl_1,      /*!< PIT channel number 1 */
-    kPIT_Chnl_2,      /*!< PIT channel number 2 */
-    kPIT_Chnl_3,      /*!< PIT channel number 3 */
+	kPIT_Chnl_0 = 0U, /*!< PIT channel number 0*/
+	kPIT_Chnl_1,      /*!< PIT channel number 1 */
+	kPIT_Chnl_2,      /*!< PIT channel number 2 */
+	kPIT_Chnl_3,      /*!< PIT channel number 3 */
 } pit_chnl_t;
 
 /*! @brief List of PIT interrupts */
 typedef enum _pit_interrupt_enable {
-    kPIT_TimerInterruptEnable = PIT_TCTRL_TIE_MASK, /*!< Timer interrupt enable*/
+	kPIT_TimerInterruptEnable = PIT_TCTRL_TIE_MASK, /*!< Timer interrupt enable*/
 } pit_interrupt_enable_t;
 
 /*! @brief List of PIT status flags */
 typedef enum _pit_status_flags {
-    kPIT_TimerFlag = PIT_TFLG_TIF_MASK, /*!< Timer flag */
+	kPIT_TimerFlag = PIT_TFLG_TIF_MASK, /*!< Timer flag */
 } pit_status_flags_t;
 
 /*!
@@ -73,7 +73,7 @@ typedef enum _pit_status_flags {
  * The configuration structure can be made constant so it resides in flash.
  */
 typedef struct _pit_config {
-    bool enableRunInDebug; /*!< true: Timers run in debug mode; false: Timers stop in debug mode */
+	bool enableRunInDebug; /*!< true: Timers run in debug mode; false: Timers stop in debug mode */
 } pit_config_t;
 
 /*******************************************************************************
@@ -117,10 +117,10 @@ void imxrt_pit_deinit(PIT_Type *base);
  */
 static inline void imxrt_pit_getdefaultconfig(pit_config_t *config)
 {
-    assert(config);
+	assert(config);
 
-    /* Timers are stopped in Debug mode */
-    config->enableRunInDebug = false;
+	/* Timers are stopped in Debug mode */
+	config->enableRunInDebug = false;
 }
 
 #if defined(FSL_FEATURE_PIT_HAS_CHAIN_MODE) && FSL_FEATURE_PIT_HAS_CHAIN_MODE
@@ -142,11 +142,11 @@ static inline void imxrt_pit_getdefaultconfig(pit_config_t *config)
  */
 static inline void imxrt_pit_settimerchainmode(PIT_Type *base, pit_chnl_t channel, bool enable)
 {
-    if (enable) {
-        base->CHANNEL[channel].TCTRL |= PIT_TCTRL_CHN_MASK;
-    } else {
-        base->CHANNEL[channel].TCTRL &= ~PIT_TCTRL_CHN_MASK;
-    }
+	if (enable) {
+		base->CHANNEL[channel].TCTRL |= PIT_TCTRL_CHN_MASK;
+	} else {
+		base->CHANNEL[channel].TCTRL &= ~PIT_TCTRL_CHN_MASK;
+	}
 }
 
 #endif /* FSL_FEATURE_PIT_HAS_CHAIN_MODE */
@@ -168,7 +168,7 @@ static inline void imxrt_pit_settimerchainmode(PIT_Type *base, pit_chnl_t channe
  */
 static inline void imxrt_pit_enableinterrupts(PIT_Type *base, pit_chnl_t channel, uint32_t mask)
 {
-    base->CHANNEL[channel].TCTRL |= mask;
+	base->CHANNEL[channel].TCTRL |= mask;
 }
 
 /*!
@@ -181,7 +181,7 @@ static inline void imxrt_pit_enableinterrupts(PIT_Type *base, pit_chnl_t channel
  */
 static inline void imxrt_pit_disableinterrupts(PIT_Type *base, pit_chnl_t channel, uint32_t mask)
 {
-    base->CHANNEL[channel].TCTRL &= ~mask;
+	base->CHANNEL[channel].TCTRL &= ~mask;
 }
 
 /*!
@@ -195,7 +195,7 @@ static inline void imxrt_pit_disableinterrupts(PIT_Type *base, pit_chnl_t channe
  */
 static inline uint32_t imxrt_pit_getenabledinterrupts(PIT_Type *base, pit_chnl_t channel)
 {
-    return (base->CHANNEL[channel].TCTRL & PIT_TCTRL_TIE_MASK);
+	return (base->CHANNEL[channel].TCTRL & PIT_TCTRL_TIE_MASK);
 }
 
 /*! @}*/
@@ -216,7 +216,7 @@ static inline uint32_t imxrt_pit_getenabledinterrupts(PIT_Type *base, pit_chnl_t
  */
 static inline uint32_t imxrt_pit_getstatusflags(PIT_Type *base, pit_chnl_t channel)
 {
-    return (base->CHANNEL[channel].TFLG & PIT_TFLG_TIF_MASK);
+	return (base->CHANNEL[channel].TFLG & PIT_TFLG_TIF_MASK);
 }
 
 /*!
@@ -229,7 +229,7 @@ static inline uint32_t imxrt_pit_getstatusflags(PIT_Type *base, pit_chnl_t chann
  */
 static inline void imxrt_pit_clearstatusflags(PIT_Type *base, pit_chnl_t channel, uint32_t mask)
 {
-    base->CHANNEL[channel].TFLG = mask;
+	base->CHANNEL[channel].TFLG = mask;
 }
 
 /*! @}*/
@@ -255,7 +255,7 @@ static inline void imxrt_pit_clearstatusflags(PIT_Type *base, pit_chnl_t channel
  */
 static inline void imxrt_pit_settimerperiod(PIT_Type *base, pit_chnl_t channel, uint32_t count)
 {
-    base->CHANNEL[channel].LDVAL = count;
+	base->CHANNEL[channel].LDVAL = count;
 }
 
 /*!
@@ -273,7 +273,7 @@ static inline void imxrt_pit_settimerperiod(PIT_Type *base, pit_chnl_t channel, 
  */
 static inline uint32_t imxrt_pit_getcurrenttimercount(PIT_Type *base, pit_chnl_t channel)
 {
-    return base->CHANNEL[channel].CVAL;
+	return base->CHANNEL[channel].CVAL;
 }
 
 /*! @}*/
@@ -295,7 +295,7 @@ static inline uint32_t imxrt_pit_getcurrenttimercount(PIT_Type *base, pit_chnl_t
  */
 static inline void imxrt_pit_starttimer(PIT_Type *base, pit_chnl_t channel)
 {
-    base->CHANNEL[channel].TCTRL |= PIT_TCTRL_TEN_MASK;
+	base->CHANNEL[channel].TCTRL |= PIT_TCTRL_TEN_MASK;
 }
 
 /*!
@@ -309,7 +309,7 @@ static inline void imxrt_pit_starttimer(PIT_Type *base, pit_chnl_t channel)
  */
 static inline void imxrt_pit_stoptimer(PIT_Type *base, pit_chnl_t channel)
 {
-    base->CHANNEL[channel].TCTRL &= ~PIT_TCTRL_TEN_MASK;
+	base->CHANNEL[channel].TCTRL &= ~PIT_TCTRL_TEN_MASK;
 }
 
 /*! @}*/
