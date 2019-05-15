@@ -25,6 +25,9 @@
 #include <string.h>
 #include <debug.h>
 #include <errno.h>
+#if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_DISABLE_SIGNALS)
+#include <signal.h>
+#endif
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
@@ -169,6 +172,11 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	tcb = sched_gettcb(pid);
 	tcb->ram_start = (uint32_t)start_addr;
 	tcb->ram_size = size;
+#endif
+
+#if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_DISABLE_SIGNALS)
+	/* Clean the signal mask of loaded task because it inherits signal mask from parent task, binary manager. */
+	tcb->sigprocmask = NULL_SIGNAL_SET;
 #endif
 
 #ifdef CONFIG_BINFMT_LOADABLE
