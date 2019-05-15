@@ -22,13 +22,13 @@
 #include <string.h>
 #include <tinyara/seclink.h>
 
-#define SECAPI_LOG printf
+#define SECAPI_LOG sfdbg
 
 #define SECAPI_TAG "[SECAPI]"
 
-#define SECAPI_ERR														\
-	do {																\
-		SECAPI_LOG("[ERR] %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+#define SECAPI_ERR                                                   \
+	do {                                                             \
+		SECAPI_LOG(SECAPI_TAG"ERR\t%s:%d\n", __FILE__, __LINE__);    \
 	} while (0)
 
 #define SECAPI_DUMMY
@@ -54,15 +54,15 @@
 	} while (0)
 
 
-#define SECAPI_ENTER													\
-	do {																\
-		SECAPI_LOG(SECAPI_TAG "%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+#define SECAPI_ENTER                                                 \
+	do {                                                             \
+		SECAPI_LOG(SECAPI_TAG "---> %s:%d\n", __FILE__, __LINE__);   \
 	} while (0)
 
-#define SECAPI_RETURN(res)												\
-	do {																\
-		SECAPI_LOG(SECAPI_TAG "%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
-		return res;														\
+#define SECAPI_RETURN(res)                                           \
+	do {                                                             \
+		SECAPI_LOG(SECAPI_TAG "<--- %s:%d\n", __FILE__, __LINE__);   \
+		return res;                                             \
 	} while (0)
 
 /* convert a value from seclink then return it
@@ -97,12 +97,12 @@
 		hal->length = 0;						\
 	} while (0)
 
-#define SECAPI_ISHANDLE_VALID(ctx)					\
-	do {											\
-		if (!ctx) {									\
-			SECAPI_ERR;								\
-			return SECURITY_INVALID_INPUT_PARAMS;	\
-		}											\
+#define SECAPI_ISHANDLE_VALID(ctx)							\
+	do {													\
+		if (!ctx) {											\
+			SECAPI_ERR;										\
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);	\
+		}													\
 	} while (0)
 
 #define SECAPI_CONVERT_PATH(path, idx)							\

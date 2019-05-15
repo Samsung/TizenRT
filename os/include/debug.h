@@ -861,6 +861,22 @@
 #define sellvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR
+#define sfdbg(format, ...)     dbg(format, ##__VA_ARGS__)
+#define sflldbg(format, ...)   lldbg(format, ##__VA_ARGS__)
+#else
+#define sfdbg(...)
+#define sflldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_INFO
+#define sfvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define sfllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define sfvdbg(...)
+#define sfllvdbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1340,6 +1356,22 @@
 #else
 #define sevdbg     (void)
 #define sellvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR
+#define sfdbg      dbg
+#define sflldbg    lldbg
+#else
+#define sfdbg      (void)
+#define sflldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_INFO
+#define sfvdbg     vdbg
+#define sfllvdbg   llvdbg
+#else
+#define sfvdbg     (void)
+#define sfllvdbg   (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

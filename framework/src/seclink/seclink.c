@@ -39,18 +39,14 @@
 #define SECLINK_PATH "./seclink"
 #endif
 
-#ifdef CONFIG_SECURITY_LINK_DEBUG
-#define SL_LOG(format, ...) printf(format, ##__VA_ARGS__)
-#else
-#define SL_LOG(a, ...) (void)0
-#endif
+#define SL_LOG sedbg
 
 #define SL_TAG "[SECLINK]"
 
 #define SL_ERR(fd)														\
 	do {																\
-		SL_LOG(SL_TAG"[ERR:%s] %s %s:%d ret(%d) code(%s)\n",			\
-			   SL_TAG, __FUNCTION__, __FILE__, __LINE__, fd, strerror(errno)); \
+		SL_LOG(SL_TAG"%s:%d ret(%d) code(%s)\n",			            \
+			   __FILE__, __LINE__, fd, strerror(errno));                \
 	} while (0)
 
 #ifdef LINUX
@@ -64,7 +60,7 @@ extern int sl_post_msg(int fd, int cmd, unsigned long arg);
 			return SECLINK_ERROR;										\
 		}																\
 	} while (0)
-#elif
+#else
 #define SL_CALL(hnd, code, param)										\
 	do {																\
 		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \

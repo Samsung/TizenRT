@@ -216,6 +216,10 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_EVENTLOOP_UTC),y)
 	$(Q) $(call REGISTER,eventloop_utc,utc_eventloop_main,TASH_EXECMD_ASYNC,100,2048)
 endif
 
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC),y)
+	$(Q) $(call REGISTER,security_utc,utc_security_main,TASH_EXECMD_ASYNC,100,16384)
+endif
+
 context: $(BUILTIN_REGISTRY)$(DELIM)testcase.bdat
 
 else
