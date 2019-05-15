@@ -109,6 +109,7 @@ config IMXRT_LPI2C
 config IMXRT_LPSPI
 	bool
 	default n
+	select SPI
 
 config IMXRT_HIGHSPEED_GPIO
 	bool
