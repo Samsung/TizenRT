@@ -248,6 +248,11 @@ $(LIBRARIES_DIR)$(DELIM)libbcmexternal$(LIBEXT): $(EXTDIR)$(DELIM)WICED$(DELIM)l
 	$(Q) install $(EXTDIR)$(DELIM)WICED$(DELIM)libbcmexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libbcmexternal$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_RTK_WLAN),y)
+$(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT): $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)librtl$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)librtl$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
+endif
+
 # External esp32 wifi static Lib builds
 ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
 $(LIBRARIES_DIR)$(DELIM)libcoexist$(LIBEXT): $(EXTDIR)$(DELIM)esp_idf_port/esp32$(DELIM)lib$(DELIM)libcoexist$(LIBEXT)

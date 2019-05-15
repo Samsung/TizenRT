@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+config RTK_WIFI
+	bool "REALTEK Wi-Fi API"
+	default n
+	select SELECT_RTK_WLAN
+	---help---
+		Enable support for the REALTEK WI-Fi Networking API.
+

@@ -86,6 +86,11 @@ ifeq ($(CONFIG_USBHOST_RTL8187),y)
   RTL8187_CSRC := ${shell if [ -f usbhost$(DELIM)rtl8187x.c ]; then echo "rtl8187x.c"; fi}
   CSRCS += $(RTL8187_CSRC)
 endif
+
+ifeq ($(CONFIG_USBHOST_RTL8723D),y)
+  RTL8723D_CSRC := ${shell if [ -f usbhost$(DELIM)rtl8723d.c ]; then echo "rtl8723d.c"; fi}
+  CSRCS += $(RTL8723D_CSRC)
+endif
 endif
 
 # Include USB host driver build logic
