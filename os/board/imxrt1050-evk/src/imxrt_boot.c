@@ -59,6 +59,7 @@
 #include <tinyara/board.h>
 #include <tinyara/pwm.h>
 #include <tinyara/gpio.h>
+#include <tinyara/spi/spi.h>
 
 #include <arch/board/board.h>
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -74,8 +75,10 @@
 #include "imxrt_start.h"
 #include "imxrt_pwm.h"
 #include "imxrt_flash.h"
+ #include "imxrt_gpio.h"
 #include <tinyara/gpio.h>
-#include "imxrt_gpio.h"
+#include "imxrt_lpspi.h"
+
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
@@ -146,6 +149,29 @@ static void imxrt_pwm_initialize(void)
 }
 
 /****************************************************************************
+ * Name: imxrt_spi_initialize
+ *
+ * Description:
+ *   SPI intialization for imxrt
+ *
+ ****************************************************************************/
+void imxrt_spi_initialize(void)
+{
+#ifdef CONFIG_SPI
+	struct spi_dev_s *spi;
+	spi = up_spiinitialize(1);
+
+	char path[10];
+	if (spi != NULL) {
+		snprintf(path, sizeof(path), "/dev/spi%d", 1);
+		if (spi_uioregister(path, spi) < 0) {
+			lldbg("Failed to register SPI%d\n", 1);
+		}
+	}
+#endif
+}
+
+/****************************************************************************
  * Name: imxrt_boardinitialize
  *
  * Description:
@@ -192,5 +218,7 @@ void board_initialize(void)
 	imxrt_gpio_initialize();
 
 	imxrt_pwm_initialize();
+
+	imxrt_spi_initialize();
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */
