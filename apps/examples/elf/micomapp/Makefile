@@ -113,6 +113,10 @@ clean:
 install:
 	$(Q) mkdir -p $(USER_BIN_DIR)
 	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
+ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
+	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
+	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
+endif
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE)
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
