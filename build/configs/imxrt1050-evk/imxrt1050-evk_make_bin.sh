@@ -72,6 +72,12 @@ MAKE_FLASHFILE() {
 		APP2_SIZE1=$(stat -c%s "$APP2_IMG1")
 		APP2_SIZE2=$(stat -c%s "$APP2_IMG2")
 
+		# Check the size of partition and file
+		if [ ${OS_PART} -lt ${KERN_SIZE} -o ${USER_PART} -lt ${USER_SIZE} -o ${APP1_PART} -lt ${APP1_SIZE1} -o ${APP2_PART} -lt ${APP2_SIZE1} ]; then
+			echo "FAIL to make \"${FLASH_IMG##*/}\"!! Partition size is smaller than binary. Please resize it using menuconfig."
+			exit 1
+		fi
+
 		# Calculate padding sizes. Padding is required to adjust the binary size with
 		# the flash partition size.
 
@@ -121,6 +127,12 @@ MAKE_FLASHFILE() {
 
 		KERN_SIZE=$(stat -c%s "$KERN_IMG")
 		USER_SIZE=$(stat -c%s "$USER_IMG")
+
+		# Check the size of partition and file
+		if [ ${OS_PART} -lt ${KERN_SIZE} -o ${USER_PART} -lt ${USER_SIZE} ]; then
+			echo "FAIL to make \"${FLASH_IMG##*/}\"!! Partition size is smaller than binary. Please resize it using menuconfig."
+			exit 1
+		fi
 
 		# Calculate padding sizes. Padding is required to adjust the binary size with
 		# the flash partition size.
