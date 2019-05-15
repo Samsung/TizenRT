@@ -22,12 +22,15 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
+#include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <crc32.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <queue.h>
+#include <semaphore.h>
 #include <sys/types.h>
 
 #include <tinyara/mm/mm.h>
@@ -52,6 +55,7 @@ struct binary_header_s {
 };
 typedef struct binary_header_s binary_header_t;
 
+loading_list_t g_loading_list;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -329,35 +333,29 @@ static int binary_manager_reload(char *bin_name)
 static int loading_thread(int argc, char *argv[])
 {
 	int ret;
-	int type;
+	loading_data_t *loading_data;
 
-	if (argc <= 1) {
-		bmdbg("Invalid arguments\n");
-		return -1;
-	}
-
-	/* Arguments : [1] type */
-	type = (int)atoi(argv[1]);
-
-	ret = BINMGR_INVALID_PARAM;
-	switch (type) {
-	case LOADCMD_LOAD_ALL:
-		ret = binary_manager_load_all();
-		break;
-	case LOADCMD_RELOAD:
-		if (argc <= 2) {
-			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
-			break;
+	while (1) {
+		ret = sem_wait(&g_loading_list.sem);
+		if (ret != OK) {
+			bmdbg("sem_wait FAIL errno %d !!!!\n", errno);
+			continue;
 		}
-		/* [2] bin_name for reloading */
-		ret = binary_manager_reload(argv[2]);
-		break;
-	default:
-		bmdbg("Invalid loading type %d\n", type);
+		ret = BINMGR_INVALID_PARAM;
+		/* Get loading data from loading data list */
+		loading_data = (loading_data_t *)sq_remfirst(&g_loading_list.list);
+		if (loading_data) {
+			if (loading_data->type == LOADCMD_LOAD_ALL) {
+				ret = binary_manager_load_all();
+			} else if (loading_data->type == LOADCMD_RELOAD) {
+				ret = binary_manager_reload(loading_data->name);
+			}
+			kmm_free(loading_data);
+			bmdbg("Loading type %d result = %d\n", loading_data->type, ret);
+		}
 	}
-	bmvdbg("Loading result %d\n", ret);
 
-	return ret;
+	return 0;
 }
 
 /****************************************************************************
@@ -367,19 +365,59 @@ static int loading_thread(int argc, char *argv[])
  * Name: binary_manager_loading
  *
  * Description:
- *   This function create loading thread to load/unload binary.
+ *   This function creates a loading data and add it to loading data list.
+ *   A loading data would be processed by loading thread.
  *
  ****************************************************************************/
-int binary_manager_loading(char *loading_data[])
+int binary_manager_loading(int type, char *data)
+{
+	int ret;
+	loading_data_t *loading_data;
+
+	if (type < 0 || type >= LOADCMD_LOAD_MAX) {
+		bmdbg("Invalid loading type %d\n", type);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	/* Allocate loading data and set values */
+	loading_data = (loading_data_t *)kmm_zalloc(sizeof(loading_data_t));
+	if (loading_data == NULL) {
+		bmdbg("Invalid loading type %d\n", type);
+		return BINMGR_OUT_OF_MEMORY;
+	}
+	loading_data->type = type;
+	if (data != NULL) {
+		strncpy(loading_data->name, data, BIN_NAME_MAX);
+	}
+
+	/* Add loading data to list */
+	sq_addlast((dq_entry_t *)loading_data, &g_loading_list.list);
+	sem_post(&g_loading_list.sem);
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: binary_manager_loading_initialize
+ *
+ * Description:
+ *   This function create loading thread to load/unload binary
+ *   and initialize resources used in loading thread.
+ *
+ ****************************************************************************/
+int binary_manager_loading_initialize(void)
 {
 	int ret;
 
-	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, (char * const *)loading_data);
-	if (ret > 0) {
-		bmvdbg("Execute loading thread with pid %d\n", ret);
-	} else {
-		bmdbg("Loading Fail\n");
+	ret = kernel_thread(LOADINGTHD_NAME, LOADINGTHD_PRIORITY, LOADINGTHD_STACKSIZE, loading_thread, NULL);
+	if (ret <= 0) {
+		bmdbg("Failed to create loading thread, errno %d\n", errno);
+		return ERROR;
 	}
 
-	return ret;
+	/* Initialize a semaphore and a list of loading data used in loading thread */
+	sem_init(&g_loading_list.sem, 0, 0);
+	sq_init(&g_loading_list.list);
+
+	return OK;
 }

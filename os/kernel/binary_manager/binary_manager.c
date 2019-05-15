@@ -116,9 +116,7 @@ int binary_manager(int argc, char *argv[])
 	int ret;
 	int nbytes;
 	sigset_t sigset;
-	char type_str[1];
-	char data_str[1];
-	char *loading_data[LOADTHD_ARGC + 1];
+	loading_data_t *loading_data;
 	binmgr_request_t request_msg;
 
 	struct mq_attr attr;
@@ -140,16 +138,18 @@ int binary_manager(int argc, char *argv[])
 		return 0;
 	}
 
-	/* Execute loading thread for load all binaries */
-	loading_data[0] = itoa(LOADCMD_LOAD_ALL, type_str, 10);
-	loading_data[1] = NULL;
-
-	ret = binary_manager_loading(loading_data);
-	if (ret <= 0) {
-		bmdbg("Failed to create loading thread\n");
+	/* Create loading thread and initialize resources for loading thread */
+	ret = binary_manager_loading_initialize();
+	if (ret != OK) {
+		bmdbg("Failed to initialize loading, ret %d\n", ret);
 		goto binary_manager_exit;
-	} else {
-		bmvdbg("Loading thread with pid %d will load binaries!\n", ret);
+	}
+
+	/* Request loading all binaries which would be processed loading thread */
+	ret = binary_manager_loading(LOADCMD_LOAD_ALL, NULL);
+	if (ret != OK) {
+		bmdbg("Failed to request loading all, ret %d\n", ret);
+		goto binary_manager_exit;
 	}
 
 	while (1) {
@@ -176,14 +176,8 @@ int binary_manager(int argc, char *argv[])
 			ret = binary_manager_get_info_all(request_msg.requester_pid);
 			break;
 		case BINMGR_RELOAD:
-			memset(type_str, 0, 1);
-			memset(data_str, 0, 1);
-			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = request_msg.bin_name;
-			loading_data[2] = NULL;
-			ret = binary_manager_loading(loading_data);
+			ret = binary_manager_loading(LOADCMD_RELOAD, request_msg.bin_name);
 			break;
-
 		default:
 			break;
 		}

@@ -38,7 +38,6 @@
 #include "binary_manager.h"
 
 extern bool abort_mode;
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -134,10 +133,7 @@ void binary_manager_recovery(int pid)
 	int ret;
 	int bin_id;
 	int bin_idx;
-	char type_str[1];
-	char data_str[1];
 	struct tcb_s *tcb;
-	char *loading_data[LOADTHD_ARGC + 1];
 
 	bmllvdbg("Try to recover fault with pid %d\n", pid);
 
@@ -161,12 +157,8 @@ void binary_manager_recovery(int pid)
 		ret = recovery_exclude_scheduling(bin_id);
 		if (ret == OK) {
 			/* load binary and update binid */
-			memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = BIN_NAME(bin_idx);
-			loading_data[2] = NULL;
-			ret = binary_manager_loading(loading_data);
-			if (ret > 0) {
+			ret = binary_manager_loading(LOADCMD_RELOAD, BIN_NAME(bin_idx));
+			if (ret == OK) {
 				abort_mode = false;
 				bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
 				return 0;

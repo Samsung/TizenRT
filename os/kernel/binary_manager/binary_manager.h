@@ -22,6 +22,8 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <queue.h>
+#include <semaphore.h>
 
 #include <tinyara/config.h>
 #include <tinyara/binary_manager.h>
@@ -65,6 +67,19 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD_MAX,
 };
 
+struct loading_data_s {
+	struct loading_data_s *flink;
+	int type;
+	char name[BIN_NAME_MAX];
+};
+typedef struct loading_data_s loading_data_t;
+
+struct loading_list_s {
+	sq_queue_t list;
+	sem_t sem;
+};
+typedef struct loading_list_s loading_list_t;
+
 /* Binary data type in binary table */
 struct binmgr_bininfo_s {
 	pid_t bin_id;
@@ -94,7 +109,6 @@ typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
 
 extern binmgr_bininfo_t bin_table[BINARY_COUNT];
-
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
@@ -121,8 +135,9 @@ extern binmgr_bininfo_t bin_table[BINARY_COUNT];
 void binary_manager_recovery(int pid);
 #endif
 
+int binary_manager_loading_initialize(void);
 int binary_manager_load_binary(int bin_idx);
-int binary_manager_loading(char *loading_data[]);
+int binary_manager_loading(int type, char *name);
 int binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
 int binary_manager_get_info_with_name(int request_pid, char *bin_name);
