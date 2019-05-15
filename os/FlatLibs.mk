@@ -158,6 +158,10 @@ ifeq ($(CONFIG_WL_BCM4390X),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbcmexternal$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_RTK_WLAN),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
+endif
+
 # Add library for external esp32 wifi support.
 ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcore$(LIBEXT)
