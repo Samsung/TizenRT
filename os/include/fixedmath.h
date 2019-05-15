@@ -143,63 +143,63 @@
 
 /* Conversions */
 
-#define b8toi(a)        ((a) >> 8)	/* Conversion to integer */
+#define b8toi(a)        ((a) >> 8)		/* Conversion to integer */
 #define itob8(i)        (((b8_t)(i)) << 8)	/* Conversion from integer */
 #define uitoub8(i)      (((ub8_t)(i)) << 8)	/* Conversion from unsigned integer */
 #define b8tof(b)        (((float)b)/256.0)	/* Conversion to float */
 #define ftob8(f)        (b8_t)(((f)*256.0))	/* Conversion from float */
-#define b8trunc(a)      ((a) & 0xff00)	/* Truncate to integer b8 */
+#define b8trunc(a)      ((a) & 0xff00)		/* Truncate to integer b8 */
 #define b8round(a)      (((a)+0x0080) & 0xff00)	/* Round to integer b8 */
-#define b8frac(a)       ((a) & 0x00ff)	/* Take fractional part */
+#define b8frac(a)       ((a) & 0x00ff)		/* Take fractional part */
 
 /* Operators */
 
 #define ub8inv(b)       (0x8000/((b)>>1))	/* Inversion (b8=b15/b7) */
 #define b8inv(b)        (0x4000/((b)>>2))	/* Inversion (b8=b14/b6) */
-#define b8addb8(a, b)   ((a)+(b))	/* Addition */
-#define b8addi(a, i)    ((a)+itob8(i))	/* Add integer from b16 */
-#define b8subb8(a, b)   ((a)-(b))	/* Subtraction */
-#define b8subi(a, i)    ((a)-itob8(i))	/* Subtract integer from b8 */
-#define b8mulb8(a, b)   b16tob8((b16_t)(a)*(b16_t)(b)	/* Muliplication */
-#define ub8mulub8(a, b) ub16toub8((ub16_t)(a)*(ub16_t)(b)	/* Muliplication */
-#define b8muli(a, i)    ((a)*(i))	/* Simple multiplication by integer */
-#define b8sqr(a)        b8mulb8(a, a)	/* Square */
-#define ub8sqr(a)       ub8mulub8(a, a)	/* Square */
-#define b8divb8(a, b)   b8tob16(a)/(b16_t)(b)	/* Division */
-#define ub8divub8(a, b) ub8toub16(a)/(ub16_t)(b)	/* Division */
-#define b8divi(a, i)    ((a)/(i))	/* Simple division by integer */
-#define b8idiv(i, j)    (((i)<<8)/j)	/* Division of integer, b8 result */
+#define b8addb8(a, b)   ((a) + (b))		/* Addition */
+#define b8addi(a, i)    ((a) + itob8(i))	/* Add integer from b16 */
+#define b8subb8(a, b)   ((a) - (b))		/* Subtraction */
+#define b8subi(a, i)    ((a) - itob8(i))	/* Subtract integer from b8 */
+#define b8mulb8(a, b)   b16tob8((b16_t)(a) * (b16_t)(b)	/* Muliplication */
+#define ub8mulub8(a, b) ub16toub8((ub16_t)(a) * (ub16_t)(b)	/* Muliplication */
+#define b8muli(a, i)    ((a) * (i))		/* Simple multiplication by integer */
+#define b8sqr(a)        b8mulb8(a, a)		/* Square */
+#define ub8sqr(a)       ub8mulub8(a, a)		/* Square */
+#define b8divb8(a, b)   b8tob16(a) / (b16_t)(b)	/* Division */
+#define ub8divub8(a, b) ub8toub16(a) / (ub16_t)(b)	/* Division */
+#define b8divi(a, i)    ((a) / (i))		/* Simple division by integer */
+#define b8idiv(i, j)    (((i) << 8) / j)	/* Division of integer, b8 result */
 
 /* 32-bit values with 16 bits of precision ********************************/
 
 /* Conversions */
 
-#define b16toi(a)           ((a) >> 16)	/* Conversion to integer */
+#define b16toi(a)           ((a) >> 16)			/* Conversion to integer */
 #define itob16(i)           (((b16_t)(i)) << 16)	/* Conversion from integer */
 #define uitoub16(i)         (((ub16_t)(i)) << 16)	/* Conversion from unsigned integer */
-#define b16tof(b)           (((float)b)/65536.0)	/* Conversion to float */
-#define ftob16(f)           (b16_t)(((f)*65536.0))	/* Conversion from float */
-#define b16trunc(a)         ((a) & 0xffff0000)	/* Truncate to integer */
-#define b16round(a)         (((a)+0x00008000) & 0xffff0000)
-#define b16frac(a)          ((a) & 0x0000ffff)	/* Take fractional part */
+#define b16tof(b)           (((float)b) / 65536.0)	/* Conversion to float */
+#define ftob16(f)           (b16_t)(((f) * 65536.0))	/* Conversion from float */
+#define b16trunc(a)         ((a) & 0xffff0000)		/* Truncate to integer */
+#define b16round(a)         (((a) + 0x00008000) & 0xffff0000)
+#define b16frac(a)          ((a) & 0x0000ffff)		/* Take fractional part */
 
 /* Operators */
 
-#define ub16inv(b)          (0x80000000/((b)>>1))	/* Inversion (b16=b31/b15) */
-#define b16inv(b)           (0x40000000/((b)>>2))	/* Inversion (b16=b30/b14) */
-#define b16addb16(a, b)     ((a)+(b))	/* Addition */
-#define b16addi(a, i)       ((a)+itob16(i))	/* Add integer to b16 */
-#define b16subb16(a, b)     ((a)-(b))	/* Subtraction */
-#define b16subi(a, i)       ((a)-itob16(i))	/* Subtract integer from b16 */
-#define b16muli(a, i)       ((a)*(i))	/* Simple multiplication by integer */
-#define b16divi(a, i)       ((a)/(i))	/* Simple division by integer */
-#define b16idiv(i, j)       (((i)<<16)/j)	/* Division of integer, b16 result */
+#define ub16inv(b)          (0x80000000 / ((b) >> 1))	/* Inversion (b16=b31/b15) */
+#define b16inv(b)           (0x40000000 / ((b) >> 2))	/* Inversion (b16=b30/b14) */
+#define b16addb16(a, b)     ((a) + (b))			/* Addition */
+#define b16addi(a, i)       ((a) + itob16(i))		/* Add integer to b16 */
+#define b16subb16(a, b)     ((a) - (b))			/* Subtraction */
+#define b16subi(a, i)       ((a) - itob16(i))		/* Subtract integer from b16 */
+#define b16muli(a, i)       ((a) * (i))			/* Simple multiplication by integer */
+#define b16divi(a, i)       ((a) / (i))			/* Simple division by integer */
+#define b16idiv(i, j)       (((i) << 16) / j)		/* Division of integer, b16 result */
 
 #ifdef CONFIG_HAVE_LONG_LONG
 /* Multiplication operators */
 
-#define b16mulb16(a, b)     b32tob16((b32_t)(a)*(b32_t)(b))
-#define ub16mulub16(a, b)   ub32toub16((ub32_t)(a)*(ub32_t)(b))
+#define b16mulb16(a, b)     b32tob16((b32_t)(a) * (b32_t)(b))
+#define ub16mulub16(a, b)   ub32toub16((ub32_t)(a) * (ub32_t)(b))
 
 /* Square operators */
 
@@ -208,8 +208,8 @@
 
 /* Division operators */
 
-#define b16divb16(a, b)     (b16_t)(b16tob32(a)/(b32_t)(b))
-#define ub16divub16(a, b)   (ub16_t)(ub16toub32(a)/(ub32_t)(b))
+#define b16divb16(a, b)     (b16_t)(b16tob32(a) / (b32_t)(b))
+#define ub16divub16(a, b)   (ub16_t)(ub16toub32(a) / (ub32_t)(b))
 #endif
 
 /**************************************************************************
