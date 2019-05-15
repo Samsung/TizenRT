@@ -313,7 +313,6 @@ static void tc_libc_timer_strftime(void)
 {
 	struct tm st_time;
 	char buffer[BUFF_SIZE];
-	int ret_chk;
 
 	/* using specific tm struct */
 	st_time.tm_sec = 15;
@@ -327,20 +326,20 @@ static void tc_libc_timer_strftime(void)
 	 * time structure has month in range 0-11,
 	 * so tm_mon + 1 represents actual month number */
 
-	strftime(buffer, BUFF_SIZE, "%m", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mon + 1);
+	/* Check the zero value */
+	TC_ASSERT_EQ("strftime", strftime(buffer, 0, "return_0_check", &st_time), 0);
 
-	/* Check the abbreviated month name */
-	strftime(buffer, BUFF_SIZE, "%h", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "Jun"), 0);
+	/* Check the three-letter abbreviation for the day of the week */
+	strftime(buffer, BUFF_SIZE, "a", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "a", strlen("a") + 1), 0);
+
+	/* Check the full name for the day of the week */
+	strftime(buffer, BUFF_SIZE, "%a", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "Day", strlen("Day") + 1), 0);
 
 	/* Check the full month name */
 	strftime(buffer, BUFF_SIZE, "%B", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "June"), 0);
-
-	/* Check the century number (year/100) as a 2-digit integer */
-	strftime(buffer, BUFF_SIZE, "%C", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year % 100);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "June", strlen("June") + 1), 0);
 
 	/* Check the day of month as a decimal number (range 01 to 31) */
 	strftime(buffer, BUFF_SIZE, "%d", &st_time);
@@ -352,17 +351,21 @@ static void tc_libc_timer_strftime(void)
 	strftime(buffer, BUFF_SIZE, "%e", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mday);
 
+	/* Check the abbreviated month name */
+	strftime(buffer, BUFF_SIZE, "%h", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "Jun", strlen("Jun") + 1), 0);
+
 	/* Check the hour as a decimal number using a 24-hour clock (range 00 to 23) */
 	strftime(buffer, BUFF_SIZE, "%H", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour);
 
 	/* Check the hour as a decimal number using a 12-hour clock (range 01 to 12) */
 	strftime(buffer, BUFF_SIZE, "%I", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour - 12);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour % 12);
 
 	/* Check the day of the year as a decimal number (range 001 to 366) */
 	strftime(buffer, BUFF_SIZE, "%j", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), clock_daysbeforemonth(st_time.tm_mon, false) + st_time.tm_mday);
+	TC_ASSERT_EQ("strftime", atoi(buffer), clock_daysbeforemonth(st_time.tm_mon, clock_isleapyear(st_time.tm_year)) + st_time.tm_mday);
 
 	/* Check the hour as a decimal number using a 24-hour clock (range 0 to 23)
 	 * single digits are preceded by a blank.
@@ -374,41 +377,60 @@ static void tc_libc_timer_strftime(void)
 	 * single digits are preceded by a blank.
 	 */
 	strftime(buffer, BUFF_SIZE, "%l", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour - 12);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour % 12);
+
+	/* Check the month as a decimal number (range 01 to 12). */
+	strftime(buffer, BUFF_SIZE, "%m", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mon + 1);
+
+	/* Check the minute as a decimal number (range 00 to 59). */
+	strftime(buffer, BUFF_SIZE, "%M", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_min);
+
+	/* Check the Enter character */
+	strftime(buffer, BUFF_SIZE, "%n", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "\n", strlen("\n") + 1), 0);
 
 	/* Check either "AM" or "PM" according to the given time value, Noon is treated as "PM" and midnight as "AM" */
 	strftime(buffer, BUFF_SIZE, "%p", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "PM"), 0);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "PM", strlen("PM") + 1), 0);
 
 	/* Check either "am" or "pm" according to the given time value, Noon is treated as "pm" and midnight as "am" */
 	strftime(buffer, BUFF_SIZE, "%P", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "pm"), 0);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "pm", strlen("pm") + 1), 0);
+
+	/* Check the century number (year/100) as a 2-digit integer */
+	strftime(buffer, BUFF_SIZE, "%y", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year % 100);
 
 	st_time.tm_hour = 3;
 	/* Check either "AM" or "PM" according to the given time value, Noon is treated as "PM" and midnight as "AM" */
 	strftime(buffer, BUFF_SIZE, "%p", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "AM"), 0);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "AM", strlen("AM") + 1), 0);
 
 	/* Check either "am" or "pm" according to the given time value, Noon is treated as "pm" and midnight as "am" */
 	strftime(buffer, BUFF_SIZE, "%P", &st_time);
-	TC_ASSERT_EQ("strftime", strcmp(buffer, "am"), 0);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "am", strlen("am") + 1), 0);
+
+	/* Check the number of seconds since the Epoch, that is, since 1970-01-01 */
+	strftime(buffer, BUFF_SIZE, "%s", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), mktime((FAR struct tm *)&st_time));
 
 	/* Check the second as a decimal number (range 00 to 60) */
 	strftime(buffer, BUFF_SIZE, "%S", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_sec);
 
+	/* Check the tab character */
+	strftime(buffer, BUFF_SIZE, "%t", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "\t", strlen("\t") + 1), 0);
+
 	/* Check the year as a decimal number including the century */
 	strftime(buffer, BUFF_SIZE, "%Y", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + TM_YEAR_BASE);
 
-	/* Check the year as a decimal number without a century (range 00 to 99) */
-	strftime(buffer, BUFF_SIZE, "%y", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year % 100);
-
-	/* Check with invalid param. it will returns 0. */
-	ret_chk = strftime(buffer, BUFF_SIZE, "%f", &st_time);
-	TC_ASSERT_EQ("strftime", ret_chk, 0);
-	TC_ASSERT_EQ("strftime", atoi(buffer), 0);
+	/* Check the '%' character */
+	strftime(buffer, BUFF_SIZE, "%%", &st_time);
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "%", strlen("%") + 1), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -436,7 +458,106 @@ static void tc_libc_timer_strptime(void)
 	sf_tm.tm_mon  = 5;
 	sf_tm.tm_year = 2018 - TM_YEAR_BASE;
 
-	memset(&sp_tm, 0, sizeof(struct tm));
+	/* %b or %B or %h - The month name according to the current locale, in abbreviated form or the full name. */
+	ret = strptime("Jun", "%B", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+
+	/* %b or %B or %h - The month name according to the current locale, in abbreviated form or the full name. */
+	ret = strptime("Fail", "%B", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %C - The century number (0-99).
+	 * %C does not modify tm structure, so just validating the return value..
+	 */
+	ret = strptime("Fail", "%C", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %D - Equivalent	to %m/%d/%y(month/day/year). */
+	ret = strptime("Fail/05/18", "%D", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %n - The Enter Character.
+	 * %n does not modify tm structure, so just validating the return value..
+	 */
+	ret = strptime("\n", "%n", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+
+	/* %H - Equivalent to Hour
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("13 AM", "%H %p", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %H - Equivalent to Hour
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("12 AM", "%H %p", &sp_tm);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, 0);
+
+	/* %H - Equivalent to Hour
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("13 PM", "%H %p", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %H - Equivalent to Hour
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("11 PM", "%H %p", &sp_tm);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, 23);
+
+	/* %p - The locale's equivalent of AM or PM. */
+	ret = strptime("FM", "%p", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %R - Equivalent to %H:%M (hour:minute). */
+	ret = strptime("24:42", "%R", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %r - The 12-hour clock time (using the locale's AM or PM). */
+	ret = strptime("Fail:42:13 PM", "%r", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %T - Equivalent to %H:%M:%S (hour/minute/second). */
+	ret = strptime("12:42:Fail", "%T", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %U - The week number with Sunday the first day of the week (0-53). */
+	ret = strptime("Fail", "%U", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %X - The time, using the locale's time format. */
+	ret = strptime("10:Fail:13", "%X", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %x - The date, using the locale's date format. */
+	ret = strptime("10/Fail/18", "%x", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %Y or %y - The year, including century (2018 = 2000(century) + 18(year)). */
+	ret = strptime("Fail", "%Y", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %Y or %y - The year, including century (2018 = 2000(century) + 18(year)). */
+	ret = strptime("Fail", "%y", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	/* %Y or %y - The year, including century (2018 = 2000(century) + 18(year)). */
+	ret = strptime("80", "%y", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, 80 + 1900 - TM_YEAR_BASE);
+
+	/* %C - The century number (0-99).
+	 * %C does not modify tm structure, so just validating the return value..
+	 * %Y or %y - The year, including century (2018 = 2000(century) + 18(year)).
+	 */
+	ret = strptime("10 80", "%C %y", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, 80 + 1000 - TM_YEAR_BASE);
+
+	ret = strptime("test", "%%", &sp_tm);
+	TC_ASSERT_EQ("strptime", ret, NULL);
 
 	/* strptime() converts a string representation of time to a time tm structure,
 	 * using the specified format. descrtiption of example formats are as shown below,
@@ -448,7 +569,8 @@ static void tc_libc_timer_strptime(void)
 	 * %S - The second (0-60).
 	 * %p - The locale's equivalent of AM or PM.
 	 */
-	ret = strptime("2018-06-05 12:42:13 PM", "%Y-%m-%Od %k:%M:%S %p", &sp_tm);
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("2018-06-05 12:42:13 PM", "%Y-%m-%d %k:%M:%S %p", &sp_tm);
 	TC_ASSERT_NEQ("strptime", ret, NULL);
 	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
 	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
@@ -472,10 +594,10 @@ static void tc_libc_timer_strptime(void)
 	/* %C - The century number (0-99).
 	 * %C does not modify tm structure, so just validating the return value..
 	 */
-	ret = strptime("2018", "%C", &sp_tm);
+	ret = strptime("50", "%C", &sp_tm);
 	TC_ASSERT_NEQ("strptime", ret, NULL);
 
-	/* %D - Equivalent  to %m/%d/%y(month/day/year).
+	/* %D - Equivalent to %m/%d/%y(month/day/year).
 	 * %X - The time, using the locale's time format.
 	 */
 	memset(&sp_tm, 0, sizeof(struct tm));
@@ -490,7 +612,7 @@ static void tc_libc_timer_strptime(void)
 
 	/* %x - The date, using the locale's date format.
 	 * %R - Equivalent to %H:%M (hour:minute).
-     */
+	 */
 	memset(&sp_tm, 0, sizeof(struct tm));
 	ret = strptime("06/05/18 12:42", "%x %R", &sp_tm);
 	TC_ASSERT_NEQ("strptime", ret, NULL);
@@ -518,6 +640,7 @@ static void tc_libc_timer_strptime(void)
 	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
 	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
 	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
 
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	/* Tuesday (0-6: day of the week, week starts on Sunday)*/
