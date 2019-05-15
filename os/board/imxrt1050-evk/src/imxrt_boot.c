@@ -98,10 +98,10 @@ static void imxrt_gpio_initialize(void)
 		gpio_pinset_t pinset;
 	} pins[] = {
 		{
-			45, GPIO_LED
+			9, GPIO_LED
 		},
 		{
-			49, GPIO_LED2
+			11, GPIO_LED2
 		},
 	};
 
