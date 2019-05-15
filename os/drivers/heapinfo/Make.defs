@@ -19,7 +19,9 @@
 
 ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
 
+ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
 CSRCS += heapinfo_drv.c
+endif
 
 # Include heapinfo driver support
 
