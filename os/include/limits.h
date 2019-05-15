@@ -79,7 +79,7 @@
 
 #ifndef CONFIG_PATH_MAX
 #if CONFIG_NAME_MAX < 64
-#define CONFIG_PATH_MAX (4*CONFIG_NAME_MAX + 1)
+#define CONFIG_PATH_MAX (4 * CONFIG_NAME_MAX + 1)
 #else
 #define CONFIG_PATH_MAX 256
 #endif
@@ -178,9 +178,9 @@
 #define _POSIX_TIMER_MAX      32
 
 #ifdef CONFIG_USEC_PER_TICK
-#define _POSIX_CLOCKRES_MIN  ((CONFIG_USEC_PER_TICK)*1000)
+#define _POSIX_CLOCKRES_MIN  ((CONFIG_USEC_PER_TICK) * 1000)
 #else
-#define _POSIX_CLOCKRES_MIN  (10*1000000)
+#define _POSIX_CLOCKRES_MIN  (10 * 1000000)
 #endif
 
 /* Required for asynchronous I/O */
