@@ -63,6 +63,7 @@
 #include <tinyara/gpio.h>
 #include <tinyara/kmalloc.h>
 
+#include "imxrt_iomuxc.h"
 #include "imxrt_gpio.h"
 
 /****************************************************************************
@@ -138,6 +139,7 @@ static int imxrt_gpio_setdir(FAR struct gpio_lowerhalf_s *lower, unsigned long a
 {
 	struct imxrt_lowerhalf_s *priv = (struct imxrt_lowerhalf_s *)lower;
 
+	priv->pinset &= (~GPIO_MODE_MASK);
 	if (arg == GPIO_DIRECTION_OUT) {
 		priv->pinset |= GPIO_OUTPUT;
 	} else {
@@ -149,23 +151,20 @@ static int imxrt_gpio_setdir(FAR struct gpio_lowerhalf_s *lower, unsigned long a
 
 static int imxrt_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long arg)
 {
-	#if 0 //TO-DO
 	struct imxrt_lowerhalf_s *priv = (struct imxrt_lowerhalf_s *)lower;
 
-	priv->pincfg &= ~PUPD_MASK;
+	priv->pinset &= ~IOMUX_PULL_MASK;
 	if (arg == GPIO_DRIVE_PULLUP) {
-		priv->pincfg |= PULLUP;
+		priv->pinset |= IOMUX_PULL_UP_100K;
 	} else if (arg == GPIO_DRIVE_PULLDOWN) {
-		priv->pincfg |= PULLDOWN;
+		priv->pinset |= IOMUX_PULL_DOWN_100K;
 	} else if (arg == GPIO_DRIVE_FLOAT) {
-		priv->pincfg &= ~(PULLDOWN | PULLUP);
+		priv->pinset &= ~IOMUX_PULL_NONE;
 	} else {
 		return -EINVAL;
 	}
 
-	return imxrt_configgpio(priv->pinnum, priv->pincfg);
-	#endif
-	return 0;
+	return imxrt_config_gpio(priv->pinset);
 }
 
 static int imxrt_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling, int rising, gpio_handler_t handler)
