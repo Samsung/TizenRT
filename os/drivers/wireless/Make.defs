@@ -39,6 +39,10 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 include wireless$(DELIM)scsc$(DELIM)Make.defs
 endif
 
+ifeq ($(CONFIG_RTK_WLAN),y)
+include wireless$(DELIM)realtek$(DELIM)Make.defs
+endif
+
 ifeq ($(CONFIG_SCSC_CORE),y)
 include wireless$(DELIM)scsc$(DELIM)misc$(DELIM)Make.defs
 endif

@@ -259,6 +259,27 @@ config RTL8187_PID
 
 endif # USBHOST_RTL8187
 
+config USBHOST_RTL8723D
+	bool "RTL8723D-based wireless LAN"
+	default n
+	depends on NET
+
+if USBHOST_RTL8723D
+
+config RTL8723D
+	bool "RTL8723D chip"
+	default y
+
+config RTL8723D_VID
+	hex "RTL8723D VID"
+	default 0x0bda
+
+config RTL8723D_PID
+	hex "RTL8723D PID"
+	default 0xd723
+
+endif # USBHOST_RTL8723D
+
 config USBHOST_TRACE
 	bool "Enable USB HCD tracing for debug"
 	default n
