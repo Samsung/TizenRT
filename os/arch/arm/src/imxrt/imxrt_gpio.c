@@ -654,6 +654,19 @@ static inline int imxrt_gpio_configperiph(gpio_pinset_t pinset)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+uint8_t imxrt_gpio_irqvector(uint32_t pinset)
+{
+	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+	if (port == GPIO_PORT1 >> GPIO_PORT_SHIFT) {
+		return _IMXRT_GPIO1_0_15_BASE + pin;
+	} else if (port == GPIO_PORT2 >> GPIO_PORT_SHIFT) {
+		return _IMXRT_GPIO1_16_31_BASE + pin;
+	}
+
+	return 0;
+}
 
 /****************************************************************************
  * Name: imxrt_config_gpio
