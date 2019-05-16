@@ -16,5 +16,4 @@ source "$EXTERNALDIR/esp_idf_port/esp32/Kconfig"
 source "$EXTERNALDIR/esp_idf_port/log/Kconfig"
 source "$EXTERNALDIR/esp_idf_port/esp_lwip/Kconfig"
 source "$EXTERNALDIR/esp_idf_port/tcpip_adapter/Kconfig"
-source "$EXTERNALDIR/esp_idf_port/spi_flash/Kconfig"
 endif
