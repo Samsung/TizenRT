@@ -597,11 +597,15 @@ status_t imxrt_flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t addre
 {
 	status_t status;
 	flexspi_transfer_t flashXfer;
+	irqstate_t flags;
+
+	flags = irqsave();
 
 	/* Write enable */
 	status = imxrt_flexspi_nor_write_enable(base, address);
 
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
@@ -613,10 +617,13 @@ status_t imxrt_flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t addre
 	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
 	status = imxrt_flexspi_nor_wait_bus_busy(base);
+
+	irqrestore(flags);
 
 	return status;
 }
@@ -632,10 +639,14 @@ status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t addre
 {
 	status_t status;
 	flexspi_transfer_t flashXfer;
+	irqstate_t flags;
+
+	flags = irqsave();
 
 	/* Write neable */
 	status = imxrt_flexspi_nor_write_enable(base, address);
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
@@ -650,6 +661,7 @@ status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t addre
 	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
@@ -657,7 +669,7 @@ status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t addre
 
 	arch_flush_dcache(address + IMXRT_FLASH_BASE, address + IMXRT_FLASH_BASE + IMXRT_FLASH_PAGE_SIZE);
 
-	//flexspi_clock_update();
+	irqrestore(flags);
 
 	return status;
 }

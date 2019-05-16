@@ -135,13 +135,10 @@ struct imxrt_dev_s {
  ************************************************************************************/
 
 /* Helpers */
-
-static void imxrt_lock(FAR struct spi_dev_s *dev);
-static inline void imxrt_unlock(FAR struct spi_dev_s *dev);
 static inline int imxrt_readid(struct imxrt_dev_s *priv);
 static void imxrt_waitwritecomplete(struct imxrt_dev_s *priv);
 static inline void imxrt_sectorerase(struct imxrt_dev_s *priv, off_t offset);
-static inline int imxrt_bulkerase(struct imxrt_dev_s *priv);
+static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, unsigned long arg);
 static inline void imxrt_pagewrite(struct imxrt_dev_s *priv, FAR const uint8_t *buffer, off_t offset);
 
 /* MTD driver methods */
@@ -162,27 +159,6 @@ static int imxrt_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
-
-
-
-
-
-/************************************************************************************
- * Name: imxrt_lock
- ************************************************************************************/
-
-static void imxrt_lock(FAR struct spi_dev_s *dev)
-{
-}
-
-/************************************************************************************
- * Name: imxrt_unlock
- ************************************************************************************/
-
-static inline void imxrt_unlock(FAR struct spi_dev_s *dev)
-{
-}
-
 /************************************************************************************
  * Name: imxrt_readid
  ************************************************************************************/
@@ -277,9 +253,9 @@ static void imxrt_sectorerase(struct imxrt_dev_s *priv, off_t sector)
  * Name:  imxrt_bulkerase
  ************************************************************************************/
 
-static inline int imxrt_bulkerase(struct imxrt_dev_s *priv)
+static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, unsigned long arg)
 {
-	fdbg("priv: %p\n", priv);
+	fvdbg("priv: %p\n", priv);
 
     #ifdef CONSIDER_IMPLEMENT
 	/* Wait for any preceding write to complete.  We could simplify things by
@@ -305,6 +281,24 @@ static inline int imxrt_bulkerase(struct imxrt_dev_s *priv)
 	/* Deselect the FLASH */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+	
+	size_t sectors_erased = 0;
+	size_t startsector = 8;
+//	fdbg("startsector: %d nsectors: %d\n", (long)startsector, (int)priv->nsectors);
+	fdbg("startsector: %d nsectors: %d\n", (long)startsector, 2);
+
+	/* Lock access to the SPI bus until we complete the erase */
+
+//	while (sectors_erased < priv->nsectors) {
+	while (sectors_erased < 2) {
+		/* Not using sub-sector erase.  Erase each full sector */
+
+		imxrt_sectorerase(priv, startsector + sectors_erased);
+		sectors_erased++;
+	}
+
+	fdbg("Return = erased sectors = %d\n", sectors_erased);
+	return sectors_erased;
 	#endif
 
 	fdbg("Return: OK\n");
@@ -366,6 +360,7 @@ static int imxrt_erase(FAR struct mtd_dev_s *dev, off_t startsector, size_t nsec
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
 	size_t sectors_erased = 0;
 
+	#ifdef CONSIDER_IMPLEMENT
 	fdbg("startsector: %d nsectors: %d\n", (long)startsector, (int)nsectors);
 
 	/* Lock access to the SPI bus until we complete the erase */
@@ -409,10 +404,11 @@ static int imxrt_erase(FAR struct mtd_dev_s *dev, off_t startsector, size_t nsec
 
 		/* Not using sub-sector erase.  Erase each full sector */
 
-		imxrt_sectorerase(priv, startsector);
+		imxrt_sectorerase(priv, startsector + sectors_erased);
 		sectors_erased++;
 	}
-
+	#endif
+	
 	return (int)sectors_erased;
 }
 
@@ -441,7 +437,7 @@ static ssize_t imxrt_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t n
 static ssize_t imxrt_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buffer)
 {
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
-	size_t blockswritten = 0;
+	off_t blockswritten = 0;
 	size_t pagesize = 1 << priv->pageshift;
 	status_t status;
 	ssize_t nbytes;
@@ -454,8 +450,7 @@ static ssize_t imxrt_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 	fvdbg("buffer value: [%x] [%x] [%x] [%x] [%x] [%x]\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 
 	while (blockswritten < nblocks) {
-		imxrt_pagewrite(priv, buffer, startblock + blockswritten);
-		buffer += pagesize;
+		imxrt_pagewrite(priv, buffer + pagesize * blockswritten, startblock + blockswritten);
 		blockswritten++;
 	}
 
@@ -515,7 +510,6 @@ static ssize_t imxrt_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
 
 		count = nbytes;
 		pagesize = (1 << priv->pageshift);
-//		pagesize = (1 << priv->sectorshift);
 		bytestowrite = pagesize - (offset & (pagesize - 1));
 		imxrt_bytewrite(priv, buffer, offset, bytestowrite);
 
@@ -556,9 +550,8 @@ static int imxrt_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
-	char tempLog[128];
 
-	fdbg("cmd: %d \n", cmd);
+	fvdbg("cmd: %d \n", cmd);
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {
@@ -582,24 +575,20 @@ static int imxrt_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 #endif
 			{
 				geo->erasesize = (1 << priv->sectorshift);
-				geo->neraseblocks = priv->nsectors;
+				geo->neraseblocks = priv->npages;
 			}
 
 			ret = OK;
 
-			snprintf(tempLog, sizeof(tempLog), "sectorshift: %d nsectors: %d pageshift: %d, npages: %d\n", priv->sectorshift, priv->nsectors, priv->pageshift, priv->npages);
-			IMXLOG(tempLog);
-
-			snprintf(tempLog, sizeof(tempLog), "blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
-			IMXLOG(tempLog);
-			fdbg("blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
+			fvdbg("blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
 		}
 	}
 	break;
 
 	case MTDIOC_BULKERASE: {
 		/* Erase the entire device */
-		ret = imxrt_bulkerase(priv);
+		fdbg("[pid %d]: checkpoint line %d, arg = %d\n", getpid(), __LINE__, arg);
+		ret = imxrt_bulkerase(priv, arg);
 	}
 	break;
 
@@ -609,7 +598,7 @@ static int imxrt_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 		break;
 	}
 
-	fdbg("return %d\n", ret);
+	fvdbg("return %d\n", ret);
 	return ret;
 }
 
