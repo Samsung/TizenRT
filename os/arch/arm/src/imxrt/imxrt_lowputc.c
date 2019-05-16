@@ -493,7 +493,6 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 	} else {
 		/* Here should be added support of other bit modes. */
 
-#warning missing logic
 		return ERROR;
 	}
 

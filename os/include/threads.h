@@ -107,10 +107,10 @@
 
 /* thrd_start_t: function pointer type passed to thrd_create */
 
-typedef CODE int (*thrd_start_t)(FAR void *arg)
+typedef CODE int (*thrd_start_t)(FAR void *arg);
 
 /* mtx_t : mutex identifier */
-#define pthread_mutex_t
+#define mtx_t pthread_mutex_t
 /* once_flag: the type of the flag used by call_once */
 #define pthread_once_t once_flag
 /* cnd_t: condition variable identifier */

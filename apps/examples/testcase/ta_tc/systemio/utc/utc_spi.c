@@ -29,11 +29,7 @@
 
 iotbus_spi_context_h spi;
 
-#if defined(CONFIG_ARCH_BOARD_MIKROEQUAIL)
 unsigned int bus = 1;
-#else
-unsigned int bus = 0;
-#endif
 
 unsigned char txbuf[64] = { 0, };
 unsigned char rxbuf[64] = { 0, };;

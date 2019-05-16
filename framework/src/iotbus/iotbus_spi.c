@@ -79,7 +79,7 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 
 	/*	Open driver */
 	char spi_dev[16] = { 0, };
-	snprintf(spi_dev, 16, "/dev/spi-%d", bus);
+	snprintf(spi_dev, 16, "/dev/spi%d", bus);
 	int fd = open(spi_dev, O_RDWR);
 	if (fd < 0) {
 		ibdbg("open %s failed: %d\n", spi_dev, errno);
