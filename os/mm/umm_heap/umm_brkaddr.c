@@ -58,8 +58,6 @@
 #include <assert.h>
 #include <tinyara/mm/mm.h>
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -81,4 +79,3 @@ FAR void *umm_brkaddr(int region)
 	return mm_brkaddr(BASE_HEAP, region);
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
