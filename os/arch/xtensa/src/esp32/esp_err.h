@@ -16,6 +16,10 @@
  *
  ******************************************************************/
 
+#ifndef _ESP_ERR_H_
+#define _ESP_ERR_H_ 1
+
+#include "stdint.h"
 
 typedef int32_t esp_err_t;
 #define ESP_OK          0		/*!< esp_err_t value indicating success (no error) */
@@ -35,3 +39,5 @@ typedef int32_t esp_err_t;
 
 #define ESP_ERR_WIFI_BASE       0x3000	/*!< Starting number of WiFi error codes */
 #define ESP_ERR_MESH_BASE       0x4000	/*!< Starting number of MESH error codes */
+
+#endif //_ESP_ERR_H_

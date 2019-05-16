@@ -94,7 +94,7 @@
  *
  ****************************************************************************/
 
-int board_app_initialize(uintptr_t arg)
+int board_app_initialize(void)
 {
 #ifdef CONFIG_BOARD_INITIALIZE
 	/* Board initialization already performed by board_initialize() */
