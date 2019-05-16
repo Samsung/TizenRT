@@ -125,7 +125,9 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 
 	/* pre-application entry points (declared in include/tinyara/init.h) */
 
+#ifdef CONFIG_SYSTEM_PREAPP_INIT
 	.preapp_start    = preapp_start,
+#endif
 };
 
 /****************************************************************************
