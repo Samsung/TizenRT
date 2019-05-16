@@ -37,6 +37,10 @@
 #include "task/task.h"
 #include "binary_manager.h"
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
+extern volatile sq_queue_t g_delayed_kfree;
+#endif
+
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
@@ -52,7 +56,7 @@ struct binary_header_s {
 	uint32_t bin_stacksize;
 	char kernel_ver[KERNEL_VER_MAX];
 	uint32_t jump_addr;
-}__attribute__((__packed__));
+} __attribute__((__packed__));
 typedef struct binary_header_s binary_header_t;
 
 /****************************************************************************
@@ -129,26 +133,45 @@ errout_with_fd:
 	return ERROR;
 }
 
-/* Read binary header and update binary table */
-static int binary_manager_load_bininfo(int bin_idx)
+/* Load binary with index in binary table */
+int binary_manager_load_binary(int bin_idx)
 {
 	int ret;
+	pid_t bin_pid;
 	int version;
 	int part_idx;
 	int latest_ver;
 	int latest_idx;
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
+	int wait_count;
+#endif
+	int valid_bin_count;
+	bool loadable;
+	bool is_new_bin;
+	load_attr_t load_attr;
+	char devname[BINMGR_DEVNAME_LEN];
 	binary_header_t header_data[PARTS_PER_BIN];
 
 	latest_ver = -1;
 	latest_idx = -1;
+	valid_bin_count = 0;
+	loadable = false;
+	is_new_bin = false;
+
+	if (bin_idx < 0) {
+		bmdbg("Invalid bin idx %d\n", bin_idx);
+		return ERROR;
+	}
 
 	/* Read header data of binary partitions */
 	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
 		if (BIN_PARTNUM(bin_idx, part_idx) < 0) {
-			break;
+			continue;
 		}
 		ret = binary_manager_read_header(bin_idx, part_idx, &header_data[part_idx]);
 		if (ret == OK) {
+			loadable = true;
+			valid_bin_count++;
 			version = (int)atoi(header_data[part_idx].bin_ver);
 			bmvdbg("Found valid header in part %d, version %d\n", part_idx, version);
 			if (version > latest_ver) {
@@ -159,57 +182,66 @@ static int binary_manager_load_bininfo(int bin_idx)
 	}
 
 	/* Failed to find valid binary */
-	if (latest_ver < 0) {
+	if (loadable == false) {
 		bmdbg("Failed to find loadable binary %d\n", bin_idx);
 		return ERROR;
 	}
 
+	/* Load binary */
+	do {
+		if (is_new_bin == false) {
+			snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, latest_idx));
+			load_attr.bin_size = header_data[latest_idx].bin_size;
+			load_attr.compression_type = header_data[latest_idx].compression_type;
+			load_attr.ram_size = header_data[latest_idx].bin_ramsize;
+			load_attr.stack_size = header_data[latest_idx].bin_stacksize;
+			load_attr.priority = header_data[latest_idx].bin_priority;
+			load_attr.offset = CHECKSUM_SIZE + header_data[latest_idx].header_size;		
+			is_new_bin = true;
+		}
+		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
+
+		ret = load_binary(devname, &load_attr);
+		if (ret > 0) {
+			bin_pid = (pid_t)ret;
+			bmvdbg("Load '%s' success! pid = %d\n", devname, bin_pid);
+			break;
+		} 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
+		else if (errno == ENOMEM) {
+			if (g_delayed_kfree.head) {
+				wait_count = 0;
+				/* wait until delayed free list is empty */
+				while (g_delayed_kfree.head && wait_count < MAX_WAIT_COUNT) {
+					usleep(500);
+					wait_count++;
+				}
+				/* If delayed free list is empty, try to load binary again */
+				if (g_delayed_kfree.head == NULL) {
+					continue;
+				}
+			}
+		}
+#endif
+		if (valid_bin_count == 1) {
+			bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
+			return ERROR;
+		}
+		is_new_bin = false;
+		valid_bin_count--;
+		/* Change index 0 to 1 and 1 to 0. */
+		latest_idx ^= 1;
+	} while (loadable);
+
 	/* Set the data in table from header */
+	BIN_ID(bin_idx) = bin_pid;
 	BIN_USEIDX(bin_idx) = latest_idx;
-	BIN_COMPRESSION_TYPE(bin_idx) = header_data[latest_idx].compression_type;
-	BIN_SIZE(bin_idx) = header_data[latest_idx].bin_size;
-	BIN_RAMSIZE(bin_idx) = header_data[latest_idx].bin_ramsize;
-	BIN_STACKSIZE(bin_idx) = header_data[latest_idx].bin_stacksize;
-	BIN_PRIORITY(bin_idx) = header_data[latest_idx].bin_priority;
-	BIN_OFFSET(bin_idx) = CHECKSUM_SIZE + header_data[latest_idx].header_size;
+	BIN_LOAD_ATTR(bin_idx) = load_attr;
 	strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
 	strncpy(BIN_KERNEL_VER(bin_idx), header_data[latest_idx].kernel_ver, KERNEL_VER_MAX);
 	strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);
 
 	bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
-
-	return OK;
-}
-
-/* Load binary with index in binary table */
-int binary_manager_load_binary(int bin_idx)
-{
-	int ret;
-	pid_t pid;
-	char devname[BINMGR_DEVNAME_LEN];
-
-	if (bin_idx < 0) {
-		bmdbg("Invalid bin idx %d\n", bin_idx);
-		return ERROR;
-	}
-
-	/* Load binary info */
-	ret = binary_manager_load_bininfo(bin_idx);
-	if (ret < 0) {
-		bmdbg("Failed to get loadable binary %d\n", bin_idx);
-		return ERROR;
-	}
-
-	/* Load binary */
-	snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
-	bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx));
-	pid = load_binary(devname, &BIN_LOAD_ATTR(bin_idx));
-	if (pid <= 0) {
-		bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
-		return ERROR;
-	}
-	BIN_ID(bin_idx) = pid;
-	bmvdbg("Load '%s' success! pid = %d\n", BIN_NAME(bin_idx), BIN_ID(bin_idx));
 
 	return OK;
 }
