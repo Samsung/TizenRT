@@ -89,7 +89,6 @@ include aio/Make.defs
 include pthread/Make.defs
 include semaphore/Make.defs
 include signal/Make.defs
-include mqueue/Make.defs
 include machine/Make.defs
 include math/Make.defs
 include fixedmath/Make.defs
