@@ -72,8 +72,6 @@ EXTRA_LIBS += -lsoc
 EXTRA_LIBPATHS += -L"$(TOPDIR)/../external/esp_idf_port/esp32"
 EXTRA_LIBS += -lesp32
 
-EXTRA_LIBPATHS += -L"$(TOPDIR)/../external/esp_idf_port/spi_flash"
-EXTRA_LIBS += -lspiflash
 endif
 
 ifeq ($(WINTOOL),y)
