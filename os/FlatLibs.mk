@@ -134,6 +134,11 @@ ifeq ($(CONFIG_AUDIO),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
+# Add libraries for the Compression sub-system
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
+endif
+
 # Add libraries for the Crypto sub-system
 
 ifeq ($(CONFIG_CRYPTO),y)

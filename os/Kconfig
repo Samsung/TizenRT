@@ -533,6 +533,10 @@ menu "Binary Loader"
 source binfmt/Kconfig
 endmenu
 
+menu "Binary Compression"
+source compression/Kconfig
+endmenu
+
 menu "Application Configuration"
 source "$APPSDIR/Kconfig"
 endmenu

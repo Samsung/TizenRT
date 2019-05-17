@@ -225,6 +225,13 @@ KERNDEPDIRS += audio
 endif
 CLEANDIRS += audio
 
+# Add Compression Module
+
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+KERNDEPDIRS += compression
+endif
+CLEANDIRS += compression tools/compression
+
 # Add Crypto Module
 
 ifeq ($(CONFIG_CRYPTO),y)

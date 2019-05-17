@@ -90,6 +90,10 @@ ifeq ($(CONFIG_SE),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
 endif
 
+# Add libraries for compression support
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
+endif
+
 # Add libraries for crypto support
 ifeq ($(CONFIG_CRYPTO),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)

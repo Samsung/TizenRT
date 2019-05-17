@@ -117,6 +117,12 @@ se$(DELIM)libse$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT): se$(DELIM)libse$(LIBEXT)
 	$(Q) install se$(DELIM)libse$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
 
+compression$(DELIM)libcompression$(LIBEXT): context
+	$(Q) $(MAKE) -C compression TOPDIR="$(TOPDIR)" libcompression$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT): compression$(DELIM)libcompression$(LIBEXT)
+	$(Q) install compression$(DELIM)libcompression$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
+
 crypto$(DELIM)libcrypto$(LIBEXT): context
 	$(Q) $(MAKE) -C crypto TOPDIR="$(TOPDIR)" libcrypto$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
