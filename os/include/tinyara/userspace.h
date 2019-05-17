@@ -135,7 +135,9 @@ struct userspace_s {
 
 	/* Pre - Application Start */
 
+#ifdef CONFIG_SYSTEM_PREAPP_INIT
 	preapp_main_t preapp_start;
+#endif
 };
 
 /****************************************************************************
