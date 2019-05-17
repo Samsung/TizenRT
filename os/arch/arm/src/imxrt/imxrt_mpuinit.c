@@ -63,6 +63,7 @@
 #include "mpu.h"
 #include "cache.h"
 #include "chip/imxrt_memorymap.h"
+#include "up_internal.h"
 
 #include "imxrt_mpuinit.h"
 
@@ -73,11 +74,40 @@
  ****************************************************************************/
 
 #ifndef MAX
-#define MAX(a,b) a > b ? a : b
+#define MAX(a, b) a > b ? a : b
 #endif
 
 #ifndef MIN
-#define MIN(a,b) a < b ? a : b
+#define MIN(a, b) a < b ? a : b
+#endif
+
+#if defined(CONFIG_BUILD_PROTECTED)
+const struct mpu_region_info regions_info[] = {
+	{
+		&mpu_privflash, (uintptr_t)__kflash_segment_start__, (uintptr_t)__kflash_segment_size__, MPU_REG_KERN_CODE,
+	},
+	{
+		&mpu_privintsram, (uintptr_t)__ksram_segment_start__, (uintptr_t)__ksram_segment_size__, MPU_REG_KERN_DATA,
+	},
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	{
+		&mpu_privintsram, (uintptr_t)CONFIG_IMXRT_SDRAM_START, (uintptr_t)CONFIG_MM_KERNEL_HEAPSIZE, MPU_REG_KERN_HEAP,
+	},
+#endif
+	{
+		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
+	},
+	{
+		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_USER_DATA,
+	},
+};
+#endif
+
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
+uint32_t g_app_mpu_region;
 #endif
 
 /****************************************************************************
@@ -95,11 +125,6 @@
 
 void imxrt_mpu_initialize(void)
 {
-#ifdef CONFIG_BUILD_PROTECTED
-	uintptr_t datastart;
-	uintptr_t dataend;
-#endif
-
 	/* Show MPU information */
 
 	mpu_showtype();
@@ -118,40 +143,21 @@ void imxrt_mpu_initialize(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROTECTED
-	/* Configure user flash and SRAM space */
+	int i;
 
-	DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart);
+	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
+		lldbg("Region = %u base = 0x%x size = %u\n", regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
+		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
+	}
 
-	mpu_user_flash(USERSPACE->us_textstart, USERSPACE->us_textend - USERSPACE->us_textstart);
-
-	datastart = MIN(USERSPACE->us_datastart, USERSPACE->us_bssstart);
-	dataend = MAX(USERSPACE->us_dataend, USERSPACE->us_bssend);
-
-	DEBUGASSERT(dataend >= datastart);
-
-	mpu_user_intsram(datastart, dataend - datastart);
+	/* Save the APP MPU region to be used later when loading apps */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	g_app_mpu_region = MPU_REG_APP;
 #endif
-
+#endif
 	/* Then enable the MPU */
 
 	mpu_control(true, false, true);
 }
-
-/****************************************************************************
- * Name: imxrt_mpu_uheap
- *
- * Description:
- *  Map the user-heap region.
- *
- *  This logic may need an extension to handle external SDRAM).
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_PROTECTED
-void imxrt_mpu_uheap(uintptr_t start, size_t size)
-{
-	mpu_user_intsram(start, size);
-}
-#endif
 
 #endif							/* CONFIG_ARMV7M_MPU */
