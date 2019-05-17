@@ -30,8 +30,6 @@
 /**
  * Private
  */
-
-//hal_key_type _convert_algo_stoh(security_key_type sec)
 hal_key_type secutils_convert_key_s2h(security_key_type sec)
 {
 	switch (sec) {
@@ -101,7 +99,6 @@ hal_hash_type secutils_convert_hashmode_s2h(security_hash_mode mode)
 	default:
 		return HAL_HASH_UNKNOWN;
 	}
-
 	return HAL_HASH_UNKNOWN;
 }
 
@@ -123,7 +120,6 @@ hal_hmac_type secutils_convert_hmacmode_s2h(security_hmac_mode mode)
 	default:
 		return HAL_HMAC_UNKNOWN;
 	}
-
 	return HAL_HMAC_UNKNOWN;
 }
 
@@ -197,7 +193,7 @@ hal_aes_algo secutils_convert_aesmode_s2h(security_aes_mode mode)
 		return HAL_AES_CBC_PKCS7;
 	case AES_CTR:
 		return HAL_AES_CTR;
-	case AES_UNKNWON:
+	case AES_UNKNOWN:
 		return HAL_AES_UNKNOWN;
 	}
 	return HAL_AES_UNKNOWN;
@@ -241,31 +237,6 @@ hal_ecdsa_curve secutils_convert_ecdsamode_s2h(security_ecdsa_mode mode)
 	return HAL_ECDSA_UNKNOWN;
 }
 
-hal_key_type secutils_convert_ecdsamode_to_key_s2h(security_ecdsa_mode mode)
-{
-	switch (mode) {
-	case ECDSA_BRAINPOOL_P256R1:
-		return HAL_KEY_ECC_BRAINPOOL_P256R1;
-	case ECDSA_BRAINPOOL_P384R1:
-		return HAL_KEY_ECC_BRAINPOOL_P384R1;
-	case ECDSA_BRAINPOOL_P512R1:
-		return HAL_KEY_ECC_BRAINPOOL_P512R1;
-	case ECDSA_SEC_P192R1:
-		return HAL_KEY_ECC_SEC_P192R1;
-	case ECDSA_SEC_P224R1:
-		return HAL_KEY_ECC_SEC_P224R1;
-	case ECDSA_SEC_P256R1:
-		return HAL_KEY_ECC_SEC_P256R1;
-	case ECDSA_SEC_P384R1:
-		return HAL_KEY_ECC_SEC_P384R1;
-	case ECDSA_SEC_P512R1:
-		return HAL_KEY_ECC_SEC_P512R1;
-	default:
-		return HAL_KEY_UNKNOWN;
-	}
-	return HAL_KEY_UNKNOWN;
-}
-
 hal_dh_key_type secutils_convert_dhmode_s2h(security_dh_mode mode)
 {
 	switch (mode) {
@@ -288,6 +259,10 @@ hal_dh_key_type secutils_convert_dhmode_s2h(security_dh_mode mode)
 
 int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 {
+	if (!path) {
+		return -1;
+	}
+
 	if (!strncmp(path, SS_PATH, sizeof(SS_PATH) - 1)) {
 		*slot = atoi(&path[3]);
 		return 0;
@@ -298,14 +273,14 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 
 int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hparam)
 {
-	if (!hparam || !hparam->iv) {
+	if (!hparam || !sparam) {
 		return -1;
 	}
 
-	if (!sparam) {
+	hparam->mode = secutils_convert_aesmode_s2h(sparam->mode);
+	if (hparam->mode == HAL_AES_UNKNOWN) {
 		return -1;
 	}
-	hparam->mode = secutils_convert_aesmode_s2h(sparam->mode);
 	hparam->iv = sparam->iv;
 	hparam->iv_len = sparam->iv_len;
 
@@ -318,8 +293,17 @@ int secutils_convert_rsaparam_s2h(security_rsa_param *sparam, hal_rsa_mode *hpar
 		return -1;
 	}
 	hparam->rsa_a = secutils_convert_rsamode_s2h(sparam->rsa_a);
+	if (hparam->rsa_a == HAL_RSASSA_UNKNOWN) {
+		return -1;
+	}
 	hparam->hash_t = secutils_convert_hashmode_s2h(sparam->hash_t);
+	if (hparam->hash_t == HAL_HASH_UNKNOWN) {
+		return -1;
+	}
 	hparam->mgf = secutils_convert_hashmode_s2h(sparam->mgf);
+	if (hparam->mgf == HAL_HASH_UNKNOWN) {
+		return -1;
+	}
 	hparam->salt_byte_len = sparam->salt_byte_len;
 
 	return 0;
@@ -338,14 +322,17 @@ int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode
 
 int secutils_convert_dhparam_s2h(security_dh_param *dparam, hal_dh_data *hdata)
 {
-	if (!dparam || !hdata) {
+	if (!hdata) {
 		return -1;
 	}
 
-	if (!dparam->G || !dparam->P || !dparam->pubkey) {
+	if (!dparam || !dparam->G || !dparam->P || !dparam->pubkey) {
 		return -1;
 	}
 	hdata->mode = secutils_convert_dhmode_s2h(dparam->mode);
+	if (hdata->mode == HAL_DH_UNKNOWN) {
+		return -1;
+	}
 	hdata->G->data = dparam->G->data;
 	hdata->G->data_len = dparam->G->length;
 	hdata->P->data = dparam->P->data;
@@ -366,6 +353,10 @@ int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *h
 		return -1;
 	}
 	hdata->curve = secutils_convert_ecdsamode_s2h(eparam->curve);
+	if (hdata->curve == HAL_ECDSA_UNKNOWN) {
+		return -1;
+	}
+
 	hdata->pubkey_x->data = eparam->pubkey_x->data;
 	hdata->pubkey_x->data_len = eparam->pubkey_x->length;
 	hdata->pubkey_y->data = eparam->pubkey_y->data;

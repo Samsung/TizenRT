@@ -27,7 +27,7 @@
 /**
  * Common
  */
-int security_init(security_handle *hnd)
+security_error security_init(security_handle *hnd)
 {
 	SECAPI_ENTER;
 
@@ -64,7 +64,7 @@ int security_init(security_handle *hnd)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int security_deinit(security_handle hnd)
+security_error security_deinit(security_handle hnd)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
@@ -79,7 +79,7 @@ int security_deinit(security_handle hnd)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int security_free_data(security_data *data)
+security_error security_free_data(security_data *data)
 {
 	if (data) {
 		if (data->data) {
@@ -94,7 +94,7 @@ int security_free_data(security_data *data)
 	return SECURITY_OK;
 }
 
-int security_get_status(int *status)
+security_error security_get_status(int *status)
 {
 	SECAPI_ENTER;
 	if (!status) {

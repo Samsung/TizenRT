@@ -25,7 +25,7 @@
 /**
  * Key Manager
  */
-int keymgr_generate_key(security_handle hnd, security_key_type algo, const char *key_name)
+security_error keymgr_generate_key(security_handle hnd, security_key_type algo, const char *key_name)
 {
 	SECAPI_ENTER;
 
@@ -33,7 +33,8 @@ int keymgr_generate_key(security_handle hnd, security_key_type algo, const char 
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	// convert the security request to the seclink format.
-	hal_key_type htype = secutils_convert_key_s2h(algo);
+	hal_key_type htype = HAL_KEY_UNKNOWN;
+	SECAPI_CONVERT_KEYTYPE(algo, htype);
 
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
@@ -46,7 +47,7 @@ int keymgr_generate_key(security_handle hnd, security_key_type algo, const char 
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey, security_data *prikey)
+security_error keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey, security_data *prikey)
 {
 	SECAPI_ENTER;
 
@@ -54,13 +55,18 @@ int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	//convert key type
-	hal_key_type htype = secutils_convert_key_s2h(algo);
+	hal_key_type htype = HAL_KEY_UNKNOWN;
+	SECAPI_CONVERT_KEYTYPE(algo, htype);
+
 
 	// convert path
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	// convert key
+	if (!pubkey || !pubkey->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	hal_data h_pubkey = {pubkey->data, pubkey->length, NULL, 0};
 	hal_data h_prikey = {NULL, 0, NULL, 0};
 	if (prikey) {
@@ -76,7 +82,7 @@ int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey_x, security_data *pubkey_y)
+security_error keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey_x, security_data *pubkey_y)
 {
 	SECAPI_ENTER;
 
@@ -89,11 +95,16 @@ int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_
 	// it should be discussed later.
 
 	//convert key type
-	hal_key_type htype = secutils_convert_key_s2h(algo);
+	hal_key_type htype = HAL_KEY_UNKNOWN;
+	SECAPI_CONVERT_KEYTYPE(algo, htype);
 
 	// convert path
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
+
+	if (!pubkey_x) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
 	// convert key
 	hal_data h_pubkey = {ctx->data1, ctx->dlen1, ctx->data2, ctx->dlen2};
@@ -101,6 +112,10 @@ int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_
 	SECAPI_CALL(sl_get_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &hres));
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);
+	}
+
+	if (h_pubkey.priv_len > 0 && !pubkey_y) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
 
 	pubkey_x->data = (unsigned char *)malloc(h_pubkey.data_len);
@@ -124,7 +139,7 @@ int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int keymgr_remove_key(security_handle hnd, security_key_type algo, const char *key_name)
+security_error keymgr_remove_key(security_handle hnd, security_key_type algo, const char *key_name)
 {
 	SECAPI_ENTER;
 
@@ -132,7 +147,8 @@ int keymgr_remove_key(security_handle hnd, security_key_type algo, const char *k
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	//convert key type
-	hal_key_type htype = secutils_convert_key_s2h(algo);
+	hal_key_type htype = HAL_KEY_UNKNOWN;
+	SECAPI_CONVERT_KEYTYPE(algo, htype);
 
 	// convert path
 	uint32_t key_idx = 0;

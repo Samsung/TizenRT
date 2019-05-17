@@ -90,15 +90,8 @@ int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 	case SECLINKIOC_REMOVECERTIFICATE:
 		req->res = se->ops->remove_certificate(info->key_idx);
 		break;
-	case SECLINKIOC_GETFACTORY_KEY:
-		req->res = se->ops->get_factory_key(info->key_idx, info->data);
-		break;
-	case SECLINKIOC_GETFACTORY_CERT:
-		req->res = se->ops->get_factory_key(info->key_idx, info->data);
-		break;
-	case SECLINKIOC_GETFACTORY_DATA:
-		req->res = se->ops->get_factory_key(info->key_idx, info->data);
-		break;
+	default:
+		SLDRV_LOG("Invalid command error\n");
 	}
 	return 0;
 }

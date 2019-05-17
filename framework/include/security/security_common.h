@@ -149,7 +149,7 @@ typedef enum {
 	AES_CBC_PKCS5,
 	AES_CBC_PKCS7,
 	AES_CTR,
-	AES_UNKNWON,
+	AES_UNKNOWN,
 } security_aes_mode;
 
 typedef enum {
@@ -193,13 +193,14 @@ typedef struct _security_ecdh_param {
 	security_data *pubkey_y;
 } security_ecdh_param;
 
-
+#define SEC_DATA_INITIALIZER {NULL, 0}
+#define SEC_DHPARAM_INITIALIZER {DH_UNKNOWN, NULL, NULL}
 /**
  * Common
  */
-int security_init(security_handle *hnd);
-int security_deinit(security_handle hnd);
-int security_free_data(security_data *data);
-int security_get_status(int *status);
+security_error security_init(security_handle *hnd);
+security_error security_deinit(security_handle hnd);
+security_error security_free_data(security_data *data);
+security_error security_get_status(int *status);
 
 #endif // _SECURITY_API_COMMON_H__

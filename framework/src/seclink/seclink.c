@@ -35,11 +35,11 @@
 
 #ifndef LINUX
 #define SECLINK_PATH "/dev/seclink"
+#define SL_LOG sedbg
 #else
 #define SECLINK_PATH "./seclink"
+#define SL_LOG printf
 #endif
-
-#define SL_LOG sedbg
 
 #define SL_TAG "[SECLINK]"
 
@@ -121,24 +121,38 @@ int sl_init(sl_ctx *hnd)
 	handle->fd = fd;
 	*hnd = handle;
 
+	struct seclink_req req = {.req_type.comm = NULL, 0};
+	SL_CALL(handle, SECLINKIOC_INIT, req);
+	if (req.res != HAL_SUCCESS) {
+		close(fd);
+		free(handle);
+		return SECLINK_ERROR;
+	}
+
 	return SECLINK_OK;
 }
 
-void sl_deinit(sl_ctx hnd)
+int sl_deinit(sl_ctx hnd)
 {
 	SL_ENTER;
 
 	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {
 		SL_ERR(((struct _seclink_s_ *)hnd)->fd);
-		return;
+		return -1;
+	}
+	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+
+	struct seclink_req req = {.req_type.comm = NULL, 0};
+	SL_CALL(sl, SECLINKIOC_DEINIT, req);
+	if (req.res != HAL_SUCCESS) {
+		SL_LOG("fail to deinit");
 	}
 
-	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	SL_CLOSE(sl->fd);
 
 	free(sl);
 
-	return;
+	return 0;
 }
 
 /*  key manager */
@@ -506,7 +520,7 @@ int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data, hal_rsa_mode *rsa_mode, uint3
 	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, NULL, rsa_mode};
 	struct seclink_req req = {.req_type.crypto = &info, 0};
 
-	SL_CALL(sl, SECLINKIOC_RSADECRYPT, req);
+	SL_CALL(sl, SECLINKIOC_RSAENCRYPT, req);
 	*hres = req.res;
 
 	return SECLINK_OK;

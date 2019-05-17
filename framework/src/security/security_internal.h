@@ -22,7 +22,11 @@
 #include <string.h>
 #include <tinyara/seclink.h>
 
+#ifdef LINUX
+#define SECAPI_LOG printf
+#else
 #define SECAPI_LOG sfdbg
+#endif
 
 #define SECAPI_TAG "[SECAPI]"
 
@@ -84,6 +88,14 @@
 		sec->length = hal.data_len;					\
 	} while (0)
 
+#define SECAPI_DATA_ALLOC_HAL(hal, sec)				\
+	do {											\
+		sec->data = (char *)malloc(hal->data_len);	\
+		if (!sec->data) {							\
+			return -2;								\
+		}											\
+	} while (0)
+
 #define SECAPI_PRIV_DCOPY(hal, sec)					\
 	do {											\
 		memcpy(sec->data, hal.priv, hal.priv_len);	\
@@ -121,6 +133,14 @@
 			}													\
 	} while (0)
 
+#define SECAPI_CONVERT_KEYTYPE(sec, hal)					\
+	do {													\
+		hal = secutils_convert_key_s2h(sec);				\
+		if (hal == HAL_KEY_UNKNOWN) {						\
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);	\
+		}													\
+	} while (0)
+
 #define SECAPI_CONVERT_RSAPARAM(sec, hal)						\
 	do {														\
 		int c_res = secutils_convert_rsaparam_s2h(sec, hal);	\
@@ -143,6 +163,15 @@
 		if (c_res < 0) {										\
 			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);		\
 		}														\
+	} while (0)
+
+#define SECAPI_CONVERT_DHPARAM_H2S(hal, sec)					\
+	do {														\
+		int c_res = secutils_convert_dhparam_h2s(hal, sec);		\
+		if (c_res == -1) {										\
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);		\
+		} else if (c_res == -2)									\
+			SECAPI_RETURN(SECURITY_ALLOC_ERROR);				\
 	} while (0)
 
 #define SECAPI_CONVERT_DHPARAM(sec, hal)						\
@@ -196,5 +225,7 @@ int secutils_convert_rsaparam_s2h(security_rsa_param *sparam, hal_rsa_mode *hpar
 int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode *hmode);
 int secutils_convert_dhparam_s2h(security_dh_param *dparam, hal_dh_data *hdata);
 int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata);
-;
+
+int secutils_convert_dhparam_h2s(hal_dh_data *hdata, security_dh_param *dparam);
+
 #endif // _SECURITY_API_INTERNAL_H__

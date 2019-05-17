@@ -213,6 +213,106 @@ static void utc_ss_delete_secure_storage_name_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         utc_ss_get_size_secure_storage_p
+ * @brief            Get size of secure storage
+ * @scenario         Get size of secure storage
+ * @apicovered       ss_get_size_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_size_secure_storage_p(void)
+{
+	unsigned int size = 0;
+	security_error res = ss_get_size_secure_storage(g_hnd, UTC_CRYPTO_KEY_NAME, &size);
+
+	TC_ASSERT_EQ("ss_get_size_secure_storage_p", res, SECURITY_NOT_SUPPORT);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_ss_get_size_secure_storage_hnd_n
+ * @brief            Get size of secure storage
+ * @scenario         Get size of secure storage
+ * @apicovered       ss_get_size_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_size_secure_storage_hnd_n(void)
+{
+	unsigned int size = 0;
+	security_error res = ss_get_size_secure_storage(NULL, UTC_CRYPTO_KEY_NAME, &size);
+
+	TC_ASSERT_EQ("ss_get_size_secure_storage_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_ss_get_size_secure_storage_name_n
+ * @brief            Get size of secure storage
+ * @scenario         Get size of secure storage
+ * @apicovered       ss_get_size_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_size_secure_storage_name_n(void)
+{
+	unsigned int size = 0;
+	security_error res = ss_get_size_secure_storage(g_hnd, NULL, &size);
+
+	TC_ASSERT_EQ("ss_get_size_secure_storage_name_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_ss_get_size_secure_storage_input_n
+ * @brief            Get size of secure storage
+ * @scenario         Get size of secure storage
+ * @apicovered       ss_get_size_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_size_secure_storage_input_n(void)
+{
+	security_error res = ss_get_size_secure_storage(g_hnd, UTC_CRYPTO_KEY_NAME, NULL);
+
+	TC_ASSERT_EQ("ss_get_size_secure_storage_input_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_ss_get_list_secure_storage_hnd_n
+ * @brief            Get list of secure storage
+ * @scenario         Get list of secure storage
+ * @apicovered       ss_get_list_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_list_secure_storage_hnd_n(void)
+{
+	security_storage_list slist;
+	security_error res = ss_get_list_secure_storage(NULL, &slist);
+
+	TC_ASSERT_EQ("ss_get_list_secure_storage_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_ss_get_list_secure_storage_input_n
+ * @brief            Get list of secure storage
+ * @scenario         Get list of secure storage
+ * @apicovered       ss_get_list_secure_storage
+ * @precondition     none
+ * @postcondition    none
+ */
+static void utc_ss_get_list_secure_storage_input_n(void)
+{
+	security_error res = ss_get_list_secure_storage(g_hnd, NULL);
+
+	TC_ASSERT_EQ("ss_get_list_secure_storage_input_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+}
+
 void utc_ss_main(void)
 {
 	security_error res = security_init(&g_hnd);
@@ -224,13 +324,23 @@ void utc_ss_main(void)
 	utc_ss_read_secure_storage_hnd_n();
 	utc_ss_read_secure_storage_name_n();
 	utc_ss_read_secure_storage_input_n();
+
 	utc_ss_write_secure_storage_p();
 	utc_ss_write_secure_storage_hnd_n_();
 	utc_ss_write_secure_storage_name_n();
 	utc_ss_write_secure_storage_input_n();
+
 	utc_ss_delete_secure_storage_p();
 	utc_ss_delete_secure_storage_hnd_n();
 	utc_ss_delete_secure_storage_name_n();
+
+	utc_ss_get_size_secure_storage_p();
+	utc_ss_get_size_secure_storage_hnd_n();
+	utc_ss_get_size_secure_storage_name_n();
+	utc_ss_get_size_secure_storage_input_n();
+
+	utc_ss_get_list_secure_storage_hnd_n();
+	utc_ss_get_list_secure_storage_input_n();
 
 	res = security_deinit(g_hnd);
 	if (res != SECURITY_OK) {

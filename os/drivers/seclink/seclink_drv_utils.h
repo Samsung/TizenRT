@@ -7,7 +7,7 @@
 #ifndef LINUX
 #define SLDRV_LOG vdbg
 #else
-#define SLDRV_LOG sfdbg
+#define SLDRV_LOG printf
 #endif
 
 #define SLDRV_TAG "[SECLINK_DRV]"

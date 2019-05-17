@@ -74,7 +74,7 @@ static void utc_crypto_aes_encryption_p(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 
-	for (;i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
+	for (; i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
 		security_aes_mode mode = g_aes_mode_table[i];
 		security_aes_param param = {mode, iv, iv_len};
 		security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
@@ -134,21 +134,6 @@ static void utc_crypto_aes_encryption_param_n(void)
 	TC_ASSERT_EQ("crypto_aes_encryption_param_n", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
 }
-
-/* static void utc_crypto_aes_encryption_param2_n(void) */
-/* { */
-/* 	unsigned char plain_text[] = "plain text"; */
-/* 	unsigned int plain_text_len = strlen((const char*)plain_text) + 1; */
-
-/* 	security_data plain = {plain_text, plain_text_len}; */
-/* 	security_data enc = {NULL, 0}; */
-
-/* 	security_aes_param param = {AES_CTR, NULL, 0}; */
-/* 	security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, */
-/* 											   &plain, &enc); */
-/* 	TC_ASSERT_EQ("crypto_aes_encryption_param2_n", res, SECURITY_INVALID_INPUT_PARAMS); */
-/* 	TC_SUCCESS_RESULT(); */
-/* } */
 
 /**
  * @testcase         utc_crypto_aes_encryption_key_n
@@ -242,7 +227,7 @@ static void utc_crypto_aes_decryption_p(void)
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
 
-	for (;i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
+	for (; i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
 		security_aes_mode mode = g_aes_mode_table[i];
 		security_aes_param param = {mode, iv, iv_len};
 		security_error res = crypto_aes_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
@@ -395,9 +380,9 @@ static void utc_crypto_rsa_encryption_p(void)
 	security_data enc = {NULL, 0};
 
 	int i = 0, j = 0, k = 0;
-	for(; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
-		for(; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
-			for(; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
+	for (; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
+		for (; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
+			for (; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
 				security_rsa_param param = {g_rsa_mode_table[i], g_hash_mode_table[j],
 										   g_hash_mode_table[k], 0};
 				security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
@@ -555,9 +540,9 @@ static void utc_crypto_rsa_decryption_p(void)
 	security_data dec = {NULL, 0};
 
 	int i = 0, j = 0, k = 0;
-	for(; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
-		for(; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
-			for(; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
+	for (; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
+		for (; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
+			for (; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
 				security_rsa_param param = {g_rsa_mode_table[i], g_hash_mode_table[j],
 										   g_hash_mode_table[k], 0};
 				security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
