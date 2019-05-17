@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "esp_wifi.h"
 #include "esp_wifi_internal.h"
 #include "esp_event.h"

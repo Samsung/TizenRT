@@ -33,7 +33,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 
 #include "soc/rtc.h"
 

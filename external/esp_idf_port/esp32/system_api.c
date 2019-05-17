@@ -75,7 +75,7 @@
 #include <tinyara/sched.h>
 
 #include "esp_attr.h"
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "chip/esp32_soc.h"
 #include "soc/efuse_reg.h"
 #include "esp_system.h"

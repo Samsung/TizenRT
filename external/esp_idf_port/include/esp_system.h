@@ -35,7 +35,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "esp_sleep.h"
 #include "esp_attr.h"
 
