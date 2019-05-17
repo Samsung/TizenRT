@@ -85,7 +85,7 @@ LDLIBS += $(LIBGCC)
 endif
 
 BIN = wifi
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)/$(BIN) | wc -l)
+BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
 BIN_VER = 20190412

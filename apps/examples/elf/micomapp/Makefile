@@ -84,7 +84,7 @@ LDLIBS += $(LIBGCC)
 endif
 
 BIN = micom
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)/$(BIN) | wc -l)
+BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
 DYNAMIC_RAM_SIZE = 20480
