@@ -692,91 +692,18 @@ _timerHandle _tizenrt_timerCreate( _timer *timer, const signed char *pcTimerName
 							  u32 uxAutoReload, 
 							  void * pvTimerID 
 							 )
-{ 
+{              
 
-#if 1 
-	    int ret,i;
-	pthread_t taskID,taskID1;
-
-	pthread_attr_t thread_attr,thread_attr1;
-	struct sched_param schedule_param,schedule_param1;  
-
-
-	pthread_mutex_init(&timer->mutex, NULL);
-	pthread_cond_init(&timer->cond, NULL); 
-
-	 pthread_mutex_init(&timer->mutex_t, NULL);
-	pthread_cond_init(&timer->cond_t, NULL); 
-
-	 pthread_mutex_init(&timer->mutex_y, NULL);
-	pthread_cond_init(&timer->cond_y, NULL); 
-
-
-
-	pthread_attr_init(&thread_attr);
-	schedule_param.sched_priority = 125;
-
-	pthread_attr_init(&thread_attr1);
-	schedule_param1.sched_priority = 125;
-
-	_tizenrt_init_sema(&timer->timer_sema1,0);
-	_tizenrt_init_sema(&timer->timer_sema2,0);
-	_tizenrt_init_sema(&timer->timer_sema3,0);
-
-	pthread_attr_setstacksize(&thread_attr, 2048);
-	pthread_attr_setstacksize(&thread_attr1, 2048);
-
-	pthread_attr_setinheritsched(&thread_attr, PTHREAD_EXPLICIT_SCHED); 
-	pthread_attr_setinheritsched(&thread_attr1, PTHREAD_EXPLICIT_SCHED); 
-
-	pthread_attr_setschedpolicy(&thread_attr,SCHED_RR);
-	pthread_attr_setschedpolicy(&thread_attr1,SCHED_RR);
-
-	pthread_attr_setschedparam(&thread_attr, &schedule_param); 
-	pthread_attr_setschedparam(&thread_attr1, &schedule_param1);
-
-
-	ret= pthread_create(&taskID, &thread_attr, timer_wrapper, (void *)timer);
-
-	ret=pthread_create(&taskID1, &thread_attr1, timer_wrapper1, (void *)timer);
-
-
-	pthread_attr_destroy(&thread_attr);
-	pthread_attr_destroy(&thread_attr1);
-
-	timer->live = 0;
-	srand( (unsigned)time( NULL ) );
-	timer->timer_id = rand();
-	timer->timer_hdl=(void*)timer->timer_id;
-
-	return timer->timer_hdl;
-
-#endif
-
-#if 0
-
-
-		       timer->live = 0;
-			   srand( (unsigned)time( NULL ) );
-			   timer->timer_id = rand();
-			   timer->timer_hdl=(void*)timer->timer_id;
-
-			   return timer->timer_hdl;
-#endif
-
-#if 0
 	timer->work_hdl = (struct work_s *)rtw_zmalloc(sizeof(struct work_s));
-   
+
 	if(timer->work_hdl == NULL) {
-		ndbg("Fail to alloc timer->work_hdl");
+		DBG_ERR("Fail to alloc timer->work_hdl");
 		rtw_timerDelete(timer, TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;
 		return;
 	}
-	ndbg("\r\n  timer->timer_name=%s     \n",timer->timer_name);
-	//ndbg("\r\n  _tizenrt_timerCreate!~!!     \n");
+	
 	return timer->work_hdl;
-#endif
 }
 
 u32 _tizenrt_timerDelete( _timer *timer, 
@@ -807,25 +734,6 @@ u32  _tizenrt_timerStop( _timer *timer,
 	timer->live=0;
 	// sem_post(timer->timer_sema2);
 	return _SUCCESS;
-}
-
-_timerHandle _tizenrt_timerCreate( _timer *timer, const signed char *pcTimerName, 
-							  osdepTickType xTimerPeriodInTicks, 
-							  u32 uxAutoReload, 
-							  void * pvTimerID 
-							 )
-{              
-
-	timer->work_hdl = (struct work_s *)rtw_zmalloc(sizeof(struct work_s));
-
-	if(timer->work_hdl == NULL) {
-		DBG_ERR("Fail to alloc timer->work_hdl");
-		rtw_timerDelete(timer, TIMER_MAX_DELAY);
-		timer->timer_hdl = NULL;
-		return;
-	}
-	
-	return timer->work_hdl;
 }
 
 void *_tizenrt_timerGetID( _timerHandle timer_hdl ){
@@ -885,6 +793,14 @@ cleanup:
 	DBG_ERR("_tizenrt_set_timer failed!");
 	return _FAIL;
 	
+}
+
+u32  _tizenrt_timerChangePeriodFromISR( _timerHandle xTimer, 
+							   osdepTickType xNewPeriod, 
+							   osdepBASE_TYPE *pxHigherPriorityTaskWoken )
+{
+	
+	return 0;
 }
 
 u32  _tizenrt_timerReset( _timerHandle xTimer, 
