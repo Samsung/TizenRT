@@ -96,16 +96,6 @@
 #endif
 #endif
 
-#undef uerr
-#undef uinfo
-#if defined(DEBUG_IMX_DMA_DRIVER)
-#define uinfo(format, ...)   printf(format, ##__VA_ARGS__)
-#define uerr(format, ...)   printf(format, ##__VA_ARGS__)
-#else
-#define uinfo(format, ...)
-#endif
-#define uerr(format, ...)   printf(format, ##__VA_ARGS__)
-
 /************************************************************************************
  * Private Data
  ************************************************************************************/
@@ -135,12 +125,12 @@ static int ehci_waiter(int argc, char *argv[])
 {
 	FAR struct usbhost_hubport_s *hport;
 
-	uinfo("ehci_waiter:  Running\n");
+	udbg("ehci_waiter:  Running\n");
 	for (;;) {
 		/* Wait for the device to change state */
 
 		DEBUGVERIFY(CONN_WAIT(g_ehciconn, &hport));
-		syslog(LOG_INFO, "ehci_waiter: %s\n", hport->connected ? "connected" : "disconnected");
+		udbg("ehci_waiter: %s\n", hport->connected ? "connected" : "disconnected");
 
 		/* Did we just become connected? */
 
@@ -240,7 +230,7 @@ int imxrt_usbhost_initialize(void)
 
 void imxrt_usbhost_vbusdrive(int rhport, bool enable)
 {
-	uinfo("RHPort%d: enable=%d\n", rhport + 1, enable);
+	udbg("RHPort%d: enable=%d\n", rhport + 1, enable);
 
 	/* The LPC3131 has only a single root hub port */
 
