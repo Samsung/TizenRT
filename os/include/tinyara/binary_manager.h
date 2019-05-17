@@ -110,6 +110,7 @@ struct load_attr_s {
 	uint32_t stack_size;		/* Size of the stack allocated for binary */
 	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
 	uint8_t priority;			/* Priority of the binary */
+	uint8_t compression_type;	/* Binary compression type */
 };
 typedef struct load_attr_s load_attr_t;
 

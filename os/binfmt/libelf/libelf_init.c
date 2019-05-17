@@ -67,6 +67,10 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/elf.h>
 
+#ifdef CONFIG_COMPRESSED_BINARY
+#include <tinyara/binfmt/compression/compress_read.h>
+#endif
+
 #include "libelf.h"
 
 /****************************************************************************
@@ -179,6 +183,19 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 		ret = loadinfo->filfd;
 		berr("Failed to open ELF binary %s: %d\n", filename, ret);
 		return ret;
+	}
+
+	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
+#ifdef CONFIG_COMPRESSED_BINARY
+		ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
+		if (ret != OK) {
+			berr("Failed to read header for compressed binary : %d\n", ret);
+			return ret;
+		}
+#else
+		berr("No support for reading compressed binary\n");
+		return ERROR;
+#endif
 	}
 
 	/* Read the ELF ehdr from offset 0 */

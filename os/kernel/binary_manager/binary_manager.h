@@ -93,6 +93,7 @@ typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 #define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].load_attr.offset
 #define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].load_attr.stack_size
 #define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].load_attr.priority
+#define BIN_COMPRESSION_TYPE(bin_idx)                   bin_table[bin_idx].load_attr.compression_type
 
 extern binmgr_bininfo_t bin_table[BINARY_COUNT];
 

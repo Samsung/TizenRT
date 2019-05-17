@@ -43,6 +43,7 @@
 struct binary_header_s {
 	uint16_t header_size;
 	uint8_t bin_type;
+	uint8_t compression_type;
 	uint8_t bin_priority;
 	uint32_t bin_size;
 	char bin_name[BIN_NAME_MAX];
@@ -51,7 +52,7 @@ struct binary_header_s {
 	uint32_t bin_stacksize;
 	char kernel_ver[KERNEL_VER_MAX];
 	uint32_t jump_addr;
-};
+}__attribute__((__packed__));
 typedef struct binary_header_s binary_header_t;
 
 /****************************************************************************
@@ -165,6 +166,7 @@ static int binary_manager_load_bininfo(int bin_idx)
 
 	/* Set the data in table from header */
 	BIN_USEIDX(bin_idx) = latest_idx;
+	BIN_COMPRESSION_TYPE(bin_idx) = header_data[latest_idx].compression_type;
 	BIN_SIZE(bin_idx) = header_data[latest_idx].bin_size;
 	BIN_RAMSIZE(bin_idx) = header_data[latest_idx].bin_ramsize;
 	BIN_STACKSIZE(bin_idx) = header_data[latest_idx].bin_stacksize;

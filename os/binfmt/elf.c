@@ -243,6 +243,7 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	/* Initialize the ELF library to load the program binary. */
 	loadinfo.offset = binp->offset;
 	loadinfo.filelen = binp->filelen;
+	loadinfo.compression_type = binp->compression_type;
 
 
 	ret = elf_init(binp->filename, &loadinfo);

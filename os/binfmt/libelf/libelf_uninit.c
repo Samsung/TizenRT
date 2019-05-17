@@ -62,6 +62,9 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
+#ifdef CONFIG_COMPRESSED_BINARY
+#include <tinyara/binfmt/compression/compress_read.h>
+#endif
 
 #include "libelf.h"
 
@@ -99,6 +102,13 @@ int elf_uninit(struct elf_loadinfo_s *loadinfo)
 	/* Free all working buffers */
 
 	elf_freebuffers(loadinfo);
+
+	/* Free buffers used for decompression */
+	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
+#ifdef CONFIG_COMPRESSED_BINARY
+		compress_uninit();
+#endif
+	}
 
 	/* Close the ELF file */
 
