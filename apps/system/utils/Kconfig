@@ -191,6 +191,12 @@ config ENABLE_STACKMONITOR
 		not available if the kernel build or protected build is selected.
 
 if ENABLE_STACKMONITOR
+config STACKMONITOR_STACKSIZE
+	int "Stack monitor daemon stack size"
+	default 2048
+	---help---
+		The stack size of the stack monitor daemon.  Default: 2048 bytes
+
 config STACKMONITOR_PRIORITY
 	int "Stack monitor daemon priority"
 	default 100
