@@ -208,9 +208,15 @@ static int spi_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
  *   register device.
  *
  ****************************************************************************/
-int spi_uioregister(FAR const char *path, FAR struct spi_dev_s *dev)
+int spi_uioregister(FAR int bus, FAR struct spi_dev_s *dev)
 {
 	SPI_ENTRY;
+	if (!dev) {
+		return -1;
+	}
+	char path[16] = {0,};
+	snprintf(path, 16, "/dev/spi-%d", bus);
+
 	spidbg("Registering %s\n", path);
 	return register_driver(path, &g_spiops, 0666, dev);
 }
