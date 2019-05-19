@@ -712,15 +712,30 @@ u32 _tizenrt_timerDelete( _timer *timer,
 							   osdepTickType xBlockTime )
 {
 #if 0
-           pthread_cleanup_push( (void(*)(void *))pthread_mutex_unlock, (void *)&(timer->mutex));
-           pthread_mutex_lock(&timer->mutex);
-			timer->live=0;
-			timer->timer_hdl = NULL;
-            free(timer);			
-			pthread_mutex_unlock(&timer->mutex);
-			pthread_cleanup_pop( 1 );
-#endif	
-		return _SUCCESS;	
+	pthread_cleanup_push( (void(*)(void *))pthread_mutex_unlock, (void *)&(timer->mutex));
+	pthread_mutex_lock(&timer->mutex);
+	timer->live=0;
+	timer->timer_hdl = NULL;
+	free(timer);			
+	pthread_mutex_unlock(&timer->mutex);
+	pthread_cleanup_pop( 1 );
+#endif
+	int ret;
+	ret = work_cancel(HPWORK, timer->work_hdl);
+	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+	free(timer->work_hdl);
+	timer->timer_hdl = NULL;
+	return _SUCCESS;
+
+cleanup:
+	if(ret != -2){
+		free(timer->work_hdl);
+		DBG_ERR("_tizenrt_del_timer failed! ret = %d",ret);
+		return _FAIL;
+	}
+	timer->timer_hdl = NULL;
+	DBG_ERR("_tizenrt_del_timer is Done! timer->work_hdl = %x",timer->work_hdl);
+	return _SUCCESS;
 }
 
 u32 _tizenrt_timerIsTimerActive( _timer *timer)
@@ -733,9 +748,22 @@ u32 _tizenrt_timerIsTimerActive( _timer *timer)
 u32  _tizenrt_timerStop( _timer *timer, 
 							   osdepTickType xBlockTime )
 {
-	timer->live=0;
-	// sem_post(timer->timer_sema2);
+	int ret;
+	//timer->live=0;
+	ret = work_cancel(HPWORK, timer->work_hdl);
+	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
 	return _SUCCESS;
+
+cleanup:
+	if(ret != -2){
+		free(timer->work_hdl);
+		DBG_ERR("_tizenrt_stop_timer failed! ret = %d",ret);
+		return _FAIL;
+	}
+	timer->timer_hdl = NULL;
+	DBG_ERR("_tizenrt_stop_timer is Done! timer->work_hdl = %x",timer->work_hdl);
+	return _SUCCESS;
+
 }
 
 void *_tizenrt_timerGetID( _timerHandle timer_hdl ){
@@ -783,7 +811,7 @@ u32  _tizenrt_timerChangePeriod( _timer *timer,
 		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
 	}
 	
-	timer->live = 1;
+	//timer->live = 1;
 
 	return _SUCCESS;
 

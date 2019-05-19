@@ -181,6 +181,34 @@ wifi_utils_result_e wifi_utils_deinit(void)
 	return wuret;
 }
 
+int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list)
+{
+#if 0
+	wifi_utils_scan_list_s *scan_list = NULL;
+	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] Scan failed %d\n");
+		// todo: arg need to be passed, we didn't implement passing arg yet.
+		g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
+		return SLSI_STATUS_ERROR;
+	}
+	slsi_scan_info_t *wifi_scan_result;
+	int8_t res = WiFiGetScanResults(&wifi_scan_result);
+	if (res != SLSI_STATUS_SUCCESS) {
+		return SLSI_STATUS_ERROR;
+	}
+#endif
+	if (g_cbk.scan_done) {
+		if (scan_list) {
+			g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
+			free(scan_list);
+		} else {
+			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
+		}
+	}
+
+	return RTK_STATUS_SUCCESS;
+}
+
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
 	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
@@ -294,6 +322,9 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 		return WIFI_UTILS_INVALID_ARGS;
 	}
 
+	if(g_mode == RTK_WIFI_SOFT_AP_IF)
+		ndbg("[RTK] softap is already running!\n");
+
 	wifi_utils_result_e ret = WIFI_UTILS_FAIL;
 
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
@@ -329,6 +360,9 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	int ret = RTK_STATUS_SUCCESS;
 
+	if(g_mode == RTK_WIFI_STATION_IF)
+		ndbg("[RTK] station is already running!\n");
+
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] Link callback handles: register failed !\n");
@@ -336,10 +370,13 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 	} else {
 		nvdbg("[RTK] Link callback handles: registered\n");
 	}
-	
+
+	cmd_wifi_off();
+	vTaskDelay(20);
 	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_STATION_IF;
+		wuret = WIFI_UTILS_SUCCESS;
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}

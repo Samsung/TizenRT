@@ -642,12 +642,16 @@ int wifi_connect(
 			switch(error_flag){
 				case RTW_NONE_NETWORK:
 					reason.reason_code = RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+					break;
 				case RTW_CONNECT_FAIL:
 					reason.reason_code = RTK_STATUS_ERROR;
+					break;
 				case RTW_4WAY_HANDSHAKE_TIMEOUT:
 					reason.reason_code = RTK_REASON_NETWORK_AUTHENTICATION_FAILED;
+					break;
 				default:
 					reason.reason_code = RTK_STATUS_ERROR;
+					break;
 			}
 
 			if (g_link_up) {
@@ -1568,11 +1572,6 @@ void wifi_scan_each_report_hdl( char* buf, int buf_len, int flags, void* userdat
 
 	rtw_memset(*result_ptr, 0, sizeof(rtw_scan_result_t));
 }
-
-#ifdef CONFIG_PLATFORM_TIZENRT
-#include <../../framework/src/wifi_manager/wifi_common.h>
-wifi_utils_scan_list_s *scan_list = NULL;
-#endif
 
 static void wifi_scan_done_hdl( char* buf, int buf_len, int flags, void* userdata)
 {

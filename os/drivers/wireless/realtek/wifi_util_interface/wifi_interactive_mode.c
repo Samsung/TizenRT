@@ -827,78 +827,93 @@ static void print_scan_result( rtw_scan_result_t* record )
     RTW_API_INFO( "\r\n" );
 }
 
-#ifndef CONFIG_PLATFORM_TIZENRT
+#ifdef CONFIG_PLATFORM_TIZENRT
 #include <../../framework/src/wifi_manager/wifi_common.h>
-extern wifi_utils_scan_list_s *scan_list;
+wifi_utils_scan_list_s *scan_list = NULL;
+wifi_utils_scan_list_s *_scan_list = NULL;
+
+extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list);
 
 rtw_result_t app_scan_result_handler( rtw_scan_handler_result_t* malloced_scan_result )
 {
 	static int i = 0;
+	unsigned int max_ap_size = 64;
 
+	if(i == 0){
+		scan_list = (wifi_utils_scan_list_s*)rtw_zmalloc(max_ap_size*sizeof(wifi_utils_scan_list_s));
+		if(scan_list == NULL){
+			ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
+			return;
+		}else
+			_scan_list = scan_list;
+	}	
 	if (malloced_scan_result->scan_complete != RTW_TRUE) {
 		rtw_scan_result_t* record = &malloced_scan_result->ap_details;
 		record->SSID.val[record->SSID.len] = 0; /* Ensure the SSID is null terminated */
-        
-		scan_list[i].ap_info.channel = record->channel;
-		strncpy(scan_list[i].ap_info.ssid, record->SSID.val, record->SSID.len);
-		scan_list[i].ap_info.ssid_length = record->SSID.len;
-		snprintf(scan_list[i].ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0],record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3],record->BSSID.octet[4], record->BSSID.octet[5]);
-		scan_list[i].ap_info.max_rate = 0;
-		scan_list[i].ap_info.rssi = record->signal_strength;
-		scan_list[i].ap_info.phy_mode = 0x00000004;//bit2 is set to 1 if support 11n
+		_scan_list->ap_info.channel = record->channel;
+		strncpy(_scan_list->ap_info.ssid, record->SSID.val, record->SSID.len);
+		_scan_list->ap_info.ssid_length = record->SSID.len;
+		snprintf(_scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0],record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3],record->BSSID.octet[4], record->BSSID.octet[5]);
+		_scan_list->ap_info.max_rate = 0;
+		_scan_list->ap_info.rssi = record->signal_strength;
+		_scan_list->ap_info.phy_mode = 0x00000004;//bit2 is set to 1 if support 11n
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_OPEN;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_OPEN;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
 			break;
 		case RTW_SECURITY_WPA2_AES_PSK:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 			break;
 		case RTW_SECURITY_WPA_WPA2_MIXED:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK;
 			break;
 		//case WIFI_AUTH_WPA2_ENTERPRISE:
 		default:
-			scan_list[i].ap_info.ap_auth_type = WIFI_UTILS_AUTH_UNKNOWN;
+			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_UNKNOWN;
 			break;
 		}
 
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_NONE;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_NONE;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_64;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_64;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_128;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_128;
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP;
 			break;
 		case RTW_SECURITY_WPA_AES_PSK:
         case RTW_SECURITY_WPA2_AES_PSK:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
 			break;
 		case RTW_SECURITY_WPA2_MIXED_PSK:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
 			break;
 		default:
-			scan_list[i].ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_UNKNOWN;
+			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_UNKNOWN;
 			break;
 		}
 
 		if (i > 0) {
-			scan_list[i - 1].next = &scan_list[i];
+			(_scan_list-1)->next = _scan_list;
+			_scan_list->next = NULL;
 		}
         i++;
+		_scan_list++;
 	} else{
+		ndbg("\r\n---------------------------------------\r\n");
 		i = 0;
+		wifi_scan_result_callback(scan_list);
 	}
 	return RTW_SUCCESS;
 }
