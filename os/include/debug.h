@@ -743,6 +743,21 @@
 #define i2sllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_TIMER_ERROR
+#define tmrdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define tmrlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define tmrdbg(format, ...)
+#define tmrlldbg(format, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_TIMER_INFO
+#define tmrvdbg(format, ...)    vdbg(format, ##__VA_ARGS__)
+#define tmrllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
+#else
+#define tmrvdbg(format, ...)
+#define tmrllvdbg(format, ...)
+#endif
 
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
@@ -1204,6 +1219,22 @@
 #else
 #define gvdbg       (void)
 #define gllvdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TIMER_ERROR
+#define tmrdbg      dbg
+#define tmrlldbg    lldbg
+#else
+#define tmrdbg      (void)
+#define tmrlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TIMER_INFO
+#define tmrvdbg     vdbg
+#define tmrllvdbg   llvdbg
+#else
+#define tmrvdbg     (void)
+#define tmrllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_ERROR

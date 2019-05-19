@@ -760,6 +760,23 @@ config DEBUG_TIMER
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+if DEBUG_TIMER
+
+config DEBUG_TIMER_ERROR
+	bool "TIMER Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable TIMER error debug SYSLOG output.
+
+config DEBUG_TIMER_INFO
+	bool "TIMER Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable TIMER informational debug SYSLOG output.
+endif #DEBUG_TIMER
+
 config DEBUG_TTRACE
 	bool "T-trace Debug Output"
 	default n
