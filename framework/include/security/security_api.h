@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 #ifndef __SECURITY_API_H__
-#define  __SECURITY_API_H__
+#define __SECURITY_API_H__
 
 #include "security_auth.h"
 #include "security_crypto.h"

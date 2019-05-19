@@ -1,0 +1,43 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC
+	bool "Security Framework UTC TestCase Example"
+	select SECURITY_API
+	default n
+	---help---
+		Enable Security Framework TestCase Example
+
+if EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC
+
+config EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC_AUTH
+	bool "Security Framework Authentication UTC TestCase Example"
+	select SECURITY_AUTH
+	default n
+	---help---
+		Enable Security Framework Authentication TestCase Example
+
+config EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC_CRYPTO
+	bool "Security Framework Crypto UTC TestCase Example"
+	select SECURITY_CRYPTO
+	default n
+	---help---
+		Enable Security Framework Crypto TestCase Example
+
+config EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC_KEYMGR
+	bool "Security Framework Key Manager UTC TestCase Example"
+	select SECURITY_KEYMGR
+	default n
+	---help---
+		Enable Security Framework Key Manager TestCase Example
+
+config EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC_SS
+	bool "Security Framework Secure Storage UTC TestCase Example"
+	select SECURITY_SS
+	default n
+	---help---
+		Enable Security Framework Secure Storage TestCase Example
+
+endif

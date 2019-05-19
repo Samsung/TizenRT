@@ -25,9 +25,9 @@
  * Key Manager
  */
 
-int keymgr_generate_key(security_handle hnd, security_key_type algo, const char *key_name);
-int keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey, security_data *prikey);
-int keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey_x, security_data *pubkey_y);
-int keymgr_remove_key(security_handle hnd, security_key_type algo, const char *key_name);
+security_error keymgr_generate_key(security_handle hnd, security_key_type algo, const char *key_name);
+security_error keymgr_set_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey, security_data *prikey);
+security_error keymgr_get_key(security_handle hnd, security_key_type algo, const char *key_name, security_data *pubkey_x, security_data *pubkey_y);
+security_error keymgr_remove_key(security_handle hnd, security_key_type algo, const char *key_name);
 
 #endif // _SECURITY_API_KEYMGR_H__

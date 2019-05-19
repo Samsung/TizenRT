@@ -11,6 +11,20 @@ config SECURITY_API
 
 if SECURITY_API
 
+config DEBUG_SECURITY_FRAMEWORK_ERROR
+	bool "Secure framework debug ERROR"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable Secure Framework ERROR Debug
+
+config DEBUG_SECURITY_FRAMEWORK_INFO
+	bool "Secure framework debug INFO"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable Secure Framework INFO Debug
+
 config SECURITY_AUTH
     bool "Authentication"
     default n

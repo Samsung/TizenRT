@@ -25,14 +25,14 @@
 /**
  * Secure Storage
  */
-int ss_read_secure_storage(security_handle hnd, const char *ss_name, unsigned int offset, security_data *data)
+security_error ss_read_secure_storage(security_handle hnd, const char *ss_name, unsigned int offset, security_data *data)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	// ToDo: offset is not supported yet
-	if (offset > 0) {
+	if (offset > 0 || !data) {
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
 
@@ -57,14 +57,14 @@ int ss_read_secure_storage(security_handle hnd, const char *ss_name, unsigned in
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int ss_write_secure_storage(security_handle hnd, const char *ss_name, unsigned int offset, security_data *input)
+security_error ss_write_secure_storage(security_handle hnd, const char *ss_name, unsigned int offset, security_data *input)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	// ToDo: offset is not supported yet
-	if (offset > 0) {
+	if (offset > 0 || !input) {
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
 
@@ -82,7 +82,7 @@ int ss_write_secure_storage(security_handle hnd, const char *ss_name, unsigned i
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int ss_delete_secure_storage(security_handle hnd, const char *ss_name)
+security_error ss_delete_secure_storage(security_handle hnd, const char *ss_name)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
@@ -101,27 +101,39 @@ int ss_delete_secure_storage(security_handle hnd, const char *ss_name)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int ss_get_size_secure_storage(security_handle hnd, const char *ss_name, unsigned int *size)
+security_error ss_get_size_secure_storage(security_handle hnd, const char *ss_name, unsigned int *size)
 {
 	SECAPI_ENTER;
-	/* SECAPI_ISHANDLE_VALID(hnd); */
-	/* struct security_ctx *ctx = (struct security_ctx *)hnd; */
+	SECAPI_ISHANDLE_VALID(hnd);
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
+	if (!size) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	SECAPI_LOG("handle (%p)\n", ctx);
+
+	uint32_t ss_idx = 0;
+	SECAPI_CONVERT_PATH(ss_name, &ss_idx);
 
 	// ToDo
 	*size = 0;
 
-	SECAPI_RETURN(SECURITY_OK);
+	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
 }
 
-int ss_get_list_secure_storage(security_handle hnd, unsigned int *count, security_storage_list *list)
+security_error ss_get_list_secure_storage(security_handle hnd, security_storage_list *list)
 {
 	SECAPI_ENTER;
-	/* SECAPI_ISHANDLE_VALID(hnd); */
-	/* struct security_ctx *ctx = (struct security_ctx *)hnd; */
+	SECAPI_ISHANDLE_VALID(hnd);
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!list) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	SECAPI_LOG("handle (%p)\n", ctx);
 	// ToDo
-	*count = 0;
 	*list = NULL;
 
-	SECAPI_RETURN(SECURITY_OK);
+	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
 }

@@ -37,13 +37,96 @@
 		VH_LOG(VH_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
 
-#define VH_ERR(fd)														\
-	do {																\
-		VH_LOG("[ERR:%s] %s %s:%d ret(%d) code(%s)\n",					\
-			   VH_TAG, __FUNCTION__, __FILE__, __LINE__, fd); \
+#define VH_ERR(fd)												\
+	do {														\
+		VH_LOG("[ERR:%s] %s %s:%d ret(%d) code(%s)\n",			\
+			   VH_TAG, __FUNCTION__, __FILE__, __LINE__, fd);	\
 	} while (0)
 
 #define SECLINK_PATH "/dev/seclink"
+
+#define V_DEFINE_DATA(name, text)							\
+	hal_data name##_data = {text, sizeof(text), NULL, 0};	\
+	hal_data *name = &name##_data
+
+#define V_DEFINE_ECC(name, text, text2)									\
+	hal_data name##_data = {text, sizeof(text), text2, sizeof(text2)};	\
+	hal_data *name = &name##_data
+
+#define V_COPY_DATA(dest, src)								\
+	do {													\
+		(dest)->data_len = (src)->data_len;					\
+		memcpy(dest->data, src->data, (dest)->data_len);	\
+	} while (0)
+
+#define V_COPY_ECC(dest, src)								\
+	do {													\
+		(dest)->data_len = (src)->data_len;					\
+		memcpy(dest->data, src->data, (dest)->data_len);	\
+		(dest)->priv_len = (src)->priv_len;					\
+		memcpy(dest->priv, src->priv, (dest)->priv_len);	\
+	} while (0)
+
+static hal_key_type g_asym_hal_key_table[] = {
+	/*  RSA */
+	HAL_KEY_RSA_1024, // 1024 bits rsa algorithm
+	HAL_KEY_RSA_2048, // 2048 bits rsa algorithm
+	HAL_KEY_RSA_3072, // 3072 bits rsa algorithm
+	HAL_KEY_RSA_4096,
+	/*  ECC: it doesn't support whole algorithm that mbedTLS support. it's have to be added*/
+	HAL_KEY_ECC_BRAINPOOL_P256R1, // ecc brainpool curve for p256r1
+	HAL_KEY_ECC_BRAINPOOL_P384R1, // ecc brainpool curve for p384r1
+	HAL_KEY_ECC_BRAINPOOL_P512R1, // ecc brainpool curve for p512r1
+	HAL_KEY_ECC_SEC_P192R1, // nist curve for p192r1
+	HAL_KEY_ECC_SEC_P224R1, // nist curve for p224r1
+	HAL_KEY_ECC_SEC_P256R1, // nist curve for p256r1
+	HAL_KEY_ECC_SEC_P384R1, // nist curve for p384r1
+	HAL_KEY_ECC_SEC_P512R1, // nist curve for p512r1
+	/* DH */
+	HAL_KEY_DH_1024,
+	HAL_KEY_DH_2048,
+	HAL_KEY_DH_4096,
+};
+
+static hal_key_type g_ecc_hal_key_table[] = {
+	HAL_KEY_ECC_BRAINPOOL_P256R1, // ecc brainpool curve for p256r1
+	HAL_KEY_ECC_BRAINPOOL_P384R1, // ecc brainpool curve for p384r1
+	HAL_KEY_ECC_BRAINPOOL_P512R1, // ecc brainpool curve for p512r1
+	HAL_KEY_ECC_SEC_P192R1, // nist curve for p192r1
+	HAL_KEY_ECC_SEC_P224R1, // nist curve for p224r1
+	HAL_KEY_ECC_SEC_P256R1, // nist curve for p256r1
+	HAL_KEY_ECC_SEC_P384R1, // nist curve for p384r1
+	HAL_KEY_ECC_SEC_P512R1, // nist curve for p512r1
+};
+
+V_DEFINE_DATA(g_virtual_sym, "Virtual Symmetric Key");
+V_DEFINE_DATA(g_virtual_pubkey, "Virtual Public Key");
+V_DEFINE_DATA(g_virtual_priv, "Virtual Private Key");
+V_DEFINE_ECC(g_virtual_ecckey, "Virtual ECC Pub1 Key", "Virtual ECC Pub2 Key");
+V_DEFINE_DATA(g_virtual_dh_G, "Virtual DH G");
+V_DEFINE_DATA(g_virtual_dh_P, "Virtual DH P");
+V_DEFINE_DATA(g_virtual_dh_pub, "Virtual DH public key");
+
+static int _virtual_is_asymmetric(hal_key_type type)
+{
+	int i = 0;
+	for (; i < sizeof(g_asym_hal_key_table)/sizeof(hal_key_type); i++) {
+		if (type == g_asym_hal_key_table[i]) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int _virtual_is_ecc(hal_key_type type)
+{
+	int i = 0;
+	for (; i < sizeof(g_ecc_hal_key_table)/sizeof(hal_key_type); i++) {
+		if (type == g_ecc_hal_key_table[i])
+			return 1;
+	}
+	return 0;
+}
 
 /**
  * Common
@@ -78,29 +161,39 @@ int virtual_hal_deinit(void)
 	return 0;
 }
 
-
 /**
  * Key Manager
  */
-int virtual_hal_set_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _IN_ hal_data *key, _IN_ hal_data *prikey)
+int virtual_hal_set_key(_IN_ hal_key_type type, _IN_ uint32_t key_idx, _IN_ hal_data *key, _IN_ hal_data *prikey)
 {
 	VH_ENTER;
-	VH_LOG("mode(%d) key index(%d) key(%p) private key(%p)\n", mode, key_idx, key, prikey);
+	VH_LOG("type(%d) key index(%d)\n", type, key_idx);
+	int is_asym = _virtual_is_asymmetric(type);
+	if (is_asym) {
+		VH_LOG("Asymmetric Key");
+		VH_LOG("Key1 (%p) Key2 (%p)\n", key, prikey);
+	} else {
+		VH_LOG("Symmetric Key");
+		VH_LOG("Key1 (%p) Key2 (%p)\n", key, prikey);
+	}
 
 	return 0;
 }
 
-int virtual_hal_get_key(_IN_ hal_key_type mode, _IN_ uint32_t key_idx, _OUT_ hal_data *key)
+int virtual_hal_get_key(_IN_ hal_key_type type, _IN_ uint32_t key_idx, _OUT_ hal_data *key)
 {
 	VH_ENTER;
 
-	VH_LOG("mode(%d) key index(%d) key(%p)\n", mode, key_idx, key);
+	VH_LOG("mode(%d) key index(%d) key(%p)\n", type, key_idx, key);
 
 	// return dummy key data to check data is sent well.
-	uint8_t pubkey_data[] = {"hal_key_sssssssssssstttttttttt"};
-	key->data_len = sizeof(pubkey_data);
-
-	memcpy(key->data, pubkey_data, key->data_len);
+	int is_ecc = _virtual_is_ecc(type);
+	if (is_ecc) {
+		V_COPY_ECC(key, g_virtual_ecckey);
+	} else {
+		V_COPY_DATA(key, g_virtual_sym);
+		key->priv_len = 0;
+	}
 
 	return 0;
 }
@@ -176,6 +269,11 @@ int virtual_hal_ecdsa_verify_md(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _
 int virtual_hal_dh_generate_param(_IN_ uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param)
 {
 	VH_ENTER;
+
+	V_COPY_DATA(dh_param->G, g_virtual_dh_G);
+	V_COPY_DATA(dh_param->P, g_virtual_dh_P);
+	V_COPY_DATA(dh_param->pubkey, g_virtual_dh_pub);
+
 	return 0;
 }
 

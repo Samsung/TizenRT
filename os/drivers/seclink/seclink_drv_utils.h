@@ -14,13 +14,13 @@
 
 #define SLDRV_ERR(fd)													\
 	do {																\
-		SLDRV_LOG(SL_TAG"[ERR:%s] %s %s:%d ret(%d) code(%s)\n",			\
-				  SL_TAG, __FUNCTION__, __FILE__, __LINE__, fd, strerror(errno)); \
+		SLDRV_LOG(SL_TAG"%s:%d ret(%d) code(%s))\n",                    \
+				__FILE__, __LINE__, fd, strerror(errno));               \
 	} while (0)
 
 #define SLDRV_ENTER														\
 	do {																\
-		SLDRV_LOG(SLDRV_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+		SLDRV_LOG(SLDRV_TAG"%s:%d\n", __FILE__, __LINE__);              \
 	} while (0)
 
 

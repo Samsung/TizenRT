@@ -31,10 +31,10 @@ typedef security_storage_file *security_storage_list;
 /**
  * Secure Storage
  */
-int ss_read_secure_storage(security_handle hnd, const char *name, unsigned int offset, security_data *data);
-int ss_write_secure_storage(security_handle hnd, const char *name, unsigned int offsest, security_data *data);
-int ss_delete_secure_storage(security_handle hnd, const char *name);
-int ss_get_size_secure_storage(security_handle hnd, const char *name, unsigned int *size);
-int ss_get_list_secure_storage(security_handle hnd, unsigned int *count, security_storage_list *list);
+security_error ss_read_secure_storage(security_handle hnd, const char *name, unsigned int offset, security_data *data);
+security_error ss_write_secure_storage(security_handle hnd, const char *name, unsigned int offsest, security_data *data);
+security_error ss_delete_secure_storage(security_handle hnd, const char *name);
+security_error ss_get_size_secure_storage(security_handle hnd, const char *name, unsigned int *size);
+security_error ss_get_list_secure_storage(security_handle hnd, security_storage_list *list);
 
 #endif // _SECURITY_API_SS_H__
