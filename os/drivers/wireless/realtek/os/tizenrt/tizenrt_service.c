@@ -13,6 +13,8 @@
 // Misc Function
 //----- ------------------------------------------------------------------
 
+extern _list timer_table;
+
 void timer_wrapper(_timerHandle timer_hdl)
 {
 	_list *plist;
@@ -41,7 +43,7 @@ void timer_wrapper(_timerHandle timer_hdl)
 		timer_entry->timeout = 0;
 		DBG_TRACE("[%d]: TTTTimeout timer=%p\n", rtw_get_current_time(), timer_entry->timer);
 #endif	
-
+		//ndbg("\r\n==============>>timer->function = %x\r\n",timer_entry->timer->function);
 		if(timer_entry->timer->function)
 			timer_entry->timer->function((void *) timer_entry->timer->data);
 	}

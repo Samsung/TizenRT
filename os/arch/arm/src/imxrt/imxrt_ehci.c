@@ -3194,13 +3194,13 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace1(EHCI_VTRACE1_TOPHALF, usbsts & regval);
 #else
-	uinfo("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
+	//uinfo("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 #endif
 
-	syslog(LOG_INFO, "USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
+	//syslog(LOG_INFO, "USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 
 	if ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0) {
-		syslog(LOG_INFO, "interrupt::connect\n");
+		//syslog(LOG_INFO, "interrupt::connect\n");
 	} else {
 		syslog(LOG_INFO, "interrupt::disconnect\n");
 	}

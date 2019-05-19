@@ -172,7 +172,7 @@ extern "C" {
 /******************************************************
  *                    Structures
  ******************************************************/
-#define TMR_NAME_SIZE 50
+#define TMR_NAME_SIZE 16
 struct timer_list {
     struct timer_list *prev, *next; 
 	_timerHandle 	timer_hdl;

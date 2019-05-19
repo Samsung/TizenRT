@@ -625,7 +625,6 @@ typedef struct { volatile int counter; } atomic_t;
 
 #define ATOMIC_T atomic_t
 
-_list timer_table;
 int timer_used_num;
 int max_timer_used_num;
 
