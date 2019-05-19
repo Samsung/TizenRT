@@ -1221,7 +1221,7 @@ int wifi_on(rtw_mode_t mode)
 int wifi_off(void)
 {
 	int ret = 0;
-	int timeout = 20;
+	int timeout = 2000;
 
 	if((rltk_wlan_running(WLAN0_IDX) == 0) &&
 		(rltk_wlan_running(WLAN1_IDX) == 0)) {
@@ -1232,10 +1232,8 @@ int wifi_off(void)
 #if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	//TODO
 #else
-	//dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
 	netif_set_down(&xnetif[0]);
-	netif_set_down(&xnetif[1]);
+	//netif_set_down(&xnetif[1]);
 #endif
 #endif
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
@@ -1261,7 +1259,7 @@ int wifi_off(void)
 			break;
 		}
 
-		rtw_msleep_os(1000);
+		rtw_msleep_os(5);
 		timeout --;
 	}
 
@@ -1279,9 +1277,6 @@ int wifi_off_fastly(void)
 #if CONFIG_LWIP_LAYER
 #if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	//TODO
-#else
-	//dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
 #endif	
 #endif	
 	//RTW_API_INFO("\n\rDeinitializing WIFI ...");
@@ -2146,12 +2141,6 @@ int wifi_restart_ap(
 									strlen((char*)setting.password),
 									setting.key_idx,
 									NULL);	
-#if CONFIG_DHCP_CLIENT
-		if(ret == RTW_SUCCESS) {
-			/* Start DHCPClient */
-			LwIP_DHCP(0, DHCP_START);
-		}
-#endif
 	}
 #endif	
 #if defined(CONFIG_MBED_ENABLED)
@@ -2213,7 +2202,6 @@ static void wifi_autoreconnect_thread(void *param)
 		else
 #endif
 		{
-			LwIP_DHCP(0, DHCP_START);
 #if LWIP_AUTOIP
 			uint8_t *ip = LwIP_GetIP(&xnetif[0]);
 			if((ip[0] == 0) && (ip[1] == 0) && (ip[2] == 0) && (ip[3] == 0)) {

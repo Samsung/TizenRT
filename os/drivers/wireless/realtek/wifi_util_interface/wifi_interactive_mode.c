@@ -1,3 +1,5 @@
+#include <tinyara/config.h>
+#include <stdio.h>
 
 #include "osdep_service.h"
 #include "wifi_conf.h"
@@ -476,10 +478,6 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		return -1;
 	}
 
-#if CONFIG_LWIP_LAYER
-	LwIP_DHCP(0, DHCP_START);
-#endif
-	
 	return 0;
 
 }
@@ -586,23 +584,8 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		printf("\n\rERROR: Operation failed!");
 		return;
 	} else {
-		//tick2 = xTaskGetTickCount();
-		//printf("\r\nConnected after %dms.\n", (tick2-tick1));
         printf("\r\nConnected\n");
-		
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFORM_TIZENRT )
-		//TODO
-#else
-
-		/* Start DHCPClient */
-		LwIP_DHCP(0, DHCP_START);
-#endif
-#endif
 	}
-	//tick3 = xTaskGetTickCount();
-	//printf("\r\n\nGot IP after %dms.\n", (tick3-tick1));
-	printf("\r\n\nGot IP \n");
 }
 
 int8_t cmd_wifi_disconnect(void)
@@ -767,7 +750,9 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
     
 #if CONFIG_LWIP_LAYER
 	/* Initilaize the LwIP stack */
-	LwIP_Init();
+	if (LwIP_Is_Init() < 0) {
+		LwIP_Init_If();
+	}
 #endif
 	/* Kill init thread after all init tasks done */
 	ret = wifi_on(RTW_MODE_STA);
@@ -797,7 +782,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 		printf("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
 		printf("\n\r  IP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #ifdef CONFIG_PLATFORM_TIZENRT
-		netlib_setmacaddr("r0", mac);
+		netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
 #endif
 #endif
     }

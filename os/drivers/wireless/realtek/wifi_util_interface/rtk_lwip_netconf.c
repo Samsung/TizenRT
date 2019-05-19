@@ -1,4 +1,8 @@
 /* Includes ------------------------------------------------------------------*/
+#include <tinyara/config.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "lwip/mem.h"
 #include "lwip/memp.h"
 #include "lwip/dhcp.h"
@@ -21,6 +25,7 @@
 #include "wlan_fast_connect/example_wlan_fast_connect.h"
 #endif
 
+#define IFNAME_LEN 2
 
 /*Static IP ADDRESS*/
 #ifndef IP_ADDR0
@@ -114,7 +119,15 @@ extern rtw_mode_t wifi_mode;
 
 int lwip_init_done = 0;
 
-void LwIP_Init(void)
+int LwIP_Is_Init(void) {
+	if (lwip_init_done > 0) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+void LwIP_Init_If(void)
 {
 	ip_addr_t ipaddr;
 	ip_addr_t netmask;
@@ -163,8 +176,8 @@ void LwIP_Init(void)
 		}
 #endif
 #if CONFIG_ETHERNET
-    if(idx == NET_IF_NUM - 1)
-    {
+	    if(idx == NET_IF_NUM - 1)
+		{
 #if LWIP_VERSION_MAJOR >= 2
 			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
 			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1 , ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
@@ -174,13 +187,22 @@ void LwIP_Init(void)
 			IP4_ADDR(&netmask, ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1 , ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
 			IP4_ADDR(&gw, ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);    	
 #endif
-    }
+		}
 #endif
-		xnetif[idx].name[0] = 'r';
-		xnetif[idx].name[1] = '0'+idx;
 
-		xnetif[idx].num = (unsigned char)(xnetif[idx].name[1]+'0');
 
+		if (idx == 0) {
+			strncpy(xnetif[idx].name, CONFIG_WIFIMGR_STA_IFNAME, IFNAME_LEN); 
+			strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_STA_IFNAME);
+		} else if (idx == 1) {
+			strncpy(xnetif[idx].name, CONFIG_WIFIMGR_SOFTAP_IFNAME, IFNAME_LEN);
+			strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_SOFTAP_IFNAME);
+		} else {
+			xnetif[idx].name[0] = 'r';
+			xnetif[idx].name[1] = '0'+idx;
+		}
+
+		//xnetif[idx].num = (unsigned char)(xnetif[idx].name[1]+'0');
 		
 #if LWIP_VERSION_MAJOR >= 2
 #if CONFIG_ETHERNET
@@ -202,19 +224,12 @@ void LwIP_Init(void)
     netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_init_rtk, &tcpip_input);
 #endif
 #endif
-    printf("interface %d is initialized\n", idx);
+    printf("interface %d (tot %d) is initialized (name: )\n", idx, NET_IF_NUM, xnetif[idx].name);
 
 	}
 	
 	/*  Registers the default network interface. */
 	netif_set_default(&xnetif[0]);
-
-	/*move these operations to wifi_on/wifi_off*/
-	#if 0
-	/*  When the netif is fully configured this function must be called.*/
-	for(idx = 0;idx < NET_IF_NUM;idx++)
-		netif_set_up(&xnetif[idx]); 
-	#endif
 
 	lwip_init_done = 1;	 
 }
@@ -227,64 +242,6 @@ extern uint32_t offer_ip;
 extern u8 is_the_same_ap;
 
 #endif 
-/**
-  * @brief  LwIP_DHCP_Process_Handle
-  * @param  None
-  * @retval None
-  */
-uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
-{
-
-	ip_addr_t ipaddr;
-	ip_addr_t netmask;
-	ip_addr_t gw;
-	uint32_t IPaddress;
-	uint8_t iptab[4];
-	uint8_t DHCP_state;
-	struct netif *pnetif = NULL;
-
-	DHCP_state = dhcp_state;
-	
-#if !CONFIG_ETHERNET
-	if(idx > 1)
-		idx = 1;
-#endif
-
-	pnetif = &xnetif[idx];
-
-
-	if(DHCP_state == 0){
-#if LWIP_VERSION_MAJOR >= 2
-		ip_addr_set_zero(&pnetif->ip_addr);
-		ip_addr_set_zero(&pnetif->netmask);
-		ip_addr_set_zero(&pnetif->gw);
-#else
-		pnetif->ip_addr.addr = 0;
-		pnetif->netmask.addr = 0;
-		pnetif->gw.addr = 0;
-#endif
-	}
-
-	if(!netif_is_up(pnetif)) // netif should be set up before doing dhcp request (in lwip v2.0.0)
-	{
-		netif_set_up(pnetif);
-	}
-
-	switch (DHCP_state)
-	{
-		case DHCP_START:
-		dhcp_client_start(pnetif->name);
-		break;
-	
-		case DHCP_STOP:
-		dhcp_client_stop(pnetif->name);
-			break;
-
-			default:
-			break;
-	}   
-}
-
 uint8_t* LwIP_GetMAC(struct netif *pnetif)
 {
 	return (uint8_t *) (pnetif->hwaddr);
