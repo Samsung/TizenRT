@@ -87,7 +87,9 @@
 #define STKMON_BUFLEN 64
 /* Configuration ************************************************************/
 
-#define STACKMONITOR_STACKSIZE 1024
+#ifndef CONFIG_STACKMONITOR_STACKSIZE
+#define CONFIG_STACKMONITOR_STACKSIZE 2048
+#endif
 
 #ifndef CONFIG_STACKMONITOR_PRIORITY
 #define CONFIG_STACKMONITOR_PRIORITY 100
@@ -341,7 +343,7 @@ int utils_stackmonitor(int argc, char **args)
 		stkmon_started = TRUE;
 
 		pthread_attr_init(&stkmon_attr);
-		stkmon_attr.stacksize = STACKMONITOR_STACKSIZE;
+		stkmon_attr.stacksize = CONFIG_STACKMONITOR_STACKSIZE;
 		stkmon_attr.priority = CONFIG_STACKMONITOR_PRIORITY;
 		stkmon_attr.inheritsched = PTHREAD_EXPLICIT_SCHED;
 
