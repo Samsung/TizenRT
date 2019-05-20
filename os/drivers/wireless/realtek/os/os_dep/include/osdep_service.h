@@ -172,7 +172,7 @@ extern "C" {
 /******************************************************
  *                    Structures
  ******************************************************/
-#define TMR_NAME_SIZE 50
+#define TMR_NAME_SIZE 16
 struct timer_list {
     struct timer_list *prev, *next; 
 	_timerHandle 	timer_hdl;
@@ -180,13 +180,10 @@ struct timer_list {
     int timer_id; 
     unsigned char timer_name[TMR_NAME_SIZE]; 
     int live;
-    long timevalue;
-	_sema timer_sema1,timer_sema2,timer_sema3;
-	 pthread_mutex_t mutex,mutex_t,mutex_y; 
-    pthread_cond_t cond,cond_t,cond_y; 
+    long timevalue; 
 	void *data;
     void (*function)(void *args); 
-}; 
+};
 /******************************Timer End*******************************************/
 
 

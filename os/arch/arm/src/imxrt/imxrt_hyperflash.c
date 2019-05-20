@@ -71,6 +71,7 @@
 #include "imxrt_flash.h"
 #include "imxrt_log.h"
 
+#include "cache.h"
 #include "up_arch.h"
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
@@ -84,26 +85,11 @@
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define IMXRT_FLEXSPI FLEXSPI
-#define IMXRT_FLASH_SIZE 0x10000
-#define IMXRT_FLEXSPI_AMBA_BASE FlexSPI_AMBA_BASE
-#define IMXRT_FLASH_PAGE_SIZE 512
-#define IMXRT_SECTOR_SIZE 0x40000
-#define IMXRT_BLOCK_SIZE 0x40000
-#define IMXRT_FLASH_BASE 0x60000000
-#define IMXRT_FLEXSPI_CLOCK kCLOCK_FlexSpi
-#define IMXRT_FLASH_TOTAL_SIZE (IMXRT_FLASH_SIZE*1024)
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_READDATA 0
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA 1
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_READSTATUS 2
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEENABLE 4
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_ERASESECTOR 6
-#define HYPERFLASH_CMD_LUT_SEQ_IDX_PAGEPROGRAM 10
-#define CUSTOM_LUT_LENGTH 48
 
 /************************************************************************************
  * Private Data
  ************************************************************************************/
+FAR struct mtd_dev_s *flash_dev = NULL;
 
 /*******************************************************************************
  * Code
@@ -223,75 +209,6 @@ const uint32_t customLUT[CUSTOM_LUT_LENGTH] = {
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
-/************************************************************************************
- * Name: imxrt_flexspi_hyper_write_enable
- *
- * Description:
- *   Write data to hyper flash using flexspi interface
- *
- ************************************************************************************/
-status_t imxrt_flexspi_hyper_write_enable(FLEXSPI_Type *base, uint32_t baseAddr)
-{
-	flexspi_transfer_t flashXfer;
-	status_t status;
-
-	/* Write neable */
-	flashXfer.deviceAddress = baseAddr;
-	flashXfer.port = kFLEXSPI_PortA1;
-	flashXfer.cmdType = kFLEXSPI_Command;
-	flashXfer.SeqNumber = 2;
-	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEENABLE;
-
-	status = imxrt_flexspi_transferblocking(base, &flashXfer);
-
-	return status;
-}
-
-/************************************************************************************
- * Name: imxrt_flexspi_hyper_wait_bus_busy
- *
- * Description:
- *   Check if bus is busy and wait until exiting busy
- *
- ************************************************************************************/
-status_t imxrt_flexspi_hyper_wait_bus_busy(FLEXSPI_Type *base)
-{
-	/* Wait status ready. */
-	bool isBusy;
-	uint32_t readValue;
-	status_t status;
-	flexspi_transfer_t flashXfer;
-
-	flashXfer.deviceAddress = 0;
-	flashXfer.port = kFLEXSPI_PortA1;
-	flashXfer.cmdType = kFLEXSPI_Read;
-	flashXfer.SeqNumber = 2;
-	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_READSTATUS;
-	flashXfer.data = &readValue;
-	flashXfer.dataSize = 2;
-
-	do {
-		status = imxrt_flexspi_transferblocking(base, &flashXfer);
-
-		if (status != kStatus_Success) {
-			return status;
-		}
-		if (readValue & 0x8000) {
-			isBusy = false;
-		} else {
-			isBusy = true;
-		}
-
-		if (readValue & 0x3200) {
-			status = kStatus_Fail;
-			break;
-		}
-
-	} while (isBusy);
-
-	return status;
-}
-
 /************************************************************************************
  * Name: flexspi_pins_init
  *
@@ -479,11 +396,283 @@ static inline void flexspi_clock_init(void)
 }
 
 /************************************************************************************
+ * Name: flexspi_clock_update
+ *
+ * Description:
+ *   Update clock setting in flexspi
+ *
+ ************************************************************************************/
+static inline void flexspi_clock_update(void)
+{
+	/* Program finished, speed the clock to 166M. */
+	imxrt_flexspi_enable(IMXRT_FLEXSPI, false);
+	imxrt_clock_disableclock(IMXRT_FLEXSPI_CLOCK);
+	imxrt_clock_setdiv(kCLOCK_FlexspiDiv, 0); /* flexspi clock 332M, DDR mode, internal clock 166M. */
+	imxrt_clock_enableclock(IMXRT_FLEXSPI_CLOCK);
+	imxrt_flexspi_enable(IMXRT_FLEXSPI, true);
+}
+
+/************************************************************************************
  * Public Functions
  ************************************************************************************/
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_hyperbus_read
+ *
+ * Description:
+ *   Check if bus is busy and wait until exiting busy
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_hyperbus_read(FLEXSPI_Type *base, uint32_t addr, uint32_t *buffer, uint32_t bytes)
+{
+	flexspi_transfer_t flashXfer;
+	status_t status;
+
+	flashXfer.deviceAddress = addr * 2;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Read;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_READDATA;
+	flashXfer.data = buffer;
+	flashXfer.dataSize = bytes;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+	if (status != kStatus_Success) {
+		return status;
+	}
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_hyperbus_write
+ *
+ * Description:
+ *   Check if bus is busy and wait until exiting busy
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_hyperbus_write(FLEXSPI_Type *base, uint32_t addr, uint32_t *buffer, uint32_t bytes)
+{
+	flexspi_transfer_t flashXfer;
+	status_t status;
+
+	flashXfer.deviceAddress = addr * 2;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Write;
+	flashXfer.SeqNumber = 1;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA;
+	flashXfer.data = buffer;
+	flashXfer.dataSize = bytes;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+	if (status != kStatus_Success) {
+		return status;
+	}
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_hyperflash_cfi
+ *
+ * Description:
+ *   Initialize clock setting in flexspi
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_hyperflash_cfi(FLEXSPI_Type *base)
+{
+	/*
+		* Read ID-CFI Parameters
+		*/
+	// CFI Entry
+	status_t status;
+	uint32_t buffer[2];
+	uint32_t data = 0x9800;
+	status = imxrt_flexspi_nor_hyperbus_write(base, 0x555, &data, 2);
+	if (status != kStatus_Success) {
+		return status;
+	}
+
+	// ID-CFI Read
+	// Read Query Unique ASCII String
+	status = imxrt_flexspi_nor_hyperbus_read(base, 0x10, &buffer[0], sizeof(buffer));
+	if (status != kStatus_Success) {
+		return status;
+	}
+	buffer[1] &= 0xFFFF;
+	// Check that the data read out is  unicode "QRY" in big-endian order
+	if ((buffer[0] != 0x52005100) || (buffer[1] != 0x5900)) {
+		status = kStatus_Fail;
+		return status;
+	}
+	// ASO Exit
+	data = 0xF000;
+	status = imxrt_flexspi_nor_hyperbus_write(base, 0x0, &data, 2);
+	if (status != kStatus_Success) {
+		return status;
+	}
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_write_enable
+ *
+ * Description:
+ *   Write data to hyper flash using flexspi interface
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_write_enable(FLEXSPI_Type *base, uint32_t baseAddr)
+{
+	flexspi_transfer_t flashXfer;
+	status_t status;
+
+	/* Write enable */
+	flashXfer.deviceAddress = baseAddr;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 2;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEENABLE;
+
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_wait_bus_busy
+ *
+ * Description:
+ *   Check if bus is busy and wait until exiting busy
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_wait_bus_busy(FLEXSPI_Type *base)
+{
+	/* Wait status ready. */
+	bool isBusy;
+	uint32_t readValue;
+	status_t status;
+	flexspi_transfer_t flashXfer;
+
+	flashXfer.deviceAddress = 0;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Read;
+	flashXfer.SeqNumber = 2;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_READSTATUS;
+	flashXfer.data = &readValue;
+	flashXfer.dataSize = 2;
+
+	do {
+		status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+		if (status != kStatus_Success) {
+			return status;
+		}
+		if (readValue & 0x8000) {
+			isBusy = false;
+		} else {
+			isBusy = true;
+		}
+
+		if (readValue & 0x3200) {
+			status = kStatus_Fail;
+			break;
+		}
+
+	} while (isBusy);
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_flash_erase_sector
+ *
+ * Description:
+ *   Erase data to hyper flash using flexspi interface
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t address)
+{
+	status_t status;
+	flexspi_transfer_t flashXfer;
+	irqstate_t flags;
+
+	flags = irqsave();
+
+	/* Write enable */
+	status = imxrt_flexspi_nor_write_enable(base, address);
+
+	if (status != kStatus_Success) {
+		irqrestore(flags);
+		return status;
+	}
+
+	flashXfer.deviceAddress = address;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Command;
+	flashXfer.SeqNumber = 4;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_ERASESECTOR;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+	if (status != kStatus_Success) {
+		irqrestore(flags);
+		return status;
+	}
+
+	status = imxrt_flexspi_nor_wait_bus_busy(base);
+
+	irqrestore(flags);
+
+	return status;
+}
+
+/************************************************************************************
+ * Name: imxrt_flexspi_nor_flash_page_program
+ *
+ * Description:
+ *   Write data to hyper flash using flexspi interface
+ *
+ ************************************************************************************/
+status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t address, const uint32_t *src)
+{
+	status_t status;
+	flexspi_transfer_t flashXfer;
+	irqstate_t flags;
+
+	flags = irqsave();
+
+	/* Write enable */
+	status = imxrt_flexspi_nor_write_enable(base, address);
+	if (status != kStatus_Success) {
+		irqrestore(flags);
+		return status;
+	}
+
+	/* Prepare page program command */
+	flashXfer.deviceAddress = address;
+	flashXfer.port = kFLEXSPI_PortA1;
+	flashXfer.cmdType = kFLEXSPI_Write;
+	flashXfer.SeqNumber = 2;
+	flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_PAGEPROGRAM;
+	flashXfer.data = (uint32_t *)src;
+	flashXfer.dataSize = IMXRT_FLASH_PAGE_SIZE;
+	status = imxrt_flexspi_transferblocking(base, &flashXfer);
+
+	if (status != kStatus_Success) {
+		irqrestore(flags);
+		return status;
+	}
+
+	status = imxrt_flexspi_nor_wait_bus_busy(base);
+
+	arch_flush_dcache(address + IMXRT_FLASH_BASE, address + IMXRT_FLASH_BASE + IMXRT_FLASH_PAGE_SIZE);
+
+	irqrestore(flags);
+
+	return status;
+}
 
 /* The smallest integer type that can hold the IOMUX encoding */
 
@@ -573,10 +762,10 @@ ssize_t up_progmem_erasepage(size_t page)
 	snprintf(tempLog, sizeof(tempLog), " up_progmem_erasepage called: page[%d] ", page);
 	IMXLOG(tempLog);
 
-	address= up_progmem_getaddress(page);
+	address = up_progmem_getaddress(page);
 
 	/* Write enable */
-	status = imxrt_flexspi_hyper_write_enable(IMXRT_FLEXSPI, address);
+	status = imxrt_flexspi_nor_write_enable(IMXRT_FLEXSPI, address);
 
 	if (status != kStatus_Success) {
 		return status;
@@ -593,7 +782,7 @@ ssize_t up_progmem_erasepage(size_t page)
 		return status;
 	}
 
-	status = imxrt_flexspi_hyper_wait_bus_busy(IMXRT_FLEXSPI);
+	status = imxrt_flexspi_nor_wait_bus_busy(IMXRT_FLEXSPI);
 
 	return up_progmem_blocksize();
 }
@@ -648,6 +837,20 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 	}
 
 	return count;
+}
+#else
+/************************************************************************************
+ * Name: up_flashinitialize
+ *
+ * Description:
+ *   Return an initialize MTD device instance.  MTD devices are not registered
+ *   in the file system, but are created as instances that can be bound to
+ *   other functions (such as a block or character driver front end).
+ *
+ ************************************************************************************/
+FAR struct mtd_dev_s *up_flashinitialize(void)
+{
+	return (FAR struct mtd_dev_s *)imxrt_mtd_initialize();
 }
 #endif
 

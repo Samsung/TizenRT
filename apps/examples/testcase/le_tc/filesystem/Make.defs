@@ -56,8 +56,8 @@ CSRCS += fs_main.c
 ifeq ($(CONFIG_TC_FS_PROCFS),y)
   CSRCS += tc_fs_procfs.c
 endif
-ifeq ($(CONFIG_TC_FS_TMPFS),y)
-  CSRCS += tc_fs_tmpfs.c
+ifeq ($(CONFIG_TC_FS_MOPS),y)
+  CSRCS += tc_fs_mops.c
 endif
 ifeq ($(CONFIG_ITC_FS),y)
   CSRCS += itc_fs.c

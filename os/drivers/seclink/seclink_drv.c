@@ -36,7 +36,7 @@
 #include "seclink_drv_req.h"
 #include "seclink_drv_utils.h"
 
-#define SL_IS_COMMON_REQ(cmd)  ((cmd & 0xf0) & (SECLINKIOC_COMMON & 0xf0))
+#define SL_IS_COMMON_REQ(cmd)  ((cmd & 0xf0) == 0)
 #define SL_IS_CRYPTO_REQ(cmd)  ((cmd & 0xf0) & (SECLINKIOC_CRYPTO & 0xf0))
 #define SL_IS_AUTH_REQ(cmd)    ((cmd & 0xf0) & (SECLINKIOC_AUTH & 0xf0))
 #define SL_IS_SS_REQ(cmd)      ((cmd & 0xf0) & (SECLINKIOC_SS & 0xf0))
@@ -127,7 +127,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		res = hd_handle_key_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_SS_REQ(cmd)) {
 		res = hd_handle_ss_request(cmd, arg, (void *)upper->lower);
-	} else if (SL_IS_COMMON_REQ(cmd)) {
+	} else if (SL_IS_CRYPTO_REQ(cmd)) {
 		res = hd_handle_crypto_request(cmd, arg, (void *)upper->lower);
 	}
 

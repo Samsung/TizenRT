@@ -25,14 +25,19 @@
 /**
  * Authentication
  */
-int auth_generate_random(security_handle hnd, unsigned int size, security_data *random)
+security_error auth_generate_random(security_handle hnd, unsigned int size, security_data *random)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
+	if (!random) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	hal_data hrand = {ctx->data1, ctx->dlen1, NULL, 0};
 	hal_result_e hres = HAL_SUCCESS;
+
 
 	SECAPI_CALL(sl_generate_random(ctx->sl_hnd, size, &hrand, &hres));
 	if (hres != HAL_SUCCESS) {
@@ -48,20 +53,34 @@ int auth_generate_random(security_handle hnd, unsigned int size, security_data *
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert)
+security_error auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert)
 {
 	SECAPI_ENTER;
+	SECAPI_ISHANDLE_VALID(hnd);
+
+	if (!csr) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!cert) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	uint32_t cert_idx = 0;
+	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
 	//TODO
 
 	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
 }
 
-int auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert)
+security_error auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!cert || !cert->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
     /* convert path */
 	uint32_t cert_idx = 0;
 	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
@@ -74,12 +93,15 @@ int auth_set_certificate(security_handle hnd, const char *cert_name, security_da
 	SECAPI_HAL_RETURN(hres);
 }
 
-int auth_get_certificate(security_handle hnd, const char *cert_name, security_data *cert)
+security_error auth_get_certificate(security_handle hnd, const char *cert_name, security_data *cert)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!cert) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
     /* convert path */
 	uint32_t cert_idx = 0;
 	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
@@ -101,7 +123,7 @@ int auth_get_certificate(security_handle hnd, const char *cert_name, security_da
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_remove_certificate(security_handle hnd, const char *cert_name)
+security_error auth_remove_certificate(security_handle hnd, const char *cert_name)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
@@ -119,18 +141,26 @@ int auth_remove_certificate(security_handle hnd, const char *cert_name)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_get_rsa_signature(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *hash, security_data *sign)
+security_error auth_get_rsa_signature(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *hash, security_data *sign)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
+
+	if (!hash || !hash->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	if (!sign) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	HAL_INIT_RSA_PARAM(hmode);
-	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_RSAPARAM(param, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
 	hal_data h_sign = {ctx->data1, ctx->dlen1, NULL, 0};
@@ -150,18 +180,26 @@ int auth_get_rsa_signature(security_handle hnd, security_rsa_param mode, const c
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_verify_rsa_signature(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *hash, security_data *sign)
+security_error auth_verify_rsa_signature(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *hash, security_data *sign)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
+
+	if (!hash || !hash->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	if (!sign) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	HAL_INIT_RSA_PARAM(hmode);
-	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_RSAPARAM(param, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
 	hal_data h_sign = {sign->data, sign->length, NULL, 0};
@@ -172,18 +210,25 @@ int auth_verify_rsa_signature(security_handle hnd, security_rsa_param mode, cons
 	SECAPI_HAL_RETURN(hres);
 }
 
-int auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, const char *key_name, security_data *hash, security_data *sign)
+security_error auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param *param, const char *key_name, security_data *hash, security_data *sign)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
+
+	if (!hash || !hash->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!sign) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	HAL_INIT_ECDSA_PARAM(hmode);
-	SECAPI_CONVERT_ECDSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_ECDSAPARAM(param, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
 	hal_data h_sign = {ctx->data1, ctx->dlen1, NULL, 0};
@@ -203,18 +248,28 @@ int auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, con
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_verify_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, const char *key_name, security_data *hash, security_data *sign)
+security_error auth_verify_ecdsa_signature(security_handle hnd,
+										   security_ecdsa_param *param,
+										   const char *key_name,
+										   security_data *hash,
+										   security_data *sign)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!hash || !hash->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!sign || !sign->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
 	HAL_INIT_ECDSA_PARAM(hmode);
-	SECAPI_CONVERT_ECDSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_ECDSAPARAM(param, &hmode);
 
 	hal_data h_hash = {hash->data, hash->length, NULL, 0};
 	hal_data h_sign = {sign->data, sign->length, NULL, 0};
@@ -229,12 +284,18 @@ int auth_verify_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, 
 	SECAPI_HAL_RETURN(hres);
 }
 
-int auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *data, security_data *hash)
+security_error auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *data, security_data *hash)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!data || !data->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!hash) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	hal_hash_type h_type = HAL_HASH_UNKNOWN;
 	SECAPI_CONVERT_HASHMODE(mode, h_type);
 
@@ -257,12 +318,22 @@ int auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *d
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_get_hmac(security_handle hnd, security_hmac_mode mode, const char *key_name, security_data *data, security_data *hmac)
+security_error auth_get_hmac(security_handle hnd,
+							 security_hmac_mode mode,
+							 const char *key_name,
+							 security_data *data,
+							 security_data *hmac)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!data || !data->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!hmac) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
@@ -289,26 +360,50 @@ int auth_get_hmac(security_handle hnd, security_hmac_mode mode, const char *key_
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_generate_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params)
+security_error auth_generate_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!params || !params->G || !params->P || !params->pubkey) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
     /* convert path */
 	uint32_t dh_idx = 0;
 	SECAPI_CONVERT_PATH(dh_name, &dh_idx);
 
-	hal_data G_tmp = {NULL, 0, NULL, 0};
-	hal_data P_tmp = {NULL, 0, NULL, 0};
 	/* pubkey is output */
-	unsigned char pubkey_buf[SECURITY_MAX_KEY_BUF];
-	hal_data pubkey_tmp = {pubkey_buf, SECURITY_MAX_KEY_BUF, NULL, 0};
-	hal_dh_data h_data = {HAL_DH_UNKNOWN, &G_tmp, &P_tmp, &pubkey_tmp};
-	/* copy mode, G, and P */
-	SECAPI_CONVERT_DHPARAM(params, &h_data);
-	hal_result_e hres = HAL_SUCCESS;
+	hal_dh_key_type mode = secutils_convert_dhmode_s2h(params->mode);
+	if (mode == HAL_DH_UNKNOWN) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
+	params->G->data = (void *)malloc(SECURITY_MAX_KEY_BUF);
+	if (!params->G->data) {
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+
+	params->P->data = (void *)malloc(SECURITY_MAX_KEY_BUF);
+	if (!params->P->data) {
+		free(params->G->data);
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+
+	params->pubkey->data = (void *)malloc(SECURITY_MAX_KEY_BUF);
+	if (!params->pubkey->data) {
+		free(params->G->data);
+		free(params->P->data);
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+
+	hal_data h_G = {params->G->data, params->G->length, NULL, 0};
+	hal_data h_P = {params->P->data, params->P->length, NULL, 0};
+	hal_data h_pubkey = {params->pubkey->data, params->pubkey->length, NULL, 0};
+	hal_dh_data h_data = {mode, &h_G, &h_P, &h_pubkey};
+
+	hal_result_e hres = HAL_SUCCESS;
 	SECAPI_CALL(sl_dh_generate_param(ctx->sl_hnd, dh_idx, &h_data, &hres));
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);
@@ -317,12 +412,18 @@ int auth_generate_dhparams(security_handle hnd, const char *dh_name, security_dh
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_compute_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params, security_data *secret)
+security_error auth_compute_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params, security_data *secret)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!params) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!secret) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	/* convert path */
 	uint32_t dh_idx = 0;
 	SECAPI_CONVERT_PATH(dh_name, &dh_idx);
@@ -351,18 +452,21 @@ int auth_compute_dhparams(security_handle hnd, const char *dh_name, security_dh_
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *params)
+security_error auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *params)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!params) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	/* convert path */
 	uint32_t ecdh_idx = 0;
 	SECAPI_CONVERT_PATH(ecdh_name, &ecdh_idx);
 
 	/* params->curve is input */
-	hal_key_type key_type = secutils_convert_ecdsamode_to_key_s2h(params->curve);
+	hal_key_type key_type = secutils_convert_ecdsamode_s2h(params->curve);
 	hal_result_e hres = HAL_SUCCESS;
 
 	SECAPI_CALL(sl_generate_key(ctx->sl_hnd, key_type, ecdh_idx, &hres));
@@ -406,12 +510,21 @@ int auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_e
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int auth_compute_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *params, security_data *secret)
+security_error auth_compute_ecdhkey(security_handle hnd,
+									const char *ecdh_name,
+									security_ecdh_param *params,
+									security_data *secret)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
+	if (!params) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!secret) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	/* convert path */
 	uint32_t ecdh_idx = 0;
 	SECAPI_CONVERT_PATH(ecdh_name, &ecdh_idx);

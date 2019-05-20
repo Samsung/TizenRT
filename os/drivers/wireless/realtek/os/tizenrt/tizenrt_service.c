@@ -12,85 +12,11 @@
 //----- ------------------------------------------------------------------
 // Misc Function
 //----- ------------------------------------------------------------------
-void timer_wrapper1(_timer *timer)
+
+extern _list timer_table;
+
+void timer_wrapper(_timerHandle timer_hdl)
 {
-
-   #if 1
-
-            pthread_t taskID;
-		  
-		   taskID = pthread_self();
-		   pthread_detach(taskID);	
-
-		 while(1){
-            pthread_mutex_lock(&timer->mutex_t);
-		    pthread_cond_wait(&timer->cond_t,&timer->mutex_t);
-			  if(timer->function)
-		          timer->function((void *)timer->data);
-
-			pthread_mutex_unlock(&timer->mutex_t);
-		 	}
-
-		    pthread_exit((void *)NULL);
-
-#endif
-}
-
-void timer_wrapper(_timer *timer)
-{
-
-#if 1
-
-
-        int ret;
-	 
-		   pthread_t taskID;
-		   struct timespec delay_time; 
-		   long sec;
-		   long usec;
-		   struct timeval now;
-	 	   
-		   taskID = pthread_self();
-		   pthread_detach(taskID);	
-
-		while(1){
-            pthread_mutex_lock(&timer->mutex_y);
-		    pthread_cond_wait(&timer->cond_y,&timer->mutex_y);
-			pthread_mutex_unlock(&timer->mutex_y);
-
-			//ndbg("\r\n	 timer->timevalue=%d \n",timer->timevalue);
-
-		
-			pthread_mutex_lock(&timer->mutex);
-			gettimeofday(&now, NULL);
-			long nsec = now.tv_usec * 1000 + (timer->timevalue % 1000) * 1000000;
-			delay_time.tv_sec =now.tv_sec + nsec / 1000000000 + timer->timevalue / 1000;
-			delay_time.tv_nsec = nsec % 1000000000;   
-			ret = pthread_cond_timedwait(&timer->cond,&timer->mutex, &delay_time);	
-			pthread_mutex_unlock(&timer->mutex);
-			if (ret == 0)
-			{
-			 
-			 
-			 
-			}
-			else if (ret == ETIMEDOUT)
-			{
-		  
-			  pthread_mutex_lock(&timer->mutex_t);
-		
-			  pthread_cond_signal(&timer->cond_t);
-
-		      pthread_mutex_unlock(&timer->mutex_t);		  
-			  
-			  
-			}
-		}
-
-			pthread_exit((void *)NULL);
-
-#endif			
-#if 0
 	_list *plist;
 	struct timer_entry *timer_entry = NULL;
 
@@ -117,12 +43,10 @@ void timer_wrapper(_timer *timer)
 		timer_entry->timeout = 0;
 		DBG_TRACE("[%d]: TTTTimeout timer=%p\n", rtw_get_current_time(), timer_entry->timer);
 #endif	
-		ndbg("\r\n timer->timevalue1=%d \n",timer_entry->timer->timevalue);
-        ndbg("\r\n timer_entry->timer->function=%p \n",timer_entry->timer->timevalue);
+		//ndbg("\r\n==============>>timer->function = %x\r\n",timer_entry->timer->function);
 		if(timer_entry->timer->function)
 			timer_entry->timer->function((void *) timer_entry->timer->data);
 	}
-#endif
 }
 
 
@@ -770,106 +694,48 @@ _timerHandle _tizenrt_timerCreate( _timer *timer, const signed char *pcTimerName
 							  u32 uxAutoReload, 
 							  void * pvTimerID 
 							 )
-{ 
+{              
 
-#if 1 
-	    int ret,i;
-	pthread_t taskID,taskID1;
-
-	pthread_attr_t thread_attr,thread_attr1;
-	struct sched_param schedule_param,schedule_param1;  
-
-
-	pthread_mutex_init(&timer->mutex, NULL);
-	pthread_cond_init(&timer->cond, NULL); 
-
-	 pthread_mutex_init(&timer->mutex_t, NULL);
-	pthread_cond_init(&timer->cond_t, NULL); 
-
-	 pthread_mutex_init(&timer->mutex_y, NULL);
-	pthread_cond_init(&timer->cond_y, NULL); 
-
-
-
-	pthread_attr_init(&thread_attr);
-	schedule_param.sched_priority = 125;
-
-	pthread_attr_init(&thread_attr1);
-	schedule_param1.sched_priority = 125;
-
-	_tizenrt_init_sema(&timer->timer_sema1,0);
-	_tizenrt_init_sema(&timer->timer_sema2,0);
-	_tizenrt_init_sema(&timer->timer_sema3,0);
-
-	pthread_attr_setstacksize(&thread_attr, 2048);
-	pthread_attr_setstacksize(&thread_attr1, 2048);
-
-	pthread_attr_setinheritsched(&thread_attr, PTHREAD_EXPLICIT_SCHED); 
-	pthread_attr_setinheritsched(&thread_attr1, PTHREAD_EXPLICIT_SCHED); 
-
-	pthread_attr_setschedpolicy(&thread_attr,SCHED_RR);
-	pthread_attr_setschedpolicy(&thread_attr1,SCHED_RR);
-
-	pthread_attr_setschedparam(&thread_attr, &schedule_param); 
-	pthread_attr_setschedparam(&thread_attr1, &schedule_param1);
-
-
-	ret= pthread_create(&taskID, &thread_attr, timer_wrapper, (void *)timer);
-
-	ret=pthread_create(&taskID1, &thread_attr1, timer_wrapper1, (void *)timer);
-
-
-	pthread_attr_destroy(&thread_attr);
-	pthread_attr_destroy(&thread_attr1);
-
-	timer->live = 0;
-	srand( (unsigned)time( NULL ) );
-	timer->timer_id = rand();
-	timer->timer_hdl=(void*)timer->timer_id;
-
-	return timer->timer_hdl;
-
-#endif
-
-#if 0
-
-
-		       timer->live = 0;
-			   srand( (unsigned)time( NULL ) );
-			   timer->timer_id = rand();
-			   timer->timer_hdl=(void*)timer->timer_id;
-
-			   return timer->timer_hdl;
-#endif
-
-#if 0
 	timer->work_hdl = (struct work_s *)rtw_zmalloc(sizeof(struct work_s));
-   
+
 	if(timer->work_hdl == NULL) {
-		ndbg("Fail to alloc timer->work_hdl");
+		DBG_ERR("Fail to alloc timer->work_hdl");
 		rtw_timerDelete(timer, TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;
 		return;
 	}
-	ndbg("\r\n  timer->timer_name=%s     \n",timer->timer_name);
-	//ndbg("\r\n  _tizenrt_timerCreate!~!!     \n");
+	
 	return timer->work_hdl;
-#endif
 }
 
 u32 _tizenrt_timerDelete( _timer *timer, 
 							   osdepTickType xBlockTime )
 {
 #if 0
-           pthread_cleanup_push( (void(*)(void *))pthread_mutex_unlock, (void *)&(timer->mutex));
-           pthread_mutex_lock(&timer->mutex);
-			timer->live=0;
-			timer->timer_hdl = NULL;
-            free(timer);			
-			pthread_mutex_unlock(&timer->mutex);
-			pthread_cleanup_pop( 1 );
-#endif	
-		return _SUCCESS;	
+	pthread_cleanup_push( (void(*)(void *))pthread_mutex_unlock, (void *)&(timer->mutex));
+	pthread_mutex_lock(&timer->mutex);
+	timer->live=0;
+	timer->timer_hdl = NULL;
+	free(timer);			
+	pthread_mutex_unlock(&timer->mutex);
+	pthread_cleanup_pop( 1 );
+#endif
+	int ret;
+	ret = work_cancel(HPWORK, timer->work_hdl);
+	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+	free(timer->work_hdl);
+	timer->timer_hdl = NULL;
+	return _SUCCESS;
+
+cleanup:
+	if(ret != -2){
+		free(timer->work_hdl);
+		DBG_ERR("_tizenrt_del_timer failed! ret = %d",ret);
+		return _FAIL;
+	}
+	timer->timer_hdl = NULL;
+	DBG_ERR("_tizenrt_del_timer is Done! timer->work_hdl = %x",timer->work_hdl);
+	return _SUCCESS;
 }
 
 u32 _tizenrt_timerIsTimerActive( _timer *timer)
@@ -882,98 +748,22 @@ u32 _tizenrt_timerIsTimerActive( _timer *timer)
 u32  _tizenrt_timerStop( _timer *timer, 
 							   osdepTickType xBlockTime )
 {
-	timer->live=0;
-	// sem_post(timer->timer_sema2);
-	return _SUCCESS;
-}
-
-
-u32  _tizenrt_timerChangePeriod( _timer *timer, 
-							   osdepTickType xNewPeriod, 
-							   osdepTickType xBlockTime )
-{
-
-
-								            pthread_mutex_lock(&timer->mutex_y);
-											pthread_cond_signal(&timer->cond_y);
-											pthread_mutex_unlock(&timer->mutex_y);
-								           timer->live=1;
-
-
-								return _SUCCESS;
-
-
-#if 0
-	
-	
-	
-								int ret,i;
-								pthread_t taskID,taskID1;
-								
-							   pthread_attr_t thread_attr,thread_attr1;
-							   struct sched_param schedule_param,schedule_param1;  
-							   pthread_attr_init(&thread_attr);
-							   schedule_param.sched_priority = 125;
-				   
-							   pthread_attr_init(&thread_attr1);
-							   schedule_param1.sched_priority = 125;
-				   
-							   _tizenrt_init_sema(&timer->timer_sema1,0);
-							   _tizenrt_init_sema(&timer->timer_sema2,0);
-							   _tizenrt_init_sema(&timer->timer_sema3,0);
-							   
-							   pthread_attr_setstacksize(&thread_attr, 2048);
-							   pthread_attr_setstacksize(&thread_attr1, 2048);
-							   
-							   pthread_attr_setinheritsched(&thread_attr, PTHREAD_EXPLICIT_SCHED); 
-							   pthread_attr_setinheritsched(&thread_attr1, PTHREAD_EXPLICIT_SCHED); 
-							   
-						   pthread_attr_setschedpolicy(&thread_attr,SCHED_RR);
-						   pthread_attr_setschedpolicy(&thread_attr1,SCHED_RR);
-							   
-							   pthread_attr_setschedparam(&thread_attr, &schedule_param); 
-							   pthread_attr_setschedparam(&thread_attr1, &schedule_param1);
-	
-							  
-							  ret= pthread_create(&taskID, &thread_attr, timer_wrapper, (void *)timer);
-							   
-							   //ret=pthread_create(&taskID1, &thread_attr1, timer_wrapper1, (void *)timer);
-							   if(ret!=0) ndbg("\r\n  -----------------error ret=%d----------------- \n",ret);
-					   
-							
-								pthread_attr_destroy(&thread_attr);
-								pthread_attr_destroy(&thread_attr1);
-	
-				return _SUCCESS;
-#endif
-
-
-#if 0
 	int ret;
-	ndbg("\r\n	timer->timer_name=%s	 \n",timer->timer_name);
-
-	ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), MSEC2TICK(timer->timevalue));
-
-	if(ret == -EALREADY){
-		ret = work_cancel(HPWORK, timer->work_hdl);
-		TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
-		ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), MSEC2TICK(timer->timevalue));
-		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
-	}
-
-	timer->live = 1;
-    ndbg("\r\n timer->timevalue=%d \n",timer->timevalue);
+	//timer->live=0;
+	ret = work_cancel(HPWORK, timer->work_hdl);
+	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
 	return _SUCCESS;
 
 cleanup:
-	ndbg("\r\n===================AAAAAAAAAAAA\r\n");
-
-	free(timer->work_hdl);
+	if(ret != -2){
+		free(timer->work_hdl);
+		DBG_ERR("_tizenrt_stop_timer failed! ret = %d",ret);
+		return _FAIL;
+	}
 	timer->timer_hdl = NULL;
-	DBG_ERR("_tizenrt_set_timer failed!");
-	return _FAIL;
-#endif
-	
+	DBG_ERR("_tizenrt_stop_timer is Done! timer->work_hdl = %x",timer->work_hdl);
+	return _SUCCESS;
+
 }
 
 void *_tizenrt_timerGetID( _timerHandle timer_hdl ){
@@ -1003,6 +793,35 @@ u32  _tizenrt_timerResetFromISR( _timerHandle xTimer,
 							   osdepBASE_TYPE *pxHigherPriorityTaskWoken )
 {
 	return 0;	
+}
+
+u32  _tizenrt_timerChangePeriod( _timer *timer, 
+							   osdepTickType xNewPeriod, 
+							   osdepTickType xBlockTime )
+{
+	int ret;
+
+	printf("\r\n%s():================>work_hdl = %x\r\n",__func__,timer->work_hdl);
+
+	ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
+	if(ret == -EALREADY){
+		ret = work_cancel(HPWORK, timer->work_hdl);
+		TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+		ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
+		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
+	}
+	
+	//timer->live = 1;
+
+	return _SUCCESS;
+
+cleanup:
+
+	free(timer->work_hdl);
+	timer->timer_hdl = NULL;
+	DBG_ERR("_tizenrt_set_timer failed!");
+	return _FAIL;
+	
 }
 
 u32  _tizenrt_timerChangePeriodFromISR( _timerHandle xTimer, 

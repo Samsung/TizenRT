@@ -16,9 +16,13 @@ seclink_inc_dir = root_dir + 'os/include/tinyara/'
 system_inc_dir = root_dir + 'os/include/tinyara/fs/'
 seclink_drv_path = root_dir + 'os/drivers/seclink/'
 se_inc_dir = root_dir + "os/se/virtual/"
+testcase_dir = root_dir + "apps/examples/testcase/"
+sectest_utc_dir = testcase_dir + 'ta_tc/security/utc/'
 
 main_file = ['./main.c']
-security_test_file = Glob('../security_api/*.c')
+#security_test_files = Glob('../security_api/*.c')
+testcase_files = [testcase_dir + 'tc_main.c']
+security_test_files = Glob(testcase_dir + '/ta_tc/security/utc/*.c')
 security_api_files = Glob(security_api_dir + '*.c')
 seclink_client_files = Glob(seclink_dir + '*.c')
 seclink_drv_filename = ['seclink_drv_linux.c', 'seclink_drv_common.c', \
@@ -30,8 +34,8 @@ for file in seclink_drv_filename:
 
 se_files = Glob(se_inc_dir + '*.c')
 
-src_files = security_test_file + security_api_files + seclink_client_files +\
-            seclink_drv_files + se_files + main_file
+src_files = security_test_files + security_api_files + seclink_client_files +\
+            seclink_drv_files + se_files + main_file + testcase_files
 # Create built files to get gcov informations
 
 with open("object_list.txt", "w") as f:
@@ -58,7 +62,7 @@ sys_copy_files = ['ioctl.h']
 dirs_create = [tmp_sys_dir, tmp_tinyara_dir, tmp_serial_dir]
 
 # Copy files
-env.Command(tmp_tinyara_dir + 'config.h', '', [Copy(tmp_tinyara_dir+'config.h', './config.h')])
+env.Command(tmp_tinyara_dir + 'config.h', './config.h', [Copy(tmp_tinyara_dir+'config.h', './config.h')])
 for t in tiny_copy_files:
     print("Copy command: " + t)
     print("src: " + seclink_inc_dir + t)
@@ -90,9 +94,10 @@ framework_inc = root_dir + 'framework/include/'
 print("inc path: " + framework_inc)
 
 env.Append(CFLAGS=['-I./include', '-I'+framework_inc])
+env.Append(CFLAGS=['-I'+sectest_utc_dir, '-I'+testcase_dir])
 
 env.AppendUnique(CPPDEFINES = ['LINUX'])
-libraries = ['curl', 'pthread', '-lgcov']
+libraries = ['curl', 'pthread', 'gcov']
 #lib_path = ['/usr/lib/x86_64-linux-gnu/']
 
 env.Program('sec_test', src_files, LIBS=libraries)

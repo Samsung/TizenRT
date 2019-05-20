@@ -61,9 +61,8 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <net/if.h>
-
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#include <net/if.h>
 #include <tinyara/net/net.h>
 #endif
 

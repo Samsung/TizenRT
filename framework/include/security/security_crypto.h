@@ -24,9 +24,9 @@
  * Crypto
  */
 
-int crypto_aes_encryption(security_handle hnd, security_aes_param mode, const char *key_name, security_data *input, security_data *output);
-int crypto_aes_decryption(security_handle hnd, security_aes_param mode, const char *key_name, security_data *input, security_data *output);
-int crypto_rsa_encryption(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *input, security_data *output);
-int crypto_rsa_decryption(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *input, security_data *output);
+security_error crypto_aes_encryption(security_handle hnd, security_aes_param *param, const char *key_name, security_data *input, security_data *output);
+security_error crypto_aes_decryption(security_handle hnd, security_aes_param *param, const char *key_name, security_data *input, security_data *output);
+security_error crypto_rsa_encryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
+security_error crypto_rsa_decryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
 
 #endif // _SECURITY_API_CRYPTO_H__

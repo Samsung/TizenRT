@@ -592,12 +592,8 @@ void s5j_spi_register(int bus)
 	spi = up_spiinitialize(bus);
 
 #ifdef CONFIG_SPI_USERIO
-	char path[16];
-	if (spi != NULL) {
-		snprintf(path, 16, "/dev/spi-%d", bus);
-		if (spi_uioregister(path, spi) < 0) {
-			lldbg("fail to register SPI");
-		}
+	if (spi_uioregister(bus, spi) < 0) {
+		lldbg("fail to register SPI");
 	}
 #endif
 }

@@ -24,8 +24,8 @@
 /**
  * Crypto
  */
-int crypto_aes_encryption(security_handle hnd,
-						  security_aes_param param,
+security_error crypto_aes_encryption(security_handle hnd,
+						  security_aes_param *param,
 						  const char *key_name,
 						  security_data *input,
 						  security_data *output)
@@ -35,12 +35,18 @@ int crypto_aes_encryption(security_handle hnd,
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	HAL_INIT_AES_PARAM(hparam);
-	SECAPI_CONVERT_AESPARAM(&param, &hparam);
+	SECAPI_CONVERT_AESPARAM(param, &hparam);
 
 	// convert path
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	hal_data dec = {input->data, input->length, NULL, 0};
 	hal_data enc = {ctx->data1, ctx->dlen1, NULL, 0};
 
@@ -60,8 +66,8 @@ int crypto_aes_encryption(security_handle hnd,
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int crypto_aes_decryption(security_handle hnd,
-						  security_aes_param param,
+security_error crypto_aes_decryption(security_handle hnd,
+						  security_aes_param *param,
 						  const char *key_name,
 						  security_data *input,
 						  security_data *output)
@@ -71,12 +77,18 @@ int crypto_aes_decryption(security_handle hnd,
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	HAL_INIT_AES_PARAM(hparam);
-	SECAPI_CONVERT_AESPARAM(&param, &hparam);
+	SECAPI_CONVERT_AESPARAM(param, &hparam);
 
 	// convert path
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	hal_data enc = {input->data, input->length, NULL, 0};
 	hal_data dec = {ctx->data1, ctx->dlen1, NULL, 0};
 
@@ -95,8 +107,8 @@ int crypto_aes_decryption(security_handle hnd,
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int crypto_rsa_encryption(security_handle hnd,
-						  security_rsa_param mode,
+security_error crypto_rsa_encryption(security_handle hnd,
+						  security_rsa_param *param,
 						  const char *key_name,
 						  security_data *input,
 						  security_data *output)
@@ -106,12 +118,19 @@ int crypto_rsa_encryption(security_handle hnd,
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	HAL_INIT_RSA_PARAM(hmode);
-	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_RSAPARAM(param, &hmode);
 
     /* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	hal_data dec = {input->data, input->length, NULL, 0};
 	hal_data enc = {ctx->data1, ctx->dlen1, NULL, 0};
 
@@ -131,8 +150,8 @@ int crypto_rsa_encryption(security_handle hnd,
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int crypto_rsa_decryption(security_handle hnd,
-						  security_rsa_param mode,
+security_error crypto_rsa_decryption(security_handle hnd,
+						  security_rsa_param *param,
 						  const char *key_name,
 						  security_data *input,
 						  security_data *output)
@@ -142,11 +161,18 @@ int crypto_rsa_decryption(security_handle hnd,
 	struct security_ctx *ctx = (struct security_ctx *)hnd;
 
 	HAL_INIT_RSA_PARAM(hmode);
-	SECAPI_CONVERT_RSAPARAM(&mode, &hmode);
+	SECAPI_CONVERT_RSAPARAM(param, &hmode);
 
 	/* convert path */
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
+
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 
 	hal_data enc = {input->data, input->length, NULL, 0};
 	hal_data dec = {ctx->data1, ctx->dlen1, NULL, 0};

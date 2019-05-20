@@ -62,6 +62,8 @@ ASRCS =
 CSRCS =
 VPATH = .
 
+CFLAGS += -I $(TOPDIR)/include
+
 ifeq ($(CONFIG_TASK_MANAGER),y)
 CFLAGS += -I $(TOPDIR)/kernel
 endif

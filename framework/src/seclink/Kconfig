@@ -8,11 +8,3 @@ config SECURITY_LINK
     default n
     ---help---
         Intercommunicate between Security features in User space and HAL which is in kernel space
-
-if SECURITY_LINK
-	config SECURITY_LINK_DEBUG
-	bool "Enable Security Link Debug"
-	default n
-	---help---
-		Enable debug msg for security link framework
-endif

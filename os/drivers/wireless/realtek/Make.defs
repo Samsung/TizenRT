@@ -125,6 +125,8 @@ CSRCS += ethernetif_tizenrt.c
 
 #IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)include
 IFLAGS = $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)include
+IFLAGS += $(TOPDIR)/../external/rtk_wifi/include
+IFLAGS += $(TOPDIR)/../framework/src/wifi_manager
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)osdep
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)hci
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)hal

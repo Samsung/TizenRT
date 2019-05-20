@@ -63,7 +63,9 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#ifdef CONFIG_TLS
 #include <tinyara/tls.h>
+#endif
 #include <tinyara/board.h>
 
 #include "xtensa.h"

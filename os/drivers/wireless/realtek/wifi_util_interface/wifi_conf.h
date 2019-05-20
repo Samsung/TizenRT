@@ -88,6 +88,16 @@
 #define _PACKED         __attribute__ ((packed))
 #define _WEAK           __attribute__ ((weak))
 
+typedef _int8_t int8_t;
+typedef _uint8_t uint8_t;
+
+typedef _int16_t int16_t;
+typedef _uint16_t uint16_t;
+
+typedef _int32_t int32_t;
+typedef _uint32_t uint32_t;
+
+
 /******************************************************
  *                 Type Definitions
  ******************************************************/

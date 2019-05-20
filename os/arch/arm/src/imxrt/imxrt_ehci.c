@@ -209,17 +209,6 @@
 #define RHPNDX(rh)            ((rh)->hport.hport.port)
 #define RHPORT(rh)            (RHPNDX(rh) + 1)
 
-#undef uerr
-#undef uinfo
-#if defined(DEBUG_IMX_DMA_DRIVER)
-#define uinfo(format, ...)   printf(format, ##__VA_ARGS__)
-#define uerr(format, ...)   printf(format, ##__VA_ARGS__)
-#else
-#define uinfo(format, ...)
-//#define uerr(format, ...)
-#endif
-#define uerr(format, ...)   printf(format, ##__VA_ARGS__)
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -811,7 +800,7 @@ static uint32_t imxrt_swap32(uint32_t value)
 #ifdef CONFIG_IMXRT_EHCI_REGDEBUG
 static void imxrt_printreg(volatile uint32_t *regaddr, uint32_t regval, bool iswrite)
 {
-	uinfo("%08x%s%08x\n", (uintptr_t)regaddr, iswrite ? "<-" : "->", regval);
+	udbg("%08x%s%08x\n", (uintptr_t)regaddr, iswrite ? "<-" : "->", regval);
 }
 #endif
 
@@ -855,7 +844,7 @@ static void imxrt_checkreg(volatile uint32_t *regaddr, uint32_t regval, bool isw
 			} else {
 				/* No.. More than one. */
 
-				uinfo("[repeats %d more times]\n", count);
+				udbg("[repeats %d more times]\n", count);
 			}
 		}
 
@@ -1414,10 +1403,10 @@ static int imxrt_qh_flush(struct imxrt_qh_s *qh)
 #ifdef CONFIG_IMXRT_EHCI_REGDEBUG
 static void imxrt_qtd_print(struct imxrt_qtd_s *qtd)
 {
-	uinfo("  QTD[%p]:\n", qtd);
-	uinfo("    hw:\n");
-	uinfo("      nqp: %08x alt: %08x token: %08x\n", qtd->hw.nqp, qtd->hw.alt, qtd->hw.token);
-	uinfo("      bpl: %08x %08x %08x %08x %08x\n", qtd->hw.bpl[0], qtd->hw.bpl[1], qtd->hw.bpl[2], qtd->hw.bpl[3], qtd->hw.bpl[4]);
+	udbg("  QTD[%p]:\n", qtd);
+	udbg("    hw:\n");
+	udbg("      nqp: %08x alt: %08x token: %08x\n", qtd->hw.nqp, qtd->hw.alt, qtd->hw.token);
+	udbg("      bpl: %08x %08x %08x %08x %08x\n", qtd->hw.bpl[0], qtd->hw.bpl[1], qtd->hw.bpl[2], qtd->hw.bpl[3], qtd->hw.bpl[4]);
 }
 #endif
 
@@ -1435,22 +1424,22 @@ static void imxrt_qh_print(struct imxrt_qh_s *qh)
 	struct imxrt_epinfo_s *epinfo;
 	struct ehci_overlay_s *overlay;
 
-	uinfo("QH[%p]:\n", qh);
-	uinfo("  hw:\n");
-	uinfo("    hlp: %08x epchar: %08x epcaps: %08x cqp: %08x\n", qh->hw.hlp, qh->hw.epchar, qh->hw.epcaps, qh->hw.cqp);
+	udbg("QH[%p]:\n", qh);
+	udbg("  hw:\n");
+	udbg("    hlp: %08x epchar: %08x epcaps: %08x cqp: %08x\n", qh->hw.hlp, qh->hw.epchar, qh->hw.epcaps, qh->hw.cqp);
 
 	overlay = &qh->hw.overlay;
-	uinfo("  overlay:\n");
-	uinfo("    nqp: %08x alt: %08x token: %08x\n", overlay->nqp, overlay->alt, overlay->token);
-	uinfo("    bpl: %08x %08x %08x %08x %08x\n", overlay->bpl[0], overlay->bpl[1], overlay->bpl[2], overlay->bpl[3], overlay->bpl[4]);
+	udbg("  overlay:\n");
+	udbg("    nqp: %08x alt: %08x token: %08x\n", overlay->nqp, overlay->alt, overlay->token);
+	udbg("    bpl: %08x %08x %08x %08x %08x\n", overlay->bpl[0], overlay->bpl[1], overlay->bpl[2], overlay->bpl[3], overlay->bpl[4]);
 
-	uinfo("  fqp:\n", qh->fqp);
+	udbg("  fqp:\n", qh->fqp);
 
 	epinfo = qh->epinfo;
-	uinfo("  epinfo[%p]:\n", epinfo);
+	udbg("  epinfo[%p]:\n", epinfo);
 	if (epinfo) {
-		uinfo("    EP%d DIR=%s FA=%08x TYPE=%d MaxPacket=%d\n", epinfo->epno, epinfo->dirin ? "IN" : "OUT", epinfo->devaddr, epinfo->xfrtype, epinfo->maxpacket);
-		uinfo("    Toggle=%d iocwait=%d speed=%d result=%d\n", epinfo->toggle, epinfo->iocwait, epinfo->speed, epinfo->result);
+		udbg("    EP%d DIR=%s FA=%08x TYPE=%d MaxPacket=%d\n", epinfo->epno, epinfo->dirin ? "IN" : "OUT", epinfo->devaddr, epinfo->xfrtype, epinfo->maxpacket);
+		udbg("    Toggle=%d iocwait=%d speed=%d result=%d\n", epinfo->toggle, epinfo->iocwait, epinfo->speed, epinfo->result);
 	}
 }
 #endif
@@ -2019,7 +2008,7 @@ static int imxrt_async_setup(struct imxrt_rhport_s *rhport, struct imxrt_epinfo_
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace2(EHCI_VTRACE2_ASYNCXFR, epinfo->epno, buflen);
 #else
-	uinfo("RHport%d EP%d: buffer=%p, buflen=%d, req=%p\n", RHPORT(rhport), epinfo->epno, buffer, buflen, req);
+	udbg("RHport%d EP%d: buffer=%p, buflen=%d, req=%p\n", RHPORT(rhport), epinfo->epno, buffer, buflen, req);
 #endif
 
 	DEBUGASSERT(rhport && epinfo);
@@ -2276,7 +2265,7 @@ static int imxrt_intr_setup(struct imxrt_rhport_s *rhport, struct imxrt_epinfo_s
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace2(EHCI_VTRACE2_INTRXFR, epinfo->epno, buflen);
 #else
-	uinfo("RHport%d EP%d: buffer=%p, buflen=%d\n", RHPORT(rhport), epinfo->epno, buffer, buflen);
+	udbg("RHport%d EP%d: buffer=%p, buflen=%d\n", RHPORT(rhport), epinfo->epno, buffer, buflen);
 #endif
 
 	DEBUGASSERT(rhport && epinfo && buffer && buflen > 0);
@@ -3194,15 +3183,15 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace1(EHCI_VTRACE1_TOPHALF, usbsts & regval);
 #else
-	uinfo("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
+	udbg("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 #endif
 
-	syslog(LOG_INFO, "USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
+	udbg("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 
 	if ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0) {
-		syslog(LOG_INFO, "interrupt::connect\n");
+		udbg("interrupt::connect\n");
 	} else {
-		syslog(LOG_INFO, "interrupt::disconnect\n");
+		udbg("interrupt::disconnect\n");
 	}
 
 	/* Handle all unmasked interrupt sources */
@@ -3718,7 +3707,7 @@ static int imxrt_epalloc(FAR struct usbhost_driver_s *drvr, const FAR struct usb
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace2(EHCI_VTRACE2_EPALLOC, epdesc->addr, epdesc->xfrtype);
 #else
-	uinfo("EP%d DIR=%s FA=%08x TYPE=%d Interval=%d MaxPacket=%d\n", epdesc->addr, epdesc->in ? "IN" : "OUT", hport->funcaddr, epdesc->xfrtype, epdesc->interval, epdesc->mxpacketsize);
+	udbg("EP%d DIR=%s FA=%08x TYPE=%d Interval=%d MaxPacket=%d\n", epdesc->addr, epdesc->in ? "IN" : "OUT", hport->funcaddr, epdesc->xfrtype, epdesc->interval, epdesc->mxpacketsize);
 #endif
 
 	/* Allocate a endpoint information structure */
@@ -4006,7 +3995,7 @@ static int imxrt_ctrlin(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, FAR
 #ifdef CONFIG_USBHOST_TRACE
 	usbhost_vtrace2(EHCI_VTRACE2_CTRLINOUT, RHPORT(rhport), req->req);
 #else
-	uinfo("RHPort%d type: %02x req: %02x value: %02x%02x index: %02x%02x len: %04x\n", RHPORT(rhport), req->type, req->req, req->value[1], req->value[0], req->index[1], req->index[0], len);
+	udbg("RHPort%d type: %02x req: %02x value: %02x%02x index: %02x%02x len: %04x\n", RHPORT(rhport), req->type, req->req, req->value[1], req->value[0], req->index[1], req->index[0], len);
 #endif
 
 	/* We must have exclusive access to the EHCI hardware and data structures. */
@@ -4025,7 +4014,7 @@ static int imxrt_ctrlin(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, FAR
 
 	ret = imxrt_async_setup(rhport, ep0info, req, buffer, len);
 	if (ret < 0) {
-		uerr("ERROR: imxrt_async_setup failed: %d\n", ret);
+		udbg("ERROR: imxrt_async_setup failed: %d\n", ret);
 		goto errout_with_iocwait;
 	}
 
@@ -4470,7 +4459,7 @@ static int imxrt_connect(FAR struct usbhost_driver_s *drvr, FAR struct usbhost_h
 	/* Set the connected/disconnected flag */
 
 	hport->connected = connected;
-	uinfo("Hub port %d connected: %s\n", hport->port, connected ? "YES" : "NO");
+	udbg("Hub port %d connected: %s\n", hport->port, connected ? "YES" : "NO");
 
 	/* Report the connection event */
 

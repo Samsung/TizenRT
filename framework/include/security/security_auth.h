@@ -24,34 +24,34 @@
  * Authenticate
  */
 
-int auth_generate_random(security_handle hnd, unsigned int size, security_data *random);
+security_error auth_generate_random(security_handle hnd, unsigned int size, security_data *random);
 
-int auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert);
+security_error auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert);
 
-int auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert);
+security_error auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert);
 
-int auth_get_certificate(security_handle hnd, const char *cert_name, security_data *cert);
+security_error auth_get_certificate(security_handle hnd, const char *cert_name, security_data *cert);
 
-int auth_remove_certificate(security_handle hnd, const char *cert_name);
+security_error auth_remove_certificate(security_handle hnd, const char *cert_name);
 
-int auth_get_rsa_signature(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *hash, security_data *sign);
+security_error auth_get_rsa_signature(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *hash, security_data *sign);
 
-int auth_verify_rsa_signature(security_handle hnd, security_rsa_param mode, const char *key_name, security_data *hash, security_data *sign);
+security_error auth_verify_rsa_signature(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *hash, security_data *sign);
 
-int auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, const char *key_name, security_data *hash, security_data *sign);
+security_error auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_param *param, const char *key_name, security_data *hash, security_data *sign);
 
-int auth_verify_ecdsa_signature(security_handle hnd, security_ecdsa_param mode, const char *key_name, security_data *hash, security_data *sign);
+security_error auth_verify_ecdsa_signature(security_handle hnd, security_ecdsa_param *param, const char *key_name, security_data *hash, security_data *sign);
 
-int auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *data, security_data *hash);
+security_error auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *data, security_data *hash);
 
-int auth_get_hmac(security_handle hnd, security_hmac_mode mode, const char *key_name, security_data *data, security_data *hmac);
+security_error auth_get_hmac(security_handle hnd, security_hmac_mode mode, const char *key_name, security_data *data, security_data *hmac);
 
-int auth_generate_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params);
+security_error auth_generate_dhparams(security_handle hnd, const char *dh_name, security_dh_param *param);
 
-int auth_compute_dhparams(security_handle hnd, const char *dh_name, security_dh_param *params, security_data *secret);
+security_error auth_compute_dhparams(security_handle hnd, const char *dh_name, security_dh_param *param, security_data *secret);
 
-int auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *params);
+security_error auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *param);
 
-int auth_compute_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *params, security_data *secret);
+security_error auth_compute_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *param, security_data *secret);
 
 #endif //  _SECURITY_API_AUTH_H__

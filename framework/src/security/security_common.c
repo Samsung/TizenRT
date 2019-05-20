@@ -24,18 +24,20 @@
 #include <security/security_common.h>
 #include "security_internal.h"
 
-
-
 /**
  * Common
  */
-int security_init(security_handle *hnd)
+security_error security_init(security_handle *hnd)
 {
 	SECAPI_ENTER;
 
+	if (hnd == NULL) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+
 	struct security_ctx *ctx = (struct security_ctx *)malloc(sizeof(struct security_ctx));
 	if (!ctx) {
-		return SECURITY_ALLOC_ERROR;
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
 	}
 
 	SECAPI_CALL3(sl_init(&(ctx->sl_hnd)), SECURITY_ERROR, free(ctx));
@@ -62,7 +64,7 @@ int security_init(security_handle *hnd)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int security_deinit(security_handle hnd)
+security_error security_deinit(security_handle hnd)
 {
 	SECAPI_ENTER;
 	SECAPI_ISHANDLE_VALID(hnd);
@@ -77,7 +79,7 @@ int security_deinit(security_handle hnd)
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-int security_free_data(security_data *data)
+security_error security_free_data(security_data *data)
 {
 	if (data) {
 		if (data->data) {
@@ -85,12 +87,19 @@ int security_free_data(security_data *data)
 		}
 		data->data = 0;
 		data->length = 0;
+	} else {
+		return SECURITY_INVALID_INPUT_PARAMS;
 	}
-	SECAPI_RETURN(SECURITY_OK);
+
+	return SECURITY_OK;
 }
 
-int security_get_status(int *status)
+security_error security_get_status(int *status)
 {
+	SECAPI_ENTER;
+	if (!status) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
 	//todo
 	*status = 0;
 
