@@ -105,7 +105,7 @@ static int rtw_usb_bulk_in(void *priv,unsigned char pipe,unsigned char *buf,unsi
 	if(nread_bytes > 0){
 		ret = 0;
 		//printf("usb bulk in: nbytes = %d \n",nread_bytes);
-		callback(arg,nread_bytes);
+		//callback(arg,nread_bytes);
 	}
 	else{
 		printf("usb bulk in fail: %d \n",nread_bytes);

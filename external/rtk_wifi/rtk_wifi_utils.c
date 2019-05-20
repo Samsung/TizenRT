@@ -18,6 +18,7 @@
 #include "pthread.h"
 #include "rtk_wifi_utils.h"
 #include "rtk_lwip_netconf.h"
+#include "wifi_manager.h"
 
 //RTK
 #define CONFIG_INIT_NET                 1
@@ -181,6 +182,7 @@ wifi_utils_result_e wifi_utils_deinit(void)
 	return wuret;
 }
 
+#if 0
 int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list)
 {
 #if 0
@@ -208,6 +210,7 @@ int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list)
 
 	return RTK_STATUS_SUCCESS;
 }
+#endif
 
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {

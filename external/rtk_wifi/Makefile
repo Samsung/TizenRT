@@ -23,6 +23,7 @@ VPATH	=
 # Include Files
 #########################################################################
 CFLAGS += -I$(TOPDIR)/../framework/src/wifi_manager
+CFLAGS += -I$(TOPDIR)/../framework/include/wifi_manager
 CFLAGS += -I$(TOPDIR)/include/net/lwip
 CFLAGS += -I$(TOPDIR)/drivers/wireless/realtek/wifi_util_interface
 #CFLAGS += -I$(TOPDIR)/include

@@ -44,8 +44,6 @@ static struct lwnl80211_lowerhalf_s *g_dev;
 
 static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 
-extern struct netif xnetif[NET_IF_NUM]; 
-
 static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
 	rtkdrv_init,                   /* init */
 	rtkdrv_deinit,                 /* deinit */
@@ -350,6 +348,9 @@ lwnl80211_result_e rtkdrv_start_softap(lwnl80211_softap_config_s *softap_config)
 		return LWNL80211_FAIL;
 	}
 
+	vdvdbg("[RTK] Start SoftAp mode\n");
+	g_mode = RTK_WIFI_SOFT_AP_IF;
+
 	return LWNL80211_SUCCESS;
 }
 
@@ -388,7 +389,9 @@ lwnl80211_result_e rtkdrv_start_sta(void)
 lwnl80211_result_e rtkdrv_stop_softap(void)
 {
 	RTKDRV_ENTER;
+
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+
 		if (cmd_wifi_off() == RTK_STATUS_SUCCESS) {
 			g_mode = RTK_WIFI_NONE;
 			vdvdbg("[RTK] Stop AP mode successfully\n");
