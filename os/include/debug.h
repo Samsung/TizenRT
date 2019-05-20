@@ -153,16 +153,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define dbg(format, ...) \
-	lldbg(format, ##__VA_ARGS__)
-#else
+
 #define dbg(format, ...) \
 	syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #define dbg_noarg(format, ...) \
 	syslog(LOG_ERR, format, ##__VA_ARGS__)
@@ -199,16 +192,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define wdbg(format, ...) \
-	llwdbg(format, ##__VA_ARGS__)
-#else
+
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -242,16 +228,9 @@
  * @details @b #include <debug.h>
  * @since TizenRT v1.0
  */
-#ifdef CONFIG_ARCH_CHIP_IMXRT
-/* TODO: This is a temporary fix to redirect dbg messages to lldbg.
- *       After IMXRT dbg implementation is fixed, this needs to be removed.
- */
-#define vdbg(format, ...) \
-	llvdbg(format, ##__VA_ARGS__)
-#else
+
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-#endif
 
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
@@ -309,6 +288,40 @@
 #else
 #define audvdbg(...)
 #define audllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
+#else
+#  define berr(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
+#else
+#  define bwarn(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#  define binfo(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_ERROR
+#define bmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define bmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define bmdbg(...)
+#define bmlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_INFO
+#define bmvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define bmllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
+#else
+#define bmvdbg(...)
+#define bmllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_ERR_REPORT_ERROR
@@ -571,6 +584,14 @@
 #else
 #define medvdbg(...)
 #define medllvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MESSAGE_IPC	
+#define msgdbg(format, ...)     dbg(format, ##__VA_ARGS__)	
+#define msglldbg(format, ...)   lldbg(format, ##__VA_ARGS__)	
+#else	
+#define msgdbg(...)	
+#define msglldbg(...)	
 #endif
 
 #ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR
@@ -974,6 +995,24 @@
 #define audllvdbg   (void)
 #endif
 
+#ifdef CONFIG_DEBUG_BINFMT_ERROR
+#define berr  dbg
+#else
+#define berr  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_WARN
+#define bwarn  wdbg
+#else
+#define bwarn  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT_INFO
+#define binfo  vdbg
+#else
+#define binfo  (void)
+#endif
+
 #ifdef CONFIG_DEBUG_ERR_REPORT_ERROR
 #define nwerrdbg    dbg
 #define nwerrlldbg  lldbg
@@ -1176,6 +1215,14 @@
 #else
 #define medllvdbg   (void)
 #define medllvdbg   (...)
+#endif
+
+#ifdef CONFIG_DEBUG_MESSAGE_IPC
+#define msgdbg       dbg	
+#define msglldbg     lldbg	
+#else	
+#define msgdbg       (void)	
+#define msglldbg     (void)	
 #endif
 
 #ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR

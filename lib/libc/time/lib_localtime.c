@@ -2041,7 +2041,7 @@ static time_t time1(FAR struct tm *const tmp, FAR struct tm * (*const funcp)(FAR
 	int okay;
 
 	if (tmp == NULL) {
-		errno = EINVAL;
+		set_errno(EINVAL);
 		return -1;
 	}
 

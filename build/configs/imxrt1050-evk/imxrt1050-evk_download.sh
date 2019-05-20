@@ -18,17 +18,26 @@
 ###########################################################################
 # imxrt1050-evk_download.sh
 
+
 THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 
-#echo $THIS_PATH
+# When location of this script is changed, only TOP_PATH should be changed together!!!
+TOP_PATH=${THIS_PATH}/../../..
 
-# When location of this script is changed, only OS_DIR_PATH should be changed together!!!
-OS_DIR_PATH=$THIS_PATH/../../../os
+OS_PATH=${TOP_PATH}/os
+OUTBIN_PATH=${TOP_PATH}/build/output/bin
+
+CONFIG=${OS_PATH}/.config
+if [ ! -f ${CONFIG} ]; then
+        echo "No .config file"
+        exit 1
+fi
+
+source ${CONFIG}
+source ${THIS_PATH}/imxrt1050-evk_get_filename.sh
 
 IMXRT1050_USB_STRING=`mount | grep RT1050-EVK`
 FIND_WORD="RT1050-EVK"
-
-#echo $IMXRT1050_USB_STRING
 
 for ELEMENT in $IMXRT1050_USB_STRING; do 
 	#echo $ELEMENT
@@ -37,9 +46,6 @@ for ELEMENT in $IMXRT1050_USB_STRING; do
 	fi 
 done;
 
-#echo $IMXRT1050_USB_PATH
-#echo $OS_DIR_PATH
-
-cp $OS_DIR_PATH/../build/output/bin/tinyara.hex $IMXRT1050_USB_PATH
-
-echo "Waiting until detecting usb memory again!!!"
+GET_FILENAME
+echo "Downloading ${FLASH_IMG}"
+cp ${FLASH_IMG} ${IMXRT1050_USB_PATH} || exit 1

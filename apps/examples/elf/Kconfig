@@ -1,0 +1,35 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ELF
+	bool "ELF Loader Example"
+	default n
+	select LIBC_EXECFUNCS
+	depends on ELF
+	---help---
+		Enable the ELF Loader Example
+
+if EXAMPLES_ELF
+
+config EXAMPLES_ELF_FULLYLINKED
+	bool "Fully Linked ELF application support"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable Fully Linked ELF application support
+
+config MPU_TEST_KERNEL_CODE_ADDR
+	hex "Address in kernel code range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel code address
+
+config MPU_TEST_APP_ADDR
+	hex "Address in differnet application range"
+	default 0x00000000
+	depends on APP_BINARY_SEPARATION
+	---help---
+		Test MPU access protection to this application address
+endif

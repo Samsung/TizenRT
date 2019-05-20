@@ -127,6 +127,14 @@ uintptr_t STUB_wait(int nbr, uintptr_t parm1);
 uintptr_t STUB_waitid(int nbr, uintptr_t parm1, uintptr_t parm2,
 					  uintptr_t parm3, uintptr_t parm4);
 
+/* The following can only be defined if we are configured to execute
+ * programs from a file system.
+ */
+
+uintptr_t STUB_exec(int nbr, uintptr_t parm1, uintptr_t parm2,
+					uintptr_t parm3, uintptr_t parm4);
+uintptr_t STUB_execv(int nbr, uintptr_t parm1, uintptr_t parm2);
+
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
  */
@@ -197,7 +205,7 @@ uintptr_t STUB_aio_cancel(int nbr, uintptr_t parm1, uintptr_t parm2);
 
 /* Board support */
 
-uintptr-t STUB_boardctl(int nbr, uintptr_t parm1, uinptr_1 parm2);
+uintptr_t STUB_boardctl(int nbr, uintptr_t parm1, uintptr_t parm2);
 
 /* The following are defined if file descriptors are enabled */
 
