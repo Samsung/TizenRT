@@ -23,7 +23,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stdint.h>
 #include <string.h>
+#include <debug.h>
+
+#include <arch/irq.h>
+#include <tinyara/clock.h>
+
 #include "imxrt_clock.h"
 #include "imxrt_gpt.h"
 
@@ -41,6 +47,16 @@ static GPT_Type *const s_gptBases[] = GPT_BASE_PTRS;
 /*! @brief Pointers to GPT clocks for each instance. */
 static const clock_ip_name_t s_gptClocks[] = GPT_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+static struct imxrt_gpt_chipinfo_s imxrt_gpt0_chipinfo = {
+	.base   = GPT1,
+	.irq_id = IMXRT_IRQ_GPT1,
+};
+
+static struct imxrt_gpt_chipinfo_s imxrt_gpt1_chipinfo = {
+	.base   = GPT2,
+	.irq_id = IMXRT_IRQ_GPT2,
+};
 
 /*******************************************************************************
  * Code
@@ -140,4 +156,89 @@ void imxrt_gpt_getdefaultconfig(gpt_config_t *config)
 	config->enableRunInDbg = false;
 	config->enableFreeRun = false;
 	config->enableMode = true;
+}
+
+void imxrt_gpt_setisr(struct imxrt_gpt_chipinfo_s *gpt, xcpt_t handler, void *arg)
+{
+	irq_attach(gpt->irq_id, handler, arg);
+
+	up_enable_irq(gpt->irq_id);
+}
+
+static uint32_t imxrt_gpt_get_clockfreq(gpt_clock_source_t clock)
+{
+	uint32_t freq;
+
+	switch (clock) {
+	case kGPT_ClockSource_Periph:
+		freq = imxrt_clock_getperclkfreq();
+		break;
+	case kGPT_ClockSource_HighFreq:
+		freq = imxrt_clock_getipgfreq();
+		break;
+	case kGPT_ClockSource_LowFreq:
+		freq = imxrt_clock_getrtcfreq();
+		break;
+	case kGPT_ClockSource_Osc:
+		freq = imxrt_clock_getoscfreq();
+		break;
+	case kGPT_ClockSource_Ext:
+	default:
+		freq = 0;
+		tmrdbg("Invalid Timer clock to get freq\n");
+		break;
+	}
+
+	return freq;
+}
+
+uint32_t imxrt_gpt_convert_time_tick(imxrt_timer_convert_dir_t dir, gpt_clock_source_t clock_source, uint32_t value)
+{
+	uint64_t converted;
+	uint32_t freq;
+
+	freq = imxrt_gpt_get_clockfreq(clock_source);
+
+	switch (dir) {
+	case TIME2TICK:
+		converted = ((uint64_t)freq * (uint64_t)value) / USEC_PER_SEC;
+		break;
+	case TICK2TIME:
+		converted = ((uint64_t)USEC_PER_SEC * (uint64_t)value) / freq;
+		break;
+	default:
+		tmrdbg("Invalid converting type (%d)\n", dir);
+		return 0;
+	}
+
+	if (converted > UINT32_MAX) {
+		tmrdbg("%lld converted to UINT32_MAX\n", converted);
+		converted = UINT32_MAX;
+	}
+
+	return (uint32_t)converted;
+}
+
+
+struct imxrt_gpt_chipinfo_s *imxrt_gpt_configure(int timer, gpt_config_t *config)
+{
+	struct imxrt_gpt_chipinfo_s *gpt = NULL;
+
+	if (timer >= IMXRT_GPT_CH_MAX) {
+		return gpt;
+	}
+
+	switch (timer) {
+	case IMXRT_GPT_CH0:
+		gpt = &imxrt_gpt0_chipinfo;
+		break;
+
+	case IMXRT_GPT_CH1:
+		gpt = &imxrt_gpt1_chipinfo;
+		break;
+	}
+
+	imxrt_gpt_init(gpt->base, config);
+
+	return gpt;
 }
