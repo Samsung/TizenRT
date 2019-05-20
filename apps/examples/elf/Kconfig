@@ -13,6 +13,23 @@ config EXAMPLES_ELF
 
 if EXAMPLES_ELF
 
+menu "Enable Test Scenarios"
+config EXAMPLES_RECOVERY_TEST
+	bool "Binary Manager Recovery example"
+	default y
+	---help---
+		Enable the Binary Manager Recovery test
+
+if EXAMPLES_RECOVERY_TEST
+config ENABLE_RECOVERY_AGING_TEST
+	bool "Recovery Aging test"
+	default n
+	---help---
+		Enable Recovery Aging test. Another Test cannot run at the same time.
+endif
+
+endmenu
+
 config EXAMPLES_ELF_FULLYLINKED
 	bool "Fully Linked ELF application support"
 	default n

@@ -22,118 +22,53 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <errno.h>
-#include <sched.h>
-#include <pthread.h>
 
-#if !defined(CONFIG_MPU_TEST_KERNEL_CODE_ADDR) || !defined(CONFIG_MPU_TEST_APP_ADDR)
-#error "Address not defined for MPU test"
-#endif
-
-static void *assert_thread(void *index)
-{
-	int type;
-	volatile uint32_t *addr;
-
-	type = getpid() % 3;
-	if (type == 0) {
-		/* PANIC */
-		printf("[%d] %dth thread, PANIC!\n", getpid(), (int)index);
-		sleep(1);
-		PANIC();
-	} else if (type == 1) {
-		/* Access kernel code */
-		addr = (uint32_t *)CONFIG_MPU_TEST_KERNEL_CODE_ADDR;
-		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, addr);
-		sleep(1);
-		*addr = 0xdeadbeef;
-	} else {
-		/* Access another binary 'micom' address */
-		addr = (uint32_t *)CONFIG_MPU_TEST_APP_ADDR;
-		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, addr);
-		sleep(1);
-		*addr = 0xdeadbeef;
-	}
-
-	return 0;
-}
-
-static void *normal_thread(void *index)
-{
-	printf("[%d] %dth thread, normal thread\n", getpid(), (int)index);
-
-	while (1);
-	return 0;
-}
-
-static int assert_group_main_task(int argc, char *argv[])
-{
-	int count;
-	pthread_t thd;
-	pthread_attr_t attr;
-
-	printf("[%d] assert_group_main_task \n", getpid());
-
-	pthread_attr_init(&attr);
-
-	for (count = 0; count < 2; count++) {
-		pthread_create(&thd, &attr, (pthread_startroutine_t)normal_thread, (pthread_addr_t)count);
-	}
-	pthread_create(&thd, &attr, (pthread_startroutine_t)assert_thread, (pthread_addr_t)count);
-
-	while (1);
-
-	return 0;
-}
-
-static int normal_task(int argc, char *argv[])
-{
-	printf("[%d] normal_task \n", getpid());
-
-	while (1);
-
-	return 0;
-}
-
-static int make_children_task(int argc, char *argv[])
-{
-	int pid;
-
-	printf("[%d] make_children_task \n", getpid());
-
-	pid	= task_create("normal", 100, 1024, normal_task, (FAR char *const *)NULL);
-	if (pid < 0) {
-		printf("task create FAIL\n");
-		return 0;
-	}
-
-	pid	= task_create("assert_group_main", 100, 1024, assert_group_main_task, (FAR char *const *)NULL);
-	if (pid < 0) {
-		printf("task create FAIL\n");
-		return 0;
-	}
-
-	while (1);
-
-	return 0;
-}
-
+#include "wifiapp_internal.h"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+static void display_test_scenario(void)
+{
+	printf("\nSelect Test Scenario.\n");
+#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
+	printf("\t-Press R or r : Recovery Test\n");
+#endif
+	printf("\t-Press X or x : Terminate Tests.\n");
+}
 
 int main(int argc, char **argv)
 {
-	int pid;
+	char ch;
+	bool is_testing = true;
 
-	pid = task_create("mkchildren", 100, 1024, make_children_task, (FAR char *const *)NULL);
-	if (pid < 0) {
-		printf("task create FAIL\n");
-		return 0;
+	printf("This is WIFI App\n");
+#ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
+	while (is_testing) {
+		display_test_scenario();
+		ch = getchar();
+		switch (ch) {
+#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
+		case 'R':
+		case 'r':
+			recovery_test();
+			break;
+#endif
+		case 'X':
+		case 'x':
+			printf("Test will be finished.\n");
+			is_testing = false;
+		default:
+			printf("Invalid Scenario.\n");
+			break;
+		}
+		sleep(1);
+		fflush(stdout);
 	}
-	printf("I'm WIFI main! create mkchildren task %d\n", pid);
-
+#else
+	recovery_test();
+#endif
 	while (1) {
 		sleep(10);
 		printf("[%d] WIFI ALIVE\n", getpid());
