@@ -78,20 +78,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Debug ********************************************************************/
-/* Non-standard debug that may be enabled just for testing the timer driver */
-
-#ifdef CONFIG_DEBUG_TIMER
-#define tmrdbg    dbg
-#define tmrvdbg   vdbg
-#define tmrlldbg  lldbg
-#define tmrllvdbg llvdbg
-#else
-#define tmrdbg(...)
-#define tmrvdbg(...)
-#define tmrlldbg(...)
-#define tmrllvdbg(...)
-#endif
 
 /****************************************************************************
  * Private Type Definitions
