@@ -691,6 +691,13 @@ struct mm_heap_s *mm_get_heap(void *address);
 struct mm_heap_s *mm_get_heap_with_index(int index);
 
 int mm_get_heapindex(void *mem);
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+void mm_initialize_app_heap(void);
+void mm_add_app_heap_list(struct mm_heap_s *heap);
+void mm_remove_app_heap_list(struct mm_heap_s *heap);
+#endif
+
 #if CONFIG_MM_NHEAPS > 1
 struct heapinfo_total_info_s {
 	int total_heap_size;
