@@ -100,22 +100,20 @@ extern binmgr_bininfo_t bin_table[BINARY_COUNT];
  ****************************************************************************/
 #ifdef CONFIG_BINMGR_RECOVERY
 /****************************************************************************
- * Name: recovery_thread
+ * Name: binary_manager_recovery
  *
  * Description:
- *   This function create recovery thread to handle fault with pid.
- *   Recovery thread will check if it is one of the registered binary with binary manager.
- *   If the binary is registered then it will be restarted after killing its
- *   child processes, and if it is not registered then board will be rebooted.
+ *   This function will receive the faulty pid and check if its binary id is one
+ *   of the registered binary with binary manager.
+ *   If the binary is registered, it excludes its children from scheduling
+ *   and creates loading thread which will terminate them and load binary again.
+ *   Otherwise, board will be rebooted.
  *
  * Input parameters:
- *   None
+ *   pid   -   The pid of recovery message
  *
  * Returned Value:
- *   Zero (OK) on success; otherwise -1 (ERROR) value is returned.
- *
- * Assumptions:
- *    All the binaries of the system will be registered with the binary manager
+ *   None
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
