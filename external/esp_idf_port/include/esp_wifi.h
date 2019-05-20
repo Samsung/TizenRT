@@ -76,8 +76,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <arch/chip/esp_err.h>
 #include "rom/queue.h"
-#include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_wifi_crypto_types.h"
 #include "esp_event.h"

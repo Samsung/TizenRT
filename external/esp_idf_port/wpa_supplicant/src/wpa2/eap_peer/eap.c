@@ -34,7 +34,7 @@
  */
 #include <string.h>
      
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 
 #include "wpa/includes.h"
 #include "wpa/common.h"

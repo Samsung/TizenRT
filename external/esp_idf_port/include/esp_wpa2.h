@@ -35,7 +35,7 @@
 
 #include <stdbool.h>
 
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "esp_wifi_crypto_types.h"
 
 #ifdef __cplusplus

@@ -41,12 +41,9 @@
 #include <string.h>
 
 #include "esp_attr.h"
-#include "esp_err.h"
-//#include "esp_intr.h"
+#include <arch/chip/esp_err.h>
 #include "rom/ets_sys.h"
-//#include "rom/uart.h"
 
-//#include "soc/cpu.h"
 #include "esp32_dport.h"
 #include "soc/spi_reg.h"
 #include "esp_dport_access.h"

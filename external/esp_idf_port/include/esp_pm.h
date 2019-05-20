@@ -33,7 +33,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 
 // Include SoC-specific definitions. Only ESP32 supported for now.
 #include "soc/pm.h"
