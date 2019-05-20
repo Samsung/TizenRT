@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <../arch/arm/src/imxrt/imxrt_config.h>
 //#include <tcm_heap.h>
+#include <drv_types.h>
 /********************* os depended utilities ********************/
 
 #ifndef USE_MUTEX_FOR_SPINLOCK
@@ -43,9 +44,28 @@ void timer_wrapper(_timerHandle timer_hdl)
 		timer_entry->timeout = 0;
 		DBG_TRACE("[%d]: TTTTimeout timer=%p\n", rtw_get_current_time(), timer_entry->timer);
 #endif	
-		//ndbg("\r\n==============>>timer->function = %x\r\n",timer_entry->timer->function);
-		if(timer_entry->timer->function)
+		if(timer_entry->timer->data){
+			struct _ADAPTER *_adapter = (struct _ADAPTER *)(timer_entry->timer->data);
+			if(_adapter->RxStop){
+				DBG_871X("[timer_wrapper]:RxStop = %d\n",_adapter->RxStop);
+				return;
+			}
+		}else{
+			DBG_871X("[timer_wrapper]:Adapter = NULL\n");
+			return;
+		}
+		
+		timer_entry->timer->timevalue -= 1000;
+		
+		if(timer_entry->timer->timevalue > 0){
+			if(rtw_timerChangePeriod(timer_entry->timer, rtw_ms_to_systime(1000), TIMER_MAX_DELAY) == _FAIL)
+				DBG_ERR("Fail to set timer period");
+		}else if(timer_entry->timer->function){
+			//ndbg("\r\n==============>>timer->function = %x\r\n",timer_entry->timer->function);
+			timer_entry->timer->timevalue = 0;
 			timer_entry->timer->function((void *) timer_entry->timer->data);
+		}
+		
 	}
 }
 
@@ -663,8 +683,8 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 		 status=task_delete(ptask->_rtw_task_info_s) ;//TODO
 		 if(status != OK)
 		 {
-			  DBG_ERR("delete the task failed!",ptask->task_name);
-			  return;
+			DBG_ERR("delete the task failed!",ptask->task_name);
+			return;
 		 }
 		 free(ptask);
 		 return;
@@ -721,10 +741,11 @@ u32 _tizenrt_timerDelete( _timer *timer,
 	pthread_cleanup_pop( 1 );
 #endif
 	int ret;
-	ret = work_cancel(HPWORK, timer->work_hdl);
+	ret = work_cancel(LPWORK, timer->work_hdl);
 	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
 	free(timer->work_hdl);
 	timer->timer_hdl = NULL;
+	timer->timevalue = 0;
 	return _SUCCESS;
 
 cleanup:
@@ -734,6 +755,7 @@ cleanup:
 		return _FAIL;
 	}
 	timer->timer_hdl = NULL;
+	timer->timevalue = 0;
 	DBG_ERR("_tizenrt_del_timer is Done! timer->work_hdl = %x",timer->work_hdl);
 	return _SUCCESS;
 }
@@ -750,8 +772,9 @@ u32  _tizenrt_timerStop( _timer *timer,
 {
 	int ret;
 	//timer->live=0;
-	ret = work_cancel(HPWORK, timer->work_hdl);
+	ret = work_cancel(LPWORK, timer->work_hdl);
 	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+	timer->timevalue = 0;
 	return _SUCCESS;
 
 cleanup:
@@ -760,7 +783,7 @@ cleanup:
 		DBG_ERR("_tizenrt_stop_timer failed! ret = %d",ret);
 		return _FAIL;
 	}
-	timer->timer_hdl = NULL;
+	timer->timevalue = 0;
 	DBG_ERR("_tizenrt_stop_timer is Done! timer->work_hdl = %x",timer->work_hdl);
 	return _SUCCESS;
 
@@ -801,13 +824,13 @@ u32  _tizenrt_timerChangePeriod( _timer *timer,
 {
 	int ret;
 
-	printf("\r\n%s():================>work_hdl = %x\r\n",__func__,timer->work_hdl);
+	//ndbg("\r\n%s():================>work_hdl = %x\r\n",__func__,timer->work_hdl);
 
-	ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
+	ret = work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
 	if(ret == -EALREADY){
-		ret = work_cancel(HPWORK, timer->work_hdl);
+		ret = work_cancel(LPWORK, timer->work_hdl);
 		TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
-		ret = work_queue(HPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
+		ret = work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
 		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
 	}
 	
