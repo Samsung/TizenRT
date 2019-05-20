@@ -211,10 +211,9 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	tcb->ram_start = (uint32_t)start_addr;
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) && defined(CONFIG_ARCH_CHIP_IMXRT)
 	mpu_user_intsram_context(g_app_mpu_region, (uintptr_t)start_addr, size, tcb->mpu_regs);
 #endif
-
 #endif
 
 	/* Then start the module */
