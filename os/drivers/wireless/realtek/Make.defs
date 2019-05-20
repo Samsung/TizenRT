@@ -95,6 +95,10 @@ CSRCS += wifi_conf.c \
 		 wifi_util.c \
 		 rtk_lwip_netconf.c
 
+
+ifeq ($(CONFIG_LWNL80211_RTK),y)
+CSRCS += rtk_drv_lwnl80211.c
+endif
 ############################### End UTIL_INTERFACE #########################
 
 
