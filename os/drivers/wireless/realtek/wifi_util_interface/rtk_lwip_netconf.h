@@ -58,9 +58,9 @@ err_t dhcp_release_unicast(struct netif *netif);
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void LwIP_Init(void);
+int LwIP_Is_Init(void);
+void LwIP_Init_If(void);
 void LwIP_ReleaseIP(uint8_t idx);
-uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state);
 unsigned char* LwIP_GetMAC(struct netif *pnetif);
 unsigned char* LwIP_GetIP(struct netif *pnetif);
 unsigned char* LwIP_GetGW(struct netif *pnetif);

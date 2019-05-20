@@ -14,7 +14,8 @@
 
 #include "usb_io_realtek.h"
 #include "rtk_lwip_netconf.h"
-
+#include "rtk_wifi_utils.h"
+#include <debug.h>
 
 /******************************************************
  *                    Constants
@@ -145,6 +146,9 @@ extern USB_BUS_OPS rtw_usb_bus_ops;
 /******************************************************
  *               Function Definitions
  ******************************************************/
+
+static rtk_network_link_callback_t g_link_up = NULL;
+static rtk_network_link_callback_t g_link_down = NULL;
 
 #if CONFIG_WLAN
 
@@ -305,6 +309,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 	u16 disconn_reason;
 	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 	disconn_reason =*(u16*)(buf+6);
+	rtk_reason_t reason;
 
 	if(join_user_data != NULL){
 		if(join_user_data->network_info.security_type == RTW_SECURITY_OPEN){
@@ -352,6 +357,14 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 
 	if(join_user_data != NULL)
 		rtw_up_sema(&join_user_data->join_sema);
+	else{
+		memset(&reason, 0, sizeof(rtk_reason_t));
+
+		if (g_link_down){
+			ndbg("RTK_API rtk_link_event_handler send link_down\n");
+			g_link_down(&reason);
+		}
+	}
 	//RTW_API_INFO("\r\nWiFi Disconnect. Error flag is %d.\n", error_flag);
 
 // Need to use sema to make sure wifi_disconn_hdl invoked before setting join_user_data when connecting to another AP
@@ -454,6 +467,16 @@ void restore_wifi_info_to_flash()
 #endif
 
 //----------------------------------------------------------------------------//
+int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network_link_callback_t link_down)
+{
+	if(!g_link_up)
+		g_link_up = link_up;
+	if(!g_link_down)
+		g_link_down = link_down;
+	
+	return RTK_STATUS_SUCCESS;
+}
+
 int wifi_connect(
 	char 				*ssid,
 	rtw_security_t	security_type,
@@ -467,6 +490,7 @@ int wifi_connect(
 	rtw_result_t result = RTW_SUCCESS;
 	u8 wep_hex = 0;
 	u8 wep_pwd[14] = {0};
+	rtk_reason_t reason;
 
 	if(rtw_join_status & JOIN_CONNECTING){
 		if(wifi_disconnect() < 0){
@@ -614,14 +638,50 @@ int wifi_connect(
 				rtw_free(join_result->network_info.password);
 			}
 			result = RTW_TIMEOUT;
+			memset(&reason, 0, sizeof(rtk_reason_t));
+			switch(error_flag){
+				case RTW_NONE_NETWORK:
+					reason.reason_code = RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+					break;
+				case RTW_CONNECT_FAIL:
+					reason.reason_code = RTK_STATUS_ERROR;
+					break;
+				case RTW_4WAY_HANDSHAKE_TIMEOUT:
+					reason.reason_code = RTK_REASON_NETWORK_AUTHENTICATION_FAILED;
+					break;
+				default:
+					reason.reason_code = RTK_STATUS_ERROR;
+					break;
+			}
+
+			if (g_link_up) {
+				if (reason.reason_code)
+					ndbg("reason.reason_code=%d\n", reason.reason_code);
+				ndbg("RTK_API %s() send link_up\n",__func__);
+				g_link_up(&reason);
+			}
 			goto error;
 		} else {
+			
 			if(join_result->network_info.password_len) {
 				rtw_free(join_result->network_info.password);
 			}
 			if(wifi_is_connected_to_ap( ) != RTW_SUCCESS) {
 				result = RTW_ERROR;
 				goto error;
+			}
+
+			memset(&reason, 0, sizeof(rtk_reason_t));
+			rtw_memcpy(reason.bssid, join_result->network_info.bssid.octet, ETH_ALEN);
+			rtw_memcpy(reason.ssid, join_result->network_info.ssid.val, 32);
+			reason.ssid_len = join_result->network_info.ssid.len;
+			reason.reason_code = RTK_STATUS_SUCCESS;
+
+			if (g_link_up) {
+				if (reason.reason_code)
+					ndbg("reason.reason_code=%d\n", reason.reason_code);
+				ndbg("RTK_API %s() send link_up\n",__func__);
+				g_link_up(&reason);
 			}
 		}
 	}
@@ -1165,7 +1225,7 @@ int wifi_on(rtw_mode_t mode)
 int wifi_off(void)
 {
 	int ret = 0;
-	int timeout = 20;
+	int timeout = 2000;
 
 	if((rltk_wlan_running(WLAN0_IDX) == 0) &&
 		(rltk_wlan_running(WLAN1_IDX) == 0)) {
@@ -1176,10 +1236,8 @@ int wifi_off(void)
 #if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	//TODO
 #else
-	//dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
 	netif_set_down(&xnetif[0]);
-	netif_set_down(&xnetif[1]);
+	//netif_set_down(&xnetif[1]);
 #endif
 #endif
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
@@ -1205,7 +1263,7 @@ int wifi_off(void)
 			break;
 		}
 
-		rtw_msleep_os(1000);
+		rtw_msleep_os(5);
 		timeout --;
 	}
 
@@ -1223,9 +1281,6 @@ int wifi_off_fastly(void)
 #if CONFIG_LWIP_LAYER
 #if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	//TODO
-#else
-	//dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
 #endif	
 #endif	
 	//RTW_API_INFO("\n\rDeinitializing WIFI ...");
@@ -1277,12 +1332,29 @@ extern void wifi_utils_ap_sta_disassoc_hdl(void);
 
 static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* userdata)
 {
-	//USER TODO
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	if (strlen(buf) >= 17) {	// bssid is a 17 character string
+		memcpy(&(reason.bssid), buf, 17);	// Exclude null-termination
+	}
+
+	if (g_link_up) {
+		ndbg("RTK_API rtk_link_event_handler send link_up\n");
+		g_link_up(&reason);
+	}
 
 }
 static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* userdata)
 {
-	//USER TODO
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	if (strlen(buf) >= 17) {	// bssid is a 17 character string
+		memcpy(&(reason.bssid), buf, 17);
+	}
+	if (g_link_down) {
+		ndbg("RTK_API rtk_handle_disconnect send link_down\n");
+		g_link_down(&reason);
+	}
 }
 
 int wifi_get_last_error(void)
@@ -1500,11 +1572,6 @@ void wifi_scan_each_report_hdl( char* buf, int buf_len, int flags, void* userdat
 
 	rtw_memset(*result_ptr, 0, sizeof(rtw_scan_result_t));
 }
-
-#ifdef CONFIG_PLATFORM_TIZENRT
-#include <../../framework/src/wifi_manager/wifi_common.h>
-wifi_utils_scan_list_s *scan_list = NULL;
-#endif
 
 static void wifi_scan_done_hdl( char* buf, int buf_len, int flags, void* userdata)
 {
@@ -2073,12 +2140,6 @@ int wifi_restart_ap(
 									strlen((char*)setting.password),
 									setting.key_idx,
 									NULL);	
-#if CONFIG_DHCP_CLIENT
-		if(ret == RTW_SUCCESS) {
-			/* Start DHCPClient */
-			LwIP_DHCP(0, DHCP_START);
-		}
-#endif
 	}
 #endif	
 #if defined(CONFIG_MBED_ENABLED)
@@ -2140,7 +2201,6 @@ static void wifi_autoreconnect_thread(void *param)
 		else
 #endif
 		{
-			LwIP_DHCP(0, DHCP_START);
 #if LWIP_AUTOIP
 			uint8_t *ip = LwIP_GetIP(&xnetif[0]);
 			if((ip[0] == 0) && (ip[1] == 0) && (ip[2] == 0) && (ip[3] == 0)) {
