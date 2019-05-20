@@ -22,65 +22,54 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sched.h>
 
-#include "wifiapp_internal.h"
+#include <messaging/messaging.h>
+
+#define SYNC_BLOCK_PORT "sync_block_port"
+#define SYNC_BLOCK_DATA "sync_block_msg"
+#define SYNC_BLOCK_REPLY "reply_msg"
+
+#define BUFFER_SIZE 20
+#define MSG_PRIO 10
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-static void display_test_scenario(void)
+static int sync_send_test(void)
 {
-	printf("\nSelect Test Scenario.\n");
-#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
-	printf("\t-Press M or m : Messaging F/W Test\n");	
-#endif
-#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
-	printf("\t-Press R or r : Recovery Test\n");
-#endif
-	printf("\t-Press X or x : Terminate Tests.\n");
-}
+	int ret;
+	msg_send_data_t send_data;
+	msg_recv_buf_t reply_data;
 
-int main(int argc, char **argv)
-{
-	char ch;
-	bool is_testing = true;
+	send_data.priority = MSG_PRIO;
+	send_data.msg = SYNC_BLOCK_DATA;
+	send_data.msglen = sizeof(SYNC_BLOCK_DATA);
 
-	printf("This is WIFI App\n");
-#ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
-	while (is_testing) {
-		display_test_scenario();
-		ch = getchar();
-		switch (ch) {
-#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
-		case 'M':
-		case 'm':
-			messaging_test();
-			break;
-#endif
-#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
-		case 'R':
-		case 'r':
-			recovery_test();
-			break;
-#endif
-		case 'X':
-		case 'x':
-			printf("Test will be finished.\n");
-			is_testing = false;
-		default:
-			printf("Invalid Scenario.\n");
-			break;
-		}
-		sleep(1);
-		fflush(stdout);
+	reply_data.buflen = BUFFER_SIZE;
+	reply_data.buf = (char *)malloc(BUFFER_SIZE);
+	if (reply_data.buf == NULL) {
+		printf("[WIFI] Fail to sync send message : out of memory.\n");
+		return ERROR;
 	}
-#else
-	recovery_test();
-#endif
-	while (1) {
-		sleep(10);
-		printf("[%d] WIFI ALIVE\n", getpid());
+
+	printf("[WIFI] - Send [%s] data with sync mode.\n", SYNC_BLOCK_DATA);
+	ret = messaging_send_sync(SYNC_BLOCK_PORT, &send_data, &reply_data);
+	if (ret != OK) {
+		printf("[WIFI] Fail to sync send message.\n");
+		free(reply_data.buf);
+		return ERROR;
 	}
+
+	printf("[WIFI] Success to receive reply from receiver. msg : [%s]\n", (char *)reply_data.buf);
+	free(reply_data.buf);
+
 	return 0;
+}
+void messaging_test(void)
+{
+	int ret;
+	ret = sync_send_test();
 }
