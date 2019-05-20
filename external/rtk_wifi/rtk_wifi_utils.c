@@ -288,8 +288,10 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 	if (wifi_info) {
 		wuret = WIFI_UTILS_FAIL;
 		if (g_mode != RTK_WIFI_NONE) {
-			int ret = wifi_get_mac_address(wifi_info->mac_address);
-			if (ret == RTK_STATUS_SUCCESS) {
+			char mac_str[18] = {0 ,};
+			(void)wifi_get_mac_address((char *)mac_str);
+			int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);
+			if (ret == WIFIMGR_MACADDR_LEN) {
 				wifi_info->rssi = (int)0;
 				if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 					wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;

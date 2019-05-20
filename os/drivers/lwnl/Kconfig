@@ -11,6 +11,10 @@ config LWNL80211_SLSI
 	---help---
 		Samsung Artik WiFi driver
 
+config LWNL80211_RTK
+	bool "Realtek driver"
+	---help---
+		Realtek WiFi driver
 endchoice
 
 config DEBUG_LWNL80211_ERROR
@@ -22,10 +26,10 @@ config DEBUG_LWNL80211_ERROR
 config DEBUG_LWNL80211_INFO
 	bool "LWNL80211 INFO DEBUG"
 	default n
+	depends on DEBUG_VERBOSE
 	---help---
 		Enable LWNL80211 INFO DEBUG
 
-if LWNL80211_SLSI
 config DEBUG_LWNL80211_VENDOR_DRV_ERROR
 	bool "Vendor-specific driver interface ERROR DEBUG"
 	default n
@@ -33,10 +37,9 @@ config DEBUG_LWNL80211_VENDOR_DRV_ERROR
 	---help---
 		Enable Vendor-Specific Driver ERROR Debug
 
-config DEBUG_LWNL80211_SLSI_INFO
+config DEBUG_LWNL80211_VENDOR_DRV_INFO
 	bool "Vendor-specific driver interface INFO DEBUG"
 	default n
 	depends on DEBUG_VERBOSE
 	---help---
 		Enable Vendor-Specific Driver INFO Debug
-endif
