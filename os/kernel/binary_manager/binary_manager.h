@@ -73,6 +73,8 @@ struct binmgr_bininfo_s {
 	uint16_t bin_offset;
 	uint16_t inuse_idx;
 	uint32_t part_size;
+	uint32_t bin_stacksize;
+	uint8_t bin_priority;
 	int8_t part_num[PARTS_PER_BIN];
 	char name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
@@ -92,6 +94,8 @@ typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 #define BIN_NAME(bin_idx)                               bin_table[bin_idx].name
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
+#define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].bin_stacksize
+#define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].bin_priority
 
 extern binmgr_bininfo_t bin_table[BINARY_COUNT];
 

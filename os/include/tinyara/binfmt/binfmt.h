@@ -384,7 +384,7 @@ int binfmt_exit(FAR struct binary_s *bin);
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size);
+int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size, size_t stack_size, uint8_t priority);
 
 #undef EXTERN
 #if defined(__cplusplus)

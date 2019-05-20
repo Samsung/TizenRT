@@ -90,6 +90,8 @@ BIN_TYPE = ELF
 DYNAMIC_RAM_SIZE = 20480
 BIN_VER = 20190421
 KERNEL_VER = 2.0
+STACKSIZE = 2048
+PRIORITY = 220
 
 SRCS = micomapp.c
 OBJS = $(SRCS:.c=$(OBJEXT))
@@ -117,7 +119,7 @@ ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
 	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
 endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE)
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY)
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
 verify:

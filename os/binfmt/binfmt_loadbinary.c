@@ -77,7 +77,7 @@ extern void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t siz
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size)
+int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size, size_t stack_size, uint8_t priority)
 {
 	FAR struct binary_s *bin;
 	int pid;
@@ -120,6 +120,8 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	bin->nexports = 0;
 	bin->filelen = binsize;
 	bin->offset = offset;
+	bin->stacksize = stack_size;
+	bin->priority = priority;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin->uheap = (struct mm_heap_s *)start_addr;
 #endif
@@ -154,12 +156,8 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 #endif
 
 #endif
-#ifdef CONFIG_BINARY_MANAGER
-	/* Temp code*/
-	bin->priority = BINMGR_LOAD_PRIORITY_DEFAULT;
-#endif
-	/* Then start the module */
 
+	/* Then start the module */
 	pid = exec_module(bin);
 	if (pid < 0) {
 		errcode = -pid;

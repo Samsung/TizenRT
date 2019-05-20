@@ -42,11 +42,13 @@
  ****************************************************************************/
 struct binary_header_s {
 	uint16_t header_size;
-	uint16_t bin_type;
+	uint8_t bin_type;
+	uint8_t bin_priority;
 	uint32_t bin_size;
 	char bin_name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
-	uint32_t ram_size;
+	uint32_t bin_ramsize;
+	uint32_t bin_stacksize;
 	char kernel_ver[KERNEL_VER_MAX];
 	uint32_t jump_addr;
 };
@@ -92,8 +94,8 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 
 	/* Verify header data */
 	if (header_data->header_size < 0 || header_data->bin_size < 0 \
-		|| header_data->ram_size < 0 || header_data->bin_type != BIN_TYPE_ELF) {
-		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->ram_size, header_data->bin_type);
+		|| header_data->bin_ramsize < 0 || header_data->bin_type != BIN_TYPE_ELF) {
+		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 		goto errout_with_fd;
 	}
 
@@ -116,7 +118,7 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 		goto errout_with_fd;
 	}
 
-	bmvdbg("Binary header : %d %d %d %s %s %d %s %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->ram_size, header_data->kernel_ver, header_data->jump_addr);
+	bmvdbg("Binary header : %d %d %d %s %s %d %s %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver, header_data->jump_addr);
 	close(fd);
 
 	return OK;
@@ -164,7 +166,9 @@ static int binary_manager_load_bininfo(int bin_idx)
 	/* Set the data in table from header */
 	BIN_USEIDX(bin_idx) = latest_idx;
 	BIN_SIZE(bin_idx) = header_data[latest_idx].bin_size;
-	BIN_RAMSIZE(bin_idx) = header_data[latest_idx].ram_size;
+	BIN_RAMSIZE(bin_idx) = header_data[latest_idx].bin_ramsize;
+	BIN_STACKSIZE(bin_idx) = header_data[latest_idx].bin_stacksize;
+	BIN_PRIORITY(bin_idx) = header_data[latest_idx].bin_priority;
 	BIN_OFFSET(bin_idx) = CHECKSUM_SIZE + header_data[latest_idx].header_size;
 	strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
 	strncpy(BIN_KERNEL_VER(bin_idx), header_data[latest_idx].kernel_ver, KERNEL_VER_MAX);
@@ -197,7 +201,7 @@ int binary_manager_load_binary(int bin_idx)
 	/* Load binary */
 	snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
 	bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx));
-	pid = load_binary(devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx), BIN_RAMSIZE(bin_idx));
+	pid = load_binary(devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx), BIN_RAMSIZE(bin_idx), BIN_STACKSIZE(bin_idx), BIN_PRIORITY(bin_idx));
 	if (pid <= 0) {
 		bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
 		return ERROR;
