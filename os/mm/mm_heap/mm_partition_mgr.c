@@ -46,6 +46,7 @@ will throw an error here
 
 #define ALIGN_UP_MASK		3
 #define ALIGN_UP(a)		((a) + ALIGN_UP_MASK) & ~ALIGN_UP_MASK
+#define EXTRA_PADDING		100
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -56,7 +57,19 @@ extern uint32_t __usram_segment_size__[];
  * Private variables
  ****************************************************************************/
 uint32_t g_default_size;
+uint32_t g_ram_start;
+uint32_t g_ram_size;
+
+#ifdef CONFIG_MM_PARTITION_HEAP
 struct mm_heap_s g_pheap;
+#else
+struct mm_part_s {
+	uint32_t start;
+	uint32_t size;
+};
+
+struct mm_part_s g_mm_parts[CONFIG_NUM_APPS];
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -85,30 +98,39 @@ void mm_initialize_ram_partitions(void)
 {
 	/* We will calculate a overhead value for default partition size.
 	 * The overhead value will include the size of mm_heap_s and the
-	 * allocation node and also a 100 byte buffer for future change in mm.
+	 * allocation node and also a 100 byte buffer (EXTRA_PADDING) for future change in mm.
 	 */
-	uint32_t overhead = CONFIG_NUM_APPS * (SIZEOF_MM_ALLOCNODE + sizeof(struct mm_heap_s) + 100); 
-#ifdef CONFIG_IMXRT_SEMC_SDRAM
-	uint32_t start = CONFIG_IMXRT_SDRAM_START + CONFIG_MM_KERNEL_HEAPSIZE;
-	uint32_t size = CONFIG_IMXRT_SDRAM_SIZE - CONFIG_MM_KERNEL_HEAPSIZE;
-	g_default_size = (size - overhead) / CONFIG_NUM_APPS;
+#ifdef CONFIG_MM_PARTITION_HEAP
+	uint32_t overhead = CONFIG_NUM_APPS * (SIZEOF_MM_ALLOCNODE + sizeof(struct mm_heap_s) + EXTRA_PADDING);
+#else
+	uint32_t overhead = 0;
+#endif
 
-	DEBUGASSERT(start != 0);
-	DEBUGASSERT(size != 0);
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	g_ram_start = CONFIG_IMXRT_SDRAM_START + CONFIG_MM_KERNEL_HEAPSIZE;
+	g_ram_size = CONFIG_IMXRT_SDRAM_SIZE - CONFIG_MM_KERNEL_HEAPSIZE;
+#else
+	g_ram_start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
+	g_ram_size = (uint32_t)(REGION_END - g_ram_start);
+#endif
+
+	g_default_size = (g_ram_size - overhead) / CONFIG_NUM_APPS;
+	DEBUGASSERT(g_ram_start != 0);
+	DEBUGASSERT(g_ram_size != 0);
 	DEBUGASSERT(g_default_size > 0);
 
-	mm_initialize(&g_pheap, (void *)start, size);
-	mvdbg("Default RAM partition size set to %u\n", g_default_size);
-	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, size);
+#ifdef CONFIG_MM_PARTITION_HEAP
+	mm_initialize(&g_pheap, (void *)g_ram_start, g_ram_size);
 #else
-	uint32_t start = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
-
-	g_default_size = (REGION_END - start - overhead) / CONFIG_NUM_APPS;
-	mvdbg("Default RAM partition size set to %u\n", g_default_size);
-
-	mm_initialize(&g_pheap, start, (uint32_t)(REGION_END - start));
-	mvdbg("Initialized partition heap start = 0x%x size = %u\n", start, (uint32_t)(REGION_END - start));
+	g_mm_parts[0].start = g_ram_start;
+	g_mm_parts[0].size = 0;
+	g_mm_parts[1].start = g_ram_start + g_ram_size;
+	g_mm_parts[1].size = 0;
 #endif
+
+	mvdbg("Default RAM partition size set to %u\n", g_default_size);
+	mvdbg("Initialized partition heap start = 0x%x size = %u\n", g_ram_start, g_ram_size);
+
 	mm_initialize_app_heap();
 }
 
@@ -136,12 +158,29 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 		*size = g_default_size;
 	}
 
+#ifdef CONFIG_MM_PARTITION_HEAP
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s), retaddr);
 #else
 	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s));
 #endif
+
+#else	/* CONFIG_MM_PARTITION_HEAP */
+	uint32_t overhead = sizeof(struct mm_heap_s);
+	if (g_mm_parts[0].size == 0 && g_mm_parts[1].start > g_ram_start + *size + overhead) {
+		*start_addr = (uint32_t *)g_ram_start;
+		g_mm_parts[0].size = *size + overhead;
+	} else if (g_mm_parts[1].size == 0 && g_ram_start + g_ram_size - *size - overhead > g_ram_start + g_mm_parts[0].size) {
+		*start_addr = (uint32_t *)(g_ram_start + g_ram_size - *size - overhead);
+		g_mm_parts[1].start = *start_addr;
+		g_mm_parts[1].size = *size + overhead;
+	} else {
+		mvdbg("Part 1 Start = 0x%x, size = %u\n", g_mm_parts[0].start, g_mm_parts[0].size);
+		mvdbg("Part 2 Start = 0x%x, size = %u\n", g_mm_parts[1].start, g_mm_parts[1].size);
+	}
+#endif	/* CONFIG_MM_PARTITION_HEAP */
 
 	if (*start_addr == NULL) {
 		mdbg("Failed to allocate RAM partition of size %u\n", *size);
@@ -176,7 +215,18 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 void mm_free_ram_partition(uint32_t address)
 {
 	mm_remove_app_heap_list((struct mm_heap_s *)address);
+#ifdef CONFIG_MM_PARTITION_HEAP
 	mm_free(&g_pheap, (void *)address);
+#else
+	if (g_mm_parts[0].start == address) {
+		g_mm_parts[0].size = 0;
+	} else if (g_mm_parts[1].start == address) {
+		g_mm_parts[1].size = 0;
+		g_mm_parts[1].start = g_ram_start + g_ram_size;
+	} else {
+		mdbg("Incorrect partition address 0x%x\n", address);
+	}
+#endif
 	mvdbg("Freed RAM partition at 0x%x\n", address);
 }
 
