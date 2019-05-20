@@ -58,8 +58,6 @@ if BUILTIN
 source binfmt/libbuiltin/Kconfig
 endif
 
-endif
-
 config BINFMT_CONSTRUCTORS
 	bool "C++ Static Constructor Support"
 	default n
@@ -76,3 +74,4 @@ config SYMTAB_ORDEREDBYNAME
 		the logic can perform faster lookups using a binary search.
 		Otherwise, the symbol table is assumed to be un-ordered an only
 		slow, linear searches are supported.
+endif # !BINFMT_DISABLE
