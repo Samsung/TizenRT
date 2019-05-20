@@ -93,6 +93,9 @@ DYNAMIC_RAM_SIZE = 51200
 KERNEL_VER = 2.0
 
 SRCS = wifiapp.c
+ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
+SRCS += recovery.c
+endif
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 all: $(BIN)
