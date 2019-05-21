@@ -110,6 +110,7 @@ static bool recursive_abort = false;
 #ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc[];
 uint32_t assert_pc;
+extern mqd_t g_binmgr_mq_fd;
 #endif
 /****************************************************************************
  * Pre-processor Definitions
@@ -931,7 +932,6 @@ static void _up_assert(int errorcode)
 {
 #ifdef CONFIG_BINMGR_RECOVERY
 	int ret;
-	mqd_t binmgr_mq;
 	binmgr_request_t request_msg;
 	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
 	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
@@ -957,8 +957,6 @@ static void _up_assert(int errorcode)
 		}
 #endif
 	} else {
-		binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
-		DEBUGASSERT(binmgr_mq != (mqd_t)ERROR);
 
 		request_msg.cmd = BINMGR_FAULT;
 		request_msg.requester_pid = getpid();
@@ -977,7 +975,7 @@ static void _up_assert(int errorcode)
 
 		/* Send a message to fault manager with pid of the faulty task */
 
-		ret = mq_send(binmgr_mq, (const char *)&request_msg, sizeof(request_msg), BINMGR_FAULT_PRIO);
+		ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 		DEBUGASSERT(ret == 0);
 
 		exit(errorcode);
