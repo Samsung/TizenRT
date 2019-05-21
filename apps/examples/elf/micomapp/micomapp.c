@@ -23,11 +23,16 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "micomapp_internal.h"
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 int main(int argc, char **argv)
 {
+#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
+	messaging_test();
+#endif
 	while (1) {
 		sleep(10);
 		printf("[%d] MICOM ALIVE\n", getpid());

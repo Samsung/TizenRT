@@ -80,6 +80,10 @@ else
 LDLIBS += -lmm
 endif
 
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+LDLIBS += -lframework
+endif
+
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
@@ -95,9 +99,13 @@ STACKSIZE = 4096
 PRIORITY = 180
 
 SRCS = wifiapp.c
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+SRCS += messaging.c
+endif
 ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
 SRCS += recovery.c
 endif
+
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 all: $(BIN)

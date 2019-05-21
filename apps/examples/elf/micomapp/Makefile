@@ -79,6 +79,10 @@ else
 LDLIBS += -lmm
 endif
 
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+LDLIBS += -lframework
+endif
+
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
@@ -87,13 +91,16 @@ BIN = micom
 BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
-DYNAMIC_RAM_SIZE = 20480
+DYNAMIC_RAM_SIZE = 40960
 BIN_VER = 20190421
 KERNEL_VER = 2.0
 STACKSIZE = 2048
 PRIORITY = 220
 
 SRCS = micomapp.c
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+SRCS += messaging.c
+endif
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 all: $(BIN)
