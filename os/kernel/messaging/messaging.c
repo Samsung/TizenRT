@@ -60,6 +60,8 @@
 #include <errno.h>
 #include <string.h>
 #include <queue.h>
+#include <semaphore.h>
+#include <tinyara/mm/mm.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,6 +92,8 @@ struct msg_recv_node_s {
 };
 typedef struct msg_recv_node_s msg_recv_node_t;
 
+sem_t port_list_sem = SEM_INITIALIZER(1);
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -107,7 +111,7 @@ static int messaging_append_receiver(pid_t pid, int prio, sq_queue_t *queue)
 	msg_recv_node_t *recv_node;
 	msg_recv_node_t *prev_node;
 	msg_recv_node_t *next_node;
-	recv_node = (msg_recv_node_t *)malloc(sizeof(msg_recv_node_t));
+	recv_node = (msg_recv_node_t *)kmm_malloc(sizeof(msg_recv_node_t));
 	if (recv_node == NULL) {
 		msgdbg("[Messaging] fail to save receiver info : out of memory.\n");
 		return ERROR;
@@ -176,25 +180,29 @@ int messaging_save_receiver(char *port_name, pid_t recv_pid, int recv_prio)
 	int ret;
 	msg_port_node_t *port_node;
 
+	sem_wait(&port_list_sem);
 	port_node = (msg_port_node_t *)sq_peek(&g_port_node_list);
 	while (port_node != NULL) {
 		if (strncmp(port_node->port_name, port_name, strlen(port_name) + 1) == 0) {
 			ret = messaging_check_recv_exist(recv_pid, &port_node->recv_node_list);
 			if (ret == MSG_RECV_EXIST) {
+				sem_post(&port_list_sem);
 				return OK;
 			}
 			port_node->nreceiver++;
 			/* There was already same port node in the list, append recv node to this list. */
 			ret = messaging_append_receiver(recv_pid, recv_prio, &port_node->recv_node_list);
+			sem_post(&port_list_sem);
 			return ret;
 		}
 		port_node = (msg_port_node_t *)sq_next(port_node);
 	}
 
 	/* Create new port node which has this port name */
-	port_node = (msg_port_node_t *)malloc(sizeof(msg_port_node_t));
+	port_node = (msg_port_node_t *)kmm_malloc(sizeof(msg_port_node_t));
 	if (port_node == NULL) {
 		msgdbg("[Messaging] fail to save receiver info : out of memory.\n");
+		sem_post(&port_list_sem);
 		return ERROR;
 	}
 
@@ -208,6 +216,7 @@ int messaging_save_receiver(char *port_name, pid_t recv_pid, int recv_prio)
 	/* Append recv node to new created port node. */
 	ret = messaging_append_receiver(recv_pid, recv_prio, &port_node->recv_node_list);
 
+	sem_post(&port_list_sem);
 	return ret;
 }
 
@@ -234,6 +243,7 @@ int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt)
 	msg_recv_node_t *recv_node;
 	int recv_cnt;
 
+	sem_wait(&port_list_sem);
 	port_node = (msg_port_node_t *)sq_peek(&g_port_node_list);
 	while (port_node != NULL) {
 		if (strncmp(port_node->port_name, port_name, strlen(port_name) + 1) == 0) {
@@ -244,6 +254,7 @@ int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt)
 				if (recv_node == NULL) {
 					curr_recv_cnt = 0;
 					msgdbg("[Messaging] fail to read receivers list.\n");
+					sem_post(&port_list_sem);
 					return ERROR;
 				}
 
@@ -260,15 +271,18 @@ int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt)
 					if (recv_node == NULL) {
 						recv_cnt = curr_recv_cnt;
 						curr_recv_cnt = 0;
+						sem_post(&port_list_sem);
 						return recv_cnt;
 					}
 				}
 			}
+			sem_post(&port_list_sem);
 			return curr_recv_cnt;
 		}
 		port_node = (msg_port_node_t *)sq_next(port_node);
 	}
 
+	sem_post(&port_list_sem);
 	return ERROR;
 }
 
@@ -293,15 +307,16 @@ int messaging_remove_list(char *port_name)
 	msg_recv_node_t *recv_node;
 	msg_port_node_t *port_node;
 
+	sem_wait(&port_list_sem);
 	port_node = (msg_port_node_t *)sq_peek(&g_port_node_list);
 	while (port_node != NULL) {
 		if (strncmp(port_node->port_name, port_name, strlen(port_name) + 1) == 0) {
 			/* Remove the whole recv node which attached to this port node. */
 			while ((recv_node = (msg_recv_node_t *)sq_remfirst(&port_node->recv_node_list)) != NULL) {
-				free(recv_node);
+				kmm_free(recv_node);
 			}
 			(void)sq_rem((FAR sq_entry_t *)port_node, &g_port_node_list);
-			free(port_node);
+			kmm_free(port_node);
 			ret = OK;
 			break;
 		}
@@ -313,5 +328,6 @@ int messaging_remove_list(char *port_name)
 		ret = OK;
 	}
 
+	sem_post(&port_list_sem);
 	return ret;
 }
