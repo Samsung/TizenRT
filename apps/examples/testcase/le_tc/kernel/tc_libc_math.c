@@ -4213,21 +4213,41 @@ static void tc_libc_math_ynf(void)
  */
 static void tc_libc_math_gamma(void)
 {
-	double value;
+	double input[13] = {2.0, 3.0, INFINITY, 256.5,
+						1.0e-20, -257.5, -256.5, -1.0,
+						-1.5, 8.1, 8.3, 8.8, 9.3};
+	double compare[13] = {1, 2, (double)INFINITY, 0x1p1023 * value[3],
+						1 / value[4], 0, -0.0, 0/0.0,
+						2.363271801, 6169.5936974846, 9281.3925257465,
+						26339.986354509, 77035.557963696};
 	double result;
+	int digit = 1e5;
 
-	value = 2.0;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, 1);
-
-	value = 3.0;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, 2);
-
-	value = INFINITY;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, (double)INFINITY);
-
+	/**
+	 * gamma value comparison
+	 */
+	for(int i = 0; i<13; i++)
+	{
+		result = gamma(input[i]);
+		if(i >= 8)
+		{
+			/**
+			 * Compare to the fifth decimal place (digit)
+			 */
+			TC_ASSERT_EQ("gamma", floor(result*digit), floor(compare[i]*digit));
+		}
+		else if(i == 7)
+		{
+			/**
+			 * Compare NaN
+			 */
+			TC_ASSERT_EQ("gamma", isnan(result), isnan(compare[i]));
+		}
+		else
+		{
+			TC_ASSERT_EQ("gamma", result, compare[i]);
+		}
+	}
 	TC_SUCCESS_RESULT();
 }
 
