@@ -138,7 +138,7 @@ struct imxrt_dev_s {
 static inline int imxrt_readid(struct imxrt_dev_s *priv);
 static void imxrt_waitwritecomplete(struct imxrt_dev_s *priv);
 static inline void imxrt_sectorerase(struct imxrt_dev_s *priv, off_t offset);
-static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, unsigned long arg);
+static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, size_t startsector, size_t nsectors);
 static inline void imxrt_pagewrite(struct imxrt_dev_s *priv, FAR const uint8_t *buffer, off_t offset);
 
 /* MTD driver methods */
@@ -251,10 +251,8 @@ static void imxrt_sectorerase(struct imxrt_dev_s *priv, off_t sector)
  * Name:  imxrt_bulkerase
  ************************************************************************************/
 
-static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, unsigned long arg)
+static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, size_t startblock, size_t nsectors)
 {
-	fvdbg("priv: %p\n", priv);
-
     #ifdef CONSIDER_IMPLEMENT
 	/* Wait for any preceding write to complete.  We could simplify things by
 	 * perform this wait at the end of each write operation (rather than at
@@ -279,27 +277,21 @@ static inline int imxrt_bulkerase(struct imxrt_dev_s *priv, unsigned long arg)
 	/* Deselect the FLASH */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+#endif
 	
 	size_t sectors_erased = 0;
-	size_t startsector = 8;
-//	fdbg("startsector: %d nsectors: %d\n", (long)startsector, (int)priv->nsectors);
-	fdbg("startsector: %d nsectors: %d\n", (long)startsector, 2);
+	fvdbg("priv: %p, startblock: %d, startsector: %d, nsectors: %d\n", priv, startblock, startblock >> priv->pageshift, nsectors);
 
 	/* Lock access to the SPI bus until we complete the erase */
 
-//	while (sectors_erased < priv->nsectors) {
-	while (sectors_erased < 2) {
+	while (sectors_erased < nsectors) {
 		/* Not using sub-sector erase.  Erase each full sector */
 
-		imxrt_sectorerase(priv, startsector + sectors_erased);
+		imxrt_sectorerase(priv, (startblock >> priv->pageshift) + sectors_erased);
 		sectors_erased++;
 	}
+	fvdbg("ret = %d, erased sectors = %d\n", ret, sectors_erased);
 
-	fdbg("Return = erased sectors = %d\n", sectors_erased);
-	return sectors_erased;
-	#endif
-
-	fdbg("Return: OK\n");
 	return OK;
 }
 
@@ -581,9 +573,10 @@ static int imxrt_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	break;
 
 	case MTDIOC_BULKERASE: {
+		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)((uintptr_t)arg);
 		/* Erase the entire device */
-		fdbg("[pid %d]: checkpoint line %d, arg = %d\n", getpid(), __LINE__, arg);
-		ret = imxrt_bulkerase(priv, arg);
+
+		ret = imxrt_bulkerase(priv, geo->startblock, geo->neraseblocks);
 	}
 	break;
 

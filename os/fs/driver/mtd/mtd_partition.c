@@ -401,6 +401,7 @@ static int part_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			geo->blocksize = priv->blocksize;
 			geo->erasesize = priv->blocksize * priv->blkpererase;
 			geo->neraseblocks = priv->neraseblocks;
+			geo->startblock = priv->firstblock;
 			ret = OK;
 		}
 	}
@@ -427,10 +428,9 @@ static int part_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 	case MTDIOC_BULKERASE: {
 		/* Erase the entire partition */
-
-		ret = priv->parent->erase(priv->parent, priv->firstblock / priv->blkpererase, priv->neraseblocks);
-		if (ret == priv->neraseblocks) {
-			ret = OK;
+		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)arg;
+		if (geo) {
+			ret = priv->parent->ioctl(priv->parent, MTDIOC_BULKERASE, (unsigned long)((uintptr_t)geo));
 		}
 	}
 	break;

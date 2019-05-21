@@ -99,6 +99,7 @@ struct mtd_geometry_s {
 	uint32_t erasesize;		/* Size of one erase blocks -- must be a multiple
 					 * of blocksize. */
 	uint32_t neraseblocks;		/* Number of erase blocks */
+	uint32_t startblock;
 };
 
 /* The following defines the information for writing bytes to a sector

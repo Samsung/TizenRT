@@ -2830,7 +2830,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 
 	/* Erase the MTD device. */
 
-	ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+	ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, (unsigned long)((uintptr_t)&dev->geo));
 	if (ret < 0) {
 		return ret;
 	}
