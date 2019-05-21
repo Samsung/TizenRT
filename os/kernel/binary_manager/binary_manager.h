@@ -68,13 +68,9 @@ enum loading_thread_cmd {
 /* Binary data type in binary table */
 struct binmgr_bininfo_s {
 	pid_t bin_id;
-	uint32_t bin_size;
-	uint32_t ram_size;
-	uint16_t bin_offset;
 	uint16_t inuse_idx;
 	uint32_t part_size;
-	uint32_t bin_stacksize;
-	uint8_t bin_priority;
+	load_attr_t load_attr;
 	int8_t part_num[PARTS_PER_BIN];
 	char name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
@@ -83,19 +79,20 @@ struct binmgr_bininfo_s {
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
 #define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
-#define BIN_SIZE(bin_idx)                               bin_table[bin_idx].bin_size
-#define BIN_RAMSIZE(bin_idx)                            bin_table[bin_idx].ram_size
-#define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].bin_offset
 #define BIN_USEIDX(bin_idx)                             bin_table[bin_idx].inuse_idx
-
 #define BIN_PARTSIZE(bin_idx)                           bin_table[bin_idx].part_size
 #define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_num[part_idx]
 
 #define BIN_NAME(bin_idx)                               bin_table[bin_idx].name
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
-#define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].bin_stacksize
-#define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].bin_priority
+
+#define BIN_LOAD_ATTR(bin_idx)                          bin_table[bin_idx].load_attr
+#define BIN_SIZE(bin_idx)                               bin_table[bin_idx].load_attr.bin_size
+#define BIN_RAMSIZE(bin_idx)                            bin_table[bin_idx].load_attr.ram_size
+#define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].load_attr.offset
+#define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].load_attr.stack_size
+#define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].load_attr.priority
 
 extern binmgr_bininfo_t bin_table[BINARY_COUNT];
 

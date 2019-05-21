@@ -201,7 +201,7 @@ int binary_manager_load_binary(int bin_idx)
 	/* Load binary */
 	snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
 	bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx));
-	pid = load_binary(devname, BIN_SIZE(bin_idx), BIN_OFFSET(bin_idx), BIN_RAMSIZE(bin_idx), BIN_STACKSIZE(bin_idx), BIN_PRIORITY(bin_idx));
+	pid = load_binary(devname, &BIN_LOAD_ATTR(bin_idx));
 	if (pid <= 0) {
 		bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
 		return ERROR;

@@ -103,6 +103,16 @@ struct binary_info_s {
 };
 typedef struct binary_info_s binary_info_t;
 
+/* The structure of load attr configuration */
+struct load_attr_s {
+	uint32_t bin_size;			/* The size of ELF binary to be loaded */
+	uint32_t ram_size;			/* The size of RAM partition required by binary */
+	uint32_t stack_size;		/* Size of the stack allocated for binary */
+	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
+	uint8_t priority;			/* Priority of the binary */
+};
+typedef struct load_attr_s load_attr_t;
+
 /* The structure of binaries' information list */
 struct binary_info_list_s {
 	int bin_count;

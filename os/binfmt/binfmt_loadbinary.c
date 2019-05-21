@@ -35,7 +35,6 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
-
 #include "binfmt.h"
 
 #ifndef CONFIG_BINFMT_DISABLE
@@ -58,18 +57,14 @@ extern void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t siz
  *   schedule to unload the module when task exits.
  *
  * Input Parameters:
- *   filename - The path to the program to be executed. If
- *              CONFIG_LIB_ENVPATH is defined in the configuration, then
- *              this may be a relative path from the current working
- *              directory. Otherwise, path must be the absolute path to the
- *              program.
+ *   filename  - The path to the program to be executed. If
+ *               CONFIG_LIB_ENVPATH is defined in the configuration, then
+ *               this may be a relative path from the current working
+ *               directory. Otherwise, path must be the absolute path to the
+ *               program.
  *
- *   binsize  - The size of ELF binary to be loaded, if this value is less than
- *              will return with invalid parameter.
- *
- *   offset   - The offset from which ELF binary has to be read in MTD partition.
- *
- *   ram_size - The size of RAM partition required by this app
+ *   load_attr - This structure contains the information that the binary
+ *               to be loaded.
  *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
@@ -77,7 +72,8 @@ extern void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t siz
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size, size_t stack_size, uint8_t priority)
+#ifdef CONFIG_BINARY_MANAGER
+int load_binary(FAR const char *filename, load_attr_t *load_attr)
 {
 	FAR struct binary_s *bin;
 	int pid;
@@ -85,7 +81,7 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	int ret;
 
 	/* Sanity check */
-	if (binsize <= 0) {
+	if (load_attr->bin_size <= 0) {
 		berr("ERROR: Invalid file length!\n");
 		errcode = EINVAL;
 		goto errout;
@@ -94,7 +90,7 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
-	uint32_t size = ram_size;
+	uint32_t size = load_attr->ram_size;
 	struct tcb_s *tcb;
 
 	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
@@ -118,10 +114,10 @@ int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t 
 	bin->filename = filename;
 	bin->exports = NULL;
 	bin->nexports = 0;
-	bin->filelen = binsize;
-	bin->offset = offset;
-	bin->stacksize = stack_size;
-	bin->priority = priority;
+	bin->filelen = load_attr->bin_size;
+	bin->offset = load_attr->offset;
+	bin->stacksize = load_attr->stack_size;
+	bin->priority = load_attr->priority;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin->uheap = (struct mm_heap_s *)start_addr;
 #endif
@@ -214,5 +210,5 @@ errout:
 	return ERROR;
 
 }
-
+#endif							/* CONFIG_BINARY_MANAGER */
 #endif							/* !CONFIG_BINFMT_DISABLE */
