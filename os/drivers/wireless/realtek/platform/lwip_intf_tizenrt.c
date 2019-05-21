@@ -40,7 +40,17 @@ extern struct netif xnetif[];			//LWIP netif
  *      @dev_addr: set netif hw address
  *
  *      Return Value: None
- */     
+ */
+#include <net/if.h>
+extern struct netif *netdev_findbyname(FAR const char *ifname);
+static void _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
+{
+	struct netif *dev = netdev_findbyname(ifname);
+	if (dev) {
+		memcpy(dev->d_mac.ether_addr_octet, macaddr, IFHWADDRLEN);
+	}
+}
+
 void rltk_wlan_set_netif_info(int idx_wlan, void * dev, unsigned char * dev_addr)
 {
 #if (CONFIG_LWIP_LAYER == 1)
@@ -48,7 +58,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void * dev, unsigned char * dev_addr
 	//rtw_memcpy(xnetif[idx_wlan]->hwaddr, dev_addr, 6);
 	//set netif hwaddr later
 #else
-	netlib_setmacaddr(xnetif[idx_wlan].name,dev_addr);
+	_netlib_setmacaddr(xnetif[idx_wlan].name,dev_addr);
 	rtw_memcpy(xnetif[idx_wlan].hwaddr, dev_addr, 6);
 	xnetif[idx_wlan].state = dev;
 #endif

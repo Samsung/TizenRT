@@ -129,7 +129,12 @@ typedef enum {
 	FREEADDRINFO,
 	GETHOSTBYNAME,
 	GETNAMEINFO,
-	DNSSETSERVER
+	DNSSETSERVER,
+	DHCPCSTART,
+	DHCPCSTOP,
+	DHCPDSTART,
+	DHCPDSTOP,
+	DHCPDSTATUS,
 } req_type;
 
 /* To send a request to lwip stack by ioctl() use */

@@ -1091,6 +1091,41 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #endif							/* CONFIG_NET_ROUTE */
 
 #if CONFIG_NET_LWIP
+
+#define DHCPD_MQ_NAME "dhcpd_queue"
+
+static void _dhcpd_join(void)
+{
+	printf("dhcpd joined");
+
+	struct mq_attr attr;
+	attr.mq_maxmsg = 10;
+	attr.mq_msgsize = 10;
+	attr.mq_flags = 0;
+	attr.mq_curmsgs = 0;
+
+	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
+	if (!md) {
+		printf("mq open fail%s %d\n", __FUNCTION__, errno);
+		return;
+	}
+
+	char msg[2] = "t";
+	int mq_ret = mq_send(md, msg, 2, 100);
+	if (mq_ret < 0) {
+		printf("send mq fail %s %d\n", __FUNCTION__, errno);
+	}
+	mq_close(md);
+
+	return;
+}
+
+extern int netdev_dhcp_client_start(const char *intf);
+extern void netdev_dhcp_client_stop(const char *intf);
+extern int netdev_dhcp_server_status(char *intf);
+extern int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb);
+extern int netdev_dhcp_server_stop(char *intf);
+
 /****************************************************************************
  * Function: lwip_func_ioctl
  *
@@ -1105,7 +1140,6 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-
 int lwip_func_ioctl(int cmd, void *arg)
 {
 	int ret = -EINVAL;
@@ -1155,6 +1189,38 @@ int lwip_func_ioctl(int cmd, void *arg)
 		ret = 0;
 		break;
 #endif
+	case DHCPCSTART:
+		ret = netdev_dhcp_client_start((const char*)in_arg->host_name);
+		if (ret != 0) {
+			printf("start dhcp fail\n");
+		}
+		in_arg->req_res = ret;
+		break;
+	case DHCPCSTOP:
+		netdev_dhcp_client_stop((const char*)in_arg->host_name);
+		in_arg->req_res = 0;
+		break;
+	case DHCPDSTART:
+		ret = netdev_dhcp_server_start((const char*)in_arg->host_name, _dhcpd_join);
+		if (ret != 0) {
+			printf("start dhcpd fail\n");
+		}
+		in_arg->req_res = ret;
+		break;
+	case DHCPDSTOP:
+		ret = netdev_dhcp_server_stop((const char*)in_arg->host_name);
+		if (ret != 0) {
+			printf("stop dhcpd fail\n");
+		}
+		in_arg->req_res = ret;
+		break;
+	case DHCPDSTATUS:
+		ret = netdev_dhcp_server_status((const char*)in_arg->host_name);
+		if (ret != 0) {
+			printf("stop dhcpd fail\n");
+		}
+		in_arg->req_res = ret;
+		break;
 	default:
 		printf("Wrong request type: %d\n", in_arg->type);
 		break;

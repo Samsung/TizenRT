@@ -745,6 +745,20 @@ void cmd_wifi_info(int argc, char **argv)
 #endif
 }
 
+/*
+ * Wi-Fi driver doesn't need to set mac address because
+ * Wi-Fi manager does it.
+ */
+#include <net/if.h>
+extern struct netif *netdev_findbyname(FAR const char *ifname);
+static void _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
+{
+	struct netif *dev = netdev_findbyname(ifname);
+	if (dev) {
+		memcpy(dev->d_mac.ether_addr_octet, macaddr, IFHWADDRLEN);
+	}
+}
+
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
 	int ret;
@@ -783,7 +797,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 		printf("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
 		printf("\n\r  IP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #ifdef CONFIG_PLATFORM_TIZENRT
-		netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
+		_netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
 #endif
 #endif
     }

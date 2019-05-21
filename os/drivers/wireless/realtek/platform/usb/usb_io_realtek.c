@@ -14,7 +14,7 @@ int usbhost_cancel_bulk_in(void *priv);
 int usbhost_cancel_bulk_out(void *priv);
 
 extern void *g_rtk_wifi_usb;
-unsigned char g_rtk_wifi_connect;
+extern unsigned char g_rtk_wifi_connect;
 
 static void rtw_usb_probe(void)
 {

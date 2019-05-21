@@ -55,9 +55,9 @@
  * Included Files
  ****************************************************************************/
 
+#include <stdio.h>
 
 #include <tinyara/config.h>		/* TinyAra configuration */
-#include <stdio.h>
 #include <debug.h>				/* For ndbg, vdbg */
 #include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
 #include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
@@ -74,9 +74,9 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <netutils/netlib.h>
-#include <mqueue.h>
-#include <sys/ioctl.h>
-#include <netdb.h>
+
+#include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
 
 #undef nvdbg
 #undef ndbg
@@ -92,167 +92,83 @@
 #define DHCP_SERVER_PORT         67
 #define DHCP_CLIENT_PORT         68
 
-#define DHCPD_WAIT_TASK_TERM									\
-	do {														\
-		pthread_mutex_lock(&dhcpdterm_lock);					\
-		pthread_cond_wait(&dhcpdterm_signal, &dhcpdterm_lock);	\
-		pthread_mutex_unlock(&dhcpdterm_lock);					\
-	} while (0)
-
-#define DHCPD_SIGNAL_TASK_TERM					\
-	do {										\
-		pthread_mutex_lock(&dhcpdterm_lock);	\
-		pthread_cond_signal(&dhcpdterm_signal);	\
-		pthread_mutex_unlock(&dhcpdterm_lock);	\
-	} while (0)
-
-static pthread_t g_dhcpd_tid = -1;
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-//static pthread_mutex_t dhcpdterm_lock = PTHREAD_MUTEX_INITIALIZER;
-//static pthread_cond_t dhcpdterm_signal = PTHREAD_COND_INITIALIZER;
-static int g_dhcpd_term = 0;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#define DHCPD_MQ_NAME "dhcpd_queue"
-
-void *_dhcpd_join_handler(void *arg)
-{
-	struct mq_attr attr;
-	attr.mq_maxmsg = 10;
-	attr.mq_msgsize = 10;
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
-
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
-	if (md == NULL) {
-		ndbg("Failed to open mq\n");
-		return NULL;
-	}
-
-	while (!g_dhcpd_term) {
-		char msg[2];
-		int msglen = 2;
-		int prio = 0;
-		int nbytes = mq_receive(md, msg, msglen, &prio);
-		if (nbytes <= 0) {
-			printf("mq receive fail\n");
-			break;
-		}
-		sleep(1);
-	}
-	return NULL;
-}
-
 /****************************************************************************
  * Global Functions
  ****************************************************************************/
 /****************************************************************************
  * Name: dhcps_server_status
  ****************************************************************************/
-int dhcp_server_status(char *intf)
+int netdev_dhcp_server_status(char *intf)
 {
-	int ret = -1;
-	struct req_lwip_data req;
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
-		return ret;
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
+		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTATUS;
-	req.host_name = intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return ret;
+	if (cur_netif->dhcps_pcb == NULL) {
+		ndbg("[DHCPS] DHCP server closed\n");
+		return 0;
+	} else {
+		ndbg("[DHCPS] DHCP server opened\n");
+		return 1;
 	}
-
-	ret = req.req_res;
-	close(sockfd);
-	return ret;
 }
 
 /****************************************************************************
  * Name: dhcps_server_start
  ****************************************************************************/
-int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
-	int ret = -1;
-	struct req_lwip_data req;
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
-		return ret;
-	}
-
-	// pthread create
-	g_dhcpd_term = 0;
-	ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, NULL);
-	if (ret < 0) {
-		printf("[dhcpd] create iotapi handler fail(%d)\n", ret);
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
 		return -1;
 	}
-
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTART;
-	req.host_name = intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		g_dhcpd_term = 1;
-		pthread_join(g_dhcpd_tid, NULL);
-		return ret;
+	if (dhcp_join_cb) {
+		if (dhcps_register_cb(dhcp_join_cb) != ERR_OK) {
+			ndbg("[DHCPS] link callback fail\n");
+			return -1;
+		}
 	}
 
-	ret = req.req_res;
-	close(sockfd);
-	return ret;
+	if (netifapi_dhcps_start(cur_netif) == ERR_OK) {
+		ndbg("[DHCPS] started successfully (LWIP)\n");
+		return OK;
+	}
+
+	return -1;
 }
 
 /****************************************************************************
  * Name: dhcps_server_stop
  ****************************************************************************/
-int dhcp_server_stop(char *intf)
+int netdev_dhcp_server_stop(char *intf)
 {
-	int ret = -1;
-	struct req_lwip_data req;
-
-	// remove thread
-	g_dhcpd_term = 1;
-	pthread_join(g_dhcpd_tid, NULL);
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
-		return ret;
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
+		return -1;
+	}
+	if (cur_netif->dhcps_pcb == NULL) {
+		ndbg("[DHCPS] stop dhcpd fail: no pcb\n");
+		return -1;
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTOP;
-	req.host_name = intf;
+	netifapi_dhcps_stop(cur_netif);
+	ndbg("[DHCPS] stopped successfully (LWIP)\n");
 
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return ret;
-	}
-
-	ret = req.req_res;
-	close(sockfd);
-
-	return ret;
+	return OK;
 }

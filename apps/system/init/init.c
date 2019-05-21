@@ -67,7 +67,7 @@ static void tash_register_cmds(void)
 	system_register_utilcmds();
 #endif
 
-#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_CMDS)
+#if defined(CONFIG_FS_CMDS)
 	fs_register_utilcmds();
 #endif
 

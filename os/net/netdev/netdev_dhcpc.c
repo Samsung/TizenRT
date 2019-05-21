@@ -67,11 +67,12 @@
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
-#include <sys/ioctl.h>
-#include <netdb.h>
+
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
-
+#include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
+#include "netdev/netdev.h"
 
 /****************************************************************************
  * Definitions
@@ -79,15 +80,15 @@
 #define DHCPC_SET_IP4ADDR(intf, ip, netmask, gateway)	        \
 	do {							\
 		int res = -1;					\
-		res = netlib_set_ipv4addr(intf, &ip);		\
+		res = _netlib_set_ipv4addr(intf, &ip);		\
 		if (res == -1) {				\
 			nvdbg("[DHCPC] set ipv4 addr error\n");	\
 		}						\
-		res = netlib_set_ipv4netmask(intf, &netmask);	\
+		res = _netlib_set_ipv4netmask(intf, &netmask);	\
 		if (res == -1) {				\
 			nvdbg("[DHCPC] set netmask addr error\n");	\
 		}						\
-		res = netlib_set_dripv4addr(intf, &gateway);	\
+		res = _netlib_set_dripv4addr(intf, &gateway);	\
 		if (res == -1) {				\
 			nvdbg("[DHCPC] set route addr error\n");	\
 		}						\
@@ -102,65 +103,183 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void _ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr *inaddr)
+{
+	FAR const struct sockaddr_in *src = (FAR const struct sockaddr_in *)inaddr;
+	*outaddr = src->sin_addr.s_addr;
+}
+
+static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
+{
+	FAR struct sockaddr_in *dest = (FAR struct sockaddr_in *)outaddr;
+	dest->sin_family = AF_INET;
+	dest->sin_port = 0;
+	dest->sin_addr.s_addr = inaddr;
+}
+
+static int _netlib_set_ipv4addr(FAR const char *ifname, FAR const struct in_addr *addr)
+{
+	struct netif *dev = NULL;
+	dev = netdev_findbyname(ifname);
+	if (!dev) {
+		printf("error %s:%d", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	netifapi_netif_set_down(dev);
+
+	struct sockaddr_in inaddr;
+	inaddr.sin_family = AF_INET;
+	inaddr.sin_port = 0;
+	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
+
+	ip_addr_t ipaddr, netmask, gw;
+	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&ipaddr)), (struct sockaddr *)&inaddr);
+	netmask = dev->netmask;
+	gw = dev->gw;
+	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+
+	netifapi_netif_set_up(dev);
+
+	return 0;
+}
+
+static int _netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_addr *addr)
+{
+	struct netif *dev = netdev_findbyname(ifname);
+	if (!dev) {
+		printf("error %s:%d", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	netifapi_netif_set_down(dev);
+
+	ip_addr_t ipaddr, netmask, gw;
+	struct sockaddr_in inaddr;
+
+	inaddr.sin_family = AF_INET;
+	inaddr.sin_port = 0;
+	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
+
+	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&netmask)), (struct sockaddr *)&inaddr);
+	ipaddr = dev->ip_addr;
+	gw = dev->gw;
+	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+
+	netifapi_netif_set_up(dev);
+
+	return 0;
+}
+
+static int _netlib_set_dripv4addr(FAR const char *ifname, FAR const struct in_addr *addr)
+{
+	struct netif *dev = netdev_findbyname(ifname);
+	if (!dev) {
+		printf("error %s:%d", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	netifapi_netif_set_down(dev);
+
+	ip_addr_t ipaddr, netmask, gw;
+	struct sockaddr_in inaddr;
+
+	inaddr.sin_family = AF_INET;
+	inaddr.sin_port = 0;
+	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
+
+	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&gw)), (struct sockaddr *)&inaddr);
+	ipaddr = dev->ip_addr;
+	netmask = dev->netmask;
+	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+
+	netifapi_netif_set_up(dev);
+	return 0;
+}
+
+int _netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
+{
+	struct netif *dev = netdev_findbyname(ifname);
+	if (!dev) {
+		return -1;
+	}
+
+	struct sockaddr_in inaddr;
+
+	ioctl_getipv4addr((struct sockaddr *)&inaddr, ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr)));
+
+	memcpy(addr, inaddr.sin_addr.s_addr, sizeof(struct in_addr));
+
+	return 0;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
  * Name: dhcp_client_start
  ****************************************************************************/
-int dhcp_client_start(const char *intf)
+int netdev_dhcp_client_start(const char *intf)
 {
-	int ret = -1;
-	struct req_lwip_data req;
+	ndbg("[DHCPC] LWIP DHCPC started\n");
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPC] No network interface for dhcpc\n");
+		return -1;
+	}
+	int32_t timeleft = CONFIG_LWIP_DHCPC_TIMEOUT;
+	struct in_addr local_ipaddr;
+	struct in_addr local_netmask;
+	struct in_addr local_gateway;
 
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
-		return ret;
+	struct in_addr ip_check;
+
+	/* Initialize dhcp structure if exists */
+	if (netif_dhcp_data(cur_netif)) {
+		netifapi_dhcp_stop(cur_netif);
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPCSTART;
-	req.host_name = intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return ret;
+	local_ipaddr.s_addr = IPADDR_ANY;
+	local_netmask.s_addr = IPADDR_BROADCAST;
+	local_gateway.s_addr = IPADDR_ANY;
+	DHCPC_SET_IP4ADDR(intf, local_ipaddr, local_netmask, local_gateway);
+	err_t res = netifapi_dhcp_start(cur_netif);
+	if (res) {
+		ndbg("[DHCPC] dhcpc_start failure %d\n", res);
+		return -1;
 	}
-
-	ret = req.req_res;
-	close(sockfd);
-	return ret;
+	ndbg("[DHCPC] dhcpc_start success, waiting IP address (timeout %d secs)\n", timeleft);
+	while (netifapi_dhcp_address_valid(cur_netif) != 0) {
+		usleep(100000);
+		timeleft -= 100;
+		if (timeleft <= 0) {
+			ndbg("[DHCPC] dhcpc_start timeout\n");
+			netifapi_dhcp_stop(cur_netif);
+			return -1;
+		}
+	}
+	int ret = _netlib_get_ipv4addr(intf, &ip_check);
+	if (ret == -1) {
+		ndbg("[DHCPC] fail to get IP address\n");
+		netifapi_dhcp_stop(cur_netif);
+		return -1;
+	}
+	ndbg("[DHCPC] dhcpc_start - got IP address %s\n", inet_ntoa(ip_check));
+	return OK;
 }
 
 /****************************************************************************
  * Name: dhcp_client_stop
  ****************************************************************************/
-void dhcp_client_stop(const char *intf)
+void netdev_dhcp_client_stop(const char *intf)
 {
-	int ret = -1;
-	struct req_lwip_data req;
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
+	struct in_addr in = { .s_addr = INADDR_NONE };
+	DHCPC_SET_IP4ADDR(intf, in, in, in);
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPC] No network interface for dhcpc\n");
 		return;
 	}
-
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPCSTOP;
-	req.host_name = intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return;
-	}
-
-	ret = req.req_res;
-	close(sockfd);
+	netifapi_dhcp_stop(cur_netif);
+	ndbg("[DHCPC] dhcpc_stop -release IP address (lwip)\n");
 	return;
 }
