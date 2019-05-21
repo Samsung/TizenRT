@@ -64,7 +64,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
-
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -371,12 +373,8 @@ int binfmt_exit(FAR struct binary_s *bin);
  *              directory. Otherwise, path must be the absolute path to the
  *              program.
  *
- *   binsize  - The size of ELF binary to be loaded, if this value is less than
- *              will return with invalid parameter.
- *
- *   offset   - The offset from which ELF binary has to be read in MTD partition.
- *
- *   ram_size - The size of RAM partition required to run this app
+ *   load_attr - This structure contains the information that the binary
+ *               to be loaded.
  *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
@@ -384,7 +382,9 @@ int binfmt_exit(FAR struct binary_s *bin);
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
-int load_binary(FAR const char *filename, size_t binsize, size_t offset, size_t ram_size, size_t stack_size, uint8_t priority);
+#ifdef CONFIG_BINARY_MANAGER
+int load_binary(FAR const char *filename, load_attr_t *load_attr);
+#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
