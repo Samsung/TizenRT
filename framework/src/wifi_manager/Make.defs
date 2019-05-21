@@ -20,12 +20,12 @@ ifeq ($(CONFIG_WIFI_MANAGER), y)
 CSRCS += wifi_manager.c 
 CSRCS += wifi_profile.c
 
-ifeq ($(CONFIG_SLSI_WPA_SUPPLICANT), y)
 ifeq ($(CONFIG_LWNL80211), y)
-CSRCS += slsi_wifi_utils_lwnl80211.c
-else
-CSRCS += slsi_wifi_utils.c
+CSRCS += wifi_utils_lwnl80211.c
 endif
+
+ifeq ($(CONFIG_SLSI_WPA_SUPPLICANT), y)
+CSRCS += slsi_wifi_utils.c
 endif
 
 DEPPATH += --dep-path src/wifi_manager

@@ -55,8 +55,23 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/lwnl/lwnl80211.h>
+#include <stdio.h>
 
 void up_netinitialize(void)
 {
-	// TODO
+#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211_RTK
+	FAR struct lwnl80211_lowerhalf_s *rtk_drv_lwnl80211;
+	int ret;
+	rtk_drv_lwnl80211 = rtk_drv_initialize();
+	if (!rtk_drv_lwnl80211) {
+		return;
+	}
+
+	ret = lwnl80211_register(rtk_drv_lwnl80211);
+	if (ret < 0) {
+		printf("Driver registeration is failed\n");
+		return;
+	}
+#endif
 }
