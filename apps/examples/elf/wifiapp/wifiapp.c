@@ -32,6 +32,9 @@
 static void display_test_scenario(void)
 {
 	printf("\nSelect Test Scenario.\n");
+#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
+	printf("\t-Press M or m : Messaging F/W Test\n");	
+#endif
 #ifdef CONFIG_EXAMPLES_RECOVERY_TEST
 	printf("\t-Press R or r : Recovery Test\n");
 #endif
@@ -49,6 +52,12 @@ int main(int argc, char **argv)
 		display_test_scenario();
 		ch = getchar();
 		switch (ch) {
+#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
+		case 'M':
+		case 'm':
+			messaging_test();
+			break;
+#endif
 #ifdef CONFIG_EXAMPLES_RECOVERY_TEST
 		case 'R':
 		case 'r':

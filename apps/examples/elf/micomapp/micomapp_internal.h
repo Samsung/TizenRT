@@ -15,12 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __EXAMPLES_ELF_WIFIAPP_INTERNAL_H
-#define __EXAMPLES_ELF_WIFIAPP_INTERNAL_H
+#ifndef __EXAMPLES_ELF_MICOMAPP_INTERNAL_H
+#define __EXAMPLES_ELF_MICOMAPP_INTERNAL_H
 
-#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
-void recovery_test(void);
-#endif
 #ifdef CONFIG_EXAMPLES_MESSAGING_TEST
 void messaging_test(void);
 #endif
