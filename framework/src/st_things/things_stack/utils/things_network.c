@@ -301,7 +301,8 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 
 void things_wifi_sta_connected(wifi_manager_result_e res)
 {
-	bool is_wifi_retry_connect = false;
+	static bool is_wifi_retry_connect;
+	is_wifi_retry_connect = false;
 	if (res == WIFI_MANAGER_FAIL) {
 		THINGS_LOG_E(TAG, "Failed to connect to the AP");
 
