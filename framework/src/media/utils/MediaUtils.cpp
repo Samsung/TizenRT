@@ -322,14 +322,13 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 				ret = fseek(fp, -1, SEEK_CUR);
 				if (ret != OK) {
 					meddbg("file seek failed errno : %d\n", errno);
-					free(header);
 					return false;
 				}
 			}
 		}
 		if (isHeader) {
 			header = (unsigned char *)malloc(sizeof(unsigned char) * (MP3_HEADER_LENGTH + 1));
-			
+
 			if (header == NULL) {
 				meddbg("malloc failed error\n");
 				return false;
