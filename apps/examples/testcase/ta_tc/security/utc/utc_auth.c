@@ -1131,7 +1131,10 @@ static void utc_auth_generate_dhparams_hnd_n(void)
  */
 static void utc_auth_generate_dhparams_name_n(void)
 {
-	security_dh_param param;
+	security_data G;
+	security_data P;
+	security_data pubkey;
+	security_dh_param param = {DH_1024, &G, &P, &pubkey};
 	security_error res = auth_generate_dhparams(g_hnd, NULL, &param);
 
 	TC_ASSERT_EQ("auth_generate_dhparams_name_n", res, SECURITY_INVALID_KEY_INDEX);
@@ -1270,7 +1273,10 @@ static void utc_auth_compute_dhparams_secret_n(void)
  */
 static void utc_auth_generate_ecdhkey_p(void)
 {
-	security_ecdh_param param;
+	security_ecdsa_mode curve = ECDSA_UNKNOWN;
+	security_data px;
+	security_data py;
+	security_ecdh_param param = {curve, &px, &py};
 	security_error res = auth_generate_ecdhkey(g_hnd, UTC_CRYPTO_KEY_NAME, &param);
 
 	TC_ASSERT_EQ("auth_generate_ecdhkey_p", res, SECURITY_OK);
@@ -1287,7 +1293,10 @@ static void utc_auth_generate_ecdhkey_p(void)
  */
 static void utc_auth_generate_ecdhkey_hnd_n(void)
 {
-	security_ecdh_param param;
+	security_ecdsa_mode curve = ECDSA_UNKNOWN;
+	security_data px;
+	security_data py;
+	security_ecdh_param param = {curve, &px, &py};
 	security_error res = auth_generate_ecdhkey(NULL, UTC_CRYPTO_KEY_NAME, &param);
 
 	TC_ASSERT_EQ("auth_generate_ecdhkey_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
@@ -1304,7 +1313,10 @@ static void utc_auth_generate_ecdhkey_hnd_n(void)
  */
 static void utc_auth_generate_ecdhkey_name_n(void)
 {
-	security_ecdh_param param;
+	security_ecdsa_mode curve = ECDSA_UNKNOWN;
+	security_data px;
+	security_data py;
+	security_ecdh_param param = {curve, &px, &py};
 	security_error res = auth_generate_ecdhkey(g_hnd, NULL, &param);
 
 	TC_ASSERT_EQ("auth_generate_ecdhkey_name_n", res, SECURITY_INVALID_KEY_INDEX);

@@ -69,7 +69,7 @@ security_error auth_generate_certificate(security_handle hnd, const char *cert_n
 	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
 	//TODO
 
-	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
+	SECAPI_RETURN(SECURITY_OK);
 }
 
 security_error auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert)
@@ -477,36 +477,28 @@ security_error auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name,
 	hal_data key = {ctx->data1, ctx->dlen1, ctx->data2, ctx->dlen2};
 
 	SECAPI_CALL(sl_get_key(ctx->sl_hnd, key_type, ecdh_idx, &key, &hres));
+	SECAPI_LOG(SECAPI_TAG "get key(%d)\n", hres);
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);
 	}
+	SECAPI_LOG(SECAPI_TAG "data len(%d) (%d)\n ", key.data_len, key.priv_len);
 
-	params->pubkey_x = (security_data *)malloc(sizeof(security_data));
-	if (!params->pubkey_x) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
-	params->pubkey_y = (security_data *)malloc(sizeof(security_data));
-	if (!params->pubkey_y) {
-		free(params->pubkey_x);
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
-	params->pubkey_x->data = (unsigned char *)malloc(key.data_len);
-	if (!params->pubkey_x->data) {
-		free(params->pubkey_x);
-		free(params->pubkey_y);
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
-	params->pubkey_y->data = (unsigned char *)malloc(key.priv_len);
-	if (!params->pubkey_y->data) {
-		free(params->pubkey_x);
-		free(params->pubkey_y);
-		free(params->pubkey_x->data);
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	if (key.data_len > 0) {
+		params->pubkey_x->data = (unsigned char *)malloc(key.data_len);
+		if (!params->pubkey_x->data) {
+			SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+		}
+		SECAPI_DATA_DCOPY(key, params->pubkey_x);
 	}
 
-	SECAPI_DATA_DCOPY(key, params->pubkey_x);
-	SECAPI_PRIV_DCOPY(key, params->pubkey_y);
-
+	if (key.priv_len > 0) {
+		params->pubkey_y->data = (unsigned char *)malloc(key.priv_len);
+		if (!params->pubkey_y->data) {
+			free(params->pubkey_x->data);
+			SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+		}
+		SECAPI_PRIV_DCOPY(key, params->pubkey_y);
+	}
 	SECAPI_RETURN(SECURITY_OK);
 }
 
