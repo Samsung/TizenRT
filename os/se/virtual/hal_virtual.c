@@ -194,6 +194,7 @@ int virtual_hal_get_key(_IN_ hal_key_type type, _IN_ uint32_t key_idx, _OUT_ hal
 		V_COPY_DATA(key, g_virtual_sym);
 		key->priv_len = 0;
 	}
+	VH_LOG("key(%p), len(%d)\n", key->data, key->data_len);
 
 	return 0;
 }
