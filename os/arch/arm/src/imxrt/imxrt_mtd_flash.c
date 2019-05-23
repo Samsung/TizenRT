@@ -353,17 +353,16 @@ static inline void imxrt_bytewrite(struct imxrt_dev_s *priv, FAR const uint8_t *
  * Name: imxrt_erase
  ************************************************************************************/
 
-static int imxrt_erase(FAR struct mtd_dev_s *dev, off_t startsector, size_t nsectors)
+static int imxrt_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
-	size_t sectors_erased = 0;
+	size_t blocks_erased = 0;
 
-	#ifdef CONSIDER_IMPLEMENT
-	fdbg("startsector: %d nsectors: %d\n", (long)startsector, (int)nsectors);
+	fvdbg("priv: %p, startblock: %d, nblocks: %d\n", priv, startblock, nblocks);
 
 	/* Lock access to the SPI bus until we complete the erase */
 
-	while (sectors_erased < nsectors) {
+	while (blocks_erased < nblocks) {
 #ifdef CONFIG_IMXRT_SUBSECTOR_ERASE
 		size_t sectorboundry;
 		size_t blkper;
@@ -402,12 +401,12 @@ static int imxrt_erase(FAR struct mtd_dev_s *dev, off_t startsector, size_t nsec
 
 		/* Not using sub-sector erase.  Erase each full sector */
 
-		imxrt_sectorerase(priv, startsector + sectors_erased);
-		sectors_erased++;
+		imxrt_sectorerase(priv, startblock + blocks_erased);
+		blocks_erased++;
 	}
-	#endif
-	
-	return (int)sectors_erased;
+	fvdbg("erased blocks = %d\n", blocks_erased);
+
+	return blocks_erased == nblocks ? nblocks : EIO;
 }
 
 /************************************************************************************
