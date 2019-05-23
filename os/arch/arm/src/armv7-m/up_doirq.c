@@ -73,7 +73,9 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
+extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -88,9 +90,30 @@
 
 uint32_t *up_doirq(int irq, uint32_t *regs)
 {
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
+	irqstate_t flags;
+#endif
 	board_led_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
 	PANIC();
+#else
+
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
+	/* Current regs non-zero indicates that we are processing an interrupt;
+	 * regs holds the state of the interrupted logic; current_regs holds the
+	 * state of the interrupted user task.  current_regs should, therefor,
+	 * only be modified for outermost interrupt handler (when g_nestlevel == 0)
+	 */
+
+	flags = irqsave();
+
+	if (g_nestlevel == 0) {
+		current_regs = regs;
+	}
+
+	g_nestlevel++;
+
+	irqrestore(flags);
 #else
 	uint32_t *savestate;
 
@@ -101,22 +124,41 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 * that purpose as implemented here because only the outermost nested
 	 * interrupt can result in a context switch (it can probably be deleted).
 	 */
-
-	/* Current regs non-zero indicates that we are processing an interrupt;
-	 * current_regs is also used to manage interrupt level context switches.
-	 */
-
 	savestate = (uint32_t *)current_regs;
 	current_regs = regs;
-
 	/* Acknowledge the interrupt */
 
 	up_ack_irq(irq);
+#endif
 
 	/* Deliver the IRQ */
 
 	irq_dispatch(irq, regs);
 
+#if CONFIG_ARCH_INTERRUPTSTACK > 7
+	/* Context switches are indicated by the returned value of this function.
+	 * If a context switch occurred while processing the interrupt then
+	 * current_regs may have change value.  If we return any value different
+	 * from the input regs, then the lower level will know that a context
+	 * switch occurred during interrupt processing.  Context switching should
+	 * only be performed when the outermost interrupt handler returns.
+	 */
+
+	flags = irqsave();
+
+	g_nestlevel--;
+
+	if (g_nestlevel == 0) {
+		regs = (uint32_t*)current_regs;
+		current_regs = NULL;
+	}
+
+	/* Note that interrupts are left disabled.  This needed if context switch
+	 * will be performed.  But, any case, the correct interrupt state should
+	 * be restored when returning from the interrupt.
+	 */
+
+#else
 	/* If a context switch occurred while processing the interrupt then
 	 * current_regs may have change value.  If we return any value different
 	 * from the input regs, then the lower level will know that a context
@@ -131,6 +173,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 */
 
 	current_regs = savestate;
+#endif
 #endif
 	board_led_off(LED_INIRQ);
 	return regs;

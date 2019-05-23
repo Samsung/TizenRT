@@ -13,6 +13,7 @@ config ARCH_ARM
 	select ARCH_HAVE_VFORK
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_NESTED_INTERRUPT
 	---help---
 		The ARM architectures
 
@@ -570,6 +571,20 @@ config ARCH_INTERRUPTSTACK
 		will be the size of the interrupt stack in bytes.  If not defined (or
 		defined to be zero), the user task stacks will be used during interrupt
 		handling.
+
+config ARCH_HAVE_NESTED_INTERRUPT
+	bool
+	default n
+
+if ARCH_INTERRUPTSTACK > 7
+config ARCH_NESTED_INTERRUPT
+	bool "Nested interrupt support"
+	depends on ARCH_HAVE_NESTED_INTERRUPT
+	default n
+	---help---
+		Enables the nested interrupt support. If defined, higher priority interrupt
+		can pre-empt the lower priority interrupt.
+endif
 
 config ARCH_HAVE_HIPRI_INTERRUPT
 	bool
