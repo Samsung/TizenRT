@@ -155,18 +155,17 @@ int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 
 int mq_close(mqd_t mqdes)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)sched_self();
+	FAR struct tcb_s *rtcb;
 	int ret;
+
+	rtcb = (FAR struct tcb_s *)sched_self();
+	DEBUGASSERT(mqdes != NULL && rtcb != NULL && rtcb->group != NULL);
 
 	/* Lock the scheduler to prevent any asynchrounous task delete operation
 	* (unlikely).
 	*/
 
 	sched_lock();
-
-	rtcb = (FAR struct tcb_s *)sched_self();
-	DEBUGASSERT(mqdes != NULL && rtcb != NULL && rtcb->group != NULL);
-
 	ret = mq_close_group(mqdes, rtcb->group);
 	sched_unlock();
 
