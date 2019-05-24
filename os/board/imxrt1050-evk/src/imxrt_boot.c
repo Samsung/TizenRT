@@ -56,32 +56,84 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #include <tinyara/board.h>
 #include <tinyara/pwm.h>
 #include <tinyara/gpio.h>
 #include <tinyara/spi/spi.h>
+#include <tinyara/analog/adc.h>
 
 #include <arch/board/board.h>
-#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-#include "chip/imxrt102x_config.h"
-#include "imxrt1020-evk.h"
-#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-#include "chip/imxrt105x_config.h"
-#include "imxrt1050-evk.h"
-#else
-#error Unrecognized i.MX RT architecture
-#endif
 
+#include "imxrt1050-evk.h"
 #include "imxrt_start.h"
 #include "imxrt_pwm.h"
 #include "imxrt_flash.h"
- #include "imxrt_gpio.h"
-#include <tinyara/gpio.h>
+#include "imxrt_gpio.h"
 #include "imxrt_lpspi.h"
-
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
+
+#ifdef CONFIG_ANALOG
+#include "imxrt_adc.h"
+#endif
+
+
+
+/****************************************************************************
+ * Name: imxrt_board_adc_initialize
+ *
+ * Description:
+ *   Initialize the ADC. As the pins of each ADC channel are exported through
+ *   configurable GPIO and it is board-specific, information on available
+ *   ADC channels should be passed to imxrt_adc_initialize().
+ *
+ * Input Parameters:
+ *   chanlist  - The list of channels
+ *   cchannels - Number of channels
+ *
+ * Returned Value:
+ *   Valid ADC device structure reference on succcess; a NULL on failure
+ *
+ ****************************************************************************/
+void imxrt_board_adc_initialize(void)
+{
+#ifdef CONFIG_ANALOG
+	static bool adc_initialized = false;
+	struct adc_dev_s *adc;
+	const uint8_t chanlist[] = {
+		GPIO_PIN16,   //A5
+		GPIO_PIN17,   //A4
+		GPIO_PIN20,   //A3
+		GPIO_PIN11,   //A2
+		GPIO_PIN27,   //A1
+		GPIO_PIN26    //A0
+	};
+
+	if (!adc_initialized) {
+		adc = imxrt_adc_initialize(chanlist, sizeof(chanlist) / sizeof(uint8_t));
+		if (NULL != adc) {
+			lldbg("VERVOSE: Success to get the imxrt ADC driver\n");
+		} else {
+			lldbg("ERROR: up_spiinitialize failed\n");
+		}
+
+		/* Register the ADC driver at "/dev/adc0" */
+		int ret = adc_register("/dev/adc0", adc);
+		if (ret < 0) {
+			return;
+		}
+
+		/* Now we are initialized */
+		adc_initialized = true;
+	}
+#endif
+}
 
 /****************************************************************************
  * Name: board_gpio_initialize
@@ -220,5 +272,7 @@ void board_initialize(void)
 	imxrt_pwm_initialize();
 
 	imxrt_spi_initialize();
+
+	imxrt_board_adc_initialize();
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */

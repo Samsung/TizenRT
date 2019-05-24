@@ -122,6 +122,11 @@ config IMXRT_EDMA
 	default n
 	select ARCH_DMA
 
+config IMXRT_ADC
+	bool "ADC"
+	default n
+	select ADC
+
 config IMXRT_USBHOST
 	bool "USB host"
 	select USBHOST
