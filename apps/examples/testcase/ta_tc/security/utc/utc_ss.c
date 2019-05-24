@@ -260,7 +260,7 @@ static void utc_ss_get_size_secure_storage_name_n(void)
 	unsigned int size = 0;
 	security_error res = ss_get_size_secure_storage(g_hnd, NULL, &size);
 
-	TC_ASSERT_EQ("ss_get_size_secure_storage_name_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_ASSERT_EQ("ss_get_size_secure_storage_name_n", res, SECURITY_INVALID_KEY_INDEX);
 	TC_SUCCESS_RESULT();
 }
 

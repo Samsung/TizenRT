@@ -33,7 +33,7 @@
 #ifndef __ESP_MESH_INTERNAL_H__
 #define __ESP_MESH_INTERNAL_H__
 
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
 #include "esp_wifi_internal.h"

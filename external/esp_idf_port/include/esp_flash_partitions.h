@@ -32,7 +32,7 @@
 #ifndef __ESP_FLASH_PARTITIONS_H
 #define __ESP_FLASH_PARTITIONS_H
 
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "esp_flash_data_types.h"
 #include <stdbool.h>
 

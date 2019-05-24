@@ -77,7 +77,7 @@
 
 #include "chip/dport_access.h"
 
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "rom/rtc.h"
 #include "esp_phy_init.h"
 #include "esp_system.h"

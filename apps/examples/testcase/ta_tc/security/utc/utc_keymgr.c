@@ -268,7 +268,7 @@ static void utc_keymgr_get_key_p(void)
 	}
 
 	for (i = 0; i < sizeof(g_asym_key_type_table)/sizeof(security_key_type); i++) {
-		security_error res = keymgr_get_key(g_hnd, g_sym_key_type_table[i], UTC_CRYPTO_KEY_NAME, &pubkey, &privkey);
+		security_error res = keymgr_get_key(g_hnd, g_asym_key_type_table[i], UTC_CRYPTO_KEY_NAME, &pubkey, &privkey);
 		TC_ASSERT_EQ("keymgr_get_key_p", res, SECURITY_OK);
 		TC_SUCCESS_RESULT();
 	}
@@ -366,9 +366,10 @@ static void utc_keymgr_remove_key_p(void)
 	}
 
 	for (i = 0; i < sizeof(g_asym_key_type_table)/sizeof(security_key_type); i++) {
-		security_error res = keymgr_get_key(g_hnd, g_sym_key_type_table[i], UTC_CRYPTO_KEY_NAME, &pubkey, &privkey);
+		security_error res = keymgr_set_key(g_hnd, g_asym_key_type_table[i], UTC_CRYPTO_KEY_NAME, &pubkey, &privkey);
 		TC_ASSERT_EQ("keymgr_remove_key_p", res, SECURITY_OK);
-		res = keymgr_remove_key(g_hnd, g_sym_key_type_table[i], UTC_CRYPTO_KEY_NAME);
+
+		res = keymgr_remove_key(g_hnd, g_asym_key_type_table[i], UTC_CRYPTO_KEY_NAME);
 		TC_ASSERT_EQ("keymgr_remove_key_p", res, SECURITY_OK);
 		TC_SUCCESS_RESULT();
 	}

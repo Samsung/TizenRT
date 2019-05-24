@@ -16,8 +16,9 @@
 #include "rtk_lwip_netconf.h"
 #include "ip_addr.h"
 #include "ip4_addr.h"
-#include "rtk_wifi_utils.h"
 #include "wifi_common.h"
+#include "rtk_wifi_utils.h"
+
 #include <debug.h>
 
 //#include <wlan/wlan_test_inc.h>

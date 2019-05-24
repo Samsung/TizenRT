@@ -145,14 +145,6 @@ typedef struct {
 /******************************************************
  *               Function Declarations
  ******************************************************/
-/**
- * @brief  Initialize Realtek WiFi API System.
- * 			- Initialize the required parts of the software platform.
- *   			i.e. worker, event registering, semaphore, etc.
- * 			- Initialize the RTW API thread which handles the asynchronous event.
- * @return RTW_SUCCESS if initialization is successful, RTW_ERROR otherwise
- */
-int wifi_manager_init(void);
 
 /**
  * @brief  Join a Wi-Fi network.

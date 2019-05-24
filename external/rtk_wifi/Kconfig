@@ -6,6 +6,7 @@ config RTK_WIFI
 	bool "REALTEK Wi-Fi API"
 	default n
 	select SELECT_RTK_WLAN
+	depends on !LWNL80211_RTK
 	---help---
 		Enable support for the REALTEK WI-Fi Networking API.
 

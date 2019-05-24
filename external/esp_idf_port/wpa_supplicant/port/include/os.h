@@ -36,7 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 #include "rom/ets_sys.h"
 
 typedef long os_time_t;

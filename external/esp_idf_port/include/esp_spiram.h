@@ -35,7 +35,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.

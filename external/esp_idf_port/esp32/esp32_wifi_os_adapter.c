@@ -630,7 +630,7 @@ uint32_t IRAM_ATTR esp_get_free_heap_size(void)
 
 static void *IRAM_ATTR malloc_internal_wrapper(size_t size)
 {
-#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_NHEAPS > 1)
 	return malloc_at(0, size);
 #else
 	return malloc(size);
@@ -644,7 +644,7 @@ static void *IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
 
 static void *IRAM_ATTR calloc_internal_wrapper(size_t n, size_t size)
 {
-#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_NHEAPS > 1)
 	return calloc_at(0, n, size);
 #else
 	return calloc(n, size);
@@ -653,7 +653,7 @@ static void *IRAM_ATTR calloc_internal_wrapper(size_t n, size_t size)
 
 static void *IRAM_ATTR zalloc_internal_wrapper(size_t size)
 {
-#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_REGIONS > 1)
+#if (defined(CONFIG_SPIRAM_SUPPORT) && CONFIG_MM_NHEAPS > 1)
 	return zalloc_at(0, size);
 #else
 	return zalloc(size);

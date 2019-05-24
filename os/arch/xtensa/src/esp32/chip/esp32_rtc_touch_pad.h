@@ -35,9 +35,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-//#include "esp_intr.h"
-//#include "esp_err.h"
-//#include "esp_intr_alloc.h"
+
 #include <arch/chip/touch_channel.h>
 #include "chip/esp32_rtc_periph.h"
 

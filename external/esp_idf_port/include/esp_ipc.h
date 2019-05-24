@@ -33,7 +33,7 @@
 #ifndef __ESP_IPC_H__
 #define __ESP_IPC_H__
 
-#include <esp_err.h>
+#include <arch/chip/esp_err.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -2620,7 +2620,7 @@ static void tc_libc_math_log2f(void)
  */
 static void tc_libc_math_log2l(void)
 {
-	const long double in_val[] ={ 1024, 5.5, -10.0, 0.95, 0, NAN, INFINITY, -INFINITY };
+	const long double in_val[] = { 1024, 5.5, -10.0, 0.95, 0, NAN, INFINITY, -INFINITY };
 	const long double sol_val[] = { 10.0, 2.4594316186373, NAN, -0.074000597000122, -INFINITY, NAN, INFINITY, NAN };
 	long double ret_val[SIZE(sol_val, long double)];
 	int log2l_idx;
@@ -4213,21 +4213,33 @@ static void tc_libc_math_ynf(void)
  */
 static void tc_libc_math_gamma(void)
 {
-	double value;
-	double result;
-
-	value = 2.0;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, 1);
-
-	value = 3.0;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, 2);
-
-	value = INFINITY;
-	result = gamma(value);
-	TC_ASSERT_EQ("gamma", result, (double)INFINITY);
-
+	double in_val[13] = { 2.0, 3.0, INFINITY, 256.5,
+						1.0e-20, -257.5, -256.5, -1.0,
+						-1.5, 8.1, 8.3, 8.8, 9.3 };
+	double sol_val[13] = { 1, 2, INFINITY, 0x1p1023 * 256.5,
+						1 / 1.0e-20, ZERO, -ZERO, NAN,
+						2.363271801, 6169.5936974846, 9281.3925257465,
+						26339.986354509, 77035.557963696 };
+	int digit = 1e5;
+	int gamma_idx;
+	/**
+	 * gamma value comparison
+	 */
+	for (gamma_idx = 0; gamma_idx < SIZE(in_val, double); gamma_idx++) {
+		if (gamma_idx >= 8) {
+			/**
+			 * Compare to the fifth decimal place (digit)
+			 */
+			TC_ASSERT_EQ("gamma", floor(gamma(in_val[gamma_idx]) * digit), floor(sol_val[gamma_idx] * digit));
+		} else if (gamma_idx == 7) {
+			/**
+			 * Compare to NAN
+			 */
+			TC_ASSERT_EQ("gamma", isnan(gamma(in_val[gamma_idx])), isnan(sol_val[gamma_idx]));
+		} else {
+			TC_ASSERT_EQ("gamma", gamma(in_val[gamma_idx]), sol_val[gamma_idx]);
+		}
+	}
 	TC_SUCCESS_RESULT();
 }
 

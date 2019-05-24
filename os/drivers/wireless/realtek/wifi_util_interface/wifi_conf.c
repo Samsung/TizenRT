@@ -934,7 +934,8 @@ int wifi_get_mac_address(char * mac)
 	rtw_memset(buf, 0, sizeof(buf));
 	rtw_memcpy(buf, "read_mac", 8);
 	ret = wext_private_command_with_retval(WLAN0_NAME, buf, buf, 32);
-	strcpy(mac, buf);
+	strncpy(mac, buf, 17);
+	mac[17] = '\0';;
 	return ret;
 }
 
@@ -1268,6 +1269,9 @@ int wifi_off(void)
 	}
 
 	wifi_mode = RTW_MODE_NONE;
+
+	g_link_up = NULL;
+	g_link_down = NULL;
 
 #if CONFIG_INIC_EN
 	inic_stop();
