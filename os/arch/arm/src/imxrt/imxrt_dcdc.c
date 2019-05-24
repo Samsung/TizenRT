@@ -108,19 +108,19 @@ void imxrt_dcdc_setclocksource(DCDC_Type *base, dcdc_clock_source_t clockSource)
 			~(DCDC_REG0_XTAL_24M_OK_MASK | DCDC_REG0_DISABLE_AUTO_CLK_SWITCH_MASK | DCDC_REG0_SEL_CLK_MASK |
 				DCDC_REG0_PWD_OSC_INT_MASK);
 	switch (clockSource) {
-		case kDCDC_ClockInternalOsc:
-			tmp32 |= DCDC_REG0_DISABLE_AUTO_CLK_SWITCH_MASK;
-			break;
-		case kDCDC_ClockExternalOsc:
-			/* Choose the external clock and disable the internal clock. */
-			tmp32 |= DCDC_REG0_DISABLE_AUTO_CLK_SWITCH_MASK | DCDC_REG0_SEL_CLK_MASK | DCDC_REG0_PWD_OSC_INT_MASK;
-			break;
-		case kDCDC_ClockAutoSwitch:
-			/* Set to switch from internal ring osc to xtal 24M if auto mode is enabled. */
-			tmp32 |= DCDC_REG0_XTAL_24M_OK_MASK;
-			break;
-		default:
-			break;
+	case kDCDC_ClockInternalOsc:
+		tmp32 |= DCDC_REG0_DISABLE_AUTO_CLK_SWITCH_MASK;
+		break;
+	case kDCDC_ClockExternalOsc:
+		/* Choose the external clock and disable the internal clock. */
+		tmp32 |= DCDC_REG0_DISABLE_AUTO_CLK_SWITCH_MASK | DCDC_REG0_SEL_CLK_MASK | DCDC_REG0_PWD_OSC_INT_MASK;
+		break;
+	case kDCDC_ClockAutoSwitch:
+		/* Set to switch from internal ring osc to xtal 24M if auto mode is enabled. */
+		tmp32 |= DCDC_REG0_XTAL_24M_OK_MASK;
+		break;
+	default:
+		break;
 	}
 	base->REG0 = tmp32;
 }
@@ -168,36 +168,36 @@ void imxrt_dcdc_getdefaultdetectionconfig(dcdc_detection_config_t *config)
 */
 void imxrt_dcdc_setdetectionconfig(DCDC_Type *base, const dcdc_detection_config_t *config)
 {
-    assert(NULL != config);
+	assert(NULL != config);
 
-    uint32_t tmp32;
-    /* Configure the DCDC_REG0 register. */
-    tmp32 = base->REG0 &
-            ~(DCDC_REG0_XTALOK_DISABLE_MASK | DCDC_REG0_PWD_HIGH_VOLT_DET_MASK | DCDC_REG0_PWD_CMP_BATT_DET_MASK |
-              DCDC_REG0_PWD_OVERCUR_DET_MASK | DCDC_REG0_PWD_CUR_SNS_CMP_MASK | DCDC_REG0_PWD_ZCD_MASK |
-              DCDC_REG0_CUR_SNS_THRSH_MASK | DCDC_REG0_OVERCUR_TRIG_ADJ_MASK);
+	uint32_t tmp32;
+	/* Configure the DCDC_REG0 register. */
+	tmp32 = base->REG0 &
+				~(DCDC_REG0_XTALOK_DISABLE_MASK | DCDC_REG0_PWD_HIGH_VOLT_DET_MASK | DCDC_REG0_PWD_CMP_BATT_DET_MASK |
+				DCDC_REG0_PWD_OVERCUR_DET_MASK | DCDC_REG0_PWD_CUR_SNS_CMP_MASK | DCDC_REG0_PWD_ZCD_MASK |
+				DCDC_REG0_CUR_SNS_THRSH_MASK | DCDC_REG0_OVERCUR_TRIG_ADJ_MASK);
 
-    tmp32 |= DCDC_REG0_CUR_SNS_THRSH(config->PeakCurrentThreshold) |
-             DCDC_REG0_OVERCUR_TRIG_ADJ(config->OverCurrentThreshold);
-    if (false == config->enableXtalokDetection) {
-        tmp32 |= DCDC_REG0_XTALOK_DISABLE_MASK;
-    }
-    if (config->powerDownOverVoltageDetection) {
-        tmp32 |= DCDC_REG0_PWD_HIGH_VOLT_DET_MASK;
-    }
-    if (config->powerDownLowVlotageDetection) {
-        tmp32 |= DCDC_REG0_PWD_CMP_BATT_DET_MASK;
-    }
-    if (config->powerDownOverCurrentDetection) {
-        tmp32 |= DCDC_REG0_PWD_OVERCUR_DET_MASK;
-    }
-    if (config->powerDownPeakCurrentDetection) {
-        tmp32 |= DCDC_REG0_PWD_CUR_SNS_CMP_MASK;
-    }
-    if (config->powerDownZeroCrossDetection) {
-        tmp32 |= DCDC_REG0_PWD_ZCD_MASK;
-    }
-    base->REG0 = tmp32;
+	tmp32 |= DCDC_REG0_CUR_SNS_THRSH(config->PeakCurrentThreshold) |
+				DCDC_REG0_OVERCUR_TRIG_ADJ(config->OverCurrentThreshold);
+	if (false == config->enableXtalokDetection) {
+		tmp32 |= DCDC_REG0_XTALOK_DISABLE_MASK;
+	}
+	if (config->powerDownOverVoltageDetection) {
+		tmp32 |= DCDC_REG0_PWD_HIGH_VOLT_DET_MASK;
+	}
+	if (config->powerDownLowVlotageDetection) {
+		tmp32 |= DCDC_REG0_PWD_CMP_BATT_DET_MASK;
+	}
+	if (config->powerDownOverCurrentDetection) {
+		tmp32 |= DCDC_REG0_PWD_OVERCUR_DET_MASK;
+	}
+	if (config->powerDownPeakCurrentDetection) {
+		tmp32 |= DCDC_REG0_PWD_CUR_SNS_CMP_MASK;
+	}
+	if (config->powerDownZeroCrossDetection) {
+		tmp32 |= DCDC_REG0_PWD_ZCD_MASK;
+	}
+	base->REG0 = tmp32;
 }
 
 /*!
@@ -416,7 +416,7 @@ void imxrt_dcdc_adjusttargetvoltage(DCDC_Type *base, uint32_t VDDRun, uint32_t V
 * param base DCDC peripheral base address.
 * param config Pointer to configuration structure. See to "dcdc_internal_regulator_config_t".
 */
-void DCDC_SetInternalRegulatorConfig(DCDC_Type *base, const dcdc_internal_regulator_config_t *config)
+void imxrt_dcdc_setinternalregulatorconfig(DCDC_Type *base, const dcdc_internal_regulator_config_t *config)
 {
 	assert(NULL != config);
 
