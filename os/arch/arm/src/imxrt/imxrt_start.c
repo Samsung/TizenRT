@@ -320,8 +320,13 @@ static void go_os_start(void *pv, unsigned int nbytes)
 static void imxrt_configure_dtcm(void)
 {
 	/* Configure FlexRAM banks for DTCM and 64KB OCRAM */
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	/* It is mandatory to have at least 32KB as OCRAM to boot the board */
+	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x00005aaa);
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 	/* It is mandatory to have at least 64KB as OCRAM to boot the board */
 	IOMUXC_GPR->GPR17 |= IOMUXC_GPR_GPR17_FLEXRAM_BANK_CFG(0x55aaaaaa);
+#endif
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL(0x1);
 
 	/* Configure and enable DTCM for 256KB */
