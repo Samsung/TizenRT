@@ -69,6 +69,10 @@
 #include <tinyara/debug/sysdbg.h>
 #endif
 
+#ifdef CONFIG_ARMV7M_MPU
+#include "mpu.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -156,6 +160,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 #ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */
 			save_task_scheduling_status(rtcb);
+#endif
+
+			/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV7M_MPU
+			up_set_mpu_app_configuration(rtcb);
 #endif
 
 			/* Then switch contexts */
