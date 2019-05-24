@@ -56,29 +56,21 @@
 
 #include <tinyara/config.h>
 
+#include <stdint.h>
+#include <stdio.h>
+
 #include <tinyara/board.h>
 #include <tinyara/pwm.h>
 #include <tinyara/gpio.h>
 #include <tinyara/spi/spi.h>
-
 #include <arch/board/board.h>
-#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-#include "chip/imxrt102x_config.h"
-#include "imxrt1020-evk.h"
-#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-#include "chip/imxrt105x_config.h"
-#include "imxrt1050-evk.h"
-#else
-#error Unrecognized i.MX RT architecture
-#endif
 
+#include "imxrt1050-evk.h"
 #include "imxrt_start.h"
 #include "imxrt_pwm.h"
 #include "imxrt_flash.h"
- #include "imxrt_gpio.h"
-#include <tinyara/gpio.h>
+#include "imxrt_gpio.h"
 #include "imxrt_lpspi.h"
-
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
