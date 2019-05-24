@@ -150,6 +150,9 @@ EXTERN sq_queue_t g_desfree;
  * Public Function Prototypes
  ****************************************************************************/
 
+struct tcb_s;        /* Forward reference */
+struct task_group_s; /* Forward reference */
+
 /* Functions defined in mq_initialize.c ************************************/
 
 void weak_function mq_initialize(void);
@@ -177,7 +180,6 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 
 /* mq_release.c ************************************************************/
 
-struct task_group_s;			/* Forward reference */
 void mq_release(FAR struct task_group_s *group);
 
 /* mq_recover.c ************************************************************/

@@ -18,7 +18,7 @@
 /****************************************************************************
  *  kernel/mqueue/mq_desclose.c
  *
- *   Copyright (C) 2007, 2009, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2013-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 #include <assert.h>
 #include <queue.h>
 
+#include <tinyara/sched.h>
 #include <tinyara/mqueue.h>
 
 #include "mqueue/mqueue.h"
@@ -103,7 +104,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mq_close
+ * Name: mq_desclose_group
  *
  * Description:
  *   This function performs the portion of the mq_close operation related
@@ -111,6 +112,7 @@
  *
  * Parameters:
  *   mqdes - Message queue descriptor.
+ *   group - Group that has the open descriptor.
  *
  * Return Value:
  *   None.
@@ -120,13 +122,11 @@
  *
  ****************************************************************************/
 
-void mq_desclose(mqd_t mqdes)
+void mq_desclose_group(mqd_t mqdes, FAR struct task_group_s *group)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)sched_self();
-	FAR struct task_group_s *group = rtcb->group;
 	FAR struct mqueue_inode_s *msgq;
 
-	DEBUGASSERT(mqdes && group);
+	DEBUGASSERT(mqdes != NULL && group != NULL);
 
 	/* Remove the message descriptor from the current task's list of message
 	 * descriptors.
