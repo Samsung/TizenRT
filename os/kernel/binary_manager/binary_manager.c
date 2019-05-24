@@ -25,7 +25,9 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <string.h>
+#if !defined(CONFIG_DISABLE_SIGNALS)
 #include <signal.h>
+#endif
 #include <stdlib.h>
 #include <tinyara/binary_manager.h>
 
@@ -115,7 +117,9 @@ int binary_manager(int argc, char *argv[])
 {
 	int ret;
 	int nbytes;
+#if !defined(CONFIG_DISABLE_SIGNALS)
 	sigset_t sigset;
+#endif
 	char type_str[1];
 	char data_str[1];
 	char *loading_data[LOADTHD_ARGC + 1];
@@ -128,10 +132,12 @@ int binary_manager(int argc, char *argv[])
 
 	bmvdbg("Binary Manager STARTED\n");
 
+#if !defined(CONFIG_DISABLE_SIGNALS)
 	/* Unset all signals except for SIGKILL */
 	sigfillset(&sigset);
 	sigdelset(&sigset, SIGKILL);
 	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
+#endif
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
