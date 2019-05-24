@@ -205,14 +205,15 @@ exception_common:
 	stmdb	sp!, {r2-r11}			/* Save the remaining registers plus the SP value */
 #endif
 
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
+#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
+
 	/* Disable interrupts, select the stack to use for interrupt handling
 	 * and call up_doirq to handle the interrupt
 	 */
 
 	cpsid	i						/* Disable further interrupts */
 
-#else
+#elif !defined(CONFIG_ARCH_NESTED_INTERRUPT)
 	/* Set the BASEPRI register so that further normal interrupts will be
 	 * masked.  Nested, high priority may still occur, however.
 	 *
@@ -240,13 +241,17 @@ exception_common:
 	mov		r4, sp
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
-	/* If CONFIG_ARCH_INTERRUPTSTACK is defined, we will set the MSP to use
-	 * a special special interrupt stack pointer.  The way that this is done
-	 * here prohibits nested interrupts without some additional logic!
-	 */
 
-	setintstack	r2, r3
+	/* If g_nestlevel is zero then behave as normal, switching from the user
+	 * to the interrupt stack; if g_nestlevel is greater than zero, then do
+	 * not switch stacks. In this latter case, we are already using the interrupt stack */
 
+	ldr		r5, =g_nestlevel
+	ldr		r6, [r5]
+	cmp		r6, #0
+	bne		9f
+	ldr		sp, =g_intstackbase
+9:
 #else
 	/* Otherwise, we will re-use the interrupted thread's stack.  That may
 	 * mean using either MSP or PSP stack for interrupt level processing (in
@@ -370,7 +375,7 @@ exception_common:
 
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 	msr		basepri, r3				/* Restore interrupts priority masking */
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
+#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
 	cpsie	i						/* Re-enable interrupts */
 #endif
 
@@ -397,11 +402,16 @@ exception_common:
 	.bss
 	.global	g_intstackalloc
 	.global	g_intstackbase
+	.global	g_nestlevel
 	.align	8
 g_intstackalloc:
 	.skip	((CONFIG_ARCH_INTERRUPTSTACK + 4) & ~7)
 g_intstackbase:
 	.size	g_intstackalloc, .-g_intstackalloc
+	.skip 	4
+g_nestlevel:
+	.skip   4
+	.size   g_nestlevel, 4
 #endif
 
 	.end
