@@ -86,7 +86,11 @@ void imxrt_gpt_init(GPT_Type *base, const gpt_config_t *initConfig)
 		(initConfig->enableRunInDbg ? GPT_CR_DBGEN_MASK : 0U) | (initConfig->enableMode ? GPT_CR_ENMOD_MASK : 0U);
 
 	imxrt_gpt_setclocksource(base, initConfig->clockSource);
-	imxrt_gpt_setclockdivider(base, initConfig->divider);
+	if (initConfig->clockSource == kGPT_ClockSource_Osc) {
+		imxrt_gpt_setoscclockdivider(base, initConfig->divider);
+	} else {
+		imxrt_gpt_setclockdivider(base, initConfig->divider);
+	}
 }
 
 /*!
