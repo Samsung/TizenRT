@@ -1093,7 +1093,8 @@ menu "Binary Manager"
 config BINARY_MANAGER
 	bool "Enable Binary Manager"
 	default n
-	depends on APP_BINARY_SEPARATION
+	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE
+	depends on MTD_FTL && FLASH_PART_SIZE && FLASH_PART_TYPE && FLASH_PART_NAME
 	---help---
 		This is kernel thread which manages binaries.
 		It loads/unloads binaries and recovers any fault occurs in a system.
@@ -1103,7 +1104,6 @@ if BINARY_MANAGER
 config BINMGR_RECOVERY
 	bool "Enable Recovery Management"
 	default y
-	depends on APP_BINARY_SEPARATION
 	---help---
 		Enable the recovery management.
 		If any fault occurs in a system, it will either restart binary or reboot the system
