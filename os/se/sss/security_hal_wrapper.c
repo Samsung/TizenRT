@@ -312,7 +312,7 @@ static int hal_mpi_read_binary(hal_mpi *X, const unsigned char *buf, uint32_t bu
 		X->p[j / ciL] |= ((uint64_t)buf[i - 1]) << ((j % ciL) << 3);
 	}
 
-cleanup: 
+cleanup:
 	return ret;
 }
 
@@ -483,13 +483,13 @@ static int hal_asn1_get_mpi(unsigned char **p, const unsigned char *end, hal_mpi
 int sss_hal_init(hal_init_param *params)
 {
 	HWRAP_ENTER;
-	return HAL_NOT_SUPPORTED;
+	return HAL_SUCCESS;
 }
 
 int sss_hal_deinit(void)
 {
 	HWRAP_ENTER;
-	return HAL_NOT_SUPPORTED;
+	return HAL_SUCCESS;
 }
 
 int sss_hal_free_data(hal_data *data)
@@ -534,7 +534,7 @@ int sss_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data
 	case HAL_KEY_RSA_2048:
 	case HAL_KEY_RSA_3072:
 	case HAL_KEY_RSA_4096:
-		key_type = SECURE_STORAGE_TYPE_KEY_RSA; 
+		key_type = SECURE_STORAGE_TYPE_KEY_RSA;
 		break;
 	case HAL_KEY_ECC_BRAINPOOL_P256R1:
 	case HAL_KEY_ECC_BRAINPOOL_P384R1:
@@ -984,7 +984,7 @@ int sss_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx,
 	ecc_sign.s_byte_len = HAL_MAX_ECP_KEY_SIZE_ALT;
 	ecc_sign.r = r_buf;
 	ecc_sign.r_byte_len = HAL_MAX_ECP_KEY_SIZE_ALT;
-	
+
 	switch (mode.hash_t) {
 	case HAL_HASH_MD5:
 		ecc_sign.sign_type |= OID_SHA1_160;
@@ -1175,7 +1175,7 @@ int sss_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	unsigned int pubkey_len;
 	memset(&d_param, 0, sizeof(struct sDH_PARAM));
 	switch (dh_param->mode) {
-	case HAL_DH_1024: 
+	case HAL_DH_1024:
 		d_param.object_id = OID_DH_1024;
 		pubkey_len = 128;
 		break;
@@ -1225,7 +1225,7 @@ int sss_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal
 	struct sDH_PARAM d_param;
 	memset(&d_param, 0, sizeof(struct sDH_PARAM));
 	switch (dh_param->mode) {
-	case HAL_DH_1024: 
+	case HAL_DH_1024:
 		d_param.object_id = OID_DH_1024;
 		break;
 	case HAL_DH_2048:
