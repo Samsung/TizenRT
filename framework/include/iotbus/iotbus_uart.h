@@ -77,10 +77,10 @@ extern "C" {
 #endif
 
 typedef void (*uart_isr_cb)(iotbus_int_type_e evt);
-typedef void (*uart_write_cb)(iotbus_error_e ret);
+typedef void (*uart_write_cb)(iotbus_uart_context_h hnd, iotbus_error_e ret);
 
 /**
- * @brief initializes uart_context.
+ * @brief initializes uart_context with path.
  *
  * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] path uart device node path
@@ -88,6 +88,16 @@ typedef void (*uart_write_cb)(iotbus_error_e ret);
  * @since TizenRT v1.0
  */
 iotbus_uart_context_h iotbus_uart_init(const char *path);
+
+/**
+ * @brief initializes uart_context with device number.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] path uart device node number
+ * @return On success, handle of uart_context is returned. On failure, NULL is returned.
+ * @since TizenRT v1.0
+ */
+iotbus_uart_context_h iotbus_uart_open(int device);
 
 /**
  * @brief closes uart_context.
@@ -158,6 +168,19 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
  * @since TizenRT v1.0
  */
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
+
+/**
+ * @brief reads data over uart bus.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] buf the pointer of data buffer
+ * @param[in] length size to read
+ * @param[in] timeout timeout value (ms).
+ * @return On success, size is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int length, int timeout);
 
 /**
  * @brief writes data over uart bus.
