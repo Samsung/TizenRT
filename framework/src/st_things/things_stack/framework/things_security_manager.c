@@ -454,7 +454,7 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 		}
 	}
 
-#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
+#ifdef CONFIG_ST_THINGS_HW_CERT_KEY
 	if (dm_get_easy_setup_use_artik_crt()) {
 		oc_res = save_signed_asymmetric_key(device_id);
 		if (OC_STACK_OK != oc_res) {
@@ -575,7 +575,7 @@ static int sm_generate_mac_based_device_id(void)
 	return res;
 }
 
-#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
 static int sm_generate_artik_device_id(void)
 {
 	THINGS_LOG_D(TAG, "In %s", __func__);
@@ -606,7 +606,7 @@ static int sm_generate_artik_device_id(void)
 int sm_generate_device_id(void)
 {
 	int ret = -1;
-#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
 	if (dm_get_easy_setup_use_artik_crt()) {
 		ret = sm_generate_artik_device_id();
 	} else
@@ -813,7 +813,7 @@ unsigned char g_regional_test_root_ca[] = {
  *
  * NOTE : This API should be invoked after sm_generate_mac_based_device_id invoked.
  */
-#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
+#ifdef CONFIG_ST_THINGS_HW_CERT_KEY
 static bool g_b_init_key;
 static bool g_b_init_cert;
 #endif
@@ -845,7 +845,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	THINGS_LOG_D(TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
 #endif
 
-#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
+#ifdef CONFIG_ST_THINGS_HW_CERT_KEY
 	if (dm_get_easy_setup_use_artik_crt()) {
 		if (!g_b_init_key && things_sss_key_handler_init() < 0) {
 			THINGS_LOG_E(TAG, "InitializeSSSKeyHandlers() Fail");
@@ -864,7 +864,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		/*
 		* 2. Save the key for D2S (primary cert & key)
 		*/
-#ifndef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
+#ifndef CONFIG_ST_THINGS_HW_CERT_KEY
 		res = seckey_setup(dm_get_certificate_file_path(), &primary_cert, OIC_ENCODING_UNKNOW);
 		if (OC_STACK_OK != res) {
 			THINGS_LOG_E(TAG, "seckey_setup error");
