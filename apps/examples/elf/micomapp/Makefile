@@ -91,10 +91,10 @@ BIN = micom
 BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
-DYNAMIC_RAM_SIZE = 40960
+DYNAMIC_RAM_SIZE = 51200
 BIN_VER = 20190421
 KERNEL_VER = 2.0
-STACKSIZE = 2048
+STACKSIZE = 4096
 PRIORITY = 220
 
 SRCS = micomapp.c
