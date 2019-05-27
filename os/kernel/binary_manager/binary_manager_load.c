@@ -163,6 +163,12 @@ int binary_manager_load_binary(int bin_idx)
 		return ERROR;
 	}
 
+	/* Check binary state */
+	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
+		bmdbg("Invalid binary state %d\n", BIN_STATE(bin_idx));
+		return ERROR;
+	}
+
 	/* Read header data of binary partitions */
 	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
 		if (BIN_PARTNUM(bin_idx, part_idx) < 0) {
@@ -235,6 +241,7 @@ int binary_manager_load_binary(int bin_idx)
 
 	/* Set the data in table from header */
 	BIN_ID(bin_idx) = bin_pid;
+	BIN_STATE(bin_idx) = BINARY_LOADING_DONE;
 	BIN_USEIDX(bin_idx) = latest_idx;
 	BIN_LOAD_ATTR(bin_idx) = load_attr;
 	strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
@@ -353,6 +360,7 @@ static int binary_manager_reload(char *bin_name)
 		return BINMGR_OPERATION_FAIL;
 	}
 	BIN_ID(bin_idx) = -1;
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 
 	/* load binary and update binid */
 	ret = binary_manager_load_binary(bin_idx);

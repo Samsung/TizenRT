@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <fcntl.h>
+#include <assert.h>
 #include <string.h>
 #if !defined(CONFIG_DISABLE_SIGNALS)
 #include <signal.h>
@@ -81,6 +82,7 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
 		} else {
 			BIN_USEIDX(KERNEL_IDX) = 0;
+			BIN_STATE(KERNEL_IDX) = BINARY_RUNNING;
 			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
 			BIN_PARTNUM(KERNEL_IDX, 1) = -1;
 			BIN_PARTSIZE(KERNEL_IDX) = part_size;
@@ -102,6 +104,7 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 		/* No, Register it as a new user partition */
 		g_bin_count++;
 		BIN_ID(g_bin_count) = -1;
+		BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 		BIN_PARTNUM(g_bin_count, 0) = part_num;
 		BIN_PARTNUM(g_bin_count, 1) = -1;
 		BIN_PARTSIZE(g_bin_count) = part_size;
@@ -129,6 +132,8 @@ int binary_manager(int argc, char *argv[])
 	attr.mq_maxmsg = BINMGR_MAX_MSG;
 	attr.mq_msgsize = sizeof(binmgr_request_t);
 	attr.mq_flags = 0;
+
+	ASSERT(BIN_STATE(KERNEL_IDX) != BINARY_UNREGISTERED && g_bin_count > 0);
 
 	bmvdbg("Binary Manager STARTED\n");
 
@@ -189,7 +194,6 @@ int binary_manager(int argc, char *argv[])
 			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			break;
-
 		default:
 			break;
 		}

@@ -160,6 +160,7 @@ void binary_manager_recovery(int pid)
 		ret = recovery_exclude_scheduling(bin_id);
 		if (ret == OK) {
 			/* load binary and update binid */
+			BIN_STATE(bin_idx) = BINARY_FAULT;
 			memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
 			loading_data[1] = BIN_NAME(bin_idx);

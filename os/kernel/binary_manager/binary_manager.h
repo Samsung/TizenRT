@@ -69,10 +69,21 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD_MAX,
 };
 
+/* Binary states */
+enum binary_state_e {
+	BINARY_UNREGISTERED = 0,     /* Partition is unregistered */
+	BINARY_INACTIVE = 1,         /* Partition is registered, but binary is not loaded yet */
+	BINARY_LOADING_DONE = 2,     /* Loading binary is done */
+	BINARY_RUNNING = 3,          /* Loaded binary gets scheduling */
+	BINARY_FAULT = 4,            /* Binary is excluded from scheduling and would be reloaded */
+	BINARY_STATE_MAX,
+};
+
 /* Binary data type in binary table */
 struct binmgr_bininfo_s {
 	pid_t bin_id;
-	uint16_t inuse_idx;
+	uint8_t state;
+	uint8_t inuse_idx;
 	uint32_t part_size;
 	load_attr_t load_attr;
 	int8_t part_num[PARTS_PER_BIN];
@@ -83,6 +94,7 @@ struct binmgr_bininfo_s {
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
 #define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
+#define BIN_STATE(bin_idx)                              bin_table[bin_idx].state
 #define BIN_USEIDX(bin_idx)                             bin_table[bin_idx].inuse_idx
 #define BIN_PARTSIZE(bin_idx)                           bin_table[bin_idx].part_size
 #define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_num[part_idx]
