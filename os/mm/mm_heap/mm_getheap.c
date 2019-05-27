@@ -64,7 +64,11 @@ typedef struct app_heap_s {
 } app_heap_s;
 
 static dq_queue_t app_heap_q;
+
+#ifdef CONFIG_MM_PARTITION_HEAP
 extern struct mm_heap_s g_pheap;
+#endif
+
 #endif
 
 /****************************************************************************
@@ -119,10 +123,12 @@ static struct mm_heap_s *mm_get_app_heap(void *address)
 		node = dq_next(node);
 	}
 
+#ifdef CONFIG_MM_PARTITION_HEAP
 	/* If address was not found in the app heaps, then it might be in the partition heap */
 	if ((address > (void *)g_pheap.mm_heapstart[0]) && (address < (void *)g_pheap.mm_heapend[0])) {
 		return &g_pheap;
 	}
+#endif
 
 	mdbg("address 0x%x is not in any app heap region.\n", address);
 	return NULL;
