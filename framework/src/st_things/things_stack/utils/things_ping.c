@@ -133,7 +133,7 @@ bool things_ping_terminate(void)
 		things_ping_s *ping = NULL;
 		while ((ping = (things_ping_s *) list->pop(list)) != NULL) {
 			THINGS_LOG_D(TAG, "Terminate ping.(%s)", ping->addr);
-			if (cas_mask(ping, PING_ST_STARTTHREAD, true, PING_ST_INIT) == true) {
+			if (get_mask(ping, PING_ST_STARTTHREAD) == true) {
 				things_ping_destroy_thread(ping);
 			}
 			terminate_things_ping_s(ping);
