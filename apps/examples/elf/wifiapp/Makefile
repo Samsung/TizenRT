@@ -66,22 +66,30 @@ ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
 
+ifeq ($(CONFIG_WIFIAPP_INCLUDE_LIB_PROXY),y)
 LDLIBS += -lproxies
+endif
 
+ifeq ($(CONFIG_WIFIAPP_INCLUDE_LIB_C),y)
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 LDLIBS += -luc
 else
 LDLIBS += -lc
 endif
+endif
 
+ifeq ($(CONFIG_WIFIAPP_INCLUDE_LIB_MM),y)
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 LDLIBS += -lumm
 else
 LDLIBS += -lmm
 endif
+endif
 
+ifeq ($(CONFIG_WIFIAPP_INCLUDE_LIB_FRAMEWORK),y)
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 LDLIBS += -lframework
+endif
 endif
 
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"

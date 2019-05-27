@@ -66,3 +66,77 @@ config MPU_TEST_APP_ADDR
 	---help---
 		Test MPU access protection to this application address
 endif
+
+config MICOMAPP_INCLUDE_LIB
+        bool "Include libraries for micomapp"
+        default n
+        depends on APP_BINARY_SEPARATION
+        ---help---
+                Enable the library inclusion for micomapp
+
+if MICOMAPP_INCLUDE_LIB
+
+menu "Enable Libraries for micomapp"
+config MICOMAPP_INCLUDE_LIB_C
+        bool "Include C library"
+        default n
+        ---help---
+                Include C library for micomapp
+
+config MICOMAPP_INCLUDE_LIB_FRAMEWORK
+        bool "Include FrameWork library"
+        default n
+        ---help---
+                Include Framework library for micomapp
+
+config MICOMAPP_INCLUDE_LIB_MM
+        bool "Include MM library"
+        default n
+        ---help---
+                Include MM library for micomapp
+
+config MICOMAPP_INCLUDE_LIB_PROXY
+        bool "Include Proxies library"
+        default n
+        ---help---
+                Include Proxies library for micomapp
+endmenu
+
+endif
+
+config WIFIAPP_INCLUDE_LIB
+        bool "Include libraries for wifi app"
+        default n
+        depends on APP_BINARY_SEPARATION
+        ---help---
+                Enable the library inclusion for wifiapp
+
+if WIFIAPP_INCLUDE_LIB
+
+menu "Enable Libraries for wifiapp"
+config WIFIAPP_INCLUDE_LIB_C
+        bool "Include C library"
+        default n
+        ---help---
+                Include C library for wifiapp
+
+config WIFIAPP_INCLUDE_LIB_FRAMEWORK
+        bool "Include FrameWork library"
+        default n
+        ---help---
+                Include Framework library for wifiapp
+
+config WIFIAPP_INCLUDE_LIB_MM
+        bool "Include MM library"
+        default n
+        ---help---
+                Include MM library for wifiapp
+
+config WIFIAPP_INCLUDE_LIB_PROXY
+        bool "Include Proxies library"
+        default n
+        ---help---
+                Include Proxies library for wifiapp
+endmenu
+
+endif
