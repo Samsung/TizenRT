@@ -41,6 +41,7 @@ static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 	struct mq_attr internal_attr;
 	char *reply_data;
 	int reply_size;
+	int msg_type;
 
 	reply_size = reply_buf->buflen + MSG_HEADER_SIZE;
 
@@ -63,7 +64,7 @@ static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 
 	reply_data = (char *)MSG_ALLOC(reply_size);
 	if (reply_data == NULL) {
-		msgdbg("message send fail : out of memory for including header~\n");
+		msgdbg("message send fail : out of memory for including header\n");
 		mq_close(sync_mqdes);
 		mq_unlink(sync_portname);
 		return ERROR;
@@ -74,9 +75,10 @@ static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 		msgdbg("message send fail : sync recv fail %d.\n", errno);
 		ret = ERROR;
 	} else {
-		memcpy(&reply_buf->sender_pid, reply_data, sizeof(pid_t));
-		memcpy(reply_buf->buf, reply_data + MSG_HEADER_SIZE, reply_buf->buflen);
-		ret = OK;
+		ret = messaging_parse_packet(reply_data, reply_buf->buf, reply_buf->buflen, &reply_buf->sender_pid, &msg_type);
+		if (ret != OK) {
+			ret = ERROR;
+		}
 	}
 
 	mq_close(sync_mqdes);
