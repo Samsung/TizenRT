@@ -92,6 +92,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 {
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 	irqstate_t flags;
+	uint32_t stack_remain;
 #endif
 	board_led_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
@@ -99,6 +100,17 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 #else
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
+
+#if defined(CONFIG_STACK_COLORATION) && defined(CONFIG_ARCH_NESTED_INTERRUPT_STACKCHECK)
+
+	/* check remaining stack available, assert is the stack overflows */
+
+	stack_remain = (CONFIG_ARCH_INTERRUPTSTACK & ~3) - up_check_intstack();
+	if (stack_remain < 8) {
+		lldbg("STACK OVERFLOW!!\n");
+		PANIC();
+	}
+#endif
 	/* Current regs non-zero indicates that we are processing an interrupt;
 	 * regs holds the state of the interrupted logic; current_regs holds the
 	 * state of the interrupted user task.  current_regs should, therefor,
