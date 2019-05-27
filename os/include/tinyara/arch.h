@@ -692,6 +692,19 @@ void up_addregion(void);
 #endif
 
 /****************************************************************************
+ * Name: up_userspace
+ *
+ * Description:
+ *   For the case of the separate user-/kernel-space build, perform whatever
+ *   platform specific initialization of the user memory is required.
+ *   Normally this just means initializing the user space .data and .bss
+ *   segments.
+ *
+ ****************************************************************************/
+
+void up_userspace(void);
+
+/****************************************************************************
  * Name: up_allocate_heap
  *
  * Description:

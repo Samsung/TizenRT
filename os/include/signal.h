@@ -215,6 +215,13 @@
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
 #endif
 
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_MESSAGING
+#define SIGMSG_MESSAGING    25			/* Messaging signal */
+#else
+#define SIGMSG_MESSAGING    CONFIG_SIG_MESSAGING
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */
