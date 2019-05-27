@@ -70,7 +70,7 @@
 #define ICMP_HDR_SIZE sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr)
 #ifdef CONFIG_NET_IPv6
 #define ICMP6_HDR_SIZE sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr)
-#define PING_SIZE(proto) ((proto == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE : ICMP_HDR_SIZE )
+#define PING_SIZE(proto) (((proto) == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE : ICMP_HDR_SIZE)
 #else
 #define PING_SIZE(proto) (ICMP_HDR_SIZE + 32)
 #endif
@@ -246,24 +246,24 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 				nexth = ip6hdr->_nexth;
 				while (nexth != IP6_NEXTH_NONE) {
 					switch (nexth) {
-						case IP6_NEXTH_FRAGMENT:
-						{
-							struct ip6_frag_hdr *frag_hdr;
+					case IP6_NEXTH_FRAGMENT:
+					{
+						struct ip6_frag_hdr *frag_hdr;
 
-							frag_hdr = (struct ip6_frag_hdr *)curp;
+						frag_hdr = (struct ip6_frag_hdr *)curp;
 
-							nexth = frag_hdr->_nexth;
-							curp += (sizeof(struct ip6_frag_hdr));
-							len -= (sizeof(struct ip6_frag_hdr));
-							break;
-						}
-						case IP6_NEXTH_ICMP6:
-							ok = 1;
-							nexth = IP6_NEXTH_NONE;
-							break;
-						default:
-							nexth = IP6_NEXTH_NONE;
-							break;
+						nexth = frag_hdr->_nexth;
+						curp += (sizeof(struct ip6_frag_hdr));
+						len -= (sizeof(struct ip6_frag_hdr));
+						break;
+					}
+					case IP6_NEXTH_ICMP6:
+						ok = 1;
+						nexth = IP6_NEXTH_NONE;
+						break;
+					default:
+						nexth = IP6_NEXTH_NONE;
+						break;
 					}
 				}
 
@@ -465,7 +465,7 @@ int ping_process(int count, const char *taddr, int size)
 	while (1) {
 		if (ping_send(s, to, size) == ERR_OK) {
 			// printf("ping : send %d\n", ping_send_counter);
-      clock_gettime(CLOCK_REALTIME, &ping_time);
+			clock_gettime(CLOCK_REALTIME, &ping_time);
 			ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
 			printf("ping_process: sendto error(%d)\n", errno);
