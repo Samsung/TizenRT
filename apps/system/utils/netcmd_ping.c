@@ -304,6 +304,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 			if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
 				/* do some ping result processing */
 				PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
+				free(from);
 				return;
 			} else {
 				printf("drop\n");
