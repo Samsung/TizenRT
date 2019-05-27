@@ -131,6 +131,19 @@ SYSCALL_LOOKUP(waitid,                  4, STUB_waitid)
 #  endif
 #endif
 
+/* The following can only be defined if we are configured to execute
+ * programs from a file system.
+ */
+
+#ifndef CONFIG_BINFMT_DISABLE
+#ifndef CONFIG_BUILD_KERNEL
+SYSCALL_LOOKUP(exec,                     4, STUB_exec)
+#endif
+#ifdef CONFIG_LIBC_EXECFUNCS
+SYSCALL_LOOKUP(execv,                    2, STUB_execv)
+#endif
+#endif
+
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
  */
