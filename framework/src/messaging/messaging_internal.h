@@ -21,6 +21,10 @@
 #include <stdlib.h>
 #include <messaging/messaging.h>
 
+
+/* @cond
+ * @internal
+ */
 #define MSG_ALLOC(a) malloc(a)
 #define MSG_FREE(a) free(a)
 #ifdef CONFIG_CPP_HAVE_VARARGS
@@ -29,12 +33,19 @@
 #define MSG_ASPRINTF asprintf
 #endif
 
-#define MSG_HEADER_SIZE (sizeof(pid_t) + sizeof(int))
+#define MSG_VERSION 1
+/* Messaging Version 1 */
+struct packet_header_s {
+	uint32_t version;
+	uint32_t offset;
+	pid_t sender_pid;
+	uint32_t msg_type;
+};
+typedef struct packet_header_s packet_header_t;
+#define MSG_HEADER_SIZE sizeof(packet_header_t) /* Messaging Version 1 */
 
 #define MAX_PORT_NAME_SIZE 64
-/* @cond
- * @internal
- */
+
 /**
  * @brief The type of handling message internally
  * @details MSG_INFO_SAVE    : For saving receiver information\n
@@ -121,6 +132,10 @@ int messaging_recv_internal(const char *port_name, msg_recv_buf_t *recv_buf, msg
  * @brief Internal function for running async/non-block callback
  */
 void messaging_run_callback(int signo, siginfo_t *data);
+/**
+ * @brief Internal function for parsing received packet
+ */
+int messaging_parse_packet(char *packet, char *buf, int buflen, pid_t *sender_pid, int *msg_type);
 /*
  *@endcond
  */

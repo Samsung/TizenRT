@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <mqueue.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -112,7 +113,9 @@ int messaging_send_packet(const char *port_name, msg_send_type_t msg_type, msg_s
 	char *send_packet;
 	int send_size;
 	pid_t sender_pid;
-	int send_type;
+	uint32_t send_type;
+	uint32_t msg_offset;
+	uint32_t msg_version;
 
 	send_size = MSG_HEADER_SIZE + send_data->msglen;
 
@@ -123,7 +126,7 @@ int messaging_send_packet(const char *port_name, msg_send_type_t msg_type, msg_s
 	mqdes = mq_open(port_name, O_WRONLY, 0666, &internal_attr);
 	if (mqdes == (mqd_t)ERROR) {
 		if (errno == ENOENT) {
-			msgdbg("[Messaging] send fail : There is no receiver.\n");
+			msgdbg("[Messaging] send fail : no receiver.\n");
 		} else {
 			msgdbg("[Messaging] send fail : open fail, errno %d.\n", errno);
 		}
@@ -138,15 +141,22 @@ int messaging_send_packet(const char *port_name, msg_send_type_t msg_type, msg_s
 		return ERROR;
 	}
 
-	/* Send packet is like below.
-	 * +------------------------------------------------------------------+
-	 * | sender_pid (4bytes) | msg type(4bytes) | message(Max 65527bytes) |
-	 * +------------------------------------------------------------------+
+	/* Send packet(version 1) is like below.
+	 * +--------------------------------------------------------------------------------------------------------+
+	 * | version(4bytes) | msg_offset(4bytes) | sender_pid(4bytes) | msg type(4bytes) | message(Max 65515bytes) |
+	 * +--------------------------------------------------------------------------------------------------------+
 	 */
+
+	/* Add data header for message version and msg offset. */
+	msg_version = messaging_get_version();
+	memcpy(send_packet, &msg_version, sizeof(uint32_t));
+	msg_offset = MSG_HEADER_SIZE;
+	memcpy(send_packet + offsetof(packet_header_t, offset), &msg_offset, sizeof(uint32_t));
 
 	/* Add data header for sender pid. */
 	sender_pid = getpid();
-	memcpy(send_packet, &sender_pid, sizeof(pid_t));
+	memcpy(send_packet + offsetof(packet_header_t, sender_pid), &sender_pid, sizeof(pid_t));
+
 	/* Add data header for send type. */
 	if (msg_type == MSG_SEND_NOREPLY || msg_type == MSG_SEND_MULTI) {
 		send_type = MSG_REPLY_NO_REQUIRED;
@@ -155,13 +165,14 @@ int messaging_send_packet(const char *port_name, msg_send_type_t msg_type, msg_s
 	} else {
 		send_type = MSG_REPLY_REQUIRED;
 	}
-	memcpy(send_packet + sizeof(pid_t), &send_type, sizeof(int));
+	memcpy(send_packet + offsetof(packet_header_t, msg_type), &send_type, sizeof(uint32_t));
+
 	/* Copy the real send message. */
-	memcpy(send_packet + MSG_HEADER_SIZE, send_data->msg, send_data->msglen);
+	memcpy(send_packet + msg_offset, send_data->msg, send_data->msglen);
 
 	ret = mq_send(mqdes, (char *)send_packet, send_size, send_data->priority);
 	if (ret != OK) {
-		msgdbg("[Messaging] send fail : send fail, errno %d.\n", errno);
+		msgdbg("[Messaging] send fail : errno %d.\n", errno);
 		MSG_FREE(send_packet);
 		mq_close(mqdes);
 		mq_unlink(port_name);
@@ -214,7 +225,7 @@ int messaging_send_internal(const char *port_name, msg_send_type_t msg_type, msg
 		}
 
 		if (msg_type != MSG_SEND_MULTI && recv_cnt > 1) {
-			msgdbg("[Messaging] send fail : too many receivers(%d) are waiting unicast.\n", recv_cnt);
+			msgdbg("[Messaging] send fail : too many receivers(%d)are waiting.\n", recv_cnt);
 			return ERROR;
 		}
 

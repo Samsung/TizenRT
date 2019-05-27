@@ -71,23 +71,25 @@ static int messaging_rcv_nonblock(mqd_t mqdes, const char *port_name, msg_recv_b
 	recv_size = recv_buf->buflen + MSG_HEADER_SIZE;
 	recv_packet = (char *)MSG_ALLOC(recv_size);
 	if (recv_packet == NULL) {
-		msgdbg("[Messaging] recv fail : out of memory for including header.\n");
+		msgdbg("[Messaging] recv fail : out of memory for packet.\n");
 		goto errout_with_mq;
 	}
 	/* Check there were messages already before setting notification */
 	while (1) {
 		recv_size_chk = mq_receive(mqdes, (char *)recv_packet, recv_size, 0);
 		if (recv_size_chk > 0 && recv_size_chk <= recv_size) {
-			memcpy(&recv_buf->sender_pid, recv_packet, sizeof(pid_t));
-			memcpy(&msg_type, recv_packet + sizeof(pid_t), sizeof(int));
-			memcpy(recv_buf->buf, recv_packet + MSG_HEADER_SIZE, recv_buf->buflen);
+			ret = messaging_parse_packet(recv_packet, recv_buf->buf, recv_buf->buflen, &recv_buf->sender_pid, &msg_type);
+			if (ret != OK) {
+				MSG_FREE(recv_packet);
+				goto errout_with_mq;
+			}
 			recv_buf->buflen = recv_size_chk;
 			(*cb_info->cb_func)(msg_type, recv_buf, cb_info->cb_data);
 		} else if (recv_size_chk == ERROR && errno == EAGAIN) {
-			msgdbg("[Messaging] recv : the queue was empty, and the NONBLOCK flag was set.\n");
+			msgdbg("[Messaging] recv : empty queue, but NONBLOCK mode.\n");
 			break;
 		} else {
-			msgdbg("[Messaging] recv fail : recv fail errno %d, recv_size %d.\n", errno, recv_size_chk);
+			msgdbg("[Messaging] recv fail : errno %d, size %d.\n", errno, recv_size_chk);
 			MSG_FREE(recv_packet);
 			goto errout_with_mq;
 		}
@@ -115,7 +117,7 @@ static int messaging_rcv_nonblock(mqd_t mqdes, const char *port_name, msg_recv_b
 	/* Add a new message port into the list. */
 	port_info = (msg_port_info_t *)MSG_ALLOC(sizeof(msg_port_info_t));
 	if (port_info == NULL) {
-		msgdbg("[Messaging] recv fail : out of memory for msg_port_info.\n");
+		msgdbg("[Messaging] recv fail : out of memory for port_info.\n");
 		MSG_FREE(nonblock_data);
 		goto errout_with_mq;
 	}
@@ -170,27 +172,23 @@ static int messaging_rcv_block(mqd_t mqdes, const char *port_name, msg_recv_buf_
 	recv_size = MSG_HEADER_SIZE + recv_buf->buflen;
 	recv_packet = (char *)MSG_ALLOC(recv_size);
 	if (recv_packet == NULL) {
-		msgdbg("[Messaging] recv fail : out of memory for including header.\n");
+		msgdbg("[Messaging] recv fail : out of memory for packet.\n");
 		ret = ERROR;
 		goto cleanup_return;
 	}
 
 	ret = mq_receive(mqdes, (char *)recv_packet, recv_size, 0);
 	if (ret < 0) {
-		msgdbg("[Messaging] recv fail : recv fail, errno %d.\n", errno);
+		msgdbg("[Messaging] recv fail : errno %d, %s.\n", errno, port_name);
 		ret = ERROR;
 		goto cleanup_return;
 	}
 
-	/* Received packet is like below.
-	 * +------------------------------------------------------------------+
-	 * | sender_pid (4bytes) | msg type(4bytes) | message(Max 65527bytes) |
-	 * +------------------------------------------------------------------+
-	 */
-	memcpy(&recv_buf->sender_pid, recv_packet, sizeof(pid_t));
-	memcpy(&msg_type, recv_packet + sizeof(pid_t), sizeof(int));
-	ret = msg_type;
-	memcpy(recv_buf->buf, recv_packet + MSG_HEADER_SIZE, recv_buf->buflen);
+	ret = messaging_parse_packet(recv_packet, recv_buf->buf, recv_buf->buflen, &recv_buf->sender_pid, &msg_type);
+	if (ret != OK) {
+		msg_type = ERROR;
+		goto cleanup_return;
+	}
 
 cleanup_return:
 	MSG_FREE(recv_packet);
@@ -198,7 +196,7 @@ cleanup_return:
 	MSG_ASPRINTF(&internal_portname, "%s%d", port_name, getpid());
 	mq_unlink(internal_portname);
 	MSG_FREE(internal_portname);
-	return ret;
+	return msg_type;
 }
 /****************************************************************************
  * Name : messaging_recv_internal
