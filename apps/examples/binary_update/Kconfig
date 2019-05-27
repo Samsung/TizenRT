@@ -6,7 +6,7 @@
 config EXAMPLES_BINARY_UPDATE
 	bool "Binary Update example"
 	default n
-	depends on BINARY_UPDATE
+	depends on BINMGR_UPDATE
 	---help---
 		Enable Binary Update example
 

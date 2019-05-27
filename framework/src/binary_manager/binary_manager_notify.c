@@ -16,38 +16,31 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
+/***************************************************************************
  * Included Files
- ****************************************************************************/
+ ***************************************************************************/
 
 #include <stdio.h>
-#include <unistd.h>
-#ifdef CONFIG_BINARY_MANAGER
+#include <debug.h>
+#include <sched.h>
+#include <tinyara/binary_manager.h>
 #include <binary_manager/binary_manager.h>
-#endif
-#include "micomapp_internal.h"
+#include "binary_manager_internal.h"
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-int main(int argc, char **argv)
+int binary_manager_notify_binary_started(void)
 {
-#ifdef CONFIG_BINARY_MANAGER
 	int ret;
-	ret = binary_manager_notify_binary_started();
+	binmgr_request_t request_msg;
+
+	request_msg.cmd = BINMGR_NOTIFY_STARTED;
+	request_msg.requester_pid = getpid();
+	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", BINMGR_REQUEST_MQ);
+
+	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
-		printf("MICOM notify 'START' state FAIL\n", ret);
-	}
-#endif
-
-#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
-	messaging_test();
-#endif
-
-	while (1) {
-		sleep(10);
-		printf("[%d] MICOM ALIVE\n", getpid());
+		bmdbg("Failed to send request msg %d\n", ret);
+		return BINMGR_COMMUNICATION_FAIL;
 	}
 
-	return 0;
+	return BINMGR_OK;
 }

@@ -26,80 +26,12 @@
 #include <errno.h>
 #include <debug.h>
 #include <sched.h>
-#include <fcntl.h>
 #include <string.h>
-#include <mqueue.h>
 #include <tinyara/binary_manager.h>
+#include <binary_manager/binary_manager.h>
+#include "binary_manager_internal.h"
 
-#include <apps/system/binary_update.h>
-
-static int binary_update_send_request(binmgr_request_t *request_msg)
-{
-	int ret;
-	mqd_t binmgr_mq;
-	struct mq_attr attr;
-
-	attr.mq_maxmsg = BINMGR_MAX_MSG;
-	attr.mq_msgsize = sizeof(binmgr_request_t);
-	attr.mq_flags = 0;
-
-	binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
-	if (binmgr_mq == (mqd_t)ERROR) {
-		bmdbg("mq open ERROR failed, errno %d\n", errno);
-		return ERROR;
-	}
-
-	ret = mq_send(binmgr_mq, (const char *)request_msg, sizeof(binmgr_request_t), BINMGR_NORMAL_PRIO);
-	if (ret < 0) {
-		bmdbg("send ERROR %d, errno %d\n", errno);
-		mq_close(binmgr_mq);
-		return ERROR;
-	}
-
-	mq_close(binmgr_mq);
-
-	return OK;
-}
-
-static int binary_update_receive_response(void *response_msg, int msg_size)
-{
-	int nbytes;
-	struct mq_attr attr;
-	mqd_t private_mq;
-	char q_name[BIN_PRIVMQ_LEN];
-
-	if (response_msg == NULL || msg_size < 0) {
-		bmdbg("Invalid param\n");
-		return ERROR;
-	}
-
-	attr.mq_maxmsg = BINMGR_MAX_MSG;
-	attr.mq_msgsize = msg_size;
-	attr.mq_flags = 0;
-
-	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, getpid());
-
-	private_mq = mq_open(q_name, O_RDONLY | O_CREAT, 0666, &attr);
-	if (private_mq == (mqd_t)ERROR) {
-		bmdbg("mq open ERROR failed, errno %d\n", errno);
-		return ERROR;
-	}
-
-	nbytes = mq_receive(private_mq, (char *)response_msg, msg_size, NULL);
-	if (nbytes <= 0) {
-		bmdbg("receive ERROR %d, errno %d\n", nbytes, errno);
-		mq_close(private_mq);
-		mq_unlink(q_name);
-		return ERROR;
-	}
-
-	mq_close(private_mq);
-	mq_unlink(q_name);
-
-	return OK;
-}
-
-int binary_update_reload_binary(char *binary_name)
+int binary_manager_update_binary(char *binary_name)
 {
 	int ret;
 	binmgr_request_t request_msg;
@@ -113,7 +45,7 @@ int binary_update_reload_binary(char *binary_name)
 	request_msg.requester_pid = getpid();
 	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", binary_name);
 
-	ret = binary_update_send_request(&request_msg);
+	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
 		bmdbg("Failed to send request msg %d\n", ret);
 		return BINMGR_COMMUNICATION_FAIL;
@@ -122,7 +54,7 @@ int binary_update_reload_binary(char *binary_name)
 	return BINMGR_OK;
 }
 
-int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info)
+int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info)
 {
 	int ret;
 	binmgr_request_t request_msg;
@@ -137,13 +69,13 @@ int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info)
 	request_msg.requester_pid = getpid();
 	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", binary_name);
 
-	ret = binary_update_send_request(&request_msg);
+	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
 		bmdbg("Failed to send request msg %d\n", ret);
 		return BINMGR_COMMUNICATION_FAIL;
 	}
 
-	ret = binary_update_receive_response(&response_msg, sizeof(binmgr_getinfo_response_t));
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getinfo_response_t));
 	if (ret < 0) {
 		bmdbg("Failed to receive response msg %d\n", ret);
 		return BINMGR_COMMUNICATION_FAIL;
@@ -160,7 +92,7 @@ int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info)
 	return response_msg.result;
 }
 
-int binary_update_get_binary_info_all(binary_info_list_t *binary_info_list)
+int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list)
 {
 	int ret;
 	binmgr_request_t request_msg;
@@ -169,13 +101,13 @@ int binary_update_get_binary_info_all(binary_info_list_t *binary_info_list)
 	request_msg.cmd = BINMGR_GET_INFO_ALL;
 	request_msg.requester_pid = getpid();
 
-	ret = binary_update_send_request(&request_msg);
+	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
 		bmdbg("Failed to send request msg %d\n", ret);
 		return BINMGR_COMMUNICATION_FAIL;
 	}
 
-	ret = binary_update_receive_response(&response_msg, sizeof(binmgr_getinfo_all_response_t));
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getinfo_all_response_t));
 	if (ret < 0) {
 		bmdbg("Failed to receive response msg %d\n", ret);
 		return BINMGR_COMMUNICATION_FAIL;

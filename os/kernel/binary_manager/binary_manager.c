@@ -113,6 +113,28 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 	}
 }
 
+/* Update binary state to BINARY_RUNNING state */
+int binary_manager_update_running_state(int bin_id)
+{
+	int bin_idx;
+
+	if (bin_id <= 0) {
+		bmdbg("Invalid parameter: bin id %d\n", bin_id);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	bin_idx = binary_manager_get_index_with_binid(bin_id);
+	if (bin_idx < 0) {
+		bmdbg("Failed to get index of binary %d\n", bin_id);
+		return BINMGR_NOT_FOUND;
+	}
+
+	BIN_STATE(bin_idx) = BINARY_RUNNING;
+	bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
+
+	return BINMGR_OK;
+}
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -194,6 +216,8 @@ int binary_manager(int argc, char *argv[])
 			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			break;
+		case BINMGR_NOTIFY_STARTED:
+			ret = binary_manager_update_running_state(request_msg.requester_pid);
 		default:
 			break;
 		}

@@ -148,6 +148,7 @@ int binary_manager_load_binary(int bin_idx)
 	int valid_bin_count;
 	bool loadable;
 	bool is_new_bin;
+	bool is_sched_locked;
 	load_attr_t load_attr;
 	char devname[BINMGR_DEVNAME_LEN];
 	binary_header_t header_data[PARTS_PER_BIN];
@@ -157,6 +158,7 @@ int binary_manager_load_binary(int bin_idx)
 	valid_bin_count = 0;
 	loadable = false;
 	is_new_bin = false;
+	is_sched_locked = false;
 
 	if (bin_idx < 0) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
@@ -207,6 +209,13 @@ int binary_manager_load_binary(int bin_idx)
 		}
 		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
 
+		/* If a priority of loaded task is higher than priority of loading thread,
+		 * we need to lock scheduling until updating loading info in binary table. */
+		if (load_attr.priority >= LOADINGTHD_PRIORITY) {
+			sched_lock();
+			is_sched_locked = true;
+		}
+
 		ret = load_binary(devname, &load_attr);
 		if (ret > 0) {
 			bin_pid = (pid_t)ret;
@@ -215,6 +224,10 @@ int binary_manager_load_binary(int bin_idx)
 		} 
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
 		else if (errno == ENOMEM) {
+			if (is_sched_locked) {
+				sched_unlock();
+				is_sched_locked = false;
+			}
 			if (g_delayed_kfree.head) {
 				wait_count = 0;
 				/* wait until delayed free list is empty */
@@ -229,6 +242,11 @@ int binary_manager_load_binary(int bin_idx)
 			}
 		}
 #endif
+		if (is_sched_locked) {
+			sched_unlock();
+			is_sched_locked = false;
+		}
+
 		if (valid_bin_count == 1) {
 			bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
 			return ERROR;
@@ -249,6 +267,10 @@ int binary_manager_load_binary(int bin_idx)
 	strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);
 
 	bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
+
+	if (is_sched_locked) {
+		sched_unlock();
+	}
 
 	return OK;
 }

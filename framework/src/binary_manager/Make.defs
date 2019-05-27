@@ -16,7 +16,13 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_BINARY_UPDATE),y)
-CONFIGURED_APPS += system/binary_update
+ifeq ($(CONFIG_BINARY_MANAGER),y)
+CSRCS += binary_manager_interface.c binary_manager_notify.c
 endif
 
+ifeq ($(CONFIG_BINMGR_UPDATE),y)
+CSRCS += binary_manager_update.c
+endif
+
+DEPPATH += --dep-path src/binary_manager
+VPATH += :src/binary_manager

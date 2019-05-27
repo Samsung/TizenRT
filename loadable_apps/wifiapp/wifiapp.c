@@ -24,6 +24,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <binary_manager/binary_manager.h>
+#endif
 
 #include "wifiapp_internal.h"
 /****************************************************************************
@@ -53,6 +56,15 @@ int main(int argc, char **argv)
 #endif
 
 	printf("This is WIFI App\n");
+
+#ifdef CONFIG_BINARY_MANAGER
+	int ret;
+	ret = binary_manager_notify_binary_started();
+	if (ret < 0) {
+		printf("WIFI notify 'START' state FAIL\n", ret);
+	}
+#endif
+
 #ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
 	while (is_testing) {
 		display_test_scenario();
