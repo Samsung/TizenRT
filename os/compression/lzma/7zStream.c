@@ -35,11 +35,22 @@
 /* 7zStream.c -- 7z Stream functions
 2017-04-03 : Igor Pavlov : Public domain */
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 #include "Precomp.h"
-
 #include <string.h>
-
 #include "7zTypes.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define GET_LookToRead2 CLookToRead2 *p = CONTAINER_FROM_VTBL(pp, CLookToRead2, vt);
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 SRes SeqInStream_Read2(const ISeqInStream *stream, void *buf, size_t size, SRes errorType)
 {
@@ -102,8 +113,6 @@ SRes LookInStream_Read(const ILookInStream *stream, void *buf, size_t size)
 {
 	return LookInStream_Read2(stream, buf, size, SZ_ERROR_INPUT_EOF);
 }
-
-#define GET_LookToRead2 CLookToRead2 *p = CONTAINER_FROM_VTBL(pp, CLookToRead2, vt);
 
 static SRes LookToRead2_Look_Lookahead(const ILookInStream *pp, const void **buf, size_t *size)
 {

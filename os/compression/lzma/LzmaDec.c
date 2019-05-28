@@ -35,82 +35,95 @@
 /* LzmaDec.c -- LZMA Decoder
 2018-07-04 : Igor Pavlov : Public domain */
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include "Precomp.h"
-
 #include <string.h>
-
-/* #include "CpuArch.h" */
 #include "LzmaDec.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 #define kNumTopBits 24
 #define kTopValue ((UInt32)1 << kNumTopBits)
-
 #define kNumBitModelTotalBits 11
 #define kBitModelTotal (1 << kNumBitModelTotalBits)
 #define kNumMoveBits 5
-
 #define RC_INIT_SIZE 5
-
 #define NORMALIZE if (range < kTopValue) { range <<= 8; code = (code << 8) | (*buf++); }
-
 #define IF_BIT_0(p) ttt = *(p); NORMALIZE; bound = (range >> kNumBitModelTotalBits) * (UInt32)ttt; if (code < bound)
 #define UPDATE_0(p) range = bound; *(p) = (CLzmaProb)(ttt + ((kBitModelTotal - ttt) >> kNumMoveBits));
 #define UPDATE_1(p) range -= bound; code -= bound; *(p) = (CLzmaProb)(ttt - (ttt >> kNumMoveBits));
-#define GET_BIT2(p, i, A0, A1) IF_BIT_0(p) \
-  { UPDATE_0(p); i = (i + i); A0; } else \
-  { UPDATE_1(p); i = (i + i) + 1; A1; }
+#define GET_BIT2(p, i, A0, A1) \
+{\
+	IF_BIT_0(p) \
+	{ UPDATE_0(p); i = (i + i); A0; } else \
+	{ UPDATE_1(p); i = (i + i) + 1; A1; } \
+}
 
 #define TREE_GET_BIT(probs, i) { GET_BIT2(probs + i, i, ;, ;); }
 
-#define REV_BIT(p, i, A0, A1) IF_BIT_0(p + i) \
-  { UPDATE_0(p + i); A0; } else \
-  { UPDATE_1(p + i); A1; }
-#define REV_BIT_VAR(  p, i, m) REV_BIT(p, i, i += m; m += m, m += m; i += m; )
-#define REV_BIT_CONST(p, i, m) REV_BIT(p, i, i += m;       , i += m * 2; )
-#define REV_BIT_LAST( p, i, m) REV_BIT(p, i, i -= m        , ; )
+#define REV_BIT(p, i, A0, A1) \
+{\
+	IF_BIT_0(p + i) \
+	{ UPDATE_0(p + i); A0; } else \
+	{ UPDATE_1(p + i); A1; } \
+}
+#define REV_BIT_VAR(p, i, m) REV_BIT(p, i, i += m; m += m, m += m; i += m;)
+#define REV_BIT_CONST(p, i, m) REV_BIT(p, i, i += m;       , i += m * 2;)
+#define REV_BIT_LAST(p, i, m) REV_BIT(p, i, i -= m        , ;)
 
-#define TREE_DECODE(probs, limit, i) \
-  { i = 1; do { TREE_GET_BIT(probs, i); } while (i < limit); i -= limit; }
-
-/* #define _LZMA_SIZE_OPT */
+#define TREE_DECODE(probs, limit, i) { i = 1; do { TREE_GET_BIT(probs, i); } while (i < limit); i -= limit; }
 
 #ifdef _LZMA_SIZE_OPT
 #define TREE_6_DECODE(probs, i) TREE_DECODE(probs, (1 << 6), i)
 #else
 #define TREE_6_DECODE(probs, i) \
-  { i = 1; \
-  TREE_GET_BIT(probs, i); \
-  TREE_GET_BIT(probs, i); \
-  TREE_GET_BIT(probs, i); \
-  TREE_GET_BIT(probs, i); \
-  TREE_GET_BIT(probs, i); \
-  TREE_GET_BIT(probs, i); \
-  i -= 0x40; }
+{\
+	i = 1; \
+	TREE_GET_BIT(probs, i); \
+	TREE_GET_BIT(probs, i); \
+	TREE_GET_BIT(probs, i); \
+	TREE_GET_BIT(probs, i); \
+	TREE_GET_BIT(probs, i); \
+	TREE_GET_BIT(probs, i); \
+	i -= 0x40; \
+}
 #endif
 
 #define NORMAL_LITER_DEC TREE_GET_BIT(prob, symbol)
 #define MATCHED_LITER_DEC \
-  matchByte += matchByte; \
-  bit = offs; \
-  offs &= matchByte; \
-  probLit = prob + (offs + bit + symbol); \
-  GET_BIT2(probLit, symbol, offs ^= bit; , ;)
+{\
+	matchByte += matchByte; \
+	bit = offs; \
+	offs &= matchByte; \
+	probLit = prob + (offs + bit + symbol); \
+	GET_BIT2(probLit, symbol, offs ^= bit; , ;) \
+}
 
 #define NORMALIZE_CHECK if (range < kTopValue) { if (buf >= bufLimit) return DUMMY_ERROR; range <<= 8; code = (code << 8) | (*buf++); }
 
 #define IF_BIT_0_CHECK(p) ttt = *(p); NORMALIZE_CHECK; bound = (range >> kNumBitModelTotalBits) * (UInt32)ttt; if (code < bound)
 #define UPDATE_0_CHECK range = bound;
 #define UPDATE_1_CHECK range -= bound; code -= bound;
-#define GET_BIT2_CHECK(p, i, A0, A1) IF_BIT_0_CHECK(p) \
-  { UPDATE_0_CHECK; i = (i + i); A0; } else \
-  { UPDATE_1_CHECK; i = (i + i) + 1; A1; }
+#define GET_BIT2_CHECK(p, i, A0, A1) \
+{\
+	IF_BIT_0_CHECK(p) \
+	{ UPDATE_0_CHECK; i = (i + i); A0; } else \
+	{ UPDATE_1_CHECK; i = (i + i) + 1; A1; } \
+}
 #define GET_BIT_CHECK(p, i) GET_BIT2_CHECK(p, i, ; , ;)
-#define TREE_DECODE_CHECK(probs, limit, i) \
-  { i = 1; do { GET_BIT_CHECK(probs + i, i) } while (i < limit); i -= limit; }
+#define TREE_DECODE_CHECK(probs, limit, i) { i = 1; do { GET_BIT_CHECK(probs + i, i) } while (i < limit); i -= limit; }
 
-#define REV_BIT_CHECK(p, i, m) IF_BIT_0_CHECK(p + i) \
-  { UPDATE_0_CHECK; i += m; m += m; } else \
-  { UPDATE_1_CHECK; m += m; i += m; }
+#define REV_BIT_CHECK(p, i, m) \
+{\
+	IF_BIT_0_CHECK(p + i) \
+	{ UPDATE_0_CHECK; i += m; m += m; } else \
+	{ UPDATE_1_CHECK; m += m; i += m; } \
+}
 
 #define kNumPosBitsMax 4
 #define kNumPosStatesMax (1 << kNumPosBitsMax)
@@ -144,21 +157,8 @@
 #define kMatchMinLen 2
 #define kMatchSpecLenStart (kMatchMinLen + kLenNumLowSymbols * 2 + kLenNumHighSymbols)
 
-/* External ASM code needs same CLzmaProb array layout. So don't change it. */
-
-/* (probs_1664) is faster and better for code size at some platforms */
-/*
-#ifdef MY_CPU_X86_OR_AMD64
-*/
 #define kStartOffset 1664
 #define GET_PROBS p->probs_1664
-/*
-#define GET_PROBS p->probs + kStartOffset
-#else
-#define kStartOffset 0
-#define GET_PROBS p->probs
-#endif
-*/
 
 #define SpecPos (-kStartOffset)
 #define IsRep0Long (SpecPos + kNumFullDistances)
@@ -192,13 +192,12 @@
 
 #define LZMA_DIC_MIN (1 << 12)
 
-/*
-p->remainLen : shows status of LZMA decoder:
-    < kMatchSpecLenStart : normal remain
-    = kMatchSpecLenStart : finished
-    = kMatchSpecLenStart + 1 : need init range coder
-    = kMatchSpecLenStart + 2 : need init range coder and state
-*/
+#define kRange0 0xFFFFFFFF
+#define kBound0 ((kRange0 >> kNumBitModelTotalBits) << (kNumBitModelTotalBits - 1))
+#define kBadRepCode (kBound0 + (((kRange0 - kBound0) >> kNumBitModelTotalBits) << (kNumBitModelTotalBits - 1)))
+#if kBadRepCode != (0xC0000000 - 0x400)
+#error Stop_Compiling_Bad_LZMA_Check
+#endif
 
 /* ---------- LZMA_DECODE_REAL ---------- */
 /*
@@ -207,6 +206,21 @@ LzmaDec_DecodeReal_3() can be implemented in external ASM file.
 */
 
 #define LZMA_DECODE_REAL LzmaDec_DecodeReal_3
+
+/****************************************************************************
+ * Private Type
+ ****************************************************************************/
+
+typedef enum {
+	DUMMY_ERROR,				/* unexpected end of input stream */
+	DUMMY_LIT,
+	DUMMY_MATCH,
+	DUMMY_REP
+} ELzmaDummy;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /*
 LZMA_DECODE_REAL()
@@ -236,13 +250,9 @@ Out:
 */
 
 #ifdef _LZMA_DEC_OPT
-
 int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit);
-
 #else
-
-static
-int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit)
+static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit)
 {
 	CLzmaProb *probs = GET_PROBS;
 	unsigned state = (unsigned)p->state;
@@ -319,8 +329,7 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 				UPDATE_0(prob);
 				state += kNumStates;
 				prob = probs + LenCoder;
-			}
-			else {
+			} else {
 				UPDATE_1(prob);
 				/*
 				   // that case was checked before with kBadRepCode
@@ -340,23 +349,20 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 						continue;
 					}
 					UPDATE_1(prob);
-				}
-				else {
+				} else {
 					UInt32 distance;
 					UPDATE_1(prob);
 					prob = probs + IsRepG1 + state;
 					IF_BIT_0(prob) {
 						UPDATE_0(prob);
 						distance = rep1;
-					}
-					else {
+					} else {
 						UPDATE_1(prob);
 						prob = probs + IsRepG2 + state;
 						IF_BIT_0(prob) {
 							UPDATE_0(prob);
 							distance = rep2;
-						}
-						else {
+						} else {
 							UPDATE_1(prob);
 							distance = rep3;
 							rep3 = rep2;
@@ -379,8 +385,7 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 					probLen = prob + LenLow + GET_LEN_STATE;
 					offset = 0;
 					lim = (1 << kLenNumLowBits);
-				}
-				else {
+				} else {
 					UPDATE_1(probLen);
 					probLen = prob + LenChoice2;
 					IF_BIT_0(probLen) {
@@ -388,8 +393,7 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 						probLen = prob + LenLow + GET_LEN_STATE + (1 << kLenNumLowBits);
 						offset = kLenNumLowSymbols;
 						lim = (1 << kLenNumLowBits);
-					}
-					else {
+					} else {
 						UPDATE_1(probLen);
 						probLen = prob + LenHigh;
 						offset = kLenNumLowSymbols * 2;
@@ -410,8 +414,7 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 					TREE_GET_BIT(probLen, len);
 					TREE_GET_BIT(probLen, len);
 					len -= 8;
-				}
-				else {
+				} else {
 					UPDATE_1(probLen);
 					probLen = prob + LenChoice2;
 					IF_BIT_0(probLen) {
@@ -421,8 +424,7 @@ int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *bufLimit
 						TREE_GET_BIT(probLen, len);
 						TREE_GET_BIT(probLen, len);
 						TREE_GET_BIT(probLen, len);
-					}
-					else {
+					} else {
 						UPDATE_1(probLen);
 						probLen = prob + LenHigh;
 						TREE_DECODE(probLen, (1 << kLenNumHighBits), len);
@@ -585,13 +587,6 @@ static void MY_FAST_CALL LzmaDec_WriteRem(CLzmaDec *p, SizeT limit)
 	}
 }
 
-#define kRange0 0xFFFFFFFF
-#define kBound0 ((kRange0 >> kNumBitModelTotalBits) << (kNumBitModelTotalBits - 1))
-#define kBadRepCode (kBound0 + (((kRange0 - kBound0) >> kNumBitModelTotalBits) << (kNumBitModelTotalBits - 1)))
-#if kBadRepCode != (0xC0000000 - 0x400)
-#error Stop_Compiling_Bad_LZMA_Check
-#endif
-
 static int MY_FAST_CALL LzmaDec_DecodeReal2(CLzmaDec *p, SizeT limit, const Byte *bufLimit)
 {
 	do {
@@ -619,13 +614,6 @@ static int MY_FAST_CALL LzmaDec_DecodeReal2(CLzmaDec *p, SizeT limit, const Byte
 
 	return 0;
 }
-
-typedef enum {
-	DUMMY_ERROR,				/* unexpected end of input stream */
-	DUMMY_LIT,
-	DUMMY_MATCH,
-	DUMMY_REP
-} ELzmaDummy;
 
 static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inSize)
 {
@@ -667,12 +655,11 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 					bit = offs;
 					offs &= matchByte;
 					probLit = prob + (offs + bit + symbol);
-					GET_BIT2_CHECK(probLit, symbol, offs ^= bit; ,;)
+					GET_BIT2_CHECK(probLit, symbol, offs ^= bit; , ;)
 				} while (symbol < 0x100);
 			}
 			res = DUMMY_LIT;
-		}
-		else {
+		} else {
 			unsigned len;
 			UPDATE_1_CHECK;
 
@@ -682,8 +669,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 				state = 0;
 				prob = probs + LenCoder;
 				res = DUMMY_MATCH;
-			}
-			else {
+			} else {
 				UPDATE_1_CHECK;
 				res = DUMMY_REP;
 				prob = probs + IsRepG0 + state;
@@ -694,24 +680,20 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 						UPDATE_0_CHECK;
 						NORMALIZE_CHECK;
 						return DUMMY_REP;
-					}
-					else {
+					} else {
 						UPDATE_1_CHECK;
 					}
-				}
-				else {
+				} else {
 					UPDATE_1_CHECK;
 					prob = probs + IsRepG1 + state;
 					IF_BIT_0_CHECK(prob) {
 						UPDATE_0_CHECK;
-					}
-					else {
+					} else {
 						UPDATE_1_CHECK;
 						prob = probs + IsRepG2 + state;
 						IF_BIT_0_CHECK(prob) {
 							UPDATE_0_CHECK;
-						}
-						else {
+						} else {
 							UPDATE_1_CHECK;
 						}
 					}
@@ -727,8 +709,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 					probLen = prob + LenLow + GET_LEN_STATE;
 					offset = 0;
 					limit = 1 << kLenNumLowBits;
-				}
-				else {
+				} else {
 					UPDATE_1_CHECK;
 					probLen = prob + LenChoice2;
 					IF_BIT_0_CHECK(probLen) {
@@ -736,8 +717,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 						probLen = prob + LenLow + GET_LEN_STATE + (1 << kLenNumLowBits);
 						offset = kLenNumLowSymbols;
 						limit = 1 << kLenNumLowBits;
-					}
-					else {
+					} else {
 						UPDATE_1_CHECK;
 						probLen = prob + LenHigh;
 						offset = kLenNumLowSymbols * 2;
@@ -1084,6 +1064,10 @@ SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAll
 	p->prop = propNew;
 	return SZ_OK;
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen, const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode, ELzmaStatus *status, ISzAllocPtr alloc)
 {

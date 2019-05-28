@@ -35,18 +35,18 @@
 /* 7zFile.c -- File IO
 2017-04-03 : Igor Pavlov : Public domain */
 
-#include "Precomp.h"
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
+#include "Precomp.h"
 #include "7zFile.h"
 
 #ifndef USE_WINDOWS_FILE
-
 #ifndef UNDER_CE
 #include <errno.h>
 #endif
-
 #else
-
 /*
    ReadFile and WriteFile functions in Windows have BUG:
    If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1)
@@ -56,10 +56,12 @@
    for 32 MB (maybe also for 16 MB).
    And message can be "Network connection was lost"
 */
-
 #define kChunkSizeMax (1 << 22)
-
 #endif
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 void File_Construct(CSzFile *p)
 {
@@ -144,7 +146,6 @@ WRes File_Read(CSzFile *p, void *data, size_t *size)
 		return 0;
 	}
 #ifdef USE_WINDOWS_FILE
-
 	*size = 0;
 	do {
 		DWORD curSize = (originalSize > kChunkSizeMax) ? kChunkSizeMax : (DWORD) originalSize;
@@ -161,15 +162,12 @@ WRes File_Read(CSzFile *p, void *data, size_t *size)
 		}
 	} while (originalSize > 0);
 	return 0;
-
 #else
-
 	*size = fread(data, 1, originalSize, p->file);
 	if (*size == originalSize) {
 		return 0;
 	}
 	return ferror(p->file);
-
 #endif
 }
 
@@ -180,7 +178,6 @@ WRes File_Write(CSzFile *p, const void *data, size_t *size)
 		return 0;
 	}
 #ifdef USE_WINDOWS_FILE
-
 	*size = 0;
 	do {
 		DWORD curSize = (originalSize > kChunkSizeMax) ? kChunkSizeMax : (DWORD) originalSize;
@@ -197,22 +194,18 @@ WRes File_Write(CSzFile *p, const void *data, size_t *size)
 		}
 	} while (originalSize > 0);
 	return 0;
-
 #else
-
 	*size = fwrite(data, 1, originalSize, p->file);
 	if (*size == originalSize) {
 		return 0;
 	}
 	return ferror(p->file);
-
 #endif
 }
 
 WRes File_Seek(CSzFile *p, Int64 *pos, ESzSeek origin)
 {
 #ifdef USE_WINDOWS_FILE
-
 	LARGE_INTEGER value;
 	DWORD moveMethod;
 	value.LowPart = (DWORD) * pos;
@@ -239,9 +232,7 @@ WRes File_Seek(CSzFile *p, Int64 *pos, ESzSeek origin)
 	}
 	*pos = ((Int64) value.HighPart << 32) | value.LowPart;
 	return 0;
-
 #else
-
 	int moveMethod;
 	int res;
 	switch (origin) {
@@ -260,14 +251,12 @@ WRes File_Seek(CSzFile *p, Int64 *pos, ESzSeek origin)
 	res = fseek(p->file, (long) * pos, moveMethod);
 	*pos = ftell(p->file);
 	return res;
-
 #endif
 }
 
 WRes File_GetLength(CSzFile *p, UInt64 *length)
 {
 #ifdef USE_WINDOWS_FILE
-
 	DWORD sizeHigh;
 	DWORD sizeLow = GetFileSize(p->handle, &sizeHigh);
 	if (sizeLow == 0xFFFFFFFF) {
@@ -278,20 +267,16 @@ WRes File_GetLength(CSzFile *p, UInt64 *length)
 	}
 	*length = (((UInt64) sizeHigh) << 32) + sizeLow;
 	return 0;
-
 #else
-
 	long pos = ftell(p->file);
 	int res = fseek(p->file, 0, SEEK_END);
 	*length = ftell(p->file);
 	fseek(p->file, pos, SEEK_SET);
 	return res;
-
 #endif
 }
 
 /* ---------- FileSeqInStream ---------- */
-
 static SRes FileSeqInStream_Read(const ISeqInStream *pp, void *buf, size_t *size)
 {
 	CFileSeqInStream *p = CONTAINER_FROM_VTBL(pp, CFileSeqInStream, vt);
@@ -304,7 +289,6 @@ void FileSeqInStream_CreateVTable(CFileSeqInStream *p)
 }
 
 /* ---------- FileInStream ---------- */
-
 static SRes FileInStream_Read(const ISeekInStream *pp, void *buf, size_t *size)
 {
 	CFileInStream *p = CONTAINER_FROM_VTBL(pp, CFileInStream, vt);
@@ -324,7 +308,6 @@ void FileInStream_CreateVTable(CFileInStream *p)
 }
 
 /* ---------- FileOutStream ---------- */
-
 static size_t FileOutStream_Write(const ISeqOutStream *pp, const void *data, size_t size)
 {
 	CFileOutStream *p = CONTAINER_FROM_VTBL(pp, CFileOutStream, vt);

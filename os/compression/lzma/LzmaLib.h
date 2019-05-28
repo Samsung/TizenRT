@@ -38,7 +38,15 @@
 #ifndef __LZMA_LIB_H
 #define __LZMA_LIB_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include "7zTypes.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 EXTERN_C_BEGIN
 #define MY_STDAPI int MY_STD_CALL
@@ -55,6 +63,9 @@ LZMA properties (5 bytes) format
       0     1    lc, lp and pb in encoded form.
       1     4    dictSize (little endian).
 */
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 /*
 LzmaCompress
 ------------
@@ -85,11 +96,11 @@ level - compression level: 0 <= level <= 9;
   algo = 1 means normal method
 
 dictSize - The dictionary size in bytes. The maximum value is
-        128 MB = (1 << 27) bytes for 32-bit version
-          1 GB = (1 << 30) bytes for 64-bit version
-     The default value is 16 MB = (1 << 24) bytes.
-     It's recommended to use the dictionary that is larger than 4 KB and
-     that can be calculated as (1 << N) or (3 << N) sizes.
+		128 MB = (1 << 27) bytes for 32-bit version
+		1 GB = (1 << 30) bytes for 64-bit version
+	The default value is 16 MB = (1 << 24) bytes.
+	It's recommended to use the dictionary that is larger than 4 KB and
+	that can be calculated as (1 << N) or (3 << N) sizes.
 
 lc - The number of literal context bits (high bits of previous literal).
      It can be in the range from 0 to 8. The default value is 3.
@@ -150,7 +161,6 @@ Returns:
   SZ_ERROR_UNSUPPORTED - Unsupported properties
   SZ_ERROR_INPUT_EOF   - it needs more bytes in input buffer (src)
 */
-
 MY_STDAPI LzmaUncompress(unsigned char *dest, size_t *destLen, const unsigned char *src, SizeT *srcLen, const unsigned char *props, size_t propsSize);
 
 EXTERN_C_END

@@ -35,40 +35,128 @@
 /* Alloc.c -- Memory allocation functions
 2018-04-27 : Igor Pavlov : Public domain */
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include "Precomp.h"
-
 #include <stdio.h>
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
 #include <stdlib.h>
-
 #include "Alloc.h"
-
-/* #define _SZ_ALLOC_DEBUG */
-
-/* use _SZ_ALLOC_DEBUG to debug alloc/free operations */
 #ifdef _SZ_ALLOC_DEBUG
-
 #include <stdio.h>
+#endif
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+#ifdef _WIN32
+typedef UINT_PTR UIntPtr;
+#else
+typedef ptrdiff_t UIntPtr;
+#endif
+
+#define ADJUST_ALLOC_SIZE 0
+#define MY_ALIGN_PTR_DOWN(p, align) ((void *)((((UIntPtr)(p)) & ~((UIntPtr)(align) - 1))))
+#define MY_ALIGN_PTR_UP_PLUS(p, align) MY_ALIGN_PTR_DOWN(((char *)(p) + (align) + ADJUST_ALLOC_SIZE), align)
+#if defined(_POSIX_C_SOURCE)
+#if (_POSIX_C_SOURCE >= 200112L) && !defined(_WIN32)
+#define USE_posix_memalign
+#endif
+#endif
+
+#ifdef _SZ_ALLOC_DEBUG
+#define GET_HEX_CHAR(t) ((char)(((t < 10) ? ('0' + t) : ('A' + (t - 10)))))
+
+#define CONVERT_INT_TO_STR(charType, tempSize) \
+{\
+	unsigned char temp[tempSize]; unsigned i = 0; \
+	while (val >= 10) { temp[i++] = (unsigned char)('0' + (unsigned)(val % 10)); val /= 10; } \
+	*s++ = (charType)('0' + (unsigned)val); \
+	while (i != 0) { i--; *s++ = temp[i]; } \
+	*s = 0; \
+}
+
+#define DEBUG_OUT_STREAM stderr
+
+#define PRINT_ALLOC(name, cnt, size, ptr) \
+{\
+	Print(name " "); \
+	PrintDec(cnt++, 10); \
+	PrintHex(size, 10); \
+	PrintAddr(ptr); \
+	PrintLn(); \
+}
+
+#define PRINT_FREE(name, cnt, ptr) if (ptr) { \
+	Print(name " "); \
+	PrintDec(--cnt, 10); \
+	PrintAddr(ptr); \
+	PrintLn(); }
+#else
+#define PRINT_ALLOC(name, cnt, size, ptr)
+#define PRINT_FREE(name, cnt, ptr)
+#define Print(s)
+#define PrintLn()
+#define PrintHex(v, align)
+#define PrintDec(v, align)
+#define PrintAddr(p)
+#endif
+
+#ifdef _WIN32
+#ifndef MEM_LARGE_PAGES
+#undef _7ZIP_LARGE_PAGES
+#endif
+#ifdef _7ZIP_LARGE_PAGES
+SIZE_T g_LargePageSize = 0;
+typedef SIZE_T(WINAPI *GetLargePageMinimumP)();
+#endif
+#endif
+
+#define ALLOC_ALIGN_SIZE ((size_t)1 << 7)
+#define MY_ALIGN_PTR_DOWN_1(p) MY_ALIGN_PTR_DOWN(p, sizeof(void *))
+#define REAL_BLOCK_PTR_VAR(p) ((void **)MY_ALIGN_PTR_DOWN_1(p))[-1]
+
+/****************************************************************************
+ * Function Prototypes
+ ****************************************************************************/
+
+static void *SzAlloc(ISzAllocPtr p, size_t size);
+static void SzFree(ISzAllocPtr p, void *address);
+static void *SzMidAlloc(ISzAllocPtr p, size_t size);
+static void SzMidFree(ISzAllocPtr p, void *address);
+static void *SzBigAlloc(ISzAllocPtr p, size_t size);
+static void SzBigFree(ISzAllocPtr p, void *address);
+static void *SzAlignedAlloc(ISzAllocPtr pp, size_t size);
+static void SzAlignedFree(ISzAllocPtr pp, void *address);
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+#ifdef _SZ_ALLOC_DEBUG
 int g_allocCount = 0;
 int g_allocCountMid = 0;
 int g_allocCountBig = 0;
+#endif
 
-#define CONVERT_INT_TO_STR(charType, tempSize) \
-  unsigned char temp[tempSize]; unsigned i = 0; \
-  while (val >= 10) { temp[i++] = (unsigned char)('0' + (unsigned)(val % 10)); val /= 10; } \
-  *s++ = (charType)('0' + (unsigned)val); \
-  while (i != 0) { i--; *s++ = temp[i]; } \
-  *s = 0;
+const ISzAlloc g_AlignedAlloc = { SzAlignedAlloc, SzAlignedFree };
+const ISzAlloc g_Alloc = { SzAlloc, SzFree };
+const ISzAlloc g_MidAlloc = { SzMidAlloc, SzMidFree };
+const ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+#ifdef _SZ_ALLOC_DEBUG
 static void ConvertUInt64ToString(UInt64 val, char *s)
 {
 	CONVERT_INT_TO_STR(char, 24);
 }
-
-#define GET_HEX_CHAR(t) ((char)(((t < 10) ? ('0' + t) : ('A' + (t - 10)))))
 
 static void ConvertUInt64ToHex(UInt64 val, char *s)
 {
@@ -87,8 +175,6 @@ static void ConvertUInt64ToHex(UInt64 val, char *s)
 		s[--i] = GET_HEX_CHAR(t);
 	} while (i);
 }
-
-#define DEBUG_OUT_STREAM stderr
 
 static void Print(const char *s)
 {
@@ -131,30 +217,6 @@ static void PrintAddr(void *p)
 {
 	PrintHex((UInt64)(size_t)(ptrdiff_t) p, 12);
 }
-
-#define PRINT_ALLOC(name, cnt, size, ptr) \
-    Print(name " "); \
-    PrintDec(cnt++, 10); \
-    PrintHex(size, 10); \
-    PrintAddr(ptr); \
-    PrintLn();
-
-#define PRINT_FREE(name, cnt, ptr) if (ptr) { \
-    Print(name " "); \
-    PrintDec(--cnt, 10); \
-    PrintAddr(ptr); \
-    PrintLn(); }
-
-#else
-
-#define PRINT_ALLOC(name, cnt, size, ptr)
-#define PRINT_FREE(name, cnt, ptr)
-#define Print(s)
-#define PrintLn()
-#define PrintHex(v, align)
-#define PrintDec(v, align)
-#define PrintAddr(p)
-
 #endif
 
 void *MyAlloc(size_t size)
@@ -181,7 +243,6 @@ void MyFree(void *address)
 }
 
 #ifdef _WIN32
-
 void *MidAlloc(size_t size)
 {
 	if (size == 0) {
@@ -202,15 +263,6 @@ void MidFree(void *address)
 	}
 	VirtualFree(address, 0, MEM_RELEASE);
 }
-
-#ifndef MEM_LARGE_PAGES
-#undef _7ZIP_LARGE_PAGES
-#endif
-
-#ifdef _7ZIP_LARGE_PAGES
-SIZE_T g_LargePageSize = 0;
-typedef SIZE_T(WINAPI *GetLargePageMinimumP)();
-#endif
 
 void SetLargePageSize()
 {
@@ -266,7 +318,6 @@ void BigFree(void *address)
 	}
 	VirtualFree(address, 0, MEM_RELEASE);
 }
-
 #endif
 
 static void *SzAlloc(ISzAllocPtr p, size_t size)
@@ -280,7 +331,6 @@ static void SzFree(ISzAllocPtr p, void *address)
 	UNUSED_VAR(p);
 	MyFree(address);
 }
-const ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 static void *SzMidAlloc(ISzAllocPtr p, size_t size)
 {
@@ -293,7 +343,6 @@ static void SzMidFree(ISzAllocPtr p, void *address)
 	UNUSED_VAR(p);
 	MidFree(address);
 }
-const ISzAlloc g_MidAlloc = { SzMidAlloc, SzMidFree };
 
 static void *SzBigAlloc(ISzAllocPtr p, size_t size)
 {
@@ -306,80 +355,10 @@ static void SzBigFree(ISzAllocPtr p, void *address)
 	UNUSED_VAR(p);
 	BigFree(address);
 }
-const ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
-/*
-  uintptr_t : <stdint.h> C99 (optional)
-            : unsupported in VS6
-*/
-
-#ifdef _WIN32
-typedef UINT_PTR UIntPtr;
-#else
-/*
-   typedef uintptr_t UIntPtr;
- */
-typedef ptrdiff_t UIntPtr;
-#endif
-
-#define ADJUST_ALLOC_SIZE 0
-/*
-#define ADJUST_ALLOC_SIZE (sizeof(void *)-1)
-*/
-/*
-  Use (ADJUST_ALLOC_SIZE = (sizeof(void *)-1)), if
-     MyAlloc() can return address that is NOT multiple of sizeof(void *).
-*/
-
-/*
-#define MY_ALIGN_PTR_DOWN(p, align) ((void *)((char *)(p) - ((size_t)(UIntPtr)(p) & ((align) - 1))))
-*/
-#define MY_ALIGN_PTR_DOWN(p, align) ((void *)((((UIntPtr)(p)) & ~((UIntPtr)(align) - 1))))
-
-#define MY_ALIGN_PTR_UP_PLUS(p, align) MY_ALIGN_PTR_DOWN(((char *)(p) + (align) + ADJUST_ALLOC_SIZE), align)
-
-#if defined(_POSIX_C_SOURCE)
-#if (_POSIX_C_SOURCE >= 200112L) && !defined(_WIN32)
-#define USE_posix_memalign
-#endif
-#endif
-
-/*
-  This posix_memalign() is for test purposes only.
-  We also need special Free() function instead of free(),
-  if this posix_memalign() is used.
-*/
-
-/*
-static int posix_memalign(void **ptr, size_t align, size_t size)
-{
-  size_t newSize = size + align;
-  void *p;
-  void *pAligned;
-  *ptr = NULL;
-  if (newSize < size)
-    return 12; // ENOMEM
-  p = MyAlloc(newSize);
-  if (!p)
-    return 12; // ENOMEM
-  pAligned = MY_ALIGN_PTR_UP_PLUS(p, align);
-  ((void **)pAligned)[-1] = p;
-  *ptr = pAligned;
-  return 0;
-}
-*/
-
-/*
-  ALLOC_ALIGN_SIZE >= sizeof(void *)
-  ALLOC_ALIGN_SIZE >= cache_line_size
-*/
-
-#define ALLOC_ALIGN_SIZE ((size_t)1 << 7)
 
 static void *SzAlignedAlloc(ISzAllocPtr pp, size_t size)
 {
 #ifndef USE_posix_memalign
-
 	void *p;
 	void *pAligned;
 	size_t newSize;
@@ -413,9 +392,7 @@ static void *SzAlignedAlloc(ISzAllocPtr pp, size_t size)
 	((void **)pAligned)[-1] = p;
 
 	return pAligned;
-
 #else
-
 	void *p;
 	UNUSED_VAR(pp);
 	if (posix_memalign(&p, ALLOC_ALIGN_SIZE, size)) {
@@ -427,7 +404,6 @@ static void *SzAlignedAlloc(ISzAllocPtr pp, size_t size)
 	PrintLn();
 
 	return p;
-
 #endif
 }
 
@@ -442,16 +418,6 @@ static void SzAlignedFree(ISzAllocPtr pp, void *address)
 	free(address);
 #endif
 }
-
-const ISzAlloc g_AlignedAlloc = { SzAlignedAlloc, SzAlignedFree };
-
-#define MY_ALIGN_PTR_DOWN_1(p) MY_ALIGN_PTR_DOWN(p, sizeof(void *))
-
-/* we align ptr to support cases where CAlignOffsetAlloc::offset is not multiply of sizeof(void *) */
-#define REAL_BLOCK_PTR_VAR(p) ((void **)MY_ALIGN_PTR_DOWN_1(p))[-1]
-/*
-#define REAL_BLOCK_PTR_VAR(p) ((void **)(p))[-1]
-*/
 
 static void *AlignOffsetAlloc_Alloc(ISzAllocPtr pp, size_t size)
 {

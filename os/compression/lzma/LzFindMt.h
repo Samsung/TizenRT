@@ -38,8 +38,16 @@
 #ifndef __LZ_FIND_MT_H
 #define __LZ_FIND_MT_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include "LzFind.h"
 #include "Threads.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 EXTERN_C_BEGIN
 #define kMtHashBlockSize (1 << 13)
@@ -48,6 +56,11 @@ EXTERN_C_BEGIN
 #define kMtBtBlockSize (1 << 14)
 #define kMtBtNumBlocks (1 << 6)
 #define kMtBtNumBlocksMask (kMtBtNumBlocks - 1)
+/* kMtCacheLineDummy must be >= size_of_CPU_cache_line */
+#define kMtCacheLineDummy 128
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 typedef struct _CMtSync {
 	BoolInt wasCreated;
 	BoolInt needStart;
@@ -67,12 +80,7 @@ typedef struct _CMtSync {
 } CMtSync;
 
 typedef UInt32 *(*Mf_Mix_Matches)(void *p, UInt32 matchMinPos, UInt32 *distances);
-
-/* kMtCacheLineDummy must be >= size_of_CPU_cache_line */
-#define kMtCacheLineDummy 128
-
 typedef void (*Mf_GetHeads)(const Byte *buffer, UInt32 pos, UInt32 *hash, UInt32 hashMask, UInt32 *heads, UInt32 numHeads, const UInt32 *crc);
-
 typedef struct _CMatchFinderMt {
 	/* LZ */
 	const Byte *pointerToCurPos;
@@ -116,6 +124,10 @@ typedef struct _CMatchFinderMt {
 	Mf_GetHeads GetHeadsFunc;
 	CMatchFinder *MatchFinder;
 } CMatchFinderMt;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 void MatchFinderMt_Construct(CMatchFinderMt *p);
 void MatchFinderMt_Destruct(CMatchFinderMt *p, ISzAllocPtr alloc);

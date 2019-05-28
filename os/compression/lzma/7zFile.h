@@ -42,6 +42,10 @@
 #define USE_WINDOWS_FILE
 #endif
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #ifdef USE_WINDOWS_FILE
 #include <windows.h>
 #else
@@ -51,6 +55,9 @@
 #include "7zTypes.h"
 
 EXTERN_C_BEGIN
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 /* ---------- File ---------- */
 typedef struct {
 #ifdef USE_WINDOWS_FILE
@@ -59,6 +66,27 @@ typedef struct {
 	FILE *file;
 #endif
 } CSzFile;
+
+/* ---------- FileInStream ---------- */
+
+typedef struct {
+	ISeqInStream vt;
+	CSzFile file;
+} CFileSeqInStream;
+
+typedef struct {
+	ISeekInStream vt;
+	CSzFile file;
+} CFileInStream;
+
+typedef struct {
+	ISeqOutStream vt;
+	CSzFile file;
+} CFileOutStream;
+
+/****************************************************************************
+ * Private Function
+ ****************************************************************************/
 
 void File_Construct(CSzFile *p);
 #if !defined(UNDER_CE) || !defined(USE_WINDOWS_FILE)
@@ -79,28 +107,8 @@ WRes File_Write(CSzFile *p, const void *data, size_t *size);
 
 WRes File_Seek(CSzFile *p, Int64 *pos, ESzSeek origin);
 WRes File_GetLength(CSzFile *p, UInt64 *length);
-
-/* ---------- FileInStream ---------- */
-
-typedef struct {
-	ISeqInStream vt;
-	CSzFile file;
-} CFileSeqInStream;
-
 void FileSeqInStream_CreateVTable(CFileSeqInStream *p);
-
-typedef struct {
-	ISeekInStream vt;
-	CSzFile file;
-} CFileInStream;
-
 void FileInStream_CreateVTable(CFileInStream *p);
-
-typedef struct {
-	ISeqOutStream vt;
-	CSzFile file;
-} CFileOutStream;
-
 void FileOutStream_CreateVTable(CFileOutStream *p);
 
 EXTERN_C_END

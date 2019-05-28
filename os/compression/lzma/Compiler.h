@@ -38,6 +38,10 @@
 #ifndef __7Z_COMPILER_H
 #define __7Z_COMPILER_H
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
 #ifdef _MSC_VER
 
 #ifdef UNDER_CE
@@ -62,6 +66,5 @@
 #endif
 
 #define UNUSED_VAR(x) (void)x;
-/* #define UNUSED_VAR(x) x=x; */
 
-#endif
+#endif							/* __7Z_COMPILER_H */

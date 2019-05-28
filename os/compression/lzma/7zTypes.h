@@ -38,11 +38,18 @@
 #ifndef __7Z_TYPES_H
 #define __7Z_TYPES_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #ifdef _WIN32
 /* #include <windows.h> */
 #endif
-
 #include <stddef.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 #ifndef EXTERN_C_BEGIN
 #ifdef __cplusplus
@@ -73,18 +80,14 @@ EXTERN_C_BEGIN
 typedef int SRes;
 
 #ifdef _WIN32
-
 /* typedef DWORD WRes; */
 typedef unsigned WRes;
 #define MY_SRes_HRESULT_FROM_WRes(x) HRESULT_FROM_WIN32(x)
-
 #else
-
 typedef int WRes;
 #define MY__FACILITY_WIN32 7
 #define MY__FACILITY__WRes MY__FACILITY_WIN32
 #define MY_SRes_HRESULT_FROM_WRes(x) ((HRESULT)(x) <= 0 ? ((HRESULT)(x)) : ((HRESULT) (((x) & 0x0000FFFF) | (MY__FACILITY__WRes << 16) | 0x80000000)))
-
 #endif
 
 #ifndef RINOK
@@ -104,15 +107,11 @@ typedef unsigned int UInt32;
 #endif
 
 #ifdef _SZ_NO_INT_64
-
 /* define _SZ_NO_INT_64, if your compiler doesn't support 64-bit integers.
    NOTES: Some code will work incorrectly in that case! */
-
 typedef long Int64;
 typedef unsigned long UInt64;
-
 #else
-
 #if defined(_MSC_VER) || defined(__BORLANDC__)
 typedef __int64 Int64;
 typedef unsigned __int64 UInt64;
@@ -122,7 +121,6 @@ typedef long long int Int64;
 typedef unsigned long long int UInt64;
 #define UINT64_CONST(n) n ## ULL
 #endif
-
 #endif
 
 #ifdef _LZMA_NO_SYSTEM_SIZE_T
@@ -143,36 +141,24 @@ typedef int BoolInt;
 #endif
 
 #ifdef _MSC_VER
-
 #if _MSC_VER >= 1300
 #define MY_NO_INLINE __declspec(noinline)
 #else
 #define MY_NO_INLINE
 #endif
-
 #define MY_FORCE_INLINE __forceinline
-
 #define MY_CDECL __cdecl
 #define MY_FAST_CALL __fastcall
-
 #else
-
 #define MY_NO_INLINE
 #define MY_FORCE_INLINE
 #define MY_CDECL
 #define MY_FAST_CALL
-
-/* inline keyword : for C++ / C99 */
-
-/* GCC, clang: */
-/*
-#if defined (__GNUC__) && (__GNUC__ >= 4)
-#define MY_FORCE_INLINE __attribute__((always_inline))
-#define MY_NO_INLINE __attribute__((noinline))
 #endif
-*/
 
-#endif
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
 
 /* The following interfaces use first parameter as pointer to structure */
 
@@ -195,11 +181,6 @@ struct ISeqInStream {
 	   (output(*size) < input(*size)) is allowed */
 };
 #define ISeqInStream_Read(p, buf, size) (p)->Read(p, buf, size)
-
-/* it can return SZ_ERROR_INPUT_EOF */
-SRes SeqInStream_Read(const ISeqInStream *stream, void *buf, size_t size);
-SRes SeqInStream_Read2(const ISeqInStream *stream, void *buf, size_t size, SRes errorType);
-SRes SeqInStream_ReadByte(const ISeqInStream *stream, Byte *buf);
 
 typedef struct ISeqOutStream ISeqOutStream;
 struct ISeqOutStream {
@@ -231,7 +212,6 @@ struct ILookInStream {
 	   (output(*size) < input(*size)) is allowed */
 	SRes(*Skip)(const ILookInStream *p, size_t offset);
 	/* offset must be <= output(*size) of Look */
-
 	SRes(*Read)(const ILookInStream *p, void *buf, size_t *size);
 	/* reads directly (without buffer). It's same as ISeqInStream::Read */
 	SRes(*Seek)(const ILookInStream *p, Int64 *pos, ESzSeek origin);
@@ -242,26 +222,16 @@ struct ILookInStream {
 #define ILookInStream_Read(p, buf, size)   (p)->Read(p, buf, size)
 #define ILookInStream_Seek(p, pos, origin) (p)->Seek(p, pos, origin)
 
-SRes LookInStream_LookRead(const ILookInStream *stream, void *buf, size_t *size);
-SRes LookInStream_SeekTo(const ILookInStream *stream, UInt64 offset);
-
-/* reads via ILookInStream::Read */
-SRes LookInStream_Read2(const ILookInStream *stream, void *buf, size_t size, SRes errorType);
-SRes LookInStream_Read(const ILookInStream *stream, void *buf, size_t size);
-
 typedef struct {
 	ILookInStream vt;
 	const ISeekInStream *realStream;
 
 	size_t pos;
 	size_t size;				/* it's data size */
-
 	/* the following variables must be set outside */
 	Byte *buf;
 	size_t bufSize;
 } CLookToRead2;
-
-void LookToRead2_CreateVTable(CLookToRead2 *p, int lookahead);
 
 #define LookToRead2_Init(p) { (p)->pos = (p)->size = 0; }
 
@@ -270,14 +240,10 @@ typedef struct {
 	const ILookInStream *realStream;
 } CSecToLook;
 
-void SecToLook_CreateVTable(CSecToLook *p);
-
 typedef struct {
 	ISeqInStream vt;
 	const ILookInStream *realStream;
 } CSecToRead;
-
-void SecToRead_CreateVTable(CSecToRead *p);
 
 typedef struct ICompressProgress ICompressProgress;
 
@@ -306,60 +272,47 @@ struct ISzAlloc {
 #ifndef MY_offsetof
 #ifdef offsetof
 #define MY_offsetof(type, m) offsetof(type, m)
-/*
-   #define MY_offsetof(type, m) FIELD_OFFSET(type, m)
- */
 #else
 #define MY_offsetof(type, m) ((size_t)&(((type *)0)->m))
 #endif
 #endif
 
 #ifndef MY_container_of
-
-/*
-#define MY_container_of(ptr, type, m) container_of(ptr, type, m)
-#define MY_container_of(ptr, type, m) CONTAINING_RECORD(ptr, type, m)
-#define MY_container_of(ptr, type, m) ((type *)((char *)(ptr) - offsetof(type, m)))
-#define MY_container_of(ptr, type, m) (&((type *)0)->m == (ptr), ((type *)(((char *)(ptr)) - MY_offsetof(type, m))))
-*/
-
-/*
-  GCC shows warning: "perhaps the 'offsetof' macro was used incorrectly"
-    GCC 3.4.4 : classes with constructor
-    GCC 4.8.1 : classes with non-public variable members"
-*/
-
 #define MY_container_of(ptr, type, m) ((type *)((char *)(1 ? (ptr) : &((type *)0)->m) - MY_offsetof(type, m)))
-
 #endif
 
 #define CONTAINER_FROM_VTBL_SIMPLE(ptr, type, m) ((type *)(ptr))
-
-/*
-#define CONTAINER_FROM_VTBL(ptr, type, m) CONTAINER_FROM_VTBL_SIMPLE(ptr, type, m)
-*/
 #define CONTAINER_FROM_VTBL(ptr, type, m) MY_container_of(ptr, type, m)
-
 #define CONTAINER_FROM_VTBL_CLS(ptr, type, m) CONTAINER_FROM_VTBL_SIMPLE(ptr, type, m)
-/*
-#define CONTAINER_FROM_VTBL_CLS(ptr, type, m) CONTAINER_FROM_VTBL(ptr, type, m)
-*/
 
 #ifdef _WIN32
-
 #define CHAR_PATH_SEPARATOR '\\'
 #define WCHAR_PATH_SEPARATOR L'\\'
 #define STRING_PATH_SEPARATOR "\\"
 #define WSTRING_PATH_SEPARATOR L"\\"
-
 #else
-
 #define CHAR_PATH_SEPARATOR '/'
 #define WCHAR_PATH_SEPARATOR L'/'
 #define STRING_PATH_SEPARATOR "/"
 #define WSTRING_PATH_SEPARATOR L"/"
-
 #endif
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/* it can return SZ_ERROR_INPUT_EOF */
+SRes SeqInStream_Read(const ISeqInStream *stream, void *buf, size_t size);
+SRes SeqInStream_Read2(const ISeqInStream *stream, void *buf, size_t size, SRes errorType);
+SRes SeqInStream_ReadByte(const ISeqInStream *stream, Byte *buf);
+SRes LookInStream_LookRead(const ILookInStream *stream, void *buf, size_t *size);
+SRes LookInStream_SeekTo(const ILookInStream *stream, UInt64 offset);
+/* reads via ILookInStream::Read */
+SRes LookInStream_Read2(const ILookInStream *stream, void *buf, size_t size, SRes errorType);
+SRes LookInStream_Read(const ILookInStream *stream, void *buf, size_t size);
+void LookToRead2_CreateVTable(CLookToRead2 *p, int lookahead);
+void SecToLook_CreateVTable(CSecToLook *p);
+void SecToRead_CreateVTable(CSecToRead *p);
 
 EXTERN_C_END
-#endif
+#endif							/* __7Z_TYPES_H */
