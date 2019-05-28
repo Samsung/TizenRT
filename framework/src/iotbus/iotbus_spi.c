@@ -119,6 +119,26 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 	return dev;
 }
 
+int iotbus_spi_set_config(iotbus_spi_context_h hnd, const struct iotbus_spi_config_s *config)
+{
+	struct _iotbus_spi_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_spi_s *)hnd->handle;
+
+	struct spi_io_config conf = { config->bits_per_word, config->frequency, config->chip_select, config->mode };
+	int res = ioctl(handle->fd, SPIIOC_SET_CONFIG, (unsigned long)((uintptr_t)&conf));
+	if (res < 0) {
+		ibdbg("set config fail\n");
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+
+	return IOTBUS_ERROR_NONE;
+}
+
 int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length)
 {
 	struct _iotbus_spi_s *handle;
