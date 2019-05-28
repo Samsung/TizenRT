@@ -97,6 +97,7 @@
 
 /* Register bit definitions *********************************************************/
 
+#ifdef CONSIDER_IMPLEMENT
 /* Watchdog control and status register */
 
 #define WDOG_WCR_WDZST              (1 << 0)	/* Bit 0:  Watchdog Low Power */
@@ -155,5 +156,6 @@
 
 #define RTWDOG_UPDATE_KEY           (0xd928c520)
 #define RTWDOG_REFRESH_KEY          (0xb480a602)
+#endif
 
 #endif							/* __ARCH_ARM_SRC_IMXRT_CHIP_IMXRT_WDOG_H */
