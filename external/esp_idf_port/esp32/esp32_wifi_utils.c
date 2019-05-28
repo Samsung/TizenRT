@@ -43,7 +43,6 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 #include "esp_wifi_os_adapter.h"
-#include "nvs.h"
 #include "esp_system.h"
 #include "rom/ets_sys.h"
 #include <sched/sched.h>
@@ -53,11 +52,11 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_event_loop.h"
-#include "nvs_flash.h"
 #include "esp_wifi_internal.h"
 
-#define WIFI_DEFAULT_BEACON_INTERVAL        100
-#define WIFI_MAX_STA_CONN           4
+#define WIFI_CONN_RETRY              5
+#define WIFI_MAX_STA_CONN            4
+#define WIFI_DEFAULT_BEACON_INTERVAL 100
 
 #ifndef CONFIG_MAX_STA_CONN
 #define CONFIG_MAX_STA_CONN WIFI_MAX_STA_CONN
@@ -245,16 +244,25 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 		s_retry_num++;
 		int reason = event->event_info.disconnected.reason;
 		ESP_LOGI(TAG, "[%s] connect to the AP %s fail %d: %d; %d\n", __func__, event->event_info.disconnected.ssid, s_retry_num, event->event_info.disconnected.reason, isStaConnected);
-    
-        /*give chance to other thread to continue*/
-        sleep(1);
+
+		/*give chance to other thread to continue*/
+		sleep(1);
 		if (s_retry_num > 0) {
 			ESP_LOGI(TAG, "g_cbk.sta_connected fail\n");
-			g_cbk.sta_connected(WIFI_UTILS_FAIL, NULL);
-			s_retry_num = 0;
+			if (s_retry_num < WIFI_CONN_RETRY) {
+				esp_wifi_connect();
+			}
+
+			else {
+				g_cbk.sta_connected(WIFI_UTILS_FAIL, NULL);
+				s_retry_num = 0;
+			}
+
 		} else {
-			ESP_LOGI(TAG,"g_cbk.sta_disconnected\n");
+			ESP_LOGI(TAG, "g_cbk.sta_disconnected\n");
 			g_cbk.sta_disconnected(NULL);
+		/*in case receive multiple times SYSTEM_EVENT_STA_DISCONNECTED*/
+			s_retry_num = -1;
 		}
 		isStaConnected = 0;
 		break;

@@ -32,6 +32,8 @@
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_adc.h>
 
+#include "iotbus_internal.h"
+
 struct _iotbus_adc_s {
 	int fd;
 	uint8_t channel;
@@ -71,10 +73,10 @@ static void *iotbus_adc_handler(void *hnd)
 		ret = poll(fds, 1, timeout);
 
 		if (ret < 0) {
-			IOTAPI_LOG("[ADC] poll error(%d)\n", ret);
+			idbg("[ADC] poll error(%d)\n", ret);
 			continue;
 		} else if (ret == 0) {
-			IOTAPI_LOG("[ADC] timeout(%d)\n", timeout);
+			idbg("[ADC] timeout(%d)\n", timeout);
 			continue;
 		}
 
@@ -84,16 +86,16 @@ static void *iotbus_adc_handler(void *hnd)
 
 			/* Handle unexpected return values */
 			if (nbytes < 0) {
-				IOTAPI_LOG("[ADC] sampling: Fail to read...\n");
+				idbg("[ADC] sampling: Fail to read...\n");
 				break;
 			} else if (nbytes == 0) {
-				IOTAPI_LOG("[ADC] sampling: No data read, Ignoring\n");
+				idbg("[ADC] sampling: No data read, Ignoring\n");
 			} else {
 				if (readsize != nbytes) {
-					IOTAPI_LOG("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
+					idbg("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
 				} else {
 					// To Do : Now, get sample data only once.
-					IOTAPI_LOG("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
+					idbg("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
 					if (sample->am_channel == handle->channel) {
 						handle->callback(sample->am_channel, sample->am_data);
 					}
@@ -103,7 +105,7 @@ static void *iotbus_adc_handler(void *hnd)
 	}
 	handle->state = IOTBUS_ADC_RDY;
 	sem_post(&handle->state_sem);
-	IOTAPI_LOG("[ADC] exit iotbus_adc handler\n");
+	idbg("[ADC] exit iotbus_adc handler\n");
 
 	return 0;
 }
@@ -225,7 +227,7 @@ int iotbus_adc_start(iotbus_adc_context_h hnd, const adc_read_cb read_cb)
 	int ret;
 	ret = pthread_create(&tid, NULL, iotbus_adc_handler, (void *)handle);
 	if (ret < 0) {
-		IOTAPI_LOG("[ADC] create iotapi handler fail(%d)\n", ret);
+		idbg("[ADC] create iotapi handler fail(%d)\n", ret);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 	pthread_detach(tid);
@@ -259,7 +261,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd)
 
 		status = sem_timedwait(&handle->state_sem, &abstime);
 		if (status != OK) {
-			IOTAPI_LOG("[ADC] sem_timedwait Timeout\n");
+			idbg("[ADC] sem_timedwait Timeout\n");
 			return IOTBUS_ERROR_TIMED_OUT;
 		}
 	}
@@ -267,42 +269,65 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd)
 	return IOTBUS_ERROR_NONE;
 }
 
-uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd)
+uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 {
 	struct _iotbus_adc_s *handle;
 	size_t readsize;
 	ssize_t nbytes;
+	int ret;
 
 	struct adc_msg_s sample[1];
+
+	struct pollfd fds[1];
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
 	handle->state = IOTBUS_ADC_BUSY;
 
-	readsize = sizeof(struct adc_msg_s);
-	nbytes = read(handle->fd, sample, readsize);
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = handle->fd;
+	fds[0].events = POLLIN | POLLERR;
 
-	/* Handle unexpected return values */
-	if (nbytes <= 0) {
-		IOTAPI_LOG("[ADC] sampling: Fail to read...\n");
-		goto iobus_adc_read_done;
-	} else {
-		if (readsize != nbytes) {
-			IOTAPI_LOG("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
-			goto iobus_adc_read_done;
-		} else {
-			// To Do : Now, get sample data only once.
-			IOTAPI_LOG("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
-			if (sample->am_channel == handle->channel) {
-				return sample->am_data;
+	readsize = sizeof(struct adc_msg_s);
+
+	while (1) {
+		ret = poll(fds, 1, timeout);
+		if (ret < 0) {
+			continue;
+		} else if (ret == 0) {
+			idbg("[ADC] POLL timeout[%d]\n", received);
+			ret = IOTBUS_ERROR_TIMED_OUT;
+			break;
+		}
+
+		if (fds[0].revents & POLLIN) {
+			nbytes = read(handle->fd, sample, readsize);
+
+			if (nbytes <= 0) {
+				idbg("[ADC] sampling: Fail to read...\n");
+				ret = IOTBUS_ERROR_UNKNOWN;
+				break;
+			} else {
+				if (readsize != nbytes) {
+					idbg("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
+					ret = IOTBUS_ERROR_DEVICE_FAIL;
+					break;
+				} else {
+					// To Do : Now, get sample data only once.
+					idbg("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
+					if (sample->am_channel == handle->channel) {
+						ret = sample->am_data;
+						break;
+					}
+				}
 			}
 		}
 	}
 
 iobus_adc_read_done:
 	handle->state = IOTBUS_ADC_RDY;
-	IOTAPI_LOG("[ADC] exit iotbus_adc handler\n");
+	idbg("[ADC] exit iotbus_adc handler\n");
 
-	return 0;
+	return ret;
 }
 
 #ifdef __cplusplus

@@ -192,6 +192,7 @@ static int imxrt_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling, in
 	}
 
 	priv->handler = handler;
+#ifdef CONFIG_IMXRT_GPIO_IRQ
 	if (handler) {
 		irq_attach(irqvector, imxrt_gpio_interrupt, priv);
 		up_enable_irq(irqvector);
@@ -199,7 +200,7 @@ static int imxrt_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling, in
 		up_disable_irq(irqvector);
 		irq_detach(irqvector);
 	}
-
+#endif
 	return imxrt_config_gpio(priv->pinset);
 }
 

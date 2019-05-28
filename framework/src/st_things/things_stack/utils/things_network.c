@@ -169,7 +169,7 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 			THINGS_LOG_E(TAG, "Failed to change to STA mode)");
 			return false;
 		}
-		usleep(100000);
+		usleep(500000);
 	}
 	g_retry_connect_cnt = 0;
 	result = wifi_manager_connect_ap(connect_config);
@@ -301,7 +301,8 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 
 void things_wifi_sta_connected(wifi_manager_result_e res)
 {
-	bool is_wifi_retry_connect = false;
+	static bool is_wifi_retry_connect;
+	is_wifi_retry_connect = false;
 	if (res == WIFI_MANAGER_FAIL) {
 		THINGS_LOG_E(TAG, "Failed to connect to the AP");
 

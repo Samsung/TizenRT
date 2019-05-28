@@ -1,0 +1,45 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+menuconfig EXAMPLES_ESP32WIFIDEMO
+	bool "ESP32 wifi example"
+	depends on ESP32_WIFI_SUPPORT
+	default n
+	---help---
+		esp32 wifi example,it directly call esp wifi driver interface.
+
+if EXAMPLES_ESP32WIFIDEMO
+
+config ESP_WIFI_MODE_STATION
+	bool "ESP32 wifi station test"
+	default y
+	---help---
+		enable esp32 wifi station mode example, say N enable softap mode example
+
+config ESP_WIFI_SSID
+	string "WiFi SSID"
+	default "myssid"
+	---help---
+		SSID (network name) to connect to or softap network name.
+
+config ESP_WIFI_PASSWORD
+	string "WiFi Password"
+	default "mypassword"
+	---help---
+		WiFi password (WPA or WPA2) for the example to use.
+
+if ESP_WIFI_MODE_STATION
+config ESP_MAXIMUM_RETRY
+	int "Maximum retry"
+	default 5
+	---help---
+		Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+endif
+
+config ESP_MAX_STA_CONN
+	int "Maximal STA connections"
+	default 4
+	---help---
+		Max number of the STA connects to AP.
+endif
