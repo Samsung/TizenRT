@@ -7855,8 +7855,8 @@ typedef struct {
 
 /** CMP - Register Layout Typedef */
 typedef struct {
-  __IO uint8_t CR0;                                /**< CMP Control Register 0, offset: 0x0 */
-  __IO uint8_t CR1;                                /**< CMP Control Register 1, offset: 0x1 */
+  __IO uint8_t COMPR0;                                /**< CMP Control Register 0, offset: 0x0 */
+  __IO uint8_t COMPR1;                                /**< CMP Control Register 1, offset: 0x1 */
   __IO uint8_t FPR;                                /**< CMP Filter Period Register, offset: 0x2 */
   __IO uint8_t SCR;                                /**< CMP Status and Control Register, offset: 0x3 */
   __IO uint8_t DACCR;                              /**< DAC Control Register, offset: 0x4 */

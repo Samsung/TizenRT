@@ -139,14 +139,6 @@
 #define IMXRT_IRQ_DCDC         (IMXRT_IRQ_EXTINT + 69)	/* DCDC interrupt */
 #define IMXRT_IRQ_RESERVED70   (IMXRT_IRQ_EXTINT + 70)	/* Reserved */
 #define IMXRT_IRQ_RESERVED71   (IMXRT_IRQ_EXTINT + 71)	/* Reserved */
-#define IMXRT_IRQ_GPIO1_0      (IMXRT_IRQ_EXTINT + 72)	/* GPIO1 INT0 interrupt */
-#define IMXRT_IRQ_GPIO1_1      (IMXRT_IRQ_EXTINT + 73)	/* GPIO1 INT1 interrupt */
-#define IMXRT_IRQ_GPIO1_2      (IMXRT_IRQ_EXTINT + 74)	/* GPIO1 INT2 interrupt */
-#define IMXRT_IRQ_GPIO1_3      (IMXRT_IRQ_EXTINT + 75)	/* GPIO1 INT3 interrupt */
-#define IMXRT_IRQ_GPIO1_4      (IMXRT_IRQ_EXTINT + 76)	/* GPIO1 INT4 interrupt */
-#define IMXRT_IRQ_GPIO1_5      (IMXRT_IRQ_EXTINT + 77)	/* GPIO1 INT5 interrupt */
-#define IMXRT_IRQ_GPIO1_6      (IMXRT_IRQ_EXTINT + 78)	/* GPIO1 INT6 interrupt */
-#define IMXRT_IRQ_GPIO1_7      (IMXRT_IRQ_EXTINT + 79)	/* GPIO1 INT7 interrupt */
 #define IMXRT_IRQ_GPIO1_0_15   (IMXRT_IRQ_EXTINT + 80)	/* GPIO1 INT0-15 interrupt */
 #define IMXRT_IRQ_GPIO1_16_31  (IMXRT_IRQ_EXTINT + 81)	/* GPIO1 INT16-31 interrupt */
 #define IMXRT_IRQ_GPIO2_0_15   (IMXRT_IRQ_EXTINT + 82)	/* GPIO2 INT0-15 interrupt */

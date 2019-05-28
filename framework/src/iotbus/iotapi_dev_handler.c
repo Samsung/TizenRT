@@ -31,6 +31,7 @@
 #include <sys/select.h>
 
 #include "iotapi_dev_handler.h"
+#include "iotbus_internal.h"
 
 #ifdef CONFIG_IOTDEV
 
@@ -48,7 +49,7 @@
 
 #define IOTAPI_ERROR													\
 	do {																\
-		printf("[ERR] IOTAPI %s(%d)(%s:%d)\n", __FUNCTION__, errno, __FILE__, __LINE__); \
+		idbg("[ERR] IOTAPI %s(%d)(%s:%d)\n", __FUNCTION__, errno, __FILE__, __LINE__); \
 	} while (0)
 
 struct _iotapi_cbk_entry {
@@ -144,7 +145,7 @@ void *iotdev_handler(void *data)
 
 	int fd = open(IOTDEV_DRVPATH, O_RDWR);
 	if (fd == -1) {
-		printf("error\n");
+		idbg("error\n");
 		return NULL;
 	}
 	int sig = *((int *)data);
@@ -158,19 +159,19 @@ void *iotdev_handler(void *data)
 		rfds = fds;
 		int res = select(max_fd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
-			printf("select error\n");
+			idbg("select error\n");
 			return NULL;
 		}
 		if (FD_ISSET(sig, &rfds)) {
-			printf("terminate thread\n");
+			idbg("terminate thread\n");
 			break;
 		}
 		if (FD_ISSET(fd, &rfds)) {
-			printf("get signal from iotdev\n");
+			idbg("get signal from iotdev\n");
 			char buf[1];
 			int readed = read(fd, buf, 1);
 			if (readed <= 0) {
-				printf("read error\n");
+				idbg("read error\n");
 				continue;
 			}
 
@@ -210,7 +211,7 @@ int iotapi_dev_init(iotapi_hnd *hnd)
 	int ret;
 	ret = pthread_create(&tid, NULL, iotdev_handler, (void *)&g_pfd[0]);
 	if (ret < 0) {
-		printf("[iotcom] create iotapi handler fail(%d)\n", ret);
+		idbg("[iotcom] create iotapi handler fail(%d)\n", ret);
 		close(g_pfd[0]);
 		close(g_pfd[1]);
 		free(ctx);
@@ -227,7 +228,7 @@ int iotapi_dev_deinit(iotapi_hnd hnd)
 	char buf[5] = "term";
 	int res = write(g_pfd[1], buf, 5);
 	if (res <= 0) {
-		printf("send term signal error(%d)(%d)\n", res, errno);
+		idbg("send term signal error(%d)(%d)\n", res, errno);
 		return -1;
 	}
 	// TBD : wait here until thread is done?
@@ -275,31 +276,31 @@ iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd)
 #else
 int iotapi_dev_init(iotapi_hnd *hnd)
 {
-	printf("Turn on IOTDEV driver");
+	idbg("Turn on IOTDEV driver");
 	return -1;
 }
 
 int iotapi_dev_deinit(iotapi_hnd hnd)
 {
-	printf("Turn on IOTDEV driver");
+	idbg("Turn on IOTDEV driver");
 	return -1;
 }
 
 int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
 {
-	printf("Turn on IOTDEV driver");
+	idbg("Turn on IOTDEV driver");
 	return -1;
 }
 
 int iotapi_dev_unregister(iotapi_hnd hnd)
 {
-	printf("Turn on IOTDEV driver");
+	idbg("Turn on IOTDEV driver");
 	return -1;
 }
 
 iotbus_int_type_e iotapi_dev_get_int_type(iotapi_hnd hnd)
 {
-	printf("Turn on IOTDEV driver");
+	idbg("Turn on IOTDEV driver");
 	return -1;
 }
 #endif
