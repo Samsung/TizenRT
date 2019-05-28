@@ -55,7 +55,7 @@
 # This is the directory for the board-specific header files
 
 BOARD_INCLUDE = $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)include
-
+USER_BINPATH = $(TOPDIR)$(DELIM)../build/output/bin
 # The entry point name (if none is provided in the .config file)
 
 CONFIG_USER_ENTRYPOINT ?= user_start
@@ -76,10 +76,14 @@ else
   # Linux/Cygwin-native toolchain
   USER_LIBPATHS = $(addprefix -L$(TOPDIR)$(DELIM),$(dir $(USERLIBS)))
   USER_LDSCRIPT = -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)memory.ld
+ifeq ($(CONFIG_ARMV7M_DTCM),y)
+  USER_LDSCRIPT += -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)user-space-dtcm.ld
+else
   USER_LDSCRIPT += -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)user-space.ld
-  USER_HEXFILE += "$(TOPDIR)$(DELIM)tinyara_user.hex"
-  USER_SRECFILE += "$(TOPDIR)$(DELIM)tinyara_user.srec"
-  USER_BINFILE += "$(TOPDIR)$(DELIM)tinyara_user.bin"
+endif
+  USER_HEXFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.hex"
+  USER_SRECFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.srec"
+  USER_BINFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.bin"
 endif
 
 USER_LDFLAGS = --undefined=$(ENTRYPT) --entry=$(ENTRYPT) $(USER_LDSCRIPT)
@@ -94,7 +98,8 @@ OBJS  = $(COBJS)
 
 # Targets:
 
-all: $(TOPDIR)$(DELIM)tinyara_user.elf $(TOPDIR)$(DELIM)User.map
+all: $(USER_BINPATH)$(DELIM)tinyara_user.elf $(USER_BINPATH)$(DELIM)User.map
+	$(call DELFILE, tinyara_user.elf)
 .PHONY: tinyara_user.elf depend clean distclean
 
 $(COBJS): %$(OBJEXT): %.c
@@ -105,9 +110,9 @@ $(COBJS): %$(OBJEXT): %.c
 tinyara_user.elf: $(OBJS)
 	$(Q) $(LD) -o $@ $(USER_LDFLAGS) $(USER_LIBPATHS) $(OBJS) --start-group $(USER_LDLIBS) --end-group $(USER_LIBGCC)
 
-$(TOPDIR)$(DELIM)tinyara_user.elf: tinyara_user.elf
+$(USER_BINPATH)$(DELIM)tinyara_user.elf: tinyara_user.elf
 	@echo "LD: tinyara_user.elf"
-	$(Q) cp -a tinyara_user.elf $(TOPDIR)$(DELIM)tinyara_user.elf
+	$(Q) cp -a tinyara_user.elf $(USER_BINPATH)$(DELIM)tinyara_user.elf
 ifeq ($(CONFIG_INTELHEX_BINARY),y)
 	@echo "CP: tinyara_user.hex"
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O ihex tinyara_user.elf $(USER_HEXFILE)
@@ -121,9 +126,9 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary tinyara_user.elf $(USER_BINFILE)
 endif
 
-$(TOPDIR)$(DELIM)User.map: tinyara_user.elf
+$(USER_BINPATH)$(DELIM)User.map: tinyara_user.elf
 	@echo "MK: User.map"
-	$(Q) $(NM) tinyara_user.elf >$(TOPDIR)$(DELIM)User.map
+	$(Q) $(NM) tinyara_user.elf >$(USER_BINPATH)$(DELIM)User.map
 	$(Q) $(CROSSDEV)size tinyara_user.elf
 
 .depend:
@@ -132,8 +137,8 @@ depend: .depend
 
 clean:
 	$(call DELFILE, tinyara_user.elf)
-	$(call DELFILE, "$(TOPDIR)$(DELIM)tinyara_user.*")
-	$(call DELFILE, "$(TOPDIR)$(DELIM)User.map")
+	$(call DELFILE, "$(USER_BINPATH)$(DELIM)tinyara_user.*")
+	$(call DELFILE, "$(USER_BINPATH)$(DELIM)User.map")
 	$(call CLEAN)
 
 distclean: clean
