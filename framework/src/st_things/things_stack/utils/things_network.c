@@ -250,18 +250,20 @@ int things_get_ap_list(access_point_info_s** p_info, int* p_count)
 	while (wifi_scan_iter != NULL) {
 		if (wifi_scan_iter->e_ssid != NULL) {
 			pinfo = (access_point_info_s*)things_malloc(sizeof(access_point_info_s));
-			pinfo->next = NULL;
-			snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->e_ssid);
-			snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bss_id);
-			snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->signal_level);
-			snprintf(pinfo->sec_type, MAX_TYPE_SEC, "%s", wifi_scan_iter->sec_type);
-			snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", wifi_scan_iter->enc_type);
-			if (*p_info == NULL) {
-				*p_info = pinfo;
-			} else {
-				p_last_info->next = pinfo;
+			if (pinfo != NULL) {
+				pinfo->next = NULL;
+				snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->e_ssid);
+				snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bss_id);
+				snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->signal_level);
+				snprintf(pinfo->sec_type, MAX_TYPE_SEC, "%s", wifi_scan_iter->sec_type);
+				snprintf(pinfo->enc_type, MAX_TYPE_ENC, "%s", wifi_scan_iter->enc_type);
+				if (*p_info == NULL) {
+					*p_info = pinfo;
+				} else {
+					p_last_info->next = pinfo;
+				}
+				p_last_info = pinfo;
 			}
-			p_last_info = pinfo;
 		}
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
