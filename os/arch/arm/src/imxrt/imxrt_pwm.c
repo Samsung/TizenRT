@@ -238,6 +238,9 @@ status_t imxrt_pwm_init(PWM_Type *base, pwm_submodule_t subModule, const pwm_con
 		base->SM[subModule].CTRL2 |= PWM_CTRL2_FORCE(1U);
 	}
 
+	base->SM[subModule].DISMAP[0] = 0;
+	base->SM[subModule].DISMAP[1] = 0;
+
 	return kStatus_Success;
 }
 
@@ -933,7 +936,7 @@ static int imxrt_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 	imxrt_pwm_stop(dev);
 
 	/* Then put the GPIO pins back to the default state */
-	imxrt_pwm_deinit(priv->base,kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+	imxrt_pwm_deinit(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
 
 	return OK;
 }
@@ -956,7 +959,23 @@ static int imxrt_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 static int imxrt_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
 						 unsigned long arg)
 {
-	return -ENOTTY;
+	int ret = -ENOTTY;
+	switch (cmd) {
+	case PWMIOC_SETCHARACTERISTICS: {
+		FAR const struct pwm_info_s *info = (FAR const struct pwm_info_s *)((uintptr_t)arg);
+		DEBUGASSERT(info != NULL);
+		//todo
+	}
+	break;
+	case PWMIOC_IDLE:
+		//todo
+	break;
+	default:
+		//todo
+	break;
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -979,7 +998,7 @@ static void imxrt_pwm_reset(FAR struct pwm_lowerhalf_s *dev, int timer)
 {
 	FAR struct imxrt_pwmtimer_s *priv = (FAR struct imxrt_pwmtimer_s *)dev;
 
-	imxrt_pwm_stop(dev);
+	imxrt_pwm_stop(priv);
 }
 
 /****************************************************************************
@@ -1129,66 +1148,66 @@ static void imxrt_pwm_drv_init3phpwm(int numPWM)
 	pwmSignal[1].deadtimeValue = deadTimeVal;
 
 	switch (numPWM) {
-		case 0:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 0:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		case 1:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 1:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-		case 2:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	case 2:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		case 3:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 3:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
-		#endif
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
+	#endif
 
-		default:
-		break;
+	default:
+	break;
 	}
 }
 

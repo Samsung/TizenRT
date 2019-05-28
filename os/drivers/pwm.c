@@ -445,27 +445,40 @@ static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	case PWMIOC_SETCHARACTERISTICS: {
 		FAR const struct pwm_info_s *info = (FAR const struct pwm_info_s *)((uintptr_t)arg);
-		DEBUGASSERT(info != NULL && lower->ops->start != NULL);
+		DEBUGASSERT(info != NULL);
 
 #ifdef CONFIG_PWM_PULSECOUNT
 		pwmvdbg("PWMIOC_SETCHARACTERISTICS frequency: %d duty: %08x count: %d started: %d\n", info->frequency, info->duty, info->count, upper->started);
 #else
 		pwmvdbg("PWMIOC_SETCHARACTERISTICS frequency: %d duty: %08x started: %d\n", info->frequency, info->duty, upper->started);
 #endif
+		/* If PWM is already running, then re-start it with the new characteristics */
+		if (upper->started) {
+			DEBUGASSERT(lower->ops->stop != NULL);
+			ret = lower->ops->stop(lower);
+			if (ret < 0) {
+				return ret;
+			}
+			upper->started = false;
+#ifdef CONFIG_PWM_PULSECOUNT
+			if (upper->waiting) {
+				upper->waiting = FALSE;
+			}
+#endif
+			DEBUGASSERT(lower->ops->ioctl != NULL);
+			ret = lower->ops->ioctl(lower, cmd, arg);
+			if (ret < 0) {
+				return ret;
+			}
+			/* Restart the pulse train */
+			ret = pwm_start(upper, filep->f_oflags);
+		} else {
+			DEBUGASSERT(lower->ops->ioctl != NULL);
+			ret = lower->ops->ioctl(lower, cmd, arg);
+		}
 
 		/* Save the pulse train characteristics */
-
 		memcpy(&upper->info, info, sizeof(struct pwm_info_s));
-
-		/* If PWM is already running, then re-start it with the new characteristics */
-
-		if (upper->started) {
-#ifdef CONFIG_PWM_PULSECOUNT
-			ret = lower->ops->start(lower, &upper->info, upper);
-#else
-			ret = lower->ops->start(lower, &upper->info);
-#endif
-		}
 	}
 	break;
 
@@ -540,7 +553,6 @@ static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		unsigned long idle = (unsigned long)arg;
 		pwmvdbg("PWMIOC_IDLE: idle value %d\n", idle);
 		DEBUGASSERT(lower->ops->ioctl != NULL);
-
 		ret = lower->ops->ioctl(lower, cmd, idle);
 	}
 	break;
