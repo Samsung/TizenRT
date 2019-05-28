@@ -139,10 +139,11 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd);
  *
  * @details @b #include <iotbus/iotbus_adc.h>
  * @param[in] hnd handle of adc_context
+ * @param[in] timeout timeout value (ms).
  * @return On success, ADC sample value is returned. On failure, a negative value is returned.
  * @since TizenRT v2.0
  */
-uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd);
+uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout);
 
 #ifdef __cplusplus
 }
