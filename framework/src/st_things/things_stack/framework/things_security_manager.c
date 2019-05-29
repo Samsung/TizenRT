@@ -463,14 +463,16 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 		uint8_t cred_ret = 0;
 		OicSecCred_t *temp = NULL;
 		LL_FOREACH(GetCredList(), temp) {
-			if (0 == strcmp(temp->credUsage, TRUST_CA)) {
-				cred_ret |= (1 << 0);
-			} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
-				cred_ret |= (1 << 1);
-			} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
-				cred_ret |= (1 << 2);
-			} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
-				cred_ret |= (1 << 3);
+			if (temp->credUsage) {
+				if (0 == strcmp(temp->credUsage, TRUST_CA)) {
+					cred_ret |= (1 << 0);
+				} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
+					cred_ret |= (1 << 1);
+				} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
+					cred_ret |= (1 << 2);
+				} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
+					cred_ret |= (1 << 3);
+				}
 			}
 		}
 
