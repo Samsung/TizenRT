@@ -78,6 +78,15 @@
 #include "chip/imxrt_memorymap.h"
 #include "imxrt_pwm.h"
 
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#define IMXRT_PWM_CNT   2
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#define IMXRT_PWM_CNT   4
+#endif
+
+#define DEFAULT_DUTYCYCLE 50
+#define DEFAULT_FREQUENCY 1000
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -86,6 +95,9 @@ struct imxrt_pwmtimer_s {
 
 	PWM_Type *base;
 	uint8_t id;
+
+	uint8_t duty;
+	uint32_t frequency;
 };
 
 /*******************************************************************************
@@ -100,6 +112,7 @@ struct imxrt_pwmtimer_s {
  */
 static uint32_t imxrt_pwm_getinstance(PWM_Type *base);
 
+static void imxrt_pwm_drv_init3phpwm(int numPWM, uint8_t dutyCycle, uint32_t frequency);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -237,6 +250,9 @@ status_t imxrt_pwm_init(PWM_Type *base, pwm_submodule_t subModule, const pwm_con
 	if (config->forceTrigger == kPWM_Force_Local) {
 		base->SM[subModule].CTRL2 |= PWM_CTRL2_FORCE(1U);
 	}
+
+	base->SM[subModule].DISMAP[0] = 0;
+	base->SM[subModule].DISMAP[1] = 1;
 
 	return kStatus_Success;
 }
@@ -878,7 +894,35 @@ static int imxrt_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 {
 	FAR struct imxrt_pwmtimer_s *priv = (FAR struct imxrt_pwmtimer_s *)dev;
 
-	imxrt_pwm_starttimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_0, kPWM_PwmA, kPWM_UsePwm);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_0, kPWM_PwmB, kPWM_UsePwm);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_1, kPWM_PwmA, kPWM_UsePwm);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_1, kPWM_PwmB, kPWM_UsePwm);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_2, kPWM_PwmA, kPWM_UsePwm);
+	imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_2, kPWM_PwmB, kPWM_UsePwm);
+
+	priv->base->SM[kPWM_Module_0].CTRL2 |= PWM_CTRL2_FORCE(1);
+	priv->base->SM[kPWM_Module_1].CTRL2 |= PWM_CTRL2_FORCE(1);
+	priv->base->SM[kPWM_Module_2].CTRL2 |= PWM_CTRL2_FORCE(1);
+
+	printf("info->duty: %d, info->frequency: %d\n", info->duty, info->frequency);
+
+	if (priv->frequency != info->frequency || priv->duty != info->duty) {
+		imxrt_pwm_stoptimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+
+		for (int i = 0 ; i < IMXRT_PWM_CNT; i++) {
+			imxrt_pwm_drv_init3phpwm(i, info->duty, info->frequency);
+		}
+
+		imxrt_pwm_setpwmldok(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2, true);
+
+		imxrt_pwm_starttimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+	} else {
+		imxrt_pwm_starttimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+	}
+	
+	priv->frequency = info->frequency;
+	priv->duty = info->duty;
 
 	return OK;
 }
@@ -907,6 +951,9 @@ static int imxrt_pwm_stop(FAR struct pwm_lowerhalf_s *dev)
 
 	imxrt_pwm_stoptimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
 
+	priv->frequency = 0;
+	priv->duty = 0;
+
 	return OK;
 }
 
@@ -933,7 +980,7 @@ static int imxrt_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 	imxrt_pwm_stop(dev);
 
 	/* Then put the GPIO pins back to the default state */
-	imxrt_pwm_deinit(priv->base,kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+	imxrt_pwm_deinit(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
 
 	return OK;
 }
@@ -956,7 +1003,39 @@ static int imxrt_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 static int imxrt_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
 						 unsigned long arg)
 {
-	return -ENOTTY;
+	FAR struct imxrt_pwmtimer_s *priv = (FAR struct imxrt_pwmtimer_s *)dev;
+	int ret = -ENOTTY;
+
+	switch (cmd) {
+	case PWMIOC_IDLE:
+		printf("imxrt_pwm_ioctl: %d\n", arg);
+		bool value = (bool) arg;
+		imxrt_pwm_stoptimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+
+		imxrt_pwm_starttimer(priv->base, kPWM_Control_Module_0 | kPWM_Control_Module_1 | kPWM_Control_Module_2);
+
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_0, kPWM_PwmA, value);
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_0, kPWM_PwmB, value);
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_1, kPWM_PwmA, value);
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_1, kPWM_PwmB, value);
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_2, kPWM_PwmA, value);
+		imxrt_pwm_setupswctrlout(priv->base, kPWM_Control_Module_2, kPWM_PwmB, value);
+
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_0, kPWM_PwmA, kPWM_SoftwareControl);
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_0, kPWM_PwmB, kPWM_SoftwareControl);
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_1, kPWM_PwmA, kPWM_SoftwareControl);
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_1, kPWM_PwmB, kPWM_SoftwareControl);
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_2, kPWM_PwmA, kPWM_SoftwareControl);
+		imxrt_pwm_setupforcesignal(priv->base, kPWM_Control_Module_2, kPWM_PwmB, kPWM_SoftwareControl);
+
+		priv->base->SM[kPWM_Module_0].CTRL2 |= PWM_CTRL2_FORCE(1);
+		priv->base->SM[kPWM_Module_1].CTRL2 |= PWM_CTRL2_FORCE(1);
+		priv->base->SM[kPWM_Module_2].CTRL2 |= PWM_CTRL2_FORCE(1);
+
+		ret = OK;
+	break;
+	}
+	return ret;
 }
 
 /****************************************************************************
@@ -998,6 +1077,8 @@ static struct imxrt_pwmtimer_s g_pwm0_1 = {
 	.ops	= &g_pwm_ops,
 	.id		= 1,
 	.base	= (PWM_Type *)PWM1_BASE,
+	.duty   = 0,
+	.frequency = 0
 };
 #endif
 
@@ -1006,6 +1087,8 @@ static struct imxrt_pwmtimer_s g_pwm0_2 = {
 	.ops	= &g_pwm_ops,
 	.id		= 2,
 	.base	= (PWM_Type *)PWM2_BASE,
+	.duty   = 0,
+	.frequency = 0
 };
 #endif
 
@@ -1015,6 +1098,8 @@ static struct imxrt_pwmtimer_s g_pwm0_3 = {
 	.ops	= &g_pwm_ops,
 	.id		= 3,
 	.base	= (PWM_Type *)PWM3_BASE,
+	.duty   = 0,
+	.frequency = 0
 };
 #endif
 
@@ -1023,6 +1108,8 @@ static struct imxrt_pwmtimer_s g_pwm0_4 = {
 	.ops	= &g_pwm_ops,
 	.id		= 4,
 	.base	= (PWM_Type *)PWM4_BASE,
+	.duty   = 0,
+	.frequency = 0
 };
 #endif
 #endif
@@ -1105,12 +1192,12 @@ static inline void imxrt_pwm_clock_init(void)
 	imxrt_clock_setdiv(kCLOCK_IpgDiv, 0x3); /* Set IPG PODF to 3, divede by 4 */
 }
 
-static void imxrt_pwm_drv_init3phpwm(int numPWM)
+static void imxrt_pwm_drv_init3phpwm(int numPWM, uint8_t dutyCycle, uint32_t frequency)
 {
 	uint16_t deadTimeVal;
 	pwm_signal_param_t pwmSignal[2];
 	uint32_t pwmSourceClockInHz;
-	uint32_t pwmFrequencyInHz = 1000;
+	uint32_t pwmFrequencyInHz = frequency;
 
 	pwmSourceClockInHz = imxrt_clock_getfreq(kCLOCK_IpgClk);
 
@@ -1119,76 +1206,76 @@ static void imxrt_pwm_drv_init3phpwm(int numPWM)
 
 	pwmSignal[0].pwmChannel = kPWM_PwmA;
 	pwmSignal[0].level = kPWM_HighTrue;
-	pwmSignal[0].dutyCyclePercent = 50; /* 1 percent dutycycle */
+	pwmSignal[0].dutyCyclePercent = dutyCycle; /* 1 percent dutycycle */
 	pwmSignal[0].deadtimeValue = deadTimeVal;
 
 	pwmSignal[1].pwmChannel = kPWM_PwmB;
 	pwmSignal[1].level = kPWM_HighTrue;
 	/* Dutycycle field of PWM B does not matter as we are running in PWM A complementary mode */
-	pwmSignal[1].dutyCyclePercent = 50;
+	pwmSignal[1].dutyCyclePercent = dutyCycle;
 	pwmSignal[1].deadtimeValue = deadTimeVal;
 
 	switch (numPWM) {
-		case 0:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 0:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM1_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		case 1:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 1:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM2_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-		case 2:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+	case 2:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM3_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
 
-		case 3:
-		/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	case 3:
+	/*********** PWMA_SM0 - phase A, configuration, setup 2 channel as an example ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_0, pwmSignal, 2, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
+	/*********** PWMA_SM1 - phase B configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_1, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
 
-		/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
-		imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
-					pwmSourceClockInHz);
-		break;
-		#endif
+	/*********** PWMA_SM2 - phase C configuration, setup PWM A channel only ************/
+	imxrt_pwm_setuppwm((PWM_Type *)PWM4_BASE, kPWM_Module_2, pwmSignal, 1, kPWM_SignedCenterAligned, pwmFrequencyInHz,
+				pwmSourceClockInHz);
+	break;
+	#endif
 
-		default:
-		break;
+	default:
+	break;
 	}
 }
 
@@ -1248,7 +1335,7 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer)
 			return NULL;
 		}
 
-		imxrt_pwm_drv_init3phpwm(timer);
+		imxrt_pwm_drv_init3phpwm(timer, DEFAULT_DUTYCYCLE, DEFAULT_FREQUENCY);
 
 		lower = (struct pwm_lowerhalf_s *)&g_pwm0_1;
 	} else
@@ -1278,7 +1365,7 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer)
 			return NULL;
 		}
 
-		imxrt_pwm_drv_init3phpwm(timer);
+		imxrt_pwm_drv_init3phpwm(timer, DEFAULT_DUTYCYCLE, DEFAULT_FREQUENCY);
 
 		lower = (struct pwm_lowerhalf_s *)&g_pwm0_2;
 	} else
@@ -1309,7 +1396,7 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer)
 			return NULL;
 		}
 
-		imxrt_pwm_drv_init3phpwm(timer);
+		imxrt_pwm_drv_init3phpwm(timer, DEFAULT_DUTYCYCLE, DEFAULT_FREQUENCY);
 
 		lower = (struct pwm_lowerhalf_s *)&g_pwm0_3;
 	} else
@@ -1339,7 +1426,7 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer)
 			return NULL;
 		}
 
-		imxrt_pwm_drv_init3phpwm(timer);
+		imxrt_pwm_drv_init3phpwm(timer, DEFAULT_DUTYCYCLE, DEFAULT_FREQUENCY);
 
 		lower = (struct pwm_lowerhalf_s *)&g_pwm0_4;
 	} else
@@ -1349,8 +1436,6 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer)
 		lldbg("ERROR: invalid PWM is requested\n");
 		return NULL;
 	}
-
-	imxrt_pwm_reset(lower, timer);
 
 	return lower;
 }
