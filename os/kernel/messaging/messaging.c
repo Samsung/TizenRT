@@ -61,6 +61,7 @@
 #include <string.h>
 #include <queue.h>
 #include <semaphore.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/mm/mm.h>
 
 /****************************************************************************
