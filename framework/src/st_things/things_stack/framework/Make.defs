@@ -19,7 +19,7 @@
 CSRCS += things_data_manager.c things_req_handler.c things_resource.c things_security_manager.c things_server_builder.c
 
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
-ifeq ($(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY),y)
+ifeq ($(CONFIG_ST_THINGS_HW_CERT_KEY),y)
 CSRCS += things_sss_manager.c
 endif
 endif
