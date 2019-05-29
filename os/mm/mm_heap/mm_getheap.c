@@ -22,15 +22,119 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_MM_KERNEL_HEAP
+#include <tinyara/sched.h>
+#endif
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
+
+#include <tinyara/userspace.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/sched.h>
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#else
+#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#endif
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+#define USR_HEAP ((struct mm_heap_s *)_stext)
+
+#else
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#define USR_HEAP       g_mmheap
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+#include <queue.h>
+
+typedef struct app_heap_s {
+	struct app_heap_s *flink;
+	struct app_heap_s *blink;
+	struct mm_heap_s *heap;
+} app_heap_s;
+
+static dq_queue_t app_heap_q;
+
+#ifdef CONFIG_MM_PARTITION_HEAP
+extern struct mm_heap_s g_pheap;
+#endif
+
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+void mm_initialize_app_heap()
+{
+	dq_init(&app_heap_q);
+}
+
+void mm_add_app_heap_list(struct mm_heap_s *heap)
+{
+	app_heap_s *node = (app_heap_s *)kmm_malloc(sizeof(app_heap_s));
+	if (!node) {
+		mdbg("Error allocating heap node\n");
+		return;
+	}
+
+	node->heap = heap;
+
+	/* Add the new heap node to the head of the list*/
+	dq_addfirst((dq_entry_t *)node, &app_heap_q);
+}
+
+void mm_remove_app_heap_list(struct mm_heap_s *heap)
+{
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	/* Search the heap node in the list */
+	while (node) {
+		if (node->heap == heap) {
+			/* Remove and free the matching node */
+			dq_rem((dq_entry_t *)node, &app_heap_q);
+			kmm_free(node);
+			return;
+		}
+
+		node = dq_next(node);
+	}
+}
+
+static struct mm_heap_s *mm_get_app_heap(void *address)
+{
+	/* First, search the address in list of app heaps */
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	while (node) {
+		if ((address > (void *)node->heap->mm_heapstart[0]) && (address < (void *)node->heap->mm_heapend[0])) {
+			return node->heap;
+		}
+		node = dq_next(node);
+	}
+
+#ifdef CONFIG_MM_PARTITION_HEAP
+	/* If address was not found in the app heaps, then it might be in the partition heap */
+	if ((address > (void *)g_pheap.mm_heapstart[0]) && (address < (void *)g_pheap.mm_heapend[0])) {
+		return &g_pheap;
+	}
+#endif
+
+	mdbg("address 0x%x is not in any app heap region.\n", address);
+	return NULL;
+}
+#endif
+
 /****************************************************************************
  * Name: mm_get_heap
  *
@@ -40,25 +144,27 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap(void *address)
 {
-	int heap_idx;
 #ifdef CONFIG_MM_KERNEL_HEAP
-	struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
+	if (address >= (FAR void *)g_kmmheap.mm_heapstart[0] && address < (FAR void *)g_kmmheap.mm_heapend[0]) {
 		return &g_kmmheap;
-	} else
+	}
 #endif
-	{
-		heap_idx = mm_get_heapindex(address);
-		if (heap_idx == INVALID_HEAP_IDX) {
-			mdbg("address is not in heap region.\n");
-			return NULL;
-		}
-		return &g_mmheap[heap_idx];
+	int heap_idx;
+	heap_idx = mm_get_heapindex(address);
+	if (heap_idx == INVALID_HEAP_IDX) {
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+		/* If address was not found in kernel or user heap, search for it in app heaps */
+		return mm_get_app_heap(address);
+#else
+		mdbg("address 0x%x is not in heap region.\n", address);
+		return NULL;
+#endif
 	}
 
+	return &USR_HEAP[heap_idx];
 }
+
+
 /****************************************************************************
  * Name: mm_get_heap_with_index
  ****************************************************************************/
@@ -68,7 +174,7 @@ struct mm_heap_s *mm_get_heap_with_index(int index)
 		mdbg("heap index is out of range.\n");
 		return NULL;
 	}
-	return &g_mmheap[index];
+	return &USR_HEAP[index];
 }
 
 /****************************************************************************
@@ -89,7 +195,7 @@ int mm_get_heapindex(void *mem)
 			/* A valid address from the user heap for this region would have to lie
 			 * between the region's two guard nodes.
 			 */
-			if ((mem > (void *)g_mmheap[heap_idx].mm_heapstart[region]) && (mem < (void *)g_mmheap[heap_idx].mm_heapend[region])) {
+			if ((mem > (void *)USR_HEAP[heap_idx].mm_heapstart[region]) && (mem < (void *)USR_HEAP[heap_idx].mm_heapend[region])) {
 				return heap_idx;
 			}
 		}
