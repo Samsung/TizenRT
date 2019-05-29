@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  kernel/messaging/messaging.h
+ *  kernel/messaging/message_ctrl.h
  *
  *   Copyright (C) 2007, 2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __KERNEL_MESSAGING_MESSAGING_H
-#define __KERNEL_MESSAGING_MESSAGING_H
+#ifndef __KERNEL_MESSAGING_MESSAGE_CTRL_H
+#define __KERNEL_MESSAGING_MESSAGE_CTRL_H
 
 /****************************************************************************
  * Included Files
@@ -62,4 +62,4 @@
 int messaging_save_receiver(char *port_name, pid_t recv_pid, int recv_prio);
 int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt);
 int messaging_remove_list(char *port_name);
-#endif							/* __KERNEL_MESSAGING_MESSAGING_H */
+#endif							/* __KERNEL_MESSAGING_MESSAGE_CTRL_H */

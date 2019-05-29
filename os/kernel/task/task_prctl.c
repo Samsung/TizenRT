@@ -67,7 +67,8 @@
 
 #ifdef CONFIG_MESSAGING_IPC
 #include <sys/types.h>
-#include <messaging.h>
+#include <messaging/messaging.h>
+#include "messaging/message_ctrl.h"
 #endif
 #include "sched/sched.h"
 #include "task/task.h"
