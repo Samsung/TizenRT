@@ -492,6 +492,7 @@ const wifimgr_handler g_handler[] = {
 #ifdef CONFIG_ENABLE_IOTIVITY
 void __tizenrt_manual_linkset(const char *msg)
 {
+	nvdbg("[WM] send message : %s\n", msg);
 	int ret = mq_send(g_dw_nwevent_mqfd, msg, 3, 42);
 	if (ret < 0) {
 		ndbg("[WM] send message fail\n");
@@ -1325,8 +1326,10 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else if (msg->event == EVT_JOINED) {
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
 	} else if (msg->event == EVT_DHCPD_GET_IP) {
+#endif
 		WIFIMGR_INC_NUM_CLIENT;
 		_handle_user_cb(CB_STA_JOINED, NULL);
 	} else if (msg->event == EVT_LEFT) {
@@ -1398,10 +1401,16 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			break;
 		case CB_STA_JOINED:
 			nvdbg("[WM] call sta join event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+			__tizenrt_manual_linkset("gen");
+#endif
 			cbk->softap_sta_joined();
 			break;
 		case CB_STA_LEFT:
 			nvdbg("[WM] call sta leave event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+			__tizenrt_manual_linkset("del");
+#endif
 			cbk->softap_sta_left();
 			break;
 		case CB_SCAN_DONE:
