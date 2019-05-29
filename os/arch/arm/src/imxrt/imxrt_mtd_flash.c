@@ -339,11 +339,15 @@ static inline void imxrt_bytewrite(struct imxrt_dev_s *priv, FAR const uint8_t *
 	status_t status;
 	fvdbg("offset: %08lx  count:%d\n", (long)offset, count);
 
+	#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+	#warning "Need to check Configuration!!"
+	#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
 	status = imxrt_flexspi_nor_hyperbus_write(IMXRT_FLEXSPI, offset, (uint32_t *)buffer, count);
 	if (status != kStatus_Success) {
 		fdbg("Page program failure !\r\n");
 		return;
 	}
+	#endif
 
 	fvdbg("Written\n");
 }
