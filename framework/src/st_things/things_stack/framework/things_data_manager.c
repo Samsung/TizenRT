@@ -1109,8 +1109,8 @@ static int parse_configuration_json(cJSON *configuration)
 			THINGS_LOG_V(TAG, "svrdb file path length exceeded");
 			goto JSON_ERROR;
 		}
-		strcpy(g_svrdb_file_path, PATH_MNT);
-		strcat(g_svrdb_file_path, svrdb->valuestring);
+		strncpy(g_svrdb_file_path, PATH_MNT, strlen(PATH_MNT));
+		strncat(g_svrdb_file_path, svrdb->valuestring, (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT));
 	}
 
 	if (strncmp(provisioning->valuestring, "/", 1) == 0) {
@@ -1124,8 +1124,8 @@ static int parse_configuration_json(cJSON *configuration)
 			THINGS_LOG_V(TAG, "provisioning file path length exceeded");
 			goto JSON_ERROR;
 		}
-		strcpy(g_things_cloud_file_path, PATH_MNT);
-		strcat(g_things_cloud_file_path, provisioning->valuestring);
+		strncpy(g_things_cloud_file_path, PATH_MNT, strlen(PATH_MNT));
+		strncat(g_things_cloud_file_path, provisioning->valuestring, (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT));
 	}
 
 #ifndef CONFIG_ST_THINGS_HW_CERT_KEY
@@ -1140,8 +1140,8 @@ static int parse_configuration_json(cJSON *configuration)
 			THINGS_LOG_V(TAG, "certificate file path length exceeded");
 			goto JSON_ERROR;
 		}
-		strcpy(g_certificate_file_path, PATH_ROM);
-		strcat(g_certificate_file_path, certificate->valuestring);
+		strncpy(g_certificate_file_path, PATH_ROM, strlen(PATH_ROM));
+		strncat(g_certificate_file_path, certificate->valuestring, (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM));
 	}
 
 
@@ -1156,8 +1156,8 @@ static int parse_configuration_json(cJSON *configuration)
 			THINGS_LOG_V(TAG, "privateKey file path length exceeded");
 			goto JSON_ERROR;
 		}
-		strcpy(g_private_key_file_path, PATH_ROM);
-		strcat(g_private_key_file_path, privateKey->valuestring);
+		strncpy(g_private_key_file_path, PATH_ROM, strlen(PATH_ROM));
+		strncat(g_private_key_file_path, privateKey->valuestring, (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM));
 	}
 #endif
 
@@ -1261,7 +1261,9 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 				} else {
 					restype->prop[iter2]->mandatory = false;
 				}
-				restype->prop[iter2]->rw = rw->valueint;
+				if (rw != NULL) {
+					restype->prop[iter2]->rw = rw->valueint;
+				}
 			}
 
 			hashmap_insert(g_resource_type_hmap, restype, index);
