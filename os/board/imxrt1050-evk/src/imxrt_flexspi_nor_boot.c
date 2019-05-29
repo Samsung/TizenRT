@@ -12,7 +12,6 @@
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
@@ -59,7 +58,29 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+#ifdef CONFIG_IMXRT_BOOT_FROM_OCRAM
+const uint8_t dcd_data[];		/* Forward declaration */
+__attribute__((section(".boot_hdr.ivt")))
+const struct ivt_s image_vector_table = {
+	IVT_HEADER,					/* IVT Header */
+	0x2020A000,					/* Image  Entry Function */
+	IVT_RSVD,					/* Reserved = 0 */
+	(uint32_t)&dcd_data,		/* Address where DCD information is stored */
+	(uint32_t)BOOT_DATA_ADDRESS,	/* Address where BOOT Data Structure is stored */
+	(uint32_t)&image_vector_table,	/* Pointer to IVT Self (absolute address */
+	(uint32_t)CSF_ADDRESS,		/* Address where CSF file is stored */
+	IVT_RSVD					/* Reserved = 0 */
+};
 
+__attribute__((section(".boot_hdr.boot_data")))
+const struct boot_data_s boot_data = {
+	OCRAM_BASE,					/* boot start location */
+	(OCRAM_END - OCRAM_BASE),	/* size */
+	PLUGIN_FLAG,				/* Plugin flag */
+	0xFFFFFFFF					/* empty - extra data word */
+};
+
+#else
 __attribute__((section(".boot_hdr.ivt")))
 const struct ivt_s image_vector_table = {
 	IVT_HEADER,					/* IVT Header */
@@ -79,6 +100,7 @@ const struct boot_data_s boot_data = {
 	PLUGIN_FLAG,				/* Plugin flag */
 	0xFFFFFFFF					/* empty - extra data word */
 };
+#endif
 
 __attribute__((section(".boot_hdr.dcd_data")))
 /*************************************
@@ -87,11 +109,27 @@ __attribute__((section(".boot_hdr.dcd_data")))
 const uint8_t dcd_data[] = {
     /*0000*/ DCD_TAG_HEADER,
     0x04,
-    0x30,
+    0x40,
     0x41,
     0xCC,
     0x03,
-    0xAC,
+    0xBC,
+    0x04,
+    0x40,
+    0x0A,
+    0xC0,
+    0x44,
+    0x55,
+    0x55,
+    0x55,
+    0x55,
+    /*0010*/ 0x40,
+    0x0A,
+    0xC0,
+    0x40,
+    0x00,
+    0x00,
+    0x00,
     0x04,
     0x40,
     0x0F,

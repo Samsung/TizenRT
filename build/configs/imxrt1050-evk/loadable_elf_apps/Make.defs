@@ -58,7 +58,11 @@ MEM_LDSCRIPT = memory.ld
 ifeq ($(CONFIG_ARMV7M_DTCM),y)
 KSPACE_LDSCRIPT = kernel-space-dtcm.ld
 else
+ifeq ($(CONFIG_IMXRT_BOOT_FROM_OCRAM),y)
+KSPACE_LDSCRIPT = kernel-space-ocram-boot.ld
+else
 KSPACE_LDSCRIPT = kernel-space.ld
+endif
 endif
 
 ifeq ($(WINTOOL),y)

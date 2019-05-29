@@ -367,6 +367,12 @@ static void imxrt_configure_ocram(void)
 }
 #endif
 
+static __inline__ void * get_pc(void)  {
+    void *pc;
+    asm("mov %0, pc" : "=r"(pc));
+    return pc;
+}
+
 /****************************************************************************
  * Name: _start
  *
@@ -400,6 +406,7 @@ void __start(void)
 		*dest++ = 0;
 	}
 
+#ifndef CONFIG_IMXRT_BOOT_FROM_OCRAM
 	/* Move the initialized data section from his temporary holding spot in
 	 * FLASH into the correct place in OCRAM.  The correct place in OCRAM is
 	 * give by _sdata and _edata.  The temporary location is in FLASH at the
@@ -422,12 +429,14 @@ void __start(void)
 		*dest++ = *src++;
 	}
 #endif
-
+#endif
 	/* Configure the UART so that we can get debug output as soon as possible */
 
 	imxrt_clockconfig();
 	imxrt_fpuconfig();
 	imxrt_lowsetup();
+
+	lldbg("Executing from address 0x%x\n", get_pc());
 
 	/* Enable/disable tightly coupled memories */
 

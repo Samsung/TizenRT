@@ -95,8 +95,8 @@ MEMORY
 
   kdtcm   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
   udtcm   (rwx) : ORIGIN = 0x20010000, LENGTH = 16K
-  kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 256K
-  uocram (rwx) : ORIGIN = 0x20240000, LENGTH = 64K
+  kocram (rwx) : ORIGIN = 0x20208000, LENGTH = 256K
+  uocram (rwx) : ORIGIN = 0x20248000, LENGTH = 64K
 }
 
 __kflash_segment_start__  = ORIGIN(kflash);

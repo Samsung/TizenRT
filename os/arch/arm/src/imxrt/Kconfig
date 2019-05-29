@@ -812,5 +812,12 @@ config IMXRT_RTC_MAGIC
 		Value used as Magic to determine if the RTC is already setup
 
 endmenu
+
+config IMXRT_BOOT_FROM_OCRAM
+        bool "Boot IMXRT kernel from OCRAM"
+        default n
+        ---help---
+                Select this option to boot the TizenRT kernel from OCRAM instead of Flash
+
 endif # ARCH_CHIP_IMXRT
 

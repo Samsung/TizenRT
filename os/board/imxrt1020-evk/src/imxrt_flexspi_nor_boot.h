@@ -99,6 +99,8 @@
 #define CSF_ADDRESS                 0
 #define PLUGIN_FLAG                 (uint32_t)0
 
+#define OCRAM_BASE                 0x20208000
+#define OCRAM_END                  0x20228000          /* OCRAM default size is 128 KB */
 /****************************************************************************
  * Public Types
  ****************************************************************************/
