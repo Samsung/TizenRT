@@ -36,6 +36,7 @@
 
 #include "imxrt_clock.h"
 #include "imxrt_adc.h"
+#include "imxrt_iomuxc.h"
 
 #ifdef CONFIG_IMXRT_ADC
 
@@ -62,6 +63,7 @@ struct imxrt_dev_s {
 	uint8_t current;			/* Current ADC channel being converted */
 
 	WDOG_ID work;				/* Supports the IRQ handling */
+	struct work_s work_int;	        /* Supports the IRQ handling */
 	uint8_t chanlist[IMXRT_ADC_MAX_CHANNELS];
 };
 
@@ -74,6 +76,7 @@ struct imxrt_dev_s {
  * @param base ADC peripheral base address
  */
 static uint32_t imxrt_adc_getinstance(ADC_Type *base);
+static void adc_conversion(int argc, uint32_t arg);
 
 /*******************************************************************************
  * Variables
@@ -445,13 +448,18 @@ void imxrt_adc_clearstatusflags(ADC_Type *base, uint32_t mask)
  *   None
  *
  ****************************************************************************/
-
 static void adc_conversion(int argc, uint32_t arg)
 {
+	adc_channel_config_t adcChannelConfigStruct;
 	uint16_t sample = 0;
 	struct imxrt_dev_s *priv = (struct imxrt_dev_s *)arg;
 
 #if defined(CONVERT_ONECHANNEL) && (0 < CONVERT_ONECHANNEL)
+	/* Configure the user channel and interrupt. */
+	adcChannelConfigStruct.channelNumber = priv->current;
+	adcChannelConfigStruct.enableInterruptOnConversionCompleted = false;
+	imxrt_adc_setchannelconfig(ADC1, ADC_CHANNEL_GROUP, &adcChannelConfigStruct);
+
 	/* Read the ADC sample and pass it to the upper-half */
 	while (0U == imxrt_adc_getchannelstatusflags(ADC1, ADC_CHANNEL_GROUP)) {
 	}
@@ -470,6 +478,7 @@ static void adc_conversion(int argc, uint32_t arg)
 	}
 
 	/*next conversion */
+	wd_cancel(priv->work);
 	wd_start(priv->work, PeroidPerChannel, (wdentry_t)&adc_conversion, 1, (uint32_t)priv);
 #else
 	if (priv->current >= priv->nchannels) {
@@ -477,6 +486,11 @@ static void adc_conversion(int argc, uint32_t arg)
 	}
 
 	while (priv->current < priv->nchannels) {
+		/* Configure the user channel and interrupt. */
+		adcChannelConfigStruct.channelNumber = priv->current;
+		adcChannelConfigStruct.enableInterruptOnConversionCompleted = false;
+		imxrt_adc_setchannelconfig(ADC1, ADC_CHANNEL_GROUP, &adcChannelConfigStruct);
+		
 		/* Read the ADC sample and pass it to the upper-half */
 		while (0U == imxrt_adc_getchannelstatusflags(ADC1, ADC_CHANNEL_GROUP)) {
 		}
@@ -548,7 +562,6 @@ static void adc_startconv(FAR struct imxrt_dev_s *priv, bool enable)
 static int adc_set_ch(FAR struct adc_dev_s *dev, uint8_t ch)
 {
 	int i;
-	adc_channel_config_t adcChannelConfigStruct;
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	if (ch == 0) {
@@ -569,11 +582,6 @@ static int adc_set_ch(FAR struct adc_dev_s *dev, uint8_t ch)
 		priv->current = i;
 		priv->nchannels = 1;
 	}
-
-		/* Configure the user channel and interrupt. */
-	adcChannelConfigStruct.channelNumber = priv->current;
-	adcChannelConfigStruct.enableInterruptOnConversionCompleted = false;
-	imxrt_adc_setchannelconfig(ADC1, 0, &adcChannelConfigStruct);
 
 	return OK;
 }
@@ -645,13 +653,8 @@ static int adc_setup(FAR struct adc_dev_s *dev)
 
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
-	/* Attach the ADC interrupt */
-
 	/* Make sure that the ADC device is in the powered up, reset state */
 	adc_reset(dev);
-
-	/* Enable the ADC interrupt */
-	//up_enable_irq(IRQ_ADC);
 
 	lldbg("[ADC] adc_setup: %d, %d...\n\t", priv->cchannels, priv->nchannels);
 	for (ret = 0; ret < priv->nchannels; ret++) {
@@ -727,6 +730,13 @@ static int adc_ioctl(FAR struct adc_dev_s *dev, int cmd, unsigned long arg)
 		adc_startconv(priv, true);
 		break;
 
+	// TO-DO
+	#if 0
+	case ANIOC_STOP:
+		adc_startconv(priv, false);
+		break;
+	#endif
+
 	default:
 		ret = -ENOTTY;
 		break;
@@ -754,6 +764,26 @@ static struct imxrt_dev_s g_adcpriv = {
 
 static struct adc_dev_s g_adcdev;
 
+static inline void imxrt_adc_pins_init(void)
+{
+	imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
+
+	imxrt_iomuxc_setpinmux(
+		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,        /* GPIO_AD_B1_11 is configured as GPIO1_IO27 */
+		0U);
+
+	imxrt_iomuxc_setpinconfig(
+		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,        /* GPIO_AD_B1_11 PAD functional properties : */
+		0xB0u);                                 /* Slew Rate Field: Slow Slew Rate
+													Drive Strength Field: R0/6
+													Speed Field: medium(100MHz)
+													Open Drain Enable Field: Open Drain Disabled
+													Pull / Keep Enable Field: Pull/Keeper Disabled
+													Pull / Keep Select Field: Keeper
+													Pull Up / Down Config. Field: 100K Ohm Pull Down
+													Hyst. Enable Field: Hysteresis Disabled */
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -777,6 +807,8 @@ static struct adc_dev_s g_adcdev;
 struct adc_dev_s *imxrt_adc_initialize(FAR const uint8_t *chanlist, int cchannels)
 {
 	FAR struct imxrt_dev_s *priv = &g_adcpriv;
+
+	imxrt_adc_pins_init();
 
 	/* Initialize the public ADC device data structure */
 	g_adcdev.ad_ops = &g_adcops;
