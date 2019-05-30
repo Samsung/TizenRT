@@ -62,12 +62,14 @@ int main(int argc, char **argv)
 		case 'R':
 		case 'r':
 			recovery_test();
+			is_testing = false;
 			break;
 #endif
 		case 'X':
 		case 'x':
 			printf("Test will be finished.\n");
 			is_testing = false;
+			break;
 		default:
 			printf("Invalid Scenario.\n");
 			break;
