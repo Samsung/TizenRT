@@ -108,6 +108,11 @@ CHIP_CSRCS  = esp32_allocateheap.c esp32_clockconfig.c esp32_cpuint.c
 CHIP_CSRCS += esp32_gpio.c esp32_intdecode.c esp32_irq.c esp32_region.c
 CHIP_CSRCS += esp32_timerisr.c esp32_periph_ctrl.c
 
+ifeq ($(CONFIG_ESP32_SPIFLASH),y)
+	VPATH += chip/spi_flash
+	CHIP_CSRCS += cache_utils.c flash_mmap.c flash_ops.c partition.c spi_flash_rom_patch.c esp_ota_eps.c esp32_flash.c
+endif
+
 ifeq ($(CONFIG_GPIO),y)
     CHIP_CSRCS += esp32_gpio_lowerhalf.c
 endif
@@ -124,13 +129,6 @@ ifeq ($(CONFIG_I2C),y)
 CHIP_CSRCS += esp32_i2c.c
 endif
 
-ifeq ($(CONFIG_FS_SMARTFS),y)
-CHIP_CSRCS += esp32_flash.c
-CFLAGS += -I$(TOPDIR)/../external/esp32_wifi_adapter/include
-CFLAGS += -I$(TOPDIR)/../external/esp32_wifi_adapter/spi_flash/include
-endif
-
-
 ifeq ($(CONFIG_SPI),y)
 CHIP_CSRCS += esp32_spi.c
 endif
@@ -144,6 +142,10 @@ endif
 ifeq ($(CONFIG_I2S),y)
 CHIP_CSRCS += esp32_i2s.c
 endif
+
+CFLAGS += -Ichip/chip
+CFLAGS += -Ichip/spi_flash/include
+CFLAGS += -I$(TOPDIR)/../external/esp_idf_port/include
 
 # Configuration-dependent ESP32 files
 

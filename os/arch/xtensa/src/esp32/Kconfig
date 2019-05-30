@@ -60,6 +60,12 @@ config ESP32_I2S1
 	---help---
 		No yet implemented
 
+config ESP32_SPIFLASH
+	bool "SPI FLASH"
+	default n
+	---help---
+		ESP32 spi flash driver	
+
 config ESP32_LEDC
 	bool "LED PWM (LEDC)"
 	default n
@@ -397,5 +403,7 @@ config ESP32_I2C1_SDA_PULLUP_EN
 endif # ESP32_I2C1
 
 endmenu # I2C configuration
+
+source arch/xtensa/src/esp32/spi_flash/Kconfig
 
 endif # ARCH_CHIP_ESP32
