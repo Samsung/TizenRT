@@ -78,15 +78,15 @@ ifeq ($(CONFIG_HAVE_CXX),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 endif
 
+# Add library for external support.
+
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
 # Add library for application support.
 
 ifneq ($(APPDIR),)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
 endif
-
-# Add library for external support.
-
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
 # Add libraries for network support
 
