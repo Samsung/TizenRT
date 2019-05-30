@@ -107,6 +107,7 @@ extern const struct procfs_operations smartfs_procfsoperations;
 extern const struct procfs_operations power_procfsoperations;
 extern const struct procfs_operations cm_operations;
 extern const struct procfs_operations irqs_operations;
+extern const struct procfs_operations ereport_operations;
 
 /* And even worse, this one is specific to the STM32.  The solution to
  * this nasty couple would be to replace this hard-coded, ROM-able
@@ -159,6 +160,11 @@ static const struct procfs_entry_s g_procfsentries[] = {
 #if defined(CONFIG_CM) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CONNECTIVITY)
 	{"connectivity**", &cm_operations},
 #endif
+
+#if !defined(CONFIG_FS_PROCFS_EXCLUDE_EREPORT)
+	{"ereport/**", &ereport_operations},
+#endif
+
 	{NULL, NULL}
 };
 

@@ -905,7 +905,7 @@ ssize_t up_progmem_erasepage(size_t page)
 
 	address = up_progmem_getaddress(page);
 
-	return flexspi_nor_flash_erase_sector(IMXRT_FLEXSPI, address);
+	return imxrt_flexspi_nor_flash_erase_sector(IMXRT_FLEXSPI, address);
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
@@ -935,7 +935,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 {
 	printf("up_progmem_write\n");
 
-	return flexspi_nor_flash_write(IMXRT_FLEXSPI, addr, (const uint32_t *)buf, count);
+	return 0;
 }
 #else
 /************************************************************************************

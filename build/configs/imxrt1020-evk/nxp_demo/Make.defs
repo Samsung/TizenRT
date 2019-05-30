@@ -126,6 +126,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  $(TOPDIR)/../build/configs/imxrt1020-evk/imxrt1020-evk_download.sh
+  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_download.sh
 endef
 

@@ -81,6 +81,7 @@ CSRCS += imxrt_ethernet.c
 endif
 
 ifeq ($(CONFIG_FLASH_PARTITION),y)
+DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
 CSRCS += partitions.c
 endif

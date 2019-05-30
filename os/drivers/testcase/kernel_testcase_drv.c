@@ -142,6 +142,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	}
 	break;
 
+#ifdef CONFIG_TC_KERNEL_ROUNDROBIN
 	case TESTIOC_GET_TCB_TIMESLICE: {
 		tcb = sched_gettcb((pid_t)arg);
 		if (tcb == NULL) {
@@ -151,6 +152,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = tcb->timeslice;
 	}
 	break;
+#endif
 
 	case TESTIOC_SCHED_FOREACH: {
 		sched_foreach((void *)arg, NULL);

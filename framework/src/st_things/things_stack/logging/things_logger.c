@@ -249,9 +249,6 @@ static void things_log_payload_flag(things_log_level_e level, const char *tag, c
 
 static void things_log_payload_method(things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num,
 							OCMethod method) {
-	if (method & OC_REST_NOMETHOD) {
-		things_logv(level, tag, func_name, line_num, "\t\t\t  %s", "NOMETHOD ");
-	}
 	if (method & OC_REST_GET) {
 		things_logv(level, tag, func_name, line_num, "\t\t\t  %s", "GET ");
 	}
@@ -274,7 +271,7 @@ static void things_log_payload_method(things_log_level_e level, const char *tag,
 		things_logv(level, tag, func_name, line_num, "\t\t\t  %s", "PRESENCE ");
 	}
 	if (method & OC_REST_DISCOVER) {
-		things_logv(level, tag, func_name, line_num, "\t\t\t  %s", "DISCOVER ");
+		things_logv(level, tag, func_name, line_num, "\t\t\t  %s", "DISCOVERY ");
 	}
 }
 

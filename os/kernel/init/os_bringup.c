@@ -292,7 +292,6 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
-
 #if !defined(CONFIG_BINARY_MANAGER)
 	/* Start the application initialization task.  In a flat build, this is
 	 * entrypoint is given by the definitions, CONFIG_USER_ENTRYPOINT.  In

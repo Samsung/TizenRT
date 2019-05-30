@@ -55,8 +55,10 @@ ifeq ($(CONFIG_FS_PROCFS),y)
 
 ASRCS +=
 CSRCS += fs_procfs.c fs_procfsutil.c fs_procfsproc.c fs_procfsuptime.c
-CSRCS += fs_procfscpuload.c fs_procfsversion.c
-
+CSRCS += fs_procfsversion.c fs_procfsereport.c
+ifeq ($(CONFIG_SCHED_CPULOAD),y)
+CSRCS += fs_procfscpuload.c
+endif
 ifeq ($(CONFIG_CM),y)
 CSRCS += fs_procfscm.c
 endif

@@ -172,9 +172,11 @@ unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
 		int i = 0;
 		int idx = 0;
 		keyset = things_malloc(sizeof(unsigned long) * hash->count);
-		for (i = 0; i < hash->size; i++) {
-			if (hash->table[i].flags & ACTIVE) {
-				keyset[idx++] = hash->table[i].key;
+		if (keyset != NULL) {
+			for (i = 0; i < hash->size; i++) {
+				if (hash->table[i].flags & ACTIVE) {
+					keyset[idx++] = hash->table[i].key;
+				}
 			}
 		}
 	}
