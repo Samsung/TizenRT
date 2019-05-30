@@ -135,6 +135,7 @@ static int ereport_opendir(const char *relpath, FAR struct fs_dirent_s *dir);
 static int ereport_closedir(FAR struct fs_dirent_s *dir);
 static int ereport_readdir(FAR struct fs_dirent_s *dir);
 static int ereport_rewinddir(FAR struct fs_dirent_s *dir);
+static int ereport_stat(const char *relpath, FAR struct stat *buf);
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -161,7 +162,7 @@ const struct procfs_operations ereport_operations = {
 	ereport_readdir,					/* readdir */
 	ereport_rewinddir,				/* rewinddir */
 
-	NULL						/* stat */
+	ereport_stat						/* stat */
 };
 
 /* These structures provide information about every node */
@@ -499,6 +500,40 @@ static int ereport_rewinddir(struct fs_dirent_s *dir)
 	priv = dir->u.procfs;
 
 	priv->base.index = 0;
+	return OK;
+}
+
+/****************************************************************************
+ * Name: ereport_stat
+ *
+ * Description: Return information about a file or directory
+ *
+ ****************************************************************************/
+
+static int ereport_stat(const char *relpath, struct stat *buf)
+{
+	FAR const struct ereport_node_s *node;
+
+	/* Find the directory entry being opened */
+	node = ereport_findnode(relpath);
+
+	if (!node) {
+		fdbg("ERROR: Invalid path \"%s\"\n", relpath);
+		return -ENOENT;
+	}
+	/* If the node exists, it is the name for a read-only file or
+	 * directory.
+	 */
+	if (node->dtype == DTYPE_FILE) {
+		buf->st_mode = S_IFREG | S_IROTH | S_IRGRP | S_IRUSR;
+	} else {
+		buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR;
+	}
+
+	/* File/directory size, access block size */
+	buf->st_size = 0;
+	buf->st_blksize = 0;
+	buf->st_blocks = 0;
 	return OK;
 }
 #endif
