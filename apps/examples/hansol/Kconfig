@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LHS_APP
+	bool "hansolu"
+	default n
+	---help---
+		Enable the \"hansolu\" example
+
+config USER_ENTRYPOINT
+	string
+	default "hansolu_main" if LHS_APP

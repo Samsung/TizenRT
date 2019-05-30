@@ -1,0 +1,3 @@
+config ENTRY_LHS_APP
+	bool "hansolu"
+	depends on LHS_APP

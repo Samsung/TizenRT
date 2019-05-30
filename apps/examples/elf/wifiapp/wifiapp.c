@@ -68,6 +68,7 @@ int main(int argc, char **argv)
 		case 'x':
 			printf("Test will be finished.\n");
 			is_testing = false;
+			break;
 		default:
 			printf("Invalid Scenario.\n");
 			break;
