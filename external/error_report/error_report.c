@@ -31,6 +31,9 @@
 #include <error_report/error_report.h>
 
 #define ERR_IP_ADRR_LEN 16
+#define ERR_TASKADDR_LEN 40
+#define ERR_PROCFS_FILE "/proc/ereport/taskaddr"
+#define ERR_TASKADDR_STR "taskaddr"
 
 error_data_t g_error_report[CONFIG_ERROR_REPORT_NENTRIES];
 typedef enum {
@@ -50,20 +53,6 @@ typedef struct {
 
 static g_error_info_t g_err_info;
 
-static unsigned long prv_fetch_taskaddr(int pid)
-{
-	struct tcb_s *tcbptr = sched_gettcb(pid);
-	if (tcbptr != NULL) {
-		entry_t e = tcbptr->entry;
-		if ((tcbptr->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD) {
-			return (unsigned long)e.pthread;
-		} else {
-			return (unsigned long)e.main;
-		}
-	}
-	return 0;
-}
-
 err_status_t error_report_init(void)
 {
 	pthread_mutex_init(&g_err_info.err_mutex, NULL);
@@ -74,8 +63,36 @@ err_status_t error_report_init(void)
 err_status_t error_report_deinit(void)
 {
 	pthread_mutex_destroy(&g_err_info.err_mutex);
-
 	return ERR_SUCCESS;
+}
+
+static unsigned long prv_fetch_taskaddr(pid_t pid)
+{
+	unsigned long task_addr = ERROR;
+	const char buf[ERR_TASKADDR_LEN];
+	int nbytes=0;
+	char *pos;
+	int err_fd = open(ERR_PROCFS_FILE, O_RDONLY);
+	if (err_fd < 0) {
+		nwerrdbg("Error opening %s\n", ERR_PROCFS_FILE);
+		if (errno == -ENOENT) {
+			nwerrdbg("No such entry\n");
+		}
+		goto fetch_err;
+	}
+	nbytes = read(err_fd, (void *)buf, ERR_TASKADDR_LEN);
+	close(err_fd);
+	if (nbytes < 0) {
+		nwerrdbg("Error reading %s\n", ERR_PROCFS_FILE);
+		goto fetch_err;
+	}
+	/* Parse task address from returned buffer */
+	pos = strstr(buf, ERR_TASKADDR_STR);
+	if (pos) {
+		task_addr = (unsigned long) atoi(pos + strlen(ERR_TASKADDR_STR) + 1);
+	}
+fetch_err:
+	return task_addr;
 }
 
 error_data_t *error_report_data_create(int module_id, int error_code, uint32_t pc_value)

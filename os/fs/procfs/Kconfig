@@ -70,5 +70,10 @@ config FS_PROCFS_EXCLUDE_POWER
 	depends on PM
 	default n
 
+config FS_PROCFS_EXCLUDE_EREPORT
+	bool "Exclude error report"
+	depends on ERROR_REPORT
+	default n
+
 endmenu #
 endif # FS_PROCFS

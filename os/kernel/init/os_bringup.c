@@ -286,9 +286,7 @@ static inline void os_do_appstart(void)
 		svdbg("Failed to create Task Manager\n");
 	}
 #endif
-
 	svdbg("Starting application main thread\n");
-
 #ifdef CONFIG_BUILD_PROTECTED
 	if (USERSPACE->us_entrypoint != NULL) {
 		pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
