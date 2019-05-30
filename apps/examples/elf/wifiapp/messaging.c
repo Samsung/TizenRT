@@ -70,7 +70,7 @@ static int sync_send_test(void)
 	reply_data.buf = (char *)malloc(BUFFER_SIZE);
 	if (reply_data.buf == NULL) {
 		sem_post(&sender_sem);
-		printf("[WIFI] Fail to sync send message : out of memory.\n");
+		printf("[WIFI] Fail to sync send msg : out of memory.\n");
 		return ERROR;
 	}
 
@@ -79,11 +79,11 @@ static int sync_send_test(void)
 	if (ret != OK) {
 		free(reply_data.buf);
 		sem_post(&sender_sem);
-		printf("[WIFI] Fail to sync send message.\n");
+		printf("[WIFI] Fail to sync send msg.\n");
 		return ERROR;
 	}
 
-	printf("[WIFI] Success to receive reply from receiver. msg : [%s]\n", (char *)reply_data.buf);
+	printf("[WIFI] Success to recv reply msg. [%s]\n", (char *)reply_data.buf);
 	free(reply_data.buf);
 
 	sem_post(&sender_sem);
@@ -101,11 +101,11 @@ static int noreply_send_test(void)
 	param.msg = NOREPLY_NONBLOCK_DATA;
 	param.msglen = sizeof(NOREPLY_NONBLOCK_DATA);
 
-	printf("[WIFI] - Send [%s] data with noreply mode.\n", NOREPLY_NONBLOCK_DATA);
+	printf("[WIFI] - Send [%s] with noreply mode.\n", NOREPLY_NONBLOCK_DATA);
 	ret = messaging_send(NOREPLY_NONBLOCK_PORT, &param);
 	if (ret != OK) {
 		sem_post(&sender_sem);
-		printf("[WIFI] Fail to noreply send message.\n");
+		printf("[WIFI] Fail to noreply send msg.\n");
 		return ERROR;
 	}
 
