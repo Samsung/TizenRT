@@ -92,12 +92,6 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 	for (prev = &heap->mm_nodelist[ndx], next = heap->mm_nodelist[ndx].flink; next && next->size && next->size < node->size; prev = next, next = next->flink) ;
 
-	/* Mitigate memory fragmentation
-	 * by sorting the list in ascending order of physical address
-	 * when the size is the same.
-	 */
-	for ( ; next && next->size == node->size && next < node; prev = next, next = next->flink) ;
-
 	/* Does it go in mid next or at the end? */
 
 	prev->flink = node;
