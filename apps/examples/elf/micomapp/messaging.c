@@ -251,7 +251,7 @@ static int multicast_recv_test(void)
 	int recv2_pid;
 	int recv3_pid;
 
-	recv1_pid = task_create("multi_recv_nonblock", TASK_PRIO - 1, STACKSIZE, multi_recv_nonblock, NULL);
+	recv1_pid = task_create("multi_recv_nonblock", TASK_PRIO, STACKSIZE, multi_recv_nonblock, NULL);
 	if (recv1_pid < 0) {
 		printf("[MICOM] Fail to create multi_recv_nonblock task.\n");
 		return ERROR;
