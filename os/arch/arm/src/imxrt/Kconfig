@@ -507,6 +507,25 @@ config IMXRT_GPIO9_16_31_IRQ
 
 endif # IMXRT_GPIO_IRQ
 
+menuconfig IMXRT_TIMER
+	bool "H/W Timer support"
+	default n
+
+if IMXRT_TIMER
+config IMXRT_GPT
+	bool "Enable General Purpose Timer"
+	default n
+
+config IMXRT_PIT
+	bool "Enable Periodic Interrupt Timer"
+	default n
+
+config IMXRT_QTMR
+	bool "Enable Quad Timer"
+	default n
+
+endif # IMXRT_TIMER
+
 menu "Memory Configuration"
 
 config IMXRT_DTCM
