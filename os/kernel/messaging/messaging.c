@@ -136,8 +136,18 @@ static int messaging_append_receiver(pid_t pid, int prio, sq_queue_t *queue)
 			next_node = (msg_recv_node_t *)sq_next(next_node);
 			continue;
 		}
-		sq_addafter((FAR sq_entry_t *)prev_node, (FAR sq_entry_t *)recv_node, (FAR sq_queue_t *)queue);
 		break;
+	}
+
+	if (next_node == prev_node) {
+		/* In case recv_node's priority higher than queue->head */
+		sq_addfirst((FAR sq_entry_t *)recv_node, (FAR sq_queue_t *)queue);
+	} else if (next_node == NULL) {
+		/* In case recv_node's priority lower than queue->tail */
+		sq_addlast((FAR sq_entry_t *)recv_node, (FAR sq_queue_t *)queue);
+	} else {
+		/* In case recv_node's priority higher than prev_node and lower than next_node */
+		sq_addafter((FAR sq_entry_t *)prev_node, (FAR sq_entry_t *)recv_node, (FAR sq_queue_t *)queue);
 	}
 
 	return OK;
