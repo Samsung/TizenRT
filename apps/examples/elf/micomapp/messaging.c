@@ -38,8 +38,8 @@
 
 #define BUFFER_SIZE 20
 #define MSG_PRIO 10
-#define TASK_PRIO 130
-#define STACKSIZE 2048
+#define TASK_PRIO 190
+#define STACKSIZE 4096
 
 static sem_t nonblock_sem;
 static sem_t multi_sem;
@@ -70,7 +70,7 @@ static int block_recv(int argc, FAR char *argv[])
 		return ERROR;
 	}
 
-	printf("[MICOM] Success to receive with block mode in receiver. msg : [%s]\n", (char *)recv_data.buf);
+	printf("[MICOM] Success to recv(block) msg. : [%s]\n", (char *)recv_data.buf);
 	printf("[MICOM] - Reply to sender [%s] data.\n", SYNC_BLOCK_REPLY);
 
 	reply_data.msg = SYNC_BLOCK_REPLY;
@@ -83,7 +83,7 @@ static int block_recv(int argc, FAR char *argv[])
 			return ERROR;
 		}
 	} else {
-		printf("[MICOM] We will not reply, because received msg is not sync type. %d\n", ret);
+		printf("[MICOM] Will not reply, because received msg is not sync type. %d\n", ret);
 	}
 
 	free(recv_data.buf);
@@ -93,11 +93,11 @@ static int block_recv(int argc, FAR char *argv[])
 void recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_data, void *cb_data)
 {
 	if (recv_data == NULL) {
-		printf("[MICOM] Fail to receive unicast message with non-block mode.\n");
+		printf("[MICOM] Fail to receive unicast msg with nonblock mode.\n");
 		nonblock_fail_cnt++;
 		return;
 	}
-	printf("[MICOM] Success to receive with non-block mode in recv callback from PID(%d). msg : [%s]\n", recv_data->sender_pid, (char *)recv_data->buf);
+	printf("[MICOM] Success to recv(nonblock) from PID(%d). msg : [%s]\n", recv_data->sender_pid, (char *)recv_data->buf);
 	sem_post(&nonblock_sem);
 }
 
@@ -114,7 +114,7 @@ static int nonblock_recv(int argc, FAR char *argv[])
 
 	data.buf = (char *)malloc(BUFFER_SIZE);
 	if (data.buf == NULL) {
-		printf("[MICOM] Fail to recv nonblock message : out of memory.\n");
+		printf("[MICOM] Fail to recv nonblock msg : out of memory.\n");
 		return ERROR;
 	}
 	data.buflen = BUFFER_SIZE;
@@ -122,7 +122,7 @@ static int nonblock_recv(int argc, FAR char *argv[])
 	ret = messaging_recv_nonblock(NOREPLY_NONBLOCK_PORT, &data, &cb_info);
 	if (ret != OK) {
 		free(data.buf);
-		printf("[MICOM] Fail to receive with non-block mode.\n");
+		printf("[MICOM] Fail to receive with nonblock mode.\n");
 		return ERROR;
 	}
 
@@ -144,11 +144,11 @@ static int nonblock_recv(int argc, FAR char *argv[])
 static void multi_recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_data, void *cb_data)
 {
 	if (recv_data == NULL) {
-		printf("[MICOM] Fail to receive multicast message with non-block mode.\n");
+		printf("[MICOM] Fail to receive multicast msg(nonblock).\n");
 		multicast_fail_cnt++;
 		return;
 	}
-	printf("[MICOM] Success to receive multicast message in recv callback. [%s]\n", (char *)recv_data->buf);
+	printf("[MICOM] Success to recv multicast msg in callback. [%s]\n", (char *)recv_data->buf);
 }
 
 static int multi_recv_nonblock(int argc, FAR char *argv[])
@@ -164,7 +164,7 @@ static int multi_recv_nonblock(int argc, FAR char *argv[])
 
 	data.buf = (char *)zalloc(BUFFER_SIZE);
 	if (data.buf == NULL) {
-		printf("[MICOM] Fail to recv nonblock multicast message : out of memory.\n");
+		printf("[MICOM] Fail to recv nonblock multicast msg : out of memory.\n");
 		multicast_fail_cnt++;
 		sem_destroy(&multi_sem);
 		return ERROR;
@@ -215,7 +215,7 @@ static int multi_recv_block(int argc, FAR char *argv[])
 		return ERROR;
 	}
 
-	printf("[MICOM] Success to receive multicast message [%s], receiver pid : %d\n", msg.buf, getpid());
+	printf("[MICOM] Success to recv multicast msg(block) [%s].\n", msg.buf);
 	free(msg.buf);
 	
 	return OK;

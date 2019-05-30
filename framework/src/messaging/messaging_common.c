@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <mqueue.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -33,6 +34,10 @@
 /****************************************************************************
  * functions
  ****************************************************************************/
+int messaging_get_version(void)
+{
+	return MSG_VERSION;
+}
 /****************************************************************************
  * Name : messaging_handle_data
  * 
@@ -67,7 +72,7 @@ int messaging_handle_data(msg_info_type_t type, const char *port_name, int *data
 	} else if (type == MSG_INFO_REMOVE) {
 		ret = prctl(PR_MSG_REMOVE, port_name);
 	} else {
-		msgdbg("[Messaging] fail : invalid type for messaging_handle_data, type : %d.\n", type);
+		msgdbg("[Messaging] fail : invalid type for handling data, type : %d.\n", type);
 		ret = ERROR;
 	}
 
@@ -102,6 +107,50 @@ int messaging_set_notify_signal(int signo, _sa_sigaction_t func)
 		return ERROR;
 	}
 	return OK;
+}
+/****************************************************************************
+ * Name : messaging_parse_packet
+ *
+ * Description:
+ *  Parse the received packet.
+ ****************************************************************************/
+int messaging_parse_packet(char *packet, char *buf, int buflen, pid_t *sender_pid, int *msg_type)
+{
+	uint32_t my_version;
+	uint32_t msg_version;
+	uint32_t parsing_version;
+	int ret = OK;
+	uint32_t offset;
+
+	my_version = messaging_get_version();
+
+	/* Received packet(version 1) is like below.
+	 * +--------------------------------------------------------------------------------------------------------+
+	 * | version(4bytes) | msg_offset(4bytes) | sender_pid(4bytes) | msg type(4bytes) | message(Max 65515bytes) |
+	 * +--------------------------------------------------------------------------------------------------------+
+	 */
+	msg_version = ((messaging_packet_t *)packet)->version;
+	offset = ((messaging_packet_t *)packet)->offset;
+
+	if (msg_version < my_version) {
+		parsing_version = msg_version;
+	} else {
+		parsing_version = my_version;
+	}
+	switch (parsing_version) {
+	case 1:
+		*sender_pid = ((messaging_packet_t *)packet)->sender_pid;
+		*msg_type = ((messaging_packet_t *)packet)->msg_type;
+		memcpy(buf, packet + offset, buflen);
+		ret = OK;
+		break;
+	default:
+		msgdbg("[Messaging] Invalid version.\n");
+		ret = ERROR;
+		break;
+	}
+
+	return ret;
 }
 /****************************************************************************
  * Name : messaging_set_notification
@@ -171,7 +220,7 @@ void messaging_run_callback(int signo, siginfo_t *data)
 	while (1) {
 		size = mq_receive(recv_info->mqdes, (char *)recv_packet, attr.mq_msgsize, 0);
 		if (size < 0) {
-			msgdbg("[Messaging] recv fail : mq_receive fail, errno %d\n", errno);
+			msgdbg("[Messaging] recv fail : mq_receive, errno %d\n", errno);
 			mq_close(recv_info->mqdes);
 			MSG_FREE(recv_packet);
 			MSG_FREE(recv_info);
@@ -179,9 +228,14 @@ void messaging_run_callback(int signo, siginfo_t *data)
 		}
 
 		/* Parsing the received data to user message buffer. */
-		memcpy(&(recv_info->msg->sender_pid), recv_packet, sizeof(pid_t));
-		memcpy(&msg_type, recv_packet + sizeof(pid_t), sizeof(int));
-		memcpy(recv_info->msg->buf, recv_packet + MSG_HEADER_SIZE, recv_info->msg->buflen);
+		ret = messaging_parse_packet(recv_packet, recv_info->msg->buf, recv_info->msg->buflen, &(recv_info->msg->sender_pid), &msg_type);
+		if (ret != OK) {
+			msgdbg("[Messaging] Not supported version, received version : %d.\n", ret);
+			mq_close(recv_info->mqdes);
+			MSG_FREE(recv_packet);
+			MSG_FREE(recv_info);
+			return;
+		}
 
 		/* Call user callback */
 		(*recv_info->user_cb)(msg_type, recv_info->msg, recv_info->cb_data);
