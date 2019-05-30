@@ -1,4 +1,3 @@
-include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/xtensa/src/lx6/Toolchain.defs
 
