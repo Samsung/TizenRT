@@ -584,8 +584,15 @@ config ARCH_NESTED_INTERRUPT
 	---help---
 		Enables the nested interrupt support. If defined, higher priority interrupt
 		can pre-empt the lower priority interrupt.
-endif
 
+config ARCH_NESTED_INTERRUPT_STACKCHECK
+	bool "Nested interrupt stack check support"
+	depends on ARCH_NESTED_INTERRUPT && STACK_COLORATION
+	default n
+	---help---
+		Enables the nested interrupt stack check support. It checks every time before
+		serving the interrupt, if the stack overflows, it results in panic()
+endif
 config ARCH_HAVE_HIPRI_INTERRUPT
 	bool
 	default n
