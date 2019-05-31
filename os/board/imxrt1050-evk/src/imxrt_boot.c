@@ -77,6 +77,7 @@
 #include "imxrt_lpspi.h"
 #ifdef CONFIG_TIMER
 #include "imxrt_gpt.h"
+#include "imxrt_pit.h"
 #endif
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
@@ -284,6 +285,11 @@ void board_initialize(void)
 		for (timer_idx = 0; timer_idx < IMXRT_GPT_CH_MAX; timer_idx++) {
 			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
 			imxrt_timer_initialize(timer_path, timer_idx);
+		}
+
+		for (timer_idx = IMXRT_GPT_CH_MAX; timer_idx < IMXRT_PIT_CH_MAX + IMXRT_GPT_CH_MAX; timer_idx++) {
+			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
+			imxrt_pit_initialize(timer_path, timer_idx - IMXRT_GPT_CH_MAX);
 		}
 	}
 #endif

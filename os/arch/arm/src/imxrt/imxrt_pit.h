@@ -26,6 +26,7 @@
 #define _IMXRT_PIT_H_
 
 #include "imxrt_config.h"
+#include <chip/imxrt105x_features.h>
 
 /*!
  * @addtogroup pit
@@ -62,6 +63,19 @@ typedef enum _pit_interrupt_enable {
 typedef enum _pit_status_flags {
 	kPIT_TimerFlag = PIT_TFLG_TIF_MASK, /*!< Timer flag */
 } pit_status_flags_t;
+
+struct imxrt_pit_chipinfo_s {
+	PIT_Type   *base;
+	int         irq_id;
+};
+
+enum imxrt_pit_channel_e {
+	IMXRT_PIT_CH0,
+	IMXRT_PIT_CH1,
+	IMXRT_PIT_CH2,
+	IMXRT_PIT_CH3,
+	IMXRT_PIT_CH_MAX
+};
 
 /*!
  * @brief PIT configuration structure
@@ -105,6 +119,8 @@ void imxrt_pit_init(PIT_Type *base, const pit_config_t *config);
  * @param base PIT peripheral base address
  */
 void imxrt_pit_deinit(PIT_Type *base);
+
+int imxrt_pit_initialize(const char *devpath, int timer);
 
 /*!
  * @brief Fills in the PIT configuration structure with the default settings.
@@ -258,6 +274,11 @@ static inline void imxrt_pit_settimerperiod(PIT_Type *base, pit_chnl_t channel, 
 	base->CHANNEL[channel].LDVAL = count;
 }
 
+static inline uint32_t imxrt_pit_gettimerperiod(PIT_Type *base, pit_chnl_t channel)
+{
+	return base->CHANNEL[channel].LDVAL;
+}
+
 /*!
  * @brief Reads the current timer counting value.
  *
@@ -340,3 +361,4 @@ uint64_t imxrt_pit_getlifetimetimercount(PIT_Type *base);
 /*! @}*/
 
 #endif /* _IMXRT_PIT_H_ */
+
