@@ -66,6 +66,10 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/elf.h>
 
+#ifdef CONFIG_COMPRESSED_BINARY
+#include <tinyara/binfmt/compression/compress_read.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -129,26 +133,39 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 	ssize_t nbytes;				/* Number of bytes read */
 	off_t rpos;					/* Position returned by lseek */
 
-	/* Advance offset by binary header size, loadinfo->offset will be 0 in normal exec call*/
+	/* Advance offset by binary header size, loadinfo->offset will be 0 in normal exec call */
 	offset += loadinfo->offset;
-
-	binfo("Read %ld bytes from offset %ld\n", (long)readsize, (long)offset);
 
 	/* Loop until all of the requested data has been read. */
 
 	while (readsize > 0) {
-		/* Seek to the next read position */
+		if (loadinfo->compression_type == COMPRESS_TYPE_NONE) {	/* Uncompressed binary */
+			/* Seek to the next read position */
 
-		rpos = lseek(loadinfo->filfd, offset, SEEK_SET);
-		if (rpos != offset) {
-			int errval = get_errno();
-			berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
-			return -errval;
+			rpos = lseek(loadinfo->filfd, offset, SEEK_SET);
+			if (rpos != offset) {
+				int errval = get_errno();
+				berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
+				return -errval;
+			}
+
+			/* Read the file data at offset into the user buffer */
+
+			nbytes = read(loadinfo->filfd, buffer, readsize);
+		} else if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {	/* Compressed binary */
+#ifdef CONFIG_COMPRESSED_BINARY
+			if (loadinfo->compression_type == CONFIG_COMPRESSION_TYPE) {
+				/* Read readsize bytes from offset from uncompressed file into unser buffer */
+
+				nbytes = compress_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+			} else {
+				berr("No support for decompression of compression format %d of this binary\n", loadinfo->compression_type);
+			}
+#else
+			berr("No support for reading compressed binaries\n");
+			return ERROR;
+#endif
 		}
-
-		/* Read the file data at offset into the user buffer */
-
-		nbytes = read(loadinfo->filfd, buffer, readsize);
 		if (nbytes < 0) {
 			/* EINTR just means that we received a signal */
 
