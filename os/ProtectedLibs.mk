@@ -80,6 +80,12 @@ endif
 
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
+# Add libraries for iotivity support
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
+endif
+
 # Add library for application support.
 
 ifneq ($(APPDIR),)
@@ -90,12 +96,6 @@ endif
 
 ifeq ($(CONFIG_NET),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
-endif
-
-# Add libraries for iotivity support
-
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
 endif
 
 # Add libraries for audio module
