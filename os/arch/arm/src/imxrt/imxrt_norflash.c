@@ -71,6 +71,7 @@
 #include "imxrt_flash.h"
 #include "imxrt_clock.h"
 
+#include "cache.h"
 #include "up_arch.h"
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
@@ -84,36 +85,6 @@
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define IMXRT_FLEXSPI FLEXSPI
-#define IMXRT_FLASH_SIZE 0x2000 /* 64Mb/KByte */
-#define IMXRT_FLEXSPI_AMBA_BASE FlexSPI_AMBA_BASE
-#define IMXRT_FLASH_PAGE_SIZE 256
-#define IMXRT_SECTOR 0
-#define IMXRT_FLASH_BASE  0x60000000
-#define IMXRT_SECTOR_SIZE 0x1000 /* 4K */
-#define IMXRT_BLOCK_SIZE 0x8000
-#define IMXRT_FLASH_TOTAL_SIZE (IMXRT_FLASH_SIZE*1024)
-#define IMXRT_FLEXSPI_CLOCK kCLOCK_FlexSpi
-
-#define NOR_CMD_LUT_SEQ_IDX_READ_NORMAL 7
-#define NOR_CMD_LUT_SEQ_IDX_READ_FAST 13
-#define NOR_CMD_LUT_SEQ_IDX_READ_FAST_QUAD 0
-#define NOR_CMD_LUT_SEQ_IDX_READSTATUS 1
-#define NOR_CMD_LUT_SEQ_IDX_WRITEENABLE 2
-#define NOR_CMD_LUT_SEQ_IDX_ERASESECTOR 3
-#define NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_SINGLE 6
-#define NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD 4
-#define NOR_CMD_LUT_SEQ_IDX_READID 8
-#define NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG 9
-#define NOR_CMD_LUT_SEQ_IDX_ENTERQPI 10
-#define NOR_CMD_LUT_SEQ_IDX_EXITQPI 11
-#define NOR_CMD_LUT_SEQ_IDX_READSTATUSREG 12
-#define NOR_CMD_LUT_SEQ_IDX_ERASECHIP 5
-
-#define CUSTOM_LUT_LENGTH 60
-#define FLASH_BUSY_STATUS_POL 1
-#define FLASH_BUSY_STATUS_OFFSET 0
-
 
 /************************************************************************************
  * Private Data
@@ -327,7 +298,7 @@ status_t imxrt_flexspi_nor_write_enable(FLEXSPI_Type *base, uint32_t baseAddr)
 	flashXfer.deviceAddress = baseAddr;
 	flashXfer.port = kFLEXSPI_PortA1;
 	flashXfer.cmdType = kFLEXSPI_Command;
-	flashXfer.SeqNumber = 2;
+	flashXfer.SeqNumber = 1;
 	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITEENABLE;
 
 	status = imxrt_flexspi_transferblocking(base, &flashXfer);
@@ -388,17 +359,21 @@ status_t imxrt_flexspi_nor_enable_quad_mode(FLEXSPI_Type *base)
 	flexspi_transfer_t flashXfer;
 	status_t status;
 	uint32_t writeValue = 0x40;
+	irqstate_t flags;
+
+	flags = irqsave();
 
 	/* Write enable */
 	status = imxrt_flexspi_nor_write_enable(base, 0);
 
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
 	/* Enable quad mode. */
 	flashXfer.deviceAddress = 0;
-	flashXfer.port = kFLEXSPI_PortB1;
+	flashXfer.port = kFLEXSPI_PortA1;
 	flashXfer.cmdType = kFLEXSPI_Write;
 	flashXfer.SeqNumber = 1;
 	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_WRITESTATUSREG;
@@ -407,10 +382,12 @@ status_t imxrt_flexspi_nor_enable_quad_mode(FLEXSPI_Type *base)
 
 	status = imxrt_flexspi_transferblocking(base, &flashXfer);
 	if (status != kStatus_Success) {
+		irqrestore(flags);
 		return status;
 	}
 
 	status = imxrt_flexspi_nor_wait_bus_busy(base);
+	irqrestore(flags);
 
 	return status;
 }
@@ -725,6 +702,7 @@ static inline void flexspi_clock_init(void)
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /************************************************************************************
  * Name: imxrt_flexspi_nor_hyperbus_read
  *
@@ -752,6 +730,7 @@ status_t imxrt_flexspi_nor_hyperbus_read(FLEXSPI_Type *base, uint32_t addr, uint
 
 	return status;
 }
+#endif
 
 /************************************************************************************
  * Name: imxrt_flexspi_nor_flash_erase_sector
@@ -827,7 +806,7 @@ status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t addre
 	flashXfer.deviceAddress = address;
 	flashXfer.port = kFLEXSPI_PortA1;
 	flashXfer.cmdType = kFLEXSPI_Write;
-	flashXfer.SeqNumber = 2;
+	flashXfer.SeqNumber = 1;
 	flashXfer.seqIndex = NOR_CMD_LUT_SEQ_IDX_PAGEPROGRAM_QUAD;
 	flashXfer.data = (uint32_t *)src;
 	flashXfer.dataSize = IMXRT_FLASH_PAGE_SIZE;
@@ -839,6 +818,8 @@ status_t imxrt_flexspi_nor_flash_page_program(FLEXSPI_Type *base, uint32_t addre
 	}
 
 	status = imxrt_flexspi_nor_wait_bus_busy(base);
+
+	arch_flush_dcache(address + IMXRT_FLASH_BASE, address + IMXRT_FLASH_BASE + IMXRT_FLASH_PAGE_SIZE);
 	irqrestore(flags);
 
 	return status;
@@ -987,11 +968,5 @@ void imxrt_flash_init(void)
 
 	/* Do software reset. */
 	imxrt_flexspi_softwarereset(IMXRT_FLEXSPI);
-
-	/* Enter quad mode. */
-	status = imxrt_flexspi_nor_enable_quad_mode(IMXRT_FLEXSPI);
-	if (status != kStatus_Success) {
-		IMXLOG("flexspi_nor_enable_quad_mode error!!");
-	}
 }
 
