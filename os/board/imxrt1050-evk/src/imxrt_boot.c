@@ -110,12 +110,10 @@ void imxrt_board_adc_initialize(void)
 	static bool adc_initialized = false;
 	struct adc_dev_s *adc;
 	const uint8_t chanlist[] = {
-		GPIO_PIN16,   //A5
-		GPIO_PIN17,   //A4
-		GPIO_PIN20,   //A3
-		GPIO_PIN11,   //A2
-		GPIO_PIN27,   //A1
-		GPIO_PIN26    //A0
+		ADC_CHANNEL_0,   //A5
+		ADC_CHANNEL_1,   //A4
+		ADC_CHANNEL_2,   //A3
+		ADC_CHANNEL_3,   //A2
 	};
 
 	if (!adc_initialized) {

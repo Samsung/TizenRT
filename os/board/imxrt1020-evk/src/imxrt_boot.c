@@ -59,12 +59,163 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
+#include <tinyara/board.h>
+#include <tinyara/pwm.h>
+#include <tinyara/gpio.h>
+#include <tinyara/spi/spi.h>
+#include <tinyara/analog/adc.h>
+
 #include "imxrt_start.h"
 #include "imxrt1020-evk.h"
 #include "imxrt_flash.h"
+#include "imxrt_pwm.h"
+#include "imxrt_flash.h"
+#include "imxrt_gpio.h"
+#include "imxrt_lpspi.h"
+#ifdef CONFIG_TIMER
+#include "imxrt_gpt.h"
+#endif
+#ifdef CONFIG_ANALOG
+#include "imxrt_adc.h"
+#endif
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
+
+/****************************************************************************
+ * Name: imxrt_board_adc_initialize
+ *
+ * Description:
+ *   Initialize the ADC. As the pins of each ADC channel are exported through
+ *   configurable GPIO and it is board-specific, information on available
+ *   ADC channels should be passed to imxrt_adc_initialize().
+ *
+ * Input Parameters:
+ *   chanlist  - The list of channels
+ *   cchannels - Number of channels
+ *
+ * Returned Value:
+ *   Valid ADC device structure reference on succcess; a NULL on failure
+ *
+ ****************************************************************************/
+void imxrt_board_adc_initialize(void)
+{
+#ifdef CONFIG_ANALOG
+	static bool adc_initialized = false;
+	struct adc_dev_s *adc;
+	const uint8_t chanlist[] = {
+		ADC_CHANNEL_0,   //A5
+		ADC_CHANNEL_1,   //A4
+		ADC_CHANNEL_2,   //A3
+		ADC_CHANNEL_3,   //A2
+	};
+
+	if (!adc_initialized) {
+		adc = imxrt_adc_initialize(chanlist, sizeof(chanlist) / sizeof(uint8_t));
+		if (NULL != adc) {
+			lldbg("VERVOSE: Success to get the imxrt ADC driver\n");
+		} else {
+			lldbg("ERROR: up_spiinitialize failed\n");
+		}
+
+		/* Register the ADC driver at "/dev/adc0" */
+		int ret = adc_register("/dev/adc0", adc);
+		if (ret < 0) {
+			return;
+		}
+
+		/* Now we are initialized */
+		adc_initialized = true;
+	}
+#endif
+}
+
+/****************************************************************************
+ * Name: board_gpio_initialize
+ *
+ * Description:
+ *   GPIO intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_gpio_initialize(void)
+{
+#ifdef CONFIG_GPIO
+	int i;
+	struct gpio_lowerhalf_s *lower;
+
+	struct {
+		uint8_t minor;
+		gpio_pinset_t pinset;
+	} pins[] = {
+		{
+			9, GPIO_LED
+		},
+	};
+
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = imxrt_gpio_lowerhalf(pins[i].pinset);
+		gpio_register(pins[i].minor, lower);
+	}
+#endif
+}
+
+/****************************************************************************
+ * Name: board_pwmm_initialize
+ *
+ * Description:
+ *   PWM intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_pwm_initialize(void)
+{
+#ifdef CONFIG_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
+	int ret;
+	int i;
+
+	for (i = 0; i < PWM_CNT_COUNT; i++) {
+		pwm = imxrt_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get imxrt PWM lower half\n");
+			return;
+		}
+
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
+		if (ret < 0) {
+			lldbg("Imxrt PWM registeration failure: %d\n", ret);
+		}
+	}
+#endif
+	return;
+}
+
+/****************************************************************************
+ * Name: imxrt_spi_initialize
+ *
+ * Description:
+ *   SPI intialization for imxrt
+ *
+ ****************************************************************************/
+void imxrt_spi_initialize(void)
+{
+#ifdef CONFIG_SPI
+	struct spi_dev_s *spi;
+	spi = up_spiinitialize(1);
+
+#ifdef CONFIG_SPI_USERIO
+	if (spi_uioregister(1, spi) < 0) {
+		lldbg("Failed to register SPI%d\n", 1);
+	}
+#endif
+#endif
+}
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -109,5 +260,25 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
+
+	imxrt_gpio_initialize();
+
+	imxrt_pwm_initialize();
+
+	imxrt_spi_initialize();
+
+	imxrt_board_adc_initialize();
+
+#ifdef CONFIG_TIMER
+	{
+		int timer_idx;
+		char timer_path[CONFIG_PATH_MAX];
+
+		for (timer_idx = 0; timer_idx < IMXRT_GPT_CH_MAX; timer_idx++) {
+			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
+			imxrt_timer_initialize(timer_path, timer_idx);
+		}
+	}
+#endif
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */

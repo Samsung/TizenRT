@@ -65,6 +65,20 @@ extern "C" {
 /*! @brief ADC driver version */
 #define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 
+typedef enum {
+	ADC_CHANNEL_0 = 0,		/*!< ADC channel */
+	ADC_CHANNEL_1,			/*!< ADC channel */
+	ADC_CHANNEL_2,			/*!< ADC channel */
+	ADC_CHANNEL_3,			/*!< ADC channel */
+	ADC_CHANNEL_4,			/*!< ADC channel */
+	ADC_CHANNEL_5,			/*!< ADC channel */
+	ADC_CHANNEL_6,			/*!< ADC channel */
+	ADC_CHANNEL_7,			/*!< ADC channel */
+	ADC_CHANNEL_8,			/*!< ADC channel */
+	ADC_CHANNEL_9,			/*!< ADC channel */
+	ADC_CHANNEL_MAX,
+} adc_channel_t;
+
 /*!
  * @brief Converter's status flags.
  */

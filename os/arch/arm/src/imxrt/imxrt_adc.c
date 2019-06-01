@@ -641,7 +641,6 @@ static int adc_setup(FAR struct adc_dev_s *dev)
 {
 	int ret;
 	adc_config_t adcConfigStrcut;
-	adc_channel_config_t adcChannelConfigStruct;
 
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
