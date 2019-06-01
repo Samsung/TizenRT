@@ -195,7 +195,8 @@ int messaging_recv_nonblock(const char *port_name, msg_recv_buf_t *recv_buf, msg
  * @brief Remove the messaging port information if this message port is not used anymore.
  * @details @b #include <messaging/messaging.h>\n
  * @param[in] port_name The message port name.\n
- *		This API should be called if messaging_recv_nonblock or messaging_unicast_send_async was called.\n
+ *		This API should be called from task/pthread who called\n
+ *		messaging_recv_nonblock or messaging_unicast_send_async.\n
  *		If this API is not called, memory leak can happen.
  * @return On success, OK is returned. On failure, Error is returned.
  * @since TizenRT v3.0
