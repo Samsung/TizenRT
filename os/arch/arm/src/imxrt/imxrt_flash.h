@@ -136,6 +136,7 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+#if !defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
 /************************************************************************************
  * Name: imxrt_flexspi_nor_hyperbus_read
  *
@@ -144,6 +145,7 @@ extern "C" {
  *
  ************************************************************************************/
 status_t imxrt_flexspi_nor_hyperbus_read(FLEXSPI_Type *base, uint32_t addr, uint32_t *buffer, uint32_t bytes);
+#endif
 
 /************************************************************************************
  * Name: imxrt_flexspi_nor_hyperbus_write
