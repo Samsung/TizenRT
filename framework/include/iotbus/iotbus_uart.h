@@ -76,7 +76,7 @@ typedef struct _iotbus_uart_wrapper_s *iotbus_uart_context_h;
 extern "C" {
 #endif
 
-typedef void (*uart_isr_cb)(iotbus_int_type_e evt);
+typedef void (*uart_isr_cb)(iotbus_int_type_e evt, void *arg);
 typedef void (*uart_write_cb)(iotbus_uart_context_h hnd, iotbus_error_e ret);
 
 /**

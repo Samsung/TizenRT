@@ -56,7 +56,7 @@ static void *iotbus_adc_handler(void *hnd)
 	size_t readsize;
 	ssize_t nbytes;
 	int ret;
-	int timeout = 1000;
+	int timeout = 100;
 
 	struct pollfd fds[1];
 	struct adc_msg_s sample[1];
@@ -68,7 +68,13 @@ static void *iotbus_adc_handler(void *hnd)
 	fds[0].events = POLLIN | POLLERR;
 
 	handle->state = IOTBUS_ADC_BUSY;
-
+	ret = ioctl(handle->fd, ANIOC_TRIGGER, NULL);
+	if (ret < 0) {
+		idbg("[ADC] trigger error(%d)\n", ret);
+		handle->state = IOTBUS_ADC_RDY;
+		return 0;
+	}
+	
 	while (handle->state != IOTBUS_ADC_STOP) {
 		ret = poll(fds, 1, timeout);
 
@@ -118,7 +124,7 @@ iotbus_adc_context_h iotbus_adc_init(int bus, uint8_t channel)
 	iotbus_adc_context_h dev;
 
 	snprintf(dev_path, sizeof(dev_path), "/dev/adc%d", bus);
-	fd = open(dev_path, O_RDWR);
+	fd = open(dev_path, O_RDONLY);
 	if (fd < 0) {
 		return NULL;
 	}
@@ -281,13 +287,20 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 	struct pollfd fds[1];
 
 	handle = (struct _iotbus_adc_s *)hnd->handle;
-	handle->state = IOTBUS_ADC_BUSY;
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = handle->fd;
 	fds[0].events = POLLIN | POLLERR;
 
 	readsize = sizeof(struct adc_msg_s);
+
+	handle->state = IOTBUS_ADC_BUSY;
+	ret = ioctl(handle->fd, ANIOC_TRIGGER, NULL);
+	if (ret < 0) {
+		idbg("[ADC] trigger error(%d)\n", ret);
+		handle->state = IOTBUS_ADC_RDY;
+		return 0;
+	}
 
 	while (1) {
 		ret = poll(fds, 1, timeout);
@@ -306,18 +319,18 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 				idbg("[ADC] sampling: Fail to read...\n");
 				ret = IOTBUS_ERROR_UNKNOWN;
 				break;
+			}
+			
+			if (readsize != nbytes) {
+				idbg("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
+				ret = IOTBUS_ERROR_DEVICE_FAIL;
+				break;
 			} else {
-				if (readsize != nbytes) {
-					idbg("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
-					ret = IOTBUS_ERROR_DEVICE_FAIL;
+				// To Do : Now, get sample data only once.
+				idbg("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
+				if (sample->am_channel == handle->channel) {
+					ret = sample->am_data;
 					break;
-				} else {
-					// To Do : Now, get sample data only once.
-					idbg("[ADC] sampling: channel: %d value: %d\n", sample->am_channel, sample->am_data);
-					if (sample->am_channel == handle->channel) {
-						ret = sample->am_data;
-						break;
-					}
 				}
 			}
 		}
