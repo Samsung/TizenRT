@@ -350,17 +350,34 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
-		/* Change the parameter ordering to match the expectation of struct
-		 * userpace_s task_startup:
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		/* While starting loadable apps, we cannot go through the
+		 * USERSPACE->task_startup method. So we will directly set the
+		 * task entry point to the PC while returning from this syscall.
+		 * In this case, when the task exits, the clean up must be
+		 * handled by the loader's unload() API.
+		 *
+		 * Here, we check if this task is a loadable app (non-zero ram_start)
 		 */
+		if (((struct tcb_s*)sched_self())->ram_start) {
+			regs[REG_PC] = regs[REG_R1];    /* Task entry */
+			regs[REG_R0] = regs[REG_R2];	/* argc */
+			regs[REG_R1] = regs[REG_R3];	/* argv */
+		} else
+		/* If its a normal non-loadable user app, then follow the default method */
+#endif
+		{
+			regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
+			/* Change the parameter ordering to match the expectation of struct
+			 * userpace_s task_startup:
+			 */
 
-		regs[REG_R0] = regs[REG_R1];	/* Task entry */
-		regs[REG_R1] = regs[REG_R2];	/* argc */
-		regs[REG_R2] = regs[REG_R3];	/* argv */
-
+			regs[REG_R0] = regs[REG_R1];	/* Task entry */
+			regs[REG_R1] = regs[REG_R2];	/* argc */
+			regs[REG_R2] = regs[REG_R3];	/* argv */
+		}
 	}
 	break;
 #endif
