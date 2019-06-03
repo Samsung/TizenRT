@@ -93,7 +93,7 @@ SECTIONS
 	{
 		_stext = ABSOLUTE(.);
 		*(.vectors)
-		*(.text .text.*)
+		*(EXCLUDE_FILE(*imxrt_flexspi.o *imxrt_norflash.o) .text*)
 		*(.fixup)
 		*(.gnu.warning)
 		*(.rodata .rodata.*)
@@ -134,6 +134,8 @@ SECTIONS
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
 		CONSTRUCTORS
+		*imxrt_flexspi.o(.text*)
+		*imxrt_norflash.o(.text*)
 		_edata = ABSOLUTE(.);
 	} > sram AT > flash
 
