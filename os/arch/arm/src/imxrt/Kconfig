@@ -515,14 +515,22 @@ if IMXRT_TIMER
 config IMXRT_GPT
 	bool "Enable General Purpose Timer"
 	default n
+	select IMXRT_TIMER_INTERFACE if TIMER
 
 config IMXRT_PIT
 	bool "Enable Periodic Interrupt Timer"
 	default n
+	select IMXRT_TIMER_INTERFACE if TIMER
 
 config IMXRT_QTMR
 	bool "Enable Quad Timer"
 	default n
+	select IMXRT_TIMER_INTERFACE if TIMER
+
+config IMXRT_TIMER_INTERFACE
+	bool
+	default n
+	depends on TIMER
 
 endif # IMXRT_TIMER
 
