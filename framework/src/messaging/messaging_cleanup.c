@@ -70,6 +70,7 @@ int messaging_cleanup(const char *port_name)
 	int ret = ERROR;
 	int cleanup_pid = INVALID_PID;
 	msg_port_info_t *port_info;
+	pid_t my_pid = getpid();
 
 	if (port_name == NULL) {
 		msgdbg("[Messaging] cleanup fail : invalid param.\n");
@@ -84,7 +85,7 @@ int messaging_cleanup(const char *port_name)
 	/* Remove the receiver information by port_name from the info list. */
 	port_info = (msg_port_info_t *)sq_peek(&g_port_info_list);
 	while (port_info != NULL) {
-		if (strncmp(port_info->name, port_name, strlen(port_name) + 1) == 0) {
+		if ((strncmp(port_info->name, port_name, strlen(port_name) + 1) == 0) && (my_pid == port_info->pid)) {
 			cleanup_pid = port_info->pid;
 			mq_close(port_info->mqdes);
 			sq_rem((FAR sq_entry_t *)port_info, &g_port_info_list);

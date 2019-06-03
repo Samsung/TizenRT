@@ -296,6 +296,38 @@ int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt)
 }
 
 /****************************************************************************
+ * Name: messaging_remove_recv_node
+ *
+ * Description:
+ *   Remove the recv_node which this task made
+ *
+ * Parameters:
+ *   recv_node_list - A list which appended to port_node
+ *
+ * Return Value:
+ *   OK on success, ERROR on failure.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+static int messaging_remove_recv_node(sq_queue_t *recv_node_list)
+{
+	msg_recv_node_t *recv_node;
+	pid_t my_pid = getpid();
+
+	recv_node = (msg_recv_node_t *)sq_peek(recv_node_list);
+	while (recv_node != NULL) {
+		if (recv_node->pid == my_pid) {
+			sq_rem((sq_entry_t *)recv_node, recv_node_list);
+			kmm_free(recv_node);
+			return OK;
+		}
+		recv_node = (msg_recv_node_t *)sq_next(recv_node);
+	}
+	return ERROR;
+}
+
+/****************************************************************************
  * Name: messaging_remove_list
  *
  * Description:
@@ -313,7 +345,6 @@ int messaging_read_list(char *port_name, int *recv_arr, int *total_cnt)
 int messaging_remove_list(char *port_name)
 {
 	int ret = ERROR;
-	msg_recv_node_t *recv_node;
 	msg_port_node_t *port_node;
 
 	port_node = (msg_port_node_t *)sq_peek(&g_port_node_list);
@@ -321,15 +352,18 @@ int messaging_remove_list(char *port_name)
 		if (strncmp(port_node->port_name, port_name, strlen(port_name) + 1) == 0) {
 			/* Remove the whole recv node which attached to this port node. */
 			sem_wait(&port_node->port_sem);
-			while ((recv_node = (msg_recv_node_t *)sq_remfirst(&port_node->recv_node_list)) != NULL) {
-				kmm_free(recv_node);
+			ret = messaging_remove_recv_node(&port_node->recv_node_list);
+			if (ret == OK) {
+				port_node->nreceiver--;
 			}
 			sem_post(&port_node->port_sem);
 
-			sem_wait(&port_list_sem);
-			(void)sq_rem((FAR sq_entry_t *)port_node, &g_port_node_list);
-			sem_post(&port_list_sem);
-			kmm_free(port_node);
+			if (port_node->nreceiver == 0) {
+				sem_wait(&port_list_sem);
+				(void)sq_rem((FAR sq_entry_t *)port_node, &g_port_node_list);
+				sem_post(&port_list_sem);
+				kmm_free(port_node);
+			}
 			ret = OK;
 			break;
 		}
