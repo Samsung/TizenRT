@@ -1120,12 +1120,12 @@ static int parse_configuration_json(cJSON *configuration)
 		}
 		memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring));
 	} else {
-		if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT)) {
+		if (strlen(provisioning->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT)) {
 			THINGS_LOG_V(TAG, "provisioning file path length exceeded");
 			goto JSON_ERROR;
 		}
 		strncpy(g_things_cloud_file_path, PATH_MNT, strlen(PATH_MNT));
-		strncat(g_things_cloud_file_path, provisioning->valuestring, (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT));
+		strncat(g_things_cloud_file_path, provisioning->valuestring, (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT));
 	}
 
 #ifndef CONFIG_ST_THINGS_HW_CERT_KEY
@@ -1256,10 +1256,12 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 					memcpy(restype->prop[iter2]->key, key->valuestring, strlen(key->valuestring) + 1);
 				}
 				restype->prop[iter2]->type = type->valueint;
-				if (mandatory->type == cJSON_True) {
-					restype->prop[iter2]->mandatory = true;
-				} else {
-					restype->prop[iter2]->mandatory = false;
+				if (mandatory != NULL) {
+					if (mandatory->type == cJSON_True) {
+						restype->prop[iter2]->mandatory = true;
+					} else {
+						restype->prop[iter2]->mandatory = false;
+					}
 				}
 				if (rw != NULL) {
 					restype->prop[iter2]->rw = rw->valueint;
