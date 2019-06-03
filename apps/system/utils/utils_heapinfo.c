@@ -145,12 +145,12 @@ static int heapinfo_read_proc(pid_t pid)
 
 	asprintf(&filepath, "%s/%d/%s", PROCFS_MOUNT_POINT, pid, "stat");
 	ret = utils_readfile(filepath, buf, HEAPINFO_BUFLEN, heapinfo_print_values);
-	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
+		free(filepath);
 		return ERROR;
 	}
-
+	free(filepath);
 	return OK;
 }
 
