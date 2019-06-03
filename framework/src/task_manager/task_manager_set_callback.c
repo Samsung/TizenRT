@@ -233,8 +233,8 @@ int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_
 			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg_size = cb_data->msg_size;
 			((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg = TM_ALLOC(cb_data->msg_size);
 			if (((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg == NULL) {
-				TM_FREE(request_msg.data);
 				TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+				TM_FREE(request_msg.data);
 				return TM_OUT_OF_MEMORY;
 			}
 			memcpy(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg, cb_data->msg, cb_data->msg_size);
