@@ -20,6 +20,7 @@
 .silent:
 
 -include .config
+-include $(TOPDIR)/Make.defs
 
 # Modify on moving compression tool
 TINYARADIR	?= ../..
@@ -55,7 +56,7 @@ COMPHEADER	=  include/tinyara/binfmt/compression/compression.h
 
 all: init $(APPNAME)
 
-.PHONY: init clean context depend
+.PHONY: init depend clean distclean
 init:
 ifeq ($(CONFIG_COMPRESSION_TYPE),1)
 	@mkdir -p $(SRCDIR)/lzma
@@ -90,21 +91,18 @@ $(APPNAME): Makefile $(CONFIG) $(CCONFIG) $(COMPHEADER) $(OBJECTS)
 	@$(CC) $(LDFLAGS) $(OBJECTS) $(LIBFILES) -o $@
 
 $(CCONFIG): $(TINYARADIR)/include/tinyara/config.h
-	@echo "CP: config.h"
 	@cp $(TINYARADIR)/include/tinyara/config.h .
 
 # ==========================================================
 # Rule to retrieve compression header file
 # ==========================================================
 $(COMPHEADER): $(TINYARADIR)/include/tinyara/binfmt/compression/compression.h
-	@echo "CP: compression.h"
 	@cp $(TINYARADIR)/include/tinyara/binfmt/compression/compression.h .
 
 # =================================
 # Rule to retrieve the .config file
 # =================================
 $(CONFIG): $(TINYARADIR)/.config
-	@echo "CP: .config"
 	@cp $(TINYARADIR)/.config .
 
 # =============================
@@ -112,13 +110,19 @@ $(CONFIG): $(TINYARADIR)/.config
 # =============================
 .PHONY: clean
 clean:
-	@echo "=== cleaning ===";
-	@rm -rf $(OBJDIR) $(DEPDIR)
+	$(call DELDIR, $(OBJDIR))
+	$(call DELDIR, $(DEPDIR))
 ifeq ($(CONFIG_COMPRESSION_TYPE),1)
-	@rm -rf $(SRCDIR)/lzma/
+	$(call DELDIR, $(SRCDIR)/lzma/)
 endif
-	@rm -rf *.o
-	@rm -f mkcompressimg
-	@rm -f config.h
-	@rm -f compression.h
-	@rm -f *.h
+	$(call DELFILE, *.o)
+	$(call DELFILE, mkcompressimg)
+	$(call DELFILE, config.h)
+	$(call DELFILE, compression.h)
+	$(call DELFILE, *.h)
+	$(call DELFILE, .config)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
