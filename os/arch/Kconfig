@@ -21,6 +21,7 @@ config ARCH_XTENSA
 	bool "Xtensa"
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_VECNOTIRQ
 	---help---
 		Cadence Tensilica Xtensa architectures.
 endchoice
