@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/micomapp/Makefile
+# apps/AppLibs.mk
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,86 +50,14 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/.config # Current configuration
+
+include $(TOPDIR)/ProtectedLibs.mk
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
-include $(APPDIR)/AppLibs.mk
+LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
+LDLIBS_LIST = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
+LDLIBS = $(patsubst -lapps%, %, $(LDLIBS_LIST))
 endif
 
-OBJEXT ?= .o
-DELIM ?= /
-
-ifeq ($(WINTOOL),y)
-TINYARALIB = "${shell cygpath -w $(TOPDIR)$(DELIM)lib}"
-else
-TINYARALIB = "$(TOPDIR)$(DELIM)../build/output/libraries"
-endif
-
-ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
-LDELFFLAGS += -Bstatic
-LDLIBPATH += -L $(TINYARALIB)
-
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
-LDLIBS += $(LIBGCC)
-endif
-
-BIN = micom
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
-# need to update
-BIN_TYPE = ELF
-DYNAMIC_RAM_SIZE = 51200
-BIN_VER = 20190421
-KERNEL_VER = 2.0
-STACKSIZE = 4096
-PRIORITY = 220
-
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
-else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
-
-SRCS = micomapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-OBJS = $(SRCS:.c=$(OBJEXT))
-
-all: $(BIN)
-.PHONY: clean install verify
-
-$(OBJS): %$(OBJEXT): %.c
-	@echo "CC: $<"
-	$(Q) $(CC) -c $(CELFFLAGS) $< -o $@
-
-$(BIN): $(OBJS)
-	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
-
-clean:
-	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
-	$(call CLEAN)
-
-install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
-
-verify:
-ifneq ($(BIN_CHECK),0)
-	@echo "Undefined Symbols"
-	$(Q) $(NM) -u -l $(BIN)
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-	exit 1
-endif
+-include Make.dep
