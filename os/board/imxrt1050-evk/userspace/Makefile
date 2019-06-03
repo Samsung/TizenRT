@@ -75,11 +75,12 @@ ifeq ($(WINTOOL),y)
 else
   # Linux/Cygwin-native toolchain
   USER_LIBPATHS = $(addprefix -L$(TOPDIR)$(DELIM),$(dir $(USERLIBS)))
-  USER_LDSCRIPT = -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)memory.ld
+  USER_LDSCRIPT = -L$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts
+  USER_LDSCRIPT += -Tmemory.ld
 ifeq ($(CONFIG_ARMV7M_DTCM),y)
-  USER_LDSCRIPT += -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)user-space-dtcm.ld
+  USER_LDSCRIPT += -Tuser-space-dtcm.ld
 else
-  USER_LDSCRIPT += -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)user-space.ld
+  USER_LDSCRIPT += -Tuser-space.ld
 endif
   USER_HEXFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.hex"
   USER_SRECFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.srec"

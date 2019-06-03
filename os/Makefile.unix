@@ -387,6 +387,7 @@ context: check_context include/tinyara/config.h include/tinyara/version.h includ
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" context; \
 	done
 	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
+	$(Q) ./tools/mkldscript.sh
 
 # clean_context
 #

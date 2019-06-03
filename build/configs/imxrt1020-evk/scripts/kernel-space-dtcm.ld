@@ -137,14 +137,14 @@ SECTIONS
     *imxrt_flexspi.o(.text*)
     *imxrt_norflash.o(.text*)
     _edata = ABSOLUTE(.);
-  } > kdtcm AT > kflash
+  } > ksram AT > kflash
 
   .ramfunc ALIGN(4):
   {
     _sramfuncs = ABSOLUTE(.);
     *(.ramfunc  .ramfunc.*)
     _eramfuncs = ABSOLUTE(.);
-  } > kdtcm AT > kflash
+  } > ksram AT > kflash
 
   _framfuncs = LOADADDR(.ramfunc);
 
@@ -155,7 +155,7 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     _ebss = ABSOLUTE(.);
-  } > kdtcm
+  } > ksram
 
   /* Stabs debugging sections */
 

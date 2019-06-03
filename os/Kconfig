@@ -198,6 +198,44 @@ config BUILD_KERNEL
 
 endchoice # Build configuration
 
+config FLASH_START_ADDR
+	hex "Flash memory start address"
+	default 0x0
+	---help---
+		Start address of Flash memory
+
+if BUILD_PROTECTED
+
+config SRAM_START_ADDR
+	hex "RAM memory start address"
+	default 0x0
+	---help---
+		Start address of RAM memory to be used by the linker script. If multiple RAM are available,
+		then this config gives the start address of the RAM region for which the kernel and user
+		binaries need to be linked during the build process.
+
+config KSRAM_SIZE
+	int "Kernel RAM size in KB"
+	default 0
+	---help---
+		Size of kernel RAM region in KB. This value will be used in the linker scripts as the total size
+		of the kernel ram area in the SRAM region. This size will accomodate the kernel data and bss. 
+
+config USRAM_SIZE
+	int "User RAM size in KB"
+	default 0
+	---help---
+		Size of user RAM region in KB. This value will be used in the linker scripts as the total size
+                of the user ram area in the SRAM region. This size will accomodate the user data, bss and heap.
+
+config AUTOGEN_MEMORY_LDSCRIPT
+	bool "Auto generate memory.ld linker script"
+	default n
+	---help---
+		Auto generate the board specific memory.ld linker script using values
+		from the configuration file
+
+endif # BUILD_PROTECTED
 
 config APP_BINARY_SEPARATION
 	bool "Application binary separation build"
