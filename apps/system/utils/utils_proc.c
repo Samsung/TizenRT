@@ -65,8 +65,10 @@ int utils_proc_pid_foreach(procentry_handler_t handler)
 		return ERROR;
 	}
 
+	ret = OK;
+
 	/* Read each directory entry */
-	
+
 	for (;;) {
 		
 		entryp = readdir(dirp);
