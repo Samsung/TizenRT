@@ -25,8 +25,14 @@
 
 #ifndef _IMXRT_GPT_H_
 #define _IMXRT_GPT_H_
+#include <tinyara/config.h>
 
 #include "imxrt_config.h"
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "chip/imxrt102x_config.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#include "chip/imxrt105x_config.h"
+#endif
 
 /*!
  * @addtogroup gpt
@@ -41,6 +47,9 @@
 /*@{*/
 #define FSL_GPT_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
 /*@}*/
+
+#define GPT_OSCDIV_MAXVAL 0xF
+#define GPT_DIV_MAXVAL    0xFFF
 
 /*!
  * @brief List of clock sources
@@ -118,6 +127,23 @@ typedef struct _gpt_init_config {
 									false: counter retain its value when enabled. */
 } gpt_config_t;
 
+struct imxrt_gpt_chipinfo_s {
+	GPT_Type   *base;
+	int         irq_id;
+};
+
+enum imxrt_gpt_channel_e {
+	IMXRT_GPT_CH0,
+	IMXRT_GPT_CH1,
+	IMXRT_GPT_CH_MAX
+};
+
+enum imxrt_timer_convert_dir_e {
+	TIME2TICK,
+	TICK2TIME
+};
+typedef enum imxrt_timer_convert_dir_e imxrt_timer_convert_dir_t;
+
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -163,6 +189,12 @@ void imxrt_gpt_deinit(GPT_Type *base);
  * @param config Pointer to the user configuration structure.
  */
 void imxrt_gpt_getdefaultconfig(gpt_config_t *config);
+
+struct imxrt_gpt_chipinfo_s *imxrt_gpt_configure(int timer, gpt_config_t *config);
+
+uint32_t imxrt_gpt_convert_time_tick(imxrt_timer_convert_dir_t dir, gpt_clock_source_t clock_source, uint32_t value);
+
+int imxrt_timer_initialize(const char *devpath, int timer);
 
 /*!
  * @name Software Reset

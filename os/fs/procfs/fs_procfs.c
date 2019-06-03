@@ -162,7 +162,8 @@ static const struct procfs_entry_s g_procfsentries[] = {
 #endif
 
 #if !defined(CONFIG_FS_PROCFS_EXCLUDE_EREPORT)
-	{"ereport/**", &ereport_operations},
+	{"ereport**", &ereport_operations},
+	{"ereport/*", &ereport_operations},
 #endif
 
 	{NULL, NULL}
