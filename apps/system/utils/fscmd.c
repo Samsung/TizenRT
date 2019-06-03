@@ -223,6 +223,10 @@ static int tash_echo(int argc, char **args)
 	}
 
 	if (1 == n_opt) {
+		if (len >= FSCMD_BUFFER_LEN) {
+			FSCMD_OUTPUT("%s : Too long input text\n", args[0]);
+			goto error_with_close;
+		}
 		memcpy(fscmd_buffer + len, "\n", 1);
 		len += 1;
 	}
