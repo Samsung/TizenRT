@@ -82,10 +82,13 @@
 
 void free(FAR void *mem)
 {
-	int heap_idx;
-	heap_idx = mm_get_heapindex(mem);
-	if (heap_idx != INVALID_HEAP_IDX) {
-		mm_free(&USR_HEAP[heap_idx], mem);
+	struct mm_heap_s *heap;
+	heap = mm_get_heap(mem);
+	if (heap) {
+		mm_free(heap, mem);
+		return;
 	}
+
+	mdbg("Failed to free address 0x%x\n", mem);
 }
 
