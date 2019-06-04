@@ -38,8 +38,6 @@ nothing:
 install:
 
 preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
-	$(Q) $(MKKCONFIG) -m $(MENUDESC)
-	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
 
 context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 

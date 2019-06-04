@@ -309,7 +309,6 @@ void imxrt_wdog_disable_all(void)
 void imxrt_wdog_hwreset(void)
 {
 	uint32_t reg;
-	irqstate_t flags;
 
 	reg = getreg16(IMXRT_WDOG1_WCR);
 	if (reg & ~WDOG_WCR_WDT_MASK) {

@@ -78,7 +78,7 @@ static void mbedtls_zeroize( void *v, size_t n ) {
 #endif
 
 #if defined(MBEDTLS_RSA_C)
-#if !defined(MBEDTLS_PK_RSA_VERIFIY_ALT) && !defined(MBEDTLS_PK_RSA_ENCRYPT_ALT)
+#if !defined(MBEDTLS_PK_RSA_VERIFY_ALT) && !defined(MBEDTLS_PK_RSA_ENCRYPT_ALT)
 static int rsa_can_do( mbedtls_pk_type_t type )
 {
     return( type == MBEDTLS_PK_RSA ||
