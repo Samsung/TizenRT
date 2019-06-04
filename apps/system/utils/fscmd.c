@@ -812,6 +812,8 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 		ret = statfs(fullpath, &buf);
 		if (ret != OK) {
 			FSCMD_OUTPUT("statfs is failed at %s\n", fullpath);
+			fscmd_free(fullpath);
+			closedir(dirp);
 			return ERROR;
 		}
 
@@ -824,6 +826,8 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 			ret = handler(fullpath, &buf, NULL);
 			if (ret != OK) {
 				FSCMD_OUTPUT("handler is failed at %d\n", fullpath);
+				fscmd_free(fullpath);
+				closedir(dirp);
 				return ERROR;
 			}
 		} else {
