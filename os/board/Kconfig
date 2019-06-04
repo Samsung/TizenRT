@@ -93,6 +93,7 @@ config ARCH_BOARD_IMXRT1020_EVK
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select AUTOGEN_MEMORY_LDSCRIPT if BUILD_PROTECTED
 	---help---
 		This is the board configuration for the port of TinyARA to the NXP i.MXRT
 		evaluation kit, MIMXRT1020-EVKB.  This board features the MIMXRT1021CAF4A MCU.
