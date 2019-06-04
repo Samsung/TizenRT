@@ -55,6 +55,10 @@
 OBJEXT ?= .o
 DELIM ?= /
 
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+include $(APPDIR)/AppLibs.mk
+endif
+
 ifeq ($(WINTOOL),y)
 TINYARALIB = "${shell cygpath -w $(TOPDIR)$(DELIM)lib}"
 else
@@ -66,23 +70,6 @@ ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
 
-LDLIBS += -lproxies
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-LDLIBS += -luc
-else
-LDLIBS += -lc
-endif
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-LDLIBS += -lumm
-else
-LDLIBS += -lmm
-endif
-
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-LDLIBS += -lframework
-endif
 
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
