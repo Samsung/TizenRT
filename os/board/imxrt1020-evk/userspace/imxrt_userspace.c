@@ -16,7 +16,7 @@
 *
 ******************************************************************/
 /****************************************************************************
- * os/board/imxrt1050-evk/userspace/imxrt_userspace.c
+ * os/board/imxrt1020-evk/userspace/imxrt_userspace.c
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

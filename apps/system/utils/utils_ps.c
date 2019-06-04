@@ -134,12 +134,12 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
 	ret = utils_readfile(filepath, buf, PS_BUFLEN, ps_print_values);
-	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
+		free(filepath);
 		return ERROR;
 	}
-
+	free(filepath);
 	return OK;
 }
 

@@ -158,11 +158,10 @@ endif
 ifeq ($(CONFIG_IMXRT_QTMR),y)
 CHIP_CSRCS += imxrt_qtmr.c
 endif
-endif
-
-ifeq ($(CONFIG_TIMER),y)
+ifeq ($(CONFIG_IMXRT_TIMER_INTERFACE),y)
 CHIP_CSRCS += imxrt_timer_lowerhalf.c
 endif
+endif # CONFIG_IMXRT_TIMER
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CHIP_CSRCS += imxrt_userspace.c

@@ -220,7 +220,7 @@ void imxrt_filesystem_initialize(void)
  * Name: imxrt_spidev_initialize
  *
  * Description:
- *   Called to configure SPI chip select GPIO pins for the imxrt1050-evk board.
+ *   Called to configure SPI chip select GPIO pins for the imxrt1020-evk board.
  *
  ************************************************************************************/
 

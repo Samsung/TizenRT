@@ -223,6 +223,10 @@ static int tash_echo(int argc, char **args)
 	}
 
 	if (1 == n_opt) {
+		if (len >= FSCMD_BUFFER_LEN) {
+			FSCMD_OUTPUT("%s : Too long input text\n", args[0]);
+			goto error_with_close;
+		}
 		memcpy(fscmd_buffer + len, "\n", 1);
 		len += 1;
 	}
@@ -808,6 +812,8 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 		ret = statfs(fullpath, &buf);
 		if (ret != OK) {
 			FSCMD_OUTPUT("statfs is failed at %s\n", fullpath);
+			fscmd_free(fullpath);
+			closedir(dirp);
 			return ERROR;
 		}
 
@@ -820,6 +826,8 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 			ret = handler(fullpath, &buf, NULL);
 			if (ret != OK) {
 				FSCMD_OUTPUT("handler is failed at %d\n", fullpath);
+				fscmd_free(fullpath);
+				closedir(dirp);
 				return ERROR;
 			}
 		} else {

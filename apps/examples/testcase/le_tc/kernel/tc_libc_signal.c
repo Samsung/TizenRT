@@ -318,12 +318,42 @@ static void tc_libc_signal_raise(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_libc_signal_psignal
+* @brief                :tc_libc_signal_psignal test sigpsignal function
+* @scenario             :If pinfo == NULL, it set errno EINVAL.
+*                        Else if message is not a null pointer and is not the empty string, the string pointed to by the message argument will be written, followed by a colon and a space.
+*                        Then the signal description string associated with signum will be written, followed by a newline.
+* API's covered         :psiginfo()
+* Preconditions         :none
+* Preconditions         :none
+* @return               :void
+*/
+
+static void tc_libc_signal_psignal(void)
+{
+	siginfo_t siginfo;
+	siginfo.si_signo = SIG1;
+
+	psiginfo(NULL, NULL);
+	TC_ASSERT_EQ("psignal", get_errno(), EINVAL);
+
+	/* "User-defined signal 1 (POSIX): SIGUSR1" will be printed to stderr */
+	psiginfo(&siginfo, "User-defined signal 1 (POSIX)");
+
+	/* "SIGUSR1" will be printed to stderr */
+	psiginfo(&siginfo, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_signal
  ****************************************************************************/
 
 int libc_signal_main(void)
 {
+	tc_libc_signal_psignal();
 	tc_libc_signal_sigemptyset();
 	tc_libc_signal_sigfillset();
 	tc_libc_signal_sigaddset();

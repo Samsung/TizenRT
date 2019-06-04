@@ -545,7 +545,7 @@ int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, b
 		for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
 			if (!handle->evt_hnd[i]) {
 				iotapi_dev_init(&handle->evt_hnd[i]);
-				iotapi_dev_register(handle->evt_hnd[i], int_type, cb);
+				iotapi_dev_register(handle->evt_hnd[i], int_type, cb, (void *)hnd);
 				break;
 			}
 		}

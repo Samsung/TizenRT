@@ -71,6 +71,7 @@ struct _iotapi_dev_ctx_s {
 	iotbus_int_type_e type;
 	iotapi_cbk cb;
 	struct _iotapi_cbk_entry entry;
+	void *arg;
 };
 
 static int g_pfd[2] = {0,};
@@ -131,7 +132,7 @@ static void iotdev_callback(iotbus_int_type_e evt)
 	struct _iotapi_cbk_entry *node = queue->head;
 	while (node) {
 		if (node->ctx->type == evt) {
-			node->ctx->cb(evt);
+			node->ctx->cb(evt, node->ctx->arg);
 		}
 		node = node->flink;
 	}
@@ -235,7 +236,7 @@ int iotapi_dev_deinit(iotapi_hnd hnd)
 	return 0;
 }
 
-int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
+int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk, void *arg)
 {
 	struct _iotapi_dev_ctx_s *ctx = (struct _iotapi_dev_ctx_s *)hnd;
 	if (!ctx) {
@@ -245,6 +246,7 @@ int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
 
 	ctx->cb = cbk;
 	ctx->type = evt;
+	ctx->arg = arg;
 	iotapi_insert_cbk(ctx);
 
 	return 0;
@@ -286,7 +288,7 @@ int iotapi_dev_deinit(iotapi_hnd hnd)
 	return -1;
 }
 
-int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk)
+int iotapi_dev_register(iotapi_hnd hnd, iotbus_int_type_e evt, iotapi_cbk cbk, void *arg)
 {
 	idbg("Turn on IOTDEV driver");
 	return -1;

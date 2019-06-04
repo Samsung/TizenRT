@@ -440,8 +440,6 @@ static ssize_t imxrt_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev;
 	off_t blockswritten = 0;
 	size_t pagesize = 1 << priv->pageshift;
-	status_t status;
-	ssize_t nbytes;
 
 	fvdbg("priv: %x  ,  IMXRT_FLEXSPI: %x,  startblock: %08lx nblocks: %d, pagesize = %d, pageshift = %d,  offset = 0x%x  %08lx\n",
 		priv, IMXRT_FLEXSPI, (long)startblock, (int)nblocks, pagesize, priv->pageshift, startblock << priv->pageshift, startblock << priv->pageshift);
@@ -464,8 +462,6 @@ static ssize_t imxrt_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 
 static ssize_t imxrt_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
 {
-	status_t status;
-
 	fvdbg("offset: %08lx nbytes: %d\n", (long)offset, (int)nbytes);
 
 	memcpy(buffer, (void*)(IMXRT_FLASH_BASE + offset), nbytes);
