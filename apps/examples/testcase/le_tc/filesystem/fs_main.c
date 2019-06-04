@@ -273,7 +273,7 @@ static void tc_fs_vfs_mount(void)
 
 	/*For each mountpt operation*/
 
-#ifndef CONFIG_DISABLE_ENVIRON
+#if !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
 	ret = mount_show();
 	TC_ASSERT_EQ("mount_show", ret, OK);
 #endif
@@ -3730,7 +3730,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
-#if defined(CONFIG_TC_FS_PROCFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
+#if defined(CONFIG_TC_FS_PROCFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) && !defined(CONFIG_BUILD_PROTECTED)
 	tc_fs_smartfs_mksmartfs();
 #endif
 	(void)tc_handler(TC_END, "FileSystem TC");
