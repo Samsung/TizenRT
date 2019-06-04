@@ -50,60 +50,15 @@
  *
  ****************************************************************************/
 
-/* The i.MXRT1050-EVK has 64Mb of Hyper FLASH beginning at address,
- * 0x0060:0000, 512Kb of DTCM RAM beginning at 0x2000:0000, and 512Kb OCRAM
- * beginning at 0x2020:0000.  Neither DTCM or SDRAM are used in this
- * configuratin.
- *
- * The user and kernel space partitions will be spanned with a single
- * region of size 2**n bytes.  As a consequence, as the partitions increase
- * in size, the alignment requirement also increases.  The sizes below give
- * the largest possible user address spaces (but leave far too much for the
- * OS).
- *
- * The solution to this wasted memory is to (1) use more than one region to
- * span the user spaces, or (2) poke holes in a larger region (via sub-
- * regions) to trim it to fit better.
- *
- * A detailed memory map for the 512KB SRAM region is as follows:
- *
- *   0x2020 0000:  Kernel .data region.  Typical size: 0.1KB
- *   ------ ----   Kernel .bss  region.  Typical size: 1.8KB
- *   0x2020 0800:  Kernel IDLE thread stack (approximate).  Size is
- *                 determined by CONFIG_IDLETHREAD_STACKSIZE and
- *                 adjustments for alignment.  Typical is 1KB.
- *   ------ ----   Padded to 4KB
- *   0x2040 0000:  User .data region.  Size is variable.
- *   ------- ----  User .bss region  Size is variable.
- *   0x2042 0000:  Beginning of kernel heap.  Size determined by
- *                 CONFIG_MM_KERNEL_HEAPSIZE.
- *   ------ ----   Beginning of user heap.  Can vary with other settings.
- *   0x2080 0000:  End+1 of mappable OCRAM
- */
-
-/* Specify the memory areas */
-
-MEMORY
-{
-  /* 8MB of HyperFLASH */
-
-  kflash (rx)  : ORIGIN = 0x60000000, LENGTH = 256K
-  uflash (rx)  : ORIGIN = 0x60040000, LENGTH = 256K
-  flash  (rx)  : ORIGIN = 0x60400000, LENGTH = 62M
-
-  /* 256KB of OCRAM */
-
-  kdtcm   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
-  udtcm   (rwx) : ORIGIN = 0x20010000, LENGTH = 16K
-  kocram (rwx) : ORIGIN = 0x20200000, LENGTH = 128K
-  uocram (rwx) : ORIGIN = 0x20220000, LENGTH = 64K
-}
+/* Memory information is auto-generated at build time from .config */
+/* The auto-generated memory_layout.ld file will be included here */
+INCLUDE memory_layout.ld
 
 __kflash_segment_start__  = ORIGIN(kflash);
 __kflash_segment_size__   = LENGTH(kflash);
 __uflash_segment_start__  = ORIGIN(uflash);
 __uflash_segment_size__   = LENGTH(uflash);
-__ksram_segment_start__   = ORIGIN(kocram);
-__ksram_segment_size__    = LENGTH(kocram);
-__usram_segment_start__   = ORIGIN(uocram);
-__usram_segment_size__    = LENGTH(uocram);
+__ksram_segment_start__   = ORIGIN(ksram);
+__ksram_segment_size__    = LENGTH(ksram);
+__usram_segment_start__   = ORIGIN(usram);
+__usram_segment_size__    = LENGTH(usram);

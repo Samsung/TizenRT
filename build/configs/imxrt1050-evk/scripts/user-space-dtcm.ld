@@ -123,7 +123,7 @@ SECTIONS
     *(.gnu.linkonce.d.*)
     CONSTRUCTORS
     _edata = ABSOLUTE(.);
-  } > udtcm AT > uflash
+  } > usram AT > uflash
 
   .bss :
   {
@@ -132,7 +132,7 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     _ebss = ABSOLUTE(.);
-  } > udtcm
+  } > usram
 
   /* Stabs debugging sections */
 
