@@ -83,14 +83,23 @@
 
 #if defined(CONFIG_BUILD_PROTECTED)
 const struct mpu_region_info regions_info[] = {
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+	{
+		&mpu_privflash, (uintptr_t)__kflash_segment_start__, (uintptr_t)__kflash_segment_size__, MPU_REG_KERN_CODE,
+	},
+	{
+		&mpu_privintsram, (uintptr_t)__ksram_segment_start__, (uintptr_t)__ksram_segment_size__, MPU_REG_KERN_DATA,
+	},
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	{
+		&mpu_privintsram, (uintptr_t)CONFIG_IMXRT_SDRAM_START, (uintptr_t)CONFIG_MM_KERNEL_HEAPSIZE, MPU_REG_KERN_HEAP,
+	},
+#endif
 	{
 		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
 	},
 	{
 		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_USER_DATA,
 	},
-#endif
 };
 #endif
 

@@ -41,11 +41,14 @@
  * registers.
  */
 enum {
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+	MPU_REG_KERN_CODE,
+	MPU_REG_KERN_DATA,
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	MPU_REG_KERN_HEAP,
+#endif
 	MPU_REG_USER_CODE,
 	MPU_REG_USER_DATA,
-#endif
-	MPU_REG_APP,
+	MPU_REG_APP
 };
 
 #ifndef __ASSEMBLY__
