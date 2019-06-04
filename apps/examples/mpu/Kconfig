@@ -34,7 +34,7 @@ config MPUTEST_USE_PREBUILT_BINS
 	bool "Use pre-built application binaries"
 	default n
 	depends on APP_BINARY_SEPARATION
-	depends on ARCH_BOARD_IMXRT1050_EVK
+	depends on ARCH_BOARD_IMXRT1050_EVK || ARCH_BOARD_IMXRT1020_EVK
 	depends on !EXAMPLES_ELF
 	---help---
 		To test different application access, two application binaries
