@@ -87,7 +87,7 @@
 #  define EXAMPLE_TIMER_SIGNO    17
 #endif
 
-#define TIMER_THEAD_SIZE                512
+#define TIMER_THEAD_SIZE                1024
 #define TIMER_THEAD_PRIORITY            100
 
 /****************************************************************************
@@ -233,7 +233,7 @@ int timer_main(int argc, char *argv[])
 		}
 	}
 
-	if (optind >= argc) {
+	if (optind > argc) {
 		fprintf(stderr, "timer: invalid option -- \'%s\'\n", argv[optind]);
 		fprintf(stdout, USAGE);
 		return EXIT_SUCCESS;
