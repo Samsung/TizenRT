@@ -22,11 +22,11 @@ config EXAMPLES_MESSAGING_TEST
 
 if EXAMPLES_MESSAGING_TEST
 config MESSAGING_TEST_REPETITION_NUM
-	int
+	int "Messaging F/W Test Repetition Number"
 	default 1
 	---help---
 		Messaging F/W Test repetition number.
-		To be updated.
+		If set to 0(zero) or negative number, test runs infinitely.
 
 endif
 
