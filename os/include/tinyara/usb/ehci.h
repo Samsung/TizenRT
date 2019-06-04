@@ -735,7 +735,7 @@
 #define QH_TOKEN_TOGGLE_SHIFT          (31)	/* Bit 31: Data Toggle */
 #define QH_TOKEN_TOGGLE                (1 << 31)	/* Bit 31: Data Toggle */
 
-/* Buffer Page Pointer List (NOTE 2)
+/* Buffer Page Pointer List (NOTE 2) */
 /* Page 0 */
 
 #define QH_BUFPTR0_OFFFSET_SHIFT      (0)	/* Bits 0-11: Current Offset */
@@ -902,7 +902,7 @@ struct ehci_qh_s {
 	struct ehci_overlay_s overlay;	/* 0x10-0x2c: Transfer overlay */
 };
 
-#define SIZEOF_EHCI_OVERLAY (48)	/* 4*sizeof(uint32_t) + SIZEOF_EHCI_OVERLAY */
+#define SIZEOF_EHCI_QH_S (48)	/* 4*sizeof(uint32_t) + SIZEOF_EHCI_OVERLAY */
 
 /* Periodic Frame Span Traversal Node (STN). Paragrap 3.7 */
 
