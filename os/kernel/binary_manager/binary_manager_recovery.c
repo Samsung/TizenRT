@@ -26,7 +26,7 @@
 #include <queue.h>
 #include <errno.h>
 #include <sys/types.h>
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#ifdef CONFIG_BOARDCTL_RESET
 #include <sys/boardctl.h>
 #endif
 #include <tinyara/irq.h>
@@ -49,17 +49,14 @@ extern bool abort_mode;
 /* Reboot the board */
 static void binary_manager_board_reset(void)
 {
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#ifdef CONFIG_BOARDCTL_RESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 #else
 	(void)irqsave();
+	sched_lock();
 	for (;;) {
-#ifdef CONFIG_ARCH_LEDS
-		//board_autoled_on(LED_PANIC);
-		up_mdelay(250);
-		//board_autoled_off(LED_PANIC);
-		up_mdelay(250);
-#endif
+		lldbg("This is a situation that can't alive again, And S/W does't support reset. push the reset button!");
+		up_mdelay(10000);
 	}
 #endif
 }
