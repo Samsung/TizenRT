@@ -73,6 +73,7 @@ endif
 
 ifeq ($(CONFIG_SYSTEM_CMDS),y)
 CSRCS += systemcmd.c
+endif
 
 ifeq ($(CONFIG_FS_CMDS),y)
 CSRCS += fscmd.c
@@ -97,8 +98,6 @@ endif
 ifeq ($(CONFIG_NETUTILS_TFTPC),y)
 CSRCS += netcmd_tftpc.c
 endif
-
-endif #CONFIG_TASH
 
 ifeq ($(CONFIG_ENABLE_CPULOAD),y)
 CSRCS += utils_cpuload.c
