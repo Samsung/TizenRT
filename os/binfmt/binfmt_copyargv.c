@@ -65,7 +65,7 @@
 
 #include "binfmt.h"
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -204,4 +204,4 @@ void binfmt_freeargv(FAR struct binary_s *binp)
 }
 #endif
 
-#endif							/* !CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */

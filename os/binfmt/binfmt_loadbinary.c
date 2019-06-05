@@ -37,7 +37,7 @@
 #endif
 #include "binfmt.h"
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 #ifdef CONFIG_ARMV7M_MPU
 extern uint32_t g_app_mpu_region;
@@ -212,4 +212,4 @@ errout:
 
 }
 #endif							/* CONFIG_BINARY_MANAGER */
-#endif							/* !CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */

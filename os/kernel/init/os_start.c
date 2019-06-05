@@ -565,7 +565,7 @@ void os_start(void)
 
 	lib_initialize();
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 	/* Initialize the binfmt system */
 
 	binfmt_initialize();

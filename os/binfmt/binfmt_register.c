@@ -65,7 +65,7 @@
 
 #include "binfmt.h"
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Public Functions
@@ -101,4 +101,4 @@ int register_binfmt(FAR struct binfmt_s *binfmt)
 	return -EINVAL;
 }
 
-#endif							/* CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */

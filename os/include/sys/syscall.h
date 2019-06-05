@@ -197,7 +197,7 @@
  * programs from a file system.
  */
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 #ifndef CONFIG_BUILD_KERNEL
 #define SYS_exec                       __SYS_exec
 #define __SYS_execv                    (__SYS_exec + 1)
