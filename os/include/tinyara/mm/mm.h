@@ -153,6 +153,8 @@
 
 #define MM_MIN_SHIFT    4		/* 16 bytes */
 #define MM_MAX_SHIFT   15		/* 32 Kb */
+#define MM_SHIFT_FOR_NDX (MM_MIN_SHIFT + 1)
+#define MM_SHIFT_MASK    ~(1 << MM_SHIFT_FOR_NDX)
 
 #elif defined(CONFIG_HAVE_LONG_LONG)
 /* Four byte offsets; Pointers may be 4 or 8 bytes
@@ -161,8 +163,12 @@
 
 #if UINTPTR_MAX <= UINT32_MAX
 #define MM_MIN_SHIFT  4			/* 16 bytes */
+#define MM_SHIFT_FOR_NDX 5		/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
 #elif UINTPTR_MAX <= UINT64_MAX
 #define MM_MIN_SHIFT  5			/* 32 bytes */
+#define MM_SHIFT_FOR_NDX 6		/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
 #endif
 #define MM_MAX_SHIFT   22		/*  4 Mb */
 
@@ -173,6 +179,8 @@
 
 #define MM_MIN_SHIFT    4		/* 16 bytes */
 #define MM_MAX_SHIFT   22		/*  4 Mb */
+#define MM_SHIFT_FOR_NDX 5		/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
 #endif
 
 /* All other definitions derive from these two */
@@ -383,7 +391,7 @@ struct mm_heap_s {
 	 * speed searches for free nodes.
 	 */
 
-	struct mm_freenode_s mm_nodelist[MM_NNODES];
+	struct mm_freenode_s mm_nodelist[MM_NNODES + 1];
 };
 
 /****************************************************************************
