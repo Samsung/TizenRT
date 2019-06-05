@@ -102,7 +102,7 @@ EXTERN FAR struct binfmt_s *g_binfmts;
  *
  ****************************************************************************/
 
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_BINFMT)
+#ifdef CONFIG_DEBUG_BINFMT
 int dump_module(FAR const struct binary_s *bin);
 #else
 #define dump_module(bin)
