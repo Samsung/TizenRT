@@ -224,7 +224,7 @@ static int procfs_rewind_tc(const char *dirpath)
 
 	return OK;
 }
-#ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#if !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) && !defined(CONFIG_BUILD_PROTECTED)
 void tc_fs_smartfs_mksmartfs(void)
 {
 	int ret;
