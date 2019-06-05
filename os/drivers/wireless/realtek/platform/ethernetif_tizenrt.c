@@ -58,9 +58,6 @@
 
 #include "lwip/ethip6.h" //Add for ipv6
 
-//#include <platform/platform_stdlib.h>
-//#include "platform_opts.h"
-
 #if CONFIG_WLAN
 #include <lwip_intf_tizenrt.h>
 #endif
@@ -69,13 +66,12 @@
 #include "freertos/inic_intf.h"
 #endif
 
-#define netifMTU                                (1500)
-#define netifINTERFACE_TASK_STACK_SIZE		( 350 )
-#define netifINTERFACE_TASK_PRIORITY		( configMAX_PRIORITIES - 1 )
-#define netifGUARD_BLOCK_TIME			( 250 )
+#define netifMTU (1500)
+#define netifINTERFACE_TASK_STACK_SIZE (350)
+#define netifINTERFACE_TASK_PRIORITY (configMAX_PRIORITIES - 1)
+#define netifGUARD_BLOCK_TIME (250)
 /* The time to block waiting for input. */
-#define emacBLOCK_TIME_WAITING_FOR_INPUT	( ( portTickType ) 100 )
-
+#define emacBLOCK_TIME_WAITING_FOR_INPUT ((portTickType)100)
 
 #ifdef CONFIG_CONCURRENT_MODE
 #define IF2NAME0 'r'
@@ -107,7 +103,7 @@ static void low_level_init(struct netif *netif)
 	netif->mtu = 1500;
 
 	/* Accept broadcast address and ARP traffic */
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;	     
+	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
 
 #if LWIP_IGMP
 	/* make LwIP_Init do igmp_start to add group 224.0.0.1 */
@@ -116,7 +112,6 @@ static void low_level_init(struct netif *netif)
 
 	/* Wlan interface is initialized later */
 }
-
 
 /**
  * This function should do the actual transmission of the packet. The packet is
@@ -136,18 +131,15 @@ static void low_level_init(struct netif *netif)
 
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
-
-	printf("\r\n ===================>>Enter low_level_output\r\n");
-  /* Refer to eCos lwip eth_drv_send() */
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	int sg_len = 0;
 	struct pbuf *q;
 #if CONFIG_WLAN
-	if(!rltk_wlan_running(netif_get_idx(netif)))
+	if (!rltk_wlan_running(netif_get_idx(netif)))
 		return ERR_IF;
 #endif
 	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-		sg_list[sg_len].buf = (unsigned int) q->payload;
+		sg_list[sg_len].buf = (unsigned int)q->payload;
 		sg_list[sg_len++].len = q->len;
 	}
 
@@ -155,38 +147,17 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 #if CONFIG_WLAN
 		if (rltk_wlan_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len) == 0)
 #elif CONFIG_INIC_HOST
-		if(rltk_inic_send( sg_list, sg_len, p->tot_len) == 0)
+		if (rltk_inic_send(sg_list, sg_len, p->tot_len) == 0)
 #else
-                if(1)
+		if (1)
 #endif
 			return ERR_OK;
 		else
-			return ERR_BUF;	// return a non-fatal error
+			return ERR_BUF; // return a non-fatal error
 	}
 	return ERR_OK;
 }
 
-/*for ethernet mii interface*/
-#if 0
-static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
-{
-	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
-	int sg_len = 0;
-	struct pbuf *q;
-	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-		sg_list[sg_len].buf = (unsigned int) q->payload;
-		sg_list[sg_len++].len = q->len;
-	}
-	if (sg_len) {
-		 if(rltk_mii_send(sg_list, sg_len, p->tot_len) == 0)
-			return ERR_OK;
-		else
-			return ERR_BUF;	// return a non-fatal error
-	}
-	return ERR_OK;
-}
-#endif
-	
 /**
  * Should allocate a pbuf and transfer the bytes of the incoming
  * packet from the interface into the pbuf.
@@ -197,10 +168,9 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
  */
 //static struct pbuf * low_level_input(struct netif *netif){}
 
-
 /**
- * This function is the ethernetif_input task, it is processed when a packet 
- * is ready to be read from the interface. It uses the function low_level_input() 
+ * This function is the ethernetif_input task, it is processed when a packet
+ * is ready to be read from the interface. It uses the function low_level_input()
  * that should handle the actual reception of bytes from the network
  * interface. Then the type of the received packet is determined and
  * the appropriate input function is called.
@@ -209,7 +179,6 @@ static err_t low_level_output_mii(struct netif *netif, struct pbuf *p)
  */
 //void ethernetif_input( void * pvParameters )
 
-
 /* Refer to eCos eth_drv_recv to do similarly in ethernetif_input */
 void ethernetif_recv(struct netif *netif, int total_len)
 {
@@ -217,7 +186,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 	struct pbuf *p, *q;
 	int sg_len = 0;
 #if CONFIG_WLAN
-	if(!rltk_wlan_running(netif_get_idx(netif)))
+	if (!rltk_wlan_running(netif_get_idx(netif)))
 		return;
 #endif
 	if ((total_len > MAX_ETH_MSG) || (total_len < 0))
@@ -232,12 +201,10 @@ void ethernetif_recv(struct netif *netif, int total_len)
 
 	// Create scatter list
 	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-   		sg_list[sg_len].buf = (unsigned int) q->payload;
+		sg_list[sg_len].buf = (unsigned int)q->payload;
 		sg_list[sg_len++].len = q->len;
 	}
 
-	// Copy received packet to scatter list from wrapper rx skb
-  	//printf("\n\rwlan:%c: Recv sg_len: %d, tot_len:%d", netif->name[1],sg_len, total_len);
 #if CONFIG_WLAN
 	rltk_wlan_recv(netif_get_idx(netif), sg_list, sg_len);
 #elif CONFIG_INIC_HOST
@@ -246,39 +213,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 	// Pass received packet to the interface
 	if (ERR_OK != netif->input(p, netif))
 		pbuf_free(p);
-
 }
-
-#if 0
-void ethernetif_mii_recv(struct netif *netif, int total_len)
-{
-	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
-	struct pbuf *p, *q;
-	int sg_len = 0;
-
-	if ((total_len > MAX_ETH_MSG) || (total_len < 0))
-		total_len = MAX_ETH_MSG;
-
-	// Allocate buffer to store received packet
-	p = pbuf_alloc(PBUF_RAW, total_len, PBUF_POOL);
-	if (p == NULL) {
-		printf("\n\rCannot allocate pbuf to receive packet");
-		return;
-	}
-
-	// Create scatter list
-	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-   		sg_list[sg_len].buf = (unsigned int) q->payload;
-		sg_list[sg_len++].len = q->len;
-	}
-	rltk_mii_recv(sg_list, sg_len);
-
-	// Pass received packet to the interface
-	if (ERR_OK != netif->input(p, netif))
-		pbuf_free(p);
-
-}
-#endif
 
 /**
  * Should be called at the beginning of the program to set up the
@@ -300,9 +235,9 @@ err_t ethernetif_init_rtk(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 	/* Initialize interface hostname */
-	if(netif->name[1] == '0')
+	if (netif->name[1] == '0')
 		netif->hostname = "lwip0";
-	else if(netif->name[1] == '1')
+	else if (netif->name[1] == '1')
 		netif->hostname = "lwip1";
 #endif /* LWIP_NETIF_HOSTNAME */
 
@@ -319,70 +254,3 @@ err_t ethernetif_init_rtk(struct netif *netif)
 
 	return ERR_OK;
 }
-
-//masked by sherry 
-#if 0
-err_t ethernetif_mii_init(struct netif *netif)
-{
-	LWIP_ASSERT("netif != NULL", (netif != NULL));
-
-#if LWIP_NETIF_HOSTNAME
-		netif->hostname = "lwip2";		
-#endif /* LWIP_NETIF_HOSTNAME */
-
-	netif->output = etharp_output;
-#if LWIP_IPV6
-	netif->output_ip6 = ethip6_output;
-#endif
-	netif->linkoutput = low_level_output_mii;
-
-	/* initialize the hardware */
-	low_level_init(netif);
-
-	etharp_init();
-
-	return ERR_OK;
-}
-
-static void arp_timer(void *arg)
-{
-  etharp_tmr();
-  sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
-}
-
-/*
- * For FreeRTOS tickless
- */
-int lwip_tickless_used = 0;
-
-int arp_timeout_exist(void)
-{
-	struct sys_timeouts *timeouts;
-	struct sys_timeo *t;
-
-	timeouts = sys_arch_timeouts();
-
-	for(t = timeouts->next; t != NULL;t = t->next)
-		if(t->h == arp_timer)
-			return 1;
-
-	return 0;
-}
-
-//Called by rltk_wlan_PRE_SLEEP_PROCESSING()
-void lwip_PRE_SLEEP_PROCESSING(void)
-{
-	if(arp_timeout_exist()) {
-		tcpip_untimeout(arp_timer, NULL);
-	}
-	lwip_tickless_used = 1;
-}
-
-//Called in ips_leave() path, support tickless when wifi power wakeup due to ioctl or deinit
-void lwip_POST_SLEEP_PROCESSING(void)
-{
-	if(lwip_tickless_used) {
-		tcpip_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
-	}
-}
-#endif

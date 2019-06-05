@@ -32,7 +32,7 @@
 
 #include "rtk_drv_lwnl80211.h"
 
-#define vTaskDelay(t)              usleep(t)
+#define vTaskDelay(t) usleep(t)
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -44,18 +44,20 @@ static struct lwnl80211_lowerhalf_s *g_dev;
 
 static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 
+extern struct netif xnetif[NET_IF_NUM];
+
 static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
-	rtkdrv_init,                   /* init */
-	rtkdrv_deinit,                 /* deinit */
-	rtkdrv_scan_ap,                /* scan_ap */
-	rtkdrv_connect_ap,             /* connect_ap */
-	rtkdrv_disconnect_ap,          /* disconnect_ap */
-	rtkdrv_get_info,               /* get_info */
-	rtkdrv_start_sta,              /* start_sta */
-	rtkdrv_start_softap,           /* start_softap */
-	rtkdrv_stop_softap,            /* stop_softap */
-	rtkdrv_set_autoconnect,        /* set_autoconnect */
-	NULL                           /* drv_ioctl */
+	rtkdrv_init,			/* init */
+	rtkdrv_deinit,			/* deinit */
+	rtkdrv_scan_ap,			/* scan_ap */
+	rtkdrv_connect_ap,		/* connect_ap */
+	rtkdrv_disconnect_ap,   /* disconnect_ap */
+	rtkdrv_get_info,		/* get_info */
+	rtkdrv_start_sta,		/* start_sta */
+	rtkdrv_start_softap,	/* start_softap */
+	rtkdrv_stop_softap,		/* stop_softap */
+	rtkdrv_set_autoconnect, /* set_autoconnect */
+	NULL					/* drv_ioctl */
 };
 
 /*
@@ -63,7 +65,7 @@ static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
  */
 static int rtk_drv_callback_handler(void *arg)
 {
-	int *type = (int*)(arg);
+	int *type = (int *)(arg);
 	lwnl80211_cb_status status;
 
 	if (!g_dev) {
@@ -163,7 +165,6 @@ static void linkdown_handler(rtk_reason_t *reason)
 	pthread_detach(tid);
 }
 
-
 int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input)
 {
 	lwnl80211_cb_status status;
@@ -198,7 +199,7 @@ lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev)
 		}
 		vdvdbg("[RTK] Link callback handles: registered\n");
 
-		if (cmd_wifi_on(RTK_WIFI_STATION_IF)!= RTK_STATUS_SUCCESS) {
+		if (cmd_wifi_on(RTK_WIFI_STATION_IF) != RTK_STATUS_SUCCESS) {
 			vddbg("[RTK] Failed to start STA mode\n");
 			return result;
 		}
@@ -295,7 +296,9 @@ lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info)
 		return LWNL80211_INVALID_ARGS;
 	}
 
-	char mac_str[18] = {0 ,};
+	char mac_str[18] = {
+		0,
+	};
 	(void)wifi_get_mac_address((char *)mac_str);
 
 	int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);

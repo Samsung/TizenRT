@@ -28,29 +28,29 @@
 * Fields    TRIGGER    PAYLOAD    SEQ    PLEN    ID
 * BITS     [127:120]    [119:16]   [15:8]  [7:4]  [3:0]
 */
-#define C2H_ID(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)), 0, 4)
-#define C2H_PLEN(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)), 4, 4)
-#define C2H_SEQ(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)) + 1, 0, 8)
-#define C2H_PAYLOAD(_c2h)	(((u8*)(_c2h)) + 2)
+#define C2H_ID(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)), 0, 4)
+#define C2H_PLEN(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)), 4, 4)
+#define C2H_SEQ(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)) + 1, 0, 8)
+#define C2H_PAYLOAD(_c2h) (((u8 *)(_c2h)) + 2)
 
-#define SET_C2H_ID(_c2h, _val)		SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)), 0, 4, _val)
-#define SET_C2H_PLEN(_c2h, _val)	SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)), 4, 4, _val)
-#define SET_C2H_SEQ(_c2h, _val)		SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)) + 1 , 0, 8, _val)
+#define SET_C2H_ID(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)), 0, 4, _val)
+#define SET_C2H_PLEN(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)), 4, 4, _val)
+#define SET_C2H_SEQ(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)) + 1, 0, 8, _val)
 
 /* 
 * C2H event format:
 * Fields    TRIGGER     PLEN      PAYLOAD    SEQ      ID
 * BITS    [127:120]  [119:112]  [111:16]   [15:8]   [7:0]
 */
-#define C2H_ID_88XX(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)), 0, 8)
-#define C2H_SEQ_88XX(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)) + 1, 0, 8)
-#define C2H_PAYLOAD_88XX(_c2h)	(((u8*)(_c2h)) + 2)
-#define C2H_PLEN_88XX(_c2h)		LE_BITS_TO_1BYTE(((u8*)(_c2h)) + 14, 0, 8)
-#define C2H_TRIGGER_88XX(_c2h)	LE_BITS_TO_1BYTE(((u8*)(_c2h)) + 15, 0, 8)
+#define C2H_ID_88XX(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)), 0, 8)
+#define C2H_SEQ_88XX(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)) + 1, 0, 8)
+#define C2H_PAYLOAD_88XX(_c2h) (((u8 *)(_c2h)) + 2)
+#define C2H_PLEN_88XX(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)) + 14, 0, 8)
+#define C2H_TRIGGER_88XX(_c2h) LE_BITS_TO_1BYTE(((u8 *)(_c2h)) + 15, 0, 8)
 
-#define SET_C2H_ID_88XX(_c2h, _val)		SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)), 0, 8, _val)
-#define SET_C2H_SEQ_88XX(_c2h, _val)	SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)) + 1, 0, 8, _val)
-#define SET_C2H_PLEN_88XX(_c2h, _val)	SET_BITS_TO_LE_1BYTE(((u8*)(_c2h)) + 14, 0, 8, _val)
+#define SET_C2H_ID_88XX(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)), 0, 8, _val)
+#define SET_C2H_SEQ_88XX(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)) + 1, 0, 8, _val)
+#define SET_C2H_PLEN_88XX(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)) + 14, 0, 8, _val)
 
 typedef enum _C2H_EVT {
 	C2H_DBG = 0x00,
@@ -86,7 +86,7 @@ typedef enum _EXTEND_C2H_EVT {
 /* C2H_IQK_FINISH, 0x11 */
 #define IQK_OFFLOAD_LEN 1
 void c2h_iqk_offload(_adapter *adapter, u8 *data, u8 len);
-int	c2h_iqk_offload_wait(_adapter *adapter, u32 timeout_ms);
+int c2h_iqk_offload_wait(_adapter *adapter, u32 timeout_ms);
 #define rtl8812_iqk_wait c2h_iqk_offload_wait /* TODO: remove this after phydm call c2h_iqk_offload_wait instead */
 
 #ifdef CONFIG_RTW_MAC_HIDDEN_RPT

@@ -25,20 +25,20 @@
 
 //#include <drv_types.h>
 
-#define MSECS(t)        (HZ * ((t) / 1000) + (HZ * ((t) % 1000)) / 1000)
+#define MSECS(t) (HZ * ((t) / 1000) + (HZ * ((t) % 1000)) / 1000)
 
-#define LED_BLINK_NORMAL_INTERVAL	100
-#define LED_BLINK_SLOWLY_INTERVAL	200
-#define LED_BLINK_LONG_INTERVAL	400
+#define LED_BLINK_NORMAL_INTERVAL 100
+#define LED_BLINK_SLOWLY_INTERVAL 200
+#define LED_BLINK_LONG_INTERVAL 400
 
-#define LED_BLINK_NO_LINK_INTERVAL_ALPHA		1000
-#define LED_BLINK_LINK_INTERVAL_ALPHA			500		//500
-#define LED_BLINK_SCAN_INTERVAL_ALPHA		180 	//150
-#define LED_BLINK_FASTER_INTERVAL_ALPHA		50
-#define LED_BLINK_WPS_SUCESS_INTERVAL_ALPHA	5000
+#define LED_BLINK_NO_LINK_INTERVAL_ALPHA 1000
+#define LED_BLINK_LINK_INTERVAL_ALPHA 500 //500
+#define LED_BLINK_SCAN_INTERVAL_ALPHA 180 //150
+#define LED_BLINK_FASTER_INTERVAL_ALPHA 50
+#define LED_BLINK_WPS_SUCESS_INTERVAL_ALPHA 5000
 
-#define LED_BLINK_NORMAL_INTERVAL_NETTRONIX  100
-#define LED_BLINK_SLOWLY_INTERVAL_NETTRONIX  2000
+#define LED_BLINK_NORMAL_INTERVAL_NETTRONIX 100
+#define LED_BLINK_SLOWLY_INTERVAL_NETTRONIX 2000
 
 #define LED_BLINK_SLOWLY_INTERVAL_PORNET 1000
 #define LED_BLINK_NORMAL_INTERVAL_PORNET 100
@@ -46,21 +46,21 @@
 #define LED_BLINK_FAST_INTERVAL_BITLAND 30
 
 // 060403, rcnjko: Customized for AzWave.
-#define LED_CM2_BLINK_ON_INTERVAL			250
-#define LED_CM2_BLINK_OFF_INTERVAL		4750
+#define LED_CM2_BLINK_ON_INTERVAL 250
+#define LED_CM2_BLINK_OFF_INTERVAL 4750
 
-#define LED_CM8_BLINK_INTERVAL			500		//for QMI
-#define LED_CM8_BLINK_OFF_INTERVAL	3750	//for QMI
+#define LED_CM8_BLINK_INTERVAL 500		//for QMI
+#define LED_CM8_BLINK_OFF_INTERVAL 3750 //for QMI
 
 // 080124, lanhsin: Customized for RunTop
-#define LED_RunTop_BLINK_INTERVAL			300
+#define LED_RunTop_BLINK_INTERVAL 300
 
 // 060421, rcnjko: Customized for Sercomm Printer Server case.
-#define LED_CM3_BLINK_INTERVAL				1500
+#define LED_CM3_BLINK_INTERVAL 1500
 
-#endif	//#if 0
+#endif //#if 0
 
-typedef enum _LED_CTL_MODE{
+typedef enum _LED_CTL_MODE {
 	LED_CTL_POWER_ON = 1,
 	LED_CTL_LINK = 2,
 	LED_CTL_NO_LINK = 3,
@@ -71,11 +71,11 @@ typedef enum _LED_CTL_MODE{
 	LED_CTL_START_TO_LINK = 8,
 	LED_CTL_START_WPS = 9,
 	LED_CTL_STOP_WPS = 10,
-	LED_CTL_START_WPS_BOTTON = 11, //added for runtop
-	LED_CTL_STOP_WPS_FAIL = 12, //added for ALPHA	
+	LED_CTL_START_WPS_BOTTON = 11,		//added for runtop
+	LED_CTL_STOP_WPS_FAIL = 12,			//added for ALPHA
 	LED_CTL_STOP_WPS_FAIL_OVERLAP = 13, //added for BELKIN
 	LED_CTL_CONNECTION_NO_TRANSFER = 14,
-}LED_CTL_MODE;
+} LED_CTL_MODE;
 
 //TODO
 #if 0
@@ -133,12 +133,12 @@ typedef struct _LED_871x{
 	u8					bLedLinkBlinkInProgress;
 	u8					bLedStartToLinkBlinkInProgress;
 	u8					bLedScanBlinkInProgress;
-	
-	#if LINUX_VERSION_CODE > KERNEL_VERSION(2,5,0)|| defined PLATFORM_FREEBSD
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0) || defined PLATFORM_FREEBSD
 	_workitem			BlinkWorkItem; // Workitem used by BlinkTimer to manipulate H/W to blink LED.
-	#endif
+#endif
 #endif //defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	
+
 #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI)
 	u8					bLedSlowBlinkInProgress;//added by vivi, for led new mode
 #endif
@@ -147,12 +147,9 @@ typedef struct _LED_871x{
 
 #if defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
 
-#define IS_LED_WPS_BLINKING(_LED_871x)	(((PLED_871x)_LED_871x)->CurrLedState==LED_BLINK_WPS \
-					|| ((PLED_871x)_LED_871x)->CurrLedState==LED_BLINK_WPS_STOP \
-					|| ((PLED_871x)_LED_871x)->bLedWPSBlinkInProgress)
+#define IS_LED_WPS_BLINKING(_LED_871x) (((PLED_871x)_LED_871x)->CurrLedState == LED_BLINK_WPS || ((PLED_871x)_LED_871x)->CurrLedState == LED_BLINK_WPS_STOP || ((PLED_871x)_LED_871x)->bLedWPSBlinkInProgress)
 
-#define IS_LED_BLINKING(_LED_871x) 	(((PLED_871x)_LED_871x)->bLedWPSBlinkInProgress \
-					||((PLED_871x)_LED_871x)->bLedScanBlinkInProgress)
+#define IS_LED_BLINKING(_LED_871x) (((PLED_871x)_LED_871x)->bLedWPSBlinkInProgress || ((PLED_871x)_LED_871x)->bLedScanBlinkInProgress)
 
 //================================================================================
 // LED customization.
@@ -209,14 +206,14 @@ struct led_priv{
 	/* add for led controll */
 };
 
-#endif	//#if 0
+#endif //#if 0
 
 #ifdef CONFIG_SW_LED
-#define rtw_led_control(adapter, LedAction) \
-	do { \
-		if((adapter)->ledpriv.LedControlHandler) \
+#define rtw_led_control(adapter, LedAction)                               \
+	do {                                                                  \
+		if ((adapter)->ledpriv.LedControlHandler)                         \
 			(adapter)->ledpriv.LedControlHandler((adapter), (LedAction)); \
-	} while(0)
+	} while (0)
 #else //CONFIG_SW_LED
 #define rtw_led_control(adapter, LedAction)
 #endif //CONFIG_SW_LED
@@ -244,7 +241,6 @@ DeInitLed871x(
 //hal...
 extern void BlinkHandler(PLED_871x	 pLed);
 
-#endif	//#if 0
+#endif //#if 0
 
 #endif //__RTW_LED_H_
-

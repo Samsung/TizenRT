@@ -20,7 +20,7 @@
   * @brief   This file provides the functions related to event handler mechanism.
   ******************************************************************************
   */
-  
+
 #ifndef _WIFI_INDICATE_H
 #define _WIFI_INDICATE_H
 
@@ -29,20 +29,20 @@
  *  @brief      NIC functions
  *  @{
  */
- 
-#include "wifi_conf.h"  
+
+#include "wifi_conf.h"
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
-typedef void (*rtw_event_handler_t)(char *buf, int buf_len, int flags, void* handler_user_data );
+typedef void (*rtw_event_handler_t)(char *buf, int buf_len, int flags, void *handler_user_data);
 
 typedef struct
 {
-//	rtw_event_indicate_t	event_cmd;
-	rtw_event_handler_t	handler;
-	void*	handler_user_data;
+	//	rtw_event_indicate_t	event_cmd;
+	rtw_event_handler_t handler;
+	void *handler_user_data;
 } event_list_elem_t;
 
 /** 
@@ -67,7 +67,7 @@ void init_event_callback_list(void);
   *			for the following operations. 
   *			ex: using semaphore to notice another thread instead of handing event directly in wifi_indication().  
   */
-extern void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int flags);
+extern void wifi_indication(rtw_event_indicate_t event, char *buf, int buf_len, int flags);
 
 /** 
  * @brief  Register the event listener.
@@ -95,10 +95,9 @@ extern void wifi_reg_event_handler(unsigned int event_cmds, rtw_event_handler_t 
 extern void wifi_unreg_event_handler(unsigned int event_cmds, rtw_event_handler_t handler_func);
 
 #ifdef __cplusplus
-  }
+}
 #endif
 
 /*\@}*/
 
 #endif //_WIFI_INDICATE_H
-
