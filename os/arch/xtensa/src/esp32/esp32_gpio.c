@@ -65,8 +65,9 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-#define NGPIO_HPINS  (ESP32_NIRQ_GPIO - 32)
+//ESP32 GPIO 0~39 are organized as low 0~31, high 32~39 tow groups.
+#define NGPIO_HBORDER	32
+#define NGPIO_HPINS  (ESP32_NIRQ_GPIO - (NGPIO_HBORDER))
 #define NGPIO_HMASK  ((1ul << NGPIO_HPINS) - 1)
 #define _NA_         0xff
 
@@ -106,7 +107,7 @@ static void gpio_dispatch(int irq, uint32_t status, uint32_t *regs)
 
 	/* Check each bit in the status register */
 
-	for (i = 0; i < 32 && status != 0; i++) {
+	for (i = 0; i < NGPIO_HBORDER && status != 0; i++) {
 		/* Check if there is an interrupt pending for this pin */
 
 		mask = (1ul << i);
@@ -154,7 +155,8 @@ static int gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 
 	/* Dispatch pending interrupts in the lower GPIO status register */
 
-	gpio_dispatch(ESP32_FIRST_GPIOIRQ + 32, status, (uint32_t *)context);
+	gpio_dispatch(ESP32_FIRST_GPIOIRQ + NGPIO_HBORDER, status, (uint32_t *)context);
+
 	return OK;
 }
 #endif
@@ -186,7 +188,7 @@ int esp32_configgpio(int pin, gpio_pinattr_t attr)
 	cntrl = 0;
 
 	if ((attr & INPUT) != 0) {
-		if (pin < 32) {
+		if (pin < NGPIO_HBORDER) {
 			putreg32((1ul << pin), GPIO_ENABLE_W1TC_REG);
 		} else {
 			putreg32((1ul << (pin - 32)), GPIO_ENABLE1_W1TC_REG);
@@ -205,7 +207,7 @@ int esp32_configgpio(int pin, gpio_pinattr_t attr)
 		if (pin < 32) {
 			putreg32((1ul << pin), GPIO_ENABLE_W1TS_REG);
 		} else {
-			putreg32((1ul << (pin - 32)), GPIO_ENABLE1_W1TS_REG);
+			putreg32((1ul << (pin - NGPIO_HBORDER)), GPIO_ENABLE1_W1TS_REG);
 		}
 	}
 
@@ -252,16 +254,16 @@ void esp32_gpiowrite(int pin, bool value)
 	DEBUGASSERT(pin >= 0 && pin <= ESP32_NIRQ_GPIO);
 
 	if (value) {
-		if (pin < 32) {
+		if (pin < NGPIO_HBORDER) {
 			putreg32((uint32_t)(1ul << pin), GPIO_OUT_W1TS_REG);
 		} else {
-			putreg32((uint32_t)(1ul << (pin - 32)), GPIO_OUT1_W1TS_REG);
+			putreg32((uint32_t)(1ul << (pin - NGPIO_HBORDER)), GPIO_OUT1_W1TS_REG);
 		}
 	} else {
-		if (pin < 32) {
+		if (pin < NGPIO_HBORDER) {
 			putreg32((uint32_t)(1ul << pin), GPIO_OUT_W1TC_REG);
 		} else {
-			putreg32((uint32_t)(1ul << (pin - 32)), GPIO_OUT1_W1TC_REG);
+			putreg32((uint32_t)(1ul << (pin - NGPIO_HBORDER)), GPIO_OUT1_W1TC_REG);
 		}
 	}
 }
@@ -280,12 +282,12 @@ bool esp32_gpioread(int pin)
 
 	DEBUGASSERT(pin >= 0 && pin <= ESP32_NIRQ_GPIO);
 
-	if (pin < 32) {
+	if (pin < NGPIO_HBORDER) {
 		regval = getreg32(GPIO_IN_REG);
 		return ((regval >> pin) & 1) != 0;
 	} else {
 		regval = getreg32(GPIO_IN1_REG);
-		return ((regval >> (pin - 32)) & 1) != 0;
+		return ((regval >> (pin - NGPIO_HBORDER)) & 1) != 0;
 	}
 }
 
@@ -344,7 +346,7 @@ void esp32_gpioirqenable(int irq, gpio_intrtype_t intrtype)
 	int cpu;
 	int pin;
 
-	DEBUGASSERT(irq <= ESP32_FIRST_GPIOIRQ && irq <= ESP32_LAST_GPIOIRQ);
+	DEBUGASSERT(irq >= ESP32_FIRST_GPIOIRQ && irq <= ESP32_LAST_GPIOIRQ);
 
 	/* Convert the IRQ number to a pin number */
 
@@ -403,8 +405,9 @@ void esp32_gpioirqdisable(int irq)
 	uintptr_t regaddr;
 	uint32_t regval;
 	int pin;
+	uint32_t status;
 
-	DEBUGASSERT(irq <= ESP32_FIRST_GPIOIRQ && irq <= ESP32_LAST_GPIOIRQ);
+	DEBUGASSERT(irq >= ESP32_FIRST_GPIOIRQ && irq <= ESP32_LAST_GPIOIRQ);
 
 	/* Convert the IRQ number to a pin number */
 
@@ -418,6 +421,15 @@ void esp32_gpioirqdisable(int irq)
 	regval = getreg32(regaddr);
 	regval &= ~(GPIO_PIN_INT_ENA_M | GPIO_PIN_INT_TYPE_M);
 	putreg32(regval, regaddr);
+
+	/* Clear the disabled interrupt*/
+	if (pin >= 0 && pin < NGPIO_HBORDER) {
+		status = 1ul << pin;
+		putreg32(status, GPIO_STATUS_W1TC_REG);
+	} else if (pin >= NGPIO_HBORDER) {
+		status = 1ul << (pin - NGPIO_HBORDER);
+		putreg32(status, GPIO_STATUS1_W1TC_REG);
+	}
 
 	up_enable_irq(g_gpio_cpuint);
 }

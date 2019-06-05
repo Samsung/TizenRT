@@ -77,16 +77,30 @@
 int mm_size2ndx(size_t size)
 {
 	int ndx = 0;
+	size_t o_size = size;
+	size_t mask = MM_SHIFT_MASK;
 
-	if (size >= MM_MAX_CHUNK) {
+	if ((size >> MM_MAX_SHIFT) >= 1) {
 		return MM_NNODES - 1;
 	}
 
-	size >>= MM_MIN_SHIFT;
-	while (size > 1) {
+	size >>= MM_SHIFT_FOR_NDX;
+	while(size > 1) {
 		ndx++;
 		size >>= 1;
 	}
-
-	return ndx;
+	
+	/* If free nodes are sorted in a descending order,
+	 * it would be better to use ]32, 64] instead of [32, 64[.
+	 */
+	if (size > 0) {
+		mask <<= ndx;
+		if ((o_size & (~mask)) > 0) {
+			return ++ndx;
+		} else {
+			return ndx;
+		}
+	} else {
+		return ndx;
+	}
 }
