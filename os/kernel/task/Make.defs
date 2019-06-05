@@ -78,6 +78,12 @@ ifeq ($(CONFIG_CANCELLATION_POINTS),y)
 CSRCS += task_setcanceltype.c task_testcancel.c task_cancelpt.c
 endif
 
+ifneq ($(CONFIG_BINFMT_DISABLE),y)
+ifeq ($(CONFIG_LIBC_EXECFUNCS),y)
+CSRCS += task_execv.c
+endif
+endif
+
 # Include task build support
 
 DEPPATH += --dep-path task
