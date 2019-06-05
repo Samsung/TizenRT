@@ -74,7 +74,7 @@ static void *iotbus_adc_handler(void *hnd)
 		handle->state = IOTBUS_ADC_RDY;
 		return 0;
 	}
-	
+
 	while (handle->state != IOTBUS_ADC_STOP) {
 		ret = poll(fds, 1, timeout);
 
@@ -320,7 +320,7 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 				ret = IOTBUS_ERROR_UNKNOWN;
 				break;
 			}
-			
+
 			if (readsize != nbytes) {
 				idbg("[ADC] sampling: read size=%ld is not a multiple of sample size=%d, Ignoring\n", (long)nbytes, sizeof(struct adc_msg_s));
 				ret = IOTBUS_ERROR_DEVICE_FAIL;
@@ -336,7 +336,6 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 		}
 	}
 
-iobus_adc_read_done:
 	handle->state = IOTBUS_ADC_RDY;
 	idbg("[ADC] exit iotbus_adc handler\n");
 
