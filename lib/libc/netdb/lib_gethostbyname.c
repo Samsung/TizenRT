@@ -43,7 +43,7 @@
  *
  * Input Parameters:
  *   name - the hostname to resolve
- * 
+ *
  * Returned Value:
  *   an entry containing addresses of address family AF_INET
  *   for the host with name
@@ -53,7 +53,19 @@
 /****************************************************************************
  * Name: gethostbyname
  ****************************************************************************/
+
 #ifdef CONFIG_NET_LWIP_NETDB
+
+#ifndef DNS_MAX_NAME_LENGTH
+#define DNS_MAX_NAME_LENGTH 256
+#endif
+
+char g_name[DNS_MAX_NAME_LENGTH + 1];
+struct in_addr g_hostent_addr;
+char *g_aliases = NULL;
+struct in_addr *g_phostent_addr[2] = {&g_hostent_addr, NULL};
+struct hostent g_hent = {g_name, &g_aliases, 0, 0, (char **)&g_phostent_addr};
+
 struct hostent *gethostbyname(const char *name)
 {
 	struct req_lwip_data req;
@@ -67,6 +79,7 @@ struct hostent *gethostbyname(const char *name)
 	memset(&req, 0, sizeof(req));
 	req.type = GETHOSTBYNAME;
 	req.host_name = name;
+	req.host_entry = &g_hent;
 
 	int ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {

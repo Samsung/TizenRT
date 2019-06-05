@@ -479,7 +479,7 @@ int ping_process(int count, const char *taddr, int size)
 		}
 	}
 
-	lwip_freeaddrinfo(result);
+	freeaddrinfo(result);
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
@@ -490,7 +490,7 @@ int ping_process(int count, const char *taddr, int size)
 	return OK;
 
 err_out:
-	lwip_freeaddrinfo(result);
+	freeaddrinfo(result);
 	if (s >= 0) {
 		close(s);
 		s = -1;
