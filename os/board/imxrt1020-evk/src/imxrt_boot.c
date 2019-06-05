@@ -56,12 +56,17 @@
 
 #include <tinyara/config.h>
 
+#include <stdio.h>
+
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
-#include "imxrt_start.h"
 #include "imxrt1020-evk.h"
+#include "imxrt_start.h"
 #include "imxrt_flash.h"
+#ifdef CONFIG_IMXRT_GPT
+#include "imxrt_gpt.h"
+#endif
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
@@ -109,5 +114,19 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
+
+#ifdef CONFIG_IMXRT_TIMER_INTERFACE
+	{
+		int timer_idx;
+		char timer_path[CONFIG_PATH_MAX];
+
+#ifdef CONFIG_IMXRT_GPT
+		for (timer_idx = 0; timer_idx < IMXRT_GPT_CH_MAX; timer_idx++) {
+			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
+			imxrt_timer_initialize(timer_path, timer_idx);
+		}
+#endif
+	}
+#endif
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */

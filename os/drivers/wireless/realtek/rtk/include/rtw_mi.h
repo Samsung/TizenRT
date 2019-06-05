@@ -20,19 +20,19 @@
 #ifndef __RTW_MI_H_
 #define __RTW_MI_H_
 
-void rtw_mi_update_union_chan_inf(_adapter *adapter, u8 ch, u8 offset , u8 bw);
+void rtw_mi_update_union_chan_inf(_adapter *adapter, u8 ch, u8 offset, u8 bw);
 int rtw_mi_get_ch_setting_union(_adapter *adapter, u8 *ch, u8 *bw, u8 *offset);
 int rtw_mi_get_ch_setting_union_no_self(_adapter *adapter, u8 *ch, u8 *bw, u8 *offset);
 
 struct mi_state {
-	u8 sta_num;			/*WIFI_FW_STATION_STATE*/
-	u8 ld_sta_num;		/*WIFI_FW_STATION_STATE |_FW_LINKED*/
-	u8 lg_sta_num;		/*WIFI_FW_STATION_STATE |_FW_UNDER_LINKING*/
-	u8 ap_num;			/*WIFI_FW_AP_STATE|_FW_LINKED*/
-	u8 ld_ap_num;		/*WIFI_FW_AP_STATE|_FW_LINKED && asoc_sta_count > 2*/
-	u8 adhoc_num;		/* WIFI_FW_ADHOC_STATE */
-	u8 ld_adhoc_num;	/* WIFI_FW_ADHOC_STATE && asoc_sta_count > 2 */
-	u8 uwps_num;		/*WIFI_UNDER_WPS*/
+	u8 sta_num;		 /*WIFI_FW_STATION_STATE*/
+	u8 ld_sta_num;   /*WIFI_FW_STATION_STATE |_FW_LINKED*/
+	u8 lg_sta_num;   /*WIFI_FW_STATION_STATE |_FW_UNDER_LINKING*/
+	u8 ap_num;		 /*WIFI_FW_AP_STATE|_FW_LINKED*/
+	u8 ld_ap_num;	/*WIFI_FW_AP_STATE|_FW_LINKED && asoc_sta_count > 2*/
+	u8 adhoc_num;	/* WIFI_FW_ADHOC_STATE */
+	u8 ld_adhoc_num; /* WIFI_FW_ADHOC_STATE && asoc_sta_count > 2 */
+	u8 uwps_num;	 /*WIFI_UNDER_WPS*/
 	u8 union_ch;
 	u8 union_bw;
 	u8 union_offset;
@@ -43,25 +43,25 @@ struct mi_state {
 //#define MSTATE_STA_LG_NUM(_mstate)		((_mstate)->lg_sta_num)
 //#define MSTATE_AP_NUM(_mstate)			((_mstate)->ap_num)
 //#define MSTATE_AP_LD_NUM(_mstate)		((_mstate)->ld_ap_num)
-#define MSTATE_STA_NUM(adapter)			(check_fwstate(&adapter->mlmepriv, WIFI_STATION_STATE) ? 1:0)
-#define MSTATE_STA_LD_NUM(adapter)		(((adapter->mlmepriv.fw_state&(WIFI_STATION_STATE | _FW_LINKED)) == (WIFI_STATION_STATE | _FW_LINKED)) ? 1:0)
-#define MSTATE_STA_LG_NUM(adapter)		(((adapter->mlmepriv.fw_state&(WIFI_STATION_STATE | _FW_UNDER_LINKING)) == (WIFI_STATION_STATE | _FW_UNDER_LINKING)) ? 1:0)
-#define MSTATE_AP_NUM(adapter)			(check_fwstate(&adapter->mlmepriv, WIFI_AP_STATE) ? 1:0)
-#define MSTATE_AP_LD_NUM(adapter)		(((&adapter->stapriv)->asoc_sta_count > 2) ? (((&adapter->stapriv)->asoc_sta_count)-2) : 0)
+#define MSTATE_STA_NUM(adapter) (check_fwstate(&adapter->mlmepriv, WIFI_STATION_STATE) ? 1 : 0)
+#define MSTATE_STA_LD_NUM(adapter) (((adapter->mlmepriv.fw_state & (WIFI_STATION_STATE | _FW_LINKED)) == (WIFI_STATION_STATE | _FW_LINKED)) ? 1 : 0)
+#define MSTATE_STA_LG_NUM(adapter) (((adapter->mlmepriv.fw_state & (WIFI_STATION_STATE | _FW_UNDER_LINKING)) == (WIFI_STATION_STATE | _FW_UNDER_LINKING)) ? 1 : 0)
+#define MSTATE_AP_NUM(adapter) (check_fwstate(&adapter->mlmepriv, WIFI_AP_STATE) ? 1 : 0)
+#define MSTATE_AP_LD_NUM(adapter) (((&adapter->stapriv)->asoc_sta_count > 2) ? (((&adapter->stapriv)->asoc_sta_count) - 2) : 0)
 
-#define MSTATE_ADHOC_NUM(_mstate)		((_mstate)->adhoc_num)
-#define MSTATE_ADHOC_LD_NUM(_mstate)	((_mstate)->ld_adhoc_num)
-#define MSTATE_WPS_NUM(_mstate)			((_mstate)->uwps_num)
-#define MSTATE_U_CH(_mstate)			((_mstate)->union_ch)
-#define MSTATE_U_BW(_mstate)			((_mstate)->union_bw)
-#define MSTATE_U_OFFSET(_mstate)		((_mstate)->union_offset)
+#define MSTATE_ADHOC_NUM(_mstate) ((_mstate)->adhoc_num)
+#define MSTATE_ADHOC_LD_NUM(_mstate) ((_mstate)->ld_adhoc_num)
+#define MSTATE_WPS_NUM(_mstate) ((_mstate)->uwps_num)
+#define MSTATE_U_CH(_mstate) ((_mstate)->union_ch)
+#define MSTATE_U_BW(_mstate) ((_mstate)->union_bw)
+#define MSTATE_U_OFFSET(_mstate) ((_mstate)->union_offset)
 
-#define rtw_mi_get_union_chan(adapter)	adapter_to_dvobj(adapter)->iface_state.union_ch
-#define rtw_mi_get_union_bw(adapter)		adapter_to_dvobj(adapter)->iface_state.union_bw
-#define rtw_mi_get_union_offset(adapter)	adapter_to_dvobj(adapter)->iface_state.union_offset
+#define rtw_mi_get_union_chan(adapter) adapter_to_dvobj(adapter)->iface_state.union_ch
+#define rtw_mi_get_union_bw(adapter) adapter_to_dvobj(adapter)->iface_state.union_bw
+#define rtw_mi_get_union_offset(adapter) adapter_to_dvobj(adapter)->iface_state.union_offset
 
-#define rtw_mi_get_assoced_sta_num(adapter)	DEV_STA_LD_NUM(adapter_to_dvobj(adapter))
-#define rtw_mi_get_ap_num(adapter)			DEV_AP_NUM(adapter_to_dvobj(adapter))
+#define rtw_mi_get_assoced_sta_num(adapter) DEV_STA_LD_NUM(adapter_to_dvobj(adapter))
+#define rtw_mi_get_ap_num(adapter) DEV_AP_NUM(adapter_to_dvobj(adapter))
 
 /* For now, not return union_ch/bw/offset */
 void rtw_mi_status(_adapter *adapter, struct mi_state *mstate);
@@ -72,10 +72,10 @@ void rtw_mi_update_iface_status(struct mlme_priv *pmlmepriv, sint state);
 u8 rtw_mi_mp_mode_check(_adapter *padapter);
 
 #ifdef CONFIG_CONCURRENT_MODE
-#define UNDER_SURVEY_T1	1 /*buddy under suvey*/
-#define UNDER_SURVEY_T2	2 /*buddy under suvey by scan_request*/
+#define UNDER_SURVEY_T1 1 /*buddy under suvey*/
+#define UNDER_SURVEY_T2 2 /*buddy under suvey by scan_request*/
 u8 rtw_mi_buddy_under_survey(_adapter *padapter);
-void  rtw_mi_buddy_indicate_scan_done(_adapter *padapter, bool bscan_aborted);
+void rtw_mi_buddy_indicate_scan_done(_adapter *padapter, bool bscan_aborted);
 #endif
 
 u8 rtw_mi_netif_stop_queue(_adapter *padapter, bool carrier_off);
@@ -112,8 +112,12 @@ void rtw_mi_buddy_suspend_free_assoc_resource(_adapter *adapter);
 void rtw_mi_set_scan_deny(_adapter *adapter, u32 ms);
 void rtw_mi_buddy_set_scan_deny(_adapter *adapter, u32 ms);
 #else
-#define rtw_mi_set_scan_deny(adapter, ms) do {} while (0)
-#define rtw_mi_buddy_set_scan_deny(adapter, ms) do {} while (0)
+#define rtw_mi_set_scan_deny(adapter, ms) \
+	do {                                  \
+	} while (0)
+#define rtw_mi_buddy_set_scan_deny(adapter, ms) \
+	do {                                        \
+	} while (0)
 #endif
 
 u8 rtw_mi_is_scan_deny(_adapter *adapter);
@@ -157,7 +161,7 @@ u8 rtw_mi_check_status(_adapter *adapter, u8 type);
 
 void dump_dvobj_mi_status(void *sel, const char *fun_name, _adapter *adapter);
 #ifdef DBG_IFACE_STATUS
-#define DBG_IFACE_STATUS_DUMP(adapter)	dump_dvobj_mi_status(RTW_DBGDUMP, __func__, adapter)
+#define DBG_IFACE_STATUS_DUMP(adapter) dump_dvobj_mi_status(RTW_DBGDUMP, __func__, adapter)
 #endif
 void dump_mi_status(void *sel, struct dvobj_priv *dvobj);
 
@@ -171,9 +175,9 @@ u8 rtw_mi_buddy_check_pending_xmitbuf(_adapter *padapter);
 
 #if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
 #ifdef CONFIG_RTL8822B
-	#include <rtl8822b_hal.h>
+#include <rtl8822b_hal.h>
 #else
-	extern s32 _dequeue_writeport(PADAPTER padapter);
+extern s32 _dequeue_writeport(PADAPTER padapter);
 #endif
 u8 rtw_mi_dequeue_writeport(_adapter *padapter);
 u8 rtw_mi_buddy_dequeue_writeport(_adapter *padapter);

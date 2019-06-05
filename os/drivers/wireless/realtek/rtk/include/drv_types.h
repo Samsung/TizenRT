@@ -23,12 +23,10 @@
 
 --------------------------------------------------------------------------------*/
 
-
 #ifndef __DRV_TYPES_H__
 #define __DRV_TYPES_H__
 
 #include <drv_conf.h>
-
 
 #ifdef PLATFORM_OS_XP
 #include <drv_types_xp.h>
@@ -42,13 +40,12 @@
 #include <drv_types_linux.h>
 #endif
 
-
-#if defined (__ICCARM__)
-#define _PACKED         __packed
-#define _WEAK           __weak
+#if defined(__ICCARM__)
+#define _PACKED __packed
+#define _WEAK __weak
 #else
-#define _PACKED         __attribute__ ((packed))
-#define _WEAK           __attribute__ ((weak))
+#define _PACKED __attribute__((packed))
+#define _WEAK __attribute__((weak))
 #endif
 
 // Assign memory sectinon usage
@@ -63,49 +60,49 @@
 #define SRAM_BD_DATA_SECTION
 #define WLAN_ROM_TEXT_SECTION
 #define WLAN_ROM_DATA_SECTION
-#define _LONG_CALL_     
+#define _LONG_CALL_
 #endif
 
 #ifdef CONFIG_TRACE_SKB
-#define SKBLIST_ALL								0xFFFFFFFF
+#define SKBLIST_ALL 0xFFFFFFFF
 // receive
-#define	SKBLIST_RECVBUF_MASK					0x0000000F
-#define	SKBLIST_RECVBUF							0x00000001
-#define	SKBLIST_RECVBUF_FREEQUEUE				0x00000002
-#define	SKBLIST_RECVBUF_PENDINGQUEUE			0x00000004
+#define SKBLIST_RECVBUF_MASK 0x0000000F
+#define SKBLIST_RECVBUF 0x00000001
+#define SKBLIST_RECVBUF_FREEQUEUE 0x00000002
+#define SKBLIST_RECVBUF_PENDINGQUEUE 0x00000004
 
-#define	SKBLIST_RECVFRAME_MASK					0x000000F0
-#define	SKBLIST_RECVFRAME						0x00000010
-#define	SKBLIST_RECVFRAME_FREEQUEUE				0x00000020
-#define	SKBLIST_RECVFRAME_SWDECQUEUE			0x00000040
+#define SKBLIST_RECVFRAME_MASK 0x000000F0
+#define SKBLIST_RECVFRAME 0x00000010
+#define SKBLIST_RECVFRAME_FREEQUEUE 0x00000020
+#define SKBLIST_RECVFRAME_SWDECQUEUE 0x00000040
 #ifdef CONFIG_RECV_REORDERING_CTRL
-#define	SKBLIST_RECVFRAME_REORDERQUEUE			0x00000080
+#define SKBLIST_RECVFRAME_REORDERQUEUE 0x00000080
 #endif
 
 // transmit
-#define	SKBLIST_XMITBUF_MASK					0x0000FF00
-#define	SKBLIST_XMITBUF							0x00000100
-#define	SKBLIST_XMITEXTBUF						0x00000200
-#define	SKBLIST_XMITBUF_FREEQUEUE				0x00000400
-#define	SKBLIST_XMITEXTBUF_FREEQUEUE			0x00000800
-#define	SKBLIST_XMITBUF_PENDINGQUEUE			0x00001000
+#define SKBLIST_XMITBUF_MASK 0x0000FF00
+#define SKBLIST_XMITBUF 0x00000100
+#define SKBLIST_XMITEXTBUF 0x00000200
+#define SKBLIST_XMITBUF_FREEQUEUE 0x00000400
+#define SKBLIST_XMITEXTBUF_FREEQUEUE 0x00000800
+#define SKBLIST_XMITBUF_PENDINGQUEUE 0x00001000
 #ifdef CONFIG_SDIO_TX_MULTI_QUEUE
-#define	SKBLIST_XMITBUF_PENDING0QUEUE			0x00002000
-#define	SKBLIST_XMITBUF_PENDING1QUEUE			0x00004000
-#define	SKBLIST_XMITBUF_PENDING2QUEUE			0x00008000
+#define SKBLIST_XMITBUF_PENDING0QUEUE 0x00002000
+#define SKBLIST_XMITBUF_PENDING1QUEUE 0x00004000
+#define SKBLIST_XMITBUF_PENDING2QUEUE 0x00008000
 #endif
 
-#define	SKBLIST_XMITFRAME_MASK					0x0FFF0000
-#define	SKBLIST_XMITFRAME						0x00010000
-#define	SKBLIST_XMITFRAME_FREEQUEUE				0x00020000
-#define	SKBLIST_XMITFRAME_SLEEPQUEUE			0x00040000
-#define	SKBLIST_XMITFRAME_VOQUEUE				0x00100000
-#define	SKBLIST_XMITFRAME_VIQUEUE				0x00200000
-#define	SKBLIST_XMITFRAME_BEQUEUE				0x00400000
-#define	SKBLIST_XMITFRAME_BKQUEUE				0x00800000
-#define	SKBLIST_XMITFRAME_BMQUEUE				0x01000000
+#define SKBLIST_XMITFRAME_MASK 0x0FFF0000
+#define SKBLIST_XMITFRAME 0x00010000
+#define SKBLIST_XMITFRAME_FREEQUEUE 0x00020000
+#define SKBLIST_XMITFRAME_SLEEPQUEUE 0x00040000
+#define SKBLIST_XMITFRAME_VOQUEUE 0x00100000
+#define SKBLIST_XMITFRAME_VIQUEUE 0x00200000
+#define SKBLIST_XMITFRAME_BEQUEUE 0x00400000
+#define SKBLIST_XMITFRAME_BKQUEUE 0x00800000
+#define SKBLIST_XMITFRAME_BMQUEUE 0x01000000
 
-#define	SKBLIST_POOL							0x10000000
+#define SKBLIST_POOL 0x10000000
 #endif
 
 enum _NIC_VERSION {
@@ -117,7 +114,7 @@ enum _NIC_VERSION {
 
 };
 
-typedef struct _ADAPTER _adapter, ADAPTER,*PADAPTER;
+typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 
 #include "wireless.h"
 #include <netdev.h>
@@ -200,14 +197,14 @@ typedef struct _ADAPTER _adapter, ADAPTER,*PADAPTER;
 
 #ifdef CONFIG_BR_EXT
 #include <rtw_br_ext.h>
-#endif	// CONFIG_BR_EXT
+#endif // CONFIG_BR_EXT
 
 #ifdef CONFIG_IOCTL_CFG80211
-	#include "ioctl_cfg80211.h"
+#include "ioctl_cfg80211.h"
 #endif //CONFIG_IOCTL_CFG80211
 
 #ifdef CONFIG_BT_COEXIST
-	#include <rtw_btcoex.h>
+#include <rtw_btcoex.h>
 #endif
 #include <rtw_btcoex_wifionly.h>
 
@@ -222,168 +219,166 @@ typedef struct _ADAPTER _adapter, ADAPTER,*PADAPTER;
 #define SPEC_DEV_ID_RF_CONFIG_2T2R BIT(4)
 #define SPEC_DEV_ID_ASSIGN_IFNAME BIT(5)
 
-typedef unsigned char			BOOLEAN,*PBOOLEAN;
-typedef unsigned char			u1Byte,*pu1Byte;
-typedef unsigned short			u2Byte,*pu2Byte;
-typedef unsigned int			u4Byte,*pu4Byte;
-typedef unsigned long long		u8Byte,*pu8Byte;
-typedef signed char				s1Byte,*ps1Byte;
+typedef unsigned char BOOLEAN, *PBOOLEAN;
+typedef unsigned char u1Byte, *pu1Byte;
+typedef unsigned short u2Byte, *pu2Byte;
+typedef unsigned int u4Byte, *pu4Byte;
+typedef unsigned long long u8Byte, *pu8Byte;
+typedef signed char s1Byte, *ps1Byte;
 
-struct specific_device_id{
+struct specific_device_id {
 
-	u32		flags;
+	u32 flags;
 
-	u16		idVendor;
-	u16		idProduct;
-
+	u16 idVendor;
+	u16 idProduct;
 };
 
-struct registry_priv
-{
-	u8	chip_version;
-//	u8	rfintfs;
-//	u8	lbkmode;
-	u8	hci;
-	NDIS_802_11_SSID	ssid;
-//	u8	network_mode;	//infra, ad-hoc, auto
-	u8	channel;//ad-hoc support requirement
-	u8	wireless_mode;//A, B, G, auto
-	u8 	scan_mode;//active, passive
-//	u8	radio_enable;
-//	u8	preamble;//long, short, auto
-	u8	vrtl_carrier_sense;//Enable, Disable, Auto
-	u8	vcs_type;//RTS/CTS, CTS-to-self
-	u16	rts_thresh;
-//	u8	adhoc_tx_pwr;
-	u8	soft_ap;
-	u8	power_mgnt;
-	u8 	ps_enable;
-	u8	ips_mode;
-    u8	lps_level;
+struct registry_priv {
+	u8 chip_version;
+	//	u8	rfintfs;
+	//	u8	lbkmode;
+	u8 hci;
+	NDIS_802_11_SSID ssid;
+	//	u8	network_mode;	//infra, ad-hoc, auto
+	u8 channel;			   //ad-hoc support requirement
+	u8 wireless_mode;	  //A, B, G, auto
+	u8 scan_mode;		   //active, passive
+						   //	u8	radio_enable;
+						   //	u8	preamble;//long, short, auto
+	u8 vrtl_carrier_sense; //Enable, Disable, Auto
+	u8 vcs_type;		   //RTS/CTS, CTS-to-self
+	u16 rts_thresh;
+	//	u8	adhoc_tx_pwr;
+	u8 soft_ap;
+	u8 power_mgnt;
+	u8 ps_enable;
+	u8 ips_mode;
+	u8 lps_level;
 #ifdef CONFIG_FW_PSTIMEOUT
-	u8 	ps_timeout;
+	u8 ps_timeout;
 #endif
-	u8	smart_ps;
-//	u8	long_retry_lmt;
-//	u8	short_retry_lmt;
-//	u16	busy_thresh;
-//	u8	ack_policy;
-	u8	mp_mode;
-	u8	software_encrypt;
-	u8	software_decrypt;
-	#ifdef CONFIG_TX_EARLY_MODE
-	u8   	early_mode;
-	#endif
-	u8	acm_method;
-	  //UAPSD
-	u8	wmm_enable;
-	u8	uapsd_enable;
-//	u8	uapsd_max_sp;
-//	u8	uapsd_acbk_en;
-//	u8	uapsd_acbe_en;
-//	u8	uapsd_acvi_en;
-//	u8	uapsd_acvo_en;
+	u8 smart_ps;
+	//	u8	long_retry_lmt;
+	//	u8	short_retry_lmt;
+	//	u16	busy_thresh;
+	//	u8	ack_policy;
+	u8 mp_mode;
+	u8 software_encrypt;
+	u8 software_decrypt;
+#ifdef CONFIG_TX_EARLY_MODE
+	u8 early_mode;
+#endif
+	u8 acm_method;
+	//UAPSD
+	u8 wmm_enable;
+	u8 uapsd_enable;
+	//	u8	uapsd_max_sp;
+	//	u8	uapsd_acbk_en;
+	//	u8	uapsd_acbe_en;
+	//	u8	uapsd_acvi_en;
+	//	u8	uapsd_acvo_en;
 
-//	WLAN_BSSID_EX    dev_network;
-	u8  tx_bw_mode;
-	u32  beacon_period;
+	//	WLAN_BSSID_EX    dev_network;
+	u8 tx_bw_mode;
+	u32 beacon_period;
 
 #ifdef CONFIG_80211N_HT
-	u8	ht_enable;
+	u8 ht_enable;
 #if !defined(NOT_SUPPORT_40M)
-	u8	cbw40_enable;
+	u8 cbw40_enable;
 #endif
-	u8	bw_mode;
-	u8	ampdu_enable;//for tx
-	u8 	rx_stbc;
-	u8	ampdu_amsdu;//A-MPDU Supports A-MSDU is permitted
+	u8 bw_mode;
+	u8 ampdu_enable; //for tx
+	u8 rx_stbc;
+	u8 ampdu_amsdu; //A-MPDU Supports A-MSDU is permitted
 	/* Short GI support Bit Map */
 	/* BIT0 - 20MHz, 1: support, 0: non-support */
 	/* BIT1 - 40MHz, 1: support, 0: non-support */
 	/* BIT2 - 80MHz, 1: support, 0: non-support */
 	/* BIT3 - 160MHz, 1: support, 0: non-support */
-	u8	short_gi;
+	u8 short_gi;
 	/* BIT0: Enable VHT LDPC Rx, BIT1: Enable VHT LDPC Tx, BIT4: Enable HT LDPC Rx, BIT5: Enable HT LDPC Tx */
-	u8	ldpc_cap;
+	u8 ldpc_cap;
 	/* BIT0: Enable VHT STBC Rx, BIT1: Enable VHT STBC Tx, BIT4: Enable HT STBC Rx, BIT5: Enable HT STBC Tx */
-	u8	stbc_cap;
+	u8 stbc_cap;
 #endif
 
 #ifdef CONFIG_80211AC_VHT
-	u8	vht_enable; /* 0:disable, 1:enable, 2:auto */
-	u8	ampdu_factor;
-	u8  vht_rx_mcs_map[2];
+	u8 vht_enable; /* 0:disable, 1:enable, 2:auto */
+	u8 ampdu_factor;
+	u8 vht_rx_mcs_map[2];
 #endif /* CONFIG_80211AC_VHT */
 
 	//u8	lowrate_two_xmit;
 
-	u8	rf_config ;
-//	u8	low_power ;
-	u8	power_percentage_idx;
-	u8	wifi_spec;// !turbo_mode
-	u8	channel_plan;
-	u8	map_in_efuse;
-	
+	u8 rf_config;
+	//	u8	low_power ;
+	u8 power_percentage_idx;
+	u8 wifi_spec; // !turbo_mode
+	u8 channel_plan;
+	u8 map_in_efuse;
+
 #ifdef CONFIG_BT_COEXIST
-	u8	btcoex;
-	u8	bt_iso;
-	u8	bt_sco;
-	u8	bt_ampdu;
-	u8	ant_num;
+	u8 btcoex;
+	u8 bt_iso;
+	u8 bt_sco;
+	u8 bt_ampdu;
+	u8 ant_num;
 #endif
-#if RX_AGGREGATION 
-	BOOLEAN	bAcceptAddbaReq;
+#if RX_AGGREGATION
+	BOOLEAN bAcceptAddbaReq;
 #endif
-	u8	antdiv_cfg;
+	u8 antdiv_cfg;
 //	u8	antdiv_type;
 
 #ifdef CONFIG_AUTOSUSPEND
-	u8	usbss_enable;//0:disable,1:enable
+	u8 usbss_enable; //0:disable,1:enable
 #endif
 #ifdef SUPPORT_HW_RFOFF_DETECTED
-	u8	hwpdn_mode;//0:disable,1:enable,2:decide by EFUSE config
-	u8	hwpwrp_detect;//0:disable,1:enable
+	u8 hwpdn_mode;	//0:disable,1:enable,2:decide by EFUSE config
+	u8 hwpwrp_detect; //0:disable,1:enable
 #endif
 #ifdef CONFIG_SUPPORT_HW_WPS_PBC
-	u8	hw_wps_pbc;//0:disable,1:enable
+	u8 hw_wps_pbc; //0:disable,1:enable
 #endif
 
 #ifdef CONFIG_ADAPTOR_INFO_CACHING_FILE
-	char	adaptor_info_caching_file_path[PATH_LENGTH_MAX];
+	char adaptor_info_caching_file_path[PATH_LENGTH_MAX];
 #endif
 
 #ifdef CONFIG_LAYER2_ROAMING
-	u8	max_roaming_times; // the max number driver will try to roaming
+	u8 max_roaming_times; // the max number driver will try to roaming
 #endif
 
 #ifdef CONFIG_IOL
-	bool 	force_iol; //enable iol without other concern
+	bool force_iol; //enable iol without other concern
 #endif
 
 #ifdef CONFIG_80211D
-	u8 	enable80211d;
+	u8 enable80211d;
 #endif
 
-	u8 	ifname[16];
-	u8 	if2name[16];
-	
+	u8 ifname[16];
+	u8 if2name[16];
+
 #if (RTW_NOTCH_FILTER != 0)
-	u8 	notch_filter;
+	u8 notch_filter;
 #endif
 
 #ifdef CONFIG_SPECIAL_SETTING_FOR_FUNAI_TV
-	u8 	force_ant;//0 normal,1 main,2 aux
-	u8 	force_igi;//0 normal
+	u8 force_ant; //0 normal,1 main,2 aux
+	u8 force_igi; //0 normal
 #endif
 
 	//define for tx power adjust
-	u8	RegEnableTxPowerLimit;
-	u8	RegEnableTxPowerByRate;
+	u8 RegEnableTxPowerLimit;
+	u8 RegEnableTxPowerByRate;
 #ifdef CONFIG_RF_GAIN_OFFSET
-	u8	RegEnableKFree;
+	u8 RegEnableKFree;
 #endif
-	u8	RegPowerBase;
-	u8	RegPwrTblSel;
+	u8 RegPowerBase;
+	u8 RegPwrTblSel;
 
 	u8 adaptivity_en;
 	u8 adaptivity_mode;
@@ -398,20 +393,20 @@ struct registry_priv
 #endif
 
 #if defined(CONFIG_RTL8821C) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C)
-	s8	TxBBSwing_2G;
-	s8	TxBBSwing_5G;
-	u8	AmplifierType_2G;
-	u8	AmplifierType_5G;
-	u8	RFE_Type;
+	s8 TxBBSwing_2G;
+	s8 TxBBSwing_5G;
+	u8 AmplifierType_2G;
+	u8 AmplifierType_5G;
+	u8 RFE_Type;
 #endif
 
 #if defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8192F)
-	s8	TxBBSwing_2G;
-	u8	AmplifierType_2G;
-	u8	RFE_Type;
-	u8	bEn_RFE;
-	u8	PowerTracking_Type;
-	u8	GLNA_Type;
+	s8 TxBBSwing_2G;
+	u8 AmplifierType_2G;
+	u8 RFE_Type;
+	u8 bEn_RFE;
+	u8 PowerTracking_Type;
+	u8 GLNA_Type;
 #endif
 
 #ifdef CONFIG_MCC_MODE
@@ -444,17 +439,17 @@ struct registry_priv
 };
 
 //For registry parameters
-#define RGTRY_OFT(field) ((u32)FIELD_OFFSET(struct registry_priv,field))
-#define RGTRY_SZ(field)   sizeof(((struct registry_priv*) 0)->field)
-#define BSSID_OFT(field) ((u32)FIELD_OFFSET(WLAN_BSSID_EX,field))
-#define BSSID_SZ(field)   sizeof(((PWLAN_BSSID_EX) 0)->field)
+#define RGTRY_OFT(field) ((u32)FIELD_OFFSET(struct registry_priv, field))
+#define RGTRY_SZ(field) sizeof(((struct registry_priv *)0)->field)
+#define BSSID_OFT(field) ((u32)FIELD_OFFSET(WLAN_BSSID_EX, field))
+#define BSSID_SZ(field) sizeof(((PWLAN_BSSID_EX)0)->field)
 
-#define GetRegbENRFEType(_Adapter)	(_Adapter->registrypriv.bEn_RFE)
-#define GetRegRFEType(_Adapter)	(_Adapter->registrypriv.RFE_Type)
-#define GetRegGLNAType(_Adapter)	(_Adapter->registrypriv.GLNA_Type)
-#define GetRegPowerTrackingType(_Adapter)	(_Adapter->registrypriv.PowerTracking_Type)
+#define GetRegbENRFEType(_Adapter) (_Adapter->registrypriv.bEn_RFE)
+#define GetRegRFEType(_Adapter) (_Adapter->registrypriv.RFE_Type)
+#define GetRegGLNAType(_Adapter) (_Adapter->registrypriv.GLNA_Type)
+#define GetRegPowerTrackingType(_Adapter) (_Adapter->registrypriv.PowerTracking_Type)
 
-#define BW_MODE_2G(bw_mode) ((bw_mode) & 0x0F)
+#define BW_MODE_2G(bw_mode) ((bw_mode)&0x0F)
 #define BW_MODE_5G(bw_mode) ((bw_mode) >> 4)
 #ifdef CONFIG_80211N_HT
 #define REGSTY_BW_2G(regsty) BW_MODE_2G((regsty)->bw_mode)
@@ -520,16 +515,16 @@ struct rf_ctl_t {
 	const struct country_chplan *country_ent;
 	u8 ChannelPlan;
 	u8 max_chan_nums;
-//	RT_CHANNEL_INFO channel_set[MAX_CHANNEL_NUM];
-//	struct p2p_channels channel_list;
+	//	RT_CHANNEL_INFO channel_set[MAX_CHANNEL_NUM];
+	//	struct p2p_channels channel_list;
 
 	_mutex offch_mutex;
 	u8 offch_state;
 
 	/* used for debug or by tx power limit */
-	u16 rate_bmp_cck_ofdm;		/* 20MHz */
-	u32 rate_bmp_ht_by_bw[2];	/* 20MHz, 40MHz. 4SS supported */
-	u32 rate_bmp_vht_by_bw[4];	/* 20MHz, 40MHz, 80MHz, 160MHz. up to 3SS supported */
+	u16 rate_bmp_cck_ofdm;	 /* 20MHz */
+	u32 rate_bmp_ht_by_bw[2];  /* 20MHz, 40MHz. 4SS supported */
+	u32 rate_bmp_vht_by_bw[4]; /* 20MHz, 40MHz, 80MHz, 160MHz. up to 3SS supported */
 
 	/* used by tx power limit */
 	u8 highest_ht_rate_bw_bmp;
@@ -544,10 +539,10 @@ struct rf_ctl_t {
 	const char *regd_name;
 
 	u8 txpwr_lmt_2g_cck_ofdm_state;
-	#ifdef CONFIG_IEEE80211_BAND_5GHZ
+#ifdef CONFIG_IEEE80211_BAND_5GHZ
 	u8 txpwr_lmt_5g_cck_ofdm_state;
 	u8 txpwr_lmt_5g_20_40_ref;
-	#endif
+#endif
 #endif
 
 	u8 ch_sel_same_band_prefer;
@@ -593,7 +588,7 @@ struct halmacpriv {
 	u16 txpage[HW_QUEUE_ENTRY];
 #endif /* CONFIG_SDIO_HCI */
 };
-#endif 
+#endif
 
 #if 0
 struct rtw_traffic_statistics {
@@ -615,7 +610,7 @@ struct rtw_traffic_statistics {
 };
 #endif
 
-#define SEC_CAP_CHK_BMC	BIT0
+#define SEC_CAP_CHK_BMC BIT0
 
 #define RTW_DEFAULT_MGMT_MACID 1
 
@@ -663,16 +658,15 @@ struct macid_ctl_t {
 #endif
 };
 
-struct dvobj_priv
-{
+struct dvobj_priv {
 	void *if1;
-#ifdef CONFIG_CONCURRENT_MODE	
+#ifdef CONFIG_CONCURRENT_MODE
 	void *if2;
 #endif
 
-	unsigned char	oper_channel; /* saved channel info when call set_channel_bw */
-	unsigned char	oper_bwmode;
-	unsigned char	oper_ch_offset;/* PRIME_CHNL_OFFSET */
+	unsigned char oper_channel; /* saved channel info when call set_channel_bw */
+	unsigned char oper_bwmode;
+	unsigned char oper_ch_offset; /* PRIME_CHNL_OFFSET */
 
 	//For 92D, DMDP have 2 interface.
 	//u8	InterfaceNumber;
@@ -691,16 +685,16 @@ struct dvobj_priv
 	_mutex rf_read_reg_mutex;
 
 	//In /Out Pipe information
-	int	RtInPipe[2]; //xhl modify 1226
-	int	RtOutPipe[6];//u8	RtOutPipe[3]; xhl modify 01.23
-	u8	Queue2Pipe[HW_QUEUE_ENTRY];//for out pipe mapping
+	u8 RtInPipe[2];				   //xhl modify 1226
+	u8 RtOutPipe[6];			   //u8	RtOutPipe[3]; xhl modify 01.23
+	u8 Queue2Pipe[HW_QUEUE_ENTRY]; //for out pipe mapping
 
-	//u8	irq_alloc;
-	
+//u8	irq_alloc;
+
 #ifdef RTW_HALMAC
 	void *halmac;
 	struct halmacpriv hmpriv;
-#endif 
+#endif
 /*-------- below is for SDIO INTERFACE --------*/
 #if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
 	//
@@ -712,7 +706,7 @@ struct dvobj_priv
 	// SDIO Tx FIFO related.
 	//
 	// HIQ, MID, LOW, PUB free pages; padapter->xmitpriv.free_txpg
-	u8  SdioTxFIFOFreePage[TX_FREE_PG_QUEUE];
+	u8 SdioTxFIFOFreePage[TX_FREE_PG_QUEUE];
 	_lock SdioTxFIFOFreePageLock;
 
 	//
@@ -736,141 +730,144 @@ struct dvobj_priv
 /*-------- below is for USB INTERFACE --------*/
 
 #ifdef CONFIG_USB_HCI
-	u8	HardwareType;
-	u8	usb_speed; /* 1.1, 2.0 or 3.0 */
-	u8	irq_alloc; 
-	u8	nr_endpoint;
-	u8	ishighspeed;
-	u8	RtNumInPipes;
-	u8	RtNumOutPipes;
-	int	ep_num[8]; //endpoint number
+#ifdef INTF_DATA
+	INTF_DATA intf_data;
+#endif
+	u8 HardwareType;
+	u8 usb_speed; /* 1.1, 2.0 or 3.0 */
+	u8 irq_alloc;
+	u8 nr_endpoint;
+	u8 ishighspeed;
+	u8 RtNumInPipes;
+	u8 RtNumOutPipes;
+	int ep_num[8]; //endpoint number
 
-	int	RegUsbSS;
+	int RegUsbSS;
 
-	_sema	usb_suspend_sema;
+	_sema usb_suspend_sema;
 	ATOMIC_T continual_io_error;
 	ATOMIC_T disable_func;
 
 #ifdef CONFIG_USB_VENDOR_REQ_MUTEX
-	_mutex  usb_vendor_req_mutex;
+	_mutex usb_vendor_req_mutex;
 #endif
 
 #ifdef CONFIG_USB_VENDOR_REQ_BUFFER_PREALLOC
-	u8 * usb_alloc_vendor_req_buf;
-	u8 * usb_vendor_req_buf;
+	u8 *usb_alloc_vendor_req_buf;
+	u8 *usb_vendor_req_buf;
 #endif
 
 #ifdef PLATFORM_WINDOWS
 	//related device objects
-	PDEVICE_OBJECT	pphysdevobj;//pPhysDevObj;
-	PDEVICE_OBJECT	pfuncdevobj;//pFuncDevObj;
-	PDEVICE_OBJECT	pnextdevobj;//pNextDevObj;
+	PDEVICE_OBJECT pphysdevobj; //pPhysDevObj;
+	PDEVICE_OBJECT pfuncdevobj; //pFuncDevObj;
+	PDEVICE_OBJECT pnextdevobj; //pNextDevObj;
 
-	u8	nextdevstacksz;//unsigned char NextDeviceStackSize;	//= (CHAR)CEdevice->pUsbDevObj->StackSize + 1;
+	u8 nextdevstacksz; //unsigned char NextDeviceStackSize;	//= (CHAR)CEdevice->pUsbDevObj->StackSize + 1;
 
-	//urb for control diescriptor request
+//urb for control diescriptor request
 
 #ifdef PLATFORM_OS_XP
 	struct _URB_CONTROL_DESCRIPTOR_REQUEST descriptor_urb;
-	PUSB_CONFIGURATION_DESCRIPTOR	pconfig_descriptor;//UsbConfigurationDescriptor;
+	PUSB_CONFIGURATION_DESCRIPTOR pconfig_descriptor; //UsbConfigurationDescriptor;
 #endif
 
 #ifdef PLATFORM_OS_CE
-	WCHAR			active_path[MAX_ACTIVE_REG_PATH];	// adapter regpath
-	USB_EXTENSION	usb_extension;
+	WCHAR active_path[MAX_ACTIVE_REG_PATH]; // adapter regpath
+	USB_EXTENSION usb_extension;
 
-	_nic_hdl		pipehdls_r8192c[0x10];
+	_nic_hdl pipehdls_r8192c[0x10];
 #endif
 
-	u32	config_descriptor_len;//u32 UsbConfigurationDescriptorLength;
-#endif//PLATFORM_WINDOWS
+	u32 config_descriptor_len; //u32 UsbConfigurationDescriptorLength;
+#endif						   //PLATFORM_WINDOWS
 
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	struct usb_interface *pusbintf;
 	struct usb_device *pusbdev;
-#endif//PLATFORM_LINUX
+#endif //PLATFORM_LINUX
 
 #ifdef PLATFORM_FREEBSD
 	struct usb_interface *pusbintf;
 	struct usb_device *pusbdev;
-#endif//PLATFORM_FREEBSD
+#endif //PLATFORM_FREEBSD
 	ATOMIC_T continual_urb_error;
-#endif//CONFIG_USB_HCI
+#endif //CONFIG_USB_HCI
 
 /*-------- below is for PCIE INTERFACE --------*/
 
 #ifdef CONFIG_PCI_HCI
-	u8	irq_alloc; 
+	u8 irq_alloc;
 
 #ifdef PLATFORM_LINUX
 	struct pci_dev *ppcidev;
 
 	//PCI MEM map
-	unsigned long	pci_mem_end;	/* shared mem end	*/
-	unsigned long	pci_mem_start;	/* shared mem start	*/
+	unsigned long pci_mem_end;   /* shared mem end	*/
+	unsigned long pci_mem_start; /* shared mem start	*/
 
 	//PCI IO map
-	unsigned long	pci_base_addr;	/* device I/O address	*/
+	unsigned long pci_base_addr; /* device I/O address	*/
 
 	//PciBridge
-	struct pci_priv	pcipriv;
+	struct pci_priv pcipriv;
 
-	u16	irqline;
-	u8	irq_enabled;
-	RT_ISR_CONTENT	isr_content;
-	_lock	irq_th_lock;
+	u16 irqline;
+	u8 irq_enabled;
+	RT_ISR_CONTENT isr_content;
+	_lock irq_th_lock;
 
 	//ASPM
-	u8	const_pci_aspm;
-	u8	const_amdpci_aspm;
-	u8	const_hwsw_rfoff_d3;
-	u8	const_support_pciaspm;
+	u8 const_pci_aspm;
+	u8 const_amdpci_aspm;
+	u8 const_hwsw_rfoff_d3;
+	u8 const_support_pciaspm;
 	// pci-e bridge */
-	u8 	const_hostpci_aspm_setting;
+	u8 const_hostpci_aspm_setting;
 	// pci-e device */
-	u8 	const_devicepci_aspm_setting;
-	u8 	b_support_aspm; // If it supports ASPM, Offset[560h] = 0x40, otherwise Offset[560h] = 0x00.
-	u8	b_support_backdoor;
+	u8 const_devicepci_aspm_setting;
+	u8 b_support_aspm; // If it supports ASPM, Offset[560h] = 0x40, otherwise Offset[560h] = 0x00.
+	u8 b_support_backdoor;
 	u8 bdma64;
-#endif//PLATFORM_LINUX
+#endif //PLATFORM_LINUX
 
-#if defined(PLATFORM_FREERTOS) || defined (PLATFORM_CMSIS_RTOS)
-	u8	irq_enabled;
-	_lock	irq_th_lock;
+#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS)
+	u8 irq_enabled;
+	_lock irq_th_lock;
 #endif //PLATFORM_FREERTOS
 
-#endif//CONFIG_PCI_HCI
+#endif //CONFIG_PCI_HCI
 
 #ifdef CONFIG_LX_HCI
-	u8	irq_alloc; 
-#if defined(PLATFORM_FREERTOS) || defined (PLATFORM_CMSIS_RTOS)
-	u8	irq_enabled;
-	_lock	irq_th_lock;
+	u8 irq_alloc;
+#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS)
+	u8 irq_enabled;
+	_lock irq_th_lock;
 #endif //PLATFORM_FREERTOS
 #endif
 
 #ifdef CONFIG_AXI_HCI
-	u8	irq_alloc; 
-#if defined(PLATFORM_FREERTOS) || defined (PLATFORM_CMSIS_RTOS)
-	u8	irq_enabled;
-	_lock	irq_th_lock;
+	u8 irq_alloc;
+#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS)
+	u8 irq_enabled;
+	_lock irq_th_lock;
 #endif //PLATFORM_FREERTOS
 
 #endif
 
 #ifdef CONFIG_MCC_MODE
-	struct mcc_obj_priv	mcc_objpriv;
+	struct mcc_obj_priv mcc_objpriv;
 	//unsigned char		oper_channel;	/* saved channel info when call set_channel_bw */
 	//unsigned char		oper_bwmode;
 	//unsigned char		oper_ch_offset;	/* PRIME_CHNL_OFFSET */
-	u32					on_oper_ch_time;
+	u32 on_oper_ch_time;
 #endif
 };
 
 #ifdef PLATFORM_LINUX
 static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 {
-	/* todo: get interface type from dvobj and the return the dev accordingly */
+/* todo: get interface type from dvobj and the return the dev accordingly */
 #ifdef RTW_DVOBJ_CHIP_HW_TYPE
 #endif
 
@@ -890,7 +887,7 @@ static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 #endif
 
 #ifdef CONFIG_CONCURRENT_MODE
-struct co_data_priv{
+struct co_data_priv {
 
 	//george@20120518
 	//current operating channel/bw/ch_offset
@@ -901,15 +898,14 @@ struct co_data_priv{
 	u8 co_bw;
 	u8 co_ch_offset;
 	u8 rsvd;
-
 };
 #endif //CONFIG_CONCURRENT_MODE
 
-typedef enum _DRIVER_STATE{
+typedef enum _DRIVER_STATE {
 	DRIVER_NORMAL = 0,
 	DRIVER_DISAPPEAR = 1,
 	DRIVER_REPLACE_DONGLE = 2,
-}DRIVER_STATE;
+} DRIVER_STATE;
 
 #ifdef CONFIG_INTEL_PROXIM
 struct proxim {
@@ -918,15 +914,14 @@ struct proxim {
 
 	void *proximity_priv;
 	int (*proxim_rx)(_adapter *padapter,
-		union recv_frame *precv_frame);
-	u8	(*proxim_get_var)(_adapter* padapter, u8 type);
+					 union recv_frame *precv_frame);
+	u8 (*proxim_get_var)(_adapter *padapter, u8 type);
 };
-#endif	//CONFIG_INTEL_PROXIM
+#endif //CONFIG_INTEL_PROXIM
 
 #ifdef CONFIG_MAC_LOOPBACK_DRIVER
-typedef struct loopbackdata
-{
-	_sema	sema;
+typedef struct loopbackdata {
+	_sema sema;
 	_thread_hdl_ lbkthread;
 	u8 bstop;
 	u32 cnt;
@@ -937,174 +932,174 @@ typedef struct loopbackdata
 	u8 rxbuf[0x8000];
 	u8 msg[100];
 
-}LOOPBACKDATA, *PLOOPBACKDATA;
+} LOOPBACKDATA, *PLOOPBACKDATA;
 #endif
 
 #define ADAPTER_TX_BW_2G(adapter) BW_MODE_2G((adapter)->driver_tx_bw_mode)
 #define ADAPTER_TX_BW_5G(adapter) BW_MODE_5G((adapter)->driver_tx_bw_mode)
 
 struct tsf_info {
-	u8 sync_port;/*tsf sync from portx*/
-	u8 offset; /*tsf timer offset*/
+	u8 sync_port; /*tsf sync from portx*/
+	u8 offset;	/*tsf timer offset*/
 };
 
-struct _ADAPTER{
+struct _ADAPTER {
 #ifdef CONFIG_EASY_REPLACEMENT
-	int	DriverState;// for disable driver using module, use dongle to replace module.
-	int	bDongle;//build-in module or external dongle
+	int DriverState; // for disable driver using module, use dongle to replace module.
+	int bDongle;	 //build-in module or external dongle
 
 #endif
 #ifdef PLATFORM_LINUX
-	int	pid[3];//process id from UI, 0:wps, 1:hostapd, 2:dhcpcd
-#endif	
-
-#ifdef CONFIG_PROC_DEBUG
-	u16 	chip_type;
+	int pid[3]; //process id from UI, 0:wps, 1:hostapd, 2:dhcpcd
 #endif
 
-	u16	HardwareType;
-	u16	interface_type;//USB,SDIO,SPI,PCI
-	u32	work_mode; //STA, AP, STA+AP, PROMISC, P2P
+#ifdef CONFIG_PROC_DEBUG
+	u16 chip_type;
+#endif
 
-	struct	dvobj_priv	*dvobj;
-	struct	mlme_priv	mlmepriv;
-	struct	mlme_ext_priv	mlmeextpriv;
-	struct	cmd_priv	cmdpriv;
-	struct	evt_priv	evtpriv;
+	u16 HardwareType;
+	u16 interface_type; //USB,SDIO,SPI,PCI
+	u32 work_mode;		//STA, AP, STA+AP, PROMISC, P2P
+
+	struct dvobj_priv *dvobj;
+	struct mlme_priv mlmepriv;
+	struct mlme_ext_priv mlmeextpriv;
+	struct cmd_priv cmdpriv;
+	struct evt_priv evtpriv;
 	//struct	io_queue	*pio_queue;
-	struct 	io_priv	iopriv;
-	struct	xmit_priv	xmitpriv;
-	struct	recv_priv	recvpriv;
-	struct	sta_priv	stapriv;
-	struct	security_priv	securitypriv;
-	_lock   security_key_mutex; /* add for CONFIG_IEEE80211W, none 11w also can use */
-	struct	registry_priv	registrypriv;
-	struct	pwrctrl_priv	pwrctrlpriv;
-	struct 	eeprom_priv eeprompriv;
+	struct io_priv iopriv;
+	struct xmit_priv xmitpriv;
+	struct recv_priv recvpriv;
+	struct sta_priv stapriv;
+	struct security_priv securitypriv;
+	_lock security_key_mutex; /* add for CONFIG_IEEE80211W, none 11w also can use */
+	struct registry_priv registrypriv;
+	struct pwrctrl_priv pwrctrlpriv;
+	struct eeprom_priv eeprompriv;
 //TODO
 //	struct	led_priv	ledpriv;
 
-
 #ifdef CONFIG_MP_INCLUDED
-       struct	mp_priv	mppriv;
+	struct mp_priv mppriv;
 #endif
 
 #ifdef CONFIG_DRVEXT_MODULE
-	struct	drvext_priv	drvextpriv;
+	struct drvext_priv drvextpriv;
 #endif
 
-#if defined(CONFIG_HOSTAPD_MLME) && defined (CONFIG_AP_MODE)
-	struct	hostapd_priv	*phostapdpriv;
+#if defined(CONFIG_HOSTAPD_MLME) && defined(CONFIG_AP_MODE)
+	struct hostapd_priv *phostapdpriv;
 #endif
 
 #ifdef CONFIG_IOCTL_CFG80211
 #ifdef CONFIG_P2P
-	struct cfg80211_wifidirect_info	cfg80211_wdinfo;
+	struct cfg80211_wifidirect_info cfg80211_wdinfo;
 #endif //CONFIG_P2P
 #endif //CONFIG_IOCTL_CFG80211
 
 #ifdef CONFIG_P2P_NEW
-	struct wifidirect_info	wdinfo;
+	struct wifidirect_info wdinfo;
 #endif //CONFIG_P2P
 
 #ifdef CONFIG_TDLS
-	struct tdls_info	tdlsinfo;
+	struct tdls_info tdlsinfo;
 #endif //CONFIG_TDLS
 
 #ifdef CONFIG_WAPI_SUPPORT
-	u8	WapiSupport;
-	RT_WAPI_T	wapiInfo;
+	u8 WapiSupport;
+	RT_WAPI_T wapiInfo;
 #endif
-
 
 #ifdef CONFIG_WFD
 	struct wifi_display_info wfd_info;
 #endif //CONFIG_WFD
 
-	PVOID		HalData;
-	u32 		hal_data_sz;
-	struct hal_ops	HalFunc;
+	PVOID HalData;
+	u32 hal_data_sz;
+	struct hal_ops HalFunc;
 
-	s32	bDriverStopped;
-	s32	bSurpriseRemoved;
-	s32	bCardDisableWOHSM;
-	u8	RxStop;	//Used to stop rx thread as early as possible
+	s32 bDriverStopped;
+	s32 bSurpriseRemoved;
+	s32 bCardDisableWOHSM;
+	u8 RxStop; //Used to stop rx thread as early as possible
 
-	u32	IsrContent;
-	u32	ImrContent;
+	u32 IsrContent;
+	u32 ImrContent;
 
-	u8	EepromAddressSize;
-	u8	hw_init_completed;
-	u8	bDriverIsGoingToUnload;
-	u8	init_adpt_in_progress;
-	u8	bMpDriver;
+	u8 EepromAddressSize;
+	u8 hw_init_completed;
+	u8 bDriverIsGoingToUnload;
+	u8 init_adpt_in_progress;
+	u8 bMpDriver;
 
 #ifdef CONFIG_AP_MODE
-	u8	bForwardingDisabled;
+	u8 bForwardingDisabled;
 #endif
 
 #if defined(CONFIG_EVENT_THREAD_MODE)
-	_thread_hdl_	evtThread;
+	_thread_hdl_ evtThread;
 #endif
 #if defined(CONFIG_ISR_THREAD_MODE_POLLING) || defined(CONFIG_ISR_THREAD_MODE_INTERRUPT)
-	struct task_struct	isrThread;
+	struct task_struct isrThread;
 #endif
-	struct task_struct	cmdThread;
+	struct task_struct cmdThread;
 #ifdef CONFIG_XMIT_THREAD_MODE
-	struct task_struct	xmitThread;
+	struct task_struct xmitThread;
 #endif
 #if defined(CONFIG_RECV_THREAD_MODE)
-	struct task_struct	recvThread;
+	struct task_struct recvThread;
 #endif
+
 #ifdef CONFIG_RECV_TASKLET_THREAD
-	struct task_struct	recvtasklet_thread;
+	struct task_struct recvtasklet_thread;
 #endif
 #ifdef CONFIG_XMIT_TASKLET_THREAD
 #ifdef PLATFORM_LINUX
 	struct tasklet_struct xmit_tasklet;
 #else
-	struct task_struct	xmittasklet_thread;
+	struct task_struct xmittasklet_thread;
 #endif
 #else
 	struct task_struct halXmitThread;
 #endif
 #ifdef CONFIG_SDIO_XMIT_THREAD
-	struct task_struct	SdioXmitThread;
+	struct task_struct SdioXmitThread;
 #endif //CONFIG_XMIT_TASKLET_THREAD
 
 #ifdef CONFIG_RECV_TASK_THREAD_MODE
-	struct task_struct	recvtaskThread;
+	struct task_struct recvtaskThread;
 #endif
 
 #if !defined(PLATFORM_LINUX) && !defined(PLATFORM_ECOS) && !defined(PLATFORM_FREERTOS) && !defined(PLATFORM_CMSIS_RTOS) && !defined(PLATFORM_CUSTOMER_RTOS) && !defined(PLATFORM_TIZENRT)
-	NDIS_STATUS (*dvobj_init)(struct dvobj_priv *dvobj);
+	NDIS_STATUS (*dvobj_init)
+	(struct dvobj_priv *dvobj);
 	void (*dvobj_deinit)(struct dvobj_priv *dvobj);
 #endif
 
-	void (*intf_start)(_adapter * adapter);
-	void (*intf_stop)(_adapter * adapter);
+	void (*intf_start)(_adapter *adapter);
+	void (*intf_stop)(_adapter *adapter);
 
 #ifdef PLATFORM_WINDOWS
-	_nic_hdl		hndis_adapter;//hNdisAdapter(NDISMiniportAdapterHandle);
-	_nic_hdl		hndis_config;//hNdisConfiguration;
+	_nic_hdl hndis_adapter; //hNdisAdapter(NDISMiniportAdapterHandle);
+	_nic_hdl hndis_config;  //hNdisConfiguration;
 	NDIS_STRING fw_img;
 
-	u32	NdisPacketFilter;
-	u8	MCList[MAX_MCAST_LIST_NUM][6];
-	u32	MCAddrCount;
+	u32 NdisPacketFilter;
+	u8 MCList[MAX_MCAST_LIST_NUM][6];
+	u32 MCAddrCount;
 #endif //end of PLATFORM_WINDOWS
 
 #ifdef PLATFORM_ECOS
 	_nic_hdl pnetdev;
 	int bup;
 	struct net_device_stats stats;
-#endif	//#ifdef PLATFORM_ECOS
+#endif //#ifdef PLATFORM_ECOS
 
 #if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
-	_nic_hdl	pnetdev;
-	int		bup;
+	_nic_hdl pnetdev;
+	int bup;
 	struct net_device_stats stats;
-#endif	//#ifdef PLATFORM_FREERTOS
+#endif //#ifdef PLATFORM_FREERTOS
 
 #ifdef PLATFORM_LINUX
 	_nic_hdl pnetdev;
@@ -1120,7 +1115,7 @@ struct _ADAPTER{
 	int bup;
 	struct net_device_stats stats;
 	struct iw_statistics iwstats;
-	struct proc_dir_entry *dir_dev;// for proc directory
+	struct proc_dir_entry *dir_dev; // for proc directory
 
 #ifdef CONFIG_IOCTL_CFG80211
 	struct wireless_dev *rtw_wdev;
@@ -1142,7 +1137,7 @@ struct _ADAPTER{
 	u8 bLinkInfoDump;
 	u8 bRxRSSIDisplay;
 #ifdef CONFIG_AUTOSUSPEND
-	u8	bDisableAutosuspend;
+	u8 bDisableAutosuspend;
 #endif
 
 	_adapter *pbuddy_adapter;
@@ -1154,7 +1149,7 @@ struct _ADAPTER{
 	/*extend to support multi interface*/
 	u8 iface_id;
 
-#if defined(CONFIG_CONCURRENT_MODE) 
+#if defined(CONFIG_CONCURRENT_MODE)
 	u8 isprimary; //is primary adapter or not
 	u8 adapter_type;
 	struct tsf_info tsf;
@@ -1163,30 +1158,30 @@ struct _ADAPTER{
 	_mutex *psetch_mutex;
 	_mutex *psetbw_mutex;
 
-	struct co_data_priv *pcodatapriv;//data buffer shared among interfaces
+	struct co_data_priv *pcodatapriv; //data buffer shared among interfaces
 #endif
 
 #ifdef CONFIG_BR_EXT
-	_lock					br_ext_lock;
+	_lock br_ext_lock;
 	//unsigned int			macclone_completed;
-	struct nat25_network_db_entry	*nethash[NAT25_HASH_SIZE];
-	int				pppoe_connection_in_progress;
-	unsigned char			pppoe_addr[MACADDRLEN];
-	unsigned char			scdb_mac[MACADDRLEN];
-	unsigned char			scdb_ip[4];
-	struct nat25_network_db_entry	*scdb_entry;
-	unsigned char			br_mac[MACADDRLEN];
-	unsigned char			br_ip[4];
+	struct nat25_network_db_entry *nethash[NAT25_HASH_SIZE];
+	int pppoe_connection_in_progress;
+	unsigned char pppoe_addr[MACADDRLEN];
+	unsigned char scdb_mac[MACADDRLEN];
+	unsigned char scdb_ip[4];
+	struct nat25_network_db_entry *scdb_entry;
+	unsigned char br_mac[MACADDRLEN];
+	unsigned char br_ip[4];
 
-	struct br_ext_info		ethBrExtInfo;
-#endif	// CONFIG_BR_EXT
+	struct br_ext_info ethBrExtInfo;
+#endif // CONFIG_BR_EXT
 
 #ifdef CONFIG_INTEL_PROXIM
 	/* intel Proximity, should be alloc mem
 	 * in intel Proximity module and can only
 	 * be used in intel Proximity mode */
 	struct proxim proximity;
-#endif	//CONFIG_INTEL_PROXIM
+#endif //CONFIG_INTEL_PROXIM
 
 #ifdef CONFIG_MAC_LOOPBACK_DRIVER
 	PLOOPBACKDATA ploopback;
@@ -1197,12 +1192,12 @@ struct _ADAPTER{
 	u8 driver_tx_bw_mode;
 
 #ifdef CONFIG_CAC_TEST
-	unsigned char     in_cta_test;
+	unsigned char in_cta_test;
 #endif
-	/* This flag is used to dynamically enabling debug message if
+/* This flag is used to dynamically enabling debug message if
 	  	certain sympton happen. Use iwpriv command to enable it */
-#if defined(CONFIG_DEBUG_DYNAMIC)	
-	u8	debug_level;
+#if defined(CONFIG_DEBUG_DYNAMIC)
+	u8 debug_level;
 #endif
 
 	// for user define DM
@@ -1212,28 +1207,28 @@ struct _ADAPTER{
 
 #ifdef CONFIG_MCC_MODE
 	struct mcc_adapter_priv mcc_adapterpriv;
-	/* notes:
+/* notes:
 	**	if isprimary is true, the adapter_type value is 0, iface_id is IFACE_ID0 for PRIMARY_ADAPTER
 	**	if isprimary is false, the adapter_type value is 1, iface_id is IFACE_ID1 for VIRTUAL_ADAPTER
 	**	refer to iface_id if iface_nums>2 and isprimary is false and the adapter_type value is 0xff.*/
-	//u8 hw_port; /*interface port type, it depends on HW port */
+//u8 hw_port; /*interface port type, it depends on HW port */
 
-	/*extend to support multi interface*/
-	/*IFACE_ID0 is equals to PRIMARY_ADAPTER
+/*extend to support multi interface*/
+/*IFACE_ID0 is equals to PRIMARY_ADAPTER
 	IFACE_ID1 is equals to VIRTUAL_ADAPTER*/
-	//u8 iface_id;
+//u8 iface_id;
 #endif
 };
 
 #define dvobj_to_macidctl(dvobj) (&(dvobj->macid_ctl))
 #define dvobj_to_rfctl(dvobj) (&(dvobj->rf_ctl))
-#define dvobj_get_primary_adapter(dvobj)	((_adapter*)((dvobj)->if1))
+#define dvobj_get_primary_adapter(dvobj) ((_adapter *)((dvobj)->if1))
 
 #define GET_PRIMARY_ADAPTER(padapter) ((_adapter *)((padapter->dvobj)->if1))
-#define rtw_is_surprise_removed(padapter)	(padapter->bSurpriseRemoved==_TRUE)
-#define RTW_CANNOT_RUN(padapter) \
-	((padapter->bSurpriseRemoved==_TRUE) || \
-	(padapter->bDriverStopped==_TRUE))
+#define rtw_is_surprise_removed(padapter) (padapter->bSurpriseRemoved == _TRUE)
+#define RTW_CANNOT_RUN(padapter)              \
+	((padapter->bSurpriseRemoved == _TRUE) || \
+	 (padapter->bDriverStopped == _TRUE))
 
 #define adapter_to_dvobj(adapter) (adapter->dvobj)
 #define adapter_to_regsty(adapter) dvobj_to_regsty(adapter_to_dvobj((adapter)))
@@ -1244,8 +1239,7 @@ struct _ADAPTER{
 #define adapter_to_chset(adapter) (adapter->mlmeextpriv.channel_set)
 
 #define rtw_get_intf_type(adapter) (((PADAPTER)adapter)->interface_type)
-#define GetDefaultAdapter(padapter)	padapter
-
+#define GetDefaultAdapter(padapter) padapter
 
 int rtw_handle_dualmac(_adapter *adapter, bool init);
 
@@ -1265,4 +1259,3 @@ __inline static u8 *myid(struct eeprom_priv *peepriv)
 //fast reconnection function prototype
 typedef int (*init_done_ptr)(void);
 #endif //__DRV_TYPES_H__
-

@@ -29,95 +29,94 @@
  *  @{
  */
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef WLAN0_NAME
-  #define WLAN0_NAME		"wlan0"
+#define WLAN0_NAME "wlan0"
 #endif
 #ifndef WLAN1_NAME
-  #define WLAN1_NAME		"wlan1"
+#define WLAN1_NAME "wlan1"
 #endif
 
-#define WEP_ENABLED        0x0001
-#define TKIP_ENABLED       0x0002
-#define AES_ENABLED        0x0004
-#define WSEC_SWFLAG        0x0008
-#define AES_CMAC_ENABLED        0x0010
+#define WEP_ENABLED 0x0001
+#define TKIP_ENABLED 0x0002
+#define AES_ENABLED 0x0004
+#define WSEC_SWFLAG 0x0008
+#define AES_CMAC_ENABLED 0x0010
 
-#define SHARED_ENABLED  0x00008000
-#define WPA_SECURITY    0x00200000
-#define WPA2_SECURITY   0x00400000
-#define WPS_ENABLED     0x10000000
+#define SHARED_ENABLED 0x00008000
+#define WPA_SECURITY 0x00200000
+#define WPA2_SECURITY 0x00400000
+#define WPS_ENABLED 0x10000000
 
-#define RTW_MAX_PSK_LEN		(64)
-#define RTW_MIN_PSK_LEN		(8)
+#define RTW_MAX_PSK_LEN (64)
+#define RTW_MIN_PSK_LEN (8)
 
-#define MCSSET_LEN			16
+#define MCSSET_LEN 16
 
 /**
   * @brief  The enumeration lists the results of the function.
   */
-enum
-{
-    RTW_SUCCESS                      = 0,    /**< Success */
-    RTW_PENDING                      = 1,    /**< Pending */
-    RTW_TIMEOUT                      = 2,    /**< Timeout */
-    RTW_PARTIAL_RESULTS              = 3,    /**< Partial results */
-    RTW_INVALID_KEY                  = 4,    /**< Invalid key */
-    RTW_DOES_NOT_EXIST               = 5,    /**< Does not exist */
-    RTW_NOT_AUTHENTICATED            = 6,    /**< Not authenticated */
-    RTW_NOT_KEYED                    = 7,    /**< Not keyed */
-    RTW_IOCTL_FAIL                   = 8,    /**< IOCTL fail */
-    RTW_BUFFER_UNAVAILABLE_TEMPORARY = 9,    /**< Buffer unavailable temporarily */
-    RTW_BUFFER_UNAVAILABLE_PERMANENT = 10,   /**< Buffer unavailable permanently */
-    RTW_WPS_PBC_OVERLAP              = 11,   /**< WPS PBC overlap */
-    RTW_CONNECTION_LOST              = 12,   /**< Connection lost */
+enum {
+	RTW_SUCCESS = 0,					   /**< Success */
+	RTW_PENDING = 1,					   /**< Pending */
+	RTW_TIMEOUT = 2,					   /**< Timeout */
+	RTW_PARTIAL_RESULTS = 3,			   /**< Partial results */
+	RTW_INVALID_KEY = 4,				   /**< Invalid key */
+	RTW_DOES_NOT_EXIST = 5,				   /**< Does not exist */
+	RTW_NOT_AUTHENTICATED = 6,			   /**< Not authenticated */
+	RTW_NOT_KEYED = 7,					   /**< Not keyed */
+	RTW_IOCTL_FAIL = 8,					   /**< IOCTL fail */
+	RTW_BUFFER_UNAVAILABLE_TEMPORARY = 9,  /**< Buffer unavailable temporarily */
+	RTW_BUFFER_UNAVAILABLE_PERMANENT = 10, /**< Buffer unavailable permanently */
+	RTW_WPS_PBC_OVERLAP = 11,			   /**< WPS PBC overlap */
+	RTW_CONNECTION_LOST = 12,			   /**< Connection lost */
 
-    RTW_ERROR                        = -1,   /**< Generic Error */
-    RTW_BADARG                       = -2,   /**< Bad Argument */
-    RTW_BADOPTION                    = -3,   /**< Bad option */
-    RTW_NOTUP                        = -4,   /**< Not up */
-    RTW_NOTDOWN                      = -5,   /**< Not down */
-    RTW_NOTAP                        = -6,   /**< Not AP */
-    RTW_NOTSTA                       = -7,   /**< Not STA  */
-    RTW_BADKEYIDX                    = -8,   /**< BAD Key Index */
-    RTW_RADIOOFF                     = -9,   /**< Radio Off */
-    RTW_NOTBANDLOCKED                = -10,  /**< Not  band locked */
-    RTW_NOCLK                        = -11,  /**< No Clock */
-    RTW_BADRATESET                   = -12,  /**< BAD Rate valueset */
-    RTW_BADBAND                      = -13,  /**< BAD Band */
-    RTW_BUFTOOSHORT                  = -14,  /**< Buffer too short */
-    RTW_BUFTOOLONG                   = -15,  /**< Buffer too long */
-    RTW_BUSY                         = -16,  /**< Busy */
-    RTW_NOTASSOCIATED                = -17,  /**< Not Associated */
-    RTW_BADSSIDLEN                   = -18,  /**< Bad SSID len */
-    RTW_OUTOFRANGECHAN               = -19,  /**< Out of Range Channel */
-    RTW_BADCHAN                      = -20,  /**< Bad Channel */
-    RTW_BADADDR                      = -21,  /**< Bad Address */
-    RTW_NORESOURCE                   = -22,  /**< Not Enough Resources */
-    RTW_UNSUPPORTED                  = -23,  /**< Unsupported */
-    RTW_BADLEN                       = -24,  /**< Bad length */
-    RTW_NOTREADY                     = -25,  /**< Not Ready */
-    RTW_EPERM                        = -26,  /**< Not Permitted */
-    RTW_NOMEM                        = -27,  /**< No Memory */
-    RTW_ASSOCIATED                   = -28,  /**< Associated */
-    RTW_RANGE                        = -29,  /**< Not In Range */
-    RTW_NOTFOUND                     = -30,  /**< Not Found */
-    RTW_WME_NOT_ENABLED              = -31,  /**< WME Not Enabled */
-    RTW_TSPEC_NOTFOUND               = -32,  /**< TSPEC Not Found */
-    RTW_ACM_NOTSUPPORTED             = -33,  /**< ACM Not Supported */
-    RTW_NOT_WME_ASSOCIATION          = -34,  /**< Not WME Association */
-    RTW_SDIO_ERROR                   = -35,  /**< SDIO Bus Error */
-    RTW_WLAN_DOWN                    = -36,  /**< WLAN Not Accessible */
-    RTW_BAD_VERSION                  = -37,  /**< Incorrect version */
-    RTW_TXFAIL                       = -38,  /**< TX failure */
-    RTW_RXFAIL                       = -39,  /**< RX failure */
-    RTW_NODEVICE                     = -40,  /**< Device not present */
-    RTW_UNFINISHED                   = -41,  /**< To be finished */
-    RTW_NONRESIDENT                  = -42,  /**< access to nonresident overlay */
-    RTW_DISABLED                     = -43   /**< Disabled in this build */
+	RTW_ERROR = -1,				   /**< Generic Error */
+	RTW_BADARG = -2,			   /**< Bad Argument */
+	RTW_BADOPTION = -3,			   /**< Bad option */
+	RTW_NOTUP = -4,				   /**< Not up */
+	RTW_NOTDOWN = -5,			   /**< Not down */
+	RTW_NOTAP = -6,				   /**< Not AP */
+	RTW_NOTSTA = -7,			   /**< Not STA  */
+	RTW_BADKEYIDX = -8,			   /**< BAD Key Index */
+	RTW_RADIOOFF = -9,			   /**< Radio Off */
+	RTW_NOTBANDLOCKED = -10,	   /**< Not  band locked */
+	RTW_NOCLK = -11,			   /**< No Clock */
+	RTW_BADRATESET = -12,		   /**< BAD Rate valueset */
+	RTW_BADBAND = -13,			   /**< BAD Band */
+	RTW_BUFTOOSHORT = -14,		   /**< Buffer too short */
+	RTW_BUFTOOLONG = -15,		   /**< Buffer too long */
+	RTW_BUSY = -16,				   /**< Busy */
+	RTW_NOTASSOCIATED = -17,	   /**< Not Associated */
+	RTW_BADSSIDLEN = -18,		   /**< Bad SSID len */
+	RTW_OUTOFRANGECHAN = -19,	  /**< Out of Range Channel */
+	RTW_BADCHAN = -20,			   /**< Bad Channel */
+	RTW_BADADDR = -21,			   /**< Bad Address */
+	RTW_NORESOURCE = -22,		   /**< Not Enough Resources */
+	RTW_UNSUPPORTED = -23,		   /**< Unsupported */
+	RTW_BADLEN = -24,			   /**< Bad length */
+	RTW_NOTREADY = -25,			   /**< Not Ready */
+	RTW_EPERM = -26,			   /**< Not Permitted */
+	RTW_NOMEM = -27,			   /**< No Memory */
+	RTW_ASSOCIATED = -28,		   /**< Associated */
+	RTW_RANGE = -29,			   /**< Not In Range */
+	RTW_NOTFOUND = -30,			   /**< Not Found */
+	RTW_WME_NOT_ENABLED = -31,	 /**< WME Not Enabled */
+	RTW_TSPEC_NOTFOUND = -32,	  /**< TSPEC Not Found */
+	RTW_ACM_NOTSUPPORTED = -33,	/**< ACM Not Supported */
+	RTW_NOT_WME_ASSOCIATION = -34, /**< Not WME Association */
+	RTW_SDIO_ERROR = -35,		   /**< SDIO Bus Error */
+	RTW_WLAN_DOWN = -36,		   /**< WLAN Not Accessible */
+	RTW_BAD_VERSION = -37,		   /**< Incorrect version */
+	RTW_TXFAIL = -38,			   /**< TX failure */
+	RTW_RXFAIL = -39,			   /**< RX failure */
+	RTW_NODEVICE = -40,			   /**< Device not present */
+	RTW_UNFINISHED = -41,		   /**< To be finished */
+	RTW_NONRESIDENT = -42,		   /**< access to nonresident overlay */
+	RTW_DISABLED = -43			   /**< Disabled in this build */
 };
 typedef unsigned long rtw_result_t;
 
@@ -127,43 +126,43 @@ typedef unsigned long rtw_result_t;
   *			AP mode support OPEN and WPA2.
   */
 enum {
-    RTW_SECURITY_OPEN           = 0,                                                /**< Open security                           */
-    RTW_SECURITY_WEP_PSK        = WEP_ENABLED,                                      /**< WEP Security with open authentication   */
-    RTW_SECURITY_WEP_SHARED     = ( WEP_ENABLED | SHARED_ENABLED ),                 /**< WEP Security with shared authentication */
-    RTW_SECURITY_WPA_TKIP_PSK   = ( WPA_SECURITY  | TKIP_ENABLED ),                 /**< WPA Security with TKIP                  */
-    RTW_SECURITY_WPA_AES_PSK    = ( WPA_SECURITY  | AES_ENABLED ),                  /**< WPA Security with AES                   */
-    RTW_SECURITY_WPA2_AES_PSK   = ( WPA2_SECURITY | AES_ENABLED ),                  /**< WPA2 Security with AES                  */
-    RTW_SECURITY_WPA2_TKIP_PSK  = ( WPA2_SECURITY | TKIP_ENABLED ),                 /**< WPA2 Security with TKIP                 */
-    RTW_SECURITY_WPA2_MIXED_PSK = ( WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED ),   /**< WPA2 Security with AES & TKIP           */
-    RTW_SECURITY_WPA_WPA2_MIXED = ( WPA_SECURITY  | WPA2_SECURITY ),                /**< WPA/WPA2 Security                       */
-    RTW_SECURITY_WPA2_AES_CMAC = ( WPA2_SECURITY | AES_CMAC_ENABLED),                /**< WPA2 Security with AES and Management Frame Protection                 */
+	RTW_SECURITY_OPEN = 0,														/**< Open security                           */
+	RTW_SECURITY_WEP_PSK = WEP_ENABLED,											/**< WEP Security with open authentication   */
+	RTW_SECURITY_WEP_SHARED = (WEP_ENABLED | SHARED_ENABLED),					/**< WEP Security with shared authentication */
+	RTW_SECURITY_WPA_TKIP_PSK = (WPA_SECURITY | TKIP_ENABLED),					/**< WPA Security with TKIP                  */
+	RTW_SECURITY_WPA_AES_PSK = (WPA_SECURITY | AES_ENABLED),					/**< WPA Security with AES                   */
+	RTW_SECURITY_WPA2_AES_PSK = (WPA2_SECURITY | AES_ENABLED),					/**< WPA2 Security with AES                  */
+	RTW_SECURITY_WPA2_TKIP_PSK = (WPA2_SECURITY | TKIP_ENABLED),				/**< WPA2 Security with TKIP                 */
+	RTW_SECURITY_WPA2_MIXED_PSK = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED), /**< WPA2 Security with AES & TKIP           */
+	RTW_SECURITY_WPA_WPA2_MIXED = (WPA_SECURITY | WPA2_SECURITY),				/**< WPA/WPA2 Security                       */
+	RTW_SECURITY_WPA2_AES_CMAC = (WPA2_SECURITY | AES_CMAC_ENABLED),			/**< WPA2 Security with AES and Management Frame Protection                 */
 
-    RTW_SECURITY_WPS_OPEN       = WPS_ENABLED,                                      /**< WPS with open security                  */
-    RTW_SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                      /**< WPS with AES security                   */
+	RTW_SECURITY_WPS_OPEN = WPS_ENABLED,				   /**< WPS with open security                  */
+	RTW_SECURITY_WPS_SECURE = (WPS_ENABLED | AES_ENABLED), /**< WPS with AES security                   */
 
-    RTW_SECURITY_UNKNOWN        = -1,                                               /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
+	RTW_SECURITY_UNKNOWN = -1, /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
 
-    RTW_SECURITY_FORCE_32_BIT   = 0x7fffffff                                        /**< Exists only to force rtw_security_t type to 32 bits */
+	RTW_SECURITY_FORCE_32_BIT = 0x7fffffff /**< Exists only to force rtw_security_t type to 32 bits */
 };
 typedef unsigned long rtw_security_t;
 
 enum {
-    RTW_ENCRYPTION_UNKNOWN = 0,                 
-    RTW_ENCRYPTION_OPEN = 1,
-    RTW_ENCRYPTION_WEP40 = 2,
-    RTW_ENCRYPTION_WPA_TKIP = 3,
-    RTW_ENCRYPTION_WPA_AES = 4,
-    RTW_ENCRYPTION_WPA2_TKIP = 5,
-    RTW_ENCRYPTION_WPA2_AES = 6,
-    RTW_ENCRYPTION_WPA2_MIXED = 7,
-    RTW_ENCRYPTION_WEP104 = 9,
-    RTW_ENCRYPTION_UNDEF = 0xFF,                 
+	RTW_ENCRYPTION_UNKNOWN = 0,
+	RTW_ENCRYPTION_OPEN = 1,
+	RTW_ENCRYPTION_WEP40 = 2,
+	RTW_ENCRYPTION_WPA_TKIP = 3,
+	RTW_ENCRYPTION_WPA_AES = 4,
+	RTW_ENCRYPTION_WPA2_TKIP = 5,
+	RTW_ENCRYPTION_WPA2_AES = 6,
+	RTW_ENCRYPTION_WPA2_MIXED = 7,
+	RTW_ENCRYPTION_WEP104 = 9,
+	RTW_ENCRYPTION_UNDEF = 0xFF,
 };
 typedef unsigned long rtw_encryption_t;
 
 enum {
 	RTW_FALSE = 0,
-	RTW_TRUE  = 1
+	RTW_TRUE = 1
 };
 typedef unsigned long rtw_bool_t;
 
@@ -171,8 +170,8 @@ typedef unsigned long rtw_bool_t;
   * @brief  The enumeration lists the band types.
   */
 enum {
-	RTW_802_11_BAND_5GHZ   = 0, /**< Denotes 5GHz radio band   */
-	RTW_802_11_BAND_2_4GHZ = 1  /**< Denotes 2.4GHz radio band */
+	RTW_802_11_BAND_5GHZ = 0,  /**< Denotes 5GHz radio band   */
+	RTW_802_11_BAND_2_4GHZ = 1 /**< Denotes 2.4GHz radio band */
 };
 typedef unsigned long rtw_802_11_band_t;
 
@@ -181,25 +180,25 @@ typedef unsigned long rtw_802_11_band_t;
   */
 enum {
 	/* CHANNEL PLAN */
-	RTW_COUNTRY_WORLD1,	// 0x20
-	RTW_COUNTRY_ETSI1,	// 0x21
-	RTW_COUNTRY_FCC1,	// 0x22
-	RTW_COUNTRY_MKK1,	// 0x23
-	RTW_COUNTRY_ETSI2,	// 0x24
-	RTW_COUNTRY_FCC2,	// 0x2A
-	RTW_COUNTRY_WORLD2,	// 0x47
-	RTW_COUNTRY_MKK2,	// 0x58
-	RTW_COUNTRY_GLOBAL,	// 0x41
+	RTW_COUNTRY_WORLD1, // 0x20
+	RTW_COUNTRY_ETSI1,  // 0x21
+	RTW_COUNTRY_FCC1,   // 0x22
+	RTW_COUNTRY_MKK1,   // 0x23
+	RTW_COUNTRY_ETSI2,  // 0x24
+	RTW_COUNTRY_FCC2,   // 0x2A
+	RTW_COUNTRY_WORLD2, // 0x47
+	RTW_COUNTRY_MKK2,   // 0x58
+	RTW_COUNTRY_GLOBAL, // 0x41
 
 	/* SPECIAL */
-	RTW_COUNTRY_WORLD,	// WORLD1
-	RTW_COUNTRY_EU,		// ETSI1
+	RTW_COUNTRY_WORLD, // WORLD1
+	RTW_COUNTRY_EU,	// ETSI1
 
 	/* JAPANESE */
-	RTW_COUNTRY_JP,		// MKK1
+	RTW_COUNTRY_JP, // MKK1
 
 	/* FCC , 19 countries*/
-	RTW_COUNTRY_AS,		// FCC2
+	RTW_COUNTRY_AS, // FCC2
 	RTW_COUNTRY_BM,
 	RTW_COUNTRY_CA,
 	RTW_COUNTRY_DM,
@@ -220,7 +219,7 @@ enum {
 	RTW_COUNTRY_VI,
 
 	/* others,  ETSI */
-	RTW_COUNTRY_AD,		// ETSI1
+	RTW_COUNTRY_AD, // ETSI1
 	RTW_COUNTRY_AE,
 	RTW_COUNTRY_AF,
 	RTW_COUNTRY_AI,
@@ -373,7 +372,7 @@ enum {
 	RTW_COUNTRY_YT,
 	RTW_COUNTRY_ZA,
 	RTW_COUNTRY_ZW,
-	
+
 	RTW_COUNTRY_MAX
 
 };
@@ -384,8 +383,8 @@ typedef unsigned long rtw_country_code_t;
   */
 enum {
 	RTW_ADAPTIVITY_DISABLE = 0,
-	RTW_ADAPTIVITY_NORMAL,			// CE
-	RTW_ADAPTIVITY_CARRIER_SENSE	// MKK
+	RTW_ADAPTIVITY_NORMAL,		 // CE
+	RTW_ADAPTIVITY_CARRIER_SENSE // MKK
 };
 typedef unsigned long rtw_adaptivity_mode_t;
 
@@ -413,10 +412,10 @@ typedef unsigned long rtw_scan_mode_t;
 /**
   * @brief  The enumeration lists the supported autoreconnect mode by WIFI driver.
   */
-typedef enum{
-    RTW_AUTORECONNECT_DISABLE,
-    RTW_AUTORECONNECT_FINITE,
-    RTW_AUTORECONNECT_INFINITE
+typedef enum {
+	RTW_AUTORECONNECT_DISABLE,
+	RTW_AUTORECONNECT_FINITE,
+	RTW_AUTORECONNECT_INFINITE
 } rtw_autoreconnect_mode_t;
 
 /**
@@ -432,9 +431,9 @@ typedef unsigned long rtw_link_status_t;
   * @brief  The enumeration lists the scan types.
   */
 enum {
-    RTW_SCAN_TYPE_ACTIVE              = 0x00,  /**< Actively scan a network by sending 802.11 probe(s)         */
-    RTW_SCAN_TYPE_PASSIVE             = 0x01,  /**< Passively scan a network by listening for beacons from APs */
-    RTW_SCAN_TYPE_PROHIBITED_CHANNELS = 0x04   /**< Passively scan on channels not enabled by the country code */
+	RTW_SCAN_TYPE_ACTIVE = 0x00,			 /**< Actively scan a network by sending 802.11 probe(s)         */
+	RTW_SCAN_TYPE_PASSIVE = 0x01,			 /**< Passively scan a network by listening for beacons from APs */
+	RTW_SCAN_TYPE_PROHIBITED_CHANNELS = 0x04 /**< Passively scan on channels not enabled by the country code */
 };
 typedef unsigned long rtw_scan_type_t;
 
@@ -442,11 +441,11 @@ typedef unsigned long rtw_scan_type_t;
   * @brief  The enumeration lists the bss types.
   */
 enum {
-    RTW_BSS_TYPE_INFRASTRUCTURE = 0, /**< Denotes infrastructure network                  */
-    RTW_BSS_TYPE_ADHOC          = 1, /**< Denotes an 802.11 ad-hoc IBSS network           */
-    RTW_BSS_TYPE_ANY            = 2, /**< Denotes either infrastructure or ad-hoc network */
+	RTW_BSS_TYPE_INFRASTRUCTURE = 0, /**< Denotes infrastructure network                  */
+	RTW_BSS_TYPE_ADHOC = 1,			 /**< Denotes an 802.11 ad-hoc IBSS network           */
+	RTW_BSS_TYPE_ANY = 2,			 /**< Denotes either infrastructure or ad-hoc network */
 
-    RTW_BSS_TYPE_UNKNOWN        = -1 /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
+	RTW_BSS_TYPE_UNKNOWN = -1 /**< May be returned by scan function if BSS type is unknown. Do not pass this to the Join function */
 };
 typedef unsigned long rtw_bss_type_t;
 
@@ -455,20 +454,20 @@ enum {
 };
 typedef unsigned long rtw_scan_command_t;
 
-enum{
-	COMMAND1					= 0x01
+enum {
+	COMMAND1 = 0x01
 };
 typedef unsigned long rtw_command_type;
 
 enum {
-	RTW_WPS_TYPE_DEFAULT 		    	= 0x0000,
-	RTW_WPS_TYPE_USER_SPECIFIED 		= 0x0001,
-	RTW_WPS_TYPE_MACHINE_SPECIFIED   	= 0x0002,
-	RTW_WPS_TYPE_REKEY 			        = 0x0003,
-	RTW_WPS_TYPE_PUSHBUTTON 		    = 0x0004,
-	RTW_WPS_TYPE_REGISTRAR_SPECIFIED 	= 0x0005,
-    RTW_WPS_TYPE_NONE                   = 0x0006,
-    RTW_WPS_TYPE_WSC                    = 0x0007
+	RTW_WPS_TYPE_DEFAULT = 0x0000,
+	RTW_WPS_TYPE_USER_SPECIFIED = 0x0001,
+	RTW_WPS_TYPE_MACHINE_SPECIFIED = 0x0002,
+	RTW_WPS_TYPE_REKEY = 0x0003,
+	RTW_WPS_TYPE_PUSHBUTTON = 0x0004,
+	RTW_WPS_TYPE_REGISTRAR_SPECIFIED = 0x0005,
+	RTW_WPS_TYPE_NONE = 0x0006,
+	RTW_WPS_TYPE_WSC = 0x0007
 };
 typedef unsigned long rtw_wps_type_t;
 
@@ -476,8 +475,8 @@ typedef unsigned long rtw_wps_type_t;
   * @brief  The enumeration lists all the network bgn mode.
   */
 enum {
-    RTW_NETWORK_B   = 1,
-	RTW_NETWORK_BG  = 3,
+	RTW_NETWORK_B = 1,
+	RTW_NETWORK_BG = 3,
 	RTW_NETWORK_BGN = 11
 };
 typedef unsigned long rtw_network_mode_t;
@@ -486,8 +485,8 @@ typedef unsigned long rtw_network_mode_t;
   * @brief  The enumeration lists the interfaces.
   */
 enum {
-    RTW_STA_INTERFACE     = 0, /**< STA or Client Interface  */
-    RTW_AP_INTERFACE      = 1, /**< SoftAP Interface         */
+	RTW_STA_INTERFACE = 0, /**< STA or Client Interface  */
+	RTW_AP_INTERFACE = 1,  /**< SoftAP Interface         */
 };
 typedef unsigned long rtw_interface_t;
 
@@ -495,8 +494,8 @@ typedef unsigned long rtw_interface_t;
   * @brief  The enumeration lists the packet filter rules.
   */
 enum {
-	RTW_POSITIVE_MATCHING  = 0, /**< Receive the data matching with this pattern and discard the other data   */
-	RTW_NEGATIVE_MATCHING  = 1  /**< Discard the data matching with this pattern and receive the other data */
+	RTW_POSITIVE_MATCHING = 0, /**< Receive the data matching with this pattern and discard the other data   */
+	RTW_NEGATIVE_MATCHING = 1  /**< Discard the data matching with this pattern and receive the other data */
 };
 typedef unsigned long rtw_packet_filter_rule_t;
 
@@ -518,19 +517,19 @@ typedef unsigned long rtw_rcr_level_t;
   */
 #if CONFIG_UNSUPPORT_PLCPHDR_RPT
 enum {
-	RTW_RX_NORMAL = 0,  /**< The supported 802.11 packet*/
-	RTW_RX_UNSUPPORT = 1,  /**<  Unsupported 802.11 packet info */
+	RTW_RX_NORMAL = 0,	/**< The supported 802.11 packet*/
+	RTW_RX_UNSUPPORT = 1, /**<  Unsupported 802.11 packet info */
 };
 typedef unsigned long rtw_rx_type_t;
 #endif
 /**
   * @brief  The enumeration lists the disconnect reasons.
   */
-enum{
+enum {
 	RTW_NO_ERROR = 0,
 	RTW_NONE_NETWORK = 1,
 	RTW_CONNECT_FAIL = 2,
-	RTW_WRONG_PASSWORD = 3 ,
+	RTW_WRONG_PASSWORD = 3,
 	RTW_4WAY_HANDSHAKE_TIMEOUT = 4,
 	RTW_DHCP_FAIL = 5,
 	RTW_UNKNOWN,
@@ -538,10 +537,10 @@ enum{
 typedef unsigned long rtw_connect_error_flag_t;
 
 enum {
-	RTW_TX_PWR_PERCENTAGE_100 = 0, /* 100%, default target output power.	 */
-	RTW_TX_PWR_PERCENTAGE_75 = 1, /* 75% */
-	RTW_TX_PWR_PERCENTAGE_50 = 2, /* 50% */
-	RTW_TX_PWR_PERCENTAGE_25 = 3, /* 25% */
+	RTW_TX_PWR_PERCENTAGE_100 = 0,  /* 100%, default target output power.	 */
+	RTW_TX_PWR_PERCENTAGE_75 = 1,   /* 75% */
+	RTW_TX_PWR_PERCENTAGE_50 = 2,   /* 50% */
+	RTW_TX_PWR_PERCENTAGE_25 = 3,   /* 25% */
 	RTW_TX_PWR_PERCENTAGE_12_5 = 4, /* 12.5% */
 };
 typedef unsigned long rtw_tx_pwr_percentage_t;
@@ -549,10 +548,10 @@ typedef unsigned long rtw_tx_pwr_percentage_t;
 /**
   * @brief  The enumeration is event type indicated from wlan driver.
   */
-enum _WIFI_EVENT_INDICATE{
+enum _WIFI_EVENT_INDICATE {
 	WIFI_EVENT_CONNECT = 0,
 	WIFI_EVENT_DISCONNECT = 1,
-	WIFI_EVENT_FOURWAY_HANDSHAKE_DONE = 2,	
+	WIFI_EVENT_FOURWAY_HANDSHAKE_DONE = 2,
 	WIFI_EVENT_SCAN_RESULT_REPORT = 3,
 	WIFI_EVENT_SCAN_DONE = 4,
 	WIFI_EVENT_RECONNECTION_FAIL = 5,
@@ -572,7 +571,7 @@ enum _WIFI_EVENT_INDICATE{
 	WIFI_EVENT_MAX,
 };
 typedef unsigned long rtw_event_indicate_t;
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 

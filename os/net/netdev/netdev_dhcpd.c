@@ -1,7 +1,6 @@
 /****************************************************************************
- * netutils/dhcpd/dhcpd.c
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * netutils/dhcpd/dhcpd.c
+ * net/netdev/netdev_dhcpd.c
  *
  *   Copyright (C) 2007-2009, 2011-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,29 +53,26 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-
 #include <tinyara/config.h>		/* TinyAra configuration */
-#include <stdio.h>
-#include <debug.h>				/* For ndbg, vdbg */
-#include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
-#include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <debug.h>				/* For ndbg, vdbg */
 
 #include <net/if.h>
 #include <netinet/in.h>
 #include <semaphore.h>
 #include <pthread.h>
 #include <netutils/netlib.h>
-#include <mqueue.h>
-#include <sys/ioctl.h>
-#include <netdb.h>
+#include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
+
+#include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
 
 /****************************************************************************
  * Global Data
@@ -87,173 +83,83 @@
 #define DHCP_SERVER_PORT         67
 #define DHCP_CLIENT_PORT         68
 
-static pthread_t g_dhcpd_tid = -1;
-static int g_dhcpd_term = 0;
-
-struct dhcp_join_data {
-	char *intf;
-	dhcp_sta_joined fn;
-};
-typedef struct dhcp_join_data dhcp_join_data_s;
-
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#define DHCPD_MQ_NAME "dhcpd_queue"
-#define DHCPD_MQ_LEN 11
-#define DHCPD_MQ_MAX_LEN 20
-
-void *_dhcpd_join_handler(void *arg)
-{
-	dhcp_join_data_s *data = (dhcp_join_data_s *)arg;
-	int sockfd = 0;
-	struct req_lwip_data req;
-	int ret = ERROR;
-	struct mq_attr attr;
-	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
-	attr.mq_msgsize = DHCPD_MQ_LEN;
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
-
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_NONBLOCK |O_CREAT, 0666, &attr);
-	if (md == (mqd_t)ERROR) {
-		ndbg("Failed to open mq\n");
-		goto go_out;
-	}
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
-		goto go_out;
-	}
-
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTART;
-	req.host_name = data->intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
-		goto go_out;
-	}
-
-	while (!g_dhcpd_term) {
-		char msg[DHCPD_MQ_LEN];
-		memset(msg, 0, DHCPD_MQ_LEN);
-		int prio = 0;
-		int nbytes = mq_receive(md, msg, DHCPD_MQ_LEN, &prio);
-		if (nbytes <= 0) {
-			if (errno != EAGAIN) {
-				ndbg("mq receive none (errno %d)\n", errno);
-				break;
-			}
-		} else {
-			data->fn();
-		}
-		sleep(1);
-	}
-
-go_out:
-	free(data->intf);
-	free(data);
-	if (md > 0) {
-		mq_close(md);
-	}
-	if (sockfd > 0) {
-		close(sockfd);
-	}
-	return NULL;
-
-}
-
 /****************************************************************************
  * Global Functions
  ****************************************************************************/
 /****************************************************************************
  * Name: dhcps_server_status
  ****************************************************************************/
-int dhcp_server_status(char *intf)
+int netdev_dhcp_server_status(char *intf)
 {
-	int ret = ERROR;
-	struct req_lwip_data req;
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
-		return ret;
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
+		return 0;
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTATUS;
-	req.host_name = intf;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return ret;
+	if (cur_netif->dhcps_pcb == NULL) {
+		ndbg("[DHCPS] DHCP server closed\n");
+		return 0;
+	} else {
+		ndbg("[DHCPS] DHCP server opened\n");
+		return 1;
 	}
-
-	ret = req.req_res;
-	close(sockfd);
-	return ret;
 }
 
 /****************************************************************************
  * Name: dhcps_server_start
  ****************************************************************************/
-
-
-int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
-	dhcp_join_data_s *data = (dhcp_join_data_s *)malloc(sizeof(dhcp_join_data_s));
-	data->intf = (char *)malloc(strlen(intf)+1);
-	memcpy(data->intf, intf, strlen(intf) + 1);
-	data->fn = dhcp_join_cb;
-
-	int ret = ERROR;
-	g_dhcpd_term = 0;
-	ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, (void *)data);
-	pthread_setname_np(g_dhcpd_tid, "dhcpd cb handler");
-	if (ret < 0) {
-		g_dhcpd_term = 1;
-		ndbg("[dhcpd] create iotapi handler fail(%d) errno %d\n", ret, errno);
-		return ERROR;
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
+		return -1;
 	}
-	return ret;
+	if (dhcp_join_cb) {
+		if (dhcps_register_cb(dhcp_join_cb) != ERR_OK) {
+			ndbg("[DHCPS] link callback fail\n");
+			return -1;
+		}
+	}
+
+	if (netifapi_dhcps_start(cur_netif) == ERR_OK) {
+		ndbg("[DHCPS] started successfully (LWIP)\n");
+		return OK;
+	}
+
+	return -1;
 }
 
 /****************************************************************************
  * Name: dhcps_server_stop
  ****************************************************************************/
-int dhcp_server_stop(char *intf)
+int netdev_dhcp_server_stop(char *intf)
 {
-	int ret = ERROR;
-	struct req_lwip_data req;
-	g_dhcpd_term = 1;
-	sleep(1);
-
-	pthread_join(g_dhcpd_tid, NULL);
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
-		return ret;
+	struct netif *cur_netif;
+	cur_netif = netif_find(intf);
+	if (cur_netif == NULL) {
+		ndbg("[DHCPS] no network interface for dhcpd start\n");
+		return -1;
+	}
+	if (cur_netif->dhcps_pcb == NULL) {
+		ndbg("[DHCPS] stop dhcpd fail: no pcb\n");
+		return -1;
 	}
 
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPDSTOP;
-	req.host_name = intf;
+	netifapi_dhcps_stop(cur_netif);
+	ndbg("[DHCPS] stopped successfully (LWIP)\n");
 
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
-		return ret;
-	}
-
-	ret = req.req_res;
-	close(sockfd);
-
-	return ret;
+	return OK;
 }

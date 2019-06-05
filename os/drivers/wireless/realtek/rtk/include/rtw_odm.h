@@ -39,26 +39,26 @@ u32 rtw_phydm_ability_ops(_adapter *adapter, HAL_PHYDM_OPS ops, u32 ability);
 bool rtw_odm_adaptivity_needed(_adapter *adapter);
 
 #define rtw_phydm_func_disable_all(adapter) \
-		rtw_phydm_ability_ops(adapter, HAL_PHYDM_DIS_ALL_FUNC, 0)
+	rtw_phydm_ability_ops(adapter, HAL_PHYDM_DIS_ALL_FUNC, 0)
 
-#define rtw_phydm_func_for_offchannel(adapter) \
-		do { \
-			rtw_phydm_ability_ops(adapter, HAL_PHYDM_DIS_ALL_FUNC, 0); \
-			if (rtw_odm_adaptivity_needed(adapter)) \
-				rtw_phydm_ability_ops(adapter, HAL_PHYDM_FUNC_SET, ODM_BB_ADAPTIVITY); \
-		} while (0)
+#define rtw_phydm_func_for_offchannel(adapter)                                     \
+	do {                                                                           \
+		rtw_phydm_ability_ops(adapter, HAL_PHYDM_DIS_ALL_FUNC, 0);                 \
+		if (rtw_odm_adaptivity_needed(adapter))                                    \
+			rtw_phydm_ability_ops(adapter, HAL_PHYDM_FUNC_SET, ODM_BB_ADAPTIVITY); \
+	} while (0)
 
-#define rtw_phydm_func_clr(adapter, ability)	\
-		rtw_phydm_ability_ops(adapter, HAL_PHYDM_FUNC_CLR, ability)
+#define rtw_phydm_func_clr(adapter, ability) \
+	rtw_phydm_ability_ops(adapter, HAL_PHYDM_FUNC_CLR, ability)
 
-#define rtw_phydm_ability_backup(adapter)	\
-		rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_BK, 0)
+#define rtw_phydm_ability_backup(adapter) \
+	rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_BK, 0)
 
-#define rtw_phydm_ability_restore(adapter)	\
-		rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_RESTORE, 0)
+#define rtw_phydm_ability_restore(adapter) \
+	rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_RESTORE, 0)
 
-#define rtw_phydm_func_set(adapter, ability)	\
-		rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_SET, ability)
+#define rtw_phydm_func_set(adapter, ability) \
+	rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_SET, ability)
 
 static inline u32 rtw_phydm_ability_get(_adapter *adapter)
 {
@@ -71,10 +71,9 @@ void rtw_phydm_set_dbg_info(_adapter *padapter, u32 dm_func);
 void rtw_odm_acquirespinlock(_adapter *adapter, enum rt_spinlock_type type);
 void rtw_odm_releasespinlock(_adapter *adapter, enum rt_spinlock_type type);
 #else
-void rtw_odm_acquirespinlock(_adapter *adapter,	RT_SPINLOCK_TYPE type);
-void rtw_odm_releasespinlock(_adapter *adapter,	RT_SPINLOCK_TYPE type);
+void rtw_odm_acquirespinlock(_adapter *adapter, RT_SPINLOCK_TYPE type);
+void rtw_odm_releasespinlock(_adapter *adapter, RT_SPINLOCK_TYPE type);
 #endif
 
 #endif
-#endif	//_RTW_ODM_H_
-
+#endif //_RTW_ODM_H_

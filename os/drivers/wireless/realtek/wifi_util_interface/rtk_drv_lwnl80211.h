@@ -45,36 +45,36 @@
  ****************************************************************************/
 #define RTKDRV_TAG "[RTKDRV]"
 
-#define RTKDRV_ERR                                                         \
-	do {                                                                   \
-		vddbg(RTKDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
-				  __FILE__, __LINE__, strerror(errno));                    \
+#define RTKDRV_ERR                                      \
+	do {                                                \
+		vddbg(RTKDRV_TAG "[ERR] %s: %d line err(%s)\n", \
+			  __FILE__, __LINE__, strerror(errno));     \
 	} while (0)
 
-#define RTKDRV_ENTER                                                       \
-	do {                                                                   \
-		vddbg(RTKDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
+#define RTKDRV_ENTER                                     \
+	do {                                                 \
+		vddbg(RTKDRV_TAG "%s:%d\n", __FILE__, __LINE__); \
 	} while (0)
 
 /* rtk return values */
-#define RTK_STATUS_SUCCESS                             0	// Successfully completed
-#define RTK_STATUS_ERROR                               1	// Error  - unspecified
-#define RTK_STATUS_COMMAND_FAILED                      2	// Failed - command failed
-#define RTK_STATUS_COMMAND_UNKNOWN                     3	// Failed - command unknown
-#define RTK_STATUS_NOT_STARTED                         4	// Failed - mode never initiated
-#define RTK_STATUS_ALREADY_STARTED                     5	// Failed - mode already started
-#define RTK_STATUS_SUPPLICANT_START_FAILED             6	// Failed - start up of wpa_supplicant failed
-#define RTK_STATUS_PARAM_FAILED                        7	// Failed - parameter specified not valid
-#define RTK_STATUS_ALREADY_CONNECTED                   8	// Failed - WiFi already connected
-#define RTK_STATUS_NOT_CONNECTED                       9	// Failed - WiFi not connected
-#define RTK_STATUS_SECURITY_FAILED                     10	// Failed - security setup failed
-#define RTK_STATUS_NOT_ALLOWED                         11	// Failed - not allowed
-#define RTK_STATUS_NOT_SUPPORTED                       12	// Failed - function not supported (maybe due to missing dependencies to filesystem)
+#define RTK_STATUS_SUCCESS 0				 // Successfully completed
+#define RTK_STATUS_ERROR 1					 // Error  - unspecified
+#define RTK_STATUS_COMMAND_FAILED 2			 // Failed - command failed
+#define RTK_STATUS_COMMAND_UNKNOWN 3		 // Failed - command unknown
+#define RTK_STATUS_NOT_STARTED 4			 // Failed - mode never initiated
+#define RTK_STATUS_ALREADY_STARTED 5		 // Failed - mode already started
+#define RTK_STATUS_SUPPLICANT_START_FAILED 6 // Failed - start up of wpa_supplicant failed
+#define RTK_STATUS_PARAM_FAILED 7			 // Failed - parameter specified not valid
+#define RTK_STATUS_ALREADY_CONNECTED 8		 // Failed - WiFi already connected
+#define RTK_STATUS_NOT_CONNECTED 9			 // Failed - WiFi not connected
+#define RTK_STATUS_SECURITY_FAILED 10		 // Failed - security setup failed
+#define RTK_STATUS_NOT_ALLOWED 11			 // Failed - not allowed
+#define RTK_STATUS_NOT_SUPPORTED 12			 // Failed - function not supported (maybe due to missing dependencies to filesystem)
 
 /* Added in Join failed scenarios:*/
 #define RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND 201
-#define RTK_REASON_NETWORK_AUTHENTICATION_FAILED   202
-#define RTK_REASON_ASSOCIATION_REQ_FAILED          203
+#define RTK_REASON_NETWORK_AUTHENTICATION_FAILED 202
+#define RTK_REASON_ASSOCIATION_REQ_FAILED 203
 
 typedef _int8_t int8_t;
 typedef _uint8_t uint8_t;
@@ -89,18 +89,18 @@ typedef _uint32_t uint32_t;
  * Public Types
  ****************************************************************************/
 typedef enum WiFi_InterFace_ID {
-	RTK_WIFI_NONE,					// default
-	RTK_WIFI_STATION_IF,			// Station mode (turns on wpa_supplicant)
-	RTK_WIFI_SOFT_AP_IF,			// Soft AP mode (turns on hostapd)
-	RTK_WIFI_P2P_IF					// P2P mode (turns on wpa_supplicant)
+	RTK_WIFI_NONE,		 // default
+	RTK_WIFI_STATION_IF, // Station mode (turns on wpa_supplicant)
+	RTK_WIFI_SOFT_AP_IF, // Soft AP mode (turns on hostapd)
+	RTK_WIFI_P2P_IF		 // P2P mode (turns on wpa_supplicant)
 } WiFi_InterFace_ID_t;
 
 typedef struct rtk_reason {
-	uint32_t reason_code;				// Reason codes - 0 for success - error code see 'rtk reason codes' above
-	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
-	int8_t ssid_len;					// length of ssid - # of valid octets
-	uint8_t ssid[33];	// 802.11 spec defined up to 32 octets of data
-	char bssid[17];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	uint32_t reason_code;	  // Reason codes - 0 for success - error code see 'rtk reason codes' above
+	uint8_t locally_generated; // Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
+	int8_t ssid_len;		   // length of ssid - # of valid octets
+	uint8_t ssid[33];		   // 802.11 spec defined up to 32 octets of data
+	char bssid[17];			   // BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
 } rtk_reason_t;
 
 #define RTW_LWIP_LAYER 1

@@ -8,14 +8,14 @@ ROM_F_RTW_MSGPOOL(DM_ANT_DIV_5, "[ Update Rx-Idle-Ant ] RxIdleAnt =%s\n")
 
 // freertos_ioctl.c
 // 0x76 read sys
-ROM_F_RTW_MSGPOOL(READ_SYS_1,	"read sys_reg(0x%x)=0x%x\n")
+ROM_F_RTW_MSGPOOL(READ_SYS_1, "read sys_reg(0x%x)=0x%x\n")
 // 0x77 write sys
-ROM_F_RTW_MSGPOOL(WRITE_SYS_1,	"write sys_reg(0x%x)=0x%x\n")
+ROM_F_RTW_MSGPOOL(WRITE_SYS_1, "write sys_reg(0x%x)=0x%x\n")
 // 0xdd dump info
-ROM_F_RTW_MSGPOOL(DUMP_INFO_9,	"ID: 0x%02x\n")
+ROM_F_RTW_MSGPOOL(DUMP_INFO_9, "ID: 0x%02x\n")
 
 // wlan driver DBG_871X_LEVEL
-#define ROM_F_RTW_MSGPOOL_871X(name,str) ROM_F_RTW_MSGPOOL(name,DRIVER_PREFIX str)
+#define ROM_F_RTW_MSGPOOL_871X(name, str) ROM_F_RTW_MSGPOOL(name, DRIVER_PREFIX str)
 
 #undef ROM_F_RTW_MSGPOOL
 #undef ROM_F_RTW_MSGPOOL_871X

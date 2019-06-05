@@ -22,13 +22,11 @@
 
 //#include <drv_types.h>
 
-
 #ifdef CONFIG_AP_MODE
 
 //external function
 extern void rtw_indicate_sta_assoc_event(_adapter *padapter, struct sta_info *psta);
 extern void rtw_indicate_sta_disassoc_event(_adapter *padapter, struct sta_info *psta);
-
 
 void init_mlme_ap_info(_adapter *padapter);
 void free_mlme_ap_info(_adapter *padapter);
@@ -39,7 +37,7 @@ void update_beacon(_adapter *padapter, u8 ie_id, u8 *oui, u8 tx);
 void add_RATid(_adapter *padapter, struct sta_info *psta, u8 rssi_level);
 void expire_timeout_chk(_adapter *padapter);
 void update_sta_info_apmode(_adapter *padapter, struct sta_info *psta);
-int rtw_check_beacon_data(_adapter *padapter, u8 *pbuf,  int len);
+int rtw_check_beacon_data(_adapter *padapter, u8 *pbuf, int len);
 void rtw_set_macaddr_acl(_adapter *padapter, int mode);
 int rtw_acl_add_sta(_adapter *padapter, u8 *addr);
 int rtw_acl_remove_sta(_adapter *padapter, u8 *addr);
@@ -62,4 +60,3 @@ void stop_ap_mode(_adapter *padapter);
 #endif //end of CONFIG_AP_MODE
 
 #endif
-
