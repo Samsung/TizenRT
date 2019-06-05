@@ -57,6 +57,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>		/* TinyAra configuration */
 
 #include <sys/types.h>
 
@@ -82,15 +83,15 @@
 		int res = -1;					\
 		res = _netlib_set_ipv4addr(intf, &ip);		\
 		if (res == -1) {				\
-			nvdbg("[DHCPC] set ipv4 addr error\n");	\
+			nvdbg("set ipv4 addr error\n");	\
 		}						\
 		res = _netlib_set_ipv4netmask(intf, &netmask);	\
 		if (res == -1) {				\
-			nvdbg("[DHCPC] set netmask addr error\n");	\
+			nvdbg("set netmask addr error\n");	\
 		}						\
 		res = _netlib_set_dripv4addr(intf, &gateway);	\
 		if (res == -1) {				\
-			nvdbg("[DHCPC] set route addr error\n");	\
+			nvdbg("set route addr error\n");	\
 		}						\
 	} while (0)
 
@@ -122,8 +123,8 @@ static int _netlib_set_ipv4addr(FAR const char *ifname, FAR const struct in_addr
 	struct netif *dev = NULL;
 	dev = netdev_findbyname(ifname);
 	if (!dev) {
-		printf("error %s:%d", __FUNCTION__, __LINE__);
-		return -1;
+		ndbg("Failed to netdev_findbyname\n");
+		return ERROR;
 	}
 	netifapi_netif_set_down(dev);
 
@@ -147,8 +148,8 @@ static int _netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_a
 {
 	struct netif *dev = netdev_findbyname(ifname);
 	if (!dev) {
-		printf("error %s:%d", __FUNCTION__, __LINE__);
-		return -1;
+		ndbg("Failed to netdev_findbyname\n");
+		return ERROR;
 	}
 	netifapi_netif_set_down(dev);
 
@@ -173,8 +174,8 @@ static int _netlib_set_dripv4addr(FAR const char *ifname, FAR const struct in_ad
 {
 	struct netif *dev = netdev_findbyname(ifname);
 	if (!dev) {
-		printf("error %s:%d", __FUNCTION__, __LINE__);
-		return -1;
+		ndbg("Failed to netdev_findbyname\n");
+		return ERROR;
 	}
 	netifapi_netif_set_down(dev);
 
@@ -198,7 +199,7 @@ int _netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 {
 	struct netif *dev = netdev_findbyname(ifname);
 	if (!dev) {
-		return -1;
+		return ERROR;
 	}
 
 	struct sockaddr_in inaddr;
@@ -218,12 +219,12 @@ int _netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
  ****************************************************************************/
 int netdev_dhcp_client_start(const char *intf)
 {
-	nvdbg("[DHCPC] LWIP DHCPC started\n");
+	nvdbg("LWIP DHCPC started\n");
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);
 	if (cur_netif == NULL) {
-		ndbg("[DHCPC] No network interface for dhcpc\n");
-		return -1;
+		ndbg("No network interface for dhcpc\n");
+		return ERROR;
 	}
 	int32_t timeleft = CONFIG_LWIP_DHCPC_TIMEOUT;
 	struct in_addr local_ipaddr;
@@ -243,27 +244,26 @@ int netdev_dhcp_client_start(const char *intf)
 	DHCPC_SET_IP4ADDR(intf, local_ipaddr, local_netmask, local_gateway);
 	err_t res = netifapi_dhcp_start(cur_netif);
 	if (res) {
-		ndbg("[DHCPC] dhcpc_start failure %d\n", res);
-		return -1;
+		ndbg("dhcpc_start failure %d\n", res);
+		return ERROR;
 	}
-	nvdbg("[DHCPC] dhcpc_start success, waiting IP address (timeout %d secs)\n", timeleft);
+	nvdbg("dhcpc_start success, waiting IP address (timeout %d secs)\n", timeleft);
 	while (netifapi_dhcp_address_valid(cur_netif) != 0) {
 		usleep(100000);
 		timeleft -= 100;
 		if (timeleft <= 0) {
-			ndbg("[DHCPC] dhcpc_start timeout\n");
+			ndbg("dhcpc_start timeout\n");
 			netifapi_dhcp_stop(cur_netif);
-			return -1;
+			return ERROR;
 		}
 	}
-	int ret = _netlib_get_ipv4addr(intf, &ip_check);
-	if (ret == -1) {
-		ndbg("[DHCPC] fail to get IP address\n");
+	if (_netlib_get_ipv4addr(intf, &ip_check) != 0) {
+		ndbg("fail to get IP address\n");
 		netifapi_dhcp_stop(cur_netif);
-		return -1;
+		return ERROR;
 	}
-	nvdbg("[DHCPC] dhcpc_start - got IP address %s\n", inet_ntoa(ip_check));
-	return OK;
+	nvdbg("dhcpc_start - got IP address %s\n", inet_ntoa(ip_check));
+	return 0;
 }
 
 /****************************************************************************
@@ -276,10 +276,9 @@ void netdev_dhcp_client_stop(const char *intf)
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);
 	if (cur_netif == NULL) {
-		ndbg("[DHCPC] No network interface for dhcpc\n");
+		ndbg("No network interface for dhcpc\n");
 		return;
 	}
 	netifapi_dhcp_stop(cur_netif);
-	nvdbg("[DHCPC] dhcpc_stop -release IP address (lwip)\n");
-	return;
+	nvdbg("dhcpc_stop -release IP address (lwip)\n");
 }
