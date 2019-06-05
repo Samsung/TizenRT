@@ -97,7 +97,6 @@
  *
  */
 
-
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS) || defined(PLATFORM_MPIXEL) || defined(PLATFORM_FREEBSD) || defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 /*
  * inside the kernel, we can use nicknames;
@@ -110,7 +109,7 @@
 #define cpu_to_le64 __cpu_to_le64
 #define le64_to_cpu __le64_to_cpu
 
-#endif	//#if 0
+#endif //#if 0
 
 #define cpu_to_le64 __cpu_to_le64
 #define le64_to_cpu __le64_to_cpu
@@ -176,7 +175,7 @@
  * Do the prototypes. Somebody might want to take the
  * address or some such sick thing..
  */
-#if defined(PLATFORM_LINUX) || (defined (__GLIBC__) && __GLIBC__ >= 2)
+#if defined(PLATFORM_LINUX) || (defined(__GLIBC__) && __GLIBC__ >= 2)
 extern __u32			ntohl(__u32);
 extern __u32			htonl(__u32);
 #else //defined(PLATFORM_LINUX) || (defined (__GLIBC__) && __GLIBC__ >= 2)
@@ -190,14 +189,14 @@ extern unsigned short int	ntohs(unsigned short int);
 extern unsigned short int	htons(unsigned short int);
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ >= 2) && defined(__OPTIMIZE__) ||  defined(PLATFORM_MPIXEL)
+#if defined(__GNUC__) && (__GNUC__ >= 2) && defined(__OPTIMIZE__) || defined(PLATFORM_MPIXEL)
 
 #define ___htonl(x) __cpu_to_be32(x)
 #define ___htons(x) __cpu_to_be16(x)
 #define ___ntohl(x) __be32_to_cpu(x)
 #define ___ntohs(x) __be16_to_cpu(x)
 
-#if defined(PLATFORM_LINUX) || (defined (__GLIBC__) && __GLIBC__ >= 2)
+#if defined(PLATFORM_LINUX) || (defined(__GLIBC__) && __GLIBC__ >= 2)
 #define htonl(x) ___htonl(x)
 #define ntohl(x) ___ntohl(x)
 #else
@@ -209,8 +208,7 @@ extern unsigned short int	htons(unsigned short int);
 
 #endif /* OPTIMIZE */
 
-
-#if defined (PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
 
 #define htonl(x) __cpu_to_be32(x)
 #define ntohl(x) __be32_to_cpu(x)
@@ -219,7 +217,6 @@ extern unsigned short int	htons(unsigned short int);
 
 #endif
 
-#endif	//#if 0
+#endif //#if 0
 
 #endif /* _LINUX_BYTEORDER_GENERIC_H */
-

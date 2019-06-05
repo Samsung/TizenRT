@@ -16,7 +16,7 @@
 #ifndef __WLAN_INTF_H__
 #define __WLAN_INTF_H__
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 #include <autoconf.h>
@@ -25,13 +25,13 @@ extern "C" {
 #include "wifi_constants.h"
 
 #ifndef WLAN0_IDX
-	#define WLAN0_IDX	0
+#define WLAN0_IDX 0
 #endif
 #ifndef WLAN1_IDX
-	#define WLAN1_IDX	1
+#define WLAN1_IDX 1
 #endif
 #ifndef WLAN_UNDEF
-	#define WLAN_UNDEF	-1
+#define WLAN_UNDEF -1
 #endif
 
 /***********************************************************/
@@ -55,12 +55,12 @@ struct sk_buff {
 //----- ------------------------------------------------------------------
 // Wlan Interface opened for upper layer
 //----- ------------------------------------------------------------------
-int rltk_wlan_init(int idx_wlan, rtw_mode_t mode);				//return 0: success. -1:fail
+int rltk_wlan_init(int idx_wlan, rtw_mode_t mode); //return 0: success. -1:fail
 void rltk_wlan_deinit(void);
 void rltk_wlan_deinit_fastly(void);
 int rltk_wlan_start(int idx_wlan);
 void rltk_wlan_statistic(unsigned char idx);
-unsigned char rltk_wlan_running(unsigned char idx);		// interface is up. 0: interface is down
+unsigned char rltk_wlan_running(unsigned char idx); // interface is up. 0: interface is down
 int rltk_wlan_control(unsigned long cmd, void *data);
 int rltk_wlan_handshake_done(void);
 int rltk_wlan_rf_on(void);
@@ -77,10 +77,8 @@ void rltk_wlan_tx_deauth(unsigned char b_broadcast, unsigned char key_type);
 void rltk_wlan_tx_auth(void);
 #endif
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
-
-
 
 #endif //#ifndef __WLAN_INTF_H__

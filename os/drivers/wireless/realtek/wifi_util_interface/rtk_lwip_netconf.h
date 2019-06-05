@@ -12,7 +12,7 @@
 #define __NETCONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 #include "tcpip.h"
@@ -29,17 +29,16 @@
 #define CONFIG_WLAN 1
 
 #ifndef NET_IF_NUM
-  #ifdef CONFIG_CONCURRENT_MODE
-    #define NET_IF_NUM ((CONFIG_WLAN) + 1)
-  #else
-    #define NET_IF_NUM (CONFIG_WLAN)
-  #endif  // end of CONFIG_CONCURRENT_MODE
-#endif  // end of NET_IF_NUM
+#ifdef CONFIG_CONCURRENT_MODE
+#define NET_IF_NUM ((CONFIG_WLAN) + 1)
+#else
+#define NET_IF_NUM (CONFIG_WLAN)
+#endif // end of CONFIG_CONCURRENT_MODE
+#endif // end of NET_IF_NUM
 
 /* Private typedef -----------------------------------------------------------*/
-typedef enum 
-{ 
-	DHCP_START=0,
+typedef enum {
+	DHCP_START = 0,
 	DHCP_WAIT_ADDRESS,
 	DHCP_ADDRESS_ASSIGNED,
 	DHCP_RELEASE_IP,
@@ -48,11 +47,10 @@ typedef enum
 } DHCP_State_TypeDef;
 
 /* Extern functions ------------------------------------------------------------*/
-void wifi_rx_beacon_hdl( char* buf, int buf_len, int flags, void* userdata);
+void wifi_rx_beacon_hdl(char *buf, int buf_len, int flags, void *userdata);
 void rtw_wakelock_timeout(u32 timeoutms);
 /** Release a DHCP lease. */
 err_t dhcp_release_unicast(struct netif *netif);
-
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -61,14 +59,14 @@ err_t dhcp_release_unicast(struct netif *netif);
 int LwIP_Is_Init(void);
 void LwIP_Init_If(void);
 void LwIP_ReleaseIP(uint8_t idx);
-unsigned char* LwIP_GetMAC(struct netif *pnetif);
-unsigned char* LwIP_GetIP(struct netif *pnetif);
-unsigned char* LwIP_GetGW(struct netif *pnetif);
-uint8_t* LwIP_GetMASK(struct netif *pnetif);
-uint8_t* LwIP_GetBC(struct netif *pnetif);
+unsigned char *LwIP_GetMAC(struct netif *pnetif);
+unsigned char *LwIP_GetIP(struct netif *pnetif);
+unsigned char *LwIP_GetGW(struct netif *pnetif);
+uint8_t *LwIP_GetMASK(struct netif *pnetif);
+uint8_t *LwIP_GetBC(struct netif *pnetif);
 #if LWIP_DNS
-void LwIP_GetDNS(ip_addr_t* dns);
-void LwIP_SetDNS(ip_addr_t* dns);
+void LwIP_GetDNS(ip_addr_t *dns);
+void LwIP_SetDNS(ip_addr_t *dns);
 #endif
 void LwIP_UseStaticIP(struct netif *pnetif);
 #if LWIP_AUTOIP
@@ -83,6 +81,5 @@ uint32_t LWIP_Get_Dynamic_Sleep_Interval(void);
 #endif
 
 #endif /* __NETCONF_H */
-
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

@@ -49,9 +49,8 @@ The protection mechanism is through the pending queue.
 
 	_mutex ioctl_mutex;
 
-	
-#ifdef PLATFORM_LINUX	
-	#ifdef CONFIG_USB_HCI	
+#ifdef PLATFORM_LINUX
+#ifdef CONFIG_USB_HCI	
 	// when in USB, IO is through interrupt in/out endpoints
 	struct usb_device 	*udev;
 	PURB	piorw_urb;
@@ -61,11 +60,11 @@ The protection mechanism is through the pending queue.
 	_timer	io_timer;
 	u8 bio_irp_timeout;
 	u8 bio_timer_cancel;
-	#endif
+#endif
 #endif
 
 #ifdef PLATFORM_OS_XP
-	#ifdef CONFIG_SDIO_HCI
+#ifdef CONFIG_SDIO_HCI
 		// below is for io_rwmem...	
 		PMDL pmdl;
 		PSDBUS_REQUEST_PACKET  sdrp;
@@ -74,25 +73,24 @@ The protection mechanism is through the pending queue.
 
 			PIRP		piorw_irp;
 
-	#endif
-	#ifdef CONFIG_USB_HCI
+#endif
+#ifdef CONFIG_USB_HCI
 		PURB	piorw_urb;
 		PIRP		piorw_irp;
 		u8 io_irp_cnt;
 		u8 bio_irp_pending;
-		_sema io_retevt;	
-	#endif	
+		_sema io_retevt;
+#endif
 #endif
 
-};	
-
+};
 
 #ifdef CONFIG_R871X_TEST
 int rtw_start_pseudo_adhoc(_adapter *padapter);
 int rtw_stop_pseudo_adhoc(_adapter *padapter);
 #endif
 
-#endif	//#if 0
+#endif //#if 0
 
 typedef struct _driver_priv {
 	int drv_registered;
@@ -106,9 +104,8 @@ typedef struct _driver_priv {
 #endif
 } drv_priv, *pdrv_priv;
 
-
 struct net_device *rtw_init_netdev(_adapter *padapter);
-void rtw_os_indicate_disconnect( _adapter *adapter );
+void rtw_os_indicate_disconnect(_adapter *adapter);
 
 #ifdef CONFIG_PROC_DEBUG
 void rtw_proc_init_one(struct net_device *dev);
@@ -147,15 +144,14 @@ extern thread_return rtw_recv_tasklet(thread_context context);
 extern thread_return rtw_xmit_tasklet(thread_context context);
 #endif
 
-extern struct net_device *rtw_drv_probe(struct net_device* parent_dev, u32 mode);	//Wlan driver init entry
+extern struct net_device *rtw_drv_probe(struct net_device *parent_dev, u32 mode); //Wlan driver init entry
 extern void rtw_drv_entry(void);
 extern void rtw_drv_halt(void);
 extern int rtw_dev_remove(struct net_device *pnetdev);
 extern int rtw_ioctl(struct net_device *dev, struct iwreq *rq, int cmd);
 
 #if defined(CONFIG_LX_HCI)
-u32 lextra_bus_dma_Interrupt (void* data);
+u32 lextra_bus_dma_Interrupt(void *data);
 #endif
 
-#endif	//__FREERTOS_INTFS_H_
-
+#endif //__FREERTOS_INTFS_H_

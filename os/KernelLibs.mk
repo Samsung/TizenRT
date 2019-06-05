@@ -124,6 +124,10 @@ else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_RTK_WLAN),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
+endif
+
 # Add library for wifi driver
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwifidriver$(LIBEXT)
 # Add library for wifi stack

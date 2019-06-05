@@ -28,19 +28,19 @@
 #ifdef CONFIG_MCC_MODE
 #include "rtl8195a/rtl8195a_mcc.h"
 #endif
-#define RSVDPAGE_LOC  RSVDPAGE_LOC_8195A
+#define RSVDPAGE_LOC RSVDPAGE_LOC_8195A
 #elif defined(CONFIG_RTL8723D)
 #include "rtl8723d/rtl8723d_cmd.h"
-#define FCS_REQ_END   0xF
+#define FCS_REQ_END 0xF
 #elif defined(CONFIG_RTL8188F)
 #include "rtl8188f/rtl8188f_cmd.h"
-#define FCS_REQ_END   0xF
+#define FCS_REQ_END 0xF
 #endif
 
 #ifdef CONFIG_MCC_MODE
 
-#define CONFIG_RTW_MCC_EN					1
-#define CONFIG_RTW_MCC_POLICY_IDX			4
+#define CONFIG_RTW_MCC_EN 1
+#define CONFIG_RTW_MCC_POLICY_IDX 4
 
 /* ---------------------------------------------------------------------------------------------------------
  * -----------------------------------  H2C CMD DEFINITION  ------------------------------------------------
@@ -61,85 +61,85 @@ enum h2c_cmd {
 };
 #endif
 
-#define H2C_MCC_CTRL_LEN			7
-#define H2C_MCC_LOCATION_LEN		3
-#define H2C_MCC_MACID_BITMAP_LEN	6
-#define H2C_MCC_UPDATE_INFO_LEN		4
-#define H2C_MCC_TIME_SETTING_LEN	6
-#define H2C_MCC_IQK_PARAM_LEN		7
+#define H2C_MCC_CTRL_LEN 7
+#define H2C_MCC_LOCATION_LEN 3
+#define H2C_MCC_MACID_BITMAP_LEN 6
+#define H2C_MCC_UPDATE_INFO_LEN 4
+#define H2C_MCC_TIME_SETTING_LEN 6
+#define H2C_MCC_IQK_PARAM_LEN 7
 #ifdef CONFIG_MCC_MODE_DEBUG
-#define H2C_MCC_RQT_TSF__LEN		1
+#define H2C_MCC_RQT_TSF__LEN 1
 #endif
 
 #ifdef CONFIG_MCC_MODE_DEBUG
 /* MCC RQT TSF CMD 0xF*/
-#define SET_H2CCMD_MCC_RQT_TSFX(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
-#define SET_H2CCMD_MCC_RQT_TSFY(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
+#define SET_H2CCMD_MCC_RQT_TSFX(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
+#define SET_H2CCMD_MCC_RQT_TSFY(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
 #endif
 
 /* MCC LOC CMD 0x10 */
-#define SET_H2CCMD_MCC_RSVDPAGE_LOC(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 8, __Value)
+#define SET_H2CCMD_MCC_RSVDPAGE_LOC(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 8, __Value)
 
 /* MCC MAC ID CMD 0x16 */
-#define SET_H2CCMD_MCC_MACID_BITMAP_L(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 8, __Value)
-#define SET_H2CCMD_MCC_MACID_BITMAP_H(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+1, 0, 8, __Value)
+#define SET_H2CCMD_MCC_MACID_BITMAP_L(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 8, __Value)
+#define SET_H2CCMD_MCC_MACID_BITMAP_H(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 1, 0, 8, __Value)
 
 /* NEW MCC CTRL CMD 0x17 */
-#define SET_H2CCMD_MCC_CTRL_V2_ORDER(__pH2CCmd, __Value)		SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_TOTALNUM(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_CENTRAL_CH(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+1, 0, 8, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_PRIMARY_CH(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 0, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_BW(__pH2CCmd, __Value)			SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 4, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_DURATION(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+3, 0, 8, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_ROLE(__pH2CCmd, __Value)			SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 0, 3, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_INCURCH(__pH2CCmd, __Value)		SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 3, 1, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_DIS_SW_RETRY(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 4, 1, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_DISTXNULL(__pH2CCmd, __Value)		SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 5, 1, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_C2HRPT(__pH2CCmd, __Value)			SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 6, 2, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_TSFX(__pH2CCmd, __Value)				SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 0, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_RSVD0(__pH2CCmd, __Value)			SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 4, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_V2_UPDATE_PARM(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 7, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_ORDER(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_TOTALNUM(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_CENTRAL_CH(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 1, 0, 8, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_PRIMARY_CH(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 0, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_BW(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 4, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_DURATION(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 3, 0, 8, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_ROLE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 0, 3, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_INCURCH(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 3, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_DIS_SW_RETRY(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 4, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_DISTXNULL(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 5, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_C2HRPT(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 6, 2, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_TSFX(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 0, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_RSVD0(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 4, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_V2_UPDATE_PARM(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 7, 1, __Value)
 
 /* MCC CTRL CMD 0x18 */
-#define SET_H2CCMD_MCC_CTRL_ORDER(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_TOTALNUM(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_CHIDX(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+1, 0, 8, __Value)
-#define SET_H2CCMD_MCC_CTRL_BW(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 0, 2, __Value)
-#define SET_H2CCMD_MCC_CTRL_BW40SC(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 2, 3, __Value)
-#define SET_H2CCMD_MCC_CTRL_BW80SC(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 5, 3, __Value)
-#define SET_H2CCMD_MCC_CTRL_DURATION(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+3, 0, 8, __Value)
-#define SET_H2CCMD_MCC_CTRL_ROLE(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 0, 3, __Value)
-#define SET_H2CCMD_MCC_CTRL_INCURCH(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 3, 1, __Value)
-#define SET_H2CCMD_MCC_CTRL_RSVD0(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 4, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_RSVD1(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 0, 8, __Value)
-#define SET_H2CCMD_MCC_CTRL_RFETYPE(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 0, 4, __Value)
-#define SET_H2CCMD_MCC_CTRL_DISTXNULL(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 4, 1, __Value)
-#define SET_H2CCMD_MCC_CTRL_C2HRPT(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 5, 2, __Value)
-#define SET_H2CCMD_MCC_CTRL_CHSCAN(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 7, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_ORDER(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_TOTALNUM(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 4, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_CHIDX(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 1, 0, 8, __Value)
+#define SET_H2CCMD_MCC_CTRL_BW(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 0, 2, __Value)
+#define SET_H2CCMD_MCC_CTRL_BW40SC(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 2, 3, __Value)
+#define SET_H2CCMD_MCC_CTRL_BW80SC(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 5, 3, __Value)
+#define SET_H2CCMD_MCC_CTRL_DURATION(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 3, 0, 8, __Value)
+#define SET_H2CCMD_MCC_CTRL_ROLE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 0, 3, __Value)
+#define SET_H2CCMD_MCC_CTRL_INCURCH(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 3, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_RSVD0(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 4, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_RSVD1(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 0, 8, __Value)
+#define SET_H2CCMD_MCC_CTRL_RFETYPE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 0, 4, __Value)
+#define SET_H2CCMD_MCC_CTRL_DISTXNULL(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 4, 1, __Value)
+#define SET_H2CCMD_MCC_CTRL_C2HRPT(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 5, 2, __Value)
+#define SET_H2CCMD_MCC_CTRL_CHSCAN(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 7, 1, __Value)
 
 /* MCC NoA CMD 0x19 */
-#define SET_H2CCMD_MCC_TIME_SETTING_FW_EN(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_TSF_SYNC_OFFSET(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 1, 7, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_START_TIME(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+1, 0, 8, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_INTERVAL(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 0, 8, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_EARLY_SWITCH_RPT(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+3, 0, 8, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_ORDER_BASE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 0, 4, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_ORDER_SYNC(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 4, 4, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_UPDATE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 0, 1, __Value)
-#define SET_H2CCMD_MCC_TIME_SETTING_DURATION(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 1, 7, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_FW_EN(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_TSF_SYNC_OFFSET(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 1, 7, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_START_TIME(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 1, 0, 8, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_INTERVAL(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 0, 8, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_EARLY_SWITCH_RPT(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 3, 0, 8, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_ORDER_BASE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 0, 4, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_ORDER_SYNC(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 4, 4, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_UPDATE(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 0, 1, __Value)
+#define SET_H2CCMD_MCC_TIME_SETTING_DURATION(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 1, 7, __Value)
 
 /* MCC IQK CMD 0x1A */
-#define SET_H2CCMD_MCC_IQK_READY(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)
-#define SET_H2CCMD_MCC_IQK_ORDER(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 1, 4, __Value)
-#define SET_H2CCMD_MCC_IQK_PATH(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE(__pH2CCmd, 5, 2, __Value)
-#define SET_H2CCMD_MCC_IQK_RX_L(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+1, 0, 8, __Value)
-#define SET_H2CCMD_MCC_IQK_RX_M1(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 0, 2, __Value)
-#define SET_H2CCMD_MCC_IQK_RX_M2(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+2, 2, 6, __Value)
-#define SET_H2CCMD_MCC_IQK_RX_H(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+3, 0, 4, __Value)
-#define SET_H2CCMD_MCC_IQK_TX_L(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+4, 0, 8, __Value)
-#define SET_H2CCMD_MCC_IQK_TX_M1(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 0, 3, __Value)
-#define SET_H2CCMD_MCC_IQK_TX_M2(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+5, 3, 5, __Value)
-#define SET_H2CCMD_MCC_IQK_TX_H(__pH2CCmd, __Value)	SET_BITS_TO_LE_1BYTE((__pH2CCmd)+6, 0, 6, __Value)
+#define SET_H2CCMD_MCC_IQK_READY(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 0, 1, __Value)
+#define SET_H2CCMD_MCC_IQK_ORDER(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 1, 4, __Value)
+#define SET_H2CCMD_MCC_IQK_PATH(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE(__pH2CCmd, 5, 2, __Value)
+#define SET_H2CCMD_MCC_IQK_RX_L(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 1, 0, 8, __Value)
+#define SET_H2CCMD_MCC_IQK_RX_M1(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 0, 2, __Value)
+#define SET_H2CCMD_MCC_IQK_RX_M2(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 2, 2, 6, __Value)
+#define SET_H2CCMD_MCC_IQK_RX_H(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 3, 0, 4, __Value)
+#define SET_H2CCMD_MCC_IQK_TX_L(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 4, 0, 8, __Value)
+#define SET_H2CCMD_MCC_IQK_TX_M1(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 0, 3, __Value)
+#define SET_H2CCMD_MCC_IQK_TX_M2(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 5, 3, 5, __Value)
+#define SET_H2CCMD_MCC_IQK_TX_H(__pH2CCmd, __Value) SET_BITS_TO_LE_1BYTE((__pH2CCmd) + 6, 0, 6, __Value)
 #endif
 
 #define MCC_STATUS_PROCESS_MCC_START_SETTING BIT0
@@ -148,8 +148,8 @@ enum h2c_cmd {
 #define MCC_STATUS_DOING_MCC BIT3
 
 #define MCC_SWCH_FW_EARLY_TIME 10 /* ms */
-#define MCC_EXPIRE_TIME 50 /* ms */
-#define MCC_TOLERANCE_TIME 2 /* 2*2 = 4s */
+#define MCC_EXPIRE_TIME 50		  /* ms */
+#define MCC_TOLERANCE_TIME 2	  /* 2*2 = 4s */
 
 #define MCC_ROLE_STA_GC_MGMT_QUEUE_MACID 0
 #define MCC_ROLE_SOFTAP_GO_MGMT_QUEUE_MACID 1
@@ -200,15 +200,15 @@ enum mcc_channel_scan {
 
 /* Represent FW status report of channel switch */
 enum mcc_status_rpt {
-	MCC_RPT_SUCCESS					= 0,
-	MCC_RPT_TXNULL_FAIL				= 1,
-	MCC_RPT_STOPMCC					= 2,
-	MCC_RPT_READY					= 3,
-	MCC_RPT_STOPFCS_FAIL			= 4,
-	MCC_RPT_MCC_ENABLE_FAIL			= 5,
-	MCC_RPT_MCC_SWITCH_CH_FAIL		= 6,
-	MCC_RPT_MCC_SWITCH_EARLY_RPT	= 7,
-	MCC_RPT_BCN_EARLY				= 8,
+	MCC_RPT_SUCCESS = 0,
+	MCC_RPT_TXNULL_FAIL = 1,
+	MCC_RPT_STOPMCC = 2,
+	MCC_RPT_READY = 3,
+	MCC_RPT_STOPFCS_FAIL = 4,
+	MCC_RPT_MCC_ENABLE_FAIL = 5,
+	MCC_RPT_MCC_SWITCH_CH_FAIL = 6,
+	MCC_RPT_MCC_SWITCH_EARLY_RPT = 7,
+	MCC_RPT_BCN_EARLY = 8,
 	//MCC_RPT_TSFX					= 9,
 	MCC_RPT_MAX,
 };
@@ -230,15 +230,15 @@ struct mcc_iqk_backup {
 
 /*	mcc data for adapter */
 struct mcc_adapter_priv {
-	u8 order;		/* FW document, softap/AP must be 0 */
-	u8 role;			/* MCC role(AP,STA,GO,GC) */
+	u8 order;		 /* FW document, softap/AP must be 0 */
+	u8 role;		 /* MCC role(AP,STA,GO,GC) */
 	u8 mcc_duration; /* channel stay period, UNIT:1TU */
 
 	/* flow control */
-	u8 mcc_tx_stop;				/* check if tp stop or not */
-	u8 mcc_tp_limit;				/* check if tp limit or not */
-	u32 mcc_target_tx_bytes_to_port;		/* customer require	 */
-	u32 mcc_tx_bytes_to_port;	/* already tx to tx fifo (write port) */
+	u8 mcc_tx_stop;					 /* check if tp stop or not */
+	u8 mcc_tp_limit;				 /* check if tp limit or not */
+	u32 mcc_target_tx_bytes_to_port; /* customer require	 */
+	u32 mcc_tx_bytes_to_port;		 /* already tx to tx fifo (write port) */
 
 #ifdef CONFIG_RUNTIME_MCC
 	RUNTIME_MCC_PRIV;
@@ -274,11 +274,11 @@ struct mcc_adapter_priv {
 struct mcc_obj_priv {
 	u8 duration; /* channel stay period, UNIT:1TU */
 	u8 mcc_c2h_status;
-	u8 cur_mcc_success_cnt; /* used for check mcc switch channel success */
-	u8 prev_mcc_success_cnt; /* used for check mcc switch channel success */
-	u8 mcc_tolerance_time; /* used for detect mcc switch channel success */
-	u8 mcc_loc_rsvd_paga[MAX_MCC_NUM];	/* mcc rsvd page */
-	u8 mcc_status; /* mcc status stop or start .... */
+	u8 cur_mcc_success_cnt;			   /* used for check mcc switch channel success */
+	u8 prev_mcc_success_cnt;		   /* used for check mcc switch channel success */
+	u8 mcc_tolerance_time;			   /* used for detect mcc switch channel success */
+	u8 mcc_loc_rsvd_paga[MAX_MCC_NUM]; /* mcc rsvd page */
+	u8 mcc_status;					   /* mcc status stop or start .... */
 	u8 policy_index;
 	u32 mcc_launch_time; /* mcc launch time, used for starting detect mcc switch channel success */
 	_mutex mcc_mutex;
@@ -304,8 +304,7 @@ void rtw_hal_set_mcc_status(PADAPTER padapter, u8 mcc_status);
 void rtw_hal_clear_mcc_status(PADAPTER padapter, u8 mcc_status);
 
 /* dl mcc rsvd page */
-u8 rtw_hal_dl_mcc_fw_rsvd_page(_adapter *adapter, u8 *pframe, u16 *index
-	, u8 tx_desc, u32 page_size, u8 *page_num, u32 *total_pkt_len, RSVDPAGE_LOC *rsvd_page_loc);
+u8 rtw_hal_dl_mcc_fw_rsvd_page(_adapter *adapter, u8 *pframe, u16 *index, u8 tx_desc, u32 page_size, u8 *page_num, u32 *total_pkt_len, RSVDPAGE_LOC *rsvd_page_loc);
 
 /* handle C2H */
 void rtw_hal_mcc_c2h_handler(PADAPTER padapter, u8 buflen, u8 *tmpBuf);
@@ -355,6 +354,5 @@ void rtw_hal_dump_mcc_policy_table(void *sel);
 
 void rtw_hal_mcc_update_macid_bitmap(PADAPTER padapter, u8 mac_id, u8 add);
 
-#endif	//CONFIG_MCC_MODE
-#endif	//_HAL_MCC_H_
-
+#endif //CONFIG_MCC_MODE
+#endif //_HAL_MCC_H_

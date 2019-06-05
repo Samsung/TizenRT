@@ -4,9 +4,8 @@
 #define P2P_WILDCARD_SSID "DIRECT-"
 #define P2P_WILDCARD_SSID_LEN 7
 
-
-#define RTW_P2P_SEND_ACTION_SUCCESS	0
-#define RTW_P2P_SEND_ACTION_FAILED		2
+#define RTW_P2P_SEND_ACTION_SUCCESS 0
+#define RTW_P2P_SEND_ACTION_FAILED 2
 
 static inline bool rtw_p2p_chk_state(struct wifidirect_info *wdinfo, enum P2P_STATE state)
 {
@@ -35,4 +34,3 @@ extern void rtw_deinit_p2p_wdinfo(_adapter *padapter);
 extern void rtw_p2p_pre_tx_scan_cmd_callback(_adapter *padapter);
 
 #endif //_RTW_P2P_H_
-

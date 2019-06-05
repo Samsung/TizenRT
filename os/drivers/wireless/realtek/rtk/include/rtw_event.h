@@ -22,16 +22,14 @@
 
 #ifndef CONFIG_RTL8711FW
 #ifdef PLATFORM_LINUX
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26))
 #include <asm/semaphore.h>
 #else
 #include <linux/semaphore.h>
 #endif
 #include <linux/sem.h>
 #endif
-#endif//CONFIG_RTL8711FW
-
-
+#endif //CONFIG_RTL8711FW
 
 #ifdef CONFIG_H2CLBK
 #include <h2clbk.h>
@@ -41,7 +39,7 @@
 Used to report a bss has been scanned
 
 */
-struct survey_event	{
+struct survey_event {
 	WLAN_BSSID_EX bss;
 };
 
@@ -53,8 +51,7 @@ bss_cnt indicates the number of bss that has been reported.
 
 */
 struct surveydone_event {
-	unsigned int	bss_cnt;	
-	
+	unsigned int bss_cnt;
 };
 
 /*
@@ -81,46 +78,43 @@ It is used in AP/Ad-HoC(M) mode.
 struct stassoc_event {
 	unsigned char macaddr[6];
 	unsigned char rsvd[2];
-	int    cam_id;
-	
+	int cam_id;
 };
 
 struct stadel_event {
- unsigned char macaddr[6];
- unsigned char rsvd[2]; //for reason
- int mac_id;
+	unsigned char macaddr[6];
+	unsigned char rsvd[2]; //for reason
+	int mac_id;
 };
 
-struct addba_event
-{
- 	unsigned int tid;
+struct addba_event {
+	unsigned int tid;
 };
-
 
 #ifdef CONFIG_H2CLBK
-struct c2hlbk_event{
+struct c2hlbk_event {
 	unsigned char mac[6];
-	unsigned short	s0;
-	unsigned short	s1;
-	unsigned int	w0;
-	unsigned char	b0;
-	unsigned short  s2;
-	unsigned char	b1;
-	unsigned int	w1;	
+	unsigned short s0;
+	unsigned short s1;
+	unsigned int w0;
+	unsigned char b0;
+	unsigned short s2;
+	unsigned char b1;
+	unsigned int w1;
 };
-#endif//CONFIG_H2CLBK
+#endif //CONFIG_H2CLBK
 
-#define GEN_EVT_CODE(event)	event ## _EVT_
+#define GEN_EVT_CODE(event) event##_EVT_
 
 struct fwevent {
-	u32	parmsize;
+	u32 parmsize;
 	void (*event_callback)(_adapter *dev, u8 *pbuf);
 };
 
 //TODO
 #if 0
 
-#define C2HEVENT_SZ			32	
+#define C2HEVENT_SZ 32	
 
 struct event_node{
 	unsigned char *node;
@@ -137,7 +131,7 @@ struct c2hevent_queue {
 	unsigned char	seq;
 };
 
-#define NETWORK_QUEUE_SZ	4
+#define NETWORK_QUEUE_SZ 4
 
 struct network_queue {
 	volatile int	head;
@@ -145,7 +139,6 @@ struct network_queue {
 	WLAN_BSSID_EX networks[NETWORK_QUEUE_SZ];	
 };
 
-#endif	//#if 0
+#endif //#if 0
 
 #endif // _WLANEVENT_H_
-

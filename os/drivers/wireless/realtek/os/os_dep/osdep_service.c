@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *                                        
+ *
  ******************************************************************************/
 
 #include <osdep_service.h>
@@ -9,36 +9,34 @@
 #include "tcm_heap.h"
 #endif
 
-#define OSDEP_DBG(x, ...) do {} while(0)
+#define OSDEP_DBG(x, ...) \
+	do {                  \
+	} while (0)
 
 extern struct osdep_service_ops osdep_service;
 
 #ifdef CONFIG_LITTLE_ENDIAN
-u16
-_htons(u16 n)
+u16 _htons(u16 n)
 {
-  return ((n & 0xff) << 8) | ((n & 0xff00) >> 8);
+	return ((n & 0xff) << 8) | ((n & 0xff00) >> 8);
 }
 
-u16
-_ntohs(u16 n)
+u16 _ntohs(u16 n)
 {
-  return _htons(n);
+	return _htons(n);
 }
 
-u32
-_htonl(u32 n)
+u32 _htonl(u32 n)
 {
-  return ((n & 0xff) << 24) |
-    ((n & 0xff00) << 8) |
-    ((n & 0xff0000UL) >> 8) |
-    ((n & 0xff000000UL) >> 24);
+	return ((n & 0xff) << 24) |
+		   ((n & 0xff00) << 8) |
+		   ((n & 0xff0000UL) >> 8) |
+		   ((n & 0xff000000UL) >> 24);
 }
 
-u32
-_ntohl(u32 n)
+u32 _ntohl(u32 n)
 {
-  return _htonl(n);
+	return _htonl(n);
 }
 
 #endif /* CONFIG_LITTLE_ENDIAN */
@@ -48,107 +46,106 @@ _ntohl(u32 n)
 */
 int RTW_STATUS_CODE(int error_code)
 {
-	if(error_code >= 0)
+	if (error_code >= 0)
 		return _SUCCESS;
 
 	return _FAIL;
 }
 
-u32 rtw_atoi(u8* s)
+u32 rtw_atoi(u8 *s)
 {
-	int num=0,flag=0;
+	int num = 0, flag = 0;
 	int i;
 
-	for(i=0;i<=strlen((char *)s);i++)
-	{
-		if(s[i] >= '0' && s[i] <= '9')
-			num = num * 10 + s[i] -'0';
-		else if(s[0] == '-' && i==0) 
-			flag =1;
-		else 
+	for (i = 0; i <= strlen((char *)s); i++) {
+		if (s[i] >= '0' && s[i] <= '9')
+			num = num * 10 + s[i] - '0';
+		else if (s[0] == '-' && i == 0)
+			flag = 1;
+		else
 			break;
 	}
 
-	if(flag == 1)
+	if (flag == 1)
 		num = num * -1;
 
-	return(num); 
+	return (num);
 }
 #if CONFIG_USE_TCM_HEAP
 void *tcm_heap_malloc(int size);
 void *tcm_heap_calloc(int size);
 #endif
-u8* _rtw_vmalloc(u32 sz)
+u8 *_rtw_vmalloc(u32 sz)
 {
-	u8 *pbuf = NULL;	
+	u8 *pbuf = NULL;
 #if CONFIG_USE_TCM_HEAP
 	pbuf = tcm_heap_malloc(sz);
 #endif
-	if(pbuf==NULL){
-		if(osdep_service.rtw_vmalloc) {
+	if (pbuf == NULL) {
+		if (osdep_service.rtw_vmalloc) {
 			pbuf = osdep_service.rtw_vmalloc(sz);
 		} else
-			OSDEP_DBG("Not implement osdep service: rtw_vmalloc");	
+			OSDEP_DBG("Not implement osdep service: rtw_vmalloc");
 	}
 	return pbuf;
 }
 
-u8* _rtw_zvmalloc(u32 sz)
+u8 *_rtw_zvmalloc(u32 sz)
 {
-	u8 *pbuf = NULL;	
+	u8 *pbuf = NULL;
 #if CONFIG_USE_TCM_HEAP
 	pbuf = tcm_heap_calloc(sz);
 #endif
-	if(pbuf==NULL){
-		if(osdep_service.rtw_zvmalloc) {
+	if (pbuf == NULL) {
+		if (osdep_service.rtw_zvmalloc) {
 			pbuf = osdep_service.rtw_zvmalloc(sz);
 		} else
-			OSDEP_DBG("Not implement osdep service: rtw_zvmalloc");	
+			OSDEP_DBG("Not implement osdep service: rtw_zvmalloc");
 	}
 	return pbuf;
 }
 
 void _rtw_vmfree(u8 *pbuf, u32 sz)
 {
-	
+
 #if CONFIG_USE_TCM_HEAP
-	if( (u32)pbuf > 0x1FFF0000 && (u32)pbuf < 0x20000000 )
+	if ((u32)pbuf > 0x1FFF0000 && (u32)pbuf < 0x20000000)
 		tcm_heap_free(pbuf);
 	else
 #endif
 	{
-	if(osdep_service.rtw_vmfree) {
-		osdep_service.rtw_vmfree(pbuf, sz);
-	} else
-		OSDEP_DBG("Not implement osdep service: rtw_vmfree");	
+		if (osdep_service.rtw_vmfree) {
+			osdep_service.rtw_vmfree(pbuf, sz);
+		} else
+			OSDEP_DBG("Not implement osdep service: rtw_vmfree");
 	}
 }
 
-u8* _rtw_malloc(u32 sz)
+u8 *_rtw_malloc(u32 sz)
 {
-	if(osdep_service.rtw_malloc) {
+	if (osdep_service.rtw_malloc) {
 		u8 *pbuf = osdep_service.rtw_malloc(sz);
 		return pbuf;
 	} else
-		OSDEP_DBG("Not implement osdep service: rtw_malloc");	
+		OSDEP_DBG("Not implement osdep service: rtw_malloc");
 
 	return NULL;
 }
 
-u8* _rtw_zmalloc(u32 sz)
+u8 *_rtw_zmalloc(u32 sz)
 {
-	if(osdep_service.rtw_zmalloc) {
+	if (osdep_service.rtw_zmalloc) {
 		u8 *pbuf = osdep_service.rtw_zmalloc(sz);
 		return pbuf;
 	} else
-		OSDEP_DBG("Not implement osdep service: rtw_zmalloc");	
+		OSDEP_DBG("Not implement osdep service: rtw_zmalloc");
 
 	return NULL;
 }
 
 void _rtw_mfree(u8 *pbuf, u32 sz)
 {
-	if(osdep_service.rtw_mfree) {
+	if (osdep_service.rtw_mfree) {
 		osdep_service.rtw_mfree(pbuf, sz);
 	} else
 		OSDEP_DBG("Not implement osdep service: rtw_mfree");
@@ -175,24 +172,24 @@ void deinit_mem_monitor(_list *pmem_table, int *used_num)
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
 	_list *plist;
 	struct mem_entry *mem_entry;
-	
-	if(*used_num > 0)
+
+	if (*used_num > 0)
 		DBG_ERR("Have %d mem_entry kept in monitor", *used_num);
 	else
 		DBG_INFO("No mem_entry kept in monitor");
-	
+
 	save_and_cli();
-	
-	while (rtw_end_of_queue_search(pmem_table, get_next(pmem_table)) == _FALSE)	{		
+
+	while (rtw_end_of_queue_search(pmem_table, get_next(pmem_table)) == _FALSE) {
 		plist = get_next(pmem_table);
 		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
-		
+
 		DBG_ERR("Not release memory at %p with size of %d", mem_entry->ptr, mem_entry->size);
-		
+
 		rtw_list_delete(plist);
-		_rtw_mfree((u8 *) mem_entry, sizeof(struct mem_entry));
+		_rtw_mfree((u8 *)mem_entry, sizeof(struct mem_entry));
 	}
-	
+
 	restore_flags();
 #endif
 }
@@ -203,20 +200,19 @@ void add_mem_usage(_list *pmem_table, void *ptr, int size, int *used_num, int fl
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
 	struct mem_entry *mem_entry;
 #endif
-	if(ptr == NULL) {
+	if (ptr == NULL) {
 		DBG_ERR("Catch a mem alloc fail with size of %d, current heap free size = %d", size, free_heap_size);
 		return;
-	}
-	else{
-		if(flag == MEM_MONITOR_FLAG_WPAS)
+	} else {
+		if (flag == MEM_MONITOR_FLAG_WPAS)
 			DBG_INFO("Alloc memory at %p with size of %d", ptr, size);
 		else
 			DBG_INFO("Alloc memory at %p with size of %d", ptr, size);
 	}
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	mem_entry = (struct mem_entry *) _rtw_malloc(sizeof(struct mem_entry));
+	mem_entry = (struct mem_entry *)_rtw_malloc(sizeof(struct mem_entry));
 
-	if(mem_entry == NULL) {
+	if (mem_entry == NULL) {
 		DBG_ERR("Fail to alloc mem_entry");
 		return;
 	}
@@ -224,14 +220,14 @@ void add_mem_usage(_list *pmem_table, void *ptr, int size, int *used_num, int fl
 	memset(mem_entry, 0, sizeof(struct mem_entry));
 	mem_entry->ptr = ptr;
 	mem_entry->size = size;
-	
+
 	save_and_cli();
 	rtw_list_insert_head(&mem_entry->list, pmem_table);
 	restore_flags();
 
-	*used_num ++;
+	*used_num++;
 #endif
-	if(min_free_heap_size > free_heap_size)
+	if (min_free_heap_size > free_heap_size)
 		min_free_heap_size = free_heap_size;
 }
 
@@ -241,21 +237,20 @@ void del_mem_usage(_list *pmem_table, void *ptr, int *used_num, int flag)
 	_list *plist;
 	struct mem_entry *mem_entry = NULL;
 
-	if(ptr == NULL)
+	if (ptr == NULL)
 		return;
-	
-	if(flag == MEM_MONITOR_FLAG_WPAS)
+
+	if (flag == MEM_MONITOR_FLAG_WPAS)
 		DBG_INFO("Free memory at %p", ptr);
 	else
-		DBG_INFO("Free memory at %p", ptr);	
+		DBG_INFO("Free memory at %p", ptr);
 
 	save_and_cli();
 
 	plist = get_next(pmem_table);
-	while ((rtw_end_of_queue_search(pmem_table, plist)) == _FALSE)	
-	{		
+	while ((rtw_end_of_queue_search(pmem_table, plist)) == _FALSE) {
 		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
-		if(mem_entry->ptr == ptr) {
+		if (mem_entry->ptr == ptr) {
 			rtw_list_delete(plist);
 			break;
 		}
@@ -264,11 +259,11 @@ void del_mem_usage(_list *pmem_table, void *ptr, int *used_num, int flag)
 
 	restore_flags();
 
-	if(plist == pmem_table)
+	if (plist == pmem_table)
 		DBG_ERR("Fail to find the mem_entry in mem table");
 	else {
-		*used_num --;
-		_rtw_mfree((u8 *) mem_entry, sizeof(struct mem_entry));
+		*used_num--;
+		_rtw_mfree((u8 *)mem_entry, sizeof(struct mem_entry));
 	}
 #endif
 }
@@ -283,14 +278,14 @@ int get_mem_usage(_list *pmem_table)
 
 	save_and_cli();
 
-	if((plist = get_next(pmem_table)) == NULL) {
+	if ((plist = get_next(pmem_table)) == NULL) {
 		DBG_ERR("No mem table available\n");
 		restore_flags();
 		return 0;
 	}
 
 	while (rtw_end_of_queue_search(pmem_table, plist) == _FALSE) {
-		entry_num ++;
+		entry_num++;
 		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
 		mem_usage += mem_entry->size;
 
@@ -306,8 +301,7 @@ int get_mem_usage(_list *pmem_table)
 }
 #endif
 
-
-u8* rtw_vmalloc(u32 sz)
+u8 *rtw_vmalloc(u32 sz)
 {
 	u8 *pbuf = _rtw_vmalloc(sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
@@ -318,7 +312,7 @@ u8* rtw_vmalloc(u32 sz)
 	return pbuf;
 }
 
-u8* rtw_zvmalloc(u32 sz)
+u8 *rtw_zvmalloc(u32 sz)
 {
 	u8 *pbuf = _rtw_zvmalloc(sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
@@ -333,13 +327,13 @@ void rtw_vmfree(u8 *pbuf, u32 sz)
 {
 	_rtw_vmfree(pbuf, sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);	
+	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
 	del_mem_usage(NULL, pbuf, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
 #endif
 }
 
-u8* rtw_malloc(u32 sz)
+u8 *rtw_malloc(u32 sz)
 {
 	u8 *pbuf = _rtw_malloc(sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
@@ -350,7 +344,7 @@ u8* rtw_malloc(u32 sz)
 	return pbuf;
 }
 
-u8* rtw_zmalloc(u32 sz)
+u8 *rtw_zmalloc(u32 sz)
 {
 	u8 *pbuf = _rtw_zmalloc(sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
@@ -365,38 +359,37 @@ void rtw_mfree(u8 *pbuf, u32 sz)
 {
 	_rtw_mfree(pbuf, sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);	
+	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
 	del_mem_usage(NULL, pbuf, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
 #endif
 }
 #endif
 
-void* rtw_malloc2d(int h, int w, int size)
+void *rtw_malloc2d(int h, int w, int size)
 {
 	int j;
 
-	void **a = (void **) rtw_zmalloc( h*sizeof(void *) + h*w*size );
-	if(a == NULL)
-	{
+	void **a = (void **)rtw_zmalloc(h * sizeof(void *) + h * w * size);
+	if (a == NULL) {
 		OSDEP_DBG("%s: alloc memory fail!\n", __FUNCTION__);
 		return NULL;
 	}
 
-	for( j=0; j<h; j++ )
-		a[j] = ((char *)(a+h)) + j*w*size;
+	for (j = 0; j < h; j++)
+		a[j] = ((char *)(a + h)) + j * w * size;
 
 	return a;
 }
 
 void rtw_mfree2d(void *pbuf, int h, int w, int size)
 {
-	rtw_mfree((u8 *)pbuf, h*sizeof(void*) + w*h*size);
+	rtw_mfree((u8 *)pbuf, h * sizeof(void *) + w * h * size);
 }
 
-void rtw_memcpy(void* dst, void* src, u32 sz)
+void rtw_memcpy(void *dst, void *src, u32 sz)
 {
-	if(osdep_service.rtw_memcpy)
+	if (osdep_service.rtw_memcpy)
 		osdep_service.rtw_memcpy(dst, src, sz);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_memcpy");
@@ -404,7 +397,7 @@ void rtw_memcpy(void* dst, void* src, u32 sz)
 
 int rtw_memcmp(void *dst, void *src, u32 sz)
 {
-	if(osdep_service.rtw_memcmp)
+	if (osdep_service.rtw_memcmp)
 		return osdep_service.rtw_memcmp(dst, src, sz);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_memcmp");
@@ -414,7 +407,7 @@ int rtw_memcmp(void *dst, void *src, u32 sz)
 
 void rtw_memset(void *pbuf, int c, u32 sz)
 {
-	if(osdep_service.rtw_memset)
+	if (osdep_service.rtw_memset)
 		osdep_service.rtw_memset(pbuf, c, sz);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_memset");
@@ -426,13 +419,13 @@ void rtw_init_listhead(_list *list)
 }
 
 /*
-For the following list_xxx operations, 
+For the following list_xxx operations,
 caller must guarantee the atomic context.
 Otherwise, there will be racing condition.
 */
 u32 rtw_is_list_empty(_list *phead)
 {
-	if(list_empty(phead))
+	if (list_empty(phead))
 		return _TRUE;
 
 	return _FALSE;
@@ -458,11 +451,9 @@ void rtw_list_delete(_list *plist)
 	list_del_init(plist);
 }
 
-
-
 void rtw_init_sema(_sema *sema, int init_val)
 {
-	if(osdep_service.rtw_init_sema)
+	if (osdep_service.rtw_init_sema)
 		osdep_service.rtw_init_sema(sema, init_val);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_init_sema");
@@ -470,7 +461,7 @@ void rtw_init_sema(_sema *sema, int init_val)
 
 void rtw_free_sema(_sema *sema)
 {
-	if(osdep_service.rtw_free_sema)
+	if (osdep_service.rtw_free_sema)
 		osdep_service.rtw_free_sema(sema);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_free_sema");
@@ -478,7 +469,7 @@ void rtw_free_sema(_sema *sema)
 
 void rtw_up_sema(_sema *sema)
 {
-	if(osdep_service.rtw_up_sema)
+	if (osdep_service.rtw_up_sema)
 		osdep_service.rtw_up_sema(sema);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_up_sema");
@@ -486,15 +477,15 @@ void rtw_up_sema(_sema *sema)
 
 void rtw_up_sema_from_isr(_sema *sema)
 {
-	if(osdep_service.rtw_up_sema_from_isr)
+	if (osdep_service.rtw_up_sema_from_isr)
 		osdep_service.rtw_up_sema_from_isr(sema);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_up_sema_from_isr");
 }
 
-u32	rtw_down_timeout_sema(_sema *sema, u32 timeout)
+u32 rtw_down_timeout_sema(_sema *sema, u32 timeout)
 {
-	if(osdep_service.rtw_down_timeout_sema)
+	if (osdep_service.rtw_down_timeout_sema)
 		return osdep_service.rtw_down_timeout_sema(sema, timeout);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_down_timeout_sema");
@@ -504,16 +495,16 @@ u32	rtw_down_timeout_sema(_sema *sema, u32 timeout)
 
 u32 rtw_down_sema(_sema *sema)
 {
-	while(rtw_down_timeout_sema(sema, RTW_MAX_DELAY) != _TRUE)
-//		rom_e_rtw_msg_871X_LEVEL(DOWN_SEMA_1, _drv_always_, "%s(%p) failed, retry\n",  __FUNCTION__, sema);
+	while (rtw_down_timeout_sema(sema, RTW_MAX_DELAY) != _TRUE)
+		//		rom_e_rtw_msg_871X_LEVEL(DOWN_SEMA_1, _drv_always_, "%s(%p) failed, retry\n",  __FUNCTION__, sema);
 		//OSDEP_DBG_LEVEL(_drv_always_, "%s(%p) failed, retry\n",  __FUNCTION__, sema);
-		OSDEP_DBG("%s(%p) failed, retry\n",  __FUNCTION__, sema);
+		OSDEP_DBG("%s(%p) failed, retry\n", __FUNCTION__, sema);
 	return _TRUE;
 }
 
 void rtw_mutex_init(_mutex *pmutex)
 {
-	if(osdep_service.rtw_mutex_init)
+	if (osdep_service.rtw_mutex_init)
 		osdep_service.rtw_mutex_init(pmutex);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_mutex_init");
@@ -521,7 +512,7 @@ void rtw_mutex_init(_mutex *pmutex)
 
 void rtw_mutex_free(_mutex *pmutex)
 {
-	if(osdep_service.rtw_mutex_free)
+	if (osdep_service.rtw_mutex_free)
 		osdep_service.rtw_mutex_free(pmutex);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_mutex_free");
@@ -529,7 +520,7 @@ void rtw_mutex_free(_mutex *pmutex)
 
 void rtw_mutex_put(_mutex *pmutex)
 {
-	if(osdep_service.rtw_mutex_put)
+	if (osdep_service.rtw_mutex_put)
 		osdep_service.rtw_mutex_put(pmutex);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_mutex_put");
@@ -537,7 +528,7 @@ void rtw_mutex_put(_mutex *pmutex)
 
 void rtw_mutex_get(_mutex *pmutex)
 {
-	if(osdep_service.rtw_mutex_get)
+	if (osdep_service.rtw_mutex_get)
 		osdep_service.rtw_mutex_get(pmutex);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_mutex_get");
@@ -545,9 +536,9 @@ void rtw_mutex_get(_mutex *pmutex)
 
 int rtw_mutex_get_timeout(_mutex *pmutex, u32 timeout_ms)
 {
-	if(osdep_service.rtw_mutex_get_timeout)
+	if (osdep_service.rtw_mutex_get_timeout)
 		return osdep_service.rtw_mutex_get_timeout(pmutex, timeout_ms);
-	else{
+	else {
 		OSDEP_DBG("Not implement osdep service: rtw_mutex_get_timeout");
 		return -1;
 	}
@@ -555,7 +546,7 @@ int rtw_mutex_get_timeout(_mutex *pmutex, u32 timeout_ms)
 
 void rtw_enter_critical(_lock *plock, _irqL *pirqL)
 {
-	if(osdep_service.rtw_enter_critical)
+	if (osdep_service.rtw_enter_critical)
 		osdep_service.rtw_enter_critical(plock, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_enter_critical");
@@ -563,7 +554,7 @@ void rtw_enter_critical(_lock *plock, _irqL *pirqL)
 
 void rtw_exit_critical(_lock *plock, _irqL *pirqL)
 {
-	if(osdep_service.rtw_exit_critical)
+	if (osdep_service.rtw_exit_critical)
 		osdep_service.rtw_exit_critical(plock, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_exit_critical");
@@ -571,7 +562,7 @@ void rtw_exit_critical(_lock *plock, _irqL *pirqL)
 
 void rtw_enter_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
-	if(osdep_service.rtw_enter_critical)
+	if (osdep_service.rtw_enter_critical)
 		osdep_service.rtw_enter_critical(plock, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_enter_critical_from_isr");
@@ -579,7 +570,7 @@ void rtw_enter_critical_from_isr(_lock *plock, _irqL *pirqL)
 
 void rtw_exit_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
-	if(osdep_service.rtw_exit_critical)
+	if (osdep_service.rtw_exit_critical)
 		osdep_service.rtw_exit_critical(plock, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_exit_critical_from_isr");
@@ -597,7 +588,7 @@ void rtw_exit_critical_bh(_lock *plock, _irqL *pirqL)
 
 int rtw_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 {
-	if(osdep_service.rtw_enter_critical_mutex)
+	if (osdep_service.rtw_enter_critical_mutex)
 		return osdep_service.rtw_enter_critical_mutex(pmutex, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_enter_critical_mutex");
@@ -607,7 +598,7 @@ int rtw_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 
 void rtw_exit_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 {
-	if(osdep_service.rtw_exit_critical_mutex)
+	if (osdep_service.rtw_exit_critical_mutex)
 		osdep_service.rtw_exit_critical_mutex(pmutex, pirqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_exit_critical_mutex");
@@ -615,31 +606,30 @@ void rtw_exit_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 
 void rtw_cpu_lock(void)
 {
-	if(osdep_service.rtw_cpu_lock)
+	if (osdep_service.rtw_cpu_lock)
 		osdep_service.rtw_cpu_lock();
 	else
-		OSDEP_DBG("Not implement osdep service: rtw_cpu_lock");	
+		OSDEP_DBG("Not implement osdep service: rtw_cpu_lock");
 }
 
 void rtw_cpu_unlock(void)
 {
-	if(osdep_service.rtw_cpu_unlock)
+	if (osdep_service.rtw_cpu_unlock)
 		osdep_service.rtw_cpu_unlock();
 	else
-		OSDEP_DBG("Not implement osdep service: rtw_cpu_unlock");		
+		OSDEP_DBG("Not implement osdep service: rtw_cpu_unlock");
 }
 
-void	rtw_init_queue(_queue	*pqueue)
+void rtw_init_queue(_queue *pqueue)
 {
 	rtw_init_listhead(&(pqueue->queue));
 	rtw_spinlock_init(&(pqueue->lock));
 }
 
-u32	  rtw_queue_empty(_queue	*pqueue)
+u32 rtw_queue_empty(_queue *pqueue)
 {
 	return (rtw_is_list_empty(&(pqueue->queue)));
 }
-
 
 u32 rtw_end_of_queue_search(_list *head, _list *plist)
 {
@@ -652,7 +642,7 @@ u32 rtw_end_of_queue_search(_list *head, _list *plist)
 #if 1
 void rtw_spinlock_init(_lock *plock)
 {
-	if(osdep_service.rtw_spinlock_init)
+	if (osdep_service.rtw_spinlock_init)
 		osdep_service.rtw_spinlock_init(plock);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spinlock_init");
@@ -660,7 +650,7 @@ void rtw_spinlock_init(_lock *plock)
 
 void rtw_spinlock_free(_lock *plock)
 {
-	if(osdep_service.rtw_spinlock_free)
+	if (osdep_service.rtw_spinlock_free)
 		osdep_service.rtw_spinlock_free(plock);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spinlock_free");
@@ -668,7 +658,7 @@ void rtw_spinlock_free(_lock *plock)
 
 void rtw_spin_lock(_lock *plock)
 {
-	if(osdep_service.rtw_spin_lock)
+	if (osdep_service.rtw_spin_lock)
 		osdep_service.rtw_spin_lock(plock);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spin_lock");
@@ -676,7 +666,7 @@ void rtw_spin_lock(_lock *plock)
 
 void rtw_spin_unlock(_lock *plock)
 {
-	if(osdep_service.rtw_spin_unlock)
+	if (osdep_service.rtw_spin_unlock)
 		osdep_service.rtw_spin_unlock(plock);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spin_unlock");
@@ -684,7 +674,7 @@ void rtw_spin_unlock(_lock *plock)
 
 void rtw_spinlock_irqsave(_lock *plock, _irqL *irqL)
 {
-	if(osdep_service.rtw_spinlock_irqsave)
+	if (osdep_service.rtw_spinlock_irqsave)
 		osdep_service.rtw_spinlock_irqsave(plock, irqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spinlock_irqsave");
@@ -692,16 +682,16 @@ void rtw_spinlock_irqsave(_lock *plock, _irqL *irqL)
 
 void rtw_spinunlock_irqsave(_lock *plock, _irqL *irqL)
 {
-	if(osdep_service.rtw_spinunlock_irqsave)
+	if (osdep_service.rtw_spinunlock_irqsave)
 		osdep_service.rtw_spinunlock_irqsave(plock, irqL);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_spinunlock_irqsave");
 }
 #endif
 
-int rtw_init_xqueue( _xqueue* queue, const char* name, u32 message_size, u32 number_of_messages )
+int rtw_init_xqueue(_xqueue *queue, const char *name, u32 message_size, u32 number_of_messages)
 {
-	if(osdep_service.rtw_init_xqueue)
+	if (osdep_service.rtw_init_xqueue)
 		return (int)osdep_service.rtw_init_xqueue(queue, name, message_size, number_of_messages);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_init_xqueue");
@@ -709,9 +699,9 @@ int rtw_init_xqueue( _xqueue* queue, const char* name, u32 message_size, u32 num
 	return FAIL;
 }
 
-int rtw_push_to_xqueue( _xqueue* queue, void* message, u32 timeout_ms )
+int rtw_push_to_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-	if(osdep_service.rtw_push_to_xqueue)
+	if (osdep_service.rtw_push_to_xqueue)
 		return (int)osdep_service.rtw_push_to_xqueue(queue, message, timeout_ms);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_push_to_xqueue");
@@ -719,9 +709,9 @@ int rtw_push_to_xqueue( _xqueue* queue, void* message, u32 timeout_ms )
 	return FAIL;
 }
 
-int rtw_pop_from_xqueue( _xqueue* queue, void* message, u32 timeout_ms )
+int rtw_pop_from_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-	if(osdep_service.rtw_pop_from_xqueue)
+	if (osdep_service.rtw_pop_from_xqueue)
 		return (int)osdep_service.rtw_pop_from_xqueue(queue, message, timeout_ms);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_pop_from_xqueue");
@@ -729,9 +719,9 @@ int rtw_pop_from_xqueue( _xqueue* queue, void* message, u32 timeout_ms )
 	return FAIL;
 }
 
-int rtw_deinit_xqueue( _xqueue* queue )
+int rtw_deinit_xqueue(_xqueue *queue)
 {
-	if(osdep_service.rtw_deinit_xqueue)
+	if (osdep_service.rtw_deinit_xqueue)
 		return (int)osdep_service.rtw_deinit_xqueue(queue);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_deinit_xqueue");
@@ -772,7 +762,7 @@ _list	*rtw_get_queue_head(_queue	*queue)
 
 u32 rtw_get_current_time(void)
 {
-	if(osdep_service.rtw_get_current_time)
+	if (osdep_service.rtw_get_current_time)
 		return osdep_service.rtw_get_current_time();
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_get_current_time");
@@ -782,7 +772,7 @@ u32 rtw_get_current_time(void)
 
 u32 rtw_systime_to_ms(u32 systime)
 {
-	if(osdep_service.rtw_systime_to_ms)
+	if (osdep_service.rtw_systime_to_ms)
 		return osdep_service.rtw_systime_to_ms(systime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_systime_to_ms");
@@ -792,7 +782,7 @@ u32 rtw_systime_to_ms(u32 systime)
 
 u32 rtw_systime_to_sec(u32 systime)
 {
-	if(osdep_service.rtw_systime_to_sec)
+	if (osdep_service.rtw_systime_to_sec)
 		return osdep_service.rtw_systime_to_sec(systime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_systime_to_sec");
@@ -802,7 +792,7 @@ u32 rtw_systime_to_sec(u32 systime)
 
 u32 rtw_ms_to_systime(u32 ms)
 {
-	if(osdep_service.rtw_ms_to_systime)
+	if (osdep_service.rtw_ms_to_systime)
 		return osdep_service.rtw_ms_to_systime(ms);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_ms_to_systime");
@@ -812,7 +802,7 @@ u32 rtw_ms_to_systime(u32 ms)
 
 u32 rtw_sec_to_systime(u32 sec)
 {
-	if(osdep_service.rtw_sec_to_systime)
+	if (osdep_service.rtw_sec_to_systime)
 		return osdep_service.rtw_sec_to_systime(sec);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_sec_to_systime");
@@ -830,10 +820,10 @@ s32 rtw_get_time_interval_ms(u32 start, u32 end)
 {
 	return rtw_systime_to_ms(end - start);
 }
-	
+
 void rtw_msleep_os(int ms)
 {
-	if(osdep_service.rtw_msleep_os)
+	if (osdep_service.rtw_msleep_os)
 		osdep_service.rtw_msleep_os(ms);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_msleep_os");
@@ -841,15 +831,15 @@ void rtw_msleep_os(int ms)
 
 void rtw_usleep_os(int us)
 {
-	if(osdep_service.rtw_usleep_os)
+	if (osdep_service.rtw_usleep_os)
 		osdep_service.rtw_usleep_os(us);
 	else
-		OSDEP_DBG("Not implement osdep service: rtw_usleep_os");	
+		OSDEP_DBG("Not implement osdep service: rtw_usleep_os");
 }
 
 void rtw_mdelay_os(int ms)
 {
-	if(osdep_service.rtw_mdelay_os)
+	if (osdep_service.rtw_mdelay_os)
 		osdep_service.rtw_mdelay_os(ms);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_mdelay_os");
@@ -857,7 +847,7 @@ void rtw_mdelay_os(int ms)
 
 void rtw_udelay_os(int us)
 {
-	if(osdep_service.rtw_udelay_os)
+	if (osdep_service.rtw_udelay_os)
 		osdep_service.rtw_udelay_os(us);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_udelay_os");
@@ -865,7 +855,7 @@ void rtw_udelay_os(int us)
 
 void rtw_yield_os(void)
 {
-	if(osdep_service.rtw_yield_os)
+	if (osdep_service.rtw_yield_os)
 		osdep_service.rtw_yield_os();
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_yield_os");
@@ -873,7 +863,7 @@ void rtw_yield_os(void)
 
 void ATOMIC_SET(ATOMIC_T *v, int i)
 {
-	if(osdep_service.ATOMIC_SET)
+	if (osdep_service.ATOMIC_SET)
 		osdep_service.ATOMIC_SET(v, i);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_SET");
@@ -881,7 +871,7 @@ void ATOMIC_SET(ATOMIC_T *v, int i)
 
 int ATOMIC_READ(ATOMIC_T *v)
 {
-	if(osdep_service.ATOMIC_READ)
+	if (osdep_service.ATOMIC_READ)
 		return osdep_service.ATOMIC_READ(v);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_READ");
@@ -891,7 +881,7 @@ int ATOMIC_READ(ATOMIC_T *v)
 
 void ATOMIC_ADD(ATOMIC_T *v, int i)
 {
-	if(osdep_service.ATOMIC_ADD)
+	if (osdep_service.ATOMIC_ADD)
 		osdep_service.ATOMIC_ADD(v, i);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_ADD");
@@ -899,7 +889,7 @@ void ATOMIC_ADD(ATOMIC_T *v, int i)
 
 void ATOMIC_SUB(ATOMIC_T *v, int i)
 {
-	if(osdep_service.ATOMIC_SUB)
+	if (osdep_service.ATOMIC_SUB)
 		osdep_service.ATOMIC_SUB(v, i);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_SUB");
@@ -907,7 +897,7 @@ void ATOMIC_SUB(ATOMIC_T *v, int i)
 
 void ATOMIC_INC(ATOMIC_T *v)
 {
-	if(osdep_service.ATOMIC_INC)
+	if (osdep_service.ATOMIC_INC)
 		osdep_service.ATOMIC_INC(v);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_INC");
@@ -915,7 +905,7 @@ void ATOMIC_INC(ATOMIC_T *v)
 
 void ATOMIC_DEC(ATOMIC_T *v)
 {
-	if(osdep_service.ATOMIC_DEC)
+	if (osdep_service.ATOMIC_DEC)
 		osdep_service.ATOMIC_DEC(v);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_DEC");
@@ -923,7 +913,7 @@ void ATOMIC_DEC(ATOMIC_T *v)
 
 int ATOMIC_ADD_RETURN(ATOMIC_T *v, int i)
 {
-	if(osdep_service.ATOMIC_ADD_RETURN)
+	if (osdep_service.ATOMIC_ADD_RETURN)
 		return osdep_service.ATOMIC_ADD_RETURN(v, i);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_ADD_RETURN");
@@ -933,7 +923,7 @@ int ATOMIC_ADD_RETURN(ATOMIC_T *v, int i)
 
 int ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 {
-	if(osdep_service.ATOMIC_SUB_RETURN)
+	if (osdep_service.ATOMIC_SUB_RETURN)
 		return osdep_service.ATOMIC_SUB_RETURN(v, i);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_SUB_RETURN");
@@ -943,7 +933,7 @@ int ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 
 int ATOMIC_INC_RETURN(ATOMIC_T *v)
 {
-	if(osdep_service.ATOMIC_INC_RETURN)
+	if (osdep_service.ATOMIC_INC_RETURN)
 		return osdep_service.ATOMIC_INC_RETURN(v);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_INC_RETURN");
@@ -953,7 +943,7 @@ int ATOMIC_INC_RETURN(ATOMIC_T *v)
 
 int ATOMIC_DEC_RETURN(ATOMIC_T *v)
 {
-	if(osdep_service.ATOMIC_DEC_RETURN)
+	if (osdep_service.ATOMIC_DEC_RETURN)
 		return osdep_service.ATOMIC_DEC_RETURN(v);
 	else
 		OSDEP_DBG("Not implement osdep service: ATOMIC_DEC_RETURN");
@@ -968,7 +958,7 @@ int ATOMIC_DEC_AND_TEST(ATOMIC_T *v)
 
 u64 rtw_modular64(u64 x, u64 y)
 {
-	if(osdep_service.rtw_modular64)
+	if (osdep_service.rtw_modular64)
 		return osdep_service.rtw_modular64(x, y);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_modular64");
@@ -976,9 +966,9 @@ u64 rtw_modular64(u64 x, u64 y)
 	return 0;
 }
 
-int rtw_get_random_bytes(void* dst, u32 size)
+int rtw_get_random_bytes(void *dst, u32 size)
 {
-	if(osdep_service.rtw_get_random_bytes)
+	if (osdep_service.rtw_get_random_bytes)
 		return osdep_service.rtw_get_random_bytes(dst, size);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_get_random_bytes");
@@ -988,7 +978,7 @@ int rtw_get_random_bytes(void* dst, u32 size)
 
 u32 rtw_getFreeHeapSize(void)
 {
-	if(osdep_service.rtw_getFreeHeapSize)
+	if (osdep_service.rtw_getFreeHeapSize)
 		return osdep_service.rtw_getFreeHeapSize();
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_getFreeHeapSize");
@@ -1013,7 +1003,7 @@ void rtw_netif_stop_queue(void *pnetdev)
 {
 }
 
-void flush_signals_thread(void) 
+void flush_signals_thread(void)
 {
 }
 
@@ -1042,9 +1032,9 @@ void rtw_wakelock_timeout(u32 timeoutms)
 }
 
 int rtw_create_task(struct task_struct *task, const char *name,
-	u32 stack_size, u32 priority, thread_func_t func, void *thctx)
+					u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
-	if(osdep_service.rtw_create_task)
+	if (osdep_service.rtw_create_task)
 		return osdep_service.rtw_create_task(task, name, stack_size, priority, func, thctx);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_create_task");
@@ -1052,35 +1042,33 @@ int rtw_create_task(struct task_struct *task, const char *name,
 }
 void rtw_delete_task(struct task_struct *task)
 {
-	if(osdep_service.rtw_delete_task)
+	if (osdep_service.rtw_delete_task)
 		osdep_service.rtw_delete_task(task);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_delete_task");
 
-	return;	
+	return;
 }
 void rtw_wakeup_task(struct task_struct *task)
 {
-	if(osdep_service.rtw_wakeup_task)
+	if (osdep_service.rtw_wakeup_task)
 		osdep_service.rtw_wakeup_task(task);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_wakeup_task");
 
-	return;	
+	return;
 }
 
-static void worker_thread_main( void *arg )
+static void worker_thread_main(void *arg)
 {
-	rtw_worker_thread_t* worker_thread = (rtw_worker_thread_t*) arg;
+	rtw_worker_thread_t *worker_thread = (rtw_worker_thread_t *)arg;
 
-	while ( 1 )
-	{
+	while (1) {
 		rtw_event_message_t message;
 
-		if ( rtw_pop_from_xqueue( &worker_thread->event_queue, &message, RTW_WAIT_FOREVER ) == SUCCESS )
-		{
+		if (rtw_pop_from_xqueue(&worker_thread->event_queue, &message, RTW_WAIT_FOREVER) == SUCCESS) {
 			message.function(message.buf, message.buf_len, message.flags, message.user_data);
-			if(message.buf){
+			if (message.buf) {
 				//printf("\n!!!!!Free %p(%d)\n", message.buf, message.buf_len);
 				_rtw_mfree((u8 *)message.buf, message.buf_len);
 			}
@@ -1088,175 +1076,171 @@ static void worker_thread_main( void *arg )
 	}
 }
 
-int rtw_create_worker_thread( rtw_worker_thread_t* worker_thread, u8 priority, u32 stack_size, u32 event_queue_size )
+int rtw_create_worker_thread(rtw_worker_thread_t *worker_thread, u8 priority, u32 stack_size, u32 event_queue_size)
 {
-	if(NULL == worker_thread)
+	if (NULL == worker_thread)
 		return FAIL;
 
-	memset( worker_thread, 0, sizeof( *worker_thread ) );
+	memset(worker_thread, 0, sizeof(*worker_thread));
 
-	if ( rtw_init_xqueue( &worker_thread->event_queue, "worker queue", sizeof(rtw_event_message_t), event_queue_size ) != SUCCESS )
-	{
+	if (rtw_init_xqueue(&worker_thread->event_queue, "worker queue", sizeof(rtw_event_message_t), event_queue_size) != SUCCESS) {
 		return FAIL;
 	}
 
-	if ( !rtw_create_task( &worker_thread->thread, "worker thread", stack_size, priority, worker_thread_main, (void*) worker_thread ) )
-	{
-		rtw_deinit_xqueue( &worker_thread->event_queue );
+	if (!rtw_create_task(&worker_thread->thread, "worker thread", stack_size, priority, worker_thread_main, (void *)worker_thread)) {
+		rtw_deinit_xqueue(&worker_thread->event_queue);
 		return FAIL;
 	}
 
 	return SUCCESS;
 }
 
-int rtw_delete_worker_thread( rtw_worker_thread_t* worker_thread )
+int rtw_delete_worker_thread(rtw_worker_thread_t *worker_thread)
 {
-	if(NULL == worker_thread)
+	if (NULL == worker_thread)
 		return FAIL;
 
-	rtw_deinit_xqueue( &worker_thread->event_queue );
+	rtw_deinit_xqueue(&worker_thread->event_queue);
 
 	rtw_delete_task(&worker_thread->thread);
 
 	return SUCCESS;
 }
 
-_timerHandle rtw_timerCreate( _timer *timer ,
-	                           const signed char *pcTimerName, 
-							  osdepTickType xTimerPeriodInTicks, 
-							  u32 uxAutoReload, 
-							  void * pvTimerID
-							  )
+_timerHandle rtw_timerCreate(_timer *timer,
+							 const signed char *pcTimerName,
+							 osdepTickType xTimerPeriodInTicks,
+							 u32 uxAutoReload,
+							 void *pvTimerID)
 {
-	if(osdep_service.rtw_timerCreate)
-		return osdep_service.rtw_timerCreate(timer,pcTimerName, xTimerPeriodInTicks, uxAutoReload, 
+	if (osdep_service.rtw_timerCreate)
+		return osdep_service.rtw_timerCreate(timer, pcTimerName, xTimerPeriodInTicks, uxAutoReload,
 											 pvTimerID);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerCreate");
 
-	return 0;	
+	return 0;
 }
 
-u32 rtw_timerDelete( _timer *timer, 
-							   osdepTickType xBlockTime )
+u32 rtw_timerDelete(_timer *timer,
+					osdepTickType xBlockTime)
 {
-	if(osdep_service.rtw_timerDelete)
-		return osdep_service.rtw_timerDelete( timer, xBlockTime );
+	if (osdep_service.rtw_timerDelete)
+		return osdep_service.rtw_timerDelete(timer, xBlockTime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerDelete");
 
-	return 0;	
+	return 0;
 }
 
-u32 rtw_timerIsTimerActive( _timer *timer )
+u32 rtw_timerIsTimerActive(_timer *timer)
 {
-	if(osdep_service.rtw_timerIsTimerActive)
+	if (osdep_service.rtw_timerIsTimerActive)
 		return osdep_service.rtw_timerIsTimerActive(timer);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerIsTimerActive");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerStop( _timer *timer, 
-							   osdepTickType xBlockTime )
+u32 rtw_timerStop(_timer *timer,
+				  osdepTickType xBlockTime)
 {
-	if(osdep_service.rtw_timerStop)
+	if (osdep_service.rtw_timerStop)
 		return osdep_service.rtw_timerStop(timer, xBlockTime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerStop");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerChangePeriod( _timer *timer, 
-							   osdepTickType xNewPeriod, 
-							   osdepTickType xBlockTime )
+u32 rtw_timerChangePeriod(_timer *timer,
+						  osdepTickType xNewPeriod,
+						  osdepTickType xBlockTime)
 {
-	if(osdep_service.rtw_timerChangePeriod)
+	if (osdep_service.rtw_timerChangePeriod)
 		return osdep_service.rtw_timerChangePeriod(timer, xNewPeriod, xBlockTime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerChangePeriod");
 
-	return 0;	
+	return 0;
 }
 
-void *rtw_timerGetID( _timerHandle xTimer )
+void *rtw_timerGetID(_timerHandle xTimer)
 {
-	if(osdep_service.rtw_timerGetID)
+	if (osdep_service.rtw_timerGetID)
 		return osdep_service.rtw_timerGetID(xTimer);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerGetID");
 
-	return NULL;		
+	return NULL;
 }
 
-u32  rtw_timerStart( _timerHandle xTimer, osdepTickType xBlockTime )
+u32 rtw_timerStart(_timerHandle xTimer, osdepTickType xBlockTime)
 {
-	if(osdep_service.rtw_timerStart)
+	if (osdep_service.rtw_timerStart)
 		return osdep_service.rtw_timerStart(xTimer, xBlockTime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerStart");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerStartFromISR( _timerHandle xTimer, 
-								osdepBASE_TYPE *pxHigherPriorityTaskWoken )
+u32 rtw_timerStartFromISR(_timerHandle xTimer,
+						  osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	if(osdep_service.rtw_timerStartFromISR)
+	if (osdep_service.rtw_timerStartFromISR)
 		return osdep_service.rtw_timerStartFromISR(xTimer, pxHigherPriorityTaskWoken);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerStartFromISR");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerStopFromISR( _timerHandle xTimer, 
-							   osdepBASE_TYPE *pxHigherPriorityTaskWoken )
+u32 rtw_timerStopFromISR(_timerHandle xTimer,
+						 osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	if(osdep_service.rtw_timerStopFromISR)
+	if (osdep_service.rtw_timerStopFromISR)
 		return osdep_service.rtw_timerStopFromISR(xTimer, pxHigherPriorityTaskWoken);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerStopFromISR");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerResetFromISR( _timerHandle xTimer, 
-							   osdepBASE_TYPE *pxHigherPriorityTaskWoken )
+u32 rtw_timerResetFromISR(_timerHandle xTimer,
+						  osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	if(osdep_service.rtw_timerResetFromISR)
+	if (osdep_service.rtw_timerResetFromISR)
 		return osdep_service.rtw_timerResetFromISR(xTimer, pxHigherPriorityTaskWoken);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerResetFromISR");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerChangePeriodFromISR( _timerHandle xTimer, 
-							   osdepTickType xNewPeriod, 
-							   osdepBASE_TYPE *pxHigherPriorityTaskWoken )
+u32 rtw_timerChangePeriodFromISR(_timerHandle xTimer,
+								 osdepTickType xNewPeriod,
+								 osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	if(osdep_service.rtw_timerChangePeriodFromISR)
+	if (osdep_service.rtw_timerChangePeriodFromISR)
 		return osdep_service.rtw_timerChangePeriodFromISR(xTimer, xNewPeriod, pxHigherPriorityTaskWoken);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerChangePeriodFromISR");
 
-	return 0;	
+	return 0;
 }
 
-u32  rtw_timerReset( _timerHandle xTimer, 
-						osdepTickType xBlockTime )
+u32 rtw_timerReset(_timerHandle xTimer,
+				   osdepTickType xBlockTime)
 {
-	if(osdep_service.rtw_timerReset)
+	if (osdep_service.rtw_timerReset)
 		return osdep_service.rtw_timerReset(xTimer, xBlockTime);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_timerReset");
 
-	return 0;	
+	return 0;
 }
-
 
 #if 0 //TODO
 void rtw_init_delayed_work(struct delayed_work *dwork, work_func_t func, const char *name)
@@ -1266,7 +1250,7 @@ void rtw_init_delayed_work(struct delayed_work *dwork, work_func_t func, const c
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_init_delayed_work");
 
-	return;	
+	return;
 }
 
 void rtw_deinit_delayed_work(struct delayed_work *dwork)
@@ -1276,7 +1260,7 @@ void rtw_deinit_delayed_work(struct delayed_work *dwork)
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_deinit_delayed_work");
 
-	return;	
+	return;
 }
 
 int rtw_queue_delayed_work(struct workqueue_struct *wq,
@@ -1287,7 +1271,7 @@ int rtw_queue_delayed_work(struct workqueue_struct *wq,
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_queue_delayed_work");
 
-	return;	
+	return;
 }
 
 BOOLEAN rtw_cancel_delayed_work(struct delayed_work *dwork)
@@ -1297,12 +1281,12 @@ BOOLEAN rtw_cancel_delayed_work(struct delayed_work *dwork)
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_cancel_delayed_work");
 
-	return;	
+	return;
 }
 #endif
 void rtw_thread_enter(char *name)
 {
-	if(osdep_service.rtw_thread_enter)
+	if (osdep_service.rtw_thread_enter)
 		osdep_service.rtw_thread_enter(name);
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_thread_enter");
@@ -1310,21 +1294,21 @@ void rtw_thread_enter(char *name)
 
 void rtw_thread_exit()
 {
-	if(osdep_service.rtw_thread_exit)
+	if (osdep_service.rtw_thread_exit)
 		osdep_service.rtw_thread_exit();
 	else
 		OSDEP_DBG("Not implement osdep service: rtw_thread_exit");
 }
 
 u8 rtw_get_scheduler_state()
-{	
+{
 	// OS_SCHEDULER_NOT_STARTED	0
 	// OS_SCHEDULER_RUNNING		1
 	// OS_SCHEDULER_SUSPENDED	2
 	// OS_SCHEDULER_UNREACHABLE	3
-	if(osdep_service.rtw_get_scheduler_state)
+	if (osdep_service.rtw_get_scheduler_state)
 		return osdep_service.rtw_get_scheduler_state();
-	else{
+	else {
 		OSDEP_DBG("Not implement osdep service: rtw_get_scheduler_state");
 		return 3;
 	}

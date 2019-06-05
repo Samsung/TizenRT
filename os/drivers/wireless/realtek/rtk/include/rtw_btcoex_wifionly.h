@@ -15,7 +15,7 @@
 #ifndef __RTW_BTCOEX_WIFIONLY_H__
 #define __RTW_BTCOEX_WIFIONLY_H__
 
-#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C)||defined(CONFIG_RTL8821C)
+#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8821C)
 void rtw_btcoex_wifionly_switchband_notify(PADAPTER padapter);
 void rtw_btcoex_wifionly_scan_notify(PADAPTER padapter);
 void rtw_btcoex_wifionly_connect_notify(PADAPTER padapter);
@@ -31,4 +31,3 @@ void rtw_btcoex_wifionly_AntInfoSetting(PADAPTER padapter);
 #define rtw_btcoex_wifionly_AntInfoSetting(padapter)
 #endif
 #endif
-

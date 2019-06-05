@@ -16,7 +16,7 @@
 #ifndef __NET_STACK_INTF_H__
 #define __NET_STACK_INTF_H__
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -30,8 +30,8 @@ struct netif;
 //----- ------------------------------------------------------------------
 
 struct eth_drv_sg {
-    unsigned int	buf;
-    unsigned int 	len;
+	unsigned int buf;
+	unsigned int len;
 };
 
 //----- ------------------------------------------------------------------
@@ -40,19 +40,19 @@ struct eth_drv_sg {
 unsigned char rltk_wlan_check_isup(int idx);
 void rltk_wlan_tx_inc(int idx);
 void rltk_wlan_tx_dec(int idx);
-struct sk_buff * rltk_wlan_get_recv_skb(int idx);
-struct sk_buff * rltk_wlan_alloc_skb(unsigned int total_len);
-void rltk_wlan_set_netif_info(int idx_wlan, void * dev, unsigned char * dev_addr);
-void rltk_wlan_send_skb(int idx, struct sk_buff *skb);	//struct sk_buff as defined above comment line
+struct sk_buff *rltk_wlan_get_recv_skb(int idx);
+struct sk_buff *rltk_wlan_alloc_skb(unsigned int total_len);
+void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
+void rltk_wlan_send_skb(int idx, struct sk_buff *skb); //struct sk_buff as defined above comment line
 int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len);
 void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
-unsigned char rltk_wlan_running(unsigned char idx);		// interface is up. 0: interface is down
+unsigned char rltk_wlan_running(unsigned char idx); // interface is up. 0: interface is down
 
 //----- ------------------------------------------------------------------
 // Network Interface provided
 //----- ------------------------------------------------------------------
 
-int netif_is_valid_IP(int idx,unsigned char * ip_dest);
+int netif_is_valid_IP(int idx, unsigned char *ip_dest);
 int netif_get_idx(struct netif *pnetif);
 unsigned char *netif_get_hwaddr(int idx_wlan);
 void netif_rx(int idx, unsigned int len);
@@ -68,7 +68,7 @@ extern void lwip_POST_SLEEP_PROCESSING(void);
 extern unsigned char *rltk_wlan_get_ip(int idx);
 #endif
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
