@@ -58,6 +58,10 @@ NETDEV_CSRCS += netdev_count.c
 NETDEV_CSRCS += netdev_foreach.c
 NETDEV_CSRCS += netdev_sem.c
 NETDEV_CSRCS += netdev_getstats.c
+ifeq ($(CONFIG_NET_LWIP_DHCP),y)
+NETDEV_CSRCS += netdev_dhcpc.c
+NETDEV_CSRCS += netdev_dhcpd.c
+endif
 
 # Include netdev build support
 DEPPATH += --dep-path netdev
