@@ -70,6 +70,7 @@
 
 #include <tinyara/net/net.h>
 #include <tinyara/net/ip.h>
+#include <tinyara/kmalloc.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -1091,6 +1092,63 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #endif							/* CONFIG_NET_ROUTE */
 
 #if CONFIG_NET_LWIP
+static struct addrinfo *copy_addrinfo(struct addrinfo *src)
+{
+	struct addrinfo *tmp = src;
+	struct addrinfo *prev = NULL;
+	struct addrinfo *root = NULL;
+	while (tmp) {
+		struct addrinfo *dst = NULL;
+		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
+		if (!dst) {
+			printf("copy_addrinfo() kumm_malloc failed\n");
+			break;
+		}
+		dst->ai_flags = tmp->ai_flags;
+		dst->ai_family = tmp->ai_family;
+		dst->ai_socktype = tmp->ai_socktype;
+		dst->ai_protocol = tmp->ai_protocol;
+		dst->ai_addrlen = tmp->ai_addrlen;
+		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
+		if (!dst->ai_addr) {
+			printf("copy_addrinfo() kumm_malloc failed\n");
+			kumm_free(dst);
+			break;
+		}
+		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
+		dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
+		if (!dst->ai_canonname) {
+			printf("copy_addrinfo() kumm_malloc failed\n");
+			kumm_free(dst->ai_addr);
+			kumm_free(dst);
+			break;
+		}
+		memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+		dst->ai_next = NULL;
+		if (prev) {
+			prev->ai_next = dst;
+		} else {
+			root = dst;
+		}
+		tmp = tmp->ai_next;
+		prev = dst;
+	}
+
+	return root;
+}
+
+static int free_addrinfo(struct addrinfo *ai)
+{
+	struct addrinfo *next;
+
+	while (ai != NULL) {
+		next = ai->ai_next;
+		kumm_free(ai);
+		ai = next;
+	}
+	return 0;
+}
+
 /****************************************************************************
  * Function: lwip_func_ioctl
  *
@@ -1105,7 +1163,6 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-
 int lwip_func_ioctl(int cmd, void *arg)
 {
 	int ret = -EINVAL;
@@ -1116,6 +1173,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 
 	struct addrinfo *res = NULL;
 	struct hostent *host_ent = NULL;
+	struct hostent *user_ent = NULL;
 
 	switch (in_arg->type) {
 #if LWIP_DNS
@@ -1125,13 +1183,13 @@ int lwip_func_ioctl(int cmd, void *arg)
 			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
 			in_arg->ai_res = NULL;
 		} else {
-			in_arg->ai_res = res;
+			in_arg->ai_res = copy_addrinfo(res);
 		}
 		in_arg->req_res = ret;
 		ret = 0;
 		break;
 	case FREEADDRINFO:
-		lwip_freeaddrinfo(in_arg->ai);
+		in_arg->req_res = free_addrinfo(in_arg->ai);
 		ret = 0;
 		break;
 	case DNSSETSERVER:
@@ -1143,7 +1201,13 @@ int lwip_func_ioctl(int cmd, void *arg)
 		if (!host_ent) {
 			printf("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
 		}
-		in_arg->host_entry = host_ent;
+		user_ent = in_arg->host_entry;
+		strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
+		user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
+		memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
+		user_ent->h_addrtype = host_ent->h_addrtype;
+		user_ent->h_length = host_ent->h_length;
+
 		ret = 0;
 		break;
 	case GETNAMEINFO:
