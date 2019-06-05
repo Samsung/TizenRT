@@ -1094,7 +1094,7 @@ config BINARY_MANAGER
 	bool "Enable Binary Manager"
 	default n
 	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE
-	depends on MTD_FTL && FLASH_PARTITION && MTD_PARTITION_NAMES
+	depends on BCH && MTD_FTL && FLASH_PARTITION && MTD_PARTITION_NAMES
 	---help---
 		This is kernel thread which manages binaries.
 		It loads/unloads binaries and recovers any fault occurs in a system.
