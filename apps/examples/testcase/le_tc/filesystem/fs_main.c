@@ -3559,7 +3559,7 @@ static void tc_libc_stdio_ungetc(void)
 * @precondition     NA
 * @postcondition    NA
 */
-#ifdef CONFIG_BCH
+#if defined(CONFIG_BCH) && !defined(CONFIG_BUILD_PROTECTED)
 static void tc_fs_driver_ramdisk_ops(void)
 {
 	uint8_t *buffer;
@@ -3705,7 +3705,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_setvbuf();
 #endif
 	tc_fs_mqueue_ops();
-#ifdef CONFIG_BCH
+#if defined(CONFIG_BCH) && !defined(CONFIG_BUILD_PROTECTED)
 	tc_fs_driver_ramdisk_ops();
 #endif
 	tc_libc_stdio_meminstream();
