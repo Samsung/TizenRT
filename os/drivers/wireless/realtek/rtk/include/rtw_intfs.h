@@ -15,6 +15,6 @@ extern int rtw_drv_init(ADAPTER *padapter);
 extern void rtw_drv_deinit(ADAPTER *Adapter);
 
 extern u32 rtw_start_drv_threads(_adapter *padapter);
-extern void rtw_stop_drv_threads (_adapter *padapter);
+extern void rtw_stop_drv_threads(_adapter *padapter);
 
 #endif //_RTW_INTFS_H_

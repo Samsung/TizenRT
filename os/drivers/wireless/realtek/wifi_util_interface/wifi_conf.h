@@ -42,7 +42,7 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 /******************************************************
@@ -53,40 +53,40 @@
 
 #ifdef RTW_ENABLE_API_INFO
 #if defined(CONFIG_MBED_ENABLED)
-    extern __u32 GlobalDebugEnable;
-    #define RTW_API_INFO(...)     do {\
-        if (GlobalDebugEnable) \
-            printf(__VA_ARGS__);\
-    }while(0)
+extern __u32 GlobalDebugEnable;
+#define RTW_API_INFO(...)        \
+	do {                         \
+		if (GlobalDebugEnable)   \
+			printf(__VA_ARGS__); \
+	} while (0)
 #else
-    #define RTW_API_INFO printf
+#define RTW_API_INFO printf
 #endif
 #else
-    #define RTW_API_INFO(args)
+#define RTW_API_INFO(args)
 #endif
 
-#define MAC_ARG(x) ((u8*)(x))[0],((u8*)(x))[1],((u8*)(x))[2],((u8*)(x))[3],((u8*)(x))[4],((u8*)(x))[5]
-#define CMP_MAC( a, b )  (((a[0])==(b[0]))&& \
-                          ((a[1])==(b[1]))&& \
-                          ((a[2])==(b[2]))&& \
-                          ((a[3])==(b[3]))&& \
-                          ((a[4])==(b[4]))&& \
-                          ((a[5])==(b[5])))
+#define MAC_ARG(x) ((u8 *)(x))[0], ((u8 *)(x))[1], ((u8 *)(x))[2], ((u8 *)(x))[3], ((u8 *)(x))[4], ((u8 *)(x))[5]
+#define CMP_MAC(a, b) (((a[0]) == (b[0])) && \
+					   ((a[1]) == (b[1])) && \
+					   ((a[2]) == (b[2])) && \
+					   ((a[3]) == (b[3])) && \
+					   ((a[4]) == (b[4])) && \
+					   ((a[5]) == (b[5])))
 
 /******************************************************
  *                    Constants
  ******************************************************/
-#define SCAN_LONGEST_WAIT_TIME  (4500)
-
+#define SCAN_LONGEST_WAIT_TIME (4500)
 
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 
-#define PSCAN_ENABLE 0x01      //enable for partial channel scan
-#define PSCAN_FAST_SURVEY 0x02 //set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO
-#define PSCAN_SIMPLE_CONFIG   0x04 //set to select scan time to FAST_SURVEY_TO and resend probe request
+#define PSCAN_ENABLE 0x01		 //enable for partial channel scan
+#define PSCAN_FAST_SURVEY 0x02   //set to select scan time to FAST_SURVEY_TO, otherwise SURVEY_TO
+#define PSCAN_SIMPLE_CONFIG 0x04 //set to select scan time to FAST_SURVEY_TO and resend probe request
 
-#define _PACKED         __attribute__ ((packed))
-#define _WEAK           __attribute__ ((weak))
+#define _PACKED __attribute__((packed))
+#define _WEAK __attribute__((weak))
 
 typedef _int8_t int8_t;
 typedef _uint8_t uint8_t;
@@ -97,7 +97,6 @@ typedef _uint16_t uint16_t;
 typedef _int32_t int32_t;
 typedef _uint32_t uint32_t;
 
-
 /******************************************************
  *                 Type Definitions
  ******************************************************/
@@ -107,8 +106,8 @@ typedef _uint32_t uint32_t;
  * @param result_ptr  : A pointer to the pointer that indicates where to put the next scan result
  * @param user_data   : User provided data
  */
-typedef void (*rtw_scan_result_callback_t)( rtw_scan_result_t** result_ptr, void* user_data );
-typedef rtw_result_t (*rtw_scan_result_handler_t)( rtw_scan_handler_result_t* malloced_scan_result );
+typedef void (*rtw_scan_result_callback_t)(rtw_scan_result_t **result_ptr, void *user_data);
+typedef rtw_result_t (*rtw_scan_result_handler_t)(rtw_scan_handler_result_t *malloced_scan_result);
 
 /******************************************************
  *                    Structures
@@ -121,25 +120,25 @@ typedef struct {
 /******************************************************
  *                    Structures
  ******************************************************/
-typedef struct internal_scan_handler{
-	rtw_scan_result_t** pap_details;
-	rtw_scan_result_t * ap_details;
-	int	scan_cnt;
-	rtw_bool_t	scan_complete;
-	unsigned char	max_ap_size;
+typedef struct internal_scan_handler {
+	rtw_scan_result_t **pap_details;
+	rtw_scan_result_t *ap_details;
+	int scan_cnt;
+	rtw_bool_t scan_complete;
+	unsigned char max_ap_size;
 	rtw_scan_result_handler_t gscan_result_handler;
 #if SCAN_USE_SEMAPHORE
 	void *scan_semaphore;
 #else
-	int 	scan_running;
+	int scan_running;
 #endif
-	void*	user_data;
-	unsigned int	scan_start_time;
+	void *user_data;
+	unsigned int scan_start_time;
 } internal_scan_handler_t;
 
 typedef struct {
-    rtw_network_info_t	network_info;
-    void *join_sema;
+	rtw_network_info_t network_info;
+	void *join_sema;
 } internal_join_result_t;
 
 /******************************************************
@@ -172,13 +171,13 @@ typedef struct {
  * @note  Please make sure the Wi-Fi is enabled before invoking this function. (@ref wifi_on())
  */
 int wifi_connect(
-	char 				*ssid,
-	rtw_security_t	security_type,
-	char 				*password,
-	int 				ssid_len,
-	int 				password_len,
-	int 				key_id,
-	void 				*semaphore);
+	char *ssid,
+	rtw_security_t security_type,
+	char *password,
+	int ssid_len,
+	int password_len,
+	int key_id,
+	void *semaphore);
 
 /**
  * @brief  Join a Wi-Fi network with specified BSSID.
@@ -207,15 +206,15 @@ int wifi_connect(
  * @note  The difference between @ref wifi_connect_bssid() and @ref wifi_connect() is that BSSID has higher priority as the basis of connection in @ref wifi_connect_bssid.
  */
 int wifi_connect_bssid(
-	unsigned char 		bssid[ETH_ALEN],
-	char 				*ssid,
-	rtw_security_t	security_type,
-	char 				*password,
-	int 				bssid_len,
-	int 				ssid_len,
-	int 				password_len,
-	int 				key_id,
-	void 				*semaphore);
+	unsigned char bssid[ETH_ALEN],
+	char *ssid,
+	rtw_security_t security_type,
+	char *password,
+	int bssid_len,
+	int ssid_len,
+	int password_len,
+	int key_id,
+	void *semaphore);
 
 /**
   * @brief  Disassociates from current Wi-Fi network.
@@ -256,7 +255,7 @@ int wifi_is_ready_to_transceive(rtw_interface_t interface);
  * @param[in] mac: Wi-Fi MAC address.
  * @return    RTW_SUCCESS or RTW_ERROR
  */
-int wifi_set_mac_address(char * mac);
+int wifi_set_mac_address(char *mac);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -264,7 +263,7 @@ int wifi_set_mac_address(char * mac);
  * @param[in]  mac: Point to the result of the mac address will be get.
  * @return    RTW_SUCCESS or RTW_ERROR
  */
-int wifi_get_mac_address(char * mac);
+int wifi_get_mac_address(char *mac);
 
 /**
  * @brief Enable Wi-Fi powersave mode.
@@ -304,7 +303,7 @@ int wifi_set_txpower(int poweridx);
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
  */
-int wifi_get_associated_client_list(void * client_list_buffer, unsigned short buffer_length);
+int wifi_get_associated_client_list(void *client_list_buffer, unsigned short buffer_length);
 
 /**
  * @brief Get connected AP's BSSID
@@ -321,7 +320,7 @@ int wifi_get_ap_bssid(unsigned char *bssid);
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
  */
-int wifi_get_ap_info(rtw_bss_info_t * ap_info, rtw_security_t* security);
+int wifi_get_ap_info(rtw_bss_info_t *ap_info, rtw_security_t *security);
 
 /**
  * @brief  Set the country code to driver to determine the channel set.
@@ -338,7 +337,7 @@ int wifi_set_country(rtw_country_code_t country_code);
  * @return  RTW_ERROR: If the INIDATA_RATE is not retrieved.
  * note: inidata_rate = 2 * (data rate), you need inidata_rate/2.0 to get the real rate
  */
-int wifi_get_sta_max_data_rate(__u8 * inidata_rate);
+int wifi_get_sta_max_data_rate(__u8 *inidata_rate);
 
 /**
  * @brief  Retrieve the latest RSSI value.
@@ -462,7 +461,7 @@ int wifi_off_fastly(void);
  * @return  RTW_SUCCESS if setting LPS mode successful.
  * @return  RTW_ERROR otherwise.
  */
- 
+
 int wifi_set_power_mode(unsigned char ips_mode, unsigned char lps_mode);
 
 /**
@@ -515,7 +514,7 @@ typedef unsigned char rtw_lps_thresh_t;
  * @return  RTW_SUCCESS if set LPS threshold successful.
  * @return  RTW_ERROR otherwise.
  */
-int wifi_set_lps_thresh(rtw_lps_thresh_t mode); 
+int wifi_set_lps_thresh(rtw_lps_thresh_t mode);
 
 /**
  * @brief Set LPS LEVEL
@@ -557,12 +556,12 @@ int wifi_set_mfp_support(unsigned char value);
  * @note  Please make sure the Wi-Fi is enabled before invoking this function. (@ref wifi_on())
  */
 int wifi_start_ap(
-	char 				*ssid,
-	rtw_security_t		security_type,
-	char 				*password,
-	int 				ssid_len,
-	int 				password_len,
-	int					channel);
+	char *ssid,
+	rtw_security_t security_type,
+	char *password,
+	int ssid_len,
+	int password_len,
+	int channel);
 
 /**
  * @brief  Start an infrastructure Wi-Fi network with hidden SSID.
@@ -587,12 +586,12 @@ int wifi_start_ap(
  * @return  RTW_ERROR: If an error occurred.
  */
 int wifi_start_ap_with_hidden_ssid(
-	char 				*ssid,
-	rtw_security_t		security_type,
-	char 				*password,
-	int 				ssid_len,
-	int 				password_len,
-	int					channel);
+	char *ssid,
+	rtw_security_t security_type,
+	char *password,
+	int ssid_len,
+	int password_len,
+	int channel);
 
 /**
  * @brief  Initiate a scan to search for 802.11 networks.
@@ -623,9 +622,9 @@ int wifi_start_ap_with_hidden_ssid(
  *  	 strong signal strength on nearby channels may be
  *  	 detected
  */
-int wifi_scan(rtw_scan_type_t                    scan_type,
-				  rtw_bss_type_t                     bss_type,
-				  void*                result_ptr);
+int wifi_scan(rtw_scan_type_t scan_type,
+			  rtw_bss_type_t bss_type,
+			  void *result_ptr);
 
 /**
  * @brief  Initiate a scan to search for 802.11 networks, a higher level API based on wifi_scan
@@ -638,7 +637,7 @@ int wifi_scan(rtw_scan_type_t                    scan_type,
  *			Those variables must remain valid until the scan is completed.
  *			The usage of this api can reference ATWS in atcmd_wifi.c.
  */
-int wifi_scan_networks(rtw_scan_result_handler_t results_handler, void* user_data);
+int wifi_scan_networks(rtw_scan_result_handler_t results_handler, void *user_data);
 
 /**
  * @brief  Initiate a scan to search for 802.11 networks with specified SSID.
@@ -652,7 +651,7 @@ int wifi_scan_networks(rtw_scan_result_handler_t results_handler, void* user_dat
  *			The callback, user_data variables will be referenced after the function returns. 
  *			Those variables must remain valid until the scan is completed.
  */
-int wifi_scan_networks_with_ssid(int (results_handler)(char*, int, char *, void *), void* user_data, int scan_buflen, char* ssid, int ssid_len);
+int wifi_scan_networks_with_ssid(int(results_handler)(char *, int, char *, void *), void *user_data, int scan_buflen, char *ssid, int ssid_len);
 
 /**
 * @brief  Set the channel used to be partial scanned.
@@ -663,7 +662,7 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*, int, char *, void 
 * @note  This function should be used with wifi_scan function. First, use @ref wifi_set_pscan_chan to
 *			indicate which channel will be scanned, and then use @ref wifi_scan to get scanned results.
 */
-int wifi_set_pscan_chan(__u8 * channel_list,__u8 * pscan_config, __u8 length);
+int wifi_set_pscan_chan(__u8 *channel_list, __u8 *pscan_config, __u8 length);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
@@ -671,7 +670,7 @@ int wifi_set_pscan_chan(__u8 * channel_list,__u8 * pscan_config, __u8 length);
  * @param[out]  pSetting: Points to the rtw_wifi_setting_t structure to store the WIFI setting gotten from driver.
  * @return  RTW_SUCCESS or RTW_ERROR.
  */
-int wifi_get_setting(const char *ifname,rtw_wifi_setting_t *pSetting);
+int wifi_get_setting(const char *ifname, rtw_wifi_setting_t *pSetting);
 
 /**
  * @brief  Show the network information stored in a rtw_wifi_setting_t structure.
@@ -679,7 +678,7 @@ int wifi_get_setting(const char *ifname,rtw_wifi_setting_t *pSetting);
  * @param[in]  pSetting: Points to the rtw_wifi_setting_t structure which information is gotten by @ref wifi_get_setting().
  * @return  RTW_SUCCESS or RTW_ERROR.
  */
-int wifi_show_setting(const char *ifname,rtw_wifi_setting_t *pSetting);
+int wifi_show_setting(const char *ifname, rtw_wifi_setting_t *pSetting);
 
 /**
  * @brief  
@@ -717,7 +716,7 @@ int wifi_get_network_mode(rtw_network_mode_t *pmode);
  * @note  This function can be used to implement vendor specified simple configure.
  * @note  To fetch Ethernet frames, the len_used should be set to 1
  */
-int wifi_set_promisc(rtw_rcr_level_t enabled, void (*callback)(unsigned char*, unsigned int, void*), unsigned char len_used);
+int wifi_set_promisc(rtw_rcr_level_t enabled, void (*callback)(unsigned char *, unsigned int, void *), unsigned char len_used);
 
 /**
  * @brief  Let Wi-Fi enter promiscuous mode.
@@ -754,12 +753,12 @@ int wifi_set_wps_phase(unsigned char is_trigger_wps);
  * @note  Please make sure the Wi-Fi is enabled before invoking this function. (@ref wifi_on())
  */
 int wifi_restart_ap(
-	unsigned char 		*ssid,
-	rtw_security_t		security_type,
-	unsigned char 		*password,
-	int 				ssid_len,
-	int 				password_len,
-	int					channel);
+	unsigned char *ssid,
+	rtw_security_t security_type,
+	unsigned char *password,
+	int ssid_len,
+	int password_len,
+	int channel);
 
 /**
  * @brief  Set reconnection mode with configuration.
@@ -809,10 +808,9 @@ int wifi_get_autoreconnect(__u8 *mode);
   */
 int wifi_get_last_error(void);
 
-
 #ifdef CONFIG_CUSTOM_IE
 #ifndef BIT
-#define BIT(x)	((__u32)1 << (x))
+#define BIT(x) ((__u32)1 << (x))
 #endif
 
 #ifndef _CUSTOM_IE_TYPE_
@@ -820,10 +818,10 @@ int wifi_get_last_error(void);
 /**
   * @brief  The enumeration is transmission type for wifi custom ie.
   */
-enum CUSTOM_IE_TYPE{
+enum CUSTOM_IE_TYPE {
 	PROBE_REQ = BIT(0),
 	PROBE_RSP = BIT(1),
-	BEACON	  = BIT(2),
+	BEACON = BIT(2),
 };
 typedef __u32 rtw_custom_ie_type_t;
 #endif /* _CUSTOM_IE_TYPE_ */
@@ -841,10 +839,10 @@ typedef __u32 rtw_custom_ie_type_t;
   * @brief  The structure is used to set WIFI custom ie list, and type match CUSTOM_IE_TYPE.\n
   *			The ie will be transmitted according to the type.
   */
-typedef struct _cus_ie{
+typedef struct _cus_ie {
 	__u8 *ie;
 	__u8 type;
-}rtw_custom_ie_t, *p_rtw_custom_ie_t;
+} rtw_custom_ie_t, *p_rtw_custom_ie_t;
 #endif /* _CUS_IE_ */
 
 /**
@@ -941,7 +939,6 @@ int wifi_get_antenna_info(unsigned char *antenna);
 
 void wifi_set_indicate_mgnt(int enable);
 
-
 /**
  * @brief  Get the information of MP driver
  * @param[out]  ability : 0x1 stand for mp driver, and 0x0 stand for normal driver
@@ -987,7 +984,7 @@ int wifi_disable_forwarding(void);
 int wifi_set_ch_deauth(__u8 enable);
 #endif
 
-///@name Ameba1 Only 
+///@name Ameba1 Only
 ///@{
 /**
  * @brief enable AP sending QoS Null0 Data to poll Sta be alive
@@ -1016,7 +1013,7 @@ typedef struct {
 	unsigned int filter_id;
 	unsigned int polarity;
 	unsigned int type;
-	unsigned int offset;	
+	unsigned int offset;
 	unsigned char *bitmask;
 	unsigned char *pattern;
 } wowlan_pattern_param_t;
@@ -1027,7 +1024,7 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 //-------------------------------------------------------------//
 
 #ifdef __cplusplus
-  }
+}
 #endif
 
 /*\@}*/
@@ -1035,4 +1032,3 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 #endif // __WIFI_API_H
 
 //----------------------------------------------------------------------------//
-

@@ -18,33 +18,35 @@
 #include <drv_types.h>
 #include <hal_data.h>
 
-#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C)||defined(CONFIG_RTL8821C) || defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B)
+#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8821C) || defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B)
 typedef enum _WIFIONLY_CHIP_INTERFACE {
-	WIFIONLY_INTF_UNKNOWN	= 0,
-	WIFIONLY_INTF_PCI		= 1,
-	WIFIONLY_INTF_USB		= 2,
-	WIFIONLY_INTF_SDIO		= 3,
+	WIFIONLY_INTF_UNKNOWN = 0,
+	WIFIONLY_INTF_PCI = 1,
+	WIFIONLY_INTF_USB = 2,
+	WIFIONLY_INTF_SDIO = 3,
 	WIFIONLY_INTF_MAX
-} WIFIONLY_CHIP_INTERFACE, *PWIFIONLY_CHIP_INTERFACE;
+} WIFIONLY_CHIP_INTERFACE,
+	*PWIFIONLY_CHIP_INTERFACE;
 
 typedef enum _WIFIONLY_CUSTOMER_ID {
-	CUSTOMER_NORMAL			= 0,
-	CUSTOMER_HP_1			= 1
-} WIFIONLY_CUSTOMER_ID, *PWIFIONLY_CUSTOMER_ID;
+	CUSTOMER_NORMAL = 0,
+	CUSTOMER_HP_1 = 1
+} WIFIONLY_CUSTOMER_ID,
+	*PWIFIONLY_CUSTOMER_ID;
 
 struct wifi_only_haldata {
-	u16		customer_id;
-	u8		efuse_pg_antnum;
-	u8		efuse_pg_antpath;
-	u8		rfe_type;
-	u8		ant_div_cfg;
+	u16 customer_id;
+	u8 efuse_pg_antnum;
+	u8 efuse_pg_antpath;
+	u8 rfe_type;
+	u8 ant_div_cfg;
 };
 
 typedef struct wifi_only_cfg {
-	PVOID						Adapter;
-	struct	wifi_only_haldata		haldata_info;
-	WIFIONLY_CHIP_INTERFACE	chip_interface;
-}WIFI_ONLY_CFG, *PWIFI_ONLY_CFG;
+	PVOID Adapter;
+	struct wifi_only_haldata haldata_info;
+	WIFIONLY_CHIP_INTERFACE chip_interface;
+} WIFI_ONLY_CFG, *PWIFI_ONLY_CFG;
 
 void halwifionly_write1byte(PVOID pwifionlyContext, u32 RegAddr, u8 Data);
 void halwifionly_write2byte(PVOID pwifionlyContext, u32 RegAddr, u16 Data);

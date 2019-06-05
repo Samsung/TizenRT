@@ -132,6 +132,10 @@ ifneq ($(CONFIG_BINFMT_DISABLE),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_RTK_WLAN),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
+endif
+
 # Add library for wifi driver
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwifidriver$(LIBEXT)
 # Add library for wifi stack

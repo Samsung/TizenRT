@@ -21,13 +21,13 @@
 #ifndef __OSDEP_INTF_H_
 #define __OSDEP_INTF_H_
 
-typedef	struct	net_device *	_nic_hdl;
-struct iw_request_info { 
-    u16           cmd;            /* Wireless Extension command */
-    u16           flags;          /* More to come ;-) */ 
+typedef struct net_device *_nic_hdl;
+struct iw_request_info {
+	u16 cmd;   /* Wireless Extension command */
+	u16 flags; /* More to come ;-) */
 };
 typedef int (*iw_handler)(struct net_device *dev, struct iw_request_info *info,
-			  union iwreq_data *wrqu, char *extra);
+						  union iwreq_data *wrqu, char *extra);
 
 struct pkt_buff {
 	_list list;
@@ -35,7 +35,7 @@ struct pkt_buff {
 	unsigned char *data;
 };
 
-#if defined(PLATFORM_FREERTOS) || defined (PLATFORM_CMSIS_RTOS)
+#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS)
 
 #include "freertos/wrapper.h"
 #include "freertos/freertos_intfs.h"
@@ -63,12 +63,16 @@ struct pkt_buff {
 #include "ecos/ecos_mlme.h"
 #include "ecos/ecos_intfs.h"
 
-#ifdef CONFIG_PROC_DEBUG  //need move to ecos/ecos_intfs.h
+#ifdef CONFIG_PROC_DEBUG //need move to ecos/ecos_intfs.h
 void rtw_proc_init_one(struct net_device *dev);
 void rtw_proc_remove_one(struct net_device *dev);
 #else
-static void rtw_proc_init_one(struct net_device *dev){}
-static void rtw_proc_remove_one(struct net_device *dev){}
+static void rtw_proc_init_one(struct net_device *dev)
+{
+}
+static void rtw_proc_remove_one(struct net_device *dev)
+{
+}
 #endif //CONFIG_PROC_DEBUG
 
 #elif defined(PLATFORM_LINUX)
@@ -81,8 +85,12 @@ struct net_device *rtw_init_netdev(_adapter *padapter);
 void rtw_proc_init_one(struct net_device *dev);
 void rtw_proc_remove_one(struct net_device *dev);
 #else
-static void rtw_proc_init_one(struct net_device *dev){}
-static void rtw_proc_remove_one(struct net_device *dev){}
+static void rtw_proc_init_one(struct net_device *dev)
+{
+}
+static void rtw_proc_remove_one(struct net_device *dev)
+{
+}
 #endif //CONFIG_PROC_DEBUG
 #endif
 
@@ -93,13 +101,13 @@ void rtw_drv_if2_free(_adapter *pbuddy_padapter);
 #endif
 
 struct net_device *rtw_alloc_etherdev_with_old_priv(int sizeof_priv, void *old_priv);
-struct net_device * rtw_alloc_etherdev(int sizeof_priv);
-void rtw_free_netdev(struct net_device * netdev);
+struct net_device *rtw_alloc_etherdev(int sizeof_priv);
+void rtw_free_netdev(struct net_device *netdev);
 
-int	rtw_netif_queue_stopped(struct net_device *pnetdev);
-void	rtw_netif_wake_queue(struct net_device *pnetdev);
-void	rtw_netif_start_queue(struct net_device *pnetdev);
-void	rtw_netif_stop_queue(struct net_device *pnetdev);
+int rtw_netif_queue_stopped(struct net_device *pnetdev);
+void rtw_netif_wake_queue(struct net_device *pnetdev);
+void rtw_netif_start_queue(struct net_device *pnetdev);
+void rtw_netif_stop_queue(struct net_device *pnetdev);
 
 struct pkt_buff *rtw_alloc_pktbuf(unsigned int size);
 void rtw_free_pktbuf(struct pkt_buff *skb);
@@ -126,5 +134,4 @@ enum {
 };
 #endif
 
-#endif	//_OSDEP_INTF_H_
-
+#endif //_OSDEP_INTF_H_

@@ -67,12 +67,11 @@
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
-
+#include <sys/ioctl.h>
+#include <netdb.h>
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
 
-#include <net/lwip/netif.h>
-#include <net/lwip/netifapi.h>
 
 /****************************************************************************
  * Definitions
@@ -111,52 +110,29 @@
  ****************************************************************************/
 int dhcp_client_start(const char *intf)
 {
-	ndbg("[DHCPC] LWIP DHCPC started\n");
-	struct netif *cur_netif;
-	cur_netif = netif_find(intf);
-	if (cur_netif == NULL) {
-		ndbg("[DHCPC] No network interface for dhcpc\n");
-		return -1;
-	}
-	int32_t timeleft = CONFIG_LWIP_DHCPC_TIMEOUT;
-	struct in_addr local_ipaddr;
-	struct in_addr local_netmask;
-	struct in_addr local_gateway;
+	int ret = -1;
+	struct req_lwip_data req;
 
-	struct in_addr ip_check;
-
-	/* Initialize dhcp structure if exists */
-	if (netif_dhcp_data(cur_netif)) {
-		netifapi_dhcp_stop(cur_netif);
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0) {
+		printf("socket() failed with errno: %d\n", errno);
+		return ret;
 	}
 
-	local_ipaddr.s_addr = IPADDR_ANY;
-	local_netmask.s_addr = IPADDR_BROADCAST;
-	local_gateway.s_addr = IPADDR_ANY;
-	DHCPC_SET_IP4ADDR(intf, local_ipaddr, local_netmask, local_gateway);
-	err_t res = netifapi_dhcp_start(cur_netif);
-	if (res) {
-		ndbg("[DHCPC] dhcpc_start failure %d\n", res);
-		return -1;
+	memset(&req, 0, sizeof(req));
+	req.type = DHCPCSTART;
+	req.host_name = intf;
+
+	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	if (ret == ERROR) {
+		printf("ioctl() failed with errno: %d\n", errno);
+		close(sockfd);
+		return ret;
 	}
-	ndbg("[DHCPC] dhcpc_start success, waiting IP address (timeout %d secs)\n", timeleft);
-	while (netifapi_dhcp_address_valid(cur_netif) != 0) {
-		usleep(100000);
-		timeleft -= 100;
-		if (timeleft <= 0) {
-			ndbg("[DHCPC] dhcpc_start timeout\n");
-			netifapi_dhcp_stop(cur_netif);
-			return -1;
-		}
-	}
-	int ret = netlib_get_ipv4addr(intf, &ip_check);
-	if (ret == -1) {
-		ndbg("[DHCPC] fail to get IP address\n");
-		netifapi_dhcp_stop(cur_netif);
-		return -1;
-	}
-	ndbg("[DHCPC] dhcpc_start - got IP address %s\n", inet_ntoa(ip_check));
-	return OK;
+
+	ret = req.req_res;
+	close(sockfd);
+	return ret;
 }
 
 /****************************************************************************
@@ -164,15 +140,20 @@ int dhcp_client_start(const char *intf)
  ****************************************************************************/
 void dhcp_client_stop(const char *intf)
 {
-	struct in_addr in = { .s_addr = INADDR_NONE };
-	DHCPC_SET_IP4ADDR(intf, in, in, in);
-	struct netif *cur_netif;
-	cur_netif = netif_find(intf);
-	if (cur_netif == NULL) {
-		ndbg("[DHCPC] No network interface for dhcpc\n");
+	struct req_lwip_data req;
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0) {
+		printf("socket() failed with errno: %d\n", errno);
 		return;
 	}
-	netifapi_dhcp_stop(cur_netif);
-	ndbg("[DHCPC] dhcpc_stop -release IP address (lwip)\n");
+
+	memset(&req, 0, sizeof(req));
+	req.type = DHCPCSTOP;
+	req.host_name = intf;
+
+	(void)ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+
+	close(sockfd);
 	return;
 }

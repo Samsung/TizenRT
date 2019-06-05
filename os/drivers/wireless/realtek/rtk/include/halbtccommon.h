@@ -15,7 +15,6 @@
 
 #if (BT_SUPPORT == 1 && COEX_SUPPORT == 1)
 
-
 /* *******************************************
  * The following is interface which will notify coex module.
  * ********************************************/
@@ -34,12 +33,12 @@ void rtw_btc_ex_media_status_notify(struct btc_coexist *btc, u8 type);
 void rtw_btc_ex_specific_packet_notify(struct btc_coexist *btc, u8 type);
 void rtw_btc_ex_bt_info_notify(struct btc_coexist *btc, u8 *tmp_buf, u8 length);
 void rtw_btc_ex_wl_fwdbginfo_notify(struct btc_coexist *btc, u8 *tmp_buf,
-				    u8 length);
+									u8 length);
 void rtw_btc_ex_rx_rate_change_notify(struct btc_coexist *btc,
-				      BOOLEAN is_data_frame,
-				      u8 btc_rate_id);
+									  BOOLEAN is_data_frame,
+									  u8 btc_rate_id);
 void rtw_btc_ex_tx_rate_change_notify(struct btc_coexist *btc, u8 tx_rate,
-				      u8 tx_retry_ratio, u8 macid);
+									  u8 tx_retry_ratio, u8 macid);
 void rtw_btc_ex_rf_status_notify(struct btc_coexist *btc, u8 type);
 void rtw_btc_ex_halt_notify(struct btc_coexist *btc);
 void rtw_btc_ex_pnp_notify(struct btc_coexist *btc, u8 pnp_state);
@@ -48,7 +47,7 @@ void rtw_btc_ex_periodical(struct btc_coexist *btc);
 void rtw_btc_ex_display_simple_coex_info(struct btc_coexist *btc);
 void rtw_btc_ex_display_coex_info(struct btc_coexist *btc);
 void rtw_btc_ex_dbg_control(struct btc_coexist *btc, u8 op_code, u8 op_len,
-			    u8 *pdata);
+							u8 *pdata);
 
 #else
 #define rtw_btc_ex_power_on_setting(btc)
@@ -68,7 +67,7 @@ void rtw_btc_ex_dbg_control(struct btc_coexist *btc, u8 op_code, u8 op_len,
 #define rtw_btc_ex_wl_fwdbginfo_notify(btc, tmp_buf, length)
 #define rtw_btc_ex_rx_rate_change_notify(btc, is_data_frame, btc_rate_id)
 #define rtw_btc_ex_tx_rate_change_notify(btcoexist, tx_rate, tx_retry_ratio, \
-				       macid)
+										 macid)
 #define rtw_btc_ex_rf_status_notify(btc, type)
 #define rtw_btc_ex_halt_notify(btc)
 #define rtw_btc_ex_pnp_notify(btc, pnp_state)

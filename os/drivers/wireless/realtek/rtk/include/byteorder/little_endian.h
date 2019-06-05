@@ -53,7 +53,7 @@
 #define __cpu_to_le64(x) ((__u64)(x))
 #define __le64_to_cpu(x) ((__u64)(x))
 
-#endif	//#if 0
+#endif //#if 0
 
 #define __cpu_to_le64(x) ((__u64)(x))
 #define __le64_to_cpu(x) ((__u64)(x))
@@ -67,33 +67,44 @@
 #define __be32_to_cpu(x) __swab32((x))
 #define __cpu_to_be16(x) __swab16((x))
 #define __be16_to_cpu(x) __swab16((x))
-#define __cpu_to_le64p(x) (*(__u64*)(x))
-#define __le64_to_cpup(x) (*(__u64*)(x))
-#define __cpu_to_le32p(x) (*(__u32*)(x))
-#define __le32_to_cpup(x) (*(__u32*)(x))
-#define __cpu_to_le16p(x) (*(__u16*)(x))
-#define __le16_to_cpup(x) (*(__u16*)(x))
+#define __cpu_to_le64p(x) (*(__u64 *)(x))
+#define __le64_to_cpup(x) (*(__u64 *)(x))
+#define __cpu_to_le32p(x) (*(__u32 *)(x))
+#define __le32_to_cpup(x) (*(__u32 *)(x))
+#define __cpu_to_le16p(x) (*(__u16 *)(x))
+#define __le16_to_cpup(x) (*(__u16 *)(x))
 #define __cpu_to_be64p(x) __swab64p((x))
 #define __be64_to_cpup(x) __swab64p((x))
 #define __cpu_to_be32p(x) __swab32p((x))
 #define __be32_to_cpup(x) __swab32p((x))
 #define __cpu_to_be16p(x) __swab16p((x))
 #define __be16_to_cpup(x) __swab16p((x))
-#define __cpu_to_le64s(x) do {} while (0)
-#define __le64_to_cpus(x) do {} while (0)
-#define __cpu_to_le32s(x) do {} while (0)
-#define __le32_to_cpus(x) do {} while (0)
-#define __cpu_to_le16s(x) do {} while (0)
-#define __le16_to_cpus(x) do {} while (0)
+#define __cpu_to_le64s(x) \
+	do {                  \
+	} while (0)
+#define __le64_to_cpus(x) \
+	do {                  \
+	} while (0)
+#define __cpu_to_le32s(x) \
+	do {                  \
+	} while (0)
+#define __le32_to_cpus(x) \
+	do {                  \
+	} while (0)
+#define __cpu_to_le16s(x) \
+	do {                  \
+	} while (0)
+#define __le16_to_cpus(x) \
+	do {                  \
+	} while (0)
 #define __cpu_to_be64s(x) __swab64s((x))
 #define __be64_to_cpus(x) __swab64s((x))
 #define __cpu_to_be32s(x) __swab32s((x))
 #define __be32_to_cpus(x) __swab32s((x))
 #define __cpu_to_be16s(x) __swab16s((x))
 #define __be16_to_cpus(x) __swab16s((x))
-#endif	// __constant_htonl
+#endif // __constant_htonl
 
 #include <byteorder/generic.h>
 
 #endif /* _LINUX_BYTEORDER_LITTLE_ENDIAN_H */
-
