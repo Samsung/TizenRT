@@ -101,7 +101,7 @@
  ****************************************************************************/
 
 static int elf_loadbinary(FAR struct binary_s *binp);
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_BINFMT)
+#ifdef CONFIG_DEBUG_BINFMT
 static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo);
 #endif
 
@@ -123,7 +123,7 @@ static struct binfmt_s g_elfbinfmt = {
  * Name: elf_dumploadinfo
  ****************************************************************************/
 
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_BINFMT)
+#ifdef CONFIG_DEBUG_BINFMT
 static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo)
 {
 	int i;
