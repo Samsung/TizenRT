@@ -1101,7 +1101,7 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 		struct addrinfo *dst = NULL;
 		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
 		if (!dst) {
-			printf("copy_addrinfo() kumm_malloc failed\n");
+			ndbg("copy_addrinfo() kumm_malloc failed\n");
 			break;
 		}
 		dst->ai_flags = tmp->ai_flags;
@@ -1111,14 +1111,14 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 		dst->ai_addrlen = tmp->ai_addrlen;
 		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
 		if (!dst->ai_addr) {
-			printf("copy_addrinfo() kumm_malloc failed\n");
+			ndbg("copy_addrinfo() kumm_malloc failed\n");
 			kumm_free(dst);
 			break;
 		}
 		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
 		dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
 		if (!dst->ai_canonname) {
-			printf("copy_addrinfo() kumm_malloc failed\n");
+			ndbg("copy_addrinfo() kumm_malloc failed\n");
 			kumm_free(dst->ai_addr);
 			kumm_free(dst);
 			break;
@@ -1156,7 +1156,7 @@ static int free_addrinfo(struct addrinfo *ai)
 
 static void _dhcpd_join(void)
 {
-	printf("dhcpd joined");
+	ndbg("dhcpd joined");
 
 	struct mq_attr attr;
 	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
@@ -1166,16 +1166,15 @@ static void _dhcpd_join(void)
 
 	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
 	if (!md) {
-		printf("mq open fail%s %d\n", __FUNCTION__, errno);
+		ndbg("mq open fail (errno %d)\n", errno);
 		mq_close(md);
 		return;
 	}
 
 	char *msg = "dhcpd_join";
 	int mq_ret = mq_send(md, msg, DHCPD_MQ_LEN, 100);
-	printf("[shbyeon] send mq %s\n", msg);
 	if (mq_ret < 0) {
-		printf("send mq fail %s %d\n", __FUNCTION__, errno);
+		ndbg("send mq fail (errno %d)\n", errno);
 	}
 
 	mq_close(md);
@@ -1219,83 +1218,95 @@ int lwip_func_ioctl(int cmd, void *arg)
 	switch (in_arg->type) {
 #if LWIP_DNS
 	case GETADDRINFO:
-		ret = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
-		if (ret != 0) {
-			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
+		in_arg->req_res = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
+		if (in_arg->req_res != 0) {
+			ndbg("lwip_getaddrinfo() returned with the error code: %d\n", ret);
 			in_arg->ai_res = NULL;
+			ret = -EINVAL;
 		} else {
 			in_arg->ai_res = copy_addrinfo(res);
+			ret = OK;
 		}
-		in_arg->req_res = ret;
-		ret = 0;
 		break;
 	case FREEADDRINFO:
 		in_arg->req_res = free_addrinfo(in_arg->ai);
-		ret = 0;
+		ret = OK;
 		break;
 	case DNSSETSERVER:
 		dns_setserver(in_arg->num_dns, in_arg->dns_server);
-		ret = 0;
+		ret = OK;
 		break;
 	case GETHOSTBYNAME:
 		host_ent = lwip_gethostbyname(in_arg->host_name);
 		if (!host_ent) {
-			printf("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
-		}
-		user_ent = in_arg->host_entry;
-		strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
-		user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
-		memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
-		user_ent->h_addrtype = host_ent->h_addrtype;
-		user_ent->h_length = host_ent->h_length;
+			ndbg("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
+			ret = -EINVAL;
+		} else {
+			user_ent = in_arg->host_entry;
+			strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
+			user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
+			memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
+			user_ent->h_addrtype = host_ent->h_addrtype;
+			user_ent->h_length = host_ent->h_length;
 
-		ret = 0;
+			ret	= OK;
+		}
 		break;
 	case GETNAMEINFO:
-		ret = lwip_getnameinfo(in_arg->sa, in_arg->sa_len, (char *)in_arg->host_name, in_arg->host_len, (char *)in_arg->serv_name, in_arg->serv_len, in_arg->flags);
-		if (ret != 0) {
-			printf("lwip_getnameinfo() returned with the error code: %d\n", ret);
+		in_arg->req_res = lwip_getnameinfo(in_arg->sa, in_arg->sa_len, (char *)in_arg->host_name, in_arg->host_len, (char *)in_arg->serv_name, in_arg->serv_len, in_arg->flags);
+		if (in_arg->req_res != 0) {
+			ndbg("lwip_getnameinfo() returned with the error code: %d\n", ret);
+			ret = -EINVAL;
+		} else {
+			ret = OK;
 		}
-		in_arg->req_res = ret;
-		ret = 0;
 		break;
 #endif
 #if defined(CONFIG_NET_LWIP_DHCP)
 	case DHCPCSTART:
-		ret = netdev_dhcp_client_start((const char *)in_arg->host_name);
-		if (ret != 0) {
-			printf("start dhcp fail\n");
+		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->host_name);
+		if (in_arg->req_res != 0) {
+			ret = -EINVAL;
+			ndbg("start dhcp fail\n");
+		} else {
+			ret = OK;
 		}
-		in_arg->req_res = ret;
 		break;
 	case DHCPCSTOP:
 		netdev_dhcp_client_stop((const char *)in_arg->host_name);
 		in_arg->req_res = 0;
+		ret = OK;
 		break;
 	case DHCPDSTART:
-		ret = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
-		if (ret != 0) {
-			printf("start dhcpd fail\n");
+		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
+		if (in_arg->req_res != 0) {
+			ret = -EINVAL;
+			ndbg("start dhcpd fail\n");
+		} else {
+			ret = OK;
 		}
-		in_arg->req_res = ret;
 		break;
 	case DHCPDSTOP:
-		ret = netdev_dhcp_server_stop((char *)in_arg->host_name);
-		if (ret != 0) {
-			printf("stop dhcpd fail\n");
+		in_arg->req_res = netdev_dhcp_server_stop((char *)in_arg->host_name);
+		if (in_arg->req_res != 0) {
+			ret = -EINVAL;
+			ndbg("stop dhcpd fail\n");
+		} else {
+			ret = OK;
 		}
-		in_arg->req_res = ret;
 		break;
 	case DHCPDSTATUS:
-		ret = netdev_dhcp_server_status((char *)in_arg->host_name);
-		if (ret != 0) {
-			printf("stop dhcpd fail\n");
+		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->host_name);
+		if (in_arg->req_res != 0) {
+			ret = -EINVAL;
+			ndbg("stop dhcpd fail\n");
+		} else {
+			ret = OK;
 		}
-		in_arg->req_res = ret;
 		break;
 #endif
 	default:
-		printf("Wrong request type: %d\n", in_arg->type);
+		ndbg("Wrong request type: %d\n", in_arg->type);
 		break;
 	}
 
