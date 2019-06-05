@@ -158,7 +158,7 @@ static char *things_make_abs_device_def_path(const char *json_path)
 		abs_json_path = (char *)things_malloc(len_of_path * sizeof(char));
 		strncpy(abs_json_path, json_path, len_of_path);
 	}
-	abs_json_path[len_of_path] = '\0';
+	abs_json_path[len_of_path - 1] = '\0';
 	return abs_json_path;
 }
 

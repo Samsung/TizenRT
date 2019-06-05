@@ -178,6 +178,12 @@ static inline int imxrt_readid(struct imxrt_dev_s *priv)
 	}
 	fvdbg("Vendor ID: 0x%x\r\n", vendorID);
 
+	/* Enter quad mode. */
+	status = imxrt_flexspi_nor_enable_quad_mode(IMXRT_FLEXSPI);
+	if (status != kStatus_Success) {
+		fdbg("flexspi_nor_enable_quad_mode error!!");
+	}
+
 	/* Save the FLASH geometry */
 
 	priv->sectorshift = IMXRT_1020EVK_NORFLASH_SECTOR_SHIFT;
