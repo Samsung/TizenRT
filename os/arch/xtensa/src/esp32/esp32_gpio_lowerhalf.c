@@ -80,12 +80,9 @@ struct esp32_lowerhalf_s {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifndef CONFIG_DISABLE_POLL
 static int esp32_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 {
 	struct esp32_lowerhalf_s *lower = (struct esp32_lowerhalf_s *)arg;
-
-	esp32_gpio_clear_pending(lower->pincfg);
 
 	if (lower->handler != NULL) {
 		DEBUGASSERT(lower->handler != NULL);
@@ -94,7 +91,6 @@ static int esp32_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 
 	return OK;
 }
-#endif
 
 /****************************************************************************
  * Name: esp32_gpio_get
@@ -174,41 +170,35 @@ static int esp32_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long arg
 
 static int esp32_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling, int rising, gpio_handler_t handler)
 {
-#if 0
 	int irqvector;
 	struct esp32_lowerhalf_s *priv = (struct esp32_lowerhalf_s *)lower;
+	gpio_intrtype_t intr_type;
 
-	irqvector = esp32_gpio_irqvector(priv->pincfg);
+	irqvector = ESP32_PIN2IRQ(priv->pinnum);
 	if (!irqvector) {
 		return -EINVAL;
 	}
 
-	/* clear function mask */
-	priv->pincfg &= ~FUNC_MASK;
-
 	if (falling && rising) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_BOTH_EDGE;
+		intr_type = CHANGE;
 	} else if (falling) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_FALLING_EDGE;
+		intr_type = FALLING;
 	} else if (rising) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_RISING_EDGE;
+		intr_type = RISING;
 	} else {
-		priv->pincfg |= GPIO_INPUT;
 		handler = NULL;
 	}
 
 	priv->handler = handler;
 	if (handler) {
 		irq_attach(irqvector, esp32_gpio_interrupt, priv);
-		up_enable_irq(irqvector);
+		esp32_gpioirqenable(irqvector, intr_type);
 	} else {
-		up_disable_irq(irqvector);
+		esp32_gpioirqdisable(irqvector);
 		irq_detach(irqvector);
 	}
 
-	return esp32_configgpio(priv->pincfg);
-#endif
-	return 0;
+	return OK;
 }
 
 /****************************************************************************
@@ -231,14 +221,14 @@ static const struct gpio_ops_s esp32_gpio_ops = {
  * Name: esp32_gpio_lowerhalf
  *
  * Description:
- *   Instantiate the GPIO lower half driver for the S5J.
+ *   Instantiate the GPIO lower half driver for the ESP32.
  *   General usage:
  *
  *     #include <tinyara/gpio.h>
  *     #include "esp32_gpio.h"
  *
  *     struct gpio_lowerhalf_s *lower;
- *     lower = 5j_gpio_lowerhalf();
+ *     lower = esp32_gpio_lowerhalf();
  *     gpio_register(0, lower);
  *
  * Input Parameters:
