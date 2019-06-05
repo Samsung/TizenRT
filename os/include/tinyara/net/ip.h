@@ -238,21 +238,22 @@ EXTERN const net_ipv6addr_t g_ipv6_allzeroaddr;	/* An address of all zeroes */
  * byte order.
  */
 
-#ifdef CONFIG_ENDIAN_BIG
-/* Big-endian byte order: 11223344 */
+/*  Duplicate definition to lwip/ip4_addr.h */
+/* #ifdef CONFIG_ENDIAN_BIG */
+/* /\* Big-endian byte order: 11223344 *\/ */
 
-#define ip4_addr1(ipaddr) (((ipaddr) >> 24) & 0xff)
-#define ip4_addr2(ipaddr) (((ipaddr) >> 16) & 0xff)
-#define ip4_addr3(ipaddr) (((ipaddr) >>  8) & 0xff)
-#define ip4_addr4(ipaddr)  ((ipaddr)        & 0xff)
-#else
-/* Little endian byte order: 44223311 */
+/* #define ip4_addr1(ipaddr) (((ipaddr) >> 24) & 0xff) */
+/* #define ip4_addr2(ipaddr) (((ipaddr) >> 16) & 0xff) */
+/* #define ip4_addr3(ipaddr) (((ipaddr) >>  8) & 0xff) */
+/* #define ip4_addr4(ipaddr)  ((ipaddr)        & 0xff) */
+/* #else */
+/* /\* Little endian byte order: 44223311 *\/ */
 
-#define ip4_addr1(ipaddr)  ((ipaddr)        & 0xff)
-#define ip4_addr2(ipaddr) (((ipaddr) >>  8) & 0xff)
-#define ip4_addr3(ipaddr) (((ipaddr) >> 16) & 0xff)
-#define ip4_addr4(ipaddr) (((ipaddr) >> 24) & 0xff)
-#endif
+/* #define ip4_addr1(ipaddr)  ((ipaddr)        & 0xff) */
+/* #define ip4_addr2(ipaddr) (((ipaddr) >>  8) & 0xff) */
+/* #define ip4_addr3(ipaddr) (((ipaddr) >> 16) & 0xff) */
+/* #define ip4_addr4(ipaddr) (((ipaddr) >> 24) & 0xff) */
+/* #endif */
 
 /* Construct an IPv6 address from eight 16-bit words.
  *
