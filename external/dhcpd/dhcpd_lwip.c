@@ -106,16 +106,17 @@ typedef struct dhcp_join_data dhcp_join_data_s;
 void *_dhcpd_join_handler(void *arg)
 {
 	dhcp_join_data_s *data = (dhcp_join_data_s *)arg;
+	int ret = ERROR;
 	int sockfd = 0;
 	struct req_lwip_data req;
-	int ret = ERROR;
+
 	struct mq_attr attr;
 	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
 	attr.mq_msgsize = DHCPD_MQ_LEN;
 	attr.mq_flags = 0;
 	attr.mq_curmsgs = 0;
 
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_NONBLOCK |O_CREAT, 0666, &attr);
+	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_NONBLOCK | O_CREAT, 0666, &attr);
 	if (md == (mqd_t)ERROR) {
 		ndbg("Failed to open mq\n");
 		goto go_out;
@@ -148,7 +149,9 @@ void *_dhcpd_join_handler(void *arg)
 				break;
 			}
 		} else {
-			data->fn();
+			if (!strncmp(msg, "dhcpd_join", DHCPD_MQ_LEN - 1)) {
+				data->fn();
+			}
 		}
 		sleep(1);
 	}
@@ -207,19 +210,30 @@ int dhcp_server_status(char *intf)
 int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
 	dhcp_join_data_s *data = (dhcp_join_data_s *)malloc(sizeof(dhcp_join_data_s));
-	data->intf = (char *)malloc(strlen(intf)+1);
+	if (!data) {
+		ndbg("Failed to alloc mem for data\n");
+		return ERROR;
+	}
+	data->intf = (char *)malloc(strlen(intf) + 1);
+	if (!data->intf) {
+		free(data);
+		ndbg("Failed to alloc mem for data->intf\n");
+		return ERROR;
+	}
 	memcpy(data->intf, intf, strlen(intf) + 1);
 	data->fn = dhcp_join_cb;
 
 	int ret = ERROR;
 	g_dhcpd_term = 0;
 	ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, (void *)data);
-	pthread_setname_np(g_dhcpd_tid, "dhcpd cb handler");
 	if (ret < 0) {
 		g_dhcpd_term = 1;
-		ndbg("[dhcpd] create iotapi handler fail(%d) errno %d\n", ret, errno);
+		free(data->intf);
+		free(data);
+		ndbg("create iotapi handler fail(%d) errno %d\n", ret, errno);
 		return ERROR;
 	}
+	pthread_setname_np(g_dhcpd_tid, "dhcpd cb handler");
 	return ret;
 }
 
