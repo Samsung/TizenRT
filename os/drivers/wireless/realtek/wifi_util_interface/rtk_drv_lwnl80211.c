@@ -63,25 +63,24 @@ static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
 /*
  * Callback
  */
-static int rtk_drv_callback_handler(void *arg)
+static int rtk_drv_callback_handler(int argc, char *argv[])
 {
-	int *type = (int *)(arg);
+	RTKDRV_ENTER;
+	int type = (int)(argv[1][0] - '0');
+
 	lwnl80211_cb_status status;
 
 	if (!g_dev) {
 		vddbg("Failed to find upper driver\n");
-		free(type);
 		return -1;
 	}
 
 	if (!g_dev->cbk) {
 		vddbg("Failed to find callback function\n");
-		free(type);
 		return -1;
 	}
 
-	vddbg("Got callback from RTK drv (%d)\n", status);
-	switch (*type) {
+	switch (type) {
 	case 1:
 		status = LWNL80211_STA_CONNECTED;
 		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
@@ -108,61 +107,56 @@ static int rtk_drv_callback_handler(void *arg)
 		break;
 	}
 
-	free(type);
-
 	return 0;
 }
 
 static void linkup_handler(rtk_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error\n");
-		return;
-	}
+	RTKDRV_ENTER;
+	pid_t pid;
+	char *argv[2];
+	argv[1] = NULL;
+	char data[2] = {0, 0};
 
 	if (g_mode == RTK_WIFI_STATION_IF) {
 		if (reason->reason_code == RTK_STATUS_SUCCESS) {
-			*type = 1;
+			data[0] = '1';
 		} else {
-			*type = 2;
+			data[0] = '2';
 		}
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		*type = 3;
+		data[0] = '3';
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)rtk_drv_callback_handler, (void *)type);
-	if (ret != 0) {
+	argv[0] = data;
+
+	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
+	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
 		return;
 	}
-	pthread_setname_np(tid, "lwnl80211_cbk_handler");
-	pthread_detach(tid);
 }
 
 static void linkdown_handler(rtk_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error linkdown\n");
-		return;
-	}
-	*type = 4;
+	RTKDRV_ENTER;
+	pid_t pid;
+	char *argv[2];
+	argv[1] = NULL;
+	char data[2] = {0, 0};
+
+	data[0] = '4';
 	if (g_mode == RTK_WIFI_STATION_IF) {
-		*type = 4;
+		data[0] = '4';
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		*type = 5;
+		data[0] = '5';
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)rtk_drv_callback_handler, (void *)type);
-	if (ret != 0) {
+	argv[0] = data;
+
+	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
+	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
 		return;
 	}
-	pthread_setname_np(tid, "lwnl80211_cbk_handler");
-	pthread_detach(tid);
 }
 
 int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input)
