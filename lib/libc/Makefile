@@ -82,13 +82,14 @@ include stdio/Make.defs
 include stdlib/Make.defs
 include unistd/Make.defs
 include sched/Make.defs
+include symtab/Make.defs
 include syslog/Make.defs
 include string/Make.defs
 include aio/Make.defs
 include pthread/Make.defs
 include semaphore/Make.defs
 include signal/Make.defs
-include mqueue/Make.defs
+include machine/Make.defs
 include math/Make.defs
 include fixedmath/Make.defs
 include net/Make.defs
