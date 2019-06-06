@@ -67,9 +67,74 @@
 #ifdef CONFIG_IMXRT_GPT
 #include "imxrt_gpt.h"
 #endif
+#ifdef CONFIG_ANALOG
+#include "imxrt_adc.h"
+#endif
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
+
+/****************************************************************************
+ * Name: imxrt_board_adc_initialize
+ *
+ * Description:
+ *   Initialize the ADC. As the pins of each ADC channel are exported through
+ *   configurable GPIO and it is board-specific, information on available
+ *   ADC channels should be passed to imxrt_adc_initialize().
+ *
+ * Input Parameters:
+ *   chanlist  - The list of channels
+ *   cchannels - Number of channels
+ *
+ * Returned Value:
+ *   Valid ADC device structure reference on succcess; a NULL on failure
+ *
+ ****************************************************************************/
+#define ADC_ASSIGN(a, b) (a << 5 | b)
+void imxrt_board_adc_initialize(void)
+{
+#ifdef CONFIG_ANALOG
+	static bool adc_initialized = false;
+	struct adc_dev_s *adc;
+	const uint8_t chanlist[] = {
+		ADC_CHANNEL_0, //A5
+		ADC_CHANNEL_1, //A4
+		ADC_CHANNEL_2, //A3
+		ADC_CHANNEL_3, //A2
+		ADC_CHANNEL_4,
+		ADC_CHANNEL_5,
+	};
+
+	int ch;
+	int ret;
+	char path[16];
+	int bus = 0;
+
+	if (!adc_initialized) {
+		imxrt_adc_pins_init(bus, sizeof(chanlist) / sizeof(uint8_t));
+
+		for (ch = 0; ch < sizeof(chanlist) / sizeof(uint8_t); ch++) {
+			adc = imxrt_adc_initialize(bus, chanlist[ch]);
+			if (NULL != adc) {
+				lldbg("VERVOSE: Success to get the imxrt ADC driver[%d]\n", ch);
+			} else {
+				lldbg("ERROR: up_spiinitialize failed\n");
+			}
+
+			/* Register the ADC driver at "/dev/adc0" */
+			snprintf(path, sizeof(path), "/dev/adc%d", ADC_ASSIGN(bus, ch));
+
+			ret = adc_register(path, adc);
+			if (ret < 0) {
+				lldbg("ERROR: adc_register[%d] failed\n", ch);
+				return;
+			}
+		}
+		/* Now we are initialized */
+		adc_initialized = true;
+	}
+#endif
+}
 
 /****************************************************************************
  * Name: board_gpio_initialize
@@ -145,6 +210,8 @@ void board_initialize(void)
 	(void)imxrt_bringup();
 
 	imxrt_gpio_initialize();
+
+	imxrt_board_adc_initialize();
 
 #ifdef CONFIG_IMXRT_TIMER_INTERFACE
 	{

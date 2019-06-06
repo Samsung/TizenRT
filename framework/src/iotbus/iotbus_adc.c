@@ -36,6 +36,7 @@
 
 struct _iotbus_adc_s {
 	int fd;
+	uint8_t bus;
 	uint8_t channel;
 	iotbus_adc_state_e state;
 	sem_t state_sem;
@@ -123,7 +124,9 @@ iotbus_adc_context_h iotbus_adc_init(int bus, uint8_t channel)
 	struct _iotbus_adc_s *handle;
 	iotbus_adc_context_h dev;
 
-	snprintf(dev_path, sizeof(dev_path), "/dev/adc%d", bus);
+	int val = (bus << 5) | channel;
+
+	snprintf(dev_path, sizeof(dev_path), "/dev/adc%d", val);
 	fd = open(dev_path, O_RDONLY);
 	if (fd < 0) {
 		return NULL;
@@ -142,6 +145,7 @@ iotbus_adc_context_h iotbus_adc_init(int bus, uint8_t channel)
 
 	handle->fd = fd;
 	handle->callback = NULL;
+	handle->bus = bus;
 	handle->channel = channel;
 	handle->state = IOTBUS_ADC_RDY;
 	sem_init(&handle->state_sem, 0, 0);

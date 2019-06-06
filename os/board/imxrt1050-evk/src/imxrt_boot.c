@@ -104,6 +104,7 @@
  *   Valid ADC device structure reference on succcess; a NULL on failure
  *
  ****************************************************************************/
+#define ADC_ASSIGN(a, b) (a << 5 | b)
 void imxrt_board_adc_initialize(void)
 {
 #ifdef CONFIG_ANALOG
@@ -118,18 +119,29 @@ void imxrt_board_adc_initialize(void)
 		GPIO_PIN26    //A0
 	};
 
-	if (!adc_initialized) {
-		adc = imxrt_adc_initialize(chanlist, sizeof(chanlist) / sizeof(uint8_t));
-		if (NULL != adc) {
-			lldbg("VERVOSE: Success to get the imxrt ADC driver\n");
-		} else {
-			lldbg("ERROR: up_spiinitialize failed\n");
-		}
+	int ch;
+	int ret;
+	char path[16];
+	int bus = 0;
 
-		/* Register the ADC driver at "/dev/adc0" */
-		int ret = adc_register("/dev/adc0", adc);
-		if (ret < 0) {
-			return;
+	if (!adc_initialized) {
+		imxrt_adc_pins_init(bus, sizeof(chanlist) / sizeof(uint8_t));
+
+		for (ch = 0; ch < sizeof(chanlist) / sizeof(uint8_t); ch++) {
+			adc = imxrt_adc_initialize(bus, chanlist[ch]);
+			if (NULL != adc) {
+				lldbg("VERVOSE: Success to get the imxrt ADC driver[%d]\n", ch);
+			} else {
+				lldbg("ERROR: up_spiinitialize failed\n");
+			}
+			/* Register the ADC driver at "/dev/adc0" */
+			snprintf(path, sizeof(path), "/dev/adc%d", ADC_ASSIGN(bus, ch));
+
+			ret = adc_register(path, adc);
+			if (ret < 0) {
+				lldbg("ERROR: adc_register[%d] failed\n", ch);
+				return;
+			}
 		}
 
 		/* Now we are initialized */
