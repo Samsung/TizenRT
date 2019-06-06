@@ -165,10 +165,9 @@ static void _tizenrt_init_sema(_sema *sema, int init_val)
 }
 
 static void _tizenrt_free_sema(_sema *sema)
-
 {
 	sem_destroy(*sema);
-	free(*sema);
+	kmm_free(*sema);
 }
 
 static void _tizenrt_up_sema(_sema *sema)
@@ -200,7 +199,7 @@ static void _tizenrt_mutex_init(_mutex *pmutex)
 static void _tizenrt_mutex_free(_mutex *pmutex)
 {
 	pthread_mutex_destroy(*pmutex);
-	free(*pmutex);
+	kmm_free(*pmutex);
 }
 
 static void _tizenrt_mutex_get(_lock *plock)
@@ -305,7 +304,7 @@ static void _tizenrt_spinlock_init(_lock *plock)
 static void _tizenrt_spinlock_free(_lock *plock)
 {
 	pthread_mutex_destroy(*plock);
-	free(*plock);
+	kmm_free(*plock);
 }
 
 static void _tizenrt_spinlock(_lock *plock)
@@ -585,7 +584,7 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 	//task_fun Task_fun=(task_fun)func;
 	ptask->task_name = name;
 	ptask->task = priority;
-	ptask->_rtw_task_info_s = task_create(name, priority, stack_size, (main_t)func, NULL);
+	ptask->_rtw_task_info_s = kernel_thread(name, priority, stack_size, (main_t)func, NULL);
 	//ptask->_rtw_task_info_s=kernel_thread(name,priority,stack_size,(main_t)func,(char *const*)NULL);
 
 	if (!ptask->_rtw_task_info_s) {
@@ -609,7 +608,7 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 		DBG_ERR("delete the task failed!", ptask->task_name);
 		return;
 	}
-	free(ptask);
+	kmm_free(ptask);
 	return;
 }
 
@@ -651,26 +650,17 @@ _timerHandle _tizenrt_timerCreate(_timer *timer, const signed char *pcTimerName,
 u32 _tizenrt_timerDelete(_timer *timer,
 						 osdepTickType xBlockTime)
 {
-#if 0
-	pthread_cleanup_push( (void(*)(void *))pthread_mutex_unlock, (void *)&(timer->mutex));
-	pthread_mutex_lock(&timer->mutex);
-	timer->live=0;
-	timer->timer_hdl = NULL;
-	free(timer);
-	pthread_mutex_unlock(&timer->mutex);
-	pthread_cleanup_pop( 1 );
-#endif
 	int ret;
 	ret = work_cancel(LPWORK, timer->work_hdl);
 	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
-	free(timer->work_hdl);
+	kmm_free(timer->work_hdl);
 	timer->timer_hdl = NULL;
 	timer->timevalue = 0;
 	return _SUCCESS;
 
 cleanup:
 	if (ret != -2) {
-		free(timer->work_hdl);
+		kmm_free(timer->work_hdl);
 		DBG_ERR("_tizenrt_del_timer failed! ret = %d", ret);
 		return _FAIL;
 	}
@@ -690,7 +680,6 @@ u32 _tizenrt_timerStop(_timer *timer,
 					   osdepTickType xBlockTime)
 {
 	int ret;
-	//timer->live=0;
 	ret = work_cancel(LPWORK, timer->work_hdl);
 	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
 	timer->timevalue = 0;
@@ -698,7 +687,7 @@ u32 _tizenrt_timerStop(_timer *timer,
 
 cleanup:
 	if (ret != -2) {
-		free(timer->work_hdl);
+		kmm_free(timer->work_hdl);
 		DBG_ERR("_tizenrt_stop_timer failed! ret = %d", ret);
 		return _FAIL;
 	}
@@ -743,8 +732,6 @@ u32 _tizenrt_timerChangePeriod(_timer *timer,
 {
 	int ret;
 
-	//ndbg("\r\n%s():================>work_hdl = %x\r\n",__func__,timer->work_hdl);
-
 	ret = work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
 	if (ret == -EALREADY) {
 		ret = work_cancel(LPWORK, timer->work_hdl);
@@ -753,13 +740,10 @@ u32 _tizenrt_timerChangePeriod(_timer *timer,
 		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
 	}
 
-	//timer->live = 1;
-
 	return _SUCCESS;
 
 cleanup:
-
-	free(timer->work_hdl);
+	kmm_free(timer->work_hdl);
 	timer->timer_hdl = NULL;
 	DBG_ERR("_tizenrt_set_timer failed!");
 	return _FAIL;
