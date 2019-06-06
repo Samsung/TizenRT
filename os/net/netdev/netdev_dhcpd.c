@@ -55,6 +55,8 @@
  ****************************************************************************/
 #include <tinyara/config.h>		/* TinyAra configuration */
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -103,16 +105,16 @@ int netdev_dhcp_server_status(char *intf)
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);
 	if (cur_netif == NULL) {
-		ndbg("[DHCPS] no network interface for dhcpd start\n");
-		return 0;
+		ndbg("no network interface for dhcpd start\n");
+		return ERROR;
 	}
 
 	if (cur_netif->dhcps_pcb == NULL) {
-		ndbg("[DHCPS] DHCP server closed\n");
-		return 0;
+		ndbg("DHCP server closed\n");
+		return ERROR;
 	} else {
-		ndbg("[DHCPS] DHCP server opened\n");
-		return 1;
+		ndbg("DHCP server opened\n");
+		return OK;
 	}
 }
 
@@ -124,22 +126,22 @@ int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);
 	if (cur_netif == NULL) {
-		ndbg("[DHCPS] no network interface for dhcpd start\n");
-		return -1;
+		ndbg("no network interface for dhcpd start\n");
+		return ERROR;
 	}
 	if (dhcp_join_cb) {
-		if (dhcps_register_cb(dhcp_join_cb) != ERR_OK) {
-			ndbg("[DHCPS] link callback fail\n");
-			return -1;
+		if (dhcps_register_cb(dhcp_join_cb) != OK) {
+			ndbg("link callback fail\n");
+			return ERROR;
 		}
 	}
 
-	if (netifapi_dhcps_start(cur_netif) == ERR_OK) {
-		ndbg("[DHCPS] started successfully (LWIP)\n");
+	if (netifapi_dhcps_start(cur_netif) == OK) {
+		ndbg("started successfully (LWIP)\n");
 		return OK;
 	}
 
-	return -1;
+	return ERROR;
 }
 
 /****************************************************************************
@@ -150,16 +152,16 @@ int netdev_dhcp_server_stop(char *intf)
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);
 	if (cur_netif == NULL) {
-		ndbg("[DHCPS] no network interface for dhcpd start\n");
-		return -1;
+		ndbg("no network interface for dhcpd start\n");
+		return ERROR;
 	}
 	if (cur_netif->dhcps_pcb == NULL) {
-		ndbg("[DHCPS] stop dhcpd fail: no pcb\n");
-		return -1;
+		ndbg("stop dhcpd fail: no pcb\n");
+		return ERROR;
 	}
 
 	netifapi_dhcps_stop(cur_netif);
-	ndbg("[DHCPS] stopped successfully (LWIP)\n");
+	ndbg("stopped successfully (LWIP)\n");
 
 	return OK;
 }
