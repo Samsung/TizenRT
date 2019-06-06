@@ -177,7 +177,7 @@ static void usbhost_freeclass(FAR struct usbhost_rtk_wifi_s *usbclass)
 	 * from an interrupt handler.
 	 */
 
-	printf("Freeing: %p\n", usbclass);
+	udbg("Freeing: %p\n", usbclass);
 	sched_kfree(usbclass);
 }
 
@@ -231,7 +231,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 
 		case USB_DESC_TYPE_INTERFACE: {
 			FAR struct usb_ifdesc_s *ifdesc = (FAR struct usb_ifdesc_s *)configdesc;
-			printf("Interface descriptor: class: %d subclass: %d proto: %d\n", ifdesc->classid, ifdesc->subclass, ifdesc->protocol);
+			udbg("Interface descriptor: class: %d subclass: %d proto: %d\n", ifdesc->classid, ifdesc->subclass, ifdesc->protocol);
 			DEBUGASSERT(remaining >= USB_SIZEOF_IFDESC);
 
 		} break;
@@ -244,7 +244,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 			FAR struct usb_epdesc_s *epdesc = (FAR struct usb_epdesc_s *)configdesc;
 			if ((epdesc->attr & USB_EP_ATTR_XFERTYPE_MASK) == USB_EP_ATTR_XFER_BULK) {
 				if (USB_ISEPOUT(epdesc->addr)) {
-					printf("out endpoint:  epdesc->addr = %d \n", epdesc->addr);
+					udbg("out endpoint:  epdesc->addr = %d \n", epdesc->addr);
 					boutdesc[outdesc_index].hport = hport;
 					boutdesc[outdesc_index].addr = epdesc->addr & USB_EP_ADDR_NUMBER_MASK;
 					boutdesc[outdesc_index].in = false;
@@ -253,7 +253,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 					boutdesc[outdesc_index].mxpacketsize = usbhost_getle16(epdesc->mxpacketsize);
 					outdesc_index++;
 				} else if (USB_ISEPIN(epdesc->addr)) {
-					printf("in endpoint epdesc->addr = %x \n", epdesc->addr);
+					udbg("in endpoint epdesc->addr = %x \n", epdesc->addr);
 					bindesc[indesc_index].hport = hport;
 					bindesc[indesc_index].addr = epdesc->addr & USB_EP_ADDR_NUMBER_MASK;
 					bindesc[indesc_index].in = 1;
@@ -280,11 +280,11 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 		remaining -= desc->len;
 	}
 
-	printf("outdesc_index = %d \n", outdesc_index);
+	udbg("outdesc_index = %d \n", outdesc_index);
 	for (i = 0; i < outdesc_index; i++) {
 		ret = DRVR_EPALLOC(hport->drvr, &boutdesc[i], &priv->bulkout[i]);
 		if (ret < 0) {
-			printf("ERROR: Failed to allocate Bulk OUT endpoint\n");
+			udbg("ERROR: Failed to allocate Bulk OUT endpoint\n");
 			for (i = 0; i < outdesc_index; i++) {
 				(void)DRVR_EPFREE(hport->drvr, priv->bulkout[i]);
 			}
@@ -296,7 +296,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 	for (i = 0; i < indesc_index; i++) {
 		ret = DRVR_EPALLOC(hport->drvr, &bindesc[i], &priv->bulkin[i]);
 		if (ret < 0) {
-			printf("ERROR: Failed to allocate Bulk IN endpoint\n");
+			udbg("ERROR: Failed to allocate Bulk IN endpoint\n");
 			for (i = 0; i < indesc_index; i++) {
 				(void)DRVR_EPFREE(hport->drvr, priv->bulkin[i]);
 			}
@@ -339,43 +339,39 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
  *
  ****************************************************************************/
 unsigned char usb_thread_active = 0;
+#ifndef CONFIG_USBHOST_DEFPRIO
+#define CONFIG_USBHOST_DEFPRIO 120
+#endif
+#ifndef CONFIG_USBHOST_STACKSIZE
+#define CONFIG_USBHOST_STACKSIZE 8192
+#endif
 
 static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8_t *configdesc, int desclen)
 {
 	FAR struct usbhost_rtk_wifi_s *priv = (FAR struct usbhost_rtk_wifi_s *)usbclass;
 	int ret;
+	pid_t pid;
 
 	DEBUGASSERT(priv != NULL && configdesc != NULL && desclen >= sizeof(struct usb_cfgdesc_s));
 
-	printf("-------------> usbhost_connect \n");
-	extern pthread_startroutine_t _usb_thread;
+	udbg("-------------> usbhost_connect \n");
+	extern main_t _usb_thread;
 
-	pthread_t taskID;
-	pthread_attr_t thread_attr;
-	struct sched_param schedule_param;
-	pthread_attr_init(&thread_attr);
-	schedule_param.sched_priority = 123;
-	pthread_attr_setstacksize(&thread_attr, 1024 * 6);
-	pthread_attr_setinheritsched(&thread_attr, PTHREAD_EXPLICIT_SCHED);
-	pthread_attr_setschedpolicy(&thread_attr, SCHED_RR);
-	pthread_attr_setschedparam(&thread_attr, &schedule_param);
-
-	usb_thread_active = 1;
-
-	ret = pthread_create(&taskID, &thread_attr, _usb_thread, (void *)NULL);
-
-	if (ret < 0) {
+	pid = kernel_thread("USB host", CONFIG_USBHOST_DEFPRIO, CONFIG_USBHOST_STACKSIZE, _usb_thread, (FAR char *const *)NULL);
+	if (pid < 0) {
 		ndbg("_tizenrt_set_timer failed!------------------  \n");
+		return pid;
 	}
+	usb_thread_active = 1;
 
 	/* Parse the configuration descriptor to get the endpoints */
 	ret = usbhost_cfgdesc(priv, configdesc, desclen);
 	if (ret < 0) {
-		printf("usbhost_cfgdesc() failed: %d\n", ret);
+		udbg("usbhost_cfgdesc() failed: %d\n", ret);
 	}
 
 	g_rtk_wifi_connect = 1;
-	printf("<------------- usbhost_connect \n");
+	udbg("<------------- usbhost_connect \n");
 	return ret;
 }
 
@@ -475,13 +471,13 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	for (i = 0; i < priv->nr_inep; i++) {
 		ret = DRVR_CANCEL(priv->usbclass.hport->drvr, priv->bulkin[i]);
 		if (ret < 0)
-			printf("usbhost_disconnect: cancel bulk in fail \n");
+			udbg("usbhost_disconnect: cancel bulk in fail \n");
 	}
 
 	for (i = 0; i < priv->nr_outep; i++) {
 		ret = DRVR_CANCEL(priv->usbclass.hport->drvr, priv->bulkout[i]);
 		if (ret < 0)
-			printf("usbhost_disconnect: cancel bulk out fail \n");
+			udbg("usbhost_disconnect: cancel bulk out fail \n");
 	}
 
 	/* call usbhost_destroy to free resource  */
@@ -546,7 +542,7 @@ int usbhost_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, uns
 	/* alloc crtl req*/
 	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&ctrlreq, &maxlen);
 	if (ret < 0) {
-		printf("DRVR_ALLOC failed: %d\n", ret);
+		udbg("DRVR_ALLOC failed: %d\n", ret);
 		return ret;
 	}
 
@@ -577,7 +573,7 @@ int usbhost_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, uns
 	/*submit ctrl request: imxrt_ctrlin()*/
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buf);
 	if (ret < 0) {
-		printf("ERROR: Failed to get device descriptor, %d\n", ret);
+		udbg("ERROR: Failed to get device descriptor, %d\n", ret);
 		return ret;
 	}
 
@@ -704,7 +700,7 @@ int usbhost_cancel_bulk_in(void *priv)
 	for (i = 0; i < p_rtk_wifi_usb->nr_inep; i++) {
 		ret = DRVR_CANCEL(hport->drvr, p_rtk_wifi_usb->bulkin[i]);
 		if (ret < 0)
-			printf("ERROR: Failed to cancel bulk in, %d\n", ret);
+			udbg("ERROR: Failed to cancel bulk in, %d\n", ret);
 	}
 
 exit:
@@ -731,7 +727,7 @@ int usbhost_cancel_bulk_out(void *priv)
 	for (i = 0; i < p_rtk_wifi_usb->nr_outep; i++) {
 		ret = DRVR_CANCEL(hport->drvr, p_rtk_wifi_usb->bulkout[i]);
 		if (ret < 0)
-			printf("ERROR: Failed to cancel bulk out, %d\n", ret);
+			udbg("ERROR: Failed to cancel bulk out, %d\n", ret);
 	}
 
 exit:
@@ -744,7 +740,7 @@ void usbhost_rtl8723d_initialize(void)
 	 * then place all of the pre-allocated USB host RTK WIFI class instances
 	 * into a free list.
 	 */
-	printf("------->usbhost_rtl8723d_initialize \n ");
+	udbg("------->usbhost_rtl8723d_initialize \n ");
 	usbhost_registerclass(&g_rtl8723d);
 }
 
