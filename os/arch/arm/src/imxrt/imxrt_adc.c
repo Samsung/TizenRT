@@ -43,12 +43,12 @@
 #define IMXRT_ADC_MAX_CHANNELS 10
 
 //Depends on TICK; Default is 100ms(10ms*10)!
-#define IMXRT_ADC_DEFAULT_PEROID  10
-#define IMXRT_ADC_MIN_PEROID    1
-#define IMXRT_ADC_MAX_PEROID    1000000
+#define IMXRT_ADC_DEFAULT_PEROID		10
+#define IMXRT_ADC_MIN_PEROID			1
+#define IMXRT_ADC_MAX_PEROID			1000000
 
-#define CONVERT_ONECHANNEL		1
-#define ADC_CHANNEL_GROUP       0
+#define CONVERT_ONECHANNEL				1
+#define ADC_CHANNEL_GROUP				0
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -58,12 +58,13 @@ struct imxrt_dev_s {
 	FAR const struct adc_callback_s *cb;
 
 	struct adc_dev_s *dev;		/* A reference to the outer (parent) */
+	uint8_t adc_bus;			/* ADC module number */
 	uint8_t nchannels;			/* Number of channels */
 	uint8_t cchannels;			/* Number of configured channels */
 	uint8_t current;			/* Current ADC channel being converted */
 
 	WDOG_ID work;				/* Supports the IRQ handling */
-	struct work_s work_int;	        /* Supports the IRQ handling */
+	struct work_s work_int;		/* Supports the IRQ handling */
 	uint8_t chanlist[IMXRT_ADC_MAX_CHANNELS];
 };
 
@@ -133,7 +134,7 @@ void imxrt_adc_init(ADC_Type *base, const adc_config_t *config)
 	/* ADCx_CFG */
 	tmp32 = base->CFG & (ADC_CFG_AVGS_MASK | ADC_CFG_ADTRG_MASK); /* Reserve AVGS and ADTRG bits. */
 	tmp32 |= ADC_CFG_REFSEL(config->referenceVoltageSource) | ADC_CFG_ADSTS(config->samplePeriodMode) |
-				ADC_CFG_ADICLK(config->clockSource) | ADC_CFG_ADIV(config->clockDriver) | ADC_CFG_MODE(config->resolution);
+			 ADC_CFG_ADICLK(config->clockSource) | ADC_CFG_ADIV(config->clockDriver) | ADC_CFG_MODE(config->resolution);
 	if (config->enableOverWrite) {
 		tmp32 |= ADC_CFG_OVWREN_MASK;
 	}
@@ -358,7 +359,7 @@ void imxrt_adc_sethardwarecompareconfig(ADC_Type *base, const adc_hardware_compa
 	uint32_t tmp32;
 
 	tmp32 = base->GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
-	if (NULL == config) {/* Pass "NULL" to disable the feature. */
+	if (NULL == config) { /* Pass "NULL" to disable the feature. */
 		base->GC = tmp32;
 		return;
 	}
@@ -465,21 +466,10 @@ static void adc_conversion(int argc, uint32_t arg)
 	}
 	sample = imxrt_adc_getchannelconversionvalue(ADC1, ADC_CHANNEL_GROUP);
 
-	lldbg("[ADC] conversion %d %d: %d\n", priv->current, priv->chanlist[priv->current], sample);
+	allvdbg("[ADC] conversion %d : %d\n", priv->current, sample);
 	if (priv->cb != NULL && priv->cb->au_receive != NULL) {
 		priv->cb->au_receive(priv->dev, priv->current, sample);
 	}
-
-	/* Set the next channel to be sampled */
-	priv->current++;
-
-	if (priv->current >= priv->nchannels) {
-		priv->current = 0;
-	}
-
-	/*next conversion */
-	wd_cancel(priv->work);
-	wd_start(priv->work, PeroidPerChannel, (wdentry_t)&adc_conversion, 1, (uint32_t)priv);
 #else
 	if (priv->current >= priv->nchannels) {
 		priv->current = 0;
@@ -490,13 +480,13 @@ static void adc_conversion(int argc, uint32_t arg)
 		adcChannelConfigStruct.channelNumber = priv->current;
 		adcChannelConfigStruct.enableInterruptOnConversionCompleted = false;
 		imxrt_adc_setchannelconfig(ADC1, ADC_CHANNEL_GROUP, &adcChannelConfigStruct);
-		
+
 		/* Read the ADC sample and pass it to the upper-half */
 		while (0U == imxrt_adc_getchannelstatusflags(ADC1, ADC_CHANNEL_GROUP)) {
 		}
 		sample = imxrt_adc_getchannelconversionvalue(ADC1, ADC_CHANNEL_GROUP);
 
-		lldbg("[ADC] conversion %d %d: %d\n", priv->current, priv->chanlist[priv->current], sample);
+		allvdbg("[ADC] conversion %d %d: %d\n", priv->current, priv->chanlist[priv->current], sample);
 		if (priv->cb != NULL && priv->cb->au_receive != NULL) {
 			priv->cb->au_receive(priv->dev, priv->chanlist[priv->current], sample);
 		}
@@ -526,15 +516,15 @@ static void adc_conversion(int argc, uint32_t arg)
 static void adc_startconv(FAR struct imxrt_dev_s *priv, bool enable)
 {
 	if (enable) {
-		#if !(defined(FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE) && FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE)
+#if !(defined(FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE) && FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE)
 		imxrt_adc_enablehardwaretrigger(ADC1, false);
-		#endif
+#endif
 
 		/* Do auto hardware calibration. */
 		if (kStatus_Success == imxrt_adc_doautocalibration(ADC1)) {
-			lldbg("imxrt_adc_doautocalibration() Done.\r\n");
+			allvdbg("imxrt_adc_doautocalibration() Done.\r\n");
 		} else {
-			lldbg("imxrt_adc_doautocalibration() Failed.\r\n");
+			allvdbg("imxrt_adc_doautocalibration() Failed.\r\n");
 		}
 
 		wd_cancel(priv->work);
@@ -542,7 +532,7 @@ static void adc_startconv(FAR struct imxrt_dev_s *priv, bool enable)
 	} else {
 		wd_cancel(priv->work);
 	}
-	lldbg("[ADC] conv %d: %d\n", enable, get_errno());
+	allvdbg("[ADC] conv %d: %d\n", enable, get_errno());
 }
 
 /****************************************************************************
@@ -619,16 +609,15 @@ static int adc_bind(FAR struct adc_dev_s *dev, FAR const struct adc_callback_s *
 static void adc_reset(FAR struct adc_dev_s *dev)
 {
 	irqstate_t flags;
+	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	flags = irqsave();
 
 	/* Reset ADC */
+	// TO Do : rest ADC H/W
+
 
 	/* Release ADC from reset state */
-
-	/* Configuration of the channel conversions */
-	adc_set_ch(dev, 0);
-
 	irqrestore(flags);
 }
 
@@ -655,16 +644,12 @@ static int adc_setup(FAR struct adc_dev_s *dev)
 	/* Make sure that the ADC device is in the powered up, reset state */
 	adc_reset(dev);
 
-	lldbg("[ADC] adc_setup: %d, %d...\n\t", priv->cchannels, priv->nchannels);
-	for (ret = 0; ret < priv->nchannels; ret++) {
-		lldbg("%d ", priv->chanlist[ret]);
-	}
-	lldbg("\n");
+	allvdbg("[ADC] Adc_setup channel: %d\n", priv->current);
 
 	imxrt_adc_getdefaultconfig(&adcConfigStrcut);
 	imxrt_adc_init(ADC1, &adcConfigStrcut);
 
-	lldbg("[ADC] adc1_config_width:%d\n\n", ret);
+	allvdbg("[ADC] adc1_config_width:%d\n\n", ret);
 
 	return OK;
 }
@@ -729,13 +714,6 @@ static int adc_ioctl(FAR struct adc_dev_s *dev, int cmd, unsigned long arg)
 		adc_startconv(priv, true);
 		break;
 
-	// TO-DO
-	#if 0
-	case ANIOC_STOP:
-		adc_startconv(priv, false);
-		break;
-	#endif
-
 	default:
 		ret = -ENOTTY;
 		break;
@@ -756,24 +734,20 @@ static const struct adc_ops_s g_adcops = {
 	.ao_ioctl = adc_ioctl,
 };
 
-static struct imxrt_dev_s g_adcpriv = {
-	.cb = NULL,
-	.current = 0,
+static struct imxrt_dev_s g_adcpriv[IMXRT_ADC_MAX_CHANNELS] = {
+	0,
+};
+static struct adc_dev_s g_adcdev[IMXRT_ADC_MAX_CHANNELS] = {
+	0,
 };
 
-static struct adc_dev_s g_adcdev;
-
-static inline void imxrt_adc_pins_init(void)
+void imxrt_adc_pins_init(int bus, int cchannels)
 {
-	imxrt_clock_enableclock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03u */
-
-	imxrt_iomuxc_setpinmux(
-		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,        /* GPIO_AD_B1_11 is configured as GPIO1_IO27 */
-		0U);
-
-	imxrt_iomuxc_setpinconfig(
-		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,        /* GPIO_AD_B1_11 PAD functional properties : */
-		0xB0u);                                 /* Slew Rate Field: Slow Slew Rate
+	if (cchannels <= 0 || cchannels > IMXRT_ADC_MAX_CHANNELS) {
+		return;
+	}
+	uint32_t inputvalue = 0U;
+	uint32_t pinconfig = 0xB0u; /* Slew Rate Field: Slow Slew Rate
 													Drive Strength Field: R0/6
 													Speed Field: medium(100MHz)
 													Open Drain Enable Field: Open Drain Disabled
@@ -781,6 +755,65 @@ static inline void imxrt_adc_pins_init(void)
 													Pull / Keep Select Field: Keeper
 													Pull Up / Down Config. Field: 100K Ohm Pull Down
 													Hyst. Enable Field: Hysteresis Disabled */
+
+	imxrt_clock_enableclock(kCLOCK_Iomuxc); /* iomuxc clock (iomuxc_clk_enable): 0x03u */
+	if (bus == 0) {
+		switch (cchannels) {
+		case 16:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN15, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN15, pinconfig);
+		case 15:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN14, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN14, pinconfig);
+		case 14:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN13, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN13, pinconfig);
+		case 13:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN12, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN12, pinconfig);
+		case 12:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN11, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN11, pinconfig);
+		case 11:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN10, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN10, pinconfig);
+		case 10:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN9, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN9, pinconfig);
+		case 9:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN8, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN8, pinconfig);
+		case 8:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN7, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN7, pinconfig);
+		case 7:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN6, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN6, pinconfig);
+		case 6:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN5, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN5, pinconfig);
+		case 5:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN4, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN4, pinconfig);
+		case 4:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN3, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN3, pinconfig);
+		case 3:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN2, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN2, pinconfig);
+		case 2:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN1, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN1, pinconfig);
+		case 1:
+			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN0, inputvalue);
+			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN0, pinconfig);
+
+		default:
+			break;
+		}
+	} else if (bus == 1) {
+		//To DO
+	}
 }
 
 /****************************************************************************
@@ -796,38 +829,35 @@ static inline void imxrt_adc_pins_init(void)
  *   ADC channels should be passed to imxrt_adc_initialize().
  *
  * Input Parameters:
- *   chanlist  - The list of channels
- *   cchannels - Number of channels
+ *   bus - ADC Module number
+ *   channel - current channel
  *
  * Returned Value:
  *   Valid ADC device structure reference on succcess; a NULL on failure
  *
  ****************************************************************************/
-struct adc_dev_s *imxrt_adc_initialize(FAR const uint8_t *chanlist, int cchannels)
+struct adc_dev_s *imxrt_adc_initialize(int bus, int channel)
 {
-	FAR struct imxrt_dev_s *priv = &g_adcpriv;
-
-	imxrt_adc_pins_init();
-
-	/* Initialize the public ADC device data structure */
-	g_adcdev.ad_ops = &g_adcops;
-	g_adcdev.ad_priv = priv;
-
-	/* Initialize the private ADC device data structure */
-	priv->cb = NULL;
-	priv->dev = &g_adcdev;
-	priv->cchannels = cchannels;
-
-	if (cchannels > IMXRT_ADC_MAX_CHANNELS) {
-		lldbg("IMXRT ADC1 has maximum %d ADC channels.\n", IMXRT_ADC_MAX_CHANNELS);
+	if (channel > IMXRT_ADC_MAX_CHANNELS) {
+		allvdbg("IMXRT ADC1 has maximum %d ADC channels.\n", IMXRT_ADC_MAX_CHANNELS);
 		return NULL;
 	}
 
-	memcpy(priv->chanlist, chanlist, cchannels * sizeof(uint8_t));
-	lldbg("IMXRT ADC channel count %d\n", cchannels);
+	struct imxrt_dev_s *priv = &g_adcpriv[channel];
 
+	/* Initialize the public ADC device data structure */
+	g_adcdev[channel].ad_ops = &g_adcops;
+	g_adcdev[channel].ad_priv = priv;
+
+	/* Initialize the private ADC device data structure */
+	priv->adc_bus = bus;
+	priv->cb = NULL;
+	priv->dev = &g_adcdev[channel];
+	priv->cchannels = 1;
+	priv->nchannels = 1;
+	priv->current = channel;
 	priv->work = wd_create();
 
-	return &g_adcdev;
+	return &g_adcdev[channel];
 }
-#endif							/* CONFIG_IMXRT_ADC */
+#endif /* CONFIG_IMXRT_ADC */

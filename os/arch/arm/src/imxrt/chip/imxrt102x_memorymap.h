@@ -166,6 +166,7 @@
 #define IMXRT_GPIO1_BASE          0x401b8000	/* 16KB GPIO1 */
 #define IMXRT_GPIO2_BASE          0x401bc000	/* 16KB GPIO2 */
 #define IMXRT_GPIO3_BASE          0x401c0000	/* 16KB GPIO3 */
+#define IMXRT_GPIO4_BASE          0x401c4000	/* 16KB GPIO4 */
 /* 0x401c4000     16KB Reserved */
 /* 0x401c8000     16KB Reserved */
 /* 0x401cc000     16KB Reserved */
