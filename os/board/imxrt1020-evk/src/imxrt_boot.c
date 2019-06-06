@@ -72,6 +72,35 @@
 #endif
 
 /****************************************************************************
+ * Name: board_gpio_initialize
+ *
+ * Description:
+ *   GPIO intialization for imxrt
+ *
+ ****************************************************************************/
+#define PORT_ASSIGN(a, b) (a >> (GPIO_PORT_SHIFT - 5) | b >> GPIO_PIN_SHIFT)
+static void imxrt_gpio_initialize(void)
+{
+#ifdef CONFIG_GPIO
+	int i;
+	struct gpio_lowerhalf_s *lower;
+
+	struct {
+		uint8_t minor;
+		gpio_pinset_t pinset;
+	} pins[] = {
+		{PORT_ASSIGN(GPIO_PORT1, GPIO_PIN5), (GPIO_PORT1 | GPIO_PIN5) | GPIO_OUTPUT | GPIO_OUTPUT_ZERO | IOMUX_PULL_NONE | IOMUX_CMOS_OUTPUT | IOMUX_DRIVE_40OHM | IOMUX_SPEED_MEDIUM | IOMUX_SLEW_SLOW},
+		{PORT_ASSIGN(GPIO_PORT1, GPIO_PIN9), (GPIO_PORT1 | GPIO_PIN9) | GPIO_OUTPUT | GPIO_OUTPUT_ZERO | IOMUX_PULL_NONE | IOMUX_CMOS_OUTPUT | IOMUX_DRIVE_40OHM | IOMUX_SPEED_MEDIUM | IOMUX_SLEW_SLOW},
+	};
+
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = imxrt_gpio_lowerhalf(pins[i].pinset);
+		gpio_register(pins[i].minor, lower);
+	}
+#endif
+}
+
+/****************************************************************************
  * Name: imxrt_boardinitialize
  *
  * Description:
@@ -114,6 +143,8 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
+
+	imxrt_gpio_initialize();
 
 #ifdef CONFIG_IMXRT_TIMER_INTERFACE
 	{
