@@ -85,14 +85,14 @@
  ************************************************************************************/
 
 #ifndef CONFIG_USBHOST_DEFPRIO
-#define CONFIG_USBHOST_DEFPRIO 50
+#define CONFIG_USBHOST_DEFPRIO 120
 #endif
 
 #ifndef CONFIG_USBHOST_STACKSIZE
 #ifdef CONFIG_USBHOST_HUB
 #define CONFIG_USBHOST_STACKSIZE 1536
 #else
-#define CONFIG_USBHOST_STACKSIZE 1024
+#define CONFIG_USBHOST_STACKSIZE 8192
 #endif
 #endif
 
@@ -234,7 +234,7 @@ void imxrt_usbhost_vbusdrive(int rhport, bool enable)
 
 	/* The LPC3131 has only a single root hub port */
 
-#ifdef NEED_REFERENCE 
+#ifdef NEED_REFERENCE
 	if (rhport == 0) {
 		/* Then enable or disable VBUS power */
 

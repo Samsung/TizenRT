@@ -9,7 +9,7 @@ typedef struct USB_DATA_S {
 	void *usb_intf;
 } USB_DATA, *PUSB_DATA;
 
-void usb_thread(void *priv);
+int usb_thread(int argc, char *argv[]);
 
 typedef void (*usb_complete)(void *arg, ssize_t result);
 

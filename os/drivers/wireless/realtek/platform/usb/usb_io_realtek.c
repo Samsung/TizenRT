@@ -14,7 +14,7 @@ int usbhost_cancel_bulk_in(void *priv);
 int usbhost_cancel_bulk_out(void *priv);
 
 extern void *g_rtk_wifi_usb;
-unsigned char g_rtk_wifi_connect;
+extern unsigned char g_rtk_wifi_connect;
 static unsigned char rtk_usb_running = 0;
 extern unsigned char usb_thread_active;
 extern _mutex usb_host_mutex;
@@ -37,7 +37,7 @@ static void rtw_usb_probe(void)
 	printf("rtw_usb_probe <------- \n");
 }
 
-void usb_thread(void *priv)
+int usb_thread(int argc, char *argv[])
 {
 	extern PADAPTER padapter_for_Tizenrt;
 	extern ssize_t nread_bytes;
@@ -84,10 +84,10 @@ void usb_thread(void *priv)
 	_func_exit_;
 
 	printf("exit usb read port thread \n");
-	pthread_exit((void *)NULL);
+	return 0;
 }
 
-pthread_startroutine_t _usb_thread = &usb_thread;
+main_t _usb_thread = &usb_thread;
 
 static int rtw_usb_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, unsigned char *buf, unsigned int len)
 {
