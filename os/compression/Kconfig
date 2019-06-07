@@ -6,7 +6,7 @@
 config COMPRESSED_BINARY
 	bool "Compressed binary support"
 	default n
-	depends on !BINFMT_DISABLE
+	depends on BINFMT_ENABLE
 	---help---
 		If a compressed binary is to be loaded/executed
 		this config needs to be enabled. It adds support for

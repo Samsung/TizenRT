@@ -67,7 +67,7 @@
 
 #include "binfmt.h"
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Private Functions
@@ -208,4 +208,4 @@ int unload_module(FAR struct binary_s *binp)
 	return OK;
 }
 
-#endif							/* CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */

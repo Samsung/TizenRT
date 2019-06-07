@@ -60,7 +60,7 @@
 #include <tinyara/binfmt/builtin.h>
 #include <tinyara/binfmt/elf.h>
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Public Functions
@@ -109,4 +109,4 @@ void binfmt_initialize(void)
 	UNUSED(ret);
 }
 
-#endif							/* CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */
