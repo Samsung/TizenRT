@@ -165,7 +165,7 @@ void imxrt_gpt_setisr(struct imxrt_gpt_chipinfo_s *gpt, xcpt_t handler, void *ar
 	up_enable_irq(gpt->irq_id);
 }
 
-static uint32_t imxrt_gpt_get_clockfreq(gpt_clock_source_t clock)
+uint32_t imxrt_gpt_get_clockfreq(gpt_clock_source_t clock)
 {
 	uint32_t freq;
 

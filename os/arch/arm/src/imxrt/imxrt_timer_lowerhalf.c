@@ -267,6 +267,10 @@ static int imxrt_gpt_getstatus(struct timer_lowerhalf_s *lower,
 
 	ticks = imxrt_gpt_getcurrenttimercount(priv->gpt->base);
 	status->timeleft = imxrt_gpt_convert_time_tick(TICK2TIME, priv->config.clockSource, ticks);
+#if defined(CONFIG_ARCH_BOARD_IMXRT1020_EVK) || defined(CONFIG_ARCH_BOARD_IMXRT1050_EVK)
+	status->clock_freq = imxrt_gpt_get_clockfreq(priv->config.clockSource);
+	status->ticks = ticks;
+#endif
 
 	return OK;
 }
