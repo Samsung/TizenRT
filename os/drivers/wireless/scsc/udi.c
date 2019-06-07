@@ -287,6 +287,7 @@ static int slsi_cdev_close(FAR struct file *filep)
 
 	/* free other resource */
 	kmm_free(client);
+	filep->f_priv = NULL;
 	//slsi_procfs_dec_node();
 
 	SLSI_DBG1_NODEV(SLSI_UDI, "Client:%d removed\n", indx);

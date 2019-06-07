@@ -547,6 +547,8 @@ static int gpio_close(FAR struct file *filep)
 
 	/* And free the open structure */
 	kmm_free(opriv);
+	filep->f_priv = NULL;
+
 	ret = OK;
 
 errout_with_exclsem:
