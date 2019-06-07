@@ -37,11 +37,12 @@ static int heap_performance_test(int argc, char *argv[])
 	int size = 32;
 	int i, j, k;
 	char *data[100];
-	int test_repeat = 11;
+	int num_of_sizes = 11;
 	uint32_t elapsed = 0;
 	uint32_t total_elapsed = 0;
 	int sizes[11] = {16, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
 	int interval = 1;
+	int ucc = 10; // unit changing constant
 
 	for (j = 0; j < NUM_ALLOC; ++j) {
 		data[j] = NULL;
@@ -53,21 +54,26 @@ static int heap_performance_test(int argc, char *argv[])
 			interval = in;
 		}
 		in = strtol(argv[3], (char **)NULL, 10);
-		if (in > 0) {
-			repeat = in;
+		if (in >= 100000) {
+			in /= (NUM_ALLOC * 100);
+			while ((in /= 10) > 0) {
+				repeat *= 10;
+			}
+			ucc = repeat / 10;
 		}
 	} else {
 		printf("Usage:	%s param1 param2\n", argv[1]);
 		printf("	param1 is the interval between tests each of which handles a different size.\n");
-		printf("	param2 is the number of repetition of one experiment.\n");
-		printf("	In one experiment, param1-sized memory is allocated a hundred times and then released.\n\n");
+		printf("	param2 is the number of repetition of one pair of malloc() and free().\n");
+		printf("	It should be 10^n where n >= 4.\n");
 		printf("At this time, %s will be performed with default values.\n\n", argv[1]);
 	}
 
-	printf("\nTest with interval %d, repetition %d.\n", interval, repeat);
-	printf("Elapsed time doing a cycle of malloc() and free() %u times:\n", NUM_ALLOC * repeat);
+	printf("\nTest with interval %d.\n", interval);
+	printf("One pair of alloc() and free() has been performed %u times.\n\n", NUM_ALLOC * repeat);
+	printf("Average time per one pair of malloc() and free():\n");
 
-	for (k = 0; k < test_repeat; ++k) {
+	for (k = 0; k < num_of_sizes; ++k) {
 		size = sizes[k];
 		if (clock_gettime(CLOCK_REALTIME, &ts1) == -1) {
 			printf("gettime error occured.\n");
@@ -97,7 +103,7 @@ static int heap_performance_test(int argc, char *argv[])
 		if (k > 0) {
 			elapsed = ((ts2.tv_sec - ts1.tv_sec) * 1000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000000);
 			total_elapsed += elapsed;
-			printf("Size %u bytes	: %u mseconds.\n", size, elapsed);
+			printf("Size %u bytes	: %u.%u [us]\n", size, elapsed / ucc, elapsed - (elapsed / ucc) * ucc);
 		}
 
 		sleep(interval);
