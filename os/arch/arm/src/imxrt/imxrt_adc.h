@@ -62,8 +62,58 @@ extern "C" {
 /*******************************************************************************
 * Definitions
 ******************************************************************************/
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#define IMXRT_ADC1_IN0		IOMUXC_GPIO_AD_B0_12_GPIO1_IO12
+#define IMXRT_ADC1_IN1		IOMUXC_GPIO_AD_B0_14_GPIO1_IO14
+#define IMXRT_ADC1_IN2		IOMUXC_GPIO_AD_B0_15_GPIO1_IO15
+#define IMXRT_ADC1_IN3		IOMUXC_GPIO_AD_B1_01_GPIO1_IO17
+#define IMXRT_ADC1_IN4		IOMUXC_GPIO_AD_B1_03_GPIO1_IO19
+#define IMXRT_ADC1_IN5		IOMUXC_GPIO_AD_B1_05_GPIO1_IO21
+#define IMXRT_ADC1_IN6		IOMUXC_GPIO_AD_B1_06_GPIO1_IO22
+#define IMXRT_ADC1_IN7		IOMUXC_GPIO_AD_B1_07_GPIO1_IO23
+#define IMXRT_ADC1_IN8		IOMUXC_GPIO_AD_B1_08_GPIO1_IO24
+#define IMXRT_ADC1_IN9		IOMUXC_GPIO_AD_B1_09_GPIO1_IO25
+#define IMXRT_ADC1_IN10		IOMUXC_GPIO_AD_B1_10_GPIO1_IO26
+#define IMXRT_ADC1_IN11		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27
+#define IMXRT_ADC1_IN12		IOMUXC_GPIO_AD_B1_12_GPIO1_IO28
+#define IMXRT_ADC1_IN13		IOMUXC_GPIO_AD_B1_13_GPIO1_IO29
+#define IMXRT_ADC1_IN14		IOMUXC_GPIO_AD_B1_14_GPIO1_IO30
+#define IMXRT_ADC1_IN15		IOMUXC_GPIO_AD_B1_15_GPIO1_IO31
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#define IMXRT_ADC1_IN0		IOMUXC_GPIO_AD_B1_11_GPIO1_IO27
+#define IMXRT_ADC1_IN1		IOMUXC_GPIO_AD_B0_12_GPIO1_IO12
+#define IMXRT_ADC1_IN2		IOMUXC_GPIO_AD_B0_13_GPIO1_IO13
+#define IMXRT_ADC1_IN3		IOMUXC_GPIO_AD_B0_14_GPIO1_IO14
+#define IMXRT_ADC1_IN4		IOMUXC_GPIO_AD_B0_15_GPIO1_IO15
+#define IMXRT_ADC1_IN5		IOMUXC_GPIO_AD_B1_00_GPIO1_IO16
+#define IMXRT_ADC1_IN6		IOMUXC_GPIO_AD_B1_01_GPIO1_IO17
+#define IMXRT_ADC1_IN7		IOMUXC_GPIO_AD_B1_02_GPIO1_IO18
+#define IMXRT_ADC1_IN8		IOMUXC_GPIO_AD_B1_03_GPIO1_IO19
+#define IMXRT_ADC1_IN9		IOMUXC_GPIO_AD_B1_04_GPIO1_IO20
+#define IMXRT_ADC1_IN10		IOMUXC_GPIO_AD_B1_05_GPIO1_IO21
+#define IMXRT_ADC1_IN11		IOMUXC_GPIO_AD_B1_06_GPIO1_IO22
+#define IMXRT_ADC1_IN12		IOMUXC_GPIO_AD_B1_07_GPIO1_IO23
+#define IMXRT_ADC1_IN13		IOMUXC_GPIO_AD_B1_08_GPIO1_IO24
+#define IMXRT_ADC1_IN14		IOMUXC_GPIO_AD_B1_09_GPIO1_IO25
+#define IMXRT_ADC1_IN15		IOMUXC_GPIO_AD_B1_10_GPIO1_IO26
+#endif
+
 /*! @brief ADC driver version */
 #define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
+
+typedef enum {
+	ADC_CHANNEL_0 = 0,		/*!< ADC channel */
+	ADC_CHANNEL_1,			/*!< ADC channel */
+	ADC_CHANNEL_2,			/*!< ADC channel */
+	ADC_CHANNEL_3,			/*!< ADC channel */
+	ADC_CHANNEL_4,			/*!< ADC channel */
+	ADC_CHANNEL_5,			/*!< ADC channel */
+	ADC_CHANNEL_6,			/*!< ADC channel */
+	ADC_CHANNEL_7,			/*!< ADC channel */
+	ADC_CHANNEL_8,			/*!< ADC channel */
+	ADC_CHANNEL_9,			/*!< ADC channel */
+	ADC_CHANNEL_MAX,
+} adc_channel_t;
 
 /*!
  * @brief Converter's status flags.
@@ -443,14 +493,16 @@ void imxrt_adc_clearstatusflags(ADC_Type *base, uint32_t mask);
  *   ADC channels should be passed to imxrt_adc_initialize().
  *
  * Input Parameters:
- *   chanlist  - The list of channels
- *   nchannels - Number of channels
+ *   bus - ADC module number
+ *   cchannels - Number of channels
  *
  * Returned Value:
  *   Valid can device structure reference on success; a NULL on failure
  *
  ****************************************************************************/
-struct adc_dev_s *imxrt_adc_initialize(FAR const uint8_t *chanlist, int cchannels);
+struct adc_dev_s *imxrt_adc_initialize(int bus, int cchannels);
+
+void imxrt_adc_pins_init(int bus, int cchannels);
 
 #undef EXTERN
 #if defined(__cplusplus)

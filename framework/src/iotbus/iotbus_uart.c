@@ -50,7 +50,7 @@ struct _iotbus_uart_s {
 	iotapi_hnd evt_hnd[CONFIG_IOTBUS_UART_EVENT_SIZE];
 	uart_write_cb callback;
 	int timeout;
-	uint8_t buf[CONFIG_IOTBUS_UART_BUF_SIZE];
+	uint8_t *buf;
 	size_t len;
 	iotbus_uart_state_e rx_state;
 	iotbus_uart_state_e tx_state;
@@ -120,6 +120,8 @@ static void *iotbus_uart_out_handler(void *hnd)
 	if (handle->callback) {
 		handle->callback((struct _iotbus_uart_wrapper_s *)hnd, ret);
 	}
+	free(handle->buf);
+	handle->buf = NULL;
 	idbg("[UART] exit iotbus_uart handler\n");
 
 	return 0;
@@ -514,6 +516,11 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 
 	handle->callback = cb;
 	handle->timeout = timeout;
+	handle->buf = (uint8_t *)malloc(length);
+	if (handle->buf == NULL) {
+		idbg("[UART] fail to alloc buf memory(%d)\n", ret);
+		return IOTBUS_ERROR_QUEUE_FULL;
+	}
 	memcpy(handle->buf, buf, length);
 	handle->len = length;
 
