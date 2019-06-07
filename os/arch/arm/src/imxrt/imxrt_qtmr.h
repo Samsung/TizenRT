@@ -149,6 +149,22 @@ typedef enum _qtmr_dma_enable {
 	kQTMR_ComparatorPreload2DmaEnable = (1U << 2), /*!< Comparator Preload Register 2 DMA Enable.*/
 } qtmr_dma_enable_t;
 
+enum imxrt_qtmr_channel_e {
+	IMXRT_QTMR_CH0,
+	IMXRT_QTMR_CH1,
+	IMXRT_QTMR_CH2,
+	IMXRT_QTMR_CH3,
+	IMXRT_QTMR_CH_MAX
+};
+
+typedef enum _qtmr_selection {
+	kQTMR_0,
+	kQTMR_1,
+	kQTMR_2,
+	kQTMR_3,
+	kQTMR_MAX,
+} qtmr_selection_t;
+
 /*!
  * @brief Quad Timer config structure
  *
@@ -169,6 +185,11 @@ typedef struct _qtmr_config {
 	uint8_t faultFilterPeriod;                 /*!< Fault filter period;value of 0 will bypass the filter */
 	qtmr_debug_action_t debugMode;             /*!< Operation in Debug mode */
 } qtmr_config_t;
+
+struct imxrt_qtmr_chipinfo_s {
+	TMR_Type   *base;
+	int         irq_id;
+};
 
 /*******************************************************************************
  * API
@@ -312,7 +333,7 @@ uint32_t imxrt_qtmr_getenabledinterrupts(TMR_Type *base, qtmr_channel_selection_
  * @return The status flags. This is the logical OR of members of the
  *         enumeration ::qtmr_status_flags_t
  */
-uint32_t imxrt_qtmr_getstatus(TMR_Type *base, qtmr_channel_selection_t channel);
+uint32_t imxrt_qtmr_getstatusflags(TMR_Type *base, qtmr_channel_selection_t channel);
 
 /*!
  * @brief Clears the Quad Timer status flags.
