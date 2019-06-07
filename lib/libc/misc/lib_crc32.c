@@ -117,11 +117,12 @@ static const uint32_t crc32_tab[] = {
 uint32_t crc32part(FAR const uint8_t *src, size_t len, uint32_t crc32val)
 {
 	size_t i;
+	uint32_t crc_val = ~crc32val;
 
 	for (i = 0; i < len; i++) {
-		crc32val = crc32_tab[(crc32val ^ src[i]) & 0xff] ^ (crc32val >> 8);
+		crc_val = crc32_tab[(crc_val ^ src[i]) & 0xff] ^ (crc_val >> 8);
 	}
-	return crc32val;
+	return ~crc_val;
 }
 
 /************************************************************************************************
