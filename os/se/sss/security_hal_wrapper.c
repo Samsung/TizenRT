@@ -396,20 +396,16 @@ static int hal_asn1_write_len(unsigned char **p, unsigned char *start, uint32_t 
 		return 4;
 	}
 
-	if (len <= 0xFFFFFFFF) {
-		if (*p - start < 5) {
-			return -HAL_INVALID_ARGS;
-		}
-
-		*--(*p) = (len) & 0xFF;
-		*--(*p) = (len >> 8) & 0xFF;
-		*--(*p) = (len >> 16) & 0xFF;
-		*--(*p) = (len >> 24) & 0xFF;
-		*--(*p) = 0x84;
-		return 5;
+	if (*p - start < 5) {
+		return -HAL_INVALID_ARGS;
 	}
 
-	return -HAL_INVALID_ARGS;
+	*--(*p) = (len) & 0xFF;
+	*--(*p) = (len >> 8) & 0xFF;
+	*--(*p) = (len >> 16) & 0xFF;
+	*--(*p) = (len >> 24) & 0xFF;
+	*--(*p) = 0x84;
+	return 5;
 }
 
 static int hal_asn1_write_mpi(unsigned char **p, unsigned char *start, const hal_mpi *X)
