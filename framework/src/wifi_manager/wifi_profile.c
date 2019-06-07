@@ -112,7 +112,7 @@ static int _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *buf
 {
 	int pos = 0;
 	DECODE_INTEGER(buf, config->ssid_length, pos);
-	if (config->ssid_length < 0 || config->ssid_length > WIFIMGR_SSID_LEN) {
+	if (config->ssid_length > WIFIMGR_SSID_LEN) {
 		return -1;
 	}
 	DECODE_STRING(buf, config->ssid, pos, config->ssid_length);
@@ -124,7 +124,7 @@ static int _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *buf
 		return 0;
 	}
 	DECODE_INTEGER(buf, config->passphrase_length, pos);
-	if (config->passphrase_length < 0 || config->passphrase_length > WIFIMGR_PASSPHRASE_LEN) {
+	if (config->passphrase_length > WIFIMGR_PASSPHRASE_LEN) {
 		return -1;
 	}
 	DECODE_STRING(buf, config->passphrase, pos, config->passphrase_length);

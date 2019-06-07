@@ -121,9 +121,7 @@ int sl_init(sl_ctx *hnd)
 		close(fd);
 		return SECLINK_ERROR;
 	}
-
 	handle->fd = fd;
-	*hnd = handle;
 
 	struct seclink_req req = {.req_type.comm = NULL, 0};
 	SL_CALL(handle, SECLINKIOC_INIT, req);
@@ -132,6 +130,8 @@ int sl_init(sl_ctx *hnd)
 		free(handle);
 		return SECLINK_ERROR;
 	}
+
+	*hnd = handle;
 
 	return SECLINK_OK;
 }
