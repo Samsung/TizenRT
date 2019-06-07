@@ -142,6 +142,7 @@ class DumpParser(Tk):
 				resText.insert(INSERT, data)
 
 if __name__ == "__main__":
+	os.chdir(os.path.dirname(os.path.realpath(__file__)))
 	app = DumpParser()
 	app.title("Dump Parser")
 	app.mainloop()
