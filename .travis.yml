@@ -17,19 +17,23 @@ branches:
 env:
   global:
     - TIZENRT_IMG_VERSION=latest
-  matrix:
-    - BUILD_CONFIG=artik055s/audio
-    - BUILD_CONFIG=artik053/grpc
-    - BUILD_CONFIG=artik053/st_things
-    - BUILD_CONFIG=artik053/tc
-    - BUILD_CONFIG=artik053/iotjs
-    - BUILD_CONFIG=artik053/minimal
-    - BUILD_CONFIG=qemu/tc_64k
-    - BUILD_CONFIG=qemu/build_test
-    - BUILD_CONFIG=esp_wrover_kit/hello_with_tash
-    - BUILD_CONFIG=imxrt1020-evk/nxp_demo
-    - BUILD_CONFIG=imxrt1050-evk/nxp_demo
-
+  
+matrix:
+  include:
+    - env: BUILD_CONFIG=artik055s/audio
+    - env: BUILD_CONFIG=artik053/grpc
+    - env: BUILD_CONFIG=artik053/st_things
+    - env: BUILD_CONFIG=artik053/tc
+    - env: BUILD_CONFIG=artik053/iotjs
+    - env: BUILD_CONFIG=artik053/minimal
+    - env: BUILD_CONFIG=qemu/tc_64k
+    - env: BUILD_CONFIG=qemu/build_test
+    - env: BUILD_CONFIG=esp_wrover_kit/hello_with_tash
+    - env: BUILD_CONFIG=imxrt1020-evk/nxp_demo
+    - env: BUILD_CONFIG=imxrt1050-evk/nxp_demo
+    - if: branch = protection
+      env: BUILD_CONFIG=imxrt1020-evk/loadable_elf_apps
+      
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
 - echo "${TRAVIS_BUILD_DIR}"
