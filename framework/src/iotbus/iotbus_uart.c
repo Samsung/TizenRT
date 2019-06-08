@@ -41,12 +41,9 @@
 #define CONFIG_IOTBUS_UART_EVENT_SIZE 3
 #endif
 
-#ifndef CONFIG_IOTBUS_UART_BUF_SIZE
-#define CONFIG_IOTBUS_UART_BUF_SIZE 64
-#endif
-
 struct _iotbus_uart_s {
 	int fd;
+	int device;
 	iotapi_hnd evt_hnd[CONFIG_IOTBUS_UART_EVENT_SIZE];
 	uart_write_cb callback;
 	int timeout;
@@ -139,6 +136,27 @@ static int _iotbus_valid_baudrate(unsigned int rate)
 }
 #endif
 
+static int _iotbus_get_dev_number(const char *path)
+{
+	
+	const char *ptr = path;
+	int len = strlen(path);
+	char p[8] = { 0, };
+	int cnt = 0;
+	
+	while (*ptr != 'S') {
+		if (*ptr == 0) return -1;
+		if (ptr - path >= len) return -1;
+		ptr++;
+	}
+
+	for (ptr = ptr + 1; ptr < path + len; ptr++) {
+		p[cnt++] = *ptr;
+	}
+
+	return atoi(p);
+}
+
 /*
  * Public Functions
  */
@@ -166,6 +184,7 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 	}
 
 	handle->fd = fd;
+	handle->device = _iotbus_get_dev_number(path);
 	for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
 		handle->evt_hnd[i] = NULL;
 	}
