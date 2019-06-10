@@ -60,4 +60,5 @@ LDLIBS_LIST = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
 LDLIBS = $(patsubst -lapps%, %, $(LDLIBS_LIST))
 endif
 
+LDELFFLAGS += --gc-sections
 -include Make.dep
