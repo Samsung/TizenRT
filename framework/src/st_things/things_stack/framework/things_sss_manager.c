@@ -33,14 +33,18 @@
 #include "credresource.h"
 
 #include "mbedtls/ssl_ciphersuites.h"
-#include "mbedtls/see_api.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/pem.h"
 
 #include "things_sss_manager.h"
+#ifdef CONFIG_SECURITY_API
+#include <security/security_api.h>
+
+#define SECURITY_MAX_BUF_SIZE		(4096)
+#define FACTORYKEY_ARTIK_CERTIFICATE "factory/key"
+#endif
 
 #define TAG "THINGS_SSS"
-
 #define HASH_LENGTH 32
 
 static OicSecKey_t cacert;
@@ -171,18 +175,33 @@ static int things_set_cert_chains(void)
 {
 	int ret = -1;
 	uint8_t *buf = NULL;
-	uint32_t buflen = SEE_MAX_BUF_SIZE;
+	uint32_t buflen = SECURITY_MAX_BUF_SIZE;
+	security_handle hnd;
 
+		if (security_init(&hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_init fail");
+		return ret;
+	};
 	buf = (uint8_t *)things_malloc(buflen);
 	if (buf == NULL) {
 		THINGS_LOG_E(TAG, "things_set_cert_chains() : Memory is full");
 		return -1;
 	}
 
-	if ((ret = see_get_certificate(buf, &buflen, FACTORYKEY_ARTIK_CERT, 0)) != 0) {
-		THINGS_LOG_E(TAG, "things_set_cert_chains() : see_get_certificate fail %d", ret);
+	security_data sdata1 = {buf, buflen};
+	if ((ret = auth_get_certificate(hnd, FACTORYKEY_ARTIK_CERTIFICATE, &sdata1)) != SECURITY_OK) {
+		THINGS_LOG_E(TAG, "things_set_cert_chains() : auth_get_certificate fail %d", ret);
 		things_free(buf);
+
+		if (security_deinit(hnd) != SECURITY_OK) {
+			THINGS_LOG_V(TAG, "security_deinit fail");
+		}
+
 		return ret;
+	}
+	buflen = sdata1.length;
+	if (security_deinit(hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_deinit fail");
 	}
 
 	int cnt = 0;

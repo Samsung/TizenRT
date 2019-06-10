@@ -48,10 +48,6 @@ security_error ss_read_secure_storage(security_handle hnd, const char *ss_name, 
 		SECAPI_HAL_RETURN(hres);
 	}
 
-	data->data = (unsigned char *)malloc(ss.data_len);
-	if (!data->data) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
 	SECAPI_DATA_DCOPY(ss, data);
 
 	SECAPI_RETURN(SECURITY_OK);

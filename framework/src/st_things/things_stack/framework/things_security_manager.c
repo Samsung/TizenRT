@@ -43,11 +43,6 @@
 #include "things_data_manager.h"
 
 #include <wifi_manager/wifi_manager.h>
-
-#ifdef CONFIG_SUPPORT_FULL_SECURITY
-#include <mbedtls/see_api.h>
-#endif
-
 #define TAG "[OIC_SEC_MGR]"
 
 #ifdef CONFIG_SVR_DB_SECURESTORAGE

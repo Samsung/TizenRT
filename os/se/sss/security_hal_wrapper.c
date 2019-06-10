@@ -1,3 +1,4 @@
+
 /****************************************************************************
  *
  * Copyright 2019 Samsung Electronics All Rights Reserved.
@@ -707,6 +708,7 @@ int sss_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	HWRAP_ENTER;
 	uint32_t ret;
 	ISP_CHECKBUSY();
+
 	switch (mode) {
 	case HAL_KEY_AES_128:
 		ret = isp_aes_generate_key_securekey(16, key_idx);
@@ -1371,7 +1373,7 @@ int sss_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 		}
 	} else {
 		return HAL_NOT_SUPPORTED;
-	}
+}
 
 	return HAL_SUCCESS;
 }

@@ -429,13 +429,15 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_
 		}
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
+#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
 	pinfo = g_wifi_scan_info;
 	while (pinfo != NULL) {
-		THINGS_LOG_V(TAG, "WiFi AP - SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d",
+		THINGS_LOG_D(TAG, "WiFi AP - SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d",
 				   pinfo->e_ssid, pinfo->bss_id, pinfo->signal_level);
 		pinfo = pinfo->next;
 	}
-	THINGS_LOG_V(TAG, "WiFi List Count is (%d)", g_wifi_count);
+#endif
+	THINGS_LOG_V(TAG, "WiFi Scan done, list count is %d.", g_wifi_count);
 	pthread_mutex_unlock(&g_ap_list_mutex);
 	return;
 }

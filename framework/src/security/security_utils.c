@@ -25,6 +25,7 @@
 #include "security_internal.h"
 
 #define SS_PATH "ss/"
+#define FACTORY_PATH "factory/"
 
 
 /**
@@ -266,8 +267,11 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 	if (!strncmp(path, SS_PATH, sizeof(SS_PATH) - 1)) {
 		*slot = atoi(&path[3]);
 		return 0;
+	} else if (!strncmp(path, FACTORY_PATH, sizeof(FACTORY_PATH) - 1)) {
+		*slot = FACTORYKEY_ARTIK_CERT;
+		return 0;
 	}
-	// ToDo: check the stored location which is not SE.
+
 	return -1;
 }
 
