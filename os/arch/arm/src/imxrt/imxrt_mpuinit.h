@@ -99,20 +99,6 @@ void imxrt_mpu_initialize(void);
 #define imxrt_mpu_initialize()
 #endif
 
-/****************************************************************************
- * Name: imxrt_mpu_uheap
- *
- * Description:
- *  Map the user heap region.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_PROTECTED
-void imxrt_mpu_uheap(uintptr_t start, size_t size);
-#else
-#define imxrt_mpu_uheap(start,size)
-#endif
-
 #undef EXTERN
 #if defined(__cplusplus)
 }
