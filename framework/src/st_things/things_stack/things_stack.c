@@ -637,7 +637,9 @@ int things_return_user_opinion_for_reset(int reset)
 		things_set_reset_mask(RST_USER_CONFIRM_COMPLETED);
 		result = 1;
 	} else {					// User not allow Reset.
+		pthread_mutex_lock(&m_thread_oic_reset);
 		b_reset_continue_flag = false;
+		pthread_mutex_unlock(&m_thread_oic_reset);
 	}
 
 	THINGS_LOG_D(TAG, "User Opinion : %d", result);

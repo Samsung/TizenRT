@@ -248,7 +248,7 @@ int things_get_ap_list(access_point_info_s** p_info, int* p_count)
 	access_point_info_s *pinfo = NULL;
 	access_point_info_s *p_last_info = NULL;
 	while (wifi_scan_iter != NULL) {
-		if (wifi_scan_iter->e_ssid != NULL) {
+		if (wifi_scan_iter->e_ssid[0] != NULL) {
 			pinfo = (access_point_info_s*)things_malloc(sizeof(access_point_info_s));
 			if (pinfo != NULL) {
 				pinfo->next = NULL;
@@ -260,7 +260,9 @@ int things_get_ap_list(access_point_info_s** p_info, int* p_count)
 				if (*p_info == NULL) {
 					*p_info = pinfo;
 				} else {
-					p_last_info->next = pinfo;
+					if (p_last_info != NULL) {
+						p_last_info->next = pinfo;
+					}
 				}
 				p_last_info = pinfo;
 			}
@@ -384,8 +386,11 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_
 	access_point_info_s *pinfo = NULL;
 	access_point_info_s *p_last_info = NULL;
 	while (wifi_scan_iter != NULL) {
-		if ((wifi_scan_iter->ssid != NULL) && (strlen(wifi_scan_iter->ssid)) != 0) {
+		if ((wifi_scan_iter->ssid[0] != NULL) && (strlen(wifi_scan_iter->ssid)) != 0) {
 			pinfo = (access_point_info_s*)things_malloc(sizeof(access_point_info_s));
+			if (pinfo == NULL) {
+				break;
+			}
 			pinfo->next = NULL;
 			snprintf(pinfo->e_ssid, WIFIMGR_SSID_LEN, "%s", wifi_scan_iter->ssid);
 			snprintf(pinfo->bss_id, WIFIMGR_MACADDR_STR_LEN, "%s", wifi_scan_iter->bssid);
