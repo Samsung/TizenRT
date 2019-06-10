@@ -87,15 +87,6 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	}
 	break;
 
-	case TESTIOC_CLOCK_ABSTIME2TICKS: {
-		base_time.tv_sec = (time_t)arg;
-		base_time.tv_nsec = 0;
-		if (clock_abstime2ticks(CLOCK_REALTIME, &base_time, &ret) != OK) {
-			ret = ERROR;
-		}
-	}
-	break;
-
 	case TESTIOC_GET_SELF_PID: {
 		tcb =  sched_self();
 		if (tcb == NULL) {
@@ -166,6 +157,48 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		} else {
 			ret = ERROR;
 		}
+	}
+	break;
+
+	case TESTIOC_CLOCK_ABSTIME2TICKS_TEST: {
+		int base_tick;
+		int comparison_tick;
+		struct timespec comparison_time;
+		struct timespec result_time;
+
+		ret_chk = clock_gettime(CLOCK_REALTIME, &cur_time);
+		if (ret_chk != OK) {
+			dbg("clock_gettime failed. errno : %d\n", get_errno());
+			ret = ERROR;
+			break;
+		}
+
+		base_time.tv_sec = cur_time.tv_sec + 101;
+		base_time.tv_nsec = cur_time.tv_nsec;
+
+		comparison_time.tv_sec = cur_time.tv_sec + 102;
+		comparison_time.tv_nsec = cur_time.tv_nsec;
+		ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
+		if (ret_chk == ERROR) {
+			dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+			ret = ERROR;
+			break;
+		}
+
+		ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
+		if (ret_chk != OK) {
+			dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+			ret = ERROR;
+			break;
+		}
+
+		clock_ticks2time(comparison_tick - base_tick, &result_time);
+		if (result_time.tv_sec != 1) {
+			dbg("clock_abstime2ticks failed. %d.%d sec is not 1 sec.\n", result_time.tv_sec, result_time.tv_nsec);
+			ret = ERROR;
+			break;
+		}
+		ret = OK;
 	}
 	break;
 
