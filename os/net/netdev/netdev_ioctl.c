@@ -1109,6 +1109,7 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 		dst->ai_socktype = tmp->ai_socktype;
 		dst->ai_protocol = tmp->ai_protocol;
 		dst->ai_addrlen = tmp->ai_addrlen;
+
 		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
 		if (!dst->ai_addr) {
 			ndbg("copy_addrinfo() kumm_malloc failed\n");
@@ -1116,14 +1117,20 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 			break;
 		}
 		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
-		dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
-		if (!dst->ai_canonname) {
-			ndbg("copy_addrinfo() kumm_malloc failed\n");
-			kumm_free(dst->ai_addr);
-			kumm_free(dst);
-			break;
+
+		if (tmp->ai_canonname) {
+			dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
+			if (!dst->ai_canonname) {
+				ndbg("copy_addrinfo() kumm_malloc failed\n");
+				kumm_free(dst->ai_addr);
+				kumm_free(dst);
+				break;
+			}
+			memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+		} else {
+			dst->ai_canonname = NULL;
 		}
-		memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+
 		dst->ai_next = NULL;
 		if (prev) {
 			prev->ai_next = dst;
