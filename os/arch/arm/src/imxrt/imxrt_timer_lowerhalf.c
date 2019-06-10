@@ -400,6 +400,14 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 			ret = (int)imxrt_gpt_getclockdivider(priv->gpt->base);
 		}
 		break;
+	case TCIOC_SETFREERUN:
+		if ((bool)arg == true) {
+			imxrt_gpt_setfreerunmode(priv->gpt->base);
+		} else {
+			imxrt_gpt_unsetfreerunmode(priv->gpt->base);
+		}
+		ret = OK;
+		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
 		break;

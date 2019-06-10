@@ -111,6 +111,7 @@
 #define TCIOC_NOTIFICATION	_TCIOC(0x0005)
 #define TCIOC_SETDIV        _TCIOC(0x0006)
 #define TCIOC_GETDIV        _TCIOC(0x0007)
+#define TCIOC_SETFREERUN    _TCIOC(0x0008)
 
 /* Bit Settings *************************************************************/
 /* Bit settings for the struct timer_status_s flags field */

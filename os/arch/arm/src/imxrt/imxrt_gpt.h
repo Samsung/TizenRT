@@ -322,6 +322,26 @@ static inline void imxrt_gpt_stoptimer(GPT_Type *base)
 }
 
 /*!
+ * @brief Set the FreeRun mode.
+ *
+ * @param base GPT peripheral base address.
+ */
+static inline void imxrt_gpt_setfreerunmode(GPT_Type *base)
+{
+	base->CR |= GPT_CR_FRR_MASK;
+}
+
+/*!
+ * @brief Unset the FreeRun mode.
+ *
+ * @param base GPT peripheral base address.
+ */
+static inline void imxrt_gpt_unsetfreerunmode(GPT_Type *base)
+{
+	base->CR &= ~GPT_CR_FRR_MASK;
+}
+
+/*!
  * @name Read the timer period
  * @{
  */
