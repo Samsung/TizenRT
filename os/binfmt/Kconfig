@@ -3,14 +3,14 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config BINFMT_DISABLE
-	bool "Disable BINFMT support"
+config BINFMT_ENABLE
+	bool "Enable BINFMT support"
 	default n
 	---help---
-		By default, support for loadable binary formats is built.  This logic
-		may be suppressed be defining this setting.
+		By default, support for loadable binary formats is disable.  This logic
+		may be build by defining this setting.
 
-if !BINFMT_DISABLE
+if BINFMT_ENABLE
 
 config PATH_INITIAL
 	string "Initial PATH Value"
@@ -74,4 +74,4 @@ config SYMTAB_ORDEREDBYNAME
 		the logic can perform faster lookups using a binary search.
 		Otherwise, the symbol table is assumed to be un-ordered an only
 		slow, linear searches are supported.
-endif # !BINFMT_DISABLE
+endif # BINFMT_ENABLE

@@ -142,7 +142,7 @@ endif
 
 NONFSDIRS = kernel $(ARCH_SRC) $(TINYARA_ADDONS)
 FSDIRS = fs drivers
-ifneq ($(CONFIG_BINFMT_DISABLE),y)
+ifeq ($(CONFIG_BINFMT_ENABLE),y)
 FSDIRS += binfmt
 endif
 CONTEXTDIRS = $(APPDIR)

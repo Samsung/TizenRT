@@ -75,7 +75,7 @@
 #include "sched/sched.h"
 #include "binfmt.h"
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -321,4 +321,4 @@ errout_with_tcb:
 	return ret;
 }
 
-#endif							/* CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */

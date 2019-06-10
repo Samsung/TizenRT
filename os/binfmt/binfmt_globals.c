@@ -58,7 +58,7 @@
 
 #include <tinyara/binfmt/binfmt.h>
 
-#ifndef CONFIG_BINFMT_DISABLE
+#ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -83,4 +83,4 @@ FAR struct binfmt_s *g_binfmts;
  * Public Functions
  ****************************************************************************/
 
-#endif							/* CONFIG_BINFMT_DISABLE */
+#endif							/* CONFIG_BINFMT_ENABLE */
