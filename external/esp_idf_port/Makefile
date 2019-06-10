@@ -121,7 +121,7 @@ OBJS        = $(CXXOBJS) $(COBJS)
 
 # Common build
 all: $(SUBDIRS) .built
-.PHONY: clean distclean
+.PHONY: .depend depend clean distclean
 
 ECHO:
 	@echo $(SUBDIRS)
@@ -131,6 +131,12 @@ $(SUBDIRS): ECHO
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
 
 $(CXXOBJS) : %$(OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
