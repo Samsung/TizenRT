@@ -64,6 +64,9 @@
 
 #include <tinyara/timer.h>
 #include <tinyara/irq.h>
+#ifdef CONFIG_ARCH_IRQPRIO
+#include <tinyara/arch.h>
+#endif
 
 #include "chip.h"
 #include "imxrt_gpt.h"
@@ -408,6 +411,11 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 		}
 		ret = OK;
 		break;
+#ifdef CONFIG_ARCH_IRQPRIO
+	case TCIOC_SETIRQPRIO:
+		ret = up_prioritize_irq(priv->gpt->irq_id, arg);
+		break;
+#endif
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
 		break;
