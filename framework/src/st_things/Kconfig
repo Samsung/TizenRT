@@ -23,7 +23,7 @@ if ST_THINGS
 
 comment "ST_Things Config Parameters"
 
-config ST_THINGS_ARTIK_HW_CERT_KEY
+config ST_THINGS_HW_CERT_KEY
 	bool "Enable Artik H/W Certificate & Key"
 	depends on ARCH_BOARD_ARTIK05X_FAMILY && ST_THINGS_SECURESTORAGE
 	default n
