@@ -57,8 +57,7 @@
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -83,11 +82,13 @@
 
 void free(FAR void *mem)
 {
-	int heap_idx;
-	heap_idx = mm_get_heapindex(mem);
-	if (heap_idx != INVALID_HEAP_IDX) {
-		mm_free(&g_mmheap[heap_idx], mem);
+	struct mm_heap_s *heap;
+	heap = mm_get_heap(mem);
+	if (heap) {
+		mm_free(heap, mem);
+		return;
 	}
+
+	mdbg("Failed to free address 0x%x\n", mem);
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
