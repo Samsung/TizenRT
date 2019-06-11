@@ -112,6 +112,9 @@
 #define TCIOC_SETDIV        _TCIOC(0x0006)
 #define TCIOC_GETDIV        _TCIOC(0x0007)
 #define TCIOC_SETFREERUN    _TCIOC(0x0008)
+#ifdef CONFIG_ARCH_IRQPRIO
+#define TCIOC_SETIRQPRIO    _TCIOC(0x0009)
+#endif
 
 /* Bit Settings *************************************************************/
 /* Bit settings for the struct timer_status_s flags field */
