@@ -64,7 +64,7 @@
 
 #include "binfmt.h"
 
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_BINFMT) && defined(CONFIG_BINFMT_ENABLE)
+#ifdef CONFIG_DEBUG_BINFMT
 
 /****************************************************************************
  * Public Functions

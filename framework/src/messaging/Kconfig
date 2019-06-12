@@ -5,7 +5,7 @@
 
 config MESSAGING_IPC
 	bool "Enable Messaging APIs"
-	default y
+	default n
 	depends on !DISABLE_MQUEUE
 	depends on !DISABLE_SIGNALS
 	---help---

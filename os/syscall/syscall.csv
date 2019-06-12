@@ -18,7 +18,7 @@
 "dup", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int"
 "dup2", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int", "int"
 "exec","tinyara/binfmt/binfmt.h","defined(CONFIG_BINFMT_ENABLE) && !defined(CONFIG_BUILD_KERNEL)","int","FAR const char *","FAR char * const *","FAR const struct symtab_s *","int"
-"execv","unistd.h","defined(CONFIG_BINFMT_ENABLE) && defined(CONFIG_LIBC_EXECFUNCS)","int","FAR const char *","FAR char *const []|FAR char *const *"
+"execv","unistd.h","defined(CONFIG_LIBC_EXECFUNCS)","int","FAR const char *","FAR char *const []|FAR char *const *"
 "exit", "stdlib.h", "", "void", "int"
 "fcntl", "fcntl.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int", "int", "..."
 "fs_fdopen", "tinyara/fs/fs.h", "CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0", "FAR struct file_struct*", "int", "int", "FAR struct tcb_s*"
