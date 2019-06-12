@@ -791,7 +791,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	free(pubkey.data);
 	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		sl_deinit(shnd);
-		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
+		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 	}
 
 	/*
@@ -810,7 +810,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	t_hash.data = (unsigned char *)malloc(hash_len);
 	if (t_hash.data == NULL) {
 		sl_deinit(shnd);
-		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
 	}
 	memcpy(t_hash.data, hash, hash_len);
 	t_hash.data_len = hash_len;
@@ -820,7 +820,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	if (t_sig.data == NULL) {
 		free(t_hash.data);
 		sl_deinit(shnd);
-		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
 	}
 	memcpy(t_sig.data, sig, sig_len);
 	t_sig.data_len = sig_len;
@@ -830,7 +830,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	free(t_sig.data);
 	sl_deinit(shnd);
 	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
+		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 	}
 
 	return 0;
