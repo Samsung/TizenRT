@@ -22,6 +22,13 @@
 #include <string.h>
 #include <tinyara/seclink.h>
 
+#if (defined(CONFIG_ARCH_BOARD_ARTIK053S) || defined(CONFIG_ARCH_BOARD_ARTIK053)) \
+		&& defined(CONFIG_S5J_HAVE_SSS)
+#include "../../../os/arch/arm/src/s5j/sss/isp_custom.h"
+
+#define FACTORYKEY_CERT					(0x00010122)
+#endif
+
 #ifdef LINUX
 #define SECAPI_LOG printf
 #else

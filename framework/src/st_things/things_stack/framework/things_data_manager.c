@@ -43,8 +43,7 @@
 #include "cloud/cloud_connector.h"
 #include "things_types.h"
 #include <wifi_manager/wifi_manager.h>
-
-
+#include <security/security_api.h>
 #define TAG "[things_datamgr]"
 
 /* device define JSON */
@@ -141,10 +140,17 @@
 #ifdef CONFIG_ST_THINGS_SECURESTORAGE
 #define SECURESTOARGE_MAX_DATA_SIZE	       (208)
 #define SECURESTOARGE_MAX_CERT_SIZE	       (2048)
+#if CONFIG_SECURITY_API
+#define SECURESTOARGE_CERT_INDEX           "ss/1"
+#define SECURESTOARGE_EASYSETUP_INDEX      "ss/2"
+#define SECURESTOARGE_CLOUD_DATA_INDEX_1   "ss/3"
+#define SECURESTOARGE_CLOUD_DATA_INDEX_2   "ss/4"
+#else
 #define SECURESTOARGE_CERT_INDEX           (1)
 #define SECURESTOARGE_EASYSETUP_INDEX      (2)
 #define SECURESTOARGE_CLOUD_DATA_INDEX_1   (3)
 #define SECURESTOARGE_CLOUD_DATA_INDEX_2   (4)
+#endif
 #endif
 
 typedef int8_t INT8;
@@ -597,31 +603,46 @@ char *get_json_string_from_securestorage(void)
 {
 	cJSON *root = NULL;
 	int ret = 1;
-	char *empty = "";
 	char *json_str = NULL;
 	unsigned char read_data[SECURESTOARGE_MAX_DATA_SIZE * 2];
 	unsigned int read_size[2] = {SECURESTOARGE_MAX_DATA_SIZE, SECURESTOARGE_MAX_DATA_SIZE};
 	int err;
-	if ((err = see_read_secure_storage(read_data, &read_size[0], SECURESTOARGE_CLOUD_DATA_INDEX_1)) != 0) {
-		THINGS_LOG_V(TAG, "see_read_secure_storage error (%d)", err);
+
+	security_handle hnd;
+
+	if (security_init(&hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_init fail");
+		return ret;
+	}
+	security_data sdata1 = {read_data, read_size[0]};
+	security_data sdata2 = {read_data + read_size[0], read_size[1]};
+	if ((err = ss_read_secure_storage(hnd, SECURESTOARGE_CLOUD_DATA_INDEX_1, 0, &sdata1)) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "ss_read_secure_storage error (%d)", err);
 		read_size[0] = 0;
 		ret = 0;
 		goto GOTO_OUT;
 	}
-	if ((err = see_read_secure_storage(read_data + read_size[0], &read_size[1], SECURESTOARGE_CLOUD_DATA_INDEX_2)) != 0) {
-		THINGS_LOG_V(TAG, "see_read_secure_storage error (%d)", err);
+	read_size[0] = sdata1.length;
+	if ((err = ss_read_secure_storage(hnd, SECURESTOARGE_CLOUD_DATA_INDEX_2, 0, &sdata2)) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "ss_read_secure_storage error (%d)", err);
 		read_size[1] = 0;
 		ret = 0;
 		goto GOTO_OUT;
 	}
+	read_size[1] = sdata2.length;
+
 	int size = read_size[0] + read_size[1];
 	read_data[size + 1] = 0;
 
 	unsigned char cert_data[SECURESTOARGE_MAX_CERT_SIZE];
 	unsigned int cert_size = SECURESTOARGE_MAX_CERT_SIZE;
-	if ((err = see_get_certificate(cert_data, &cert_size, SECURESTOARGE_CERT_INDEX)) != 0) {
-		THINGS_LOG_E(TAG, "see_get_certificate error (%d)", err);
+
+	security_data sdata3 = {cert_data, cert_size};
+	if ((err = auth_get_certificate(hnd, SECURESTOARGE_CERT_INDEX, &sdata3)) != SECURITY_OK) {
+		THINGS_LOG_E(TAG, "auth_get_certificate error (%d)", err);
 		cert_size = 0;
+	} else {
+		cert_size = sdata3.length;
 	}
 	cert_data[cert_size + 1] = 0;
 
@@ -654,12 +675,21 @@ GOTO_OUT:
 	if (root != NULL) {
 		cJSON_Delete(root);
 	}
+	if (security_deinit(hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_deinit fail");
+	}
 	return json_str;
 }
 
 int set_json_string_into_securestorage(const char *json_str)
 {
 	int ret = 0;
+	security_handle hnd;
+
+	if (security_init(&hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_init fail");
+		return ret;
+	}
 	cJSON *root = cJSON_Parse((const char *)json_str);
 	cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 	if (cloud == NULL) {
@@ -671,15 +701,17 @@ int set_json_string_into_securestorage(const char *json_str)
 	int err;
 	if (certificate != NULL && certificate->valuestring != NULL) {
 		THINGS_LOG_V(TAG, "json_print:cert [%s] size : %d", certificate->valuestring, strlen(certificate->valuestring));
-		if ((err = see_set_certificate(certificate->valuestring, strlen(certificate->valuestring), SECURESTOARGE_CERT_INDEX, 0)) != 0) {
-			THINGS_LOG_E(TAG, "see_set_certificate error (%d)", err);
+		security_data sdata1 = {certificate->valuestring, strlen(certificate->valuestring)};
+		if ((err = auth_set_certificate(hnd, SECURESTOARGE_CERT_INDEX, &sdata1)) != SECURITY_OK) {
+			THINGS_LOG_E(TAG, "auth_set_certificate error (%d)", err);
 			goto GOTO_OUT;
 		}
 	} else {
 		THINGS_LOG_D(TAG, "certificate == NULL || json->valuestring == NULL");
 		unsigned char *empty = "";
-		if ((err = see_set_certificate(empty, 1, SECURESTOARGE_CERT_INDEX, 0)) != 0) {
-			THINGS_LOG_V(TAG, "see_set_certificate error (%d)", err);
+		security_data sdata1 = {empty, 1};
+		if ((err = auth_set_certificate(hnd, SECURESTOARGE_CERT_INDEX, &sdata1)) != SECURITY_OK) {
+			THINGS_LOG_E(TAG, "auth_set_certificate error (%d)", err);
 			goto GOTO_OUT;
 		}
 	}
@@ -699,13 +731,18 @@ int set_json_string_into_securestorage(const char *json_str)
 	} else {
 		len = json_print_len;
 	}
-
-	see_write_secure_storage(json_print, len, SECURESTOARGE_CLOUD_DATA_INDEX_1);
+	security_data sdata2 = {json_print, len};
+	if ((err = ss_write_secure_storage(hnd, SECURESTOARGE_CLOUD_DATA_INDEX_1, 0, &sdata2)) != SECURITY_OK) {
+		THINGS_LOG_E(TAG, "ss_write_secure_storage error (%d)", err);
+	}
 	if (len < SECURESTOARGE_MAX_DATA_SIZE) {
 		unsigned char *empty = "";
-		see_write_secure_storage(empty, 1, SECURESTOARGE_CLOUD_DATA_INDEX_2);
+
+		security_data sdata3 = {empty, 1};
+		ss_write_secure_storage(hnd, SECURESTOARGE_CLOUD_DATA_INDEX_2, 0, &sdata3);
 	} else {
-		see_write_secure_storage(json_print + SECURESTOARGE_MAX_DATA_SIZE, json_print_len - SECURESTOARGE_MAX_DATA_SIZE, SECURESTOARGE_CLOUD_DATA_INDEX_2);
+		security_data sdata3 = {json_print + SECURESTOARGE_MAX_DATA_SIZE, json_print_len - SECURESTOARGE_MAX_DATA_SIZE};
+		ss_write_secure_storage(hnd, SECURESTOARGE_CLOUD_DATA_INDEX_2, 0, &sdata3);
 	}
 	THINGS_LOG_V(TAG, "set_json_string_into_securestorage success");
 	ret = 1;
@@ -716,6 +753,9 @@ GOTO_OUT:
 
 	if (json_print != NULL) {
 		things_free(json_print);
+	}
+	if (security_deinit(hnd) != SECURITY_OK) {
+		THINGS_LOG_V(TAG, "security_deinit fail");
 	}
 	return ret;
 }
@@ -1120,12 +1160,12 @@ static int parse_configuration_json(cJSON *configuration)
 		}
 		memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring));
 	} else {
-		if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT)) {
+		if (strlen(provisioning->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT)) {
 			THINGS_LOG_V(TAG, "provisioning file path length exceeded");
 			goto JSON_ERROR;
 		}
 		strncpy(g_things_cloud_file_path, PATH_MNT, strlen(PATH_MNT));
-		strncat(g_things_cloud_file_path, provisioning->valuestring, (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT));
+		strncat(g_things_cloud_file_path, provisioning->valuestring, (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT));
 	}
 
 #ifndef CONFIG_ST_THINGS_HW_CERT_KEY
@@ -1256,10 +1296,12 @@ static int parse_resource_type_json_with_internal(cJSON *resource_types_user)
 					memcpy(restype->prop[iter2]->key, key->valuestring, strlen(key->valuestring) + 1);
 				}
 				restype->prop[iter2]->type = type->valueint;
-				if (mandatory->type == cJSON_True) {
-					restype->prop[iter2]->mandatory = true;
-				} else {
-					restype->prop[iter2]->mandatory = false;
+				if (mandatory != NULL) {
+					if (mandatory->type == cJSON_True) {
+						restype->prop[iter2]->mandatory = true;
+					} else {
+						restype->prop[iter2]->mandatory = false;
+					}
 				}
 				if (rw != NULL) {
 					restype->prop[iter2]->rw = rw->valueint;

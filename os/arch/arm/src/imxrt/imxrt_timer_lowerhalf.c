@@ -64,6 +64,9 @@
 
 #include <tinyara/timer.h>
 #include <tinyara/irq.h>
+#ifdef CONFIG_ARCH_IRQPRIO
+#include <tinyara/arch.h>
+#endif
 
 #include "chip.h"
 #include "imxrt_gpt.h"
@@ -267,6 +270,10 @@ static int imxrt_gpt_getstatus(struct timer_lowerhalf_s *lower,
 
 	ticks = imxrt_gpt_getcurrenttimercount(priv->gpt->base);
 	status->timeleft = imxrt_gpt_convert_time_tick(TICK2TIME, priv->config.clockSource, ticks);
+#if defined(CONFIG_ARCH_BOARD_IMXRT1020_EVK) || defined(CONFIG_ARCH_BOARD_IMXRT1050_EVK)
+	status->clock_freq = imxrt_gpt_get_clockfreq(priv->config.clockSource);
+	status->ticks = ticks;
+#endif
 
 	return OK;
 }
@@ -396,6 +403,19 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 			ret = (int)imxrt_gpt_getclockdivider(priv->gpt->base);
 		}
 		break;
+	case TCIOC_SETFREERUN:
+		if ((bool)arg == true) {
+			imxrt_gpt_setfreerunmode(priv->gpt->base);
+		} else {
+			imxrt_gpt_unsetfreerunmode(priv->gpt->base);
+		}
+		ret = OK;
+		break;
+#ifdef CONFIG_ARCH_IRQPRIO
+	case TCIOC_SETIRQPRIO:
+		ret = up_prioritize_irq(priv->gpt->irq_id, arg);
+		break;
+#endif
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
 		break;

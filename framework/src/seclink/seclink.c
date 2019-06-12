@@ -43,10 +43,14 @@
 
 #define SL_TAG "[SECLINK]"
 
-#define SL_ERR(fd)														\
-	do {																\
-		SL_LOG(SL_TAG"%s:%d ret(%d) code(%s)\n",			            \
-			   __FILE__, __LINE__, fd, strerror(errno));                \
+#define SL_ERR(fd)												\
+	do {														\
+		if (fd == -1) {											\
+			SL_LOG(SL_TAG"%s:%d\n", __FILE__, __LINE__);		\
+		} else {												\
+			SL_LOG(SL_TAG"%s:%d ret(%d) code(%s)\n",			\
+				   __FILE__, __LINE__, fd, strerror(errno));	\
+		}														\
 	} while (0)
 
 #ifdef LINUX
@@ -117,9 +121,7 @@ int sl_init(sl_ctx *hnd)
 		close(fd);
 		return SECLINK_ERROR;
 	}
-
 	handle->fd = fd;
-	*hnd = handle;
 
 	struct seclink_req req = {.req_type.comm = NULL, 0};
 	SL_CALL(handle, SECLINKIOC_INIT, req);
@@ -129,6 +131,8 @@ int sl_init(sl_ctx *hnd)
 		return SECLINK_ERROR;
 	}
 
+	*hnd = handle;
+
 	return SECLINK_OK;
 }
 
@@ -137,7 +141,7 @@ int sl_deinit(sl_ctx hnd)
 	SL_ENTER;
 
 	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {
-		SL_ERR(((struct _seclink_s_ *)hnd)->fd);
+		SL_ERR(-1);
 		return -1;
 	}
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;

@@ -1,3 +1,4 @@
+
 /****************************************************************************
  *
  * Copyright 2019 Samsung Electronics All Rights Reserved.
@@ -396,20 +397,16 @@ static int hal_asn1_write_len(unsigned char **p, unsigned char *start, uint32_t 
 		return 4;
 	}
 
-	if (len <= 0xFFFFFFFF) {
-		if (*p - start < 5) {
-			return -HAL_INVALID_ARGS;
-		}
-
-		*--(*p) = (len) & 0xFF;
-		*--(*p) = (len >> 8) & 0xFF;
-		*--(*p) = (len >> 16) & 0xFF;
-		*--(*p) = (len >> 24) & 0xFF;
-		*--(*p) = 0x84;
-		return 5;
+	if (*p - start < 5) {
+		return -HAL_INVALID_ARGS;
 	}
 
-	return -HAL_INVALID_ARGS;
+	*--(*p) = (len) & 0xFF;
+	*--(*p) = (len >> 8) & 0xFF;
+	*--(*p) = (len >> 16) & 0xFF;
+	*--(*p) = (len >> 24) & 0xFF;
+	*--(*p) = 0x84;
+	return 5;
 }
 
 static int hal_asn1_write_mpi(unsigned char **p, unsigned char *start, const hal_mpi *X)
@@ -711,6 +708,7 @@ int sss_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	HWRAP_ENTER;
 	uint32_t ret;
 	ISP_CHECKBUSY();
+
 	switch (mode) {
 	case HAL_KEY_AES_128:
 		ret = isp_aes_generate_key_securekey(16, key_idx);
@@ -1375,7 +1373,7 @@ int sss_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 		}
 	} else {
 		return HAL_NOT_SUPPORTED;
-	}
+}
 
 	return HAL_SUCCESS;
 }

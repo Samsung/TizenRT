@@ -190,6 +190,8 @@ void imxrt_gpt_deinit(GPT_Type *base);
  */
 void imxrt_gpt_getdefaultconfig(gpt_config_t *config);
 
+uint32_t imxrt_gpt_get_clockfreq(gpt_clock_source_t clock);
+
 struct imxrt_gpt_chipinfo_s *imxrt_gpt_configure(int timer, gpt_config_t *config);
 
 uint32_t imxrt_gpt_convert_time_tick(imxrt_timer_convert_dir_t dir, gpt_clock_source_t clock_source, uint32_t value);
@@ -317,6 +319,26 @@ static inline void imxrt_gpt_starttimer(GPT_Type *base)
 static inline void imxrt_gpt_stoptimer(GPT_Type *base)
 {
 	base->CR &= ~GPT_CR_EN_MASK;
+}
+
+/*!
+ * @brief Set the FreeRun mode.
+ *
+ * @param base GPT peripheral base address.
+ */
+static inline void imxrt_gpt_setfreerunmode(GPT_Type *base)
+{
+	base->CR |= GPT_CR_FRR_MASK;
+}
+
+/*!
+ * @brief Unset the FreeRun mode.
+ *
+ * @param base GPT peripheral base address.
+ */
+static inline void imxrt_gpt_unsetfreerunmode(GPT_Type *base)
+{
+	base->CR &= ~GPT_CR_FRR_MASK;
 }
 
 /*!

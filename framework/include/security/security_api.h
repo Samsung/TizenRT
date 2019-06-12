@@ -23,4 +23,9 @@
 #include "security_keymgr.h"
 #include "security_ss.h"
 
+#if (defined(CONFIG_ARCH_BOARD_ARTIK053S) || defined(CONFIG_ARCH_BOARD_ARTIK053)) \
+			&& defined(CONFIG_S5J_HAVE_SSS)
+#include "../../../os/arch/arm/src/s5j/sss/isp_custom.h"
+#endif
+
 #endif // __SECURITY_API_H__

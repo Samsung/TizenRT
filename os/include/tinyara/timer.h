@@ -111,6 +111,10 @@
 #define TCIOC_NOTIFICATION	_TCIOC(0x0005)
 #define TCIOC_SETDIV        _TCIOC(0x0006)
 #define TCIOC_GETDIV        _TCIOC(0x0007)
+#define TCIOC_SETFREERUN    _TCIOC(0x0008)
+#ifdef CONFIG_ARCH_IRQPRIO
+#define TCIOC_SETIRQPRIO    _TCIOC(0x0009)
+#endif
 
 /* Bit Settings *************************************************************/
 /* Bit settings for the struct timer_status_s flags field */
@@ -138,6 +142,10 @@ struct timer_status_s {
 	uint32_t timeout;  /* The current timeout setting (in microseconds) */
 	uint32_t timeleft; /* Time left until the timer expiration
 			    * (in microseconds) */
+#if defined(CONFIG_ARCH_BOARD_IMXRT1020_EVK) || defined(CONFIG_ARCH_BOARD_IMXRT1050_EVK)
+	uint32_t clock_freq;
+	uint32_t ticks;
+#endif
 };
 
 /* This is the type of the argument passed to the TCIOC_NOTIFICATION ioctl */

@@ -159,8 +159,10 @@ bool es_get_cloud_login_state(void)
 	case ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD:
 	case ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD:
 		res = true;
+		break;
 	default:
 		res = false;
+		break;
 	}
 
 	return res;

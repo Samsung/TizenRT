@@ -454,6 +454,7 @@ static int smartfs_close(FAR struct file *filep)
 #endif
 
 	kmm_free(sf);
+	filep->f_priv = NULL;
 
 okout:
 	smartfs_semgive(fs);
