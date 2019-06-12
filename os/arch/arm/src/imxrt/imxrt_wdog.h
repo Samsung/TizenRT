@@ -84,7 +84,6 @@
  * @addtogroup wdog
  * @{
  */
-
 /*******************************************************************************
  * Definitions
  *******************************************************************************/
@@ -97,6 +96,19 @@
 /*@{*/
 #define WDOG_REFRESH_KEY (0xAAAA5555U)
 /*@}*/
+
+enum imxrt_wdog_type_e {
+	IMXRT_WDOG1,
+	IMXRT_WDOG2,
+	IMXRT_WDOG_MAX
+};
+
+/* @breif IOCTL commands list */
+enum imxrt_wdog_cmd_e {
+	IMXRT_WDOG_CMD_PAUSE,
+	IMXRT_WDOG_CMD_RESUME,
+	IMXRT_WDOG_CMD_MAX
+};
 
 /*! @brief Defines WDOG work mode. */
 typedef struct _wdog_work_mode {
@@ -389,6 +401,16 @@ void imxrt_wdog_disable_all(void);
  ****************************************************************************/
 
 void imxrt_wdog_hwreset(void);
+
+/****************************************************************************
+ * Name: imxrt_wdog_initialize
+ *
+ * Description:
+ *   Initialize and register the imxrt watchdog. Watchdog timer is registered
+ *   as 'devpath'.
+ *
+ ****************************************************************************/
+int imxrt_wdog_initialize(const char *devpath, int wdog_base);
 
 #if defined(__cplusplus)
 }

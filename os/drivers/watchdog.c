@@ -394,6 +394,24 @@ static int wdog_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 
+	case WDIOC_PAUSE: {
+		if (lower->ops->ioctl) {
+			ret = lower->ops->ioctl(lower, WDIOC_PAUSE, 0);
+		} else {
+			ret = -ENOSYS;
+		}
+	}
+	break;
+
+	case WDIOC_RESUME: {
+		if (lower->ops->ioctl) {
+			ret = lower->ops->ioctl(lower, WDIOC_RESUME, 0);
+		} else {
+			ret = -ENOSYS;
+		}
+	}
+	break;
+
 	/* Any unrecognized IOCTL commands might be platform-specific ioctl commands */
 
 	default: {
