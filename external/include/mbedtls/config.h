@@ -548,10 +548,10 @@
  *
  * Enable padding modes in the cipher layer.
  */
-#define MBEDTLS_CIPHER_PADDING_PKCS7
-#define MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS
-#define MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN
-#define MBEDTLS_CIPHER_PADDING_ZEROS
+//#define MBEDTLS_CIPHER_PADDING_PKCS7
+//#define MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS
+//#define MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN
+//#define MBEDTLS_CIPHER_PADDING_ZEROS
 
 /**
  * \def MBEDTLS_ENABLE_WEAK_CIPHERSUITES
@@ -597,13 +597,13 @@
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+//#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
+//#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
+//#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
 #define MBEDTLS_ECP_DP_BP256R1_ENABLED
-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
-#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
+//#define MBEDTLS_ECP_DP_BP384R1_ENABLED
+//#define MBEDTLS_ECP_DP_BP512R1_ENABLED
+//#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
 
 /**
  * \def MBEDTLS_ECP_NIST_OPTIM
@@ -933,7 +933,7 @@
  *
  * Disable if you only need to support RFC 5915 + 5480 key formats.
  */
-#define MBEDTLS_PK_PARSE_EC_EXTENDED
+// #define MBEDTLS_PK_PARSE_EC_EXTENDED
 
 /**
  * \def MBEDTLS_ERROR_STRERROR_DUMMY
@@ -964,7 +964,7 @@
  *
  * Enable functions that use the filesystem.
  */
-#define MBEDTLS_FS_IO
+// #define MBEDTLS_FS_IO // artik
 
 /**
  * \def MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
@@ -1154,7 +1154,7 @@
  * a timing side-channel.
  *
  */
-//#define MBEDTLS_SSL_DEBUG_ALL
+// #define MBEDTLS_SSL_DEBUG_ALL
 
 /** \def MBEDTLS_SSL_ENCRYPT_THEN_MAC
  *
@@ -1172,7 +1172,7 @@
  *
  * Comment this macro to disable support for Encrypt-then-MAC
  */
-#define MBEDTLS_SSL_ENCRYPT_THEN_MAC
+// #define MBEDTLS_SSL_ENCRYPT_THEN_MAC // artik
 
 /** \def MBEDTLS_SSL_EXTENDED_MASTER_SECRET
  *
@@ -1190,7 +1190,7 @@
  *
  * Comment this macro to disable support for Extended Master Secret.
  */
-#define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+// #define MBEDTLS_SSL_EXTENDED_MASTER_SECRET // artik
 
 /**
  * \def MBEDTLS_SSL_FALLBACK_SCSV
@@ -1207,7 +1207,7 @@
  *
  * Comment this macro to disable support for FALLBACK_SCSV
  */
-#define MBEDTLS_SSL_FALLBACK_SCSV
+// #define MBEDTLS_SSL_FALLBACK_SCSV // artik
 
 /**
  * \def MBEDTLS_SSL_HW_RECORD_ACCEL
@@ -1229,7 +1229,7 @@
  *
  * Comment this macro to disable 1/n-1 record splitting.
  */
-#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
+// #define MBEDTLS_SSL_CBC_RECORD_SPLITTING // pkbuild
 
 /**
  * \def MBEDTLS_SSL_RENEGOTIATION
@@ -1655,7 +1655,7 @@
  *
  * This modules adds support for the AES-NI instructions on x86-64
  */
-#define MBEDTLS_AESNI_C
+// #define MBEDTLS_AESNI_C
 
 /**
  * \def MBEDTLS_AES_C
@@ -1759,7 +1759,7 @@
  *            it, and considering stronger ciphers instead.
  *
  */
-#define MBEDTLS_ARC4_C
+// #define MBEDTLS_ARC4_C // artik
 
 /**
  * \def MBEDTLS_ASN1_PARSE_C
@@ -1825,7 +1825,7 @@
  *
  * Module:  library/blowfish.c
  */
-#define MBEDTLS_BLOWFISH_C
+// #define MBEDTLS_BLOWFISH_C // artik
 
 /**
  * \def MBEDTLS_CAMELLIA_C
@@ -1880,7 +1880,7 @@
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
  */
-#define MBEDTLS_CAMELLIA_C
+// #define MBEDTLS_CAMELLIA_C // artik
 
 /**
  * \def MBEDTLS_CCM_C
@@ -2416,7 +2416,7 @@
  *
  * This module enables PKCS#12 functions.
  */
-#define MBEDTLS_PKCS12_C
+// #define MBEDTLS_PKCS12_C // artik
 
 /**
  * \def MBEDTLS_PLATFORM_C
@@ -2447,7 +2447,7 @@
  * Caller:  library/md.c
  *
  */
-#define MBEDTLS_RIPEMD160_C
+// #define MBEDTLS_RIPEMD160_C // artik
 
 /**
  * \def MBEDTLS_RSA_C
@@ -2717,7 +2717,7 @@
  *
  * This module is used for reading X.509 certificate request.
  */
-#define MBEDTLS_X509_CSR_PARSE_C
+// #define MBEDTLS_X509_CSR_PARSE_C // artik
 
 /**
  * \def MBEDTLS_X509_CREATE_C
@@ -2768,7 +2768,7 @@
  * Module:  library/xtea.c
  * Caller:
  */
-#define MBEDTLS_XTEA_C
+// #define MBEDTLS_XTEA_C // artik
 
 /* \} name SECTION: mbed TLS modules */
 
@@ -2857,60 +2857,6 @@
 //#define MBEDTLS_PSK_MAX_LEN               32 /**< Max size of TLS pre-shared keys, in bytes (default 256 bits) */
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
 
-/**
- * \def MBEDTLS_LIGHT_DEVICE
- *
- * Configuration for light devices.
- */
-
-#define MBEDTLS_LIGHT_DEVICE
-#if defined(MBEDTLS_LIGHT_DEVICE)
-
-#undef MBEDTLS_CIPHER_PADDING_PKCS7
-#undef MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS
-#undef MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN
-#undef MBEDTLS_CIPHER_PADDING_ZEROS
-
-#undef MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#undef MBEDTLS_ECP_DP_SECP224K1_ENABLED
-#undef MBEDTLS_ECP_DP_SECP256K1_ENABLED
-#undef MBEDTLS_ECP_DP_BP384R1_ENABLED
-#undef MBEDTLS_ECP_DP_BP512R1_ENABLED
-#undef MBEDTLS_ECP_DP_CURVE25519_ENABLED
-
-#undef MBEDTLS_PK_PARSE_EC_EXTENDED
-#undef MBEDTLS_ERROR_STRERROR_DUMMY
-#undef MBEDTLS_GENPRIME
-
-#undef MBEDTLS_FS_IO
-#undef MBEDTLS_MEMORY_DEBUG
-#undef MBEDTLS_HAVEGE_C
-
-#undef MBEDTLS_PK_RSA_ALT_SUPPORT
-#undef MBEDTLS_SSL_DEBUG_ALL
-#undef MBEDTLS_SSL_EXTENDED_MASTER_SECRET
-
-#undef MBEDTLS_SSL_ENCRYPT_THEN_MAC
-#undef MBEDTLS_SSL_EXTENDED_MASTER_SECRET
-#undef MBEDTLS_SSL_FALLBACK_SCSV
-#undef MBEDTLS_SSL_CBC_RECORD_SPLITTING
-
-#undef MBEDTLS_AESNI_C
-#undef MBEDTLS_ARC4_C
-#undef MBEDTLS_BLOWFISH_C
-#undef MBEDTLS_CAMELLIA_C
-#undef MBEDTLS_DEBUG_C
-#undef MBEDTLS_RIPEMD160_C
-//#undef MBEDTLS_SHA512_C
-#undef MBEDTLS_PKCS12_C
-
-#undef MBEDTLS_X509_CSR_PARSE_C
-//#undef MBEDTLS_X509_CREATE_C
-//#undef MBEDTLS_X509_CRT_WRITE_C
-
-#undef MBEDTLS_XTEA_C
-
-#endif							/* MBEDTLS_LIGHT_DEVICE */
 
 #if defined(CONFIG_SE)
 #define MBEDTLS_ENABLE_HARDWARE_ALT
