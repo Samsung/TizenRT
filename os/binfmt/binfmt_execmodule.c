@@ -281,6 +281,10 @@ int exec_module(FAR const struct binary_s *binp)
 	tcb->cmn.group->tg_loadtask = pid;
 #endif
 
+	/* Store the address of the applications userspace object in the tcb  */
+	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
+	((struct tcb_s *)tcb)->uspace = (uint32_t)binp->alloc[0] + 4;
+
 	/* Then activate the task at the provided priority */
 
 	ret = task_activate((FAR struct tcb_s *)tcb);

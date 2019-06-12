@@ -93,7 +93,9 @@ COMPRESSION_TYPE = 0
 BLOCK_SIZE = 0
 endif
 
-SRCS = wifiapp.c
+APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
+SRCS = $(TOPDIR)/board/common/userspace/up_userspace.c
+SRCS += wifiapp.c
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c
 endif
@@ -108,7 +110,7 @@ all: $(BIN)
 
 $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
-	$(Q) $(CC) -c $(CELFFLAGS) $< -o $@
+	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
 
 $(BIN): $(OBJS)
 	@echo "LD: $<"
