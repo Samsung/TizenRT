@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# os/board/imxrt1020-evk/userspace/Makefile
+# os/board/imxrt1050-evk/userspace/Makefile
 #
 #   Copyright (C) 2018 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -93,7 +93,7 @@ USER_LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 
 # Source files
 
-CSRCS = imxrt_userspace.c
+CSRCS = up_userspace.c
 COBJS = $(CSRCS:.c=$(OBJEXT))
 OBJS  = $(COBJS)
 
