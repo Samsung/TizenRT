@@ -799,11 +799,15 @@ void imxrt_adc_pins_init(int bus, int cchannels)
 			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN3, inputvalue);
 			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN3, pinconfig);
 		case 3:
+#ifndef CONFIG_ARCH_BOARD_IMXRT1050_EVK // FIXME This pin is dedicated to UART1_RXD on i.MXRT1050-evk board.
 			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN2, inputvalue);
 			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN2, pinconfig);
+#endif
 		case 2:
+#ifndef CONFIG_ARCH_BOARD_IMXRT1050_EVK // FIXME This pin is dedicated to UART1_TXD on i.MXRT1050-evk board.
 			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN1, inputvalue);
 			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN1, pinconfig);
+#endif
 		case 1:
 			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN0, inputvalue);
 			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN0, pinconfig);
