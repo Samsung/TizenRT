@@ -1,4 +1,4 @@
-/* ****************************************************************
+/*****************************************************************
 *
 * Copyright 2019 NXP Semiconductors All Rights Reserved.
 *
@@ -99,7 +99,7 @@ extern uint32_t _ebss;			/* End+1 of .bss */
 
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
-
+#ifndef __APP_BUILD__
 #ifdef CONFIG_USER_ENTRYPOINT
 	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
 #else
@@ -113,6 +113,12 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.us_bssstart = (uintptr_t)&_sbss,
 	.us_bssend = (uintptr_t)&_ebss,
 
+	/* pre-application entry points (declared in include/tinyara/init.h) */
+
+#ifdef CONFIG_SYSTEM_PREAPP_INIT
+	.preapp_start    = preapp_start,
+#endif
+#endif
 	/* Task/thread startup routines */
 	.task_startup = task_startup,
 #ifndef CONFIG_DISABLE_PTHREAD
@@ -123,11 +129,6 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.signal_handler = up_signal_handler,
 #endif
 
-	/* pre-application entry points (declared in include/tinyara/init.h) */
-
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
-	.preapp_start    = preapp_start,
-#endif
 };
 
 /****************************************************************************

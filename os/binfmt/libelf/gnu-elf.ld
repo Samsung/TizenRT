@@ -61,6 +61,7 @@ SECTIONS
        * eventually used by user space memory allocator
        */
       LONG(0);
+      *(.userspace)
       *(.text)
       *(.text.*)
       *(.gnu.warning)
@@ -87,6 +88,7 @@ SECTIONS
       *(.rodata.*)
       *(.gnu.linkonce.r*)
       _erodata = . ;
+      _eronly = .;
     }
 
   .data :

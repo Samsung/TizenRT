@@ -439,7 +439,7 @@ include LibTargets.mk
 # is an archive.  Exactly what is performed during pass1 or what it generates
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
-PASS1_BUILDIR = $(BOARD_DIR)/userspace
+PASS1_BUILDIR = board/common/userspace
 
 pass1deps: pass1dep $(USERLIBS)
 
