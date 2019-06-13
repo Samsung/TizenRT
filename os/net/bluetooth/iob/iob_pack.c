@@ -50,7 +50,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a,b) ((a) < (b) ? (a) : (b))
+#  define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -69,82 +69,73 @@
 
 FAR struct iob_s *iob_pack(FAR struct iob_s *iob)
 {
-  FAR struct iob_s *head;
-  FAR struct iob_s *next;
-  unsigned int ncopy;
-  unsigned int navail;
+	FAR struct iob_s *head;
+	FAR struct iob_s *next;
+	unsigned int ncopy;
+	unsigned int navail;
 
-  /* Handle special cases */
+	/* Handle special cases */
 
-  while (iob->io_len <= 0)
-    {
-      iob = iob_free(iob);
-    }
+	while (iob->io_len <= 0)
+		iob = iob_free(iob);
 
-  /* Now remember the head of the chain (for the return value) */
+	/* Now remember the head of the chain (for the return value) */
 
-  head = iob;
+	head = iob;
 
-  /* Pack each entry in the list */
+	/* Pack each entry in the list */
 
-  while (iob)
-    {
-      next = iob->io_flink;
+	while (iob) {
+		next = iob->io_flink;
 
-      /* Eliminate the data offset in this entry */
+		/* Eliminate the data offset in this entry */
 
-      if (iob->io_offset > 0)
-        {
-          memcpy(iob->io_data, &iob->io_data[iob->io_offset], iob->io_len);
-          iob->io_offset = 0;
-        }
+		if (iob->io_offset > 0) {
+			memcpy(iob->io_data, &iob->io_data[iob->io_offset], iob->io_len);
+			iob->io_offset = 0;
+		}
 
-      /* Is there a buffer after this one? */
+		/* Is there a buffer after this one? */
 
-      if (next)
-        {
-          /* How many bytes can we copy from the next I/O buffer.  Limit the
-           * size of the copy to the amount of free space in current I/O
-           * buffer
-           */
+		if (next) {
+			/* How many bytes can we copy from the next I/O buffer.  Limit the
+			 * size of the copy to the amount of free space in current I/O
+			 * buffer
+			 */
 
-          ncopy  = next->io_len;
-          navail = CONFIG_IOB_BUFSIZE - iob->io_len;
-          if (ncopy > navail)
-            {
-              ncopy = navail;
-            }
+			ncopy  = next->io_len;
+			navail = CONFIG_IOB_BUFSIZE - iob->io_len;
+			if (ncopy > navail)
+				ncopy = navail;
 
-          if (ncopy > 0)
-            {
-              /* Copy the data from the next into the current I/O buffer iob */
+			if (ncopy > 0) {
+				/* Copy the data from the next into the current I/O buffer iob */
 
-              memcpy(&iob->io_data[iob->io_len],
-                     &next->io_data[next->io_offset],
-                     ncopy);
+				memcpy(&iob->io_data[iob->io_len],
+						&next->io_data[next->io_offset],
+						ncopy);
 
-              /* Adjust lengths and offsets */
+				/* Adjust lengths and offsets */
 
-              iob->io_len     += ncopy;
-              next->io_len    -= ncopy;
-              next->io_offset += ncopy;
-            }
+				iob->io_len     += ncopy;
+				next->io_len    -= ncopy;
+				next->io_offset += ncopy;
+			}
 
-         /* Have we consumed all of the data in the next entry? */
+			/* Have we consumed all of the data in the next entry? */
 
-         if (next->io_len <= 0)
-           {
-             /* Yes.. free the next entry in I/O buffer chain */
+			if (next->io_len <= 0) {
+				/* Yes.. free the next entry in I/O buffer chain */
 
-             next          = iob_free(next);
-             iob->io_flink = next;
-           }
-        }
+				next          = iob_free(next);
+				iob->io_flink = next;
+			}
+		}
 
-      /* Set up to pack the next entry in the chain */
+		/* Set up to pack the next entry in the chain */
 
-      iob = next;
-    }
+		iob = next;
+	}
 
-  return head;
+	return head;
 }

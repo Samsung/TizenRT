@@ -286,8 +286,7 @@
 
 /* Type of GATT discovery command */
 
-enum bt_gatt_discover_e
-{
+enum bt_gatt_discover_e {
 	GATT_DISCOVER = 0,                /* Discover */
 	GATT_DISCOVER_DESC,               /* Discover descriptor */
 	GATT_DISCOVER_CHAR,               /* Discover characteristic */
@@ -295,8 +294,7 @@ enum bt_gatt_discover_e
 
 /* Write-able data that accompanies the SIOCBTSCANGET IOCTL command */
 
-struct bt_scanresponse_s
-{
+struct bt_scanresponse_s {
 	bt_addr_le_t sr_addr;             /* Advertiser LE address and type */
 	int8_t sr_rssi;                   /* Strength of advertiser signal */
 	uint8_t sr_type;                  /* Type of advertising response */
@@ -306,24 +304,21 @@ struct bt_scanresponse_s
 
 /* Write-able data that accompanies the SIOCBTDISCGET IOCTL command */
 
-struct bt_discresonse_s
-{
+struct bt_discresonse_s {
 	uint16_t dr_handle;               /* Discovered handled */
 	uint8_t dr_perm;                  /* Permissions */
 };
 
 /* General result of a pass/fail operation. */
 
-struct bt_result_s
-{
+struct bt_result_s {
 	bool br_pending;                  /* True:  The operation is not yet complete */
 	uint8_t br_result;                /* The result of the operation */
 };
 
 /* Bluetooth statistics */
 
-struct bt_stats_s
-{
+struct bt_stats_s {
 	uint32_t err_tx;
 	uint32_t err_rx;
 	uint32_t cmd_tx;
@@ -338,15 +333,12 @@ struct bt_stats_s
 
 /* Common structure for Bluetooth IOCTL commands */
 
-struct btreq_s
-{
+struct btreq_s {
 	char btr_name[IFNAMSIZ];         /* IN:  Device name */
-	union
-	{
+	union {
 		/* Bluetooth information used with informational query IOCTL commands */
 
-		struct
-		{
+		struct {
 			bt_addr_t btri_bdaddr;      /* IN/OUT: Device bdaddr */
 			uint16_t btri_flags;        /* OUT: flags */
 			uint16_t btri_num_cmd;      /* OUT: Number of free cmd buffers */
@@ -362,8 +354,7 @@ struct btreq_s
 
 		 /* Bluetooth Features */
 
-		 struct
-		 {
+		 struct {
 			uint8_t btrf_page0[HCI_FEATURES_SIZE]; /* OUT: Basic */
 			uint8_t btrf_page1[HCI_FEATURES_SIZE]; /* OUT: Extended page 1 */
 			uint8_t btrf_page2[HCI_FEATURES_SIZE]; /* OUT: Extended page 2 */
@@ -378,8 +369,7 @@ struct btreq_s
 		 * identified with a length of zero.
 		 */
 
-		struct
-		{
+		struct {
 			uint8_t btras_advtype;             /* IN:  Advertising type */
 			FAR struct bt_eir_s *btras_advad;  /* IN:  Data for advertisement packets */
 			FAR struct bt_eir_s *btras_advsd;  /* IN:  Data for scan response packets */
@@ -391,15 +381,13 @@ struct btreq_s
 		 * command.
 		 */
 
-		struct
-		{
+		struct {
 			bool btrss_dupenable;        /* IN:  True: enable duplicate filtering */
 		} btrss;
 
 		/* Write-able data that accompanies the SIOCBTSCANGET IOCTL command */
 
-		struct
-		{
+		struct {
 			uint8_t brtsr_nrsp;          /* IN:   Max number of responses
 												* OUT: Actual number of responses */
 
@@ -415,16 +403,14 @@ struct btreq_s
 
 		/* Read-only data that accompanies the SIOCBTSECURITY IOCTL command */
 
-		struct
-		{
+		struct {
 			bt_addr_le_t btrse_secaddr;        /* IN:  BLE address */
 			enum bt_security_e btrse_seclevel; /* IN:  Security level */
 		} btrse;
 
 		/* Read-only data that accompanies SIOCBTEXCHANGE command */
 
-		struct
-		{
+		struct {
 			bt_addr_le_t btmx_expeer;    /* IN:  Peer address for MTU exchange */
 		} btmx;
 
@@ -434,8 +420,7 @@ struct btreq_s
 
 		/* Read-only data that accompanies SIOCBTDISCOVER command */
 
-		struct
-		{
+		struct {
 			uint8_t btrds_dtype;         /* IN:  Discovery type (see enum
 												*      bt_gatt_discover_e) */
 			bt_addr_le_t btrds_dpeer;    /* IN:  Peer address */
@@ -446,8 +431,7 @@ struct btreq_s
 
 		/* Write-able structure that accompanies the SIOCBTDISCGET command. */
 
-		struct
-		{
+		struct {
 			uint8_t btrdg_gnrsp;         /* IN:  Max number of responses
 												* OUT: Actual number of responses */
 
@@ -460,8 +444,7 @@ struct btreq_s
 
 		/* Read-only data that accompanies the SIOCBTGATTRD command */
 
-		struct
-		{
+		struct {
 			bt_addr_le_t btgrd_rdpeer;   /* IN:  Peer address */
 			uint8_t btgrd_rdnhandles;    /* IN:  Number of handles in array */
 			uint16_t btgrd_rdoffset;     /* IN:  Offset (Only for read single) */
@@ -470,8 +453,7 @@ struct btreq_s
 
 		/* Write-able data that accompanies the SIOCBTGATTRDGET command */
 
-		struct
-		{
+		struct {
 			bool    btgrr_rdpending;     /* OUT: True: Read not yet complete */
 			uint8_t btgrr_rdresult;      /* OUT: Result of the read */
 			uint8_t btgrr_rdsize;        /* IN:  Sizeof rddata[]
@@ -484,8 +466,7 @@ struct btreq_s
 		 * and must persist until the completion of the write.
 		 */
 
-		struct
-		{
+		struct {
 			bt_addr_le_t btgwr_wrpeer;   /* IN:  Peer address */
 			uint8_t btgwr_wrnbytes;      /* IN:  Number of bytes to write */
 			uint16_t btgwr_wrhandle;     /* IN:  GATT handle */
