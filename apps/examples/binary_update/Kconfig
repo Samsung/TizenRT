@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_BINARY_UPDATE
+	bool "Binary Update example"
+	default n
+	depends on BINARY_UPDATE
+	---help---
+		Enable Binary Update example
+
+config USER_ENTRYPOINT
+	string
+	default "binary_update_main" if ENTRY_BINARY_UPDATE
