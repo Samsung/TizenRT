@@ -1,5 +1,5 @@
 /****************************************************************************
- * include/nuttx/net/bluetooth.h
+ * include/tinyara/bluetooth/bluetooth.h
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef  __INCLUDE_NUTTX_NET_BLUETOOTH_H
-#define  __INCLUDE_NUTTX_NET_BLUETOOTH_H
+#ifndef  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H
+#define  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H
 
 /****************************************************************************
  * Public Function Prototypes
@@ -144,4 +144,4 @@ int bluetooth_input(FAR struct radio_driver_s *radio,
                      FAR struct iob_s *framelist,
                      FAR struct bluetooth_frame_meta_s *meta);
 
-#endif /*  __INCLUDE_NUTTX_NET_BLUETOOTH_H */
+#endif /*  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H */

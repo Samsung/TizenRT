@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_gatt.h
+ * include/tinyara/bluetooth/bt_gatt.h
  * Generic Attribute Profile handling.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_GATT_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_GATT_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_GATT_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_GATT_H 1
 
 /****************************************************************************
  * Included Files
@@ -1044,4 +1044,4 @@ int bt_gatt_read_multiple(FAR struct bt_conn_s *conn,
                           FAR const uint16_t *handles, size_t count,
                           bt_gatt_read_func_t func);
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_GATT_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_GATT_H */

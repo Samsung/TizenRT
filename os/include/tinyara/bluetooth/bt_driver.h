@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_driver.h
+ * include/tinyara/bluetooth/bt_driver.h
  * Bluetooth HCI driver API.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_DRIVER_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_DRIVER_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H 1
 
 /****************************************************************************
  * Included Files
@@ -108,4 +108,4 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev);
 
 void bt_hci_receive(FAR struct bt_buf_s *buf);
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_DRIVER_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * drivers/wireless/bluetooth/bt_uart.h
+ * include/tinyara/bluetooth/bt_uart.h
  * UART based Bluetooth driver
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_UART_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_UART_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_UART_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_UART_H 1
 
 /****************************************************************************
  * Included Files
@@ -155,4 +155,4 @@ struct btuart_lowerhalf_s
 
 int btuart_register(FAR const struct btuart_lowerhalf_s *lower);
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_UART_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_UART_H */

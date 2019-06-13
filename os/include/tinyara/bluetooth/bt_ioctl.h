@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_ioctl.h
+ * include/tinyara/bluetooth/bt_ioctl.h
  * Bluetooth Network IOCTL commands.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_IOCTL_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_IOCTL_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_IOCTL_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_IOCTL_H 1
 
 /****************************************************************************
  * Included Files
@@ -502,4 +502,4 @@ struct btreq_s
  * Public Function Prototypes
  ****************************************************************************/
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_IOCTL_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_IOCTL_H */

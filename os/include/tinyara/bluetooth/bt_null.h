@@ -1,5 +1,5 @@
 /****************************************************************************
- * drivers/wireless/bluetooth/bt_null.h
+ * include/tinyara/bluetooth/bt_null.h
  * NULL based Bluetooth driver
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_NULL_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_NULL_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_NULL_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_NULL_H 1
 
 /****************************************************************************
  * Public Function Prototypes
@@ -57,4 +57,4 @@
 
 int btnull_register(void);
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_NULL_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_NULL_H */

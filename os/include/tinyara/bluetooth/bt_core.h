@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_core.h
+ * include/tinyara/bluetooth/bt_core.h
  * Bluetooth subsystem core APIs.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_CORE_H
-#define __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_CORE_H 1
+#ifndef __INCLUDE_TINYARA_BLUETOOTH_BT_CORE_H
+#define __INCLUDE_TINYARA_BLUETOOTH_BT_CORE_H 1
 
 /****************************************************************************
  * Included Files
@@ -223,4 +223,4 @@ static inline int bt_addr_le_to_str(FAR const bt_addr_le_t *addr, char *str,
  * Public Function Prototypes
  ****************************************************************************/
 
-#endif /* __INCLUDE_NUTTX_WIRELESS_BLUETOOTH_BT_CORE_H */
+#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_CORE_H */
