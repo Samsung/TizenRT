@@ -84,10 +84,10 @@ static FAR struct iob_s *iob_alloc_committed(void)
 
 		/* Put the I/O buffer in a known state */
 
-		iob->io_flink  = NULL; /* Not in a chain */
-		iob->io_len    = 0;    /* Length of the data in the entry */
-		iob->io_offset = 0;    /* Offset to the beginning of data */
-		iob->io_pktlen = 0;    /* Total length of the packet */
+		iob->io_flink = NULL;	/* Not in a chain */
+		iob->io_len = 0;		/* Length of the data in the entry */
+		iob->io_offset = 0;		/* Offset to the beginning of data */
+		iob->io_pktlen = 0;		/* Total length of the packet */
 	}
 
 	leave_critical_section(flags);
@@ -280,10 +280,10 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 
 			/* Put the I/O buffer in a known state */
 
-			iob->io_flink  = NULL; /* Not in a chain */
-			iob->io_len    = 0;    /* Length of the data in the entry */
-			iob->io_offset = 0;    /* Offset to the beginning of data */
-			iob->io_pktlen = 0;    /* Total length of the packet */
+			iob->io_flink = NULL;	/* Not in a chain */
+			iob->io_len = 0;	/* Length of the data in the entry */
+			iob->io_offset = 0;	/* Offset to the beginning of data */
+			iob->io_pktlen = 0;	/* Total length of the packet */
 			return iob;
 		}
 	}

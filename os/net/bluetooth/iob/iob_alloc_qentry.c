@@ -85,7 +85,7 @@ static FAR struct iob_qentry_s *iob_alloc_qcommitted(void)
 
 		/* Put the I/O buffer in a known state */
 
-		iobq->qe_head = NULL; /* Nothing is contained */
+		iobq->qe_head = NULL;	/* Nothing is contained */
 	}
 
 	leave_critical_section(flags);
@@ -224,7 +224,7 @@ FAR struct iob_qentry_s *iob_tryalloc_qentry(void)
 	 */
 
 	flags = enter_critical_section();
-	iobq  = g_iob_freeqlist;
+	iobq = g_iob_freeqlist;
 	if (iobq) {
 		/* Remove the I/O buffer chain container from the free list and
 		 * decrement the counting semaphore that tracks the number of free
@@ -245,11 +245,11 @@ FAR struct iob_qentry_s *iob_tryalloc_qentry(void)
 
 		/* Put the I/O buffer in a known state */
 
-		iobq->qe_head = NULL; /* Nothing is contained */
+		iobq->qe_head = NULL;	/* Nothing is contained */
 	}
 
 	leave_critical_section(flags);
 	return iobq;
 }
 
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

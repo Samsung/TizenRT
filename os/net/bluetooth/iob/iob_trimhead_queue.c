@@ -53,7 +53,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -77,8 +77,7 @@
  *
  ****************************************************************************/
 
-FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead,
-												unsigned int trimlen)
+FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead, unsigned int trimlen)
 {
 	FAR struct iob_qentry_s *qentry;
 	FAR struct iob_s *iob = NULL;
@@ -103,4 +102,4 @@ FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead,
 	return iob;
 }
 
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

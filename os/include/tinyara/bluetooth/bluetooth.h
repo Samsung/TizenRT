@@ -60,9 +60,9 @@
  * mark.
  */
 
-#define BLUETOOTH_L2CAP_HDRLEN  4  /* Size of L2CAP header */
-#define BLUETOOTH_ACL_HDRLEN    4  /* Size of ACL header */
-#define BLUETOOTH_H4_HDRLEN     1  /* Size of H4 header */
+#define BLUETOOTH_L2CAP_HDRLEN  4	/* Size of L2CAP header */
+#define BLUETOOTH_ACL_HDRLEN    4	/* Size of ACL header */
+#define BLUETOOTH_H4_HDRLEN     1	/* Size of H4 header */
 
 #define BLUETOOTH_MAX_HDRLEN \
 	(BLUETOOTH_L2CAP_HDRLEN + BLUETOOTH_ACL_HDRLEN + BLUETOOTH_H4_HDRLEN)
@@ -84,10 +84,9 @@
  * the Bluetooth stack.
  */
 
-struct bluetooth_frame_meta_s
-{
-	bt_addr_t bm_raddr;                         /* Connected remote address */
-	uint8_t bm_channel;                         /* Connection channel */
+struct bluetooth_frame_meta_s {
+	bt_addr_t bm_raddr;			/* Connected remote address */
+	uint8_t bm_channel;			/* Connection channel */
 };
 
 /****************************************************************************
@@ -136,12 +135,10 @@ struct bluetooth_frame_meta_s
  *
  ****************************************************************************/
 
-struct radio_driver_s;        /* Forward reference */
-struct bluetooth_data_ind_s;  /* Forward reference */
-struct iob_s;                 /* Forward reference */
+struct radio_driver_s;			/* Forward reference */
+struct bluetooth_data_ind_s;	/* Forward reference */
+struct iob_s;					/* Forward reference */
 
-int bluetooth_input(FAR struct radio_driver_s *radio,
-						FAR struct iob_s *framelist,
-						FAR struct bluetooth_frame_meta_s *meta);
+int bluetooth_input(FAR struct radio_driver_s *radio, FAR struct iob_s *framelist, FAR struct bluetooth_frame_meta_s *meta);
 
-#endif /*  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H */
+#endif							/*  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H */

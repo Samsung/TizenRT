@@ -79,10 +79,10 @@
  */
 
 #ifdef CONFIG_ENDIAN_BIG
-#  define BT_LE162HOST(le) \
+#define BT_LE162HOST(le) \
      ((((uint16_t)(le) >> 8) & 0xff) | (((uint16_t)(le) & 0xff) << 8))
 #else
-#  define BT_LE162HOST(le) (le)
+#define BT_LE162HOST(le) (le)
 #endif
 
 /* BT_HOST2LE16
@@ -90,19 +90,19 @@
  */
 
 #ifdef CONFIG_ENDIAN_BIG
-#  define BT_HOST2LE16(h) \
+#define BT_HOST2LE16(h) \
      ((((uint16_t)(h) >> 8) & 0xff) | (((uint16_t)(h) & 0xff) << 8))
 #else
-#  define BT_HOST2LE16(h) (h)
+#define BT_HOST2LE16(h) (h)
 #endif
 
 /* Unaligned access */
 
 #ifdef CONFIG_ENDIAN_BIG
-#  define BT_GETUINT16(p) \
+#define BT_GETUINT16(p) \
      ((((uint16_t)(((FAR uint8_t *)(p))[1]) >> 8) & 0xff) | \
       (((uint16_t)(((FAR uint8_t *)(p))[0]) & 0xff) << 8))
-#  define BT_PUTUINT16(p,v) \
+#define BT_PUTUINT16(p,v) \
      do \
        { \
          ((FAR uint8_t *)(p))[0] = ((uint16_t)(v) >> 8) & 0xff; \
@@ -110,10 +110,10 @@
        } \
      while (0)
 #else
-#  define BT_GETUINT16(p) \
+#define BT_GETUINT16(p) \
      ((((uint16_t)(((FAR uint8_t *)(p))[0]) >> 8) & 0xff) | \
       (((uint16_t)(((FAR uint8_t *)(p))[1]) & 0xff) << 8))
-#  define BT_PUTUINT16(p,v) \
+#define BT_PUTUINT16(p,v) \
      do \
        { \
          ((FAR uint8_t *)(p))[0] = ((uint16_t)(v) & 0xff) >> 8; \
@@ -128,22 +128,20 @@
 
 /* Advertising API */
 
-struct bt_eir_s
-{
-  uint8_t len;
-  uint8_t type;
-  uint8_t data[29];
+struct bt_eir_s {
+	uint8_t len;
+	uint8_t type;
+	uint8_t data[29];
 } packed_struct;
 
 /* Security level */
 
-enum bt_security_e
-{
-  BT_SECURITY_LOW,    /* No encryption and no authentication. */
-  BT_SECURITY_MEDIUM, /* encryption and no authentication (no MITM). */
-  BT_SECURITY_HIGH,   /* encryption and authentication (MITM). */
-  BT_SECURITY_FIPS,   /* Authenticated LE Secure Connections and
-                       * encryption. */
+enum bt_security_e {
+	BT_SECURITY_LOW,			/* No encryption and no authentication. */
+	BT_SECURITY_MEDIUM,			/* encryption and no authentication (no MITM). */
+	BT_SECURITY_HIGH,			/* encryption and authentication (MITM). */
+	BT_SECURITY_FIPS,			/* Authenticated LE Secure Connections and
+								 * encryption. */
 };
 
 /****************************************************************************
@@ -168,12 +166,9 @@ enum bt_security_e
  *
  ****************************************************************************/
 
-static inline int bt_addr_to_str(FAR const bt_addr_t *addr, FAR char *str,
-                                 size_t len)
+static inline int bt_addr_to_str(FAR const bt_addr_t * addr, FAR char *str, size_t len)
 {
-  return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-                  addr->val[5], addr->val[4], addr->val[3],
-                  addr->val[2], addr->val[1], addr->val[0]);
+	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", addr->val[5], addr->val[4], addr->val[3], addr->val[2], addr->val[1], addr->val[0]);
 }
 
 /****************************************************************************
@@ -194,33 +189,29 @@ static inline int bt_addr_to_str(FAR const bt_addr_t *addr, FAR char *str,
  *
  ****************************************************************************/
 
-static inline int bt_addr_le_to_str(FAR const bt_addr_le_t *addr, char *str,
-            size_t len)
+static inline int bt_addr_le_to_str(FAR const bt_addr_le_t * addr, char *str, size_t len)
 {
-  char type[7];
+	char type[7];
 
-  switch (addr->type)
-  {
-    case BT_ADDR_LE_PUBLIC:
-      strcpy(type, "public");
-      break;
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		strcpy(type, "public");
+		break;
 
-    case BT_ADDR_LE_RANDOM:
-      strcpy(type, "random");
-      break;
+	case BT_ADDR_LE_RANDOM:
+		strcpy(type, "random");
+		break;
 
-    default:
-      sprintf(type, "0x%02x", addr->type);
-      break;
-  }
+	default:
+		sprintf(type, "0x%02x", addr->type);
+		break;
+	}
 
-  return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
-                  addr->val[5], addr->val[4], addr->val[3],
-                  addr->val[2], addr->val[1], addr->val[0], type);
+	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)", addr->val[5], addr->val[4], addr->val[3], addr->val[2], addr->val[1], addr->val[0], type);
 }
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_CORE_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_CORE_H */

@@ -66,19 +66,19 @@
 
 #if !defined(CONFIG_BLUETOOTH_BUFFER_PREALLOC) || \
 		CONFIG_BLUETOOTH_BUFFER_PREALLOC < 1
-#  undef CONFIG_BLUETOOTH_BUFFER_PREALLOC
-#  define CONFIG_BLUETOOTH_BUFFER_PREALLOC 20
+#undef CONFIG_BLUETOOTH_BUFFER_PREALLOC
+#define CONFIG_BLUETOOTH_BUFFER_PREALLOC 20
 #endif
 
 #if !defined(CONFIG_BLUETOOTH_BUFFER_IRQRESERVE) || \
 		CONFIG_BLUETOOTH_BUFFER_IRQRESERVE < 0
-#  undef CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
-#  define CONFIG_BLUETOOTH_BUFFER_IRQRESERVE 0
+#undef CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
+#define CONFIG_BLUETOOTH_BUFFER_IRQRESERVE 0
 #endif
 
 #if CONFIG_BLUETOOTH_BUFFER_IRQRESERVE > CONFIG_BLUETOOTH_BUFFER_PREALLOC
-#  undef CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
-#  define CONFIG_BLUETOOTH_BUFFER_IRQRESERVE CONFIG_BLUETOOTH_BUFFER_PREALLOC
+#undef CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
+#define CONFIG_BLUETOOTH_BUFFER_IRQRESERVE CONFIG_BLUETOOTH_BUFFER_PREALLOC
 #endif
 
 /* Memory Pools */
@@ -110,7 +110,7 @@ static struct bt_buf_s *g_buf_free_irq;
 /* Pool of pre-allocated buffer structures */
 
 static struct bt_buf_s
-	g_buf_pool[CONFIG_BLUETOOTH_BUFFER_PREALLOC];
+		g_buf_pool[CONFIG_BLUETOOTH_BUFFER_PREALLOC];
 
 static bool g_poolinit = false;
 
@@ -141,8 +141,9 @@ void bt_buf_initialize(void)
 
 	/* Only allow the pool to be initialized once */
 
-	if (g_poolinit)
+	if (g_poolinit) {
 		return;
+	}
 
 	g_poolinit = true;
 
@@ -182,7 +183,7 @@ void bt_buf_initialize(void)
 		 * general structures.
 		 */
 
-		buf->flink     = g_buf_free_irq;
+		buf->flink = g_buf_free_irq;
 		g_buf_free_irq = buf;
 
 		/* Set up for the next structure from the pool */
@@ -225,9 +226,7 @@ void bt_buf_initialize(void)
  *
  ****************************************************************************/
 
-FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
-										FAR struct iob_s *iob,
-										size_t reserve_head)
+FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob, size_t reserve_head)
 {
 	FAR struct bt_buf_s *buf;
 	irqstate_t flags;
@@ -238,34 +237,34 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 	 * then try the list of messages reserved for interrupt handlers
 	 */
 
-	flags = spin_lock_irqsave(); /* Always necessary in SMP mode */
+	flags = spin_lock_irqsave();	/* Always necessary in SMP mode */
 	if (up_interrupt_context()) {
 #if CONFIG_BLUETOOTH_BUFFER_PREALLOC > CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
 		/* Try the general free list */
 
 		if (g_buf_free != NULL) {
-			buf            = g_buf_free;
-			g_buf_free     = buf->flink;
+			buf = g_buf_free;
+			g_buf_free = buf->flink;
 
 			spin_unlock_irqrestore(flags);
-			pool           = POOL_BUFFER_GENERAL;
+			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
 #if CONFIG_BLUETOOTH_BUFFER_IRQRESERVE > 0
-		/* Try the list list reserved for interrupt handlers */
+			/* Try the list list reserved for interrupt handlers */
 
-		if (g_buf_free_irq != NULL) {
-			buf            = g_buf_free_irq;
-			g_buf_free_irq = buf->flink;
+			if (g_buf_free_irq != NULL) {
+				buf = g_buf_free_irq;
+				g_buf_free_irq = buf->flink;
 
-			spin_unlock_irqrestore(flags);
-			pool           = POOL_BUFFER_IRQ;
-		} else
+				spin_unlock_irqrestore(flags);
+				pool = POOL_BUFFER_IRQ;
+			} else
 #endif
-		{
-			spin_unlock_irqrestore(flags);
-			return NULL;
-		}
+			{
+				spin_unlock_irqrestore(flags);
+				return NULL;
+			}
 	}
 
 	/* We were not called from an interrupt handler. */
@@ -275,11 +274,11 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 		/* Try the general free list */
 
 		if (g_buf_free != NULL) {
-			buf           = g_buf_free;
-			g_buf_free    = buf->flink;
+			buf = g_buf_free;
+			g_buf_free = buf->flink;
 
 			leave_critical_section(flags);
-			pool          = POOL_BUFFER_GENERAL;
+			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
 		{
@@ -288,7 +287,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 			 */
 
 			leave_critical_section(flags);
-			buf = (FAR struct bt_buf_s *)kmm_malloc((sizeof (struct bt_buf_s)));
+			buf = (FAR struct bt_buf_s *)kmm_malloc((sizeof(struct bt_buf_s)));
 
 			/* Check if we successfully allocated the buffer structure */
 
@@ -311,7 +310,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 
 	memset(buf, 0, sizeof(struct bt_buf_s));
 	buf->pool = pool;
-	buf->ref  = 1;
+	buf->ref = 1;
 	buf->type = type;
 
 	/* Were we provided with an IOB? */
@@ -319,12 +318,11 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 	if (iob != NULL) {
 		/* Yes.. use that IOB */
 
-		DEBUGASSERT(iob->io_len >= iob->io_offset &&
-						iob->io_len <= BLUETOOTH_MAX_FRAMELEN);
+		DEBUGASSERT(iob->io_len >= iob->io_offset && iob->io_len <= BLUETOOTH_MAX_FRAMELEN);
 
 		buf->frame = iob;
-		buf->data  = &iob->io_data[iob->io_offset];
-		buf->len   = iob->io_len - iob->io_offset; /* IOB length includes offset */
+		buf->data = &iob->io_data[iob->io_offset];
+		buf->len = iob->io_len - iob->io_offset;	/* IOB length includes offset */
 	} else {
 		/* No.. Allocate an IOB to hold the actual frame data.  This call will
 		 * normally block in the event that there is no available IOB memory.
@@ -340,7 +338,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
 		}
 
 		buf->frame->io_offset = reserve_head;
-		buf->frame->io_len    = reserve_head; /* IOB length includes offset */
+		buf->frame->io_len = reserve_head;	/* IOB length includes offset */
 		buf->frame->io_pktlen = reserve_head;
 
 		buf->data = buf->frame->io_data + reserve_head;
@@ -381,7 +379,7 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 	}
 
 	handle = buf->u.acl.handle;
-	type   = buf->type;
+	type = buf->type;
 
 	/* Free the contained frame and return the container to the correct memory
 	 * pool.
@@ -391,7 +389,6 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 		iob_free(buf->frame);
 		buf->frame = NULL;
 	}
-
 #if CONFIG_BLUETOOTH_BUFFER_PREALLOC > CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
 	/* If this is a generally available pre-allocated buffer structure,
 	 * then just put it back in the free list.
@@ -402,7 +399,7 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 		 * list from interrupt handlers.
 		 */
 
-		flags      = spin_lock_irqsave();
+		flags = spin_lock_irqsave();
 		buf->flink = g_buf_free;
 		g_buf_free = buf;
 		spin_unlock_irqrestore(flags);
@@ -410,28 +407,28 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 #endif
 
 #if CONFIG_BLUETOOTH_BUFFER_IRQRESERVE > 0
-	/* If this is a buffer structure pre-allocated for interrupts,
-	 * then put it back in the correct free list.
-	 */
-
-	if (buf->pool == POOL_BUFFER_IRQ) {
-		/* Make sure we avoid concurrent access to the free
-		 * list from interrupt handlers.
+		/* If this is a buffer structure pre-allocated for interrupts,
+		 * then put it back in the correct free list.
 		 */
 
-		flags          = spin_lock_irqsave();
-		buf->flink     = g_buf_free_irq;
-		g_buf_free_irq = buf;
-		spin_unlock_irqrestore(flags);
-	} else
+		if (buf->pool == POOL_BUFFER_IRQ) {
+			/* Make sure we avoid concurrent access to the free
+			 * list from interrupt handlers.
+			 */
+
+			flags = spin_lock_irqsave();
+			buf->flink = g_buf_free_irq;
+			g_buf_free_irq = buf;
+			spin_unlock_irqrestore(flags);
+		} else
 #endif
 
-	{
-		/* Otherwise, deallocate it. */
+		{
+			/* Otherwise, deallocate it. */
 
-		DEBUGASSERT(buf->pool == POOL_BUFFER_DYNAMIC);
-		sched_kfree(buf);
-	}
+			DEBUGASSERT(buf->pool == POOL_BUFFER_DYNAMIC);
+			sched_kfree(buf);
+		}
 
 	wlinfo("Buffer freed: %p\n", buf);
 
@@ -441,19 +438,18 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 
 		wlinfo("Reporting completed packet for handle %u\n", handle);
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
-										sizeof(*cp) + sizeof(*hc));
+		buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, sizeof(*cp) + sizeof(*hc));
 		if (buf == NULL) {
 			wlerr("ERROR: Unable to allocate new HCI command\n");
 			return;
 		}
 
-		cp              = bt_buf_extend(buf, sizeof(*cp));
+		cp = bt_buf_extend(buf, sizeof(*cp));
 		cp->num_handles = BT_HOST2LE16(1);
 
-		hc              = bt_buf_extend(buf, sizeof(*hc));
-		hc->handle      = BT_HOST2LE16(handle);
-		hc->count       = BT_HOST2LE16(1);
+		hc = bt_buf_extend(buf, sizeof(*hc));
+		hc->handle = BT_HOST2LE16(handle);
+		hc->count = BT_HOST2LE16(1);
 
 		bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 	}
@@ -551,11 +547,10 @@ FAR void *bt_buf_provide(FAR struct bt_buf_s *buf, size_t len)
 {
 	wlinfo("buf %p len %u\n", buf, len);
 
-	DEBUGASSERT(buf != NULL && buf->frame != NULL &&
-					bt_buf_headroom(buf) >= len);
+	DEBUGASSERT(buf != NULL && buf->frame != NULL && bt_buf_headroom(buf) >= len);
 
 	buf->data -= len;
-	buf->len  += len;
+	buf->len += len;
 	return buf->data;
 }
 
@@ -603,7 +598,7 @@ uint16_t bt_buf_get_le16(FAR struct bt_buf_s *buf)
 {
 	uint16_t value;
 
-	value = BT_GETUINT16((FAR uint8_t *)buf->data);
+	value = BT_GETUINT16((FAR uint8_t *) buf->data);
 	bt_buf_consume(buf, sizeof(value));
 
 	return BT_LE162HOST(value);

@@ -52,20 +52,18 @@
  * Public Types
  ****************************************************************************/
 
-struct bt_driver_s
-{
+struct bt_driver_s {
 	/* How much headroom is needed for HCI transport headers */
 
 	size_t head_reserve;
 
 	/* Open the HCI transport */
 
-	CODE int (*open)(FAR const struct bt_driver_s *btdev);
+	CODE int (*open) (FAR const struct bt_driver_s * btdev);
 
 	/* Send data to HCI */
 
-	CODE int (*send)(FAR const struct bt_driver_s *btdev,
-						FAR struct bt_buf_s *buf);
+	CODE int (*send) (FAR const struct bt_driver_s * btdev, FAR struct bt_buf_s * buf);
 };
 
 /****************************************************************************
@@ -108,4 +106,4 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev);
 
 void bt_hci_receive(FAR struct bt_buf_s *buf);
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H */

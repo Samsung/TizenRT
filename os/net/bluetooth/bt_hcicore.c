@@ -84,6 +84,6 @@
 
 void bt_hci_receive(FAR struct bt_buf_s *buf)
 {
-  /* TODO: need to implement */
-  return;
+	/* TODO: need to implement */
+	return;
 }

@@ -57,4 +57,4 @@
 
 int btnull_register(void);
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_NULL_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_NULL_H */

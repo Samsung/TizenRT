@@ -56,32 +56,32 @@
 #if defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_IOB_DEBUG)
 #ifdef CONFIG_CPP_HAVE_VARARGS
 
-#  define ioberr(format, ...)    _err(format, ##__VA_ARGS__)
-#  define iobwarn(format, ...)   _warn(format, ##__VA_ARGS__)
-#  define iobinfo(format, ...)   _info(format, ##__VA_ARGS__)
+#define ioberr(format, ...)    _err(format, ##__VA_ARGS__)
+#define iobwarn(format, ...)   _warn(format, ##__VA_ARGS__)
+#define iobinfo(format, ...)   _info(format, ##__VA_ARGS__)
 
 #else
 
-#  define ioberr                 _err
-#  define iobwarn                _warn
-#  define iobinfo                _info
+#define ioberr                 _err
+#define iobwarn                _warn
+#define iobinfo                _info
 
 #endif
 #else
 #ifdef CONFIG_CPP_HAVE_VARARGS
 
-#  define ioberr(format, ...)
-#  define iobwarn(format, ...)
-#  define iobinfo(format, ...)
+#define ioberr(format, ...)
+#define iobwarn(format, ...)
+#define iobinfo(format, ...)
 
 #else
 
-#  define ioberr                 (void)
-#  define iobwarn                (void)
-#  define iobinfo                (void)
+#define ioberr                 (void)
+#define iobwarn                (void)
+#define iobinfo                (void)
 
 #endif
-#endif /* CONFIG_DEBUG_FEATURES && CONFIG_IOB_DEBUG */
+#endif							/* CONFIG_DEBUG_FEATURES && CONFIG_IOB_DEBUG */
 
 /****************************************************************************
  * Public Data
@@ -107,12 +107,12 @@ extern FAR struct iob_qentry_s *g_iob_qcommitted;
 
 /* Counting semaphores that tracks the number of free IOBs/qentries */
 
-extern sem_t g_iob_sem;       /* Counts free I/O buffers */
+extern sem_t g_iob_sem;			/* Counts free I/O buffers */
 #if CONFIG_IOB_THROTTLE > 0
-extern sem_t g_throttle_sem;  /* Counts available I/O buffers when throttled */
+extern sem_t g_throttle_sem;	/* Counts available I/O buffers when throttled */
 #endif
 #if CONFIG_IOB_NCHAINS > 0
-extern sem_t g_qentry_sem;    /* Counts free I/O buffer queue containers */
+extern sem_t g_qentry_sem;		/* Counts free I/O buffer queue containers */
 #endif
 
 /****************************************************************************
@@ -154,6 +154,5 @@ FAR struct iob_qentry_s *iob_tryalloc_qentry(void);
 
 FAR struct iob_qentry_s *iob_free_qentry(FAR struct iob_qentry_s *iobq);
 
-#endif /* CONFIG_MM_IOB */
-#endif /* __MM_IOB_IOB_H */
-
+#endif							/* CONFIG_MM_IOB */
+#endif							/* __MM_IOB_IOB_H */

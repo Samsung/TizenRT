@@ -52,7 +52,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -80,8 +80,9 @@ FAR struct iob_s *iob_remove_queue(FAR struct iob_queue_s *iobq)
 	qentry = iobq->qh_head;
 	if (qentry) {
 		iobq->qh_head = qentry->qe_flink;
-		if (!iobq->qh_head)
+		if (!iobq->qh_head) {
 			iobq->qh_tail = NULL;
+		}
 
 		/* Extract the I/O buffer chain from the container and free the
 		 * container.
@@ -94,4 +95,4 @@ FAR struct iob_s *iob_remove_queue(FAR struct iob_queue_s *iobq)
 	return iob;
 }
 
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

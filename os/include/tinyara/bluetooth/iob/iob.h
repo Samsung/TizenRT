@@ -62,22 +62,22 @@
  */
 
 #if !defined(CONFIG_IOB_THROTTLE)
-#  define CONFIG_IOB_THROTTLE 0
+#define CONFIG_IOB_THROTTLE 0
 #endif
 
 /* Some I/O buffers should be allocated */
 
 #if !defined(CONFIG_IOB_NBUFFERS)
-#  warning CONFIG_IOB_NBUFFERS not defined
-#  define CONFIG_IOB_NBUFFERS 0
+#warning CONFIG_IOB_NBUFFERS not defined
+#define CONFIG_IOB_NBUFFERS 0
 #endif
 
 #if CONFIG_IOB_NBUFFERS < 1
-#  error CONFIG_IOB_NBUFFERS is zero
+#error CONFIG_IOB_NBUFFERS is zero
 #endif
 
 #if CONFIG_IOB_NBUFFERS <= CONFIG_IOB_THROTTLE
-#  error CONFIG_IOB_NBUFFERS <= CONFIG_IOB_THROTTLE
+#error CONFIG_IOB_NBUFFERS <= CONFIG_IOB_THROTTLE
 #endif
 
 /* IOB helpers */
@@ -88,8 +88,8 @@
 #if CONFIG_IOB_NCHAINS > 0
 /* Queue helpers */
 
-#  define IOB_QINIT(q)   do { (q)->qh_head = 0; (q)->qh_tail = 0; } while (0)
-#  define IOB_QEMPTY(q)  ((q)->qh_head == NULL)
+#define IOB_QINIT(q)   do { (q)->qh_head = 0; (q)->qh_tail = 0; } while (0)
+#define IOB_QEMPTY(q)  ((q)->qh_head == NULL)
 #endif
 
 /****************************************************************************
@@ -101,24 +101,23 @@
  * the head of the chain.
  */
 
-struct iob_s
-{
-  /* Singly-link list support */
+struct iob_s {
+	/* Singly-link list support */
 
-  FAR struct iob_s *io_flink;
+	FAR struct iob_s *io_flink;
 
-  /* Payload */
+	/* Payload */
 
 #if CONFIG_IOB_BUFSIZE < 256
-  uint8_t  io_len;      /* Length of the data in the entry */
-  uint8_t  io_offset;   /* Data begins at this offset */
+	uint8_t io_len;				/* Length of the data in the entry */
+	uint8_t io_offset;			/* Data begins at this offset */
 #else
-  uint16_t io_len;      /* Length of the data in the entry */
-  uint16_t io_offset;   /* Data begins at this offset */
+	uint16_t io_len;			/* Length of the data in the entry */
+	uint16_t io_offset;			/* Data begins at this offset */
 #endif
-  uint16_t io_pktlen;   /* Total length of the packet */
+	uint16_t io_pktlen;			/* Total length of the packet */
 
-  uint8_t  io_data[CONFIG_IOB_BUFSIZE];
+	uint8_t io_data[CONFIG_IOB_BUFSIZE];
 };
 
 #if CONFIG_IOB_NCHAINS > 0
@@ -126,27 +125,25 @@ struct iob_s
  * structure is intended only for internal use by the IOB module.
  */
 
-struct iob_qentry_s
-{
-  /* Singly-link list support */
+struct iob_qentry_s {
+	/* Singly-link list support */
 
-  FAR struct iob_qentry_s *qe_flink;
+	FAR struct iob_qentry_s *qe_flink;
 
-  /* Payload -- Head of the I/O buffer chain */
+	/* Payload -- Head of the I/O buffer chain */
 
-  FAR struct iob_s *qe_head;
+	FAR struct iob_s *qe_head;
 };
 
 /* The I/O buffer queue head structure */
 
-struct iob_queue_s
-{
-  /* Head of the I/O buffer chain list */
+struct iob_queue_s {
+	/* Head of the I/O buffer chain list */
 
-  FAR struct iob_qentry_s *qh_head;
-  FAR struct iob_qentry_s *qh_tail;
+	FAR struct iob_qentry_s *qh_head;
+	FAR struct iob_qentry_s *qh_tail;
 };
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */
 
 /****************************************************************************
  * Public Function Prototypes
@@ -216,7 +213,7 @@ void iob_free_chain(FAR struct iob_s *iob);
 
 #if CONFIG_IOB_NCHAINS > 0
 int iob_add_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq);
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */
 
 /****************************************************************************
  * Name: iob_tryadd_queue
@@ -229,7 +226,7 @@ int iob_add_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq);
 
 #if CONFIG_IOB_NCHAINS > 0
 int iob_tryadd_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq);
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */
 
 /****************************************************************************
  * Name: iob_remove_queue
@@ -244,7 +241,7 @@ int iob_tryadd_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq);
 
 #if CONFIG_IOB_NCHAINS > 0
 FAR struct iob_s *iob_remove_queue(FAR struct iob_queue_s *iobq);
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */
 
 /****************************************************************************
  * Name: iob_peek_queue
@@ -275,7 +272,7 @@ FAR struct iob_s *iob_peek_queue(FAR struct iob_queue_s *iobq);
 
 #if CONFIG_IOB_NCHAINS > 0
 void iob_free_queue(FAR struct iob_queue_s *qhead);
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */
 
 /****************************************************************************
  * Name: iob_copyin
@@ -286,8 +283,7 @@ void iob_free_queue(FAR struct iob_queue_s *qhead);
  *
  ****************************************************************************/
 
-int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-               unsigned int len, unsigned int offset, bool throttled);
+int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled);
 
 /****************************************************************************
  * Name: iob_trycopyin
@@ -299,8 +295,7 @@ int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
  *
  ****************************************************************************/
 
-int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-                  unsigned int len, unsigned int offset, bool throttled);
+int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled);
 
 /****************************************************************************
  * Name: iob_copyout
@@ -311,8 +306,7 @@ int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src,
  *
  ****************************************************************************/
 
-int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob,
-                unsigned int len, unsigned int offset);
+int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob, unsigned int len, unsigned int offset);
 
 /****************************************************************************
  * Name: iob_clone
@@ -362,8 +356,7 @@ FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen);
  ****************************************************************************/
 
 #if CONFIG_IOB_NCHAINS > 0
-FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead,
-                                     unsigned int trimlen);
+FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead, unsigned int trimlen);
 #endif
 
 /****************************************************************************
@@ -410,12 +403,10 @@ int iob_contig(FAR struct iob_s *iob, unsigned int len);
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_FEATURES
-void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
-              unsigned int offset);
+void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len, unsigned int offset);
 #else
-#  define iob_dump(wrb)
+#define iob_dump(wrb)
 #endif
 
-#endif /* CONFIG_MM_IOB */
-#endif /* _INCLUDE_NUTTX_MM_IOB_H */
-
+#endif							/* CONFIG_MM_IOB */
+#endif							/* _INCLUDE_NUTTX_MM_IOB_H */

@@ -52,7 +52,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -77,7 +77,7 @@ void iob_free_queue(FAR struct iob_queue_s *qhead)
 	 * anyway).
 	 */
 
-	iobq           = qhead->qh_head;
+	iobq = qhead->qh_head;
 	qhead->qh_head = NULL;
 
 	/* Remove each I/O buffer chain from the queue */
@@ -102,4 +102,4 @@ void iob_free_queue(FAR struct iob_queue_s *qhead)
 	}
 }
 
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

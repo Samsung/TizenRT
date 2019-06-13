@@ -67,8 +67,7 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 	FAR struct iob_s *next = iob->io_flink;
 	irqstate_t flags;
 
-	iobinfo("iob=%p io_pktlen=%u io_len=%u next=%p\n",
-				iob, iob->io_pktlen, iob->io_len, next);
+	iobinfo("iob=%p io_pktlen=%u io_len=%u next=%p\n", iob, iob->io_pktlen, iob->io_len, next);
 
 	/* Copy the data that only exists in the head of a I/O buffer chain into
 	 * the next entry.
@@ -93,8 +92,7 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 			DEBUGASSERT(next->io_len == 0 && next->io_flink == NULL);
 		}
 
-		iobinfo("next=%p io_pktlen=%u io_len=%u\n",
-					next, next->io_pktlen, next->io_len);
+		iobinfo("next=%p io_pktlen=%u io_len=%u\n", next, next->io_pktlen, next->io_len);
 	}
 
 	/* Free the I/O buffer by adding it to the head of the free or the
@@ -112,11 +110,11 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 	 */
 
 	if (g_iob_sem.semcount < 0) {
-		iob->io_flink   = g_iob_committed;
+		iob->io_flink = g_iob_committed;
 		g_iob_committed = iob;
 	} else {
-		iob->io_flink   = g_iob_freelist;
-		g_iob_freelist  = iob;
+		iob->io_flink = g_iob_freelist;
+		g_iob_freelist = iob;
 	}
 
 	/* Signal that an IOB is available.  If there is a thread waiting

@@ -81,8 +81,7 @@ static void dump_chain(struct iob_s *iob)
 	}
 
 	if (pktlen != head->io_pktlen) {
-		printf("ERROR: Bad packet length=%u, actual=%u\n",
-				head->io_pktlen, pktlen);
+		printf("ERROR: Bad packet length=%u, actual=%u\n", head->io_pktlen, pktlen);
 	}
 
 	printf("=========================================================\n");
@@ -109,8 +108,9 @@ int main(int argc, char **argv)
 	iob_initialize();
 	iob = iob_alloc(false);
 
-	for (i = 0; i < 4096; i++)
+	for (i = 0; i < 4096; i++) {
 		buffer1[i] = (uint8_t)(i & 0xff);
+	}
 	memset(buffer2, 0xff, 4096);
 
 	iob_copyin(iob, buffer2, 47, 0, false);
@@ -124,8 +124,9 @@ int main(int argc, char **argv)
 	nbytes = iob_copyout(buffer2, iob, 4096, 47);
 	printf("Copy OUT: %d, offset 47\n", nbytes);
 
-	if (memcmp(buffer1, buffer2, nbytes) != 0)
+	if (memcmp(buffer1, buffer2, nbytes) != 0) {
 		fprintf(stderr, "Buffer1 does not match buffer2\n");
+	}
 
 	iob = iob_trimhead(iob, 47);
 	printf("Trim: 47 from the beginning of the list\n");
@@ -138,8 +139,9 @@ int main(int argc, char **argv)
 	nbytes = iob_copyout(buffer2, iob, 4096, 0);
 	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-	if (memcmp(buffer1, buffer2, nbytes) != 0)
+	if (memcmp(buffer1, buffer2, nbytes) != 0) {
 		fprintf(stderr, "Buffer1 does not match buffer2\n");
+	}
 
 	iob = iob_trimhead(iob, 1362);
 	printf("Trim: 1362 from the beginning of the list\n");
@@ -148,8 +150,9 @@ int main(int argc, char **argv)
 	nbytes = iob_copyout(buffer2, iob, 4096, 0);
 	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
+	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0) {
 		fprintf(stderr, "Buffer1 does not match buffer2\n");
+	}
 
 	iob = iob_pack(iob);
 	printf("Packed\n");
@@ -158,10 +161,13 @@ int main(int argc, char **argv)
 	nbytes = iob_copyout(buffer2, iob, 4096, 0);
 	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
+	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0) {
 		fprintf(stderr, "Buffer1 does not match buffer2\n");
+	}
 
-	while (iob) iob = iob_free(iob);
+	while (iob) {
+		iob = iob_free(iob);
+	}
 	return EXIT_SUCCESS;
 }
 

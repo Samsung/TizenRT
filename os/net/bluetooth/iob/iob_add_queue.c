@@ -54,7 +54,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -70,9 +70,7 @@
  *
  ****************************************************************************/
 
-static int iob_add_queue_internal(FAR struct iob_s *iob,
-											FAR struct iob_queue_s *iobq,
-											FAR struct iob_qentry_s *qentry)
+static int iob_add_queue_internal(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq, FAR struct iob_qentry_s *qentry)
 {
 	/* Add the I/O buffer chain to the container */
 
@@ -144,4 +142,4 @@ int iob_tryadd_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
 
 	return iob_add_queue_internal(iob, iobq, qentry);
 }
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

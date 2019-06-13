@@ -55,19 +55,17 @@
 
 /* Type of data contained in a buffer */
 
-enum bt_buf_type_e
-{
-	BT_CMD,             /* HCI command */
-	BT_EVT,             /* HCI event */
-	BT_ACL_OUT,         /* Outgoing ACL data */
-	BT_ACL_IN,          /* Incoming ACL data */
-	BT_DUMMY = BT_CMD   /* Only used for waking up kernel threads */
+enum bt_buf_type_e {
+	BT_CMD,						/* HCI command */
+	BT_EVT,						/* HCI event */
+	BT_ACL_OUT,					/* Outgoing ACL data */
+	BT_ACL_IN,					/* Incoming ACL data */
+	BT_DUMMY = BT_CMD			/* Only used for waking up kernel threads */
 };
 
 /* HCI command specific information */
 
-struct bt_buf_hci_data_s
-{
+struct bt_buf_hci_data_s {
 	/* Used by bt_hci_cmd_send_sync. Initially contains the waiting
 	 * semaphore, as the semaphore is given back contains the bt_buf
 	 * for the return parameters.
@@ -82,30 +80,27 @@ struct bt_buf_hci_data_s
 
 /* ACL data buffer specific information */
 
-struct bt_buf_acl_data_s
-{
+struct bt_buf_acl_data_s {
 	uint16_t handle;
 };
 
 /* This structure defines one buffer */
 
-struct iob_s;  /* Forward reference */
+struct iob_s;					/* Forward reference */
 
-struct bt_buf_s
-{
+struct bt_buf_s {
 	FAR struct bt_buf_s *flink;
 
-	union
-	{
+	union {
 		struct bt_buf_hci_data_s hci;
 		struct bt_buf_acl_data_s acl;
 	} u;
 
-	FAR uint8_t *data;     /* Start of data in the buffer */
-	uint8_t len;           /* Length of data in the buffer */
-	uint8_t pool;          /* Memory pool */
-	uint8_t ref;           /* Reference count */
-	uint8_t type;          /* Type of data contained in the buffer */
+	FAR uint8_t *data;			/* Start of data in the buffer */
+	uint8_t len;				/* Length of data in the buffer */
+	uint8_t pool;				/* Memory pool */
+	uint8_t ref;				/* Reference count */
+	uint8_t type;				/* Type of data contained in the buffer */
 
 	/* The full available buffer. */
 
@@ -114,8 +109,7 @@ struct bt_buf_s
 
 /* This structure defines a singly linked list of buffers */
 
-struct bt_bufferlist_s
-{
+struct bt_bufferlist_s {
 	FAR struct bt_buf_s *head;
 	FAR struct bt_buf_s *tail;
 };
@@ -154,11 +148,9 @@ struct bt_bufferlist_s
  *
  ****************************************************************************/
 
-struct iob_s; /* Forward reference */
+struct iob_s;					/* Forward reference */
 
-FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type,
-											FAR struct iob_s *iob,
-											size_t reserve_head);
+FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob, size_t reserve_head);
 
 /****************************************************************************
  * Name: bt_buf_release
@@ -321,4 +313,4 @@ size_t bt_buf_headroom(FAR struct bt_buf_s *buf);
 
 #define bt_buf_tail(buf) ((buf)->data + (buf)->len)
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_BUF_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_BUF_H */

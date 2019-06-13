@@ -69,8 +69,7 @@
 
 /* State tracking for the local Bluetooth controller */
 
-struct bt_dev_s
-{
+struct bt_dev_s {
 	/* Local Bluetooth Device Address */
 
 	bt_addr_t bdaddr;
@@ -128,9 +127,8 @@ struct bt_dev_s
 
 /* Connection callback structure */
 
-struct bt_conn_s; /* Forward reference */
-struct bt_conn_cb_s
-{
+struct bt_conn_s;				/* Forward reference */
+struct bt_conn_cb_s {
 	FAR struct bt_conn_cb_s *flink;
 	FAR void *context;
 
@@ -156,9 +154,7 @@ struct bt_conn_cb_s
  *
  ****************************************************************************/
 
-typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi,
-											uint8_t adv_type,
-											FAR const uint8_t *adv_data, uint8_t len);
+typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
 
 /****************************************************************************
  * Public Data
@@ -192,24 +188,28 @@ static inline void bt_addr_le_copy(FAR bt_addr_le_t *dst, FAR const bt_addr_le_t
 
 static inline bool bt_addr_le_is_rpa(FAR const bt_addr_le_t *addr)
 {
-	if (addr->type != BT_ADDR_LE_RANDOM)
+	if (addr->type != BT_ADDR_LE_RANDOM) {
 		return false;
+	}
 
-	if ((addr->val[5] & 0xc0) == 0x40)
+	if ((addr->val[5] & 0xc0) == 0x40) {
 		return true;
+	}
 
 	return false;
 }
 
 static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
 {
-	if (addr->type == BT_ADDR_LE_PUBLIC)
+	if (addr->type == BT_ADDR_LE_PUBLIC) {
 		return true;
+	}
 
 	/* Check for Random Static address type */
 
-	if ((addr->val[5] & 0xc0) == 0xc0)
+	if ((addr->val[5] & 0xc0) == 0xc0) {
 		return true;
+	}
 
 	return false;
 }
@@ -218,7 +218,7 @@ static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
  * Public Function Prototypes
  ****************************************************************************/
 
-struct bt_eir_s; /* Forward reference */
+struct bt_eir_s;				/* Forward reference */
 
 /****************************************************************************
  * Name: bt_initialize
@@ -290,8 +290,7 @@ FAR struct bt_buf_s *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 /* Send HCI commands */
 
 int bt_hci_cmd_send(uint16_t opcode, FAR struct bt_buf_s *buf);
-int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf,
-								 FAR struct bt_buf_s **rsp);
+int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct bt_buf_s **rsp);
 
 /* The helper is only safe to be called from internal kernel threads as it's
  * not multi-threading safe
@@ -319,8 +318,7 @@ FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr);
  *
  ****************************************************************************/
 
-int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad,
-								 FAR const struct bt_eir_s *sd);
+int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
 
 /****************************************************************************
  * Name: bt_stop_advertising
@@ -399,4 +397,4 @@ int bt_le_scan_update(void);
 
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
-#endif /* __NET_BLUETOOTH_BT_HCICORE_H */
+#endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

@@ -51,7 +51,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -60,7 +60,7 @@
 
 /* This is a pool of pre-allocated I/O buffers */
 
-static struct iob_s        g_iob_pool[CONFIG_IOB_NBUFFERS];
+static struct iob_s g_iob_pool[CONFIG_IOB_NBUFFERS];
 #if CONFIG_IOB_NCHAINS > 0
 static struct iob_qentry_s g_iob_qpool[CONFIG_IOB_NCHAINS];
 #endif
@@ -89,12 +89,12 @@ FAR struct iob_qentry_s *g_iob_qcommitted;
 
 /* Counting semaphores that tracks the number of free IOBs/qentries */
 
-sem_t g_iob_sem;            /* Counts free I/O buffers */
+sem_t g_iob_sem;				/* Counts free I/O buffers */
 #if CONFIG_IOB_THROTTLE > 0
-sem_t g_throttle_sem;       /* Counts available I/O buffers when throttled */
+sem_t g_throttle_sem;			/* Counts available I/O buffers when throttled */
 #endif
 #if CONFIG_IOB_NCHAINS > 0
-sem_t g_qentry_sem;         /* Counts free I/O buffer queue containers */
+sem_t g_qentry_sem;				/* Counts free I/O buffer queue containers */
 #endif
 
 /****************************************************************************
@@ -124,7 +124,7 @@ void iob_initialize(void)
 
 			/* Add the pre-allocate I/O buffer to the head of the free list */
 
-			iob->io_flink  = g_iob_freelist;
+			iob->io_flink = g_iob_freelist;
 			g_iob_freelist = iob;
 		}
 
@@ -143,7 +143,7 @@ void iob_initialize(void)
 
 			/* Add the pre-allocate buffer container to the head of the free list */
 
-			iobq->qe_flink  = g_iob_freeqlist;
+			iobq->qe_flink = g_iob_freeqlist;
 			g_iob_freeqlist = iobq;
 		}
 

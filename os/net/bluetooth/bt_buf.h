@@ -71,4 +71,4 @@
 
 void bt_buf_initialize(void);
 
-#endif /* __NET_BLUETOOTH_BT_BUF_H */
+#endif							/* __NET_BLUETOOTH_BT_BUF_H */

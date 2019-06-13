@@ -68,26 +68,26 @@
 
 /* EIR/AD definitions */
 
-#define BT_EIR_FLAGS             0x01 /* AD flags */
-#define BT_EIR_UUID16_SOME       0x02 /* 16-bit UUID, more available */
-#define BT_EIR_UUID16_ALL        0x03 /* 16-bit UUID, all listed */
-#define BT_EIR_UUID32_SOME       0x04 /* 32-bit UUID, more available */
-#define BT_EIR_UUID32_ALL        0x05 /* 32-bit UUID, all listed */
-#define BT_EIR_UUID128_SOME      0x06 /* 128-bit UUID, more available */
-#define BT_EIR_UUID128_ALL       0x07 /* 128-bit UUID, all listed */
-#define BT_EIR_NAME_COMPLETE     0x09 /* Complete name */
-#define BT_EIR_TX_POWER          0x0a /* Tx Power */
-#define BT_EIR_SOLICIT16         0x14 /* Solicit UUIDs, 16-bit */
-#define BT_EIR_SOLICIT128        0x15 /* Solicit UUIDs, 128-bit */
-#define BT_EIR_SVC_DATA16        0x16 /* Service data, 16-bit UUID */
-#define BT_EIR_GAP_APPEARANCE    0x19 /* GAP appearance */
-#define BT_EIR_SOLICIT32         0x1f /* Solicit UUIDs, 32-bit */
-#define BT_EIR_SVC_DATA32        0x20 /* Service data, 32-bit UUID */
-#define BT_EIR_SVC_DATA128       0x21 /* Service data, 128-bit UUID */
-#define BT_EIR_MANUFACTURER_DATA 0xff /* Manufacturer Specific Data */
+#define BT_EIR_FLAGS             0x01	/* AD flags */
+#define BT_EIR_UUID16_SOME       0x02	/* 16-bit UUID, more available */
+#define BT_EIR_UUID16_ALL        0x03	/* 16-bit UUID, all listed */
+#define BT_EIR_UUID32_SOME       0x04	/* 32-bit UUID, more available */
+#define BT_EIR_UUID32_ALL        0x05	/* 32-bit UUID, all listed */
+#define BT_EIR_UUID128_SOME      0x06	/* 128-bit UUID, more available */
+#define BT_EIR_UUID128_ALL       0x07	/* 128-bit UUID, all listed */
+#define BT_EIR_NAME_COMPLETE     0x09	/* Complete name */
+#define BT_EIR_TX_POWER          0x0a	/* Tx Power */
+#define BT_EIR_SOLICIT16         0x14	/* Solicit UUIDs, 16-bit */
+#define BT_EIR_SOLICIT128        0x15	/* Solicit UUIDs, 128-bit */
+#define BT_EIR_SVC_DATA16        0x16	/* Service data, 16-bit UUID */
+#define BT_EIR_GAP_APPEARANCE    0x19	/* GAP appearance */
+#define BT_EIR_SOLICIT32         0x1f	/* Solicit UUIDs, 32-bit */
+#define BT_EIR_SVC_DATA32        0x20	/* Service data, 32-bit UUID */
+#define BT_EIR_SVC_DATA128       0x21	/* Service data, 128-bit UUID */
+#define BT_EIR_MANUFACTURER_DATA 0xff	/* Manufacturer Specific Data */
 
-#define BT_LE_AD_GENERAL         0x02 /* General Discoverable */
-#define BT_LE_AD_NO_BREDR        0x04 /* BR/EDR not supported */
+#define BT_LE_AD_GENERAL         0x02	/* General Discoverable */
+#define BT_LE_AD_NO_BREDR        0x04	/* BR/EDR not supported */
 
 #define bt_acl_handle(h)         ((h) & 0x0fff)
 
@@ -141,13 +141,13 @@
 /* Scan types */
 
 #define BT_HCI_OP_LE_SET_SCAN_PARAMS          BT_OP(BT_OGF_LE, 0x000b)
-#  define BT_LE_SCAN_PASSIVE                  0x00
-#  define BT_LE_SCAN_ACTIVE                   0x01
+#define BT_LE_SCAN_PASSIVE                  0x00
+#define BT_LE_SCAN_ACTIVE                   0x01
 #define BT_HCI_OP_LE_SET_SCAN_ENABLE          BT_OP(BT_OGF_LE, 0x000c)
-#  define BT_LE_SCAN_DISABLE                  0x00
-#  define BT_LE_SCAN_ENABLE                   0x01
-#  define BT_LE_SCAN_FILTER_DUP_DISABLE       0x00
-#  define BT_LE_SCAN_FILTER_DUP_ENABLE        0x01
+#define BT_LE_SCAN_DISABLE                  0x00
+#define BT_LE_SCAN_ENABLE                   0x01
+#define BT_LE_SCAN_FILTER_DUP_DISABLE       0x00
+#define BT_LE_SCAN_FILTER_DUP_ENABLE        0x01
 #define BT_HCI_OP_LE_CREATE_CONN              BT_OP(BT_OGF_LE, 0x000d)
 #define BT_HCI_OP_LE_CREATE_CONN_CANCEL       BT_OP(BT_OGF_LE, 0x000e)
 #define BT_HCI_OP_LE_CONN_UPDATE              BT_OP(BT_OGF_LE, 0x0013)
@@ -167,8 +167,8 @@
 #define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE 0x30
 #define BT_HCI_EVT_LE_META_EVENT              0x3e
 #define BT_HCI_EVT_LE_CONN_COMPLETE           0x01
-#  define BT_HCI_ROLE_MASTER                  0x00
-#  define BT_HCI_ROLE_SLAVE                   0x01
+#define BT_HCI_ROLE_MASTER                  0x00
+#define BT_HCI_ROLE_SLAVE                   0x01
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT      0x02
 #define BT_HCI_EVT_LE_LTK_REQUEST             0x05
 
@@ -424,4 +424,4 @@ struct bt_hci_evt_le_ltk_request_s {
 	uint16_t ediv;
 } packed_struct;
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_HCI_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_HCI_H */

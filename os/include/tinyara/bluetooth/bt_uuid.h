@@ -169,21 +169,18 @@
 
 /* Bluetooth UUID types */
 
-enum bt_uuid_type_e
-{
+enum bt_uuid_type_e {
 	BT_UUID_16,
 	BT_UUID_128,
 };
 
 /* Bluetooth UUID structure */
 
-struct bt_uuid_s
-{
+struct bt_uuid_s {
 	/* UUID type */
 
 	uint8_t type;
-	union
-	{
+	union {
 		/* UUID 16 bits value */
 
 		uint16_t u16;
@@ -214,7 +211,6 @@ struct bt_uuid_s
  *
  ****************************************************************************/
 
-int bt_uuid_cmp(FAR const struct bt_uuid_s *u1,
-					FAR const struct bt_uuid_s *u2);
+int bt_uuid_cmp(FAR const struct bt_uuid_s *u1, FAR const struct bt_uuid_s *u2);
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_UUID_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_UUID_H */

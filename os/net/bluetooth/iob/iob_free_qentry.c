@@ -83,11 +83,11 @@ FAR struct iob_qentry_s *iob_free_qentry(FAR struct iob_qentry_s *iobq)
 	 */
 
 	if (g_iob_sem.semcount < 0) {
-		iobq->qe_flink   = g_iob_qcommitted;
+		iobq->qe_flink = g_iob_qcommitted;
 		g_iob_qcommitted = iobq;
 	} else {
-		iobq->qe_flink   = g_iob_freeqlist;
-		g_iob_freeqlist  = iobq;
+		iobq->qe_flink = g_iob_freeqlist;
+		g_iob_freeqlist = iobq;
 	}
 
 	/* Signal that an I/O buffer chain container is available.  If there
@@ -105,4 +105,4 @@ FAR struct iob_qentry_s *iob_free_qentry(FAR struct iob_qentry_s *iobq)
 	return nextq;
 }
 
-#endif /* CONFIG_IOB_NCHAINS > 0 */
+#endif							/* CONFIG_IOB_NCHAINS > 0 */

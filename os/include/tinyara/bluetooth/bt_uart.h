@@ -60,7 +60,7 @@
 
 struct btuart_lowerhalf_s;
 typedef CODE void (*btuart_rxcallback_t)
-	(FAR const struct btuart_lowerhalf_s *lower, FAR void *arg);
+ (FAR const struct btuart_lowerhalf_s * lower, FAR void *arg);
 
 /* The Bluetooth UART driver is a two-part driver:
  *
@@ -75,8 +75,7 @@ typedef CODE void (*btuart_rxcallback_t)
  * the upper and lower halves into one driver.
  */
 
-struct btuart_lowerhalf_s
-{
+struct btuart_lowerhalf_s {
 	/* Attach/enable the upper half Rx interrupt callback.
 	 *
 	 * rxattach() allows the upper half logic to attach a callback function
@@ -92,10 +91,8 @@ struct btuart_lowerhalf_s
 	 *   sparingly:  Rx data overrun may occur when Rx events are disabled!
 	 */
 
-	CODE void (*rxattach)(FAR const struct btuart_lowerhalf_s *lower,
-								btuart_rxcallback_t callback, FAR void *arg);
-	CODE void (*rxenable)(FAR const struct btuart_lowerhalf_s *lower,
-								bool enable);
+	CODE void (*rxattach) (FAR const struct btuart_lowerhalf_s * lower, btuart_rxcallback_t callback, FAR void *arg);
+	CODE void (*rxenable) (FAR const struct btuart_lowerhalf_s * lower, bool enable);
 
 	/* Change the HCI UART BAUD
 	 *
@@ -108,8 +105,7 @@ struct btuart_lowerhalf_s
 	 * driver to the new HCI UART BAUD.
 	 */
 
- CODE int (*setbaud)(FAR const struct btuart_lowerhalf_s *lower,
-						uint32_t baud);
+	CODE int (*setbaud) (FAR const struct btuart_lowerhalf_s * lower, uint32_t baud);
 
 	/* Read/write UART frames
 	 *
@@ -123,14 +119,12 @@ struct btuart_lowerhalf_s
 	 *   the entire outgoing packet.
 	 */
 
-	CODE ssize_t (*read)(FAR const struct btuart_lowerhalf_s *lower,
-							FAR void *buffer, size_t buflen);
-	CODE ssize_t (*write)(FAR const struct btuart_lowerhalf_s *lower,
-							FAR const void *buffer, size_t buflen);
+	CODE ssize_t(*read) (FAR const struct btuart_lowerhalf_s * lower, FAR void *buffer, size_t buflen);
+	CODE ssize_t(*write) (FAR const struct btuart_lowerhalf_s * lower, FAR const void *buffer, size_t buflen);
 
 	/* Flush/drain all buffered RX data */
 
-	CODE ssize_t (*rxdrain)(FAR const struct btuart_lowerhalf_s *lower);
+	CODE ssize_t(*rxdrain) (FAR const struct btuart_lowerhalf_s * lower);
 };
 
 /****************************************************************************
@@ -155,4 +149,4 @@ struct btuart_lowerhalf_s
 
 int btuart_register(FAR const struct btuart_lowerhalf_s *lower);
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_UART_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_UART_H */

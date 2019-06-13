@@ -51,7 +51,7 @@
  ****************************************************************************/
 
 #ifndef NULL
-#  define NULL ((FAR void *)0)
+#define NULL ((FAR void *)0)
 #endif
 
 /****************************************************************************
@@ -80,8 +80,7 @@ FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen)
 		while (trimlen > 0 && iob != NULL) {
 			/* Do we trim this entire I/O buffer away? */
 
-			iobinfo("iob=%p io_len=%d pktlen=%d trimlen=%d\n",
-						iob, iob->io_len, pktlen, trimlen);
+			iobinfo("iob=%p io_len=%d pktlen=%d trimlen=%d\n", iob, iob->io_len, pktlen, trimlen);
 
 			if (iob->io_len <= trimlen) {
 				FAR struct iob_s *next;
@@ -90,7 +89,7 @@ FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen)
 				 * data size.
 				 */
 
-				pktlen  -= iob->io_len;
+				pktlen -= iob->io_len;
 				trimlen -= iob->io_len;
 
 				/* Check if this was the last entry in the chain */
@@ -102,7 +101,7 @@ FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen)
 					 */
 
 					DEBUGASSERT(pktlen == 0);
-					iob->io_len    = 0;
+					iob->io_len = 0;
 					iob->io_offset = 0;
 					break;
 				}
@@ -117,10 +116,10 @@ FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen)
 				 * stop the trim.
 				 */
 
-				pktlen         -= trimlen;
-				iob->io_len    -= trimlen;
+				pktlen -= trimlen;
+				iob->io_len -= trimlen;
 				iob->io_offset += trimlen;
-				trimlen         = 0;
+				trimlen = 0;
 			}
 		}
 

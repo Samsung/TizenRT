@@ -414,8 +414,7 @@
  * Public Types
  ****************************************************************************/
 
-enum bt_gatt_iter_e
-{
+enum bt_gatt_iter_e {
 	BT_GATT_ITER_STOP = 0,
 	BT_GATT_ITER_CONTINUE,
 };
@@ -431,11 +430,9 @@ enum bt_gatt_iter_e
  *   or BT_GATT_ITER_STOP to stop.
  */
 
-struct bt_gatt_attr_s; /* Forward reference */
+struct bt_gatt_attr_s;			/* Forward reference */
 
-typedef CODE uint8_t
-	(*bt_gatt_attr_func_t)(FAR const struct bt_gatt_attr_s *attr,
-								FAR void *user_data);
+typedef CODE uint8_t(*bt_gatt_attr_func_t) (FAR const struct bt_gatt_attr_s * attr, FAR void *user_data);
 
 /* Response callback function
  *
@@ -444,9 +441,9 @@ typedef CODE uint8_t
  *   err  - Error code.
  */
 
-struct bt_conn_s; /* Forward reference */
+struct bt_conn_s;				/* Forward reference */
 
-typedef void (*bt_gatt_rsp_func_t)(FAR struct bt_conn_s *conn, uint8_t err);
+typedef void (*bt_gatt_rsp_func_t) (FAR struct bt_conn_s * conn, uint8_t err);
 
 /* Read callback function
  *
@@ -457,35 +454,26 @@ typedef void (*bt_gatt_rsp_func_t)(FAR struct bt_conn_s *conn, uint8_t err);
  *   length - Attribute value length.
  */
 
-typedef CODE void (*bt_gatt_read_func_t)(FAR struct bt_conn_s *conn,
-													int err, FAR const void *data,
-													uint16_t length);
+typedef CODE void (*bt_gatt_read_func_t) (FAR struct bt_conn_s * conn, int err, FAR const void *data, uint16_t length);
 
 /* GATT Attribute structure. */
 
-struct bt_gatt_attr_s
-{
+struct bt_gatt_attr_s {
 	/* Attribute UUID */
 
 	FAR const struct bt_uuid_s *uuid;
 
 	/* Attribute read callback */
 
-	CODE int (*read)(FAR struct bt_conn_s *conn,
-						FAR const struct bt_gatt_attr_s *attr, FAR void *buf,
-						uint8_t len, uint16_t offset);
+	CODE int (*read) (FAR struct bt_conn_s * conn, FAR const struct bt_gatt_attr_s * attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /* Attribute write callback */
 
-	CODE int (*write)(FAR struct bt_conn_s *conn,
-							FAR const struct bt_gatt_attr_s *attr,
-							FAR const void *buf, uint8_t len, uint16_t offset);
+	CODE int (*write) (FAR struct bt_conn_s * conn, FAR const struct bt_gatt_attr_s * attr, FAR const void *buf, uint8_t len, uint16_t offset);
 
 	/* Attribute flush callback */
 
-	CODE int (*flush)(FAR struct bt_conn_s *conn,
-							FAR const struct bt_gatt_attr_s *attr,
-							uint8_t flags);
+	CODE int (*flush) (FAR struct bt_conn_s * conn, FAR const struct bt_gatt_attr_s * attr, uint8_t flags);
 
 	/* Attribute user data */
 
@@ -502,8 +490,7 @@ struct bt_gatt_attr_s
 
 /* Service Attribute Value. */
 
-struct bt_gatt_service_s
-{
+struct bt_gatt_service_s {
 	/* Service UUID. */
 
 	FAR const struct bt_uuid_s *uuid;
@@ -511,8 +498,7 @@ struct bt_gatt_service_s
 
 /* Include Attribute Value. */
 
-struct bt_gatt_include_s
-{
+struct bt_gatt_include_s {
 	/* Service UUID. */
 
 	FAR const struct bt_uuid_s *uuid;
@@ -528,8 +514,7 @@ struct bt_gatt_include_s
 
 /* Characteristic Attribute Value. */
 
-struct bt_gatt_chrc_s
-{
+struct bt_gatt_chrc_s {
 	/* Characteristic UUID. */
 
 	FAR const struct bt_uuid_s *uuid;
@@ -545,8 +530,7 @@ struct bt_gatt_chrc_s
 
 /* Characteristic Extended Properties Attribute Value. */
 
-struct bt_gatt_cep_s
-{
+struct bt_gatt_cep_s {
 	/* Characteristic Extended properties */
 
 	uint16_t properties;
@@ -554,8 +538,7 @@ struct bt_gatt_cep_s
 
 /* Characteristic User Description Attribute Value. */
 
-struct bt_gatt_cud_s
-{
+struct bt_gatt_cud_s {
 	/* Characteristic User Description string. */
 
 	FAR char *string;
@@ -563,8 +546,7 @@ struct bt_gatt_cud_s
 
 /* Client Characteristic Configuration Attribute Value */
 
-struct bt_gatt_ccc_s
-{
+struct bt_gatt_ccc_s {
 	/* Client Characteristic Configuration flags */
 
 	uint16_t flags;
@@ -572,8 +554,7 @@ struct bt_gatt_ccc_s
 
 /* GATT CCC configuration entry. */
 
-struct bt_gatt_ccc_cfg_s
-{
+struct bt_gatt_ccc_cfg_s {
 	/* Config peer address. */
 
 	bt_addr_le_t peer;
@@ -589,19 +570,17 @@ struct bt_gatt_ccc_cfg_s
 
 /* Internal representation of CCC value */
 
-struct _bt_gatt_ccc_s
-{
+struct _bt_gatt_ccc_s {
 	FAR struct bt_gatt_ccc_cfg_s *cfg;
 	size_t cfg_len;
 	uint16_t value;
 	uint16_t value_handle;
-	CODE void (*cfg_changed)(uint16_t value);
+	CODE void (*cfg_changed) (uint16_t value);
 };
 
 /* GATT Discover Primary parameters */
 
-struct bt_gatt_discover_params_s
-{
+struct bt_gatt_discover_params_s {
 	/* Discover UUID type */
 
 	FAR struct bt_uuid_s *uuid;
@@ -612,7 +591,7 @@ struct bt_gatt_discover_params_s
 
 	/* Discover destroy callback */
 
-	CODE void (*destroy)(FAR void *user_data);
+	CODE void (*destroy) (FAR void *user_data);
 
 	/* Discover start handle */
 
@@ -659,8 +638,7 @@ void bt_gatt_register(FAR const struct bt_gatt_attr_s *attrs, size_t count);
  *
  ****************************************************************************/
 
-void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
-								bt_gatt_attr_func_t func, FAR void *user_data);
+void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle, bt_gatt_attr_func_t func, FAR void *user_data);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read
@@ -683,10 +661,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read(FAR struct bt_conn_s *conn,
-							FAR const struct bt_gatt_attr_s *attr,
-							FAR void *buf, uint8_t buf_len, uint16_t offset,
-							FAR const void *value, uint8_t value_len);
+int bt_gatt_attr_read(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t buf_len, uint16_t offset, FAR const void *value, uint8_t value_len);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read_service
@@ -709,9 +684,7 @@ int bt_gatt_attr_read(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read_service(FAR struct bt_conn_s *conn,
-									FAR const struct bt_gatt_attr_s *attr,
-									FAR void *buf, uint8_t len, uint16_t offset);
+int bt_gatt_attr_read_service(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read_included
@@ -734,9 +707,7 @@ int bt_gatt_attr_read_service(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read_included(FAR struct bt_conn_s *conn,
-									FAR const struct bt_gatt_attr_s *attr,
-									FAR void *buf, uint8_t len, uint16_t offset);
+int bt_gatt_attr_read_included(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read_chrc
@@ -759,9 +730,7 @@ int bt_gatt_attr_read_included(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read_chrc(FAR struct bt_conn_s *conn,
-								FAR const struct bt_gatt_attr_s *attr, FAR void *buf,
-								uint8_t len, uint16_t offset);
+int bt_gatt_attr_read_chrc(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read_ccc
@@ -784,9 +753,7 @@ int bt_gatt_attr_read_chrc(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read_ccc(FAR struct bt_conn_s *conn,
-								FAR const struct bt_gatt_attr_s *attr, FAR void *buf,
-								uint8_t len, uint16_t offset);
+int bt_gatt_attr_read_ccc(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_attr_write_ccc
@@ -808,9 +775,7 @@ int bt_gatt_attr_read_ccc(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_write_ccc(FAR struct bt_conn_s *conn,
-								FAR const struct bt_gatt_attr_s *attr,
-								FAR const void *buf, uint8_t len, uint16_t offset);
+int bt_gatt_attr_write_ccc(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR const void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_attr_read_cep
@@ -833,9 +798,7 @@ int bt_gatt_attr_write_ccc(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_attr_read_cep(FAR struct bt_conn_s *conn,
-								FAR const struct bt_gatt_attr_s *attr, FAR void *buf,
-								uint8_t len, uint16_t offset);
+int bt_gatt_attr_read_cep(FAR struct bt_conn_s *conn, FAR const struct bt_gatt_attr_s *attr, FAR void *buf, uint8_t len, uint16_t offset);
 
 /****************************************************************************
  * Name: bt_gatt_notify
@@ -916,8 +879,7 @@ int bt_gatt_exchange_mtu(FAR struct bt_conn_s *conn, bt_gatt_rsp_func_t func);
  *
  ****************************************************************************/
 
-int bt_gatt_discover(FAR struct bt_conn_s *conn,
-						FAR struct bt_gatt_discover_params_s *params);
+int bt_gatt_discover(FAR struct bt_conn_s *conn, FAR struct bt_gatt_discover_params_s *params);
 
 /****************************************************************************
  * Name: bt_gatt_discover_characteristic
@@ -940,8 +902,7 @@ int bt_gatt_discover(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_discover_characteristic(FAR struct bt_conn_s *conn,
-											FAR struct bt_gatt_discover_params_s *params);
+int bt_gatt_discover_characteristic(FAR struct bt_conn_s *conn, FAR struct bt_gatt_discover_params_s *params);
 
 /****************************************************************************
  * Name: bt_gatt_discover_descriptor
@@ -963,8 +924,7 @@ int bt_gatt_discover_characteristic(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_discover_descriptor(FAR struct bt_conn_s *conn,
-										FAR struct bt_gatt_discover_params_s *params);
+int bt_gatt_discover_descriptor(FAR struct bt_conn_s *conn, FAR struct bt_gatt_discover_params_s *params);
 
 /****************************************************************************
  * Name: bt_gatt_read
@@ -983,8 +943,7 @@ int bt_gatt_discover_descriptor(FAR struct bt_conn_s *conn,
  *
  ****************************************************************************/
 
-int bt_gatt_read(FAR struct bt_conn_s *conn, uint16_t handle, uint16_t offset,
-					bt_gatt_read_func_t func);
+int bt_gatt_read(FAR struct bt_conn_s *conn, uint16_t handle, uint16_t offset, bt_gatt_read_func_t func);
 
 /****************************************************************************
  * Name:
@@ -1005,9 +964,7 @@ int bt_gatt_read(FAR struct bt_conn_s *conn, uint16_t handle, uint16_t offset,
  *
  ****************************************************************************/
 
-int bt_gatt_write(FAR struct bt_conn_s *conn, uint16_t handle,
-						FAR const void *data, uint16_t length,
-						bt_gatt_rsp_func_t func);
+int bt_gatt_write(FAR struct bt_conn_s *conn, uint16_t handle, FAR const void *data, uint16_t length, bt_gatt_rsp_func_t func);
 
 /****************************************************************************
  * Name: bt_gatt_cancel
@@ -1040,8 +997,6 @@ void bt_gatt_cancel(FAR struct bt_conn_s *conn);
  *
  ****************************************************************************/
 
-int bt_gatt_read_multiple(FAR struct bt_conn_s *conn,
-								FAR const uint16_t *handles, size_t count,
-								bt_gatt_read_func_t func);
+int bt_gatt_read_multiple(FAR struct bt_conn_s *conn, FAR const uint16_t * handles, size_t count, bt_gatt_read_func_t func);
 
-#endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_GATT_H */
+#endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_GATT_H */

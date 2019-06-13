@@ -96,8 +96,8 @@ FAR struct iob_s *iob_trimtail(FAR struct iob_s *iob, unsigned int trimlen)
 				/* Yes.. Consume the entire buffer */
 
 				iob->io_pktlen -= last->io_len;
-				len            -= last->io_len;
-				last->io_len    = 0;
+				len -= last->io_len;
+				last->io_len = 0;
 
 				/* Free the last, empty buffer in the list */
 
@@ -122,8 +122,8 @@ FAR struct iob_s *iob_trimtail(FAR struct iob_s *iob, unsigned int trimlen)
 				 */
 
 				iob->io_pktlen -= len;
-				last->io_len   -= len;
-				len             = 0;
+				last->io_len -= len;
+				len = 0;
 			}
 		}
 	}

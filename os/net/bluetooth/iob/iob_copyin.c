@@ -54,7 +54,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -79,9 +79,7 @@ typedef CODE struct iob_s *(*iob_alloc_t)(bool throttled);
  *
  ****************************************************************************/
 
-static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
-										 unsigned int len, unsigned int offset,
-										 bool throttled, bool can_block)
+static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled, bool can_block)
 {
 	FAR struct iob_s *head = iob;
 	FAR struct iob_s *next;
@@ -96,8 +94,7 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 	/* The offset must applied to data that is already in the I/O buffer chain */
 
 	if (offset > iob->io_pktlen) {
-		ioberr("ERROR: offset is past the end of data: %u > %u\n",
-				 offset, iob->io_pktlen);
+		ioberr("ERROR: offset is past the end of data: %u > %u\n", offset, iob->io_pktlen);
 		return -ESPIPE;
 	}
 
@@ -105,7 +102,7 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 
 	while (offset > iob->io_len) {
 		offset -= iob->io_len;
-		iob     = iob->io_flink;
+		iob = iob->io_flink;
 	}
 
 	/* Then loop until all of the I/O data is copied from the user buffer */
@@ -117,7 +114,7 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 		 * available from that address.
 		 */
 
-		dest  = &iob->io_data[iob->io_offset + offset];
+		dest = &iob->io_data[iob->io_offset + offset];
 		avail = iob->io_len - offset;
 
 		iobinfo("iob=%p avail=%u len=%u next=%p\n", iob, avail, len, next);
@@ -148,13 +145,14 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 				 */
 
 				newlen = len + offset;
-				if (newlen > maxlen)
+				if (newlen > maxlen) {
 					newlen = maxlen;
+				}
 
 				/* Set the new length and increment the packet length */
 
 				head->io_pktlen += (newlen - iob->io_len);
-				iob->io_len      = newlen;
+				iob->io_len = newlen;
 
 				/* Set the new number of bytes to copy */
 
@@ -169,8 +167,7 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 		/* Copy from the user buffer to the I/O buffer.  */
 
 		memcpy(dest, src, ncopy);
-		iobinfo("iob=%p Copy %u bytes new len=%u\n",
-					iob, ncopy, iob->io_len);
+		iobinfo("iob=%p Copy %u bytes new len=%u\n", iob, ncopy, iob->io_len);
 
 		/* Adjust the total length of the copy and the destination address in
 		 * the user buffer.
@@ -192,8 +189,9 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
 
 			if (!can_block || len < total) {
 				next = iob_tryalloc(throttled);
-			} else
+			} else {
 				next = iob_alloc(throttled);
+			}
 
 			if (next == NULL) {
 				ioberr("ERROR: Failed to allocate I/O buffer\n");
@@ -226,8 +224,7 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
  *
  ****************************************************************************/
 
-int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-					 unsigned int len, unsigned int offset, bool throttled)
+int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled)
 {
 	return len - iob_copyin_internal(iob, src, len, offset, throttled, true);
 }
@@ -242,11 +239,11 @@ int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
  *
  ****************************************************************************/
 
-int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-						unsigned int len, unsigned int offset, bool throttled)
+int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled)
 {
 	if (iob_copyin_internal(iob, src, len, offset, throttled, false) == 0) {
 		return len;
-	} else
+	} else {
 		return -ENOMEM;
+	}
 }

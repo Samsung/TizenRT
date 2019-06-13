@@ -53,7 +53,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -105,8 +105,7 @@ int iob_contig(FAR struct iob_s *iob, unsigned int len)
 
 		/* Then move what we need from the next I/O buffer(s) */
 
-		do
-		{
+		do {
 			/* Get the next I/O buffer in the chain */
 
 			next = iob->io_flink;
@@ -116,23 +115,22 @@ int iob_contig(FAR struct iob_s *iob, unsigned int len)
 
 			ncopy = len - iob->io_len;
 			ncopy = MIN(ncopy, next->io_len);
-			memcpy(&iob->io_data[iob->io_len],
-					 &next->io_data[next->io_offset], ncopy);
+			memcpy(&iob->io_data[iob->io_len], &next->io_data[next->io_offset], ncopy);
 
 			/* Adjust counts and offsets */
 
-			iob->io_len     += ncopy;
+			iob->io_len += ncopy;
 			next->io_offset += ncopy;
-			next->io_len    -= ncopy;
+			next->io_len -= ncopy;
 
 			/* Handle a (improbable) case where we just emptied the second
 			 * buffer in the chain.
 			 */
 
-			if (next->io_len == 0)
+			if (next->io_len == 0) {
 				iob->io_flink = iob_free(next);
-		}
-		while (len > iob->io_len);
+			}
+		} while (len > iob->io_len);
 
 		/* This should always succeed because we know that:
 		 *

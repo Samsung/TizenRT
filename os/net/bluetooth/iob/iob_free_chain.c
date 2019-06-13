@@ -63,6 +63,7 @@ void iob_free_chain(FAR struct iob_s *iob)
 
 	/* Free each IOB in the chain -- one at a time to keep the count straight */
 
-	for (; iob; iob = next)
+	for (; iob; iob = next) {
 		next = iob_free(iob);
+	}
 }

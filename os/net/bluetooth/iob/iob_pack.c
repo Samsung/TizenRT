@@ -50,7 +50,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -76,8 +76,9 @@ FAR struct iob_s *iob_pack(FAR struct iob_s *iob)
 
 	/* Handle special cases */
 
-	while (iob->io_len <= 0)
+	while (iob->io_len <= 0) {
 		iob = iob_free(iob);
+	}
 
 	/* Now remember the head of the chain (for the return value) */
 
@@ -103,22 +104,21 @@ FAR struct iob_s *iob_pack(FAR struct iob_s *iob)
 			 * buffer
 			 */
 
-			ncopy  = next->io_len;
+			ncopy = next->io_len;
 			navail = CONFIG_IOB_BUFSIZE - iob->io_len;
-			if (ncopy > navail)
+			if (ncopy > navail) {
 				ncopy = navail;
+			}
 
 			if (ncopy > 0) {
 				/* Copy the data from the next into the current I/O buffer iob */
 
-				memcpy(&iob->io_data[iob->io_len],
-						&next->io_data[next->io_offset],
-						ncopy);
+				memcpy(&iob->io_data[iob->io_len], &next->io_data[next->io_offset], ncopy);
 
 				/* Adjust lengths and offsets */
 
-				iob->io_len     += ncopy;
-				next->io_len    -= ncopy;
+				iob->io_len += ncopy;
+				next->io_len -= ncopy;
 				next->io_offset += ncopy;
 			}
 
@@ -127,7 +127,7 @@ FAR struct iob_s *iob_pack(FAR struct iob_s *iob)
 			if (next->io_len <= 0) {
 				/* Yes.. free the next entry in I/O buffer chain */
 
-				next          = iob_free(next);
+				next = iob_free(next);
 				iob->io_flink = next;
 			}
 		}

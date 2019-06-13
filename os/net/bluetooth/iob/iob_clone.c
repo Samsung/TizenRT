@@ -53,7 +53,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -78,8 +78,7 @@ int iob_clone(FAR struct iob_s *iob1, FAR struct iob_s *iob2, bool throttled)
 	unsigned int offset1;
 	unsigned int offset2;
 
-	DEBUGASSERT(iob2->io_len == 0 && iob2->io_offset == 0 &&
-					iob2->io_pktlen == 0 && iob2->io_flink == NULL);
+	DEBUGASSERT(iob2->io_len == 0 && iob2->io_offset == 0 && iob2->io_pktlen == 0 && iob2->io_flink == NULL);
 
 	/* Copy the total packet size from the I/O buffer at the head of the chain */
 
@@ -89,8 +88,9 @@ int iob_clone(FAR struct iob_s *iob1, FAR struct iob_s *iob2, bool throttled)
 	 * the list.
 	 */
 
-	while (iob1->io_len <= 0)
+	while (iob1->io_len <= 0) {
 		iob1 = iob1->io_flink;
+	}
 
 	/* Pack each entry from iob1 to iob2 */
 
@@ -102,14 +102,14 @@ int iob_clone(FAR struct iob_s *iob1, FAR struct iob_s *iob2, bool throttled)
 		 * from this address.
 		 */
 
-		src    = &iob1->io_data[iob1->io_offset + offset1];
+		src = &iob1->io_data[iob1->io_offset + offset1];
 		avail1 = iob1->io_len - offset1;
 
 		/* Get the destination I/O buffer pointer and the number of bytes to
 		 * copy to that address.
 		 */
 
-		dest   = &iob2->io_data[offset2];
+		dest = &iob2->io_data[offset2];
 		avail2 = CONFIG_IOB_BUFSIZE - offset2;
 
 		/* Copy the smaller of the two and update the srce and destination
@@ -129,13 +129,11 @@ int iob_clone(FAR struct iob_s *iob1, FAR struct iob_s *iob2, bool throttled)
 			 * but just to be safe).
 			 */
 
-			do
-			{
+			do {
 				/* Yes.. move to the next source I/O buffer */
 
 				iob1 = iob1->io_flink;
-			}
-			while (iob1 && iob1->io_len <= 0);
+			} while (iob1 && iob1->io_len <= 0);
 
 			/* Reset the offset to the beginning of the I/O buffer */
 
@@ -146,7 +144,7 @@ int iob_clone(FAR struct iob_s *iob1, FAR struct iob_s *iob2, bool throttled)
 		 * transferred?
 		 */
 
-		 if (offset2 >= CONFIG_IOB_BUFSIZE && iob1 != NULL) {
+		if (offset2 >= CONFIG_IOB_BUFSIZE && iob1 != NULL) {
 			FAR struct iob_s *next;
 
 			/* Allocate new destination I/O buffer and hook it into the

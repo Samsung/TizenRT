@@ -53,7 +53,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -68,8 +68,7 @@
  *
  ****************************************************************************/
 
-void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
-					unsigned int offset)
+void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len, unsigned int offset)
 {
 	FAR struct iob_s *head;
 	uint8_t data[32];
@@ -84,16 +83,14 @@ void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
 	/* Check if the offset is beyond the data in the I/O buffer chain */
 
 	if (offset > head->io_pktlen) {
-		ioberr("ERROR: offset is past the end of data: %u > %u\n",
-				 offset, head->io_pktlen);
+		ioberr("ERROR: offset is past the end of data: %u > %u\n", offset, head->io_pktlen);
 		return;
 	}
 
 	/* Dump I/O buffer headers */
 
 	for (; iob; iob = iob->io_flink) {
-		syslog(LOG_DEBUG, "  iob=%p len=%d offset=%d\n",
-				 iob, iob->io_len, iob->io_offset);
+		syslog(LOG_DEBUG, "  iob=%p len=%d offset=%d\n", iob, iob->io_len, iob->io_offset);
 	}
 
 	/* Get the amount of data to be displayed, limited by the amount that we
@@ -118,25 +115,29 @@ void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
 			syslog(LOG_DEBUG, "  %04x: ", offset);
 
 			for (cndx = 0; cndx < 32; cndx++) {
-				if (cndx == 16)
+				if (cndx == 16) {
 					syslog(LOG_DEBUG, " ");
+				}
 
 				if ((lndx + cndx) < len) {
 					syslog(LOG_DEBUG, "%02x", data[cndx]);
-				} else
+				} else {
 					syslog(LOG_DEBUG, "  ");
+				}
 			}
 
 			syslog(LOG_DEBUG, " ");
 			for (cndx = 0; cndx < 32; cndx++) {
-				if (cndx == 16)
+				if (cndx == 16) {
 					syslog(LOG_DEBUG, " ");
+				}
 
 				if ((lndx + cndx) < len) {
 					if (data[cndx] >= 0x20 && data[cndx] < 0x7f) {
 						syslog(LOG_DEBUG, "%c", data[cndx]);
-					} else
+					} else {
 						syslog(LOG_DEBUG, ".");
+					}
 				}
 			}
 
@@ -145,4 +146,4 @@ void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
 	}
 }
 
-#endif /* CONFIG_DEBUG_FEATURES */
+#endif							/* CONFIG_DEBUG_FEATURES */

@@ -52,7 +52,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -68,8 +68,7 @@
  *
  ****************************************************************************/
 
-int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob,
-					unsigned int len, unsigned int offset)
+int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob, unsigned int len, unsigned int offset)
 {
 	FAR const uint8_t *src;
 	unsigned int ncopy;
@@ -80,7 +79,7 @@ int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob,
 
 	while (offset >= iob->io_len) {
 		offset -= iob->io_len;
-		iob     = iob->io_flink;
+		iob = iob->io_flink;
 		if (iob == NULL) {
 			/* We have no requested data in iob chain */
 
@@ -96,7 +95,7 @@ int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob,
 		 * available from that address.
 		 */
 
-		src   = &iob->io_data[iob->io_offset + offset];
+		src = &iob->io_data[iob->io_offset + offset];
 		avail = iob->io_len - offset;
 
 		/* Copy the from the I/O buffer in to the user buffer */
