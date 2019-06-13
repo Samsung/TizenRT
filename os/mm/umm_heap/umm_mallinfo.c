@@ -58,8 +58,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tinyara/mm/mm.h>
-
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -95,7 +94,7 @@ struct mallinfo mallinfo(void)
 	memset(&info, 0, sizeof(struct mallinfo));
 #endif
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		mm_mallinfo(&g_mmheap[heap_idx], &info);
+		mm_mallinfo(&USR_HEAP[heap_idx], &info);
 	}
 	return info;
 }
@@ -106,10 +105,9 @@ int mallinfo(struct mallinfo *info)
 {
 	int heap_idx;
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		mm_mallinfo(&g_mmheap[heap_idx], info);
+		mm_mallinfo(&USR_HEAP[heap_idx], info);
 	}
 	return OK;
 }
 
 #endif							/* CONFIG_CAN_PASS_STRUCTS */
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
