@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_netdev.c
+ * net/bluetooth/bt_netdev.c
  * Network stack interface
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -88,5 +88,6 @@
 
 int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 {
+  /* TODO: need to implement */
   return 0;
 }

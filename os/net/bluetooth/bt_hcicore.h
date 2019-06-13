@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_hdicore.h
+ * net/bluetooth/bt_hcicore.h
  * HCI core Bluetooth handling.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_HDICORE_H
-#define __WIRELESS_BLUETOOTH_BT_HDICORE_H 1
+#ifndef __NET_BLUETOOTH_BT_HCICORE_H
+#define __NET_BLUETOOTH_BT_HCICORE_H 1
 
 /****************************************************************************
  * Included Files
@@ -407,4 +407,4 @@ int bt_le_scan_update(void);
 
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
-#endif /* __WIRELESS_BLUETOOTH_BT_HDICORE_H */
+#endif /* __NET_BLUETOOTH_BT_HCICORE_H */

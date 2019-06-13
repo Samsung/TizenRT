@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_buf.h
+ * net/bluetooth/bt_buf.h
  * Bluetooth buffer management.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_BUF_H
-#define __WIRELESS_BLUETOOTH_BT_BUF_H 1
+#ifndef __NET_BLUETOOTH_BT_BUF_H
+#define __NET_BLUETOOTH_BT_BUF_H 1
 
 /****************************************************************************
  * Included Files
@@ -71,4 +71,4 @@
 
 void bt_buf_initialize(void);
 
-#endif /* __WIRELESS_BLUETOOTH_BT_BUF_H */
+#endif /* __NET_BLUETOOTH_BT_BUF_H */

@@ -1,5 +1,5 @@
 ############################################################################
-# mm/iob/Make.defs
+# net/bluetooth/iob/Make.defs
 #
 #   Copyright (C) 2014, 2017 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,7 +33,7 @@
 #
 ############################################################################
 
-#ifeq ($(CONFIG_MM_IOB),y)
+ifeq ($(CONFIG_MM_IOB),y)
 
 # Include IOB source files
 
@@ -51,6 +51,5 @@ endif
 
 DEPPATH += --dep-path bluetooth/iob
 VPATH += :bluetooth/iob
-#CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)mm$(DELIM)iob}
 
-#endif # CONFIG_MM_IOB
+endif # CONFIG_MM_IOB

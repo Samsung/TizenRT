@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_buf_s.c
+ * net/bluetooth/bt_buf.c
  * Bluetooth buffer management
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -58,7 +58,6 @@
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_buf.h>
 
-#include "bt_buf.h"
 #include "bt_hcicore.h"
 
 /****************************************************************************
