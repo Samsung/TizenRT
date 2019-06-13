@@ -55,7 +55,7 @@ static void binary_manager_board_reset(void)
 	(void)irqsave();
 	sched_lock();
 	for (;;) {
-		lldbg("This is a situation that can't alive again, And S/W does't support reset. push the reset button!");
+		lldbg("\nASSERT!! Push the reset button!\n");
 		up_mdelay(10000);
 	}
 #endif
