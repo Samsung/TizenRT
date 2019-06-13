@@ -256,7 +256,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	mm_givesemaphore(heap);
 
 	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
-		printf("Nodelist[%d] (less than %d) : num %d, size %d [Bytes]\n", ndx, 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
+		printf("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, ((ndx > 0 ? (1 << (ndx + MM_MIN_SHIFT)) : 0) + 1), 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
 	}
 #endif
 
