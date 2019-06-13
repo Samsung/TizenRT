@@ -71,6 +71,13 @@ bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_t
 		} else {
 			g_switch_value = 1;
 		}
+
+#ifdef CONFIG_DEMO_LED
+		// control LEDs
+		led_set_switch(g_switch_value);
+		led_set_dimming(g_dimming_setting);
+		led_set_color_temprature(g_color_temp);
+#endif
 		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_power_status[g_switch_value]);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
@@ -82,12 +89,19 @@ bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_t
 // Change value of switch using switch(702) at artik board
 void change_switch_value(void)
 {
-	printf("[%s] current power value: %s\n", TAG, g_power); 
+	printf("[%s] current power value: %s\n", TAG, g_power);
 	if (g_switch_value == 0) {
 		g_switch_value = 1;
 	} else {
 		g_switch_value = 0;
 	}
+
+#ifdef CONFIG_DEMO_LED
+	// control LEDs
+	led_set_switch(g_switch_value);
+	led_set_dimming(g_dimming_setting);
+	led_set_color_temprature(g_color_temp);
+#endif
 	g_power = g_power_status[g_switch_value];
 	printf("[%s] new power value : %s\n", TAG, g_power);
 }
@@ -114,6 +128,9 @@ bool handle_set_request_on_dimming(st_things_set_request_message_s *req_msg, st_
 
 	if (req_msg->rep->get_int_value(req_msg->rep, PROPERTY_VALUE_DIMMING, &g_dimming_setting)) {
 		printf("dimming : %lld\n", g_dimming_setting);
+#ifdef CONFIG_DEMO_LED
+		led_set_dimming(g_dimming_setting);
+#endif
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_DIMMING, g_dimming_setting);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
@@ -141,6 +158,10 @@ bool handle_set_request_on_ct(st_things_set_request_message_s *req_msg, st_thing
 	printf("[%s]IN-handle_set_request_on_ct() called..\n", TAG);
 
 	if (req_msg->rep->get_int_value(req_msg->rep, PROPERTY_VALUE_COLOR_TEMPERATURE, &g_color_temp)) {
+		printf("colortemp : %lld\n", g_color_temp);
+#ifdef CONFIG_DEMO_LED
+		led_set_color_temprature(g_color_temp);
+#endif
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_COLOR_TEMPERATURE, g_color_temp);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
@@ -158,7 +179,7 @@ void set_rep_push_mesg(void)
 	}
 	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_SOURCE_ATTRIBUTE, "/alarms/vs/0");
 	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_TYPE_ATTRIBUTE, "4");
-	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_CODE_ATTRIBUTE, "Light 50 % progress");
+	st_things_rep->set_str_value(st_things_rep, PUSH_MESG_CODE_ATTRIBUTE, (g_switch_value ? "Light On" : "Light Off"));
 	int res = st_things_push_notification_to_cloud(g_push_res_uri, st_things_rep);
 	printf("[%s]Send push notifiation to cloud!! %d\n", TAG, res);
 }

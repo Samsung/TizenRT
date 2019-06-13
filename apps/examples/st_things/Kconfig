@@ -6,7 +6,6 @@
 config EXAMPLES_ST_THINGS
 	bool "ST Things example"
 	default n
-	select IOTBUS
 	---help---
 		Enable the ST(SmartThings) Things example
 
@@ -19,33 +18,45 @@ choice
 
 config EXAMPLES_ST_THINGS_LIGHT
 	bool "LIGHT"
-	select IOTBUS_GPIO
 	---help---
 		This is a Light Sample.
 
 config EXAMPLES_ST_THINGS_BLINK
 	bool "BLINK"
+	select IOTBUS
 	select IOTBUS_GPIO
 	---help---
 		This is a Blink Sample.
 
 config EXAMPLES_ST_THINGS_MSG_HANDLING
 	bool "Message Handling Example"
+	select IOTBUS
 	select IOTBUS_GPIO
 	---help---
 		This is a Message handling Sample.
 
 endchoice
 
+config DEMO_LED
+	bool "Demo LEDs"
+	default n
+	depends on EXAMPLES_ST_THINGS_LIGHT
+	---help---
+		Enable LEDs and buttons for st_things demo.
+
 config RESET_BUTTON
 	bool "Reset_Button"
 	default y
+	select IOTBUS
+	select IOTBUS_GPIO
 	depends on EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		Decide whether to use the button to reset the connection on your board.
 config LIGHT_SWITCH_BUTTON
 	bool "Light_Switch_Button"
 	default y
+	select IOTBUS
+	select IOTBUS_GPIO
 	depends on EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		Decide whether to use the button to trigger the light switch on your board.

@@ -19,6 +19,10 @@
 ifeq ($(CONFIG_EXAMPLES_ST_THINGS_LIGHT),y)
 CSRCS += sample_light_things.c sample_light_user.c
 
+ifeq ($(CONFIG_DEMO_LED),y)
+CSRCS += sample_light_LED.c
+endif
+
 ROOTDEPPATH += --dep-path light
 VPATH += : light
 endif
