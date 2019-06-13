@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config COMPRESSED_BINARY
+	bool "Compressed binary support"
+	default n
+	depends on BINFMT_ENABLE
+	---help---
+		If a compressed binary is to be loaded/executed
+		this config needs to be enabled. It adds support for
+		reading compressed binary.
+
+if COMPRESSED_BINARY
+
+config COMPRESSION_TYPE
+	int "Compression Algorithm Type"
+	default 1
+	range 1 1
+	---help---
+		Enter compression type.
+		1 = LZMA
+
+config COMPRESSION_BLOCK_SIZE
+	int "Block size for binary compression"
+	default 2048
+	range 512 8192
+	---help---
+		Enter block size to use for compression of binary.
+
+endif # COMPRESSED_BINARY
