@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file version.h
  *
@@ -56,17 +39,17 @@
  * Major, Minor, Patchlevel
  */
 #define MBEDTLS_VERSION_MAJOR  2
-#define MBEDTLS_VERSION_MINOR  7
-#define MBEDTLS_VERSION_PATCH  8
+#define MBEDTLS_VERSION_MINOR  14
+#define MBEDTLS_VERSION_PATCH  0
 
 /**
  * The single version number has the following structure:
  *    MMNNPP00
  *    Major version | Minor version | Patch version
  */
-#define MBEDTLS_VERSION_NUMBER         0x02070800
-#define MBEDTLS_VERSION_STRING         "2.7.8"
-#define MBEDTLS_VERSION_STRING_FULL    "mbed TLS 2.7.8"
+#define MBEDTLS_VERSION_NUMBER         0x020E0000
+#define MBEDTLS_VERSION_STRING         "2.14.0"
+#define MBEDTLS_VERSION_STRING_FULL    "mbed TLS 2.14.0"
 
 #if defined(MBEDTLS_VERSION_C)
 

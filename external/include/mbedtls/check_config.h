@@ -1,27 +1,10 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file check_config.h
  *
  * \brief Consistency checks for configuration options
  */
 /*
- *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
+ *  Copyright (C) 2006-2018, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -104,6 +87,11 @@
 #error "MBEDTLS_CMAC_C defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_NIST_KW_C) && \
+    ( !defined(MBEDTLS_AES_C) || !defined(MBEDTLS_CIPHER_C) )
+#error "MBEDTLS_NIST_KW_C defined, but not all prerequisites"
+#endif
+
 #if defined(MBEDTLS_ECDH_C) && !defined(MBEDTLS_ECP_C)
 #error "MBEDTLS_ECDH_C defined, but not all prerequisites"
 #endif
@@ -118,6 +106,16 @@
 #if defined(MBEDTLS_ECJPAKE_C) &&           \
     ( !defined(MBEDTLS_ECP_C) || !defined(MBEDTLS_MD_C) )
 #error "MBEDTLS_ECJPAKE_C defined, but not all prerequisites"
+#endif
+
+#if defined(MBEDTLS_ECP_RESTARTABLE)           && \
+    ( defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT) || \
+      defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)     || \
+      defined(MBEDTLS_ECDSA_SIGN_ALT)          || \
+      defined(MBEDTLS_ECDSA_VERIFY_ALT)        || \
+      defined(MBEDTLS_ECDSA_GENKEY_ALT)        || \
+      defined(MBEDTLS_ECP_ALT) )
+#error "MBEDTLS_ECP_RESTARTABLE defined, but it cannot coexist with an alternative ECP implementation"
 #endif
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC) && !defined(MBEDTLS_HMAC_DRBG_C)
@@ -208,6 +206,10 @@
 #error "MBEDTLS_HAVEGE_C defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_HKDF_C) && !defined(MBEDTLS_MD_C)
+#error "MBEDTLS_HKDF_C defined, but not all prerequisites"
+#endif
+
 #if defined(MBEDTLS_HMAC_DRBG_C) && !defined(MBEDTLS_MD_C)
 #error "MBEDTLS_HMAC_DRBG_C defined, but not all prerequisites"
 #endif
@@ -220,11 +222,6 @@
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED) &&                 \
     ( !defined(MBEDTLS_ECDH_C) || !defined(MBEDTLS_X509_CRT_PARSE_C) )
 #error "MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED defined, but not all prerequisites"
-#endif
-
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED) && !defined(MBEDTLS_ECDH_C)
-
-#error "MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED defined, but not all prerequisites"
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) && !defined(MBEDTLS_DHM_C)

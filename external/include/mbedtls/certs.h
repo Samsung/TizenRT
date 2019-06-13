@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file certs.h
  *
@@ -81,10 +64,6 @@ extern const char   mbedtls_test_ca_crt_ec[];
 extern const size_t mbedtls_test_ca_crt_ec_len;
 extern const char   mbedtls_test_ca_key_ec[];
 extern const size_t mbedtls_test_ca_key_ec_len;
-#if defined (MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT) && defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
-extern const char   mbedtls_test_srv_directoryname_ec_crt[];
-extern const size_t mbedtls_test_srv_directoryname_ec_crt_len;
-#endif
 extern const char   mbedtls_test_ca_pwd_ec[];
 extern const size_t mbedtls_test_ca_pwd_ec_len;
 extern const char   mbedtls_test_srv_crt_ec[];

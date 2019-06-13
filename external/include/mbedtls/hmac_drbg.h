@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file hmac_drbg.h
  *
@@ -91,7 +74,7 @@ extern "C" {
 /**
  * HMAC_DRBG context.
  */
-typedef struct
+typedef struct mbedtls_hmac_drbg_context
 {
     /* Working state: the key K is not stored explicitely,
      * but is implied by the HMAC context */
@@ -222,23 +205,6 @@ int mbedtls_hmac_drbg_update_ret( mbedtls_hmac_drbg_context *ctx,
                        const unsigned char *additional, size_t add_len );
 
 /**
- * \brief               HMAC_DRBG update state
- *
- * \warning             This function cannot report errors. You should use
- *                      mbedtls_hmac_drbg_update_ret() instead.
- *
- * \param ctx           HMAC_DRBG context
- * \param additional    Additional data to update state with, or NULL
- * \param add_len       Length of additional data, or 0
- *
- * \note                Additional data is optional, pass NULL and 0 as second
- *                      third argument if no additional data is being used.
- */
-void mbedtls_hmac_drbg_update( mbedtls_hmac_drbg_context *ctx,
-                               const unsigned char *additional,
-                               size_t add_len );
-
-/**
  * \brief               HMAC_DRBG reseeding (extracts data from entropy source)
  *
  * \param ctx           HMAC_DRBG context
@@ -293,6 +259,31 @@ int mbedtls_hmac_drbg_random( void *p_rng, unsigned char *output, size_t out_len
  * \param ctx           HMAC_DRBG context to free.
  */
 void mbedtls_hmac_drbg_free( mbedtls_hmac_drbg_context *ctx );
+
+#if ! defined(MBEDTLS_DEPRECATED_REMOVED)
+#if defined(MBEDTLS_DEPRECATED_WARNING)
+#define MBEDTLS_DEPRECATED    __attribute__((deprecated))
+#else
+#define MBEDTLS_DEPRECATED
+#endif
+/**
+ * \brief               HMAC_DRBG update state
+ *
+ * \deprecated          Superseded by mbedtls_hmac_drbg_update_ret()
+ *                      in 2.16.0.
+ *
+ * \param ctx           HMAC_DRBG context
+ * \param additional    Additional data to update state with, or NULL
+ * \param add_len       Length of additional data, or 0
+ *
+ * \note                Additional data is optional, pass NULL and 0 as second
+ *                      third argument if no additional data is being used.
+ */
+MBEDTLS_DEPRECATED void mbedtls_hmac_drbg_update(
+    mbedtls_hmac_drbg_context *ctx,
+    const unsigned char *additional, size_t add_len );
+#undef MBEDTLS_DEPRECATED
+#endif /* !MBEDTLS_DEPRECATED_REMOVED */
 
 #if defined(MBEDTLS_FS_IO)
 /**

@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file md2.h
  *
@@ -54,15 +37,16 @@
 
 #include <stddef.h>
 
+/* MBEDTLS_ERR_MD2_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_MD2_HW_ACCEL_FAILED                   -0x002B  /**< MD2 hardware accelerator failed */
-
-#if !defined(MBEDTLS_MD2_ALT)
-// Regular implementation
-//
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(MBEDTLS_MD2_ALT)
+// Regular implementation
+//
 
 /**
  * \brief          MD2 context structure
@@ -72,7 +56,7 @@ extern "C" {
  *                 stronger message digests instead.
  *
  */
-typedef struct
+typedef struct mbedtls_md2_context
 {
     unsigned char cksum[16];    /*!< checksum of the data block */
     unsigned char state[48];    /*!< intermediate digest state  */
@@ -80,6 +64,10 @@ typedef struct
     size_t left;                /*!< amount of data in buffer   */
 }
 mbedtls_md2_context;
+
+#else  /* MBEDTLS_MD2_ALT */
+#include "md2_alt.h"
+#endif /* MBEDTLS_MD2_ALT */
 
 /**
  * \brief          Initialize MD2 context
@@ -251,18 +239,6 @@ MBEDTLS_DEPRECATED void mbedtls_md2_process( mbedtls_md2_context *ctx );
 
 #undef MBEDTLS_DEPRECATED
 #endif /* !MBEDTLS_DEPRECATED_REMOVED */
-
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_MD2_ALT */
-#include "md2_alt.h"
-#endif /* MBEDTLS_MD2_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief          Output = MD2( input buffer )

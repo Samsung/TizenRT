@@ -1,0 +1,92 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig ENABLE_IOTIVITY
+	bool "enable / disable iotivity stack"
+	default n
+	select NET_LWIP_NETDB
+	select TIME_EXTENDED
+	select ARCH_STDARG_H
+	---help---
+		select to enable the iotivity stack in tinyara
+
+if ENABLE_IOTIVITY
+
+comment "IOTIVITY Config Parameters"
+
+config IOTIVITY_RELEASE_VERSION
+	string "iotivity stack version"
+	default "1.2-rel"
+	---help---
+		define this to iotivity stack release veriosn in use
+
+config IOTIVITY_ROUTING
+	string "Enable routing, allowed values : 'EP' / 'GW' "
+	default "EP"
+	---help---
+		define this to enable routing, allowed values : 'EP' / 'GW'
+
+config IOTIVITY_PTHREAD_STACKSIZE
+	int "Default pthread stack size for iotivity threads"
+	default 8192
+	---help---
+		Default pthread stack size for iotivity threads
+
+config IOTIVITY_QUEING_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the queing thread"
+	default 3072
+	---help---
+		Default pthread stack size for the queing thread
+
+config IOTIVITY_RETRANSMIT_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the retransmission pthread"
+	default 1024
+	---help---
+		Default pthread stack size for the retransmission pthread
+
+config IOTIVITY_TCPRECEIVE_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the TCP-receive thread"
+	default 8192
+	---help---
+		Default pthread stack size for the TCP-receive thread
+
+config IOTIVITY_RECEIVEHANDLER_PTHREAD_STACKSIZE
+	int "Default pthread stack size for the receive-handler thread"
+	default 8192
+	---help---
+		Default pthread stack size for the receive-handler thread
+
+config ENABLE_IOTIVITY_SECURED
+	bool "enable iotivity security"
+	default n
+	select NET_SECURITY_TLS
+	---help---
+		select to enable the security for iotivity stack in tinyara
+
+config ENABLE_IOTIVITY_CLOUD
+	bool "enable iotivity cloud"
+	default n
+	---help---
+		select to enable the cloud for iotivity stack in tinyara
+
+config IOTIVITY_RELEASE
+	bool "Set Iotivity to Release mode"
+	default y
+	---help---
+		select to build IoTivity in Release mode. Code will be optimized.
+
+config IOTIVITY_DEBUG
+        bool "enable iotivity stack logs"
+        default n
+        ---help---
+                select to enable all iotivity stack logs (DEBUG / INFO etc.)
+
+config IOTIVITY_NS_PROVIDER
+        bool "enable iotivity notification service(provider only)"
+        default n
+        ---help---
+                select to enable iotivity Notification Provider Service
+
+endif # ENABLE_IOTIVITY

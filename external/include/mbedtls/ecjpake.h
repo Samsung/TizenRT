@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file ecjpake.h
  *
@@ -61,8 +44,6 @@
 #include "ecp.h"
 #include "md.h"
 
-#if !defined(MBEDTLS_ECJPAKE_ALT)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,6 +56,7 @@ typedef enum {
     MBEDTLS_ECJPAKE_SERVER,             /**< Server                         */
 } mbedtls_ecjpake_role;
 
+#if !defined(MBEDTLS_ECJPAKE_ALT)
 /**
  * EC J-PAKE context structure.
  *
@@ -86,7 +68,7 @@ typedef enum {
  * convetion from the Thread v1.0 spec. Correspondance is indicated in the
  * description as a pair C: client name, S: server name
  */
-typedef struct
+typedef struct mbedtls_ecjpake_context
 {
     const mbedtls_md_info_t *md_info;   /**< Hash to use                    */
     mbedtls_ecp_group grp;              /**< Elliptic curve                 */
@@ -104,6 +86,10 @@ typedef struct
 
     mbedtls_mpi s;                      /**< Pre-shared secret (passphrase) */
 } mbedtls_ecjpake_context;
+
+#else  /* MBEDTLS_ECJPAKE_ALT */
+#include "ecjpake_alt.h"
+#endif /* MBEDTLS_ECJPAKE_ALT */
 
 /**
  * \brief           Initialize a context
@@ -242,19 +228,9 @@ int mbedtls_ecjpake_derive_secret( mbedtls_ecjpake_context *ctx,
  */
 void mbedtls_ecjpake_free( mbedtls_ecjpake_context *ctx );
 
-#ifdef __cplusplus
-}
-#endif
 
-#else  /* MBEDTLS_ECJPAKE_ALT */
-#include "ecjpake_alt.h"
-#endif /* MBEDTLS_ECJPAKE_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief          Checkup routine
@@ -263,10 +239,11 @@ extern "C" {
  */
 int mbedtls_ecjpake_self_test( int verbose );
 
+#endif /* MBEDTLS_SELF_TEST */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MBEDTLS_SELF_TEST */
 
 #endif /* ecjpake.h */

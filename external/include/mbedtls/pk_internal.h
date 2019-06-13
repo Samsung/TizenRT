@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file pk_internal.h
  *
@@ -76,6 +59,21 @@ struct mbedtls_pk_info_t
                       int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng );
 
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /** Verify signature (restartable) */
+    int (*verify_rs_func)( void *ctx, mbedtls_md_type_t md_alg,
+                           const unsigned char *hash, size_t hash_len,
+                           const unsigned char *sig, size_t sig_len,
+                           void *rs_ctx );
+
+    /** Make signature (restartable) */
+    int (*sign_rs_func)( void *ctx, mbedtls_md_type_t md_alg,
+                         const unsigned char *hash, size_t hash_len,
+                         unsigned char *sig, size_t *sig_len,
+                         int (*f_rng)(void *, unsigned char *, size_t),
+                         void *p_rng, void *rs_ctx );
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
     /** Decrypt message */
     int (*decrypt_func)( void *ctx, const unsigned char *input, size_t ilen,
                          unsigned char *output, size_t *olen, size_t osize,
@@ -96,6 +94,14 @@ struct mbedtls_pk_info_t
 
     /** Free the given context */
     void (*ctx_free_func)( void *ctx );
+
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /** Allocate the restart context */
+    void * (*rs_alloc_func)( void );
+
+    /** Free the restart context */
+    void (*rs_free_func)( void *rs_ctx );
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
 
     /** Interface with the debug module */
     void (*debug_func)( const void *ctx, mbedtls_pk_debug_item *items );

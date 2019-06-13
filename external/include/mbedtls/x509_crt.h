@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file x509_crt.h
  *
@@ -64,31 +47,6 @@ extern "C" {
  * \{
  */
 
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
-typedef enum
-{
-    /* Don't use the value zero in this enum, because we use zero to denote an unset struct. */
-    MBEDTLS_X509_GENERALNAME_DNSNAME = 1,
-    MBEDTLS_X509_GENERALNAME_DIRECTORYNAME
-} mbedtls_x509_general_name_choice;
-
-typedef struct mbedtls_x509_general_name
-{
-    mbedtls_x509_general_name_choice name_type;
-    union
-    {
-        mbedtls_x509_buf dns_name;
-        mbedtls_x509_name *directory_name;
-    };
-} mbedtls_x509_general_name;
-
-typedef struct mbedtls_x509_general_names
-{
-    mbedtls_x509_general_name general_name;
-    struct mbedtls_x509_general_names *next;
-} mbedtls_x509_general_names;
-#endif
-
 /**
  * Container for an X.509 certificate. The certificate may be chained.
  */
@@ -115,11 +73,7 @@ typedef struct mbedtls_x509_crt
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
-    mbedtls_x509_general_names subject_alt_names; /**< Optional list of Subject Alternative Names (Only dNSName and directoryName supported). */
-#else
     mbedtls_x509_sequence subject_alt_names;    /**< Optional list of Subject Alternative Names (Only dNSName supported). */
-#endif
 
     int ext_types;              /**< Bit string containing detected and parsed extensions */
     int ca_istrue;              /**< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */
@@ -151,7 +105,7 @@ mbedtls_x509_crt;
  *
  * All lists are bitfields, built by ORing flags from MBEDTLS_X509_ID_FLAG().
  */
-typedef struct
+typedef struct mbedtls_x509_crt_profile
 {
     uint32_t allowed_mds;       /**< MDs for signatures         */
     uint32_t allowed_pks;       /**< PK algs for signatures     */
@@ -188,6 +142,63 @@ typedef struct mbedtls_x509write_cert
     mbedtls_asn1_named_data *extensions;
 }
 mbedtls_x509write_cert;
+
+/**
+ * Item in a verification chain: cert and flags for it
+ */
+typedef struct {
+    mbedtls_x509_crt *crt;
+    uint32_t flags;
+} mbedtls_x509_crt_verify_chain_item;
+
+/**
+ * Max size of verification chain: end-entity + intermediates + trusted root
+ */
+#define MBEDTLS_X509_MAX_VERIFY_CHAIN_SIZE  ( MBEDTLS_X509_MAX_INTERMEDIATE_CA + 2 )
+
+/**
+ * Verification chain as built by \c mbedtls_crt_verify_chain()
+ */
+typedef struct
+{
+    mbedtls_x509_crt_verify_chain_item items[MBEDTLS_X509_MAX_VERIFY_CHAIN_SIZE];
+    unsigned len;
+} mbedtls_x509_crt_verify_chain;
+
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+
+/**
+ * \brief       Context for resuming X.509 verify operations
+ */
+typedef struct
+{
+    /* for check_signature() */
+    mbedtls_pk_restart_ctx pk;
+
+    /* for find_parent_in() */
+    mbedtls_x509_crt *parent; /* non-null iff parent_in in progress */
+    mbedtls_x509_crt *fallback_parent;
+    int fallback_signature_is_good;
+
+    /* for find_parent() */
+    int parent_is_trusted; /* -1 if find_parent is not in progress */
+
+    /* for verify_chain() */
+    enum {
+        x509_crt_rs_none,
+        x509_crt_rs_find_parent,
+    } in_progress;  /* none if no operation is in progress */
+    int self_cnt;
+    mbedtls_x509_crt_verify_chain ver_chain;
+
+} mbedtls_x509_crt_restart_ctx;
+
+#else /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+/* Now we can declare functions that take a pointer to that */
+typedef void mbedtls_x509_crt_restart_ctx;
+
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 /**
@@ -399,6 +410,37 @@ int mbedtls_x509_crt_verify_with_profile( mbedtls_x509_crt *crt,
                      int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
                      void *p_vrfy );
 
+/**
+ * \brief          Restartable version of \c mbedtls_crt_verify_with_profile()
+ *
+ * \note           Performs the same job as \c mbedtls_crt_verify_with_profile()
+ *                 but can return early and restart according to the limit
+ *                 set with \c mbedtls_ecp_set_max_ops() to reduce blocking.
+ *
+ * \param crt      a certificate (chain) to be verified
+ * \param trust_ca the list of trusted CAs
+ * \param ca_crl   the list of CRLs for trusted CAs
+ * \param profile  security profile for verification
+ * \param cn       expected Common Name (can be set to
+ *                 NULL if the CN must not be verified)
+ * \param flags    result of the verification
+ * \param f_vrfy   verification function
+ * \param p_vrfy   verification parameter
+ * \param rs_ctx   restart context (NULL to disable restart)
+ *
+ * \return         See \c mbedtls_crt_verify_with_profile(), or
+ * \return         #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
+ *                 operations was reached: see \c mbedtls_ecp_set_max_ops().
+ */
+int mbedtls_x509_crt_verify_restartable( mbedtls_x509_crt *crt,
+                     mbedtls_x509_crt *trust_ca,
+                     mbedtls_x509_crl *ca_crl,
+                     const mbedtls_x509_crt_profile *profile,
+                     const char *cn, uint32_t *flags,
+                     int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
+                     void *p_vrfy,
+                     mbedtls_x509_crt_restart_ctx *rs_ctx );
+
 #if defined(MBEDTLS_X509_CHECK_KEY_USAGE)
 /**
  * \brief          Check usage of certificate against keyUsage extension.
@@ -470,6 +512,18 @@ void mbedtls_x509_crt_init( mbedtls_x509_crt *crt );
  * \param crt      Certificate chain to free
  */
 void mbedtls_x509_crt_free( mbedtls_x509_crt *crt );
+
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+/**
+ * \brief           Initialize a restart context
+ */
+void mbedtls_x509_crt_restart_init( mbedtls_x509_crt_restart_ctx *ctx );
+
+/**
+ * \brief           Free the components of a restart context
+ */
+void mbedtls_x509_crt_restart_free( mbedtls_x509_crt_restart_ctx *ctx );
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 /* \} name */
@@ -654,20 +708,6 @@ int mbedtls_x509write_crt_set_key_usage( mbedtls_x509write_cert *ctx,
  */
 int mbedtls_x509write_crt_set_ns_cert_type( mbedtls_x509write_cert *ctx,
                                     unsigned char ns_cert_type );
-
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
-/**
- * \brief           Set the subject alternative name extension
- *
- * \param ctx       CRT context to use
- * \param names     subject alternative names. For each dNSName element, the tag field of the dns_name
- *                  member does not need to be set and will be ignored.
- *
- * \return          0 if successful, or a specific error code
- */
-int mbedtls_x509write_crt_set_subject_alt_names( mbedtls_x509write_cert *ctx,
-                                                 const mbedtls_x509_general_names *names );
-#endif /* MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT */
 
 /**
  * \brief           Free the contents of a CRT write context

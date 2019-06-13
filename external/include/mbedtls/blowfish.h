@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file blowfish.h
  *
@@ -58,26 +41,34 @@
 #define MBEDTLS_BLOWFISH_BLOCKSIZE   8          /* Blowfish uses 64 bit blocks */
 
 #define MBEDTLS_ERR_BLOWFISH_INVALID_KEY_LENGTH                -0x0016  /**< Invalid key length. */
-#define MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED                   -0x0017  /**< Blowfish hardware accelerator failed. */
-#define MBEDTLS_ERR_BLOWFISH_INVALID_INPUT_LENGTH              -0x0018  /**< Invalid data input length. */
 
-#if !defined(MBEDTLS_BLOWFISH_ALT)
-// Regular implementation
-//
+/* MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED is deprecated and should not be used.
+ */
+#define MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED                   -0x0017  /**< Blowfish hardware accelerator failed. */
+
+#define MBEDTLS_ERR_BLOWFISH_INVALID_INPUT_LENGTH              -0x0018  /**< Invalid data input length. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if !defined(MBEDTLS_BLOWFISH_ALT)
+// Regular implementation
+//
+
 /**
  * \brief          Blowfish context structure
  */
-typedef struct
+typedef struct mbedtls_blowfish_context
 {
     uint32_t P[MBEDTLS_BLOWFISH_ROUNDS + 2];    /*!<  Blowfish round keys    */
     uint32_t S[4][256];                 /*!<  key dependent S-boxes  */
 }
 mbedtls_blowfish_context;
+
+#else  /* MBEDTLS_BLOWFISH_ALT */
+#include "blowfish_alt.h"
+#endif /* MBEDTLS_BLOWFISH_ALT */
 
 /**
  * \brief          Initialize Blowfish context
@@ -187,7 +178,46 @@ int mbedtls_blowfish_crypt_cfb64( mbedtls_blowfish_context *ctx,
 /**
  * \brief               Blowfish-CTR buffer encryption/decryption
  *
- * Warning: You have to keep the maximum use of your counter in mind!
+ * \warning    You must never reuse a nonce value with the same key. Doing so
+ *             would void the encryption for the two messages encrypted with
+ *             the same nonce and key.
+ *
+ *             There are two common strategies for managing nonces with CTR:
+ *
+ *             1. You can handle everything as a single message processed over
+ *             successive calls to this function. In that case, you want to
+ *             set \p nonce_counter and \p nc_off to 0 for the first call, and
+ *             then preserve the values of \p nonce_counter, \p nc_off and \p
+ *             stream_block across calls to this function as they will be
+ *             updated by this function.
+ *
+ *             With this strategy, you must not encrypt more than 2**64
+ *             blocks of data with the same key.
+ *
+ *             2. You can encrypt separate messages by dividing the \p
+ *             nonce_counter buffer in two areas: the first one used for a
+ *             per-message nonce, handled by yourself, and the second one
+ *             updated by this function internally.
+ *
+ *             For example, you might reserve the first 4 bytes for the
+ *             per-message nonce, and the last 4 bytes for internal use. In that
+ *             case, before calling this function on a new message you need to
+ *             set the first 4 bytes of \p nonce_counter to your chosen nonce
+ *             value, the last 4 to 0, and \p nc_off to 0 (which will cause \p
+ *             stream_block to be ignored). That way, you can encrypt at most
+ *             2**32 messages of up to 2**32 blocks each with the same key.
+ *
+ *             The per-message nonce (or information sufficient to reconstruct
+ *             it) needs to be communicated with the ciphertext and must be unique.
+ *             The recommended way to ensure uniqueness is to use a message
+ *             counter.
+ *
+ *             Note that for both stategies, sizes are measured in blocks and
+ *             that a Blowfish block is 8 bytes.
+ *
+ * \warning    Upon return, \p stream_block contains sensitive data. Its
+ *             content must not be written to insecure storage and should be
+ *             securely discarded as soon as it's no longer needed.
  *
  * \param ctx           Blowfish context
  * \param length        The length of the data
@@ -214,9 +244,5 @@ int mbedtls_blowfish_crypt_ctr( mbedtls_blowfish_context *ctx,
 #ifdef __cplusplus
 }
 #endif
-
-#else  /* MBEDTLS_BLOWFISH_ALT */
-#include "blowfish_alt.h"
-#endif /* MBEDTLS_BLOWFISH_ALT */
 
 #endif /* blowfish.h */

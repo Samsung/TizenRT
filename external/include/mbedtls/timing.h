@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file timing.h
  *
@@ -47,15 +30,15 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#if !defined(MBEDTLS_TIMING_ALT)
-// Regular implementation
-//
-
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(MBEDTLS_TIMING_ALT)
+// Regular implementation
+//
 
 /**
  * \brief          timer structure
@@ -68,12 +51,16 @@ struct mbedtls_timing_hr_time
 /**
  * \brief          Context for mbedtls_timing_set/get_delay()
  */
-typedef struct
+typedef struct mbedtls_timing_delay_context
 {
     struct mbedtls_timing_hr_time   timer;
     uint32_t                        int_ms;
     uint32_t                        fin_ms;
 } mbedtls_timing_delay_context;
+
+#else  /* MBEDTLS_TIMING_ALT */
+#include "timing_alt.h"
+#endif /* MBEDTLS_TIMING_ALT */
 
 extern volatile int mbedtls_timing_alarmed;
 
@@ -149,18 +136,6 @@ void mbedtls_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms );
  *                  2 if the final delay is passed.
  */
 int mbedtls_timing_get_delay( void *data );
-
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_TIMING_ALT */
-#include "timing_alt.h"
-#endif /* MBEDTLS_TIMING_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #if defined(MBEDTLS_SELF_TEST)
 /**

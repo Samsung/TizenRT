@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file bn_mul.h
  *
@@ -582,9 +565,8 @@
 #endif /* TriCore */
 
 /*
- * gcc -O0 by default uses r7 for the frame pointer, so it complains about our
- * use of r7 below, unless -fomit-frame-pointer is passed. Unfortunately,
- * passing that option is not easy when building with yotta.
+ * Note, gcc -O0 by default uses r7 for the frame pointer, so it complains about
+ * our use of r7 below, unless -fomit-frame-pointer is passed.
  *
  * On the other hand, -fomit-frame-pointer is implied by any -Ox options with
  * x !=0, which we can detect using __OPTIMIZE__ (which is also defined by
@@ -652,6 +634,23 @@
          : "m" (s), "m" (d), "m" (c), "m" (b)   \
          : "r0", "r1", "r2", "r3", "r4", "r5",  \
            "r6", "r7", "r8", "r9", "cc"         \
+         );
+
+#elif defined (__ARM_FEATURE_DSP) && (__ARM_FEATURE_DSP == 1)
+
+#define MULADDC_INIT                            \
+    asm(
+
+#define MULADDC_CORE                            \
+            "ldr    r0, [%0], #4        \n\t"   \
+            "ldr    r1, [%1]            \n\t"   \
+            "umaal  r1, %2, %3, r0      \n\t"   \
+            "str    r1, [%1], #4        \n\t"
+
+#define MULADDC_STOP                            \
+         : "=r" (s),  "=r" (d), "=r" (c)        \
+         : "r" (b), "0" (s), "1" (d), "2" (c)   \
+         : "r0", "r1", "memory"                 \
          );
 
 #else
