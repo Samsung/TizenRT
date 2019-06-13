@@ -65,7 +65,7 @@
 #define BLUETOOTH_H4_HDRLEN     1  /* Size of H4 header */
 
 #define BLUETOOTH_MAX_HDRLEN \
-  (BLUETOOTH_L2CAP_HDRLEN + BLUETOOTH_ACL_HDRLEN + BLUETOOTH_H4_HDRLEN)
+	(BLUETOOTH_L2CAP_HDRLEN + BLUETOOTH_ACL_HDRLEN + BLUETOOTH_H4_HDRLEN)
 
 #define BLUETOOTH_SMP_MTU       65
 #define BLUETOOTH_MAX_MTU       70
@@ -73,8 +73,8 @@
 #define BLUETOOTH_MAX_FRAMELEN  (BLUETOOTH_MAX_MTU + BLUETOOTH_MAX_HDRLEN)
 
 #define BLUETOOTH_ADDRSIZE      6
-#define BLUETOOTH_ADDRCOPY(d,s) memcpy((d),(s),BLUETOOTH_ADDRSIZE)
-#define BLUETOOTH_ADDRCMP(a,b)  (memcmp((a),(b),BLUETOOTH_ADDRSIZE) == 0)
+#define BLUETOOTH_ADDRCOPY(d, s) memcpy((d), (s), BLUETOOTH_ADDRSIZE)
+#define BLUETOOTH_ADDRCMP(a, b)  (memcmp((a), (b), BLUETOOTH_ADDRSIZE) == 0)
 
 /****************************************************************************
  * Public Types
@@ -86,8 +86,8 @@
 
 struct bluetooth_frame_meta_s
 {
-  bt_addr_t bm_raddr;                         /* Connected remote address */
-  uint8_t bm_channel;                         /* Connection channel */
+	bt_addr_t bm_raddr;                         /* Connected remote address */
+	uint8_t bm_channel;                         /* Connection channel */
 };
 
 /****************************************************************************
@@ -141,7 +141,7 @@ struct bluetooth_data_ind_s;  /* Forward reference */
 struct iob_s;                 /* Forward reference */
 
 int bluetooth_input(FAR struct radio_driver_s *radio,
-                     FAR struct iob_s *framelist,
-                     FAR struct bluetooth_frame_meta_s *meta);
+						FAR struct iob_s *framelist,
+						FAR struct bluetooth_frame_meta_s *meta);
 
 #endif /*  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H */

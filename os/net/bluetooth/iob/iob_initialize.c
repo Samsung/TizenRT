@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_initialize.c
+ * net/bluetooth/iob/iob_initialize.c
  *
  *   Copyright (C) 2014, 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -111,49 +111,46 @@ sem_t g_qentry_sem;         /* Counts free I/O buffer queue containers */
 
 void iob_initialize(void)
 {
-  static bool initialized = false;
-  int i;
+	static bool initialized = false;
+	int i;
 
-  /* Perform one-time initialization */
+	/* Perform one-time initialization */
 
-  if (!initialized)
-    {
-      /* Add each I/O buffer to the free list */
+	if (!initialized) {
+		/* Add each I/O buffer to the free list */
 
-      for (i = 0; i < CONFIG_IOB_NBUFFERS; i++)
-        {
-          FAR struct iob_s *iob = &g_iob_pool[i];
+		for (i = 0; i < CONFIG_IOB_NBUFFERS; i++) {
+			FAR struct iob_s *iob = &g_iob_pool[i];
 
-          /* Add the pre-allocate I/O buffer to the head of the free list */
+			/* Add the pre-allocate I/O buffer to the head of the free list */
 
-          iob->io_flink  = g_iob_freelist;
-          g_iob_freelist = iob;
-        }
+			iob->io_flink  = g_iob_freelist;
+			g_iob_freelist = iob;
+		}
 
-      g_iob_committed = NULL;
+		g_iob_committed = NULL;
 
-      nxsem_init(&g_iob_sem, 0, CONFIG_IOB_NBUFFERS);
+		nxsem_init(&g_iob_sem, 0, CONFIG_IOB_NBUFFERS);
 #if CONFIG_IOB_THROTTLE > 0
-      nxsem_init(&g_throttle_sem, 0, CONFIG_IOB_NBUFFERS - CONFIG_IOB_THROTTLE);
+		nxsem_init(&g_throttle_sem, 0, CONFIG_IOB_NBUFFERS - CONFIG_IOB_THROTTLE);
 #endif
 
 #if CONFIG_IOB_NCHAINS > 0
-      /* Add each I/O buffer chain queue container to the free list */
+		/* Add each I/O buffer chain queue container to the free list */
 
-      for (i = 0; i < CONFIG_IOB_NCHAINS; i++)
-        {
-          FAR struct iob_qentry_s *iobq = &g_iob_qpool[i];
+		for (i = 0; i < CONFIG_IOB_NCHAINS; i++) {
+			FAR struct iob_qentry_s *iobq = &g_iob_qpool[i];
 
-          /* Add the pre-allocate buffer container to the head of the free list */
+			/* Add the pre-allocate buffer container to the head of the free list */
 
-          iobq->qe_flink  = g_iob_freeqlist;
-          g_iob_freeqlist = iobq;
-        }
+			iobq->qe_flink  = g_iob_freeqlist;
+			g_iob_freeqlist = iobq;
+		}
 
-      g_iob_qcommitted = NULL;
+		g_iob_qcommitted = NULL;
 
-      nxsem_init(&g_qentry_sem, 0, CONFIG_IOB_NCHAINS);
+		nxsem_init(&g_qentry_sem, 0, CONFIG_IOB_NCHAINS);
 #endif
-      initialized = true;
-    }
+		initialized = true;
+	}
 }

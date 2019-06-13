@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_remove_queue.c
+ * net/bluetooth/iob/iob_remove_queue.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -72,29 +72,26 @@
 
 FAR struct iob_s *iob_remove_queue(FAR struct iob_queue_s *iobq)
 {
-  FAR struct iob_qentry_s *qentry;
-  FAR struct iob_s *iob = NULL;
+	FAR struct iob_qentry_s *qentry;
+	FAR struct iob_s *iob = NULL;
 
-  /* Remove the I/O buffer chain from the head of the queue */
+	/* Remove the I/O buffer chain from the head of the queue */
 
-  qentry = iobq->qh_head;
-  if (qentry)
-    {
-      iobq->qh_head = qentry->qe_flink;
-      if (!iobq->qh_head)
-        {
-          iobq->qh_tail = NULL;
-        }
+	qentry = iobq->qh_head;
+	if (qentry) {
+		iobq->qh_head = qentry->qe_flink;
+		if (!iobq->qh_head)
+			iobq->qh_tail = NULL;
 
-      /* Extract the I/O buffer chain from the container and free the
-       * container.
-       */
+		/* Extract the I/O buffer chain from the container and free the
+		 * container.
+		 */
 
-      iob = qentry->qe_head;
-      iob_free_qentry(qentry);
-    }
+		iob = qentry->qe_head;
+		iob_free_qentry(qentry);
+	}
 
-  return iob;
+	return iob;
 }
 
 #endif /* CONFIG_IOB_NCHAINS > 0 */

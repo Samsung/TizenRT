@@ -57,11 +57,11 @@
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/bluetooth/iob/iob.h>
-//#include <netinet/arp.h>
+/* #include <netinet/arp.h> */
 #include <tinyara/net/netdev.h>
-//#include <nuttx/net/radiodev.h>
+/* #include <nuttx/net/radiodev.h> */
 #include <tinyara/bluetooth/bluetooth.h>
-//#include <nuttx/net/sixlowpan.h>
+/* #include <nuttx/net/sixlowpan.h> */
 #include <tinyara/bluetooth/bt_core.h>
 
 #include "bt_hcicore.h"
@@ -88,6 +88,6 @@
 
 int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 {
-  /* TODO: need to implement */
-  return 0;
+	/* TODO: need to implement */
+	return 0;
 }

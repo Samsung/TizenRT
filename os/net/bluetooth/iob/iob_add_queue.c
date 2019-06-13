@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_add_queue.c
+ * net/bluetooth/iob/iob_add_queue.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -71,29 +71,26 @@
  ****************************************************************************/
 
 static int iob_add_queue_internal(FAR struct iob_s *iob,
-                                  FAR struct iob_queue_s *iobq,
-                                  FAR struct iob_qentry_s *qentry)
+											FAR struct iob_queue_s *iobq,
+											FAR struct iob_qentry_s *qentry)
 {
-  /* Add the I/O buffer chain to the container */
+	/* Add the I/O buffer chain to the container */
 
-  qentry->qe_head = iob;
+	qentry->qe_head = iob;
 
-  /* Add the container to the end of the queue */
+	/* Add the container to the end of the queue */
 
-  qentry->qe_flink = NULL;
-  if (!iobq->qh_head)
-    {
-      iobq->qh_head = qentry;
-      iobq->qh_tail = qentry;
-    }
-  else
-    {
-      DEBUGASSERT(iobq->qh_tail);
-      iobq->qh_tail->qe_flink = qentry;
-      iobq->qh_tail = qentry;
-    }
+	qentry->qe_flink = NULL;
+	if (!iobq->qh_head) {
+		iobq->qh_head = qentry;
+		iobq->qh_tail = qentry;
+	} else {
+		DEBUGASSERT(iobq->qh_tail);
+		iobq->qh_tail->qe_flink = qentry;
+		iobq->qh_tail = qentry;
+	}
 
-  return 0;
+	return 0;
 }
 
 /****************************************************************************
@@ -111,18 +108,17 @@ static int iob_add_queue_internal(FAR struct iob_s *iob,
 
 int iob_add_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
 {
-  FAR struct iob_qentry_s *qentry;
+	FAR struct iob_qentry_s *qentry;
 
-  /* Allocate a container to hold the I/O buffer chain */
+	/* Allocate a container to hold the I/O buffer chain */
 
-  qentry = iob_alloc_qentry();
-  if (!qentry)
-    {
-      ioberr("ERROR: Failed to allocate a container\n");
-      return -ENOMEM;
-    }
+	qentry = iob_alloc_qentry();
+	if (!qentry) {
+		ioberr("ERROR: Failed to allocate a container\n");
+		return -ENOMEM;
+	}
 
-  return iob_add_queue_internal(iob, iobq, qentry);
+	return iob_add_queue_internal(iob, iobq, qentry);
 }
 
 /****************************************************************************
@@ -136,17 +132,16 @@ int iob_add_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
 
 int iob_tryadd_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
 {
-  FAR struct iob_qentry_s *qentry;
+	FAR struct iob_qentry_s *qentry;
 
-  /* Allocate a container to hold the I/O buffer chain */
+	/* Allocate a container to hold the I/O buffer chain */
 
-  qentry = iob_tryalloc_qentry();
-  if (!qentry)
-    {
-      ioberr("ERROR: Failed to allocate a container\n");
-      return -ENOMEM;
-    }
+	qentry = iob_tryalloc_qentry();
+	if (!qentry) {
+		ioberr("ERROR: Failed to allocate a container\n");
+		return -ENOMEM;
+	}
 
-  return iob_add_queue_internal(iob, iobq, qentry);
+	return iob_add_queue_internal(iob, iobq, qentry);
 }
 #endif /* CONFIG_IOB_NCHAINS > 0 */

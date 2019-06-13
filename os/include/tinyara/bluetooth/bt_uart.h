@@ -60,7 +60,7 @@
 
 struct btuart_lowerhalf_s;
 typedef CODE void (*btuart_rxcallback_t)
-  (FAR const struct btuart_lowerhalf_s *lower, FAR void *arg);
+	(FAR const struct btuart_lowerhalf_s *lower, FAR void *arg);
 
 /* The Bluetooth UART driver is a two-part driver:
  *
@@ -77,60 +77,60 @@ typedef CODE void (*btuart_rxcallback_t)
 
 struct btuart_lowerhalf_s
 {
-  /* Attach/enable the upper half Rx interrupt callback.
-   *
-   * rxattach() allows the upper half logic to attach a callback function
-   *   that will be used to inform the upper half that an Rx frame is
-   *   available.  This callback will, most likely, be invoked in the
-   *   context of an interrupt callback.  The callback function should
-   *   defer processing to the (high priority) work queue.  The receive()
-   *   method should then be invoked from the work queue logic in order to
-   *   receive the obtain the Rx frame data.
-   * rxenable() may be used to enable or disable callback events.  This
-   *   probably translates to enabling and disabled Rx interrupts at
-   *   the UART.  NOTE:  Disabling Rx event notification should be done
-   *   sparingly:  Rx data overrun may occur when Rx events are disabled!
-   */
+	/* Attach/enable the upper half Rx interrupt callback.
+	 *
+	 * rxattach() allows the upper half logic to attach a callback function
+	 *   that will be used to inform the upper half that an Rx frame is
+	 *   available.  This callback will, most likely, be invoked in the
+	 *   context of an interrupt callback.  The callback function should
+	 *   defer processing to the (high priority) work queue.  The receive()
+	 *   method should then be invoked from the work queue logic in order to
+	 *   receive the obtain the Rx frame data.
+	 * rxenable() may be used to enable or disable callback events.  This
+	 *   probably translates to enabling and disabled Rx interrupts at
+	 *   the UART.  NOTE:  Disabling Rx event notification should be done
+	 *   sparingly:  Rx data overrun may occur when Rx events are disabled!
+	 */
 
-  CODE void (*rxattach)(FAR const struct btuart_lowerhalf_s *lower,
-                        btuart_rxcallback_t callback, FAR void *arg);
-  CODE void (*rxenable)(FAR const struct btuart_lowerhalf_s *lower,
-                        bool enable);
+	CODE void (*rxattach)(FAR const struct btuart_lowerhalf_s *lower,
+								btuart_rxcallback_t callback, FAR void *arg);
+	CODE void (*rxenable)(FAR const struct btuart_lowerhalf_s *lower,
+								bool enable);
 
-  /* Change the HCI UART BAUD
-   *
-   * The HCI UART comes up with some initial BAUD rate.  Some support
-   * auto-BAUD detection, some support writing a configuration file to
-   * select the initial BAUD.  The simplest strategy, however, is simply
-   * to use the HCI UART's default initial BAUD to perform the basic
-   * bring up, then send a vendor-specific command to increase the HCI
-   * UARTs BAUD.  This method then may be used to adjust the lower half
-   * driver to the new HCI UART BAUD.
-   */
+	/* Change the HCI UART BAUD
+	 *
+	 * The HCI UART comes up with some initial BAUD rate.  Some support
+	 * auto-BAUD detection, some support writing a configuration file to
+	 * select the initial BAUD.  The simplest strategy, however, is simply
+	 * to use the HCI UART's default initial BAUD to perform the basic
+	 * bring up, then send a vendor-specific command to increase the HCI
+	 * UARTs BAUD.  This method then may be used to adjust the lower half
+	 * driver to the new HCI UART BAUD.
+	 */
 
  CODE int (*setbaud)(FAR const struct btuart_lowerhalf_s *lower,
-                     uint32_t baud);
+						uint32_t baud);
 
-  /* Read/write UART frames
-   *
-   * read() after receipt of a callback notifying the upper half of the
-   *   availability of Rx frame, the upper half may call the receive()
-   *   method in order to obtain the buffered Rx frame data.
-   * write() will add the outgoing frame to the Tx buffer and will return
-   *   immediately.  This function may block only in the event that there
-   *   is insufficient buffer space to hold the Tx frame data.  In that
-   *   case the lower half will block until there is sufficient to buffer
-   *   the entire outgoing packet.
-   */
+	/* Read/write UART frames
+	 *
+	 * read() after receipt of a callback notifying the upper half of the
+	 *   availability of Rx frame, the upper half may call the receive()
+	 *   method in order to obtain the buffered Rx frame data.
+	 * write() will add the outgoing frame to the Tx buffer and will return
+	 *   immediately.  This function may block only in the event that there
+	 *   is insufficient buffer space to hold the Tx frame data.  In that
+	 *   case the lower half will block until there is sufficient to buffer
+	 *   the entire outgoing packet.
+	 */
 
-  CODE ssize_t (*read)(FAR const struct btuart_lowerhalf_s *lower,
-                       FAR void *buffer, size_t buflen);
-  CODE ssize_t (*write)(FAR const struct btuart_lowerhalf_s *lower,
-                        FAR const void *buffer, size_t buflen);
+	CODE ssize_t (*read)(FAR const struct btuart_lowerhalf_s *lower,
+							FAR void *buffer, size_t buflen);
+	CODE ssize_t (*write)(FAR const struct btuart_lowerhalf_s *lower,
+							FAR const void *buffer, size_t buflen);
 
-  /* Flush/drain all buffered RX data */
+	/* Flush/drain all buffered RX data */
 
-  CODE ssize_t (*rxdrain)(FAR const struct btuart_lowerhalf_s *lower);
+	CODE ssize_t (*rxdrain)(FAR const struct btuart_lowerhalf_s *lower);
 };
 
 /****************************************************************************

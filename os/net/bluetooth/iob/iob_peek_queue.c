@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_peek_queue.c
+ * net/bluetooth/iob/iob_peek_queue.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -76,20 +76,19 @@
 
 FAR struct iob_s *iob_peek_queue(FAR struct iob_queue_s *iobq)
 {
-  FAR struct iob_qentry_s *qentry;
-  FAR struct iob_s *iob = NULL;
+	FAR struct iob_qentry_s *qentry;
+	FAR struct iob_s *iob = NULL;
 
-  /* Peek at the I/O buffer chain container at the head of the queue */
+	/* Peek at the I/O buffer chain container at the head of the queue */
 
-  qentry = iobq->qh_head;
-  if (qentry)
-    {
-      /* Return the I/O buffer chain from the container */
+	qentry = iobq->qh_head;
+	if (qentry) {
+		/* Return the I/O buffer chain from the container */
 
-      iob = qentry->qe_head;
-    }
+		iob = qentry->qe_head;
+	}
 
-  return iob;
+	return iob;
 }
 
 #endif /* CONFIG_IOB_NCHAINS > 0 */

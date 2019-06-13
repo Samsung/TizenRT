@@ -54,18 +54,18 @@
 
 struct bt_driver_s
 {
-  /* How much headroom is needed for HCI transport headers */
+	/* How much headroom is needed for HCI transport headers */
 
-  size_t head_reserve;
+	size_t head_reserve;
 
-  /* Open the HCI transport */
+	/* Open the HCI transport */
 
-  CODE int (*open)(FAR const struct bt_driver_s *btdev);
+	CODE int (*open)(FAR const struct bt_driver_s *btdev);
 
-  /* Send data to HCI */
+	/* Send data to HCI */
 
-  CODE int (*send)(FAR const struct bt_driver_s *btdev,
-                   FAR struct bt_buf_s *buf);
+	CODE int (*send)(FAR const struct bt_driver_s *btdev,
+						FAR struct bt_buf_s *buf);
 };
 
 /****************************************************************************

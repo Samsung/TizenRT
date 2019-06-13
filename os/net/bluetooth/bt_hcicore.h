@@ -71,59 +71,59 @@
 
 struct bt_dev_s
 {
-  /* Local Bluetooth Device Address */
+	/* Local Bluetooth Device Address */
 
-  bt_addr_t bdaddr;
+	bt_addr_t bdaddr;
 
-  /* Controller version & manufacturer information */
+	/* Controller version & manufacturer information */
 
-  uint8_t hci_version;
-  uint16_t hci_revision;
-  uint16_t manufacturer;
+	uint8_t hci_version;
+	uint16_t hci_revision;
+	uint16_t manufacturer;
 
-  /* BR/EDR features page 0 */
+	/* BR/EDR features page 0 */
 
-  uint8_t features[8];
+	uint8_t features[8];
 
-  /* LE features */
+	/* LE features */
 
-  uint8_t le_features[8];
+	uint8_t le_features[8];
 
-  /* Advertising state */
+	/* Advertising state */
 
-  uint8_t adv_enable;
+	uint8_t adv_enable;
 
-  /* Scanning state */
+	/* Scanning state */
 
-  uint8_t scan_enable;
-  uint8_t scan_filter;
+	uint8_t scan_enable;
+	uint8_t scan_filter;
 
-  /* Controller buffer information */
+	/* Controller buffer information */
 
-  uint8_t le_pkts;
-  uint16_t le_mtu;
-  sem_t le_pkts_sem;
+	uint8_t le_pkts;
+	uint16_t le_mtu;
+	sem_t le_pkts_sem;
 
-  /* Number of commands controller can accept */
+	/* Number of commands controller can accept */
 
-  uint8_t ncmd;
-  sem_t ncmd_sem;
+	uint8_t ncmd;
+	sem_t ncmd_sem;
 
-  /* Last sent HCI command */
+	/* Last sent HCI command */
 
-  FAR struct bt_buf_s *sent_cmd;
+	FAR struct bt_buf_s *sent_cmd;
 
-  /* Queue for incoming HCI events and ACL data */
+	/* Queue for incoming HCI events and ACL data */
 
-  mqd_t rx_queue;
+	mqd_t rx_queue;
 
-  /* Queue for outgoing HCI commands */
+	/* Queue for outgoing HCI commands */
 
-  mqd_t tx_queue;
+	mqd_t tx_queue;
 
-  /* Registered HCI driver */
+	/* Registered HCI driver */
 
-  FAR const struct bt_driver_s *btdev;
+	FAR const struct bt_driver_s *btdev;
 };
 
 /* Connection callback structure */
@@ -131,11 +131,11 @@ struct bt_dev_s
 struct bt_conn_s; /* Forward reference */
 struct bt_conn_cb_s
 {
-  FAR struct bt_conn_cb_s *flink;
-  FAR void *context;
+	FAR struct bt_conn_cb_s *flink;
+	FAR void *context;
 
-  CODE void (*connected)(FAR struct bt_conn_s *conn, FAR void *context);
-  CODE void (*disconnected)(FAR struct bt_conn_s *conn, FAR void *context);
+	CODE void (*connected)(FAR struct bt_conn_s *conn, FAR void *context);
+	CODE void (*disconnected)(FAR struct bt_conn_s *conn, FAR void *context);
 };
 
 /****************************************************************************
@@ -157,8 +157,8 @@ struct bt_conn_cb_s
  ****************************************************************************/
 
 typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi,
-                                  uint8_t adv_type,
-                                  FAR const uint8_t *adv_data, uint8_t len);
+											uint8_t adv_type,
+											FAR const uint8_t *adv_data, uint8_t len);
 
 /****************************************************************************
  * Public Data
@@ -172,54 +172,46 @@ extern struct bt_dev_s g_btdev;
 
 static inline int bt_addr_cmp(FAR const bt_addr_t *a, FAR const bt_addr_t *b)
 {
-  return memcmp(a, b, sizeof(*a));
+	return memcmp(a, b, sizeof(*a));
 }
 
 static inline int bt_addr_le_cmp(FAR const bt_addr_le_t *a, FAR const bt_addr_le_t *b)
 {
-  return memcmp(a, b, sizeof(*a));
+	return memcmp(a, b, sizeof(*a));
 }
 
 static inline void bt_addr_copy(FAR bt_addr_t *dst, FAR const bt_addr_t *src)
 {
-  memcpy(dst, src, sizeof(*dst));
+	memcpy(dst, src, sizeof(*dst));
 }
 
 static inline void bt_addr_le_copy(FAR bt_addr_le_t *dst, FAR const bt_addr_le_t *src)
 {
-  memcpy(dst, src, sizeof(*dst));
+	memcpy(dst, src, sizeof(*dst));
 }
 
 static inline bool bt_addr_le_is_rpa(FAR const bt_addr_le_t *addr)
 {
-  if (addr->type != BT_ADDR_LE_RANDOM)
-    {
-      return false;
-    }
+	if (addr->type != BT_ADDR_LE_RANDOM)
+		return false;
 
-  if ((addr->val[5] & 0xc0) == 0x40)
-    {
-      return true;
-    }
+	if ((addr->val[5] & 0xc0) == 0x40)
+		return true;
 
-  return false;
+	return false;
 }
 
 static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
 {
-  if (addr->type == BT_ADDR_LE_PUBLIC)
-    {
-      return true;
-    }
+	if (addr->type == BT_ADDR_LE_PUBLIC)
+		return true;
 
-  /* Check for Random Static address type */
+	/* Check for Random Static address type */
 
-  if ((addr->val[5] & 0xc0) == 0xc0)
-    {
-      return true;
-    }
+	if ((addr->val[5] & 0xc0) == 0xc0)
+		return true;
 
-  return false;
+	return false;
 }
 
 /****************************************************************************
@@ -299,7 +291,7 @@ FAR struct bt_buf_s *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 
 int bt_hci_cmd_send(uint16_t opcode, FAR struct bt_buf_s *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf,
-                         FAR struct bt_buf_s **rsp);
+								 FAR struct bt_buf_s **rsp);
 
 /* The helper is only safe to be called from internal kernel threads as it's
  * not multi-threading safe
@@ -328,7 +320,7 @@ FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr);
  ****************************************************************************/
 
 int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad,
-                         FAR const struct bt_eir_s *sd);
+								 FAR const struct bt_eir_s *sd);
 
 /****************************************************************************
  * Name: bt_stop_advertising

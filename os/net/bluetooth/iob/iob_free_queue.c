@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_free_queue.c
+ * net/bluetooth/iob/iob_free_queue.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -69,38 +69,37 @@
 
 void iob_free_queue(FAR struct iob_queue_s *qhead)
 {
-  FAR struct iob_qentry_s *iobq;
-  FAR struct iob_qentry_s *nextq;
-  FAR struct iob_s *iob;
+	FAR struct iob_qentry_s *iobq;
+	FAR struct iob_qentry_s *nextq;
+	FAR struct iob_s *iob;
 
-  /* Detach the list from the queue head so first for safety (should be safe
-   * anyway).
-   */
+	/* Detach the list from the queue head so first for safety (should be safe
+	 * anyway).
+	 */
 
-  iobq           = qhead->qh_head;
-  qhead->qh_head = NULL;
+	iobq           = qhead->qh_head;
+	qhead->qh_head = NULL;
 
-  /* Remove each I/O buffer chain from the queue */
+	/* Remove each I/O buffer chain from the queue */
 
-  while (iobq)
-    {
-      /* Remove the I/O buffer chain from the head of the queue and
-       * discard the queue container.
-       */
+	while (iobq) {
+		/* Remove the I/O buffer chain from the head of the queue and
+		 * discard the queue container.
+		 */
 
-      iob = iobq->qe_head;
-      DEBUGASSERT(iob);
+		iob = iobq->qe_head;
+		DEBUGASSERT(iob);
 
-      /* Remove the queue container from the list and discard it */
+		/* Remove the queue container from the list and discard it */
 
-      nextq = iobq->qe_flink;
-      iob_free_qentry(iobq);
-      iobq = nextq;
+		nextq = iobq->qe_flink;
+		iob_free_qentry(iobq);
+		iobq = nextq;
 
-      /* Free the I/O chain */
+		/* Free the I/O chain */
 
-      iob_free_chain(iob);
-    }
+		iob_free_chain(iob);
+	}
 }
 
 #endif /* CONFIG_IOB_NCHAINS > 0 */

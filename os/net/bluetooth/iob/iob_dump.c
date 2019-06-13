@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_dump.c
+ * net/bluetooth/iob/iob_dump.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -53,7 +53,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a,b) ((a) < (b) ? (a) : (b))
+#  define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -69,99 +69,80 @@
  ****************************************************************************/
 
 void iob_dump(FAR const char *msg, FAR struct iob_s *iob, unsigned int len,
-              unsigned int offset)
+					unsigned int offset)
 {
-  FAR struct iob_s *head;
-  uint8_t data[32];
-  unsigned int maxlen;
-  unsigned int nbytes;
-  unsigned int lndx;
-  unsigned int cndx;
+	FAR struct iob_s *head;
+	uint8_t data[32];
+	unsigned int maxlen;
+	unsigned int nbytes;
+	unsigned int lndx;
+	unsigned int cndx;
 
-  head = iob;
-  syslog(LOG_DEBUG, "%s: iob=%p pktlen=%d\n", msg, head, head->io_pktlen);
+	head = iob;
+	syslog(LOG_DEBUG, "%s: iob=%p pktlen=%d\n", msg, head, head->io_pktlen);
 
-  /* Check if the offset is beyond the data in the I/O buffer chain */
+	/* Check if the offset is beyond the data in the I/O buffer chain */
 
-  if (offset > head->io_pktlen)
-    {
-      ioberr("ERROR: offset is past the end of data: %u > %u\n",
-             offset, head->io_pktlen);
-      return;
-    }
+	if (offset > head->io_pktlen) {
+		ioberr("ERROR: offset is past the end of data: %u > %u\n",
+				 offset, head->io_pktlen);
+		return;
+	}
 
-  /* Dump I/O buffer headers */
+	/* Dump I/O buffer headers */
 
-  for (; iob; iob = iob->io_flink)
-    {
-      syslog(LOG_DEBUG, "  iob=%p len=%d offset=%d\n",
-             iob, iob->io_len, iob->io_offset);
-    }
+	for (; iob; iob = iob->io_flink) {
+		syslog(LOG_DEBUG, "  iob=%p len=%d offset=%d\n",
+				 iob, iob->io_len, iob->io_offset);
+	}
 
-  /* Get the amount of data to be displayed, limited by the amount that we
-   * have beyond the offset.
-   */
+	/* Get the amount of data to be displayed, limited by the amount that we
+	 * have beyond the offset.
+	 */
 
-  maxlen = head->io_pktlen - offset;
-  len = MIN(len, maxlen);
+	maxlen = head->io_pktlen - offset;
+	len = MIN(len, maxlen);
 
-  /* Then beginning printing with the buffer containing the offset in groups
-   * of 32 bytes.
-   */
+	/* Then beginning printing with the buffer containing the offset in groups
+	 * of 32 bytes.
+	 */
 
-  for (lndx = 0; lndx < len; lndx += 32, offset += 32)
-    {
-      /* Copy 32-bytes into our local buffer from the current offset */
+	for (lndx = 0; lndx < len; lndx += 32, offset += 32) {
+		/* Copy 32-bytes into our local buffer from the current offset */
 
-      nbytes = iob_copyout(data, head, 32, offset);
+		nbytes = iob_copyout(data, head, 32, offset);
 
-      /* Make sure that we have something to print */
+		/* Make sure that we have something to print */
 
-      if (nbytes > 0)
-        {
-          syslog(LOG_DEBUG, "  %04x: ", offset);
+		if (nbytes > 0) {
+			syslog(LOG_DEBUG, "  %04x: ", offset);
 
-          for (cndx = 0; cndx < 32; cndx++)
-            {
-              if (cndx == 16)
-                {
-                  syslog(LOG_DEBUG, " ");
-                }
+			for (cndx = 0; cndx < 32; cndx++) {
+				if (cndx == 16)
+					syslog(LOG_DEBUG, " ");
 
-              if ((lndx + cndx) < len)
-                {
-                  syslog(LOG_DEBUG, "%02x", data[cndx]);
-                }
-              else
-                {
-                  syslog(LOG_DEBUG, "  ");
-                }
-            }
+				if ((lndx + cndx) < len) {
+					syslog(LOG_DEBUG, "%02x", data[cndx]);
+				} else
+					syslog(LOG_DEBUG, "  ");
+			}
 
-          syslog(LOG_DEBUG, " ");
-          for (cndx = 0; cndx < 32; cndx++)
-            {
-              if (cndx == 16)
-                {
-                  syslog(LOG_DEBUG, " ");
-                }
+			syslog(LOG_DEBUG, " ");
+			for (cndx = 0; cndx < 32; cndx++) {
+				if (cndx == 16)
+					syslog(LOG_DEBUG, " ");
 
-              if ((lndx + cndx) < len)
-                {
-                  if (data[cndx] >= 0x20 && data[cndx] < 0x7f)
-                    {
-                      syslog(LOG_DEBUG, "%c", data[cndx]);
-                    }
-                  else
-                    {
-                      syslog(LOG_DEBUG, ".");
-                    }
-                }
-            }
+				if ((lndx + cndx) < len) {
+					if (data[cndx] >= 0x20 && data[cndx] < 0x7f) {
+						syslog(LOG_DEBUG, "%c", data[cndx]);
+					} else
+						syslog(LOG_DEBUG, ".");
+				}
+			}
 
-          syslog(LOG_DEBUG, "\n");
-        }
-    }
+			syslog(LOG_DEBUG, "\n");
+		}
+	}
 }
 
 #endif /* CONFIG_DEBUG_FEATURES */

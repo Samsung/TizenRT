@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_test.c
+ * net/bluetooth/iob/iob_test.c
  * Unit test driver.  This is of historical interest only since it requires
  * and custom build setup and modifications to the iob source and header
  * files.
@@ -62,32 +62,30 @@ static uint8_t buffer2[16384];
 
 static void dump_chain(struct iob_s *iob)
 {
-  struct iob_s *head = iob;
-  unsigned int pktlen;
-  int n;
+	struct iob_s *head = iob;
+	unsigned int pktlen;
+	int n;
 
-  printf("=========================================================\n");
-  printf("pktlen: %d\n", iob->io_pktlen);
+	printf("=========================================================\n");
+	printf("pktlen: %d\n", iob->io_pktlen);
 
-  n = 0;
-  pktlen = 0;
+	n = 0;
+	pktlen = 0;
 
-  while (iob)
-    {
-      printf("%d. len=%d, offset=%d\n", n, iob->io_len, iob->io_offset);
+	while (iob) {
+		printf("%d. len=%d, offset=%d\n", n, iob->io_len, iob->io_offset);
 
-      pktlen += iob->io_len;
-      iob = iob->io_flink;
-      n++;
-    }
+		pktlen += iob->io_len;
+		iob = iob->io_flink;
+		n++;
+	}
 
-  if (pktlen != head->io_pktlen)
-    {
-      printf("ERROR: Bad packet length=%u, actual=%u\n",
-             head->io_pktlen, pktlen);
-    }
+	if (pktlen != head->io_pktlen) {
+		printf("ERROR: Bad packet length=%u, actual=%u\n",
+				head->io_pktlen, pktlen);
+	}
 
-  printf("=========================================================\n");
+	printf("=========================================================\n");
 }
 
 /****************************************************************************
@@ -104,77 +102,67 @@ static void dump_chain(struct iob_s *iob)
 
 int main(int argc, char **argv)
 {
-  struct iob_s *iob;
-  int nbytes;
-  int i;
+	struct iob_s *iob;
+	int nbytes;
+	int i;
 
-  iob_initialize();
-  iob = iob_alloc(false);
+	iob_initialize();
+	iob = iob_alloc(false);
 
-  for (i = 0; i < 4096; i++)
-    {
-      buffer1[i] = (uint8_t)(i & 0xff);
-    }
-  memset(buffer2, 0xff, 4096);
+	for (i = 0; i < 4096; i++)
+		buffer1[i] = (uint8_t)(i & 0xff);
+	memset(buffer2, 0xff, 4096);
 
-  iob_copyin(iob, buffer2, 47, 0, false);
-  printf("Copy IN: 47, offset 0\n");
-  dump_chain(iob);
+	iob_copyin(iob, buffer2, 47, 0, false);
+	printf("Copy IN: 47, offset 0\n");
+	dump_chain(iob);
 
-  iob_copyin(iob, buffer1, 4096, 47, false);
-  printf("Copy IN: 4096, offset 47\n");
-  dump_chain(iob);
+	iob_copyin(iob, buffer1, 4096, 47, false);
+	printf("Copy IN: 4096, offset 47\n");
+	dump_chain(iob);
 
-  nbytes = iob_copyout(buffer2, iob, 4096, 47);
-  printf("Copy OUT: %d, offset 47\n", nbytes);
+	nbytes = iob_copyout(buffer2, iob, 4096, 47);
+	printf("Copy OUT: %d, offset 47\n", nbytes);
 
-  if (memcmp(buffer1, buffer2, nbytes) != 0)
-    {
-      fprintf(stderr, "Buffer1 does not match buffer2\n");
-    }
+	if (memcmp(buffer1, buffer2, nbytes) != 0)
+		fprintf(stderr, "Buffer1 does not match buffer2\n");
 
-  iob = iob_trimhead(iob, 47);
-  printf("Trim: 47 from the beginning of the list\n");
-  dump_chain(iob);
+	iob = iob_trimhead(iob, 47);
+	printf("Trim: 47 from the beginning of the list\n");
+	dump_chain(iob);
 
-  iob = iob_trimtail(iob, 493);
-  printf("Trim: 493 from the end of the list\n");
-  dump_chain(iob);
+	iob = iob_trimtail(iob, 493);
+	printf("Trim: 493 from the end of the list\n");
+	dump_chain(iob);
 
-  nbytes = iob_copyout(buffer2, iob, 4096, 0);
-  printf("Copy OUT: %d, offset 0\n", nbytes);
+	nbytes = iob_copyout(buffer2, iob, 4096, 0);
+	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-  if (memcmp(buffer1, buffer2, nbytes) != 0)
-    {
-      fprintf(stderr, "Buffer1 does not match buffer2\n");
-    }
+	if (memcmp(buffer1, buffer2, nbytes) != 0)
+		fprintf(stderr, "Buffer1 does not match buffer2\n");
 
-  iob = iob_trimhead(iob, 1362);
-  printf("Trim: 1362 from the beginning of the list\n");
-  dump_chain(iob);
+	iob = iob_trimhead(iob, 1362);
+	printf("Trim: 1362 from the beginning of the list\n");
+	dump_chain(iob);
 
-  nbytes = iob_copyout(buffer2, iob, 4096, 0);
-  printf("Copy OUT: %d, offset 0\n", nbytes);
+	nbytes = iob_copyout(buffer2, iob, 4096, 0);
+	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-  if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
-    {
-      fprintf(stderr, "Buffer1 does not match buffer2\n");
-    }
+	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
+		fprintf(stderr, "Buffer1 does not match buffer2\n");
 
-  iob = iob_pack(iob);
-  printf("Packed\n");
-  dump_chain(iob);
+	iob = iob_pack(iob);
+	printf("Packed\n");
+	dump_chain(iob);
 
-  nbytes = iob_copyout(buffer2, iob, 4096, 0);
-  printf("Copy OUT: %d, offset 0\n", nbytes);
+	nbytes = iob_copyout(buffer2, iob, 4096, 0);
+	printf("Copy OUT: %d, offset 0\n", nbytes);
 
-  if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
-    {
-      fprintf(stderr, "Buffer1 does not match buffer2\n");
-    }
+	if (memcmp(&buffer1[1362], buffer2, nbytes) != 0)
+		fprintf(stderr, "Buffer1 does not match buffer2\n");
 
-  while (iob) iob = iob_free(iob);
-  return EXIT_SUCCESS;
+	while (iob) iob = iob_free(iob);
+	return EXIT_SUCCESS;
 }
 
 /****************************************************************************
@@ -187,10 +175,9 @@ int main(int argc, char **argv)
 
 void my_assert(bool value)
 {
-  if (!value)
-    {
-      fprintf(stderr, "Assertion failed\n");
+	if (!value) {
+		fprintf(stderr, "Assertion failed\n");
 
-      abort();
-    }
+		abort();
+	}
 }

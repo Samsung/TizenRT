@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_concat.c
+ * net/bluetooth/iob/iob_concat.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -59,18 +59,16 @@
 
 void iob_concat(FAR struct iob_s *iob1, FAR struct iob_s *iob2)
 {
-  /* Find the last buffer in the iob1 buffer chain */
+	/* Find the last buffer in the iob1 buffer chain */
 
-  while (iob1->io_flink)
-    {
-      iob1 = iob1->io_flink;
-    }
+	while (iob1->io_flink)
+		iob1 = iob1->io_flink;
 
-  /* Then connect iob2 buffer chain to the end of the iob1 chain */
+	/* Then connect iob2 buffer chain to the end of the iob1 chain */
 
-  iob1->io_flink = iob2;
+	iob1->io_flink = iob2;
 
-  /* Combine the total packet size */
+	/* Combine the total packet size */
 
-  iob1->io_pktlen += iob2->io_pktlen;
+	iob1->io_pktlen += iob2->io_pktlen;
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_free_chain.c
+ * net/bluetooth/iob/iob_free_chain.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -59,12 +59,10 @@
 
 void iob_free_chain(FAR struct iob_s *iob)
 {
-  FAR struct iob_s *next;
+	FAR struct iob_s *next;
 
-  /* Free each IOB in the chain -- one at a time to keep the count straight */
+	/* Free each IOB in the chain -- one at a time to keep the count straight */
 
-  for (; iob; iob = next)
-    {
-      next = iob_free(iob);
-    }
+	for (; iob; iob = next)
+		next = iob_free(iob);
 }

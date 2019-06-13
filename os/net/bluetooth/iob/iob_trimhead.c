@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_trimhead.c
+ * net/bluetooth/iob/iob_trimhead.c
  *
  *   Copyright (C) 2014, 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -69,73 +69,67 @@
 
 FAR struct iob_s *iob_trimhead(FAR struct iob_s *iob, unsigned int trimlen)
 {
-  uint16_t pktlen;
+	uint16_t pktlen;
 
-  iobinfo("iob=%p trimlen=%d\n", iob, trimlen);
+	iobinfo("iob=%p trimlen=%d\n", iob, trimlen);
 
-  if (iob && trimlen > 0)
-    {
-      /* Trim from the head of the I/IO buffer chain */
+	if (iob && trimlen > 0) {
+		/* Trim from the head of the I/IO buffer chain */
 
-      pktlen = iob->io_pktlen;
-      while (trimlen > 0 && iob != NULL)
-        {
-          /* Do we trim this entire I/O buffer away? */
+		pktlen = iob->io_pktlen;
+		while (trimlen > 0 && iob != NULL) {
+			/* Do we trim this entire I/O buffer away? */
 
-          iobinfo("iob=%p io_len=%d pktlen=%d trimlen=%d\n",
-                  iob, iob->io_len, pktlen, trimlen);
+			iobinfo("iob=%p io_len=%d pktlen=%d trimlen=%d\n",
+						iob, iob->io_len, pktlen, trimlen);
 
-          if (iob->io_len <= trimlen)
-            {
-              FAR struct iob_s *next;
+			if (iob->io_len <= trimlen) {
+				FAR struct iob_s *next;
 
-              /* Decrement the trim length and packet length by the full
-               * data size.
-               */
+				/* Decrement the trim length and packet length by the full
+				 * data size.
+				 */
 
-              pktlen  -= iob->io_len;
-              trimlen -= iob->io_len;
+				pktlen  -= iob->io_len;
+				trimlen -= iob->io_len;
 
-              /* Check if this was the last entry in the chain */
+				/* Check if this was the last entry in the chain */
 
-              next = iob->io_flink;
-              if (next == NULL)
-                {
-                  /* Yes.. break out of the loop returning the empty
-                   * I/O buffer chain containing only one empty entry.
-                   */
+				next = iob->io_flink;
+				if (next == NULL) {
+					/* Yes.. break out of the loop returning the empty
+					 * I/O buffer chain containing only one empty entry.
+					 */
 
-                  DEBUGASSERT(pktlen == 0);
-                  iob->io_len    = 0;
-                  iob->io_offset = 0;
-                  break;
-                }
+					DEBUGASSERT(pktlen == 0);
+					iob->io_len    = 0;
+					iob->io_offset = 0;
+					break;
+				}
 
-              /* Free this entry and set the next I/O buffer as the head */
+				/* Free this entry and set the next I/O buffer as the head */
 
-              iobinfo("iob=%p: Freeing\n", iob);
-              (void)iob_free(iob);
-              iob = next;
-            }
-          else
-            {
-              /* No, then just take what we need from this I/O buffer and
-               * stop the trim.
-               */
+				iobinfo("iob=%p: Freeing\n", iob);
+				(void)iob_free(iob);
+				iob = next;
+			} else {
+				/* No, then just take what we need from this I/O buffer and
+				 * stop the trim.
+				 */
 
-              pktlen         -= trimlen;
-              iob->io_len    -= trimlen;
-              iob->io_offset += trimlen;
-              trimlen         = 0;
-            }
-        }
+				pktlen         -= trimlen;
+				iob->io_len    -= trimlen;
+				iob->io_offset += trimlen;
+				trimlen         = 0;
+			}
+		}
 
-      /* Adjust the pktlen by the number of bytes removed from the head
-       * of the I/O buffer chain.
-       */
+		/* Adjust the pktlen by the number of bytes removed from the head
+		 * of the I/O buffer chain.
+		 */
 
-      iob->io_pktlen = pktlen;
-    }
+		iob->io_pktlen = pktlen;
+	}
 
-  return iob;
+	return iob;
 }

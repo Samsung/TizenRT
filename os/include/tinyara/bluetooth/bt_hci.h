@@ -178,291 +178,291 @@
 
 typedef struct bt_addr_s
 {
-  uint8_t val[6];
+	uint8_t val[6];
 } bt_addr_t;
 
 typedef struct bt_addr_le_s
 {
-  uint8_t type;
-  uint8_t val[6];
+	uint8_t type;
+	uint8_t val[6];
 } bt_addr_le_t;
 
 struct bt_hci_evt_hdr_s
 {
-  uint8_t evt;
-  uint8_t len;
+	uint8_t evt;
+	uint8_t len;
 } packed_struct;
 
 struct bt_hci_acl_hdr_s
 {
-  uint16_t handle;
-  uint16_t len;
+	uint16_t handle;
+	uint16_t len;
 } packed_struct;
 
 struct bt_hci_cmd_hdr_s
 {
-  uint16_t opcode;
-  uint8_t param_len;
+	uint16_t opcode;
+	uint8_t param_len;
 } packed_struct;
 
 struct bt_hci_cp_disconnect_s
 {
-  uint16_t handle;
-  uint8_t reason;
+	uint16_t handle;
+	uint8_t reason;
 } packed_struct;
 
 struct bt_hci_cp_set_event_mask_s
 {
-  uint8_t events[8];
+	uint8_t events[8];
 } packed_struct;
 
 struct bt_hci_cp_host_buffer_size_s
 {
-  uint16_t acl_mtu;
-  uint8_t sco_mtu;
-  uint16_t acl_pkts;
-  uint16_t sco_pkts;
+	uint16_t acl_mtu;
+	uint8_t sco_mtu;
+	uint16_t acl_pkts;
+	uint16_t sco_pkts;
 } packed_struct;
 
 struct bt_hci_handle_count_s
 {
-  uint16_t handle;
-  uint16_t count;
+	uint16_t handle;
+	uint16_t count;
 } packed_struct;
 
 struct bt_hci_cp_host_num_completed_packets_s
 {
-  uint8_t num_handles;
-  struct bt_hci_handle_count_s h[0];
+	uint8_t num_handles;
+	struct bt_hci_handle_count_s h[0];
 } packed_struct;
 
 struct bt_hci_cp_write_le_host_supp_s
 {
-  uint8_t le;
-  uint8_t simul;
+	uint8_t le;
+	uint8_t simul;
 } packed_struct;
 
 struct bt_hci_rp_read_local_version_info_s
 {
-  uint8_t status;
-  uint8_t hci_version;
-  uint16_t hci_revision;
-  uint8_t lmp_version;
-  uint16_t manufacturer;
-  uint16_t lmp_subversion;
+	uint8_t status;
+	uint8_t hci_version;
+	uint16_t hci_revision;
+	uint8_t lmp_version;
+	uint16_t manufacturer;
+	uint16_t lmp_subversion;
 } packed_struct;
 
 struct bt_hci_rp_read_local_features_s
 {
-  uint8_t status;
-  uint8_t features[8];
+	uint8_t status;
+	uint8_t features[8];
 } packed_struct;
 
 struct bt_hci_rp_read_buffer_size_s
 {
-  uint8_t status;
-  uint16_t acl_max_len;
-  uint8_t sco_max_len;
-  uint16_t acl_max_num;
-  uint16_t sco_max_num;
+	uint8_t status;
+	uint16_t acl_max_len;
+	uint8_t sco_max_len;
+	uint16_t acl_max_num;
+	uint16_t sco_max_num;
 } packed_struct;
 
 struct bt_hci_rp_read_bd_addr_s
 {
-  uint8_t status;
-  bt_addr_t bdaddr;
+	uint8_t status;
+	bt_addr_t bdaddr;
 } packed_struct;
 
 struct bt_hci_rp_le_read_buffer_size_s
 {
-  uint8_t status;
-  uint16_t le_max_len;
-  uint8_t le_max_num;
+	uint8_t status;
+	uint16_t le_max_len;
+	uint8_t le_max_num;
 } packed_struct;
 
 struct bt_hci_rp_le_read_local_features_s
 {
-  uint8_t status;
-  uint8_t features[8];
+	uint8_t status;
+	uint8_t features[8];
 } packed_struct;
 
 struct bt_hci_cp_le_set_adv_parameters_s
 {
-  uint16_t min_interval;
-  uint16_t max_interval;
-  uint8_t type;
-  uint8_t own_addr_type;
-  bt_addr_le_t direct_addr;
-  uint8_t channel_map;
-  uint8_t filter_policy;
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint8_t type;
+	uint8_t own_addr_type;
+	bt_addr_le_t direct_addr;
+	uint8_t channel_map;
+	uint8_t filter_policy;
 } packed_struct;
 
 struct bt_hci_cp_le_set_adv_data_s
 {
-  uint8_t len;
-  uint8_t data[31];
+	uint8_t len;
+	uint8_t data[31];
 } packed_struct;
 
 struct bt_hci_cp_le_set_scan_rsp_data_s
 {
-  uint8_t len;
-  uint8_t data[31];
+	uint8_t len;
+	uint8_t data[31];
 } packed_struct;
 
 struct bt_hci_cp_le_set_adv_enable_s
 {
-  uint8_t enable;
+	uint8_t enable;
 } packed_struct;
 
 struct bt_hci_cp_le_set_scan_params_s
 {
-  uint8_t scan_type;
-  uint16_t interval;
-  uint16_t window;
-  uint8_t addr_type;
-  uint8_t filter_policy;
+	uint8_t scan_type;
+	uint16_t interval;
+	uint16_t window;
+	uint8_t addr_type;
+	uint8_t filter_policy;
 } packed_struct;
 
 struct bt_hci_cp_le_set_scan_enable_s
 {
-  uint8_t enable;
-  uint8_t filter_dup;
+	uint8_t enable;
+	uint8_t filter_dup;
 } packed_struct;
 
 struct bt_hci_cp_le_create_conn_s
 {
-  uint16_t scan_interval;
-  uint16_t scan_window;
-  uint8_t filter_policy;
-  bt_addr_le_t peer_addr;
-  uint8_t own_addr_type;
-  uint16_t conn_interval_min;
-  uint16_t conn_interval_max;
-  uint16_t conn_latency;
-  uint16_t supervision_timeout;
-  uint16_t min_ce_len;
-  uint16_t max_ce_len;
+	uint16_t scan_interval;
+	uint16_t scan_window;
+	uint8_t filter_policy;
+	bt_addr_le_t peer_addr;
+	uint8_t own_addr_type;
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t conn_latency;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
 } packed_struct;
 
 struct hci_cp_le_conn_update_s
 {
-  uint16_t handle;
-  uint16_t conn_interval_min;
-  uint16_t conn_interval_max;
-  uint16_t conn_latency;
-  uint16_t supervision_timeout;
-  uint16_t min_ce_len;
-  uint16_t max_ce_len;
+	uint16_t handle;
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t conn_latency;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
 } packed_struct;
 
 struct bt_hci_cp_le_encrypt_s
 {
-  uint8_t key[16];
-  uint8_t plaintext[16];
+	uint8_t key[16];
+	uint8_t plaintext[16];
 } packed_struct;
 
 struct bt_hci_rp_le_encrypt_s
 {
-  uint8_t status;
-  uint8_t enc_data[16];
+	uint8_t status;
+	uint8_t enc_data[16];
 } packed_struct;
 
 struct bt_hci_rp_le_rand_s
 {
-  uint8_t status;
-  uint8_t rand[8];
+	uint8_t status;
+	uint8_t rand[8];
 } packed_struct;
 
 struct bt_hci_cp_le_start_encryption_s
 {
-  uint16_t handle;
-  uint64_t rand;
-  uint16_t ediv;
-  uint8_t ltk[16];
+	uint16_t handle;
+	uint64_t rand;
+	uint16_t ediv;
+	uint8_t ltk[16];
 } packed_struct;
 
 struct bt_hci_cp_le_ltk_req_reply_s
 {
-  uint16_t handle;
-  uint8_t ltk[16];
+	uint16_t handle;
+	uint8_t ltk[16];
 } packed_struct;
 
 struct bt_hci_cp_le_ltk_req_neg_reply_s
 {
-  uint16_t handle;
+	uint16_t handle;
 } packed_struct;
 
 /* Event definitions */
 
 struct bt_hci_evt_disconn_complete_s
 {
-  uint8_t status;
-  uint16_t handle;
-  uint8_t reason;
+	uint8_t status;
+	uint16_t handle;
+	uint8_t reason;
 } packed_struct;
 
 struct bt_hci_evt_encrypt_change_s
 {
-  uint8_t status;
-  uint16_t handle;
-  uint8_t encrypt;
+	uint8_t status;
+	uint16_t handle;
+	uint8_t encrypt;
 } packed_struct;
 
 struct hci_evt_cmd_complete_s
 {
-  uint8_t ncmd;
-  uint16_t opcode;
+	uint8_t ncmd;
+	uint16_t opcode;
 } packed_struct;
 
 struct bt_hci_evt_cmd_status_s
 {
-  uint8_t status;
-  uint8_t ncmd;
-  uint16_t opcode;
+	uint8_t status;
+	uint8_t ncmd;
+	uint16_t opcode;
 } packed_struct;
 
 struct bt_hci_evt_num_completed_packets_s
 {
-  uint8_t num_handles;
-  struct bt_hci_handle_count_s h[0];
+	uint8_t num_handles;
+	struct bt_hci_handle_count_s h[0];
 } packed_struct;
 
 struct bt_hci_evt_encrypt_key_refresh_complete_s
 {
-  uint8_t status;
-  uint16_t handle;
+	uint8_t status;
+	uint16_t handle;
 } packed_struct;
 
 struct bt_hci_evt_le_meta_event_s
 {
-  uint8_t subevent;
+	uint8_t subevent;
 } packed_struct;
 
 struct bt_hci_evt_le_conn_complete_s
 {
-  uint8_t status;
-  uint16_t handle;
-  uint8_t role;
-  bt_addr_le_t peer_addr;
-  uint16_t interval;
-  uint16_t latency;
-  uint16_t supv_timeout;
-  uint8_t clock_accuracy;
+	uint8_t status;
+	uint16_t handle;
+	uint8_t role;
+	bt_addr_le_t peer_addr;
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t supv_timeout;
+	uint8_t clock_accuracy;
 } packed_struct;
 
 struct bt_hci_ev_le_advertising_info_s
 {
-  uint8_t evt_type;
-  bt_addr_le_t addr;
-  uint8_t length;
-  uint8_t data[0];
+	uint8_t evt_type;
+	bt_addr_le_t addr;
+	uint8_t length;
+	uint8_t data[0];
 } packed_struct;
 
 struct bt_hci_evt_le_ltk_request_s
 {
-  uint16_t handle;
-  uint64_t rand;
-  uint16_t ediv;
+	uint16_t handle;
+	uint64_t rand;
+	uint16_t ediv;
 } packed_struct;
 
 #endif /* __INCLUDE_TINYARA_BLUETOOTH_BT_HCI_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_free.c
+ * net/bluetooth/iob/iob_free.c
  *
  *   Copyright (C) 2014, 2016-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -64,81 +64,74 @@
 
 FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 {
-  FAR struct iob_s *next = iob->io_flink;
-  irqstate_t flags;
+	FAR struct iob_s *next = iob->io_flink;
+	irqstate_t flags;
 
-  iobinfo("iob=%p io_pktlen=%u io_len=%u next=%p\n",
-          iob, iob->io_pktlen, iob->io_len, next);
+	iobinfo("iob=%p io_pktlen=%u io_len=%u next=%p\n",
+				iob, iob->io_pktlen, iob->io_len, next);
 
-  /* Copy the data that only exists in the head of a I/O buffer chain into
-   * the next entry.
-   */
+	/* Copy the data that only exists in the head of a I/O buffer chain into
+	 * the next entry.
+	 */
 
-  if (next != NULL)
-    {
-      /* Copy and decrement the total packet length, being careful to
-       * do nothing too crazy.
-       */
+	if (next != NULL) {
+		/* Copy and decrement the total packet length, being careful to
+		 * do nothing too crazy.
+		 */
 
-      if (iob->io_pktlen > iob->io_len)
-        {
-          /* Adjust packet length and move it to the next entry */
+		if (iob->io_pktlen > iob->io_len) {
+			/* Adjust packet length and move it to the next entry */
 
-          next->io_pktlen = iob->io_pktlen - iob->io_len;
-          DEBUGASSERT(next->io_pktlen >= next->io_len);
-        }
-      else
-        {
-          /* This can only happen if the next entry is last entry in the
-           * chain... and if it is empty
-           */
+			next->io_pktlen = iob->io_pktlen - iob->io_len;
+			DEBUGASSERT(next->io_pktlen >= next->io_len);
+		} else {
+			/* This can only happen if the next entry is last entry in the
+			 * chain... and if it is empty
+			 */
 
-          next->io_pktlen = 0;
-          DEBUGASSERT(next->io_len == 0 && next->io_flink == NULL);
-        }
+			next->io_pktlen = 0;
+			DEBUGASSERT(next->io_len == 0 && next->io_flink == NULL);
+		}
 
-      iobinfo("next=%p io_pktlen=%u io_len=%u\n",
-              next, next->io_pktlen, next->io_len);
-    }
+		iobinfo("next=%p io_pktlen=%u io_len=%u\n",
+					next, next->io_pktlen, next->io_len);
+	}
 
-  /* Free the I/O buffer by adding it to the head of the free or the
-   * committed list. We don't know what context we are called from so
-   * we use extreme measures to protect the free list:  We disable
-   * interrupts very briefly.
-   */
+	/* Free the I/O buffer by adding it to the head of the free or the
+	 * committed list. We don't know what context we are called from so
+	 * we use extreme measures to protect the free list:  We disable
+	 * interrupts very briefly.
+	 */
 
-  flags = enter_critical_section();
+	flags = enter_critical_section();
 
-  /* Which list?  If there is a task waiting for an IOB, then put
-   * the IOB on either the free list or on the committed list where
-   * it is reserved for that allocation (and not available to
-   * iob_tryalloc()).
-   */
+	/* Which list?  If there is a task waiting for an IOB, then put
+	 * the IOB on either the free list or on the committed list where
+	 * it is reserved for that allocation (and not available to
+	 * iob_tryalloc()).
+	 */
 
-  if (g_iob_sem.semcount < 0)
-    {
-      iob->io_flink   = g_iob_committed;
-      g_iob_committed = iob;
-    }
-  else
-    {
-      iob->io_flink   = g_iob_freelist;
-      g_iob_freelist  = iob;
-    }
+	if (g_iob_sem.semcount < 0) {
+		iob->io_flink   = g_iob_committed;
+		g_iob_committed = iob;
+	} else {
+		iob->io_flink   = g_iob_freelist;
+		g_iob_freelist  = iob;
+	}
 
-  /* Signal that an IOB is available.  If there is a thread waiting
-   * for an IOB, this will wake up exactly one thread.  The semaphore
-   * count will correctly indicated that the awakened task owns an
-   * IOB and should find it in the committed list.
-   */
+	/* Signal that an IOB is available.  If there is a thread waiting
+	 * for an IOB, this will wake up exactly one thread.  The semaphore
+	 * count will correctly indicated that the awakened task owns an
+	 * IOB and should find it in the committed list.
+	 */
 
-  nxsem_post(&g_iob_sem);
+	nxsem_post(&g_iob_sem);
 #if CONFIG_IOB_THROTTLE > 0
-  nxsem_post(&g_throttle_sem);
+	nxsem_post(&g_throttle_sem);
 #endif
-  leave_critical_section(flags);
+	leave_critical_section(flags);
 
-  /* And return the I/O buffer after the one that was freed */
+	/* And return the I/O buffer after the one that was freed */
 
-  return next;
+	return next;
 }

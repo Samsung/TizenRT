@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_copyin.c
+ * net/bluetooth/iob/iob_copyin.c
  *
  *   Copyright (C) 2014, 2016-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,7 +54,7 @@
  ****************************************************************************/
 
 #ifndef MIN
-#  define MIN(a,b) ((a) < (b) ? (a) : (b))
+#  define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -80,154 +80,137 @@ typedef CODE struct iob_s *(*iob_alloc_t)(bool throttled);
  ****************************************************************************/
 
 static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
-                               unsigned int len, unsigned int offset,
-                               bool throttled, bool can_block)
+										 unsigned int len, unsigned int offset,
+										 bool throttled, bool can_block)
 {
-  FAR struct iob_s *head = iob;
-  FAR struct iob_s *next;
-  FAR uint8_t *dest;
-  unsigned int ncopy;
-  unsigned int avail;
-  unsigned int total = len;
+	FAR struct iob_s *head = iob;
+	FAR struct iob_s *next;
+	FAR uint8_t *dest;
+	unsigned int ncopy;
+	unsigned int avail;
+	unsigned int total = len;
 
-  iobinfo("iob=%p len=%u offset=%u\n", iob, len, offset);
-  DEBUGASSERT(iob && src);
+	iobinfo("iob=%p len=%u offset=%u\n", iob, len, offset);
+	DEBUGASSERT(iob && src);
 
-  /* The offset must applied to data that is already in the I/O buffer chain */
+	/* The offset must applied to data that is already in the I/O buffer chain */
 
-  if (offset > iob->io_pktlen)
-    {
-      ioberr("ERROR: offset is past the end of data: %u > %u\n",
-             offset, iob->io_pktlen);
-      return -ESPIPE;
-    }
+	if (offset > iob->io_pktlen) {
+		ioberr("ERROR: offset is past the end of data: %u > %u\n",
+				 offset, iob->io_pktlen);
+		return -ESPIPE;
+	}
 
-  /* Skip to the I/O buffer containing the data offset */
+	/* Skip to the I/O buffer containing the data offset */
 
-  while (offset > iob->io_len)
-    {
-      offset -= iob->io_len;
-      iob     = iob->io_flink;
-    }
+	while (offset > iob->io_len) {
+		offset -= iob->io_len;
+		iob     = iob->io_flink;
+	}
 
-  /* Then loop until all of the I/O data is copied from the user buffer */
+	/* Then loop until all of the I/O data is copied from the user buffer */
 
-  while (len > 0)
-    {
-      next = iob->io_flink;
+	while (len > 0) {
+		next = iob->io_flink;
 
-      /* Get the destination I/O buffer address and the amount of data
-       * available from that address.
-       */
+		/* Get the destination I/O buffer address and the amount of data
+		 * available from that address.
+		 */
 
-      dest  = &iob->io_data[iob->io_offset + offset];
-      avail = iob->io_len - offset;
+		dest  = &iob->io_data[iob->io_offset + offset];
+		avail = iob->io_len - offset;
 
-      iobinfo("iob=%p avail=%u len=%u next=%p\n", iob, avail, len, next);
+		iobinfo("iob=%p avail=%u len=%u next=%p\n", iob, avail, len, next);
 
-      /* Will the rest of the copy fit into this buffer, overwriting
-       * existing data.
-       */
+		/* Will the rest of the copy fit into this buffer, overwriting
+		 * existing data.
+		 */
 
-      if (len > avail)
-        {
-          /* No.. Is this the last buffer in the chain? */
+		if (len > avail) {
+			/* No.. Is this the last buffer in the chain? */
 
-          if (next)
-            {
-              /* No.. clip to size that will overwrite.  We cannot
-               * extend the length of an I/O block in mid-chain.
-               */
+			if (next) {
+				/* No.. clip to size that will overwrite.  We cannot
+				 * extend the length of an I/O block in mid-chain.
+				 */
 
-              ncopy = avail;
-            }
-          else
-            {
-              unsigned int maxlen;
-              unsigned int newlen;
+				ncopy = avail;
+			} else {
+				unsigned int maxlen;
+				unsigned int newlen;
 
-              /* Yes.. We can extend this buffer to the up to the very end. */
+				/* Yes.. We can extend this buffer to the up to the very end. */
 
-              maxlen = CONFIG_IOB_BUFSIZE - iob->io_offset;
+				maxlen = CONFIG_IOB_BUFSIZE - iob->io_offset;
 
-              /* This is the new buffer length that we need.  Of course,
-               * clipped to the maximum possible size in this buffer.
-               */
+				/* This is the new buffer length that we need.  Of course,
+				 * clipped to the maximum possible size in this buffer.
+				 */
 
-              newlen = len + offset;
-              if (newlen > maxlen)
-                {
-                  newlen = maxlen;
-                }
+				newlen = len + offset;
+				if (newlen > maxlen)
+					newlen = maxlen;
 
-              /* Set the new length and increment the packet length */
+				/* Set the new length and increment the packet length */
 
-              head->io_pktlen += (newlen - iob->io_len);
-              iob->io_len      = newlen;
+				head->io_pktlen += (newlen - iob->io_len);
+				iob->io_len      = newlen;
 
-              /* Set the new number of bytes to copy */
+				/* Set the new number of bytes to copy */
 
-              ncopy = newlen - offset;
-            }
-        }
-      else
-        {
-          /* Yes.. Copy all of the remaining bytes */
+				ncopy = newlen - offset;
+			}
+		} else {
+			/* Yes.. Copy all of the remaining bytes */
 
-          ncopy = len;
-        }
+			ncopy = len;
+		}
 
-      /* Copy from the user buffer to the I/O buffer.  */
+		/* Copy from the user buffer to the I/O buffer.  */
 
-      memcpy(dest, src, ncopy);
-      iobinfo("iob=%p Copy %u bytes new len=%u\n",
-              iob, ncopy, iob->io_len);
+		memcpy(dest, src, ncopy);
+		iobinfo("iob=%p Copy %u bytes new len=%u\n",
+					iob, ncopy, iob->io_len);
 
-      /* Adjust the total length of the copy and the destination address in
-       * the user buffer.
-       */
+		/* Adjust the total length of the copy and the destination address in
+		 * the user buffer.
+		 */
 
-      len -= ncopy;
-      src += ncopy;
+		len -= ncopy;
+		src += ncopy;
 
-      /* Skip to the next I/O buffer in the chain.  First, check if we
-       * are at the end of the buffer chain.
-       */
+		/* Skip to the next I/O buffer in the chain.  First, check if we
+		 * are at the end of the buffer chain.
+		 */
 
-      if (len > 0 && !next)
-        {
-          /* Yes.. allocate a new buffer.
-           *
-           * Copy as many bytes as possible.  If we have successfully copied
-           * any already don't block, otherwise block if we're allowed.
-           */
+		if (len > 0 && !next) {
+			/* Yes.. allocate a new buffer.
+			 *
+			 * Copy as many bytes as possible.  If we have successfully copied
+			 * any already don't block, otherwise block if we're allowed.
+			 */
 
-          if (!can_block || len < total)
-            {
-              next = iob_tryalloc(throttled);
-            }
-          else
-            {
-              next = iob_alloc(throttled);
-            }
+			if (!can_block || len < total) {
+				next = iob_tryalloc(throttled);
+			} else
+				next = iob_alloc(throttled);
 
-          if (next == NULL)
-            {
-              ioberr("ERROR: Failed to allocate I/O buffer\n");
-              return len;
-            }
+			if (next == NULL) {
+				ioberr("ERROR: Failed to allocate I/O buffer\n");
+				return len;
+			}
 
-          /* Add the new, empty I/O buffer to the end of the buffer chain. */
+			/* Add the new, empty I/O buffer to the end of the buffer chain. */
 
-          iob->io_flink = next;
-          iobinfo("iob=%p added to the chain\n", iob);
-        }
+			iob->io_flink = next;
+			iobinfo("iob=%p added to the chain\n", iob);
+		}
 
-      iob = next;
-      offset = 0;
-    }
+		iob = next;
+		offset = 0;
+	}
 
-  return 0;
+	return 0;
 }
 
 /****************************************************************************
@@ -244,9 +227,9 @@ static int iob_copyin_internal(FAR struct iob_s *iob, FAR const uint8_t *src,
  ****************************************************************************/
 
 int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-               unsigned int len, unsigned int offset, bool throttled)
+					 unsigned int len, unsigned int offset, bool throttled)
 {
-  return len - iob_copyin_internal(iob, src, len, offset, throttled, true);
+	return len - iob_copyin_internal(iob, src, len, offset, throttled, true);
 }
 
 /****************************************************************************
@@ -260,14 +243,10 @@ int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src,
  ****************************************************************************/
 
 int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src,
-                  unsigned int len, unsigned int offset, bool throttled)
+						unsigned int len, unsigned int offset, bool throttled)
 {
-  if (iob_copyin_internal(iob, src, len, offset, throttled, false) == 0)
-    {
-      return len;
-    }
-  else
-    {
-      return -ENOMEM;
-    }
+	if (iob_copyin_internal(iob, src, len, offset, throttled, false) == 0) {
+		return len;
+	} else
+		return -ENOMEM;
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_pack.c
+ * net/bluetooth/iob/iob_pack.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

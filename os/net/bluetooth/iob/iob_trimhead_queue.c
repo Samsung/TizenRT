@@ -1,5 +1,5 @@
 /****************************************************************************
- * mm/iob/iob_trimhead_queue.c
+ * net/bluetooth/iob/iob_trimhead_queue.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -78,31 +78,29 @@
  ****************************************************************************/
 
 FAR struct iob_s *iob_trimhead_queue(FAR struct iob_queue_s *qhead,
-                                     unsigned int trimlen)
+												unsigned int trimlen)
 {
-  FAR struct iob_qentry_s *qentry;
-  FAR struct iob_s *iob = NULL;
+	FAR struct iob_qentry_s *qentry;
+	FAR struct iob_s *iob = NULL;
 
-  /* Peek at the I/O buffer chain container at the head of the queue */
+	/* Peek at the I/O buffer chain container at the head of the queue */
 
-  qentry = qhead->qh_head;
-  if (qentry)
-    {
-      /* Verify that the queue entry contains an I/O buffer chain */
+	qentry = qhead->qh_head;
+	if (qentry) {
+		/* Verify that the queue entry contains an I/O buffer chain */
 
-      iob = qentry->qe_head;
-      if (iob)
-        {
-          /* Trim the I/Buffer chain and update the queue head */
+		iob = qentry->qe_head;
+		if (iob) {
+			/* Trim the I/Buffer chain and update the queue head */
 
-          iob = iob_trimhead(iob, trimlen);
-          qentry->qe_head = iob;
-        }
-    }
+			iob = iob_trimhead(iob, trimlen);
+			qentry->qe_head = iob;
+		}
+	}
 
-  /* Return the new I/O buffer chain at the head of the queue */
+	/* Return the new I/O buffer chain at the head of the queue */
 
-  return iob;
+	return iob;
 }
 
 #endif /* CONFIG_IOB_NCHAINS > 0 */
