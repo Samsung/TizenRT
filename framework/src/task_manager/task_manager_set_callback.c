@@ -31,10 +31,10 @@
 #endif
 #include "task_manager_internal.h"
 
-#define REQ_CBFUNC(X)          ((tm_termination_info_t *)X.data)->cb
-#define REQ_CBDATA(X)          ((tm_termination_info_t *)X.data)->cb_data
-#define REQ_CBDATA_MSG_SIZE(X) ((tm_msg_t *)((tm_termination_info_t *)X.data)->cb_data)->msg_size
-#define REQ_CBDATA_MSG(X)      ((tm_msg_t *)((tm_termination_info_t *)X.data)->cb_data)->msg
+#define REQ_CBFUNC(X)          ((tm_termination_info_t *)X->data)->cb
+#define REQ_CBDATA(X)          ((tm_termination_info_t *)X->data)->cb_data
+#define REQ_CBDATA_MSG_SIZE(X) ((tm_msg_t *)((tm_termination_info_t *)X->data)->cb_data)->msg_size
+#define REQ_CBDATA_MSG(X)      ((tm_msg_t *)((tm_termination_info_t *)X->data)->cb_data)->msg
 
 void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
@@ -140,6 +140,51 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 	msg.sival_int = getpid();
 
 	(void)sigqueue(taskmgr_pid, SIGTM_TERMINATION, msg);
+}
+
+static int taskmgr_set_cb_common(int cmd, tm_request_t *request_msg, tm_termination_callback_t func, tm_msg_t *cb_data)
+{
+	int ret;
+
+	memset(request_msg, 0, sizeof(tm_request_t));
+	/* Set the request msg */
+	request_msg->cmd = TASKMGRCMD_SET_STOP_CB;
+	request_msg->caller_pid = getpid();
+	request_msg->timeout = TM_NO_RESPONSE;
+	request_msg->data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
+	if (request_msg->data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
+	if (cb_data != NULL) {
+		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
+		if (REQ_CBDATA(request_msg) == NULL) {
+			TM_FREE(request_msg->data);
+			return TM_OUT_OF_MEMORY;
+		}
+		REQ_CBDATA_MSG_SIZE(request_msg) = cb_data->msg_size;
+		REQ_CBDATA_MSG(request_msg) = TM_ALLOC(cb_data->msg_size);
+		if (REQ_CBDATA_MSG(request_msg) == NULL) {
+			TM_FREE(REQ_CBDATA(request_msg));
+			TM_FREE(request_msg->data);
+			return TM_OUT_OF_MEMORY;
+		}
+		memcpy(REQ_CBDATA_MSG(request_msg), cb_data->msg, cb_data->msg_size);
+	} else {
+		REQ_CBDATA(request_msg) = NULL;
+	}
+
+	ret = taskmgr_send_request(request_msg);
+	if (ret < 0) {
+		if (REQ_CBDATA(request_msg) != NULL) {
+			TM_FREE(REQ_CBDATA_MSG(request_msg));
+			TM_FREE(REQ_CBDATA(request_msg));
+		}
+		TM_FREE(request_msg->data);
+		return ret;
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -282,43 +327,7 @@ int task_manager_set_exit_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 	}
 
 	/* send exit callback function to task manager */
-	memset(&request_msg, 0, sizeof(tm_request_t));
-	/* Set the request msg */
-	request_msg.cmd = TASKMGRCMD_SET_EXIT_CB;
-	request_msg.caller_pid = getpid();
-	request_msg.timeout = TM_NO_RESPONSE;
-	request_msg.data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
-	if (request_msg.data == NULL) {
-		return TM_OUT_OF_MEMORY;
-	}
-	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
-	if (cb_data != NULL) {
-		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
-		if (REQ_CBDATA(request_msg) == NULL) {
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
-		}
-		REQ_CBDATA_MSG_SIZE(request_msg) = cb_data->msg_size;
-		REQ_CBDATA_MSG(request_msg) = TM_ALLOC(cb_data->msg_size);
-		if (REQ_CBDATA_MSG(request_msg) == NULL) {
-			TM_FREE(REQ_CBDATA(request_msg));
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
-		}
-		memcpy(REQ_CBDATA_MSG(request_msg), cb_data->msg, cb_data->msg_size);
-	} else {
-		REQ_CBDATA(request_msg) = NULL;
-	}
-
-	ret = taskmgr_send_request(&request_msg);
-	if (ret < 0) {
-		if (REQ_CBDATA(request_msg) != NULL) {
-			TM_FREE(REQ_CBDATA_MSG(request_msg));
-			TM_FREE(REQ_CBDATA(request_msg));
-		}
-		TM_FREE(request_msg.data);
-		return ret;
-	}
+	ret = taskmgr_set_cb_common(TASKMGRCMD_SET_EXIT_CB, &request_msg, func, cb_data);
 
 	return ret;
 }
@@ -353,43 +362,7 @@ int task_manager_set_stop_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 	}
 
 	/* send stop callback function to task manager */
-	memset(&request_msg, 0, sizeof(tm_request_t));
-	/* Set the request msg */
-	request_msg.cmd = TASKMGRCMD_SET_STOP_CB;
-	request_msg.caller_pid = getpid();
-	request_msg.timeout = TM_NO_RESPONSE;
-	request_msg.data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
-	if (request_msg.data == NULL) {
-		return TM_OUT_OF_MEMORY;
-	}
-	REQ_CBFUNC(request_msg) = (tm_termination_callback_t)func;
-	if (cb_data != NULL) {
-		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
-		if (REQ_CBDATA(request_msg) == NULL) {
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
-		}
-		REQ_CBDATA_MSG_SIZE(request_msg) = cb_data->msg_size;
-		REQ_CBDATA_MSG(request_msg) = TM_ALLOC(cb_data->msg_size);
-		if (REQ_CBDATA_MSG(request_msg) == NULL) {
-			TM_FREE(REQ_CBDATA(request_msg));
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
-		}
-		memcpy(REQ_CBDATA_MSG(request_msg), cb_data->msg, cb_data->msg_size);
-	} else {
-		REQ_CBDATA(request_msg) = NULL;
-	}
-
-	ret = taskmgr_send_request(&request_msg);
-	if (ret < 0) {
-		if (REQ_CBDATA(request_msg) != NULL) {
-			TM_FREE(REQ_CBDATA_MSG(request_msg));
-			TM_FREE(REQ_CBDATA(request_msg));
-		}
-		TM_FREE(request_msg.data);
-		return ret;
-	}
+	ret = taskmgr_set_cb_common(TASKMGRCMD_SET_STOP_CB, &request_msg, func, cb_data);
 
 	return ret;
 }
