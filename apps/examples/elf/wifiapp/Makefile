@@ -94,7 +94,7 @@ BLOCK_SIZE = 0
 endif
 
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-SRCS = $(TOPDIR)/board/common/userspace/up_userspace.c
+SRCS = $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.c
 SRCS += wifiapp.c
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c
@@ -105,8 +105,11 @@ endif
 
 OBJS = $(SRCS:.c=$(OBJEXT))
 
-all: $(BIN)
-.PHONY: clean install verify
+prebuild:
+	$(call DELFILE, $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.o)
+
+all: prebuild $(BIN)
+.PHONY: prebuild clean install verify
 
 $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"

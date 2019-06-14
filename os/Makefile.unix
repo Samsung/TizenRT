@@ -453,6 +453,7 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 		echo "ERROR: No Makefile in PASS1_BUILDIR"; \
 		exit 1; \
 	fi
+	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
 endif
 

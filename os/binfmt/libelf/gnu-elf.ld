@@ -61,7 +61,7 @@ SECTIONS
        * eventually used by user space memory allocator
        */
       LONG(0);
-      *(.userspace)
+      KEEP(*(.userspace))
       *(.text)
       *(.text.*)
       *(.gnu.warning)
