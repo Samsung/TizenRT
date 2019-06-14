@@ -34,7 +34,7 @@ int binary_manager_notify_binary_started(void)
 
 	request_msg.cmd = BINMGR_NOTIFY_STARTED;
 	request_msg.requester_pid = getpid();
-	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", BINMGR_REQUEST_MQ);
+	snprintf(request_msg.data.bin_name, BIN_NAME_MAX, "%s", BINMGR_REQUEST_MQ);
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {

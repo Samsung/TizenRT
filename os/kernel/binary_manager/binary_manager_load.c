@@ -373,16 +373,38 @@ static int binary_manager_reload(char *bin_name)
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
 		bmdbg("binary %s is not registered\n", bin_name);
-		return BINMGR_BININFO_NOT_FOUND;
+		return BINMGR_NOT_FOUND;
 	}
 
-	/* Kill its children and restart binary if the binary is registered with the binary manager */
-	ret = reload_kill_binary(BIN_ID(bin_idx));
-	if (ret != OK) {
+	if (BIN_STATE(bin_idx) == BINARY_WAITUNLOAD) {
+		bmdbg("Already reloading is requested\n");
 		return BINMGR_OPERATION_FAIL;
 	}
-	BIN_ID(bin_idx) = -1;
+
+	if (BIN_STATE(bin_idx) == BINARY_RUNNING) {
+		BIN_STATE(bin_idx) = BINARY_WAITUNLOAD;
+		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
+		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
+		if (ret != OK) {
+			return BINMGR_OPERATION_FAIL;
+		}
+	}
+
+	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
+		/* Kill its children and restart binary if the binary is registered with the binary manager */
+		ret = reload_kill_binary(BIN_ID(bin_idx));
+		if (ret != OK) {
+			return BINMGR_OPERATION_FAIL;
+		}
+		BIN_ID(bin_idx) = -1;
+
+		/* Clean callbacks of binary */
+		binary_manager_clear_bin_statecb(bin_idx);
+	}
+
+	/* Update binary state and notify it to other binaries */
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
+	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
 
 	/* load binary and update binid */
 	ret = binary_manager_load_binary(bin_idx);

@@ -43,7 +43,7 @@ int binary_manager_update_binary(char *binary_name)
 
 	request_msg.cmd = BINMGR_RELOAD;
 	request_msg.requester_pid = getpid();
-	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", binary_name);
+	snprintf(request_msg.data.bin_name, BIN_NAME_MAX, "%s", binary_name);
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
@@ -67,7 +67,7 @@ int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info
 
 	request_msg.cmd = BINMGR_GET_INFO;
 	request_msg.requester_pid = getpid();
-	snprintf(request_msg.bin_name, BIN_NAME_MAX, "%s", binary_name);
+	snprintf(request_msg.data.bin_name, BIN_NAME_MAX, "%s", binary_name);
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {

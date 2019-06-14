@@ -148,6 +148,13 @@
 
 /* The following are non-standard signal definitions */
 
+/* SIG_SIGBM_STATECB is used in binary Manager */
+#ifndef CONFIG_SIG_SIGBM_STATE
+#define SIGBM_STATE     15
+#else
+#define SIGBM_STATE     CONFIG_SIG_SIGBM_STATE
+#endif
+
 #ifndef CONFIG_DISABLE_PTHREAD
 #ifndef CONFIG_SIG_SIGCONDTIMEDOUT
 #define SIGCONDTIMEDOUT 16		/* Used in the implementation of pthread_cond_timedwait */

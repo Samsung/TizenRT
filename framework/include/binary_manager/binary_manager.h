@@ -83,6 +83,26 @@ int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list);
  */
 int binary_manager_notify_binary_started(void);
 
+/**
+ * @brief Set the callback which will be called when the the states of binaries are changed
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sets callback for the changes of binary state.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, void *cb_data);
+
+/**
+ * @brief Clear the registered callback for the changes of binary state.
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It clears registered callback for the changes of binary state.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+int binary_manager_unregister_state_changed_callback(void);
+
 #endif
 /**
  * @}

@@ -33,6 +33,9 @@
 #define BINMGR_REQUEST_MQ                "bin_req_mq"
 #define BINMGR_RESPONSE_MQ_PREFIX        "bin_res_mq"
 
+/* Binary manager Callback Message Queue */
+#define BINMGR_CBMSG_MQ                  "binmgr_cb"
+
 /* Maximum number of messages on queue */
 #define BINMGR_MAX_MSG                   32
 
@@ -62,6 +65,12 @@
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
 
+/* Binary states used in state callback */
+enum binary_statecb_state_e {
+	BINARY_STARTED = 0,           /* Binary is started */
+	BINARY_UNLOADED = 1,          /* Binary is unloaded */
+	BINARY_READYTOUNLOAD = 2,     /* Binary will be unloaded */
+};
 
 /* The types of partition for binary manager */
 enum binmgr_partition_type {
@@ -77,6 +86,8 @@ enum binmgr_request_msg_type {
 	BINMGR_GET_INFO_ALL,
 	BINMGR_RELOAD,
 	BINMGR_NOTIFY_STARTED,
+	BINMGR_REGISTER_STATECB,
+	BINMGR_UNREGISTER_STATECB,
 #ifdef CONFIG_BINMGR_RECOVERY
 	BINMGR_FAULT,
 #endif
@@ -89,7 +100,8 @@ enum binmgr_response_result_type {
 	BINMGR_OPERATION_FAIL = -2,
 	BINMGR_OUT_OF_MEMORY = -3,
 	BINMGR_INVALID_PARAM = -4,
-	BINMGR_BININFO_NOT_FOUND = -5,
+	BINMGR_NOT_FOUND = -5,
+	BINMGR_ALREADY_REGISTERED = -6,
 };
 
 /****************************************************************************
@@ -122,12 +134,37 @@ struct binary_info_list_s {
 };
 typedef struct binary_info_list_s binary_info_list_t;
 
+typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
+
+struct binmgr_cb_s {
+	binmgr_statecb_t func;
+	void *data;
+};
+typedef struct binmgr_cb_s binmgr_cb_t;
+
+struct binmgr_cb_msg_s {
+	binmgr_cb_t *callback;
+	bool need_response;
+	int state;
+	char bin_name[BIN_NAME_MAX];
+};
+typedef struct binmgr_cb_msg_s binmgr_cb_msg_t;
+
 struct binmgr_request_s {
 	int cmd;
 	int requester_pid;
-	char bin_name[BIN_NAME_MAX];
+	union {
+		char bin_name[BIN_NAME_MAX];
+		binmgr_cb_t *cb_info;
+	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_statecb_response_s {
+	int result;
+	binmgr_cb_t *cb_info;
+};
+typedef struct binmgr_statecb_response_s binmgr_statecb_response_t;
 
 struct binmgr_getinfo_response_s {
 	int result;

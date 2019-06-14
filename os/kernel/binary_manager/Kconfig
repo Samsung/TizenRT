@@ -6,7 +6,7 @@
 config BINARY_MANAGER
 	bool "Enable Binary Manager"
 	default n
-	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE
+	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE && !DISABLE_SIGNAL
 	depends on MTD_FTL && FLASH_PARTITION && MTD_PARTITION_NAMES
 	---help---
 		This is kernel thread which manages binaries.
