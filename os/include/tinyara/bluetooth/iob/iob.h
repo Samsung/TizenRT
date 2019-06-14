@@ -283,7 +283,7 @@ void iob_free_queue(FAR struct iob_queue_s *qhead);
  *
  ****************************************************************************/
 
-int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled);
+int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t * src, unsigned int len, unsigned int offset, bool throttled);
 
 /****************************************************************************
  * Name: iob_trycopyin
@@ -295,7 +295,7 @@ int iob_copyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, 
  *
  ****************************************************************************/
 
-int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int len, unsigned int offset, bool throttled);
+int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t * src, unsigned int len, unsigned int offset, bool throttled);
 
 /****************************************************************************
  * Name: iob_copyout
@@ -306,7 +306,7 @@ int iob_trycopyin(FAR struct iob_s *iob, FAR const uint8_t *src, unsigned int le
  *
  ****************************************************************************/
 
-int iob_copyout(FAR uint8_t *dest, FAR const struct iob_s *iob, unsigned int len, unsigned int offset);
+int iob_copyout(FAR uint8_t * dest, FAR const struct iob_s *iob, unsigned int len, unsigned int offset);
 
 /****************************************************************************
  * Name: iob_clone

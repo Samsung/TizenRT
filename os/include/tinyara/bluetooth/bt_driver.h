@@ -59,11 +59,11 @@ struct bt_driver_s {
 
 	/* Open the HCI transport */
 
-	CODE int (*open) (FAR const struct bt_driver_s * btdev);
+	CODE int (*open)(FAR const struct bt_driver_s *btdev);
 
 	/* Send data to HCI */
 
-	CODE int (*send) (FAR const struct bt_driver_s * btdev, FAR struct bt_buf_s * buf);
+	CODE int (*send)(FAR const struct bt_driver_s *btdev, FAR struct bt_buf_s *buf);
 };
 
 /****************************************************************************

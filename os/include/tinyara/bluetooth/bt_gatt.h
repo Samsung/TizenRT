@@ -467,7 +467,7 @@ struct bt_gatt_attr_s {
 
 	CODE int (*read) (FAR struct bt_conn_s * conn, FAR const struct bt_gatt_attr_s * attr, FAR void *buf, uint8_t len, uint16_t offset);
 
-/* Attribute write callback */
+	/* Attribute write callback */
 
 	CODE int (*write) (FAR struct bt_conn_s * conn, FAR const struct bt_gatt_attr_s * attr, FAR const void *buf, uint8_t len, uint16_t offset);
 
