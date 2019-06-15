@@ -152,14 +152,6 @@ wifi_utils_result_e wifi_utils_init(void)
 			return wuret;
 		}
 		g_mode = RTK_WIFI_STATION_IF;
-
-#if 0
-		ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
-		if (ret != SLSI_STATUS_SUCCESS) {
-			ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
-			return wuret;
-		}
-#endif
 		wuret = WIFI_UTILS_SUCCESS;
 	} else {
 		ndbg("Already %d\n", g_mode);
@@ -181,36 +173,6 @@ wifi_utils_result_e wifi_utils_deinit(void)
 	}
 	return wuret;
 }
-
-#if 0
-int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list)
-{
-#if 0
-	wifi_utils_scan_list_s *scan_list = NULL;
-	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Scan failed %d\n");
-		// todo: arg need to be passed, we didn't implement passing arg yet.
-		g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
-		return SLSI_STATUS_ERROR;
-	}
-	slsi_scan_info_t *wifi_scan_result;
-	int8_t res = WiFiGetScanResults(&wifi_scan_result);
-	if (res != SLSI_STATUS_SUCCESS) {
-		return SLSI_STATUS_ERROR;
-	}
-#endif
-	if (g_cbk.scan_done) {
-		if (scan_list) {
-			g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
-			free(scan_list);
-		} else {
-			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
-		}
-	}
-
-	return RTK_STATUS_SUCCESS;
-}
-#endif
 
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
@@ -339,14 +301,6 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	} else {
 		nvdbg("[RTK] Link callback handles: registered\n");
 	}
-
-#if 0
-	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
-	if (ret != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
-		return WIFI_UTILS_FAIL;
-	}
-#endif
 
 	if (cmd_wifi_ap(softap_config) != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] Failed to start AP mode\n");
