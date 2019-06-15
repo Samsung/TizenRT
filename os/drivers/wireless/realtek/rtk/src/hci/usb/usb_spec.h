@@ -186,7 +186,6 @@ enum RTW_USB_SPEED {
 #define REG_RW_FORMAT(pcmd, x) SET_BITS_TO_LE_4BYTE(pcmd, 31, 1, x)		   //(x<<(unsigned int)7)
 
 #define FIFO_LEN_FORMAT(pcmd, x) SET_BITS_TO_LE_4BYTE(pcmd, 0, 16, x) //(x<<(unsigned int)24)
-//#define FIFO_ADDR_FORMAT(pcmd,x) 			SET_BITS_TO_LE_4BYTE(pcmd, 8, 16, x)//(x<<(unsigned int)16)
 #define FIFO_DOMAIN_ID_FORMAT(pcmd, x) SET_BITS_TO_LE_4BYTE(pcmd, 24, 5, x) //(x<<(unsigned int)0)
 #define FIFO_FUN_FORMAT(pcmd, x) SET_BITS_TO_LE_4BYTE(pcmd, 29, 2, x)		//(x<<(unsigned int)5)
 #define FIFO_RW_FORMAT(pcmd, x) SET_BITS_TO_LE_4BYTE(pcmd, 31, 1, x)		//(x<<(unsigned int)7)

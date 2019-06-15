@@ -21,42 +21,42 @@
 #define __HALPWRSEQCMD_H__
 
 /*---------------------------------------------*/
-//3 The value of cmd: 4 bits
+//3 The value of cmd:4 bits
 /*---------------------------------------------*/
 #define PWR_CMD_READ 0x00
-// offset: the read register offset
-// msk: the mask of the read value
-// value: N/A, left by 0
-// note: dirver shall implement this function by read & msk
+// offset:the read register offset
+// msk:the mask of the read value
+// value:N/A, left by 0
+// note:dirver shall implement this function by read & msk
 
 #define PWR_CMD_WRITE 0x01
-// offset: the read register offset
-// msk: the mask of the write bits
-// value: write value
-// note: driver shall implement this cmd by read & msk after write
+// offset:the read register offset
+// msk:the mask of the write bits
+// value:write value
+// note:driver shall implement this cmd by read & msk after write
 
 #define PWR_CMD_POLLING 0x02
-// offset: the read register offset
-// msk: the mask of the polled value
-// value: the value to be polled, masked by the msd field.
-// note: driver shall implement this cmd by
+// offset:the read register offset
+// msk:the mask of the polled value
+// value:the value to be polled, masked by the msd field.
+// note:driver shall implement this cmd by
 // do{
 // if( (Read(offset) & msk) == (value & msk) )
 // break;
 // } while(not timeout);
 
 #define PWR_CMD_DELAY 0x03
-// offset: the value to delay
-// msk: N/A
-// value: the unit of delay, 0: us, 1: ms
+// offset:the value to delay
+// msk:N/A
+// value:the unit of delay, 0:us, 1:ms
 
 #define PWR_CMD_END 0x04
-// offset: N/A
-// msk: N/A
-// value: N/A
+// offset:N/A
+// msk:N/A
+// value:N/A
 
 /*---------------------------------------------*/
-//3 The value of base: 4 bits
+//3 The value of base:4 bits
 /*---------------------------------------------*/
 // define the base address of each block
 #define PWR_BASEADDR_MAC 0x00
@@ -65,7 +65,7 @@
 #define PWR_BASEADDR_SDIO 0x03
 
 /*---------------------------------------------*/
-//3 The value of interface_msk: 4 bits
+//3 The value of interface_msk:4 bits
 /*---------------------------------------------*/
 #define PWR_INTF_SDIO_MSK BIT(0)
 #define PWR_INTF_USB_MSK BIT(1)
@@ -73,14 +73,14 @@
 #define PWR_INTF_ALL_MSK (BIT(0) | BIT(1) | BIT(2) | BIT(3))
 
 /*---------------------------------------------*/
-//3 The value of fab_msk: 4 bits
+//3 The value of fab_msk:4 bits
 /*---------------------------------------------*/
 #define PWR_FAB_TSMC_MSK BIT(0)
 #define PWR_FAB_UMC_MSK BIT(1)
 #define PWR_FAB_ALL_MSK (BIT(0) | BIT(1) | BIT(2) | BIT(3))
 
 /*---------------------------------------------*/
-//3 The value of cut_msk: 8 bits
+//3 The value of cut_msk:8 bits
 /*---------------------------------------------*/
 #define PWR_CUT_TESTCHIP_MSK BIT(0)
 #define PWR_CUT_A_MSK BIT(1)
@@ -100,10 +100,10 @@ typedef enum _PWRSEQ_CMD_DELAY_UNIT_ {
 typedef struct _WL_PWR_CFG_ {
 	u16 offset;
 	u8 cut_msk;
-	u8 fab_msk : 4;
-	u8 interface_msk : 4;
-	u8 base : 4;
-	u8 cmd : 4;
+	u8 fab_msk:4;
+	u8 interface_msk:4;
+	u8 base:4;
+	u8 cmd:4;
 	u8 msk;
 	u8 value;
 } WLAN_PWR_CFG, *PWLAN_PWR_CFG;

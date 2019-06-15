@@ -1,7 +1,7 @@
 /*
   *    Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
-  * 
-  * 	Define the end point of packed structure
+  *
+  *    Define the end point of packed structure
   *
   */
 

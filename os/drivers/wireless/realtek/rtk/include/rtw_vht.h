@@ -126,8 +126,8 @@ struct vht_priv {
 	u8 vht_highest_rate;
 	u8 vht_mcs_map[2];
 
-	u8 op_present : 1;	 /* vht_op is present */
-	u8 notify_present : 1; /* vht_op_mode_notify is present */
+	u8 op_present:1;	 /* vht_op is present */
+	u8 notify_present:1; /* vht_op_mode_notify is present */
 
 	u8 vht_cap[32];
 	u8 vht_op[VHT_OP_IE_LEN];

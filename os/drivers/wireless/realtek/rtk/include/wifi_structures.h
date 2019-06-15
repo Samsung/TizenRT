@@ -68,7 +68,7 @@ typedef struct rtw_mac {
 /**
   * @brief  The structure is used to describe the setting about SSID,
   *			security type, password and default channel, used to start AP mode.
-  * @note  The data length of string pointed by ssid should not exceed 32, 
+  * @note  The data length of string pointed by ssid should not exceed 32,
   *        and the data length of string pointed by password should not exceed 64.
   */
 typedef struct rtw_ap_info {
@@ -80,9 +80,9 @@ typedef struct rtw_ap_info {
 } rtw_ap_info_t;
 
 /**
-  * @brief  The structure is used to describe the station mode setting about SSID, 
+  * @brief  The structure is used to describe the station mode setting about SSID,
   *			security type and password, used when connecting to an AP.
-  * @note  The data length of string pointed by ssid should not exceed 32, 
+  * @note  The data length of string pointed by ssid should not exceed 32,
   *        and the data length of string pointed by password should not exceed 64.
   */
 typedef struct rtw_network_info {
@@ -160,8 +160,7 @@ typedef struct rtw_wifi_config {
 /**
   * @brief  The structure is used to describe the maclist.
   */
-typedef struct
-{
+typedef struct {
 	unsigned int count;	/**< Number of MAC addresses in the list    */
 	rtw_mac_t mac_list[1]; /**< Variable length array of MAC addresses */
 } rtw_maclist_t;
@@ -181,11 +180,6 @@ typedef struct {
 	unsigned char SSID_len;
 	unsigned char SSID[32];
 	unsigned char channel;
-	//    struct {
-	//        uint32_t    count;                /* # rates in this set */
-	//        uint8_t   rates[16];              /* rates in 500kbps units w/hi bit set if basic */
-	//    } rateset;                            /* supported rates */
-	//    rtw_chanspec_t  chanspec;              /* chanspec for bss */
 	unsigned short atim_window; /**< units are Kusec */
 	unsigned char dtim_period;  /**< DTIM period */
 	signed short RSSI;			/**< receive signal strength (in dBm) */
@@ -262,9 +256,7 @@ typedef struct wowlan_pattern {
 	unsigned char eth_sa[6];
 	unsigned char eth_proto_type[2];
 	unsigned char header_len[1];
-	//unsigned char header_content[8];
 	unsigned char ip_proto[1];
-	//unsigned char checksum[2];
 	unsigned char ip_sa[4];
 	unsigned char ip_da[4];
 	unsigned char mask[5]; // 40 bits to match 34-byte pattern

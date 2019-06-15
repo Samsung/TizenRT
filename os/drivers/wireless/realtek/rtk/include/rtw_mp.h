@@ -82,39 +82,6 @@
 #define NDIS_STATUS_NO_ROUTE_TO_DESTINATION ((NDIS_STATUS)0xC0010029L) // cause 3
 #endif																   /* #ifndef PLATFORM_WINDOWS */
 
-#if 0
-#define MPT_NOOP 0
-#define MPT_READ_MAC_1BYTE 1
-#define MPT_READ_MAC_2BYTE 2
-#define MPT_READ_MAC_4BYTE 3
-#define MPT_WRITE_MAC_1BYTE 4
-#define MPT_WRITE_MAC_2BYTE 5
-#define MPT_WRITE_MAC_4BYTE 6
-#define MPT_READ_BB_CCK 7
-#define MPT_WRITE_BB_CCK 8
-#define MPT_READ_BB_OFDM 9
-#define MPT_WRITE_BB_OFDM 10
-#define MPT_READ_RF 11
-#define MPT_WRITE_RF 12
-#define MPT_READ_EEPROM_1BYTE 13
-#define MPT_WRITE_EEPROM_1BYTE 14
-#define MPT_READ_EEPROM_2BYTE 15
-#define MPT_WRITE_EEPROM_2BYTE 16
-#define MPT_SET_CSTHRESHOLD 21
-#define MPT_SET_INITGAIN 22
-#define MPT_SWITCH_BAND 23
-#define MPT_SWITCH_CHANNEL 24
-#define MPT_SET_DATARATE 25
-#define MPT_SWITCH_ANTENNA 26
-#define MPT_SET_TX_POWER 27
-#define MPT_SET_CONT_TX 28
-#define MPT_SET_SINGLE_CARRIER 29
-#define MPT_SET_CARRIER_SUPPRESSION 30
-#define MPT_GET_RATE_TABLE 31
-#define MPT_READ_TSSI 32
-#define MPT_GET_THERMAL_METER 33
-#endif
-
 typedef enum _ANTENNA_PATH {
 	ANTENNA_NONE = 0x00,
 	ANTENNA_D,
@@ -223,18 +190,18 @@ typedef struct _RT_PMAC_PKT_INFO {
 } RT_PMAC_PKT_INFO, *PRT_PMAC_PKT_INFO;
 
 typedef struct _RT_PMAC_TX_INFO {
-	u8 bEnPMacTx : 1; /* 0: Disable PMac 1: Enable PMac */
-	u8 Mode : 3;	  /* 0: Packet TX 3:Continuous TX */
-	u8 Ntx : 4;		  /* 0-7 */
+	u8 bEnPMacTx:1; /* 0:Disable PMac 1:Enable PMac */
+	u8 Mode:3;	  /* 0:Packet TX 3:Continuous TX */
+	u8 Ntx:4;		  /* 0-7 */
 	u8 TX_RATE;		  /* MPT_RATE_E */
 	u8 TX_RATE_HEX;
 	u8 TX_SC;
-	u8 bSGI : 1;
-	u8 bSPreamble : 1;
-	u8 bSTBC : 1;
-	u8 bLDPC : 1;
-	u8 NDP_sound : 1;
-	u8 BandWidth : 3; /* 0: 20 1:40 2:80Mhz */
+	u8 bSGI:1;
+	u8 bSPreamble:1;
+	u8 bSTBC:1;
+	u8 bLDPC:1;
+	u8 NDP_sound:1;
+	u8 BandWidth:3; /* 0:20 1:40 2:80Mhz */
 	u8 m_STBC;		  /* bSTBC + 1 */
 	u16 PacketPeriod;
 	u32 PacketCount;
@@ -299,7 +266,6 @@ typedef struct _MPT_CONTEXT {
 	WIRELESS_MODE MptWirelessModeToSw; // Wireless mode to switch.
 	u8 MptChannelToSw;				   // Channel to switch.
 	u8 MptInitGainToSet;			   // Initial gain to set.
-	//u32			bMptAntennaA; 		// TRUE if we want to use antenna A.
 	u32 MptBandWidth;   // bandwidth to switch.
 	u32 mpt_rate_index; // rate index.
 	// Register value kept for Single Carrier Tx test.
@@ -332,11 +298,6 @@ typedef struct _MPT_CONTEXT {
 	BOOLEAN bMptEnableAckCounter;
 	u32 MptAckCounter;
 
-	// SD3 Willis For 8192S to save 1T/2T RF table for ACUT	Only fro ACUT delete later ~~~!
-	//s8		BufOfLines[2][MAX_LINES_HWCONFIG_TXT][MAX_BYTES_LINE_HWCONFIG_TXT];
-	//s8			BufOfLines[2][MP_MAX_LINES][MP_MAX_LINES_BYTES];
-	//s32			RfReadLine[2];
-
 	u8 APK_bound[2]; //for APK	path A/path B
 	BOOLEAN bMptIndexEven;
 
@@ -359,7 +320,6 @@ typedef struct _MPT_CONTEXT {
 } MPT_CONTEXT, *PMPT_CONTEXT;
 //#endif
 
-//#define RTPRIV_IOCTL_MP 					( SIOCIWFIRSTPRIV + 0x17)
 enum {
 	WRITE_REG = 1,
 	READ_REG,
@@ -415,7 +375,6 @@ struct mp_priv {
 
 	//OID cmd handler
 	struct mp_wiparam workparam;
-	//	u8 act_in_progress;
 
 	//Tx Section
 	u8 TID;
@@ -439,13 +398,10 @@ struct mp_priv {
 	u8 txpoweridx_b;
 	u8 rateidx;
 	u32 preamble;
-	//	u8 modem;
 	u32 CrystalCap;
-	//	u32 curr_crystalcap;
 
 	u16 antenna_tx;
 	u16 antenna_rx;
-	//	u8 curr_rfpath;
 
 	u8 check_mp_pkt;
 	u32 rssi_avg_cal;
@@ -455,7 +411,6 @@ struct mp_priv {
 	u8 bSetTxPower;
 	u8 bCCKTxPowerAdjust;
 	u8 bFAStatistics;
-	//	uint ForcedDataRate;
 	u8 mp_dm;
 	struct wlan_network mp_network;
 	NDIS_802_11_MAC_ADDRESS network_macaddr;
@@ -514,31 +469,9 @@ struct bb_reg_param {
 #define LOWER _TRUE
 #define RAISE _FALSE
 
-/* Hardware Registers */
-#if 0
-#if 0
-#define IOCMD_CTRL_REG 0x102502C0
-#define IOCMD_DATA_REG 0x102502C4
-#else
-#define IOCMD_CTRL_REG 0x10250370
-#define IOCMD_DATA_REG 0x10250374
-#endif
-
-#define IOCMD_GET_THERMAL_METER 0xFD000028
-
-#define IOCMD_CLASS_BB_RF 0xF0
-#define IOCMD_BB_READ_IDX 0x00
-#define IOCMD_BB_WRITE_IDX 0x01
-#define IOCMD_RF_READ_IDX 0x02
-#define IOCMD_RF_WRIT_IDX 0x03
-#endif
 #define BB_REG_BASE_ADDR 0x800
 
 /* MP variables */
-#if 0
-#define _2MAC_MODE_ 0
-#define _LOOPBOOK_MODE_ 1
-#endif
 typedef enum _MP_MODE_ {
 	MP_OFF,
 	MP_ON,
@@ -616,7 +549,7 @@ typedef enum _MPT_RATE_INDEX {
 	MPT_RATE_MCS30, // #42
 	MPT_RATE_MCS31, // #43
 
-	/* VHT rate. Total: 20*/
+	/* VHT rate. Total:20*/
 	MPT_RATE_VHT1SS_MCS0 = 100, //  #44
 	MPT_RATE_VHT1SS_MCS1,		// #
 	MPT_RATE_VHT1SS_MCS2,
@@ -672,42 +605,6 @@ typedef enum _POWER_MODE_ {
 #define RX_PKT_DEST_ADDR 2
 #define RX_PKT_PHY_MATCH 3
 
-#if 0
-#define RPTMaxCount 0x000FFFFF;
-
-// parameter 1 : BitMask
-// 	bit 0  : OFDM PPDU
-//	bit 1  : OFDM False Alarm
-//	bit 2  : OFDM MPDU OK
-//	bit 3  : OFDM MPDU Fail
-//	bit 4  : CCK PPDU
-//	bit 5  : CCK False Alarm
-//	bit 6  : CCK MPDU ok
-//	bit 7  : CCK MPDU fail
-//	bit 8  : HT PPDU counter
-//	bit 9  : HT false alarm
-//	bit 10 : HT MPDU total
-//	bit 11 : HT MPDU OK
-//	bit 12 : HT MPDU fail
-//	bit 15 : RX full drop
-typedef enum _RXPHY_BITMASK_
-{
-	OFDM_PPDU_BIT = 0,
-	OFDM_FALSE_BIT,
-	OFDM_MPDU_OK_BIT,
-	OFDM_MPDU_FAIL_BIT,
-	CCK_PPDU_BIT,
-	CCK_FALSE_BIT,
-	CCK_MPDU_OK_BIT,
-	CCK_MPDU_FAIL_BIT,
-	HT_PPDU_BIT,
-	HT_FALSE_BIT,
-	HT_MPDU_BIT,
-	HT_MPDU_OK_BIT,
-	HT_MPDU_FAIL_BIT,
-} RXPHY_BITMASK;
-#endif
-
 typedef enum _ENCRY_CTRL_STATE_ {
 	HW_CONTROL,		   //hw encryption& decryption
 	SW_CONTROL,		   //sw encryption& decryption
@@ -759,8 +656,6 @@ typedef enum _OFDM_TX_MODE {
 								(MPT_RATE_VHT4SS_MCS0 <= _rate && _rate <= MPT_RATE_VHT4SS_MCS9))
 
 //=======================================================================
-//extern struct mp_xmit_frame *alloc_mp_xmitframe(struct mp_priv *pmp_priv);
-//extern int free_mp_xmitframe(struct xmit_priv *pxmitpriv, struct mp_xmit_frame *pmp_xmitframe);
 
 extern s32 init_mp_priv(_adapter *padapter);
 extern void free_mp_priv(struct mp_priv *pmp_priv);
@@ -770,17 +665,6 @@ extern s32 mp_start_test(_adapter *padapter);
 extern void mp_stop_test(_adapter *padapter);
 
 //=======================================================================
-//extern void	IQCalibrateBcut(_adapter * pAdapter);
-
-//extern u32	bb_reg_read(_adapter * Adapter, u16 offset);
-//extern u8	bb_reg_write(_adapter * Adapter, u16 offset, u32 value);
-//extern u32	rf_reg_read(_adapter * Adapter, u8 path, u8 offset);
-//extern u8	rf_reg_write(_adapter * Adapter, u8 path, u8 offset, u32 value);
-
-//extern u32	get_bb_reg(_adapter * Adapter, u16 offset, u32 bitmask);
-//extern u8	set_bb_reg(_adapter * Adapter, u16 offset, u32 bitmask, u32 value);
-//extern u32	get_rf_reg(_adapter * Adapter, u8 path, u8 offset, u32 bitmask);
-//extern u8	set_rf_reg(_adapter * Adapter, u8 path, u8 offset, u32 bitmask, u32 value);
 
 extern u32 _read_rfreg(_adapter *padapter, u8 rfpath, u32 addr, u32 bitmask);
 extern void _write_rfreg(_adapter *padapter, u8 rfpath, u32 addr, u32 bitmask, u32 val);
@@ -796,12 +680,9 @@ extern void SetChannel(_adapter *pAdapter);
 extern void SetBandwidth(_adapter *pAdapter);
 extern void SetTxPower(_adapter *pAdapter);
 extern void SetAntennaPathPower(_adapter *pAdapter);
-//extern void	SetTxAGCOffset(_adapter * pAdapter, u32 ulTxAGCOffset);
 extern void SetDataRate(_adapter *pAdapter);
 
 extern void SetAntenna(_adapter *pAdapter);
-
-//extern void	SetCrystalCap(_adapter * pAdapter);
 
 extern s32 SetThermalMeter(_adapter *pAdapter, u8 target_ther);
 extern void GetThermalMeter(_adapter *pAdapter, u8 *value);

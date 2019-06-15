@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -25,9 +25,6 @@
 #include "skbuff.h"
 #endif
 
-#if defined(PLATFORM_ECOS)
-#define NR_RECVFRAME 16 //Decrease recv frame due to memory limitation - Alex Fang
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #ifdef CONFIG_RECV_REORDERING_CTRL
 #define NR_RECVFRAME 16 //Increase recv frame due to rx reorder - Andy Sun
 #else
@@ -41,32 +38,10 @@
 #endif
 #endif
 #endif
-#else
-#define NR_RECVFRAME 256
-#endif
 
-#ifdef PLATFORM_OS_XP
-#define NR_RECVBUFF (16)
-#elif defined(PLATFORM_OS_CE)
-#define NR_RECVBUFF (4)
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS)
-#ifndef CONFIG_HIGH_TP
-//	#define NR_RECVBUFF (8)	//Decrease recv buffer due to memory limitation - Alex Fang
-#define NR_RECVBUFF (1) //Decrease recv buffer due to memory limitation - YangJue
-#else
-#define NR_RECVBUFF (32)
-#endif
-#elif defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define NR_RECVBUFF (8)
-#else
-#if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI)
-#define NR_RECVBUFF (32)
-#else
-#define NR_RECVBUFF (4)
-#endif
 
 #define NR_PREALLOC_RECV_SKB (8)
-#endif
 
 #define RECV_BULK_IN_ADDR 0x80
 #define RECV_INT_IN_ADDR 0x81
@@ -107,24 +82,6 @@ struct recv_reorder_ctrl {
 
 struct stainfo_rxcache {
 	u16 tid_rxseq[16];
-	/*
-	unsigned short 	tid0_rxseq;
-	unsigned short 	tid1_rxseq;
-	unsigned short 	tid2_rxseq;
-	unsigned short 	tid3_rxseq;
-	unsigned short 	tid4_rxseq;
-	unsigned short 	tid5_rxseq;
-	unsigned short 	tid6_rxseq;
-	unsigned short 	tid7_rxseq;
-	unsigned short 	tid8_rxseq;
-	unsigned short 	tid9_rxseq;
-	unsigned short 	tid10_rxseq;
-	unsigned short 	tid11_rxseq;
-	unsigned short 	tid12_rxseq;
-	unsigned short 	tid13_rxseq;
-	unsigned short 	tid14_rxseq;
-	unsigned short 	tid15_rxseq;
-*/
 };
 
 struct smooth_rssi_data {
@@ -140,167 +97,6 @@ struct signal_stat {
 	u32 total_num; //num of valid elements
 	u32 total_val; //sum of valid elements
 };
-
-//move to rtw_sta_info
-#if 0
-#if (RTL8195A_SUPPORT == 1)
-/* struct phy_info must be same with ODM ODM_PHY_INFO_T, see rtl8195a_query_rx_phy_status() */
-struct phy_info
-{
-	u8		RxPWDBAll;
-	u8		SignalQuality;	 						// in 0-100 index. 
-	u8		RxMIMOSignalStrength[MAX_RF_PATH];		// in 0~100 index
-	s8		RecvSignalPower;						// Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures.
-	u8		SignalStrength; 						// in 0-100 index.
-#if ((RTL8195A_SUPPORT == 0) && (RTL8711B_SUPPORT == 0))
-		s8		RxMIMOSignalQuality[MAX_RF_PATH];	// per-path's EVM
-		s8		RxPower;							// in dBm Translate from PWdB
-		u8		BTRxRSSIPercentage; 
-		s8		RxPwr[MAX_RF_PATH];				// per-path's pwdb
-		u8		RxSNR[MAX_RF_PATH];				// per-path's SNR	
-		u8		btCoexPwrAdjust;
-#endif
-#if (ODM_IC_11AC_SERIES_SUPPORT)
-		u8		RxMIMOEVMdbm[MAX_RF_PATH];		// per-path's EVM dbm
-		s16		Cfo_short[MAX_RF_PATH]; 		// per-path's Cfo_short
-		s16		Cfo_tail[MAX_RF_PATH];			// per-path's Cfo_tail
-		u8		BandWidth;
-#endif
-};
-#elif (RTL8188F_SUPPORT == 1)
-struct phy_info
-{
-	u8		RxPWDBAll;
-
-	u8		SignalQuality;	 // in 0-100 index.
-	s8		RxMIMOSignalQuality[MAX_RF_PATH];	//per-path's EVM
-	u8		RxMIMOEVMdbm[MAX_RF_PATH]; 		//per-path's EVM dbm
-	u8		RxMIMOSignalStrength[MAX_RF_PATH];// in 0~100 index
-	u16		Cfo_short[MAX_RF_PATH]; 			// per-path's Cfo_short
-	u16		Cfo_tail[MAX_RF_PATH];			// per-path's Cfo_tail
-
-	s8		RxPower; // in dBm Translate from PWdB
-	s8		RecvSignalPower;// Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures.
-	u8		BTRxRSSIPercentage;
-	u8		SignalStrength; // in 0-100 index.
-	s8		RxPwr[MAX_RF_PATH];				//per-path's pwdb
-	u8		RxSNR[MAX_RF_PATH];				//per-path's SNR
-	u8		BandWidth;
-	u8		btCoexPwrAdjust;
-};
-#elif (RTL8711B_SUPPORT == 1)
-struct phy_info
-{
-	u8		RxPWDBAll;
-	
-	u8		SignalQuality;				/* in 0-100 index. */
-	s8		RxMIMOSignalQuality[4];		/* per-path's EVM */
-	u8		RxMIMOEVMdbm[4];			/* per-path's EVM dbm */
-	u8		RxMIMOSignalStrength[4];	/* in 0~100 index */
-	s16		Cfo_short[4];				/* per-path's Cfo_short */
-	s16		Cfo_tail[4];					/* per-path's Cfo_tail */
-	s8		RxPower;					/* in dBm Translate from PWdB */
-	s8		RecvSignalPower;			/* Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures. */
-	u8		BTRxRSSIPercentage;
-	u8		SignalStrength;				/* in 0-100 index. */
-	s8		RxPwr[4];					/* per-path's pwdb */
-	s8		RxSNR[4];					/* per-path's SNR	*/
-	u8		RxCount:2;					/* RX path counter---*/
-	u8		BandWidth:2;
-	u8		rxsc:4;						/* sub-channel---*/
-	u8		btCoexPwrAdjust;
-	u8		channel;						/* channel number---*/
-	u8		bMuPacket;					/* is MU packet or not---*/
-	u8		bBeamformed;				/* BF packet---*/
-};
-#elif (RTL8721D_SUPPORT == 1)
-struct phy_info
-{
-	u8		RxPWDBAll;
-	
-	u8		SignalQuality;				/* in 0-100 index. */
-	s8		RxMIMOSignalQuality[4];		/* per-path's EVM */
-	u8		RxMIMOEVMdbm[4];			/* per-path's EVM dbm */
-	u8		RxMIMOSignalStrength[4];	/* in 0~100 index */
-	s16		Cfo_short[4];				/* per-path's Cfo_short */
-	s16		Cfo_tail[4];					/* per-path's Cfo_tail */
-	s8		RxPower;					/* in dBm Translate from PWdB */
-	s8		RecvSignalPower;			/* Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures. */
-	u8		BTRxRSSIPercentage;
-	u8		SignalStrength;				/* in 0-100 index. */
-	s8		RxPwr[4];					/* per-path's pwdb */
-	s8		RxSNR[4];					/* per-path's SNR	*/
-	u8		RxCount:2;					/* RX path counter---*/
-	u8		BandWidth:2;
-	u8		rxsc:4;						/* sub-channel---*/
-	u8		btCoexPwrAdjust;
-	u8		channel;						/* channel number---*/
-	u8		bMuPacket;					/* is MU packet or not---*/
-	u8		bBeamformed;				/* BF packet---*/
-};
-#elif (RTL8821C_SUPPORT == 1)
-struct phy_info {
-	u8			RxPWDBAll;
-	u8			SignalQuality;				/* in 0-100 index. */
-	s8			RxMIMOSignalQuality[4];		/* per-path's EVM */
-	u8			RxMIMOEVMdbm[4];			/* per-path's EVM dbm */
-	u8			RxMIMOSignalStrength[4];	/* in 0~100 index */
-	s16			Cfo_short[4];				/* per-path's Cfo_short */
-	s16			Cfo_tail[4];					/* per-path's Cfo_tail */
-	s8			RxPower;					/* in dBm Translate from PWdB */
-	s8			RecvSignalPower;			/* Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures. */
-	u8			BTRxRSSIPercentage;
-	u8			SignalStrength;				/* in 0-100 index. */
-	s8			RxPwr[4];					/* per-path's pwdb */
-	s8			RxSNR[4];
-	u8			RxCount:2;
-	u8			BandWidth:2;
-	u8			rxsc:4;
-	u8			btCoexPwrAdjust;
-	u8			channel;						/* channel number---*/
-	BOOLEAN		bMuPacket;					/* is MU packet or not---*/
-	BOOLEAN		bBeamformed;
-};
-#elif (RTL8195B_SUPPORT == 1)
-struct phy_info {
-	u8			RxPWDBAll;
-	u8			SignalQuality;				/* in 0-100 index. */
-	s8			RxMIMOSignalQuality[4];		/* per-path's EVM */
-	u8			RxMIMOEVMdbm[4];			/* per-path's EVM dbm */
-	u8			RxMIMOSignalStrength[4];	/* in 0~100 index */
-	s16			Cfo_short[4];				/* per-path's Cfo_short */
-	s16			Cfo_tail[4];					/* per-path's Cfo_tail */
-	s8			RxPower;					/* in dBm Translate from PWdB */
-	s8			RecvSignalPower;			/* Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures. */
-	u8			BTRxRSSIPercentage;
-	u8			SignalStrength;				/* in 0-100 index. */
-	s8			RxPwr[4];					/* per-path's pwdb */
-	s8			RxSNR[4];
-	u8			RxCount:2;
-	u8			BandWidth:2;
-	u8			rxsc:4;
-	u8			btCoexPwrAdjust;
-	u8			channel;						/* channel number---*/
-	BOOLEAN		bMuPacket;					/* is MU packet or not---*/
-	BOOLEAN		bBeamformed;
-};
-#else
-#define MAX_PATH_NUM_92CS 2
-struct phy_info //ODM_PHY_INFO_T
-{	
-	u8		RxPWDBAll;	
-	u8		SignalQuality;	 // in 0-100 index. 
-	u8		RxMIMOSignalQuality[MAX_PATH_NUM_92CS]; //EVM
-	u8		RxMIMOSignalStrength[MAX_PATH_NUM_92CS];// in 0~100 index
-	s8		RxPower; // in dBm Translate from PWdB
-	s8		RecvSignalPower;// Real power in dBm for this packet, no beautification and aggregation. Keep this raw info to be used for the other procedures.
-	u8		BTRxRSSIPercentage;	
-	u8		SignalStrength; // in 0-100 index.
-	u8		RxPwr[MAX_PATH_NUM_92CS];//per-path's pwdb
-	u8		RxSNR[MAX_PATH_NUM_92CS];//per-path's SNR
-};
-#endif
-#endif
 
 struct rx_pkt_attrib {
 	u16 pkt_len;
@@ -336,7 +132,6 @@ struct rx_pkt_attrib {
 
 	u8 ack_policy;
 
-	//#ifdef CONFIG_TCP_CSUM_OFFLOAD_RX
 	u8 tcpchk_valid; // 0: invalid, 1: valid
 	u8 ip_chkrpt;	//0: incorrect, 1: correct
 	u8 tcp_chkrpt;   //0: incorrect, 1: correct
@@ -350,21 +145,12 @@ struct rx_pkt_attrib {
 	u32 MacIDValidEntry[2]; // 64 bits present 64 entry.
 
 	u8 data_rate;
-	/*
-	u8	signal_qual;
-	s8	rx_mimo_signal_qual[2];
-	u8	signal_strength;
-	u32	RxPWDBAll;	
-	s32	RecvSignalPower;
-*/
 	struct phydm_phyinfo_struct phy_info;
 };
 
 //These definition is used for Rx packet reordering.
 #define SN_LESS(a, b) (((a - b) & 0x800) != 0)
 #define SN_EQUAL(a, b) (a == b)
-//#define REORDER_WIN_SIZE	128
-//#define REORDER_ENTRY_NUM	128
 #define REORDER_WAIT_TIME (30) // (ms)
 
 #define RECVBUFF_ALIGN_SZ 8
@@ -479,7 +265,6 @@ struct recv_priv {
 	uint rx_middlepacket_crcerr;
 
 #ifdef CONFIG_USB_HCI
-	//u8 *pallocated_urb_buf;
 	_sema allrxreturnevt;
 	uint ff_hwaddr;
 	u8 rx_pending_cnt;
@@ -577,14 +362,9 @@ struct sta_recv_priv {
 	_lock lock;
 	sint option;
 
-	//_queue	blk_strms[MAX_RX_NUMBLKS];
 	_queue defrag_q; //keeping the fragment frame until defrag
 
 	struct stainfo_rxcache rxcache;
-
-	//uint	sta_rx_bytes;
-	//uint	sta_rx_pkts;
-	//uint	sta_rx_fail;
 };
 
 struct recv_buf {
@@ -607,11 +387,9 @@ struct recv_buf {
 
 #ifdef CONFIG_USB_HCI
 
-#if defined(PLATFORM_OS_XP) || defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	PURB purb;
 	dma_addr_t dma_transfer_addr; /* (in) dma addr for transfer_buffer */
 	u32 alloc_sz;
-#endif
 
 #ifdef PLATFORM_OS_XP
 	PIRP pirp;
@@ -626,10 +404,7 @@ struct recv_buf {
 
 #endif
 
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	_pkt *pskb;
-//	u8	reuse;
-#endif
 #ifdef PLATFORM_FREEBSD //skb solution
 	struct sk_buff *pskb;
 	u8 reuse;
@@ -637,19 +412,17 @@ struct recv_buf {
 };
 
 /*
-	head  ----->
+   head  ----->
 
-		data  ----->
+   data  ----->
 
-			payload
+   payload
 
-		tail  ----->
+   tail  ----->
 
+   end   ----->
 
-	end   ----->
-
-	len = (unsigned int )(tail - data);
-
+   len = (unsigned int )(tail - data);
 */
 struct recv_frame_hdr {
 	_list list;
@@ -677,7 +450,6 @@ struct recv_frame_hdr {
 
 	void *precvbuf;
 
-	//
 	struct sta_info *psta;
 #ifdef CONFIG_RECV_REORDERING_CTRL
 	//for A-MPDU Rx reordering buffer control
@@ -699,8 +471,6 @@ union recv_frame {
 		struct recv_frame_hdr hdr;
 		uint mem[RECVFRAME_HDR_ALIGN >> 2];
 	} u;
-
-	//uint mem[MAX_RXSZ>>2];
 };
 
 typedef enum _RX_PACKET_TYPE {
@@ -729,10 +499,11 @@ union recv_frame *__rtw_alloc_recvframe(_queue *pfree_recv_queue); //get a free 
 		__rtw_enqueue_recvframe(precvframe, queue);                      \
 	} while (0)
 #define rtw_alloc_recvframe(queue, precvframe, Q)                                           \
-	(                                                                                       \
+	do {                                                                                    \
 		precvframe = __rtw_alloc_recvframe(queue),                                          \
 		precvframe ? clear_skb_list_flag(precvframe->u.hdr.pkt, SKBLIST_RECVFRAME_##Q) : 0, \
-		precvframe)
+		precvframe                                                                          \
+	} while (0)
 #else
 extern int rtw_enqueue_recvframe(union recv_frame *precvframe, _queue *queue);
 extern union recv_frame *rtw_alloc_recvframe(_queue *pfree_recv_queue); //get a free recv_frame from pfree_recv_queue
@@ -757,10 +528,11 @@ struct recv_buf *_rtw_dequeue_recvbuf(_queue *queue);
 		_rtw_enqueue_recvbuf(precvbuf, queue);                  \
 	} while (0)
 #define rtw_dequeue_recvbuf(queue, precvbuf, Q)                                  \
-	(                                                                            \
+	do {                                                                         \
 		precvbuf = _rtw_dequeue_recvbuf(queue),                                  \
 		precvbuf ? clear_skb_list_flag(precvbuf->pskb, SKBLIST_RECVBUF_##Q) : 0, \
-		precvbuf)
+		precvbuf                                                                 \
+	} while (0)
 
 #else
 sint rtw_enqueue_recvbuf_to_head(struct recv_buf *precvbuf, _queue *queue);
@@ -794,38 +566,6 @@ __inline static u8 *get_recvframe_data(union recv_frame *precvframe)
 
 	return precvframe->u.hdr.rx_data;
 }
-
-//TODO
-#if 0
-
-__inline static u8 *recvframe_push(union recv_frame *precvframe, sint sz)
-{
-	// append data before rx_data
-
-	/* add data to the start of recv_frame
- *
- *      This function extends the used data area of the recv_frame at the buffer
- *      start. rx_data must be still larger than rx_head, after pushing.
- */
-
-	if(precvframe==NULL)
-		return NULL;
-
-
-	precvframe->u.hdr.rx_data -= sz ;
-	if( precvframe->u.hdr.rx_data < precvframe->u.hdr.rx_head )
-	{
-		precvframe->u.hdr.rx_data += sz ;
-		return NULL;
-	}
-
-	precvframe->u.hdr.len +=sz;
-
-	return precvframe->u.hdr.rx_data;
-
-}
-
-#endif //#if 0
 
 __inline static u8 *recvframe_pull(union recv_frame *precvframe, sint sz)
 {

@@ -1,3 +1,22 @@
+/******************************************************************************
+ *
+ * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
+ *
+ *
+ ******************************************************************************/
 //----------------------------------------------------------------------------//
 #include "wifi_ind.h"
 #include "wifi_conf.h"
@@ -35,19 +54,22 @@ static rtw_result_t rtw_send_event_to_worker(int event_cmd, char *buf, int buf_l
 	rtw_result_t ret = RTW_SUCCESS;
 	char *local_buf = NULL;
 
-	if (event_cmd >= WIFI_EVENT_MAX)
+	if (event_cmd >= WIFI_EVENT_MAX) {
 		return RTW_BADARG;
+	}
 
 	for (i = 0; i < WIFI_EVENT_MAX_ROW; i++) {
-		if (event_callback_list[event_cmd][i].handler == NULL)
+		if (event_callback_list[event_cmd][i].handler == NULL) {
 			continue;
+		}
 
 		message.function = (event_handler_t)event_callback_list[event_cmd][i].handler;
 		message.buf_len = buf_len;
 		if (buf_len) {
 			local_buf = (char *)pvPortMalloc(buf_len);
-			if (local_buf == NULL)
+			if (local_buf == NULL) {
 				return RTW_NOMEM;
+			}
 			memcpy(local_buf, buf, buf_len);
 		}
 		message.buf = local_buf;
@@ -57,7 +79,7 @@ static rtw_result_t rtw_send_event_to_worker(int event_cmd, char *buf, int buf_l
 		ret = rtw_push_to_xqueue(&wifi_worker_thread.event_queue, &message, 0);
 		if (ret != RTW_SUCCESS) {
 			if (local_buf) {
-				printf("\r\nrtw_send_event_to_worker: enqueue cmd %d failed and free %p(%d)\n", event_cmd, local_buf, buf_len);
+				nvdbg("\r\nrtw_send_event_to_worker: enqueue cmd %d failed and free %p(%d)\n", event_cmd, local_buf, buf_len);
 				vPortFree(local_buf);
 			}
 			break;
@@ -71,13 +93,15 @@ static rtw_result_t rtw_indicate_event_handle(int event_cmd, char *buf, int buf_
 	rtw_event_handler_t handle = NULL;
 	int i;
 
-	if (event_cmd >= WIFI_EVENT_MAX)
+	if (event_cmd >= WIFI_EVENT_MAX) {
 		return (rtw_result_t)RTW_BADARG;
+	}
 
 	for (i = 0; i < WIFI_EVENT_MAX_ROW; i++) {
 		handle = event_callback_list[event_cmd][i].handler;
-		if (handle == NULL)
+		if (handle == NULL) {
 			continue;
+		}
 		handle(buf, buf_len, flags, event_callback_list[event_cmd][i].handler_user_data);
 	}
 
@@ -89,116 +113,118 @@ void wifi_indication(rtw_event_indicate_t event, char *buf, int buf_len, int fla
 {
 	//
 	// If upper layer application triggers additional operations on receiving of wext_wlan_indicate,
-	// 		please strictly check current stack size usage (by using uxTaskGetStackHighWaterMark() )
-	//		, and tries not to share the same stack with wlan driver if remaining stack space is
-	//		not available for the following operations.
-	//		ex: using semaphore to notice another thread.
+	//      please strictly check current stack size usage (by using uxTaskGetStackHighWaterMark() )
+	//      , and tries not to share the same stack with wlan driver if remaining stack space is
+	//      not available for the following operations.
+	//      ex: using semaphore to notice another thread.
 	switch (event) {
 	case WIFI_EVENT_DISCONNECT:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r %s():Disconnection indication received", __FUNCTION__);
+		ndbg("\n\r %s():Disconnection indication received", __FUNCTION__);
 #endif
 		break;
 	case WIFI_EVENT_CONNECT:
 // For WPA/WPA2 mode, indication of connection does not mean data can be
-// 		correctly transmitted or received. Data can be correctly transmitted or
-// 		received only when 4-way handshake is done.
+//      correctly transmitted or received. Data can be correctly transmitted or
+//      received only when 4-way handshake is done.
 // Please check WIFI_EVENT_FOURWAY_HANDSHAKE_DONE event
 #if (WIFI_INDICATE_MSG == 1)
 		// Sample: return mac address
 		if (buf != NULL && buf_len == 6) {
-			printf("\n\r%s():Connect indication received: %02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
-				   buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+			ndbg("\n\r%s():Connect indication received: %02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
+				  buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 		}
 #endif
 		break;
 	case WIFI_EVENT_FOURWAY_HANDSHAKE_DONE:
 #if (WIFI_INDICATE_MSG == 1)
 		if (buf != NULL) {
-			if (buf_len == strlen(IW_EXT_STR_FOURWAY_DONE))
-				printf("\n\r%s():%s", __FUNCTION__, buf);
+			if (buf_len == strlen(IW_EXT_STR_FOURWAY_DONE)) {
+				ndbg("\n\r%s():%s", __FUNCTION__, buf);
+			}
 		}
 #endif
 		break;
 	case WIFI_EVENT_SCAN_RESULT_REPORT:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_SCAN_RESULT_REPORT\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_SCAN_RESULT_REPORT\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_SCAN_DONE:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_SCAN_DONE\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_SCAN_DONE\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_RECONNECTION_FAIL:
 #if (WIFI_INDICATE_MSG == 1)
 		if (buf != NULL) {
-			if (buf_len == strlen(IW_EXT_STR_RECONNECTION_FAIL))
-				printf("\n\r%s", buf);
+			if (buf_len == strlen(IW_EXT_STR_RECONNECTION_FAIL)) {
+				ndbg("\n\r%s", buf);
+			}
 		}
 #endif
 		break;
 	case WIFI_EVENT_NO_NETWORK:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_NO_NETWORK\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_NO_NETWORK\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_RX_MGNT:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_RX_MGNT\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_RX_MGNT\n", __func__);
 #endif
 		break;
 #if CONFIG_ENABLE_P2P
 	case WIFI_EVENT_SEND_ACTION_DONE:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_SEND_ACTION_DONE\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_SEND_ACTION_DONE\n", __func__);
 #endif
 		break;
 #endif //CONFIG_ENABLE_P2P
 	case WIFI_EVENT_STA_ASSOC:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_STA_ASSOC\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_STA_ASSOC\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_STA_DISASSOC:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_STA_DISASSOC\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_STA_DISASSOC\n", __func__);
 #endif
 		break;
 #ifdef CONFIG_WPS
 	case WIFI_EVENT_STA_WPS_START:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_STA_WPS_START\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_STA_WPS_START\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_WPS_FINISH:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_WPS_FINISH\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_WPS_FINISH\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_EAPOL_RECVD:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_EAPOL_RECVD\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_EAPOL_RECVD\n", __func__);
 #endif
 		break;
 #endif
 	case WIFI_EVENT_BEACON_AFTER_DHCP:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_BEACON_AFTER_DHCP\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_BEACON_AFTER_DHCP\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_IP_CHANGED:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_IP_CHANNGED\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_IP_CHANNGED\n", __func__);
 #endif
 		break;
 	case WIFI_EVENT_ICV_ERROR:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_ICV_ERROR\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_ICV_ERROR\n", __func__);
 #endif
 	case WIFI_EVENT_CHALLENGE_FAIL:
 #if (WIFI_INDICATE_MSG == 1)
-		printf("\n\r%s(): WIFI_EVENT_CHALLENGE_FAIL\n", __func__);
+		ndbg("\n\r%s(): WIFI_EVENT_CHALLENGE_FAIL\n", __func__);
 #endif
 		break;
 	}

@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -116,16 +116,8 @@ typedef enum _RT_CUSTOMER_ID {
 
 struct eeprom_priv {
 	u8 bautoload_fail_flag;
-	//u8		bempty;
-	//u8		sys_config;
 	u8 mac_addr[6]; //PermanentAddress
-	//u8		config0;
-	//	u16		channel_plan;
 	u16 CustomerID;
-	//u8		country_string[3];
-	//u8		tx_power_b[15];
-	//u8		tx_power_g[15];
-	//u8		tx_power_a[201];
 
 	u8 EepromOrEfuse;
 #ifdef CONFIG_MEMORY_ACCESS_ALIGNED
@@ -142,25 +134,5 @@ struct eeprom_priv {
 	u8 EEPROMRFGainVal;
 #endif //CONFIG_RF_GAIN_OFFSET
 };
-
-//TODO
-#if 0
-
-extern void eeprom_write16(_adapter *padapter, u16 reg, u16 data);
-extern u16 eeprom_read16(_adapter *padapter, u16 reg);
-extern void read_eeprom_content(_adapter *padapter);
-extern void eeprom_read_sz(_adapter * padapter, u16 reg,u8* data, u32 sz); 
-
-extern void read_eeprom_content_by_attrib(_adapter *	padapter	);
-
-#ifdef PLATFORM_LINUX
-#ifdef CONFIG_ADAPTOR_INFO_CACHING_FILE
-extern int isAdaptorInfoFileValid(void);
-extern int storeAdaptorInfoFile(char *path, struct eeprom_priv * eeprom_priv);
-extern int retriveAdaptorInfoFile(char *path, struct eeprom_priv * eeprom_priv);
-#endif //CONFIG_ADAPTOR_INFO_CACHING_FILE
-#endif //PLATFORM_LINUX
-
-#endif //#if 0
 
 #endif //__RTL871X_EEPROM_H__
