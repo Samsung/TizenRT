@@ -215,6 +215,12 @@
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
 #endif
 
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS
+#define SIG_IOTBUS_INT		25
+#else
+#define SIG_IOTBUS_INT    CONFIG_SIG_IOTBUS
+#endif
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

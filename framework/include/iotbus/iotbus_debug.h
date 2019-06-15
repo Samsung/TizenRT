@@ -15,43 +15,28 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef _IOTBUS_COMMON_H__
-#define _IOTBUS_COMMON_H__
+#ifndef _IOTBUS_DEBUG_H__
+#define _IOTBUS_DEBUG_H__
 
-typedef enum {
-	IOTBUS_UART_TX_EMPTY = 0,
-	IOTBUS_UART_TX_RDY,
-	IOTBUS_UART_RX_AVAIL,
-	IOTBUS_UART_RECEIVED,
-	IOTBUS_GPIO_FALLING,
-	IOTBUS_GPIO_RISING,
-	IOTBUS_INTR_MAX,	
-} iotbus_int_type_e;
+#include <tinyara/config.h>
+#include <debug.h>
 
-typedef enum {
-	IOTBUS_GPIO = 0,
-	IOTBUS_PWM,
-	IOTBUS_ADC,
-	IOTBUS_UART,
-	IOTBUS_I2C,
-	IOTBUS_SPI,
-} iotbus_pin_e;
-
-static char *iotbus_int_str[] = {
-	"IOTBUS_UART_TX_EMPTY",
-	"IOTBUS_UART_TX_RDY",
-	"IOTBUS_UART_RX_AVAIL",
-	"IOTBUS_UART_RECEIVED",
-	"IOTBUS_GPIO_FALLING",
-	"IOTBUS_GPIO_RISING",
-};
-
-struct iotbus_int_info_s {
-	void *handle;
-	iotbus_pin_e pin_type;
-	void *callback;
-	iotbus_int_type_e int_type;
-	uint8_t irq;
-};
+#ifdef CONFIG_CPP_HAVE_VARARGS
+#ifdef CONFIG_DEBUG_IOTBUS
+#define ibdbg(format, ...)			dbg(format, ##__VA_ARGS__)
+#define ibvdbg(format, ...)			vdbg(format, ##__VA_ARGS__)
+#else
+#define ibdbg(...)
+#define ibvdbg(...)
+#endif
+#else /* !CONFIG_CPP_HAVE_VARARGS */
+#ifdef CONFIG_DEBUG_IOTBUS
+#define ibdbg		dbg
+#define ibvdbg		vdbg
+#else
+#define ibdbg		(void)
+#define ibvdbg		(void)
+#endif
+#endif /* CONFIG_CPP_HAVE_VARARGS */
 
 #endif

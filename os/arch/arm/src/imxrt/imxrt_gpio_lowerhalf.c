@@ -62,6 +62,7 @@
 #include <arch/irq.h>
 #include <tinyara/gpio.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/iotbus_irq.h>
 
 #include "imxrt_iomuxc.h"
 #include "imxrt_gpio.h"
@@ -84,6 +85,15 @@ struct imxrt_lowerhalf_s {
 static int imxrt_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 {
 	struct imxrt_lowerhalf_s *lower = (struct imxrt_lowerhalf_s *)arg;
+	uint32_t status = (lower->pinset & GPIO_INTCFG_MASK);
+
+	if (status == GPIO_INT_FALLINGEDGE) {
+		IOTBUS_INT_TRIG(irq, IOTBUS_GPIO_FALLING);
+	}
+
+	if (status == GPIO_INT_RISINGEDGE) {
+		IOTBUS_INT_TRIG(irq, IOTBUS_GPIO_RISING);
+	}
 
 	if (lower->handler != NULL) {
 		DEBUGASSERT(lower->handler != NULL);
@@ -204,6 +214,27 @@ static int imxrt_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling, in
 	return imxrt_config_gpio(priv->pinset);
 }
 
+static int imxrt_gpio_ioctl(FAR struct gpio_lowerhalf_s *lower, FAR int cmd, unsigned long args)
+{
+	int ret;
+
+	switch (cmd) {
+	case GPIOIOC_GET_IRQ: {
+		struct imxrt_lowerhalf_s *priv = (struct imxrt_lowerhalf_s *)lower;
+
+		ret = imxrt_gpio_irqvector(priv->pinset);
+		if (!ret) {
+			ret = -EINVAL;
+		}
+		break;
+	}
+	default:
+		ret = -ENOTTY;
+	}
+
+	return ret;
+}
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -213,7 +244,7 @@ static const struct gpio_ops_s imxrt_gpio_ops = {
 	.pull = imxrt_gpio_pull,
 	.setdir = imxrt_gpio_setdir,
 	.enable = imxrt_gpio_enable,
-
+	.ioctl = imxrt_gpio_ioctl,
 };
 
 /****************************************************************************

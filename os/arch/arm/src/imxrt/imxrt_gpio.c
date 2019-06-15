@@ -659,10 +659,31 @@ uint8_t imxrt_gpio_irqvector(uint32_t pinset)
 	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
 	int pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-	if (port == GPIO_PORT1 >> GPIO_PORT_SHIFT) {
-		return _IMXRT_GPIO1_0_15_BASE + pin;
-	} else if (port == GPIO_PORT2 >> GPIO_PORT_SHIFT) {
-		return _IMXRT_GPIO1_16_31_BASE + pin;
+	if (port == GPIO1INDEX) {
+		if (pin > 15) {
+			return _IMXRT_GPIO1_16_31_BASE + (pin - 15);
+		}
+			return _IMXRT_GPIO1_0_15_BASE + pin;
+	} else if (port == GPIO2INDEX) {
+		if (pin > 15) {
+			return _IMXRT_GPIO2_16_31_BASE + (pin - 15);
+		}
+			return _IMXRT_GPIO2_0_15_BASE + pin;
+	} else if (port == GPIO3INDEX) {
+		if (pin > 15) {
+			return _IMXRT_GPIO3_16_31_BASE + (pin - 15);
+		}
+			return _IMXRT_GPIO3_0_15_BASE + pin;
+	} else if (port == GPIO4INDEX) {
+		if (pin > 15) {
+			return _IMXRT_GPIO4_16_31_BASE + (pin - 15);
+		}
+			return _IMXRT_GPIO4_0_15_BASE + pin;
+	} else if (port == GPIO5INDEX) {
+		if (pin > 15) {
+			return _IMXRT_GPIO5_16_31_BASE + (pin - 15);
+		}
+			return _IMXRT_GPIO5_0_15_BASE + pin;
 	}
 
 	return 0;

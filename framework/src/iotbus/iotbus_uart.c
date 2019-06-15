@@ -33,9 +33,8 @@
 #include <poll.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>
-
+#include <iotbus/iotbus_debug.h>
 #include "iotapi_dev_handler.h"
-#include "iotbus_internal.h"
 
 #ifndef CONFIG_IOTBUS_UART_EVENT_SIZE
 #define CONFIG_IOTBUS_UART_EVENT_SIZE 3
@@ -102,11 +101,11 @@ static void *iotbus_uart_out_handler(void *hnd)
 
 			/* Handle unexpected return values */
 			if (nbytes < 0) {
-				idbg("[UART] Fail to write...\n");
+				ibdbg("[UART] Fail to write...\n");
 				ret = IOTBUS_ERROR_UNKNOWN;
 				break;
 			} else if (nbytes == 0) {
-				idbg("[UART] No data write, Ignoring\n");
+				ibdbg("[UART] No data write, Ignoring\n");
 			} else {
 				ret = IOTBUS_ERROR_NONE;
 				break;
@@ -119,7 +118,7 @@ static void *iotbus_uart_out_handler(void *hnd)
 	}
 	free(handle->buf);
 	handle->buf = NULL;
-	idbg("[UART] exit iotbus_uart handler\n");
+	ibdbg("[UART] exit iotbus_uart handler\n");
 
 	return 0;
 }
@@ -458,7 +457,7 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 		if (ret < 0) {
 			continue;
 		} else if (ret == 0) {
-			idbg("[UART] POLL timeout[%d]\n", received);
+			ibdbg("[UART] POLL timeout[%d]\n", received);
 			if (received == 0) {
 				ret = IOTBUS_ERROR_TIMED_OUT;
 			} else {
@@ -473,16 +472,16 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 
 			/* Handle unexpected return values */
 			if (nbytes < 0) {
-				idbg("[UART] Fail to read...\n");
+				ibdbg("[UART] Fail to read...\n");
 				ret = IOTBUS_ERROR_UNKNOWN;
 				break;
 			} else if (nbytes == 0) {
-				idbg("[UART] No data read, Ignoring\n");
+				ibdbg("[UART] No data read, Ignoring\n");
 			} else {
 				received += nbytes;
 				length -= nbytes;
 				if (length <= 0) {
-					idbg("[UART] RX buffer is full.\n");
+					ibdbg("[UART] RX buffer is full.\n");
 					ret = received;
 					break;
 				}
@@ -490,7 +489,7 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 		}
 	}
 	handle->rx_state = IOTBUS_UART_RDY;
-	idbg("[UART] exit iotbus_uart_read_wait \n");
+	ibdbg("[UART] exit iotbus_uart_read_wait \n");
 
 	return ret;
 }
@@ -537,7 +536,7 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 	handle->timeout = timeout;
 	handle->buf = (uint8_t *)malloc(length);
 	if (handle->buf == NULL) {
-		idbg("[UART] fail to alloc buf memory(%d)\n", ret);
+		ibdbg("[UART] fail to alloc buf memory\n");
 		return IOTBUS_ERROR_QUEUE_FULL;
 	}
 	memcpy(handle->buf, buf, length);
@@ -547,7 +546,7 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 	int ret;
 	ret = pthread_create(&tid, NULL, iotbus_uart_out_handler, (void *)hnd);
 	if (ret < 0) {
-		idbg("[UART] create iotapi handler fail(%d)\n", ret);
+		ibdbg("[UART] create iotapi handler fail(%d)\n", ret);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 	pthread_detach(tid);

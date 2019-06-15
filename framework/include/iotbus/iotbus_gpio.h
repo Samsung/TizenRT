@@ -32,6 +32,8 @@
 #define IOTBUS_GPIO_H_
 
 #include <tinyara/config.h>
+#include <tinyara/gpio.h>
+
 /**
  * @brief Enumeration of Gpio signal value
  * @details
@@ -100,6 +102,7 @@ extern "C" {
 #endif
 
 typedef void (*gpio_isr_cb)(void *user_data);
+typedef void (*iotbus_gpio_cb)(iotbus_gpio_context_h);
 
 /**
  * @brief initializes gpio_context based on gpio pin.
@@ -180,6 +183,22 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
  * @since TizenRT v1.0
  */
 int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
+
+/**
+ * @brief register interrupt callback.
+ *
+ * @details @b #include <iotbus/iotbus_gpio.h>
+ * @param[in] dev handle of gpio_context
+ * @param[in] edge gpio edge type
+ * @param[in] int_type interrupt type of gpio
+ * @param[in] enable enable/disable intterrupt
+ * @param[in] cb callback function of interrupt
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v3.0
+ */
+#ifdef CONFIG_IOTDEV
+int iotbus_gpio_set_int(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, bool enable, iotbus_gpio_cb cb);
+#endif
 
 /**
  * @brief reads the gpio value.

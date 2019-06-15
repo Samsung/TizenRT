@@ -30,8 +30,7 @@
 #include <tinyara/pwm.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_pwm.h>
-
-#include "iotbus_internal.h"
+#include <iotbus/iotbus_debug.h>
 
 /*
  * private types

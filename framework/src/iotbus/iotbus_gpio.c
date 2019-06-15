@@ -33,16 +33,18 @@
 #include <fcntl.h>
 #include <stdbool.h>
 
+#include <tinyara/iotbus_irq.h>
 #include <iotbus/iotbus_gpio.h>
 #include <iotbus/iotbus_error.h>
+#include <iotbus/iotbus_debug.h>
 #include "iotapi_evt_handler.h"
-#include "iotbus_internal.h"
 
 /**
  * @brief Struct for iotbus_gpio_s
  */
 struct _iotbus_gpio_s {
 	int pin;
+	uint8_t irq;
 	iotbus_gpio_drive_e drive;
 	iotbus_gpio_direction_e dir;
 	iotbus_gpio_edge_e edge;
@@ -102,6 +104,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 	handle->edge = IOTBUS_GPIO_EDGE_NONE;
 	handle->fd = fd;
 	handle->isr_cb = NULL;
+	handle->irq = ioctl(fd, GPIOIOC_GET_IRQ, 0);
 
 	dev->handle = handle;
 
@@ -397,6 +400,67 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev)
 
 	return IOTBUS_ERROR_NONE;
 }
+
+#ifdef CONFIG_IOTDEV
+int iotbus_gpio_set_int(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, bool enable, iotbus_gpio_cb cb)
+{
+	int fd, ret, edge;
+	struct _iotbus_gpio_s *handle;
+	struct iotbus_int_info_s info = { 0, };
+
+	handle = (struct _iotbus_gpio_s *)dev->handle;
+
+	info.handle = dev;
+	info.pin_type = IOTBUS_GPIO;
+	info.callback = cb;
+	info.int_type = int_type;
+	info.irq = handle->irq;
+	
+	fd = open(IOTBUS_IRQPATH, O_NONBLOCK);
+	if (fd < 0) {
+		ret = get_errno();
+		ibdbg("Open iotirq fail[%d, %d]\n", fd, ret);
+		return IOTBUS_ERROR_DEVICE_FAIL;
+	}
+
+	if (int_type == IOTBUS_GPIO_FALLING) {
+		edge = GPIO_EDGE_FALLING;
+	} else if (int_type == IOTBUS_GPIO_EDGE_RISING) {
+		edge = GPIO_EDGE_RISING;
+	}
+
+	if (enable) {
+		ret = ioctl(fd, IOTBUS_INTR_REGISTER, (unsigned long)&info);
+		if (ret < 0) {
+			ibdbg("Fail to register %s\n", iotbus_int_str[int_type]);
+			close(fd);
+			return IOTBUS_ERROR_DEVICE_FAIL;
+		}
+		ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, edge);
+		if (ret < 0) {
+			ibdbg("Fail to set %s\n", iotbus_int_str[int_type]);
+			close(fd);
+			return IOTBUS_ERROR_DEVICE_FAIL;
+		}
+	} else {
+		ret = ioctl(fd, IOTBUS_INTR_UNREGISTER, (unsigned long)&info);
+		if (ret < 0) {
+			ibdbg("Fail to unregister %s\n", iotbus_int_str[int_type]);
+			close(fd);
+			return IOTBUS_ERROR_DEVICE_FAIL;
+		}
+		ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, GPIO_EDGE_NONE);
+		if (ret < 0) {
+			ibdbg("Fail to unset %d\n", edge);
+			close(fd);
+			return IOTBUS_ERROR_DEVICE_FAIL;
+		}
+	}
+	
+	close(fd);
+	return IOTBUS_ERROR_NONE;
+}
+#endif
 
 /**
  * @brief Reads the gpio value.
