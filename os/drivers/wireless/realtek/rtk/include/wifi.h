@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -24,14 +24,10 @@
 #include <wlan_basic_types.h>
 
 #ifdef BIT
-//#error	"BIT define occurred earlier elsewhere!\n"
 #undef BIT
 #endif
 #define BIT(x) ((u32)1 << (x))
 
-#if defined(PLATFORM_ECOS)
-#define NUM_STA 10 //Decrease STA due to memory limitation - Alex Fang
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 //Decrease STA due to memory limitation - Alex Fang
 #ifdef CONFIG_AP_MODE
 #define NUM_STA (2 + AP_STA_NUM) //2 + supported clients
@@ -42,9 +38,6 @@
 #define MACID_NUM_SW_LIMIT ((NUM_STA) + 2)
 #else
 #define MACID_NUM_SW_LIMIT NUM_STA
-#endif
-#else
-#define NUM_STA 32
 #endif
 
 #define WLAN_ETHHDR_LEN 14
@@ -87,11 +80,6 @@
 // This value is tested by WiFi 11n Test Plan 5.2.3.
 // This test verifies the WLAN NIC can update the NAV through sending the CTS with large duration.
 #define WiFiNavUpperUs 30000 // 30 ms
-// enum WLAN_IDX{
-// 	WLAN0_IDX = 0,
-// 	WLAN1_IDX,
-// 	WLAN_UNDEF = -1
-// };
 
 #ifdef GREEN_HILL
 #pragma pack(1)
@@ -172,35 +160,9 @@ enum WIFI_REASON_CODE {
 };
 
 /* Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) */
-#if 0
-#define WLAN_REASON_UNSPECIFIED 1
-#define WLAN_REASON_PREV_AUTH_NOT_VALID 2
-#define WLAN_REASON_DEAUTH_LEAVING 3
-#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
-#define WLAN_REASON_DISASSOC_AP_BUSY 5
-#define WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA 6
-#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA 7
-#define WLAN_REASON_DISASSOC_STA_HAS_LEFT 8
-#define WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH 9
-#endif
 /* IEEE 802.11h */
 #define WLAN_REASON_PWR_CAPABILITY_NOT_VALID 10
 #define WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID 11
-#if 0
-/* IEEE 802.11i */
-#define WLAN_REASON_INVALID_IE 13
-#define WLAN_REASON_MICHAEL_MIC_FAILURE 14
-#define WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT 15
-#define WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT 16
-#define WLAN_REASON_IE_IN_4WAY_DIFFERS 17
-#define WLAN_REASON_GROUP_CIPHER_NOT_VALID 18
-#define WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID 19
-#define WLAN_REASON_AKMP_NOT_VALID 20
-#define WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION 21
-#define WLAN_REASON_INVALID_RSN_IE_CAPAB 22
-#define WLAN_REASON_IEEE_802_1X_AUTH_FAILED 23
-#define WLAN_REASON_CIPHER_SUITE_REJECTED 24
-#endif
 
 enum WIFI_STATUS_CODE {
 	_STATS_SUCCESSFUL_ = 0,
@@ -218,19 +180,6 @@ enum WIFI_STATUS_CODE {
 };
 
 /* Status codes (IEEE 802.11-2007, 7.3.1.9, Table 7-23) */
-#if 0
-#define WLAN_STATUS_SUCCESS 0
-#define WLAN_STATUS_UNSPECIFIED_FAILURE 1
-#define WLAN_STATUS_CAPS_UNSUPPORTED 10
-#define WLAN_STATUS_REASSOC_NO_ASSOC 11
-#define WLAN_STATUS_ASSOC_DENIED_UNSPEC 12
-#define WLAN_STATUS_NOT_SUPPORTED_AUTH_ALG 13
-#define WLAN_STATUS_UNKNOWN_AUTH_TRANSACTION 14
-#define WLAN_STATUS_CHALLENGE_FAIL 15
-#define WLAN_STATUS_AUTH_TIMEOUT 16
-#define WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA 17
-#define WLAN_STATUS_ASSOC_DENIED_RATES 18
-#endif
 //entended
 /* IEEE 802.11b */
 #define WLAN_STATUS_ASSOC_DENIED_NOSHORT 19
@@ -465,14 +414,12 @@ enum WIFI_REG_DOMAIN {
 
 #define GetAddr4Ptr(pbuf) ((unsigned char *)((SIZE_PTR)(pbuf) + 24))
 
-#define MacAddr_isBcst(addr) \
-(              \
-	((addr[0] == 0xff) && (addr[1] == 0xff) && \
-	 (addr[2] == 0xff) && (addr[3] == 0xff) && \
-	 (addr[4] == 0xff) && (addr[5] == 0xff))   \
-		? _TRUE                                \
-		: _FALSE\
-)
+#define MacAddr_isBcst(addr)                    \
+	(((addr[0] == 0xff) && (addr[1] == 0xff) && \
+	  (addr[2] == 0xff) && (addr[3] == 0xff) && \
+	  (addr[4] == 0xff) && (addr[5] == 0xff))   \
+		 ? _TRUE                                \
+		 : _FALSE)
 
 __inline static int IS_MCAST(unsigned char *da)
 {
@@ -748,16 +695,6 @@ typedef enum _ELEMENT_ID {
 #define _IEEE8021X_MGT_ 1 // WPA
 #define _IEEE8021X_PSK_ 2 // WPA with pre-shared key
 
-/*
-#define _NO_PRIVACY_			0
-#define _WEP_40_PRIVACY_		1
-#define _TKIP_PRIVACY_			2
-#define _WRAP_PRIVACY_			3
-#define _CCMP_PRIVACY_			4
-#define _WEP_104_PRIVACY_		5
-#define _WEP_WPA_MIXED_PRIVACY_ 6	// WEP + WPA
-*/
-
 #ifdef CONFIG_IEEE80211W
 #define _MME_IE_LENGTH_ 18
 #endif /* CONFIG_IEEE80211W */
@@ -767,48 +704,6 @@ typedef enum _ELEMENT_ID {
 ------------------------------------------------------------------------------*/
 #define _WMM_IE_Length_ 7 // for WMM STA
 #define _WMM_Para_Element_Length_ 24
-
-//TODO
-#if 0
-
-/*-----------------------------------------------------------------------------
-				Below is the definition for 802.11n 
-------------------------------------------------------------------------------*/
-
-//#ifdef CONFIG_80211N_HT
-
-#define SetOrderBit(pbuf)                                  \
-	do {                                                   \
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_ORDER_); \
-	} while (0)
-
-#define GetOrderBit(pbuf) (((*(unsigned short *)(pbuf)) & le16_to_cpu(_ORDER_)) != 0)
-
-
-/**
- * struct rtw_ieee80211_bar - HT Block Ack Request
- *
- * This structure refers to "HT BlockAckReq" as
- * described in 802.11n draft section 7.2.1.7.1
- */
-#if defined(PLATFORM_LINUX) || defined(CONFIG_RTL8712FW)
-struct rtw_ieee80211_bar {
-	unsigned short frame_control;
-	unsigned short duration;
-	unsigned char ra[6];
-	unsigned char ta[6];
-	unsigned short control;
-	unsigned short start_seq_num;
-} __attribute__((packed));
-#endif
-
-/* 802.11 BAR control masks */
-#define IEEE80211_BAR_CTRL_ACK_POLICY_NORMAL 0x0000
-#define IEEE80211_BAR_CTRL_CBMTID_COMPRESSED_BA 0x0004
-
-#endif //#if 0
-
-#if defined(PLATFORM_LINUX) || defined(CONFIG_RTL8712FW) || defined(PLATFORM_FREEBSD) || defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 
 /**
  * struct rtw_ieee80211_ht_cap - HT capabilities
@@ -861,8 +756,7 @@ RTW_PACK_STRUCT_END
 RTW_PACK_STRUCT_BEGIN
 struct HT_caps_element {
 	union {
-		struct
-		{
+		struct {
 			unsigned short HT_caps_info;
 			unsigned char AMPDU_para;
 			unsigned char MCS_rate[16];
@@ -941,73 +835,6 @@ struct ADDBA_request {
 RTW_PACK_STRUCT_END
 #ifdef RTW_PACK_STRUCT_USE_INCLUDES
 #include "pack_end.h"
-#endif
-
-#endif //#if defined PLATFORM_LINUX/CONFIG_RTL8712FW/PLATFORM_FREEBSD/PLATFORM_ECOS/PLATFORM_FREERTOS
-
-#ifdef PLATFORM_WINDOWS
-
-#pragma pack(1)
-
-struct rtw_ieee80211_ht_cap {
-	unsigned short cap_info;
-	unsigned char ampdu_params_info;
-	unsigned char supp_mcs_set[16];
-	unsigned short extended_ht_cap_info;
-	unsigned int tx_BF_cap_info;
-	unsigned char antenna_selection_info;
-};
-
-struct ieee80211_ht_addt_info {
-	unsigned char control_chan;
-	unsigned char ht_param;
-	unsigned short operation_mode;
-	unsigned short stbc_param;
-	unsigned char basic_set[16];
-};
-
-struct HT_caps_element {
-	union {
-		struct
-		{
-			unsigned short HT_caps_info;
-			unsigned char AMPDU_para;
-			unsigned char MCS_rate[16];
-			unsigned short HT_ext_caps;
-			unsigned int Beamforming_caps;
-			unsigned char ASEL_caps;
-		} HT_cap_element;
-		unsigned char HT_cap[26];
-	};
-};
-
-struct HT_info_element {
-	unsigned char primary_channel;
-	unsigned char infos[5];
-	unsigned char MCS_rate[16];
-};
-
-struct AC_param {
-	unsigned char ACI_AIFSN;
-	unsigned char CW;
-	unsigned short TXOP_limit;
-};
-
-struct WMM_para_element {
-	unsigned char QoS_info;
-	unsigned char reserved;
-	struct AC_param ac_param[4];
-};
-
-struct ADDBA_request {
-	unsigned char dialog_token;
-	unsigned short BA_para_set;
-	unsigned short BA_timeout_value;
-	unsigned short BA_starting_seqctrl;
-};
-
-#pragma pack()
-
 #endif
 
 typedef enum _HT_CAP_AMPDU_FACTOR {

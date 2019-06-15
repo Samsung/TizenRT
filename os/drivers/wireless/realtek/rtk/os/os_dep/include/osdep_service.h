@@ -131,17 +131,7 @@ extern "C" {
 #define RTW_RBUF_PKT_UNAVAIL 6
 #define RTW_SDIO_READ_PORT_FAIL 7
 
-#if defined(PLATFORM_FREERTOS)
-#include "freertos_service.h"
-#elif defined(PLATFORM_ECOS)
-#include "ecos/ecos_service.h"
-#elif defined(PLATFORM_CMSIS_RTOS)
-#include "cmsis_rtos_service.h"
-#elif defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-#include "customer_rtos_service.h"
-#elif defined(CONFIG_PLATFORM_TIZENRT)
 #include "tizenrt_service.h"
-#endif
 
 #define RTW_MAX_DELAY 0xFFFFFFFF
 #define RTW_WAIT_FOREVER 0xFFFFFFFF
@@ -156,17 +146,6 @@ extern "C" {
 #define OS_SCHEDULER_NOT_STARTED 0
 #define OS_SCHEDULER_RUNNING 1
 #define OS_SCHEDULER_SUSPENDED 2
-
-#define TC_ASSERT_EQ_CLEANUP(api_name, var, ref, freeResource)                                                                                                             \
-	\
-{                                                                                                                                                                   \
-		if ((var) != (ref)) {                                                                                                                                              \
-			printf("\n[%s] FAIL [Line : %d] %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
-			freeResource;                                                                                                                                                  \
-			return;                                                                                                                                                        \
-		}                                                                                                                                                                  \
-	\
-}
 
 /******************************************************
  *                    Structures
@@ -196,9 +175,7 @@ typedef int (*event_handler_t)(char *buf, int buf_len, int flags, void *user_dat
 struct task_struct {
 	const char *task_name;
 	_thread_hdl_ task; /* I: workqueue thread */
-#if defined(PLATFORM_TIZENRT)
 	pid_t _rtw_task_info_s;
-#endif
 
 #ifdef CONFIG_THREAD_COMM_SIGNAL
 	const char *name;  /* I: workqueue thread name */
@@ -217,8 +194,7 @@ typedef struct {
 	struct task_struct thread;
 } rtw_worker_thread_t;
 
-typedef struct
-{
+typedef struct {
 	event_handler_t function;
 	char *buf;
 	int buf_len;
@@ -330,7 +306,7 @@ void _rtw_mfree(u8 *pbuf, u32 sz);
 u8 *rtw_vmalloc(u32 sz);
 
 /**
- * @brief  This function allocates the virtually contiguous memory 
+ * @brief  This function allocates the virtually contiguous memory
  *		   and the values of the memory are setted to 0.
  * @param[in] sz: The size of memory to be allocated.
  * @return	  The pointer to the beginning of the memory
@@ -346,7 +322,7 @@ u8 *rtw_zvmalloc(u32 sz);
 void rtw_vmfree(u8 *pbuf, u32 sz);
 
 /**
- * @brief  This function allocates the memory 
+ * @brief  This function allocates the memory
  *		   and the values of the memory are setted to 0.
  * @param[in] sz: The size of memory to be allocated.
  * @return	  The pointer to the beginning of the memory
@@ -397,7 +373,7 @@ void *rtw_malloc2d(int h, int w, int size);
 void rtw_mfree2d(void *pbuf, int h, int w, int size);
 
 /**
- * @brief  This function copies the values of "sz" bytes from the location pointed to by "src" 
+ * @brief  This function copies the values of "sz" bytes from the location pointed to by "src"
  *         directly to the memory block pointed to by "des".
  * @param[in] dst: Pointer to the destination array where the content is to be copied, type-casted to a pointer of type void*.
  * @param[in] src: Pointer to the source of data to be copied, type-casted to a pointer of type void*.
@@ -565,7 +541,7 @@ int rtw_mutex_get_timeout(_mutex *pmutex, u32 timeout_ms);
 /*************************** SchedulerControl *******************************/
 /**
  * @brief  This function marks the start of a critical code region.
- * 		   Preemptive context switches cannot occur when in a critical region.
+ *         Preemptive context switches cannot occur when in a critical region.
  * @param[in] plock: Pointer to the spin lock semaphore.
  * @param[in] pirqL: Pointer to the IRQ.
  * @return	  None
@@ -680,7 +656,7 @@ void rtw_spin_lock(_lock *plock);
 void rtw_spin_unlock(_lock *plock);
 
 /**
- * @brief  This function marks the start of a critical code region and 
+ * @brief  This function marks the start of a critical code region and
  *		   obtains a spin lock semaphore.
  * @param[in] plock: Pointer to the spin lock semaphore being taken - obtained when
  *			  the mutex semaphore was created.
@@ -691,7 +667,7 @@ void rtw_spinlock_irqsave(_lock *plock, _irqL *irqL);
 
 /**
  * @brief  This function releases a spin lock semaphore and
- 		   marks the end of a critical code region.
+ *         marks the end of a critical code region.
  * @param[in] plock: Pointer to the spin lock semaphore to be released.
  * @param[in] irqL: Pointer to the IRQ.
  * @return	  None
@@ -717,9 +693,9 @@ int rtw_init_xqueue(_xqueue *queue, const char *name, u32 message_size, u32 numb
  *		   The message is queued by copy, not by reference.
  * @param[in] queue: The handle to the queue on which the message is to be posted.
  * @param[in] message: The pointer to the message that is to be placed on the queue.
- * @param[in] timeout_ms: The maximum amout of time the task should block waiting for 
- 			              the space to become available on the queue, should it already be full.
- 			              The time is defined in ms.
+ * @param[in] timeout_ms: The maximum amout of time the task should block waiting for
+ *                        the space to become available on the queue, should it already be full.
+ *                        The time is defined in ms.
  * @return	  0: The message was successfully posted.
  * @return	  -1: The message was not posted.
  */
@@ -731,8 +707,8 @@ int rtw_push_to_xqueue(_xqueue *queue, void *message, u32 timeout_ms);
  * @param[in] queue: The handle to the queue from which the message is to be received.
  * @param[in] message: The pointer to the buffer into which the received message will be copied.
  * @param[in] timeout_ms: The maximum amout of time the task should block waiting for a message to
- *						  receive should the queue be empty at the time of the call.
- 			              The time is defined in ms.
+ *                        receive should the queue be empty at the time of the call.
+ *                        The time is defined in ms.
  * @return	  0: A message was successfully received from the queue.
  * @return	  -1: No message was received from the queue.
  */
@@ -1001,8 +977,8 @@ void rtw_wakelock_timeout(u32 timeout);
  * @return  pdPASS: The task was successfully created and added to a ready list.
  * @return  other error code defined in the file errors.h.
  * @note  For the task name, please do not use "rtw_little_wifi_mcu_thread", "rtw_check_in_req_state_thread",
- 		  "rtw_TDMA_change_state_thread", "xmit_thread", "recv_thread", "rtw_recv_tasklet", "rtw_xmit_tasklet",
- 		  "rtw_interrupt_thread", "cmd_thread", "usb_init", "MSC_BULK_CMD" and "MSC_BULK_DATA".
+ *        "rtw_TDMA_change_state_thread", "xmit_thread", "recv_thread", "rtw_recv_tasklet", "rtw_xmit_tasklet",
+ *        "rtw_interrupt_thread", "cmd_thread", "usb_init", "MSC_BULK_CMD" and "MSC_BULK_DATA".
  */
 int rtw_create_task(struct task_struct *task, const char *name, u32 stack_size, u32 priority, thread_func_t func, void *thctx);
 
@@ -1066,13 +1042,9 @@ void rtw_thread_exit(void);
 u8 rtw_get_scheduler_state(void);
 
 /*************************** End Threads *******************************/
-#ifdef PLATFORM_LINUX
-#define rtw_warn_on(condition) WARN_ON(condition)
-#else
 #define rtw_warn_on(condition) \
 	do {                       \
 	} while (0)
-#endif
 
 /*************************** Timers *******************************/
 
@@ -1099,7 +1071,7 @@ _timerHandle rtw_timerCreate(_timer *timer,
  * @brief  This function deletes a timer that was previously created using rtw_timerCreate.
  * @param[in] xTimer:  The handle of the timer being deleted.
  * @param[in] xBlockTime: Specifies th etime, in ticks, that the calling task should be held in the Blocked
- *						  State to wait for the delete command to be successfully sent to the timer command queue, 
+ *						  State to wait for the delete command to be successfully sent to the timer command queue,
  *						  should the queue already be full when rtw_timerDelete was called.
  * @return  pdFAIL will be returned if the delete command could not be sent to
  * the timer command queue even after xTicksToWait ticks had passed.  pdPASS will
@@ -1131,7 +1103,7 @@ u32 rtw_timerIsTimerActive(_timer *timer);
  * the timer command queue even after xTicksToWait ticks had passed.  pdPASS will
  * be returned if the command was successfully sent to the timer command queue.
  * When the command is actually processed will depend on the priority of the
- * timer service/daemon task relative to other tasks in the system.  
+ * timer service/daemon task relative to other tasks in the system.
  */
 u32 rtw_timerStop(_timer *timer, osdepTickType xBlockTime);
 
@@ -1142,13 +1114,13 @@ u32 rtw_timerStop(_timer *timer, osdepTickType xBlockTime);
  * @param[in] xBlockTime:  Specifies the time, in ticks, that the calling task should
  * be held in the Blocked state to wait for the change period command to be
  * successfully sent to the timer command queue, should the queue already be
- * full when rtw_timerChangePeriod() was called. 
+ * full when rtw_timerChangePeriod() was called.
  * @return  pdFAIL will be returned if the change period command could not be
  * sent to the timer command queue even after xTicksToWait ticks had passed.
  * pdPASS will be returned if the command was successfully sent to the timer
  * command queue.  When the command is actually processed will depend on the
  * priority of the timer service/daemon task relative to other tasks in the
- * system.  
+ * system.
  */
 u32 rtw_timerChangePeriod(_timer *timer,
 						  osdepTickType xNewPeriod,
@@ -1377,12 +1349,6 @@ struct osdep_service_ops {
 	void (*rtw_delete_task)(struct task_struct *task);
 	void (*rtw_wakeup_task)(struct task_struct *task);
 
-#if 0 //TODO
-	void (*rtw_init_delayed_work)(struct delayed_work *dwork, work_func_t func, const char *name);
-	void (*rtw_deinit_delayed_work)(struct delayed_work *dwork);
-	int (*rtw_queue_delayed_work)(struct workqueue_struct *wq, struct delayed_work *dwork, unsigned long delay, void* context);
-	BOOLEAN (*rtw_cancel_delayed_work)(struct delayed_work *dwork);
-#endif
 	void (*rtw_thread_enter)(char *name);
 	void (*rtw_thread_exit)(void);
 	_timerHandle (*rtw_timerCreate)(_timer *timer,

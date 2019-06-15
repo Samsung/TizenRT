@@ -146,9 +146,6 @@ typedef struct _BB_INIT_REGISTER {
 } BB_INIT_REGISTER, *PBB_INIT_REGISTER;
 
 struct dm_priv {
-	//	u8	DM_Type;
-	//	u8	DMFlag;
-	//	u8	InitDMFlag;
 	u32 InitODMFlag;
 
 	//* Upper and Lower Signal threshold for Rate Adaptive*/
@@ -159,20 +156,7 @@ struct dm_priv {
 	int MinUndecoratedPWDBForDM;
 	int LastMinUndecoratedPWDBForDM;
 
-	//for High Power
-	//	u8 	bDynamicTxPowerEnable;
-	//	u8 	LastDTPLvl;
-	//	u8 	DynamicTxHighPowerLvl;//Add by Jacken Tx Power Control for Near/Far Range 2008/03/06
-
-	//for tx power tracking
-	//	u8	bTXPowerTracking;
-	//	u8	TXPowercount;
-	//	u8	bTXPowerTrackingInit;
-	//	u8	TxPowerTrackControl;	//for mp mode, turn off txpwrtracking as default
-
 	u8 PowerIndex_backup[6];
-
-//	s32	OFDM_Pkt_Cnt;
 
 // Add for Reading Initial Data Rate SEL Register 0x484 during watchdog. Using for fill tx desc. 2011.3.21 by Thomas
 #ifndef NO_CALLER
@@ -210,21 +194,21 @@ struct hal_spec_t {
 	u8 sec_cam_ent_num;
 	u8 sec_cap;
 
-	u8 rfpath_num_2g : 4; /* used for tx power index path */
-	u8 rfpath_num_5g : 4; /* used for tx power index path */
+	u8 rfpath_num_2g:4; /* used for tx power index path */
+	u8 rfpath_num_5g:4; /* used for tx power index path */
 	u8 txgi_max;		  /* maximum tx power gain index */
 	u8 txgi_pdbm;		  /* tx power gain index per dBm */
 
 	u8 max_tx_cnt;
-	u8 tx_nss_num : 4;
-	u8 rx_nss_num : 4;
+	u8 tx_nss_num:4;
+	u8 rx_nss_num:4;
 	u8 band_cap; /* value of BAND_CAP_XXX */
 	u8 bw_cap;   /* value of BW_CAP_XXX */
 	u8 port_num;
 	u8 proto_cap; /* value of PROTO_CAP_XXX */
 	u8 wl_func;   /* value of WL_FUNC_XXX */
 
-	u8 rx_tsf_filter : 1;
+	u8 rx_tsf_filter:1;
 
 	u8 pg_txpwr_saddr;		/* starting address of PG tx power info */
 	u8 pg_txgi_diff_factor; /* PG tx power gain index diff to tx power gain index */
@@ -255,7 +239,6 @@ typedef struct hal_com_data {
 	u16 FirmwareVersionRev;
 	u16 FirmwareSubVersion;
 	u16 FirmwareSignature;
-	//	u8	PGMaxGroup;
 	//current WIFI_PHY values
 	u32 ReceiveConfig;
 	//	WIRELESS_MODE		CurrentWirelessMode;
@@ -291,15 +274,7 @@ typedef struct hal_com_data {
 
 	u8 BoardType;
 
-	//
-	// EEPROM setting.
-	//
-	//	u16	EEPROMVID;
-	//	u16	EEPROMPID;
-	//	u16	EEPROMSVID;
-	//	u16	EEPROMSDID;
 	u8 EEPROMCustomerID;
-	//	u8	EEPROMSubCustomerID;
 	u8 EEPROMVersion;
 	u8 EEPROMRegulatory;
 
@@ -319,7 +294,6 @@ typedef struct hal_com_data {
 	s8 rf_offset_5g_rx_lna2;
 #endif
 #endif
-//	u8	bTXPowerDataReadFromEEPORM;
 #if (PHYDM_LINUX_CODING_STYLE == 1)
 	u8 rf_power_tracking_type;
 	u8 eeprom_thermal_meter;
@@ -330,10 +304,6 @@ typedef struct hal_com_data {
 #else
 	u8 EEPROMThermalMeter;
 #endif
-//	u8	bAPKThermalMeterIgnore;
-
-//	BOOLEAN 			EepromOrEfuse;
-//u8				EfuseMap[2][HWSET_MAX_SIZE_512]; //92C:256bytes, 88E:512bytes, we use union set (512bytes)
 
 #if defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8192F)
 	u8 adjuseVoltageVal;
@@ -347,7 +317,6 @@ typedef struct hal_com_data {
 #ifdef HAL_EFUSE_MEMORY
 	EFUSE_HAL EfuseHal;
 #endif
-	//u8	bIQKInitialized;
 
 	u8 Regulation2_4G;
 #if !defined(NOT_SUPPORT_5G)
@@ -384,30 +353,20 @@ typedef struct hal_com_data {
 
 #endif
 
-	//2 Power Limit Table
-	// Power Limit Table for 2.4G
-	s8 TxPwrLimit_2_4G[MAX_REGULATION_NUM]
-					  [MAX_2_4G_BANDWITH_NUM]
-					  [MAX_RATE_SECTION_NUM]
-					  [CHANNEL_MAX_NUMBER_2G]
-					  [MAX_RF_PATH];
+	s8 TxPwrLimit_2_4G[MAX_REGULATION_NUM][MAX_2_4G_BANDWITH_NUM][MAX_RATE_SECTION_NUM][CHANNEL_MAX_NUMBER_2G][MAX_RF_PATH];
 #if !defined(NOT_SUPPORT_5G)
-	// Power Limit Table for 5G
 	s8 TxPwrLimit_5G[MAX_REGULATION_NUM]
 					[MAX_5G_BANDWITH_NUM]
 					[MAX_RATE_SECTION_NUM]
 					[CHANNEL_MAX_NUMBER_5G]
 					[MAX_RF_PATH];
 #endif
-
 	// Store the original power by rate value of the base of each rate section of rf path A & B
 	u8 TxPwrByRateBase2_4G[TX_PWR_BY_RATE_NUM_RF]
 						  [TX_PWR_BY_RATE_NUM_RF]
 						  [MAX_BASE_NUM_IN_PHY_REG_PG_2_4G];
 #if !defined(NOT_SUPPORT_5G)
-	u8 TxPwrByRateBase5G[TX_PWR_BY_RATE_NUM_RF]
-						[TX_PWR_BY_RATE_NUM_RF]
-						[MAX_BASE_NUM_IN_PHY_REG_PG_5G];
+	u8 TxPwrByRateBase5G[TX_PWR_BY_RATE_NUM_RF][TX_PWR_BY_RATE_NUM_RF][MAX_BASE_NUM_IN_PHY_REG_PG_5G];
 #endif
 
 #if (RTL8188E_SUPPORT == 1)
@@ -418,11 +377,6 @@ typedef struct hal_com_data {
 	u8 TxPwrLegacyHtDiff[MAX_RF_PATH][CHANNEL_MAX_NUMBER]; // For HT<->legacy pwr diff
 #endif
 
-	// For power group
-	//	u8	PwrGroupHT20[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
-	//	u8	PwrGroupHT40[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
-
-	//	u8	LegacyHTTxPowerDiff;// Legacy to HT rate power diff
 	// The current Tx Power Level
 	u8 CurrentCckTxPwrIdx;
 	u8 CurrentOfdm24GTxPwrIdx;
@@ -430,10 +384,6 @@ typedef struct hal_com_data {
 	u8 CurrentBW4024GTxPwrIdx;
 
 	u8 CrystalCap;
-//u32	AntennaTxPath;					// Antenna path Tx
-//u32	AntennaRxPath;					// Antenna path Rx
-//u8	BluetoothCoexist;
-//	u8	ExternalPA;
 
 #if defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8188E)
 	/* PHY DM & DM Section */
@@ -463,13 +413,6 @@ typedef struct hal_com_data {
 	u8 rfe_type;
 	u8 INIDATA_RATE[32 /*MACID_NUM_SW_LIMIT*/];
 #endif
-	//u8	bLedOpenDrain; // Support Open-drain arrangement for controlling the LED. Added by Roger, 2009.10.16.
-
-	//u32	LedControlNum;
-	//u32	LedControlMode;
-	//u8	b1x1RecvCombine;	// for 1T1R receive combining
-
-	//u8	bCurrentTurboEDCA;
 	BOOLEAN bSwChnl;
 	BOOLEAN bSetChnlBW;
 	BOOLEAN bChnlBWInitialized;
@@ -497,19 +440,14 @@ typedef struct hal_com_data {
 #endif
 
 //RDG enable
-//	BOOLEAN	 bRDGEnable;
 #if (defined(CONFIG_RTL8711B) || defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8821C)) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8188E) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8192F)
 	//for host message to fw
 	u8 LastHMEBoxNum;
 #endif
 
 	u8 fw_ractrl;
-	//	u8	RegTxPause;
-	// Beacon function related global variable.
-	//	u32	RegBcnCtrlVal;
 	u8 RegFwHwTxQCtrl;
 	u8 RegReg542;
-	//	u8	RegCR_1;
 	u16 RegRRSR;
 
 	struct dm_priv dmpriv;
@@ -532,30 +470,15 @@ typedef struct hal_com_data {
 	int entry_min_undecorated_smoothed_pwdb;
 #endif
 
-	//#ifdef CONFIG_ANTENNA_DIVERSITY
 	u8 CurAntenna;
 	u8 AntDivCfg;
 	u8 TRxAntDivType;
-	//#endif
-
-	//	u8	FwRsvdPageStartOffset; //2010.06.23. Added by tynli. Reserve page start offset except beacon in TxQ.
 
 	// 2010/08/09 MH Add CU power down mode.
 	BOOLEAN pwrdown;
 
-	// Add for dual MAC  0--Mac0 1--Mac1
-	//	u32	interfaceIndex;
-
 	u8 OutEpQueueSel;
 	u8 OutEpNumber;
-
-	// 2010/12/10 MH Add for USB aggreation mode dynamic shceme.
-	//	BOOLEAN		UsbRxHighSpeedMode;
-
-	// 2010/11/22 MH Add for slim combo debug mode selective.
-	// This is used for fix the drawback of CU TSMC-A/UMC-A cut. HW auto suspend ability. Close BT clock.
-	//BOOLEAN		SlimComboDbg;
-
 	u16 EfuseUsedBytes;
 
 #ifdef CONFIG_P2P
@@ -580,13 +503,6 @@ typedef struct hal_com_data {
 //
 // For SDIO Interface HAL related
 //
-
-//
-// SDIO ISR Related
-//
-//	u32			IntrMask[1];
-//	u32			IntrMaskToSet[1];
-//	LOG_INTERRUPT		InterruptLog;
 #ifdef CONFIG_WOWLAN
 	u32 sdio_himr;
 	u32 sdio_hisr;
@@ -618,7 +534,6 @@ typedef struct hal_com_data {
 	// SDIO Rx FIFO related.
 	//
 	u8 SdioRxFIFOCnt;
-//	u16			SdioRxFIFOSize;
 #endif //CONFIG_SDIO_HCI
 
 #ifdef CONFIG_USB_HCI
@@ -629,7 +544,6 @@ typedef struct hal_com_data {
 	// Interrupt relatd register information.
 	u32 IntArray[3]; //HISR0,HISR1,HSISR
 	u32 IntrMask[3];
-//u8	C2hArray[16];
 #ifdef CONFIG_USB_TX_AGGREGATION
 	u8 UsbTxAggMode;
 	u8 UsbTxAggDescNum;
@@ -644,7 +558,6 @@ typedef struct hal_com_data {
 #endif //CONFIG_USB_HCI
 
 #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-//	u32	TransmitConfig;
 #if defined(CONFIG_AXI_HCI)
 	u32 IntArray[4];
 	u32 IntrMask[4];
@@ -652,11 +565,6 @@ typedef struct hal_com_data {
 	u32 IntArray[3];
 	u32 IntrMask[3];
 #endif
-//	u8	bDefaultAntenna;
-//	u8	bIQKInitialized;
-
-//	u8	bInterruptMigration;
-//	u8	bDisableTxInt;
 #ifdef CONFIG_SUPPORT_HW_WPS_PBC
 	u8 bGpioHwWpsPbc;
 #endif
@@ -878,12 +786,6 @@ typedef struct hal_com_data {
 #endif // #if (PHYDM_LINUX_CODING_STYLE == 1)
 
 #if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C)
-//#define ODM_RF_PATH_A RF_PATH_A
-//#define ODM_RF_PATH_B RF_PATH_B
-//#define ODM_RF_PATH_C RF_PATH_C
-//#define ODM_RF_PATH_D RF_PATH_D
-//#define ODM_RF_PATH_AB RF_PATH_AB
-
 #define ODM_COMP_COMMON BIT(30)
 
 typedef struct _ROM_INFO {

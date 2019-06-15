@@ -1,3 +1,23 @@
+/******************************************************************************
+ *
+ * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
+ *
+ *
+ ******************************************************************************/
+
 /* Includes ------------------------------------------------------------------*/
 #include <tinyara/config.h>
 #include <stdio.h>
@@ -135,93 +155,89 @@ void LwIP_Init_If(void)
 	ip_addr_t gw;
 	int8_t idx = 0;
 
-	/* - netif_add(struct netif *netif, struct ip_addr *ipaddr,
-	        struct ip_addr *netmask, struct ip_addr *gw,
-	        void *state, err_t (* init)(struct netif *netif),
-	        err_t (* input)(struct pbuf *p, struct netif *netif))
-
+/*
 	Adds your network interface to the netif_list. Allocate a struct
 	netif and pass a pointer to this structure as the first argument.
 	Give pointers to cleared ip_addr structures when using DHCP,
 	or fill them with sane numbers otherwise. The state pointer may be NULL.
 
 	The init function pointer must point to a initialization function for
-	your ethernet netif interface. The following code illustrates it's use.*/
-	//printf("NET_IF_NUM:%d\n\r",NET_IF_NUM);
+	your ethernet netif interface. The following code illustrates it's use.
+*/
 	for (idx = 0; idx < NET_IF_NUM; idx++) {
 #if LWIP_VERSION_MAJOR >= 2
-		if (idx == 0) {
-			IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		} else {
-			IP4_ADDR(ip_2_ip4(&ipaddr), AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-		}
+		 if (idx == 0) {
+			 IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+		 } else {
+			 IP4_ADDR(ip_2_ip4(&ipaddr), AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&netmask), AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&gw), AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+		 }
 #else
-		if (idx == 0) {
-			IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-			IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-			IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		} else {
-			IP4_ADDR(&ipaddr, AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-			IP4_ADDR(&netmask, AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-			IP4_ADDR(&gw, AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-		}
+		 if (idx == 0) {
+			 IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+			 IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+			 IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+		 } else {
+			 IP4_ADDR(&ipaddr, AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+			 IP4_ADDR(&netmask, AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+			 IP4_ADDR(&gw, AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+		 }
 #endif
 #if CONFIG_ETHERNET
-		if (idx == NET_IF_NUM - 1) {
+		 if (idx == NET_IF_NUM - 1) {
 #if LWIP_VERSION_MAJOR >= 2
-			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
+			 IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
 #else
-			IP4_ADDR(&ipaddr, ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
-			IP4_ADDR(&netmask, ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
-			IP4_ADDR(&gw, ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
+			 IP4_ADDR(&ipaddr, ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
+			 IP4_ADDR(&netmask, ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
+			 IP4_ADDR(&gw, ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
 #endif
-		}
+		 }
 #endif
 
-		if (idx == 0) {
-			strncpy(xnetif[idx].name, CONFIG_WIFIMGR_STA_IFNAME, IFNAME_LEN);
-			strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_STA_IFNAME);
-		} else if (idx == 1) {
-			strncpy(xnetif[idx].name, CONFIG_WIFIMGR_SOFTAP_IFNAME, IFNAME_LEN);
-			strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_SOFTAP_IFNAME);
-		} else {
-			xnetif[idx].name[0] = 'r';
-			xnetif[idx].name[1] = '0' + idx;
-		}
+		 if (idx == 0) {
+			 strncpy(xnetif[idx].name, CONFIG_WIFIMGR_STA_IFNAME, IFNAME_LEN);
+			 strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_STA_IFNAME);
+		 } else if (idx == 1) {
+			 strncpy(xnetif[idx].name, CONFIG_WIFIMGR_SOFTAP_IFNAME, IFNAME_LEN);
+			 strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_SOFTAP_IFNAME);
+		 } else {
+			 xnetif[idx].name[0] = 'r';
+			 xnetif[idx].name[1] = '0' + idx;
+		 }
 
 #if LWIP_VERSION_MAJOR >= 2
 #if CONFIG_ETHERNET
-		if (idx == NET_IF_NUM - 1)
-			netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
-		else
-			netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init_rtk, &tcpip_input);
+		 if (idx == NET_IF_NUM - 1)
+			 netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_mii_init, &tcpip_input);
+		 else
+			 netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init_rtk, &tcpip_input);
 #else
-		netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init_rtk, &tcpip_input);
+		 netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init_rtk, &tcpip_input);
 #endif
 #else
 
 #if CONFIG_ETHERNET
-		if (idx == NET_IF_NUM - 1)
-			netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_mii_init, &tcpip_input);
-		else
-			netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+		 if (idx == NET_IF_NUM - 1)
+			 netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_mii_init, &tcpip_input);
+		 else
+			 netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
 #else
-		netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_init_rtk, &tcpip_input);
+		 netif_add(&xnetif[idx], &ipaddr, &netmask, &gw, NULL, &ethernetif_init_rtk, &tcpip_input);
 #endif
 #endif
-		printf("interface %d (tot %d) is initialized (name: )\n", idx, NET_IF_NUM, xnetif[idx].name);
-	}
+		 ndbg("interface %d (tot %d) is initialized (name: )\n", idx, NET_IF_NUM, xnetif[idx].name);
+	 }
 
-	/*  Registers the default network interface. */
-	netif_set_default(&xnetif[0]);
+	 /*  Registers the default network interface. */
+	 netif_set_default(&xnetif[0]);
 
-	lwip_init_done = 1;
+	 lwip_init_done = 1;
 }
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
@@ -353,7 +369,7 @@ void LwIP_AUTOIP(struct netif *pnetif)
 		struct ip_addr netmask;
 		struct ip_addr gw;
 
-		printf("AUTOIP timeout\n");
+		ndbg("AUTOIP timeout\n");
 
 /* Static address used */
 #if LWIP_VERSION_MAJOR >= 2
@@ -367,9 +383,9 @@ void LwIP_AUTOIP(struct netif *pnetif)
 		IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 		netif_set_addr(pnetif, &ipaddr, &netmask, &gw);
 #endif
-		printf("Static IP address : %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+		ndbg("Static IP address : %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 	} else {
-		printf("\nLink-local address: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+		ndbg("\nLink-local address: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 	}
 }
 #endif
@@ -383,7 +399,7 @@ void LwIP_AUTOIP_IPv6(struct netif *pnetif)
 	uint8_t *ipv6 = (uint8_t *)&(pnetif->ip6_addr[0].addr[0]);
 #endif
 	netif_create_ip6_linklocal_address(pnetif, 1);
-	printf("\nIPv6 link-local address: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
+	ndbg("\nIPv6 link-local address: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
 		   ipv6[0], ipv6[1], ipv6[2], ipv6[3], ipv6[4], ipv6[5], ipv6[6], ipv6[7],
 		   ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
 }

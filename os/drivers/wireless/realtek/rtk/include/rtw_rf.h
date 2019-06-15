@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -64,7 +64,6 @@ extern u8 center_ch_5g_80m[CENTER_CH_5G_80M_NUM];
 extern u8 center_ch_5g_all[CENTER_CH_5G_ALL_NUM];
 #endif
 
-//#define NUM_REGULATORYS	21
 #define NUM_REGULATORYS 1
 
 //Country codes
@@ -124,7 +123,6 @@ typedef enum _RF90_RADIO_PATH {
 	RF90_PATH_B = 1, //Radio Path B
 	RF90_PATH_C = 2, //Radio Path C
 	RF90_PATH_D = 3  //Radio Path D
-					 //RF90_PATH_MAX 			//Max RF number 90 support
 } RF90_RADIO_PATH_E,
 	*PRF90_RADIO_PATH_E;
 
@@ -132,19 +130,6 @@ typedef enum _RF90_RADIO_PATH {
 #define HAL_PRIME_CHNL_OFFSET_DONT_CARE 0
 #define HAL_PRIME_CHNL_OFFSET_LOWER 1
 #define HAL_PRIME_CHNL_OFFSET_UPPER 2
-
-// Represent Channel Width in HT Capabilities
-//
-#if 0 //move to rtw_sta_info.h
-typedef enum _CHANNEL_WIDTH{
-	CHANNEL_WIDTH_20 = 0,
-	CHANNEL_WIDTH_40 = 1,
-	CHANNEL_WIDTH_80 = 2,
-	CHANNEL_WIDTH_160 = 3,
-	CHANNEL_WIDTH_80_80 = 4,
-	CHANNEL_WIDTH_MAX = 5,
-}CHANNEL_WIDTH, *PCHANNEL_WIDTH;
-#endif
 
 //
 // Represent Extention Channel Offset in HT Capabilities
@@ -187,18 +172,6 @@ extern const u8 _rf_type_to_rf_rx_cnt[];
 #endif
 
 /* 2007/11/15 MH Define different RF type. */
-#if 0 //move to rtw_sta_info.h
-typedef	enum _RT_RF_TYPE_DEFINITION
-{
-	RF_1T2R = 0,
-	RF_2T4R = 1,
-	RF_2T2R = 2,
-	RF_1T1R = 3,
-	RF_2T2R_GREEN = 4,
-	RF_819X_MAX_TYPE = 5,
-}RT_RF_TYPE_DEF_E;
-#endif
-
 #define BB_GAIN_2G 0
 #if SUPPORT_5G_CHANNEL
 #define BB_GAIN_5GLB1 1

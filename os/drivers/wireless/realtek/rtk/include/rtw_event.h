@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -110,35 +110,5 @@ struct fwevent {
 	u32 parmsize;
 	void (*event_callback)(_adapter *dev, u8 *pbuf);
 };
-
-//TODO
-#if 0
-
-#define C2HEVENT_SZ 32	
-
-struct event_node{
-	unsigned char *node;
-	unsigned char evt_code;
-	unsigned short evt_sz;
-	volatile int	*caller_ff_tail;
-	int	caller_ff_sz;
-};
-
-struct c2hevent_queue {
-	volatile int	head;
-	volatile int	tail;
-	struct	event_node	nodes[C2HEVENT_SZ];
-	unsigned char	seq;
-};
-
-#define NETWORK_QUEUE_SZ 4
-
-struct network_queue {
-	volatile int	head;
-	volatile int	tail;
-	WLAN_BSSID_EX networks[NETWORK_QUEUE_SZ];	
-};
-
-#endif //#if 0
 
 #endif // _WLANEVENT_H_

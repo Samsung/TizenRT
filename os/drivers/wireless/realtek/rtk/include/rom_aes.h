@@ -1,16 +1,15 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2014 Realtek Corporation. All rights reserved.
- *                                        
- * This is ROM code section. 
+ *
+ * This is ROM code section.
  *
  *
  ******************************************************************************/
 #ifndef ROM_AES_H
 #define ROM_AES_H
 
-typedef struct
-{
+typedef struct {
 	u32 erk[64]; /* encryption round keys */
 	u32 drk[64]; /* decryption round keys */
 	int nr;		 /* number of rounds */

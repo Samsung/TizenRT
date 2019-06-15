@@ -29,11 +29,7 @@
 #endif
 #else
 #define CONFIG_PLATFORM_AMEBA_X 0
-#if defined(CONFIG_PLATFORM_TIZENRT)
 #include "autoconf_tizenrt.h"
-#else
-#include "autoconf_rtos.h"
-#endif
 #endif
 
 #if (CONFIG_PLATFORM_AMEBA_X == 1)
@@ -192,7 +188,7 @@
 #define CRC_IMPLEMENTATION_MODE CRC_IMPLEMENTATION_DMEM_OPTIMIZED
 #endif
 
-/* AES DMEM optimized mode comsume 10k less memory compare to 
+/* AES DMEM optimized mode comsume 10k less memory compare to
      IMEM optimized mode AES_IMPLEMENTATION_IMEM_OPTIMIZED */
 #define AES_IMPLEMENTATION_MODE AES_IMPLEMENTATION_DMEM_OPTIMIZED
 

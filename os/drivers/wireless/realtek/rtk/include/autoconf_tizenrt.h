@@ -18,17 +18,12 @@
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you dont like!
  */
-#define CONFIG_PLATFORM_TIZENRT
-#define PLATFORM_TIZENRT 1
-
-#if 1
 #if defined(USE_SDIO_INTERFACE)
 #define CONFIG_SDIO_HCI
 #elif defined(USE_USB_INTERFACE)
 #define CONFIG_USB_HCI
 #else
 #define CONFIG_GSPI_HCI
-#endif
 #endif
 
 //#define CONFIG_IEEE80211W
@@ -130,7 +125,7 @@
 
 //#define CONFIG_RECV_TASK_THREAD_MODE
 
-/* AES DMEM optimized mode comsume 10k less memory compare to 
+/* AES DMEM optimized mode comsume 10k less memory compare to
      IMEM optimized mode AES_IMPLEMENTATION_IMEM_OPTIMIZED */
 #define AES_IMPLEMENTATION_MODE AES_IMPLEMENTATION_DMEM_OPTIMIZED
 #ifdef CONFIG_USB_HCI

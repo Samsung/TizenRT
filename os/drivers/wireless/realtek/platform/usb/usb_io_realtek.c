@@ -21,7 +21,7 @@ extern _mutex usb_host_mutex;
 
 static void rtw_usb_probe(void)
 {
-	printf("rtw_usb_probe -------> \n");
+	nvdbg("rtw_usb_probe -------> \n");
 
 	if (!g_rtk_wifi_connect)
 		usbhost_rtl8723d_initialize();
@@ -34,7 +34,7 @@ static void rtw_usb_probe(void)
 			usleep(10000);
 	}
 
-	printf("rtw_usb_probe <------- \n");
+	nvdbg("rtw_usb_probe <------- \n");
 }
 
 int usb_thread(int argc, char *argv[])
@@ -83,7 +83,7 @@ int usb_thread(int argc, char *argv[])
 
 	_func_exit_;
 
-	printf("exit usb read port thread \n");
+	nvdbg("exit usb read port thread \n");
 	return 0;
 }
 
@@ -103,15 +103,15 @@ static int rtw_usb_get_speed_info(void *priv)
 
 	switch (usb_speed) {
 	case 1:
-		printf("Low Speed Case \n");
+		nvdbg("Low Speed Case \n");
 		ret = RTW_USB_SPEED_1_1;
 		break;
 	case 2:
-		printf("full speed Case \n");
+		nvdbg("full speed Case \n");
 		ret = RTW_USB_SPEED_1_1;
 		break;
 	case 3:
-		printf("high speed Case \n");
+		nvdbg("high speed Case \n");
 		ret = RTW_USB_SPEED_2;
 		break;
 	default:
@@ -160,7 +160,7 @@ static int rtw_usb_bulk_in(void *priv, unsigned char pipe, unsigned char *buf, u
 	if (nread_bytes > 0) {
 		ret = 0;
 	} else {
-		printf("usb bulk in fail: %d \n", nread_bytes);
+		ndbg("usb bulk in fail: %d \n", nread_bytes);
 		nread_bytes = 0;
 	}
 
@@ -178,7 +178,7 @@ static int rtw_usb_bulk_out(void *priv, unsigned char pipe, unsigned char *buf, 
 		ret = 0;
 		callback(arg, nwritten_bytes);
 	} else {
-		printf("usb bulk out fail: %d \n", nwritten_bytes);
+		ndbg("usb bulk out fail: %d \n", nwritten_bytes);
 		nwritten_bytes = 0;
 	}
 

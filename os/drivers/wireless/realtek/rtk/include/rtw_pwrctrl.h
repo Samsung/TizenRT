@@ -52,7 +52,6 @@
 #define MAX_WKFM_SIZE 16	/* (16 bytes for WKFM bit mask, 16*8 = 128 bits) */
 #define MAX_WKFM_PATTERN_SIZE 128
 #define WKFMCAM_ADDR_NUM 8 //6
-//#define WKFMCAM_SIZE 		24 /* each entry need 6*4 bytes */
 
 enum pattern_type {
 	PATTERN_BROADCAST = 0,
@@ -220,8 +219,6 @@ struct pwrctrl_priv {
 	u8 dtim;
 	u32 alives;
 	u64 wowlan_fw_iv;
-//TODO
-//	_workitem cpwm_event;
 #ifdef CONFIG_LPS_RPWM_TIMER
 	u8 brpwmtimeout;
 	_workitem rpwmtimeoutwi;
@@ -302,7 +299,6 @@ struct pwrctrl_priv {
 	int ps_flag;
 
 	rt_rf_power_state rf_pwrstate; //cur power state
-	//rt_rf_power_state 	current_rfpwrstate;
 	rt_rf_power_state change_rfpwrstate;
 
 	u8 wepkeymask;
@@ -374,7 +370,6 @@ struct pwrctrl_priv {
 
 #define _rtw_set_pwr_state_check_timer(pwrctrlpriv, ms)                                                 \
 	do {                                                                                                \
-		/*DBG_871X("%s _rtw_set_pwr_state_check_timer(%p, %d)\n", __FUNCTION__, (pwrctrlpriv), (ms));*/ \
 		rtw_set_timer(&(pwrctrlpriv)->pwr_state_check_timer, (ms));                                     \
 	} while (0)
 
@@ -418,9 +413,6 @@ rt_rf_power_state RfOnOffDetect(IN PADAPTER pAdapter);
 s32 LPS_RF_ON_check(PADAPTER padapter, u32 delay_ms);
 void LPS_Enter(PADAPTER padapter);
 void LPS_Leave(PADAPTER padapter);
-//#ifdef CONFIG_LPS_CHK_BY_TP
-//void traffic_check_for_leave_lps_by_tp(PADAPTER padapter, u8 tx, struct sta_info *sta);
-//#endif
 #endif
 
 #ifdef CONFIG_RESUME_IN_WORKQUEUE
@@ -432,8 +424,6 @@ void rtw_resume_in_workqueue(struct pwrctrl_priv *pwrpriv);
 void rtw_register_early_suspend(struct pwrctrl_priv *pwrpriv);
 void rtw_unregister_early_suspend(struct pwrctrl_priv *pwrpriv);
 #endif //CONFIG_HAS_EARLYSUSPEND || CONFIG_ANDROID_POWER
-//TODO
-//u8 rtw_interface_ps_func(_adapter *padapter,HAL_INTF_PS_FUNC efunc_id,u8* val);
 int _rtw_pwr_wakeup(_adapter *padapter, u32 ips_deffer_ms, const char *caller);
 #define rtw_pwr_wakeup(adapter) _rtw_pwr_wakeup(adapter, RTW_PWR_STATE_CHK_INTERVAL, __FUNCTION__)
 int rtw_pm_set_ips(_adapter *padapter, u8 mode);

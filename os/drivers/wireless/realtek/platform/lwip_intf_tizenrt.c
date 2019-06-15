@@ -99,7 +99,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 #ifdef CONFIG_TX_ZERO_COPY
 	data = rtw_malloc(1640);
 	if (data == NULL) {
-		printf("\r\n###########ERR_MEM at %s\r\n", __func__);
+		ndbg("\r\n###########ERR_MEM at %s\r\n", __func__);
 		ret = -1;
 		goto exit;
 	}
@@ -113,7 +113,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 
 	skb = (struct sk_buff *)rltk_wlan_alloc_skb_0copy();
 	if (skb == NULL) {
-		printf("\r\nrltk_wlan_alloc_skb()failed!\r\n");
+		ndbg("\r\nrltk_wlan_alloc_skb()failed!\r\n");
 		goto exit;
 	}
 	skb->data = data + 80;
@@ -285,23 +285,10 @@ void netif_rx(int idx, unsigned int len)
 
 void netif_post_sleep_processing(void)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-#if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFORM_TIZENRT)
-#else
-	lwip_POST_SLEEP_PROCESSING();
-
-#endif
-#endif
 }
 
 void netif_pre_sleep_processing(void)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-#if defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFORM_TIZENRT)
-#else
-	lwip_PRE_SLEEP_PROCESSING();
-#endif
-#endif
 }
 
 #ifdef CONFIG_WOWLAN
