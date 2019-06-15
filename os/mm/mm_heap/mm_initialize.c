@@ -283,6 +283,9 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 
 #ifdef CONFIG_MM_REALTIME_SUPPORT
 	memset(heap->mm_realtime_num, 0, sizeof(int) * MM_REALTIME_SUPPORT_NUMOF_SIZES);
+#ifdef CONFIG_EXAMPLES_HEAP_STAT_REALTIME
+	memset(heap->mm_realtime_miss, 0, sizeof(size_t) * MM_REALTIME_SUPPORT_NUMOF_SIZES);
+#endif
 
 	size_t tsize = (MM_REALTIME_SUPPORT_NUMOF_SIZES + 2) * MM_REALTIME_SUPPORT_STEP_SIZE;
 	heap->mm_ndx_offset = (tsize >> MM_MIN_SHIFT) - mm_size2ndx(tsize) - 2;

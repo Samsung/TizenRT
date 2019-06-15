@@ -412,6 +412,9 @@ struct mm_heap_s {
 	FAR struct mm_freenode_s *mm_delimiter;
 	int mm_ndx_offset;
 	int mm_realtime_num[MM_REALTIME_SUPPORT_NUMOF_SIZES];
+#ifdef CONFIG_EXAMPLES_HEAP_STAT_REALTIME
+	size_t mm_realtime_miss[MM_REALTIME_SUPPORT_NUMOF_SIZES];
+#endif
 #endif
 };
 
@@ -717,8 +720,13 @@ void mm_is_sem_available(void *address);
 /* Functions to get the address of heap structure */
 struct mm_heap_s *mm_get_heap(void *address);
 struct mm_heap_s *mm_get_heap_with_index(int index);
-
 int mm_get_heapindex(void *mem);
+
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+int mm_heapstat_get(char *addr, uint32_t *miss, int *num);
+int mm_heapstat_reset(char *addr);
+#endif
+
 #if CONFIG_MM_NHEAPS > 1
 struct heapinfo_total_info_s {
 	int total_heap_size;

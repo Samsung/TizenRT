@@ -159,6 +159,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		 * then try to allocate in the non-realtime memory area.
 		 */
 		if (ndx < MM_REALTIME_SUPPORT_NUMOF_SIZES) {
+#ifdef CONFIG_EXAMPLES_HEAP_STAT_REALTIME
+			heap->mm_realtime_miss[ndx] += 1;
+#endif
 			ndx = MM_REALTIME_SUPPORT_NUMOF_SIZES - 1;
 		}
 #endif
