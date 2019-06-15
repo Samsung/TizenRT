@@ -146,13 +146,80 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], 0xDEAD);
 #endif
 
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+	int i = 0;
+	int j;
+	int seg_size = MM_REALTIME_SUPPORT_MIN_SIZE; /* minimum size for realtime support */
+	int mem_pool_size = 0;
+	int prev_size;
+	char *numbers = CONFIG_MM_REALTIME_SUPPORT_NUMS;
+	char *ptr;
+
+	while (*numbers != '\0') {
+		heap->mm_realtime_num[i] = (int)strtol(numbers, &ptr, 10);
+		while (*ptr == ',' || *ptr == ' ') {
+			++ptr;
+		}
+		numbers = ptr;
+		if (++i >= MM_REALTIME_SUPPORT_NUMOF_SIZES) {
+			break;
+		}
+	}
+
+	for (i = 0; i < MM_REALTIME_SUPPORT_NUMOF_SIZES; ++i) {
+		if (heap->mm_realtime_num[i] < 1) {
+			heap->mm_realtime_num[i] = 0;
+		}
+		mem_pool_size += (heap->mm_realtime_num[i] * (i + 2) * MM_REALTIME_SUPPORT_STEP_SIZE);
+		llvdbg("%d free nodes for size %d are reserved.\n", heap->mm_realtime_num[i], (i + 2) * MM_REALTIME_SUPPORT_STEP_SIZE);
+
+	}
+	llvdbg("mm_pool_size = %d\n", mem_pool_size);
+
+	/* First, add one big chunk of free node for non-realtime. */
+	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
+	node->size      = heapsize - (2 * SIZEOF_MM_ALLOCNODE) - mem_pool_size;
+	DEBUGASSERT((int)node->size > 0);
+	node->preceding = SIZEOF_MM_ALLOCNODE;
+	mm_addfreechunk(heap, node);
+
+	/* Set the delimiter between non-realtime and realtime areas.
+	 * This is required to discern where the realtime area is.
+	 * For this area, coalescing is not going to happen.
+	 */
+	heap->mm_delimiter = (FAR struct mm_freenode_s *)((char *)node + node->size);
+
+	/* Second, reserve free nodes for realtime support at the end of heap memory. */
+	prev_size = node->size;
+	for (i = 0; i < MM_REALTIME_SUPPORT_NUMOF_SIZES; ++i) {
+		node            = (FAR struct mm_freenode_s *)((char *)node + prev_size);
+		node->size      = seg_size;
+		node->preceding = prev_size;
+		mm_addfreechunk(heap, node);
+
+		for (j = 1; j < heap->mm_realtime_num[i]; ++j) {
+			node            = (FAR struct mm_freenode_s *)((char *)node + seg_size);
+			node->size      = seg_size;
+			node->preceding = seg_size;
+			mm_addfreechunk(heap, node);
+		}
+
+		prev_size = seg_size;
+		seg_size += MM_REALTIME_SUPPORT_STEP_SIZE;
+	}
+#else
 	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
 	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
 	node->preceding = SIZEOF_MM_ALLOCNODE;
 
+	/* Add the single, large free node to the nodelist */
+	mm_addfreechunk(heap, node);
+#endif
+
 	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
 	heap->mm_heapend[IDX]->size      = SIZEOF_MM_ALLOCNODE;
 	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
@@ -163,10 +230,6 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 #if CONFIG_MM_REGIONS > 1
 	heap->mm_nregions++;
 #endif
-
-	/* Add the single, large free node to the nodelist */
-
-	mm_addfreechunk(heap, node);
 }
 
 /****************************************************************************
@@ -217,6 +280,15 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	/* Initialize the node array */
 
 	memset(heap->mm_nodelist, 0, sizeof(struct mm_freenode_s) * (MM_NNODES + 1));
+
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+	memset(heap->mm_realtime_num, 0, sizeof(int) * MM_REALTIME_SUPPORT_NUMOF_SIZES);
+
+	size_t tsize = (MM_REALTIME_SUPPORT_NUMOF_SIZES + 2) * MM_REALTIME_SUPPORT_STEP_SIZE;
+	heap->mm_ndx_offset = (tsize >> MM_MIN_SHIFT) - mm_size2ndx(tsize) - 2;
+	llvdbg("mm_ndx_offset = %d, numof_sizes = %d, heapsize = %u\n", heap->mm_ndx_offset, MM_REALTIME_SUPPORT_NUMOF_SIZES, heapsize);
+	DEBUGASSERT(heap->mm_ndx_offset >= 0);
+#endif
 
 	/* Initialize the malloc semaphore to one (to support one-at-
 	 * a-time access to private data sets).

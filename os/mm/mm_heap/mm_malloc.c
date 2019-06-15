@@ -139,7 +139,11 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 * by converting the request size into a nodelist index.
 	 */
 
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+	ndx = mm_size2ndx_realtime(heap, size);
+#else
 	ndx = mm_size2ndx(size);
+#endif
 
 	/* Search for a large enough chunk in the list of nodes.
 	 * This list is ordered by size in a descending order.
@@ -149,6 +153,15 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	node = heap->mm_nodelist[ndx].flink;
 	if (!(node && node->size >= size)) {
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+		/* In case the requested size pertains to the realtime support
+		 * and there are no more available free nodes in that specific free nodelist,
+		 * then try to allocate in the non-realtime memory area.
+		 */
+		if (ndx < MM_REALTIME_SUPPORT_NUMOF_SIZES) {
+			ndx = MM_REALTIME_SUPPORT_NUMOF_SIZES - 1;
+		}
+#endif
 		while (++ndx < MM_NNODES && !(node = heap->mm_nodelist[ndx].flink)) ;
 	}
 

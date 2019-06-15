@@ -80,12 +80,12 @@ int mm_size2ndx(size_t size)
 	size_t o_size = size;
 	size_t mask = MM_SHIFT_MASK;
 
-	if ((size >> MM_MAX_SHIFT) >= 1) {
+	if ((size >> MM_MAX_SHIFT) > 0) {
 		return MM_NNODES - 1;
 	}
 
 	size >>= MM_SHIFT_FOR_NDX;
-	while(size > 1) {
+	while (size > 1) {
 		ndx++;
 		size >>= 1;
 	}
@@ -104,3 +104,45 @@ int mm_size2ndx(size_t size)
 		return ndx;
 	}
 }
+
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+/****************************************************************************
+ * Name: mm_size2ndx_realtime
+ *
+ * Description:
+ *    Convert the size to a nodelist index when realtime support is enabled.
+ *
+ ****************************************************************************/
+
+int mm_size2ndx_realtime(FAR struct mm_heap_s *heap, size_t size)
+{
+	int ndx = 0;
+	size_t o_size = size;
+	size_t mask = MM_SHIFT_MASK;
+
+	if ((size >> MM_MAX_SHIFT) > 0) {
+		return MM_NNODES - 1;
+	}
+
+	size >>= MM_MIN_SHIFT;
+	if (size > MM_REALTIME_SUPPORT_NUMOF_SIZES + 1) {
+		size >>= 1;
+		while (size > 1) {
+			ndx++;
+			size >>= 1;
+		}
+
+		/* If free nodes are sorted in a descending order,
+		 * it would be better to use ]32, 64] instead of [32, 64[.
+		 */
+		mask <<= ndx;
+		if ((o_size & (~mask)) > 0) {
+			++ndx;
+		}
+		return ndx + heap->mm_ndx_offset;
+	} else if (size < 3) {
+		return 0;
+	}
+	return size - 2;
+}
+#endif

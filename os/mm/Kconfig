@@ -170,3 +170,36 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
+
+config MM_REALTIME_SUPPORT
+	bool "Realtime support for malloc/free functions performing within a constant time"
+	default n
+	---help---
+		Do memory allocation and releasing within a constant time
+		if the requested size is less than or equal to (16 * MM_REALTIME_SUPPORT_NUMOF_SIZES).
+
+config MM_REALTIME_SUPPORT_NUMOF_SIZES
+	int "The number of sizes for realtime support"
+	default 3
+	depends on MM_REALTIME_SUPPORT
+	---help---
+		The number of sizes for realtime support, starting from 16 bytes with 16 bytes step.
+		For example, if MM_REALTIME_SUPPORT_NUMOF_SIZES is 3,
+		16, 32, 48 bytes memory can be allocated within a constant time.
+		This number should be positive integer.
+
+config MM_REALTIME_SUPPORT_NUMS
+	string "The numbers of free nodes which are reserved for realtime support"
+	default "100 100 100"
+	depends on MM_REALTIME_SUPPORT
+	---help---
+		The numbers of free nodes which can be used for memory allocation within a constant time.
+		For example, by default, MM_REALTIME_SUPPORT_NUMS = "100 100 100" means
+		a hundred free nodes for each size, i.e, 16, 32, 48 bytes,
+		are reserved for realtime support. The total amount of memory sizes
+		for realtime support is calculated by (16 * N1 + 32 * N2 + ... + 16 * n * Nn) bytes,
+		where n is the number of sizes (i.e., MM_REALTIME_SUPPORT_NUMOF_SIZES)
+		and Nn is the number of free nodes for the size of 16 * n bytes.
+		These numbers should not be negative integers.
+		If n is larger than the number of these numbers, non-defined numbers of free nodes
+		become, by default, zero.

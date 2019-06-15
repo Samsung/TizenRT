@@ -86,7 +86,11 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 	/* Convert the size to a nodelist index */
 
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+	int ndx = mm_size2ndx_realtime(heap, node->size);
+#else
 	int ndx = mm_size2ndx(node->size);
+#endif
 
 	/* Now put the new free node in a descending order */
 
