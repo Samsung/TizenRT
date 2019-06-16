@@ -386,7 +386,7 @@ if IMXRT_PWM
 		bool "PWM IMXRT_PWM2"
 		default n
 	
-	if ARCH_CHIP_FAMILY_IMXRT102x
+	if ARCH_CHIP_FAMILY_IMXRT105x
 	config IMXRT_PWM3
 		bool "PWM IMXRT_PWM3"
 		default n

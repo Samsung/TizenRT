@@ -295,7 +295,7 @@ typedef enum _pwm_module_control {
 /*! @brief Structure for the user to define the PWM signal characteristics */
 typedef struct _pwm_signal_param {
 	pwm_channels_t pwmChannel; /*!< PWM channel being configured; PWM A or PWM B */
-	uint8_t dutyCyclePercent;  /*!< PWM pulse width, value should be between 0 to 100
+	uint16_t dutyCycle;  /*!< PWM pulse width, value should be between 0 to 100
 									0=inactive signal(0% duty cycle)...
 									100=always active signal (100% duty cycle)*/
 	pwm_level_select_t level;  /*!< PWM output active level select */
@@ -455,15 +455,15 @@ status_t imxrt_pwm_setuppwm(PWM_Type *base,
  * @param subModule         PWM submodule to configure
  * @param pwmSignal         Signal (PWM A or PWM B) to update
  * @param currPwmMode       The current PWM mode set during PWM setup
- * @param dutyCyclePercent  New PWM pulse width, value should be between 0 to 100
+ * @param dutyCycle         New PWM pulse width, value should be between 0 to 100
  *                          0=inactive signal(0% duty cycle)...
- *                          100=active signal (100% duty cycle)
+ *                          65535=active signal (100% duty cycle)
  */
 void imxrt_pwm_updatepwmdutycycle(PWM_Type *base,
 								pwm_submodule_t subModule,
 								pwm_channels_t pwmSignal,
 								pwm_mode_t currPwmMode,
-								uint8_t dutyCyclePercent);
+								uint16_t dutyCycle);
 
 /*! @}*/
 

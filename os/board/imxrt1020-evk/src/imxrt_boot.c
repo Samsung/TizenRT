@@ -166,6 +166,38 @@ static void imxrt_gpio_initialize(void)
 }
 
 /****************************************************************************
+ * Name: board_pwm_initialize
+ *
+ * Description:
+ *   PWM intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_pwm_initialize(void)
+{
+#ifdef CONFIG_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
+	int ret;
+	int i;
+
+	for (i = 0; i < PWM_CNT_COUNT; i++) {
+		pwm = imxrt_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get imxrt PWM lower half\n");
+			return;
+		}
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
+		if (ret < 0) {
+			lldbg("Imxrt PWM registeration failure: %d\n", ret);
+		}
+	}
+#endif
+	return;
+}
+
+/****************************************************************************
  * Name: imxrt_boardinitialize
  *
  * Description:
@@ -210,6 +242,8 @@ void board_initialize(void)
 	(void)imxrt_bringup();
 
 	imxrt_gpio_initialize();
+
+	imxrt_pwm_initialize();
 
 	imxrt_board_adc_initialize();
 

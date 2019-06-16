@@ -43,7 +43,6 @@
 struct _iotbus_pwm_s {
 	int fd;
 	int enabled;
-	iotbus_pwm_val_e idle;
 	struct pwm_info_s config;
 };
 
@@ -173,22 +172,17 @@ int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty
 int iotbus_pwm_set_idle(iotbus_pwm_context_h pwm, iotbus_pwm_val_e val)
 {
 	int ret;
-	struct _iotbus_pwm_s *handle;
 
 	if (!pwm || !pwm->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	handle = (struct _iotbus_pwm_s *)pwm->handle;
-	handle->idle = val;
-
-	ret = ioctl(handle->fd, PWMIOC_IDLE, (unsigned long)(handle->idle));
-	if (ret < 0) {
-		ibdbg("ioctl(PWMIOC_IDLE) failed: %d\n", errno);
-		return IOTBUS_ERROR_UNKNOWN;
+	if (val == IOTBUS_PWM_HIGH) {
+		ret = iotbus_pwm_set_duty_cycle(pwm, 100);
+	} else {
+		ret = iotbus_pwm_set_duty_cycle(pwm, 0);
 	}
-
-	return IOTBUS_ERROR_NONE;
+	return ret;
 }
 
 // period : us
