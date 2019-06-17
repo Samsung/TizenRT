@@ -39,23 +39,24 @@
 #define TASKMGRCMD_RESTART                 4
 #define TASKMGRCMD_PAUSE                   5
 #define TASKMGRCMD_RESUME                  6
-#define TASKMGRCMD_UNICAST                 7
-#define TASKMGRCMD_BROADCAST               8
-#define TASKMGRCMD_SET_UNICAST_CB          9
-#define TASKMGRCMD_SET_BROADCAST_CB        10
-#define TASKMGRCMD_SCAN_NAME               11
-#define TASKMGRCMD_SCAN_HANDLE             12
-#define TASKMGRCMD_SCAN_GROUP              13
-#define TASKMGRCMD_REGISTER_TASK           14
+#define TASKMGRCMD_UNICAST_SYNC            7
+#define TASKMGRCMD_UNICAST_ASYNC           8
+#define TASKMGRCMD_BROADCAST               9
+#define TASKMGRCMD_SET_UNICAST_CB          10
+#define TASKMGRCMD_SET_BROADCAST_CB        11
+#define TASKMGRCMD_SCAN_NAME               12
+#define TASKMGRCMD_SCAN_HANDLE             13
+#define TASKMGRCMD_SCAN_GROUP              14
+#define TASKMGRCMD_REGISTER_TASK           15
 #ifndef CONFIG_DISABLE_PTHREAD
-#define TASKMGRCMD_REGISTER_PTHREAD        15
+#define TASKMGRCMD_REGISTER_PTHREAD        16
 #endif
-#define TASKMGRCMD_SET_STOP_CB             16
-#define TASKMGRCMD_SET_EXIT_CB             17
-#define TASKMGRCMD_ALLOC_BROADCAST_MSG     18
-#define TASKMGRCMD_UNSET_BROADCAST_CB      19
-#define TASKMGRCMD_DEALLOC_BROADCAST_MSG   20
-#define TASKMGRCMD_SCAN_PID                21
+#define TASKMGRCMD_SET_STOP_CB             17
+#define TASKMGRCMD_SET_EXIT_CB             18
+#define TASKMGRCMD_ALLOC_BROADCAST_MSG     19
+#define TASKMGRCMD_UNSET_BROADCAST_CB      20
+#define TASKMGRCMD_DEALLOC_BROADCAST_MSG   21
+#define TASKMGRCMD_SCAN_PID                22
 
 /* Task Type */
 #define TM_BUILTIN_TASK                    0
@@ -187,8 +188,9 @@ typedef struct tm_broadcast_internal_msg_s tm_broadcast_internal_msg_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
-#define TM_LIST_ADDR(handle)            ((app_list_data_t *)tm_app_list[handle].addr)
-#define TM_PID(handle)                  tm_app_list[handle].pid
+app_list_t *taskmger_get_applist(int handle);
+#define TM_LIST_ADDR(handle)            ((app_list_data_t *)taskmger_get_applist(handle)->addr)
+#define TM_PID(handle)                  taskmger_get_applist(handle)->pid
 #define TM_TYPE(handle)                 TM_LIST_ADDR(handle)->type
 #define TM_IDX(handle)                  TM_LIST_ADDR(handle)->idx
 #define TM_GID(handle)                  TM_LIST_ADDR(handle)->tm_gid
@@ -199,10 +201,8 @@ typedef struct tm_broadcast_internal_msg_s tm_broadcast_internal_msg_t;
 #define TM_STOP_CB_INFO(handle)         TM_LIST_ADDR(handle)->stop_cb_info
 #define TM_EXIT_CB_INFO(handle)         TM_LIST_ADDR(handle)->exit_cb_info
 
-extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
-
 int taskmgr_send_request(tm_request_t *request_msg);
-int taskmgr_send_response(char *q_name, tm_response_t *response_msg);
+void taskmgr_send_response(char *q_name, int timeout, tm_response_t *response_msg, int ret_status);
 int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int timeout);
 
 bool taskmgr_is_permitted(int handle, pid_t pid);

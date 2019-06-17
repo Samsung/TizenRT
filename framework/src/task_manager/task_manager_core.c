@@ -78,6 +78,11 @@ int taskmgr_get_drvfd(void)
 	return g_taskmgr_fd;
 }
 
+app_list_t *taskmger_get_applist(int handle)
+{
+	return &tm_app_list[handle];
+}
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -487,6 +492,12 @@ static int taskmgr_restart(int handle, int caller_pid)
 		return TM_INVALID_PARAM;
 	}
 
+#ifndef CONFIG_DISABLE_PTHREAD
+	if (TM_TYPE(handle) == TM_PTHREAD) {
+		return TM_NOT_SUPPORTED;
+	}
+#endif
+
 	ret = taskmgr_get_task_state(handle);
 	if (ret == TM_APP_STATE_UNREGISTERED) {
 		return -ret;
@@ -633,7 +644,7 @@ int taskmgr_calc_time(struct timespec *result_time, int offset)
 	return OK;
 }
 
-static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *data, tm_msg_t *response_msg, int timeout)
+static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *data, tm_response_t *response_msg, int timeout)
 {
 	int ret;
 	union sigval msg;
@@ -658,6 +669,12 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle));
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
+	}
+
+	response_msg->data = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+	if (response_msg->data == NULL) {
+		response_msg->status = TM_OUT_OF_MEMORY;
+		return TM_OUT_OF_MEMORY;
 	}
 
 	/* handle is in app_list */
@@ -709,12 +726,12 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 	mq_close(unicast_mqfd);
 	mq_unlink(TM_UNICAST_MQ);
 
-	response_msg->msg_size = recv_msg.msg_size;
-	response_msg->msg = TM_ALLOC(recv_msg.msg_size);
-	if (response_msg->msg == NULL) {
+	((tm_msg_t *)response_msg->data)->msg_size = recv_msg.msg_size;
+	((tm_msg_t *)response_msg->data)->msg = (char *)TM_ALLOC(recv_msg.msg_size);
+	if (((tm_msg_t *)response_msg->data)->msg == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	memcpy(response_msg->msg, recv_msg.msg, recv_msg.msg_size);
+	memcpy(((tm_msg_t *)response_msg->data)->msg, recv_msg.msg, recv_msg.msg_size);
 
 	return OK;
 }
@@ -845,6 +862,18 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 	}
 
 	return taskmgr_get_task_info((tm_appinfo_list_t **)&response_msg->data, handle);
+}
+
+static int taskmgr_getinfo_with_pid(int caller_pid, tm_response_t *response_msg)
+{
+	int ret;
+	ret = taskmgr_get_handle_by_pid(caller_pid);
+	if (ret == TM_UNREGISTERED_APP) {
+		return ret;
+	}
+
+	ret = taskmgr_getinfo_with_handle(ret, response_msg);
+	return ret;
 }
 
 static void taskmgr_termination_callback(void)
@@ -1121,17 +1150,38 @@ static int taskmgr_unset_broadcast_cb(int msg, int pid)
 	return OK;
 }
 
+static void taskmgr_dealloc_task_name(char *name)
+{
+	if (name != NULL) {
+		TM_FREE(name);
+		name = NULL;
+	}
+}
+
+static void taskmgr_dealloc_reqmsg_data(tm_request_t *request_msg)
+{
+	if (request_msg->data != NULL && request_msg->cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg->cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG && request_msg->cmd != TASKMGRCMD_UNICAST_SYNC && request_msg->cmd != TASKMGRCMD_UNICAST_ASYNC) {
+		if (request_msg->cmd == TASKMGRCMD_BROADCAST && ((tm_internal_msg_t *)request_msg->data)->msg != NULL) {
+			TM_FREE(((tm_internal_msg_t *)request_msg->data)->msg);
+		}
+		TM_FREE(request_msg->data);
+		request_msg->data = NULL;
+	}
+}
+
 static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int caller_pid)
 {
 	int chk_idx;
 	int handle;
 
 	if (permission < 0 || caller_pid < 0 || task_info == NULL) {
-		return TM_INVALID_PARAM;
+		handle = TM_INVALID_PARAM;
+		goto end_func;
 	}
 
 	if (handle_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
-		return TM_OUT_OF_MEMORY;
+		handle = TM_OUT_OF_MEMORY;
+		goto end_func;
 	}
 
 	handle = TM_OPERATION_FAIL;
@@ -1140,7 +1190,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
 		if (strcmp(tm_task_list[chk_idx].name, task_info->name) == 0) {
 			/* Already registered task */
-			return TM_OPERATION_FAIL;
+			handle = TM_OPERATION_FAIL;
+			goto end_func;
 		}
 	}
 
@@ -1153,7 +1204,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		if (tm_task_list[task_cnt].entry == NULL) {
 			tm_task_list[task_cnt].name = (char *)TM_ALLOC(strlen(task_info->name) + 1);
 			if (tm_task_list[task_cnt].name == NULL) {
-				return TM_OUT_OF_MEMORY;
+				handle = TM_OUT_OF_MEMORY;
+				goto end_func;
 			}
 			strncpy(tm_task_list[task_cnt].name, task_info->name, strlen(task_info->name) + 1);
 			tm_task_list[task_cnt].priority = task_info->priority;
@@ -1170,7 +1222,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 	if (handle >= 0) {
 		tm_app_list[handle].addr = (void *)TM_ALLOC(sizeof(app_list_data_t));
 		if (tm_app_list[handle].addr == NULL) {
-			return TM_OUT_OF_MEMORY;
+			handle = TM_OUT_OF_MEMORY;
+			goto end_func;
 		}
 		TM_TYPE(handle) = TM_TASK;
 		TM_IDX(handle) = task_cnt - 1;
@@ -1184,6 +1237,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		handle_cnt++;
 	}
 
+end_func:
+	taskmgr_dealloc_task_name(task_info->name);
 	return handle;
 }
 
@@ -1194,11 +1249,13 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 	int handle;
 
 	if (permission < 0 || caller_pid < 0 || pthread_info == NULL) {
-		return TM_INVALID_PARAM;
+		handle = TM_INVALID_PARAM;
+		goto end_func;
 	}
 
 	if (handle_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
-		return TM_OUT_OF_MEMORY;
+		handle = TM_OUT_OF_MEMORY;
+		goto end_func;
 	}
 
 	handle = TM_OPERATION_FAIL;
@@ -1207,7 +1264,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
 		if (strcmp(tm_pthread_list[chk_idx].name, pthread_info->name) == 0) {
 			/* Already registered task */
-			return TM_OPERATION_FAIL;
+			handle = TM_OPERATION_FAIL;
+			goto end_func;
 		}
 	}
 
@@ -1220,7 +1278,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		if (tm_pthread_list[pthread_cnt].entry == NULL) {
 			tm_pthread_list[pthread_cnt].name = (char *)TM_ALLOC(strlen(pthread_info->name) + 1);
 			if (tm_pthread_list[pthread_cnt].name == NULL) {
-				return TM_OUT_OF_MEMORY;
+				handle = TM_OUT_OF_MEMORY;
+				goto end_func;
 			}
 			strncpy(tm_pthread_list[pthread_cnt].name, pthread_info->name, strlen(pthread_info->name) + 1);
 			tm_pthread_list[pthread_cnt].attr = pthread_info->attr;
@@ -1236,7 +1295,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 	if (handle >= 0) {
 		tm_app_list[handle].addr = (void *)TM_ALLOC(sizeof(app_list_data_t));
 		if (tm_app_list[handle].addr == NULL) {
-			return TM_OUT_OF_MEMORY;
+			handle = TM_OUT_OF_MEMORY;
+			goto end_func;
 		}
 		TM_TYPE(handle) = TM_PTHREAD;
 		TM_IDX(handle) = pthread_cnt - 1;
@@ -1250,6 +1310,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		handle_cnt++;
 	}
 
+end_func:
+	taskmgr_dealloc_task_name(pthread_info->name);
 	return handle;
 }
 #endif
@@ -1364,17 +1426,13 @@ int taskmgr_get_task_manager_pid(void)
 	}
 	return TM_TASK_MGR_NOT_ALIVE;
 }
-/****************************************************************************
- * Main Function
- ****************************************************************************/
-int task_manager(int argc, char *argv[])
+
+static int taskmgr_init_task_manager(void)
 {
-	int nbytes;
 	int ret;
-	tm_request_t request_msg;
-	tm_response_t response_msg;
 	struct mq_attr attr;
 	struct sigaction act;
+
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	sigignore(SIGCHLD);
 #endif
@@ -1388,17 +1446,20 @@ int task_manager(int argc, char *argv[])
 
 	ret = taskmgr_open_driver();
 	if (ret < 0) {
-		return 0;
+		tmdbg("Failed to open task manager driver.\n");
+		return ERROR;
 	}
 
 	g_tm_recv_mqfd = mq_open(TM_PUBLIC_MQ, O_RDONLY | O_CREAT, 0666, &attr);
 	if (g_tm_recv_mqfd < 0) {
-		return 0;
+		tmdbg("Failed to open task manager public queue.\n");
+		return ERROR;
 	}
 
 	/* Register callback when termination */
 	if (atexit((void *)taskmgr_termination_callback) != OK) {
-		return 0;
+		tmdbg("Failed to register atexit\n");
+		return ERROR;
 	}
 
 	act.sa_sigaction = (_sa_sigaction_t)taskmgr_update_stop_status;
@@ -1415,6 +1476,24 @@ int task_manager(int argc, char *argv[])
 	if (ret == (int)SIG_ERR) {
 		tmdbg("sigaction Failed\n");
 		return TM_OPERATION_FAIL;
+	}
+
+	return OK;
+}
+
+/****************************************************************************
+ * Main Function
+ ****************************************************************************/
+int task_manager(int argc, char *argv[])
+{
+	int nbytes;
+	int ret;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
+
+	ret = taskmgr_init_task_manager();
+	if (ret < 0) {
+		return ret;	
 	}
 
 	while (1) {
@@ -1446,12 +1525,6 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_RESTART:
-#ifndef CONFIG_DISABLE_PTHREAD
-			if (TM_TYPE(request_msg.handle) == TM_PTHREAD) {
-				ret = TM_NOT_SUPPORTED;
-				break;
-			}
-#endif
 			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
@@ -1476,24 +1549,14 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_SCAN_PID:
-			ret = taskmgr_get_handle_by_pid(request_msg.caller_pid);
-			if (ret == TM_UNREGISTERED_APP) {
-				break;
-			}
-			ret = taskmgr_getinfo_with_handle(ret, &response_msg);
+			ret = taskmgr_getinfo_with_pid(request_msg.caller_pid, &response_msg);
 			break;
 
-		case TASKMGRCMD_UNICAST:
-			if (((tm_internal_msg_t *)request_msg.data)->type == TM_UNICAST_SYNC) {
-				response_msg.data = TM_ALLOC(sizeof(tm_msg_t));
-				if (response_msg.data == NULL) {
-					response_msg.status = TM_OUT_OF_MEMORY;
-					break;
-				}
-				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_internal_msg_t *)request_msg.data, response_msg.data, request_msg.timeout);
-			} else {
-				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, (tm_msg_t *)request_msg.data);
-			}
+		case TASKMGRCMD_UNICAST_SYNC:
+			ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_internal_msg_t *)request_msg.data, &response_msg, request_msg.timeout);
+			break;
+		case TASKMGRCMD_UNICAST_ASYNC:
+			ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, (tm_msg_t *)request_msg.data);
 			break;
 
 		case TASKMGRCMD_BROADCAST:
@@ -1514,18 +1577,10 @@ int task_manager(int argc, char *argv[])
 
 		case TASKMGRCMD_REGISTER_TASK:
 			ret = taskmgr_register_task((tm_task_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
-			if (((tm_task_info_t *)request_msg.data)->name != NULL) {
-				TM_FREE(((tm_task_info_t *)request_msg.data)->name);
-				((tm_task_info_t *)request_msg.data)->name = NULL;
-			}
 			break;
 #ifndef CONFIG_DISABLE_PTHREAD
 		case TASKMGRCMD_REGISTER_PTHREAD:
 			ret = taskmgr_register_pthread((tm_pthread_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
-			if (((tm_pthread_info_t *)request_msg.data)->name != NULL) {
-				TM_FREE(((tm_pthread_info_t *)request_msg.data)->name);
-				((tm_pthread_info_t *)request_msg.data)->name = NULL;
-			}
 			break;
 #endif
 		case TASKMGRCMD_SET_STOP_CB:
@@ -1548,18 +1603,9 @@ int task_manager(int argc, char *argv[])
 			break;
 		}
 
-		if (request_msg.timeout != TM_NO_RESPONSE) {
-			response_msg.status = ret;
-			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
-		}
+		taskmgr_send_response((char *)request_msg.q_name, request_msg.timeout, &response_msg, ret);
+		taskmgr_dealloc_reqmsg_data(&request_msg);
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG && request_msg.cmd != TASKMGRCMD_UNICAST) {
-			if (request_msg.cmd == TASKMGRCMD_BROADCAST && ((tm_internal_msg_t *)request_msg.data)->msg != NULL) {
-				TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-			}
-			TM_FREE(request_msg.data);
-			request_msg.data = NULL;
-		}
 		sched_unlock();
 	}
 	tmdbg("Task manager OUT\n");
