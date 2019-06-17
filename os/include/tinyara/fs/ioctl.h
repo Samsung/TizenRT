@@ -393,7 +393,6 @@
 #define HEAPINFOIOC_PPID              _HEAPINFOIOC(0x0003)
 #define HEAPINFOIOC_STKSIZE           _HEAPINFOIOC(0x0004)
 #define HEAPINFOIOC_TASKNAME          _HEAPINFOIOC(0x0005)
-#define HEAPINFOIOC_INIT_KHEAP        _HEAPINFOIOC(0x0006)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */
