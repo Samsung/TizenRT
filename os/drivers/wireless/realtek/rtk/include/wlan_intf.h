@@ -35,19 +35,19 @@ extern "C" {
 #endif
 
 /***********************************************************/
-/* 
+/*
 struct sk_buff {
 	// These two members must be first.
 	struct sk_buff		*next;		// Next buffer in list
 	struct sk_buff		*prev;		// Previous buffer in list
-	
-	struct sk_buff_head	*list;			// List we are on	
+
+	struct sk_buff_head	*list;			// List we are on
 	unsigned char		*head;		// Head of buffer
 	unsigned char		*data;		// Data head pointer
 	unsigned char		*tail;		// Tail pointer
 	unsigned char		*end;		//End pointer
-	struct net_device 	*dev;		//Device we arrived on/are leaving by 	
-	unsigned int 		len;			// Length of actual data 
+	struct net_device *dev; //Device we arrived on/are leaving by
+	unsigned int len; // Length of actual data
 };
 */
 /************************************************************/

@@ -23,9 +23,6 @@ CFLAGS += -DCONFIG_RTL8723D
 ############################### Interface ###############################
 CFLAGS += -DUSE_USB_INTERFACE
 
-############################### Platform Related #########################
-CFLAGS += -DCONFIG_PLATFORM_TIZENRT
-
 ################### Module Name and HAL Definition #######################
 ifeq ($(CONFIG_RTL8188F),y)
 RTL871X = rtl8188f

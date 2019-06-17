@@ -36,10 +36,6 @@
 //reserve tx headroom in case of softap forwarding unicase packet
 #define RX_RESERV_HEADROOM (SKB_WLAN_TX_EXTRA_LEN > RX_DRIVER_INFO + RXDESC_SIZE) ? (SKB_WLAN_TX_EXTRA_LEN - RX_DRIVER_INFO - RXDESC_SIZE) : 0
 typedef struct gspi_data {
-	//u8  func_number;
-
-	//u8  tx_block_mode;
-	//u8  rx_block_mode;
 	u16 block_transfer_len; //u32 block_transfer_len;
 
 #ifdef PLATFORM_LINUX
@@ -49,9 +45,7 @@ typedef struct gspi_data {
 	struct delayed_work irq_work;
 #endif
 
-#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	_mutex spi_mutex;
-#endif
 } GSPI_DATA, *PGSPI_DATA;
 
 #define INTF_DATA GSPI_DATA
@@ -71,10 +65,6 @@ extern void spi_int_hdl(PADAPTER padapter);
 #define RX_RESERV_HEADROOM (SKB_WLAN_TX_EXTRA_LEN > RX_DRIVER_INFO + RXDESC_SIZE) ? (SKB_WLAN_TX_EXTRA_LEN - RX_DRIVER_INFO - RXDESC_SIZE) : 0
 
 typedef struct gspi_data {
-	//u8  func_number;
-
-	//u8  tx_block_mode;
-	//u8  rx_block_mode;
 	u16 block_transfer_len; //u32 block_transfer_len;
 
 #ifdef PLATFORM_LINUX
@@ -86,9 +76,7 @@ typedef struct gspi_data {
 
 	struct sdio_func *func;
 
-#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	_mutex spi_mutex;
-#endif
 } GSPI_DATA, *PGSPI_DATA;
 typedef struct rtw_if_operations {
 	int (*read)(struct dvobj_priv *d, int addr, void *buf,
@@ -105,8 +93,6 @@ extern void spi_int_hdl(PADAPTER padapter);
 #define rtw_hci_interrupt_handler(__adapter) spi_int_hdl(__adapter)
 
 #elif defined(CONFIG_USB_HCI)
-//#include <usb_ops.h>
-//#include <usb_osintf.h>
 #include <usb/usb_spec.h>
 #include "usb_io_realtek.h"
 #define GSPI_STATUS_LEN 8 //  xhl
@@ -227,74 +213,6 @@ typedef struct _PCI_COMMON_CONFIG {
 			u8 MinimumGrant;
 			u8 MaximumLatency;
 		} type0;
-#if 0
-	struct _PCI_HEADER_TYPE_1 {
-		u32 BaseAddresses[PCI_TYPE1_ADDRESSES];
-		u8 PrimaryBusNumber;
-		u8 SecondaryBusNumber;
-		u8 SubordinateBusNumber;
-		u8 SecondaryLatencyTimer;
-		u8 IOBase;
-		u8 IOLimit;
-		u16 SecondaryStatus;
-		u16 MemoryBase;
-		u16 MemoryLimit;
-		u16 PrefetchableMemoryBase;
-		u16 PrefetchableMemoryLimit;
-		u32 PrefetchableMemoryBaseUpper32;
-		u32 PrefetchableMemoryLimitUpper32;
-		u16 IOBaseUpper;
-		u16 IOLimitUpper;
-		u32 Reserved2;
-		u32 ExpansionROMBase;
-		u8 InterruptLine;
-		u8 InterruptPin;
-		u16 BridgeControl;
-	} type1;
-
-	struct _PCI_HEADER_TYPE_2 {
-		u32 BaseAddress;
-		u8 CapabilitiesPtr;
-		u8 Reserved2;
-		u16 SecondaryStatus;
-		u8 PrimaryBusNumber;
-		u8 CardbusBusNumber;
-		u8 SubordinateBusNumber;
-		u8 CardbusLatencyTimer;
-		u32 MemoryBase0;
-		u32 MemoryLimit0;
-		u32 MemoryBase1;
-		u32 MemoryLimit1;
-		u16 IOBase0_LO;
-		u16 IOBase0_HI;
-		u16 IOLimit0_LO;
-		u16 IOLimit0_HI;
-		u16 IOBase1_LO;
-		u16 IOBase1_HI;
-		u16 IOLimit1_LO;
-		u16 IOLimit1_HI;
-		u8 InterruptLine;
-		u8 InterruptPin;
-		u16 BridgeControl;
-		u16 SubVendorID;
-		u16 SubSystemID;
-		u32 LegacyBaseAddress;
-		u8 Reserved3[56];
-		u32 SystemControl;
-		u8 MultiMediaControl;
-		u8 GeneralStatus;
-		u8 Reserved4[2];
-		u8 GPIO0Control;
-		u8 GPIO1Control;
-		u8 GPIO2Control;
-		u8 GPIO3Control;
-		u32 IRQMuxRouting;
-		u8 RetryStatus;
-		u8 CardControl;
-		u8 DeviceControl;
-		u8 Diagnostic;
-	} type2;
-#endif
 	} u;
 
 	u8 DeviceSpecific[108];
@@ -383,66 +301,4 @@ static inline void NdisRawReadPortUlong(u32 port, u32 *pval)
 
 #endif // interface define
 
-#if 0 //TODO
-struct intf_priv {
-	
-	u8 *intf_dev;
-	u32	max_iosz; 	//USB2.0: 128, USB1.1: 64, SDIO:64
-	u32	max_xmitsz; //USB2.0: unlimited, SDIO:512
-	u32	max_recvsz; //USB2.0: unlimited, SDIO:512
-
-	volatile u8 *io_rwmem;
-	volatile u8 *allocated_io_rwmem;
-	u32	io_wsz; //unit: 4bytes
-	u32	io_rsz;//unit: 4bytes
-	u8 intf_status;	
-	
-	void (*_bus_io)(u8 *priv);	
-
-/*
-Under Sync. IRP (SDIO/USB)
-A protection mechanism is necessary for the io_rwmem(read/write protocol)
-
-Under Async. IRP (SDIO/USB)
-The protection mechanism is through the pending queue.
-*/
-
-	_mutex ioctl_mutex;
-
-#ifdef PLATFORM_LINUX
-#ifdef CONFIG_USB_HCI	
-	// when in USB, IO is through interrupt in/out endpoints
-	struct usb_device 	*udev;
-	PURB	piorw_urb;
-	u8 io_irp_cnt;
-	u8 bio_irp_pending;
-	_sema io_retevt;
-	_timer	io_timer;
-	u8 bio_irp_timeout;
-	u8 bio_timer_cancel;
-#endif
-#endif
-
-#ifdef PLATFORM_OS_XP
-#ifdef CONFIG_SDIO_HCI
-		// below is for io_rwmem...	
-		PMDL pmdl;
-		PSDBUS_REQUEST_PACKET  sdrp;
-		PSDBUS_REQUEST_PACKET  recv_sdrp;
-		PSDBUS_REQUEST_PACKET  xmit_sdrp;
-
-			PIRP		piorw_irp;
-
-#endif
-#ifdef CONFIG_USB_HCI
-		PURB	piorw_urb;
-		PIRP		piorw_irp;
-		u8 io_irp_cnt;
-		u8 bio_irp_pending;
-		_sema io_retevt;
-#endif
-#endif
-
-};
-#endif
 #endif //__HCI_SPEC_H__

@@ -51,7 +51,6 @@
 // Assign memory sectinon usage
 #if defined(CONFIG_PLATFORM_8195A) || defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C)
 #include <section_config.h>
-//#include "rtl_utility_ram.h"
 #include "platform/platform_stdlib.h"
 #if defined(CONFIG_PLATFORM_8710C)
 #define SRAM_BD_DATA_SECTION
@@ -236,11 +235,8 @@ struct specific_device_id {
 
 struct registry_priv {
 	u8 chip_version;
-	//	u8	rfintfs;
-	//	u8	lbkmode;
 	u8 hci;
 	NDIS_802_11_SSID ssid;
-	//	u8	network_mode;	//infra, ad-hoc, auto
 	u8 channel;			   //ad-hoc support requirement
 	u8 wireless_mode;	  //A, B, G, auto
 	u8 scan_mode;		   //active, passive
@@ -249,7 +245,6 @@ struct registry_priv {
 	u8 vrtl_carrier_sense; //Enable, Disable, Auto
 	u8 vcs_type;		   //RTS/CTS, CTS-to-self
 	u16 rts_thresh;
-	//	u8	adhoc_tx_pwr;
 	u8 soft_ap;
 	u8 power_mgnt;
 	u8 ps_enable;
@@ -259,10 +254,6 @@ struct registry_priv {
 	u8 ps_timeout;
 #endif
 	u8 smart_ps;
-	//	u8	long_retry_lmt;
-	//	u8	short_retry_lmt;
-	//	u16	busy_thresh;
-	//	u8	ack_policy;
 	u8 mp_mode;
 	u8 software_encrypt;
 	u8 software_decrypt;
@@ -273,13 +264,6 @@ struct registry_priv {
 	//UAPSD
 	u8 wmm_enable;
 	u8 uapsd_enable;
-	//	u8	uapsd_max_sp;
-	//	u8	uapsd_acbk_en;
-	//	u8	uapsd_acbe_en;
-	//	u8	uapsd_acvi_en;
-	//	u8	uapsd_acvo_en;
-
-	//	WLAN_BSSID_EX    dev_network;
 	u8 tx_bw_mode;
 	u32 beacon_period;
 
@@ -310,10 +294,7 @@ struct registry_priv {
 	u8 vht_rx_mcs_map[2];
 #endif /* CONFIG_80211AC_VHT */
 
-	//u8	lowrate_two_xmit;
-
 	u8 rf_config;
-	//	u8	low_power ;
 	u8 power_percentage_idx;
 	u8 wifi_spec; // !turbo_mode
 	u8 channel_plan;
@@ -330,7 +311,6 @@ struct registry_priv {
 	BOOLEAN bAcceptAddbaReq;
 #endif
 	u8 antdiv_cfg;
-//	u8	antdiv_type;
 
 #ifdef CONFIG_AUTOSUSPEND
 	u8 usbss_enable; //0:disable,1:enable
@@ -385,7 +365,6 @@ struct registry_priv {
 	u8 adaptivity_dml;
 	u8 adaptivity_dc_backoff;
 	s8 adaptivity_th_l2h_ini;
-//	u8 nhm_en;
 
 #ifdef RTW_HALMAC
 	u8 boffefusemask;
@@ -515,9 +494,6 @@ struct rf_ctl_t {
 	const struct country_chplan *country_ent;
 	u8 ChannelPlan;
 	u8 max_chan_nums;
-	//	RT_CHANNEL_INFO channel_set[MAX_CHANNEL_NUM];
-	//	struct p2p_channels channel_list;
-
 	_mutex offch_mutex;
 	u8 offch_state;
 
@@ -587,26 +563,6 @@ struct halmacpriv {
 	/* Store hardware tx queue page number setting */
 	u16 txpage[HW_QUEUE_ENTRY];
 #endif /* CONFIG_SDIO_HCI */
-};
-#endif
-
-#if 0
-struct rtw_traffic_statistics {
-	/* tx statistics */
-	u64	tx_bytes;
-	u64	tx_pkts;
-	u64	tx_drop;
-	u64	cur_tx_bytes;
-	u64	last_tx_bytes;
-	u32	cur_tx_tp; /* Tx throughput in MBps. */
-
-	/* rx statistics */
-	u64	rx_bytes;
-	u64	rx_pkts;
-	u64	rx_drop;
-	u64	cur_rx_bytes;
-	u64	last_rx_bytes;
-	u32	cur_rx_tp; /* Rx throughput in MBps. */
 };
 #endif
 
@@ -723,10 +679,6 @@ struct dvobj_priv {
 
 #endif //CONFIG_SDIO_HCI
 
-#if 0
-	struct rtw_traffic_statistics	traffic_stat;
-#endif
-
 /*-------- below is for USB INTERFACE --------*/
 
 #ifdef CONFIG_USB_HCI
@@ -782,10 +734,8 @@ struct dvobj_priv {
 	u32 config_descriptor_len; //u32 UsbConfigurationDescriptorLength;
 #endif						   //PLATFORM_WINDOWS
 
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	struct usb_interface *pusbintf;
 	struct usb_device *pusbdev;
-#endif //PLATFORM_LINUX
 
 #ifdef PLATFORM_FREEBSD
 	struct usb_interface *pusbintf;
@@ -857,9 +807,6 @@ struct dvobj_priv {
 
 #ifdef CONFIG_MCC_MODE
 	struct mcc_obj_priv mcc_objpriv;
-	//unsigned char		oper_channel;	/* saved channel info when call set_channel_bw */
-	//unsigned char		oper_bwmode;
-	//unsigned char		oper_ch_offset;	/* PRIME_CHNL_OFFSET */
 	u32 on_oper_ch_time;
 #endif
 };
@@ -976,8 +923,6 @@ struct _ADAPTER {
 	struct registry_priv registrypriv;
 	struct pwrctrl_priv pwrctrlpriv;
 	struct eeprom_priv eeprompriv;
-//TODO
-//	struct	led_priv	ledpriv;
 
 #ifdef CONFIG_MP_INCLUDED
 	struct mp_priv mppriv;
@@ -1070,12 +1015,6 @@ struct _ADAPTER {
 	struct task_struct recvtaskThread;
 #endif
 
-#if !defined(PLATFORM_LINUX) && !defined(PLATFORM_ECOS) && !defined(PLATFORM_FREERTOS) && !defined(PLATFORM_CMSIS_RTOS) && !defined(PLATFORM_CUSTOMER_RTOS) && !defined(PLATFORM_TIZENRT)
-	NDIS_STATUS (*dvobj_init)
-	(struct dvobj_priv *dvobj);
-	void (*dvobj_deinit)(struct dvobj_priv *dvobj);
-#endif
-
 	void (*intf_start)(_adapter *adapter);
 	void (*intf_stop)(_adapter *adapter);
 
@@ -1095,11 +1034,9 @@ struct _ADAPTER {
 	struct net_device_stats stats;
 #endif //#ifdef PLATFORM_ECOS
 
-#if defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	_nic_hdl pnetdev;
 	int bup;
 	struct net_device_stats stats;
-#endif //#ifdef PLATFORM_FREERTOS
 
 #ifdef PLATFORM_LINUX
 	_nic_hdl pnetdev;
@@ -1131,9 +1068,6 @@ struct _ADAPTER {
 	u8 net_closed;
 
 	u8 bFWReady;
-	//u8 bBTFWReady;
-	//u8 bReadPortCancel;
-	//u8 bWritePortCancel;
 	u8 bLinkInfoDump;
 	u8 bRxRSSIDisplay;
 #ifdef CONFIG_AUTOSUSPEND
@@ -1194,8 +1128,7 @@ struct _ADAPTER {
 #ifdef CONFIG_CAC_TEST
 	unsigned char in_cta_test;
 #endif
-/* This flag is used to dynamically enabling debug message if
-	  	certain sympton happen. Use iwpriv command to enable it */
+/* This flag is used to dynamically enabling debug message if certain sympton happen. Use iwpriv command to enable it */
 #if defined(CONFIG_DEBUG_DYNAMIC)
 	u8 debug_level;
 #endif
@@ -1207,16 +1140,6 @@ struct _ADAPTER {
 
 #ifdef CONFIG_MCC_MODE
 	struct mcc_adapter_priv mcc_adapterpriv;
-/* notes:
-	**	if isprimary is true, the adapter_type value is 0, iface_id is IFACE_ID0 for PRIMARY_ADAPTER
-	**	if isprimary is false, the adapter_type value is 1, iface_id is IFACE_ID1 for VIRTUAL_ADAPTER
-	**	refer to iface_id if iface_nums>2 and isprimary is false and the adapter_type value is 0xff.*/
-//u8 hw_port; /*interface port type, it depends on HW port */
-
-/*extend to support multi interface*/
-/*IFACE_ID0 is equals to PRIMARY_ADAPTER
-	IFACE_ID1 is equals to VIRTUAL_ADAPTER*/
-//u8 iface_id;
 #endif
 };
 
@@ -1247,14 +1170,6 @@ __inline static u8 *myid(struct eeprom_priv *peepriv)
 {
 	return (peepriv->mac_addr);
 }
-
-#if 0 //#if (CONFIG_LWIP_LAYER == 0)
-// For FPGA test program
-#define _htons(x) (x)
-#define _htons(x) (x)
-#define _htons(x) (x)
-#define _htons(x) (x)
-#endif
 
 //fast reconnection function prototype
 typedef int (*init_done_ptr)(void);

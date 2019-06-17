@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -225,7 +225,7 @@ typedef enum _HAL_INTF_PS_FUNC {
 #define C2H_TYPE_REG 0
 #define C2H_TYPE_PKT 1
 
-/* 
+/*
 * C2H event format:
 * Fields    TRIGGER    PAYLOAD    SEQ    PLEN    ID
 * BITS     [127:120]    [119:16]   [15:8]  [7:4]  [3:0]
@@ -239,7 +239,7 @@ typedef enum _HAL_INTF_PS_FUNC {
 #define SET_C2H_PLEN(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)), 4, 4, _val)
 #define SET_C2H_SEQ(_c2h, _val) SET_BITS_TO_LE_1BYTE(((u8 *)(_c2h)) + 1, 0, 8, _val)
 
-/* 
+/*
 * C2H event format:
 * Fields    TRIGGER     PLEN      PAYLOAD    SEQ      ID
 * BITS    [127:120]  [119:112]  [111:16]   [15:8]   [7:0]
@@ -307,9 +307,6 @@ struct hal_ops {
 	void (*set_tx_power_level_handler)(_adapter *padapter, u8 channel);
 
 	void (*hal_dm_watchdog)(_adapter *padapter);
-#if 0
-	void	(*hal_dm_watchdog_in_lps)(_adapter *padapter);
-#endif
 	void (*SetHwRegHandler)(_adapter *padapter, u8 variable, u8 *val);
 	void (*GetHwRegHandler)(_adapter *padapter, u8 variable, u8 *val);
 
@@ -320,10 +317,6 @@ struct hal_ops {
 	void (*SetHalODMVarHandler)(_adapter *padapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, BOOLEAN bSet);
 
 	void (*UpdateRAMaskHandler)(_adapter *padapter, u32 mac_id, u8 rssi_level);
-
-#if 0
-	void	(*SetBeaconRelatedRegistersHandler)(_adapter *padapter);
-#endif
 
 	void (*Add_RateATid)(_adapter *padapter, u32 bitmap, u8 *arg, u8 rssi_level);
 #ifdef CONFIG_CONCURRENT_MODE
@@ -336,9 +329,6 @@ struct hal_ops {
 #ifdef CONFIG_ANTENNA_DIVERSITY
 	u8 (*AntDivBeforeLinkHandler)(_adapter *padapter);
 	void (*AntDivCompareHandler)(_adapter *padapter, WLAN_BSSID_EX *dst, WLAN_BSSID_EX *src);
-#endif
-#if 0
-	u8	(*interface_ps_func)(_adapter *padapter,HAL_INTF_PS_FUNC efunc_id, u8* val);
 #endif
 	s32 (*hal_xmit)(_adapter *padapter, struct xmit_frame *pxmitframe);
 	s32 (*mgnt_xmit)(_adapter *padapter, struct xmit_frame *pmgntframe);
@@ -377,17 +367,10 @@ struct hal_ops {
 #ifdef CONFIG_IOL
 	int (*IOL_exec_cmds_sync)(_adapter *padapter, struct xmit_frame *xmit_frame, u32 max_wating_ms);
 #endif
-
-#if 0 //def CONFIG_XMIT_THREAD_MODE
-	s32 (*xmit_thread_handler)(_adapter *padapter);
-#endif
 	void (*recv_tasklet)(void *padapter);
 
 #if (RTW_NOTCH_FILTER != 0)
 	void (*hal_notch_filter)(_adapter *adapter, bool enable);
-#endif
-#if 0
-	void (*hal_reset_security_engine)(_adapter * adapter);
 #endif
 #ifdef RTW_HALMAC
 	void (*hal_mac_c2h_handler)(_adapter *adapter, u8 *pbuf, u16 length);
@@ -665,10 +648,6 @@ void rtw_hal_free_data(_adapter *padapter);
 
 void rtw_hal_dm_init(_adapter *padapter);
 void rtw_hal_dm_deinit(_adapter *padapter);
-#if 0
-void rtw_hal_sw_led_init(_adapter *padapter);
-void rtw_hal_sw_led_deinit(_adapter *padapter);
-#endif
 u32 rtw_hal_power_on(_adapter *padapter);
 void rtw_hal_power_off(_adapter *padapter);
 uint rtw_hal_init(_adapter *padapter);
@@ -698,9 +677,6 @@ u32 rtw_hal_inirp_init(_adapter *padapter);
 u32 rtw_hal_inirp_deinit(_adapter *padapter);
 
 void rtw_hal_irp_reset(_adapter *padapter);
-#if 0
-u8	rtw_hal_intf_ps_func(_adapter *padapter,HAL_INTF_PS_FUNC efunc_id, u8* val);
-#endif
 s32 rtw_hal_xmit(_adapter *padapter, struct xmit_frame *pxmitframe);
 s32 rtw_hal_mgnt_xmit(_adapter *padapter, struct xmit_frame *pmgntframe);
 
@@ -770,16 +746,9 @@ u8 rtw_hal_sreset_get_wifi_status(_adapter *padapter);
 int rtw_hal_iol_cmd(ADAPTER *adapter, struct xmit_frame *xmit_frame, u32 max_wating_ms, u32 bndy_cnt)
 #endif
 
-#if 0 //def CONFIG_XMIT_THREAD_MODE
-s32 rtw_hal_xmit_thread_handler(_adapter *padapter);
-#endif
-
 	s32 rtw_hal_recv_tasklet(_adapter *padapter);
 #if (RTW_NOTCH_FILTER != 0)
 void rtw_hal_notch_filter(_adapter *adapter, bool enable);
-#endif
-#if 0
-void rtw_hal_reset_security_engine(_adapter * adapter);
 #endif
 
 void decide_chip_type_by_device_id(_adapter *padapter);

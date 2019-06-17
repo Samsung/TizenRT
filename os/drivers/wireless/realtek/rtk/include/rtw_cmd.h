@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -24,8 +24,6 @@
 #include <rtw_led.h>
 
 #define C2H_MEM_SZ (16 * 1024)
-//#define CMD_RSP_BUF	0
-//#define CMD_DBG 0
 
 #ifndef CONFIG_RTL8711FW
 
@@ -38,11 +36,7 @@
 #define MAX_RSPSZ 512
 #define MAX_EVTSZ 1024
 
-#if defined(PLATFORM_OS_CE) || defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define CMDBUFF_ALIGN_SZ 4
-#else
-#define CMDBUFF_ALIGN_SZ 512
-#endif
 
 struct cmd_obj {
 	_adapter *padapter;
@@ -52,12 +46,10 @@ struct cmd_obj {
 	u32 cmdsz;
 	u8 *rsp;
 	u32 rspsz;
-	//_sema 	cmd_sem;
 	_list list;
 };
 
 struct cmd_priv {
-	//_sema	cmd_done_sema;
 	_queue cmd_queue;
 #ifdef CMD_BUF
 	u8 *cmd_buf; //shall be non-paged, and 4 bytes aligned
@@ -114,18 +106,14 @@ struct evt_priv {
 };
 
 #define init_h2fwcmd_w_parm_no_rsp(pcmd, pparm, code) \
-	\
-do                                             \
-	{                                                 \
+	do {                                              \
 		rtw_init_listhead(&pcmd->list);               \
 		pcmd->cmdcode = code;                         \
 		pcmd->parmbuf = (u8 *)(pparm);                \
 		pcmd->cmdsz = sizeof(*pparm);                 \
 		pcmd->rsp = NULL;                             \
 		pcmd->rspsz = 0;                              \
-	\
-}                                              \
-	while (0)
+	} while (0)
 
 extern u32 rtw_enqueue_cmd(struct cmd_priv *pcmdpriv, struct cmd_obj *obj);
 extern struct cmd_obj *rtw_dequeue_cmd(struct cmd_priv *pcmdpriv);
@@ -163,7 +151,6 @@ enum rtw_drvextra_cmd_id {
 	LPS_CTRL_WK_CID,
 	ANT_SELECT_WK_CID,
 	P2P_PS_WK_CID,
-	//P2P_PROTO_WK_CID,
 	CHECK_HIQ_WK_CID, //for softap mode, check hi queue if empty
 	INTEl_WIDI_WK_CID,
 	C2H_WK_CID,
@@ -250,24 +237,6 @@ struct createbss_parm {
 	WLAN_BSSID_EX network;
 };
 
-/*
-Caller Mode: AP, Ad-HoC, Infra
-
-Notes: To set the NIC mode of RTL8711
-
-Command Mode
-
-The definition of mode:
-
-#define IW_MODE_AUTO	0	// Let the driver decides which AP to join
-#define IW_MODE_ADHOC	1	// Single cell network (Ad-Hoc Clients)
-#define IW_MODE_INFRA	2	// Multi cell network, roaming, ..
-#define IW_MODE_MASTER	3	// Synchronisation master or Access Point
-#define IW_MODE_REPEAT	4	// Wireless Repeater (forwarder)
-#define IW_MODE_SECOND	5	// Secondary master/repeater (backup)
-#define IW_MODE_MONITOR	6	// Passive monitor (listen only)
-
-*/
 struct setopmode_parm {
 	u8 mode;
 	u8 rsvd[3];
@@ -278,15 +247,11 @@ Caller Mode: AP, Ad-HoC, Infra
 
 Notes: To ask RTL8711 performing site-survey
 
-Command-Event Mode 
+Command-Event Mode
 
 */
 
-#if defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define RTW_SSID_SCAN_AMOUNT 1 //Reduce ssid scan amount due to memory limitation - Alex Fang
-#else
-#define RTW_SSID_SCAN_AMOUNT 9 // for WEXT_CSCAN_AMOUNT 9
-#endif
 
 struct sitesurvey_parm {
 	sint scan_mode; //active: 1, passive: 0
@@ -330,12 +295,12 @@ struct setkey_parm {
 };
 
 /*
-When in AP or Ad-Hoc mode, this is used to 
+When in AP or Ad-Hoc mode, this is used to
 allocate an sw/hw entry for a newly associated sta.
 
 Command
 
-when shared key ==> algorithm/keyid 
+when shared key ==> algorithm/keyid
 
 */
 struct set_stakey_parm {
@@ -372,11 +337,11 @@ struct set_assocsta_rsp {
 
 /*
 	Caller Ad-Hoc/AP
-	
+
 	Command mode
-	
+
 	This is to force fw to del an sta_data entry per driver's request
-	
+
 	FW will invalidate the cam entry associated with it.
 
 */
@@ -558,55 +523,53 @@ struct Tx_Beacon_param {
 /*
 	Notes: This command is used for H2C/C2H loopback testing
 
-	mac[0] == 0 
+	mac[0] == 0
 	==> CMD mode, return H2C_SUCCESS.
 	The following condition must be ture under CMD mode
 		mac[1] == mac[4], mac[2] == mac[3], mac[0]=mac[5]= 0;
 		s0 == 0x1234, s1 == 0xabcd, w0 == 0x78563412, w1 == 0x5aa5def7;
 		s2 == (b1 << 8 | b0);
-	
+
 	mac[0] == 1
 	==> CMD_RSP mode, return H2C_SUCCESS_RSP
-	
+
 	The rsp layout shall be:
-	rsp: 			parm:
-		mac[0]  =   mac[5];
-		mac[1]  =   mac[4];
-		mac[2]  =   mac[3];
-		mac[3]  =   mac[2];
-		mac[4]  =   mac[1];
-		mac[5]  =   mac[0];
-		s0		=   s1;
-		s1		=   swap16(s0);
-		w0		=  	swap32(w1);
-		b0		= 	b1
-		s2		= 	s0 + s1
-		b1		= 	b0
-		w1		=	w0
-		
-	mac[0] == 	2
-	==> CMD_EVENT mode, return 	H2C_SUCCESS
+	rsp: parm:
+		mac[0] = mac[5];
+		mac[1] = mac[4];
+		mac[2] = mac[3];
+		mac[3] = mac[2];
+		mac[4] = mac[1];
+		mac[5] = mac[0];
+		s0 = s1;
+		s1 = swap16(s0);
+		w0 = swap32(w1);
+		b0 = b1
+		s2 = s0 + s1
+		b1 = b0
+		w1 = w0
+
+	mac[0] == 2
+	==> CMD_EVENT mode, return H2C_SUCCESS
 	The event layout shall be:
-	event:			parm:
-		mac[0]  =   mac[5];
-		mac[1]  =   mac[4];
-		mac[2]  =   event's sequence number, starting from 1 to parm's marc[3]
-		mac[3]  =   mac[2];
-		mac[4]  =   mac[1];
-		mac[5]  =   mac[0];
-		s0		=   swap16(s0) - event.mac[2];
-		s1		=   s1 + event.mac[2];
-		w0		=  	swap32(w0);
-		b0		= 	b1
-		s2		= 	s0 + event.mac[2]
-		b1		= 	b0 
-		w1		=	swap32(w1) - event.mac[2];	
-	
+	event:  parm:
+		mac[0] = mac[5];
+		mac[1] = mac[4];
+		mac[2] = event's sequence number, starting from 1 to parm's marc[3]
+		mac[3] = mac[2];
+		mac[4] = mac[1];
+		mac[5] = mac[0];
+		s0= s wap16(s0) - event.mac[2];
+		s1 = s1 + event.mac[2];
+		w0 = swap32(w0);
+		b0 = b1
+		s2 = s0 + event.mac[2]
+		b1 = b0
+		w1 = swap32(w1) - event.mac[2];
+
 		parm->mac[3] is the total event counts that host requested.
-		
-	
+
 	event will be the same with the cmd's param.
-		
 */
 
 #ifdef CONFIG_H2CLBK
@@ -782,35 +745,6 @@ struct getcurtxpwrlevel_rsp {
 	unsigned short tx_power;
 };
 
-///TODO
-#if 0
-
-struct setprobereqextraie_parm {
-	unsigned char e_id;
-	unsigned char ie_len;
-	unsigned char ie[0];
-};
-
-struct setassocreqextraie_parm {
-	unsigned char e_id;
-	unsigned char ie_len;
-	unsigned char ie[0];
-};
-
-struct setproberspextraie_parm {
-	unsigned char e_id;
-	unsigned char ie_len;
-	unsigned char ie[0];
-};
-
-struct setassocrspextraie_parm {
-	unsigned char e_id;
-	unsigned char ie_len;
-	unsigned char ie[0];
-};
-
-#endif //#if 0
-
 struct addBaReq_parm {
 	unsigned int tid;
 	u8 addr[ETH_ALEN];
@@ -876,15 +810,6 @@ struct SetChannelPlan_param {
 	u8 channel_plan;
 };
 
-//TODO
-#if 0
-/*H2C Handler index: 60 */ 
-struct LedBlink_param
-{
-	PLED_871x	 pLed;
-};
-#endif //#if 0
-
 /*H2C Handler index: 61 */
 struct SetChannelSwitch_param {
 	u8 new_ch_no;
@@ -901,7 +826,7 @@ struct TDLSoption_param {
 
 /*
 
-Result: 
+Result:
 0x00: success
 0x01: sucess, and check Response.
 0x02: cmd ignored due to duplicated sequcne number
@@ -972,8 +897,6 @@ u8 rtw_btinfo_cmd(PADAPTER padapter, u8 *pbuf, u16 length);
 #endif
 
 extern u8 rtw_set_chplan_cmd(_adapter *padapter, u8 chplan, u8 enaueue);
-//TODO
-//extern u8 rtw_led_blink_cmd(_adapter*padapter, PLED_871x pLed);
 extern u8 rtw_set_csa_cmd(_adapter *padapter, u8 new_ch_no);
 extern u8 rtw_tdls_cmd(_adapter *padapter, u8 *addr, u8 option);
 
@@ -1085,88 +1008,79 @@ enum rtw_h2c_cmd {
 #define _SetRFReg_CMD_ _Write_RFREG_CMD_
 
 #ifdef _RTW_CMD_C_
-const struct _cmd_callback rtw_cmd_callback[] =
-	{
-		{GEN_CMD_CODE(_Read_MACREG), NULL}, /*0*/
-		{GEN_CMD_CODE(_Write_MACREG), NULL},
-		//TODO
-		//	{GEN_CMD_CODE(_Read_BBREG), &rtw_getbbrfreg_cmdrsp_callback},
-		{GEN_CMD_CODE(_Read_BBREG), NULL},
-		{GEN_CMD_CODE(_Write_BBREG), NULL},
-		//TODO
-		//	{GEN_CMD_CODE(_Read_RFREG), &rtw_getbbrfreg_cmdrsp_callback},
-		{GEN_CMD_CODE(_Read_RFREG), NULL},
-		{GEN_CMD_CODE(_Write_RFREG), NULL}, /*5*/
-		{GEN_CMD_CODE(_Read_EEPROM), NULL},
-		{GEN_CMD_CODE(_Write_EEPROM), NULL},
-		{GEN_CMD_CODE(_Read_EFUSE), NULL},
-		{GEN_CMD_CODE(_Write_EFUSE), NULL},
+const struct _cmd_callback rtw_cmd_callback[] = {
+	{GEN_CMD_CODE(_Read_MACREG), NULL}, /*0*/
+	{GEN_CMD_CODE(_Write_MACREG), NULL},
+	{GEN_CMD_CODE(_Read_BBREG), NULL},
+	{GEN_CMD_CODE(_Write_BBREG), NULL},
+	{GEN_CMD_CODE(_Read_RFREG), NULL},
+	{GEN_CMD_CODE(_Write_RFREG), NULL}, /*5*/
+	{GEN_CMD_CODE(_Read_EEPROM), NULL},
+	{GEN_CMD_CODE(_Write_EEPROM), NULL},
+	{GEN_CMD_CODE(_Read_EFUSE), NULL},
+	{GEN_CMD_CODE(_Write_EFUSE), NULL},
 
-		{GEN_CMD_CODE(_Read_CAM), NULL}, /*10*/
-		{GEN_CMD_CODE(_Write_CAM), NULL},
-		{GEN_CMD_CODE(_setBCNITV), NULL},
-		{GEN_CMD_CODE(_setMBIDCFG), NULL},
-		{GEN_CMD_CODE(_JoinBss), &rtw_joinbss_cmd_callback},	 /*14*/
-		{GEN_CMD_CODE(_DisConnect), &rtw_disassoc_cmd_callback}, /*15*/
-																 //TODO
-																 //	{GEN_CMD_CODE(_CreateBss), &rtw_createbss_cmd_callback},
-		{GEN_CMD_CODE(_CreateBss), NULL},
-		{GEN_CMD_CODE(_SetOpMode), NULL},
-		{GEN_CMD_CODE(_SiteSurvey), &rtw_survey_cmd_callback}, /*18*/
-		{GEN_CMD_CODE(_SetAuth), NULL},
+	{GEN_CMD_CODE(_Read_CAM), NULL}, /*10*/
+	{GEN_CMD_CODE(_Write_CAM), NULL},
+	{GEN_CMD_CODE(_setBCNITV), NULL},
+	{GEN_CMD_CODE(_setMBIDCFG), NULL},
+	{GEN_CMD_CODE(_JoinBss), &rtw_joinbss_cmd_callback},	 /*14*/
+	{GEN_CMD_CODE(_DisConnect), &rtw_disassoc_cmd_callback}, /*15*/
+	{GEN_CMD_CODE(_CreateBss), NULL},
+	{GEN_CMD_CODE(_SetOpMode), NULL},
+	{GEN_CMD_CODE(_SiteSurvey), &rtw_survey_cmd_callback}, /*18*/
+	{GEN_CMD_CODE(_SetAuth), NULL},
 
-		{GEN_CMD_CODE(_SetKey), NULL}, /*20*/
-		{GEN_CMD_CODE(_SetStaKey), &rtw_setstaKey_cmdrsp_callback},
-		//TODO
-		//	{GEN_CMD_CODE(_SetAssocSta), &rtw_setassocsta_cmdrsp_callback},
-		{GEN_CMD_CODE(_SetAssocSta), NULL},
-		{GEN_CMD_CODE(_DelAssocSta), NULL},
-		{GEN_CMD_CODE(_SetStaPwrState), NULL},
-		{GEN_CMD_CODE(_SetBasicRate), NULL}, /*25*/
-		{GEN_CMD_CODE(_GetBasicRate), NULL},
-		{GEN_CMD_CODE(_SetDataRate), NULL},
-		{GEN_CMD_CODE(_GetDataRate), NULL},
-		{GEN_CMD_CODE(_SetPhyInfo), NULL},
+	{GEN_CMD_CODE(_SetKey), NULL}, /*20*/
+	{GEN_CMD_CODE(_SetStaKey), &rtw_setstaKey_cmdrsp_callback},
+	{GEN_CMD_CODE(_SetAssocSta), NULL},
+	{GEN_CMD_CODE(_DelAssocSta), NULL},
+	{GEN_CMD_CODE(_SetStaPwrState), NULL},
+	{GEN_CMD_CODE(_SetBasicRate), NULL}, /*25*/
+	{GEN_CMD_CODE(_GetBasicRate), NULL},
+	{GEN_CMD_CODE(_SetDataRate), NULL},
+	{GEN_CMD_CODE(_GetDataRate), NULL},
+	{GEN_CMD_CODE(_SetPhyInfo), NULL},
 
-		{GEN_CMD_CODE(_GetPhyInfo), NULL}, /*30*/
-		{GEN_CMD_CODE(_SetPhy), NULL},
-		{GEN_CMD_CODE(_GetPhy), NULL},
-		{GEN_CMD_CODE(_readRssi), NULL},
-		{GEN_CMD_CODE(_readGain), NULL},
-		{GEN_CMD_CODE(_SetAtim), NULL}, /*35*/
-		{GEN_CMD_CODE(_SetPwrMode), NULL},
-		{GEN_CMD_CODE(_JoinbssRpt), NULL},
-		{GEN_CMD_CODE(_SetRaTable), NULL},
-		{GEN_CMD_CODE(_GetRaTable), NULL},
+	{GEN_CMD_CODE(_GetPhyInfo), NULL}, /*30*/
+	{GEN_CMD_CODE(_SetPhy), NULL},
+	{GEN_CMD_CODE(_GetPhy), NULL},
+	{GEN_CMD_CODE(_readRssi), NULL},
+	{GEN_CMD_CODE(_readGain), NULL},
+	{GEN_CMD_CODE(_SetAtim), NULL}, /*35*/
+	{GEN_CMD_CODE(_SetPwrMode), NULL},
+	{GEN_CMD_CODE(_JoinbssRpt), NULL},
+	{GEN_CMD_CODE(_SetRaTable), NULL},
+	{GEN_CMD_CODE(_GetRaTable), NULL},
 
-		{GEN_CMD_CODE(_GetCCXReport), NULL}, /*40*/
-		{GEN_CMD_CODE(_GetDTMReport), NULL},
-		{GEN_CMD_CODE(_GetTXRateStatistics), NULL},
-		{GEN_CMD_CODE(_SetUsbSuspend), NULL},
-		{GEN_CMD_CODE(_SetH2cLbk), NULL},
-		{GEN_CMD_CODE(_AddBAReq), NULL},   /*45*/
-		{GEN_CMD_CODE(_SetChannel), NULL}, /*46*/
-		{GEN_CMD_CODE(_SetTxPower), NULL},
-		{GEN_CMD_CODE(_SwitchAntenna), NULL},
-		{GEN_CMD_CODE(_SetCrystalCap), NULL},
-		{GEN_CMD_CODE(_SetSingleCarrierTx), NULL}, /*50*/
+	{GEN_CMD_CODE(_GetCCXReport), NULL}, /*40*/
+	{GEN_CMD_CODE(_GetDTMReport), NULL},
+	{GEN_CMD_CODE(_GetTXRateStatistics), NULL},
+	{GEN_CMD_CODE(_SetUsbSuspend), NULL},
+	{GEN_CMD_CODE(_SetH2cLbk), NULL},
+	{GEN_CMD_CODE(_AddBAReq), NULL},   /*45*/
+	{GEN_CMD_CODE(_SetChannel), NULL}, /*46*/
+	{GEN_CMD_CODE(_SetTxPower), NULL},
+	{GEN_CMD_CODE(_SwitchAntenna), NULL},
+	{GEN_CMD_CODE(_SetCrystalCap), NULL},
+	{GEN_CMD_CODE(_SetSingleCarrierTx), NULL}, /*50*/
 
-		{GEN_CMD_CODE(_SetSingleToneTx), NULL}, /*51*/
-		{GEN_CMD_CODE(_SetCarrierSuppressionTx), NULL},
-		{GEN_CMD_CODE(_SetContinuousTx), NULL},
-		{GEN_CMD_CODE(_SwitchBandwidth), NULL}, /*54*/
-		{GEN_CMD_CODE(_TX_Beacon), NULL},		/*55*/
+	{GEN_CMD_CODE(_SetSingleToneTx), NULL}, /*51*/
+	{GEN_CMD_CODE(_SetCarrierSuppressionTx), NULL},
+	{GEN_CMD_CODE(_SetContinuousTx), NULL},
+	{GEN_CMD_CODE(_SwitchBandwidth), NULL}, /*54*/
+	{GEN_CMD_CODE(_TX_Beacon), NULL},		/*55*/
 
-		{GEN_CMD_CODE(_Set_MLME_EVT), NULL},								/*56*/
-		{GEN_CMD_CODE(_Set_Drv_Extra), NULL},								/*57*/
-		{GEN_CMD_CODE(_Set_H2C_MSG), NULL},									/*58*/
-		{GEN_CMD_CODE(_SetChannelPlan), rtw_set_channel_plan_cmd_callback}, /*59*/
-		{GEN_CMD_CODE(_LedBlink), NULL},									/*60*/
+	{GEN_CMD_CODE(_Set_MLME_EVT), NULL},								/*56*/
+	{GEN_CMD_CODE(_Set_Drv_Extra), NULL},								/*57*/
+	{GEN_CMD_CODE(_Set_H2C_MSG), NULL},									/*58*/
+	{GEN_CMD_CODE(_SetChannelPlan), rtw_set_channel_plan_cmd_callback}, /*59*/
+	{GEN_CMD_CODE(_LedBlink), NULL},									/*60*/
 
-		{GEN_CMD_CODE(_SetChannelSwitch), NULL}, /*61*/
-		{GEN_CMD_CODE(_TDLS), NULL},			 /*62*/
+	{GEN_CMD_CODE(_SetChannelSwitch), NULL}, /*61*/
+	{GEN_CMD_CODE(_TDLS), NULL},			 /*62*/
 #ifdef CONFIG_P2P_NEW
-		{GEN_CMD_CODE(_P2P), NULL}, /*63*/
+	{GEN_CMD_CODE(_P2P), NULL}, /*63*/
 #endif
 };
 #endif

@@ -28,8 +28,6 @@
 #ifdef CONFIG_TX_AGGREGATION   //effect only for SDIO and GSPI Interface
 #define MAX_XMITBUF_SZ (20480) // 20k
 #else
-#if defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
-
 #if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
 #define HAL_INTERFACE_OVERHEAD_XMIT_BUF 12 //HAL_INTERFACE_CMD (4) + HAL_INTERFACE_STATUS (8)
 #elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
@@ -37,7 +35,7 @@
 #endif
 
 // Consideration for MAX_XMITBUF_SZ size
-// 	Check more detail information in MAX_SKB_BUF_SIZE
+// Check more detail information in MAX_SKB_BUF_SIZE
 //	Tx: [INTF_CMD][TX_DESC][WLAN_HDR][QoS][IV][SNAP][Data][MIC][ICV][INTF_STATUS]
 //	HAL_INTERFACE_OVERHEAD: HAL_INTERFACE_CMD is 4/0 for SPI/PCIE, HAL_INTERFACE_STATUS is 8/0 for SPI/PCIE
 //	WLAN_MAX_ETHFRM_LEN : May not be required because WLAN_HEADER +SNAP can totally
@@ -55,10 +53,7 @@
 						SKB_RESERVED_FOR_SAFETY)
 #endif
 
-#else						   // Other OS
-#define MAX_XMITBUF_SZ (12288) //12k 1536*8
-#endif						   //#ifdef PLATFORM_ECOS || defined(PLATFORM_FREERTOS)
-#endif						   //#ifdef CONFIG_TX_AGGREGATION
+#endif //#ifdef CONFIG_TX_AGGREGATION
 
 #elif defined(CONFIG_USB_HCI)
 
@@ -85,17 +80,11 @@
 /*--------------------------------------------------------------*/
 #if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI)
 
-#if defined(PLATFORM_ECOS)
-#define NR_XMITBUFF (8)
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #ifndef CONFIG_HIGH_TP
 #define NR_XMITBUFF (2) //Decrease recv frame (8->2) due to memory limitation - YangJue
 #else
 #define NR_XMITBUFF (128)
 #endif
-#else
-#define NR_XMITBUFF (128)
-#endif //#ifdef PLATFORM_ECOS
 
 #elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #define NR_XMITBUFF (8)
@@ -113,15 +102,7 @@
 /*--------------------------------------------------------------*/
 /*  Define XMITBUF_ALIGN_SZ										*/
 /*--------------------------------------------------------------*/
-#if defined(PLATFORM_OS_CE) || defined(PLATFORM_ECOS) || defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define XMITBUF_ALIGN_SZ 4
-#else
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-#define XMITBUF_ALIGN_SZ 4
-#else
-#define XMITBUF_ALIGN_SZ 512
-#endif
-#endif
 
 #define MAX_CMDBUF_SZ (5120) //(4096)
 
@@ -132,13 +113,7 @@
 /*--------------------------------------------------------------*/
 #define MAX_XMIT_EXTBUF_SZ (1536)
 
-#if defined(PLATFORM_ECOS)
-#define NR_XMIT_EXTBUFF (16) //Decrease ext xmit buffer due to memory limitation - Alex Fang
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define NR_XMIT_EXTBUFF (8) //Decrease ext xmit buffer due to memory limitation - Alex Fang
-#else
-#define NR_XMIT_EXTBUFF (32)
-#endif //#ifdef	PLATFORM_ECOS
 
 #define MAX_BEACON_LEN 512
 
@@ -184,22 +159,16 @@
 #endif // #if defined(CONFIG_AXI_HCI)
 
 #define WEP_IV(pattrib_iv, dot11txpn, keyidx)                                  \
-	\
-do                                                                      \
-	{                                                                          \
+	do {                                                                       \
 		pattrib_iv[0] = dot11txpn._byte_.TSC0;                                 \
 		pattrib_iv[1] = dot11txpn._byte_.TSC1;                                 \
 		pattrib_iv[2] = dot11txpn._byte_.TSC2;                                 \
 		pattrib_iv[3] = ((keyidx & 0x3) << 6);                                 \
 		dot11txpn.val = (dot11txpn.val == 0xffffff) ? 0 : (dot11txpn.val + 1); \
-	\
-}                                                                       \
-	while (0)
+	} while (0)
 
 #define TKIP_IV(pattrib_iv, dot11txpn, keyidx)                                        \
-	\
-do                                                                             \
-	{                                                                                 \
+	do {                                                                              \
 		pattrib_iv[0] = dot11txpn._byte_.TSC1;                                        \
 		pattrib_iv[1] = (dot11txpn._byte_.TSC1 | 0x20) & 0x7f;                        \
 		pattrib_iv[2] = dot11txpn._byte_.TSC0;                                        \
@@ -209,14 +178,10 @@ do                                                                             \
 		pattrib_iv[6] = dot11txpn._byte_.TSC4;                                        \
 		pattrib_iv[7] = dot11txpn._byte_.TSC5;                                        \
 		dot11txpn.val = dot11txpn.val == 0xffffffffffffULL ? 0 : (dot11txpn.val + 1); \
-	\
-}                                                                              \
-	while (0)
+	} while (0)
 
 #define AES_IV(pattrib_iv, dot11txpn, keyidx)                                         \
-	\
-do                                                                             \
-	{                                                                                 \
+	do {                                                                              \
 		pattrib_iv[0] = dot11txpn._byte_.TSC0;                                        \
 		pattrib_iv[1] = dot11txpn._byte_.TSC1;                                        \
 		pattrib_iv[2] = 0;                                                            \
@@ -226,14 +191,10 @@ do                                                                             \
 		pattrib_iv[6] = dot11txpn._byte_.TSC4;                                        \
 		pattrib_iv[7] = dot11txpn._byte_.TSC5;                                        \
 		dot11txpn.val = dot11txpn.val == 0xffffffffffffULL ? 0 : (dot11txpn.val + 1); \
-	\
-}                                                                              \
-	while (0)
+	} while (0)
 
 #define GCMP_IV(pattrib_iv, dot11txpn, keyidx)                                        \
-	\
-do                                                                             \
-	{                                                                                 \
+	do {                                                                              \
 		pattrib_iv[0] = dot11txpn._byte_.TSC0;                                        \
 		pattrib_iv[1] = dot11txpn._byte_.TSC1;                                        \
 		pattrib_iv[2] = 0;                                                            \
@@ -243,9 +204,7 @@ do                                                                             \
 		pattrib_iv[6] = dot11txpn._byte_.TSC4;                                        \
 		pattrib_iv[7] = dot11txpn._byte_.TSC5;                                        \
 		dot11txpn.val = dot11txpn.val == 0xffffffffffffULL ? 0 : (dot11txpn.val + 1); \
-	\
-}                                                                              \
-	while (0)
+	} while (0)
 
 #define HWXMIT_ENTRY 4
 
@@ -301,8 +260,6 @@ struct tx_buf_desc {
 };
 
 struct tx_desc {
-
-	//DWORD 0
 	unsigned int txdw0;
 
 	unsigned int txdw1;
@@ -382,63 +339,9 @@ struct hw_xmit {
 	//_lock xmit_lock;
 	//_list	pending;
 	_queue *sta_queue;
-	//struct hw_txqueue *phwtxqueue;
-	//sint	txcmdcnt;
 	int accnt;
 };
 
-#if 0
-struct pkt_attrib
-{
-	u8	type;
-	u8	subtype;
-	u8	bswenc;
-	u8	dhcp_pkt;
-	u16	ether_type;
-	int	pktlen;		//the original 802.3 pkt raw_data len (not include ether_hdr data)
-	int	pkt_hdrlen;	//the original 802.3 pkt header len
-	int	hdrlen;		//the WLAN Header Len
-	int	nr_frags;
-	int	last_txcmdsz;
-	int	encrypt;	//when 0 indicate no encrypt. when non-zero, indicate the encrypt algorith
-	u8	iv[8];
-	int	iv_len;
-	u8	icv[8];
-	int	icv_len;
-	int	priority;
-	int	ack_policy;
-	int	mac_id;
-	int	vcs_mode;	//virtual carrier sense method
-
-	u8 	dst[ETH_ALEN];
-	u8	src[ETH_ALEN];
-	u8	ta[ETH_ALEN];
-	u8 	ra[ETH_ALEN];
-
-	u8	key_idx;
-
-	u8	qos_en;
-	u8	ht_en;
-	u8	raid;//rate adpative id
-	u8	bwmode;
-	u8	ch_offset;//PRIME_CHNL_OFFSET
-	u8	sgi;//short GI
-	u8	ampdu_en;//tx ampdu enable
-	u8	mdata;//more data bit
-	u8	eosp;
-
-	u8	pctrl;//per packet txdesc control enable
-	u8	triggered;//for ap mode handling Power Saving sta
-
-	u32	qsel;
-	u16	seqnum;
-
-	struct sta_info * psta;
-#ifdef CONFIG_TCP_CSUM_OFFLOAD_TX
-	u8	hw_tcp_csum;
-#endif
-};
-#else
 //reduce size
 struct pkt_attrib {
 	u8 type;
@@ -448,7 +351,7 @@ struct pkt_attrib {
 	u16 ether_type;
 	u16 seqnum;
 #if defined(CONFIG_RTL8821C) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C)
-	u8 hw_ssn_sel;  /* for HW_SEQ0,1,2,3 */
+	u8 hw_ssn_sel; /* for HW_SEQ0,1,2,3 */
 #endif
 	u16 pkt_hdrlen; //the original 802.3 pkt header len
 	u16 hdrlen;		//the WLAN Header Len
@@ -480,7 +383,7 @@ struct pkt_attrib {
 	u8 ampdu_en;  //tx ampdu enable
 	u8 mdata;	 //more data bit
 #ifdef CONFIG_AUTO_AP_MODE
-	u8 pctrl;	 //per packet txdesc control enable
+	u8 pctrl; //per packet txdesc control enable
 #endif
 	u8 triggered; //for ap mode handling Power Saving sta
 	u8 qsel;
@@ -506,23 +409,6 @@ struct pkt_attrib {
 	u8 raw;
 #endif
 };
-#endif
-
-#ifdef PLATFORM_FREEBSD
-#define ETH_ALEN 6		/* Octets in one ethernet addr	 */
-#define ETH_HLEN 14		/* Total octets in header.	 */
-#define ETH_P_IP 0x0800 /* Internet Protocol packet	*/
-
-/*struct rtw_ieee80211_hdr {
-	uint16_t frame_control;
-	uint16_t duration_id;
-	u8 addr1[6];
-	u8 addr2[6];
-	u8 addr3[6];
-	uint16_t seq_ctrl;
-	u8 addr4[6];
-} ;*/
-#endif //PLATFORM_FREEBSD
 
 #define WLANHDR_OFFSET 64
 
@@ -601,11 +487,8 @@ struct xmit_buf {
 
 	//u32 sz[8];
 	u32 ff_hwaddr;
-
-#if defined(PLATFORM_OS_XP) || defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 	PURB pxmit_urb[8];
 	dma_addr_t dma_transfer_addr; /* (in) dma addr for transfer_buffer */
-#endif
 
 #ifdef PLATFORM_OS_XP
 	PIRP pxmit_irp[8];
@@ -716,10 +599,6 @@ struct sta_xmit_priv {
 	_list apsd;
 
 	u16 txseq_tid[16];
-
-	//uint	sta_tx_bytes;
-	//u64	sta_tx_pkts;
-	//uint	sta_tx_fail;
 };
 
 struct hw_txqueue {
@@ -742,37 +621,23 @@ struct xmit_priv {
 
 	_lock lock;
 
-	//_queue	blk_strms[MAX_NUMBLKS];
 	_queue be_pending;
 	_queue bk_pending;
 	_queue vi_pending;
 	_queue vo_pending;
 	_queue bm_pending;
 
-	//_queue	legacy_dz_queue;
-	//_queue	apsd_queue;
-
 	u8 *pallocated_frame_buf;
 	u8 *pxmit_frame_buf;
 	uint free_xmitframe_cnt;
 
-	//uint mapping_addr;
-	//uint pkt_sz;
-
 	_queue free_xmit_queue;
-
-	//struct	hw_txqueue	be_txqueue;
-	//struct	hw_txqueue	bk_txqueue;
-	//struct	hw_txqueue	vi_txqueue;
-	//struct	hw_txqueue	vo_txqueue;
-	//struct	hw_txqueue	bmc_txqueue;
 
 	_adapter *adapter;
 
 	u8 vcs_setting;
 	u8 vcs;
 	u8 vcs_type;
-	//u16  rts_thresh;
 
 	u64 tx_bytes;
 	u64 tx_pkts;
@@ -789,7 +654,6 @@ struct xmit_priv {
 
 #ifdef PLATFORM_OS_CE
 	USB_TRANSFER usb_transfer_write_port;
-//	USB_TRANSFER	usb_transfer_write_mem;
 #endif
 #ifdef PLATFORM_LINUX
 	struct tasklet_struct xmit_tasklet;
@@ -842,16 +706,10 @@ struct xmit_priv {
 
 #ifdef CONFIG_TRACE_SKB
 extern struct xmit_buf *_rtw_alloc_xmitbuf_ext(struct xmit_priv *pxmitpriv, u32 size);
-
-//extern struct xmit_frame *_rtw_alloc_xmitframe(struct xmit_priv *pxmitpriv);
-//extern s32 _rtw_free_xmitframe(struct xmit_priv *pxmitpriv, struct xmit_frame *pxmitframe);
-//extern void _rtw_free_xmitframe_queue(struct xmit_priv *pxmitpriv, _queue *pframequeue);
-
-#define rtw_alloc_xmitbuf_ext(pxmitpriv, pxmitbuf, size)                     \
-	(                                                                        \
-		pxmitbuf = _rtw_alloc_xmitbuf_ext(pxmitpriv, size),                  \
-		pxmitbuf ? set_skb_list_flag(pxmitbuf->pkt, SKBLIST_XMITEXTBUF) : 0, \
-		pxmitbuf)
+#define rtw_alloc_xmitbuf_ext(pxmitpriv, pxmitbuf, size)                  \
+	(pxmitbuf = _rtw_alloc_xmitbuf_ext(pxmitpriv, size),                  \
+	 pxmitbuf ? set_skb_list_flag(pxmitbuf->pkt, SKBLIST_XMITEXTBUF) : 0, \
+	 pxmitbuf)
 #else
 extern struct xmit_buf *rtw_alloc_xmitbuf_ext(struct xmit_priv *pxmitpriv, u32 size);
 #endif

@@ -105,7 +105,7 @@
 /*
 	2008-12-16, For Corega CG-WLCB54GL 54Mbps NIC interoperability issue.
 	The behavior of this NIC when it connect to the other AP with WPA/TKIP is:
-		AP	<----------------------> 	STA
+		AP<----------------------> STA
 			....................
 			------------> Assoc Rsp (ok)
 			------------> EAPOL-key (4-way msg 1)
@@ -122,7 +122,6 @@
 	And this NIC will always can not connect to our AP.
 	set MAX_RESEND_NUM=5 can fix this issue.
  */
-//#define MAX_RESEND_NUM	3
 #define MAX_RESEND_NUM 5
 
 /*
@@ -131,18 +130,18 @@
 	As to AP "HUAWEI WS5100", in case of situation that if STA (re)connect to the AP with a wrong password for several times
 	and in each (re)connect the 4-2 msg with the wrong pw info (re)sent more than once in response to every 4-1, then the AP will
 	probably put the STA into blacklist and won't respond to STA's AUTH again even the STA may has corrected the password.
-	
-	AP(WS5100)	<-----------> 	STA
+
+	AP(WS5100) < ----------->STA
 					....................
 					------------> Assoc Rsp (ok)
 					------------> EAPOL-key (4-1)
 					<------------ EAPOL-key (4-2 with wrong pw info)
-					<------------ EAPOL-key (resend 4-2 with wrong pw info)					
-					
+					<------------ EAPOL-key (resend 4-2 with wrong pw info)
+
 					------------> EAPOL-key (4-way msg 1)
-					<------------ EAPOL-key (4-2 with wrong pw info)					
-					<------------ EAPOL-key (resend 4-2 with wrong pw info)			
-					....................					
+					<------------ EAPOL-key (4-2 with wrong pw info)
+					<------------ EAPOL-key (resend 4-2 with wrong pw info)
+					....................
 */
 #define RESEND_TIME 1000
 #define CLIENT_RESEND_TIME 1200
@@ -150,10 +149,10 @@
 
 #define GK_REKEY_TIME 3600000 //Set rekey period to 1 hour
 
-typedef enum {
-	desc_type_RSN = 2,
-	desc_type_WPA = 254
-} DescTypeRSN;
+					   typedef enum {
+						   desc_type_RSN = 2,
+						   desc_type_WPA = 254
+					   } DescTypeRSN;
 
 typedef enum {
 	type_Group = 0,
@@ -226,7 +225,6 @@ struct wpa_igtk_kde {
 typedef struct _wpa_global_info {
 	OCTET32_INTEGER Counter;
 	//Save PSK to global array
-	//	unsigned char		PSK[A_SHA_DIGEST_LEN * 2];
 	int GTKAuthenticator;
 	int GKeyDoneStations;
 	int GInitAKeys;
@@ -277,7 +275,6 @@ typedef struct _wpa_sta_info {
 	OCTET_STRING EapolKeyMsgSend;
 
 	unsigned char eapSendBuf[MAX_EAPOLMSG_LEN];
-	//	unsigned char		eapRecvdBuf[MAX_EAPOLMSG_LEN];
 	struct timer_list resendTimer;
 	int resendCnt;
 	struct timer_list waitTimer; // wait for 4-1 or 2-1

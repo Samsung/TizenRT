@@ -51,13 +51,13 @@ void tcm_heap_dump(void)
 	MemChunk *chunk, *prev;
 	struct Heap *h = &g_tcm_heap;
 
-	printf("---Free List--\n\r");
+	nvdbg("---Free List--\n\r");
 	for (prev = (MemChunk *)&h->FreeList, chunk = h->FreeList;
 		 chunk;
 		 prev = chunk, chunk = chunk->next) {
-		printf(" prev %x, chunk %x, size %d \n\r", prev, chunk, chunk->size);
+		nvdbg(" prev %x, chunk %x, size %d \n\r", prev, chunk, chunk->size);
 	}
-	printf("--------------\n\r");
+	nvdbg("--------------\n\r");
 }
 
 void *tcm_heap_allocmem(int size)
@@ -68,15 +68,17 @@ void *tcm_heap_allocmem(int size)
 
 	rtw_enter_critical(&tcm_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		tcm_heap_init();
+	}
 
 	/* Round size up to the allocation granularity */
 	size = ROUND_UP2(size, sizeof(MemChunk));
 
 	/* Handle allocations of 0 bytes */
-	if (!size)
+	if (!size) {
 		size = sizeof(MemChunk);
+	}
 
 	/* Walk on the free list looking for any chunk big enough to
 	 * fit the requested block size.
@@ -119,8 +121,9 @@ void tcm_heap_freemem(void *mem, int size)
 
 	rtw_enter_critical(&tcm_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		tcm_heap_init();
+	}
 
 #ifdef _DEBUG
 	memset(mem, FREE_FILL_CODE, size);
@@ -130,8 +133,9 @@ void tcm_heap_freemem(void *mem, int size)
 	size = ROUND_UP2(size, sizeof(MemChunk));
 
 	/* Handle allocations of 0 bytes */
-	if (!size)
+	if (!size) {
 		size = sizeof(MemChunk);
+	}
 
 	/* Special cases: first chunk in the free list or memory completely full */
 	if (((uint8_t *)mem) < ((uint8_t *)h->FreeList) || !h->FreeList) {
@@ -140,15 +144,15 @@ void tcm_heap_freemem(void *mem, int size)
 		prev->next = h->FreeList;
 		prev->size = size;
 		h->FreeList = prev;
-	} else /* Normal case: not the first chunk in the free list */
-	{
+	} else { /* Normal case: not the first chunk in the free list */
 		/*
 		 * Walk on the free list. Stop at the insertion point (when mem
 		 * is between prev and prev->next)
 		 */
 		prev = h->FreeList;
-		while (prev->next < (MemChunk *)mem && prev->next)
+		while (prev->next < (MemChunk *)mem && prev->next) {
 			prev = prev->next;
+		}
 
 		/* Make sure mem is not *within* prev */
 
@@ -156,8 +160,7 @@ void tcm_heap_freemem(void *mem, int size)
 		if (((uint8_t *)prev) + prev->size == ((uint8_t *)mem)) {
 			/* Yes */
 			prev->size += size;
-		} else /* not merged with previous chunk */
-		{
+		} else { /* not merged with previous chunk */
 			MemChunk *curr = (MemChunk *)mem;
 
 			/* insert it after the previous node
@@ -191,11 +194,13 @@ int tcm_heap_freeSpace(void)
 
 	rtw_enter_critical(&tcm_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		tcm_heap_init();
+	}
 
-	for (chunk = h->FreeList; chunk; chunk = chunk->next)
+	for (chunk = h->FreeList; chunk; chunk = chunk->next) {
 		free_mem += chunk->size;
+	}
 
 	rtw_exit_critical(&tcm_lock, &irqL);
 	return free_mem;
@@ -232,8 +237,9 @@ void *tcm_heap_calloc(int size)
 {
 	void *mem;
 	mem = tcm_heap_malloc(size);
-	if (mem)
+	if (mem) {
 		memset(mem, 0, size);
+	}
 
 	return mem;
 }
@@ -278,7 +284,7 @@ static void alloc_test(int size, int test_len)
 
 	for (i = 0; i < test_len; i++) {
 		for (j = 0; j < size; j++) {
-			printf("a[%d][%d] = %d\n", i, j, a[i][j]);
+			nvdbg("a[%d][%d] = %d\n", i, j, a[i][j]);
 		}
 		tcm_heap_freemem(a[i], size);
 	}
@@ -297,11 +303,12 @@ int tcm_heap_testRun(void)
 	uint8_t *b = tcm_heap_allocmem(HEAP_SIZE);
 	int j;
 
-	for (j = 0; j < HEAP_SIZE; j++)
+	for (j = 0; j < HEAP_SIZE; j++) {
 		b[j] = j;
+	}
 
 	for (j = 0; j < HEAP_SIZE; j++) {
-		printf("b[%d] = %d\n", j, j);
+		nvdbg("b[%d] = %d\n", j, j);
 	}
 	tcm_heap_freemem(b, HEAP_SIZE);
 
