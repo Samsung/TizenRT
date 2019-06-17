@@ -60,6 +60,10 @@
 #include <unistd.h>
 #endif
 
+// pkbuild
+/* #if defined(OIC_LOG_V) */
+/* #undef OIC_LOG_V */
+/* #endif */
 
 /**
  * @def MBED_TLS_VERSION_LEN
@@ -96,7 +100,7 @@
  * @def MMBED_TLS_DEBUG_LEVEL
  * @brief Logging level for mbedTLS library
  */
-#define MBED_TLS_DEBUG_LEVEL (4)
+#define MBEDser_TLS_DEBUG_LEVEL (4)
 
 /**
  * @def TLS_MSG_BUF_LEN
@@ -233,7 +237,7 @@ if (0 != (ret) && MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY != (int) (ret) &&           
     MBEDTLS_SSL_ALERT_MSG_UNKNOWN_PSK_IDENTITY != (int) (ret) &&                                   \
     MBEDTLS_SSL_ALERT_MSG_NO_APPLICATION_PROTOCOL != (int) (ret))                                  \
 {                                                                                                  \
-    OIC_LOG_V(ERROR, NET_SSL_TAG, "%s: -0x%x", (str), -(ret));                                     \
+    printf("%s: -0x%x", (str), -(ret));                                     \
     if ((int) MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE != (int) (ret) &&                                \
         (int) MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO != (int) (ret))                                  \
     {                                                                                              \
@@ -248,7 +252,7 @@ if (0 != (ret) && MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY != (int) (ret) &&           
     {                                                                                              \
         SSL_RES((peer), CA_DTLS_AUTHENTICATION_FAILURE);                                           \
     }                                                                                              \
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);                                             \
+    printf("Out %s", __func__);                                             \
     if (-1 != error)                                                                               \
     {                                                                                              \
         return (error);                                                                            \
@@ -275,7 +279,7 @@ fn((serverConf), __VA_ARGS__);                                                  
 #define CHECK_MBEDTLS_RET(f, ...) do {                                                             \
 int ret = (f)(__VA_ARGS__);                                                                        \
 if (0 != ret) {                                                                                    \
-    OIC_LOG_V(ERROR, NET_SSL_TAG, "%s returned -0x%04x\n", __func__, -(ret));                      \
+    printf("%s returned -0x%04x\n", __func__, -(ret));                      \
     goto exit;                                                                                     \
 } } while (0)
 
@@ -293,7 +297,9 @@ typedef enum
     SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     SSL_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
     SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+//#ifndef __TIZENRT__
     SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256,
+//#endif
     SSL_CIPHER_MAX
 } SslCipher_t;
 
@@ -317,7 +323,9 @@ static const int tlsCipher[SSL_CIPHER_MAX][2] =
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0},
+//#ifndef __TIZENRT__
     {MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256, 0}
+//#endif
 };
 
 static int g_cipherSuitesList[SSL_CIPHER_MAX];
@@ -382,6 +390,8 @@ static int GetAlertCode(uint32_t flags)
  * @param[in] line  line number
  * @param[in] str  message
  */
+
+#endif
 static void DebugSsl(void *ctx, int level, const char *file, int line, const char *str)
 {
     ((void) level);
@@ -389,9 +399,8 @@ static void DebugSsl(void *ctx, int level, const char *file, int line, const cha
     ((void) line);
     ((void) ctx);
 
-    OIC_LOG_V(DEBUG, MBED_TLS_TAG, "%s", str);
+    printf("[pkTLS]""[%s%d] %s: ", file, line, str);
 }
-#endif
 
 #if defined(_WIN32) || defined (__TIZENRT__)
 /*
@@ -556,30 +565,30 @@ typedef struct SslEndPoint
 void CAsetPskCredentialsCallback(CAgetPskCredentialsHandler credCallback)
 {
     // TODO Does this method needs protection of tlsContextMutex?
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     g_getCredentialsCallback = credCallback;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 void CAsetPkixInfoCallback(CAgetPkixInfoHandler infoCallback)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     g_getPkixInfoCallback = infoCallback;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 void CAsetSetupPkContextCallback(CAsetupPkContextHandler setupPkCtxCallback)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     g_setupPkContextCallback = setupPkCtxCallback;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 void CAsetCredentialTypesCallback(CAgetCredentialTypesHandler credTypesCallback)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     g_getCredentialTypesCallback = credTypesCallback;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 static int GetAdapterIndex(CATransportAdapter_t adapter)
@@ -593,7 +602,7 @@ static int GetAdapterIndex(CATransportAdapter_t adapter)
         case CA_ADAPTER_GATT_BTLE:
             return 2;
         default:
-            OIC_LOG(ERROR, NET_SSL_TAG, "Unsupported adapter");
+            printf( "Unsupported adapter\n");
             return -1;
     }
 }
@@ -608,12 +617,12 @@ static int GetAdapterIndex(CATransportAdapter_t adapter)
  */
 static int SendCallBack(void * tep, const unsigned char * data, size_t dataLen)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(tep, NET_SSL_TAG, "secure endpoint is NULL", -1);
     VERIFY_NON_NULL_RET(data, NET_SSL_TAG, "data is NULL", -1);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", -1);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Data len: %zu", dataLen);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Adapter: %u", ((SslEndPoint_t * )tep)->sep.endpoint.adapter);
+    printf("Data len: %zu\n", dataLen);
+    printf("Adapter: %u\n", ((SslEndPoint_t * )tep)->sep.endpoint.adapter);
     ssize_t sentLen = 0;
     int adapterIndex = GetAdapterIndex(((SslEndPoint_t * )tep)->sep.endpoint.adapter);
     if (0 <= adapterIndex && MAX_SUPPORTED_ADAPTERS > adapterIndex)
@@ -622,18 +631,18 @@ static int SendCallBack(void * tep, const unsigned char * data, size_t dataLen)
         sentLen = sendCallback(&(((SslEndPoint_t * )tep)->sep.endpoint), (const void *) data, dataLen);
         if (sentLen != dataLen)
         {
-            OIC_LOG_V(DEBUG, NET_SSL_TAG,
+            printf(
                       "Packet was partially sent - total/sent/remained bytes : %d/%d/%d",
                       sentLen, dataLen, (dataLen - sentLen));
         }
     }
     else
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Unsupported adapter");
+        printf( "Unsupported adapter\n");
         return -1;
     }
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return sentLen;
 }
 /**
@@ -647,7 +656,7 @@ static int SendCallBack(void * tep, const unsigned char * data, size_t dataLen)
  */
 static int RecvCallBack(void * tep, unsigned char * data, size_t dataLen)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(tep, NET_SSL_TAG, "endpoint is NULL", 0);
     VERIFY_NON_NULL_RET(data, NET_SSL_TAG, "data is NULL", 0);
 
@@ -658,7 +667,7 @@ static int RecvCallBack(void * tep, unsigned char * data, size_t dataLen)
     memcpy(data, recBuf->buff + recBuf->loaded, retLen);
     recBuf->loaded += retLen;
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return (int)retLen;
 }
 
@@ -669,16 +678,16 @@ static int CASslExportKeysHandler(void *p_expkey,
                                 size_t keylen,
                                 size_t ivlen)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
 
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "SSL Context is not initialized.");
+        printf( "SSL Context is not initialized.\n");
         return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
     }
     if (NULL == p_expkey)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Can not find the protocol information from 'p_expkey'.");
+        printf( "Can not find the protocol information from 'p_expkey'.\n");
         return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
     }
 
@@ -686,43 +695,43 @@ static int CASslExportKeysHandler(void *p_expkey,
 
     if (gTlsExportKeysCallback && CA_SSL_EKCB_TLS == (*protocol))
     {
-        OIC_LOG(DEBUG, NET_SSL_TAG, "Invoking TLS export key callback.");
+        printf( "Invoking TLS export key callback.\n");
         gTlsExportKeysCallback(ms, kb, maclen, keylen, ivlen);
     }
     else if (gDtlsExportKeysCallback && CA_SSL_EKCB_DTLS == (*protocol))
     {
-        OIC_LOG(DEBUG, NET_SSL_TAG, "Invoking DTLS export key callback.");
+        printf( "Invoking DTLS export key callback.\n");
         gDtlsExportKeysCallback(ms, kb, maclen, keylen, ivlen);
     }
     else
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Failed to Invoke (D)TLS export key callback.");
+        printf( "Failed to Invoke (D)TLS export key callback.\n");
         return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
     }
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return 0;
 }
 
 CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
                                       CASslEkcbProtocol_t protocol, CASslEkcbRole_t role)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     mbedtls_ssl_config* sslConf = NULL;
     static CASslEkcbProtocol_t protocolCtx = CA_SSL_EKCB_TLS;
 
     if (CA_SSL_EKCB_TLS != protocol && CA_SSL_EKCB_DTLS != protocol)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Invaild protocol.");
+        printf( "Invaild protocol.\n");
         return CA_STATUS_INVALID_PARAM;
     }
     if (CA_SSL_EKCB_CLIENT != role && CA_SSL_EKCB_SERVER != role)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Invaild role.");
+        printf( "Invaild role.\n");
         return CA_STATUS_INVALID_PARAM;
     }
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "TLS Export Key Callback Type : [%s] [%s]",
+    printf("TLS Export Key Callback Type : [%s] [%s]\n",
               (CA_SSL_EKCB_TLS == protocol ? "TLS" : "DTLS"),
               (CA_SSL_EKCB_CLIENT == role ? "Client" : "Server"));
 
@@ -730,7 +739,7 @@ CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
 
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "SSL Context is not initialized.");
+        printf( "SSL Context is not initialized.\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_NOT_INITIALIZED;
     }
@@ -764,16 +773,16 @@ CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
     if (NULL == exportKeysCb)
     {
         mbedtls_ssl_conf_export_keys_cb(sslConf, NULL, NULL);
-        OIC_LOG(DEBUG, NET_SSL_TAG, "Export key callback unregistered.");
+        printf( "Export key callback unregistered.\n");
     }
     else
     {
         mbedtls_ssl_conf_export_keys_cb(sslConf, CASslExportKeysHandler, (void*)(&protocolCtx));
-        OIC_LOG(DEBUG, NET_SSL_TAG, "Export key callback registered.");
+        printf( "Export key callback registered.\n");
     }
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 
     return CA_STATUS_OK;
 }
@@ -791,7 +800,7 @@ CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
  */
 static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, int * errNum)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(crt, NET_SSL_TAG, "Param crt is NULL" , -1);
     VERIFY_NON_NULL_RET(buf, NET_SSL_TAG, "Param buf is NULL" , -1);
 
@@ -829,7 +838,7 @@ static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, i
                 else
                 {
                     (*errNum)++;
-                    OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedtls_x509_crt_parse_der returned -0x%04x\n", -(ret));
+                    printf("mbedtls_x509_crt_parse_der returned -0x%04x\n\n", -(ret));
                 }
             }
             pos += len + 4;
@@ -841,8 +850,8 @@ static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, i
             endPos = memmem(&(buf[pos]), bufLen - pos, pemCertFooter, pemCertFooterLen);
             if (NULL == endPos)
             {
-                OIC_LOG(ERROR, NET_SSL_TAG, "Error: end of PEM certificate not found.");
-                OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+                printf( "Error: end of PEM certificate not found.\n");
+                printf("Out %s\n", __func__);
                 return -1;
             }
             len = (char*)endPos - ((char*)buf + pos) + pemCertFooterLen;
@@ -858,7 +867,7 @@ static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, i
                 else
                 {
                     (*errNum)++;
-                    OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedtls_x509_crt_parse returned -0x%04x\n", -(ret));
+                    printf("mbedtls_x509_crt_parse returned -0x%04x\n\n", -(ret));
                 }
                 buf[pos + len] = con;
             }
@@ -875,7 +884,7 @@ static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, i
                 else
                 {
                     (*errNum)++;
-                    OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedtls_x509_crt_parse returned -0x%04x\n", -(ret));
+                    printf("mbedtls_x509_crt_parse returned -0x%04x\n\n", -(ret));
                 }
                 OICFree(lastCert);
             }
@@ -886,8 +895,8 @@ static int ParseChain(mbedtls_x509_crt * crt, unsigned char * buf, int bufLen, i
             pos++;
         }
     }
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "%s successfully parsed %d certificates", __func__, count);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("%s successfully parsed %d certificates\n", __func__, count);
+    printf("Out %s\n", __func__);
     return count;
 
 exit:
@@ -897,7 +906,7 @@ exit:
 //Loads PKIX related information from SRM
 static int InitPKIX(CATransportAdapter_t adapter)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(g_getPkixInfoCallback, NET_SSL_TAG, "PKIX info callback is NULL", -1);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", -1);
 
@@ -930,19 +939,19 @@ static int InitPKIX(CATransportAdapter_t adapter)
     int count = ParseChain(&g_caSslContext->crt, g_pkiInfo.crt.data, g_pkiInfo.crt.len, &errNum);
     if (0 >= count)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "Own certificate chain parsing error");
+        printf( "Own certificate chain parsing error\n");
         goto required;
     }
     if (0 != errNum)
     {
-        OIC_LOG_V(WARNING, NET_SSL_TAG, "Own certificate chain parsing error: %d certs failed to parse", errNum);
+        printf("Own certificate chain parsing error: %d certs failed to parse\n", errNum);
         goto required;
     }
 
     // parse private key if hw is not supported (optional)
     if(NULL == g_setupPkContextCallback)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "g_setupPkContextCallback is NULL");
+        printf( "g_setupPkContextCallback is NULL\n");
         ret =  mbedtls_pk_parse_key(&g_caSslContext->pkey, g_pkiInfo.key.data, g_pkiInfo.key.len,
                                                                                    NULL, 0);
     }
@@ -957,7 +966,7 @@ static int InitPKIX(CATransportAdapter_t adapter)
             if (MBEDTLS_PK_ECKEY == ktype || MBEDTLS_PK_ECKEY_DH == ktype
                 || MBEDTLS_PK_ECDSA == ktype)
             {
-                OIC_LOG_V(DEBUG, NET_SSL_TAG, "Copy ecp public param from cert, keytype [%d]", ktype);
+                printf("Copy ecp public param from cert, keytype [%d]\n", ktype);
                 mbedtls_ecp_keypair *eckey = (mbedtls_ecp_keypair*)g_caSslContext->crt.pk.pk_ctx;
                 mbedtls_ecdsa_context *ecdsa = (mbedtls_ecdsa_context*)g_caSslContext->pkey.pk_ctx;
                 if (ecdsa && eckey)
@@ -965,32 +974,32 @@ static int InitPKIX(CATransportAdapter_t adapter)
                     ret = mbedtls_ecdsa_from_keypair(ecdsa, eckey);
                     if(0 != ret )
                     {
-                        OIC_LOG_V(ERROR, NET_SSL_TAG, "Fail to copy public param [0x%x]", ret);
+                        printf("Fail to copy public param [0x%x]\n", ret);
                     }
                 }
                 else
                 {
-                    OIC_LOG_V(WARNING, NET_SSL_TAG, "key-ctx(0x%x), cert-ctx(0x%x)", ecdsa, eckey);
+                    printf("key-ctx(0x%x), cert-ctx(0x%x)\n", ecdsa, eckey);
                 }
             }
         }
     }
     if (0 != ret)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "Key parsing error");
+        printf( "Key parsing error\n");
         goto required;
     }
 
     ret = mbedtls_ssl_conf_own_cert(serverConf, &g_caSslContext->crt, &g_caSslContext->pkey);
     if (0 != ret)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "Own certificate parsing error");
+        printf( "Own certificate parsing error\n");
         goto required;
     }
     ret = mbedtls_ssl_conf_own_cert(clientConf, &g_caSslContext->crt, &g_caSslContext->pkey);
     if(0 != ret)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "Own certificate configuration error");
+        printf( "Own certificate configuration error\n");
         goto required;
     }
 
@@ -998,20 +1007,20 @@ static int InitPKIX(CATransportAdapter_t adapter)
     count = ParseChain(&g_caSslContext->ca, g_pkiInfo.ca.data, g_pkiInfo.ca.len, &errNum);
     if(0 >= count)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "CA chain in svr db was not parsed");
-        OIC_LOG(WARNING, NET_SSL_TAG, "    but if working as server, chain not required");
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf( "CA chain in svr db was not parsed\n");
+        printf( "    but if working as server, chain not required\n");
+        printf("Out %s\n", __func__);
         return -1;
     }
     if(0 != errNum)
     {
-        OIC_LOG_V(WARNING, NET_SSL_TAG, "CA chain parsing warning: %d certs failed to parse", errNum);
+        printf("CA chain parsing warning: %d certs failed to parse\n", errNum);
     }
 
     ret = mbedtls_x509_crl_parse_der(&g_caSslContext->crl, g_pkiInfo.crl.data, g_pkiInfo.crl.len);
     if(0 != ret)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "CRL in svr db was not parsed");
+        printf( "CRL in svr db was not parsed\n");
         CONF_SSL(clientConf, serverConf, mbedtls_ssl_conf_ca_chain, &g_caSslContext->ca, NULL);
     }
     else
@@ -1020,7 +1029,7 @@ static int InitPKIX(CATransportAdapter_t adapter)
                  &g_caSslContext->ca, &g_caSslContext->crl);
     }
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return 0;
 }
 
@@ -1037,13 +1046,13 @@ static int InitPKIX(CATransportAdapter_t adapter)
 static int GetPskCredentialsCallback(void * notUsed, mbedtls_ssl_context * ssl,
                                      const unsigned char * desc, size_t descLen)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(g_getCredentialsCallback, NET_SSL_TAG, "Credential callback s NULL", -1);
     VERIFY_NON_NULL_RET(ssl, NET_SSL_TAG, "ssl pointer is NULL", -1);
     VERIFY_NON_NULL_RET(desc, NET_SSL_TAG, "desc pointer is NULL", -1);
     if (descLen > CA_MAX_ENDPOINT_IDENTITY_LEN)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "desc too long!");
+        printf( "desc too long!\n");
         return -1;
     }
     (void) notUsed;
@@ -1055,13 +1064,13 @@ static int GetPskCredentialsCallback(void * notUsed, mbedtls_ssl_context * ssl,
     {
         memcpy(((SslEndPoint_t *) ssl)->sep.identity.id, desc, descLen);
         ((SslEndPoint_t *) ssl)->sep.identity.id_length = descLen;
-        OIC_LOG(DEBUG, NET_SSL_TAG, "PSK:");
+        printf( "PSK:\n");
         OIC_LOG_BUFFER(DEBUG, NET_SSL_TAG, keyBuf, ret);
 
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return(mbedtls_ssl_set_hs_psk(ssl, keyBuf, ret));
     }
-    OIC_LOG_V(WARNING, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return -1;
 }
 /**
@@ -1075,7 +1084,7 @@ static SslEndPoint_t *GetSslPeer(const CAEndpoint_t *peer)
 {
     uint32_t listIndex = 0;
     uint32_t listLength = 0;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(peer, NET_SSL_TAG, "TLS peer is NULL", NULL);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", NULL);
 
@@ -1089,7 +1098,7 @@ static SslEndPoint_t *GetSslPeer(const CAEndpoint_t *peer)
             continue;
         }
 
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Compare [%s:%d] and [%s:%d] for %d adapter",
+        printf("Compare [%s:%d] and [%s:%d] for %d adapter\n",
                   peer->addr, peer->port, tep->sep.endpoint.addr, tep->sep.endpoint.port,
                   peer->adapter);
 
@@ -1097,12 +1106,12 @@ static SslEndPoint_t *GetSslPeer(const CAEndpoint_t *peer)
                 && (0 == strncmp(peer->addr, tep->sep.endpoint.addr, MAX_ADDR_STR_SIZE_CA))
                 && (peer->port == tep->sep.endpoint.port || CA_ADAPTER_GATT_BTLE == peer->adapter))
         {
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+            printf("Out %s\n", __func__);
             return tep;
         }
     }
-    OIC_LOG(DEBUG, NET_SSL_TAG, "Return NULL");
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf( "Return NULL\n");
+    printf("Out %s\n", __func__);
     return NULL;
 }
 
@@ -1117,11 +1126,11 @@ static SslEndPoint_t *GetSslPeerUsingUuid(const uint8_t *identity, size_t idLeng
 {
     uint32_t listIndex = 0;
     uint32_t listLength = 0;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(identity, NET_SSL_TAG, "Param identity is NULL", NULL);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", NULL);
 
-    OIC_LOG(DEBUG, NET_SSL_TAG, "[Target UUID]");
+    printf( "[Target UUID]\n");
     OIC_LOG_BUFFER(DEBUG, NET_SSL_TAG, identity, idLength);
 
     SslEndPoint_t *tep = NULL;
@@ -1134,20 +1143,20 @@ static SslEndPoint_t *GetSslPeerUsingUuid(const uint8_t *identity, size_t idLeng
             continue;
         }
 
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Compare UUID for [%s:%d]",
+        printf("Compare UUID for [%s:%d]\n",
                   tep->sep.endpoint.addr, tep->sep.endpoint.port);
 
         if ((tep->sep.identity.id_length == idLength)
             && (0 == memcmp(identity, tep->sep.identity.id, idLength)))
         {
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "Found matched UUID in [%s:%d]",
+            printf("Found matched UUID in [%s:%d]\n",
                       tep->sep.endpoint.addr, tep->sep.endpoint.port);
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+            printf("Out %s\n", __func__);
             return tep;
         }
     }
-    OIC_LOG(DEBUG, NET_SSL_TAG, "Return NULL");
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf( "Return NULL\n");
+    printf("Out %s\n", __func__);
     return NULL;
 }
 
@@ -1162,12 +1171,12 @@ static SslEndPoint_t *GetSslPeerUsingUuid(const uint8_t *identity, size_t idLeng
  */
 const CASecureEndpoint_t *GetCASecureEndpointData(const CAEndpoint_t* peer)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return NULL;
     }
@@ -1175,13 +1184,13 @@ const CASecureEndpoint_t *GetCASecureEndpointData(const CAEndpoint_t* peer)
     SslEndPoint_t* sslPeer = GetSslPeer(peer);
     if(sslPeer)
     {
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         oc_mutex_unlock(g_sslContextMutex);
         return &sslPeer->sep;
     }
 
-    OIC_LOG(DEBUG, NET_SSL_TAG, "Return NULL");
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf( "Return NULL\n");
+    printf("Out %s\n", __func__);
     oc_mutex_unlock(g_sslContextMutex);
     return NULL;
 }
@@ -1194,13 +1203,13 @@ const CASecureEndpoint_t *GetCASecureEndpointData(const CAEndpoint_t* peer)
  */
 static void DeleteCacheMessage(SslCacheMessage_t * msg)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(msg, NET_SSL_TAG, "msg");
 
     OICFree(msg->data);
     OICFree(msg);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 /**
  * Deletes cached message list.
@@ -1209,7 +1218,7 @@ static void DeleteCacheMessage(SslCacheMessage_t * msg)
  */
 static void DeleteCacheList(u_arraylist_t * cacheList)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(cacheList, NET_SSL_TAG, "cacheList");
     uint32_t listIndex = 0;
     uint32_t listLength = 0;
@@ -1225,7 +1234,7 @@ static void DeleteCacheList(u_arraylist_t * cacheList)
     }
     u_arraylist_free(&cacheList);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 /**
  * Deletes endpoint with session.
@@ -1234,13 +1243,13 @@ static void DeleteCacheList(u_arraylist_t * cacheList)
  */
 static void DeleteSslEndPoint(SslEndPoint_t * tep)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(tep, NET_SSL_TAG, "tep");
 
     mbedtls_ssl_free(&tep->ssl);
     DeleteCacheList(tep->cacheList);
     OICFree(tep);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 /**
  * Removes endpoint session from list.
@@ -1299,20 +1308,20 @@ static void DeletePeerList()
 
 CAResult_t CAcloseSslConnection(const CAEndpoint_t *endpoint)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG, "Param endpoint is NULL" , CA_STATUS_INVALID_PARAM);
 
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
     SslEndPoint_t * tep = GetSslPeer(endpoint);
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Session does not exist");
+        printf( "Session does not exist\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -1327,19 +1336,19 @@ CAResult_t CAcloseSslConnection(const CAEndpoint_t *endpoint)
     RemovePeerFromList(&tep->sep.endpoint);
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 
 CAResult_t CAcloseSslConnectionUsingUuid(const uint8_t *identity, size_t idLength)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(identity, NET_SSL_TAG, "Param identity is NULL" , CA_STATUS_INVALID_PARAM);
 
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -1347,7 +1356,7 @@ CAResult_t CAcloseSslConnectionUsingUuid(const uint8_t *identity, size_t idLengt
     SslEndPoint_t* tep = GetSslPeerUsingUuid(identity, idLength);
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Session does not exist");
+        printf( "Session does not exist\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -1363,23 +1372,23 @@ CAResult_t CAcloseSslConnectionUsingUuid(const uint8_t *identity, size_t idLengt
     RemovePeerFromList(&tep->sep.endpoint);
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 
 void CAcloseSslConnectionAll(CATransportAdapter_t transportType)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n\n\n");
         oc_mutex_unlock(g_sslContextMutex);
         return;
     }
 
     uint32_t listLength = u_arraylist_length(g_caSslContext->peerList);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG,
+    printf(
             "Required transport [%d], peer count [%d]", transportType, listLength);
     for (uint32_t i = listLength; i > 0; i--)
     {
@@ -1388,13 +1397,13 @@ void CAcloseSslConnectionAll(CATransportAdapter_t transportType)
         {
             continue;
         }
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "SSL Connection [%s:%d], Transport [%d]",
+        printf("SSL Connection [%s:%d], Transport [%d]\n",
                   tep->sep.endpoint.addr, tep->sep.endpoint.port, tep->sep.endpoint.adapter);
 
         // check transport matching
         if (0 == (tep->sep.endpoint.adapter & transportType))
         {
-            OIC_LOG(DEBUG, NET_SSL_TAG, "Skip the un-matched transport session");
+            printf( "Skip the un-matched transport session\n");
             continue;
         }
 
@@ -1412,7 +1421,7 @@ void CAcloseSslConnectionAll(CATransportAdapter_t transportType)
     }
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return;
 }
 /**
@@ -1426,7 +1435,7 @@ void CAcloseSslConnectionAll(CATransportAdapter_t transportType)
 static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl_config * config)
 {
     SslEndPoint_t * tep = NULL;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG, "endpoint", NULL);
     VERIFY_NON_NULL_RET(config, NET_SSL_TAG, "config", NULL);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", NULL);
@@ -1434,7 +1443,7 @@ static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl
     tep = (SslEndPoint_t *) OICCalloc(1, sizeof (SslEndPoint_t));
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Malloc failed!");
+        printf( "Malloc failed!\n");
         return NULL;
     }
 
@@ -1443,9 +1452,9 @@ static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl
 
     if(0 != mbedtls_ssl_setup(&tep->ssl, config))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Setup failed");
+        printf( "Setup failed\n");
         OICFree(tep);
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return NULL;
     }
 
@@ -1459,10 +1468,10 @@ static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl
             if (0 != mbedtls_ssl_set_client_transport_id(&tep->ssl,
                                     (const unsigned char *) endpoint->addr, sizeof(endpoint->addr)))
             {
-                OIC_LOG(ERROR, NET_SSL_TAG, "Transport id setup failed!");
+                printf( "Transport id setup failed!\n");
                 mbedtls_ssl_free(&tep->ssl);
                 OICFree(tep);
-                OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+                printf("Out %s\n", __func__);
                 return NULL;
             }
         }
@@ -1470,16 +1479,16 @@ static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl
     tep->cacheList = u_arraylist_create();
     if (NULL == tep->cacheList)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "cacheList initialization failed!");
+        printf( "cacheList initialization failed!\n");
         mbedtls_ssl_free(&tep->ssl);
         OICFree(tep);
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return NULL;
     }
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "New [%s role] endpoint added [%s:%d]",
+    printf("New [%s role] endpoint added [%s:%d]\n",
             (MBEDTLS_SSL_IS_SERVER==config->endpoint ? "server" : "client"),
             endpoint->addr, endpoint->port);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return tep;
 }
 /**
@@ -1492,28 +1501,28 @@ static SslEndPoint_t * NewSslEndPoint(const CAEndpoint_t * endpoint, mbedtls_ssl
 static int InitPskIdentity(mbedtls_ssl_config * config)
 {
     uint8_t idBuf[UUID_LENGTH] = {0};
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(config, NET_SSL_TAG, "Param config is NULL" , -1);
 
     if (0 > g_getCredentialsCallback(CA_DTLS_PSK_IDENTITY, NULL, 0, idBuf, UUID_LENGTH))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Identity not found");
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf( "Identity not found\n");
+        printf("Out %s\n", __func__);
         return -1;
     }
     if (0 != mbedtls_ssl_conf_psk(config, idBuf, 0, idBuf, UUID_LENGTH))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Identity initialization failed!");
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf( "Identity initialization failed!\n");
+        printf("Out %s\n", __func__);
         return -1;
     }
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return 0;
 }
 static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapter)
 {
     int index = 0;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(config, NET_SSL_TAG, "Invaild param");
     VERIFY_NON_NULL_VOID(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL");
     VERIFY_NON_NULL_VOID(g_getCredentialTypesCallback, NET_SSL_TAG, "Param callback is null");
@@ -1526,7 +1535,7 @@ static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapte
     // Retrieve the PSK credential from SRM
     if (0 != InitPskIdentity(config))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "PSK identity initialization failed!");
+        printf( "PSK identity initialization failed!\n");
     }
 
     // Retrieve the Cert credential from SRM
@@ -1535,7 +1544,7 @@ static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapte
         int ret = InitPKIX(adapter);
         if (0 != ret)
         {
-            OIC_LOG(ERROR, NET_SSL_TAG, "Failed to init X.509");
+            printf( "Failed to init X.509\n");
         }
     }
 
@@ -1545,7 +1554,7 @@ static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapte
     if (SSL_CIPHER_MAX != g_caSslContext->cipher)
     {
         g_cipherSuitesList[index] = tlsCipher[g_caSslContext->cipher][0];
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Preferred ciphersuite added");
+        printf("Preferred ciphersuite added\n");
         index++;
     }
 
@@ -1554,7 +1563,7 @@ static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapte
                 MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 != tlsCipher[g_caSslContext->cipher][0])
     {
        g_cipherSuitesList[index] = MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256;
-       OIC_LOG(DEBUG, NET_SSL_TAG, "PSK ciphersuite added");
+       printf( "PSK ciphersuite added\n");
        index++;
     }
 
@@ -1577,15 +1586,15 @@ static void SetupCipher(mbedtls_ssl_config * config, CATransportAdapter_t adapte
         }
     }
 
-    OIC_LOG(DEBUG, NET_SSL_TAG, "Supported ciphersuites:");
+    printf( "Supported ciphersuites:\n");
     for (int i = 0; i < index; i++)
     {
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Ciphersuite %04x", g_cipherSuitesList[i]);
+        printf("Ciphersuite %04x\n", g_cipherSuitesList[i]);
     }
 
     mbedtls_ssl_conf_ciphersuites(config, g_cipherSuitesList);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 /**
  * Initiate TLS handshake with endpoint.
@@ -1599,7 +1608,7 @@ static SslEndPoint_t * InitiateTlsHandshake(const CAEndpoint_t *endpoint)
     int ret = 0;
     SslEndPoint_t * tep = NULL;
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG, "Param endpoint is NULL" , NULL);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", NULL);
 
@@ -1612,7 +1621,7 @@ static SslEndPoint_t * InitiateTlsHandshake(const CAEndpoint_t *endpoint)
     tep = NewSslEndPoint(endpoint, config);
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Malloc failed!");
+        printf( "Malloc failed!\n");
         return NULL;
     }
 
@@ -1622,7 +1631,7 @@ static SslEndPoint_t * InitiateTlsHandshake(const CAEndpoint_t *endpoint)
     ret = u_arraylist_add(g_caSslContext->peerList, (void *) tep);
     if (!ret)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "u_arraylist_add failed!");
+        printf( "u_arraylist_add failed!\n");
         DeleteSslEndPoint(tep);
         return NULL;
     }
@@ -1636,13 +1645,13 @@ static SslEndPoint_t * InitiateTlsHandshake(const CAEndpoint_t *endpoint)
         }
         else if (-1 == ret)
         {
-            OIC_LOG(ERROR, NET_SSL_TAG, "Handshake failed due to socket error");
+            printf( "Handshake failed due to socket error\n");
             RemovePeerFromList(&tep->sep.endpoint);
             return NULL;
         }
         SSL_CHECK_FAIL(tep, ret, "Handshake error", 0, NULL, MBEDTLS_SSL_ALERT_MSG_HANDSHAKE_FAILURE);
     }
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return tep;
 }
 #ifdef __WITH_DTLS__
@@ -1660,7 +1669,7 @@ static void StopRetransmit()
 #endif
 void CAdeinitSslAdapter()
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
 
     VERIFY_NON_NULL_VOID(g_caSslContext, NET_SSL_TAG, "context is NULL");
     VERIFY_NON_NULL_VOID(g_sslContextMutex, NET_SSL_TAG, "context mutex is NULL");
@@ -1706,18 +1715,18 @@ void CAdeinitSslAdapter()
     oc_mutex_free(g_sslContextMutex);
     g_sslContextMutex = NULL;
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s ", __func__);
+    printf("Out %s \n", __func__);
 }
 
 static int InitConfig(mbedtls_ssl_config * conf, int transport, int mode)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(conf, NET_SSL_TAG, "Param conf is NULL" , -1);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL Context is NULL", -1);
     mbedtls_ssl_config_init(conf);
     if (mbedtls_ssl_config_defaults(conf, mode, transport, MBEDTLS_SSL_PRESET_DEFAULT) != 0)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Config initialization failed!");
+        printf( "Config initialization failed!\n");
         return -1;
     }
 
@@ -1737,11 +1746,15 @@ static int InitConfig(mbedtls_ssl_config * conf, int transport, int mode)
     }
 #endif // __WITH_DTLS__
 
-#if !defined(NDEBUG) || defined(TB_LOG)
-    mbedtls_ssl_conf_dbg(conf, DebugSsl, NULL);
-    mbedtls_debug_set_threshold(MBED_TLS_DEBUG_LEVEL);
-#endif
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+//#if !defined(NDEBUG) || defined(TB_LOG)
+	// pkbuild
+	mbedtls_ssl_conf_dbg(conf, DebugSsl, NULL);
+	#define PKTLS_DEBUG_LEVEL 2
+	printf("pkbuild] set debug level(%d)\n\n", PKTLS_DEBUG_LEVEL);
+    //mbedtls_debug_set_threshold(MBED_TLS_DEBUG_LEVEL);
+	mbedtls_debug_set_threshold(PKTLS_DEBUG_LEVEL);
+//#endif
+    printf("Out %s\n", __func__);
     return 0;
 }
 #ifdef __WITH_DTLS__
@@ -1757,7 +1770,7 @@ static int StartRetransmit()
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL. Stop retransmission");
+        printf( "Context is NULL. Stop retransmission\n");
         oc_mutex_unlock(g_sslContextMutex);
         return -1;
     }
@@ -1797,7 +1810,7 @@ static int StartRetransmit()
 
 CAResult_t CAinitSslAdapter()
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     // Initialize mutex for tlsContext
     if (NULL == g_sslContextMutex)
     {
@@ -1806,7 +1819,7 @@ CAResult_t CAinitSslAdapter()
     }
     else
     {
-        OIC_LOG(INFO, NET_SSL_TAG, "Done already!");
+        printf( "Done already!\n");
         return CA_STATUS_OK;
     }
 
@@ -1816,7 +1829,7 @@ CAResult_t CAinitSslAdapter()
 
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context malloc failed");
+        printf( "Context malloc failed\n");
         oc_mutex_unlock(g_sslContextMutex);
         oc_mutex_free(g_sslContextMutex);
         g_sslContextMutex = NULL;
@@ -1828,7 +1841,7 @@ CAResult_t CAinitSslAdapter()
 
     if(NULL == g_caSslContext->peerList)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "peerList initialization failed!");
+        printf( "peerList initialization failed!\n");
         OICFree(g_caSslContext);
         g_caSslContext = NULL;
         oc_mutex_unlock(g_sslContextMutex);
@@ -1842,7 +1855,7 @@ CAResult_t CAinitSslAdapter()
 #if !defined(NDEBUG) || defined(TB_LOG)
     char version[MBED_TLS_VERSION_LEN];
     mbedtls_version_get_string(version);
-    OIC_LOG_V(INFO, NET_SSL_TAG, "mbed TLS version: %s", version);
+    printf("mbed TLS version: %s\n", version);
 #endif
 
     /* Entropy settings
@@ -1856,14 +1869,14 @@ CAResult_t CAinitSslAdapter()
     urandomFd = open("/dev/urandom", O_RDONLY);
     if(urandomFd == -1)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Fails open /dev/urandom!");
+        printf( "Fails open /dev/urandom!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
         return CA_STATUS_FAILED;
     }
     if(0 > read(urandomFd, seed, sizeof(seed)))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Fails read from /dev/urandom!");
+        printf( "Fails read from /dev/urandom!\n");
         close(urandomFd);
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
@@ -1877,7 +1890,7 @@ CAResult_t CAinitSslAdapter()
     if(0 != mbedtls_ctr_drbg_seed(&g_caSslContext->rnd, mbedtls_entropy_func,
                                   &g_caSslContext->entropy, seed, sizeof(SEED)))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Seed initialization failed!");
+        printf( "Seed initialization failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
         return CA_STATUS_FAILED;
@@ -1888,20 +1901,20 @@ CAResult_t CAinitSslAdapter()
     if (0 != InitConfig(&g_caSslContext->clientTlsConf,
                         MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_IS_CLIENT))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Client config initialization failed!");
+        printf( "Client config initialization failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
 
     if (0 != InitConfig(&g_caSslContext->serverTlsConf,
                         MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_IS_SERVER))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Server config initialization failed!");
+        printf( "Server config initialization failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
 #endif // __WITH_TLS__
@@ -1910,30 +1923,30 @@ CAResult_t CAinitSslAdapter()
     if (0 != mbedtls_ssl_cookie_setup(&g_caSslContext->cookieCtx, mbedtls_ctr_drbg_random,
                                       &g_caSslContext->rnd))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Cookie setup failed!");
+        printf( "Cookie setup failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
 
     if (0 != InitConfig(&g_caSslContext->clientDtlsConf,
                         MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_IS_CLIENT))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Client config initialization failed!");
+        printf( "Client config initialization failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
 
     if (0 != InitConfig(&g_caSslContext->serverDtlsConf,
                         MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_IS_SERVER))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Server config initialization failed!");
+        printf( "Server config initialization failed!\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
 #endif // __WITH_DTLS__
@@ -1955,10 +1968,10 @@ CAResult_t CAinitSslAdapter()
     g_decryptBuffer = (uint8_t *)OICCalloc(1, TLS_MSG_BUF_LEN);
     if (NULL == g_decryptBuffer)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Decrypt buffer malloc failed");
+        printf( "Decrypt buffer malloc failed\n");
         oc_mutex_unlock(g_sslContextMutex);
         CAdeinitSslAdapter();
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_MEMORY_ALLOC_FAILED;
     }
 
@@ -1967,39 +1980,39 @@ CAResult_t CAinitSslAdapter()
     StartRetransmit();
 #endif
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 
 SslCacheMessage_t *  NewCacheMessage(uint8_t * data, size_t dataLen)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(data, NET_SSL_TAG, "Param data is NULL" , NULL);
     if (0 == dataLen)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "dataLen is equal to zero");
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf( "dataLen is equal to zero\n");
+        printf("Out %s\n", __func__);
         return NULL;
     }
     SslCacheMessage_t * message = (SslCacheMessage_t *) OICCalloc(1, sizeof(SslCacheMessage_t));
     if (NULL == message)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "calloc failed!");
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf( "calloc failed!\n");
+        printf("Out %s\n", __func__);
         return NULL;
     }
 
     message->data = (uint8_t *)OICCalloc(dataLen, sizeof(uint8_t));
     if (NULL == message->data)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "calloc failed!");
+        printf( "calloc failed!\n");
         OICFree(message);
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return NULL;
     }
     memcpy(message->data, data, dataLen);
     message->len = dataLen;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return message;
 }
 
@@ -2010,24 +2023,24 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
 {
     int ret = 0;
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s ", __func__);
+    printf("In %s \n", __func__);
 
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG,"Remote address is NULL", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(data, NET_SSL_TAG, "Data is NULL", CA_STATUS_INVALID_PARAM);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Port %d", endpoint->port);
+    printf("Port %d\n", endpoint->port);
 
     if (0 == dataLen)
     {
-        OIC_LOG_V(ERROR, NET_SSL_TAG, "dataLen is zero [%d]", dataLen);
+        printf("dataLen is zero [%d]\n", dataLen);
         return CA_STATUS_FAILED;
     }
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Data to be encrypted dataLen [%d]", dataLen);
+    printf("Data to be encrypted dataLen [%d]\n", dataLen);
 
     oc_mutex_lock(g_sslContextMutex);
     if(NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -2039,7 +2052,7 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
     }
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "TLS handshake failed");
+        printf( "TLS handshake failed\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -2056,14 +2069,14 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
             {
                 if (MBEDTLS_ERR_SSL_WANT_WRITE != ret)
                 {
-                    OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedTLS write failed! returned 0x%x", -ret);
+                    printf("mbedTLS write failed! returned 0x%x\n", -ret);
                     RemovePeerFromList(&tep->sep.endpoint);
                     oc_mutex_unlock(g_sslContextMutex);
                     return CA_STATUS_FAILED;
                 }
                 continue;
             }
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "mbedTLS write returned with sent bytes[%d]", ret);
+            printf("mbedTLS write returned with sent bytes[%d]\n", ret);
 
             dataBuf += ret;
             written += ret;
@@ -2075,7 +2088,7 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
         SslCacheMessage_t * msg = NewCacheMessage((uint8_t*) data, dataLen);
         if (NULL == msg || !u_arraylist_add(tep->cacheList, (void *) msg))
         {
-            OIC_LOG(ERROR, NET_SSL_TAG, "u_arraylist_add failed!");
+            printf( "u_arraylist_add failed!\n");
             oc_mutex_unlock(g_sslContextMutex);
             return CA_STATUS_FAILED;
         }
@@ -2083,7 +2096,7 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
 
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 /**
@@ -2093,7 +2106,7 @@ CAResult_t CAencryptSsl(const CAEndpoint_t *endpoint,
  */
 static void SendCacheMessages(SslEndPoint_t * tep)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(tep, NET_SSL_TAG, "Param tep is NULL");
 
     uint32_t listIndex = 0;
@@ -2115,12 +2128,12 @@ static void SendCacheMessages(SslEndPoint_t * tep)
                 {
                     if (MBEDTLS_ERR_SSL_WANT_WRITE != ret)
                     {
-                        OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedTLS write failed! returned -0x%x", -ret);
+                        printf("mbedTLS write failed! returned -0x%x\n", -ret);
                         break;
                     }
                     continue;
                 }
-                OIC_LOG_V(DEBUG, NET_SSL_TAG, "mbedTLS write returned with sent bytes[%d]", ret);
+                printf("mbedTLS write returned with sent bytes[%d]\n", ret);
 
                 dataBuf += ret;
                 written += ret;
@@ -2134,7 +2147,7 @@ static void SendCacheMessages(SslEndPoint_t * tep)
             }
             else
             {
-                OIC_LOG(ERROR, NET_SSL_TAG, "u_arraylist_remove failed.");
+                printf( "u_arraylist_remove failed.\n");
                 break;
             }
         }
@@ -2144,14 +2157,14 @@ static void SendCacheMessages(SslEndPoint_t * tep)
             ++listIndex;
         }
     }
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 void CAsetSslHandshakeCallback(CAErrorCallback tlsHandshakeCallback)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     g_sslCallback = tlsHandshakeCallback;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 
 /* Read data from TLS connection
@@ -2159,14 +2172,14 @@ void CAsetSslHandshakeCallback(CAErrorCallback tlsHandshakeCallback)
 CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t dataLen)
 {
     int ret = 0;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(sep, NET_SSL_TAG, "endpoint is NULL" , CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(data, NET_SSL_TAG, "Param data is NULL" , CA_STATUS_INVALID_PARAM);
 
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -2181,7 +2194,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
         peer = NewSslEndPoint(&sep->endpoint, config);
         if (NULL == peer)
         {
-            OIC_LOG(ERROR, NET_SSL_TAG, "Malloc failed!");
+            printf( "Malloc failed!\n");
             oc_mutex_unlock(g_sslContextMutex);
             return CA_STATUS_FAILED;
         }
@@ -2191,7 +2204,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
         ret = u_arraylist_add(g_caSslContext->peerList, (void *) peer);
         if (!ret)
         {
-            OIC_LOG(ERROR, NET_SSL_TAG, "u_arraylist_add failed!");
+            printf( "u_arraylist_add failed!\n");
             OICFree(peer);
             oc_mutex_unlock(g_sslContextMutex);
             return CA_STATUS_FAILED;
@@ -2212,7 +2225,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
 
         if (MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED == ret)
         {
-            OIC_LOG(DEBUG, NET_SSL_TAG, "Hello verification requested");
+            printf( "Hello verification requested\n");
             mbedtls_ssl_session_reset(&peer->ssl);
             mbedtls_ssl_set_client_transport_id(&peer->ssl,
                                                 (const unsigned char *) sep->endpoint.addr,
@@ -2249,9 +2262,12 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
             }
 
             int selectedCipher = peer->ssl.session->ciphersuite;
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "(D)TLS Session is connected via ciphersuite [0x%x]", selectedCipher);
-            if (MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 != selectedCipher &&
-                MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 != selectedCipher)
+            printf("(D)TLS Session is connected via ciphersuite [0x%x]\n", selectedCipher);
+            if (MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 != selectedCipher
+//#ifndef __TIZENRT__
+				&& MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 != selectedCipher
+//#endif
+				)
             {
                 char uuid[UUID_LENGTH * 2 + 5] = {0};
                 void * uuidPos = NULL;
@@ -2268,14 +2284,14 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
                     if (NULL != uuidPos)
                     {
                         memcpy(uuid, (char*) uuidPos + sizeof(UUID_PREFIX) - 1, UUID_LENGTH * 2 + 4);
-                        OIC_LOG_V(DEBUG, NET_SSL_TAG, "certificate uuid string: %s" , uuid);
+                        printf("certificate uuid string: %s\n" , uuid);
                         ret = OCConvertStringToUuid(uuid, peer->sep.identity.id);
                         SSL_CHECK_FAIL(peer, ret, "Failed to convert subject", 1,
                                               CA_STATUS_FAILED, MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT);
                     }
                     else
                     {
-                        OIC_LOG(WARNING, NET_SSL_TAG, "uuid not found");
+                        printf( "uuid not found\n");
                     }
 
                     userIdPos = memmem(peerCert->subject_raw.p, peerCert->subject_raw.len,
@@ -2289,7 +2305,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
                     }
                     else
                     {
-                        OIC_LOG(WARNING, NET_SSL_TAG, "Subject alternative name not found");
+                        printf( "Subject alternative name not found\n");
                     }
                 }
             }
@@ -2305,7 +2321,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
             mbedtls_ssl_conf_authmode(config, MBEDTLS_SSL_VERIFY_REQUIRED);
 
             oc_mutex_unlock(g_sslContextMutex);
-            OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+            printf("Out %s\n", __func__);
             return CA_STATUS_OK;
         }
     }
@@ -2318,7 +2334,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
         {
             if (NULL == g_decryptBuffer)
             {
-                OIC_LOG(ERROR, NET_SSL_TAG, "decrypt buffer is NULL");
+                printf( "decrypt buffer is NULL\n");
                 oc_mutex_unlock(g_sslContextMutex);
                 return CA_STATUS_FAILED;
             }
@@ -2336,7 +2352,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
                  MBEDTLS_SSL_ALERT_LEVEL_FATAL == peer->ssl.in_msg[0] &&
                  MBEDTLS_SSL_ALERT_MSG_CLOSE_NOTIFY == peer->ssl.in_msg[1]))
             {
-                OIC_LOG(INFO, NET_SSL_TAG, "Connection was closed gracefully");
+                printf( "Connection was closed gracefully\n");
                 RemovePeerFromList(&peer->sep.endpoint);
                 oc_mutex_unlock(g_sslContextMutex);
                 return CA_STATUS_OK;
@@ -2344,7 +2360,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
 
             if (0 > ret)
             {
-                OIC_LOG_V(ERROR, NET_SSL_TAG, "mbedtls_ssl_read returned -0x%x", -ret);
+                printf("mbedtls_ssl_read returned -0x%x\n", -ret);
                 //SSL_RES(peer, CA_STATUS_FAILED);
                 RemovePeerFromList(&peer->sep.endpoint);
                 oc_mutex_unlock(g_sslContextMutex);
@@ -2360,7 +2376,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
                             g_decryptBuffer, ret);
                     if (CA_STATUS_OK != res)
                     {
-                        OIC_LOG(ERROR, NET_SSL_TAG, "recvCallback is failed");
+                        printf( "recvCallback is failed\n");
                         RemovePeerFromList(&peer->sep.endpoint);
                         oc_mutex_unlock(g_sslContextMutex);
                         return CA_STATUS_FAILED;
@@ -2371,13 +2387,13 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
                     if (0 < remained &&
                         MBEDTLS_SSL_TRANSPORT_STREAM == peer->ssl.conf->transport)
                     {
-                        OIC_LOG_V(DEBUG, NET_SSL_TAG, "need to read %zu bytes more", remained);
+                        printf("need to read %zu bytes more\n", remained);
                         read_more = true;
                     }
                 }
                 else
                 {
-                    OIC_LOG(ERROR, NET_SSL_TAG, "Unsuported adapter");
+                    printf( "Unsuported adapter\n");
                     RemovePeerFromList(&peer->sep.endpoint);
                     oc_mutex_unlock(g_sslContextMutex);
                     return CA_STATUS_FAILED;
@@ -2387,7 +2403,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
     }
 
     oc_mutex_unlock(g_sslContextMutex);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 
@@ -2395,13 +2411,13 @@ void CAsetSslAdapterCallbacks(CAPacketReceivedCallback recvCallback,
                               CAPacketSendCallback sendCallback,
                               CATransportAdapter_t type)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_VOID(sendCallback, NET_SSL_TAG, "sendCallback is NULL");
     VERIFY_NON_NULL_VOID(recvCallback, NET_SSL_TAG, "recvCallback is NULL");
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
         return;
     }
@@ -2421,11 +2437,11 @@ void CAsetSslAdapterCallbacks(CAPacketReceivedCallback recvCallback,
             g_caSslContext->adapterCallbacks[2].sendCallback = sendCallback;
             break;
         default:
-            OIC_LOG_V(ERROR, NET_SSL_TAG, "Unsupported adapter: %d", type);
+            printf("Unsupported adapter: %d\n", type);
     }
 
     oc_mutex_unlock(g_sslContextMutex);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
 }
 /**
  * Gets index of the TLS ciphersuite in the SslCipher_t enum.
@@ -2487,10 +2503,12 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
         {
             return SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256;
         }
+//#ifndef __TIZENRT__
         case MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256:
         {
             return SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256;
         }
+//#endif
         default:
         {
             return SSL_CIPHER_MAX;
@@ -2500,14 +2518,14 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
 
 CAResult_t CAsetTlsCipherSuite(const uint32_t cipher)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(g_caSslContext, NET_SSL_TAG, "SSL context is not initialized." , CA_STATUS_NOT_INITIALIZED);
 
     CAResult_t res = CA_STATUS_FAILED;
     SslCipher_t index = GetCipherIndex(cipher);
     if (SSL_CIPHER_MAX == index)
     {
-        OIC_LOG(WARNING, NET_SSL_TAG, "Unknown cipher");
+        printf( "Unknown cipher\n");
     }
     else
     {
@@ -2519,27 +2537,27 @@ CAResult_t CAsetTlsCipherSuite(const uint32_t cipher)
         CONF_SSL(&g_caSslContext->clientDtlsConf, &g_caSslContext->serverDtlsConf,
         mbedtls_ssl_conf_ciphersuites, tlsCipher[index]);
 #endif
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Selected cipher: 0x%x", cipher);
+        printf("Selected cipher: 0x%x\n", cipher);
     }
     g_caSslContext->cipher = index;
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return CA_STATUS_OK;
 }
 
 CAResult_t CAinitiateSslHandshake(const CAEndpoint_t *endpoint)
 {
     CAResult_t res = CA_STATUS_OK;
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG, "Param endpoint is NULL" , CA_STATUS_INVALID_PARAM);
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == InitiateTlsHandshake(endpoint))
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "TLS handshake failed");
+        printf( "TLS handshake failed\n");
         res = CA_STATUS_FAILED;
     }
     oc_mutex_unlock(g_sslContextMutex);
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n", __func__);
     return res;
 }
 /**
@@ -2647,25 +2665,25 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
                             const uint8_t* provServerDeviceId, const size_t provServerDeviceIdLen,
                             uint8_t* ownerPsk, const size_t ownerPskSize)
 {
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
+    printf("In %s\n", __func__);
     VERIFY_NON_NULL_RET(endpoint, NET_SSL_TAG, "endpoint is NULL", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(label, NET_SSL_TAG, "label is NULL", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(rsrcServerDeviceId, NET_SSL_TAG, "rsrcId is NULL", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(provServerDeviceId, NET_SSL_TAG, "provId is NULL", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(ownerPsk, NET_SSL_TAG, "ownerPSK is NULL", CA_STATUS_INVALID_PARAM);
-    
+
     oc_mutex_lock(g_sslContextMutex);
     if (NULL == g_caSslContext)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Context is NULL");
+        printf( "Context is NULL\n");
         oc_mutex_unlock(g_sslContextMutex);
-        OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+        printf("Out %s\n", __func__);
         return CA_STATUS_FAILED;
     }
     SslEndPoint_t * tep = GetSslPeer(endpoint);
     if (NULL == tep)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Session does not exist");
+        printf( "Session does not exist\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -2675,7 +2693,10 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
     int ivSize = 0;
     int keySize = 0;
     int keyBlockLen = 0;
-    if (MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
+    if (
+//#ifndef __TIZENRT__
+		MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
+//#endif
         MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
         MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
         MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher)
@@ -2733,7 +2754,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
     uint8_t * keyblock = (uint8_t *)OICMalloc(keyBlockLen);
     if (NULL == keyblock)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "Failed to OICMalloc for keyblock");
+        printf( "Failed to OICMalloc for keyblock\n");
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
     }
@@ -2745,7 +2766,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
                     keyblock, keyBlockLen);
     if (-1 == ret)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "PSK not generated");
+        printf( "PSK not generated\n");
         OICFree(keyblock);
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
@@ -2757,7 +2778,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
                 ownerPsk, ownerPskSize);
     if (-1 == ret)
     {
-        OIC_LOG(ERROR, NET_SSL_TAG, "PSK not generated");
+        printf( "PSK not generated\n");
         OICFree(keyblock);
         oc_mutex_unlock(g_sslContextMutex);
         return CA_STATUS_FAILED;
@@ -2766,7 +2787,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
     OICFree(keyblock);
     oc_mutex_unlock(g_sslContextMutex);
 
-    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+    printf("Out %s\n\n\n", __func__);
     return CA_STATUS_OK;
 }
 
