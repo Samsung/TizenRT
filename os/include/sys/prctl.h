@@ -90,6 +90,20 @@
  * @ingroup SCHED_KERNEL
  */
 #define PR_GET_NAME 2
+#ifdef CONFIG_MESSAGING_IPC
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_MSG_SAVE 3
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_MSG_READ 4
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_MSG_REMOVE 5
+#endif
 
 /****************************************************************************
  * Public Type Definitions
