@@ -54,18 +54,23 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# mpu test! built-in application info
+# MPU test! built-in application info
 
 APPNAME = mpu_test
 FUNCNAME = mpu_tc_main
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_SYNC
+
+# Definitions to test application binary separation
+# CONFIG_MPUTEST_USE_PREBUILT_BINS
+APP1_BIN = micom
+APP2_BIN = wifi
+OUTPUT_DIR = $(TOPDIR)/../build/output/bin
 
 # mpu test! Example
 
 ASRCS =
-CSRCS = tc_read.c tc_write.c
-MAINSRC = mpu_tc_main.c
+CSRCS =
+MAINSRC = mpu_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -103,7 +108,7 @@ ROOTDEPPATH = --dep-path .
 
 VPATH =
 
-all: .built
+all: .built install
 .PHONY: clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
@@ -126,10 +131,22 @@ install: $(BIN_DIR)$(DELIM)$(PROGNAME)
 
 else
 install:
-
+ifeq ($(CONFIG_MPUTEST_USE_PREBUILT_BINS),y)
+	$(Q) install $(APP1_BIN) $(OUTPUT_DIR)$(DELIM)$(APP1_BIN)
+	$(Q) install $(APP2_BIN) $(OUTPUT_DIR)$(DELIM)$(APP2_BIN)
+endif
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MPU_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
