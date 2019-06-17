@@ -723,92 +723,106 @@ static void print_scan_result(rtw_scan_result_t *record)
 	RTW_API_INFO("\r\n");
 }
 
+/* Scanning operation should be blocked mode */
+wifi_utils_scan_list_s *g_scan_list;
+int g_scan_num;
+static void _free_scanlist(void)
+{
+	while (g_scan_list) {
+		wifi_utils_scan_list_s *cur = g_scan_list;
+		g_scan_list = g_scan_list->next;
+		rtw_mfree(cur, sizeof(cur));
+	}
+	g_scan_num = 0;
+}
 
-wifi_utils_scan_list_s *scan_list = NULL;
-wifi_utils_scan_list_s *_scan_list = NULL;
-
-extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list);
+extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list, int scan_num);
 
 rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_result)
 {
-	static int i = 0;
-	unsigned int max_ap_size = 64;
-
-	if (i == 0) {
-		scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(max_ap_size * sizeof(wifi_utils_scan_list_s));
-		if (scan_list == NULL) {
-			ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
-			return;
-		} else
-			_scan_list = scan_list;
+	wifi_utils_scan_list_s *scan_list;
+	scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(sizeof(wifi_utils_scan_list_s));
+	if (scan_list == NULL) {
+		ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
+		return;
 	}
+
 	if (malloced_scan_result->scan_complete != RTW_TRUE) {
 		rtw_scan_result_t *record = &malloced_scan_result->ap_details;
 		record->SSID.val[record->SSID.len] = 0; /* Ensure the SSID is null terminated */
-		_scan_list->ap_info.channel = record->channel;
-		strncpy(_scan_list->ap_info.ssid, record->SSID.val, record->SSID.len);
-		_scan_list->ap_info.ssid_length = record->SSID.len;
-		snprintf(_scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
-		_scan_list->ap_info.max_rate = 0;
-		_scan_list->ap_info.rssi = record->signal_strength;
-		_scan_list->ap_info.phy_mode = 0x00000004; //bit2 is set to 1 if support 11n
+		scan_list->ap_info.channel = record->channel;
+		strncpy(scan_list->ap_info.ssid, record->SSID.val, record->SSID.len);
+		scan_list->ap_info.ssid_length = record->SSID.len;
+		snprintf(scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
+		scan_list->ap_info.max_rate = 0;
+		scan_list->ap_info.rssi = record->signal_strength;
+		scan_list->ap_info.phy_mode = 0x00000004; //bit2 is set to 1 if support 11n
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_OPEN;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_OPEN;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
 			break;
 		case RTW_SECURITY_WPA2_AES_PSK:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 			break;
 		case RTW_SECURITY_WPA_WPA2_MIXED:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK;
 			break;
-		//case WIFI_AUTH_WPA2_ENTERPRISE:
 		default:
-			_scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_UNKNOWN;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_UNKNOWN;
 			break;
 		}
 
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_NONE;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_NONE;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_64;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_64;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_128;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_128;
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP;
 			break;
 		case RTW_SECURITY_WPA_AES_PSK:
 		case RTW_SECURITY_WPA2_AES_PSK:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
 			break;
 		case RTW_SECURITY_WPA2_MIXED_PSK:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
 			break;
 		default:
-			_scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_UNKNOWN;
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_UNKNOWN;
 			break;
 		}
-
-		if (i > 0) {
-			(_scan_list - 1)->next = _scan_list;
-			_scan_list->next = NULL;
+		if (g_scan_list == NULL) {
+			g_scan_list = scan_list;
+			g_scan_num = 1;
+		} else {
+			wifi_utils_scan_list_s *cur = g_scan_list;
+			int idx;
+			for (idx = 1; idx < g_scan_num; idx++) {
+				cur = cur->next;
+			}
+			cur->next = scan_list;
+			scan_list->next = NULL;
+			g_scan_num++;
 		}
-		i++;
-		_scan_list++;
 	} else {
-		nvdbg("\r\n---------------------------------------\r\n");
-		i = 0;
-		wifi_scan_result_callback(scan_list);
+		nvdbg("SCAN DONE: Calling wifi_scan_result_callback\r\n");
+		wifi_scan_result_callback(g_scan_list, g_scan_num);
+		_free_scanlist();
+		if (g_scan_list) {
+			ndbg("SCAN list is not initialized\n");
+			return RTW_ERROR;
+		}
 	}
 	return RTW_SUCCESS;
 }
