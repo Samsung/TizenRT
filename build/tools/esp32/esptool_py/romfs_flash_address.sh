@@ -31,11 +31,11 @@ i=0
 #find romfs partition number
 for pname in $flash_type_list
 do
-	if [ "$pname" == "romfs" ]; then
+	if [ "$pname" = "romfs" ]; then
 		isromfs_exist=1
 		break	
 	fi
-	let "romfs_num += 1"			
+	romfs_num=`expr $romfs_num + 1`
 done
 
 #find romfs partition start address
@@ -51,7 +51,7 @@ do
 		break	
 	fi	
 	romfs_addr=`expr $romfs_addr + $psize`
-	let "i += 1"			
+	i=`expr $i + 1`
 done
 
 if [ $isromfs_exist -eq 0 ]; then
