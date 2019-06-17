@@ -72,7 +72,7 @@ static FAR struct iob_s *iob_alloc_committed(void)
 	 * to protect the committed list:  We disable interrupts very briefly.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 	/* Take the I/O buffer from the head of the committed list */
 
@@ -90,7 +90,7 @@ static FAR struct iob_s *iob_alloc_committed(void)
 		iob->io_pktlen = 0;		/* Total length of the packet */
 	}
 
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return iob;
 }
 
@@ -124,7 +124,7 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 	 * we are waiting for I/O buffers to become free.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 	/* Try to get an I/O buffer.  If successful, the semaphore count will be
 	 * decremented atomically.
@@ -138,7 +138,7 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 		 * list.
 		 */
 
-		ret = nxsem_wait(sem);
+		ret = sem_wait(sem);
 		if (ret < 0) {
 			/* EINTR is not an error!  EINTR simply means that we were
 			 * awakened by a signal and we should try again.
@@ -175,13 +175,13 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 				 * we will have to wait again.
 				 */
 
-				nxsem_post(sem);
+				sem_post(sem);
 				iob = iob_tryalloc(throttled);
 			}
 		}
 	}
 
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return iob;
 }
 
@@ -201,7 +201,11 @@ FAR struct iob_s *iob_alloc(bool throttled)
 {
 	/* Were we called from the interrupt level? */
 
+#ifdef MIGRATION_DONE
 	if (up_interrupt_context() || sched_idletask()) {
+#else
+	if (up_interrupt_context()) {
+#endif
 		/* Yes, then try to allocate an I/O buffer without waiting */
 
 		return iob_tryalloc(throttled);
@@ -239,7 +243,7 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 	 * to protect the free list:  We disable interrupts very briefly.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 #if CONFIG_IOB_THROTTLE > 0
 	/* If there are free I/O buffers for this allocation */
@@ -259,7 +263,7 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 			g_iob_freelist = iob->io_flink;
 
 			/* Take a semaphore count.  Note that we cannot do this in
-			 * in the orthodox way by calling nxsem_wait() or nxsem_trywait()
+			 * in the orthodox way by calling sem_wait() or sem_trywait()
 			 * because this function may be called from an interrupt
 			 * handler. Fortunately we know at at least one free buffer
 			 * so a simple decrement is all that is needed.
@@ -276,7 +280,7 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 			g_throttle_sem.semcount--;
 			DEBUGASSERT(g_throttle_sem.semcount >= -CONFIG_IOB_THROTTLE);
 #endif
-			leave_critical_section(flags);
+			irqrestore(flags);
 
 			/* Put the I/O buffer in a known state */
 
@@ -288,6 +292,6 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 		}
 	}
 
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return NULL;
 }

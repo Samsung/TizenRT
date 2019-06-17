@@ -101,7 +101,7 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 	 * interrupts very briefly.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 	/* Which list?  If there is a task waiting for an IOB, then put
 	 * the IOB on either the free list or on the committed list where
@@ -123,11 +123,11 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
 	 * IOB and should find it in the committed list.
 	 */
 
-	nxsem_post(&g_iob_sem);
+	sem_post(&g_iob_sem);
 #if CONFIG_IOB_THROTTLE > 0
-	nxsem_post(&g_throttle_sem);
+	sem_post(&g_throttle_sem);
 #endif
-	leave_critical_section(flags);
+	irqrestore(flags);
 
 	/* And return the I/O buffer after the one that was freed */
 

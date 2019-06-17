@@ -237,7 +237,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 	 * then try the list of messages reserved for interrupt handlers
 	 */
 
-	flags = spin_lock_irqsave();	/* Always necessary in SMP mode */
+	flags = irqsave();			/* Always necessary in SMP mode */
 	if (up_interrupt_context()) {
 #if CONFIG_BLUETOOTH_BUFFER_PREALLOC > CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
 		/* Try the general free list */
@@ -246,7 +246,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			buf = g_buf_free;
 			g_buf_free = buf->flink;
 
-			spin_unlock_irqrestore(flags);
+			irqrestore(flags);
 			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
@@ -257,12 +257,12 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 				buf = g_buf_free_irq;
 				g_buf_free_irq = buf->flink;
 
-				spin_unlock_irqrestore(flags);
+				irqrestore(flags);
 				pool = POOL_BUFFER_IRQ;
 			} else
 #endif
 			{
-				spin_unlock_irqrestore(flags);
+				irqrestore(flags);
 				return NULL;
 			}
 	}
@@ -277,7 +277,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			buf = g_buf_free;
 			g_buf_free = buf->flink;
 
-			leave_critical_section(flags);
+			irqrestore(flags);
 			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
@@ -286,7 +286,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			 * will have to allocate one from the kernel memory pool.
 			 */
 
-			leave_critical_section(flags);
+			irqrestore(flags);
 			buf = (FAR struct bt_buf_s *)kmm_malloc((sizeof(struct bt_buf_s)));
 
 			/* Check if we successfully allocated the buffer structure */
@@ -294,7 +294,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			if (buf == NULL) {
 				/* No..  memory not available */
 
-				wlerr("ERROR: Failed to allocate buffer.\n");
+				ndbg("ERROR: Failed to allocate buffer.\n");
 				return NULL;
 			}
 
@@ -332,7 +332,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 
 		buf->frame = iob_alloc(false);
 		if (!buf->frame) {
-			wlerr("ERROR:  Failed to allocate an IOB\n");
+			ndbg("ERROR:  Failed to allocate an IOB\n");
 			bt_buf_release(buf);
 			return NULL;
 		}
@@ -344,7 +344,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 		buf->data = buf->frame->io_data + reserve_head;
 	}
 
-	wlinfo("buf %p type %d reserve %u\n", buf, buf->type, reserve_head);
+	nvdbg("buf %p type %d reserve %u\n", buf, buf->type, reserve_head);
 	return buf;
 }
 
@@ -371,10 +371,10 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 	irqstate_t flags;
 	uint16_t handle;
 
-	wlinfo("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
+	nvdbg("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
 
 	if (--buf->ref > 0) {
-		wlinfo("Remaining references: %d\n", buf->ref);
+		nvdbg("Remaining references: %d\n", buf->ref);
 		return;
 	}
 
@@ -399,10 +399,10 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 		 * list from interrupt handlers.
 		 */
 
-		flags = spin_lock_irqsave();
+		flags = irqsave();
 		buf->flink = g_buf_free;
 		g_buf_free = buf;
-		spin_unlock_irqrestore(flags);
+		irqrestore(flags);
 	} else
 #endif
 
@@ -416,10 +416,10 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 			 * list from interrupt handlers.
 			 */
 
-			flags = spin_lock_irqsave();
+			flags = irqsave();
 			buf->flink = g_buf_free_irq;
 			g_buf_free_irq = buf;
-			spin_unlock_irqrestore(flags);
+			irqrestore(flags);
 		} else
 #endif
 
@@ -430,17 +430,17 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 			sched_kfree(buf);
 		}
 
-	wlinfo("Buffer freed: %p\n", buf);
+	nvdbg("Buffer freed: %p\n", buf);
 
 	if (type == BT_ACL_IN) {
 		FAR struct bt_hci_cp_host_num_completed_packets_s *cp;
 		FAR struct bt_hci_handle_count_s *hc;
 
-		wlinfo("Reporting completed packet for handle %u\n", handle);
+		nvdbg("Reporting completed packet for handle %u\n", handle);
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, sizeof(*cp) + sizeof(*hc));
 		if (buf == NULL) {
-			wlerr("ERROR: Unable to allocate new HCI command\n");
+			ndbg("ERROR: Unable to allocate new HCI command\n");
 			return;
 		}
 
@@ -468,7 +468,7 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 
 FAR struct bt_buf_s *bt_buf_addref(FAR struct bt_buf_s *buf)
 {
-	wlinfo("buf %p (old) ref %u type %d\n", buf, buf->ref, buf->type);
+	nvdbg("buf %p (old) ref %u type %d\n", buf, buf->ref, buf->type);
 
 	buf->ref++;
 	return buf;
@@ -494,7 +494,7 @@ FAR void *bt_buf_extend(FAR struct bt_buf_s *buf, size_t len)
 {
 	FAR uint8_t *tail = bt_buf_tail(buf);
 
-	wlinfo("buf %p len %u\n", buf, len);
+	nvdbg("buf %p len %u\n", buf, len);
 
 	DEBUGASSERT(bt_buf_tailroom(buf) >= len);
 
@@ -521,7 +521,7 @@ FAR void *bt_buf_extend(FAR struct bt_buf_s *buf, size_t len)
 
 void bt_buf_put_le16(FAR struct bt_buf_s *buf, uint16_t value)
 {
-	wlinfo("buf %p value %u\n", buf, value);
+	nvdbg("buf %p value %u\n", buf, value);
 
 	value = BT_HOST2LE16(value);
 	memcpy(bt_buf_extend(buf, sizeof(value)), &value, sizeof(value));
@@ -545,7 +545,7 @@ void bt_buf_put_le16(FAR struct bt_buf_s *buf, uint16_t value)
 
 FAR void *bt_buf_provide(FAR struct bt_buf_s *buf, size_t len)
 {
-	wlinfo("buf %p len %u\n", buf, len);
+	nvdbg("buf %p len %u\n", buf, len);
 
 	DEBUGASSERT(buf != NULL && buf->frame != NULL && bt_buf_headroom(buf) >= len);
 
@@ -571,7 +571,7 @@ FAR void *bt_buf_provide(FAR struct bt_buf_s *buf, size_t len)
 
 FAR void *bt_buf_consume(FAR struct bt_buf_s *buf, size_t len)
 {
-	wlinfo("buf %p len %u\n", buf, len);
+	nvdbg("buf %p len %u\n", buf, len);
 
 	DEBUGASSERT(buf->len >= len);
 

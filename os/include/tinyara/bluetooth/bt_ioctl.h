@@ -68,8 +68,10 @@
 
 /* Bluetooth network device IOCTL commands. */
 
+#ifdef MIGRATION_DONE
 #if !defined(WL_BLUETOOTHCMDS) || WL_BLUETOOTHCMDS != 24
 #error Incorrect setting for number of Bluetooth IOCTL commands
+#endif
 #endif
 
 /* IOCTL Commands ***********************************************************
