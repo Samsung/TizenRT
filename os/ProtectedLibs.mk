@@ -88,10 +88,7 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
 endif
 
 # Add library for application support.
-
-ifneq ($(APPDIR),)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
-endif
 
 # Add libraries for network support
 
