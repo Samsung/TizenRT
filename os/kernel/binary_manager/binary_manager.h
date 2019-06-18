@@ -57,6 +57,10 @@
 
 #define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
+#define MAX_WAIT_COUNT             3                          /* The maximum number of times you can wait to process a delayed free */
+#endif
+
 /* Loading thread cmd types */
 enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
