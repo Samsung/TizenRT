@@ -62,6 +62,9 @@
 #include <errno.h>
 
 #include <tinyara/mqueue.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "mqueue/mqueue.h"
@@ -154,6 +157,11 @@ int mq_unlink(FAR const char *mq_name)
 
 	inode_semgive();
 	mq_inode_release(inode);
+
+#ifdef CONFIG_BINARY_MANAGER
+	binary_manager_unregister_resource(BIN_RESOURCE_MQ, mq_name);
+#endif
+
 	sched_unlock();
 	return OK;
 

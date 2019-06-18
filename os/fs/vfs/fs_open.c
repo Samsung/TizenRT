@@ -67,6 +67,9 @@
 
 #include <tinyara/cancelpt.h>
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "driver/block/driver.h"
@@ -223,6 +226,11 @@ int open(const char *path, int oflags, ...)
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 		if (INODE_IS_MOUNTPT(inode)) {
 			ret = inode->u.i_mops->open(filep, relpath, oflags, mode);
+#ifdef CONFIG_BINARY_MANAGER
+		if (ret == OK && (oflags & O_CREAT) != 0 && (oflags & (O_APPEND | O_TRUNC)) == 0) {
+			binary_manager_register_resource(BIN_RESOURCE_FILE, path);
+		}
+#endif
 		} else
 #endif
 		{
@@ -236,6 +244,7 @@ int open(const char *path, int oflags, ...)
 	}
 
 	leave_cancellation_point();
+
 	return fd;
 
 errout_with_fd:

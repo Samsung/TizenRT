@@ -63,6 +63,9 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "driver/block/driver.h"
@@ -368,6 +371,10 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 	{
 		inode_release(blkdrvr_inode);
 	}
+#endif
+
+#ifdef CONFIG_BINARY_MANAGER
+	binary_manager_register_resource(BIN_RESOURCE_MOUNTPT, target);
 #endif
 
 	return OK;

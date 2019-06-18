@@ -28,6 +28,8 @@
 
 #include <tinyara/binary_manager.h>
 
+#include <queue.h>
+
 #ifdef CONFIG_BINARY_MANAGER
 
 /****************************************************************************
@@ -94,6 +96,7 @@ struct binmgr_bininfo_s {
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
 	sq_queue_t cb_list; // list node type : statecb_node_t
+	sq_queue_t resource_list; // list node type : resource_node_t
 };
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
@@ -114,6 +117,7 @@ typedef struct statecb_node_s statecb_node_t;
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
 #define BIN_CBLIST(bin_idx)                             bin_table[bin_idx].cb_list
+#define BIN_RESOURCELIST(bin_idx)                       bin_table[bin_idx].resource_list
 
 #define BIN_LOAD_ATTR(bin_idx)                          bin_table[bin_idx].load_attr
 #define BIN_SIZE(bin_idx)                               bin_table[bin_idx].load_attr.bin_size
@@ -154,6 +158,7 @@ int binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 int binary_manager_notify_state_changed(int bin_idx, uint8_t state);
+void binary_manager_clear_bin_resource(int bin_idx);
 int binary_manager_load_binary(int bin_idx);
 int binary_manager_loading(char *loading_data[]);
 int binary_manager_get_binary_count(void);

@@ -406,6 +406,9 @@ static int binary_manager_reload(char *bin_name)
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
 
+	/* Clear resources of binary */
+	binary_manager_clear_bin_resource(bin_idx);
+
 	/* load binary and update binid */
 	ret = binary_manager_load_binary(bin_idx);
 	if (ret != OK) {

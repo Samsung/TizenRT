@@ -58,7 +58,11 @@
 
 #include <sys/mount.h>
 #include <errno.h>
+
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 
@@ -194,6 +198,9 @@ int umount(const char *target)
 	if (blkdrvr_inode) {
 		inode_release(blkdrvr_inode);
 	}
+#ifdef CONFIG_BINARY_MANAGER
+	binary_manager_unregister_resource(BIN_RESOURCE_MOUNTPT, target);
+#endif
 
 	return OK;
 

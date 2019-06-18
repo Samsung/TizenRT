@@ -64,6 +64,9 @@
 #include <assert.h>
 
 #include <tinyara/kmalloc.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "semaphore/semaphore.h"
@@ -177,6 +180,12 @@ int sem_unlink(FAR const char *name)
 
 	inode_semgive();
 	ret = sem_close((FAR sem_t *)inode->u.i_nsem);
+#ifdef CONFIG_BINARY_MANAGER
+	if (ret == OK) {
+		binary_manager_unregister_resource(BIN_RESOURCE_NAMEDSEM, name);
+	}
+#endif
+
 	sched_unlock();
 	return ret;
 

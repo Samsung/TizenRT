@@ -68,6 +68,9 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "semaphore/semaphore.h"
@@ -261,6 +264,10 @@ FAR sem_t *sem_open(FAR const char *name, int oflags, ...)
 			/* Return a reference to the semaphore */
 
 			sem = &nsem->ns_sem;
+
+#ifdef CONFIG_BINARY_MANAGER
+			binary_manager_register_resource(BIN_RESOURCE_NAMEDSEM, name);
+#endif
 		}
 
 		sched_unlock();

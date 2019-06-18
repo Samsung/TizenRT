@@ -65,6 +65,9 @@
 
 #include <tinyara/mqueue.h>
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 #include "mqueue/mqueue.h"
@@ -215,10 +218,12 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 		INODE_SET_MQUEUE(inode);
 		inode->u.i_mqueue = msgq;
 		msgq->inode = inode;
-
 		/* Set the initial reference count on this inode to one */
 
 		inode->i_crefs = 1;
+#ifdef CONFIG_BINARY_MANAGER
+		binary_manager_register_resource(BIN_RESOURCE_MQ, mq_name);
+#endif
 	}
 
 	sched_unlock();

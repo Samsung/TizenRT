@@ -26,7 +26,7 @@
 #include <tinyara/config.h>
 
 #ifdef CONFIG_BINARY_MANAGER
-
+#include <stdint.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -78,6 +78,18 @@ enum binmgr_partition_type {
 	BINMGR_PART_USRBIN,
 	BINMGR_PART_LOADPARAM,
 	BINMGR_PART_MAX,
+};
+
+/* Types of resources which use kernel resource, inode */
+enum binmgr_resource_type {
+	BIN_RESOURCE_MQ = 0,
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && CONFIG_NFILE_DESCRIPTORS > 0
+	BIN_RESOURCE_FILE = 1,
+	BIN_RESOURCE_MOUNTPT = 2,
+#endif
+#ifdef CONFIG_FS_NAMED_SEMAPHORES
+	BIN_RESOURCE_NAMEDSEM = 3,
+#endif
 };
 
 /* Message type for binary manager */
@@ -181,6 +193,8 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+void binary_manager_register_resource(int type, const char *name);
+void binary_manager_unregister_resource(int type, const char *name);
 void binary_manager_register_partition(int part_num, int part_type, char *name, int part_size);
 
 #ifdef __cplusplus

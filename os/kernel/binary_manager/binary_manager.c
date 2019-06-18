@@ -25,6 +25,7 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <queue.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -108,6 +109,8 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 		BIN_PARTSIZE(g_bin_count) = part_size;
 		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 		sq_init(&BIN_CBLIST(g_bin_count));
+		sq_init(&BIN_RESOURCELIST(g_bin_count));
+
 		bmvdbg("[USER1 : %d] %s size %d %d \n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count), BIN_PARTNUM(g_bin_count, 0));
 	}
 }

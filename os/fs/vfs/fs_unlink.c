@@ -59,6 +59,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <tinyara/fs/fs.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 
 #include "inode/inode.h"
 
@@ -137,6 +140,11 @@ int unlink(FAR const char *pathname)
 				errcode = -ret;
 				goto errout_with_inode;
 			}
+#ifdef CONFIG_BINARY_MANAGER
+			else {
+				binary_manager_register_resource(BIN_RESOURCE_FILE, pathname);
+			}
+#endif
 		} else {
 			errcode = ENOSYS;
 			goto errout_with_inode;
