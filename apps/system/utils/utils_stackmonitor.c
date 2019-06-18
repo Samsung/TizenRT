@@ -107,7 +107,7 @@
  * Private Data
  ****************************************************************************/
 static volatile bool stkmon_started;
-struct stkmon_save_s stkmon_arr[CONFIG_MAX_TASKS * 2];
+static struct stkmon_save_s stkmon_arr[CONFIG_MAX_TASKS * 2];
 static int stkmon_chk_idx;
 
 /****************************************************************************

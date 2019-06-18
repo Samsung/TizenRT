@@ -57,8 +57,6 @@
  * Global Variables
  ****************************************************************************/
 
-extern int tash_running;
-
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
@@ -173,7 +171,7 @@ static int tash_help(int argc, char **args)
 static int tash_exit(int argc, char **args)
 {
 	printf("TASH: Good bye!!\n");
-	tash_running = FALSE;
+	tash_stop();
 	exit(0);
 }
 

@@ -57,6 +57,7 @@ extern void tash_register_basic_cmds(void);
 extern int tash_execute_cmdline(char *buff);
 extern int tash_execute_cmd(char **args, int argc);
 extern int tash_init(void);
+extern void tash_stop(void);
 #ifdef CONFIG_TASH_SCRIPT
 extern int tash_script(int argc, char **args);
 #endif
