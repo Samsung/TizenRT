@@ -1,4 +1,20 @@
-
+/****************************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 #include <osdep_service.h>
 #include <stdio.h>
 #include <../arch/arm/src/imxrt/imxrt_config.h>
@@ -184,10 +200,11 @@ static u32 _tizenrt_down_sema(_sema *sema, u32 timeout)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += timeout / 1000;
-	if (sem_timedwait(*sema, &ts) < 0)
+	if (sem_timedwait(*sema, &ts) < 0) {
 		return _FAIL;
-	else
+	} else {
 		return _SUCCESS;
+	}
 }
 
 static void _tizenrt_mutex_init(_mutex *pmutex)
@@ -206,16 +223,18 @@ static void _tizenrt_mutex_get(_lock *plock)
 {
 	int temp;
 	temp = pthread_mutex_lock(*plock);
-	if (temp != 0)
+	if (temp != 0) {
 		DBG_ERR("_tizenrt_mutex_get %s failed!\n");
+	}
 }
 
 static int _tizenrt_mutex_get_timeout(_lock *plock, u32 timeout_ms)
 {
 	int temp;
 	temp = pthread_mutex_lock(*plock);
-	if (temp != 0)
+	if (temp != 0) {
 		DBG_ERR("_tizenrt_mutex_get_timeout %s failed!\n");
+	}
 	return temp;
 }
 
@@ -248,8 +267,9 @@ static int _tizenrt_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 
 	int temp;
 	temp = pthread_mutex_lock(*pmutex);
-	if (temp != 0)
+	if (temp != 0) {
 		DBG_ERR("_tizenrt_enter_critical_mutex %s failed!\n");
+	}
 	return temp;
 }
 
@@ -313,8 +333,9 @@ static void _tizenrt_spinlock(_lock *plock)
 
 	int temp;
 	temp = pthread_mutex_lock(*plock);
-	if (temp != 0)
+	if (temp != 0) {
 		DBG_ERR("_tizenrt_spinlock failed!\n");
+	}
 }
 
 static void _tizenrt_spinunlock(_lock *plock)
@@ -330,8 +351,9 @@ static void _tizenrt_spinlock_irqsave(_lock *plock, _irqL *irqL)
 	int temp;
 	__enable_irq();
 	temp = pthread_mutex_lock(*plock);
-	if (temp != 0)
+	if (temp != 0) {
 		DBG_ERR("_tizenrt_spinlock failed!\n");
+	}
 }
 
 static void _tizenrt_spinunlock_irqsave(_lock *plock, _irqL *irqL)
@@ -509,8 +531,9 @@ static u64 _tizenrt_modular64(u64 n, u64 base)
 	if (((n) >> 32) == 0) {
 		__rem = (unsigned int)(n) % __base;
 		(n) = (unsigned int)(n) / __base;
-	} else
+	} else {
 		__rem = __div64_32(&(n), __base);
+	}
 
 	return __rem;
 }
@@ -538,7 +561,6 @@ static int _tizenrt_arc4random(void)
 
 static int _tizenrt_get_random_bytes(void *buf, size_t len)
 {
-#if 1 //becuase of 4-byte align, we use the follow code style.
 	unsigned int ranbuf;
 	unsigned int *lp;
 	int i, count;
@@ -555,16 +577,6 @@ static int _tizenrt_get_random_bytes(void *buf, size_t len)
 		_tizenrt_memcpy(&lp[i], &ranbuf, len);
 	}
 	return 0;
-#else
-	unsigned long ranbuf, *lp;
-	lp = (unsigned long *)buf;
-	while (len > 0) {
-		ranbuf = _tizenrt_arc4random();
-		*lp++ = ranbuf; //this op need the pointer is 4Byte-align!
-		len -= sizeof(ranbuf);
-	}
-	return 0;
-#endif
 }
 
 static u32 _tizenrt_GetFreeHeapSize(void)
@@ -579,9 +591,6 @@ typedef CODE int (*main_t)(int argc, char *argv[]);
 static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 								u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
-
-	//printf("\r\n===============>Enter _tizenrt_create_task\r\n");
-	//task_fun Task_fun=(task_fun)func;
 	ptask->task_name = name;
 	ptask->task = priority;
 	ptask->_rtw_task_info_s = kernel_thread(name, priority, stack_size, (main_t)func, NULL);
@@ -634,7 +643,6 @@ _timerHandle _tizenrt_timerCreate(_timer *timer, const signed char *pcTimerName,
 								  u32 uxAutoReload,
 								  void *pvTimerID)
 {
-
 	timer->work_hdl = (struct work_s *)rtw_zmalloc(sizeof(struct work_s));
 
 	if (timer->work_hdl == NULL) {
@@ -650,9 +658,10 @@ _timerHandle _tizenrt_timerCreate(_timer *timer, const signed char *pcTimerName,
 u32 _tizenrt_timerDelete(_timer *timer,
 						 osdepTickType xBlockTime)
 {
-	int ret;
-	ret = work_cancel(LPWORK, timer->work_hdl);
-	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+	int ret = work_cancel(LPWORK, timer->work_hdl);
+	if (ret != OK) {
+		goto cleanup;
+	}
 	kmm_free(timer->work_hdl);
 	timer->timer_hdl = NULL;
 	timer->timevalue = 0;
@@ -672,16 +681,16 @@ cleanup:
 
 u32 _tizenrt_timerIsTimerActive(_timer *timer)
 {
-
 	return timer->live;
 }
 
 u32 _tizenrt_timerStop(_timer *timer,
 					   osdepTickType xBlockTime)
 {
-	int ret;
-	ret = work_cancel(LPWORK, timer->work_hdl);
-	TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
+	int ret = work_cancel(LPWORK, timer->work_hdl);
+	if (ret = OK) {
+		goto cleanup;
+	}
 	timer->timevalue = 0;
 	return _SUCCESS;
 
@@ -698,7 +707,6 @@ cleanup:
 
 void *_tizenrt_timerGetID(_timerHandle timer_hdl)
 {
-
 	return (int)timer_hdl;
 }
 
@@ -731,13 +739,14 @@ u32 _tizenrt_timerChangePeriod(_timer *timer,
 							   osdepTickType xBlockTime)
 {
 	int ret;
-
 	ret = work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
 	if (ret == -EALREADY) {
-		ret = work_cancel(LPWORK, timer->work_hdl);
-		TC_ASSERT_EQ_CLEANUP("work_cancel", ret, OK, goto cleanup);
-		ret = work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod);
-		TC_ASSERT_EQ_CLEANUP("work_queue", ret, OK, goto cleanup);
+		if (work_cancel(LPWORK, timer->work_hdl) != OK) {
+			goto cleanup;
+		}
+		if (work_queue(LPWORK, timer->work_hdl, timer_wrapper, (void *)(timer->timer_hdl), xNewPeriod)) {
+			goto cleanup;
+		}
 	}
 
 	return _SUCCESS;
@@ -753,7 +762,6 @@ u32 _tizenrt_timerChangePeriodFromISR(_timerHandle xTimer,
 									  osdepTickType xNewPeriod,
 									  osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-
 	return 0;
 }
 

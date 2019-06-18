@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 #ifndef _CUSTOMER_RTOS_SERVICE_H_
 #define _CUSTOMER_RTOS_SERVICE_H_
 
@@ -24,8 +41,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/time.h>
 
-//#include <os/arch/arm/src/imxrt/imxrt_config.h>
-
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -35,16 +50,6 @@
 #include "../../rtk/include/autoconf_tizenrt.h"
 #include "../../rtk/src/osdep/wireless.h"
 
-#if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI) || \
-	defined(CONFIG_LX_HCI)
-/* For SPI interface transfer and us delay implementation */
-#if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) &&   \
-	!defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_8195BHP) && \
-	!defined(CONFIG_PLATFORM_8710C) && !defined(CONFIG_PLATFORM_TIZENRT)
-#include <rtwlan_bsp.h>
-#endif
-#endif
-
 #ifdef CONFIG_USB_HCI
 typedef struct urb *PURB;
 #endif
@@ -53,7 +58,6 @@ typedef struct urb *PURB;
 // Move from basic_types.h
 //----- ------------------------------------------------------------------
 
-//#define PLATFORM_FREERTOS
 #include <stdint.h>
 
 #define PLATFORM_LITTLE_ENDIAN 0
@@ -364,10 +368,9 @@ typedef __kernel_ssize_t SSIZE_T;
 //	Description:
 //		Set subfield of little-endian 4-byte value to specified value.
 //
-#define SET_BITS_TO_LE_4BYTE(__pStart, __BitOffset, __BitLen, __Value) \
-	*((u32 *)(__pStart)) = EF4Byte(                                    \
-		LE_BITS_CLEARED_TO_4BYTE(__pStart, __BitOffset, __BitLen) |    \
-		((((u32)__Value) & BIT_LEN_MASK_32(__BitLen)) << (__BitOffset)));
+#define SET_BITS_TO_LE_4BYTE(__pStart, __BitOffset, __BitLen, __Value)                         \
+	*((u32 *)(__pStart)) = EF4Byte(LE_BITS_CLEARED_TO_4BYTE(__pStart, __BitOffset, __BitLen) | \
+								   ((((u32)__Value) & BIT_LEN_MASK_32(__BitLen)) << (__BitOffset)));
 
 #define BIT_LEN_MASK_16(__BitLen) (0xFFFF >> (16 - (__BitLen)))
 
@@ -384,10 +387,9 @@ typedef __kernel_ssize_t SSIZE_T;
 	(LE_P2BYTE_TO_HOST_2BYTE(__pStart) &                          \
 	 (~BIT_OFFSET_LEN_MASK_16(__BitOffset, __BitLen)))
 
-#define SET_BITS_TO_LE_2BYTE(__pStart, __BitOffset, __BitLen, __Value) \
-	*((u16 *)(__pStart)) = EF2Byte(                                    \
-		LE_BITS_CLEARED_TO_2BYTE(__pStart, __BitOffset, __BitLen) |    \
-		((((u16)__Value) & BIT_LEN_MASK_16(__BitLen)) << (__BitOffset)));
+#define SET_BITS_TO_LE_2BYTE(__pStart, __BitOffset, __BitLen, __Value)                         \
+	*((u16 *)(__pStart)) = EF2Byte(LE_BITS_CLEARED_TO_2BYTE(__pStart, __BitOffset, __BitLen) | \
+								   ((((u16)__Value) & BIT_LEN_MASK_16(__BitLen)) << (__BitOffset)));
 
 #define BIT_LEN_MASK_8(__BitLen) (0xFF >> (8 - (__BitLen)))
 
@@ -409,18 +411,13 @@ typedef __kernel_ssize_t SSIZE_T;
 		EF1Byte(LE_BITS_CLEARED_TO_1BYTE(__pStart, __BitOffset, __BitLen) | \
 				((((u8)__Value) & BIT_LEN_MASK_8(__BitLen)) << (__BitOffset)));
 
-// pclint
 #define LE_BITS_CLEARED_TO_1BYTE_8BIT(__pStart, __BitOffset, __BitLen) \
 	(LE_P1BYTE_TO_HOST_1BYTE(__pStart))
 
-// pclint
-#define SET_BITS_TO_LE_1BYTE_8BIT(__pStart, __BitOffset, __BitLen, __Value)  \
-	\
-{                                                                     \
-		*((pu1Byte)(__pStart)) = EF1Byte(                                    \
-			LE_BITS_CLEARED_TO_1BYTE_8BIT(__pStart, __BitOffset, __BitLen) | \
-			((u1Byte)__Value));                                              \
-	\
+#define SET_BITS_TO_LE_1BYTE_8BIT(__pStart, __BitOffset, __BitLen, __Value)                           \
+{                                                                                                     \
+	*((pu1Byte)(__pStart)) = EF1Byte(LE_BITS_CLEARED_TO_1BYTE_8BIT(__pStart, __BitOffset, __BitLen) | \
+									 ((u1Byte)__Value));                                              \
 }
 
 // Get the N-bytes aligment offset from the current length
@@ -505,20 +502,20 @@ typedef unsigned char BOOLEAN, *PBOOLEAN, boolean;
 #endif
 
 typedef struct _RAM_START_FUNCTION_ {
-	VOID (*RamStartFun)
+	VOID(*RamStartFun)
 	(VOID);
 } RAM_START_FUNCTION, *PRAM_START_FUNCTION;
 
 typedef struct _RAM_FUNCTION_START_TABLE_ {
-	VOID (*RamStartFun)
+	VOID(*RamStartFun)
 	(VOID);
-	VOID (*RamWakeupFun)
+	VOID(*RamWakeupFun)
 	(VOID);
-	VOID (*RamPatchFun0)
+	VOID(*RamPatchFun0)
 	(VOID);
-	VOID (*RamPatchFun1)
+	VOID(*RamPatchFun1)
 	(VOID);
-	VOID (*RamPatchFun2)
+	VOID(*RamPatchFun2)
 	(VOID);
 } RAM_FUNCTION_START_TABLE, *PRAM_FUNCTION_START_TABLE;
 
@@ -676,12 +673,12 @@ void cli(void);
 #define netif_wake_queue(dev) \
 	do {                      \
 	} while (0)
-#define printk printf
+#define printk nvdbg
 
-#define DBG_ERR(fmt, args...) printf("\n\r[%s] " fmt, __FUNCTION__, ##args)
+#define DBG_ERR(fmt, args...) ndbg("\n\r[%s] " fmt, __FUNCTION__, ##args)
 #if WLAN_INTF_DBG
-#define DBG_TRACE(fmt, args...) printf("\n\r[%s] " fmt, __FUNCTION__, ##args)
-#define DBG_INFO(fmt, args...) printf("\n\r[%s] " fmt, __FUNCTION__, ##args)
+#define DBG_TRACE(fmt, args...) nvdbg("\n\r[%s] " fmt, __FUNCTION__, ##args)
+#define DBG_INFO(fmt, args...) nvdbg("\n\r[%s] " fmt, __FUNCTION__, ##args)
 #else
 #define DBG_TRACE(fmt, args...)
 #define DBG_INFO(fmt, args...)
@@ -693,21 +690,21 @@ void cli(void);
 			;    \
 	} while (0)
 #undef ASSERT
-#define ASSERT(x)                                                               \
-	do {                                                                        \
-		if ((x) == 0) {                                                         \
-			printf("\n\rAssert(" #x ") failed on line %d in file %s", __LINE__, \
-				   __FILE__);                                                   \
-			HALT();                                                             \
-		}                                                                       \
+#define ASSERT(x)                                                              \
+	do {                                                                       \
+		if ((x) == 0) {                                                        \
+			nvdbg("\n\rAssert(" #x ") failed on line %d in file %s", __LINE__, \
+				  __FILE__);                                                   \
+			HALT();                                                            \
+		}                                                                      \
 	} while (0)
 
 #undef DBG_ASSERT
-#define DBG_ASSERT(x, msg)                                                     \
-	do {                                                                       \
-		if ((x) == 0)                                                          \
-			printf("\n\r%s, Assert(" #x ") failed on line %d in file %s", msg, \
-				   __LINE__, __FILE__);                                        \
+#define DBG_ASSERT(x, msg)                                                    \
+	do {                                                                      \
+		if ((x) == 0)                                                         \
+			nvdbg("\n\r%s, Assert(" #x ") failed on line %d in file %s", msg, \
+				  __LINE__, __FILE__);                                        \
 	} while (0)
 
 //----- ------------------------------------------------------------------

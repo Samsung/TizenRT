@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -177,13 +177,6 @@ struct security_priv {
 	u8 KeyMaterial[16]; // variable length depending on above field.
 #endif
 
-//TODO
-#if 0 //Remove unused wpa2 data - Alex Fang
-	u8 assoc_info[600];
-	u8 szofcapability[256]; //for wpa2 usage
-	u8 oidassociation[512]; //for wpa/wpa2 usage
-	u8 authenticator_ie[256];  //store ap security information element
-#endif
 	u8 supplicant_ie[256]; //store sta security information element
 
 	//for tkip countermeasure
@@ -195,18 +188,13 @@ struct security_priv {
 	//---------------------------------------------------------------------------
 	// For WPA2 Pre-Authentication.
 	//---------------------------------------------------------------------------
-	//u8				RegEnablePreAuth;				// Default value: Pre-Authentication enabled or not, from registry "EnablePreAuth". Added by Annie, 2005-11-01.
-	//u8				EnablePreAuthentication;		// Current Value: Pre-Authentication enabled or not.
 	RT_PMKID_LIST PMKIDList[NUM_PMKID_CACHE]; // Renamed from PreAuthKey[NUM_PRE_AUTH_KEY]. Annie, 2006-10-13.
 	u8 PMKIDIndex;
-//u32				PMKIDCount;						// Added by Annie, 2006-10-13.
-//u8				szCapability[256];				// For WPA2-PSK using zero-config, by Annie, 2005-09-20.
 #endif
 
 #ifdef CONFIG_INCLUDE_WPA_PSK
 	WPA_GLOBAL_INFO wpa_global_info;
 #if defined(CONFIG_AP_MODE) && defined(CONFIG_MULTIPLE_WPA_STA)
-	//	WPA_STA_INFO		wpa_sta_info[AP_STA_NUM];
 	u8 *palloc_wpastainfo_buf;
 	u32 alloc_wpastainfo_size;
 	WPA_STA_INFO *wpa_sta_info[NUM_STA - 2];
@@ -227,9 +215,7 @@ struct sha256_state {
 };
 
 #define GET_ENCRY_ALGO(psecuritypriv, psta, encry_algo, bmcst)        \
-	\
-do                                                             \
-	{                                                                 \
+	do {                                                              \
 		switch (psecuritypriv->dot11AuthAlgrthm) {                    \
 		case dot11AuthAlgrthm_Open:                                   \
 		case dot11AuthAlgrthm_Shared:                                 \
@@ -246,14 +232,10 @@ do                                                             \
 			encry_algo = (u8)psecuritypriv->dot11PrivacyAlgrthm;      \
 			break;                                                    \
 		}                                                             \
-	\
-}                                                              \
-	while (0)
+	} while (0)
 
 #define SET_ICE_IV_LEN(iv_len, icv_len, encrypt) \
-	\
-do                                        \
-	{                                            \
+	do {                                         \
 		switch (encrypt) {                       \
 		case _WEP40_:                            \
 		case _WEP104_:                           \
@@ -277,23 +259,17 @@ do                                        \
 			icv_len = 0;                         \
 			break;                               \
 		}                                        \
-	\
-}                                         \
-	while (0)
+	} while (0)
 
 #define GET_TKIP_PN(iv, dot11txpn)     \
-	\
-do                              \
-	{                                  \
+	do {                               \
 		dot11txpn._byte_.TSC0 = iv[2]; \
 		dot11txpn._byte_.TSC1 = iv[0]; \
 		dot11txpn._byte_.TSC2 = iv[4]; \
 		dot11txpn._byte_.TSC3 = iv[5]; \
 		dot11txpn._byte_.TSC4 = iv[6]; \
 		dot11txpn._byte_.TSC5 = iv[7]; \
-	\
-}                               \
-	while (0)
+	} while (0)
 
 #define ROL32(A, n) (((A) << (n)) | (((A) >> (32 - (n))) & ((1UL << (n)) - 1)))
 #define ROR32(A, n) ROL32((A), 32 - (n))
@@ -351,11 +327,9 @@ static inline u32 rotr(u32 val, int bits)
 
 #define PUTU32(ct, st)              \
 	{                               \
-		\
-(ct)[0] = (u8)((st) >> 24);         \
+		(ct)[0] = (u8)((st) >> 24); \
 		(ct)[1] = (u8)((st) >> 16); \
-		\
-(ct)[2] = (u8)((st) >> 8);          \
+		(ct)[2] = (u8)((st) >> 8);  \
 		(ct)[3] = (u8)(st);         \
 	}
 
@@ -410,10 +384,12 @@ static const unsigned long K[64] = {
 	0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL};
 
 /* Various logical functions */
-#define RORc(x, y) \
-(((((unsigned long)(x)&0xFFFFFFFFUL) >> (unsigned long)((y)&31)) | \
-  ((unsigned long)(x) << (unsigned long)(32 - ((y)&31)))) &        \
- 0xFFFFFFFFUL)
+#define RORc(x, y)                                                        \
+	do {                                                                  \
+		((((unsigned long)(x)&0xFFFFFFFFUL) >> (unsigned long)((y)&31)) | \
+		 ((unsigned long)(x) << (unsigned long)(32 - ((y)&31)))) &        \
+			0xFFFFFFFFUL                                                  \
+	} while (0)
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #define Maj(x, y, z) (((x | y) & z) | (x & y))
 #define S(x, n) RORc((x), (n))

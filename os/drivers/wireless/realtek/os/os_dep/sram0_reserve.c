@@ -55,15 +55,17 @@ static void *reserved_heap_allocmem(int size)
 
 	rtw_enter_critical(&heap_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		reserved_heap_init();
+	}
 
 	/* Round size up to the allocation granularity */
 	size = ROUND_UP2(size, sizeof(MemChunk));
 
 	/* Handle allocations of 0 bytes */
-	if (!size)
+	if (!size) {
 		size = sizeof(MemChunk);
+	}
 
 	/* Walk on the free list looking for any chunk big enough to
 	 * fit the requested block size.
@@ -103,15 +105,17 @@ static void reserved_heap_freemem(void *mem, int size)
 
 	rtw_enter_critical(&heap_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		reserved_heap_init();
+	}
 
 	/* Round size up to the allocation granularity */
 	size = ROUND_UP2(size, sizeof(MemChunk));
 
 	/* Handle allocations of 0 bytes */
-	if (!size)
+	if (!size) {
 		size = sizeof(MemChunk);
+	}
 
 	/* Special cases: first chunk in the free list or memory completely full */
 	if (((uint8_t *)mem) < ((uint8_t *)h->FreeList) || !h->FreeList) {
@@ -120,22 +124,21 @@ static void reserved_heap_freemem(void *mem, int size)
 		prev->next = h->FreeList;
 		prev->size = size;
 		h->FreeList = prev;
-	} else /* Normal case: not the first chunk in the free list */
-	{
+	} else { /* Normal case: not the first chunk in the free list */
 		/*
 		 * Walk on the free list. Stop at the insertion point (when mem
 		 * is between prev and prev->next)
 		 */
 		prev = h->FreeList;
-		while (prev->next < (MemChunk *)mem && prev->next)
+		while (prev->next < (MemChunk *)mem && prev->next) {
 			prev = prev->next;
+		}
 
 		/* Should it be merged with previous block? */
 		if (((uint8_t *)prev) + prev->size == ((uint8_t *)mem)) {
 			/* Yes */
 			prev->size += size;
-		} else /* not merged with previous chunk */
-		{
+		} else { /* not merged with previous chunk */
 			MemChunk *curr = (MemChunk *)mem;
 
 			/* insert it after the previous node
@@ -169,11 +172,13 @@ int sram0_reserve_free_size(void)
 
 	rtw_enter_critical(&heap_lock, &irqL);
 
-	if (!g_heap_inited)
+	if (!g_heap_inited) {
 		reserved_heap_init();
+	}
 
-	for (chunk = h->FreeList; chunk; chunk = chunk->next)
+	for (chunk = h->FreeList; chunk; chunk = chunk->next) {
 		free_mem += chunk->size;
+	}
 
 	rtw_exit_critical(&heap_lock, &irqL);
 	return free_mem;

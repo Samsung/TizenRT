@@ -22,7 +22,7 @@
 
 #include <drv_types.h>
 
-/* For H2C: H2C_BT_MP_OPER. Return status definition to the user layer */
+/* For H2C:H2C_BT_MP_OPER. Return status definition to the user layer */
 typedef enum _BT_CTRL_STATUS {
 	BT_STATUS_SUCCESS = 0x00,					   /* Success */
 	BT_STATUS_BT_OP_SUCCESS = 0x01,				   /* bt fw op execution success */
@@ -158,31 +158,31 @@ struct btinfo_8761ATV {
 	u8 cid;
 	u8 len;
 
-	u8 bConnection : 1;
-	u8 bSCOeSCO : 1;
-	u8 bInQPage : 1;
-	u8 bACLBusy : 1;
-	u8 bSCOBusy : 1;
-	u8 bHID : 1;
-	u8 bA2DP : 1;
-	u8 bFTP : 1;
+	u8 bConnection:1;
+	u8 bSCOeSCO:1;
+	u8 bInQPage:1;
+	u8 bACLBusy:1;
+	u8 bSCOBusy:1;
+	u8 bHID:1;
+	u8 bA2DP:1;
+	u8 bFTP:1;
 
-	u8 retry_cnt : 4;
-	u8 rsvd_34 : 1;
-	u8 bPage : 1;
-	u8 TRxMask : 1;
-	u8 Sniff_attempt : 1;
+	u8 retry_cnt:4;
+	u8 rsvd_34:1;
+	u8 bPage:1;
+	u8 TRxMask:1;
+	u8 Sniff_attempt:1;
 
 	u8 rssi;
 
-	u8 A2dp_rate : 1;
-	u8 ReInit : 1;
-	u8 MaxPower : 1;
-	u8 bEnIgnoreWlanAct : 1;
-	u8 TxPowerLow : 1;
-	u8 TxPowerHigh : 1;
-	u8 eSCO_SCO : 1;
-	u8 Master_Slave : 1;
+	u8 A2dp_rate:1;
+	u8 ReInit:1;
+	u8 MaxPower:1;
+	u8 bEnIgnoreWlanAct:1;
+	u8 TxPowerLow:1;
+	u8 TxPowerHigh:1;
+	u8 eSCO_SCO:1;
+	u8 Master_Slave:1;
 
 	u8 ACL_TRx_TP_low;
 	u8 ACL_TRx_TP_high;

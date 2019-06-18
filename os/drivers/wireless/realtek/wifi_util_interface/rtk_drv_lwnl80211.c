@@ -159,7 +159,8 @@ static void linkdown_handler(rtk_reason_t *reason)
 	}
 }
 
-int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input)
+
+int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int scan_num)
 {
 	lwnl80211_cb_status status;
 	lwnl80211_scan_list_s *scan_list = (lwnl80211_scan_list_s *)utils_scan_input;

@@ -20,44 +20,6 @@
 #ifndef __RTW_DEBUG_H__
 #define __RTW_DEBUG_H__
 
-#ifdef PLATFORM_WINDOWS
-#define RTW_PRINT \
-	do {          \
-	} while (0)
-#define RTW_ERR \
-	do {        \
-	} while (0)
-#define RTW_WARN \
-	do {         \
-	} while (0)
-#define RTW_INFO \
-	do {         \
-	} while (0)
-#define RTW_DBG \
-	do {        \
-	} while (0)
-#define RTW_PRINT_SEL \
-	do {              \
-	} while (0)
-#define _RTW_PRINT \
-	do {           \
-	} while (0)
-#define _RTW_ERR \
-	do {         \
-	} while (0)
-#define _RTW_WARN \
-	do {          \
-	} while (0)
-#define _RTW_INFO \
-	do {          \
-	} while (0)
-#define _RTW_DBG \
-	do {         \
-	} while (0)
-#define _RTW_PRINT_SEL \
-	do {               \
-	} while (0)
-#else
 #define RTW_PRINT(x, ...) \
 	do {                  \
 	} while (0)
@@ -94,7 +56,6 @@
 #define _RTW_PRINT_SEL(x, ...) \
 	do {                       \
 	} while (0)
-#endif
 
 #define _drv_always_ 1
 #define _drv_emerg_ 2
@@ -243,20 +204,6 @@ extern u16 GlobalDebugLevel;
 	do {                                                                  \
 	} while (0)
 
-#ifdef PLATFORM_WINDOWS
-#define DBG_871X \
-	do {         \
-	} while (0)
-#define MSG_8192C \
-	do {          \
-	} while (0)
-#define DBG_8192C \
-	do {          \
-	} while (0)
-#define DBG_871X_LEVEL \
-	do {               \
-	} while (0)
-#else
 #define DBG_871X(x, ...) \
 	do {                 \
 	} while (0)
@@ -269,7 +216,6 @@ extern u16 GlobalDebugLevel;
 #define DBG_871X_LEVEL(x, ...) \
 	do {                       \
 	} while (0)
-#endif
 
 #ifdef CONFIG_BT_COEXIST
 #define RTW_INFO(x, ...) \
@@ -281,26 +227,11 @@ extern u16 GlobalDebugLevel;
 #endif
 
 #undef _dbgdump
-#ifdef PLATFORM_WINDOWS
 
-#ifdef PLATFORM_OS_XP
-#define _dbgdump DbgPrint
-#elif defined PLATFORM_OS_CE
-#define _dbgdump rtl871x_cedbg
-#endif
-
-#elif defined PLATFORM_LINUX
-#define _dbgdump printk
-#elif defined PLATFORM_ECOS
-#define _dbgdump diag_printf
-#elif defined(PLATFORM_FREERTOS) || defined(PLATFORM_CMSIS_RTOS) || defined(PLATFORM_CUSTOMER_RTOS) || defined(PLATFORM_TIZENRT)
 #define _dbgdump_nr \
 	printf("\n\r"); \
 	printf
 #define _dbgdump printf
-#elif defined PLATFORM_FREEBSD
-#define _dbgdump printf
-#endif
 
 #if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_8195B) && !defined(CONFIG_PLATFORM_8710C)
 #define DRIVER_PREFIX "RTL871X: "
@@ -370,13 +301,9 @@ extern int msg_uart_port(const char *fmt, ...);
 #if (DBG == 1)
 #undef RTW_INFO
 #define RTW_INFO(fmt, arg...)                  \
-	\
-do                                      \
-	{                                          \
+	do {                                       \
 		_dbgdump_nr(DRIVER_PREFIX fmt, ##arg); \
-	\
-}                                       \
-	while (0)
+	} while (0)
 #endif
 
 #ifdef CONFIG_DEBUG_RTL871X

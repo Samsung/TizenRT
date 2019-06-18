@@ -3,7 +3,7 @@
 
 #if (RTL8195A_SUPPORT == 1) || (RTL8195B_SUPPORT == 1)
 // For Lextra(PCI-E like interface), RX buffer along with its skb is required to be
-// 	pre-allocation and set into rx buffer descriptor ring during initialization.
+// pre - allocation and set into rx buffer descriptor ring during initialization.
 #if (SKB_PRE_ALLOCATE_RX == 1)
 #define MAX_SKB_BUF_NUM (8 + 4)		//tx+rx (8 + RX_Q_DESC_NUM) Reduce rx skb number due to memory limitation
 #define MAX_LOCAL_SKB_NUM (10 + 18) //tx+rx
@@ -83,7 +83,7 @@
 #endif
 #endif
 
-extern int max_local_skb_num;
+	  extern int max_local_skb_num;
 extern int max_skb_buf_num;
 
 #endif

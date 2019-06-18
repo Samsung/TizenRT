@@ -30,13 +30,10 @@
 
 #endif
 
-//TODO
 #define FAST_SURVEY_TO (25) //Fast connection time, scan only partial channel
 #define SURVEY_TO (100)		//Reduce connection time
-//#define SURVEY_TO		(300) //Increase time to stay each channel - Alex Fang
 #define REAUTH_TO (300)  //(50)
 #define REASSOC_TO (300) //(50)
-//#define DISCONNECT_TO	(3000)
 #define ADDBA_TO (2000)
 
 #define LINKED_TO (1) //unit:2 sec, 1x2=2 sec
@@ -50,15 +47,6 @@
 #else
 #define ROAMING_LIMIT 8
 #endif
-//#define	IOCMD_REG0		0x10250370
-//#define	IOCMD_REG1		0x10250374
-//#define	IOCMD_REG2		0x10250378
-
-//#define	FW_DYNAMIC_FUN_SWITCH	0x10250364
-
-//#define	WRITE_BB_CMD		0xF0000001
-//#define	SET_CHANNEL_CMD	0xF3000000
-//#define	UPDATE_RA_CMD	0xFD0000A2
 
 #define _HW_STATE_NOLINK_ 0x00
 #define _HW_STATE_ADHOC_ 0x01
@@ -443,17 +431,17 @@ struct FW_Sta_Info {
 
 /*
  * Usage:
- * When one iface acted as AP mode and the other iface is STA mode and scanning, 
+ * When one iface acted as AP mode and the other iface is STA mode and scanning,
  * it should switch back to AP's operating channel periodically.
  * Parameters info:
  * When the driver scanned RTW_SCAN_NUM_OF_CH channels, it would switch back to AP's operating channel for
  * RTW_STAY_AP_CH_MILLISECOND * SURVEY_TO milliseconds.
  * Example:
- * For chip supports 2.4G + 5GHz and AP mode is operating in channel 1, 
+ * For chip supports 2.4G + 5GHz and AP mode is operating in channel 1,
  * RTW_SCAN_NUM_OF_CH is 8, RTW_STAY_AP_CH_MILLISECOND is 3 and SURVEY_TO is 100.
- * When it's STA mode gets set_scan command, 
- * it would 
- * 1. Doing the scan on channel 1.2.3.4.5.6.7.8 
+ * When it's STA mode gets set_scan command,
+ * it would
+ * 1. Doing the scan on channel 1.2.3.4.5.6.7.8
  * 2. Back to channel 1 for 300 milliseconds
  * 3. Go through doing site survey on channel 9.10.11.36.40.44.48.52
  * 4. Back to channel 1 for 300 milliseconds
@@ -564,8 +552,6 @@ struct mlme_ext_priv {
 	u8 key_type_11w; // for debug
 #endif				 /* CONFIG_IEEE80211W */
 
-	//struct fw_priv 	fwpriv;
-
 	u8 cur_channel;
 	u8 cur_bwmode;
 	u8 cur_ch_offset;	 //PRIME_CHNL_OFFSET
@@ -652,7 +638,6 @@ extern void init_dot11w_expire_timer(_adapter *padapter, struct sta_info *psta);
 #endif /* CONFIG_IEEE80211W */
 extern struct xmit_frame *alloc_mgtxmitframe(struct xmit_priv *pxmitpriv);
 extern struct xmit_frame *alloc_FwRsvdframe(struct xmit_priv *pxmitpriv, u32 size);
-//void fill_fwpriv(_adapter * padapter, struct fw_priv *pfwpriv);
 
 unsigned char networktype_to_raid(unsigned char network_type);
 u8 judge_network_type(_adapter *padapter, unsigned char *rate, int ratelen);
@@ -664,8 +649,6 @@ void Save_DM_Func_Flag(_adapter *padapter);
 void Restore_DM_Func_Flag(_adapter *padapter);
 void Switch_DM_Func(_adapter *padapter, u32 mode, u8 enable);
 
-//void Set_NETYPE1_MSR(_adapter *padapter, u8 type);
-//void Set_NETYPE0_MSR(_adapter *padapter, u8 type);
 void Set_MSR(_adapter *padapter, u8 type);
 
 u8 rtw_get_oper_ch(_adapter *adapter);
@@ -840,9 +823,6 @@ void addba_timer_hdl(struct sta_info *psta);
 void sa_query_timer_hdl(struct sta_info *psta);
 #endif /* CONFIG_IEEE80211W */
 
-//void reauth_timer_hdl(_adapter *padapter);
-//void reassoc_timer_hdl(_adapter *padapter);
-
 #define set_survey_timer(mlmeext, ms)                                                 \
 	do {                                                                              \
 		/*DBG_871X("%s set_survey_timer(%p, %d)\n", __FUNCTION__, (mlmeext), (ms));*/ \
@@ -854,13 +834,6 @@ void sa_query_timer_hdl(struct sta_info *psta);
 		/*DBG_871X("%s set_link_timer(%p, %d)\n", __FUNCTION__, (mlmeext), (ms));*/ \
 		rtw_set_timer(&(mlmeext)->link_timer, (ms));                                \
 	} while (0)
-
-//TODO
-#if 0
-extern int cckrates_included(unsigned char *rate, int ratelen);
-extern int cckratesonly_included(unsigned char *rate, int ratelen);
-extern void process_addba_req(_adapter *padapter, u8 *paddba_req, u8 *addr);
-#endif
 
 extern void update_TSF(struct mlme_ext_priv *pmlmeext, u8 *pframe, uint len);
 extern void correct_TSF(_adapter *padapter, struct mlme_ext_priv *pmlmeext);
@@ -881,18 +854,6 @@ struct cmd_hdl {
 	uint parmsize;
 	u8 (*h2cfuns)(struct _ADAPTER *padapter, u8 *pbuf);
 };
-
-//TODO
-#if 0
-
-u8 read_macreg_hdl(_adapter *padapter, u8 *pbuf);
-u8 write_macreg_hdl(_adapter *padapter, u8 *pbuf);
-u8 read_bbreg_hdl(_adapter *padapter, u8 *pbuf);
-u8 write_bbreg_hdl(_adapter *padapter, u8 *pbuf);
-u8 read_rfreg_hdl(_adapter *padapter, u8 *pbuf);
-u8 write_rfreg_hdl(_adapter *padapter, u8 *pbuf);
-
-#endif //#if 0
 
 u8 NULL_hdl(_adapter *padapter, u8 *pbuf);
 u8 join_cmd_hdl(_adapter *padapter, u8 *pbuf);
@@ -926,90 +887,76 @@ extern void csa_timer_hdl(void *FunctionContext);
 
 #ifdef _RTW_CMD_C_
 
-const struct cmd_hdl wlancmds[] =
-	{
-		GEN_DRV_CMD_HANDLER(0, NULL) /*0*/
-		GEN_DRV_CMD_HANDLER(0, NULL)
-			GEN_DRV_CMD_HANDLER(0, NULL)
-				GEN_DRV_CMD_HANDLER(0, NULL)
-					GEN_DRV_CMD_HANDLER(0, NULL)
-						GEN_DRV_CMD_HANDLER(0, NULL)
-							GEN_MLME_EXT_HANDLER(0, NULL)
-								GEN_MLME_EXT_HANDLER(0, NULL)
-									GEN_MLME_EXT_HANDLER(0, NULL)
-										GEN_MLME_EXT_HANDLER(0, NULL)
-											GEN_MLME_EXT_HANDLER(0, NULL) /*10*/
-		GEN_MLME_EXT_HANDLER(0, NULL)
-			GEN_MLME_EXT_HANDLER(0, NULL)
-				GEN_MLME_EXT_HANDLER(0, NULL)
-					GEN_MLME_EXT_HANDLER(sizeof(struct joinbss_parm), join_cmd_hdl) /*14*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct disconnect_parm), disconnect_hdl)
-		//TODO
-		//	GEN_MLME_EXT_HANDLER(sizeof (struct createbss_parm), createbss_hdl)
-		GEN_MLME_EXT_HANDLER(sizeof(struct createbss_parm), NULL)
-			GEN_MLME_EXT_HANDLER(sizeof(struct setopmode_parm), setopmode_hdl)
-				GEN_MLME_EXT_HANDLER(sizeof(struct sitesurvey_parm), sitesurvey_cmd_hdl) /*18*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct setauth_parm), setauth_hdl)
-			GEN_MLME_EXT_HANDLER(sizeof(struct setkey_parm), setkey_hdl) /*20*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct set_stakey_parm), set_stakey_hdl)
-			GEN_MLME_EXT_HANDLER(sizeof(struct set_assocsta_parm), NULL)
-				GEN_MLME_EXT_HANDLER(sizeof(struct del_assocsta_parm), NULL)
-					GEN_MLME_EXT_HANDLER(sizeof(struct setstapwrstate_parm), NULL)
-						GEN_MLME_EXT_HANDLER(sizeof(struct setbasicrate_parm), NULL)
-							GEN_MLME_EXT_HANDLER(sizeof(struct getbasicrate_parm), NULL)
-								GEN_MLME_EXT_HANDLER(sizeof(struct setdatarate_parm), NULL)
-									GEN_MLME_EXT_HANDLER(sizeof(struct getdatarate_parm), NULL)
-										GEN_MLME_EXT_HANDLER(sizeof(struct setphyinfo_parm), NULL)
-											GEN_MLME_EXT_HANDLER(sizeof(struct getphyinfo_parm), NULL) /*30*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct setphy_parm), NULL)
-			GEN_MLME_EXT_HANDLER(sizeof(struct getphy_parm), NULL)
-				GEN_MLME_EXT_HANDLER(0, NULL)
-					GEN_MLME_EXT_HANDLER(0, NULL)
-						GEN_MLME_EXT_HANDLER(0, NULL)
-							GEN_MLME_EXT_HANDLER(0, NULL)
-								GEN_MLME_EXT_HANDLER(0, NULL)
-									GEN_MLME_EXT_HANDLER(0, NULL)
-										GEN_MLME_EXT_HANDLER(0, NULL)
-											GEN_MLME_EXT_HANDLER(0, NULL) /*40*/
-		GEN_MLME_EXT_HANDLER(0, NULL)
-			GEN_MLME_EXT_HANDLER(0, NULL)
-				GEN_MLME_EXT_HANDLER(0, NULL)
-					GEN_MLME_EXT_HANDLER(0, NULL)
-//TODO
+const struct cmd_hdl wlancmds[] = {
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_DRV_CMD_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL) /*10*/
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct joinbss_parm), join_cmd_hdl) /*14*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct disconnect_parm), disconnect_hdl)
+	GEN_MLME_EXT_HANDLER(sizeof(struct createbss_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setopmode_parm), setopmode_hdl)
+	GEN_MLME_EXT_HANDLER(sizeof(struct sitesurvey_parm), sitesurvey_cmd_hdl) /*18*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct setauth_parm), setauth_hdl)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setkey_parm), setkey_hdl) /*20*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct set_stakey_parm), set_stakey_hdl)
+	GEN_MLME_EXT_HANDLER(sizeof(struct set_assocsta_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct del_assocsta_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setstapwrstate_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setbasicrate_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct getbasicrate_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setdatarate_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct getdatarate_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct setphyinfo_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct getphyinfo_parm), NULL) /*30*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct setphy_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct getphy_parm), NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL) /*40*/
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
 #if RX_AGGREGATION
-						GEN_MLME_EXT_HANDLER(sizeof(struct addBaReq_parm), add_ba_hdl)
+	GEN_MLME_EXT_HANDLER(sizeof(struct addBaReq_parm), add_ba_hdl)
 #else
-						GEN_MLME_EXT_HANDLER(sizeof(struct addBaReq_parm), NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct addBaReq_parm), NULL)
 #endif
-							GEN_MLME_EXT_HANDLER(0, NULL)
-								GEN_MLME_EXT_HANDLER(0, NULL)
-									GEN_MLME_EXT_HANDLER(0, NULL)
-										GEN_MLME_EXT_HANDLER(0, NULL)
-											GEN_MLME_EXT_HANDLER(0, NULL) /*50*/
-		GEN_MLME_EXT_HANDLER(0, NULL)
-			GEN_MLME_EXT_HANDLER(0, NULL)
-				GEN_MLME_EXT_HANDLER(0, NULL)
-					GEN_MLME_EXT_HANDLER(0, NULL)
-						GEN_MLME_EXT_HANDLER(sizeof(struct Tx_Beacon_param), tx_beacon_hdl) /*55*/
-		GEN_MLME_EXT_HANDLER(0, mlme_evt_hdl)												/*56*/
-		GEN_MLME_EXT_HANDLER(0, rtw_drvextra_cmd_hdl)										/*57*/
-																							//TODO
-																							//	GEN_MLME_EXT_HANDLER(0, h2c_msg_hdl) /*58*/
-		GEN_MLME_EXT_HANDLER(0, NULL)														/*58*/
-																							//TODO
-																							//	GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelPlan_param), set_chplan_hdl) /*59*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelPlan_param), NULL)						/*59*/
-																							//TODO
-																							//	GEN_MLME_EXT_HANDLER(sizeof(struct LedBlink_param), led_blink_hdl) /*60*/
-		GEN_MLME_EXT_HANDLER(0, NULL)														/*60*/
-																							//TODO
-		GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelSwitch_param), set_csa_hdl)			/*61*/
-		//GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelSwitch_param), NULL) /*61*/
-		//TODO
-		//	GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), tdls_hdl) /*62*/
-		GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), NULL) /*62*/
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL) /*50*/
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(0, NULL)
+	GEN_MLME_EXT_HANDLER(sizeof(struct Tx_Beacon_param), tx_beacon_hdl) /*55*/
+	GEN_MLME_EXT_HANDLER(0, mlme_evt_hdl)												/*56*/
+	GEN_MLME_EXT_HANDLER(0, rtw_drvextra_cmd_hdl)										/*57*/
+	GEN_MLME_EXT_HANDLER(0, NULL)														/*58*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelPlan_param), NULL)						/*59*/
+	GEN_MLME_EXT_HANDLER(0, NULL)														/*60*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct SetChannelSwitch_param), set_csa_hdl)			/*61*/
+	GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), NULL) /*62*/
 #ifdef CONFIG_P2P_NEW
-		GEN_MLME_EXT_HANDLER(0, rtw_p2p_cmd_hdl) /*63*/
+	GEN_MLME_EXT_HANDLER(0, rtw_p2p_cmd_hdl) /*63*/
 #endif
 };
 
@@ -1019,15 +966,15 @@ struct C2HEvent_Header {
 
 #ifdef CONFIG_LITTLE_ENDIAN
 
-	unsigned int len : 16;
-	unsigned int ID : 8;
-	unsigned int seq : 8;
+	unsigned int len:16;
+	unsigned int ID:8;
+	unsigned int seq:8;
 
 #elif defined(CONFIG_BIG_ENDIAN)
 
-	unsigned int seq : 8;
-	unsigned int ID : 8;
-	unsigned int len : 16;
+	unsigned int seq:8;
+	unsigned int ID:8;
+	unsigned int len:16;
 
 #else
 
@@ -1076,44 +1023,36 @@ enum rtw_c2h_event {
 
 #ifdef _RTW_MLME_EXT_C_
 
-const static struct fwevent wlanevents[] =
-	{
-		{0, rtw_dummy_event_callback}, /*0*/
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, &rtw_survey_event_callback},								   /*8*/
-		{sizeof(struct surveydone_event), &rtw_surveydone_event_callback}, /*9*/
-		{0, &rtw_joinbss_event_callback},								   /*10*/
-		{sizeof(struct stassoc_event), &rtw_stassoc_event_callback},
-		{sizeof(struct stadel_event), &rtw_stadel_event_callback},
-		//TODO
-		//	{0, &rtw_atimdone_event_callback},
-		{0, NULL}, /*rtw_atimdone_event_callback*/
-		{0, rtw_dummy_event_callback},
-		{0, NULL}, /*15*/
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		//TODO
-		//	{0, rtw_fwdbg_event_callback},
-		{0, NULL}, /*rtw_fwdbg_event_callback*/
-		{0, NULL}, /*20*/
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
-		{0, NULL},
+const static struct fwevent wlanevents[] = {
+	{0, rtw_dummy_event_callback}, /*0*/
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, &rtw_survey_event_callback},								   /*8*/
+	{sizeof(struct surveydone_event), &rtw_surveydone_event_callback}, /*9*/
+	{0, &rtw_joinbss_event_callback},								   /*10*/
+	{sizeof(struct stassoc_event), &rtw_stassoc_event_callback},
+	{sizeof(struct stadel_event), &rtw_stadel_event_callback},
+	{0, NULL}, /*rtw_atimdone_event_callback*/
+	{0, rtw_dummy_event_callback},
+	{0, NULL}, /*15*/
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL}, /*rtw_fwdbg_event_callback*/
+	{0, NULL}, /*20*/
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
+	{0, NULL},
 #if defined(CONFIG_IEEE80211W) && defined(CONFIG_AP_MODE)
-		{sizeof(struct stadel_event), &rtw_sta_timeout_event_callback}, /*25*/
+	{sizeof(struct stadel_event), &rtw_sta_timeout_event_callback}, /*25*/
 #endif																	/* CONFIG_IEEE80211W */
-
-		//TODO
-		//	{0, &rtw_cpwm_event_callback},
-		{0, NULL}, /*rtw_cpwm_event_callback*/
+	{0, NULL}, /*rtw_cpwm_event_callback*/
 };
 
 #endif //_RTL8192C_CMD_C_

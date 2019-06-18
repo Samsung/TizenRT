@@ -64,36 +64,39 @@ int taskmgr_send_request(tm_request_t *request_msg)
 	return OK;
 }
 
-int taskmgr_send_response(char *q_name, tm_response_t *response_msg)
+void taskmgr_send_response(char *q_name, int timeout, tm_response_t *response_msg, int ret_status)
 {
 	int status;
 	mqd_t private_mqfd;
 	struct mq_attr attr;
 
 	if (q_name == NULL) {
-		return TM_INVALID_PARAM;
+		tmdbg("invalid q_name.\n");
+		return;
 	}
 
-	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
-	attr.mq_msgsize = sizeof(tm_response_t);
-	attr.mq_flags = 0;
+	if (timeout != TM_NO_RESPONSE) {
+		response_msg->status = ret_status;
 
-	private_mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
-	if (private_mqfd == (mqd_t)ERROR) {
-		tmdbg("mq_open failed!\n");
-		return TM_COMMUCATION_FAIL;
-	}
+		attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
+		attr.mq_msgsize = sizeof(tm_response_t);
+		attr.mq_flags = 0;
 
-	status = mq_send(private_mqfd, (char *)response_msg, sizeof(tm_response_t), TM_MQ_PRIO);
-	if (status != OK) {
-		tmdbg("mq_send failed! %d\n", errno);
+		private_mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
+		if (private_mqfd == (mqd_t)ERROR) {
+			tmdbg("mq_open failed!\n");
+			return;
+		}
+
+		status = mq_send(private_mqfd, (char *)response_msg, sizeof(tm_response_t), TM_MQ_PRIO);
+		if (status != OK) {
+			tmdbg("mq_send failed! %d\n", errno);
+			mq_close(private_mqfd);
+			return;
+		}
+
 		mq_close(private_mqfd);
-		return TM_COMMUCATION_FAIL;
 	}
-
-	mq_close(private_mqfd);
-
-	return OK;
 }
 
 int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int timeout)

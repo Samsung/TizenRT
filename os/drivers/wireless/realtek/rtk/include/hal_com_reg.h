@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -1087,7 +1087,7 @@ Default: 00b.
 
 /*===================================================================
 =====================================================================
-Here the register defines are for 92C. When the define is as same with 92C, 
+Here the register defines are for 92C. When the define is as same with 92C,
 we will use the 92C's define for the consistency
 So the following defines for 92C is not entire!!!!!!
 =====================================================================
@@ -1107,7 +1107,7 @@ Current IOREG MAP
 0x2000h ~ 0x3FFFh   8051 FW Download Region (8196 Bytes)
 */
 //----------------------------------------------------------------------------
-//		 8192C (TXPAUSE) transmission pause 	(Offset 0x522, 8 bits)
+//    8192C (TXPAUSE) transmission pause (Offset 0x522, 8 bits)
 //----------------------------------------------------------------------------
 // Note:
 //	The the bits of stoping AC(VO/VI/BE/BK) queue in datasheet RTL8192S/RTL8192C are wrong,

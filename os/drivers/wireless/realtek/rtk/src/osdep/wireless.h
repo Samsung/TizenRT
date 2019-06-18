@@ -72,15 +72,7 @@
 /* This header is used in user-space, therefore need to be sanitised
  * for that purpose. Those includes are usually not compatible with glibc.
  * To know which includes to use in user-space, check iwlib.h. */
-#ifndef CONFIG_PLATFORM_TIZENRT
-#ifdef __KERNEL__
-#include <linux/types.h>  /* for "caddr_t" et al		*/
-#include <linux/socket.h> /* for "struct sockaddr" et al	*/
-#include <linux/if.h>	 /* for IFNAMSIZ and co... */
-#endif					  /* __KERNEL__ */
-#endif
 
-//#include <sockets.h>
 #define IFNAMSIZ 16
 #define ARPHRD_ETHER 1 /* ethernet hardware format */
 
@@ -960,7 +952,7 @@ struct iw_statistics {
 
 /* ------------------------ IOCTL REQUEST ------------------------ */
 /*
- * This structure defines the payload of an ioctl, and is used 
+ * This structure defines the payload of an ioctl, and is used
  * below.
  *
  * Note that this structure should fit on the memory footprint
@@ -1008,12 +1000,6 @@ union iwreq_data {
  * Do I need to remind you about structure size (32 octets) ?
  */
 struct iwreq {
-#if 0
-	union
-	{
-		char	ifrn_name[IFNAMSIZ];	/* if name, e.g. "eth0" */
-	} ifr_ifrn;
-#endif
 	char ifr_name[IFNAMSIZ]; /* if name, e.g. "eth0" */
 
 	/* Data part (defined just above) */

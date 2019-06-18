@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -29,12 +29,12 @@
 #define MAXIMUM_ETHERNET_PACKET_SIZE 1514 //!< Maximum Ethernet Packet Size
 
 #define RT_ETH_IS_MULTICAST(_pAddr) ((((u8 *)(_pAddr))[0] & 0x01) != 0) //!< Is Multicast Address?
-#define RT_ETH_IS_BROADCAST(_pAddr) ( \
-	((u8 *)(_pAddr))[0] == 0xff &&    \
-	((u8 *)(_pAddr))[1] == 0xff &&    \
-	((u8 *)(_pAddr))[2] == 0xff &&    \
-	((u8 *)(_pAddr))[3] == 0xff &&    \
-	((u8 *)(_pAddr))[4] == 0xff &&    \
+#define RT_ETH_IS_BROADCAST(_pAddr)(\
+	((u8 *)(_pAddr))[0] == 0xff &&  \
+	((u8 *)(_pAddr))[1] == 0xff &&  \
+	((u8 *)(_pAddr))[2] == 0xff &&  \
+	((u8 *)(_pAddr))[3] == 0xff &&  \
+	((u8 *)(_pAddr))[4] == 0xff &&  \
 	((u8 *)(_pAddr))[5] == 0xff) //!< Is Broadcast Address?
 
 #endif // #ifndef __INC_ETHERNET_H

@@ -57,17 +57,14 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
 		}
 		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, send_msg->msg, send_msg->msg_size);
 		((tm_internal_msg_t *)request_msg.data)->msg_size = send_msg->msg_size;
-
-		if (reply_msg == NULL) {
-			((tm_internal_msg_t *)request_msg.data)->type = TM_UNICAST_ASYNC;
-		} else {
-			((tm_internal_msg_t *)request_msg.data)->type = TM_UNICAST_SYNC;
-		}
-
 	}
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGRCMD_UNICAST;
+	if (reply_msg == NULL) {
+		request_msg.cmd = TASKMGRCMD_UNICAST_ASYNC;
+	} else {
+		request_msg.cmd = TASKMGRCMD_UNICAST_SYNC;
+	}
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;

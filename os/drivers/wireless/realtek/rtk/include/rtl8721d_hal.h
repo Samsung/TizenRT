@@ -22,7 +22,6 @@
 #define __RTL8721D_HAL_H__
 
 #include "drv_types.h"
-//#include "rtl8721d/rtl8721d_pmu_task.h"
 #include "hal_data.h"
 
 #include "rtl8721d/rtl8721d_spec.h"
@@ -31,7 +30,6 @@
 #include "rtl8721d/rtl8721d_recv.h"
 #include "rtl8721d/rtl8721d_xmit.h"
 #include "rtl8721d/rtl8721d_cmd.h"
-//#include "rtl8721d/rtl8721d_pmu_cmd.h"
 #include "rtl8721d/rtl8721d_led.h"
 #include "rtl8721d/Hal8721DPwrSeq.h"
 #include "rtl8721d/Hal8721DPhyReg.h"
@@ -45,7 +43,6 @@
 #include "../src/hal/phydm/phydm_precomp.h"
 
 #if (RTL8721D_SUPPORT == 1)
-//2TODO: We should define 8192S firmware related macro settings here!!
 #define RTL819X_DEFAULT_RF_TYPE RF_1T2R
 #define RTL819X_TOTAL_RF_PATH 2
 
@@ -66,11 +63,6 @@
 //---------------------------------------------------------------------
 //		RTL8723BS From header
 //---------------------------------------------------------------------
-
-//#define Rtl8723B_FwImageArray				Array_MP_8723B_FW_NIC
-//#define Rtl8723B_FwImgArrayLength			ArrayLength_MP_8723B_FW_NIC
-//#define Rtl8723B_FwWoWImageArray			Array_MP_8723B_FW_WoWLAN
-//#define Rtl8723B_FwWoWImgArrayLength		ArrayLength_MP_8723B_FW_WoWLAN
 
 #define Rtl8721D_PHY_REG_Array_PG Rtl8723SPHY_REG_Array_PG
 #define Rtl8721D_PHY_REG_Array_PGLength Rtl8723SPHY_REG_Array_PGLength
@@ -243,31 +235,6 @@ typedef struct _RT_8723B_FIRMWARE_HDR {
 
 #define GET_RF_TYPE(priv) (GET_HAL_DATA(priv)->rf_type)
 
-// Description: Determine the types of C2H events that are the same in driver and Fw.
-// Fisrt constructed by tynli. 2009.10.09.
-#if 0
-typedef enum _C2H_EVT
-{
-	C2H_DBG = 0,
-	C2H_TSF = 1,
-	C2H_AP_RPT_RSP = 2,
-	C2H_CCX_TX_RPT = 3,	// The FW notify the report of the specific tx packet.
-	C2H_BT_RSSI = 4,
-	C2H_BT_OP_MODE = 5,
-	C2H_EXT_RA_RPT = 6,
-	C2H_8723B_BT_INFO = 9,
-	C2H_HW_INFO_EXCH = 10,
-	C2H_8723B_BT_MP_INFO = 11,
-	MAX_C2HEVENT
-} C2H_EVT;
-
-typedef _PACKED struct _C2H_EVT_HDR
-{
-	u8	CmdID;
-	u8	CmdLen;
-	u8	CmdSeq;
-} C2H_EVT_HDR, *PC2H_EVT_HDR;
-#endif
 typedef enum tag_Package_Definition {
 	PACKAGE_QFN32,
 	PACKAGE_QFN48_MCM,
@@ -360,7 +327,6 @@ typedef struct _LX_DMA_ELEMENT_ {
 	u32 HostIndex;
 	u32 AvaliableCnt;
 } LX_DMA_ELEMENT, *PLX_DMA_ELEMENT;
-#if 1
 
 typedef enum _LX_DMA_QUEUE_TYPE_ {
 	VO_QUEUE = 0,
@@ -402,50 +368,6 @@ typedef struct _LX_DMA_MANAGER_ {
 
 } LX_DMA_MANAGER, *PLX_DMA_MANAGER;
 
-#else
-
-typedef struct _LX_DMA_MANAGER_ {
-	u32 *pVoqTXBD;
-	u32 *pViqTXBD;
-	u32 *pBeqTXBD;
-	u32 *pBkqTXBD;
-	u32 *pBcnqTXBD;
-	u32 *pMgqTXBD;
-	u32 *pH0qTXBD;
-	u32 *pH1qTXBD;
-	u32 *pH2qTXBD;
-	u32 *pH3qTXBD;
-	u32 *pH4qTXBD;
-	u32 *pH5qTXBD;
-	u32 *pH6qTXBD;
-	u32 *pH7qTXBD;
-	u32 *pExViqTXBD;
-	u32 *pExVoqTXBD;
-	u32 *pExBeqTXBD;
-	u32 *pExBkqTXBD;
-	u32 *pExMgqTXBD;
-	u32 *pRXBD;
-	//    u4Byte                  RxAggBufEntry[RX_Q_DESC_NUM];
-	//    u4Byte                  RxAggLenEntry[RX_Q_DESC_NUM];
-	u32 RxLen;
-	u32 RemainLen;
-	u16 ViqTxWritePoint;
-	u16 ViqTxReadPoint;
-	u16 VoqTxWritePoint;
-	u16 VoqTxReadPoint;
-	u16 BeqTxWritePoint;
-	u16 BeqTxReadPoint;
-	u16 BkqTxWritePoint;
-	u16 BkqTxReadPoint;
-	u16 RxWritePoint;
-	u16 RxReadPoint;
-	u16 RxAggregateNum;
-	u16 RxExpectTag;
-	u16 RxSegFlow;
-	u16 Flagls;
-} LX_DMA_MANAGER, *PLX_DMA_MANAGER;
-#endif
-
 // rtl8723a_hal_init.c
 s32 rtl8721d_FirmwareDownload(PADAPTER padapter, BOOLEAN bUsedWoWLANFw);
 s32 rtl8721d_FirmwareDisable(PADAPTER padapter);
@@ -462,7 +384,6 @@ s32 CardDisableHWSM(PADAPTER padapter, u8 resetMCU);
 s32 CardDisableWithoutHWSM(PADAPTER padapter);
 
 // EFuse
-//u8 GetEEPROMSize8721d(PADAPTER padapter);
 void Hal_InitPGData(PADAPTER padapter, u8 *PROMContent);
 void Hal_EfuseParseIDCode(PADAPTER padapter, u8 *hwinfo);
 void Hal_EfuseParseTxPowerInfo_8721D(PADAPTER padapter, u8 *PROMContent, BOOLEAN AutoLoadFail);
@@ -537,9 +458,6 @@ u8 HwRateToMRate8723B(u8 rate);
 void Hal_ReadRFGainOffset(PADAPTER pAdapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
 #endif //CONFIG_RF_GAIN_OFFSET
 
-//1TODO: Chris
-#if 1
-
 //=============
 // [1] Rx Buffer Descriptor (for PCIE) buffer descriptor architecture
 //DWORD 0
@@ -588,7 +506,5 @@ void Hal_ReadRFGainOffset(PADAPTER pAdapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
 // Dword 3, RESERVED
 
 #define SET_TX_DESC_OWN_92E(__pTxDesc, __Value) SET_BITS_TO_LE_4BYTE(__pTxDesc, 31, 1, __Value)
-
-#endif
 
 #endif
