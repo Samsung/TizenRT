@@ -54,12 +54,12 @@ static int handle_cnt;
 static int task_cnt;
 #ifndef CONFIG_DISABLE_PTHREAD
 static int pthread_cnt;
-tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+static tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 #endif
-app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
-tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+static app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+static tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
-int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
+static int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
 static int task_manager_pid;
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
