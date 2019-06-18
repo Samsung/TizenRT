@@ -71,19 +71,19 @@
 #endif
 
 #define BT_GATT_PERM_READ_MASK     (BT_GATT_PERM_READ | \
-                                    BT_GATT_PERM_READ_ENCRYPT | \
-                                    BT_GATT_PERM_READ_AUTHEN | \
-                                    BT_GATT_PERM_AUTHOR)
+										BT_GATT_PERM_READ_ENCRYPT | \
+										BT_GATT_PERM_READ_AUTHEN | \
+										BT_GATT_PERM_AUTHOR)
 #define BT_GATT_PERM_WRITE_MASK    (BT_GATT_PERM_WRITE | \
-                                    BT_GATT_PERM_WRITE_ENCRYPT | \
-                                    BT_GATT_PERM_WRITE_AUTHEN | \
-                                    BT_GATT_PERM_AUTHOR)
+										BT_GATT_PERM_WRITE_ENCRYPT | \
+										BT_GATT_PERM_WRITE_AUTHEN | \
+										BT_GATT_PERM_AUTHOR)
 #define BT_GATT_PERM_ENCRYPT_MASK  (BT_GATT_PERM_READ_ENCRYPT | \
-                                    BT_GATT_PERM_WRITE_ENCRYPT)
+										BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK    (BT_GATT_PERM_READ_AUTHEN | \
-                                    BT_GATT_PERM_WRITE_AUTHEN)
+										BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_MASK         (BT_ATT_OP_WRITE_CMD & \
-                                    BT_ATT_OP_SIGNED_WRITE_CMD)
+										BT_ATT_OP_SIGNED_WRITE_CMD)
 
 /****************************************************************************
  * Private Types

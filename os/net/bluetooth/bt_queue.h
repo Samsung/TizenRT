@@ -69,7 +69,7 @@
 /* Verify that enough messages have been allocated */
 #if 0							// TODO: need to check
 #define BT_NMSGS         (CONFIG_BLUETOOTH_TXCMD_NMSGS + \
-                          CONFIG_BLUETOOTH_TXCONN_NMSGS)
+							CONFIG_BLUETOOTH_TXCONN_NMSGS)
 
 #if BT_NMSGS > CONFIG_PREALLOC_MQ_MSGS
 #warning WARNING: not enough pre-allocated messages

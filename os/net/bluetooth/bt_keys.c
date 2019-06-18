@@ -60,7 +60,7 @@
  ****************************************************************************/
 
 #define bt_keys_foreach(list, cur, member) \
-  for (cur = list; *cur; cur = &(*cur)->member)
+	for (cur = list; *cur; cur = &(*cur)->member)
 
 /****************************************************************************
  * Private Data
