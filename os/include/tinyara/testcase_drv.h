@@ -53,17 +53,17 @@
  */
 
 #define TESTIOC_ANALOG                         _TESTIOC(1)
-#define TESTIOC_CLOCK_ABSTIME2TICKS            _TESTIOC(2)
-#define TESTIOC_GET_SIG_FINDACTION_ADD         _TESTIOC(3)
-#define TESTIOC_GET_SELF_PID                   _TESTIOC(4)
-#define TESTIOC_IS_ALIVE_THREAD                _TESTIOC(5)
-#define TESTIOC_GET_TCB_SIGPROCMASK            _TESTIOC(6)
-#define TESTIOC_GET_TCB_ADJ_STACK_SIZE         _TESTIOC(7)
+#define TESTIOC_GET_SIG_FINDACTION_ADD         _TESTIOC(2)
+#define TESTIOC_GET_SELF_PID                   _TESTIOC(3)
+#define TESTIOC_IS_ALIVE_THREAD                _TESTIOC(4)
+#define TESTIOC_GET_TCB_SIGPROCMASK            _TESTIOC(5)
+#define TESTIOC_GET_TCB_ADJ_STACK_SIZE         _TESTIOC(6)
 #ifdef CONFIG_TC_KERNEL_ROUNDROBIN
-#define TESTIOC_GET_TCB_TIMESLICE              _TESTIOC(8)
+#define TESTIOC_GET_TCB_TIMESLICE              _TESTIOC(7)
 #endif
-#define TESTIOC_SCHED_FOREACH                  _TESTIOC(9)
-#define TESTIOC_SIGNAL_PAUSE                   _TESTIOC(10)
+#define TESTIOC_SCHED_FOREACH                  _TESTIOC(8)
+#define TESTIOC_SIGNAL_PAUSE                   _TESTIOC(9)
+#define TESTIOC_CLOCK_ABSTIME2TICKS_TEST       _TESTIOC(10)
 #define TESTIOC_TIMER_INITIALIZE_TEST          _TESTIOC(11)
 #define TESTIOC_SEM_TICK_WAIT_TEST             _TESTIOC(12)
 
