@@ -2445,11 +2445,43 @@ static void tc_libc_stdio_setvbuf(void)
 	char buffer[64];
 	char *filename = VFS_FILE_PATH;
 	int ret;
+	int fp_fd;
 
 	/* setvbuf_test: DEFAULT buffering */
 
 	fp = fopen(filename, "w");
 	TC_ASSERT_NEQ("fopen", fp, NULL);
+
+	/* setvbuf_test: fail to file open */
+
+	fp_fd = fp->fs_fd;
+	fp->fs_fd = ERROR;
+	ret = setvbuf(fp, buffer, _IOFBF, 64);
+	fp->fs_fd = fp_fd;
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("setvbuf", errno, EBADF, fclose(fp));
+
+	/* setvbuf_test: Invalid mode check */
+
+	ret = setvbuf(fp, NULL, ERROR, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("setvbuf", errno, EINVAL, fclose(fp));
+
+	/* setvbuf_test: EINVAL error check
+	 * In case that if a buffer pointer is provided and the buffer size is zero
+	 */
+
+	ret = setvbuf(fp, buffer, _IOFBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("setvbuf", errno, EINVAL, fclose(fp));
+
+	/* setvbuf_test: EBUSY test */
+
+	fp->fs_bufpos++;
+	ret = setvbuf(fp, NULL, _IOFBF, 64);
+	fp->fs_bufpos = fp->fs_bufstart;
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("setvbuf", errno, EBUSY, fclose(fp));
 
 	/* setvbuf_test: NO buffering */
 
@@ -2457,6 +2489,11 @@ static void tc_libc_stdio_setvbuf(void)
 	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
 
 	/* setvbuf_test: FULL buffering */
+
+	ret = setvbuf(fp, NULL, _IOFBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: Reuse full buffering */
 
 	ret = setvbuf(fp, NULL, _IOFBF, 0);
 	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
@@ -2475,8 +2512,8 @@ static void tc_libc_stdio_setvbuf(void)
 	ret = setvbuf(fp, buffer, _IOFBF, 64);
 	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
 	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
 	fclose(fp);
-	TC_ASSERT_LEQ("setvbuf", ret, 0);
 
 	TC_SUCCESS_RESULT();
 }
