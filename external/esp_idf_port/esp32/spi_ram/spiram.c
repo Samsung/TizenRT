@@ -39,7 +39,6 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 
 #include "esp_attr.h"
-#include "esp_err.h"
 #include "spiram_psram.h"
 #include "esp_log.h"
 #include "chip/esp32_soc.h"

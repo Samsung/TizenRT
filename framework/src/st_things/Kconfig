@@ -9,10 +9,10 @@ config ST_THINGS
 	select ENABLE_IOTIVITY
 	select ENABLE_IOTIVITY_SECURED
 	select ENABLE_IOTIVITY_CLOUD
-	select NETUTILS_WIFI
+	select NETUTILS_WIFI if !ARCH_BOARD_ESP32_FAMILY
 	select WIFI_MANAGER
-	select WPA_SUPPLICANT
-	select SCSC_WLAN
+	select WPA_SUPPLICANT if !ARCH_BOARD_ESP32_FAMILY
+	select SCSC_WLAN if !ARCH_BOARD_ESP32_FAMILY
 	select NETUTILS_JSON
 	select NETUTILS_NTPCLIENT
 	depends on FS_ROMFS
@@ -52,4 +52,12 @@ config ST_THINGS_FOTA
 	default n
 	---help---
 		Enable a FOTA service for ST Things
+
+config WIFI_SCAN_IN_SOFT_AP_DISABLED
+	bool "Disable Wi-Fi Scan in soft AP mode"
+	default y if ARCH_BOARD_ESP32_FAMILY
+	default n if !ARCH_BOARD_ESP32_FAMILY
+	---help---
+		Disable Wi-Fi Scan in soft AP mode
+
 endif # ST_THINGS

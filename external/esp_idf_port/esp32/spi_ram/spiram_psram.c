@@ -33,16 +33,11 @@
  Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
 */
 
-//#include "sdkconfig.h"
 #include "string.h"
 #include "esp_attr.h"
-#include "esp_err.h"
-//#include "esp_types.h"
-//#include "esp_log.h"
 #include "spiram_psram.h"
 #include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
-//#include "rom/gpio.h"
 #include "rom/cache.h"
 #include "soc/io_mux_reg.h"
 #include "chip/esp32_dport.h"

@@ -372,9 +372,12 @@ int things_start_stack(void)
 			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}
+#ifndef CONFIG_WIFI_SCAN_IN_SOFT_AP_DISABLED
 			//call wifi scan ap.
-			if (!things_start_scanning_ap())
+			if (!things_start_scanning_ap()) {
 				return 0;
+			}
+#endif
 		} else if (!things_network_connect_home_ap()) {
 			return 0;
 		}
@@ -758,8 +761,10 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 
 	THINGS_LOG_D(TAG, "Reset Success.");
 	result = 1;
+#ifndef CONFIG_WIFI_SCAN_IN_SOFT_AP_DISABLED
 	// After completed reset of device doing wifi scan
 	things_start_scanning_ap();
+#endif
 
 GOTO_OUT:
 	// 10. All Module Enable.

@@ -1,5 +1,5 @@
 ###########################################################################
-# 
+#
 # Copyright 2019 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,5 +19,5 @@
 # Name,   Type, SubType, Offset,  Size
 nvs,      data, nvs,           ,  0x6000
 phy_init, data, phy,           ,  0x1000
-factory,  app,  factory,       ,  1M
+factory,  app,  factory,       ,  0x280000
 coredump, data, coredump,      ,  64K

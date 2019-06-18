@@ -34,7 +34,7 @@
 #ifndef _PSRAM_H
 #define _PSRAM_H
 #include "soc/spi_reg.h"
-#include "esp_err.h"
+#include <arch/chip/esp_err.h>
 
 typedef enum {
 	PSRAM_CACHE_F80M_S40M = 0,

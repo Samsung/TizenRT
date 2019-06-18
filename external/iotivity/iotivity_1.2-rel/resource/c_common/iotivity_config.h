@@ -17,7 +17,7 @@
 
 #define HAVE_FCNTL_H 1
 
-#define HAVE_MEMORY_H 1
+//#define HAVE_MEMORY_H 1
 
 #define HAVE_NETDB_H 1
 

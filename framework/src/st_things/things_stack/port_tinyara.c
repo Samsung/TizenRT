@@ -68,6 +68,9 @@ int getifaddrs(struct ifaddrs **ifap)
 	memset(&netmask, 0, sizeof(netmask));
 
 	struct netif *curr = g_netdevices;
+	if (curr == NULL) {
+		goto error;
+	}
 
 	if ((netlib_get_ipv4addr(curr->d_ifname, &addr.sin_addr) == -1)
 		|| (netlib_get_dripv4addr(curr->d_ifname, &netmask.sin_addr) == -1)
