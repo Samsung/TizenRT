@@ -30,7 +30,9 @@
 
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
-
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 void configure_partitions(void)
 {
 #if defined(CONFIG_FLASH_PARTITION)
@@ -100,6 +102,9 @@ void configure_partitions(void)
 #ifdef CONFIG_FS_ROMFS
 		|| !strncmp(types, "romfs,", 6)
 #endif
+#ifdef CONFIG_BINARY_MANAGER
+		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4) || !strncmp(types, "loadparam,", 10)
+#endif
 		) {
 			if (ftl_initialize(partno, mtd_part)) {
 				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
@@ -125,7 +130,6 @@ void configure_partitions(void)
 		}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
-
 		if (*names) {
 			while (*names) {
 				if (*names == ',') {
@@ -149,6 +153,15 @@ void configure_partitions(void)
 				}
 			}
 			mtd_setpartitionname(mtd_part, part_name);
+#ifdef CONFIG_BINARY_MANAGER
+			if (!strncmp(types, "kernel,", 7)) {
+				binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
+			} else if (!strncmp(types, "bin,", 4)) {
+				binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
+			} else if (!strncmp(types, "loadparam,", 10)) {
+				binary_manager_register_partition(partno, BINMGR_PART_LOADPARAM, part_name, partsize);
+			}
+#endif
 		}
 
 #endif
