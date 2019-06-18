@@ -371,7 +371,7 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 						unsigned long arg)
 {
 	struct imxrt_gpt_lowerhalf_s *priv = (struct imxrt_gpt_lowerhalf_s *)lower;
-	int ret = ERROR;
+	int ret = -EINVAL;
 	gpt_clock_source_t clock_source = priv->config.clockSource;
 
 	tmrvdbg("GPT IOCTL cmd: %d, arg: %ld\n", cmd, arg);
@@ -416,6 +416,13 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 		ret = up_prioritize_irq(priv->gpt->irq_id, arg);
 		break;
 #endif
+	case TCIOC_SETCLKSRC:
+		if (arg > kGPT_ClockSource_Off && arg <= kGPT_ClockSource_Osc) {
+			imxrt_gpt_setclocksource(priv->gpt->base, (gpt_clock_source_t)arg);
+			priv->config.clockSource = (gpt_clock_source_t)arg;
+			ret = OK;
+		}
+		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
 		break;

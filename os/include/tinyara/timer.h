@@ -115,6 +115,7 @@
 #ifdef CONFIG_ARCH_IRQPRIO
 #define TCIOC_SETIRQPRIO    _TCIOC(0x0009)
 #endif
+#define TCIOC_SETCLKSRC     _TCIOC(0x000A)
 
 /* Bit Settings *************************************************************/
 /* Bit settings for the struct timer_status_s flags field */
