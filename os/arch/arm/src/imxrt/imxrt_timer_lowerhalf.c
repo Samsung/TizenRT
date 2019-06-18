@@ -249,6 +249,8 @@ static int imxrt_gpt_getstatus(struct timer_lowerhalf_s *lower,
 {
 	struct imxrt_gpt_lowerhalf_s *priv = (struct imxrt_gpt_lowerhalf_s *)lower;
 	uint32_t ticks;
+	uint32_t divider;
+	gpt_clock_source_t clock_source = priv->config.clockSource;
 
 	/* Return the status bit */
 
@@ -264,16 +266,19 @@ static int imxrt_gpt_getstatus(struct timer_lowerhalf_s *lower,
 	/* Return the actual timeout in microseconds */
 
 	ticks = imxrt_gpt_getoutputcomparevalue(priv->gpt->base, kGPT_OutputCompare_Channel1);
-	status->timeout = imxrt_gpt_convert_time_tick(TICK2TIME, priv->config.clockSource, ticks);
+	status->timeout = imxrt_gpt_convert_time_tick(TICK2TIME, clock_source, ticks);
 
 	/* Get the time remaining until the timer expires (in microseconds). */
 
 	ticks = imxrt_gpt_getcurrenttimercount(priv->gpt->base);
-	status->timeleft = imxrt_gpt_convert_time_tick(TICK2TIME, priv->config.clockSource, ticks);
-#if defined(CONFIG_ARCH_BOARD_IMXRT1020_EVK) || defined(CONFIG_ARCH_BOARD_IMXRT1050_EVK)
-	status->clock_freq = imxrt_gpt_get_clockfreq(priv->config.clockSource);
+	status->timeleft = imxrt_gpt_convert_time_tick(TICK2TIME, clock_source, ticks);
+	if (clock_source == kGPT_ClockSource_Osc) {
+		divider = (int)imxrt_gpt_getoscclockdivider(priv->gpt->base);
+	} else {
+		divider = (int)imxrt_gpt_getclockdivider(priv->gpt->base);
+	}
+	status->clock_freq = imxrt_gpt_get_clockfreq(clock_source) / divider;
 	status->ticks = ticks;
-#endif
 
 	return OK;
 }
@@ -371,7 +376,7 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 						unsigned long arg)
 {
 	struct imxrt_gpt_lowerhalf_s *priv = (struct imxrt_gpt_lowerhalf_s *)lower;
-	int ret = ERROR;
+	int ret = -EINVAL;
 	gpt_clock_source_t clock_source = priv->config.clockSource;
 
 	tmrvdbg("GPT IOCTL cmd: %d, arg: %ld\n", cmd, arg);
@@ -416,6 +421,13 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 		ret = up_prioritize_irq(priv->gpt->irq_id, arg);
 		break;
 #endif
+	case TCIOC_SETCLKSRC:
+		if (arg > kGPT_ClockSource_Off && arg <= kGPT_ClockSource_Osc) {
+			imxrt_gpt_setclocksource(priv->gpt->base, (gpt_clock_source_t)arg);
+			priv->config.clockSource = (gpt_clock_source_t)arg;
+			ret = OK;
+		}
+		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
 		break;
