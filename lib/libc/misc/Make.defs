@@ -92,6 +92,12 @@ ifeq ($(CONFIG_DEBUG),y)
 CSRCS += lib_dbg.c
 endif
 
+# Environment search path support
+
+ifeq ($(CONFIG_LIB_ENVPATH),y)
+CSRCS += lib_envpath.c
+endif
+
 # Add the misc directory to the build
 
 DEPPATH += --dep-path misc

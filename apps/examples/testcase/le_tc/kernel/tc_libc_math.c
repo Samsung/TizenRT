@@ -285,15 +285,20 @@ static void tc_libc_math_asin(void)
 static void tc_libc_math_asinf(void)
 {
 	const float in_val[] = { 0.64, -0.4, ZERO, -1, 1, 1.1, -2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { 0.694498240947723, -0.411516845226288, 0, -1.5704115629196, 1.5703850984573, NAN, NAN, NAN, NAN, NAN };
+	const float sol_val[] = { 0.694, -0.411516845226288, 0, -1.5704115629196, 1.570, NAN, NAN, NAN, NAN, NAN };
 	float ret_val[SIZE(sol_val, float)];
 	int asinf_idx;
 	float compute_val;
+	float roundoff_val = 1000.0;
 
 	/* Returns the principal value of the arc sine of x */
 
 	for (asinf_idx = 0; asinf_idx < SIZE(sol_val, float); asinf_idx++) {
 		ret_val[asinf_idx] = asinf(in_val[asinf_idx]);
+
+		if (ret_val[asinf_idx] >= 0) {
+			ret_val[asinf_idx] = floorf(ret_val[asinf_idx] * roundoff_val) / roundoff_val;
+		}
 		compute_val = fabsf(sol_val[asinf_idx] - ret_val[asinf_idx]);
 
 		if ((isnan(sol_val[asinf_idx]) ^ (isnan(ret_val[asinf_idx])))) {
@@ -302,6 +307,7 @@ static void tc_libc_math_asinf(void)
 
 		TC_ASSERT_LEQ("asinf", compute_val, FLT_EPSILON);
 	}
+
 
 	TC_SUCCESS_RESULT();
 }
@@ -4053,13 +4059,18 @@ static void tc_libc_math_y0(void)
 static void tc_libc_math_y0f(void)
 {
 	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-13, 0x1p-15 };
-	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -5.810329437255859, -6.692872047424316 };
+	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -5.8103, -6.6928 };
 	float ret_val[SIZE(sol_val, float)];
 	int y0f_idx;
 	float compute_val;
+	float roundoff_val = 10000.0;
 
 	for (y0f_idx = 0; y0f_idx < SIZE(sol_val, float); y0f_idx++) {
 		ret_val[y0f_idx] = y0f(in_val[y0f_idx]);
+
+		if (ret_val[y0f_idx] < 0) {
+			ret_val[y0f_idx] = ceilf(ret_val[y0f_idx] * roundoff_val) / roundoff_val;
+		}
 		compute_val = fabsf(sol_val[y0f_idx] - ret_val[y0f_idx]);
 
 		if ((isnan(sol_val[y0f_idx]) ^ (isnan(ret_val[y0f_idx])))) {
