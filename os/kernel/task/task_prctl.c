@@ -166,21 +166,27 @@ int prctl(int option, ...)
 	goto errout;
 #endif
 
+	case PR_GET_STKLOG:
+	{
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+		struct stkmon_save_s *dest_buf = va_arg(ap, struct stkmon_save_s *);
+		stkmon_copy_log(dest_buf);
+#else
+		sdbg("Not supported StackMonitor Logging\n");
+		err = ENOSYS;
+		goto errout;
+#endif
+	}
+	break;
 	default:
 		sdbg("Unrecognized option: %d\n", option);
 		err = EINVAL;
 		goto errout;
 	}
 
-	/* Not reachable unless CONFIG_TASK_NAME_SIZE is > 0.  NOTE: This might
-	 * change if additional commands are supported.
-	 */
-
-#if CONFIG_TASK_NAME_SIZE > 0
 	va_end(ap);
 	trace_end(TTRACE_TAG_TASK);
 	return OK;
-#endif
 
 errout:
 	va_end(ap);

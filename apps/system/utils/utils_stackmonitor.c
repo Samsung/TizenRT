@@ -70,6 +70,8 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <sys/prctl.h>
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 #endif
@@ -88,7 +90,7 @@
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_STACKMONITOR_STACKSIZE
-#define CONFIG_STACKMONITOR_STACKSIZE 2048
+#define CONFIG_STACKMONITOR_STACKSIZE 4096
 #endif
 
 #ifndef CONFIG_STACKMONITOR_PRIORITY
@@ -107,8 +109,6 @@
  * Private Data
  ****************************************************************************/
 static volatile bool stkmon_started;
-static struct stkmon_save_s stkmon_arr[CONFIG_MAX_TASKS * 2];
-static int stkmon_chk_idx;
 
 /****************************************************************************
  * Private Functions
@@ -132,21 +132,31 @@ static void stkmon_print_title(void)
 static void stkmon_print_inactive_list(void)
 {
 	int inactive_idx;
-	for (inactive_idx = 0; inactive_idx < CONFIG_MAX_TASKS * 2; inactive_idx++) {
-		if (stkmon_arr[inactive_idx].timestamp != 0) {
-			printf("%5d | %8s | %8d", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize);
+	struct stkmon_save_s terminated_infos[STKMON_MAX_LOGS];
+
+	/* Initialize the terminated_infos array. */
+	for (inactive_idx = 0; inactive_idx < (STKMON_MAX_LOGS); inactive_idx++) {	
+		terminated_infos[inactive_idx].timestamp = 0;
+	}
+
+	/* Copy the terminated task/pthread information from kernel. */
+	prctl((int)PR_GET_STKLOG, (struct stkmon_save_s *)terminated_infos);
+
+	for (inactive_idx = 0; inactive_idx < STKMON_MAX_LOGS; inactive_idx++) {
+		if (terminated_infos[inactive_idx].timestamp != 0) {
+			printf("%5d | %8s | %8d", terminated_infos[inactive_idx].chk_pid, "INACTIVE", terminated_infos[inactive_idx].chk_stksize);
 #ifdef CONFIG_STACK_COLORATION
-			printf(" | %10d", stkmon_arr[inactive_idx].chk_peaksize);
+			printf(" | %10d", terminated_infos[inactive_idx].chk_peaksize);
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-			printf(" | %10d", stkmon_arr[inactive_idx].chk_peakheap);
+			printf(" | %10d", terminated_infos[inactive_idx].chk_peakheap);
 #endif
-			printf(" | %7lld", (uint64_t)((clock_t)stkmon_arr[inactive_idx].timestamp));
+			printf(" | %7lld", (uint64_t)((clock_t)terminated_infos[inactive_idx].timestamp));
 #if (CONFIG_TASK_NAME_SIZE > 0)
-			printf(" | %s", stkmon_arr[inactive_idx].chk_name);
+			printf(" | %s", terminated_infos[inactive_idx].chk_name);
 #endif
 			printf("\n");
-			stkmon_arr[inactive_idx].timestamp = 0;
+			terminated_infos[inactive_idx].timestamp = 0;
 		}
 	}
 }
@@ -282,36 +292,6 @@ static void stackmonitor_stop(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-void stkmon_logging(struct tcb_s *tcb)
-{
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	int name_idx;
-#endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_heap_s *heap;
-#endif
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].timestamp = clock();
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_pid = tcb->pid;
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_stksize = tcb->adj_stack_size;
-#ifdef CONFIG_STACK_COLORATION
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peaksize = up_check_tcbstack(tcb);
-#endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heap = mm_get_heap(tcb->stack_alloc_ptr);
-	if (heap == NULL) {
-		return;
-	}
-	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peakheap = heap->alloc_list[PIDHASH(tcb->pid)].peak_alloc_size;
-#endif
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	for (name_idx = 0; name_idx < CONFIG_TASK_NAME_SIZE + 1; name_idx++) {
-		stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_name[name_idx] = tcb->name[name_idx];
-	}
-#endif
-	stkmon_chk_idx %= (CONFIG_MAX_TASKS * 2);
-	stkmon_chk_idx++;
-}
-
 int utils_stackmonitor(int argc, char **args)
 {
 #ifndef CONFIG_DISABLE_SIGNALS
