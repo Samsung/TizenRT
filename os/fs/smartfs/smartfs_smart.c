@@ -597,7 +597,7 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 	int used_value;
 #endif
 
-#ifdef CONFIG_SMARTFS_JOURNALING
+#if defined(CONFIG_SMARTFS_JOURNALING) && !defined(CONFIG_SMARTFS_USE_SECTOR_BUFFER)
 	int retj;
 	uint16_t used_bytes;
 	uint16_t t_sector, t_offset;
