@@ -326,7 +326,7 @@ def build_cmake_args(options, for_jerry=False):
             include_dirs.append('%s/arch/arm/src/stm32' % options.sysroot)
 
     if options.target_os == 'tizenrt':
-        include_dirs.append('%s/../framework/include/iotbus' % options.sysroot)
+        include_dirs.append('%s/../framework/include' % options.sysroot)
 
     include_dirs.extend(options.external_include_dir)
     cmake_args.append("-DEXTERNAL_INCLUDE_DIR='%s'" % (' '.join(include_dirs)))
