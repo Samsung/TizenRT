@@ -14,7 +14,7 @@
  */
 
 
-#include <iotbus_gpio.h>
+#include <iotbus/iotbus_gpio.h>
 #include <stdlib.h>
 
 #include "modules/iotjs_module_gpio.h"
