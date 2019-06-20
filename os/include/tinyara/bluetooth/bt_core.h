@@ -102,7 +102,7 @@
 #define BT_GETUINT16(p) \
 	((((uint16_t)(((FAR uint8_t *)(p))[1]) >> 8) & 0xff) | \
 	(((uint16_t)(((FAR uint8_t *)(p))[0]) & 0xff) << 8))
-#define BT_PUTUINT16(p,v) \
+#define BT_PUTUINT16(p, v) \
 	do { \
 		((FAR uint8_t *)(p))[0] = ((uint16_t)(v) >> 8) & 0xff; \
 		((FAR uint8_t *)(p))[1] = ((uint16_t)(v) & 0xff) >> 8; \
@@ -111,7 +111,7 @@
 #define BT_GETUINT16(p) \
 	((((uint16_t)(((FAR uint8_t *)(p))[0]) >> 8) & 0xff) | \
 	(((uint16_t)(((FAR uint8_t *)(p))[1]) & 0xff) << 8))
-#define BT_PUTUINT16(p,v) \
+#define BT_PUTUINT16(p, v) \
 	do { \
 		((FAR uint8_t *)(p))[0] = ((uint16_t)(v) & 0xff) >> 8; \
 		((FAR uint8_t *)(p))[1] = ((uint16_t)(v) >> 8) & 0xff; \
@@ -121,14 +121,6 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-
-/* Advertising API */
-
-struct bt_eir_s {
-	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} packed_struct;
 
 /* Security level */
 

@@ -137,26 +137,6 @@ struct bt_conn_cb_s {
 };
 
 /****************************************************************************
- * Name: bt_le_scan_cb_t
- *
- * Description:
- *   A function of this type will be called back when user application
- *   triggers active LE scan. The caller will populate all needed
- *   parameters based on data coming from scan result.
- *   Such function can be set by user when LE active scan API is used.
- *
- * Input Parameters:
- *  addr     - Advertiser LE address and type.
- *  rssi     - Strength of advertiser signal.
- *  adv_type - Type of advertising response from advertiser.
- *  adv_data - Address of buffer containing advertiser data.
- *  len      - Length of advertiser data contained in buffer.
- *
- ****************************************************************************/
-
-typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
-
-/****************************************************************************
  * Public Data
  ****************************************************************************/
 
@@ -219,19 +199,6 @@ static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
  ****************************************************************************/
 
 struct bt_eir_s;				/* Forward reference */
-
-/****************************************************************************
- * Name: bt_initialize
- *
- * Description:
- *   Initialize Bluetooth. Must be the called before anything else.
- *
- * Returned Value:
- *    Zero on success or (negative) error code otherwise.
- *
- ****************************************************************************/
-
-int bt_initialize(void);
 
 /****************************************************************************
  * Name: bt_driver_register
@@ -300,71 +267,6 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 FAR const char *bt_addr_str(FAR const bt_addr_t *addr);
 FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr);
 #endif
-
-/****************************************************************************
- * Name: bt_start_advertising
- *
- * Description:
- *   Set advertisement data, scan response data, advertisement parameters
- *   and start advertising.
- *
- * Input Parameters:
- *   type - Advertising type.
- *   ad   - Data to be used in advertisement packets.
- *   sd   - Data to be used in scan response packets.
- *
- * Returned Value:
- *   Zero on success or (negative) error code otherwise.
- *
- ****************************************************************************/
-
-int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
-
-/****************************************************************************
- * Name: bt_stop_advertising
- *
- * Description:
- *   Stops ongoing advertising.
- *
- * Returned Value:
- *   Zero on success or (negative) error code otherwise.
- *
- ****************************************************************************/
-
-int bt_stop_advertising(void);
-
-/****************************************************************************
- * Name: bt_start_scanning
- *
- * Description:
- *   Start LE scanning with and provide results through the specified
- *   callback.
- *
- * Input Parameters:
- *   filter_dups - Enable duplicate filtering (or not).
- *   cb          - Callback to notify scan results.
- *
- * Returned Value:
- *   Zero on success or error code otherwise, positive in case
- *   of protocol error or negative (POSIX) in case of stack internal error
- *
- ****************************************************************************/
-
-int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
-
-/****************************************************************************
- * Name: bt_stop_scanning
- *
- * Description:
- *   Stops ongoing LE scanning.
- *
- * Returned Value:
- *   Zero on success or error code otherwise, positive in case
- *   of protocol error or negative (POSIX) in case of stack internal error
- *
- ****************************************************************************/
-
-int bt_stop_scanning(void);
 
 /****************************************************************************
  * Name: bt_le_scan_update

@@ -141,4 +141,462 @@ struct iob_s;					/* Forward reference */
 
 int bluetooth_input(FAR struct radio_driver_s *radio, FAR struct iob_s *framelist, FAR struct bluetooth_frame_meta_s *meta);
 
+/** Description of different data types that can be encoded into
+  * advertising data. Used to form arrays that are passed to the
+  * bt_le_adv_start() function.
+  */
+struct bt_data {
+	uint8_t type;
+	uint8_t data_len;
+	const uint8_t *data;
+};
+
+/** OOB data that is specific for LE SC pairing method. */
+struct bt_le_oob_sc_data {
+	/** Random Number. */
+	uint8_t r[16];
+
+	/** Confirm Value. */
+	uint8_t c[16];
+};
+
+/** General OOB data. */
+struct bt_le_oob {
+	/** LE address. If local privacy is enabled this is Resolvable Private
+	 *  Address.
+	 */
+	bt_addr_le_t addr;
+
+	/** OOB data that are relevant for LESC pairing. */
+	struct bt_le_oob_sc_data le_sc_data;
+};
+
+/** @brief BR/EDR discovery result structure */
+struct bt_br_discovery_result {
+	/** private */
+	uint8_t _priv[4];
+
+	/** Remote device address */
+	bt_addr_t addr;
+
+	/** RSSI from inquiry */
+	int8_t rssi;
+
+	/** Class of Device */
+	uint8_t cod[3];
+
+	/** Extended Inquiry Response */
+	uint8_t eir[240];
+};
+
+/** BR/EDR discovery parameters */
+struct bt_br_discovery_param {
+	/** Maximum length of the discovery in units of 1.28 seconds.
+	 *  Valid range is 0x01 - 0x30.
+	 */
+	uint8_t length;
+
+	/** True if limited discovery procedure is to be used. */
+	bool limited;
+};
+
+struct bt_br_oob {
+	/** BR/EDR address. */
+	bt_addr_t addr;
+};
+
+/** Information about a bond with a remote device. */
+struct bt_bond_info {
+	/** Address of the remote device. */
+	bt_addr_le_t addr;
+};
+
+/* Advertising API */
+struct bt_eir_s {
+	uint8_t len;
+	uint8_t type;
+	uint8_t data[29];
+} packed_struct;
+
+/** LE Advertising Parameters. */
+struct bt_le_adv_param {
+	/** Local identity */
+	uint8_t id;
+
+	/** Bit-field of advertising options */
+	uint8_t options;
+
+	/** Minimum Advertising Interval (N * 0.625) */
+	uint16_t interval_min;
+
+	/** Maximum Advertising Interval (N * 0.625) */
+	uint16_t interval_max;
+};
+
+/**
+ * @brief Initialize Bluetooth
+ *
+ * Initialize Bluetooth. Must be the called before anything else.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_initialize(void);
+
+/** @brief Set Bluetooth Device Name
+ *
+ *  Set Bluetooth GAP Device Name.
+ *
+ *  @param name New name
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_set_name(const char *name);
+
+/** @brief Get Bluetooth Device Name
+ *
+ *  Get Bluetooth GAP Device Name.
+ *
+ *  @return Bluetooth Device Name
+ */
+const char *bt_get_name(void);
+
+/** @brief Set the local Identity Address
+ *
+ *  Allows setting the local Identity Address from the application.
+ *  This API must be called before calling bt_enable(). Calling it at any
+ *  other time will cause it to fail. In most cases the application doesn't
+ *  need to use this API, however there are a few valid cases where
+ *  it can be useful (such as for testing).
+ *
+ *  At the moment, the given address must be a static random address. In the
+ *  future support for public addresses may be added.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_set_id_addr(const bt_addr_le_t *addr);
+
+/** @brief Get the currently configured identities.
+ *
+ *  Returns an array of the currently configured identity addresses. To
+ *  make sure all available identities can be retrieved, the number of
+ *  elements in the @a addrs array should be CONFIG_BT_ID_MAX. The identity
+ *  identifier that some APIs expect (such as advertising parameters) is
+ *  simply the index of the identity in the @a addrs array.
+ *
+ *  Note: Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ *  array.
+ *
+ *  @param addrs Array where to store the configured identities.
+ *  @param count Should be initialized to the array size. Once the function
+ *               returns it will contain the number of returned identities.
+ */
+void bt_id_get(bt_addr_le_t *addrs, size_t *count);
+
+/** @brief Create a new identity.
+ *
+ *  Create a new identity using the given address and IRK. This function
+ *  can be called before calling bt_enable(), in which case it can be used
+ *  to override the controller's public address (in case it has one). However,
+ *  the new identity will only be stored persistently in flash when this API
+ *  is used after bt_enable(). The reason is that the persistent settings
+ *  are loaded after bt_enable() and would therefore cause potential conflicts
+ *  with the stack blindly overwriting what's stored in flash. The identity
+ *  will also not be written to flash in case a pre-defined address is
+ *  provided, since in such a situation the app clearly has some place it got
+ *  the address from and will be able to repeat the procedure on every power
+ *  cycle, i.e. it would be redundant to also store the information in flash.
+ *
+ *  If the application wants to have the stack randomly generate identities
+ *  and store them in flash for later recovery, the way to do it would be
+ *  to first initialize the stack (using bt_enable), then call settings_load(),
+ *  and after that check with bt_id_get() how many identities were recovered.
+ *  If an insufficient amount of identities were recovered the app may then
+ *  call bt_id_create() to create new ones.
+ *
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
+ *              random address for the identity and copy it to the given
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
+ *  @param irk  Identity Resolving Key (16 bytes) to be used with this
+ *              identity. If set to all zeroes or NULL, the stack will
+ *              generate a random IRK for the identity and copy it back
+ *              to the parameter upon return from this function (in case
+ *              the parameter was non-NULL). If privacy support
+ *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              be NULL.
+ *
+ *  @return Identity identifier (>= 0) in case of success, or a negative
+ *          error code on failure.
+ */
+int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
+
+/** @brief Reset/reclaim an identity for reuse.
+ *
+ *  The semantics of the @a addr and @a irk parameters of this function
+ *  are the same as with bt_id_create(). The difference is the first
+ *  @a id parameter that needs to be an existing identity (if it doesn't
+ *  exist this function will return an error). When given an existing
+ *  identity this function will disconnect any connections created using it,
+ *  remove any pairing keys or other data associated with it, and then create
+ *  a new identity in the same slot, based on the @a addr and @a irk
+ *  parameters.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
+ *              random address for the identity and copy it to the given
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
+ *  @param irk  Identity Resolving Key (16 bytes) to be used with this
+ *              identity. If set to all zeroes or NULL, the stack will
+ *              generate a random IRK for the identity and copy it back
+ *              to the parameter upon return from this function (in case
+ *              the parameter was non-NULL). If privacy support
+ *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              be NULL.
+ *
+ *  @return Identity identifier (>= 0) in case of success, or a negative
+ *          error code on failure.
+ */
+int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
+
+/** @brief Delete an identity.
+ *
+ *  When given a valid identity this function will disconnect any connections
+ *  created using it, remove any pairing keys or other data associated with
+ *  it, and then flag is as deleted, so that it can not be used for any
+ *  operations. To take back into use the slot the identity was occupying the
+ *  bt_id_reset() API needs to be used.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *
+ *  @return 0 in case of success, or a negative error code on failure.
+ */
+int bt_id_delete(uint8_t id);
+
+/* Advertising API */
+
+/**
+ * @brief Start advertising
+ *
+ * Set advertisement data, scan response data, advertisement parameters
+ * and start advertising.
+ *
+ * @param[in] type Advertising type.
+ * @param[in] ad Data to be used in advertisement packets.
+ * @param[in] sd Data to be used in scan response packets.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
+
+/**
+ * @brief Stop advertising
+ *
+ * Stops ongoing advertising.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_stop_advertising(void);
+
+/** @brief Update advertising
+ *
+ *  Update advertisement and scan response data.
+ *
+ *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
+ *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
+
+/****************************************************************************
+ * Name: bt_le_scan_cb_t
+ *
+ * Description:
+ *   A function of this type will be called back when user application
+ *   triggers active LE scan. The caller will populate all needed
+ *   parameters based on data coming from scan result.
+ *   Such function can be set by user when LE active scan API is used.
+ *
+ * Input Parameters:
+ *  addr     - Advertiser LE address and type.
+ *  rssi     - Strength of advertiser signal.
+ *  adv_type - Type of advertising response from advertiser.
+ *  adv_data - Address of buffer containing advertiser data.
+ *  len      - Length of advertiser data contained in buffer.
+ *
+ ****************************************************************************/
+typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
+
+/**
+ * @brief Start (LE) scanning
+ *
+ * Start LE scanning with given parameters and provide results through
+ * the specified callback.
+ *
+ * @param[in] filter_dups Enable duplicate filtering (or not).
+ * @param[in] cb Callback to notify scan results.
+ *
+ * @return Zero on success or error code otherwise, positive in case
+ * of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+
+/**
+ * @brief Stop (LE) scanning.
+ *
+ * Stops ongoing LE scanning.
+ *
+ * @return Zero on success or error code otherwise, positive in case
+ * of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_stop_scanning(void);
+
+/** @brief Set (LE) channel map.
+ *
+ * @param chan_map Channel map.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_set_chan_map(uint8_t chan_map[5]);
+
+/** @brief Helper for parsing advertising (or EIR or OOB) data.
+ *
+ *  A helper for parsing the basic data types used for Extended Inquiry
+ *  Response (EIR), Advertising Data (AD), and OOB data blocks. The most
+ *  common scenario is to call this helper on the advertising data
+ *  received in the callback that was given to bt_le_scan_start().
+ *
+ *  @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
+ *  @param func      Callback function which will be called for each element
+ *                   that's found in the data. The callback should return
+ *                   true to continue parsing, or false to stop parsing.
+ *  @param user_data User data to be passed to the callback.
+ */
+void bt_data_parse(struct net_buf_simple *ad, bool(*func)(struct bt_data *data, void *user_data), void *user_data);
+
+/**
+ * @brief Get LE local Out Of Band information
+ *
+ * This function allows to get local information that are useful for Out Of Band
+ * pairing or connection creation process.
+ *
+ * If privacy is enabled this will result in generating new Resolvable Private
+ * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
+ * will be used for advertising, active scanning and connection creation.
+ *
+ * @param id  Local identity, in most cases BT_ID_DEFAULT.
+ * @param oob LE related information
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
+
+/** @typedef bt_br_discovery_cb_t
+ *  @brief Callback type for reporting BR/EDR discovery (inquiry)
+ *         results.
+ *
+ *  A callback of this type is given to the bt_br_discovery_start()
+ *  function and will be called at the end of the discovery with
+ *  information about found devices populated in the results array.
+ *
+ *  @param results Storage used for discovery results
+ *  @param count Number of valid discovery results.
+ */
+typedef void bt_br_discovery_cb_t(struct bt_br_discovery_result *results, size_t count);
+
+/** @brief Start BR/EDR discovery
+ *
+ *  Start BR/EDR discovery (inquiry) and provide results through the specified
+ *  callback. When bt_br_discovery_cb_t is called it indicates that discovery
+ *  has completed. If more inquiry results were received during session than
+ *  fits in provided result storage, only ones with highest RSSI will be
+ *  reported.
+ *
+ *  @param param Discovery parameters.
+ *  @param results Storage for discovery results.
+ *  @param count Number of results in storage. Valid range: 1-255.
+ *  @param cb Callback to notify discovery results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_br_discovery_start(const struct bt_br_discovery_param *param, struct bt_br_discovery_result *results, size_t count, bt_br_discovery_cb_t cb);
+
+/** @brief Stop BR/EDR discovery.
+ *
+ *  Stops ongoing BR/EDR discovery. If discovery was stopped by this call
+ *  results won't be reported
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_br_discovery_stop(void);
+
+/**
+ * @brief Get BR/EDR local Out Of Band information
+ *
+ * This function allows to get local controller information that are useful
+ * for Out Of Band pairing or connection creation process.
+ *
+ * @param oob Out Of Band information
+ */
+int bt_br_oob_get_local(struct bt_br_oob *oob);
+
+/** @brief Enable/disable set controller in discoverable state.
+ *
+ *  Allows make local controller to listen on INQUIRY SCAN channel and responds
+ *  to devices making general inquiry. To enable this state it's mandatory
+ *  to first be in connectable state.
+ *
+ *  @param enable Value allowing/disallowing controller to become discoverable.
+ *
+ *  @return Negative if fail set to requested state or requested state has been
+ *  already set. Zero if done successfully.
+ */
+int bt_br_set_discoverable(bool enable);
+
+/** @brief Enable/disable set controller in connectable state.
+ *
+ *  Allows make local controller to be connectable. It means the controller
+ *  start listen to devices requests on PAGE SCAN channel. If disabled also
+ *  resets discoverability if was set.
+ *
+ *  @param enable Value allowing/disallowing controller to be connectable.
+ *
+ *  @return Negative if fail set to requested state or requested state has been
+ *  already set. Zero if done successfully.
+ */
+int bt_br_set_connectable(bool enable);
+
+/** Clear pairing information.
+  *
+  * @param id    Local identity (mostly just BT_ID_DEFAULT).
+  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+  *              devices.
+  *
+  * @return 0 on success or negative error value on failure.
+  */
+int bt_unpair(uint8_t id, const bt_addr_le_t *addr);
+
+/** Iterate through all existing bonds.
+  *
+  * @param id         Local identity (mostly just BT_ID_DEFAULT).
+  * @param func       Function to call for each bond.
+  * @param user_data  Data to pass to the callback function.
+  */
+void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info, void *user_data), void *user_data);
+
 #endif							/*  __INCLUDE_TINYARA_BLUETOOTH_BLUETOOTH_H */

@@ -54,7 +54,7 @@
 # Include Bluetooth support
 BLUETOOTH_CSRCS += bt_atomic.c bt_att.c bt_buf.c bt_conn.c bt_gatt.c bt_hcicore.c
 BLUETOOTH_CSRCS += bt_ioctl.c bt_keys.c bt_l2cap.c bt_netdev.c bt_queue.c bt_smp.c
-BLUETOOTH_CSRCS += bt_uuid.c
+BLUETOOTH_CSRCS += bt_uuid.c bluetooth.c
 
 DEPPATH += --dep-path bluetooth
 VPATH += :bluetooth
