@@ -122,14 +122,6 @@
  * Public Types
  ****************************************************************************/
 
-/* Advertising API */
-
-struct bt_eir_s {
-	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} packed_struct;
-
 /* Security level */
 
 enum bt_security_e {
