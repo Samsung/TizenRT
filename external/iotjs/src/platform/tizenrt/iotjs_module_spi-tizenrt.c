@@ -23,8 +23,8 @@
 #error "\n\nTizenRT CONFIG_SPI_EXCHANGE flag required for SPI module\n\n"
 #endif
 
-#include <iotbus_error.h>
-#include <iotbus_spi.h>
+#include <iotbus/iotbus_error.h>
+#include <iotbus/iotbus_spi.h>
 
 #include "modules/iotjs_module_spi.h"
 

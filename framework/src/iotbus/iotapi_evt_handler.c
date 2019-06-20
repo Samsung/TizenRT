@@ -25,7 +25,6 @@
 #include <poll.h>
 #include <errno.h>
 #include "iotapi_evt_handler.h"
-#include "iotbus_internal.h"
 
 #define IOTAPI_QUEUE_SIZE 19
 
@@ -84,24 +83,24 @@ void *iotapi_handler(void *data)
 	pthread_mutex_unlock(&g_ia_lock);
 
 	for (;;) {
-		int timeout = 1000;
+		int timeout = 10;
 		int size = _iotapi_alloc_event();
-		idbg("[iotcom] Wait sysio events(%d)\n", size);
+		ibdbg("[iotcom] Wait sysio events(%d)\n", size);
 		int ret = poll(g_ia_evtlist, size, timeout);
 		if (ret < 0) {
-			idbg("[iotcom] poll error(%d)(%d)\n", ret, errno);
+			ibdbg("[iotcom] poll error(%d)(%d)\n", ret, errno);
 			break;
 		} else if (ret == 0) {
-			idbg("[iotcom] timeout(%d)\n", timeout);
+			ibdbg("[iotcom] timeout(%d)\n", timeout);
 			continue;
 		}
 
-		idbg("[iotcom] poll event(%d)\n", ret);
+		ibdbg("[iotcom] poll event(%d)\n", ret);
 		int idx = 0;
 		for (idx = 0; idx < IOTAPI_QUEUE_SIZE; idx++) {
-			//idbg("[iotcom] search fd(%d) idx(%d)\n", g_ia_evt_queue[idx].fd, g_ia_evt_queue[idx].idx);
+			//ibdbg("[iotcom] search fd(%d) idx(%d)\n", g_ia_evt_queue[idx].fd, g_ia_evt_queue[idx].idx);
 			if (g_ia_evt_queue[idx].fd != -1 && g_ia_evtlist[g_ia_evt_queue[idx].idx].revents & (POLLIN)) {
-				idbg("[iotcom] search fd(%d) idx(%d)\n", g_ia_evt_queue[idx].fd, g_ia_evt_queue[idx].idx);
+				ibdbg("[iotcom] search fd(%d) idx(%d)\n", g_ia_evt_queue[idx].fd, g_ia_evt_queue[idx].idx);
 				g_ia_evt_queue[idx].func(g_ia_evt_queue[idx].data);
 			}
 		}
@@ -111,7 +110,7 @@ void *iotapi_handler(void *data)
 #ifdef CONFIG_IOTAPI_DEBUG
 			int readed;
 			readed = read(g_ia_evtlist[0].fd, buf, 3);
-			idbg("[iotcom] receive command(%d)\n", readed);
+			ibdbg("[iotcom] receive command(%d)\n", readed);
 #else
 			read(g_ia_evtlist[0].fd, buf, 3);
 #endif
@@ -128,7 +127,7 @@ void *iotapi_handler(void *data)
 						g_ia_evt_queue[i].fd = g_ia_msg_queue[0].evt.fd;
 						g_ia_evt_queue[i].data = g_ia_msg_queue[0].evt.data;
 						g_ia_evt_queue[i].func = g_ia_msg_queue[0].evt.func;
-						idbg("[iotcom] insert 2-1-1(%d)\n", g_ia_evt_size);
+						ibdbg("[iotcom] insert 2-1-1(%d)\n", g_ia_evt_size);
 						break;
 					}
 				}
@@ -140,7 +139,7 @@ void *iotapi_handler(void *data)
 				for (; i < IOTAPI_QUEUE_SIZE; i++) {
 					if (g_ia_evt_queue[i].fd == g_ia_msg_queue[0].evt.fd) {
 						g_ia_evt_queue[i].fd = -1;
-						idbg("[iotcom] remove 2-2-1(%d)\n", g_ia_evt_size);
+						ibdbg("[iotcom] remove 2-2-1(%d)\n", g_ia_evt_size);
 						break;
 					}
 				}
@@ -155,7 +154,7 @@ void *iotapi_handler(void *data)
 		}
 
 	}
-	idbg("[iotcom] exit iotapi handler\n");
+	ibdbg("[iotcom] exit iotapi handler\n");
 
 	return NULL;
 }
@@ -164,7 +163,7 @@ int iotapi_queue_command(char *buf)
 {
 	int ret = write(g_pipes_handler[1], buf, 3);
 	if (ret < 0) {
-		idbg("[iotcom] pipe write fail\n");
+		ibdbg("[iotcom] pipe write fail\n");
 		return -1;
 	}
 	return 0;
@@ -175,7 +174,7 @@ int iotapi_handler_restart(void)
 	char command[3] = "rs";
 	int ret = iotapi_queue_command(command);
 	if (ret < 0) {
-		idbg("[iotcom] iotapi handler restart fail\n");
+		ibdbg("[iotcom] iotapi handler restart fail\n");
 		return -1;
 	}
 	return 0;
@@ -183,11 +182,11 @@ int iotapi_handler_restart(void)
 
 int iotapi_handler_stop(void)
 {
-	idbg("[iotcom] iotapi handler stop\n");
+	ibdbg("[iotcom] iotapi handler stop\n");
 	char command[3] = "st";
 	int ret = iotapi_queue_command(command);
 	if (ret < 0) {
-		idbg("[iotcom] stop iotapi handler fail\n");
+		ibdbg("[iotcom] stop iotapi handler fail\n");
 		return -1;
 	}
 	return 0;
@@ -195,12 +194,12 @@ int iotapi_handler_stop(void)
 
 int iotapi_handler_start(int fd)
 {
-	idbg("[iotcom] iotapi handler start\n");
+	ibdbg("[iotcom] iotapi handler start\n");
 	pthread_t tid;
 	int ret;
 	ret = pthread_create(&tid, NULL, iotapi_handler, NULL);
 	if (ret < 0) {
-		idbg("[iotcom] create iotapi handler fail(%d)\n", ret);
+		ibdbg("[iotcom] create iotapi handler fail(%d)\n", ret);
 		return -1;
 	}
 	pthread_detach(tid);
@@ -212,19 +211,19 @@ int iotapi_handler_start(int fd)
  */
 void iotapi_initialize(void)
 {
-	idbg("[iotcom] init\n");
+	ibdbg("[iotcom] init\n");
 	int ret = 0, i = 0;
 	// booting time
 
 	// init mutex
 	ret = pthread_mutex_init(&g_ia_lock, NULL);
 	if (ret < 0) {
-		idbg("[iotcom] IOTAPI mutex init error\n");
+		ibdbg("[iotcom] IOTAPI mutex init error\n");
 		return;
 	}
 	// init pipe
 	if (pipe(g_pipes_handler) == -1) {
-		idbg("[iotcom] Create handler pipe fail\n");
+		ibdbg("[iotcom] Create handler pipe fail\n");
 		return;
 	}
 	// init queue
@@ -237,7 +236,7 @@ void iotapi_initialize(void)
 
 int iotapi_insert(iotapi_elem * item)
 {
-	idbg("[iotcom] ==>iotapi_insert\n");
+	ibdbg("[iotcom] ==>iotapi_insert\n");
 	int mode = 1, ret = 0;
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == IOTAPI_QUEUE_SIZE) {
@@ -256,11 +255,11 @@ int iotapi_insert(iotapi_elem * item)
 	if (mode == 0) {
 		ret = iotapi_handler_start(item->fd);
 		if (ret < 0)
-			idbg("[iotcom] start iotapi_handler fail\n");
+			ibdbg("[iotcom] start iotapi_handler fail\n");
 	} else {
 		ret = iotapi_handler_restart();
 		if (ret < 0)
-			idbg("[iotcom] Restart iotapi_handler fail\n");
+			ibdbg("[iotcom] Restart iotapi_handler fail\n");
 	}
 
 	return ret;
@@ -268,7 +267,7 @@ int iotapi_insert(iotapi_elem * item)
 
 int iotapi_remove(iotapi_elem * item)
 {
-	idbg("[iotcom] ==>iotapi_remove\n");
+	ibdbg("[iotcom] ==>iotapi_remove\n");
 	int ret = 0;
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == 0) {
@@ -282,7 +281,7 @@ int iotapi_remove(iotapi_elem * item)
 
 	ret = iotapi_handler_restart();
 	if (ret < 0)
-		idbg("[iotcom] Restart iotapi_handler fail\n");
+		ibdbg("[iotcom] Restart iotapi_handler fail\n");
 
 	return ret;
 }

@@ -41,6 +41,8 @@ struct _iotbus_adc_s;
  */
 typedef struct _iotbus_adc_wrapper_s *iotbus_adc_context_h;
 
+typedef void (*iotbus_adc_cb)(iotbus_adc_context_h);
+
 /**
  * @brief Enumeration of ADC state
  * @details

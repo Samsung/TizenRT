@@ -22,7 +22,7 @@
 #include "iotjs_reqwrap.h"
 
 #if defined(__TIZENRT__)
-#include <iotbus_pwm.h>
+#include <iotbus/iotbus_pwm.h>
 #include <stdint.h>
 #endif
 

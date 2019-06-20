@@ -23,7 +23,7 @@
 #error "\n\nTizenRT CONFIG_I2C configuration flag required for I2C module\n\n"
 #endif
 
-#include <iotbus_i2c.h>
+#include <iotbus/iotbus_i2c.h>
 
 #include "modules/iotjs_module_i2c.h"
 

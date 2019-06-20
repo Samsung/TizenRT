@@ -31,7 +31,6 @@
 #include <tinyara/spi/spi.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_spi.h>
-#include "iotbus_internal.h"
 
 #define _IOTBUS_SPI_MAX_FREQUENCY 12000000 //12Mhz
 
