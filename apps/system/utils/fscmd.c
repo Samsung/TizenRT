@@ -993,6 +993,68 @@ static int tash_pwd(int argc, char **args)
 }
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
+static int delete_entry(const char *fullpath)
+{
+	int ret = OK;
+	struct stat st;
+
+	if (!fullpath) {
+		FSCMD_OUTPUT("Path is null\n");
+		return ERROR;
+	}
+
+	if (stat(fullpath, &st) < 0) {
+		FSCMD_OUTPUT("stat failed with %s\n", fullpath);
+		return ERROR;
+	}
+
+	if (!S_ISDIR(st.st_mode)) {
+		ret = unlink(fullpath);
+		if (ret != OK) {
+			FSCMD_OUTPUT("unlink() failed with %s\n", fullpath);
+			return ret;
+		}
+	} else {
+		/* Iterate the directory contents */
+		DIR *dirp = opendir(fullpath);		/* Open the directory */
+		if (!dirp) {
+			/* Failed to open the directory */
+			FSCMD_OUTPUT("\t Failed to open directory: %s\n", fullpath);
+			return ERROR;
+		}
+
+		/* Read each directory entry */
+		for (;;) {
+			char *entrypath = NULL;
+			struct dirent *entryp = readdir(dirp);
+			if (!entryp) {
+				/* Finished with this directory */
+				break;
+			}
+
+			/* Call delete_entey recursively */
+			entrypath = get_dirpath(fullpath, entryp->d_name);
+			ret = delete_entry(entrypath);
+			fscmd_free(entrypath);
+			if (ret != OK) {
+				FSCMD_OUTPUT("delete_entry() failed with %s\n", entrypath);
+				return ret;
+			}
+		}
+
+		ret = rmdir(fullpath);
+		if (ret != OK) {
+			FSCMD_OUTPUT("rmdir failed with %s\n", fullpath);
+			return ret;
+		}
+
+		closedir(dirp);
+	}
+	FSCMD_OUTPUT("%s deleted\n", fullpath);
+
+	return ret;
+}
+
 /****************************************************************************
  * Name: tash_rm
  *
@@ -1005,14 +1067,26 @@ static int tash_pwd(int argc, char **args)
 static int tash_rm(int argc, char **args)
 {
 	char *fullpath;
-	int ret = ERROR;
+	int ret = OK;
 
-	fullpath = get_fullpath(args[1]);
-	if (fullpath) {
-		ret = unlink(fullpath);
-		if (ret < 0) {
-			FSCMD_OUTPUT(CMD_FAILED, args[0], "unlink");
+	if (args[2]) {
+		fullpath = get_fullpath(args[2]);
+		if (strncmp(args[1], "-r", strlen(args[1])) == 0) {
+			ret = delete_entry(fullpath);
+		} else {
+			FSCMD_OUTPUT("Usage: rm [-r] [FILE/DIR]\n");
 		}
+	} else {
+		fullpath = get_fullpath(args[1]);
+		ret = unlink(fullpath);
+		if (ret != OK) {
+			FSCMD_OUTPUT(CMD_FAILED, args[0], "unlink");
+			return ret;
+		}
+		FSCMD_OUTPUT("%s deleted\n", fullpath);
+	}
+
+	if (fullpath) {
 		fscmd_free(fullpath);
 	}
 
