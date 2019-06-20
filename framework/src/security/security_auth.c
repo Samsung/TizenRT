@@ -114,6 +114,11 @@ security_error auth_get_certificate(security_handle hnd, const char *cert_name, 
 		SECAPI_HAL_RETURN(hres);
 	}
 
+	cert->data = (unsigned char *)malloc(cert_out.data_len);
+	if (!cert->data) {
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+
 	SECAPI_DATA_DCOPY(cert_out, cert);
 
 	SECAPI_RETURN(SECURITY_OK);
