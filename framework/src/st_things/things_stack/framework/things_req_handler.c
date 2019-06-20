@@ -197,17 +197,12 @@ static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource
 	} else {
 		rep = target_resource->rep;
 	}
+
+	THINGS_LOG_D(TAG, "Create response for accesspoints resource, WiFi list count is: %d", list_cnt);
 	things_representation_s **child_rep = (things_representation_s **)things_malloc(list_cnt * sizeof(things_representation_s *));
 	access_point_info_s *wifi_scan_iter = p_list;
 	int iter;
 	for (iter = 0; iter < list_cnt; ++iter) {
-#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
-		THINGS_LOG_V(TAG, "e_ssid : %s", wifi_scan_iter->e_ssid);
-		THINGS_LOG_V(TAG, "signal_level : %s", wifi_scan_iter->signal_level);
-		THINGS_LOG_V(TAG, "bss_id : %s", wifi_scan_iter->bss_id);
-		THINGS_LOG_V(TAG, "sec_type : %s", wifi_scan_iter->sec_type);
-		THINGS_LOG_V(TAG, "enc_type : %s", wifi_scan_iter->enc_type);
-#endif               // CONFIG_DEBUG_ST_THINGS_DEBUG
 		child_rep[iter] = things_create_representation_inst(NULL);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MACADDR, wifi_scan_iter->bss_id);
 		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_RSSI, wifi_scan_iter->signal_level);
