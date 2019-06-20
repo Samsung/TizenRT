@@ -80,7 +80,7 @@ OS:app-flash
 
 ROMFS:romfs
 
-romfs: $(ROMFS_IMG) $(ESPTOOLPY_SRC)
+romfs: $(ESPTOOLPY_SRC)
 ifneq ($(ROMFS_OFFSET),-1)
 	@echo "Flashing romfs image to serial port $(ESPPORT), offset $(ROMFS_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(ROMFS_OFFSET) $(ROMFS_IMG)
