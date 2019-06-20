@@ -15,26 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef _IOTBUS_COMMON_H__
-#define _IOTBUS_COMMON_H__
 
-typedef enum {
-	IOTBUS_UART_TX_EMPTY = 0,
-	IOTBUS_UART_TX_RDY,
-	IOTBUS_UART_RX_AVAIL,
-	IOTBUS_UART_RECEIVED,
-	IOTBUS_GPIO_FALLING,
-	IOTBUS_GPIO_RISING,
-	IOTBUS_INTR_MAX,	
-} iotbus_int_type_e;
+#ifndef _IOTAPI_SIG_HANDLER_H__
+#define _IOTAPI_SIG_HANDLER_H__
 
-typedef enum {
-	IOTBUS_GPIO = 0,
-	IOTBUS_PWM,
-	IOTBUS_ADC,
-	IOTBUS_UART,
-	IOTBUS_I2C,
-	IOTBUS_SPI,
-} iotbus_pin_e;
+pid_t iotapi_get_pid(void);
+void iotapi_sig_init(void);
 
-#endif
+#endif // #define _IOTAPI_SIG_HANDLER_H__

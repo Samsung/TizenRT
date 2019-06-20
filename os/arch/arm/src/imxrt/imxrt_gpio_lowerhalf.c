@@ -62,6 +62,7 @@
 #include <arch/irq.h>
 #include <tinyara/gpio.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/iotbus_sig.h>
 
 #include "imxrt_iomuxc.h"
 #include "imxrt_gpio.h"
@@ -84,6 +85,15 @@ struct imxrt_lowerhalf_s {
 static int imxrt_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 {
 	struct imxrt_lowerhalf_s *lower = (struct imxrt_lowerhalf_s *)arg;
+	uint32_t status = (lower->pinset & GPIO_INTCFG_MASK);
+
+	if (status == GPIO_INT_FALLINGEDGE) {
+		IOTBUS_INT_SIG_TRIG(IOTBUS_GPIO_FALLING);
+	}
+
+	if (status == GPIO_INT_RISINGEDGE) {
+		IOTBUS_INT_SIG_TRIG(IOTBUS_GPIO_RISING);
+	}
 
 	if (lower->handler != NULL) {
 		DEBUGASSERT(lower->handler != NULL);

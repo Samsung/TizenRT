@@ -45,6 +45,7 @@
 #define GPIOIOC_SET_DRIVE		_GPIOIOC(0x0002)
 #define GPIOIOC_POLLEVENTS		_GPIOIOC(0x0003)
 #define GPIOIOC_REGISTER		_GPIOIOC(0x0004)
+#define GPIOIOC_SET_INTERRUPT		_GPIOIOC(0x0005)
 
 /****************************************************************************
  * Public Types

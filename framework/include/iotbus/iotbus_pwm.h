@@ -41,6 +41,8 @@ struct _iotbus_pwm_s;
  */
 typedef struct _iotbus_pwm_wrapper_s *iotbus_pwm_context_h;
 
+typedef void (*iotbus_pwm_cb)(iotbus_pwm_context_h);
+
 /**
  * @brief Enumeration of PWM state
  * @details
