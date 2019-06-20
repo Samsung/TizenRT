@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 
+
 def Excute(cmd):
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              universal_newlines=True)
@@ -31,7 +32,8 @@ def DeleteFile():
     with open('object_list.txt', "r") as f:
         while True:
             line = f.readline()
-            if not line: break
+            if not line:
+                break
             gcda_list.append(line[:-1].replace(".c", ".gcda"))
             gcno_list.append(line[:-1].replace(".c", ".gcno"))
     rm_gcda_list = rm_cmd + gcda_list
@@ -49,4 +51,3 @@ if __name__ == "__main__":
         ReadFile()
     else:
         DeleteFile()
-
