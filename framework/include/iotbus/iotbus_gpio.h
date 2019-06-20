@@ -33,6 +33,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/gpio.h>
+#include <iotbus/iotbus_common.h>
 
 /**
  * @brief Enumeration of Gpio signal value

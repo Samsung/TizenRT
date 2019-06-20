@@ -23,7 +23,7 @@
 #include "iotjs_reqwrap.h"
 
 #if defined(__TIZENRT__)
-#include <iotbus_spi.h>
+#include <iotbus/iotbus_spi.h>
 #include <tinyara/config.h>
 #endif
 
