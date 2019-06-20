@@ -59,6 +59,7 @@ typedef enum {
 	IOTBUS_ERROR_DEVICE_NOT_READY = -1102, /* Device is Not ready to use */
 	IOTBUS_ERROR_DEVICE_FAIL = -1103, /* Device is Not ready to use */
 	IOTBUS_ERROR_QUEUE_FULL = -1104, /* Queue is full */
+	IOTBUS_ERROR_OUT_OF_MEM = -1105, /* Heap is full */
 
 	IOTBUS_ERROR_UNKNOWN = -1999, /* Unknown error */
 } iotbus_error_e;

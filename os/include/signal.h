@@ -215,6 +215,48 @@
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
 #endif
 
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_GPIO_FALLING
+#define SIG_IOTBUS_GPIO_FALLING		26
+#else
+#define SIG_IOTBUS_GPIO_FALLING		CONFIG_SIG_IOTBUS_GPIO_FALLING
+#endif
+
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_GPIO_RISING
+#define SIG_IOTBUS_GPIO_RISING		27
+#else
+#define SIG_IOTBUS_GPIO_RISING		CONFIG_SIG_IOTBUS_GPIO_RISING
+#endif
+
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_UART_TX_EMPTY
+#define SIG_IOTBUS_UART_TX_EMPTY	28
+#else
+#define SIG_IOTBUS_UART_TX_EMPTY	CONFIG_SIG_IOTBUS_UART_TX_EMPTY
+#endif
+
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_UART_TX_RDY
+#define SIG_IOTBUS_UART_TX_RDY		29
+#else
+#define SIG_IOTBUS_UART_TX_RDY		CONFIG_SIG_IOTBUS_UART_TX_RDY
+#endif
+
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_UART_RX_AVAIL
+#define SIG_IOTBUS_UART_RX_AVAIL	30
+#else
+#define SIG_IOTBUS_UART_RX_AVAIL	CONFIG_SIG_IOTBUS_UART_RX_AVAIL
+#endif
+
+/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
+#ifndef CONFIG_SIG_IOTBUS_UART_RECEIVED
+#define SIG_IOTBUS_UART_RECEIVED	31
+#else
+#define SIG_IOTBUS_UART_RECEIVED	CONFIG_SIG_IOTBUS_UART_RECEIVED
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

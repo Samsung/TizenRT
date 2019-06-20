@@ -67,6 +67,8 @@ struct _iotbus_spi_s;
  */
 typedef struct _iotbus_spi_wrapper_s *iotbus_spi_context_h;
 
+typedef void (*iotbus_spi_cb)(iotbus_spi_context_h);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

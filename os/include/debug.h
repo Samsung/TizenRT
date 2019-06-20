@@ -882,6 +882,13 @@
 #define ullvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_IOTBUS
+#define ibdbg(format, ...)	dbg(format, ##__VA_ARGS__)
+#define ibvdbg(format, ...)	vdbg(format, ##__VA_ARGS__)
+#else
+#define ibdbg(...)
+#define ibvdbg(...)
+#endif
 
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
@@ -1409,6 +1416,14 @@
 #else
 #define uvdbg       (void)
 #define ullvdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_IOTBUS
+#define ibdbg		dbg
+#define ibvdbg		vdbg
+#else
+#define ibdbg		(void)
+#define ibvdbg		(void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

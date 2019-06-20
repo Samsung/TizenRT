@@ -41,6 +41,8 @@ struct _iotbus_i2c_s;
  */
 typedef struct _iotbus_i2c_wrapper_s *iotbus_i2c_context_h;
 
+typedef void (*iotbus_i2c_cb)(iotbus_i2c_context_h);
+
 /**
  * @brief Enumeration of I2C frequency mode
  * @details
