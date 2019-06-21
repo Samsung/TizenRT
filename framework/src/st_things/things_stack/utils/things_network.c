@@ -377,7 +377,9 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
+	THINGS_LOG_V(TAG, "WiFi Scan done.");
 	if (scan_result == NULL) {
+		THINGS_LOG_E(TAG, "\tWiFi scan result is NULL.");
 		return;
 	}
 	pthread_mutex_lock(&g_ap_list_mutex);
@@ -434,15 +436,7 @@ void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_
 		}
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
-#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
-	pinfo = g_wifi_scan_info;
-	while (pinfo != NULL) {
-		THINGS_LOG_D(TAG, "WiFi AP - SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d",
-				   pinfo->e_ssid, pinfo->bss_id, pinfo->signal_level);
-		pinfo = pinfo->next;
-	}
-#endif
-	THINGS_LOG_V(TAG, "WiFi Scan done, list count is %d.", g_wifi_count);
+	THINGS_LOG_V(TAG, "\tWiFi list count is %d.", g_wifi_count);
 	pthread_mutex_unlock(&g_ap_list_mutex);
 	return;
 }
