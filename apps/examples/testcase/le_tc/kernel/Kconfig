@@ -27,9 +27,8 @@ config TC_KN_ALL
 	select TC_KERNEL_LIBC_LIBGEN
 	select TC_KERNEL_LIBC_MATH if LIBM
 	select TC_KERNEL_LIBC_MISC
-	select TC_KERNEL_LIBC_MQUEUE
 	select TC_KERNEL_LIBC_PTHREAD
-	select TC_KERNEL_LIBC_QUEUE if !DISABLE_MQUEUE
+	select TC_KERNEL_LIBC_QUEUE
 	select TC_KERNEL_LIBC_SCHED
 	select TC_KERNEL_LIBC_SEMAPHORE
 	select TC_KERNEL_LIBC_SIGNAL
@@ -99,11 +98,6 @@ config TC_KERNEL_LIBC_MISC
 	select DEBUG
 	select DEBUG_ERROR
 	select DEBUG_VERBOSE
-
-config TC_KERNEL_LIBC_MQUEUE
-	bool "Libc Mqueue"
-	default n
-	depends on !DISABLE_MQUEUE
 
 config TC_KERNEL_LIBC_PTHREAD
 	bool "Libc Pthread"
