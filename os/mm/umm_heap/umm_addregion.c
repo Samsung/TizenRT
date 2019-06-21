@@ -57,8 +57,6 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-
 /************************************************************************
  * Pre-processor definition
  ************************************************************************/
@@ -100,5 +98,3 @@ void umm_addregion(FAR void *heap_start, size_t heap_size)
 {
 	mm_addregion(BASE_HEAP, heap_start, heap_size);
 }
-
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
