@@ -142,6 +142,9 @@ endif
 
 NONFSDIRS = kernel $(ARCH_SRC) $(TINYARA_ADDONS)
 FSDIRS = fs drivers
+ifeq ($(CONFIG_BINFMT_ENABLE),y)
+FSDIRS += binfmt
+endif
 CONTEXTDIRS = $(APPDIR)
 CONTEXTDIRS += $(TOOLSDIR)
 CONTEXTDIRS += mm
@@ -221,6 +224,13 @@ ifeq ($(CONFIG_AUDIO),y)
 KERNDEPDIRS += audio
 endif
 CLEANDIRS += audio
+
+# Add Compression Module
+
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+KERNDEPDIRS += compression
+endif
+CLEANDIRS += compression tools/compression
 
 # Add Crypto Module
 

@@ -1,0 +1,3 @@
+config ENTRY_MESSAGING_SAMPLE
+	bool "Messaging Framework sample"
+	depends on EXAMPLES_MESSAGING_SAMPLE
