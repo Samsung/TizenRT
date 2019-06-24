@@ -215,6 +215,13 @@
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
 #endif
 
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_MESSAGING
+#define SIGMSG_MESSAGING    25			/* Messaging signal */
+#else
+#define SIGMSG_MESSAGING    CONFIG_SIG_MESSAGING
+#endif
+
 /* SIG_IOTBUS_INT is used for iotbus interrupt handling */
 #ifndef CONFIG_SIG_IOTBUS_GPIO_FALLING
 #define SIG_IOTBUS_GPIO_FALLING		26
