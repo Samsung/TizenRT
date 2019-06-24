@@ -159,14 +159,10 @@ enum {
  */
 struct bt_conn_info {
 	uint8_t type;
-
 	uint8_t role;
-
 	uint8_t id;
-
 	union {
 		struct bt_conn_le_info le;
-
 		struct bt_conn_br_info br;
 	};
 };

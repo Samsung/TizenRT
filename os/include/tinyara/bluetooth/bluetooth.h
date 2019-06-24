@@ -155,7 +155,6 @@ struct bt_data {
 struct bt_le_oob_sc_data {
 	/** Random Number. */
 	uint8_t r[16];
-
 	/** Confirm Value. */
 	uint8_t c[16];
 };
@@ -175,16 +174,12 @@ struct bt_le_oob {
 struct bt_br_discovery_result {
 	/** private */
 	uint8_t _priv[4];
-
 	/** Remote device address */
 	bt_addr_t addr;
-
 	/** RSSI from inquiry */
 	int8_t rssi;
-
 	/** Class of Device */
 	uint8_t cod[3];
-
 	/** Extended Inquiry Response */
 	uint8_t eir[240];
 };
