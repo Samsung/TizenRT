@@ -5,18 +5,18 @@
 #include <string.h>
 #include <stdint.h>
 #include <debug.h>
-#include <netif.h>
+#include <net/lwip/netif.h>
 #include <rtk_lwip_netconf.h>
 
 #include "osdep_service.h"
 #include "wifi_conf.h"
 #include "wifi_util.h"
 #include "rtk_lwip_netconf.h"
-#include "ip_addr.h"
-#include "ip4_addr.h"
+#include "net/lwip/ip_addr.h"
+#include "net/lwip/ip4_addr.h"
 #include "wifi_common.h"
 #include "rtk_wifi_utils.h"
-#include "tcpip.h"
+#include "net/lwip/tcpip.h"
 
 #include <../../framework/src/wifi_manager/wifi_common.h>
 
