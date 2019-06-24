@@ -2,8 +2,8 @@
 #define _USB_IO_REALTEK_H
 
 #include "tizenrt_service.h"
-#include "usb.h"
-#include "usbhost.h"
+#include "tinyara/usb/usb.h"
+#include "tinyara/usb/usbhost.h"
 
 typedef struct USB_DATA_S {
 	void *usb_intf;
