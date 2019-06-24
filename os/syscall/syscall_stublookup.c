@@ -342,6 +342,7 @@ uintptr_t STUB_recv(int nbr, uintptr_t parm1, uintptr_t parm2,
 uintptr_t STUB_recvfrom(int nbr, uintptr_t parm1, uintptr_t parm2,
 						uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
 						uintptr_t parm6);
+uintptr_t STUB_recvmsg(int nbr, uintptr_t parm1, uintptr_t parm2, uintptr_t parm3);
 uintptr_t STUB_send(int nbr, uintptr_t parm1, uintptr_t parm2,
 					uintptr_t parm3, uintptr_t parm4);
 uintptr_t STUB_sendto(int nbr, uintptr_t parm1, uintptr_t parm2,
