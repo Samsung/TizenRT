@@ -90,14 +90,22 @@
 #define TIMER_THEAD_SIZE                2048
 #define TIMER_THEAD_PRIORITY            100
 
-
+struct timer_args {
+	int fd;
+	int count;
+	int intval;
+};
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 static pthread_addr_t timer_thread(pthread_addr_t arg)
 {
-	int count = (int)arg;
+	struct timer_args *pargs = (struct timer_args *)arg;
+	struct timer_notify_s notify;
+	int count = pargs->count;
+	int intval = pargs->intval;
+	int fd = pargs->fd;
 	int nbr = 0;
 
 	sigset_t sig_set;
@@ -106,11 +114,53 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 
 	pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
 
+	/*
+	 * Register a callback for notifications using the configured signal.
+	 * NOTE: If no callback is attached, the timer stop at the first interrupt.
+	 */
+	fprintf(stdout, "Attach timer handler\n");
+
+	notify.arg   = NULL;
+	notify.pid   = (pid_t)getpid();
+	notify.signo = EXAMPLE_TIMER_SIGNO;
+
+	if (ioctl(fd, TCIOC_NOTIFICATION,
+			(unsigned long)((uintptr_t)&notify)) < 0) {
+		fprintf(stderr, "ERROR: Failed to set the timer handler: %d\n", errno);
+		goto error;
+	}
+
+	/* Set the timer interval */
+	fprintf(stdout, "Set timer interval to %lu\n",
+			(unsigned long)intval);
+
+	if (ioctl(fd, TCIOC_SETTIMEOUT, intval) < 0) {
+		fprintf(stderr, "ERROR: Failed to set the timer interval: %d\n", errno);
+		goto error;
+	}
+
+	/* Start the timer */
+	fprintf(stdout, "Start the timer\n");
+	if (ioctl(fd, TCIOC_START, 0) < 0) {
+		fprintf(stderr, "ERROR: Failed to start the timer: %d\n", errno);
+		goto error;
+	}
+
 	while (count--) {
 		if (sigwaitinfo(&sig_set, NULL) == EXAMPLE_TIMER_SIGNO)
 			fprintf(stdout, "time limits(%d)\n", ++nbr);
 	}
-	fprintf(stdout, "signal received:%d\n", (int)arg);
+	/* Stop the timer */
+	fprintf(stdout, "Stop the timer\n");
+
+	/* In high resolution timers, timer has to be stopped immediately once
+	the sigwait handling is completed. If not timer interrupt would keep
+	posting the events which would results in stack overflows. */
+	if (ioctl(fd, TCIOC_STOP, 0) < 0) {
+		fprintf(stderr, "ERROR: Failed to stop the timer: %d\n", errno);
+	}
+
+error:
 	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
 	pthread_exit(NULL);
 
@@ -186,7 +236,7 @@ int timer_main(int argc, char *argv[])
 #endif
 {
 	pthread_t tid;
-	struct timer_notify_s notify;
+	struct timer_args args;
 	int fd;
 	int opt = 0;
 
@@ -235,63 +285,23 @@ int timer_main(int argc, char *argv[])
 		repeat = EXAMPLE_TIMER_NSAMPLES;
 	}
 
-	/* Create Time Handler Thread */
-	tid = create_timer_thread((void *)repeat);
-	if (tid < 0) {
-		close(fd);
-		return EXIT_FAILURE;
-	}
-
 	if (intval <= 0) {
 		intval = EXAMPLE_TIMER_INTERVAL;
 	}
 
-	/* Set the timer interval */
-	fprintf(stdout, "Set timer interval to %lu\n",
-			(unsigned long)intval);
+	args.count = repeat;
+	args.fd = fd;
+	args.intval = intval;
 
-	if (ioctl(fd, TCIOC_SETTIMEOUT, intval) < 0) {
-		fprintf(stderr, "ERROR: Failed to set the timer interval: %d\n", errno);
-		close(fd);
-		return EXIT_FAILURE;
-	}
-
-	/*
-	 * Register a callback for notifications using the configured signal.
-	 * NOTE: If no callback is attached, the timer stop at the first interrupt.
-	 */
-	fprintf(stdout, "Attach timer handler\n");
-
-	notify.arg   = NULL;
-	notify.pid   = (pid_t)tid;
-	notify.signo = EXAMPLE_TIMER_SIGNO;
-
-	if (ioctl(fd, TCIOC_NOTIFICATION,
-			(unsigned long)((uintptr_t)&notify)) < 0) {
-		fprintf(stderr, "ERROR: Failed to set the timer handler: %d\n", errno);
-		close(fd);
-		return EXIT_FAILURE;
-	}
-
-	/* Start the timer */
-	fprintf(stdout, "Start the timer\n");
-	if (ioctl(fd, TCIOC_START, 0) < 0) {
-		fprintf(stderr, "ERROR: Failed to start the timer: %d\n", errno);
+	/* Create Time Handler Thread */
+	tid = create_timer_thread((void *)&args);
+	if (tid < 0) {
 		close(fd);
 		return EXIT_FAILURE;
 	}
 
 	/* Wait a bit showing timer thread */
 	pthread_join(tid, NULL);
-
-	/* Stop the timer */
-	fprintf(stdout, "Stop the timer\n");
-
-	if (ioctl(fd, TCIOC_STOP, 0) < 0) {
-		fprintf(stderr, "ERROR: Failed to stop the timer: %d\n", errno);
-		close(fd);
-		return EXIT_FAILURE;
-	}
 
 	/* Close the timer driver */
 	fprintf(stdout, "Finished\n");
