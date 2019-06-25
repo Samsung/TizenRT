@@ -36,14 +36,13 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 #include <stdint.h>
 #include <string.h>
-
+#include <debug.h>
 
 #include "esp_attr.h"
 #include "spiram_psram.h"
-#include "esp_log.h"
 #include "chip/esp32_soc.h"
 #include "esp_heap_caps.h"
-#include "soc/soc_memory_layout.h"
+#include "chip/soc_memory_layout.h"
 #include "chip/esp32_dport.h"
 #include "rom/cache.h"
 #include <tinyara/mm/heap_regioninfo.h>
@@ -60,7 +59,6 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 #ifdef CONFIG_SPIRAM_SUPPORT
 
-static const char* TAG = "spiram";
 
 #if CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
 #define PSRAM_SPEED PSRAM_CACHE_F40M_S40M
@@ -92,6 +90,7 @@ bool esp_spiram_test()
 	size_t s = CONFIG_SPIRAM_SIZE;
 	int errct = 0;
 	int initial_err = -1;
+	
 	for (p = 0; p < (s / sizeof(int)); p += 8) {
 		spiram[p] = p ^ 0xAAAAAAAA;
 	}
@@ -103,12 +102,12 @@ bool esp_spiram_test()
 			}
 		}
 	}
-	ESP_EARLY_LOGI(TAG,"read spiram over\n");
+	llvdbg("read spiram over\n");
 	if (errct) {
-		ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s/32, initial_err+SOC_EXTRAM_DATA_LOW);
+		dbg("SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s / 32, initial_err + SOC_EXTRAM_DATA_LOW);
 		return false;
 	} else {
-		ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");
+		dbg("SPI SRAM memory test OK");
 		return true;
 	}
 }
@@ -129,12 +128,12 @@ esp_err_t esp_spiram_init()
 	esp_err_t r;
 	r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
 	if (r != ESP_OK) {
-		ESP_EARLY_LOGE(TAG, "SPI RAM enabled but initialization failed. Bailing out.");
+		lldbg("SPI RAM enabled but initialization failed. Bailing out.");
 		return r;
 	}
-	ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
+	llvdbg("SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
 	PSRAM_SPEED == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : PSRAM_SPEED == PSRAM_CACHE_F80M_S80M ? "flash 80m sram 80m" : "ERROR");
-	ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
+	llvdbg("PSRAM initialized, cache is in %s mode.", \
 	(PSRAM_MODE == PSRAM_VADDR_MODE_EVENODD) ? "even/odd (2-core)" : (PSRAM_MODE == PSRAM_VADDR_MODE_LOWHIGH) ? "low/high (2-core)" : (PSRAM_MODE == PSRAM_VADDR_MODE_NORMAL) ? "normal (1-core)" : "ERROR");
 	spiram_inited = true;
 	return ESP_OK;
@@ -147,8 +146,6 @@ esp_err_t esp_spiram_add_to_heapalloc()
 	//no need to explicitly specify them.
 	return ESP_FAIL;
 }
-
-static uint8_t *dma_heap;
 
 esp_err_t esp_spiram_reserve_dma_pool(size_t size)
 {

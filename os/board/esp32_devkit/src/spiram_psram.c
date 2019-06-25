@@ -36,20 +36,65 @@
 #include "string.h"
 #include "esp_attr.h"
 #include "spiram_psram.h"
-#include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
 #include "rom/cache.h"
-#include "soc/io_mux_reg.h"
+#include "chip/esp32_io_mux_reg.h"
 #include "chip/esp32_dport.h"
-#include "soc/gpio_periph.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/efuse_reg.h"
-#include "chip/esp32_gpio.h"
-#include "spi_common.h"
+#include "chip/esp32_gpio_sigmap.h"
+#include "chip/esp32_efuse_reg.h"
+#include "rom/esp32_gpio.h"
+//#include "spi_common.h"
 #include "periph_ctrl.h"
+#include "assert.h"
 
-#if CONFIG_SPIRAM_SUPPORT
-#include "soc/rtc.h"
+#ifdef CONFIG_SPIRAM_SUPPORT
+//#include "soc/rtc.h"
+#ifndef GPIO_PIN_COUNT
+#define GPIO_PIN_COUNT                  40
+#endif
+
+const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
+	IO_MUX_GPIO0_REG,
+	IO_MUX_GPIO1_REG,
+	IO_MUX_GPIO2_REG,
+	IO_MUX_GPIO3_REG,
+	IO_MUX_GPIO4_REG,
+	IO_MUX_GPIO5_REG,
+	IO_MUX_GPIO6_REG,
+	IO_MUX_GPIO7_REG,
+	IO_MUX_GPIO8_REG,
+	IO_MUX_GPIO9_REG,
+	IO_MUX_GPIO10_REG,
+	IO_MUX_GPIO11_REG,
+	IO_MUX_GPIO12_REG,
+	IO_MUX_GPIO13_REG,
+	IO_MUX_GPIO14_REG,
+	IO_MUX_GPIO15_REG,
+	IO_MUX_GPIO16_REG,
+	IO_MUX_GPIO17_REG,
+	IO_MUX_GPIO18_REG,
+	IO_MUX_GPIO19_REG,
+	0,
+	IO_MUX_GPIO21_REG,
+	IO_MUX_GPIO22_REG,
+	IO_MUX_GPIO23_REG,
+	0,
+	IO_MUX_GPIO25_REG,
+	IO_MUX_GPIO26_REG,
+	IO_MUX_GPIO27_REG,
+	0,
+	0,
+	0,
+	0,
+	IO_MUX_GPIO32_REG,
+	IO_MUX_GPIO33_REG,
+	IO_MUX_GPIO34_REG,
+	IO_MUX_GPIO35_REG,
+	IO_MUX_GPIO36_REG,
+	IO_MUX_GPIO37_REG,
+	IO_MUX_GPIO38_REG,
+	IO_MUX_GPIO39_REG,
+};
 
 //Commands for PSRAM chip
 #define PSRAM_READ              0x03
@@ -97,7 +142,6 @@
 #define _SPI_80M_CLK_DIV  1
 #define _SPI_40M_CLK_DIV  2
 
-static const char* TAG = "psram";
 typedef enum {
 	PSRAM_SPI_1  = 0x1,
 	PSRAM_SPI_2,
@@ -531,7 +575,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 	}
 
 	WRITE_PERI_REG(GPIO_ENABLE_W1TC_REG, BIT(PSRAM_CLK_IO) | BIT(PSRAM_CS_IO));   //DISABLE OUPUT FOR IO16/17
-	assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");
+	ASSERT(mode < PSRAM_CACHE_MAX);
 	s_psram_mode = mode;
 
 	periph_module_enable(PERIPH_SPI_MODULE);
@@ -544,7 +588,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 			psram_spi_init(PSRAM_SPI_1, mode);
 			CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_CS_HOLD);
 			gpio_matrix_out(PSRAM_CS_IO, SPICS1_OUT_IDX, 0, 0);
-			gpio_matrix_out(PSRAM_CLK_IO, VSPICLK_OUT_IDX, 0, 0);
+			gpio_matrix_out(PSRAM_CLK_IO, VSPICLK_OUT_MUX_IDX, 0, 0);
 			//use spi3 clock,but use spi1 data/cs wires
 			//We get a solid 80MHz clock from SPI3 by setting it up, starting a transaction, waiting until it 
 			//is in progress, then cutting the clock (but not the reset!) to that peripheral.
@@ -588,7 +632,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 		cfg.drefl = 3;
 		cfg.force = 1;
 		rtc_vddsdio_set_config(cfg);
-		ets_delay_us(10);                     // wait for regulator to become stable
+		usleep(10);                     // wait for regulator to become stable
 	}
 #endif
 	CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_CS_SETUP_M);

@@ -727,7 +727,7 @@ int spicommon_setup_dma_desc_links(lldesc_chain_t *desc_chain, int len, const ui
 	desc_chain->tail = NULL;
 	int n = 0;
 	while (n < len) {
-		lldesc_t *cdesc = (lldesc_t *)zalloc(sizeof(lldesc_t));
+		lldesc_t *cdesc = (lldesc_t *)kmm_zalloc(sizeof(lldesc_t));
 		if (cdesc == NULL) {
 			ret = -ENOMEM;
 			spiinfo("[SPI] setup dma links fails\n");

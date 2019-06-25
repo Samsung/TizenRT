@@ -62,6 +62,10 @@ ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += esp32_appinit.c
 endif
 
+ifeq ($(CONFIG_SPIRAM_SUPPORT),y)
+CSRCS += spiram_psram.c spiram.c heap_caps.c
+endif
+
 SCRIPTIN = $(SCRIPTDIR)$(DELIM)esp32.template
 SCRIPTOUT = $(SCRIPTDIR)$(DELIM)esp32_out.ld
 
