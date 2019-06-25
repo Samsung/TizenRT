@@ -390,7 +390,7 @@ void os_start(void)
 		up_allocate_heap(&heap_start, &heap_size);
 
 #if CONFIG_MM_REGIONS > 1
-		mm_initialize(&USR_HEAP[regionx_heap_idx[0]], heap_start, heap_size);
+		mm_initialize(&BASE_HEAP[regionx_heap_idx[0]], heap_start, heap_size);
 		heapx_is_init[regionx_heap_idx[0]] = true;
 		up_addregion();
 #else
