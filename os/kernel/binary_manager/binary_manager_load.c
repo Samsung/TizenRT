@@ -148,6 +148,7 @@ int binary_manager_load_binary(int bin_idx)
 	int valid_bin_count;
 	bool loadable;
 	bool is_new_bin;
+	bool is_sched_locked;
 	load_attr_t load_attr;
 	char devname[BINMGR_DEVNAME_LEN];
 	binary_header_t header_data[PARTS_PER_BIN];
@@ -157,9 +158,16 @@ int binary_manager_load_binary(int bin_idx)
 	valid_bin_count = 0;
 	loadable = false;
 	is_new_bin = false;
+	is_sched_locked = false;
 
 	if (bin_idx < 0) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
+		return ERROR;
+	}
+
+	/* Check binary state */
+	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
+		bmdbg("Invalid binary state %d\n", BIN_STATE(bin_idx));
 		return ERROR;
 	}
 
@@ -201,6 +209,13 @@ int binary_manager_load_binary(int bin_idx)
 		}
 		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
 
+		/* If a priority of loaded task is higher than priority of loading thread,
+		 * we need to lock scheduling until updating loading info in binary table. */
+		if (load_attr.priority >= LOADINGTHD_PRIORITY) {
+			sched_lock();
+			is_sched_locked = true;
+		}
+
 		ret = load_binary(devname, &load_attr);
 		if (ret > 0) {
 			bin_pid = (pid_t)ret;
@@ -209,6 +224,10 @@ int binary_manager_load_binary(int bin_idx)
 		} 
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
 		else if (errno == ENOMEM) {
+			if (is_sched_locked) {
+				sched_unlock();
+				is_sched_locked = false;
+			}
 			if (g_delayed_kfree.head) {
 				wait_count = 0;
 				/* wait until delayed free list is empty */
@@ -223,6 +242,11 @@ int binary_manager_load_binary(int bin_idx)
 			}
 		}
 #endif
+		if (is_sched_locked) {
+			sched_unlock();
+			is_sched_locked = false;
+		}
+
 		if (valid_bin_count == 1) {
 			bmdbg("Load '%s' fail, errno %d\n", BIN_NAME(bin_idx), errno);
 			return ERROR;
@@ -235,6 +259,7 @@ int binary_manager_load_binary(int bin_idx)
 
 	/* Set the data in table from header */
 	BIN_ID(bin_idx) = bin_pid;
+	BIN_STATE(bin_idx) = BINARY_LOADING_DONE;
 	BIN_USEIDX(bin_idx) = latest_idx;
 	BIN_LOAD_ATTR(bin_idx) = load_attr;
 	strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
@@ -242,6 +267,10 @@ int binary_manager_load_binary(int bin_idx)
 	strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);
 
 	bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
+
+	if (is_sched_locked) {
+		sched_unlock();
+	}
 
 	return OK;
 }
@@ -344,15 +373,38 @@ static int binary_manager_reload(char *bin_name)
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
 		bmdbg("binary %s is not registered\n", bin_name);
-		return BINMGR_BININFO_NOT_FOUND;
+		return BINMGR_NOT_FOUND;
 	}
 
-	/* Kill its children and restart binary if the binary is registered with the binary manager */
-	ret = reload_kill_binary(BIN_ID(bin_idx));
-	if (ret != OK) {
+	if (BIN_STATE(bin_idx) == BINARY_WAITUNLOAD) {
+		bmdbg("Already reloading is requested\n");
 		return BINMGR_OPERATION_FAIL;
 	}
-	BIN_ID(bin_idx) = -1;
+
+	if (BIN_STATE(bin_idx) == BINARY_RUNNING) {
+		BIN_STATE(bin_idx) = BINARY_WAITUNLOAD;
+		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
+		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
+		if (ret != OK) {
+			return BINMGR_OPERATION_FAIL;
+		}
+	}
+
+	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
+		/* Kill its children and restart binary if the binary is registered with the binary manager */
+		ret = reload_kill_binary(BIN_ID(bin_idx));
+		if (ret != OK) {
+			return BINMGR_OPERATION_FAIL;
+		}
+		BIN_ID(bin_idx) = -1;
+
+		/* Clean callbacks of binary */
+		binary_manager_clear_bin_statecb(bin_idx);
+	}
+
+	/* Update binary state and notify it to other binaries */
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
+	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
 
 	/* load binary and update binid */
 	ret = binary_manager_load_binary(bin_idx);

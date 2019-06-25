@@ -101,7 +101,7 @@ int binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 
 	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_response_t));
-	response_msg.result = BINMGR_BININFO_NOT_FOUND;
+	response_msg.result = BINMGR_NOT_FOUND;
 
 	bin_count = binary_manager_get_binary_count();
 	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
@@ -149,7 +149,7 @@ int binary_manager_get_info_all(int requester_pid)
 		response_msg.data.bin_count = bin_count + 1;
 		response_msg.result = BINMGR_OK;
 	} else {
-		response_msg.result = BINMGR_BININFO_NOT_FOUND;
+		response_msg.result = BINMGR_NOT_FOUND;
 	}
 
 	return binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));

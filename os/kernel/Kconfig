@@ -805,6 +805,15 @@ config SIG_POLL
 		The SIGPOLL signal is sent to a process when an asynchronous I/O
 		event occurs (meaning it has been polled).  Default: 5
 
+config SIG_SIGBM_STATE
+	int "SIGBM_STATE"
+	default 15
+	depends on BINARY_MANAGER
+	---help---
+		SIG_SIGBM_STATE is a non-standard signal used to notify that state of binary is changed.
+		This setting specifies the signal number that will be used for SIG_SIGBM_STATE.
+		Default: 15
+
 config SIG_SIGCONDTIMEDOUT
 	int "SIGCONDTIMEDOUT"
 	default 16
@@ -1088,30 +1097,6 @@ config SCHED_LPWORKSTACKSIZE
 
 endif # SCHED_LPWORK
 endmenu # Work Queue Support
-
-menu "Binary Manager"
-config BINARY_MANAGER
-	bool "Enable Binary Manager"
-	default n
-	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE
-	depends on BCH && MTD_FTL && FLASH_PARTITION && MTD_PARTITION_NAMES
-	---help---
-		This is kernel thread which manages binaries.
-		It loads/unloads binaries and recovers any fault occurs in a system.
-
-if BINARY_MANAGER
-
-config BINMGR_RECOVERY
-	bool "Enable Recovery Management"
-	default y
-	---help---
-		Enable the recovery management.
-		If any fault occurs in a system, it will either restart binary or reboot the system
-		accroding to the configuration.
-
-endif # BINARY_MANAGER
-
-endmenu # Binary Manager Support
 
 menu "Stack size information"
 

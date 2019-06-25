@@ -24,10 +24,9 @@
 #include <errno.h>
 #include <debug.h>
 #include <fcntl.h>
+#include <assert.h>
 #include <string.h>
-#if !defined(CONFIG_DISABLE_SIGNALS)
 #include <signal.h>
-#endif
 #include <stdlib.h>
 #include <tinyara/binary_manager.h>
 
@@ -81,6 +80,7 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
 		} else {
 			BIN_USEIDX(KERNEL_IDX) = 0;
+			BIN_STATE(KERNEL_IDX) = BINARY_RUNNING;
 			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
 			BIN_PARTNUM(KERNEL_IDX, 1) = -1;
 			BIN_PARTSIZE(KERNEL_IDX) = part_size;
@@ -102,12 +102,37 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 		/* No, Register it as a new user partition */
 		g_bin_count++;
 		BIN_ID(g_bin_count) = -1;
+		BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 		BIN_PARTNUM(g_bin_count, 0) = part_num;
 		BIN_PARTNUM(g_bin_count, 1) = -1;
 		BIN_PARTSIZE(g_bin_count) = part_size;
 		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
+		sq_init(&BIN_CBLIST(g_bin_count));
 		bmvdbg("[USER1 : %d] %s size %d %d \n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count), BIN_PARTNUM(g_bin_count, 0));
 	}
+}
+
+/* Update binary state to BINARY_RUNNING state */
+int binary_manager_update_running_state(int bin_id)
+{
+	int bin_idx;
+
+	if (bin_id <= 0) {
+		bmdbg("Invalid parameter: bin id %d\n", bin_id);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	bin_idx = binary_manager_get_index_with_binid(bin_id);
+	if (bin_idx < 0) {
+		bmdbg("Failed to get index of binary %d\n", bin_id);
+		return BINMGR_NOT_FOUND;
+	}
+
+	BIN_STATE(bin_idx) = BINARY_RUNNING;
+	bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
+
+	/* Notify that binary is started. */
+	return binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
 }
 
 /****************************************************************************
@@ -130,14 +155,14 @@ int binary_manager(int argc, char *argv[])
 	attr.mq_msgsize = sizeof(binmgr_request_t);
 	attr.mq_flags = 0;
 
+	ASSERT(BIN_STATE(KERNEL_IDX) != BINARY_UNREGISTERED && g_bin_count > 0);
+
 	bmvdbg("Binary Manager STARTED\n");
 
-#if !defined(CONFIG_DISABLE_SIGNALS)
 	/* Unset all signals except for SIGKILL */
 	sigfillset(&sigset);
 	sigdelset(&sigset, SIGKILL);
 	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
-#endif
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
@@ -176,7 +201,7 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		case BINMGR_GET_INFO:
-			ret = binary_manager_get_info_with_name(request_msg.requester_pid, request_msg.bin_name);
+			ret = binary_manager_get_info_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
 			break;
 		case BINMGR_GET_INFO_ALL:
 			ret = binary_manager_get_info_all(request_msg.requester_pid);
@@ -185,11 +210,19 @@ int binary_manager(int argc, char *argv[])
 			memset(type_str, 0, 1);
 			memset(data_str, 0, 1);
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = request_msg.bin_name;
+			loading_data[1] = (char *)request_msg.data.bin_name;
 			loading_data[2] = NULL;
 			ret = binary_manager_loading(loading_data);
 			break;
-
+		case BINMGR_NOTIFY_STARTED:
+			ret = binary_manager_update_running_state(request_msg.requester_pid);
+			break;
+		case BINMGR_REGISTER_STATECB:
+			ret = binary_manager_register_statecb(request_msg.requester_pid, (binmgr_cb_t *)request_msg.data.cb_info);
+			break;
+		case BINMGR_UNREGISTER_STATECB:
+			ret = binary_manager_unregister_statecb(request_msg.requester_pid);
+			break;
 		default:
 			break;
 		}

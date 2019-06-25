@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <apps/system/binary_update.h>
+#include <binary_manager/binary_manager.h>
 
 #define APP1_NAME "micom"
 #define APP2_NAME "wifi"
@@ -69,7 +69,7 @@ static void binary_update_getinfo_all(void)
 	binary_info_list_t bin_info_list;
 
 	printf("\n** Binary Update GETINFO_ALL test.\n");
-	ret = binary_update_get_binary_info_all(&bin_info_list);
+	ret = binary_manager_get_update_info_all(&bin_info_list);
 	if (ret == OK) {
 		print_binary_info_list(&bin_info_list);
 	} else {
@@ -84,7 +84,7 @@ static void binary_update_getinfo(char *name)
 	binary_info_t bin_info;
 
 	printf("\n** Binary Update GETINFO [%s] test.\n", name);
-	ret = binary_update_get_binary_info(name, &bin_info);
+	ret = binary_manager_get_update_info(name, &bin_info);
 	if (ret == OK) {
 		print_binary_info(&bin_info);
 	} else {
@@ -97,7 +97,7 @@ static void binary_update_reload(char *name)
 	int ret;
 
 	printf("\n** Binary Update RELOAD [%s] test.\n", name);
-	ret = binary_update_reload_binary(name);
+	ret = binary_manager_update_binary(name);
 	if (ret == OK) {
 		printf("RELOAD [%s] SUCCESS\n", name);
 	} else {

@@ -16,17 +16,17 @@
  *
  ****************************************************************************/
 /**
- * @defgroup Binary_Update Binary_Update
- * @ingroup Binary_Update
- * @brief Provides APIs for Binary Update
+ * @defgroup Binary_Manager Binary_Manager
+ * @ingroup Binary_Manager
+ * @brief Provides APIs for Binary Manager
  * @{
  */
 
 /**
- * @file apps/include/system/binary_update.h
+ * @file binary_manager/binary_manager.h
  */
-#ifndef __BINARY_UPDATE_H__
-#define __BINARY_UPDATE_H__
+#ifndef __BINARY_MANAGER_H__
+#define __BINARY_MANAGER_H__
 
 /***************************************************************************
  * Included Files
@@ -36,10 +36,10 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_BINMGR_UPDATE
 /**
  * @brief Loads the binary after downloading a new binary
- * @details @b #include <apps/system/binary_update.h>\n
+ * @details @b #include <binary_manager/binary_manager.h>\n
  *  This function loads a new binary after downloading the binary.\n
  * It requests the binary manager to load the input binary name.
  * @param[in] binary_name The name of a new binary to be loaded
@@ -47,11 +47,11 @@
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-int binary_update_reload_binary(char *binary_name);
+int binary_manager_update_binary(char *binary_name);
 
 /**
  * @brief Get the binary information with name
- * @details @b #include <apps/system/binary_update.h>\n
+ * @details @b #include <binary_manager/binary_manager.h>\n
  *  It requests the binary manager to get the binary information through input binary name.
  * @param[in] binary_name The binary name which to get
  * @param[out] binary_info The address value to receive the binary information
@@ -59,18 +59,50 @@ int binary_update_reload_binary(char *binary_name);
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-int binary_update_get_binary_info(char *binary_name, binary_info_t *binary_info);
+int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info);
 
 /**
  * @brief Get the all binaries information
- * @details @b #include <apps/system/binary_update.h>\n
+ * @details @b #include <binary_manager/binary_manager.h>\n
  *  It requests the binary manager to get the all of binaries' information.
  * @param[out] binary_info_list The address value to receive the binary information list
  * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-int binary_update_get_binary_info_all(binary_info_list_t *binary_info_list);
+int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list);
+#endif
+
+/**
+ * @brief Notify that loaded binary is started to binary manager
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sends a message the binary manager to notify that loaded binary is started well.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+int binary_manager_notify_binary_started(void);
+
+/**
+ * @brief Set the callback which will be called when the the states of binaries are changed
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sets callback for the changes of binary state.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, void *cb_data);
+
+/**
+ * @brief Clear the registered callback for the changes of binary state.
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It clears registered callback for the changes of binary state.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+int binary_manager_unregister_state_changed_callback(void);
+
 #endif
 /**
  * @}

@@ -16,38 +16,19 @@
  *
  ****************************************************************************/
 
+#ifndef __BINARY_MANAGER_INTERNAL_H
+#define __BINARY_MANAGER_INTERNAL_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <stdio.h>
-#include <unistd.h>
-#ifdef CONFIG_BINARY_MANAGER
-#include <binary_manager/binary_manager.h>
-#endif
-#include "micomapp_internal.h"
+#include <tinyara/binary_manager.h>
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
-int main(int argc, char **argv)
-{
-#ifdef CONFIG_BINARY_MANAGER
-	int ret;
-	ret = binary_manager_notify_binary_started();
-	if (ret < 0) {
-		printf("MICOM notify 'START' state FAIL\n", ret);
-	}
-#endif
+int binary_manager_send_request(binmgr_request_t *request_msg);
+int binary_manager_receive_response(void *response_msg, int msg_size);
 
-#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
-	messaging_test();
-#endif
-
-	while (1) {
-		sleep(10);
-		printf("[%d] MICOM ALIVE\n", getpid());
-	}
-
-	return 0;
-}
+#endif							/* __BINARY_MANAGER_INTERNAL_H */
