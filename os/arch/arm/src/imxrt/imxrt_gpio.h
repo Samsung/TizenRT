@@ -187,7 +187,7 @@
 #define GPIO_ALT2            (2 << GPIO_ALT_SHIFT)  /* Alternate function 2 */
 #define GPIO_ALT3            (3 << GPIO_ALT_SHIFT)  /* Alternate function 3 */
 #define GPIO_ALT4            (4 << GPIO_ALT_SHIFT)  /* Alternate function 4 */
-                                                      /* Alternate function 5 is GPIO */
+#define GPIO_ALT5            (5 << GPIO_ALT_SHIFT)  /* Alternate function 5 */    /* Alternate function 5 is GPIO */
 #define GPIO_ALT6            (6 << GPIO_ALT_SHIFT)  /* Alternate function 6 */
 #define GPIO_ALT7            (7 << GPIO_ALT_SHIFT)  /* Alternate function 7 */
 #define GPIO_ALT8            (8 << GPIO_ALT_SHIFT)  /* Alternate function 8 */
@@ -382,10 +382,12 @@ int imxrt_gpioirq_disable(int irq);
 #ifdef CONFIG_DEBUG_GPIO_INFO
 int imxrt_dump_gpio(uint32_t pinset, const char *msg);
 #else
-#define imxrt_dumpgpio(p,m)
+#define imxrt_dumpgpio(p, m)
 #endif
 
 struct gpio_lowerhalf_s *imxrt_gpio_lowerhalf(gpio_pinset_t pinset);
+uintptr_t imxrt_padmux_address(unsigned int index);
+uintptr_t imxrt_padctl_address(unsigned int index);
 
 #undef EXTERN
 #if defined(__cplusplus)

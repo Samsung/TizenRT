@@ -94,99 +94,9 @@
 #define PIT_DEVPATH     "/dev/pit"
 #endif
 
-/****************************************************************************
- * Name: imxrt_board_adc_initialize
- *
- * Description:
- *   Initialize the ADC. As the pins of each ADC channel are exported through
- *   configurable GPIO and it is board-specific, information on available
- *   ADC channels should be passed to imxrt_adc_initialize().
- *
- * Input Parameters:
- *   chanlist  - The list of channels
- *   cchannels - Number of channels
- *
- * Returned Value:
- *   Valid ADC device structure reference on succcess; a NULL on failure
- *
- ****************************************************************************/
+#include CONFIG_PROD_HEADER
+
 #define ADC_ASSIGN(a, b) (a << 5 | b)
-void imxrt_board_adc_initialize(void)
-{
-#ifdef CONFIG_ANALOG
-	static bool adc_initialized = false;
-	struct adc_dev_s *adc;
-	const uint8_t chanlist[] = {
-		GPIO_PIN16,   //A5
-		GPIO_PIN17,   //A4
-		GPIO_PIN20,   //A3
-		GPIO_PIN11,   //A2
-		GPIO_PIN27,   //A1
-		GPIO_PIN26    //A0
-	};
-
-	int ch;
-	int ret;
-	char path[16];
-	int bus = 0;
-
-	if (!adc_initialized) {
-		imxrt_adc_pins_init(bus, sizeof(chanlist) / sizeof(uint8_t));
-
-		for (ch = 0; ch < sizeof(chanlist) / sizeof(uint8_t); ch++) {
-			adc = imxrt_adc_initialize(bus, chanlist[ch]);
-			if (NULL != adc) {
-				lldbg("VERVOSE: Success to get the imxrt ADC driver[%d]\n", ch);
-			} else {
-				lldbg("ERROR: up_spiinitialize failed\n");
-			}
-			/* Register the ADC driver at "/dev/adc0" */
-			snprintf(path, sizeof(path), "/dev/adc%d", ADC_ASSIGN(bus, ch));
-
-			ret = adc_register(path, adc);
-			if (ret < 0) {
-				lldbg("ERROR: adc_register[%d] failed\n", ch);
-				return;
-			}
-		}
-
-		/* Now we are initialized */
-		adc_initialized = true;
-	}
-#endif
-}
-
-/****************************************************************************
- * Name: board_gpio_initialize
- *
- * Description:
- *   GPIO intialization for imxrt
- *
- ****************************************************************************/
-static void imxrt_gpio_initialize(void)
-{
-#ifdef CONFIG_GPIO
-	int i;
-	struct gpio_lowerhalf_s *lower;
-
-	struct {
-		uint8_t minor;
-		gpio_pinset_t pinset;
-	} pins[] = {
-		{
-			9, GPIO_LED
-		},
-		{
-			11, GPIO_LED2
-		},
-	};
-
-	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
-		lower = imxrt_gpio_lowerhalf(pins[i].pinset);
-		gpio_register(pins[i].minor, lower);
-	}
-#endif
-}
 
 /****************************************************************************
  * Name: board_pwmm_initialize
@@ -266,6 +176,56 @@ void imxrt_boardinitialize(void)
 	imxrt_flash_init();
 }
 
+static int IS_GPIO_PIN(PORT_PROPERTY pin)
+{
+	switch (pin.u32Alternative) {
+	case PORT_TYPE_GPIO_OUTPUT_HIGH:
+	case PORT_TYPE_GPIO_OUTPUT_LOW:
+	case PORT_TYPE_GPIO_INPUT:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static int IS_ADC_PIN(PORT_PROPERTY pin)
+{
+	switch (pin.u32Alternative) {
+	case PORT_TYPE_ADC:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+void imxrt_iotbus_initialize(void)
+{
+	for (int port_idx = 0; port_idx < PORT_INIT_TABLE; port_idx++) {
+		uint32_t pinset = (sPort_InitTable[port_idx].u32Port << GPIO_PIN_SHIFT) | sPort_InitTable[port_idx].u32Alternative;
+
+		if (IS_GPIO_PIN(sPort_InitTable[port_idx])) {
+			struct gpio_lowerhalf_s *lower = imxrt_gpio_lowerhalf(pinset);
+			if (!lower) {
+				lldbg("ERROR: adc_register[%x] port(%d) failed\n", pinset, port_idx);
+				continue;
+			}
+			gpio_register(sPort_InitTable[port_idx].u32Port, lower);
+		}
+#ifdef CONFIG_ANALOG
+		else if (IS_ADC_PIN(sPort_InitTable[port_idx])) {
+			struct adc_dev_s *lower = imxrt_adc_lowerhalf(pinset);
+			if (!lower) {
+				lldbg("ERROR: adc_register[%x] port(%d) failed\n", pinset, port_idx);
+				continue;
+			}
+			char adc_path[64];
+			snprintf(adc_path, 64, "adc-%d", sPort_InitTable[port_idx].u32Port);
+			adc_register(adc_path, lower);
+		}
+#endif
+	}
+}
+
 /****************************************************************************
  * Name: board_initialize
  *
@@ -286,15 +246,13 @@ void board_initialize(void)
 
 	(void)imxrt_bringup();
 
-	imxrt_gpio_initialize();
+	imxrt_iotbus_initialize();
 
 	imxrt_pwm_initialize();
 
 	imxrt_spi_initialize();
 
-	imxrt_board_adc_initialize();
-
-#ifdef CONFIG_IMXRT_TIMER_INTERFACE
+	#ifdef CONFIG_IMXRT_TIMER_INTERFACE
 	{
 		int timer_idx;
 		char timer_path[CONFIG_PATH_MAX];
