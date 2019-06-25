@@ -296,7 +296,8 @@ int imxrt_iomux_configure(uintptr_t padctl, iomux_pinset_t ioset)
 	break;
 
 	case _IOMUX_PULL_ENABLE: {
-		regval |= (PADCTL_PKE | PADCTL_PUE);
+		/* regval |= (PADCTL_PKE | PADCTL_PUE); */
+		regval |= (PADCTL_PKE);
 
 		value = (ioset & _IOMUX_PULLDESC_MASK) >> _IOMUX_PULLDESC_SHIFT;
 		regval |= PADCTL_PUS(value);

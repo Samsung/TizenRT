@@ -197,7 +197,6 @@ endif
 
 ifeq ($(CONFIG_IMXRT_LPI2C),y)
 CHIP_CSRCS += imxrt_lpi2c.c
-CHIP_CSRCS += imxrt_i2c.c
 endif
 
 ifeq ($(CONFIG_IMXRT_LPSPI),y)

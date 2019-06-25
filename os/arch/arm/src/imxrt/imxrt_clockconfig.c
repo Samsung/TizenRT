@@ -248,7 +248,7 @@ void imxrt_clockconfig(void)
 	/* Set Sai3 clock source. */
 	imxrt_clock_setmux(kCLOCK_Sai3Mux, 0x0);
 	/* Set LPI2C_CLK_PODF. */
-	imxrt_clock_setdiv(kCLOCK_Lpi2cDiv, 0x0);
+	imxrt_clock_setdiv(kCLOCK_Lpi2cDiv, 0x5);
 	/* Set Lpi2c clock source. */
 	imxrt_clock_setmux(kCLOCK_Lpi2cMux, 0x0);
 	/* Set CAN_CLK_PODF. */
@@ -701,7 +701,7 @@ void imxrt_clockconfig(void)
 	while ((getreg32(IMXRT_CCM_CDHIPR) & CCM_CDHIPR_PERIPH_CLK_SEL_BUSY(1U)) != 0) {
 	}
 
-	/* Set LPI2C divider to 5  for 12 Mhz */
+	/* Set LPI2C divider to (5 + 1)  for 10 Mhz */
 
 	reg = getreg32(IMXRT_CCM_CSCDR2);
 	reg &= ~CCM_CSCDR2_LPI2C_CLK_PODF_MASK;
