@@ -77,6 +77,7 @@ static struct imxrt_qtmr_chipinfo_s imxrt_qtmr1_chipinfo = {
 
 };
 
+#ifdef CONFIG_ARCH_CHIP_FAMILY_IMXRT105x
 static struct imxrt_qtmr_chipinfo_s imxrt_qtmr2_chipinfo = {
 	.base = TMR3,
 	.irq_id = IMXRT_IRQ_QTIMER3,
@@ -86,6 +87,7 @@ static struct imxrt_qtmr_chipinfo_s imxrt_qtmr3_chipinfo = {
 	.base = TMR4,
 	.irq_id = IMXRT_IRQ_QTIMER4,
 };
+#endif
 
 struct imxrt_qtmr_lowerhalf_s {
 	const struct timer_ops_s *ops;		/* Lowerhalf operations */
@@ -155,6 +157,7 @@ static struct imxrt_qtmr_lowerhalf_s g_qtmr1_3_lowerhalf = {
 	.tmr = kQTMR_1,
 };
 
+#ifdef CONFIG_ARCH_CHIP_FAMILY_IMXRT105x
 static struct imxrt_qtmr_lowerhalf_s g_qtmr2_0_lowerhalf = {
 	.ops = &qtmr_timer_ops,
 	.channel = kQTMR_Channel_0,
@@ -202,6 +205,7 @@ static struct imxrt_qtmr_lowerhalf_s g_qtmr3_3_lowerhalf = {
 	.channel = kQTMR_Channel_3,
 	.tmr = kQTMR_3,
 };
+#endif
 
 /*******************************************************************************
  * Code
@@ -771,7 +775,7 @@ struct imxrt_qtmr_chipinfo_s *imxrt_qtmr_configure(int timer, qtmr_config_t *con
 	case kQTMR_1:
 		qtmr = &imxrt_qtmr1_chipinfo;
 		break;
-
+#ifdef CONFIG_ARCH_CHIP_FAMILY_IMXRT105x
 	case kQTMR_2:
 		qtmr = &imxrt_qtmr2_chipinfo;
 		break;
@@ -779,6 +783,7 @@ struct imxrt_qtmr_chipinfo_s *imxrt_qtmr_configure(int timer, qtmr_config_t *con
 	case kQTMR_3:
 		qtmr = &imxrt_qtmr3_chipinfo;
 		break;
+#endif
 	}
 
 	imxrt_qtmr_init(qtmr->base, channel, config);
@@ -969,6 +974,7 @@ int imxrt_qtmr_initialize(const char *devpath, int timer)
 		lower = &g_qtmr1_0_lowerhalf;
 		break;
 
+#ifdef CONFIG_ARCH_CHIP_FAMILY_IMXRT105x
 	case kQTMR_2:
 		lower = &g_qtmr2_0_lowerhalf;
 		break;
@@ -976,6 +982,7 @@ int imxrt_qtmr_initialize(const char *devpath, int timer)
 	case kQTMR_3:
 		lower = &g_qtmr3_0_lowerhalf;
 		break;
+#endif
 	}
 
 	if (!lower) {

@@ -160,8 +160,10 @@ enum imxrt_qtmr_channel_e {
 typedef enum _qtmr_selection {
 	kQTMR_0,
 	kQTMR_1,
+#ifdef CONFIG_ARCH_CHIP_FAMILY_IMXRT105x
 	kQTMR_2,
 	kQTMR_3,
+#endif
 	kQTMR_MAX,
 } qtmr_selection_t;
 
