@@ -27,6 +27,8 @@
 #include <string.h>
 #include <debug.h>
 #include <errno.h>
+#include <time.h>
+#include <limits.h>
 
 #include <tinyara/clock.h>
 #include <tinyara/timer.h>
@@ -554,9 +556,10 @@ static int imxrt_pit_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 						unsigned long arg)
 {
 	struct imxrt_pit_lowerhalf_s *priv = (struct imxrt_pit_lowerhalf_s *)lower;
-	int ret = ERROR;
+	uint64_t total_time;
 	uint32_t freq;
 	uint64_t ticks;
+	struct tm *l_time;
 
 	tmrvdbg("PIT IOCTL cmd: %d, arg: %ld\n", cmd, arg);
 
@@ -564,14 +567,18 @@ static int imxrt_pit_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 	case TCIOC_GETLIFETIME:
 		freq = imxrt_clock_getperclkfreq();
 		ticks = imxrt_pit_getlifetimetimercount(priv->pit->base);
-		ret = ((uint32_t)USEC_PER_SEC * (uint32_t)ticks) / freq;
-		tmrvdbg("lifetime counter %d (ms)\n", ret);
+		total_time = ((ULLONG_MAX - ticks) * USEC_PER_SEC) / freq;
+
+		total_time = total_time / USEC_PER_SEC;
+
+		l_time = localtime((const time_t *)&total_time);
+		memcpy((uintptr_t)arg, l_time, sizeof(struct tm));
 		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
-		break;
+		return -EINVAL;
 	}
-	return ret;
+	return OK;
 }
 
 /****************************************************************************
