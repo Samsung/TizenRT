@@ -78,6 +78,9 @@
 #ifdef CONFIG_IMXRT_GPT
 #include "imxrt_gpt.h"
 #endif
+#ifdef CONFIG_IMXRT_QTMR
+#include "imxrt_qtmr.h"
+#endif
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
@@ -297,6 +300,13 @@ void board_initialize(void)
 		for (timer_idx = 0; timer_idx < IMXRT_GPT_CH_MAX; timer_idx++) {
 			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
 			imxrt_timer_initialize(timer_path, timer_idx);
+		}
+#endif
+
+#ifdef CONFIG_IMXRT_QTMR
+		for (timer_idx = 0; timer_idx < kQTMR_MAX; timer_idx++) {
+			snprintf(timer_path, sizeof(timer_path), "/dev/qtimer%d", timer_idx);
+			imxrt_qtmr_initialize(timer_path, timer_idx);
 		}
 #endif
 	}
