@@ -91,8 +91,10 @@ struct gpio_open_s {
 
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* GPIO event notification information */
-	pid_t go_pid;
 	struct gpio_notify_s go_notify;
+	/* Iotbus Values */
+	pid_t go_pid;
+	void *ib;
 #endif
 
 #ifndef CONFIG_DISABLE_POLL
@@ -289,55 +291,83 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 }
 #endif
 
-static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned long arg)
+static void gpio_iotbus_interrupt(FAR struct gpio_upperhalf_s *priv)
 {
-	FAR struct gpio_lowerhalf_s *lower;
-	
-	DEBUGASSERT(priv && priv->gu_lower);
-	lower = priv->gu_lower;
+	DEBUGASSERT(priv);
 
-	bool rising;
-	bool falling;
-	int ret;
+	FAR struct gpio_open_s *opriv;
 	irqstate_t flags;
 
 	flags = irqsave();
 
-	switch (arg) {
-	case GPIO_EDGE_NONE:
-		rising = false;
-		falling = false;
-		break;
-	case GPIO_EDGE_BOTH:
-		rising = true;
-		falling = true;
-		break;
-	case GPIO_EDGE_RISING:
-		rising = true;
-		falling = false;
-		break;
-	case GPIO_EDGE_FALLING:
-		rising = false;
-		falling = true;
-		break;
-	default:
-		lldbg("Interrupt value is invalid\n");
-		irqrestore(flags);
-		return ERROR;
-		break;
+	/* Sample the new GPIO state */
+#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
+	/* Visit each opened reference to the device */
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+#ifndef CONFIG_DISABLE_SIGNALS
+		if ((opriv->go_notify.gn_rising) || (opriv->go_notify.gn_falling)) {
+			if (opriv->go_pid <= 0 || opriv->go_notify.gn_signo <= 0) {
+				continue;
+			}
+			ibdbg("Signal Target : %d, signo : %d\n", opriv->go_pid, opriv->go_notify.gn_signo);
+#ifdef CONFIG_CAN_PASS_STRUCTS
+			union sigval value;
+			value.sival_ptr = opriv->ib;
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, value);
+#else
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, opriv->ib);
+#endif
+		}
+#endif
+	}
+#endif
+	irqrestore(flags);
+}
+
+static int gpio_iotbus_enable(FAR struct gpio_upperhalf_s *priv)
+{
+	FAR struct gpio_lowerhalf_s *lower;
+	FAR struct gpio_open_s *opriv;
+	bool rising;
+	bool falling;
+	irqstate_t flags;
+	int ret = OK;
+
+	DEBUGASSERT(priv && priv->gu_lower);
+	lower = priv->gu_lower;
+
+	/*
+	 * This routine is called both task level and interrupt level, so
+	 * interrupts must be disabled.
+	 */
+	flags = irqsave();
+
+	/* Visit each opened reference to the device */
+	rising  = 0;
+	falling = 0;
+
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+#ifndef CONFIG_DISABLE_SIGNALS
+		/* OR in the signal events */
+		rising  |= opriv->go_notify.gn_rising;
+		falling |= opriv->go_notify.gn_falling;
+#endif
 	}
 
+	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
-		ret = lower->ops->enable(lower, falling, rising, gpio_interrupt);
+		ret = lower->ops->enable(lower, falling, rising, gpio_iotbus_interrupt);
 	} else {
 		/* Disable further interrupts */
 		ret = lower->ops->enable(lower, false, false, NULL);
 	}
+
 	irqrestore(flags);
 
 	return ret;
 }
+
 /****************************************************************************
  * Name: gpio_write
  *
@@ -453,12 +483,25 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	}
-#endif /* CONFIG_DISABLE_SIGNALS */
 
 	case GPIOIOC_SET_INTERRUPT: {
-		ret = gpio_enable_interrupt(priv, arg);
+		FAR struct gpio_notify_s *notify =
+			(FAR struct gpio_notify_s *)((uintptr_t)arg);
+
+		if (notify) {
+			/* Save the notification events */
+			opriv->go_notify.gn_rising  = notify->gn_rising;
+			opriv->go_notify.gn_falling = notify->gn_falling;
+			opriv->go_notify.gn_signo   = notify->gn_signo;
+			opriv->go_pid               = notify->pid;
+			opriv->ib					= notify->handle;
+
+			/* Enable/disable interrupt handling */
+			ret = gpio_iotbus_enable(priv);
+		}
 		break;
 	}
+#endif /* CONFIG_DISABLE_SIGNALS */
 
 	default:
 		ret = -ENOTTY;
@@ -652,6 +695,7 @@ static int gpio_open(FAR struct file *filep)
 	opriv->go_pollevents.gp_falling = true;
 	opriv->go_pollevents.gp_rising  = true;
 #endif
+	opriv->ib = NULL;
 
 	/* Attach the open structure to the device */
 	opriv->go_flink = priv->gu_open;

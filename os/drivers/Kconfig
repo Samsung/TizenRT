@@ -486,7 +486,6 @@ config FOTA_DRIVER
 
 source drivers/syslog/Kconfig
 source drivers/ttrace/Kconfig
-source drivers/iotdev/Kconfig
 
 comment "Wireless Device Options"
 

@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#include <pthread.h>
 
 #include <tinyara/fs/ioctl.h>
 
@@ -84,6 +85,9 @@ struct gpio_notify_s {
 	bool gn_rising;
 	bool gn_falling;
 	uint8_t gn_signo;
+	/* Values for iotbus */
+	pid_t pid;
+	void *handle;
 };
 
 struct gpio_upperhalf_s;
