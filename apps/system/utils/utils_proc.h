@@ -21,23 +21,6 @@
 
 #include <tinyara/config.h>
 #include <dirent.h>
-#ifdef CONFIG_ENABLE_STACKMONITOR
-#include <tinyara/clock.h>
-#include <sys/types.h>
-
-struct stkmon_save_s {
-	clock_t timestamp;
-	pid_t chk_pid;
-	size_t chk_stksize;
-	size_t chk_peaksize;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	int chk_peakheap;
-#endif
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	char chk_name[CONFIG_TASK_NAME_SIZE + 1];
-#endif
-};
-#endif
 
 #if defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_PS) || defined(CONFIG_ENABLE_STACKMONITOR) || defined(CONFIG_ENABLE_HEAPINFO)
 #define ENABLE_PROC_UTILS

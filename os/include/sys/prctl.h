@@ -90,6 +90,10 @@
  * @ingroup SCHED_KERNEL
  */
 #define PR_GET_NAME 2
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_GET_STKLOG 3
 
 /****************************************************************************
  * Public Type Definitions
