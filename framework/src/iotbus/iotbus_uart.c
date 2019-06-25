@@ -33,16 +33,10 @@
 #include <poll.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>
-#include "iotapi_dev_handler.h"
-
-#ifndef CONFIG_IOTBUS_UART_EVENT_SIZE
-#define CONFIG_IOTBUS_UART_EVENT_SIZE 3
-#endif
 
 struct _iotbus_uart_s {
 	int fd;
 	int device;
-	iotapi_hnd evt_hnd[CONFIG_IOTBUS_UART_EVENT_SIZE];
 	uart_write_cb callback;
 	int timeout;
 	uint8_t *buf;
@@ -163,7 +157,6 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 	int fd;
 	struct _iotbus_uart_s *handle;
 	iotbus_uart_context_h dev;
-	int i;
 
 	fd = open(path, O_RDWR, 0666);
 	if (fd < 0) {
@@ -183,9 +176,6 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 
 	handle->fd = fd;
 	handle->device = _iotbus_get_dev_number(path);
-	for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
-		handle->evt_hnd[i] = NULL;
-	}
 	handle->callback = NULL;
 	dev->handle = handle;
 
@@ -553,42 +543,14 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 	return IOTBUS_ERROR_NONE;
 }
 
-int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb)
+int iotbus_uart_set_interrupt(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, uart_isr_cb cb)
 {
-	struct _iotbus_uart_s *handle;
-	int i;
+	return 0;
+}
 
-	if (!hnd || !hnd->handle || !cb) {
-		return IOTBUS_ERROR_INVALID_PARAMETER;
-	}
-
-	handle = (struct _iotbus_uart_s *)hnd->handle;
-
-	if (enable) {
-		// To check already registered int_type;
-		for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
-			if (!handle->evt_hnd[i]) {
-				iotapi_dev_init(&handle->evt_hnd[i]);
-				iotapi_dev_register(handle->evt_hnd[i], int_type, cb, (void *)hnd);
-				break;
-			}
-		}
-		if (i >= CONFIG_IOTBUS_UART_EVENT_SIZE) {
-			return IOTBUS_ERROR_QUEUE_FULL;
-		}
-	} else {
-		// Find int_type
-		for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
-			if (!handle->evt_hnd[i]) {
-				if (iotapi_dev_get_int_type(handle->evt_hnd[i]) == int_type) {
-					iotapi_dev_unregister(handle->evt_hnd[i]);
-					handle->evt_hnd[i] = NULL;
-				}
-			}
-		}
-	}
-
-	return IOTBUS_ERROR_NONE;
+int iotbus_uart_unset_interrupt(iotbus_uart_context_h hnd, iotbus_int_type_e int_type)
+{
+	return 0;
 }
 
 #ifdef __cplusplus

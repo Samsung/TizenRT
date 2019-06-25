@@ -18,6 +18,13 @@
 #ifndef _IOTBUS_COMMON_H__
 #define _IOTBUS_COMMON_H__
 
+#include <tinyara/config.h>
+
+#include <debug.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <pthread.h>
+
 typedef enum {
 	IOTBUS_UART_TX_EMPTY = 0,
 	IOTBUS_UART_TX_RDY,
@@ -35,6 +42,16 @@ typedef enum {
 	IOTBUS_UART,
 	IOTBUS_I2C,
 	IOTBUS_SPI,
+	IOTBUS_PIN_MAX,
 } iotbus_pin_e;
+
+struct intr_attr {
+	uint8_t priority;
+	iotbus_pin_e pin;
+	pid_t parent;
+};
+
+pthread_t create_intr_pthread(pthread_startroutine_t handler, pthread_addr_t arg, struct intr_attr *val);
+void iotapi_sig_init(void);
 
 #endif

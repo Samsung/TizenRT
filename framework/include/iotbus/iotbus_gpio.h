@@ -185,7 +185,6 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
  */
 int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
 
-#ifdef CONFIG_IOTDEV
 /**
  * @brief register interrupt callback.
  *
@@ -197,7 +196,7 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb);
+int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type, iotbus_gpio_cb cb);
 
 /**
  * @brief register interrupt callback.
@@ -209,8 +208,7 @@ int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_t
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type);
-#endif
+int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type);
 
 /**
  * @brief reads the gpio value.

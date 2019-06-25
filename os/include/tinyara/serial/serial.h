@@ -67,7 +67,6 @@
 #endif
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/iotdev.h>
 
 /************************************************************************************
  * Pre-processor Definitions

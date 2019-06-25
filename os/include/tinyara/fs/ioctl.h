@@ -363,11 +363,6 @@
 #define _SECLINKIOCVALID(c)   (_IOC_TYPE(c) == _SECLINKBASE)
 #define _SECLINKIOC(nr)       _IOC(_SECLINKBASE, nr)
 
-/* iotbus driver ioctl definitions ********************************************/
-/* (see include/tinyara/iotbus_sig.h */
-#define _IOTBUSIOCVALID(c)   (_IOC_TYPE(c) == _IOTBUSBASE)
-#define _IOTBUSIOC(nr)       _IOC(_IOTBUSBASE, nr)
-
 /* Kernel_tc driver ioctl definitions *************************************/
 /* (see tinyara/testcase_drv.h) */
 

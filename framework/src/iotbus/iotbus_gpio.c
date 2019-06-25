@@ -32,11 +32,17 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <pthread.h>
+#include <signal.h>
 
-#include <tinyara/iotbus_sig.h>
+#include <iotbus/iotbus_common.h>
 #include <iotbus/iotbus_gpio.h>
 #include <iotbus/iotbus_error.h>
 #include "iotapi_evt_handler.h"
+
+#ifndef CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY
+#define CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY 224
+#endif
 
 /**
  * @brief Struct for iotbus_gpio_s
@@ -48,8 +54,10 @@ struct _iotbus_gpio_s {
 	iotbus_gpio_edge_e edge;
 	int fd;
 	gpio_isr_cb isr_cb;
-	iotbus_gpio_cb cb;
 	void *ud;
+	/* For Signal Callback */
+	iotbus_gpio_cb cb;
+	pid_t pid;
 };
 
 struct _iotbus_gpio_wrapper_s {
@@ -120,6 +128,7 @@ errout_with_close:
 int iotbus_gpio_close(iotbus_gpio_context_h dev)
 {
 	struct _iotbus_gpio_s *handle;
+	int ret;
 
 	if (!dev || !dev->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -128,7 +137,14 @@ int iotbus_gpio_close(iotbus_gpio_context_h dev)
 	handle = (struct _iotbus_gpio_s *)dev->handle;
 
 	if (handle->isr_cb != NULL) {
-		int ret = iotbus_gpio_unregister_cb(dev);
+		ret = iotbus_gpio_unregister_cb(dev);
+		if (ret != IOTBUS_ERROR_NONE) {
+			return ret;
+		}
+	}
+
+	if (handle->cb != NULL) {
+		ret = iotbus_gpio_unset_interrupt(dev, IOTBUS_GPIO_EDGE_NONE);
 		if (ret != IOTBUS_ERROR_NONE) {
 			return ret;
 		}
@@ -400,88 +416,145 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev)
 	return IOTBUS_ERROR_NONE;
 }
 
-#ifdef CONFIG_IOTDEV
-int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb)
+static pthread_addr_t gpio_intr_thread(pthread_addr_t arg)
 {
-	int fd, ret, edge;
+	iotbus_gpio_context_h dev = (iotbus_gpio_context_h)arg;
 	struct _iotbus_gpio_s *handle;
-	struct iotbus_int_info_s info = { 0, };
-
-	handle = (struct _iotbus_gpio_s *)dev->handle;
-	handle->cb = cb;
-
-	info.handle = dev;
-	info.pin_type = IOTBUS_GPIO;
-	info.int_type = int_type;
-	info.pid = iotapi_get_pid();
 	
-	fd = open(IOTBUS_SIGPATH, O_NONBLOCK);
-	if (fd < 0) {
-		ret = get_errno();
-		ibdbg("Open iotsig fail[%d, %d]\n", fd, ret);
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
+	int ret;
+	siginfo_t info;
+	sigset_t sig_set;
+	bool running = true;
+	void *ptr;
 
-	if (int_type == IOTBUS_GPIO_FALLING) {
-		edge = GPIO_EDGE_FALLING;
-	} else if (int_type == IOTBUS_GPIO_EDGE_RISING) {
-		edge = GPIO_EDGE_RISING;
-	} else {
-		edge = GPIO_EDGE_NONE;
-	}
+	sigemptyset(&sig_set);
+	sigaddset(&sig_set, SIG_IOTBUS_GPIO_RISING);
+	sigaddset(&sig_set, SIG_IOTBUS_GPIO_FALLING);
 
-	ret = ioctl(fd, IOTBUS_INTR_REGISTER, (unsigned long)&info);
-	if (ret < 0) {
-		ibdbg("Fail to register %d\n", int_type);
-		close(fd);
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
-	ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, edge);
-	if (ret < 0) {
-		ibdbg("Fail to set %d\n", int_type);
-		close(fd);
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
-	
-	close(fd);
-	return IOTBUS_ERROR_NONE;
-}
+	pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
 
-int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type)
-{
-	int fd, ret, edge;
-	struct _iotbus_gpio_s *handle;
-	struct iotbus_int_info_s info = { 0, };
-
-	handle = (struct _iotbus_gpio_s *)dev->handle;
-
-	info.handle = dev;
-	info.pin_type = IOTBUS_GPIO;
-	info.int_type = int_type;
-	
-	fd = open(IOTBUS_SIGPATH, O_NONBLOCK);
-	if (fd < 0) {
-		ibdbg("Open iotsig fail[%d, %d]\n", fd, get_errno());
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
-
-	ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, GPIO_EDGE_NONE);
-	if (ret < 0) {
-		ibdbg("Fail to unset intterupt\n");
-		close(fd);
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
-	ret = ioctl(fd, IOTBUS_INTR_UNREGISTER, (unsigned long)&info);
-	if (ret < 0) {
-		ibdbg("Fail to unregister %d\n", int_type);
-		close(fd);
-		return IOTBUS_ERROR_DEVICE_FAIL;
-	}
-	
-	close(fd);
-	return IOTBUS_ERROR_NONE;
-}
+	while (running) {
+		ibdbg("Waiting GPIO Interrupt Signal...\n");
+		ret = sigwaitinfo(&sig_set, &info);
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		ptr = info.si_value.sival_ptr;
+#else
+		ptr = info.si_value;
 #endif
+		if (ptr == NULL) {
+			ibdbg("Handler is not assigned.\n");
+			continue;
+		}
+		dev = (iotbus_gpio_context_h)ptr;
+		handle = (struct _iotbus_gpio_s *)dev->handle;
+		if (ret == SIG_IOTBUS_GPIO_RISING) {
+			ibdbg("Get GPIO Rising Interrupt in [%d]\n", handle->pin);
+		} else if (ret == SIG_IOTBUS_GPIO_FALLING) {
+			ibdbg("Get GPIO Falling Interrupt in [%d]\n", handle->pin);
+		}
+		// Call callback function.
+		((iotbus_gpio_cb)handle->cb)(dev);
+	}
+	
+	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
+	pthread_exit(NULL);
+
+	return NULL;
+}
+
+int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type, iotbus_gpio_cb cb)
+{
+	int ret = -1;
+	struct _iotbus_gpio_s *handle;
+	FAR struct gpio_notify_s notify;
+
+	if (!dev || !dev->handle || int_type == IOTBUS_GPIO_EDGE_NONE) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_gpio_s *)dev->handle;
+
+	switch (int_type) {
+	case IOTBUS_GPIO_EDGE_BOTH:
+		return IOTBUS_ERROR_NOT_SUPPORTED;
+	case IOTBUS_GPIO_EDGE_RISING:
+		notify.gn_rising  = true;
+		notify.gn_falling = false;
+		notify.gn_signo = SIG_IOTBUS_GPIO_RISING;
+		break;
+	case IOTBUS_GPIO_EDGE_FALLING:
+		notify.gn_rising  = false;
+		notify.gn_falling = true;
+		notify.gn_signo = SIG_IOTBUS_GPIO_FALLING;
+		break;
+	default:
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	struct intr_attr val = { CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY, IOTBUS_GPIO, getpid() };
+
+	handle->pid = create_intr_pthread(gpio_intr_thread, (void *)dev, &val);
+	if (handle->pid < 0) {
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+
+	handle->cb = cb;
+	notify.pid = handle->pid;
+	notify.handle = (void *)dev;
+	
+	ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, (unsigned long)&notify);
+	if (ret != 0) {
+		ibdbg("ioctl failed \n");
+		return ret;
+	}
+	return IOTBUS_ERROR_NONE;
+}
+
+int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type)
+{
+	/* 
+	1. Diable Interrupt
+	2. Kill Thread
+	3. Clear Callback
+	*/
+	struct _iotbus_gpio_s *handle;
+	FAR struct gpio_notify_s notify;
+	int ret;
+
+	if (!dev || !dev->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_gpio_s *)dev->handle;
+
+	// Disable Interrupt
+	notify.gn_rising  = false;
+	notify.gn_falling = false;
+	notify.gn_signo = 0;
+	notify.pid = 0;
+	notify.handle = NULL;
+
+	ret = ioctl(handle->fd, GPIOIOC_SET_INTERRUPT, (unsigned long)&notify);
+	if (ret != 0) {
+		ibdbg("ioctl failed \n");
+		return ret;
+	}
+
+	// Kill Thread
+	if (handle->pid > 0) {
+		ret = pthread_cancel(handle->pid);
+		if (ret < 0) {
+			ibdbg("pthread cancel failed[%d].\n", ret);
+			return IOTBUS_ERROR_UNKNOWN;
+		}
+		handle->pid = 0;
+	}
+
+	// Clear Callback
+	handle->cb = NULL;
+
+	return IOTBUS_ERROR_NONE;
+}
 
 /**
  * @brief Reads the gpio value.
