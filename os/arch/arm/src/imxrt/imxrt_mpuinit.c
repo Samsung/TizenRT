@@ -83,7 +83,7 @@
 
 #if defined(CONFIG_BUILD_PROTECTED)
 const struct mpu_region_info regions_info[] = {
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	{
 		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
 	},

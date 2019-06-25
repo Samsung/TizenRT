@@ -256,7 +256,7 @@ static inline void os_do_appstart(void)
 	net_initialize();
 #endif
 
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	svdbg("Starting application init task\n");
 
 #ifdef CONFIG_BUILD_PROTECTED

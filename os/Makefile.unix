@@ -105,6 +105,8 @@ CONFIG_APPS_DIR = ../apps
 endif
 APPDIR := ${shell if [ -r $(CONFIG_APPS_DIR)/Makefile ]; then echo "$(CONFIG_APPS_DIR)"; fi}
 
+ELFDIR := ${shell if [ -r ../loadable_apps/Makefile ]; then echo "../loadable_apps"; fi}
+
 #ifeq ($(CONFIG_FRAMEWORK_DIR),)
 CONFIG_FRAMEWORK_DIR = ../framework
 #endif
@@ -455,6 +457,7 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 	fi
 	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
+	$(Q) $(MAKE) -C $(ELFDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 
 pass2deps: pass2dep $(TINYARALIBS)

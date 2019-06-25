@@ -41,7 +41,7 @@
  * registers.
  */
 enum {
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	MPU_REG_USER_CODE,
 	MPU_REG_USER_DATA,
 #endif

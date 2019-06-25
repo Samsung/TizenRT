@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/wifiapp/Makefile
+# apps/examples/elf/Makefile
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,96 +50,51 @@
 #
 ############################################################################
 
+-include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-OBJEXT ?= .o
-DELIM ?= /
+BUILD_SUBDIRS = micomapp wifiapp
 
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-include $(APPDIR)/AppLibs.mk
-endif
+USER_BIN_DIR = $(TOPDIR)/../build/output/bin
 
-ifeq ($(WINTOOL),y)
-TINYARALIB = "${shell cygpath -w $(TOPDIR)$(DELIM)lib}"
-else
-TINYARALIB = "$(TOPDIR)$(DELIM)../build/output/libraries"
-endif
+define DIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(3) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" USER_BIN_DIR="$(USER_BIN_DIR)" CROSSDEV=$(CROSSDEV)
+endef
 
+all: build verify install
+.PHONY: all build clean install distclean verify
 
-ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
-LDELFFLAGS += -Bstatic
-LDLIBPATH += -L $(TINYARALIB)
+$(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),build, all)))
+$(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),clean,clean)))
+$(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),install,install)))
+$(foreach DIR, $(BUILD_SUBDIRS), $(eval $(call DIR_template,$(DIR),verify,verify)))
 
+# Build program(s) in each sub-directory
 
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
-LDLIBS += $(LIBGCC)
-endif
+build: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_build)
 
-BIN = wifi
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
-# need to update
-BIN_TYPE = ELF
-BIN_VER = 20190412
-DYNAMIC_RAM_SIZE = 51200
-KERNEL_VER = 2.0
-STACKSIZE = 8192
-PRIORITY = 180
+# Install each program in the romfs directory
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
-else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
+install: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_install)
 
-APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-SRCS = $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.c
-SRCS += wifiapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
-SRCS += recovery.c
-endif
+# Verify each program for undefined symbols
 
-OBJS = $(SRCS:.c=$(OBJEXT))
+verify: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_verify)
 
-prebuild:
-	$(call DELFILE, $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.o)
+# context
+context:
 
-all: prebuild $(BIN)
-.PHONY: prebuild clean install verify
+# depend
+depend:
 
-$(OBJS): %$(OBJEXT): %.c
-	@echo "CC: $<"
-	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
+# Clean each subdirectory
+clean: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_clean)
 
-$(BIN): $(OBJS)
-	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
 
-clean:
-	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
-	$(call CLEAN)
-
-install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
-
-verify:
-ifneq ($(BIN_CHECK),0)
-	@echo "Undefined Symbols"
-	$(Q) $(NM) -u -l $(BIN)
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-	exit 1
-endif
+-include Make.dep
+.PHONY: preconfig
+preconfig:

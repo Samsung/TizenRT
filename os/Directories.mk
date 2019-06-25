@@ -190,6 +190,7 @@ else
 OTHERDIRS += syscall
 endif
 
+USERDIRS += $(TOPDIR)$(DELIM)..$(DELIM)loadable_apps
 
 # CLEANDIRS are the directories that will clean in.  These are
 #   all directories that we know about.

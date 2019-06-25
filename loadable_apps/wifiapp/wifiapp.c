@@ -41,10 +41,16 @@ static void display_test_scenario(void)
 	printf("\t-Press X or x : Terminate Tests.\n");
 }
 
+extern int preapp_start(int argc, char **argv);
+
 int main(int argc, char **argv)
 {
 	char ch;
 	bool is_testing = true;
+
+#ifdef CONFIG_SYSTEM_PREAPP_INIT
+	preapp_start(argc, argv);
+#endif
 
 	printf("This is WIFI App\n");
 #ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST

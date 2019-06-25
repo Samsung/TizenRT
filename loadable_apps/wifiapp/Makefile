@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/micomapp/Makefile
+# apps/examples/elf/wifiapp/Makefile
 #
 #   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,11 +50,11 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
-include $(APPDIR)/AppLibs.mk
+LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
+LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
 endif
 
 OBJEXT ?= .o
@@ -74,15 +74,15 @@ LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
 
-BIN = micom
+BIN = wifi
 BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
+BIN_VER = 20190412
 DYNAMIC_RAM_SIZE = 51200
-BIN_VER = 20190421
 KERNEL_VER = 2.0
-STACKSIZE = 4096
-PRIORITY = 220
+STACKSIZE = 8192
+PRIORITY = 180
 
 ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
@@ -93,12 +93,15 @@ BLOCK_SIZE = 0
 endif
 
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-
 SRCS = $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.c
-SRCS += micomapp.c
+SRCS += wifiapp.c
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c
 endif
+ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
+SRCS += recovery.c
+endif
+
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 prebuild:
