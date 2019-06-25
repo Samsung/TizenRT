@@ -443,7 +443,7 @@ extern uint32_t _stext;
 #else
 /* Otherwise, the user heap data structures are in common .bss */
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#define BASE_HEAP &g_mmheap[0]
+#define BASE_HEAP g_mmheap
 
 #endif
 
