@@ -90,19 +90,24 @@
  * @ingroup SCHED_KERNEL
  */
 #define PR_GET_NAME 2
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_GET_STKLOG 3
+
 #ifdef CONFIG_MESSAGING_IPC
 /**
  * @ingroup SCHED_KERNEL
  */
-#define PR_MSG_SAVE 3
+#define PR_MSG_SAVE 4
 /**
  * @ingroup SCHED_KERNEL
  */
-#define PR_MSG_READ 4
+#define PR_MSG_READ 5
 /**
  * @ingroup SCHED_KERNEL
  */
-#define PR_MSG_REMOVE 5
+#define PR_MSG_REMOVE 6
 #endif
 
 /****************************************************************************

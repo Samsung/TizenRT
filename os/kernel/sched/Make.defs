@@ -60,6 +60,10 @@ CSRCS += sched_setscheduler.c sched_getscheduler.c
 CSRCS += sched_yield.c sched_rrgetinterval.c sched_foreach.c
 CSRCS += sched_lock.c sched_unlock.c sched_lockcount.c sched_self.c
 
+ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
+CSRCS += sched_save_terminated_stackinfo.c
+endif
+
 ifeq ($(CONFIG_PRIORITY_INHERITANCE),y)
 CSRCS += sched_reprioritize.c
 endif

@@ -193,9 +193,9 @@ config ENABLE_STACKMONITOR
 if ENABLE_STACKMONITOR
 config STACKMONITOR_STACKSIZE
 	int "Stack monitor daemon stack size"
-	default 2048
+	default 4096
 	---help---
-		The stack size of the stack monitor daemon.  Default: 2048 bytes
+		The stack size of the stack monitor daemon.  Default: 4096 bytes
 
 config STACKMONITOR_PRIORITY
 	int "Stack monitor daemon priority"

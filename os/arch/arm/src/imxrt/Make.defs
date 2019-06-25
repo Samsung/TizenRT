@@ -153,7 +153,7 @@ ifeq ($(CONFIG_IMXRT_GPT),y)
 CHIP_CSRCS += imxrt_gpt.c
 endif
 ifeq ($(CONFIG_IMXRT_PIT),y)
-CHIP_CSRCS += imxrt_gpioirq.c
+CHIP_CSRCS += imxrt_pit.c
 endif
 ifeq ($(CONFIG_IMXRT_QTMR),y)
 CHIP_CSRCS += imxrt_qtmr.c

@@ -74,6 +74,10 @@
 #include "imxrt_semc_sdram.h"
 #endif
 
+#ifdef CONFIG_IMXRT_PIT
+#include "imxrt_pit.h"
+#define PIT_DEVPATH	"/dev/pit"
+#endif
 /****************************************************************************
  * Name: imxrt_board_adc_initialize
  *
@@ -223,6 +227,9 @@ void board_initialize(void)
 			snprintf(timer_path, sizeof(timer_path), "/dev/timer%d", timer_idx);
 			imxrt_timer_initialize(timer_path, timer_idx);
 		}
+#endif
+#ifdef CONFIG_IMXRT_PIT
+		imxrt_pit_initialize(PIT_DEVPATH);
 #endif
 	}
 #endif

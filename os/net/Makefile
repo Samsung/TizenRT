@@ -75,12 +75,19 @@ SOCK_CSRCS  =
 NETDEV_ASRCS =
 NETDEV_CSRCS =
 
+BLUETOOTH_ASRCS =
+BLUETOOTH_CSRCS =
+
 VPATH =
 DEPPATH = --dep-path .
 
 include netdev/Make.defs
 include mac/Make.defs
 include socket/Make.defs
+ifeq ($(CONFIG_BLUETOOTH),y)
+include bluetooth/Make.defs
+include bluetooth/iob/Make.defs
+endif
 #LWIP Support
 
 ifeq ($(CONFIG_NET_LWIP),y)
@@ -102,10 +109,10 @@ include utils/Make.defs
 
 endif
 
-ASRCS		= $(SOCK_ASRCS) $(NETDEV_ASRCS) $(NET_ASRCS) $(TLS_ASRCS) $(LWIP_ASRCS)
+ASRCS		= $(SOCK_ASRCS) $(NETDEV_ASRCS) $(NET_ASRCS) $(TLS_ASRCS) $(LWIP_ASRCS) $(BLUETOOTH_ASRCS)
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 
-CSRCS		= $(SOCK_CSRCS) $(NETDEV_CSRCS) $(NET_CSRCS) $(TLS_CSRCS) $(LWIP_CSRCS)
+CSRCS		= $(SOCK_CSRCS) $(NETDEV_CSRCS) $(NET_CSRCS) $(TLS_CSRCS) $(LWIP_CSRCS) $(BLUETOOTH_CSRCS)
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 
 SRCS		= $(ASRCS) $(CSRCS)

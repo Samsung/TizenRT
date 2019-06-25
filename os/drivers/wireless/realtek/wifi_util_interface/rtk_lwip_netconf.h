@@ -15,14 +15,14 @@
 extern "C" {
 #endif
 
-#include "tcpip.h"
-#include "init.h" //for lwip version control
+#include "net/lwip/tcpip.h"
+#include "net/lwip/init.h" //for lwip version control
 /* Includes ------------------------------------------------------------------*/
 //#include <platform/platform_stdlib.h>
 //#include "platform_opts.h"
 //#include "autoconf.h"
 
-#include "err.h"
+#include "net/lwip/err.h"
 // macros
 /* Give default value if not defined */
 

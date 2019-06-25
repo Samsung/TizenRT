@@ -69,9 +69,6 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "timer/timer.h"
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
-#include <apps/system/utils.h>
-#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 
@@ -158,8 +155,8 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	int ret = OK;
 
 	if (tcb) {
-#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
-		stkmon_logging(tcb);
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+		sched_save_terminated_stackinfo(tcb);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

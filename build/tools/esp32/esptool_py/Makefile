@@ -74,13 +74,13 @@ $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
 
 ESPTOOL_ALL_FLASH_ARGS += $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 
-ALL:flash romfs
+ALL:erase_flash flash romfs
 
 OS:app-flash
 
 ROMFS:romfs
 
-romfs: $(ROMFS_IMG) $(ESPTOOLPY_SRC)
+romfs: $(ESPTOOLPY_SRC)
 ifneq ($(ROMFS_OFFSET),-1)
 	@echo "Flashing romfs image to serial port $(ESPPORT), offset $(ROMFS_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(ROMFS_OFFSET) $(ROMFS_IMG)

@@ -455,12 +455,13 @@
 #define SYS_listen                     (__SYS_network + 6)
 #define SYS_recv                       (__SYS_network + 7)
 #define SYS_recvfrom                   (__SYS_network + 8)
-#define SYS_send                       (__SYS_network + 9)
-#define SYS_sendto                     (__SYS_network + 10)
-#define SYS_setsockopt                 (__SYS_network + 11)
-#define SYS_shutdown                   (__SYS_network + 12)
-#define SYS_socket                     (__SYS_network + 13)
-#define SYS_nnetsocket                 (__SYS_network + 14)
+#define SYS_recvmsg                    (__SYS_network + 9)
+#define SYS_send                       (__SYS_network + 10)
+#define SYS_sendto                     (__SYS_network + 11)
+#define SYS_setsockopt                 (__SYS_network + 12)
+#define SYS_shutdown                   (__SYS_network + 13)
+#define SYS_socket                     (__SYS_network + 14)
+#define SYS_nnetsocket                 (__SYS_network + 15)
 #else
 #define SYS_nnetsocket                 __SYS_network
 #endif

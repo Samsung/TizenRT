@@ -150,6 +150,12 @@ source ../framework/src/wifi_manager/Kconfig
 
 endmenu #Wireless
 
+menu "Bluetooth"
+
+source net/bluetooth/Kconfig
+
+endmenu #Bluetooth
+
 menu "Network utilities"
 
 source "$EXTERNALDIR/netutils/Kconfig.netutil"

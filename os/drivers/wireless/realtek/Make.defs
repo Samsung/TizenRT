@@ -141,10 +141,7 @@ IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)platfor
 
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)wifi_util_interface
 
-IFLAGS += $(TOPDIR)$(DELIM)include$(DELIM)net
-IFLAGS += $(TOPDIR)$(DELIM)include$(DELIM)net$(DELIM)lwip
 IFLAGS += $(TOPDIR)$(DELIM)arch$(DELIM)arm$(DELIM)src$(DELIM)imxrt
-IFLAGS += $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)usb
 ######################### END OF INCLUDE FILES #################################
 
 ############################ COMPILE FLAG ####################################

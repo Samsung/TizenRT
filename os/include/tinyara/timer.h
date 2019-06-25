@@ -116,6 +116,7 @@
 #define TCIOC_SETIRQPRIO    _TCIOC(0x0009)
 #endif
 #define TCIOC_SETCLKSRC     _TCIOC(0x000A)
+#define TCIOC_GETLIFETIME	_TCIOC(0x000B)
 
 /* Bit Settings *************************************************************/
 /* Bit settings for the struct timer_status_s flags field */

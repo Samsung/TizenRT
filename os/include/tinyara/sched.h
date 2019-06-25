@@ -69,6 +69,13 @@
 #include <mqueue.h>
 #include <time.h>
 
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+#include <tinyara/clock.h>
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
+#endif
+
 #include <tinyara/irq.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
@@ -697,6 +704,32 @@ typedef void (*sched_foreach_t)(FAR struct tcb_s *tcb, FAR void *arg);
 
 #endif							/* __ASSEMBLY__ */
 
+/* 
+ * @cond
+ * @internal
+ * {
+ */
+#define STKMON_MAX_LOGS (CONFIG_MAX_TASKS * 2)
+
+/* Structure for saving terminated task/pthread information with stack monitor. */
+struct stkmon_save_s {
+	clock_t timestamp;
+	pid_t chk_pid;
+	size_t chk_stksize;
+	size_t chk_peaksize;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	int chk_peakheap;
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	char chk_name[CONFIG_TASK_NAME_SIZE + 1];
+#endif
+};
+
+void stkmon_copy_log(struct stkmon_save_s *dest_arr);
+/* 
+ * }
+ * @endcond
+ */
 /********************************************************************************
  * Public Data
  ********************************************************************************/
