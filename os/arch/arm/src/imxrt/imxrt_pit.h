@@ -26,6 +26,11 @@
 #define _IMXRT_PIT_H_
 
 #include "imxrt_config.h"
+#if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
+#include "chip/imxrt102x_features.h"
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
+#include "chip/imxrt105x_features.h"
+#endif
 
 /*!
  * @addtogroup pit
@@ -62,6 +67,11 @@ typedef enum _pit_interrupt_enable {
 typedef enum _pit_status_flags {
 	kPIT_TimerFlag = PIT_TFLG_TIF_MASK, /*!< Timer flag */
 } pit_status_flags_t;
+
+struct imxrt_pit_chipinfo_s {
+	PIT_Type   *base;
+	int         irq_id;
+};
 
 /*!
  * @brief PIT configuration structure
@@ -105,6 +115,14 @@ void imxrt_pit_init(PIT_Type *base, const pit_config_t *config);
  * @param base PIT peripheral base address
  */
 void imxrt_pit_deinit(PIT_Type *base);
+
+/*!
+ * @brief Initialize PIT timers/channels
+ *
+ * @param devpath timer register path
+ * @param timer channel to register
+ */
+int imxrt_pit_initialize(const char *devpath);
 
 /*!
  * @brief Fills in the PIT configuration structure with the default settings.
@@ -259,6 +277,19 @@ static inline void imxrt_pit_settimerperiod(PIT_Type *base, pit_chnl_t channel, 
 }
 
 /*!
+ * @brief Gets the timer period in units of count.
+ *
+ * Return the actual timeout in microseconds
+ *
+ * @param base    PIT peripheral base address
+ * @param channel Timer channel number
+ */
+static inline uint32_t imxrt_pit_gettimerperiod(PIT_Type *base, pit_chnl_t channel)
+{
+	return base->CHANNEL[channel].LDVAL;
+}
+
+/*!
  * @brief Reads the current timer counting value.
  *
  * This function returns the real-time timer counting value, in a range from 0 to a
@@ -330,6 +361,18 @@ static inline void imxrt_pit_stoptimer(PIT_Type *base, pit_chnl_t channel)
  * @return Current lifetime timer value
  */
 uint64_t imxrt_pit_getlifetimetimercount(PIT_Type *base);
+
+/*!
+ * brief Start the lifetime counter
+ *
+ * The lifetime timer is a 64-bit timer which chains timer 0 and timer 1 together.
+ * Timer 0 and 1 are chained by calling the PIT_SetTimerChainMode before using this timer.
+ * The period of lifetime timer is equal to the "period of timer 0 * period of timer 1".
+ *
+ * param base PIT peripheral base address
+ */
+static inline void imxrt_pit_start_lifetimetimercount(PIT_Type *base);
+
 
 #endif /* FSL_FEATURE_PIT_HAS_LIFETIME_TIMER */
 
