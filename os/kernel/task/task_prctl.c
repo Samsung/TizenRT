@@ -165,6 +165,11 @@ int prctl(int option, ...)
 		}
 	}
 	break;
+#else
+		sdbg("Option not enabled: %d\n", option);
+		err = ENOSYS;
+		goto errout;
+#endif
 #ifdef CONFIG_MESSAGING_IPC
 	case PR_MSG_SAVE:
 	{
@@ -209,13 +214,17 @@ int prctl(int option, ...)
 		ret = messaging_remove_list(port_name);
 		return ret;
 	}
-#endif
-#else
-	sdbg("Option not enabled: %d\n", option);
-	err = ENOSYS;
-	goto errout;
-#endif
-
+	break;
+#else /* CONFIG_MESSAGING_IPC */
+	case PR_MSG_SAVE:
+	case PR_MSG_READ:
+	case PR_MSG_REMOVE:
+	{
+		sdbg("Not supported.\n");
+		err = ENOSYS;
+		goto errout;
+	}
+#endif /* CONFIG_MESSAGING_IPC */
 	case PR_GET_STKLOG:
 	{
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
