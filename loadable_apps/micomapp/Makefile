@@ -101,6 +101,10 @@ ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c
 endif
 OBJS = $(SRCS:.c=$(OBJEXT))
+ifeq ($(CONFIG_EXAMPLES_TIMER)$(CONFIG_EXAMPLES_MICOM_TIMER_TEST),yy)
+SRCS += timer.c
+OBJS += $(TOPDIR)$(DELIM)../apps/examples/timer/timer_main.o
+endif
 
 prebuild:
 	$(call DELFILE, $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.o)

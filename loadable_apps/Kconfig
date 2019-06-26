@@ -44,6 +44,28 @@ config ENABLE_RECOVERY_AGING_TEST
 		Enable Recovery Aging test. Another Test cannot run at the same time.
 endif
 
+config EXAMPLES_MICOM_TIMER_TEST
+	bool "Micom Timer Test"
+	default n
+	---help---
+		Enable Timer test in micom app.
+		If this test is enabled, another test will not run.
+
+if EXAMPLES_MICOM_TIMER_TEST
+config EXAMPLES_MICOM_TIMER_REPEAT
+	string "Repetition Number of Micom Timer Test"
+	default 10
+	---help---
+		Repetition Number of Micom Timer Test
+
+config EXAMPLES_MICOM_TIMER_INTERVAL
+	string "Interval for Micom Timer Test"
+	default 100
+	---help---
+		Time Interval for testing Timer.
+		Interval is based on microsecond.
+endif
+
 endmenu
 
 config EXAMPLES_ELF_FULLYLINKED

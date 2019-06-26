@@ -22,4 +22,11 @@
 void messaging_test(void);
 #endif
 
+#ifdef CONFIG_EXAMPLES_MICOM_TIMER_TEST
+#define TIMER_ARG_NUM 5
+#define TIMER_ARG_MAX 10
+int alloc_timer_args(char **timer_args);
+void free_timer_args(char **timer_args);
+#endif
+
 #endif
