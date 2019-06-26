@@ -84,31 +84,16 @@
 
 /**
  * @ingroup SCHED_KERNEL
+ * @brief Types of Prctl API
  */
-#define PR_SET_NAME 1
-/**
- * @ingroup SCHED_KERNEL
- */
-#define PR_GET_NAME 2
-/**
- * @ingroup SCHED_KERNEL
- */
-#define PR_GET_STKLOG 3
-
-#ifdef CONFIG_MESSAGING_IPC
-/**
- * @ingroup SCHED_KERNEL
- */
-#define PR_MSG_SAVE 4
-/**
- * @ingroup SCHED_KERNEL
- */
-#define PR_MSG_READ 5
-/**
- * @ingroup SCHED_KERNEL
- */
-#define PR_MSG_REMOVE 6
-#endif
+enum prctl_type_e {
+	PR_SET_NAME = 1,
+	PR_GET_NAME = 2,
+	PR_GET_STKLOG = 3,
+	PR_MSG_SAVE = 4,
+	PR_MSG_READ = 5,
+	PR_MSG_REMOVE = 6,
+};
 
 /****************************************************************************
  * Public Type Definitions
