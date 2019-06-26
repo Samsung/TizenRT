@@ -51,7 +51,7 @@ issues when both app and pro CPU are enabled. LOWHIGH and EVENODD do not have th
 issues but cannot be used when the app CPU cache is disabled.
 */
 typedef enum {
-	PSRAM_VADDR_MODE_NORMAL=0, ///< App and pro CPU use their own flash cache for external RAM access
+	PSRAM_VADDR_MODE_NORMAL = 0, ///< App and pro CPU use their own flash cache for external RAM access
 	PSRAM_VADDR_MODE_LOWHIGH,  ///< App and pro CPU share external RAM caches: pro CPU has low 2M, app CPU has high 2M
 	PSRAM_VADDR_MODE_EVENODD,  ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
 } psram_vaddr_mode_t;

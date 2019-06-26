@@ -76,14 +76,14 @@ we add more types of external RAM memory, this can be made into a more intellige
 #else
 #define CONFIG_SPIRAM_SIZE 4194304
 #endif
-static bool spiram_inited=false;
+static bool spiram_inited = false;
 
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_spiram_test()
+bool esp_spiram_test(void)
 {
 	volatile int *spiram = (volatile int *)SOC_EXTRAM_DATA_LOW;
 	size_t p;
@@ -112,7 +112,7 @@ bool esp_spiram_test()
 	}
 }
 
-void IRAM_ATTR esp_spiram_init_cache()
+void IRAM_ATTR esp_spiram_init_cache(void)
 {
 	//Enable external RAM in MMU
 	cache_sram_mmu_set(0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128);
@@ -123,7 +123,7 @@ void IRAM_ATTR esp_spiram_init_cache()
 #endif
 }
 
-esp_err_t esp_spiram_init()
+esp_err_t esp_spiram_init(void)
 {
 	esp_err_t r;
 	r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
@@ -139,7 +139,7 @@ esp_err_t esp_spiram_init()
 	return ESP_OK;
 }
 
-esp_err_t esp_spiram_add_to_heapalloc()
+esp_err_t esp_spiram_add_to_heapalloc(void)
 {
 	//ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
 	//Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
@@ -152,7 +152,7 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size)
 	return ESP_FAIL;
 }
 
-size_t esp_spiram_get_size()
+size_t esp_spiram_get_size(void)
 {
 	return CONFIG_SPIRAM_SIZE;
 }
@@ -161,7 +161,7 @@ size_t esp_spiram_get_size()
  Before flushing the cache, if psram is enabled as a memory-mapped thing, we need to write back the data in the cache to the psram first,
  otherwise it will get lost. For now, we just read 64/128K of random PSRAM memory to do this.
 */
-void IRAM_ATTR esp_spiram_writeback_cache()
+void IRAM_ATTR esp_spiram_writeback_cache(void)
 {
 	int x;
 	volatile int i = 0;

@@ -159,26 +159,26 @@ typedef struct {
 
 typedef union {
 	struct {
-		uint32_t rd_buf_done: 1;	/*The interrupt raw bit for the completion of read-buffer operation in the slave mode. */
-		uint32_t wr_buf_done: 1;	/*The interrupt raw bit for the completion of write-buffer operation in the slave mode. */
-		uint32_t rd_sta_done: 1;	/*The interrupt raw bit for the completion of read-status operation in the slave mode. */
-		uint32_t wr_sta_done: 1;	/*The interrupt raw bit for the completion of write-status operation in the slave mode. */
-		uint32_t trans_done: 1;	/*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode. */
-		uint32_t rd_buf_inten: 1;	/*The interrupt enable bit for the completion of read-buffer operation in the slave mode. */
-		uint32_t wr_buf_inten: 1;	/*The interrupt enable bit for the completion of write-buffer operation in the slave mode. */
-		uint32_t rd_sta_inten: 1;	/*The interrupt enable bit for the completion of read-status operation in the slave mode. */
-		uint32_t wr_sta_inten: 1;	/*The interrupt enable bit for the completion of write-status operation in the slave mode. */
-		uint32_t trans_inten: 1;	/*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode. */
-		uint32_t cs_i_mode: 2;	/*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter. */
-		uint32_t reserved12: 5;	/*reserved */
-		uint32_t last_command: 3;	/*In the slave mode it is the value of command. */
-		uint32_t last_state: 3;	/*In the slave mode it is the state of spi state machine. */
-		uint32_t trans_cnt: 4;	/*The operations counter in both the master mode and the slave mode. 4: read-status */
-		uint32_t cmd_define: 1;	/*1: slave mode commands are defined in SPI_SLAVE3.  0: slave mode commands are fixed as: 1: write-status 2: write-buffer and 3: read-buffer. */
-		uint32_t wr_rd_sta_en: 1;	/*write and read status enable  in the slave mode */
-		uint32_t wr_rd_buf_en: 1;	/*write and read buffer enable in the slave mode */
-		uint32_t slave_mode: 1;	/*1: slave mode 0: master mode. */
-		uint32_t sync_reset: 1;	/*Software reset enable, reset the spi clock line cs line and data lines. */
+		uint32_t rd_buf_done:1;	/*The interrupt raw bit for the completion of read-buffer operation in the slave mode. */
+		uint32_t wr_buf_done:1;	/*The interrupt raw bit for the completion of write-buffer operation in the slave mode. */
+		uint32_t rd_sta_done:1;	/*The interrupt raw bit for the completion of read-status operation in the slave mode. */
+		uint32_t wr_sta_done:1;	/*The interrupt raw bit for the completion of write-status operation in the slave mode. */
+		uint32_t trans_done:1;	/*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode. */
+		uint32_t rd_buf_inten:1;	/*The interrupt enable bit for the completion of read-buffer operation in the slave mode. */
+		uint32_t wr_buf_inten:1;	/*The interrupt enable bit for the completion of write-buffer operation in the slave mode. */
+		uint32_t rd_sta_inten:1;	/*The interrupt enable bit for the completion of read-status operation in the slave mode. */
+		uint32_t wr_sta_inten:1;	/*The interrupt enable bit for the completion of write-status operation in the slave mode. */
+		uint32_t trans_inten:1;	/*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode. */
+		uint32_t cs_i_mode:2;	/*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter. */
+		uint32_t reserved12:5;	/*reserved */
+		uint32_t last_command:3;	/*In the slave mode it is the value of command. */
+		uint32_t last_state:3;	/*In the slave mode it is the state of spi state machine. */
+		uint32_t trans_cnt:4;	/*The operations counter in both the master mode and the slave mode. 4: read-status */
+		uint32_t cmd_define:1;	/*1: slave mode commands are defined in SPI_SLAVE3.  0: slave mode commands are fixed as: 1: write-status 2: write-buffer and 3: read-buffer. */
+		uint32_t wr_rd_sta_en:1;	/*write and read status enable  in the slave mode */
+		uint32_t wr_rd_buf_en:1;	/*write and read buffer enable in the slave mode */
+		uint32_t slave_mode:1;	/*1: slave mode 0: master mode. */
+		uint32_t sync_reset:1;	/*Software reset enable, reset the spi clock line cs line and data lines. */
 	};
 	uint32_t val;
 } spi_reg_slave_t;
@@ -256,11 +256,11 @@ typedef struct {
 	uint8_t cs_ena_pretrans;	///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
 	uint8_t cs_ena_posttrans;	///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
 	int clock_speed_hz;			///< Clock speed, divisors of 80MHz, in Hz. See ``SPI_MASTER_FREQ_*``.
-	int input_delay_ns;				/**< Maximum data valid time of slave. The time required between SCLK and MISO
-                                    valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
-                                    delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
-                                    performance at high frequency (over 8MHz), it's suggest to have the right value.
-                                    */
+	int input_delay_ns;			/**< Maximum data valid time of slave. The time required between SCLK and MISO
+								valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
+								delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
+								performance at high frequency (over 8MHz), it's suggest to have the right value.
+								*/
 	int spics_io_num;			///< CS GPIO pin for this device, or -1 if not used
 	uint32_t flags;				///< Bitwise OR of SPI_DEVICE_* flags
 } spi_device_interface_config_t;
@@ -407,7 +407,7 @@ static struct esp32_spidev_s g_spi2dev = {
 	.gpio_clk = HSPI_IOMUX_PIN_NUM_CLK,
 #endif
 
-#if defined( CONFIG_GPIO_SPI2_MISO_PIN)
+#if defined(CONFIG_GPIO_SPI2_MISO_PIN)
 	.gpio_miso = CONFIG_GPIO_SPI2_MISO_PIN,
 #else
 	.gpio_miso = (HSPI_IOMUX_PIN_NUM_MISO),
@@ -1121,7 +1121,7 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 	switch (priv->port) {
 	case HSPI_PORT: {
 		p_pin_sig = (esp32_spi_pins_sig_t *)(&s_spi2_pin_sig);
-#if defined(CONFIG_GPIO_SPI2_CS_PIN) || defined(CONFIG_GPIO_SPI2_CLK_PIN) || defined( CONFIG_GPIO_SPI2_MISO_PIN) || defined(CONFIG_GPIO_SPI2_MOSI_PIN)
+#if defined(CONFIG_GPIO_SPI2_CS_PIN) || defined(CONFIG_GPIO_SPI2_CLK_PIN) || defined(CONFIG_GPIO_SPI2_MISO_PIN) || defined(CONFIG_GPIO_SPI2_MOSI_PIN)
 		use_iomux = false;
 #endif
 
@@ -1129,7 +1129,7 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 	break;
 	case VSPI_PORT: {
 		p_pin_sig = (esp32_spi_pins_sig_t *)(&s_spi3_pin_sig);
-#if defined(CONFIG_GPIO_SPI3_CS_PIN) || defined(CONFIG_GPIO_SPI3_CLK_PIN) || defined( CONFIG_GPIO_SPI3_MISO_PIN) || defined(CONFIG_GPIO_SPI3_MOSI_PIN)
+#if defined(CONFIG_GPIO_SPI3_CS_PIN) || defined(CONFIG_GPIO_SPI3_CLK_PIN) || defined(CONFIG_GPIO_SPI3_MISO_PIN) || defined(CONFIG_GPIO_SPI3_MOSI_PIN)
 		use_iomux = false;
 #endif
 
