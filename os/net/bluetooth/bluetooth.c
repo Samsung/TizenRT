@@ -37,7 +37,6 @@
  ****************************************************************************/
 
 #include <string.h>
-
 #include <tinyara/bluetooth/bluetooth.h>
 #include <tinyara/bluetooth/conn.h>
 
