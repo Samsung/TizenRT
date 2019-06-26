@@ -70,6 +70,7 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkarch$(LIBEXT)
 USERLIBS  += $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
 USERLIBS  += $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT)
+USERLIBS  += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
 # Add libraries for C++ support.  CXX, CXXFLAGS, and COMPILEXX must
 # be defined in Make.defs for this to work!
@@ -87,10 +88,7 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotivity$(LIBEXT)
 endif
 
 # Add library for application support.
-
-ifneq ($(APPDIR),)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
-endif
 
 # Add libraries for network support
 
@@ -107,6 +105,12 @@ endif
 # Add libraries for se module
 ifeq ($(CONFIG_SE),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
+endif
+
+# Add libraries for compression module
+
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 endif
 
 # Add libraries for crypto module
@@ -132,6 +136,10 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
+endif
+
+ifeq ($(CONFIG_BINFMT_ENABLE),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
 endif
 
 ifeq ($(CONFIG_RTK_WLAN),y)
