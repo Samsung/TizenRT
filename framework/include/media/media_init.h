@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-int media_init();
+int media_init(void);
 
 #if defined(__cplusplus)
 } /* extern "C" */

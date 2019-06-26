@@ -78,6 +78,11 @@
 #include "imxrt_pit.h"
 #define PIT_DEVPATH	"/dev/pit"
 #endif
+
+#ifdef CONFIG_IMXRT_QTMR
+#include "imxrt_qtmr.h"
+#endif
+
 /****************************************************************************
  * Name: imxrt_board_adc_initialize
  *
@@ -230,6 +235,14 @@ void board_initialize(void)
 #endif
 #ifdef CONFIG_IMXRT_PIT
 		imxrt_pit_initialize(PIT_DEVPATH);
+#endif
+
+#ifdef CONFIG_IMXRT_QTMR
+		for (timer_idx = 0; timer_idx < kQTMR_MAX; timer_idx++) {
+			snprintf(timer_path, sizeof(timer_path), "/dev/qtimer%d", timer_idx);
+			imxrt_qtmr_initialize(timer_path, timer_idx);
+		}
+
 #endif
 	}
 #endif
