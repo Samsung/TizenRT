@@ -145,7 +145,6 @@ endif
 
 CFLAGS += -Ichip/chip
 CFLAGS += -Ichip/spi_flash/include
-CFLAGS += -I$(TOPDIR)/../external/esp_idf_port/include
 
 # Configuration-dependent ESP32 files
 

@@ -45,7 +45,7 @@
 #include "esp_spi_flash.h"
 #include "esp_flash_encrypt.h"
 #include "cache_utils.h"
-#include "esp_spiram.h"
+#include <arch/board/esp_spiram.h>
 
 #define MALLOC_CAP_INTERNAL (1 << 11)
 #define MALLOC_CAP_8BIT     (1<<2)
