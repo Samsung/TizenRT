@@ -36,14 +36,13 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 #include <stdint.h>
 #include <string.h>
-
+#include <debug.h>
 
 #include "esp_attr.h"
 #include "spiram_psram.h"
-#include "esp_log.h"
 #include "chip/esp32_soc.h"
 #include "esp_heap_caps.h"
-#include "soc/soc_memory_layout.h"
+#include "chip/soc_memory_layout.h"
 #include "chip/esp32_dport.h"
 #include "rom/cache.h"
 #include <tinyara/mm/heap_regioninfo.h>
@@ -60,7 +59,6 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 #ifdef CONFIG_SPIRAM_SUPPORT
 
-static const char* TAG = "spiram";
 
 #if CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
 #define PSRAM_SPEED PSRAM_CACHE_F40M_S40M
@@ -78,20 +76,21 @@ static const char* TAG = "spiram";
 #else
 #define CONFIG_SPIRAM_SIZE 4194304
 #endif
-static bool spiram_inited=false;
+static bool spiram_inited = false;
 
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_spiram_test()
+bool esp_spiram_test(void)
 {
 	volatile int *spiram = (volatile int *)SOC_EXTRAM_DATA_LOW;
 	size_t p;
 	size_t s = CONFIG_SPIRAM_SIZE;
 	int errct = 0;
 	int initial_err = -1;
+	
 	for (p = 0; p < (s / sizeof(int)); p += 8) {
 		spiram[p] = p ^ 0xAAAAAAAA;
 	}
@@ -103,17 +102,17 @@ bool esp_spiram_test()
 			}
 		}
 	}
-	ESP_EARLY_LOGI(TAG,"read spiram over\n");
+	llvdbg("read spiram over\n");
 	if (errct) {
-		ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s/32, initial_err+SOC_EXTRAM_DATA_LOW);
+		dbg("SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s / 32, initial_err + SOC_EXTRAM_DATA_LOW);
 		return false;
 	} else {
-		ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");
+		dbg("SPI SRAM memory test OK");
 		return true;
 	}
 }
 
-void IRAM_ATTR esp_spiram_init_cache()
+void IRAM_ATTR esp_spiram_init_cache(void)
 {
 	//Enable external RAM in MMU
 	cache_sram_mmu_set(0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128);
@@ -124,23 +123,23 @@ void IRAM_ATTR esp_spiram_init_cache()
 #endif
 }
 
-esp_err_t esp_spiram_init()
+esp_err_t esp_spiram_init(void)
 {
 	esp_err_t r;
 	r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
 	if (r != ESP_OK) {
-		ESP_EARLY_LOGE(TAG, "SPI RAM enabled but initialization failed. Bailing out.");
+		lldbg("SPI RAM enabled but initialization failed. Bailing out.");
 		return r;
 	}
-	ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
+	llvdbg("SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
 	PSRAM_SPEED == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : PSRAM_SPEED == PSRAM_CACHE_F80M_S80M ? "flash 80m sram 80m" : "ERROR");
-	ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
+	llvdbg("PSRAM initialized, cache is in %s mode.", \
 	(PSRAM_MODE == PSRAM_VADDR_MODE_EVENODD) ? "even/odd (2-core)" : (PSRAM_MODE == PSRAM_VADDR_MODE_LOWHIGH) ? "low/high (2-core)" : (PSRAM_MODE == PSRAM_VADDR_MODE_NORMAL) ? "normal (1-core)" : "ERROR");
 	spiram_inited = true;
 	return ESP_OK;
 }
 
-esp_err_t esp_spiram_add_to_heapalloc()
+esp_err_t esp_spiram_add_to_heapalloc(void)
 {
 	//ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
 	//Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
@@ -148,14 +147,12 @@ esp_err_t esp_spiram_add_to_heapalloc()
 	return ESP_FAIL;
 }
 
-static uint8_t *dma_heap;
-
 esp_err_t esp_spiram_reserve_dma_pool(size_t size)
 {
 	return ESP_FAIL;
 }
 
-size_t esp_spiram_get_size()
+size_t esp_spiram_get_size(void)
 {
 	return CONFIG_SPIRAM_SIZE;
 }
@@ -164,7 +161,7 @@ size_t esp_spiram_get_size()
  Before flushing the cache, if psram is enabled as a memory-mapped thing, we need to write back the data in the cache to the psram first,
  otherwise it will get lost. For now, we just read 64/128K of random PSRAM memory to do this.
 */
-void IRAM_ATTR esp_spiram_writeback_cache()
+void IRAM_ATTR esp_spiram_writeback_cache(void)
 {
 	int x;
 	volatile int i = 0;
