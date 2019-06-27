@@ -411,7 +411,7 @@ static void _up_assert(int errorcode)
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 #else
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (current_regs || (this_task())->pid == 0) {
@@ -425,7 +425,7 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	} else {
 		exit(errorcode);
 	}
