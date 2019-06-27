@@ -81,7 +81,7 @@ int wctomb(FAR char *s, wchar_t wc)
 	/* Verify that wchar is a valid single-byte character.  */
 
 	if ((size_t) wc >= 0x100) {
-		errno = EILSEQ;
+		set_errno(EILSEQ);
 		return -1;
 	}
 
