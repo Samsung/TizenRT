@@ -72,6 +72,7 @@
 #define CONFIG_DEBUG_VERBOSE 1
 #endif
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -208,21 +209,30 @@ static inline void up_registerdump(void)
 #ifdef CONFIG_STACK_COLORATION
 static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
+	size_t used_stack_size;
+
+	if (tcb->pid == 0) {
+		used_stack_size = 0;
+	} else {
+		used_stack_size = up_check_tcbstack(tcb);
+	}
+
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
 			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
 #else
 	lldbg("%5d | %4d | %7lu / %7lu\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
+			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
 			(unsigned long)tcb->adj_stack_size);
 #endif
 
-	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+	if (tcb->pid != 0 && used_stack_size == tcb->adj_stack_size) {
 		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
+
 }
 #endif
 
