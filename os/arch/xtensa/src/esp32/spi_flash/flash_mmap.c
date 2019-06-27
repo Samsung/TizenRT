@@ -37,7 +37,7 @@
 
 #include <rom/spi_flash.h>
 #include <rom/cache.h>
-#include <soc/soc_memory_layout.h>
+#include <chip/soc_memory_layout.h>
 #include <chip/esp32_soc.h>
 #include <chip/dport_access.h>
 #include "esp_ipc.h"
