@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/simxrt1020-evk/scripts/user-space.ld
+ * build/configs/imxrt1020-evk/scripts/user-space.ld
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -80,6 +80,7 @@ SECTIONS
   .text :
   {
     _stext = ABSOLUTE(.);
+    *(.usrheapptr)
     *(.text .text.*)
     *(.fixup)
     *(.gnu.warning)
@@ -122,7 +123,7 @@ SECTIONS
     *(.gnu.linkonce.d.*)
     CONSTRUCTORS
     _edata = ABSOLUTE(.);
-  } > uocram AT > uflash
+  } > usram AT > uflash
 
   .bss :
   {
@@ -131,7 +132,7 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     _ebss = ABSOLUTE(.);
-  } > uocram
+  } > usram
 
   /* Stabs debugging sections */
 

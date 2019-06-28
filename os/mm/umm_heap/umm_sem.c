@@ -58,8 +58,6 @@
 #include <errno.h>
 #include <tinyara/mm/mm.h>
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-
 /************************************************************************
  * Pre-processor definition
  ************************************************************************/
@@ -134,4 +132,3 @@ void umm_givesemaphore(void *address)
 	mm_givesemaphore(heap);
 }
 
-#endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */

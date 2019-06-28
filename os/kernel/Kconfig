@@ -805,6 +805,15 @@ config SIG_POLL
 		The SIGPOLL signal is sent to a process when an asynchronous I/O
 		event occurs (meaning it has been polled).  Default: 5
 
+config SIG_SIGBM_STATE
+	int "SIGBM_STATE"
+	default 15
+	depends on BINARY_MANAGER
+	---help---
+		SIG_SIGBM_STATE is a non-standard signal used to notify that state of binary is changed.
+		This setting specifies the signal number that will be used for SIG_SIGBM_STATE.
+		Default: 15
+
 config SIG_SIGCONDTIMEDOUT
 	int "SIGCONDTIMEDOUT"
 	default 16
@@ -884,6 +893,15 @@ config SIG_SIGEL_EVENT
 		SIG_SIGEL_EVENT is a non-standard signal used to wake eventloop task up.
 		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
 		Default: 24
+
+config SIG_MESSAGING_UNICAST
+	int "MESSAGE RECV SIGNAL"
+	default 25
+	depends on MESSAGING_IPC
+	---help---
+		SIG_MESSAGING_UNICAST is a non-standard signal used to notify to message receiver.
+		This setting specifies the signal number that will be used for SIG_MESSAGING_UNICAST.
+		Default: 25
 
 endmenu # Signal Numbers
 
