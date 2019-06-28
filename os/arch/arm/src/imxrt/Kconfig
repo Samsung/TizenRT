@@ -379,20 +379,353 @@ config IMXRT_PWM
 if IMXRT_PWM
 
 	config IMXRT_PWM1
-		bool "PWM IMXRT_PWM1"
-		default n
-
-	config IMXRT_PWM2
-		bool "PWM IMXRT_PWM2"
+		bool "PWM Controller 1, Channel 1 to Channel 8"
 		default n
 	
-	if ARCH_CHIP_FAMILY_IMXRT102x
+	if IMXRT_PWM1
+		choice
+			prompt "** PWM Submodule1 Clock"
+			default PWM1_SUB1_CLOCK1
+
+		config PWM1_SUB1_CLOCK1
+			bool "fclk/1"
+		config PWM1_SUB1_CLOCK2
+			bool "fclk/2"
+		config PWM1_SUB1_CLOCK3
+			bool "fclk/4"
+		config PWM1_SUB1_CLOCK4
+			bool "fclk/8"
+		config PWM1_SUB1_CLOCK5
+			bool "fclk/16"
+		config PWM1_SUB1_CLOCK6
+			bool "fclk/32"
+		config PWM1_SUB1_CLOCK7
+			bool "fclk/64"
+		config PWM1_SUB1_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM1_SUB1_CLOCK
+			int
+			default 0 if PWM1_SUB1_CLOCK1
+			default 1 if PWM1_SUB1_CLOCK2
+			default 2 if PWM1_SUB1_CLOCK3
+			default 3 if PWM1_SUB1_CLOCK4
+			default 4 if PWM1_SUB1_CLOCK5
+			default 5 if PWM1_SUB1_CLOCK6
+			default 6 if PWM1_SUB1_CLOCK7
+			default 7 if PWM1_SUB1_CLOCK8
+
+		config IMXRT_PWM_CHANNEL1
+			bool "PWM Controller 1, Channel 1"
+			default n
+		config IMXRT_PWM_CHANNEL2
+			bool "PWM Controller 1, Channel 2"
+			default n
+		
+		choice
+			prompt "** PWM Submodule2 Clock"
+			default PWM1_SUB2_CLOCK1
+
+		config PWM1_SUB2_CLOCK1
+			bool "fclk/1"
+		config PWM1_SUB2_CLOCK2
+			bool "fclk/2"
+		config PWM1_SUB2_CLOCK3
+			bool "fclk/4"
+		config PWM1_SUB2_CLOCK4
+			bool "fclk/8"
+		config PWM1_SUB2_CLOCK5
+			bool "fclk/16"
+		config PWM1_SUB2_CLOCK6
+			bool "fclk/32"
+		config PWM1_SUB2_CLOCK7
+			bool "fclk/64"
+		config PWM1_SUB2_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM1_SUB2_CLOCK
+			int
+			default 0 if PWM1_SUB2_CLOCK1
+			default 1 if PWM1_SUB2_CLOCK2
+			default 2 if PWM1_SUB2_CLOCK3
+			default 3 if PWM1_SUB2_CLOCK4
+			default 4 if PWM1_SUB2_CLOCK5
+			default 5 if PWM1_SUB2_CLOCK6
+			default 6 if PWM1_SUB2_CLOCK7
+			default 7 if PWM1_SUB2_CLOCK8
+
+		config IMXRT_PWM_CHANNEL3
+			bool "PWM Controller 1, Channel 3"
+			default n
+		config IMXRT_PWM_CHANNEL4
+			bool "PWM Controller 1, Channel 4"
+			default n
+		
+		choice
+			prompt "** PWM Submodule3 Clock"
+			default PWM1_SUB3_CLOCK1
+
+		config PWM1_SUB3_CLOCK1
+			bool "fclk/1"
+		config PWM1_SUB3_CLOCK2
+			bool "fclk/2"
+		config PWM1_SUB3_CLOCK3
+			bool "fclk/4"
+		config PWM1_SUB3_CLOCK4
+			bool "fclk/8"
+		config PWM1_SUB3_CLOCK5
+			bool "fclk/16"
+		config PWM1_SUB3_CLOCK6
+			bool "fclk/32"
+		config PWM1_SUB3_CLOCK7
+			bool "fclk/64"
+		config PWM1_SUB3_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM1_SUB3_CLOCK
+			int
+			default 0 if PWM1_SUB3_CLOCK1
+			default 1 if PWM1_SUB3_CLOCK2
+			default 2 if PWM1_SUB3_CLOCK3
+			default 3 if PWM1_SUB3_CLOCK4
+			default 4 if PWM1_SUB3_CLOCK5
+			default 5 if PWM1_SUB3_CLOCK6
+			default 6 if PWM1_SUB3_CLOCK7
+			default 7 if PWM1_SUB3_CLOCK8
+
+		config IMXRT_PWM_CHANNEL5
+			bool "PWM Controller 1, Channel 5"
+			default n
+		config IMXRT_PWM_CHANNEL6
+			bool "PWM Controller 1, Channel 6"
+			default n
+		
+		choice
+			prompt "** PWM Submodule4 Clock"
+			default PWM1_SUB4_CLOCK1
+
+		config PWM1_SUB4_CLOCK1
+			bool "fclk/1"
+		config PWM1_SUB4_CLOCK2
+			bool "fclk/2"
+		config PWM1_SUB4_CLOCK3
+			bool "fclk/4"
+		config PWM1_SUB4_CLOCK4
+			bool "fclk/8"
+		config PWM1_SUB4_CLOCK5
+			bool "fclk/16"
+		config PWM1_SUB4_CLOCK6
+			bool "fclk/32"
+		config PWM1_SUB4_CLOCK7
+			bool "fclk/64"
+		config PWM1_SUB4_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM1_SUB4_CLOCK
+			int
+			default 0 if PWM1_SUB4_CLOCK1
+			default 1 if PWM1_SUB4_CLOCK2
+			default 2 if PWM1_SUB4_CLOCK3
+			default 3 if PWM1_SUB4_CLOCK4
+			default 4 if PWM1_SUB4_CLOCK5
+			default 5 if PWM1_SUB4_CLOCK6
+			default 6 if PWM1_SUB4_CLOCK7
+			default 7 if PWM1_SUB4_CLOCK8
+
+		config IMXRT_PWM_CHANNEL7
+			bool "PWM Controller 1, Channel 7"
+			default n
+		config IMXRT_PWM_CHANNEL8
+			bool "PWM Controller 1, Channel 8"
+			default n
+	endif
+
+	config IMXRT_PWM2
+		bool "PWM Controller 2, Channel 9 to Channel 16"
+		default n
+
+	if IMXRT_PWM2
+
+		choice
+			prompt "** PWM Submodule1 Clock"
+			default PWM2_SUB1_CLOCK1
+
+		config PWM2_SUB1_CLOCK1
+			bool "fclk/1"
+		config PWM2_SUB1_CLOCK2
+			bool "fclk/2"
+		config PWM2_SUB1_CLOCK3
+			bool "fclk/4"
+		config PWM2_SUB1_CLOCK4
+			bool "fclk/8"
+		config PWM2_SUB1_CLOCK5
+			bool "fclk/16"
+		config PWM2_SUB1_CLOCK6
+			bool "fclk/32"
+		config PWM2_SUB1_CLOCK7
+			bool "fclk/64"
+		config PWM2_SUB1_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM2_SUB1_CLOCK
+			int
+			default 0 if PWM2_SUB1_CLOCK1
+			default 1 if PWM2_SUB1_CLOCK2
+			default 2 if PWM2_SUB1_CLOCK3
+			default 3 if PWM2_SUB1_CLOCK4
+			default 4 if PWM2_SUB1_CLOCK5
+			default 5 if PWM2_SUB1_CLOCK6
+			default 6 if PWM2_SUB1_CLOCK7
+			default 7 if PWM2_SUB1_CLOCK8
+
+		config IMXRT_PWM_CHANNEL9
+			bool "PWM Controller 2, Channel 1"
+			default n
+		config IMXRT_PWM_CHANNEL10
+			bool "PWM Controller 2, Channel 2"
+			default n
+
+		choice
+			prompt "** PWM Submodule2 Clock"
+			default PWM2_SUB2_CLOCK1
+
+		config PWM2_SUB2_CLOCK1
+			bool "fclk/1"
+		config PWM2_SUB2_CLOCK2
+			bool "fclk/2"
+		config PWM2_SUB2_CLOCK3
+			bool "fclk/4"
+		config PWM2_SUB2_CLOCK4
+			bool "fclk/8"
+		config PWM2_SUB2_CLOCK5
+			bool "fclk/16"
+		config PWM2_SUB2_CLOCK6
+			bool "fclk/32"
+		config PWM2_SUB2_CLOCK7
+			bool "fclk/64"
+		config PWM2_SUB2_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM2_SUB1_CLOCK
+			int
+			default 0 if PWM2_SUB2_CLOCK1
+			default 1 if PWM2_SUB2_CLOCK2
+			default 2 if PWM2_SUB2_CLOCK3
+			default 3 if PWM2_SUB2_CLOCK4
+			default 4 if PWM2_SUB2_CLOCK5
+			default 5 if PWM2_SUB2_CLOCK6
+			default 6 if PWM2_SUB2_CLOCK7
+			default 7 if PWM2_SUB2_CLOCK8
+
+		config IMXRT_PWM_CHANNEL11
+			bool "PWM Controller 2, Channel 3"
+			default n
+		config IMXRT_PWM_CHANNEL12
+			bool "PWM Controller 2, Channel 4"
+			default n
+
+		choice
+			prompt "** PWM Submodule3 Clock"
+			default PWM2_SUB3_CLOCK1
+
+		config PWM2_SUB3_CLOCK1
+			bool "fclk/1"
+		config PWM2_SUB3_CLOCK2
+			bool "fclk/2"
+		config PWM2_SUB3_CLOCK3
+			bool "fclk/4"
+		config PWM2_SUB3_CLOCK4
+			bool "fclk/8"
+		config PWM2_SUB3_CLOCK5
+			bool "fclk/16"
+		config PWM2_SUB3_CLOCK6
+			bool "fclk/32"
+		config PWM2_SUB3_CLOCK7
+			bool "fclk/64"
+		config PWM2_SUB3_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM2_SUB3_CLOCK
+			int
+			default 0 if PWM2_SUB3_CLOCK1
+			default 1 if PWM2_SUB3_CLOCK2
+			default 2 if PWM2_SUB3_CLOCK3
+			default 3 if PWM2_SUB3_CLOCK4
+			default 4 if PWM2_SUB3_CLOCK5
+			default 5 if PWM2_SUB3_CLOCK6
+			default 6 if PWM2_SUB3_CLOCK7
+			default 7 if PWM2_SUB3_CLOCK8
+
+		config IMXRT_PWM_CHANNEL13
+			bool "PWM Controller 2, Channel 5"
+			default n
+		config IMXRT_PWM_CHANNEL14
+			bool "PWM Controller 2, Channel 6"
+			default n
+
+		choice
+			prompt "** PWM Submodule4 Clock"
+			default PWM2_SUB4_CLOCK1
+
+		config PWM2_SUB4_CLOCK1
+			bool "fclk/1"
+		config PWM2_SUB4_CLOCK2
+			bool "fclk/2"
+		config PWM2_SUB4_CLOCK3
+			bool "fclk/4"
+		config PWM2_SUB4_CLOCK4
+			bool "fclk/8"
+		config PWM2_SUB4_CLOCK5
+			bool "fclk/16"
+		config PWM2_SUB4_CLOCK6
+			bool "fclk/32"
+		config PWM2_SUB4_CLOCK7
+			bool "fclk/64"
+		config PWM2_SUB4_CLOCK8
+			bool "fclk/128"
+
+		endchoice
+
+		config PWM2_SUB4_CLOCK
+			int
+			default 0 if PWM2_SUB4_CLOCK1
+			default 1 if PWM2_SUB4_CLOCK2
+			default 2 if PWM2_SUB4_CLOCK3
+			default 3 if PWM2_SUB4_CLOCK4
+			default 4 if PWM2_SUB4_CLOCK5
+			default 5 if PWM2_SUB4_CLOCK6
+			default 6 if PWM2_SUB4_CLOCK7
+			default 7 if PWM2_SUB4_CLOCK8
+
+		config IMXRT_PWM_CHANNEL15
+			bool "PWM Controller 2, Channel 7 (UART1 Pins)"
+			default n
+		config IMXRT_PWM_CHANNEL16
+			bool "PWM Controller 2, Channel 8 (UART1 Pins)"
+			default n
+	endif
+	
+	if ARCH_CHIP_FAMILY_IMXRT105x
 	config IMXRT_PWM3
-		bool "PWM IMXRT_PWM3"
+		bool "PWM Controller 3, Channel 17 to Channel 24"
 		default n
 
 	config IMXRT_PWM4
-		bool "PWM IMXRT_PWM4"
+		bool "PWM Controller 4, Channel 25 to Channel 32"
 		default n
 	endif
 endif # IMXRT_PWM
