@@ -189,7 +189,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 	int ret;
 	int send_count;
 	mqd_t send_mq;
-	mqd_t recv_mq;
+	mqd_t recv_mq = NULL;
 	struct mq_attr attr;
 	statecb_node_t *cb_node;
 	char q_name[BIN_PRIVMQ_LEN];
@@ -254,7 +254,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 			ret = mq_receive(recv_mq, (char *)&response_msg, sizeof(binmgr_statecb_response_t), NULL);
 			if (ret == sizeof(binmgr_statecb_response_t)) {
 				send_count--;
-				bmvdbg("Receive message, %d response remained\n");
+				bmvdbg("Receive message, %d response remained\n", send_conut);
 			} else if (ret < 0 && errno == EINTR) {
 				continue;
 			} else {
@@ -267,7 +267,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 	return OK;
 
 errout:
-	if(need_response) {
+	if (need_response) {
 		mq_close(recv_mq);
 		mq_unlink(BINMGR_CBMSG_MQ);
 	}
