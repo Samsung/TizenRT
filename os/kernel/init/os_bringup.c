@@ -83,6 +83,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -253,16 +256,9 @@ static inline void os_do_appstart(void)
 	net_initialize();
 #endif
 
-	/* Start the application initialization task.  In a flat build, this is
-	 * entrypoint is given by the definitions, CONFIG_USER_ENTRYPOINT.  In
-	 * the protected build, however, we must get the address of the
-	 * entrypoint from the header at the beginning of the user-space blob.
-	 */
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
+	svdbg("Starting application init task\n");
 
-	svdbg("Starting application init thread\n");
-
-
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->preapp_start != NULL);
 	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char *const *)NULL);
@@ -271,6 +267,15 @@ static inline void os_do_appstart(void)
 #endif
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
+	}
+#endif
+
+#ifdef CONFIG_BINARY_MANAGER
+	svdbg("Starting binary manager thread\n");
+
+	pid = kernel_thread(BINARY_MANAGER_NAME, BINARY_MANAGER_PRIORITY, BINARY_MANAGER_STACKSIZE, binary_manager, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start binary manager");
 	}
 #endif
 
@@ -290,7 +295,16 @@ static inline void os_do_appstart(void)
 		svdbg("Failed to create Task Manager\n");
 	}
 #endif
-	svdbg("Starting application main thread\n");
+
+#if !defined(CONFIG_BINARY_MANAGER)
+	/* Start the application initialization task.  In a flat build, this is
+	 * entrypoint is given by the definitions, CONFIG_USER_ENTRYPOINT.  In
+	 * the protected build, however, we must get the address of the
+	 * entrypoint from the header at the beginning of the user-space blob.
+	 */
+
+	svdbg("Starting application main task\n");
+
 #ifdef CONFIG_BUILD_PROTECTED
 	if (USERSPACE->us_entrypoint != NULL) {
 		pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
@@ -298,6 +312,8 @@ static inline void os_do_appstart(void)
 #elif defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
+#endif // !CONFIG_BINARY_MANAGER
+
 	ASSERT(pid > 0);
 }
 
