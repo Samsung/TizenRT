@@ -982,7 +982,7 @@ static void _up_assert(int errorcode)
 	}
 #else
 
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (g_upassert || current_regs || (this_task())->pid == 0) {
@@ -996,7 +996,7 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	} else {
 		exit(errorcode);
 	}

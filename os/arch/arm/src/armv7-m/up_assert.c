@@ -72,6 +72,7 @@
 #define CONFIG_DEBUG_VERBOSE 1
 #endif
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -208,21 +209,30 @@ static inline void up_registerdump(void)
 #ifdef CONFIG_STACK_COLORATION
 static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
+	size_t used_stack_size;
+
+	if (tcb->pid == 0) {
+		used_stack_size = 0;
+	} else {
+		used_stack_size = up_check_tcbstack(tcb);
+	}
+
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
+	lldbg("%*s | %5d | %4d | %7lu / %7lu\n", CONFIG_TASK_NAME_SIZE,
 			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
 #else
 	lldbg("%5d | %4d | %7lu / %7lu\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
+			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
 			(unsigned long)tcb->adj_stack_size);
 #endif
 
-	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+	if (tcb->pid != 0 && used_stack_size == tcb->adj_stack_size) {
 		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
+
 }
 #endif
 
@@ -238,10 +248,10 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("-------------------------------------------------\n");
+	lldbg("%*s | %5s | %4s | %7s / %7s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK");
+	lldbg("---------------------------------------------------------------------\n");
 #else
-	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
+	lldbg("%5s | %4s | %7s / %7s\n", "PID", "PRI", "USED", "TOTAL STACK");
 	lldbg("----------------------------------\n");
 #endif
 
@@ -408,57 +418,12 @@ static void up_dumpstate(void)
 
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_BINMGR_RECOVERY
-	int ret;
-	binmgr_request_t request_msg;
-	struct tcb_s *tcb;
-	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
-	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
-
-	/* Check if the PC lies within kernel context */
-	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
-
-		/* Reboot the system if fault is in kernel context */
-
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
-		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 #else
-		(void)irqsave();
-		for (;;) {
-#ifdef CONFIG_ARCH_LEDS
-			//board_autoled_on(LED_PANIC);
-			up_mdelay(250);
-			//board_autoled_off(LED_PANIC);
-			up_mdelay(250);
-#endif
-		}
-#endif
-	} else {
-
-		request_msg.cmd = BINMGR_FAULT;
-		request_msg.requester_pid = getpid();
-		if (current_regs) {
-			tcb = sched_self();
-			sched_removereadytorun(tcb);
-#if CONFIG_RR_INTERVAL > 0
-			tcb->timeslice = 0;
-#endif
-			tcb->sched_priority = SCHED_PRIORITY_MIN;
-			sched_addreadytorun(tcb);
-		}
-
-		/* Send a message to fault manager with pid of the faulty task */
-		ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
-		DEBUGASSERT(ret == 0);
-		if (current_regs) {
-			tcb = sched_self();
-			current_regs = tcb->xcp.regs;
-		}
-	}
-#else
-
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
+
 	if (current_regs || (this_task())->pid == 0) {
 #endif
 		(void)irqsave();
@@ -470,13 +435,46 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_BLOCK
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	} else {
 		exit(errorcode);
 	}
 #endif
-#endif
+#endif /* CONFIG_BOARD_ASSERT_AUTORESET */
 }
+
+#ifdef CONFIG_BINMGR_RECOVERY
+/****************************************************************************
+ * Name: recovery_user_assert : recovery user assert through binary manager
+ ****************************************************************************/
+static void recovery_user_assert(void)
+{
+	int ret;
+	binmgr_request_t request_msg;
+	struct tcb_s *tcb;
+
+	request_msg.cmd = BINMGR_FAULT;
+	request_msg.requester_pid = getpid();
+	if (current_regs) {
+		tcb = sched_self();
+		sched_removereadytorun(tcb);
+#if CONFIG_RR_INTERVAL > 0
+		tcb->timeslice = 0;
+#endif
+		tcb->sched_priority = SCHED_PRIORITY_MIN;
+		sched_addreadytorun(tcb);
+	}
+
+	/* Send a message to binary manager with pid of the faulty task */
+
+	ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+	DEBUGASSERT(ret == 0);
+	if (current_regs) {
+		tcb = sched_self();
+		current_regs = tcb->xcp.regs;
+	}
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -519,6 +517,11 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
+	uint32_t ksram_segment_end  = (uint32_t)__ksram_segment_start__  + (uint32_t)__ksram_segment_size__;
+	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
+	uint32_t assert_pc;
+	uint32_t is_kernel_assert   = false;
+
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (current_regs) {
@@ -526,14 +529,26 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		assert_pc = (uint32_t)g_assertpc;
 	}
-#endif
 
-#if !defined(CONFIG_BINMGR_RECOVERY) && !defined(CONFIG_BOARD_ASSERT_SYSTEM_BLOCK)
+	/* Is the assert in Kernel? */
+
+	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
+		is_kernel_assert = true;
+	}
+#endif  /* CONFIG_BINMGR_RECOVERY */
+
 	up_dumpstate();
-#endif
 
-#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_BINMGR_RECOVERY)
-	(void)boardctl(BOARDIOC_RESET, 0);
+#ifdef CONFIG_BINMGR_RECOVERY
+	if (is_kernel_assert == false) {
+		/* recovery user assert through binary manager */
+
+		recovery_user_assert();
+	} else
 #endif
-	_up_assert(EXIT_FAILURE);
+	{
+		/* treat kernel assert */
+
+		_up_assert(EXIT_FAILURE);
+	}
 }
