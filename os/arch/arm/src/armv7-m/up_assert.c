@@ -220,7 +220,7 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
+	lldbg("%*s | %5d | %4d | %7lu / %7lu\n", CONFIG_TASK_NAME_SIZE,
 			tcb->name, tcb->pid, tcb->sched_priority,
 			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
 #else
@@ -248,10 +248,10 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("-------------------------------------------------\n");
+	lldbg("%*s | %5s | %4s | %7s / %7s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK");
+	lldbg("---------------------------------------------------------------------\n");
 #else
-	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
+	lldbg("%5s | %4s | %7s / %7s\n", "PID", "PRI", "USED", "TOTAL STACK");
 	lldbg("----------------------------------\n");
 #endif
 
