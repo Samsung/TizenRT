@@ -1222,7 +1222,7 @@ CONFIG_MM_REGIONS=2
 #
 # Binary Loader
 #
-# CONFIG_BINFMT_DISABLE is not set
+# CONFIG_BINFMT_ENABLE is not set
 # CONFIG_BINFMT_EXEPATH is not set
 # CONFIG_NXFLAT is not set
 # CONFIG_ELF is not set
