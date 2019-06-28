@@ -200,16 +200,16 @@ void imxrt_adc_getdefaultconfig(adc_config_t *config)
 	/* Initializes the configure structure to zero. */
 	memset(config, 0, sizeof(*config));
 
-	config->enableAsynchronousClockOutput = true;
+	config->enableAsynchronousClockOutput = false;
 	config->enableOverWrite = false;
 	config->enableContinuousConversion = false;
-	config->enableHighSpeed = false;
+	config->enableHighSpeed = true;
 	config->enableLowPower = false;
 	config->enableLongSample = false;
 	config->referenceVoltageSource = kADC_ReferenceVoltageSourceAlt0;
 	config->samplePeriodMode = kADC_SamplePeriod2or12Clocks;
-	config->clockSource = kADC_ClockSourceAD;
-	config->clockDriver = kADC_ClockDriver1;
+	config->clockSource = kADC_ClockSourceIPG;
+	config->clockDriver = kADC_ClockDriver4;
 	config->resolution = kADC_Resolution12Bit;
 }
 
@@ -609,7 +609,6 @@ static int adc_bind(FAR struct adc_dev_s *dev, FAR const struct adc_callback_s *
 static void adc_reset(FAR struct adc_dev_s *dev)
 {
 	irqstate_t flags;
-	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	flags = irqsave();
 
@@ -636,10 +635,7 @@ static void adc_reset(FAR struct adc_dev_s *dev)
  ****************************************************************************/
 static int adc_setup(FAR struct adc_dev_s *dev)
 {
-	int ret;
 	adc_config_t adcConfigStrcut;
-
-	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	/* Make sure that the ADC device is in the powered up, reset state */
 	adc_reset(dev);

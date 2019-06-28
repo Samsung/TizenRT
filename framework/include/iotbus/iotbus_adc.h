@@ -145,7 +145,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd);
  * @return On success, ADC sample value is returned. On failure, a negative value is returned.
  * @since TizenRT v2.0
  */
-uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout);
+int32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout);
 
 #ifdef __cplusplus
 }
