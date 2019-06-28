@@ -97,10 +97,6 @@ static void recovery_exclude_scheduling_each(FAR struct tcb_s *tcb, FAR void *ar
  ****************************************************************************/
 static int recovery_exclude_scheduling(int binid)
 {
-	int ret;
-	irqstate_t flags;
-	FAR struct tcb_s *tcb;
-
 	if (binid < 0) {
 		return ERROR;
 	}
@@ -134,7 +130,6 @@ void binary_manager_recovery(int pid)
 	int bin_id;
 	int bin_idx;
 	char type_str[1];
-	char data_str[1];
 	struct tcb_s *tcb;
 	char *loading_data[LOADTHD_ARGC + 1];
 
@@ -169,7 +164,7 @@ void binary_manager_recovery(int pid)
 			if (ret > 0) {
 				abort_mode = false;
 				bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
-				return 0;
+				return;
 			}
 		}
 	}
