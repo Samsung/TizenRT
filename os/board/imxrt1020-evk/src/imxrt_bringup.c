@@ -73,7 +73,9 @@
 
 #include <syslog.h>
 #include <tinyara/i2c.h>
-#include <imxrt_lpi2c.h>
+#include <tinyara/pwm.h>
+#include "imxrt_lpi2c.h"
+#include "imxrt_pwm.h"
 #include "imxrt_log.h"
 
 #if defined(CONFIG_FLASH_PARTITION)
@@ -113,6 +115,38 @@ static void imxrt_i2c_register(int bus)
 	}
 }
 #endif
+
+/****************************************************************************
+ * Name: board_pwmm_initialize
+ *
+ * Description:
+ *   PWM intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_pwm_register(int ch)
+{
+#ifdef CONFIG_PWM
+	struct pwm_lowerhalf_s *pwm_ch;
+	char path[16];
+	int ret;
+
+	/* The last two channels(15, 16) multiplex the PINs with LPUART1,
+	 * so for debugging they are not be set to PWM PINs */
+	pwm_ch = imxrt_pwminitialize(ch);
+	if (!pwm_ch) {
+		dbg("Failed to get imxrt PWM Channel lower half\n");
+		return;
+	}
+
+	/* Register the PWM channel driver at "/dev/pwmx" */
+	snprintf(path, sizeof(path), "/dev/pwm%d", ch);
+	ret = pwm_register(path, pwm_ch);
+	if (ret < 0) {
+		dbg("Imxrt PWM registeration failure: %d\n", ret);
+	}
+#endif
+	return;
+}
 
 void imxrt_filesystem_initialize(void)
 {
@@ -280,6 +314,57 @@ int imxrt_bringup(void)
 #endif
 #if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C4)
 	imxrt_i2c_register(4);
+#endif
+
+#ifdef CONFIG_PWM
+#if defined(CONFIG_IMXRT_PWM_CHANNEL1)
+	imxrt_pwm_register(1);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL2)
+	imxrt_pwm_register(2);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL3)
+	imxrt_pwm_register(3);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL4)
+	imxrt_pwm_register(4);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL5)
+	imxrt_pwm_register(5);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL6)
+	imxrt_pwm_register(6);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL7)
+	imxrt_pwm_register(7);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL8)
+	imxrt_pwm_register(8);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL9)
+	imxrt_pwm_register(9);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL10)
+	imxrt_pwm_register(10);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL11)
+	imxrt_pwm_register(11);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL12)
+	imxrt_pwm_register(12);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL13)
+	imxrt_pwm_register(13);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL14)
+	imxrt_pwm_register(14);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL15)
+	imxrt_pwm_register(15);
+#endif
+#if defined(CONFIG_IMXRT_PWM_CHANNEL16)
+	imxrt_pwm_register(16);
+#endif
 #endif
 
 #ifdef CONFIG_USBHOST
