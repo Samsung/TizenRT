@@ -28,8 +28,7 @@
 
 #include <binary_manager/binary_manager.h>
 
-#define APP1_NAME "micom"
-#define APP2_NAME "wifi"
+#define APP_NAME "micom"
 
 #define EXEC_FINITE   0
 #define EXEC_INFINITE 1
@@ -108,11 +107,9 @@ static void binary_update_reload(char *name)
 static void binary_update_run_tests(int repetition_num)
 {
 	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
-	binary_update_getinfo(APP1_NAME);
-	binary_update_getinfo(APP2_NAME);
+	binary_update_getinfo(APP_NAME);
 	binary_update_getinfo_all();
-	binary_update_reload(APP1_NAME);
-	binary_update_reload(APP2_NAME);
+	binary_update_reload(APP_NAME);
 
 	/* Wait for finishing previous test. */
 	sleep(1);
