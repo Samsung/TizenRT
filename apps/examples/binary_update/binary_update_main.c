@@ -31,7 +31,7 @@
 #define APP1_NAME "micom"
 #define APP2_NAME "wifi"
 
-#define EXEC_NORMAL   0
+#define EXEC_FINITE   0
 #define EXEC_INFINITE 1
 
 static volatile bool is_running;
@@ -163,9 +163,9 @@ int binary_update_main(int argc, char *argv[])
 {
 	int repetition_num = 1;
 	int option;
-	char *cmd_arg = NULL;
-	char *cnt_arg = NULL;
-	int execution_type = EXEC_NORMAL;
+	char *cmd_arg;
+	char *cnt_arg;
+	int execution_type;
 
 	if (argc >= 4 || argc == 2) {
 		goto usage;
@@ -178,7 +178,7 @@ int binary_update_main(int argc, char *argv[])
 			cmd_arg = optarg;
 			break;
 		case 'n':
-			execution_type = EXEC_NORMAL;
+			execution_type = EXEC_FINITE;
 			cnt_arg = optarg;
 			break;
 		case '?':
@@ -189,13 +189,13 @@ int binary_update_main(int argc, char *argv[])
 
 	/* Execute the binary update example. */
 	if (execution_type == EXEC_INFINITE) {
-		if (cmd_arg && strncmp(cmd_arg, "start", strlen("start") + 1) == 0) {
+		if (strncmp(cmd_arg, "start", strlen("start") + 1) == 0) {
 			if (is_running) {
 				goto already_running;
 			}
 			inf_flag = true;
 			binary_update_execute_infinitely();
-		} else if (cmd_arg && strncmp(cmd_arg, "stop", strlen("stop") + 1) == 0) {
+		} else if (strncmp(cmd_arg, "stop", strlen("stop") + 1) == 0) {
 			if (inf_flag == false) {
 				printf("There is no infinite running Binary Update example. Cannot stop the sample.\n");
 				return -1;
