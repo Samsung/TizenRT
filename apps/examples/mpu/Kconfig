@@ -11,19 +11,38 @@ menuconfig EXAMPLES_MPU_TEST
 
 if EXAMPLES_MPU_TEST
 
-config TC_MPU_ALL
-	bool "All"
-	default n
-	select TC_MPU_READ
-	select TC_MPU_WRITE
+config MPUTEST_KERNEL_CODE_ADDR
+	hex "Address in kernel code range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel code address
 
-config TC_MPU_READ
-	bool "Read"
-	default n
+config MPUTEST_KERNEL_DATA_ADDR
+	hex "Address in kernel data range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel data address
 
-config TC_MPU_WRITE
-	bool "Write"
+config MPUTEST_APP_ADDR
+	hex "Address in differnet application range"
+	default 0x00000000
+	depends on APP_BINARY_SEPARATION
+	---help---
+		Test MPU access protection to this application address
+
+config MPUTEST_USE_PREBUILT_BINS
+	bool "Use pre-built application binaries"
 	default n
+	depends on APP_BINARY_SEPARATION
+	depends on ARCH_BOARD_IMXRT1050_EVK || ARCH_BOARD_IMXRT1020_EVK
+	depends on !EXAMPLES_ELF
+	---help---
+		To test different application access, two application binaries
+		should be flashed. This config makes using pre-built application binaries.
+		Note! 1. Initial binaries are built with NXP imxrt1050-evk. To use this
+		        with another board, pre-built binaries should be replaced.
+		      2. ELF example makes application binaries itself so that
+		         when it is enabled, this should be turned off.
 
 endif #EXAMPLES_MPU_TEST
 
