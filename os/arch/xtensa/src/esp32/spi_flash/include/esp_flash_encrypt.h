@@ -38,7 +38,7 @@
 #ifndef BOOTLOADER_BUILD
 #include "esp_spi_flash.h"
 #endif
-#include "soc/efuse_reg.h"
+#include "chip/esp32_efuse_reg.h"
 
 /**
  * @file esp_partition.h

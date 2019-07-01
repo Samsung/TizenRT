@@ -30,7 +30,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rom/ets_sys.h"
 #include "esp32_gpio.h"
 #include "rom/spi_flash.h"
 
