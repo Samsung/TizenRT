@@ -40,7 +40,7 @@
 	"	 wm_test softap [ssid] [password]\n"							\
 	"\n station mode options:\n"										\
 	"	 wm_test sta\n"													\
-	"	 wm_test join [ssid] [security mode] [password]\n"				\
+	"	 wm_test join [ssid] [password] [security mode]\n"				\
 	"	 wm_test leave\n"												\
 	"	 wm_test cancel\n"												\
 	"\n run scan:\n"													\
@@ -1305,31 +1305,37 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		}
 		opt->func = wm_connect;
 		opt->ssid = argv[3];
-		opt->auth_type = get_auth_type(argv[4]);
-		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
-			return -1;
-		}
-		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
-			opt->password = "";
-			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		opt->password = argv[4];
+		opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
+		if (argc == 5) {
 			return 0;
 		}
 
-		if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
-			if (strlen(argv[5]) == 13) {
+		opt->auth_type = get_auth_type(argv[5]);
+		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
+			return 0;
+		}
+
+		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+			opt->password = "";
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		} else if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			if (strlen(argv[4]) == 13) {
 				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-			} else if (strlen(argv[5]) == 5) {
+			} else if (strlen(argv[4]) == 5) {
 				opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
 			} else {
-				return -1;
+				opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
 			}
 		} else {
-			opt->crypto_type = get_crypto_type(argv[4]);
+			opt->crypto_type = get_crypto_type(argv[5]);
 			if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
-				return -1;
+				opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
 			}
 		}
-		opt->password = argv[5];
+		return 0;
 	} else if (strcmp(argv[2], "set") == 0) {
 		if (argc < 5) {
 			return -1;

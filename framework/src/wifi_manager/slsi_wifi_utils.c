@@ -29,13 +29,22 @@
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0
 
+struct _wifi_scan_filter_result_ {
+	int scan_flag;
+	sem_t scan_sem;
+	uint8_t scan_ssid[WIFI_UTILS_SSID_LEN + 1];
+	wifi_utils_scan_list_s *result_list;
+};
+typedef struct _wifi_scan_filter_result_ scan_filter_result_t;
+
 static WiFi_InterFace_ID_t g_mode;
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
+
+static scan_filter_result_t scan_filter_result;
 
 /*
  * Utils
  */
-
 static void
 get_security_type(slsi_security_config_t *sec_modes, uint8_t num_sec_modes,
 				   wifi_utils_ap_auth_type_e *auth,
@@ -93,7 +102,7 @@ free_scan_results(wifi_utils_scan_list_s *scan_list)
 }
 
 static wifi_utils_result_e
-fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_info)
+fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_info, const char* ssid)
 {
 	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
 	wifi_utils_scan_list_s *cur = NULL, *prev = NULL;
@@ -120,6 +129,11 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 			ndbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
 			ndbg("-----------------------------------------------\n");
 #endif
+			if (ssid != NULL && strlen(ssid) > 0 && strcmp(ssid, (const char*)wifi_scan_iter->ssid) != 0) {
+				wifi_scan_iter = wifi_scan_iter->next;
+				continue;
+			}
+
 			cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
 			if (!cur) {
 				free_scan_results(*scan_list);
@@ -240,15 +254,25 @@ static int8_t wifi_scan_result_callback(slsi_reason_t *reason)
 		ndbg("[WU] Scan failed %d\n");
 		// todo: arg need to be passed, we didn't implement passing arg yet.
 		g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
+		if (scan_filter_result.scan_flag) {
+			sem_post(&(scan_filter_result.scan_sem));
+		}
 		return SLSI_STATUS_ERROR;
 	}
 	slsi_scan_info_t *wifi_scan_result;
 	int8_t res = WiFiGetScanResults(&wifi_scan_result);
 	if (res != SLSI_STATUS_SUCCESS) {
+		if (scan_filter_result.scan_flag) {
+			sem_post(&(scan_filter_result.scan_sem));
+		}
 		return SLSI_STATUS_ERROR;
 	}
+	if (scan_filter_result.scan_flag) {
+		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char*)scan_filter_result.scan_ssid);
+		sem_post(&(scan_filter_result.scan_sem));
+	}
 	if (g_cbk.scan_done) {
-		if (fetch_scan_results(&scan_list, &wifi_scan_result) == WIFI_UTILS_SUCCESS) {
+		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == WIFI_UTILS_SUCCESS) {
 			g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
 			free_scan_results(scan_list);
 		} else {
@@ -256,10 +280,8 @@ static int8_t wifi_scan_result_callback(slsi_reason_t *reason)
 		}
 	}
 	WiFiFreeScanResults(&wifi_scan_result);
-
 	return SLSI_STATUS_SUCCESS;
 }
-
 
 //
 // Interface API
@@ -290,6 +312,12 @@ wifi_utils_result_e wifi_utils_init(void)
 			ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
 			return wuret;
 		}
+
+		memset((void*)&scan_filter_result, 0, sizeof(scan_filter_result_t));
+		sem_init(&(scan_filter_result.scan_sem), 0, 0);
+		scan_filter_result.result_list = NULL;
+		scan_filter_result.scan_flag = 0;
+
 		wuret = WIFI_UTILS_SUCCESS;
 	} else {
 		ndbg("Already %d\n", g_mode);
@@ -319,11 +347,36 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
 		return wuret;
 	} 
-	ret = WiFiScanNetwork();
+	slsi_ap_config_t ap_config;
+	memset((void*)&ap_config, 0, sizeof(slsi_ap_config_t));
+	scan_filter_result.scan_flag = 0;
+	if (arg != NULL) {
+		wifi_utils_ap_config_s *ap_connect_config = (wifi_utils_ap_config_s *)arg;
+		strncpy((FAR char *)ap_config.ssid, (FAR const char *)ap_connect_config->ssid, ap_connect_config->ssid_length);
+		ap_config.ssid_len = ap_connect_config->ssid_length;
+		scan_filter_result.scan_flag = 1;
+		if (scan_filter_result.result_list != NULL) {
+			free_scan_results(scan_filter_result.result_list);
+			scan_filter_result.result_list = NULL;
+		}
+		strncpy((char*)scan_filter_result.scan_ssid, (const char*)ap_config.ssid, ap_connect_config->ssid_length);
+	}
+	ret = WiFiScanNetwork(&ap_config);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		ndbg("[WU] [ERR] WiFi scan fail(%d)\n", ret);
 		return wuret;
 	} 
+	if (scan_filter_result.scan_flag > 0) {
+		struct timespec abstime;
+		(void)clock_gettime(CLOCK_REALTIME, &abstime);
+		abstime.tv_sec += (SLSI_SCAN_INTERVAL + 1);
+		ret = sem_timedwait(&(scan_filter_result.scan_sem), &abstime);
+		if (ret != OK) {
+			scan_filter_result.scan_flag = 0;
+			return WIFI_UTILS_TIMEOUT;
+		}
+		scan_filter_result.scan_flag = 0;
+	}
 	wuret = WIFI_UTILS_SUCCESS;
 	ndbg("[WU] WIFi Scan success\n");
 	return wuret;
@@ -354,6 +407,27 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	slsi_security_config_t *config = NULL;
 
 	if (ap_connect_config->passphrase_length > 0) {
+		// scan to get the security config if it is unknown
+		if (ap_connect_config->ap_auth_type == WIFI_UTILS_AUTH_UNKNOWN ||
+			ap_connect_config->ap_crypto_type == WIFI_UTILS_CRYPTO_UNKNOWN) {
+			wuret = wifi_utils_scan_ap(ap_connect_config);
+			if (wuret != WIFI_UTILS_SUCCESS) {
+				return wuret;
+			}
+
+			if (scan_filter_result.result_list != NULL) {
+				// Use the auth_type/crypto_type value of first one.
+				ap_connect_config->ap_auth_type = scan_filter_result.result_list->ap_info.ap_auth_type;
+				ap_connect_config->ap_crypto_type = scan_filter_result.result_list->ap_info.ap_crypto_type;
+				// Free the result_list.
+				free_scan_results(scan_filter_result.result_list);
+				scan_filter_result.result_list = NULL;
+			} else {
+				wuret = WIFI_UTILS_FAIL;
+				return wuret;
+			}
+		}
+
 		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
 			ndbg("[WU] Memory allocation failed!\n");

@@ -287,7 +287,7 @@ int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handle
  * or Scan aborted.
  * The scan results are retrieved using WiFiGetScanResults().
  */
-int8_t WiFiScanNetwork(void);
+int8_t WiFiScanNetwork(const slsi_ap_config_t *ap_config);
 
 /**
  * Return current scan results list

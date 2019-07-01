@@ -357,7 +357,7 @@ static void slsi_init_nvram(void);
 static uint8_t slsi_stop_supplicant(void);
 static void slsi_deinit(void);
 static int8_t slsi_wpa_close(bool terminate);
-static int8_t slsi_start_scan(void);
+static int8_t slsi_start_scan(const uint8_t* ssid, uint8_t ssidLen);
 static int8_t slsi_get_country_code(char *country_code);
 static WiFi_InterFace_ID_t slsi_get_op_mode(void);
 static void slsi_set_scan_interval(uint8_t interval);
@@ -1614,7 +1614,7 @@ static int8_t slsi_get_network(uint8_t *ssid, uint8_t ssid_len, char **network_i
 	int8_t result = SLSI_STATUS_ERROR;
 	char *pbuf = NULL;
 	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
-	char ssid_formated[WPA_MAX_SSID_LEN];
+	char ssid_formated[WPA_MAX_SSID_LEN] = { 0 };
 	printf_encode(ssid_formated, WPA_MAX_SSID_LEN - 1, ssid, ssid_len);
 	// List networks to see if already available
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_LIST_NETWORKS);
@@ -2013,7 +2013,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 	result = slsi_get_network(ssid, ssid_len, &network_id);
 	if ((result != SLSI_STATUS_SUCCESS) && (network_id == NULL) /* Attempt to make SVACE happy */) {
 		// Add new network
-		char ssid_formatted[WPA_MAX_SSID_LEN];
+		char ssid_formatted[WPA_MAX_SSID_LEN] = { 0 };
 		char command[WPA_COMMAND_MAX_SIZE] = { 0 };
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_ADD_NETWORK);
 		pbuf = slsi_send_request(command, NULL);
@@ -2437,10 +2437,32 @@ errout:
 	return result;
 }
 
-static int8_t slsi_start_scan(void)
+static int8_t slsi_start_scan(const uint8_t *ssid, uint8_t ssid_len)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-	slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
+	if (ssid == NULL || ssid_len == 0) {
+		slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
+	} else {
+		char hex_ssid[WPA_COMMAND_MAX_SIZE] = { 0 };
+		int i = 0;
+		int hexindex = 0;
+		for (; i < WPA_COMMAND_MAX_SIZE / 2 && i < strlen((const char *)ssid) && i < ssid_len; i++) {
+			char value = ssid[i];
+			char temp = (value >> 4) & 0x0f;
+			if (temp < 0x0a) {
+				hex_ssid[hexindex++] = temp + '0';
+			} else {
+				hex_ssid[hexindex++] = temp - 0x0a + 'a';
+			}
+			temp = value & 0x0f;
+			if (temp < 0x0a) {
+				hex_ssid[hexindex++] = temp + '0';
+			} else {
+				hex_ssid[hexindex++] = temp - 0x0a + 'a';
+			}
+		}
+		slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, " ssid", hex_ssid, NULL, &result);
+	}
 	if (result == SLSI_STATUS_SUCCESS) {
 		g_scanning = 1;
 	}
@@ -3378,12 +3400,12 @@ int8_t WiFiStop(void)
 	return result;
 }
 
-int8_t WiFiScanNetwork(void)
+int8_t WiFiScanNetwork(const slsi_ap_config_t *ap_config)
 {
 	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_NOT_STARTED;
 	if (g_state != SLSI_WIFIAPI_STATE_NOT_STARTED) {
-		result = slsi_start_scan();
+		result = slsi_start_scan(ap_config->ssid, ap_config->ssid_len);
 	}
 	LEAVE_CRITICAL;
 	return result;
