@@ -1,0 +1,43 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config MESSAGING_IPC
+	bool "Enable Messaging APIs"
+	default n
+	depends on !DISABLE_MQUEUE
+	depends on !DISABLE_SIGNALS
+	---help---
+		Enables Messaging APIs.
+		Messaging IPC supports like below.
+		1. Send unicast message with sync/async/noreply option.
+			- sync : sender waits after sending msg
+			- async : sender just sends msg and can receive the reply through callback.
+			- noreply : sender just sends msg and cannot receive the reply.
+		2. Reply unicast message : send reply msg from receiver to sender.
+			- using same port name which used when receiving
+		3. Send multicast message.
+		4. Receive message with block/non-block option.
+			- block : receiver waits for getting message.
+			- non-block : receiver sets message callback func and continue to run.
+		The maximum size of message is smaller than 65527 bytes.
+
+
+if MESSAGING_IPC
+config MESSAGING_RECV_LIST_SIZE
+	int "The buffer size for getting receivers' information."
+	default 10
+	---help---
+		This config is used for getting receivers information before send message.
+		If this value is large, sending performance can be enhanced, but there is large memory consumption.
+		If this value is small, memory consumption is less, but there is low performance for sending.
+
+config MESSAGING_MAXMSG
+	int "Max message number"
+	default 10
+	---help---
+		Max number of messaging which can send or receive.
+
+endif
+

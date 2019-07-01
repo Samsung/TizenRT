@@ -1,0 +1,3 @@
+config ENTRY_BINARY_UPDATE
+	bool "Binary Update example"
+	depends on EXAMPLES_BINARY_UPDATE
