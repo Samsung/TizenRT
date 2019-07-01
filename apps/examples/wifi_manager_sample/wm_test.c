@@ -272,7 +272,7 @@ void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
 		printf("SECURITY: unknown\n");
 	} else {
-		char security_type[20] = {0,};
+		char security_type[20] = { 0, };
 		strcat(security_type, wifi_test_auth_method[config->ap_auth_type]);
 		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
 		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
@@ -310,7 +310,7 @@ wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 	result[2] = strtok_r(NULL, "_", &next_ptr);
 
 	int i = 0;
-	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
+	int list_size = sizeof(wifi_test_auth_method) / sizeof(wifi_test_auth_method[0]);
 	for (; i < list_size; i++) {
 		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (strcmp(result[0], wifi_test_auth_method[i]) == 0)) {
 			if (result[2] != NULL) {		
@@ -335,7 +335,7 @@ wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 	result[1] = next_ptr;
 
 	int i = 0;
-	int list_size = sizeof(wifi_test_crypto_method)/sizeof(wifi_test_crypto_method[0]);
+	int list_size = sizeof(wifi_test_crypto_method) / sizeof(wifi_test_crypto_method[0]);
 	for (; i < list_size; i++) {
 		if (strcmp(result[1], wifi_test_crypto_method[i]) == 0) {
 			return crypto_type_table[i];
@@ -656,7 +656,7 @@ void wm_connect(void *arg)
 		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
-	} else{
+	} else {
 		apconfig.passphrase[0] = '\0';
 		apconfig.passphrase_length = 0;
 		apconfig.ap_crypto_type = ap_info->crypto_type;
