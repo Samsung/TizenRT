@@ -257,8 +257,11 @@ size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb
 	size_t totalsize = size * nmemb;
 	std::string header(data, totalsize);
 	medvdbg("%s\n", header.c_str());
-	if (header.find(TAG_CONTENT_TYPE) != std::string::npos) {
-		source->mContentType = header.substr(TAG_CONTENT_TYPE.length());
+	auto pos = header.find(TAG_CONTENT_TYPE);
+	if (pos != std::string::npos) {
+		pos = header.find_first_not_of(' ', pos + TAG_CONTENT_TYPE.length());
+		auto end = header.find((char)0x0d, pos); // CR: 0x0d
+		source->mContentType = header.substr(pos, end - pos);
 		if (!source->mIsHeaderReceived) {
 			std::lock_guard<std::mutex> lock(source->mMutex);
 			source->mIsHeaderReceived = true;
