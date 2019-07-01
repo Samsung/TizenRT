@@ -38,7 +38,7 @@
 
 #include "esp_attr.h"
 
-#include "soc/spi_reg.h"
+#include "chip/esp32_spi_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

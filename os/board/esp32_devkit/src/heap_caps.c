@@ -37,7 +37,6 @@
 
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
-#include "esp_log.h"
 
 /*
 Routine to allocate a bit of memory with certain capabilities. caps is a bitfield of MALLOC_CAP_* bits.

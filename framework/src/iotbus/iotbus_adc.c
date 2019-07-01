@@ -67,7 +67,7 @@ static void *iotbus_adc_handler(void *hnd)
 	fds[0].events = POLLIN | POLLERR;
 
 	handle->state = IOTBUS_ADC_BUSY;
-	ret = ioctl(handle->fd, ANIOC_TRIGGER, NULL);
+	ret = ioctl(handle->fd, ANIOC_TRIGGER, 0);
 	if (ret < 0) {
 		ibdbg("[ADC] trigger error(%d)\n", ret);
 		handle->state = IOTBUS_ADC_RDY;
@@ -277,7 +277,7 @@ int iotbus_adc_stop(iotbus_adc_context_h hnd)
 	return IOTBUS_ERROR_NONE;
 }
 
-uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
+int32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 {
 	struct _iotbus_adc_s *handle;
 	size_t readsize;
@@ -297,11 +297,11 @@ uint32_t iotbus_adc_get_sample(iotbus_adc_context_h hnd, int timeout)
 	readsize = sizeof(struct adc_msg_s);
 
 	handle->state = IOTBUS_ADC_BUSY;
-	ret = ioctl(handle->fd, ANIOC_TRIGGER, NULL);
+	ret = ioctl(handle->fd, ANIOC_TRIGGER, 0);
 	if (ret < 0) {
 		ibdbg("[ADC] trigger error(%d)\n", ret);
 		handle->state = IOTBUS_ADC_RDY;
-		return 0;
+		return ret;
 	}
 
 	while (1) {

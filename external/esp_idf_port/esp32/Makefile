@@ -42,11 +42,6 @@ CFLAGS += -I../tcpip_adapter/include
 #ESP32 hardware crypto
 ESP32_CSRCS += $(wildcard ./hwcrypto/*.c)
 
-#ESP32 external SPIRAM
-ifeq ($(CONFIG_SPIRAM_SUPPORT), y)
-ESP32_CSRCS += $(wildcard ./spi_ram/*.c)
-endif
-
 ESP32_COBJS = $(ESP32_CSRCS:.c=$(OBJEXT))
 BIN = libesp32$(LIBEXT)
 
