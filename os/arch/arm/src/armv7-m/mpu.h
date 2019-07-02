@@ -66,7 +66,7 @@
 #include <stdbool.h>
 #include <debug.h>
 #ifdef CONFIG_BUILD_PROTECTED
-#include <chip/mpu-reg.h>
+#include "mpu-reg.h"
 #endif
 #include "up_arch.h"
 #endif
