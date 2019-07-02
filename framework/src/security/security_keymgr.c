@@ -118,10 +118,6 @@ security_error keymgr_get_key(security_handle hnd, security_key_type algo, const
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
 
-	pubkey_x->data = (unsigned char *)malloc(h_pubkey.data_len);
-	if (!pubkey_x->data) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
 	SECAPI_DATA_DCOPY(h_pubkey, pubkey_x);
 
 	// check pubkey_y for ECDH
@@ -129,11 +125,6 @@ security_error keymgr_get_key(security_handle hnd, security_key_type algo, const
 		SECAPI_RETURN(SECURITY_OK);
 	}
 
-	pubkey_y->data = (unsigned char *)malloc(h_pubkey.priv_len);
-	if (!pubkey_y->data) {
-		SECAPI_FREE(pubkey_x);
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
 	SECAPI_PRIV_DCOPY(h_pubkey, pubkey_y);
 
 	SECAPI_RETURN(SECURITY_OK);

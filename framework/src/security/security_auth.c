@@ -235,10 +235,6 @@ security_error auth_get_ecdsa_signature(security_handle hnd, security_ecdsa_para
 		SECAPI_HAL_RETURN(hres);
 	}
 
-	sign->data = (unsigned char *)malloc(h_sign.data_len);
-	if (!sign->data) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
-	}
 	SECAPI_DATA_DCOPY(h_sign, sign);
 
 	SECAPI_RETURN(SECURITY_OK);
@@ -276,7 +272,6 @@ security_error auth_verify_ecdsa_signature(security_handle hnd,
 		SECAPI_HAL_RETURN(hres);
 	}
 
-
 	SECAPI_HAL_RETURN(hres);
 }
 
@@ -302,11 +297,6 @@ security_error auth_get_hash(security_handle hnd, security_hash_mode mode, secur
 	SECAPI_CALL(sl_get_hash(ctx->sl_hnd, h_type, &input, &output, &hres));
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);
-	}
-
-	hash->data = (unsigned char *)malloc(output.data_len);
-	if (!hash->data) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
 	}
 
 	SECAPI_DATA_DCOPY(output, hash);
@@ -344,11 +334,6 @@ security_error auth_get_hmac(security_handle hnd,
 	SECAPI_CALL(sl_get_hmac(ctx->sl_hnd, h_type, &input, key_idx, &output, &hres));
 	if (hres != HAL_SUCCESS) {
 		SECAPI_HAL_RETURN(hres);
-	}
-
-	hmac->data = (unsigned char *)malloc(output.data_len);
-	if (!hmac->data) {
-		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
 	}
 
 	SECAPI_DATA_DCOPY(output, hmac);

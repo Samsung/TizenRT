@@ -32,12 +32,13 @@
 void test_authenticate(void)
 {
 	security_handle hnd;
-	security_data rand = {NULL, 0};
-	security_data cert = {NULL, 0};
-	security_data plaintext = {NULL, 0};
-	security_data hashed = {NULL, 0};
-	security_data sign = {NULL, 0};
-	security_data hmac = {NULL, 0};
+	char buff[4096] = {0};
+	security_data rand = {buff, 0};
+	security_data cert = {buff, 0};
+	security_data plaintext = {buff, 0};
+	security_data hashed = {buff, 0};
+	security_data sign = {buff, 0};
+	security_data hmac = {buff, 0};
 //	security_data hash_gen_key;
 
 	plaintext.data = "01234567890123456789";
@@ -82,7 +83,6 @@ void test_authenticate(void)
 	PrintBuffer("Plain Text", plaintext.data, plaintext.length);
 	PrintBuffer("Hashed Data", hashed.data, hashed.length);
 
-
 	/*	does ecdsa require certificate to get signature? */
 	printf("  . SEC Get ECDSA Signature ...\n");
 	fflush(stdout);
@@ -90,7 +90,7 @@ void test_authenticate(void)
 	mode.curve = ECDSA_SEC_P256R1;
 	mode.hash_t = HASH_SHA256;
 
-	if (0 != auth_get_ecdsa_signature(hnd, mode, ARTIK_CERT, &hashed, &sign)) {
+	if (0 != auth_get_ecdsa_signature(hnd, &mode, ARTIK_CERT, &hashed, &sign)) {
 		printf("  fail\n  ! auth_get_ecdsa_signature\n");
 		goto exit;
 	}
@@ -100,7 +100,7 @@ void test_authenticate(void)
 
 	printf("  . SEC Verify ECDSA Signature ...\n");
 	fflush(stdout);
-	if (0 != auth_verify_ecdsa_signature(hnd, mode, ARTIK_CERT, &hashed, &sign)) {
+	if (0 != auth_verify_ecdsa_signature(hnd, &mode, ARTIK_CERT, &hashed, &sign)) {
 		printf("  fail\n  ! auth_verify_ecdsa_signature\n");
 		goto exit;
 	}
