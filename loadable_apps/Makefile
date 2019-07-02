@@ -53,6 +53,7 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 BUILD_SUBDIRS = micomapp wifiapp
 
 USER_BIN_DIR = $(TOPDIR)/../build/output/bin
@@ -81,6 +82,10 @@ install: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_install)
 # Verify each program for undefined symbols
 
 verify: $(foreach DIR, $(BUILD_SUBDIRS), $(DIR)_verify)
+else
+all:
+
+endif
 
 # context
 context:
