@@ -150,7 +150,7 @@ int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	cb_node = (statecb_node_t *)sq_peek(&BIN_CBLIST(bin_idx));
 	while (cb_node != NULL) {
 		if (cb_node->pid == pid) {
-			bmdbg("Already callback is registered pid %d\n", pid);
+			bmdbg("callback is already registered, pid %d\n", pid);
 			response_msg.result = BINMGR_ALREADY_REGISTERED;
 			goto send_result;
 		}
@@ -181,7 +181,7 @@ send_result:
  * Name: binary_manager_send_statecb_msg
  *
  * Description:
- *   This function send messages and signals to tasks/pthreads which registered callback.
+ *   This function sends messages and signals to tasks/pthreads which registered callback.
  *
  ****************************************************************************/
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response)
@@ -254,7 +254,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 			ret = mq_receive(recv_mq, (char *)&response_msg, sizeof(binmgr_statecb_response_t), NULL);
 			if (ret == sizeof(binmgr_statecb_response_t)) {
 				send_count--;
-				bmvdbg("Receive message, %d response remained\n", send_conut);
+				bmvdbg("Receive message, %d response remained\n", send_count);
 			} else if (ret < 0 && errno == EINTR) {
 				continue;
 			} else {
@@ -279,7 +279,7 @@ errout:
  * Name: binary_manager_notify_state_changed
  *
  * Description:
- *   This function send callback message to other binaries if registered callbacks exist.
+ *   This function sends callback message to other binaries if registered callbacks exist.
  *
  ****************************************************************************/
 int binary_manager_notify_state_changed(int bin_idx, uint8_t state)
