@@ -17,6 +17,10 @@ config LIBDIR
 	string
 	option env="LIBDIR"
 
+config LOADABLEDIR
+	string
+	option env="LOADABLEDIR"
+
 menu "Build Setup"
 
 config EXPERIMENTAL
@@ -580,7 +584,7 @@ source "$APPSDIR/Kconfig"
 endmenu
 
 menu "Loadable apps Configuration"
-source "$APPSDIR/../loadable_apps/Kconfig"
+source "$LOADABLEDIR/Kconfig"
 endmenu
 
 menu "Runtime Environment"

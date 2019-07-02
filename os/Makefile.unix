@@ -105,7 +105,7 @@ CONFIG_APPS_DIR = ../apps
 endif
 APPDIR := ${shell if [ -r $(CONFIG_APPS_DIR)/Makefile ]; then echo "$(CONFIG_APPS_DIR)"; fi}
 
-ELFDIR := ${shell if [ -r ../loadable_apps/Makefile ]; then echo "../loadable_apps"; fi}
+LOADABLE_APPDIR := ${shell if [ -r ../loadable_apps/Makefile ]; then echo "../loadable_apps"; fi}
 
 #ifeq ($(CONFIG_FRAMEWORK_DIR),)
 CONFIG_FRAMEWORK_DIR = ../framework
@@ -457,7 +457,7 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 	fi
 	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
-	$(Q) $(MAKE) -C $(ELFDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 
 pass2deps: pass2dep $(TINYARALIBS)
@@ -555,24 +555,24 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
 
 config: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-conf Kconfig
 
 oldconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf --oldconfig Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-conf --oldconfig Kconfig
 
 menuconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-mconf Kconfig
 
 do_nconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-nconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-nconf Kconfig
 
 nconfig: do_nconfig clean_context
 
 qconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-qconf Kconfig
 
 gconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-gconf Kconfig
 
 # export
 #
