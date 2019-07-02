@@ -97,6 +97,11 @@ SIZE_CMD_SUMMATION_INDEX = 3
 # Temporary file to estimate the static RAM size.
 STATIC_RAM_ESTIMATION = 'temp_static_ram_estimation_file'
 
+if int(binary_stack_size) >= int(dynamic_ram_size) :
+    print "error : Dynamic ram size should be bigger than Binary stack size."
+    print "Dynamic ram size : %d, Binary stack size : %d" %(int(dynamic_ram_size), int(binary_stack_size))
+    sys.exit(1)
+
 with open(file_path, 'rb') as fp:
     # binary data copy to 'data'
     data = fp.read()
