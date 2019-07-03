@@ -39,22 +39,282 @@
 #include <string.h>
 #include <tinyara/bluetooth/bluetooth.h>
 #include <tinyara/bluetooth/conn.h>
+#include "bt_hcicore.h"
+#include <errno.h>
+#include <debug.h>
+#include <tinyara/wqueue.h>
+
+extern struct bt_dev_s g_btdev;
+
+struct bt_ad {
+	const struct bt_data *data;
+	size_t len;
+};
+
+/* Work structures: One for high priority and one for low priority work */
+
+static struct work_s g_hip_work;
+
+static bt_ready_cb_t ready_cb;
+
+FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr)
+{
+	static char bufs[2][27];
+	static uint8_t cur;
+	FAR char *str;
+
+	str = bufs[cur++];
+	cur %= ARRAY_SIZE(bufs);
+	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
+
+	return str;
+}
+
+static int set_advertise_enable(bool enable)
+{
+	struct bt_buf_s *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	memcpy(bt_buf_extend(buf, 1), &g_btdev.adv_enable, 1);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	g_btdev.adv_enable = enable;
+
+	if (enable) {
+		bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ADVERTISING);
+	} else {
+		bt_atomic_testclrbit(g_btdev.flags, BT_DEV_ADVERTISING);
+	}
+
+	return 0;
+}
+
+static int set_ad(unsigned short hci_op, const struct bt_ad *ad, size_t ad_len)
+{
+	struct bt_hci_cp_le_set_adv_data_s *set_data;
+	struct bt_buf_s *buf;
+	int c, i;
+
+	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	set_data = bt_buf_extend(buf, sizeof(*set_data));
+
+	(void)memset(set_data, 0, sizeof(*set_data));
+
+	for (c = 0; c < ad_len; c++) {
+		const struct bt_data *data = ad[c].data;
+
+		for (i = 0; i < ad[c].len; i++) {
+			int len = data[i].data_len;
+			unsigned char type = data[i].type;
+
+			/* Check if ad fit in the remaining buffer */
+			if (set_data->len + len + 2 > 31) {
+				len = 31 - (set_data->len + 2);
+				if (type != BT_DATA_NAME_COMPLETE || !len) {
+					bt_buf_release(buf);
+					BT_ERR("Too big advertising data");
+					return -EINVAL;
+				}
+				type = BT_DATA_NAME_SHORTENED;
+			}
+
+			set_data->data[set_data->len++] = len + 1;
+			set_data->data[set_data->len++] = type;
+
+			memcpy(&set_data->data[set_data->len], data[i].data, len);
+			set_data->len += len;
+		}
+	}
+
+	return bt_hci_cmd_send_sync(hci_op, buf, NULL);
+}
 
 int bt_set_name(const char *name)
 {
-	// TODO: need to implement
+	size_t len = strlen(name);
+
+	if (len >= sizeof(g_btdev.name)) {
+		return -ENOMEM;
+	}
+
+	if (!strcmp(g_btdev.name, name)) {
+		return 0;
+	}
+
+	strncpy(g_btdev.name, name, sizeof(g_btdev.name));
+
+	/* Update advertising name if in use */
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING_NAME)) {
+		struct bt_data data[] = { BT_DATA(BT_DATA_NAME_COMPLETE, name,
+											  strlen(name))
+		};
+		struct bt_ad sd = { data, ARRAY_SIZE(data) };
+
+		set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, &sd, 1);
+
+		/* Make sure the new name is set */
+		if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+			set_advertise_enable(false);
+			set_advertise_enable(true);
+		}
+	}
+
 	return 0;
 }
 
 const char *bt_get_name(void)
 {
-	// TODO: need to implement
-	return NULL;
+	return g_btdev.name;
+}
+
+static const char *ver_str(uint8_t ver)
+{
+	const char *const str[] = {
+		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
+		"5.0", "5.1",
+	};
+
+	if (ver < ARRAY_SIZE(str)) {
+		return str[ver];
+	}
+
+	return "unknown";
+}
+
+static void bt_dev_show_info(void)
+{
+	int i;
+
+	BT_INFO("Identity%s: %s", g_btdev.id_count > 1 ? "[0]" : "", bt_addr_le_str(&g_btdev.id_addr[0]));
+
+	for (i = 1; i < g_btdev.id_count; i++) {
+		BT_INFO("Identity[%d]: %s", i, bt_addr_le_str(&g_btdev.id_addr[i]));
+	}
+
+	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", ver_str(g_btdev.hci_version), g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
+}
+
+static void bt_finalize_init(void)
+{
+	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_READY);
+#if 0
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		bt_le_scan_update(false);
+	}
+#endif
+	bt_dev_show_info();
+}
+
+static int bt_conn_init(void)
+{
+	int err;
+
+	err = bt_l2cap_init();
+	if (err < 0) {
+		ndbg("ERROR:  l2cap init failed: %d\n", err);
+		return err;
+	}
+
+	return err;
+}
+
+static int bt_init(void)
+{
+	int ret;
+
+	ret = hci_initialize();
+	if (ret < 0) {
+		ndbg("ERROR:  hci_initialize failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = bt_conn_init();
+	if (ret < 0) {
+		ndbg("ERROR:  bt_conn_init failed: %d\n", ret);
+		return ret;
+	}
+
+	bt_finalize_init();
+
+	return ret;
+}
+
+static void init_work(FAR void *arg)
+{
+	int err;
+
+	err = bt_init();
+
+	if (ready_cb) {
+		ready_cb(err);
+	}
+}
+
+static void k_work_submit(void)
+{
+	int err;
+
+	if (work_available(&g_hip_work)) {
+		err = work_queue(HPWORK, &g_hip_work, init_work, NULL, 0);
+		if (err < 0) {
+			ndbg("ERROR:  Failed to schedule HPWORK: %d\n", err);
+		}
+	}
+}
+
+int bt_enable(bt_ready_cb_t cb)
+{
+	int err;
+	FAR const struct bt_driver_s *bt_drv = g_btdev.btdev;
+
+	if (!bt_drv) {
+		BT_ERR("No HCI driver registered");
+		return -ENODEV;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ENABLE)) {
+		return -EALREADY;
+	}
+
+	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ENABLE);
+
+	bt_set_name(CONFIG_BT_DEVICE_NAME);
+
+	ready_cb = cb;
+
+	err = bt_drv->open(bt_drv);
+	if (err) {
+		BT_ERR("HCI driver open failed (%d)", err);
+		return err;
+	}
+
+	if (!cb) {
+		return bt_init();
+	}
+
+	k_work_submit();
+
+	return 0;
 }
 
 int bt_set_id_addr(const bt_addr_le_t *addr)
 {
 	// TODO: need to implement
+
 	return 0;
 }
 
@@ -228,11 +488,11 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 	return 0;
 }
 
-void bt_conn_cb_register(struct bt_conn_cb *cb)
+/* void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 	// TODO: need to implement
 	return;
-}
+}*/
 
 void bt_set_bondable(bool enable)
 {

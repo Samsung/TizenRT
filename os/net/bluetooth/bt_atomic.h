@@ -51,7 +51,9 @@
  * Public Types
  ****************************************************************************/
 
-typedef uint8_t bt_atomic_t;
+/* since there are more that 8 device flag, so uint8_t is small */
+/*typedef uint8_t bt_atomic_t;*/
+typedef int bt_atomic_t;
 
 /****************************************************************************
  * Inline Functions

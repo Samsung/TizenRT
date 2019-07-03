@@ -151,6 +151,22 @@ struct bt_data {
 	const uint8_t *data;
 };
 
+/** @brief Helper to declare elements of bt_data arrays
+ *
+ *  This macro is mainly for creating an array of struct bt_data
+ *  elements which is then passed to bt_le_adv_start().
+ *
+ *  @param _type Type of advertising data field
+ *  @param _data Pointer to the data field payload
+ *  @param _data_len Number of bytes behind the _data pointer
+ */
+#define BT_DATA(_type, _data, _data_len) \
+        { \
+                .type = (_type), \
+                .data_len = (_data_len), \
+                .data = (const unsigned char *)(_data), \
+        }
+
 /** OOB data that is specific for LE SC pairing method. */
 struct bt_le_oob_sc_data {
 	/** Random Number. */
@@ -236,6 +252,26 @@ struct bt_le_adv_param {
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_initialize(void);
+
+/**
+ * @typedef bt_ready_cb_t
+ * @brief Callback for notifying that Bluetooth has been enabled.
+ *
+ *  @param err zero on success or (negative) error code otherwise.
+ */
+typedef void (*bt_ready_cb_t)(int err);
+
+/** @brief Enable Bluetooth
+ *
+ *  Enable Bluetooth. Must be the called before any calls that
+ *  require communication with the local Bluetooth hardware.
+ *
+ *  @param cb Callback to notify completion or NULL to perform the
+ *  enabling synchronously.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_enable(bt_ready_cb_t cb);
 
 /** @brief Set Bluetooth Device Name
  *
