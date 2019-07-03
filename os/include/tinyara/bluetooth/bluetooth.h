@@ -141,101 +141,25 @@ struct iob_s;					/* Forward reference */
 
 int bluetooth_input(FAR struct radio_driver_s *radio, FAR struct iob_s *framelist, FAR struct bluetooth_frame_meta_s *meta);
 
-/** Description of different data types that can be encoded into
-  * advertising data. Used to form arrays that are passed to the
-  * bt_le_adv_start() function.
-  */
-struct bt_data {
-	uint8_t type;
-	uint8_t data_len;
-	const uint8_t *data;
-};
-
-/** OOB data that is specific for LE SC pairing method. */
-struct bt_le_oob_sc_data {
-	/** Random Number. */
-	uint8_t r[16];
-	/** Confirm Value. */
-	uint8_t c[16];
-};
-
-/** General OOB data. */
-struct bt_le_oob {
-	/** LE address. If local privacy is enabled this is Resolvable Private
-	 *  Address.
-	 */
-	bt_addr_le_t addr;
-
-	/** OOB data that are relevant for LESC pairing. */
-	struct bt_le_oob_sc_data le_sc_data;
-};
-
-/** @brief BR/EDR discovery result structure */
-struct bt_br_discovery_result {
-	/** private */
-	uint8_t _priv[4];
-	/** Remote device address */
-	bt_addr_t addr;
-	/** RSSI from inquiry */
-	int8_t rssi;
-	/** Class of Device */
-	uint8_t cod[3];
-	/** Extended Inquiry Response */
-	uint8_t eir[240];
-};
-
-/** BR/EDR discovery parameters */
-struct bt_br_discovery_param {
-	/** Maximum length of the discovery in units of 1.28 seconds.
-	 *  Valid range is 0x01 - 0x30.
-	 */
-	uint8_t length;
-
-	/** True if limited discovery procedure is to be used. */
-	bool limited;
-};
-
-struct bt_br_oob {
-	/** BR/EDR address. */
-	bt_addr_t addr;
-};
-
-/** Information about a bond with a remote device. */
-struct bt_bond_info {
-	/** Address of the remote device. */
-	bt_addr_le_t addr;
-};
-
-/* Advertising API */
-struct bt_eir_s {
-	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} packed_struct;
-
-/** LE Advertising Parameters. */
-struct bt_le_adv_param {
-	/** Local identity */
-	uint8_t id;
-
-	/** Bit-field of advertising options */
-	uint8_t options;
-
-	/** Minimum Advertising Interval (N * 0.625) */
-	uint16_t interval_min;
-
-	/** Maximum Advertising Interval (N * 0.625) */
-	uint16_t interval_max;
-};
-
 /**
- * @brief Initialize Bluetooth
+ * @typedef bt_ready_cb_t
+ * @brief Callback for notifying that Bluetooth has been enabled.
  *
- * Initialize Bluetooth. Must be the called before anything else.
- *
- * @return Zero on success or (negative) error code otherwise.
+ *  @param err zero on success or (negative) error code otherwise.
  */
-int bt_initialize(void);
+typedef void (*bt_ready_cb_t)(int err);
+
+/** @brief Enable Bluetooth
+ *
+ *  Enable Bluetooth. Must be the called before any calls that
+ *  require communication with the local Bluetooth hardware.
+ *
+ *  @param cb Callback to notify completion or NULL to perform the
+ *  enabling synchronously.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_enable(bt_ready_cb_t cb);
 
 /** @brief Set Bluetooth Device Name
  *
@@ -378,28 +302,50 @@ int bt_id_delete(uint8_t id);
 
 /* Advertising API */
 
-/**
- * @brief Start advertising
- *
- * Set advertisement data, scan response data, advertisement parameters
- * and start advertising.
- *
- * @param[in] type Advertising type.
- * @param[in] ad Data to be used in advertisement packets.
- * @param[in] sd Data to be used in scan response packets.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
+/** Description of different data types that can be encoded into
+  * advertising data. Used to form arrays that are passed to the
+  * bt_le_adv_start() function.
+  */
+struct bt_data {
+	uint8_t type;
+	uint8_t data_len;
+	const uint8_t *data;
+};
 
-/**
- * @brief Stop advertising
+/** LE Advertising Parameters. */
+struct bt_le_adv_param {
+	/** Local identity */
+	uint8_t id;
+
+	/** Bit-field of advertising options */
+	uint8_t options;
+
+	/** Minimum Advertising Interval (N * 0.625) */
+	uint16_t interval_min;
+
+	/** Maximum Advertising Interval (N * 0.625) */
+	uint16_t interval_max;
+};
+
+/** @brief Start advertising
  *
- * Stops ongoing advertising.
+ *  Set advertisement data, scan response data, advertisement parameters
+ *  and start advertising.
  *
- * @return Zero on success or (negative) error code otherwise.
+ *  @param param Advertising parameters.
+ *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
+ *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ECONNREFUSED When connectable advertising is requested and there
+ *			  is already maximum number of connections established.
+ *			  This error code is only guaranteed when using Zephyr
+ *			  controller, for other controllers code returned in
+ *			  this case may be -EIO.
  */
-int bt_stop_advertising(void);
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
 /** @brief Update advertising
  *
@@ -414,48 +360,65 @@ int bt_stop_advertising(void);
  */
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
-/****************************************************************************
- * Name: bt_le_scan_cb_t
+/** @brief Stop advertising
  *
- * Description:
- *   A function of this type will be called back when user application
- *   triggers active LE scan. The caller will populate all needed
- *   parameters based on data coming from scan result.
- *   Such function can be set by user when LE active scan API is used.
+ *  Stops ongoing advertising.
  *
- * Input Parameters:
- *  addr     - Advertiser LE address and type.
- *  rssi     - Strength of advertiser signal.
- *  adv_type - Type of advertising response from advertiser.
- *  adv_data - Address of buffer containing advertiser data.
- *  len      - Length of advertiser data contained in buffer.
- *
- ****************************************************************************/
-typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
-
-/**
- * @brief Start (LE) scanning
- *
- * Start LE scanning with given parameters and provide results through
- * the specified callback.
- *
- * @param[in] filter_dups Enable duplicate filtering (or not).
- * @param[in] cb Callback to notify scan results.
- *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+int bt_le_adv_stop(void);
 
-/**
- * @brief Stop (LE) scanning.
+/** @typedef bt_le_scan_cb_t
+ *  @brief Callback type for reporting LE scan results.
  *
- * Stops ongoing LE scanning.
+ *  A function of this type is given to the bt_le_scan_start() function
+ *  and will be called for any discovered LE device.
  *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @param addr Advertiser LE address and type.
+ *  @param rssi Strength of advertiser signal.
+ *  @param adv_type Type of advertising response from advertiser.
+ *  @param buf Buffer containing advertiser data.
  */
-int bt_stop_scanning(void);
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, struct net_buf_simple *buf);
+
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
+	uint8_t type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint16_t window;
+};
+
+/** @brief Start (LE) scanning
+ *
+ *  Start LE scanning with given parameters and provide results through
+ *  the specified callback.
+ *
+ *  @param param Scan parameters.
+ *  @param cb Callback to notify scan results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
+
+/** @brief Stop (LE) scanning.
+ *
+ *  Stops ongoing LE scanning.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_stop(void);
 
 /** @brief Set (LE) channel map.
  *
@@ -481,6 +444,26 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
  */
 void bt_data_parse(struct net_buf_simple *ad, bool(*func)(struct bt_data *data, void *user_data), void *user_data);
 
+/** OOB data that is specific for LE SC pairing method. */
+struct bt_le_oob_sc_data {
+	/** Random Number. */
+	uint8_t r[16];
+
+	/** Confirm Value. */
+	uint8_t c[16];
+};
+
+/** General OOB data. */
+struct bt_le_oob {
+	/** LE address. If local privacy is enabled this is Resolvable Private
+	 *  Address.
+	 */
+	bt_addr_le_t addr;
+
+	/** OOB data that are relevant for LESC pairing. */
+	struct bt_le_oob_sc_data le_sc_data;
+};
+
 /**
  * @brief Get LE local Out Of Band information
  *
@@ -499,6 +482,24 @@ void bt_data_parse(struct net_buf_simple *ad, bool(*func)(struct bt_data *data, 
  */
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
 
+/** @brief BR/EDR discovery result structure */
+struct bt_br_discovery_result {
+	/** private */
+	uint8_t _priv[4];
+
+	/** Remote device address */
+	bt_addr_t addr;
+
+	/** RSSI from inquiry */
+	int8_t rssi;
+
+	/** Class of Device */
+	uint8_t cod[3];
+
+	/** Extended Inquiry Response */
+	uint8_t eir[240];
+};
+
 /** @typedef bt_br_discovery_cb_t
  *  @brief Callback type for reporting BR/EDR discovery (inquiry)
  *         results.
@@ -511,6 +512,17 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  *  @param count Number of valid discovery results.
  */
 typedef void bt_br_discovery_cb_t(struct bt_br_discovery_result *results, size_t count);
+
+/** BR/EDR discovery parameters */
+struct bt_br_discovery_param {
+	/** Maximum length of the discovery in units of 1.28 seconds.
+	 *  Valid range is 0x01 - 0x30.
+	 */
+	uint8_t length;
+
+	/** True if limited discovery procedure is to be used. */
+	bool limited;
+};
 
 /** @brief Start BR/EDR discovery
  *
@@ -539,6 +551,11 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param, struct bt_b
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_br_discovery_stop(void);
+
+struct bt_br_oob {
+	/** BR/EDR address. */
+	bt_addr_t addr;
+};
 
 /**
  * @brief Get BR/EDR local Out Of Band information
@@ -585,6 +602,12 @@ int bt_br_set_connectable(bool enable);
   * @return 0 on success or negative error value on failure.
   */
 int bt_unpair(uint8_t id, const bt_addr_le_t *addr);
+
+/** Information about a bond with a remote device. */
+struct bt_bond_info {
+	/** Address of the remote device. */
+	bt_addr_le_t addr;
+};
 
 /** Iterate through all existing bonds.
   *

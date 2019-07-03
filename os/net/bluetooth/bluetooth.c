@@ -40,6 +40,12 @@
 #include <tinyara/bluetooth/bluetooth.h>
 #include <tinyara/bluetooth/conn.h>
 
+int bt_enable(bt_ready_cb_t cb)
+{
+	// TODO: need to implement
+	return 0;
+}
+
 int bt_set_name(const char *name)
 {
 	// TODO: need to implement
@@ -82,7 +88,31 @@ int bt_id_delete(uint8_t id)
 	return 0;
 }
 
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len)
+{
+	// TODO: need to implement
+	return 0;
+}
+
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len)
+{
+	// TODO: need to implement
+	return 0;
+}
+
+int bt_le_adv_stop(void)
+{
+	// TODO: need to implement
+	return 0;
+}
+
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
+{
+	// TODO: need to implement
+	return 0;
+}
+
+int bt_le_scan_stop(void)
 {
 	// TODO: need to implement
 	return 0;

@@ -122,6 +122,14 @@
  * Public Types
  ****************************************************************************/
 
+/* Advertising API */
+
+struct bt_eir_s {
+	uint8_t len;
+	uint8_t type;
+	uint8_t data[29];
+} packed_struct;
+
 /* Security level */
 
 enum bt_security_e {
@@ -154,7 +162,7 @@ enum bt_security_e {
  *
  ****************************************************************************/
 
-static inline int bt_addr_to_str(FAR const bt_addr_t * addr, FAR char *str, size_t len)
+static inline int bt_addr_to_str(FAR const bt_addr_t *addr, FAR char *str, size_t len)
 {
 	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", addr->val[5], addr->val[4], addr->val[3], addr->val[2], addr->val[1], addr->val[0]);
 }
@@ -177,7 +185,7 @@ static inline int bt_addr_to_str(FAR const bt_addr_t * addr, FAR char *str, size
  *
  ****************************************************************************/
 
-static inline int bt_addr_le_to_str(FAR const bt_addr_le_t * addr, char *str, size_t len)
+static inline int bt_addr_le_to_str(FAR const bt_addr_le_t *addr, char *str, size_t len)
 {
 	char type[7];
 

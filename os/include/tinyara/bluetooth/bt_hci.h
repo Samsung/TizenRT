@@ -52,8 +52,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define BT_ADDR_LE_PUBLIC  0x00
-#define BT_ADDR_LE_RANDOM  0x01
+#define BT_ADDR_LE_PUBLIC    0x00
+#define BT_ADDR_LE_RANDOM    0x01
+#define BT_ADDR_LE_PUBLIC_ID 0x02
+#define BT_ADDR_LE_RANDOM_ID 0x03
 
 #define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0}})
 #define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
