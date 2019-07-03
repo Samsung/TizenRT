@@ -95,6 +95,7 @@
 #include <tinyara/testcase_drv.h>
 #endif
 
+extern const uint32_t g_idle_topstack;
 #include <tinyara/mm/heap_regioninfo.h>
 extern bool heapx_is_init[CONFIG_MM_NHEAPS];
 
@@ -358,6 +359,10 @@ void os_start(void)
 #endif							/* CONFIG_TASK_NAME_SIZE */
 	g_idleargv[1]  = NULL;
 	g_idletcb.argv = g_idleargv;
+
+	/* Fill the stack information to Idle task's tcb */
+	g_idletcb.cmn.adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
+	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
 
 	/* Then add the idle task's TCB to the head of the ready to run list */
 
