@@ -55,8 +55,8 @@
 #define BT_ADDR_LE_PUBLIC  0x00
 #define BT_ADDR_LE_RANDOM  0x01
 
-#define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0}})
-#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
+#define BT_ADDR_ANY    (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, { 0, 0, 0, 0, 0, 0 } })
 
 /* HCI Error Codes */
 
@@ -173,10 +173,19 @@
 #define BT_HCI_EVT_LE_LTK_REQUEST             0x05
 
 #define CONFIG_BT_DEVICE_NAME_MAX		65
-#define CONFIG_BT_DEVICE_NAME			"TizenRT Bluetooth"
+#define CONFIG_BT_DEVICE_NAME			"TizenRT"
 #define BT_HCI_LE_ADV_DISABLE                   0x00
 #define BT_HCI_LE_ADV_ENABLE                    0x01
 #define CONFIG_BT_ID_MAX                        2
+
+#define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
+#define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
+#define BT_ADDR_IS_STATIC(a)  (((a)->val[5] & 0xc0) == 0xc0)
+
+#define BT_ADDR_SET_RPA(a)    ((a)->val[5] = (((a)->val[5] & 0x3f) | 0x40))
+
+#define BT_ADDR_SET_NRPA(a)   ((a)->val[5] &= 0x3f)
+#define BT_ADDR_SET_STATIC(a) ((a)->val[5] |= 0xc0)
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01	/* AD flags */

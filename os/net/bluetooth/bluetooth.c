@@ -311,11 +311,39 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
-int bt_set_id_addr(const bt_addr_le_t *addr)
+static inline int create_random_addr(bt_addr_le_t *addr)
 {
-	// TODO: need to implement
+	addr->type = BT_ADDR_LE_RANDOM;
+
+	return bt_rand(addr->val, 6);
+}
+
+int bt_addr_le_create_static(bt_addr_le_t *addr)
+{
+	int err;
+
+	err = create_random_addr(addr);
+	if (err) {
+		return err;
+	}
+
+	BT_ADDR_SET_STATIC(addr);
 
 	return 0;
+}
+
+int bt_set_id_addr(const bt_addr_le_t *addr)
+{
+	bt_addr_le_t non_const_addr;
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+		BT_ERR("Setting identity not allowed after bt_enable()");
+		return -EBUSY;
+	}
+
+	bt_addr_le_copy(&non_const_addr, addr);
+
+	return bt_id_create(&non_const_addr, NULL);
 }
 
 void bt_id_get(bt_addr_le_t *addrs, size_t *count)
@@ -324,21 +352,174 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 	return;
 }
 
+static int id_find(const bt_addr_le_t *addr)
+{
+	uint8_t id;
+
+	for (id = 0U; id < g_btdev.id_count; id++) {
+		if (!bt_addr_le_cmp(addr, &g_btdev.id_addr[id])) {
+			return id;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
+{
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		bt_addr_le_copy(&g_btdev.id_addr[id], addr);
+	} else {
+		bt_addr_le_t new_addr;
+
+		do {
+			bt_addr_le_create_static(&new_addr);
+			/* Make sure we didn't generate a duplicate */
+		} while (id_find(&new_addr) >= 0);
+
+		bt_addr_le_copy(&g_btdev.id_addr[id], &new_addr);
+
+		if (addr) {
+			bt_addr_le_copy(addr, &g_btdev.id_addr[id]);
+		}
+	}
+
+#if 0
+#if defined(CONFIG_BT_PRIVACY)
+	{
+		u8_t zero_irk[16] = { 0 };
+
+		if (irk && memcmp(irk, zero_irk, 16)) {
+			memcpy(&bt_dev.irk[id], irk, 16);
+		} else {
+			bt_rand(&bt_dev.irk[id], 16);
+			if (irk) {
+				memcpy(irk, &bt_dev.irk[id], 16);
+			}
+		}
+	}
+#endif
+	/* Only store if stack was already initialized. Before initialization
+	 * we don't know the flash content, so it's potentially harmful to
+	 * try to write anything there.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_settings_save_id();
+	}
+#endif
+}
+
 int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 {
-	// TODO: need to implement
-	return 0;
+	int new_id;
+
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(addr)) {
+			BT_ERR("Only static random identity address supported");
+			return -EINVAL;
+		}
+
+		if (id_find(addr) >= 0) {
+			return -EALREADY;
+		}
+	}
+#if 0
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
+		return -EINVAL;
+	}
+#endif
+	if (g_btdev.id_count == ARRAY_SIZE(g_btdev.id_addr)) {
+		return -ENOMEM;
+	}
+
+	new_id = g_btdev.id_count++;
+	if (new_id == BT_ID_DEFAULT && !bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+		bt_atomic_testsetbit(g_btdev.flags, BT_DEV_USER_ID_ADDR);
+	}
+
+	id_create(new_id, addr, irk);
+
+	return new_id;
 }
 
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
-	// TODO: need to implement
-	return 0;
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(addr)) {
+			BT_ERR("Only static random identity address supported");
+			return -EINVAL;
+		}
+
+		if (id_find(addr) >= 0) {
+			return -EALREADY;
+		}
+	}
+#if 0
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
+		return -EINVAL;
+	}
+#endif
+	if (id == BT_ID_DEFAULT || id >= g_btdev.id_count) {
+		return -EINVAL;
+	}
+
+	if (id == g_btdev.adv_id && bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		return -EBUSY;
+	}
+#if 0
+	if (IS_ENABLED(CONFIG_BT_CONN) &&
+#endif
+	if (bt_addr_le_cmp(&g_btdev.id_addr[id], BT_ADDR_LE_ANY)) {
+		int err;
+		err = bt_unpair(id, NULL);
+			if (err) {
+				return err;
+			}
+		}
+
+	id_create(id, addr, irk); return id;
 }
 
 int bt_id_delete(uint8_t id)
 {
-	// TODO: need to implement
+	if (id == BT_ID_DEFAULT || id >= g_btdev.id_count) {
+		return -EINVAL;
+	}
+
+	if (!bt_addr_le_cmp(&g_btdev.id_addr[id], BT_ADDR_LE_ANY)) {
+		return -EALREADY;
+	}
+
+	if (id == g_btdev.adv_id && atomic_test_bit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		return -EBUSY;
+	}
+
+#if 0
+	if (IS_ENABLED(CONFIG_BT_CONN))
+#endif
+	{
+		int err;
+		err = bt_unpair(id, NULL);
+		if (err) {
+			return err;
+		}
+	}
+
+#if 0
+#if defined(CONFIG_BT_PRIVACY)
+	(void)memset(bt_dev.irk[id], 0, 16);
+#endif
+#endif
+	bt_addr_le_copy(&g_btdev.id_addr[id], BT_ADDR_LE_ANY);
+	if (id == g_btdev.id_count - 1) {
+		g_btdev.id_count--;
+	}
+
+#if 0
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_settings_save_id();
+	}
+#endif
 	return 0;
 }
 

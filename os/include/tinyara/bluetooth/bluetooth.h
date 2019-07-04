@@ -49,6 +49,13 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/** @def BT_ID_DEFAULT
+ *
+ *  Convenience macro for specifying the default identity. This helps
+ *  make the code more readable, especially when only one identity is
+ *  supported.
+ */
+#define BT_ID_DEFAULT 0
 
 /* BLUETOOTH_MAX_FRAMELEN
  * Maximum amount of data that can fit in a buffer.
@@ -161,11 +168,11 @@ struct bt_data {
  *  @param _data_len Number of bytes behind the _data pointer
  */
 #define BT_DATA(_type, _data, _data_len) \
-        { \
-                .type = (_type), \
-                .data_len = (_data_len), \
-                .data = (const unsigned char *)(_data), \
-        }
+{ \
+	.type = (_type), \
+	.data_len = (_data_len), \
+	.data = (const unsigned char *)(_data), \
+}
 
 /** OOB data that is specific for LE SC pairing method. */
 struct bt_le_oob_sc_data {

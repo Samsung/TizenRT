@@ -159,6 +159,9 @@ struct bt_dev_s {
 	/* Local Identity Address(es) */
 	bt_addr_le_t id_addr[CONFIG_BT_ID_MAX];
 	uint8_t id_count;
+
+	/* ID Address used for advertising */
+	uint8_t adv_id;
 };
 
 /* Connection callback structure */
@@ -334,5 +337,7 @@ int bt_le_scan_update(void);
  ****************************************************************************/
 
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
+
+int bt_addr_le_create_static(bt_addr_le_t *addr);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */
