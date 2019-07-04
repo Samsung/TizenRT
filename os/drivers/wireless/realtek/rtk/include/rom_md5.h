@@ -1,8 +1,8 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2014 Realtek Corporation. All rights reserved.
- *                                        
- * This is ROM code section. 
+ *
+ * This is ROM code section.
  *
  *
  ******************************************************************************/

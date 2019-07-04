@@ -69,6 +69,8 @@
  *         Simon Goldschmidt
  *
  */
+#include <tinyara/config.h>
+#include <tinyara/kmalloc.h>
 
 #include <net/lwip/opt.h>
 #include <net/lwip/mem.h>
@@ -111,13 +113,13 @@ void *mem_trim(void *mem, mem_size_t size)
  * allow these defines to be overridden.
  */
 #ifndef mem_clib_free
-#define mem_clib_free free
+#define mem_clib_free kmm_free
 #endif
 #ifndef mem_clib_malloc
-#define mem_clib_malloc malloc
+#define mem_clib_malloc kmm_malloc
 #endif
 #ifndef mem_clib_calloc
-#define mem_clib_calloc calloc
+#define mem_clib_calloc kmm_malloc
 #endif
 
 #if LWIP_STATS && MEM_STATS
@@ -297,8 +299,8 @@ struct mem {
  * how that space is calculated). */
 #ifndef LWIP_RAM_HEAP_POINTER
 /** the heap. we need one struct mem at the end and some room for alignment */
-LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
-#define LWIP_RAM_HEAP_POINTER ram_heap
+//LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
+//#define LWIP_RAM_HEAP_POINTER ram_heap
 #endif							/* LWIP_RAM_HEAP_POINTER */
 
 /** pointer to the heap (ram_heap): for alignment, ram is now a pointer instead of an array */
@@ -393,7 +395,12 @@ void mem_init(void)
 	LWIP_ASSERT("Sanity check alignment", (SIZEOF_STRUCT_MEM & (MEM_ALIGNMENT - 1)) == 0);
 
 	/* align the heap */
-	ram = (u8_t *) LWIP_MEM_ALIGN(LWIP_RAM_HEAP_POINTER);
+	int size_tmp =  MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM);
+	u8_t *ram_heap = kmm_malloc(LWIP_MEM_ALIGN_BUFFER(size_tmp));
+	if (!ram_heap) {
+		LWIP_ASSERT("failed to malloc mem pool\n", 0);
+	}
+	ram = (u8_t *)LWIP_MEM_ALIGN(ram_heap);
 	/* initialize the start of the heap */
 	mem = (struct mem *)(void *)ram;
 	mem->next = MEM_SIZE_ALIGNED;
@@ -741,7 +748,7 @@ mem_malloc_adjust_lfree:
 #if MEM_LIBC_MALLOC && (!LWIP_STATS || !MEM_STATS)
 void *mem_calloc(mem_size_t count, mem_size_t size)
 {
-	return mem_clib_calloc(count, size);
+	return mem_clib_calloc(size);
 }
 
 #else							/* MEM_LIBC_MALLOC && (!LWIP_STATS || !MEM_STATS) */

@@ -101,6 +101,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t stack_resource;
 	size_t nonsched_resource;
 	int nonsched_idx;
+	struct sched_param sched_data;
 
 	/* This nonsched can be 3 types : group resources, freed when child task finished, leak */
 	pid_t nonsched_list[CONFIG_MAX_TASKS];
@@ -166,9 +167,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #if CONFIG_TASK_NAME_SIZE > 0
 				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
-				} else if (node->pid < 0 && sched_gettcb((-1) * (node->pid)) != NULL) {
+				} else if (node->pid < 0 && sched_getparam((-1) * (node->pid), &sched_data) != ERROR) {
 					stack_resource += node->size;
-				} else if (sched_gettcb(node->pid) == NULL) {
+				} else if (sched_getparam(node->pid, &sched_data) == ERROR) {
 					nonsched_list[PIDHASH(node->pid)] = node->pid;
 					nonsched_size[PIDHASH(node->pid)] += node->size;
 					nonsched_resource += node->size;
@@ -376,12 +377,7 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 {
 	node->alloc_call_addr = caller_retaddr;
 	node->reserved = 0;
-	if (up_interrupt_context() == true) {
-		/* update pid as HEAPINFO_INT(-1) if allocation is from INT context */
-		node->pid = HEAPINFO_INT;
-	} else {
-		node->pid = getpid();
-	}
+	node->pid = getpid();
 	return;
 }
 

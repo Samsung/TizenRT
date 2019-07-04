@@ -143,7 +143,7 @@ int wext_set_key_ext(const char *ifname, __u16 alg, const __u8 *addr, int key_id
 	int ret = 0;
 	struct iw_encode_ext *ext;
 
-	ext = (struct iw_encode_ext *)malloc(sizeof(struct iw_encode_ext) + key_len);
+	ext = (struct iw_encode_ext *)rtw_malloc(sizeof(struct iw_encode_ext) + key_len);
 	if (ext == NULL)
 		return -1;
 	else
@@ -199,7 +199,7 @@ int wext_get_enc_ext(const char *ifname, __u16 *alg, __u8 *key_idx, __u8 *passph
 	int ret = 0;
 	struct iw_encode_ext *ext;
 
-	ext = (struct iw_encode_ext *)malloc(sizeof(struct iw_encode_ext) + 16);
+	ext = (struct iw_encode_ext *)rtw_malloc(sizeof(struct iw_encode_ext) + 16);
 	if (ext == NULL)
 		return -1;
 	else
@@ -1303,7 +1303,7 @@ int wext_init_mac_filter(void)
 		return -1;
 	}
 
-	mf_list_head = (struct list_head *)malloc(sizeof(struct list_head));
+	mf_list_head = (struct list_head *)rtw_malloc(sizeof(struct list_head));
 	if (mf_list_head == NULL) {
 		RTW_API_INFO("\n\r[ERROR] %s : can't allocate mf_list_head", __func__);
 		return -1;
@@ -1342,7 +1342,7 @@ int wext_add_mac_filter(unsigned char *hwaddr)
 	}
 
 	rtw_mac_filter_list_t *mf_list_new;
-	mf_list_new = (rtw_mac_filter_list_t *)malloc(sizeof(rtw_mac_filter_list_t));
+	mf_list_new = (rtw_mac_filter_list_t *)rtw_malloc(sizeof(rtw_mac_filter_list_t));
 	if (mf_list_new == NULL) {
 		RTW_API_INFO("\n\r[ERROR] %s : can't allocate mf_list_new", __func__);
 		return -1;
