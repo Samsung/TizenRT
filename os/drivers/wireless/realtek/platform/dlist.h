@@ -23,8 +23,8 @@
 #endif
 #endif
 
-/* This file is from Linux Kernel (include/linux/list.h) 
- * and modified by simply removing hardware prefetching of list items. 
+/* This file is from Linux Kernel (include/linux/list.h)
+ * and modified by simply removing hardware prefetching of list items.
  * Here by copyright, credits attributed to wherever they belong.
  * Kulesh Shanmugasundaram (kulesh [squiggly] isis.poly.edu)
  */
@@ -59,7 +59,7 @@ struct list_head {
 } while (0)
 
 /*
- * Insert a new entry between two known consecutive entries. 
+ * Insert a new entry between two known consecutive entries.
  *
  * This is only for internal list manipulation where we know
  * the prev/next entries already!

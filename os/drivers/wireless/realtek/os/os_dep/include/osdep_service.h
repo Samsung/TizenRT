@@ -183,9 +183,7 @@ typedef int (*event_handler_t)(char *buf, int buf_len, int flags, void *user_dat
 #define CONFIG_THREAD_COMM_SEMA
 struct task_struct {
 	const char *task_name;
-	_thread_hdl_ task; /* I: workqueue thread */
-	pid_t _rtw_task_info_s;
-
+	pid_t task;
 #ifdef CONFIG_THREAD_COMM_SIGNAL
 	const char *name;  /* I: workqueue thread name */
 	u32 queue_num;	 /* total signal num */
