@@ -142,6 +142,19 @@ struct uart_buffer_s {
 	FAR char *buffer;			/* Pointer to the allocated buffer memory */
 };
 
+typedef enum {
+	UART_TX_EMPTY = 0,
+	UART_TX_RDY,
+	UART_RX_AVAIL,
+	UART_RECEIVED,
+} uart_intr_e;
+
+struct uart_notify_s {
+	/* Values for iotbus */
+	uart_intr_e type;
+	pid_t pid;
+};
+
 /* This structure defines all of the operations providd by the architecture specific
  * logic.  All fields must be provided with non-NULL function pointers by the
  * caller of uart_register().
@@ -291,6 +304,10 @@ struct uart_dev_s {
 #ifndef CONFIG_DISABLE_POLL
 	struct pollfd *fds[CONFIG_SERIAL_NPOLLWAITERS];
 #endif
+
+	/* Iotbus Handler */
+	void *ib;
+	pid_t pid[4]; // For 4 types interrupt
 };
 
 typedef struct uart_dev_s uart_dev_t;

@@ -192,25 +192,12 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @param[in] int_type interrupt type of gpio
  * @param[in] cb callback function of interrupt
+ * @param[in] prirority interrupt prirority (0 - 255)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb);
-
-/**
- * @brief register interrupt callback with priority.
- *
- * @details @b #include <iotbus/iotbus_gpio.h>
- * @param[in] dev handle of gpio_context
- * @param[in] int_type interrupt type of gpio
- * @param[in] cb callback function of interrupt
- * @param[in] priority interrupt priority
- * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since TizenRT v2.1
- */
-
-int iotbus_gpio_set_interrupt_priority(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb, uint8_t priority);
+int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type, iotbus_gpio_cb cb, uint8_t priority);
 
 /**
  * @brief register interrupt callback.
@@ -222,7 +209,7 @@ int iotbus_gpio_set_interrupt_priority(iotbus_gpio_context_h dev, iotbus_int_typ
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type);
+int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type);
 
 /**
  * @brief reads the gpio value.

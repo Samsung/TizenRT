@@ -199,6 +199,11 @@
 
 #define TIOCSERGSTRUCT  _TIOC(0x002e)	/* Get device TTY structure */
 
+/* Iotbus */
+
+#define TIOCSETIOTBUS	_TIOC(0x002f)	/* Set iotbus handler */
+#define TIOCSETINTR		_TIOC(0x0030)	/* Set serial interrupt callback */
+
 /********************************************************************************************
  * Public Type Definitions
  ********************************************************************************************/

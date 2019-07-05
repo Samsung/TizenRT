@@ -26,16 +26,6 @@
 #include <pthread.h>
 
 typedef enum {
-	IOTBUS_UART_TX_EMPTY = 0,
-	IOTBUS_UART_TX_RDY,
-	IOTBUS_UART_RX_AVAIL,
-	IOTBUS_UART_RECEIVED,
-	IOTBUS_GPIO_FALLING,
-	IOTBUS_GPIO_RISING,
-	IOTBUS_INTR_MAX,	
-} iotbus_int_type_e;
-
-typedef enum {
 	IOTBUS_GPIO = 0,
 	IOTBUS_PWM,
 	IOTBUS_ADC,

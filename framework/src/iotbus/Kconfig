@@ -18,15 +18,6 @@ config IOTBUS_GPIO
 	---help---
 		Enables IoTbus GPIO
 
-if IOTBUS_GPIO
-	config IOTBUS_GPIO_INTERRUPT_PRIORITY
-		int "Iotbus GPIO interrupt priority"
-		default 224
-		range 0 255
-		---help---
-			Set GPIO interrupt handler priority, range 0 - 255
-endif
-
 config IOTBUS_I2C
 	bool "IoTbus I2C"
 	default y

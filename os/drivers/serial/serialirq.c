@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <semaphore.h>
 #include <debug.h>
@@ -78,9 +79,29 @@
  * Private Variables
  ************************************************************************************/
 
+static int uart_signo[] = {
+	SIG_IOTBUS_UART_TX_EMPTY,
+	SIG_IOTBUS_UART_TX_RDY,
+	SIG_IOTBUS_UART_RX_AVAIL,
+	SIG_IOTBUS_UART_RECEIVED,
+};
+
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
+
+static void uart_send_signal(FAR uart_dev_t *dev, int type)
+{
+	if (dev->pid[type] > 0) {
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		union sigval value;
+		value.sival_ptr = dev->ib;
+		sigqueue(dev->pid[type], uart_signo[type], value);
+#else
+		sigqueue(dev->pid[type], uart_signo[type], dev->ib);
+#endif
+	}
+}
 
 /************************************************************************************
  * Public Functions
@@ -100,6 +121,12 @@
 void uart_xmitchars(FAR uart_dev_t *dev)
 {
 	uint16_t nbytes = 0;
+
+	if (!dev->isconsole) {
+		if (dev->ib != NULL) {
+			uart_send_signal(dev, UART_TX_EMPTY);
+		}
+	}
 
 	/* Send while we still have data in the TX buffer & room in the fifo */
 
@@ -151,6 +178,12 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 
 void uart_recvchars(FAR uart_dev_t *dev)
 {
+	if (!dev->isconsole) {
+		if (dev->ib != NULL) {
+			uart_send_signal(dev, UART_RX_AVAIL);
+		}
+	}
+
 	FAR struct uart_buffer_s *rxbuf = &dev->recv;
 #ifdef CONFIG_SERIAL_IFLOWCONTROL_WATERMARKS
 	unsigned int watermark;
@@ -246,6 +279,11 @@ void uart_recvchars(FAR uart_dev_t *dev)
 	 */
 
 	if (nbytes) {
+		if (!dev->isconsole) {
+			if (dev->ib != NULL) {
+				uart_send_signal(dev, UART_RECEIVED);
+			}
+		}
 		uart_datareceived(dev);
 	}
 }

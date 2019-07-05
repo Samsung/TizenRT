@@ -35,13 +35,10 @@
 #include <pthread.h>
 #include <signal.h>
 
+#include <iotbus/iotbus_common.h>
 #include <iotbus/iotbus_gpio.h>
 #include <iotbus/iotbus_error.h>
 #include "iotapi_evt_handler.h"
-
-#ifndef CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY
-#define CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY 224
-#endif
 
 /**
  * @brief Struct for iotbus_gpio_s
@@ -452,7 +449,9 @@ static pthread_addr_t gpio_intr_thread(pthread_addr_t arg)
 			ibdbg("Get GPIO Falling Interrupt in [%d]\n", handle->pin);
 		}
 		// Call callback function.
-		((iotbus_gpio_cb)handle->cb)(dev);
+		if (handle->cb != NULL) {
+			((iotbus_gpio_cb)handle->cb)(dev);
+		}
 	}
 	
 	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
@@ -461,30 +460,27 @@ static pthread_addr_t gpio_intr_thread(pthread_addr_t arg)
 	return NULL;
 }
 
-int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb)
-{
-	return iotbus_gpio_set_interrupt_priority(dev, int_type, cb, CONFIG_IOTBUS_GPIO_INTERRUPT_PRIORITY);
-}
-
-int iotbus_gpio_set_interrupt_priority(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb, uint8_t priority)
+int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type, iotbus_gpio_cb cb, uint8_t priority)
 {
 	int ret = -1;
 	struct _iotbus_gpio_s *handle;
 	FAR struct gpio_notify_s notify;
 
-	if (!dev || !dev->handle) {
+	if (!dev || !dev->handle || int_type == IOTBUS_GPIO_EDGE_NONE) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
 	handle = (struct _iotbus_gpio_s *)dev->handle;
 
 	switch (int_type) {
-	case IOTBUS_GPIO_RISING:
+	case IOTBUS_GPIO_EDGE_BOTH:
+		return IOTBUS_ERROR_NOT_SUPPORTED;
+	case IOTBUS_GPIO_EDGE_RISING:
 		notify.gn_rising  = true;
 		notify.gn_falling = false;
 		notify.gn_signo = SIG_IOTBUS_GPIO_RISING;
 		break;
-	case IOTBUS_GPIO_FALLING:
+	case IOTBUS_GPIO_EDGE_FALLING:
 		notify.gn_rising  = false;
 		notify.gn_falling = true;
 		notify.gn_signo = SIG_IOTBUS_GPIO_FALLING;
@@ -512,7 +508,7 @@ int iotbus_gpio_set_interrupt_priority(iotbus_gpio_context_h dev, iotbus_int_typ
 	return IOTBUS_ERROR_NONE;
 }
 
-int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type)
+int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type)
 {
 	/* 
 	1. Diable Interrupt

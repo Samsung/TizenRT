@@ -781,10 +781,10 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR uart_dev_t *dev = inode->i_private;
-
+	
 	/* Handle TTY-level IOCTLs here */
 	/* Let low-level driver handle the call first */
-
+	
 	int ret = dev->ops->ioctl(filep, cmd, arg);
 
 	/* The device ioctl() handler returns -ENOTTY when it doesn't know
@@ -793,6 +793,22 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	if (ret == -ENOTTY) {
 		switch (cmd) {
+		case TIOCSETIOTBUS: {
+			dev->ib = (void *)arg;
+			ret = OK;
+		}
+		break;
+		case TIOCSETINTR: {
+			if (dev->ib == NULL) {
+				ibdbg("Uart should be opened by iotbus.");
+				return -EINVAL;
+			}
+
+			struct uart_notify_s *noti = (struct uart_notify_s *)arg;
+			dev->pid[noti->type] = noti->pid;
+			ret = OK;
+		}
+		break;
 		case FIONREAD: {
 			int count;
 			irqstate_t state = irqsave();

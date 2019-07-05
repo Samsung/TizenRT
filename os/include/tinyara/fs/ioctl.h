@@ -98,7 +98,6 @@
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
 #define _LWNLIOCBASE    (0x2400)	/* LWNL ioctl commands */
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
-#define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
