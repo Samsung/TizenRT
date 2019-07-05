@@ -123,7 +123,7 @@
 
 //#define CONFIG_RECV_TASK_THREAD_MODE
 
-/* AES DMEM optimized mode comsume 10k less memory compare to 
+/* AES DMEM optimized mode comsume 10k less memory compare to
      IMEM optimized mode AES_IMPLEMENTATION_IMEM_OPTIMIZED */
 #define AES_IMPLEMENTATION_MODE AES_IMPLEMENTATION_DMEM_OPTIMIZED
 

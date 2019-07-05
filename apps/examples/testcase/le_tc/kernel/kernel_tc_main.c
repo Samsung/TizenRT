@@ -103,10 +103,6 @@ int tc_kernel_main(int argc, char *argv[])
 	libc_misc_main();
 #endif
 
-#ifdef CONFIG_TC_KERNEL_LIBC_MQUEUE
-	libc_mqueue_main();
-#endif
-
 #ifdef CONFIG_TC_KERNEL_LIBC_PTHREAD
 	libc_pthread_main();
 #endif
