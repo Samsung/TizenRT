@@ -16,7 +16,6 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/wifiapp/Makefile
 #
 #   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,21 +49,22 @@
 #
 ############################################################################
 
+-include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
-LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
-
-TINYARALIB = "$(TOPDIR)/../build/output/libraries"
-
-ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
-LDELFFLAGS += -Bstatic
-LDLIBPATH += -L $(TINYARALIB)
-
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
-LDLIBS += $(LIBGCC)
+SRCS = wifiapp.c
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+SRCS += messaging.c
 endif
+ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
+SRCS += recovery.c
+endif
+
+#########################################
+# Case of Loadable separated binary build
+# Make separated ELF type binary
+#########################################
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 
 BIN = wifi
 # need to update
@@ -75,63 +75,35 @@ KERNEL_VER = 2.0
 STACKSIZE = 8192
 PRIORITY = 180
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
+include $(TOPDIR)/../loadable_apps/loadable.mk
+
+###################################
+# Cases of Flat and Protected build
+# Merge into libapps.a
+###################################
 else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
-
-APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-SRCS = $(TOPDIR)/board/common/userspace/up_userspace.c
-endif # CONFIG_APP_BINARY_SEPARATION
-
-SRCS += wifiapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
-SRCS += recovery.c
-endif
 
 OBJS = $(SRCS:.c=$(OBJEXT))
 
-prebuild:
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-	$(call DELFILE, $(TOPDIR)/board/common/userspace/up_userspace.o)
-endif
+BIN = ../../../apps/libapps$(LIBEXT)
 
-all: prebuild $(BIN)
-.PHONY: prebuild clean install verify
+all: .built
+.PHONY: clean depend distclean
 
 $(OBJS): %$(OBJEXT): %.c
-	@echo "CC: $<"
-	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
+	$(call COMPILE, $<, $@)
 
-$(BIN): $(OBJS)
-	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
 
 clean:
-	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
+	$(call DELFILE, .built)
 	$(call CLEAN)
 
-install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+endif # CONFIG_APP_BINARY_SEPARATION
 
-verify:
-	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
-		echo "Undefined Symbols"; \
-		nm -u -l $(BIN); \
-		rm $(BIN); \
-		exit 1; \
-	fi
+preconfig:

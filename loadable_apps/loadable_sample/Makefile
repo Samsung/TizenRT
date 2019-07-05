@@ -16,9 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/micomapp/Makefile
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,89 +49,40 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/.config # Current configuration
 
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
-LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
+# Sub-directories
 
-ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
-TINYARALIB = "$(TOPDIR)/../build/output/libraries"
-LDELFFLAGS += -Bstatic
-LDLIBPATH += -L $(TINYARALIB)
+SUBDIRS = $(dir $(wildcard */Makefile))
 
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
-LDLIBS += $(LIBGCC)
-endif
+all: nothing
 
-BIN = micom
-# need to update
-BIN_TYPE = ELF
-DYNAMIC_RAM_SIZE = 51200
-BIN_VER = 20190421
-KERNEL_VER = 2.0
-STACKSIZE = 4096
-PRIORITY = 220
+.PHONY: nothing context depend clean distclean
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
-else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
+define SDIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)"
+endef
 
-APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-SRCS = $(TOPDIR)/board/common/userspace/up_userspace.c
-endif # CONFIG_APP_BINARY_SEPARATION
-
-SRCS += micomapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-OBJS = $(SRCS:.c=$(OBJEXT))
-ifeq ($(CONFIG_EXAMPLES_TIMER)$(CONFIG_EXAMPLES_MICOM_TIMER_TEST),yy)
-SRCS += timer.c
-OBJS += $(TOPDIR)$(DELIM)../apps/examples/timer/timer_main.o
-endif
-
-prebuild:
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-	$(call DELFILE, $(TOPDIR)/board/common/userspace/up_userspace.o)
-endif
-
-all: prebuild $(BIN)
-.PHONY: prebuild clean install verify
-
-$(OBJS): %$(OBJEXT): %.c
-	@echo "CC: $<"
-	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
-
-$(BIN): $(OBJS)
-	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
-
-clean:
-	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
-	$(call CLEAN)
+nothing:
 
 install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
-verify:
-	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
-		echo "Undefined Symbols"; \
-		nm -u -l $(BIN); \
-		rm $(BIN); \
-		exit 1; \
-	fi
+preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
+
+context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
+
+depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
+
+clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
+
+distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
+
+-include Make.dep
+

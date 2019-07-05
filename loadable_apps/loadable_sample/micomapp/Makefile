@@ -16,10 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/Make.defs
-# Adds selected applications to apps/ build
 #
-#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,6 +49,62 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_EXAMPLES_ELF),)
-CONFIGURED_APPS += examples/elf
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+
+SRCS = micomapp.c
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+SRCS += messaging.c
 endif
+ifeq ($(CONFIG_EXAMPLES_TIMER)$(CONFIG_EXAMPLES_MICOM_TIMER_TEST),yy)
+SRCS += timer.c
+OBJS += $(TOPDIR)$(DELIM)../apps/examples/timer/timer_main.o
+endif
+
+#########################################
+# Case of Loadable separated binary build
+# Make separated ELF type binary
+#########################################
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+
+BIN = micom
+# need to update
+BIN_TYPE = ELF
+DYNAMIC_RAM_SIZE = 51200
+BIN_VER = 20190421
+KERNEL_VER = 2.0
+STACKSIZE = 4096
+PRIORITY = 220
+
+include $(TOPDIR)/../loadable_apps/loadable.mk
+
+###################################
+# Cases of Flat and Protected build
+# Merge into libapps.a
+###################################
+else
+
+OBJS = $(SRCS:.c=$(OBJEXT))
+
+BIN = ../../../apps/libapps$(LIBEXT)
+
+all: .built
+.PHONY: clean depend distclean
+
+$(OBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+endif # CONFIG_APP_BINARY_SEPARATION
+
+preconfig:

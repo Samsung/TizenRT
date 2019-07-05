@@ -661,6 +661,9 @@ apps_preconfig:
 ifneq ($(APPDIR),)
 	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" preconfig
 endif
+ifneq ($(LOADABLE_APPDIR),)
+	$(Q) $(MAKE) -C "$(TOPDIR)/$(LOADABLE_APPDIR)" TOPDIR="$(TOPDIR)" LOADABLEDIR=${LOADABLE_APPDIR} preconfig
+endif
 
 apps_clean:
 ifneq ($(APPDIR),)
