@@ -402,7 +402,8 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 			ndbg("[WU] Wrong security type\n");
 			goto connect_ap_fail;
 		}
-	} else {
+	} else if (ap_connect_config->ap_auth_type !=  WIFI_UTILS_AUTH_OPEN ||
+				ap_connect_config->ap_crypto_type != WIFI_UTILS_CRYPTO_NONE) {
 		ndbg("[WU] No passphrase!\n");
 		goto connect_ap_fail;
 	}

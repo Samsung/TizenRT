@@ -90,7 +90,6 @@
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
 
-extern const uint32_t g_idle_topstack;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -367,10 +366,6 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	struct mm_heap_s *heap;
 	pid_t hash_pid;
 #endif
-	if (tcb->pid == 0) {
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
-		tcb->stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
-	}
 
 	remaining = buflen;
 	totalsize = 0;

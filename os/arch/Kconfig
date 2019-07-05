@@ -13,7 +13,6 @@ config ARCH_ARM
 	select ARCH_HAVE_VFORK
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_NESTED_INTERRUPT
 	---help---
 		The ARM architectures
 
