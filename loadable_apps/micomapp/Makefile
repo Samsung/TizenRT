@@ -76,7 +76,6 @@ LDLIBS += $(LIBGCC)
 endif
 
 BIN = micom
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
 DYNAMIC_RAM_SIZE = 51200
@@ -136,11 +135,11 @@ endif
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
 verify:
-ifneq ($(BIN_CHECK),0)
-	@echo "Undefined Symbols"
-	$(Q) $(NM) -u -l $(BIN)
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-	exit 1
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
+		echo "Undefined Symbols"; \
+		nm -u -l $(BIN); \
+		rm $(BIN); \
+		exit 1; \
+	fi
 endif
