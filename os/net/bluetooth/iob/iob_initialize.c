@@ -130,9 +130,9 @@ void iob_initialize(void)
 
 		g_iob_committed = NULL;
 
-		nxsem_init(&g_iob_sem, 0, CONFIG_IOB_NBUFFERS);
+		sem_init(&g_iob_sem, 0, CONFIG_IOB_NBUFFERS);
 #if CONFIG_IOB_THROTTLE > 0
-		nxsem_init(&g_throttle_sem, 0, CONFIG_IOB_NBUFFERS - CONFIG_IOB_THROTTLE);
+		sem_init(&g_throttle_sem, 0, CONFIG_IOB_NBUFFERS - CONFIG_IOB_THROTTLE);
 #endif
 
 #if CONFIG_IOB_NCHAINS > 0
@@ -149,7 +149,7 @@ void iob_initialize(void)
 
 		g_iob_qcommitted = NULL;
 
-		nxsem_init(&g_qentry_sem, 0, CONFIG_IOB_NCHAINS);
+		sem_init(&g_qentry_sem, 0, CONFIG_IOB_NCHAINS);
 #endif
 		initialized = true;
 	}

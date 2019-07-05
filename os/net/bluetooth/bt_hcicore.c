@@ -139,14 +139,14 @@ static void bt_enqueue_bufwork(FAR struct bt_bufferlist_s *list, FAR struct bt_b
 {
 	irqstate_t flags;
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 	buf->flink = list->head;
 	if (list->head == NULL) {
 		list->tail = buf;
 	}
 
 	list->head = buf;
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -170,7 +170,7 @@ static FAR struct bt_buf_s *bt_dequeue_bufwork(FAR struct bt_bufferlist_s *list)
 	FAR struct bt_buf_s *buf;
 	irqstate_t flags;
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 	buf = list->tail;
 	if (buf != NULL) {
 		if (list->head == list->tail) {
@@ -191,7 +191,7 @@ static FAR struct bt_buf_s *bt_dequeue_bufwork(FAR struct bt_bufferlist_s *list)
 		buf->flink = NULL;
 	}
 
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 	return buf;
 }
 
@@ -320,7 +320,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, FAR struct bt_buf_s *b
 			sent->u.hci.sync = bt_buf_addref(buf);
 		}
 
-		nxsem_post(sem);
+		sem_post(sem);
 	} else {
 		bt_buf_release(sent);
 	}
@@ -358,7 +358,7 @@ static void hci_cmd_complete(FAR struct bt_buf_s *buf)
 		/* Allow next command to be sent */
 
 		g_btdev.ncmd = 1;
-		nxsem_post(&g_btdev.ncmd_sem);
+		sem_post(&g_btdev.ncmd_sem);
 	}
 }
 
@@ -383,7 +383,7 @@ static void hci_cmd_status(FAR struct bt_buf_s *buf)
 		/* Allow next command to be sent */
 
 		g_btdev.ncmd = 1;
-		nxsem_post(&g_btdev.ncmd_sem);
+		sem_post(&g_btdev.ncmd_sem);
 	}
 }
 
@@ -896,7 +896,7 @@ static int hci_tx_kthread(int argc, FAR char *argv[])
 		/* Wait until ncmd > 0 */
 
 		do {
-			ret = nxsem_wait(&g_btdev.ncmd_sem);
+			ret = sem_wait(&g_btdev.ncmd_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret >= 0);
@@ -1206,7 +1206,7 @@ static int hci_initialize(void)
 	 * ACL packet buffers.
 	 */
 
-	nxsem_init(&g_btdev.le_pkts_sem, 0, g_btdev.le_pkts);
+	sem_init(&g_btdev.le_pkts_sem, 0, g_btdev.le_pkts);
 	return 0;
 }
 
@@ -1226,11 +1226,11 @@ static void cmd_queue_init(void)
 	DEBUGASSERT(ret >= 0 && g_btdev.tx_queue != NULL);
 	UNUSED(ret);
 
-	nxsem_init(&g_btdev.ncmd_sem, 0, 1);
-	nxsem_setprotocol(&g_btdev.ncmd_sem, SEM_PRIO_NONE);
+	sem_init(&g_btdev.ncmd_sem, 0, 1);
+	sem_setprotocol(&g_btdev.ncmd_sem, SEM_PRIO_NONE);
 
 	g_btdev.ncmd = 1;
-	pid = kthread_create("BT HCI Tx", CONFIG_BLUETOOTH_TXCMD_PRIORITY, CONFIG_BLUETOOTH_TXCMD_STACKSIZE, hci_tx_kthread, NULL);
+	pid = kernel_thread("BT HCI Tx", CONFIG_BLUETOOTH_TXCMD_PRIORITY, CONFIG_BLUETOOTH_TXCMD_STACKSIZE, hci_tx_kthread, NULL);
 	DEBUGASSERT(pid > 0);
 	UNUSED(pid);
 }
@@ -1505,8 +1505,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 
 	/* Set up for the wait */
 
-	nxsem_init(&sync_sem, 0, 0);
-	nxsem_setprotocol(&sync_sem, SEM_PRIO_NONE);
+	sem_init(&sync_sem, 0, 0);
+	sem_setprotocol(&sync_sem, SEM_PRIO_NONE);
 	buf->u.hci.sync = &sync_sem;
 
 	/* Send the frame */
@@ -1553,7 +1553,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 			do {
 				/* The timed wait could also be awakened by a signal */
 
-				ret = nxsem_timedwait(&sync_sem, &abstime);
+				ret = sem_timedwait(&sync_sem, &abstime);
 			} while (ret == -EINTR);
 		}
 

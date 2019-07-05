@@ -109,7 +109,7 @@ int bt_queue_open(FAR const char *name, int oflags, int nmsgs, FAR mqd_t *mqd)
 		/* REVISIT: mq_open() modifies the errno value */
 
 		ret = -get_errno();
-		gerr("ERROR: mq_open(%s) failed: %d\n", name, ret);
+		ndbg("ERROR: mq_open(%s) failed: %d\n", name, ret);
 		newmqd = NULL;
 	}
 
@@ -148,9 +148,9 @@ int bt_queue_receive(mqd_t mqd, FAR struct bt_buf_s **buf)
 	/* Wait for the next message */
 
 	u.msg.buf = NULL;
-	msgsize = nxmq_receive(mqd, u.msgbuf, BT_MSGSIZE, &priority);
+	msgsize = mq_receive(mqd, u.msgbuf, BT_MSGSIZE, &priority);
 	if (msgsize < 0) {
-		ndbg("ERROR: nxmq_receive() failed: %ld\n", (long)msgsize);
+		ndbg("ERROR: mq_receive() failed: %ld\n", (long)msgsize);
 		return (int)msgsize;
 	}
 

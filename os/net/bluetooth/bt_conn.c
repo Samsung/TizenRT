@@ -134,17 +134,17 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 
 	conn = g_conn_handoff.conn;
 	DEBUGASSERT(conn != NULL);
-	nxsem_post(&g_conn_handoff.sync_sem);
+	sem_post(&g_conn_handoff.sync_sem);
 
 	nvdbg("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Wait until the controller can accept ACL packets */
 
-		nvdbg("calling nxsem_wait\n");
+		nvdbg("calling sem_wait\n");
 
 		do {
-			ret = nxsem_wait(&g_btdev.le_pkts_sem);
+			ret = sem_wait(&g_btdev.le_pkts_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
@@ -152,7 +152,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 		/* Check for disconnection */
 
 		if (conn->state != BT_CONN_CONNECTED) {
-			nxsem_post(&g_btdev.le_pkts_sem);
+			sem_post(&g_btdev.le_pkts_sem);
 			break;
 		}
 
@@ -163,7 +163,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 		UNUSED(ret);
 
 		if (conn->state != BT_CONN_CONNECTED) {
-			nxsem_post(&g_btdev.le_pkts_sem);
+			sem_post(&g_btdev.le_pkts_sem);
 			bt_buf_release(buf);
 			break;
 		}
@@ -512,7 +512,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		 */
 
 		do {
-			ret = nxsem_wait(&g_conn_handoff.sync_sem);
+			ret = sem_wait(&g_conn_handoff.sync_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
@@ -520,7 +520,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		/* Start the Tx connection kernel thread */
 
 		g_conn_handoff.conn = bt_conn_addref(conn);
-		pid = kthread_create("BT Conn Tx", CONFIG_BLUETOOTH_TXCONN_PRIORITY, CONFIG_BLUETOOTH_TXCONN_STACKSIZE, conn_tx_kthread, NULL);
+		pid = kernel_thread("BT Conn Tx", CONFIG_BLUETOOTH_TXCONN_PRIORITY, CONFIG_BLUETOOTH_TXCONN_STACKSIZE, conn_tx_kthread, NULL);
 		DEBUGASSERT(pid > 0);
 		UNUSED(pid);
 
@@ -529,11 +529,11 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		 */
 
 		do {
-			ret = nxsem_wait(&g_conn_handoff.sync_sem);
+			ret = sem_wait(&g_conn_handoff.sync_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
-		nxsem_post(&g_conn_handoff.sync_sem);
+		sem_post(&g_conn_handoff.sync_sem);
 	}
 	break;
 

@@ -128,7 +128,7 @@ static FAR struct iob_qentry_s *iob_allocwait_qentry(void)
 		 * semaphore count will be incremented.
 		 */
 
-		ret = nxsem_wait(&g_qentry_sem);
+		ret = sem_wait(&g_qentry_sem);
 		if (ret < 0) {
 			/* EINTR is not an error!  EINTR simply means that we were
 			 * awakened by a signal and we should try again.
@@ -165,7 +165,7 @@ static FAR struct iob_qentry_s *iob_allocwait_qentry(void)
 				 * we will have to wait again.
 				 */
 
-				nxsem_post(&g_qentry_sem);
+				sem_post(&g_qentry_sem);
 				qentry = iob_tryalloc_qentry();
 			}
 		}
@@ -234,7 +234,7 @@ FAR struct iob_qentry_s *iob_tryalloc_qentry(void)
 		g_iob_freeqlist = iobq->qe_flink;
 
 		/* Take a semaphore count.  Note that we cannot do this in
-		 * in the orthodox way by calling nxsem_wait() or nxsem_trywait()
+		 * in the orthodox way by calling sem_wait() or sem_trywait()
 		 * because this function may be called from an interrupt
 		 * handler. Fortunately we know at at least one free buffer
 		 * so a simple decrement is all that is needed.
