@@ -592,11 +592,8 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 								u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
 	ptask->task_name = name;
-	ptask->task = priority;
-	ptask->_rtw_task_info_s = kernel_thread(name, priority, stack_size, (main_t)func, NULL);
-	//ptask->_rtw_task_info_s=kernel_thread(name,priority,stack_size,(main_t)func,(char *const*)NULL);
-
-	if (!ptask->_rtw_task_info_s) {
+	ptask->task = kernel_thread(name, priority, stack_size, (main_t)func, NULL);
+	if (!ptask->task) {
 		DBG_ERR("create the task %s failed!", name);
 		ptask->task = 0;
 		return _FAIL;
@@ -608,18 +605,18 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 static void _tizenrt_delete_task(struct task_struct *ptask)
 {
 	int status = 0;
-	if (!ptask->_rtw_task_info_s) {
+	if (!ptask->task) {
 		DBG_ERR("_tizenrt_delete_task(): ptask is NULL!\n", ptask->task_name);
 		return;
 	}
-	status = task_delete(ptask->_rtw_task_info_s); //TODO
+	status = task_delete(ptask->task); //TODO
 	if (status != OK) {
 		DBG_ERR("delete the task failed!", ptask->task_name);
 		return;
 	}
-	kmm_free(ptask);
 	return;
 }
+
 
 u32 _tizenrt_wake_task(struct task_struct *task)
 {
@@ -669,7 +666,7 @@ u32 _tizenrt_timerDelete(_timer *timer,
 
 cleanup:
 	if (ret != -2) {
-		kmm_free(timer->work_hdl);
+		rtw_mfree(timer->work_hdl, 0);
 		DBG_ERR("_tizenrt_del_timer failed! ret = %d", ret);
 		return _FAIL;
 	}
@@ -696,7 +693,7 @@ u32 _tizenrt_timerStop(_timer *timer,
 
 cleanup:
 	if (ret != -2) {
-		kmm_free(timer->work_hdl);
+		rtw_mfree(timer->work_hdl, 0);
 		DBG_ERR("_tizenrt_stop_timer failed! ret = %d", ret);
 		return _FAIL;
 	}
@@ -752,7 +749,7 @@ u32 _tizenrt_timerChangePeriod(_timer *timer,
 	return _SUCCESS;
 
 cleanup:
-	kmm_free(timer->work_hdl);
+	rtw_mfree(timer->work_hdl, 0);
 	timer->timer_hdl = NULL;
 	DBG_ERR("_tizenrt_set_timer failed!");
 	return _FAIL;
