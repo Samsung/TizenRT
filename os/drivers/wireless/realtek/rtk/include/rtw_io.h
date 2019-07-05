@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -99,7 +99,7 @@ struct	intf_hdl {
 	u32	bus_status;
 	u32	do_flush;
 	u8	*adapter;
-	u8	*intf_dev;	
+	u8	*intf_dev;
 	struct intf_priv	*pintfpriv;
 	u8	cnt;
 	void (*intf_hdl_init)(u8 *priv);
@@ -109,11 +109,11 @@ struct	intf_hdl {
 	struct	_io_ops	io_ops;
 	//u8 intf_status;//moved to struct intf_priv
 	u16 len;
-	u16 done_len;	
+	u16 done_len;
 
 	_adapter *padapter;
 	struct dvobj_priv *pintf_dev;//	pointer to &(padapter->dvobjpriv);
-	
+
 	struct _io_ops	io_ops;
 
 };
