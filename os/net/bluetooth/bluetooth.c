@@ -46,6 +46,8 @@
 
 extern struct bt_dev_s g_btdev;
 
+static bt_le_scan_cb_t *scan_dev_found_cb;
+
 struct bt_ad {
 	const struct bt_data *data;
 	size_t len;
@@ -90,9 +92,9 @@ static int set_advertise_enable(bool enable)
 	g_btdev.adv_enable = enable;
 
 	if (enable) {
-		bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ADVERTISING);
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_ADVERTISING);
 	} else {
-		bt_atomic_testclrbit(g_btdev.flags, BT_DEV_ADVERTISING);
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_ADVERTISING);
 	}
 
 	return 0;
@@ -210,7 +212,7 @@ static void bt_dev_show_info(void)
 
 static void bt_finalize_init(void)
 {
-	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_READY);
+	bt_atomic_setbit(g_btdev.flags, BT_DEV_READY);
 #if 0
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		bt_le_scan_update(false);
@@ -286,11 +288,9 @@ int bt_enable(bt_ready_cb_t cb)
 		return -ENODEV;
 	}
 
-	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ENABLE)) {
+	if (bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ENABLE)) {
 		return -EALREADY;
 	}
-
-	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ENABLE);
 
 	bt_set_name(CONFIG_BT_DEVICE_NAME);
 
@@ -434,7 +434,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 
 	new_id = g_btdev.id_count++;
 	if (new_id == BT_ID_DEFAULT && !bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
-		bt_atomic_testsetbit(g_btdev.flags, BT_DEV_USER_ID_ADDR);
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_USER_ID_ADDR);
 	}
 
 	id_create(new_id, addr, irk);
@@ -751,4 +751,168 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
 {
 	// TODO: need to implement
 	return NULL;
+}
+
+static bool valid_le_scan_param(const struct bt_le_scan_param *param)
+{
+	if (param->type != BT_LE_SCAN_PASSIVE && param->type != BT_LE_SCAN_ACTIVE) {
+		return false;
+	}
+
+	if (param->filter_dup != BT_LE_SCAN_FILTER_DUP_DISABLE && param->filter_dup != BT_LE_SCAN_FILTER_DUP_ENABLE) {
+		return false;
+	}
+
+	if (param->interval < 0x0004 || param->interval > 0x4000) {
+		return false;
+	}
+
+	if (param->window < 0x0004 || param->window > 0x4000) {
+		return false;
+	}
+
+	if (param->window > param->interval) {
+		return false;
+	}
+
+	return true;
+}
+
+static int set_le_scan_enable(uint8_t enable)
+{
+	FAR struct bt_hci_cp_le_set_scan_enable_s *cp;
+	FAR struct bt_buf_s *buf;
+	int err;
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_extend(buf, sizeof(*cp));
+	if (enable == BT_LE_SCAN_ENABLE) {
+		cp->filter_dup = bt_atomic_testbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+	} else {
+		cp->filter_dup = BT_LE_SCAN_FILTER_DUP_DISABLE;
+	}
+
+	cp->enable = enable;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* setting the BT_DEV_SCANNING flag */
+	if (enable) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_SCANNING);
+	} else {
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_SCANNING);
+	}
+	return 0;
+}
+
+static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window)
+{
+	FAR struct bt_hci_cp_le_set_scan_params_s *set_param;
+	FAR struct bt_buf_s *buf;
+	int err;
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS, sizeof(*set_param));
+	if (buf == NULL) {
+		ndbg("ERROR:  Failed to create buffer\n");
+		return -ENOBUFS;
+	}
+
+	set_param = bt_buf_extend(buf, sizeof(*set_param));
+	memset(set_param, 0, sizeof(*set_param));
+	set_param->scan_type = scan_type;
+	/* for the rest parameters apply default values according to
+	 *  spec 4.2, vol2, part E, 7.8.10
+	 */
+	set_param->interval = sys_cpu_to_le16(interval);
+	set_param->window = sys_cpu_to_le16(window);
+	set_param->filter_policy = 0x00;
+	set_param->addr_type = 0x00;
+#if 0
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		err = le_set_private_addr(BT_ID_DEFAULT);
+		if (err) {
+			return err;
+		}
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			set_param.addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			set_param.addr_type = BT_ADDR_LE_RANDOM;
+		}
+	} else {
+		set_param.addr_type = bt_dev.id_addr[0].type;
+		/* Use NRPA unless identity has been explicitly requested
+		 * (through Kconfig), or if there is no advertising ongoing.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) && scan_type == BT_HCI_LE_SCAN_ACTIVE && !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+			err = le_set_private_addr(BT_ID_DEFAULT);
+			if (err) {
+				return err;
+			}
+
+			set_param.addr_type = BT_ADDR_LE_RANDOM;
+		} else if (set_param.addr_type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&bt_dev.id_addr[0].a);
+		}
+	}
+#endif
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
+	err = set_le_scan_enable(BT_LE_SCAN_ENABLE);
+	if (err) {
+		return err;
+	}
+
+	if (scan_type == BT_LE_SCAN_ACTIVE) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_ACTIVE_SCAN);
+	} else {
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_ACTIVE_SCAN);
+	}
+
+	return 0;
+}
+
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
+{
+	int err;
+	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	/* Check that the parameters have valid values */
+	if (!valid_le_scan_param(param)) {
+		return -EINVAL;
+	}
+
+	/* Return if active scan is already enabled */
+	if (bt_atomic_testsetbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return -EALREADY;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_SCANNING)) {
+		err = set_le_scan_enable(BT_LE_SCAN_DISABLE);
+		if (err) {
+			bt_atomic_clrbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN);
+			return err;
+		}
+	}
+
+	if (param->filter_dup) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+	} else {
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+	}
+
+	err = start_le_scan(param->type, param->interval, param->window);
+	if (err) {
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN);
+		return err;
+	}
+
+	scan_dev_found_cb = cb;
+	return 0;
 }

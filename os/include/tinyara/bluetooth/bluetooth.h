@@ -476,6 +476,23 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct 
  ****************************************************************************/
 typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
 
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_PASSIVE or BT_HCI_LE_SCAN_ACTIVE) */
+	uint8_t type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint8_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint8_t window;
+};
+
 /**
  * @brief Start (LE) scanning
  *
@@ -489,6 +506,19 @@ typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uin
  * of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+
+/** @brief Start (LE) scanning
+ *
+ *  Start LE scanning with given parameters and provide results through
+ *  the specified callback.
+ *
+ *  @param param Scan parameters.
+ *  @param cb Callback to notify scan results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
 /**
  * @brief Stop (LE) scanning.
