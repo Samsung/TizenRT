@@ -52,19 +52,11 @@
 
 -include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
 LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
-endif
 
-OBJEXT ?= .o
-DELIM ?= /
-
-ifeq ($(WINTOOL),y)
-TINYARALIB = "${shell cygpath -w $(TOPDIR)$(DELIM)lib}"
-else
-TINYARALIB = "$(TOPDIR)$(DELIM)../build/output/libraries"
-endif
+TINYARALIB = "$(TOPDIR)/../build/output/libraries"
 
 ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
 LDELFFLAGS += -Bstatic
@@ -92,7 +84,9 @@ BLOCK_SIZE = 0
 endif
 
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-SRCS = $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.c
+SRCS = $(TOPDIR)/board/common/userspace/up_userspace.c
+endif # CONFIG_APP_BINARY_SEPARATION
+
 SRCS += wifiapp.c
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c
@@ -104,7 +98,9 @@ endif
 OBJS = $(SRCS:.c=$(OBJEXT))
 
 prebuild:
-	$(call DELFILE, $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.o)
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+	$(call DELFILE, $(TOPDIR)/board/common/userspace/up_userspace.o)
+endif
 
 all: prebuild $(BIN)
 .PHONY: prebuild clean install verify
@@ -133,11 +129,9 @@ endif
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
 verify:
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
 		echo "Undefined Symbols"; \
 		nm -u -l $(BIN); \
 		rm $(BIN); \
 		exit 1; \
 	fi
-endif
