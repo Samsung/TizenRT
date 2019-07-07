@@ -106,7 +106,7 @@
  */
 
 #ifndef CONFIG_IMXRT_EHCI_NQHS
-#define CONFIG_IMXRT_EHCI_NQHS (IMXRT_EHCI_NRHPORT + 1)
+#define CONFIG_IMXRT_EHCI_NQHS (IMXRT_EHCI_NRHPORT + 79)
 #endif
 
 /* Configurable number of Queue Element Transfer Descriptor (qTDs).  The default
@@ -114,7 +114,7 @@
  */
 
 #ifndef CONFIG_IMXRT_EHCI_NQTDS
-#define CONFIG_IMXRT_EHCI_NQTDS (IMXRT_EHCI_NRHPORT + 3)
+#define CONFIG_IMXRT_EHCI_NQTDS (IMXRT_EHCI_NRHPORT + 79)
 #endif
 
 /* Buffers must be aligned to the cache line size */
