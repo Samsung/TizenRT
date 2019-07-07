@@ -55,8 +55,8 @@
 #define BT_ADDR_LE_PUBLIC  0x00
 #define BT_ADDR_LE_RANDOM  0x01
 
-#define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0}})
-#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
+#define BT_ADDR_ANY    (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, { 0, 0, 0, 0, 0, 0 } })
 
 /* HCI Error Codes */
 
@@ -171,6 +171,52 @@
 #define BT_HCI_ROLE_SLAVE                   0x01
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT      0x02
 #define BT_HCI_EVT_LE_LTK_REQUEST             0x05
+
+#define CONFIG_BT_DEVICE_NAME_MAX		65
+#define CONFIG_BT_DEVICE_NAME			"TizenRT"
+#define BT_HCI_LE_ADV_DISABLE                   0x00
+#define BT_HCI_LE_ADV_ENABLE                    0x01
+#define CONFIG_BT_ID_MAX                        2
+
+#define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
+#define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
+#define BT_ADDR_IS_STATIC(a)  (((a)->val[5] & 0xc0) == 0xc0)
+
+#define BT_ADDR_SET_RPA(a)    ((a)->val[5] = (((a)->val[5] & 0x3f) | 0x40))
+
+#define BT_ADDR_SET_NRPA(a)   ((a)->val[5] &= 0x3f)
+#define BT_ADDR_SET_STATIC(a) ((a)->val[5] |= 0xc0)
+
+/* EIR/AD data type definitions */
+#define BT_DATA_FLAGS                   0x01	/* AD flags */
+#define BT_DATA_UUID16_SOME             0x02	/* 16-bit UUID, more available */
+#define BT_DATA_UUID16_ALL              0x03	/* 16-bit UUID, all listed */
+#define BT_DATA_UUID32_SOME             0x04	/* 32-bit UUID, more available */
+#define BT_DATA_UUID32_ALL              0x05	/* 32-bit UUID, all listed */
+#define BT_DATA_UUID128_SOME            0x06	/* 128-bit UUID, more available */
+#define BT_DATA_UUID128_ALL             0x07	/* 128-bit UUID, all listed */
+#define BT_DATA_NAME_SHORTENED          0x08	/* Shortened name */
+#define BT_DATA_NAME_COMPLETE           0x09	/* Complete name */
+#define BT_DATA_TX_POWER                0x0a	/* Tx Power */
+#define BT_DATA_SM_TK_VALUE             0x10	/* Security Manager TK Value */
+#define BT_DATA_SM_OOB_FLAGS            0x11	/* Security Manager OOB Flags */
+#define BT_DATA_SOLICIT16               0x14	/* Solicit UUIDs, 16-bit */
+#define BT_DATA_SOLICIT128              0x15	/* Solicit UUIDs, 128-bit */
+#define BT_DATA_SVC_DATA16              0x16	/* Service data, 16-bit UUID */
+#define BT_DATA_GAP_APPEARANCE          0x19	/* GAP appearance */
+#define BT_DATA_LE_BT_DEVICE_ADDRESS    0x1b	/* LE Bluetooth Device Address */
+#define BT_DATA_LE_ROLE                 0x1c	/* LE Role */
+#define BT_DATA_SOLICIT32               0x1f	/* Solicit UUIDs, 32-bit */
+#define BT_DATA_SVC_DATA32              0x20	/* Service data, 32-bit UUID */
+#define BT_DATA_SVC_DATA128             0x21	/* Service data, 128-bit UUID */
+#define BT_DATA_LE_SC_CONFIRM_VALUE     0x22	/* LE SC Confirmation Value */
+#define BT_DATA_LE_SC_RANDOM_VALUE      0x23	/* LE SC Random Value */
+#define BT_DATA_URI                     0x24	/* URI */
+#define BT_DATA_MESH_PROV               0x29	/* Mesh Provisioning PDU */
+#define BT_DATA_MESH_MESSAGE            0x2a	/* Mesh Networking PDU */
+#define BT_DATA_MESH_BEACON             0x2b	/* Mesh Beacon */
+
+#define BT_DATA_MANUFACTURER_DATA       0xff	/* Manufacturer Specific Data */
 
 /****************************************************************************
  * Public Types

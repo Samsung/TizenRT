@@ -1274,7 +1274,15 @@ int bt_initialize(void)
 		return ret;
 	}
 
-	return bt_l2cap_init();
+	ret = bt_l2cap_init();
+	if (ret < 0) {
+		ndbg("ERROR:  l2cap_initialise failed: %d\n", ret);
+		return ret;
+	}
+
+	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_READY);
+
+	return ret;
 }
 
 /****************************************************************************
@@ -1687,6 +1695,8 @@ send_set_param:
 	g_btdev.adv_enable = 0x01;
 	memcpy(bt_buf_extend(buf, 1), &g_btdev.adv_enable, 1);
 
+	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ADVERTISING);
+
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
@@ -1718,6 +1728,8 @@ int bt_stop_advertising(void)
 
 	g_btdev.adv_enable = 0x00;
 	memcpy(bt_buf_extend(buf, 1), &g_btdev.adv_enable, 1);
+
+	bt_atomic_testclrbit(g_btdev.flags, BT_DEV_ADVERTISING);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }

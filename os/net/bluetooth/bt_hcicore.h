@@ -53,6 +53,7 @@
 #include <mqueue.h>
 
 #include <tinyara/bluetooth/bt_driver.h>
+#include "bt_atomic.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -66,6 +67,31 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+/* bt_dev flags: the flags defined here represent BT controller state */
+enum {
+	BT_DEV_ENABLE,
+	BT_DEV_READY,
+	BT_DEV_PRESET_ID,
+	BT_DEV_USER_ID_ADDR,
+	BT_DEV_HAS_PUB_KEY,
+	BT_DEV_PUB_KEY_BUSY,
+
+	BT_DEV_ADVERTISING,
+	BT_DEV_ADVERTISING_NAME,
+	BT_DEV_ADVERTISING_CONNECTABLE,
+	BT_DEV_KEEP_ADVERTISING,
+	BT_DEV_SCANNING,
+	BT_DEV_EXPLICIT_SCAN,
+	BT_DEV_ACTIVE_SCAN,
+	BT_DEV_SCAN_FILTER_DUP,
+
+	BT_DEV_RPA_VALID,
+
+	BT_DEV_ID_PENDING,
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_DEV_NUM_FLAGS,
+};
 
 /* State tracking for the local Bluetooth controller */
 
@@ -123,6 +149,19 @@ struct bt_dev_s {
 	/* Registered HCI driver */
 
 	FAR const struct bt_driver_s *btdev;
+
+	/* local name */
+	char name[CONFIG_BT_DEVICE_NAME_MAX];
+
+	/* dev flags */
+	bt_atomic_t flags[1];
+
+	/* Local Identity Address(es) */
+	bt_addr_le_t id_addr[CONFIG_BT_ID_MAX];
+	uint8_t id_count;
+
+	/* ID Address used for advertising */
+	uint8_t adv_id;
 };
 
 /* Connection callback structure */
@@ -298,5 +337,7 @@ int bt_le_scan_update(void);
  ****************************************************************************/
 
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
+
+int bt_addr_le_create_static(bt_addr_le_t *addr);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

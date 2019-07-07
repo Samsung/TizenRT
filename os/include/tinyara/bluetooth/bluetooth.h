@@ -49,6 +49,13 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/** @def BT_ID_DEFAULT
+ *
+ *  Convenience macro for specifying the default identity. This helps
+ *  make the code more readable, especially when only one identity is
+ *  supported.
+ */
+#define BT_ID_DEFAULT 0
 
 /* BLUETOOTH_MAX_FRAMELEN
  * Maximum amount of data that can fit in a buffer.
@@ -151,6 +158,22 @@ struct bt_data {
 	const uint8_t *data;
 };
 
+/** @brief Helper to declare elements of bt_data arrays
+ *
+ *  This macro is mainly for creating an array of struct bt_data
+ *  elements which is then passed to bt_le_adv_start().
+ *
+ *  @param _type Type of advertising data field
+ *  @param _data Pointer to the data field payload
+ *  @param _data_len Number of bytes behind the _data pointer
+ */
+#define BT_DATA(_type, _data, _data_len) \
+{ \
+	.type = (_type), \
+	.data_len = (_data_len), \
+	.data = (const unsigned char *)(_data), \
+}
+
 /** OOB data that is specific for LE SC pairing method. */
 struct bt_le_oob_sc_data {
 	/** Random Number. */
@@ -236,6 +259,26 @@ struct bt_le_adv_param {
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_initialize(void);
+
+/**
+ * @typedef bt_ready_cb_t
+ * @brief Callback for notifying that Bluetooth has been enabled.
+ *
+ *  @param err zero on success or (negative) error code otherwise.
+ */
+typedef void (*bt_ready_cb_t)(int err);
+
+/** @brief Enable Bluetooth
+ *
+ *  Enable Bluetooth. Must be the called before any calls that
+ *  require communication with the local Bluetooth hardware.
+ *
+ *  @param cb Callback to notify completion or NULL to perform the
+ *  enabling synchronously.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_enable(bt_ready_cb_t cb);
 
 /** @brief Set Bluetooth Device Name
  *
@@ -433,6 +476,23 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct 
  ****************************************************************************/
 typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
 
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_PASSIVE or BT_HCI_LE_SCAN_ACTIVE) */
+	uint8_t type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint8_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint8_t window;
+};
+
 /**
  * @brief Start (LE) scanning
  *
@@ -446,6 +506,19 @@ typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uin
  * of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+
+/** @brief Start (LE) scanning
+ *
+ *  Start LE scanning with given parameters and provide results through
+ *  the specified callback.
+ *
+ *  @param param Scan parameters.
+ *  @param cb Callback to notify scan results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
 /**
  * @brief Stop (LE) scanning.
