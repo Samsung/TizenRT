@@ -101,6 +101,7 @@ extern "C" {
 /*! @brief ADC driver version */
 #define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 
+#if 0
 typedef enum {
 	ADC_CHANNEL_0 = 0,		/*!< ADC channel */
 	ADC_CHANNEL_1,			/*!< ADC channel */
@@ -114,6 +115,74 @@ typedef enum {
 	ADC_CHANNEL_9,			/*!< ADC channel */
 	ADC_CHANNEL_MAX,
 } adc_channel_t;
+#endif
+
+/********************************************************************************************
+ * Pre-processor Definitions
+ ********************************************************************************************/
+/* ADC Port Number
+ *
+ *               3322 2222 2222 1111  1111 1100 0000 0000
+ *               1098 7654 3210 9876  5432 1098 7654 3210
+ *   ADC       00.. ...G GGG. ....  .... .... .... ....
+ */
+
+#define ADC_BUS_SHIFT       (21)      /* Bits 21-23: GPIO port index */
+#define ADC_BUS_MASK        (15 << ADC_BUS_SHIFT)
+
+#define ADC_ADC1            (0 << ADC_BUS_SHIFT)	/* ADC Bus 0 */
+#define ADC_ADC2            (1 << ADC_BUS_SHIFT)	/* ADC Bus 1 */
+#define IMXRT_ADC_NBUS		2
+
+/* ADC Channel Number:
+ *
+ *               3322 2222 2222 1111  1111 1100 0000 0000
+ *               1098 7654 3210 9876  5432 1098 7654 3210
+ *   ADC         00.. .... ...P PPPP  .... .... .... ....
+ */
+
+/////////////////////////////////////////////////////////////////////////////
+// Chip/imxrt_adc.h ??
+#define ADC1INDEX                     0	/* Channel 1 index */
+#define ADC2INDEX                     1	/* Channel 2 index */
+#define ADC3INDEX                     2	/* Channel 3 index */
+#define ADC4INDEX                     3	/* Channel 4 index */
+#define ADC5INDEX                     4	/* Channel 5 index */
+#define ADC6INDEX                     5	/* Channel 6 index */
+#define ADC7INDEX                     6	/* Channel 7 index */
+#define ADC8INDEX                     7	/* Channel 8 index */
+#define ADC9INDEX                     8	/* Channel 9 index */
+#define ADC10INDEX                    9	/* Channel 9 index */
+#define ADC11INDEX                    10	/* Channel 10 index */
+#define ADC12INDEX                    11	/* Channel 11 index */
+#define ADC13INDEX                    12	/* Channel 12 index */
+#define ADC14INDEX                    13	/* Channel 13 index */
+#define ADC15INDEX                    14	/* Channel 14 index */
+#define IMXRT_ADC_NCHANEL		ADC15INDEX
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+#define ADC_CHANNEL_SHIFT         (16)	/* Bits 16-20: GPIO pin number */
+#define ADC_CHANNEL_MASK          (31 << GPIO_PIN_SHIFT)
+
+#define ADC_CHANNEL1           (ADC1INDEX << ADC_CHANNEL_SHIFT) /* ADC1 */
+#define ADC_CHANNEL2           (ADC2INDEX << ADC_CHANNEL_SHIFT) /* ADC2 */
+#define ADC_CHANNEL3           (ADC3INDEX << ADC_CHANNEL_SHIFT) /* ADC3 */
+#define ADC_CHANNEL4           (ADC4INDEX << ADC_CHANNEL_SHIFT) /* ADC4 */
+#define ADC_CHANNEL5           (ADC5INDEX << ADC_CHANNEL_SHIFT) /* ADC5 */
+#define ADC_CHANNEL6           (ADC6INDEX << ADC_CHANNEL_SHIFT) /* ADC6 */
+#define ADC_CHANNEL7           (ADC7INDEX << ADC_CHANNEL_SHIFT) /* ADC7 */
+#define ADC_CHANNEL8           (ADC8INDEX << ADC_CHANNEL_SHIFT) /* ADC8 */
+#define ADC_CHANNEL9           (ADC9INDEX << ADC_CHANNEL_SHIFT) /* ADC9 */
+#define ADC_CHANNEL10           (ADC10INDEX << ADC_CHANNEL_SHIFT) /* ADC10 */
+#define ADC_CHANNEL11           (ADC11INDEX << ADC_CHANNEL_SHIFT) /* ADC11 */
+#define ADC_CHANNEL12           (ADC12INDEX << ADC_CHANNEL_SHIFT) /* ADC12 */
+#define ADC_CHANNEL13           (ADC13INDEX << ADC_CHANNEL_SHIFT) /* ADC13 */
+#define ADC_CHANNEL14           (ADC14INDEX << ADC_CHANNEL_SHIFT) /* ADC14 */
+#define ADC_CHANNEL15           (ADC15INDEX << ADC_CHANNEL_SHIFT) /* ADC15 */
+
+
 
 /*!
  * @brief Converter's status flags.
@@ -500,9 +569,12 @@ void imxrt_adc_clearstatusflags(ADC_Type *base, uint32_t mask);
  *   Valid can device structure reference on success; a NULL on failure
  *
  ****************************************************************************/
-struct adc_dev_s *imxrt_adc_initialize(int bus, int cchannels);
+struct adc_dev_s *imxrt_adc_initialize(uint32_t pinset);
 
 void imxrt_adc_pins_init(int bus, int cchannels);
+//static
+int imxrt_adc_configinput(uint32_t pinset);
+FAR struct adc_dev_s * imxrt_adc_lowerhalf(uint32_t pinset);
 
 #undef EXTERN
 #if defined(__cplusplus)
