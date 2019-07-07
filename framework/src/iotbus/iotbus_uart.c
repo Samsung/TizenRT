@@ -591,6 +591,22 @@ int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, b
 	return IOTBUS_ERROR_NONE;
 }
 
+/**
+ * @brief Gets a device number of the UART.
+ */
+int iotbus_uart_get_device(iotbus_uart_context_h hnd)
+{
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	return handle->device;
+}
+
+
 #ifdef __cplusplus
 }
 #endif
