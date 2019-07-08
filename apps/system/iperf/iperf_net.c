@@ -128,7 +128,7 @@ int netdial(int domain, int proto, char *local, int local_port, char *server, in
 	}
 
 	((struct sockaddr_in *)server_res->ai_addr)->sin_port = htons(port);
-	if (connect(s, (struct sockaddr *)server_res->ai_addr, server_res->ai_addrlen) < 0 && errno != EINPROGRESS) {
+	if (connect(s, (struct sockaddr *)server_res->ai_addr, server_res->ai_addrlen) < 0 && get_errno() != EINPROGRESS) {
 		close(s);
 		freeaddrinfo(server_res);
 		return -1;
@@ -238,7 +238,8 @@ int Nread(int fd, char *buf, size_t count, int prot)
 	while (nleft > 0) {
 		r = read(fd, buf, nleft);
 		if (r < 0) {
-			if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+			int errcode = get_errno();
+			if (errcode == EINTR || errcode == EAGAIN || errcode == EWOULDBLOCK) {
 				break;
 			} else {
 				return NET_HARDERROR;
@@ -265,7 +266,7 @@ int Nwrite(int fd, const char *buf, size_t count, int prot)
 	while (nleft > 0) {
 		r = write(fd, buf, nleft);
 		if (r < 0) {
-			switch (errno) {
+			switch (get_errno()) {
 			case EINTR:
 			case EAGAIN:
 #if (EAGAIN != EWOULDBLOCK)
@@ -331,10 +332,10 @@ int Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 #else
 		/* Shouldn't happen. */
 		r = -1;
-		errno = ENOSYS;
+		set_errno(ENOSYS);
 #endif
 		if (r < 0) {
-			switch (errno) {
+			switch (get_errno()) {
 			case EINTR:
 			case EAGAIN:
 #if (EAGAIN != EWOULDBLOCK)
@@ -361,7 +362,7 @@ int Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 	}
 	return count;
 #else							/* HAVE_SENDFILE */
-	errno = ENOSYS;				/* error if somehow get called without HAVE_SENDFILE */
+	set_errno(ENOSYS);				/* error if somehow get called without HAVE_SENDFILE */
 	return NET_HARDERROR;
 #endif							/* HAVE_SENDFILE */
 }
