@@ -64,6 +64,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #include <tinyara/lib.h>
+#include <tinyara/sched.h>
 
 #include "environ/environ.h"
 #include "signal/signal.h"
@@ -288,7 +289,7 @@ static inline void group_release(FAR struct task_group_s *group)
 	 * group.
 	 */
 
-	if (group->tg_bininfo != NULL) {
+	if (IS_LOADED_MODULE(group)) {
 		binfmt_exit(group->tg_bininfo);
 		group->tg_bininfo = NULL;
 	}
@@ -395,6 +396,16 @@ void group_leave(FAR struct tcb_s *tcb)
 		/* Have all of the members left the group? */
 
 		if (group->tg_nmembers == 0) {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			if (IS_LOADED_MODULE(group)) {
+				/* The region of stack is allocated in user RAM partition.
+				 * If it is loaded, whole RAM partition for binary is freed by unloading in group_release.
+				 * So the stack doesn't need to freed after unloading.
+				 */
+
+				tcb->stack_alloc_ptr = NULL;
+			}
+#endif
 			/* Yes.. Release all of the resource held by the task group */
 
 			group_release(group);
@@ -431,6 +442,16 @@ void group_leave(FAR struct tcb_s *tcb)
 		/* Yes.. that was the last member remaining in the group */
 
 		else {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			if (IS_LOADED_MODULE(group)) {
+				/* The region of stack is allocated in user RAM partition.
+				 * If it is loaded, whole RAM partition for binary is freed by unloading in group_release.
+				 * So the stack doesn't need to freed after unloading.
+				 */
+
+				tcb->stack_alloc_ptr = NULL;
+			}
+#endif
 			/* Release all of the resource held by the task group */
 
 			group_release(group);

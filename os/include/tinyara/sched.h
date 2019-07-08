@@ -504,6 +504,10 @@ struct task_group_s {
 };
 #endif
 
+#ifdef CONFIG_BINFMT_LOADABLE
+#define IS_LOADED_MODULE(group)    (group->tg_bininfo != NULL)   /* Points loading data if it is loaded */
+#endif
+
 /* struct tcb_s ******************************************************************/
 
 FAR struct wdog_s;				/* Forward reference                   */
