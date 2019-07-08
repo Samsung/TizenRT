@@ -106,7 +106,7 @@
  */
 
 #ifndef CONFIG_IMXRT_EHCI_NQHS
-#define CONFIG_IMXRT_EHCI_NQHS (IMXRT_EHCI_NRHPORT + 1)
+#define CONFIG_IMXRT_EHCI_NQHS (IMXRT_EHCI_NRHPORT + 79)
 #endif
 
 /* Configurable number of Queue Element Transfer Descriptor (qTDs).  The default
@@ -114,7 +114,7 @@
  */
 
 #ifndef CONFIG_IMXRT_EHCI_NQTDS
-#define CONFIG_IMXRT_EHCI_NQTDS (IMXRT_EHCI_NRHPORT + 3)
+#define CONFIG_IMXRT_EHCI_NQTDS (IMXRT_EHCI_NRHPORT + 79)
 #endif
 
 /* Buffers must be aligned to the cache line size */
@@ -266,6 +266,7 @@ struct imxrt_epinfo_s {
 	uint16_t speed:2;			/* See USB_*_SPEED definitions in ehci.h */
 	int result;					/* The result of the transfer */
 	uint32_t xfrd;				/* On completion, will hold the number of bytes transferred */
+	sem_t appsem;               /* Semaphore used to protect epinfo */
 	sem_t iocsem;				/* Semaphore used to wait for transfer completion */
 #ifdef CONFIG_USBHOST_ASYNCH
 	usbhost_asynch_t callback;	/* Transfer complete callback */
@@ -438,7 +439,7 @@ static int ehci_wait_usbsts(uint32_t maskbits, uint32_t donebits, unsigned int d
 /* Semaphores ******************************************************************/
 
 static void imxrt_takesem(sem_t *sem);
-#define imxrt_givesem(s) sem_post(s);
+#define imxrt_givesem(s) sem_post(s)
 
 /* Allocators ******************************************************************/
 
@@ -681,6 +682,7 @@ static const struct imxrt_ehci_trace_s g_trace2[TRACE2_NSTRINGS] = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Register Operations
  ****************************************************************************/
@@ -1146,7 +1148,6 @@ static int imxrt_qh_foreach(struct imxrt_qh_s *qh, uint32_t **bp, foreach_qh_t h
 		 */
 
 		ret = handler(qh, bp, arg);
-
 		/* If the handler returns any non-zero value, then terminate the traversal
 		 * early.
 		 */
@@ -1357,9 +1358,7 @@ static int imxrt_qtd_flush(struct imxrt_qtd_s *qtd, uint32_t **bp, void *arg)
 	 * to force re-loading of the data from memory when next accessed.
 	 */
 
-	//cp15_flush_idcache((uintptr_t)&qtd->hw,
-	//                   (uintptr_t)&qtd->hw + sizeof(struct ehci_qtd_s));
-	arch_invalidate_dcache((uintptr_t) & qtd->hw, (uintptr_t) & qtd->hw + sizeof(struct ehci_qtd_s));
+	arch_flush_dcache((uintptr_t) & qtd->hw, (uintptr_t) & qtd->hw + sizeof(struct ehci_qtd_s));
 
 	return OK;
 }
@@ -1379,9 +1378,7 @@ static int imxrt_qh_flush(struct imxrt_qh_s *qh)
 	 * reloaded from D-Cache.
 	 */
 
-	//cp15_flush_idcache((uintptr_t)&qh->hw,
-	//                   (uintptr_t)&qh->hw + sizeof(struct ehci_qh_s));
-	arch_invalidate_dcache((uintptr_t) & qh->hw, (uintptr_t) & qh->hw + sizeof(struct ehci_qh_s));
+	arch_flush_dcache((uintptr_t) & qh->hw, (uintptr_t) & qh->hw + sizeof(struct ehci_qh_s));
 
 	/* Then flush all of the qTD entries in the queue */
 
@@ -1599,8 +1596,8 @@ static void imxrt_qh_enqueue(struct imxrt_qh_s *qhead, struct imxrt_qh_s *qh)
 
 	physaddr = (uintptr_t) imxrt_physramaddr((uintptr_t) qh);
 	qhead->hw.hlp = imxrt_swap32(physaddr | QH_HLP_TYP_QH);
-	//cp15_flush_idcache((uintptr_t)&qhead->hw,
-	//                   (uintptr_t)&qhead->hw + sizeof(struct ehci_qh_s));
+	arch_flush_dcache((uintptr_t)&qhead->hw,
+		(uintptr_t)&qhead->hw + sizeof(struct ehci_qh_s));
 }
 
 /****************************************************************************
@@ -1747,8 +1744,7 @@ static int imxrt_qtd_addbpl(struct imxrt_qtd_s *qtd, const void *buffer, size_t 
 	 * will be accessed for an OUT DMA.
 	 */
 
-	//cp15_flush_idcache((uintptr_t)buffer, (uintptr_t)buffer + buflen);
-	arch_invalidate_dcache((uintptr_t) buffer, (uintptr_t) buffer + buflen);
+	arch_flush_dcache((uintptr_t) buffer, (uintptr_t) buffer + buflen);
 
 	/* Loop, adding the aligned physical addresses of the buffer to the buffer page
 	 * list.  Only the first entry need not be aligned (because only the first
@@ -2088,14 +2084,15 @@ static int imxrt_async_setup(struct imxrt_rhport_s *rhport, struct imxrt_epinfo_
 		 * If this is a SETUP request, use the direction contained in the
 		 * request.  The IOC bit is not set.
 		 */
-
 		if (req) {
 			if ((req->type & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
 				tokenbits |= QTD_TOKEN_PID_IN;
 				dirin = true;
+				epinfo->dirin = true;
 			} else {
 				tokenbits |= QTD_TOKEN_PID_OUT;
 				dirin = false;
+				epinfo->dirin = false;
 			}
 		}
 
@@ -2477,14 +2474,39 @@ static inline int imxrt_ioc_async_setup(struct imxrt_rhport_s *rhport, struct im
  *   - Called from the interrupt level
  *
  ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
+struct usb_asynch_work_s {
+	struct work_s worker;
+	usbhost_asynch_t callback;
+	int nbytes;
+	void *arg;
+};
+typedef struct usb_asynch_work_s usb_asynch_work;
+
+static void worker_handler(void *input)
+{
+	usb_asynch_work *uaw = (usb_asynch_work *)input;
+	uaw->callback(uaw->arg, uaw->nbytes);
+	kmm_free(uaw);
+}
+
+#define WORKER_HANDLER(arg)                                                      \
+	do {                                                                         \
+		if (work_available(&arg->worker)) {                                      \
+			result = work_queue(HPWORK, &arg->worker, worker_handler, arg, 0);   \
+		} else {                                                                 \
+			udbg("workQueue is not allowed\n");                                  \
+			return -1;                                                           \
+		}                                                                        \
+	} while (0);
+
 static void imxrt_asynch_completion(struct imxrt_epinfo_s *epinfo)
 {
 	usbhost_asynch_t callback;
 	ssize_t nbytes;
 	void *arg;
 	int result;
+	usb_asynch_work *uaw;
 
 	DEBUGASSERT(epinfo != NULL && epinfo->iocwait == false && epinfo->callback != NULL);
 
@@ -2508,7 +2530,17 @@ static void imxrt_asynch_completion(struct imxrt_epinfo_s *epinfo)
 		nbytes = (ssize_t) result;
 	}
 
-	callback(arg, nbytes);
+	uaw = (usb_asynch_work *)kmm_malloc(sizeof(usb_asynch_work));
+	if (!uaw) {
+		udbg("Failed to alloc uaw\n");
+		return -1;
+	}
+	memset(uaw, 0, sizeof(usb_asynch_work));
+	uaw->nbytes = nbytes;
+	uaw->arg = arg;
+	uaw->callback = callback;
+
+	WORKER_HANDLER(uaw);
 }
 #endif
 
@@ -2632,7 +2664,7 @@ static int imxrt_qh_ioccheck(struct imxrt_qh_s *qh, uint32_t **bp, void *arg)
 		 */
 
 		**bp = qh->hw.hlp;
-		//cp15_flush_idcache((uintptr_t)*bp, (uintptr_t)*bp + sizeof(uint32_t));
+		arch_flush_dcache((uintptr_t)*bp, (uintptr_t)*bp + sizeof(uint32_t));
 
 		/* Check for errors, update the data toggle */
 
@@ -2678,8 +2710,8 @@ static int imxrt_qh_ioccheck(struct imxrt_qh_s *qh, uint32_t **bp, void *arg)
 		if (epinfo->iocwait) {
 			/* Yes... wake it up */
 
+			epinfo->iocwait = false;
 			imxrt_givesem(&epinfo->iocsem);
-			epinfo->iocwait = 0;
 		}
 #ifdef CONFIG_USBHOST_ASYNCH
 		/* No.. Is there a pending asynchronous transfer? */
@@ -2791,7 +2823,7 @@ static int imxrt_qh_cancel(struct imxrt_qh_s *qh, uint32_t **bp, void *arg)
 	 */
 
 	**bp = qh->hw.hlp;
-	//cp15_flush_idcache((uintptr_t)*bp, (uintptr_t)*bp + sizeof(uint32_t));
+	arch_flush_dcache((uintptr_t)*bp, (uintptr_t)*bp + sizeof(uint32_t));
 
 	/* Re-enable the schedules (if they were enabled before. */
 
@@ -2848,6 +2880,8 @@ static inline void imxrt_ioc_bottomhalf(void)
 
 	bp = (uint32_t *)&g_asynchead.hw.hlp;
 	qh = (struct imxrt_qh_s *)imxrt_virtramaddr(imxrt_swap32(*bp) & QH_HLP_MASK);
+	struct imxrt_epinfo_s *epinfo = qh->epinfo;
+	udbg("EP%d dir=%d\n", epinfo->epno, epinfo->dirin);
 
 	/* If the asynchronous queue is empty, then the forward point in the
 	 * asynchronous queue head will point back to the queue head.
@@ -2945,8 +2979,8 @@ static inline void imxrt_portsc_bottomhalf(void)
 					/* Notify any waiters */
 
 					if (g_ehci.pscwait) {
-						imxrt_givesem(&g_ehci.pscsem);
 						g_ehci.pscwait = false;
+						imxrt_givesem(&g_ehci.pscsem);
 					}
 				} else {
 					usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CONNALREADY, portsc);
@@ -2977,8 +3011,8 @@ static inline void imxrt_portsc_bottomhalf(void)
 					 */
 
 					if (g_ehci.pscwait) {
-						imxrt_givesem(&g_ehci.pscsem);
 						g_ehci.pscwait = false;
+						imxrt_givesem(&g_ehci.pscsem);
 					}
 				} else {
 					usbhost_vtrace1(EHCI_VTRACE1_PORTSC_DISCALREADY, portsc);
@@ -3052,6 +3086,7 @@ static void imxrt_ehci_bottomhalf(FAR void *arg)
 	 * (other than to reschedule and delay).
 	 */
 
+	udbg("Start\n");
 	imxrt_takesem(&g_ehci.exclsem);
 
 	/* Handle all unmasked interrupt sources */
@@ -3185,14 +3220,6 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
 #else
 	udbg("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
 #endif
-
-	udbg("USBSTS: %08x USBINTR: %08x\n", usbsts, regval);
-
-	if ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0) {
-		udbg("interrupt::connect\n");
-	} else {
-		udbg("interrupt::disconnect\n");
-	}
 
 	/* Handle all unmasked interrupt sources */
 
@@ -3739,7 +3766,9 @@ static int imxrt_epalloc(FAR struct usbhost_driver_s *drvr, const FAR struct usb
 	 */
 
 	sem_init(&epinfo->iocsem, 0, 0);
+	sem_init(&epinfo->appsem, 0, 1);
 	sem_setprotocol(&epinfo->iocsem, SEM_PRIO_NONE);
+	sem_setprotocol(&epinfo->appsem, SEM_PRIO_NONE);
 
 	/* Success.. return an opaque reference to the endpoint information structure
 	 * instance
@@ -4000,10 +4029,11 @@ static int imxrt_ctrlin(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, FAR
 
 	/* We must have exclusive access to the EHCI hardware and data structures. */
 
+	imxrt_takesem(&ep0info->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
-	/* Set the request for the IOC event well BEFORE initiating the transfer. */
 
+	/* Set the request for the IOC event well BEFORE initiating the transfer. */
 	ret = imxrt_ioc_setup(rhport, ep0info);
 	if (ret != OK) {
 		usbhost_trace1(EHCI_TRACE1_DEVDISCONNECTED, -ret);
@@ -4022,12 +4052,14 @@ static int imxrt_ctrlin(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, FAR
 
 	nbytes = imxrt_transfer_wait(ep0info);
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&ep0info->appsem);
 	return nbytes >= 0 ? OK : (int)nbytes;
 
 errout_with_iocwait:
 	ep0info->iocwait = false;
 errout_with_sem:
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&ep0info->appsem);
 	return ret;
 }
 
@@ -4089,6 +4121,7 @@ static ssize_t imxrt_transfer(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep
 
 	/* We must have exclusive access to the EHCI hardware and data structures. */
 
+	imxrt_takesem(&epinfo->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
 	/* Set the request for the IOC event well BEFORE initiating the transfer. */
@@ -4133,12 +4166,14 @@ static ssize_t imxrt_transfer(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep
 
 	nbytes = imxrt_transfer_wait(epinfo);
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&epinfo->appsem);
 	return nbytes;
 
 errout_with_iocwait:
 	epinfo->iocwait = false;
 errout_with_sem:
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&epinfo->appsem);
 	return (ssize_t) ret;
 }
 
@@ -4188,6 +4223,7 @@ static int imxrt_asynch(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep, FAR 
 
 	/* We must have exclusive access to the EHCI hardware and data structures. */
 
+	imxrt_takesem(&epinfo->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
 	/* Set the request for the callback well BEFORE initiating the transfer. */
@@ -4231,6 +4267,7 @@ static int imxrt_asynch(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep, FAR 
 	/* The transfer is in progress */
 
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&epinfo->appsem);
 	return OK;
 
 errout_with_callback:
@@ -4238,6 +4275,7 @@ errout_with_callback:
 	epinfo->arg = NULL;
 errout_with_sem:
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&epinfo->appsem);
 	return ret;
 }
 #endif							/* CONFIG_USBHOST_ASYNCH */
@@ -4284,6 +4322,7 @@ static int imxrt_cancel(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep)
 	 * level.
 	 */
 
+	imxrt_takesem(&epinfo->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
 	/* Sample and reset all transfer termination information.  This will prevent any
@@ -4427,6 +4466,7 @@ exit_terminate:
 
 errout_with_sem:
 	imxrt_givesem(&g_ehci.exclsem);
+	imxrt_givesem(&epinfo->appsem);
 	return ret;
 }
 
@@ -4696,7 +4736,9 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	/* Initialize EP0 */
 
+	sem_init(&g_ehci.ep0.appsem, 0, 1);
 	sem_init(&g_ehci.ep0.iocsem, 0, 1);
+
 
 	/* Initialize the root hub port structures */
 
@@ -4734,8 +4776,12 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 		 * should not have priority inheritance enabled.
 		 */
 
+		sem_init(&rhport->ep0.appsem, 0, 1);
 		sem_init(&rhport->ep0.iocsem, 0, 0);
+
+		sem_setprotocol(&rhport->ep0.appsem, SEM_PRIO_NONE);
 		sem_setprotocol(&rhport->ep0.iocsem, SEM_PRIO_NONE);
+
 
 		/* Initialize the public port representation */
 
@@ -4949,8 +4995,8 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	g_asynchead.hw.overlay.token = imxrt_swap32(QH_TOKEN_HALTED);
 	g_asynchead.fqp = imxrt_swap32(QTD_NQP_T);
 
-	//cp15_flush_idcache((uintptr_t)&g_asynchead.hw,
-	//                   (uintptr_t)&g_asynchead.hw + sizeof(struct ehci_qh_s));
+	arch_flush_dcache((uintptr_t)&g_asynchead.hw,
+		(uintptr_t)&g_asynchead.hw + sizeof(struct ehci_qh_s));
 
 	/* Set the Current Asynchronous List Address. */
 
