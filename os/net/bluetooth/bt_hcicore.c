@@ -100,7 +100,7 @@ struct bt_dev_s g_btdev;
  ****************************************************************************/
 
 static FAR struct bt_conn_cb_s *g_callback_list;
-static bt_le_scan_cb_t *g_scan_dev_found_cb;
+static bt_scanning_cb_t *g_scan_dev_found_cb;
 
 /* Lists of pending received messages.  One for low priority input that is
  * processed on the low priority work queue and one for high priority
@@ -1751,7 +1751,7 @@ int bt_stop_advertising(void)
  *
  ****************************************************************************/
 
-int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
+int bt_start_scanning(uint8_t scan_filter, bt_scanning_cb_t cb)
 {
 	/* Return if active scan is already enabled */
 
