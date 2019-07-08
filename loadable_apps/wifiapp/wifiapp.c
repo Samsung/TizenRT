@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 
 	printf("This is WIFI App\n");
 
+#ifndef CONFIG_EXAMPLES_MICOM_TIMER_TEST
 #ifdef CONFIG_BINARY_MANAGER
 	int ret;
 	ret = binary_manager_notify_binary_started();
@@ -98,6 +99,8 @@ int main(int argc, char **argv)
 #else
 	recovery_test();
 #endif
+
+#endif /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */
 	while (1) {
 		sleep(10);
 		printf("[%d] WIFI ALIVE\n", getpid());
