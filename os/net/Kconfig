@@ -153,6 +153,7 @@ endmenu #Wireless
 menu "Bluetooth"
 
 source net/bluetooth/Kconfig
+source ../framework/src/bluetooth/Kconfig
 
 endmenu #Bluetooth
 
