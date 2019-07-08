@@ -616,7 +616,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 
 	/* Disable interruption */
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 
 	/* Cancel the TX poll timer and TX timeout timers */
 
@@ -630,7 +630,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 	/* Mark the device "down" */
 
 	priv->bd_bifup = false;
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 	return OK;
 }
 
@@ -1006,7 +1006,7 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 
 	/* Setup a locking semaphore for exclusive device driver access */
 
-	nxsem_init(&priv->bd_exclsem, 0, 1);
+	sem_init(&priv->bd_exclsem, 0, 1);
 
 	DEBUGASSERT(priv->bd_txpoll != NULL);
 
@@ -1068,7 +1068,7 @@ errout:
 
 	/* Un-initialize semaphores */
 
-	nxsem_destroy(&priv->bd_exclsem);
+	sem_destroy(&priv->bd_exclsem);
 
 	/* Free memory and return the error */
 

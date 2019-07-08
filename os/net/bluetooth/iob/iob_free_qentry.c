@@ -97,7 +97,7 @@ FAR struct iob_qentry_s *iob_free_qentry(FAR struct iob_qentry_s *iobq)
 	 * and should find it in the committed list.
 	 */
 
-	nxsem_post(&g_qentry_sem);
+	sem_post(&g_qentry_sem);
 	leave_critical_section(flags);
 
 	/* And return the I/O buffer chain container after the one that was freed */
