@@ -158,6 +158,38 @@ struct bt_data {
 	const uint8_t *data;
 };
 
+/** LE Advertising Parameters. */
+struct bt_le_adv_param {
+	/** Local identity */
+	uint8_t id;
+
+	/** Bit-field of advertising options */
+	uint8_t options;
+
+	/** Minimum Advertising Interval (N * 0.625) */
+	uint16_t interval_min;
+
+	/** Maximum Advertising Interval (N * 0.625) */
+	uint16_t interval_max;
+};
+
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
+	uint8_t type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint16_t window;
+};
+
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
@@ -228,37 +260,6 @@ struct bt_bond_info {
 	/** Address of the remote device. */
 	bt_addr_le_t addr;
 };
-
-/* Advertising API */
-struct bt_eir_s {
-	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} packed_struct;
-
-/** LE Advertising Parameters. */
-struct bt_le_adv_param {
-	/** Local identity */
-	uint8_t id;
-
-	/** Bit-field of advertising options */
-	uint8_t options;
-
-	/** Minimum Advertising Interval (N * 0.625) */
-	uint16_t interval_min;
-
-	/** Maximum Advertising Interval (N * 0.625) */
-	uint16_t interval_max;
-};
-
-/**
- * @brief Initialize Bluetooth
- *
- * Initialize Bluetooth. Must be the called before anything else.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_initialize(void);
 
 /**
  * @typedef bt_ready_cb_t
@@ -421,28 +422,25 @@ int bt_id_delete(uint8_t id);
 
 /* Advertising API */
 
-/**
- * @brief Start advertising
+/** @brief Start advertising
  *
- * Set advertisement data, scan response data, advertisement parameters
- * and start advertising.
+ *  Set advertisement data, scan response data, advertisement parameters
+ *  and start advertising.
  *
- * @param[in] type Advertising type.
- * @param[in] ad Data to be used in advertisement packets.
- * @param[in] sd Data to be used in scan response packets.
+ *  @param param Advertising parameters.
+ *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
+ *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
  *
- * @return Zero on success or (negative) error code otherwise.
+ *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ECONNREFUSED When connectable advertising is requested and there
+ *			  is already maximum number of connections established.
+ *			  This error code is only guaranteed when using Zephyr
+ *			  controller, for other controllers code returned in
+ *			  this case may be -EIO.
  */
-int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
-
-/**
- * @brief Stop advertising
- *
- * Stops ongoing advertising.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_stop_advertising(void);
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
 /** @brief Update advertising
  *
@@ -457,55 +455,26 @@ int bt_stop_advertising(void);
  */
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
-/****************************************************************************
- * Name: bt_le_scan_cb_t
+/** @brief Stop advertising
  *
- * Description:
- *   A function of this type will be called back when user application
- *   triggers active LE scan. The caller will populate all needed
- *   parameters based on data coming from scan result.
- *   Such function can be set by user when LE active scan API is used.
+ *  Stops ongoing advertising.
  *
- * Input Parameters:
- *  addr     - Advertiser LE address and type.
- *  rssi     - Strength of advertiser signal.
- *  adv_type - Type of advertising response from advertiser.
- *  adv_data - Address of buffer containing advertiser data.
- *  len      - Length of advertiser data contained in buffer.
- *
- ****************************************************************************/
-typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
-
-/** LE scan parameters */
-struct bt_le_scan_param {
-	/** Scan type (BT_HCI_LE_SCAN_PASSIVE or BT_HCI_LE_SCAN_ACTIVE) */
-	uint8_t type;
-
-	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
-	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
-	 */
-	uint8_t filter_dup;
-
-	/** Scan interval (N * 0.625 ms) */
-	uint8_t interval;
-
-	/** Scan window (N * 0.625 ms) */
-	uint8_t window;
-};
-
-/**
- * @brief Start (LE) scanning
- *
- * Start LE scanning with given parameters and provide results through
- * the specified callback.
- *
- * @param[in] filter_dups Enable duplicate filtering (or not).
- * @param[in] cb Callback to notify scan results.
- *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+int bt_le_adv_stop(void);
+
+/** @typedef bt_le_scan_cb_t
+ *  @brief Callback type for reporting LE scan results.
+ *
+ *  A function of this type is given to the bt_le_scan_start() function
+ *  and will be called for any discovered LE device.
+ *
+ *  @param addr Advertiser LE address and type.
+ *  @param rssi Strength of advertiser signal.
+ *  @param adv_type Type of advertising response from advertiser.
+ *  @param buf Buffer containing advertiser data.
+ */
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, struct net_buf_simple *buf);
 
 /** @brief Start (LE) scanning
  *
@@ -520,15 +489,14 @@ int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
-/**
- * @brief Stop (LE) scanning.
+/** @brief Stop (LE) scanning.
  *
- * Stops ongoing LE scanning.
+ *  Stops ongoing LE scanning.
  *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
  */
-int bt_stop_scanning(void);
+int bt_le_scan_stop(void);
 
 /** @brief Set (LE) channel map.
  *
