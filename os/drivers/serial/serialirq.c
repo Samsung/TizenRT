@@ -122,12 +122,6 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 {
 	uint16_t nbytes = 0;
 
-	if (!dev->isconsole) {
-		if (dev->ib != NULL) {
-			uart_send_signal(dev, UART_TX_EMPTY);
-		}
-	}
-
 	/* Send while we still have data in the TX buffer & room in the fifo */
 
 	while (dev->xmit.head != dev->xmit.tail && uart_txready(dev)) {
@@ -141,6 +135,13 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 		if (++(dev->xmit.tail) >= dev->xmit.size) {
 			dev->xmit.tail = 0;
 		}
+
+		if (!dev->isconsole) {
+			if (dev->ib != NULL) {
+				uart_send_signal(dev, UART_TX_EMPTY);
+			}
+		}
+		
 	}
 
 	/* When all of the characters have been sent from the buffer disable the TX
@@ -178,12 +179,6 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 
 void uart_recvchars(FAR uart_dev_t *dev)
 {
-	if (!dev->isconsole) {
-		if (dev->ib != NULL) {
-			uart_send_signal(dev, UART_RX_AVAIL);
-		}
-	}
-
 	FAR struct uart_buffer_s *rxbuf = &dev->recv;
 #ifdef CONFIG_SERIAL_IFLOWCONTROL_WATERMARKS
 	unsigned int watermark;
@@ -271,19 +266,19 @@ void uart_recvchars(FAR uart_dev_t *dev)
 			if (++nexthead >= rxbuf->size) {
 				nexthead = 0;
 			}
+
+			if (!dev->isconsole) {
+				if (dev->ib != NULL) {
+					uart_send_signal(dev, UART_RX_AVAIL);
+				}
+			}
 		}
 	}
 
 	/* If any bytes were added to the buffer, inform any waiters there there is new
 	 * incoming data available.
 	 */
-
 	if (nbytes) {
-		if (!dev->isconsole) {
-			if (dev->ib != NULL) {
-				uart_send_signal(dev, UART_RECEIVED);
-			}
-		}
 		uart_datareceived(dev);
 	}
 }

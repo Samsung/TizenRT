@@ -575,10 +575,52 @@ static int _uart_sig[IOTBUS_UART_INTR_MAX] = {
 	SIG_IOTBUS_UART_RECEIVED
 };
 
-static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
+static void signal_handler(int sig, siginfo_t *info, void *ctx)
 {
+	void *ptr;
 	iotbus_uart_context_h dev;
 	struct _iotbus_uart_s *handle;
+	int type;
+
+ #ifdef CONFIG_CAN_PASS_STRUCTS
+	ptr = info->si_value.sival_ptr;
+#else
+	ptr = info->si_value;
+#endif
+	if (ptr == NULL) {
+		ibdbg("Handler is not assigned.\n");
+		return;
+	}
+	dev = (iotbus_uart_context_h)ptr;
+	handle = (struct _iotbus_uart_s *)dev->handle;
+
+	switch(sig) {
+	case SIG_IOTBUS_UART_TX_EMPTY:
+		type = IOTBUS_UART_TX_EMPTY;
+		break;
+	case SIG_IOTBUS_UART_TX_RDY:
+		type = IOTBUS_UART_TX_RDY;
+		break;
+	case SIG_IOTBUS_UART_RX_AVAIL:
+		type = IOTBUS_UART_RX_AVAIL;
+		break;
+	case SIG_IOTBUS_UART_RECEIVED:
+		type = IOTBUS_UART_RECEIVED;
+		break;
+	default:
+		ibdbg("signo is wrong.\n");
+		return;
+	}
+	
+	// Call callback function.
+	if (handle->cb[type] != NULL) {
+		((iotbus_uart_cb)handle->cb[type])(dev);
+	}
+}
+
+static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
+{
+	int ret;
 
 	iotbus_uart_intr_e int_type = (iotbus_uart_intr_e)(unsigned long)arg;
 	if (int_type < 0 || int_type >= IOTBUS_UART_INTR_MAX) {
@@ -587,42 +629,19 @@ static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 		return NULL;
 	}
 	ibdbg("Thread for [%d]\n", int_type);
-	
-	int ret;
-	siginfo_t info;
-	sigset_t sig_set;
-	bool running = true;
-	void *ptr;
 
-	sigemptyset(&sig_set);
-	sigaddset(&sig_set, _uart_sig[int_type]);
+	struct sigaction sigact;
+	sigact.sa_handler = signal_handler;
+	(void)sigfillset(&sigact.sa_mask);
+	(void)sigdelset(&sigact.sa_mask, _uart_sig[int_type]);
+	sigact.sa_flags = SA_SIGINFO;
 
-	pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
+	sigaction(_uart_sig[int_type], &sigact, NULL);
 
-	while (running) {
-		ibdbg("Waiting UART Interrupt Signal...\n");
-		ret = sigwaitinfo(&sig_set, &info);
-#ifdef CONFIG_CAN_PASS_STRUCTS
-		ptr = info.si_value.sival_ptr;
-#else
-		ptr = info.si_value;
-#endif
-		if (ptr == NULL) {
-			ibdbg("Handler is not assigned.\n");
-			continue;
-		}
-		dev = (iotbus_uart_context_h)ptr;
-		handle = (struct _iotbus_uart_s *)dev->handle;
+	// Not to finish this thread.
+	while(1) { usleep(1); }
 		
-		// Call callback function.
-		if (handle->cb[int_type] != NULL) {
-			((iotbus_uart_cb)handle->cb[int_type])(dev);
-		}
-	}
-	
-	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
 	pthread_exit(NULL);
-
 	return NULL;
 }
 

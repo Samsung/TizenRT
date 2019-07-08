@@ -147,6 +147,7 @@ typedef enum {
 	UART_TX_RDY,
 	UART_RX_AVAIL,
 	UART_RECEIVED,
+	UART_INTR_MAX,
 } uart_intr_e;
 
 struct uart_notify_s {
@@ -307,7 +308,7 @@ struct uart_dev_s {
 
 	/* Iotbus Handler */
 	void *ib;
-	pid_t pid[4]; // For 4 types interrupt
+	pid_t pid[UART_INTR_MAX]; // For several types of interrupts
 };
 
 typedef struct uart_dev_s uart_dev_t;

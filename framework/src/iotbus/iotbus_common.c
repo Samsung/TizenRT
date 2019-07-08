@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define INTR_THREAD_STACK_SIZE		1024
+#define INTR_THREAD_STACK_SIZE		2048
 
 char *iotbus_pin_str[IOTBUS_PIN_MAX] = {
 	"GPIO",
