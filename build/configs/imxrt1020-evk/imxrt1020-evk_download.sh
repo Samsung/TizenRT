@@ -77,9 +77,9 @@ $SUDO ${CURDIR_PATH}/blhost -p $TTYDEV -- configure-memory 0x09 0x2000
 #Input: Address and length
 function flash_erase()
 {
+	echo -e "\nFLASH_ERASE: ADDR:$1 LENGTH:$2 KB"
 	size_in_bytes=$(($2 * 1024))
 	${SUDO} ${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
-	echo "Successfull erased flash region from $1 of size $2 KB"
 }
 
 
@@ -88,8 +88,9 @@ function flash_erase()
 #Input: Address and filepath
 function flash_write()
 {
+	echo -e "\nFLASH_WRITE ADDR:$1 \nFILEPATH:$2 "
 	${SUDO} ${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
-	sleep 3
+	sleep 2
 }
 
 ##Utility function to match partition name to binary name##
@@ -142,9 +143,9 @@ do
 done
 
 #Dump Info
-echo "offsets: ${offsets[@]}"
-echo "sizes: ${sizes[@]}"
-echo "partitions: ${parts[@]}"
+echo "PARTIION OFFSETS: ${offsets[@]}"
+echo "PARTITION SIZES: ${sizes[@]}"
+echo "PARTIION NAMES: ${parts[@]}"
 
 if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]
 then
@@ -158,7 +159,6 @@ then
 	for i in 0 1 2 4
 	do
 		exec=$(get_executable_name ${parts[$i]})
-		echo "Gonna Write ${exec} into offset ${offsets[$i]}"
 		flash_write ${offsets[$i]} ${OUTBIN_PATH}/${exec}
 	done
 
@@ -180,7 +180,7 @@ then
 	done
 else
 	#Erase All Prev Partitions
-	PREV_PART_SIZE=`printf "0x%X" $((256 * 1024 * 8))`
+	PREV_PART_SIZE=`printf "0x%X" $((256 * 8))`
 	flash_erase ${CONFIG_FLASH_START_ADDR} ${PREV_PART_SIZE}
 	flash_write ${CONFIG_FLASH_START_ADDR} ${TINYARA_BIN}
 fi
