@@ -341,26 +341,33 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 {
 	LOG_STATE_INFO(mCurState);
 
+	player_result_t errcode = stopPlayback();
+	if (ret == PLAYER_OK && errcode != PLAYER_OK) {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, errcode);
+	} else {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_STOPPED);
+	}
+}
+
+player_result_t MediaPlayerImpl::stopPlayback()
+{
 	PlayerWorker &mpw = PlayerWorker::getWorker();
-	if (ret == PLAYER_OK && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
+	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
-		notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INVALID_STATE);
-		return;
+		return PLAYER_ERROR_INVALID_STATE;		
 	}
+
+	mCurState = PLAYER_STATE_READY;
+	mpw.setPlayer(nullptr);
 
 	audio_manager_result_t result = stop_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
-		if (ret == PLAYER_OK) {
-			notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-			return;
-		}
+		return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
-
-	mpw.setPlayer(nullptr);
-	mCurState = PLAYER_STATE_READY;
-	notifyObserver(PLAYER_OBSERVER_COMMAND_STOPPED);
+	
+	return PLAYER_OK;
 }
 
 player_result_t MediaPlayerImpl::pause()
@@ -795,8 +802,12 @@ void MediaPlayerImpl::playback()
 			}
 		}
 	} else if (num_read == 0) {
-		stop();
-		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
+		player_result_t errcode = stopPlayback();
+		if (errcode != PLAYER_OK) {
+			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, errcode);
+		} else {
+			notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
+		}
 	} else {
 		meddbg("InputDatasource read error\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
