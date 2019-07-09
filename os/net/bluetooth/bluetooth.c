@@ -36,6 +36,8 @@
  *
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #include <string.h>
 #include <errno.h>
 #include <debug.h>
@@ -47,6 +49,7 @@
 
 #include "bt_buf.h"
 #include "bt_keys.h"
+#include "bt_conn.h"
 #include "bt_l2cap.h"
 #include "bt_hcicore.h"
 
@@ -208,6 +211,7 @@ static const char *ver_str(uint8_t ver)
 static void bt_dev_show_info(void)
 {
 	int i;
+	char *hci_version;
 
 	nvdbg("Identity%s: %s", g_btdev.id_count > 1 ? "[0]" : "", bt_addr_le_str(&g_btdev.id_addr[0]));
 
@@ -215,7 +219,9 @@ static void bt_dev_show_info(void)
 		nvdbg("Identity[%d]: %s", i, bt_addr_le_str(&g_btdev.id_addr[i]));
 	}
 
-	nvdbg("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", ver_str(g_btdev.hci_version), g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
+	hci_version = (char *)ver_str(g_btdev.hci_version);
+
+	nvdbg("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", hci_version, g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
 }
 
 static void bt_finalize_init(void)
@@ -323,7 +329,11 @@ static inline int create_random_addr(bt_addr_le_t *addr)
 {
 	addr->type = BT_ADDR_LE_RANDOM;
 
+#if 0
+	/* TODO implement the bt_rand */
 	return bt_rand(addr->val, 6);
+#endif
+	return 0;
 }
 
 int bt_addr_le_create_static(bt_addr_le_t *addr)

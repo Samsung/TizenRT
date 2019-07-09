@@ -599,7 +599,7 @@ FAR struct bt_conn_s *bt_conn_lookup_handle(uint16_t handle)
 }
 
 /****************************************************************************
- * Name: bt_conn_lookup_addr_le
+ * Name: bt_conn_lookup_addr_le_internal
  *
  * Description:
  *   Look up an existing connection based on the remote address.
@@ -615,7 +615,7 @@ FAR struct bt_conn_s *bt_conn_lookup_handle(uint16_t handle)
  *
  ****************************************************************************/
 
-FAR struct bt_conn_s *bt_conn_lookup_addr_le(FAR const bt_addr_le_t *peer)
+FAR struct bt_conn_s *bt_conn_lookup_addr_le_internal(FAR const bt_addr_le_t *peer)
 {
 	int i;
 
@@ -721,7 +721,7 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
 }
 
 /****************************************************************************
- * Name: bt_conn_get_dst
+ * Name: bt_conn_get_dst_internal
  *
  * Description:
  *   Get destination (peer) address of a connection.
@@ -734,13 +734,13 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
  *
  ****************************************************************************/
 
-FAR const bt_addr_le_t *bt_conn_get_dst(FAR const struct bt_conn_s *conn)
+FAR const bt_addr_le_t *bt_conn_get_dst_internal(FAR const struct bt_conn_s *conn)
 {
 	return &conn->dst;
 }
 
 /****************************************************************************
- * Name: bt_conn_security
+ * Name: bt_conn_security_internal
  *
  * Description:
  *   This function enable security (encryption) for a connection. If device is
@@ -765,7 +765,7 @@ FAR const bt_addr_le_t *bt_conn_get_dst(FAR const struct bt_conn_s *conn)
  *
  ****************************************************************************/
 
-int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
+int bt_conn_security_internal(FAR struct bt_conn_s *conn, bt_security_t sec)
 {
 	FAR struct bt_keys_s *keys;
 
@@ -775,13 +775,13 @@ int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
 
 	/* Nothing to do */
 
-	if (sec == BT_SECURITY_NEW_LOW) {
+	if (sec == BT_SECURITY_LOW) {
 		return 0;
 	}
 
 	/* For now we only support JustWorks */
 
-	if (sec > BT_SECURITY_NEW_MEDIUM) {
+	if (sec > BT_SECURITY_MEDIUM) {
 		return -EINVAL;
 	}
 
@@ -789,7 +789,7 @@ int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
 		return 0;
 	}
 
-	if (conn->role == BT_SECURITY_NEW_HIGH) {
+	if (conn->role == BT_HCI_ROLE_SLAVE) {
 		return bt_smp_send_security_req(conn);
 	}
 
@@ -830,7 +830,7 @@ void bt_conn_set_auto_conn(FAR struct bt_conn_s *conn, bool auto_conn)
 }
 
 /****************************************************************************
- * Name: bt_conn_disconnect
+ * Name: bt_conn_disconnect_internal
  *
  * Description:
  *   Disconnect an active connection with the specified reason code or cancel
@@ -845,7 +845,7 @@ void bt_conn_set_auto_conn(FAR struct bt_conn_s *conn, bool auto_conn)
  *
  ****************************************************************************/
 
-int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
+int bt_conn_disconnect_internal(FAR struct bt_conn_s *conn, uint8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall be disabled.
 	 * Otherwise the passive scan would be enabled and we could send LE Create
@@ -876,7 +876,7 @@ int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
 }
 
 /****************************************************************************
- * Name: bt_conn_create_le
+ * Name: bt_conn_create_le_internal
  *
  * Description:
  *  Allows initiate new LE link to remote peer using its address.
@@ -890,7 +890,7 @@ int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
  *
  ****************************************************************************/
 
-FAR struct bt_conn_s *bt_conn_create_le(FAR const bt_addr_le_t *peer)
+FAR struct bt_conn_s *bt_conn_create_le_internal(FAR const bt_addr_le_t *peer)
 {
 	FAR struct bt_conn_s *conn;
 
@@ -898,7 +898,7 @@ FAR struct bt_conn_s *bt_conn_create_le(FAR const bt_addr_le_t *peer)
 	 * state.
 	 */
 
-	conn = bt_conn_lookup_addr_le(peer);
+	conn = bt_conn_lookup_addr_le_internal(peer);
 	if (conn != NULL) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_SCAN:

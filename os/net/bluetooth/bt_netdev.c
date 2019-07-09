@@ -841,16 +841,16 @@ static int btnet_req_data(FAR struct radio_driver_s *netdev, FAR const void *met
 	 *
 	 * Assumptions to REVISIT:
 	 *
-	 *   1. Role is Master (see bt_conn_create_le())
+	 *   1. Role is Master (see bt_conn_create_le_internal())
 	 *   2. Address type is BT_ADDR_LE_PUBLIC (vs. BT_ADDR_LE_RANDOM)
 	 */
 
 	BLUETOOTH_ADDRCOPY(peer.val, btmeta->bm_raddr.val);
 	peer.type = BT_ADDR_LE_PUBLIC;
 
-	conn = bt_conn_create_le(&peer);
+	conn = bt_conn_create_le_internal(&peer);
 	if (conn == NULL) {
-		/* bt_conn_create_le() can fail if (1) the connection exists, but is
+		/* bt_conn_create_le_internal() can fail if (1) the connection exists, but is
 		 * in a bad state or (2) CONFIG_BLUETOOTH_MAX_CONN has been exceeded.
 		 * Assume the latter.
 		 */

@@ -130,14 +130,6 @@ struct bt_eir_s {
 	uint8_t data[29];
 } packed_struct;
 
-/* Security level */
-enum bt_security_e {
-	BT_SECURITY_NEW_LOW,		/* No encryption and no authentication. */
-	BT_SECURITY_NEW_MEDIUM,		/* encryption and no authentication (no MITM). */
-	BT_SECURITY_NEW_HIGH,		/* encryption and authentication (MITM). */
-	BT_SECURITY_NEW_FIPS,		/* Authenticated LE Secure Connections and
-								 * encryption. */
-};
 /****************************************************************************
  * Inline Functions
  ****************************************************************************/

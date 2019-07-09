@@ -548,7 +548,7 @@ static int bt_hci_stop_scanning(void)
 	return ret;
 }
 
-static int hci_le_create_conn(FAR const bt_addr_le_t *addr)
+int hci_le_create_conn(FAR const bt_addr_le_t *addr)
 {
 	FAR struct bt_buf_s *buf;
 	FAR struct bt_hci_cp_le_create_conn_s *cp;
