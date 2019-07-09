@@ -291,20 +291,18 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 }
 #endif
 
-static void gpio_iotbus_interrupt(FAR struct gpio_upperhalf_s *priv)
+static void gpio_signal_interrupt(FAR struct gpio_upperhalf_s *priv)
 {
 	DEBUGASSERT(priv);
 
 	FAR struct gpio_open_s *opriv;
 	irqstate_t flags;
 
+#ifndef CONFIG_DISABLE_SIGNALS
 	flags = irqsave();
-
 	/* Sample the new GPIO state */
-#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
 	/* Visit each opened reference to the device */
 	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
-#ifndef CONFIG_DISABLE_SIGNALS
 		if ((opriv->go_notify.gn_rising) || (opriv->go_notify.gn_falling)) {
 			if (opriv->go_pid <= 0 || opriv->go_notify.gn_signo <= 0) {
 				continue;
@@ -318,13 +316,12 @@ static void gpio_iotbus_interrupt(FAR struct gpio_upperhalf_s *priv)
 			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, opriv->ib);
 #endif
 		}
-#endif
 	}
-#endif
 	irqrestore(flags);
+#endif	
 }
 
-static int gpio_iotbus_enable(FAR struct gpio_upperhalf_s *priv)
+static int gpio_signal_enable(FAR struct gpio_upperhalf_s *priv)
 {
 	FAR struct gpio_lowerhalf_s *lower;
 	FAR struct gpio_open_s *opriv;
@@ -357,7 +354,7 @@ static int gpio_iotbus_enable(FAR struct gpio_upperhalf_s *priv)
 	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
-		ret = lower->ops->enable(lower, falling, rising, gpio_iotbus_interrupt);
+		ret = lower->ops->enable(lower, falling, rising, gpio_signal_interrupt);
 	} else {
 		/* Disable further interrupts */
 		ret = lower->ops->enable(lower, false, false, NULL);
@@ -379,18 +376,13 @@ static int gpio_iotbus_enable(FAR struct gpio_upperhalf_s *priv)
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 			  size_t buflen)
 {
-	ssize_t ret;
-	int32_t value;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_upperhalf_s *priv = inode->i_private;
 	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	ret = sscanf(buffer, "%d", &value);
-	if (ret) {
-		lower->ops->set(lower, value != 0);
-	}
+	lower->ops->set(lower, (int32_t)buffer[0] != 0);
 
-	return ret;
+	return 1;
 }
 
 /****************************************************************************
@@ -404,14 +396,14 @@ static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
 			 size_t buflen)
 {
-	int ret = 0;
+	int ret = 1;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_upperhalf_s *priv = inode->i_private;
 	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
 	if (filep->f_pos == 0) {
 		int value = lower->ops->get(lower);
-		ret = snprintf(buffer, buflen, "%d", value);
+		buffer[0] = '0' + !!value;
 	}
 
 	filep->f_pos += ret;
@@ -497,7 +489,7 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			opriv->ib					= notify->handle;
 
 			/* Enable/disable interrupt handling */
-			ret = gpio_iotbus_enable(priv);
+			ret = gpio_signal_enable(priv);
 		}
 		break;
 	}

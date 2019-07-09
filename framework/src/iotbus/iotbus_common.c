@@ -75,16 +75,11 @@ pthread_t create_intr_pthread(pthread_startroutine_t handler, pthread_addr_t arg
 		return -ret;
 	}
 
-	sprintf(pname, "%s_intr_handler[%d]", iotbus_pin_str[val->pin], val->parent);
+	sprintf(pname, "%s_handler_%d", iotbus_pin_str[val->pin], val->parent);
 	pthread_setname_np(tid, pname);
 	pthread_detach(tid);
 
-	ibdbg("[%d] Thread Created!\n", tid);
+	ibvdbg("[%d] Thread Created!\n", tid);
 
 	return tid;
-}
-
-void iotapi_sig_init(void)
-{
-	return;
 }

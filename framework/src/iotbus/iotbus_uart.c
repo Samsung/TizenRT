@@ -190,7 +190,9 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 	ret = ioctl(fd, TIOCSETIOTBUS, (unsigned long)dev);
 	if (ret != 0) {
 		ibdbg("ioctl failed \n");
-		return NULL;
+		free(handle);
+		free(dev);
+		goto errout_with_close;
 	}
 
 	return dev;
@@ -594,7 +596,7 @@ static void signal_handler(int sig, siginfo_t *info, void *ctx)
 	dev = (iotbus_uart_context_h)ptr;
 	handle = (struct _iotbus_uart_s *)dev->handle;
 
-	switch(sig) {
+	switch (sig) {
 	case SIG_IOTBUS_UART_TX_EMPTY:
 		type = IOTBUS_UART_TX_EMPTY;
 		break;
@@ -620,8 +622,6 @@ static void signal_handler(int sig, siginfo_t *info, void *ctx)
 
 static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 {
-	int ret;
-
 	iotbus_uart_intr_e int_type = (iotbus_uart_intr_e)(unsigned long)arg;
 	if (int_type < 0 || int_type >= IOTBUS_UART_INTR_MAX) {
 		ibdbg("Error : invalid int type\n");
@@ -631,7 +631,7 @@ static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 	ibdbg("Thread for [%d]\n", int_type);
 
 	struct sigaction sigact;
-	sigact.sa_handler = signal_handler;
+	sigact.sa_sigaction = signal_handler;
 	(void)sigfillset(&sigact.sa_mask);
 	(void)sigdelset(&sigact.sa_mask, _uart_sig[int_type]);
 	sigact.sa_flags = SA_SIGINFO;
@@ -639,8 +639,8 @@ static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 	sigaction(_uart_sig[int_type], &sigact, NULL);
 
 	// Not to finish this thread.
-	while(1) { usleep(1); }
-		
+	while (1) { sleep(1); }
+
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -691,6 +691,12 @@ int iotbus_uart_set_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_
 	ret = ioctl(handle->fd, TIOCSETINTR, (unsigned long)&noti);
 	if (ret != 0) {
 		ibdbg("ioctl failed \n");
+		if (pthread_cancel(handle->pid[int_type]) < 0) {
+			ibdbg("pthread cancel failed.\n");
+			return IOTBUS_ERROR_UNKNOWN;
+		}
+		handle->pid[int_type] = 0;
+		handle->cb[int_type] = NULL;
 		return ret;
 	}
 

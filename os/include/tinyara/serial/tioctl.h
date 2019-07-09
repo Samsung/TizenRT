@@ -202,7 +202,7 @@
 /* Iotbus */
 
 #define TIOCSETIOTBUS	_TIOC(0x002f)	/* Set iotbus handler */
-#define TIOCSETINTR		_TIOC(0x0030)	/* Set serial interrupt callback */
+#define TIOCSETINTR	_TIOC(0x0030)	/* Set serial interrupt callback */
 
 /********************************************************************************************
  * Public Type Definitions

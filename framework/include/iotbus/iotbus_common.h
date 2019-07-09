@@ -42,6 +42,5 @@ struct intr_attr {
 };
 
 pthread_t create_intr_pthread(pthread_startroutine_t handler, pthread_addr_t arg, struct intr_attr *val);
-void iotapi_sig_init(void);
 
 #endif
