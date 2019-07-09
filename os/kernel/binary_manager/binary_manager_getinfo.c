@@ -106,7 +106,7 @@ int binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
 		if (!strncmp(BIN_NAME(bin_idx), bin_name, BIN_NAME_MAX)) {
 			response_msg.result = BINMGR_OK;
-			response_msg.data.part_size = BIN_PARTSIZE(bin_idx);
+			response_msg.data.part_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 			strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
 			strncpy(response_msg.data.version, BIN_VER(bin_idx), BIN_VER_MAX);
 			if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
@@ -138,7 +138,7 @@ int binary_manager_get_info_all(int requester_pid)
 	bin_count = binary_manager_get_binary_count();
 	if (bin_count > 0) {
 		for (bin_idx = 0; bin_idx < bin_count + 1; bin_idx++) {
-			response_msg.data.bin_info[bin_idx].part_size = BIN_PARTSIZE(bin_idx);
+			response_msg.data.bin_info[bin_idx].part_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 			strncpy(response_msg.data.bin_info[bin_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
 			strncpy(response_msg.data.bin_info[bin_idx].version, BIN_VER(bin_idx), BIN_VER_MAX);
 			if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
