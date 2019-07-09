@@ -774,6 +774,19 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer, const struct bt_br_conn
  */
 struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
 
+/* TODO amit temporary place for below function or structure
+	we have to remove from here  and move it to bt_conn.h*/
+enum bt_conn_state_e {
+	BT_CONN_DISCONNECTED,
+	BT_CONN_CONNECT_SCAN,
+	BT_CONN_CONNECT,
+	BT_CONN_CONNECTED,
+	BT_CONN_DISCONNECT,
+};
+
+FAR struct bt_conn_s *bt_conn_lookup_state(FAR const bt_addr_le_t *peer, enum bt_conn_state_e state);
+/* end amit */
+
 #ifdef __cplusplus
 }
 #endif

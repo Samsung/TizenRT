@@ -37,12 +37,15 @@
  ****************************************************************************/
 
 #include <string.h>
-#include <tinyara/bluetooth/bluetooth.h>
-#include <tinyara/bluetooth/conn.h>
-#include "bt_hcicore.h"
 #include <errno.h>
 #include <debug.h>
+#include <tinyara/bluetooth/bluetooth.h>
+#include <tinyara/bluetooth/conn.h>
 #include <tinyara/wqueue.h>
+
+#include "bt_keys.h"
+#include "bt_hcicore.h"
+#include "bt_l2cap.h"
 
 extern struct bt_dev_s g_btdev;
 
@@ -215,7 +218,7 @@ static void bt_finalize_init(void)
 	bt_atomic_setbit(g_btdev.flags, BT_DEV_READY);
 #if 0
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		bt_le_scan_update(false);
+		bt_ble_scan_update(false);
 	}
 #endif
 	bt_dev_show_info();
@@ -543,8 +546,13 @@ int bt_le_adv_stop(void)
 
 int bt_le_scan_stop(void)
 {
-	// TODO: need to implement
-	return 0;
+	/* Return if active scanning is already disabled */
+	if (!bt_atomic_testclrbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return -EALREADY;
+	}
+
+	scan_dev_found_cb = NULL;
+	return bt_ble_scan_update(false);
 }
 
 int bt_le_set_chan_map(uint8_t chan_map[5])
@@ -892,6 +900,128 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window)
 	}
 
 	return 0;
+}
+
+int bt_ble_scan_update(bool fast_scan)
+{
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return 0;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_SCANNING)) {
+		int err;
+		err = set_le_scan_enable(BT_LE_SCAN_DISABLE);
+		if (err) {
+			return err;
+		}
+	}
+
+#if 0
+	if (IS_ENABLED(CONFIG_BT_CENTRAL))
+#endif
+	{
+		uint16_t interval, window;
+		FAR struct bt_conn_s *conn = NULL;
+		/* don't restart scan if we have pending connection */
+		conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT);
+		if (conn) {
+			bt_conn_release(conn);
+			return 0;
+		}
+
+		conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT_SCAN);
+		if (!conn) {
+			return 0;
+		}
+
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+		bt_conn_release(conn);
+		if (fast_scan) {
+			interval = BT_GAP_SCAN_FAST_INTERVAL;
+			window = BT_GAP_SCAN_FAST_WINDOW;
+		} else {
+			interval = CONFIG_BT_BACKGROUND_SCAN_INTERVAL;
+			window = CONFIG_BT_BACKGROUND_SCAN_WINDOW;
+		}
+
+		return start_le_scan(BT_LE_SCAN_PASSIVE, interval, window);
+	}
+
+	return 0;
+}
+
+static void ble_check_pending_conn(FAR const bt_addr_le_t *addr, uint8_t evtype, FAR struct bt_keys_s *keys)
+{
+	FAR struct bt_conn_s *conn = NULL;
+	/* No connections are allowed during explicit scanning */
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return;
+	}
+
+	/* Return if event is not connectible */
+	if (evtype != BT_LE_ADV_IND && evtype != BT_LE_ADV_DIRECT_IND) {
+		return;
+	}
+
+	if (keys) {
+		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT_SCAN);
+	} else {
+		conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+	}
+
+	if (!conn) {
+		return;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_SCANNING) && set_le_scan_enable(BT_LE_SCAN_DISABLE)) {
+		goto failed;
+	}
+
+	if (hci_le_create_conn(addr)) {
+		goto failed;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_release(conn);
+	return;
+failed:
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	bt_conn_release(conn);
+	bt_ble_scan_update(false);
+}
+
+void ble_adv_report(FAR struct bt_buf_s *buf)
+{
+	FAR struct bt_hci_ev_le_advertising_info_s *info;
+	uint8_t num_reports = buf->data[0];
+	nvdbg("Adv number of reports %u\n", num_reports);
+	info = bt_buf_consume(buf, sizeof(num_reports));
+	while (num_reports--) {
+		int8_t rssi = info->data[info->length];
+		FAR struct bt_keys_s *keys;
+		bt_addr_le_t addr;
+		nvdbg("%s event %u, len %u, rssi %d dBm\n", bt_addr_le_str(&info->addr), info->evt_type, info->length, rssi);
+		keys = bt_keys_find_irk(&info->addr);
+		if (keys) {
+			bt_addr_le_copy(&addr, &keys->addr);
+			nvdbg("Identity %s matched RPA %s\n", bt_addr_le_str(&keys->addr), bt_addr_le_str(&info->addr));
+		} else {
+			bt_addr_le_copy(&addr, &info->addr);
+		}
+
+		if (scan_dev_found_cb) {
+			struct net_buf_simple net_buf;
+			net_buf.data = info->data;
+			net_buf.len = info->length;
+			scan_dev_found_cb(&addr, rssi, info->evt_type, &net_buf);
+		}
+
+		ble_check_pending_conn(&info->addr, info->evt_type, keys);
+		/* Get next report iteration by moving pointer to right offset in buf
+		 * according to spec 4.2, Vol 2, Part E, 7.7.65.2.
+		 */
+		info = bt_buf_consume(buf, sizeof(*info) + info->length + sizeof(rssi));
+	}
 }
 
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)

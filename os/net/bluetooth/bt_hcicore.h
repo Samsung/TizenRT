@@ -438,4 +438,6 @@ void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
 int bt_addr_le_create_static(bt_addr_le_t *addr);
 
+int bt_ble_scan_update(bool fast_scan);
+
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */
