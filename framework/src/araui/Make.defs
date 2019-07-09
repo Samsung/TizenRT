@@ -1,0 +1,64 @@
+###########################################################################
+#
+# Copyright 2019 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+ifeq ($(CONFIG_UI), y)
+
+CSRCS += ui_core.c ui_request_callback.c
+CSRCS += ui_commons.c
+CSRCS += ui_font_asset.c ui_image_asset.c ui_asset.c
+CSRCS += ui_view.c
+CSRCS += ui_widget.c
+CSRCS += ui_image_widget.c
+CSRCS += ui_text_widget.c
+CSRCS += ui_button_widget.c
+CSRCS += ui_scroll_widget.c
+CSRCS += ui_paginator_widget.c
+CSRCS += ui_canvas_widget.c
+CSRCS += ui_global_widget.c
+CSRCS += easing_fn.c ui_list.c lzw.c ui_map.c upng.c
+CSRCS += ui_painter.c
+
+ifeq ($(CONFIG_UI_HAL_NULL_IMPL), y)
+CSRCS += hal_null_impl.c
+endif
+ifeq ($(CONFIG_UI_HAL_ESP_IMPL), y)
+CSRCS += hal_esplcd_impl.c
+endif
+
+CFLAGS += -DUI_PLATFORM_TIZENRT
+CFLAGS += -Isrc/araui/include
+
+DEPPATH += --dep-path src/araui/include
+DEPPATH += --dep-path src/araui/core
+DEPPATH += --dep-path src/araui/common
+DEPPATH += --dep-path src/araui/assets
+DEPPATH += --dep-path src/araui/views
+DEPPATH += --dep-path src/araui/widgets
+DEPPATH += --dep-path src/araui/libs
+DEPPATH += --dep-path src/araui/hal
+DEPPATH += --dep-path src/araui/painter
+VPATH += :src/araui/include
+VPATH += :src/araui/core
+VPATH += :src/araui/common
+VPATH += :src/araui/assets
+VPATH += :src/araui/views
+VPATH += :src/araui/widgets
+VPATH += :src/araui/libs
+VPATH += :src/araui/hal
+VPATH += :src/araui/painter
+
+endif
