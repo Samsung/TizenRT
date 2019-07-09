@@ -87,9 +87,8 @@ struct binmgr_bininfo_s {
 	pid_t bin_id;
 	uint8_t state;
 	uint8_t inuse_idx;
-	uint32_t part_size;
 	load_attr_t load_attr;
-	int8_t part_num[PARTS_PER_BIN];
+	part_info_t part_info[PARTS_PER_BIN];
 	char name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
@@ -107,8 +106,8 @@ typedef struct statecb_node_s statecb_node_t;
 #define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
 #define BIN_STATE(bin_idx)                              bin_table[bin_idx].state
 #define BIN_USEIDX(bin_idx)                             bin_table[bin_idx].inuse_idx
-#define BIN_PARTSIZE(bin_idx)                           bin_table[bin_idx].part_size
-#define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_num[part_idx]
+#define BIN_PARTSIZE(bin_idx, part_idx)                 bin_table[bin_idx].part_info[part_idx].part_size
+#define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_info[part_idx].part_num
 
 #define BIN_NAME(bin_idx)                               bin_table[bin_idx].name
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver

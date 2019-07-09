@@ -116,6 +116,13 @@ struct binary_info_s {
 };
 typedef struct binary_info_s binary_info_t;
 
+/* The sturcture of partition information */
+struct part_info_s {
+	uint32_t part_size;         /* Partition size */
+	int8_t part_num;            /* Partition number */
+};
+typedef struct part_info_s part_info_t;
+
 /* The structure of load attr configuration */
 struct load_attr_s {
 	uint32_t bin_size;			/* The size of ELF binary to be loaded */

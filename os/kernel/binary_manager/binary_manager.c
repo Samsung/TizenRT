@@ -75,15 +75,15 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 	if (part_type == BINMGR_PART_LOADPARAM) {
 		g_loadparam_part = part_num;
 	} else if (part_type == BINMGR_PART_KERNEL) {
-		if (BIN_PARTSIZE(KERNEL_IDX) > 0) {
+		if (BIN_PARTSIZE(KERNEL_IDX, 0) > 0) {
 			/* Already registered first kernel partition, register it as second partition. */
+			BIN_PARTSIZE(KERNEL_IDX, 1) = part_size;
 			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
 		} else {
 			BIN_USEIDX(KERNEL_IDX) = 0;
 			BIN_STATE(KERNEL_IDX) = BINARY_RUNNING;
 			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
-			BIN_PARTNUM(KERNEL_IDX, 1) = -1;
-			BIN_PARTSIZE(KERNEL_IDX) = part_size;
+			BIN_PARTSIZE(KERNEL_IDX, 0) = part_size;
 			strncpy(BIN_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
 			strncpy(BIN_KERNEL_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
 			strncpy(BIN_NAME(KERNEL_IDX), "kernel", BIN_NAME_MAX);
@@ -95,7 +95,8 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 			/* Found in the list, then register it as second partition */
 			if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
 				BIN_PARTNUM(bin_idx, 1) = part_num;
-				bmvdbg("[USER2 : %d] %s %d %d \n", bin_idx, BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, 0), BIN_PARTNUM(bin_idx, 1));
+				BIN_PARTSIZE(bin_idx, 1) = part_size;
+				bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
 				return;
 			}
 		}
@@ -104,11 +105,10 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 		BIN_ID(g_bin_count) = -1;
 		BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 		BIN_PARTNUM(g_bin_count, 0) = part_num;
-		BIN_PARTNUM(g_bin_count, 1) = -1;
-		BIN_PARTSIZE(g_bin_count) = part_size;
+		BIN_PARTSIZE(g_bin_count, 0) = part_size;
 		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 		sq_init(&BIN_CBLIST(g_bin_count));
-		bmvdbg("[USER1 : %d] %s size %d %d \n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count), BIN_PARTNUM(g_bin_count, 0));
+		bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
 	}
 }
 
