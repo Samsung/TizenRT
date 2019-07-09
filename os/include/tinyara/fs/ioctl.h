@@ -99,6 +99,7 @@
 #define _LWNLIOCBASE    (0x2400)	/* LWNL ioctl commands */
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
 #define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
+#define _UIBASE         (0x2700)	/* AraUI ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
@@ -406,6 +407,14 @@
 
 #define _LWNLIOCVALID(c) (_IOC_TYPE(c) == _LWNLIOCBASE)
 #define _LWNLIOC(nr)     _IOC(_LWNLIOCBASE, nr)
+
+/* TinyAra AraUI Framework driver ioctl definitions ************************/
+/* (see include/tinyara/araui_drv.h) */
+#define _UIIOCVALID(c)             (_IOC_TYPE(c) == _UIBASE)
+#define _UIIOC(nr)                 _IOC(_UIBASE, nr)
+
+#define UIIOC_LCDINIT              _UIIOC(0x0001)
+#define UIIOC_LCDFLUSH             _UIIOC(0x0002)
 
 /****************************************************************************
  * Public Type Definitions
