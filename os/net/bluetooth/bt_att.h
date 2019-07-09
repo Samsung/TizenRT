@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_att.h
+ * net/bluetooth/bt_att.h
  * Attribute protocol handling.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_ATTR_H
-#define __WIRELESS_BLUETOOTH_BT_ATTR_H 1
+#ifndef __NET_BLUETOOTH_BT_ATTR_H
+#define __NET_BLUETOOTH_BT_ATTR_H 1
 
 /****************************************************************************
  * Included Files
@@ -411,4 +411,4 @@ int bt_att_send(FAR struct bt_conn_s *conn, FAR struct bt_buf_s *buf, bt_att_fun
 
 void bt_att_cancel(FAR struct bt_conn_s *conn);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_ATTR_H */
+#endif							/* __NET_BLUETOOTH_BT_ATTR_H */

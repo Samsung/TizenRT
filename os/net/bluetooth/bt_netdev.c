@@ -1040,9 +1040,9 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 	 * BLE device is supported.
 	 */
 
-	ret = bt_initialize();
+	ret = bt_initialize_internal();
 	if (ret < 0) {
-		nerr("ERROR:  bt_initialize() failed: %d\n", ret);
+		nerr("ERROR:  bt_initialize_internal() failed: %d\n", ret);
 		goto errout;
 	}
 

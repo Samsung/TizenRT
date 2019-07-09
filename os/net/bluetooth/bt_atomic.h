@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_atomic.h
+ * net/bluetooth/bt_atomic.h
  * Linux like atomic operations
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -34,8 +34,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_ATOMIC_H
-#define __WIRELESS_BLUETOOTH_BT_ATOMIC_H 1
+#ifndef __NET_BLUETOOTH_BT_ATOMIC_H
+#define __NET_BLUETOOTH_BT_ATOMIC_H 1
 
 /****************************************************************************
  * Included Files
@@ -99,4 +99,4 @@ bool bt_atomic_testbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno);
 bool bt_atomic_testsetbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno);
 bool bt_atomic_testclrbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_ATOMIC_H */
+#endif							/* __NET_BLUETOOTH_BT_ATOMIC_H */

@@ -1260,7 +1260,7 @@ static void cmd_queue_init(void)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: bt_initialize
+ * Name: bt_initialize_internal
  *
  * Description:
  *   Initialize Bluetooth. Must be the called before anything else.
@@ -1270,7 +1270,7 @@ static void cmd_queue_init(void)
  *
  ****************************************************************************/
 
-int bt_initialize(void)
+int bt_initialize_internal(void)
 {
 	FAR const struct bt_driver_s *btdev = g_btdev.btdev;
 	int ret;

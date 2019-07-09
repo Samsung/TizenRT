@@ -266,7 +266,7 @@ static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
 struct bt_eir_s;				/* Forward reference */
 
 /****************************************************************************
- * Name: bt_initialize
+ * Name: bt_initialize_internal
  *
  * Description:
  *   Initialize Bluetooth. Must be the called before anything else.
@@ -276,7 +276,7 @@ struct bt_eir_s;				/* Forward reference */
  *
  ****************************************************************************/
 
-int bt_initialize(void);
+int bt_initialize_internal(void);
 
 /****************************************************************************
  * Name: bt_driver_register
