@@ -149,8 +149,8 @@ echo "PARTIION NAMES: ${parts[@]}"
 
 if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]
 then
-	#Erase All Partitions
-	for (( i=0; i<$num; i++ ))
+	#Erase All Except Userfs Partitions
+	for (( i=0; i< $(( $num - 1 )); i++ ))
 	do
 		flash_erase ${offsets[$i]} ${sizes[$i]}
 	done
@@ -164,8 +164,8 @@ then
 
 elif [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]
 then
-	#Erase All Partitions
-	for (( i=0; i<$num; i++ ))
+	#Erase All Except Userfs Partitions
+	for (( i=0; i< $(( $num -1)); i++ ))
 	do
 		flash_erase ${offsets[$i]} ${sizes[$i]}
 	done
