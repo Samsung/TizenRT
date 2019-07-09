@@ -1,0 +1,3 @@
+config ENTRY_ARAUI_SAMPLE
+	bool "AraUI Sample"
+	depends on EXAMPLES_ARAUI_SAMPLE

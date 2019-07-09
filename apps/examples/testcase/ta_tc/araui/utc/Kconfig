@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_ARAUI_UTC
+	bool "AraUI UTC TestCase Example"
+	default n
+	depends on UI
+	---help---
+		Enable the UI TestCase Example

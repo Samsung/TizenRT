@@ -123,6 +123,11 @@ endif
 
 .built: $(OBJS)
 ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_ARAUI_UTC),y)
+	$(Q) cp ta_tc/araui/utc/utc_ui_font.fnt $(TOPDIR)/../tools/fs/contents
+	$(Q) cp ta_tc/araui/utc/utc_ui_image_rgb.png $(TOPDIR)/../tools/fs/contents
+	$(Q) cp ta_tc/araui/utc/utc_ui_image.png $(TOPDIR)/../tools/fs/contents
+endif
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 endif
