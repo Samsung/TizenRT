@@ -131,15 +131,13 @@ struct bt_eir_s {
 } packed_struct;
 
 /* Security level */
-
 enum bt_security_e {
-	BT_SECURITY_LOW,			/* No encryption and no authentication. */
-	BT_SECURITY_MEDIUM,			/* encryption and no authentication (no MITM). */
-	BT_SECURITY_HIGH,			/* encryption and authentication (MITM). */
-	BT_SECURITY_FIPS,			/* Authenticated LE Secure Connections and
+	BT_SECURITY_NEW_LOW,		/* No encryption and no authentication. */
+	BT_SECURITY_NEW_MEDIUM,		/* encryption and no authentication (no MITM). */
+	BT_SECURITY_NEW_HIGH,		/* encryption and authentication (MITM). */
+	BT_SECURITY_NEW_FIPS,		/* Authenticated LE Secure Connections and
 								 * encryption. */
 };
-
 /****************************************************************************
  * Inline Functions
  ****************************************************************************/

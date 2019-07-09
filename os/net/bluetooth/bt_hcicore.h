@@ -440,4 +440,6 @@ int bt_addr_le_create_static(bt_addr_le_t *addr);
 
 int bt_ble_scan_update(bool fast_scan);
 
+int hci_initialize(void);
+
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

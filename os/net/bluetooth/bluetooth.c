@@ -42,10 +42,13 @@
 #include <tinyara/bluetooth/bluetooth.h>
 #include <tinyara/bluetooth/conn.h>
 #include <tinyara/wqueue.h>
+#include <tinyara/bluetooth/bt_core.h>
+#include <tinyara/bluetooth/bt_hci.h>
 
+#include "bt_buf.h"
 #include "bt_keys.h"
-#include "bt_hcicore.h"
 #include "bt_l2cap.h"
+#include "bt_hcicore.h"
 
 extern struct bt_dev_s g_btdev;
 
@@ -55,6 +58,8 @@ struct bt_ad {
 	const struct bt_data *data;
 	size_t len;
 };
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* Work structures: One for high priority and one for low priority work */
 
@@ -130,7 +135,7 @@ static int set_ad(unsigned short hci_op, const struct bt_ad *ad, size_t ad_len)
 				len = 31 - (set_data->len + 2);
 				if (type != BT_DATA_NAME_COMPLETE || !len) {
 					bt_buf_release(buf);
-					BT_ERR("Too big advertising data");
+					ndbg("Too big advertising data");
 					return -EINVAL;
 				}
 				type = BT_DATA_NAME_SHORTENED;
@@ -204,13 +209,13 @@ static void bt_dev_show_info(void)
 {
 	int i;
 
-	BT_INFO("Identity%s: %s", g_btdev.id_count > 1 ? "[0]" : "", bt_addr_le_str(&g_btdev.id_addr[0]));
+	nvdbg("Identity%s: %s", g_btdev.id_count > 1 ? "[0]" : "", bt_addr_le_str(&g_btdev.id_addr[0]));
 
 	for (i = 1; i < g_btdev.id_count; i++) {
-		BT_INFO("Identity[%d]: %s", i, bt_addr_le_str(&g_btdev.id_addr[i]));
+		nvdbg("Identity[%d]: %s", i, bt_addr_le_str(&g_btdev.id_addr[i]));
 	}
 
-	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", ver_str(g_btdev.hci_version), g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
+	nvdbg("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", ver_str(g_btdev.hci_version), g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
 }
 
 static void bt_finalize_init(void)
@@ -287,7 +292,7 @@ int bt_enable(bt_ready_cb_t cb)
 	FAR const struct bt_driver_s *bt_drv = g_btdev.btdev;
 
 	if (!bt_drv) {
-		BT_ERR("No HCI driver registered");
+		ndbg("No HCI driver registered");
 		return -ENODEV;
 	}
 
@@ -301,7 +306,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 	err = bt_drv->open(bt_drv);
 	if (err) {
-		BT_ERR("HCI driver open failed (%d)", err);
+		ndbg("HCI driver open failed (%d)", err);
 		return err;
 	}
 
@@ -340,7 +345,7 @@ int bt_set_id_addr(const bt_addr_le_t *addr)
 	bt_addr_le_t non_const_addr;
 
 	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
-		BT_ERR("Setting identity not allowed after bt_enable()");
+		ndbg("Setting identity not allowed after bt_enable()");
 		return -EBUSY;
 	}
 
@@ -418,7 +423,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(addr)) {
-			BT_ERR("Only static random identity address supported");
+			ndbg("Only static random identity address supported");
 			return -EINVAL;
 		}
 
@@ -449,7 +454,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(addr)) {
-			BT_ERR("Only static random identity address supported");
+			ndbg("Only static random identity address supported");
 			return -EINVAL;
 		}
 
@@ -493,7 +498,7 @@ int bt_id_delete(uint8_t id)
 		return -EALREADY;
 	}
 
-	if (id == g_btdev.adv_id && atomic_test_bit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+	if (id == g_btdev.adv_id && bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
 		return -EBUSY;
 	}
 
@@ -853,8 +858,8 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window)
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
 	 */
-	set_param->interval = sys_cpu_to_le16(interval);
-	set_param->window = sys_cpu_to_le16(window);
+	set_param->interval = BT_HOST2LE16(interval);
+	set_param->window = BT_HOST2LE16(window);
 	set_param->filter_policy = 0x00;
 	set_param->addr_type = 0x00;
 #if 0

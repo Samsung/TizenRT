@@ -1038,7 +1038,7 @@ static void le_read_buffer_size_complete(FAR struct bt_buf_s *buf)
 	g_btdev.le_pkts = rp->le_max_num;
 }
 
-static int hci_initialize(void)
+int hci_initialize(void)
 {
 	FAR struct bt_hci_cp_host_buffer_size_s *hbs;
 	FAR struct bt_hci_cp_set_event_mask_s *ev;

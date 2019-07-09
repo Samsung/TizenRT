@@ -93,7 +93,7 @@ static const char *state2str(enum bt_conn_state_e state)
 {
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
-			return "disconnected";
+		return "disconnected";
 
 	case BT_CONN_CONNECT_SCAN:
 		return "connect-scan";
@@ -775,13 +775,13 @@ int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
 
 	/* Nothing to do */
 
-	if (sec == BT_SECURITY_LOW) {
+	if (sec == BT_SECURITY_NEW_LOW) {
 		return 0;
 	}
 
 	/* For now we only support JustWorks */
 
-	if (sec > BT_SECURITY_MEDIUM) {
+	if (sec > BT_SECURITY_NEW_MEDIUM) {
 		return -EINVAL;
 	}
 
@@ -789,7 +789,7 @@ int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
 		return 0;
 	}
 
-	if (conn->role == BT_HCI_ROLE_SLAVE) {
+	if (conn->role == BT_SECURITY_NEW_HIGH) {
 		return bt_smp_send_security_req(conn);
 	}
 
