@@ -321,3 +321,20 @@ endchoice
 
 endmenu # "SPI RAM config"
 
+config ESP_LCD_ENABLE
+	bool "Enable LCD driver on ESP-WROVER-KIT board"
+	depends on ARCH_BOARD_ESP_WROVER_KIT
+	default n
+	---help---
+		Espressif esp32 WIFI/BLE LCDs MCU
+
+config ESP_LCD_SPI_PORTNUM
+	int "SPI port number of the LCD uses"
+	default 2
+	depends on ESP_LCD_ENABLE
+	range 2 3
+	---help---
+		SPI driver support only 2(HSPI) and 3(VSPI) port,
+		Need to set the config for correspond spi port, like
+		CONFIG_GPIO_SPI2_xxx items.
+
