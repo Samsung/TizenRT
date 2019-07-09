@@ -296,7 +296,7 @@ int iperf_handle_message_client(struct iperf_test *test)
 			i_errno = IECTRLREAD;
 			return -1;
 		}
-		errno = ntohl(err);
+		set_errno(ntohl(err));
 		return -1;
 	default:
 		i_errno = IEMESSAGE;
@@ -403,7 +403,7 @@ int iperf_run_client(struct iperf_test *test)
 		(void)gettimeofday(&now, NULL);
 		timeout = tmr_timeout(&now);
 		result = select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
-		if (result < 0 && errno != EINTR) {
+		if (result < 0 && get_errno() != EINTR) {
 			i_errno = IESELECT;
 			return -1;
 		}
