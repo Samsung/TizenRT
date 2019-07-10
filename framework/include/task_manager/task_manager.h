@@ -157,6 +157,13 @@ extern "C" {
  * Public Function Prototypes
  ****************************************************************************/
 /**
+ * @cond
+ * @internal
+ * @brief Task Manager Main Thread
+ * @endcond
+ */
+int task_manager(int argc, char *argv[]);
+/**
  * @brief Request to register a built-in task
  * @details @b #include <task_manager/task_manager.h>\n
  * This API can request to register a built-in task.\n
