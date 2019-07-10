@@ -382,6 +382,7 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 	sem_post(&upper->exclsem);
 	LWNL80211_LEAVE;
+
 	return ret;
 }
 

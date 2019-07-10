@@ -85,9 +85,26 @@
 		close(fd);                              \
 	} while (0)
 
+#define KILL_CB_THREAD                                                                  \
+	do {                                                                                \
+		lwnl80211_cb_data data_s = {LWNL80211_EXIT, .u.data = NULL, 0, 0};              \
+		if (g_hnd.mq == NULL) {                                                         \
+			ndbg("Failed to init mq\n");                                                \
+			return WIFI_UTILS_FAIL;                                                     \
+		}                                                                               \
+		int ret_mq = mq_send(g_hnd.mq, (const char *)&data_s, sizeof(data_s), 100);     \
+		if (ret_mq < 0) {                                                               \
+			ndbg("Failed to send msg to mq\n");                                        \
+			return WIFI_UTILS_FAIL;                                                     \
+		}                                                                               \
+		sem_wait(&g_sem_signal);                                                        \
+	} while (0)
+
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
 
 struct _wifi_utils_s g_hnd = {"", 0, 0};
+
+sem_t g_sem_signal;
 
 static void free_scan_data(wifi_utils_scan_list_s *scan_list)
 {
@@ -155,15 +172,29 @@ void *wifi_utils_callback_handler(void *arg)
 	WU_ENTER;
 
 	int prio;
+	int terminate = 0;
 	int nbytes;
 	lwnl80211_cb_data msg;
 	int msglen = sizeof(lwnl80211_cb_data);
 
+	struct mq_attr attr;
+	attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;
+	attr.mq_msgsize = sizeof(lwnl80211_cb_data);
+	attr.mq_flags = 0;
+	attr.mq_curmsgs = 0;
+
+	g_hnd.mq = mq_open(g_hnd.mqname, O_RDWR | O_CREAT, 0666, &attr);
+	if (g_hnd.mq == NULL) {
+		ndbg("Failed to open mq\n");
+		return NULL;
+	}
+
+	sem_post(&g_sem_signal);
+
 	while (true) {
-		if (g_hnd.mq == NULL) {
+		if (terminate) {
 			break;
 		}
-
 		nbytes = mq_receive(g_hnd.mq, (char *)&msg, msglen, &prio);
 		if (nbytes < 0 || nbytes != msglen) {
 			ndbg("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
@@ -213,14 +244,23 @@ void *wifi_utils_callback_handler(void *arg)
 			}
 			break;
 		}
+		case LWNL80211_EXIT:
+			nvdbg("Terminate this thread (%d)\n", msg.status);
+			terminate = 1;
+			break;
 		default:
 			ndbg("Bad status received (%d)\n", msg.status);
 			WU_ERR;
+			terminate = 1;
 			break;
 		}
 	}
 
-	pthread_exit(NULL);
+	mq_close(g_hnd.mq);
+	g_hnd.mq = NULL;
+
+	sem_post(&g_sem_signal);
+
 	return NULL;
 }
 
@@ -230,35 +270,15 @@ wifi_utils_result_e wifi_utils_init(void)
 
 	pthread_attr_t p_attr;
 	int status;
-	struct mq_attr attr;
+
 	wifi_utils_result_e ret = WIFI_UTILS_FAIL;
 
 	int fd = open(LWNL80211_PATH, O_RDWR);
 	WU_CHECK_ERR(fd);
 
-	attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;
-	attr.mq_msgsize = sizeof(lwnl80211_cb_data);
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
+	sem_init(&g_sem_signal, 0, 0);
 
 	snprintf(g_hnd.mqname, sizeof(g_hnd.mqname), "%01x", (unsigned long)((uintptr_t)&g_hnd));
-	g_hnd.mq = mq_open(g_hnd.mqname, O_RDWR | O_CREAT, 0666, &attr);
-	if (g_hnd.mq == NULL) {
-		close(fd);
-		ndbg("Failed to open mq\n");
-		return WIFI_UTILS_FAIL;
-	}
-
-	/* Start to send ioctl */
-	lwnl80211_data data_in = {NULL, 0, 0};
-	data_in.data_len = sizeof(g_hnd.mqname);
-	data_in.data = (mqd_t *)malloc(data_in.data_len);
-	if (!data_in.data) {
-		ndbg("Failed to alloc lw80211_data input\n");
-		ret = WIFI_UTILS_FAIL;
-		goto errout;
-	}
-	memcpy(data_in.data, g_hnd.mqname, data_in.data_len);
 
 	status = pthread_attr_init(&p_attr);
 	if (status != 0) {
@@ -273,6 +293,19 @@ wifi_utils_result_e wifi_utils_init(void)
 	}
 	pthread_setname_np(g_hnd.cb_receiver, "lwnl80211 cb handler");
 
+	/* Start to send ioctl */
+
+	lwnl80211_data data_in = {NULL, 0, 0};
+	data_in.data_len = sizeof(g_hnd.mqname);
+	data_in.data = (mqd_t *)malloc(data_in.data_len);
+	if (!data_in.data) {
+		ndbg("Failed to alloc lw80211_data input\n");
+		ret = WIFI_UTILS_FAIL;
+		goto errout;
+	}
+	memcpy(data_in.data, g_hnd.mqname, data_in.data_len);
+	sem_wait(&g_sem_signal);
+
 	WU_CALL_ERROUT(fd, g_hnd, LWNL80211_REGISTERMQ, data_in);
 	free(data_in.data);
 	data_in.data = NULL;
@@ -286,11 +319,10 @@ wifi_utils_result_e wifi_utils_init(void)
 
 errout:
 	WU_CLOSE(fd);
-	mq_close(g_hnd.mq);
-	g_hnd.mq = NULL;
 	if (data_in.data) {
 		free(data_in.data);
 	}
+	KILL_CB_THREAD;
 	return ret;
 }
 
@@ -307,28 +339,16 @@ wifi_utils_result_e wifi_utils_deinit(void)
 
 	WU_CALL(fd, g_hnd, LWNL80211_UNREGISTERMQ, data_in);
 
-#ifndef CONFIG_DISABLE_SIGNALS
-	pthread_kill(g_hnd.cb_receiver, 9);
-	usleep(HALF_SECOND_USEC_USEC);
-#endif
-
-	status = pthread_cancel(g_hnd.cb_receiver);
-	if (status == ESRCH) {
-		ndbg("Callback receiver thread already closed successfully\n");
-	} else if (status != 0) {
-		WU_ERR;
-		WU_CLOSE(fd);
-		return WIFI_UTILS_FAIL;
-	}
-	pthread_join(g_hnd.cb_receiver, NULL);
-
 	g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
 
 	WU_CALL(fd, g_hnd, LWNL80211_DEINIT, data_in);
 
 	WU_CLOSE(fd);
-	mq_close(g_hnd.mq);
-	g_hnd.mq = NULL;
+
+	KILL_CB_THREAD;
+	pthread_join(g_hnd.cb_receiver, NULL);
+
+	sem_destroy(&g_sem_signal);
 
 	return WIFI_UTILS_SUCCESS;
 }
