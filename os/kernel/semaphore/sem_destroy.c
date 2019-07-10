@@ -65,6 +65,9 @@
 #include "sched/sched.h"
 #include <tinyara/debug/sysdbg.h>
 #endif
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <tinyara/semaphore.h>
+#endif
 
 /****************************************************************************
  * Definitions
@@ -145,6 +148,9 @@ int sem_destroy(FAR sem_t *sem)
 
 		sem_destroyholder(sem);
 
+#ifdef CONFIG_BINMGR_RECOVERY
+		sem_unregister(sem);
+#endif
 		sem->flags &= ~FLAGS_INITIALIZED;
 		return OK;
 	} else {
