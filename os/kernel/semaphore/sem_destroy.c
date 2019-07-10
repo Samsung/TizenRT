@@ -58,6 +58,9 @@
 
 #include <semaphore.h>
 #include <errno.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <queue.h>
+#endif
 
 #include "semaphore/semaphore.h"
 
@@ -85,6 +88,27 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
+extern sq_queue_t g_sem_list;
+
+static void sem_unregister(FAR sem_t *sem)
+{
+	sem_t *sem_ptr;
+	irqstate_t flags;
+
+	flags = irqsave();
+	sem_ptr = (sem_t *)sq_peek(&g_sem_list);
+	while (sem_ptr) {
+		if (sem_ptr == sem) {
+			/* Remove semaphore from a list of kernel semaphore */
+			sq_rem((FAR sq_entry_t *)sem, &g_sem_list);
+			break;
+		}
+		sem_ptr = sq_next(sem_ptr);
+	}
+	irqrestore(flags);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -145,6 +169,11 @@ int sem_destroy(FAR sem_t *sem)
 
 		sem_destroyholder(sem);
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		if (IS_KERNEL_SEM(sem)) {
+			sem_unregister(sem);
+		}
+#endif
 		sem->flags &= ~FLAGS_INITIALIZED;
 		return OK;
 	} else {

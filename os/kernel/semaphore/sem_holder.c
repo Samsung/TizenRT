@@ -65,8 +65,6 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
-
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -273,6 +271,8 @@ static int sem_recoverholders(FAR struct semholder_s *pholder, FAR sem_t *sem, F
 }
 #endif
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
+
 /****************************************************************************
  * Name: sem_boostholderprio
  ****************************************************************************/
@@ -362,7 +362,7 @@ static int sem_boostholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, 
 
 	return 0;
 }
-
+#endif
 /****************************************************************************
  * Name: sem_verifyholder
  ****************************************************************************/
@@ -402,6 +402,8 @@ static int sem_dumpholder(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR v
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
 
 /****************************************************************************
  * Name: sem_restoreholderprio
@@ -715,6 +717,7 @@ static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR sem_t *s
 		}
 	}
 }
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -818,13 +821,14 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
 	FAR struct semholder_s *pholder;
 
+#if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	/*
 	 * If priority inheritance is disabled for this thread, then do not
 	 * add the holder. If there are never holders of the semaphore,
 	 * the priority inheritance is effectively disabled.
 	 */
-
 	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+#endif
 		/* Find or allocate a container for this new holder */
 		pholder = sem_findorallocateholder(sem, htcb);
 		if (pholder != NULL) {
@@ -835,7 +839,9 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 			pholder->htcb = htcb;
 			pholder->counts++;
 		}
+#if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	}
+#endif
 }
 
 /****************************************************************************
@@ -859,34 +865,6 @@ void sem_addholder(FAR sem_t *sem)
 {
 	FAR struct tcb_s *rtcb = this_task();
 	sem_addholder_tcb(rtcb, sem);
-}
-
-/****************************************************************************
- * Name: void sem_boostpriority(sem_t *sem)
- *
- * Description:
- *
- *
- * Parameters:
- *   None
- *
- * Return Value:
- *   None
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-void sem_boostpriority(FAR sem_t *sem)
-{
-	FAR struct tcb_s *rtcb = this_task();
-
-	/* Boost the priority of every thread holding counts on this semaphore
-	 * that are lower in priority than the new thread that is waiting for a
-	 * count.
-	 */
-
-	(void)sem_foreachholder(sem, sem_boostholderprio, rtcb);
 }
 
 /****************************************************************************
@@ -918,9 +896,42 @@ void sem_releaseholder(FAR sem_t *sem)
 		/* Decrement the counts on this holder -- the holder will be freed
 		 * later in sem_restorebaseprio.
 		 */
-
 		pholder->counts--;
+#ifndef CONFIG_PRIORITY_INHERITANCE
+		if (pholder->counts <= 0) {
+			sem_freeholder(sem, pholder);
+		}
+#endif
 	}
+}
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+/****************************************************************************
+ * Name: void sem_boostpriority(sem_t *sem)
+ *
+ * Description:
+ *
+ *
+ * Parameters:
+ *   None
+ *
+ * Return Value:
+ *   None
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+void sem_boostpriority(FAR sem_t *sem)
+{
+	FAR struct tcb_s *rtcb = this_task();
+
+	/* Boost the priority of every thread holding counts on this semaphore
+	 * that are lower in priority than the new thread that is waiting for a
+	 * count.
+	 */
+
+	(void)sem_foreachholder(sem, sem_boostholderprio, rtcb);
 }
 
 /****************************************************************************
@@ -976,7 +987,7 @@ void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR sem_t *sem)
 		sem_restorebaseprio_task(stcb, sem);
 	}
 }
-
+#endif
 /****************************************************************************
  * Name: sem_canceled
  *
@@ -1004,8 +1015,9 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem)
 	DEBUGASSERT(sem->semcount <= 0);
 
 	/* Adjust the priority of every holder as necessary */
-
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
+#endif
 }
 #endif
 
@@ -1065,5 +1077,3 @@ int sem_nfreeholders(void)
 #endif
 }
 #endif
-
-#endif							/* CONFIG_PRIORITY_INHERITANCE */

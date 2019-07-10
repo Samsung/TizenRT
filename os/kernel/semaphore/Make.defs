@@ -57,6 +57,8 @@ CSRCS += sem_post.c sem_recover.c sem_reset.c sem_waitirq.c sem_tickwait.c
 
 ifeq ($(CONFIG_PRIORITY_INHERITANCE),y)
 CSRCS += sem_initialize.c sem_holder.c sem_setprotocol.c
+else ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+CSRCS += sem_holder.c
 endif
 
 # Include semaphore build support

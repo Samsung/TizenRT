@@ -60,9 +60,39 @@
 #include <limits.h>
 #include <semaphore.h>
 #include <errno.h>
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+#include <queue.h>
+#include <tinyara/arch.h>
+#endif
 
 #ifdef CONFIG_SEMAPHORE_HISTORY
 #include <tinyara/debug/sysdbg.h>
+#endif
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+sq_queue_t g_sem_list;
+
+static void sem_register(FAR sem_t *sem)
+{
+	sem_t *sem_ptr;
+	irqstate_t flags;
+
+	flags = irqsave();
+	if (!sq_empty(&g_sem_list)) {
+		sem_ptr = (sem_t *)sq_peek(&g_sem_list);
+		while (sem_ptr) {
+			if (sem_ptr == sem) {
+				/* Already registered */
+				irqrestore(flags);
+				return;
+			}
+			sem_ptr = sq_next(sem_ptr);
+		}
+	}
+	/* Add semaphore to a list of kernel semaphore, g_sem_list */
+	sq_addlast((FAR sq_entry_t *)sem, &g_sem_list);
+	irqrestore(flags);
+}
 #endif
 
 /****************************************************************************
@@ -114,12 +144,21 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 		sem->flags &= ~(PRIOINHERIT_FLAGS_DISABLE);
+#endif
+
+#if defined(CONFIG_PRIORITY_INHERITANCE) || (defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__))
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 		sem->hhead = NULL;
 #else
 		sem->holder.htcb = NULL;
 		sem->holder.counts = 0;
 #endif
+#endif
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+		/* Register semaphore in kernel region for kernel resource management */
+		sem->flags |= FLAGS_KERNELSEM;
+		sem_register(sem);
 #endif
 		return OK;
 	} else {

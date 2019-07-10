@@ -56,6 +56,10 @@
 
 #include <tinyara/config.h>
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <queue.h>
+#endif
+
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 
@@ -88,6 +92,36 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
+extern sq_queue_t g_sem_list;
+
+static void sem_tcb_recover(FAR struct tcb_s *tcb)
+{
+	sem_t *sem;
+	irqstate_t flags;
+	FAR struct semholder_s *holder;
+
+	sem = (sem_t *)sq_peek(&g_sem_list);
+	while (sem) {
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+		for (holder = sem->hhead; holder; holder = holder->flink)
+#else
+		holder = &sem->holder;
+#endif
+		{
+			if (holder->htcb == tcb) {
+				flags = irqsave();
+				if (tcb->task_state == TSTATE_WAIT_SEM) {
+					sem_canceled(tcb, sem);
+				}
+				sem->semcount++;
+				irqrestore(flags);
+			}
+		}
+		sem = sq_next(sem);
+	}
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -122,7 +156,9 @@
 void sem_recover(FAR struct tcb_s *tcb)
 {
 	irqstate_t flags;
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	sem_tcb_recover(tcb);
+#endif
 	/* The task is being deleted.  If it is waiting for a semphore, then
 	 * increment the count on the semaphores.  This logic is almost identical
 	 * to what you see in sem_waitirq() except that no attempt is made to

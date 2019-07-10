@@ -79,13 +79,16 @@
 #define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
 					    * is disabled for this semaphore */
 #define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define FLAGS_KERNELSEM           (1 << 2) /* Bit 2: The semaphore in kernel region */
+#endif
 /****************************************************************************
  * Public Type Declarations
  ****************************************************************************/
 
 /* This structure contains information about the holder of a semaphore */
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_APP_BINARY_SEPARATION)
 struct tcb_s;					/* Forward reference */
 /**
  * @ingroup SEMAPHORE_KERNEL
@@ -106,11 +109,18 @@ struct semholder_s {
 #endif
 #endif							/* CONFIG_PRIORITY_INHERITANCE */
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define IS_KERNEL_SEM(sem) ((sem->flags & FLAGS_KERNELSEM) != 0)
+#endif
+
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief Structure of generic semaphore
  */
 struct sem_s {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	struct sem_s *flink;		/* Support for singly linked lists. */
+#endif
 	int16_t semcount;			/* >0 -> Num counts available */
 	/* <0 -> Num tasks waiting for semaphore */
 	/* If priority inheritance is enabled, then we have to keep track of which
@@ -124,6 +134,8 @@ struct sem_s {
 #else
 	struct semholder_s holder;	/* Single holder */
 #endif
+#else if defined(CONFIG_APP_BINARY_SEPARATION)
+	struct semholder_s holder;	/* Single holder */
 #endif
 };
 
@@ -134,6 +146,17 @@ typedef struct sem_s sem_t;
  * @ingroup SEMAPHORE_KERNEL
  * @brief Sem initializer
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
+#else
+#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#endif
+#else
+#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED}	/* semcount, flags */
+#endif
+#else // CONFIG_APP_BINARY_SEPARATION
 #ifdef CONFIG_PRIORITY_INHERITANCE
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
@@ -142,6 +165,7 @@ typedef struct sem_s sem_t;
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
+#endif
 #endif
 
 /****************************************************************************
