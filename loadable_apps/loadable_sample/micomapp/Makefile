@@ -16,7 +16,6 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/elf/micomapp/Makefile
 #
 #   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -53,30 +52,22 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
-LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
+SRCS = micomapp.c
+ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
+SRCS += messaging.c
+endif
+ifeq ($(CONFIG_EXAMPLES_TIMER)$(CONFIG_EXAMPLES_MICOM_TIMER_TEST),yy)
+SRCS += timer.c
+OBJS += $(TOPDIR)$(DELIM)../apps/examples/timer/timer_main.o
 endif
 
-OBJEXT ?= .o
-DELIM ?= /
-
-ifeq ($(WINTOOL),y)
-TINYARALIB = "${shell cygpath -w $(TOPDIR)$(DELIM)lib}"
-else
-TINYARALIB = "$(TOPDIR)$(DELIM)../build/output/libraries"
-endif
-
-ifeq ($(CONFIG_EXAMPLES_ELF_FULLYLINKED),y)
-LDELFFLAGS += -Bstatic
-LDLIBPATH += -L $(TINYARALIB)
-
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
-LDLIBS += $(LIBGCC)
-endif
+#########################################
+# Case of Loadable separated binary build
+# Make separated ELF type binary
+#########################################
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 
 BIN = micom
-BIN_CHECK = $(shell nm -u $(PWD)/$(BIN)app/$(BIN) | wc -l)
 # need to update
 BIN_TYPE = ELF
 DYNAMIC_RAM_SIZE = 51200
@@ -85,62 +76,35 @@ KERNEL_VER = 2.0
 STACKSIZE = 4096
 PRIORITY = 220
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
+include $(TOPDIR)/../loadable_apps/loadable.mk
+
+###################################
+# Cases of Flat and Protected build
+# Merge into libapps.a
+###################################
 else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
 
-APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
-
-SRCS = $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.c
-SRCS += micomapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
 OBJS = $(SRCS:.c=$(OBJEXT))
-ifeq ($(CONFIG_EXAMPLES_TIMER)$(CONFIG_EXAMPLES_MICOM_TIMER_TEST),yy)
-SRCS += timer.c
-OBJS += $(TOPDIR)$(DELIM)../apps/examples/timer/timer_main.o
-endif
 
-prebuild:
-	$(call DELFILE, $(TOPDIR)$(DELIM)board$(DELIM)common$(DELIM)userspace$(DELIM)up_userspace.o)
+BIN = ../../../apps/libapps$(LIBEXT)
 
-all: prebuild $(BIN)
-.PHONY: prebuild clean install verify
+all: .built
+.PHONY: clean depend distclean
 
 $(OBJS): %$(OBJEXT): %.c
-	@echo "CC: $<"
-	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
+	$(call COMPILE, $<, $@)
 
-$(BIN): $(OBJS)
-	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
 
 clean:
-	$(call DELFILE, $(BIN))
-	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
+	$(call DELFILE, .built)
 	$(call CLEAN)
 
-install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+endif # CONFIG_APP_BINARY_SEPARATION
 
-verify:
-ifneq ($(BIN_CHECK),0)
-	@echo "Undefined Symbols"
-	$(Q) $(NM) -u -l $(BIN)
-	$(call DELFILE, $(SYSTEM_BIN_DIR)/$(BIN))
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-	exit 1
-endif
+preconfig:

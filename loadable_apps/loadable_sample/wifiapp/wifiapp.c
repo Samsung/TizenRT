@@ -93,8 +93,6 @@ int main(int argc, char **argv)
 			printf("Invalid Scenario.\n");
 			break;
 		}
-		sleep(1);
-		fflush(stdout);
 	}
 #else
 	recovery_test();

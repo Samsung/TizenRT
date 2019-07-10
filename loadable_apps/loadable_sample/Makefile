@@ -17,7 +17,7 @@
 ###########################################################################
 ############################################################################
 #
-#   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,53 +49,40 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/.config # Current configuration
 
-BUILDIRS   := $(dir $(wildcard */Make.defs))
-OUTPUT_BIN_DIR = $(TOPDIR)/../build/output/bin
-CONFIGURED =
+# Sub-directories
 
-define ADD_APPS
-	include $(1)Make.defs
-endef
-$(foreach BDIR, $(BUILDIRS), $(eval $(call ADD_APPS,$(BDIR))))
+SUBDIRS = $(dir $(wildcard */Makefile))
 
-define DIR_template
+all: nothing
+
+.PHONY: nothing context depend clean distclean
+
+define SDIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" USER_BIN_DIR="$(OUTPUT_BIN_DIR)" CROSSDEV=$(CROSSDEV)
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)"
 endef
-$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),context)))
-$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),all)))
-$(foreach BDIR, $(BUILDIRS), $(eval $(call DIR_template,$(BDIR),preconfig)))
-$(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),clean)))
-$(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),distclean)))
 
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),verify)))
-$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),install)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-all: build verify install
-.PHONY: all build clean install distclean depend verify preconfig
+nothing:
 
-install: $(foreach BDIR, $(CONFIGURED), $(BDIR)_install)
+install:
 
-verify: $(foreach BDIR, $(CONFIGURED), $(BDIR)_verify)
-else # !CONFIG_APP_BINARY_SEPARATION
+preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
 
-all: build
-.PHONY: all build clean distclean depend preconfig
-endif # CONFIG_APP_BINARY_SEPARATION
+context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 
-build: $(foreach BDIR, $(CONFIGURED), $(BDIR)_all)
+depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
 
-context: $(foreach BDIR, $(CONFIGURED), $(BDIR)_context)
+clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
 
-preconfig: $(foreach BDIR, $(BUILDIRS), $(BDIR)_preconfig)
-	$(Q) $(LOADABLEDIR)/mkkconfig.sh
-
-clean: $(foreach CDIR, $(BUILDIRS), $(CDIR)_clean)
-
-distclean: $(foreach CDIR, $(BUILDIRS), $(CDIR)_distclean)
+distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
 
 -include Make.dep
+

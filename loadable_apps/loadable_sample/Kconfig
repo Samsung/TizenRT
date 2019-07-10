@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config EXAMPLES_ELF
+menuconfig EXAMPLES_ELF
 	bool "ELF Loader Example"
 	default n
 	select LIBC_EXECFUNCS
