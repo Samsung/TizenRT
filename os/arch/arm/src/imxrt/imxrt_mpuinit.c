@@ -91,6 +91,10 @@ const struct mpu_region_info regions_info[] = {
 		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_USER_DATA,
 	},
 #endif
+	{
+		&mpu_peripheral_user, (uintptr_t)IMXRT_GPT1_BASE, (uintptr_t)(32*1024), MPU_REG_APP_PERIPH_RO,
+	},
+
 };
 #endif
 

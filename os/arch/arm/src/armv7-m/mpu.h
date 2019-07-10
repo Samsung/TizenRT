@@ -660,6 +660,39 @@ static inline void mpu_peripheral(uint32_t region, uintptr_t base, size_t size)
 	putreg32(regval, MPU_RASR);
 }
 
+static inline void mpu_peripheral_user(uint32_t region, uintptr_t base, size_t size)
+{
+	uint32_t regval;
+	uint8_t l2size;
+	uint8_t subregions;
+
+	DEBUGASSERT(region < CONFIG_ARMV7M_MPU_NREGIONS);
+	/* Select the region */
+
+	putreg32(region, MPU_RNR);
+
+	/* Select the region base address */
+
+	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
+
+	/* Select the region size and the sub-region map */
+
+	l2size = mpu_log2regionceil(base, size);
+	subregions = mpu_subregion(base, size, l2size);
+
+	/* The configure the region */
+
+	regval = MPU_RASR_ENABLE |	/* Enable region */
+			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
+			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
+			 MPU_RASR_S |			/* Shareable     */
+			 MPU_RASR_B |			/* Bufferable    */
+			 MPU_RASR_AP_RWRO |		/* P:RW   U:None */
+			 MPU_RASR_XN;			/* Instruction access disable */
+
+	putreg32(regval, MPU_RASR);
+}
+
 #if defined(CONFIG_APP_BINARY_SEPARATION)
 static inline void up_set_mpu_app_configuration(struct tcb_s *rtcb)
 {

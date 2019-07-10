@@ -46,6 +46,7 @@ enum {
 	MPU_REG_USER_DATA,
 #endif
 	MPU_REG_APP,
+	MPU_REG_APP_PERIPH_RO,
 };
 
 #ifndef __ASSEMBLY__
