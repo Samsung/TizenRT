@@ -2496,6 +2496,7 @@ static void worker_handler(void *input)
 			result = work_queue(HPWORK, &arg->worker, worker_handler, arg, 0);   \
 		} else {                                                                 \
 			udbg("workQueue is not allowed\n");                                  \
+			kmm_free(arg);                                                       \
 			return -1;                                                           \
 		}                                                                        \
 	} while (0);
