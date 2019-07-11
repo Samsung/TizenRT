@@ -592,7 +592,16 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 								u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
 	ptask->task_name = name;
-	ptask->task = kernel_thread(name, priority, stack_size, (main_t)func, NULL);
+	u32 priority_tmp = priority;
+	if (!strncmp(name, "recv_thread", sizeof("recv_thread"))) {
+		priority_tmp = 224;
+	}  else if (!strncmp(name, "cmd_thread", sizeof("cmd_thread"))) {
+		priority_tmp = 113;
+	} else if (!strncmp(name, "xmit_thread", sizeof("xmit_thread"))) {
+		priority_tmp = 110;
+	}
+
+	ptask->task = kernel_thread(name, priority_tmp, stack_size, (main_t)func, NULL);
 	if (!ptask->task) {
 		DBG_ERR("create the task %s failed!", name);
 		ptask->task = 0;

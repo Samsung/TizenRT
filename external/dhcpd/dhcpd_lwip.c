@@ -209,6 +209,9 @@ int dhcp_server_status(char *intf)
 
 int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	int ret= ERROR;
 	dhcp_join_data_s *data = (dhcp_join_data_s *)malloc(sizeof(dhcp_join_data_s));
 	if (!data) {
 		ndbg("Failed to alloc mem for data\n");
@@ -223,9 +226,24 @@ int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	memcpy(data->intf, intf, strlen(intf) + 1);
 	data->fn = dhcp_join_cb;
 
-	int ret = ERROR;
 	g_dhcpd_term = 0;
-	ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, (void *)data);
+		/* Initialize the attribute variable */
+
+	if ((ret = pthread_attr_init(&attr)) != 0) {
+		ndbg("Failed to init attr\n");
+		free(data->intf);
+		free(data);
+		return ERROR;
+	}
+
+	sparam.sched_priority = 110;
+	if ((ret = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+		ndbg("Failed to set attr\n");
+		free(data->intf);
+		free(data);
+		return ERROR;
+	}
+	ret = pthread_create(&g_dhcpd_tid, &attr, _dhcpd_join_handler, (void *)data);
 	if (ret < 0) {
 		g_dhcpd_term = 1;
 		free(data->intf);
