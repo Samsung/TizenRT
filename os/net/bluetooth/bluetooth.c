@@ -44,6 +44,10 @@
 #include <debug.h>
 #include <tinyara/wqueue.h>
 
+#ifdef CONFIG_BLUETOOTH_NULL
+#include <tinyara/bluetooth/bt_null.h>
+#endif
+
 extern struct bt_dev_s g_btdev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
@@ -144,9 +148,38 @@ static int set_ad(unsigned short hci_op, const struct bt_ad *ad, size_t ad_len)
 	return bt_hci_cmd_send_sync(hci_op, buf, NULL);
 }
 
+#ifdef CONFIG_BLUETOOTH_NULL
+static int write_local_name(const char *name)
+{
+	struct bt_buf_s *buf;
+	struct hci_cp_write_local_name_s *name_cp;
+	int err;
+
+	/* Set local name */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	name_cp = bt_buf_extend(buf, sizeof(*name_cp));
+	strncpy((char *)name_cp->local_name, name, sizeof(name_cp->local_name));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+#endif
+
 int bt_set_name(const char *name)
 {
 	size_t len = strlen(name);
+
+#ifdef CONFIG_BLUETOOTH_NULL
+	write_local_name(name);
+#endif
 
 	if (len >= sizeof(g_btdev.name)) {
 		return -ENOMEM;
@@ -178,8 +211,38 @@ int bt_set_name(const char *name)
 	return 0;
 }
 
+#ifdef CONFIG_BLUETOOTH_NULL
+static void read_local_name_complete(FAR struct bt_buf_s *buf)
+{
+	FAR struct hci_rp_read_local_name_s *rp = (FAR void *)buf->data;
+
+	nvdbg("status %u\n", rp->status);
+
+	memcpy(g_btdev.local_name, rp->local_name, HCI_MAX_NAME_LENGTH);
+}
+
+static int read_local_name(void)
+{
+	struct bt_buf_s *rsp;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_NAME, NULL, &rsp);
+	if (err) {
+		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		return err;
+	}
+
+	read_local_name_complete(rsp);
+
+	return 0;
+}
+#endif
+
 const char *bt_get_name(void)
 {
+#ifdef CONFIG_BLUETOOTH_NULL
+	read_local_name();
+#endif
 	return g_btdev.name;
 }
 
@@ -281,6 +344,11 @@ static void k_work_submit(void)
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
+
+#ifdef CONFIG_BLUETOOTH_NULL
+	btnull_register();
+#endif
+
 	FAR const struct bt_driver_s *bt_drv = g_btdev.btdev;
 
 	if (!bt_drv) {

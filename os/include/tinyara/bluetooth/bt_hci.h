@@ -127,6 +127,10 @@
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE         BT_OP(BT_OGF_LE, 0x0002)
 #define BT_HCI_OP_LE_READ_LOCAL_FEATURES      BT_OP(BT_OGF_LE, 0x0003)
 
+/* Local Name */
+#define BT_HCI_OP_WRITE_LOCAL_NAME            BT_OP(BT_OGF_BASEBAND, 0x0013)
+#define BT_HCI_OP_READ_LOCAL_NAME             BT_OP(BT_OGF_BASEBAND, 0x0014)
+
 /* Advertising types */
 
 #define BT_LE_ADV_IND                         0x00
@@ -179,6 +183,7 @@
 #define BT_HCI_LE_ADV_DISABLE                   0x00
 #define BT_HCI_LE_ADV_ENABLE                    0x01
 #define CONFIG_BT_ID_MAX                        2
+#define HCI_MAX_NAME_LENGTH             248
 
 #define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
 #define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
@@ -407,6 +412,15 @@ struct bt_hci_cp_le_ltk_req_reply_s {
 
 struct bt_hci_cp_le_ltk_req_neg_reply_s {
 	uint16_t handle;
+} packed_struct;
+
+struct hci_cp_write_local_name_s {
+	uint8_t local_name[HCI_MAX_NAME_LENGTH];
+} packed_struct;
+
+struct hci_rp_read_local_name_s {
+	uint8_t status;
+	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 } packed_struct;
 
 /* Event definitions */
