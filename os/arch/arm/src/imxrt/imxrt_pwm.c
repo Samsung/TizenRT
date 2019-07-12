@@ -954,6 +954,7 @@ static int imxrt_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 	int16_t modulo = 0;
 	uint8_t polarityShift = 0;
 	uint8_t outputEnableShift = 0;
+	uint8_t outputMaskShift = 0;
 	pwm_level_select_t level = kPWM_HighTrue;
 	uint16_t deadtimeValue = 0;
 	uint32_t pwmFreq_Hz = 10000;
@@ -1061,10 +1062,12 @@ static int imxrt_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 	if (pwm_ch % 2) {
 		polarityShift = PWM_OCTRL_POLA_SHIFT;
 		outputEnableShift = PWM_OUTEN_PWMA_EN_SHIFT;
+		outputMaskShift = PWM_MASK_MASKA_SHIFT;
 		base->SM[submodule].DTCNT0 = PWM_DTCNT0_DTCNT0(deadtimeValue);
 	} else {
 		polarityShift = PWM_OCTRL_POLB_SHIFT;
 		outputEnableShift = PWM_OUTEN_PWMB_EN_SHIFT;
+		outputMaskShift = PWM_MASK_MASKB_SHIFT;
 		base->SM[submodule].DTCNT1 = PWM_DTCNT1_DTCNT1(deadtimeValue);
 	}
 
@@ -1074,8 +1077,16 @@ static int imxrt_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 	} else {
 		base->SM[submodule].OCTRL |= (1U << polarityShift);
 	}
-	/* Enable PWM output */
+	/* Mask the output first immediately */
+	base->MASK |= (1U << (outputMaskShift + submodule));
+	base->MASK |= (1U << (PWM_MASK_UPDATE_MASK_SHIFT + submodule));
+
+	/* Enable PWM output at the next reload point */
 	base->OUTEN |= (1U << (outputEnableShift + submodule));
+
+	/* UnMask the output until the next reload */
+	base->MASK &= ~(1U << (PWM_MASK_UPDATE_MASK_SHIFT + submodule));
+	base->MASK &= ~(1U << (outputMaskShift + submodule));
 
 	/* Set the load okay bit for all submodules to load registers from their buffer */
 	imxrt_pwm_setpwmldok(base, 1U << submodule, true);
@@ -2104,6 +2115,7 @@ FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int channel)
 	/* Use full cycle reload */
 	pwmconfig.reloadLogic = kPWM_ReloadPwmFullCycle;
 	pwmconfig.pairOperation = lower->submodule_mode;
+	pwmconfig.forceTrigger = kPWM_Force_LocalReload;
 	pwmconfig.enableDebugMode = true;
 
 	if (imxrt_pwm_init(base, submodule, &pwmconfig) == kStatus_Fail) {
