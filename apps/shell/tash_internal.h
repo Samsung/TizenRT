@@ -31,9 +31,13 @@
 #ifdef CONFIG_DEBUG_TASH
 #ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg(format, ...)        dbg(format, ##__VA_ARGS__)
+#else
+#define shdbg(...)
 #endif
 #ifdef CONFIG_DEBUG_TASH_INFO
 #define shvdbg(format, ...)       vdbg(format, ##__VA_ARGS__)
+#else
+#define shvdbg(...)
 #endif
 #else  /* !CONFIG_DEBUG_TASH */
 #define shdbg(...)
