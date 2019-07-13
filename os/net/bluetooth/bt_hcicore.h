@@ -163,6 +163,9 @@ struct bt_dev_s {
 	/* ID Address used for advertising */
 	uint8_t adv_id;
 
+	/* Current local Random Address */
+	bt_addr_le_t random_addr;
+
 	/* local_name at driver side */
 	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 };

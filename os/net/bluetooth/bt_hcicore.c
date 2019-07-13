@@ -1003,6 +1003,24 @@ static void read_bdaddr_complete(FAR struct bt_buf_s *buf)
 	bt_addr_copy(&g_btdev.bdaddr, &rp->bdaddr);
 }
 
+static void read_bdaddr_complete_id_addr(FAR struct bt_buf_s *buf)
+{
+	FAR struct bt_hci_rp_read_bd_addr_s *rp = (FAR void *)buf->data;
+
+	nvdbg("status %u\n", rp->status);
+
+	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) || !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
+		nvdbg("Controller has no public address");
+		return;
+	}
+
+	bt_addr_copy((bt_addr_t *) g_btdev.id_addr[0].val, &rp->bdaddr);
+
+	g_btdev.id_addr[0].type = BT_ADDR_LE_PUBLIC;
+	g_btdev.id_count = 1U;
+
+}
+
 static void read_le_features_complete(FAR struct bt_buf_s *buf)
 {
 	FAR struct bt_hci_rp_le_read_local_features_s *rp = (FAR void *)buf->data;
@@ -1082,6 +1100,7 @@ int hci_initialize(void)
 	}
 
 	read_bdaddr_complete(rsp);
+	read_bdaddr_complete_id_addr(rsp);
 	bt_buf_release(rsp);
 
 	/* For now we only support LE capable controllers */
@@ -1696,8 +1715,6 @@ send_set_param:
 	g_btdev.adv_enable = 0x01;
 	memcpy(bt_buf_extend(buf, 1), &g_btdev.adv_enable, 1);
 
-	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ADVERTISING);
-
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
@@ -1729,8 +1746,6 @@ int bt_stop_advertising(void)
 
 	g_btdev.adv_enable = 0x00;
 	memcpy(bt_buf_extend(buf, 1), &g_btdev.adv_enable, 1);
-
-	bt_atomic_testclrbit(g_btdev.flags, BT_DEV_ADVERTISING);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }

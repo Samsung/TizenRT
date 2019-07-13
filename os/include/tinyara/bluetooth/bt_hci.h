@@ -59,6 +59,8 @@
 
 #define BT_ADDR_ANY    (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
 #define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_NONE   (&(bt_addr_t) { \
+			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } })
 
 /* HCI Error Codes */
 #define BT_HCI_ERR_SUCCESS                      0x00
@@ -157,6 +159,7 @@
 #define BT_HCI_OP_READ_BD_ADDR                BT_OP(BT_OGF_INFO, 0x0009)
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE         BT_OP(BT_OGF_LE, 0x0002)
 #define BT_HCI_OP_LE_READ_LOCAL_FEATURES      BT_OP(BT_OGF_LE, 0x0003)
+#define BT_HCI_OP_LE_SET_RANDOM_ADDRESS       BT_OP(BT_OGF_LE, 0x0005)
 
 /* Local Name */
 #define BT_HCI_OP_WRITE_LOCAL_NAME            BT_OP(BT_OGF_BASEBAND, 0x0013)
@@ -168,6 +171,8 @@
 #define BT_LE_ADV_DIRECT_IND                  0x01
 #define BT_LE_ADV_SCAN_IND                    0x02
 #define BT_LE_ADV_NONCONN_IND                 0x03
+#define BT_LE_ADV_DIRECT_IND_LOW_DUTY         0x04
+/* Needed in advertising reports when getting info about */
 #define BT_LE_ADV_SCAN_RSP                    0x04
 
 #define BT_HCI_OP_LE_SET_ADV_PARAMETERS       BT_OP(BT_OGF_LE, 0x0006)
@@ -255,6 +260,24 @@
 #define BT_DATA_MESH_BEACON             0x2b	/* Mesh Beacon */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff	/* Manufacturer Specific Data */
+
+#ifdef BIT
+#undef BIT
+#endif
+#define BIT(x) ((uint32_t)1 << (x))
+
+/* HCI version from Assigned Numbers */
+#define BT_HCI_VERSION_1_0B                     0
+#define BT_HCI_VERSION_1_1                      1
+#define BT_HCI_VERSION_1_2                      2
+#define BT_HCI_VERSION_2_0                      3
+#define BT_HCI_VERSION_2_1                      4
+#define BT_HCI_VERSION_3_0                      5
+#define BT_HCI_VERSION_4_0                      6
+#define BT_HCI_VERSION_4_1                      7
+#define BT_HCI_VERSION_4_2                      8
+#define BT_HCI_VERSION_5_0                      9
+#define BT_HCI_VERSION_5_1                      10
 
 /* Defined GAP timers */
 #define BT_GAP_SCAN_FAST_INTERVAL               0x0060	/* 60 ms    */
@@ -462,6 +485,10 @@ struct bt_hci_cp_le_ltk_req_reply_s {
 
 struct bt_hci_cp_le_ltk_req_neg_reply_s {
 	uint16_t handle;
+} packed_struct;
+
+struct bt_hci_cp_le_set_random_address_s {
+	bt_addr_t bdaddr;
 } packed_struct;
 
 struct hci_cp_write_local_name_s {
