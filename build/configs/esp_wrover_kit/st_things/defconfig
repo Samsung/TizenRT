@@ -1282,7 +1282,6 @@ CONFIG_ST_THINGS=y
 #
 # ST_Things Config Parameters
 #
-# CONFIG_ST_THINGS_STG_MODE is not set
 CONFIG_WIFI_SCAN_IN_SOFT_AP_DISABLED=y
 
 #
