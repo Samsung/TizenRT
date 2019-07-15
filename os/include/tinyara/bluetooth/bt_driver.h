@@ -106,4 +106,8 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev);
 
 void bt_hci_receive(FAR struct bt_buf_s *buf);
 
+#ifdef CONFIG_BLUETOOTH_NULL
+int bt_dev_register(FAR const struct bt_driver_s *btdev);
+#endif
+
 #endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H */

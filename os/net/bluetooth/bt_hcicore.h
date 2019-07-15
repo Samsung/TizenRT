@@ -150,7 +150,7 @@ struct bt_dev_s {
 
 	FAR const struct bt_driver_s *btdev;
 
-	/* local name */
+	/* name */
 	char name[CONFIG_BT_DEVICE_NAME_MAX];
 
 	/* dev flags */
@@ -162,6 +162,9 @@ struct bt_dev_s {
 
 	/* ID Address used for advertising */
 	uint8_t adv_id;
+
+	/* local_name at driver side */
+	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 };
 
 /* Connection callback structure */

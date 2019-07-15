@@ -1079,4 +1079,11 @@ errout:
 #endif
 }
 
+#ifdef CONFIG_BLUETOOTH_NULL
+int bt_dev_register(FAR const struct bt_driver_s *btdev)
+{
+	return bt_driver_register(btdev);
+}
+#endif
+
 #endif							/* CONFIG_NET && CONFIG_NET_skeleton */
