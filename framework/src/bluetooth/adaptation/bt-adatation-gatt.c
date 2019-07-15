@@ -15,6 +15,7 @@
  *
  */
 
+#include <tinyara/config.h>
 #include <string.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-gatt.h"

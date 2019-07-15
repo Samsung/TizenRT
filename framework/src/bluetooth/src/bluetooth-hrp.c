@@ -19,6 +19,7 @@
  *
  */
 
+#include <tinyara/config.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/bluetooth_internal.h>
 #include "bluetooth_private.h"
