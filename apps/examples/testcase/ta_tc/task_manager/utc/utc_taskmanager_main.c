@@ -492,12 +492,19 @@ static void utc_taskmanager_broadcast_p(void)
 {
 	int sleep_cnt = 0;
 	tm_msg_t user_data;
+	int ret;
 
 	sem_init(&tm_broad_sem, 0, 1);
 	broad_wifi_on_cnt = 0;
 	broad_wifi_off_cnt = 0;
 	broad_undefined_cnt = 0;
 	broadcast_data_flag = -1;
+
+	user_data.msg_size = 0;
+	user_data.msg = NULL;
+
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON, &user_data, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_broadcast", ret, OK);
 
 	user_data.msg_size = strlen("WIFI_ON") + 1;
 	user_data.msg = malloc(user_data.msg_size);
@@ -970,7 +977,7 @@ void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
 	cb_flag = false;
-	
+
 	utc_taskmanager_alloc_broadcast_msg_p();
 
 	utc_taskmanager_register_n();
