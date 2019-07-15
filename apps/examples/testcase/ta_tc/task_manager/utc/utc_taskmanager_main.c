@@ -482,8 +482,15 @@ static void utc_taskmanager_unicast_p(void)
 static void utc_taskmanager_broadcast_n(void)
 {
 	int ret;
+	tm_msg_t user_data;
+	user_data.msg_size = 0;
+	user_data.msg = NULL;
+
 	ret = task_manager_broadcast(TM_INVALID_BROAD_MSG, NULL, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_broadcast", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON, &user_data, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_broadcast", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -970,7 +977,7 @@ void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
 	cb_flag = false;
-	
+
 	utc_taskmanager_alloc_broadcast_msg_p();
 
 	utc_taskmanager_register_n();
