@@ -124,6 +124,7 @@ private:
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
+	player_result_t stopPlayback();
 	void pausePlayer();
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
