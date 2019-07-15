@@ -148,6 +148,53 @@ struct iob_s;					/* Forward reference */
 
 int bluetooth_input(FAR struct radio_driver_s *radio, FAR struct iob_s *framelist, FAR struct bluetooth_frame_meta_s *meta);
 
+/** Advertising options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_ADV_OPT_NONE = 0,
+
+	/** Advertise as connectable. Type of advertising is determined by
+	 * providing SCAN_RSP data and/or enabling local privacy support.
+	 */
+	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
+
+	/** Don't try to resume connectable advertising after a connection.
+	 *  This option is only meaningful when used together with
+	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
+	 *  when bt_le_adv_stop() is called or when an incoming (slave)
+	 *  connection happens. If this option is not set the stack will
+	 *  take care of keeping advertising enabled even as connections
+	 *  occur.
+	 */
+	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
+
+	/** Advertise using the identity address as the own address.
+	 *  @warning This will compromise the privacy of the device, so care
+	 *           must be taken when using this option.
+	 */
+	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
+
+	/* Advertise using GAP device name */
+	BT_LE_ADV_OPT_USE_NAME = BIT(3),
+
+	/** Use low duty directed advertising mode, otherwise high duty mode
+	 *  will be used. This option is only effective when used with
+	 *  bt_conn_create_slave_le().
+	 */
+	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
+
+	/** Enable use of Resolvable Private Address (RPA) as the target address
+	 *  in directed advertisements when CONFIG_BT_PRIVACY is not enabled.
+	 *  This is required if the remote device is privacy-enabled and
+	 *  supports address resolution of the target address in directed
+	 *  advertisement.
+	 *  It is the responsibility of the application to check that the remote
+	 *  device supports address resolution of directed advertisements by
+	 *  reading its Central Address Resolution characteristic.
+	 */
+	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
+};
+
 /** Description of different data types that can be encoded into
   * advertising data. Used to form arrays that are passed to the
   * bt_le_adv_start() function.

@@ -46,6 +46,7 @@
 #include <tinyara/wqueue.h>
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_hci.h>
+#include <tinyara/random.h>
 
 #include "bt_buf.h"
 #include "bt_keys.h"
@@ -393,6 +394,15 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
+static int bt_rand(void *buf, size_t len)
+{
+#ifdef CONFIG_CRYPTO_RANDOM_POOL
+	getrandom(buf, len);
+#endif
+
+	return 0;
+}
+
 static inline int create_random_addr(bt_addr_le_t *addr)
 {
 	addr->type = BT_ADDR_LE_RANDOM;
@@ -609,21 +619,358 @@ int bt_id_delete(uint8_t id)
 	return 0;
 }
 
+static int set_random_address(const bt_addr_t *addr)
+{
+	struct bt_buf_s *buf;
+	bt_addr_t *r_addr;
+	int err;
+	nvdbg("%s", bt_addr_str(addr));
+	/* Do nothing if we already have the right address */
+	if (!bt_addr_cmp(addr, (bt_addr_t *) g_btdev.random_addr.val)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(*addr));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	r_addr = bt_buf_extend(buf, sizeof(bt_addr_t));
+	memcpy(r_addr, addr, sizeof(bt_addr_t));
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_addr_copy((bt_addr_t *) g_btdev.random_addr.val, addr);
+	g_btdev.random_addr.type = BT_ADDR_LE_RANDOM;
+	return 0;
+}
+
+static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
+{
+	int i;
+	for (i = 0; i < ad_len; i++) {
+		if (ad[i].type == BT_DATA_NAME_COMPLETE || ad[i].type == BT_DATA_NAME_SHORTENED) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int le_adv_update(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len, bool connectable, bool use_name)
+{
+	struct bt_ad d[2] = {
+	};
+	int err;
+	d[0].data = ad;
+	d[0].len = ad_len;
+	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, d, 1);
+	if (err) {
+		return err;
+	}
+
+	d[0].data = sd;
+	d[0].len = sd_len;
+	if (use_name) {
+		const char *name;
+		if (sd) {
+			/* Cannot use name if name is already set */
+			if (ad_has_name(sd, sd_len)) {
+				return -EINVAL;
+			}
+		}
+
+		name = bt_get_name();
+		d[1].data = (&(struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, name, strlen(name)));
+		d[1].len = 1;
+	}
+
+	/*
+	 * We need to set SCAN_RSP when enabling advertising type that
+	 * allows for Scan Requests.
+	 *
+	 * If any data was not provided but we enable connectable
+	 * undirected advertising sd needs to be cleared from values set
+	 * by previous calls.
+	 * Clearing sd is done by calling set_ad() with NULL data and
+	 * zero len.
+	 * So following condition check is unusual but correct.
+	 */
+	if (d[0].data || d[1].data || connectable) {
+		err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, d, 2);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
+{
+	/* TODO amit id_addr and adv_id to check more on this */
+	if (param->id >= g_btdev.id_count || !bt_addr_le_cmp(&g_btdev.id_addr[param->id], BT_ADDR_LE_ANY)) {
+		return false;
+	}
+
+	if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+		/*
+		 * BT Core 4.2 [Vol 2, Part E, 7.8.5]
+		 * The Advertising_Interval_Min and Advertising_Interval_Max
+		 * shall not be set to less than 0x00A0 (100 ms) if the
+		 * Advertising_Type is set to ADV_SCAN_IND or ADV_NONCONN_IND.
+		 */
+		if (g_btdev.hci_version < BT_HCI_VERSION_5_0 && param->interval_min < 0x00a0) {
+			return false;
+		}
+	}
+
+	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) || !dir_adv) {
+		if (param->interval_min > param->interval_max || param->interval_min < 0x0020 || param->interval_max > 0x4000) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+#if 0
+#if defined(CONFIG_BT_PRIVACY)
+/* this function sets new RPA only if current one is no longer valid */
+static int le_set_private_addr(u8_t id)
+{
+	bt_addr_t rpa;
+	int err;
+	/* check if RPA is valid */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
+		return 0;
+	}
+
+	err = bt_rpa_create(bt_dev.irk[id], &rpa);
+	if (!err) {
+		err = set_random_address(&rpa);
+		if (!err) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+		}
+	}
+
+	/* restart timer even if failed to set new RPA */
+	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	return err;
+}
+#endif
+#endif
+
+static int le_set_private_addr(uint8_t id)
+{
+	bt_addr_t nrpa;
+	int err;
+	err = bt_rand(nrpa.val, sizeof(nrpa.val));
+	if (err) {
+		return err;
+	}
+
+	nrpa.val[5] &= 0x3f;
+	return set_random_address(&nrpa);
+}
+
+static int bt_le_adv_start_internal(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len, const bt_addr_le_t *peer)
+{
+	FAR struct bt_hci_cp_le_set_adv_parameters_s set_param;
+	FAR struct bt_hci_cp_le_set_adv_parameters_s *set_adv_param;
+	const bt_addr_le_t *id_addr;
+	FAR struct bt_buf_s *buf;
+	bool dir_adv = (peer != NULL);
+	int err = 0;
+	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (!valid_adv_param(param, dir_adv)) {
+		return -EINVAL;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		return -EALREADY;
+	}
+
+	if (!dir_adv) {
+		err = le_adv_update(ad, ad_len, sd, sd_len, param->options & BT_LE_ADV_OPT_CONNECTABLE, param->options & BT_LE_ADV_OPT_USE_NAME);
+		if (err) {
+			return err;
+		}
+	}
+
+	(void)memset(&set_param, 0, sizeof(set_param));
+	set_param.min_interval = BT_HOST2LE16(param->interval_min);
+	set_param.max_interval = BT_HOST2LE16(param->interval_max);
+	set_param.channel_map = 0x07;
+	if (g_btdev.adv_id != param->id) {
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_RPA_VALID);
+	}
+
+	/* Set which local identity address we're advertising with */
+	g_btdev.adv_id = param->id;
+	id_addr = &g_btdev.id_addr[param->id];
+	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+#if 0
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) && !(param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
+			err = le_set_private_addr(param->id);
+		}
+		if (err) {
+			return err;
+		}
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			set_param.own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+#endif
+		if (!(param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
+			err = le_set_private_addr(param->id);
+			if (err) {
+				return err;
+			}
+
+			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
+		} else {
+			/*
+			 * If Static Random address is used as Identity
+			 * address we need to restore it before advertising
+			 * is enabled. Otherwise NRPA used for active scan
+			 * could be used for advertising.
+			 */
+			if (id_addr->type == BT_ADDR_LE_RANDOM) {
+				set_random_address((bt_addr_t *) id_addr->val);
+			}
+
+			set_param.own_addr_type = id_addr->type;
+		}
+
+		if (dir_adv) {
+			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
+				set_param.type = BT_LE_ADV_DIRECT_IND_LOW_DUTY;
+			} else {
+				set_param.type = BT_LE_ADV_DIRECT_IND;
+			}
+
+			bt_addr_le_copy(&set_param.direct_addr, peer);
+#if 0
+			if (IS_ENABLED(CONFIG_BT_SMP) && !IS_ENABLED(CONFIG_BT_PRIVACY) && BT_FEAT_LE_PRIVACY(bt_dev.le.features) && (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
+				/* This will not use RPA for our own address
+				 * since we have set zeroed out the local IRK.
+				 */
+				set_param.own_addr_type |= BT_HCI_OWN_ADDR_RPA_MASK;
+			}
+#endif
+		} else {
+			set_param.type = BT_LE_ADV_IND;
+		}
+	} else {
+		if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
+			if (id_addr->type == BT_ADDR_LE_RANDOM) {
+				err = set_random_address((bt_addr_t *) id_addr->val);
+			}
+
+			set_param.own_addr_type = id_addr->type;
+		} else {
+			err = le_set_private_addr(param->id);
+			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+
+		if (err) {
+			return err;
+		}
+
+		if (sd) {
+			set_param.type = BT_LE_ADV_SCAN_IND;
+		} else {
+			set_param.type = BT_LE_ADV_NONCONN_IND;
+		}
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS, sizeof(*set_adv_param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	set_adv_param = bt_buf_extend(buf, sizeof(*set_adv_param));
+	memset(set_adv_param, 0, sizeof(*set_adv_param));
+	memcpy(set_adv_param, &set_param, sizeof(*set_adv_param));
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	err = set_advertise_enable(true);
+	if (err) {
+		return err;
+	}
+
+	if (!(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_KEEP_ADVERTISING);
+	}
+
+	if (param->options & BT_LE_ADV_OPT_USE_NAME) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_ADVERTISING_NAME);
+	}
+
+	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+		bt_atomic_setbit(g_btdev.flags, BT_DEV_ADVERTISING_CONNECTABLE);
+	}
+
+	return 0;
+}
+
 int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len)
 {
-	// TODO: need to implement
-	return 0;
+	if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
+		return -EINVAL;
+	}
+
+	return bt_le_adv_start_internal(param, ad, ad_len, sd, sd_len, NULL);
 }
 
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len)
 {
-	// TODO: need to implement
-	return 0;
+	bool connectable, use_name;
+	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		return -EAGAIN;
+	}
+
+	connectable = bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING_CONNECTABLE);
+	use_name = bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING_NAME);
+	return le_adv_update(ad, ad_len, sd, sd_len, connectable, use_name);
 }
 
 int bt_le_adv_stop(void)
 {
-	// TODO: need to implement
+	int err;
+	/* Make sure advertising is not re-enabled later even if it's not
+	 * currently enabled (i.e. BT_DEV_ADVERTISING is not set).
+	 */
+	bt_atomic_clrbit(g_btdev.flags, BT_DEV_KEEP_ADVERTISING);
+	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		return 0;
+	}
+
+	err = set_advertise_enable(false);
+	if (err) {
+		return err;
+	}
+#if 0
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY))
+#endif
+	{
+		/* If active scan is ongoing set NRPA */
+		if (bt_atomic_testbit(g_btdev.flags, BT_DEV_SCANNING) && bt_atomic_testbit(g_btdev.flags, BT_DEV_ACTIVE_SCAN)) {
+			le_set_private_addr(g_btdev.adv_id);
+		}
+	}
+
 	return 0;
 }
 
@@ -645,12 +992,12 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 }
 
 /*
-void bt_data_parse(struct net_buf_simple *ad, bool (*func)(struct bt_data *data, void *user_data), void *user_data)
-{
-	// TODO: need to implement
-	return;
-}
-*/
+   void bt_data_parse(struct net_buf_simple *ad, bool (*func)(struct bt_data *data, void *user_data), void *user_data)
+   {
+   // TODO: need to implement
+   return;
+   }
+ */
 
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
@@ -779,10 +1126,10 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 }
 
 /* void bt_conn_cb_register(struct bt_conn_cb *cb)
-{
-	// TODO: need to implement
-	return;
-}*/
+   {
+   // TODO: need to implement
+   return;
+   } */
 
 void bt_set_bondable(bool enable)
 {
