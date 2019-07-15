@@ -362,7 +362,7 @@ static uint8_t notify_cb(FAR const struct bt_gatt_attr_s *attr, FAR void *user_d
 			continue;
 		}
 
-		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
+		conn = bt_conn_lookup_addr_le_internal(&ccc->cfg[i].peer);
 		if (!conn || conn->state != BT_CONN_CONNECTED) {
 			continue;
 		}
@@ -474,7 +474,7 @@ static uint8_t disconnected_cb(FAR const struct bt_gatt_attr_s *attr, FAR void *
 
 			/* Skip if there is another peer connected */
 
-			tmp = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
+			tmp = bt_conn_lookup_addr_le_internal(&ccc->cfg[i].peer);
 			if (tmp && tmp->state == BT_CONN_CONNECTED) {
 				bt_conn_release(tmp);
 				return BT_GATT_ITER_CONTINUE;

@@ -262,6 +262,35 @@ struct bt_bond_info {
 };
 
 /**
+ * @brief Simple network buffer representation.
+ *
+ * This is a simpler variant of the net_buf object (in fact net_buf uses
+ * net_buf_simple internally). It doesn't provide any kind of reference
+ * counting, user data, dynamic allocation, or in general the ability to
+ * pass through kernel objects such as FIFOs.
+ *
+ * The main use of this is for scenarios where the meta-data of the normal
+ * net_buf isn't needed and causes too much overhead. This could be e.g.
+ * when the buffer only needs to be allocated on the stack or when the
+ * access to and lifetime of the buffer is well controlled and constrained.
+ */
+struct net_buf_simple {
+	/** Pointer to the start of data in the buffer. */
+	uint8_t *data;
+
+	/** Length of the data behind the data pointer. */
+	uint8_t len;
+
+	/** Amount of data that this buffer can store. */
+	uint16_t size;
+
+	/** Start of the data storage. Not to be accessed directly
+	 *  (the data pointer should be used instead).
+	 */
+	uint8_t *__buf;
+};
+
+/**
  * @typedef bt_ready_cb_t
  * @brief Callback for notifying that Bluetooth has been enabled.
  *

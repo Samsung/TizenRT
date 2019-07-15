@@ -548,7 +548,7 @@ static int bt_hci_stop_scanning(void)
 	return ret;
 }
 
-static int hci_le_create_conn(FAR const bt_addr_le_t *addr)
+int hci_le_create_conn(FAR const bt_addr_le_t *addr)
 {
 	FAR struct bt_buf_s *buf;
 	FAR struct bt_hci_cp_le_create_conn_s *cp;
@@ -812,6 +812,7 @@ static void hci_le_meta_event(FAR struct bt_buf_s *buf)
 
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
+		ble_adv_report(buf);
 		break;
 
 	case BT_HCI_EVT_LE_LTK_REQUEST:
@@ -1037,7 +1038,7 @@ static void le_read_buffer_size_complete(FAR struct bt_buf_s *buf)
 	g_btdev.le_pkts = rp->le_max_num;
 }
 
-static int hci_initialize(void)
+int hci_initialize(void)
 {
 	FAR struct bt_hci_cp_host_buffer_size_s *hbs;
 	FAR struct bt_hci_cp_set_event_mask_s *ev;

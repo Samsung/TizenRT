@@ -61,12 +61,43 @@
 #define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, { 0, 0, 0, 0, 0, 0 } })
 
 /* HCI Error Codes */
-
-#define BT_HCI_ERR_AUTHENTICATION_FAIL    0x05
-#define BT_HCI_ERR_REMOTE_USER_TERM_CONN  0x13
-#define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE  0x1a
-#define BT_HCI_ERR_PAIRING_NOT_SUPPORTED  0x29
-#define BT_HCI_ERR_UNACCEPT_CONN_PARAMS   0x3b
+#define BT_HCI_ERR_SUCCESS                      0x00
+#define BT_HCI_ERR_UNKNOWN_CMD                  0x01
+#define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
+#define BT_HCI_ERR_HW_FAILURE                   0x03
+#define BT_HCI_ERR_PAGE_TIMEOUT                 0x04
+#define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
+#define BT_HCI_ERR_PIN_OR_KEY_MISSING           0x06
+#define BT_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07
+#define BT_HCI_ERR_CONN_TIMEOUT                 0x08
+#define BT_HCI_ERR_CONN_LIMIT_EXCEEDED          0x09
+#define BT_HCI_ERR_SYNC_CONN_LIMIT_EXCEEDED     0x0a
+#define BT_HCI_ERR_CONN_ALREADY_EXISTS          0x0b
+#define BT_HCI_ERR_CMD_DISALLOWED               0x0c
+#define BT_HCI_ERR_INSUFFICIENT_RESOURCES       0x0d
+#define BT_HCI_ERR_INSUFFICIENT_SECURITY        0x0e
+#define BT_HCI_ERR_BD_ADDR_UNACCEPTABLE         0x0f
+#define BT_HCI_ERR_CONN_ACCEPT_TIMEOUT          0x10
+#define BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL     0x11
+#define BT_HCI_ERR_INVALID_PARAM                0x12
+#define BT_HCI_ERR_REMOTE_USER_TERM_CONN        0x13
+#define BT_HCI_ERR_REMOTE_LOW_RESOURCES         0x14
+#define BT_HCI_ERR_REMOTE_POWER_OFF             0x15
+#define BT_HCI_ERR_LOCALHOST_TERM_CONN          0x16
+#define BT_HCI_ERR_PAIRING_NOT_ALLOWED          0x18
+#define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
+#define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
+#define BT_HCI_ERR_UNSPECIFIED                  0x1f
+#define BT_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20
+#define BT_HCI_ERR_LL_RESP_TIMEOUT              0x22
+#define BT_HCI_ERR_LL_PROC_COLLISION            0x23
+#define BT_HCI_ERR_INSTANT_PASSED               0x28
+#define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
+#define BT_HCI_ERR_DIFF_TRANS_COLLISION         0x2a
+#define BT_HCI_ERR_UNACCEPT_CONN_PARAMS         0x3b
+#define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
+#define BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3d
+#define BT_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3e
 
 /* EIR/AD definitions */
 
@@ -219,6 +250,25 @@
 #define BT_DATA_MESH_BEACON             0x2b	/* Mesh Beacon */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff	/* Manufacturer Specific Data */
+
+/* Defined GAP timers */
+#define BT_GAP_SCAN_FAST_INTERVAL               0x0060	/* 60 ms    */
+#define BT_GAP_SCAN_FAST_WINDOW                 0x0030	/* 30 ms    */
+#define BT_GAP_SCAN_SLOW_INTERVAL_1             0x0800	/* 1.28 s   */
+#define BT_GAP_SCAN_SLOW_WINDOW_1               0x0012	/* 11.25 ms */
+#define BT_GAP_SCAN_SLOW_INTERVAL_2             0x1000	/* 2.56 s   */
+#define BT_GAP_SCAN_SLOW_WINDOW_2               0x0012	/* 11.25 ms */
+#define BT_GAP_ADV_FAST_INT_MIN_1               0x0030	/* 30 ms    */
+#define BT_GAP_ADV_FAST_INT_MAX_1               0x0060	/* 60 ms    */
+#define BT_GAP_ADV_FAST_INT_MIN_2               0x00a0	/* 100 ms   */
+#define BT_GAP_ADV_FAST_INT_MAX_2               0x00f0	/* 150 ms   */
+#define BT_GAP_ADV_SLOW_INT_MIN                 0x0640	/* 1 s      */
+#define BT_GAP_ADV_SLOW_INT_MAX                 0x0780	/* 1.2 s    */
+#define BT_GAP_INIT_CONN_INT_MIN                0x0018	/* 30 ms    */
+#define BT_GAP_INIT_CONN_INT_MAX                0x0028	/* 50 ms    */
+
+#define CONFIG_BT_BACKGROUND_SCAN_INTERVAL      0x0010	/*defaulut value */
+#define CONFIG_BT_BACKGROUND_SCAN_WINDOW        0x0010	/*default value */
 
 /****************************************************************************
  * Public Types
