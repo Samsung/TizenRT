@@ -17,6 +17,7 @@ echo "Connecting the chip ROM ... "
 $SUDO ${SDPHOST} -p $TTYDEV error-status
 if [ $? -ne 0 ]
 then
+    echo -e "## CHECK BOOTMODE PIN SETTINGS & RESET \n"
     exit 1
 fi
 
