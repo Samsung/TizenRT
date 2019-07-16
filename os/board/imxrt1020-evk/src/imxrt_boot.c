@@ -69,6 +69,10 @@
 #ifdef CONFIG_IMXRT_GPT
 #include "imxrt_gpt.h"
 #endif
+#ifdef CONFIG_WATCHDOG
+#include <tinyara/watchdog.h>
+#include "imxrt_wdog.h"
+#endif
 #ifdef CONFIG_ANALOG
 #include <tinyara/analog/adc.h>
 #include "imxrt_adc.h"
@@ -211,6 +215,10 @@ void board_initialize(void)
 	(void)imxrt_bringup();
 
 	imxrt_iotbus_initialize();
+
+#ifdef CONFIG_WATCHDOG
+	imxrt_wdog_initialize(CONFIG_WATCHDOG_DEVPATH, IMXRT_WDOG1);
+#endif
 
 #ifdef CONFIG_IMXRT_TIMER_INTERFACE
 	{
