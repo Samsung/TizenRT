@@ -306,7 +306,7 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
 }
 
 /****************************************************************************
- * Name: mpu_user_intsram_context
+ * Name: mpu_user_extsram_context
  *
  * Description:
  *   Configure the user SRAM mpu settings into the context registers
@@ -314,7 +314,7 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
  ****************************************************************************/
 
 #if defined(CONFIG_ARMV7M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)
-void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs)
+void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs)
 {
 	uint32_t regval;
 	uint8_t l2size;
@@ -338,6 +338,9 @@ void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t size, uint
 	regval = MPU_RASR_ENABLE |      /* Enable region */
 			MPU_RASR_SIZE_LOG2((uint32_t)l2size) | /* Region size   */
 			((uint32_t)subregions << MPU_RASR_SRD_SHIFT) | /* Sub-regions   */
+#ifdef CONFIG_APPS_RAM_REGION_SHAREABLE
+			MPU_RASR_S |                   /* Shareable     */
+#endif
 			MPU_RASR_C |                   /* Cacheable     */
 			MPU_RASR_AP_RWRW;              /* P:RW   U:RW   */
 	regs[2] = regval;
