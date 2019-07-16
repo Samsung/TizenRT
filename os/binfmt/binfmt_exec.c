@@ -71,7 +71,7 @@
 
 #ifdef CONFIG_ARMV7M_MPU
 extern uint32_t g_app_mpu_region;
-extern void mpu_user_intsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs);
+extern void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs);
 #endif
 
 /****************************************************************************
@@ -212,7 +212,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARMV7M_MPU
-	mpu_user_intsram_context(g_app_mpu_region, (uintptr_t)start_addr, size, tcb->mpu_regs);
+	mpu_user_extsram_context(g_app_mpu_region, (uintptr_t)start_addr, size, tcb->mpu_regs);
 #endif
 
 #endif

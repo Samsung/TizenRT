@@ -262,6 +262,14 @@ config NUM_APPS
 		constrain the max number of applications. It is the developer's responsibility
 		to make sure that the NUM_APPS lies withing the memory constraints.
 
+config APPS_RAM_REGION_SHAREABLE
+	bool "RAM region of apps shareable"
+	default n
+	---help---
+		This config indicates if the applications RAM region is to be configured as a
+		shareable region in the MPU. If the system has multiple cores which might access
+		the external applicaiton RAM region, then this config needs to be set to true.
+
 endif # APP_BINARY_SEPARATION
 
 
