@@ -152,7 +152,7 @@ static void uv__signal_handler(int signum) {
   index = PIDHASH(getpid());
 
   if (uv__signal_lock()) {
-    errno = saved_errno;
+    set_errno(saved_errno);
     return;
   }
 
@@ -180,7 +180,7 @@ static void uv__signal_handler(int signum) {
   }
 
   uv__signal_unlock();
-  errno = saved_errno;
+  set_errno(saved_errno);
 }
 
 
