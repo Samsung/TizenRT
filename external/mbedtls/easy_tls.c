@@ -25,7 +25,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 #include <mbedtls/see_cert.h>
 #include <mbedtls/see_api.h>
 #endif
@@ -132,7 +132,7 @@ static int tls_entropy_init(tls_ctx *ctx)
 static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 {
 	int ret = TLS_PARSE_CRED_FAIL;
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	const mbedtls_pk_info_t *pk_info = NULL;
 #endif
 	char *start = NULL, *end = NULL, *copy = NULL;
@@ -194,7 +194,7 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 				return TLS_INVALID_DEVKEY;
 			}
 		}
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 		else if (cred->use_se) {
 			pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
 			if (!pk_info) {
@@ -227,7 +227,7 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 	return TLS_SUCCESS;
 }
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 static int see_generate_random_client(void *ctx, unsigned char *data, size_t len)
 {
 	size_t offset = 0;
@@ -282,7 +282,7 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 	}
 #endif
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	if (ctx->use_se) {
 		mbedtls_ssl_conf_rng(ctx->conf, see_generate_random_client, ctx->ctr_drbg);
 	} else

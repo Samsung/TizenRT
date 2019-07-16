@@ -236,7 +236,7 @@ static tcp_tls_result_e tcp_tls_create(mbedtls_config *tls)
 		return result;
 	}
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	ret = see_init();
 	if (ret != 0) {
 		printf("failed : see_init returned %d\n\n", ret);
@@ -398,7 +398,7 @@ static tcp_tls_result_e tcp_tls_destroy(mbedtls_config *tls)
 	free(tls->entropy);
 	free(tls->timer);
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	int ret = 0;
 
 	ret = see_free();
