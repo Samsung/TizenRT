@@ -120,6 +120,7 @@ int load_binary(FAR const char *filename, load_attr_t *load_attr)
 	bin->priority = load_attr->priority;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin->uheap = (struct mm_heap_s *)start_addr;
+	bin->uheap_size = size;
 #endif
 	bin->compression_type = load_attr->compression_type;
 

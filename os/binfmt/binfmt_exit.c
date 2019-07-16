@@ -59,6 +59,9 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <debug.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <queue.h>
+#endif
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
@@ -66,6 +69,9 @@
 #include "binfmt.h"
 
 #ifdef CONFIG_BINFMT_LOADABLE
+#ifdef CONFIG_APP_BINARY_SEPARATION
+extern volatile sq_queue_t g_delayed_kufree;
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -93,7 +99,12 @@
 int binfmt_exit(FAR struct binary_s *bin)
 {
 	int ret;
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	irqstate_t flags;
+	FAR void *address;
+	uint32_t uheap_start;
+	uint32_t uheap_end;
+#endif
 	DEBUGASSERT(bin != NULL);
 
 	/* Unload the module */
@@ -104,6 +115,21 @@ int binfmt_exit(FAR struct binary_s *bin)
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+	uheap_start = (uint32_t)bin->uheap;
+	uheap_end = uheap_start + bin->uheap_size;
+
+	/* Remove resources which in binary to be unloaded from delayed deallocation. */
+	address = sq_peek(&g_delayed_kufree);
+	while (address) {
+		mllvdbg("Remove addr %p from deplaed kufree, uheap (%p, %p)\n", address, uheap_start, uheap_end);
+		if (uheap_start <= (uint32_t)address && (uint32_t)address <= uheap_end) {
+			flags = irqsave();
+			sq_rem((FAR sq_entry_t *)address, (FAR sq_queue_t *)&g_delayed_kufree);
+			irqrestore(flags);
+		}
+		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
+	}
+
 	/* Free the RAM partition into which this app was loaded */
 	mm_free_ram_partition((uint32_t)bin->uheap);
 #endif

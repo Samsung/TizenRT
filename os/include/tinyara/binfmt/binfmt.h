@@ -99,6 +99,7 @@ struct binary_s {
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	struct mm_heap_s *uheap;	/* User heap pointer to allocate memory for sections */
+	uint32_t uheap_size;		/* The size of user heap */
 #endif
 
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
