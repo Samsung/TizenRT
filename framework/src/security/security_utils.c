@@ -267,9 +267,6 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 	if (!strncmp(path, SS_PATH, sizeof(SS_PATH) - 1)) {
 		*slot = atoi(&path[3]);
 		return 0;
-	} else if (!strncmp(path, FACTORY_PATH, sizeof(FACTORY_PATH) - 1)) {
-		*slot = FACTORYKEY_ARTIK_CERT;
-		return 0;
 	}
 
 	return -1;
