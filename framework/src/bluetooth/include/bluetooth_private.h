@@ -255,6 +255,7 @@ typedef struct {
 	bt_adapter_le_advertising_type_e type;
 } bt_adapter_le_advertising_parameters_s;
 
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	int handle;
 
@@ -271,6 +272,33 @@ typedef struct {
 	char *scan_rsp_data;
 	unsigned int scan_rsp_system_data_len;
 } bt_advertiser_s;
+#else
+struct bt_advertiser_t {
+	struct bt_advertiser_t *flink; /* flink is required to use sq_queue_t */
+	int handle;
+
+	bt_adapter_le_advertising_state_changed_cb cb;
+	void *user_data;
+
+	bt_adapter_le_advertising_parameters_s adv_params;
+
+	unsigned int adv_data_len;
+	char *adv_data;
+	unsigned int adv_system_data_len;
+
+	unsigned int scan_rsp_data_len;
+	char *scan_rsp_data;
+	unsigned int scan_rsp_system_data_len;
+} bt_advertiser_t;
+typedef struct bt_advertiser_t bt_advertiser_s;
+#endif
+
+#ifndef GLIB_SUPPORTED
+struct bt_device_info_t {
+	struct bt_device_info_t *flink; /* flink is required to use sq_queue_t */
+	bt_device_info_s *dev_info;
+};
+#endif
 
 typedef struct {
 	int slot_id;
@@ -298,11 +326,19 @@ typedef struct bt_event_sig_event_slot_s {
 	void *user_data;
 } bt_event_sig_event_slot_s;
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	GSList *services;
 } bt_gatt_server_s;
+#else
+struct bt_gatt_server_t {
+	struct bt_gatt_server_t *flink;
+	sq_queue_t *services;
+};
+typedef struct bt_gatt_server_t bt_gatt_server_s;
+#endif
 
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	GSList *services;
 	char *remote_address;
@@ -315,8 +351,24 @@ typedef struct {
 	void *att_mtu_changed_user_data;
 	int client_id;
 } bt_gatt_client_s;
+#else
+struct bt_gatt_client_t {
+	struct bt_gatt_client_t *flink; /* flink is required to use sq_queue_t */
+	sq_queue_t *services;
+	char *remote_address;
+	bool services_discovered;
+	bool connected;
+
+	bt_gatt_client_att_mtu_changed_cb att_mtu_changed_cb;
+	bt_gatt_client_service_changed_cb service_changed_cb;
+	void *service_changed_user_data;
+	void *att_mtu_changed_user_data;
+	int client_id;
+};
+typedef struct bt_gatt_client_t bt_gatt_client_s;
 #endif
 
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	bt_gatt_type_e type;
 	bt_gatt_role_e role;
@@ -325,8 +377,20 @@ typedef struct {
 	char *uuid;
 	int handle;
 } bt_gatt_common_s;
+#else
+struct bt_gatt_common_t {
+	struct bt_gatt_common_t *flink; /* flink is required to use sq_queue_t */
+	bt_gatt_type_e type;
+	bt_gatt_role_e role;
+	void *parent;
+	char *path;
+	char *uuid;
+	int handle;
+};
+typedef struct bt_gatt_common_t bt_gatt_common_s;
+#endif
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	bt_gatt_type_e type;
 	bt_gatt_role_e role;
@@ -350,9 +414,35 @@ typedef struct {
 	char **include_handles;
 	char **char_handles;
 } bt_gatt_service_s;
+#else
+struct bt_gatt_service_t {
+	struct bt_gatt_service_t *flink; /* flink is required to use sq_queue_t */
+	bt_gatt_type_e type;
+	bt_gatt_role_e role;
+	void *parent;
+	char *path;
+	char *uuid;
+	int handle;
+	int numhandles;
+
+	bool is_included_service;
+
+	bt_gatt_service_type_e service_type;
+
+	sq_queue_t *included_services;
+	sq_queue_t *characteristics;
+
+	int instance_id;  /* Instance ID of the service object */
+	bt_gatt_handle_info_t svc_include_handles;
+	bt_gatt_handle_info_t charc_handles;
+
+	char **include_handles;
+	char **char_handles;
+};
+typedef struct bt_gatt_service_t bt_gatt_service_s;
 #endif
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	bt_gatt_type_e type;
 	bt_gatt_role_e role;
@@ -396,8 +486,55 @@ typedef struct {
 	bt_gatt_client_request_completed_cb write_cb;
 	void *write_user_data;
 } bt_gatt_characteristic_s;
+#else
+struct bt_gatt_characteristic_t {
+	struct bt_gatt_characteristic_t *flink; /* flink is required to use sq_queue_t */
+	bt_gatt_type_e type;
+	bt_gatt_role_e role;
+	void *parent;
+	char *path;
+	char *uuid;
+	int handle;
+	unsigned char addr[BT_ADDR_HEX_LEN];
+
+	int permissions;
+	int properties;
+	bt_gatt_write_type_e write_type;
+
+	sq_queue_t *descriptors;
+
+	int instance_id;  /* Instance ID of the characteristic object */
+	bt_gatt_handle_info_t descriptor_handles;
+
+	char **desc_handles;
+
+	bt_gatt_client_characteristic_value_changed_cb value_changed_cb;
+	void *value_changed_user_data;
+
+	bt_gatt_server_write_value_requested_cb write_value_requested_cb;
+	void *write_value_requested_user_data;
+
+	bt_gatt_server_read_value_requested_cb read_requested_cb;
+	void *read_requested_user_data;
+
+	bt_gatt_server_notification_sent_cb notified_cb;
+	void *notified_user_data;
+
+	bt_gatt_server_characteristic_notification_state_changed_cb notification_changed_cb;
+	void *notification_changed_user_data;
+
+	int value_length;
+	char *value;
+	bt_gatt_client_request_completed_cb read_cb;
+	void *read_user_data;
+
+	bt_gatt_client_request_completed_cb write_cb;
+	void *write_user_data;
+};
+typedef struct bt_gatt_characteristic_t bt_gatt_characteristic_s;
 #endif
 
+#ifdef GLIB_SUPPORTED
 typedef struct {
 	bt_gatt_type_e type;
 	bt_gatt_role_e role;
@@ -423,6 +560,35 @@ typedef struct {
 	bt_gatt_client_request_completed_cb write_cb;
 	void *write_user_data;
 } bt_gatt_descriptor_s;
+#else
+struct bt_gatt_descriptor_t {
+	struct bt_gatt_descriptor_t *flink; /* flink is required to use sq_queue_t */
+	bt_gatt_type_e type;
+	bt_gatt_role_e role;
+	void *parent;
+	char *path;
+	char *uuid;
+	int handle;
+
+	int instance_id;  /* Instance ID of the descriptor object */
+	int permissions;
+
+	bt_gatt_server_write_value_requested_cb write_value_requested_cb;
+	void *write_value_requested_user_data;
+
+	bt_gatt_server_read_value_requested_cb read_requested_cb;
+	void *read_requested_user_data;
+
+	int value_length;
+	char *value;
+	bt_gatt_client_request_completed_cb read_cb;
+	void *read_user_data;
+
+	bt_gatt_client_request_completed_cb write_cb;
+	void *write_user_data;
+};
+typedef struct bt_gatt_descriptor_t bt_gatt_descriptor_s;
+#endif
 
 typedef struct {
 	bt_gatt_client_h client;
@@ -529,6 +695,19 @@ int _bt_check_init_status(void);
 		return BT_ERROR_NOT_ENABLED; \
 	}
 
+#define FREE(data) \
+	if (data) { \
+		free(data); \
+	}
+
+#define FREEV(data) \
+	if (data) { \
+		int tmp_i; \
+		for (tmp_i = 0; data[tmp_i]; tmp_i++) \
+			FREE(data[tmp_i]); \
+		FREE(data); \
+	}
+
 /**
  * @internal
  * @brief Initialize Bluetooth LE adapter
@@ -614,8 +793,10 @@ bool _bt_gatt_is_legacy_client_mode(void);
 
 bt_gatt_client_h _bt_gatt_get_client(const char *remote_addr);
 
-#ifdef GLIB_SUPPORT
-const GSList* _bt_gatt_get_server_list(void);
+#ifdef GLIB_SUPPORTED
+const GSList *_bt_gatt_get_server_list(void);
+#else
+const sq_queue_t *_bt_gatt_get_server_list(void);
 #endif
 
 bt_gatt_h _bt_gatt_client_add_service(bt_gatt_client_h client,

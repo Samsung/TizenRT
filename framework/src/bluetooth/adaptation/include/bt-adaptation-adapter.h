@@ -18,8 +18,10 @@
 #ifndef __BT_ADAPTATION_ADAPTER_H__
 #define __BT_ADAPTATION_ADAPTER_H__
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 #include <glib.h>
+#else
+#include <queue.h>
 #endif
 
 #include <bluetooth/bluetooth_type.h>
@@ -56,8 +58,10 @@ int bt_adapt_is_connectable(bool *is_connectable);
 
 int bt_adapt_set_connectable(bool is_connectable);
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_adapt_get_bonded_device_list(GPtrArray **dev_list);
+#else
+int bt_adapt_get_bonded_device_list(sq_queue_t *dev_list);
 #endif
 
 int bt_adapt_start_le_scan(void);

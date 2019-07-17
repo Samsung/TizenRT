@@ -16,7 +16,8 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <math.h>
+#include <strings.h>
+#include <tinyara/math.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/bluetooth_internal.h>
@@ -32,9 +33,15 @@
 
 #define BT_ADDR_STR_LEN		17
 
+#ifdef GLIB_SUPPORTED
 static GSList *gatt_client_list = NULL;
 static GSList *gatt_handle_list = NULL;
 static GSList *gatt_server_list = NULL;
+#else
+static sq_queue_t gatt_client_list;
+static sq_queue_t gatt_handle_list;
+static sq_queue_t gatt_server_list;
+#endif
 
 int instance_id;
 static bool is_gatt_server_initialized = false;
@@ -42,9 +49,11 @@ static bool is_gatt_server_started = false;
 
 static bt_gatt_service_s* __bt_gatt_service_create(const char *uuid,
 						   bt_gatt_service_type_e type);
-static void __bt_gatt_free_descriptor(bt_gatt_h gatt_handle);
-static void __bt_gatt_free_characteristic(bt_gatt_h gatt_handle);
+#ifdef GLIB_SUPPORTED
 static void __bt_gatt_free_service(bt_gatt_h gatt_handle);
+#else
+static void __bt_gatt_free_service(sq_queue_t *gatt_handle);
+#endif
 
 #define BT_CHECK_GATT_SUPPORT() \
 { \
@@ -71,6 +80,7 @@ static void __bt_gatt_free_service(bt_gatt_h gatt_handle);
 	} \
 }
 
+#ifdef GLIB_SUPPORTED
 #define BT_VALIDATE_GATT_HANDLE(h1) \
 { \
 	GSList *l; \
@@ -86,10 +96,59 @@ static void __bt_gatt_free_service(bt_gatt_h gatt_handle);
 		BT_ERR("App Handle [%p] did not match with any stored handles!!! Must be Invalid Handle!!", h1); \
 		return BT_ERROR_INVALID_PARAMETER; \
 	} \
-} \
+}
+#else
+#define BT_VALIDATE_GATT_HANDLE(h1) \
+{ \
+	bool valid = FALSE; \
+	sq_entry_t *h2 = (sq_entry_t *)sq_peek(&gatt_handle_list); \
+	while (h2) { \
+		if (h2 == h1) { \
+			BT_INFO("Handle matched [%p]", h2); \
+			valid = TRUE; break; \
+		} \
+		h2 = (sq_entry_t *)sq_next(h2); \
+	} \
+	if (valid == FALSE) { \
+		BT_ERR("App Handle [%p] did not match with any stored handles!!! Must be Invalid Handle!!", h1); \
+		return BT_ERROR_INVALID_PARAMETER; \
+	} \
+}
+#endif
 
-static void __bt_gatt_free_service(bt_gatt_h gatt_handle);
+#ifndef GLIB_SUPPORTED
+static int __bt_sq_queue_length(sq_queue_t *q)
+{
+	int length = 0;
+	sq_entry_t *entry = NULL;
 
+	if (q == NULL)
+		return 0;
+
+	entry = (sq_entry_t *)sq_peek(q);
+	while (entry) {
+		length++;
+		entry = (sq_entry_t *)sq_next(entry);
+	}
+	return length;
+}
+
+static sq_entry_t *__bt_sq_queue_find(sq_queue_t *q, sq_entry_t *e)
+{
+	sq_entry_t *entry = NULL;
+
+	if (e == NULL)
+		return NULL;
+
+	entry = (sq_entry_t *)sq_peek(q);
+	while (entry) {
+		if (entry == e)
+			return entry;
+		entry = (sq_entry_t *)sq_next(entry);
+	}
+	return NULL;
+}
+#endif
 /* LCOV_EXCL_START */
 void __bt_string_to_uuid_hex(const char *str, unsigned char *uuid)
 {
@@ -125,6 +184,7 @@ static int __bt_check_gatt_server_init_status(void)
 	return BT_ERROR_NONE;
 }
 
+#ifdef GLIB_SUPPORTED
 static int __get_gatt_handle_by_uuid(GSList *list, const char *uuid,
 		bt_gatt_h *gatt_handle)
 {
@@ -173,9 +233,60 @@ static int __get_gatt_handle_by_uuid(GSList *list, const char *uuid,
 
 	return BT_ERROR_NONE;
 }
+#else
+static int __get_gatt_handle_by_uuid(sq_queue_t *list, const char *uuid,
+		bt_gatt_h *gatt_handle)
+{
+	char *uuid128_a;
+	char *uuid128_b;
+
+	uuid128_a = _bt_convert_uuid_to_uuid128(uuid);
+	if (uuid128_a == NULL) {
+		BT_ERR("Wrong type of uuid : %s", uuid);
+		return BT_ERROR_INVALID_PARAMETER;
+	}
+
+	bt_gatt_common_s *common = (bt_gatt_common_s *)sq_peek(list);
+	while (common) {
+		uuid128_b = _bt_convert_uuid_to_uuid128(common->uuid);
+
+		if (uuid128_b == NULL) {
+			BT_ERR("__get_gatt_handle_by_uuid Error Parameter are NULL..\n");
+			continue;
+		} else if (strcasecmp(uuid128_a, uuid128_b) == 0) {
+			FREE(uuid128_b);
+			break;
+		}
+		
+		FREE(uuid128_b);
+		common = (bt_gatt_common_s *)sq_next(common);
+	}
+	FREE(uuid128_a);
+	
+	if (!common) {
+		char *name = NULL;
+		bt_get_uuid_name(uuid, &name);
+		BT_INFO("Find uuid : %s [%s]", uuid, name);
+		FREE(name);
+		common = (bt_gatt_common_s *)sq_peek(list);
+		while (common) {
+			bt_get_uuid_name(common->uuid, &name);
+			BT_INFO("%s [%s]", common->uuid, name);
+			FREE(name);
+			common = (bt_gatt_common_s *)sq_next(common);
+		}
+		return BT_ERROR_NO_DATA;
+	}
+
+	*gatt_handle = (bt_gatt_common_s *)common;
+
+	return BT_ERROR_NONE;
+}
+#endif
 
 bt_gatt_client_h _bt_gatt_get_client(const char *remote_addr)
 {
+#ifdef GLIB_SUPPORTED
 	GSList *l;
 
 	for (l = gatt_client_list; l; l = g_slist_next(l)) {
@@ -187,15 +298,36 @@ bt_gatt_client_h _bt_gatt_get_client(const char *remote_addr)
 		if (!g_ascii_strcasecmp(client_s->remote_address, remote_addr))
 			return (bt_gatt_client_h)client_s;
 	}
+#else
+	bt_gatt_client_s *client_s = (bt_gatt_client_s *)sq_peek(&gatt_client_list);
+	if (client_s == NULL) {
+		BT_INFO("No GATT Client");
+		return NULL;
+	}
+
+	while (client_s) {
+		if (!strcasecmp(client_s->remote_address, remote_addr))
+			return (bt_gatt_client_h)client_s;
+		client_s = (bt_gatt_client_s *)sq_next(client_s);
+	}
 
 	return NULL;
+#endif
 }
 
+#ifdef GLIB_SUPPORTED
 const GSList* _bt_gatt_get_server_list(void)
 {
 	return gatt_server_list;
 }
+#else
+const sq_queue_t *_bt_gatt_get_server_list(void)
+{
+	return &gatt_server_list;
+}
+#endif
 
+#ifdef GLIB_SUPPORTED
 static void __bt_gatt_client_handle_destroy(bt_gatt_h gatt_handle)
 {
 	bt_gatt_common_s *handle = (bt_gatt_common_s*)gatt_handle;
@@ -207,9 +339,22 @@ static void __bt_gatt_client_handle_destroy(bt_gatt_h gatt_handle)
 	else if (handle->type == BT_GATT_TYPE_DESCRIPTOR)
 		bt_gatt_descriptor_destroy(gatt_handle);
 }
+#else
+static void __bt_gatt_client_handle_destroy(sq_queue_t *gatt_handle)
+{
+	bt_gatt_common_s *handle = (bt_gatt_common_s *)sq_peek(gatt_handle);
+
+	if (handle->type == BT_GATT_TYPE_SERVICE)
+		bt_gatt_service_destroy(gatt_handle);
+	else if (handle->type == BT_GATT_TYPE_CHARACTERISTIC)
+		bt_gatt_characteristic_destroy(gatt_handle);
+	else if (handle->type == BT_GATT_TYPE_DESCRIPTOR)
+		bt_gatt_descriptor_destroy(gatt_handle);
+}
+#endif
 
 bt_gatt_h _bt_gatt_client_add_service(bt_gatt_client_h client,
-		const char *uuid, int instance_id)
+		const char *uuid, int __instance_id)
 {
 	int ret;
 	bt_gatt_client_s *client_s = (bt_gatt_client_s*)client;
@@ -226,7 +371,7 @@ bt_gatt_h _bt_gatt_client_add_service(bt_gatt_client_h client,
 	memset(&service, 0x00, sizeof(bt_gatt_handle_prop_t));
 
 	__bt_string_to_uuid_hex(uuid, service.uuid);
-	service.instance_id = instance_id;
+	service.instance_id = __instance_id;
 
 	BT_INFO("GATT client add service: get all properties of this service");
 	ret = bt_adapt_gatt_client_get_svc_property(client_s->remote_address,
@@ -245,7 +390,7 @@ bt_gatt_h _bt_gatt_client_add_service(bt_gatt_client_h client,
 		return NULL;
 	}
 	svc->role = BT_GATT_ROLE_CLIENT;
-	svc->instance_id = instance_id;
+	svc->instance_id = __instance_id;
 	svc->parent = (void *)client_s;
 	svc->is_included_service = false;
 
@@ -257,14 +402,22 @@ bt_gatt_h _bt_gatt_client_add_service(bt_gatt_client_h client,
 
 	bt_adapt_gatt_free_svc_property(&property);
 
+#ifdef GLIB_SUPPORTED
 	client_s->services = g_slist_append(client_s->services, svc);
 	BT_INFO("GATT service added , current count of Client services [%d]",
 		g_slist_length(client_s->services));
+#else
+	BT_INFO("GATT service added , current count of Client services [%d]",
+		__bt_sq_queue_length(client_s->services));
+
+	client_s->services = calloc(1, sizeof(sq_queue_t));
+	sq_addlast((sq_entry_t *)svc, client_s->services);
+#endif
 
 	return svc;
 }
 
-
+#ifdef GLIB_SUPPORTED
 int _bt_gatt_client_update_services(bt_gatt_client_h client)
 {
 	bt_gatt_client_s *client_s = client;
@@ -314,12 +467,65 @@ int _bt_gatt_client_update_services(bt_gatt_client_h client)
 	}
 	return BT_ERROR_NONE;
 }
+#else
+int _bt_gatt_client_update_services(bt_gatt_client_h client)
+{
+	bt_gatt_client_s *client_s = client;
+	bt_gatt_handle_info_t prim_svc;
+	int ret;
+	int i;
+
+	if (!client_s->connected) {
+		BT_INFO("Not connected");
+		return BT_ERROR_REMOTE_DEVICE_NOT_CONNECTED;
+	}
+
+	if (client_s->services_discovered) {
+		BT_INFO("Already discovered");
+		return BT_ERROR_ALREADY_DONE;
+	}
+
+	BT_INFO("Update services for remote GATT server [%s]",
+			client_s->remote_address);
+
+	ret = bt_adapt_gatt_client_get_primary_services(client_s->remote_address, &prim_svc);
+
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("bt_adapt_gatt_client_get_primary_services is failed");
+		return ret;
+	}
+
+	__bt_gatt_free_service(client_s->services);
+
+	if (prim_svc.count == 0) {
+		BT_INFO("There is no service");
+		return BT_ERROR_NONE;
+	}
+
+	BT_INFO("Services discovered");
+	client_s->services_discovered = true;
+	for (i = 0; i < prim_svc.count; i++) {
+		BT_INFO("Service UUID[%d][%s] Instance ID[%d]",
+				i, prim_svc.uuids[i], prim_svc.inst_id[i]);
+		if (!_bt_gatt_client_add_service(client, prim_svc.uuids[i], prim_svc.inst_id[i])) {
+			BT_ERR("_bt_gatt_client_add_service is failed [%s]",
+					prim_svc.uuids[i]);
+			client_s->services_discovered = false;
+		}
+	}
+	return BT_ERROR_NONE;
+}
+#endif
 
 int _bt_gatt_client_update_include_services(bt_gatt_h service)
 {
 	bt_gatt_service_s *svc = service;
 	bt_gatt_client_s *client_s;
+#ifdef GLIB_SUPPORTED
 	GSList *include_list = NULL;
+#else
+	sq_queue_t *include_list = NULL;
+#endif
 	int i;
 
 	if (svc == NULL)
@@ -332,15 +538,15 @@ int _bt_gatt_client_update_include_services(bt_gatt_h service)
 
 	for (i = 0; svc->include_handles[i]; i++) {
 		bt_gatt_service_s *sec_svc = NULL;
-		bt_gatt_handle_prop_t service;
+		bt_gatt_handle_prop_t prop;
 		bt_gatt_svc_prop_t sec_property;
 		int ret;
 
-		memset(&service, 0x00, sizeof(bt_gatt_handle_prop_t));
+		memset(&prop, 0x00, sizeof(bt_gatt_handle_prop_t));
 		memset(&sec_property, 0x00, sizeof(sec_property));
 
 		ret = bt_adapt_gatt_client_get_svc_property(client_s->remote_address,
-				&service, &sec_property);
+				&prop, &sec_property);
 
 		if (ret != BT_ERROR_NONE) {
 			BT_ERR("bt_adapt_gatt_client_get_svc_property is failed");
@@ -356,20 +562,26 @@ int _bt_gatt_client_update_include_services(bt_gatt_h service)
 		sec_svc->role = BT_GATT_ROLE_CLIENT;
 		sec_svc->parent = (void *)svc;
 		sec_svc->is_included_service = true;
-		sec_svc->path = g_strdup(svc->include_handles[i]);
+		sec_svc->path = strdup(svc->include_handles[i]);
 
 		sec_svc->char_handles = sec_property.char_handle.handle;
 		sec_property.char_handle.handle = NULL;
 
+#ifdef GLIB_SUPPORTED
 		include_list = g_slist_append(include_list, sec_svc);
+#else
+		include_list = calloc(1, sizeof(sq_queue_t));
+		sq_addlast((sq_entry_t *)sec_svc, include_list);
+#endif
 next:
 		bt_adapt_gatt_free_svc_property(&sec_property);
 	}
 
-	g_strfreev(svc->include_handles);
+	FREEV(svc->include_handles);
 	svc->include_handles = NULL;
 
-	g_slist_free_full(svc->included_services, __bt_gatt_free_service);
+//	g_slist_free_full(svc->included_services, __bt_gatt_free_service);
+	__bt_gatt_free_service(svc->included_services);
 
 	svc->included_services = include_list;
 
@@ -382,7 +594,11 @@ int _bt_gatt_client_update_characteristics(bt_gatt_h service)
 	bt_gatt_client_s *client_s;
 	bt_gatt_handle_prop_t svc_handle;
 	bt_gatt_handle_prop_t char_handle;
+#ifdef GLIB_SUPPORTED
 	GSList *chr_list = NULL;
+#else
+	sq_queue_t *chr_list = NULL;
+#endif
 	int i;
 
 	BT_INFO("+");
@@ -462,18 +678,29 @@ int _bt_gatt_client_update_characteristics(bt_gatt_h service)
 		chr->role = BT_GATT_ROLE_CLIENT;
 		chr->properties = char_property.permission;
 
+#ifdef GLIB_SUPPORTED
 		chr_list = g_slist_append(chr_list, chr);
+#else
+		chr_list = calloc(1, sizeof(sq_queue_t));
+		sq_addlast((sq_entry_t *)chr, chr_list);
+#endif
 next:
 		bt_adapt_gatt_free_char_property(&char_property);
 	}
 
 	memset(&svc->charc_handles, 0x00, sizeof(bt_gatt_handle_info_t));
+#ifdef GLIB_SUPPORTED
 	g_slist_free_full(svc->characteristics,
 			__bt_gatt_client_handle_destroy);
+#else
+	__bt_gatt_client_handle_destroy(svc->characteristics);
+#endif
 
 	svc->characteristics = chr_list;
+#ifdef GLIB_SUPPORTED
 	BT_INFO("Total number of characteristics whose properties are retrieved is [%d]",
 			g_slist_length(svc->characteristics));
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -481,7 +708,11 @@ next:
 int _bt_gatt_client_update_descriptors(bt_gatt_h characteristic)
 {
 	bt_gatt_characteristic_s *chr = characteristic;
+#ifdef GLIB_SUPPORTED
 	GSList *desc_list = NULL;
+#else
+	sq_queue_t *desc_list = NULL;
+#endif
 	int i;
 
 	bt_gatt_service_s *svc;
@@ -548,7 +779,12 @@ int _bt_gatt_client_update_descriptors(bt_gatt_h characteristic)
 		desc->instance_id = desc_handle.instance_id;
 		desc->parent = (void *)characteristic;
 		desc->role = BT_GATT_ROLE_CLIENT;
+#ifdef GLIB_SUPPORTED
 		desc_list = g_slist_append(desc_list, desc);
+#else
+		desc_list = calloc(1, sizeof(sq_queue_t));
+		sq_addlast((sq_entry_t *)desc, desc_list);
+#endif
 next:
 		bt_adapt_gatt_free_desc_property(&desc_property);
 	}
@@ -556,8 +792,12 @@ next:
 
 	memset(&chr->descriptor_handles, 0x00, sizeof(bt_gatt_handle_info_t));
 
+#ifdef GLIB_SUPPORTED
 	g_slist_free_full(chr->descriptors,
 			__bt_gatt_client_handle_destroy);
+#else
+	__bt_gatt_client_handle_destroy(chr->descriptors);
+#endif
 
 	chr->descriptors = desc_list;
 
@@ -643,6 +883,7 @@ int bt_gatt_unset_connection_state_changed_cb(void)
 	return BT_ERROR_NONE;
 }
 
+#ifdef GLIB_SUPPORTED
 static void __bt_gatt_free_descriptor(bt_gatt_h gatt_handle)
 {
 	bt_gatt_descriptor_s *desc = (bt_gatt_descriptor_s *)gatt_handle;
@@ -660,7 +901,27 @@ static void __bt_gatt_free_descriptor(bt_gatt_h gatt_handle)
 	else
 		desc->parent = NULL;
 }
+#else
+static void __bt_gatt_free_descriptor(sq_queue_t *gatt_handle)
+{
+	bt_gatt_descriptor_s *desc = (bt_gatt_descriptor_s *)sq_peek(gatt_handle);
 
+	/* Remove descriptor from List of GATT handles */
+	sq_rem((sq_entry_t *)gatt_handle, &gatt_handle_list);
+
+	FREE(desc->path);
+	FREE(desc->uuid);
+	FREE(desc->value);
+
+	if (!desc->read_cb && !desc->write_cb) {
+		FREE(desc);
+	} else {
+		desc->parent = NULL;
+	}
+}
+#endif
+
+#ifdef GLIB_SUPPORTED
 static void __bt_gatt_free_characteristic(bt_gatt_h gatt_handle)
 {
 	int ret;
@@ -723,7 +984,72 @@ fail:
 	else
 		chr->parent = NULL;
 }
+#else
+static void __bt_gatt_free_characteristic(sq_queue_t *gatt_handle)
+{
+	int ret;
+	bt_gatt_handle_prop_t svc_handle;
+	bt_gatt_handle_prop_t chr_handle;
+	bt_gatt_service_s *service_s;
+	bt_gatt_client_s *client_s;
 
+	bt_gatt_characteristic_s *chr = (bt_gatt_characteristic_s *)sq_peek(gatt_handle);
+
+	BT_INFO("+");
+
+	/* Remove characteristic from List of GATT handles */
+	sq_rem((sq_entry_t *)gatt_handle, &gatt_handle_list);
+
+	service_s = (bt_gatt_service_s *)chr->parent;
+	if (!service_s) {
+		BT_ERR("service_s is null");
+		goto fail;
+	}
+	client_s = (bt_gatt_client_s *)service_s->parent;
+	if (!client_s) {
+		BT_ERR("client_s is null");
+		goto fail;
+	}
+	/* Create Service and Charc handles */
+	__bt_string_to_uuid_hex(service_s->uuid, svc_handle.uuid);
+	svc_handle.instance_id = service_s->instance_id;
+
+	BT_INFO("Service UUID [%s]", service_s->uuid);
+	BT_INFO("Charc Instance ID [%d]", service_s->instance_id);
+
+	BT_INFO("Charc UUID [%s]", chr->uuid);
+	BT_INFO("Charc Instance ID [%d]", chr->instance_id);
+
+	BT_INFO("Client ID [%d]", client_s->client_id);
+
+	__bt_string_to_uuid_hex(chr->uuid, chr_handle.uuid);
+	chr_handle.instance_id = chr->instance_id;
+
+	if (chr->role == BT_GATT_ROLE_CLIENT && chr->value_changed_cb &&
+		chr->properties &
+		(BT_GATT_PROPERTY_NOTIFY | BT_GATT_PROPERTY_INDICATE)) {
+		BT_DBG("Unwatch characteristic");
+		ret = bt_adapt_gatt_client_unwatch_char(client_s->remote_address, &svc_handle, &chr_handle, chr->instance_id);
+		if (ret != BT_ERROR_NONE)
+			BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
+	}
+
+fail:
+	__bt_gatt_free_descriptor(chr->descriptors);
+
+	FREE(chr->path);
+	FREE(chr->uuid);
+	FREE(chr->value);
+
+	if (!chr->read_cb && !chr->write_cb) {
+		FREE(chr);
+	} else {
+		chr->parent = NULL;
+	}
+}
+#endif
+
+#ifdef GLIB_SUPPORTED
 static void __bt_gatt_free_service(bt_gatt_h gatt_handle)
 {
 	int ret = BT_ERROR_NONE;
@@ -754,15 +1080,52 @@ static void __bt_gatt_free_service(bt_gatt_h gatt_handle)
 	g_free(svc->uuid);
 	g_free(svc);
 }
+#else
+static void __bt_gatt_free_service(sq_queue_t *gatt_handle)
+{
+	int ret = BT_ERROR_NONE;
+	bt_gatt_service_s *svc = (bt_gatt_service_s *)sq_peek(gatt_handle);
+
+	if (svc->included_services)
+		__bt_gatt_free_service(svc->included_services);
+	if (svc->characteristics)
+	__bt_gatt_free_characteristic(svc->characteristics);
+
+	/* Remove service from List of GATT handles */
+	sq_rem((sq_entry_t *)gatt_handle, &gatt_handle_list);
+
+	if (svc->role == BT_GATT_ROLE_SERVER) {
+		if (is_gatt_server_initialized) {
+			BT_INFO("GATT Server Delete Service: service handle [%d] Inst ID [%d]", svc->handle, instance_id);
+			ret = bt_adapt_gatt_server_delete_service(svc->handle, instance_id);
+			if (ret != BT_ERROR_NONE) {
+				BT_ERR("%s(0x%08x)",
+						_bt_convert_error_to_string(ret), ret);
+			}
+		}
+	}
+
+	FREEV(svc->include_handles);
+	FREEV(svc->char_handles);
+
+	FREE(svc->path);
+	FREE(svc->uuid);
+	FREE(svc);
+}
+#endif
 
 static void __bt_gatt_destroy_descriptor(bt_gatt_h gatt_handle)
 {
 	bt_gatt_descriptor_s *desc = (bt_gatt_descriptor_s *)gatt_handle;
 	bt_gatt_characteristic_s *parent_chr = (bt_gatt_characteristic_s *)desc->parent;
 
+#ifdef GLIB_SUPPORTED
 	if (parent_chr)
 		parent_chr->descriptors = g_slist_remove(parent_chr->descriptors,
 									desc);
+#else
+	sq_rem((sq_entry_t *)desc, parent_chr->descriptors);
+#endif
 
 	__bt_gatt_free_descriptor(gatt_handle);
 }
@@ -772,9 +1135,13 @@ static void __bt_gatt_destroy_characteristic(bt_gatt_h gatt_handle)
 	bt_gatt_characteristic_s *chr = (bt_gatt_characteristic_s *)gatt_handle;
 	bt_gatt_service_s *parent_svc = (bt_gatt_service_s *)chr->parent;
 
+#ifdef GLIB_SUPPORTED
 	if (parent_svc)
 		parent_svc->characteristics = g_slist_remove(parent_svc->characteristics,
 									chr);
+#else
+	sq_rem((sq_entry_t *)chr, parent_svc->characteristics);
+#endif
 
 	__bt_gatt_free_characteristic(gatt_handle);
 }
@@ -789,20 +1156,32 @@ static void __bt_gatt_destroy_service(bt_gatt_h gatt_handle)
 	if (svc->is_included_service == FALSE) {
 		if (svc->role == BT_GATT_ROLE_SERVER) {
 			server = (bt_gatt_server_s *)svc->parent;
+#ifdef GLIB_SUPPORTED
 			if (server)
 				server->services = g_slist_remove(server->services,
 									svc);
+#else
+			sq_rem((sq_entry_t *)svc, server->services);
+#endif
 		} else {
 			client = (bt_gatt_client_s *)svc->parent;
+#ifdef GLIB_SUPPORTED
 			if (client)
 				client->services = g_slist_remove(client->services,
 									svc);
+#else
+			sq_rem((sq_entry_t *)svc, client->services);
+#endif
 		}
 	} else {
 		parent_svc = (bt_gatt_service_s *)svc->parent;
+#ifdef GLIB_SUPPORTED
 		if (parent_svc)
 			parent_svc->included_services = g_slist_remove(parent_svc->included_services,
 									svc);
+#else
+			sq_rem((sq_entry_t *)svc, parent_svc->included_services);
+#endif
 	}
 
 	__bt_gatt_free_service(gatt_handle);
@@ -1033,12 +1412,18 @@ int bt_gatt_get_value(bt_gatt_h gatt_handle, char **value, int *value_length)
 
 	if (handle->type == BT_GATT_TYPE_CHARACTERISTIC) {
 		*value_length = chr->value_length;
-		if (chr->value_length > 0)
-			*value = g_memdup(chr->value, chr->value_length);
+		if (chr->value_length > 0) {
+//			*value = g_memdup(chr->value, chr->value_length);
+			*value = calloc(1, chr->value_length);
+			memcpy(*value, chr->value, chr->value_length);
+		}
 	} else if (handle->type == BT_GATT_TYPE_DESCRIPTOR) {
 		*value_length = desc->value_length;
-		if (desc->value_length > 0)
-			*value = g_memdup(desc->value, desc->value_length);
+		if (desc->value_length > 0) {
+//			*value = g_memdup(desc->value, desc->value_length);
+			*value = calloc(1, desc->value_length);
+			memcpy(*value, desc->value, desc->value_length);
+		}
 	} else {
 		BT_ERR("Type is invalid(type:%d)", handle->type);
 		return BT_ERROR_INVALID_PARAMETER;
@@ -1203,10 +1588,13 @@ int bt_gatt_set_value(bt_gatt_h gatt_handle, const char *value,
 		}
 	}
 
-	g_free(*val);
+	FREE(*val);
 	*val = NULL;
-	if (value_length > 0)
-		*val = g_memdup(value, value_length);
+	if (value_length > 0) {
+		//*val = g_memdup(value, value_length);
+		*val = calloc(1, value_length);
+		*val = memcpy(*val, value, value_length);
+	}
 	*val_len = value_length;
 
 	BT_INFO("Value is set");
@@ -1249,30 +1637,30 @@ int bt_gatt_set_int_value(bt_gatt_h gatt_handle, bt_data_type_int_e type,
 
 	fmt_size = __get_data_type_int_size(type);
 	if (*val == NULL) {
-		*val = g_malloc0(fmt_size);
+		*val = calloc(1, fmt_size);
 		if (*val == NULL)
 			return BT_ERROR_OUT_OF_MEMORY;
 		*val_len = fmt_size;
 	} else if (*val_len == offset) { /* Added */
-		tmp = g_malloc0(*val_len + fmt_size);
+		tmp = calloc(1, *val_len + fmt_size);
 		/* Fix : NULL_RETURNS */
 		if (!tmp) {
-			g_free(*val);
+			FREE(*val);
 			return BT_ERROR_OUT_OF_MEMORY;
 		}
 		memcpy(tmp, *val, *val_len);
-		g_free(*val);
+		FREE(*val);
 		*val = tmp;
 		*val_len += fmt_size;
 	} else if (*val_len < offset + fmt_size) {/* Overlapped */
-		tmp = g_malloc0(offset + fmt_size);
+		tmp = calloc(1, offset + fmt_size);
 		/* Fix : NULL_RETURNS */
 		if (!tmp) {
-			g_free(*val);
+			FREE(*val);
 			return BT_ERROR_OUT_OF_MEMORY;
 		}
 		memcpy(tmp, *val, *val_len);
-		g_free(*val);
+		FREE(*val);
 		*val = tmp;
 		*val_len = offset + fmt_size;
 	}
@@ -1369,31 +1757,31 @@ int bt_gatt_set_float_value(bt_gatt_h gatt_handle, bt_data_type_float_e type,
 	}
 
 	if (*val == NULL) {
-		*val = g_malloc0(fmt_size);
+		*val = calloc(1, fmt_size);
 		/* Fix : NULL_RETURNS */
 		if (*val == NULL)
 			return BT_ERROR_OUT_OF_MEMORY;
 		*val_len = fmt_size;
 	} else if (*val_len == offset) {/* Added */
-		tmp = g_malloc0(*val_len + fmt_size);
+		tmp = calloc(1, *val_len + fmt_size);
 		/* Fix : NULL_RETURNS */
 		if (tmp == NULL) {
-			g_free(*val);
+			FREE(*val);
 			return BT_ERROR_OUT_OF_MEMORY;
 		}
 		memcpy(tmp, *val, *val_len);
-		g_free(*val);
+		FREE(*val);
 		*val = tmp;
 		*val_len += fmt_size;
 	} else if (*val_len < offset + fmt_size) {/* Overlapped */
-		tmp = g_malloc0(offset + fmt_size);
+		tmp = calloc(1, offset + fmt_size);
 		/* Fix : NULL_RETURNS */
 		if (tmp == NULL) {
-			g_free(*val);
+			FREE(*val);
 			return BT_ERROR_OUT_OF_MEMORY;
 		}
 		memcpy(tmp, *val, *val_len);
-		g_free(*val);
+		FREE(*val);
 		*val = tmp;
 		*val_len = offset + fmt_size;
 	}
@@ -1515,7 +1903,7 @@ int bt_gatt_get_uuid(bt_gatt_h gatt_handle, char **uuid)
 	BT_CHECK_INPUT_PARAMETER(gatt_handle);
 	BT_CHECK_INPUT_PARAMETER(uuid); /* LCOV_EXCL_LINE */
 
-	*uuid = g_strdup(handle->uuid); /* LCOV_EXCL_LINE */
+	*uuid = strdup(handle->uuid); /* LCOV_EXCL_LINE */
 
 	return BT_ERROR_NONE; /* LCOV_EXCL_LINE */
 }
@@ -1543,7 +1931,7 @@ static bt_gatt_service_s* __bt_gatt_service_create(const char *uuid,
 	if (uuid == NULL)
 		return NULL;
 
-	svc = (bt_gatt_service_s*)g_malloc0(sizeof(bt_gatt_service_s));
+	svc = (bt_gatt_service_s *)calloc(1, sizeof(bt_gatt_service_s));
 	if (svc == NULL)
 		return NULL;
 
@@ -1551,7 +1939,7 @@ static bt_gatt_service_s* __bt_gatt_service_create(const char *uuid,
 	svc->uuid = _bt_convert_uuid_to_uuid128(uuid);
 
 	if (svc->uuid == NULL) {
-		g_free(svc);
+		FREE(svc);
 		return NULL;
 	}
 	svc->service_type = type;
@@ -1588,7 +1976,11 @@ int bt_gatt_service_create(const char *uuid, bt_gatt_service_type_e type,
 	*service = (bt_gatt_h)svc;
 
 	/* Add service to list of GATT handles */
+#ifdef GLIB_SUPPORTED
 	gatt_handle_list = g_slist_append(gatt_handle_list, (gpointer)svc);
+#else
+	sq_addlast((sq_entry_t *)svc, &gatt_handle_list);
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -1613,7 +2005,12 @@ int bt_gatt_service_add_characteristic(bt_gatt_h service,
 		return BT_ERROR_INVALID_PARAMETER;
 	}
 
+#ifdef GLIB_SUPPORTED
 	svc->characteristics = g_slist_append(svc->characteristics, chr);
+#else
+	svc->characteristics = calloc(1, sizeof(sq_queue_t));
+	sq_addlast((sq_entry_t *)chr, svc->characteristics);
+#endif
 	chr->parent = (void *)service;
 	return BT_ERROR_NONE;
 }
@@ -1638,8 +2035,13 @@ int bt_gatt_service_add_included_service(bt_gatt_h service,
 		return BT_ERROR_INVALID_PARAMETER;
 	}
 
+#ifdef GLIB_SUPPORTED
 	svc->included_services = g_slist_append(svc->included_services,
 							included_svc);
+#else
+	svc->included_services = calloc(1, sizeof(sq_queue_t));
+	sq_addlast((sq_entry_t *)included_svc, svc->included_services);
+#endif
 	included_svc->parent = (void *)service;
 
 	if (svc) {
@@ -1741,7 +2143,9 @@ int bt_gatt_service_foreach_characteristics(bt_gatt_h service,
 {
 	bt_gatt_service_s *svc = (bt_gatt_service_s *)service;
 	bt_gatt_characteristic_s *chr = NULL;
+#ifdef GLIB_SUPPORTED
 	GSList *l = NULL;
+#endif
 	int total = 0;
 	int index = 1;
 
@@ -1762,6 +2166,7 @@ int bt_gatt_service_foreach_characteristics(bt_gatt_h service,
 		}
 	}
 
+#ifdef GLIB_SUPPORTED
 	total = g_slist_length(svc->characteristics);
 	BT_INFO("Total charcs [%d]", total);
 
@@ -1770,6 +2175,17 @@ int bt_gatt_service_foreach_characteristics(bt_gatt_h service,
 		if (!callback(total, index++, (bt_gatt_h)chr, user_data))
 			break;
 	}
+#else
+	total = __bt_sq_queue_length(svc->characteristics);
+	BT_INFO("Total charcs [%d]", total);
+
+	chr = (bt_gatt_characteristic_s *)sq_peek(svc->characteristics);
+	while (chr) {
+		if (!callback(total, index++, (bt_gatt_h)chr, user_data))
+			break;
+		chr = (bt_gatt_characteristic_s *)sq_next(chr);
+	}
+#endif
 
 	return BT_ERROR_NONE; /* LCOV_EXCL_STOP */
 }
@@ -1812,7 +2228,9 @@ int bt_gatt_service_foreach_included_services(bt_gatt_h service,
 {
 	bt_gatt_service_s *svc = (bt_gatt_service_s *)service;
 	bt_gatt_service_s *included_svc = NULL;
+#ifdef GLIB_SUPPORTED
 	GSList *l = NULL;
+#endif
 	int total = 0;
 	int index = 1;
 
@@ -1832,6 +2250,7 @@ int bt_gatt_service_foreach_included_services(bt_gatt_h service,
 		}
 	}
 
+#ifdef GLIB_SUPPORTED
 	total = g_slist_length(svc->included_services); /* LCOV_EXCL_LINE */
 
 	for (l = svc->included_services; l; l = g_slist_next(l)) {
@@ -1840,6 +2259,16 @@ int bt_gatt_service_foreach_included_services(bt_gatt_h service,
 					user_data)) /* LCOV_EXCL_LINE */
 			break;
 	}
+#else
+	total = __bt_sq_queue_length(svc->included_services); /* LCOV_EXCL_LINE */
+
+	included_svc = (bt_gatt_service_s *)sq_peek(svc->included_services);
+	while (included_svc) {
+		if (!callback(total, index++, (bt_gatt_h)included_svc, user_data))
+			break;
+		included_svc = (bt_gatt_service_s *)sq_next(included_svc);
+	}
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -1861,7 +2290,7 @@ int bt_gatt_characteristic_create(const char *uuid, int permissions,
 		BT_CHECK_INPUT_PARAMETER(value);
 
 
-	chr = g_malloc(sizeof(*chr));
+	chr = calloc(1, sizeof(*chr));
 
 	memset(chr, 0x00, sizeof(*chr));
 
@@ -1881,7 +2310,9 @@ int bt_gatt_characteristic_create(const char *uuid, int permissions,
 	chr->write_type = BT_GATT_WRITE_TYPE_WRITE;
 	chr->value_length = value_length;
 	if (value_length > 0) {
-		chr->value = g_memdup(value, value_length);
+		//chr->value = g_memdup(value, value_length);
+		chr->value = calloc(1, value_length);
+		memcpy(chr->value, value, value_length);
 		if (chr->value == NULL) {
 			ret = BT_ERROR_OUT_OF_MEMORY;
 			goto fail;
@@ -1891,14 +2322,18 @@ int bt_gatt_characteristic_create(const char *uuid, int permissions,
 	*characteristic = (bt_gatt_h)chr;
 
 	/* Add charactristic to list of GATT handles */
+#ifdef GLIB_SUPPORTED
 	gatt_handle_list = g_slist_append(gatt_handle_list, (gpointer)chr);
+#else
+	sq_addlast((sq_entry_t *)chr, &gatt_handle_list);
+#endif
 
 	return BT_ERROR_NONE;
 
 fail:
-	g_free(chr->value);
-	g_free(chr->uuid);
-	g_free(chr);
+	FREE(chr->value);
+	FREE(chr->uuid);
+	FREE(chr);
 	BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
 	return ret;
 }
@@ -1929,7 +2364,12 @@ int bt_gatt_characteristic_add_descriptor(bt_gatt_h characteristic,
 		return BT_ERROR_INVALID_PARAMETER;
 	}
 
+#ifdef GLIB_SUPPORTED
 	chr->descriptors = g_slist_append(chr->descriptors, desc);
+#else
+	chr->descriptors = calloc(1, sizeof(sq_queue_t));
+	sq_addlast((sq_entry_t *)desc, chr->descriptors);
+#endif
 	desc->parent = (void *)characteristic;
 
 	return BT_ERROR_NONE;
@@ -2083,7 +2523,9 @@ int bt_gatt_characteristic_get_descriptor(bt_gatt_h characteristic,
 int bt_gatt_characteristic_foreach_descriptors(bt_gatt_h characteristic,
 				bt_gatt_foreach_cb callback, void *user_data)
 {
+#ifdef GLIB_SUPPORTED
 	GSList *l;
+#endif
 	bt_gatt_characteristic_s *chr = (bt_gatt_characteristic_s *)characteristic;
 	int total;
 	int i;
@@ -2111,6 +2553,7 @@ int bt_gatt_characteristic_foreach_descriptors(bt_gatt_h characteristic,
 		}
 	}
 
+#ifdef GLIB_SUPPORTED
 	total = g_slist_length(chr->descriptors);
 	BT_INFO("Total number of descriptors found [%d]", total);
 
@@ -2119,6 +2562,18 @@ int bt_gatt_characteristic_foreach_descriptors(bt_gatt_h characteristic,
 		if (!callback(total, i++, (bt_gatt_h)l->data, user_data))
 			break; /* LCOV_EXCL_STOP */
 	}
+#else
+	total = __bt_sq_queue_length(chr->descriptors);
+	BT_INFO("Total number of descriptors found [%d]", total);
+
+	i = 1;
+	bt_gatt_descriptor_s *desc = (bt_gatt_descriptor_s *)sq_peek(chr->descriptors);
+	while (desc) {
+		if (!callback(total, i++, (bt_gatt_h)desc, user_data))
+			break; /* LCOV_EXCL_STOP */
+		desc = (bt_gatt_descriptor_s *)sq_next(desc);
+	}
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -2139,7 +2594,7 @@ int bt_gatt_descriptor_create(const char *uuid, int permissions,
 	if (value_length > 0)
 		BT_CHECK_INPUT_PARAMETER(value);
 
-	desc = g_malloc(sizeof(*desc));
+	desc = calloc(1, sizeof(*desc));
 	memset(desc, 0x00, sizeof(*desc));
 
 	desc->type = BT_GATT_TYPE_DESCRIPTOR;
@@ -2157,7 +2612,9 @@ int bt_gatt_descriptor_create(const char *uuid, int permissions,
 	desc->permissions = permissions;
 	desc->value_length = value_length;
 	if (value_length > 0) {
-		desc->value = g_memdup(value, value_length);
+		//desc->value = g_memdup(value, value_length);
+		desc->value = calloc(1, value_length);
+		memcpy(desc->value, value, value_length);
 		if (desc->value == NULL) {
 			ret = BT_ERROR_OUT_OF_MEMORY;
 			goto fail;
@@ -2167,14 +2624,18 @@ int bt_gatt_descriptor_create(const char *uuid, int permissions,
 	*descriptor = (bt_gatt_h)desc;
 
 	/* Add charactristic to list of GATT handles */
+#ifdef GLIB_SUPPORTED
 	gatt_handle_list = g_slist_append(gatt_handle_list, (gpointer)desc);
+#else
+	sq_addlast((sq_entry_t *)desc, &gatt_handle_list);
+#endif
 
 	return ret;
 
 fail:
-	g_free(desc->uuid);
-	g_free(desc->value);
-	g_free(desc);
+	FREE(desc->uuid);
+	FREE(desc->value);
+	FREE(desc);
 
 	return ret;
 }
@@ -2240,6 +2701,7 @@ int bt_gatt_server_deinitialize(void)
 		is_gatt_server_initialized, is_gatt_server_started, instance_id);
 
 	if (is_gatt_server_initialized) {
+#ifdef GLIB_SUPPORTED
 		GSList *l;
 		for (l = gatt_server_list; l; l = g_slist_next(l)) {
 			bt_gatt_server_s *serv = l->data;
@@ -2247,6 +2709,13 @@ int bt_gatt_server_deinitialize(void)
 		}
 		g_slist_free(gatt_server_list);
 		gatt_server_list = NULL;
+#else
+		bt_gatt_server_s *serv = (bt_gatt_server_s *)sq_peek(&gatt_server_list);
+		while (serv) {
+			bt_gatt_server_destroy(serv);
+			serv = (bt_gatt_server_s *)sq_next(serv);
+		}
+#endif
 
 		ret = bt_adapt_gatt_server_deinit();
 		if (ret != BT_ERROR_NONE) {
@@ -2287,17 +2756,24 @@ int bt_gatt_server_create(bt_gatt_server_h *server)
 		return BT_ERROR_OPERATION_FAILED;
 	}
 
-	serv = g_malloc0(sizeof(bt_gatt_server_s));
+	serv = calloc(1, sizeof(bt_gatt_server_s));
 	if (serv == NULL)
 		return BT_ERROR_OUT_OF_MEMORY;
 
 	*server = (bt_gatt_server_h)serv;
 
 	BT_INFO("Creating a GATT Server");
+#ifdef GLIB_SUPPORTED
 	gatt_server_list = g_slist_append(gatt_server_list, serv);
 
 	/* Add server to list of GATT handles */
 	gatt_handle_list = g_slist_append(gatt_handle_list, (gpointer)serv);
+#else
+	sq_addlast((sq_entry_t *)serv, &gatt_server_list);
+
+	/* Add server to list of GATT handles */
+	sq_addlast((sq_entry_t *)serv, &gatt_handle_list);
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -2313,12 +2789,21 @@ int bt_gatt_server_destroy(bt_gatt_server_h server)
 	BT_INFO("Destroy GATT Server");
 
 	/* Remove Server from list of GATT handles */
+#ifdef GLIB_SUPPORTED
 	if (gatt_handle_list)
 		gatt_handle_list = g_slist_remove(gatt_handle_list, serv);
 
 	g_slist_free_full(serv->services, __bt_gatt_free_service);
 	gatt_server_list = g_slist_remove(gatt_server_list, serv);
 	g_free(serv);
+#else
+	sq_rem((sq_entry_t *)serv, &gatt_handle_list);
+	__bt_gatt_free_service(serv->services);
+	FREE(serv->services);
+
+	sq_rem((sq_entry_t *)serv, &gatt_server_list);
+	FREE(serv);
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -2378,12 +2863,15 @@ int bt_gatt_server_set_characteristic_notification_state_change_cb(bt_gatt_h gat
 static int __gatt_service_add_num_handle(bt_gatt_service_s *service)
 {
 	int handles_count = 0;
+#ifdef GLIB_SUPPORTED
 	GSList *char_l = NULL;
+#endif
 
 	BT_CHECK_INPUT_PARAMETER(service);
 
 	BT_INFO("total service handles [%d]", service->numhandles);
 
+#ifdef GLIB_SUPPORTED
 	for (char_l = service->characteristics; char_l; char_l = g_slist_next(char_l)) {
 		bt_gatt_characteristic_s *chr = char_l->data;
 		int desc_numhandles = 0;
@@ -2398,6 +2886,20 @@ static int __gatt_service_add_num_handle(bt_gatt_service_s *service)
 			}
 		}
 	}
+#else
+	bt_gatt_characteristic_s *chr = (bt_gatt_characteristic_s *)sq_peek(service->characteristics);
+	while (chr) {
+		int desc_numhandles = 0;
+		handles_count += 2;
+
+		/* descriptor of each characteristic */
+		if (chr->descriptors) {
+			//desc_numhandles = g_slist_length(chr->descriptors);
+			desc_numhandles = __bt_sq_queue_length(chr->descriptors);
+			handles_count += desc_numhandles;
+		}
+	}
+#endif
 
 	service->numhandles += handles_count;
 	BT_INFO("total service handles [%d]", service->numhandles);
@@ -2410,7 +2912,9 @@ int bt_gatt_server_register_service(bt_gatt_server_h server, bt_gatt_h service)
 	int ret = BT_ERROR_NONE;
 	bt_gatt_server_s *serv = (bt_gatt_server_s *)server;
 	bt_gatt_service_s *svc = (bt_gatt_service_s *)service;
+#ifdef GLIB_SUPPORTED
 	GSList *char_l;
+#endif
 
 	BT_CHECK_GATT_SERVER_SUPPORT();
 	BT_CHECK_INIT_STATUS();
@@ -2419,10 +2923,17 @@ int bt_gatt_server_register_service(bt_gatt_server_h server, bt_gatt_h service)
 	BT_CHECK_INPUT_PARAMETER(service);
 	BT_VALIDATE_GATT_HANDLE(server);
 
+#ifdef GLIB_SUPPORTED
 	if (g_slist_find(serv->services, svc)) {
 		BT_ERR("Already added service.");
 		return BT_ERROR_ALREADY_DONE;
 	}
+#else
+	if (__bt_sq_queue_find(serv->services, (sq_entry_t *)svc)) {
+		BT_ERR("Already added service.");
+		return BT_ERROR_ALREADY_DONE;
+	}
+#endif
 
 	if (is_gatt_server_started) {
 		BT_ERR("Already Server started");
@@ -2442,6 +2953,7 @@ int bt_gatt_server_register_service(bt_gatt_server_h server, bt_gatt_h service)
 		return ret;
 	}
 
+#ifdef GLIB_SUPPORTED
 	for (char_l = svc->characteristics; char_l; char_l = g_slist_next(char_l)) { /* LCOV_EXCL_START */
 		GSList *desc_l;
 		bt_gatt_characteristic_s *chr = char_l->data;
@@ -2481,8 +2993,51 @@ int bt_gatt_server_register_service(bt_gatt_server_h server, bt_gatt_h service)
 
 		}
 	} /* LCOV_EXCL_STOP */
+#else
+	bt_gatt_characteristic_s *chr = (bt_gatt_characteristic_s *)sq_peek(svc->characteristics);
+	while (chr) {
+		/* Add Characteristic to GATT database */
+		BT_INFO("GATT Server Add Char: UUID [%s] permission [%d] properties [%d] service handle [%d] Inst ID [%d]",
+				chr->uuid, chr->permissions, chr->properties, svc->handle, instance_id);
 
+		ret = bt_adapt_gatt_server_add_new_char(chr->uuid, chr->permissions, chr->properties, svc->handle, instance_id, &chr->handle);
+
+		BT_INFO("Char added handle [%d]", chr->handle);
+
+		if (ret != BT_ERROR_NONE) {
+			BT_ERR("%s(0x%08x)",
+				_bt_convert_error_to_string(ret), ret);
+			goto fail;
+		}
+
+		bt_gatt_descriptor_s *desc = (bt_gatt_descriptor_s *)sq_peek(chr->descriptors);
+		while (desc) {
+			/* Add descriptor to GATT database */
+			BT_INFO("GATT Server Add Descriptor: UUID [%s] permission [%d] service handle [%d] Inst ID [%d]",
+					desc->uuid, desc->permissions, svc->handle, instance_id);
+
+			ret = bt_adapt_gatt_server_add_desc(desc->uuid, (bt_gatt_permission_e)desc->permissions,
+						svc->handle, instance_id, &desc->handle);
+
+			BT_INFO("Descriptor added handle [%d]", desc->handle);
+
+			if (ret != BT_ERROR_NONE) {
+				BT_ERR("%s(0x%08x)",
+					_bt_convert_error_to_string(ret), ret);
+				goto fail;
+			}
+			desc = (bt_gatt_descriptor_s *)sq_next(desc);
+		}
+		chr = (bt_gatt_characteristic_s *)sq_next(chr);
+	} /* LCOV_EXCL_STOP */
+#endif
+
+#ifdef GLIB_SUPPORTED
 	serv->services = g_slist_append(serv->services, svc);
+#else
+	serv->services = calloc(1, sizeof(sq_queue_t));
+	sq_addlast((sq_entry_t *)svc, serv->services);
+#endif
 	svc->parent = (void *)server;
 
 	return ret;
@@ -2507,10 +3062,17 @@ int bt_gatt_server_unregister_service(bt_gatt_server_h server,
 	BT_CHECK_INPUT_PARAMETER(server);
 	BT_CHECK_INPUT_PARAMETER(service);
 
+#ifdef GLIB_SUPPORTED
 	if (!g_slist_find(serv->services, svc)) {
 		BT_ERR("Service is NOT found.");
 		return BT_ERROR_SERVICE_NOT_FOUND;
 	}
+#else
+	if (!__bt_sq_queue_find(serv->services, (sq_entry_t *)svc)) {
+		BT_ERR("Service is NOT found.");
+		return BT_ERROR_SERVICE_NOT_FOUND;
+	}
+#endif
 
 	bt_gatt_service_destroy(svc);
 
@@ -2529,7 +3091,8 @@ int bt_gatt_server_unregister_all_services(bt_gatt_server_h server)
 	BT_CHECK_GATT_SERVER_INIT_STATUS();
 	BT_CHECK_INPUT_PARAMETER(server);
 
-	g_slist_free_full(serv->services, __bt_gatt_free_service);
+	//g_slist_free_full(serv->services, __bt_gatt_free_service);
+	__bt_gatt_free_service(serv->services);
 	serv->services = NULL;
 
 	is_gatt_server_started = false;
@@ -2545,6 +3108,7 @@ int bt_gatt_server_start(void)
 	BT_CHECK_INIT_STATUS();
 	BT_CHECK_GATT_SERVER_INIT_STATUS();
 
+#ifdef GLIB_SUPPORTED
 	if (!is_gatt_server_started) {
 		GSList *l;
 		GSList *l1;
@@ -2575,6 +3139,33 @@ int bt_gatt_server_start(void)
 		is_gatt_server_started = true;
 		return ret;
 	}
+#else
+	if (!is_gatt_server_started) {
+		/* Kick Start all services*/
+		//BT_INFO("Total GATT Servers for this application [%d]", g_slist_length(gatt_server_list));
+		bt_gatt_server_s *server = (bt_gatt_server_s *)sq_peek(&gatt_server_list);
+		while (server) {
+			bt_gatt_service_s *service = (bt_gatt_service_s *)sq_peek(server->services);
+			while (service) {
+				BT_DBG("Service handle [%d] Service UUID [%s]", service->handle, service->uuid);
+				ret = bt_adapt_gatt_server_start_service(service->handle, instance_id);
+				if (ret != BT_ERROR_NONE)
+					BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
+
+				service = (bt_gatt_service_s *)sq_next(service);
+			}
+			server = (bt_gatt_server_s *)sq_next(server);
+		}
+
+		if (ret != BT_ERROR_NONE) {
+			BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
+			return ret;
+		}
+
+		is_gatt_server_started = true;
+		return ret;
+	}
+#endif
 
 	BT_DBG("Gatt-service already Running");
 
@@ -2756,7 +3347,9 @@ int bt_gatt_server_foreach_services(bt_gatt_server_h server,
 		bt_gatt_foreach_cb callback, void *user_data)
 {
 	bt_gatt_server_s *server_s = (bt_gatt_server_s *)server;
+#ifdef GLIB_SUPPORTED
 	GSList *l = NULL;
+#endif
 	int total = 0;
 	int index = 1;
 
@@ -2767,12 +3360,23 @@ int bt_gatt_server_foreach_services(bt_gatt_server_h server,
 	BT_CHECK_INPUT_PARAMETER(server);
 	BT_CHECK_INPUT_PARAMETER(callback);
 
+#ifdef GLIB_SUPPORTED
 	total = g_slist_length(server_s->services);
 
 	for (l = server_s->services; l; l = g_slist_next(l)) {
 		if (!callback(total, index++, (bt_gatt_h)l->data, user_data))
 			break;
 	}
+#else
+	total = __bt_sq_queue_length(server_s->services);
+
+	bt_gatt_service_s *svc = (bt_gatt_service_s *)sq_peek(server_s->services);
+	while (svc) {
+		if (!callback(total, index++, svc, user_data))
+			break;
+		svc = (bt_gatt_service_s *)sq_next(svc);
+	}
+#endif
 
 	return BT_ERROR_NONE;
 }
@@ -2782,12 +3386,15 @@ int bt_gatt_client_create(const char *remote_address, bt_gatt_client_h *client)
 	int ret = BT_ERROR_NONE;
 	bt_gatt_client_s *client_s;
 	bool connected = false;
+#ifdef GLIB_SUPPORTED
 	GSList *l;
+#endif
 
 	BT_CHECK_GATT_CLIENT_SUPPORT();
 	BT_CHECK_INIT_STATUS();
 	BT_CHECK_INPUT_PARAMETER(remote_address); /* LCOV_EXCL_START */
 
+#ifdef GLIB_SUPPORTED
 	BT_INFO("Create GATT client: address[%s] Total gatt client instance list [%d]",
 			remote_address, g_slist_length(gatt_client_list));
 
@@ -2804,16 +3411,26 @@ int bt_gatt_client_create(const char *remote_address, bt_gatt_client_h *client)
 			return BT_ERROR_ALREADY_DONE;
 		}
 	}
+#else
+	BT_INFO("Create GATT client: address[%s] Total gatt client instance list [%d]",
+			remote_address, __bt_sq_queue_length(&gatt_client_list));
 
-	client_s = g_malloc0(sizeof(*client_s));
+	if (_bt_gatt_get_client(remote_address) != NULL) {
+		BT_ERR("Gatt client for %s is already created", remote_address);
+		return BT_ERROR_ALREADY_DONE;
+	}
+#endif
+
+	client_s = calloc(1, sizeof(bt_gatt_client_s));
 	if (client_s == NULL) {
 		ret = BT_ERROR_OUT_OF_MEMORY;
 		BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
 		return ret;
 	}
 
-	client_s->remote_address = g_strdup(remote_address);
+	client_s->remote_address = strdup(remote_address);
 	if (client_s->remote_address == NULL) {
+		free(client_s->services);
 		free(client_s);
 		ret = BT_ERROR_OUT_OF_MEMORY;
 		BT_ERR("%s(0x%08x)", _bt_convert_error_to_string(ret), ret);
@@ -2846,7 +3463,11 @@ int bt_gatt_client_create(const char *remote_address, bt_gatt_client_h *client)
 				client_s->client_id);
 
 	*client = (bt_gatt_client_h)client_s;
+#ifdef GLIB_SUPPORTED
 	gatt_client_list = g_slist_append(gatt_client_list, client_s);
+#else
+	sq_addlast((sq_entry_t *)client_s, &gatt_client_list);
+#endif
 
 	return ret; /* LCOV_EXCL_STOP */
 }
@@ -2864,13 +3485,18 @@ int bt_gatt_client_destroy(bt_gatt_client_h client)
 	if (client_s->service_changed_cb)
 		bt_adapt_gatt_client_set_service_change_watcher(client_s->remote_address, FALSE);
 
+#ifdef GLIB_SUPPORTED
 	g_slist_free_full(client_s->services, __bt_gatt_free_service);
 	gatt_client_list = g_slist_remove(gatt_client_list, client_s);
+#else
+	sq_rem((sq_entry_t *)client_s, &gatt_client_list);
+	__bt_gatt_free_service(client_s->services);
+#endif
 
 	/* Unregister GATT Client instance: Unregister should never fail  */
 	bt_adapt_gatt_client_deinit(client_s->client_id);
-	g_free(client_s->remote_address);
-	g_free(client_s);
+	FREE(client_s->remote_address);
+	FREE(client_s);
 
 	return BT_ERROR_NONE; /* LCOV_EXCL_STOP */
 }
@@ -2885,7 +3511,7 @@ int bt_gatt_client_get_remote_address(bt_gatt_client_h client,
 	BT_CHECK_INPUT_PARAMETER(client); /* LCOV_EXCL_START */
 	BT_CHECK_INPUT_PARAMETER(remote_address);
 
-	*remote_address = g_strdup(client_s->remote_address);
+	*remote_address = strdup(client_s->remote_address);
 
 	return BT_ERROR_NONE;
 }
@@ -2928,7 +3554,7 @@ void _handle_gatt_client_read_completed_event(int result, bt_gatt_resp_data_t *r
 		if (!chr->parent) {
 			BT_INFO("Already destroyed handle : %p", chr);
 			if (!chr->write_cb)
-				g_free(chr);
+				FREE(chr);
 			return;
 		}
 	} else if (handle->type == BT_GATT_TYPE_DESCRIPTOR) {
@@ -2943,7 +3569,7 @@ void _handle_gatt_client_read_completed_event(int result, bt_gatt_resp_data_t *r
 		if (!desc->parent) {
 			BT_INFO("Already destroyed handle : %p", desc);
 			if (!desc->write_cb)
-				g_free(desc);
+				FREE(desc);
 			return;
 		}
 	}
@@ -2983,7 +3609,7 @@ void _handle_gatt_client_write_completed_event(int result, bt_gatt_resp_data_t *
 		if (!chr->parent) {
 			BT_INFO("Already destroyed handle : %p", chr);
 			if (!chr->read_cb)
-				g_free(chr);
+				FREE(chr);
 			return;
 		}
 	} else if (handle->type == BT_GATT_TYPE_DESCRIPTOR) {
@@ -2998,7 +3624,7 @@ void _handle_gatt_client_write_completed_event(int result, bt_gatt_resp_data_t *
 		if (!desc->parent) {
 			BT_INFO("Already destroyed handle : %p", desc);
 			if (!desc->read_cb)
-				g_free(desc);
+				FREE(desc);
 			return;
 		}
 	}
@@ -3240,22 +3866,6 @@ int bt_gatt_client_write_value(bt_gatt_h gatt_handle,
 }
 
 /* LCOV_EXCL_START */
-static bt_gatt_client_h __find_gatt_client(const char *remote_address)
-{
-	GSList *l = NULL;
-
-	for (l = gatt_client_list; l; l = g_slist_next(l)) {
-		bt_gatt_client_s *client_s = l->data;
-
-		if (!g_ascii_strcasecmp(client_s->remote_address, remote_address))
-			return (const bt_gatt_client_h)l->data;
-	}
-
-	return NULL;
-}
-/* LCOV_EXCL_STOP */
-
-/* LCOV_EXCL_START */
 void __uuid_hex_to_string(unsigned char *uuid, char *str)
 {
 	uint32_t uuid0, uuid4;
@@ -3299,7 +3909,7 @@ static bt_gatt_characteristic_s* __gatt_get_characteristic_handle(
 	BT_INFO("Address [%s] Char UUID [%s]", remote_address, uuid_string);
 
 
-	client = __find_gatt_client(remote_address);
+	client = _bt_gatt_get_client(remote_address);
 	if (client == NULL) {
 		BT_ERR("Cannot find client [%s]", remote_address);
 		return NULL;
@@ -3359,7 +3969,7 @@ static bt_gatt_descriptor_s* __gatt_get_descriptor_handle(
 	BT_INFO("Address [%s] Descriptor UUID [%s]", remote_address, uuid_string);
 
 
-	client = __find_gatt_client(remote_address);
+	client = _bt_gatt_get_client(remote_address);
 	if (client == NULL) {
 		BT_ERR("Cannot find client [%s]", remote_address);
 		return NULL;
@@ -3406,8 +4016,10 @@ static bt_gatt_descriptor_s* __gatt_get_descriptor_handle(
 static void __gatt_value_changed_cb(unsigned char *uuid, char *remote_address,
 		char *value, int value_length, void *user_data)
 {
+#ifdef GLIB_SUPPORTED
 	GSList *l;
 	GSList *ll;
+#endif
 	bt_gatt_client_h client;
 	bt_gatt_client_s *client_s;
 	bt_gatt_service_s *svc;
@@ -3418,13 +4030,14 @@ static void __gatt_value_changed_cb(unsigned char *uuid, char *remote_address,
 
 	BT_INFO("Address [%s] Char UUID [%s]", remote_address, uuid_string);
 
-	client = __find_gatt_client(remote_address);
+	client = _bt_gatt_get_client(remote_address);
 	if (client == NULL) {
 		BT_ERR("Cannot find client [%s]", remote_address);
 		return;
 	}
 
 	client_s = (bt_gatt_client_s *)client;
+#ifdef GLIB_SUPPORTED
 	for (l = client_s->services; l; l = g_slist_next(l)) {
 		svc = (bt_gatt_service_s *)l->data;
 		for (ll = svc->characteristics; ll; ll = g_slist_next(ll)) {
@@ -3440,6 +4053,25 @@ static void __gatt_value_changed_cb(unsigned char *uuid, char *remote_address,
 			}
 		}
 	}
+#else
+	svc = (bt_gatt_service_s *)sq_peek(client_s->services);
+	while (svc) {
+		chr = (bt_gatt_characteristic_s *)sq_peek(svc->characteristics);
+		while (chr) {
+			if (strcasecmp(chr->uuid, uuid_string) == 0) {
+				if (chr->value_changed_cb)
+					chr->value_changed_cb(chr, value,
+						value_length,
+						chr->value_changed_user_data);
+
+				bt_gatt_set_value(chr, value, value_length);
+				return;
+			}
+			chr = (bt_gatt_characteristic_s *)sq_next(chr);
+		}
+		svc = (bt_gatt_service_s *)sq_next(svc);
+	}
+#endif
 }
 
 int bt_gatt_client_set_characteristic_value_changed_cb(bt_gatt_h characteristic,
@@ -3591,7 +4223,9 @@ int bt_gatt_client_foreach_services(bt_gatt_client_h client,
 					void *user_data)
 {
 	bt_gatt_client_s *client_s = (bt_gatt_client_s *)client;
+#ifdef GLIB_SUPPORTED
 	GSList *l = NULL;
+#endif
 	int total = 0;
 	int index = 1;
 
@@ -3600,6 +4234,7 @@ int bt_gatt_client_foreach_services(bt_gatt_client_h client,
 	BT_CHECK_INPUT_PARAMETER(client);
 	BT_CHECK_INPUT_PARAMETER(callback); /* LCOV_EXCL_LINE */
 
+#ifdef GLIB_SUPPORTED
 	total = g_slist_length(client_s->services); /* LCOV_EXCL_LINE */
 
 	for (l = client_s->services; l; l = g_slist_next(l)) { /* LCOV_EXCL_LINE */
@@ -3608,6 +4243,17 @@ int bt_gatt_client_foreach_services(bt_gatt_client_h client,
 			(bt_gatt_h)l->data, user_data)) /* LCOV_EXCL_LINE */
 			break;
 	}
+#else
+	total = __bt_sq_queue_length(client_s->services); /* LCOV_EXCL_LINE */
+
+	bt_gatt_service_s *svc = (bt_gatt_service_s *)sq_peek(client_s->services);
+	while (svc) {
+		BT_INFO("Call one service callback");
+		if (!callback(total, index++, svc, user_data))
+			break;
+		svc = (bt_gatt_service_s *)sq_next(svc);
+	}
+#endif
 
 	return BT_ERROR_NONE;
 }
