@@ -46,6 +46,7 @@ ifeq ($(CONFIG_CODEC_LIBOPUS), y)
 DEPPATH += --dep-path src/media/codec/opus
 VPATH += :src/media/codec/opus
 endif
+CXXSRCS += StreamHandler.cpp
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
