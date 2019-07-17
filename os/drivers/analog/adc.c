@@ -198,10 +198,26 @@ static int adc_close(FAR struct file *filep)
 	FAR struct adc_dev_s *dev   = inode->i_private;
 	irqstate_t            flags;
 	int                   ret = OK;
+#ifndef CONFIG_DISABLE_POLL
+	int                   i;
+#endif
 
 	if (sem_wait(&dev->ad_closesem) != OK) {
 		ret = -errno;
 	} else {
+#ifndef CONFIG_DISABLE_POLL
+		/* Check if this file is registered in a list of waiters for polling.
+		 * For example, when task A is blocked by calling poll and task B try to terminate task A,
+		 * a pollfd of A remains in this list. If it is, it should be cleared.
+		 */
+		for (i = 0; i < CONFIG_ADC_NPOLLWAITERS; i++) {
+			struct pollfd *fds = dev->fds[i];
+			if (fds && (FAR struct file *)fds->filep == filep) {
+				dev->fds[i] = NULL;
+			}
+		}
+#endif
+
 		/*
 		 * Decrement the references to the driver.  If the reference
 		 * count will decrement to 0, then uninitialize the driver.
@@ -476,12 +492,14 @@ static int adc_poll(FAR struct file *filep, struct pollfd *fds, bool setup)
 
 				dev->fds[i] = fds;
 				fds->priv   = &dev->fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}
 
 		if (i >= CONFIG_ADC_NPOLLWAITERS) {
 			fds->priv    = NULL;
+			fds->filep   = NULL;
 			ret          = -EBUSY;
 			goto return_with_irqdisabled;
 		}
@@ -500,6 +518,7 @@ static int adc_poll(FAR struct file *filep, struct pollfd *fds, bool setup)
 
 		*slot                = NULL;
 		fds->priv            = NULL;
+		fds->filep           = NULL;
 	}
 
 return_with_irqdisabled:

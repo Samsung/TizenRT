@@ -952,12 +952,14 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 				dev->fds[i] = fds;
 				fds->priv = &dev->fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}
 
 		if (i >= CONFIG_SERIAL_NPOLLWAITERS) {
 			fds->priv = NULL;
+			fds->filep = NULL;
 			ret = -EBUSY;
 			goto errout;
 		}
@@ -1026,6 +1028,7 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 		*slot = NULL;
 		fds->priv = NULL;
+		fds->filep = NULL;
 	}
 
 errout:
@@ -1048,6 +1051,9 @@ static int uart_close(FAR struct file *filep)
 	FAR struct inode *inode = filep->f_inode;
 	FAR uart_dev_t *dev = inode->i_private;
 	irqstate_t flags;
+#ifndef CONFIG_DISABLE_POLL
+	int i;
+#endif
 
 	/* Get exclusive access to the close semaphore (to synchronize open/close operations.
 	 * NOTE: that we do not let this wait be interrupted by a signal.  Technically, we
@@ -1056,6 +1062,22 @@ static int uart_close(FAR struct file *filep)
 	 */
 
 	(void)uart_takesem(&dev->closesem, false);
+
+#ifndef CONFIG_DISABLE_POLL
+	/* Check if this file is registered in a list of waiters for polling.
+	 * For example, when task A is blocked by calling poll and task B try to terminate task A,
+	 * a pollfd of A remains in this list. If it is, it should be cleared.
+	 */
+	(void)uart_takesem(&dev->pollsem, false);
+	for (i = 0; i < CONFIG_SERIAL_NPOLLWAITERS; i++) {
+		struct pollfd *fds = dev->fds[i];
+		if (fds && (FAR struct file *)fds->filep == filep) {
+			dev->fds[i] = NULL;
+		}
+	}
+	uart_givesem(&dev->pollsem);
+#endif
+
 	if (dev->open_count > 1) {
 		dev->open_count--;
 		uart_givesem(&dev->closesem);
