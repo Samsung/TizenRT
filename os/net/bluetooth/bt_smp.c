@@ -283,7 +283,6 @@ static const uint8_t g_mac4[] = {
  * in a single syslog call.
  */
 
-#ifdef CONFIG_DEBUG_WIRELESS_INFO
 static const char *h(FAR const void *buf, size_t len)
 {
 	static const char hex[] = "0123456789abcdef";
@@ -310,7 +309,6 @@ static const char *h(FAR const void *buf, size_t len)
 	str[i * 2] = '\0';
 	return str;
 }
-#endif
 
 static void xor_128(FAR const struct uint128_s *p, FAR const struct uint128_s *q, FAR struct uint128_s *r)
 {

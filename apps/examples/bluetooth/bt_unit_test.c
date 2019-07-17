@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <debug.h>
+#include <bt_unit_test.h>
 
 #include <tinyara/bluetooth/bluetooth.h>
 
