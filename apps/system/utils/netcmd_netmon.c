@@ -44,47 +44,47 @@
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
-#define USAGE							\
-	"\n usage: netmon [options]\n"		\
-	"\n socket information:\n"			\
-	"       netmon sock\n"				\
-	"\n WiFi Manager stats:\n"			\
-	"       netmon wifi\n"				\
-	"\n Net device stats:\n"			\
+#define USAGE									\
+	"\n usage: netmon [options]\n"				\
+	"\n socket information:\n"					\
+	"       netmon sock\n"						\
+	"\n WiFi Manager stats:\n"					\
+	"       netmon wifi\n"						\
+	"\n Net device stats:\n"					\
 	"       netmon [devname]\n\n"
 
 #ifdef CONFIG_NET_IPv6
-#define PRINT_IPV(sock)										\
-	do {													\
-		if (sock->type & NETMON_TYPE_IPV6) {				\
-			printf("IPv6\t");								\
-			printf("%-15s:", inet6_ntoa(sock->local_ip));	\
-			if (sock->local_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->local_port);			\
-			}												\
-			printf("%-15s:", inet6_ntoa(sock->remote_ip));	\
-			if (sock->remote_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->remote_port);			\
-			}												\
-		} else {											\
-			printf("IPv4\t");								\
-			printf("%-15s:", inet_ntoa(sock->local_ip));	\
-			if (sock->local_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->local_port);			\
-			}												\
-			printf("%-15s:", inet_ntoa(sock->remote_ip));	\
-			if (sock->remote_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->remote_port);			\
-			}												\
-		}													\
+#define PRINT_IPV(sock)													\
+	do {																\
+		if (sock->type & NETMON_TYPE_IPV6) {							\
+			printf("IPv6\t");											\
+			printf("%-15s:", _netmon_ip6addr_ntoa((const ip6_addr_t*)&sock->local_ip));	\
+			if (sock->local_port == 0) {								\
+				printf("%-8s", "*");									\
+			} else {													\
+				printf("%-8d", sock->local_port);						\
+			}															\
+			printf("%-15s:", _netmon_ip6addr_ntoa((const ip6_addr_t*)&sock->remote_ip)); \
+			if (sock->remote_port == 0) {								\
+				printf("%-8s", "*");									\
+			} else {													\
+				printf("%-8d", sock->remote_port);						\
+			}															\
+		} else {														\
+			printf("IPv4\t");											\
+			printf("%-15s:", inet_ntoa(sock->local_ip));				\
+			if (sock->local_port == 0) {								\
+				printf("%-8s", "*");									\
+			} else {													\
+				printf("%-8d", sock->local_port);						\
+			}															\
+			printf("%-15s:", inet_ntoa(sock->remote_ip));				\
+			if (sock->remote_port == 0) {								\
+				printf("%-8s", "*");									\
+			} else {													\
+				printf("%-8d", sock->remote_port);						\
+			}															\
+		}																\
 	} while (0)
 #else
 #define PRINT_IPV(sock)									\
@@ -106,13 +106,128 @@
 #endif
 
 /****************************************************************************
-* Global Data
-****************************************************************************/
+ * Global Data
+ ****************************************************************************/
 
 
 /****************************************************************************
-* Private Functions
-****************************************************************************/
+ * Private Functions
+ ****************************************************************************/
+/*
+ * To Do: _netmon_ip6addr_ntoa_r is temporary functions to show ipv6
+ * this has to be changed to a socket interface to transform in_addr to string
+ */
+#define xchar(i)             ((i) < 10 ? '0' + (i) : 'A' + (i) - 10)
+static char *_netmon_ip6addr_ntoa_r(const ip6_addr_t *addr, char *buf, int buflen)
+{
+	u32_t current_block_index, current_block_value, next_block_value;
+	s32_t i;
+	u8_t zero_flag, empty_block_flag;
+
+	i = 0;
+	empty_block_flag = 0;		/* used to indicate a zero chain for "::' */
+
+	for (current_block_index = 0; current_block_index < 8; current_block_index++) {
+		/* get the current 16-bit block */
+		current_block_value = htonl(addr->addr[current_block_index >> 1]);
+		if ((current_block_index & 0x1) == 0) {
+			current_block_value = current_block_value >> 16;
+		}
+		current_block_value &= 0xffff;
+
+		/* Check for empty block. */
+		if (current_block_value == 0) {
+			if (current_block_index == 7 && empty_block_flag == 1) {
+				/* special case, we must render a ':' for the last block. */
+				buf[i++] = ':';
+				if (i >= buflen) {
+					return NULL;
+				}
+				break;
+			}
+			if (empty_block_flag == 0) {
+				/* generate empty block "::", but only if more than one contiguous zero block,
+				 * according to current formatting suggestions RFC 5952. */
+				next_block_value = htonl(addr->addr[(current_block_index + 1) >> 1]);
+				if ((current_block_index & 0x1) == 0x01) {
+					next_block_value = next_block_value >> 16;
+				}
+				next_block_value &= 0xffff;
+				if (next_block_value == 0) {
+					empty_block_flag = 1;
+					buf[i++] = ':';
+					if (i >= buflen) {
+						return NULL;
+					}
+					continue;	/* move on to next block. */
+				}
+			} else if (empty_block_flag == 1) {
+				/* move on to next block. */
+				continue;
+			}
+		} else if (empty_block_flag == 1) {
+			/* Set this flag value so we don't produce multiple empty blocks. */
+			empty_block_flag = 2;
+		}
+
+		if (current_block_index > 0) {
+			buf[i++] = ':';
+			if (i >= buflen) {
+				return NULL;
+			}
+		}
+
+		if ((current_block_value & 0xf000) == 0) {
+			zero_flag = 1;
+		} else {
+			buf[i++] = xchar(((current_block_value & 0xf000) >> 12));
+			zero_flag = 0;
+			if (i >= buflen) {
+				return NULL;
+			}
+		}
+
+		if (((current_block_value & 0xf00) == 0) && (zero_flag)) {
+			/* do nothing */
+		} else {
+			buf[i++] = xchar(((current_block_value & 0xf00) >> 8));
+			zero_flag = 0;
+			if (i >= buflen) {
+				return NULL;
+			}
+		}
+
+		if (((current_block_value & 0xf0) == 0) && (zero_flag)) {
+			/* do nothing */
+		} else {
+			buf[i++] = xchar(((current_block_value & 0xf0) >> 4));
+			zero_flag = 0;
+			if (i >= buflen) {
+				return NULL;
+			}
+		}
+
+		buf[i++] = xchar((current_block_value & 0xf));
+		if (i >= buflen) {
+			return NULL;
+		}
+	}
+
+	buf[i] = 0;
+
+	return buf;
+}
+
+/*
+ * To Do: _netmon_ip6addr_ntoa is temporary functions to show ipv6
+ * this has to be changed to a socket interface to transform in_addr to string
+ */
+static char *_netmon_ip6addr_ntoa(const ip6_addr_t *addr)
+{
+	static char str[40];
+	return _netmon_ip6addr_ntoa_r(addr, str, 40);
+}
+
 /**
  * Print the command list
  */

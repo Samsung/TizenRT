@@ -112,10 +112,6 @@ static void nic_display_state(void)
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
 	ifr = ifcfg.ifc_req;
 	int i = 0;
-#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
-	int j;
-	struct netif *netif;
-#endif
 
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
@@ -157,14 +153,9 @@ static void nic_display_state(void)
 			printf("MTU: %d\n", ifr->ifr_mtu);
 		}
 #ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
-		netif = netif_find(ifr->ifr_name);
-		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
-			if (netif->ip6_addr_state[j] != 0) {
-				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
-			}
-		}
-#else
-		printf("\n");
+		// Todo: there is no way to get IPv6 info by VFS
+		// nic display state have to provide ioctl command to get it
+		printf("Not support yet to get IPv6 address\n");
 #endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
 		printf("\n");
 	}
