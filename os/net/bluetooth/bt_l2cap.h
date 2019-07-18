@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_l2cap.c
+ * net/bluetooth/bt_l2cap.c
  * L2CAP handling
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_L2CAP_H
-#define __WIRELESS_BLUETOOTH_BT_L2CAP_H 1
+#ifndef __NET_BLUETOOTH_BT_L2CAP_H
+#define __NET_BLUETOOTH_BT_L2CAP_H 1
 
 /****************************************************************************
  * Included Files
@@ -148,4 +148,4 @@ void bt_l2cap_update_conn_param(FAR struct bt_conn_s *conn);
 
 int bt_l2cap_init(void);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_L2CAP_H */
+#endif							/* __NET_BLUETOOTH_BT_L2CAP_H */

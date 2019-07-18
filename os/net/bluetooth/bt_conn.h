@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_conn.h
+ * net/bluetooth/bt_conn.h
  * Bluetooth connection handling.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_CONN_H
-#define __WIRELESS_BLUETOOTH_BT_CONN_H 1
+#ifndef __NET_BLUETOOTH_BT_CONN_H
+#define __NET_BLUETOOTH_BT_CONN_H 1
 
 /****************************************************************************
  * Included Files
@@ -406,4 +406,4 @@ int bt_conn_le_start_encryption(FAR struct bt_conn_s *conn, uint64_t rand, uint1
 
 int bt_conn_le_conn_update(FAR struct bt_conn_s *conn, uint16_t min, uint16_t max, uint16_t latency, uint16_t timeout);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_CONN_H */
+#endif							/* __NET_BLUETOOTH_BT_CONN_H */
