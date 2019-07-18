@@ -122,15 +122,20 @@ static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work,
 {
 	DEBUGASSERT(work != NULL);
 
+	/* Get exclusive access to the work queue */
+
+	while (work_lock() < 0);
+
+	if (work->worker != NULL) {
+		work_unlock();
+		return -EALREADY;
+	}
+
 	/* First, initialize the work structure */
 
 	work->worker = worker;		/* Work callback */
 	work->arg = arg;			/* Callback argument */
 	work->delay = delay;		/* Delay until work performed */
-
-	/* Get exclusive access to the work queue */
-
-	while (work_lock() < 0);
 
 	/* Now, time-tag that entry and put it in the work queue. */
 
