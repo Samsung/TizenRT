@@ -48,6 +48,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
 #include <net/lwip/opt.h>
 
 #if LWIP_IPV4 && LWIP_DHCP /* don't build if not configured for use in lwipopts.h */
@@ -79,6 +80,7 @@
 #define DHCPS_LEASE_TIME_DEF    CONFIG_LWIP_DHCPS_LEASE_DEF
 #define DHCPS_LEASE_TIMER       DHCPS_LEASE_TIME_DEF
 #define BOOTP_BROADCAST         0x8000
+#define BOOTP_UNICAST           0X0000
 
 #define DHCPS_STATE_OFFER   1
 #define DHCPS_STATE_DECLINE 2
@@ -353,7 +355,11 @@ static void dhcps_create_msg(struct dhcps_msg *m)
 	m->hlen = 6;
 	m->hops = 0;
 	m->secs = 0;
+#ifdef CONFIG_LWIP_DHCPS_UNICAST
+	m->flags = htons(BOOTP_UNICAST);
+#else
 	m->flags = htons(BOOTP_BROADCAST);
+#endif
 
 	memcpy(m->yiaddr, &IN_ADDR_T(client).addr, sizeof(m->yiaddr));
 	memcpy(m->options, magic_cookie, sizeof(magic_cookie));
@@ -406,7 +412,14 @@ static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 		return;
 	}
 
-	if (udp_sendto(pcb_dhcps, p, &broadcast_dhcps, DHCP_CLIENT_PORT) != ERR_OK) {
+	ip_addr_t ip_temp = IPADDR4_INIT(0x0);
+#ifdef CONFIG_LWIP_DHCPS_UNICAST
+	memcpy(&(IN_ADDR_T(ip_temp).addr) ,m->yiaddr, sizeof(m->yiaddr));
+#else
+	ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
+#endif
+
+	if (udp_sendto(pcb_dhcps, p, &ip_temp, DHCP_CLIENT_PORT) != ERR_OK) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_send_msg(): udp_sendto failed\n"));
 	}
 
@@ -572,6 +585,13 @@ static int16_t dhcps_parse_msg(struct dhcps_msg *m, u16_t len)
 		memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
 		pdhcps_pool->lease_timer = DHCPS_LEASE_TIMER;
 
+#ifdef CONFIG_LWIP_DHCPS_UNICAST
+		// update ARP table to send unicast
+		struct eth_addr mac;
+		memcpy(&mac.addr, pdhcps_pool->mac, ETH_HWADDR_LEN);
+		etharp_add_static_entry(&(IN_ADDR_T(pdhcps_pool->ip)), &mac);
+#endif
+
 		pnode = (struct list_node *)mem_malloc(sizeof(struct list_node));
 		if (pnode == NULL) {
 			return 0;
@@ -604,7 +624,11 @@ POOL_CHECK:
 		return DHCPS_STATE_NAK;
 	}
 
-	LWIP_DEBUGF(DHCP_DEBUG, ("Assigned client IP address %u.%u.%u.%u\n", (unsigned char)((htonl(client_address.addr) >> 24) & 0xff), (unsigned char)((htonl(client_address.addr) >> 16) & 0xff), (unsigned char)((htonl(client_address.addr) >> 8) & 0xff), (unsigned char)((htonl(client_address.addr) >> 0) & 0xff)));
+	LWIP_DEBUGF(DHCP_DEBUG, ("Assigned client IP address %u.%u.%u.%u\n",
+							 (unsigned char)((htonl(IN_ADDR_T(client_address)) >> 24) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(client_address)) >> 16) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(client_address)) >> 8) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(client_address)) >> 0) & 0xff)));
 
 	ret = dhcps_parse_options(&m->options[4], len);
 
@@ -640,15 +664,21 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 {
 	int16_t tlen = 0;
 
-	u16_t i = 0;
+	//u16_t i = 0;
 	u16_t dhcps_msg_cnt = 0;
 	u8_t *p_dhcps_msg = NULL;
 	u8_t *data = NULL;
 
 	//struct netif *netif = (struct netif *)arg;
 	struct dhcps_msg *pmsg_dhcps = NULL;
-
-	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(pbuf = %p) from DHCP client %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F " port %" U16_F "\n", (void *)p, ip4_addr1_16(addr), ip4_addr2_16(addr), ip4_addr3_16(addr), ip4_addr4_16(addr), port));
+//ip4_addr4_16
+	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(pbuf = %p) from DHCP client %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F " port %" U16_F "\n",
+							 (void *)p,
+							 ((char *)(&((IN_ADDR_T(*addr)).addr)))[0],
+							 ((char *)(&((IN_ADDR_T(*addr)).addr)))[1],
+							 ((char *)(&((IN_ADDR_T(*addr)).addr)))[2],
+							 ((char *)(&((IN_ADDR_T(*addr)).addr)))[3],
+							 port));
 	LWIP_DEBUGF(DHCP_DEBUG, ("pbuf->len = %" U16_F "\n", p->len));
 	LWIP_DEBUGF(DHCP_DEBUG, ("pbuf->tot_len = %" U16_F "\n", p->tot_len));
 
@@ -665,17 +695,23 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 
 	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): msg tot_len=%d, len=%d\n", tlen, p->len));
 
-	for (i = 0; i < (p->len); i++) {
-		p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-	}
+	/* for (i = 0; i < (p->len); i++) { */
+	/* 	p_dhcps_msg[dhcps_msg_cnt++] = data[i]; */
+	/* } */
+
+	memcpy(&p_dhcps_msg[dhcps_msg_cnt], data, p->len);
+	dhcps_msg_cnt = p->len;
 
 	if (p->next != NULL) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): next msg tot_len=%d, len=%d\n", p->next->tot_len, p->next->len));
 
 		data = p->next->payload;
-		for (i = 0; i < (p->next->len); i++) {
-			p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-		}
+
+		memcpy(&p_dhcps_msg[dhcps_msg_cnt], data, p->len);
+		dhcps_msg_cnt += p->len;
+		/* for (i = 0; i < (p->next->len); i++) { */
+		/* 	p_dhcps_msg[dhcps_msg_cnt++] = data[i]; */
+		/* } */
 	}
 
 	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): parse_msg\n"));
@@ -789,7 +825,11 @@ err_t dhcps_start(struct netif *netif)
 	}
 
 	dhcps = netif->dhcps_pcb;
-	LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start (netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start (netif=%p) %c%c%" U16_F "\n",
+							 (void *)netif,
+							 netif->name[0],
+							 netif->name[1],
+							 (u16_t) netif->num));
 
 	/* check hwtype of the netif */
 	if ((netif->flags & NETIF_FLAG_ETHARP) == 0) {
@@ -845,13 +885,29 @@ err_t dhcps_start(struct netif *netif)
 
 	IN_ADDR_T(client_address_plus).addr = IN_ADDR_T(dhcps_lease.start_ip).addr;
 
-	LWIP_DEBUGF(DHCP_DEBUG, ("Server IP address set %u.%u.%u.%u\n", (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 24) & 0xff), (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 16) & 0xff), (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 8) & 0xff), (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 0) & 0xff)));
+	LWIP_DEBUGF(DHCP_DEBUG, ("Server IP address set %u.%u.%u.%u\n",
+							 (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 24) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 16) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 8) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(server_address).addr) >> 0) & 0xff)));
 
-	LWIP_DEBUGF(DHCP_DEBUG, ("Broadcast IP address set %u.%u.%u.%u\n", (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 24) & 0xff), (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 16) & 0xff), (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 8) & 0xff), (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 0) & 0xff)));
+	LWIP_DEBUGF(DHCP_DEBUG, ("Broadcast IP address set %u.%u.%u.%u\n",
+							 (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 24) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 16) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 8) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(broadcast_dhcps).addr) >> 0) & 0xff)));
 
-	LWIP_DEBUGF(DHCP_DEBUG, ("Start IP address set %u.%u.%u.%u\n", (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 24) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 16) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 8) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 0) & 0xff)));
+	LWIP_DEBUGF(DHCP_DEBUG, ("Start IP address set %u.%u.%u.%u\n",
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 24) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 16) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 8) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.start_ip).addr) >> 0) & 0xff)));
 
-	LWIP_DEBUGF(DHCP_DEBUG, ("End IP address set %u.%u.%u.%u\n", (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 24) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 16) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 8) & 0xff), (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 0) & 0xff)));
+	LWIP_DEBUGF(DHCP_DEBUG, ("End IP address set %u.%u.%u.%u\n",
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 24) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 16) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 8) & 0xff),
+							 (unsigned char)((htonl(IN_ADDR_T(dhcps_lease.end_ip).addr) >> 0) & 0xff)));
 
 	ip_set_option(pcb_dhcps, SOF_BROADCAST);
 

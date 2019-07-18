@@ -106,6 +106,14 @@ config LWIP_DHCPS_SERVER_NETMASK
 config LWIP_DHCPS_MAX_STATION_NUM
 	int "Maximum number of allowed stations"
 	default 8
-	
+
+config LWIP_DHCPS_UNICAST
+	bool "Send unicast"
+	select NET_ARP_STATIC_ENTRIES
+	default n
+	---help---
+		DHCP server sent unicast message to client.
+		To send unicast, ARP table should be allowed to static update
+
 endif
 endif
