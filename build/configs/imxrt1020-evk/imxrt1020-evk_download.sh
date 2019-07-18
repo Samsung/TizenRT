@@ -68,8 +68,8 @@ function imxrt1020_sanity_check()
 function imxrt1020_bootstrap()
 {
 	source ${CURDIR_PATH}/bootstrap.sh
-	$SUDO ${CURDIR_PATH}/blhost -p $TTYDEV -- fill-memory 0x2000 0x04 0xc0000006
-	$SUDO ${CURDIR_PATH}/blhost -p $TTYDEV -- configure-memory 0x09 0x2000
+	$SUDO ${BLHOST} -p $TTYDEV -- fill-memory 0x2000 0x04 0xc0000006
+	$SUDO ${BLHOST} -p $TTYDEV -- configure-memory 0x09 0x2000
 }
 
 ##Utility function to erase a part of flash##

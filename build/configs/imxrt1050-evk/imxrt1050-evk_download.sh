@@ -52,7 +52,6 @@ BOOTSTRAP_SCRIPT=${THIS_PATH}/bootstrap.sh
 
 OS_PATH=${TOP_PATH}/os
 OUTBIN_PATH=${TOP_PATH}/build/output/bin
-BLHOST=${TOP_PATH}/build/tools/nxp/blhost
 TTYDEV="/dev/ttyACM0"
 SUDO=sudo
 
