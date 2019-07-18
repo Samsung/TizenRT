@@ -91,13 +91,13 @@ string do_strerror_r(int ev) {
 // POSIX version
 string do_strerror_r(int ev) {
     char buffer[strerror_buff_size];
-    const int old_errno = errno;
+    const int old_errno = get_errno();
     int ret;
     if ((ret = ::strerror_r(ev, buffer, strerror_buff_size)) != 0) {
-        // If `ret == -1` then the error is specified using `errno`, otherwise
+        // If `ret == -1` then the error is specified using `get_errno()`, otherwise
         // `ret` represents the error.
-        const int new_errno = ret == -1 ? errno : ret;
-        errno = old_errno;
+        const int new_errno = ret == -1 ? get_errno() : ret;
+        set_errno(old_errno);
         if (new_errno == EINVAL) {
             std::snprintf(buffer, strerror_buff_size, "Unknown error %d", ev);
             return string(buffer);
