@@ -314,6 +314,7 @@
 #ifdef CONFIG_DEBUG_FS_ERROR
 #define fdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define flldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#define fsdbg(format, ...)   dbg_noarg(format, ##__VA_ARGS__)
 #else
 #define fdbg(...)
 #define flldbg(...)

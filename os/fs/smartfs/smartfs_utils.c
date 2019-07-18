@@ -613,7 +613,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 	fdbg("\t    Bytes/sector     %d\n", fs->fs_llformat.availbytes);
 	fdbg("\t    Num sectors:     %d\n", fs->fs_llformat.nsectors);
 	fdbg("\t    Free sectors:    %d\n", fs->fs_llformat.nfreesectors);
-	fdbg("\t    Max filename:    %d\n", CONFIG_SMARTFS_MAXNAMLEN);
+	fdbg("\t    Max filename:    %d\n", fs->fs_llformat.namesize);
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	fdbg("\t    RootDirEntries:  %d\n", fs->fs_llformat.nrootdirentries);
 #endif
@@ -1799,6 +1799,36 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 					} else {
 						entrytype = SMARTFS_SECTOR_TYPE_DIR;
 					}
+						/* If entry item is not valid, then remove from entry */
+					if (smart_validatesector(fs->fs_blkdriver, firstsector, validsectors) != OK) {
+						fdbg("It is not valid child sector, parent : %d parent offset: %d child : %d\n", logsector, offset, firstsector);
+
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+						smartfs_wrle16(&entry->flags, smartfs_rdle16(&entry->flags) & ~SMARTFS_DIRENT_ACTIVE);
+#else
+						entry->flags &= ~SMARTFS_DIRENT_ACTIVE;
+#endif
+#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+						smartfs_wrle16(&entry->flags, smartfs_rdle16(&entry->flags) | SMARTFS_DIRENT_ACTIVE);
+#else
+						entry->flags |= SMARTFS_DIRENT_ACTIVE;
+#endif
+#endif	
+						readwrite.logsector = logsector;
+						readwrite.offset = offset;
+						readwrite.count = sizeof(uint16_t);
+						readwrite.buffer = (uint8_t *)&entry->flags;
+						
+						ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+						if (ret < 0) {
+							fdbg("Error marking entry inactive at sector %d\n", firstsector);
+							goto errout;
+						}
+						offset += entrysize;
+						continue;
+					}
 
 					node = (struct sector_queue_s *)kmm_malloc(sizeof(struct sector_queue_s));
 					if (!node) {
@@ -1915,6 +1945,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 
 	journal = (struct journal_transaction_manager_s *)kmm_malloc(sizeof(struct journal_transaction_manager_s));
 	if (!journal) {
+		ret = -ENOMEM;
 		goto err_out;
 	}
 
@@ -1938,6 +1969,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 
 	journal->buffer = (uint8_t *)kmm_malloc(sizeof(struct smartfs_logging_entry_s) + journal->availbytes);
 	if (!(journal->buffer)) {
+		ret = ENOMEM;
 		goto err_out;
 	}
 
@@ -1946,6 +1978,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	mapsize = fmt.nsectors / SZ_UINT8 + 1;
 	journal->active_sectors = (uint8_t *)kmm_malloc(mapsize);
 	if (!(journal->active_sectors)) {
+		ret = ENOMEM;
 		goto err_out;
 	}
 	memset(journal->active_sectors, 0, mapsize);
@@ -1969,7 +2002,15 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 			entry = (struct smartfs_logging_entry_s *)journal->buffer;
 			if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
 				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
-				break;
+				if (!T_FINISH_CHECK(entry->trans_info)) {
+					ret = smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED);
+					if (ret != OK) {
+						fdbg("set transaction failed sector : %d, offset : %d\n", readsect, readoffset);
+					} else {
+						fvdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
+					}
+					break;
+				}
 			}
 			/* Check whether this transaction exists, and logging of transaction has been completed */
 			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
@@ -1991,7 +2032,16 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 					}
 					if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
 						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
-						break;
+						if (!T_FINISH_CHECK(entry->trans_info)) {
+							ret = smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED);
+							if (ret != OK) {
+								fdbg("set transaction failed sector : %d, offset : %d\n", readsect, readoffset);
+							} else {
+								fvdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
+							}
+							break;
+						}
+
 					}
 				}
 				/* Restore the transaction. (T_WRITE with sync type transaction will not be
@@ -2047,7 +2097,7 @@ err_out:
 		kmm_free(journal);
 		journal = NULL;
 	}
-	return ERROR;
+	return ret;
 }
 
 static int set_area_id_bits(struct smartfs_mountpt_s *fs, uint8_t id_bits)
@@ -2236,17 +2286,20 @@ int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transacti
 		if (ret < 0) {
 			if (ret != -EINVAL) {
 				/* Read failed due to reason other than log sector not allocated */
+				fdbg("sector is not allocated ret : %d sector : %d\n", ret, readsect);
 				return ret;
 			}
 			/* need to allocate this logical sector */
 			allocate = true;
 		} else {
-			ret = OK;
 			/* Check whether the sector needs relocation */
 			for (j = 0; j < req.count; j++) {
 				if (req.buffer[j] != CONFIG_SMARTFS_ERASEDSTATE) {
 					/* Free sector and set to allocate */
-					FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)req.logsector);
+					ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)req.logsector);
+					if (ret < 0) {
+						fdbg("free failed!! sector : %d\n", readsect);
+					}
 					allocate = true;
 					break;
 				}
@@ -2255,7 +2308,7 @@ int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transacti
 		if (allocate) {
 			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, (unsigned long)readsect);
 			if (ret < 0) {
-				fdbg("alloc failed!!\n");
+				fdbg("alloc failed!! sector : %d\n", readsect);
 				break;
 			}
 		}
@@ -2922,7 +2975,7 @@ static int smartfs_set_transaction(struct smartfs_mountpt_s *fs, uint16_t sector
 		/* Read current current transaction info */
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
 		if (ret < 0) {
-			return ERROR;
+			return ret;
 		}
 
 		T_SET_TRANSACTION(entry->trans_info, action);
@@ -2931,12 +2984,12 @@ static int smartfs_set_transaction(struct smartfs_mountpt_s *fs, uint16_t sector
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
 		if (ret != OK) {
 			fdbg("Writing failed %u %u\n", req.logsector, req.offset);
-			return ERROR;
+			return ret;
 		}
 	} else {
 		/* Should never happen. Entry header should never be broken in 2 sectors. */
 		fdbg("Entry header should never be broken in 2 sectors. offset : %d count : %d availbytes : %d\n", req.offset, req.count, j_mgr->availbytes);
-		return ERROR;
+		return ENFILE;
 	}
 	return OK;
 }
