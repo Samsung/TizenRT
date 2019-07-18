@@ -122,6 +122,11 @@ static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work,
 {
 	DEBUGASSERT(work != NULL);
 
+#ifdef CONFIG_LIB_USRWORK_SORTING
+	struct work_s *cur_work;
+	struct work_s *next_work;
+#endif
+
 	/* Get exclusive access to the work queue */
 
 	while (work_lock() < 0);
@@ -139,9 +144,27 @@ static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work,
 
 	/* Now, time-tag that entry and put it in the work queue. */
 
-	work->qtime = clock();	/* Time work queued */
+	work->qtime = clock();		/* Time work queued */
 
+#ifdef CONFIG_LIB_USRWORK_SORTING
+	next_work = NULL;
+	cur_work = (struct work_s *)wqueue->q.head;
+	while (cur_work != NULL) {
+		if ((cur_work->delay > delay) && (next_work == NULL)) {
+			next_work = cur_work;
+			break;
+		}
+		cur_work = (struct work_s *)cur_work->dq.flink;
+	}
+
+	if (next_work) {
+		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
+	} else {
+		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
+	}
+#else
 	dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
+#endif
 	kill(wqueue->pid, SIGWORK);	/* Wake up the worker thread */
 
 	work_unlock();

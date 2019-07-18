@@ -141,11 +141,17 @@ void work_process(FAR struct usr_wqueue_s *wqueue)
 	worker_t worker;
 	FAR void *arg;
 	clock_t elapsed;
-	uint32_t remaining;
 	clock_t stick;
 	clock_t ctick;
 	uint32_t next;
 	int ret;
+#ifdef CONFIG_LIB_USRWORK_SORTING
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGWORK);
+#else
+	clock_t remaining;
+#endif
 
 	/* Then process queued work.  Lock the work queue while we process items
 	 * in the work list.
@@ -247,6 +253,13 @@ void work_process(FAR struct usr_wqueue_s *wqueue)
 
 			/* Will it be ready before the next scheduled wakeup interval? */
 
+#ifdef CONFIG_LIB_USRWORK_SORTING
+			next = work->delay - elapsed;
+
+			/* Then break at while loop due to sorted list */
+			break;
+#else
+
 			remaining = work->delay - elapsed;
 			if (remaining < next) {
 				/* Yes.. Then schedule to wake up when the work is ready */
@@ -257,28 +270,40 @@ void work_process(FAR struct usr_wqueue_s *wqueue)
 			/* Then try the next in the list. */
 
 			work = (FAR struct work_s *)work->dq.flink;
+#endif
 		}
 	}
 
-	/* Get the delay (in clock ticks) since we started the sampling */
+#ifdef CONFIG_LIB_USRWORK_SORTING
+	if ((FAR struct work_s *)wqueue->q.head == NULL) {
+		/* Wait indefinitely until signalled with SIGWORK */
 
-	elapsed = clock() - stick;
-	if (elapsed < wqueue->delay && next > 0) {
-		/* How must time would we need to delay to get to the end of the
-		 * sampling period?  The amount of time we delay should be the smaller
-		 * of the time to the end of the sampling period and the time to the
-		 * next work expiry.
-		 */
+		DEBUGVERIFY(sigwaitinfo(&set, NULL));
+	} else
+#endif
+	{
+		if (next > 0) {
+#ifndef CONFIG_LIB_USRWORK_SORTING
+			/* Get the delay (in clock ticks) since we started the sampling */
 
-		remaining = wqueue->delay - elapsed;
-		next = MIN(next, remaining);
+			elapsed = clock() - stick;
+			if (elapsed < wqueue->delay) {
+				/* How must time would we need to delay to get to the end of the
+				* sampling period?  The amount of time we delay should be the smaller
+				* of the time to the end of the sampling period and the time to the
+				* next work expiry.
+				*/
 
-		/* Wait awhile to check the work list.  We will wait here until
-		 * either the time elapses or until we are awakened by a signal.
-		 * Interrupts will be re-enabled while we wait.
-		 */
-
-		usleep(next * USEC_PER_TICK);
+				remaining = wqueue->delay - elapsed;
+				next = MIN(next, remaining);
+			}
+#endif
+				/* Wait a while to check the work list.  We will wait here until
+				* either the time elapses or until we are awakened by a signal.
+				* Interrupts will be re-enabled while we wait.
+				*/
+				usleep(next * USEC_PER_TICK);
+		}
 	}
 
 	work_unlock();

@@ -436,6 +436,12 @@ config LIB_USRWORK
 
 if LIB_USRWORK
 
+config LIB_USRWORK_SORTING
+	bool "Sort workers by delay"
+	default y
+	---help---
+		Sort workers by delay when worker is inserted
+
 config LIB_USRWORKPRIORITY
 	int "User mode priority worker thread priority"
 	default 100
