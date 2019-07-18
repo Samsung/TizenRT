@@ -414,7 +414,7 @@ static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 
 	ip_addr_t ip_temp = IPADDR4_INIT(0x0);
 #ifdef CONFIG_LWIP_DHCPS_UNICAST
-	memcpy(&(IN_ADDR_T(ip_temp).addr) ,m->yiaddr, sizeof(m->yiaddr));
+	memcpy(&(IN_ADDR_T(ip_temp).addr), m->yiaddr, sizeof(m->yiaddr));
 #else
 	ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
 #endif
@@ -663,8 +663,6 @@ POOL_CHECK:
 static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
 	int16_t tlen = 0;
-
-	//u16_t i = 0;
 	u16_t dhcps_msg_cnt = 0;
 	u8_t *p_dhcps_msg = NULL;
 	u8_t *data = NULL;
@@ -695,10 +693,6 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 
 	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): msg tot_len=%d, len=%d\n", tlen, p->len));
 
-	/* for (i = 0; i < (p->len); i++) { */
-	/* 	p_dhcps_msg[dhcps_msg_cnt++] = data[i]; */
-	/* } */
-
 	memcpy(&p_dhcps_msg[dhcps_msg_cnt], data, p->len);
 	dhcps_msg_cnt = p->len;
 
@@ -709,9 +703,6 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 
 		memcpy(&p_dhcps_msg[dhcps_msg_cnt], data, p->len);
 		dhcps_msg_cnt += p->len;
-		/* for (i = 0; i < (p->next->len); i++) { */
-		/* 	p_dhcps_msg[dhcps_msg_cnt++] = data[i]; */
-		/* } */
 	}
 
 	LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): parse_msg\n"));
@@ -724,9 +715,14 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_
 	case DHCPS_STATE_ACK:		//3
 		LWIP_DEBUGF(DHCP_DEBUG, ("handle_dhcp(): DHCPD_STATE_ACK\n"));
 		dhcps_send_msg(pmsg_dhcps, DHCP_ACK);
+
 		if (g_dhcp_sta_joined) {
 			LWIP_DEBUGF(DHCP_DEBUG, ("station join done: callback\n"));
-			g_dhcp_sta_joined();
+			dhcp_node_s node;
+			memcpy(&node.ipaddr, pmsg_dhcps->yiaddr, sizeof(pmsg_dhcps->yiaddr));
+			memcpy(&node.macaddr, pmsg_dhcps->chaddr, 6);
+
+			g_dhcp_sta_joined(DHCP_ACK_EVT, (void *)&node);
 		}
 		break;
 	case DHCPS_STATE_NAK:		//4

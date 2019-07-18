@@ -116,7 +116,8 @@ void *_dhcpd_join_handler(void *arg)
 	attr.mq_flags = 0;
 	attr.mq_curmsgs = 0;
 
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_NONBLOCK | O_CREAT, 0666, &attr);
+
+	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
 	if (md == (mqd_t)ERROR) {
 		ndbg("Failed to open mq\n");
 		goto go_out;
@@ -138,22 +139,26 @@ void *_dhcpd_join_handler(void *arg)
 		goto go_out;
 	}
 
-	while (!g_dhcpd_term) {
+	while (1) {
 		char msg[DHCPD_MQ_LEN];
 		memset(msg, 0, DHCPD_MQ_LEN);
 		int prio = 0;
 		int nbytes = mq_receive(md, msg, DHCPD_MQ_LEN, &prio);
+
 		if (nbytes <= 0) {
 			if (errno != EAGAIN) {
 				ndbg("mq receive none (errno %d)\n", errno);
 				break;
 			}
-		} else {
-			if (!strncmp(msg, "dhcpd_join", DHCPD_MQ_LEN - 1)) {
-				data->fn();
-			}
+		} else if (msg[0] == 0) {// terminate thread
+			break;
+		} else if (msg[0] == 1) {
+			dhcp_node_s node;
+			memcpy(&node.ipaddr, &msg[1], 4);
+			memcpy(&node.macaddr, &msg[5], 6);
+
+			data->fn(DHCP_ACK_EVT, &node);
 		}
-		sleep(1);
 	}
 
 go_out:
@@ -223,11 +228,8 @@ int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	memcpy(data->intf, intf, strlen(intf) + 1);
 	data->fn = dhcp_join_cb;
 
-	int ret = ERROR;
-	g_dhcpd_term = 0;
-	ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, (void *)data);
+	int ret = pthread_create(&g_dhcpd_tid, NULL, _dhcpd_join_handler, (void *)data);
 	if (ret < 0) {
-		g_dhcpd_term = 1;
 		free(data->intf);
 		free(data);
 		ndbg("create iotapi handler fail(%d) errno %d\n", ret, errno);
@@ -244,10 +246,27 @@ int dhcp_server_stop(char *intf)
 {
 	int ret = ERROR;
 	struct req_lwip_data req;
+
 	g_dhcpd_term = 1;
 	sleep(1);
 
-	pthread_join(g_dhcpd_tid, NULL);
+	struct mq_attr attr;
+	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
+	attr.mq_msgsize = DHCPD_MQ_LEN;
+	attr.mq_flags = 0;
+	attr.mq_curmsgs = 0;
+
+	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
+	if (md == (mqd_t)ERROR) {
+		ndbg("Failed to open mq\n");
+	}
+	char msg[2] = {0, 0}; // terminate thread message
+	int mq_ret = mq_send(md, msg, 2, 100);
+	if (mq_ret == 0) {
+		pthread_join(g_dhcpd_tid, NULL);
+	} else {
+		ndbg("send mq fail (errno %d)\n", errno);
+	}
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {

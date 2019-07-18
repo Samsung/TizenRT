@@ -88,7 +88,20 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-typedef void (*dhcp_sta_joined)(void);
+typedef enum {
+	DHCP_ACK_EVT,
+	DHCP_NACK_EVT,
+} dhcp_evt_type_e;
+
+typedef struct dhcp_node {
+	int ipaddr;
+	char macaddr[6];
+} dhcp_node_s;
+/*
+ * data is allocated where call it. so it is not allowed to access
+ * data outside a callback function.
+ */
+typedef void (*dhcp_sta_joined)(dhcp_evt_type_e type, void *data);
 
 /**
  * @brief Returns whether DHCP server is already running or not
