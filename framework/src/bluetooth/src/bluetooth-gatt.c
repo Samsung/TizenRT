@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <tinyara/config.h>
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>

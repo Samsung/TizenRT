@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#ifdef GLIB_SUPPORTED
+#include <tinyara/config.h>
+#ifdef GLIB_SUPPORT
 #include <glib.h>
 #endif
 #include <string.h>

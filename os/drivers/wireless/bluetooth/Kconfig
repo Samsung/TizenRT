@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config BLUETOOTH_NULL
+	bool "NULL Bluetooth device"
+	default n
+	---help---
+		A do-nothing Bluetooth device driver to permit some basic testing of
+		the Bluetooth stack on the simulator.  This driver just "closes the
+		loop" and nothing more:  It is a just a bit-bucket for outgoing
+		packets; it generates no incoming packets.
+

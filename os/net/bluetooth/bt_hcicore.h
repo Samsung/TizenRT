@@ -150,7 +150,7 @@ struct bt_dev_s {
 
 	FAR const struct bt_driver_s *btdev;
 
-	/* local name */
+	/* name */
 	char name[CONFIG_BT_DEVICE_NAME_MAX];
 
 	/* dev flags */
@@ -162,6 +162,12 @@ struct bt_dev_s {
 
 	/* ID Address used for advertising */
 	uint8_t adv_id;
+
+	/* Current local Random Address */
+	bt_addr_le_t random_addr;
+
+	/* local_name at driver side */
+	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 };
 
 /* Connection callback structure */
@@ -437,5 +443,13 @@ int bt_le_scan_update(void);
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
 int bt_addr_le_create_static(bt_addr_le_t *addr);
+
+int bt_ble_scan_update(bool fast_scan);
+
+int hci_initialize(void);
+
+void ble_adv_report(FAR struct bt_buf_s *buf);
+
+int hci_le_create_conn(FAR const bt_addr_le_t *addr);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

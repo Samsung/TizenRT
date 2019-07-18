@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <tinyara/config.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/bluetooth_internal.h>
 

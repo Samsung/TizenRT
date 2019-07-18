@@ -261,6 +261,9 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
+#ifdef CONFIG_TASK_MANAGER
+	task_manager_drv_register();
+#endif
 
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
@@ -278,18 +281,6 @@ static inline void os_do_appstart(void)
 	heapinfo_drv_register();
 #endif
 
-#ifdef CONFIG_TASK_MANAGER
-#define TASKMGR_STACK_SIZE 2048
-#define TASKMGR_PRIORITY 200
-
-	svdbg("Starting task manager\n");
-	task_manager_drv_register();
-
-	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
-	if (pid < 0) {
-		svdbg("Failed to create Task Manager\n");
-	}
-#endif
 	svdbg("Starting application main thread\n");
 #ifdef CONFIG_BUILD_PROTECTED
 	if (USERSPACE->us_entrypoint != NULL) {

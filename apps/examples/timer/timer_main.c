@@ -88,12 +88,19 @@
 #endif
 
 #define TIMER_THEAD_SIZE                2048
-#define TIMER_THEAD_PRIORITY            100
+#define TIMER_THEAD_PRIORITY            255
+
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+#define ALLOWABLE_PERCENTAGE (0.1)
+#endif
 
 struct timer_args {
 	int fd;
 	int count;
 	int intval;
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	int devno;
+#endif
 };
 /****************************************************************************
  * Private Functions
@@ -106,7 +113,15 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	int count = pargs->count;
 	int intval = pargs->intval;
 	int fd = pargs->fd;
-	int nbr = 0;
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	int frt_fd;
+	char path[_POSIX_PATH_MAX];
+	int frt_dev;
+	struct timer_status_s before;
+	struct timer_status_s after;
+	uint32_t time_diff;
+	uint32_t expected_time;
+#endif
 
 	sigset_t sig_set;
 	sigemptyset(&sig_set);
@@ -131,8 +146,8 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	}
 
 	/* Set the timer interval */
-	fprintf(stdout, "Set timer interval to %lu\n",
-			(unsigned long)intval);
+	fprintf(stdout, "Set timer interval to %lu, repeat %d\n",
+			(unsigned long)intval, count);
 
 	if (ioctl(fd, TCIOC_SETTIMEOUT, intval) < 0) {
 		fprintf(stderr, "ERROR: Failed to set the timer interval: %d\n", errno);
@@ -146,13 +161,46 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 		goto error;
 	}
 
-	while (count--) {
-		if (sigwaitinfo(&sig_set, NULL) == EXAMPLE_TIMER_SIGNO)
-			fprintf(stdout, "time limits(%d)\n", ++nbr);
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	/* Open the FRTimer device */
+	if (pargs->devno == 0) {
+		frt_dev = 1;
+	} else {
+		frt_dev = 0;
 	}
-	/* Stop the timer */
-	fprintf(stdout, "Stop the timer\n");
+	snprintf(path, _POSIX_PATH_MAX, TIMER_DEVNAME, frt_dev);
+	fprintf(stdout, "FRT Open %s\n", path);
 
+	expected_time = count * intval;
+
+	frt_fd = open(path, O_RDONLY);
+	if (frt_fd < 0) {
+		fprintf(stderr, "ERROR: Failed to open Free Run Timer: %d\n", errno);
+		goto error;
+	}
+	if (ioctl(frt_fd, TCIOC_SETFREERUN, TRUE) < 0) {
+		fprintf(stderr, "ERROR: Failed to set Free Run Timer: %d\n", errno);
+		goto error;
+	}
+	if (ioctl(frt_fd, TCIOC_START, TRUE) < 0) {
+		fprintf(stderr, "ERROR: Failed to start Free Run Timer: %d\n", errno);
+		goto error;
+	}
+
+	if (ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&before) < 0) {
+		fprintf(stderr, "ERROR: Failed to get Free Run Timer status: %d\n", errno);
+		goto error;
+	}
+
+#endif
+	while (count--) {
+		sigwaitinfo(&sig_set, NULL);
+	}
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	if (ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&after) < 0) {
+		fprintf(stderr, "ERROR: Failed to get Free Run Timer status: %d\n", errno);
+	}
+#endif
 	/* In high resolution timers, timer has to be stopped immediately once
 	the sigwait handling is completed. If not timer interrupt would keep
 	posting the events which would results in stack overflows. */
@@ -160,10 +208,29 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 		fprintf(stderr, "ERROR: Failed to stop the timer: %d\n", errno);
 	}
 
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	if (ioctl(frt_fd, TCIOC_STOP, 0) < 0) {
+		fprintf(stderr, "ERROR: Failed to stop the Free Run Timer: %d\n", errno);
+	}
+#endif
+	fprintf(stdout, "Stop the timer\n");
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	fprintf(stdout, ">> Summary\n");
+
+	time_diff = after.timeleft - before.timeleft;
+	fprintf(stdout, "\tExpected %d, Estimated %d, Ratio %.9f\n", expected_time, time_diff, ((float)time_diff / (float)expected_time) - 1.0);
+	if (((float)expected_time * (1.0 + ALLOWABLE_PERCENTAGE / 100.0)) > (float)time_diff) {
+		fprintf(stdout, "\tPASS : Estimated Elapsed time is within the expected range.\n");
+	} else {
+		fprintf(stdout, "\tFAIL : There are many missing timer interrupts.\n");
+	}
+#endif
 error:
 	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
 	pthread_exit(NULL);
-
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	close(frt_fd);
+#endif
 	return NULL;
 }
 
@@ -272,7 +339,7 @@ int timer_main(int argc, char *argv[])
 	}
 
 	/* Open the timer device */
-	sprintf(path, TIMER_DEVNAME, dev);
+	snprintf(path, _POSIX_PATH_MAX, TIMER_DEVNAME, dev);
 	fprintf(stdout, "Open %s\n", path);
 
 	fd = open(path, O_RDONLY);
@@ -292,6 +359,9 @@ int timer_main(int argc, char *argv[])
 	args.count = repeat;
 	args.fd = fd;
 	args.intval = intval;
+#ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
+	args.devno = dev;
+#endif
 
 	/* Create Time Handler Thread */
 	tid = create_timer_thread((void *)&args);

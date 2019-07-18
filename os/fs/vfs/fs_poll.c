@@ -207,6 +207,7 @@ static inline int poll_setup(FAR struct pollfd *fds, nfds_t nfds, sem_t *sem)
 		fds[i].sem = sem;
 		fds[i].revents = 0;
 		fds[i].priv = NULL;
+		fds[i].filep = NULL;
 
 		/* Check for invalid descriptors. "If the value of fd is less than 0,
 		 * events shall be ignored, and revents shall be set to 0 in that entry

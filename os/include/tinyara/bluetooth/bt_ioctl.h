@@ -51,6 +51,7 @@
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_gatt.h>
+#include <tinyara/bluetooth/conn.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -407,7 +408,7 @@ struct btreq_s {
 
 		struct {
 			bt_addr_le_t btrse_secaddr;	/* IN:  BLE address */
-			enum bt_security_e btrse_seclevel;	/* IN:  Security level */
+			bt_security_t btrse_seclevel;	/* IN:  Security level */
 		} btrse;
 
 		/* Read-only data that accompanies SIOCBTEXCHANGE command */

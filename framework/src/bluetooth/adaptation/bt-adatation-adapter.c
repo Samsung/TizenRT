@@ -15,6 +15,7 @@
  *
  */
 
+#include <tinyara/config.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-adapter.h"
 #include "bluetooth_private.h"

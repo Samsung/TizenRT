@@ -747,12 +747,12 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 		/* Get the connection associated with the provided LE address */
 
-		conn = bt_conn_lookup_addr_le(&btreq->btr_secaddr);
+		conn = bt_conn_lookup_addr_le_internal(&btreq->btr_secaddr);
 		if (conn == NULL) {
 			nwdbg("WARNING:  Peer not connected\n");
 			ret = -ENOTCONN;
 		} else {
-			ret = bt_conn_security(conn, btreq->btr_seclevel);
+			ret = bt_conn_security_internal(conn, btreq->btr_seclevel);
 			if (ret < 0) {
 				ndbg("ERROR:  Security setting failed: %d\n", ret);
 			}
@@ -775,7 +775,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_expeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_expeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -814,7 +814,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 		} else {
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_dpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_dpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -900,7 +900,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_rdpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_rdpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -962,7 +962,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_wrpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_wrpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
