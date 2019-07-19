@@ -81,14 +81,24 @@ security_error auth_set_certificate(security_handle hnd, const char *cert_name, 
 	if (!cert || !cert->data) {
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
-    /* convert path */
 	uint32_t cert_idx = 0;
-	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
+	security_storage_types ss_types = SECURE_ERROR;
 
-	hal_data cert_in = {cert->data, cert->length, NULL, 0};
 	hal_result_e hres = HAL_SUCCESS;
+	hal_data cert_in = {cert->data, cert->length, NULL, 0};
 
-	SECAPI_CALL(sl_set_certificate(ctx->sl_hnd, cert_idx, &cert_in, &hres));
+	SECAPI_GET_STORAGE_TYPE(ss_types, cert_name);
+	if (ss_types == SECURE_STORAGE) {
+	    /* convert path */
+		SECAPI_CONVERT_PATH(cert_name, &cert_idx);
+		SECAPI_CALL(sl_set_certificate(ctx->sl_hnd, cert_idx, &cert_in, &hres));
+	} else if (ss_types == SECURE_SMARTFS){
+		FILE *fp = NULL;
+		SECAPI_OPEN(ss_types, fp, cert_name, "w");
+		// SECAPI_WRITE(fp, cert_in.data, cert_in.data_len);
+		fwrite(cert_in.data, 1, cert_in.data_len, fp);
+		SECAPI_CLOSE(fp);
+	}
 
 	SECAPI_HAL_RETURN(hres);
 }
@@ -102,16 +112,26 @@ security_error auth_get_certificate(security_handle hnd, const char *cert_name, 
 	if (!cert) {
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
 	}
-    /* convert path */
+	hal_result_e hres = HAL_SUCCESS;
 	uint32_t cert_idx = 0;
-	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
+	security_storage_types ss_types = SECURE_ERROR;
 
 	hal_data cert_out = {ctx->data1, ctx->dlen1, NULL, 0};
-	hal_result_e hres = HAL_SUCCESS;
 
-	SECAPI_CALL(sl_get_certificate(ctx->sl_hnd, cert_idx, &cert_out, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
+	SECAPI_GET_STORAGE_TYPE(ss_types, cert_name);
+	if (ss_types == SECURE_STORAGE) {
+	    /* convert path */
+		SECAPI_CONVERT_PATH(cert_name, &cert_idx);
+		SECAPI_CALL(sl_get_certificate(ctx->sl_hnd, cert_idx, &cert_out, &hres));
+		if (hres != HAL_SUCCESS) {
+			SECAPI_HAL_RETURN(hres);
+		}
+	} else if (ss_types == SECURE_SMARTFS){
+		FILE *fp = NULL;
+		SECAPI_OPEN(ss_types, fp, cert_name, "r");
+		// SECAPI_READ(fp, cert_out.data, cert_out.data_len);
+		fread(cert_out.data, 1, cert_out.data_len, fp);
+		SECAPI_CLOSE(fp);
 	}
 
 	SECAPI_DATA_DCOPY(cert_out, cert);
@@ -127,13 +147,25 @@ security_error auth_remove_certificate(security_handle hnd, const char *cert_nam
 
     /* convert path */
 	uint32_t cert_idx = 0;
-	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
-
+	security_storage_types ss_types = SECURE_ERROR;
 	hal_result_e hres = HAL_SUCCESS;
-	SECAPI_CALL(sl_remove_certificate(ctx->sl_hnd, cert_idx, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
+
+	SECAPI_GET_STORAGE_TYPE(ss_types, cert_name);
+	if (ss_types == SECURE_STORAGE) {
+		SECAPI_CONVERT_PATH(cert_name, &cert_idx);
+
+		SECAPI_CALL(sl_remove_certificate(ctx->sl_hnd, cert_idx, &hres));
+		if (hres != HAL_SUCCESS) {
+			SECAPI_HAL_RETURN(hres);
+		}
+	} else if (ss_types == SECURE_SMARTFS){
+		int ret = unlink(cert_name);
+		if (ret < 0) {
+			SECAPI_LOG("Fail to delete certification(%s).", cert_name);
+			return SECURITY_ERROR;
+		}
 	}
+
 	SECAPI_RETURN(SECURITY_OK);
 }
 

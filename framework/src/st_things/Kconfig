@@ -28,6 +28,7 @@ config ST_THINGS_HW_CERT_KEY
 	depends on ARCH_BOARD_ARTIK05X_FAMILY && ST_THINGS_SECURESTORAGE
 	default n
 	select TLS_WITH_HW_ACCEL
+	select CONFIG_SVR_DB_SECURESTORAGE
 	---help---
 		Build ST Things to save hardware certification to securestorage(limited under 8KB)
 
@@ -36,7 +37,7 @@ config ST_THINGS_SECURESTORAGE
 	depends on ARCH_BOARD_ARTIK05X_FAMILY
 	default n
 	select TLS_WITH_HW_ACCEL
-	
+
 	---help---
 		Build ST Things for Secure Storage
 

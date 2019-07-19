@@ -162,6 +162,13 @@ typedef enum {
 	HASH_UNKNOWN,
 } security_hash_mode;
 
+typedef enum {
+	SECURE_ERROR = -1,
+	SECURE_NONE,
+	SECURE_STORAGE,
+	SECURE_SMARTFS
+} security_storage_types;
+
 typedef struct _security_rsa_param {
 	security_rsa_mode rsa_a;
 	security_hash_mode hash_t;

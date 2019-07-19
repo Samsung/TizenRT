@@ -15,12 +15,13 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __SECURITY_API_H__
-#define __SECURITY_API_H__
 
-#include "security_auth.h"
-#include "security_crypto.h"
-#include "security_keymgr.h"
-#include "security_ss.h"
+#ifndef __SS_MISC_H
+#define __SS_MISC_H
 
-#endif // __SECURITY_API_H__
+#define ST_DEVICE_KEY                  (9)
+#define ST_FACTORY_CERT                (8)
+
+int get_artik_crt_uuid(unsigned char *uuid, unsigned int *uuid_len);
+
+#endif  //__SS_MISC_H

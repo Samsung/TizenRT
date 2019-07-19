@@ -22,9 +22,12 @@
 #include <security/security_api.h>
 #include <tinyara/seclink.h>
 #include <security/security_common.h>
+
+#include "security/sss_security/ss_misc.h"
 #include "security_internal.h"
 
 #define SS_PATH "ss/"
+#define FS_PATH "fs/"
 #define FACTORY_PATH "factory/"
 
 
@@ -268,12 +271,29 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 		*slot = atoi(&path[3]);
 		return 0;
 	} else if (!strncmp(path, FACTORY_PATH, sizeof(FACTORY_PATH) - 1)) {
-		*slot = FACTORYKEY_ARTIK_CERT;
+		*slot = ST_FACTORY_CERT;
 		return 0;
 	}
 
 	return -1;
 }
+
+security_storage_types secutils_get_storage_type(const char *path)
+{
+	if (!path) {
+		return SECURE_ERROR;
+	}
+
+	if (!strncmp(path, SS_PATH, sizeof(SS_PATH) - 1)) {
+		return SECURE_STORAGE;
+	} else if (path[0] == '/' || path[0] == '.') {
+		// the path starts root or current directory.
+		return SECURE_SMARTFS;
+	}
+
+	return SECURE_ERROR;
+}
+
 
 int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hparam)
 {

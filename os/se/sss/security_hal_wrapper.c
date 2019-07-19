@@ -62,7 +62,7 @@
 #define HAL_MAX_RANDOM_SIZE 256
 #define HAL_MAX_ECP_KEY_SIZE_ALT 128
 #define HAL_MAX_ECDSA_LEN 256
-#define HAL_MAX_BUF_SIZE 2048
+#define HAL_MAX_BUF_SIZE (2048 * 2)
 #define HAL_MAX_SHARED_SECRET_LEN 256
 
 #define AES_ECB_MODE		(0x0008)
@@ -1332,8 +1332,13 @@ int sss_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 	unsigned int buf_len;
 
 	ISP_CHECKBUSY();
-	if (cert_idx == FACTORYKEY_ARTIK_CERT) {
-		ret = isp_get_factorykey_data(buf, &buf_len, cert_idx);
+	if (cert_idx > 7) {
+		if (cert_idx == 8) {
+			ret = isp_get_factorykey_data(buf, &buf_len, FACTORYKEY_ARTIK_CERT);
+		} else if( cert_idx == 9) {
+			ret = isp_get_factorykey_data(buf, &buf_len, FACTORYKEY_ARTIK_DEVICE);
+		}
+
 		if (ret != 0) {
 			isp_clear(0);
 			sedbg("ISP failed (%zu)\n", ret);

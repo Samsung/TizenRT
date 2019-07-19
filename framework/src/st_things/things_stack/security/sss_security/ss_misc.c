@@ -20,6 +20,7 @@
 #include <security/security_api.h>
 #include <mbedtls/x509_crt.h>
 
+#include "ss_misc.h"
 #include "sss_storage.h"
 
 #define SUBJECT_NAME_LEN	128
@@ -121,9 +122,6 @@ exit:
 	return r;
 }
 
-// TBD: this should be fixed to change to support other SE.
-#define ST_FACTORYKEY_ARTIK_CERT (0x00010122)
-
 int get_artik_crt_uuid(unsigned char *uuid, unsigned int *uuid_len)
 {
 	int r;
@@ -143,7 +141,7 @@ int get_artik_crt_uuid(unsigned char *uuid, unsigned int *uuid_len)
 		return -1;
 	}
 	char auth_name[7] = {0,};
-	snprintf(auth_name, 7, "ss/%d", ST_FACTORYKEY_ARTIK_CERT);
+	snprintf(auth_name, 7, "ss/%d", ST_FACTORY_CERT);
 
 	security_data data = {buf, buf_len};
 
@@ -155,7 +153,7 @@ int get_artik_crt_uuid(unsigned char *uuid, unsigned int *uuid_len)
 	}
 	security_deinit(hnd);
 
-	r = get_crt_subject_uuid(uuid, uuid_len, buf, buf_len);
+	r = get_crt_subject_uuid(uuid, uuid_len, data.data, data.length);
 	if (r) {
 		printf("Fail to get subject uuid %d\n", r);
 		goto exit;

@@ -22,13 +22,6 @@
 #include <string.h>
 #include <tinyara/seclink.h>
 
-#if (defined(CONFIG_ARCH_BOARD_ARTIK053S) || defined(CONFIG_ARCH_BOARD_ARTIK053)) \
-		&& defined(CONFIG_S5J_HAVE_SSS)
-#include "../../../os/arch/arm/src/s5j/sss/isp_custom.h"
-
-#define FACTORYKEY_CERT					(0x00010122)
-#endif
-
 #ifdef LINUX
 #define SECAPI_LOG printf
 #else
@@ -131,6 +124,42 @@
 			SECAPI_RETURN(SECURITY_INVALID_KEY_INDEX);			\
 		}														\
 	} while (0)
+
+#define SECAPI_GET_STORAGE_TYPE(type, path)                     \
+	do {                                                        \
+		type = secutils_get_storage_type(path);                 \
+		if (type == SECURE_ERROR) {                             \
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);       \
+		}                                                       \
+	} while (0)
+
+#define SECAPI_OPEN(type, fp, path, mode)						\
+	do {														\
+		if (type == SECURE_NONE || type == SECURE_STORAGE) {	\
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);		\
+		} else if (type == SECURE_SMARTFS) {					\
+			fp = fopen(path, mode);		                    \
+			if (fp == NULL) {                                   \
+				SECAPI_LOG(SECAPI_TAG" %s:%d | fail to open(%s) with mode(%s).\n", __FILE__, __LINE__, path, mode);   \
+				SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);   \
+			}                                                   \
+		}														\
+	} while(0)
+
+#define SECAPI_READ(fp, buff, size)								\
+	do {														\
+		fread((char*)buff, 1, size, fp);                               \
+	} while (0)
+
+#define SECAPI_WRITE(fp, buff, size)							\
+	do {														\
+		fwrite((char*)buff, 1, size, fp);                              \
+	} while (0)
+
+#define SECAPI_CLOSE(fp)										\
+	do {														\
+		fclose(fp);												\
+	} while(0)
 
 #define SECAPI_CONVERT_AESPARAM(sec, hal)						\
 	do {														\

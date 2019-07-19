@@ -40,6 +40,18 @@
 
 #define SSSFILE  "/sss/00014280"
 
+
+
+void printhex(unsigned char *hex, const unsigned int size) {
+	unsigned int i = 0;
+	for (i = 0; i < size; ++i) {
+		printf("%02X ", hex[i]);
+	}
+	printf("\n");
+}
+
+
+
 int g_secureStorageType;
 
 int getSecureStorageType(void)
@@ -52,8 +64,8 @@ void setSecureStorageType(int type)
 	g_secureStorageType = type;
 }
 
-//#define LOGSECURE(data) printf("%s:%d|%s() SSS[%s] data:%d\n",__FILE__,__LINE__,__func__,getSecureStorageType() == 0 ? "PERSISTENT" : "MEMORY", data)
-#define LOGSECURE(data)
+#define LOGSECURE(data) printf("%s:%d | %s() SSS[%s] data:%d\n",__FILE__,__LINE__,__func__,getSecureStorageType() == 0 ? "PERSISTENT" : "MEMORY", data)
+// #define LOGSECURE(data)
 
 /** Persistent storage open handler.*/
 FILE *secure_fopen(const char *path, const char *mode)
@@ -121,12 +133,12 @@ extern int secure_remove(const char *path)
 	if (fullpath) {
 		ret = unlink(fullpath);
 		if (ret < 0) {
-			printf("unlink fail [%d]", ret);
+			printf("unlink fail [%d]\n", ret);
 		}
 		free(fullpath);
-		printf("File [%s] Clear Success", SSSFILE);
+		printf("File [%s] Clear Success\n", SSSFILE);
 	} else {
-		printf("delete fail");
+		printf("delete fail\n");
 	}
 
 	return ret;

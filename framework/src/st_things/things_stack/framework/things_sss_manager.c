@@ -32,6 +32,10 @@
 #include "srmresourcestrings.h"
 #include "credresource.h"
 
+#ifdef CONFIG_ST_THINGS_HW_CERT_KEY
+#include "security/sss_security/ss_misc.h"
+#endif
+
 #include "mbedtls/ssl_ciphersuites.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/pem.h"
@@ -41,7 +45,7 @@
 #include <security/security_api.h>
 
 #define SECURITY_MAX_BUF_SIZE		(4096)
-#define FACTORYKEY_ARTIK_CERTIFICATE "factory/key"
+#define FACTORYKEY_ARTIK_CERTIFICATE "ss/8"
 #endif
 
 #define TAG "THINGS_SSS"
@@ -117,6 +121,8 @@ int OCGetOwnCertFromHw(const void* keyContext, uint8_t** certChain, size_t* cert
 	/* If input buffer's address is same with previous allocated memory,
        it will return the success value and iotivity stack use previous memory. */
 	if (*certChain && *certChain == g_certChain) {
+		THINGS_LOG_D(TAG, "Certfication chain are sames.");
+		THINGS_LOG_D(TAG, "Out: %s", __func__);
 		return 0;
 	}
 
@@ -160,7 +166,7 @@ int OCSetupPkContextFromHw(mbedtls_pk_context* ctx, void* keyContext)
 	}
 
 	mbedtls_ecdsa_init((mbedtls_ecdsa_context*)pkey->pk_ctx);
-	((mbedtls_ecdsa_context *)(pkey->pk_ctx))->key_index = FACTORYKEY_ARTIK_DEVICE;
+	((mbedtls_ecdsa_context *)(pkey->pk_ctx))->key_index = ST_DEVICE_KEY;
 	((mbedtls_ecdsa_context *)(pkey->pk_ctx))->grp.id = MBEDTLS_ECP_DP_SECP256R1;
 
 	ctx->pk_info = pkey->pk_info;
