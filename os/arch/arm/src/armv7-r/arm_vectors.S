@@ -94,13 +94,6 @@ g_fiqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
 #endif
-#ifdef CONFIG_BINMGR_RECOVERY
-	.globl	g_assertpc
-	.type	g_assertpc, object
-g_assertpc:
-	.skip	4
-	.size	g_assertpc, 4
-#endif
 
 /************************************************************************************
  * Assembly Macros
@@ -354,11 +347,6 @@ arm_vectorsvc:
 
 #ifdef CONFIG_BUILD_PROTECTED
 	push	{lr}
-#ifdef CONFIG_BINMGR_RECOVERY
-	ldr		lr, .Lassertpc
-	ldr		r10, [sp]
-	str		r10, [lr]
-#endif
 	ldr		lr, .Lsvctmp
 	stmia	lr, {r9, r10}
 
@@ -483,10 +471,6 @@ arm_vectorsvc:
 	.word	g_svctmp
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
-.Lassertpc:
-	.word	g_assertpc
-#endif
 	.size	arm_vectorsvc, . - arm_vectorsvc
 
 	.align	5
