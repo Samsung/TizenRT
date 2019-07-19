@@ -122,7 +122,9 @@ static void test_broadcast_handler(tm_msg_t *user_data, tm_msg_t *info)
 			sem_wait(&tm_broad_sem);
 			broad_wifi_on_cnt++;
 			sem_post(&tm_broad_sem);
-			(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
+			if (user_data->msg != NULL || user_data->msg_size != 0) {
+				(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
+			}
 		} else if (strncmp((char *)info->msg, TM_BROAD_WIFI_OFF_DATA, info->msg_size) == 0) {
 			sem_wait(&tm_broad_sem);
 			broad_wifi_off_cnt++;
@@ -492,12 +494,36 @@ static void utc_taskmanager_broadcast_p(void)
 {
 	int sleep_cnt = 0;
 	tm_msg_t user_data;
+	int ret;
 
 	sem_init(&tm_broad_sem, 0, 1);
 	broad_wifi_on_cnt = 0;
 	broad_wifi_off_cnt = 0;
 	broad_undefined_cnt = 0;
 	broadcast_data_flag = -1;
+
+	user_data.msg_size = 0;
+	user_data.msg = NULL;
+
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON, &user_data, TM_NO_RESPONSE);
+	while (1) {
+		sleep(1);
+		if (broad_wifi_on_cnt == TM_BROAD_TASK_NUM) {
+			break;
+		}
+		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 10, sem_destroy(&tm_broad_sem));
+		sleep_cnt++;
+	}
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", ret, OK, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_on_cnt, TM_BROAD_TASK_NUM, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_off_cnt, 0, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_undefined_cnt, 0, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broadcast_data_flag, -1, sem_destroy(&tm_broad_sem); free(user_data.msg));
+
+	broad_wifi_on_cnt = 0;
+	broad_wifi_off_cnt = 0;
+	broad_undefined_cnt = 0;
+	sleep_cnt = 0;
 
 	user_data.msg_size = strlen("WIFI_ON") + 1;
 	user_data.msg = malloc(user_data.msg_size);
