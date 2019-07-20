@@ -25,11 +25,12 @@
 #include <assert.h>
 #include <pthread.h>
 #include <debug.h>
+#include <media/MediaTypes.h>
 #include "audio_decoder.h"
 #include "../utils/internal_defs.h"
 #include "../audio/resample/samplerate.h"
 
-namespace media {
+using namespace media;
 
 // MP3 tag frame header len
 #define MP3_HEAD_ID3_TAG_LEN 10
@@ -1169,5 +1170,3 @@ int audio_decoder_finish(audio_decoder_p decoder)
 
 	return AUDIO_DECODER_OK;
 }
-
-} // namespace media
