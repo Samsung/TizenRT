@@ -239,8 +239,11 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 				char *curp;
 				int ok = 0;
 
+				// ToDo netcmd refer ipv6 header in lwip
+				// it doesn't cause problems but.
+				// it would be better not to refer lwip header in application
 				ip6hdr = (struct ip6_hdr *)buf;
-				len = IP6H_PLEN(ip6hdr);
+				len = htons(ip6hdr->_plen);
 				curp = (char *)(buf + sizeof(struct ip6_hdr));
 
 				nexth = ip6hdr->_nexth;

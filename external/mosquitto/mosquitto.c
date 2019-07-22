@@ -125,7 +125,6 @@ struct mosquitto *mosquitto_new(const char *id, bool clean_session, void *userda
 	int rc;
 
 	if (clean_session == false && id == NULL) {
-		errno = EINVAL;
 		return NULL;
 	}
 #if !defined(WIN32) && !defined(__TINYARA__)
@@ -143,16 +142,10 @@ struct mosquitto *mosquitto_new(const char *id, bool clean_session, void *userda
 		rc = mosquitto_reinitialise(mosq, id, clean_session, userdata);
 		if (rc) {
 			mosquitto_destroy(mosq);
-			if (rc == MOSQ_ERR_INVAL) {
-				errno = EINVAL;
-			} else if (rc == MOSQ_ERR_NOMEM) {
-				errno = ENOMEM;
-			}
 			return NULL;
 		}
-	} else {
-		errno = ENOMEM;
 	}
+
 	return mosq;
 }
 

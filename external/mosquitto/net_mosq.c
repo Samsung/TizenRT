@@ -328,7 +328,7 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 	s = getaddrinfo(host, NULL, &hints, &ainfo);
 	if (s) {
 		_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: getaddrinfo() fail (%d)", s);
-		errno = s;
+		set_errno(s);
 		return MOSQ_ERR_EAI;
 	}
 #if defined(__TINYARA__)
@@ -342,7 +342,7 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 #if defined(__TINYARA__)
 			mosq->connect_ainfo = ainfo = NULL;
 #endif
-			errno = s;
+			set_errno(s);
 			return MOSQ_ERR_EAI;
 		}
 #if defined(__TINYARA__)
@@ -387,7 +387,7 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 
 		rc = connect(*sock, rp->ai_addr, rp->ai_addrlen);
 #ifdef WIN32
-		errno = WSAGetLastError();
+		set_errno(WSAGetLastError());
 #endif
 		if (rc == 0 || errno == EINPROGRESS || errno == COMPAT_EWOULDBLOCK) {
 			if (rc < 0 && (errno == EINPROGRESS || errno == COMPAT_EWOULDBLOCK)) {
@@ -797,7 +797,7 @@ ssize_t _mosquitto_net_read(struct mosquitto *mosq, void *buf, size_t count)
 	unsigned long e;
 #endif
 	assert(mosq);
-	errno = 0;
+	set_errno(0);
 #ifdef WITH_TLS
 	if (mosq->ssl) {
 		ret = SSL_read(mosq->ssl, buf, count);
@@ -805,18 +805,18 @@ ssize_t _mosquitto_net_read(struct mosquitto *mosq, void *buf, size_t count)
 			err = SSL_get_error(mosq->ssl, ret);
 			if (err == SSL_ERROR_WANT_READ) {
 				ret = -1;
-				errno = EAGAIN;
+				set_errno(EAGAIN);
 			} else if (err == SSL_ERROR_WANT_WRITE) {
 				ret = -1;
 				mosq->want_write = true;
-				errno = EAGAIN;
+				set_errno(EAGAIN);
 			} else {
 				e = ERR_get_error();
 				while (e) {
 					_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "OpenSSL Error: %s", ERR_error_string(e, ebuf));
 					e = ERR_get_error();
 				}
-				errno = EPROTO;
+				set_errno(EPROTO);
 			}
 		}
 		return (ssize_t)ret;
@@ -831,11 +831,11 @@ ssize_t _mosquitto_net_read(struct mosquitto *mosq, void *buf, size_t count)
 			if (ret < 0) {
 				if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
 					ret = -1;
-					errno = EAGAIN;
+					set_errno(EAGAIN);
 				} else if (ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 					ret = -1;
 					mosq->want_write = true;
-					errno = EAGAIN;
+					set_errno(EAGAIN);
 				} else {
 					_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "mbedtls Read Error %d", ret);
 				}
@@ -871,7 +871,7 @@ ssize_t _mosquitto_net_write(struct mosquitto *mosq, void *buf, size_t count)
 #endif
 	assert(mosq);
 
-	errno = 0;
+	set_errno(0);
 #ifdef WITH_TLS
 	if (mosq->ssl) {
 		mosq->want_write = false;
@@ -880,18 +880,18 @@ ssize_t _mosquitto_net_write(struct mosquitto *mosq, void *buf, size_t count)
 			err = SSL_get_error(mosq->ssl, ret);
 			if (err == SSL_ERROR_WANT_READ) {
 				ret = -1;
-				errno = EAGAIN;
+				set_errno(EAGAIN);
 			} else if (err == SSL_ERROR_WANT_WRITE) {
 				ret = -1;
 				mosq->want_write = true;
-				errno = EAGAIN;
+				set_errno(EAGAIN);
 			} else {
 				e = ERR_get_error();
 				while (e) {
 					_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "OpenSSL Error: %s", ERR_error_string(e, ebuf));
 					e = ERR_get_error();
 				}
-				errno = EPROTO;
+				set_errno(EPROTO);
 			}
 		}
 		return (ssize_t)ret;
@@ -965,7 +965,7 @@ int _mosquitto_packet_write(struct mosquitto *mosq)
 				packet->pos += write_length;
 			} else {
 #ifdef WIN32
-				errno = WSAGetLastError();
+				set_errno(WSAGetLastError());
 #endif
 				if (errno == EAGAIN || errno == COMPAT_EWOULDBLOCK) {
 					pthread_mutex_unlock(&mosq->current_out_packet_mutex);
@@ -1111,7 +1111,7 @@ int _mosquitto_packet_read(struct mosquitto *mosq)
 				return MOSQ_ERR_CONN_LOST;    /* EOF */
 			}
 #ifdef WIN32
-			errno = WSAGetLastError();
+			set_errno(WSAGetLastError());
 #endif
 			if (errno == EAGAIN || errno == COMPAT_EWOULDBLOCK) {
 				return MOSQ_ERR_SUCCESS;
@@ -1156,7 +1156,7 @@ int _mosquitto_packet_read(struct mosquitto *mosq)
 					return MOSQ_ERR_CONN_LOST;    /* EOF */
 				}
 #ifdef WIN32
-				errno = WSAGetLastError();
+				set_errno(WSAGetLastError());
 #endif
 				if (errno == EAGAIN || errno == COMPAT_EWOULDBLOCK) {
 					return MOSQ_ERR_SUCCESS;
@@ -1192,7 +1192,7 @@ int _mosquitto_packet_read(struct mosquitto *mosq)
 			mosq->in_packet.pos += read_length;
 		} else {
 #ifdef WIN32
-			errno = WSAGetLastError();
+			set_errno(WSAGetLastError());
 #endif
 			if (errno == EAGAIN || errno == COMPAT_EWOULDBLOCK) {
 				if (mosq->in_packet.to_process > 1000) {
@@ -1363,7 +1363,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 		}
 		if (connect(spR, (struct sockaddr *)&ss, ss_len) < 0) {
 #		ifdef WIN32
-			errno = WSAGetLastError();
+			set_errno(WSAGetLastError());
 #		endif
 			if (errno != EINPROGRESS && errno != COMPAT_EWOULDBLOCK) {
 				COMPAT_CLOSE(spR);
@@ -1374,7 +1374,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 		spW = accept(listensock, NULL, 0);
 		if (spW == -1) {
 #		ifdef WIN32
-			errno = WSAGetLastError();
+			set_errno(WSAGetLastError());
 #		endif
 
 #		if ! defined(__TINYARA__)

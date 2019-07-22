@@ -256,7 +256,7 @@ pid_t up_vfork(const struct vfork_s *context)
 
 #endif
 #elif defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || \
-	  defined(CONFIG_ARCH_CORTEXM0)
+	  defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM7)
 
 			child->cmn.xcp.syscall[index].excreturn = parent->xcp.syscall[index].excreturn;
 #else
