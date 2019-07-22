@@ -1274,6 +1274,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 		break;
 #endif
 #if defined(CONFIG_NET_LWIP_DHCP)
+#if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
 		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->host_name);
 		if (in_arg->req_res != 0) {
@@ -1288,6 +1289,8 @@ int lwip_func_ioctl(int cmd, void *arg)
 		in_arg->req_res = 0;
 		ret = OK;
 		break;
+#endif
+#if defined(CONFIG_LWIP_DHCPS)
 	case DHCPDSTART:
 		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
 		if (in_arg->req_res != 0) {
@@ -1315,6 +1318,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 			ret = OK;
 		}
 		break;
+#endif
 #endif
 	default:
 		ndbg("Wrong request type: %d\n", in_arg->type);

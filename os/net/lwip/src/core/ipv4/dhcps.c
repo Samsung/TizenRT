@@ -416,7 +416,7 @@ static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 #ifdef CONFIG_LWIP_DHCPS_UNICAST
 	memcpy(&(IN_ADDR_T(ip_temp).addr), m->yiaddr, sizeof(m->yiaddr));
 #else
-	ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
+	ip4_addr_set(ip_2_ip4(&ip_temp), &(IN_ADDR_T(broadcast_dhcps)));
 #endif
 
 	if (udp_sendto(pcb_dhcps, p, &ip_temp, DHCP_CLIENT_PORT) != ERR_OK) {

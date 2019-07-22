@@ -20,5 +20,6 @@ config LWIP_DHCPC
 config LWIP_DHCPC_TIMEOUT
 	int "LWIP DHCPC timeout"
 	default 10000
+	depends on LWIP_DHCPC
 
 endif
