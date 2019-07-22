@@ -1161,7 +1161,7 @@ static int free_addrinfo(struct addrinfo *ai)
 #define DHCPD_MQ_LEN 11
 #define DHCPD_MQ_MAX_LEN 20
 
-static void _dhcpd_join(void)
+static void _dhcpd_join(dhcp_evt_type_e type, void *data)
 {
 	ndbg("dhcpd joined");
 
@@ -1178,7 +1178,11 @@ static void _dhcpd_join(void)
 		return;
 	}
 
-	char *msg = "dhcpd_join";
+	char msg[DHCPD_MQ_LEN];
+	dhcp_node_s *node = (dhcp_node_s *)data;
+	msg[0] = 1;
+	memcpy(&msg[1], &node->ipaddr, 4);
+	memcpy(&msg[5], &node->macaddr, 6);
 	int mq_ret = mq_send(md, msg, DHCPD_MQ_LEN, 100);
 	if (mq_ret < 0) {
 		ndbg("send mq fail (errno %d)\n", errno);

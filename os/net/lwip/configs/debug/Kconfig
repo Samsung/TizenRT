@@ -49,6 +49,12 @@ config NET_AUTOIP_DEBUG
 	---help---
 		Enable debugging in autoip.c.
 
+config NET_DHCP_DEBUG
+	bool "DHCP debug message"
+	default n
+	---help---
+		Enable debugging in dhcp.c
+
 config NET_ETHARP_DEBUG
 	bool "Enable ETHARP Debugging"
 	default n
