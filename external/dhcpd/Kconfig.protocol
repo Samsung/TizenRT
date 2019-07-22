@@ -10,9 +10,8 @@ config NETUTILS_DHCPD
 	---help---
 		Enable support for the DHCP server.
 
-if NETUTILS_DHCPD
+if NETUTILS_DHCPD && NET_DHCP
 
-if NET_DHCP
 config NETUTILS_DHCPD_HOST
 	bool "Host-based DHCPD build"
 	default n
@@ -85,7 +84,7 @@ config NETUTILS_DHCPD_DECLINETIME
 
 endif
 
-if NET_LWIP_DHCP
+if NETUTILS_DHCPD && NET_LWIP_DHCP
 
 config LWIP_DHCPS
 	bool
@@ -94,26 +93,30 @@ config LWIP_DHCPS
 config LWIP_DHCPS_LEASE_DEF
 	int "LWIP DHCPS lease time (min)"
 	default 120
+	depends on LWIP_DHCPS
 
 config LWIP_DHCPS_SERVER_IP
 	string "Set DHCP server IP"
 	default "192.168.47.1"
+	depends on LWIP_DHCPS
 
 config LWIP_DHCPS_SERVER_NETMASK
 	string "Set netmask"
 	default "255.255.255.0"
+	depends on LWIP_DHCPS
 
 config LWIP_DHCPS_MAX_STATION_NUM
 	int "Maximum number of allowed stations"
 	default 8
+	depends on LWIP_DHCPS
 
 config LWIP_DHCPS_UNICAST
 	bool "Send unicast"
 	select NET_ARP_STATIC_ENTRIES
 	default n
+	depends on LWIP_DHCPS
 	---help---
 		DHCP server sent unicast message to client.
 		To send unicast, ARP table should be allowed to static update
 
-endif
 endif
