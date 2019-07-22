@@ -189,7 +189,7 @@ config BOARD_ASSERT_AUTORESET
 		board reset. When fault manager is enabled this will reset the
 		system only when fault is in kernel context.
 
-config BOARD_ASSERT_SYSTEM_BLOCK
+config BOARD_ASSERT_SYSTEM_HALT
 	bool "Enable Infinite loop feature of fault manager"
 	default n
 	depends on !BOARD_ASSERT_AUTORESET && !BINMGR_RECOVERY
