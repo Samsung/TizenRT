@@ -300,6 +300,16 @@ void imxrt_gpioirq_initialize(void);
 #endif
 
 /************************************************************************************
+ * Name: imxrt_gpio_irqvector
+ *
+ * Description:
+ *   Get irq number from pinset.
+ *
+ ************************************************************************************/
+
+uint16_t imxrt_gpio_irqvector(uint32_t pinset);
+
+/************************************************************************************
  * Name: imxrt_config_gpio
  *
  * Description:

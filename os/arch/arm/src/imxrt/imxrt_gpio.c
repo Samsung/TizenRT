@@ -729,18 +729,52 @@ static inline int imxrt_gpio_configperiph(gpio_pinset_t pinset)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-uint8_t imxrt_gpio_irqvector(uint32_t pinset)
+uint16_t imxrt_gpio_irqvector(uint32_t pinset)
 {
 	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
 	int pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	uint16_t ret = 0;
 
-	if (port == GPIO_PORT1 >> GPIO_PORT_SHIFT) {
-		return _IMXRT_GPIO1_0_15_BASE + pin;
-	} else if (port == GPIO_PORT2 >> GPIO_PORT_SHIFT) {
-		return _IMXRT_GPIO1_16_31_BASE + pin;
+	switch (port) {
+	case GPIO1INDEX:
+		if (pin > 15) {
+			ret = _IMXRT_GPIO1_16_31_BASE + (pin - 16);
+		} else {
+			ret = _IMXRT_GPIO1_0_15_BASE + pin;
+		}
+		break;
+	case GPIO2INDEX:
+		if (pin > 15) {
+			ret = _IMXRT_GPIO2_16_31_BASE + (pin - 16);
+		} else {
+			ret = _IMXRT_GPIO2_0_15_BASE + pin;
+		}
+		break;
+	case GPIO3INDEX:
+		if (pin > 15) {
+			ret = _IMXRT_GPIO3_16_31_BASE + (pin - 16);
+		} else {
+			ret = _IMXRT_GPIO3_0_15_BASE + pin;
+		}
+		break;
+	case GPIO4INDEX:
+		if (pin > 15) {
+			ret = _IMXRT_GPIO4_16_31_BASE + (pin - 16);
+		} else {
+			ret = _IMXRT_GPIO4_0_15_BASE + pin;
+		}
+		break;
+	case GPIO5INDEX:
+		if (pin > 15) {
+			ret = _IMXRT_GPIO5_16_31_BASE + (pin - 16);
+		} else {
+			ret = _IMXRT_GPIO5_0_15_BASE + pin;
+		}
+		break;
+	default:
+		break;
 	}
-
-	return 0;
+	return ret;
 }
 
 /****************************************************************************
