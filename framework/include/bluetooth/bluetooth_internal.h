@@ -18,7 +18,7 @@
 #ifndef __TIZEN_NETWORK_BLUETOOTH_INTERNAL_H__
 #define __TIZEN_NETWORK_BLUETOOTH_INTERNAL_H__
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 #include <glib.h>
 #endif
 #include "bluetooth_type.h"
@@ -1968,7 +1968,7 @@ int bt_hf_notify_voice_recognition_state(bool state);
  * @see bt_audio_initialize()
  * @see bt_hf_unset_call_status_updated_event_cb()
  */
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_set_call_status_updated_event_cb(bt_hf_call_status_updated_event_cb callback, void *user_data);
 #endif
 
@@ -2094,7 +2094,7 @@ int bt_hf_get_codec_id(unsigned int *codec_id);
  * @see bt_hf_call_status_info_s
  * @see bt_audio_connect()
  */
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_get_call_status_info_list(GSList **call_list);
 #endif
 
@@ -2112,7 +2112,7 @@ int bt_hf_get_call_status_info_list(GSList **call_list);
  *
  * @see bt_hf_get_call_status_info_list()
  */
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_free_call_status_info_list(GSList *call_list);
 #endif
 

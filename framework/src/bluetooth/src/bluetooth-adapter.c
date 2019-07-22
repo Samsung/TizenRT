@@ -47,8 +47,10 @@
 	BT_CHECK_SUPPORTED_FEATURE(BT_FEATURE_LE_5_0); \
 }
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 static GSList *advertiser_list = NULL;
+#else
+sq_queue_t advertiser_list;
 #endif
 
 /* LCOV_EXCL_START */
@@ -124,7 +126,7 @@ int bt_adapter_get_address(char **address)
 	BT_CHECK_SUPPORTED_FEATURE(BT_FEATURE_COMMON);
 	BT_CHECK_INIT_STATUS();
 
-	*address = malloc(BT_ADDR_STR_LEN * sizeof(char));
+	*address = calloc(1, BT_ADDR_STR_LEN * sizeof(char));
 
 	error_code = bt_adapt_get_local_address(address);
 	if (error_code != BT_ERROR_NONE) { /* LCOV_EXCL_LINE */
@@ -160,7 +162,7 @@ int bt_adapter_get_name(char **name)
 	BT_CHECK_SUPPORTED_FEATURE(BT_FEATURE_COMMON);
 	BT_CHECK_INIT_STATUS();
 
-	*name = malloc(BT_ADDR_STR_LEN * sizeof(char));
+	*name = calloc(1, BT_ADDR_STR_LEN * sizeof(char));
 
 	ret = bt_adapt_get_local_name(name);
 	if (ret != BT_ERROR_NONE) { /* LCOV_EXCL_LINE */
@@ -291,7 +293,7 @@ int bt_adapter_set_connectable(bool connectable)
 int bt_adapter_foreach_bonded_device(bt_adapter_bonded_device_cb foreach_cb,
 							void *user_data)
 {
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 	GPtrArray *dev_list = NULL;
 	bt_device_info_s *dev_info = NULL;
 	int ret = BT_ERROR_NONE;
@@ -334,7 +336,36 @@ int bt_adapter_foreach_bonded_device(bt_adapter_bonded_device_cb foreach_cb,
 
 	return ret;
 #else
-	return 0;
+	sq_queue_t dev_list;
+//	bt_device_info_s *dev_info = NULL;
+	struct bt_device_info_t *dev_info_internal = NULL;
+	int ret = BT_ERROR_NONE;
+
+	BT_CHECK_SUPPORTED_FEATURE(BT_FEATURE_COMMON);
+	BT_CHECK_INIT_STATUS();
+	BT_CHECK_INPUT_PARAMETER(foreach_cb);
+
+	sq_init(&dev_list);
+
+	ret = bt_adapt_get_bonded_device_list(&dev_list);
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x) : Failed to get bonded device list", _bt_convert_error_to_string(ret), ret); /* LCOV_EXCL_LINE */
+		return ret;
+	}
+
+	dev_info_internal = (struct bt_device_info_t *)sq_peek(&dev_list);
+	if (!dev_info_internal) {
+		BT_ERR("OPERATION_FAILED(0x%08x)", BT_ERROR_OPERATION_FAILED); /* LCOV_EXCL_LINE */
+		return BT_ERROR_OPERATION_FAILED;
+	}
+
+	while (dev_info_internal) {
+		if (!foreach_cb(dev_info_internal->dev_info, user_data))
+			break;
+		dev_info_internal = (struct bt_device_info_t *)sq_next(dev_info_internal);
+	}
+
+	return ret;
 #endif
 }
 
@@ -347,7 +378,7 @@ int bt_adapter_get_bonded_device_info(const char *remote_address,
 	BT_CHECK_INIT_STATUS();
 	BT_CHECK_INPUT_PARAMETER(remote_address); /* LCOV_EXCL_START */
 
-	*device_info = (bt_device_info_s *)malloc(sizeof(bt_device_info_s));
+	*device_info = (bt_device_info_s *)calloc(1, sizeof(bt_device_info_s));
 	ret = bt_adapt_get_bonded_device(remote_address, *device_info);
 	if (ret != BT_ERROR_NONE) {
 		free(*device_info);
@@ -685,19 +716,33 @@ int bt_adapter_le_set_customized_scan_mode(float scan_interval, float scan_windo
 
 int bt_adapter_le_create_advertiser(bt_advertiser_h *advertiser)
 {
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 	bt_advertiser_s *__adv = NULL;
 
 	BT_CHECK_LE_SUPPORT();
 	BT_CHECK_INIT_STATUS();
 	BT_CHECK_INPUT_PARAMETER(advertiser);
 
-	__adv = (bt_advertiser_s *)malloc(sizeof(bt_advertiser_s));
+	__adv = (bt_advertiser_s *)g_malloc(sizeof(bt_advertiser_s));
 	__adv->handle = GPOINTER_TO_INT(__adv);
 
 	*advertiser = (bt_advertiser_h)__adv;
 
 	advertiser_list = g_slist_append(advertiser_list, __adv);
+#else
+	bt_advertiser_s *__adv = NULL;
+
+	BT_CHECK_LE_SUPPORT();
+	BT_CHECK_INIT_STATUS();
+	BT_CHECK_INPUT_PARAMETER(advertiser);
+
+	__adv = (bt_advertiser_s *)calloc(1, sizeof(bt_advertiser_s));
+	__adv->handle = (int)__adv;
+
+	*advertiser = (bt_advertiser_h)__adv;
+
+	sq_init(&advertiser_list);
+	sq_addlast((sq_entry_t *)__adv, &advertiser_list);
 #endif
 
 	return BT_ERROR_NONE;
@@ -733,8 +778,10 @@ int bt_adapter_le_destroy_advertiser(bt_advertiser_h advertiser)
 		}
 	}
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 	advertiser_list = g_slist_remove(advertiser_list, __adv);
+#else
+	sq_rem((sq_entry_t *)__adv, &advertiser_list);
 #endif
 
 	/* Free advertising data */
@@ -925,7 +972,7 @@ static int __bt_convert_string_to_uuid(const char *string,
 
 	if (strlen(string) == 4)  { /* 16 bit uuid */
 		unsigned short val;
-		data = malloc(sizeof(char) * 2);
+		data = calloc(1, sizeof(char) * 2);
 
 		val = (unsigned short)strtoul(string, NULL, 16);
 		val = htons(val);
@@ -946,7 +993,7 @@ static int __bt_convert_string_to_uuid(const char *string,
 
 		unsigned int val0, val4;
 		unsigned short val1, val2, val3, val5;
-		data = malloc(sizeof(char) * 16);
+		data = calloc(1, sizeof(char) * 16);
 
 		/* UUID format : %08x-%04hx-%04hx-%04hx-%08x%04hx */
 		strncpy(str_ptr, string, 36);
@@ -959,8 +1006,8 @@ static int __bt_convert_string_to_uuid(const char *string,
 		}
 
 		/* ptr[4] contain "08x" and "04hx" */
-		ptr[5] = malloc(sizeof(char) * 8);
-		ptr[6] = malloc(sizeof(char) * 4);
+		ptr[5] = calloc(1, sizeof(char) * 8);
+		ptr[6] = calloc(1, sizeof(char) * 4);
 		strncpy(ptr[5], ptr[4], 8);
 		strncpy(ptr[6], ptr[4] + 8, 4);
 
@@ -1009,7 +1056,7 @@ static int __bt_convert_byte_ordering(char *data, int data_len,
 	int i, j;
 
 	/* Convert to little endian */
-	swp = malloc(data_len);
+	swp = calloc(1, data_len);
 	for (i = 0, j = data_len - 1; i < data_len; i++, j--)
 		swp[i] = data[j];
 
@@ -1103,7 +1150,7 @@ static int __bt_append_adv_type_data(bt_advertiser_h advertiser,
 		return BT_ERROR_QUOTA_EXCEEDED;
 	}
 
-	new_adv = malloc(adv_len + new_data_len);
+	new_adv = calloc(1, adv_len + new_data_len);
 
 	for (i = 0; i < adv_len; i++) {
 		len = adv_data[i];
@@ -1281,7 +1328,7 @@ int bt_adapter_le_add_advertising_service_data(bt_advertiser_h advertiser,
 	__bt_convert_byte_ordering(uuid_ptr, byte_len, &converted_uuid);
 	free(uuid_ptr);
 
-	adv_data = malloc(sizeof(char) *(service_data_len + 2));
+	adv_data = calloc(1, sizeof(char) *(service_data_len + 2));
 
 	memcpy(adv_data, converted_uuid, 2);
 	memcpy(adv_data + 2, service_data, service_data_len);
@@ -1342,7 +1389,7 @@ int bt_adapter_le_add_advertising_manufacturer_data(bt_advertiser_h advertiser,
 		return BT_ERROR_ALREADY_DONE; /* LCOV_EXCL_LINE */
 	}
 
-	adv_data = malloc(sizeof(char) *(manufacturer_data_len + 2));
+	adv_data = calloc(1, sizeof(char) *(manufacturer_data_len + 2));
 
 	adv_data[0] = manufacturer_id & 0xffffffff;
 	adv_data[1] = (manufacturer_id & 0xff00) >> 8;
@@ -1546,7 +1593,7 @@ int bt_adapter_le_start_advertising_new(bt_advertiser_h advertiser,
 void _bt_adapter_le_invoke_advertising_state_cb(int handle, int result,
 				bt_adapter_le_advertising_state_e adv_state)
 {
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 	const GSList *l = NULL;
 
 	for (l = advertiser_list; l; l = g_slist_next(l)) {
@@ -1562,9 +1609,24 @@ void _bt_adapter_le_invoke_advertising_state_cb(int handle, int result,
 			return;
 		}
 	}
+#else
+	bt_advertiser_s *__adv = (bt_advertiser_s *)sq_peek(&advertiser_list);
+	while (__adv) {
+		if (__adv->handle == handle) {
+			if (__adv->cb == NULL) {
+				BT_ERR("advertiser cb is NULL"); /* LCOV_EXCL_LINE */
+				return; /* LCOV_EXCL_LINE */
+			}
+
+			__adv->cb(result, (bt_advertiser_h)__adv,
+					adv_state, __adv->user_data);
+			return;
+		}
+		__adv = (bt_advertiser_s *)sq_next(__adv);
+	}
+#endif
 
 	BT_ERR("No available advertiser"); /* LCOV_EXCL_LINE */
-#endif
 }
 
 int bt_adapter_le_set_advertising_mode(bt_advertiser_h advertiser,
@@ -1726,7 +1788,7 @@ int bt_adapter_le_get_scan_result_service_uuids(const bt_adapter_le_device_scan_
 	if (uuid_count == 0)
 		return BT_ERROR_NO_DATA;
 
-	*uuids = malloc(sizeof(char *) *uuid_count);
+	*uuids = calloc(1, sizeof(char *) *uuid_count);
 
 	*count = uuid_count;
 
@@ -1747,13 +1809,13 @@ int bt_adapter_le_get_scan_result_service_uuids(const bt_adapter_le_device_scan_
 		if (uuid_size != 0) {
 			for (i = 0; i < (field_len - 1); i += uuid_size) {
 				if (uuid_size == 2) {
-					(*uuids)[uuid_index] = malloc(sizeof(char) * 4 + 1);
+					(*uuids)[uuid_index] = calloc(1, sizeof(char) * 4 + 1);
 					snprintf((*uuids)[uuid_index], 5,
 							"%2.2X%2.2X",
 							remain_data[i+3],
 							remain_data[i+2]);
 				} else {
-					(*uuids)[uuid_index] = malloc(sizeof(char) * 36 + 1);
+					(*uuids)[uuid_index] = calloc(1, sizeof(char) * 36 + 1);
 					snprintf((*uuids)[uuid_index], 37, "%2.2X%2.2X%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X",
 						remain_data[i+17], remain_data[i+16], remain_data[i+15], remain_data[i+14],
 						remain_data[i+13], remain_data[i+12], remain_data[i+11], remain_data[i+10], remain_data[i+9], remain_data[i+8],
@@ -1798,7 +1860,7 @@ int bt_adapter_le_get_scan_result_device_name(const bt_adapter_le_device_scan_re
 		field_len = adv_data[0];
 		if (adv_data[1] == BT_ADAPTER_LE_ADVERTISING_DATA_LOCAL_NAME ||
 			adv_data[1] == BT_ADAPTER_LE_ADVERTISING_DATA_SHORT_LOCAL_NAME) {
-			*name = malloc(sizeof(char) *field_len);
+			*name = calloc(1, sizeof(char) *field_len);
 			memcpy(*name, &adv_data[2], field_len - 1);
 
 			return BT_ERROR_NONE;
@@ -1902,7 +1964,7 @@ int bt_adapter_le_get_scan_result_service_solicitation_uuids(const bt_adapter_le
 	if (uuid_count == 0)
 		return BT_ERROR_NO_DATA;
 
-	*uuids = malloc(sizeof(char *) * uuid_count);
+	*uuids = calloc(1, sizeof(char *) * uuid_count);
 	*count = uuid_count;
 
 	remain_data = adv_data;
@@ -1920,12 +1982,12 @@ int bt_adapter_le_get_scan_result_service_solicitation_uuids(const bt_adapter_le
 		if (uuid_size != 0) {
 			for (i = 0; i < (field_len - 1); i += uuid_size) {
 				if (uuid_size == 2) {
-					(*uuids)[uuid_index] = malloc(sizeof(char) * 4 + 1);
+					(*uuids)[uuid_index] = calloc(1, sizeof(char) * 4 + 1);
 					snprintf((*uuids)[uuid_index], 5,
 						"%2.2X%2.2X", remain_data[i+3],
 						remain_data[i+2]);
 				} else {
-					(*uuids)[uuid_index] = malloc(sizeof(char) * 36 + 1);
+					(*uuids)[uuid_index] = calloc(1, sizeof(char) * 36 + 1);
 					snprintf((*uuids)[uuid_index], 37, "%2.2X%2.2X%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X-%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X",
 						remain_data[i+17], remain_data[i+16], remain_data[i+15], remain_data[i+14],
 						remain_data[i+13], remain_data[i+12], remain_data[i+11], remain_data[i+10], remain_data[i+9], remain_data[i+8],
@@ -1986,7 +2048,7 @@ int bt_adapter_le_get_scan_result_service_data_list(const bt_adapter_le_device_s
 	if (data_count == 0)
 		return BT_ERROR_NO_DATA;
 
-	*data_list = malloc(sizeof(bt_adapter_le_service_data_s) * data_count);
+	*data_list = calloc(1, sizeof(bt_adapter_le_service_data_s) * data_count);
 	*count = data_count;
 
 	remain_data = adv_data;
@@ -1995,13 +2057,16 @@ int bt_adapter_le_get_scan_result_service_data_list(const bt_adapter_le_device_s
 	while (remain_len > 0) {
 		field_len = remain_data[0];
 		if (remain_data[1] == BT_ADAPTER_LE_ADVERTISING_DATA_SERVICE_DATA) {
-			(*data_list)[data_index].service_uuid = malloc(sizeof(char) *4 + 1);
+			(*data_list)[data_index].service_uuid = calloc(1, sizeof(char) *4 + 1);
 			snprintf((*data_list)[data_index].service_uuid, 5,
 				"%2.2X%2.2X", remain_data[3], remain_data[2]);
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 			(*data_list)[data_index].service_data = g_memdup(
 							&remain_data[4], field_len - 3);
+#else
+			(*data_list)[data_index].service_data = calloc(1, field_len - 3);
+			memcpy((*data_list)[data_index].service_data, &remain_data[4], field_len - 3);
 #endif
 			(*data_list)[data_index].service_data_len = field_len - 3;
 
@@ -2114,8 +2179,11 @@ int bt_adapter_le_get_scan_result_manufacturer_data(const bt_adapter_le_device_s
 			*manufacturer_id = remain_data[3] << 8;
 			*manufacturer_id += remain_data[2];
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 			*manufacturer_data = g_memdup(&remain_data[4], field_len - 3);
+#else
+			*manufacturer_data = calloc(1, field_len - 3);
+			memcpy(*manufacturer_data, &remain_data[4], field_len - 3);
 #endif
 			*manufacturer_data_len = field_len - 3;
 

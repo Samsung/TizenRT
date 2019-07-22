@@ -22,7 +22,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 #include <glib.h>
 #endif
 
@@ -514,7 +514,7 @@ typedef void (*bt_hf_speaker_gain_changed_cb) (int gain, void *user_data);
  * @see bt_hf_set_call_status_updated_event_cb()
  * @see bt_hf_unset_call_status_updated_event_cb()
  */
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 typedef void (*bt_hf_call_status_updated_event_cb) (GSList *call_info_list, void *user_data);
 #endif
 

@@ -19,6 +19,7 @@
 #include <string.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-gatt.h"
+#include "bluetooth_private.h"
 
 /* Need to include BT stack's header in here */
 
@@ -28,12 +29,18 @@
 
 int bt_adapt_gatt_free_svc_property(bt_gatt_svc_prop_t *svc_pty)
 {
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 	g_free(svc_pty->uuid);
 	g_free(svc_pty->uuid);
 	g_free(svc_pty->handle);
 	g_strfreev(svc_pty->include_handles.handle);
 	g_strfreev(svc_pty->char_handle.handle);
+#else
+	FREE(svc_pty->uuid);
+	FREE(svc_pty->uuid);
+	FREE(svc_pty->handle);
+	FREEV(svc_pty->include_handles.handle);
+	FREEV(svc_pty->char_handle.handle);
 #endif
 
 	memset(svc_pty, 0, sizeof(bt_gatt_svc_prop_t));
@@ -43,12 +50,21 @@ int bt_adapt_gatt_free_svc_property(bt_gatt_svc_prop_t *svc_pty)
 
 int bt_adapt_gatt_free_char_property(bt_gatt_char_prop_t *char_pty)
 {
+#ifdef GLIB_SUPPORTED
 	g_free(char_pty->uuid);
 	g_free(char_pty->name);
 	g_free(char_pty->description);
 	g_free(char_pty->val);
 	g_free(char_pty->handle);
 	g_strfreev(char_pty->char_desc_handle.handle);
+#else
+	FREE(char_pty->uuid);
+	FREE(char_pty->name);
+	FREE(char_pty->description);
+	FREE(char_pty->val);
+	FREE(char_pty->handle);
+	FREEV(char_pty->char_desc_handle.handle);
+#endif
 
 	memset(char_pty, 0, sizeof(bt_gatt_char_prop_t));
 
@@ -57,9 +73,15 @@ int bt_adapt_gatt_free_char_property(bt_gatt_char_prop_t *char_pty)
 
 int bt_adapt_gatt_free_desc_property(bt_gatt_char_desc_prop_t *desc_pty)
 {
+#ifdef GLIB_SUPPORTED
 	g_free(desc_pty->uuid);
 	g_free(desc_pty->val);
 	g_free(desc_pty->handle);
+#else
+	FREE(desc_pty->uuid);
+	FREE(desc_pty->val);
+	FREE(desc_pty->handle);
+#endif
 
 	memset(desc_pty, 0, sizeof(bt_gatt_char_desc_prop_t));
 
