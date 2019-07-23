@@ -116,7 +116,7 @@ static bool _format_parse(void *buffer, uint32_t size, wave_format_extensible_p 
 	} else if (ex->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
 		RETURN_VAL_IF_FAIL((size >= 8 + chunkSize), false);
 		ex->cbSize = _le_num_at(&fmtChunk[8 + WAVE_FMT_CHUNK_SIZE], 2);
-		RETURN_VAL_IF_FAIL((WAVE_FMT_CHUNK_SIZE + 2 + ex->cbSize <= chunkSize), false);
+		RETURN_VAL_IF_FAIL((WAVE_FMT_CHUNK_SIZE + 2u + ex->cbSize <= chunkSize), false);
 	} else {
 		meddbg("Unsupported format %u, chunkSize %u\n", ex->wFormatTag, chunkSize);
 		return false;
@@ -150,7 +150,7 @@ static bool _format_parse(void *buffer, uint32_t size, wave_format_extensible_p 
 		}
 
 		ext->dwChannelMask = _le_num_at(&extraData[2], 4);
-		RETURN_VAL_IF_FAIL((ex->cbSize - 6 <= sizeof(ext->subFormat)), false);
+		RETURN_VAL_IF_FAIL((ex->cbSize <= sizeof(ext->subFormat) + 6), false);
 		memcpy((void *)ext->subFormat, (const void *)&extraData[6], ex->cbSize - 6);
 		if (memcmp(DATAFORMAT_SUBTYPE_PCM, ext->subFormat, sizeof(DATAFORMAT_SUBTYPE_PCM)) != OK) {
 			meddbg("Unsupported sub format...\n");
@@ -207,10 +207,14 @@ bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer,
 		n = _source_read_at(mFp, _offset + 4, sizeBuf, sizeof(sizeBuf));
 		RETURN_VAL_IF_FAIL(((size_t)n == sizeof(sizeBuf)), false);
 		uint32_t chunkSize = _le_num_at(&sizeBuf[0], 4);
-		uint8_t fmtChunk[8 + chunkSize];
-		n = _source_read_at(mFp, _offset, fmtChunk, sizeof(fmtChunk));
-		RETURN_VAL_IF_FAIL(((size_t)n == sizeof(fmtChunk)), false);
-		RETURN_VAL_IF_FAIL((_format_parse((void *)fmtChunk, sizeof(fmtChunk), ext)), false);
+		uint32_t fmtChunkSize = 8 + chunkSize;
+		uint8_t *fmtChunk = (uint8_t *)malloc(sizeof(uint8_t) * fmtChunkSize);
+		RETURN_VAL_IF_FAIL(fmtChunk, false);
+		n = _source_read_at(mFp, _offset, fmtChunk, fmtChunkSize);
+		bool ret_format_parse = _format_parse((void *)fmtChunk, fmtChunkSize, ext);
+		free(fmtChunk);
+		RETURN_VAL_IF_FAIL((size_t)n == fmtChunkSize, false);
+		RETURN_VAL_IF_FAIL(ret_format_parse, false);
 		_offset += (8 + chunkSize);
 
 		uint8_t subChunk[8];
