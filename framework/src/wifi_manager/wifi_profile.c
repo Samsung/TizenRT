@@ -28,9 +28,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <wifi_manager/wifi_manager.h>
-#ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
-#include <mbedtls/see_api.h>
-#endif
+#include <security/security_api.h>
 #include "wifi_common.h"
 #include "wifi_profile.h"
 
@@ -221,15 +219,27 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 	int ret = -1;
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
 	char buf = '\0';
-	if (internal > 0) {
-		ret = see_write_secure_storage((unsigned char *)&buf, (unsigned int)1, WIFI_PROFILE_SS_INDEX_INTERNAL);
-	} else {
-		ret = see_write_secure_storage((unsigned char *)&buf, (unsigned int)1, WIFI_PROFILE_SS_INDEX);
-	}
-	if (ret != SEE_OK) {
-		ndbg("Write SS fail(%d)\n", ret);
+	security_handle hnd;
+	security_error err = security_init(&hnd);
+	if (err != SECURITY_OK) {
+		ndbg("Reset wi-fi profile in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
+	security_data data = {&buf, 1};
+	char ss_name[7] = {0,};
+	int index = WIFI_PROFILE_SS_INDEX;
+	if (internal > 0) {
+		index = WIFI_PROFILE_SS_INDEX_INTERNAL;
+	}
+	snprintf(ss_name, 7, "ss/%d", index);
+	err = ss_write_secure_storage(hnd, ss_name, 0, &data);
+	if (err != SECURITY_OK) {
+		security_deinit(hnd);
+		return WIFI_UTILS_FILE_ERROR;
+	}
+
+	security_deinit(hnd);
+
 #else
 	if (internal > 0) {
 		ret = unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME_INTERNAL);
@@ -255,15 +265,29 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int int
 	}
 	nvdbg("store data to file: buffer len(%d)\n", len);
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
-	if (internal > 0) {
-		ret = see_write_secure_storage((unsigned char *)buf, (unsigned int)len, WIFI_PROFILE_SS_INDEX_INTERNAL);
-	} else {
-		ret = see_write_secure_storage((unsigned char *)buf, (unsigned int)len, WIFI_PROFILE_SS_INDEX);
-	}
-	if (ret != SEE_OK) {
-		ndbg("Write SS fail(%d)\n", ret);
+	security_handle hnd;
+	security_error err = security_init(&hnd);
+	if (err != SECURITY_OK) {
+		ndbg("Write Wi-Fi info in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
+	char ss_name[7] = {0,};
+	int index = WIFI_PROFILE_SS_INDEX;
+	if (internal > 0) {
+		index = WIFI_PROFILE_SS_INDEX_INTERNAL;
+	}
+	snprintf(ss_name, 7, "ss/%d", index);
+
+	security_data data = {&buf, len};
+
+	err = ss_write_secure_storage(hnd, ss_name, 0, &data);
+	if (err != SECURITY_OK) {
+		security_deinit(hnd);
+		return WIFI_UTILS_FILE_ERROR;
+	}
+
+	security_deinit(hnd);
+
 #else
 	ret = _wifi_profile_store_file(buf, len, internal);
 	if (ret < 0) {
@@ -289,16 +313,36 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	// ssid_length and passphrase length are stored as character.
 	//
 	/////////////////////////////////////////////////////////////////////////////////////////
-	unsigned int readlen = WIFI_PROFILE_BUFSIZE;
-	if (internal > 0) {
-		ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX_INTERNAL);
-	} else {
-		ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX);
-	}
-	if (ret != SEE_OK) {
+
+	security_handle hnd;
+	security_error err = security_init(&hnd);
+	if (err != SECURITY_OK) {
+		ndbg("Read Wi-Fi info in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
-	nvdbg("read data len(%u)\n", readlen);
+
+	char ss_name[7] = {0,};
+	int index = WIFI_PROFILE_SS_INDEX;
+	if (internal > 0) {
+		index = WIFI_PROFILE_SS_INDEX_INTERNAL;
+	}
+	snprintf(ss_name, 7, "ss/%d", index);
+
+	security_data data = {buf, WIFI_PROFILE_BUFSIZE};
+
+	err = ss_read_secure_storage(hnd, ss_name, 0, &data);
+	if (err != SECURITY_OK) {
+		security_deinit(hnd);
+		return WIFI_UTILS_FILE_ERROR;
+	}
+
+	if (data.length <= 0) {
+		ndbg("Read length is 0");
+	}
+	security_deinit(hnd);
+
+	nvdbg("read data len(%u)\n", data.length);
+
 #else
 	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE, internal);
 	if (ret < 0) {

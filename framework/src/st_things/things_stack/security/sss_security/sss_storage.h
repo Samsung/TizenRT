@@ -27,7 +27,11 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "mbedtls/see_api.h"
+
+#define IOTIVITY_SS           7
+#define SEE_MAX_BUF_SIZE (4096)
+#define SECURITY_MAX_BUF_SIZE 4096
+#define IOTIVITY_MAX_BUF_SIZE SECURITY_MAX_BUF_SIZE
 
 typedef struct sss_file_control {
 	unsigned char data[SEE_MAX_BUF_SIZE * 2];

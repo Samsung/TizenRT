@@ -2926,29 +2926,29 @@
  *
  * Uncomment to use your own hardware entropy collector.
  */
-#if defined(CONFIG_HW_RNG)
+#if defined(CONFIG_TLS_HW_RNG)
 #define MBEDTLS_ENTROPY_HARDWARE_ALT
 #endif
 
-#if defined(CONFIG_HW_DH_PARAM)
+#if defined(CONFIG_TLS_HW_DH_PARAM)
 #define MBEDTLS_DHM_ALT
 #endif
 
-#if defined(CONFIG_HW_ECDH_PARAM)
+#if defined(CONFIG_TLS_HW_ECDH_PARAM)
 #define MBEDTLS_ECDH_GEN_PUBLIC_ALT
 #define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
 #endif
 
-#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+#if defined(CONFIG_TLS_HW_ECDSA_VERIFICATION)
 #define MBEDTLS_PK_ECDSA_VERIFY_ALT
 #endif
 
-#if defined(CONFIG_HW_RSA_VERIFICATION)
+#if defined(CONFIG_TLS_HW_RSA_VERIFICATION)
 #define MBEDTLS_PK_RSA_VERIFY_ALT
 #undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #endif
 
-#if defined(CONFIG_HW_RSA_ENC)
+#if defined(CONFIG_TLS_HW_RSA_ENC)
 #define MBEDTLS_PK_RSA_ENCRYPT_ALT
 #undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #endif

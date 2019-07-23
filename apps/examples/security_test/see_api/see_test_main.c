@@ -1476,7 +1476,7 @@ pthread_addr_t see_test_cb(void *args)
 	argc = ((struct pthread_arg *)args)->argc;
 	argv = ((struct pthread_arg *)args)->argv;
 
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	see_init();
 #endif
 
@@ -1604,7 +1604,7 @@ pthread_addr_t see_test_cb(void *args)
 	}
 
 	printf("=====SSS Block Test Finish=====\n");
-#if defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_TLS_WITH_HW_ACCEL)
 	see_free();
 #endif
 

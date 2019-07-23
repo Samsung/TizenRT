@@ -19,7 +19,7 @@ menu option
 config EXAMPLES_TLS_ARTIK_KEY
 	bool "use artik cloud key"
 	default n
-	depends on TLS_WITH_SSS
+	depends on TLS_WITH_HW_ACCEL
 endmenu
 
 endif # EXAMPLE_TLS_CLIENT

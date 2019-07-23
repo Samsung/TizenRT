@@ -44,7 +44,7 @@ config HW_RSA_ENC
 		Encrypts a data based on hardware.
 		Supporting key size : 1024, 2048
 
-config SE_STORAGE
+config HW_SE_STORAGE
 	bool "Secure Storage Support"
 	default n
 	---help---

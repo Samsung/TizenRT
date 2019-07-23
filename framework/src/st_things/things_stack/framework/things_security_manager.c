@@ -572,7 +572,7 @@ static int sm_generate_mac_based_device_id(void)
 	return res;
 }
 
-#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_HW_ACCEL)
 static int sm_generate_artik_device_id(void)
 {
 	THINGS_LOG_D(TAG, "In %s", __func__);
@@ -603,7 +603,7 @@ static int sm_generate_artik_device_id(void)
 int sm_generate_device_id(void)
 {
 	int ret = -1;
-#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_HW_ACCEL)
 	if (dm_get_easy_setup_use_artik_crt()) {
 		ret = sm_generate_artik_device_id();
 	} else
