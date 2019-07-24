@@ -100,7 +100,7 @@
  */
 
 volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
-volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
+static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 	CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT,
 	CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID,
