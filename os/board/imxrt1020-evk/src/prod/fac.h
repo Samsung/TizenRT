@@ -3,6 +3,10 @@
 
 #include <tinyara/iotbus_pinmap.h>
 
+#include "imxrt_adc.h"
+#include "imxrt_gpio.h"
+#include "imxrt_iomuxc.h"
+
 /*
  * Board specific definition
  */

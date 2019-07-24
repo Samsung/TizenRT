@@ -176,6 +176,7 @@ void imxrt_boardinitialize(void)
 	imxrt_flash_init();
 }
 
+#ifdef CONFIG_GPIO
 static int IS_GPIO_PIN(PORT_PROPERTY pin)
 {
 	switch (pin.u32Alternative) {
@@ -187,7 +188,9 @@ static int IS_GPIO_PIN(PORT_PROPERTY pin)
 		return 0;
 	}
 }
+#endif
 
+#ifdef CONFIG_ANALOG
 static int IS_ADC_PIN(PORT_PROPERTY pin)
 {
 	switch (pin.u32Alternative) {
@@ -197,12 +200,14 @@ static int IS_ADC_PIN(PORT_PROPERTY pin)
 		return 0;
 	}
 }
+#endif
 
 void imxrt_iotbus_initialize(void)
 {
 	for (int port_idx = 0; port_idx < PORT_INIT_TABLE; port_idx++) {
 		uint32_t pinset = (sPort_InitTable[port_idx].u32Port << GPIO_PIN_SHIFT) | sPort_InitTable[port_idx].u32Alternative;
 
+#ifdef CONFIG_GPIO
 		if (IS_GPIO_PIN(sPort_InitTable[port_idx])) {
 			struct gpio_lowerhalf_s *lower = imxrt_gpio_lowerhalf(pinset);
 			if (!lower) {
@@ -210,9 +215,10 @@ void imxrt_iotbus_initialize(void)
 				continue;
 			}
 			gpio_register(sPort_InitTable[port_idx].u32Port, lower);
-		}
+		} else
+#endif
 #ifdef CONFIG_ANALOG
-		else if (IS_ADC_PIN(sPort_InitTable[port_idx])) {
+		if (IS_ADC_PIN(sPort_InitTable[port_idx])) {
 			struct adc_dev_s *lower = imxrt_adc_lowerhalf(pinset);
 			if (!lower) {
 				lldbg("ERROR: adc_register[%x] port(%d) failed\n", pinset, port_idx);
@@ -221,8 +227,10 @@ void imxrt_iotbus_initialize(void)
 			char adc_path[64];
 			snprintf(adc_path, 64, "adc-%d", sPort_InitTable[port_idx].u32Port);
 			adc_register(adc_path, lower);
-		}
+		} else
 #endif
+		{
+		}
 	}
 }
 
