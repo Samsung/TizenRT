@@ -22,8 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <condition_variable>
-
-struct rb_s;
+#include "utils/rb.h"
 
 namespace media {
 namespace stream {
@@ -37,7 +36,6 @@ public:
 	{
 	public:
 		Builder();
-		virtual ~Builder();
 		Builder &setBufferSize(size_t bufferSize);
 		Builder &setThreshold(size_t threshold);
 		std::shared_ptr<StreamBuffer> build();
@@ -112,7 +110,7 @@ private:
 	std::mutex mMutex;
 	std::condition_variable mCondv;
 	BufferObserverInterface *mObserver;
-	struct rb_s *mRingBuf;
+	rb_t mRingBuf;
 	bool mEOS;
 	size_t mBufferSize;
 	size_t mThreshold;
