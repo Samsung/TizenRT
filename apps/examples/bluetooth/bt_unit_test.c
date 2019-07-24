@@ -23,8 +23,24 @@
 
 #include <tinyara/bluetooth/bluetooth.h>
 
+
+void bt_enable_cb(int err)
+{
+	PRT("bt_enable() callback with error code:[%d] \n", err);
+}
+
 int bt_unit_test_main(int argc, char **argv)
 {
-	printf("Enter bt_unit_test_main()\n");
+	int ret = -1;
+
+	PRT("Enter bt_unit_test_main()\n");
+
+	PRT("testing bt_enable() \n");
+
+	ret = bt_enable(bt_enable_cb);
+
+	PRT("bt_enable rc[%d] \n", ret);
+
+
 	return 0;
 }
