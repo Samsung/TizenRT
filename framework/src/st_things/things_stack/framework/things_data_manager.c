@@ -1686,7 +1686,7 @@ static int parse_device_json(cJSON *device)
 			g_device->ver_p = (char *) things_malloc(sizeof(char) * (sizeof(DEVICE_PLATFORM_VERSION)));
 			strncpy(g_device->ver_p, DEVICE_PLATFORM_VERSION, sizeof(DEVICE_PLATFORM_VERSION));
 
-			g_device->ver_os = (char *) things_malloc(sizeof(char) + (sizeof(DEVICE_OS_VERSION)));
+			g_device->ver_os = (char *) things_malloc(sizeof(char) * (sizeof(DEVICE_OS_VERSION)));
 			strncpy(g_device->ver_os, DEVICE_OS_VERSION, sizeof(DEVICE_OS_VERSION));
 
 			g_device->ver_hw = (char *) things_malloc(sizeof(char) * (sizeof(DEVICE_HARDWARE_VERSION)));

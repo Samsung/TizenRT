@@ -1256,3 +1256,4 @@ CONFIG_IOTBUS_ADC=y
 # Security Framework
 #
 # CONFIG_SECURITY_API is not set
+CONFIG_PROD_HEADER="prod/fac.h"

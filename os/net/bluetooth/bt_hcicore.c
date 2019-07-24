@@ -100,7 +100,7 @@ struct bt_dev_s g_btdev;
  ****************************************************************************/
 
 static FAR struct bt_conn_cb_s *g_callback_list;
-static bt_le_scan_cb_t *g_scan_dev_found_cb;
+static bt_scanning_cb_t *g_scan_dev_found_cb;
 
 /* Lists of pending received messages.  One for low priority input that is
  * processed on the low priority work queue and one for high priority
@@ -139,14 +139,14 @@ static void bt_enqueue_bufwork(FAR struct bt_bufferlist_s *list, FAR struct bt_b
 {
 	irqstate_t flags;
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 	buf->flink = list->head;
 	if (list->head == NULL) {
 		list->tail = buf;
 	}
 
 	list->head = buf;
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -170,7 +170,7 @@ static FAR struct bt_buf_s *bt_dequeue_bufwork(FAR struct bt_bufferlist_s *list)
 	FAR struct bt_buf_s *buf;
 	irqstate_t flags;
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 	buf = list->tail;
 	if (buf != NULL) {
 		if (list->head == list->tail) {
@@ -191,7 +191,7 @@ static FAR struct bt_buf_s *bt_dequeue_bufwork(FAR struct bt_bufferlist_s *list)
 		buf->flink = NULL;
 	}
 
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 	return buf;
 }
 
@@ -320,7 +320,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, FAR struct bt_buf_s *b
 			sent->u.hci.sync = bt_buf_addref(buf);
 		}
 
-		nxsem_post(sem);
+		sem_post(sem);
 	} else {
 		bt_buf_release(sent);
 	}
@@ -358,7 +358,7 @@ static void hci_cmd_complete(FAR struct bt_buf_s *buf)
 		/* Allow next command to be sent */
 
 		g_btdev.ncmd = 1;
-		nxsem_post(&g_btdev.ncmd_sem);
+		sem_post(&g_btdev.ncmd_sem);
 	}
 }
 
@@ -383,7 +383,7 @@ static void hci_cmd_status(FAR struct bt_buf_s *buf)
 		/* Allow next command to be sent */
 
 		g_btdev.ncmd = 1;
-		nxsem_post(&g_btdev.ncmd_sem);
+		sem_post(&g_btdev.ncmd_sem);
 	}
 }
 
@@ -548,7 +548,7 @@ static int bt_hci_stop_scanning(void)
 	return ret;
 }
 
-static int hci_le_create_conn(FAR const bt_addr_le_t *addr)
+int hci_le_create_conn(FAR const bt_addr_le_t *addr)
 {
 	FAR struct bt_buf_s *buf;
 	FAR struct bt_hci_cp_le_create_conn_s *cp;
@@ -812,6 +812,7 @@ static void hci_le_meta_event(FAR struct bt_buf_s *buf)
 
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
+		ble_adv_report(buf);
 		break;
 
 	case BT_HCI_EVT_LE_LTK_REQUEST:
@@ -896,7 +897,7 @@ static int hci_tx_kthread(int argc, FAR char *argv[])
 		/* Wait until ncmd > 0 */
 
 		do {
-			ret = nxsem_wait(&g_btdev.ncmd_sem);
+			ret = sem_wait(&g_btdev.ncmd_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret >= 0);
@@ -1002,6 +1003,24 @@ static void read_bdaddr_complete(FAR struct bt_buf_s *buf)
 	bt_addr_copy(&g_btdev.bdaddr, &rp->bdaddr);
 }
 
+static void read_bdaddr_complete_id_addr(FAR struct bt_buf_s *buf)
+{
+	FAR struct bt_hci_rp_read_bd_addr_s *rp = (FAR void *)buf->data;
+
+	nvdbg("status %u\n", rp->status);
+
+	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) || !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
+		nvdbg("Controller has no public address");
+		return;
+	}
+
+	bt_addr_copy((bt_addr_t *) g_btdev.id_addr[0].val, &rp->bdaddr);
+
+	g_btdev.id_addr[0].type = BT_ADDR_LE_PUBLIC;
+	g_btdev.id_count = 1U;
+
+}
+
 static void read_le_features_complete(FAR struct bt_buf_s *buf)
 {
 	FAR struct bt_hci_rp_le_read_local_features_s *rp = (FAR void *)buf->data;
@@ -1037,7 +1056,7 @@ static void le_read_buffer_size_complete(FAR struct bt_buf_s *buf)
 	g_btdev.le_pkts = rp->le_max_num;
 }
 
-static int hci_initialize(void)
+int hci_initialize(void)
 {
 	FAR struct bt_hci_cp_host_buffer_size_s *hbs;
 	FAR struct bt_hci_cp_set_event_mask_s *ev;
@@ -1081,6 +1100,7 @@ static int hci_initialize(void)
 	}
 
 	read_bdaddr_complete(rsp);
+	read_bdaddr_complete_id_addr(rsp);
 	bt_buf_release(rsp);
 
 	/* For now we only support LE capable controllers */
@@ -1206,7 +1226,7 @@ static int hci_initialize(void)
 	 * ACL packet buffers.
 	 */
 
-	nxsem_init(&g_btdev.le_pkts_sem, 0, g_btdev.le_pkts);
+	sem_init(&g_btdev.le_pkts_sem, 0, g_btdev.le_pkts);
 	return 0;
 }
 
@@ -1226,11 +1246,11 @@ static void cmd_queue_init(void)
 	DEBUGASSERT(ret >= 0 && g_btdev.tx_queue != NULL);
 	UNUSED(ret);
 
-	nxsem_init(&g_btdev.ncmd_sem, 0, 1);
-	nxsem_setprotocol(&g_btdev.ncmd_sem, SEM_PRIO_NONE);
+	sem_init(&g_btdev.ncmd_sem, 0, 1);
+	sem_setprotocol(&g_btdev.ncmd_sem, SEM_PRIO_NONE);
 
 	g_btdev.ncmd = 1;
-	pid = kthread_create("BT HCI Tx", CONFIG_BLUETOOTH_TXCMD_PRIORITY, CONFIG_BLUETOOTH_TXCMD_STACKSIZE, hci_tx_kthread, NULL);
+	pid = kernel_thread("BT HCI Tx", CONFIG_BLUETOOTH_TXCMD_PRIORITY, CONFIG_BLUETOOTH_TXCMD_STACKSIZE, hci_tx_kthread, NULL);
 	DEBUGASSERT(pid > 0);
 	UNUSED(pid);
 }
@@ -1240,7 +1260,7 @@ static void cmd_queue_init(void)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: bt_initialize
+ * Name: bt_initialize_internal
  *
  * Description:
  *   Initialize Bluetooth. Must be the called before anything else.
@@ -1250,7 +1270,7 @@ static void cmd_queue_init(void)
  *
  ****************************************************************************/
 
-int bt_initialize(void)
+int bt_initialize_internal(void)
 {
 	FAR const struct bt_driver_s *btdev = g_btdev.btdev;
 	int ret;
@@ -1274,7 +1294,15 @@ int bt_initialize(void)
 		return ret;
 	}
 
-	return bt_l2cap_init();
+	ret = bt_l2cap_init();
+	if (ret < 0) {
+		ndbg("ERROR:  l2cap_initialise failed: %d\n", ret);
+		return ret;
+	}
+
+	bt_atomic_testsetbit(g_btdev.flags, BT_DEV_READY);
+
+	return ret;
 }
 
 /****************************************************************************
@@ -1505,8 +1533,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 
 	/* Set up for the wait */
 
-	nxsem_init(&sync_sem, 0, 0);
-	nxsem_setprotocol(&sync_sem, SEM_PRIO_NONE);
+	sem_init(&sync_sem, 0, 0);
+	sem_setprotocol(&sync_sem, SEM_PRIO_NONE);
 	buf->u.hci.sync = &sync_sem;
 
 	/* Send the frame */
@@ -1553,7 +1581,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 			do {
 				/* The timed wait could also be awakened by a signal */
 
-				ret = nxsem_timedwait(&sync_sem, &abstime);
+				ret = sem_timedwait(&sync_sem, &abstime);
 			} while (ret == -EINTR);
 		}
 
@@ -1739,7 +1767,7 @@ int bt_stop_advertising(void)
  *
  ****************************************************************************/
 
-int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
+int bt_start_scanning(uint8_t scan_filter, bt_scanning_cb_t cb)
 {
 	/* Return if active scan is already enabled */
 

@@ -1,0 +1,50 @@
+###########################################################################
+#
+# Copyright 2019 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+ifeq ($(CONFIG_BT_CAPI),y)
+BT_CAPI_INCLUDE_DIR += $(TOPDIR)/../framework/src/bluetooth/include
+BT_CAPI_ADAPTATION_DIR += $(TOPDIR)/../framework/src/bluetooth/adaptation/include
+CFLAGS += -I$(BT_CAPI_INCLUDE_DIR)
+CFLAGS += -I$(BT_CAPI_ADAPTATION_DIR)
+
+CSRCS += \
+	bluetooth-adapter.c \
+	bluetooth-device.c \
+	bluetooth-hid.c \
+	bluetooth-opp-client.c \
+	bluetooth-pbap.c \
+	bluetooth-audio.c \
+	bluetooth-dpm.c \
+	bluetooth-hrp.c \
+	bluetooth-opp-server.c \
+	bluetooth-proximity.c \
+	bluetooth-avrcp.c \
+	bluetooth-ipsp.c \
+	bluetooth-otp.c \
+	bluetooth-socket.c \
+	bluetooth-common.c \
+	bluetooth-hdp.c \
+	bluetooth-map-client.c \
+	bluetooth-pan.c \
+	bluetooth-tds.c
+#	src/bluetooth-gatt.c \
+
+DEPPATH += --dep-path src/bluetooth/src
+VPATH += :src/bluetooth/src
+endif
+

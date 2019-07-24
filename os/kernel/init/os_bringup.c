@@ -256,6 +256,10 @@ static inline void os_do_appstart(void)
 	net_initialize();
 #endif
 
+#ifdef CONFIG_TASK_MANAGER
+	task_manager_drv_register();
+#endif
+
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	svdbg("Starting application init task\n");
 
@@ -281,19 +285,6 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_ENABLE_HEAPINFO
 	heapinfo_drv_register();
-#endif
-
-#ifdef CONFIG_TASK_MANAGER
-#define TASKMGR_STACK_SIZE 2048
-#define TASKMGR_PRIORITY 200
-
-	svdbg("Starting task manager\n");
-	task_manager_drv_register();
-
-	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
-	if (pid < 0) {
-		svdbg("Failed to create Task Manager\n");
-	}
 #endif
 
 #if !defined(CONFIG_BINARY_MANAGER)

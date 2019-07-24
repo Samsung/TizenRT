@@ -49,6 +49,13 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/** @def BT_ID_DEFAULT
+ *
+ *  Convenience macro for specifying the default identity. This helps
+ *  make the code more readable, especially when only one identity is
+ *  supported.
+ */
+#define BT_ID_DEFAULT 0
 
 /* BLUETOOTH_MAX_FRAMELEN
  * Maximum amount of data that can fit in a buffer.
@@ -141,6 +148,53 @@ struct iob_s;					/* Forward reference */
 
 int bluetooth_input(FAR struct radio_driver_s *radio, FAR struct iob_s *framelist, FAR struct bluetooth_frame_meta_s *meta);
 
+/** Advertising options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_ADV_OPT_NONE = 0,
+
+	/** Advertise as connectable. Type of advertising is determined by
+	 * providing SCAN_RSP data and/or enabling local privacy support.
+	 */
+	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
+
+	/** Don't try to resume connectable advertising after a connection.
+	 *  This option is only meaningful when used together with
+	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
+	 *  when bt_le_adv_stop() is called or when an incoming (slave)
+	 *  connection happens. If this option is not set the stack will
+	 *  take care of keeping advertising enabled even as connections
+	 *  occur.
+	 */
+	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
+
+	/** Advertise using the identity address as the own address.
+	 *  @warning This will compromise the privacy of the device, so care
+	 *           must be taken when using this option.
+	 */
+	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
+
+	/* Advertise using GAP device name */
+	BT_LE_ADV_OPT_USE_NAME = BIT(3),
+
+	/** Use low duty directed advertising mode, otherwise high duty mode
+	 *  will be used. This option is only effective when used with
+	 *  bt_conn_create_slave_le().
+	 */
+	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
+
+	/** Enable use of Resolvable Private Address (RPA) as the target address
+	 *  in directed advertisements when CONFIG_BT_PRIVACY is not enabled.
+	 *  This is required if the remote device is privacy-enabled and
+	 *  supports address resolution of the target address in directed
+	 *  advertisement.
+	 *  It is the responsibility of the application to check that the remote
+	 *  device supports address resolution of directed advertisements by
+	 *  reading its Central Address Resolution characteristic.
+	 */
+	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
+};
+
 /** Description of different data types that can be encoded into
   * advertising data. Used to form arrays that are passed to the
   * bt_le_adv_start() function.
@@ -150,6 +204,54 @@ struct bt_data {
 	uint8_t data_len;
 	const uint8_t *data;
 };
+
+/** LE Advertising Parameters. */
+struct bt_le_adv_param {
+	/** Local identity */
+	uint8_t id;
+
+	/** Bit-field of advertising options */
+	uint8_t options;
+
+	/** Minimum Advertising Interval (N * 0.625) */
+	uint16_t interval_min;
+
+	/** Maximum Advertising Interval (N * 0.625) */
+	uint16_t interval_max;
+};
+
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
+	uint8_t type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint16_t window;
+};
+
+/** @brief Helper to declare elements of bt_data arrays
+ *
+ *  This macro is mainly for creating an array of struct bt_data
+ *  elements which is then passed to bt_le_adv_start().
+ *
+ *  @param _type Type of advertising data field
+ *  @param _data Pointer to the data field payload
+ *  @param _data_len Number of bytes behind the _data pointer
+ */
+#define BT_DATA(_type, _data, _data_len) \
+{ \
+	.type = (_type), \
+	.data_len = (_data_len), \
+	.data = (const unsigned char *)(_data), \
+}
 
 /** OOB data that is specific for LE SC pairing method. */
 struct bt_le_oob_sc_data {
@@ -206,36 +308,54 @@ struct bt_bond_info {
 	bt_addr_le_t addr;
 };
 
-/* Advertising API */
-struct bt_eir_s {
+/**
+ * @brief Simple network buffer representation.
+ *
+ * This is a simpler variant of the net_buf object (in fact net_buf uses
+ * net_buf_simple internally). It doesn't provide any kind of reference
+ * counting, user data, dynamic allocation, or in general the ability to
+ * pass through kernel objects such as FIFOs.
+ *
+ * The main use of this is for scenarios where the meta-data of the normal
+ * net_buf isn't needed and causes too much overhead. This could be e.g.
+ * when the buffer only needs to be allocated on the stack or when the
+ * access to and lifetime of the buffer is well controlled and constrained.
+ */
+struct net_buf_simple {
+	/** Pointer to the start of data in the buffer. */
+	uint8_t *data;
+
+	/** Length of the data behind the data pointer. */
 	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} packed_struct;
 
-/** LE Advertising Parameters. */
-struct bt_le_adv_param {
-	/** Local identity */
-	uint8_t id;
+	/** Amount of data that this buffer can store. */
+	uint16_t size;
 
-	/** Bit-field of advertising options */
-	uint8_t options;
-
-	/** Minimum Advertising Interval (N * 0.625) */
-	uint16_t interval_min;
-
-	/** Maximum Advertising Interval (N * 0.625) */
-	uint16_t interval_max;
+	/** Start of the data storage. Not to be accessed directly
+	 *  (the data pointer should be used instead).
+	 */
+	uint8_t *__buf;
 };
 
 /**
- * @brief Initialize Bluetooth
+ * @typedef bt_ready_cb_t
+ * @brief Callback for notifying that Bluetooth has been enabled.
  *
- * Initialize Bluetooth. Must be the called before anything else.
- *
- * @return Zero on success or (negative) error code otherwise.
+ *  @param err zero on success or (negative) error code otherwise.
  */
-int bt_initialize(void);
+typedef void (*bt_ready_cb_t)(int err);
+
+/** @brief Enable Bluetooth
+ *
+ *  Enable Bluetooth. Must be the called before any calls that
+ *  require communication with the local Bluetooth hardware.
+ *
+ *  @param cb Callback to notify completion or NULL to perform the
+ *  enabling synchronously.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_enable(bt_ready_cb_t cb);
 
 /** @brief Set Bluetooth Device Name
  *
@@ -378,28 +498,25 @@ int bt_id_delete(uint8_t id);
 
 /* Advertising API */
 
-/**
- * @brief Start advertising
+/** @brief Start advertising
  *
- * Set advertisement data, scan response data, advertisement parameters
- * and start advertising.
+ *  Set advertisement data, scan response data, advertisement parameters
+ *  and start advertising.
  *
- * @param[in] type Advertising type.
- * @param[in] ad Data to be used in advertisement packets.
- * @param[in] sd Data to be used in scan response packets.
+ *  @param param Advertising parameters.
+ *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
+ *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
  *
- * @return Zero on success or (negative) error code otherwise.
+ *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ECONNREFUSED When connectable advertising is requested and there
+ *			  is already maximum number of connections established.
+ *			  This error code is only guaranteed when using Zephyr
+ *			  controller, for other controllers code returned in
+ *			  this case may be -EIO.
  */
-int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
-
-/**
- * @brief Stop advertising
- *
- * Stops ongoing advertising.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_stop_advertising(void);
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
 /** @brief Update advertising
  *
@@ -414,48 +531,48 @@ int bt_stop_advertising(void);
  */
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd, size_t sd_len);
 
-/****************************************************************************
- * Name: bt_le_scan_cb_t
+/** @brief Stop advertising
  *
- * Description:
- *   A function of this type will be called back when user application
- *   triggers active LE scan. The caller will populate all needed
- *   parameters based on data coming from scan result.
- *   Such function can be set by user when LE active scan API is used.
+ *  Stops ongoing advertising.
  *
- * Input Parameters:
- *  addr     - Advertiser LE address and type.
- *  rssi     - Strength of advertiser signal.
- *  adv_type - Type of advertising response from advertiser.
- *  adv_data - Address of buffer containing advertiser data.
- *  len      - Length of advertiser data contained in buffer.
- *
- ****************************************************************************/
-typedef CODE void bt_le_scan_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
-
-/**
- * @brief Start (LE) scanning
- *
- * Start LE scanning with given parameters and provide results through
- * the specified callback.
- *
- * @param[in] filter_dups Enable duplicate filtering (or not).
- * @param[in] cb Callback to notify scan results.
- *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+int bt_le_adv_stop(void);
 
-/**
- * @brief Stop (LE) scanning.
+/** @typedef bt_le_scan_cb_t
+ *  @brief Callback type for reporting LE scan results.
  *
- * Stops ongoing LE scanning.
+ *  A function of this type is given to the bt_le_scan_start() function
+ *  and will be called for any discovered LE device.
  *
- * @return Zero on success or error code otherwise, positive in case
- * of protocol error or negative (POSIX) in case of stack internal error
+ *  @param addr Advertiser LE address and type.
+ *  @param rssi Strength of advertiser signal.
+ *  @param adv_type Type of advertising response from advertiser.
+ *  @param buf Buffer containing advertiser data.
  */
-int bt_stop_scanning(void);
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, struct net_buf_simple *buf);
+
+/** @brief Start (LE) scanning
+ *
+ *  Start LE scanning with given parameters and provide results through
+ *  the specified callback.
+ *
+ *  @param param Scan parameters.
+ *  @param cb Callback to notify scan results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
+
+/** @brief Stop (LE) scanning.
+ *
+ *  Stops ongoing LE scanning.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_scan_stop(void);
 
 /** @brief Set (LE) channel map.
  *

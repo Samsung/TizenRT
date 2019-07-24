@@ -168,7 +168,7 @@ static void btnet_scan_callback(FAR const bt_addr_le_t *addr, int8_t rssi, uint8
 
 	/* Get exclusive access to the scan data */
 
-	while ((ret = nxsem_wait(&g_scanstate.bs_exclsem)) < 0) {
+	while ((ret = sem_wait(&g_scanstate.bs_exclsem)) < 0) {
 		DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 		if (ret != -EINTR) {
 			return;
@@ -207,7 +207,7 @@ static void btnet_scan_callback(FAR const bt_addr_le_t *addr, int8_t rssi, uint8
 	memcpy(&rsp->sr_data, adv_data, len);
 
 	g_scanstate.bs_tail = nexttail;
-	nxsem_post(&g_scanstate.bs_exclsem);
+	sem_post(&g_scanstate.bs_exclsem);
 }
 
 /****************************************************************************
@@ -245,7 +245,7 @@ static int btnet_scan_result(FAR struct bt_scanresponse_s *result, uint8_t maxrs
 	if (scanning) {
 		/* Get exclusive access to the scan data */
 
-		ret = nxsem_wait(&g_scanstate.bs_exclsem);
+		ret = sem_wait(&g_scanstate.bs_exclsem);
 		if (ret < 0) {
 			DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 			return ret;
@@ -277,7 +277,7 @@ static int btnet_scan_result(FAR struct bt_scanresponse_s *result, uint8_t maxrs
 	g_scanstate.bs_head = head;
 
 	if (scanning) {
-		nxsem_post(&g_scanstate.bs_exclsem);
+		sem_post(&g_scanstate.bs_exclsem);
 	}
 
 	return nrsp;
@@ -337,7 +337,7 @@ static uint8_t btnet_discover_func(FAR const struct bt_gatt_attr_s *attr, FAR vo
 
 	/* Get exclusive access to the discovered data */
 
-	while ((ret = nxsem_wait(&g_discoverstate.bd_exclsem)) < 0) {
+	while ((ret = sem_wait(&g_discoverstate.bd_exclsem)) < 0) {
 		DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 		if (ret != -EINTR) {
 			return BT_GATT_ITER_STOP;
@@ -372,7 +372,7 @@ static uint8_t btnet_discover_func(FAR const struct bt_gatt_attr_s *attr, FAR vo
 	g_discoverstate.bd_rsp[tail].dr_perm = attr->perm;
 	g_discoverstate.bd_tail = nexttail;
 
-	nxsem_post(&g_discoverstate.bd_exclsem);
+	sem_post(&g_discoverstate.bd_exclsem);
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -404,7 +404,7 @@ static void btnet_discover_destroy(FAR void *arg)
 	UNUSED(params);
 
 	memset(&g_discoverstate.bd_params, 0, sizeof(struct btnet_discoverstate_s));
-	nxsem_destroy(&g_discoverstate.bd_exclsem);
+	sem_destroy(&g_discoverstate.bd_exclsem);
 	g_discoverstate.bd_discovering = false;
 }
 
@@ -441,7 +441,7 @@ static int btnet_discover_result(FAR struct bt_discresonse_s *result, uint8_t ma
 	 */
 
 	if (discovering) {
-		ret = nxsem_wait(&g_discoverstate.bd_exclsem);
+		ret = sem_wait(&g_discoverstate.bd_exclsem);
 		if (ret < 0) {
 			DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
 			return ret;
@@ -469,7 +469,7 @@ static int btnet_discover_result(FAR struct bt_discresonse_s *result, uint8_t ma
 	g_discoverstate.bd_head = head;
 
 	if (discovering) {
-		nxsem_post(&g_discoverstate.bd_exclsem);
+		sem_post(&g_discoverstate.bd_exclsem);
 	}
 
 	return nrsp;
@@ -696,7 +696,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 		} else {
 			/* Initialize scan state */
 
-			nxsem_init(&g_scanstate.bs_exclsem, 0, 1);
+			sem_init(&g_scanstate.bs_exclsem, 0, 1);
 			g_scanstate.bs_scanning = true;
 			g_scanstate.bs_head = 0;
 			g_scanstate.bs_tail = 0;
@@ -705,7 +705,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 			nvdbg("Start scan: %d\n", ret);
 
 			if (ret < 0) {
-				nxsem_destroy(&g_scanstate.bs_exclsem);
+				sem_destroy(&g_scanstate.bs_exclsem);
 				g_scanstate.bs_scanning = false;
 			}
 		}
@@ -735,7 +735,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 		ret = bt_stop_scanning();
 		nvdbg("Stop scanning: %d\n", ret);
 
-		nxsem_destroy(&g_scanstate.bs_exclsem);
+		sem_destroy(&g_scanstate.bs_exclsem);
 		g_scanstate.bs_scanning = false;
 	}
 	break;
@@ -747,12 +747,12 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 		/* Get the connection associated with the provided LE address */
 
-		conn = bt_conn_lookup_addr_le(&btreq->btr_secaddr);
+		conn = bt_conn_lookup_addr_le_internal(&btreq->btr_secaddr);
 		if (conn == NULL) {
 			nwdbg("WARNING:  Peer not connected\n");
 			ret = -ENOTCONN;
 		} else {
-			ret = bt_conn_security(conn, btreq->btr_seclevel);
+			ret = bt_conn_security_internal(conn, btreq->btr_seclevel);
 			if (ret < 0) {
 				ndbg("ERROR:  Security setting failed: %d\n", ret);
 			}
@@ -775,7 +775,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_expeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_expeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -814,7 +814,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 		} else {
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_dpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_dpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -833,7 +833,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 				params->start_handle = btreq->btr_dstart;
 				params->end_handle = btreq->btr_dend;
 
-				nxsem_init(&g_discoverstate.bd_exclsem, 0, 1);
+				sem_init(&g_discoverstate.bd_exclsem, 0, 1);
 				g_discoverstate.bd_discovering = true;
 				g_discoverstate.bd_head = 0;
 				g_discoverstate.bd_tail = 0;
@@ -900,7 +900,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_rdpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_rdpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;
@@ -962,7 +962,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 
 			/* Get the connection associated with the provided LE address */
 
-			conn = bt_conn_lookup_addr_le(&btreq->btr_wrpeer);
+			conn = bt_conn_lookup_addr_le_internal(&btreq->btr_wrpeer);
 			if (conn == NULL) {
 				nwdbg("WARNING:  Peer not connected\n");
 				ret = -ENOTCONN;

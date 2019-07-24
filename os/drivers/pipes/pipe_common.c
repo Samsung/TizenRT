@@ -305,6 +305,9 @@ int pipecommon_close(FAR struct file *filep)
 	struct inode *inode = filep->f_inode;
 	struct pipe_dev_s *dev = inode->i_private;
 	int sval;
+#ifndef CONFIG_DISABLE_POLL
+	int i;
+#endif
 
 	DEBUGASSERT(dev && dev->d_refs > 0);
 
@@ -314,6 +317,19 @@ int pipecommon_close(FAR struct file *filep)
 	 */
 
 	pipecommon_semtake(&dev->d_bfsem);
+
+#ifndef CONFIG_DISABLE_POLL
+	/* Check if this file is registered in a list of waiters for polling.
+	 * For example, when task A is blocked by calling poll and task B try to terminate task A,
+	 * a pollfd of A remains in this list. If it is, it should be cleared.
+	 */
+	for (i = 0; i < CONFIG_DEV_PIPE_NPOLLWAITERS; i++) {
+		struct pollfd *fds = dev->d_fds[i];
+		if (fds && (FAR struct file *)fds->filep == filep) {
+			dev->d_fds[i] = NULL;
+		}
+	}
+#endif
 
 	/* Decrement the number of references on the pipe.  Check if there are
 	 * still outstanding references to the pipe.
@@ -596,12 +612,14 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 				dev->d_fds[i] = fds;
 				fds->priv = &dev->d_fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}
 
 		if (i >= CONFIG_DEV_PIPE_NPOLLWAITERS) {
 			fds->priv = NULL;
+			fds->filep = NULL;
 			ret = -EBUSY;
 			goto errout;
 		}
@@ -648,6 +666,7 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 		*slot = NULL;
 		fds->priv = NULL;
+		fds->filep = NULL;
 	}
 
 errout:

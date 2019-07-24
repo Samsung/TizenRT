@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_keys.h
+ * net/bluetooth/bt_keys.h
  * Bluetooth key handling
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -38,6 +38,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+
+#ifndef __NET_BLUETOOTH_BT_KEYS_H
+#define __NET_BLUETOOTH_BT_KEYS_H 1
 
 /****************************************************************************
  * Included Files
@@ -98,3 +101,6 @@ void bt_keys_add_type(FAR struct bt_keys_s *keys, int type);
 void bt_keys_clear(FAR struct bt_keys_s *keys, int type);
 FAR struct bt_keys_s *bt_keys_find(int type, FAR const bt_addr_le_t *addr);
 FAR struct bt_keys_s *bt_keys_find_irk(FAR const bt_addr_le_t *addr);
+
+#endif /* __NET_BLUETOOTH_BT_KEYS_H */
+

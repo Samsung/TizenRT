@@ -29,18 +29,19 @@
 #include <stdio.h>
 
 #include <tinyara/irq.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/wdog.h>
 #include <tinyara/analog/adc.h>
 #include <tinyara/analog/ioctl.h>
 
+#include "up_arch.h"
 #include "imxrt_clock.h"
 #include "imxrt_adc.h"
+#include "imxrt_gpio.h"
 #include "imxrt_iomuxc.h"
 
 #ifdef CONFIG_IMXRT_ADC
-
-#define IMXRT_ADC_MAX_CHANNELS 10
 
 //Depends on TICK; Default is 100ms(10ms*10)!
 #define IMXRT_ADC_DEFAULT_PEROID		10
@@ -49,6 +50,50 @@
 
 #define CONVERT_ONECHANNEL				1
 #define ADC_CHANNEL_GROUP				0
+
+static const uint8_t g_adc1_padmux[IMXRT_ADC_NCHANEL] = {
+		IMXRT_PADMUX_GPIO_AD_B0_12_INDEX,	/* ADC1 Pin 0 */
+		IMXRT_PADMUX_GPIO_AD_B0_14_INDEX,	/* ADC1 Pin 1 */
+		IMXRT_PADMUX_GPIO_AD_B0_15_INDEX,	/* ADC1 Pin 2 */
+		IMXRT_PADMUX_GPIO_AD_B1_01_INDEX,	/* ADC1 Pin 3 */
+		IMXRT_PADMUX_GPIO_AD_B1_03_INDEX,	/* ADC1 Pin 4 */
+		IMXRT_PADMUX_GPIO_AD_B1_05_INDEX,	/* ADC1 Pin 5 */
+		IMXRT_PADMUX_GPIO_AD_B1_06_INDEX,	/* ADC1 Pin 6 */
+		IMXRT_PADMUX_GPIO_AD_B1_07_INDEX,	/* ADC1 Pin 7 */
+		IMXRT_PADMUX_GPIO_AD_B1_08_INDEX,	/* ADC1 Pin 8 */
+		IMXRT_PADMUX_GPIO_AD_B1_09_INDEX,	/* ADC1 Pin 9 */
+		IMXRT_PADMUX_GPIO_AD_B1_10_INDEX,	/* ADC1 Pin 10 */
+		IMXRT_PADMUX_GPIO_AD_B1_11_INDEX,	/* ADC1 Pin 11 */
+		IMXRT_PADMUX_GPIO_AD_B1_12_INDEX,	/* ADC1 Pin 12 */
+		IMXRT_PADMUX_GPIO_AD_B1_13_INDEX,	/* ADC1 Pin 13 */
+		IMXRT_PADMUX_GPIO_AD_B1_14_INDEX,	/* ADC1 Pin 14 */
+		IMXRT_PADMUX_GPIO_AD_B1_15_INDEX,	/* ADC1 Pin 15 */
+};
+
+static const uint8_t g_adc2_padmux[IMXRT_ADC_NCHANEL] = {
+		IMXRT_PADMUX_GPIO_AD_B0_13_INDEX,	/* ADC2 Pin 0 */
+		IMXRT_PADMUX_GPIO_AD_B0_14_INDEX,	/* ADC2 Pin 1 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B0_15_INDEX,	/* ADC2 Pin 2 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_02_INDEX,	/* ADC2 Pin 3 */
+		IMXRT_PADMUX_GPIO_AD_B1_04_INDEX,	/* ADC2 Pin 4 */
+		IMXRT_PADMUX_GPIO_AD_B1_05_INDEX,	/* ADC2 Pin 5 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_06_INDEX,	/* ADC2 Pin 6 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_07_INDEX,	/* ADC2 Pin 7 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_08_INDEX,	/* ADC1 Pin 8 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_09_INDEX,	/* ADC2 Pin 9 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_10_INDEX,	/* ADC2 Pin 10 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_11_INDEX,	/* ADC2 Pin 11 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_12_INDEX,	/* ADC2 Pin 12 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_13_INDEX,	/* ADC2 Pin 13 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_14_INDEX,	/* ADC2 Pin 14 */					// 중복
+		IMXRT_PADMUX_GPIO_AD_B1_15_INDEX,	/* ADC2 Pin 15 */					// 중복
+};
+
+static FAR const uint8_t *g_adc_padmux[IMXRT_ADC_NBUS] = {
+	g_adc1_padmux,				/* ADC1 */
+	g_adc2_padmux,				/* ADC2 */
+};
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -58,6 +103,7 @@ struct imxrt_dev_s {
 	FAR const struct adc_callback_s *cb;
 
 	struct adc_dev_s *dev;		/* A reference to the outer (parent) */
+	uint32_t pinset;
 	uint8_t adc_bus;			/* ADC module number */
 	uint8_t nchannels;			/* Number of channels */
 	uint8_t cchannels;			/* Number of configured channels */
@@ -65,7 +111,7 @@ struct imxrt_dev_s {
 
 	WDOG_ID work;				/* Supports the IRQ handling */
 	struct work_s work_int;		/* Supports the IRQ handling */
-	uint8_t chanlist[IMXRT_ADC_MAX_CHANNELS];
+	uint8_t chanlist[IMXRT_ADC_NCHANEL];
 };
 
 /*******************************************************************************
@@ -200,16 +246,16 @@ void imxrt_adc_getdefaultconfig(adc_config_t *config)
 	/* Initializes the configure structure to zero. */
 	memset(config, 0, sizeof(*config));
 
-	config->enableAsynchronousClockOutput = false;
+	config->enableAsynchronousClockOutput = true;
 	config->enableOverWrite = false;
 	config->enableContinuousConversion = false;
-	config->enableHighSpeed = true;
+	config->enableHighSpeed = false;
 	config->enableLowPower = false;
 	config->enableLongSample = false;
 	config->referenceVoltageSource = kADC_ReferenceVoltageSourceAlt0;
 	config->samplePeriodMode = kADC_SamplePeriod2or12Clocks;
-	config->clockSource = kADC_ClockSourceIPG;
-	config->clockDriver = kADC_ClockDriver4;
+	config->clockSource = kADC_ClockSourceAD;
+	config->clockDriver = kADC_ClockDriver1;
 	config->resolution = kADC_Resolution12Bit;
 }
 
@@ -591,6 +637,8 @@ static int adc_bind(FAR struct adc_dev_s *dev, FAR const struct adc_callback_s *
 	DEBUGASSERT(priv != NULL);
 	priv->cb = callback;
 
+	imxrt_config_gpio(priv->pinset);
+
 	return OK;
 }
 
@@ -609,6 +657,7 @@ static int adc_bind(FAR struct adc_dev_s *dev, FAR const struct adc_callback_s *
 static void adc_reset(FAR struct adc_dev_s *dev)
 {
 	irqstate_t flags;
+	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	flags = irqsave();
 
@@ -635,7 +684,10 @@ static void adc_reset(FAR struct adc_dev_s *dev)
  ****************************************************************************/
 static int adc_setup(FAR struct adc_dev_s *dev)
 {
+	int ret;
 	adc_config_t adcConfigStrcut;
+
+	FAR struct imxrt_dev_s *priv = (FAR struct imxrt_dev_s *)dev->ad_priv;
 
 	/* Make sure that the ADC device is in the powered up, reset state */
 	adc_reset(dev);
@@ -730,134 +782,92 @@ static const struct adc_ops_s g_adcops = {
 	.ao_ioctl = adc_ioctl,
 };
 
-static struct imxrt_dev_s g_adcpriv[IMXRT_ADC_MAX_CHANNELS] = {
-	0,
-};
-static struct adc_dev_s g_adcdev[IMXRT_ADC_MAX_CHANNELS] = {
-	0,
-};
-
-void imxrt_adc_pins_init(int bus, int cchannels)
-{
-	if (cchannels <= 0 || cchannels > IMXRT_ADC_MAX_CHANNELS) {
-		return;
-	}
-	uint32_t inputvalue = 0U;
-	uint32_t pinconfig = 0xB0u; /* Slew Rate Field: Slow Slew Rate
-													Drive Strength Field: R0/6
-													Speed Field: medium(100MHz)
-													Open Drain Enable Field: Open Drain Disabled
-													Pull / Keep Enable Field: Pull/Keeper Disabled
-													Pull / Keep Select Field: Keeper
-													Pull Up / Down Config. Field: 100K Ohm Pull Down
-													Hyst. Enable Field: Hysteresis Disabled */
-
-	imxrt_clock_enableclock(kCLOCK_Iomuxc); /* iomuxc clock (iomuxc_clk_enable): 0x03u */
-	if (bus == 0) {
-		switch (cchannels) {
-		case 16:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN15, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN15, pinconfig);
-		case 15:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN14, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN14, pinconfig);
-		case 14:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN13, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN13, pinconfig);
-		case 13:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN12, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN12, pinconfig);
-		case 12:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN11, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN11, pinconfig);
-		case 11:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN10, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN10, pinconfig);
-		case 10:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN9, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN9, pinconfig);
-		case 9:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN8, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN8, pinconfig);
-		case 8:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN7, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN7, pinconfig);
-		case 7:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN6, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN6, pinconfig);
-		case 6:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN5, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN5, pinconfig);
-		case 5:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN4, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN4, pinconfig);
-		case 4:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN3, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN3, pinconfig);
-		case 3:
-#ifndef CONFIG_ARCH_BOARD_IMXRT1050_EVK // FIXME This pin is dedicated to UART1_RXD on i.MXRT1050-evk board.
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN2, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN2, pinconfig);
-#endif
-		case 2:
-#ifndef CONFIG_ARCH_BOARD_IMXRT1050_EVK // FIXME This pin is dedicated to UART1_TXD on i.MXRT1050-evk board.
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN1, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN1, pinconfig);
-#endif
-		case 1:
-			imxrt_iomuxc_setpinmux(IMXRT_ADC1_IN0, inputvalue);
-			imxrt_iomuxc_setpinconfig(IMXRT_ADC1_IN0, pinconfig);
-
-		default:
-			break;
-		}
-	} else if (bus == 1) {
-		//To DO
-	}
-}
+/************************************************************************************
+ * Public Data
+ ************************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: imxrt_adc_initialize
- *
- * Description:
- *   Initialize the ADC. As the pins of each ADC channel are exported through
- *   configurable GPIO and it is board-specific, information on available
- *   ADC channels should be passed to imxrt_adc_initialize().
- *
- * Input Parameters:
- *   bus - ADC Module number
- *   channel - current channel
- *
- * Returned Value:
- *   Valid ADC device structure reference on succcess; a NULL on failure
- *
+ * Name: imxrt_gpio_configinput
  ****************************************************************************/
-struct adc_dev_s *imxrt_adc_initialize(int bus, int channel)
+//static
+int imxrt_adc_configinput(uint32_t pinset)
 {
-	if (channel > IMXRT_ADC_MAX_CHANNELS) {
-		allvdbg("IMXRT ADC1 has maximum %d ADC channels.\n", IMXRT_ADC_MAX_CHANNELS);
+	int bus = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int channel = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	FAR const uint8_t *table;
+	iomux_pinset_t ioset;
+	uintptr_t regaddr;
+	unsigned int index;
+
+	DEBUGASSERT((unsigned int)bus < IMXRT_ADC_NBUS);
+
+	/* Configure pin as in input */
+
+	/* Configure pin as a GPIO */
+	table = g_adc_padmux[bus];
+	if (table == NULL) {
+		return -EINVAL;
+	}
+
+	index = (unsigned int)table[channel];
+	if (index >= IMXRT_PADMUX_NREGISTERS) {
+		return -EINVAL;
+	}
+
+	regaddr = imxrt_padmux_address(index);
+	putreg32(PADMUX_MUXMODE_ALT5, regaddr);
+
+	/* Configure channel pad settings */
+	index = imxrt_padmux_map(index);
+	if (index >= IMXRT_PADCTL_NREGISTERS) {
+		return -EINVAL;
+	}
+
+	regaddr = imxrt_padctl_address(index);
+	ioset = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
+	return imxrt_iomux_configure(regaddr, ioset);
+}
+
+FAR struct adc_dev_s * imxrt_adc_lowerhalf(uint32_t pinset)
+{
+	struct adc_dev_s *adcdev;
+	struct imxrt_dev_s *priv;
+	int bus = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int channel = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+	if (channel > IMXRT_ADC_NCHANEL) {
+		allvdbg("IMXRT ADC1 has maximum %d ADC channels.\n", IMXRT_ADC_NCHANEL);
 		return NULL;
 	}
 
-	struct imxrt_dev_s *priv = &g_adcpriv[channel];
+	adcdev = (struct adc_dev_s *)kmm_malloc(sizeof(struct adc_dev_s));
+	if (!adcdev) {
+		return NULL;
+	}
+	priv = (struct imxrt_dev_s *)kmm_malloc(sizeof(struct imxrt_dev_s));
+	if (!priv) {
+		return NULL;
+	}
+
+	imxrt_clock_enableclock(kCLOCK_Iomuxc); /* iomuxc clock (iomuxc_clk_enable): 0x03u */   // ??? Init ?�서 ?�번�?초기???�도...
 
 	/* Initialize the public ADC device data structure */
-	g_adcdev[channel].ad_ops = &g_adcops;
-	g_adcdev[channel].ad_priv = priv;
+	adcdev->ad_ops = &g_adcops;
+	adcdev->ad_priv = priv;
 
 	/* Initialize the private ADC device data structure */
-	priv->adc_bus = bus;
-	priv->cb = NULL;
-	priv->dev = &g_adcdev[channel];
+	priv->pinset = pinset;
+	priv->adc_bus = bus;			// pinset ??중복?�어, ??�� 가??	priv->cb = NULL;
+	priv->dev = adcdev;
 	priv->cchannels = 1;
 	priv->nchannels = 1;
-	priv->current = channel;
-	priv->work = wd_create();
+	priv->current = channel;	// pinset ??중복?�어, ??�� 가??	priv->work = wd_create();
 
-	return &g_adcdev[channel];
+	return (struct adc_dev_s *)adcdev;
 }
+
 #endif /* CONFIG_IMXRT_ADC */

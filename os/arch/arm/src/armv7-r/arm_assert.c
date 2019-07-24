@@ -487,19 +487,22 @@ void dump_stack(void)
 #ifdef CONFIG_STACK_COLORATION
 static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
+	size_t used_stack_size;
+
+	used_stack_size = up_check_tcbstack(tcb);
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
 			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
 #else
 	lldbg("%5d | %4d | %7lu / %7lu\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
+			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
 			(unsigned long)tcb->adj_stack_size);
 #endif
 
-	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+	if (used_stack_size == tcb->adj_stack_size) {
 		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
 }
@@ -770,16 +773,11 @@ static void up_dumpstate(void)
 
 	/* Get the limits on the user stack memory */
 
-	if (rtcb->pid == 0) {
-		ustackbase = g_idle_topstack - 4;
-		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
-	} else {
-		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
-		ustacksize = (uint32_t)rtcb->adj_stack_size;
+	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
+	ustacksize = (uint32_t)rtcb->adj_stack_size;
 #ifdef CONFIG_MPU_STACKGUARD
-		uguardsize = (uint32_t)rtcb->guard_size;
+	uguardsize = (uint32_t)rtcb->guard_size;
 #endif
-	}
 
 	lldbg("Current sp: %08x\n", sp);
 

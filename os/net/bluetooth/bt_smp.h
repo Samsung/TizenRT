@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_smp.h
+ * net/bluetooth/bt_smp.h
  * Security Manager Protocol implementation.
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -39,8 +39,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_SMP_H
-#define __WIRELESS_BLUETOOTH_BT_SMP_H 1
+#ifndef __NET_BLUETOOTH_BT_SMP_H
+#define __NET_BLUETOOTH_BT_SMP_H 1
 
 /****************************************************************************
  * Included Files
@@ -166,4 +166,4 @@ int bt_smp_send_pairing_req(FAR struct bt_conn_s *conn);
 int bt_smp_send_security_req(FAR struct bt_conn_s *conn);
 int bt_smp_initialize(void);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_SMP_H */
+#endif							/* __NET_BLUETOOTH_BT_SMP_H */

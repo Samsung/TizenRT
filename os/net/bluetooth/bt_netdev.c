@@ -616,7 +616,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 
 	/* Disable interruption */
 
-	flags = spin_lock_irqsave();
+	flags = irqsave();
 
 	/* Cancel the TX poll timer and TX timeout timers */
 
@@ -630,7 +630,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 	/* Mark the device "down" */
 
 	priv->bd_bifup = false;
-	spin_unlock_irqrestore(flags);
+	irqrestore(flags);
 	return OK;
 }
 
@@ -841,16 +841,16 @@ static int btnet_req_data(FAR struct radio_driver_s *netdev, FAR const void *met
 	 *
 	 * Assumptions to REVISIT:
 	 *
-	 *   1. Role is Master (see bt_conn_create_le())
+	 *   1. Role is Master (see bt_conn_create_le_internal())
 	 *   2. Address type is BT_ADDR_LE_PUBLIC (vs. BT_ADDR_LE_RANDOM)
 	 */
 
 	BLUETOOTH_ADDRCOPY(peer.val, btmeta->bm_raddr.val);
 	peer.type = BT_ADDR_LE_PUBLIC;
 
-	conn = bt_conn_create_le(&peer);
+	conn = bt_conn_create_le_internal(&peer);
 	if (conn == NULL) {
-		/* bt_conn_create_le() can fail if (1) the connection exists, but is
+		/* bt_conn_create_le_internal() can fail if (1) the connection exists, but is
 		 * in a bad state or (2) CONFIG_BLUETOOTH_MAX_CONN has been exceeded.
 		 * Assume the latter.
 		 */
@@ -1006,7 +1006,7 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 
 	/* Setup a locking semaphore for exclusive device driver access */
 
-	nxsem_init(&priv->bd_exclsem, 0, 1);
+	sem_init(&priv->bd_exclsem, 0, 1);
 
 	DEBUGASSERT(priv->bd_txpoll != NULL);
 
@@ -1040,9 +1040,9 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev)
 	 * BLE device is supported.
 	 */
 
-	ret = bt_initialize();
+	ret = bt_initialize_internal();
 	if (ret < 0) {
-		nerr("ERROR:  bt_initialize() failed: %d\n", ret);
+		nerr("ERROR:  bt_initialize_internal() failed: %d\n", ret);
 		goto errout;
 	}
 
@@ -1068,7 +1068,7 @@ errout:
 
 	/* Un-initialize semaphores */
 
-	nxsem_destroy(&priv->bd_exclsem);
+	sem_destroy(&priv->bd_exclsem);
 
 	/* Free memory and return the error */
 
@@ -1078,5 +1078,12 @@ errout:
 	return 0;
 #endif
 }
+
+#ifdef CONFIG_BLUETOOTH_NULL
+int bt_dev_register(FAR const struct bt_driver_s *btdev)
+{
+	return bt_driver_register(btdev);
+}
+#endif
 
 #endif							/* CONFIG_NET && CONFIG_NET_skeleton */

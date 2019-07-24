@@ -13,4 +13,8 @@ if DRIVERS_WIRELESS && SELECT_RTK_WLAN
 source drivers/wireless/realtek/Kconfig
 
 endif # DRIVERS_WIRELESS
+if DRIVERS_WIRELESS && BLUETOOTH
 
+source drivers/wireless/bluetooth/Kconfig
+
+endif # DRIVERS_WIRELESS

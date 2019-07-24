@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_ioctl.h
+ * net/bluetooth/bt_ioctl.h
  * Bluetooth network IOCTL handler
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -34,8 +34,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_IOCTL_H
-#define __WIRELESS_BLUETOOTH_BT_IOCTL_H 1
+#ifndef __NET_BLUETOOTH_BT_IOCTL_H
+#define __NET_BLUETOOTH_BT_IOCTL_H 1
 
 /****************************************************************************
  * Included Files
@@ -70,4 +70,4 @@
 struct net_driver_s;			/* Forward reference */
 int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_IOCTL_H */
+#endif							/* __NET_BLUETOOTH_BT_IOCTL_H */

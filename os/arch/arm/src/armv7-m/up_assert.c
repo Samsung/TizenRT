@@ -211,11 +211,7 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
 	size_t used_stack_size;
 
-	if (tcb->pid == 0) {
-		used_stack_size = 0;
-	} else {
-		used_stack_size = up_check_tcbstack(tcb);
-	}
+	used_stack_size = up_check_tcbstack(tcb);
 
 	/* Dump interesting properties of this task */
 
@@ -229,7 +225,7 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 			(unsigned long)tcb->adj_stack_size);
 #endif
 
-	if (tcb->pid != 0 && used_stack_size == tcb->adj_stack_size) {
+	if (used_stack_size == tcb->adj_stack_size) {
 		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
 
@@ -307,13 +303,8 @@ static void up_dumpstate(void)
 
 	/* Get the limits on the user stack memory */
 
-	if (rtcb->pid == 0) {
-		ustackbase = g_idle_topstack - 4;
-		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
-	} else {
-		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
-		ustacksize = (uint32_t)rtcb->adj_stack_size;
-	}
+	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
+	ustacksize = (uint32_t)rtcb->adj_stack_size;
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	/* Get the limits on the interrupt stack memory */

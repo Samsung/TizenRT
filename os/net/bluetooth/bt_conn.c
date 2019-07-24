@@ -93,7 +93,7 @@ static const char *state2str(enum bt_conn_state_e state)
 {
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
-			return "disconnected";
+		return "disconnected";
 
 	case BT_CONN_CONNECT_SCAN:
 		return "connect-scan";
@@ -134,17 +134,17 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 
 	conn = g_conn_handoff.conn;
 	DEBUGASSERT(conn != NULL);
-	nxsem_post(&g_conn_handoff.sync_sem);
+	sem_post(&g_conn_handoff.sync_sem);
 
 	nvdbg("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Wait until the controller can accept ACL packets */
 
-		nvdbg("calling nxsem_wait\n");
+		nvdbg("calling sem_wait\n");
 
 		do {
-			ret = nxsem_wait(&g_btdev.le_pkts_sem);
+			ret = sem_wait(&g_btdev.le_pkts_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
@@ -152,7 +152,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 		/* Check for disconnection */
 
 		if (conn->state != BT_CONN_CONNECTED) {
-			nxsem_post(&g_btdev.le_pkts_sem);
+			sem_post(&g_btdev.le_pkts_sem);
 			break;
 		}
 
@@ -163,7 +163,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 		UNUSED(ret);
 
 		if (conn->state != BT_CONN_CONNECTED) {
-			nxsem_post(&g_btdev.le_pkts_sem);
+			sem_post(&g_btdev.le_pkts_sem);
 			bt_buf_release(buf);
 			break;
 		}
@@ -512,7 +512,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		 */
 
 		do {
-			ret = nxsem_wait(&g_conn_handoff.sync_sem);
+			ret = sem_wait(&g_conn_handoff.sync_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
@@ -520,7 +520,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		/* Start the Tx connection kernel thread */
 
 		g_conn_handoff.conn = bt_conn_addref(conn);
-		pid = kthread_create("BT Conn Tx", CONFIG_BLUETOOTH_TXCONN_PRIORITY, CONFIG_BLUETOOTH_TXCONN_STACKSIZE, conn_tx_kthread, NULL);
+		pid = kernel_thread("BT Conn Tx", CONFIG_BLUETOOTH_TXCONN_PRIORITY, CONFIG_BLUETOOTH_TXCONN_STACKSIZE, conn_tx_kthread, NULL);
 		DEBUGASSERT(pid > 0);
 		UNUSED(pid);
 
@@ -529,11 +529,11 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 		 */
 
 		do {
-			ret = nxsem_wait(&g_conn_handoff.sync_sem);
+			ret = sem_wait(&g_conn_handoff.sync_sem);
 		} while (ret == -EINTR);
 
 		DEBUGASSERT(ret == OK);
-		nxsem_post(&g_conn_handoff.sync_sem);
+		sem_post(&g_conn_handoff.sync_sem);
 	}
 	break;
 
@@ -599,7 +599,7 @@ FAR struct bt_conn_s *bt_conn_lookup_handle(uint16_t handle)
 }
 
 /****************************************************************************
- * Name: bt_conn_lookup_addr_le
+ * Name: bt_conn_lookup_addr_le_internal
  *
  * Description:
  *   Look up an existing connection based on the remote address.
@@ -615,7 +615,7 @@ FAR struct bt_conn_s *bt_conn_lookup_handle(uint16_t handle)
  *
  ****************************************************************************/
 
-FAR struct bt_conn_s *bt_conn_lookup_addr_le(FAR const bt_addr_le_t *peer)
+FAR struct bt_conn_s *bt_conn_lookup_addr_le_internal(FAR const bt_addr_le_t *peer)
 {
 	int i;
 
@@ -721,7 +721,7 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
 }
 
 /****************************************************************************
- * Name: bt_conn_get_dst
+ * Name: bt_conn_get_dst_internal
  *
  * Description:
  *   Get destination (peer) address of a connection.
@@ -734,13 +734,13 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
  *
  ****************************************************************************/
 
-FAR const bt_addr_le_t *bt_conn_get_dst(FAR const struct bt_conn_s *conn)
+FAR const bt_addr_le_t *bt_conn_get_dst_internal(FAR const struct bt_conn_s *conn)
 {
 	return &conn->dst;
 }
 
 /****************************************************************************
- * Name: bt_conn_security
+ * Name: bt_conn_security_internal
  *
  * Description:
  *   This function enable security (encryption) for a connection. If device is
@@ -765,7 +765,7 @@ FAR const bt_addr_le_t *bt_conn_get_dst(FAR const struct bt_conn_s *conn)
  *
  ****************************************************************************/
 
-int bt_conn_security(FAR struct bt_conn_s *conn, enum bt_security_e sec)
+int bt_conn_security_internal(FAR struct bt_conn_s *conn, bt_security_t sec)
 {
 	FAR struct bt_keys_s *keys;
 
@@ -830,7 +830,7 @@ void bt_conn_set_auto_conn(FAR struct bt_conn_s *conn, bool auto_conn)
 }
 
 /****************************************************************************
- * Name: bt_conn_disconnect
+ * Name: bt_conn_disconnect_internal
  *
  * Description:
  *   Disconnect an active connection with the specified reason code or cancel
@@ -845,7 +845,7 @@ void bt_conn_set_auto_conn(FAR struct bt_conn_s *conn, bool auto_conn)
  *
  ****************************************************************************/
 
-int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
+int bt_conn_disconnect_internal(FAR struct bt_conn_s *conn, uint8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall be disabled.
 	 * Otherwise the passive scan would be enabled and we could send LE Create
@@ -876,7 +876,7 @@ int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
 }
 
 /****************************************************************************
- * Name: bt_conn_create_le
+ * Name: bt_conn_create_le_internal
  *
  * Description:
  *  Allows initiate new LE link to remote peer using its address.
@@ -890,7 +890,7 @@ int bt_conn_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
  *
  ****************************************************************************/
 
-FAR struct bt_conn_s *bt_conn_create_le(FAR const bt_addr_le_t *peer)
+FAR struct bt_conn_s *bt_conn_create_le_internal(FAR const bt_addr_le_t *peer)
 {
 	FAR struct bt_conn_s *conn;
 
@@ -898,7 +898,7 @@ FAR struct bt_conn_s *bt_conn_create_le(FAR const bt_addr_le_t *peer)
 	 * state.
 	 */
 
-	conn = bt_conn_lookup_addr_le(peer);
+	conn = bt_conn_lookup_addr_le_internal(peer);
 	if (conn != NULL) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_SCAN:

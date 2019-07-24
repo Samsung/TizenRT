@@ -146,5 +146,7 @@ config IMXRT_RAMMTD_MOUNT_POINT
 	default "/ramfs"
 endif
 
-
+config PROD_HEADER
+	string "Product pin definition header"
+	default "prod/fac.h"
 endif

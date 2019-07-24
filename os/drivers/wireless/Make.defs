@@ -47,6 +47,10 @@ ifeq ($(CONFIG_SCSC_CORE),y)
 include wireless$(DELIM)scsc$(DELIM)misc$(DELIM)Make.defs
 endif
 
+ifeq ($(CONFIG_BLUETOOTH_NULL),y)
+include wireless$(DELIM)bluetooth$(DELIM)Make.defs
+endif
+
 # Include wireless devices build support
 
 DEPPATH += --dep-path wireless

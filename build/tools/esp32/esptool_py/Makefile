@@ -74,7 +74,7 @@ $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
 
 ESPTOOL_ALL_FLASH_ARGS += $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 
-ALL:erase_flash flash romfs
+ALL: flash romfs
 
 OS:app-flash
 

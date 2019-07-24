@@ -53,6 +53,7 @@
 #include <mqueue.h>
 
 #include <tinyara/bluetooth/bt_driver.h>
+#include "bt_atomic.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -66,6 +67,31 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+/* bt_dev flags: the flags defined here represent BT controller state */
+enum {
+	BT_DEV_ENABLE,
+	BT_DEV_READY,
+	BT_DEV_PRESET_ID,
+	BT_DEV_USER_ID_ADDR,
+	BT_DEV_HAS_PUB_KEY,
+	BT_DEV_PUB_KEY_BUSY,
+
+	BT_DEV_ADVERTISING,
+	BT_DEV_ADVERTISING_NAME,
+	BT_DEV_ADVERTISING_CONNECTABLE,
+	BT_DEV_KEEP_ADVERTISING,
+	BT_DEV_SCANNING,
+	BT_DEV_EXPLICIT_SCAN,
+	BT_DEV_ACTIVE_SCAN,
+	BT_DEV_SCAN_FILTER_DUP,
+
+	BT_DEV_RPA_VALID,
+
+	BT_DEV_ID_PENDING,
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_DEV_NUM_FLAGS,
+};
 
 /* State tracking for the local Bluetooth controller */
 
@@ -123,6 +149,25 @@ struct bt_dev_s {
 	/* Registered HCI driver */
 
 	FAR const struct bt_driver_s *btdev;
+
+	/* name */
+	char name[CONFIG_BT_DEVICE_NAME_MAX];
+
+	/* dev flags */
+	bt_atomic_t flags[1];
+
+	/* Local Identity Address(es) */
+	bt_addr_le_t id_addr[CONFIG_BT_ID_MAX];
+	uint8_t id_count;
+
+	/* ID Address used for advertising */
+	uint8_t adv_id;
+
+	/* Current local Random Address */
+	bt_addr_le_t random_addr;
+
+	/* local_name at driver side */
+	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 };
 
 /* Connection callback structure */
@@ -135,6 +180,26 @@ struct bt_conn_cb_s {
 	CODE void (*connected)(FAR struct bt_conn_s *conn, FAR void *context);
 	CODE void (*disconnected)(FAR struct bt_conn_s *conn, FAR void *context);
 };
+
+/****************************************************************************
+ * Name: bt_scanning_cb_t
+ *
+ * Description:
+ *   A function of this type will be called back when user application
+ *   triggers active LE scan. The caller will populate all needed
+ *   parameters based on data coming from scan result.
+ *   Such function can be set by user when LE active scan API is used.
+ *
+ * Input Parameters:
+ *  addr     - Advertiser LE address and type.
+ *  rssi     - Strength of advertiser signal.
+ *  adv_type - Type of advertising response from advertiser.
+ *  adv_data - Address of buffer containing advertiser data.
+ *  len      - Length of advertiser data contained in buffer.
+ *
+ ****************************************************************************/
+
+typedef CODE void bt_scanning_cb_t(FAR const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, FAR const uint8_t *adv_data, uint8_t len);
 
 /****************************************************************************
  * Public Data
@@ -199,6 +264,19 @@ static inline bool bt_addr_le_is_identity(FAR const bt_addr_le_t *addr)
  ****************************************************************************/
 
 struct bt_eir_s;				/* Forward reference */
+
+/****************************************************************************
+ * Name: bt_initialize_internal
+ *
+ * Description:
+ *   Initialize Bluetooth. Must be the called before anything else.
+ *
+ * Returned Value:
+ *    Zero on success or (negative) error code otherwise.
+ *
+ ****************************************************************************/
+
+int bt_initialize_internal(void);
 
 /****************************************************************************
  * Name: bt_driver_register
@@ -269,6 +347,71 @@ FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr);
 #endif
 
 /****************************************************************************
+ * Name: bt_start_advertising
+ *
+ * Description:
+ *   Set advertisement data, scan response data, advertisement parameters
+ *   and start advertising.
+ *
+ * Input Parameters:
+ *   type - Advertising type.
+ *   ad   - Data to be used in advertisement packets.
+ *   sd   - Data to be used in scan response packets.
+ *
+ * Returned Value:
+ *   Zero on success or (negative) error code otherwise.
+ *
+ ****************************************************************************/
+
+int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const struct bt_eir_s *sd);
+
+/****************************************************************************
+* Name: bt_stop_advertising
+*
+* Description:
+*   Stops ongoing advertising.
+*
+* Returned Value:
+*   Zero on success or (negative) error code otherwise.
+*
+****************************************************************************/
+
+int bt_stop_advertising(void);
+
+/****************************************************************************
+* Name: bt_start_scanning
+*
+* Description:
+*   Start LE scanning with and provide results through the specified
+*   callback.
+*
+* Input Parameters:
+*   filter_dups - Enable duplicate filtering (or not).
+*   cb          - Callback to notify scan results.
+*
+* Returned Value:
+*   Zero on success or error code otherwise, positive in case
+*   of protocol error or negative (POSIX) in case of stack internal error
+*
+****************************************************************************/
+
+int bt_start_scanning(uint8_t filter_dups, bt_scanning_cb_t cb);
+
+/****************************************************************************
+* Name: bt_stop_scanning
+*
+* Description:
+*   Stops ongoing LE scanning.
+*
+* Returned Value:
+*   Zero on success or error code otherwise, positive in case
+*   of protocol error or negative (POSIX) in case of stack internal error
+*
+****************************************************************************/
+
+int bt_stop_scanning(void);
+
+/****************************************************************************
  * Name: bt_le_scan_update
  *
  * Description:
@@ -298,5 +441,15 @@ int bt_le_scan_update(void);
  ****************************************************************************/
 
 void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
+
+int bt_addr_le_create_static(bt_addr_le_t *addr);
+
+int bt_ble_scan_update(bool fast_scan);
+
+int hci_initialize(void);
+
+void ble_adv_report(FAR struct bt_buf_s *buf);
+
+int hci_le_create_conn(FAR const bt_addr_le_t *addr);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

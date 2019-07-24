@@ -1,5 +1,5 @@
 /****************************************************************************
- * wireless/bluetooth/bt_queue.h
+ * net/bluetooth/bt_queue.h
  * Inter-thread buffer queue management
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
@@ -34,8 +34,8 @@
  *
  ****************************************************************************/
 
-#ifndef __WIRELESS_BLUETOOTH_BT_QUEUE_H
-#define __WIRELESS_BLUETOOTH_BT_QUEUE_H 1
+#ifndef __NET_BLUETOOTH_BT_QUEUE_H
+#define __NET_BLUETOOTH_BT_QUEUE_H 1
 
 /****************************************************************************
  * Included Files
@@ -142,4 +142,4 @@ int bt_queue_receive(mqd_t mqd, FAR struct bt_buf_s **buf);
 
 int bt_queue_send(mqd_t mqd, FAR struct bt_buf_s *buf, int priority);
 
-#endif							/* __WIRELESS_BLUETOOTH_BT_QUEUE_H */
+#endif							/* __NET_BLUETOOTH_BT_QUEUE_H */
