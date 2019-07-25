@@ -99,7 +99,7 @@
  * 'denominator' for all CPU load calculations.
  */
 
-volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
+static volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
 static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 	CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT,
@@ -117,7 +117,44 @@ static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 /************************************************************************
  * Public Functions
  ************************************************************************/
+/************************************************************************
+ * Name: sched_clear_cpuload
+ *
+ * Description:
+ *	 Decrement the total CPU load count held by this thread from total
+ *   for all threads and reset the load count on this defunct thread.
+ *
+ * Inputs:
+ *	 pid - The task ID of the thread of interest.
+ *
+ * Return Value:
+ *	 None
+ *
+ * Assumptions:
+ *
+ ************************************************************************/
 
+void sched_clear_cpuload(pid_t pid)
+{
+	int hash_ndx;
+	int cpuload_idx;
+	irqstate_t flags;
+
+	hash_ndx = PIDHASH(pid);
+
+	flags = irqsave();
+	/* Decrement the total CPU load count held by this thread from the
+	 * total for all threads.  Then we can reset the count on this
+	 * defunct thread to zero.
+	 */
+	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
+		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
+		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+	}
+	irqrestore(flags);
+}
+
+#ifndef CONFIG_SCHED_CPULOAD_EXTCLK
 /************************************************************************
  * Name: sched_process_cpuload
  *
@@ -178,6 +215,7 @@ void weak_function sched_process_cpuload(void)
 		}
 	}
 }
+#endif
 
 /****************************************************************************
  * Function:  clock_cpuload
