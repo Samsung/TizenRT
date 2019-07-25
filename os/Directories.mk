@@ -142,6 +142,9 @@ endif
 
 NONFSDIRS = kernel $(ARCH_SRC) $(TINYARA_ADDONS)
 FSDIRS = fs drivers
+ifeq ($(CONFIG_BINFMT_ENABLE),y)
+FSDIRS += binfmt
+endif
 CONTEXTDIRS = $(APPDIR)
 CONTEXTDIRS += $(TOOLSDIR)
 CONTEXTDIRS += mm
@@ -187,6 +190,7 @@ else
 OTHERDIRS += syscall
 endif
 
+USERDIRS += $(TOPDIR)$(DELIM)..$(DELIM)loadable_apps
 
 # CLEANDIRS are the directories that will clean in.  These are
 #   all directories that we know about.
@@ -221,6 +225,13 @@ ifeq ($(CONFIG_AUDIO),y)
 KERNDEPDIRS += audio
 endif
 CLEANDIRS += audio
+
+# Add Compression Module
+
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+KERNDEPDIRS += compression
+endif
+CLEANDIRS += compression tools/compression
 
 # Add Crypto Module
 

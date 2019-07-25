@@ -193,7 +193,7 @@ void ethernetif_recv(struct netif *netif, int total_len)
 		total_len = MAX_ETH_MSG;
 
 	// Allocate buffer to store received packet
-	p = pbuf_alloc(PBUF_RAW, total_len, PBUF_POOL);
+	p = pbuf_alloc(PBUF_RAW, total_len, PBUF_RAM);
 	if (p == NULL) {
 		printf("\n\rCannot allocate pbuf to receive packet");
 		return;
