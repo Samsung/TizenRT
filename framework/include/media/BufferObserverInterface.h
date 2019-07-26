@@ -29,6 +29,8 @@
 #ifndef __MEDIA_STREAMOBSERVERINTERFACE_H
 #define __MEDIA_STREAMOBSERVERINTERFACE_H
 
+#include <sys/types.h>
+
 namespace media {
 namespace stream {
 /**
