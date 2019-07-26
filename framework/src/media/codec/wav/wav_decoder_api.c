@@ -22,18 +22,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <debug.h>
-#include <media/MediaTypes.h>
 #include "../../utils/internal_defs.h"
 #include "../../utils/rbs.h"
 #include "../../audio/resample/samplerate.h"
 #include "../audio_decoder.h"
 #include "wav_decoder_api.h"
 
-namespace media {
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define WAVE_HEADER_LENGTH      44
 #define WAVE_HDR_CHUNK_ID       "RIFF"
 #define WAVE_FORMAT_STR         "WAVE"
 #define WAVE_FMT_CHUNK_ID       "fmt "
@@ -298,6 +297,4 @@ int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem, src_handle_t *re
 	dec_ext->outputFrameSize = nFrames;
 	dec_ext->samplingRate = wav_fmt_ex->nSamplesPerSec;
 	return AUDIO_DECODER_OK;
-}
-
 }

@@ -21,7 +21,6 @@
 
 #include "../utils/rb.h"
 #include "../utils/rbs.h"
-#include <media/MediaTypes.h>
 #ifdef CONFIG_CODEC_LIBOPUS
 #include "opus/opus_encoder_api.h"
 #endif
@@ -29,7 +28,10 @@
 #define AUDIO_ENCODER_OK 0
 #define AUDIO_ENCODER_ERROR -1
 
-namespace media {
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 struct audio_encoder_s;
 typedef struct audio_encoder_s audio_encoder_t;
@@ -80,7 +82,7 @@ struct audio_encoder_s {
  * @param  enc_ext : Pointer to encoder external struct, ex: opus use opus_enc_external_t
  * @return 0 on success, otherwise, return -1.
  */
-int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, audio_type_t audio_type, void *enc_ext);
+int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type, void *enc_ext);
 
 /**
  * @brief  stream encoder register user data and user input callback.
@@ -138,7 +140,9 @@ bool audio_encoder_dataspace_is_empty(audio_encoder_p encoder);
  */
 int audio_encoder_getframe(audio_encoder_p encoder, void * data, size_t len);
 
-} // namespace media
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* STREAMING_ENCODER_H */
 

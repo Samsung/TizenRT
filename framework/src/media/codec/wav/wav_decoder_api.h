@@ -22,7 +22,10 @@
 #include "../../utils/rbs.h"
 #include <stdint.h>
 
-namespace media {
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 struct audio_decoder_s;
 typedef struct audio_decoder_s *audio_decoder_p;
@@ -88,7 +91,9 @@ bool wav_check_type(rbstream_p rbsp);
 bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer, uint32_t *size);
 int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem, src_handle_t *resampler);
 
-}
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* WAV_DECODER_API_H */
 

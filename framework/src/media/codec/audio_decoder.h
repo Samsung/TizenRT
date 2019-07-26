@@ -19,7 +19,6 @@
 #ifndef STREAMING_DECODER_H
 #define STREAMING_DECODER_H
 
-#include <media/MediaTypes.h>
 #include "../utils/rb.h"
 #include "../utils/rbs.h"
 #include "mp3/pvmp3decoder_api.h"
@@ -32,7 +31,10 @@
 #define AUDIO_DECODER_OK 0
 #define AUDIO_DECODER_ERROR -1
 
-namespace media {
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 struct audio_decoder_s;
 typedef struct audio_decoder_s audio_decoder_t;
@@ -163,7 +165,9 @@ int audio_decoder_configure(audio_decoder_p decoder, int audio_type, void *dec_e
  */
 size_t audio_decoder_get_frames(audio_decoder_p decoder, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch);
 
-} // namespace media
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* STREAMING_DECODER_H */
 
