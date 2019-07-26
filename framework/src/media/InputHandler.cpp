@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 
+#include <debug.h>
 #include <pthread.h>
 
 #include "InputHandler.h"
