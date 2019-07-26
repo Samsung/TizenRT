@@ -381,7 +381,11 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	if (tcb->pid == 0) {
 		/* Idle task normally uses heap with index 0. */
+#ifndef CONFIG_BUILD_PROTECTED
 		heap = mm_get_heap_with_index(0);
+#else
+		heap = &g_kmmheap;
+#endif
 	} else {
 		heap = mm_get_heap(tcb->stack_alloc_ptr);
 	}

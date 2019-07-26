@@ -231,6 +231,7 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
 		heap->alloc_list[i].pid = HEAPINFO_INIT_INFO;
 	}
+	heap->total_alloc_size = heap->peak_alloc_size = 0;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group_info(-1, -1, HEAPINFO_INIT_INFO);
 #endif
