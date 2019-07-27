@@ -72,15 +72,37 @@ config ENABLE_IOTIVITY_CLOUD
 		select to enable the cloud for iotivity stack in tinyara
 
 config IOTIVITY_DEBUG
-        bool "enable iotivity stack logs"
-        default n
-        ---help---
-                select to enable all iotivity stack logs (DEBUG / INFO etc.)
+	bool "enable iotivity stack logs"
+	default n
+	---help---
+		select to enable iotivity stack logs
+
+if IOTIVITY_DEBUG
+
+choice IOTIVITY_LOGGING_LEVEL
+	prompt "iotivity stack logging level"
+	default IOTIVITY_LOGGING_LEVEL_DEBUG
+	---help---
+		select iotivity stack logging level (DEBUG / INFO etc.)
+
+config IOTIVITY_LOGGING_LEVEL_DEBUG
+	bool "Debug"
+config IOTIVITY_LOGGING_LEVEL_INFO
+	bool "Info"
+config IOTIVITY_LOGGING_LEVEL_WARNING
+	bool "Warning"
+config IOTIVITY_LOGGING_LEVEL_ERROR
+	bool "Error"
+config IOTIVITY_LOGGING_LEVEL_FATAL
+	bool "Fatal"
+endchoice
+
+endif # IOTIVITY_DEBUG
 
 config IOTIVITY_NS_PROVIDER
-        bool "enable iotivity notification service(provider only)"
-        default n
-        ---help---
-                select to enable iotivity Notification Provider Service
+	bool "enable iotivity notification service(provider only)"
+	default n
+	---help---
+		select to enable iotivity Notification Provider Service
 
 endif # ENABLE_IOTIVITY
