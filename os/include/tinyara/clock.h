@@ -209,8 +209,17 @@ struct cpuload_s {
 #else
 #define SCHED_NCPULOAD 1
 #endif
+
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT_INTERVAL
+#define CPULOAD_SNAPSHOT_INTERVAL CONFIG_SCHED_CPULOAD_SNAPSHOT_INTERVAL
+#else
+#define CPULOAD_SNAPSHOT_INTERVAL 60
+#endif
+#define CPULOAD_NSNAPTICKS (CPULOAD_SNAPSHOT_INTERVAL * CLOCKS_PER_SEC)
 #endif
 
+#endif
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -368,6 +377,18 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload);
 /**
  * @endcond
  */
+
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+/**
+ * @cond
+ * @internal
+ */
+int clock_cpuload_snapshot(int pid, FAR struct cpuload_s *cpuload);
+/**
+ * @endcond
+ */
+#endif
+
 #endif
 
 #undef EXTERN

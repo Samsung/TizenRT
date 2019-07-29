@@ -110,6 +110,11 @@ static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 #endif
 };
 
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+static volatile uint32_t g_cpuload_snap_head;
+static volatile uint32_t g_cpuload_snapticks[CPULOAD_NSNAPTICKS];
+#endif
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -153,6 +158,13 @@ void weak_function sched_process_cpuload(void)
 	 */
 
 	hash_index = PIDHASH(rtcb->pid);
+
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+	g_cpuload_snapticks[g_cpuload_snap_head] = rtcb->pid;
+	if (++g_cpuload_snap_head >= CPULOAD_NSNAPTICKS) {
+		g_cpuload_snap_head = 0;
+	}
+#endif
 
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
 		g_pidhash[hash_index].ticks[cpuload_idx]++;
@@ -235,4 +247,61 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	irqrestore(flags);
 	return ret;
 }
+
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+/****************************************************************************
+ * Function:  clock_cpuload_snapshot
+ *
+ * Description:
+ *   Return load measurement data for the select PID in specific time period.
+ *
+ * Parameters:
+ *   pid - The task ID of the thread of interest.  pid == 0 is the IDLE thread.
+ *   cpuload - The location to return the CPU load
+ *
+ * Return Value:
+ *   OK (0) on success; a negated errno value on failure.  The only reason
+ *   that this function can fail is if 'pid' no longer refers to a valid
+ *   thread.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+int clock_cpuload_snapshot(int pid, FAR struct cpuload_s *cpuload)
+{
+	irqstate_t flags;
+	int tick_index;
+	int hash_index;
+
+	hash_index = PIDHASH(pid);
+	DEBUGASSERT(cpuload);
+
+	/* Check if the entry is valid (TCB field is not NULL) */
+	if (g_pidhash[hash_index].tcb == NULL) {
+		return -ESRCH;
+	}
+
+	cpuload->active = 0;
+	cpuload->total = CPULOAD_NSNAPTICKS;
+
+	/* Momentarily disable interrupts.  We need (1) the task to stay valid
+	 * while we are doing these operations and (2) the tick counts to be
+	 * synchronized when read.
+	 */
+
+	flags = irqsave();
+
+	for (tick_index = 0; tick_index < CPULOAD_NSNAPTICKS; tick_index++) {
+		if (pid == g_cpuload_snapticks[tick_index]) {
+			cpuload->active++;
+		}
+	}
+
+	irqrestore(flags);
+
+	return OK;
+}
+#endif
+
 #endif							/* CONFIG_SCHED_CPULOAD */

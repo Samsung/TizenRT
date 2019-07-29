@@ -65,20 +65,45 @@ static volatile bool is_started = false;
 static pthread_t cpuloadmon;
 #endif
 
-#define CPULOAD_BUFLEN 64
+#define CPULOAD_BUFLEN 128
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void cpuload_print_values(char *buf)
+{
+	int i;
+	stat_data stat_info[PROC_STAT_MAX];
+
+	stat_info[0] = buf;
+
+	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
+		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
+	}
+
+	printf("%3s |", stat_info[PROC_STAT_PID]);
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+	printf(" %12s |", stat_info[PROC_STAT_CPULOAD_SNAPSHOT]);
+#endif
+
+#ifdef CONFIG_SCHED_MULTI_CPULOAD
+	printf(" %5s | %5s | %5s |", stat_info[PROC_STAT_CPULOAD_SHORT], stat_info[PROC_STAT_CPULOAD_MID], stat_info[PROC_STAT_CPULOAD_LONG]);
+#else
+	printf(" %5s |", stat_info[PROC_STAT_CPULOAD]);
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	printf(" %s", stat_info[PROC_STAT_NAME]);
+#endif
+}
+
 static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 {
 	int ret;
 	char *filepath;
 	char buf[CPULOAD_BUFLEN];
 
-	printf("  %s	", entryp->d_name);
-	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "loadavg");
-	ret = utils_readfile(filepath, buf, CPULOAD_BUFLEN, NULL);
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
+	ret = utils_readfile(filepath, buf, CPULOAD_BUFLEN, cpuload_print_values);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -91,21 +116,24 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 static void cpuload_print_tasklist(void)
 {
-	printf("==================================\n");
-	printf(" CPU USAGE\n");
-	printf("==================================\n");
-	printf(" PID");
-#ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("%7ds %8ds %8ds", CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT, CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID, CONFIG_SCHED_CPULOAD_TIMECONSTANT_LONG);
-#else
-	printf("%9ds", CONFIG_SCHED_CPULOAD_TIMECONSTANT);
+	printf("PID |");
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+	printf("  Snap ticks  |");
 #endif
-	printf("\n----------------------------------\n");
+#ifdef CONFIG_SCHED_MULTI_CPULOAD
+	printf("%5ds | %4ds | %4ds |", CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT, CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID, CONFIG_SCHED_CPULOAD_TIMECONSTANT_LONG);
+#else
+	printf("%5ds |", CONFIG_SCHED_CPULOAD_TIMECONSTANT);
+#endif
+
+	printf("\n--------------------------------------------------\n");
 
 	/* Print cpu load for each task */
 	utils_proc_pid_foreach(cpuload_read_proc);
-
-	printf("==================================\n");
+#ifdef CONFIG_SCHED_CPULOAD_SNAPSHOT
+	printf(" * Snapshot interval : %ds (%d ticks)\n", CPULOAD_SNAPSHOT_INTERVAL, CPULOAD_NSNAPTICKS);
+#endif
+	printf("-------------------------------------------------\n");
 }
 
 #ifdef CONFIG_ENABLE_CPULOAD_MONITOR

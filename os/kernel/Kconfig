@@ -567,6 +567,17 @@ config SCHED_CPULOAD_TIMECONSTANT_LONG
 	default 10
 	depends on SCHED_MULTI_CPULOAD
 
+config SCHED_CPULOAD_SNAPSHOT
+	bool "Support snapshot for cpuload measurement in specific time period"
+	default y
+	---help---
+		If this option is selected, user can measure CPU load in the latest period of time.
+
+config SCHED_CPULOAD_SNAPSHOT_INTERVAL
+	int "CPU load snapshot interval (in seconds)"
+	depends on SCHED_CPULOAD_SNAPSHOT
+	default 60
+
 endif # SCHED_CPULOAD
 
 endmenu # Performance Monitoring
