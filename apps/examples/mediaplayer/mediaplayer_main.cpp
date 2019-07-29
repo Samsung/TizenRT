@@ -35,20 +35,8 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <limits.h>
-#include <wifi_manager/wifi_manager.h>
 
-#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_SSID
-#define CONFIG_EXAMPLES_MEDIAPLAYER_SSID "NULL"
-#endif
-#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE
-#define CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE "NULL"
-#endif
-#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION
-#define CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION 0
-#endif
-#ifndef CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO
-#define CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO 0
-#endif
+#include "WiFiConnector.h"
 
 using namespace std;
 using namespace media;
@@ -81,8 +69,6 @@ enum test_command_e {
 };
 
 extern "C" {
-static int wifi_connect();
-static int wifi_disconnect();
 static int list_dir_entries(const char *dirpath, char **filelist, int max);
 }
 
@@ -361,7 +347,7 @@ public:
 private:
 	bool setUp(const int test)
 	{
-		if ((test == TEST_HTTP) && (wifi_connect() != 0)) {
+		if ((test == TEST_HTTP) && (MediaPlayerApp::WiFiConnector::connect() != 0)) {
 			return false;
 		}
 
@@ -378,7 +364,7 @@ private:
 		mPlayer[1].reset();
 
 		if (test == TEST_HTTP) {
-			wifi_disconnect();
+			MediaPlayerApp::WiFiConnector::disconnect();
 		}
 	}
 
@@ -460,93 +446,6 @@ private:
 };
 
 extern "C" {
-
-static bool sg_wifiIsConnected = false;
-static std::mutex sg_wifiMutex;
-static std::condition_variable sg_wifiCondv;
-static const std::chrono::seconds WAIT_WIFI_TIMEOUT(5);
-
-#define WIFI_CONNECTED_RESETFLAG() sg_wifiIsConnected = false
-
-#define WIFI_CONNECTED_CHECKFLAG() sg_wifiIsConnected
-
-#define WIFI_CONNECTED_NOTIFY() \
-	do {\
-		std::lock_guard<std::mutex> lock(sg_wifiMutex);\
-		sg_wifiIsConnected = true;\
-		sg_wifiCondv.notify_one();\
-	} while (0)
-
-#define WIFI_CONNECTED_WAIT() \
-	do {\
-		std::unique_lock<std::mutex> lock(sg_wifiMutex);\
-		sg_wifiCondv.wait_for(lock, WAIT_WIFI_TIMEOUT, []{return sg_wifiIsConnected;});\
-	} while (0)
-
-static void wifi_sta_connected(wifi_manager_result_e result) {
-	meddbg("result %d\n", (int)result);
-	WIFI_CONNECTED_NOTIFY();
-}
-
-static void wifi_sta_disconnected(wifi_manager_disconnect_e result) {
-	meddbg("result %d\n", (int)result);
-}
-
-static int wifi_connect()
-{
-	static wifi_manager_cb_s wifi_callbacks = {
-		wifi_sta_connected,
-		wifi_sta_disconnected,
-		NULL,
-		NULL,
-		NULL,
-	};
-
-	wifi_manager_result_e ret = wifi_manager_init(&wifi_callbacks);
-	if (ret != WIFI_MANAGER_SUCCESS) {
-		meddbg("wifi_manager_init failed, ret %d\n", (int)ret);
-		return -1;
-	}
-
-	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_MEDIAPLAYER_SSID);
-	config.passphrase_length = strlen(CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE);
-	strncpy(config.ssid, CONFIG_EXAMPLES_MEDIAPLAYER_SSID, config.ssid_length + 1);
-	strncpy(config.passphrase, CONFIG_EXAMPLES_MEDIAPLAYER_PASSPHRASE, config.passphrase_length + 1);
-	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_MEDIAPLAYER_AUTHENTICATION;
-	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_MEDIAPLAYER_CRYPTO;
-
-	WIFI_CONNECTED_RESETFLAG();
-
-	meddbg("wifi_manager_connect_ap...\n");
-	ret = wifi_manager_connect_ap(&config);
-	if (ret != WIFI_MANAGER_SUCCESS) {
-		meddbg("wifi_manager_connect_ap failed, ret %d\n", (int)ret);
-		wifi_manager_deinit();
-		return -1;
-	}
-
-	meddbg("WIFI_CONNECTED_WAIT...\n");
-	WIFI_CONNECTED_WAIT();
-	if (!WIFI_CONNECTED_CHECKFLAG()) {
-		meddbg("wifi connect failed, timeout!\n");
-		wifi_manager_deinit();
-		return -1;
-	}
-
-	return 0;
-}
-
-static int wifi_disconnect()
-{
-	wifi_manager_result_e ret = wifi_manager_deinit();
-	if (ret != WIFI_MANAGER_SUCCESS) {
-		meddbg("wifi_manager_deinit failed, ret %d\n", (int)ret);
-		return -1;
-	}
-
-	return 0;
-}
 
 /* list all files in the directory */
 static int list_dir_entries(const char *dirpath, char **filelist, int max)
