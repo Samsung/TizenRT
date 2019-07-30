@@ -101,6 +101,10 @@ sq_queue_t g_msgfreeirq;
 
 sq_queue_t g_desfree;
 
+#if MQUEUE_NO_FS
+sq_queue_t g_mq_info_queue;
+#endif
+
 /************************************************************************
  * Private Variables
  ************************************************************************/
@@ -186,6 +190,10 @@ void mq_initialize(void)
 	sq_init(&g_msgfree);
 	sq_init(&g_msgfreeirq);
 	sq_init(&g_desalloc);
+
+#if MQUEUE_NO_FS
+	sq_init(&g_mq_info_queue);
+#endif
 
 	/* Allocate a block of messages for general use */
 
