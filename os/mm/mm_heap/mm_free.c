@@ -149,54 +149,64 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Check if the following node is free and, if so, merge it */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
-	if ((next->preceding & MM_ALLOC_BIT) == 0) {
-		FAR struct mm_allocnode_s *andbeyond;
+#ifdef  CONFIG_MM_REALTIME_SUPPORT
+	if (next < heap->mm_delimiter)
+#endif
+	{
+		if ((next->preceding & MM_ALLOC_BIT) == 0) {
+			FAR struct mm_allocnode_s *andbeyond;
 
-		/* Get the node following the next node (which will
-		 * become the new next node). We know that we can never
-		 * index past the tail chunk because it is always allocated.
-		 */
+			/* Get the node following the next node (which will
+			 * become the new next node). We know that we can never
+			 * index past the tail chunk because it is always allocated.
+			 */
 
-		andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
+			andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
 
-		/* Remove the next node.  There must be a predecessor,
-		 * but there may not be a successor node.
-		 */
+			/* Remove the next node.  There must be a predecessor,
+			 * but there may not be a successor node.
+			 */
 
-		DEBUGASSERT(next->blink);
-		next->blink->flink = next->flink;
-		if (next->flink) {
-			next->flink->blink = next->blink;
+			DEBUGASSERT(next->blink);
+			next->blink->flink = next->flink;
+			if (next->flink) {
+				next->flink->blink = next->blink;
+			}
+
+			/* Then merge the two chunks */
+
+			node->size          += next->size;
+			andbeyond->preceding = node->size | (andbeyond->preceding & MM_ALLOC_BIT);
+			next                 = (FAR struct mm_freenode_s *)andbeyond;
 		}
-
-		/* Then merge the two chunks */
-
-		node->size          += next->size;
-		andbeyond->preceding = node->size | (andbeyond->preceding & MM_ALLOC_BIT);
-		next                 = (FAR struct mm_freenode_s *)andbeyond;
 	}
 
 	/* Check if the preceding node is also free and, if so, merge
 	 * it with this node
 	 */
 
-	prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
-	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
-		/* Remove the node.  There must be a predecessor, but there may
-		 * not be a successor node.
-		 */
+#ifdef  CONFIG_MM_REALTIME_SUPPORT
+	if (node < heap->mm_delimiter)
+#endif
+	{
+		prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
+		if ((prev->preceding & MM_ALLOC_BIT) == 0) {
+			/* Remove the node.  There must be a predecessor, but there may
+			 * not be a successor node.
+			 */
 
-		DEBUGASSERT(prev->blink);
-		prev->blink->flink = prev->flink;
-		if (prev->flink) {
-			prev->flink->blink = prev->blink;
+			DEBUGASSERT(prev->blink);
+			prev->blink->flink = prev->flink;
+			if (prev->flink) {
+				prev->flink->blink = prev->blink;
+			}
+
+			/* Then merge the two chunks */
+
+			prev->size     += node->size;
+			next->preceding = prev->size | (next->preceding & MM_ALLOC_BIT);
+			node            = prev;
 		}
-
-		/* Then merge the two chunks */
-
-		prev->size     += node->size;
-		next->preceding = prev->size | (next->preceding & MM_ALLOC_BIT);
-		node            = prev;
 	}
 
 	/* Add the merged node to the nodelist */

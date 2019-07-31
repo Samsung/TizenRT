@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_HEAP_STAT_REALTIME
+	bool "Show the stat of heap for realtime support"
+	default n
+	depends on MM_REALTIME_SUPPORT
+	---help---
+		Show the stat of heap for realtime support,
+		including the number of misses of memory allocation within a constant time.
+
+config USER_ENTRYPOINT
+	string
+	default "heapstat_main" if ENTRY_HEAP_STAT_REALTIME

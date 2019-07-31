@@ -129,6 +129,17 @@
 #undef CONFIG_MM_KERNEL_HEAP
 #endif
 
+#ifdef  CONFIG_MM_REALTIME_SUPPORT
+#define MM_REALTIME_SUPPORT_MIN_SIZE 32 /* bytes */
+#define MM_REALTIME_SUPPORT_STEP_SIZE 16 /* bytes */
+
+#if CONFIG_MM_REALTIME_SUPPORT_NUMOF_SIZES < 1
+#define MM_REALTIME_SUPPORT_NUMOF_SIZES 3
+#else
+#define MM_REALTIME_SUPPORT_NUMOF_SIZES CONFIG_MM_REALTIME_SUPPORT_NUMOF_SIZES
+#endif
+#endif // CONFIG_MM_REALTIME_SUPPORT
+
 /* Chunk Header Definitions *************************************************/
 /* These definitions define the characteristics of allocator
  *
@@ -187,7 +198,11 @@
 
 #define MM_MIN_CHUNK     (1 << MM_MIN_SHIFT)
 #define MM_MAX_CHUNK     (1 << MM_MAX_SHIFT)
+#ifdef  CONFIG_MM_REALTIME_SUPPORT
+#define MM_NNODES        (MM_MAX_SHIFT - MM_MIN_SHIFT + MM_REALTIME_SUPPORT_NUMOF_SIZES + 1)
+#else
 #define MM_NNODES        (MM_MAX_SHIFT - MM_MIN_SHIFT + 1)
+#endif // CONFIG_MM_REALTIME_SUPPORT
 
 #define MM_GRAN_MASK     (MM_MIN_CHUNK-1)
 #define MM_ALIGN_UP(a)   (((a) + MM_GRAN_MASK) & ~MM_GRAN_MASK)
@@ -392,6 +407,15 @@ struct mm_heap_s {
 	 */
 
 	struct mm_freenode_s mm_nodelist[MM_NNODES + 1];
+
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+	FAR struct mm_freenode_s *mm_delimiter;
+	int mm_ndx_offset;
+	int mm_realtime_num[MM_REALTIME_SUPPORT_NUMOF_SIZES];
+#ifdef CONFIG_EXAMPLES_HEAP_STAT_REALTIME
+	size_t mm_realtime_miss[MM_REALTIME_SUPPORT_NUMOF_SIZES];
+#endif
+#endif
 };
 
 /****************************************************************************
@@ -671,6 +695,9 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 /* Functions contained in mm_size2ndx.c.c ***********************************/
 
 int mm_size2ndx(size_t size);
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+int mm_size2ndx_realtime(FAR struct mm_heap_s *heap, size_t size);
+#endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
@@ -693,8 +720,13 @@ void mm_is_sem_available(void *address);
 /* Functions to get the address of heap structure */
 struct mm_heap_s *mm_get_heap(void *address);
 struct mm_heap_s *mm_get_heap_with_index(int index);
-
 int mm_get_heapindex(void *mem);
+
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+int mm_heapstat_get(char *addr, uint32_t *miss, int *num);
+int mm_heapstat_reset(char *addr);
+#endif
+
 #if CONFIG_MM_NHEAPS > 1
 struct heapinfo_total_info_s {
 	int total_heap_size;

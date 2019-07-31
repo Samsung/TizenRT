@@ -256,9 +256,19 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	mm_givesemaphore(heap);
 
 	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
+#ifdef CONFIG_MM_REALTIME_SUPPORT
+		if (ndx < MM_REALTIME_SUPPORT_NUMOF_SIZES) {
+			printf("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, ((ndx > 0 ? (MM_REALTIME_SUPPORT_STEP_SIZE * (ndx + 1)) : 0) + 1), MM_REALTIME_SUPPORT_STEP_SIZE * (ndx + 2), nodelist_cnt[ndx], nodelist_size[ndx]);
+		} else if (ndx == MM_REALTIME_SUPPORT_NUMOF_SIZES) {
+			printf("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, (MM_REALTIME_SUPPORT_STEP_SIZE * (ndx + 1) + 1), 1 << (ndx + MM_MIN_SHIFT + 1 - heap->mm_ndx_offset), nodelist_cnt[ndx], nodelist_size[ndx]);
+		} else {
+			printf("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, ((1 << (ndx + MM_MIN_SHIFT - heap->mm_ndx_offset)) + 1), 1 << (ndx + MM_MIN_SHIFT + 1 - heap->mm_ndx_offset), nodelist_cnt[ndx], nodelist_size[ndx]);
+		}
+#else
 		printf("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, ((ndx > 0 ? (1 << (ndx + MM_MIN_SHIFT)) : 0) + 1), 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
+#endif // CONFIG_MM_REALTIME_SUPPORT
 	}
-#endif
+#endif // CONFIG_DEBUG_CHECK_FRAGMENTATION
 
 	if (mode != HEAPINFO_SIMPLE) {
 		printf("\n< by Dead Threads >\n");
