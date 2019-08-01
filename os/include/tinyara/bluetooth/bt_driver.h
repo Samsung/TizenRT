@@ -106,8 +106,22 @@ int bt_netdev_register(FAR const struct bt_driver_s *btdev);
 
 void bt_hci_receive(FAR struct bt_buf_s *buf);
 
-#ifdef CONFIG_BLUETOOTH_NULL
+
+/****************************************************************************
+ * Name: bt_dev_register
+ *
+ * Description:
+ *   Register a bluetooth driver to access the Bluetooth layer
+ *
+ * Input Parameters:
+ *   btdev - An instance of the low-level drivers interface structure.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  Otherwise a negated errno value is
+ *   returned to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
 int bt_dev_register(FAR const struct bt_driver_s *btdev);
-#endif
 
 #endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_DRIVER_H */

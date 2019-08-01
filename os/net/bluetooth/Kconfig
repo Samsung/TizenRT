@@ -147,9 +147,8 @@ if MM_IOB
 
 config IOB_NBUFFERS
 	int "Number of pre-allocated I/O buffers"
-	default 24 if (NET_WRITE_BUFFERS && !NET_READAHEAD) || (!NET_WRITE_BUFFERS && NET_READAHEAD)
-	default 36 if NET_WRITE_BUFFERS && NET_READAHEAD
-	default 8 if !NET_WRITE_BUFFERS && !NET_READAHEAD
+	default 24 
+	range 8 36
 	---help---
 		Each packet is represented by a series of small I/O buffers in a
 		chain.  This setting determines the number of preallocated I/O

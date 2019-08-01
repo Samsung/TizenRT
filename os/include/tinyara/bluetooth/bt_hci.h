@@ -219,7 +219,7 @@
 #define BT_HCI_LE_ADV_DISABLE                   0x00
 #define BT_HCI_LE_ADV_ENABLE                    0x01
 #define CONFIG_BT_ID_MAX                        2
-#define HCI_MAX_NAME_LENGTH             248
+#define HCI_MAX_NAME_LENGTH                     65
 
 #define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
 #define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
