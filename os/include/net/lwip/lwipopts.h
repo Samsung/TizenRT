@@ -1005,6 +1005,12 @@
 #define AUTOIP_DEBUG	LWIP_DBG_OFF
 #endif
 
+#ifdef CONFIG_NET_DHCP_DEBUG
+#define DHCP_DEBUG	LWIP_DBG_ON
+#else
+#define DHCP_DEBUG	LWIP_DBG_OFF
+#endif
+
 #ifdef CONFIG_NET_POLL_DEBUG
 #define POLL_DEBUG	LWIP_DBG_ON
 #else

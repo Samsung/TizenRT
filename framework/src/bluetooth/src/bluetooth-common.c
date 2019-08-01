@@ -180,17 +180,23 @@ char *_bt_convert_uuid_to_uuid128(const char *uuid)
 
 	switch (len) {
 	case 4:         /* UUID 16bits */
-		//uuid128 = g_strdup_printf("0000%s-0000-1000-8000-00805f9b34fb", uuid);
+#ifdef GLIB_SUPPORTED
+		uuid128 = g_strdup_printf("0000%s-0000-1000-8000-00805f9b34fb", uuid);
+#else
 		len = snprintf(NULL, 0, "0000%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
 		snprintf(uuid128, len + 1,  "0000%s-0000-1000-8000-00805f9b34fb", uuid);
+#endif
 		break;
 
 	case 8:         /* UUID 32bits */
-		//uuid128 = g_strdup_printf("%s-0000-1000-8000-00805f9b34fb", uuid); /* LCOV_EXCL_LINE */
+#ifdef GLIB_SUPPORTED
+		uuid128 = g_strdup_printf("%s-0000-1000-8000-00805f9b34fb", uuid); /* LCOV_EXCL_LINE */
+#else
 		len = snprintf(NULL, 0, "%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
 		snprintf(uuid128, len + 1,  "%s-0000-1000-8000-00805f9b34fb", uuid);
+#endif
 		break; /* LCOV_EXCL_LINE */
 
 	case 36:        /* UUID 128bits */

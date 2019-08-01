@@ -78,11 +78,15 @@ namespace std
   using ::clock_gettime;
   using ::mktime;
   using ::time;
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
   using ::asctime;
   using ::ctime;
+ #endif
   using ::gmtime;
   using ::gmtime_r;
+#ifdef CONFIG_LIBC_LOCALTIME
   using ::localtime;
+#endif
   using ::timer_create;
   using ::timer_delete;
   using ::timer_settime;

@@ -58,7 +58,7 @@ endif #SLSI_WPA_SUPPLICANT
 
 config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
-	depends on SUPPORT_FULL_SECURITY
+	depends on SECURITY_SS
 	default n
 
 

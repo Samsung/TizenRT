@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += sss_storage_server.c
+CSRCS += sss_storage_server.c sss_storage.c ss_misc.c
 
 DEPPATH += --dep-path src/st_things/things_stack/security/sss_security
 VPATH += :src/st_things/things_stack/security/sss_security

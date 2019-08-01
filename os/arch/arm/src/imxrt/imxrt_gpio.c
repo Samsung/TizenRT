@@ -765,11 +765,12 @@ int imxrt_config_gpio(gpio_pinset_t pinset)
 	switch (pinset & GPIO_MODE_MASK) {
 	case GPIO_INPUT: {
 		/* Configure the pin as a GPIO input */
+#ifdef CONFIG_IMXRT_ADC
 		if ((pinset & IOMUX_PULL_MASK) == IOMUX_PULL_KEEP) {
 			ret = imxrt_adc_configinput(pinset);			// confirm �ʿ�
-		} else {
+		} else
+#endif
 			ret = imxrt_gpio_configinput(pinset);
-		}
 	}
 	break;
 

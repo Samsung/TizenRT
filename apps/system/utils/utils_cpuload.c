@@ -57,8 +57,6 @@
 #endif
 #endif
 
-extern volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD];
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -93,37 +91,21 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 static void cpuload_print_tasklist(void)
 {
-	int cpuload_idx;
-
-#ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("=====================================\n");
-#else
-	printf("=================\n");
-#endif
+	printf("==================================\n");
 	printf(" CPU USAGE\n");
-#ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("=====================================\n");
-#else
-	printf("=================\n");
-#endif
+	printf("==================================\n");
 	printf(" PID");
-	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		printf("%9ds", g_cpuload_timeconstant[cpuload_idx]);
-	}
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("\n-------------------------------------\n");
+	printf("%7ds %8ds %8ds", CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT, CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID, CONFIG_SCHED_CPULOAD_TIMECONSTANT_LONG);
 #else
-	printf("\n-----------------\n");
+	printf("%9ds", CONFIG_SCHED_CPULOAD_TIMECONSTANT);
 #endif
+	printf("\n----------------------------------\n");
 
 	/* Print cpu load for each task */
 	utils_proc_pid_foreach(cpuload_read_proc);
 
-#ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("=====================================\n");
-#else
-	printf("=================\n");
-#endif
+	printf("==================================\n");
 }
 
 #ifdef CONFIG_ENABLE_CPULOAD_MONITOR

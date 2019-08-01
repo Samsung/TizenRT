@@ -5,11 +5,13 @@
 
 config SE
 	bool "Enable embedded SE"
-	select TLS_WITH_SSS
+	select TLS_WITH_HW_ACCEL
 	select SECURITY_LINK_DRV
 
 if SE
-
+#
+# Debug options
+#
 config DEBUG_SECURE_ELEMENT_ERROR
 	bool "Secure element debug ERROR"
 	default n
@@ -43,6 +45,19 @@ config SE_VIRTUAL
 	---help---
 		Enable Virtual SE chip for testing
 endchoice
+
+#
+# Below configurations shows availabilities that the SE supports
+# Those features let mbedtls know what features it supports
+# Each vendors of SE should select features that it supports from below list
+#
+# config HW_RNG
+# config HW_DH_PARAM
+# config HW_ECDH_PARAM
+# config HW_RSA_VERIFICATION
+# config HW_ECDSA_VERIFICATION
+# config HW_RSA_ENC
+# config HW_SE_STORAGE
 
 if SE_SSS
 source se/sss/Kconfig

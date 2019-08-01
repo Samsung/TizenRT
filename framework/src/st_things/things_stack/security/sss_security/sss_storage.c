@@ -22,25 +22,26 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <security/security_api.h>
+#include "sss_storage.h"
 
-#include "mbedtls/see_api.h"
-#include "mbedtls/sss_storage.h"
-
-unsigned char *sss_p;
+static unsigned char *sss_p;
 static sss_file_ctrl sss_fs;
 
-unsigned char *sss_p_mem;
+static unsigned char *sss_p_mem;
 static sss_file_ctrl sss_fs_mem;
 
-size_t g_sss_size;
+static size_t g_sss_size = 0;
 
-FILE *sss_open_mem(const char *filename, const char *mode)
+FILE *sss_open(const char* filename, const char* mode);
+
+FILE *
+sss_open_mem(const char *filename, const char *mode)
 {
-	if (!strcmp(mode, "r") || !strcmp(mode, "rb")) {
 
-		if (g_sss_size == 0)
-		{
-			sss_open(filename, mode);
+	if (!strcmp(mode, "r") || !strcmp(mode, "rb")) {
+		if (g_sss_size == 0) {
+			(void *)sss_open(filename, mode);
 		}
 
 		sss_p_mem = sss_fs_mem.data;
@@ -52,6 +53,7 @@ FILE *sss_open_mem(const char *filename, const char *mode)
 
 size_t sss_read_mem(void *ptr, size_t size, size_t count, FILE *stream)
 {
+
 	unsigned int read_size = 0;
 
 	if (ptr == NULL || stream == NULL || count == 0) {
@@ -76,9 +78,6 @@ size_t sss_read_mem(void *ptr, size_t size, size_t count, FILE *stream)
 
 size_t sss_write_mem(const void *ptr, size_t size, size_t count, FILE *stream)
 {
-	if (ptr == NULL || stream == NULL || size == 0 || count == 0) {
-		return SSS_WRITE_ERR;
-	}
 
 	memcpy(sss_fs_mem.data, ptr, count);
 	sss_fs_mem.size = count;
@@ -89,19 +88,28 @@ size_t sss_write_mem(const void *ptr, size_t size, size_t count, FILE *stream)
 
 int sss_sync(void)
 {
-	int ret = 0;
 
 	memcpy(sss_fs.data, sss_fs_mem.data, g_sss_size);
 
 	sss_p = sss_fs.data;
 	sss_fs.size = g_sss_size;
 
-	ret = see_write_iotivity_storage(sss_fs.data, sss_fs.size);
-
-	if (ret != 0) {
-		printf("setSecureStorageType sss_sync fail : %d\n", ret);
-		return ret;
+	security_handle hnd;
+	security_error res = security_init(&hnd);
+	if (res != SECURITY_OK) {
+		free(hnd);
+		return NULL;
 	}
+
+	security_data input = {sss_fs.data, sss_fs.size};
+	//security_data input = {g_ss_pool, g_ss_pool_size};
+	res = ss_write_secure_storage(hnd, IOTIVITY_SS, 0, &input);
+	if (res != SECURITY_OK) {
+		printf("setSecureStorageType sss_sync fail : %d\n", res);
+		security_deinit(hnd);
+		return -1;
+	}
+	security_deinit(hnd);
 
 	return 0;
 }
@@ -109,22 +117,40 @@ int sss_sync(void)
 FILE *sss_open(const char *filename, const char *mode)
 {
 	int ret;
-	unsigned int flen;
 
-	if (!strcmp(mode, "r") || !strcmp(mode, "rb")) {
-		ret = see_read_iotivity_storage(sss_fs.data, SEE_IOTIVITY_MAXSIZE, &flen);
-		if (ret != 0) {
-			printf("see_open error : %d\n", ret);
-			return NULL;
-		}
-		sss_p = sss_fs.data;
-		sss_fs.size = flen;
-
-		g_sss_size = flen;
-		memcpy(sss_fs_mem.data, sss_fs.data, g_sss_size);
+	char *dummy = (char *)malloc(sizeof(4));
+	if (!dummy) {
+		return NULL;
 	}
 
-	return (FILE *) sss_fs.data;
+	if (strcmp(mode, "r") && strcmp(mode, "rb")) {
+		return (FILE *)dummy;
+	}
+
+	security_handle hnd;
+	security_error res = security_init(&hnd);
+	if (res != SECURITY_OK) {
+		free(dummy);
+		return NULL;
+	}
+
+	security_data data = {sss_fs.data, IOTIVITY_MAX_BUF_SIZE};
+	res = ss_read_secure_storage(hnd, IOTIVITY_SS, 0, &data);
+	if (res != SECURITY_OK) {
+		free(dummy);
+		(void)security_deinit(hnd);
+		return NULL;
+	}
+
+	sss_p = sss_fs.data;
+	sss_fs.size = data.length;
+
+	g_sss_size = data.length;
+	memcpy(sss_fs_mem.data, sss_fs.data, g_sss_size);
+
+	(void)security_deinit(hnd);
+
+	return (FILE *)(dummy);
 }
 
 size_t sss_read(void *ptr, size_t size, size_t count, FILE *stream)
@@ -147,23 +173,28 @@ size_t sss_read(void *ptr, size_t size, size_t count, FILE *stream)
 		read_size = sss_fs.size;
 		sss_fs.size = 0;
 	}
-
 	return read_size;
 }
 
 size_t sss_write(const void *ptr, size_t size, size_t count, FILE *stream)
 {
-	int ret;
-
 	if (ptr == NULL || stream == NULL || size == 0 || count == 0) {
 		return SSS_WRITE_ERR;
 	}
 
-	ret = see_write_iotivity_storage((unsigned char *)ptr, count);
-	if (ret != 0) {
-		printf("sss_write fail : %d\n", ret);
+	security_handle hnd;
+	security_error res = security_init(&hnd);
+	if (res != SECURITY_OK) {
 		return SSS_WRITE_ERR;
 	}
+	security_data data = {ptr, count};
+	res = ss_write_secure_storage(hnd, IOTIVITY_SS, 0, &data);
+	if (res != SECURITY_OK) {
+		printf("[ERROR] %s:%d\n", __FILE__, __LINE__);
+		security_deinit(hnd);
+		return SSS_WRITE_ERR;
+	}
+	security_deinit(hnd);
 
 	g_sss_size = count;
 	memcpy(sss_fs_mem.data, ptr, g_sss_size);
@@ -176,6 +207,8 @@ int sss_close(FILE *fp)
 	if (fp == 0) {
 		return SSS_CLOSE_ERR;
 	}
+	char *dummy = (char *)fp;
+	free(dummy);
 
 	return 0;
 }

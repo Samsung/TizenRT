@@ -264,7 +264,7 @@ int bt_hf_notify_vendor_cmd(int appid, char *msg)
 	return BT_ERROR_NOT_SUPPORTED;
 }
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_set_call_status_updated_event_cb(bt_hf_call_status_updated_event_cb callback, void *user_data)
 {
 	return BT_ERROR_NOT_SUPPORTED;
@@ -301,7 +301,7 @@ int bt_hf_get_codec_id(unsigned int *codec_id)
 	return BT_ERROR_NOT_SUPPORTED;
 }
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_get_call_status_info_list(GSList **call_list)
 {
 	return BT_ERROR_NOT_SUPPORTED;
@@ -318,7 +318,7 @@ int bt_hf_is_inband_ringtone_supported(bool *supported)
 	return BT_ERROR_NOT_SUPPORTED;
 }
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_hf_free_call_status_info_list(GSList *call_list)
 {
 	return BT_ERROR_NOT_SUPPORTED;

@@ -1,17 +1,10 @@
 if NET_SECURITY_TLS
 
-config TLS_WITH_SSS
-	bool "Enable HW Accelerator(SSS)"
-	depends on S5J_SSS
+config TLS_WITH_HW_ACCEL
+	bool "Enable HW Accelerator"
+	depends on SE
 	select DEV_URANDOM
 	default n
-
-config SUPPORT_FULL_SECURITY
-	bool "Enable full security features"
-	depends on S5J_SSS && ARCH_BOARD_ARTIK05X_FAMILY
-	default n
-	---help---
-		Supports security features with secure storage.
 
 config TLS_MPI_MAX_SIZE
 	int "TLS MPI Max Size (bytes)"
@@ -21,26 +14,29 @@ config TLS_MPI_MAX_SIZE
 		You can find this value in the information for the certificate to use.
 		ex) Server public key is 2048 bit
 
-if TLS_WITH_SSS
+if TLS_WITH_HW_ACCEL
 
-menu "HW Selection"
+menu "HW Options"
 
-config HW_RNG
-	bool "HW RNG"
+config TLS_HW_RNG
+	bool "Use H/W RNG"
+	depends on HW_RNG
 	default n
 	---help---
 		Supports true random generator by hardware
 		Maximum random size is 256 bytes at one time.
 
-config HW_DH_PARAM
-	bool "HW supports DH params"
+config TLS_HW_DH_PARAM
+	bool "Use H/W supports DH params"
+	depends on HW_DH_PARAM
 	default n
 	---help---
 		Generates and caculates diffie-hellman parameter with hardware.
 		Supporting parameter size : 1024, 2048
 
-config HW_ECDH_PARAM
-	bool "HW supports ECDH params"
+config TLS_HW_ECDH_PARAM
+	bool "Use H/W supports ECDH params"
+	depends on HW_ECDH_PARAM
 	default n
 	---help---
 		Generates and caculates eliptic curve params with hardware.
@@ -48,15 +44,17 @@ config HW_ECDH_PARAM
 		 . SECP 192, 224, 256, 384, 512
 		 . Brainpool 256
 
-config HW_RSA_VERIFICATION
-	bool "HW rsa verification"
+config TLS_HW_RSA_VERIFICATION
+	bool "Use H/W rsa verification"
+	depends on HW_RSA_VERIFICATION
 	default n
 	---help---
 		Verifing a RSA signature based on hardware.
 		Supporting key size : 1024, 2048
 
-config HW_ECDSA_VERIFICATION
-	bool "HW ecdsa verification"
+config TLS_HW_ECDSA_VERIFICATION
+	bool "Use H/W ecdsa verification"
+	depends on HW_ECDSA_VERIFICATION
 	default n
 	---help---
 		Verifing a ECDSA signature based on hardware.
@@ -64,8 +62,9 @@ config HW_ECDSA_VERIFICATION
 		 . SECP 192, 224, 256, 384, 512
 		 . Brainpool 256
 
-config HW_RSA_ENC
-	bool "HW rsa encryption"
+config TLS_HW_RSA_ENC
+	bool "Use H/W rsa encryption"
+	depends on HW_RSA_ENC
 	default n
 	---help---
 		Encrypts a data based on hardware.

@@ -62,6 +62,9 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/syslog/ramlog.h>
 #include <tinyara/syslog/syslog_console.h>
+#if defined(CONFIG_BLUETOOTH) && defined(CONFIG_BLUETOOTH_NULL)
+#include <tinyara/bluetooth/bt_null.h>
+#endif
 
 #include <arch/board/board.h>
 
@@ -206,6 +209,10 @@ void up_initialize(void)
 
 #if defined(CONFIG_DEV_NULL)
 	devnull_register();			/* Standard /dev/null */
+#endif
+
+#if defined(CONFIG_BLUETOOTH) && defined(CONFIG_BLUETOOTH_NULL)
+	btnull_register();    /* bluetooth bt_null */
 #endif
 
 #ifdef CONFIG_DEV_URANDOM

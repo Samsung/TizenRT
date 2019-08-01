@@ -156,13 +156,16 @@ static const unsigned char romfs_img[] = {
 static void tc_fs_mops_mount(const char *filesystemtype)
 {
 	int ret = -1;
-	
+
 	if (strcmp(filesystemtype, "tmpfs") == 0) {
+		ret = umount(TMPFS_TEST_MOUNTPOINT);
 		ret = mount(NULL, TMPFS_TEST_MOUNTPOINT, "tmpfs", 0, NULL);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
+		ret = umount("/rom");
 		romdisk_register(0, (FAR uint8_t *)romfs_img, 32, 512);
 		ret = mount(ROMFS_MOUNT_DEV_DIR, ROMFS_TEST_MOUNTPOINT, "romfs", 1, NULL);
 	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+		ret = umount(SMARTFS_TEST_MOUNTPOINT);
 		ret = mount(SMARTFS_MOUNT_DEV_DIR, SMARTFS_TEST_MOUNTPOINT, "smartfs", 0, NULL);
 	}
 

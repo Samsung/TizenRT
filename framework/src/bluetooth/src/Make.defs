@@ -41,8 +41,8 @@ CSRCS += \
 	bluetooth-hdp.c \
 	bluetooth-map-client.c \
 	bluetooth-pan.c \
-	bluetooth-tds.c
-#	src/bluetooth-gatt.c \
+	bluetooth-tds.c \
+	bluetooth-gatt.c
 
 DEPPATH += --dep-path src/bluetooth/src
 VPATH += :src/bluetooth/src

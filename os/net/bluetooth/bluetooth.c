@@ -71,7 +71,7 @@ struct bt_ad {
 
 /* Work structures: One for high priority and one for low priority work */
 
-static struct work_s g_hip_work;
+static struct work_s g_lowp_work;
 
 static bt_ready_cb_t ready_cb;
 
@@ -348,8 +348,8 @@ static void k_work_submit(void)
 {
 	int err;
 
-	if (work_available(&g_hip_work)) {
-		err = work_queue(HPWORK, &g_hip_work, init_work, NULL, 0);
+	if (work_available(&g_lowp_work)) {
+		err = work_queue(LPWORK, &g_lowp_work, init_work, NULL, 0);
 		if (err < 0) {
 			ndbg("ERROR:  Failed to schedule HPWORK: %d\n", err);
 		}
@@ -359,10 +359,6 @@ static void k_work_submit(void)
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
-
-#ifdef CONFIG_BLUETOOTH_NULL
-	btnull_register();
-#endif
 
 	FAR const struct bt_driver_s *bt_drv = g_btdev.btdev;
 

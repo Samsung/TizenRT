@@ -1161,7 +1161,7 @@ static int free_addrinfo(struct addrinfo *ai)
 #define DHCPD_MQ_LEN 11
 #define DHCPD_MQ_MAX_LEN 20
 
-static void _dhcpd_join(void)
+static void _dhcpd_join(dhcp_evt_type_e type, void *data)
 {
 	ndbg("dhcpd joined");
 
@@ -1178,7 +1178,11 @@ static void _dhcpd_join(void)
 		return;
 	}
 
-	char *msg = "dhcpd_join";
+	char msg[DHCPD_MQ_LEN];
+	dhcp_node_s *node = (dhcp_node_s *)data;
+	msg[0] = 1;
+	memcpy(&msg[1], &node->ipaddr, 4);
+	memcpy(&msg[5], &node->macaddr, 6);
 	int mq_ret = mq_send(md, msg, DHCPD_MQ_LEN, 100);
 	if (mq_ret < 0) {
 		ndbg("send mq fail (errno %d)\n", errno);
@@ -1270,6 +1274,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 		break;
 #endif
 #if defined(CONFIG_NET_LWIP_DHCP)
+#if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
 		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->host_name);
 		if (in_arg->req_res != 0) {
@@ -1284,6 +1289,8 @@ int lwip_func_ioctl(int cmd, void *arg)
 		in_arg->req_res = 0;
 		ret = OK;
 		break;
+#endif
+#if defined(CONFIG_LWIP_DHCPS)
 	case DHCPDSTART:
 		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
 		if (in_arg->req_res != 0) {
@@ -1311,6 +1318,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 			ret = OK;
 		}
 		break;
+#endif
 #endif
 	default:
 		ndbg("Wrong request type: %d\n", in_arg->type);

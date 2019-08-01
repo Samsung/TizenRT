@@ -921,7 +921,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
 
-#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+#if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_HW_ACCEL)
 	if (is_artik) {
 		if (!things_encrypt_artik_uuid(ext_value)) {
 			THINGS_LOG_E(TAG, "Fail to encrypt artik uuid");

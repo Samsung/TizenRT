@@ -21,7 +21,6 @@
 #include <cstring>
 #include <stdio.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <debug.h>
 
 #include <media/BufferObserverInterface.h>
@@ -47,67 +46,60 @@ namespace media {
 namespace stream {
 
 StreamBuffer::StreamBuffer(size_t bufferSize, size_t threshold)
-	: mObserver(nullptr), mRingBuf(nullptr), mEOS(false), mBufferSize(bufferSize), mThreshold(threshold)
+	: mObserver(nullptr), mEOS(false), mBufferSize(bufferSize), mThreshold(threshold)
 {
+	mRingBuf.buf = nullptr;
+	mRingBuf.depth = 0;
+	mRingBuf.rd_idx = 0;
+	mRingBuf.wr_idx = 0;
 }
 
 StreamBuffer::~StreamBuffer()
 {
-	if (mRingBuf) {
-		rb_free(mRingBuf);
-		delete mRingBuf;
-		mRingBuf = nullptr;
+	if (mRingBuf.buf != nullptr) {
+		rb_free(&mRingBuf);
 	}
 }
 
 bool StreamBuffer::init(size_t size)
 {
-	assert(!mRingBuf);
-	mRingBuf = new rb_t;
+	if (mRingBuf.buf != nullptr) {
+		mdbg("mRingBuf is already initialized.");
+		return false;
+	}
 
-	assert(mRingBuf);
-	return rb_init(mRingBuf, size);
+	return rb_init(&mRingBuf, size);
 }
 
 bool StreamBuffer::reset()
 {
-	bool ret;
-
-	assert(mRingBuf);
-	ret = rb_reset(mRingBuf);
-
 	mEOS = false;
-	return ret;
+	return rb_reset(&mRingBuf);
 }
 
 size_t StreamBuffer::copy(unsigned char *buf, size_t size, size_t offset)
 {
-	assert(mRingBuf);
-	return rb_read_ext(mRingBuf, (void *)buf, size, offset);
+	return rb_read_ext(&mRingBuf, (void *)buf, size, offset);
 }
 
 size_t StreamBuffer::read(unsigned char *buf, size_t size)
 {
-	assert(mRingBuf);
-	return rb_read(mRingBuf, buf, size);
+	return rb_read(&mRingBuf, buf, size);
 }
 
 size_t StreamBuffer::write(unsigned char *buf, size_t size)
 {
-	assert(mRingBuf);
-	return rb_write(mRingBuf, buf, size);
+	return rb_write(&mRingBuf, buf, size);
 }
 
 size_t StreamBuffer::sizeOfSpace()
 {
-	assert(mRingBuf);
-	return rb_avail(mRingBuf);
+	return rb_avail(&mRingBuf);
 }
 
 size_t StreamBuffer::sizeOfData()
 {
-	assert(mRingBuf);
-	return rb_used(mRingBuf);
+	return rb_used(&mRingBuf);
 }
 
 void StreamBuffer::setEndOfStream()
@@ -149,10 +141,6 @@ void StreamBuffer::notifyObserver(State st, ...)
 
 StreamBuffer::Builder::Builder()
 	: mBufferSize(CONFIG_STREAM_BUFFER_SIZE_DEFAULT), mThreshold(CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT)
-{
-}
-
-StreamBuffer::Builder::~Builder()
 {
 }
 

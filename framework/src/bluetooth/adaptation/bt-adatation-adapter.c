@@ -18,6 +18,7 @@
 #include <tinyara/config.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-adapter.h"
+#include "bluetooth_private.h"
 
 /* Need to include BT stack's header in here */
 
@@ -99,10 +100,21 @@ int bt_adapt_set_connectable(bool is_connectable)
 	return BT_ERROR_NONE;
 }
 
-#ifdef GLIB_SUPPORT
+#ifdef GLIB_SUPPORTED
 int bt_adapt_get_bonded_device_list(GPtrArray **dev_list)
 {
 	/* To be implemented */
+	return BT_ERROR_NONE;
+}
+#else
+int bt_adapt_get_bonded_device_list(sq_queue_t *dev_list)
+{
+	/* To be implemented */
+	struct bt_device_info_t *_device_info = NULL;
+	_device_info = (struct bt_device_info_t *)malloc(sizeof(struct bt_device_info_t));
+	//_device_info->dev_info = dev_info;
+	sq_addlast((sq_entry_t *)_device_info, dev_list);
+
 	return BT_ERROR_NONE;
 }
 #endif

@@ -33,11 +33,10 @@
 #include "mbedtls/ssl_ciphersuites.h"
 
 #include "sss_storage_server.h"
+#include "sss_storage.h"
 
 #include "utils/things_malloc.h"
 #include "logging/things_logger.h"
-
-#include "mbedtls/sss_storage.h"
 
 #define SSSFILE  "/sss/00014280"
 

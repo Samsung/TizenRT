@@ -4,7 +4,7 @@
 #
 config EXAMPLES_SECURITY_SEE_TEST
 	bool "Security SEE API Test"
-	depends on TLS_WITH_SSS && SUPPORT_FULL_SECURITY
+	depends on TLS_WITH_HW_ACCEL
 	default n
 
 if EXAMPLES_SECURITY_SEE_TEST

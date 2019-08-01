@@ -36,9 +36,6 @@
 namespace media {
 class MediaRecorderImpl;
 namespace stream {
-class StreamBuffer;
-class StreamBufferReader;
-class StreamBufferWriter;
 
 /**
  * @class

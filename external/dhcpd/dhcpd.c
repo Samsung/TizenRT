@@ -1096,8 +1096,11 @@ int dhcpd_sendack(in_addr_t ipaddr)
 	/* TODO: new callback way up to application to inform a new STA has called
 	 * dhcp client
 	 */
+	dhcp_node_s node;
+	memcpy(&node.ipaddr, &netaddr, 4);
+	memcpy(node.macaddr, g_state.ds_inpacket.chaddr, 6);
 	if (g_dhcp_sta_joined) {
-		g_dhcp_sta_joined();
+		g_dhcp_sta_joined(DHCP_ACK_EVT, (void *)&node);
 	}
 	return OK;
 }
