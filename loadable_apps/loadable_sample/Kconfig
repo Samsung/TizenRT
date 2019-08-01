@@ -1,0 +1,90 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_ELF
+	bool "ELF Loader Example"
+	default n
+	select LIBC_EXECFUNCS
+	depends on ELF
+	---help---
+		Enable the ELF Loader Example
+
+if EXAMPLES_ELF
+
+menu "Enable Test Scenarios"
+config EXAMPLES_MESSAGING_TEST
+	bool "Messaging Framework Test"
+	default y
+	---help---
+		Enable the Messaging Framework Test"
+
+if EXAMPLES_MESSAGING_TEST
+config MESSAGING_TEST_REPETITION_NUM
+	int "Messaging F/W Test Repetition Number"
+	default 1
+	---help---
+		Messaging F/W Test repetition number.
+		If set to 0(zero) or negative number, test runs infinitely.
+
+endif
+
+config EXAMPLES_RECOVERY_TEST
+	bool "Binary Manager Recovery example"
+	default y
+	---help---
+		Enable the Binary Manager Recovery test
+
+if EXAMPLES_RECOVERY_TEST
+config ENABLE_RECOVERY_AGING_TEST
+	bool "Recovery Aging test"
+	default n
+	---help---
+		Enable Recovery Aging test. Another Test cannot run at the same time.
+endif
+
+config EXAMPLES_MICOM_TIMER_TEST
+	bool "Micom Timer Test"
+	default n
+	---help---
+		Enable Timer test in micom app.
+		If this test is enabled, another test will not run.
+
+if EXAMPLES_MICOM_TIMER_TEST
+config EXAMPLES_MICOM_TIMER_REPEAT
+	string "Repetition Number of Micom Timer Test"
+	default 10
+	---help---
+		Repetition Number of Micom Timer Test
+
+config EXAMPLES_MICOM_TIMER_INTERVAL
+	string "Interval for Micom Timer Test"
+	default 100
+	---help---
+		Time Interval for testing Timer.
+		Interval is based on microsecond.
+endif
+
+endmenu
+
+config EXAMPLES_ELF_FULLYLINKED
+	bool "Fully Linked ELF application support"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable Fully Linked ELF application support
+
+config MPU_TEST_KERNEL_CODE_ADDR
+	hex "Address in kernel code range"
+	default 0x00000000
+	---help---
+		Test MPU access protection to this kernel code address
+
+config MPU_TEST_APP_ADDR
+	hex "Address in differnet application range"
+	default 0x00000000
+	depends on APP_BINARY_SEPARATION
+	---help---
+		Test MPU access protection to this application address
+endif

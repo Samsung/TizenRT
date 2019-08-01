@@ -100,6 +100,13 @@ static bool is_union(const char *type)
 	return (strncmp(type, "union", 5) == 0);
 }
 
+static bool is_noreturn_func(const char *func_name)
+{
+	return ((strncmp(func_name, "_exit", 5) == 0) ||
+			(strncmp(func_name, "exit", 4) == 0) ||
+			(strncmp(func_name, "pthread_exit", 12) == 0));
+}
+
 static const char *check_funcptr(const char *type)
 {
 	const char *str = strstr(type, "(*)");
@@ -323,7 +330,12 @@ static void generate_proxy(int nparms)
 
 	/* Handle the tail end of the function. */
 
-	fprintf(stream, ");\n}\n\n");
+	if (is_noreturn_func(g_parm[NAME_INDEX])) {
+		fprintf(stream, ");%s\n}\n\n", "\n  while(1);");
+	} else {
+		fprintf(stream, ");\n}\n\n");
+	}
+
 	if (g_parm[COND_INDEX][0] != '\0')
 		fprintf(stream, "#endif /* %s */\n", g_parm[COND_INDEX]);
 
