@@ -62,9 +62,6 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
-#ifdef CONFIG_SCHED_CPULOAD
-#include <tinyara/clock.h>
-#endif
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -111,15 +108,10 @@ static void sched_releasepid(pid_t pid)
 	g_pidhash[hash_ndx].pid = INVALID_PROCESS_ID;
 
 #ifdef CONFIG_SCHED_CPULOAD
-	/* Decrement the total CPU load count held by this thread from the
-	 * total for all threads.  Then we can reset the count on this
-	 * defunct thread to zero.
+	/* Decrement the total CPU load count held by this thread from total
+	 * for all threads and reset the load count on this defunct thread
 	 */
-	int cpuload_idx;
-	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
-		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
-	}
+	sched_clear_cpuload(pid);
 #endif
 	/* Decrement the alive task count as task is exiting */
 	g_alive_taskcount--;
