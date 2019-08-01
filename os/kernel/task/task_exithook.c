@@ -410,9 +410,6 @@ static inline void task_signalparent(FAR struct tcb_s *ctcb, int status)
 
 	task_sigchild(ptcb, ctcb, status);
 
-	/* Forget who our parent was */
-
-	ctcb->group->tg_ppid = INVALID_PROCESS_ID;
 	sched_unlock();
 #endif
 }
