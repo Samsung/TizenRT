@@ -55,16 +55,9 @@
 
 #ifdef LINUX
 extern int sl_post_msg(int fd, int cmd, unsigned long arg);
+#define ioctl sl_post_msg
+#endif
 
-#define SL_CALL(hnd, code, param)										\
-	do {																\
-		int i_res = sl_post_msg(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
-		if (i_res < 0) {												\
-			SL_ERR(i_res);												\
-			return SECLINK_ERROR;										\
-		}																\
-	} while (0)
-#else
 #define SL_CALL(hnd, code, param)										\
 	do {																\
 		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
@@ -73,8 +66,24 @@ extern int sl_post_msg(int fd, int cmd, unsigned long arg);
 			return SECLINK_ERROR;										\
 		}																\
 	} while (0)
-#endif
 
+#define SL_CALL2(hnd, code, param, error)								\
+	do {																\
+		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
+		if (i_res < 0) {												\
+			SL_ERR(i_res);												\
+			error;														\
+			return SECLINK_ERROR;										\
+		}																\
+	} while (0)
+
+#define SL_CALL_NORET(hnd, code, param) \
+	do {																\
+		int i_res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param)); \
+		if (i_res < 0) {												\
+			SL_ERR(i_res);												\
+		}																\
+	} while (0)
 
 #define SL_ENTER														\
 	do {																\
@@ -93,6 +102,12 @@ extern int sl_post_msg(int fd, int cmd, unsigned long arg);
 		if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {	 \
 			return SECLINK_ERROR;							 \
 		}													 \
+	} while (0)
+
+#define SL_FREE_HANDLE(handle)					\
+	do {										\
+		SL_CLOSE(handle->fd);					\
+		free(handle);							\
 	} while (0)
 
 /*
@@ -124,7 +139,7 @@ int sl_init(sl_ctx *hnd)
 	handle->fd = fd;
 
 	struct seclink_req req = {.req_type.comm = NULL, 0};
-	SL_CALL(handle, SECLINKIOC_INIT, req);
+	SL_CALL2(handle, SECLINKIOC_INIT, req, SL_FREE_HANDLE(handle));
 	if (req.res != HAL_SUCCESS) {
 		close(fd);
 		free(handle);
@@ -147,7 +162,7 @@ int sl_deinit(sl_ctx hnd)
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 
 	struct seclink_req req = {.req_type.comm = NULL, 0};
-	SL_CALL(sl, SECLINKIOC_DEINIT, req);
+	SL_CALL_NORET(sl, SECLINKIOC_DEINIT, req);
 	if (req.res != HAL_SUCCESS) {
 		SL_LOG("fail to deinit");
 	}
