@@ -148,6 +148,13 @@
 
 /* The following are non-standard signal definitions */
 
+/* SIG_SIGBM_STATECB is used in binary Manager */
+#ifndef CONFIG_SIG_SIGBM_STATE
+#define SIGBM_STATE     15
+#else
+#define SIGBM_STATE     CONFIG_SIG_SIGBM_STATE
+#endif
+
 #ifndef CONFIG_DISABLE_PTHREAD
 #ifndef CONFIG_SIG_SIGCONDTIMEDOUT
 #define SIGCONDTIMEDOUT 16		/* Used in the implementation of pthread_cond_timedwait */
@@ -213,6 +220,13 @@
 #define SIGEL_EVENT       24			/* Eventloop signal */
 #else
 #define SIGEL_EVENT       CONFIG_SIG_SIGEL_EVENT
+#endif
+
+/* SIG_SIGEL_EVENT is used for event handling in Event Loop */
+#ifndef CONFIG_SIG_MESSAGING
+#define SIGMSG_MESSAGING    25			/* Messaging signal */
+#else
+#define SIGMSG_MESSAGING    CONFIG_SIG_MESSAGING
 #endif
 
 /* SIG_IOTBUS_INT is used for iotbus interrupt handling */

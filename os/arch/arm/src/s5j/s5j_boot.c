@@ -79,6 +79,30 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
+#if defined(CONFIG_BUILD_PROTECTED)
+const struct mpu_region_info regions_info[] = {
+	{
+		&mpu_user_intsram_wb, 0x0, 0x80000000, MPU_REG_ENTIRE_MAP,
+	},
+	{
+		&mpu_peripheral, S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE, MPU_REG_PERIPH,
+	},
+	{
+		&mpu_priv_flash, (uintptr_t)__kflash_segment_start__, (uintptr_t)__kflash_segment_size__, MPU_REG_KERN_CODE,
+	},
+	{
+		&mpu_priv_intsram, (uintptr_t)__ksram_segment_start__, (uintptr_t)__ksram_segment_size__, MPU_REG_KERN_DATA,
+	},
+	{
+		&mpu_user_flash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
+	},
+	{
+		&mpu_user_intsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_USER_DATA,
+	},
+};
+#endif
+
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -134,7 +158,13 @@ void up_copyvectorblock(void)
 #ifdef CONFIG_ARMV7M_MPU
 int s5j_mpu_initialize(void)
 {
-#ifdef CONFIG_ARCH_CHIP_S5JT200
+#if defined(CONFIG_BUILD_PROTECTED)
+	int i;
+
+	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
+		regions_info[i].call(regions_info[i].base, regions_info[i].size);
+	}
+#elif CONFIG_ARCH_CHIP_S5JT200
 	/*
 	 * Vector Table	0x02020000	0x02020FFF	4
 	 * Reserved		0x02021000	0x020217FF	2
@@ -167,8 +197,8 @@ int s5j_mpu_initialize(void)
 	 */
 	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);
 
-	mpu_control(true);
 #endif
+	mpu_control(true);
 	return 0;
 }
 #endif
@@ -190,6 +220,11 @@ void arm_boot(void)
 	 * performed after returning from tms570_board_initialize()
 	 */
 	arm_data_initialize();
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+	/* Initialize userspace .data and .bss section */
+	up_userspace();
 #endif
 
 #ifdef CONFIG_ARMV7M_MPU

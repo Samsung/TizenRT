@@ -93,6 +93,7 @@ config ARCH_BOARD_IMXRT1020_EVK
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select AUTOGEN_MEMORY_LDSCRIPT if BUILD_PROTECTED
 	---help---
 		This is the board configuration for the port of TinyARA to the NXP i.MXRT
 		evaluation kit, MIMXRT1020-EVKB.  This board features the MIMXRT1021CAF4A MCU.
@@ -103,6 +104,7 @@ config ARCH_BOARD_IMXRT1050_EVK
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select AUTOGEN_MEMORY_LDSCRIPT if BUILD_PROTECTED
 	---help---
 		This is the board configuration for the port of TinyARA to the NXP i.MXRT
 		evaluation kit, MIMXRT1050-EVKB.  This board features the MIMXRT1052DVL6A MCU.
@@ -184,7 +186,16 @@ config BOARD_ASSERT_AUTORESET
 	depends on BOARDCTL_RESET
 	---help---
 		Some cases do not need to stay assert status. This supports
-		board reset.
+		board reset. When fault manager is enabled this will reset the
+		system only when fault is in kernel context.
+
+config BOARD_ASSERT_SYSTEM_HALT
+	bool "Enable Infinite loop feature of fault manager"
+	default n
+	depends on !BOARD_ASSERT_AUTORESET && !BINMGR_RECOVERY
+	---help---
+		When this is enabled irrespective of any fault, system will
+		go in infinite loop. This can help to debug the system using Trace32.
 
 config LIB_BOARDCTL
 	bool "Enable boardctl() interface"

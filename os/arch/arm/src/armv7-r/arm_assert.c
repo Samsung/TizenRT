@@ -94,7 +94,8 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
-#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 #include <stdio.h>
 bool abort_mode = false;
 static bool recursive_abort = false;
@@ -916,9 +917,11 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (g_upassert || current_regs || (this_task())->pid == 0) {
+#endif
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -928,9 +931,11 @@ static void _up_assert(int errorcode)
 			up_mdelay(250);
 #endif
 		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	} else {
 		exit(errorcode);
 	}
+#endif
 }
 
 /****************************************************************************
@@ -943,8 +948,9 @@ static void _up_assert(int errorcode)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
+
 	board_autoled_on(LED_ASSERTION);
-#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 	/* First time, when code reaches here abort_mode will be false and
 	   for next iteration (recursive abort case), abort_mode is already
 	   set to true and thus we can assume that we are in recursive abort
@@ -962,13 +968,12 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	up_dumpstate();
 
-#ifdef CONFIG_BOARD_CRASHDUMP
+#if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
-
 	_up_assert(EXIT_FAILURE);
 }

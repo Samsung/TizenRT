@@ -72,6 +72,11 @@
 
 	.data
 	.align 3
+#ifdef CONFIG_BUILD_PROTECTED
+g_svctmp:
+	.word	0		/* Saved r9 */
+	.word	0		/* Saved r10 */
+#endif
 g_irqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
@@ -341,6 +346,10 @@ arm_vectorsvc:
 	 */
 
 #ifdef CONFIG_BUILD_PROTECTED
+	push	{lr}
+	ldr		lr, .Lsvctmp
+	stmia	lr, {r9, r10}
+
 	mrs		r10, spsr
 	and		r10, #PSR_MODE_MASK		/* User mode? */
 	cmp		r10, #PSR_MODE_USR		/* User mode? */
@@ -456,6 +465,11 @@ arm_vectorsvc:
 	/* Life is simple when everything is SVC mode */
 
 	ldmia	r0, {r0-r15}^			/* Return */
+
+#ifdef CONFIG_BUILD_PROTECTED
+.Lsvctmp:
+	.word	g_svctmp
+#endif
 
 	.size	arm_vectorsvc, . - arm_vectorsvc
 
