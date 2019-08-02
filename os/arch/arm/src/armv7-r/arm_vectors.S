@@ -72,14 +72,14 @@
 
 	.data
 	.align 3
+#ifdef CONFIG_BUILD_PROTECTED
 g_svctmp:
 	.word	0		/* Saved r9 */
 	.word	0		/* Saved r10 */
+#endif
 g_irqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
-	.word	0		/* Saved r9 */
-	.word	0		/* Saved r10 */
 g_undeftmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
@@ -93,13 +93,6 @@ g_aborttmp:
 g_fiqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
-#endif
-#ifdef CONFIG_BINMGR_RECOVERY
-	.globl	g_assertpc
-	.type	g_assertpc, object
-g_assertpc:
-	.skip	4
-	.size	g_assertpc, 4
 #endif
 
 /************************************************************************************
@@ -139,11 +132,8 @@ arm_vectorirq:
 	mrs		lr, spsr
 	str		lr, [r13, #4]			/* Save spsr_IRQ */
 
-#ifdef CONFIG_BUILD_PROTECTED
-	str		r9, [r13, #8]			/* Save R9 */
-	str		r10, [r13, #12]			/* Save R10 */
-
 	/* Then switch back to SVC mode */
+#ifdef CONFIG_BUILD_PROTECTED
 	mov		r10, lr
 	and		r10, #PSR_MODE_MASK		/* User mode? */
 	cmp		r10, #PSR_MODE_USR		/* User mode? */
@@ -151,7 +141,7 @@ arm_vectorirq:
 
 	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
 	orr		r10, r10, #(PSR_MODE_SYS | PSR_I_BIT)
-	msr		cpsr_c, r10				/* Switch to SYS mode */
+	msr		cpsr_c, r10				/* Switch to SVC mode */
 	mov		r9, r13
 	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
 	orr		r10, r10, #(PSR_MODE_SVC | PSR_I_BIT)
@@ -178,20 +168,36 @@ arm_vectorirq:
 	/* Get the values for r15(pc) and CPSR in r3 and r4 */
 
 	ldr		r0, .Lirqtmp			/* Points to temp storage */
-#ifndef CONFIG_BUILD_PROTECTED
-	ldmia	r0, {r3, r4}		/* Recover r3=lr_IRQ, r4=spsr_IRQ */
-#endif
+	ldmia	r0, {r3, r4}			/* Recover r3=lr_IRQ, r4=spsr_IRQ */
 
 #ifdef CONFIG_BUILD_PROTECTED
-	/* Recover r3=lr_IRQ, r4=spsr_IRQ, R9 and R10 */
-
-	ldmia	r0, {r3, r4, r9, r10}
-	str		r9, [r13, #(4*REG_R9)]			/* Save R9 */
-	str		r10, [r13, #(4*REG_R10)]		/* Save R10 */
-
 	/* Did we enter from user mode?  If so then we need get the values of
 	 * USER mode r13(sp) and r14(lr).
 	 */
+       mov             r6, #0
+       mov     r5, #MPU_REG_USER_CONFIG1
+3:
+       mcr     p15, 0, r5, c6, c2, 0
+       add     r1,  sp, #(4*REG_RNUM)
+       str     r5, [r1, r6]
+
+       mrc     p15, 0, r7, c6, c1, 0
+       add     r1, sp, #(4*REG_RBASE)
+       str     r7, [r1, r6]
+
+       mrc     p15, 0, r7, c6, c1, 2
+       add     r1, sp, #(4*REG_RSIZE)
+       str     r7, [r1, r6]
+
+       mrc     p15, 0, r7, c6, c1, 4
+       add     r1, sp, #(4*REG_RATTR)
+       str     r7, [r1, r6]
+
+       add             r6, #16
+       add     r5, #1
+       cmp             r6, #MPU_CONTEXT_SIZE
+       bne             3b
+
 	and		r1, r4, #PSR_MODE_MASK	/* Interrupted mode */
 	cmp		r1, #PSR_MODE_USR		/* User mode? */
 	bne		.Lirqentersvc			/* Branch if not user mode */
@@ -267,6 +273,30 @@ arm_vectorirq:
 	/* Are we leaving in user mode?  If so then we need to restore the
 	 * values of USER mode r13(sp) and r14(lr).
 	 */
+       mov             r3, #0
+       mov             r6, #0
+       mov     r5, #MPU_REG_USER_CONFIG1
+4:
+       mcr     p15, 0, r5, c6, c2, 0
+       add     r6,  r0, #(4*REG_RNUM)
+       str     r5, [r6, r3]
+
+       add     r6, r0, #(4*REG_RBASE)
+       ldr     r2, [r6, r3]
+       mcr     p15, 0, r2, c6, c1, 0
+
+       add     r6, r0, #(4*REG_RSIZE)
+       ldr     r2, [r6, r3]
+       mcr     p15, 0, r2, c6, c1, 2
+
+       add     r6, r0, #(4*REG_RATTR)
+       ldr     r2, [r6, r3]
+       mcr     p15, 0, r2, c6, c1, 4
+
+       add             r3, #16 /* offset to next mpu region context */
+       add     r5, #1
+       cmp             r3, #MPU_CONTEXT_SIZE
+       bne             4b
 	and		r2, r1, #PSR_MODE_MASK	/* Interrupted mode */
 	cmp		r2, #PSR_MODE_USR		/* User mode? */
 	bne		.Lirqleavesvc			/* Branch if not user mode */
@@ -317,11 +347,6 @@ arm_vectorsvc:
 
 #ifdef CONFIG_BUILD_PROTECTED
 	push	{lr}
-#ifdef CONFIG_BINMGR_RECOVERY
-	ldr		lr, .Lassertpc
-	ldr		r10, [sp]
-	str		r10, [lr]
-#endif
 	ldr		lr, .Lsvctmp
 	stmia	lr, {r9, r10}
 
@@ -337,22 +362,11 @@ arm_vectorsvc:
 	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
 	orr		r10, r10, #(PSR_MODE_SVC | PSR_I_BIT)
 	msr		cpsr_c, r10				/* Switch to SVC mode */
-	pop		{lr}
 	mov		r13, r9
-	b		2f
 1:
-	pop		{lr}
-2:
 #endif
 	sub		sp, sp, #XCPTCONTEXT_SIZE
 	stmia	sp, {r0-r12}			/* Save the SVC mode regs */
-
-#ifdef CONFIG_BUILD_PROTECTED
-	ldr		r3, .Lsvctmp
-	ldmia	r3, {r9, r10}				/* restore R9, R10 */
-	str		r9, [r13, #(4*REG_R9)]		/* Save R9 */
-	str		r10, [r13, #(4*REG_R10)]	/* Save R10 */
-#endif
 
 	/* Get the values for r15(pc) and CPSR in r3 and r4 */
 
@@ -452,13 +466,11 @@ arm_vectorsvc:
 
 	ldmia	r0, {r0-r15}^			/* Return */
 
+#ifdef CONFIG_BUILD_PROTECTED
 .Lsvctmp:
 	.word	g_svctmp
-
-#ifdef CONFIG_BINMGR_RECOVERY
-.Lassertpc:
-	.word	g_assertpc
 #endif
+
 	.size	arm_vectorsvc, . - arm_vectorsvc
 
 	.align	5

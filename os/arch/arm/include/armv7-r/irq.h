@@ -72,22 +72,22 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* MPU Region Definitions */
+/*
+  Region definitions for our platform
+ * TODO: This definition should be moved to platform specific header
+ *
+ */
+#define MPU_REG_ENTIRE_MAP    (0)
+#define MPU_REG_USER_RAM    (1)
+#define MPU_REG_USER_CONFIG1  (2)
+#define MPU_REG_USER_CONFIG0  (3)
+#define MPU_REG_TASK_STACK    (4)
+#define MPU_REG_KERN_FLASH    (5)
+#define MPU_REG_KERN_DATA   (6)
+#define MPU_REG_KERN_VEC    (7)
 
-#define MPU_REG0       (0)
-#define MPU_REG1       (1)
-#define MPU_REG2       (2)
-#define MPU_REG3       (3)
-#define MPU_REG4       (4)
-#define MPU_REG5       (5)
-#define MPU_REG6       (6)
-#define MPU_REG7       (7)
-#if (CONFIG_ARMV7M_MPU_NREGIONS == 12)
-#define MPU_REG8       (8)
-#define MPU_REG9       (9)
-#define MPU_REG10      (10)
-#define MPU_REG11      (11)
-#endif
+/* Total number of regions for user, including the user task region */
+#define MPU_TOTAL_USER_REG          (MPU_REG_KERN_FLASH - MPU_REG_USER_CONFIG1)
 
 /* IRQ Stack Frame Format:
  *
@@ -189,7 +189,6 @@
 #else
 #define FPU_CONTEXT_REGS  (0)
 #endif
-
 
 /* The total number of registers saved by software */
 

@@ -55,7 +55,6 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <fcntl.h>
 
 /* Output debug info if stack dump is selected -- even if debug is not
  * selected.
@@ -95,23 +94,13 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
-#ifdef CONFIG_BINMGR_RECOVERY
-#include <mqueue.h>
-#include <tinyara/binary_manager.h>
-#include "binary_manager/binary_manager.h"
-#endif
 
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 #include <stdio.h>
 bool abort_mode = false;
 static bool recursive_abort = false;
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
-extern uint32_t g_assertpc[];
-uint32_t assert_pc;
-extern mqd_t g_binmgr_mq_fd;
-#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -928,58 +917,6 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_BINMGR_RECOVERY
-	int ret;
-	binmgr_request_t request_msg;
-	uint32_t ksram_segment_end = (uint32_t)__ksram_segment_start__ + (uint32_t)__ksram_segment_size__;
-	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
-
-
-	/* Check if the PC lies within kernel context */
-
-	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
-
-		/* Reboot the system if fault is in kernel context */
-
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
-		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-#else
-		(void)irqsave();
-		for (;;) {
-#ifdef CONFIG_ARCH_LEDS
-			board_autoled_on(LED_PANIC);
-			up_mdelay(250);
-			board_autoled_off(LED_PANIC);
-			up_mdelay(250);
-#endif
-		}
-#endif
-	} else {
-
-		request_msg.cmd = BINMGR_FAULT;
-		request_msg.requester_pid = getpid();
-
-		/* Check if the fault is due to data/prefetch/undef abort or
-		   due to direct call to up_assert */
-
-		if (current_regs) {
-
-			/* if fault is due to any kind of abort,
-			   enable the interrupts to schedule to next task */
-
-			current_regs = NULL;
-			irqenable();
-		}
-
-		/* Send a message to fault manager with pid of the faulty task */
-
-		ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
-		DEBUGASSERT(ret == 0);
-
-		exit(errorcode);
-	}
-#else
-
 #ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
@@ -999,7 +936,6 @@ static void _up_assert(int errorcode)
 		exit(errorcode);
 	}
 #endif
-#endif
 }
 
 /****************************************************************************
@@ -1014,7 +950,7 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 
 	board_autoled_on(LED_ASSERTION);
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 	/* First time, when code reaches here abort_mode will be false and
 	   for next iteration (recursive abort case), abort_mode is already
 	   set to true and thus we can assume that we are in recursive abort
@@ -1025,16 +961,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	abort_mode = true;
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
-	/* Extract the PC value of instruction which caused the abort/assert */
-
-	if (current_regs) {
-		assert_pc = current_regs[REG_LR];
-	} else {
-		assert_pc = (uint32_t)g_assertpc[0];
-	}
-#endif
-
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
@@ -1042,11 +968,11 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	up_dumpstate();
 
-#if defined(CONFIG_BOARD_CRASHDUMP) && !defined(CONFIG_BINMGR_RECOVERY)
+#if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
-#if defined(CONFIG_BOARD_ASSERT_AUTORESET) && !defined(CONFIG_BINMGR_RECOVERY)
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET)
 	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 	_up_assert(EXIT_FAILURE);
