@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see the file kconfig-language.txt in the NuttX tools repository.
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
 menu "LCD Driver Support"
@@ -84,7 +84,6 @@ config LCD_DMA_SUPPORT
 		area all together, to acheive a better flushing performance. to support this
 		config, the specific lcd driver need to implement corresponding interface
 
-		
 config LCD_MAXCONTRAST
 	int "LCD maximum contrast"
 	default 63
@@ -268,3 +267,4 @@ endmenu # LCD Driver selection
 endif # LCD
 
 endmenu # LCD Driver Support
+

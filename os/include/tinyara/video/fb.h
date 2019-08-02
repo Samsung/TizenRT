@@ -18,7 +18,8 @@
 /****************************************************************************
  * include/tinyara/video/fb.h
  *
- *   Copyright (C) 2008-2011, 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2008-2011, 2013, 2016-2018 Gregory Nutt. All rights
+ *     reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,8 +51,8 @@
  *
  ****************************************************************************/
 
-#ifndef _INCLUDE_TINYARA_VIDEO_FB_H
-#define _INCLUDE_TINYARA_VIDEO_FB_H
+#ifndef __INCLUDE_TINYARA_VIDEO_FB_H
+#define __INCLUDE_TINYARA_VIDEO_FB_H
 
 /****************************************************************************
  * Included Files
@@ -80,7 +81,7 @@
 #define FB_FMT_GREY           FB_FMT_Y8 /* BPP=8 */
 #define FB_FMT_Y800           FB_FMT_Y8 /* BPP=8 */
 
-#define FB_ISMONO(f)       ((f) >= FB_FMT_Y4) && (f) <= FB_FMT_Y16)
+#define FB_ISMONO(f)          ((f) >= FB_FMT_Y4) && (f) <= FB_FMT_Y16)
 
 /* RGB video formats ********************************************************/
 
@@ -116,7 +117,7 @@
 #define FB_FMT_RGBA16         20          /* BPP=16 Raw RGB with alpha */
 #define FB_FMT_RGBA32         21          /* BPP=32 Raw RGB with alpha */
 
-/* Raw RGB with a transparency field. Layout is as for stanadard RGB at 16 and
+/* Raw RGB with a transparency field. Layout is as for standard RGB at 16 and
  * 32 bits per pixel but the msb in each pixel indicates whether the pixel is
  * transparent or not.
  */
@@ -124,26 +125,26 @@
 #define FB_FMT_RGBT16         22          /* BPP=16 */
 #define FB_FMT_RGBT32         23          /* BPP=32 */
 
-#define FB_ISRGB(f)  ((f) >= FB_FMT_RGB1) && (f) <= FB_FMT_RGBT32)
+#define FB_ISRGB(f)           ((f) >= FB_FMT_RGB1) && (f) <= FB_FMT_RGBT32)
 
 /* Packed YUV Formats *******************************************************/
 
 #define FB_FMT_AYUV           24          /* BPP=32  Combined YUV and alpha */
 #define FB_FMT_CLJR           25          /* BPP=8   4 pixels packed into a uint32_t.
-                                           *         YUV 4:1:1 with l< 8 bits
-                                           *         per YUV sample */
+											*        YUV 4:1:1 with l< 8 bits
+											*        per YUV sample */
 #define FB_FMT_CYUV           26          /* BPP=16  UYVY except that height is
-                                           *         reversed */
+											*         reversed */
 #define FB_FMT_IRAW           27          /* BPP=?   Intel uncompressed YUV */
 #define FB_FMT_IUYV           28          /* BPP=16  Interlaced UYVY (line order
-                                           *         0,2,4,.., 1,3,5...) */
+											*         0,2,4,.., 1,3,5...) */
 #define FB_FMT_IY41           29          /* BPP=12  Interlaced Y41P (line order
-                                           *         0,2,4,.., 1,3,5...) */
+											*         0,2,4,.., 1,3,5...) */
 #define FB_FMT_IYU2           30          /* BPP=24 */
 #define FB_FMT_HDYC           31          /* BPP=16  UYVY except uses the BT709
-                                           *         color space  */
+											*         color space  */
 #define FB_FMT_UYVP           32          /* BPP=24? YCbCr 4:2:2, 10-bits per
-                                           *         component in U0Y0V0Y1 order */
+											*         component in U0Y0V0Y1 order */
 #define FB_FMT_UYVY           33          /* BPP=16  YUV 4:2:2 */
 #define FB_FMT_UYNV           FB_FMT_UYVY /* BPP=16  */
 #define FB_FMT_Y422           FB_FMT_UYVY /* BPP=16  */
@@ -162,36 +163,36 @@
 #define FB_FMT_Y42T           44          /* BPP=16  UYVY LSB for transparency */
 #define FB_FMT_YUVP           45          /* BPP=24? YCbCr 4:2:2 Y0U0Y1V0 order */
 
-#define FB_ISYUVPACKED(f)  ((f) >= FB_FMT_AYUV) && (f) <= FB_FMT_YUVP)
+#define FB_ISYUVPACKED(f)     ((f) >= FB_FMT_AYUV) && (f) <= FB_FMT_YUVP)
 
 /* Packed Planar YUV Formats ************************************************/
 
 #define FB_FMT_YVU9           46          /* BPP=9   8-bit Y followed by 8-bit
-                                           *         4x4 VU */
+											*         4x4 VU */
 #define FB_FMT_YUV9           47          /* BPP=9? */
 #define FB_FMT_IF09           48          /* BPP=9.5 YVU9 + 4x4 plane of delta
-                                           *         relative to tframe. */
+											*         relative to tframe. */
 #define FB_FMT_YV16           49          /* BPP=16  8-bit Y followed by 8-bit
-                                           *         2x1 VU */
+											*         2x1 VU */
 #define FB_FMT_YV12           50          /* BPP=12  8-bit Y followed by 8-bit
-                                           *         2x2 VU */
+											*         2x2 VU */
 #define FB_FMT_I420           51          /* BPP=12  8-bit Y followed by 8-bit
-                                           *         2x2 UV */
+											*         2x2 UV */
 #define FB_FMT_IYUV           FB_FMT_I420 /* BPP=12 */
 #define FB_FMT_NV12           52          /* BPP=12  8-bit Y followed by an
-                                           *         interleaved 2x2 UV */
+											*         interleaved 2x2 UV */
 #define FB_FMT_NV21           53          /* BPP=12  NV12 with UV reversed */
 #define FB_FMT_IMC1           54          /* BPP=12  YV12 except UV planes same
-                                           *         stride as Y */
+											*         stride as Y */
 #define FB_FMT_IMC2           55          /* BPP=12  IMC1 except UV lines
-                                           *         interleaved at half stride
-                                           *         boundaries */
+											*         interleaved at half stride
+											*         boundaries */
 #define FB_FMT_IMC3           56          /* BPP=12  As IMC1 except that UV
-                                           *         swapped */
+											*         swapped */
 #define FB_FMT_IMC4           57          /* BPP=12  As IMC2  except that UV
-                                           *         swapped */
+											*         swapped */
 #define FB_FMT_CLPL           58          /* BPP=12  YV12 but including a level
-                                           *         of indirection. */
+											*         of indirection. */
 #define FB_FMT_Y41B           59          /* BPP=12?  4:1:1 planar. */
 #define FB_FMT_Y42B           60          /* BPP=16?  YUV 4:2:2 planar. */
 #define FB_FMT_CXY1           61          /* BPP=12 */
@@ -203,11 +204,11 @@
 /* Hardware cursor control **************************************************/
 
 #ifdef CONFIG_FB_HWCURSOR
-#define FB_CUR_ENABLE      0x01	/* Enable the cursor */
-#define FB_CUR_SETIMAGE    0x02	/* Set the cursor image */
-#define FB_CUR_SETPOSITION 0x04	/* Set the position of the cursor */
-#define FB_CUR_SETSIZE     0x08	/* Set the size of the cursor */
-#define FB_CUR_XOR         0x10	/* Use XOR vs COPY ROP on image */
+#define FB_CUR_ENABLE       0x01        /* Enable the cursor */
+#define FB_CUR_SETIMAGE     0x02        /* Set the cursor image */
+#define FB_CUR_SETPOSITION  0x04        /* Set the position of the cursor */
+#define FB_CUR_SETSIZE      0x08        /* Set the size of the cursor */
+#define FB_CUR_XOR          0x10        /* Use XOR vs COPY ROP on image */
 #endif
 
 /* Hardware overlay acceleration *******************************************/
@@ -261,9 +262,9 @@
 
 #ifdef CONFIG_LCD_UPDATE
 #define FBIO_UPDATE         _FBIOC(0x0007)  /* Update a rectangular region in
-                                               * the framebuffer
-                                               * Argument: read-only struct
-                                               *           nxgl_rect_s */
+											* the framebuffer
+											* Argument: read-only struct
+											*           nxgl_rect_s */
 #endif
 
 #ifdef CONFIG_FB_SYNC
@@ -278,27 +279,27 @@
 /* Argument: read-only
  *           unsigned long */
 #define FBIOSET_TRANSP      _FBIOC(0x000b)  /* Set opacity or transparency
-                                               * Argument: read-only struct
-                                               *           fb_overlayinfo_s */
+											* Argument: read-only struct
+											*           fb_overlayinfo_s */
 #define FBIOSET_CHROMAKEY   _FBIOC(0x000c)  /* Set chroma key
-                                               * Argument: read-only struct
-                                               *           fb_overlayinfo_s */
+											* Argument: read-only struct
+											*           fb_overlayinfo_s */
 #define FBIOSET_COLOR       _FBIOC(0x000d)  /* Set color
-                                               * A?gument: read-only struct
-                                               *           fb_overlayinfo_s */
+											* A?gument: read-only struct
+											*           fb_overlayinfo_s */
 #define FBIOSET_BLANK       _FBIOC(0x000e)  /* Blank or unblank
-                                               * Argument: read-only struct
-                                               *           fb_overlayinfo_s */
+											* Argument: read-only struct
+											*           fb_overlayinfo_s */
 #define FBIOSET_AREA        _FBIOC(0x000f)  /* Set active overlay area
-                                               * Argument: read-only struct
-                                               *           fb_overlayinfo_s */
+											* Argument: read-only struct
+											*           fb_overlayinfo_s */
 #ifdef CONFIG_FB_OVERLAY_BLIT
 #define FBIOSET_BLIT        _FBIOC(0x0010)  /* Blit area between overlays
-                                               * Argument: read-only struct
-                                               *           fb_overlayblit_s */
+											* Argument: read-only struct
+											*           fb_overlayblit_s */
 #define FBIOSET_BLEND       _FBIOC(0x0011)  /* Blend area between overlays
-                                               * Argument: read-only struct
-                                               *           fb_overlayblend_s */
+											* Argument: read-only struct
+											*           fb_overlayblend_s */
 #endif
 #endif /* CONFIG_FB_OVERLAY */
 
@@ -424,39 +425,39 @@ struct fb_overlayblend_s {
 
 #ifdef CONFIG_FB_CMAP
 struct fb_cmap_s {
-	uint16_t first;				/* Offset offset first color entry in tables */
-	uint16_t len;				/* Number of color entries  in tables */
+	uint16_t  first;        /* Offset offset first color entry in tables */
+	uint16_t  len;          /* Number of color entries  in tables */
 
 	/* Tables of  color component.  Any may be NULL if not used */
 
-	uint8_t *red;				/* Table of 8-bit red values */
-	uint8_t *green;				/* Table of 8-bit green values */
-	uint8_t *blue;				/* Table of 8-bit blue values */
+	uint8_t *red;           /* Table of 8-bit red values */
+	uint8_t *green;         /* Table of 8-bit green values */
+	uint8_t *blue;          /* Table of 8-bit blue values */
 #ifdef CONFIG_FB_TRANSPARENCY
-	uint8_t *transp;			/* Table of 8-bit transparency */
+	uint8_t *transp;        /* Table of 8-bit transparency */
 #endif
 };
 #endif
 
+#ifdef CONFIG_FB_HWCURSOR
+#ifdef CONFIG_FB_HWCURSORIMAGE
 /* If the video controller hardware supports a hardware cursor and
  * that hardware cursor supports user-provided images, then the
  * following structure may be used to provide the cursor image
  */
 
-#ifdef CONFIG_FB_HWCURSOR
-#ifdef CONFIG_FB_HWCURSORIMAGE
 struct fb_cursorimage_s {
-	fb_coord_t width;			/* Width of the cursor image in pixels */
-	fb_coord_t height			/* Height of the curor image in pixels */
-	const uint8_t *image;		/* Pointer to image data */
+	fb_coord_t     width;    /* Width of the cursor image in pixels */
+	fb_coord_t     height    /* Height of the cursor image in pixels */
+	const uint8_t *image;    /* Pointer to image data */
 };
 #endif
 
 /* The following structure defines the cursor position/size */
 
 struct fb_cursorpos_s {
-	fb_coord_t x;				/* X position in pixels */
-	fb_coord_t y;				/* Y position in rows */
+	fb_coord_t x;            /* X position in pixels */
+	fb_coord_t y;            /* Y position in rows */
 };
 
 /* If the hardware supports setting the cursor size, then this structure
@@ -465,59 +466,70 @@ struct fb_cursorpos_s {
 
 #ifdef CONFIG_FB_HWCURSORSIZE
 struct fb_cursorsize_s {
-	fb_coord_t h;				/* Height in rows */
-	fb_coord_t w;				/* Width in pixels */
+	fb_coord_t h;            /* Height in rows */
+	fb_coord_t w;            /* Width in pixels */
 };
 #endif
 
-/* The following is used to get the cursor attributes */
+/* The following are used to get/get the cursor attributes via IOCTL command. */
 
 struct fb_cursorattrib_s {
 #ifdef CONFIG_FB_HWCURSORIMAGE
-	uint8_t fmt;				/* Video format of cursor */
+	uint8_t fmt;                   /* Video format of cursor */
 #endif
-	struct fb_cursorpos_s pos;	/* Current cursor position */
+	struct fb_cursorpos_s  pos;    /* Current cursor position */
 #ifdef CONFIG_FB_HWCURSORSIZE
-	struct fb_cursorsize_s mxsize;	/* Maximum cursor size */
-	struct fb_cursorsize_s size;	/* Current size */
+	struct fb_cursorsize_s mxsize; /* Maximum cursor size */
+	struct fb_cursorsize_s size;   /* Current size */
 #endif
 };
 
 struct fb_setcursor_s {
-	uint8_t flags;				/* See FB_CUR_* definitions */
-	struct fb_cursorpos_s pos;	/* Cursor position */
+	uint8_t flags;                 /* See FB_CUR_* definitions */
+	struct fb_cursorpos_s pos;     /* Cursor position */
 #ifdef CONFIG_FB_HWCURSORSIZE
-	struct fb_cursorsize_s size;	/* Cursor size */
+	struct fb_cursorsize_s  size;  /* Cursor size */
 #endif
 #ifdef CONFIG_FB_HWCURSORIMAGE
-	struct fb_cursorimage_s img;	/* Cursor image */
+	struct fb_cursorimage_s img;   /* Cursor image */
 #endif
 };
 #endif
 
-/* The framebuffer "driver" under TinyAra is not a driver at all, but simply
- * a driver "object" that is accessed through the following vtable:
+/* The framebuffer "object" is accessed through within the OS via
+ * the following vtable:
  */
 
 struct fb_vtable_s {
-	/* Get information about the video controller configuration and the configuration
-	 * of each color plane.
+	/* Get information about the video controller configuration and the
+	 * configuration of each color plane.
 	 */
 
-	int (*getvideoinfo)(FAR struct fb_vtable_s *vtable, FAR struct fb_videoinfo_s *vinfo);
-	int (*getplaneinfo)(FAR struct fb_vtable_s *vtable, int planeno, FAR struct fb_planeinfo_s *pinfo);
-
-	/* The following are provided only if the video hardware supports RGB color mapping */
+	int (*getvideoinfo)(FAR struct fb_vtable_s *vtable,
+						FAR struct fb_videoinfo_s *vinfo);
+	int (*getplaneinfo)(FAR struct fb_vtable_s *vtable, int planeno,
+						FAR struct fb_planeinfo_s *pinfo);
 
 #ifdef CONFIG_FB_CMAP
-	int (*getcmap)(FAR struct fb_vtable_s *vtable, FAR struct fb_cmap_s *cmap);
-	int (*putcmap)(FAR struct fb_vtable_s *vtable, FAR const struct fb_cmap_s *cmap);
+	/* The following are provided only if the video hardware supports RGB
+	 * color mapping
+	 */
+
+	int (*getcmap)(FAR struct fb_vtable_s *vtable,
+				   FAR struct fb_cmap_s *cmap);
+	int (*putcmap)(FAR struct fb_vtable_s *vtable,
+				   FAR const struct fb_cmap_s *cmap);
 #endif
-	/* The following are provided only if the video hardware supports a hardware cursor */
 
 #ifdef CONFIG_FB_HWCURSOR
-	int (*getcursor)(FAR struct fb_vtable_s *vtable, FAR struct fb_cursorattrib_s *attrib);
-	int (*setcursor)(FAR struct fb_vtable_s *vtable, FAR struct fb_setcursor_s *settings);
+	/* The following are provided only if the video hardware supports a
+	 * hardware cursor.
+	 */
+
+	int (*getcursor)(FAR struct fb_vtable_s *vtable,
+					 FAR struct fb_cursorattrib_s *attrib);
+	int (*setcursor)(FAR struct fb_vtable_s *vtable,
+					 FAR struct fb_setcursor_s *settings);
 #endif
 
 #ifdef CONFIG_FB_SYNC
@@ -697,3 +709,4 @@ int fb_register(int display, int plane);
 #endif
 
 #endif							/* _INCLUDE_TINYARA_VIDEO_FB_H */
+

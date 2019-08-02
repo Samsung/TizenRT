@@ -131,8 +131,8 @@
 #define ILI9341_IFCTL_WEMODE    ILI9341_INTERFACE_CONTROL_WEMODE
 
 #define ILI9341_IFCTL_PARAM1    ILI9341_IFCTL_MYEOR | ILI9341_IFCTL_MXEOR | \
-                                ILI9341_IFCTL_MVEOR | ILI9341_IFCTL_BGREOR | \
-                                ILI9341_IFCTL_WEMODE
+								ILI9341_IFCTL_MVEOR | ILI9341_IFCTL_BGREOR | \
+								ILI9341_IFCTL_WEMODE
 
 /* Parameter 2: 0x0000
  *
@@ -168,7 +168,7 @@
 #define ILI9341_IFCTL_RIM       0
 
 #define ILI9341_IFCTL_PARAM3    ILI9341_IFCTL_RIM | ILI9341_IFCTL_RM | \
-                                ILI9341_IFCTL_DM | ILI9341_IFCTL_ENDIAN
+								ILI9341_IFCTL_DM | ILI9341_IFCTL_ENDIAN
 
 
 /* Memory access control (MADCTL) */
@@ -195,11 +195,11 @@
 #define ILI9341_MADCTL_LANDSCAPE_MH     0
 
 #define ILI9341_MADCTL_LANDSCAPE_PARAM1 (ILI9341_MADCTL_LANDSCAPE_MY | \
-                                        ILI9341_MADCTL_LANDSCAPE_MX | \
-                                        ILI9341_MADCTL_LANDSCAPE_MV | \
-                                        ILI9341_MADCTL_LANDSCAPE_ML | \
-                                        ILI9341_MADCTL_LANDSCAPE_BGR | \
-                                        ILI9341_MADCTL_LANDSCAPE_MH)
+										ILI9341_MADCTL_LANDSCAPE_MX | \
+										ILI9341_MADCTL_LANDSCAPE_MV | \
+										ILI9341_MADCTL_LANDSCAPE_ML | \
+										ILI9341_MADCTL_LANDSCAPE_BGR | \
+										ILI9341_MADCTL_LANDSCAPE_MH)
 
 /* Portrait:    00000000 / 00001000 / h08
  *
@@ -223,11 +223,11 @@
 #define ILI9341_MADCTL_PORTRAIT_MH      0
 
 #define ILI9341_MADCTL_PORTRAIT_PARAM1  (ILI9341_MADCTL_PORTRAIT_MY | \
-                                        ILI9341_MADCTL_PORTRAIT_MX | \
-                                        ILI9341_MADCTL_PORTRAIT_MV | \
-                                        ILI9341_MADCTL_PORTRAIT_ML | \
-                                        ILI9341_MADCTL_PORTRAIT_BGR | \
-                                        ILI9341_MADCTL_PORTRAIT_MH)
+										ILI9341_MADCTL_PORTRAIT_MX | \
+										ILI9341_MADCTL_PORTRAIT_MV | \
+										ILI9341_MADCTL_PORTRAIT_ML | \
+										ILI9341_MADCTL_PORTRAIT_BGR | \
+										ILI9341_MADCTL_PORTRAIT_MH)
 /* RLandscape:  01100000 / 01101000 / h68
  *
  * MY:          0
@@ -250,12 +250,12 @@
 #define ILI9341_MADCTL_RLANDSCAPE_MH    0
 
 #define ILI9341_MADCTL_RLANDSCAPE_PARAM1 \
-                                        (ILI9341_MADCTL_RLANDSCAPE_MY | \
-                                        ILI9341_MADCTL_RLANDSCAPE_MX | \
-                                        ILI9341_MADCTL_RLANDSCAPE_MV | \
-                                        ILI9341_MADCTL_RLANDSCAPE_ML | \
-                                        ILI9341_MADCTL_RLANDSCAPE_BGR | \
-                                        ILI9341_MADCTL_RLANDSCAPE_MH)
+										(ILI9341_MADCTL_RLANDSCAPE_MY | \
+										ILI9341_MADCTL_RLANDSCAPE_MX | \
+										ILI9341_MADCTL_RLANDSCAPE_MV | \
+										ILI9341_MADCTL_RLANDSCAPE_ML | \
+										ILI9341_MADCTL_RLANDSCAPE_BGR | \
+										ILI9341_MADCTL_RLANDSCAPE_MH)
 
 /* RPortrait:   11000000 / 11001000 / hc8
  *
@@ -280,11 +280,11 @@
 #define ILI9341_MADCTL_RPORTRAIT_MH     0
 
 #define ILI9341_MADCTL_RPORTRAIT_PARAM1 (ILI9341_MADCTL_RPORTRAIT_MY | \
-                                        ILI9341_MADCTL_RPORTRAIT_MX | \
-                                        ILI9341_MADCTL_RPORTRAIT_MV | \
-                                        ILI9341_MADCTL_RPORTRAIT_ML | \
-                                        ILI9341_MADCTL_RPORTRAIT_BGR | \
-                                        ILI9341_MADCTL_RPORTRAIT_MH)
+										ILI9341_MADCTL_RPORTRAIT_MX | \
+										ILI9341_MADCTL_RPORTRAIT_MV | \
+										ILI9341_MADCTL_RPORTRAIT_ML | \
+										ILI9341_MADCTL_RPORTRAIT_BGR | \
+										ILI9341_MADCTL_RPORTRAIT_MH)
 
 /* Pixel Format Set (COLMOD)
  *
@@ -302,7 +302,7 @@
 #define ILI9341_PIXSET_16BITDBI         ILI9341_PIXEL_FORMAT_SET_DBI(5)
 
 #define ILI9341_PIXSET_16BITMCU_PARAM1  (ILI9341_PIXSET_16BITDPI | \
-                                        ILI9341_PIXSET_16BITDBI)
+										ILI9341_PIXSET_16BITDBI)
 
 /* 18-bit MCU:  01100110 / h66 (not supported by nuttx until now)
  *
@@ -314,7 +314,7 @@
 #define ILI9341_PIXSET_18BITDBI         ILI9341_PIXEL_FORMAT_SET_DBI(6)
 
 #define ILI9341_PIXSET_18BITMCU_PARAM1  (ILI9341_PIXSET_18BITDPI | \
-                                        ILI9341_PIXSET_18BITDBI)
+										ILI9341_PIXSET_18BITDBI)
 
 
 /* General fix display resolution */
@@ -547,7 +547,7 @@ static struct ili9341_dev_s g_lcddev[CONFIG_LCD_ILI9341_NINTERFACES] = {
 		.bpp              = ILI9341_IFACE1_BPP,
 		.power            = 0,
 #ifdef CONFIG_LCD_DMA_SUPPORT
-		.putdma 		  = ili9341_putdma1,
+		.putdma           = ili9341_putdma1,
 #endif
 	},
 #endif
@@ -803,7 +803,6 @@ static int ili9341_putdma(int devno, fb_coord_t row, fb_coord_t col, fb_coord_t 
 	lcd->deselect(lcd);
 
 	return OK;
-
 }
 #endif
 /****************************************************************************

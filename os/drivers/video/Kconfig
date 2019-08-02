@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see the file kconfig-language.txt in the NuttX tools repository.
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
 config VIDEO_FB
@@ -21,3 +21,4 @@ config FB_OVERLAY_BLIT
 	bool "Framebuffer overlay blit support"
 	depends on FB_OVERLAY
 	default n
+

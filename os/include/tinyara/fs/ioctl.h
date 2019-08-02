@@ -100,7 +100,7 @@
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
 #define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
 #define _FBIOCBASE      (0x2700)	/* Frame buffer character driver ioctl commands */
-#define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
+#define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
 
@@ -267,8 +267,8 @@
 
 /* TinyAra touchscreen ioctl definitions (see include/tinyara/input/touchscreen.h) ******/
 
-#define _TSIOCVALID(c)    (_IOC_TYPE(c)==_TSIOCBASE)
-#define _TSIOC(nr)        _IOC(_TSIOCBASE,nr)
+#define _TSIOCVALID(c)    (_IOC_TYPE(c) == _TSIOCBASE)
+#define _TSIOC(nr)        _IOC(_TSIOCBASE, nr)
 
 /* TinyAra sensor ioctl definitions (see include/tinyara/sensor/xxx.h) ******************/
 
@@ -315,8 +315,8 @@
 
 /* Frame buffer character drivers *******************************************/
 
-#define _FBIOCVALID(c)    (_IOC_TYPE(c)==_FBIOCBASE)
-#define _FBIOC(nr)        _IOC(_FBIOCBASE,nr)
+#define _FBIOCVALID(c)    (_IOC_TYPE(c) == _FBIOCBASE)
+#define _FBIOC(nr)        _IOC(_FBIOCBASE, nr)
 
 /* Application Config Data driver ioctl definitions *************************/
 /* (see include/tinyara/configdata.h */
