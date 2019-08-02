@@ -80,6 +80,7 @@ include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
 include net$(DELIM)Make.defs
+include otp$(DELIM)Make.defs
 include pipes$(DELIM)Make.defs
 include power$(DELIM)Make.defs
 include seclink$(DELIM)Make.defs

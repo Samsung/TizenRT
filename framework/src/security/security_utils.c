@@ -268,7 +268,7 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 		*slot = atoi(&path[3]);
 		return 0;
 	}
-
+	
 	return -1;
 }
 
