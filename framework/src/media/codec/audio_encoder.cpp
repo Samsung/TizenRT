@@ -25,10 +25,11 @@
 #include <assert.h>
 #include <pthread.h>
 #include <debug.h>
+#include <media/MediaTypes.h>
 #include "audio_encoder.h"
 #include "../utils/internal_defs.h"
 
-namespace media {
+using namespace media;
 
 /****************************************************************************
  * Private Declarations
@@ -185,7 +186,7 @@ int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len)
 	}
 }
 
-int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, audio_type_t audio_type, void *enc_ext)
+int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type, void *enc_ext)
 {
 	assert(encoder != NULL);
 	RETURN_VAL_IF_FAIL(audio_encoder_check_audio_type(audio_type), AUDIO_ENCODER_ERROR);
@@ -255,6 +256,3 @@ int audio_encoder_finish(audio_encoder_p encoder)
 
 	return AUDIO_ENCODER_OK;
 }
-
-} // namespace media
-

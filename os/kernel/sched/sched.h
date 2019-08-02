@@ -235,14 +235,6 @@ extern struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
 
 extern const struct tasklist_s g_tasklisttable[NUM_TASK_STATES];
 
-#ifdef CONFIG_SCHED_CPULOAD
-/* This is the total number of clock tick counts.  Essentially the
- * 'denominator' for all CPU load calculations.
- */
-
-extern volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
-#endif
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -272,8 +264,11 @@ void sched_timer_reassess(void);
 #define sched_timer_reassess()
 #endif
 
-#if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_SCHED_CPULOAD_EXTCLK)
+#ifdef CONFIG_SCHED_CPULOAD
+#ifndef CONFIG_SCHED_CPULOAD_EXTCLK
 void weak_function sched_process_cpuload(void);
+#endif
+void sched_clear_cpuload(pid_t pid);
 #endif
 
 bool sched_verifytcb(FAR struct tcb_s *tcb);

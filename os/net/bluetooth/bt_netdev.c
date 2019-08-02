@@ -69,6 +69,11 @@
 #include "bt_conn.h"
 #include "bt_ioctl.h"
 
+int bt_dev_register(FAR const struct bt_driver_s *btdev)
+{
+	return bt_driver_register(btdev);
+}
+
 #if defined(CONFIG_NET_6LOWPAN) || defined(CONFIG_NET_BLUETOOTH)
 
 /****************************************************************************
@@ -1079,11 +1084,5 @@ errout:
 #endif
 }
 
-#ifdef CONFIG_BLUETOOTH_NULL
-int bt_dev_register(FAR const struct bt_driver_s *btdev)
-{
-	return bt_driver_register(btdev);
-}
-#endif
 
 #endif							/* CONFIG_NET && CONFIG_NET_skeleton */

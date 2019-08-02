@@ -341,10 +341,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
  * not multi-threading safe
  */
 
-#ifdef CONFIG_DEBUG_WIRELESS_ERROR
 FAR const char *bt_addr_str(FAR const bt_addr_t *addr);
 FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr);
-#endif
 
 /****************************************************************************
  * Name: bt_start_advertising
@@ -451,5 +449,7 @@ int hci_initialize(void);
 void ble_adv_report(FAR struct bt_buf_s *buf);
 
 int hci_le_create_conn(FAR const bt_addr_le_t *addr);
+
+void cmd_queue_init(void);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

@@ -140,13 +140,13 @@ static void heapinfo_print_values(char *buf)
 	printf(")\n");
 }
 
-static int heapinfo_read_proc(pid_t pid)
+static int heapinfo_read_proc(FAR struct dirent *entryp, FAR void *arg)
 {
 	int ret;
 	char *filepath;
 	char buf[HEAPINFO_BUFLEN];
 
-	asprintf(&filepath, "%s/%d/%s", PROCFS_MOUNT_POINT, pid, "stat");
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
 	ret = utils_readfile(filepath, buf, HEAPINFO_BUFLEN, heapinfo_print_values);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -190,8 +190,6 @@ static void heapinfo_show_group(void)
 
 static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
 {
-	int tcb_idx;
-	int heap_idx;
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
 	bool is_mounted;
@@ -221,13 +219,7 @@ static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
 #endif
 	printf("-------|-----------|-----------|----------\n");
 
-	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		for (tcb_idx = 0; tcb_idx < CONFIG_MAX_TASKS; tcb_idx++) {
-			if (heap[heap_idx].alloc_list[tcb_idx].pid != HEAPINFO_INIT_INFO) {
-				heapinfo_read_proc(heap[heap_idx].alloc_list[tcb_idx].pid);
-			}
-		}
-	}
+	utils_proc_pid_foreach(heapinfo_read_proc);
 
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {
@@ -275,8 +267,19 @@ int utils_heapinfo(int argc, char **args)
 #ifdef CONFIG_MM_KERNEL_HEAP
 	struct mm_heap_s *heap = g_kmmheap;
 #else
-	struct mm_heap_s *heap = g_mmheap;
+	void *temp_addr = malloc(1);
+	if (temp_addr == NULL) {
+		printf("Fail to run heapinfo : Out of memory.\n");
+		return -ENOMEM;
+	}
+	struct mm_heap_s *heap = mm_get_heap(temp_addr);
+	free(temp_addr);
+	if (heap == NULL) {
+		printf("Fail to run heapinfo : Operation fail.\n");
+		return -EFAULT;
+	}
 #endif
+
 	while ((option = getopt(argc, args, "iap:fge:rk")) != ERROR) {
 #if CONFIG_MM_NHEAPS > 1
 		summary_option = false;

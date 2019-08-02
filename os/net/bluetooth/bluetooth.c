@@ -47,6 +47,7 @@
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/random.h>
+#include <tinyara/bluetooth/iob/iob.h>
 
 #include "bt_buf.h"
 #include "bt_keys.h"
@@ -74,19 +75,6 @@ struct bt_ad {
 static struct work_s g_lowp_work;
 
 static bt_ready_cb_t ready_cb;
-
-FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr)
-{
-	static char bufs[2][27];
-	static uint8_t cur;
-	FAR char *str;
-
-	str = bufs[cur++];
-	cur %= ARRAY_SIZE(bufs);
-	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
-
-	return str;
-}
 
 static int set_advertise_enable(bool enable)
 {
@@ -189,10 +177,6 @@ int bt_set_name(const char *name)
 {
 	size_t len = strlen(name);
 
-#ifdef CONFIG_BLUETOOTH_NULL
-	write_local_name(name);
-#endif
-
 	if (len >= sizeof(g_btdev.name)) {
 		return -ENOMEM;
 	}
@@ -206,9 +190,9 @@ int bt_set_name(const char *name)
 	/* Update advertising name if in use */
 
 	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING_NAME)) {
-		struct bt_data data[] = { BT_DATA(BT_DATA_NAME_COMPLETE, name,
-											  strlen(name))
-		};
+		struct bt_data data[] = { BT_DATA(BT_DATA_NAME_COMPLETE,
+						name, strlen(name)) };
+
 		struct bt_ad sd = { data, ARRAY_SIZE(data) };
 
 		set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, &sd, 1);
@@ -240,7 +224,7 @@ static int read_local_name(void)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_NAME, NULL, &rsp);
 	if (err) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", err);
 		return err;
 	}
 
@@ -285,7 +269,7 @@ static void bt_dev_show_info(void)
 
 	hci_version = (char *)ver_str(g_btdev.hci_version);
 
-	nvdbg("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x", hci_version, g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
+	nvdbg("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x \n", hci_version, g_btdev.hci_version, g_btdev.hci_revision, g_btdev.manufacturer);
 }
 
 static void bt_finalize_init(void)
@@ -314,7 +298,7 @@ static int bt_conn_init(void)
 
 static int bt_init(void)
 {
-	int ret;
+	int ret = 0;
 
 	ret = hci_initialize();
 	if (ret < 0) {
@@ -329,7 +313,6 @@ static int bt_init(void)
 	}
 
 	bt_finalize_init();
-
 	return ret;
 }
 
@@ -356,6 +339,18 @@ static void k_work_submit(void)
 	}
 }
 
+static void bt_common_init(void)
+{
+	/* It initializes the buf, iob and tx queue and thread.
+	   Initialise it before the radio opens */
+
+	bt_buf_initialize();
+
+	iob_initialize();
+
+	cmd_queue_init();
+}
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
@@ -370,6 +365,8 @@ int bt_enable(bt_ready_cb_t cb)
 	if (bt_atomic_testsetbit(g_btdev.flags, BT_DEV_ENABLE)) {
 		return -EALREADY;
 	}
+
+	bt_common_init();
 
 	bt_set_name(CONFIG_BT_DEVICE_NAME);
 

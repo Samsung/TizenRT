@@ -107,7 +107,6 @@ static bt_scanning_cb_t *g_scan_dev_found_cb;
  * input that is processed on high priority work queue.
  */
 
-#ifdef MIGRATION_DONE
 static FAR struct bt_bufferlist_s g_lp_rxlist;
 static FAR struct bt_bufferlist_s g_hp_rxlist;
 
@@ -115,7 +114,6 @@ static FAR struct bt_bufferlist_s g_hp_rxlist;
 
 static struct work_s g_lp_work;
 static struct work_s g_hp_work;
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -1066,9 +1064,7 @@ int hci_initialize(void)
 	int ret;
 
 	/* Send HCI_RESET */
-
 	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
-
 	/* Read Local Supported Features */
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
@@ -1232,7 +1228,7 @@ int hci_initialize(void)
 
 /* threads, fifos and semaphores initialization */
 
-static void cmd_queue_init(void)
+void cmd_queue_init(void)
 {
 	pid_t pid;
 	int ret;
@@ -1381,7 +1377,6 @@ void bt_driver_unregister(FAR const struct bt_driver_s *btdev)
 
 void bt_hci_receive(FAR struct bt_buf_s *buf)
 {
-#ifdef MIGRATION_DONE
 	FAR struct bt_hci_evt_hdr_s *hdr;
 	int ret;
 
@@ -1437,9 +1432,6 @@ void bt_hci_receive(FAR struct bt_buf_s *buf)
 			ndbg("ERROR:  Failed to schedule LPWORK: %d\n", ret);
 		}
 	}
-#else
-	return;
-#endif
 }
 
 /****************************************************************************
@@ -1868,7 +1860,6 @@ void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb)
 	g_callback_list = cb;
 }
 
-#ifdef CONFIG_DEBUG_WIRELESS_ERROR
 FAR const char *bt_addr_str(FAR const bt_addr_t *addr)
 {
 	static char bufs[2][18];
@@ -1894,4 +1885,3 @@ FAR const char *bt_addr_le_str(FAR const bt_addr_le_t *addr)
 
 	return str;
 }
-#endif							/* CONFIG_DEBUG_WIRELESS_ERROR */

@@ -745,6 +745,7 @@ static CAResult_t CATCPCreateSocket(int family, CATCPSessionInfo_t *svritem)
     if (connect(fd, (struct sockaddr *)&sa, socklen) < 0)
     {
         OIC_LOG_V(ERROR, TAG, "failed to connect socket, %s", strerror(errno));
+        close(fd);
         CALogSendStateInfo(svritem->sep.endpoint.adapter, svritem->sep.endpoint.addr,
                            svritem->sep.endpoint.port, 0, false, strerror(errno));
         return CA_SOCKET_OPERATION_FAILED;
