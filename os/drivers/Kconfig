@@ -498,6 +498,23 @@ menuconfig DRIVERS_WIRELESS
 
 source drivers/wireless/Kconfig
 
+config OTP
+	bool "OTP Driver Support"
+	default n
+	depends on NFILE_DESCRIPTORS != 0
+	---help---
+		This selection enables building of the "upper-half" OTP
+		driver. See include/tinyara/otp.h for further OTP driver
+		information.
+
+if OTP
+config OTP_NULL
+	bool "OTP Null device"
+	default n
+	---help---
+		Virtual OTP device
+endif
+
 menuconfig LWNL80211
 	bool "Enable light-weight netlink for 80211"
 	default n
