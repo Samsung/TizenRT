@@ -585,6 +585,45 @@ config DEBUG_I2S_INFO
 
 endif #DEBUG_I2S
 
+config DEBUG_LCD
+	bool "LCD driver Debug Feature"
+	default n
+	depends on LCD
+	---help---
+		Enable lcd driver debug feature.
+
+if DEBUG_LCD
+
+config DEBUG_LCD_ERROR
+	bool "Enable LCD Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		LCD Error Debug Output.
+
+config DEBUG_LCD_INFO
+	bool "Enable LCD Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		LCD Informational Debug Output.
+
+config DEBUG_GRAPHICS_ERROR
+	bool "Enable Graphics Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Graphics Error Debug Output.
+
+config DEBUG_GRAPHICS_INFO
+	bool "Enable Graphics Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Graphics Informational Debug Output.
+
+endif #DEBUG_LCD
+
 config DEBUG_PWM
 	bool "PWM Debug Feature"
 	default n

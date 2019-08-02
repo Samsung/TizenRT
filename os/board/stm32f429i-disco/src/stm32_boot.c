@@ -138,7 +138,7 @@ void stm32_boardinitialize(void)
 void board_initialize(void)
 {
 #ifdef CONFIG_STM32_LTDC
-	up_fbinitialize();
+	up_fbinitialize(0);
 #endif
 }
 #endif
