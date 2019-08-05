@@ -864,13 +864,12 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_FAIL;
 	}
 	WIFIMGR_SET_SSID(config->ssid);
-	/*
 	wifi_manager_result_e wret = _wifimgr_save_connected_config(config);
 	if (wret != WIFI_MANAGER_SUCCESS) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 		return wret;
 	}
-	*/
+
 	return WIFI_MANAGER_SUCCESS;
 }
 
