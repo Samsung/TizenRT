@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config VIDEO_FB
+	bool "Framebuffer character driver"
+	default n
+
+config FB_SYNC
+	bool "Hardware signals vertical sync"
+	depends on VIDEO_FB
+	default n
+
+config FB_OVERLAY
+	bool "Framebuffer overlay support"
+	depends on VIDEO_FB
+	default n
+
+config FB_OVERLAY_BLIT
+	bool "Framebuffer overlay blit support"
+	depends on FB_OVERLAY
+	default n
+

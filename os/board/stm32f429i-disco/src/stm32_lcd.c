@@ -519,12 +519,15 @@ int up_lcdinitialize(void)
  * Description:
  *   The generic method to initialize the framebuffer device
  *
+ * Paramater:
+ *   display - Not used
+ *
  * Return:
  *   OK - On succes
  *
  ******************************************************************************/
 
-int up_fbinitialize(void)
+int up_fbinitialize(int display)
 {
 #ifdef CONFIG_STM32F429I_DISCO_ILI9341_FBIFACE
 	int ret;
@@ -569,6 +572,7 @@ int up_fbinitialize(void)
  *   The generic method to get the videoplane.
  *
  * Paramater:
+ *   display - Not used
  *   vplane - Number othe video plane
  *
  * Return:
@@ -576,20 +580,23 @@ int up_fbinitialize(void)
  *
  ******************************************************************************/
 
-FAR struct fb_vtable_s *up_fbgetvplane(int vplane)
+FAR struct fb_vtable_s *up_fbgetvplane(int display, int vplane)
 {
 	return stm32_ltdcgetvplane(vplane);
 }
 
 /******************************************************************************
- * Name: up_uninitialize
+ * Name: up_fbuninitialize
  *
  * Description:
  *   The generic method to uninitialize the framebuffer device
  *
+ * Paramater:
+ *   display - Not used
+ *
  ******************************************************************************/
 
-void fb_uninitialize(void)
+void up_fbuninitialize(int display)
 {
 	stm32_ltdcuninitialize();
 }

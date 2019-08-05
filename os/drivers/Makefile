@@ -78,6 +78,7 @@ include gpio$(DELIM)Make.defs
 include heapinfo$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
+include lcd$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
 include net$(DELIM)Make.defs
 include otp$(DELIM)Make.defs
@@ -93,6 +94,7 @@ include testcase$(DELIM)Make.defs
 include ttrace$(DELIM)Make.defs
 include usbdev$(DELIM)Make.defs
 include usbhost$(DELIM)Make.defs
+include video$(DELIM)Make.defs
 include wireless$(DELIM)Make.defs
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
