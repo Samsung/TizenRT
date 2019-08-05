@@ -66,6 +66,10 @@ ifeq ($(CONFIG_SPIRAM_SUPPORT),y)
 CSRCS += spiram_psram.c spiram.c heap_caps.c
 endif
 
+ifeq ($(CONFIG_LCD),y)
+CSRCS += esp32_lcd.c
+endif
+
 SCRIPTIN = $(SCRIPTDIR)$(DELIM)esp32.template
 SCRIPTOUT = $(SCRIPTDIR)$(DELIM)esp32_out.ld
 

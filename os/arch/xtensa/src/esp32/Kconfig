@@ -11,6 +11,10 @@ config ESP32_UART
 	bool
 	default n
 
+config ESP32_SPI
+	bool
+	default n
+
 config ESP32_BT
 	bool "Bluetooth"
 	default n
@@ -118,8 +122,16 @@ config ESP32_SPI1
 config ESP32_SPI2
 	bool "SPI 2"
 	default n
+	select ESP32_SPI
 	---help---
-		No yet implemented
+		Enable HSPI port setting
+
+config ESP32_SPI3
+	bool "SPI 3"
+	default n
+	select ESP32_SPI
+	---help---
+		Enable VSPI port setting
 
 config XTENSA_TIMER1
 	bool "Xtensa Timer 1"
@@ -406,4 +418,104 @@ endmenu # I2C configuration
 
 source arch/xtensa/src/esp32/spi_flash/Kconfig
 
+menu "SPI configuration"
+	depends on ESP32_SPI
+
+config ESP32_SPI_CS
+	int "SPI CS channel"
+	default 0
+	range 0 2
+	---help---
+		use SPI_SELECT to select this CS channel
+
+if ESP32_SPI2
+
+config GPIO_SPI2_CS0_PIN
+	int "HSPI CS0 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 1 && ESP32_SPI_CS != 2
+
+config GPIO_SPI2_CS1_PIN
+	int "HSPI CS1 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 2
+
+config GPIO_SPI2_CS2_PIN
+	int "HSPI CS2 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 1
+
+config GPIO_SPI2_CLK_PIN
+	int "HSPI CLK Pin"
+	default 19
+	range 0 39
+
+config GPIO_SPI2_MISO_PIN
+	int "HSPI MISO Pin"
+	default 25
+	range 0 39
+
+config GPIO_SPI2_MOSI_PIN
+	int "HSPI MOSI Pin"
+	default 23
+	range 0 39
+
+config SPI2_DMA_CHANNEL
+	int "HSPI DMA Channel, 0 is disable"
+	default 1
+	range 0 2
+
+endif # ESP32_SPI2
+
+if ESP32_SPI3
+
+config GPIO_SPI3_CS0_PIN
+	int "VSPI CS0 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 1 && ESP32_SPI_CS != 2
+
+config GPIO_SPI3_CS1_PIN
+	int "VSPI CS1 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 2
+
+config GPIO_SPI3_CS2_PIN
+	int "VSPI CS2 Pin"
+	default 22
+	range 0 39
+	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 1
+
+config GPIO_SPI3_CLK_PIN
+	int "VSPI CLK Pin"
+	default 19
+	range 0 39
+
+config GPIO_SPI3_MISO_PIN
+	int "VSPI MISO Pin"
+	default 25
+	range 0 39
+
+config GPIO_SPI3_MOSI_PIN
+	int "VSPI MOSI Pin"
+	default 23
+	range 0 39
+
+config SPI3_DMA_CHANNEL
+	int "VSPI DMA Channel, 0 is disable"
+	default 0
+	range 0 2
+
+endif # ESP32_SPI3
+
+config SPI_DMA_MAX_DATALEN
+	int "SPI DMA data length"
+	default 4080
+	range 32 4080
+
+endmenu # SPI configuration
 endif # ARCH_CHIP_ESP32
