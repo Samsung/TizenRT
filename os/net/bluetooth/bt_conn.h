@@ -77,9 +77,26 @@ enum bt_conn_flags_e {
 	BT_CONN_AUTO_CONNECT,
 };
 
+struct bt_conn_le_s {
+	bt_addr_le_t            init_addr;
+	bt_addr_le_t            resp_addr;
+
+	uint16_t                interval;
+	uint16_t                interval_min;
+	uint16_t                interval_max;
+
+	uint16_t                latency;
+	uint16_t                timeout;
+	uint16_t                pending_latency;
+	uint16_t                pending_timeout;
+
+	uint8_t                 features[8];
+};
+
 struct bt_conn_s {
 	uint16_t handle;
-	uint8_t role;
+	uint8_t     type;
+	uint8_t  role;
 	bt_atomic_t flags[1];
 
 	bt_addr_le_t src;
@@ -105,6 +122,15 @@ struct bt_conn_s {
 	uint8_t le_conn_interval;
 	bt_atomic_t ref;
 	enum bt_conn_state_e state;
+
+	struct bt_conn_le_s       le;
+
+	/* Which local identity address this connection uses */
+	uint8_t                 id;
+
+	bt_security_t           sec_level;
+	bt_security_t           required_sec_level;
+
 };
 
 /****************************************************************************
@@ -405,5 +431,19 @@ int bt_conn_le_start_encryption(FAR struct bt_conn_s *conn, uint64_t rand, uint1
  ****************************************************************************/
 
 int bt_conn_le_conn_update(FAR struct bt_conn_s *conn, uint16_t min, uint16_t max, uint16_t latency, uint16_t timeout);
+
+int bt_conn_addr_le_cmp(const struct bt_conn_s *conn, const bt_addr_le_t *peer);
+
+struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer, const enum bt_conn_state_e state);
+
+struct bt_conn_s *bt_conn_lookup_addr_le_id(uint8_t id, const bt_addr_le_t *peer);
+
+void bt_conn_set_param_le(struct bt_conn_s *conn, const struct bt_le_conn_param *param);
+
+struct bt_conn_s *bt_conn_add_le(const bt_addr_le_t *peer);
+
+bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
+
+struct bt_conn_s * bt_conn_relref(FAR struct bt_conn_s *conn);
 
 #endif							/* __NET_BLUETOOTH_BT_CONN_H */

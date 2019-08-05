@@ -65,6 +65,12 @@
 #include "bt_keys.h"
 #include "bt_smp.h"
 
+/*! @brief Computes the number of elements in an array. */
+#if !defined(ARRAY_SIZE)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#endif
+
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -458,6 +464,51 @@ FAR struct bt_conn_s *bt_conn_add(FAR const bt_addr_le_t *peer, uint8_t role)
 	return conn;
 }
 
+static struct bt_conn_s *conn_new(void)
+{
+	FAR struct bt_conn_s *conn = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(g_conns); i++) {
+		if (!bt_atomic_get(&g_conns[i].ref)) {
+			conn = &g_conns[i];
+			break;
+		}
+	}
+
+	if (!conn) {
+		return NULL;
+	}
+
+	(void)memset(conn, 0, sizeof(*conn));
+
+	bt_atomic_set(&conn->ref, 1);
+
+	return conn;
+}
+
+
+struct bt_conn_s *bt_conn_add_le(const bt_addr_le_t *peer)
+{
+	FAR struct bt_conn_s *conn = conn_new();
+
+	if (!conn) {
+		return NULL;
+	}
+
+	bt_addr_le_copy(&conn->dst, peer);
+
+	/* if CONFIG_BT_SMP, then below two sec parameter required */
+	conn->sec_level = BT_SECURITY_LOW;
+	conn->required_sec_level = BT_SECURITY_LOW;
+
+	conn->type = BT_CONN_TYPE_LE;
+	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
+	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
+
+	return conn;
+}
+
 /****************************************************************************
  * Name: bt_conn_set_state
  *
@@ -626,6 +677,30 @@ FAR struct bt_conn_s *bt_conn_lookup_addr_le_internal(FAR const bt_addr_le_t *pe
 	return NULL;
 }
 
+struct bt_conn_s *bt_conn_lookup_addr_le_id(uint8_t id, const bt_addr_le_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(g_conns); i++) {
+		if (!bt_atomic_get(&g_conns[i].ref)) {
+			continue;
+		}
+
+		if (g_conns[i].type != BT_CONN_TYPE_LE) {
+			continue;
+		}
+
+		if (g_conns[i].id == id &&
+				!bt_conn_addr_le_cmp(&g_conns[i], peer)) {
+
+			return bt_conn_addref(&g_conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
+
 /****************************************************************************
  * Name: bt_conn_lookup_state
  *
@@ -665,6 +740,48 @@ FAR struct bt_conn_s *bt_conn_lookup_state(FAR const bt_addr_le_t *peer, enum bt
 
 	return NULL;
 }
+
+int bt_conn_addr_le_cmp(const struct bt_conn_s *conn, const bt_addr_le_t *peer)
+{
+	/* Check against conn dst address as it may be the identity address */
+	if (!bt_addr_le_cmp(peer, &conn->dst)) {
+		return 0;
+	}
+
+	/* Check against initial connection address */
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		return bt_addr_le_cmp(peer, &conn->le.resp_addr);
+	} 
+
+	return bt_addr_le_cmp(peer, &conn->le.init_addr);
+}
+
+struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
+		const enum bt_conn_state_e state)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_BLUETOOTH_MAX_CONN; i++) {
+		if (!bt_atomic_get(&g_conns[i].ref)) {
+			continue;
+		}
+
+		if (g_conns[i].type != BT_CONN_TYPE_LE) {
+			continue;
+		}
+
+		if (peer && bt_conn_addr_le_cmp(&g_conns[i], peer)) {
+			continue;
+		}
+
+		if (g_conns[i].state == state) {
+			return bt_conn_addref(&g_conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
 
 /****************************************************************************
  * Name: bt_conn_addref
@@ -716,6 +833,15 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
 	}
 
 	bt_addr_le_copy(&conn->dst, BT_ADDR_LE_ANY);
+}
+
+struct bt_conn_s * bt_conn_relref(FAR struct bt_conn_s *conn)
+{
+	bt_atomic_decr(&conn->ref);
+
+	nvdbg("handle %u ref %u\n", conn->handle, bt_atomic_get(&conn->ref));
+
+	return conn;
 }
 
 /****************************************************************************
@@ -982,3 +1108,34 @@ int bt_conn_le_conn_update(FAR struct bt_conn_s *conn, uint16_t min, uint16_t ma
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
+
+void bt_conn_set_param_le(struct bt_conn_s *conn,
+		const struct bt_le_conn_param *param)
+{
+	conn->le.interval_max = param->interval_max;
+	conn->le.latency = param->latency;
+	conn->le.timeout = param->timeout;
+}
+
+bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
+{
+	/* All limits according to BT Core spec 5.0 [Vol 2, Part E, 7.8.12] */
+
+	if (param->interval_min > param->interval_max ||
+			param->interval_min < 6 || param->interval_max > 3200) {
+		return false;
+	}
+
+	if (param->latency > 499) {
+		return false;
+	}
+
+	if (param->timeout < 10 || param->timeout > 3200 ||
+			((param->timeout * 4U) <=
+			 ((1 + param->latency) * param->interval_max))) {
+		return false;
+	}
+
+	return true;
+}
+
