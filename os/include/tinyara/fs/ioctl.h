@@ -123,7 +123,9 @@
 
 /* Terminal I/O IOCTL definitions are retained in tioctl.h */
 
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/serial/tioctl.h>
+#endif
 
 /* Watchdog driver ioctl commands *******************************************/
 

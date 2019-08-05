@@ -68,14 +68,25 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
 #include <tinyara/logm.h>
+#endif
 
 #include <syslog.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#ifdef NXFUSE_HOST_BUILD
+#define FAR
+#define DEBUGASSERT(x)
+#define ASSERT(x) DEBUGASSERT(x)
+#define OK    0
+#define ERROR 1
+
+int get_errno(void);
+#endif
 
 /* Debug macros to runtime filter the debug messages sent to the console.  In
  * general, there are four forms of the debug macros:
