@@ -92,8 +92,10 @@
 
 int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 {
+	int ret = OK;
 	FAR struct mqueue_inode_s *msgq;
 	FAR struct inode *inode;
+	mqd_t mqdes_ptr;
 
 	DEBUGASSERT(mqdes != NULL && group != NULL);
 
@@ -102,27 +104,42 @@ int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 	if (mqdes) {
 		sched_lock();
 
-		/* Find the message queue associated with the message descriptor */
+		/* Check that mqdes is in one's group */
+		mqdes_ptr = (mqd_t)sq_peek(&group->tg_msgdesq);
+		while (mqdes_ptr) {
+			if (mqdes_ptr == mqdes) {
+				break;
+			}
+			mqdes_ptr = (mqd_t)sq_next(mqdes_ptr);
+		}
 
-		msgq = mqdes->msgq;
-		DEBUGASSERT(msgq && msgq->inode);
+		/* If there is no mqdes in one's group, skip to desclose and inode release. */
+		if (mqdes_ptr != NULL) {
 
-		/* Close/free the message descriptor */
+			/* Find the message queue associated with the message descriptor */
 
-		mq_desclose_group(mqdes, group);
+			msgq = mqdes->msgq;
+			DEBUGASSERT(msgq && msgq->inode);
 
-		/* Get the inode from the message queue structure */
+			/* Close/free the message descriptor */
 
-		inode = msgq->inode;
-		DEBUGASSERT(inode->u.i_mqueue == msgq);
+			mq_desclose_group(mqdes, group);
 
-		/* Decrement the reference count on the inode, possibly freeing it */
+			/* Get the inode from the message queue structure */
 
-		mq_inode_release(inode);
+			inode = msgq->inode;
+			DEBUGASSERT(inode->u.i_mqueue == msgq);
+
+			/* Decrement the reference count on the inode, possibly freeing it */
+
+			mq_inode_release(inode);
+		} else {
+			ret = ERROR;
+		}
 		sched_unlock();
 	}
 
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
