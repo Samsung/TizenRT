@@ -442,8 +442,6 @@ void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
 int bt_addr_le_create_static(bt_addr_le_t *addr);
 
-int bt_ble_scan_update(bool fast_scan);
-
 int hci_initialize(void);
 
 void ble_adv_report(FAR struct bt_buf_s *buf);
@@ -451,5 +449,7 @@ void ble_adv_report(FAR struct bt_buf_s *buf);
 int hci_le_create_conn(FAR const bt_addr_le_t *addr);
 
 void cmd_queue_init(void);
+
+int bt_le_scan_update_internal(bool fast_scan);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

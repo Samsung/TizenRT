@@ -68,6 +68,8 @@ struct bt_ad {
 	size_t len;
 };
 
+static int set_le_scan_enable(uint8_t enable);
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* Work structures: One for high priority and one for low priority work */
@@ -275,11 +277,9 @@ static void bt_dev_show_info(void)
 static void bt_finalize_init(void)
 {
 	bt_atomic_setbit(g_btdev.flags, BT_DEV_READY);
-#if 0
-	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		bt_ble_scan_update(false);
-	}
-#endif
+
+	bt_le_scan_update_internal(false);
+
 	bt_dev_show_info();
 }
 
@@ -975,7 +975,7 @@ int bt_le_scan_stop(void)
 	}
 
 	scan_dev_found_cb = NULL;
-	return bt_ble_scan_update(false);
+	return bt_le_scan_update_internal(false);
 }
 
 int bt_le_set_chan_map(uint8_t chan_map[5])
@@ -1042,20 +1042,28 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info, v
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
-	// TODO: need to implement
-	return NULL;
+	struct bt_conn_s *conns;
+
+	conns = bt_conn_addref((struct bt_conn_s*)conn);
+
+	return (struct bt_conn*)conns;
 }
 
 void bt_conn_unref(struct bt_conn *conn)
 {
-	// TODO: need to implement
+	bt_conn_relref((struct bt_conn_s *)conn);
+
 	return;
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 {
-	// TODO: need to implement
-	return NULL;
+	struct bt_conn_s * conns;
+
+	conns = bt_conn_lookup_addr_le_id(id, peer);
+
+	return (struct bt_conn *)conns;
+
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
@@ -1088,10 +1096,57 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	return 0;
 }
 
+
+
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer, const struct bt_le_conn_param *param)
 {
-	// TODO: need to implement
-	return NULL;
+	struct bt_conn_s *conn;
+
+	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+		return NULL;
+	}
+
+	if (!bt_le_conn_params_valid(param)) {
+		return NULL;
+	}
+
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return NULL;
+	}
+
+	conn = bt_conn_lookup_addr_le_id(BT_ID_DEFAULT, peer);
+	if (conn) {
+		switch (conn->state) {
+		case BT_CONN_CONNECT_SCAN:
+			bt_conn_set_param_le(conn, param);
+			return (struct bt_conn *)conn;
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return (struct bt_conn *)conn;
+		default:
+			bt_conn_relref(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add_le(peer);
+	if (!conn) {
+		return NULL;
+	}
+
+	/* Only default identity supported for now */
+	conn->id = BT_ID_DEFAULT;
+
+	/* Set initial address - will be updated later if necessary. */
+	bt_addr_le_copy(&conn->le.resp_addr, peer);
+
+	bt_conn_set_param_le(conn, param);
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+
+	bt_le_scan_update_internal(true);
+
+	return (struct bt_conn *)conn;
 }
 
 int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param *param)
@@ -1325,8 +1380,11 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window)
 	return 0;
 }
 
-int bt_ble_scan_update(bool fast_scan)
+int bt_le_scan_update_internal(bool fast_scan)
 {
+	uint16_t interval, window;
+	FAR struct bt_conn_s *conn = NULL;
+
 	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return 0;
 	}
@@ -1339,38 +1397,29 @@ int bt_ble_scan_update(bool fast_scan)
 		}
 	}
 
-#if 0
-	if (IS_ENABLED(CONFIG_BT_CENTRAL))
-#endif
-	{
-		uint16_t interval, window;
-		FAR struct bt_conn_s *conn = NULL;
-		/* don't restart scan if we have pending connection */
-		conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT);
-		if (conn) {
-			bt_conn_release(conn);
-			return 0;
-		}
-
-		conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT_SCAN);
-		if (!conn) {
-			return 0;
-		}
-
-		bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+	/* don't restart scan if we have pending connection */
+	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT);
+	if (conn) {
 		bt_conn_release(conn);
-		if (fast_scan) {
-			interval = BT_GAP_SCAN_FAST_INTERVAL;
-			window = BT_GAP_SCAN_FAST_WINDOW;
-		} else {
-			interval = CONFIG_BT_BACKGROUND_SCAN_INTERVAL;
-			window = CONFIG_BT_BACKGROUND_SCAN_WINDOW;
-		}
-
-		return start_le_scan(BT_LE_SCAN_PASSIVE, interval, window);
+		return 0;
 	}
 
-	return 0;
+	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT_SCAN);
+	if (!conn) {
+		return 0;
+	}
+
+	bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
+	bt_conn_release(conn);
+	if (fast_scan) {
+		interval = BT_GAP_SCAN_FAST_INTERVAL;
+		window = BT_GAP_SCAN_FAST_WINDOW;
+	} else {
+		interval = CONFIG_BT_BACKGROUND_SCAN_INTERVAL;
+		window = CONFIG_BT_BACKGROUND_SCAN_WINDOW;
+	}
+
+	return start_le_scan(BT_LE_SCAN_PASSIVE, interval, window);
 }
 
 static void ble_check_pending_conn(FAR const bt_addr_le_t *addr, uint8_t evtype, FAR struct bt_keys_s *keys)
@@ -1387,9 +1436,9 @@ static void ble_check_pending_conn(FAR const bt_addr_le_t *addr, uint8_t evtype,
 	}
 
 	if (keys) {
-		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT_SCAN);
+		conn = bt_conn_lookup_state_le(&keys->addr, BT_CONN_CONNECT_SCAN);
 	} else {
-		conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+		conn = bt_conn_lookup_state_le(addr, BT_CONN_CONNECT_SCAN);
 	}
 
 	if (!conn) {
@@ -1410,7 +1459,7 @@ static void ble_check_pending_conn(FAR const bt_addr_le_t *addr, uint8_t evtype,
 failed:
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	bt_conn_release(conn);
-	bt_ble_scan_update(false);
+	bt_le_scan_update_internal(false);
 }
 
 void ble_adv_report(FAR struct bt_buf_s *buf)
