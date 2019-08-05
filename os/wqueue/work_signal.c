@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_lock.c
+ * wqueue/work_signal.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,98 +56,87 @@
 
 #include <tinyara/config.h>
 
-#include <pthread.h>
-#include <semaphore.h>
-#include <assert.h>
+#include <signal.h>
 #include <errno.h>
 
-#include "wqueue/wqueue.h"
+#include <tinyara/wqueue.h>
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#include "wqueue.h"
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 /****************************************************************************
- * Name: work_lock
+ * Name: work_signal
  *
  * Description:
- *   Lock the user-mode work queue.
+ *   Signal the worker thread to process the work queue now.  This function
+ *   is used internally by the work logic but could also be used by the
+ *   user to force an immediate re-assessment of pending work.
  *
  * Input parameters:
- *   None
+ *   qid    - The work queue ID
  *
  * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -EINTR - Wait was interrupted by a signal
+ *   Zero on success, a negated errno on failure
  *
  ****************************************************************************/
 
-int work_lock(void)
+int work_signal(int qid)
 {
+	pid_t pid;
 	int ret;
+	/* Get the process ID of the worker thread */
 
-#ifdef CONFIG_BUILD_PROTECTED
-	ret = sem_wait(&g_usrsem);
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+	if (qid == USRWORK) {
+		pid = g_usrwork.worker[0].pid;
+	} else
+#endif
+#ifdef CONFIG_SCHED_HPWORK
+	if (qid == HPWORK) {
+		pid = g_hpwork.worker[0].pid;
+	} else
+#endif
+#ifdef CONFIG_SCHED_LPWORK
+	if (qid == LPWORK) {
+		int wndx;
+		int i;
+
+		/* Find an IDLE worker thread */
+
+		for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
+			/* Is this worker thread busy? */
+
+			if (!g_lpwork.worker[i].busy) {
+				/* No.. select this thread */
+
+				wndx = i;
+				break;
+			}
+		}
+
+		/* Use the process ID of the IDLE worker thread (or the ID of worker
+			* thread 0 if all of the worker threads are busy).
+			*/
+
+		pid = g_lpwork.worker[wndx].pid;
+	} else
+#endif
+	{
+		return -EINVAL;
+	}
+
+	/* Signal the worker thread */
+	ret = kill(pid, SIGWORK);
 	if (ret < 0) {
-		DEBUGASSERT(errno == EINTR);
-		return -EINTR;
+		int errcode = errno;
+		return -errcode;
 	}
-#else
-	ret = pthread_mutex_lock(&g_usrmutex);
-	if (ret != 0) {
-		DEBUGASSERT(ret == EINTR);
-		return -EINTR;
-	}
-#endif
 
-	return ret;
+	return OK;
 }
 
-/****************************************************************************
- * Name: work_unlock
- *
- * Description:
- *   Unlock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void work_unlock(void)
-{
-#ifdef CONFIG_BUILD_PROTECTED
-	(void)sem_post(&g_usrsem);
-#else
-	(void)pthread_mutex_unlock(&g_usrmutex);
-#endif
-}
-
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_WORKQUEUE */

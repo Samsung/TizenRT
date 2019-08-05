@@ -1,3 +1,4 @@
+    
 ###########################################################################
 #
 # Copyright 2016 Samsung Electronics All Rights Reserved.
@@ -16,7 +17,7 @@
 #
 ###########################################################################
 ############################################################################
-# kernel/wqueue/Make.defs
+# wqueue/kwqueue/Make.defs
 #
 #   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,7 +55,7 @@
 
 ifeq ($(CONFIG_SCHED_WORKQUEUE),y)
 
-CSRCS += kwork_queue.c kwork_process.c kwork_cancel.c kwork_signal.c
+CSRCS += kwork_queue.c kwork_cancel.c
 
 # Add high priority work queue files
 
@@ -67,13 +68,14 @@ endif
 ifeq ($(CONFIG_SCHED_LPWORK),y)
 CSRCS += kwork_lpthread.c
 ifeq ($(CONFIG_PRIORITY_INHERITANCE),y)
+CFLAGS += -I $(TOPDIR)/kernel
 CSRCS += kwork_inherit.c
 endif # CONFIG_PRIORITY_INHERITANCE
 endif # CONFIG_SCHED_LPWORK
 
-# Include wqueue build support
+# Include kwqueue build support
 
-DEPPATH += --dep-path wqueue
-VPATH += :wqueue
+DEPPATH += --dep-path kwqueue
+VPATH += :kwqueue
 
 endif # CONFIG_SCHED_WORKQUEUE

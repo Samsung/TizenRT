@@ -133,7 +133,6 @@
 
 #undef CONFIG_SCHED_HPWORK
 #undef CONFIG_SCHED_LPWORK
-#undef CONFIG_SCHED_WORKQUEUE
 
 /* User-space worker threads are not built in a kernel build when we are
  * building the kernel-space libraries (but we still need to know that it
@@ -342,6 +341,44 @@ extern "C" {
 
 #if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
 int work_usrstart(void);
+#endif
+
+/****************************************************************************
+ * Name: work_hpstart
+ *
+ * Description:
+ *   Start the high-priority, kernel-mode work queue.
+ *
+ * Input parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The task ID of the worker thread is returned on success.  A negated
+ *   errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_HPWORK
+int work_hpstart(void);
+#endif
+
+/****************************************************************************
+ * Name: work_lpstart
+ *
+ * Description:
+ *   Start the low-priority, kernel-mode worker thread(s)
+ *
+ * Input parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The task ID of the worker thread is returned on success.  A negated
+ *   errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_LPWORK
+int work_lpstart(void);
 #endif
 
 /****************************************************************************

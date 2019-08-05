@@ -16,9 +16,8 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_queue.c
  *
- *   Copyright (C) 2009-2011, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,17 +56,17 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-#include <signal.h>
-#include <assert.h>
 #include <queue.h>
+#include <assert.h>
 #include <errno.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -114,75 +113,65 @@
  *            is invoked. Zero means to perform the work immediately.
  *
  * Returned Value:
- *   Zero on success, a negated errno on failure
+ *   Zero (OK) on success, a negated errno on failure.
  *
  ****************************************************************************/
 
-static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
 {
 	DEBUGASSERT(work != NULL);
 
-	/* First, initialize the work structure */
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+	struct work_s *next_work;
+#endif
+	struct work_s *cur_work;
+
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+	while (work_lock() < 0);
+#else
+	irqstate_t flags;
+	flags = irqsave();
+#endif
+
+	/* check whether requested work is in queue list or not */
+	next_work = NULL;
+	cur_work = (struct work_s *)wqueue->q.head;
+	while (cur_work != NULL) {
+		if (cur_work == work) {
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+			work_unlock();
+#else
+			irqrestore(flags);
+#endif
+			return -EALREADY;
+		}
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+		if (next_work == NULL && cur_work->delay > delay) {
+			next_work = cur_work;
+		}
+#endif
+		cur_work = (struct work_s *)cur_work->dq.flink;
+	}
 
 	work->worker = worker;		/* Work callback */
 	work->arg = arg;			/* Callback argument */
 	work->delay = delay;		/* Delay until work performed */
-
-	/* Get exclusive access to the work queue */
-
-	while (work_lock() < 0);
-
-	/* Now, time-tag that entry and put it in the work queue. */
-
-	work->qtime = clock();	/* Time work queued */
-
-	dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
-	kill(wqueue->pid, SIGWORK);	/* Wake up the worker thread */
-
+	work->qtime = clock();      /* Time work queued */
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+	if (next_work) {
+		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
+	} else 
+#endif
+	{
+		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
+	}
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
 	work_unlock();
+#else
+	irqrestore(flags);
+#endif
+
 	return OK;
 }
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: work_queue
- *
- * Description:
- *   Queue user-mode work to be performed at a later time.  All queued work
- *   will be performed on the worker thread of of execution (not the caller's).
- *
- *   The work structure is allocated by caller, but completely managed by
- *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
- *   again until either (1) the previous work has been performed and removed
- *   from the queue, or (2) work_cancel() has been called to cancel the work
- *   and remove it from the work queue.
- *
- * Input parameters:
- *   qid    - The work queue ID (index)
- *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
- *            int is invoked.
- *   delay  - Delay (in clock ticks) from the time queue until the worker
- *            is invoked. Zero means to perform the work immediately.
- *
- * Returned Value:
- *   Zero on success, a negated errno on failure
- *
- ****************************************************************************/
-
-int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
-{
-	if (qid == USRWORK) {
-		return work_qqueue(&g_usrwork, work, worker, arg, delay);
-	} else {
-		return -EINVAL;
-	}
-}
-
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_WORKQUEUE */

@@ -69,6 +69,12 @@ mm$(DELIM)libkmm$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT): mm$(DELIM)libkmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT)
 
+wqueue$(DELIM)libkwque$(LIBEXT): context
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT): wqueue$(DELIM)libkwque$(LIBEXT)
+	$(Q) install wqueue$(DELIM)libkwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT)
+
 $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libkarch$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
@@ -165,6 +171,12 @@ mm$(DELIM)libumm$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT): mm$(DELIM)libumm$(LIBEXT)
 	$(Q) install mm$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT)
 
+wqueue$(DELIM)libuwque$(LIBEXT): context
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n
+
+$(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT): wqueue$(DELIM)libuwque$(LIBEXT)
+	$(Q) install wqueue$(DELIM)libuwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT)
+
 $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libuarch$(LIBEXT) KERNEL=n
 
@@ -249,6 +261,12 @@ mm$(DELIM)libmm$(LIBEXT): context
 
 $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT): mm$(DELIM)libmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
+
+wqueue$(DELIM)libwque$(LIBEXT): context
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT): wqueue$(DELIM)libwque$(LIBEXT)
+	$(Q) install wqueue$(DELIM)libwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libarch$(LIBEXT): context
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libarch$(LIBEXT)

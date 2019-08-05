@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_lpthread.c
+ * wqueue/kwqueue/kwork_lpthread.c
  *
  *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -68,7 +68,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
 #ifdef CONFIG_SCHED_LPWORK
 
@@ -154,7 +154,7 @@ static int work_lpthread(int argc, char *argv[])
 			 * to wait indefinitely until a signal is received.
 			 */
 
-			work_process((FAR struct kwork_wqueue_s *)&g_lpwork, 0, wndx);
+			work_process((FAR struct wqueue_s *)&g_lpwork, wndx);
 		} else
 #endif
 		{
@@ -175,7 +175,7 @@ static int work_lpthread(int argc, char *argv[])
 			 * period provided by g_lpwork.delay expires.
 			 */
 
-			work_process((FAR struct kwork_wqueue_s *)&g_lpwork, g_lpwork.delay, 0);
+			work_process((FAR struct wqueue_s *)&g_lpwork, 0);
 		}
 	}
 
@@ -208,7 +208,7 @@ int work_lpstart(void)
 
 	/* Initialize work queue data structures */
 
-	memset(&g_lpwork, 0, sizeof(struct kwork_wqueue_s));
+	memset(&g_lpwork, 0, sizeof(struct wqueue_s));
 
 	g_lpwork.delay = CONFIG_SCHED_LPWORKPERIOD / USEC_PER_TICK;
 	dq_init(&g_lpwork.q);

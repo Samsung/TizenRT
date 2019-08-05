@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_hpthread.c
+ * wqueue/work_cancel.c
  *
- *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,18 +56,16 @@
 
 #include <tinyara/config.h>
 
-#include <errno.h>
 #include <queue.h>
-#include <debug.h>
+#include <assert.h>
+#include <errno.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/wqueue.h>
-#include <tinyara/kthread.h>
-#include <tinyara/kmalloc.h>
-#include <tinyara/clock.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#ifdef CONFIG_SCHED_HPWORK
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -78,15 +76,11 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Public Data
+ * Public Variables
  ****************************************************************************/
 
-/* The state of the kernel mode, high priority work queue. */
-
-struct hp_wqueue_s g_hpwork;
-
 /****************************************************************************
- * Private Data
+ * Private Variables
  ****************************************************************************/
 
 /****************************************************************************
@@ -94,108 +88,86 @@ struct hp_wqueue_s g_hpwork;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_hpthread
- *
- * Description:
- *   This is the worker thread that performs the actions placed on the high
- *   priority work queue.
- *
- *   This, along with the lower priority worker thread(s) are the kernel
- *   mode work queues (also build in the flat build).  One of these threads
- *   also performs periodic garbage collection (that would otherwise be
- *   performed by the idle thread if CONFIG_SCHED_WORKQUEUE is not defined).
- *   That will be the higher priority worker thread only if a lower priority
- *   worker thread is available.
- *
- *   All kernel mode worker threads are started by the OS during normal
- *   bring up.  This entry point is referenced by OS internally and should
- *   not be accessed by application logic.
- *
- * Input parameters:
- *   argc, argv (not used)
- *
- * Returned Value:
- *   Does not return
- *
- ****************************************************************************/
-
-static int work_hpthread(int argc, char *argv[])
-{
-	/* Loop forever */
-
-	for (;;) {
-#ifndef CONFIG_SCHED_LPWORK
-		/* First, perform garbage collection.  This cleans-up memory
-		 * de-allocations that were queued because they could not be freed in
-		 * that execution context (for example, if the memory was freed from
-		 * an interrupt handler).
-		 *
-		 * NOTE: If the work thread is disabled, this clean-up is performed by
-		 * the IDLE thread (at a very, very low priority).  If the low-priority
-		 * work thread is enabled, then the garbage collection is done on that
-		 * thread instead.
-		 */
-
-		sched_garbagecollection();
-#endif
-
-		/* Then process queued work.  work_process will not return until: (1)
-		 * there is no further work in the work queue, and (2) the polling
-		 * period provided by g_hpwork.delay expires.
-		 */
-
-		work_process((FAR struct kwork_wqueue_s *)&g_hpwork, g_hpwork.delay, 0);
-	}
-
-	return OK;					/* To keep some compilers happy */
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_hpstart
+ * Name: work_qcancel
  *
  * Description:
- *   Start the high-priority, kernel-mode work queue.
+ *   Cancel previously queued work.  This removes work from the work queue.
+ *   After work has been cancelled, it may be re-queue by calling work_queue()
+ *   again.
  *
  * Input parameters:
- *   None
+ *   qid    - The work queue ID
+ *   work   - The previously queue work structure to cancel
  *
  * Returned Value:
- *   The task ID of the worker thread is returned on success.  A negated
- *   errno value is returned on failure.
+ *   Zero (OK) on success, a negated errno on failure.  This error may be
+ *   reported:
+ *
+ *   -ENOENT - There is no such work queued.
+ *   -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
-int work_hpstart(void)
+int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 {
-	int pid;
+	struct work_s *cur_work;
+	int ret = -ENOENT;
 
-	/* Initialize work queue data structures */
+	DEBUGASSERT(work != NULL);
 
-	g_hpwork.delay = CONFIG_SCHED_HPWORKPERIOD / USEC_PER_TICK;
-	dq_init(&g_hpwork.q);
+	/* Cancelling the work is simply a matter of removing the work structure
+	 * from the work queue.  This must be done with interrupts disabled because
+	 * new work is typically added to the work queue from interrupt handlers.
+	 */
 
-	/* Start the high-priority, kernel mode worker thread */
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+	while (work_lock() < 0);
+#else
+	irqstate_t flags;
+	flags = irqsave();
+#endif
+	if (work->worker != NULL) {
+		/* A little test of the integrity of the work queue */
 
-	svdbg("Starting high-priority kernel worker thread\n");
+		DEBUGASSERT(work->dq.flink || (FAR dq_entry_t *)work == wqueue->q.tail);
+		DEBUGASSERT(work->dq.blink || (FAR dq_entry_t *)work == wqueue->q.head);
 
-	pid = kernel_thread(HPWORKNAME, CONFIG_SCHED_HPWORKPRIORITY, CONFIG_SCHED_HPWORKSTACKSIZE, (main_t)work_hpthread, (FAR char *const *)NULL);
+		/* check whether requested work is in queue list or not */
+		cur_work = (struct work_s *)wqueue->q.head;
+		do {
+			if (cur_work == NULL) {
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+				work_unlock();
+#else
+				irqrestore(flags);
+#endif
+				return -ENOENT;
+			} else if (cur_work == work) {
+				break;
+			}
 
-	DEBUGASSERT(pid > 0);
-	if (pid < 0) {
-		int errcode = errno;
-		DEBUGASSERT(errcode > 0);
+			cur_work = (struct work_s *)cur_work->dq.flink;
+		} while (1);
 
-		slldbg("kernel_thread failed: %d\n", errcode);
-		return -errcode;
+		/* Remove the entry from the work queue and make sure that it is
+		 * mark as available (i.e., the worker field is nullified).
+		 */
+
+		dq_rem((FAR dq_entry_t *)work, &wqueue->q);
+		work->worker = NULL;
+		ret = OK;
 	}
 
-	g_hpwork.worker[0].pid = pid;
-	g_hpwork.worker[0].busy = true;
-	return pid;
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+	work_unlock();
+#else
+	irqrestore(flags);
+#endif
+	return ret;
 }
 
-#endif							/* CONFIG_SCHED_HPWORK */
+#endif							/* CONFIG_SCHED_WORKQUEUE */

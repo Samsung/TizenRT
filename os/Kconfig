@@ -558,6 +558,10 @@ menu "Memory Management"
 source mm/Kconfig
 endmenu
 
+menu "Work Queue"
+source wqueue/Kconfig
+endmenu
+
 menu "Power Management"
 source pm/Kconfig
 endmenu

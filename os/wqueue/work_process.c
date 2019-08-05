@@ -66,7 +66,7 @@
 
 #include <arch/irq.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
 #ifdef CONFIG_SCHED_WORKQUEUE
 
@@ -124,30 +124,39 @@
  *   None
  *
  ****************************************************************************/
-void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx)
+void work_process(FAR struct wqueue_s *wqueue, int wndx)
 {
 	volatile FAR struct work_s *work;
 	worker_t worker;
-	irqstate_t flags;
 	FAR void *arg;
 	clock_t elapsed;
-#ifndef CONFIG_SCHED_WORKQUEUE_SORTING
-	clock_t remaining;
-#endif
 	clock_t stick;
 	clock_t ctick;
 	clock_t next;
+
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGWORK);
+#else 
+	clock_t remaining;
+#endif
 
 	/* Then process queued work.  We need to keep interrupts disabled while
 	 * we process items in the work list.
 	 */
 
-	next = period;
+	next = wqueue->delay;
+
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+	while (work_lock() < 0);
+#else
+	irqstate_t flags;
 	flags = irqsave();
+#endif
 
 	/* Get the time that we started this polling cycle in clock ticks. */
-
-	stick = clock_systimer();
+	stick = clock();
 
 	/* And check each entry in the work queue.  Since we have disabled
 	 * interrupts we know:  (1) we will not be suspended unless we do
@@ -155,14 +164,16 @@ void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx)
 	 */
 
 	work = (FAR struct work_s *)wqueue->q.head;
+	
 	while (work) {
+		
 		/* Is this work ready?  It is ready if there is no delay or if
 		 * the delay has elapsed. qtime is the time that the work was added
 		 * to the work queue.  It will always be greater than or equal to
 		 * zero.  Therefore a delay of zero will always execute immediately.
 		 */
 
-		ctick = clock_systimer();
+		ctick = clock();
 		elapsed = ctick - work->qtime;
 
 		if (elapsed >= work->delay) {
@@ -192,8 +203,12 @@ void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx)
 				/* Do the work.  Re-enable interrupts while the work is being
 				 * performed... we don't have any idea how long this will take!
 				 */
-
-				irqrestore(flags);
+				
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+			work_unlock();
+#else
+			irqrestore(flags);
+#endif
 				worker(arg);
 
 				/* Now, unfortunately, since we re-enabled interrupts we don't
@@ -201,7 +216,11 @@ void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx)
 				 * back at the head of the list.
 				 */
 
-				flags = irqsave();
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+			while (work_lock() < 0);
+#else
+			flags = irqsave();
+#endif
 				work = (FAR struct work_s *)wqueue->q.head;
 			} else {
 				/* Cancelled.. Just move to the next work in the list with
@@ -247,61 +266,54 @@ void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx)
 		}
 	}
 
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
-	if ((FAR struct work_s *)wqueue->q.head == NULL) {
-		period = 0;
-	}
-#endif
-
 #if (defined(CONFIG_SCHED_LPWORK) && CONFIG_SCHED_LPNTHREADS > 0) || defined(CONFIG_SCHED_WORKQUEUE_SORTING)
-	/* Value of zero for period means that we should wait indefinitely until
-	 * signalled.  This option is used only for the case where there are
-	 * multiple, low-priority worker threads.  In that case, only one of
-	 * the threads does the poll... the others simple.  In all other cases
-	 * period will be non-zero and equal to wqueue->delay.
-	 */
-
-	if (period == 0) {
-		sigset_t set;
-
+	if ((FAR struct work_s *)wqueue->q.head == NULL) {
+		wqueue->delay = 0;
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+		work_unlock();
+#else
+		irqrestore(flags);
+#endif
 		/* Wait indefinitely until signalled with SIGWORK */
-
-		sigemptyset(&set);
-		sigaddset(&set, SIGWORK);
-
 		wqueue->worker[wndx].busy = false;
 		DEBUGVERIFY(sigwaitinfo(&set, NULL));
 		wqueue->worker[wndx].busy = true;
 	} else
 #endif
-	{
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
-		if (next > 0) {
-#else
+	if (next > 0) {
 		/* Get the delay (in clock ticks) since we started the sampling */
-
-		elapsed = clock_systimer() - stick;
-		if (elapsed < period && next > 0) {
+#ifndef CONFIG_SCHED_WORKQUEUE_SORTING
+		elapsed = clock() - stick;
+		if (elapsed < wqueue->delay) {
 			/* How much time would we need to delay to get to the end of the
-			 * sampling period?  The amount of time we delay should be the smaller
-			 * of the time to the end of the sampling period and the time to the
-			 * next work expiry.
-			 */
+			* sampling period?  The amount of time we delay should be the smaller
+			* of the time to the end of the sampling period and the time to the
+			* next work expiry.
+			*/
 
-			remaining = period - elapsed;
+			remaining = wqueue->delay - elapsed;
 			next = MIN(next, remaining);
-#endif
-			/* Wait awhile to check the work list.  We will wait here until
-			 * either the time elapses or until we are awakened by a signal.
-			 * Interrupts will be re-enabled while we wait.
-			 */
-			wqueue->worker[wndx].busy = false;
-			usleep(next * USEC_PER_TICK);
-			wqueue->worker[wndx].busy = true;
 		}
+#endif
+		/* Wait awhile to check the work list.  We will wait here until
+			* either the time elapses or until we are awakened by a signal.
+			* Interrupts will be re-enabled while we wait.
+			*/
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+		work_unlock();
+#else
+		irqrestore(flags);
+#endif
+		wqueue->worker[wndx].busy = false;
+		usleep(next * USEC_PER_TICK);
+		wqueue->worker[wndx].busy = true;
+	} else {
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+		work_unlock();
+#else
+		irqrestore(flags);
+#endif
 	}
-
-	irqrestore(flags);
 }
 
 #endif							/* CONFIG_SCHED_WORKQUEUE */

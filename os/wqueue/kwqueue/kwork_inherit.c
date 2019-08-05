@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_inherit.c
+ * wqueue/kwqueue/kwork_inherit.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -61,10 +61,9 @@
 #include <tinyara/wqueue.h>
 
 #include "sched/sched.h"
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#if defined(CONFIG_SCHED_WORKQUEUE) && defined(CONFIG_SCHED_LPWORK) && \
-	defined(CONFIG_PRIORITY_INHERITANCE)
+#if defined(CONFIG_PRIORITY_INHERITANCE) && defined(CONFIG_SCHED_LPWORK)
 
 /****************************************************************************
  * Private Data
@@ -388,4 +387,4 @@ void lpwork_restorepriority(uint8_t reqprio)
 	irqrestore(flags);
 }
 
-#endif							/* CONFIG_SCHED_WORKQUEUE && CONFIG_SCHED_LPWORK && CONFIG_PRIORITY_INHERITANCE */
+#endif							/* CONFIG_SCHED_LPWORK && CONFIG_PRIORITY_INHERITANCE */

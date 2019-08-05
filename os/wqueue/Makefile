@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# libc/Makefile
+# wqueue/Makefile
 #
 #   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -48,7 +48,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-###########################################################################
+############################################################################
 
 -include $(TOPDIR)/Make.defs
 
@@ -72,41 +72,15 @@ endif
 
 # Sources and paths
 
-ASRCS =
-CSRCS =
+ASRCS  =
+CSRCS  =
 
-DEPPATH := --dep-path .
-VPATH := .
+VPATH =
+DEPPATH = --dep-path .
 
-include stdio/Make.defs
-include stdlib/Make.defs
-include unistd/Make.defs
-include sched/Make.defs
-include symtab/Make.defs
-include syslog/Make.defs
-include string/Make.defs
-include aio/Make.defs
-include pthread/Make.defs
-include semaphore/Make.defs
-include signal/Make.defs
-include machine/Make.defs
-include math/Make.defs
-include fixedmath/Make.defs
-include net/Make.defs
-include netdb/Make.defs
-include time/Make.defs
-include inttypes/Make.defs
-include libgen/Make.defs
-include locale/Make.defs
-include dirent/Make.defs
-include termios/Make.defs
-include queue/Make.defs
-include wchar/Make.defs
-include wctype/Make.defs
-include misc/Make.defs
-include ttrace/Make.defs
-include audio/Make.defs
-include uio/Make.defs
+include kwqueue/Make.defs
+include uwqueue/Make.defs
+include Make.defs
 
 # REVISIT: Backslash causes problems in $(COBJS) target
 DELIM := $(strip /)
@@ -118,12 +92,12 @@ COBJS = $(patsubst %.c, $(BINDIR)$(DELIM)%$(OBJEXT), $(CSRCS))
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-UBIN = libuc$(LIBEXT)
-KBIN = libkc$(LIBEXT)
-BIN ?= libc$(LIBEXT)
+UBIN = libuwque$(LIBEXT)
+KBIN = libkwque$(LIBEXT)
+BIN ?= libwque$(LIBEXT)
 
 all: $(BIN)
-.PHONY: clean distclean
+.PHONY: context depend clean distclean
 
 $(AOBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -133,19 +107,19 @@ $(COBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
-# C library for the flat build
+# Memory manager for the flat build
 
-$(BIN): $(OBJS)
+$(BIN):	$(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
-# C library for the user phase of the two-pass kernel build
+# Memory manager for the user phase of the two-pass kernel build
 
 ifneq ($(BIN),$(UBIN))
 $(UBIN):
 	$(Q) $(MAKE) $(UBIN) BIN=$(UBIN) BINDIR=ubin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
-# C library for the kernel phase of the two-pass kernel build
+# Memory manager for the kernel phase of the two-pass kernel build
 
 ifneq ($(BIN),$(KBIN))
 $(KBIN):
@@ -155,6 +129,7 @@ endif
 # Dependencies
 
 .depend: Makefile $(SRCS)
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 	$(Q) $(MKDEP) --obj-path ubin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make_ubin.dep
 	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >Make_kbin.dep
@@ -174,10 +149,10 @@ clean:
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(UBIN))
 	$(call DELFILE, $(KBIN))
+
 	$(call CLEAN)
 
 # Deep clean -- removes all traces of the configuration
-
 distclean: clean
 	$(Q) $(MAKE) -C bin  distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C ubin distclean TOPDIR=$(TOPDIR)
@@ -190,3 +165,4 @@ distclean: clean
 -include Make_bin.dep
 -include Make_ubin.dep
 -include Make_kbin.dep
+

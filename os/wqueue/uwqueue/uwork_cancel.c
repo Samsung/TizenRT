@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_signal.c
+ * wqueue/uwqueue/uwork_cancel.c
  *
- *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2010, 2012-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,84 +56,69 @@
 
 #include <tinyara/config.h>
 
-#include <signal.h>
+#include <queue.h>
+#include <assert.h>
 #include <errno.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#ifdef CONFIG_SCHED_WORKQUEUE
+#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Type Declarations
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
- * Name: work_signal
+ * Name: work_cancel
  *
  * Description:
- *   Signal the worker thread to process the work queue now.  This function
- *   is used internally by the work logic but could also be used by the
- *   user to force an immediate re-assessment of pending work.
+ *   Cancel previously queued user-mode work.  This removes work from the
+ *   user mode work queue.  After work has been cancelled, it may be re-queue
+ *   by calling work_queue() again.
  *
  * Input parameters:
- *   qid    - The work queue ID
+ *   qid    - The work queue ID (must be USRWORK)
+ *   work   - The previously queue work structure to cancel
  *
  * Returned Value:
- *   Zero on success, a negated errno on failure
+ *   Zero (OK) on success, a negated errno on failure.  This error may be
+ *   reported:
+ *
+ *   -ENOENT - There is no such work queued.
+ *	 -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
-int work_signal(int qid)
+int work_cancel(int qid, FAR struct work_s *work)
 {
-	pid_t pid;
-	int ret;
-
-	/* Get the process ID of the worker thread */
-
-#ifdef CONFIG_SCHED_HPWORK
-	if (qid == HPWORK) {
-		pid = g_hpwork.worker[0].pid;
-	} else
-#endif
-#ifdef CONFIG_SCHED_LPWORK
-		if (qid == LPWORK) {
-			int wndx;
-			int i;
-
-			/* Find an IDLE worker thread */
-
-			for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
-				/* Is this worker thread busy? */
-
-				if (!g_lpwork.worker[i].busy) {
-					/* No.. select this thread */
-
-					wndx = i;
-					break;
-				}
-			}
-
-			/* Use the process ID of the IDLE worker thread (or the ID of worker
-			 * thread 0 if all of the worker threads are busy).
-			 */
-
-			pid = g_lpwork.worker[wndx].pid;
-		} else
-#endif
-		{
-			return -EINVAL;
-		}
-
-	/* Signal the worker thread */
-
-	ret = kill(pid, SIGWORK);
-	if (ret < 0) {
-		int errcode = errno;
-		return -errcode;
+	if (qid == USRWORK) {
+		return work_qcancel(&g_usrwork, work);
+	} else {
+		return -EINVAL;
 	}
-
-	return OK;
 }
 
-#endif							/* CONFIG_SCHED_WORKQUEUE */
+#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */

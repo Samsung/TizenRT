@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/wqueue.h
+ * wqueue/kwqueue/kwork_hpthread.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,93 +50,108 @@
  *
  ****************************************************************************/
 
-#ifndef __SCHED_WQUEUE_WQUEUE_H
-#define __SCHED_WQUEUE_WQUEUE_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <stdbool.h>
+#include <errno.h>
 #include <queue.h>
+#include <debug.h>
 
-#ifdef CONFIG_SCHED_WORKQUEUE
+#include <tinyara/wqueue.h>
+#include <tinyara/kthread.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/clock.h>
+
+#include "wqueue.h"
+
+#ifdef CONFIG_SCHED_HPWORK
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Kkernel thread names */
-
-#define HPWORKNAME "hpwork"
-#define LPWORKNAME "lpwork"
-
 /****************************************************************************
- * Public Type Definitions
+ * Private Type Declarations
  ****************************************************************************/
-/* This represents one worker */
-
-struct kworker_s {
-	pid_t pid;					/* The task ID of the worker thread */
-	volatile bool busy;			/* True: Worker is not available */
-};
-
-/* This structure defines the state of one kernel-mode work queue */
-
-struct kwork_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
-	struct dq_queue_s q;		/* The queue of pending work */
-	struct kworker_s worker[1];	/* Describes a worker thread */
-};
-
-/* This structure defines the state of one high-priority work queue.  This
- * structure must be cast-compatible with kwork_wqueue_s.
- */
-
-#ifdef CONFIG_SCHED_HPWORK
-struct hp_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
-	struct dq_queue_s q;		/* The queue of pending work */
-	struct kworker_s worker[1];	/* Describes the single high priority worker */
-};
-#endif
-
-/* This structure defines the state of one high-priority work queue.  This
- * structure must be cast compatible with kwork_wqueue_s
- */
-
-#ifdef CONFIG_SCHED_LPWORK
-struct lp_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
-	struct dq_queue_s q;		/* The queue of pending work */
-
-	/* Describes each thread in the low priority queue's thread pool */
-
-	struct kworker_s worker[CONFIG_SCHED_LPNTHREADS];
-};
-#endif
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_HPWORK
 /* The state of the kernel mode, high priority work queue. */
 
-extern struct hp_wqueue_s g_hpwork;
-#endif
-
-#ifdef CONFIG_SCHED_LPWORK
-/* The state of the kernel mode, low priority work queue(s). */
-
-extern struct lp_wqueue_s g_lpwork;
-#endif
+struct hp_wqueue_s g_hpwork;
 
 /****************************************************************************
- * Public Function Prototypes
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: work_hpthread
+ *
+ * Description:
+ *   This is the worker thread that performs the actions placed on the high
+ *   priority work queue.
+ *
+ *   This, along with the lower priority worker thread(s) are the kernel
+ *   mode work queues (also build in the flat build).  One of these threads
+ *   also performs periodic garbage collection (that would otherwise be
+ *   performed by the idle thread if CONFIG_SCHED_WORKQUEUE is not defined).
+ *   That will be the higher priority worker thread only if a lower priority
+ *   worker thread is available.
+ *
+ *   All kernel mode worker threads are started by the OS during normal
+ *   bring up.  This entry point is referenced by OS internally and should
+ *   not be accessed by application logic.
+ *
+ * Input parameters:
+ *   argc, argv (not used)
+ *
+ * Returned Value:
+ *   Does not return
+ *
+ ****************************************************************************/
+
+static int work_hpthread(int argc, char *argv[])
+{
+	/* Loop forever */
+
+	for (;;) {
+#ifndef CONFIG_SCHED_LPWORK
+		/* First, perform garbage collection.  This cleans-up memory
+		 * de-allocations that were queued because they could not be freed in
+		 * that execution context (for example, if the memory was freed from
+		 * an interrupt handler).
+		 *
+		 * NOTE: If the work thread is disabled, this clean-up is performed by
+		 * the IDLE thread (at a very, very low priority).  If the low-priority
+		 * work thread is enabled, then the garbage collection is done on that
+		 * thread instead.
+		 */
+
+		sched_garbagecollection();
+#endif
+
+		/* Then process queued work.  work_process will not return until: (1)
+		 * there is no further work in the work queue, and (2) the polling
+		 * period provided by g_hpwork.delay expires.
+		 */
+
+		work_process((FAR struct wqueue_s *)&g_hpwork, 0);
+	}
+
+	return OK;					/* To keep some compilers happy */
+}
+
+/****************************************************************************
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -154,49 +169,33 @@ extern struct lp_wqueue_s g_lpwork;
  *
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_HPWORK
-int work_hpstart(void);
-#endif
+int work_hpstart(void)
+{
+	int pid;
 
-/****************************************************************************
- * Name: work_lpstart
- *
- * Description:
- *   Start the low-priority, kernel-mode worker thread(s)
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   The task ID of the worker thread is returned on success.  A negated
- *   errno value is returned on failure.
- *
- ****************************************************************************/
+	/* Initialize work queue data structures */
 
-#ifdef CONFIG_SCHED_LPWORK
-int work_lpstart(void);
-#endif
+	g_hpwork.delay = CONFIG_SCHED_HPWORKPERIOD / USEC_PER_TICK;
+	dq_init(&g_hpwork.q);
 
-/****************************************************************************
- * Name: work_process
- *
- * Description:
- *   This is the logic that performs actions placed on any work list.  This
- *   logic is the common underlying logic to all work queues.  This logic is
- *   part of the internal implementation of each work queue; it should not
- *   be called from application level logic.
- *
- * Input parameters:
- *   wqueue - Describes the work queue to be processed
- *   period - The polling period in clock ticks
- *   wndx   - The worker thread index
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
+	/* Start the high-priority, kernel mode worker thread */
 
-void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx);
+	svdbg("Starting high-priority kernel worker thread\n");
 
-#endif							/* CONFIG_SCHED_WORKQUEUE */
-#endif							/* __SCHED_WQUEUE_WQUEUE_H */
+	pid = kernel_thread(HPWORKNAME, CONFIG_SCHED_HPWORKPRIORITY, CONFIG_SCHED_HPWORKSTACKSIZE, (main_t)work_hpthread, (FAR char *const *)NULL);
+
+	DEBUGASSERT(pid > 0);
+	if (pid < 0) {
+		int errcode = errno;
+		DEBUGASSERT(errcode > 0);
+
+		slldbg("kernel_thread failed: %d\n", errcode);
+		return -errcode;
+	}
+
+	g_hpwork.worker[0].pid = pid;
+	g_hpwork.worker[0].busy = true;
+	return pid;
+}
+
+#endif							/* CONFIG_SCHED_HPWORK */

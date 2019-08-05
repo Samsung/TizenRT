@@ -51,21 +51,19 @@
 ############################################################################
 
 ifeq ($(CONFIG_LIB_USRWORK),y)
-
 # Add the work queue C files to the build
 
-WORK_CSRCS += work_usrthread.c work_queue.c work_cancel.c work_signal.c
-WORK_CSRCS += work_lock.c
+WORK_CSRCS += uwork_thread.c uwork_queue.c uwork_cancel.c uwork_lock.c
 
 # Protected mode
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CSRCS += $(WORK_CSRCS)
 
-# Add the wqueue directory to the build
+# Add the uwqueue directory to the build
 
-DEPPATH += --dep-path wqueue
-VPATH += :wqueue
+DEPPATH += --dep-path uwqueue
+VPATH += :uwqueue
 
 else
 
@@ -74,10 +72,10 @@ else
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 CSRCS += $(WORK_CSRCS)
 
-# Add the wqueue directory to the build
+# Add the uwqueue directory to the build
 
-DEPPATH += --dep-path wqueue
-VPATH += :wqueue
+DEPPATH += --dep-path uwqueue
+VPATH += :uwqueue
 
 endif
 endif

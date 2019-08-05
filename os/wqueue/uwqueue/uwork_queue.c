@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_signal.c
+ * wqueue/uwqueue/uwork_queue.c
  *
- *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2011, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,12 +56,16 @@
 
 #include <tinyara/config.h>
 
+#include <stdint.h>
 #include <signal.h>
+#include <assert.h>
+#include <queue.h>
 #include <errno.h>
 
+#include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
 #if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
 
@@ -88,39 +92,48 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
- * Name: work_signal
+ * Name: work_queue
  *
  * Description:
- *   Signal the worker thread to process the work queue now.  This function
- *   is used internally by the work logic but could also be used by the
- *   user to force an immediate re-assessment of pending work.
+ *   Queue user-mode work to be performed at a later time.  All queued work
+ *   will be performed on the worker thread of of execution (not the caller's).
+ *
+ *   The work structure is allocated by caller, but completely managed by
+ *   the work queue logic.  The caller should never modify the contents of
+ *   the work queue structure; the caller should not call work_queue()
+ *   again until either (1) the previous work has been performed and removed
+ *   from the queue, or (2) work_cancel() has been called to cancel the work
+ *   and remove it from the work queue.
  *
  * Input parameters:
- *   qid    - The work queue ID
+ *   qid    - The work queue ID (index)
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will invoked
+ *            on the worker thread of execution.
+ *   arg    - The argument that will be passed to the workder callback when
+ *            int is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
  *
  * Returned Value:
  *   Zero on success, a negated errno on failure
  *
  ****************************************************************************/
 
-int work_signal(int qid)
+int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
 {
 	int ret;
-
 	if (qid == USRWORK) {
-		/* Signal the worker thread */
-
-		ret = kill(g_usrwork.pid, SIGWORK);
-		if (ret < 0) {
-			int errcode = errno;
-			ret = -errcode;
+		ret = work_qqueue(&g_usrwork, work, worker, arg, delay);
+		if (ret != OK) {
+			return ret;
 		}
+		return work_signal(USRWORK);
 	} else {
-		ret = -EINVAL;
+		return -EINVAL;
 	}
-
-	return ret;
 }
 
 #endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */

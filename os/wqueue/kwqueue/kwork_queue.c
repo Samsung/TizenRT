@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/wqueue.h
- *
+ * wqueue/kwqueue/kwork_queue.c
+ * 
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
@@ -50,92 +50,108 @@
  *
  ****************************************************************************/
 
-#ifndef __LIBC_WQUEUE_WQUEUE_H
-#define __LIBC_WQUEUE_WQUEUE_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <semaphore.h>
+#include <stdint.h>
+#include <queue.h>
+#include <assert.h>
+#include <errno.h>
 
+#include <tinyara/arch.h>
+#include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#include "wqueue.h"
+
+#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Type Definitions
+ * Private Type Declarations
  ****************************************************************************/
-
-/* This structure defines the state of one user-modework queue. */
-
-struct usr_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
-	struct dq_queue_s q;		/* The queue of pending work */
-	pid_t pid;					/* The task ID of the worker thread(s) */
-};
 
 /****************************************************************************
- * Public Data
+ * Public Variables
  ****************************************************************************/
 
-/* The state of the user mode work queue */
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
 
-extern struct usr_wqueue_s g_usrwork;
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-/* This semaphore/mutex supports exclusive access to the user-mode work queue */
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-#ifdef CONFIG_BUILD_PROTECTED
-extern sem_t g_usrsem;
-#else
-extern pthread_mutex_t g_usrmutex;
+/****************************************************************************
+ * Name: work_queue
+ *
+ * Description:
+ *   Queue kernel-mode work to be performed at a later time.  All queued work
+ *   will be performed on the worker thread of of execution (not the caller's).
+ *
+ *   The work structure is allocated by caller, but completely managed by
+ *   the work queue logic.  The caller should never modify the contents of
+ *   the work queue structure; the caller should not call work_queue()
+ *   again until either (1) the previous work has been performed and removed
+ *   from the queue, or (2) work_cancel() has been called to cancel the work
+ *   and remove it from the work queue.
+ *
+ * Input parameters:
+ *   qid    - The work queue ID (index)
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will invoked
+ *            on the worker thread of execution.
+ *   arg    - The argument that will be passed to the workder callback when
+ *            int is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
+ *
+ * Returned Value:
+ *   Zero on success, a negated errno on failure
+ *
+ ****************************************************************************/
+
+int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+{
+#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
+	int result;
 #endif
+#ifdef CONFIG_SCHED_HPWORK
+	if (qid == HPWORK) {
+		/* Cancel high priority work */
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+		result = work_qqueue((FAR struct wqueue_s *)&g_hpwork, work, worker, arg, delay);
+		if (result != OK) {
+			return result;
+		}
+		return work_signal(HPWORK);
+	} else
+#endif
+#ifdef CONFIG_SCHED_LPWORK
+		if (qid == LPWORK) {
+			/* Cancel low priority work */
 
-/****************************************************************************
- * Name: work_lock
- *
- * Description:
- *   Lock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -EINTR - Wait was interrupted by a signal
- *
- ****************************************************************************/
+			result = work_qqueue((FAR struct wqueue_s *)&g_lpwork, work, worker, arg, delay);
+			if (result != OK) {
+				return result;
+			}
+			return work_signal(LPWORK);
+		} else
+#endif
+		{
+			return -EINVAL;
+		}
+}
 
-int work_lock(void);
-
-/****************************************************************************
- * Name: work_unlock
- *
- * Description:
- *   Unlock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void work_unlock(void);
-
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
-#endif							/* __LIBC_WQUEUE_WQUEUE_H */
+#endif							/* CONFIG_SCHED_HPWORK || CONFIG_SCHED_LPWORK*/
