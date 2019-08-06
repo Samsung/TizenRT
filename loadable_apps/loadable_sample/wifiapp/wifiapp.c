@@ -46,12 +46,16 @@ static void display_test_scenario(void)
 
 extern int preapp_start(int argc, char **argv);
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 int main(int argc, char **argv)
+#else
+int wifiapp_main(int argc, char **argv)
+#endif
 {
 	char ch;
 	bool is_testing = true;
 
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && defined(CONFIG_APP_BINARY_SEPARATION)
 	preapp_start(argc, argv);
 #endif
 

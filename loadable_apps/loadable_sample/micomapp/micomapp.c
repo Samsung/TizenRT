@@ -30,7 +30,11 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
 int main(int argc, char **argv)
+#else
+int micomapp_main(int argc, char **argv)
+#endif
 {
 	int ret;
 #ifdef CONFIG_EXAMPLES_MICOM_TIMER_TEST

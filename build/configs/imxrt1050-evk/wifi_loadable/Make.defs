@@ -55,27 +55,37 @@ include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-m/Toolchain.defs
 
 MEM_LDSCRIPT = memory.ld
-ifeq ($(CONFIG_ARMV7M_DTCM),y)
-KSPACE_LDSCRIPT = kernel-space-dtcm.ld
-else
-KSPACE_LDSCRIPT = kernel-space.ld
-endif
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+  ifeq ($(CONFIG_ARMV7M_DTCM),y)
+    KSPACE_LDSCRIPT = kernel-space-dtcm.ld
+  else
+    KSPACE_LDSCRIPT = kernel-space.ld
+  endif
+else # !BUILD_PROTECTED
+  ifeq ($(CONFIG_ARMV7M_DTCM),y)
+    KSPACE_LDSCRIPT = flash-dtcm.ld
+  else
+    KSPACE_LDSCRIPT = flash-ocram.ld
+  endif
+endif # BUILD_PROTECTED
 
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
   DIRUNLINK = $(TOPDIR)/tools/unlink.sh
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
-  ARCHINCLUDES = -I. -I"${shell cygpath -w $(TOPDIR)/include}"
-  ARCHXXINCLUDES = -I. -I"${shell cygpath -w $(TOPDIR)/include}" -I"${shell cygpath -w $(TOPDIR)/include/cxx}"
+  ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}"
+  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT1)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
-  ARCHINCLUDES = -I. -I$(TOPDIR)/include -I$(TOPDIR)/../framework/include -I$(TOPDIR)/../external/include
-  ARCHXXINCLUDES = -I. -I$(TOPDIR)/include -I$(TOPDIR)/include/cxx -I$(TOPDIR)/../external/include
+  ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/../external/include
   ARCHSCRIPT = -L$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts
+ifeq ($(CONFIG_AUTOGEN_MEMORY_LDSCRIPT),y)
   ARCHSCRIPT += -T$(MEM_LDSCRIPT)
+endif
   ARCHSCRIPT += -T$(KSPACE_LDSCRIPT)
 
 endif
@@ -166,10 +176,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_download.sh
-endef
-
-define MAKE_BOARD_SPECIFIC_BIN
-  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_make_bin.sh
+  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
 
