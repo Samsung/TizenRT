@@ -190,12 +190,14 @@ config BOARD_ASSERT_AUTORESET
 		system only when fault is in kernel context.
 
 config BOARD_ASSERT_SYSTEM_HALT
-	bool "Enable Infinite loop feature of fault manager"
-	default n
-	depends on !BOARD_ASSERT_AUTORESET && !BINMGR_RECOVERY
+	bool "Enable Infinite loop feature on fault status"
+	default y
+	depends on !BOARD_ASSERT_AUTORESET
 	---help---
 		When this is enabled irrespective of any fault, system will
 		go in infinite loop. This can help to debug the system using Trace32.
+		When this is disabled, a system will be blocked only if an assert in interrupt handler or idle thread happens.
+		In the other case, a faulty task is terminated only and it can bring unexpected situation.
 
 config LIB_BOARDCTL
 	bool "Enable boardctl() interface"

@@ -91,7 +91,7 @@
 #include <sys/boardctl.h>
 #endif
 #ifdef CONFIG_BINMGR_RECOVERY
-#include <fcntl.h>
+#include <unistd.h>
 #include <mqueue.h>
 #include "binary_manager/binary_manager.h"
 #endif
@@ -103,7 +103,6 @@
 
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
-uint32_t assert_pc;
 extern uint32_t g_assertpc;
 extern mqd_t g_binmgr_mq_fd;
 #endif
