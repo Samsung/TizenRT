@@ -103,16 +103,16 @@ struct lcdfb_dev_s {
 /* Update the LCD when there is a change to the framebuffer */
 
 static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
-             FAR const struct nxgl_rect_s *rect);
+			FAR const struct nxgl_rect_s *rect);
 
 /* Get information about the video controller configuration and the
  * configuration of each color plane.
  */
 
 static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_videoinfo_s *vinfo);
+			FAR struct fb_videoinfo_s *vinfo);
 static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-             FAR struct fb_planeinfo_s *pinfo);
+			FAR struct fb_planeinfo_s *pinfo);
 
 /* The following is provided only if the video hardware supports RGB color
  * mapping
@@ -120,9 +120,9 @@ static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_cmap_s *cmap);
+			FAR struct fb_cmap_s *cmap);
 static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
-             FAR const struct fb_cmap_s *cmap);
+			FAR const struct fb_cmap_s *cmap);
 #endif
 
 /* The following is provided only if the video hardware supports a hardware
@@ -131,9 +131,9 @@ static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_cursorattrib_s *attrib);
+			FAR struct fb_cursorattrib_s *attrib);
 static int lcdfb_setcursor(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_setcursor_s *settings);
+			FAR struct fb_setcursor_s *settings);
 #endif
 
 /****************************************************************************
@@ -187,7 +187,7 @@ static FAR struct lcdfb_dev_s *lcdfb_find(int display)
  ****************************************************************************/
 
 static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
-                        FAR const struct nxgl_rect_s *rect)
+			FAR const struct nxgl_rect_s *rect)
 {
 	FAR struct lcd_planeinfo_s *pinfo = &priv->pinfo;
 	FAR uint8_t *run;
@@ -317,7 +317,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
  ****************************************************************************/
 
 static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
-                              FAR struct fb_videoinfo_s *vinfo)
+				FAR struct fb_videoinfo_s *vinfo)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -347,7 +347,7 @@ static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
  ****************************************************************************/
 
 static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-                              FAR struct fb_planeinfo_s *pinfo)
+				FAR struct fb_planeinfo_s *pinfo)
 {
 	FAR struct lcdfb_dev_s *priv;
 	int ret = -EINVAL;
@@ -378,7 +378,7 @@ static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
-                         FAR struct fb_cmap_s *cmap)
+			FAR struct fb_cmap_s *cmap)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -410,7 +410,7 @@ static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
-                         FAR const struct fb_cmap_s *cmap)
+			FAR const struct fb_cmap_s *cmap)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -442,7 +442,7 @@ static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
-                        FAR struct fb_cursorattrib_s *attrib)
+			FAR struct fb_cursorattrib_s *attrib)
 {
 	gvdbg("vtable=%p attrib=%p\n", vtable, attrib);
 	FAR struct lcdfb_dev_s *priv;
@@ -475,7 +475,7 @@ static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_setcursor(FAR struct fb_vtable_s *vtable,
-                       FAR struct fb_setcursor_s *settings)
+			FAR struct fb_setcursor_s *settings)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -764,7 +764,7 @@ void up_fbuninitialize(int display)
 
 #if defined(CONFIG_LCD_UPDATE)
 void nx_notify_rectangle(FAR struct fb_planeinfo_s *pinfo,
-                         FAR const struct nxgl_rect_s *rect)
+				FAR const struct nxgl_rect_s *rect)
 {
 	FAR struct fb_planeinfo_s *fpinfo = (FAR struct fb_planeinfo_s *)pinfo;
 	FAR struct lcdfb_dev_s *priv;
