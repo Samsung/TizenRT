@@ -29,8 +29,7 @@
 #ifdef CONFIG_LWNL80211
 struct _wifi_utils_s {
 	char mqname[16];
-	mqd_t mq;
-	pthread_t cb_receiver;
+	pid_t cb_receiver;
 };
 #endif
 
@@ -145,6 +144,6 @@ wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check);
  * @brief lwnl80211 driver callback handler
  *
  */
-void *wifi_utils_callback_handler(void *arg);
+int wifi_utils_callback_handler(int argc, char *argv[]);
 
 #endif /* __WIFI_UTILS_H__ */
