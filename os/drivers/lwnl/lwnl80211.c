@@ -46,25 +46,6 @@
 
 #define DMA_BUFFER_MIN_SIZE 4096	/* 4K */
 
-#define MQ_REOPEN                                                                     \
-	do {                                                                              \
-		if (upper->usermq == NULL) {                                                  \
-			struct mq_attr attr;                                                      \
-			attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;                           \
-			attr.mq_msgsize = sizeof(lwnl80211_cb_data);                              \
-			attr.mq_flags = 0;                                                        \
-			attr.mq_curmsgs = 0;                                                      \
-			upper->usermq = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);    \
-			if (upper->usermq == NULL) {                                              \
-				nldbg("Failed to open mq\n");                                 \
-				ret = -ENOSYS;                                                        \
-			} else {                                                                  \
-				nldbg("Open mq with %s\n", upper->mqname);                    \
-				ret = OK;                                                             \
-			}                                                                         \
-		}                                                                             \
-	} while (0)
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -73,7 +54,6 @@ struct lwnl80211_upperhalf_s {
 	volatile bool started;
 	sem_t exclsem;
 	struct lwnl80211_lowerhalf_s *lower; /* Arch-specific operations */
-	mqd_t usermq;
 	char mqname[16];
 };
 
@@ -124,10 +104,6 @@ static int lwnl80211_open(struct file *filep)
 	}
 
 	upper->crefs = tmp_crefs;
-
-	if (upper->crefs == 1) {
-		upper->usermq = NULL;
-	}
 
 	ret = OK;
 
@@ -195,28 +171,13 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 	switch (cmd) {
 	case LWNL80211_REGISTERMQ:
 	{
-		struct mq_attr attr;
-		attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;
-		attr.mq_msgsize = sizeof(lwnl80211_cb_data);
-		attr.mq_flags = 0;
-		attr.mq_curmsgs = 0;
 		memcpy(upper->mqname, (char *)(data_in->data), data_in->data_len);
-		upper->usermq = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);
-		if (upper->usermq == NULL) {
-			nldbg("Failed to open mq\n");
-			ret = -ENOSYS;
-		} else {
-			nldbg("Open mq with %s\n", upper->mqname);
-			ret = OK;
-		}
+		ret = OK;
 	}
 	break;
 	case LWNL80211_UNREGISTERMQ:
 	{
-		if (upper->usermq) {
-			mq_close(upper->usermq);
-			upper->usermq = NULL;
-		}
+		memset(upper->mqname, 0, sizeof(upper->mqname));
 		ret = OK;
 	}
 	break;
@@ -290,7 +251,6 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		} else {
 			ret = -ENOSYS;
 		}
-		MQ_REOPEN;
 	}
 	break;
 	case LWNL80211_CONNECT_AP:
@@ -320,7 +280,6 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		} else {
 			ret = -ENOSYS;
 		}
-		MQ_REOPEN;
 	}
 	break;
 	case LWNL80211_START_SOFTAP:
@@ -336,7 +295,6 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		} else {
 			ret = -ENOSYS;
 		}
-		MQ_REOPEN;
 	}
 	break;
 	case LWNL80211_STOP_SOFTAP:
@@ -351,7 +309,6 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		} else {
 			ret = -ENOSYS;
 		}
-		MQ_REOPEN;
 	}
 	break;
 	case LWNL80211_SCAN_AP:
@@ -389,12 +346,21 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_status status, void *buffer)
 {
 	LWNL80211_ENTER;
-	struct lwnl80211_upperhalf_s *upper = dev->parent;
-	int mq_ret;
 
-	if (upper->usermq == NULL) {
-		LWNL80211_ERR;
+	struct lwnl80211_upperhalf_s *upper = dev->parent;
+	mqd_t mqfd;
+	int mq_ret;
+	struct mq_attr attr;
+	attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;
+	attr.mq_msgsize = sizeof(lwnl80211_cb_data);
+	attr.mq_flags = 0;
+	attr.mq_curmsgs = 0;
+	mqfd = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);
+	if (mqfd == NULL) {
+		nldbg("Failed to open mq\n");
 		return;
+	} else {
+		nlvdbg("Open mq with %p\n", mqfd);
 	}
 
 	switch (status) {
@@ -406,9 +372,10 @@ static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_s
 	case LWNL80211_SCAN_FAILED:
 	{
 		lwnl80211_cb_data data_s = {status, .u.data = NULL, 0, 0};
-		mq_ret = mq_send(upper->usermq, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
+		mq_ret = mq_send(mqfd, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
 		if (mq_ret < 0) {
 			LWNL80211_ERR;
+			mq_close(mqfd);
 			return;
 		}
 		break;
@@ -422,9 +389,10 @@ static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_s
 				data_s.md = 0;
 			}
 			scan_list = scan_list->next;
-			mq_ret = mq_send(upper->usermq, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
+			mq_ret = mq_send(mqfd, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
 			if (mq_ret < 0) {
 				LWNL80211_ERR;
+				mq_close(mqfd);
 				return;
 			}
 		}
@@ -433,8 +401,11 @@ static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_s
 	case LWNL80211_UNKNOWN:
 	default:
 		LWNL80211_ERR;
+		mq_close(mqfd);
 		return;
 	}
+
+	mq_close(mqfd);
 
 	LWNL80211_LEAVE;
 
