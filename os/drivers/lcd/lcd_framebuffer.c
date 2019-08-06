@@ -198,6 +198,14 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 	fb_coord_t starty;
 	fb_coord_t endy;
 	int ret;
+#ifdef CONFIG_LCD_DMA_SUPPORT
+	int rowbytes;
+	int optsize;
+	int bytespl;
+	int height;
+	uint8_t *dmabuff;
+	int offset = 0;
+#endif
 
 	/* Clip to fit in the framebuffer */
 
@@ -234,45 +242,52 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 
 #ifdef CONFIG_LCD_DMA_SUPPORT
 	if (pinfo->putdma) {
-		//send buffer with dma , need to convert buffer
-		int y, w;
-		int bytepp = pinfo->bpp / 8;
-		int height = endy - starty + 1;
-
-		int offset = 0;
-		uint8_t *dmabuff = (uint8_t *)malloc(width * height * bytepp);
-		if (dmabuff == NULL) {
-			gdbg("ERROR: out of memory \n");
-			return -ENOMEM;
-		}
-
-		for (y = starty; y <= endy; y++) {
-			// get start point of each row
-			run  = priv->fbmem + y * priv->stride;
-			run += (startx * pinfo->bpp + 7) >> 3;
-			w = width * bytepp; //bytes for each line
+		if (width == priv->xres) {
+			dmabuff = priv->fbmem + starty * priv->stride;
+			ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
+		} else {
+			/* Send buffer with dma , need to convert buffer
+			 * buffer for each line is byte aligned.
+			 */
+			bytespl = (width * pinfo->bpp + 7) >> 3;
+			height = endy - starty + 1;
 			
-			// first copy each 8bytes
-			while (w >= 8) {
-				*((uint64_t *)(dmabuff + offset)) = *((uint64_t *)run);
-				w -= 8;
-				offset += 8;
-				run += 8;
+			dmabuff = (uint8_t *)malloc(height * bytespl);
+			if (dmabuff == NULL) {
+				gdbg("ERROR: out of memory \n");
+				return -ENOMEM;
 			}
-			// copy left data byte by byte
-			while (w-- > 0) {
-				dmabuff[offset++] = *run++;
-			}
-		}
 
-		ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
-		if (ret < 0) {
+			optsize = sizeof(uint32_t);
+			for (row = starty; row <= endy; row++) {
+				/* Get starting position of each row */
+				run = priv->fbmem + row * priv->stride;
+				run += (startx * pinfo->bpp + 7) >> 3;
+
+				rowbytes = bytespl;
+				/* First copy each optsize bytes */
+				while (rowbytes >= optsize) {
+					*((uint32_t *)(dmabuff + offset)) = *((uint32_t *)run);
+					rowbytes -= optsize;
+					offset += optsize;
+					run += optsize;
+				}
+
+				/* Copy left data byte by byte */
+				while (rowbytes-- > 0) {
+					dmabuff[offset++] = *run++;
+				}
+			}
+
+			ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
 			free(dmabuff);
-			return ret;
 		}
 
-		free(dmabuff);
-		return OK;
+		if (ret < 0) {
+			gdbg("ERROR: LCD putdma failed: %d \n", ret);
+		}
+
+		return ret;
 	}
 #endif
 
