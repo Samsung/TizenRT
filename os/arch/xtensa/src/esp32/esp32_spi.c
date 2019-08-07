@@ -360,7 +360,7 @@ const spi_device_interface_config_t def_dev_config = {
 	.clock_speed_hz = 1,
 	.input_delay_ns = 0,
 	.spics_io_num = 0,
-	.flags = 0,
+	.flags = SPI_DEVICE_HALFDUPLEX,
 };
 
 static struct esp32_spidev_s g_spi2dev = {
@@ -372,10 +372,14 @@ static struct esp32_spidev_s g_spi2dev = {
 	.dma_chan = 0,
 #endif
 	.port = HSPI_PORT,
-	.periph_module = PERIPH_VSPI_MODULE,
+	.periph_module = PERIPH_HSPI_MODULE,
 	.initiallized = 0,
 
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL,
+#if defined(CONFIG_GPIO_SPI2_CLK_PIN) || defined(CONFIG_GPIO_SPI2_MISO_PIN) || defined(CONFIG_GPIO_SPI2_MOSI_PIN)
+	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL ,
+#else
+	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_NATIVE_PINS,
+#endif
 	.comm_mode = SPIDEV_MODE0,
 	.frequency = SPI_DEFAULT_FREQUENCY,
 
@@ -440,8 +444,11 @@ static struct esp32_spidev_s g_spi3dev = {
 #else
 	.dma_chan = 0,
 #endif
-
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL,
+#if defined(CONFIG_GPIO_SPI3_CLK_PIN) || defined(CONFIG_GPIO_SPI3_MISO_PIN) || defined(CONFIG_GPIO_SPI3_MOSI_PIN)
+	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL ,
+#else
+	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_NATIVE_PINS,
+#endif
 	.comm_mode = SPIDEV_MODE0,
 
 	.port = VSPI_PORT,
@@ -452,11 +459,6 @@ static struct esp32_spidev_s g_spi3dev = {
 	.intrupt_level = 1,
 	.isr_num = ESP32_IRQ_SPI3,
 
-#if defined(CONFIG_GPIO_SPI3_CLK_PIN)
-	.gpio_clk = CONFIG_GPIO_SPI3_CLK_PIN,
-#else
-	.gpio_clk = VSPI_IOMUX_PIN_NUM_CLK,
-#endif
 	.gpio_nss = {
 #if defined(CONFIG_GPIO_SPI3_CS0_PIN)
 		CONFIG_GPIO_SPI3_CS0_PIN,
@@ -474,6 +476,13 @@ static struct esp32_spidev_s g_spi3dev = {
 		-1
 #endif
 	},
+	
+#if defined(CONFIG_GPIO_SPI3_CLK_PIN)
+	.gpio_clk = CONFIG_GPIO_SPI3_CLK_PIN,
+#else
+	.gpio_clk = VSPI_IOMUX_PIN_NUM_CLK,
+#endif
+
 #if defined(CONFIG_GPIO_SPI3_MISO_PIN)
 	.gpio_miso = CONFIG_GPIO_SPI3_MISO_PIN,
 #else
@@ -1153,7 +1162,11 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 
 	if (priv->gpio_miso >= 0) {
 		gpio_matrix_in(priv->gpio_miso, p_pin_sig->spimiso_in, 0);
-		gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
+		func = use_iomux ? (INPUT | FUNCTION_1) : (INPUT | FUNCTION_2);
+		if (priv->work_mode & SPICOMMON_BUSFLAG_DUAL) {
+			gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
+			func |= OUTPUT;
+		}
 		esp32_configgpio(priv->gpio_miso, func);
 	}
 
@@ -1177,7 +1190,9 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 	if (priv->work_mode & SPICOMMON_BUSFLAG_MASTER) {
 		for (int i = 0; i < MAX_CS_NUM; i++) {
 			if (priv->gpio_nss[i] >= 0 && priv->gpio_nss[i] < GPIO_PIN_COUNT) {
-				gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0);
+				if (i == 0) {
+					gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_in, 0);
+				}
 				gpio_matrix_out(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0, 0);
 				esp32_configgpio(priv->gpio_nss[i], func);
 			}
@@ -1474,7 +1489,8 @@ int spi_select_device(struct esp32_spidev_s *priv, int dev_id, const spi_device_
 	priv->hw->ctrl2.mosi_delay_num = 0;
 
 	/*Record the device just configured to save time for next time */
-	priv->prev_cs = dev_id;
+	priv->prev_cs = priv->cur_cs;
+	priv->cur_cs = dev_id;
 
 	spi_config_device(priv, dev_config);
 
@@ -1564,8 +1580,11 @@ struct spi_dev_s *up_spiinitialize(int port)
 		esp32_spi_Disable_ints(priv);
 		esp32_spi_Clear_ints(priv);
 
+#ifdef CONFIG_ESP32_SPI_CS
+		spi_select_device(priv, CONFIG_ESP32_SPI_CS, &def_dev_config);
+#else
 		spi_select_device(priv, 0, &def_dev_config);
-
+#endif
 		priv->initiallized = true;
 	}
 
