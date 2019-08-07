@@ -197,7 +197,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 	return EXIT_SUCCESS;
 }
 
-static int bt_hci_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
+int bt_hci_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
 {
 	FAR struct bt_buf_s *buf;
 	FAR struct bt_hci_cp_disconnect_s *disconn;
@@ -221,7 +221,7 @@ static int bt_hci_disconnect(FAR struct bt_conn_s *conn, uint8_t reason)
 	return 0;
 }
 
-static int bt_hci_connect_le_cancel(FAR struct bt_conn_s *conn)
+int bt_hci_connect_le_cancel(FAR struct bt_conn_s *conn)
 {
 	int err;
 
@@ -1138,4 +1138,3 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 
 	return true;
 }
-

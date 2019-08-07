@@ -450,6 +450,4 @@ int hci_le_create_conn(FAR const bt_addr_le_t *addr);
 
 void cmd_queue_init(void);
 
-int bt_le_scan_update_internal(bool fast_scan);
-
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

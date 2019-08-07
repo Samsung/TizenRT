@@ -143,9 +143,6 @@ static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 	return bt_conn_send_cb(conn, buf, NULL);
 }
 
-/* Add a new LE connection */
-struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
-
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
@@ -180,11 +177,6 @@ int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
  */
 #define BT_CONN_ID_INVALID 0xff
 struct bt_conn *bt_conn_lookup_id(u8_t id);
-
-/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
- * with the specific state
- */
-struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer, const bt_conn_state_t state);
 
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
