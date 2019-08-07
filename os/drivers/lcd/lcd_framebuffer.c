@@ -103,16 +103,16 @@ struct lcdfb_dev_s {
 /* Update the LCD when there is a change to the framebuffer */
 
 static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
-             FAR const struct nxgl_rect_s *rect);
+			FAR const struct nxgl_rect_s *rect);
 
 /* Get information about the video controller configuration and the
  * configuration of each color plane.
  */
 
 static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_videoinfo_s *vinfo);
+			FAR struct fb_videoinfo_s *vinfo);
 static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-             FAR struct fb_planeinfo_s *pinfo);
+			FAR struct fb_planeinfo_s *pinfo);
 
 /* The following is provided only if the video hardware supports RGB color
  * mapping
@@ -120,9 +120,9 @@ static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_cmap_s *cmap);
+			FAR struct fb_cmap_s *cmap);
 static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
-             FAR const struct fb_cmap_s *cmap);
+			FAR const struct fb_cmap_s *cmap);
 #endif
 
 /* The following is provided only if the video hardware supports a hardware
@@ -131,9 +131,9 @@ static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_cursorattrib_s *attrib);
+			FAR struct fb_cursorattrib_s *attrib);
 static int lcdfb_setcursor(FAR struct fb_vtable_s *vtable,
-             FAR struct fb_setcursor_s *settings);
+			FAR struct fb_setcursor_s *settings);
 #endif
 
 /****************************************************************************
@@ -187,7 +187,7 @@ static FAR struct lcdfb_dev_s *lcdfb_find(int display)
  ****************************************************************************/
 
 static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
-                        FAR const struct nxgl_rect_s *rect)
+			FAR const struct nxgl_rect_s *rect)
 {
 	FAR struct lcd_planeinfo_s *pinfo = &priv->pinfo;
 	FAR uint8_t *run;
@@ -198,6 +198,14 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 	fb_coord_t starty;
 	fb_coord_t endy;
 	int ret;
+#ifdef CONFIG_LCD_DMA_SUPPORT
+	int rowbytes;
+	int optsize;
+	int bytespl;
+	int height;
+	uint8_t *dmabuff;
+	int offset = 0;
+#endif
 
 	/* Clip to fit in the framebuffer */
 
@@ -234,45 +242,52 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 
 #ifdef CONFIG_LCD_DMA_SUPPORT
 	if (pinfo->putdma) {
-		//send buffer with dma , need to convert buffer
-		int y, w;
-		int bytepp = pinfo->bpp / 8;
-		int height = endy - starty + 1;
-
-		int offset = 0;
-		uint8_t *dmabuff = (uint8_t *)malloc(width * height * bytepp);
-		if (dmabuff == NULL) {
-			gdbg("ERROR: out of memory \n");
-			return -ENOMEM;
-		}
-
-		for (y = starty; y <= endy; y++) {
-			// get start point of each row
-			run  = priv->fbmem + y * priv->stride;
-			run += (startx * pinfo->bpp + 7) >> 3;
-			w = width * bytepp; //bytes for each line
+		if (width == priv->xres) {
+			dmabuff = priv->fbmem + starty * priv->stride;
+			ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
+		} else {
+			/* Send buffer with dma , need to convert buffer
+			 * buffer for each line is byte aligned.
+			 */
+			bytespl = (width * pinfo->bpp + 7) >> 3;
+			height = endy - starty + 1;
 			
-			// first copy each 8bytes
-			while (w >= 8) {
-				*((uint64_t *)(dmabuff + offset)) = *((uint64_t *)run);
-				w -= 8;
-				offset += 8;
-				run += 8;
+			dmabuff = (uint8_t *)malloc(height * bytespl);
+			if (dmabuff == NULL) {
+				gdbg("ERROR: out of memory \n");
+				return -ENOMEM;
 			}
-			// copy left data byte by byte
-			while (w-- > 0) {
-				dmabuff[offset++] = *run++;
-			}
-		}
 
-		ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
-		if (ret < 0) {
+			optsize = sizeof(uint32_t);
+			for (row = starty; row <= endy; row++) {
+				/* Get starting position of each row */
+				run = priv->fbmem + row * priv->stride;
+				run += (startx * pinfo->bpp + 7) >> 3;
+
+				rowbytes = bytespl;
+				/* First copy each optsize bytes */
+				while (rowbytes >= optsize) {
+					*((uint32_t *)(dmabuff + offset)) = *((uint32_t *)run);
+					rowbytes -= optsize;
+					offset += optsize;
+					run += optsize;
+				}
+
+				/* Copy left data byte by byte */
+				while (rowbytes-- > 0) {
+					dmabuff[offset++] = *run++;
+				}
+			}
+
+			ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
 			free(dmabuff);
-			return ret;
 		}
 
-		free(dmabuff);
-		return OK;
+		if (ret < 0) {
+			gdbg("ERROR: LCD putdma failed: %d \n", ret);
+		}
+
+		return ret;
 	}
 #endif
 
@@ -302,7 +317,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
  ****************************************************************************/
 
 static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
-                              FAR struct fb_videoinfo_s *vinfo)
+				FAR struct fb_videoinfo_s *vinfo)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -332,7 +347,7 @@ static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
  ****************************************************************************/
 
 static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-                              FAR struct fb_planeinfo_s *pinfo)
+				FAR struct fb_planeinfo_s *pinfo)
 {
 	FAR struct lcdfb_dev_s *priv;
 	int ret = -EINVAL;
@@ -363,7 +378,7 @@ static int lcdfb_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
-                         FAR struct fb_cmap_s *cmap)
+			FAR struct fb_cmap_s *cmap)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -395,7 +410,7 @@ static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_CMAP
 static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
-                         FAR const struct fb_cmap_s *cmap)
+			FAR const struct fb_cmap_s *cmap)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -427,7 +442,7 @@ static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
-                        FAR struct fb_cursorattrib_s *attrib)
+			FAR struct fb_cursorattrib_s *attrib)
 {
 	gvdbg("vtable=%p attrib=%p\n", vtable, attrib);
 	FAR struct lcdfb_dev_s *priv;
@@ -460,7 +475,7 @@ static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
 
 #ifdef CONFIG_FB_HWCURSOR
 static int lcdfb_setcursor(FAR struct fb_vtable_s *vtable,
-                       FAR struct fb_setcursor_s *settings)
+			FAR struct fb_setcursor_s *settings)
 {
 	FAR struct lcdfb_dev_s *priv;
 	FAR struct lcd_dev_s *lcd;
@@ -749,7 +764,7 @@ void up_fbuninitialize(int display)
 
 #if defined(CONFIG_LCD_UPDATE)
 void nx_notify_rectangle(FAR struct fb_planeinfo_s *pinfo,
-                         FAR const struct nxgl_rect_s *rect)
+				FAR const struct nxgl_rect_s *rect)
 {
 	FAR struct fb_planeinfo_s *fpinfo = (FAR struct fb_planeinfo_s *)pinfo;
 	FAR struct lcdfb_dev_s *priv;
