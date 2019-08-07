@@ -1439,12 +1439,12 @@ static void utc_arastorage_cursor_get_string_value_n(void)
 * @brief  test example for bplustree indexing
 * @scenario :
 		utc_arastorage_db_init_p();
-		utc_arastorage_db_index_exec();
+		utc_arastorage_db_index_exec_p();
 		utc_arastorage_db_deinit_p();
 * @precondition	 none
 * @postcondition    none
 */
-static void utc_arastorage_db_index_exec(void)
+static void utc_arastorage_db_index_exec_p(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
