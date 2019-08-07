@@ -702,8 +702,9 @@ int mm_get_heapindex(void *mem);
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
 void mm_initialize_app_heap(void);
-void mm_add_app_heap_list(struct mm_heap_s *heap);
+void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name);
 void mm_remove_app_heap_list(struct mm_heap_s *heap);
+struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 #endif
 
 #if CONFIG_MM_NHEAPS > 1
@@ -812,7 +813,7 @@ struct mm_ram_partition_s {
 
 /* Functions contained in mm_partition_mgr.c **************************************/
 void mm_initialize_ram_partitions(void);
-int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size);
+int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *name);
 void mm_free_ram_partition(uint32_t address);
 
 #endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */

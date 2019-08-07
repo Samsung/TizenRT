@@ -21,9 +21,13 @@
 
 #include <tinyara/config.h>
 #include <debug.h>
+#include <string.h>
 #include <tinyara/mm/mm.h>
 #ifdef CONFIG_MM_KERNEL_HEAP
 #include <tinyara/sched.h>
+#endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/binary_manager.h>
 #endif
 
 #if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
@@ -47,6 +51,7 @@ extern uint32_t _stext;
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #define USR_HEAP       g_mmheap
 #endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -60,6 +65,7 @@ extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 typedef struct app_heap_s {
 	struct app_heap_s *flink;
 	struct app_heap_s *blink;
+	char app_name[BIN_NAME_MAX];
 	struct mm_heap_s *heap;
 } app_heap_s;
 
@@ -80,7 +86,7 @@ void mm_initialize_app_heap()
 	dq_init(&app_heap_q);
 }
 
-void mm_add_app_heap_list(struct mm_heap_s *heap)
+void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name)
 {
 	app_heap_s *node = (app_heap_s *)kmm_malloc(sizeof(app_heap_s));
 	if (!node) {
@@ -89,6 +95,7 @@ void mm_add_app_heap_list(struct mm_heap_s *heap)
 	}
 
 	node->heap = heap;
+	strncpy(node->app_name, app_name, BIN_NAME_MAX);
 
 	/* Add the new heap node to the head of the list*/
 	dq_addfirst((dq_entry_t *)node, &app_heap_q);
@@ -131,6 +138,23 @@ static struct mm_heap_s *mm_get_app_heap(void *address)
 #endif
 
 	mdbg("address 0x%x is not in any app heap region.\n", address);
+	return NULL;
+}
+
+struct mm_heap_s *mm_get_app_heap_with_name(char *app_name)
+{
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	/* Search the heap */
+	while (node) {
+		if (strncmp(node->app_name, app_name, BIN_NAME_MAX) == 0) {
+			return node->heap;
+		}
+
+		node = dq_next(node);
+	}
+
+	/* There is no app which matched with app_name. */
 	return NULL;
 }
 #endif

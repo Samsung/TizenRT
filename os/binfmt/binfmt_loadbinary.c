@@ -93,7 +93,7 @@ int load_binary(FAR const char *filename, load_attr_t *load_attr)
 	uint32_t size = load_attr->ram_size;
 	struct tcb_s *tcb;
 
-	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
+	if (mm_allocate_ram_partition(&start_addr, &size, load_attr->bin_name) < 0) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		errcode = ENOMEM;
 		goto errout;

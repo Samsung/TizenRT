@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <string.h>
 #include <sys/types.h>
 
 #include <tinyara/mm/mm.h>
@@ -198,6 +199,7 @@ int binary_manager_load_binary(int bin_idx)
 	/* Load binary */
 	do {
 		if (is_new_bin == false) {
+			strncpy(load_attr.bin_name, header_data[latest_idx].bin_name, BIN_NAME_MAX);
 			snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, latest_idx));
 			load_attr.bin_size = header_data[latest_idx].bin_size;
 			load_attr.compression_type = header_data[latest_idx].compression_type;

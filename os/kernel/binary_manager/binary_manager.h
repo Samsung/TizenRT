@@ -89,7 +89,6 @@ struct binmgr_bininfo_s {
 	uint8_t inuse_idx;
 	load_attr_t load_attr;
 	part_info_t part_info[PARTS_PER_BIN];
-	char name[BIN_NAME_MAX];
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
 	sq_queue_t cb_list; // list node type : statecb_node_t
@@ -109,12 +108,12 @@ typedef struct statecb_node_s statecb_node_t;
 #define BIN_PARTSIZE(bin_idx, part_idx)                 bin_table[bin_idx].part_info[part_idx].part_size
 #define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_info[part_idx].part_num
 
-#define BIN_NAME(bin_idx)                               bin_table[bin_idx].name
 #define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
 #define BIN_CBLIST(bin_idx)                             bin_table[bin_idx].cb_list
 
 #define BIN_LOAD_ATTR(bin_idx)                          bin_table[bin_idx].load_attr
+#define BIN_NAME(bin_idx)                               bin_table[bin_idx].load_attr.bin_name
 #define BIN_SIZE(bin_idx)                               bin_table[bin_idx].load_attr.bin_size
 #define BIN_RAMSIZE(bin_idx)                            bin_table[bin_idx].load_attr.ram_size
 #define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].load_attr.offset
