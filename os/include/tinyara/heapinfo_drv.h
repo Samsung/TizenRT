@@ -23,6 +23,9 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/binary_manager.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -30,8 +33,12 @@
 #define HEAPINFO_DRVPATH     "/dev/heapinfo"
 
 struct heapinfo_option_s {
+	int heap_type;
 	int mode;
 	int pid;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	char app_name[BIN_NAME_MAX];
+#endif
 };
 typedef struct heapinfo_option_s heapinfo_option_t;
 

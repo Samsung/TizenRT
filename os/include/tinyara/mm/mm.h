@@ -221,6 +221,14 @@
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
+#define HEAPINFO_HEAP_TYPE_KERNEL 1
+#ifdef CONFIG_BUILD_PROTECTED
+#define HEAPINFO_HEAP_TYPE_USER   2
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define HEAPINFO_HEAP_TYPE_BINARY    3
+#endif
+#endif
+
 #define REGION_START (size_t)regionx_start[0]
 #define REGION_SIZE  regionx_size[0]
 #define REGION_END (REGION_START + REGION_SIZE)

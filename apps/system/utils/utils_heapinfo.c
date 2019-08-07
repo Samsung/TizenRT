@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 #include <sys/mount.h>
 #endif
@@ -30,10 +31,13 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/fs/fs.h>
-#ifdef CONFIG_MM_KERNEL_HEAP
 #include <tinyara/fs/ioctl.h>
-#endif
 #include <tinyara/heapinfo_drv.h>
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/binary_manager.h>
+#endif
+
 #include "utils_proc.h"
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
@@ -49,23 +53,11 @@ const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HE
 #define HEAPINFO_DISPLAY_SPECIFIC_HEAP  1
 #define HEAPINFO_DISPLAY_GROUP          2
 #define HEAPINFO_DISPLAY_SUMMARY        3
+
 #if CONFIG_MM_REGIONS > 1
 extern void *regionx_start[CONFIG_MM_REGIONS];
 extern size_t regionx_size[CONFIG_MM_REGIONS];
 extern int regionx_heap_idx[CONFIG_MM_REGIONS];
-#endif
-
-extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#ifdef CONFIG_MM_KERNEL_HEAP
-static int heapinfo_fd;
-#endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-static int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
-static int heapinfo_mode = HEAPINFO_SIMPLE;
-static int heapinfo_pid = HEAPINFO_PID_ALL;
-#endif
-#if CONFIG_MM_NHEAPS > 1
-extern heapinfo_total_info_t total_info;
 #endif
 
 #if CONFIG_MM_REGIONS > 1
@@ -80,41 +72,6 @@ static void heapinfo_print_regions(void)
 	for (region_idx = 0; region_idx < CONFIG_MM_REGIONS; region_idx++) {
 		printf("    %2d    | 0x%8x | 0x%8x |%8d |    %2d    \n", region_idx, regionx_start[region_idx], regionx_start[region_idx] + regionx_size[region_idx], regionx_size[region_idx], regionx_heap_idx[region_idx]);
 	}
-}
-static void heapinfo_print_nheaps(void)
-{
-	printf("\n****************************************************************\n");
-	printf("%c[1;33m", 27);
-	printf("     Summary of Total Heap Usages (Size in Bytes)\n");
-	printf("%c[0m", 27);
-	printf("****************************************************************\n");
-	/* Print the total heap details. */
-
-	printf("Total                           : %u (100%%)\n", total_info.total_heap_size);
-	printf("  - Allocated (Current / Peak)  : %u (%d%%) / %u (%d%%)\n",\
-		total_info.cur_alloc_size, (size_t)((uint64_t)(total_info.cur_alloc_size) * 100 / total_info.total_heap_size),\
-		total_info.peak_alloc_size,  (size_t)((uint64_t)(total_info.peak_alloc_size) * 100 / total_info.total_heap_size));
-	printf("  - Free (Current)              : %u (%d%%)\n", total_info.cur_free, (size_t)((uint64_t)total_info.cur_free * 100 / total_info.total_heap_size));
-	printf("  - Reserved                    : %u\n", CONFIG_MM_NHEAPS * SIZEOF_MM_ALLOCNODE * 2);
-
-	printf("\n****************************************************************\n");
-	printf("     Details of Total Heap Usages (Size in Bytes)\n");
-	printf("****************************************************************\n");
-	printf("< Free >\n");
-	printf("  - Largest Free Node Size            : %u\n", total_info.largest_free_size);
-	printf("\n< Allocation >\n");
-	printf("  - Current Size (Alive Allocation) = (1) + (2) + (3)\n");
-	printf("     . by Dead Threads (*) (1)        : %u\n", total_info.cur_dead_thread);
-	printf("     . by Alive Threads\n");
-	printf("        - Sum of \"STACK\"(**) (2)      : %u\n", total_info.sum_of_stacks);
-	printf("        - Sum of \"CURR_HEAP\" (3)      : %u\n", total_info.sum_of_heaps);
-
-	printf("** NOTE **\n");
-	printf("(*)  Alive allocation by dead threads might be used by others or might be a leakage.\n");
-	printf("(**) Only Idle task has a separate stack region,\n");
-	printf("  rest are all allocated on the heap region.\n");
-
-	printf("\n** For details, \"heapinfo -a\" or \"heapinfo -e [HEAP_IDX]\"\n");
 }
 #endif
 static void heapinfo_print_values(char *buf)
@@ -188,7 +145,7 @@ static void heapinfo_show_group(void)
 }
 #endif
 
-static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
+static void heapinfo_show_taskinfo(void)
 {
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
@@ -229,68 +186,49 @@ static void heapinfo_show_taskinfo(struct mm_heap_s *heap)
 #endif
 }
 
-#if CONFIG_MM_NHEAPS > 1
-static void heapinfo_init_totalinfo(void)
-{
-	total_info.total_heap_size = 0;
-	total_info.cur_free = 0;
-	total_info.largest_free_size = 0;
-	total_info.cur_dead_thread = 0;
-	total_info.sum_of_stacks = 0;
-	total_info.sum_of_heaps = 0;
-}
-#endif
-
 int utils_heapinfo(int argc, char **args)
 {
-	int option;
-#ifdef CONFIG_MM_KERNEL_HEAP
-	bool showing_kheap = false;
-	heapinfo_option_t kernel_option;
+	int ret;
+	int opt;
+	int heapinfo_fd;
+	int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
+	heapinfo_option_t options;
+	options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
+	options.mode = HEAPINFO_SIMPLE;
+	options.pid = HEAPINFO_PID_ALL;
+#ifdef CONFIG_BUILD_PROTECTED
+	char *heap_name = "KERNEL";
 #endif
-#if CONFIG_MM_NHEAPS > 1
-	bool summary_option = true;
-	int heap_idx = -1;
-	int region_num;
-#endif
+
 	if (argc >= 2 && !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
 	}
 
-	heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
-	heapinfo_mode = HEAPINFO_SIMPLE;
-	heapinfo_pid = HEAPINFO_PID_ALL;
-
-#if CONFIG_MM_NHEAPS > 1
-	heapinfo_init_totalinfo();
-#endif
-#ifdef CONFIG_MM_KERNEL_HEAP
-	struct mm_heap_s *heap = g_kmmheap;
-#else
-	void *temp_addr = malloc(1);
-	if (temp_addr == NULL) {
-		printf("Fail to run heapinfo : Out of memory.\n");
-		return -ENOMEM;
-	}
-	struct mm_heap_s *heap = mm_get_heap(temp_addr);
-	free(temp_addr);
-	if (heap == NULL) {
-		printf("Fail to run heapinfo : Operation fail.\n");
-		return -EFAULT;
-	}
-#endif
-
-	while ((option = getopt(argc, args, "iap:fge:rk")) != ERROR) {
+	while ((opt = getopt(argc, args, "kub:ap:fge:r")) != ERROR) {
 #if CONFIG_MM_NHEAPS > 1
 		summary_option = false;
 #endif
-		switch (option) {
-		case 'i':
-			heapinfo_peak_init(heap);
-			printf("Peak allocated memory size is cleared\n");
-			return OK;
+		switch (opt) {
+		/* k, u, b : select the heap type about kernel, user, binary. */
+		case 'k':
+			options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
+			break;
+#ifdef CONFIG_BUILD_PROTECTED
+		case 'u':
+			options.heap_type = HEAPINFO_HEAP_TYPE_USER;
+			heap_name = "USER";
+			break;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		case 'b':
+			options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
+			strncpy(options.app_name, optarg, BIN_NAME_MAX);
+			heap_name = options.app_name;
+			break;
+#endif
+#endif
+		/* a, p, f, g, e : select heapinfo display options */
 		case 'a':
-			heapinfo_mode = HEAPINFO_DETAIL_ALL;
+			options.mode = HEAPINFO_DETAIL_ALL;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 #if CONFIG_MM_NHEAPS > 1
 			summary_option = true;
@@ -298,8 +236,8 @@ int utils_heapinfo(int argc, char **args)
 			break;
 		case 'p':
 			if (strncmp(optarg, "0", strlen("0") + 1) == 0 || atoi(optarg)) {
-				heapinfo_mode = HEAPINFO_DETAIL_PID;
-				heapinfo_pid = atoi(optarg);
+				options.mode = HEAPINFO_DETAIL_PID;
+				options.pid = atoi(optarg);
 				heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 			} else {
 				printf("Invalid PID.\n");
@@ -307,16 +245,16 @@ int utils_heapinfo(int argc, char **args)
 			}
 			break;
 		case 'f':
-			heapinfo_mode = HEAPINFO_DETAIL_FREE;
+			options.mode = HEAPINFO_DETAIL_FREE;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 			break;
 		case 'g':
-			heapinfo_mode = HEAPINFO_SIMPLE;
+			options.mode = HEAPINFO_SIMPLE;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_GROUP;
 			break;
 		case 'e':
 #if CONFIG_MM_NHEAPS > 1
-			heapinfo_mode = HEAPINFO_DETAIL_SPECIFIC_HEAP;
+			options.mode = HEAPINFO_DETAIL_SPECIFIC_HEAP;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_SPECIFIC_HEAP;
 			heap_idx = atoi(optarg);
 #else
@@ -330,19 +268,6 @@ int utils_heapinfo(int argc, char **args)
 			goto usage;
 #endif
 			break;
-		case 'k':
-#ifdef CONFIG_MM_KERNEL_HEAP
-			heapinfo_fd = open(HEAPINFO_DRVPATH, O_RDWR);
-			if (heapinfo_fd < 0) {
-				printf("Fail to open heapinfo driver %d.\n", errno);
-				return ERROR;
-			}
-			showing_kheap = true;
-#else
-			printf("Kernel Heap is not supported.\n");
-			goto usage;
-#endif
-			break;
 		case '?':
 		default:
 			printf("Invalid option\n");
@@ -350,70 +275,29 @@ int utils_heapinfo(int argc, char **args)
 		}
 	}
 
-#ifdef CONFIG_MM_KERNEL_HEAP
-	if (showing_kheap == true) {
-		kernel_option.mode = heapinfo_mode; 
-		kernel_option.pid = heapinfo_pid;
+#ifdef CONFIG_BUILD_PROTECTED
+	printf("\n****************************************************************\n");
+	printf("     %s HEAP INFORMATION\n", heap_name);
+	printf("****************************************************************\n");
+#endif
+	heapinfo_fd = open(HEAPINFO_DRVPATH, O_RDWR);
+	if (heapinfo_fd < 0) {
+		printf("Heapinfo Fail, %d.\n", get_errno());
+		return ERROR;
 	}
-#endif
-
-#if CONFIG_MM_NHEAPS > 1
-	if (heapinfo_display_flag == HEAPINFO_DISPLAY_ALL) {
-		for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-			if (summary_option == false) {
-				printf("\n\n****************************************************************\n");
-				printf("%c[1;33m", 27);
-#ifdef CONFIG_MM_KERNEL_HEAP
-				if (showing_kheap == true) {
-					region_num = ioctl(heapinfo_fd, HEAPINFOIOC_NREGION, heap_idx);
-				} else
-#endif
-				{
-					region_num = heap[heap_idx].mm_nregions;
-				}
-				printf("HEAP[%d] has %d Region(s).\n", heap_idx, region_num);
-				printf("%c[0m", 27);
-			}
-#ifdef CONFIG_MM_KERNEL_HEAP
-			if (showing_kheap == true) {
-				(void)ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&kernel_option);
-			} else
-#endif
-			{
-				heapinfo_parse(&heap[heap_idx], heapinfo_mode, heapinfo_pid);
-			}
-		}
-	} else if (heapinfo_display_flag == HEAPINFO_DISPLAY_SPECIFIC_HEAP) {
-		if (heap_idx < 0 || heap_idx >= CONFIG_MM_NHEAPS) {
-			goto usage;
-		}
-		printf("****************************************************************\n");
-		printf("HEAP[%d] Allocation Info- (Size in Bytes)\n", heap_idx);
-#ifdef CONFIG_MM_KERNEL_HEAP
-		if (showing_kheap == true) {
-			(void)ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&kernel_option);
-		} else
-#endif
-		{
-			heapinfo_parse(&heap[heap_idx], heapinfo_mode, HEAPINFO_PID_ALL);
-		}
-	} else
-#endif
-#ifdef CONFIG_MM_KERNEL_HEAP
-	if (showing_kheap == true) {
-		(void)ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&kernel_option);
-	} else
-#endif
-	{
-		heapinfo_parse(heap, heapinfo_mode, heapinfo_pid);
+	ret = ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&options);
+	if (ret == ERROR) {
+		printf("Heapinfo Fail, %d.\n", get_errno());
+		return ERROR;		
 	}
+	close(heapinfo_fd);
 
 #if CONFIG_MM_NHEAPS > 1
 	if (summary_option == true) {
 		heapinfo_print_nheaps();
 	}
 #endif
-	heapinfo_show_taskinfo(heap);
+	heapinfo_show_taskinfo();
 
 
 	if (heapinfo_display_flag == HEAPINFO_DISPLAY_GROUP) {
@@ -424,35 +308,33 @@ int utils_heapinfo(int argc, char **args)
 #endif
 	}
 
-#ifdef CONFIG_MM_KERNEL_HEAP
-	if (showing_kheap == true) {
-		close(heapinfo_fd);
-	}
-#endif
 	return OK;
 
 usage:
-	printf("\nUsage: heapinfo [OPTIONS]\n");
+	printf("\nUsage: heapinfo [-TARGET] [-OPTION] [ARG]\n");
 	printf("Display information of heap memory\n");
+	printf("\nTargets:\n");
+#ifndef CONFIG_BUILD_PROTECTED
+	printf(" (none)         Initialize the heapinfo\n");
+#else
+	printf(" -k             Kernel Heap\n");
+	printf(" -u             User Heap\n");
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	printf(" -b BIN_NAME    Heap for BIN_NAME binary\n");
+#endif
+#endif
 	printf("\nOptions:\n");
-	printf(" -i           Initialize the heapinfo\n");
-	printf(" -a           Show the all allocation details\n");
-	printf(" -p PID       Show the specific PID allocation details \n");
-	printf(" -f           Show the free list \n");
+	printf(" -a             Show the all allocation details\n");
+	printf(" -p PID         Show the specific PID allocation details \n");
+	printf(" -f             Show the free list \n");
 #ifdef CONFIG_HEAPINFO_USER_GROUP
-	printf(" -g           Show the User defined group allocation details \n");
+	printf(" -g             Show the User defined group allocation details \n");
 #endif
 #if CONFIG_MM_NHEAPS > 1
-	printf(" -e HEAP_IDX  Show the heap[HEAP_IDX] allocation details(HEAP_IDX range : 0 ~ %d)\n", CONFIG_MM_NHEAPS - 1);
+	printf(" -e HEAP_IDX    Show the heap[HEAP_IDX] allocation details(HEAP_IDX range : 0 ~ %d)\n", CONFIG_MM_NHEAPS - 1);
 #endif
 #if CONFIG_MM_REGIONS > 1
-	printf(" -r           Show the all region information\n");
-#endif
-#ifdef CONFIG_MM_KERNEL_HEAP
-	printf(" -k OPTION    Show the kernel heap memory allocation details based on above options.\n");
-	if (showing_kheap == true) {
-		close(heapinfo_fd);
-	}
+	printf(" -r             Show the all region information\n");
 #endif
 	return ERROR;
 }
