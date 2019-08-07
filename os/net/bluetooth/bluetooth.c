@@ -1092,10 +1092,45 @@ int bt_conn_le_param_update(struct bt_conn *conn, const struct bt_le_conn_param 
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	// TODO: need to implement
-	return 0;
-}
+	struct bt_conn_s *conns = (struct bt_conn_s *)conn;
 
+	/* Disconnection is initiated by us, so auto connection shall be disabled.
+	 * Otherwise the passive scan would be enabled and we could send LE Create
+	 * Connection as soon as the remote starts advertising.
+	 */
+
+	if(conns->type == BT_CONN_TYPE_LE) {
+		bt_le_set_auto_conn(&conns->dst, NULL);
+	}
+
+	switch (conns->state) {
+	case BT_CONN_CONNECT_SCAN:
+		conns->err = reason;
+		bt_conn_set_state(conns, BT_CONN_DISCONNECTED);
+		bt_le_scan_update_internal(false);
+		return 0;
+	case BT_CONN_CONNECT_DIR_ADV:
+		conns->err = reason;
+		bt_conn_set_state(conns, BT_CONN_DISCONNECTED);
+		/* User should unref connection object when receiving
+		* error in connection callback.
+		*/
+		return bt_le_adv_stop();
+
+	case BT_CONN_CONNECT:
+		return bt_hci_connect_le_cancel(conns);
+
+	case BT_CONN_CONNECTED:
+		return bt_hci_disconnect(conns, reason);
+
+	case BT_CONN_DISCONNECT:
+		return 0;
+
+	case BT_CONN_DISCONNECTED:
+	default:
+		return -ENOTCONN;
+	}
+}
 
 
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer, const struct bt_le_conn_param *param)
@@ -1151,8 +1186,54 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer, const struct bt_le_c
 
 int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param *param)
 {
-	// TODO: need to implement
-	return 0;
+        struct bt_conn_s *conn;
+
+        if (param && !bt_le_conn_params_valid(param)) {
+                return -EINVAL;
+        }
+
+        conn = bt_conn_lookup_addr_le_id(BT_ID_DEFAULT, addr);
+        if (!conn) {
+                conn = bt_conn_add_le(addr);
+                if (!conn) {
+                        return -ENOMEM;
+                }
+        }
+
+        if (param) {
+                /* Enable the auto connection */
+
+                /* Only default identity is supported */
+                conn->id = BT_ID_DEFAULT;
+
+                bt_conn_set_param_le(conn, param);
+
+                if (!bt_atomic_testsetbit(conn->flags,
+                                        BT_CONN_AUTO_CONNECT)) {
+                        bt_conn_addref(conn);
+                }
+        } else {
+                /* Disable the auto connection */
+                if (bt_atomic_testclrbit(conn->flags,
+                                        BT_CONN_AUTO_CONNECT)) {
+                        bt_conn_relref(conn);
+                        if (conn->state == BT_CONN_CONNECT_SCAN) {
+                                bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+                        }
+                }
+        }
+
+        if (conn->state == BT_CONN_DISCONNECTED &&
+                        bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+                if (param) {
+                        bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+                }
+                bt_le_scan_update_internal(false);
+        }
+
+        bt_conn_relref(conn);
+
+        return 0;
 }
 
 struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer, const struct bt_le_adv_param *param)
