@@ -23,7 +23,7 @@
 #ifdef CONFIG_HAVE_CXXINITIALIZE
 #include <apps/platform/cxxinitialize.h>
 #endif
-#ifdef CONFIG_LIB_USRWORK
+#ifdef CONFIG_SCHED_USRWORK
 #include <tinyara/wqueue.h>
 #endif
 #ifdef CONFIG_TASH
@@ -56,7 +56,7 @@
 /* In the protected build (only) we also need to start the user work queue */
 
 #if !defined(CONFIG_BUILD_PROTECTED)
-#undef CONFIG_LIB_USRWORK
+#undef CONFIG_SCHED_USRWORK
 #endif
 
 #ifdef CONFIG_ENABLE_IOTJS
@@ -106,7 +106,7 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
+#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
 	int pid;
 #endif
 #if defined(CONFIG_MEDIA)
@@ -121,9 +121,8 @@ int preapp_start(int argc, char *argv[])
 	up_cxxinitialize();
 #endif
 
-#ifdef CONFIG_LIB_USRWORK
+#ifdef CONFIG_SCHED_USRWORK
 	/* Start the user-space work queue */
-
 	pid = work_usrstart();
 	if (pid <= 0) {
 		printf("user work queue is failed to start, error code is %d\n", pid);
@@ -167,7 +166,7 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
+#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
 error_out:
 	return pid;
 #else

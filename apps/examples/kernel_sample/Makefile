@@ -114,10 +114,6 @@ endif # CONFIG_DISABLE_SIGNALS
 
 ifeq ($(CONFIG_SCHED_WORKQUEUE),y)
 CSRCS += workqueue.c
-else
-ifeq ($(CONFIG_LIB_USRWORK),y)
-CSRCS += workqueue.c
-endif
 endif
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

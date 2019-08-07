@@ -111,13 +111,13 @@
  * builds.  This those configurations, the user-mode work queue provides the
  * same (non-standard) facility for use by applications.
  *
- * CONFIG_LIB_USRWORK. If CONFIG_LIB_USRWORK is also defined then the
+ * CONFIG_SCHED_USRWORK. If CONFIG_SCHED_USRWORK is also defined then the
  *   user-mode work queue will be created.
- * CONFIG_LIB_USRWORKPRIORITY - The minimum execution priority of the lower
+ * CONFIG_SCHED_USRWORKPRIORITY - The minimum execution priority of the lower
  *   priority worker thread.  Default: 100
- * CONFIG_LIB_USRWORKPERIOD - How often the lower priority worker thread
+ * CONFIG_SCHED_USRWORKPERIOD - How often the lower priority worker thread
  *  checks for work in units of microseconds.  Default: 100*1000 (100 MS).
- * CONFIG_LIB_USRWORKSTACKSIZE - The stack size allocated for the lower
+ * CONFIG_SCHED_USRWORKSTACKSIZE - The stack size allocated for the lower
  *   priority worker thread.  Default: 2048.
  */
 
@@ -151,10 +151,10 @@
  * (CONFIG_BUILD_PROTECTED=n && CONFIG_BUILD_KERNEL=n)
  */
 
-#undef CONFIG_LIB_USRWORK
+#undef CONFIG_SCHED_USRWORK
 #endif
 
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /* High priority, kernel work queue configuration ***************************/
 
@@ -233,21 +233,21 @@
 
 /* User space work queue configuration **************************************/
 
-#ifdef CONFIG_LIB_USRWORK
+#ifdef CONFIG_SCHED_USRWORK
 
-#ifndef CONFIG_LIB_USRWORKPRIORITY
-#define CONFIG_LIB_USRWORKPRIORITY 100
+#ifndef CONFIG_SCHED_USRWORKPRIORITY
+#define CONFIG_SCHED_USRWORKPRIORITY 100
 #endif
 
-#ifndef CONFIG_LIB_USRWORKPERIOD
-#define CONFIG_LIB_USRWORKPERIOD (100*1000)	/* 100 milliseconds */
+#ifndef CONFIG_SCHED_USRWORKPERIOD
+#define CONFIG_SCHED_USRWORKPERIOD (100*1000)	/* 100 milliseconds */
 #endif
 
-#ifndef CONFIG_LIB_USRWORKSTACKSIZE
-#define CONFIG_LIB_USRWORKSTACKSIZE CONFIG_IDLETHREAD_STACKSIZE
+#ifndef CONFIG_SCHED_USRWORKSTACKSIZE
+#define CONFIG_SCHED_USRWORKSTACKSIZE CONFIG_IDLETHREAD_STACKSIZE
 #endif
 
-#endif							/* CONFIG_LIB_USRWORK */
+#endif							/* CONFIG_SCHED_USRWORK */
 
 /* Work queue IDs:
  *
@@ -266,7 +266,7 @@
  *     priority work queue (if there is one).
  */
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 /* User mode */
 
 #define USRWORK  2				/* User mode work queue */
@@ -284,7 +284,7 @@
 #endif
 #define USRWORK  LPWORK			/* Redirect user-mode references */
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_USRWORK && !__KERNEL__ */
 
 /****************************************************************************
  * Public Types
@@ -339,7 +339,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 int work_usrstart(void);
 #endif
 
@@ -517,5 +517,5 @@ void lpwork_restorepriority(uint8_t reqprio);
 #endif
 
 #endif							/* __ASSEMBLY__ */
-#endif							/* CONFIG_SCHED_WORKQUEUE || CONFIG_LIB_USRWORK */
+#endif							/* CONFIG_SCHED_WORKQUEUE */
 #endif							/* __INCLUDE_WQUEUE_H */

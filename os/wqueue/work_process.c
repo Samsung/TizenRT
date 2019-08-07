@@ -148,7 +148,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 
 	next = wqueue->delay;
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
 #else
 	irqstate_t flags;
@@ -204,7 +204,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				 * performed... we don't have any idea how long this will take!
 				 */
 				
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 			work_unlock();
 #else
 			irqrestore(flags);
@@ -216,7 +216,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				 * back at the head of the list.
 				 */
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 			while (work_lock() < 0);
 #else
 			flags = irqsave();
@@ -269,7 +269,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 #if (defined(CONFIG_SCHED_LPWORK) && CONFIG_SCHED_LPNTHREADS > 0) || defined(CONFIG_SCHED_WORKQUEUE_SORTING)
 	if ((FAR struct work_s *)wqueue->q.head == NULL) {
 		wqueue->delay = 0;
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 		work_unlock();
 #else
 		irqrestore(flags);
@@ -299,7 +299,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 			* either the time elapses or until we are awakened by a signal.
 			* Interrupts will be re-enabled while we wait.
 			*/
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 		work_unlock();
 #else
 		irqrestore(flags);
@@ -308,7 +308,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 		usleep(next * USEC_PER_TICK);
 		wqueue->worker[wndx].busy = true;
 	} else {
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 		work_unlock();
 #else
 		irqrestore(flags);

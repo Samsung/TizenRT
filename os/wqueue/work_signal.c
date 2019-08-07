@@ -90,7 +90,7 @@ int work_signal(int qid)
 	int ret;
 	/* Get the process ID of the worker thread */
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	if (qid == USRWORK) {
 		pid = g_usrwork.worker[0].pid;
 	} else

@@ -400,17 +400,6 @@ CONFIG_PREALLOC_MQ_MSGS=4
 CONFIG_MQ_MAXMSGSIZE=32
 
 #
-# Work Queue Support
-#
-# CONFIG_SCHED_WORKQUEUE is not set
-# CONFIG_SCHED_HPWORK is not set
-# CONFIG_SCHED_LPWORK is not set
-
-#
-# Binary Manager
-#
-
-#
 # Stack size information
 #
 CONFIG_IDLETHREAD_STACKSIZE=1024
@@ -611,6 +600,17 @@ CONFIG_MM_NHEAPS=1
 # CONFIG_GRAN is not set
 
 #
+# Work Queue Support
+#
+# CONFIG_SCHED_WORKQUEUE is not set
+
+#
+# Kernel Work Queue
+#
+# CONFIG_SCHED_HPWORK is not set
+# CONFIG_SCHED_LPWORK is not set
+
+#
 # Power Management
 #
 
@@ -713,10 +713,6 @@ CONFIG_LIB_SENDFILE_BUFSIZE=512
 
 #
 # Program Execution Options
-#
-
-#
-# Non-standard Library Support
 #
 
 #

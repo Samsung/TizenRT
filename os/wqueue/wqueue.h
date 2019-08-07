@@ -66,7 +66,7 @@
 
 #include <tinyara/wqueue.h>
 
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_SCHED_WORKQUEUE)
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -168,7 +168,7 @@ extern pthread_mutex_t g_usrmutex;
  *   -EINTR - Wait was interrupted by a signal
  *
  ****************************************************************************/
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 int work_lock(void);
 #endif
 /****************************************************************************
@@ -184,7 +184,7 @@ int work_lock(void);
  *   None
  *
  ****************************************************************************/
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 void work_unlock(void);
 #endif
 
@@ -279,5 +279,5 @@ void work_process(FAR struct wqueue_s *wqueue, int wdx);
 
 int work_signal(int qid);
 
-#endif							/* CONFIG_SCHED_WORKQUEUE || CONFIG_LIB_USRWORK*/
+#endif							/* CONFIG_SCHED_WORKQUEUE */
 #endif							/* __OS_WQUEUE_WQUEUE_H */

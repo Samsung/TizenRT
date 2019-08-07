@@ -124,7 +124,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 	 * new work is typically added to the work queue from interrupt handlers.
 	 */
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
 #else
 	irqstate_t flags;
@@ -140,7 +140,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 		cur_work = (struct work_s *)wqueue->q.head;
 		do {
 			if (cur_work == NULL) {
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 				work_unlock();
 #else
 				irqrestore(flags);
@@ -162,7 +162,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 		ret = OK;
 	}
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	work_unlock();
 #else
 	irqrestore(flags);

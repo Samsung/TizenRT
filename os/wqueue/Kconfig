@@ -17,6 +17,7 @@ config SCHED_WORKQUEUE_SORTING
 	---help---
 		Sort workers by delay when worker is inserted
 
+comment "Kernel Work Queue"
 
 config SCHED_HPWORK
 	bool "High priority (kernel) worker thread"
@@ -173,38 +174,38 @@ config SCHED_LPWORKSTACKSIZE
 
 endif # SCHED_LPWORK
 
-comment "User Work queue Support"
-
 if BUILD_PROTECTED || BUILD_KERNEL
 
-config LIB_USRWORK
+comment "User Work Queue"
+
+config SCHED_USRWORK
 	bool "User mode worker thread"
+	select SCHED_WORKQUEUE
 	default y
-	depends on !DISABLE_SIGNALS
 	---help---
 		User space work queues can also be made available for deferred
 		processing in the TinyAra kernel build.
 
-if LIB_USRWORK
+if SCHED_USRWORK
 
-config LIB_USRWORKPRIORITY
+config SCHED_USRWORKPRIORITY
 	int "User mode priority worker thread priority"
 	default 100
 	---help---
 		The execution priority of the user-mode priority worker thread.  Default: 100
 
-config LIB_USRWORKPERIOD
+config SCHED_USRWORKPERIOD
 	int "User mode worker thread period"
 	default 100000
 	---help---
 		How often the lower priority worker thread checks for work in units
 		of microseconds. Default: 100*1000 (100 MS).
 
-config LIB_USRWORKSTACKSIZE
+config SCHED_USRWORKSTACKSIZE
 	int "User mode worker thread stack size"
 	default 2048
 	---help---
 		The stack size allocated for the lower priority worker thread.  Default: 2K.
 
-endif # LIB_USRWORK
+endif # SCHED_USRWORK
 endif # BUILD_PROTECTED || BUILD_KERNEL

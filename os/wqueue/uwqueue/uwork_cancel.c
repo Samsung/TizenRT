@@ -65,7 +65,7 @@
 
 #include "wqueue.h"
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -121,4 +121,4 @@ int work_cancel(int qid, FAR struct work_s *work)
 	}
 }
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_USRWORK && !__KERNEL__ */

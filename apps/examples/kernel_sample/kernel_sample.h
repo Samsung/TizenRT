@@ -212,7 +212,7 @@ int vfork_test(void);
 #endif
 
 /* workqueue.c **************************************************************/
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+#ifdef CONFIG_SCHED_WORKQUEUE
 int workqueue_test(void);
 #endif
 

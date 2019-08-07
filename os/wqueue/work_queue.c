@@ -126,7 +126,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 #endif
 	struct work_s *cur_work;
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
 #else
 	irqstate_t flags;
@@ -138,7 +138,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 	cur_work = (struct work_s *)wqueue->q.head;
 	while (cur_work != NULL) {
 		if (cur_work == work) {
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 			work_unlock();
 #else
 			irqrestore(flags);
@@ -165,7 +165,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 	{
 		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
 	}
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	work_unlock();
 #else
 	irqrestore(flags);

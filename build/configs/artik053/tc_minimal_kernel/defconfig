@@ -339,13 +339,6 @@ CONFIG_PREALLOC_MQ_MSGS=4
 CONFIG_MQ_MAXMSGSIZE=600
 
 #
-# Work Queue Support
-#
-# CONFIG_SCHED_WORKQUEUE is not set
-# CONFIG_SCHED_HPWORK is not set
-# CONFIG_SCHED_LPWORK is not set
-
-#
 # Stack size information
 #
 CONFIG_IDLETHREAD_STACKSIZE=1024
@@ -598,6 +591,17 @@ CONFIG_MM_NHEAPS=1
 CONFIG_MM_REGIONS=1
 # CONFIG_ARCH_HAVE_HEAPx is not set
 # CONFIG_GRAN is not set
+
+#
+# Work Queue Support
+#
+# CONFIG_SCHED_WORKQUEUE is not set
+
+#
+# Kernel Work Queue
+#
+# CONFIG_SCHED_HPWORK is not set
+# CONFIG_SCHED_LPWORK is not set
 
 #
 # Power Management
