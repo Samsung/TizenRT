@@ -72,6 +72,9 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
+#ifdef CONFIG_BINDER
+#include "tinyara/binder_drv.h"
+#endif
 #ifdef CONFIG_ENABLE_HEAPINFO
 #include <tinyara/heapinfo_drv.h>
 #endif
@@ -258,6 +261,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_TASK_MANAGER
 	task_manager_drv_register();
+#endif
+
+#ifdef CONFIG_BINDER
+	binder_drv_register();
 #endif
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
