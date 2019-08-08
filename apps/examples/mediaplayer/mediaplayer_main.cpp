@@ -37,6 +37,7 @@
 #include <limits.h>
 
 #include "WiFiConnector.h"
+#include "CmdView.h"
 
 using namespace std;
 using namespace media;
@@ -46,16 +47,14 @@ using namespace media::stream;
 // Name: mediaplayer_main
 //***************************************************************************/
 
-static const int TEST_PCM = 0;
-static const int TEST_BUFFER = 1;
-static const int TEST_HTTP = 2;
+static const int TEST_PCM = 1;
+static const int TEST_BUFFER = 2;
+static const int TEST_HTTP = 3;
 
 static char TEST_FILE_PATH[128] = "/rom/44100.pcm";
 // We don't provide any song's URL, to avoid license issue.
 // Please fill a valid URL to `TEST_HTTP_URL` for testing!
 static const std::string TEST_HTTP_URL = "";
-
-static const int TEST_COMMAND_NUM = 8;
 
 enum test_command_e {
 	APP_OFF = 0,
@@ -67,10 +66,6 @@ enum test_command_e {
 	VOLUME_UP,
 	VOLUME_DOWN
 };
-
-extern "C" {
-static int list_dir_entries(const char *dirpath, char **filelist, int max);
-}
 
 class MyMediaPlayer : public MediaPlayerObserverInterface,
 					  public FocusChangeListener,
@@ -321,9 +316,13 @@ public:
 	void start()
 	{
 		while (true) {
-			auto test = selectSource();
-			if (test < 0) {
+			vector<string> sourceList = {"Exit APP", "Test PCM", "Test BUFFER", "Test HTTP"};
+			listDirEntries("/rom", sourceList);
+			auto test = view.selectSource(sourceList);
+			if (test == 0) {
 				break;
+			} else if (test >= 4) {
+				strncpy(TEST_FILE_PATH, sourceList[test].c_str(), sizeof(TEST_FILE_PATH));
 			}
 
 			if (!setUp(test)) {
@@ -331,12 +330,11 @@ public:
 			}
 
 			while (true) {
-				auto player = selectPlayer();
+				auto player = view.selectPlayer();
 				if (player < 0) {
 					break;
 				}
-				cout << "PLAYER " << (char)('A' + player) << " is selected" << endl;
-				auto command = selectCommand();
+				auto command = view.selectCommand();
 				mPlayer[player]->doCommand(command);
 			}
 
@@ -368,129 +366,40 @@ private:
 		}
 	}
 
-	int userInput(int min, int max)
+	/* list all files in the directory */
+	void listDirEntries(const char *dirpath, vector<string> &sourceList)
 	{
-		assert(min <= max);
-		int input;
+		DIR *dirp = opendir(dirpath);
+		if (!dirp) {
+			cout << "Failed to open directory " << dirpath << "\n";
+			return;
+		}
 
-		while (true) {
-			cin >> input;
-			cout << endl;
+		struct dirent *entryp;
+		char path[CONFIG_PATH_MAX];
 
-			if (!cin.fail()) {
-				if (min <= input && input <= max) {
-					cout << "return input " << input << endl;
-					return input;
-				}
+		while ((entryp = readdir(dirp)) != NULL) {
+			if ((strcmp(".", entryp->d_name) == 0) || (strcmp("..", entryp->d_name) == 0)) {
+				continue;
 			}
 
-			cin.clear();
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-			cout << "Invalid Input, please try again" << endl;
+			snprintf(path, CONFIG_PATH_MAX, "%s/%s", dirpath, entryp->d_name);
+			if (DIRENT_ISDIRECTORY(entryp->d_type)) {
+				listDirEntries(path, sourceList);
+			} else {
+				/* this entry is a file, add it to list. */
+				sourceList.push_back(path);
+			}
 		}
+
+		closedir(dirp);
 	}
 
-	int selectSource()
-	{
-		char *filelist[32] = { 0, };
-		int filenum = list_dir_entries("/rom", filelist, 32);
-
-		cout << "====================" << endl;
-		cout << " 0. Exit APP        " << endl;
-		cout << " 1. Test PCM        " << endl;
-		cout << " 2. Test BUFFER     " << endl;
-		cout << " 3. Test HTTP       " << endl;
-		int offset = 4;
-		int i;
-		for (i = 0; i < filenum; i++) {
-			cout << " " << offset + i << ". " << filelist[i] << endl;
-		}
-		cout << "====================" << endl;
-
-		int select = userInput(0, offset + filenum - 1);
-		if (select >= offset) {
-			strncpy(TEST_FILE_PATH, filelist[select - offset], sizeof(TEST_FILE_PATH));
-		}
-		for (i = 0; i < filenum; i++) {
-			free(filelist[i]);
-		}
-		return select - 1;
-	}
-
-	int selectPlayer()
-	{
-		cout << "====================" << endl;
-		cout << " 0. Select Source   " << endl;
-		cout << " 1. Select PLAYER A " << endl;
-		cout << " 2. Select PLAYER B " << endl;
-		cout << "====================" << endl;
-		return userInput(0, 2) - 1;
-	}
-
-	int selectCommand()
-	{
-		cout << "====================" << endl;
-		cout << " 0. Do Nothing      " << endl;
-		cout << " 1. PLAYER_START    " << endl;
-		cout << " 2. PLAYER_PAUSE    " << endl;
-		cout << " 3. PLAYER_RESUME   " << endl;
-		cout << " 4. PLAYER_STOP     " << endl;
-		cout << " 5. GET_MAX_VOLUME  " << endl;
-		cout << " 6. VOLUME_UP       " << endl;
-		cout << " 7. VOLUME_DOWN     " << endl;
-		cout << "====================" << endl;
-		return userInput(0, TEST_COMMAND_NUM - 1);
-	}
 	shared_ptr<MyMediaPlayer> mPlayer[2];
+	MediaPlayerApp::CmdView view;
 };
 
 extern "C" {
-
-/* list all files in the directory */
-static int list_dir_entries(const char *dirpath, char **filelist, int max)
-{
-	if (!filelist) {
-		meddbg("Invalid list param!\n", dirpath);
-		return -1;
-	}
-
-	DIR *dirp = opendir(dirpath);
-	if (!dirp) {
-		meddbg("Failed to open directory %s\n", dirpath);
-		return -1;
-	}
-
-	int num = 0;
-	struct dirent *entryp;
-	char path[CONFIG_PATH_MAX];
-
-	while ((entryp = readdir(dirp)) != NULL) {
-		snprintf(path, CONFIG_PATH_MAX, "%s/%s", dirpath, entryp->d_name);
-		if (!DIRENT_ISDIRECTORY(entryp->d_type)) {
-			/* this entry is a file, add it to list. */
-			if (num >= max) {
-				meddbg("Too many files, list is full.\n");
-				break;
-			}
-			filelist[num++] = strdup(path);
-		} else {
-			if (!strcmp(".", entryp->d_name) || !strcmp("..", entryp->d_name)) {
-				continue;
-			}
-			int ret = list_dir_entries(path, &filelist[num], max - num);
-			if (ret <= 0) {
-				continue;
-			}
-			num += ret;
-		}
-	}
-
-	closedir(dirp);
-	return num;
-}
-
-
 int mediaplayer_main(int argc, char *argv[])
 {
 	up_cxxinitialize();

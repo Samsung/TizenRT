@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # C++ Test Example
 ASRCS		=
 CSRCS		=
-CXXSRCS		= BufferInputDataSource.cpp WiFiConnector.cpp
+CXXSRCS		= BufferInputDataSource.cpp CmdView.cpp WiFiConnector.cpp
 MAINSRC		= $(FUNCNAME)$(CXXEXT)
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
