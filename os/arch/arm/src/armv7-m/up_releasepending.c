@@ -134,6 +134,10 @@ void up_release_pending(void)
 #ifdef CONFIG_ARMV7M_MPU
 			up_set_mpu_app_configuration(rtcb);
 #endif
+#ifdef CONFIG_TASK_MONITOR
+			/* Update rtcb active flag for monitoring. */
+			rtcb->is_active = true;
+#endif
 
 			/* Then switch contexts */
 			up_restorestate(rtcb->xcp.regs);

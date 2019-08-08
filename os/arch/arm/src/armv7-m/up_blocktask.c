@@ -69,6 +69,10 @@
 #include <tinyara/debug/sysdbg.h>
 #endif
 
+#ifdef CONFIG_TASK_MONITOR
+#include "task_monitor/task_monitor_internal.h"
+#endif
+
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
 #endif
@@ -165,6 +169,10 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV7M_MPU
 			up_set_mpu_app_configuration(rtcb);
+#endif
+#ifdef CONFIG_TASK_MONITOR
+			/* Update rtcb active flag for monitoring. */
+			rtcb->is_active = true;
 #endif
 
 			/* Then switch contexts */

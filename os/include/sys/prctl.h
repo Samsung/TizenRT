@@ -93,6 +93,8 @@ enum prctl_type_e {
 	PR_MSG_SAVE = 4,
 	PR_MSG_READ = 5,
 	PR_MSG_REMOVE = 6,
+	PR_MONITOR_REGISTER = 7,
+	PR_MONITOR_UPDATE = 8,
 };
 
 /****************************************************************************

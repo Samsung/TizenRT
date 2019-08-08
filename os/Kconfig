@@ -607,6 +607,10 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
+menu "Task Monitor"
+source kernel/task_monitor/Kconfig
+endmenu
+
 menu "Task manager"
 source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
 endmenu

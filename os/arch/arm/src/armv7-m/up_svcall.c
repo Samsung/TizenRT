@@ -254,9 +254,16 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_TASK_MONITOR)
+		struct tcb_s *tcb = sched_self();
+#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV7M_MPU
-		up_set_mpu_app_configuration(sched_self());
+		up_set_mpu_app_configuration(tcb);
+#endif
+#ifdef CONFIG_TASK_MONITOR
+		/* Update tcb active flag for monitoring. */
+		tcb->is_active = true;
 #endif
 	}
 	break;
@@ -285,9 +292,16 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_TASK_MONITOR)
+		struct tcb_s *tcb = sched_self();
+#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV7M_MPU
-		up_set_mpu_app_configuration(sched_self());
+		up_set_mpu_app_configuration(tcb);
+#endif
+#ifdef CONFIG_TASK_MONITOR
+		/* Update tcb active flag for monitoring. */
+		tcb->is_active = true;
 #endif
 	}
 	break;
