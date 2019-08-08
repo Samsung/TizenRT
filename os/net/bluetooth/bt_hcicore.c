@@ -833,7 +833,7 @@ static void hci_event(FAR struct bt_buf_s *buf)
 
 	switch (hdr->evt) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
-		hci_disconn_complete(buf);
+		hci_disconn_complete_internal(buf);
 		break;
 
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
@@ -1844,7 +1844,7 @@ int bt_le_scan_update(void)
 }
 
 /****************************************************************************
- * Name: bt_conn_cb_register
+ * Name: bt_conn_cb_register_internal
  *
  * Description:
  *   Register callbacks to monitor the state of connections.
@@ -1854,7 +1854,7 @@ int bt_le_scan_update(void)
  *
  ****************************************************************************/
 
-void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb)
+void bt_conn_cb_register_internal(FAR struct bt_conn_cb_s *cb)
 {
 	cb->flink = g_callback_list;
 	g_callback_list = cb;

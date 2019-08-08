@@ -68,6 +68,8 @@ struct bt_ad {
 	size_t len;
 };
 
+static struct bt_conn_cb *callback_list;
+
 static int set_le_scan_enable(uint8_t enable);
 static int bt_le_scan_update_internal(bool fast_scan);
 
@@ -1255,11 +1257,11 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 	return 0;
 }
 
-/* void bt_conn_cb_register(struct bt_conn_cb *cb)
-   {
-   // TODO: need to implement
-   return;
-   } */
+void bt_conn_cb_register(struct bt_conn_cb *cb)
+{
+	cb->_next = callback_list;
+	callback_list = cb;
+}
 
 void bt_set_bondable(bool enable)
 {
@@ -1480,19 +1482,20 @@ static int bt_le_scan_update_internal(bool fast_scan)
 	}
 
 	/* don't restart scan if we have pending connection */
-	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
 	if (conn) {
-		bt_conn_release(conn);
+		bt_conn_relref(conn);
 		return 0;
 	}
 
-	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return 0;
 	}
 
 	bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
-	bt_conn_release(conn);
+	bt_conn_relref(conn);
+
 	if (fast_scan) {
 		interval = BT_GAP_SCAN_FAST_INTERVAL;
 		window = BT_GAP_SCAN_FAST_WINDOW;
@@ -1618,3 +1621,55 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	scan_dev_found_cb = cb;
 	return 0;
 }
+
+static void notify_disconnected(FAR struct bt_conn_s *conn)
+{
+	FAR struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected((struct bt_conn *)conn, conn->err);
+		}
+	}
+}
+
+void hci_disconn_complete_internal(FAR struct bt_buf_s *buf)
+{
+	FAR struct bt_hci_evt_disconn_complete_s *evt = (FAR void *)buf->data;
+	uint16_t handle = BT_LE162HOST(evt->handle);
+	FAR struct bt_conn_s *conn;
+
+	nvdbg("status %u handle %u reason %u\n", evt->status, handle, evt->reason);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		ndbg("ERROR:  Unable to look up conn with handle %u\n", handle);
+		goto advertise;
+	}
+
+	conn->err = evt->reason;
+
+	bt_l2cap_disconnected(conn);
+	notify_disconnected(conn);
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	conn->handle = 0;
+
+	if (bt_atomic_testbit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		bt_le_scan_update_internal(false);
+	}
+
+	bt_conn_relref(conn);
+
+advertise:
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_KEEP_ADVERTISING) &&
+		!bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		set_advertise_enable(true);
+	}
+}
+
