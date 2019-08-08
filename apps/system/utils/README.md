@@ -8,18 +8,18 @@ Most of the commands support *--help* option to show how to use.
 ## List of Commands
 | Basic commands | Kernel Commands       | FileSystem Commands |
 |----------------|-----------------------|---------------------|
-| [exit](#exit)  | [date](#date)         | [cat](#cat)         |
-| [help](#help)  | [dmesg](#dmesg)       | [cd](#cd)           |
-| [sh](#sh)      | [free](#free)         | [df](#df)           |
-| [sleep](#sleep)| [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [echo](#echo) |
-|                | [heapinfo](#heapinfo) | [ls](#ls)               |
-|                | [irqinfo](#irqinfo)   | [mkdir](#mkdir)         |
-|                | [kill/killall](#killkillall) | [mkrd](#mkrd)    |
-|                | [ps](#ps)             | [mksmartfs](#mksmartfs) |
-|                | [reboot](#reboot)     | [mount](#mount)         |
-|                | [stkmon](#stkmon)     | [pwd](#pwd)             |
-|                | [uptime](#uptime)     | [rm](#rm)               |
-|                |                       | [rmdir](#rmdir)         |
+| [exit](#exit)  | [cpuload](#cpuload)   | [cat](#cat)         |
+| [help](#help)  | [date](#date)         | [cd](#cd)           |
+| [sh](#sh)      | [dmesg](#dmesg)       | [df](#df)           |
+| [sleep](#sleep)| [free](#free)         | [echo](#echo)       |
+|                | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls)               |
+|                | [heapinfo](#heapinfo) | [mkdir](#mkdir)         |
+|                | [irqinfo](#irqinfo)   | [mkrd](#mkrd)           |
+|                | [kill/killall](#killkillall)                    | [mksmartfs](#mksmartfs) |
+|                | [ps](#ps)             | [mount](#mount)         |
+|                | [reboot](#reboot)     | [pwd](#pwd)             |
+|                | [stkmon](#stkmon)     | [rm](#rm)               |
+|                | [uptime](#uptime)     | [rmdir](#rmdir)         |
 |                |                       | [umount](#umount)       |
 
 
@@ -123,6 +123,87 @@ Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variabl
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```
 Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
+```
+
+## cpuload
+This command shows cpuload information per thread periodically. This has arguments which configure the printing information and cpuload daemon.
+```bash
+TASH>>cpuload --help
+
+Usage: cpuload [-OPTION]
+   or: cpuload stop
+Start or Stop cpuload monitor daemon
+
+Options:
+[-OPTION]
+ -s SNAPSHOT_INTERVAL  Start snapshot mode with SNAPSHOT_INTERVAL interval(s)
+ -i PRINT_INTERVAL     Show cpuload values every PRINT_INTERVAL(s)
+ -n ITERATION_COUNT    Iterate showing cpuload values ITERATION_COUNT times
+
+TASH>> cpuload
+Started CPU monitor with interval 5.
+PID | Pri |    2s |
+--------------------------------------------------
+  0 |   0 |  99.1 | Idle Task
+  1 | 224 |   0.0 | hpwork
+  2 | 113 |   0.0 | lpwork
+  3 | 120 |   0.0 | EHCI Monitor
+  4 | 110 |   0.0 | LWIP_TCP/IP
+  5 | 250 |   0.0 | binary_manager
+  7 | 220 |   0.0 | /dev/mtdblock2
+  8 | 221 |   0.0 | msg_receiver
+  9 | 221 |   0.0 | multi_recv_nonblock
+ 10 | 221 |   0.0 | multi_recv_block1
+ 11 | 221 |   0.0 | multi_recv_block2
+ 12 | 180 |   0.0 | /dev/mtdblock4
+ 13 | 100 |   0.0 | uwork
+ 14 | 125 |   0.9 | tash
+ 15 | 100 |   0.0 | CPULoadMonitor
+--------------------------------------------------
+
+TASH>> cpuload -s 10
+CPU monitor will started after 10s with interval 5.
+PID | Pri |  Snap ticks  |
+--------------------------------------------------
+  0 |   0 |   994(100.0) | Idle Task
+  1 | 224 |       0(0.0) | hpwork
+  2 | 113 |       0(0.0) | lpwork
+  3 | 120 |       0(0.0) | EHCI Monitor
+  4 | 110 |       0(0.0) | LWIP_TCP/IP
+  5 | 250 |       0(0.0) | binary_manager
+  7 | 220 |       0(0.0) | /dev/mtdblock2
+  8 | 221 |       0(0.0) | msg_receiver
+  9 | 221 |       0(0.0) | multi_recv_nonblock
+ 10 | 221 |       0(0.0) | multi_recv_block1
+ 11 | 221 |       0(0.0) | multi_recv_block2
+ 12 | 180 |       0(0.0) | /dev/mtdblock4
+ 13 | 100 |       0(0.0) | uwork
+ 14 | 125 |       5(0.5) | tash
+ 15 | 100 |       1(0.1) | CPULoadMonitor
+ * Snapshot interval : 10s (1000 ticks)
+--------------------------------------------------
+```
+### How to Enable
+Enable *CONFIG_ENABLE_CPULOAD* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> [*] cpuload monitor
+```
+#### Dependency
+Enable SCHED_CPULOAD.
+```
+Kernel Features -> [*] Performance Monitoring -> [*] Enable CPU load monitoring
+```
+Disable FS_PROCFS_EXCLUDE_CPULOAD.
+```
+File Systems -> [*] PROCFS File System -> Exclude individual procfs entries -> [ ] Exclude CPU load
+```
+Disable CONFIG_DISABLE_PTHREAD.
+```
+Kernel Features -> Disable Tinyara interfaces -> [ ] Disable pthread support
+```
+Disable CONFIG_DISABLE_SIGNALS.
+```
+Kernel Features -> Disable Tinyara interfaces -> [ ] Disable signal support
 ```
 
 

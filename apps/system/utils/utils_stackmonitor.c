@@ -86,7 +86,7 @@
  ****************************************************************************/
 #define STKMON_PREFIX "Stack Monitor: "
 
-#define STKMON_BUFLEN 64
+#define STKMON_BUFLEN 128
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_STACKMONITOR_STACKSIZE

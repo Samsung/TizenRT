@@ -75,6 +75,9 @@
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
+#ifdef CONFIG_SCHED_CPULOAD
+#include <tinyara/cpuload.h>
+#endif
 #ifdef CONFIG_ENABLE_HEAPINFO
 #include <tinyara/heapinfo_drv.h>
 #endif
@@ -259,6 +262,10 @@ static inline void os_do_appstart(void)
 	/* Initialize the network system & Create network task if required */
 
 	net_initialize();
+#endif
+
+#ifdef CONFIG_SCHED_CPULOAD
+	cpuload_initialize();
 #endif
 
 #ifdef CONFIG_TASK_MANAGER
