@@ -84,22 +84,11 @@ static void utc_systemio_spi_recv_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_systemio_spi_transfer_p(void)
-{
-	//TO DO
-}
-
-static void utc_systemio_spi_transfer_n(void)
-{
-	//TO DO
-}
-
 static void utc_systemio_spi_close_p(void)
 {
 	int ret = iotbus_spi_close(spi);
 	TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
-
 }
 
 static void utc_systemio_spi_close_n(void)
@@ -118,8 +107,6 @@ int utc_spi_main(void)
 	utc_systemio_spi_write_n();
 	utc_systemio_spi_recv_p();
 	utc_systemio_spi_recv_n();
-	utc_systemio_spi_transfer_p();
-	utc_systemio_spi_transfer_n();
 	utc_systemio_spi_close_n();
 	utc_systemio_spi_close_p();	
 
