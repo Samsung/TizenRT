@@ -40,16 +40,6 @@ static iotbus_gpio_context_h gpio;
 static iotbus_gpio_context_h gpio2;
 static int gpio_callback_flag = 0;
 
-static int utc_systemio_gpio_open2(int gpiopin)
-{
-	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpiopin);
-	if (!m_gpio) {
-		return 0;
-	}
-	gpio2 = m_gpio;
-	return 1;
-}
-
 static void utc_systemio_gpio_open_p(void)
 {
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(TEST_GPIO_1ST);
@@ -304,7 +294,7 @@ int utc_gpio_main(void)
 	utc_systemio_gpio_open_p();
 	utc_systemio_gpio_open_n();
 
-	utc_systemio_gpio_open2(TEST_GPIO_2ND);
+	gpio2 = iotbus_gpio_open(TEST_GPIO_2ND);
 
 	utc_systemio_gpio_set_direction_p_IOTBUS_GPIO_DIRECTION_NONE();
 	utc_systemio_gpio_set_direction_p_IOTBUS_GPIO_DIRECTION_OUT();

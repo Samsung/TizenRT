@@ -70,7 +70,7 @@ static void utc_systemio_uart_set_baudrate_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_systemio_uart_set_mode_P_IOTBUS_UART_PARITY_NONE(void)
+static void utc_systemio_uart_set_mode_p_IOTBUS_UART_PARITY_NONE(void)
 {
 	TC_ASSERT_EQ("iotbus_uart_set_mode", iotbus_uart_set_mode(uart, 8, IOTBUS_UART_PARITY_NONE, 1), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
@@ -173,7 +173,7 @@ int utc_uart_main(void)
 #ifdef CONFIG_SERIAL_TERMIOS
 	utc_systemio_uart_set_baudrate_p();
 	utc_systemio_uart_set_baudrate_n();	
-	utc_systemio_uart_set_mode_P_IOTBUS_UART_PARITY_NONE();
+	utc_systemio_uart_set_mode_p_IOTBUS_UART_PARITY_NONE();
 	utc_systemio_uart_set_mode_p_IOTBUS_UART_PARITY_EVEN();
 	utc_systemio_uart_set_mode_p_IOTBUS_UART_PARITY_ODD();
 	utc_systemio_uart_set_mode_n();
