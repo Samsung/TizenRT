@@ -31,7 +31,7 @@ OBJDIR		=  obj
 DEPDIR		=  dep
 SRCDIR		=  src
 
-CC		=  $(CROSS_COMPILE)gcc
+CC		=  gcc
 LDFLAGS		+=  -g
 LIBFILES	+=  -lm -lpthread
 ifeq ($(RELEASE),)
