@@ -123,7 +123,7 @@ struct tm_appinfo_list_s {
 typedef struct tm_appinfo_list_s tm_appinfo_list_t;
 
 /**
- * @brief Unicast message Structure
+ * @brief Unicast/Broadcast message structure
  */
 struct tm_msg_s {
 	int msg_size;
