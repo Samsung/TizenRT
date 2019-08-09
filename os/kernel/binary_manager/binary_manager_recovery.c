@@ -35,6 +35,7 @@
 #include <tinyara/init.h>
 #include <tinyara/board.h>
 
+#include "task/task.h"
 #include "sched/sched.h"
 #include "binary_manager.h"
 
@@ -72,6 +73,10 @@ static void recovery_exclude_scheduling_each(FAR struct tcb_s *tcb, FAR void *ar
 	}
 
 	if (tcb->group->tg_loadtask == binid) {
+
+		/* Recover semaphores, message queue, and watchdog timer resources.*/
+		task_recover(tcb);
+
 		flags = irqsave();
 		/* Remove the TCB from the task list associated with the state */
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
