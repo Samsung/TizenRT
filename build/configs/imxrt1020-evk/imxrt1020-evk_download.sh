@@ -120,15 +120,17 @@ function get_partition_index()
 function imxrt1020_dwld_help()
 {
         cat <<EOF
-	HELP: make download [OPTIONS]
-	OPTIONS:
-		ALL or [${uniq_parts[@]}]  NOTE:case sensitive
+	HELP:
+		make download ERASE [PARTITION(S)]
+		make download ALL or [PARTITION(S)]
+	PARTITION(S):
+		 [${uniq_parts[@]}]  NOTE:case sensitive
 
 	For examples:
 		make download ALL
 	        make download kernel app
 	        make download app
-
+		make download ERASE kernel
 EOF
 }
 
@@ -193,38 +195,70 @@ if test $# -eq 0; then
 	exit 1
 fi
 
+uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
+cmd_args=$@
+
+#Validate arguments
+for i in ${cmd_args[@]};do
+
+	if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
+		continue;
+	fi
+
+	for j in ${uniq_parts[@]};do
+		if [[ "${i}" == "${j}" ]];then
+			result=yes
+		fi
+	done
+
+	if [[ "$result" != "yes" ]];then
+		imxrt1020_dwld_help
+		exit 1
+	fi
+	result=no
+done
+
 imxrt1020_bootstrap;
 
-uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
-
-for in_part in "$@"
-do
-	if [[ "$in_part" == "ALL" ]];then
-		for part in ${uniq_parts[@]}; do
-			if [[ "$part" == "userfs" ]];then
-				continue
-			fi
-			gidx=$(get_partition_index $part)
-			flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
-			exe_name=$(get_executable_name ${parts[$gidx]})
-			flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
-		done
-	else
-		for i in ${parts[@]}; do
-			if [[ "$i" == "$in_part" ]]; then
-				result=y
-				break;
-			fi
-		done
-		if [ "${result}" == "y" ];then
-			gidx=$(get_partition_index $in_part)
-			flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
-			exe_name=$(get_executable_name ${parts[$gidx]})
-			flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
-		else
-			echo "Invlaid input to download script"
-			imxrt1020_dwld_help 1>&2
-			exit 1
+case $1 in
+#Download ALL option
+ALL)
+	for part in ${uniq_parts[@]}; do
+		if [[ "$part" == "userfs" ]];then
+			continue
 		fi
-	fi
-done
+		gidx=$(get_partition_index $part)
+		flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
+		exe_name=$(get_executable_name ${parts[$gidx]})
+		flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
+	done
+	;;
+#Download ERASE <list of partitions>
+ERASE)
+	while test $# -gt 1
+	do
+		chk=$2
+		for i in "${!parts[@]}"; do
+		   if [[ "${parts[$i]}" = "${chk}" ]]; then
+			flash_erase ${offsets[${i}]} ${sizes[${i}]}
+		   fi
+		done
+		shift
+	done
+	;;
+#Download <list of partitions>
+*)
+	while test $# -gt 0
+	do
+		chk=$1
+		for i in "${!uniq_parts[@]}"; do
+		   if [[ "${uniq_parts[$i]}" = "${chk}" ]]; then
+			gidx=$(get_partition_index ${chk})
+			flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
+			exe_name=$(get_executable_name ${chk})
+			flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
+		   fi
+		done
+		shift
+	done
+esac
