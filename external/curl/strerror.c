@@ -594,7 +594,7 @@ get_winsock_error (int err, char *buf, size_t len)
   buf [len-1] = '\0';
 
   if(errno != old_errno)
-    errno = old_errno;
+    set_errno(old_errno);
 
 #ifdef PRESERVE_WINDOWS_ERROR_CODE
   if(old_win_err != GetLastError())
@@ -716,7 +716,7 @@ const char *Curl_strerror(struct connectdata *conn, int err)
     *p = '\0';
 
   if(errno != old_errno)
-    errno = old_errno;
+    set_errno(old_errno);
 
 #ifdef PRESERVE_WINDOWS_ERROR_CODE
   if(old_win_err != GetLastError())
@@ -1049,7 +1049,7 @@ const char *Curl_sspi_strerror (struct connectdata *conn, int err)
   outbuf[outmax] = '\0';
 
   if(errno != old_errno)
-    errno = old_errno;
+    set_errno(old_errno);
 
 #ifdef PRESERVE_WINDOWS_ERROR_CODE
   if(old_win_err != GetLastError())

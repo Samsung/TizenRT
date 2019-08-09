@@ -661,7 +661,7 @@ static bool getaddressinfo(struct sockaddr *sa, char *addr,
 
   addr[0] = '\0';
   *port = 0;
-  errno = EAFNOSUPPORT;
+  set_errno(EAFNOSUPPORT);
   return FALSE;
 }
 
