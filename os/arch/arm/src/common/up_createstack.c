@@ -62,6 +62,9 @@
 #include <debug.h>
 #include <errno.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
 #include <arch/board/board.h>

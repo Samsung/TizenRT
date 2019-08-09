@@ -77,24 +77,45 @@ static ssize_t heapinfo_write(FAR struct file *filep, FAR const char *buffer, si
 static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = ERROR;
-#ifdef CONFIG_MM_KERNEL_HEAP
+	struct mm_heap_s *heap = NULL;
 	heapinfo_option_t *option;
-#endif
 
 	/* Handle built-in ioctl commands */
 
 	switch (cmd) {
-#ifdef CONFIG_MM_KERNEL_HEAP
 	case HEAPINFOIOC_PARSE:
 		option = (heapinfo_option_t *)arg;
-		heapinfo_parse(&g_kmmheap, option->mode, option->pid);
+		switch (option->heap_type) {
+#ifndef CONFIG_BUILD_PROTECTED
+		case HEAPINFO_HEAP_TYPE_KERNEL:
+			heap = &BASE_HEAP[regionx_heap_idx[0]];
+			break;
+#else /* CONFIG_BUILD_PROTECTED */
+		case HEAPINFO_HEAP_TYPE_KERNEL:
+			heap = &g_kmmheap;
+			break;
+		case HEAPINFO_HEAP_TYPE_USER:
+			heap = &BASE_HEAP[regionx_heap_idx[0]];
+			break;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		case HEAPINFO_HEAP_TYPE_BINARY:
+			heap = mm_get_app_heap_with_name(option->app_name);
+			break;
+#endif
+#endif
+		default:
+			break;
+		}
+		if (heap == NULL) {
+			return ERROR;
+		}
+		heapinfo_parse(heap, option->mode, option->pid);
 		ret = OK;
 		break;
 #if CONFIG_MM_REGIONS > 1
 	case HEAPINFOIOC_NREGION:
 		ret = g_kmmheap.mm_nregions;
 		break;
-#endif
 #endif
 	default:
 		break;

@@ -221,6 +221,14 @@
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
+#define HEAPINFO_HEAP_TYPE_KERNEL 1
+#ifdef CONFIG_BUILD_PROTECTED
+#define HEAPINFO_HEAP_TYPE_USER   2
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define HEAPINFO_HEAP_TYPE_BINARY    3
+#endif
+#endif
+
 #define REGION_START (size_t)regionx_start[0]
 #define REGION_SIZE  regionx_size[0]
 #define REGION_END (REGION_START + REGION_SIZE)
@@ -702,8 +710,9 @@ int mm_get_heapindex(void *mem);
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
 void mm_initialize_app_heap(void);
-void mm_add_app_heap_list(struct mm_heap_s *heap);
+void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name);
 void mm_remove_app_heap_list(struct mm_heap_s *heap);
+struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 #endif
 
 #if CONFIG_MM_NHEAPS > 1
@@ -812,7 +821,7 @@ struct mm_ram_partition_s {
 
 /* Functions contained in mm_partition_mgr.c **************************************/
 void mm_initialize_ram_partitions(void);
-int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size);
+int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *name);
 void mm_free_ram_partition(uint32_t address);
 
 #endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */
