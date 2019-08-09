@@ -158,7 +158,6 @@ config ENABLE_IRQINFO
 config ENABLE_KILL
 	bool "kill"
 	default y
-	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to processes or process groups.
 		When SIGKILL(9) is sent, a task/pthread which received signal will be terminated without any garbage collection.
