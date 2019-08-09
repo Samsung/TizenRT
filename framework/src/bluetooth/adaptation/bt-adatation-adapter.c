@@ -16,6 +16,8 @@
  */
 
 #include <tinyara/config.h>
+#include <tinyara/bluetooth/bluetooth.h>
+#include <tinyara/bluetooth/bt_hci.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-adapter.h"
 #include "bluetooth_private.h"
@@ -28,8 +30,24 @@ int bt_adapt_get_state(bt_adapter_state_e *adapter_state)
 	return BT_ERROR_NONE;
 }
 
+static void __bt_enable_cb(int err)
+{
+	bluetooth_event_param_t param = {0, };
+
+	BT_PRT("Enter\n");
+
+	param.event = BLUETOOTH_EVENT_ENABLED;
+	param.result = err; // TODO: need to convert
+
+	__bt_event_proxy(BLUETOOTH_EVENT_ENABLED, &param);
+}
+
 int bt_adapt_enable(void)
 {
+	BT_PRT("Enter\n");
+
+	bt_enable(__bt_enable_cb);
+
 	/* To be implemented */
 	return BT_ERROR_NONE;
 }
@@ -119,8 +137,33 @@ int bt_adapt_get_bonded_device_list(sq_queue_t *dev_list)
 }
 #endif
 
+static void __scan_start_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type, struct net_buf_simple *buf)
+{
+	bluetooth_event_param_t param = {0, };
+	bluetooth_le_device_info_t device_info = {0, };
+
+	BT_PRT("Enter\n");
+
+	param.event = BT_EVENT_LE_SCAN_RESULT_UPDATED;
+	param.result = 0;
+	param.param_data = &device_info;
+
+	__bt_le_event_proxy(BLUETOOTH_EVENT_REMOTE_LE_DEVICE_FOUND, &param);
+}
+
 int bt_adapt_start_le_scan(void)
 {
+	struct bt_le_scan_param param = {
+		.type = BT_HCI_LE_SCAN_PASSIVE,
+		.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+		.interval = 0x010,
+		.window = 0x010,
+	};
+
+	BT_DBG("Enter\n");
+
+	bt_le_scan_start(&param, __scan_start_cb);
+
 	/* To be implemented */
 	return BT_ERROR_NONE;
 }

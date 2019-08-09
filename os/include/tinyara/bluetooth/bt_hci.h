@@ -46,6 +46,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdint.h>
 
 /****************************************************************************
@@ -297,6 +298,12 @@
 
 #define CONFIG_BT_BACKGROUND_SCAN_INTERVAL      0x0010	/*defaulut value */
 #define CONFIG_BT_BACKGROUND_SCAN_WINDOW        0x0010	/*default value */
+
+#define BT_HCI_LE_SCAN_PASSIVE					0x00
+#define BT_HCI_LE_SCAN_ACTIVE					0x01
+
+#define BT_HCI_LE_SCAN_FILTER_DUP_DISABLE		0x00
+#define BT_HCI_LE_SCAN_FILTER_DUP_ENABLE		0x01
 
 /****************************************************************************
  * Public Types
