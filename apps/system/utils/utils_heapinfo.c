@@ -311,12 +311,10 @@ int utils_heapinfo(int argc, char **args)
 	return OK;
 
 usage:
-	printf("\nUsage: heapinfo [-TARGET] [-OPTION] [ARG]\n");
+	printf("\nUsage: heapinfo [-TARGET] [-OPTION]\n");
 	printf("Display information of heap memory\n");
+#ifdef CONFIG_BUILD_PROTECTED
 	printf("\nTargets:\n");
-#ifndef CONFIG_BUILD_PROTECTED
-	printf(" (none)         Initialize the heapinfo\n");
-#else
 	printf(" -k             Kernel Heap\n");
 	printf(" -u             User Heap\n");
 #ifdef CONFIG_APP_BINARY_SEPARATION
