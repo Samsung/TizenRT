@@ -325,21 +325,27 @@ This command shows heap memory usages per thread. This has arguments which confi
 ```bash
 TASH>>heapinfo --help
 
-Usage: heapinfo [OPTIONS]
+Usage: heapinfo [-TARGET] [-OPTION]
 Display information of heap memory
 
 Options:
- -i           Initialize the heapinfo
- -a           Show the all allocation details
- -p PID       Show the specific PID allocation details
- -f           Show the free list
- -g           Show the User defined group allocation details
-              (for -g option, CONFIG_HEAPINFO_GROUP is needed)
- -e HEAP_IDX  Show the heap[HEAP_IDX] allocation details
-              (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
- -r           Show the all region information
-              (-r option is available when CONFIG_MM_REGIONS is greater than 1)
- -k OPTION    Show the kernel heap memory allocation details based on above options
+[-TARGET]
+ -k             Kernel Heap
+                (-k target is available when CONFIG_BUILD_PROTECTED is enabled)
+ -u             User Heap
+                (-u target is available when CONFIG_BUILD_PROTECTED is enabled)
+ -b BIN_NAME    Heap for BIN_NAME binary
+                (-b target is available when CONFIG_APP_BINARY_SEPARATION is enabled)
+[-OPTION]
+ -a             Show the all allocation details
+ -p PID         Show the specific PID allocation details
+ -f             Show the free list
+ -g             Show the User defined group allocation details
+                (for -g option, CONFIG_HEAPINFO_GROUP is needed)
+ -e HEAP_IDX    Show the heap[HEAP_IDX] allocation details
+                (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
+ -r             Show the all region information
+                (-r option is available when CONFIG_MM_REGIONS is greater than 1)
 
 TASH>>heapinfo
 
