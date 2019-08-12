@@ -18,7 +18,6 @@
 
 #include <tinyara/config.h>
 #include <tinyara/init.h>
-#include <apps/platform/cxxinitialize.h>
 #include <tinyalsa/tinyalsa.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -405,8 +404,6 @@ private:
 extern "C" {
 int mediarecorder_main(int argc, char *argv[])
 {
-	up_cxxinitialize();
-
 	auto mediaRecorderTest = make_shared<MediaRecorderTest>();
 	mediaRecorderTest->start(TEST_MEDIATYPE_PCM, TEST_DATASOURCE_TYPE_FILE);
 

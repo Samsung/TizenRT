@@ -65,8 +65,6 @@
 #include "helper.h"
 #include "route_guide.grpc.pb.h"
 
-#include <apps/platform/cxxinitialize.h>
-
 struct arg_holder {
 	int argc;
 	char** argv;
@@ -596,11 +594,6 @@ int route_client_guide_cb(void* args)
 extern "C" {
 int route_client_main(int argc, char** argv)
 {
-// If C++ initialization for static constructors is supported, then do
-// that first
-#ifdef CONFIG_EXAMPLES_ROUTE_CLIENT_CXXINITIALIZE
-	up_cxxinitialize();
-#endif
 	setenv("GRPC_VERBOSITY", "DEBUG", 1);
 	pthread_t tid;
 	pthread_attr_t attr;

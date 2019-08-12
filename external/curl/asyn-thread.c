@@ -429,7 +429,7 @@ static bool init_resolve_thread(struct connectdata *conn,
   destroy_async_data(&conn->async);
 
  errno_exit:
-  errno = err;
+  set_errno(err);
   return FALSE;
 }
 

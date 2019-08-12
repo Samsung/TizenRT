@@ -20,6 +20,9 @@
  ****************************************************************************/
 #include <stdio.h>
 #include <tinyara/config.h>
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+#include <apps/platform/cxxinitialize.h>
+#endif
 #ifdef CONFIG_LIB_USRWORK
 #include <tinyara/wqueue.h>
 #endif
@@ -112,6 +115,10 @@ int preapp_start(int argc, char *argv[])
 
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
+#endif
+
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+	up_cxxinitialize();
 #endif
 
 #ifdef CONFIG_LIB_USRWORK

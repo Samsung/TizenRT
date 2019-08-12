@@ -22,7 +22,6 @@
 #include <tinyara/config.h>
 #include <tinyara/init.h>
 #include <stdio.h>
-#include <apps/platform/cxxinitialize.h>
 
 #include "gtest/gtest.h"
 
@@ -62,10 +61,6 @@ GTEST_API_ int gtest_run(void *args)
 
 	argc = ((struct pthread_arg *)args)->argc;
 	argv = ((struct pthread_arg *)args)->argv;
-
-	/* C++ initialization should be supported to run this unittest.
-	All the tests are registered executing this function. */
-	up_cxxinitialize();
 
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

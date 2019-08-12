@@ -154,7 +154,7 @@ static curl_off_t strtooff(const char *nptr, char **endptr, int base)
     else
       value = CURL_OFF_T_MAX;
 
-    errno = ERANGE;
+    set_errno(ERANGE);
   }
 
   if(endptr)
@@ -217,7 +217,7 @@ CURLofft curlx_strtoofft(const char *str, char **endp, int base,
 {
   char *end;
   curl_off_t number;
-  errno = 0;
+  set_errno(0);
   *num = 0; /* clear by default */
 
   DEBUGASSERT(str);

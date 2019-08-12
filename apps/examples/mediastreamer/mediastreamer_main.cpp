@@ -18,7 +18,6 @@
 
 #include <tinyara/config.h>
 #include <tinyara/init.h>
-#include <apps/platform/cxxinitialize.h>
 #include <fcntl.h>
 #include <wifi_manager/wifi_manager.h>
 
@@ -225,8 +224,6 @@ extern "C"
 			printf("Wait (%d/3) sec...\n", i + 1);
 			sleep(1);
 		}
-
-		up_cxxinitialize();
 
 		g_ipAddr = TEST_SERVER_IP_ADDR;
 		g_port = TEST_SERVER_PORT;

@@ -420,7 +420,7 @@ typedef int sig_atomic_t;
 #define SET_SOCKERRNO(x)  (WSASetLastError((int)(x)))
 #else
 #define SOCKERRNO         (errno)
-#define SET_SOCKERRNO(x)  (errno = (x))
+#define SET_SOCKERRNO(x)  set_errno((x))
 #endif
 
 

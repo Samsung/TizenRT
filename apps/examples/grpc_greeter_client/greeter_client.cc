@@ -58,7 +58,6 @@
 #include <grpc++/grpc++.h>
 #include <tinyara/init.h>
 
-#include <apps/platform/cxxinitialize.h>
 #include <stdlib.h>
 
 #ifdef BAZEL_BUILD
@@ -442,11 +441,6 @@ int greeter_client_cb(void* args)
 extern "C" {
 int greeter_client_main(int argc, char** argv)
 {
-// If C++ initialization for static constructors is supported, then do
-// that first
-#ifdef CONFIG_EXAMPLES_GREETER_CLIENT_CXXINITIALIZE
-	up_cxxinitialize();
-#endif
 	struct pthread_arg args;
 	args.argc = argc;
 	args.argv = argv;

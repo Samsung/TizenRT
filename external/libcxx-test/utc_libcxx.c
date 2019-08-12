@@ -20,11 +20,6 @@
 
 int utc_libcxx_main(int argc, char *argv[])
 {
-
-#if defined(CONFIG_HAVE_CXXINITIALIZE)
-	up_cxxinitialize();
-#endif
-
 	if (tc_handler(TC_START, "Libc++ TC") == ERROR) {
 		return ERROR;
 	}

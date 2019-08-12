@@ -62,10 +62,6 @@ ifeq ($(CONFIG_ENC28J60),y)
 CSRCS += up_enc28j60.c
 endif
 
-ifeq ($(CONFIG_HAVE_CXX),y)
-CSRCS += stm32_cxxinitialize.c
-endif
-
 ifeq ($(CONFIG_ARCH_LEDS),y)
 CSRCS += stm32_autoleds.c
 else

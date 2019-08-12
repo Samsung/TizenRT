@@ -22,7 +22,6 @@
 #include <tinyara/config.h>
 #include <tinyara/init.h>
 #include <stdio.h>
-#include <apps/platform/cxxinitialize.h>
 #include <errno.h>
 #include <iostream>
 #include "tc_common.h"
@@ -66,8 +65,6 @@ int main(int argc, FAR char *argv[])
 int utc_media_main(int argc, char *argv[])
 #endif
 {
-	up_cxxinitialize();
-	
 	if (tc_handler(TC_START, "Media UTC") == -1) {
 		return -1;
 	}

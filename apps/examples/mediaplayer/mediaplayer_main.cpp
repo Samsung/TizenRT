@@ -24,7 +24,6 @@
 #include <functional>
 
 #include <tinyara/init.h>
-#include <apps/platform/cxxinitialize.h>
 #include <media/FocusManager.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
@@ -402,8 +401,6 @@ private:
 extern "C" {
 int mediaplayer_main(int argc, char *argv[])
 {
-	up_cxxinitialize();
-
 	MediaPlayerController mediaPlayerController;
 	mediaPlayerController.start();
 
