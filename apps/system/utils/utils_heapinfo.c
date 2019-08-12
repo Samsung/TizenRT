@@ -89,6 +89,9 @@ static void heapinfo_print_values(char *buf)
 	printf(" | %5s", stat_info[PROC_STAT_PPID]);
 #endif
 	printf(" | %5s | %9s | %9s", stat_info[PROC_STAT_TOTALSTACK], stat_info[PROC_STAT_CURRHEAP], stat_info[PROC_STAT_PEAKHEAP]);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	printf(" | %8s", stat_info[PROC_STAT_HEAP_NAME]);
+#endif
 #if CONFIG_TASK_NAME_SIZE > 0
 	printf(" | %s(", stat_info[PROC_STAT_NAME]);
 #else
@@ -169,12 +172,19 @@ static void heapinfo_show_taskinfo(void)
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
 	printf("%5s | ", "PPID");
 #endif
-	printf("%5s | %9s | %9s | %s\n", "STACK", "CURR_HEAP", "PEAK_HEAP", "NAME");
-	printf("----|");
+	printf("%5s | %9s | %9s |", "STACK", "CURR_HEAP", "PEAK_HEAP");
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	printf(" %s |", "   BIN  ");
+#endif
+	printf(" %s\n----|", "NAME");
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
 	printf("-------|");
 #endif
-	printf("-------|-----------|-----------|----------\n");
+	printf("-------|-----------|-----------|");
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	printf("----------|");
+#endif
+	printf("----------\n");
 
 	utils_proc_pid_foreach(heapinfo_read_proc);
 

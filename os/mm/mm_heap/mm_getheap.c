@@ -157,6 +157,22 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name)
 	/* There is no app which matched with app_name. */
 	return NULL;
 }
+
+char *mm_get_app_heap_name(void *address)
+{
+	/* First, search the address in list of app heaps */
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	while (node) {
+		if ((address > (void *)node->heap->mm_heapstart[0]) && (address < (void *)node->heap->mm_heapend[0])) {
+			return node->app_name;
+		}
+		node = dq_next(node);
+	}
+
+	mdbg("address 0x%x is not in any app heap region.\n", address);
+	return NULL;
+}
 #endif
 
 /****************************************************************************
