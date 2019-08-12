@@ -442,8 +442,6 @@ void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
 
 int bt_addr_le_create_static(bt_addr_le_t *addr);
 
-int bt_ble_scan_update(bool fast_scan);
-
 int hci_initialize(void);
 
 void ble_adv_report(FAR struct bt_buf_s *buf);
