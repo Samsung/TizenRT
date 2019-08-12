@@ -72,6 +72,9 @@
 #endif
 #include "task/task.h"
 
+#ifdef CONFIG_TASK_MONITOR
+#include "task_monitor/task_monitor_internal.h"
+#endif
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -188,6 +191,10 @@ int task_terminate(pid_t pid, bool nonblocking)
 	saved_state = irqsave();
 	dq_rem((FAR dq_entry_t *)dtcb, (dq_queue_t *)g_tasklisttable[dtcb->task_state].list);
 	dtcb->task_state = TSTATE_TASK_INVALID;
+#ifdef CONFIG_TASK_MONITOR
+	/* Unregister this pid from task monitor */
+	task_monitor_update_list(pid, NOT_MONITORED);
+#endif
 	irqrestore(saved_state);
 
 	/* At this point, the TCB should no longer be accessible to the system */

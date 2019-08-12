@@ -88,6 +88,9 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include "binary_manager/binary_manager.h"
 #endif
+#ifdef CONFIG_TASK_MONITOR
+#include "task_monitor/task_monitor_internal.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -260,6 +263,13 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_TASK_MANAGER
 	task_manager_drv_register();
+#endif
+
+#ifdef CONFIG_TASK_MONITOR
+	pid = kernel_thread("taskmonitor", CONFIG_TASK_MONITOR_PRIORITY, 1024, task_monitor, (FAR char *const *)NULL);
+	if (pid < 0) {
+		sdbg("Failed to start task monitor\n");
+	}
 #endif
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)

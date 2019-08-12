@@ -624,6 +624,9 @@ struct tcb_s {
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
 #endif
+#ifdef CONFIG_TASK_MONITOR
+	bool is_active;
+#endif
 };
 
 /* struct task_tcb_s *************************************************************/
