@@ -409,6 +409,24 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	char *bin_name = mm_get_app_heap_name(tcb->stack_alloc_ptr);
+	if (bin_name == NULL) {
+		bin_name = "kernel";
+	}
+
+	buffer += copysize;
+	remaining -= copysize;
+
+	if (totalsize >= buflen) {
+		return totalsize;
+	}
+
+	linesize = snprintf(procfile->line, STATUS_LINELEN, " %s", bin_name);
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);	
+	totalsize += copysize;
+#endif
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	buffer += copysize;
 	remaining -= copysize;

@@ -713,6 +713,7 @@ void mm_initialize_app_heap(void);
 void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name);
 void mm_remove_app_heap_list(struct mm_heap_s *heap);
 struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
+char *mm_get_app_heap_name(void *address);
 #endif
 
 #if CONFIG_MM_NHEAPS > 1
