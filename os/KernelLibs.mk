@@ -91,6 +91,7 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
 endif
 
 # Add libraries for compression support
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 endif
 
