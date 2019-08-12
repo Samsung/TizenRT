@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# libc/wqueue/Make.defs
+# wqueue/Make.defs
 #
-#   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,35 +50,15 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_LIB_USRWORK),y)
+# Add work queue files
 
-# Add the work queue C files to the build
+ifeq ($(CONFIG_SCHED_WORKQUEUE),y)
 
-WORK_CSRCS += work_usrthread.c work_queue.c work_cancel.c work_signal.c
-WORK_CSRCS += work_lock.c
+CSRCS += work_queue.c work_process.c work_cancel.c work_signal.c
 
-# Protected mode
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CSRCS += $(WORK_CSRCS)
-
-# Add the wqueue directory to the build
+# Include wqueue build support
 
 DEPPATH += --dep-path wqueue
 VPATH += :wqueue
 
-else
-
-# Kernel mode
-
-ifeq ($(CONFIG_BUILD_KERNEL),y)
-CSRCS += $(WORK_CSRCS)
-
-# Add the wqueue directory to the build
-
-DEPPATH += --dep-path wqueue
-VPATH += :wqueue
-
-endif
-endif
-endif
+endif # CONFIG_SCHED_WORKQUEUE

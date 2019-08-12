@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/wqueue.h
+ * wqueue/work_signal.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,92 +50,93 @@
  *
  ****************************************************************************/
 
-#ifndef __LIBC_WQUEUE_WQUEUE_H
-#define __LIBC_WQUEUE_WQUEUE_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <semaphore.h>
+#include <signal.h>
+#include <errno.h>
 
 #include <tinyara/wqueue.h>
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#include "wqueue.h"
+
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Functions
  ****************************************************************************/
-
 /****************************************************************************
- * Public Type Definitions
+ * Name: work_signal
+ *
+ * Description:
+ *   Signal the worker thread to process the work queue now.  This function
+ *   is used internally by the work logic but could also be used by the
+ *   user to force an immediate re-assessment of pending work.
+ *
+ * Input parameters:
+ *   qid    - The work queue ID
+ *
+ * Returned Value:
+ *   Zero on success, a negated errno on failure
+ *
  ****************************************************************************/
 
-/* This structure defines the state of one user-modework queue. */
+int work_signal(int qid)
+{
+	pid_t pid;
+	int ret;
+	/* Get the process ID of the worker thread */
 
-struct usr_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
-	struct dq_queue_s q;		/* The queue of pending work */
-	pid_t pid;					/* The task ID of the worker thread(s) */
-};
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/* The state of the user mode work queue */
-
-extern struct usr_wqueue_s g_usrwork;
-
-/* This semaphore/mutex supports exclusive access to the user-mode work queue */
-
-#ifdef CONFIG_BUILD_PROTECTED
-extern sem_t g_usrsem;
-#else
-extern pthread_mutex_t g_usrmutex;
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	if (qid == USRWORK) {
+		pid = g_usrwork.worker[0].pid;
+	} else
 #endif
+#ifdef CONFIG_SCHED_HPWORK
+	if (qid == HPWORK) {
+		pid = g_hpwork.worker[0].pid;
+	} else
+#endif
+#ifdef CONFIG_SCHED_LPWORK
+	if (qid == LPWORK) {
+		int wndx;
+		int i;
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+		/* Find an IDLE worker thread */
 
-/****************************************************************************
- * Name: work_lock
- *
- * Description:
- *   Lock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -EINTR - Wait was interrupted by a signal
- *
- ****************************************************************************/
+		for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
+			/* Is this worker thread busy? */
 
-int work_lock(void);
+			if (!g_lpwork.worker[i].busy) {
+				/* No.. select this thread */
 
-/****************************************************************************
- * Name: work_unlock
- *
- * Description:
- *   Unlock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
+				wndx = i;
+				break;
+			}
+		}
 
-void work_unlock(void);
+		/* Use the process ID of the IDLE worker thread (or the ID of worker
+			* thread 0 if all of the worker threads are busy).
+			*/
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
-#endif							/* __LIBC_WQUEUE_WQUEUE_H */
+		pid = g_lpwork.worker[wndx].pid;
+	} else
+#endif
+	{
+		return -EINVAL;
+	}
+
+	/* Signal the worker thread */
+	ret = kill(pid, SIGWORK);
+	if (ret < 0) {
+		int errcode = errno;
+		return -errcode;
+	}
+
+	return OK;
+}
+
+#endif							/* CONFIG_SCHED_WORKQUEUE */

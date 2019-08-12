@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_cancel.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,14 +55,16 @@
 
 #include <tinyara/config.h>
 
+#include <stdint.h>
 #include <queue.h>
 #include <assert.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
 #ifdef CONFIG_SCHED_WORKQUEUE
 
@@ -87,119 +88,90 @@
  * Private Functions
  ****************************************************************************/
 
-#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
 /****************************************************************************
- * Name: work_qcancel
+ * Name: work_qqueue
  *
  * Description:
- *   Cancel previously queued work.  This removes work from the work queue.
- *   After work has been cancelled, it may be re-queue by calling work_queue()
- *   again.
+ *   Queue work to be performed at a later time.  All queued work will be
+ *   performed on the worker thread of of execution (not the caller's).
+ *
+ *   The work structure is allocated by caller, but completely managed by
+ *   the work queue logic.  The caller should never modify the contents of
+ *   the work queue structure; the caller should not call work_queue()
+ *   again until either (1) the previous work has been performed and removed
+ *   from the queue, or (2) work_cancel() has been called to cancel the work
+ *   and remove it from the work queue.
  *
  * Input parameters:
- *   qid    - The work queue ID
- *   work   - The previously queue work structure to cancel
+ *   qid    - The work queue ID (index)
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will invoked
+ *            on the worker thread of execution.
+ *   arg    - The argument that will be passed to the workder callback when
+ *            int is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
  *
  * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -ENOENT - There is no such work queued.
- *   -EINVAL - An invalid work queue was specified
+ *   Zero (OK) on success, a negated errno on failure.
  *
  ****************************************************************************/
 
-static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, FAR struct work_s *work)
+int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
 {
-	struct work_s *cur_work;
-	irqstate_t flags;
-	int ret = -ENOENT;
-
 	DEBUGASSERT(work != NULL);
 
-	/* Cancelling the work is simply a matter of removing the work structure
-	 * from the work queue.  This must be done with interrupts disabled because
-	 * new work is typically added to the work queue from interrupt handlers.
-	 */
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+	struct work_s *next_work;
+#endif
+	struct work_s *cur_work;
 
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	while (work_lock() < 0);
+#else
+	irqstate_t flags;
 	flags = irqsave();
-	if (work->worker != NULL) {
-		/* A little test of the integrity of the work queue */
+#endif
 
-		DEBUGASSERT(work->dq.flink || (FAR dq_entry_t *)work == wqueue->q.tail);
-		DEBUGASSERT(work->dq.blink || (FAR dq_entry_t *)work == wqueue->q.head);
-
-		/* check whether requested work is in queue list or not */
-		cur_work = (struct work_s *)wqueue->q.head;
-		do {
-			if (cur_work == NULL) {
-				irqrestore(flags);
-				return -ENOENT;
-			} else if (cur_work == work) {
-				break;
-			}
-
-			cur_work = (struct work_s *)cur_work->dq.flink;
-		} while (1);
-
-		/* Remove the entry from the work queue and make sure that it is
-		 * mark as available (i.e., the worker field is nullified).
-		 */
-
-		dq_rem((FAR dq_entry_t *)work, &wqueue->q);
-		work->worker = NULL;
-		ret = OK;
+	/* check whether requested work is in queue list or not */
+	next_work = NULL;
+	cur_work = (struct work_s *)wqueue->q.head;
+	while (cur_work != NULL) {
+		if (cur_work == work) {
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+			work_unlock();
+#else
+			irqrestore(flags);
+#endif
+			return -EALREADY;
+		}
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+		if (next_work == NULL && cur_work->delay > delay) {
+			next_work = cur_work;
+		}
+#endif
+		cur_work = (struct work_s *)cur_work->dq.flink;
 	}
 
+	work->worker = worker;		/* Work callback */
+	work->arg = arg;			/* Callback argument */
+	work->delay = delay;		/* Delay until work performed */
+	work->qtime = clock();      /* Time work queued */
+#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+	if (next_work) {
+		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
+	} else 
+#endif
+	{
+		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
+	}
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	work_unlock();
+#else
 	irqrestore(flags);
-	return ret;
-}
 #endif
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: work_cancel
- *
- * Description:
- *   Cancel previously queued user-mode work.  This removes work from the
- *   user mode work queue.  After work has been cancelled, it may be re-queue
- *   by calling work_queue() again.
- *
- * Input parameters:
- *   qid    - The work queue ID (must be HPWORK or LPWORK)
- *   work   - The previously queue work structure to cancel
- *
- * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -ENOENT - There is no such work queued.
- *   -EINVAL - An invalid work queue was specified
- *
- ****************************************************************************/
-
-int work_cancel(int qid, FAR struct work_s *work)
-{
-#ifdef CONFIG_SCHED_HPWORK
-	if (qid == HPWORK) {
-		/* Cancel high priority work */
-
-		return work_qcancel((FAR struct kwork_wqueue_s *)&g_hpwork, work);
-	} else
-#endif
-#ifdef CONFIG_SCHED_LPWORK
-		if (qid == LPWORK) {
-			/* Cancel low priority work */
-
-			return work_qcancel((FAR struct kwork_wqueue_s *)&g_lpwork, work);
-		} else
-#endif
-		{
-			return -EINVAL;
-		}
+	return OK;
 }
 
 #endif							/* CONFIG_SCHED_WORKQUEUE */

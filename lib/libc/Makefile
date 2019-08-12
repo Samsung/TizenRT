@@ -103,7 +103,6 @@ include termios/Make.defs
 include queue/Make.defs
 include wchar/Make.defs
 include wctype/Make.defs
-include wqueue/Make.defs
 include misc/Make.defs
 include ttrace/Make.defs
 include audio/Make.defs

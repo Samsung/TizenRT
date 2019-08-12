@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_signal.c
+ * wqueue/work_cancel.c
  *
- *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,14 +56,16 @@
 
 #include <tinyara/config.h>
 
-#include <signal.h>
+#include <queue.h>
+#include <assert.h>
 #include <errno.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -88,39 +90,84 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
- * Name: work_signal
+ * Name: work_qcancel
  *
  * Description:
- *   Signal the worker thread to process the work queue now.  This function
- *   is used internally by the work logic but could also be used by the
- *   user to force an immediate re-assessment of pending work.
+ *   Cancel previously queued work.  This removes work from the work queue.
+ *   After work has been cancelled, it may be re-queue by calling work_queue()
+ *   again.
  *
  * Input parameters:
  *   qid    - The work queue ID
+ *   work   - The previously queue work structure to cancel
  *
  * Returned Value:
- *   Zero on success, a negated errno on failure
+ *   Zero (OK) on success, a negated errno on failure.  This error may be
+ *   reported:
+ *
+ *   -ENOENT - There is no such work queued.
+ *   -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
-int work_signal(int qid)
+int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 {
-	int ret;
+	struct work_s *cur_work;
+	int ret = -ENOENT;
 
-	if (qid == USRWORK) {
-		/* Signal the worker thread */
+	DEBUGASSERT(work != NULL);
 
-		ret = kill(g_usrwork.pid, SIGWORK);
-		if (ret < 0) {
-			int errcode = errno;
-			ret = -errcode;
-		}
-	} else {
-		ret = -EINVAL;
+	/* Cancelling the work is simply a matter of removing the work structure
+	 * from the work queue.  This must be done with interrupts disabled because
+	 * new work is typically added to the work queue from interrupt handlers.
+	 */
+
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	while (work_lock() < 0);
+#else
+	irqstate_t flags;
+	flags = irqsave();
+#endif
+	if (work->worker != NULL) {
+		/* A little test of the integrity of the work queue */
+
+		DEBUGASSERT(work->dq.flink || (FAR dq_entry_t *)work == wqueue->q.tail);
+		DEBUGASSERT(work->dq.blink || (FAR dq_entry_t *)work == wqueue->q.head);
+
+		/* check whether requested work is in queue list or not */
+		cur_work = (struct work_s *)wqueue->q.head;
+		do {
+			if (cur_work == NULL) {
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+				work_unlock();
+#else
+				irqrestore(flags);
+#endif
+				return -ENOENT;
+			} else if (cur_work == work) {
+				break;
+			}
+
+			cur_work = (struct work_s *)cur_work->dq.flink;
+		} while (1);
+
+		/* Remove the entry from the work queue and make sure that it is
+		 * mark as available (i.e., the worker field is nullified).
+		 */
+
+		dq_rem((FAR dq_entry_t *)work, &wqueue->q);
+		work->worker = NULL;
+		ret = OK;
 	}
 
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	work_unlock();
+#else
+	irqrestore(flags);
+#endif
 	return ret;
 }
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_WORKQUEUE */

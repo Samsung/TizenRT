@@ -16,7 +16,8 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *
+ * wqueue/kwqueue/kwork_queue.c
+ * 
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
@@ -64,9 +65,9 @@
 #include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#ifdef CONFIG_SCHED_WORKQUEUE
+#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -87,82 +88,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-/****************************************************************************
- * Name: work_qqueue
- *
- * Description:
- *   Queue work to be performed at a later time.  All queued work will be
- *   performed on the worker thread of of execution (not the caller's).
- *
- *   The work structure is allocated by caller, but completely managed by
- *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
- *   again until either (1) the previous work has been performed and removed
- *   from the queue, or (2) work_cancel() has been called to cancel the work
- *   and remove it from the work queue.
- *
- * Input parameters:
- *   qid    - The work queue ID (index)
- *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
- *            int is invoked.
- *   delay  - Delay (in clock ticks) from the time queue until the worker
- *            is invoked. Zero means to perform the work immediately.
- *
- * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.
- *
- ****************************************************************************/
-
-static int work_qqueue(FAR struct kwork_wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
-{
-	struct work_s *cur_work;
-	struct work_s *next_work;
-	irqstate_t flags;
-	DEBUGASSERT(work != NULL);
-
-	next_work = NULL;
-	flags = irqsave();
-
-	/* check whether requested work is in queue list or not */
-	cur_work = (struct work_s *)wqueue->q.head;
-	while (cur_work != NULL) {
-		if (cur_work == work) {
-			irqrestore(flags);
-			return -EALREADY;
-		}
-
-		if ((cur_work->delay > delay) && (next_work == NULL)) {
-			next_work = cur_work;
-		}
-
-		cur_work = (struct work_s *)cur_work->dq.flink;
-	}
-
-	work->worker = worker;		/* Work callback */
-	work->arg = arg;			/* Callback argument */
-	work->delay = delay;		/* Delay until work performed */
-	work->qtime = clock_systimer();	/* Time work queued */
-
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
-	if (next_work) {
-		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
-	} else {
-		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
-	}
-#else
-	dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
-#endif
-
-	irqrestore(flags);
-
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -206,7 +131,7 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg,
 	if (qid == HPWORK) {
 		/* Cancel high priority work */
 
-		result = work_qqueue((FAR struct kwork_wqueue_s *)&g_hpwork, work, worker, arg, delay);
+		result = work_qqueue((FAR struct wqueue_s *)&g_hpwork, work, worker, arg, delay);
 		if (result != OK) {
 			return result;
 		}
@@ -217,7 +142,7 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg,
 		if (qid == LPWORK) {
 			/* Cancel low priority work */
 
-			result = work_qqueue((FAR struct kwork_wqueue_s *)&g_lpwork, work, worker, arg, delay);
+			result = work_qqueue((FAR struct wqueue_s *)&g_lpwork, work, worker, arg, delay);
 			if (result != OK) {
 				return result;
 			}
@@ -229,4 +154,4 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg,
 		}
 }
 
-#endif							/* CONFIG_SCHED_WORKQUEUE */
+#endif							/* CONFIG_SCHED_HPWORK || CONFIG_SCHED_LPWORK*/

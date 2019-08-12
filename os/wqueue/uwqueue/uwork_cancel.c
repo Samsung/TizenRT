@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_cancel.c
+ * wqueue/uwqueue/uwork_cancel.c
  *
  *   Copyright (C) 2009-2010, 2012-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -63,9 +63,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -88,61 +88,6 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_qcancel
- *
- * Description:
- *   Cancel previously queued work.  This removes work from the work queue.
- *   After work has been cancelled, it may be re-queue by calling work_queue()
- *   again.
- *
- * Input parameters:
- *   qid    - The work queue ID
- *   work   - The previously queue work structure to cancel
- *
- * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.  This error may be
- *   reported:
- *
- *   -ENOENT - There is no such work queued.
- *   -EINVAL - An invalid work queue was specified
- *
- ****************************************************************************/
-
-static int work_qcancel(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work)
-{
-	int ret = -ENOENT;
-
-	DEBUGASSERT(work != NULL);
-
-	/* Get exclusive access to the work queue */
-
-	while (work_lock() < 0);
-
-	/* Cancelling the work is simply a matter of removing the work structure
-	 * from the work queue.  This must be done with interrupts disabled because
-	 * new work is typically added to the work queue from interrupt handlers.
-	 */
-
-	if (work->worker != NULL) {
-		/* A little test of the integrity of the work queue */
-
-		DEBUGASSERT(work->dq.flink || (FAR dq_entry_t *)work == wqueue->q.tail);
-		DEBUGASSERT(work->dq.blink || (FAR dq_entry_t *)work == wqueue->q.head);
-
-		/* Remove the entry from the work queue and make sure that it is
-		 * mark as available (i.e., the worker field is nullified).
-		 */
-
-		dq_rem((FAR dq_entry_t *)work, &wqueue->q);
-		work->worker = NULL;
-		ret = OK;
-	}
-
-	work_unlock();
-	return ret;
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -163,6 +108,7 @@ static int work_qcancel(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work
  *   reported:
  *
  *   -ENOENT - There is no such work queued.
+ *	 -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
@@ -175,4 +121,4 @@ int work_cancel(int qid, FAR struct work_s *work)
 	}
 }
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_USRWORK && !__KERNEL__ */

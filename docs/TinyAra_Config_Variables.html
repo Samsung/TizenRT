@@ -2820,10 +2820,10 @@ function toggle(id, link) {
 <li><a href="#CONFIG_ARCH_STRLEN">1.16.45 <code>CONFIG_ARCH_STRLEN</code>: strlen</a></li>
 <li><a href="#CONFIG_ARCH_STRNLEN">1.16.46 <code>CONFIG_ARCH_STRNLEN</code>: strlen()</a></li>
 <li><a href="#CONFIG_ARCH_BZERO">1.16.47 <code>CONFIG_ARCH_BZERO</code>: bzero()</a></li>
-<li><a href="#CONFIG_LIB_USRWORK">1.16.48 <code>CONFIG_LIB_USRWORK</code>: User mode worker thread</a></li>
-<li><a href="#CONFIG_LIB_USRWORKPRIORITY">1.16.49 <code>CONFIG_LIB_USRWORKPRIORITY</code>: User mode priority worker thread priority</a></li>
-<li><a href="#CONFIG_LIB_USRWORKPERIOD">1.16.50 <code>CONFIG_LIB_USRWORKPERIOD</code>: User mode worker thread period</a></li>
-<li><a href="#CONFIG_LIB_USRWORKSTACKSIZE">1.16.51 <code>CONFIG_LIB_USRWORKSTACKSIZE</code>: User mode worker thread stack size</a></li>
+<li><a href="#CONFIG_SCHED_USRWORK">1.16.48 <code>CONFIG_SCHED_USRWORK</code>: User mode worker thread</a></li>
+<li><a href="#CONFIG_SCHED_USRWORKPRIORITY">1.16.49 <code>CONFIG_SCHED_USRWORKPRIORITY</code>: User mode priority worker thread priority</a></li>
+<li><a href="#CONFIG_SCHED_USRWORKPERIOD">1.16.50 <code>CONFIG_SCHED_USRWORKPERIOD</code>: User mode worker thread period</a></li>
+<li><a href="#CONFIG_SCHED_USRWORKSTACKSIZE">1.16.51 <code>CONFIG_SCHED_USRWORKSTACKSIZE</code>: User mode worker thread stack size</a></li>
 <li><a href="#CONFIG_C99_BOOL8">1.16.52 <code>CONFIG_C99_BOOL8</code>: sizeof(_Bool) is 8-bits</a></li>
 <li><a href="#CONFIG_HAVE_CXX">1.16.53 <code>CONFIG_HAVE_CXX</code>: Have C++ compiler</a></li>
 <li><a href="#CONFIG_CXX_NEWLONG">1.16.54 <code>CONFIG_CXX_NEWLONG</code>: size_t is type long</a></li>
@@ -18244,7 +18244,7 @@ int ret = sigaction(SIGCHLD, &amp;sa, NULL);
   <li>
     <i>Default</i>: 17
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a> || <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a></li>
+  <li><i>Dependencies</i>: <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a> || <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a></li>
   <li><i>Kconfig file</i>: <code>./kernel/Kconfig</code>
 <p>
   SIGWORK is a non-standard signal used to wake up the internal TinyAra  worker thread. This setting specifies the signal number that will be  used for SIGWORK. Default: 17</p>
@@ -35295,7 +35295,7 @@ sizeof(FAR void *) == sizeof(unsigned long));
 <p>
   Select this option if the architecture provides an optimized version  of bzero().</p>
 </ul>
-<h3><a name="CONFIG_LIB_USRWORK">1.16.48 <code>CONFIG_LIB_USRWORK</code>: User mode worker thread</a></h3>
+<h3><a name="CONFIG_SCHED_USRWORK">1.16.48 <code>CONFIG_SCHED_USRWORK</code>: User mode worker thread</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>
@@ -35307,37 +35307,37 @@ sizeof(FAR void *) == sizeof(unsigned long));
 <p>
   User space work queues can also be made available for deferred  processing in the TinyAra kernel build.</p>
 </ul>
-<h3><a name="CONFIG_LIB_USRWORKPRIORITY">1.16.49 <code>CONFIG_LIB_USRWORKPRIORITY</code>: User mode priority worker thread priority</a></h3>
+<h3><a name="CONFIG_SCHED_USRWORKPRIORITY">1.16.49 <code>CONFIG_SCHED_USRWORKPRIORITY</code>: User mode priority worker thread priority</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>
     <i>Default</i>: 100
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a>
+  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a>
 </li>
   <li><i>Kconfig file</i>: <code>./../lib/libc/Kconfig</code>
 <p>
   The execution priority of the user-mode priority worker thread.  Default: 100</p>
 </ul>
-<h3><a name="CONFIG_LIB_USRWORKPERIOD">1.16.50 <code>CONFIG_LIB_USRWORKPERIOD</code>: User mode worker thread period</a></h3>
+<h3><a name="CONFIG_SCHED_USRWORKPERIOD">1.16.50 <code>CONFIG_SCHED_USRWORKPERIOD</code>: User mode worker thread period</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>
     <i>Default</i>: 100000
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a>
+  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a>
 </li>
   <li><i>Kconfig file</i>: <code>./../lib/libc/Kconfig</code>
 <p>
   How often the lower priority worker thread checks for work in units  of microseconds. Default: 100*1000 (100 MS).</p>
 </ul>
-<h3><a name="CONFIG_LIB_USRWORKSTACKSIZE">1.16.51 <code>CONFIG_LIB_USRWORKSTACKSIZE</code>: User mode worker thread stack size</a></h3>
+<h3><a name="CONFIG_SCHED_USRWORKSTACKSIZE">1.16.51 <code>CONFIG_SCHED_USRWORKSTACKSIZE</code>: User mode worker thread stack size</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>
     <i>Default</i>: 2048
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a>
+  <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a>, <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a>
 </li>
   <li><i>Kconfig file</i>: <code>./../lib/libc/Kconfig</code>
 <p>
@@ -38937,7 +38937,7 @@ RAMMTD_ERASESIZE * EXAMPLES_SMART_NEBLOCKS
     <i>Default</i>: n
   </li>
   <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_TESTCASE"><code>CONFIG_EXAMPLES_TESTCASE</code></a>, <a href="#CONFIG_EXAMPLES_TESTCASE_KERNEL"><code>CONFIG_EXAMPLES_TESTCASE_KERNEL</code></a>
-, <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a> || <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a>
+, <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a> || <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a>
 </li>
   <li><i>Kconfig file</i>: <code>./../apps/examples/testcase/le_tc/kernel/Kconfig</code>
 </ul>
@@ -41896,7 +41896,7 @@ to spare, this editor will only be useful for very small files.
   <li>
     <i>Default</i>: n
   </li>
-  <li><i>Selects</i>: <a href="#CONFIG_SCHED_ATEXIT"><code>CONFIG_SCHED_ATEXIT</code></a>, <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a>, <a href="#CONFIG_LIB_USRWORK"><code>CONFIG_LIB_USRWORK</code></a></li>
+  <li><i>Selects</i>: <a href="#CONFIG_SCHED_ATEXIT"><code>CONFIG_SCHED_ATEXIT</code></a>, <a href="#CONFIG_SCHED_WORKQUEUE"><code>CONFIG_SCHED_WORKQUEUE</code></a>, <a href="#CONFIG_SCHED_USRWORK"><code>CONFIG_SCHED_USRWORK</code></a></li>
   <li><i>Dependencies</i>: !<a href="#CONFIG_DISABLE_SIGNALS"><code>CONFIG_DISABLE_SIGNALS</code></a> &amp;&amp; !<a href="#CONFIG_DISABLE_MQUEUE"><code>CONFIG_DISABLE_MQUEUE</code></a> &amp;&amp; <a href="#CONFIG_TASK_NAME_SIZE"><code>CONFIG_TASK_NAME_SIZE</code></a> != <a href="#CONFIG_0"><code>CONFIG_0</code></a></li>
   <li><i>Kconfig file</i>: <code>./../framework/src/task_manager/Kconfig</code>
 <p>

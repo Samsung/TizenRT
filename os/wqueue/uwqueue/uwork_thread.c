@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_queue.c
+ * wqueue/uwqueue/uwork_usrthread.c
  *
- *   Copyright (C) 2009-2011, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,33 +56,62 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdint.h>
-#include <signal.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sched.h>
+#include <errno.h>
 #include <assert.h>
 #include <queue.h>
-#include <errno.h>
 
-#include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
+#include <tinyara/clock.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* Use CLOCK_MONOTONIC if it is available.  CLOCK_REALTIME can cause bad
+ * delays if the time is changed.
+ */
+
+#ifdef CONFIG_CLOCK_MONOTONIC
+#define WORK_CLOCK CLOCK_MONOTONIC
+#else
+#define WORK_CLOCK CLOCK_REALTIME
+#endif
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
 
 /****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
+/* The state of the user mode work queue. */
+
+struct wqueue_s g_usrwork;
+
+/* This semaphore supports exclusive access to the user-mode work queue */
+
+#ifdef CONFIG_BUILD_PROTECTED
+sem_t g_usrsem;
+#else
+pthread_mutex_t g_usrmutex;
+#endif
+
 /****************************************************************************
- * Private Variables
+ * Private Data
  ****************************************************************************/
 
 /****************************************************************************
@@ -90,57 +119,45 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_qqueue
+ * Name: work_usrthread
  *
  * Description:
- *   Queue work to be performed at a later time.  All queued work will be
- *   performed on the worker thread of of execution (not the caller's).
+ *   This is the worker thread that performs the actions placed on the user
+ *   work queue.
  *
- *   The work structure is allocated by caller, but completely managed by
- *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
- *   again until either (1) the previous work has been performed and removed
- *   from the queue, or (2) work_cancel() has been called to cancel the work
- *   and remove it from the work queue.
+ *   This is a user mode work queue.  It must be used by applications for
+ *   miscellaneous operations.  The user work thread must be started by
+ *   application start-up logic by calling work_usrstart().
  *
  * Input parameters:
- *   qid    - The work queue ID (index)
- *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
- *            int is invoked.
- *   delay  - Delay (in clock ticks) from the time queue until the worker
- *            is invoked. Zero means to perform the work immediately.
+ *   argc, argv (not used)
  *
  * Returned Value:
- *   Zero on success, a negated errno on failure
+ *   Does not return
  *
  ****************************************************************************/
 
-static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+#ifdef CONFIG_BUILD_PROTECTED
+static int work_usrthread(int argc, char *argv[])
+#else
+static pthread_addr_t work_usrthread(pthread_addr_t arg)
+#endif
 {
-	DEBUGASSERT(work != NULL);
+	/* Loop forever */
 
-	/* First, initialize the work structure */
+	for (;;) {
+		/* Then process queued work.  We need to keep the work queue locked
+		 * while we process items in the work list.
+		 */
 
-	work->worker = worker;		/* Work callback */
-	work->arg = arg;			/* Callback argument */
-	work->delay = delay;		/* Delay until work performed */
+		work_process(&g_usrwork, 0);
+	}
 
-	/* Get exclusive access to the work queue */
-
-	while (work_lock() < 0);
-
-	/* Now, time-tag that entry and put it in the work queue. */
-
-	work->qtime = clock();	/* Time work queued */
-
-	dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
-	kill(wqueue->pid, SIGWORK);	/* Wake up the worker thread */
-
-	work_unlock();
-	return OK;
+#ifdef CONFIG_BUILD_PROTECTED
+	return OK;					/* To keep some compilers happy */
+#else
+	return NULL;				/* To keep some compilers happy */
+#endif
 }
 
 /****************************************************************************
@@ -148,41 +165,81 @@ static int work_qqueue(FAR struct usr_wqueue_s *wqueue, FAR struct work_s *work,
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_queue
+ * Name: work_usrstart
  *
  * Description:
- *   Queue user-mode work to be performed at a later time.  All queued work
- *   will be performed on the worker thread of of execution (not the caller's).
- *
- *   The work structure is allocated by caller, but completely managed by
- *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
- *   again until either (1) the previous work has been performed and removed
- *   from the queue, or (2) work_cancel() has been called to cancel the work
- *   and remove it from the work queue.
+ *   Start the user mode work queue.
  *
  * Input parameters:
- *   qid    - The work queue ID (index)
- *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
- *            int is invoked.
- *   delay  - Delay (in clock ticks) from the time queue until the worker
- *            is invoked. Zero means to perform the work immediately.
+ *   None
  *
  * Returned Value:
- *   Zero on success, a negated errno on failure
+ *   The task ID of the worker thread is returned on success.  A negated
+ *   errno value is returned on failure.
  *
  ****************************************************************************/
 
-int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+int work_usrstart(void)
 {
-	if (qid == USRWORK) {
-		return work_qqueue(&g_usrwork, work, worker, arg, delay);
-	} else {
-		return -EINVAL;
+	/* Initialize work queue data structures */
+
+	g_usrwork.delay = CONFIG_SCHED_USRWORKPERIOD / USEC_PER_TICK;
+	dq_init(&g_usrwork.q);
+
+#ifdef CONFIG_BUILD_PROTECTED
+	{
+		/* Set up the work queue lock */
+
+		(void)sem_init(&g_usrsem, 0, 1);
+
+		/* Start a user-mode worker thread for use by applications. */
+
+		g_usrwork.worker[0].pid = task_create("uwork", CONFIG_SCHED_USRWORKPRIORITY, CONFIG_SCHED_USRWORKSTACKSIZE, (main_t)work_usrthread, (FAR char *const *)NULL);
+
+		DEBUGASSERT(g_usrwork.worker[0].pid > 0);
+		if (g_usrwork.worker[0].pid < 0) {
+			int errcode = errno;
+			DEBUGASSERT(errcode > 0);
+			return -errcode;
+		}
+		g_usrwork.worker[0].busy = true;
+		return g_usrwork.worker[0].pid;
 	}
+#else
+	{
+		pthread_t usrwork;
+		pthread_attr_t attr;
+		struct sched_param param;
+		int status;
+
+		/* Set up the work queue lock */
+
+		(void)pthread_mutex_init(&g_usrmutex, NULL);
+
+		/* Start a user-mode worker thread for use by applications. */
+
+		(void)pthread_attr_init(&attr);
+		(void)pthread_attr_setstacksize(&attr, CONFIG_SCHED_USRWORKSTACKSIZE);
+
+		param.sched_priority = CONFIG_SCHED_USRWORKPRIORITY;
+		(void)pthread_attr_setschedparam(&attr, &param);
+
+		status = pthread_create(&usrwork, &attr, work_usrthread, NULL);
+		if (status != 0) {
+			return -status;
+		}
+
+		/* Detach because the return value and completion status will not be
+		 * requested.
+		 */
+
+		(void)pthread_detach(usrwork);
+
+		g_usrwork.worker[0].pid = (pid_t)usrwork;
+		g_usrwork.worker[0].busy = true;
+		return g_usrwork.worker[0].pid;
+	}
+#endif
 }
 
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_USRWORK && !__KERNEL__ */

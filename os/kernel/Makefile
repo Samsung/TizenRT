@@ -75,7 +75,6 @@ include mqueue/Make.defs
 include clock/Make.defs
 include timer/Make.defs
 include environ/Make.defs
-include wqueue/Make.defs
 include debug/Make.defs
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

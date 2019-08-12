@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/wqueue.h
+ * wqueue/wqueue.h
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,18 +50,21 @@
  *
  ****************************************************************************/
 
-#ifndef __SCHED_WQUEUE_WQUEUE_H
-#define __SCHED_WQUEUE_WQUEUE_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
+#ifndef __OS_WQUEUE_WQUEUE_H
+#define __OS_WQUEUE_WQUEUE_H
 
 #include <tinyara/config.h>
 
 #include <sys/types.h>
 #include <stdbool.h>
 #include <queue.h>
+#include <semaphore.h>
+
+#include <tinyara/wqueue.h>
 
 #ifdef CONFIG_SCHED_WORKQUEUE
 
@@ -69,27 +72,26 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Kkernel thread names */
-
 #define HPWORKNAME "hpwork"
 #define LPWORKNAME "lpwork"
 
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
+
 /* This represents one worker */
 
-struct kworker_s {
+struct worker_s {
 	pid_t pid;					/* The task ID of the worker thread */
 	volatile bool busy;			/* True: Worker is not available */
 };
 
-/* This structure defines the state of one kernel-mode work queue */
+/* This structure defines the state of work queue */
 
-struct kwork_wqueue_s {
+struct wqueue_s {
 	uint32_t delay;				/* Delay between polling cycles (ticks) */
 	struct dq_queue_s q;		/* The queue of pending work */
-	struct kworker_s worker[1];	/* Describes a worker thread */
+	struct worker_s worker[1];	/* Describes a worker thread */
 };
 
 /* This structure defines the state of one high-priority work queue.  This
@@ -100,7 +102,7 @@ struct kwork_wqueue_s {
 struct hp_wqueue_s {
 	uint32_t delay;				/* Delay between polling cycles (ticks) */
 	struct dq_queue_s q;		/* The queue of pending work */
-	struct kworker_s worker[1];	/* Describes the single high priority worker */
+	struct worker_s worker[1];	/* Describes the single high priority worker */
 };
 #endif
 
@@ -114,14 +116,17 @@ struct lp_wqueue_s {
 	struct dq_queue_s q;		/* The queue of pending work */
 
 	/* Describes each thread in the low priority queue's thread pool */
-
-	struct kworker_s worker[CONFIG_SCHED_LPNTHREADS];
+	struct worker_s worker[CONFIG_SCHED_LPNTHREADS];
 };
 #endif
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+/* The state of the user mode work queue */
+
+extern struct wqueue_s g_usrwork;
 
 #ifdef CONFIG_SCHED_HPWORK
 /* The state of the kernel mode, high priority work queue. */
@@ -135,47 +140,107 @@ extern struct hp_wqueue_s g_hpwork;
 extern struct lp_wqueue_s g_lpwork;
 #endif
 
+/* This semaphore/mutex supports exclusive access to the user-mode work queue */
+
+#ifdef CONFIG_BUILD_PROTECTED
+extern sem_t g_usrsem;
+#else
+extern pthread_mutex_t g_usrmutex;
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_hpstart
+ * Name: work_lock
  *
  * Description:
- *   Start the high-priority, kernel-mode work queue.
+ *   Lock the user-mode work queue.
  *
  * Input parameters:
  *   None
  *
  * Returned Value:
- *   The task ID of the worker thread is returned on success.  A negated
- *   errno value is returned on failure.
+ *   Zero (OK) on success, a negated errno on failure.  This error may be
+ *   reported:
+ *
+ *   -EINTR - Wait was interrupted by a signal
  *
  ****************************************************************************/
-
-#ifdef CONFIG_SCHED_HPWORK
-int work_hpstart(void);
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+int work_lock(void);
+#endif
+/****************************************************************************
+ * Name: work_unlock
+ *
+ * Description:
+ *   Unlock the user-mode work queue.
+ *
+ * Input parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+void work_unlock(void);
 #endif
 
 /****************************************************************************
- * Name: work_lpstart
+ * Name: work_qcancel
  *
  * Description:
- *   Start the low-priority, kernel-mode worker thread(s)
+ *   Cancel previously queued work.  This removes work from the work queue.
+ *   After work has been cancelled, it may be re-queue by calling work_queue()
+ *   again.
  *
  * Input parameters:
- *   None
+ *   qid    - The work queue ID
+ *   work   - The previously queue work structure to cancel
  *
  * Returned Value:
- *   The task ID of the worker thread is returned on success.  A negated
- *   errno value is returned on failure.
+ *   Zero (OK) on success, a negated errno on failure.  This error may be
+ *   reported:
+ *
+ *   -ENOENT - There is no such work queued.
+ *   -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_LPWORK
-int work_lpstart(void);
-#endif
+int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work);
+
+/****************************************************************************
+ * Name: work_qqueue
+ *
+ * Description:
+ *   Queue work to be performed at a later time.  All queued work will be
+ *   performed on the worker thread of of execution (not the caller's).
+ *
+ *   The work structure is allocated by caller, but completely managed by
+ *   the work queue logic.  The caller should never modify the contents of
+ *   the work queue structure; the caller should not call work_queue()
+ *   again until either (1) the previous work has been performed and removed
+ *   from the queue, or (2) work_cancel() has been called to cancel the work
+ *   and remove it from the work queue.
+ *
+ * Input parameters:
+ *   qid    - The work queue ID (index)
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will invoked
+ *            on the worker thread of execution.
+ *   arg    - The argument that will be passed to the workder callback when
+ *            int is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
+ *
+ * Returned Value:
+ *   Zero (OK) on success, a negated errno on failure.
+ *
+ ****************************************************************************/
+
+int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay);
 
 /****************************************************************************
  * Name: work_process
@@ -188,15 +253,31 @@ int work_lpstart(void);
  *
  * Input parameters:
  *   wqueue - Describes the work queue to be processed
- *   period - The polling period in clock ticks
- *   wndx   - The worker thread index
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-void work_process(FAR struct kwork_wqueue_s *wqueue, uint32_t period, int wndx);
+void work_process(FAR struct wqueue_s *wqueue, int wdx);
+
+/****************************************************************************
+ * Name: work_signal
+ *
+ * Description:
+ *   Signal the worker thread to process the work queue now.  This function
+ *   is used internally by the work logic but could also be used by the
+ *   user to force an immediate re-assessment of pending work.
+ *
+ * Input parameters:
+ *   qid    - The work queue ID
+ *
+ * Returned Value:
+ *   Zero on success, a negated errno on failure
+ *
+ ****************************************************************************/
+
+int work_signal(int qid);
 
 #endif							/* CONFIG_SCHED_WORKQUEUE */
-#endif							/* __SCHED_WQUEUE_WQUEUE_H */
+#endif							/* __OS_WQUEUE_WQUEUE_H */

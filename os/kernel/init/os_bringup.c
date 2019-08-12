@@ -69,6 +69,9 @@
 #include <tinyara/kthread.h>
 #include <tinyara/userspace.h>
 #include <tinyara/net/net.h>
+#ifdef CONFIG_SCHED_WORKQUEUE
+#include <tinyara/wqueue.h>
+#endif
 #ifdef CONFIG_LOGM
 #include <tinyara/logm.h>
 #endif
@@ -78,7 +81,6 @@
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
-#include "wqueue/wqueue.h"
 #include "init/init.h"
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/wqueue/work_lock.c
+ * wqueue/kwqueue/kwork_cancel.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,14 +56,16 @@
 
 #include <tinyara/config.h>
 
-#include <pthread.h>
-#include <semaphore.h>
+#include <queue.h>
 #include <assert.h>
 #include <errno.h>
 
-#include "wqueue/wqueue.h"
+#include <tinyara/arch.h>
+#include <tinyara/wqueue.h>
 
-#if defined(CONFIG_LIB_USRWORK) && !defined(__KERNEL__)
+#include "wqueue.h"
+
+#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,64 +92,45 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_lock
+ * Name: work_cancel
  *
  * Description:
- *   Lock the user-mode work queue.
+ *   Cancel previously queued user-mode work.  This removes work from the
+ *   user mode work queue.  After work has been cancelled, it may be re-queue
+ *   by calling work_queue() again.
  *
  * Input parameters:
- *   None
+ *   qid    - The work queue ID (must be HPWORK or LPWORK)
+ *   work   - The previously queue work structure to cancel
  *
  * Returned Value:
  *   Zero (OK) on success, a negated errno on failure.  This error may be
  *   reported:
  *
- *   -EINTR - Wait was interrupted by a signal
+ *   -ENOENT - There is no such work queued.
+ *   -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/
 
-int work_lock(void)
+int work_cancel(int qid, FAR struct work_s *work)
 {
-	int ret;
+#ifdef CONFIG_SCHED_HPWORK
+	if (qid == HPWORK) {
+		/* Cancel high priority work */
 
-#ifdef CONFIG_BUILD_PROTECTED
-	ret = sem_wait(&g_usrsem);
-	if (ret < 0) {
-		DEBUGASSERT(errno == EINTR);
-		return -EINTR;
-	}
-#else
-	ret = pthread_mutex_lock(&g_usrmutex);
-	if (ret != 0) {
-		DEBUGASSERT(ret == EINTR);
-		return -EINTR;
-	}
+		return work_qcancel((FAR struct wqueue_s *)&g_hpwork, work);
+	} else
 #endif
+#ifdef CONFIG_SCHED_LPWORK
+		if (qid == LPWORK) {
+			/* Cancel low priority work */
 
-	return ret;
+			return work_qcancel((FAR struct wqueue_s *)&g_lpwork, work);
+		} else
+#endif
+		{
+			return -EINVAL;
+		}
 }
 
-/****************************************************************************
- * Name: work_unlock
- *
- * Description:
- *   Unlock the user-mode work queue.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void work_unlock(void)
-{
-#ifdef CONFIG_BUILD_PROTECTED
-	(void)sem_post(&g_usrsem);
-#else
-	(void)pthread_mutex_unlock(&g_usrmutex);
-#endif
-}
-
-#endif							/* CONFIG_LIB_USRWORK && !__KERNEL__ */
+#endif							/* CONFIG_SCHED_HPWORK || CONFIG_SCHED_LPWORK*/

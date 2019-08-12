@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Definitions

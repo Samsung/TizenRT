@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/wqueue/kwork_lpthread.c
+ * wqueue/kwqueue/kwork_hpthread.c
  *
  *   Copyright (C) 2009-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,9 +56,6 @@
 
 #include <tinyara/config.h>
 
-#include <unistd.h>
-#include <sched.h>
-#include <string.h>
 #include <errno.h>
 #include <queue.h>
 #include <debug.h>
@@ -68,9 +65,9 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 
-#include "wqueue/wqueue.h"
+#include "wqueue.h"
 
-#ifdef CONFIG_SCHED_LPWORK
+#ifdef CONFIG_SCHED_HPWORK
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -84,9 +81,9 @@
  * Public Data
  ****************************************************************************/
 
-/* The state of the kernel mode, low priority work queue(s). */
+/* The state of the kernel mode, high priority work queue. */
 
-struct lp_wqueue_s g_lpwork;
+struct hp_wqueue_s g_hpwork;
 
 /****************************************************************************
  * Private Data
@@ -97,17 +94,18 @@ struct lp_wqueue_s g_lpwork;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_lpthread
+ * Name: work_hpthread
  *
  * Description:
- *   These are the worker thread(s) that performs the actions placed on the
- *   low priority work queue.
+ *   This is the worker thread that performs the actions placed on the high
+ *   priority work queue.
  *
- *   These, along with the higher priority worker thread are the kernel mode
- *   work queues (also build in the flat build).  One of these threads also
- *   performs periodic garbage collection (that would otherwise be performed
- *   by the idle thread if CONFIG_SCHED_WORKQUEUE is not defined).  That will
- *   be the lower priority worker thread if it is available.
+ *   This, along with the lower priority worker thread(s) are the kernel
+ *   mode work queues (also build in the flat build).  One of these threads
+ *   also performs periodic garbage collection (that would otherwise be
+ *   performed by the idle thread if CONFIG_SCHED_WORKQUEUE is not defined).
+ *   That will be the higher priority worker thread only if a lower priority
+ *   worker thread is available.
  *
  *   All kernel mode worker threads are started by the OS during normal
  *   bring up.  This entry point is referenced by OS internally and should
@@ -121,62 +119,32 @@ struct lp_wqueue_s g_lpwork;
  *
  ****************************************************************************/
 
-static int work_lpthread(int argc, char *argv[])
+static int work_hpthread(int argc, char *argv[])
 {
-#if CONFIG_SCHED_LPNTHREADS > 0
-	int wndx;
-	pid_t me = getpid();
-	int i;
-
-	/* Find out thread index by search the workers in g_lpwork */
-
-	for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
-		if (g_lpwork.worker[i].pid == me) {
-			wndx = i;
-			break;
-		}
-	}
-
-	DEBUGASSERT(i < CONFIG_SCHED_LPNTHREADS);
-#endif
-
 	/* Loop forever */
 
 	for (;;) {
-#if CONFIG_SCHED_LPNTHREADS > 0
-		/* Thread 0 is special.  Only thread 0 performs period garbage collection */
+#ifndef CONFIG_SCHED_LPWORK
+		/* First, perform garbage collection.  This cleans-up memory
+		 * de-allocations that were queued because they could not be freed in
+		 * that execution context (for example, if the memory was freed from
+		 * an interrupt handler).
+		 *
+		 * NOTE: If the work thread is disabled, this clean-up is performed by
+		 * the IDLE thread (at a very, very low priority).  If the low-priority
+		 * work thread is enabled, then the garbage collection is done on that
+		 * thread instead.
+		 */
 
-		if (wndx > 0) {
-			/* The other threads will perform work, waiting indefinitely until
-			 * signalled for the next work availability.
-			 *
-			 * The special value of zero for the poll period instructs work_process
-			 * to wait indefinitely until a signal is received.
-			 */
-
-			work_process((FAR struct kwork_wqueue_s *)&g_lpwork, 0, wndx);
-		} else
+		sched_garbagecollection();
 #endif
-		{
-			/* Perform garbage collection.  This cleans-up memory de-allocations
-			 * that were queued because they could not be freed in that execution
-			 * context (for example, if the memory was freed from an interrupt handler).
-			 * NOTE: If the work thread is disabled, this clean-up is performed by
-			 * the IDLE thread (at a very, very low priority).
-			 *
-			 * In the event of multiple low priority threads, on index == 0 will do
-			 * the garbage collection.
-			 */
 
-			sched_garbagecollection();
+		/* Then process queued work.  work_process will not return until: (1)
+		 * there is no further work in the work queue, and (2) the polling
+		 * period provided by g_hpwork.delay expires.
+		 */
 
-			/* Then process queued work.  work_process will not return until:
-			 * (1) there is no further work in the work queue, and (2) the polling
-			 * period provided by g_lpwork.delay expires.
-			 */
-
-			work_process((FAR struct kwork_wqueue_s *)&g_lpwork, g_lpwork.delay, 0);
-		}
+		work_process((FAR struct wqueue_s *)&g_hpwork, 0);
 	}
 
 	return OK;					/* To keep some compilers happy */
@@ -187,10 +155,10 @@ static int work_lpthread(int argc, char *argv[])
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_lpstart
+ * Name: work_hpstart
  *
  * Description:
- *   Start the low-priority, kernel-mode worker thread(s)
+ *   Start the high-priority, kernel-mode work queue.
  *
  * Input parameters:
  *   None
@@ -201,47 +169,33 @@ static int work_lpthread(int argc, char *argv[])
  *
  ****************************************************************************/
 
-int work_lpstart(void)
+int work_hpstart(void)
 {
 	int pid;
-	int wndx;
 
 	/* Initialize work queue data structures */
 
-	memset(&g_lpwork, 0, sizeof(struct kwork_wqueue_s));
+	g_hpwork.delay = CONFIG_SCHED_HPWORKPERIOD / USEC_PER_TICK;
+	dq_init(&g_hpwork.q);
 
-	g_lpwork.delay = CONFIG_SCHED_LPWORKPERIOD / USEC_PER_TICK;
-	dq_init(&g_lpwork.q);
+	/* Start the high-priority, kernel mode worker thread */
 
-	/* Don't permit any of the threads to run until we have fully initialized
-	 * g_lpwork.
-	 */
+	svdbg("Starting high-priority kernel worker thread\n");
 
-	sched_lock();
+	pid = kernel_thread(HPWORKNAME, CONFIG_SCHED_HPWORKPRIORITY, CONFIG_SCHED_HPWORKSTACKSIZE, (main_t)work_hpthread, (FAR char *const *)NULL);
 
-	/* Start the low-priority, kernel mode worker thread(s) */
+	DEBUGASSERT(pid > 0);
+	if (pid < 0) {
+		int errcode = errno;
+		DEBUGASSERT(errcode > 0);
 
-	svdbg("Starting low-priority kernel worker thread(s)\n");
-
-	for (wndx = 0; wndx < CONFIG_SCHED_LPNTHREADS; wndx++) {
-		pid = kernel_thread(LPWORKNAME, CONFIG_SCHED_LPWORKPRIORITY, CONFIG_SCHED_LPWORKSTACKSIZE, (main_t)work_lpthread, (FAR char *const *)NULL);
-
-		DEBUGASSERT(pid > 0);
-		if (pid < 0) {
-			int errcode = errno;
-			DEBUGASSERT(errcode > 0);
-
-			slldbg("kernel_thread %d failed: %d\n", wndx, errcode);
-			sched_unlock();
-			return -errcode;
-		}
-
-		g_lpwork.worker[wndx].pid = (pid_t)pid;
-		g_lpwork.worker[wndx].busy = true;
+		slldbg("kernel_thread failed: %d\n", errcode);
+		return -errcode;
 	}
 
-	sched_unlock();
-	return g_lpwork.worker[0].pid;
+	g_hpwork.worker[0].pid = pid;
+	g_hpwork.worker[0].busy = true;
+	return pid;
 }
 
-#endif							/* CONFIG_SCHED_LPWORK */
+#endif							/* CONFIG_SCHED_HPWORK */

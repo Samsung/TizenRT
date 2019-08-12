@@ -558,6 +558,11 @@ menu "Memory Management"
 source mm/Kconfig
 endmenu
 
+menu "Work Queue Support"
+	depends on !DISABLE_SIGNALS
+source wqueue/Kconfig
+endmenu
+
 menu "Power Management"
 source pm/Kconfig
 endmenu
