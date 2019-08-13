@@ -382,6 +382,24 @@ config WATCHDOG_DEVPATH
 	string "Watchdog Device Path"
 	default "/dev/watchdog0"
 
+config WATCHDOG_FOR_IRQ
+	bool "Enable watchdog for irq"
+	default n
+	depends on !SUPPRESS_INTERRUPTS && !SUPPRESS_TIMER_INTS && !SYSTEMTICK_EXTCLK
+	---help---
+		If there is no irq within interval, watchdog resets the system.
+
+if WATCHDOG_FOR_IRQ
+
+config WATCHDOG_FOR_IRQ_INTERVAL
+	int "Interval for resetting watchdog(us)"
+	default 20000
+	---help---
+		After this interval, watchdog for irq expires.
+		This value should be greater than USER_PER_TICK.
+
+endif # WATCHDOG_FOR_IRQ
+
 endif # WATCHDOG
 
 config TIMER

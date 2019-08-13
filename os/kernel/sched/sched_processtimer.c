@@ -193,6 +193,9 @@ static inline void sched_process_timeslice(void)
 
 void sched_process_timer(void)
 {
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
+	up_wdog_keepalive();
+#endif
 	/* Increment the system time (if in the link) */
 
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS

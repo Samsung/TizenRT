@@ -349,3 +349,33 @@ int board_reset(int status)
 	return 0;
 }
 #endif
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
+/****************************************************************************
+ * Name: up_wdog_init
+ *
+ * Description:
+ *   Initialize the watchdog for irq
+ *
+ ****************************************************************************/
+void up_wdog_init(uint16_t timeout)
+{
+	wdog_config_t config;
+
+	imxrt_wdog_getdefaultconfig(&config);
+	config.timeoutValue = timeout;
+
+	imxrt_wdog_init(WDOG1, &config);
+}
+
+/****************************************************************************
+ * Name: up_wdog_keepalive
+ *
+ * Description:
+ *   Reset the watchdog timer for preventing timeouts.
+ *
+ ****************************************************************************/
+void up_wdog_keepalive(void)
+{
+	imxrt_wdog_refresh(WDOG1);
+}
+#endif
