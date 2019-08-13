@@ -828,6 +828,12 @@ FAR struct streamlist *sched_getstreams(void);
 FAR struct socketlist *sched_getsockets(void);
 #endif							/* CONFIG_NSOCKET_DESCRIPTORS */
 
+#ifdef CONFIG_SCHED_CPULOAD
+int sched_start_cpuload_snapshot(int ticks);
+void sched_clear_cpuload_snapshot(void);
+void sched_get_cpuload_snapshot(pid_t *result_addr);
+#endif
+
 /********************************************************************************
  * Name: task_starthook
  *

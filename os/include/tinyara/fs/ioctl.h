@@ -100,6 +100,7 @@
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
 #define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
 #define _FBIOCBASE      (0x2700)	/* Frame buffer character driver ioctl commands */
+#define _CPULOADBASE    (0x2800)	/* cpuload ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
@@ -410,6 +411,15 @@
 #define HEAPINFOIOC_PPID              _HEAPINFOIOC(0x0003)
 #define HEAPINFOIOC_STKSIZE           _HEAPINFOIOC(0x0004)
 #define HEAPINFOIOC_TASKNAME          _HEAPINFOIOC(0x0005)
+
+/* Cpuload driver ioctl definitions ************************/
+
+#define _CPULOADIOCVALID(c)   (_IOC_TYPE(c) == _CPULOADBASE)
+#define _CPULOADIOC(nr)       _IOC(_CPULOADBASE, nr)
+
+#define CPULOADIOC_START              _CPULOADIOC(0x0001)
+#define CPULOADIOC_STOP               _CPULOADIOC(0x0002)
+#define CPULOADIOC_GETVALUE           _CPULOADIOC(0x0003)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */

@@ -58,9 +58,12 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
 
+#include <sys/types.h>
 #include <tinyara/clock.h>
 #include <tinyara/sched.h>
+#include <tinyara/kmalloc.h>
 #include <arch/irq.h>
 
 #include "sched/sched.h"
@@ -110,6 +113,10 @@ static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 #endif
 };
 
+static int16_t g_cpusnap_head;
+static int16_t g_cpusnap_arr_size;
+static pid_t *g_cpusnap_arr;
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -117,6 +124,43 @@ static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 /************************************************************************
  * Public Functions
  ************************************************************************/
+int sched_start_cpuload_snapshot(int ticks)
+{
+	irqstate_t flags;
+
+	flags = irqsave();
+	/* Allocate data buffer for CPU load measurements in time interval */
+	g_cpusnap_arr = (pid_t *)kmm_realloc(g_cpusnap_arr, ticks * sizeof(pid_t));
+	if (g_cpusnap_arr == NULL) {
+		irqrestore(flags);
+		return -ENOMEM;
+	}
+	g_cpusnap_arr_size = ticks;
+	g_cpusnap_head = 0;
+	irqrestore(flags);
+
+	return OK;
+}
+
+void sched_clear_cpuload_snapshot(void)
+{
+	if (g_cpusnap_arr) {
+		kmm_free(g_cpusnap_arr);
+	}
+	g_cpusnap_arr = NULL;
+	g_cpusnap_arr_size = 0;
+	g_cpusnap_head = 0;
+}
+
+void sched_get_cpuload_snapshot(pid_t *result_addr)
+{
+	int tick_index;
+
+	for (tick_index = 0; tick_index < g_cpusnap_arr_size; tick_index++) {
+		result_addr[tick_index] = g_cpusnap_arr[tick_index];
+	}
+}
+
 /************************************************************************
  * Name: sched_clear_cpuload
  *
@@ -189,6 +233,12 @@ void weak_function sched_process_cpuload(void)
 	 * do this too, but this would require a little more overhead.
 	 */
 
+	if (g_cpusnap_arr) {
+		g_cpusnap_arr[g_cpusnap_head] = rtcb->pid;
+		if (++g_cpusnap_head >= g_cpusnap_arr_size) {
+			g_cpusnap_head = 0;
+		}
+	}
 	hash_index = PIDHASH(rtcb->pid);
 
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {

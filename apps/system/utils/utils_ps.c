@@ -65,7 +65,7 @@
 
 #include "utils_proc.h"
 
-#define PS_BUFLEN 64
+#define PS_BUFLEN 128
 
 static const char *utils_statenames[] = {
 	"INVALID ",
