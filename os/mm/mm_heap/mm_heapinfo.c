@@ -102,6 +102,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t nonsched_resource;
 	int nonsched_idx;
 	struct sched_param sched_data;
+	size_t heap_size;
 
 	/* This nonsched can be 3 types : group resources, freed when child task finished, leak */
 	pid_t nonsched_list[CONFIG_MAX_TASKS];
@@ -217,11 +218,15 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("\n****************************************************************\n");
 	printf("     Summary of Heap Usages (Size in Bytes)\n");
 	printf("****************************************************************\n");
-	printf("Total                           : %u (100%%)\n", heap->mm_heapsize);
+	heap_size = heap->mm_heapsize;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	heap_size -= heap->elf_sections_size;
+#endif
+	printf("Total                           : %u (100%%)\n", heap_size);
 	printf("  - Allocated (Current / Peak)  : %u (%d%%) / %u (%d%%)\n",\
-		heap->total_alloc_size, (size_t)((uint64_t)(heap->total_alloc_size) * 100 / heap->mm_heapsize),\
-		heap->peak_alloc_size,  (size_t)((uint64_t)(heap->peak_alloc_size) * 100 / heap->mm_heapsize));
-	printf("  - Free (Current)              : %u (%d%%)\n", fordblks, (size_t)((uint64_t)fordblks * 100 / heap->mm_heapsize));
+		heap->total_alloc_size, (size_t)((uint64_t)(heap->total_alloc_size) * 100 / heap_size),\
+		heap->peak_alloc_size,  (size_t)((uint64_t)(heap->peak_alloc_size) * 100 / heap_size));
+	printf("  - Free (Current)              : %u (%d%%)\n", fordblks, (size_t)((uint64_t)fordblks * 100 / heap_size));
 	printf("  - Reserved                    : %u\n", SIZEOF_MM_ALLOCNODE * 2);
 
 	printf("\n****************************************************************\n");
