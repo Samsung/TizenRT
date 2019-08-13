@@ -396,6 +396,10 @@ struct mm_heap_s {
 	int mm_nregions;
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	size_t elf_sections_size;
+#endif
+
 	/* All free nodes are maintained in a doubly linked list.  This
 	 * array provides some hooks into the list at various points to
 	 * speed searches for free nodes.
