@@ -2107,6 +2107,27 @@ int up_getc(void);
 
 void up_puts(FAR const char *str);
 
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
+/****************************************************************************
+ * Name: up_wdog_init
+ *
+ * Description:
+ *   Initialize the watchdog for irq
+ *
+ ****************************************************************************/
+void up_wdog_init(uint16_t timeout);
+
+/****************************************************************************
+ * Name: up_wdog_keepalive
+ *
+ * Description:
+ *   Reset the watchdog timer for preventing timeouts.
+ *
+ ****************************************************************************/
+void up_wdog_keepalive(void);
+
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }

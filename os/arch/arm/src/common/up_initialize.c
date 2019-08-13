@@ -75,6 +75,10 @@
 #include <tinyara/net/telnet.h>
 #endif
 
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#include <tinyara/arch.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -201,6 +205,13 @@ void up_initialize(void)
 #if !defined(CONFIG_SUPPRESS_INTERRUPTS) && !defined(CONFIG_SUPPRESS_TIMER_INTS) && \
 	!defined(CONFIG_SYSTEMTICK_EXTCLK)
 	up_timer_initialize();
+
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#if (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL <= CONFIG_USEC_PER_TICK)
+#error "CONFIG_WATCHDOG_FOR_IRQ_INTERVAL should be greater than CONFIG_USEC_PER_TICK"
+#endif
+	up_wdog_init(CONFIG_WATCHDOG_FOR_IRQ_INTERVAL);
+#endif
 #endif
 
 	/* Register devices */
