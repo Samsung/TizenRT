@@ -406,9 +406,13 @@ static inline void task_signalparent(FAR struct tcb_s *ctcb, int status)
 		return;
 	}
 
-	/* Send SIGCHLD to all members of the parent's task group */
-
-	task_sigchild(ptcb, ctcb, status);
+	/* If ptcb is not ctcb, send SIGCHLD to all members of the parent's task group.
+	 * If ptcb is same as ctcb, calling task_sigchild is not needed.
+	 * Because ctcb is the last exit task.
+	 */
+	if (ptcb->pid != ctcb->pid) {
+		task_sigchild(ptcb, ctcb, status);
+	}
 
 	sched_unlock();
 #endif
