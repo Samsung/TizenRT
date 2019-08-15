@@ -385,10 +385,10 @@ context: check_context include/tinyara/config.h include/tinyara/version.h includ
 		echo "Previous Build Outputs - $(OUTBIN_DIR) - are deleted"; \
 		rm -rf ${OUTBIN_DIR}/*; \
 	fi
+	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" context; \
 	done
-	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 	$(Q) ./tools/mkldscript.sh
 
 # clean_context
