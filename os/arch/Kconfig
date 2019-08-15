@@ -536,6 +536,18 @@ config ARCH_RAMVECTORS
 		If ARCH_RAMVECTORS is defined, then the architecture will support
 		modifiable vectors in a RAM-based vector table.
 
+config SUPPRESS_INTERRUPTS
+	bool "Suppress all interrupts"
+	default n
+	---help---
+		Do not enable interrupts
+
+config SUPPRESS_TIMER_INTS
+	bool "No timer"
+	default n
+	---help---
+		Do not initialize or enable the system timer
+
 comment "Board Settings"
 
 config BOARD_LOOPSPERMSEC
