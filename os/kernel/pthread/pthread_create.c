@@ -257,6 +257,14 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 	trace_begin(TTRACE_TAG_TASK, "pthread_create");
 
+	/* Check whether we are allowed to create new pthread ? */
+
+	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
+		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);
+		trace_end(TTRACE_TAG_TASK);
+		return EBUSY;
+	}
+
 	/* If attributes were not supplied, use the default attributes */
 
 	if (!attr) {
