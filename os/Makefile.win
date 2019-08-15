@@ -384,8 +384,8 @@ context: check_context include\tinyara\config.h include\tinyara\version.h includ
 		echo "Previous Build Outputs - $(OUTBIN_DIR) - are deleted"
 		$(call DELFILE, $(OUTBIN_DIR)\*.*)
 	)
-	$(Q) for %%G in ($(CONTEXTDIRS)) do ( $(MAKE) -C %%G TOPDIR="$(TOPDIR)" context )
 	$(call DELFILE, $(APPDIR)\builtin\registry\*.?dat)
+	$(Q) for %%G in ($(CONTEXTDIRS)) do ( $(MAKE) -C %%G TOPDIR="$(TOPDIR)" context )
 
 # clean_context
 #
