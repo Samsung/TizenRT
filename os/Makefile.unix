@@ -457,7 +457,7 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 	fi
 	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
-	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 
 pass2deps: pass2dep $(TINYARALIBS)
@@ -600,12 +600,12 @@ depend: pass1dep pass2dep
 subdir_clean:
 	$(Q) for dir in $(CLEANDIRS) ; do \
 		if [ -e $$dir/Makefile ]; then \
-			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" clean ; \
+			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" clean ; \
 		fi \
 	done
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)" clean
 ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" clean
+	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" clean
 endif
 
 clean: subdir_clean
@@ -619,7 +619,7 @@ clean: subdir_clean
 subdir_distclean:
 	$(Q) for dir in $(CLEANDIRS) ; do \
 		if [ -e $$dir/Makefile ]; then \
-			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" distclean ; \
+			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" distclean ; \
 		fi \
 	done
 

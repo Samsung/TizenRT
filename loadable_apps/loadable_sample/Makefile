@@ -61,7 +61,7 @@ all: nothing
 
 define SDIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)"
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" LOADABLEDIR="$(LOADABLEDIR)"
 endef
 
 $(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))

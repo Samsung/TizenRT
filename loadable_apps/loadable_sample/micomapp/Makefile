@@ -76,7 +76,7 @@ KERNEL_VER = 2.0
 STACKSIZE = 4096
 PRIORITY = 220
 
-include $(TOPDIR)/../loadable_apps/loadable.mk
+include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
 
 ###################################
 # Cases of Flat and Protected build
