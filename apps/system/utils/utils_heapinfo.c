@@ -202,6 +202,7 @@ int utils_heapinfo(int argc, char **args)
 	int opt;
 	int heapinfo_fd;
 	int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
+	bool init_flag = false;
 	heapinfo_option_t options;
 	options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
 	options.mode = HEAPINFO_SIMPLE;
@@ -214,11 +215,16 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "kub:ap:fge:r")) != ERROR) {
+	while ((opt = getopt(argc, args, "ikub:ap:fge:r")) != ERROR) {
 #if CONFIG_MM_NHEAPS > 1
 		summary_option = false;
 #endif
 		switch (opt) {
+		/* i : initialize the peak allocated memory size. */
+		case 'i':
+			options.mode = HEAPINFO_INIT_PEAK;
+			init_flag = true;
+			break;
 		/* k, u, b : select the heap type about kernel, user, binary. */
 		case 'k':
 			options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
@@ -286,9 +292,11 @@ int utils_heapinfo(int argc, char **args)
 	}
 
 #ifdef CONFIG_BUILD_PROTECTED
-	printf("\n****************************************************************\n");
-	printf("     %s HEAP INFORMATION\n", heap_name);
-	printf("****************************************************************\n");
+	if (init_flag != true) {
+		printf("\n****************************************************************\n");
+		printf("     %s HEAP INFORMATION\n", heap_name);
+		printf("****************************************************************\n");
+	}
 #endif
 	heapinfo_fd = open(HEAPINFO_DRVPATH, O_RDWR);
 	if (heapinfo_fd < 0) {
@@ -301,6 +309,14 @@ int utils_heapinfo(int argc, char **args)
 		return ERROR;		
 	}
 	close(heapinfo_fd);
+
+	if (init_flag == true) {
+#ifdef CONFIG_BUILD_PROTECTED
+		printf("[%s]", heap_name);
+#endif
+		printf("Peak allocated memory size is cleared\n");
+		return OK;
+	}
 
 #if CONFIG_MM_NHEAPS > 1
 	if (summary_option == true) {
@@ -344,5 +360,6 @@ usage:
 #if CONFIG_MM_REGIONS > 1
 	printf(" -r             Show the all region information\n");
 #endif
+	printf(" -i             Initialize the peak allocated size\n");
 	return ERROR;
 }
