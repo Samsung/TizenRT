@@ -205,6 +205,24 @@ int exec_module(FAR const struct binary_s *binp)
 		goto errout_with_addrenv;
 	}
 
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_APP_BINARY_SEPARATION)
+	/* Re-initialize the binary heap alloc list information.
+	 * Loading thread uses the binary's heap for loading,
+	 * so it saves the alloc data in binary's heap.
+	 * But loading thread is not in its binary, exclude those data
+	 * for calculating the heap usage per threads.
+	 */
+	int hashpid = PIDHASH(getpid());
+	struct mm_allocnode_s *node;
+
+	binp->uheap->alloc_list[hashpid].pid = HEAPINFO_INIT_INFO;
+	binp->uheap->alloc_list[hashpid].curr_alloc_size = 0;
+	binp->uheap->alloc_list[hashpid].num_alloc_free = 0;
+
+	node = (struct mm_allocnode_s *)((void *)stack - SIZEOF_MM_ALLOCNODE);
+	node->pid = (-1) * (tcb->cmn.pid);
+#endif
+
 	/* We can free the argument buffer now.
 	 * REVISIT:  It is good to free up memory as soon as possible, but
 	 * unfortunately here 'binp' is 'const'.  So to do this properly, we will

@@ -353,17 +353,10 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 #endif
 
 #if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_APP_BINARY_SEPARATION)
-	/* Re-initialize the binary heap information.
-	 * Because, binary heap contains text and data region size,
-	 * but those should not be calculated for heap usage.
+	/* Save the text and data region size of new binary into its heap
+	 * for excluding those size when calculating the heap usage.
 	 */
-	pid_t pid = getpid();
-	pid_t hashpid = PIDHASH(pid);
-
 	loadinfo->uheap->elf_sections_size = loadinfo->textsize + loadinfo->datasize;
-
-	loadinfo->uheap->alloc_list[hashpid].curr_alloc_size = 0;
-	loadinfo->uheap->alloc_list[hashpid].num_alloc_free = 0;
 
 	loadinfo->uheap->total_alloc_size = 0;
 	loadinfo->uheap->peak_alloc_size = 0;
