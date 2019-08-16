@@ -70,7 +70,6 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
 
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -487,7 +486,6 @@ static struct bt_conn_s *conn_new(void)
 	return conn;
 }
 
-
 struct bt_conn_s *bt_conn_add_le(const bt_addr_le_t *peer)
 {
 	FAR struct bt_conn_s *conn = conn_new();
@@ -633,8 +631,11 @@ FAR struct bt_conn_s *bt_conn_lookup_handle(uint16_t handle)
 	int i;
 
 	for (i = 0; i < CONFIG_BLUETOOTH_MAX_CONN; i++) {
-		/* We only care about connections with a valid handle */
+		if (!bt_atomic_get(&g_conns[i].ref)) {
+			continue;
+		}
 
+		/* We only care about connections with a valid handle */
 		if (g_conns[i].state != BT_CONN_CONNECTED && g_conns[i].state != BT_CONN_DISCONNECT) {
 			continue;
 		}
@@ -690,8 +691,7 @@ struct bt_conn_s *bt_conn_lookup_addr_le_id(uint8_t id, const bt_addr_le_t *peer
 			continue;
 		}
 
-		if (g_conns[i].id == id &&
-				!bt_conn_addr_le_cmp(&g_conns[i], peer)) {
+		if (g_conns[i].id == id && !bt_conn_addr_le_cmp(&g_conns[i], peer)) {
 
 			return bt_conn_addref(&g_conns[i]);
 		}
@@ -699,7 +699,6 @@ struct bt_conn_s *bt_conn_lookup_addr_le_id(uint8_t id, const bt_addr_le_t *peer
 
 	return NULL;
 }
-
 
 /****************************************************************************
  * Name: bt_conn_lookup_state
@@ -751,13 +750,12 @@ int bt_conn_addr_le_cmp(const struct bt_conn_s *conn, const bt_addr_le_t *peer)
 	/* Check against initial connection address */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		return bt_addr_le_cmp(peer, &conn->le.resp_addr);
-	} 
+	}
 
 	return bt_addr_le_cmp(peer, &conn->le.init_addr);
 }
 
-struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
-		const enum bt_conn_state_e state)
+struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer, const enum bt_conn_state_e state)
 {
 	int i;
 
@@ -781,7 +779,6 @@ struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 
 	return NULL;
 }
-
 
 /****************************************************************************
  * Name: bt_conn_addref
@@ -835,7 +832,7 @@ void bt_conn_release(FAR struct bt_conn_s *conn)
 	bt_addr_le_copy(&conn->dst, BT_ADDR_LE_ANY);
 }
 
-struct bt_conn_s * bt_conn_relref(FAR struct bt_conn_s *conn)
+struct bt_conn_s *bt_conn_relref(FAR struct bt_conn_s *conn)
 {
 	bt_atomic_decr(&conn->ref);
 
@@ -1109,9 +1106,9 @@ int bt_conn_le_conn_update(FAR struct bt_conn_s *conn, uint16_t min, uint16_t ma
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
-void bt_conn_set_param_le(struct bt_conn_s *conn,
-		const struct bt_le_conn_param *param)
+void bt_conn_set_param_le(struct bt_conn_s *conn, const struct bt_le_conn_param *param)
 {
+	conn->le.interval_min = param->interval_min;
 	conn->le.interval_max = param->interval_max;
 	conn->le.latency = param->latency;
 	conn->le.timeout = param->timeout;
@@ -1121,8 +1118,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 {
 	/* All limits according to BT Core spec 5.0 [Vol 2, Part E, 7.8.12] */
 
-	if (param->interval_min > param->interval_max ||
-			param->interval_min < 6 || param->interval_max > 3200) {
+	if (param->interval_min > param->interval_max || param->interval_min < 6 || param->interval_max > 3200) {
 		return false;
 	}
 
@@ -1130,9 +1126,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 		return false;
 	}
 
-	if (param->timeout < 10 || param->timeout > 3200 ||
-			((param->timeout * 4U) <=
-			 ((1 + param->latency) * param->interval_max))) {
+	if (param->timeout < 10 || param->timeout > 3200 || ((param->timeout * 4U) <= ((1 + param->latency) * param->interval_max))) {
 		return false;
 	}
 
