@@ -557,6 +557,12 @@ struct bt_hci_cp_le_read_remote_features_s {
 	uint16_t handle;
 } packed_struct;
 
+#define BT_HCI_OP_READ_SUPPORTED_COMMANDS     BT_OP(BT_OGF_INFO, 0x0002)
+struct bt_hci_rp_read_supported_commands_s {
+	uint8_t  status;
+	uint8_t  commands[64];
+} packed_struct;
+
 /* Event definitions */
 
 struct bt_hci_evt_disconn_complete_s {
