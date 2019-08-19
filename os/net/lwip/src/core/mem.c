@@ -299,8 +299,8 @@ struct mem {
  * how that space is calculated). */
 #ifndef LWIP_RAM_HEAP_POINTER
 /** the heap. we need one struct mem at the end and some room for alignment */
-//LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
-//#define LWIP_RAM_HEAP_POINTER ram_heap
+LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
+#define LWIP_RAM_HEAP_POINTER ram_heap
 #endif							/* LWIP_RAM_HEAP_POINTER */
 
 /** pointer to the heap (ram_heap): for alignment, ram is now a pointer instead of an array */
@@ -395,17 +395,14 @@ void mem_init(void)
 	LWIP_ASSERT("Sanity check alignment", (SIZEOF_STRUCT_MEM & (MEM_ALIGNMENT - 1)) == 0);
 
 	/* align the heap */
-	int size_tmp =  MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM);
-	u8_t *ram_heap = kmm_malloc(LWIP_MEM_ALIGN_BUFFER(size_tmp));
-	if (!ram_heap) {
-		LWIP_ASSERT("failed to malloc mem pool\n", 0);
-	}
-	ram = (u8_t *)LWIP_MEM_ALIGN(ram_heap);
+	ram = (u8_t *) LWIP_MEM_ALIGN(LWIP_RAM_HEAP_POINTER);
+
 	/* initialize the start of the heap */
 	mem = (struct mem *)(void *)ram;
 	mem->next = MEM_SIZE_ALIGNED;
 	mem->prev = 0;
 	mem->used = 0;
+
 	/* initialize the end of the heap */
 	ram_end = (struct mem *)(void *)&ram[MEM_SIZE_ALIGNED];
 	ram_end->used = 1;
