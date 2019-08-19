@@ -392,11 +392,12 @@ config WATCHDOG_FOR_IRQ
 if WATCHDOG_FOR_IRQ
 
 config WATCHDOG_FOR_IRQ_INTERVAL
-	int "Interval for resetting watchdog(us)"
-	default 20000
+	int "Interval for resetting watchdog(ms)"
+	default 1000
 	---help---
 		After this interval, watchdog for irq expires.
 		This value should be greater than USER_PER_TICK.
+		Default interval is 1000ms.
 
 endif # WATCHDOG_FOR_IRQ
 

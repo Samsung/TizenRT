@@ -87,6 +87,7 @@ static const clock_ip_name_t s_wdogClock[] = WDOG_CLOCKS;
 
 static const IRQn_Type s_wdogIRQ[] = WDOG_IRQS;
 
+#define IMXRT_WATCHDOG_RESOLUTION 500
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -359,10 +360,13 @@ int board_reset(int status)
  ****************************************************************************/
 void up_wdog_init(uint16_t timeout)
 {
+#if ((CONFIG_WATCHDOG_FOR_IRQ_INTERVAL % 500) != 0) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL < 500) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL > 128000)
+#error "IMXRT WATCHDOG supports timeout periods from 500ms to 128000ms with a time resolution of 500ms."
+#endif
 	wdog_config_t config;
 
 	imxrt_wdog_getdefaultconfig(&config);
-	config.timeoutValue = timeout;
+	config.timeoutValue = (uint16_t)(timeout / IMXRT_WATCHDOG_RESOLUTION) - 1;
 
 	imxrt_wdog_init(WDOG1, &config);
 }
