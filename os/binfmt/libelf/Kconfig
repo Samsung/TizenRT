@@ -55,3 +55,37 @@ config ELF_EXCLUDE_SYMBOLS
 	---help---
 		If this option is enabled, then it excludes symbol information from the ELF
 		and results in a ELF of much smaller size.
+
+config ELF_CACHE_READ
+        bool "ELF cache read support"
+        default n
+        depends on BINFMT_ENABLE
+        depends on !COMPRESSED_BINARY
+        ---help---
+		Enabling this config would increase the elf read performance by
+		manyfolds with its caching mechanism.
+
+		If an elf_read taking more time and consistently trying to read the
+		same position multiple times, then there would be a considerable delay.
+		Enabling this config will cache/buffer the previously accessed data.
+
+		Note: If COMPRESSED_BINARY=y, then this config should be disabled, as
+		by default COMPRESSED_BINARY config would support caching inbuilt.
+
+if ELF_CACHE_READ
+
+config ELF_CACHE_BLOCK_SIZE
+        int "Block size for elf read caching"
+        default 2048
+        range 512 8192
+        ---help---
+                Enter block size to use for caching the elf read.
+
+config ELF_CACHE_BLOCKS_COUNT
+        int "Number of Blocks to be cached when reading elf"
+        default 60
+        range 2 100
+        ---help---
+                Enter the number of blocks(counts) to use for caching.
+
+endif # ELF_CACHE_READ

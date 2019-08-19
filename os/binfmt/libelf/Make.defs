@@ -66,6 +66,9 @@ ifeq ($(CONFIG_BINFMT_CONSTRUCTORS),y)
 BINFMT_CSRCS += libelf_ctors.c libelf_dtors.c
 endif
 
+ifeq ($(CONFIG_ELF_CACHE_READ),y)
+BINFMT_CSRCS += libelf_cache.c
+endif
 # Hook the libelf subdirectory into the build
 
 VPATH += libelf

@@ -185,6 +185,15 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 		return ret;
 	}
 
+#if defined(CONFIG_ELF_CACHE_READ) && !defined(CONFIG_COMPRESSED_BINARY)
+	if (loadinfo->compression_type == COMPRESS_TYPE_NONE) {
+		ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
+		if (ret != OK) {
+			berr("Failed to init cache support: %d\n", ret);
+			return ret;
+		}
+	} else
+#endif
 	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
 #ifdef CONFIG_COMPRESSED_BINARY
 		ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);

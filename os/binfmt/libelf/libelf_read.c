@@ -140,6 +140,9 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 
 	while (readsize > 0) {
 		if (loadinfo->compression_type == COMPRESS_TYPE_NONE) {	/* Uncompressed binary */
+#if defined(CONFIG_ELF_CACHE_READ) && !defined(CONFIG_COMPRESSED_BINARY)
+			nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+#else
 			/* Seek to the next read position */
 
 			rpos = lseek(loadinfo->filfd, offset, SEEK_SET);
@@ -152,6 +155,7 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 			/* Read the file data at offset into the user buffer */
 
 			nbytes = read(loadinfo->filfd, buffer, readsize);
+#endif
 		} else if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {	/* Compressed binary */
 #ifdef CONFIG_COMPRESSED_BINARY
 			if (loadinfo->compression_type == CONFIG_COMPRESSION_TYPE) {
