@@ -271,8 +271,6 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 		wqueue->delay = 0;
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 		work_unlock();
-#else
-		irqrestore(flags);
 #endif
 		/* Wait indefinitely until signalled with SIGWORK */
 		wqueue->worker[wndx].busy = false;
@@ -301,19 +299,19 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 			*/
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 		work_unlock();
-#else
-		irqrestore(flags);
 #endif
 		wqueue->worker[wndx].busy = false;
 		usleep(next * USEC_PER_TICK);
 		wqueue->worker[wndx].busy = true;
-	} else {
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-		work_unlock();
-#else
-		irqrestore(flags);
-#endif
 	}
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	else {
+		work_unlock();
+	}
+#else
+	irqrestore(flags);
+#endif
+
 }
 
 #endif							/* CONFIG_SCHED_WORKQUEUE */
