@@ -301,6 +301,15 @@ static int bt_conn_init(void)
 	return err;
 }
 
+static void le_read_supp_states_complete(struct bt_buf_s *buf)
+{
+        struct bt_hci_rp_le_read_supp_states_s *rp = (void *)buf->data;
+
+        ndbg("status %u", rp->status);
+
+        g_btdev.le.states = sys_get_le64(rp->le_states);
+}
+
 static void read_supported_commands_complete(struct bt_buf_s *buf)
 {
 	struct bt_hci_rp_read_supported_commands_s *rp = (void *)buf->data;
@@ -332,6 +341,17 @@ static int hci_common_init(void)
 
 	read_supported_commands_complete(rsp);
 	bt_buf_release(rsp);
+
+	/* Read LE Supported States */
+	if (BT_CMD_LE_STATES(g_btdev.supported_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_SUPP_STATES, NULL, &rsp);
+		if (err) {
+			return err;
+		}
+
+		le_read_supp_states_complete(rsp);
+		bt_buf_release(rsp);
+	}
 
 	return 0;
 }

@@ -350,6 +350,10 @@
 #define LE_CONN_LATENCY              0x0000
 #define LE_CONN_TIMEOUT              0x002a
 
+/* Supported Commands */
+#define BT_CMD_TEST(cmd, octet, bit)            (cmd[octet] & BIT(bit))
+#define BT_CMD_LE_STATES(cmd)                   BT_CMD_TEST(cmd, 28, 3)
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -561,6 +565,12 @@ struct bt_hci_cp_le_read_remote_features_s {
 struct bt_hci_rp_read_supported_commands_s {
 	uint8_t  status;
 	uint8_t  commands[64];
+} packed_struct;
+
+#define BT_HCI_OP_LE_READ_SUPP_STATES           BT_OP(BT_OGF_LE, 0x001c)
+struct bt_hci_rp_le_read_supp_states_s {
+	uint8_t  status;
+	uint8_t  le_states[8];
 } packed_struct;
 
 /* Event definitions */
