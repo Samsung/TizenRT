@@ -40,6 +40,8 @@
  * Public Function Prototypes
  ****************************************************************************/
 
+#include <tinyara/config.h>
+#include <stdio.h>
 #include <tinyara/bluetooth/bt_hci.h>
 
 /****************************************************************************

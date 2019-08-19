@@ -145,11 +145,347 @@ typedef enum {
 	BT_EVENT_MAX
 } bt_event_e;
 
+#define BLUETOOTH_ADDRESS_LENGTH		6 /**< This specifies bluetooth device address length */
+#define BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX	31 /**< This specifies maximum AD data length */
+
+#define BLUETOOTH_EVENT_BASE            ((int)(0x0000))		/**< No event */
+#define BLUETOOTH_EVENT_GAP_BASE        ((int)(BLUETOOTH_EVENT_BASE + 0x0010))
+								/**< Base ID for GAP Event */
+#define BLUETOOTH_EVENT_SDP_BASE        ((int)(BLUETOOTH_EVENT_GAP_BASE + 0x0020))
+								/**< Base ID for SDP events */
+#define BLUETOOTH_EVENT_RFCOMM_BASE     ((int)(BLUETOOTH_EVENT_SDP_BASE + 0x0020))
+								/**< Base ID for RFCOMM events */
+#define BLUETOOTH_EVENT_NETWORK_BASE     ((int)(BLUETOOTH_EVENT_RFCOMM_BASE + 0x0020))
+								/**< Base ID for NETWORK events */
+#define BLUETOOTH_EVENT_HDP_BASE     ((int)(BLUETOOTH_EVENT_NETWORK_BASE + 0x0020))
+								/**< Base ID for HDP events */
+#define BLUETOOTH_EVENT_OPC_BASE  ((int)(BLUETOOTH_EVENT_HDP_BASE + 0x0020))
+								/**< Base ID for OPC events */
+#define BLUETOOTH_EVENT_OBEX_SERVER_BASE ((int)(BLUETOOTH_EVENT_OPC_BASE + 0x0020))
+								/**< Base ID for Obex Server events */
+#define BLUETOOTH_EVENT_GATT_BASE ((int)(BLUETOOTH_EVENT_OBEX_SERVER_BASE + 0x0020))
+								/**< Base ID for GATT events */
+
+#define BLUETOOTH_EVENT_AUDIO_BASE ((int)(BLUETOOTH_EVENT_GATT_BASE + 0x0020))
+								/**< Base ID for Audio events */
+#define BLUETOOTH_EVENT_HID_BASE ((int)(BLUETOOTH_EVENT_AUDIO_BASE + 0x0030))
+								/**< Base ID for HID events */
+#define BLUETOOTH_EVENT_ADVERTISING_BASE ((int)(BLUETOOTH_EVENT_HID_BASE + 0x0020))
+								/**< Base ID for Advertising events */
+#define BLUETOOTH_EVENT_PBAP_CLIENT_BASE ((int)(BLUETOOTH_EVENT_ADVERTISING_BASE + 0x0020))
+								/**< Base ID for PBAP Client events */
+#define BLUETOOTH_EVENT_AVRCP_CONTROL_BASE ((int)(BLUETOOTH_EVENT_PBAP_CLIENT_BASE + 0x0020))
+								/**< Base ID for AVRCP events */
+#define BLUETOOTH_EVENT_IPSP_BASE ((int)(BLUETOOTH_EVENT_AVRCP_CONTROL_BASE + 0x0020))
+								/**< Base ID for IPSP events */
+#define BLUETOOTH_EVENT_MAP_BASE  ((int)(BLUETOOTH_EVENT_IPSP_BASE + 0x0020))
+								/**< Base ID for MAP events */
+#define BLUETOOTH_EVENT_TYPE_TELEPHONY_BASE	(unsigned int)(0x00500)
+
+typedef enum {
+	BLUETOOTH_EVENT_TELEPHONY_ANSWER_CALL = BLUETOOTH_EVENT_TYPE_TELEPHONY_BASE,
+	BLUETOOTH_EVENT_TELEPHONY_RELEASE_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_REJECT_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_CHLD_0_RELEASE_ALL_HELD_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_CHLD_1_RELEASE_ALL_ACTIVE_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_CHLD_2_ACTIVE_HELD_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_CHLD_3_MERGE_CALL,
+	BLUETOOTH_EVENT_TELEPHONY_CHLD_4_EXPLICIT_CALL_TRANSFER,
+	BLUETOOTH_EVENT_TELEPHONY_SEND_DTMF,
+	BLUETOOTH_EVENT_TELEPHONY_HFP_CONNECTED,
+	BLUETOOTH_EVENT_TELEPHONY_HFP_DISCONNECTED,
+	BLUETOOTH_EVENT_TELEPHONY_AUDIO_CONNECTED,
+	BLUETOOTH_EVENT_TELEPHONY_AUDIO_DISCONNECTED,
+	BLUETOOTH_EVENT_TELEPHONY_SET_SPEAKER_GAIN,
+	BLUETOOTH_EVENT_TELEPHONY_SET_MIC_GAIN,
+	BLUETOOTH_EVENT_TELEPHONY_NREC_CHANGED,
+	BLUETOOTH_EVENT_TELEPHONY_VENDOR_AT_CMD,
+} bluetooth_telephony_event_type;
+
+/**
+ * Bluetooth event type
+ */
+typedef enum {
+	BLUETOOTH_EVENT_NONE = BLUETOOTH_EVENT_BASE,/**< No event */
+
+	BLUETOOTH_EVENT_ENABLED,		    /**< Bluetooth event adpater enabled */
+	BLUETOOTH_EVENT_DISABLED,		    /**< Bluetooth event adpater disabled */
+	BLUETOOTH_EVENT_LE_ENABLED,		    /**< Bluetooth event adpater enabled */
+	BLUETOOTH_EVENT_LE_DISABLED,		    /**< Bluetooth event adpater disabled */
+	BLUETOOTH_EVENT_LOCAL_NAME_CHANGED,	    /**< Bluetooth event local name changed*/
+	BLUETOOTH_EVENT_DISCOVERABLE_TIMEOUT_REQUESTED,
+					/**< Bluetooth event Discoverable timeout requested*/
+	BLUETOOTH_EVENT_DISCOVERABLE_MODE_CHANGED,  /**< Bluetooth event mode changed */
+	BLUETOOTH_EVENT_DISCOVERY_OPTION_REQUESTED, /**< Bluetooth event discovery option */
+	BLUETOOTH_EVENT_DISCOVERY_STARTED,	    /**< Bluetooth event discovery started */
+	BLUETOOTH_EVENT_DISCOVERY_FINISHED,	    /**< Bluetooth event discovery finished */
+	BLUETOOTH_EVENT_REMOTE_DEVICE_FOUND,	    /**< Bluetooth event remote deice found */
+	BLUETOOTH_EVENT_LE_DISCOVERY_STARTED,		/**< Bluetooth event LE discovery started */
+	BLUETOOTH_EVENT_LE_DISCOVERY_FINISHED,	/**< Bluetooth event LE discovery finished */
+	BLUETOOTH_EVENT_REMOTE_LE_DEVICE_FOUND,	    /**< Bluetooth event remote deice found (LE dev) */
+	BLUETOOTH_EVENT_REMOTE_DEVICE_NAME_UPDATED,/**< Bluetooth event remote device name updated*/
+	BLUETOOTH_EVENT_BONDING_FINISHED,	    /**< Bluetooth event bonding completed */
+	BLUETOOTH_EVENT_BONDED_DEVICE_REMOVED,	    /**< Bluetooth event bonding removed */
+	BLUETOOTH_EVENT_BONDED_DEVICE_FOUND,	    /**< Bluetooth event paired device found */
+	BLUETOOTH_EVENT_REMOTE_DEVICE_READ,	    /**< Bluetooth event read remote device */
+	BLUETOOTH_EVENT_DEVICE_AUTHORIZED,	    /**< Bluetooth event authorize device */
+	BLUETOOTH_EVENT_DEVICE_UNAUTHORIZED,	    /**< Bluetooth event unauthorize device */
+	BLUETOOTH_EVENT_DISCOVERABLE_TIMEOUT_CHANGED,  /**< Bluetooth event mode changed */
+	BLUETOOTH_EVENT_KEYBOARD_PASSKEY_DISPLAY,	/**Bluetooth event for displaying keyboard  passkey to user*/
+	BLUETOOTH_EVENT_PIN_REQUEST,	/**Bluetooth event for PIN input by user*/
+	BLUETOOTH_EVENT_PASSKEY_REQUEST,	/**Bluetooth event for entering Passkey by user*/
+	BLUETOOTH_EVENT_PASSKEY_CONFIRM_REQUEST,	/**Bluetooth event for Passkey confirmation by user*/
+	BLUETOOTH_EVENT_CONNECTABLE_CHANGED,	    /**< Bluetooth event connectable changed */
+
+	BLUETOOTH_EVENT_RSSI_ENABLED,		/**< Bluetooth event RSSI monitoring enabled */
+	BLUETOOTH_EVENT_RSSI_ALERT,				/**< Bluetooth event RSSI Alert */
+	BLUETOOTH_EVENT_RAW_RSSI,				/**< Bluetooth event Raw RSSI */
+	BLUETOOTH_EVENT_SUPPORTED_PROFILE_TRUSTED,	/**< Bluetooth event Supported Profile Trusted */
+	BLUETOOTH_EVENT_PASSKEY_NOTIFICATION,	    /**< Bluetooth event passkey notification */
+
+	BLUETOOTH_EVENT_SERVICE_SEARCHED = BLUETOOTH_EVENT_SDP_BASE,
+						    /**< Bluetooth event serice search base id */
+	BLUETOOTH_EVENT_SERVICE_SEARCH_CANCELLED,   /**< Bluetooth event service search cancelled */
+	BLUETOOTH_EVENT_RFCOMM_DATA_RECEIVED = BLUETOOTH_EVENT_RFCOMM_BASE,
+							/**< RFCOMM data receive event */
+	BLUETOOTH_EVENT_RFCOMM_CONNECTED,		/**< Rfcomm server incomming connection */
+	BLUETOOTH_EVENT_RFCOMM_DISCONNECTED,		/**< Rfcomm server/client disconnect */
+
+	BLUETOOTH_EVENT_RFCOMM_AUTHORIZE,
+
+	BLUETOOTH_EVENT_DEVICE_CONNECTED,	    /**< Bluetooth event device connected */
+	BLUETOOTH_EVENT_DEVICE_DISCONNECTED,	    /**< Bluetooth event device disconnected */
+
+	BLUETOOTH_EVENT_RFCOMM_SERVER_REMOVED,
+
+	BLUETOOTH_EVENT_NETWORK_SERVER_ACTIVATED = BLUETOOTH_EVENT_NETWORK_BASE,
+								/**< Bluetooth Network event */
+	BLUETOOTH_EVENT_NETWORK_SERVER_DEACTIVATED, /**< Network server deactivated */
+	BLUETOOTH_EVENT_NETWORK_SERVER_CONNECTED,     /**< Network connected event in server */
+	BLUETOOTH_EVENT_NETWORK_SERVER_DISCONNECTED,
+						   /**< Network disconnected evnet in server */
+
+	BLUETOOTH_EVENT_NETWORK_CONNECTED,		/**< Network connected event in client*/
+	BLUETOOTH_EVENT_NETWORK_DISCONNECTED,		/**< Network disconnected evnet in client*/
+
+	BLUETOOTH_EVENT_HDP_CONNECTED
+			= BLUETOOTH_EVENT_HDP_BASE,		   /**<HDP Connect>*/
+	BLUETOOTH_EVENT_HDP_DISCONNECTED,	   /**<HDP Disconnect>*/
+	BLUETOOTH_EVENT_HDP_DATA_RECEIVED,	   /**<HDP Data Indication>*/
+
+	BLUETOOTH_EVENT_OPC_CONNECTED = BLUETOOTH_EVENT_OPC_BASE,
+								/* OPC Connected event */
+	BLUETOOTH_EVENT_OPC_DISCONNECTED,		/* OPC Disonnected event */
+	BLUETOOTH_EVENT_OPC_TRANSFER_STARTED,	/* OPC Transfer started event */
+	BLUETOOTH_EVENT_OPC_TRANSFER_PROGRESS,	/* OPC Transfer progress event */
+	BLUETOOTH_EVENT_OPC_TRANSFER_COMPLETE,	/* OPC Transfer Complete event */
+
+	BLUETOOTH_EVENT_MAP_CONNECTED = BLUETOOTH_EVENT_MAP_BASE,
+	BLUETOOTH_EVENT_MAP_DISCONNECTED,
+	/*
+	BLUETOOTH_EVENT_MAP_SET_FOLDER_COMPLETE,
+	BLUETOOTH_EVENT_MAP_SET_FOLDER_INVALID_ARGUMENTS,
+	BLUETOOTH_EVENT_MAP_SET_FOLDER_FAILED,
+	BLUETOOTH_EVENT_MAP_UPDATE_INBOX_COMPLETE,
+	BLUETOOTH_EVENT_MAP_UPDATE_INBOX_FAILED,
+	*/
+	BLUETOOTH_EVENT_MAP_LIST_FOLDERS_COMPLETE,
+	BLUETOOTH_EVENT_MAP_LIST_FOLDERS_INVALID_ARGUMENTS,
+	BLUETOOTH_EVENT_MAP_LIST_FOLDERS_FAILED,
+	BLUETOOTH_EVENT_MAP_LIST_MESSAGES_COMPLETE,
+	BLUETOOTH_EVENT_MAP_LIST_MESSAGES_INVALID_ARGUMENTS,
+	BLUETOOTH_EVENT_MAP_LIST_MESSAGES_FAILED,
+	BLUETOOTH_EVENT_MAP_PUSH_MESSAGE_COMPLETE,
+	BLUETOOTH_EVENT_MAP_PUSH_MESSAGE_INVALID_ARGUMENTS,
+	BLUETOOTH_EVENT_MAP_PUSH_MESSAGE_FAILED,
+	BLUETOOTH_EVENT_MAP_GET_MESSAGE_COMPLETE,
+	BLUETOOTH_EVENT_MAP_GET_MESSAGE_INVALID_ARGUMENTS,
+	BLUETOOTH_EVENT_MAP_GET_MESSAGE_FAILED,
+	BLUETOOTH_EVENT_MAP_LIST_FILTER_FIELD_COMPLETE,
+
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_AUTHORIZE = BLUETOOTH_EVENT_OBEX_SERVER_BASE,
+								/* Obex server authorize event*/
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_STARTED,	/* Obex Server transfer started event*/
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_PROGRESS,/* Obex Server transfer progress event*/
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_COMPLETED,/* Obex Server transfer complete event*/
+	BLUETOOTH_EVENT_OBEX_SERVER_CONNECTION_AUTHORIZE,
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_CONNECTED, /* Obex Transfer connected event */
+	BLUETOOTH_EVENT_OBEX_SERVER_TRANSFER_DISCONNECTED, /* Obex Transfer disconnected event */
+
+	BLUETOOTH_EVENT_GATT_SVC_CHAR_DISCOVERED = BLUETOOTH_EVENT_GATT_BASE,
+				/**<Discovered GATT service characteristics event*/
+	BLUETOOTH_EVENT_GATT_CHAR_VAL_CHANGED,
+				/**<Remote GATT charateristic value changed event*/
+	BLUETOOTH_EVENT_GATT_GET_CHAR_FROM_UUID,
+	BLUETOOTH_EVENT_GATT_READ_CHAR, /**<Gatt Read Characteristic Value */
+	BLUETOOTH_EVENT_GATT_WRITE_CHAR, /**<Gatt Write Characteristic Value */
+	BLUETOOTH_EVENT_GATT_READ_DESC, /**<Gatt Read Characteristic Descriptor Value */
+	BLUETOOTH_EVENT_GATT_WRITE_DESC, /**<Gatt Write Characteristic Descriptor Value */
+	BLUETOOTH_EVENT_GATT_SVC_CHAR_DESC_DISCOVERED, /**<Gatt Char Descriptors Discovered Event*/
+#ifdef TIZEN_GATT_CLIENT
+	BLUETOOTH_EVENT_GATT_SERVER_CONNECTED,/**<Local Gatt Server connected event */
+	BLUETOOTH_EVENT_GATT_SERVER_DISCONNECTED, /**<Local Gatt Server Disconnected event */
+	BLUETOOTH_EVENT_GATT_CLIENT_CONNECTED,/**<Local Gatt Client connected event */
+	BLUETOOTH_EVENT_GATT_CLIENT_DISCONNECTED, /**<Local Gatt Client Disconnected event */
+#else
+	BLUETOOTH_EVENT_GATT_CONNECTED,/**<Gatt connected event */
+	BLUETOOTH_EVENT_GATT_DISCONNECTED, /**<Gatt Disconnected event */
+#endif
+	BLUETOOTH_EVENT_GATT_ATT_MTU_CHANGED, /**<Attribute protocol MTU changed event */
+	BLUETOOTH_EVENT_GATT_SERVER_CHARACTERISTIC_VALUE_CHANGED, /**<Gatt Char write callback event */
+	BLUETOOTH_EVENT_GATT_SERVER_READ_REQUESTED, /** <GATT Characteristic/Descriptor Read Request event */
+	BLUETOOTH_EVENT_GATT_SERVER_VALUE_CHANGED, /** <GATT Characteristic/Descriptor Value change event */
+	BLUETOOTH_EVENT_GATT_SERVER_NOTIFICATION_STATE_CHANGED, /** <GATT Characteristic Notification change event */
+	BLUETOOTH_EVENT_GATT_SERVER_NOTIFICATION_COMPLETED, /** <GATT Characteristic Notification or Indication completed event */
+	BLUETOOTH_EVENT_GATT_CLIENT_SERVICE_CHANGED, /** <GATT Client service change event */
+	BLUETOOTH_EVENT_GATT_SERVER_ACQUIRE_WRITE, /** <GATT Characteristic/Descriptor Value change event */
+	BLUETOOTH_EVENT_GATT_SERVER_ACQUIRE_NOTIFY,
+	BLUETOOTH_EVENT_AG_CONNECTED = BLUETOOTH_EVENT_AUDIO_BASE, /**<AG service connected event*/
+	BLUETOOTH_EVENT_AG_DISCONNECTED, /**<AG service disconnected event*/
+	BLUETOOTH_EVENT_AG_SPEAKER_GAIN, /**<Speaker gain request event*/
+	BLUETOOTH_EVENT_AG_MIC_GAIN, /**<Mic gain request event*/
+	BLUETOOTH_EVENT_AG_AUDIO_CONNECTED, /**<AV & AG service connected event*/
+	BLUETOOTH_EVENT_AG_AUDIO_DISCONNECTED,  /**<AV & AG service disconnected event*/
+	BLUETOOTH_EVENT_AV_CONNECTED, /**<AV service connected event*/
+	BLUETOOTH_EVENT_AV_DISCONNECTED, /**<AV service disconnected event*/
+	BLUETOOTH_EVENT_AV_SOURCE_CONNECTED, /**<AV Source device connected event */
+	BLUETOOTH_EVENT_AV_SOURCE_DISCONNECTED, /**<AV Source device disconnected event */
+	BLUETOOTH_EVENT_AVRCP_CONNECTED, /**<AVRCP service connected event*/
+	BLUETOOTH_EVENT_AVRCP_DISCONNECTED, /**<AVRCP service disconnected event*/
+	BLUETOOTH_EVENT_AVRCP_SETTING_SHUFFLE_STATUS, /**<AVRCP service player suffle  status event*/
+	BLUETOOTH_EVENT_AVRCP_SETTING_EQUALIZER_STATUS, /**<AVRCP service player equalizer status event*/
+	BLUETOOTH_EVENT_AVRCP_SETTING_REPEAT_STATUS, /**<AVRCP service player repeat status event*/
+	BLUETOOTH_EVENT_AVRCP_SETTING_SCAN_STATUS, /**<AVRCP service player scan status event*/
+	BLUETOOTH_EVENT_AVRCP_DELAY_CHANGED, /**<AVRCP service transport delay changed event*/
+	BLUETOOTH_EVENT_HF_CONNECTED,
+	BLUETOOTH_EVENT_HF_DISCONNECTED,
+	BLUETOOTH_EVENT_HF_AUDIO_CONNECTED,
+	BLUETOOTH_EVENT_HF_AUDIO_DISCONNECTED,
+	BLUETOOTH_EVENT_HF_RING_INDICATOR,
+	BLUETOOTH_EVENT_HF_CALL_WAITING,
+	BLUETOOTH_EVENT_HF_CALL_TERMINATED,
+	BLUETOOTH_EVENT_HF_CALL_STARTED,
+	BLUETOOTH_EVENT_HF_CALL_ENDED,
+	BLUETOOTH_EVENT_HF_CALL_UNHOLD,
+	BLUETOOTH_EVENT_HF_CALL_SWAPPED,
+	BLUETOOTH_EVENT_HF_CALL_ON_HOLD,
+	BLUETOOTH_EVENT_HF_CALL_STATUS,
+	BLUETOOTH_EVENT_HF_VOICE_RECOGNITION_ENABLED,
+	BLUETOOTH_EVENT_HF_VOICE_RECOGNITION_DISABLED,
+	BLUETOOTH_EVENT_HF_VOLUME_SPEAKER,
+	BLUETOOTH_EVENT_HF_VENDOR_DEP_CMD,
+	BLUETOOTH_EVENT_HF_CALLSETUP_INCOMING,
+	BLUETOOTH_EVENT_HF_CALL_FAILED_TO_DIAL,
+	BLUETOOTH_EVENT_HF_CALL_IDLE,
+	BLUETOOTH_EVENT_HF_CALLSETUP_DIALING,
+	BLUETOOTH_EVENT_HF_CALLSETUP_ALERTING,
+	BLUETOOTH_EVENT_HF_CIEV_DEVICE_STATUS_CHANGED,
+
+	BLUETOOTH_HID_CONNECTED = BLUETOOTH_EVENT_HID_BASE, /**< Input connectd event*/
+	BLUETOOTH_HID_DISCONNECTED, /**< Input disconnectd event*/
+	BLUETOOTH_HID_DEVICE_CONNECTED, /**< HID Device connected event*/
+	BLUETOOTH_HID_DEVICE_DISCONNECTED, /**< HID Device disconnected event*/
+	BLUETOOTH_HID_DEVICE_DATA_RECEIVED, /**< HID Device data received event*/
+
+	BLUETOOTH_EVENT_ADVERTISING_STARTED = BLUETOOTH_EVENT_ADVERTISING_BASE, /**< Advertising started event */
+	BLUETOOTH_EVENT_ADVERTISING_STOPPED, /**< Advertising stopped event */
+	BLUETOOTH_EVENT_ADVERTISING_MANUFACTURER_DATA_CHANGED, /**< Advertising manufacturer data changed event */
+	BLUETOOTH_EVENT_SCAN_RESPONSE_MANUFACTURER_DATA_CHANGED, /**< Scan response manufacturer data changed event */
+	BLUETOOTH_EVENT_MANUFACTURER_DATA_CHANGED, /**< Manufacturer data changed event */
+	BLUETOOTH_EVENT_DEVICE_ERROR, /**< Hardware error */
+	BLUETOOTH_EVENT_TX_TIMEOUT_ERROR, /** TX Timeout Error*/
+	BLUETOOTH_EVENT_MAX, /**< Bluetooth event Max value */
+
+	BLUETOOTH_PBAP_CONNECTED = BLUETOOTH_EVENT_PBAP_CLIENT_BASE, /**< PBAP connected event*/
+	BLUETOOTH_PBAP_DISCONNECTED, /**< PBAP disconnectd event*/
+	BLUETOOTH_PBAP_PHONEBOOK_SIZE, /**< PBAP Phonebook Size event*/
+	BLUETOOTH_PBAP_PHONEBOOK_PULL, /**< PBAP Phonebook Pull event*/
+	BLUETOOTH_PBAP_VCARD_LIST, /**< PBAP vCard List event*/
+	BLUETOOTH_PBAP_VCARD_PULL, /**< PBAP vCard Pull event*/
+	BLUETOOTH_PBAP_PHONEBOOK_SEARCH, /**< PBAP Phonebook Search event*/
+
+	BLUETOOTH_EVENT_AVRCP_CONTROL_CONNECTED = BLUETOOTH_EVENT_AVRCP_CONTROL_BASE, /**<AVRCP service connected event*/
+	BLUETOOTH_EVENT_AVRCP_CONTROL_DISCONNECTED, /**<AVRCP service disconnected event*/
+	BLUETOOTH_EVENT_AVRCP_CONTROL_SHUFFLE_STATUS, /**<AVRCP control suffle  status event*/
+	BLUETOOTH_EVENT_AVRCP_CONTROL_EQUALIZER_STATUS, /**<AVRCP control equalizer status event*/
+	BLUETOOTH_EVENT_AVRCP_CONTROL_REPEAT_STATUS, /**<AVRCP control repeat status event*/
+	BLUETOOTH_EVENT_AVRCP_CONTROL_SCAN_STATUS, /**<AVRCP control scan status event*/
+	BLUETOOTH_EVENT_AVRCP_SONG_POSITION_STATUS, /**<AVRCP control play Postion status event*/
+	BLUETOOTH_EVENT_AVRCP_PLAY_STATUS_CHANGED, /**<AVRCP control play status event*/
+	BLUETOOTH_EVENT_AVRCP_TRACK_CHANGED, /**<AVRCP control song metadata event*/
+
+	BLUETOOTH_EVENT_IPSP_INIT_STATE_CHANGED = BLUETOOTH_EVENT_IPSP_BASE, /**<IPSP init event*/
+	BLUETOOTH_EVENT_IPSP_CONNECTED, /**< IPSP connected event  */
+	BLUETOOTH_EVENT_IPSP_DISCONNECTED, /**< IPSP Disconnected event */
+	BLUETOOTH_EVENT_IPSP_INTERFACE_INFO, /** IPSP BT Interface Info after connection */
+	BLUETOOTH_EVENT_LE_DATA_LENGTH_CHANGED,  /** LE data length values changed */
+	BLUETOOTH_EVENT_PXP_PROPERTY_CHANGED, /** Proximity property changed */
+	BLUETOOTH_EVENT_TDS_ACTIVATION_REQUESTED, /** TDS activation requested */
+	BLUETOOTH_EVENT_TDS_TRANSPORT_DATA_RECEIVED,  /** TDS Transport Data received */
+	BLUETOOTH_EVENT_TDS_ACTIVATION_RESULT,        /** TDS Activation Result */
+	BLUETOOTH_EVENT_TDS_CONTROL_POINT_ENABLED,    /** TDS CCCD enabled event */
+	BLUETOOTH_EVENT_TDS_ACTIVATION_INDICATION,    /** TDS Activation Indication from Provider */
+
+	BLUETOOTH_EVENT_OTP_SERVER_STATE_CHANGED,	/* OTP Server Status **/
+	BLUETOOTH_EVENT_OTP_READ_CHAR_VAL,	/* OTP Read Value Response */
+	BLUETOOTH_EVENT_OTP_NOTIFICATION_ENABLED,	/* OTP Notification Enabled Response */
+	BLUETOOTH_EVENT_OTP_WRITE_CHAR_VAL,	/* OTP Write Value Response */
+	BLUETOOTH_EVENT_OTP_INDICATION,	/* OTP Indication */
+	BLUETOOTH_EVENT_OTC_STATE_CHANGED,		/* OTC Connection State Changed Event */
+} bluetooth_event_type_t;
+
+/**
+ * Stucture to hold event information
+ */
+typedef struct {
+	int event; /**< event type */
+	int result; /**< Success or error value */
+	void *param_data; /**<parameter data pointer */
+	//void *user_data;
+} bluetooth_event_param_t;
+
+/**
+ * Callback pointer type
+ */
+typedef void (*bluetooth_cb_func_ptr)(int event, bluetooth_event_param_t *param);
+
+void __bt_event_proxy(int event, bluetooth_event_param_t *param);
+void __bt_le_event_proxy(int event, bluetooth_event_param_t *param);
+
+/**
+ * This is Bluetooth device address type, fixed to 6 bytes ##:##:##:##:##:##
+ */
+typedef struct {
+	unsigned char addr[BLUETOOTH_ADDRESS_LENGTH];
+} bluetooth_device_address_t;
+
+/**
+ * Advertising data
+ */
+typedef struct {
+	uint8_t data[BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX];
+} bluetooth_advertising_data_t;
+
+/**
+* structure to hold the LE device information
+*/
+typedef struct {
+	int data_len;		/**< manafacturer specific data length */
+	bluetooth_advertising_data_t data;		/**< manafacturer specific data */
+} bluetooth_le_advertising_data_t;
+
+typedef struct {
+	bluetooth_device_address_t device_address;	/**< device address */
+	int addr_type;			/**< address type*/
+	int rssi;			/**< received strength signal*/
+	bluetooth_le_advertising_data_t adv_ind_data;
+	bluetooth_le_advertising_data_t scan_resp_data;
+} bluetooth_le_device_info_t;
+
 typedef enum {
 	BT_GATT_ROLE_SERVER = 0x01,
 	BT_GATT_ROLE_CLIENT = 0x02,
 } bt_gatt_role_e;
-
 
 /**
  * @internal

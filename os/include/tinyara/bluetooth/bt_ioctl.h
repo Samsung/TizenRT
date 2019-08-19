@@ -46,6 +46,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <net/if.h>
 
 #include <tinyara/bluetooth/bt_core.h>

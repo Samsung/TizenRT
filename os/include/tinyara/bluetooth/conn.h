@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+#include <tinyara/config.h>
 #include <stdbool.h>
 
 #include <tinyara/bluetooth/bluetooth.h>
