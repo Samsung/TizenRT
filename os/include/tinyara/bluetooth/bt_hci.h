@@ -563,14 +563,35 @@ struct bt_hci_cp_le_read_remote_features_s {
 
 #define BT_HCI_OP_READ_SUPPORTED_COMMANDS     BT_OP(BT_OGF_INFO, 0x0002)
 struct bt_hci_rp_read_supported_commands_s {
-	uint8_t  status;
-	uint8_t  commands[64];
+	uint8_t status;
+	uint8_t commands[64];
 } packed_struct;
 
 #define BT_HCI_OP_LE_READ_SUPP_STATES           BT_OP(BT_OGF_LE, 0x001c)
 struct bt_hci_rp_le_read_supp_states_s {
-	uint8_t  status;
-	uint8_t  le_states[8];
+	uint8_t status;
+	uint8_t le_states[8];
+} packed_struct;
+
+#define BT_HCI_OP_LE_SET_DATA_LEN               BT_OP(BT_OGF_LE, 0x0022)
+struct bt_hci_cp_le_set_data_len_s {
+	uint16_t handle;
+	uint16_t tx_octets;
+	uint16_t tx_time;
+} packed_struct;
+
+struct bt_hci_rp_le_set_data_len_s {
+	uint8_t status;
+	uint16_t handle;
+} packed_struct;
+
+#define BT_HCI_OP_LE_READ_MAX_DATA_LEN          BT_OP(BT_OGF_LE, 0x002f)
+struct bt_hci_rp_le_read_max_data_len_s {
+	uint8_t status;
+	uint16_t max_tx_octets;
+	uint16_t max_tx_time;
+	uint16_t max_rx_octets;
+	uint16_t max_rx_time;
 } packed_struct;
 
 /* Event definitions */
