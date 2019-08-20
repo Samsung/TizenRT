@@ -841,7 +841,24 @@ void hci_le_set_data_len(struct bt_conn_s *conn)
 
 int hci_le_set_phy(struct bt_conn_s *conn)
 {
-	/*Need to  TODO */
+	struct bt_hci_cp_le_set_phy_s *cp;
+	struct bt_buf_s *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PHY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_extend(buf, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
+
+	cp->handle = BT_HOST2LE16(conn->handle);
+	cp->all_phys = 0U;
+	cp->tx_phys = BT_HCI_LE_PHY_PREFER_2M;
+	cp->rx_phys = BT_HCI_LE_PHY_PREFER_2M;
+	cp->phy_opts = BT_HCI_LE_PHY_CODED_ANY;
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
+
 	return 0;
 }
 
