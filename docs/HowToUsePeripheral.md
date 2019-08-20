@@ -1,6 +1,121 @@
 # How to Use Peripheral
 
-Here are 4 parts, [UART](#uart), [SPI](#spi), [I2C](#i2c) and [I2S](#i2s) to use peripheral.
+Here are 5 parts, [GPIO](#gpio), [UART](#uart), [SPI](#spi), [I2C](#i2c) and [I2S](#i2s) to use peripheral.
+
+## GPIO
+Each board, shall;
+
+Implement and expose an instance of `struct gpio_lowerhalf_s`.  
+Implement the supported operations on `struct gpio_ops_s`.
+
+### Registering GPIO on dev
+```
+struct gpio_lowerhalf_s {
+	FAR const struct gpio_ops_s *ops;
+	struct gpio_upperhalf_s *parent;
+};
+```
+
+```
+struct [BOARD]_lowerhalf_s {
+	/* 
+	* Must include common member value 
+	*	struct gpio_lowerhalf_s 
+	*/
+	FAR const struct gpio_ops_s *ops;
+	struct gpio_upperhalf_s *parent;
+
+	/* Including private value */
+	...
+};
+```
+
+The implement of these structs will be good to follow below steps on its own BSP code.
+
+```
+struct [BOARD]_lowerhalf_s {
+	/* 
+	* Must include common member value 
+	*	struct gpio_lowerhalf_s 
+	*/
+	FAR const struct gpio_ops_s *ops;
+	struct gpio_upperhalf_s *parent;
+
+	/* Including private value */
+	...
+};
+
+FAR struct gpio_lowerhalf_s *[BOARD]_gpio_lowerhalf(gpio_pinset_t pinset)
+{
+	/* 
+	* gpio_pinset_t : unsigned int32 value for PIN setting.
+	*
+	* 1. Allocate Board specific GPIO struct
+	* 2. Set private value
+	* 3. Set operation struct.
+	*/
+
+	return (struct gpio_lowerhalf_s *)([BOARD]_lowerhalf_s);
+}
+```
+
+>struct gpio_lowerhalf_s *lower = [BOARD]_gpio_lowerhalf(pinset);  
+>gpio_register(pin_number, lower);
+
+If these steps worked well, the result will be shown on /dev/gpio[pin_number]
+
+### Implement GPIO Operation
+
+```
+struct gpio_ops_s {
+	CODE int  (*get)(FAR struct gpio_lowerhalf_s *lower);
+	CODE void (*set)(FAR struct gpio_lowerhalf_s *lower, FAR unsigned int value);
+	CODE int  (*pull)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+	CODE int  (*setdir)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+	CODE int  (*enable)(FAR struct gpio_lowerhalf_s *lower,	int falling, int rising, gpio_handler_t handler);
+	CODE int  (*ioctl)(FAR struct gpio_lowerhalf_s *lower, FAR int cmd,  unsigned long args);
+};
+```
+
+```
+CODE int  (*get)(FAR struct gpio_lowerhalf_s *lower);
+- return : Current GPIO value
+
+CODE void (*set)(FAR struct gpio_lowerhalf_s *lower, FAR unsigned int value);
+- value : GPIO value to be set.
+
+CODE int  (*pull)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+- arg : GPIO_DRIVE_PULLUP / GPIO_DRIVE_PULLDOWN / GPIO_DRIVE_FLOAT
+- retrun : OK / negative value 
+
+CODE int  (*setdir)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+- arg : GPIO_DIRECTION_NONE / GPIO_DIRECTION_OUT / GPIO_DIRECTION_IN
+- retrun : OK / negative value 
+
+CODE int  (*enable)(FAR struct gpio_lowerhalf_s *lower, int falling, int rising, gpio_handler_t handler);
+- falling : true / false
+- rising : true / false
+- gpio_handler_t handler : This handler should be called whenever each GPIO interrupt occurred.
+	-> typedef CODE void (*gpio_handler_t)(FAR struct gpio_upperhalf_s *upper);
+```
+
+>In [enable] operation, below process must be included.
+```
+static int [Interrupt_Function](int irq, FAR void *context, FAR void *arg);
+- irq : irqvector number
+- contetxt : identifying value.
+- arg : user specific pointer
+
+if (handler) {
+	irq_attach([irqvector], [Interrupt_Function], (void *)arg);
+	up_enable_irq([irqvector]);
+} else {
+	up_disable_irq([irqvector]);
+	irq_detach([irqvector]);
+}
+```
+
+>Example implementation is present in s5j_gpio_lowerhalf.c under os/arch/arm/src/s5j folder.
 
 ## UART
 UART has two parts, setting early console and setting serial console driver, serial port drivers.
