@@ -107,14 +107,16 @@ void sem_recover(FAR struct tcb_s *tcb);
  * holders of semaphores.
  */
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
+#ifdef SAVE_SEM_HOLDER
 void sem_initholders(void);
 void sem_destroyholder(FAR sem_t *sem);
 void sem_addholder(FAR sem_t *sem);
 void sem_addholder_tcb(FAR struct tcb_s *tcb, FAR sem_t *sem);
+void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
+#if defined(CONFIG_PRIORITY_INHERITANCE)
 void sem_boostpriority(FAR sem_t *sem);
-void sem_releaseholder(FAR sem_t *sem);
 void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR sem_t *sem);
+#endif
 #ifndef CONFIG_DISABLE_SIGNALS
 void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
 #else
@@ -126,7 +128,7 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
 #define sem_addholder(sem)
 #define sem_addholder_tcb(tcb, sem)
 #define sem_boostpriority(sem)
-#define sem_releaseholder(sem)
+#define sem_releaseholder(sem, htcb)
 #define sem_restorebaseprio(stcb, sem)
 #define sem_canceled(stcb, sem)
 #endif

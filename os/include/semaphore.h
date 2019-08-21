@@ -73,19 +73,27 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+/* Save semaphore holder data when priority inheritance or binary manager recovery is enabled. */
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_BINMGR_RECOVERY)
+#define SAVE_SEM_HOLDER 1
+#endif
 
 /* Bit definitions for the struct sem_s flags field */
 
 #define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
 					    * is disabled for this semaphore */
 #define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
+#ifdef SAVE_SEM_HOLDER
+#define FLAGS_SIGSEM              (1 << 2) /* Bit 2: The semaphore for signaling */
+#endif
+
 /****************************************************************************
  * Public Type Declarations
  ****************************************************************************/
 
 /* This structure contains information about the holder of a semaphore */
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
+#ifdef SAVE_SEM_HOLDER
 struct tcb_s;					/* Forward reference */
 /**
  * @ingroup SEMAPHORE_KERNEL
@@ -104,13 +112,16 @@ struct semholder_s {
 #else
 #define SEMHOLDER_INITIALIZER {NULL, 0}
 #endif
-#endif							/* CONFIG_PRIORITY_INHERITANCE */
+#endif							/* SAVE_SEM_HOLDER */
 
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief Structure of generic semaphore
  */
 struct sem_s {
+#ifdef CONFIG_BINMGR_RECOVERY
+	struct sem_s *flink;		/* Support for singly linked lists. */
+#endif
 	int16_t semcount;			/* >0 -> Num counts available */
 	/* <0 -> Num tasks waiting for semaphore */
 	/* If priority inheritance is enabled, then we have to keep track of which
@@ -118,7 +129,7 @@ struct sem_s {
 	 */
 
 	uint8_t flags;			/* See definitions for the struct sem_s flags */
-#ifdef CONFIG_PRIORITY_INHERITANCE
+#ifdef SAVE_SEM_HOLDER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	FAR struct semholder_s *hhead;	/* List of holders of semaphore counts */
 #else
@@ -134,11 +145,19 @@ typedef struct sem_s sem_t;
  * @ingroup SEMAPHORE_KERNEL
  * @brief Sem initializer
  */
-#ifdef CONFIG_PRIORITY_INHERITANCE
+#ifdef SAVE_SEM_HOLDER
+#ifdef CONFIG_BINMGR_RECOVERY
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
+#else
+#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
+#endif
+#else // CONFIG_BINMGR_RECOVERY
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#endif
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
