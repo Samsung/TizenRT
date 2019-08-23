@@ -25,29 +25,24 @@
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
 
-#ifndef CONFIG_HANDLER_STREAM_BUFFER_SIZE
-#define CONFIG_HANDLER_STREAM_BUFFER_SIZE 4096
-#endif
-
-#ifndef CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD
-#define CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD 2048
-#endif
-
 namespace media {
 namespace stream {
 
 InputHandler::InputHandler() :
-	mInputDataSource(nullptr),
 	mDecoder(nullptr),
-	mWorker(0),
-	mIsWorkerAlive(false),
 	mState(BUFFER_STATE_EMPTY),
 	mTotalBytes(0)
 {
+	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
 
 void InputHandler::setInputDataSource(std::shared_ptr<InputDataSource> source)
 {
+	if (source == nullptr) {
+		meddbg("source is nullptr\n");
+		return;
+	}
+	StreamHandler::setDataSource(source);
 	mInputDataSource = source;
 }
 
@@ -77,43 +72,16 @@ bool InputHandler::doStandBy()
 
 bool InputHandler::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
+	/* Media f/w playback supports only mono and stereo.
+	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
+	 */
+	unsigned int channels = getDataSource()->getChannels();
+	if (channels > 2) {
+		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
+		getDataSource()->setChannels(2);
 	}
 
-	if (mInputDataSource->open()) {
-		/* Media f/w playback supports only mono and stereo.
-		 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
-		 */
-		if (mInputDataSource->getChannels() > 2) {
-			medvdbg("Set multiple channel %u to stereo forcely!\n", mInputDataSource->getChannels());
-			mInputDataSource->setChannels(2);
-		}
-
-		if (registerDecoder(mInputDataSource->getAudioType(), mInputDataSource->getChannels(), mInputDataSource->getSampleRate())) {
-			start();
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool InputHandler::close()
-{
-	stop();
-	unregisterDecoder();
-	return mInputDataSource->close();
+	return StreamHandler::open();
 }
 
 ssize_t InputHandler::read(unsigned char *buf, size_t size)
@@ -129,93 +97,30 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 	return (ssize_t)rlen;
 }
 
-bool InputHandler::start()
+void InputHandler::resetWorker()
 {
-	if (!mInputDataSource->isPrepared()) {
-		return false;
-	}
-
-	createWorker();
-	return true;
+	mState = BUFFER_STATE_EMPTY;
+	mTotalBytes = 0;
 }
 
-bool InputHandler::stop()
+bool InputHandler::processWorker()
 {
-	destroyWorker();
-	return true;
-}
-
-void InputHandler::createWorker()
-{
-	medvdbg("InputHandler::createWorker()\n");
-	if (mStreamBuffer && !mIsWorkerAlive) {
-		mStreamBuffer->reset();
-		mState = BUFFER_STATE_EMPTY;
-		mTotalBytes = 0;
-		mIsWorkerAlive = true;
-
-		long stackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
-		pthread_attr_t attr;
-		pthread_attr_init(&attr);
-		pthread_attr_setstacksize(&attr, stackSize);
-		int ret = pthread_create(&mWorker, &attr, static_cast<pthread_startroutine_t>(InputHandler::workerMain), this);
-		if (ret != OK) {
-			meddbg("Fail to create DataSourceWorker thread, return value : %d\n", ret);
-			mIsWorkerAlive = false;
-			return;
-		}
-		pthread_setname_np(mWorker, "InputHandlerWorker");
-	}
-}
-
-void InputHandler::destroyWorker()
-{
-	medvdbg("InputHandler::destroyWorker()\n");
-	if (mIsWorkerAlive) {
-		// Setup flag,
-		mIsWorkerAlive = false;
-
-		// Worker may be blocked in buffer writing.
-		mBufferWriter->setEndOfStream();
-
-		// Wake worker up,
-		wakenWorker();
-
-		// Join thread.
-		pthread_join(mWorker, NULL);
-	}
-}
-
-void *InputHandler::workerMain(void *arg)
-{
-	auto stream = static_cast<InputHandler *>(arg);
-	auto worker = stream->mInputDataSource;
-
-	while (stream->mIsWorkerAlive) {
-		// Waken up by a reading/stopping operation
-		stream->sleepWorker();
-
-		// Worker may be stoped
-		if (!stream->mIsWorkerAlive) {
-			break;
-		}
-
-		auto size = stream->mBufferWriter->sizeOfSpace();
-		if (size > 0) {
-			auto buf = new unsigned char[size];
-			if (worker->read(buf, size) <= 0) {
-				// Error occurred, or inputting finished
-				stream->mBufferWriter->setEndOfStream();
-				delete[] buf;
-				break;
-			}
-
-			stream->writeToStreamBuffer(buf, size);
+	auto worker = this->mInputDataSource;
+	auto size = this->mBufferWriter->sizeOfSpace();
+	if (size > 0) {
+		auto buf = new unsigned char[size];
+		if (worker->read(buf, size) <= 0) {
+			// Error occurred, or inputting finished
+			this->mBufferWriter->setEndOfStream();
 			delete[] buf;
+			return false;
 		}
+
+		this->writeToStreamBuffer(buf, size);
+		delete[] buf;
 	}
 
-	return NULL;
+	return true;
 }
 
 void InputHandler::sleepWorker()
@@ -223,33 +128,9 @@ void InputHandler::sleepWorker()
 	bool bEOS = mBufferReader->isEndOfStream();
 	size_t spaces = mBufferWriter->sizeOfSpace();
 
-	std::unique_lock<std::mutex> lock(mMutex);
-	// In case of EOS or overrun, sleep worker.
-	if (mIsWorkerAlive && (bEOS || (spaces == 0))) {
-		mCondv.wait(lock);
-	}
-}
-
-void InputHandler::wakenWorker()
-{
-	std::lock_guard<std::mutex> lock(mMutex);
-	mCondv.notify_one();
-}
-
-void InputHandler::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
-{
-	if (mStreamBuffer) {
-		mStreamBuffer->setObserver(nullptr);
-		mBufferReader = nullptr;
-		mBufferWriter = nullptr;
-	}
-
-	mStreamBuffer = streamBuffer;
-
-	if (mStreamBuffer) {
-		mStreamBuffer->setObserver(this);
-		mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
-		mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
+	/* In case of EOS or overrun, sleep worker. */
+	if (bEOS || (spaces == 0)) {
+		StreamHandler::sleepWorker();
 	}
 }
 
@@ -345,7 +226,7 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 	return (ssize_t)written;
 }
 
-bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
+bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
@@ -371,7 +252,7 @@ bool InputHandler::registerDecoder(audio_type_t audioType, unsigned int channels
 	}
 }
 
-void InputHandler::unregisterDecoder()
+void InputHandler::unregisterCodec()
 {
 	mDecoder = nullptr;
 }
