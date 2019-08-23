@@ -76,41 +76,41 @@ struct bt_conn_l2cap_s {
 
 enum bt_conn_flags_e {
 	BT_CONN_AUTO_CONNECT,
-	BT_CONN_BR_LEGACY_SECURE,       /* 16 digits legacy PIN tracker */
-	BT_CONN_USER,                   /* user I/O when pairing */
-	BT_CONN_BR_PAIRING,             /* BR connection in pairing context */
-	BT_CONN_BR_NOBOND,              /* SSP no bond pairing tracker */
-	BT_CONN_BR_PAIRING_INITIATOR,   /* local host starts authentication */
-	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
-	BT_CONN_SLAVE_PARAM_UPDATE,     /* If slave param update timer fired */
-	BT_CONN_SLAVE_PARAM_SET,        /* If slave param were set from app */
-	BT_CONN_SLAVE_PARAM_L2CAP,      /* If should force L2CAP for CPUP */
+	BT_CONN_BR_LEGACY_SECURE,	/* 16 digits legacy PIN tracker */
+	BT_CONN_USER,				/* user I/O when pairing */
+	BT_CONN_BR_PAIRING,			/* BR connection in pairing context */
+	BT_CONN_BR_NOBOND,			/* SSP no bond pairing tracker */
+	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
+	BT_CONN_CLEANUP,			/* Disconnected, pending cleanup */
+	BT_CONN_AUTO_PHY_UPDATE,	/* Auto-update PHY */
+	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
+	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
+	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
 
 struct bt_conn_le_s {
-	bt_addr_le_t            init_addr;
-	bt_addr_le_t            resp_addr;
+	bt_addr_le_t init_addr;
+	bt_addr_le_t resp_addr;
 
-	uint16_t                interval;
-	uint16_t                interval_min;
-	uint16_t                interval_max;
+	uint16_t interval;
+	uint16_t interval_min;
+	uint16_t interval_max;
 
-	uint16_t                latency;
-	uint16_t                timeout;
-	uint16_t                pending_latency;
-	uint16_t                pending_timeout;
+	uint16_t latency;
+	uint16_t timeout;
+	uint16_t pending_latency;
+	uint16_t pending_timeout;
 
-	uint8_t                 features[8];
+	uint8_t features[8];
 };
 
 struct bt_conn_s {
 	uint16_t handle;
-	uint8_t     type;
-	uint8_t  role;
+	uint8_t type;
+	uint8_t role;
 	bt_atomic_t flags[1];
 
 	bt_addr_le_t src;
@@ -137,16 +137,17 @@ struct bt_conn_s {
 	bt_atomic_t ref;
 	enum bt_conn_state_e state;
 
-	struct bt_conn_le_s       le;
+	/* remote le device data */
+	struct bt_conn_le_s le;
 
 	/* Which local identity address this connection uses */
-	uint8_t                 id;
+	uint8_t id;
 
-	bt_security_t           sec_level;
-	bt_security_t           required_sec_level;
+	bt_security_t sec_level;
+	bt_security_t required_sec_level;
 
 	/* Connection error or reason for disconnect */
-	uint8_t                 err;
+	uint8_t err;
 
 };
 
@@ -451,7 +452,7 @@ int bt_conn_le_conn_update(FAR struct bt_conn_s *conn, uint16_t min, uint16_t ma
 
 int bt_conn_addr_le_cmp(const struct bt_conn_s *conn, const bt_addr_le_t *peer);
 
-/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection                                                                                                                             
+/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
 struct bt_conn_s *bt_conn_lookup_state_le(const bt_addr_le_t *peer, const enum bt_conn_state_e state);
@@ -465,7 +466,7 @@ struct bt_conn_s *bt_conn_add_le(const bt_addr_le_t *peer);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
-struct bt_conn_s * bt_conn_relref(FAR struct bt_conn_s *conn);
+struct bt_conn_s *bt_conn_relref(FAR struct bt_conn_s *conn);
 
 int bt_hci_connect_le_cancel(FAR struct bt_conn_s *conn);
 

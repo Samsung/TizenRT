@@ -93,6 +93,23 @@ enum {
 	BT_DEV_NUM_FLAGS,
 };
 
+struct bt_dev_le {
+	/* LE features */
+	uint8_t features[8];
+	/* LE states */
+	uint64_t states;
+
+	/* Controller buffer information */
+	uint16_t mtu;
+
+	/* Size of the the controller resolving list */
+	uint8_t rl_size;
+	/* Number of entries in the resolving list. rl_entries > rl_size
+	 * means that host-side resolving is used.
+	 */
+	uint8_t rl_entries;
+};
+
 /* State tracking for the local Bluetooth controller */
 
 struct bt_dev_s {
@@ -168,6 +185,12 @@ struct bt_dev_s {
 
 	/* local_name at driver side */
 	uint8_t local_name[HCI_MAX_NAME_LENGTH];
+
+	/* LE controller specific features */
+	struct bt_dev_le le;
+
+	/* Supported commands */
+	uint8_t supported_commands[64];
 };
 
 /* Connection callback structure */
@@ -425,7 +448,7 @@ int bt_stop_scanning(void);
 int bt_le_scan_update(void);
 
 /****************************************************************************
- * Name: bt_conn_cb_register
+ * Name: bt_conn_cb_register_internal
  *
  * Description:
  *   Register callbacks to monitor the state of connections.
@@ -438,7 +461,7 @@ int bt_le_scan_update(void);
  *
  ****************************************************************************/
 
-void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb);
+void bt_conn_cb_register_internal(FAR struct bt_conn_cb_s *cb);
 
 int bt_addr_le_create_static(bt_addr_le_t *addr);
 
@@ -449,5 +472,15 @@ void ble_adv_report(FAR struct bt_buf_s *buf);
 int hci_le_create_conn(FAR const bt_addr_le_t *addr);
 
 void cmd_queue_init(void);
+
+void hci_disconn_complete_internal(FAR struct bt_buf_s *buf);
+
+void slave_update_conn_param(struct bt_conn_s *conn);
+
+void hci_le_set_data_len(struct bt_conn_s *conn);
+
+int hci_le_set_phy(struct bt_conn_s *conn);
+
+void le_conn_complete_internal(FAR struct bt_buf_s *buf);
 
 #endif							/* __NET_BLUETOOTH_BT_HCICORE_H */

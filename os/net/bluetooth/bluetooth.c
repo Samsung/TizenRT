@@ -54,6 +54,7 @@
 #include "bt_conn.h"
 #include "bt_l2cap.h"
 #include "bt_hcicore.h"
+#include "bt_util.h"
 
 #ifdef CONFIG_BLUETOOTH_NULL
 #include <tinyara/bluetooth/bt_null.h>
@@ -67,6 +68,8 @@ struct bt_ad {
 	const struct bt_data *data;
 	size_t len;
 };
+
+static struct bt_conn_cb *callback_list;
 
 static int set_le_scan_enable(uint8_t enable);
 static int bt_le_scan_update_internal(bool fast_scan);
@@ -194,7 +197,8 @@ int bt_set_name(const char *name)
 
 	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING_NAME)) {
 		struct bt_data data[] = { BT_DATA(BT_DATA_NAME_COMPLETE,
-						name, strlen(name)) };
+											  name, strlen(name))
+		};
 
 		struct bt_ad sd = { data, ARRAY_SIZE(data) };
 
@@ -1044,27 +1048,21 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info, v
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	struct bt_conn_s *conns;
-
-	conns = bt_conn_addref((struct bt_conn_s*)conn);
-
-	return (struct bt_conn*)conns;
+	conns = bt_conn_addref((struct bt_conn_s *)conn);
+	return (struct bt_conn *)conns;
 }
 
 void bt_conn_unref(struct bt_conn *conn)
 {
 	bt_conn_relref((struct bt_conn_s *)conn);
-
 	return;
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 {
-	struct bt_conn_s * conns;
-
+	struct bt_conn_s *conns;
 	conns = bt_conn_lookup_addr_le_id(id, peer);
-
 	return (struct bt_conn *)conns;
-
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
@@ -1094,12 +1092,10 @@ int bt_conn_le_param_update(struct bt_conn *conn, const struct bt_le_conn_param 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_conn_s *conns = (struct bt_conn_s *)conn;
-
 	/* Disconnection is initiated by us, so auto connection shall be disabled.
 	 * Otherwise the passive scan would be enabled and we could send LE Create
 	 * Connection as soon as the remote starts advertising.
 	 */
-
 	if (conns->type == BT_CONN_TYPE_LE) {
 		bt_le_set_auto_conn(&conns->dst, NULL);
 	}
@@ -1114,30 +1110,24 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		conns->err = reason;
 		bt_conn_set_state(conns, BT_CONN_DISCONNECTED);
 		/* User should unref connection object when receiving
-		* error in connection callback.
-		*/
+		 * error in connection callback.
+		 */
 		return bt_le_adv_stop();
-
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conns);
-
 	case BT_CONN_CONNECTED:
 		return bt_hci_disconnect(conns, reason);
-
 	case BT_CONN_DISCONNECT:
 		return 0;
-
 	case BT_CONN_DISCONNECTED:
 	default:
 		return -ENOTCONN;
 	}
 }
 
-
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer, const struct bt_le_conn_param *param)
 {
 	struct bt_conn_s *conn;
-
 	if (!bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
 		return NULL;
 	}
@@ -1172,23 +1162,17 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer, const struct bt_le_c
 
 	/* Only default identity supported for now */
 	conn->id = BT_ID_DEFAULT;
-
 	/* Set initial address - will be updated later if necessary. */
 	bt_addr_le_copy(&conn->le.resp_addr, peer);
-
 	bt_conn_set_param_le(conn, param);
-
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-
 	bt_le_scan_update_internal(true);
-
 	return (struct bt_conn *)conn;
 }
 
 int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param *param)
 {
 	struct bt_conn_s *conn;
-
 	if (param && !bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}
@@ -1206,17 +1190,13 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param 
 
 		/* Only default identity is supported */
 		conn->id = BT_ID_DEFAULT;
-
 		bt_conn_set_param_le(conn, param);
-
-		if (!bt_atomic_testsetbit(conn->flags,
-					BT_CONN_AUTO_CONNECT)) {
+		if (!bt_atomic_testsetbit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 			bt_conn_addref(conn);
 		}
 	} else {
 		/* Disable the auto connection */
-		if (bt_atomic_testclrbit(conn->flags,
-					BT_CONN_AUTO_CONNECT)) {
+		if (bt_atomic_testclrbit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 			bt_conn_relref(conn);
 			if (conn->state == BT_CONN_CONNECT_SCAN) {
 				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
@@ -1224,8 +1204,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param 
 		}
 	}
 
-	if (conn->state == BT_CONN_DISCONNECTED &&
-			bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
+	if (conn->state == BT_CONN_DISCONNECTED && bt_atomic_testbit(g_btdev.flags, BT_DEV_READY)) {
 		if (param) {
 			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		}
@@ -1233,7 +1212,6 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param 
 	}
 
 	bt_conn_relref(conn);
-
 	return 0;
 }
 
@@ -1255,11 +1233,11 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 	return 0;
 }
 
-/* void bt_conn_cb_register(struct bt_conn_cb *cb)
-   {
-   // TODO: need to implement
-   return;
-   } */
+void bt_conn_cb_register(struct bt_conn_cb *cb)
+{
+	cb->_next = callback_list;
+	callback_list = cb;
+}
 
 void bt_set_bondable(bool enable)
 {
@@ -1466,7 +1444,6 @@ static int bt_le_scan_update_internal(bool fast_scan)
 {
 	uint16_t interval, window;
 	FAR struct bt_conn_s *conn = NULL;
-
 	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return 0;
 	}
@@ -1480,19 +1457,19 @@ static int bt_le_scan_update_internal(bool fast_scan)
 	}
 
 	/* don't restart scan if we have pending connection */
-	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
 	if (conn) {
-		bt_conn_release(conn);
+		bt_conn_relref(conn);
 		return 0;
 	}
 
-	conn = bt_conn_lookup_state(NULL, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return 0;
 	}
 
 	bt_atomic_setbit(g_btdev.flags, BT_DEV_SCAN_FILTER_DUP);
-	bt_conn_release(conn);
+	bt_conn_relref(conn);
 	if (fast_scan) {
 		interval = BT_GAP_SCAN_FAST_INTERVAL;
 		window = BT_GAP_SCAN_FAST_WINDOW;
@@ -1617,4 +1594,373 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 	scan_dev_found_cb = cb;
 	return 0;
+}
+
+static void notify_disconnected(FAR struct bt_conn_s *conn)
+{
+	FAR struct bt_conn_cb *cb;
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected((struct bt_conn *)conn, conn->err);
+		}
+	}
+}
+
+static void notify_connected(struct bt_conn_s *conn)
+{
+	FAR struct bt_conn_cb *cb;
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->connected) {
+			cb->connected((struct bt_conn *)conn, conn->err);
+		}
+	}
+}
+
+void hci_disconn_complete_internal(FAR struct bt_buf_s *buf)
+{
+	FAR struct bt_hci_evt_disconn_complete_s *evt = (FAR void *)buf->data;
+	uint16_t handle = BT_LE162HOST(evt->handle);
+	FAR struct bt_conn_s *conn;
+	nvdbg("status %u handle %u reason %u\n", evt->status, handle, evt->reason);
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		ndbg("ERROR:  Unable to look up conn with handle %u\n", handle);
+		goto advertise;
+	}
+
+	conn->err = evt->reason;
+	bt_l2cap_disconnected(conn);
+	notify_disconnected(conn);
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	conn->handle = 0;
+	if (bt_atomic_testbit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		bt_le_scan_update_internal(false);
+	}
+
+	bt_conn_relref(conn);
+advertise:
+	if (bt_atomic_testbit(g_btdev.flags, BT_DEV_KEEP_ADVERTISING) && !bt_atomic_testbit(g_btdev.flags, BT_DEV_ADVERTISING)) {
+		set_advertise_enable(true);
+	}
+}
+
+static struct bt_conn_s *find_pending_connect(bt_addr_le_t *peer_addr)
+{
+	struct bt_conn_s *conn;
+	/*
+	 * Make lookup to check if there's a connection object in
+	 * CONNECT or DIR_ADV state associated with passed peer LE address.
+	 */
+	conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT);
+	if (conn) {
+		return conn;
+	}
+
+	return bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
+}
+
+static void copy_id_addr_le(FAR struct bt_conn_s *conn, FAR const bt_addr_le_t *addr, struct bt_keys_s *keys)
+{
+	/* If we have a keys struct we already know the identity */
+
+	if (conn->keys) {
+		return;
+	}
+
+	if (keys) {
+		conn->keys = keys;
+	}
+
+	bt_addr_le_copy(&conn->dst, addr);
+}
+
+static int bt_conn_le_conn_update_internal(struct bt_conn_s *conn, const struct bt_le_conn_param *param)
+{
+	struct hci_cp_le_conn_update_s *conn_update;
+	FAR struct bt_buf_s *buf;
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE, sizeof(*conn_update));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	conn_update = bt_buf_extend(buf, sizeof(*conn_update));
+	memset(conn_update, 0, sizeof(*conn_update));
+	conn_update->handle = BT_HOST2LE16(conn->handle);
+	conn_update->conn_interval_min = BT_HOST2LE16(param->interval_min);
+	conn_update->conn_interval_max = BT_HOST2LE16(param->interval_max);
+	conn_update->conn_latency = BT_HOST2LE16(param->latency);
+	conn_update->supervision_timeout = BT_HOST2LE16(param->timeout);
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
+}
+
+static int send_conn_le_param_update(struct bt_conn_s *conn, const struct bt_le_conn_param *param)
+{
+	ndbg("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0], param->interval_min, param->interval_max, param->latency, param->timeout);
+	/* Use LE connection parameter request if both local and remote support
+	 * it; or if local role is master then use LE connection update.
+	 */
+	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(g_btdev.le.features) && BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) && !bt_atomic_testbit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) || (conn->role == BT_HCI_ROLE_MASTER)) {
+		int rc;
+		rc = bt_conn_le_conn_update_internal(conn, param);
+		/* store those in case of fallback to L2CAP */
+		if (rc == 0) {
+			conn->le.pending_latency = param->latency;
+			conn->le.pending_timeout = param->timeout;
+		}
+
+		return rc;
+	}
+
+	/* If remote master does not support LL Connection Parameters Request
+	 * Procedure
+	 */
+
+	return bt_l2cap_update_conn_parameter(conn, param);
+}
+
+static void conn_le_update_timeout(FAR void *arg)
+{
+	struct bt_conn_s *conn = (struct bt_conn_s *)arg;
+	const struct bt_le_conn_param *param;
+	/* if application set own params use those, otherwise use defaults */
+	if (bt_atomic_testclrbit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
+		param = BT_LE_CONN_PARAM(conn->le.interval_min, conn->le.interval_max, conn->le.pending_latency, conn->le.pending_timeout);
+		send_conn_le_param_update(conn, param);
+	} else {
+		param = BT_LE_CONN_PARAM(LE_CONN_MIN_INTERVAL, LE_CONN_MAX_INTERVAL, LE_CONN_LATENCY, LE_CONN_TIMEOUT);
+		send_conn_le_param_update(conn, param);
+	}
+
+	bt_atomic_setbit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
+}
+
+void slave_update_conn_param(struct bt_conn_s *conn)
+{
+	int err;
+	/*
+	 * Core 4.2 Vol 3, Part C, 9.3.12.2
+	 * The Peripheral device should not perform a Connection Parameter
+	 * Update procedure within 5 s after establishing a connection.
+	 */
+	if (work_available(&g_lowp_work)) {
+		err = work_queue(LPWORK, &g_lowp_work, conn_le_update_timeout, conn, MSEC2TICK(CONN_UPDATE_TIMEOUT));
+		if (err < 0) {
+			ndbg("ERROR:  Failed to schedule HPWORK: %d\n", err);
+		}
+	}
+}
+
+static int hci_le_read_remote_features(struct bt_conn_s *conn)
+{
+	struct bt_hci_cp_le_read_remote_features_s *cp;
+	FAR struct bt_buf_s *buf;
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_FEATURES, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_extend(buf, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
+	cp->handle = BT_HOST2LE16(conn->handle);
+	bt_hci_cmd_send(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf);
+	return 0;
+}
+
+static void enh_conn_complete(FAR struct bt_hci_evt_le_enh_conn_complete_s *evt)
+{
+	uint16_t handle = BT_LE162HOST(evt->handle);
+	bt_addr_le_t peer_addr, id_addr;
+	FAR struct bt_conn_s *conn;
+	FAR struct bt_keys_s *keys = NULL;
+	int err;
+	nvdbg("status %u handle %u role %u %s\n", evt->status, handle, evt->role, bt_addr_le_str(&evt->peer_addr));
+	if (evt->status) {
+		/*
+		 * If there was an error we are only interested in pending
+		 * connection. There is no need to check ID address as
+		 * only one connection can be in that state.
+		 *
+		 * Depending on error code address might not be valid anyway.
+		 */
+		conn = find_pending_connect(NULL);
+		if (!conn) {
+			return;
+		}
+
+		conn->err = evt->status;
+		/*
+		 * Handle advertising timeout after high duty directed
+		 * advertising.
+		 */
+		if (conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
+			bt_atomic_clrbit(g_btdev.flags, BT_DEV_ADVERTISING);
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			/* Drop the reference got by lookup call in CONNECT state. We are now in
+			 * DISCONNECTED state since no successful LE link been made.
+			 */
+			goto done;
+		}
+
+		/*
+		 * Handle cancellation of outgoing connection attempt.
+		 */
+		if (conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			/* We notify before checking autoconnect flag
+			 * as application may choose to change it from
+			 * callback.
+			 */
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			/* Check if device is marked for autoconnect. */
+			if (bt_atomic_testbit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+			}
+
+			goto done;
+		}
+
+		ndbg("Unexpected status 0x%02x", evt->status);
+		bt_conn_relref(conn);
+		return;
+	}
+
+	/* Make lookup to check if there's a connection object in CONNECT state
+	 * associated with passed peer LE address.
+	 */
+	keys = bt_keys_find_irk(&evt->peer_addr);
+	if (keys) {
+		bt_addr_le_copy(&id_addr, &keys->addr);
+	} else {
+		bt_addr_le_copy(&id_addr, &evt->peer_addr);
+	}
+
+	/* Translate "enhanced" identity address type to normal one */
+	if (id_addr.type == BT_ADDR_LE_PUBLIC_ID || id_addr.type == BT_ADDR_LE_RANDOM_ID) {
+		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		bt_addr_copy((bt_addr_t *)&peer_addr.val, &evt->peer_rpa);
+		peer_addr.type = BT_ADDR_LE_RANDOM;
+	} else {
+		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
+	}
+
+	conn = find_pending_connect(&id_addr);
+	if (evt->role == BT_CONN_ROLE_SLAVE) {
+		/*
+		 * clear advertising even if we are not able to add connection
+		 * object to keep host in sync with controller state
+		 */
+		bt_atomic_clrbit(g_btdev.flags, BT_DEV_ADVERTISING);
+		/* only for slave we may need to add new connection */
+		if (!conn) {
+			conn = bt_conn_add_le(&id_addr);
+		}
+	}
+
+	if (!conn) {
+		ndbg("ERROR:  Unable to add new conn for handle %u\n", handle);
+		return;
+	}
+
+	conn->handle = handle;
+	conn->src.type = BT_ADDR_LE_PUBLIC;
+	memcpy(conn->src.val, g_btdev.bdaddr.val, sizeof(g_btdev.bdaddr.val));
+	copy_id_addr_le(conn, &id_addr, keys);
+	conn->le_conn_interval = BT_LE162HOST(evt->interval);
+	conn->le.latency = BT_LE162HOST(evt->latency);
+	conn->le.timeout = BT_LE162HOST(evt->supv_timeout);
+	conn->role = evt->role;
+	conn->err = 0U;
+	/*
+	 * Use connection address (instead of identity address) as initiator
+	 * or responder address. Only slave needs to be updated. For master all
+	 * was set during outgoing connection creation.
+	 */
+	if (conn->role == BT_HCI_ROLE_SLAVE) {
+		conn->id = g_btdev.adv_id;
+		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_addr_copy((bt_addr_t *) conn->le.resp_addr.val, &evt->local_rpa);
+			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
+		} else {
+			bt_addr_le_copy(&conn->le.resp_addr, &g_btdev.id_addr[conn->id]);
+		}
+
+		/* if the controller supports, lets advertise for another
+		 * slave connection.
+		 * check for connectable advertising state is sufficient as
+		 * this is how this le connection complete for slave occurred.
+		 */
+		if (bt_atomic_testbit(g_btdev.flags, BT_DEV_KEEP_ADVERTISING) && BT_LE_STATES_SLAVE_CONN_ADV(g_btdev.le.states)) {
+			if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+				le_set_private_addr(g_btdev.adv_id);
+			}
+
+			set_advertise_enable(true);
+		}
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
+	/*
+	 * it is possible that connection was disconnected directly from
+	 * connected callback so we must check state before doing connection
+	 * parameters update
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		goto done;
+	}
+
+	bt_l2cap_connected(conn);
+	notify_connected(conn);
+	if ((evt->role == BT_HCI_ROLE_MASTER) || BT_FEAT_LE_SLAVE_FEATURE_XCHG(g_btdev.le.features)) {
+		err = hci_le_read_remote_features(conn);
+		if (!err) {
+			goto done;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(g_btdev.le.features)) {
+		err = hci_le_set_phy(conn);
+		if (!err) {
+			bt_atomic_setbit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
+			goto done;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) && BT_FEAT_LE_DLE(g_btdev.le.features)) {
+		hci_le_set_data_len(conn);
+	}
+
+	if (evt->role == BT_HCI_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
+
+done:
+	bt_conn_relref(conn);
+	bt_le_scan_update_internal(false);
+}
+
+void le_conn_complete_internal(FAR struct bt_buf_s *buf)
+{
+	struct bt_hci_evt_le_conn_complete_s *evt = (void *)buf->data;
+	struct bt_hci_evt_le_enh_conn_complete_s enh;
+	ndbg("status %u role %u %s", evt->status, evt->role, bt_addr_le_str(&evt->peer_addr));
+	enh.status = evt->status;
+	enh.handle = evt->handle;
+	enh.role = evt->role;
+	enh.interval = evt->interval;
+	enh.latency = evt->latency;
+	enh.supv_timeout = evt->supv_timeout;
+	enh.clock_accuracy = evt->clock_accuracy;
+	bt_addr_le_copy(&enh.peer_addr, &evt->peer_addr);
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		bt_addr_copy(&enh.local_rpa, ((bt_addr_t *)&g_btdev.random_addr.val));
+	} else {
+		bt_addr_copy(&enh.local_rpa, BT_ADDR_ANY);
+	}
+
+	enh_conn_complete((void *)buf->data);
 }

@@ -210,6 +210,7 @@
 #define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE 0x30
 #define BT_HCI_EVT_LE_META_EVENT              0x3e
 #define BT_HCI_EVT_LE_CONN_COMPLETE           0x01
+#define BT_HCI_EVT_LE_ENH_CONN_COMPLETE       0x0a
 #define BT_HCI_ROLE_MASTER                  0x00
 #define BT_HCI_ROLE_SLAVE                   0x01
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT      0x02
@@ -304,6 +305,50 @@
 
 #define BT_HCI_LE_SCAN_FILTER_DUP_DISABLE		0x00
 #define BT_HCI_LE_SCAN_FILTER_DUP_ENABLE		0x01
+
+/* LE States */
+#define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)
+
+/* LE features */
+#define BT_LE_FEAT_BIT_ENC                      0
+#define BT_LE_FEAT_BIT_CONN_PARAM_REQ           1
+#define BT_LE_FEAT_BIT_EXT_REJ_IND              2
+#define BT_LE_FEAT_BIT_SLAVE_FEAT_REQ           3
+#define BT_LE_FEAT_BIT_PING                     4
+#define BT_LE_FEAT_BIT_DLE                      5
+#define BT_LE_FEAT_BIT_PRIVACY                  6
+#define BT_LE_FEAT_BIT_EXT_SCAN                 7
+#define BT_LE_FEAT_BIT_PHY_2M                   8
+#define BT_LE_FEAT_BIT_SMI_TX                   9
+#define BT_LE_FEAT_BIT_SMI_RX                   10
+#define BT_LE_FEAT_BIT_PHY_CODED                11
+#define BT_LE_FEAT_BIT_ADV_EXT                  12
+#define BT_LE_FEAT_BIT_ADV_PER                  13
+#define BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2          14
+#define BT_LE_FEAT_BIT_PWR_CLASS_1              15
+#define BT_LE_FEAT_BIT_MIN_USED_CHAN_PROC       16
+
+#define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
+						BIT((n) & 7))
+#define BT_FEAT_LE_ENCR(feat)                   BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_ENC)
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_CONN_PARAM_REQ)
+#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_SLAVE_FEAT_REQ)
+#define BT_FEAT_LE_DLE(feat)                    BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_DLE)
+#define BT_FEAT_LE_PHY_2M(feat)                 BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PHY_2M)
+#define BT_FEAT_LE_PHY_CODED(feat)              BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PHY_CODED)
+#define BT_FEAT_LE_PRIVACY(feat)                BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PRIVACY)
+
+#define LE_CONN_MIN_INTERVAL         0x0028
+#define LE_CONN_MAX_INTERVAL         0x0038
+#define LE_CONN_LATENCY              0x0000
+#define LE_CONN_TIMEOUT              0x002a
 
 /****************************************************************************
  * Public Types
@@ -507,6 +552,11 @@ struct hci_rp_read_local_name_s {
 	uint8_t local_name[HCI_MAX_NAME_LENGTH];
 } packed_struct;
 
+#define BT_HCI_OP_LE_READ_REMOTE_FEATURES     BT_OP(BT_OGF_LE, 0x0016)
+struct bt_hci_cp_le_read_remote_features_s {
+	uint16_t handle;
+} packed_struct;
+
 /* Event definitions */
 
 struct bt_hci_evt_disconn_complete_s {
@@ -568,6 +618,26 @@ struct bt_hci_evt_le_ltk_request_s {
 	uint16_t handle;
 	uint64_t rand;
 	uint16_t ediv;
+} packed_struct;
+
+struct bt_hci_evt_le_enh_conn_complete_s {
+	uint8_t status;
+	uint16_t handle;
+	uint8_t role;
+	bt_addr_le_t peer_addr;
+	bt_addr_t local_rpa;
+	bt_addr_t peer_rpa;
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t supv_timeout;
+	uint8_t clock_accuracy;
+} packed_struct;
+
+#define BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE       0x04
+struct bt_hci_evt_le_remote_feat_complete_s {
+	uint8_t status;
+	uint16_t handle;
+	uint8_t features[8];
 } packed_struct;
 
 #endif							/* __INCLUDE_TINYARA_BLUETOOTH_BT_HCI_H */

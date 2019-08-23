@@ -45,6 +45,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/bluetooth/conn.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -147,5 +148,7 @@ void bt_l2cap_update_conn_param(FAR struct bt_conn_s *conn);
 /* Initialize L2CAP and supported channels */
 
 int bt_l2cap_init(void);
+
+int bt_l2cap_update_conn_parameter(FAR struct bt_conn_s *conn, const struct bt_le_conn_param *param);
 
 #endif							/* __NET_BLUETOOTH_BT_L2CAP_H */
