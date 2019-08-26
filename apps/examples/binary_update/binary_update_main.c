@@ -72,46 +72,46 @@ static unsigned int new_version = 20190422;
 
 static void print_binary_info(binary_info_t *binary_info)
 {
-	printf(" ========= binary [%s] info ========== \n", binary_info->name);
-	printf(" %8s | %8s | %s \n", "Version", "Partsize", "Inactive part");
-	printf(" --------------------------------------- \n");
-	printf(" %8s | %8d | %s\n", binary_info->version, binary_info->part_size, binary_info->dev_path);
-	printf(" ======================================== \n");
+	printf(" =============== binary [%s] info ================ \n", binary_info->name);
+	printf(" %8s | %8s | %14s | %s\n", "Version", "Partsize", "Active part", "Inactive part");
+	printf(" ---------------------------------------------------- \n");
+	printf(" %8s | %8d | %14s | %s\n", binary_info->version, binary_info->part_size, binary_info->active_dev, binary_info->inactive_dev);
+	printf(" ==================================================== \n");
 }
 
 static void print_binary_info_list(binary_info_list_t *binary_info_list)
 {
 	int bin_idx;
 
-	printf(" ============ ALL binary info : %d count ============== \n", binary_info_list->bin_count);
-	printf(" %4s | %6s | %8s | %8s | %s \n", "Idx", "Name", "Version", "Partsize", "Inactive part");
-	printf(" ---------------------------------------------------- \n");
+	printf(" ==================== ALL binary info : %d count ====================== \n", binary_info_list->bin_count);
+	printf(" %4s | %6s | %8s | %8s | %14s | %s \n", "Idx", "Name", "Version", "Partsize", "Active part", "Inactive part");
+	printf(" -------------------------------------------------------------------- \n");
 	for (bin_idx = 0; bin_idx < binary_info_list->bin_count; bin_idx++) {
-		printf(" %4d | %6s | %8s | %8d | %s\n", bin_idx, \
+		printf(" %4d | %6s | %8s | %8d | %14s | %s\n", bin_idx, \
 		binary_info_list->bin_info[bin_idx].name, binary_info_list->bin_info[bin_idx].version, \
-		binary_info_list->bin_info[bin_idx].part_size, binary_info_list->bin_info[bin_idx].dev_path);
+		binary_info_list->bin_info[bin_idx].part_size, binary_info_list->bin_info[bin_idx].active_dev, binary_info_list->bin_info[bin_idx].inactive_dev);
 	}
-	printf(" ==================================================== \n");
+	printf(" ==================================================================== \n");
 }
 
 static void binary_update_check_test_result(binary_info_t *pre_bin_info, binary_info_t *cur_bin_info, int condition)
 {
-	printf(" === [%5s] Update info === \n", cur_bin_info->name);
-	printf(" %4s | %8s | %s \n", "Con", "Version", "Inactive part");
-	printf(" ------------------------- \n");
-	printf(" %4s | %8s | %s \n", "Pre", pre_bin_info->version, pre_bin_info->dev_path);
-	printf(" %4s | %8s | %s \n", "Cur", cur_bin_info->version, cur_bin_info->dev_path);
-	printf(" ========================= \n");
+	printf(" ============== [%5s] Update info =============== \n", cur_bin_info->name);
+	printf(" %4s | %8s | %14s | %s\n", "Con", "Version", "Active part", "Inactive part");
+	printf(" ------------------------------------------------- \n");
+	printf(" %4s | %8s | %14s | %s\n", "Pre", pre_bin_info->version, pre_bin_info->active_dev, pre_bin_info->inactive_dev);
+	printf(" %4s | %8s | %14s | %s\n", "Cur", cur_bin_info->version, cur_bin_info->active_dev, cur_bin_info->inactive_dev);
+	printf(" ================================================== \n");
 
 	if (condition == DOWNLOAD_VALID_BIN) {
-		if (strncmp(pre_bin_info->dev_path, cur_bin_info->dev_path, sizeof(pre_bin_info->dev_path) == 0)) {
+		if (strncmp(pre_bin_info->inactive_dev, cur_bin_info->inactive_dev, sizeof(pre_bin_info->inactive_dev) == 0)) {
 			fail_cnt++;
 			printf("Fail to load valid higher version binary.\n");
 		} else {
 			printf("Success to load valid higher version binary.\n");
 		}
 	} else { //DOWNLOAD_INVALID_BIN
-		if (strncmp(pre_bin_info->dev_path, cur_bin_info->dev_path, sizeof(pre_bin_info->dev_path) != 0)) {
+		if (strncmp(pre_bin_info->inactive_dev, cur_bin_info->inactive_dev, sizeof(pre_bin_info->inactive_dev) != 0)) {
 			fail_cnt++;
 			printf("Warning! Load invalid binary.\n");
 		} else {
@@ -273,14 +273,14 @@ static void binary_update_run_tests(int repetition_num)
 
 	binary_update_getinfo(APP_NAME, &pre_bin_info);
 	/* Test invalid APP binary download. */
-	binary_update_download_binary(&pre_bin_info.dev_path, DOWNLOAD_INVALID_BIN);
+	binary_update_download_binary(&pre_bin_info.inactive_dev, DOWNLOAD_INVALID_BIN);
 	binary_update_reload(APP_NAME);
 	binary_update_getinfo(APP_NAME, &cur_bin_info);
 
 	binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_INVALID_BIN);
 
 	/* Test valid APP binary download. */
-	binary_update_download_binary(&cur_bin_info.dev_path, DOWNLOAD_VALID_BIN);
+	binary_update_download_binary(&cur_bin_info.inactive_dev, DOWNLOAD_VALID_BIN);
 	binary_update_reload(APP_NAME);
 	binary_update_getinfo(APP_NAME, &cur_bin_info);
 
