@@ -76,7 +76,10 @@ bool InputHandler::open()
 	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
 	 */
 	unsigned int channels = getDataSource()->getChannels();
-	if (channels > 2) {
+	if (channels == 0) {
+		meddbg("Channel can not be zero\n");
+		return false;
+	} else if (channels > 2) {
 		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
 		getDataSource()->setChannels(2);
 	}
