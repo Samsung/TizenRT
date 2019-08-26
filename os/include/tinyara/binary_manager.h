@@ -112,7 +112,8 @@ struct binary_info_s {
 	int part_size;
 	char name[BIN_NAME_MAX];
 	char version[BIN_VERSION_MAX];
-	char dev_path[BINMGR_DEVNAME_LEN];
+	char active_dev[BINMGR_DEVNAME_LEN];
+	char inactive_dev[BINMGR_DEVNAME_LEN];
 };
 typedef struct binary_info_s binary_info_t;
 

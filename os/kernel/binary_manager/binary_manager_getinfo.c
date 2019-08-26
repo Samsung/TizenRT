@@ -109,8 +109,10 @@ int binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 			response_msg.data.part_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 			strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
 			strncpy(response_msg.data.version, BIN_VER(bin_idx), BIN_VER_MAX);
+			snprintf(response_msg.data.active_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
 			if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
-				snprintf(response_msg.data.dev_path, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
+				snprintf(response_msg.data.inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
+
 			}
 			break;
 		}
@@ -141,8 +143,9 @@ int binary_manager_get_info_all(int requester_pid)
 			response_msg.data.bin_info[bin_idx].part_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 			strncpy(response_msg.data.bin_info[bin_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
 			strncpy(response_msg.data.bin_info[bin_idx].version, BIN_VER(bin_idx), BIN_VER_MAX);
+			snprintf(response_msg.data.bin_info[bin_idx].active_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
 			if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
-				snprintf(response_msg.data.bin_info[bin_idx].dev_path, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
+				snprintf(response_msg.data.bin_info[bin_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
 			}
 		}
 		response_msg.data.bin_count = bin_count + 1;
