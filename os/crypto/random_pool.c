@@ -345,7 +345,7 @@ static void rng_buf_internal(FAR void *bytes, size_t nbytes)
 		blake2s_update(&g_rng.blake2xs.ctx, g_rng.blake2xs.out_root, sizeof(g_rng.blake2xs.out_root));
 		blake2s_final(&g_rng.blake2xs.ctx, bytes, block_size);
 
-		bytes += block_size;
+		bytes = (size_t *)bytes + block_size;
 		nbytes -= block_size;
 	}
 }
