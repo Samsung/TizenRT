@@ -33,9 +33,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <tinyara/iotbus_sig.h>
+#include <iotbus/iotbus_common.h>
 #include <iotbus/iotbus_error.h>
-
 
 /**
  * @brief Enumeration of UART state
@@ -65,6 +64,14 @@ typedef enum {
 	IOTBUS_UART_PARITY_ODD,
 } iotbus_uart_parity_e;
 
+typedef enum {
+	IOTBUS_UART_TX_EMPTY = 0,
+	IOTBUS_UART_TX_RDY,
+	IOTBUS_UART_RX_AVAIL,
+	IOTBUS_UART_RECEIVED,
+	IOTBUS_UART_INTR_MAX,
+} iotbus_uart_intr_e;
+
 struct _iotbus_uart_s;
 
 /**
@@ -76,7 +83,6 @@ typedef struct _iotbus_uart_wrapper_s *iotbus_uart_context_h;
 extern "C" {
 #endif
 
-typedef void (*uart_isr_cb)(iotbus_int_type_e evt, void *arg);
 typedef void (*uart_write_cb)(iotbus_uart_context_h hnd, iotbus_error_e ret);
 typedef void (*iotbus_uart_cb)(iotbus_uart_context_h);
 
@@ -182,7 +188,30 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
  */
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length);
 
-#ifdef CONFIG_IOTDEV
+/**
+ * @brief Set uart interrupt.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] int_type interrupt type
+ * @param[in] cb callback function
+ * @param[in] prirority interrupt prirority (0 - 255)
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+int iotbus_uart_set_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_type, iotbus_uart_cb cb, uint8_t priority);
+
+/**
+ * @brief Unset uart interrupt.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] int_type interrupt type
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+int iotbus_uart_unset_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_type);
+
 /**
  * @brief Get uart device number.
  *
@@ -192,7 +221,16 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
  * @since TizenRT v2.0
  */
 int iotbus_uart_get_device(iotbus_uart_context_h hnd);
-#endif
+
+/**
+ * @brief Get uart interrupt timestamp.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @return On success, the timestamp of the interrupt is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+uint32_t iotbus_uart_get_timestamp(iotbus_uart_context_h hnd);
 
 #ifdef __cplusplus
 }

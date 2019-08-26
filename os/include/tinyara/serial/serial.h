@@ -67,7 +67,6 @@
 #endif
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/iotdev.h>
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -141,6 +140,20 @@ struct uart_buffer_s {
 	volatile int16_t tail;		/* Index to the tail [OUT] index in the buffer */
 	int16_t size;				/* The allocated size of the buffer */
 	FAR char *buffer;			/* Pointer to the allocated buffer memory */
+};
+
+typedef enum {
+	UART_TX_EMPTY = 0,
+	UART_TX_RDY,
+	UART_RX_AVAIL,
+	UART_RECEIVED,
+	UART_INTR_MAX,
+} uart_intr_e;
+
+struct uart_notify_s {
+	/* Values for iotbus */
+	uart_intr_e type;
+	pid_t pid;
 };
 
 /* This structure defines all of the operations providd by the architecture specific
@@ -292,6 +305,10 @@ struct uart_dev_s {
 #ifndef CONFIG_DISABLE_POLL
 	struct pollfd *fds[CONFIG_SERIAL_NPOLLWAITERS];
 #endif
+
+	/* Iotbus Handler */
+	void *ib;
+	pid_t pid[UART_INTR_MAX]; // For several types of interrupts
 };
 
 typedef struct uart_dev_s uart_dev_t;

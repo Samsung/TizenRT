@@ -167,6 +167,16 @@ int iotbus_pwm_is_enabled(iotbus_pwm_context_h pwm);
 int iotbus_pwm_get_duty_cycle(iotbus_pwm_context_h pwm);
 
 /**
+ * @brief gets the pwm duty cycle in integer.
+ *
+ * @details @b #include <iotbus/iotbus_pwm.h>
+ * @param[in] pwm handle of pwm_context
+ * @return On success, current pwm duty cycle is returned in integer value. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int32_t iotbus_pwm_get_duty_cycle_in_integer(iotbus_pwm_context_h pwm);
+
+/**
  * @brief gets the pwm period.
  *
  * @details @b #include <iotbus/iotbus_pwm.h>
@@ -175,6 +185,17 @@ int iotbus_pwm_get_duty_cycle(iotbus_pwm_context_h pwm);
  * @since TizenRT v1.0
  */
 int iotbus_pwm_get_period(iotbus_pwm_context_h pwm);
+
+/**
+ * @brief gets the pwm characteristics.
+ *
+ * @details @b #include <iotbus/iotbus_pwm.h>
+ * @param[in] pwm handle of pwm_context
+ * @param[out] the pwm_info values is set in the given pointer.
+ * @return On success, IOTBUS_ERROR_NONE is returned. On failure, a negative value is returned.
+ * @since TizenRT v1.0
+ */
+int iotbus_pwm_get_characteristics(iotbus_pwm_context_h pwm);
 
 #ifdef __cplusplus
 }

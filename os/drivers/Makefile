@@ -78,7 +78,6 @@ include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 include heapinfo$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
-include iotdev$(DELIM)Make.defs
 include lcd$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
 include net$(DELIM)Make.defs

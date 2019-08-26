@@ -15,11 +15,41 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#ifndef _IOTBUS_COMMON_H__
+#define _IOTBUS_COMMON_H__
 
-#ifndef _IOTAPI_SIG_HANDLER_H__
-#define _IOTAPI_SIG_HANDLER_H__
+#include <tinyara/config.h>
 
-pid_t iotapi_get_pid(void);
-void iotapi_sig_init(void);
+#include <debug.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <pthread.h>
 
-#endif // #define _IOTAPI_SIG_HANDLER_H__
+#ifndef CONFIG_IOTBUS_INTERRUPT_TIMESTAMP
+#define CONFIG_IOTBUS_INTERRUPT_TIMESTAMP 0
+#endif
+
+typedef enum {
+	IOTBUS_GPIO = 0,
+	IOTBUS_PWM,
+	IOTBUS_ADC,
+	IOTBUS_UART,
+	IOTBUS_I2C,
+	IOTBUS_SPI,
+	IOTBUS_PIN_MAX,
+} iotbus_pin_e;
+
+struct intr_attr {
+	uint8_t priority;
+	iotbus_pin_e pin;
+	pid_t parent;
+};
+
+struct intr_args {
+	void *dev;
+	int int_type;
+};
+
+pthread_t create_intr_pthread(pthread_startroutine_t handler, pthread_addr_t arg, struct intr_attr *val);
+
+#endif

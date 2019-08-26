@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <semaphore.h>
 #include <debug.h>
@@ -78,9 +79,29 @@
  * Private Variables
  ************************************************************************************/
 
+static int uart_signo[] = {
+	SIG_IOTBUS_UART_TX_EMPTY,
+	SIG_IOTBUS_UART_TX_RDY,
+	SIG_IOTBUS_UART_RX_AVAIL,
+	SIG_IOTBUS_UART_RECEIVED,
+};
+
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
+
+static void uart_send_signal(FAR uart_dev_t *dev, int type)
+{
+	if (dev->pid[type] > 0) {
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		union sigval value;
+		value.sival_ptr = dev->ib;
+		sigqueue(dev->pid[type], uart_signo[type], value);
+#else
+		sigqueue(dev->pid[type], uart_signo[type], dev->ib);
+#endif
+	}
+}
 
 /************************************************************************************
  * Public Functions
@@ -114,6 +135,13 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 		if (++(dev->xmit.tail) >= dev->xmit.size) {
 			dev->xmit.tail = 0;
 		}
+
+		if (!dev->isconsole) {
+			if (dev->ib != NULL) {
+				uart_send_signal(dev, UART_TX_EMPTY);
+			}
+		}
+		
 	}
 
 	/* When all of the characters have been sent from the buffer disable the TX
@@ -238,13 +266,18 @@ void uart_recvchars(FAR uart_dev_t *dev)
 			if (++nexthead >= rxbuf->size) {
 				nexthead = 0;
 			}
+
+			if (!dev->isconsole) {
+				if (dev->ib != NULL) {
+					uart_send_signal(dev, UART_RX_AVAIL);
+				}
+			}
 		}
 	}
 
 	/* If any bytes were added to the buffer, inform any waiters there there is new
 	 * incoming data available.
 	 */
-
 	if (nbytes) {
 		uart_datareceived(dev);
 	}

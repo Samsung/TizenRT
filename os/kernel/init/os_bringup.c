@@ -257,10 +257,6 @@ static inline void os_do_appstart(void)
 	se_initialize();
 #endif
 
-#ifdef CONFIG_IOTDEV
-	iotbus_sig_register();
-#endif
-
 #ifdef CONFIG_NET
 	/* Initialize the network system & Create network task if required */
 

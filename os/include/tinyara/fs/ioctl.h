@@ -98,9 +98,8 @@
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
 #define _LWNLIOCBASE    (0x2400)	/* LWNL ioctl commands */
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
-#define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
-#define _FBIOCBASE      (0x2700)	/* Frame buffer character driver ioctl commands */
-#define _CPULOADBASE    (0x2800)	/* cpuload ioctl commands */
+#define _FBIOCBASE      (0x2600)	/* Frame buffer character driver ioctl commands */
+#define _CPULOADBASE    (0x2700)	/* cpuload ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
@@ -376,11 +375,6 @@
 /* (see include/tinyara/seclink.h */
 #define _SECLINKIOCVALID(c)   (_IOC_TYPE(c) == _SECLINKBASE)
 #define _SECLINKIOC(nr)       _IOC(_SECLINKBASE, nr)
-
-/* iotbus driver ioctl definitions ********************************************/
-/* (see include/tinyara/iotbus_sig.h */
-#define _IOTBUSIOCVALID(c)   (_IOC_TYPE(c) == _IOTBUSBASE)
-#define _IOTBUSIOC(nr)       _IOC(_IOTBUSBASE, nr)
 
 /* Kernel_tc driver ioctl definitions *************************************/
 /* (see tinyara/testcase_drv.h) */

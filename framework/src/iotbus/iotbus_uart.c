@@ -31,12 +31,9 @@
 #include <pthread.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#include <tinyara/serial/serial.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>
-
-#ifndef CONFIG_IOTBUS_UART_EVENT_SIZE
-#define CONFIG_IOTBUS_UART_EVENT_SIZE 3
-#endif
 
 struct _iotbus_uart_s {
 	int fd;
@@ -47,13 +44,17 @@ struct _iotbus_uart_s {
 	size_t len;
 	iotbus_uart_state_e rx_state;
 	iotbus_uart_state_e tx_state;
+	iotbus_uart_cb cb[IOTBUS_UART_INTR_MAX];
+	pid_t pid[IOTBUS_UART_INTR_MAX];
+#ifdef CONFIG_IOTBUS_INTERRUPT_TIMESTAMP	
+	uint32_t timestamp;
+#endif
 };
 
 struct _iotbus_uart_wrapper_s {
 	struct _iotbus_uart_s *handle;
 };
 
-#ifdef CONFIG_SERIAL_TERMIOS
 static int g_iotbus_uart_br[30] = {
 B50, B75, B110, B134, B150,
 B200, B300, B600, B1200, B1800,
@@ -61,9 +62,7 @@ B2400, B4800, B9600, B19200, B38400,
 B57600, B115200, B128000, B230400, B256000,
 B460800, B500000, B576000, B921600, B1000000,
 B1152000, B1500000, B2000000, B2500000, B3000000, };
-
 static int g_iotbus_uart_size = 30;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,6 +111,8 @@ static int _iotbus_get_dev_number(const char *path)
 iotbus_uart_context_h iotbus_uart_init(const char *path)
 {
 	int fd;
+	int i;
+	int ret;
 	struct _iotbus_uart_s *handle;
 	iotbus_uart_context_h dev;
 
@@ -134,7 +135,22 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 	handle->fd = fd;
 	handle->device = _iotbus_get_dev_number(path);
 	handle->callback = NULL;
+	for (i = 0; i < IOTBUS_UART_INTR_MAX; i++) {
+		handle->cb[i] = NULL;
+		handle->pid[i] = 0;
+	}
+#ifdef CONFIG_IOTBUS_INTERRUPT_TIMESTAMP		
+	handle->timestamp = 0;
+#endif
 	dev->handle = handle;
+
+	ret = ioctl(fd, TIOCSETIOTBUS, (unsigned long)dev);
+	if (ret != 0) {
+		ibdbg("ioctl failed \n");
+		free(handle);
+		free(dev);
+		goto errout_with_close;
+	}
 
 	return dev;
 
@@ -161,12 +177,23 @@ iotbus_uart_context_h iotbus_uart_open(int device)
 int iotbus_uart_stop(iotbus_uart_context_h hnd)
 {
 	struct _iotbus_uart_s *handle;
+	int i;
+	int ret;
 
 	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
 	handle = (struct _iotbus_uart_s *)hnd->handle;
+
+	for (i = 0; i < IOTBUS_UART_INTR_MAX; i++) {
+		if (handle->cb[i] != NULL) {
+			ret = iotbus_uart_unset_interrupt(hnd, i);
+			if (ret != IOTBUS_ERROR_NONE) {
+				return ret;
+			}
+		}
+	}
 
 	close(handle->fd);
 	free(handle);
@@ -395,7 +422,184 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 	return ret;
 }
 
-#ifdef CONFIG_IOTDEV
+static int _uart_sig[IOTBUS_UART_INTR_MAX] = {
+	SIG_IOTBUS_UART_TX_EMPTY,
+	SIG_IOTBUS_UART_TX_RDY,
+	SIG_IOTBUS_UART_RX_AVAIL,
+	SIG_IOTBUS_UART_RECEIVED
+};
+
+static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
+{
+	struct intr_args *param = (struct intr_args *)arg;
+	iotbus_uart_context_h dev = (iotbus_uart_context_h)param->dev;
+	iotbus_uart_intr_e int_type = (iotbus_uart_intr_e)param->int_type;
+
+	if (int_type < 0 || int_type >= IOTBUS_UART_INTR_MAX) {
+		ibdbg("Error : invalid int type\n");
+		pthread_exit(NULL);
+		return NULL;
+	}
+
+	ibvdbg("Thread for %p[%d]\n", dev, int_type);
+
+	siginfo_t info;
+	sigset_t sig_set;
+	uint32_t val;
+	
+	struct _iotbus_uart_s *handle = (struct _iotbus_uart_s *)dev->handle;
+
+	if (handle->cb[int_type] == NULL) {
+		ibdbg("Error : Callback is not registered\n");
+		return NULL;
+	}
+
+	sigemptyset(&sig_set);
+	sigaddset(&sig_set, _uart_sig[int_type]);
+
+	pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
+
+	while (1) {
+		sigwaitinfo(&sig_set, &info);
+
+#ifdef CONFIG_IOTBUS_INTERRUPT_TIMESTAMP		
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		val = info.si_value.sival_int;
+#else
+		val = info.si_value;
+#endif
+		handle->timestamp = val;
+#endif
+		// Call callback function.
+		(handle->cb[int_type])(dev);
+	}
+
+	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
+	pthread_exit(NULL);
+	return NULL;
+}
+
+int iotbus_uart_set_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_type, iotbus_uart_cb cb, uint8_t priority)
+{
+	int ret = -1;
+	pid_t pid;
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle || int_type < 0) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+
+	handle->cb[int_type] = cb;
+	if (handle->pid[int_type] > 0) {
+		return IOTBUS_ERROR_NONE;
+	}
+
+	struct intr_attr val = { priority, IOTBUS_UART, getpid() };
+	struct intr_args arg = { 
+		.dev = (void *)hnd, 
+		.int_type = (int)int_type 
+	};
+
+	pid = create_intr_pthread(uart_intr_thread, (void *)&arg, &val);
+	if (pid < 0) {
+		handle->cb[int_type] = NULL;
+		handle->pid[int_type] = 0;
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+	handle->pid[int_type] = pid;
+
+	struct uart_notify_s noti = { 0, };
+	noti.pid = pid;
+
+	switch (int_type) {
+	case IOTBUS_UART_TX_EMPTY:
+		noti.type = UART_TX_EMPTY;
+		break;
+	case IOTBUS_UART_TX_RDY:
+		noti.type = UART_TX_RDY;
+		break;
+	case IOTBUS_UART_RX_AVAIL:
+		noti.type = UART_RX_AVAIL;
+		break;
+	case IOTBUS_UART_RECEIVED:
+		noti.type = UART_RECEIVED;
+		break;
+	default:
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	ret = ioctl(handle->fd, TIOCSETINTR, (unsigned long)&noti);
+	if (ret != 0) {
+		ibdbg("ioctl failed, errno : %d\n", get_errno());
+		pid = handle->pid[int_type];
+		handle->pid[int_type] = 0;
+		handle->cb[int_type] = NULL;
+		if (pthread_cancel(pid) < 0) {
+			ibdbg("pthread cancel failed.\n");
+			return IOTBUS_ERROR_UNKNOWN;
+		}
+		return ret;
+	}
+
+	return 0;
+}
+
+int iotbus_uart_unset_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_type)
+{
+	struct _iotbus_uart_s *handle;
+	FAR struct uart_notify_s noti;
+	int ret;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+
+	// Disable Interrupt
+	switch (int_type) {
+	case IOTBUS_UART_TX_EMPTY:
+		noti.type = UART_TX_EMPTY;
+		break;
+	case IOTBUS_UART_TX_RDY:
+		noti.type = UART_TX_RDY;
+		break;
+	case IOTBUS_UART_RX_AVAIL:
+		noti.type = UART_RX_AVAIL;
+		break;
+	case IOTBUS_UART_RECEIVED:
+		noti.type = UART_RECEIVED;
+		break;
+	default:
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+	noti.pid = 0;
+
+	ret = ioctl(handle->fd, TIOCSETINTR, (unsigned long)&noti);
+	if (ret != 0) {
+		ibdbg("ioctl failed \n");
+		return ret;
+	}
+
+	// Clear Callback
+	handle->cb[int_type] = NULL;
+
+	// Kill Thread
+	if (handle->pid[int_type] > 0) {
+		int pid = handle->pid[int_type];
+		handle->pid[int_type] = 0;
+		ret = pthread_cancel(pid);
+		if (ret < 0) {
+			ibdbg("pthread cancel failed[%d].\n", ret);
+			return IOTBUS_ERROR_UNKNOWN;
+		}
+	}
+
+	return 0;
+}
+
 /**
  * @brief Gets a device number of the UART.
  */
@@ -410,7 +614,17 @@ int iotbus_uart_get_device(iotbus_uart_context_h hnd)
 	handle = (struct _iotbus_uart_s *)hnd->handle;
 	return handle->device;
 }
+
+uint32_t iotbus_uart_get_timestamp(iotbus_uart_context_h hnd)
+{
+#ifdef CONFIG_IOTBUS_INTERRUPT_TIMESTAMP
+	struct _iotbus_uart_s *handle;
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	return handle->timestamp;
+#else
+	return IOTBUS_ERROR_NOT_SUPPORTED;	
 #endif
+}
 
 #ifdef __cplusplus
 }

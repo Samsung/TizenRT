@@ -33,7 +33,6 @@
 
 #include <tinyara/config.h>
 #include <tinyara/gpio.h>
-#include <tinyara/iotbus_sig.h>
 
 /**
  * @brief Enumeration of Gpio signal value
@@ -185,7 +184,6 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
  */
 int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
 
-#ifdef CONFIG_IOTDEV
 /**
  * @brief register interrupt callback.
  *
@@ -193,14 +191,15 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @param[in] int_type interrupt type of gpio
  * @param[in] cb callback function of interrupt
+ * @param[in] prirority interrupt prirority (0 - 255)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type, iotbus_gpio_cb cb);
+int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type, iotbus_gpio_cb cb, uint8_t priority);
 
 /**
- * @brief register interrupt callback.
+ * @brief unregister interrupt callback.
  *
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
@@ -209,18 +208,7 @@ int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_t
  * @since TizenRT v2.1
  */
 
-int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type);
-
-/**
- * @brief get interrupt callback function.
- *
- * @details @b #include <iotbus/iotbus_gpio.h>
- * @param[in] dev handle of gpio_context
-  * @return On success, the interrupt callback function is returned. On failure, NULL value is returned.
- * @since TizenRT v2.1
- */
-void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev);
-#endif
+int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_gpio_edge_e int_type);
 
 /**
  * @brief reads the gpio value.
@@ -299,6 +287,16 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *d
 #ifndef CONFIG_DISABLE_SIGNALS
 int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);
 #endif
+
+/**
+ * @brief Get gpio interrupt timestamp.
+ *
+ * @details @b #include <iotbus/iotbus_gpio.h>
+ * @param[in] dev handle of gpio_context
+ * @return On success, the timestamp of the interrupt is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+uint32_t iotbus_gpio_get_timestamp(iotbus_gpio_context_h dev);
 
 #ifdef __cplusplus
 }

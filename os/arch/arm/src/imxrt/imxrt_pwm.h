@@ -683,7 +683,7 @@ static inline void imxrt_pwm_setpwmldok(PWM_Type *base, uint8_t subModulesToUpda
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int timer);
+FAR struct pwm_lowerhalf_s *imxrt_pwminitialize(int channel);
 
 #if defined(__cplusplus)
 }

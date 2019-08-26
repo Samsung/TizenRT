@@ -91,8 +91,10 @@ struct gpio_open_s {
 
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* GPIO event notification information */
-	pid_t go_pid;
 	struct gpio_notify_s go_notify;
+	/* Iotbus Values */
+	pid_t go_pid;
+	void *ib;
 #endif
 
 #ifndef CONFIG_DISABLE_POLL
@@ -289,57 +291,80 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 }
 #endif
 
-#ifdef CONFIG_IOTDEV
-static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned long arg)
+static void gpio_signal_interrupt(FAR struct gpio_upperhalf_s *priv)
+{
+	DEBUGASSERT(priv);
+
+	FAR struct gpio_open_s *opriv;
+	irqstate_t flags;
+
+#ifndef CONFIG_DISABLE_SIGNALS
+	flags = irqsave();
+	/* Sample the new GPIO state */
+	/* Visit each opened reference to the device */
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+		if ((opriv->go_notify.gn_rising) || (opriv->go_notify.gn_falling)) {
+			if (opriv->go_pid <= 0 || opriv->go_notify.gn_signo <= 0) {
+				continue;
+			}
+			ibdbg("Signal Target : %d, signo : %d\n", opriv->go_pid, opriv->go_notify.gn_signo);
+#ifdef CONFIG_CAN_PASS_STRUCTS
+			union sigval value;
+			value.sival_ptr = opriv->ib;
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, value);
+#else
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, opriv->ib);
+#endif
+		}
+	}
+	irqrestore(flags);
+#endif	
+}
+
+static int gpio_signal_enable(FAR struct gpio_upperhalf_s *priv)
 {
 	FAR struct gpio_lowerhalf_s *lower;
-	
+	FAR struct gpio_open_s *opriv;
+	bool rising;
+	bool falling;
+	irqstate_t flags;
+	int ret = OK;
+
 	DEBUGASSERT(priv && priv->gu_lower);
 	lower = priv->gu_lower;
 
-	bool rising;
-	bool falling;
-	int ret;
-	irqstate_t flags;
-
+	/*
+	 * This routine is called both task level and interrupt level, so
+	 * interrupts must be disabled.
+	 */
 	flags = irqsave();
 
-	switch (arg) {
-	case GPIO_EDGE_NONE:
-		rising = false;
-		falling = false;
-		break;
-	case GPIO_EDGE_BOTH:
-		rising = true;
-		falling = true;
-		break;
-	case GPIO_EDGE_RISING:
-		rising = true;
-		falling = false;
-		break;
-	case GPIO_EDGE_FALLING:
-		rising = false;
-		falling = true;
-		break;
-	default:
-		lldbg("Interrupt value is invalid\n");
-		irqrestore(flags);
-		return ERROR;
-		break;
+	/* Visit each opened reference to the device */
+	rising  = 0;
+	falling = 0;
+
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+#ifndef CONFIG_DISABLE_SIGNALS
+		/* OR in the signal events */
+		rising  |= opriv->go_notify.gn_rising;
+		falling |= opriv->go_notify.gn_falling;
+#endif
 	}
 
+	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
-		ret = lower->ops->enable(lower, falling, rising, gpio_interrupt);
+		ret = lower->ops->enable(lower, falling, rising, gpio_signal_interrupt);
 	} else {
 		/* Disable further interrupts */
 		ret = lower->ops->enable(lower, false, false, NULL);
 	}
+
 	irqrestore(flags);
 
 	return ret;
 }
-#endif
+
 /****************************************************************************
  * Name: gpio_write
  *
@@ -351,18 +376,13 @@ static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned lon
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 			  size_t buflen)
 {
-	ssize_t ret;
-	int32_t value;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_upperhalf_s *priv = inode->i_private;
 	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	ret = sscanf(buffer, "%d", &value);
-	if (ret) {
-		lower->ops->set(lower, value != 0);
-	}
+	lower->ops->set(lower, (int32_t)buffer[0] != 0);
 
-	return ret;
+	return 1;
 }
 
 /****************************************************************************
@@ -376,14 +396,14 @@ static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
 			 size_t buflen)
 {
-	int ret = 0;
+	int ret = 1;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_upperhalf_s *priv = inode->i_private;
 	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
 	if (filep->f_pos == 0) {
 		int value = lower->ops->get(lower);
-		ret = snprintf(buffer, buflen, "%d", value);
+		buffer[0] = '0' + !!value;
 	}
 
 	filep->f_pos += ret;
@@ -455,13 +475,25 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	}
-#endif /* CONFIG_DISABLE_SIGNALS */
-#ifdef CONFIG_IOTDEV
 	case GPIOIOC_SET_INTERRUPT: {
-		ret = gpio_enable_interrupt(priv, arg);
+		FAR struct gpio_notify_s *notify =
+			(FAR struct gpio_notify_s *)((uintptr_t)arg);
+
+		if (notify) {
+			/* Save the notification events */
+			opriv->go_notify.gn_rising  = notify->gn_rising;
+			opriv->go_notify.gn_falling = notify->gn_falling;
+			opriv->go_notify.gn_signo   = notify->gn_signo;
+			opriv->go_pid               = notify->pid;
+			opriv->ib					= notify->handle;
+
+			/* Enable/disable interrupt handling */
+			ret = gpio_signal_enable(priv);
+		}
 		break;
 	}
-#endif
+#endif /* CONFIG_DISABLE_SIGNALS */
+
 	default:
 		ret = -ENOTTY;
 		if (lower->ops->ioctl) {
@@ -654,6 +686,7 @@ static int gpio_open(FAR struct file *filep)
 	opriv->go_pollevents.gp_falling = true;
 	opriv->go_pollevents.gp_rising  = true;
 #endif
+	opriv->ib = NULL;
 
 	/* Attach the open structure to the device */
 	opriv->go_flink = priv->gu_open;
