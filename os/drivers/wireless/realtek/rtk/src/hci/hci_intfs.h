@@ -55,8 +55,8 @@ extern s32 sdio_dvobj_xmit_data(_adapter *padapter, struct xmit_frame *pxmitfram
 #if defined(CONFIG_USB_HCI)
 #define hci_bus_intf_type RTW_USB
 #define hci_set_intf_ops usb_set_intf_ops
-struct dvobj_priv *usb_dvobj_init(struct usb_interface *usb_intf, const struct usb_device_id *pdid);
-void usb_dvobj_deinit(struct usb_interface *usb_intf);
+struct dvobj_priv *usb_dvobj_init(void);
+void usb_dvobj_deinit(struct dvobj_priv *dvobj);
 void usb_intf_start(_adapter *padapter);
 void usb_intf_stop(_adapter *padapter);
 

@@ -335,18 +335,17 @@ lwnl80211_result_e rtkdrv_start_softap(lwnl80211_softap_config_s *softap_config)
 		return LWNL80211_FAIL;
 	}
 
-	if (WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler) != RTK_STATUS_SUCCESS) {
-		vddbg("[RTK] link callback handles: register failed !\n");
-		return LWNL80211_FAIL;
-	}
-	vdvdbg("[RTK] link callback handles: registered\n");
-
 	if (cmd_wifi_ap((wifi_utils_softap_config_s *)softap_config) != RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] Failed to start AP mode\n");
 		return LWNL80211_FAIL;
 	}
 
 	vdvdbg("[RTK] Start SoftAp mode\n");
+	if (WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler) != RTK_STATUS_SUCCESS) {
+			vddbg("[RTK] link callback handles: register failed !\n");
+			return LWNL80211_FAIL;
+		}
+	vdvdbg("[RTK] link callback handles: registered\n");
 	g_mode = RTK_WIFI_SOFT_AP_IF;
 
 	return LWNL80211_SUCCESS;
