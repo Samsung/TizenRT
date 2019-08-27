@@ -1829,7 +1829,7 @@ errout:
 /****************************************************************************
  * Name: smartfs_recover
  *
- * Description: Recovery after  a power failure
+ * Description: Recover sector which has broken link after a power failure
  *
  ****************************************************************************/
 int smartfs_recover(struct smartfs_mountpt_s *fs)
