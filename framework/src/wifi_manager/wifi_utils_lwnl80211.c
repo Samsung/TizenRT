@@ -292,7 +292,7 @@ wifi_utils_result_e wifi_utils_init(void)
 
 	snprintf(g_lwnl_hnd.mqname, sizeof(g_lwnl_hnd.mqname), "%01x", (unsigned long)((uintptr_t)&g_lwnl_hnd));
 
-	g_lwnl_hnd.cb_receiver = task_create("lwnl8021 cb handler", 110, 4096, (main_t)wifi_utils_callback_handler, NULL);
+	g_lwnl_hnd.cb_receiver = task_create("lwnl80211 cb handler", 110, 4096, (main_t)wifi_utils_callback_handler, NULL);
 
 	sem_wait(&g_lwnl_signal);
 
