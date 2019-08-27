@@ -273,27 +273,6 @@ void watchdog_unregister(FAR void *handle);
  * Architecture-specific Application Interfaces
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_wdginitialize()
- *
- * Description:
- *   Perform architecture-specific initialization of the Watchdog hardware.
- *   This interface should be provided by all configurations using
- *   to avoid exposed platform-dependent logic.
- *
- *   At a minimum, this function should call watchdog_register() which is
- *   described above.
- *
- * Input parameters:
- *   None
- *
- * Returned Value:
- *   Zero on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-int up_wdginitialize(void);
-
 #undef EXTERN
 #ifdef __cplusplus
 }
