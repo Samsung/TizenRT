@@ -149,7 +149,7 @@ static void compress(int block_size, int type, char *in_file, char *out_file)
 		writesize = block_size;
 #if CONFIG_COMPRESSION_TYPE == 1
 		/* LZMA Compression for data in read_buf into out_buf */
-		ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, read_buf, (block_size - readsize), out_buf, &propsSize, -1, 0, -1, -1, -1, -1, -1);
+		ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, read_buf, (block_size - readsize), out_buf, &propsSize, 0, 1<<13 , -1, -1, -1, -1, 1);
 		if (ret != SZ_OK) {
 			printf("LZMA Compress failed, ret = %d\n", ret);
 		}

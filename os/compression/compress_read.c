@@ -32,7 +32,7 @@
 #include <tinyara/binfmt/compression/compress_read.h>
 
 #if CONFIG_COMPRESSION_TYPE == 1
-#include "lzma/LzmaLib.h"
+#include <tinyara/lzma/LzmaLib.h>
 #endif
 
 /****************************************************************************

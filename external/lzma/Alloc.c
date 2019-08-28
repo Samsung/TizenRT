@@ -226,12 +226,20 @@ void *MyAlloc(size_t size)
 	}
 #ifdef _SZ_ALLOC_DEBUG
 	{
+#ifdef __KERNEL__
+		void *p = (void *)kmm_malloc(size);
+#else
 		void *p = malloc(size);
+#endif
 		PRINT_ALLOC("Alloc    ", g_allocCount, size, p);
 		return p;
 	}
 #else
+#ifdef __KERNEL__
+	return (void *)kmm_malloc(size);
+#else
 	return malloc(size);
+#endif
 #endif
 }
 
@@ -239,7 +247,14 @@ void MyFree(void *address)
 {
 	PRINT_FREE("Free    ", g_allocCount, address);
 
+	if (address == NULL)
+		return;
+
+#ifdef __KERNEL__
+	kmm_free(address);
+#else
 	free(address);
+#endif
 }
 
 #ifdef _WIN32
@@ -415,7 +430,14 @@ static void SzAlignedFree(ISzAllocPtr pp, void *address)
 		MyFree(((void **)address)[-1]);
 	}
 #else
+	if (address == NULL)
+		return;
+
+#ifdef __KERNEL__
+	kmm_free(address);
+#else
 	free(address);
+#endif
 #endif
 }
 

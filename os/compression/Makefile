@@ -18,6 +18,8 @@
 
 -include $(TOPDIR)/Make.defs
 DELIM ?= $(strip /)
+LZMA_PATH ?= ../../external/lzma
+LZMA_SRCDIR ?= lzma
 
 ifeq ($(WINTOOL),y)
 INCDIROPT = -w
@@ -26,15 +28,18 @@ endif
 # Basic source files for compression support
 
 COMPRESSION_ASRCS  =
-COMPRESSION_CSRCS  = compress_read.c
+COMPRESSION_CSRCS  += compress_read.c
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+ifeq ($(CONFIG_COMPRESSION_TYPE),1)
+CFLAGS += -D_7ZIP_ST
+COMPRESSION_CSRCS += $(wildcard ./$(LZMA_SRCDIR)/*.c)
+endif
+endif
 
 VPATH =
 SUBDIRS =
 DEPPATH = --dep-path .
-
-ifeq ($(CONFIG_COMPRESSION_TYPE),1)
-include lzma$(DELIM)Make.defs
-endif
 
 COMPRESSION_AOBJS = $(COMPRESSION_ASRCS:.S=$(OBJEXT))
 COMPRESSION_COBJS = $(COMPRESSION_CSRCS:.c=$(OBJEXT))
@@ -44,8 +49,17 @@ COMPRESSION_OBJS = $(COMPRESSION_AOBJS) $(COMPRESSION_COBJS)
 
 BIN = libcompression$(LIBEXT)
 
-all: $(BIN)
-.PHONY: depend clean distclean
+all: init $(BIN)
+.PHONY: init depend clean distclean
+
+init:
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+ifeq ($(CONFIG_COMPRESSION_TYPE),1)
+	@mkdir -p $(LZMA_SRCDIR)$(DELIM)
+	@cp $(LZMA_PATH)$(DELIM)*.c $(LZMA_SRCDIR)$(DELIM)
+	@cp $(LZMA_PATH)$(DELIM)*.h $(LZMA_SRCDIR)$(DELIM)
+endif
+endif
 
 $(COMPRESSION_AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -56,7 +70,7 @@ $(COMPRESSION_COBJS): %$(OBJEXT): %.c
 $(BIN): $(COMPRESSION_OBJS)
 	$(call ARCHIVE, $@, $(COMPRESSION_OBJS))
 
-.depend: Makefile $(COMPRESSION_SRCS)
+.depend: init Makefile $(COMPRESSION_SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(COMPRESSION_SRCS) >Make.dep
 	$(Q) touch $@
 
@@ -65,6 +79,7 @@ depend: .depend
 clean:
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
+	$(call DELDIR, $(LZMA_SRCDIR))
 
 distclean: clean
 	$(call DELFILE, Make.dep)
