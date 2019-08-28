@@ -52,6 +52,11 @@ config HTTPSOURCE_DOWNLOAD_STACKSIZE
 	default 8192
 	---help---
 
+config DATASOURCE_PREPARSE_BUFFER_SIZE
+	int "DataSource preparsing buffer size"
+	default 4096
+	---help---
+
 menuconfig CONTAINER_FORMAT
 	bool "Digital Container Formats Support"
 	default y

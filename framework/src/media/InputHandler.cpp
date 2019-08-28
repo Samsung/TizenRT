@@ -24,6 +24,7 @@
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
+#include "Demuxer.h"
 
 namespace media {
 namespace stream {
@@ -50,8 +51,8 @@ bool InputHandler::doStandBy()
 {
 	auto mp = getPlayer();
 	if (!mp) {
-	    meddbg("get player handle failed!\n");
-	    return false;
+		meddbg("get player handle failed!\n");
+		return false;
 	}
 
 	std::thread wk = std::thread([=]() {
@@ -68,23 +69,6 @@ bool InputHandler::doStandBy()
 
 	wk.detach();
 	return true;
-}
-
-bool InputHandler::open()
-{
-	/* Media f/w playback supports only mono and stereo.
-	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
-	 */
-	unsigned int channels = getDataSource()->getChannels();
-	if (channels == 0) {
-		meddbg("Channel can not be zero\n");
-		return false;
-	} else if (channels > 2) {
-		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
-		getDataSource()->setChannels(2);
-	}
-
-	return StreamHandler::open();
 }
 
 ssize_t InputHandler::read(unsigned char *buf, size_t size)
@@ -108,18 +92,23 @@ void InputHandler::resetWorker()
 
 bool InputHandler::processWorker()
 {
-	auto worker = this->mInputDataSource;
-	auto size = this->mBufferWriter->sizeOfSpace();
+	size_t size = getAvailSpace();
 	if (size > 0) {
 		auto buf = new unsigned char[size];
-		if (worker->read(buf, size) <= 0) {
+		if (!buf) {
+			meddbg("run out of memory! size: 0x%x\n", size);
+			return false;
+		}
+
+		ssize_t readLen = mInputDataSource->read(buf, size);
+		if (readLen <= 0) {
 			// Error occurred, or inputting finished
-			this->mBufferWriter->setEndOfStream();
+			mBufferWriter->setEndOfStream();
 			delete[] buf;
 			return false;
 		}
 
-		this->writeToStreamBuffer(buf, size);
+		writeToStreamBuffer(buf, (size_t)readLen);
 		delete[] buf;
 	}
 
@@ -195,9 +184,36 @@ void InputHandler::onBufferUpdated(ssize_t change, size_t current)
 	}
 }
 
+size_t InputHandler::getAvailSpace()
+{
+	if (mDemuxer) {
+		return mDemuxer->getAvailSpace();
+	}
+
+	if (mDecoder) {
+		return mDecoder->getAvailSpace();
+	}
+
+	// return PCM buffer space size
+	return mBufferWriter->sizeOfSpace();
+}
+
 ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 {
-	assert(buf != nullptr);
+	if (mDemuxer) {
+		mDemuxer->pushData(buf, size);
+		ssize_t ret  = mDemuxer->pullData(buf, size);
+		if (ret < 0) {
+			if (ret == DEMUXER_ERROR_WANT_DATA) {
+				medvdbg("demuxer want more data!\n");
+				return (ssize_t)size;
+			}
+			medwdbg("pull ES data failed! error: %d\n", ret);
+			return EOF;
+		}
+		// size of elementary stream data got from demuxer
+		size = (size_t)ret;
+	}
 
 	size_t written = 0;
 
@@ -231,6 +247,18 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 
 bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
+	/* Media f/w playback supports only mono and stereo.
+	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
+	 */
+	if (channels == 0) {
+		meddbg("Channel can not be zero\n");
+		return false;
+	} else if (channels > 2) {
+		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
+		channels = 2;
+		getDataSource()->setChannels(channels);
+	}
+
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
@@ -247,6 +275,44 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 	case AUDIO_TYPE_PCM:
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
 		return true;
+	case AUDIO_TYPE_MP2T: {
+		/* Register demuxer according to the given audio/container type */
+		auto demuxer = Demuxer::create(audioType);
+		if (!demuxer) {
+			meddbg("Create demuxer failed! audioType %d\n", audioType);
+			return false;
+		}
+		/* Prepare demuxer (probe the datasource to get audio informations) */
+		do {
+			size_t size = demuxer->getAvailSpace() / 4;
+			unsigned char *buf = new unsigned char[size];
+			if (!buf) {
+				meddbg("Run out of memory! bytes: 0x%x\n", size);
+				return false;
+			}
+			ssize_t readLen = mInputDataSource->read(buf, size);
+			if (readLen <= 0) {
+				meddbg("Read source failed! error: %d\n", readLen);
+				delete[] buf;
+				return false;
+			}
+			demuxer->pushData(buf, (size_t)readLen);
+			delete[] buf;
+			int ret = demuxer->prepare();
+			if (ret < 0) {
+				if (ret == DEMUXER_ERROR_WANT_DATA) {
+					medvdbg("Demuxer want more data!\n");
+					continue;
+				}
+				meddbg("Prepare demuxer failed! error: %d\n", ret);
+				return false;
+			}
+		} while (!demuxer->isReady());
+		/* Demuxer is ready (to get audio information and elementary stream). */
+		mDemuxer = demuxer;
+		/* Register underlying codec */
+		return registerCodec(mDemuxer->getAudioType(), channels, sampleRate);
+	}
 	case AUDIO_TYPE_FLAC:
 		/* To be supported */
 	default:

@@ -80,6 +80,7 @@ bool FileInputDataSource::open()
 			setChannels(channel);
 			break;
 		case AUDIO_TYPE_WAVE:
+		case AUDIO_TYPE_MP2T:
 			if (!utils::file_header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
 				meddbg("header parsing failed\n");
 				return false;
