@@ -62,16 +62,30 @@ source ${OS_PATH}/.config
 FLASH_START_ADDR=0x60000000
 TINYARA_BIN=${OUTBIN_PATH}/tinyara.bin
 
-if [ ! -f ${TINYARA_BIN} ]; then
-	echo "missing file ${TINYARA_BIN}"
-	exit 1
-fi
+##Utility function for sanity check##
+function imxrt1050_sanity_check()
+{
+        if [ ! -f ${CONFIG} ];then
+                echo "No .config file"
+                exit 1
+        fi
 
-if fuser -s ${TTYDEV}
-then 
-	echo "${TTYDEV} is used by another process, can't proceed"
-	exit 1
-fi
+        source ${CONFIG}
+        if [[ "${CONFIG_ARCH_BOARD_IMXRT1050_EVK}" != "y" ]];then
+                echo "Target is NOT IMXRT1050_EVK"
+                exit 1
+        fi
+
+        if [ ! -f ${TINYARA_BIN} ]; then
+                echo "missing file ${TINYARA_BIN}"
+                exit 1
+        fi
+
+        if fuser -s ${TTYDEV};then
+                echo "${TTYDEV} is used by another process, can't proceed"
+                exit 1
+        fi
+}
 
 #Bootstrap to set communicaiton with blhost
 #Input: None
@@ -114,28 +128,79 @@ function get_executable_name()
 	esac
 }	
 
+##Utility function to get partition index ##
+function get_partition_index()
+{
+        case $1 in
+                kernel | Kernel | KERNEL) echo "0";;
+                app | App | APP) echo "1";;
+                micom | Micom | MICOM) echo "2";;
+                wifi | Wifi | WIFI) echo "4";;
+                *) echo "No Matching Partition"
+                exit 1
+        esac
+}
+
+##Help utility##
+function imxrt1050_dwld_help()
+{
+        cat <<EOF
+        HELP:
+                make download ERASE [PARTITION(S)]
+                make download ALL or [PARTITION(S)]
+        PARTITION(S):
+                 [${uniq_parts[@]}]  NOTE:case sensitive
+
+        For examples:
+                make download ALL
+                make download kernel app
+                make download app
+                make download ERASE kernel
+EOF
+}
+
+
+##Utility function to read paritions from .config or Kconfig##
+function get_configured_partitions()
+{
+        local configured_parts
+        # Read Partitions
+        if [[ -z ${CONFIG_FLASH_PART_NAME} ]];then
+
+                configured_parts=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+        else
+                configured_parts=${CONFIG_FLASH_PART_NAME}
+        fi
+
+        echo $configured_parts
+}
+
+##Utility function to get the partition sizes from .config or Kconfig
+function get_partition_sizes()
+{
+        local sizes_str
+        #Read Partition Sizes
+        if [[ -z ${CONFIG_FLASH_PART_SIZE} ]]
+        then
+                sizes_str=`grep -A 2 'config FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+        else
+                sizes_str=${CONFIG_FLASH_PART_SIZE}
+        fi
+
+        echo $sizes_str
+}
+
 # Start here
-# Read Partitions
-if [[ -z ${CONFIG_FLASH_PART_NAME} ]]
-then
-	parts=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-	echo -e "Using default partitions from Kconfig file\n"
-else
-	parts=${CONFIG_FLASH_PART_NAME}
-	echo -e "Using partitions from .config file\n"
-fi
+
+#Sanity Check
+imxrt1050_sanity_check
+
+parts=$(get_configured_partitions)
 IFS=',' read -ra parts <<< "$parts"
 
-#Read Partition Sizes
-if [[ -z ${CONFIG_FLASH_PART_SIZE} ]]
-then
-	sizes_str=`grep -A 2 'config FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-	echo -e "Using default sizes from Kconfig file\n"
-else
-	sizes_str=${CONFIG_FLASH_PART_SIZE}
-	echo -e "Using sizes from .config file\n"
-fi
-IFS=',' read -ra sizes <<< "$sizes_str"
+sizes=$(get_partition_sizes)
+IFS=',' read -ra sizes <<< "$sizes"
+
 
 #Calculate Flash Offset
 num=${#sizes[@]}
@@ -149,47 +214,84 @@ do
 done
 
 #Dump Info
-echo "offsets: ${offsets[@]}"
-echo "sizes: ${sizes[@]}"
-echo "partitions: ${parts[@]}"
+echo "PARTIION OFFSETS: ${offsets[@]}"
+echo "PARTITION SIZES: ${sizes[@]}"
+echo "PARTIION NAMES: ${parts[@]}"
+
+if test $# -eq 0; then
+        echo -e "\n## INCORRECT USAGE: Refer HELP##"
+        imxrt1050_dwld_help 1>&2
+        exit 1
+fi
+
+uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
+cmd_args=$@
+
+#Validate arguments
+for i in ${cmd_args[@]};do
+
+        if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
+                continue;
+        fi
+
+        for j in ${uniq_parts[@]};do
+                if [[ "${i}" == "${j}" ]];then
+                        result=yes
+                fi
+        done
+
+        if [[ "$result" != "yes" ]];then
+                imxrt1050_dwld_help
+                exit 1
+        fi
+        result=no
+done
+
+
 
 #bootstrap
 bootstrap
 
-if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]
-then
-	#Erase All Partitions
-	for (( i=0; i<$num; i++ ))
-	do
-		flash_erase ${offsets[$i]} ${sizes[$i]}
-	done
+case $1 in
+#Download ALL option
+ALL)
+        for part in ${uniq_parts[@]}; do
+                if [[ "$part" == "userfs" ]];then
+                        continue
+                fi
+                gidx=$(get_partition_index $part)
+                flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
+                exe_name=$(get_executable_name ${parts[$gidx]})
+                flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
+        done
+        ;;
+#Download ERASE <list of partitions>
+ERASE)
+        while test $# -gt 1
+        do
+                chk=$2
+                for i in "${!parts[@]}"; do
+                   if [[ "${parts[$i]}" = "${chk}" ]]; then
+                        flash_erase ${offsets[${i}]} ${sizes[${i}]}
+                   fi
+                done
+                shift
+        done
+        ;;
+#Download <list of partitions>
+*)
+        while test $# -gt 0
+        do
+                chk=$1
+                for i in "${!uniq_parts[@]}"; do
+                   if [[ "${uniq_parts[$i]}" = "${chk}" ]]; then
+                        gidx=$(get_partition_index ${chk})
+                        flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
+                        exe_name=$(get_executable_name ${chk})
+                        flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
+                   fi
+                done
+                shift
+        done
+esac
 
-	#Write binaries
-	for i in 0 1 2 4
-	do
-		exec=$(get_executable_name ${parts[$i]})
-		echo "Gonna Write ${exec} into offset ${offsets[$i]}"
-		flash_write ${offsets[$i]} ${OUTBIN_PATH}/${exec}
-	done
-
-elif [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]
-then
-	#Erase All Partitions
-	for (( i=0; i<$num; i++ ))
-	do
-		flash_erase ${offsets[$i]} ${sizes[$i]}
-	done
-
-	#Write binaries
-	for i in 0 1
-	do
-		exec=$(get_executable_name ${parts[$i]})
-		echo "Gonna Write ${exec} into offset ${offsets[$i]}"
-		flash_write ${offsets[$i]} ${OUTBIN_PATH}/${exec}
-	done
-else
-	#Erase All Prev Partitions
-	PREV_PART_SIZE=`printf "0x%X" $((256 * 1024 * 8))`
-	flash_erase ${FLASH_START_ADDR} ${PREV_PART_SIZE}
-	flash_write ${FLASH_START_ADDR} ${TINYARA_BIN}
-fi	
