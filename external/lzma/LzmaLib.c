@@ -66,6 +66,7 @@ MY_STDAPI LzmaCompress(unsigned char *dest, size_t *destLen, const unsigned char
 	props.pb = pb;
 	props.fb = fb;
 	props.numThreads = numThreads;
+	props.reduceSize = srcLen;
 
 	return LzmaEncode(dest, destLen, src, srcLen, &props, outProps, outPropsSize, 1, NULL, &g_Alloc, &g_Alloc);
 }

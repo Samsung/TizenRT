@@ -16,13 +16,6 @@
 #
 ###########################################################################
 
-# Add LZMA Decompression logic files
-
-CFLAGS += -D_7ZIP_ST
-
-COMPRESSION_CSRCS += 7zFile.c 7zStream.c Alloc.c
-COMPRESSION_CSRCS += LzFind.c LzmaDec.c LzmaLib.c
-
-VPATH += lzma
-SUBDIRS += lzma
-DEPPATH += --dep-path lzma
+ifeq ($(CONFIG_LIBLZMA),y)
+CONFIGURED_EXT += lzma
+endif
