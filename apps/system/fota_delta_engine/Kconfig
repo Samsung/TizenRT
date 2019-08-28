@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FOTA_DELTA_ENGINE
+	bool "FOTA DELTA ENGINE"
+	default n
+	select LIBLZMA
+	select ZLIB
+	---help---
+		Enable FOTA DELTA ENGINE
+
+if FOTA_DELTA_ENGINE
+
+config BLOCKSIZE_FOR_FOTA_DELTA
+	int "Blocksize for FOTA Delta b/w Uncompressed Binaries"
+	default 8192
+	range 512 8192
+	---help---
+		Enter blocksize to use for FOTA delta b/w 2 uncompressed
+		binaries. In case of compressed binaries, blocksize used
+		is read from their compression header and the value here
+		is ignored.
+
+endif
