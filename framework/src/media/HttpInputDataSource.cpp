@@ -26,7 +26,7 @@
 #include <media/HttpInputDataSource.h>
 #include <chrono>
 
-#include "utils/MediaUtils.h"
+#include <media/MediaUtils.h>
 #include "HttpStream.h"
 #include "StreamBuffer.h"
 #include "StreamBufferReader.h"
@@ -152,7 +152,7 @@ bool HttpInputDataSource::open()
 		size_t dlen = mBufferReader->copy(tempbuf, templen);
 		unsigned int channel;
 		unsigned int sampleRate;
-		bool ret = utils::header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
+		bool ret = utils::buffer_header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
 		delete[] tempbuf;
 
 		if (!ret) {

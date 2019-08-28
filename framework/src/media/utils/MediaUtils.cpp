@@ -16,7 +16,7 @@
  *
  ******************************************************************/
 
-#include "MediaUtils.h"
+#include <media/MediaUtils.h>
 #include <debug.h>
 #include <errno.h>
 
@@ -302,7 +302,7 @@ bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned 
 	return true;
 }
 
-bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned char *header;
 	unsigned char tag[2];
@@ -416,7 +416,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 	return true;
 }
 
-bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned int headPoint;
 	unsigned char *header;
