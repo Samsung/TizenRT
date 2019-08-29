@@ -536,9 +536,9 @@ typedef long osdepBASE_TYPE;
 typedef unsigned long osdepTickType;
 
 // lock and semaphore
-typedef pthread_mutex_t *_lock;
-typedef sem_t *_sema;
-typedef pthread_mutex_t *_mutex;
+typedef void *_lock;
+typedef void *_sema;
+typedef void *_mutex;
 
 typedef void *_timerHandle;
 

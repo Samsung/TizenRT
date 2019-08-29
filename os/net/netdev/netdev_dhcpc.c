@@ -104,18 +104,10 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void _ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr *inaddr)
+static void _setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr *inaddr)
 {
 	FAR const struct sockaddr_in *src = (FAR const struct sockaddr_in *)inaddr;
 	*outaddr = src->sin_addr.s_addr;
-}
-
-static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
-{
-	FAR struct sockaddr_in *dest = (FAR struct sockaddr_in *)outaddr;
-	dest->sin_family = AF_INET;
-	dest->sin_port = 0;
-	dest->sin_addr.s_addr = inaddr;
 }
 
 static int _netlib_set_ipv4addr(FAR const char *ifname, FAR const struct in_addr *addr)
@@ -134,14 +126,14 @@ static int _netlib_set_ipv4addr(FAR const char *ifname, FAR const struct in_addr
 	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
 
 	ip_addr_t ipaddr, netmask, gw;
-	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&ipaddr)), (struct sockaddr *)&inaddr);
+	_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&ipaddr)), (struct sockaddr *)&inaddr);
 	netmask = dev->netmask;
 	gw = dev->gw;
 	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 
 	netifapi_netif_set_up(dev);
 
-	return 0;
+	return OK;
 }
 
 static int _netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_addr *addr)
@@ -160,14 +152,14 @@ static int _netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_a
 	inaddr.sin_port = 0;
 	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
 
-	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&netmask)), (struct sockaddr *)&inaddr);
+	_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&netmask)), (struct sockaddr *)&inaddr);
 	ipaddr = dev->ip_addr;
 	gw = dev->gw;
 	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 
 	netifapi_netif_set_up(dev);
 
-	return 0;
+	return OK;
 }
 
 static int _netlib_set_dripv4addr(FAR const char *ifname, FAR const struct in_addr *addr)
@@ -186,29 +178,13 @@ static int _netlib_set_dripv4addr(FAR const char *ifname, FAR const struct in_ad
 	inaddr.sin_port = 0;
 	memcpy(&inaddr.sin_addr, addr, sizeof(struct in_addr));
 
-	_ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&gw)), (struct sockaddr *)&inaddr);
+	_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&gw)), (struct sockaddr *)&inaddr);
 	ipaddr = dev->ip_addr;
 	netmask = dev->netmask;
 	netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 
 	netifapi_netif_set_up(dev);
-	return 0;
-}
-
-int _netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
-{
-	struct netif *dev = netdev_findbyname(ifname);
-	if (!dev) {
-		return ERROR;
-	}
-
-	struct sockaddr_in inaddr;
-
-	ioctl_getipv4addr((struct sockaddr *)&inaddr, ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr)));
-
-	memcpy(addr, &inaddr.sin_addr.s_addr, sizeof(struct in_addr));
-
-	return 0;
+	return OK;
 }
 
 /****************************************************************************
@@ -230,8 +206,6 @@ int netdev_dhcp_client_start(const char *intf)
 	struct in_addr local_ipaddr;
 	struct in_addr local_netmask;
 	struct in_addr local_gateway;
-
-	struct in_addr ip_check;
 
 	/* Initialize dhcp structure if exists */
 	if (netif_dhcp_data(cur_netif)) {
@@ -257,13 +231,8 @@ int netdev_dhcp_client_start(const char *intf)
 			return ERROR;
 		}
 	}
-	if (_netlib_get_ipv4addr(intf, &ip_check) != 0) {
-		ndbg("fail to get IP address\n");
-		netifapi_dhcp_stop(cur_netif);
-		return ERROR;
-	}
-	nvdbg("dhcpc_start - got IP address %s\n", inet_ntoa(ip_check));
-	return 0;
+
+	return OK;
 }
 
 /****************************************************************************
