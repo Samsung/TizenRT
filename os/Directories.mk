@@ -234,6 +234,9 @@ KERNDEPDIRS += compression
 endif
 CLEANDIRS += compression tools/compression
 
+# Add FOTA Delta Tool Module
+CLEANDIRS += ../tools/fota_delta
+
 # Add Crypto Module
 
 ifeq ($(CONFIG_CRYPTO),y)
