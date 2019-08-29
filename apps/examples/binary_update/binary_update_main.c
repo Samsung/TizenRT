@@ -70,16 +70,16 @@ static volatile bool inf_flag = true;
 static int fail_cnt = 0;
 static unsigned int new_version = 20190422;
 
-static void print_binary_info(binary_info_t *binary_info)
+static void print_binary_info(binary_update_info_t *binary_info)
 {
 	printf(" =============== binary [%s] info ================ \n", binary_info->name);
 	printf(" %8s | %8s | %14s | %s\n", "Version", "Partsize", "Active part", "Inactive part");
 	printf(" ---------------------------------------------------- \n");
-	printf(" %8s | %8d | %14s | %s\n", binary_info->version, binary_info->part_size, binary_info->active_dev, binary_info->inactive_dev);
+	printf(" %8s | %8d | %14s | %s\n", binary_info->active_ver, binary_info->inactive_partsize, binary_info->active_dev, binary_info->inactive_dev);
 	printf(" ==================================================== \n");
 }
 
-static void print_binary_info_list(binary_info_list_t *binary_info_list)
+static void print_binary_info_list(binary_update_info_list_t *binary_info_list)
 {
 	int bin_idx;
 
@@ -88,19 +88,19 @@ static void print_binary_info_list(binary_info_list_t *binary_info_list)
 	printf(" -------------------------------------------------------------------- \n");
 	for (bin_idx = 0; bin_idx < binary_info_list->bin_count; bin_idx++) {
 		printf(" %4d | %6s | %8s | %8d | %14s | %s\n", bin_idx, \
-		binary_info_list->bin_info[bin_idx].name, binary_info_list->bin_info[bin_idx].version, \
-		binary_info_list->bin_info[bin_idx].part_size, binary_info_list->bin_info[bin_idx].active_dev, binary_info_list->bin_info[bin_idx].inactive_dev);
+		binary_info_list->bin_info[bin_idx].name, binary_info_list->bin_info[bin_idx].active_ver, \
+		binary_info_list->bin_info[bin_idx].inactive_partsize, binary_info_list->bin_info[bin_idx].active_dev, binary_info_list->bin_info[bin_idx].inactive_dev);
 	}
 	printf(" ==================================================================== \n");
 }
 
-static void binary_update_check_test_result(binary_info_t *pre_bin_info, binary_info_t *cur_bin_info, int condition)
+static void binary_update_check_test_result(binary_update_info_t *pre_bin_info, binary_update_info_t *cur_bin_info, int condition)
 {
 	printf(" ============== [%5s] Update info =============== \n", cur_bin_info->name);
 	printf(" %4s | %8s | %14s | %s\n", "Con", "Version", "Active part", "Inactive part");
 	printf(" ------------------------------------------------- \n");
-	printf(" %4s | %8s | %14s | %s\n", "Pre", pre_bin_info->version, pre_bin_info->active_dev, pre_bin_info->inactive_dev);
-	printf(" %4s | %8s | %14s | %s\n", "Cur", cur_bin_info->version, cur_bin_info->active_dev, cur_bin_info->inactive_dev);
+	printf(" %4s | %8s | %14s | %s\n", "Pre", pre_bin_info->active_ver, pre_bin_info->active_dev, pre_bin_info->inactive_dev);
+	printf(" %4s | %8s | %14s | %s\n", "Cur", cur_bin_info->active_ver, cur_bin_info->active_dev, cur_bin_info->inactive_dev);
 	printf(" ================================================== \n");
 
 	if (condition == DOWNLOAD_VALID_BIN) {
@@ -225,7 +225,7 @@ static void binary_update_download_binary(char *devname, int condition)
 static void binary_update_getinfo_all(void)
 {
 	int ret;
-	binary_info_list_t bin_info_list;
+	binary_update_info_list_t bin_info_list;
 
 	printf("\n** Binary Update GETINFO_ALL test.\n");
 	ret = binary_manager_get_update_info_all(&bin_info_list);
@@ -237,7 +237,7 @@ static void binary_update_getinfo_all(void)
 	}
 }
 
-static void binary_update_getinfo(char *name, binary_info_t *bin_info)
+static void binary_update_getinfo(char *name, binary_update_info_t *bin_info)
 {
 	int ret;
 
@@ -267,8 +267,8 @@ static void binary_update_run_tests(int repetition_num)
 {
 	new_version++;
 
-	binary_info_t pre_bin_info;
-	binary_info_t cur_bin_info;
+	binary_update_info_t pre_bin_info;
+	binary_update_info_t cur_bin_info;
 	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
 
 	binary_update_getinfo(APP_NAME, &pre_bin_info);
