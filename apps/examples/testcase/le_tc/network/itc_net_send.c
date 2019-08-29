@@ -48,19 +48,19 @@ static void itc_net_send_n_fd(void)
 }
 
 /**
-* @testcase            :itc_net_send_n_msg
+* @testcase            :itc_net_send_p_msg
 * @brief               :used to transmit a message to another socket
 * @scenario            :sending NULL msg
 * @apicovered          :send()
 * @precondition        :None
 * @postcondition       :None
 */
-static void itc_net_send_n_msg(int client_socket)
+static void itc_net_send_p_msg(int client_socket)
 {
 	char *msg = NULL;
-	int ret = send(client_socket, msg, strlen(msg), 0);
+	int ret = send(client_socket, msg, 0, 0);
 
-	TC_ASSERT_EQ("send", ret, -1);
+	TC_ASSERT_EQ("send", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -118,7 +118,7 @@ static void *server(void *args)
 	}
 
 	itc_net_send_n_fd();
-	itc_net_send_n_msg(client_socket);
+	itc_net_send_p_msg(client_socket);
 
 	ret = close(client_socket);
 	if (ret == -1) {
