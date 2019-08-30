@@ -112,6 +112,14 @@ config NET_LWIP_DHCP
 	bool "(Optional) Enabling LwIP DHCP client/server"
 	depends on NET_LWIP
 endchoice #DHCP
+
+config LWIP_DHCP_TCPIP_THREAD
+	bool "Running over LwIP Thread"
+	depends on NET_LWIP_DHCP
+	default n
+	---help---
+		Enable netifapi of DHCP to run it over LwIP TCPIP main thread
+
 source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
 source "$EXTERNALDIR/dhcpd/Kconfig.protocol"
 endmenu #DHCP
