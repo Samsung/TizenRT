@@ -31,6 +31,9 @@
 #include <tinyara/fs/fs.h>
 #include "libelf.h"
 
+#ifdef CONFIG_COMPRESSED_BINARY
+#include <tinyara/binfmt/compression/compress_read.h>
+#endif
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -58,6 +61,8 @@ static block_cache_t *most_accessed;	/* Pointer to most accessed block for quick
 /* Number of requests for the most accessed block in blockcache list */
 static unsigned int max_accessed_count;
 
+/* Compression Type of a file */
+static unsigned int elf_compress_type;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -98,7 +103,7 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 	off_t rpos;
 	off_t actual_offset;
 
-	actual_offset = binary_header_size + block_number * cache_blocks_size;;
+	actual_offset = binary_header_size + block_number * cache_blocks_size;
 
 	/* Seek to location of this block in actual ELF file */
 	rpos = lseek(filfd, actual_offset, SEEK_SET);
@@ -148,8 +153,20 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 		readsize = cache_blocks_size;
 	}
 
-	/* Read actual data to 'block_number's buf */
-	nbytes = read(filfd, buf, readsize);
+	if (elf_compress_type == COMPRESS_TYPE_NONE) {
+		/* Read actual data to 'block_number's buf */
+		nbytes = read(filfd, buf, readsize);
+	}
+#ifdef CONFIG_COMPRESSED_BINARY
+	else {
+		if (elf_compress_type == CONFIG_COMPRESSION_TYPE) {
+			/* Read readsize bytes from offset from uncompressed file into user buffer */
+			nbytes = compress_read(filfd, binary_header_size, buf, readsize, rpos - binary_header_size);
+		} else {
+			berr("No support for decompression of compression format %d of this binary\n", elf_compress_type);
+		}
+	}
+#endif
 
 	binfo("readsize: %d nbytes: %d rpos: %d\n", readsize, nbytes, rpos);
 
@@ -351,7 +368,7 @@ int elf_cache_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, 
 	int actual_offset;		/* Offset from start of ELF file */
 	int block_size_to_write;	/* Size to write into buffer from cached block */
 	int buffer_pos;			/* Position in buffer to start writing from */
-	int blocksize;			/* Blocksize used for compressing the binary */
+	int blocksize;			/* Blocksize used by the binary */
 	unsigned int blockcache_index;	/* Which blockcache element has needed ELF data for read */
 
 	binfo("filfd: %d readsize: %d offset: %d\n", filfd, readsize, offset);
@@ -370,7 +387,7 @@ int elf_cache_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, 
 	/* Actual Offset in ELF file is same as Offset passed to this function */
 	actual_offset = offset;
 
-	/* Reading and decompressing blocks from first_block to last_block. Then writing to buffer. */
+	/* Reading from first_block to last_block. Then writing to buffer. */
 	for (; block_number < first_block + no_blocks; block_number++) {
 
 		/* Update blockcache list and get data into one of the blockcache elements */
@@ -423,17 +440,18 @@ error_cache_read:
  *   OK (0) on Success
  *   Negative value on Failure
  ****************************************************************************/
-int elf_cache_init(int filfd, uint16_t offset, off_t *filelen)
+int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compression_type)
 {
 	int ret = OK;
 
-	binfo("filfd: %d offset: %d filelen: %d\n", filfd, offset, *filelen);
+	binfo("filfd: %d offset: %d filelen: %d compression_type: %d\n", filfd, offset, filelen, compression_type);
 
 	/* Initialize the ELF params */
 	number_blocks_caching = CONFIG_ELF_CACHE_BLOCKS_COUNT;
 	cache_blocks_size = CONFIG_ELF_CACHE_BLOCK_SIZE;
-	file_len = *filelen;
+	file_len = filelen;
 	number_of_blocks = file_len / cache_blocks_size;
+	elf_compress_type = compression_type;
 
 	/* Extra unaligned data apart from blocksize */
 	if (file_len % cache_blocks_size)

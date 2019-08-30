@@ -60,7 +60,6 @@ config ELF_CACHE_READ
         bool "ELF cache read support"
         default n
         depends on BINFMT_ENABLE
-        depends on !COMPRESSED_BINARY
         ---help---
 		Enabling this config would increase the elf read performance by
 		manyfolds with its caching mechanism.
@@ -69,8 +68,6 @@ config ELF_CACHE_READ
 		same position multiple times, then there would be a considerable delay.
 		Enabling this config will cache/buffer the previously accessed data.
 
-		Note: If COMPRESSED_BINARY=y, then this config should be disabled, as
-		by default COMPRESSED_BINARY config would support caching inbuilt.
 
 if ELF_CACHE_READ
 
@@ -80,6 +77,10 @@ config ELF_CACHE_BLOCK_SIZE
         range 512 8192
         ---help---
                 Enter block size to use for caching the elf read.
+
+                Note: For compressed binaries, Make sure the cache block size, should be
+                      greater than or equal to compression block size. Which would
+                      yield good read performance during caching
 
 config ELF_CACHE_BLOCKS_COUNT
         int "Number of Blocks to be cached when reading elf"

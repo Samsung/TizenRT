@@ -112,10 +112,8 @@ int elf_uninit(struct elf_loadinfo_s *loadinfo)
 		return ERROR;
 #endif
 	}
-#if defined(CONFIG_ELF_CACHE_READ) && !defined(CONFIG_COMPRESSED_BINARY)
-	else if (loadinfo->compression_type == COMPRESS_TYPE_NONE) {
-		elf_cache_uninit();
-	}
+#if defined(CONFIG_ELF_CACHE_READ)
+	elf_cache_uninit();
 #endif
 
 	/* Close the ELF file */

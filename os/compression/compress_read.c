@@ -402,7 +402,11 @@ error_compress_init:
  ****************************************************************************/
 void compress_uninit(void)
 {
+#if CONFIG_COMPRESSION_TYPE == 1
 	/* Freeing memory allocated to read_buffer and out_buffer for file decompression */
-	free(buffers.read_buffer);
-	free(buffers.out_buffer);
+	if (compression_header.compression_format == COMPRESSION_TYPE_LZMA) {
+		kmm_free(buffers.read_buffer);
+		kmm_free(buffers.out_buffer);
+	}
+#endif
 }
