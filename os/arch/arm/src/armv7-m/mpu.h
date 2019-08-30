@@ -93,9 +93,9 @@
 /* MPU Type Register Bit Definitions */
 
 #define MPU_TYPE_SEPARATE       (1 << 0)	/* Bit 0: 0:unified or 1:separate memory maps */
-#define MPU_TYPE_DREGION_SHIFT  (8)	/* Bits 8-15: Number MPU data regions */
+#define MPU_TYPE_DREGION_SHIFT  (8)			/* Bits 8-15: Number MPU data regions */
 #define MPU_TYPE_DREGION_MASK   (0xff << MPU_TYPE_DREGION_SHIFT)
-#define MPU_TYPE_IREGION_SHIFT  (16)	/* Bits 16-23: Number MPU instruction regions */
+#define MPU_TYPE_IREGION_SHIFT  (16)		/* Bits 16-23: Number MPU instruction regions */
 #define MPU_TYPE_IREGION_MASK   (0xff << MPU_TYPE_IREGION_SHIFT)
 
 /* MPU Control Register Bit Definitions */
@@ -131,7 +131,7 @@
 #define MPU_RASR_SIZE_SHIFT     (1)	/* Bits 1-5: Size of the MPU protection region */
 
 #define MPU_RASR_SIZE_MASK      (31 << MPU_RASR_SIZE_SHIFT)
-#define MPU_RASR_SIZE_LOG2(n) ((n-1) << MPU_RASR_SIZE_SHIFT)
+#define MPU_RASR_SIZE_LOG2(n) ((n - 1) << MPU_RASR_SIZE_SHIFT)
 #define MPU_RASR_SRD_SHIFT      (8)	/* Bits 8-15: Subregion disable */
 #define MPU_RASR_SRD_MASK       (0xff << MPU_RASR_SRD_SHIFT)
 #define MPU_RASR_SRD_0        (0x01 << MPU_RASR_SRD_SHIFT)

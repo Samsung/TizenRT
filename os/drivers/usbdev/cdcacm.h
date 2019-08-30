@@ -122,9 +122,9 @@
  */
 
 #define CDCACM_NINTERFACES         (2)	/* Number of interfaces in the configuration */
-#define CDCACM_NOTIFID             (CONFIG_CDCACM_IFNOBASE+0)
+#define CDCACM_NOTIFID             (CONFIG_CDCACM_IFNOBASE + 0)
 #define CDCACM_NOTALTIFID          (0)
-#define CDCACM_DATAIFID            (CONFIG_CDCACM_IFNOBASE+1)
+#define CDCACM_DATAIFID            (CONFIG_CDCACM_IFNOBASE + 1)
 #define CDCACM_DATAALTIFID         (0)
 
 /* Configuration descriptor values */
@@ -136,7 +136,7 @@
  */
 
 #define CDCACM_MXDESCLEN           (64)
-#define CDCACM_MAXSTRLEN           (CDCACM_MXDESCLEN-2)
+#define CDCACM_MAXSTRLEN           (CDCACM_MXDESCLEN - 2)
 
 /* Device descriptor values */
 
@@ -168,13 +168,13 @@
 /* These string IDs only exist if a user-defined string is provided */
 
 #ifdef CONFIG_CDCACM_NOTIFSTR
-#define CDCACM_NOTIFSTRID        (CDCACM_LASTBASESTRID+1)
+#define CDCACM_NOTIFSTRID        (CDCACM_LASTBASESTRID + 1)
 #else
 #define CDCACM_NOTIFSTRID        CDCACM_LASTBASESTRID
 #endif
 
 #ifdef CONFIG_CDCACM_DATAIFSTR
-#define CDCACM_DATAIFSTRID       (CDCACM_NOTIFSTRID+1)
+#define CDCACM_DATAIFSTRID       (CDCACM_NOTIFSTRID + 1)
 #else
 #define CDCACM_DATAIFSTRID       CDCACM_NOTIFSTRID
 #endif
@@ -231,13 +231,13 @@
 
 /* Endpoint configuration ****************************************************/
 
-#define CDCACM_EPINTIN_ADDR        (USB_DIR_IN|CONFIG_CDCACM_EPINTIN)
+#define CDCACM_EPINTIN_ADDR        (USB_DIR_IN | CONFIG_CDCACM_EPINTIN)
 #define CDCACM_EPINTIN_ATTR        (USB_EP_ATTR_XFER_INT)
 
 #define CDCACM_EPOUTBULK_ADDR      (CONFIG_CDCACM_EPBULKOUT)
 #define CDCACM_EPOUTBULK_ATTR      (USB_EP_ATTR_XFER_BULK)
 
-#define CDCACM_EPINBULK_ADDR       (USB_DIR_IN|CONFIG_CDCACM_EPBULKIN)
+#define CDCACM_EPINBULK_ADDR       (USB_DIR_IN | CONFIG_CDCACM_EPBULKIN)
 #define CDCACM_EPINBULK_ATTR       (USB_EP_ATTR_XFER_BULK)
 
 /* Device driver definitions ************************************************/

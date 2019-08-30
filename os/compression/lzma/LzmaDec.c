@@ -285,7 +285,7 @@ static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *b
 			UPDATE_0(prob);
 			prob = probs + Literal;
 			if (processedPos != 0 || checkDicSize != 0) {
-				prob += (UInt32) 3 * ((((processedPos << 8) + dic[(dicPos == 0 ? dicBufSize : dicPos) - 1]) & lpMask) << lc);
+				prob += (UInt32)3 * ((((processedPos << 8) + dic[(dicPos == 0 ? dicBufSize : dicPos) - 1]) & lpMask) << lc);
 			}
 			processedPos++;
 
@@ -461,7 +461,7 @@ static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *b
 							{
 								UInt32 t;
 								code -= range;
-								t = (0 - ((UInt32) code >> 31));	/* (UInt32)((Int32)code >> 31) */
+								t = (0 - ((UInt32)code >> 31));	/* (UInt32)((Int32)code >> 31) */
 								distance = (distance << 1) + (t + 1);
 								code += range & t;
 							}
@@ -484,7 +484,7 @@ static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *b
 							REV_BIT_LAST(prob, i, 8);
 							distance |= i;
 						}
-						if (distance == (UInt32) 0xFFFFFFFF) {
+						if (distance == (UInt32)0xFFFFFFFF) {
 							len = kMatchSpecLenStart;
 							state -= kNumStates;
 							break;
@@ -518,12 +518,12 @@ static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *b
 				curLen = ((rem < len) ? (unsigned)rem : len);
 				pos = dicPos - rep0 + (dicPos < rep0 ? dicBufSize : 0);
 
-				processedPos += (UInt32) curLen;
+				processedPos += (UInt32)curLen;
 
 				len -= curLen;
 				if (curLen <= dicBufSize - pos) {
 					Byte *dest = dic + dicPos;
-					ptrdiff_t src = (ptrdiff_t) pos - (ptrdiff_t) dicPos;
+					ptrdiff_t src = (ptrdiff_t)pos - (ptrdiff_t)dicPos;
 					const Byte *lim = dest + curLen;
 					dicPos += (SizeT) curLen;
 					do {
@@ -546,14 +546,14 @@ static int MY_FAST_CALL LZMA_DECODE_REAL(CLzmaDec *p, SizeT limit, const Byte *b
 	p->buf = buf;
 	p->range = range;
 	p->code = code;
-	p->remainLen = (UInt32) len;
+	p->remainLen = (UInt32)len;
 	p->dicPos = dicPos;
 	p->processedPos = processedPos;
 	p->reps[0] = rep0;
 	p->reps[1] = rep1;
 	p->reps[2] = rep2;
 	p->reps[3] = rep3;
-	p->state = (UInt32) state;
+	p->state = (UInt32)state;
 
 	return SZ_OK;
 }
@@ -576,8 +576,8 @@ static void MY_FAST_CALL LzmaDec_WriteRem(CLzmaDec *p, SizeT limit)
 			p->checkDicSize = p->prop.dicSize;
 		}
 
-		p->processedPos += (UInt32) len;
-		p->remainLen -= (UInt32) len;
+		p->processedPos += (UInt32)len;
+		p->remainLen -= (UInt32)len;
 		while (len != 0) {
 			len--;
 			dic[dicPos] = dic[dicPos - rep0 + (dicPos < rep0 ? dicBufSize : 0)];
@@ -636,7 +636,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 			/* if (bufLimit - buf >= 7) return DUMMY_LIT; */
 			prob = probs + Literal;
 			if (p->checkDicSize != 0 || p->processedPos != 0) {
-				prob += ((UInt32) LZMA_LIT_SIZE * ((((p->processedPos) & ((1 << (p->prop.lp)) - 1)) << p->prop.lc) + (p->dic[(p->dicPos == 0 ? p->dicBufSize : p->dicPos) - 1] >> (8 - p->prop.lc))));
+				prob += ((UInt32)LZMA_LIT_SIZE * ((((p->processedPos) & ((1 << (p->prop.lp)) - 1)) << p->prop.lc) + (p->dic[(p->dicPos == 0 ? p->dicBufSize : p->dicPos) - 1] >> (8 - p->prop.lc))));
 			}
 
 			if (state < kNumLitStates) {
@@ -803,10 +803,10 @@ SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *sr
 			*status = LZMA_STATUS_NEEDS_MORE_INPUT;
 			return SZ_OK;
 		}
-		p->code = ((UInt32) p->tempBuf[1] << 24)
-				  | ((UInt32) p->tempBuf[2] << 16)
-				  | ((UInt32) p->tempBuf[3] << 8)
-				  | ((UInt32) p->tempBuf[4]);
+		p->code = ((UInt32)p->tempBuf[1] << 24)
+				  | ((UInt32)p->tempBuf[2] << 16)
+				  | ((UInt32)p->tempBuf[3] << 8)
+				  | ((UInt32)p->tempBuf[4]);
 		p->range = 0xFFFFFFFF;
 		p->tempBufSize = 0;
 
@@ -986,7 +986,7 @@ SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
 	if (size < LZMA_PROPS_SIZE) {
 		return SZ_ERROR_UNSUPPORTED;
 	} else {
-		dicSize = data[1] | ((UInt32) data[2] << 8) | ((UInt32) data[3] << 16) | ((UInt32) data[4] << 24);
+		dicSize = data[1] | ((UInt32)data[2] << 8) | ((UInt32)data[3] << 16) | ((UInt32)data[4] << 24);
 	}
 
 	if (dicSize < LZMA_DIC_MIN) {
@@ -1012,7 +1012,7 @@ static SRes LzmaDec_AllocateProbs2(CLzmaDec *p, const CLzmaProps *propNew, ISzAl
 	UInt32 numProbs = LzmaProps_GetNumProbs(propNew);
 	if (!p->probs || numProbs != p->numProbs) {
 		LzmaDec_FreeProbs(p, alloc);
-		p->probs = (CLzmaProb *) ISzAlloc_Alloc(alloc, numProbs * sizeof(CLzmaProb));
+		p->probs = (CLzmaProb *)ISzAlloc_Alloc(alloc, numProbs * sizeof(CLzmaProb));
 		if (!p->probs) {
 			return SZ_ERROR_MEM;
 		}
@@ -1040,11 +1040,11 @@ SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAll
 
 	{
 		UInt32 dictSize = propNew.dicSize;
-		SizeT mask = ((UInt32) 1 << 12) - 1;
-		if (dictSize >= ((UInt32) 1 << 30)) {
-			mask = ((UInt32) 1 << 22) - 1;
-		} else if (dictSize >= ((UInt32) 1 << 22)) {
-			mask = ((UInt32) 1 << 20) - 1;
+		SizeT mask = ((UInt32)1 << 12) - 1;
+		if (dictSize >= ((UInt32)1 << 30)) {
+			mask = ((UInt32)1 << 22) - 1;
+		} else if (dictSize >= ((UInt32)1 << 22)) {
+			mask = ((UInt32)1 << 20) - 1;
 		};
 		dicBufSize = ((SizeT) dictSize + mask) & ~mask;
 		if (dicBufSize < dictSize) {
@@ -1054,7 +1054,7 @@ SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAll
 
 	if (!p->dic || dicBufSize != p->dicBufSize) {
 		LzmaDec_FreeDict(p, alloc);
-		p->dic = (Byte *) ISzAlloc_Alloc(alloc, dicBufSize);
+		p->dic = (Byte *)ISzAlloc_Alloc(alloc, dicBufSize);
 		if (!p->dic) {
 			LzmaDec_FreeProbs(p, alloc);
 			return SZ_ERROR_MEM;

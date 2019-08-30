@@ -158,7 +158,7 @@ struct touch_sample_s {
 	int npoints;                   /* The number of touch points in point[] */
 	struct touch_point_s point[1]; /* Actual dimension is npoints */
 };
-#define SIZEOF_TOUCH_SAMPLE_S(n) (sizeof(struct touch_sample_s) + ((n)-1)*sizeof(struct touch_point_s))
+#define SIZEOF_TOUCH_SAMPLE_S(n) (sizeof(struct touch_sample_s) + ((n) - 1) * sizeof(struct touch_point_s))
 
 /************************************************************************************
  * Public Function Prototypes
@@ -166,8 +166,7 @@ struct touch_sample_s {
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
