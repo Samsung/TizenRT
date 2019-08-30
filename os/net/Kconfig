@@ -120,6 +120,13 @@ config LWIP_DHCP_TCPIP_THREAD
 	---help---
 		Enable netifapi of DHCP to run it over LwIP TCPIP main thread
 
+config LWIP_DHCP_HOSTNAME
+	bool "Enable Hostname Option"
+	depends on NET_LWIP_DHCP
+	default n
+	---help---
+		Enable hostname option for DHCP client
+
 source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
 source "$EXTERNALDIR/dhcpd/Kconfig.protocol"
 endmenu #DHCP
