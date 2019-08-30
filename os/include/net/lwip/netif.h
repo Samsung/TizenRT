@@ -318,7 +318,7 @@ struct netif {
 #endif							/* LWIP_IPV6_SEND_ROUTER_SOLICIT */
 #if LWIP_NETIF_HOSTNAME
 	/* the hostname for this netif, NULL is a valid value */
-	const char *hostname;
+	char *hostname;
 #endif							/* LWIP_NETIF_HOSTNAME */
 #if LWIP_CHECKSUM_CTRL_PER_NETIF
 	u16_t chksum_flags;

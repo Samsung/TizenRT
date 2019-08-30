@@ -81,6 +81,12 @@
 #define LWIP_DHCP_TCPIP_THREAD 0
 #endif
 
+#ifdef CONFIG_LWIP_DHCP_HOSTNAME
+#define LWIP_NETIF_HOSTNAME 1
+#else
+#define LWIP_NETIF_HOSTNAME 0
+#endif
+
 #define LWIP_NETIF_API                  1
 
 #ifdef CONFIG_NET_ENABLE_LOOPBACK
@@ -1095,13 +1101,13 @@
 #ifdef CONFIG_NET_IPv6_STATS
 #define IP6_STATS	CONFIG_NET_IPv6_STATS
 #else
-#define IP6_STATS	0	
+#define IP6_STATS	0
 #endif
 
 #ifdef CONFIG_NET_IPv6_ICMP_STATS
 #define ICMP6_STATS	CONFIG_NET_IPv6_ICMP_STATS
 #else
-#define ICMP6_STATS	0	
+#define ICMP6_STATS	0
 #endif
 
 #ifdef CONFIG_NET_IPv6_FRAG_STATS
