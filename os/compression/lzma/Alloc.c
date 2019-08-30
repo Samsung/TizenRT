@@ -215,7 +215,7 @@ static void PrintDec(UInt64 v, size_t align)
 
 static void PrintAddr(void *p)
 {
-	PrintHex((UInt64)(size_t)(ptrdiff_t) p, 12);
+	PrintHex((UInt64)(size_t)(ptrdiff_t)p, 12);
 }
 #endif
 
@@ -426,7 +426,7 @@ static void *AlignOffsetAlloc_Alloc(ISzAllocPtr pp, size_t size)
 	void *pAligned;
 	size_t newSize;
 	size_t extra;
-	size_t alignSize = (size_t) 1 << p->numAlignBits;
+	size_t alignSize = (size_t)1 << p->numAlignBits;
 
 	if (alignSize < sizeof(void *)) {
 		alignSize = sizeof(void *);

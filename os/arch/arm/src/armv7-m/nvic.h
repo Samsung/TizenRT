@@ -95,7 +95,7 @@
 #define NVIC_SYSTICK_CURRENT_OFFSET     0x0018	/* SysTick current value register */
 #define NVIC_SYSTICK_CALIB_OFFSET       0x001c	/* SysTick calibration value register */
 
-#define NVIC_IRQ_ENABLE_OFFSET(n)       (0x0100 + 4*((n) >> 5))
+#define NVIC_IRQ_ENABLE_OFFSET(n)       (0x0100 + 4 * ((n) >> 5))
 #define NVIC_IRQ0_31_ENABLE_OFFSET      0x0100	/* IRQ 0-31 set enable register */
 #define NVIC_IRQ32_63_ENABLE_OFFSET     0x0104	/* IRQ 32-63 set enable register */
 #define NVIC_IRQ64_95_ENABLE_OFFSET     0x0108	/* IRQ 64-95 set enable register */
@@ -105,7 +105,7 @@
 #define NVIC_IRQ192_223_ENABLE_OFFSET   0x0118	/* IRQ 192-223 set enable register */
 #define NVIC_IRQ224_239_ENABLE_OFFSET   0x011c	/* IRQ 224-239 set enable register */
 
-#define NVIC_IRQ_CLEAR_OFFSET(n)        (0x0180 + 4*((n) >> 5))
+#define NVIC_IRQ_CLEAR_OFFSET(n)        (0x0180 + 4 * ((n) >> 5))
 #define NVIC_IRQ0_31_CLEAR_OFFSET       0x0180	/* IRQ 0-31 clear enable register */
 #define NVIC_IRQ32_63_CLEAR_OFFSET      0x0184	/* IRQ 32-63 clear enable register */
 #define NVIC_IRQ64_95_CLEAR_OFFSET      0x0188	/* IRQ 64-95 clear enable register */
@@ -115,7 +115,7 @@
 #define NVIC_IRQ192_223_CLEAR_OFFSET    0x0198	/* IRQ 192-223 clear enable register */
 #define NVIC_IRQ224_239_CLEAR_OFFSET    0x019c	/* IRQ 224-2391 clear enable register */
 
-#define NVIC_IRQ_PEND_OFFSET(n)         (0x0200 + 4*((n) >> 5))
+#define NVIC_IRQ_PEND_OFFSET(n)         (0x0200 + 4 * ((n) >> 5))
 #define NVIC_IRQ0_31_PEND_OFFSET        0x0200	/* IRQ 0-31 set pending register */
 #define NVIC_IRQ32_63_PEND_OFFSET       0x0204	/* IRQ 32-63 set pending register */
 #define NVIC_IRQ64_95_PEND_OFFSET       0x0208	/* IRQ 64-95 set pending register */
@@ -125,7 +125,7 @@
 #define NVIC_IRQ192_223_PEND_OFFSET     0x0218	/* IRQ 192-2231 set pending register */
 #define NVIC_IRQ224_239_PEND_OFFSET     0x021c	/* IRQ 224-2391 set pending register */
 
-#define NVIC_IRQ_CLRPEND_OFFSET(n)      (0x0280 + 4*((n) >> 5))
+#define NVIC_IRQ_CLRPEND_OFFSET(n)      (0x0280 + 4 * ((n) >> 5))
 #define NVIC_IRQ0_31_CLRPEND_OFFSET     0x0280	/* IRQ 0-31 clear pending register */
 #define NVIC_IRQ32_63_CLRPEND_OFFSET    0x0284	/* IRQ 32-63 clear pending register */
 #define NVIC_IRQ64_95_CLRPEND_OFFSET    0x0288	/* IRQ 64-95 clear pending register */
@@ -135,7 +135,7 @@
 #define NVIC_IRQ192_223_CLRPEND_OFFSET  0x0298	/* IRQ 192-223 clear pending register */
 #define NVIC_IRQ224_239_CLRPEND_OFFSET  0x029c	/* IRQ 224-239 clear pending register */
 
-#define NVIC_IRQ_ACTIVE_OFFSET(n)       (0x0300 + 4*((n) >> 5))
+#define NVIC_IRQ_ACTIVE_OFFSET(n)       (0x0300 + 4 * ((n) >> 5))
 #define NVIC_IRQ0_31_ACTIVE_OFFSET      0x0300	/* IRQ 0-31 active bit register */
 #define NVIC_IRQ32_63_ACTIVE_OFFSET     0x0304	/* IRQ 32-63 active bit register */
 #define NVIC_IRQ64_95_ACTIVE_OFFSET     0x0308	/* IRQ 64-95 active bit register */
@@ -145,7 +145,7 @@
 #define NVIC_IRQ192_223_ACTIVE_OFFSET   0x0318	/* IRQ 192-223 active bit register */
 #define NVIC_IRQ224_239_ACTIVE_OFFSET   0x031c	/* IRQ 224-239 active bit register */
 
-#define NVIC_IRQ_PRIORITY_OFFSET(n)     (0x0400 + 4*((n) >> 2))
+#define NVIC_IRQ_PRIORITY_OFFSET(n)     (0x0400 + 4 * ((n) >> 2))
 #define NVIC_IRQ0_3_PRIORITY_OFFSET     0x0400	/* IRQ 0-3 priority register */
 #define NVIC_IRQ4_7_PRIORITY_OFFSET     0x0404	/* IRQ 4-7 priority register */
 #define NVIC_IRQ8_11_PRIORITY_OFFSET    0x0408	/* IRQ 8-11 priority register */

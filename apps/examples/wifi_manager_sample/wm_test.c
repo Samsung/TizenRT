@@ -161,7 +161,7 @@ static int g_mode = 0; // check program is running
 	} while (0);
 
 #define WM_TEST_TIME_DIFF												\
-	(g_end_time.tv_sec - g_st_time.tv_sec)*1000 + (g_end_time.tv_usec - g_st_time.tv_usec)/1000
+	(g_end_time.tv_sec - g_st_time.tv_sec) * 1000 + (g_end_time.tv_usec - g_st_time.tv_usec) / 1000
 
 #define WM_TEST_SIGNAL										\
 	do {													\
