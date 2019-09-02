@@ -452,7 +452,13 @@ int bt_adapter_set_visibility_mode_changed_cb(bt_adapter_visibility_mode_changed
 int bt_adapter_set_device_discovery_state_changed_cb(bt_adapter_device_discovery_state_changed_cb callback,
 							void *user_data)
 {
-	return BT_ERROR_NOT_SUPPORTED;
+	BT_CHECK_SUPPORTED_FEATURE(BT_FEATURE_COMMON);
+	BT_CHECK_INIT_STATUS();
+	BT_CHECK_INPUT_PARAMETER(callback);
+
+	_bt_set_cb(BT_EVENT_DEVICE_DISCOVERY_STATE_CHANGED, callback, user_data);
+
+	return BT_ERROR_NONE;
 }
 
 int bt_adapter_unset_state_changed_cb(void)

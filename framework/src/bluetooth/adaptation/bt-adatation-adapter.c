@@ -20,6 +20,7 @@
 #include <tinyara/bluetooth/bt_hci.h>
 #include <bluetooth/bluetooth.h>
 #include "bt-adaptation-adapter.h"
+#include "bt-adaptation-device.h"
 #include "bluetooth_private.h"
 
 /* Need to include BT stack's header in here */
@@ -44,12 +45,16 @@ static void __bt_enable_cb(int err)
 
 int bt_adapt_enable(void)
 {
+	int ret = BT_ERROR_NONE;
+
 	BT_PRT("Enter\n");
 
-	bt_enable(__bt_enable_cb);
+	ret = _bt_get_error_code(bt_enable(__bt_enable_cb));
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
 
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	return ret;
 }
 
 int bt_adapt_disable(void)
@@ -66,7 +71,12 @@ int bt_adapt_get_local_address(char **address)
 
 int bt_adapt_get_local_name(char **name)
 {
-	/* To be implemented */
+	BT_PRT("Enter\n");
+
+	name = bt_get_name();
+
+	BT_PRT("name: %s\n", name);
+
 	return BT_ERROR_NONE;
 }
 
@@ -88,15 +98,55 @@ int bt_adapt_set_discoverable_mode(bt_adapter_visibility_mode_e mode)
 	return BT_ERROR_NONE;
 }
 
+static void __discover_start_cb(struct bt_br_discovery_result *results, size_t count)
+{
+	bluetooth_event_param_t start_param = {0, };
+	bluetooth_event_param_t updated_param = {0, };
+	bluetooth_device_info_t data_info = {0, };
+	bluetooth_event_param_t finished_param = {0, };
+
+	start_param.result = BT_ERROR_NONE;
+	__bt_event_proxy(BLUETOOTH_EVENT_DISCOVERY_STARTED, &start_param);
+
+	updated_param.result = BT_ERROR_NONE;
+	updated_param.param_data = &data_info;
+	__bt_event_proxy(BLUETOOTH_EVENT_REMOTE_DEVICE_NAME_UPDATED, &updated_param);
+
+	finished_param.result = BT_ERROR_NONE;
+	__bt_event_proxy(BLUETOOTH_EVENT_DISCOVERY_FINISHED, &finished_param);
+}
+
 int bt_adapt_start_discovery(void)
 {
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	int ret = BT_ERROR_NONE;
+	struct bt_br_discovery_param param = {
+		.length = 8,
+		.limited = false,
+	};
+	struct bt_br_discovery_result results[5];
+	size_t count;
+
+	BT_PRT("Enter\n");
+
+	ret = _bt_get_error_code(bt_br_discovery_start(&param, results, 5, __discover_start_cb));
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
+
+	return ret;
 }
 
 int bt_adapt_stop_discovery(void)
 {
-	/* To be implemented */
+	int ret = BT_ERROR_NONE;
+
+	BT_PRT("Enter\n");
+
+	ret = _bt_get_error_code(bt_br_discovery_stop());
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
+
 	return BT_ERROR_NONE;
 }
 
@@ -153,6 +203,7 @@ static void __scan_start_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_t
 
 int bt_adapt_start_le_scan(void)
 {
+	int ret = BT_ERROR_NONE;
 	struct bt_le_scan_param param = {
 		.type = BT_HCI_LE_SCAN_PASSIVE,
 		.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
@@ -160,18 +211,28 @@ int bt_adapt_start_le_scan(void)
 		.window = 0x010,
 	};
 
-	BT_DBG("Enter\n");
+	BT_PRT("Enter\n");
 
-	bt_le_scan_start(&param, __scan_start_cb);
+	ret = _bt_get_error_code(bt_le_scan_start(&param, __scan_start_cb));
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
 
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	return ret;
 }
 
 int bt_adapt_stop_le_scan(void)
 {
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	int ret = BT_ERROR_NONE;
+
+	BT_PRT("Enter\n");
+
+	ret = _bt_get_error_code(bt_le_scan_stop());
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
+
+	return ret;
 }
 
 int bt_adapt_is_le_scanning(bool *is_scanning)
@@ -184,8 +245,27 @@ int bt_adapt_start_adv(int handle, int interval_min,
 				int interval_max, unsigned int filter_policy,
 				unsigned int type)
 {
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	int ret = BT_ERROR_NONE;
+	struct bt_le_adv_param param = {0, };
+	struct bt_data ad = {0, }; // TODO: use from global value
+	size_t ad_len = 0;
+
+	BT_PRT("Enter\n");
+
+	param.id = 0;
+	param.interval_min = interval_min;
+	param.interval_max = interval_max;
+	if (type == true)
+		param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME);
+	else
+		param.options = BT_LE_ADV_OPT_NONE;
+
+	ret = _bt_get_error_code(bt_le_adv_start(&param, &ad, ad_len, NULL, 0));
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
+
+	return ret;
 }
 
 int bt_adapt_stop_adv(int handle)
@@ -202,6 +282,7 @@ int bt_adapt_is_adv(bool *is_advertising)
 
 int bt_adapt_set_adv_data(int handle, const char *data, int len)
 {
+	// TODO: update advertinsg data to global value...
 	/* To be implemented */
 	return BT_ERROR_NONE;
 }

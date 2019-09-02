@@ -227,6 +227,19 @@ static bt_event2index_table_t event2index[] = {
 	{ 0, -1 }
 };
 
+typedef struct {
+	int origin_err;
+	int public_err;
+} bt_err2pub_table_t;
+
+static bt_err2pub_table_t err2pub[] = {
+	{ 0, BT_ERROR_NONE },
+	{ -EINVAL, BT_ERROR_INVALID_PARAMETER },
+	{ -EAGAIN, BT_ERROR_NOT_ENABLED },
+	{ -EALREADY, BT_ERROR_NOW_IN_PROGRESS },
+	{ 0xFF, BT_ERROR_OPERATION_FAILED }
+};
+
 static int __bt_get_cb_index(int event)
 {
 	int i;
@@ -257,11 +270,10 @@ void __bt_event_proxy(int event, bluetooth_event_param_t *param)
 
 	switch (event) {
 	case BLUETOOTH_EVENT_ENABLED:
-		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_ENABLED"); /* LCOV_EXCL_LINE */
+		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_ENABLED");
 		((bt_adapter_state_changed_cb) bt_event_slot_container[event_index].callback)
 		    (_bt_get_error_code(param->result), BT_ADAPTER_ENABLED, bt_event_slot_container[event_index].user_data);
 		break;
-/* LCOV_EXCL_START */
 	case BLUETOOTH_EVENT_DISABLED:
 		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_DISABLED");
 		((bt_adapter_state_changed_cb) bt_event_slot_container[event_index].callback)
@@ -404,6 +416,13 @@ int _bt_convert_address_to_string(char **addr_str, unsigned char *addr_hex)
 
 int _bt_get_error_code(int origin_error)
 {
+	int i;
+
+	for (i = 0; err2pub[i].origin_err != 0xFF; i++) {
+		if (err2pub[i].origin_err == origin_error)
+			return err2pub[i].public_err;
+	}
+
 	return BT_ERROR_OPERATION_FAILED;
 }
 
