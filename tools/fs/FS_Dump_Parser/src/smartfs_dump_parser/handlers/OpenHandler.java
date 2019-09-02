@@ -11,12 +11,11 @@ import org.eclipse.e4.ui.workbench.modeling.EPartService;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
+import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.parts.DumpViewer;
+import smartfs_dump_visualizer.controllers.SmartFSOrganizer;
 
 public class OpenHandler {
-
-	private static final int BUF_SIZE = 512;
-	private static final int SECTOR_HEADER_SIZE = 5;
 
 	@Inject
 	EPartService partService;
@@ -32,27 +31,34 @@ public class OpenHandler {
 			MPart mpart = partService.findPart("SmartFS_Dump_Parser.part.sample");
 			DumpViewer dv = (DumpViewer) mpart.getObject();
 
-			byte[] buffer = new byte[BUF_SIZE];
-			byte[] headerData = new byte[SECTOR_HEADER_SIZE];
+			byte[] buffer = new byte[SmartFileSystem.getSectorSize()];
 			try {
 				FileInputStream fis = new FileInputStream(new File(filePath, fileName));
 				int sectorId = 0;
 				while (fis.read(buffer) > 0) {
-					fis.read(buffer);
-					System.arraycopy(buffer, 0, headerData, 0, SECTOR_HEADER_SIZE);
-					dv.addSectorHeader(sectorId, headerData);
+					SmartFileSystem.addSector(sectorId, buffer);
+					if (sectorId == 0 || sectorId == 3) {
+						System.out.println(printSector(buffer, sectorId));
+					}
 					sectorId++;
+					buffer = new byte[SmartFileSystem.getSectorSize()];
 				}
+				fis.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			dv.getTableViewer().refresh();
+
+			SmartFSOrganizer.createDirectoryHierarchy();
+
+			dv.getDirectoryViewer().refresh();
 		}
 	}
 
 	public String printSector(byte[] buffer, int sectorId) {
 		StringBuffer stbuf = new StringBuffer();
 		stbuf.append("Sector " + sectorId + "\n");
-		for (int i = 0; i < BUF_SIZE; i++) {
+		for (int i = 0; i < SmartFileSystem.getSectorSize(); i++) {
 			int value = (buffer[i] + 256) % 256;
 			stbuf.append(value);
 			for (int j = 0; j < 3 - new String(value + "").length(); j++)

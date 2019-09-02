@@ -3,7 +3,7 @@
   <children xsi:type="basic:TrimmedWindow" xmi:id="_6wlLccgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.window.main" label="SmartFS Dump Parser" width="500" height="400">
     <children xsi:type="basic:PartSashContainer" xmi:id="_6wlLksgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.partsashcontainer.sample">
       <children xsi:type="basic:PartStack" xmi:id="_6wlLk8gZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.partstack.sample">
-        <children xsi:type="basic:Part" xmi:id="_6wlLlMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.part.sample" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.DumpViewer" label="Sector List" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/home.png"/>
+        <children xsi:type="basic:Part" xmi:id="_6wlLlMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.part.sample" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.DumpViewer" label="File System Info." iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/home.png"/>
       </children>
     </children>
     <mainMenu xmi:id="_6wlLicgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.main.menu">

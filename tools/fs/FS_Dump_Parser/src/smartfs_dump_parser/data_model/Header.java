@@ -1,42 +1,42 @@
 package smartfs_dump_parser.data_model;
 
 public class Header {
-	private int phyicalSectorNum;
-	private int sectorNum;
-	private int seqNum;
+	private int phyicalSectorId;
+	private int logicalSectorId;
+	private int sequenceNumer;
 	private int crc8;
 	private int status;
 
-	public Header(int physicalSectorNum, int sectorNum, int seqNum, int crc8, int status) {
-		this.phyicalSectorNum = physicalSectorNum;
-		this.sectorNum = sectorNum;
-		this.seqNum = seqNum;
+	public Header(int phyicalSectorId, int logicalSectorId, int sequenceNumer, int crc8, int status) {
+		this.phyicalSectorId = phyicalSectorId;
+		this.logicalSectorId = logicalSectorId;
+		this.sequenceNumer = sequenceNumer;
 		this.crc8 = crc8;
 		this.status = status;
 	}
 
-	public int getPhyicalSectorNum() {
-		return phyicalSectorNum;
+	public int getPhyicalSectorId() {
+		return phyicalSectorId;
 	}
 
-	public void setPhyicalSectorNum(int phyicalSectorNum) {
-		this.phyicalSectorNum = phyicalSectorNum;
+	public void setPhyicalSectorId(int phyicalSectorId) {
+		this.phyicalSectorId = phyicalSectorId;
 	}
 
-	public int getSector_num() {
-		return sectorNum;
+	public int getLogicalSectorId() {
+		return logicalSectorId;
 	}
 
-	public void setSector_num(int sectorNum) {
-		this.sectorNum = sectorNum;
+	public void setLogicalSectorId(int logicalSectorId) {
+		this.logicalSectorId = logicalSectorId;
 	}
 
-	public int getSeq_num() {
-		return seqNum;
+	public int getSequenceNumber() {
+		return sequenceNumer;
 	}
 
-	public void setSeq_num(int seqNum) {
-		this.seqNum = seqNum;
+	public void setSeq_num(int sequenceNumer) {
+		this.sequenceNumer = sequenceNumer;
 	}
 
 	public int getCrc8() {
