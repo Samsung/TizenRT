@@ -1,7 +1,6 @@
 package smartfs_dump_parser.parts;
 
 import java.util.List;
-import java.util.ArrayList;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -9,10 +8,14 @@ import javax.inject.Inject;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.e4.ui.di.Persist;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -23,15 +26,15 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
-import smartfs_dump_parser.data_model.Header;
-import smartfs_dump_parser.data_model.ModelProvider;
-
-enum SectorStatus {
-	ACTIVE, DIRTY, CLEAN
-}
+import smartfs_dump_parser.data_model.SmartFileSystem;
+import smartfs_dump_parser.data_model.Sector;
+import smartfs_dump_parser.data_model.SectorStatus;
+import smartfs_dump_parser.data_model.SmartFile;
+import smartfs_dump_visualizer.controllers.SmartFSOrganizer;
 
 public class DumpViewer {
 
+	private TreeViewer treeViewer;
 	private TableViewer tableViewer;
 	private Button activeButton;
 	private Button dirtyButton;
@@ -43,6 +46,8 @@ public class DumpViewer {
 	@PostConstruct
 	public void createComposite(Composite parent) {
 		parent.setLayout(new GridLayout(3, false));
+
+		createDirectoryTreeViewer(parent);
 
 		createCheckbox(parent);
 
@@ -56,7 +61,7 @@ public class DumpViewer {
 
 		tableViewer.setContentProvider(new ArrayContentProvider());
 		// Set the content (Model) for the viewer
-		tableViewer.setInput(ModelProvider.INSTANCE.getHeaders());
+		tableViewer.setInput(SmartFileSystem.getSectors());
 
 		GridData gridData = new GridData();
 		gridData.verticalAlignment = GridData.FILL;
@@ -77,6 +82,56 @@ public class DumpViewer {
 		part.setDirty(false);
 	}
 
+	public TableViewer getTableViewer() {
+		return tableViewer;
+	}
+
+	public TreeViewer getDirectoryViewer() {
+		return treeViewer;
+	}
+
+	private void createDirectoryTreeViewer(final Composite parent) {
+		treeViewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+
+		treeViewer.setContentProvider(new ITreeContentProvider() {
+			@Override
+			public Object[] getElements(Object inputElement) {
+				return getChildren(inputElement);
+			}
+
+			@Override
+			public Object[] getChildren(Object parentElement) {
+				return ((SmartFile) parentElement).getEntries().toArray();
+			}
+
+			@Override
+			public Object getParent(Object element) {
+				return ((SmartFile) element).getParent();
+			}
+
+			@Override
+			public boolean hasChildren(Object element) {
+				return !(((SmartFile) element).getEntries().isEmpty());
+			}
+		});
+
+		treeViewer.setLabelProvider(new LabelProvider() {
+			@Override
+			public String getText(Object element) {
+				return ((SmartFile) element).getFileName();
+			}
+		});
+
+		treeViewer.setInput(SmartFileSystem.getTopDummyDirectory());
+
+		GridData gridData = new GridData();
+		gridData.verticalAlignment = GridData.FILL;
+		gridData.horizontalSpan = 3;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = GridData.FILL;
+		treeViewer.getControl().setLayoutData(gridData);
+	}
+
 	private void createCheckbox(final Composite parent) {
 		activeButton = new Button(parent, SWT.CHECK);
 		activeButton.setText("Active Sectors");
@@ -84,14 +139,16 @@ public class DumpViewer {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (activeButton.getSelection()) {
-					if (ModelProvider.INSTANCE.getHeaders().size() == 0) {
+					if (SmartFileSystem.getSectors().size() == 0) {
+						MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
 						activeButton.setSelection(false);
 						return;
 					}
-					List<Header> activeSectors = ModelProvider.INSTANCE.getActiveSectors();
+					List<Sector> activeSectors = SmartFileSystem.getActiveSectors();
 					if (activeSectors == null) {
-						activeSectors = filterSectors(SectorStatus.ACTIVE, ModelProvider.INSTANCE.getHeaders());
-						ModelProvider.INSTANCE.setActiveSectors(activeSectors);
+						activeSectors = SmartFSOrganizer.filterSectors(SectorStatus.ACTIVE,
+								SmartFileSystem.getSectors());
+						SmartFileSystem.setActiveSectors(activeSectors);
 					}
 					tableViewer.setInput(activeSectors);
 					tableViewer.refresh();
@@ -107,14 +164,16 @@ public class DumpViewer {
 		dirtyButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (ModelProvider.INSTANCE.getHeaders().size() == 0) {
+				if (SmartFileSystem.getSectors().size() == 0) {
+					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
 					dirtyButton.setSelection(false);
 					return;
 				}
-				List<Header> dirtySectors = ModelProvider.INSTANCE.getDirtySectors();
+				List<Sector> dirtySectors = SmartFileSystem.getDirtySectors();
 				if (dirtySectors == null) {
-					dirtySectors = filterSectors(SectorStatus.DIRTY, ModelProvider.INSTANCE.getHeaders());
-					ModelProvider.INSTANCE.setDirtySectors(dirtySectors);
+					dirtySectors = SmartFSOrganizer.filterSectors(SectorStatus.DIRTY,
+							SmartFileSystem.getSectors());
+					SmartFileSystem.setDirtySectors(dirtySectors);
 				}
 				tableViewer.setInput(dirtySectors);
 				tableViewer.refresh();
@@ -129,14 +188,16 @@ public class DumpViewer {
 		cleanButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (ModelProvider.INSTANCE.getHeaders().size() == 0) {
+				if (SmartFileSystem.getSectors().size() == 0) {
+					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
 					cleanButton.setSelection(false);
 					return;
 				}
-				List<Header> cleanSectors = ModelProvider.INSTANCE.getCleanSectors();
+				List<Sector> cleanSectors = SmartFileSystem.getCleanSectors();
 				if (cleanSectors == null) {
-					cleanSectors = filterSectors(SectorStatus.CLEAN, ModelProvider.INSTANCE.getHeaders());
-					ModelProvider.INSTANCE.setCleanSectors(cleanSectors);
+					cleanSectors = SmartFSOrganizer.filterSectors(SectorStatus.CLEAN,
+							SmartFileSystem.getSectors());
+					SmartFileSystem.setCleanSectors(cleanSectors);
 				}
 				tableViewer.setInput(cleanSectors);
 				tableViewer.refresh();
@@ -145,37 +206,6 @@ public class DumpViewer {
 				dirtyButton.setSelection(false);
 			}
 		});
-	}
-
-	private List<Header> filterSectors(SectorStatus targetStatus, List<Header> headerList) {
-		ArrayList<Header> resultList = new ArrayList<Header>();
-		switch (targetStatus) {
-		case ACTIVE:
-			for (Header h : headerList) {
-				int status = h.getStatus();
-				if (status < 128 && status >= 64) {
-					resultList.add(h);
-				}
-			}
-			break;
-		case DIRTY:
-			for (Header h : headerList) {
-				if (h.getStatus() < 64) {
-					resultList.add(h);
-				}
-			}
-			break;
-		case CLEAN:
-			for (Header h : headerList) {
-				if (h.getStatus() == 255) {
-					resultList.add(h);
-				}
-			}
-			break;
-		default:
-			break;
-		}
-		return resultList;
 	}
 
 	private void createColumns(final Composite parent, final TableViewer viewer) {
@@ -187,8 +217,8 @@ public class DumpViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Header h = (Header) element;
-				return h.getPhyicalSectorNum() + "";
+				Sector s = (Sector) element;
+				return s.getHeader().getPhyicalSectorId() + "";
 			}
 		});
 
@@ -197,8 +227,8 @@ public class DumpViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Header h = (Header) element;
-				return h.getSector_num() + "";
+				Sector s = (Sector) element;
+				return s.getHeader().getLogicalSectorId() + "";
 			}
 		});
 
@@ -207,8 +237,8 @@ public class DumpViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Header h = (Header) element;
-				return h.getSeq_num() + "";
+				Sector s = (Sector) element;
+				return s.getHeader().getSequenceNumber() + "";
 			}
 		});
 
@@ -217,8 +247,8 @@ public class DumpViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Header h = (Header) element;
-				return h.getCrc8() + "";
+				Sector s = (Sector) element;
+				return s.getHeader().getCrc8() + "";
 			}
 		});
 
@@ -227,8 +257,8 @@ public class DumpViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Header h = (Header) element;
-				return h.getStatus() + "";
+				Sector s = (Sector) element;
+				return s.getHeader().getStatus() + "";
 			}
 		});
 	}
@@ -242,17 +272,5 @@ public class DumpViewer {
 		column.setMoveable(true);
 
 		return viewerColumn;
-	}
-
-	public void addSectorHeader(int physicalSectorNum, byte[] headerData) {
-		Header header = new Header(physicalSectorNum,
-				(makePositiveValue(headerData[0]) + makePositiveValue(headerData[1]) * 256),
-				makePositiveValue(headerData[2]), makePositiveValue(headerData[3]), makePositiveValue(headerData[4]));
-		ModelProvider.INSTANCE.addSectorHeader(header);
-		tableViewer.refresh();
-	}
-
-	private int makePositiveValue(byte value) {
-		return (value + 256) % 256;
 	}
 }
