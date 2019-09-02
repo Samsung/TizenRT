@@ -76,7 +76,6 @@ enum binary_statecb_state_e {
 enum binmgr_partition_type {
 	BINMGR_PART_KERNEL = 0,
 	BINMGR_PART_USRBIN,
-	BINMGR_PART_LOADPARAM,
 	BINMGR_PART_MAX,
 };
 

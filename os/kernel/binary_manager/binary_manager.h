@@ -102,26 +102,25 @@ struct statecb_node_s {
 };
 typedef struct statecb_node_s statecb_node_t;
 
-#define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
-#define BIN_STATE(bin_idx)                              bin_table[bin_idx].state
-#define BIN_USEIDX(bin_idx)                             bin_table[bin_idx].inuse_idx
-#define BIN_PARTSIZE(bin_idx, part_idx)                 bin_table[bin_idx].part_info[part_idx].part_size
-#define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_info[part_idx].part_num
+binmgr_bininfo_t *binary_manager_get_binary_data(int bin_idx);
+#define BIN_ID(bin_idx)                                 binary_manager_get_binary_data(bin_idx)->bin_id
+#define BIN_STATE(bin_idx)                              binary_manager_get_binary_data(bin_idx)->state
+#define BIN_USEIDX(bin_idx)                             binary_manager_get_binary_data(bin_idx)->inuse_idx
+#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_size
+#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_num
 
-#define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
-#define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
-#define BIN_CBLIST(bin_idx)                             bin_table[bin_idx].cb_list
+#define BIN_VER(bin_idx)                                binary_manager_get_binary_data(bin_idx)->bin_ver
+#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_binary_data(bin_idx)->kernel_ver
+#define BIN_CBLIST(bin_idx)                             binary_manager_get_binary_data(bin_idx)->cb_list
 
-#define BIN_LOAD_ATTR(bin_idx)                          bin_table[bin_idx].load_attr
-#define BIN_NAME(bin_idx)                               bin_table[bin_idx].load_attr.bin_name
-#define BIN_SIZE(bin_idx)                               bin_table[bin_idx].load_attr.bin_size
-#define BIN_RAMSIZE(bin_idx)                            bin_table[bin_idx].load_attr.ram_size
-#define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].load_attr.offset
-#define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].load_attr.stack_size
-#define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].load_attr.priority
-#define BIN_COMPRESSION_TYPE(bin_idx)                   bin_table[bin_idx].load_attr.compression_type
-
-extern binmgr_bininfo_t bin_table[BINARY_COUNT];
+#define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr
+#define BIN_NAME(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_name
+#define BIN_SIZE(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_size
+#define BIN_RAMSIZE(bin_idx)                            binary_manager_get_binary_data(bin_idx)->load_attr.ram_size
+#define BIN_OFFSET(bin_idx)                             binary_manager_get_binary_data(bin_idx)->load_attr.offset
+#define BIN_STACKSIZE(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr.stack_size
+#define BIN_PRIORITY(bin_idx)                           binary_manager_get_binary_data(bin_idx)->load_attr.priority
+#define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_binary_data(bin_idx)->load_attr.compression_type
 
 /****************************************************************************
  * Function Prototypes
@@ -145,6 +144,7 @@ extern binmgr_bininfo_t bin_table[BINARY_COUNT];
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
+mqd_t binary_manager_get_mqfd(void);
 #endif
 
 int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);

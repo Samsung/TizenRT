@@ -46,19 +46,31 @@
 #endif
 
 /* Binary table, the first data [0] is for kernel. */
-binmgr_bininfo_t bin_table[BINARY_COUNT];
-int g_bin_count;
-int g_loadparam_part;
-mqd_t g_binmgr_mq_fd;
+static binmgr_bininfo_t bin_table[BINARY_COUNT];
+static int g_bin_count;
+static mqd_t g_binmgr_mq_fd;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef CONFIG_BINMGR_RECOVERY
+/* Get a mqfd of binary manager for binary recovery */
+mqd_t binary_manager_get_mqfd(void)
+{
+	return g_binmgr_mq_fd;
+}
+#endif
 
 /* Get the number of user binaries */
 int binary_manager_get_binary_count(void)
 {
 	return g_bin_count;
+}
+
+/* Get a row of binary table with bin_idx */
+binmgr_bininfo_t *binary_manager_get_binary_data(int bin_idx)
+{
+	return &bin_table[bin_idx];
 }
 
 /* Register partitions : kernel, loadparam, user binaries */
@@ -72,9 +84,7 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 	}
 
 	/* Check partition type and register it */
-	if (part_type == BINMGR_PART_LOADPARAM) {
-		g_loadparam_part = part_num;
-	} else if (part_type == BINMGR_PART_KERNEL) {
+	if (part_type == BINMGR_PART_KERNEL) {
 		if (BIN_PARTSIZE(KERNEL_IDX, 0) > 0) {
 			/* Already registered first kernel partition, register it as second partition. */
 			BIN_PARTSIZE(KERNEL_IDX, 1) = part_size;
