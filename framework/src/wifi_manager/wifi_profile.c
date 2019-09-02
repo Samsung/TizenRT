@@ -59,7 +59,7 @@
 	do {													\
 		char conv[12];										\
 		snprintf(buf + pos, size, "%d" DELIMITER, data);	\
-		sprintf(conv, "%d", data);							\
+		snprintf(conv, 12, "%d", data);						\
 		pos += (strlen(conv) + DELI_LEN);					\
 	} while (0)
 
@@ -75,7 +75,7 @@
 		char conv[12];							\
 		int tmp;								\
 		sscanf(buf + pos, "%d", &tmp);			\
-		sprintf(conv, "%d", tmp);				\
+		snprintf(conv, 12, "%d", tmp);			\
 		data = tmp;								\
 		pos += (strlen(conv) + DELI_LEN);		\
 	} while (0)
