@@ -113,6 +113,7 @@
 FAR char *getcwd(FAR char *buf, size_t size)
 {
 	char *pwd;
+	size_t pwd_len;
 
 	/* Verify input parameters */
 
@@ -132,14 +133,15 @@ FAR char *getcwd(FAR char *buf, size_t size)
 
 	/* Verify that the cwd will fit into the user-provided buffer */
 
-	if (strlen(pwd) + 1 > size) {
+	pwd_len = strlen(pwd) + 1;
+	if (pwd_len > size) {
 		set_errno(ERANGE);
 		return NULL;
 	}
 
 	/* Copy the cwd to the user buffer */
 
-	strcpy(buf, pwd);
+	strncpy(buf, pwd, pwd_len);
 	sched_unlock();
 	return buf;
 }
