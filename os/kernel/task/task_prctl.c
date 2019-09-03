@@ -244,7 +244,13 @@ int prctl(int option, ...)
 #ifdef CONFIG_TASK_MONITOR
 	case PR_MONITOR_REGISTER:
 	{
-		task_monitor_update_list(getpid(), MONITORED);
+		int interval = va_arg(ap, int);
+		int ret;
+		ret = task_monitor_register_list(getpid(), interval);
+		if (ret < 0) {
+			err = ret;
+			goto errout;
+		}
 	}
 	break;
 	case PR_MONITOR_UPDATE:

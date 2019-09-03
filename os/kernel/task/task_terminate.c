@@ -193,7 +193,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 	dtcb->task_state = TSTATE_TASK_INVALID;
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */
-	task_monitor_update_list(pid, NOT_MONITORED);
+	task_monitor_unregester_list(pid);
 #endif
 	irqrestore(saved_state);
 
