@@ -84,6 +84,9 @@ ifeq ($(CONFIG_FLASH_PARTITION),y)
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
 CSRCS += partitions.c
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
+endif
 endif
 
 # boardctl support

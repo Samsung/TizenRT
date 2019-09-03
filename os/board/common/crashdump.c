@@ -29,6 +29,7 @@
 #include <chip.h>
 #include <arch/board/board.h>
 #include "up_internal.h"
+#include "up_watchdog.h"
 
 #include <tinyara/mm/heap_regioninfo.h>
 #include <tinyara/mm/mm.h>
@@ -195,12 +196,12 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 {
 	int ret = OK;
 
-#if defined(CONFIG_S5J_WATCHDOG)
+#if defined(CONFIG_WATCHDOG)
 	/* system under panic and we are dumping system state.
 	 * watchdog reset might stall the system, causing crashdump hang.
 	 * Hence let's disable watchdog reset during crashdump process.
 	 */
-	s5j_watchdog_disable();
+	up_watchdog_disable();
 #endif
 
 #if defined(CONFIG_BOARD_RAMDUMP_UART)
