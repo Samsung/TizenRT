@@ -7,6 +7,6 @@ import org.eclipse.swt.widgets.Shell;
 public class AboutHandler {
 	@Execute
 	public void execute(Shell shell) {
-		MessageDialog.openInformation(shell, "About", "Eclipse 4 RCP Application");
+		MessageDialog.openInformation(shell, "About", "SmartFS Dump Visualizer");
 	}
 }

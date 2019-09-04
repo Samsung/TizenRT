@@ -6,7 +6,6 @@ import java.util.List;
 import smartfs_dump_parser.data_model.EntryType;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.data_model.Sector;
-import smartfs_dump_parser.data_model.SectorStatus;
 import smartfs_dump_parser.data_model.SmartFile;
 
 public class SmartFSOrganizer {
@@ -56,8 +55,9 @@ public class SmartFSOrganizer {
 			}
 			offset += SmartFileSystem.getEntryHeaderSize();
 
-			char[] fileNameArray = new char[SmartFileSystem.getFileNameLength()];
-			for (int i = 0; i < SmartFileSystem.getFileNameLength(); i++) {
+			int fileNameLength = SmartFileSystem.getFileNameLength();
+			char[] fileNameArray = new char[fileNameLength];
+			for (int i = 0; i < fileNameLength; i++) {
 				int character = SmartFileSystem.makePositiveValue(flashData[offset + i]);
 				if (character > 0) {
 					fileNameArray[i] = (char) ('a' + character - 97);
@@ -69,39 +69,9 @@ public class SmartFSOrganizer {
 			SmartFile child = new SmartFile(new String(fileNameArray).trim(),
 					(isDirectory ? EntryType.DIRECTORY : EntryType.FILE), sf, new ArrayList<Sector>());
 			sf.getEntries().add(child);
-			offset += +SmartFileSystem.getFileNameLength();
+			offset += fileNameLength;
 		}
-		return sf.getEntries().size();
-	}
 
-	public static List<Sector> filterSectors(SectorStatus targetStatus, List<Sector> sectorList) {
-		ArrayList<Sector> resultList = new ArrayList<Sector>();
-		switch (targetStatus) {
-		case ACTIVE:
-			for (Sector s : sectorList) {
-				int status = s.getHeader().getStatus();
-				if (status < 128 && status >= 64) {
-					resultList.add(s);
-				}
-			}
-			break;
-		case DIRTY:
-			for (Sector s : sectorList) {
-				if (s.getHeader().getStatus() < 64) {
-					resultList.add(s);
-				}
-			}
-			break;
-		case CLEAN:
-			for (Sector s : sectorList) {
-				if (s.getHeader().getStatus() == 255) {
-					resultList.add(s);
-				}
-			}
-			break;
-		default:
-			break;
-		}
-		return resultList;
+		return sf.getEntries().size();
 	}
 }

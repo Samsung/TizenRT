@@ -4,29 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SmartFileSystem {
-	
+
 	private static final int SECTOR_SIZE = 512;
 	private static final int SECTOR_HEADER_SIZE = 5;
 	private static final int CHAIN_HEADER_SIZE = 5;
 	private static final int ENTRY_HEADER_SIZE = 8;
 	private static final int FILE_NAME_LENGTH = 32;
-	private static final int ACTIVE_SECTOR_STATUS_VALUE = 101;
+	private static final int SECTOR_STATUS_NOT_COMMITTED = 0x80;
+	private static final int SECTOR_STATUS_NOT_RELEASED = 0x40;
 	private static final int ROOT_LOGICAL_SECTOR_ID = 3;
 	private static final String SMARTFS_ROOT = "SMARTFS ROOT";
+	private static final SmartFile dummy = new SmartFile("/", EntryType.DIRECTORY, null, new ArrayList<Sector>());
 
 	private static List<Sector> sectorList = new ArrayList<Sector>();
-	private static List<Sector> activeSectors;
-	private static List<Sector> dirtySectors;
-	private static List<Sector> cleanSectors;
+	private static List<Sector> activeSectors = new ArrayList<Sector>();
+	private static List<Sector> dirtySectors = new ArrayList<Sector>();
+	private static List<Sector> cleanSectors = new ArrayList<Sector>();
 	private static SmartFile rootDir;
-
-	private static SmartFile dummy = new SmartFile("/", EntryType.DIRECTORY, null, new ArrayList<Sector>());
 
 	// Singleton Design Pattern
 	private SmartFileSystem() {
-		
+
 	}
-	
+
 	public static int getSectorSize() {
 		return SECTOR_SIZE;
 	}
@@ -64,11 +64,21 @@ public class SmartFileSystem {
 		sector.setHeader(header);
 		sectorList.add(sector);
 
-		if (logicalSectorId == ROOT_LOGICAL_SECTOR_ID && status == ACTIVE_SECTOR_STATUS_VALUE) {
-			List<Sector> sectorList = new ArrayList<Sector>();
-			sectorList.add(sector);
-			rootDir = new SmartFile(SMARTFS_ROOT, EntryType.DIRECTORY, null, sectorList);
+		byte statusValue = sectorData[4];
+		if ((statusValue & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (statusValue & SECTOR_STATUS_NOT_RELEASED) != 0x0) {
+			SmartFileSystem.getActiveSectors().add(sector);
+			if (logicalSectorId == ROOT_LOGICAL_SECTOR_ID) {
+				List<Sector> sectorList = new ArrayList<Sector>();
+				sectorList.add(sector);
+				rootDir = new SmartFile(SMARTFS_ROOT, EntryType.DIRECTORY, null, sectorList);
+			}
+		} else if ((statusValue & SECTOR_STATUS_NOT_COMMITTED) == 0x0
+				&& (statusValue & SECTOR_STATUS_NOT_RELEASED) == 0x0) {
+			SmartFileSystem.getDirtySectors().add(sector);
+		} else {
+			SmartFileSystem.getCleanSectors().add(sector);
 		}
+
 	}
 
 	public static int makePositiveValue(byte value) {
