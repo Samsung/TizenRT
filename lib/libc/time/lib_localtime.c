@@ -536,9 +536,9 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 			goto oops;
 		}
 
-		strncpy(fullname, p, p_len);
+		strncpy(fullname, p, p_len + 1);
 		strncat(fullname, "/", strlen("/"));
-		strncat(fullname, name, name_len + 1);
+		strncat(fullname, name, name_len);
 
 		/* Set doaccess if '.' (as in "../") shows up in name.  */
 
