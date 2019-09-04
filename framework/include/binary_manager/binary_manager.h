@@ -59,7 +59,7 @@ int binary_manager_update_binary(char *binary_name);
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info);
+int binary_manager_get_update_info(char *binary_name, binary_update_info_t *binary_info);
 
 /**
  * @brief Get the all binaries information
@@ -70,7 +70,7 @@ int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list);
+int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_list);
 #endif
 
 /**

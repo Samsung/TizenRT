@@ -54,7 +54,7 @@ int binary_manager_update_binary(char *binary_name)
 	return BINMGR_OK;
 }
 
-int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info)
+int binary_manager_get_update_info(char *binary_name, binary_update_info_t *binary_info)
 {
 	int ret;
 	binmgr_request_t request_msg;
@@ -83,8 +83,8 @@ int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info
 
 	if (response_msg.result == BINMGR_OK) {
 		/* Copy binary info data */
-		memset(binary_info, 0, sizeof(binary_info_t));
-		memcpy(binary_info, &response_msg.data, sizeof(binary_info_t));
+		memset(binary_info, 0, sizeof(binary_update_info_t));
+		memcpy(binary_info, &response_msg.data, sizeof(binary_update_info_t));
 	} else {
 		bmdbg("Binary manager getinfo FAIL %d\n", response_msg.result);
 	}
@@ -92,7 +92,7 @@ int binary_manager_get_update_info(char *binary_name, binary_info_t *binary_info
 	return response_msg.result;
 }
 
-int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list)
+int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_list)
 {
 	int ret;
 	binmgr_request_t request_msg;
@@ -115,8 +115,8 @@ int binary_manager_get_update_info_all(binary_info_list_t *binary_info_list)
 
 	if (response_msg.result == BINMGR_OK) {
 		/* Copy binary info list data */
-		memset(binary_info_list, 0, sizeof(binary_info_list_t));
-		memcpy(binary_info_list, &response_msg.data, sizeof(binary_info_list_t));
+		memset(binary_info_list, 0, sizeof(binary_update_info_list_t));
+		memcpy(binary_info_list, &response_msg.data, sizeof(binary_update_info_list_t));
 	} else {
 		bmdbg("Binary manager getinfo_all FAIL %d\n", response_msg.result);
 	}
