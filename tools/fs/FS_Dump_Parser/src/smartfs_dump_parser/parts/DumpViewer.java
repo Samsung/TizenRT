@@ -1,5 +1,6 @@
 package smartfs_dump_parser.parts;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -30,7 +31,6 @@ import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.data_model.Sector;
 import smartfs_dump_parser.data_model.SectorStatus;
 import smartfs_dump_parser.data_model.SmartFile;
-import smartfs_dump_visualizer.controllers.SmartFSOrganizer;
 
 public class DumpViewer {
 
@@ -146,9 +146,7 @@ public class DumpViewer {
 					}
 					List<Sector> activeSectors = SmartFileSystem.getActiveSectors();
 					if (activeSectors == null) {
-						activeSectors = SmartFSOrganizer.filterSectors(SectorStatus.ACTIVE,
-								SmartFileSystem.getSectors());
-						SmartFileSystem.setActiveSectors(activeSectors);
+						System.out.println("Active sectors are not classified yet..");
 					}
 					tableViewer.setInput(activeSectors);
 					tableViewer.refresh();
@@ -171,9 +169,7 @@ public class DumpViewer {
 				}
 				List<Sector> dirtySectors = SmartFileSystem.getDirtySectors();
 				if (dirtySectors == null) {
-					dirtySectors = SmartFSOrganizer.filterSectors(SectorStatus.DIRTY,
-							SmartFileSystem.getSectors());
-					SmartFileSystem.setDirtySectors(dirtySectors);
+					System.out.println("Dirty sectors are not classified yet..");
 				}
 				tableViewer.setInput(dirtySectors);
 				tableViewer.refresh();
@@ -195,9 +191,7 @@ public class DumpViewer {
 				}
 				List<Sector> cleanSectors = SmartFileSystem.getCleanSectors();
 				if (cleanSectors == null) {
-					cleanSectors = SmartFSOrganizer.filterSectors(SectorStatus.CLEAN,
-							SmartFileSystem.getSectors());
-					SmartFileSystem.setCleanSectors(cleanSectors);
+					System.out.println("Clean sectors are not classified yet..");
 				}
 				tableViewer.setInput(cleanSectors);
 				tableViewer.refresh();
@@ -206,6 +200,37 @@ public class DumpViewer {
 				dirtyButton.setSelection(false);
 			}
 		});
+	}
+
+	public static List<Sector> filterSectors(SectorStatus targetStatus, List<Sector> sectorList) {
+		ArrayList<Sector> resultList = new ArrayList<Sector>();
+		switch (targetStatus) {
+		case ACTIVE:
+			for (Sector s : sectorList) {
+				int status = s.getHeader().getStatus();
+				if (status < 128 && status >= 64) {
+					resultList.add(s);
+				}
+			}
+			break;
+		case DIRTY:
+			for (Sector s : sectorList) {
+				if (s.getHeader().getStatus() < 64) {
+					resultList.add(s);
+				}
+			}
+			break;
+		case CLEAN:
+			for (Sector s : sectorList) {
+				if (s.getHeader().getStatus() == 255) {
+					resultList.add(s);
+				}
+			}
+			break;
+		default:
+			break;
+		}
+		return resultList;
 	}
 
 	private void createColumns(final Composite parent, final TableViewer viewer) {
