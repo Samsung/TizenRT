@@ -357,4 +357,55 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 
 void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo);
 
+#ifdef CONFIG_ELF_CACHE_READ
+
+/* Struct for output buffers to cache uncompressed blocks */
+struct block_cache_s {
+	unsigned char *out_buffer;              /* Buffer that is going to hold uncompressed data */
+	int block_number;                       /* Block number in compressed file for the cached block */
+	unsigned int no_requests_for_block;     /* Number of requests for current block that is cached */
+	unsigned int index_block_cache;         /* Index of block cache in the array */
+	struct block_cache_s *next;             /* Pointer to next element in doubly linked list */
+	struct block_cache_s *prev;             /* Pointer to previous element in doubly linked list */
+};
+typedef struct block_cache_s block_cache_t;
+
+/****************************************************************************
+ * Name: elf_cache_uninit
+ *
+ * Description:
+ *   Release cache buffers initialized during elf_cache_init
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+void elf_cache_uninit(void);
+
+/****************************************************************************
+ * Name: elf_cache_init
+ *
+ * Description:
+ *   Initialize the cache blocks
+ *
+ * Returned value:
+ *   OK (0) on Success
+ *   ERROR (-1) on Failure
+ ****************************************************************************/
+int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compression_type);
+
+/****************************************************************************
+ * Name: elf_cache_read
+ *
+ * Description:
+ *   Read n-bytes from the elf file using 'offset' and 'readsize' info
+ *   The data is read into 'buffer' pointer. Offset value here is offset from
+ *   start of elf binary (excluding binary header).
+ *
+ * Returned Value:
+ *   Number of bytes read into buffer on Success
+ *   Negative value on failure
+ ****************************************************************************/
+int elf_cache_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, size_t readsize, off_t offset);
+#endif
+
 #endif							/* __BINFMT_LIBELF_LIBELF_H */
