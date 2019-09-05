@@ -62,7 +62,9 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/spi/spi.h>
+#endif
 
 /****************************************************************************
  * Pre-Processor Definitions

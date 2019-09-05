@@ -23,10 +23,16 @@ source .config
 
 BOARDNAME=$CONFIG_ARCH_BOARD
 POSTFIX=_smartfs.bin
+BINDIR=../build/output/bin
 BINNAME=$BOARDNAME$POSTFIX
 CONTENTSDIR=../tools/fs/contents
+NXFUSEDIR=../tools/nxfuse
 
-blkcount=8192
+# For the below values check partition sizes in .config
+blkcount=512
+blksize=512
+pagesize=256
+erasesize=4096
 
 echo "============================================================="
 echo "mksmartfsimg.sh : $BINNAME, Target Board: $BOARDNAME"
@@ -37,19 +43,27 @@ if [ ! -d $CONTENTSDIR/$BOARDNAME/mnt ]; then
 mkdir $CONTENTSDIR/$BOARDNAME/mnt/
 fi
 
+#Make a dummy .bin file
+touch $BINDIR/$BINNAME
+
 # Making image file
-dd if=/dev/zero of=../build/bin/$BINNAME bs=1024 count=$blkcount
+dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
+
+#Copying the nxfuse
+cp $NXFUSEDIR/nxfuse .
 
 # Formatting
-tools/nxfuse -t smartfs -g 1 -m ../build/bin/$BINNAME
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m ./$BINDIR/$BINNAME
 
 # Mounting mnt
-tools/nxfuse -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ../build/bin/$BINNAME
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ./$BINDIR/$BINNAME
 
 # Copying files to smartfs file system
-cp -rf $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
+cp -a $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
 # Unmounting
 sleep 2
 fusermount -u $CONTENTSDIR/$BOARDNAME/mnt
+rm -rf $CONTENTSDIR/$BOARDNAME/mnt/*
+rm -rf nxfuse
 echo "DONE"
