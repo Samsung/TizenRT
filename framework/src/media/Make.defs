@@ -46,6 +46,10 @@ ifeq ($(CONFIG_CODEC_LIBOPUS), y)
 DEPPATH += --dep-path src/media/codec/opus
 VPATH += :src/media/codec/opus
 endif
+
+DEPPATH += --dep-path src/media/demux/mpeg2ts
+VPATH += :src/media/demux/mpeg2ts
+
 CXXSRCS += StreamHandler.cpp
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
@@ -53,6 +57,16 @@ CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWo
 CXXSRCS += InputHandler.cpp
 CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
 CXXSRCS += HttpInputDataSource.cpp
+
+CXXSRCS += Demuxer.cpp
+ifeq ($(CONFIG_CONTAINER_MPEG2TS), y)
+CXXSRCS += Section.cpp TableBase.cpp SectionParser.cpp
+CXXSRCS += PMTElementary.cpp PMTInstance.cpp PMTParser.cpp PATParser.cpp
+CXXSRCS += PESPacket.cpp PESParser.cpp TSPacket.cpp
+CXXSRCS += ParseManager.cpp
+CXXSRCS += TSDemuxer.cpp
+endif
+
 ifeq ($(CONFIG_ENABLE_CURL), y)
 CXXSRCS += HttpStream.cpp
 endif

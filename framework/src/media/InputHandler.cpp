@@ -24,6 +24,7 @@
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
+#include "Demuxer.h"
 
 namespace media {
 namespace stream {
@@ -50,8 +51,8 @@ bool InputHandler::doStandBy()
 {
 	auto mp = getPlayer();
 	if (!mp) {
-	    meddbg("get player handle failed!\n");
-	    return false;
+		meddbg("get player handle failed!\n");
+		return false;
 	}
 
 	std::thread wk = std::thread([=]() {
@@ -68,23 +69,6 @@ bool InputHandler::doStandBy()
 
 	wk.detach();
 	return true;
-}
-
-bool InputHandler::open()
-{
-	/* Media f/w playback supports only mono and stereo.
-	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
-	 */
-	unsigned int channels = getDataSource()->getChannels();
-	if (channels == 0) {
-		meddbg("Channel can not be zero\n");
-		return false;
-	} else if (channels > 2) {
-		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
-		getDataSource()->setChannels(2);
-	}
-
-	return StreamHandler::open();
 }
 
 ssize_t InputHandler::read(unsigned char *buf, size_t size)
@@ -108,19 +92,29 @@ void InputHandler::resetWorker()
 
 bool InputHandler::processWorker()
 {
-	auto worker = this->mInputDataSource;
-	auto size = this->mBufferWriter->sizeOfSpace();
+	size_t size = getAvailSpace();
 	if (size > 0) {
 		auto buf = new unsigned char[size];
-		if (worker->read(buf, size) <= 0) {
+		if (!buf) {
+			meddbg("run out of memory! size: 0x%x\n", size);
+			return false;
+		}
+
+		ssize_t readLen = mInputDataSource->read(buf, size);
+		if (readLen <= 0) {
 			// Error occurred, or inputting finished
-			this->mBufferWriter->setEndOfStream();
+			mBufferWriter->setEndOfStream();
 			delete[] buf;
 			return false;
 		}
 
-		this->writeToStreamBuffer(buf, size);
+		ssize_t writeLen = writeToStreamBuffer(buf, (size_t)readLen);
 		delete[] buf;
+		if (writeLen <= 0) {
+			meddbg("write to stream buffer failed!\n");
+			mBufferWriter->setEndOfStream();
+			return false;
+		}
 	}
 
 	return true;
@@ -195,42 +189,75 @@ void InputHandler::onBufferUpdated(ssize_t change, size_t current)
 	}
 }
 
-ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
+size_t InputHandler::getAvailSpace()
 {
-	assert(buf != nullptr);
-
-	size_t written = 0;
-
-	if (mDecoder) {
-		size_t push = 0;
-		while (push < size) {
-			size_t temp = mDecoder->pushData(buf + push, size - push);
-			if (!temp) {
-				meddbg("decode push data failed!\n");
-				return EOF;
-			}
-			push += temp;
-
-			while (1) {
-				// Reuse free space: buf[0~push)
-				size_t pcmlen = push & ~0x1;
-				if (!getDecodeFrames(buf, &pcmlen)) {
-					// Normal case: break and push more data...
-					break;
-				}
-				// Write PCM data to input stream buffer.
-				written += mBufferWriter->write(buf, pcmlen);
-			}
-		}
-	} else {
-		written = mBufferWriter->write(buf, size);
+	if (mDemuxer) {
+		return mDemuxer->getAvailSpace();
 	}
 
-	return (ssize_t)written;
+	if (mDecoder) {
+		return mDecoder->getAvailSpace();
+	}
+
+	// return PCM buffer space size
+	return mBufferWriter->sizeOfSpace();
+}
+
+ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
+{
+	size_t used = 0;
+	while (1) {
+		unsigned char *buffES = nullptr;
+		size_t sizeES = mDecoder ? mDecoder->getAvailSpace() : mBufferWriter->sizeOfSpace();
+		ssize_t ret = getElementaryStream(buf, size, &used, &buffES, &sizeES);
+		if (ret < 0) {
+			meddbg("getElementaryStream failed! error: %d\n", ret);
+			return ret;
+		}
+		if (ret == 0) {
+			// want more data
+			break;
+		}
+
+		size_t usedES = 0;
+		while (1) {
+			unsigned char *buffPCM = buf;
+			size_t sizePCM = used;
+			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
+			if (ret < 0) {
+				meddbg("getPCM failed! error: %d\n", ret);
+				return ret;
+			}
+			if (ret == 0) {
+				// want more data
+				break;
+			}
+
+			// write PCM data to stream buffer
+			size_t written = mBufferWriter->write(buffPCM, sizePCM);
+			if (written != sizePCM) {
+				meddbg("End of writting!\n");
+				return EOF;
+			}
+		}
+	}
+	return size;
 }
 
 bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
+	/* Media f/w playback supports only mono and stereo.
+	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
+	 */
+	if (channels == 0) {
+		meddbg("Channel can not be zero\n");
+		return false;
+	} else if (channels > 2) {
+		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
+		channels = 2;
+		getDataSource()->setChannels(channels);
+	}
+
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
@@ -247,6 +274,44 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 	case AUDIO_TYPE_PCM:
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
 		return true;
+	case AUDIO_TYPE_MP2T: {
+		/* Register demuxer according to the given audio/container type */
+		auto demuxer = Demuxer::create(audioType);
+		if (!demuxer) {
+			meddbg("Create demuxer failed! audioType %d\n", audioType);
+			return false;
+		}
+		/* Prepare demuxer (probe the datasource to get audio informations) */
+		do {
+			size_t size = demuxer->getAvailSpace() / 4;
+			unsigned char *buf = new unsigned char[size];
+			if (!buf) {
+				meddbg("Run out of memory! bytes: 0x%x\n", size);
+				return false;
+			}
+			ssize_t readLen = mInputDataSource->read(buf, size);
+			if (readLen <= 0) {
+				meddbg("Read source failed! error: %d\n", readLen);
+				delete[] buf;
+				return false;
+			}
+			demuxer->pushData(buf, (size_t)readLen);
+			delete[] buf;
+			int ret = demuxer->prepare();
+			if (ret < 0) {
+				if (ret == DEMUXER_ERROR_WANT_DATA) {
+					medvdbg("Demuxer want more data!\n");
+					continue;
+				}
+				meddbg("Prepare demuxer failed! error: %d\n", ret);
+				return false;
+			}
+		} while (!demuxer->isReady());
+		/* Demuxer is ready (to get audio information and elementary stream). */
+		mDemuxer = demuxer;
+		/* Register underlying codec */
+		return registerCodec(mDemuxer->getAudioType(), channels, sampleRate);
+	}
 	case AUDIO_TYPE_FLAC:
 		/* To be supported */
 	default:
@@ -271,6 +336,97 @@ size_t InputHandler::getDecodeFrames(unsigned char *buf, size_t *size)
 	}
 
 	return 0;
+}
+
+ssize_t InputHandler::getElementaryStream(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (mDemuxer) {
+		ssize_t ret;
+		if (*used < size) {
+			ret = mDemuxer->pushData(buf + *used, size - *used);
+			if (ret <= 0) {
+				meddbg("push data to demuxer failed! error: %d\n", ret);
+				return EOF;
+			}
+			*used += (size_t)ret;
+		}
+
+		if (*out == nullptr) {
+			*out = buf;
+			if (*expect > *used) {
+				*expect = *used;
+			}
+		}
+
+		ret = mDemuxer->pullData(*out, *expect);
+		if (ret < 0) {
+			if (ret == DEMUXER_ERROR_WANT_DATA) {
+				// normal case: demuxer want more data
+				return 0;
+			}
+			meddbg("pull data from demuxer failed! error: %d\n", ret);
+			return EOF;
+		}
+		*expect = (size_t)ret;
+	} else {
+		fetchData(buf, size, used, out, expect);
+	}
+
+	return (ssize_t)(*expect);
+}
+
+ssize_t InputHandler::getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (mDecoder) {
+		ssize_t ret;
+		if (*used < size) {
+			ret = mDecoder->pushData(buf + *used, size - *used);
+			if (ret <= 0) {
+				meddbg("push data to decoder failed! error: %d\n", ret);
+				return EOF;
+			}
+			*used += (size_t)ret;
+		}
+
+		if (*out == nullptr) {
+			*out = buf;
+			if (*expect > *used) {
+				*expect = *used;
+			}
+		}
+
+		*expect &= ~0x1;
+		if (!getDecodeFrames(*out, expect)) {
+			// normal case: decoder want more data
+			return 0;
+		}
+	} else {
+		fetchData(buf, size, used, out, expect);
+	}
+
+	return (ssize_t)(*expect);
+}
+
+size_t InputHandler::fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (*used < size) {
+		size_t remained = size - *used;
+		if (*expect > remained) {
+			*expect = remained;
+		}
+		if (*out == nullptr) {
+			// Point to unused data in `buf`
+			*out = buf + *used;
+		} else{
+			// Copy data to the given output buffer
+			memcpy(*out, buf + *used, *expect);
+		}
+		*used += *expect;
+	} else {
+		// no more data
+		*expect = 0;
+	}
+	return *expect;
 }
 
 } // namespace stream

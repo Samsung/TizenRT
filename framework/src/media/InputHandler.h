@@ -26,6 +26,7 @@
 #include "StreamHandler.h"
 
 #include "Decoder.h"
+#include "Demuxer.h"
 
 namespace media {
 class MediaPlayerImpl;
@@ -44,7 +45,7 @@ public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
 	bool doStandBy();
-	bool open() override;
+
 	ssize_t read(unsigned char *buf, size_t size);
 
 	void setBufferState(buffer_state_t state);
@@ -56,6 +57,7 @@ public:
 	void setPlayer(std::shared_ptr<MediaPlayerImpl> mp) { mPlayer = mp; }
 	std::shared_ptr<MediaPlayerImpl> getPlayer() { return mPlayer.lock(); }
 
+	size_t getAvailSpace();
 	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
 private:
@@ -67,9 +69,13 @@ private:
 	void sleepWorker() override;
 	bool processWorker() override;
 	const char *getWorkerName(void) const override { return "InputHandler"; };
+	ssize_t getElementaryStream(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
+	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
+	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 
 	std::shared_ptr<InputDataSource> mInputDataSource;
 	std::shared_ptr<Decoder> mDecoder;
+	std::shared_ptr<Demuxer> mDemuxer;
 	std::weak_ptr<MediaPlayerImpl> mPlayer;
 
 	buffer_state_t mState;

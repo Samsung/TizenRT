@@ -21,7 +21,7 @@
 #include <debug.h>
 
 #include <media/FileInputDataSource.h>
-#include "utils/MediaUtils.h"
+#include <media/MediaUtils.h>
 
 namespace media {
 namespace stream {
@@ -72,7 +72,7 @@ bool FileInputDataSource::open()
 		switch (audioType) {
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
-			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
+			if (!utils::file_header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
 				meddbg("header parsing failed\n");
 				return false;
 			}
@@ -80,7 +80,8 @@ bool FileInputDataSource::open()
 			setChannels(channel);
 			break;
 		case AUDIO_TYPE_WAVE:
-			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
+		case AUDIO_TYPE_MP2T:
+			if (!utils::file_header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
 				meddbg("header parsing failed\n");
 				return false;
 			}
