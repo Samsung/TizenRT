@@ -103,7 +103,7 @@ void configure_partitions(void)
 		|| !strncmp(types, "romfs,", 6)
 #endif
 #ifdef CONFIG_BINARY_MANAGER
-		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4) || !strncmp(types, "loadparam,", 10)
+		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4)
 #endif
 		) {
 			if (ftl_initialize(partno, mtd_part)) {
@@ -158,8 +158,6 @@ void configure_partitions(void)
 				binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
 			} else if (!strncmp(types, "bin,", 4)) {
 				binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
-			} else if (!strncmp(types, "loadparam,", 10)) {
-				binary_manager_register_partition(partno, BINMGR_PART_LOADPARAM, part_name, partsize);
 			}
 #endif
 		}
