@@ -69,6 +69,9 @@ private:
 	void sleepWorker() override;
 	bool processWorker() override;
 	const char *getWorkerName(void) const override { return "InputHandler"; };
+	ssize_t getElementaryStream(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
+	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
+	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 
 	std::shared_ptr<InputDataSource> mInputDataSource;
 	std::shared_ptr<Decoder> mDecoder;

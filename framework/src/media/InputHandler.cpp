@@ -108,8 +108,13 @@ bool InputHandler::processWorker()
 			return false;
 		}
 
-		writeToStreamBuffer(buf, (size_t)readLen);
+		ssize_t writeLen = writeToStreamBuffer(buf, (size_t)readLen);
 		delete[] buf;
+		if (writeLen <= 0) {
+			meddbg("write to stream buffer failed!\n");
+			mBufferWriter->setEndOfStream();
+			return false;
+		}
 	}
 
 	return true;
@@ -200,49 +205,43 @@ size_t InputHandler::getAvailSpace()
 
 ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 {
-	if (mDemuxer) {
-		mDemuxer->pushData(buf, size);
-		ssize_t ret  = mDemuxer->pullData(buf, size);
+	size_t used = 0;
+	while (1) {
+		unsigned char *buffES = nullptr;
+		size_t sizeES = mDecoder ? mDecoder->getAvailSpace() : mBufferWriter->sizeOfSpace();
+		ssize_t ret = getElementaryStream(buf, size, &used, &buffES, &sizeES);
 		if (ret < 0) {
-			if (ret == DEMUXER_ERROR_WANT_DATA) {
-				medvdbg("demuxer want more data!\n");
-				return (ssize_t)size;
-			}
-			medwdbg("pull ES data failed! error: %d\n", ret);
-			return EOF;
+			meddbg("getElementaryStream failed! error: %d\n", ret);
+			return ret;
 		}
-		// size of elementary stream data got from demuxer
-		size = (size_t)ret;
-	}
+		if (ret == 0) {
+			// want more data
+			break;
+		}
 
-	size_t written = 0;
+		size_t usedES = 0;
+		while (1) {
+			unsigned char *buffPCM = buf;
+			size_t sizePCM = used;
+			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
+			if (ret < 0) {
+				meddbg("getPCM failed! error: %d\n", ret);
+				return ret;
+			}
+			if (ret == 0) {
+				// want more data
+				break;
+			}
 
-	if (mDecoder) {
-		size_t push = 0;
-		while (push < size) {
-			size_t temp = mDecoder->pushData(buf + push, size - push);
-			if (!temp) {
-				meddbg("decode push data failed!\n");
+			// write PCM data to stream buffer
+			size_t written = mBufferWriter->write(buffPCM, sizePCM);
+			if (written != sizePCM) {
+				meddbg("End of writting!\n");
 				return EOF;
 			}
-			push += temp;
-
-			while (1) {
-				// Reuse free space: buf[0~push)
-				size_t pcmlen = push & ~0x1;
-				if (!getDecodeFrames(buf, &pcmlen)) {
-					// Normal case: break and push more data...
-					break;
-				}
-				// Write PCM data to input stream buffer.
-				written += mBufferWriter->write(buf, pcmlen);
-			}
 		}
-	} else {
-		written = mBufferWriter->write(buf, size);
 	}
-
-	return (ssize_t)written;
+	return size;
 }
 
 bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
@@ -337,6 +336,97 @@ size_t InputHandler::getDecodeFrames(unsigned char *buf, size_t *size)
 	}
 
 	return 0;
+}
+
+ssize_t InputHandler::getElementaryStream(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (mDemuxer) {
+		ssize_t ret;
+		if (*used < size) {
+			ret = mDemuxer->pushData(buf + *used, size - *used);
+			if (ret <= 0) {
+				meddbg("push data to demuxer failed! error: %d\n", ret);
+				return EOF;
+			}
+			*used += (size_t)ret;
+		}
+
+		if (*out == nullptr) {
+			*out = buf;
+			if (*expect > *used) {
+				*expect = *used;
+			}
+		}
+
+		ret = mDemuxer->pullData(*out, *expect);
+		if (ret < 0) {
+			if (ret == DEMUXER_ERROR_WANT_DATA) {
+				// normal case: demuxer want more data
+				return 0;
+			}
+			meddbg("pull data from demuxer failed! error: %d\n", ret);
+			return EOF;
+		}
+		*expect = (size_t)ret;
+	} else {
+		fetchData(buf, size, used, out, expect);
+	}
+
+	return (ssize_t)(*expect);
+}
+
+ssize_t InputHandler::getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (mDecoder) {
+		ssize_t ret;
+		if (*used < size) {
+			ret = mDecoder->pushData(buf + *used, size - *used);
+			if (ret <= 0) {
+				meddbg("push data to decoder failed! error: %d\n", ret);
+				return EOF;
+			}
+			*used += (size_t)ret;
+		}
+
+		if (*out == nullptr) {
+			*out = buf;
+			if (*expect > *used) {
+				*expect = *used;
+			}
+		}
+
+		*expect &= ~0x1;
+		if (!getDecodeFrames(*out, expect)) {
+			// normal case: decoder want more data
+			return 0;
+		}
+	} else {
+		fetchData(buf, size, used, out, expect);
+	}
+
+	return (ssize_t)(*expect);
+}
+
+size_t InputHandler::fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect)
+{
+	if (*used < size) {
+		size_t remained = size - *used;
+		if (*expect > remained) {
+			*expect = remained;
+		}
+		if (*out == nullptr) {
+			// Point to unused data in `buf`
+			*out = buf + *used;
+		} else{
+			// Copy data to the given output buffer
+			memcpy(*out, buf + *used, *expect);
+		}
+		*used += *expect;
+	} else {
+		// no more data
+		*expect = 0;
+	}
+	return *expect;
 }
 
 } // namespace stream
