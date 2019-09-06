@@ -554,6 +554,10 @@ menu "Database"
 source "$FRAMEWORK_DIR/src/arastorage/Kconfig"
 endmenu
 
+menu "AraUI Framework"
+source "$FRAMEWORK_DIR/src/araui/Kconfig"
+endmenu
+
 menu "Memory Management"
 source mm/Kconfig
 endmenu
