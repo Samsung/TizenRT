@@ -521,6 +521,44 @@ config DEBUG_TASK_MANAGER_INFO
 
 endif #DEBUG_TASK_MANAGER
 
+config DEBUG_UI
+	bool "AraUI Debug Feature"
+	default n
+	depends on UI
+	---help---
+		Enable AraUI debug feature.
+
+if DEBUG_UI
+
+config UI_DEBUG_DRAW
+	bool "Draw debug boxes"
+	default n
+	---help---
+		Draw debug boxes
+
+config DEBUG_UI_ERROR
+	bool "UI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable UI error SYSLOG output
+
+config DEBUG_UI_WARN
+	bool "UI Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable UI warning SYSLOG output
+
+config DEBUG_UI_INFO
+	bool "UI Informational Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable UI informational SYSLOG output
+
+endif #DEBUG_UI
+
 comment "OS Function Debug Options"
 
 config DEBUG_DMA

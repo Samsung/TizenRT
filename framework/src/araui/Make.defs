@@ -1,0 +1,82 @@
+###########################################################################
+#
+# Copyright 2019 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+ifeq ($(CONFIG_UI), y)
+
+CSRCS += ui_core.c ui_request_callback.c
+CSRCS += ui_commons.c
+CSRCS += ui_font_asset.c ui_image_asset.c ui_asset.c
+CSRCS += ui_window.c
+CSRCS += ui_widget.c
+CSRCS += ui_image_widget.c
+CSRCS += ui_text_widget.c
+CSRCS += ui_button_widget.c
+CSRCS += ui_scroll_widget.c
+CSRCS += ui_paginator_widget.c
+CSRCS += ui_quick_panel.c
+CSRCS += ui_renderer.c
+CSRCS += easing_fn.c
+
+ifneq ($(CONFIG_UI_USE_EXTERNAL_DAL_IMPL), y)
+CSRCS += ui_dal_default.c
+endif
+
+ifeq ($(CONFIG_UI_ENABLE_EMOJI), y)
+CSRCS += emoji.c
+
+ifeq ($(CONFIG_UI_USE_BUILTIN_EMOJI), y)
+CSRCS += __emoji_u1F600.c __emoji_u1F601.c __emoji_u1F602.c __emoji_u1F603.c
+CSRCS += __emoji_u1F604.c __emoji_u1F605.c __emoji_u1F606.c __emoji_u1F607.c
+CSRCS += __emoji_u1F608.c __emoji_u1F609.c __emoji_u1F60A.c __emoji_u1F60B.c
+CSRCS += __emoji_u1F60C.c __emoji_u1F60D.c __emoji_u1F60E.c __emoji_u1F60F.c
+CSRCS += __emoji_u1F610.c __emoji_u1F611.c __emoji_u1F612.c __emoji_u1F613.c
+CSRCS += __emoji_u1F614.c __emoji_u1F615.c __emoji_u1F616.c __emoji_u1F617.c
+CSRCS += __emoji_u1F618.c __emoji_u1F619.c __emoji_u1F61A.c __emoji_u1F61B.c
+CSRCS += __emoji_u1F61C.c __emoji_u1F61D.c __emoji_u1F61E.c __emoji_u1F61F.c
+CSRCS += __emoji_u1F620.c __emoji_u1F621.c __emoji_u1F622.c __emoji_u1F623.c
+CSRCS += __emoji_u1F624.c __emoji_u1F625.c __emoji_u1F626.c __emoji_u1F627.c
+CSRCS += __emoji_u1F628.c __emoji_u1F629.c __emoji_u1F62A.c __emoji_u1F62B.c
+CSRCS += __emoji_u1F62C.c __emoji_u1F62D.c __emoji_u1F62E.c __emoji_u1F62F.c
+CSRCS += __emoji_u1F630.c __emoji_u1F631.c __emoji_u1F632.c __emoji_u1F633.c
+CSRCS += __emoji_u1F634.c __emoji_u1F635.c __emoji_u1F636.c __emoji_u1F637.c
+CSRCS += __emoji_u1F638.c __emoji_u1F639.c __emoji_u1F63A.c __emoji_u1F63B.c
+CSRCS += __emoji_u1F63C.c __emoji_u1F63D.c __emoji_u1F63E.c __emoji_u1F63F.c
+CSRCS += __emoji_u1F640.c __emoji_u1F641.c __emoji_u1F642.c __emoji_u1F643.c
+CSRCS += __emoji_u1F644.c
+endif
+
+endif
+
+CFLAGS += -DUI_PLATFORM_TIZENRT
+CFLAGS += -Isrc/araui/include
+
+DEPPATH += --dep-path src/araui/include
+DEPPATH += --dep-path src/araui/core
+DEPPATH += --dep-path src/araui/assets
+DEPPATH += --dep-path src/araui/widgets
+DEPPATH += --dep-path src/araui/renderer
+DEPPATH += --dep-path src/araui/utils
+DEPPATH += --dep-path src/araui/utils/emoji
+VPATH += :src/araui/include
+VPATH += :src/araui/core
+VPATH += :src/araui/assets
+VPATH += :src/araui/widgets
+VPATH += :src/araui/renderer
+VPATH += :src/araui/utils
+VPATH += :src/araui/utils/emoji
+
+endif
