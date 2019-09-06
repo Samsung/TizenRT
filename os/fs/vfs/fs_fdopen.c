@@ -226,10 +226,6 @@ FAR struct file_struct *fs_fdopen(int fd, int oflags, FAR struct tcb_s *tcb)
 	for (i = 0; i < CONFIG_NFILE_STREAMS; i++) {
 		stream = &slist->sl_streams[i];
 		if (stream->fs_fd < 0) {
-			/* Zero the structure */
-
-			memset(stream, 0, sizeof(FILE));
-
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 			/* Initialize the semaphore the manages access to the buffer */
 
