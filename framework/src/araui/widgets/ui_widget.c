@@ -23,6 +23,7 @@
 #include <vec/vec.h>
 #include <araui/ui_commons.h>
 #include <araui/ui_widget.h>
+#include <araui/ui_animation.h>
 #include "ui_log.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
@@ -30,6 +31,7 @@
 #include "ui_asset_internal.h"
 #include "ui_window_internal.h"
 #include "ui_commons_internal.h"
+#include "ui_animation_internal.h"
 #include "ui_renderer.h"
 #include "utils/easing_fn.h"
 
@@ -98,11 +100,21 @@ typedef struct {
 	int32_t degree;
 } ui_rotate_info_t;
 
+typedef struct {
+	ui_widget_body_t *body;
+	ui_anim_t *anim;
+} ui_set_anim_info_t;
+
 static void _ui_widget_set_visible_func(void *userdata);
 static void _ui_widget_set_position_func(void *userdata);
 static void _ui_widget_set_size_func(void *userdata);
 static void _ui_widget_tween_moveto_func(void *userdata);
 static void _ui_widget_tween_move_func(ui_widget_t widget, uint32_t t);
+static void _ui_widget_play_anim(void *userdata);
+static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t);
+static void _ui_widget_stop_anim(void *userdata);
+static void _ui_widget_pause_anim(void *userdata);
+static void _ui_widget_resume_anim(void *userdata);
 
 static void _ui_widget_destroy_func(void *userdata);
 static void _ui_widget_add_child_func(void *userdata);
@@ -1067,3 +1079,96 @@ void *ui_widget_get_userdata(ui_widget_t widget)
 	return body->userdata;
 }
 
+ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, bool loop)
+{
+	ui_set_anim_info_t *info;
+
+	if (!widget) {
+		return UI_INVALID_PARAM;
+	}
+	
+	if (!anim) {
+		return UI_INVALID_PARAM;
+	}
+
+	info = (ui_set_anim_info_t *)UI_ALLOC(sizeof(ui_set_anim_info_t));
+	if (!info) {
+		return UI_NOT_ENOUGH_MEMORY;
+	}
+
+	memset(info, 0, sizeof(ui_set_anim_info_t));
+	info->body = (ui_widget_body_t *)widget;
+	info->anim = (ui_anim_t *)anim;
+
+	if (ui_request_callback(_ui_widget_play_anim, info)) {
+		UI_FREE(info);
+		return UI_OPERATION_FAIL;
+	}
+
+	return UI_OK;
+}
+
+static void _ui_widget_play_anim(void *userdata)
+{
+	ui_set_anim_info_t *info;
+	ui_widget_body_t *body;
+
+	if (!userdata || !((ui_set_anim_info_t *)userdata)->body || !((ui_set_anim_info_t *)userdata)->anim) {
+		UI_LOGE("error: Invalid parameter!\n");
+		return;
+	}
+
+	info = (ui_set_anim_info_t *)userdata;
+	body = (ui_widget_body_t *)info->body;
+
+	body->anim_cb = _ui_widget_play_anim_func;
+	
+	body->anim = info->anim;
+}
+
+static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t)
+{
+	ui_widget_body_t *body;
+	ui_anim_body_t *anim;
+	ui_anim_t *item;
+	uint32_t _t = t;
+
+	if (!widget) {
+		return UI_INVALID_PARAM;
+	}
+
+	body = (ui_widget_body_t *)widget;
+	anim = (ui_anim_body_t *)body->anim;
+
+	return anim->func(widget, body->anim, &_t);
+}
+
+ui_error_t ui_widget_stop_anim(ui_widget_t widget)
+{
+
+}
+
+static void _ui_widget_stop_anim(void *userdata)
+{
+
+}
+
+ui_error_t ui_widget_pause_anim(ui_widget_t widget)
+{
+
+}
+
+static void _ui_widget_pause_anim(void *userdata)
+{
+
+}
+
+ui_error_t ui_widget_resume_anim(ui_widget_t widget)
+{
+
+}
+
+static void _ui_widget_resume_anim(void *userdata)
+{
+
+}

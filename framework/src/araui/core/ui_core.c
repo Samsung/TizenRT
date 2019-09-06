@@ -223,6 +223,12 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 		}
 	}
 
+	if (widget->anim_cb) {
+		if (widget->anim_cb((ui_widget_t)widget, dt)) {
+			widget->anim_cb = UI_NULL;
+		}
+	}
+
 	if (widget->tick_cb) {
 		widget->tick_cb((ui_widget_t)widget, dt);
 	}
