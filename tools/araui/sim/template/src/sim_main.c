@@ -23,24 +23,24 @@
 #include <araui/ui_widget.h>
 #include "dal/dal_sdl.h"
 
-ui_window_t g_view;
+ui_window_t g_window;
 
-static void on_create_cb(ui_window_t view)
+static void on_create_cb(ui_window_t window)
 {
 
 }
 
-static void on_destroy_cb(ui_window_t view)
+static void on_destroy_cb(ui_window_t window)
 {
 
 }
 
-static void on_show_cb(ui_window_t view)
+static void on_show_cb(ui_window_t window)
 {
 
 }
 
-static void on_hide_cb(ui_window_t view)
+static void on_hide_cb(ui_window_t window)
 {
 
 }
@@ -49,11 +49,11 @@ int main(int argc, char *argv[])
 {
 	ui_start();
 
-	g_view = ui_window_create(on_create_cb, on_destroy_cb, on_show_cb, on_hide_cb);
+	g_window = ui_window_create(on_create_cb, on_destroy_cb, on_show_cb, on_hide_cb);
 
 	sdl_loop();
 
-	ui_window_destroy(g_view);
+	ui_window_destroy(g_window);
 
 	ui_stop();
 

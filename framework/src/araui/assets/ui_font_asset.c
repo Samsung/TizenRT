@@ -99,7 +99,7 @@ ui_asset_t ui_font_asset_create_from_file(const char *filename)
 		return UI_NULL;
 	}
 
-	read = fread(body->ttf_buf, file_size, 1, file);
+	read = fread(body->ttf_buf, 1, file_size, file);
 	(void)fclose(file);
 
 	if (read != file_size) {
