@@ -458,7 +458,8 @@ static void _ui_core_handle_touch_event(ui_touch_event_t touch_event, ui_coord_t
 	root = window->root;
 
 	switch (touch_event) {
-		case UI_TOUCH_EVENT_DOWN: {
+	case UI_TOUCH_EVENT_DOWN:
+		{
 			// If touch down, reset all infomations about focus and touch
 			ui_core_unlock_touch_event_target();
 
@@ -497,7 +498,8 @@ static void _ui_core_handle_touch_event(ui_touch_event_t touch_event, ui_coord_t
 		}
 		break;
 
-		case UI_TOUCH_EVENT_MOVE: {
+	case UI_TOUCH_EVENT_MOVE:
+		{
 			// If there is the visible quick panel,
 			// a touch event will be delivered to only that quick panel.
 			if (_ui_core_quick_panel_visible()) {
@@ -514,7 +516,8 @@ static void _ui_core_handle_touch_event(ui_touch_event_t touch_event, ui_coord_t
 		}
 		break;
 
-		case UI_TOUCH_EVENT_UP: {
+	case UI_TOUCH_EVENT_UP:
+		{
 			if (_ui_core_quick_panel_visible()) {
 				quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
 				if (quick_panel->focus && quick_panel->focus->touch_cb) {
@@ -531,7 +534,7 @@ static void _ui_core_handle_touch_event(ui_touch_event_t touch_event, ui_coord_t
 		}
 		break;
 
-		default:
+	default:
 		break;
 	}
 }
@@ -614,20 +617,20 @@ ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type)
 	}
 
 	switch (event_type) {
-		case UI_QUICK_PANEL_TOP_SWIPE:
-		case UI_QUICK_PANEL_BOTTOM_SWIPE:
-		case UI_QUICK_PANEL_LEFT_SWIPE:
-		case UI_QUICK_PANEL_RIGHT_SWIPE:
-			if (body->transition_type == UI_TRANSITION_SLIDE) {
-				ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_appear_tween_end_func);
-			}
-		break;
-
-		case UI_QUICK_PANEL_BUTTON: {
+	case UI_QUICK_PANEL_TOP_SWIPE:
+	case UI_QUICK_PANEL_BOTTOM_SWIPE:
+	case UI_QUICK_PANEL_LEFT_SWIPE:
+	case UI_QUICK_PANEL_RIGHT_SWIPE:
+		if (body->transition_type == UI_TRANSITION_SLIDE) {
+			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_appear_tween_end_func);
 		}
 		break;
 
-		default: {
+	case UI_QUICK_PANEL_BUTTON: {
+		}
+		break;
+
+	default: {
 		}
 		break;
 	}
@@ -688,7 +691,7 @@ ui_error_t ui_core_quick_panel_disappear(ui_quick_panel_event_type_t event_type)
 	return UI_OK;
 }
 
-ui_error_t ui_core_set_global_widget(ui_quick_panel_event_type_t event_type, ui_widget_t widget)
+ui_error_t ui_core_set_quick_panel(ui_quick_panel_event_type_t event_type, ui_widget_t widget)
 {
 	ui_quick_panel_body_t *body;
 
@@ -744,7 +747,7 @@ ui_error_t ui_core_set_global_widget(ui_quick_panel_event_type_t event_type, ui_
 	return UI_OK;
 }
 
-ui_error_t ui_core_unset_global_widget(ui_quick_panel_event_type_t event_type)
+ui_error_t ui_core_unset_quick_panel(ui_quick_panel_event_type_t event_type)
 {
 	ui_widget_body_t *body;
 
@@ -785,44 +788,44 @@ static bool _ui_core_quick_panel_visible(void)
 #if defined(CONFIG_UI_ENABLE_TOUCH)
 static bool _ui_core_quick_panel_touch_down(ui_touch_event_t touch_event, ui_coord_t coord)
 {
-	ui_quick_panel_body_t *global_widget;
+	ui_quick_panel_body_t *quick_panel;
 
 	if (coord.y < CONFIG_UI_GLOBAL_Y_THRESHOLD) {
 		if (g_quick_panel_info[UI_QUICK_PANEL_TOP_SWIPE]) {
-			global_widget = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_TOP_SWIPE];
-			global_widget->focus = g_quick_panel_info[UI_QUICK_PANEL_TOP_SWIPE];
-			if (global_widget->focus && global_widget->focus->touch_cb) {
-				_ui_deliver_touch_event(global_widget->focus, touch_event, coord);
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_TOP_SWIPE];
+			quick_panel->focus = g_quick_panel_info[UI_QUICK_PANEL_TOP_SWIPE];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
 			return true;
 		}
 		return false;
 	} else if (coord.y > CONFIG_UI_DISPLAY_HEIGHT - CONFIG_UI_GLOBAL_Y_THRESHOLD) {
 		if (g_quick_panel_info[UI_QUICK_PANEL_BOTTOM_SWIPE]) {
-			global_widget = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_BOTTOM_SWIPE];
-			global_widget->focus = g_quick_panel_info[UI_QUICK_PANEL_BOTTOM_SWIPE];
-			if (global_widget->focus && global_widget->focus->touch_cb) {
-				_ui_deliver_touch_event(global_widget->focus, touch_event, coord);
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_BOTTOM_SWIPE];
+			quick_panel->focus = g_quick_panel_info[UI_QUICK_PANEL_BOTTOM_SWIPE];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
 			return true;
 		}
 		return false;
 	} else if (coord.x < CONFIG_UI_GLOBAL_X_THRESHOLD) {
 		if (g_quick_panel_info[UI_QUICK_PANEL_LEFT_SWIPE]) {
-			global_widget = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_LEFT_SWIPE];
-			global_widget->focus = g_quick_panel_info[UI_QUICK_PANEL_LEFT_SWIPE];
-			if (global_widget->focus && global_widget->focus->touch_cb) {
-				_ui_deliver_touch_event(global_widget->focus, touch_event, coord);
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_LEFT_SWIPE];
+			quick_panel->focus = g_quick_panel_info[UI_QUICK_PANEL_LEFT_SWIPE];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
 			return true;
 		}
 		return false;
 	} else if (coord.x > CONFIG_UI_DISPLAY_WIDTH - CONFIG_UI_GLOBAL_X_THRESHOLD) {
 		if (g_quick_panel_info[UI_QUICK_PANEL_RIGHT_SWIPE]) {
-			global_widget = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_RIGHT_SWIPE];
-			global_widget->focus = g_quick_panel_info[UI_QUICK_PANEL_RIGHT_SWIPE];
-			if (global_widget->focus && global_widget->focus->touch_cb) {
-				_ui_deliver_touch_event(global_widget->focus, touch_event, coord);
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[UI_QUICK_PANEL_RIGHT_SWIPE];
+			quick_panel->focus = g_quick_panel_info[UI_QUICK_PANEL_RIGHT_SWIPE];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
 			return true;
 		}

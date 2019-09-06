@@ -162,7 +162,7 @@ static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const ch
 	body->text_length = length;
 
 	// Convert char array to UTF8 code array
-	while(str_idx < length) {
+	while (str_idx < length) {
 		/**
 		 * 7-bits UTF-8
 		 */
@@ -568,12 +568,8 @@ static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
 
 				for (j = 0; j < out_h; j++) {
 					for (k = 0; k < out_w; k++) {
-						/*
-						ui_dal_put_pixel(k + x, j + y + (ascent + c_y1),
-							UI_COLOR_ARGB8888(
-								((uint8_t)((uint32_t)a * g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * j + k] / 255)),
-								r, g, b));
-						*/
+						ui_dal_put_pixel_rgba8888(k + x, j + y + (ascent + c_y1),
+							UI_COLOR_RGBA8888(r, g, b, ((uint8_t)((uint32_t)a * g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * j + k] / 255))));
 					}
 				}
 
