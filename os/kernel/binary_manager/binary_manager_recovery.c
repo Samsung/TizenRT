@@ -81,15 +81,6 @@ static void recovery_release_binary_sem(int binid)
 #endif
 		{
 			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_loadtask == binid) {
-				/* No saved holder for semaphore used for signaling */
-				if ((sem->flags & FLAGS_SIGSEM) != 0) {
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-					break;
-#else
-					sem = sq_next(sem);
-					continue;
-#endif
-				}
 				/* Increase semcount and release itself from holder */
 				sem->semcount++;
 				sem_releaseholder(sem, holder->htcb);

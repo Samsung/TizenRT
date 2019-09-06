@@ -149,7 +149,9 @@ int sem_destroy(FAR sem_t *sem)
 		sem_destroyholder(sem);
 
 #ifdef CONFIG_BINMGR_RECOVERY
-		sem_unregister(sem);
+		if ((sem->flags & FLAGS_SIGSEM) == 0) {
+			sem_unregister(sem);
+		}
 #endif
 		sem->flags &= ~FLAGS_INITIALIZED;
 		return OK;
