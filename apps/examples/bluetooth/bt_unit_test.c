@@ -111,15 +111,6 @@ static const char *__bt_get_error_message(bt_error_e err)
 	return err_str;
 }
 
-static void __state_changed_cb(int result, bt_adapter_state_e adapter_state, void *user_data)
-{
-	TC_PRT("__state_changed_cb\n");
-	TC_PRT("result: %s\n", __bt_get_error_message(result));
-	TC_PRT("state: %s\n", (adapter_state == BT_ADAPTER_ENABLED) ? "ENABLED" : "DISABLED");
-
-	adapter_enabled = ((adapter_state == BT_ADAPTER_ENABLED) ? true : false);
-}
-
 static void __discovery_state_changed_cb(int result, bt_adapter_device_discovery_state_e discovery_state, bt_adapter_device_discovery_info_s *discovery_info, void *user_data)
 {
 	int i;
@@ -265,6 +256,37 @@ static void __le_scan_result_cb(int result, bt_adapter_le_device_scan_result_inf
 	}
 }
 
+static void __state_changed_cb(int result, bt_adapter_state_e adapter_state, void *user_data)
+{
+	int ret;
+	char *name = NULL;
+
+	TC_PRT("__state_changed_cb\n");
+	TC_PRT("result: %s\n", __bt_get_error_message(result));
+	TC_PRT("state: %s\n", (adapter_state == BT_ADAPTER_ENABLED) ? "ENABLED" : "DISABLED");
+
+//	adapter_enabled = ((adapter_state == BT_ADAPTER_ENABLED) ? true : false);
+
+	if (!(adapter_state == true && result == BT_ERROR_NONE)) {
+		TC_PRT("Adapter is NOT enabled\n");
+		return;
+	}
+
+	ret = bt_adapter_get_name(&name);
+	TC_PRT("bt_adapter_get_name() returns %s\n", __bt_get_error_message(ret));
+	TC_PRT("name: [%s]\n", name);
+
+	ret = bt_adapter_set_name("Test Name");
+	TC_PRT("bt_adapter_set_name() returns %s\n", __bt_get_error_message(ret));
+
+	ret = bt_adapter_get_name(&name);
+	TC_PRT("bt_adapter_get_name() returns %s\n", __bt_get_error_message(ret));
+	TC_PRT("name: [%s]\n", name);
+
+	ret = bt_adapter_le_start_scan(__le_scan_result_cb, NULL);
+	TC_PRT("bt_adapter_le_start_scan() returns %s\n", __bt_get_error_message(ret));
+}
+
 #if 0
 static bool __check_adapter_enabled(void *data)
 {
@@ -282,18 +304,18 @@ int bt_unit_test_main(int argc, char **argv)
 	TC_PRT("Enter bt_unit_test_main()\n");
 
 	ret = bt_initialize();
-	TC_PRT("returns %s\n", __bt_get_error_message(ret));
+	TC_PRT("bt_initialize() returns %s\n", __bt_get_error_message(ret));
 
 	ret = bt_adapter_set_state_changed_cb(__state_changed_cb, NULL);
-	TC_PRT("returns %s\n", __bt_get_error_message(ret));
+	TC_PRT("bt_adapter_set_state_changed_cb() returns %s\n", __bt_get_error_message(ret));
 
 	ret = bt_adapter_enable();
-	TC_PRT("returns %s\n", __bt_get_error_message(ret));
+	TC_PRT("bt_adapter_enable() returns %s\n", __bt_get_error_message(ret));
 
 // TODO: temporarily block the code because if EVENTLOOP feature is enabled, can NOT enter TASH shell.
 //	eventloop_add_timer_async(1000, true, __check_adapter_enabled, NULL);
 //	eventloop_loop_run();
-
+/*
 	ret = bt_adapter_set_device_discovery_state_changed_cb(__discovery_state_changed_cb, NULL);
 	TC_PRT("returns %s\n", __bt_get_error_message(ret));
 
@@ -302,6 +324,6 @@ int bt_unit_test_main(int argc, char **argv)
 
 	ret = bt_adapter_le_start_scan(__le_scan_result_cb, NULL);
 	TC_PRT("returns %s\n", __bt_get_error_message(ret));
-
+*/
 	return 0;
 }

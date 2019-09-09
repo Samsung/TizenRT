@@ -73,17 +73,25 @@ int bt_adapt_get_local_name(char **name)
 {
 	BT_PRT("Enter\n");
 
-	name = bt_get_name();
+	*name = bt_get_name();
 
-	BT_PRT("name: %s\n", name);
+	BT_PRT("name: %s\n", *name);
 
 	return BT_ERROR_NONE;
 }
 
 int bt_adapt_set_local_name(const char *name)
 {
-	/* To be implemented */
-	return BT_ERROR_NONE;
+	int ret = BT_ERROR_NONE;
+
+	BT_PRT("Enter\n");
+
+	ret = bt_set_name(name);
+	if (ret != BT_ERROR_NONE) {
+		BT_ERR("%s(0x%08x)\n", _bt_convert_error_to_string(ret), ret);
+	}
+
+	return ret;
 }
 
 int bt_adapt_get_discoverable_mode(bt_adapter_visibility_mode_e *mode)
