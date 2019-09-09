@@ -11,8 +11,21 @@ config SYSTEM_IPERF
 	---help---
 		Enable the \"IPERF App\" example
 
-if SYSTEM_IPERF
+config IPERF_PRIORITY
+	int "iperf Priority"
+	default 100
+	depends on SYSTEM_IPERF
+	---help---
+		Priority of iperf app
 
+config IPERF_STACKSIZE
+	int "iperf Stack Size"
+	default 4096
+	depends on SYSTEM_IPERF
+	---help---
+		Stack size of iperf app
+
+if SYSTEM_IPERF
 config SYSTEM_IPERF_PROGNAME
 	string "Program name"
 	default "iperf"
@@ -20,5 +33,4 @@ config SYSTEM_IPERF_PROGNAME
 	---help---
 		This is the name of the program that will be use when the TASH ELF
 		program is installed.
-
 endif
