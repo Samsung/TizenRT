@@ -73,7 +73,6 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/common/inc
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/logger/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls/include
 
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
@@ -82,15 +81,18 @@ CFLAGS += -DROUTING_EP
 else
 CFLAGS += -DROUTING_GW
 endif
-CFLAGS += -D__TINYARA__
+CFLAGS += -D__TINYARA__ -D__TIZENRT__
 CFLAGS += -std=c99
 CFLAGS += -w
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 CFLAGS += -D__WITH_DTLS__
+endif
 
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY),y)
-CSRCS += port_tinyara.c
+CSRCS += port_tinyara.c port_logger.c
 else
-CSRCS += port_tinyara.c
+CSRCS += port_tinyara.c port_logger.c
 endif
 
 MAINSRC = simpleServer.c
