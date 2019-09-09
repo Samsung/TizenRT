@@ -79,6 +79,7 @@
 
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 #include <arch/chip/chip.h>
+#include "nvicpri.h"
 #endif
 
 /****************************************************************************
