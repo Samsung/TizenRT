@@ -60,11 +60,10 @@
 #include <tinyara/config.h>
 #include <tinyara/usb/ohci.h>
 
-#include "chip.h"
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-#include "chip/imxrt102x_memorymap.h"
+#include "imxrt102x_memorymap.h"
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-#include "chip/imxrt105x_memorymap.h"
+#include "imxrt105x_memorymap.h"
 #else
 #error Unrecognized i.MX RT architecture
 #endif

@@ -61,9 +61,9 @@
 #include <tinyara/config.h>
 
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
-#include "chip/imxrt102x_iomuxc.h"
+#include "imxrt102x_iomuxc.h"
 #elif defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT105x)
-#include "chip/imxrt105x_iomuxc.h"
+#include "imxrt105x_iomuxc.h"
 #else
 #error Unrecognized i.MX RT architecture
 #endif

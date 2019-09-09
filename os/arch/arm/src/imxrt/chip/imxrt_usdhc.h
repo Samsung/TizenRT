@@ -59,7 +59,6 @@
 
 #include <tinyara/config.h>
 
-#include "chip.h"
 
 /************************************************************************************
  * Pre-processor Definitions
