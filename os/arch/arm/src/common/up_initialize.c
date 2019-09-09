@@ -285,7 +285,7 @@ void up_initialize(void)
 
 	/* Initialize USB -- device and/or host */
 
-	up_usbinitialize();
+	//up_usbinitialize();
 
 	/* Initialize the L2 cache if present and selected */
 
