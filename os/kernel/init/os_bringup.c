@@ -246,8 +246,9 @@ static inline void os_do_appstart(void)
 	/* Perform any last-minute, board-specific initialization, if so
 	 * configured.
 	 */
-
+#if 0 // Not use for bringup period
 	board_initialize();
+#endif
 #endif
 
 #ifdef CONFIG_SE
