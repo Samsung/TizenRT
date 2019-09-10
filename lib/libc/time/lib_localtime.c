@@ -528,9 +528,6 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 	doaccess = name[0] == '/';
 	if (!doaccess) {
 		p = TZDIR;
-		if (!p) {
-			goto oops;
-		}
 		p_len = strlen(p);
 		if (sizeof lsp->fullname - 1 <= p_len + name_len) {
 			goto oops;
