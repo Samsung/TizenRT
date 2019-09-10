@@ -24,7 +24,7 @@ TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
 CONFIGDIR="${BUILDDIR}/configs"
-DOCKER_VERSION="1.5.0"
+DOCKER_VERSION="1.5.1"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
 BUILD_CMD=make
@@ -92,6 +92,7 @@ function SELECT_OPTION()
 			echo "  \"3. Menuconfig\""
 			echo "  \"4. Build Clean\""
 			echo "  \"5. Build Dist-Clean\""
+			echo "  \"6. Build SmartFS Image\""
 			if [ "${STATUS}" == "BUILT" ]; then
 				echo "  \"d. Download\""
 			fi
@@ -119,7 +120,10 @@ function SELECT_OPTION()
 		5|distclean)
 			BUILD distclean
 			;;
-		
+		6|smartfs)
+			BUILD smartfs
+			;;
+
 		d|download)
 			if [ "${STATUS}" == "BUILT" ]; then
 				STATUS=PREPARE_DL

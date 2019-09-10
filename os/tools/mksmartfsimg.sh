@@ -40,7 +40,7 @@ echo " - block count := $blkcount (bs=1024)"
 echo "============================================================="
 
 if [ ! -d $CONTENTSDIR/$BOARDNAME/mnt ]; then
-mkdir $CONTENTSDIR/$BOARDNAME/mnt/
+mkdir -p $CONTENTSDIR/$BOARDNAME/mnt/
 fi
 
 #Make a dummy .bin file
@@ -53,17 +53,17 @@ dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
 cp $NXFUSEDIR/nxfuse .
 
 # Formatting
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m ./$BINDIR/$BINNAME
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m ./$BINDIR/$BINNAME || exit 1
 
 # Mounting mnt
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ./$BINDIR/$BINNAME
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ./$BINDIR/$BINNAME || exit 1
 
 # Copying files to smartfs file system
 cp -a $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
 # Unmounting
 sleep 2
-fusermount -u $CONTENTSDIR/$BOARDNAME/mnt
+fusermount -u $CONTENTSDIR/$BOARDNAME/mnt || exit 1
 rm -rf $CONTENTSDIR/$BOARDNAME/mnt/*
 rm -rf nxfuse
 echo "DONE"
