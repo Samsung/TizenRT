@@ -92,7 +92,7 @@
 struct mallinfo kmm_mallinfo(void)
 {
 	struct mallinfo info;
-	mm_mallinfo(&g_kmmheap, &info);
+	mm_mallinfo(kmm_get_heap(), &info);
 	return info;
 }
 
@@ -100,7 +100,7 @@ struct mallinfo kmm_mallinfo(void)
 
 int kmm_mallinfo(struct mallinfo *info)
 {
-	return mm_mallinfo(&g_kmmheap, info);
+	return mm_mallinfo(kmm_get_heap(), info);
 }
 
 #endif							/* CONFIG_CAN_PASS_STRUCTS */

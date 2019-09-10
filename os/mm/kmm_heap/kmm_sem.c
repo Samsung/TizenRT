@@ -95,7 +95,7 @@
  ************************************************************************/
 int kmm_trysemaphore(void *dummy_addr)
 {
-	return mm_trysemaphore(&g_kmmheap);
+	return mm_trysemaphore(kmm_get_heap());
 }
 
 /************************************************************************
@@ -113,7 +113,7 @@ int kmm_trysemaphore(void *dummy_addr)
  ************************************************************************/
 void kmm_givesemaphore(void *dummy_addr)
 {
-	return mm_givesemaphore(&g_kmmheap);
+	return mm_givesemaphore(kmm_get_heap());
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */
