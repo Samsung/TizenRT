@@ -185,8 +185,9 @@ char *mm_get_app_heap_name(void *address)
 struct mm_heap_s *mm_get_heap(void *address)
 {
 #ifdef CONFIG_MM_KERNEL_HEAP
-	if (address >= (FAR void *)g_kmmheap.mm_heapstart[0] && address < (FAR void *)g_kmmheap.mm_heapend[0]) {
-		return &g_kmmheap;
+	struct mm_heap_s *heap = kmm_get_heap();
+	if (address >= (FAR void *)heap->mm_heapstart[0] && address < (FAR void *)heap->mm_heapend[0]) {
+		return heap;
 	}
 #endif
 	int heap_idx;

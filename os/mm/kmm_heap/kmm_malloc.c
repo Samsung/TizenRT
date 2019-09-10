@@ -101,10 +101,9 @@
 FAR void *kmm_malloc(size_t size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_malloc(&g_kmmheap, size, __builtin_return_address(0));
+	return mm_malloc(kmm_get_heap(), size, __builtin_return_address(0));
 #else
-	return mm_malloc(&g_kmmheap, size);
+	return mm_malloc(kmm_get_heap(), size);
 #endif
 }
-
 #endif							/* CONFIG_MM_KERNEL_HEAP */
