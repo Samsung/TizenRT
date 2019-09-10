@@ -337,8 +337,7 @@ OCStackResult OCSendKeepAliveRequest(OCDoHandle *handle, const char *remoteAddr,
             return OC_STACK_ERROR;
         }
         entry->interval = interval;
-        //OIC_LOG_V(DEBUG, TAG, "Send ping message with interval [%" PRId64 "]", entry->interval);
-        OIC_LOG_V_INFO(INFO, TAG, "\e[3;30;43m Send ping message with  interval [%" PRId64 "] \e[m", entry->interval);
+        OIC_LOG_V(INFO, TAG, "Send ping message with interval [%" PRId64 "]", entry->interval);
     }
 
     // Get "inarray" value from payload.
@@ -400,8 +399,7 @@ OCStackResult OCHandleKeepAliveResponse(const CAEndpoint_t *endPoint, const OCPa
     KeepAliveEntry_t *entry = OCGetEntryFromEndpoint(endPoint);
     if (entry)
     {
-        //OIC_LOG_V(DEBUG, TAG, "Received response about interval [%" PRId64 "]", entry->interval);
-        OIC_LOG_V_INFO(INFO, TAG, "\e[3;30;43m Received response about interval [%" PRId64 "] \e[m", entry->interval);
+        OIC_LOG_V(INFO, TAG, "Received response about interval [%" PRId64 "]", entry->interval);
 
         // Set sentPingMsg values with false.
         entry->sentPingMsg = false;
