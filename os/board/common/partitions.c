@@ -33,6 +33,38 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
+
+#if defined(CONFIG_FLASH_PARTITION)
+FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s geo)
+{
+	FAR struct mtd_dev_s *mtd;
+#ifdef CONFIG_MTD_PROGMEM
+	mtd = progmem_initialize();
+	if (!mtd) {
+		lldbg("ERROR: progmem_initialize failed\n");
+		return NULL;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return NULL;
+	}
+#else
+	mtd = up_flashinitialize();
+	if (!mtd) {
+		lldbg("ERROR : up_flashinitializ failed\n");
+		return NULL;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return NULL;
+	}
+#endif
+	return mtd;
+}
+#endif /* CONFIG_FLASH_PARTITION */
+
 void configure_partitions(void)
 {
 #if defined(CONFIG_FLASH_PARTITION)
@@ -48,29 +80,10 @@ void configure_partitions(void)
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
 
-#ifdef CONFIG_MTD_PROGMEM
-	mtd = progmem_initialize();
-	if (!mtd) {
-		lldbg("ERROR: progmem_initialize failed\n");
+	mtd = mtd_initialize(geo);
+	if (mtd == NULL) {
 		return;
 	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return;
-	}
-#else
-	mtd = up_flashinitialize();
-	if (!mtd) {
-		lldbg("ERROR : up_flashinitializ failed\n");
-		return;
-	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return;
-	}
-#endif
 	partno = 0;
 	partoffset = 0;
 
@@ -144,11 +157,8 @@ void configure_partitions(void)
 					part_name[index] = '\0';
 					index = 0;
 					lldbg("ERROR: Partition name is so long. Please make it smaller than %d\n", MTD_PARTNAME_LEN);
-					while (*names) {
-						if (*(names++) == ',') {
-							break;
-						}
-					}
+					/* Move to next part name information. */
+					while (*(names++) != ',');
 					break;
 				}
 			}
@@ -164,21 +174,11 @@ void configure_partitions(void)
 
 #endif
 
-		while (*parts) {
-			if (*parts == ',') {
-				parts++;
-				break;
-			}
-			parts++;
-		}
+		/* Move to next part size information. */
+		while ((*parts++) != ',');
 
-		while (*types) {
-			if (*types == ',') {
-				types++;
-				break;
-			}
-			types++;
-		}
+		/* Move to next part type information. */
+		while ((*types++) != ',');
 
 		partno++;
 	}
