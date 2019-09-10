@@ -48,10 +48,19 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+struct _wifi_scan_filter_result_ {
+	int scan_flag;
+	sem_t scan_sem;
+	uint8_t scan_ssid[LWNL80211_SSID_LEN + 1];
+	lwnl80211_scan_list_s *result_list;
+};
+typedef struct _wifi_scan_filter_result_ scan_filter_result_t;
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+static scan_filter_result_t scan_filter_result;
+
 static struct lwnl80211_lowerhalf_s *g_dev;
 
 static WiFi_InterFace_ID_t g_mode;
@@ -131,7 +140,7 @@ free_scan_results(lwnl80211_scan_list_s *scan_list)
 }
 
 static lwnl80211_result_e
-fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_info)
+fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_info, const char *ssid)
 {
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	lwnl80211_scan_list_s *cur = NULL, *prev = NULL;
@@ -158,6 +167,11 @@ fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_sc
 			vddbg("num_sec modes(%d)\n", wifi_scan_iter->num_sec_modes);
 			vddbg("-----------------------------------------------\n");
 #endif
+			if (ssid != NULL && strlen(ssid) > 0 && strncmp(ssid, (const char *)wifi_scan_iter->ssid, SLSI_SSID_LEN + 1) != 0) {
+				wifi_scan_iter = wifi_scan_iter->next;
+				continue;
+			}
+
 			cur = (lwnl80211_scan_list_s *)malloc(sizeof(lwnl80211_scan_list_s));
 			if (!cur) {
 				free_scan_results(*scan_list);
@@ -305,11 +319,13 @@ static void linkdown_handler(slsi_reason_t *reason)
 
 static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 {
+	int8_t result;
 	lwnl80211_scan_list_s *scan_list = NULL;
 	lwnl80211_cb_status status;
 	if (!g_dev) {
 		vddbg("Failed to find upper driver\n");
-		return -1;
+		result = -1;
+		goto return_result;
 	}
 	vddbg("Got scan callback from SLSI drv (%d)\n", status);
 
@@ -317,15 +333,21 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 		vddbg("Scan failed %d\n");
 		status = LWNL80211_SCAN_FAILED;
 		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
-		return SLSI_STATUS_ERROR;
+		result = SLSI_STATUS_ERROR;
+		goto return_result;
 	}
 	slsi_scan_info_t *wifi_scan_result;
 	int8_t res = WiFiGetScanResults(&wifi_scan_result);
 	if (res != SLSI_STATUS_SUCCESS) {
-		return SLSI_STATUS_ERROR;
+		result = SLSI_STATUS_ERROR;
+		goto return_result;
 	}
 
-	if (fetch_scan_results(&scan_list, &wifi_scan_result) == LWNL80211_SUCCESS) {
+	if (scan_filter_result.scan_flag) {
+		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
+	}
+
+	if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == LWNL80211_SUCCESS) {
 		status = LWNL80211_SCAN_DONE;
 		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
 	} else {
@@ -334,8 +356,13 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	}
 
 	WiFiFreeScanResults(&wifi_scan_result);
+	result = SLSI_STATUS_SUCCESS;
 
-	return SLSI_STATUS_SUCCESS;
+return_result:
+	if (scan_filter_result.scan_flag) {
+		sem_post(&scan_filter_result.scan_sem);
+	}
+	return result;
 }
 
 /*
@@ -368,6 +395,10 @@ lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
 			return result;
 		}
 		g_dev = dev;
+		memset((void *)&scan_filter_result, 0, sizeof(scan_filter_result_t));
+		sem_init(&scan_filter_result.scan_sem, 0, 0);
+		scan_filter_result.result_list = NULL;
+		scan_filter_result.scan_flag = 0;
 		result = LWNL80211_SUCCESS;
 	} else {
 		vddbg("Already %d\n", g_mode);
@@ -399,11 +430,38 @@ lwnl80211_result_e slsidrv_scan_ap(void *arg)
 		vddbg("[ERR] Register Scan Callback(%d)\n", ret);
 		return result;
 	}
+
+	scan_filter_result.scan_flag = 0;
+	if (arg != NULL) {
+		scan_filter_result.scan_flag = 1;
+		if (scan_filter_result.result_list != NULL) {
+			free_scan_results(scan_filter_result.result_list);
+			scan_filter_result.result_list = NULL;
+		}
+		lwnl80211_ap_config_s *ap_connect_config = (lwnl80211_ap_config_s *)arg;
+		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length);
+	}
+
 	ret = WiFiScanNetwork();
 	if (ret != SLSI_STATUS_SUCCESS) {
 		vddbg("[ERR] WiFi scan fail(%d)\n", ret);
 		return result;
 	}
+
+	if (scan_filter_result.scan_flag > 0) {
+		struct timespec abstime;
+		(void)clock_gettime(CLOCK_REALTIME, &abstime);
+		abstime.tv_sec += (SLSI_SCAN_INTERVAL + 1);
+		ret = sem_timedwait(&scan_filter_result.scan_sem, &abstime);
+		if (ret != OK) {
+			vddbg("WIFi scan filtering timeout!\n");
+			scan_filter_result.scan_flag = 0;
+			return LWNL80211_TIMEOUT;
+		}
+		vdvdbg("WIFi scan filtering succeed!\n");
+		scan_filter_result.scan_flag = 0;
+	}
+
 	result = LWNL80211_SUCCESS;
 	vddbg("WIFi Scan success\n");
 	return result;
@@ -422,6 +480,40 @@ lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, 
 	slsi_security_config_t *config = NULL;
 
 	if (ap_connect_config->passphrase_length > 0) {
+		// scan to get the security config if it is unknown
+		if (ap_connect_config->ap_auth_type == LWNL80211_AUTH_UNKNOWN ||
+			ap_connect_config->ap_crypto_type == LWNL80211_CRYPTO_UNKNOWN) {
+			result = slsidrv_scan_ap(ap_connect_config);
+			if (result != LWNL80211_SUCCESS) {
+				vddbg("slsidrv_scan_ap failed! ssid:%s\n", ap_connect_config->ssid);
+				goto connect_ap_fail;
+			}
+
+			if (scan_filter_result.result_list != NULL) {
+				// Choose AP with the highest rssi value
+				lwnl80211_scan_list_s *best = NULL;
+				lwnl80211_scan_list_s *iter;
+				for (iter = scan_filter_result.result_list; iter != NULL; iter = iter->next) {
+					vdvdbg("Filter result - rssi:%d channel:%d\n", iter->ap_info.rssi, iter->ap_info.channel);
+					if (best == NULL || iter->ap_info.rssi > best->ap_info.rssi) {
+						best = iter;
+					}
+				}
+				// Use the auth_type/crypto_type value of best one.
+				vdvdbg("Choose result - rssi:%d channel:%d auth:%d crypto:%d\n",
+					best->ap_info.rssi, best->ap_info.channel, best->ap_info.ap_auth_type, best->ap_info.ap_crypto_type);
+				ap_connect_config->ap_auth_type = best->ap_info.ap_auth_type;
+				ap_connect_config->ap_crypto_type = best->ap_info.ap_crypto_type;
+				// Free the result_list.
+				free_scan_results(scan_filter_result.result_list);
+				scan_filter_result.result_list = NULL;
+			} else {
+				vddbg("slsidrv_scan_ap finish, but result is empty! ssid:%s\n", ap_connect_config->ssid);
+				result = LWNL80211_FAIL;
+				goto connect_ap_fail;
+			}
+		}
+
 		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
 			vddbg("Memory allocation failed!\n");
@@ -470,7 +562,8 @@ lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, 
 			vddbg("Wrong security type\n");
 			goto connect_ap_fail;
 		}
-	} else {
+	} else if (ap_connect_config->ap_auth_type !=  LWNL80211_AUTH_OPEN ||
+				ap_connect_config->ap_crypto_type != LWNL80211_CRYPTO_NONE) {
 		vddbg("No passphrase!\n");
 		goto connect_ap_fail;
 	}

@@ -41,6 +41,8 @@
 	"\n station mode options:\n"										\
 	"	 wm_test sta\n"													\
 	"	 wm_test join [ssid] [security mode] [password]\n"				\
+	"	    security mode is optional if not open mode,\n"				\
+	"	    password is unnecessary in case of open mode.\n"			\
 	"	 wm_test leave\n"												\
 	"	 wm_test cancel\n"												\
 	"\n run scan:\n"													\
@@ -1305,14 +1307,26 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		}
 		opt->func = wm_connect;
 		opt->ssid = argv[3];
+
 		opt->auth_type = get_auth_type(argv[4]);
-		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
-			return -1;
-		}
 		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+			// case: open mode
 			opt->password = "";
 			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 			return 0;
+		}
+
+		if (argc == 5) {
+			// case: unspecified security mode
+			opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
+			opt->password = argv[4];
+			return 0;
+		}
+
+		// case: security mode + password
+		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+			return -1;
 		}
 
 		if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
