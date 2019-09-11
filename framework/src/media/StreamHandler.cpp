@@ -95,7 +95,7 @@ void StreamHandler::createWorker()
 	medvdbg("StreamHandler::createWorker()\n");
 	if (mStreamBuffer && !mIsWorkerAlive) {
 		resetWorker();
-		mStreamBuffer = nullptr;
+		mStreamBuffer->reset();
 		mIsWorkerAlive = true;
 
 		pthread_attr_t attr;
