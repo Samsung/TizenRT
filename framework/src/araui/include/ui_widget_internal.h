@@ -25,6 +25,7 @@
 #include <vec/vec.h>
 #include <araui/ui_commons.h>
 #include <araui/ui_widget.h>
+#include <araui/ui_animation.h>
 #include "ui_asset_internal.h"
 #include "ui_widget_internal.h"
 #include "ui_commons_internal.h"
@@ -38,6 +39,7 @@ typedef void (*tween_callback)(ui_widget_t widget, uint32_t t);
 typedef float (*easing_callback)(float t, float b, float c, float d);
 typedef void (*touch_callback)(ui_widget_body_t *widget, ui_touch_event_t event, ui_coord_t coord);
 typedef void (*update_callback)(ui_widget_t widget, uint32_t dt);
+typedef bool (*anim_callback)(ui_widget_t widget, uint32_t dt);
 
 typedef enum {
 	UI_EMPTY_WIDGET,
@@ -109,6 +111,9 @@ struct ui_widget_body_s {
 	draw_callback draw_cb;
 	tween_callback tween_cb;
 	update_callback update_cb;
+	anim_callback anim_cb;
+
+	ui_anim_t *anim;
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)
 	ui_touch_info_t touch_info;

@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <araui/ui_commons.h>
 #include <araui/ui_asset.h>
+#include <araui/ui_animation.h>
 
 /**
  * @brief A handle type to control all kind of widgets in the UI Framework
@@ -107,7 +108,7 @@ typedef enum {
 /**
  * @brief Enumeration that represents the type of the scroll widget reaches its offset
  */
-typedef enum{
+typedef enum {
 	UI_REACH_ACTION_NONE = 0,
 	UI_REACH_ACTION_DELIVER_TO_PARENT
 } ui_reach_offset_action_type_t;
@@ -399,6 +400,13 @@ ui_error_t ui_widget_set_userdata(ui_widget_t widget, void *userdata);
  */
 void *ui_widget_get_userdata(ui_widget_t widget);
 
+ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, bool loop);
+
+ui_error_t ui_widget_stop_anim(ui_widget_t widget);
+
+ui_error_t ui_widget_pause_anim(ui_widget_t widget);
+
+ui_error_t ui_widget_resume_anim(ui_widget_t widget);
 
 /********************************
  *
