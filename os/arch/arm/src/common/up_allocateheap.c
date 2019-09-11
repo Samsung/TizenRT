@@ -221,11 +221,11 @@ void up_addregion(void)
 
 	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
 		if (heapx_is_init[regionx_heap_idx[region_cnt]] != true) {
-			mm_initialize(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+			mm_initialize(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 			heapx_is_init[regionx_heap_idx[region_cnt]] = true;
 			continue;
 		}
-		mm_addregion(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 	}
 }
 #endif
