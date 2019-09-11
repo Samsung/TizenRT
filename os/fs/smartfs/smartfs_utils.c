@@ -1894,11 +1894,78 @@ errout_with_semaphore:
 }
 #endif
 
+int execute_unfinished_journal_data(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *journal)
+{
+	int ret;
+	uint16_t startsector;
+	uint16_t readoffset;
+	uint16_t readsect;
+	struct smartfs_logging_entry_s *entry;
+
+#ifdef CONFIG_DEBUG_FS
+		print_journal_sectors(fs);
+#endif
+	startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
+	journal->sector = startsector;
+	readsect = startsector;
+	readoffset = 1;
+
+	while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
+		/* Read transactions in journal sector */
+		fvdbg("readsector : %d offset : %d\n", readsect, readoffset);
+		ret = read_logging_entry(fs, journal, &readsect, &readoffset);
+		if (ret != OK) {
+			break;
+		}
+		entry = (struct smartfs_logging_entry_s *)journal->buffer;
+		if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
+			fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
+			break;
+		}
+		/* Check whether this transaction exists, and logging of transaction has been completed */
+		if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
+			journal->sector = readsect;
+			journal->offset = readoffset - sizeof(struct smartfs_logging_entry_s);
+
+			/* If this entry has additional data, read additional data
+			   Skip reading additional data if transaction os of type DELETE, where we have reused datalen field
+			 */
+			if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
+				/* We skip reading additional data if transaction needs sync,
+				 * because these type of transactions are restored from list later.
+				 * So, we only increment the offset here */
+				/* If not a T_WRITE transaction which needs sync, read the additional data */
+				ret = read_logging_data(fs, journal, &readsect, &readoffset);
+				if (ret != OK) {
+					fdbg("Cannot read entry data.\n");
+					break;
+				}
+				if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
+					fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
+					break;
+				}
+			}
+			/* Restore the transaction. (T_WRITE with sync type transaction will not be
+			 * restored yet */
+			ret = process_transaction(fs);
+			if (ret != OK) {
+				fdbg("process_transaction failed, and cleaning journal areas\n");
+				break;
+			}
+		} else {
+			/* If a valid transaction does not exist here, stop checking further */
+			break;
+		}
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_SMARTFS_JOURNALING
 /****************************************************************************
  * Name: smartfs_journal_init
  *
- * Description: Initialize jornal manager
+ * Description: Initialize a journal manager
  *              Read logs to restore any previously failed transaction
  *
  ****************************************************************************/
@@ -1906,11 +1973,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 {
 	int ret;
 	uint16_t mapsize;
-	uint16_t readoffset;
-	uint16_t readsect;
-	uint16_t startsector;
 	struct smart_format_s fmt;
-	struct smartfs_logging_entry_s *entry;
 	struct journal_transaction_manager_s *journal;
 
 	journal = (struct journal_transaction_manager_s *)kmm_malloc(sizeof(struct journal_transaction_manager_s));
@@ -1951,61 +2014,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	memset(journal->active_sectors, 0, mapsize);
 
 	if (journal->jarea != -1) {
-#ifdef CONFIG_DEBUG_FS
-		print_journal_sectors(fs);
-#endif
-		startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-		journal->sector = startsector;
-		readsect = startsector;
-		readoffset = 1;
-
-		while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			/* Read transactions in journal sector */
-			fvdbg("readsector : %d offset : %d\n", readsect, readoffset);
-			ret = read_logging_entry(fs, journal, &readsect, &readoffset);
-			if (ret != OK) {
-				break;
-			}
-			entry = (struct smartfs_logging_entry_s *)journal->buffer;
-			if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
-				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
-				break;
-			}
-			/* Check whether this transaction exists, and logging of transaction has been completed */
-			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
-				journal->sector = readsect;
-				journal->offset = readoffset - sizeof(struct smartfs_logging_entry_s);
-
-				/* If this entry has additional data, read additional data
-				   Skip reading additional data if transaction os of type DELETE, where we have reused datalen field
-				 */
-				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-					/* We skip reading additional data if transaction needs sync,
-					 * because these type of transactions are restored from list later.
-					 * So, we only increment the offset here */
-					/* If not a T_WRITE transaction which needs sync, read the additional data */
-					ret = read_logging_data(fs, journal, &readsect, &readoffset);
-					if (ret != OK) {
-						fdbg("Cannot read entry data.\n");
-						break;
-					}
-					if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
-						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
-						break;
-					}
-				}
-				/* Restore the transaction. (T_WRITE with sync type transaction will not be
-				 * restored yet */
-				ret = process_transaction(fs);
-				if (ret != OK) {
-					fdbg("process_transaction failed, but clean journal area\n");
-					break;
-				}
-			} else {
-				/* If a valid transaction does not exist here, stop checking further */
-				break;
-			}
-		}
+		ret = execute_unfinished_journal_data(fs, journal);
 
 		if (journal->list) {
 			/* Now restore write transactions from the list */

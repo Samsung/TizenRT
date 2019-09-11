@@ -3348,6 +3348,107 @@ errout:
 	return ret;
 }
 
+int find_free_physical_sector(uint16_t allocblock, FAR struct smart_struct_s *dev, uint8_t *sector_buff, uint16_t *physicalsector, bool *bitflipped)
+{
+	int x, i;
+	int ret = -1;
+	uint32_t readaddr;
+	struct smart_sect_header_s header;
+		;
+	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
+		/* Check if this physical sector is available. */
+
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+		/* First check if there is a temporary alloc in place. */
+
+		FAR struct smart_allocsector_s *allocsect;
+		allocsect = dev->allocsector;
+
+		while (allocsect) {
+			if (allocsect->physical == x) {
+				break;
+			}
+			allocsect = allocsect->next;
+		}
+
+		/* If we found this physical sector above, then continue on
+		 * to the next physical sector in this block ... this one has
+		 * a temporary allocation assigned.
+		 */
+
+		if (allocsect) {
+			continue;
+		}
+#endif
+
+		/* Now check on the physical media. */
+
+		readaddr = x * dev->mtdBlksPerSector * dev->geo.blocksize;
+		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+		if (ret != sizeof(struct smart_sect_header_s)) {
+			fdbg("Error reading phys sector %d\n", physicalsector);
+			kmm_free(sector_buff);
+			return -1;
+		}
+		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
+#if SMART_STATUS_VERSION == 1
+			((header.seq == 0xFF) && (header.crc8 == 0xFF)) &&
+#else
+			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
+#endif
+			(!(SECTOR_IS_COMMITTED(header)))) {
+#ifdef CONFIG_SMARTFS_BAD_SECTOR
+			if (dev->badSectorList[x] == FALSE) {
+#endif
+				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
+				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
+					fdbg("Error reading physical sector %d\n", physicalsector);
+					kmm_free(sector_buff);
+					return -1;
+				}
+				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
+					if (sector_buff[i] != 0xff) {
+						break;
+					}
+				}
+
+				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
+					*physicalsector = x;
+					dev->lastallocblock = allocblock;
+					break;
+				} else {
+					*bitflipped = TRUE;
+					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
+					fdbg("set Released and commited to Erase%d\n", x);
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
+#else
+					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
+#endif
+					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
+					if (ret < 0) {
+						fdbg("Error %d releasing corrupted sector\n", -ret);
+						goto errout;
+					}
+#ifdef CONFIG_MTD_SMART_PACK_COUNTS
+					smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
+					smart_add_count(dev, dev->releasecount, allocblock, 1);
+#else
+					dev->freecount[x / dev->sectorsPerBlk]--;
+					dev->releasecount[allocblock]++;
+#endif
+					dev->freesectors--;
+					dev->releasesectors++;
+				}
+#ifdef CONFIG_SMARTFS_BAD_SECTOR
+			}
+#endif
+		}
+	}
+
+errout:
+	return ret;
+}
 /****************************************************************************
  * Name: smart_findfreephyssector
  *
@@ -3366,7 +3467,6 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 #endif
 	uint16_t physicalsector;
 	uint16_t x, block;
-	uint32_t readaddr;
 	struct smart_sect_header_s header;
 	int ret;
 	uint8_t   *sector_buff;
@@ -3496,102 +3596,14 @@ retry:
 
 	/* Now find a free physical sector within this selected
 	 * erase block to allocate. */
+
 	sector_buff = (uint8_t *)kmm_zalloc(dev->mtdBlksPerSector * dev->geo.blocksize);
 	if (sector_buff == NULL) {
 		fdbg("sector_buff allocation fail\n");
 		return physicalsector;
 	}
 
-	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
-		/* Check if this physical sector is available. */
-
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
-		/* First check if there is a temporary alloc in place. */
-
-		FAR struct smart_allocsector_s *allocsect;
-		allocsect = dev->allocsector;
-
-		while (allocsect) {
-			if (allocsect->physical == x) {
-				break;
-			}
-			allocsect = allocsect->next;
-		}
-
-		/* If we found this physical sector above, then continue on
-		 * to the next physical sector in this block ... this one has
-		 * a temporary allocation assigned.
-		 */
-
-		if (allocsect) {
-			continue;
-		}
-#endif
-
-		/* Now check on the physical media. */
-
-		readaddr = x * dev->mtdBlksPerSector * dev->geo.blocksize;
-		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-		if (ret != sizeof(struct smart_sect_header_s)) {
-			fdbg("Error reading phys sector %d\n", physicalsector);
-			kmm_free(sector_buff);
-			return -1;
-		}
-		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
-#if SMART_STATUS_VERSION == 1
-			((header.seq == 0xFF) && (header.crc8 == 0xFF)) &&
-#else
-			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
-#endif
-			(!(SECTOR_IS_COMMITTED(header)))) {
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			if (dev->badSectorList[x] == FALSE) {
-#endif
-				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
-				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
-					fdbg("Error reading physical sector %d\n", physicalsector);
-					kmm_free(sector_buff);
-					return -1;
-				}
-				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
-					if (sector_buff[i] != 0xff) {
-						break;
-					}
-				}
-
-				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
-					physicalsector = x;
-					dev->lastallocblock = allocblock;
-					break;
-				} else {
-					bitflipped = TRUE;
-					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
-					fdbg("set Released and commited to Erase%d\n", x);
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-					if (ret < 0) {
-						fdbg("Error %d releasing corrupted sector\n", -ret);
-						goto error;
-					}
-#ifdef CONFIG_MTD_SMART_PACK_COUNTS
-					smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
-					smart_add_count(dev, dev->releasecount, allocblock, 1);
-#else
-					dev->freecount[x / dev->sectorsPerBlk]--;
-					dev->releasecount[allocblock]++;
-#endif
-					dev->freesectors--;
-					dev->releasesectors++;
-				}
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			}
-#endif
-		}
-	}
+	find_free_physical_sector(allocblock, dev, sector_buff, &physicalsector, &bitflipped);
 
 error:
 	if (physicalsector == 0xFFFF || physicalsector >= dev->totalsectors) {
