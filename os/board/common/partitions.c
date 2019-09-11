@@ -35,7 +35,7 @@
 #endif
 
 #if defined(CONFIG_FLASH_PARTITION)
-FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s geo)
+FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
 {
 	FAR struct mtd_dev_s *mtd;
 #ifdef CONFIG_MTD_PROGMEM
@@ -45,7 +45,7 @@ FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s geo)
 		return NULL;
 	}
 
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
 		lldbg("ERROR: mtd->ioctl failed\n");
 		return NULL;
 	}
@@ -56,7 +56,7 @@ FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s geo)
 		return NULL;
 	}
 
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
 		lldbg("ERROR: mtd->ioctl failed\n");
 		return NULL;
 	}
@@ -80,7 +80,7 @@ void configure_partitions(void)
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
 
-	mtd = mtd_initialize(geo);
+	mtd = mtd_initialize(&geo);
 	if (mtd == NULL) {
 		return;
 	}
