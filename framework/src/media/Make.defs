@@ -50,8 +50,6 @@ endif
 DEPPATH += --dep-path src/media/demux/mpeg2ts
 VPATH += :src/media/demux/mpeg2ts
 
-CXXSRCS += StreamHandler.cpp
-
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
 CXXSRCS += InputHandler.cpp

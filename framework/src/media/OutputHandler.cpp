@@ -24,23 +24,58 @@
 #include "OutputHandler.h"
 #include "MediaRecorderImpl.h"
 
+#ifndef CONFIG_HANDLER_STREAM_BUFFER_SIZE
+#define CONFIG_HANDLER_STREAM_BUFFER_SIZE 4096
+#endif
+
+#ifndef CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD
+#define CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD 2048
+#endif
+
 namespace media {
 namespace stream {
 
 OutputHandler::OutputHandler() :
-	mIsFlushing(false)
+	mOutputDataSource(nullptr),
+	mWorker(0),
+	mIsFlushing(false),
+	mIsWorkerAlive(false)
 {
-	mWorkerStackSize = CONFIG_OUTPUT_DATASOURCE_STACKSIZE;
 }
 
 void OutputHandler::setOutputDataSource(std::shared_ptr<OutputDataSource> source)
 {
-	if (source == nullptr) {
-		meddbg("source is nullptr\n");
-		return;
-	}
-	StreamHandler::setDataSource(source);
 	mOutputDataSource = source;
+}
+
+bool OutputHandler::open()
+{
+	if (!getStreamBuffer()) {
+		auto streamBuffer = StreamBuffer::Builder()
+								.setBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
+								.setThreshold(CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD)
+								.build();
+
+		if (!streamBuffer) {
+			meddbg("streamBuffer is nullptr!\n");
+			return false;
+		}
+
+		setStreamBuffer(streamBuffer);
+	}
+
+	if (mOutputDataSource->open() && registerEncoder(mOutputDataSource->getAudioType(), mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate())) {
+		start();
+		return true;
+	}
+
+	return false;
+}
+
+bool OutputHandler::close()
+{
+	stop();
+	return mOutputDataSource->close();
 }
 
 ssize_t OutputHandler::write(unsigned char *buf, size_t size)
@@ -96,12 +131,24 @@ ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 	return (ssize_t)wlen;
 }
 
+bool OutputHandler::start()
+{
+	medvdbg("OutputHandler::start()\n");
+	if (!mOutputDataSource->isPrepared()) {
+		return false;
+	}
+
+	createWorker();
+	return true;
+}
+
 bool OutputHandler::stop()
 {
 	medvdbg("OutputHandler::stop()\n");
 	flush();
 
-	return StreamHandler::stop();
+	destroyWorker();
+	return true;
 }
 
 void OutputHandler::flush()
@@ -118,9 +165,44 @@ void OutputHandler::flush()
 	medvdbg("OutputDataSource::flush() exit\n");
 }
 
-void OutputHandler::resetWorker()
+void OutputHandler::createWorker()
 {
-	mIsFlushing = false;
+	medvdbg("OutputHandler::createWorker()\n");
+	if (mStreamBuffer && !mIsWorkerAlive) {
+		mStreamBuffer->reset();
+		mIsFlushing = false;
+		mIsWorkerAlive = true;
+
+		long stackSize = CONFIG_OUTPUT_DATASOURCE_STACKSIZE;
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setstacksize(&attr, stackSize);
+		int ret = pthread_create(&mWorker, &attr, static_cast<pthread_startroutine_t>(OutputHandler::workerMain), this);
+		if (ret != OK) {
+			meddbg("Fail to create DataSourceWorker thread, return value : %d\n", ret);
+			mIsWorkerAlive = false;
+			return;
+		}
+		pthread_setname_np(mWorker, "OutputHandler");
+	}
+}
+
+void OutputHandler::destroyWorker()
+{
+	medvdbg("OutputHandler::destoryWorker()\n");
+	if (mIsWorkerAlive) {
+		// Setup flag,
+		mIsWorkerAlive = false;
+
+		// Worker may be blocked in buffer reading.
+		mBufferWriter->setEndOfStream();
+
+		// Wake worker up,
+		wakenWorker();
+
+		// Join thread.
+		pthread_join(mWorker, NULL);
+	}
 }
 
 void OutputHandler::writeToSource(size_t size)
@@ -143,28 +225,74 @@ void OutputHandler::writeToSource(size_t size)
 	delete[] buf;
 }
 
-bool OutputHandler::processWorker()
+void *OutputHandler::workerMain(void *arg)
 {
-	auto size = this->mBufferReader->sizeOfData();
-	if (this->mIsFlushing) {
-		if (size != 0) {
-			this->writeToSource(size);
-		}
-		std::unique_lock<std::mutex> lock(this->mFlushMutex);
-		this->mIsFlushing = false;
-		this->mFlushCondv.notify_one();
-	} else if (size >= this->mStreamBuffer->getThreshold()) {
-		this->writeToSource(size);
+	medvdbg("OutputHandler::workerMain()\n");
+
+	if (arg == nullptr) {
+		meddbg("%s[line : %d] Fail : arg is nullptr\n", __func__, __LINE__);
+		return NULL;
 	}
 
-	return true;
+	auto stream = static_cast<OutputHandler *>(arg);
+	auto worker = stream->mOutputDataSource;
+
+	while (stream->mIsWorkerAlive) {
+		// Waken up by a writing/flushing/stopping operation
+		stream->sleepWorker();
+
+		// Worker may be stoped
+		if (!stream->mIsWorkerAlive) {
+			break;
+		}
+
+		auto size = stream->mBufferReader->sizeOfData();
+		if (stream->mIsFlushing) {
+			if (size != 0) {
+				stream->writeToSource(size);
+			}
+			std::unique_lock<std::mutex> lock(stream->mFlushMutex);
+			stream->mIsFlushing = false;
+			stream->mFlushCondv.notify_one();
+		} else if (size >= stream->mStreamBuffer->getThreshold()) {
+			stream->writeToSource(size);
+		}
+	}
+
+	medvdbg("OutputHandler exit\n");
+	return NULL;
 }
 
 void OutputHandler::sleepWorker()
 {
 	size_t spaces = mBufferWriter->sizeOfSpace();
-	if (spaces > 0) {
-		StreamHandler::sleepWorker();
+	std::unique_lock<std::mutex> lock(mMutex);
+	// In case of overrun, DO NOT sleep worker.
+	if (mIsWorkerAlive && (spaces > 0)) {
+		mCondv.wait(lock);
+	}
+}
+
+void OutputHandler::wakenWorker()
+{
+	std::lock_guard<std::mutex> lock(mMutex);
+	mCondv.notify_one();
+}
+
+void OutputHandler::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
+{
+	if (mStreamBuffer) {
+		mStreamBuffer->setObserver(nullptr);
+		mBufferReader = nullptr;
+		mBufferWriter = nullptr;
+	}
+
+	mStreamBuffer = streamBuffer;
+
+	if (mStreamBuffer) {
+		mStreamBuffer->setObserver(this);
+		mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
+		mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
 	}
 }
 
@@ -208,7 +336,7 @@ ssize_t OutputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 	return (ssize_t)written;
 }
 
-bool OutputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
+bool OutputHandler::registerEncoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
 	switch (audioType) {
 	case AUDIO_TYPE_OPUS: {
@@ -229,7 +357,7 @@ bool OutputHandler::registerCodec(audio_type_t audioType, unsigned int channels,
 	}
 }
 
-void OutputHandler::unregisterCodec()
+void OutputHandler::unregisterEncoder()
 {
 	mEncoder = nullptr;
 }
