@@ -78,6 +78,6 @@
 
 wint_t towlower(wint_t c)
 {
-	return (c < (wint_t) 0x00ff ? (wint_t) tolower((int)c) : c);
+	return (c < (wint_t)0x00ff ? (wint_t)tolower((int)c) : c);
 }
 #endif

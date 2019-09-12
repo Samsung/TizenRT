@@ -190,7 +190,7 @@ static void _tizenrt_init_sema(_sema *sema, int init_val)
 static void _tizenrt_free_sema(_sema *sema)
 {
 	int i;
-	if( *sema != NULL) {
+	if (*sema != NULL) {
 		i = sem_destroy(*sema);
 		if (i == 0) {
 			kmm_free(*sema);
@@ -224,7 +224,7 @@ static u32 _tizenrt_down_sema(_sema *sema, u32 timeout)
 
 static void _tizenrt_mutex_init(_mutex *pmutex)
 {
-	if( *pmutex == NULL) {
+	if (*pmutex == NULL) {
 		*pmutex = kmm_zalloc(sizeof(sem_t));
 		if (*pmutex == NULL) {
 			ndbg("\r\n _tizenrt_mutex_init failed \n");
@@ -246,7 +246,7 @@ static void _tizenrt_mutex_free(_mutex *pmutex)
 			ndbg("\r\n _tizenrt_mutex_free fail!!! \n");
 		}
 	}
-	*pmutex=NULL;
+	*pmutex = NULL;
 }
 
 static void _tizenrt_mutex_get(_lock *plock)
@@ -363,7 +363,7 @@ static void _tizenrt_spinlock_free(_lock *plock)
 			ndbg("\r\n _tizenrt_spinlock_free fail!!! \n");
 		}
 	}
-	*plock=NULL;
+	*plock = NULL;
 }
 
 static void _tizenrt_spinlock(_lock *plock)

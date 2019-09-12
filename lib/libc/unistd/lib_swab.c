@@ -83,7 +83,7 @@
 void swab(FAR const void *src, FAR void *dest, ssize_t nbytes)
 {
 	FAR const uint8_t *src8 = (FAR const uint8_t *)src;
-	FAR uint8_t *dest8 = (FAR uint8_t *) dest;
+	FAR uint8_t *dest8 = (FAR uint8_t *)dest;
 	FAR uint8_t *end8;
 
 	DEBUGASSERT(src != NULL && dest != NULL);

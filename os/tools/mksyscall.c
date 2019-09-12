@@ -333,7 +333,7 @@ static void generate_proxy(int nparms)
 	/* Handle the tail end of the function. */
 
 	if (is_noreturn_func(get_parm(NAME_INDEX))) {
-		fprintf(stream, ");%s\n}\n\n", "\n  while(1);");
+		fprintf(stream, ");%s\n}\n\n", "\n  while (1);");
 	} else {
 		fprintf(stream, ");\n}\n\n");
 	}
