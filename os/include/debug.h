@@ -304,19 +304,19 @@ int get_errno(void);
 #ifdef CONFIG_DEBUG_BINFMT_ERROR
 #  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
 #else
-#  define berr(x...)
+#  define berr(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_WARN
 #  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
 #else
-#  define bwarn(x...)
+#  define bwarn(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_INFO
 #  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
 #else
-#  define binfo(x...)
+#  define binfo(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINMGR_ERROR
