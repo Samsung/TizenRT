@@ -712,4 +712,4 @@ endif
 # Contents need to be placed in $(TOPDIR)/../tools/fs/contents/$BOARDNAME/base-files folder
 smartfs: include/tinyara/config.h
 	$(Q) ./../tools/nxfuse/mknxfuse.sh
-	$(Q) tools/mksmartfsimg.sh
+	$(Q) ./../tools/nxfuse/mksmartfsimg.sh

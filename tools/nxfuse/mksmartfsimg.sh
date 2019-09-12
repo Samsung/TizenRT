@@ -19,24 +19,29 @@
 #
 # File : mksmartfsimg.sh
 
-source .config
+NXFUSE_TOOL_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+
+BASE_DIR=$NXFUSE_TOOL_PATH/../..
+
+#source $BASE_DIR/os/.config
+. $BASE_DIR/os/.config
 
 BOARDNAME=$CONFIG_ARCH_BOARD
 POSTFIX=_smartfs.bin
-BINDIR=../build/output/bin
+BINDIR=$BASE_DIR/build/output/bin
 BINNAME=$BOARDNAME$POSTFIX
-CONTENTSDIR=../tools/fs/contents
-NXFUSEDIR=../tools/nxfuse
+CONTENTSDIR=$BASE_DIR/tools/fs/contents-smartfs
+NXFUSEDIR=$NXFUSE_TOOL_PATH
 
 # For the below values check partition sizes in .config
 blkcount=512
-blksize=512
+blksize=$CONFIG_MTD_SMART_SECTOR_SIZE
 pagesize=256
 erasesize=4096
 
 echo "============================================================="
 echo "mksmartfsimg.sh : $BINNAME, Target Board: $BOARDNAME"
-echo " - block count := $blkcount (bs=1024)"
+echo " - block count := $blkcount (bs=$blksize)"
 echo "============================================================="
 
 if [ ! -d $CONTENTSDIR/$BOARDNAME/mnt ]; then
@@ -53,10 +58,10 @@ dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
 cp $NXFUSEDIR/nxfuse .
 
 # Formatting
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m ./$BINDIR/$BINNAME || exit 1
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $BINDIR/$BINNAME || exit 1
 
 # Mounting mnt
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ./$BINDIR/$BINNAME || exit 1
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
 
 # Copying files to smartfs file system
 cp -a $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
