@@ -6,7 +6,7 @@
 config EXAMPLES_BT_UNIT_TEST
 	bool "Enable bt_unit_test"
 	default n
-	depends on !BUILD_PROTECTED
+	depends on BLUETOOTH
 	---help---
 		Enable bt_unit_test
 
