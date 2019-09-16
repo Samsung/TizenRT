@@ -110,14 +110,14 @@ intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base)
 		/* Correct the sign of the result and check for overflow */
 
 		if (negate) {
-			const uintmax_t limit = ((uintmax_t) - (INTMAX_MIN + 1)) + 1;
+			const uintmax_t limit = ((uintmax_t)-(INTMAX_MIN + 1)) + 1;
 
 			if (accum > limit) {
 				set_errno(ERANGE);
 				return INTMAX_MIN;
 			}
 
-			return (accum == limit) ? INTMAX_MIN : -(intmax_t) accum;
+			return (accum == limit) ? INTMAX_MIN : -(intmax_t)accum;
 		}
 
 		if (accum > INTMAX_MAX) {
@@ -126,5 +126,5 @@ intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base)
 		}
 	}
 
-	return (intmax_t) accum;
+	return (intmax_t)accum;
 }

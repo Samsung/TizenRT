@@ -132,7 +132,7 @@ double cbrt(double x)
 		hx = hx / 3 + B1;
 	}
 	u.i &= 1ULL << 63;
-	u.i |= (uint64_t) hx << 32;
+	u.i |= (uint64_t)hx << 32;
 	t = u.f;
 
 	/*
