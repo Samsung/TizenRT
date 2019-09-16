@@ -57,7 +57,6 @@ enum _wifimgr_state {
 	WIFIMGR_STA_RECONNECT, // 5
 	WIFIMGR_STA_RECONNECTING,
 	WIFIMGR_STA_CONNECT_CANCEL,
-	WIFIMGR_SOFTAP_DISCONNECTING_STA,
 	WIFIMGR_SOFTAP,
 	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
@@ -65,19 +64,27 @@ enum _wifimgr_state {
 };
 typedef enum _wifimgr_state _wifimgr_state_e;
 
+enum _wifimgr_disconn_substate {
+	WIFIMGR_DISCONN_NONE = -1,
+	WIFIMGR_DISCONN_DEINIT,
+	WIFIMGR_DISCONN_SOFTAP,
+	WIFIMGR_DISCONN_MAX,
+};
+typedef enum _wifimgr_disconn_substate _wifimgr_disconn_substate_e;
+
 enum _wifimgr_evt {
 	EVT_INIT,				// Command to initialize WiFi Manager
 	EVT_DEINIT,				// Command to Deinit WiFi Manager
 	EVT_SET_SOFTAP,			// Command to set SoftAP
 	EVT_SET_STA,			// Command to set STA mode
 	EVT_CONNECT,			// Command to connect to a WiFi AP
-	EVT_DISCONNECT,		// Command to Disconnect from a connected WiFi AP
+	EVT_DISCONNECT,			// Command to Disconnect from a connected WiFi AP
 	EVT_SCAN,				// Command to perform WiFi Scanning over WLAN channels
 	EVT_GETINFO,			// Command to get WiFi Manager information
-	EVT_RECONNECT,		  // Command to reconnect to WiFi AP. If we use EVT_CONNECT, then we can't distinguish it's from application request
+	EVT_RECONNECT,			// Command to reconnect to WiFi AP. If we use EVT_CONNECT, then we can't distinguish it's from application request
 	EVT_STA_CONNECTED,		// Event that STA is connected
-	EVT_STA_CONNECT_FAILED,	// Event that STA connect failed
-	EVT_STA_DISCONNECTED,	// Event that external STA disconnected from WiFi AP
+	EVT_STA_CONNECT_FAILED, // Event that STA connect failed
+	EVT_STA_DISCONNECTED,   // Event that external STA disconnected from WiFi AP
 	EVT_JOINED,				// Event that new STA joined softAP
 	EVT_DHCPD_GET_IP,		// Event that SoftAP got IP address
 	EVT_LEFT,				// Event that external STA device left softAP
@@ -128,8 +135,9 @@ struct _wifimgr_info {
 
 	pthread_mutex_t state_lock;
 	pthread_mutex_t info_lock;
-	pthread_mutex_t softap_lock;
-	pthread_cond_t softap_signal;
+
+	_wifimgr_disconn_substate_e disconn_substate;
+
 	wifi_manager_cb_s *cb[WIFIMGR_NUM_CALLBACKS];
 
 	//
@@ -146,6 +154,9 @@ struct _wifimgr_info {
 	uint16_t stats[CB_MAX];
 };
 typedef struct _wifimgr_info _wifimgr_info_s;
+
+static pthread_mutex_t g_disconn_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
@@ -175,20 +186,21 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
 
-#define WIFIMGR_SOFTAP_WAIT_CALLBACK									\
-	do {																\
-		pthread_mutex_lock(&g_manager_info.softap_lock);				\
-		pthread_cond_wait(&g_manager_info.softap_signal, &g_manager_info.softap_lock); \
-		pthread_mutex_unlock(&g_manager_info.softap_lock);				\
-		nvdbg("[WM] T%d wait disconnect callback\n", getpid());			\
+#define WIFIMGR_WAIT_DISCONNECT_CALLBACK                        \
+	do {                                                        \
+		pthread_mutex_lock(&g_disconn_lock);                    \
+		pthread_cond_wait(&g_disconn_signal, &g_disconn_lock);  \
+		pthread_mutex_unlock(&g_disconn_lock);                  \
+		nvdbg("[WM] T%d wait disconnect callback\n", getpid()); \
 	} while (0)
 
-#define WIFIMGR_SOFTAP_CALLBACK_RECEIVED							\
-	do {															\
-		pthread_mutex_lock(&g_manager_info.softap_lock);			\
-		pthread_cond_signal(&g_manager_info.softap_signal);			\
-		pthread_mutex_unlock(&g_manager_info.softap_lock);	        \
-		nvdbg("[WM] T%d received disconnect callback\n", getpid());	\
+#define WIFIMGR_DISCONNECT_CALLBACK_RECEIVED                        \
+	do {                                                            \
+		pthread_mutex_lock(&g_disconn_lock);                        \
+		g_manager_info.disconn_substate = WIFIMGR_DISCONN_NONE;     \
+		pthread_cond_signal(&g_disconn_signal);                     \
+		pthread_mutex_unlock(&g_disconn_lock);                      \
+		nvdbg("[WM] T%d received disconnect callback\n", getpid()); \
 	} while (0)
 
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
@@ -366,8 +378,7 @@ static _wifimgr_info_s g_manager_info = {{0}, {0}, {0}, 0, 0, 0,
 										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
 										 PTHREAD_MUTEX_INITIALIZER,
 										 PTHREAD_MUTEX_INITIALIZER,
-										 PTHREAD_MUTEX_INITIALIZER,
-										 PTHREAD_COND_INITIALIZER,
+										 WIFIMGR_DISCONN_NONE,
 										 {NULL, NULL, NULL},
 										 0,
 										 WM_APINFO_INITIALIZER,
@@ -472,7 +483,6 @@ static wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg);
-static wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg);
 
@@ -490,7 +500,6 @@ const wifimgr_handler g_handler[] = {
 	_handler_on_reconnect_state,
 	_handler_on_reconnecting_state,
 	_handler_on_connect_cancel_state,
-	_handler_on_softap_disconnecting_state,
 	_handler_on_softap_state,
 	_handler_on_scanning_state,
 };
@@ -516,7 +525,7 @@ void __tizenrt_manual_linkset(const char *msg)
  */
 #define WIFIMGR_IP4_ZERO 0
 #define WIFIMGR_MAC_ZERO {0, 0, 0, 0, 0, 0}
-// g_dhcp_list is protected by g_manager_info.softap_lock
+// g_dhcp_list is protected by g_manager_info.disconn_lock
 // because it's called while wifimanager is softap mode
 static dhcp_node_s g_dhcp_list = {WIFIMGR_IP4_ZERO, WIFIMGR_MAC_ZERO};
 
@@ -683,7 +692,6 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	case WIFIMGR_STA_DISCONNECTED:
 	case WIFIMGR_STA_DISCONNECTING:
 	case WIFIMGR_STA_CONNECTING:
-	case WIFIMGR_SOFTAP_DISCONNECTING_STA:
 	case WIFIMGR_STA_CONNECT_CANCEL:
 		*mode = STA_MODE;
 		*conn = AP_DISCONNECTED;
@@ -913,9 +921,6 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
 	g_manager_info.num_sta = 0;
 
-	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
-		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;
-	}
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
 	return WIFI_MANAGER_SUCCESS;
@@ -1097,35 +1102,24 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		} else {
 			WIFIMGR_RESET_CBK_CHK;
 		}
-		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		_close_ipaddr_dhcpc();
-	} else {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		return WIFI_MANAGER_FAIL;
-	}
-	return WIFI_MANAGER_SUCCESS;
-}
-
-
-
-wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg)
-{
-	WM_LOG_HANDLER_START;
-	if (msg->event == EVT_STA_DISCONNECTED) {
-		if (WIFIMGR_CHECK_CBK) {
-			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
-		} else {
-			WIFIMGR_RESET_CBK_CHK;
+		switch (g_manager_info.disconn_substate) {
+		case WIFIMGR_DISCONN_DEINIT:
+		case WIFIMGR_DISCONN_SOFTAP:
+			WIFIMGR_DISCONNECT_CALLBACK_RECEIVED;
+			break;
+		default:
+			// Nothing to do yet
+			break;
 		}
-		_close_ipaddr_dhcpc();
-		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(&g_manager_info.softap_config), "run_softap fail", WIFI_MANAGER_FAIL);
-		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
+
 
 wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 {
@@ -1211,13 +1205,14 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP) {
-		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_COPY_SOFTAP_CONFIG(g_manager_info.softap_config, (wifi_manager_softap_config_s *)msg->param);
-		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP_DISCONNECTING_STA);
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+		g_manager_info.disconn_substate = WIFIMGR_DISCONN_SOFTAP;
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_DEINIT) {
-		// Todo: do I need to disconnect?
-		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
-		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+		g_manager_info.disconn_substate = WIFIMGR_DISCONN_DEINIT;
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan(), "fail scan\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
@@ -1562,6 +1557,15 @@ wifi_manager_result_e wifi_manager_deinit(void)
 {
 	_wifimgr_msg_s msg = {EVT_DEINIT, NULL};
 	wifi_manager_result_e res = _handle_request(&msg);
+	LOCK_WIFIMGR;
+	if (g_manager_info.state == WIFIMGR_STA_DISCONNECTING) {
+		UNLOCK_WIFIMGR;
+		WIFIMGR_WAIT_DISCONNECT_CALLBACK;
+		res = _handle_request(&msg);
+	} else {
+		nvdbg("[WM] T%d DEINIT called\n", getpid());
+		UNLOCK_WIFIMGR;
+	}
 	return res;
 }
 
@@ -1583,12 +1587,17 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		msg.param = (void *)config;
 	}
 	wifi_manager_result_e res = _handle_request(&msg);
-	LOCK_WIFIMGR;
-	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
-		UNLOCK_WIFIMGR;
-		WIFIMGR_SOFTAP_WAIT_CALLBACK;
-	} else {
-		UNLOCK_WIFIMGR;
+
+	if (mode == SOFTAP_MODE) {
+		LOCK_WIFIMGR;
+		if (g_manager_info.state == WIFIMGR_STA_DISCONNECTING) {
+			UNLOCK_WIFIMGR;
+			WIFIMGR_WAIT_DISCONNECT_CALLBACK;
+			res = _handle_request(&msg);
+		} else {
+			nvdbg("[WM] T%d Mode switching to softap (not connected STA)\n", getpid());
+			UNLOCK_WIFIMGR;
+		}
 	}
 
 	return res;
@@ -1670,6 +1679,7 @@ wifi_manager_result_e wifi_manager_scan_ap(void)
 	wifi_manager_result_e wret = _handle_request(&msg);
 	return wret;
 }
+
 
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
