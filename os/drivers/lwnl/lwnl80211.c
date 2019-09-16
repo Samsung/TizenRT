@@ -149,6 +149,172 @@ static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t le
 	return OK;
 }
 
+static int _ops_init(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->init == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->init(lower);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_deinit(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->deinit == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->deinit();
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_get_info(struct lwnl80211_lowerhalf_s *lower, lwnl80211_info *info, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->get_info == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->get_info(info);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_set_autoconnect(struct lwnl80211_lowerhalf_s *lower, uint8_t *check, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->set_autoconnect == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->set_autoconnect(*check);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_start_sta(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->start_sta == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->start_sta();
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_connect_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_ap_config_s *config, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->connect_ap == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->connect_ap(config, NULL);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_disconnect_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->disconnect_ap == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->disconnect_ap(NULL);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_start_softap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_softap_config_s *config, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->start_softap == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->start_softap(config);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_stop_softap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->stop_softap == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->stop_softap();
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_scan_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	if (lower->ops->scan_ap == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->scan_ap(NULL);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
+static int _ops_drv_ioctl(struct lwnl80211_lowerhalf_s *lower, int cmd, unsigned long arg, lwnl80211_result_e *res)
+{
+	int ret = -ENOSYS;
+	nldbg("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
+	if (lower->ops->drv_ioctl == NULL) {
+		return ret;
+	}
+
+	*res = lower->ops->drv_ioctl(cmd, arg);
+	if (*res == LWNL80211_SUCCESS) {
+		ret = OK;
+	}
+
+	return ret;
+}
+
 static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL80211_ENTER;
@@ -170,171 +336,46 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case LWNL80211_REGISTERMQ:
-	{
 		memcpy(upper->mqname, (char *)(data_in->data), data_in->data_len);
 		ret = OK;
-	}
-	break;
+		break;
 	case LWNL80211_UNREGISTERMQ:
-	{
 		memset(upper->mqname, 0, sizeof(upper->mqname));
 		ret = OK;
-	}
-	break;
+		break;
 	case LWNL80211_INIT:
-	{
-		if (lower->ops->init != NULL) {
-			*res = lower->ops->init(lower);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_init(lower, res);
+		break;
 	case LWNL80211_DEINIT:
-	{
-		if (lower->ops->deinit != NULL) {
-			*res = lower->ops->deinit();
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_deinit(lower, res);
+		break;
 	case LWNL80211_GET_INFO:
-	{
-		lwnl80211_info *info = (lwnl80211_info *)data_in->data;;
-		if (lower->ops->get_info != NULL) {
-			*res = lower->ops->get_info(info);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_get_info(lower, (lwnl80211_info *)data_in->data, res);
+		break;
 	case LWNL80211_SET_AUTOCONNECT:
-	{
-		uint8_t *check = (uint8_t *)data_in->data;
-		if (lower->ops->set_autoconnect != NULL) {
-			*res = lower->ops->set_autoconnect(*check);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_set_autoconnect(lower, (uint8_t *)data_in->data, res);
+		break;
 	case LWNL80211_START_STA:
-	{
-		if (lower->ops->start_sta != NULL) {
-			*res = lower->ops->start_sta();
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_start_sta(lower, res);
+		break;
 	case LWNL80211_CONNECT_AP:
-	{
-		lwnl80211_ap_config_s *config = (lwnl80211_ap_config_s *)data_in->data;
-		if (lower->ops->connect_ap != NULL) {
-			*res = lower->ops->connect_ap(config, NULL);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_connect_ap(lower, (lwnl80211_ap_config_s *)data_in->data, res);
+		break;
 	case LWNL80211_DISCONNECT_AP:
-	{
-		if (lower->ops->disconnect_ap != NULL) {
-			*res = lower->ops->disconnect_ap(NULL);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_disconnect_ap(lower, res);
+		break;
 	case LWNL80211_START_SOFTAP:
-	{
-		lwnl80211_softap_config_s *config = (lwnl80211_softap_config_s *)(data_in->data);
-		if (lower->ops->start_softap != NULL) {
-			*res = lower->ops->start_softap(config);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_start_softap(lower, (lwnl80211_softap_config_s *)data_in->data, res);
+		break;
 	case LWNL80211_STOP_SOFTAP:
-	{
-		if (lower->ops->stop_softap != NULL) {
-			*res = lower->ops->stop_softap();
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_stop_softap(lower, res);
+		break;
 	case LWNL80211_SCAN_AP:
-	{
-		if (lower->ops->scan_ap != NULL) {
-			*res = lower->ops->scan_ap(NULL);
-			if (*res == LWNL80211_SUCCESS) {
-				ret = OK;
-			} else {
-				ret = -ENOSYS;
-			}
-		} else {
-			ret = -ENOSYS;
-		}
-	}
-	break;
+		ret = _ops_scan_ap(lower, res);
+		break;
 	default:
-	{
-		if (lower->ops->drv_ioctl != NULL) {
-			 nldbg("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
-			 ret = lower->ops->drv_ioctl(cmd, arg);
-		 } else {
-			 ret = -ENOSYS;
-		 }
-	}
-	break;
+		ret = _ops_drv_ioctl(lower, cmd, arg, res);
+		break;
 	}
 
 	sem_post(&upper->exclsem);
