@@ -138,7 +138,7 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 	 * ourself.
 	 */
 
-	if ((pid_t)thread == getpid()) {
+	if ((pid_t)thread == rtcb->pid) {
 		return EDEADLK;
 	}
 
