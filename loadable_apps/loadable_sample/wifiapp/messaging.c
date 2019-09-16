@@ -200,6 +200,8 @@ void messaging_test(void)
 	int ret;
 	int rep_cnt = 1;
 
+	printf("Messaging Test Runs %d-time(s) only.\n", CONFIG_MESSAGING_TEST_REPETITION_NUM);
+	printf("You can set the iteration to CONFIG_MESSAGING_TEST_REPETITION_NUM.\n");
 	sem_init(&test_sem, 0, 0);
 
 #if CONFIG_MESSAGING_TEST_REPETITION_NUM > 0
