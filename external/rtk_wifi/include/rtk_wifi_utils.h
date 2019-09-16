@@ -19,17 +19,17 @@
   * @file    rtk_wifi_utils.h
   * @author
   * @version
-  * @brief   This file provides user interface for Wi-Fi station and AP mode configuration 
+  * @brief   This file provides user interface for Wi-Fi station and AP mode configuration
   *             base on the functionalities provided by Realtek Wi-Fi driver.
   ******************************************************************************
   */
 #ifndef __RTK_WIFI_UTILS_H
 #define __RTK_WIFI_UTILS_H
 
-#include "wifi_common.h"
+#include <sys/types.h>
+#include <tinyara/wifi/wifi_common.h>
 #include "wifi_constants.h"
 #include "wifi_structures.h"
-#include <sys/types.h>
 
 /* rtk return values */
 #define RTK_STATUS_SUCCESS                             0	// Successfully completed

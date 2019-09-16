@@ -19,13 +19,24 @@
 #ifndef __WIFI_COMMON_H__
 #define __WIFI_COMMON_H__
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+#include <tinyara/config.h>
 
-/* Length defines */
+#include <stdint.h>
+
+/****************************************************************************
+ * Definitions
+ ****************************************************************************/
 #define WIFI_UTILS_MACADDR_LEN        6
 #define WIFI_UTILS_MACADDR_STR_LEN    17
 #define WIFI_UTILS_SSID_LEN           32
 #define WIFI_UTILS_PASSPHRASE_LEN     64
 
+/****************************************************************************
+ * Enums
+ ****************************************************************************/
 /**
  * @brief time out option (used by message queue, uart, semaphore, mutex)
  *
@@ -37,7 +48,7 @@ typedef enum {
 
 /**
  * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
- */ 
+ */
 typedef enum {
 	WIFI_UTILS_FAIL = -1,
 	WIFI_UTILS_SUCCESS,
@@ -103,6 +114,10 @@ typedef enum {
 	WIFI_UTILS_SOFTAP_MODE,                  /**<  soft ap mode          */
 } wifi_utils_status_e;
 
+
+/****************************************************************************
+ * Structures
+ ****************************************************************************/
 /**
  * @brief wifi access point information
  */

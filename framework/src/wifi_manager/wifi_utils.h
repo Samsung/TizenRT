@@ -24,7 +24,7 @@
 #include <mqueue.h>
 #include <pthread.h>
 
-#include "wifi_common.h"
+#include <tinyara/wifi/wifi_common.h>
 
 #ifdef CONFIG_LWNL80211
 struct _wifi_utils_s {
