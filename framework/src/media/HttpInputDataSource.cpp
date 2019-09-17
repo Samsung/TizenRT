@@ -55,13 +55,13 @@ static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
 
 HttpInputDataSource::HttpInputDataSource(const std::string &url)
-	: InputDataSource(), mUrl(url), mThread((pthread_t)0)
+	: InputDataSource(), mUrl(url), mThread((pthread_t)0), mIsHeaderReceived(false), mIsDataReceived(false)
 {
 	medvdbg("url: %s\n", mUrl.c_str());
 }
 
 HttpInputDataSource::HttpInputDataSource(const HttpInputDataSource &source)
-	: InputDataSource(source), mUrl(source.mUrl), mThread((pthread_t)0)
+	: InputDataSource(source), mUrl(source.mUrl), mThread((pthread_t)0), mIsHeaderReceived(source.mIsHeaderReceived), mIsDataReceived(source.mIsDataReceived)
 {
 }
 
