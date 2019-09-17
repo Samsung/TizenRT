@@ -93,6 +93,7 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <unistd.h>
 #include <mqueue.h>
+#include <stdbool.h>
 #include "binary_manager/binary_manager.h"
 #endif
 #include "irq/irq.h"
@@ -515,10 +516,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	uint32_t ksram_segment_end  = (uint32_t)__ksram_segment_start__  + (uint32_t)__ksram_segment_size__;
-	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 	uint32_t assert_pc;
-	uint32_t is_kernel_assert   = false;
+	bool is_kernel_assert;
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
@@ -530,9 +529,8 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	/* Is the assert in Kernel? */
 
-	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
-		is_kernel_assert = true;
-	}
+	is_kernel_assert = is_kernel_space(assert_pc);
+
 #endif  /* CONFIG_BINMGR_RECOVERY */
 
 	up_dumpstate();
