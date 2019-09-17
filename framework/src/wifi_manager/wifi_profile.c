@@ -27,9 +27,10 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <tinyara/wifi/wifi_common.h>
+
 #include <wifi_manager/wifi_manager.h>
 #include <security/security_api.h>
-#include "wifi_common.h"
 #include "wifi_profile.h"
 
 //#define WIFI_PROFILE_USE_ETC

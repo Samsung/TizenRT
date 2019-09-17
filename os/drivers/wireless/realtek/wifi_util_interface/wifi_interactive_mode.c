@@ -1,4 +1,5 @@
 #include <tinyara/config.h>
+#include <tinyara/wifi/wifi_common.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +15,8 @@
 #include "rtk_lwip_netconf.h"
 #include "net/lwip/ip_addr.h"
 #include "net/lwip/ip4_addr.h"
-#include "wifi_common.h"
 #include "rtk_wifi_utils.h"
 #include "net/lwip/tcpip.h"
-
-#include <../../framework/src/wifi_manager/wifi_common.h>
 
 #define vTaskDelay(t) usleep(t)
 
