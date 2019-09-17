@@ -28,9 +28,6 @@
  * @brief Provides APIs for Error Reporting Modules
  * @{
  */
-#define ERR_FUNCNAME_LEN_MAX	32
-#define ERR_TASKNAME_LEN_MAX CONFIG_TASK_NAME_SIZE + 1
-#define ERR_TIMESTAMP_LEN	26
 #define ERR_BUFLEN	1024
 enum error_module_id_e {
 	ERRMOD_WIFI_MANAGER,
