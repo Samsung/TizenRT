@@ -1097,6 +1097,7 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 	struct addrinfo *tmp = src;
 	struct addrinfo *prev = NULL;
 	struct addrinfo *root = NULL;
+	int canonname_len = 0;
 	while (tmp) {
 		struct addrinfo *dst = NULL;
 		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
@@ -1116,17 +1117,19 @@ static struct addrinfo *copy_addrinfo(struct addrinfo *src)
 			kumm_free(dst);
 			break;
 		}
+
 		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
 
 		if (tmp->ai_canonname) {
-			dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
+			canonname_len = strlen(tmp->ai_canonname) + 1;
+			dst->ai_canonname = (char *)kumm_malloc(canonname_len);
 			if (!dst->ai_canonname) {
 				ndbg("copy_addrinfo() kumm_malloc failed\n");
 				kumm_free(dst->ai_addr);
 				kumm_free(dst);
 				break;
 			}
-			memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+			memcpy(dst->ai_canonname, tmp->ai_canonname, canonname_len);
 		} else {
 			dst->ai_canonname = NULL;
 		}
