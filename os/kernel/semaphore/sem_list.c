@@ -77,7 +77,7 @@ void sem_register(FAR sem_t *sem)
 			irqrestore(flags);
 			return;
 		}
-		sem_ptr = sq_next(sem_ptr);
+		sem_ptr = (sem_t *)sq_next(sem_ptr);
 	}
 	/* Add semaphore to a list of kernel semaphore, g_sem_list */
 	sq_addlast((FAR sq_entry_t *)sem, &g_sem_list);

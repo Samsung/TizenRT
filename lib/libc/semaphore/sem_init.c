@@ -135,6 +135,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 #if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
 		/* Register semaphore in kernel region for kernel resource management */
 		if (sem->semcount != 0) {
+			sem->flink = NULL;
 			sem_register(sem);
 		}
 #endif
