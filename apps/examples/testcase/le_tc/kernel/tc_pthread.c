@@ -34,8 +34,11 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/types.h>
-#include "../../../../../os/kernel/group/group.h"
 #include "tc_internal.h"
+
+/****************************************************************************
+ * Definitions
+ ****************************************************************************/
 
 #define SEC_1                   1
 #define SEC_2                   2
@@ -55,37 +58,40 @@
 #define NOSIG                   333
 #define INVALID_PID             (-1)
 
-struct mallinfo mem;
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
-pthread_t g_thread1;
-pthread_t g_thread2;
-pthread_t thread[PTHREAD_CNT];
+static pthread_t g_thread1;
+static pthread_t g_thread2;
 
-pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t g_cond;
+static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_cond;
 static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
-bool g_maskquitrecv;
-bool g_maskusrrecv;
 
-pthread_barrier_t g_pthread_barrier;
-int g_barrier_count_in = 0;
-int g_barrier_count_out = 0;
-int g_barrier_count_spare = 0;
+static pthread_barrier_t g_pthread_barrier;
+static int g_barrier_count_in = 0;
+static int g_barrier_count_out = 0;
+static int g_barrier_count_spare = 0;
 
 static pthread_mutex_t g_mutex_timedwait;
 static pthread_cond_t cond;
 static int g_mutex_cnt = 0;
 
-int g_cond_sig_val = 0;
+static int g_cond_sig_val = 0;
 
 static bool g_sig_handle = false;
 
-pthread_t self_pid;
-volatile uint8_t check_prio;
+static pthread_t self_pid;
+static volatile uint8_t check_prio;
 static int chk_val;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 static void *infinite_loop_thread(void *param)
 {
@@ -1517,7 +1523,7 @@ static void tc_pthread_pthread_testcancel(void)
 #endif
 
 /****************************************************************************
- * Name: pthread
+ * Name: pthread_main
  ****************************************************************************/
 
 int pthread_main(void)
