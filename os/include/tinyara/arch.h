@@ -2148,6 +2148,17 @@ void up_wdog_keepalive(void);
 
 #endif
 
+#ifdef CONFIG_BUILD_PROTECTED
+/****************************************************************************
+ * Name: is_kernel_space
+ *
+ * Description:
+ *   Check the address is in kernel space or not
+ *
+ ****************************************************************************/
+bool is_kernel_space(void *addr);
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }
