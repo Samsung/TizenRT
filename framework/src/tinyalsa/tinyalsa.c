@@ -903,7 +903,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 		ret = ioctl(pcm->fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&buf_desc);
 
-		if (ret != sizeof(buf_desc)) {
+		if (ret != sizeof(buf_desc) || pcm->pBuffers[x] == NULL) {
 			/* Buffer alloc Operation not supported or error allocating! */
 			oops(pcm, ENOMEM, "Could not allocate buffer %d\n", x);
 			goto fail_cleanup_buffers;
