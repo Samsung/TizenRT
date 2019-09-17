@@ -651,7 +651,7 @@ static void tc_pthread_pthread_tryjoin_np(void)
 	sleep(SEC_1);
 
 	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
-	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, ESRCH);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, OK);
 
 	ret_chk = pthread_create(&pid, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
