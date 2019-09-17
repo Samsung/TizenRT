@@ -382,6 +382,9 @@ static int tash_cat(int argc, char **args)
 		FSCMD_OUTPUT(INVALID_ARGS FSCMD_CAT_USAGE, args[0]);
 		return ERROR;
 	}
+
+	fscmd_free(src_fullpath);
+	fscmd_free(dest_fullpath);
 	return OK;
 error:
 	fscmd_free(src_fullpath);
@@ -1035,9 +1038,9 @@ static int delete_entry(const char *fullpath)
 			/* Call delete_entey recursively */
 			entrypath = get_dirpath(fullpath, entryp->d_name);
 			ret = delete_entry(entrypath);
-			fscmd_free(entrypath);
 			if (ret != OK) {
 				FSCMD_OUTPUT("delete_entry() failed with %s\n", entrypath);
+				fscmd_free(entrypath);
 				return ret;
 			}
 		}
@@ -1081,6 +1084,7 @@ static int tash_rm(int argc, char **args)
 		ret = unlink(fullpath);
 		if (ret != OK) {
 			FSCMD_OUTPUT(CMD_FAILED, args[0], "unlink");
+			fscmd_free(fullpath);
 			return ret;
 		}
 		FSCMD_OUTPUT("%s deleted\n", fullpath);
