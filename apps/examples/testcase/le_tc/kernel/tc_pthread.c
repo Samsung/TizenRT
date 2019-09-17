@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
@@ -52,6 +53,7 @@
 #define INMAIN                  1
 #define SIGQUIT                 3
 #define NOSIG                   333
+#define INVALID_PID             (-1)
 
 struct mallinfo mem;
 
@@ -83,6 +85,7 @@ static bool g_sig_handle = false;
 
 pthread_t self_pid;
 volatile uint8_t check_prio;
+static int chk_val;
 
 static void *infinite_loop_thread(void *param)
 {
@@ -173,6 +176,21 @@ static void *task_barrier(void *param)
 static void *pthread_exit_thread(void *param)
 {
 	pthread_exit(RETURN_PTHREAD_JOIN);
+	return NULL;
+}
+
+/**
+* @fn                   :self_pthread_join_n_exit
+* @brief                :utility function for tc_pthread_pthread_create_exit_join
+* @return               :void *
+*/
+static void *self_pthread_join_n_exit(void *param)
+{
+	pid_t pid = getpid();
+
+	chk_val = pthread_join((pthread_t)pid, NULL);
+
+	pthread_exit((void *)chk_val);
 	return NULL;
 }
 
@@ -604,15 +622,18 @@ static void tc_pthread_pthread_create_exit_join(void)
 	pthread_t pthread;
 	void *p_value = 0;
 
-	ret_chk = pthread_create(&pthread, NULL, pthread_exit_thread, NULL);
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
-
-	/* To make sure thread is created before we join it */
-	sleep(SEC_1);
 
 	ret_chk = pthread_join(pthread, &p_value);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_join", p_value, RETURN_PTHREAD_JOIN);
+	TC_ASSERT_EQ("pthread_exit", p_value, (void *)EDEADLK);
+
+	ret_chk = pthread_join(pthread, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, EINVAL);
+
+	ret_chk = pthread_join(INVALID_PID, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
 
 	TC_SUCCESS_RESULT();
 }
