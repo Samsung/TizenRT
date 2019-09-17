@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_BINARY_MANAGER_UTC
+	bool "Binary Manager UTC TestCase Example"
+	default n
+	depends on BINMGR_UPDATE
+	---help---
+		Enable the Binary Manager UTC TestCase
