@@ -1365,7 +1365,6 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
 	} else if (msg->event == EVT_DHCPD_GET_IP) {
-
 		dhcp_node_s *node = (dhcp_node_s *)msg->param;
 		if (node != NULL) {
 			ndbg("[WM] IP: %d:%d:%d:%d\n",
@@ -1377,12 +1376,12 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 				  node->macaddr[0], node->macaddr[1],
 				  node->macaddr[2], node->macaddr[3],
 				  node->macaddr[4], node->macaddr[5]);
-		}
 
-		int is_exist = _dhcps_add_node(node);
+			int is_exist = _dhcps_add_node(node);
 
-		if (is_exist == DHCP_EXIST) {
-			return WIFI_MANAGER_SUCCESS;
+			if (is_exist == DHCP_EXIST) {
+				return WIFI_MANAGER_SUCCESS;
+			}
 		}
 #endif
 		WIFIMGR_INC_NUM_CLIENT;
