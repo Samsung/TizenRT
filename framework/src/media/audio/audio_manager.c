@@ -2067,7 +2067,9 @@ void print_audio_card_info(audio_io_direction_t direct)
 				card = &g_audio_out_cards[i];
 			}
 			status = card->config[j].status;
-			if (status != AUDIO_CARD_NONE) {
+			if (status == AUDIO_CARD_NONE) {
+				dbg_noarg("AUDIO_CARD_NONE(%d)\n", AUDIO_CARD_NONE);
+			} else {
 				get_card_path(path, i, j, direct);
 
 				dbg_noarg("\nDevice Path : %s\n", path);
@@ -2079,9 +2081,6 @@ void print_audio_card_info(audio_io_direction_t direct)
 				}
 				dbg_noarg("Status : ");
 				switch (status) {
-				case AUDIO_CARD_NONE:
-					dbg_noarg("%s(%d)\n", "AUDIO_CARD_NONE", AUDIO_CARD_NONE);
-					break;
 				case AUDIO_CARD_IDLE:
 					dbg_noarg("%s(%d)\n", "AUDIO_CARD_IDLE", AUDIO_CARD_IDLE);
 					break;

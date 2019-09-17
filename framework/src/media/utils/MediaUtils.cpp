@@ -20,6 +20,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <tinyara/config.h>
+#include <cstring>
 
 #ifdef CONFIG_CONTAINER_MPEG2TS
 #include "../demux/mpeg2ts/TSDemuxer.h"
@@ -680,12 +681,12 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 		return false;
 	}
 
-	strncpy(header->headerRiff, "RIFF", 4);
+	memcpy(header->headerRiff, "RIFF", 4);
 
 	header->riffSize = fileSize - 8;
 
-	strncpy(header->headerWave, "WAVE", 4);
-	strncpy(header->headerFmt, "fmt ", 4);
+	memcpy(header->headerWave, "WAVE", 4);
+	memcpy(header->headerFmt, "fmt ", 4);
 
 	header->fmtSize = 16;
 	header->format = 1;
@@ -695,7 +696,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	header->blockAlign = blockAlign;
 	header->bitPerSample = bitPerSample;
 
-	strncpy(header->headerData, "data", 4);
+	memcpy(header->headerData, "data", 4);
 
 	header->dataSize = fileSize - WAVE_HEADER_LENGTH;
 
