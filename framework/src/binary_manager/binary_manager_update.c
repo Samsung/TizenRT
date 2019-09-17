@@ -98,6 +98,11 @@ int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_li
 	binmgr_request_t request_msg;
 	binmgr_getinfo_all_response_t response_msg;
 
+	if (binary_info_list == NULL) {
+		bmdbg("get_binary_info_all failed : invalid param.\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
 	request_msg.cmd = BINMGR_GET_INFO_ALL;
 	request_msg.requester_pid = getpid();
 
