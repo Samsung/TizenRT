@@ -462,6 +462,10 @@ int os_bringup(void)
 	logm_start();
 #endif
 
+#if !defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_HAVE_CXXINITIALIZE)
+	up_cxxinitialize();
+#endif
+
 	/* Once the operating system has been initialized, the system must be
 	 * started by spawning the user initialization thread of execution.  This
 	 * will be the first user-mode thread.
