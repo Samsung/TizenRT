@@ -441,7 +441,7 @@ CONFIG_ARCH_USE_FLASH=y
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
 CONFIG_FLASH_PART_SIZE="2048,512,256,256,1024,1024,2048,"
-CONFIG_FLASH_PART_TYPE="kernel,app,bin,bin,bin,bin,smartfs,"
+CONFIG_FLASH_PART_TYPE="kernel,none,bin,bin,bin,bin,smartfs,"
 CONFIG_FLASH_PART_NAME="kernel,app,micom,micom,wifi,wifi,userfs,"
 
 #

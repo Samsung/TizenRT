@@ -111,7 +111,7 @@ void configure_partitions(void)
 			return;
 		}
 #ifdef CONFIG_MTD_FTL
-		if (!strncmp(types, "ftl,", 4) || !strncmp(types, "app,", 4)
+		if (!strncmp(types, "ftl,", 4)
 #ifdef CONFIG_FS_ROMFS
 		|| !strncmp(types, "romfs,", 6)
 #endif
