@@ -461,7 +461,7 @@ static void settzname(void)
 
 static int differ_by_repeat(const time_t t1, const time_t t0)
 {
-	if (TYPE_BIT(time_t) - TYPE_SIGNED(time_t) < SECSPERREPEAT_BITS) {
+	if (TYPE_BIT(time_t) < SECSPERREPEAT_BITS) {
 		return 0;
 	}
 
@@ -592,7 +592,7 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 		timecnt = 0;
 		for (i = 0; i < sp->timecnt; ++i) {
 			int_fast64_t at = stored == 4 ? detzcode(p) : detzcode64(p);
-			sp->types[i] = ((TYPE_SIGNED(time_t) ? g_min_timet <= at : 0 <= at) && at <= g_max_timet);
+			sp->types[i] = (0 <= at && at <= g_max_timet);
 			if (sp->types[i]) {
 				if (i && !timecnt && at != g_min_timet) {
 					/* Keep the earlier record, but tweak
@@ -692,12 +692,6 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 		nread -= p - up->buf;
 		for (i = 0; i < nread; ++i) {
 			up->buf[i] = p[i];
-		}
-
-		/* If this is a signed narrow time_t system, we're done. */
-
-		if (TYPE_SIGNED(time_t) && stored >= (int)sizeof(time_t)) {
-			break;
 		}
 	}
 
@@ -1614,7 +1608,7 @@ static struct tm *timesub(FAR const time_t *const timep, const int_fast32_t offs
 		int leapdays;
 
 		tdelta = tdays / DAYSPERLYEAR;
-		if (!((!TYPE_SIGNED(time_t) || INT_MIN <= tdelta) && tdelta <= INT_MAX)) {
+		if (tdelta > INT_MAX) {
 			return NULL;
 		}
 
@@ -1752,8 +1746,7 @@ static int increment_overflow_time(time_t *tp, int_fast32_t j)
 	 * except that it does the right thing even if *tp + j would overflow.
 	 */
 
-	if (!(j < 0 ? (TYPE_SIGNED(time_t) ? g_min_timet - j <= *tp : -1 - j < *tp)
-		  : *tp <= g_max_timet - j)) {
+	if (!(j < 0 ? (-1 - j < *tp) : *tp <= g_max_timet - j)) {
 		return TRUE;
 	}
 
@@ -1900,17 +1893,8 @@ static time_t time2sub(struct tm *const tmp, FAR struct tm * (*const funcp)(FAR 
 
 	/* Do a binary search (this works whatever time_t's type is) */
 
-	if (!TYPE_SIGNED(time_t)) {
-		lo = 0;
-		hi = lo - 1;
-	} else {
-		lo = 1;
-		for (i = 0; i < (int)TYPE_BIT(time_t) - 1; ++i) {
-			lo *= 2;
-		}
-
-		hi = -(lo + 1);
-	}
+	lo = 0;
+	hi = TIME_VALUE_MAX;
 
 	for (;;) {
 		t = lo / 2 + hi / 2;

@@ -141,6 +141,8 @@
 /* tm_year of struct tm means years since 1900 */
 #define TM_YEAR_BASE       1900
 
+/* The maximum value of time as time_t type */
+#define TIME_VALUE_MAX     UINT32_MAX
 /********************************************************************************
  * Public Types
  ********************************************************************************/
