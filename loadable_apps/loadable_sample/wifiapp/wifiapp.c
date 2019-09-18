@@ -41,6 +41,9 @@ static void display_test_scenario(void)
 #ifdef CONFIG_EXAMPLES_RECOVERY_TEST
 	printf("\t-Press R or r : Recovery Test\n");
 #endif
+#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
+	printf("\t-Press U or u : Binary Update Test\n");
+#endif
 	printf("\t-Press X or x : Terminate Tests.\n");
 }
 
@@ -86,6 +89,12 @@ int wifiapp_main(int argc, char **argv)
 		case 'r':
 			recovery_test();
 			is_testing = false;
+			break;
+#endif
+#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
+		case 'U':
+		case 'u':
+			binary_update_test();
 			break;
 #endif
 		case 'X':

@@ -59,7 +59,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
 SRCS += recovery.c
 endif
-
+ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE_TEST),y)
+SRCS += binary_update.c
+endif
 #########################################
 # Case of Loadable separated binary build
 # Make separated ELF type binary

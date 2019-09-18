@@ -44,6 +44,13 @@ config ENABLE_RECOVERY_AGING_TEST
 		Enable Recovery Aging test. Another Test cannot run at the same time.
 endif
 
+config EXAMPLES_BINARY_UPDATE_TEST
+	bool "Binary Update example"
+	default n
+	depends on BINMGR_UPDATE
+	---help---
+		Enable Binary Update example
+
 config EXAMPLES_MICOM_TIMER_TEST
 	bool "Micom Timer Test"
 	default n

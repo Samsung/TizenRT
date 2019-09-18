@@ -20,12 +20,15 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <crc32.h>
+
 #include <sys/types.h>
 
 #include <binary_manager/binary_manager.h>
@@ -39,7 +42,7 @@
 #define DOWNLOAD_INVALID_BIN        1
 
 #define CHECKSUM_SIZE               4
-#define CRC_BUFFER_SIZE             512
+#define BUFFER_SIZE                 512
 
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                16
@@ -68,8 +71,102 @@ typedef struct binary_header_s binary_header_t;
 static volatile bool is_running;
 static volatile bool inf_flag = true;
 static int fail_cnt = 0;
-static unsigned int new_version = 20190422;
+static unsigned int new_version;
 
+static void binary_update_cb(void)
+{
+	printf(" ==========================================================================\n");
+	printf("   The state changed callback is executed in WIFI. %s state is changed. \n", APP_NAME);
+	printf(" ========================================================================= \n");
+}
+static void binary_update_copy_binary(binary_update_info_t *binary_info)
+{
+	int read_fd;
+	int write_fd;
+	int ret;
+	int total_size;
+	int copy_size;
+	int read_size;
+	uint32_t crc_hash = 0;
+	uint8_t buffer[BUFFER_SIZE];
+	binary_header_t header_data;
+
+	read_fd = open(binary_info->active_dev, O_RDONLY);
+	if (read_fd < 0) {
+		fail_cnt++;
+		printf("Failed to open %s: %d, errno: %d\n", binary_info->active_dev, read_fd, get_errno());
+		return;
+	}
+
+	/* read to crc information. */
+	ret = read(read_fd, (FAR uint8_t *)&crc_hash, sizeof(uint32_t));
+	if (ret == ERROR) {
+		printf("Failed to read crc %s\n", binary_info->active_dev);
+		close(read_fd);
+		return;
+	}
+
+	/* Read the binary header. */
+	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
+	if (ret != sizeof(binary_header_t)) {
+		printf("Failed to read header %s: %d\n", binary_info->active_dev, ret);
+		close(read_fd);
+		return;
+	}
+
+	new_version = atoi(header_data.bin_ver);
+	new_version++;
+
+	write_fd = open(binary_info->inactive_dev, O_WRONLY);
+	if (write_fd < 0) {
+		fail_cnt++;
+		printf("Failed to open %s: %d, errno: %d\n", binary_info->inactive_dev, write_fd, get_errno());
+		close(read_fd);
+		return;
+	}
+
+	/* Write to crc information. */
+	ret = write(write_fd, (FAR uint8_t *)&crc_hash, sizeof(uint32_t));
+	if (ret == ERROR) {
+		printf("Failed to write crc %s\n", binary_info->inactive_dev);
+		close(read_fd);
+		close(write_fd);
+		return;
+	}
+
+	/* Write the binary header. */
+	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
+	if (ret != sizeof(binary_header_t)) {
+		printf("Failed to write header %s: %d\n", binary_info->inactive_dev, ret);
+		close(read_fd);
+		close(write_fd);
+		return;
+	}
+
+	/* Copy binary */
+	total_size = header_data.bin_size;
+	copy_size = 0;
+	while (total_size > copy_size) {
+		read_size = ((total_size - copy_size) < BUFFER_SIZE ? (total_size - copy_size) : BUFFER_SIZE);
+		ret = read(read_fd, (FAR uint8_t *)buffer, read_size);
+		if (ret != read_size) {
+			printf("Failed to read buffer %s: %d\n", binary_info->active_dev, ret);
+			close(write_fd);
+			close(read_fd);
+			return;
+		}
+		ret = write(write_fd, (FAR uint8_t *)buffer, read_size);
+		if (ret != read_size) {
+			printf("Failed to write buffer %s: %d\n", binary_info->inactive_dev, ret);
+			close(read_fd);
+			close(write_fd);
+			return;
+		}
+		copy_size += read_size;
+		printf("Copy to %s from %s [%d%%]\r", binary_info->inactive_dev, binary_info->active_dev, copy_size * 100 / total_size);
+	}
+	printf("\nCopy SUCCESS\n");
+}
 static void print_binary_info(binary_update_info_t *binary_info)
 {
 	printf(" =============== binary [%s] info ================ \n", binary_info->name);
@@ -126,7 +223,7 @@ static void binary_update_write_binary(char *devname, int condition, uint32_t cr
 	int ret;
 	fd = open(devname, O_WRONLY);
 	if (fd < 0) {
-		printf("Failed to open %s: %d, errno: %d\n", devname, ret, get_errno());
+		printf("Failed to open %s: %d, errno: %d\n", devname, fd, get_errno());
 		return;
 	}
 
@@ -168,7 +265,7 @@ static void binary_update_download_binary(char *devname, int condition)
 	int file_size;
 	int read_size;
 	uint32_t crc_hash = 0;
-	uint8_t crc_buffer[CRC_BUFFER_SIZE];
+	uint8_t crc_buffer[BUFFER_SIZE];
 	binary_header_t header_data;
 
 	printf("\n** Binary Update Download [%s] %s case test.\n", devname, condition == DOWNLOAD_VALID_BIN ? "Valid" : "Invalid");
@@ -176,7 +273,7 @@ static void binary_update_download_binary(char *devname, int condition)
 	fd = open(devname, O_RDONLY);
 	if (fd < 0) {
 		fail_cnt++;
-		printf("Failed to open %s: %d, errno: %d\n", devname, ret, get_errno());
+		printf("Failed to open %s: %d, errno: %d\n", devname, fd, get_errno());
 		return;
 	}
 
@@ -205,7 +302,7 @@ static void binary_update_download_binary(char *devname, int condition)
 		file_size = header_data.bin_size;
 
 		while (file_size > 0) {
-			read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
+			read_size = file_size < BUFFER_SIZE ? file_size : BUFFER_SIZE;
 			ret = read(fd, (FAR uint8_t *)crc_buffer, read_size);
 			if (ret != read_size) {
 				printf("Failed to read %s: %d\n", devname, ret);
@@ -263,30 +360,65 @@ static void binary_update_reload(char *name)
 	}
 }
 
+static void binary_update_register_state_changed_callback(void)
+{
+	int ret;
+
+	printf("\n** Binary Update Register state changed callback test.\n");
+	ret = binary_manager_register_state_changed_callback((binmgr_statecb_t)binary_update_cb, NULL);
+	if (ret == OK) {
+		printf("Register state changed callback SUCCESS\n");
+	} else {
+		printf("Register state changed callback FAIL, ret %d\n", ret);
+	}
+}
+
+static void binary_update_unregister_state_changed_callback(void)
+{
+	int ret;
+
+	printf("\n** Binary Update Unregister state changed callback test.\n");
+	ret = binary_manager_unregister_state_changed_callback();
+	if (ret == OK) {
+		printf("Unregister state changed callback SUCCESS\n");
+	} else {
+		printf("Unregister state changed callback FAIL, ret %d\n", ret);
+	}
+}
+
 static void binary_update_run_tests(int repetition_num)
 {
-	new_version++;
 
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
 
 	binary_update_getinfo(APP_NAME, &pre_bin_info);
+
+	/* Copy the partition to test the update. */
+	binary_update_copy_binary(&pre_bin_info);
+
+	binary_update_register_state_changed_callback();
+
 	/* Test invalid APP binary download. */
-	binary_update_download_binary(&pre_bin_info.inactive_dev, DOWNLOAD_INVALID_BIN);
+	binary_update_download_binary(pre_bin_info.inactive_dev, DOWNLOAD_INVALID_BIN);
 	binary_update_reload(APP_NAME);
 	binary_update_getinfo(APP_NAME, &cur_bin_info);
 
 	binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_INVALID_BIN);
 
 	/* Test valid APP binary download. */
-	binary_update_download_binary(&cur_bin_info.inactive_dev, DOWNLOAD_VALID_BIN);
+	binary_update_download_binary(cur_bin_info.inactive_dev, DOWNLOAD_VALID_BIN);
 	binary_update_reload(APP_NAME);
 	binary_update_getinfo(APP_NAME, &cur_bin_info);
 
 	binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
 
 	binary_update_getinfo_all();
+
+	binary_update_unregister_state_changed_callback();
+
+	binary_update_reload(APP_NAME);
 
 	/* Wait for finishing previous test. */
 	sleep(1);
@@ -327,85 +459,10 @@ static void binary_update_execute_ntimes(int repetition_num)
 	is_running = false;
 }
 /****************************************************************************
- * binary_update_main
+ * binary_update_test
  ****************************************************************************/
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int binary_update_main(int argc, char *argv[])
-#endif
+
+void binary_update_test(void)
 {
-	int repetition_num = 1;
-	int option;
-	char *cmd_arg;
-	char *cnt_arg;
-	int execution_type;
-
-	if (argc >= 4 || argc == 2) {
-		goto usage;
-	}
-
-	while ((option = getopt(argc, argv, "r:n:")) != ERROR) {
-		switch (option) {
-		case 'r':
-			execution_type = EXEC_INFINITE;
-			cmd_arg = optarg;
-			break;
-		case 'n':
-			execution_type = EXEC_FINITE;
-			cnt_arg = optarg;
-			break;
-		case '?':
-		default:
-			goto usage;
-		}
-	}
-
-	/* Execute the binary update example. */
-	if (execution_type == EXEC_INFINITE) {
-		if (strncmp(cmd_arg, "start", strlen("start") + 1) == 0) {
-			if (is_running) {
-				goto already_running;
-			}
-			inf_flag = true;
-			binary_update_execute_infinitely();
-		} else if (strncmp(cmd_arg, "stop", strlen("stop") + 1) == 0) {
-			if (inf_flag == false) {
-				printf("There is no infinite running Binary Update example. Cannot stop the sample.\n");
-				return -1;
-			}
-			inf_flag = false;
-		} else {
-			goto usage;
-		}
-
-	} else {
-		if (is_running) {
-			goto already_running;
-		}
-
-		if (cnt_arg != NULL) {
-			repetition_num = atoi(cnt_arg);
-			if (repetition_num <= 0) {
-				goto usage;
-			}
-		} else {
-			repetition_num = 1;
-		}
-
-		binary_update_execute_ntimes(repetition_num);
-	}
-
-	return 0;
-usage:
-	printf("\nUsage : binary_update [OPTIONS]\n");
-	printf("Options:\n");
-	printf(" -r start : Execute Binary Update Example infinitely until stop cmd.\n");
-	printf("    stop  : Stop the Binary Update Example infinite execution.\n");
-	printf(" -n COUNT : Execute Binary Update Example COUNT-iterations.\n");
-	return -1;
-already_running:
-	printf("There is already running Binary Update Example.\n");
-	printf("New sample can run after that previous example is finished.\n");
-	return -1;
+	binary_update_execute_ntimes(1);
 }
