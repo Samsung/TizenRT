@@ -205,9 +205,9 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				 */
 				
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-			work_unlock();
+				work_unlock();
 #else
-			irqrestore(flags);
+				irqrestore(flags);
 #endif
 				worker(arg);
 
@@ -217,9 +217,9 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				 */
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-			while (work_lock() < 0);
+				while (work_lock() < 0);
 #else
-			flags = irqsave();
+				flags = irqsave();
 #endif
 				work = (FAR struct work_s *)wqueue->q.head;
 			} else {
