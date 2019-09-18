@@ -31,6 +31,7 @@ Debug Options -> Enable backtracking using Frame pointer register  to y
 ```
 
 ## How to upload RAMDUMP
+### In Linux
 With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
 ```
 	****************************************************
@@ -54,6 +55,79 @@ ramdump_recv: ramdump_address = 02020000, ramdump_size = 968704
 [===========================================================>]
 Ramdump received successfully
 copying ramdump_0x02020000_0x0210c800.bin to  $TIZENRT_BASEDIR/build/output/bin
+```
+### In Windows
+With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
+```
+	****************************************************
+	Disconnect this serial terminal and Run Ramdump Tool
+	****************************************************
+```
+After you see this message, you can upload the ramdump by following the step below:  
+1. Disconnect/close your serial terminal (may be TeraTerm)
+
+2. Open windows powershell & Run ramdump tool
+```
+<tool_path>:\Ramdump_windows.ps1
+```
+3. Enter the COM port number for your device
+```
+Please enter COM port number & press enter : <ComPort>
+```
+Once connection with the COM port is established, you will get following message:
+--> Connection established.
+
+Now you can enter desired ramdump region from the options: (Multi-heap scenario)
+```
+Target Handshake SUCCESSFUL !!!
+Target entered to ramdump mode
+
+=========================================================================
+Ramdump Region Options:
+1. ALL
+2. Region : 0 ( Address: 0x02023800, Size: 61440)       [Heap index = 0]
+3. Region : 1 ( Address: 0x02032800, Size: 81920)       [Heap index = 1]
+4. Region : 2 ( Address: 0x02046800, Size: 825344)      [Heap index = 0]
+=========================================================================
+Please enter desired ramdump option as below:
+1 for ALL
+2 for Region 0
+25 for Region 0 & 3 ...
+
+Please enter your input : 1
+
+```
+4. Ramdump Tool receives the ram contents from target.
+```
+Target No. of Regions to be dumped received!
+
+Receiving ramdump......
+
+Target Region info received!
+=========================================================================
+Dumping Region: 0, Address: 0x02023800, Size:61440bytes
+=========================================================================
+[===>]
+Copying...
+to C:\Users\thapa.v\ramdump_0x02023800_0x61440.bin
+
+Target Region info received!
+=========================================================================
+Dumping Region: 1, Address: 0x02032800, Size:81920bytes
+=========================================================================
+[=====>]
+Copying...
+to C:\Users\thapa.v\ramdump_0x02032800_0x81920.bin
+
+Target Region info received!
+=========================================================================
+Dumping Region: 2, Address: 0x02046800, Size:825344bytes
+=========================================================================
+[=======================================>
+Copying...
+to C:\Users\thapa.v\ramdump_0x02046800_0x825344.bin
+
+Ramdump received successfully..!
 ```
 
 ## How to parse RAMDUMP
