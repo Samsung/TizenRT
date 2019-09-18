@@ -45,12 +45,6 @@
 #include "lwip/dhcp.h"
 #include "lwip/prot/dhcp.h"
 #include "rom/ets_sys.h"
-#if 0
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-#endif
 #include "tcpip_adapter.h"
 #include "esp_log.h"
 
