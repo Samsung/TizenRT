@@ -202,6 +202,19 @@ static void __scan_start_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_t
 
 	BT_PRT("Enter\n");
 
+	memcpy(&device_info.device_address, &addr->val, BLUETOOTH_ADDRESS_LENGTH);
+	device_info.addr_type = addr->type;
+	device_info.rssi = rssi;
+	if (adv_type == BT_LE_ADV_IND || adv_type == BT_LE_ADV_NONCONN_IND) {
+		device_info.adv_ind_data.data_len = buf->len;
+		memcpy(&device_info.adv_ind_data.data.data, buf->data, BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX);
+	} else if (adv_type == BT_LE_ADV_SCAN_RSP) {
+		device_info.scan_resp_data.data_len = buf->len;
+		memcpy(&device_info.scan_resp_data.data.data, buf->data, BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX);
+	} else {
+		BT_PRT("Not supported adv_type(%d).\n", adv_type);
+	}
+
 	param.event = BT_EVENT_LE_SCAN_RESULT_UPDATED;
 	param.result = 0;
 	param.param_data = &device_info;

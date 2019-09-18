@@ -1525,12 +1525,20 @@ void ble_adv_report(FAR struct bt_buf_s *buf)
 {
 	FAR struct bt_hci_ev_le_advertising_info_s *info;
 	uint8_t num_reports = buf->data[0];
+
 	nvdbg("Adv number of reports %u\n", num_reports);
+
 	info = bt_buf_consume(buf, sizeof(num_reports));
+	if (info == NULL) {
+		ndbg("bt_buf_consume() returns NULL\n");
+		return;
+	}
+
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
 		FAR struct bt_keys_s *keys;
 		bt_addr_le_t addr;
+
 		nvdbg("%s event %u, len %u, rssi %d dBm\n", bt_addr_le_str(&info->addr), info->evt_type, info->length, rssi);
 		keys = bt_keys_find_irk(&info->addr);
 		if (keys) {

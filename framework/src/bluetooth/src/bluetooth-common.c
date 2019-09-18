@@ -256,7 +256,36 @@ static int __bt_get_bt_adapter_le_device_scan_info_s(
 			bt_adapter_le_device_scan_result_info_s **scan_info,
 			bluetooth_le_device_info_t *source_info)
 {
-	/* Need to implement */
+
+	BT_CHECK_INPUT_PARAMETER(source_info);
+
+	*scan_info = (bt_adapter_le_device_scan_result_info_s *)malloc(sizeof(bt_adapter_le_device_scan_result_info_s));
+	if (*scan_info == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
+
+	_bt_convert_address_to_string(&((*scan_info)->remote_address), &(source_info->device_address));
+
+	if (source_info->addr_type == 0x02)
+		(*scan_info)->address_type = BT_DEVICE_RANDOM_ADDRESS;
+	else
+		(*scan_info)->address_type = BT_DEVICE_PUBLIC_ADDRESS; /* LCOV_EXCL_LINE */
+	(*scan_info)->rssi = (int)source_info->rssi;
+	(*scan_info)->adv_data_len = source_info->adv_ind_data.data_len;
+	if ((*scan_info)->adv_data_len > 0) {
+		(*scan_info)->adv_data = malloc(source_info->adv_ind_data.data_len);
+		memcpy((*scan_info)->adv_data, source_info->adv_ind_data.data.data, source_info->adv_ind_data.data_len);
+	} else {
+		(*scan_info)->adv_data = NULL; /* LCOV_EXCL_LINE */
+	}
+
+	(*scan_info)->scan_data_len = source_info->scan_resp_data.data_len;
+	if ((*scan_info)->scan_data_len > 0) {
+		(*scan_info)->scan_data = malloc(source_info->scan_resp_data.data_len); /* LCOV_EXCL_LINE */
+		memcpy((*scan_info)->scan_data, source_info->scan_resp_data.data.data, source_info->scan_resp_data.data_len); /* LCOV_EXCL_LINE */
+	} else {
+		(*scan_info)->scan_data = NULL;
+	}
+
 	return BT_ERROR_NONE;
 }
 
@@ -405,7 +434,7 @@ int _bt_convert_address_to_string(char **addr_str, unsigned char *addr_hex)
 
 	BT_CHECK_INPUT_PARAMETER(addr_hex);
 
-	snprintf(address, 18, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", addr_hex[0], addr_hex[1], addr_hex[2], addr_hex[3], addr_hex[4], addr_hex[5]);
+	snprintf(address, 18, "%02X:%02X:%02X:%02X:%02X:%02X", addr_hex[0], addr_hex[1], addr_hex[2], addr_hex[3], addr_hex[4], addr_hex[5]);
 	*addr_str = strdup(address);
 
 	if (*addr_str != NULL)
