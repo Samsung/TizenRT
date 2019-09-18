@@ -306,10 +306,12 @@ static void utc_messaging_send_sync_n(void)
 	TC_ASSERT_EQ_CLEANUP("messaging_send_sync", ret, ERROR, free(send_data.msg); free(reply.buf));
 
 	free(reply.buf);
+	reply.buf = NULL;
 	ret = messaging_send_sync(TC_SYNC_PORT, &send_data, &reply);
 	TC_ASSERT_EQ_CLEANUP("messaging_send_sync", ret, ERROR, free(send_data.msg));
 
 	free(send_data.msg);
+	send_data.msg = NULL;
 	ret = messaging_send_sync(TC_SYNC_PORT, &send_data, &reply);
 	TC_ASSERT_EQ("messaging_send_sync", ret, ERROR);
 
@@ -360,10 +362,12 @@ static void utc_messaging_send_async_n(void)
 	TC_ASSERT_EQ_CLEANUP("messaging_send_async", ret, ERROR, free(send_data.msg); free(reply.buf));
 
 	free(reply.buf);
+	reply.buf = NULL;
 	ret = messaging_send_async(TC_ASYNC_PORT, &send_data, &reply, &cb_info);
 	TC_ASSERT_EQ_CLEANUP("messaging_send_async", ret, ERROR, free(send_data.msg));
 
 	free(send_data.msg);
+	send_data.msg = NULL;
 	ret = messaging_send_async(TC_ASYNC_PORT, &send_data, &reply, &cb_info);
 	TC_ASSERT_EQ("messaging_send_async", ret, ERROR);
 
@@ -408,6 +412,9 @@ static void utc_messaging_send_n(void)
 	strncpy(send_data.msg, TC_SEND_MSG, send_data.msglen);
 
 	ret = messaging_send(NULL, &send_data);
+	TC_ASSERT_EQ_CLEANUP("messaging_send", ret, ERROR, free(send_data.msg));
+
+	ret = messaging_send("temp_port", NULL);
 	TC_ASSERT_EQ_CLEANUP("messaging_send", ret, ERROR, free(send_data.msg));
 
 	free(send_data.msg);
