@@ -30,7 +30,10 @@
 #include "clock/clock.h"
 #include "signal/signal.h"
 #include "timer/timer.h"
-
+#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+#include "task/task.h"
+#include "group/group.h"
+#endif
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -38,9 +41,19 @@
 static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
 static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
+
+#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+static int group_exitchild_func(int argc, char *argv[])
+{
+	task_delete(0);
+	return ERROR;
+}
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+#define TASK_STACKSIZE 2048
 
 static const struct file_operations kernel_test_drv_fops = {
 	0,                                                   /* open */
@@ -399,7 +412,219 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = OK;
 	}
 	break;
+#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+	case TESTIOC_GROUP_ADD_FINED_REMOVE_TEST: {
+		struct tcb_s *st_tcb;
+		struct task_group_s *group;
+		struct child_status_s *child;
+		struct child_status_s *child_returned;
+		pid_t child_pid;
 
+		st_tcb = sched_self();
+		if (st_tcb == NULL) {
+			dbg("sched_self failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group = st_tcb->group;
+		if (group == NULL) {
+			dbg("group is null.");
+			ret = ERROR;
+			break;
+		}
+
+		child = group_allocchild();
+		if (child == NULL) {
+			dbg("group_allocchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child_pid = -1;
+		child->ch_flags = TCB_FLAG_TTYPE_TASK;
+		child->ch_pid = child_pid;
+		child->ch_status = 0;
+		/* Add the entry into the TCB list of children */
+		group_addchild(group, child);
+
+		/* cross check starts */
+		child_returned = group_findchild(group, child_pid);
+		if (child != child_returned) {
+			dbg("group_findchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child_returned = group_removechild(group, child_pid);
+		if (child != child_returned) {
+			dbg("group_removechild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child_returned = group_findchild(group, child_pid);
+		if (child_returned != NULL) {
+			dbg("group_removechild failed.");
+			group_removechild(group, child_pid);
+			group_freechild(child);
+			ret = ERROR;
+			break;
+		}
+		group_freechild(child);
+		ret = OK;
+	}
+	break;
+	case TESTIOC_GROUP_ALLOC_FREE_TEST: {
+		struct tcb_s *st_tcb;
+		struct task_group_s *group;
+		struct child_status_s *child;
+		struct child_status_s child_dummy;
+
+		st_tcb = sched_self();
+		if (st_tcb == NULL) {
+			dbg("sched_self failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group = st_tcb->group;
+		if (group == NULL) {
+			dbg("group is null.");
+			ret = ERROR;
+			break;
+		}
+
+		child = group_allocchild();
+		if (child == NULL) {
+			dbg("group_allocchild failed.");
+			ret = ERROR;
+			break;
+		}
+		if (child->flink != NULL) {
+			dbg("group_allocchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child->flink = &child_dummy;
+		group_freechild(child);
+		if (child->flink == &child_dummy) {
+			dbg("group_freechild failed.");
+			ret = ERROR;
+			break;
+		}
+		ret = OK;
+	}
+	break;
+	case TESTIOC_GROUP_EXIT_CHILD_TEST: {
+		struct tcb_s *st_tcb;
+		struct task_group_s *group;
+		struct child_status_s *child;
+		struct child_status_s *child_returned;
+		pid_t child_pid;
+
+		st_tcb = sched_self();
+		if (st_tcb == NULL) {
+			dbg("sched_self failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group = st_tcb->group;
+		if (group == NULL) {
+			dbg("group is null.");
+			ret = ERROR;
+			break;
+		}
+
+		child_pid = kernel_thread("group", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, group_exitchild_func, (char *const *)NULL);
+		if (child_pid < 0) {
+			dbg("task_create failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child = group_findchild(group, child_pid);
+		if (child == NULL) {
+			dbg("child is null.");
+			ret = ERROR;
+			break;
+		}
+
+		sleep(3);
+
+		child_returned = group_exitchild(group);
+		if (child != child_returned) {
+			dbg("group_exitchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child_returned = group_removechild(group, child_pid);
+		if (child != child_returned) {
+			dbg("group_removechild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group_freechild(child);
+		ret = OK;
+	}
+	break;
+	case TESTIOC_GROUP_REMOVECHILDREN_TEST: {
+		struct tcb_s *st_tcb;
+		struct task_group_s *group;
+		struct child_status_s *child;
+		struct child_status_s *child_returned;
+		pid_t child_pid;
+
+		st_tcb = sched_self();
+		if (st_tcb == NULL) {
+			dbg("sched_self failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group = st_tcb->group;
+		if (group == NULL) {
+			dbg("group is null.");
+			ret = ERROR;
+			break;
+		}
+
+		child = group_allocchild();
+		if (child == NULL) {
+			dbg("group_allocchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		child_pid = -1;
+		child->ch_flags = TCB_FLAG_TTYPE_TASK;
+		child->ch_pid = child_pid;
+		child->ch_status = 0;
+		/* Add the entry into the TCB list of children */
+		group_addchild(group, child);
+
+		/* cross check starts */
+		child_returned = group_findchild(group, child_pid);
+		if (child != child_returned) {
+			dbg("group_findchild failed.");
+			ret = ERROR;
+			break;
+		}
+
+		group_removechildren(group);
+		if (group->tg_children != NULL) {
+			dbg("group_removechildren failed.");
+			ret = ERROR;
+			break;
+		}
+		ret = OK;
+	}
+	break;
+#endif
 	default: {
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 	}
