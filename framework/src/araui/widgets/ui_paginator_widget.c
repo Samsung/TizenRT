@@ -19,7 +19,7 @@
 #include <tinyara/config.h>
 #include <string.h>
 #include <araui/ui_commons.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
 #include "ui_window_internal.h"
@@ -102,39 +102,37 @@ static void _ui_paginator_tween_finish(ui_widget_t widget)
 	body = (ui_paginator_widget_body_t *)(((ui_widget_body_t *)widget)->parent);
 
 	switch (body->state) {
-		case UI_PAGINATOR_STATE_TWEEN_NEXT: {
-			body->cur_page_num = (body->cur_page_num + 1) % body->page_count;
+	case UI_PAGINATOR_STATE_TWEEN_NEXT:
+		body->cur_page_num = (body->cur_page_num + 1) % body->page_count;
 
-			temp = body->prev_page;
-			body->prev_page = body->cur_page;
-			body->cur_page = body->next_page;
-			body->next_page = temp;
+		temp = body->prev_page;
+		body->prev_page = body->cur_page;
+		body->cur_page = body->next_page;
+		body->next_page = temp;
 
-			// Update the next page
-			next_page_num = (body->cur_page_num + 1) % body->page_count;
-			ui_widget_remove_all_children((ui_widget_t)body->next_page);
+		// Update the next page
+		next_page_num = (body->cur_page_num + 1) % body->page_count;
+		ui_widget_remove_all_children((ui_widget_t)body->next_page);
 
-			ui_widget_add_child((ui_widget_t)body->next_page, (ui_widget_t)body->pages[next_page_num], 0, 0);
-		}
+		ui_widget_add_child((ui_widget_t)body->next_page, (ui_widget_t)body->pages[next_page_num], 0, 0);
 		break;
 
-		case UI_PAGINATOR_STATE_TWEEN_PREV: {
-			body->cur_page_num = (body->cur_page_num + body->page_count - 1) % body->page_count;
+	case UI_PAGINATOR_STATE_TWEEN_PREV:
+		body->cur_page_num = (body->cur_page_num + body->page_count - 1) % body->page_count;
 
-			temp = body->next_page;
-			body->next_page = body->cur_page;
-			body->cur_page = body->prev_page;
-			body->prev_page = temp;
+		temp = body->next_page;
+		body->next_page = body->cur_page;
+		body->cur_page = body->prev_page;
+		body->prev_page = temp;
 
-			// Update the previous page
-			prev_page_num = (body->cur_page_num + body->page_count - 1) % body->page_count;
-			ui_widget_remove_all_children((ui_widget_t)body->prev_page);
+		// Update the previous page
+		prev_page_num = (body->cur_page_num + body->page_count - 1) % body->page_count;
+		ui_widget_remove_all_children((ui_widget_t)body->prev_page);
 
-			ui_widget_add_child((ui_widget_t)body->prev_page, (ui_widget_t)body->pages[prev_page_num], 0, 0);
-		}
+		ui_widget_add_child((ui_widget_t)body->prev_page, (ui_widget_t)body->pages[prev_page_num], 0, 0);
 		break;
 
-		default:
+	default:
 		break;
 	}
 
@@ -163,165 +161,156 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 	body = (ui_paginator_widget_body_t *)widget;
 
 	switch (event) {
-		case UI_TOUCH_EVENT_CANCEL: {
-			if (body->state == UI_PAGINATOR_STATE_THRESHOLD ||
-				body->state == UI_PAGINATOR_STATE_SCROLLING) {
-				body->state = UI_PAGINATOR_STATE_NONE;
-			}
-			body->offset = 0;
+	case UI_TOUCH_EVENT_CANCEL:
+		if (body->state == UI_PAGINATOR_STATE_THRESHOLD ||
+			body->state == UI_PAGINATOR_STATE_SCROLLING) {
+			body->state = UI_PAGINATOR_STATE_NONE;
 		}
+		body->offset = 0;
 		break;
 
-		case UI_TOUCH_EVENT_DOWN: {
-			body->offset = 0;
-			switch (body->state) {
-				case UI_PAGINATOR_STATE_NONE: {
-					body->state = UI_PAGINATOR_STATE_THRESHOLD;
-					body->prev_touch = coord;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case UI_TOUCH_EVENT_MOVE: {
-			delta.x = coord.x - body->prev_touch.x;
-			delta.y = coord.y - body->prev_touch.y;
-
-			switch (body->state) {
-				case UI_PAGINATOR_STATE_THRESHOLD: {
-					if ((body->direction == UI_DIRECTION_VERTICAL && UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD) ||
-						(body->direction == UI_DIRECTION_HORIZONTAL && UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD) ||
-						(body->direction == UI_DIRECTION_ALL && (UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD || UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD))) {
-						ui_core_lock_touch_event_target((ui_widget_body_t *)body);
-						body->state = UI_PAGINATOR_STATE_SCROLLING;
-					}
-				}
-				break;
-
-				case UI_PAGINATOR_STATE_SCROLLING: {
-					body->prev_touch = coord;
-
-					// update position of all children (sync, prev, cur, next)
-					if (body->direction == UI_DIRECTION_HORIZONTAL) {
-						body->cur_page->local_rect.x += delta.x;
-						body->prev_page->local_rect.x += delta.x;
-						body->next_page->local_rect.x += delta.x;
-						body->offset += delta.x;
-					} else if (body->direction == UI_DIRECTION_VERTICAL) {
-						body->cur_page->local_rect.y += delta.y;
-						body->prev_page->local_rect.y += delta.y;
-						body->next_page->local_rect.y += delta.y;
-						body->offset += delta.y;
-					}
-
-					ui_widget_update_position_info(body->cur_page);
-					ui_widget_update_position_info(body->prev_page);
-					ui_widget_update_position_info(body->next_page);
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case UI_TOUCH_EVENT_UP: {
-			if (body->state == UI_PAGINATOR_STATE_SCROLLING) {
-				if (body->direction == UI_DIRECTION_HORIZONTAL) {
-					if (body->offset < -(body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
-						/**
-						 * Paging to Right
-						 */
-						body->state = UI_PAGINATOR_STATE_TWEEN_NEXT;
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->cur_page,
-							-body->base.local_rect.width,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							_ui_paginator_tween_finish);
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->next_page,
-							0,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							NULL);
-					} else if (body->offset > (body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
-						/**
-						 * Paging to Left
-						 */
-						body->state = UI_PAGINATOR_STATE_TWEEN_PREV;
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->cur_page,
-							body->base.local_rect.width,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							_ui_paginator_tween_finish);
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->prev_page,
-							0,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							NULL);
-					} else {
-						/**
-						 * Paging to Current
-						 */
-						body->state = UI_PAGINATOR_STATE_TWEEN_CUR;
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->cur_page,
-							0,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							_ui_paginator_tween_finish);
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->prev_page,
-							-body->base.local_rect.width,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							NULL);
-
-						ui_widget_tween_moveto(
-							(ui_widget_t)body->next_page,
-							body->base.local_rect.width,
-							0,
-							CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-							TWEEN_EASE_OUT_QUAD,
-							NULL);
-					}
-				} else if (body->direction == UI_DIRECTION_VERTICAL) {
-					// todo
-				}
-			} else {
-				if (body->state != UI_PAGINATOR_STATE_TWEEN_CUR &&
-					body->state != UI_PAGINATOR_STATE_TWEEN_PREV &&
-					body->state != UI_PAGINATOR_STATE_TWEEN_NEXT) {
-					body->state = UI_PAGINATOR_STATE_NONE;
-					body->offset = 0;
-				}
-			}
-		}
-		break;
+	case UI_TOUCH_EVENT_DOWN:
+		body->offset = 0;
+		switch (body->state) {
+		case UI_PAGINATOR_STATE_NONE:
+			body->state = UI_PAGINATOR_STATE_THRESHOLD;
+			body->prev_touch = coord;
+			break;
 
 		default:
+			break;
+		}
+		break;
+
+	case UI_TOUCH_EVENT_MOVE:
+		delta.x = coord.x - body->prev_touch.x;
+		delta.y = coord.y - body->prev_touch.y;
+
+		switch (body->state) {
+		case UI_PAGINATOR_STATE_THRESHOLD:
+			if ((body->direction == UI_DIRECTION_VERTICAL && UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD) ||
+				(body->direction == UI_DIRECTION_HORIZONTAL && UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD) ||
+				(body->direction == UI_DIRECTION_ALL && (UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD || UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD))) {
+				ui_core_lock_touch_event_target((ui_widget_body_t *)body);
+				body->state = UI_PAGINATOR_STATE_SCROLLING;
+			}
+			break;
+
+		case UI_PAGINATOR_STATE_SCROLLING:
+			body->prev_touch = coord;
+
+			// update position of all children (sync, prev, cur, next)
+			if (body->direction == UI_DIRECTION_HORIZONTAL) {
+				body->cur_page->local_rect.x += delta.x;
+				body->prev_page->local_rect.x += delta.x;
+				body->next_page->local_rect.x += delta.x;
+				body->offset += delta.x;
+			} else if (body->direction == UI_DIRECTION_VERTICAL) {
+				body->cur_page->local_rect.y += delta.y;
+				body->prev_page->local_rect.y += delta.y;
+				body->next_page->local_rect.y += delta.y;
+				body->offset += delta.y;
+			}
+
+			ui_widget_update_position_info(body->cur_page);
+			ui_widget_update_position_info(body->prev_page);
+			ui_widget_update_position_info(body->next_page);
+			break;
+
+		default:
+			break;
+		}
+		break;
+
+	case UI_TOUCH_EVENT_UP:
+		if (body->state == UI_PAGINATOR_STATE_SCROLLING) {
+			if (body->direction == UI_DIRECTION_HORIZONTAL) {
+				if (body->offset < -(body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
+					/**
+					 * Paging to Right
+					 */
+					body->state = UI_PAGINATOR_STATE_TWEEN_NEXT;
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->cur_page,
+						-body->base.local_rect.width,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						_ui_paginator_tween_finish);
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->next_page,
+						0,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						NULL);
+				} else if (body->offset > (body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
+					/**
+					 * Paging to Left
+					 */
+					body->state = UI_PAGINATOR_STATE_TWEEN_PREV;
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->cur_page,
+						body->base.local_rect.width,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						_ui_paginator_tween_finish);
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->prev_page,
+						0,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						NULL);
+				} else {
+					/**
+					 * Paging to Current
+					 */
+					body->state = UI_PAGINATOR_STATE_TWEEN_CUR;
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->cur_page,
+						0,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						_ui_paginator_tween_finish);
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->prev_page,
+						-body->base.local_rect.width,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						NULL);
+
+					ui_widget_tween_moveto(
+						(ui_widget_t)body->next_page,
+						body->base.local_rect.width,
+						0,
+						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
+						TWEEN_EASE_OUT_QUAD,
+						NULL);
+				}
+			} else if (body->direction == UI_DIRECTION_VERTICAL) {
+				// todo
+			}
+		} else {
+			if (body->state != UI_PAGINATOR_STATE_TWEEN_CUR &&
+				body->state != UI_PAGINATOR_STATE_TWEEN_PREV &&
+				body->state != UI_PAGINATOR_STATE_TWEEN_NEXT) {
+				body->state = UI_PAGINATOR_STATE_NONE;
+				body->offset = 0;
+			}
+		}
+		break;
+
+	default:
 		break;
 	}
 }

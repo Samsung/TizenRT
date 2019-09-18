@@ -22,7 +22,7 @@
 #include "ui_widget_internal.h"
 #include "ui_core_internal.h"
 #include "ui_window_internal.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 
 #define CONFIG_UI_QUICK_PANEL_APPEAR_CONST 3
 #define CONFIG_UI_QUICK_PANEL_RETURN_CONST 4
@@ -69,315 +69,299 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 	body = (ui_quick_panel_body_t *)widget;
 
 	switch (event) {
-		case UI_TOUCH_EVENT_CANCEL: {
-			body->press = false;
+	case UI_TOUCH_EVENT_CANCEL: 
+		body->press = false;
+		break;
+
+	case UI_TOUCH_EVENT_DOWN:
+		// If the state of given quick panel is UI_QUICK_PANEL_STATE_TRANSITION,
+		// then a touch event is ignored
+		if (body->state == UI_QUICK_PANEL_STATE_TRANSITION) {
+			break;
+		}
+
+		// Otherwise, information about the touch event is stored at the widget body for the future usage.
+		body->base.visible = true;
+		body->press = true;
+		body->touch_down.x = coord.x;
+		body->touch_down.y = coord.y;
+
+		if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+			body->state = UI_QUICK_PANEL_STATE_THRESHOLD;
 		}
 		break;
 
-		case UI_TOUCH_EVENT_DOWN: {
-			// If the state of given quick panel is UI_QUICK_PANEL_STATE_TRANSITION,
-			// then a touch event is ignored
-			if (body->state == UI_QUICK_PANEL_STATE_TRANSITION) {
+	case UI_TOUCH_EVENT_MOVE:
+		if (body->press && body->base.visible) {
+			switch (body->event_type) {
+			case UI_QUICK_PANEL_TOP_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
+						if (body->touch_down.y - coord.y > CONFIG_UI_TOUCH_THRESHOLD) {
+							body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						// If the state of given quick panel is UI_QUICK_PANEL_STATE_NONE,
+						// it means that the given quick panel just appears.
+						// Therefore, the edge of quick panel follows the touch coordinate.
+						body->base.local_rect.y = coord.y - CONFIG_UI_DISPLAY_HEIGHT;
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						// If the state of given quick panel is UI_QUICK_PANEL_STATE_AT_SCREEN,
+						// it means that the given quick panel occupied the display.
+						// Therefore, the given quick panel moves as difference as touch occurs.
+						body->base.local_rect.y = coord.y - body->touch_down.y;
+						if (body->base.local_rect.y > 0) {
+							body->base.local_rect.y = 0;
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_BOTTOM_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
+						if (coord.y - body->touch_down.y > CONFIG_UI_TOUCH_THRESHOLD) {
+							body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						body->base.local_rect.y = coord.y;
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						body->base.local_rect.y = coord.y - body->touch_down.y;
+						if (body->base.local_rect.y < 0) {
+							body->base.local_rect.y = 0;
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_LEFT_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
+						if (body->touch_down.x - coord.x > CONFIG_UI_TOUCH_THRESHOLD) {
+							body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						body->base.local_rect.x = coord.x - CONFIG_UI_DISPLAY_WIDTH;
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						body->base.local_rect.x = coord.x - body->touch_down.x;
+						if (body->base.local_rect.x > 0) {
+							body->base.local_rect.x = 0;
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_RIGHT_SWIPE: 
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
+						if (coord.x - body->touch_down.x > CONFIG_UI_TOUCH_THRESHOLD) {
+							body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						body->base.local_rect.x = coord.x;
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						if (body->transition_type == UI_TRANSITION_SLIDE) {
+							body->base.local_rect.x = coord.x - body->touch_down.x;
+							if (body->base.local_rect.x < 0) {
+								body->base.local_rect.x = 0;
+							}
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_BUTTON:
+				break;
+
+			default:
 				break;
 			}
-
-			// Otherwise, information about the touch event is stored at the widget body for the future usage.
-			body->base.visible = true;
-			body->press = true;
-			body->touch_down.x = coord.x;
-			body->touch_down.y = coord.y;
-
-			if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-				body->state = UI_QUICK_PANEL_STATE_THRESHOLD;
-			}
 		}
 		break;
 
-		case UI_TOUCH_EVENT_MOVE: {
-			if (body->press && body->base.visible) {
-				switch (body->event_type) {
-					case UI_QUICK_PANEL_TOP_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
-								if (body->touch_down.y - coord.y > CONFIG_UI_TOUCH_THRESHOLD) {
-									body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								// If the state of given quick panel is UI_QUICK_PANEL_STATE_NONE,
-								// it means that the given quick panel just appears.
-								// Therefore, the edge of quick panel follows the touch coordinate.
-								body->base.local_rect.y = coord.y - CONFIG_UI_DISPLAY_HEIGHT;
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								// If the state of given quick panel is UI_QUICK_PANEL_STATE_AT_SCREEN,
-								// it means that the given quick panel occupied the display.
-								// Therefore, the given quick panel moves as difference as touch occurs.
-								body->base.local_rect.y = coord.y - body->touch_down.y;
-								if (body->base.local_rect.y > 0) {
-									body->base.local_rect.y = 0;
-								}
-							}
+	case UI_TOUCH_EVENT_UP:
+		if (body->base.visible) {
+			body->press = false;
+			switch (body->event_type) {
+			case UI_QUICK_PANEL_TOP_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					// If the state of given quick panel is UI_QUICK_PANEL_STATE_NONE,
+					// it means that the given quick panel just appears.
+					// Therefore, the given quick panel occupies the display when the edge of quick panel beyonds the certain threshold.
+					// Otherwise, the given quick panel will be not presented at the display.
+					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						if (coord.y < CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
 						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_BOTTOM_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
-								if (coord.y - body->touch_down.y > CONFIG_UI_TOUCH_THRESHOLD) {
-									body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								body->base.local_rect.y = coord.y;
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								body->base.local_rect.y = coord.y - body->touch_down.y;
-								if (body->base.local_rect.y < 0) {
-									body->base.local_rect.y = 0;
-								}
-							}
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						// If the state of given quick panel is UI_QUICK_PANEL_STATE_AT_SCREEN,
+						// it means that the given quick panel occupied the display.
+						// Therefore, the given quick panel will disappear
+						// when the difference between a touch down coordinate and touch a up coordinate beyonds the certain threshold.
+						// Otherwise, the given quick panel occupies the display again.
+						if ((body->touch_down.y - coord.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
 						}
-						// other transit types are needed to be implemented.
 					}
-					break;
-
-					case UI_QUICK_PANEL_LEFT_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
-								if (body->touch_down.x - coord.x > CONFIG_UI_TOUCH_THRESHOLD) {
-									body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								body->base.local_rect.x = coord.x - CONFIG_UI_DISPLAY_WIDTH;
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								body->base.local_rect.x = coord.x - body->touch_down.x;
-								if (body->base.local_rect.x > 0) {
-									body->base.local_rect.x = 0;
-								}
-							}
-						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_RIGHT_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_THRESHOLD) {
-								if (coord.x - body->touch_down.x > CONFIG_UI_TOUCH_THRESHOLD) {
-									body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								body->base.local_rect.x = coord.x;
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								if (body->transition_type == UI_TRANSITION_SLIDE) {
-									body->base.local_rect.x = coord.x - body->touch_down.x;
-									if (body->base.local_rect.x < 0) {
-										body->base.local_rect.x = 0;
-									}
-								}
-							}
-						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_BUTTON: {
-					}
-					break;
-
-					default: {
-					}
-					break;
 				}
-			}
-		}
-		break;
+				// other transit types are needed to be implemented.
+				break;
 
-		case UI_TOUCH_EVENT_UP: {
-			if (body->base.visible) {
-				body->press = false;
-				switch (body->event_type) {
-					case UI_QUICK_PANEL_TOP_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							// If the state of given quick panel is UI_QUICK_PANEL_STATE_NONE,
-							// it means that the given quick panel just appears.
-							// Therefore, the given quick panel occupies the display when the edge of quick panel beyonds the certain threshold.
-							// Otherwise, the given quick panel will be not presented at the display.
-							if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								if (coord.y < CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								// If the state of given quick panel is UI_QUICK_PANEL_STATE_AT_SCREEN,
-								// it means that the given quick panel occupied the display.
-								// Therefore, the given quick panel will disappear
-								// when the difference between a touch down coordinate and touch a up coordinate beyonds the certain threshold.
-								// Otherwise, the given quick panel occupies the display again.
-								if ((body->touch_down.y - coord.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							}
+			case UI_QUICK_PANEL_BOTTOM_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						if (coord.y > CONFIG_UI_DISPLAY_HEIGHT - CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, CONFIG_UI_DISPLAY_HEIGHT,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
 						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_BOTTOM_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								if (coord.y > CONFIG_UI_DISPLAY_HEIGHT - CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, CONFIG_UI_DISPLAY_HEIGHT,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								if ((coord.y - body->touch_down.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, CONFIG_UI_DISPLAY_HEIGHT,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							}
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						if ((coord.y - body->touch_down.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, CONFIG_UI_DISPLAY_HEIGHT,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
 						}
-						// other transit types are needed to be implemented.
 					}
-					break;
-
-					case UI_QUICK_PANEL_LEFT_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								if (coord.x < CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								if ((body->touch_down.x - coord.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							}
-						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_RIGHT_SWIPE: {
-						if (body->transition_type == UI_TRANSITION_SLIDE) {
-							if (body->state == UI_QUICK_PANEL_STATE_NONE) {
-								if (coord.x > CONFIG_UI_DISPLAY_WIDTH - CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										CONFIG_UI_DISPLAY_WIDTH, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
-								if ((coord.x - body->touch_down.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										CONFIG_UI_DISPLAY_WIDTH, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_disappear_tween_end_func);
-								} else {
-									body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-									ui_widget_tween_moveto((ui_widget_t)widget,
-										0, 0,
-										CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-										TWEEN_EASE_OUT_QUAD,
-										ui_quick_panel_appear_tween_end_func);
-								}
-							}
-						}
-						// other transit types are needed to be implemented.
-					}
-					break;
-
-					case UI_QUICK_PANEL_BUTTON: {
-					}
-					break;
-
-					default: {
-					}
-					break;
 				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_LEFT_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						if (coord.x < CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						if ((body->touch_down.x - coord.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_RIGHT_SWIPE:
+				if (body->transition_type == UI_TRANSITION_SLIDE) {
+					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
+						if (coord.x > CONFIG_UI_DISPLAY_WIDTH - CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								CONFIG_UI_DISPLAY_WIDTH, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
+						}
+					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
+						if ((coord.x - body->touch_down.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								CONFIG_UI_DISPLAY_WIDTH, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_disappear_tween_end_func);
+						} else {
+							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
+							ui_widget_tween_moveto((ui_widget_t)widget,
+								0, 0,
+								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
+								TWEEN_EASE_OUT_QUAD,
+								ui_quick_panel_appear_tween_end_func);
+						}
+					}
+				}
+				// other transit types are needed to be implemented.
+				break;
+
+			case UI_QUICK_PANEL_BUTTON:
+				break;
+
+			default:
+				break;
 			}
 		}
 		break;
 
-		default:
+	default:
 		break;
 	}
 }

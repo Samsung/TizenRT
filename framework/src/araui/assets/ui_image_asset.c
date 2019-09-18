@@ -25,7 +25,7 @@
 #include "ui_core_internal.h"
 #include "ui_asset_internal.h"
 #include "ui_request_callback.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -149,40 +149,40 @@ static ui_pixel_format_t _ui_get_pixel_format_from_channels(int channels)
 {
 	// todo: Support 4bit ~ 16bit pixel format
 	switch (channels) {
-		case 3:
-			return UI_PIXEL_FORMAT_RGB888;
-		case 4:
-			return UI_PIXEL_FORMAT_RGBA8888;
-		default:
-			return UI_PIXEL_FORMAT_UNKNOWN;
+	case 3:
+		return UI_PIXEL_FORMAT_RGB888;
+	case 4:
+		return UI_PIXEL_FORMAT_RGBA8888;
+	default:
+		return UI_PIXEL_FORMAT_UNKNOWN;
 	}
 }
 
 static size_t _ui_get_bpp_from_pf(ui_pixel_format_t type)
 {
 	switch (type) {
-		case UI_PIXEL_FORMAT_GRAY4:
-			return 4;
-		case UI_PIXEL_FORMAT_GRAYA44:
-			return 8;
-		case UI_PIXEL_FORMAT_RGB565:
-			return 16;
-		case UI_PIXEL_FORMAT_ARGB8565:
-			return 24;
-		case UI_PIXEL_FORMAT_RGBA5658:
-			return 24;
-		case UI_PIXEL_FORMAT_ARGB4444:
-			return 16;
-		case UI_PIXEL_FORMAT_RGBA4444:
-			return 16;
-		case UI_PIXEL_FORMAT_RGB888:
-			return 24;
-		case UI_PIXEL_FORMAT_ARGA8888:
-			return 32;
-		case UI_PIXEL_FORMAT_RGBA8888:
-			return 32;
-		default:
-			return 0;
+	case UI_PIXEL_FORMAT_GRAY4:
+		return 4;
+	case UI_PIXEL_FORMAT_GRAYA44:
+		return 8;
+	case UI_PIXEL_FORMAT_RGB565:
+		return 16;
+	case UI_PIXEL_FORMAT_ARGB8565:
+		return 24;
+	case UI_PIXEL_FORMAT_RGBA5658:
+		return 24;
+	case UI_PIXEL_FORMAT_ARGB4444:
+		return 16;
+	case UI_PIXEL_FORMAT_RGBA4444:
+		return 16;
+	case UI_PIXEL_FORMAT_RGB888:
+		return 24;
+	case UI_PIXEL_FORMAT_ARGA8888:
+		return 32;
+	case UI_PIXEL_FORMAT_RGBA8888:
+		return 32;
+	default:
+		return 0;
 	}
 }
 

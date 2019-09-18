@@ -26,7 +26,7 @@
 #include <araui/ui_commons.h>
 #include <araui/ui_widget.h>
 #include "ui_request_callback.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_commons_internal.h"
 #include "ui_core_internal.h"
 #include "ui_widget_internal.h"
@@ -121,7 +121,7 @@ ui_widget_t ui_text_widget_create(int32_t width, int32_t height, ui_asset_t font
 	// Fill the color variable by 0xff for white color
 	memset(&body->font_color, 0xff, sizeof(body->font_color));
 
-	body->base.draw_cb = _ui_text_widget_draw_func;
+	body->base.render_cb = _ui_text_widget_draw_func;
 	body->base.remove_cb = _ui_text_widget_removed_func;
 
 	return (ui_widget_t)body;
@@ -329,8 +329,8 @@ static void _ui_text_widget_set_text_func(void *userdata)
 		return;
 	}
 
-	if (ui_window_add_update_list(body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the update list!\n");
+	if (ui_window_add_redraw_list(body->base.global_rect) != UI_OK) {
+		UI_LOGE("error: failed to add to the redraw list!\n");
 		UI_FREE(info->text);
 		UI_FREE(info);
 		return;
@@ -382,8 +382,8 @@ static void _ui_text_widget_set_align_func(void *userdata)
 	info = (ui_set_align_info_t *)userdata;
 
 	info->body->align = info->align;
-	if (ui_window_add_update_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the update list!\n");
+	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
+		UI_LOGE("error: failed to add to the redraw list!\n");
 		UI_FREE(info);
 		return;
 	}
@@ -653,8 +653,8 @@ static void _ui_text_widget_set_word_wrap_func(void *userdata)
 	// According to the text wrap option, a line number of the text widget can be differ from the current one.
 	// Therefore, this value should be recalculated.
 	_ui_text_widget_calculate_line_num(body);
-	if (ui_window_add_update_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the update list!\n");
+	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
+		UI_LOGE("error: failed to add to the redraw list!\n");
 		UI_FREE(info);
 		return;
 	}
@@ -716,8 +716,8 @@ static void _ui_text_widget_set_font_size_func(void *userdata)
 	// According to the text wrap option, a line number of the text widget can be differ from the current one.
 	// Therefore, this value should be recalculated.
 	_ui_text_widget_calculate_line_num(body);
-	if (ui_window_add_update_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the update list!\n");
+	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
+		UI_LOGE("error: failed to add to the redraw list!\n");
 		UI_FREE(info);
 		return;
 	}

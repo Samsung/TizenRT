@@ -24,7 +24,7 @@
 #include <araui/ui_commons.h>
 #include <araui/ui_widget.h>
 #include <araui/ui_animation.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
 #include "ui_widget_internal.h"
@@ -80,11 +80,6 @@ typedef struct {
 
 typedef struct {
 	ui_widget_body_t *body;
-	ui_align_t align;
-} ui_align_info_t;
-
-typedef struct {
-	ui_widget_body_t *body;
 	int32_t x;
 	int32_t y;
 } ui_set_pivot_point_info_t;
@@ -120,7 +115,6 @@ static void _ui_widget_destroy_func(void *userdata);
 static void _ui_widget_add_child_func(void *userdata);
 static void _ui_widget_remove_child_func(void *userdata);
 static void _ui_widget_remove_all_children_func(void *widget);
-static void _ui_widget_set_align_func(void *widget);
 static void _ui_widget_set_pivot_point_func(void *userdata);
 static void _ui_widget_set_scale_func(void *userdata);
 static void _ui_widget_set_rotation_func(void *userdata);
@@ -140,7 +134,6 @@ inline bool ui_widget_check_widget_type(ui_widget_t widget, ui_widget_type_t typ
 
 ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 {
-	ui_widget_body_t *parent;
 	int32_t x;
 	int32_t y;
 	ui_widget_body_t *child;
@@ -150,9 +143,9 @@ ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 		return UI_INVALID_PARAM;
 	}
 
-	// Add update region to clear previously located region
-	if (ui_window_add_update_list(widget->crop_rect) != UI_OK) {
-		UI_LOGE("error: failed to add update list!\n");
+	// Add redraw region to clear previously located region
+	if (ui_window_add_redraw_list(widget->global_rect) != UI_OK) {
+		UI_LOGE("error: failed to add redraw list!\n");
 		return UI_OPERATION_FAIL;
 	}
 
@@ -162,18 +155,6 @@ ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 	if (widget->parent) {
 		x = widget->local_rect.x + widget->parent->global_rect.x;
 		y = widget->local_rect.y + widget->parent->global_rect.y;
-
-		if (widget->align & UI_ALIGN_CENTER) {
-			x = x + ((widget->parent->global_rect.width - widget->global_rect.width) >> 1);
-		} else if (widget->align & UI_ALIGN_RIGHT) {
-			x = x + (widget->parent->global_rect.width - widget->global_rect.width);
-		}
-
-		if (widget->align & UI_ALIGN_MIDDLE) {
-			y = y + ((widget->parent->global_rect.height - widget->global_rect.height) >> 1);
-		} else if (widget->align & UI_ALIGN_BOTTOM) {
-			y = y + (widget->parent->global_rect.height - widget->global_rect.height);
-		}
 	} else {
 		x = widget->local_rect.x;
 		y = widget->local_rect.y;
@@ -181,16 +162,9 @@ ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 
 	widget->global_rect.x = x;
 	widget->global_rect.y = y;
-	widget->crop_rect = widget->global_rect;
-
-	parent = widget->parent;
-	while (parent) {
-		widget->crop_rect = ui_rect_intersect(widget->crop_rect, parent->crop_rect);
-		parent = parent->parent;
-	}
 
 	// Add update region to present newly located region
-	if (ui_window_add_update_list(widget->crop_rect) != UI_OK) {
+	if (ui_window_add_redraw_list(widget->global_rect) != UI_OK) {
 		UI_LOGE("error: failed to add update list!\n");
 		return UI_OPERATION_FAIL;
 	}
@@ -244,7 +218,7 @@ static void _ui_widget_set_visible_func(void *userdata)
 	body = (ui_widget_body_t *)info->body;
 	body->visible = info->visible;
 
-	if (ui_window_add_update_list(body->global_rect) != UI_OK) {
+	if (ui_window_add_redraw_list(body->global_rect) != UI_OK) {
 		UI_LOGE("error: failed to add to the update list!\n");
 	}
 
@@ -294,7 +268,6 @@ static void _ui_widget_set_position_func(void *userdata)
 	body = (ui_widget_body_t *)info->body;
 	body->local_rect.x = info->coord.x;
 	body->local_rect.y = info->coord.y;
-	info->body->mat_update_flag = true;
 
 	ui_widget_update_position_info(body);
 
@@ -574,7 +547,7 @@ ui_widget_body_t *ui_widget_search_by_coord(ui_widget_body_t *widget, ui_coord_t
 		return UI_NULL;
 	}
 
-	if (ui_coord_inside_rect(coord, widget->crop_rect) && widget->visible) {
+	if (ui_coord_inside_rect(coord, widget->global_rect) && widget->visible) {
 		if (widget->touchable) {
 			result = widget;
 		}
@@ -804,7 +777,7 @@ static void _ui_widget_remove_child_func(void *userdata)
 	vec_remove(&info->body->children, info->child);
 
 	info->child->parent = NULL;
-	ui_window_add_update_list(info->child->global_rect);
+	ui_window_add_redraw_list(info->child->global_rect);
 
 	UI_FREE(info);
 }
@@ -841,15 +814,13 @@ static void _ui_widget_remove_all_children_func(void *widget)
 
 	vec_foreach(&body->children, child, iter) {
 		child->parent = NULL;
-		ui_window_add_update_list(child->global_rect);
+		ui_window_add_redraw_list(child->global_rect);
 	}
 	vec_clear(&body->children);
 }
 
 void ui_widget_init(ui_widget_body_t *body, int32_t width, int32_t height)
 {
-	float id_mat[3][3] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
-
 	if (!body) {
 		UI_LOGE("error: Invalid Parameter!\n");
 		return;
@@ -860,8 +831,6 @@ void ui_widget_init(ui_widget_body_t *body, int32_t width, int32_t height)
 	body->local_rect.height = height;
 	body->scale_x = 1.0f;
 	body->scale_y = 1.0f;
-	ui_matrix_copy(body->trans_mat, id_mat);
-	ui_matrix_copy(body->inverse_mat, id_mat);
 
 	vec_init(&body->children);
 }
@@ -871,51 +840,6 @@ void ui_widget_deinit(ui_widget_body_t *body)
 	if (body) {
 		vec_deinit(&body->children);
 	}
-}
-
-ui_error_t ui_widget_set_align(ui_widget_t widget, ui_align_t align)
-{
-	ui_align_info_t *info;
-
-	if (!ui_is_running()) {
-		return UI_NOT_RUNNING;
-	}
-
-	if (!widget) {
-		return UI_INVALID_PARAM;
-	}
-
-	info = (ui_align_info_t *)UI_ALLOC(sizeof(ui_align_info_t));
-	if (!info) {
-		return UI_NOT_ENOUGH_MEMORY;
-	}
-
-	info->body = (ui_widget_body_t *)widget;
-	info->align = align;
-
-	if (ui_request_callback(_ui_widget_set_align_func, (void *)info) != UI_OK) {
-		UI_FREE(info);
-		return UI_OPERATION_FAIL;
-	}
-
-	return UI_OK;
-}
-
-static void _ui_widget_set_align_func(void *userdata)
-{
-	ui_align_info_t *info;
-
-	info = (ui_align_info_t *)userdata;
-
-	info->body->align = info->align;
-
-	if (ui_widget_update_position_info(info->body) != UI_OK) {
-		UI_LOGE("error: failed to update position information!\n");
-		UI_FREE(info);
-		return;
-	}
-
-	UI_FREE(info);
 }
 
 ui_error_t ui_widget_destroy_sync(ui_widget_body_t *body)
@@ -971,6 +895,8 @@ static void _ui_widget_set_pivot_point_func(void *userdata)
 	info->body->pivot_y = info->y;
 
 	UI_FREE(info);
+
+	// todo: Add redraw list
 }
 
 ui_error_t ui_widget_set_scale(ui_widget_t widget, float scale_x, float scale_y)
@@ -1010,7 +936,8 @@ static void _ui_widget_set_scale_func(void *userdata)
 
 	info->body->scale_x = info->scale_x;
 	info->body->scale_y = info->scale_y;
-	info->body->mat_update_flag = true;
+
+	// todo: Add redraw list
 
 	UI_FREE(info);
 }
@@ -1050,7 +977,9 @@ static void _ui_widget_set_rotation_func(void *userdata)
 	info = (ui_rotate_info_t *)userdata;
 
 	info->body->degree = info->degree;
-	info->body->mat_update_flag = true;
+
+	// todo: Add redraw list
+	ui_window_add_redraw_list((ui_rect_t){ 0, 0, 360, 360 });
 
 	UI_FREE(info);
 }
@@ -1131,7 +1060,6 @@ static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t)
 	ui_widget_body_t *body;
 	ui_anim_body_t *anim;
 	ui_anim_t *item;
-	uint32_t _t = t;
 
 	if (!widget) {
 		return UI_INVALID_PARAM;
@@ -1140,12 +1068,12 @@ static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t)
 	body = (ui_widget_body_t *)widget;
 	anim = (ui_anim_body_t *)body->anim;
 
-	return anim->func(widget, body->anim, &_t);
+	return anim->func(widget, (ui_anim_t)body->anim, &t);
 }
 
 ui_error_t ui_widget_stop_anim(ui_widget_t widget)
 {
-
+	return UI_OK;
 }
 
 static void _ui_widget_stop_anim(void *userdata)
@@ -1155,7 +1083,7 @@ static void _ui_widget_stop_anim(void *userdata)
 
 ui_error_t ui_widget_pause_anim(ui_widget_t widget)
 {
-
+	return UI_OK;
 }
 
 static void _ui_widget_pause_anim(void *userdata)
@@ -1165,7 +1093,7 @@ static void _ui_widget_pause_anim(void *userdata)
 
 ui_error_t ui_widget_resume_anim(ui_widget_t widget)
 {
-
+	return UI_OK;
 }
 
 static void _ui_widget_resume_anim(void *userdata)

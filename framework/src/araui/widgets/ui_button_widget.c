@@ -19,7 +19,7 @@
 #include <tinyara/config.h>
 #include <string.h>
 #include <araui/ui_commons.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
 #include "ui_window_internal.h"
@@ -100,30 +100,27 @@ void ui_button_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t even
 	body = (ui_button_widget_body_t *)widget;
 
 	switch (event) {
-		case UI_TOUCH_EVENT_CANCEL: {
+	case UI_TOUCH_EVENT_CANCEL:
+		body->pressed = false;
+		break;
+
+	case UI_TOUCH_EVENT_DOWN:
+		body->pressed = true;
+		break;
+
+	case UI_TOUCH_EVENT_UP:
+		if (body->pressed) {
 			body->pressed = false;
-		}
-		break;
 
-		case UI_TOUCH_EVENT_DOWN: {
-			body->pressed = true;
-		}
-		break;
-
-		case UI_TOUCH_EVENT_UP: {
-			if (body->pressed) {
-				body->pressed = false;
-
-				if (ui_coord_inside_rect(coord, body->base.crop_rect)) {
-					if (body->touched_cb) {
-						body->touched_cb((ui_widget_t)body);
-					}
+			if (ui_coord_inside_rect(coord, body->base.global_rect)) {
+				if (body->touched_cb) {
+					body->touched_cb((ui_widget_t)body);
 				}
 			}
 		}
 		break;
 
-		default:
+	default:
 		break;
 	}
 
@@ -160,3 +157,4 @@ ui_widget_t ui_button_widget_create(int32_t width, int32_t height)
 
 	return (ui_widget_t)body;
 }
+

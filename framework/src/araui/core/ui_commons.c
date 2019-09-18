@@ -22,7 +22,7 @@
 #include <araui/ui_commons.h>
 #include <araui/ui_commons.h>
 #include "ui_commons_internal.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 
 #define UI_FREAD_RETRY_COUNT 32
 
@@ -69,8 +69,8 @@ ui_rect_t ui_get_contain_rect(ui_rect_t r1, ui_rect_t r2)
 
 bool ui_coord_inside_rect(ui_coord_t coord, ui_rect_t rect)
 {
-	if ((rect.x <= coord.x) && (coord.x <= (rect.x + rect.width)) &&
-		(rect.y <= coord.y) && (coord.y <= (rect.y + rect.height))) {
+	if ((coord.x >= rect.x) && (coord.x < (rect.x + rect.width)) &&
+		(coord.y >= rect.y) && (coord.y < (rect.y + rect.height))) {
 		return true;
 	}
 
