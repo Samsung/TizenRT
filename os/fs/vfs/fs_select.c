@@ -117,7 +117,6 @@ static int _init_desc_list(int nfds,
 		if (readfds && FD_ISSET(fd, readfds)) {
 			pollset[ndx].fd = fd;
 			pollset[ndx].events |= POLLIN;
-			memset(readfds, 0, sizeof(fd_set));
 			incr = 1;
 		}
 
@@ -127,7 +126,6 @@ static int _init_desc_list(int nfds,
 		if (writefds && FD_ISSET(fd, writefds)) {
 			pollset[ndx].fd = fd;
 			pollset[ndx].events |= POLLOUT;
-			memset(writefds, 0, sizeof(fd_set));
 			incr = 1;
 		}
 
@@ -135,7 +133,6 @@ static int _init_desc_list(int nfds,
 		if (exceptfds && FD_ISSET(fd, exceptfds)) {
 			pollset[ndx].fd = fd;
 			pollset[ndx].events |= POLLERR;
-			memset(exceptfds, 0, sizeof(fd_set));
 			incr = 1;
 		}
 
@@ -143,6 +140,19 @@ static int _init_desc_list(int nfds,
 	}
 
 	return ndx;
+}
+
+static void _reset_fds(FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exceptfds)
+{
+	if (readfds) {
+		memset(readfds, 0, sizeof(fd_set));
+	}
+	if (writefds) {
+		memset(writefds, 0, sizeof(fd_set));
+	}
+	if (exceptfds) {
+		memset(exceptfds, 0, sizeof(fd_set));
+	}
 }
 
 static int _back_desc_list(int npfds,
@@ -262,6 +272,8 @@ int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exce
 		/* poll() failed! Save the errno value */
 		errcode = get_errno();
 	}
+
+	_reset_fds(readfds, writefds, exceptfds);
 
 	/* Convert the poll descriptor list back into selects 3 bitsets */
 	if (ret > 0) {
