@@ -46,7 +46,7 @@ int micomapp_main(int argc, char **argv)
 		return ERROR;
 	}
 
-	timer_main(TIMER_ARG_NUM, timer_args);
+	timer_example_main(TIMER_ARG_NUM, timer_args);
 
 	free_timer_args(timer_args);
 #else /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */

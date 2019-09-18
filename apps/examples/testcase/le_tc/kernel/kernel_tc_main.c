@@ -179,7 +179,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_TIMER
-	timer_main();
+	timer_tc_main();
 #endif
 
 #ifdef CONFIG_TC_KERNEL_ROUNDROBIN
