@@ -128,6 +128,7 @@ static void utc_media_SpeechDetector_startEndPointDetect_p(void)
 	TC_ASSERT_EQ_CLEANUP("utc_media_SpeechDetector_startEndPointDetect", ret, true, goto cleanup);
 	TC_SUCCESS_RESULT();
 cleanup:
+	instance->deinitKeywordDetect();
 	instance->deinitEndPointDetect();
 }
 
