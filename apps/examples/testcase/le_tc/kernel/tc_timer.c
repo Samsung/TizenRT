@@ -273,7 +273,7 @@ static void tc_timer_timer_initialize(void)
  * Name: timer
  ****************************************************************************/
 
-int timer_main(void)
+int timer_tc_main(void)
 {
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_timer_timer_create_delete();
