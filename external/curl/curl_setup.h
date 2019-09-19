@@ -1,5 +1,6 @@
 #ifndef HEADER_CURL_SETUP_H
 #define HEADER_CURL_SETUP_H
+#include <tinyara/config.h>
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
