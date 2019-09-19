@@ -36,10 +36,6 @@ config SYSIO_UTC_GPIO
 	bool "Sysio GPIO TC"
 	default n
 
-config SYSIO_UTC_ADC
-	bool "Sysio ADC TC"
-	default n
-
 if SYSIO_UTC_GPIO
 config SYSIO_UTC_GPIO1_NUM
 	int "1st GPIO Number to run testcase"
@@ -49,5 +45,9 @@ config SYSIO_UTC_GPIO2_NUM
 	int "2nd GPIO Number to run testcase"
 	default 57
 endif
+
+config SYSIO_UTC_ADC
+	bool "Sysio ADC TC"
+	default n
 endif
 
