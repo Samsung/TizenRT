@@ -40,9 +40,9 @@ File can be loaded for different locations,
 For convenience, it is recommended to use the approach of adding a ROM partition as explained in
 [HowToUseROMFS.md](HowToUseROMFS.md)
 
-Then place your script(s) in tools/fs/contents, for instance:
+Then place your script(s) in tools/fs/contents-romfs, for instance:
 
-    cat tools/fs/contents/example/index.js 
+    cat tools/fs/contents-romfs/example/index.js 
     console.log(JSON.stringify(process));
 
 
