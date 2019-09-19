@@ -43,7 +43,6 @@
 #include "chip/esp32_gpio_sigmap.h"
 #include "chip/esp32_efuse_reg.h"
 #include "rom/esp32_gpio.h"
-//#include "spi_common.h"
 #include "periph_ctrl.h"
 #include "assert.h"
 
