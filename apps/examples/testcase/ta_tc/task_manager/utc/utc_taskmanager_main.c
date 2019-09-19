@@ -1089,6 +1089,7 @@ int utc_taskmanager_main(int argc, char *argv[])
 
 	(void)task_manager_unregister(handle_tm_utc, TM_NO_RESPONSE);
 
+	sleep(1);
 	(void)tc_handler(TC_END, "TaskManager UTC");
 
 	return 0;

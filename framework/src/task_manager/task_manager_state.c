@@ -23,6 +23,8 @@
 #include <sys/ioctl.h>
 #include <tinyara/fs/ioctl.h>
 #include <task_manager/task_manager.h>
+#include <tinyara/task_manager_drv.h>
+
 #include "task_manager_internal.h"
 
 /****************************************************************************
@@ -32,13 +34,17 @@ static void taskmgr_update_task_state(int handle)
 {
 	int ret;
 	int fd;
+	tm_drv_data_t data;
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
 		return;
 	}
 
-	ret = ioctl(fd, TMIOC_CHECK_ALIVE, TM_PID(handle));
+	data.pid = TM_PID(handle);
+	data.addr = NULL;
+
+	ret = ioctl(fd, TMIOC_CHECK_ALIVE, (unsigned long)&data);
 	if (ret != OK && TM_LIST_ADDR(handle) != NULL) {
 		if (TM_STATUS(handle) == TM_APP_STATE_RUNNING || TM_STATUS(handle) == TM_APP_STATE_PAUSE) {
 			TM_STATUS(handle) = TM_APP_STATE_STOP;
