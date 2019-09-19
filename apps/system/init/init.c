@@ -45,7 +45,10 @@
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
-
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+#include <semaphore.h>
+#include <errno.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -108,6 +111,13 @@ int preapp_start(int argc, char *argv[])
 	int ret;
 #endif
 
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+	sem_t	sem;
+	sem_init(&sem, 0, 0);
+
+	up_cxxinitialize();
+#endif
+
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
 #endif
@@ -157,5 +167,21 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
+/***********************************************************************************
+ *	current preapp_start does the up_cxxinitialize which initializes the
+ *	static constructors. All the tasks and threads created by preapp refer to
+ *	these constructors. To make sure that c++ test cases from tash runs properly,
+ *	we need to keep preapp/constructor initializations alive with below changes.
+ **********************************************************************************/
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+	while (sem_wait(&sem) != 0) {
+		/* The only case that an error should occur here is if the wait was
+		 * awakened by a signal.
+		 */
+		if (errno == EINTR) {
+			printf("awakened by signal..\n");
+		}
+	}
+#endif
 	return 0;
 }
