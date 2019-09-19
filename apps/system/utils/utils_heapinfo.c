@@ -291,6 +291,7 @@ int utils_heapinfo(int argc, char **args)
 	ret = ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&options);
 	if (ret == ERROR) {
 		printf("Heapinfo Fail, %d.\n", get_errno());
+		close(heapinfo_fd);
 		return ERROR;		
 	}
 	close(heapinfo_fd);
