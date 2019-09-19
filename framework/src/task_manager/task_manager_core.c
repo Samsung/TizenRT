@@ -175,6 +175,9 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 
 	/* Check that task is in builtin-list or not */
 	for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
+		if (builtin_list[chk_idx].name == NULL) {
+			continue;
+		}
 		if (strncmp((char *)builtin_list[chk_idx].name, name, CONFIG_TASK_NAME_SIZE) == 0) {
 			/* Requested name is in builtin-list */
 			handle = taskmgr_assign_handle();
@@ -308,17 +311,20 @@ static int taskmgr_unregister(int handle)
 	return OK;
 }
 
-static int taskmgr_handle_tcb(int type, int pid)
+static int taskmgr_handle_tcb(int type, int pid, void *addr)
 {
 	int fd;
 	int ret;
+	tm_drv_data_t data;
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
 		return TM_INVALID_DRVFD;
 	}
 
-	ret = ioctl(fd, type, pid);
+	data.pid = pid;
+	data.addr = addr;
+	ret = ioctl(fd, type, (unsigned long)&data);
 	if (ret == ERROR) {
 		return TM_OPERATION_FAIL;
 	}
@@ -334,7 +340,7 @@ static int taskmgr_adj_pthread_parent(int parent_pid, int child_pid)
 	group_info.parent_pid = parent_pid;
 	group_info.child_pid = child_pid;
 
-	ret = taskmgr_handle_tcb(TMIOC_PTHREAD_PARENT, (int)&group_info);
+	ret = taskmgr_handle_tcb(TMIOC_PTHREAD_PARENT, -1, &group_info);
 	if (ret != OK) {
 		ret = TM_OPERATION_FAIL;
 	}
@@ -342,6 +348,16 @@ static int taskmgr_adj_pthread_parent(int parent_pid, int child_pid)
 	return ret;
 }
 #endif			/* HAVE_TASK_GROUP && !CONFIG_DISABLE_PTHREAD */
+
+static void taskmgr_pause_handler(int signo, siginfo_t *info, void *extra)
+{
+	if (signo != SIGTM_PAUSE) {
+		tmdbg("[TM] Invalid signal. signo = %d\n", signo);
+		return;
+	}
+
+	sigpause(SIGTM_RESUME);
+}
 
 static int taskmgr_start(int handle, int caller_pid)
 {
@@ -392,7 +408,7 @@ static int taskmgr_start(int handle, int caller_pid)
 		return TM_OPERATION_FAIL;
 	}
 
-	ret = taskmgr_handle_tcb(TMIOC_START, pid);
+	ret = taskmgr_handle_tcb(TMIOC_START, pid, (void *)taskmgr_pause_handler);
 	if (ret < 0) {
 		(void)task_delete(pid);
 		return ret;
@@ -412,7 +428,7 @@ void taskmgr_update_stop_status(int signo, siginfo_t *data)
 	handle = taskmgr_get_handle_by_pid(data->si_value.sival_int);
 
 	/* Terminate based on task type */
-	ret = taskmgr_handle_tcb(TMIOC_TERMINATE, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_TERMINATE, TM_PID(handle), NULL);
 	if (ret < 0) {
 		tmdbg("Fail to terminate the task\n");
 	}
@@ -544,7 +560,7 @@ static int taskmgr_pause(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
-	ret = taskmgr_handle_tcb(TMIOC_PAUSE, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_PAUSE, TM_PID(handle), NULL);
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
@@ -606,7 +622,7 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 		return TM_NO_PERMISSION;
 	}
 
-	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle), NULL);
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
@@ -666,7 +682,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 		return TM_NO_PERMISSION;
 	}
 
-	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle));
+	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle), NULL);
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
@@ -732,6 +748,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 		return TM_OUT_OF_MEMORY;
 	}
 	memcpy(((tm_msg_t *)response_msg->data)->msg, recv_msg.msg, recv_msg.msg_size);
+	TM_FREE(recv_msg.msg);
 
 	return OK;
 }
@@ -940,7 +957,7 @@ static int taskmgr_broadcast(tm_internal_msg_t *arg)
 			if (ret == TM_APP_STATE_STOP || ret == TM_APP_STATE_UNREGISTERED) {
 				continue;
 			}
-			ret = taskmgr_handle_tcb(TMIOC_BROADCAST, TM_PID(handle));
+			ret = taskmgr_handle_tcb(TMIOC_BROADCAST, TM_PID(handle), NULL);
 			if (ret != OK) {
 				continue;
 			}
@@ -1188,7 +1205,10 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 
 	/* Check that this task is already registered or not */
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
-		if (strcmp(tm_task_list[chk_idx].name, task_info->name) == 0) {
+		if (tm_task_list[chk_idx].name == NULL) {
+			continue;
+		}
+		if (strncmp(tm_task_list[chk_idx].name, task_info->name, strlen(task_info->name) + 1) == 0) {
 			/* Already registered task */
 			handle = TM_OPERATION_FAIL;
 			goto end_func;
@@ -1262,7 +1282,10 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 
 	/* Check that this task is already registered or not */
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
-		if (strcmp(tm_pthread_list[chk_idx].name, pthread_info->name) == 0) {
+		if (tm_pthread_list[chk_idx].name == NULL) {
+			continue;
+		}
+		if (strncmp(tm_pthread_list[chk_idx].name, pthread_info->name, strlen(pthread_info->name) + 1) == 0) {
 			/* Already registered task */
 			handle = TM_OPERATION_FAIL;
 			goto end_func;
@@ -1432,6 +1455,8 @@ static int taskmgr_init_task_manager(void)
 	int ret;
 	struct mq_attr attr;
 	struct sigaction act;
+	int taskmgr_fd;
+	tm_drv_data_t data;
 
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	sigignore(SIGCHLD);
@@ -1440,25 +1465,35 @@ static int taskmgr_init_task_manager(void)
 	attr.mq_msgsize = sizeof(tm_request_t);
 	attr.mq_flags = 0;
 
-	task_manager_pid = getpid();
+	task_manager_pid = data.pid = getpid();
 
 	/* service register : register, set tm_gid to its pid */
 
-	ret = taskmgr_open_driver();
-	if (ret < 0) {
+	taskmgr_fd = taskmgr_open_driver();
+	if (taskmgr_fd < 0) {
 		tmdbg("Failed to open task manager driver.\n");
+		return ERROR;
+	}
+
+	data.addr = task_manager_run_exit_cb;
+	ret = ioctl(taskmgr_fd, TMIOC_EXITCB, (unsigned long)&data);
+	if (ret == ERROR) {
+		tmdbg("Failed to register common exit cb.\n");
+		close(taskmgr_fd);
 		return ERROR;
 	}
 
 	g_tm_recv_mqfd = mq_open(TM_PUBLIC_MQ, O_RDONLY | O_CREAT, 0666, &attr);
 	if (g_tm_recv_mqfd < 0) {
 		tmdbg("Failed to open task manager public queue.\n");
+		close(taskmgr_fd);
 		return ERROR;
 	}
 
 	/* Register callback when termination */
 	if (atexit((void *)taskmgr_termination_callback) != OK) {
 		tmdbg("Failed to register atexit\n");
+		close(taskmgr_fd);
 		return ERROR;
 	}
 

@@ -400,8 +400,9 @@
 #define TMIOC_BROADCAST            _TMIOC(0x0005)
 #define TMIOC_CHECK_ALIVE          _TMIOC(0x0006)
 #define TMIOC_TERMINATE            _TMIOC(0x0007)
+#define TMIOC_EXITCB               _TMIOC(0x0008)
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
-#define TMIOC_PTHREAD_PARENT       _TMIOC(0x0008)
+#define TMIOC_PTHREAD_PARENT       _TMIOC(0x0009)
 #endif
 
 /* Heapinfo driver ioctl definitions ******************************************/

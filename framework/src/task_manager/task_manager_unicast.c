@@ -159,7 +159,6 @@ int task_manager_reply_unicast(tm_msg_t *reply_msg)
 		tmdbg("mq_close failed! ret %d, errno %d\n", ret, errno);
 	}
 
-	TM_FREE(data->msg);
 	TM_FREE(data);
 
 	return ret;

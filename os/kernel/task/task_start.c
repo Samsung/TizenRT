@@ -64,6 +64,11 @@
 #include <tinyara/sched.h>
 #include <tinyara/ttrace.h>
 
+#ifdef CONFIG_TASK_MANAGER
+#include <tinyara/task_manager_drv.h>
+#include <task_manager/task_manager.h>
+#endif
+
 #include "sched/sched.h"
 #include "task/task.h"
 
@@ -91,6 +96,15 @@
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+
+#ifdef CONFIG_TASK_MANAGER
+static tm_exit_cb_t g_exit_cb;
+
+void tm_set_exit_cb(tm_exit_cb_t cb)
+{
+	g_exit_cb = cb;
+}
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -164,6 +178,11 @@ void task_start(void)
 #endif
 	{
 		exitcode = tcb->cmn.entry.main(argc, tcb->argv);
+#ifdef CONFIG_TASK_MANAGER
+		if (g_exit_cb != NULL) {
+			(*g_exit_cb)(tcb->cmn.pid);
+		}
+#endif
 	}
 
 	trace_end(TTRACE_TAG_TASK);
