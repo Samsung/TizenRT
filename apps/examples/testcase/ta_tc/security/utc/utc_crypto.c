@@ -52,7 +52,7 @@ static security_aes_mode g_aes_mode_table[] = {
 	AES_CTR,
 };
 
-security_handle g_hnd = NULL;
+static security_handle g_hnd = NULL;
 
 /**
  * @testcase         utc_crypto_aes_encryption_p
