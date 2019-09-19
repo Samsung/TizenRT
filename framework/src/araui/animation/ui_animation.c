@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include <araui/ui_commons.h>
 #include <araui/ui_animation.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
 #include "ui_animation_internal.h"

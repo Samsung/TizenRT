@@ -48,12 +48,12 @@ extern "C" {
 ui_error_t ui_window_list_init(void);
 ui_error_t ui_window_list_deinit(void);
 
-ui_error_t ui_window_update_list_init(void);
-ui_error_t ui_window_update_list_deinit(void);
+ui_error_t ui_window_redraw_list_init(void);
+ui_error_t ui_window_redraw_list_deinit(void);
 
-vec_void_t *ui_window_get_update_list(void);
-ui_error_t ui_window_add_update_list(ui_rect_t update);
-ui_error_t ui_window_update_list_clear(void);
+vec_void_t *ui_window_get_redraw_list(void);
+ui_error_t ui_window_add_redraw_list(ui_rect_t update);
+ui_error_t ui_window_redraw_list_clear(void);
 
 ui_window_body_t *ui_window_get_current(void);
 

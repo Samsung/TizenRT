@@ -19,7 +19,7 @@
 #include <tinyara/config.h>
 #include <string.h>
 #include <araui/ui_commons.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_core_internal.h"
 #include "ui_window_internal.h"
@@ -199,142 +199,135 @@ void ui_scroll_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t even
 	body = (ui_scroll_widget_body_t *)widget;
 
 	switch (event) {
-		case UI_TOUCH_EVENT_CANCEL: {
-			body->state = UI_SCROLL_STATE_NONE;
+	case UI_TOUCH_EVENT_CANCEL:
+		body->state = UI_SCROLL_STATE_NONE;
+		break;
+
+	case UI_TOUCH_EVENT_DOWN:
+		switch (body->state) {
+		case UI_SCROLL_STATE_NONE:
+			body->state = UI_SCROLL_STATE_THRESHOLD;
+			body->prev_touch = coord;
+			body->scroll_velocity_x = 0.0f;
+			body->scroll_velocity_y = 0.0f;
+			break;
+
+		default:
+			break;
 		}
 		break;
 
-		case UI_TOUCH_EVENT_DOWN: {
-			switch (body->state) {
-				case UI_SCROLL_STATE_NONE: {
-					body->state = UI_SCROLL_STATE_THRESHOLD;
-					body->prev_touch = coord;
-					body->scroll_velocity_x = 0.0f;
-					body->scroll_velocity_y = 0.0f;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case UI_TOUCH_EVENT_MOVE: {
+	case UI_TOUCH_EVENT_MOVE:
+		{
 			delta.x = coord.x - body->prev_touch.x;
 			delta.y = coord.y - body->prev_touch.y;
 
 			switch (body->state) {
-				case UI_SCROLL_STATE_THRESHOLD: {
-					if ((body->direction == UI_DIRECTION_VERTICAL && UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD) ||
-						(body->direction == UI_DIRECTION_HORIZONTAL && UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD) ||
-						(body->direction == UI_DIRECTION_ALL && (UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD || UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD))) {
-						ui_core_lock_touch_event_target((ui_widget_body_t *)body);
-						body->state = UI_SCROLL_STATE_SCROLLING;
-					}
+			case UI_SCROLL_STATE_THRESHOLD:
+				if ((body->direction == UI_DIRECTION_VERTICAL && UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD) ||
+					(body->direction == UI_DIRECTION_HORIZONTAL && UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD) ||
+					(body->direction == UI_DIRECTION_ALL && (UI_ABS(delta.x) >= CONFIG_UI_TOUCH_THRESHOLD || UI_ABS(delta.y) >= CONFIG_UI_TOUCH_THRESHOLD))) {
+					ui_core_lock_touch_event_target((ui_widget_body_t *)body);
+					body->state = UI_SCROLL_STATE_SCROLLING;
 				}
 				break;
 
-				case UI_SCROLL_STATE_SCROLLING: {
-					prev_touch = body->prev_touch;
-					body->prev_touch = coord;
-					body->prev_offset.x = body->offset.x;
-					body->prev_offset.y = body->offset.y;
+			case UI_SCROLL_STATE_SCROLLING:
+				prev_touch = body->prev_touch;
+				body->prev_touch = coord;
+				body->prev_offset.x = body->offset.x;
+				body->prev_offset.y = body->offset.y;
 
-					body->offset.x += delta.x;
-					body->offset.y += delta.y;
+				body->offset.x += delta.x;
+				body->offset.y += delta.y;
 
-					if (body->offset.x > 0) {
-						body->offset.x = 0;
-						if (body->min_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
-							body->state = UI_SCROLL_STATE_NONE;
-							parent = body->base.parent;
-							while (parent) {
-								if (parent->is_hooker && parent->touch_cb) {
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
-									break;
-								}
-								parent = parent->parent;
+				if (body->offset.x > 0) {
+					body->offset.x = 0;
+					if (body->min_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
+						body->state = UI_SCROLL_STATE_NONE;
+						parent = body->base.parent;
+						while (parent) {
+							if (parent->is_hooker && parent->touch_cb) {
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
+								break;
 							}
+							parent = parent->parent;
 						}
 					}
-
-					if (body->offset.y > 0) {
-						body->offset.y = 0;
-						if (body->min_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
-							body->state = UI_SCROLL_STATE_NONE;
-							parent = body->base.parent;
-							while (parent) {
-								if (parent->is_hooker && parent->touch_cb) {
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
-									break;
-								}
-								parent = parent->parent;
-							}
-						}
-					}
-
-					if (body->offset.x < body->min_offset.x) {
-						body->offset.x = body->min_offset.x;
-						if (body->max_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
-							body->state = UI_SCROLL_STATE_NONE;
-							parent = body->base.parent;
-							while (parent) {
-								if (parent->is_hooker && parent->touch_cb) {
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
-									break;
-								}
-								parent = parent->parent;
-							}
-						}
-					}
-
-					if (body->offset.y < body->min_offset.y) {
-						body->offset.y = body->min_offset.y;
-						if (body->max_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
-							body->state = UI_SCROLL_STATE_NONE;
-							parent = body->base.parent;
-							while (parent) {
-								if (parent->is_hooker && parent->touch_cb) {
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
-									ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
-									break;
-								}
-								parent = parent->parent;
-							}
-						}
-					}
-
-					// From now, the delta means the delta of the previous offset and the current offset
-					delta.x = body->offset.x - body->prev_offset.x;
-					delta.y = body->offset.y - body->prev_offset.y;
-
-					// Update scroll velocity
-					body->scroll_velocity_x += delta.x;
-					body->scroll_velocity_y += delta.y;
-
-					// update position of all children (sync)
-					_apply_delta_to_all_children(body, delta);
 				}
+
+				if (body->offset.y > 0) {
+					body->offset.y = 0;
+					if (body->min_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
+						body->state = UI_SCROLL_STATE_NONE;
+						parent = body->base.parent;
+						while (parent) {
+							if (parent->is_hooker && parent->touch_cb) {
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
+								break;
+							}
+							parent = parent->parent;
+						}
+					}
+				}
+
+				if (body->offset.x < body->min_offset.x) {
+					body->offset.x = body->min_offset.x;
+					if (body->max_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
+						body->state = UI_SCROLL_STATE_NONE;
+						parent = body->base.parent;
+						while (parent) {
+							if (parent->is_hooker && parent->touch_cb) {
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
+								break;
+							}
+							parent = parent->parent;
+						}
+					}
+				}
+
+				if (body->offset.y < body->min_offset.y) {
+					body->offset.y = body->min_offset.y;
+					if (body->max_offset_reach == UI_REACH_ACTION_DELIVER_TO_PARENT) {
+						body->state = UI_SCROLL_STATE_NONE;
+						parent = body->base.parent;
+						while (parent) {
+							if (parent->is_hooker && parent->touch_cb) {
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_DOWN, prev_touch);
+								ui_core_unlock_and_deliver_touch(parent, UI_TOUCH_EVENT_MOVE, coord);
+								break;
+							}
+							parent = parent->parent;
+						}
+					}
+				}
+
+				// From now, the delta means the delta of the previous offset and the current offset
+				delta.x = body->offset.x - body->prev_offset.x;
+				delta.y = body->offset.y - body->prev_offset.y;
+
+				// Update scroll velocity
+				body->scroll_velocity_x += delta.x;
+				body->scroll_velocity_y += delta.y;
+
+				// update position of all children (sync)
+				_apply_delta_to_all_children(body, delta);
 				break;
 
-				default: {
-				}
+			default:
 				break;
 			}
 		}
 		break;
 
-		case UI_TOUCH_EVENT_UP: {
-			body->state = UI_SCROLL_STATE_NONE;
-		}
+	case UI_TOUCH_EVENT_UP:
+		body->state = UI_SCROLL_STATE_NONE;
 		break;
 
-		default:
+	default:
 		break;
 	}
 }

@@ -18,7 +18,7 @@
 
 #include <string.h>
 #include <araui/ui_commons.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_request_callback.h"
 #include "ui_renderer.h"
 #include "ui_core_internal.h"
@@ -99,19 +99,20 @@ static void _ui_image_widget_set_image_func(void *userdata)
 		info->body->base.local_rect.height = info->image->height;
 	}
 
-	info->body->crop_rect.x = 0;
-	info->body->crop_rect.y = 0;
-	info->body->crop_rect.width = info->image->width;
-	info->body->crop_rect.height = info->image->height;
+	info->body->uv[UV_TOP_LEFT] = (ui_uv_t){ .u = 0.0f, .v = 0.0f };
+	info->body->uv[UV_BOTTOM_LEFT] = (ui_uv_t){ .u = 0.0f, .v = 1.0f };
+	info->body->uv[UV_BOTTOM_RIGHT] = (ui_uv_t){ .u = 1.0f, .v = 1.0f };
+	info->body->uv[UV_TOP_RIGHT] = (ui_uv_t){ .u = 1.0f, .v = 0.0f };
 
-	ui_window_add_update_list(info->body->crop_rect);
+	ui_window_add_redraw_list(info->body->base.global_rect);
 
 	UI_FREE(info);
 }
 
-static void ui_image_widget_draw_func(ui_widget_t widget, uint32_t dt)
+static void ui_image_widget_render_func(ui_widget_t widget, uint32_t dt)
 {
 	ui_image_widget_body_t *body;
+	ui_coord_t coord[4];
 
 	if (!widget) {
 		UI_LOGE("error: Invalid Parameter!\n");
@@ -121,7 +122,28 @@ static void ui_image_widget_draw_func(ui_widget_t widget, uint32_t dt)
 	body = (ui_image_widget_body_t *)widget;
 
 	if (body->image) {
-		ui_render_image_widget(body);
+		ui_renderer_set_texture(body->image->buf, body->image->width, body->image->height, body->image->pixel_format);
+
+		coord[0] = (ui_coord_t){
+			.x = -body->base.pivot_x,
+			.y = -body->base.pivot_y
+		};
+		coord[1] = (ui_coord_t){
+			.x = -body->base.pivot_x,
+			.y = -body->base.pivot_y + body->base.local_rect.height - 1
+		};
+		coord[2] = (ui_coord_t){
+			.x = -body->base.pivot_x + body->base.local_rect.width - 1,
+			.y = -body->base.pivot_y + body->base.local_rect.height - 1
+		};
+		coord[3] = (ui_coord_t){
+			.x = -body->base.pivot_x + body->base.local_rect.width - 1,
+			.y = -body->base.pivot_y
+		};
+
+		ui_render_quad_uv(coord, body->uv);
+
+		ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
 	}
 }
 
@@ -151,15 +173,19 @@ ui_widget_t ui_image_widget_create(ui_asset_t image)
 		}
 		ui_widget_init((ui_widget_body_t *)body, ((ui_image_asset_body_t *)image)->width, ((ui_image_asset_body_t *)image)->height);
 		body->image = (ui_image_asset_body_t *)image;
-		body->crop_rect.x = 0;
-		body->crop_rect.y = 0;
-		body->crop_rect.width = ((ui_image_asset_body_t *)image)->width;
-		body->crop_rect.height = ((ui_image_asset_body_t *)image)->height;
+		body->uv[UV_TOP_LEFT].u = 0.0f;
+		body->uv[UV_TOP_LEFT].v = 0.0f;
+		body->uv[UV_BOTTOM_LEFT].u = 0.0f;
+		body->uv[UV_BOTTOM_LEFT].v = 1.0f;
+		body->uv[UV_BOTTOM_RIGHT].u = 1.0f;
+		body->uv[UV_BOTTOM_RIGHT].v = 1.0f;
+		body->uv[UV_TOP_RIGHT].u = 1.0f;
+		body->uv[UV_TOP_RIGHT].v = 0.0f;
 	} else {
 		ui_widget_init((ui_widget_body_t *)body, 0, 0);
 	}
 
-	body->base.draw_cb = ui_image_widget_draw_func;
+	body->base.render_cb = ui_image_widget_render_func;
 
 	return (ui_widget_t)body;
 }
@@ -177,14 +203,26 @@ ui_error_t ui_image_widget_set_crop_area(ui_widget_t widget, ui_rect_t crop_rect
 		return UI_INVALID_PARAM;
 	}
 
-	if (crop_rect.x < 0 || crop_rect.y < 0) {
+	body = (ui_image_widget_body_t *)widget;
+
+	if (!body->image) {
 		return UI_INVALID_PARAM;
 	}
 
-	body = (ui_image_widget_body_t *)widget;
+	if (crop_rect.x < 0) {
+		crop_rect.x = 0;
+	}
 
-	if (!body->image || (crop_rect.x + crop_rect.width > body->image->width) || (crop_rect.y + crop_rect.height > body->image->height)) {
-		return UI_INVALID_PARAM;
+	if (crop_rect.y < 0) {
+		crop_rect.y = 0;
+	}
+
+	if (crop_rect.x + crop_rect.width >= body->image->width) {
+		crop_rect.width = body->image->width - crop_rect.x;
+	}
+
+	if (crop_rect.y + crop_rect.height >= body->image->height) {
+		crop_rect.height = body->image->height - crop_rect.y;
 	}
 
 	info = (ui_set_crop_area_info_t *)UI_ALLOC(sizeof(ui_set_crop_area_info_t));
@@ -217,10 +255,19 @@ static void _ui_image_widget_set_crop_area_func(void *userdata)
 
 	info = (ui_set_crop_area_info_t *)userdata;
 	body = info->body;
-	body->crop_rect.x = info->crop_rect.x;
-	body->crop_rect.y = info->crop_rect.y;
-	body->crop_rect.width = info->crop_rect.width;
-	body->crop_rect.height = info->crop_rect.height;
+
+	// Calculate UV coordinates from crop_rect
+	body->uv[UV_TOP_LEFT].u = (float)info->crop_rect.x / (float)body->image->width;
+	body->uv[UV_TOP_LEFT].v = (float)info->crop_rect.y / (float)body->image->height;
+
+	body->uv[UV_BOTTOM_LEFT].u = (float)info->crop_rect.x / (float)body->image->width;
+	body->uv[UV_BOTTOM_LEFT].v = (float)(info->crop_rect.y + info->crop_rect.height) / (float)body->image->width;
+
+	body->uv[UV_BOTTOM_RIGHT].u = (float)(info->crop_rect.x + info->crop_rect.width) / (float)body->image->width;
+	body->uv[UV_BOTTOM_RIGHT].v = (float)(info->crop_rect.y + info->crop_rect.height) / (float)body->image->width;
+
+	body->uv[UV_TOP_RIGHT].u = (float)(info->crop_rect.x + info->crop_rect.width) / (float)body->image->width;
+	body->uv[UV_TOP_RIGHT].v = (float)info->crop_rect.y / (float)body->image->width;
 
 	UI_FREE(info);
 }

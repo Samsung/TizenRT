@@ -22,14 +22,14 @@
 #include <araui/ui_widget.h>
 #include <araui/ui_window.h>
 #include <araui/ui_commons.h>
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_core_internal.h"
 #include "ui_window_internal.h"
 #include "ui_request_callback.h"
 #include "ui_commons_internal.h"
 
 static vec_void_t g_window_list;
-static vec_void_t g_window_update_list;
+static vec_void_t g_window_redraw_list;
 static ui_rect_t g_rect_mempool[CONFIG_UI_UPDATE_MEMPOOL_SIZE];
 static int g_rect_mempool_idx = 0;
 static ui_window_body_t *g_current_window = UI_NULL;
@@ -58,16 +58,16 @@ ui_error_t ui_window_list_deinit(void)
 	return UI_OK;
 }
 
-ui_error_t ui_window_update_list_init(void)
+ui_error_t ui_window_redraw_list_init(void)
 {
-	vec_init(&g_window_update_list);
+	vec_init(&g_window_redraw_list);
 
 	return UI_OK;
 }
 
-ui_error_t ui_window_update_list_deinit(void)
+ui_error_t ui_window_redraw_list_deinit(void)
 {
-	vec_deinit(&g_window_update_list);
+	vec_deinit(&g_window_redraw_list);
 
 	return UI_OK;
 }
@@ -242,12 +242,12 @@ ui_error_t ui_window_add_widget(ui_window_t window, ui_widget_t widget, int32_t 
 	return UI_OK;
 }
 
-vec_void_t *ui_window_get_update_list(void)
+vec_void_t *ui_window_get_redraw_list(void)
 {
-	return &g_window_update_list;
+	return &g_window_redraw_list;
 }
 
-ui_error_t ui_window_add_update_list(ui_rect_t update)
+ui_error_t ui_window_add_redraw_list(ui_rect_t redraw_rect)
 {
 	ui_rect_t *window;
 	ui_rect_t *new_area;
@@ -255,32 +255,32 @@ ui_error_t ui_window_add_update_list(ui_rect_t update)
 	ui_rect_t ret;
 	int iter;
 
-	if (update.x < 0) {
-		update.width += update.x;
-		update.x = 0;
-	} else if (update.x >= CONFIG_UI_DISPLAY_WIDTH) {
+	if (redraw_rect.x < 0) {
+		redraw_rect.width += redraw_rect.x;
+		redraw_rect.x = 0;
+	} else if (redraw_rect.x >= CONFIG_UI_DISPLAY_WIDTH) {
 		return UI_OK;
 	}
 
-	if (update.y < 0) {
-		update.height += update.y;
-		update.y = 0;
-	} else if (update.y >= CONFIG_UI_DISPLAY_HEIGHT) {
+	if (redraw_rect.y < 0) {
+		redraw_rect.height += redraw_rect.y;
+		redraw_rect.y = 0;
+	} else if (redraw_rect.y >= CONFIG_UI_DISPLAY_HEIGHT) {
 		return UI_OK;
 	}
 
-	if (update.width <= 0 || update.height <= 0) {
+	if (redraw_rect.width <= 0 || redraw_rect.height <= 0) {
 		return UI_OK;
 	}
 
 	new_area = _ui_window_get_mempool_rect();
 
-	new_area->x = update.x;
-	new_area->y = update.y;
-	new_area->width = update.width;
-	new_area->height = update.height;
+	new_area->x = redraw_rect.x;
+	new_area->y = redraw_rect.y;
+	new_area->width = redraw_rect.width;
+	new_area->height = redraw_rect.height;
 
-	vec_foreach(&g_window_update_list, window, iter) {
+	vec_foreach(&g_window_redraw_list, window, iter) {
 		// window is whole screen case
 		if ((window->x == 0) && (window->y == 0) &&
 			(window->width == CONFIG_UI_DISPLAY_WIDTH) &&
@@ -294,7 +294,7 @@ ui_error_t ui_window_add_update_list(ui_rect_t update)
 		previous.height = window->height;
 
 		ret = ui_rect_intersect(previous, *new_area);
-		if (ret.x == 0 && ret.y == 0 && ret.width == 0 && ret.height == 0 ) {
+		if (ret.x == 0 && ret.y == 0 && ret.width == 0 && ret.height == 0) {
 			continue;
 		}
 
@@ -310,18 +310,18 @@ ui_error_t ui_window_add_update_list(ui_rect_t update)
 		new_area->width = ret.width;
 		new_area->height = ret.height;
 
-		vec_remove(&g_window_update_list, window);
+		vec_remove(&g_window_redraw_list, window);
 		iter--;
 	}
 
-	vec_push(&g_window_update_list, new_area);
+	vec_push(&g_window_redraw_list, new_area);
 
 	return UI_OK;
 }
 
-ui_error_t ui_window_update_list_clear(void)
+ui_error_t ui_window_redraw_list_clear(void)
 {
-	vec_clear(&g_window_update_list);
+	vec_clear(&g_window_redraw_list);
 
 	return UI_OK;
 }

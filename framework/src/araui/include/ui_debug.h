@@ -16,10 +16,11 @@
  *
  ****************************************************************************/
 
-#ifndef __UI_LOG_INTERNAL_H__
-#define __UI_LOG_INTERNAL_H__
+#ifndef __UI_DEBUG_INTERNAL_H__
+#define __UI_DEBUG_INTERNAL_H__
 
 #include <debug.h>
+#include <assert.h>
 
 #ifdef CONFIG_DEBUG_UI_INFO
 #define UI_LOGD(format, ...) uivdbg("[Line:%d] "format, __LINE__, ##__VA_ARGS__)
@@ -38,5 +39,7 @@
 #else
 #define UI_LOGE(...)
 #endif
+
+#define UI_ASSERT assert
 
 #endif

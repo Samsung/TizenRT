@@ -29,6 +29,14 @@
 #include "ui_asset_internal.h"
 #include "ui_widget_internal.h"
 #include "ui_commons_internal.h"
+#include "ui_renderer.h"
+
+enum {
+	UV_TOP_LEFT,
+	UV_BOTTOM_LEFT,
+	UV_BOTTOM_RIGHT,
+	UV_TOP_RIGHT
+};
 
 typedef struct ui_widget_body_s ui_widget_body_t;
 
@@ -81,18 +89,12 @@ struct ui_widget_body_s {
 
 	ui_rect_t local_rect;	//!< Widget's local position and size
 	ui_rect_t global_rect;	//!< Widget's global(absolute) position and size (size is same with the local's)
-	ui_rect_t crop_rect;	//!< Widget's global cropped rectangular region
 
 	float scale_x;
 	float scale_y;
 	int32_t degree;
 	int32_t pivot_x;
 	int32_t pivot_y;
-	bool mat_update_flag;
-	ui_mat_t trans_mat;
-	ui_mat_t inverse_mat;
-
-	ui_align_t align;
 
 	struct ui_widget_body_s *parent;
 	vec_void_t children;
@@ -108,7 +110,7 @@ struct ui_widget_body_s {
 	 */
 	add_callback add_cb;
 	remove_callback remove_cb;
-	draw_callback draw_cb;
+	draw_callback render_cb;
 	tween_callback tween_cb;
 	update_callback update_cb;
 	anim_callback anim_cb;
@@ -129,7 +131,7 @@ typedef struct {
 	ui_widget_body_t base;
 	ui_image_asset_body_t *image;
 
-	ui_rect_t crop_rect;
+	ui_uv_t uv[4]; // top-left, bottom-left, bottom-right, top-right
 } ui_image_widget_body_t;
 
 typedef struct {

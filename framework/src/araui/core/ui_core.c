@@ -32,20 +32,20 @@
 #include <araui/ui_commons.h>
 #include "ui_renderer.h"
 #include "ui_request_callback.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_core_internal.h"
 #include "ui_asset_internal.h"
 #include "ui_widget_internal.h"
 #include "ui_window_internal.h"
 #include "ui_commons_internal.h"
+#include "ui_renderer.h"
 #include "dal/ui_dal.h"
 
 #if defined(CONFIG_UI_ENABLE_EMOJI)
 #include "utils/emoji.h"
 #endif
 
-#define UI_CORE_THREAD_NAME              "UI Core Service"
-#define UI_DEFAULT_BACKGROUND_COLOR      0x0000
+#define UI_CORE_THREAD_NAME "UI Core Service"
 #define CONFIG_UI_GLOBAL_X_THRESHOLD     20
 #define CONFIG_UI_GLOBAL_Y_THRESHOLD     20
 
@@ -100,7 +100,7 @@ ui_error_t ui_start(void)
 		return UI_INIT_FAILURE;
 	}
 
-	if (ui_window_update_list_init() != UI_OK) {
+	if (ui_window_redraw_list_init() != UI_OK) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
 		return UI_INIT_FAILURE;
@@ -113,7 +113,7 @@ ui_error_t ui_start(void)
 	if (pthread_attr_init(&attr)) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
-		ui_window_update_list_deinit();
+		ui_window_redraw_list_deinit();
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
 		return UI_INIT_FAILURE;
 	}
@@ -125,7 +125,7 @@ ui_error_t ui_start(void)
 	if (ui_request_callback_init() != UI_OK) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
-		ui_window_update_list_deinit();
+		ui_window_redraw_list_deinit();
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
 		return UI_INIT_FAILURE;
 	}
@@ -139,7 +139,7 @@ ui_error_t ui_start(void)
 	if (pthread_create(&g_core.pid, &attr, _ui_core_thread_loop, NULL)) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
-		ui_window_update_list_deinit();
+		ui_window_redraw_list_deinit();
 		ui_request_callback_deinit();
 		g_core.state = UI_CORE_STATE_STOP;
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
@@ -185,8 +185,8 @@ ui_error_t ui_stop(void)
 		return UI_OPERATION_FAIL;
 	}
 
-	if (ui_window_update_list_deinit() != UI_OK) {
-		UI_LOGE("ui_window_update_list_deinit failed.\n");
+	if (ui_window_redraw_list_deinit() != UI_OK) {
+		UI_LOGE("ui_window_redraw_list_deinit failed.\n");
 		return UI_OPERATION_FAIL;
 	}
 
@@ -254,7 +254,7 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 	return UI_OK;
 }
 
-static ui_error_t _ui_draw_widget_recur(ui_widget_body_t *widget, ui_rect_t draw_area, uint32_t dt)
+static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t draw_area, uint32_t dt)
 {
 	int iter;
 	ui_widget_body_t *child;
@@ -266,16 +266,26 @@ static ui_error_t _ui_draw_widget_recur(ui_widget_body_t *widget, ui_rect_t draw
 	}
 
 	if (widget->visible) {
-		if (widget->draw_cb) {
-			new_vp = ui_rect_intersect(draw_area, widget->crop_rect);
+		ui_renderer_push_matrix();
+
+		if (widget->render_cb) {
+			new_vp = ui_rect_intersect(draw_area, widget->global_rect);
 			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
-			widget->draw_cb((ui_widget_t)widget, dt);
+
+			ui_renderer_scale(widget->scale_x, widget->scale_y);
+			ui_renderer_rotate(widget->degree);
+			ui_renderer_translate((float)widget->local_rect.x, (float)widget->local_rect.y);
+
+			widget->render_cb((ui_widget_t)widget, dt);
+			
 			ui_dal_set_viewport(draw_area.x, draw_area.y, draw_area.width, draw_area.height);
 		}
 
 		vec_foreach(&widget->children, child, iter) {
-			_ui_draw_widget_recur(child, draw_area, dt);
+			_ui_render_widget_recur(child, draw_area, dt);
 		}
+
+		ui_renderer_pop_matrix();
 	}
 
 	return UI_OK;
@@ -298,32 +308,26 @@ static void _ui_call_tween_finished_cb(void *userdata)
 
 static void _ui_redraw(uint32_t dt)
 {
-	ui_rect_t *redraw_area;
+	ui_rect_t *redraw_rect;
 	ui_window_body_t *window;
 	int iter;
-	static bool clear_flag = false;
 
-	vec_foreach(ui_window_get_update_list(), redraw_area, iter) {
+	vec_foreach(ui_window_get_redraw_list(), redraw_rect, iter) {
 		window = ui_window_get_current();
 		if (window) {
-			_ui_draw_widget_recur(window->root, *redraw_area, dt);
+			_ui_render_widget_recur(window->root, *redraw_rect, dt);
 		}
 
 		if (_ui_core_quick_panel_visible()) {
-			_ui_draw_widget_recur(g_quick_panel_info[g_core.visible_event_type], *redraw_area, dt);
+			_ui_render_widget_recur(g_quick_panel_info[g_core.visible_event_type], *redraw_rect, dt);
 		}
 
 		if (window || _ui_core_quick_panel_visible()) {
-			ui_dal_redraw(redraw_area->x, redraw_area->y, redraw_area->width, redraw_area->height);
+			ui_dal_redraw(redraw_rect->x, redraw_rect->y, redraw_rect->width, redraw_rect->height);
 		}
-
-		clear_flag = true;
 	}
 
-	if (clear_flag) {
-		clear_flag = false;
-		ui_window_update_list_clear();
-	}
+	ui_window_redraw_list_clear();
 }
 
 static void *_ui_core_thread_loop(void *param)
@@ -369,8 +373,6 @@ static void *_ui_core_thread_loop(void *param)
 			if (_ui_process_widget_recur(root, dt) != UI_OK) {
 				UI_LOGE("error: processing widget recursively failed!\n");
 			}
-
-			ui_render_widget(root);
 		}
 
 		if (_ui_core_quick_panel_visible()) {
@@ -465,79 +467,73 @@ static void _ui_core_handle_touch_event(ui_touch_event_t touch_event, ui_coord_t
 
 	switch (touch_event) {
 	case UI_TOUCH_EVENT_DOWN:
-		{
-			// If touch down, reset all infomations about focus and touch
-			ui_core_unlock_touch_event_target();
+		// If touch down, reset all infomations about focus and touch
+		ui_core_unlock_touch_event_target();
 
-			// If there is the visible quick panel,
-			// a touch event will be delivered to only that quick panel.
-			if (_ui_core_quick_panel_visible()) {
-				quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
+		// If there is the visible quick panel,
+		// a touch event will be delivered to only that quick panel.
+		if (_ui_core_quick_panel_visible()) {
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
 
-				if (quick_panel->focus) {
-					_ui_cancel_touch_event_except_locked_target(quick_panel->focus);
-				}
-
-				quick_panel->focus = ui_widget_search_by_coord(g_quick_panel_info[g_core.visible_event_type], coord);
-				if (quick_panel->focus && quick_panel->focus->touch_cb) {
-					_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
-				}
-				break;
+			if (quick_panel->focus) {
+				_ui_cancel_touch_event_except_locked_target(quick_panel->focus);
 			}
 
-			// If a touch down event occurs at the area which quick panel is set,
-			// a touch event will be delivered to only that quick panel.
-			if (_ui_core_quick_panel_touch_down(touch_event, coord)) {
-				break;
+			quick_panel->focus = ui_widget_search_by_coord(g_quick_panel_info[g_core.visible_event_type], coord);
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
+			break;
+		}
 
-			if (window->focus) {
-				_ui_cancel_touch_event_except_locked_target(window->focus);
-			}
+		// If a touch down event occurs at the area which quick panel is set,
+		// a touch event will be delivered to only that quick panel.
+		if (_ui_core_quick_panel_touch_down(touch_event, coord)) {
+			break;
+		}
 
-			window->focus = ui_widget_search_by_coord(root, coord);
-			if (window->focus) {
-				if (window->focus->touch_cb) {
-					_ui_deliver_touch_event(window->focus, touch_event, coord);
-				}
+		if (window->focus) {
+			_ui_cancel_touch_event_except_locked_target(window->focus);
+		}
+
+		window->focus = ui_widget_search_by_coord(root, coord);
+		if (window->focus) {
+			if (window->focus->touch_cb) {
+				_ui_deliver_touch_event(window->focus, touch_event, coord);
 			}
 		}
 		break;
 
 	case UI_TOUCH_EVENT_MOVE:
-		{
-			// If there is the visible quick panel,
-			// a touch event will be delivered to only that quick panel.
-			if (_ui_core_quick_panel_visible()) {
-				quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
-				if (quick_panel->focus && quick_panel->focus->touch_cb) {
-					_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
-				}
-				break;
+		// If there is the visible quick panel,
+		// a touch event will be delivered to only that quick panel.
+		if (_ui_core_quick_panel_visible()) {
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
+			break;
+		}
 
-			if (window->focus && window->focus->touch_cb) {
-				_ui_deliver_touch_event(window->focus, touch_event, coord);
-			}
+		if (window->focus && window->focus->touch_cb) {
+			_ui_deliver_touch_event(window->focus, touch_event, coord);
 		}
 		break;
 
 	case UI_TOUCH_EVENT_UP:
-		{
-			if (_ui_core_quick_panel_visible()) {
-				quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
-				if (quick_panel->focus && quick_panel->focus->touch_cb) {
-					_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
-				}
-				ui_core_unlock_touch_event_target();
-				break;
-			}
-
-			if (window->focus && window->focus->touch_cb) {
-				_ui_deliver_touch_event(window->focus, touch_event, coord);
+		if (_ui_core_quick_panel_visible()) {
+			quick_panel = (ui_quick_panel_body_t *)g_quick_panel_info[g_core.visible_event_type];
+			if (quick_panel->focus && quick_panel->focus->touch_cb) {
+				_ui_deliver_touch_event(quick_panel->focus, touch_event, coord);
 			}
 			ui_core_unlock_touch_event_target();
+			break;
 		}
+
+		if (window->focus && window->focus->touch_cb) {
+			_ui_deliver_touch_event(window->focus, touch_event, coord);
+		}
+		ui_core_unlock_touch_event_target();
 		break;
 
 	default:
@@ -632,12 +628,10 @@ ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type)
 		}
 		break;
 
-	case UI_QUICK_PANEL_BUTTON: {
-		}
+	case UI_QUICK_PANEL_BUTTON:
 		break;
 
-	default: {
-		}
+	default:
 		break;
 	}
 
@@ -664,32 +658,26 @@ ui_error_t ui_core_quick_panel_disappear(ui_quick_panel_event_type_t event_type)
 
 	if (body->transition_type == UI_TRANSITION_SLIDE) {
 		switch (event_type) {
-			case UI_QUICK_PANEL_TOP_SWIPE: {
-				ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
-			}
+		case UI_QUICK_PANEL_TOP_SWIPE:
+			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
 			break;
 
-			case UI_QUICK_PANEL_BOTTOM_SWIPE: {
-				ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
-			}
+		case UI_QUICK_PANEL_BOTTOM_SWIPE:
+			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
 			break;
 
-			case UI_QUICK_PANEL_LEFT_SWIPE: {
-				ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
-			}
+		case UI_QUICK_PANEL_LEFT_SWIPE:
+			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
 			break;
 
-			case UI_QUICK_PANEL_RIGHT_SWIPE: {
-				ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
-			}
+		case UI_QUICK_PANEL_RIGHT_SWIPE:
+			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
 			break;
 
-			case UI_QUICK_PANEL_BUTTON: {
-			}
+		case UI_QUICK_PANEL_BUTTON:
 			break;
 
-			default: {
-			}
+		default:
 			break;
 		}
 	}
@@ -717,36 +705,30 @@ ui_error_t ui_core_set_quick_panel(ui_quick_panel_event_type_t event_type, ui_wi
 	g_quick_panel_info[event_type] = (ui_widget_body_t *)widget;
 
 	switch (event_type) {
-		case UI_QUICK_PANEL_TOP_SWIPE: {
-			body->base.local_rect.x = 0;
-			body->base.local_rect.y = -1 * CONFIG_UI_DISPLAY_HEIGHT;
-		}
+	case UI_QUICK_PANEL_TOP_SWIPE:
+		body->base.local_rect.x = 0;
+		body->base.local_rect.y = -1 * CONFIG_UI_DISPLAY_HEIGHT;
 		break;
 
-		case UI_QUICK_PANEL_BOTTOM_SWIPE: {
-			body->base.local_rect.x = 0;
-			body->base.local_rect.y = CONFIG_UI_DISPLAY_HEIGHT;
-		}
+	case UI_QUICK_PANEL_BOTTOM_SWIPE:
+		body->base.local_rect.x = 0;
+		body->base.local_rect.y = CONFIG_UI_DISPLAY_HEIGHT;
 		break;
 
-		case UI_QUICK_PANEL_LEFT_SWIPE: {
-			body->base.local_rect.x = -1 * CONFIG_UI_DISPLAY_WIDTH;
-			body->base.local_rect.y = 0;
-		}
+	case UI_QUICK_PANEL_LEFT_SWIPE:
+		body->base.local_rect.x = -1 * CONFIG_UI_DISPLAY_WIDTH;
+		body->base.local_rect.y = 0;
 		break;
 
-		case UI_QUICK_PANEL_RIGHT_SWIPE: {
-			body->base.local_rect.x = CONFIG_UI_DISPLAY_WIDTH;
-			body->base.local_rect.y = 0;
-		}
+	case UI_QUICK_PANEL_RIGHT_SWIPE:
+		body->base.local_rect.x = CONFIG_UI_DISPLAY_WIDTH;
+		body->base.local_rect.y = 0;
 		break;
 
-		case UI_QUICK_PANEL_BUTTON: {
-		}
+	case UI_QUICK_PANEL_BUTTON:
 		break;
 
-		default: {
-		}
+	default:
 		break;
 	}
 

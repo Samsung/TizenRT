@@ -26,7 +26,7 @@
 #include "ui_asset_internal.h"
 #include "ui_commons_internal.h"
 #include "ui_request_callback.h"
-#include "ui_log.h"
+#include "ui_debug.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION 
 #include <stb/stb_truetype.h>

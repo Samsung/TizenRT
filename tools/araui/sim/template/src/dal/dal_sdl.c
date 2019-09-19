@@ -30,7 +30,7 @@
 #include <araui/ui_commons.h>
 
 //!< AraUI Internal
-#include "ui_log.h"
+#include "ui_debug.h"
 #include "ui_commons_internal.h"
 #include "ui_asset_internal.h"
 #include "ui_core_internal.h"
@@ -336,8 +336,8 @@ void sdl_loop(void)
 				uint8_t b = g_fb[FRONT_PAGE][((CONFIG_UI_DISPLAY_WIDTH * i + j) * 3) + 2];
 
 				SDL_Rect rect = {
-					((90 + j) * CONFIG_UI_DISPLAY_SCALE),
-					((90 + i) * CONFIG_UI_DISPLAY_SCALE),
+					((j) * CONFIG_UI_DISPLAY_SCALE),
+					((i) * CONFIG_UI_DISPLAY_SCALE),
 					(CONFIG_UI_DISPLAY_SCALE),
 					(CONFIG_UI_DISPLAY_SCALE)
 				};
