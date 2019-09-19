@@ -30,7 +30,7 @@
 
 #include "tc_common.h"
 
-security_handle g_hnd;
+static security_handle g_hnd;
 
 static void utc_security_init_n(void)
 {
