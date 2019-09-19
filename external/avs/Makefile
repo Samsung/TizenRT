@@ -206,7 +206,7 @@ $(CXXOBJS) $(MAINOBJ): %$(AVS_OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
 
 .built: chkcxx $(OBJS)
-	$(Q) cp $(AVS_TOP)/Integration/AlexaClientSDKConfig.json $(TOPDIR)/../tools/fs/contents
+	$(Q) cp $(AVS_TOP)/Integration/AlexaClientSDKConfig.json $(TOPDIR)/../tools/fs/contents-romfs
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
@@ -220,7 +220,7 @@ clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
 	$(foreach FILE, $(CXXOBJS), $(call DELFILE, $(FILE)))
-	$(Q) rm -f $(TOPDIR)/../tools/fs/contents/AlexaClientSDKConfig.json
+	$(Q) rm -f $(TOPDIR)/../tools/fs/contents-romfs/AlexaClientSDKConfig.json
 
 distclean: clean
 	$(call DELFILE, Make.dep)
