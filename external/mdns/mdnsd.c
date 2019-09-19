@@ -1623,36 +1623,17 @@ done:
 static int mdnsd_set_host_info_by_netif(struct mdnsd *svr, const char *hostname, const char *netif_name)
 {
 	int result = -1;
-	uint32_t ipaddr = 0;;
-#ifdef CONFIG_NET_LWIP
-	struct netif *netif;
-#endif
+	struct in_addr ipaddr;
 
 	if (svr == NULL) {
 		ndbg("ERROR: mdnsd instance handle is null.\n");
 		goto done;
 	}
-#ifdef CONFIG_NET_LWIP
-	// find ip address with lwip netif_find() function
-	netif = netif_find(netif_name);
-	if (netif) {
-		ipaddr = ip4_addr_get_u32(ip_2_ip4(&netif->ip_addr));
-	} else {
-		ndbg("ERROR: mdnsd cannot find netif.(%s)\n", netif_name);
-		goto done;
+	result = netlib_get_ipv4addr(netif_name, &ipaddr);
+	if (result < 0) {
+		return result;
 	}
-
-	if (ipaddr == 0) {
-		ndbg("ERROR: mdnsd cannot set ip address.\n");
-		goto done;
-	}
-#else
-	/* if CONFIG_NET_LWIP is not set, it should be implemented to resolve ip address with netif_name */
-	ndbg("ERROR: cannot resolve ip address with netif_name.\n");
-	goto done;
-#endif
-
-	result = mdnsd_set_host_info(svr, hostname, ipaddr);
+	result = mdnsd_set_host_info(svr, hostname, ipaddr.s_addr);
 
 done:
 	return result;
