@@ -229,6 +229,9 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	tcb->ram_start = 0;
 	tcb = sched_gettcb(pid);
+	if (tcb == NULL) {
+		goto errout_with_lock;
+	}
 	tcb->ram_start = (uint32_t)start_addr;
 	tcb->ram_size = size;
 #endif

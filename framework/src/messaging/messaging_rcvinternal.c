@@ -166,7 +166,7 @@ static int messaging_rcv_block(mqd_t mqdes, const char *port_name, msg_recv_buf_
 	int ret = OK;
 	int recv_size;
 	char *recv_packet;
-	int msg_type;
+	int msg_type = OK;
 	char *internal_portname;
 
 	recv_size = MSG_HEADER_SIZE + recv_buf->buflen;

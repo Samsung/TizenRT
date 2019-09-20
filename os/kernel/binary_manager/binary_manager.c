@@ -47,7 +47,7 @@
 
 /* Binary table, the first data [0] is for kernel. */
 static binmgr_bininfo_t bin_table[BINARY_COUNT];
-static int g_bin_count;
+static uint32_t g_bin_count;
 static mqd_t g_binmgr_mq_fd;
 
 /****************************************************************************
@@ -62,13 +62,13 @@ mqd_t binary_manager_get_mqfd(void)
 #endif
 
 /* Get the number of user binaries */
-int binary_manager_get_binary_count(void)
+uint32_t binary_manager_get_binary_count(void)
 {
 	return g_bin_count;
 }
 
 /* Get a row of binary table with bin_idx */
-binmgr_bininfo_t *binary_manager_get_binary_data(int bin_idx)
+binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx)
 {
 	return &bin_table[bin_idx];
 }
