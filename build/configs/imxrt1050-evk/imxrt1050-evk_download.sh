@@ -219,9 +219,9 @@ echo "PARTITION SIZES: ${sizes[@]}"
 echo "PARTIION NAMES: ${parts[@]}"
 
 if test $# -eq 0; then
-        echo -e "\n## INCORRECT USAGE: Refer HELP##"
-        imxrt1050_dwld_help 1>&2
-        exit 1
+	echo "FAIL!! NO Given partition. Refer \"PARTITION NAMES\" above."
+	imxrt1050_dwld_help 1>&2
+	exit 1
 fi
 
 uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
@@ -230,21 +230,22 @@ cmd_args=$@
 #Validate arguments
 for i in ${cmd_args[@]};do
 
-        if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
-                continue;
-        fi
+	if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
+		continue;
+	fi
 
-        for j in ${uniq_parts[@]};do
-                if [[ "${i}" == "${j}" ]];then
-                        result=yes
-                fi
-        done
+	for j in ${uniq_parts[@]};do
+		if [[ "${i}" == "${j}" ]];then
+			result=yes
+		fi
+	done
 
-        if [[ "$result" != "yes" ]];then
-                imxrt1050_dwld_help
-                exit 1
-        fi
-        result=no
+	if [[ "$result" != "yes" ]];then
+		echo "FAIL!! Given \"${i}\" partition is not available. Refer \"PARTITION NAMES\" above."
+		imxrt1050_dwld_help
+		exit 1
+	fi
+	result=no
 done
 
 

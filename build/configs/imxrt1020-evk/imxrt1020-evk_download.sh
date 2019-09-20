@@ -199,7 +199,7 @@ echo "PARTITION SIZES: ${sizes[@]}"
 echo "PARTIION NAMES: ${parts[@]}"
 
 if test $# -eq 0; then
-	echo -e "\n## INCORRECT USAGE: Refer HELP##"
+	echo "FAIL!! NO Given partition. Refer \"PARTITION NAMES\" above."
 	imxrt1020_dwld_help 1>&2
 	exit 1
 fi
@@ -221,6 +221,7 @@ for i in ${cmd_args[@]};do
 	done
 
 	if [[ "$result" != "yes" ]];then
+		echo "FAIL!! Given \"${i}\" partition is not available. Refer \"PARTITION NAMES\" above."
 		imxrt1020_dwld_help
 		exit 1
 	fi
