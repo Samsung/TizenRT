@@ -163,6 +163,10 @@ static FAR struct usbhost_rtk_wifi_s *usbhost_allocclass(void)
 
 	DEBUGASSERT(!up_interrupt_context());
 	priv = (FAR struct usbhost_rtk_wifi_s *)kmm_malloc(sizeof(struct usbhost_rtk_wifi_s));
+	if (priv == NULL) {
+		udbg("Failed to malloc\n");
+		return NULL;
+	}
 
 	memset(priv, 0, sizeof(FAR struct usbhost_rtk_wifi_s));
 
