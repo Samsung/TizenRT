@@ -99,8 +99,7 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 	}
 
 	/* Verify header data */
-	if (header_data->header_size < 0 || header_data->bin_size < 0 \
-		|| header_data->bin_ramsize < 0 || header_data->bin_type != BIN_TYPE_ELF) {
+	if (header_data->bin_type != BIN_TYPE_ELF) {
 		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 		goto errout_with_fd;
 	}

@@ -102,7 +102,7 @@ struct statecb_node_s {
 };
 typedef struct statecb_node_s statecb_node_t;
 
-binmgr_bininfo_t *binary_manager_get_binary_data(int bin_idx);
+binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
 #define BIN_ID(bin_idx)                                 binary_manager_get_binary_data(bin_idx)->bin_id
 #define BIN_STATE(bin_idx)                              binary_manager_get_binary_data(bin_idx)->state
 #define BIN_USEIDX(bin_idx)                             binary_manager_get_binary_data(bin_idx)->inuse_idx
@@ -154,7 +154,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 int binary_manager_notify_state_changed(int bin_idx, uint8_t state);
 int binary_manager_load_binary(int bin_idx);
 int binary_manager_loading(char *loading_data[]);
-int binary_manager_get_binary_count(void);
+uint32_t binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
 int binary_manager_get_info_with_name(int request_pid, char *bin_name);
 int binary_manager_get_info_all(int request_pid);
