@@ -429,8 +429,12 @@ elif [ "$1" == "menu" ]; then
 	MENU
 else
 	while test $# -gt 0; do
-		if [ "${STATUS}" == "PREPARE_DL" ]; then
-			ARG=$(echo $1 | tr '[:lower:]' '[:upper:]')
+		if [ "${STATUS}" == "PREPARE_DL" -o "${STATUS}" == "DOWNLOAD" ]; then
+			if [ "$1" == "all" ]; then
+				ARG=$(echo $1 | tr '[:lower:]' '[:upper:]')
+			else
+				ARG=$1
+			fi
 		else
 			ARG=$(echo $1 | tr '[:upper:]' '[:lower:]')
 		fi
@@ -444,7 +448,7 @@ else
 		CONFIGURED|BUILT)
 			SELECT_OPTION ${ARG}
 			;;
-		PREPARE_DL)
+		PREPARE_DL|DOWNLOAD)
 			DL_ARG+="${ARG} "
 			STATUS=DOWNLOAD
 			;;
