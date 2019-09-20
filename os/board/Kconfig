@@ -180,6 +180,29 @@ config BOARD_CRASHDUMP
 		"machine state" in a place where on the next reset can write it
 		to more sophisticated storage in a sane operating environment.
 
+if BOARD_CRASHDUMP
+
+config BOARD_COREDUMP_FLASH
+	bool "Enable corelog dump to flash"
+	default n
+	depends on MTD_PARTITION_NAMES
+	---help---
+		If selected it will dump the assert log information to flash.
+
+config BOARD_RAMDUMP_FLASH
+	bool "Enable ramdump to flash"
+	default n
+	depends on MTD_PARTITION_NAMES
+	---help---
+		If selected it will dump the RAM contents to flash.
+
+config BOARD_RAMDUMP_UART
+	bool "Enable ramdump via UART"
+	default n
+	---help---
+		If selected it will send the RAM dump via UART.
+endif
+
 config BOARD_ASSERT_AUTORESET
 	bool "Reset a board on assert status automatically"
 	default n
@@ -250,27 +273,6 @@ config BOARD_FOTA_SUPPORT
 	select FOTA_DRIVER
 	---help---
 		If selected the board provides support for FOTA.
-
-if BOARD_CRASHDUMP
-
-config BOARD_COREDUMP_FLASH
-	bool "Enable crashlog dump to flash"
-	default n
-	---help---
-		If selected it will dump the assert log information to flash.
-
-config BOARD_RAMDUMP_FLASH
-	bool "Enable ramdump to flash"
-	default n
-	---help---
-		If selected it will dump the RAM contents to flash.
-
-config BOARD_RAMDUMP_UART
-	bool "Enable ramdump via UART"
-	default n
-	---help---
-		If selected it will send the RAM dump via UART.
-endif
 
 comment "Board-Specific Options"
 
