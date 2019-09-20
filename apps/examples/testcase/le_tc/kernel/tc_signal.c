@@ -134,7 +134,7 @@ static void tc_signal_sigwaitinfo(void)
 
 	g_sig_pid = getpid();
 
-	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
+	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 1024, sigusr1_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -288,8 +288,8 @@ static void tc_signal_pause(void)
 	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 1024, sigusr1_func, (char * const *)NULL);
+	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 1024, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -343,8 +343,8 @@ static void tc_signal_sigsuspend(void)
 						);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 1024, sigusr1_func, (char * const *)NULL);
+	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 1024, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -496,6 +496,7 @@ static void tc_signal_sigtimedwait(void)
 	int ret_chk;
 	struct siginfo value;
 	sigset_t sigset;
+	sigset_t oldset;
 	struct timespec st_timeout;
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
@@ -508,19 +509,22 @@ static void tc_signal_sigtimedwait(void)
 
 	/* Set signal set */
 
-	sigemptyset(&sigset);
-	sigaddset(&sigset, SIGUSR1);
+	sigfillset(&sigset);
+	sigdelset(&sigset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &sigset, &oldset);
 
-	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, 512, sigusr1_func, (char * const *)NULL);
+	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, 1024, sigusr1_func, (char * const *)NULL);
 
 	clock_gettime(clock_id, &st_init_timespec);
 	ret_chk = sigtimedwait(&sigset, &value, &st_timeout);
-	TC_ASSERT_NEQ("sigtimedwait", ret_chk, ERROR);
+	TC_ASSERT_NEQ_CLEANUP("sigtimedwait", ret_chk, ERROR, sigprocmask(SIG_SETMASK, &oldset, NULL));
 
 	clock_gettime(clock_id, &st_final_timespec);
-	TC_ASSERT_LEQ("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_3);
+	TC_ASSERT_LEQ_CLEANUP("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_3, sigprocmask(SIG_SETMASK, &oldset, NULL););
 
-	TC_ASSERT_GEQ("sigtimedwait", value.si_value.sival_int, 0);
+	TC_ASSERT_GEQ_CLEANUP("sigtimedwait", value.si_value.sival_int, 0, sigprocmask(SIG_SETMASK, &oldset, NULL););
+
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
 	TC_SUCCESS_RESULT();
 }
 
