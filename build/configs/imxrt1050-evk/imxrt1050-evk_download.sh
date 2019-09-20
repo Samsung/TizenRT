@@ -257,16 +257,22 @@ bootstrap
 case $1 in
 #Download ALL option
 ALL)
-        for part in ${uniq_parts[@]}; do
-                if [[ "$part" == "userfs" ]];then
-                        continue
-                fi
-                gidx=$(get_partition_index $part)
-                flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
-                exe_name=$(get_executable_name ${parts[$gidx]})
-                flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
-        done
-        ;;
+	for part in ${uniq_parts[@]}; do
+		if [[ "$part" == "userfs" ]];then
+			continue
+		fi
+		if [[ "$part" == "coredump" ]];then
+			continue
+		fi
+		if [[ "$part" == "ramdump" ]];then
+			continue
+		fi
+		gidx=$(get_partition_index $part)
+		flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
+		exe_name=$(get_executable_name ${parts[$gidx]})
+		flash_write ${offsets[$gidx]} ${OUTBIN_PATH}/${exe_name}
+	done
+	;;
 #Download ERASE <list of partitions>
 ERASE)
         while test $# -gt 1
