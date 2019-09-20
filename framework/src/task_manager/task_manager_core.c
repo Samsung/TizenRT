@@ -1258,7 +1258,7 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 	}
 
 end_func:
-	if (task_info->name != NULL) {
+	if (task_info != NULL && task_info->name != NULL) {
 		taskmgr_dealloc_task_name(task_info->name);
 	}
 	return handle;
@@ -1336,7 +1336,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 	}
 
 end_func:
-	if (pthread_info->name != NULL) {
+	if (pthread_info != NULL && pthread_info->name != NULL) {
 		taskmgr_dealloc_task_name(pthread_info->name);
 	}
 	return handle;
