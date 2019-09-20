@@ -61,8 +61,6 @@ typedef struct _wifi_scan_filter_result_ scan_filter_result_t;
  ****************************************************************************/
 static scan_filter_result_t scan_filter_result;
 
-static struct lwnl80211_lowerhalf_s *g_dev;
-
 static WiFi_InterFace_ID_t g_mode;
 
 static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
@@ -217,45 +215,26 @@ fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_sc
 static int slsi_drv_callback_handler(void *arg)
 {
 	int *type = (int*)(arg);
-	lwnl80211_cb_status status;
-
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		free(type);
-		return -1;
-	}
-
-	if (!g_dev->cbk) {
-		vddbg("Failed to find callback function\n");
-		free(type);
-		return -1;
-	}
 
 	vddbg("Got callback from SLSI drv (%d)\n", status);
 	switch (*type) {
 	case 1:
-		status = LWNL80211_STA_CONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECTED, NULL);
 		break;
 	case 2:
-		status = LWNL80211_STA_CONNECT_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECT_FAILED, NULL);
 		break;
 	case 3:
-		status = LWNL80211_SOFTAP_STA_JOINED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_JOINED, NULL);
 		break;
 	case 4:
-		status = LWNL80211_STA_DISCONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_DISCONNECTED, NULL);
 		break;
 	case 5:
-		status = LWNL80211_SOFTAP_STA_LEFT;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_LEFT, NULL);
 		break;
 	default:
-		status = LWNL80211_UNKNOWN;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_UNKNOWN, NULL);
 		break;
 	}
 
@@ -281,6 +260,8 @@ static void linkup_handler(slsi_reason_t *reason)
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
 		*type = 3;
 	}
+
+	/*  If driver sends event to lwnl80211 directly it will generate platform watchdog */
 	pthread_t tid;
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
 	if (ret != 0) {
@@ -291,6 +272,7 @@ static void linkup_handler(slsi_reason_t *reason)
 	pthread_setname_np(tid, "lwnl80211_cbk_handler");
 	pthread_detach(tid);
 }
+
 
 static void linkdown_handler(slsi_reason_t *reason)
 {
@@ -321,18 +303,12 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 {
 	int8_t result;
 	lwnl80211_scan_list_s *scan_list = NULL;
-	lwnl80211_cb_status status;
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		result = -1;
-		goto return_result;
-	}
+
 	vddbg("Got scan callback from SLSI drv (%d)\n", status);
 
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
 		vddbg("Scan failed %d\n");
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
 		result = SLSI_STATUS_ERROR;
 		goto return_result;
 	}
@@ -348,11 +324,9 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	}
 
 	if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == LWNL80211_SUCCESS) {
-		status = LWNL80211_SCAN_DONE;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
+		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_list);
 	} else {
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
 	}
 
 	WiFiFreeScanResults(&wifi_scan_result);
@@ -364,6 +338,7 @@ return_result:
 	}
 	return result;
 }
+
 
 /*
  * Interface API
@@ -394,7 +369,6 @@ lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
 			vddbg("[ERR] Register Scan Callback(%d)\n", ret);
 			return result;
 		}
-		g_dev = dev;
 		memset((void *)&scan_filter_result, 0, sizeof(scan_filter_result_t));
 		sem_init(&scan_filter_result.scan_sem, 0, 0);
 		scan_filter_result.result_list = NULL;
@@ -414,7 +388,6 @@ lwnl80211_result_e slsidrv_deinit(void)
 	if (ret == SLSI_STATUS_SUCCESS) {
 		g_mode = SLSI_WIFI_NONE;
 		result = LWNL80211_SUCCESS;
-		g_dev = NULL;
 	} else {
 		vddbg("Failed to stop STA mode\n");
 	}
@@ -803,15 +776,12 @@ lwnl80211_result_e slsidrv_set_autoconnect(uint8_t check)
 struct lwnl80211_lowerhalf_s *slsi_drv_initialize(void)
 {
 	SLSIDRV_ENTER;
-	struct slsi_drv_dev_s *priv;
-
-	priv = (struct slsi_drv_dev_s *)kmm_zalloc(sizeof(struct slsi_drv_dev_s));
-	if (!priv) {
+	struct lwnl80211_lowerhalf_s *dev = NULL;
+	dev = (struct lwnl80211_lowerhalf_s *)malloc(sizeof(struct lwnl80211_lowerhalf_s));
+	if (!dev) {
 		return NULL;
 	}
 
-	priv->dev.ops = &g_lwnl80211_drv_ops;
-	priv->initialized = true;
-
-	return &priv->dev;
+	dev->ops = &g_lwnl80211_drv_ops;
+	return dev;
 }

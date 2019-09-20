@@ -21,23 +21,17 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
-#include <time.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <string.h>
 #include <semaphore.h>
-#include <fcntl.h>
-#include <assert.h>
+#include <poll.h>
 #include <errno.h>
 #include <debug.h>
 
 #include <tinyara/kmalloc.h>
-#include <tinyara/arch.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/sched.h>
 #include <tinyara/lwnl/lwnl80211.h>
+#include "lwnl_evt_queue.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -46,15 +40,46 @@
 
 #define DMA_BUFFER_MIN_SIZE 4096	/* 4K */
 
+#define LWNLDEV_LOCK(upper)						\
+	do {										\
+		ret = sem_wait(&upper->exclsem);		\
+		if (ret < 0) {							\
+			LWNL80211_ERR;						\
+			return ret;							\
+		}										\
+	} while (0)
+
+#define LWNLDEV_UNLOCK(upper)					\
+	do {										\
+		sem_post(&upper->exclsem);				\
+	} while (0)
+
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+struct lwnl80211_open_s {
+
+	/* The following will be true if we are closing */
+	volatile bool io_closing;
+
+#ifndef CONFIG_DISABLE_POLL
+	/*
+	 * The following is a list if poll structures of threads waiting
+	 * for driver events
+	 */
+	FAR struct pollfd *io_fds[LWNL_NPOLLWAITERS];
+#endif
+};
+
 struct lwnl80211_upperhalf_s {
 	uint8_t crefs;
 	volatile bool started;
 	sem_t exclsem;
-	struct lwnl80211_lowerhalf_s *lower; /* Arch-specific operations */
-	char mqname[16];
+	void *lower; /* Arch-specific operations */
+	struct lwnl80211_open_s ln_open;
+	struct lwnl_queue *queue;
 };
 
 /****************************************************************************
@@ -65,8 +90,9 @@ static int lwnl80211_close(struct file *filep);
 static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len);
 static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t len);
 static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg);
-static int lwnl80211_start(struct lwnl80211_upperhalf_s *upper);
-static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_status status, void *buffer);
+#ifndef CONFIG_DISABLE_POLL
+static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+#endif
 
 
 /****************************************************************************
@@ -81,7 +107,7 @@ static const struct file_operations g_lwnl80211_fops = {
 	0,                                                       /* seek */
 	lwnl80211_ioctl                                          /* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	, 0                                                      /* poll */
+	, lwnl80211_poll                                                      /* poll */
 #endif
 };
 
@@ -95,15 +121,19 @@ static int lwnl80211_open(struct file *filep)
 	struct inode *inode = filep->f_inode;
 	struct lwnl80211_upperhalf_s *upper = inode->i_private;
 	int tmp_crefs;
-	int ret;
+	int ret = -EMFILE;
 
 	tmp_crefs = upper->crefs + 1;
 	if (tmp_crefs == 0) {
-		ret = -EMFILE;
 		goto errout;
 	}
 
 	upper->crefs = tmp_crefs;
+
+	int res = lwnl_add_listener(filep);
+	if (res < 0) {
+		goto errout;
+	}
 
 	ret = OK;
 
@@ -111,6 +141,7 @@ errout:
 	LWNL80211_LEAVE;
 	return ret;
 }
+
 
 static int lwnl80211_close(struct file *filep)
 {
@@ -125,334 +156,127 @@ static int lwnl80211_close(struct file *filep)
 		ret = -ENOSYS;
 	}
 
+	int res = lwnl_remove_listener(filep);
+	if (res < 0) {
+		ret = -ENOSYS;
+		goto errout;
+	}
+
+errout:
 	LWNL80211_LEAVE;
 	return ret;
 }
 
+
 static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len)
 {
 	LWNL80211_ENTER;
-
-	return OK;
+	int res = lwnl_get_event(filep, buffer, len);
+	// todo_net : convert res to vfs error style?
+	LWNL80211_LEAVE;
+	return res;
 }
+
+#ifndef CONFIG_NET_NETMGR
+extern int lwnl_message_handle(struct lwnl80211_lowerhalf_s* lower, const char *msg, int msg_len);
+#endif
 
 static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t len)
 {
 	LWNL80211_ENTER;
+	int ret = -EINVAL;
+	struct inode *inode = filep->f_inode;
+	struct lwnl80211_upperhalf_s *upper = inode->i_private;
 
-	return OK;
+	LWNLDEV_LOCK(upper);
+
+#ifdef CONFIG_NET_NETMGR
+	ret = netdev_lwnlioctl(cmd, arg);
+#else
+	ret = lwnl_message_handle((struct lwnl80211_lowerhalf_s*)upper->lower, buffer, len);
+#endif
+
+	LWNLDEV_UNLOCK(upper);
+	LWNL80211_LEAVE;
+	if (ret < 0) {
+		return -1;
+	}
+	return len;
 }
 
-static int _ops_init(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->init == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->init(lower);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_deinit(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->deinit == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->deinit();
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_get_info(struct lwnl80211_lowerhalf_s *lower, lwnl80211_info *info, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->get_info == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->get_info(info);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_set_autoconnect(struct lwnl80211_lowerhalf_s *lower, uint8_t *check, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->set_autoconnect == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->set_autoconnect(*check);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_start_sta(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->start_sta == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->start_sta();
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_connect_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_ap_config_s *config, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->connect_ap == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->connect_ap(config, NULL);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_disconnect_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->disconnect_ap == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->disconnect_ap(NULL);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_start_softap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_softap_config_s *config, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->start_softap == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->start_softap(config);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_stop_softap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->stop_softap == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->stop_softap();
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_scan_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	if (lower->ops->scan_ap == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->scan_ap(NULL);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
-
-static int _ops_drv_ioctl(struct lwnl80211_lowerhalf_s *lower, int cmd, unsigned long arg, lwnl80211_result_e *res)
-{
-	int ret = -ENOSYS;
-	nldbg("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
-	if (lower->ops->drv_ioctl == NULL) {
-		return ret;
-	}
-
-	*res = lower->ops->drv_ioctl(cmd, arg);
-	if (*res == LWNL80211_SUCCESS) {
-		ret = OK;
-	}
-
-	return ret;
-}
 
 static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL80211_ENTER;
 
-	int ret = -EINVAL;
-	lwnl80211_result_e *res;
-	struct inode *inode = filep->f_inode;
-	struct lwnl80211_upperhalf_s *upper = inode->i_private;
-	struct lwnl80211_lowerhalf_s *lower = upper->lower;
-	lwnl80211_data *data_in;
+	return 0;
+}
 
-	data_in = (lwnl80211_data *)((uintptr_t)arg);
-	res = &data_in->res;
-	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
-		LWNL80211_ERR;
-		return ret;
+
+static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+{
+	FAR struct inode *inode;
+	FAR struct lwnl80211_upperhalf_s *upper;
+	FAR struct lwnl80211_open_s *opriv;
+	int ret = 0;
+
+	DEBUGASSERT(filep && filep->f_inode);
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private);
+	upper  = (FAR struct lwnl80211_upperhalf_s *)inode->i_private;
+	opriv = &upper->ln_open;
+
+	/* Get exclusive access to the driver structure */
+	LWNLDEV_LOCK(upper);
+
+	/* Are we setting up the poll? Or tearing it down? */
+	if (setup) {
+		/*
+		 * This is a request to set up the poll. Find an available
+		 * slot for the poll structure reference
+		 */
+		int i = 0;
+		for (; i < LWNL_NPOLLWAITERS; i++) {
+			/* Find an available slot */
+			if (!opriv->io_fds[i]) {
+				/* Bind the poll structure and this slot */
+				opriv->io_fds[i] = fds;
+				fds->priv = &opriv->io_fds[i];
+				break;
+			}
+		}
+
+		if (i >= LWNL_NPOLLWAITERS) {
+			lldbg("ERROR: Too many poll waiters\n");
+			fds->priv = NULL;
+			ret       = -EBUSY;
+			goto errout_with_dusem;
+		}
+	} else if (fds->priv) {
+		/* This is a request to tear down the poll. */
+		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
+
+		/* Remove all memory of the poll setup */
+		*slot = NULL;
+		fds->priv = NULL;
 	}
 
-	switch (cmd) {
-	case LWNL80211_REGISTERMQ:
-		memcpy(upper->mqname, (char *)(data_in->data), data_in->data_len);
-		ret = OK;
-		break;
-	case LWNL80211_UNREGISTERMQ:
-		memset(upper->mqname, 0, sizeof(upper->mqname));
-		ret = OK;
-		break;
-	case LWNL80211_INIT:
-		ret = _ops_init(lower, res);
-		break;
-	case LWNL80211_DEINIT:
-		ret = _ops_deinit(lower, res);
-		break;
-	case LWNL80211_GET_INFO:
-		ret = _ops_get_info(lower, (lwnl80211_info *)data_in->data, res);
-		break;
-	case LWNL80211_SET_AUTOCONNECT:
-		ret = _ops_set_autoconnect(lower, (uint8_t *)data_in->data, res);
-		break;
-	case LWNL80211_START_STA:
-		ret = _ops_start_sta(lower, res);
-		break;
-	case LWNL80211_CONNECT_AP:
-		ret = _ops_connect_ap(lower, (lwnl80211_ap_config_s *)data_in->data, res);
-		break;
-	case LWNL80211_DISCONNECT_AP:
-		ret = _ops_disconnect_ap(lower, res);
-		break;
-	case LWNL80211_START_SOFTAP:
-		ret = _ops_start_softap(lower, (lwnl80211_softap_config_s *)data_in->data, res);
-		break;
-	case LWNL80211_STOP_SOFTAP:
-		ret = _ops_stop_softap(lower, res);
-		break;
-	case LWNL80211_SCAN_AP:
-		ret = _ops_scan_ap(lower, res);
-		break;
-	default:
-		ret = _ops_drv_ioctl(lower, cmd, arg, res);
-		break;
-	}
-
-	sem_post(&upper->exclsem);
-	LWNL80211_LEAVE;
+errout_with_dusem:
+	LWNLDEV_UNLOCK(upper);
 
 	return ret;
 }
 
-static void lwnl80211_callback(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_status status, void *buffer)
-{
-	LWNL80211_ENTER;
-
-	struct lwnl80211_upperhalf_s *upper = dev->parent;
-	mqd_t mqfd;
-	int mq_ret;
-	struct mq_attr attr;
-	attr.mq_maxmsg = LWNL80211_MQUEUE_MAX_DATA_NUM;
-	attr.mq_msgsize = sizeof(lwnl80211_cb_data);
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
-	mqfd = mq_open(upper->mqname, O_RDWR | O_CREAT, 0666, &attr);
-	if (mqfd == NULL) {
-		nldbg("Failed to open mq\n");
-		return;
-	} else {
-		nlvdbg("Open mq with %p\n", mqfd);
-	}
-
-	switch (status) {
-	case LWNL80211_STA_CONNECTED:
-	case LWNL80211_STA_CONNECT_FAILED:
-	case LWNL80211_STA_DISCONNECTED:
-	case LWNL80211_SOFTAP_STA_JOINED:
-	case LWNL80211_SOFTAP_STA_LEFT:
-	case LWNL80211_SCAN_FAILED:
-	{
-		lwnl80211_cb_data data_s = {status, .u.data = NULL, 0, 0};
-		mq_ret = mq_send(mqfd, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
-		if (mq_ret < 0) {
-			LWNL80211_ERR;
-			mq_close(mqfd);
-			return;
-		}
-		break;
-	}
-	case LWNL80211_SCAN_DONE:
-	{
-		lwnl80211_scan_list_s *scan_list = (lwnl80211_scan_list_s *)buffer;
-		while (scan_list) {
-			lwnl80211_cb_data data_s = {status, .u.ap_info = scan_list->ap_info, sizeof(lwnl80211_ap_scan_info_s), 1};
-			if (scan_list->next == NULL) {
-				data_s.md = 0;
-			}
-			scan_list = scan_list->next;
-			mq_ret = mq_send(mqfd, (const char *)&data_s, sizeof(data_s), LWNL80211_MQUEUE_PRIORITY);
-			if (mq_ret < 0) {
-				LWNL80211_ERR;
-				mq_close(mqfd);
-				return;
-			}
-		}
-		break;
-	}
-	case LWNL80211_UNKNOWN:
-	default:
-		LWNL80211_ERR;
-		mq_close(mqfd);
-		return;
-	}
-
-	mq_close(mqfd);
-
-	LWNL80211_LEAVE;
-
-}
 
 /*
  * Public APIs
  */
+struct lwnl80211_upperhalf_s *g_lwnl_upper = NULL;
+
 int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev)
 {
 	LWNL80211_ENTER;
-	struct lwnl80211_upperhalf_s *upper;
+	struct lwnl80211_upperhalf_s *upper = NULL;
 	int ret;
 
 	upper = (struct lwnl80211_upperhalf_s *)kmm_zalloc(sizeof(struct lwnl80211_upperhalf_s));
@@ -461,15 +285,18 @@ int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev)
 		return -ENOMEM;
 	}
 
+	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
+		upper->ln_open.io_fds[i] = NULL;
+	}
+
 	sem_init(&upper->exclsem, 0, 1);
-
-	upper->lower = dev;
-
+	upper->lower = (void *)dev;
 	dev->parent = upper;
-	dev->cbk = (lwnl80211_callback_t)lwnl80211_callback;
+	g_lwnl_upper = upper;
+
+	lwnl_queue_initialize();
 
 	ret = register_driver(LWNL80211_PATH, &g_lwnl80211_fops, 0666, upper);
-
 	if (ret < 0) {
 		LWNL80211_ERR;
 		goto errout_with_priv;
@@ -487,10 +314,30 @@ errout_with_priv:
 
 int lwnl80211_unregister(struct lwnl80211_lowerhalf_s *dev)
 {
-	LWNL80211_ENTER;
-	struct lwnl80211_upperhalf_s *upper = dev->parent;
-
-	sem_destroy(&upper->exclsem);
-	LWNL80211_LEAVE;
-	return unregister_driver(LWNL80211_PATH);
+	return 0;
 }
+
+int lwnl80211_postmsg(lwnl80211_cb_status evttype, void *buffer)
+{
+	if (!g_lwnl_upper) {
+		return -1;
+	}
+
+	int res = lwnl_add_event(evttype, buffer);
+	if (res < 0) {
+		return -1;
+	}
+
+	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
+		struct pollfd *fds = g_lwnl_upper->ln_open.io_fds[i];
+		if (fds) {
+			fds->revents |= (fds->events &POLLIN);
+			if (fds->revents != 0) {
+				sem_post(fds->sem);
+			}
+		}
+	}
+
+	return 0;
+}
+

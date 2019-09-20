@@ -69,7 +69,28 @@
 #ifdef CONFIG_NET_IPv6
 #include <net/lwip/ip6_addr.h>
 #endif
+#include <tinyara/lwnl/lwnl80211.h>
 
+/*
+ * Private
+ */
+int _create_netlink(int type, int protocol)
+{
+	// to do message filter
+	(void)type;
+	(void)protocol;
+
+	int fd = open(LWNL80211_PATH, O_RDWR);
+	if (fd < 0) {
+		ndbg("open netlink dev fail\n");
+		return -1;
+	}
+	return fd;
+}
+
+/*
+ *public
+ */
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	return lwip_bind(s, name, namelen);
@@ -206,6 +227,11 @@ static int socket_argument_validation(int domain, int type, int protocol)
 
 int socket(int domain, int type, int protocol)
 {
+	if (domain == AF_LWNL) {
+		int fd = _create_netlink(type, protocol);
+		return fd;
+	}
+
 	if (!socket_argument_validation(domain, type, protocol)) {
 		return lwip_socket(domain, type, protocol);
 	}
