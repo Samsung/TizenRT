@@ -119,18 +119,12 @@ static int lwnl80211_close(struct file *filep)
 	struct lwnl80211_upperhalf_s *upper = inode->i_private;
 	int ret = OK;
 
-	if (ret < 0) {
-		ret = -errno;
-		goto errout;
-	}
-
 	if (upper->crefs > 0) {
 		upper->crefs--;
 	} else {
 		ret = -ENOSYS;
 	}
 
-errout:
 	LWNL80211_LEAVE;
 	return ret;
 }

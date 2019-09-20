@@ -240,12 +240,12 @@ int wifi_utils_callback_handler(int argc, char *argv[])
 		{
 			wifi_utils_scan_list_s *scan_list;
 			scan_list = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
-			scan_list->next = NULL;
 			if (!scan_list) {
 				free_scan_data(scan_list);
 				WU_ERR;
 				break;
 			}
+			scan_list->next = NULL;
 			memcpy(&(scan_list->ap_info), &(msg.u.ap_info), sizeof(wifi_utils_ap_scan_info_s));
 			if (msg.md) {
 				int ret = receive_scan_data(mqfd, scan_list);
