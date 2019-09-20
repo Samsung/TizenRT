@@ -144,7 +144,7 @@ int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty
 	struct pwm_info_s *info;
 	struct _iotbus_pwm_s *handle;
 
-	if (!pwm || !pwm->handle || duty_cycle > IOTBUS_PWM_MAX_RESOLUTION) {
+	if (!pwm || !pwm->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 

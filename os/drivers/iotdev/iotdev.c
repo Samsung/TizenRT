@@ -38,7 +38,7 @@
 	do {													\
 		int iret = id_takesem(&priv->gu_exclsem);			\
 		if (iret < 0) {										\
-			lldbg("ERROR: id_takesem failed: %d\n", ret);	\
+			lldbg("ERROR: id_takesem failed: %d\n", iret);	\
 		}													\
 	} while (0)
 
@@ -189,7 +189,7 @@ static int id_drv_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setu
 	FAR struct inode *inode;
 	FAR struct id_upperhalf_s *priv;
 	FAR struct id_open_s *opriv;
-	int ret;
+	int ret = OK;
 	int i;
 
 	//DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
