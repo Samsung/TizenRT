@@ -484,10 +484,6 @@ static FAR struct usbhost_class_s *usbhost_create(FAR struct usbhost_hubport_s *
 		return &priv->usbclass;
 	}
 
-	if (priv) {
-		usbhost_freeclass(priv);
-	}
-
 	return NULL;
 }
 

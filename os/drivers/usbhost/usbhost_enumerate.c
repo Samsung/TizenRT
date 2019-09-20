@@ -124,7 +124,7 @@ static inline uint16_t usbhost_getle16(const uint8_t *val)
 
 static void usbhost_putle16(uint8_t *dest, uint16_t val)
 {
-	dest[0] = val & 0xff;		/* Little endian means LS byte first in byte stream */
+	dest[0] = val & 0xff; /* Little endian means LS byte first in byte stream */
 	dest[1] = val >> 8;
 }
 
@@ -191,7 +191,7 @@ static inline int usbhost_configdesc(const uint8_t *configdesc, int cfglen, stru
 
 	/* Loop while there are more descriptors to examine */
 
-	memset(id, 0, sizeof(FAR struct usb_desc_s));
+	memset(id, 0, sizeof(FAR struct usbhost_id_s));
 	while (remaining >= sizeof(struct usb_desc_s)) {
 		/* What is the next descriptor? Is it an interface descriptor? */
 
@@ -309,7 +309,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 	unsigned int cfglen;
 	uint8_t maxpacketsize;
 	uint8_t descsize;
-	uint8_t funcaddr = 0;
+	int funcaddr = 0;
 	FAR uint8_t *buffer = NULL;
 	int ret;
 
@@ -434,7 +434,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 	/* Assign the function address to the port */
 
 	DEBUGASSERT(hport->funcaddr == 0 && funcaddr != 0);
-	hport->funcaddr = funcaddr;
+	hport->funcaddr = (uint8_t)funcaddr;
 
 	/* And reconfigure EP0 with the correct address */
 
