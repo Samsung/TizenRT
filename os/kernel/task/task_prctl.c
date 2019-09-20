@@ -198,10 +198,12 @@ int prctl(int option, ...)
 		int ret;
 		ret = messaging_read_list(port_name, recv_arr, &total_cnt);
 		if (ret == ERROR) {
+			va_end(ap);
 			return ret;
 		}
 		curr_cnt += ret;
 		*recv_cnt = curr_cnt;
+		va_end(ap);
 		if (curr_cnt == total_cnt) {
 			/* Read whole receivers information. */
 			curr_cnt = 0;
@@ -216,6 +218,7 @@ int prctl(int option, ...)
 		int ret;
 		char *port_name = va_arg(ap, char *);
 		ret = messaging_remove_list(port_name);
+		va_end(ap);
 		return ret;
 	}
 	break;
