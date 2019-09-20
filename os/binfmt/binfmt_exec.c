@@ -143,7 +143,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 {
 	FAR struct binary_s *bin;
 	int pid;
-	int errcode;
+	int errcode = OK;
 	int ret;
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -230,6 +230,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	tcb->ram_start = 0;
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL) {
+		errcode = ESRCH;
 		goto errout_with_lock;
 	}
 	tcb->ram_start = (uint32_t)start_addr;
