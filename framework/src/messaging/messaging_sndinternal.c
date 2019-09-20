@@ -85,7 +85,6 @@ static int messaging_set_async_callback(const char *port_name, msg_recv_buf_t *r
 
 	ret = messaging_set_notification(SIGMSG_MESSAGING, data);
 	if (ret != OK) {
-		MSG_FREE(data);
 		return ERROR;
 	}
 	return OK;
