@@ -38,6 +38,7 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_sequence_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_spawn_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
+static int _comp_anim_duration(const void *a, const void *b);
 
 ui_anim_t ui_move_anim_create(int32_t from_x, int32_t from_y, int32_t to_x, int32_t to_y, uint32_t duration, ui_intrp_type_t intrp_type)
 {
@@ -60,8 +61,20 @@ ui_anim_t ui_move_anim_create(int32_t from_x, int32_t from_y, int32_t to_x, int3
 	body->from_coord.y = from_y;
 	body->to_coord.x = to_x;
 	body->to_coord.y = to_y;
-	body->intrp_type = intrp_type;
-
+	switch (intrp_type) {
+	case UI_INTRP_EASE_IN_QUAD:
+		body->intrp_func = ease_in_quad;
+		break;
+	case UI_INTRP_EASE_INOUT_QUAD:
+		body->intrp_func = ease_inout_quad;
+		break;
+	case UI_INTRP_EASE_OUT_QUAD:
+		body->intrp_func = ease_out_quad;
+		break;
+	case UI_INTRP_LINEAR:
+		body->intrp_func = ease_linear;
+		break;
+	}
 	return (ui_anim_t)body;
 }
 
@@ -168,7 +181,7 @@ ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...)
 		iter = (ui_anim_t *)va_arg(ap, ui_anim_t);
 	}
 	
-	body->seq_index = 0;
+	body->index = 0;
 
 	ui_anim_init((ui_anim_body_t *)body, UI_SEQUENCE_ANIM, duration);
 
@@ -180,6 +193,8 @@ ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...)
 	ui_spawn_anim_body_t *body;
 	ui_anim_t *iter;
 	va_list ap;
+	uint32_t duration = 0;
+	uint32_t i;
 	
 	if (!ui_is_running()) {
 		UI_LOGE("error: UI framework is not running!\n");
@@ -193,7 +208,22 @@ ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...)
 	}
 
 	memset(body, 0, sizeof(ui_spawn_anim_body_t));
-	ui_anim_init((ui_anim_body_t *)body, UI_SPAWN_ANIM, 0);
+
+	va_start(ap, anim);
+	vec_init(&body->spawn);
+
+	iter = (ui_anim_t *)anim;
+	while (iter) {
+		vec_push(&body->spawn, iter);
+		if (((ui_anim_body_t *)iter)->d > duration) {
+			duration = ((ui_anim_body_t *)iter)->d;
+		}
+		iter = (ui_anim_t *)va_arg(ap, ui_anim_t);
+	}
+	vec_sort(&body->spawn, _comp_anim_duration);
+	body->index = 0;
+
+	ui_anim_init((ui_anim_body_t *)body, UI_SPAWN_ANIM, duration);
 
 	return (ui_anim_t)body;
 }
@@ -270,34 +300,31 @@ void ui_anim_init(ui_anim_body_t *body, ui_anim_type_t type, uint32_t duration)
 
 static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body = (ui_widget_body_t *)widget;
-	ui_anim_body_t *anim_body = (ui_anim_body_t *)anim;
-	ui_move_anim_body_t *move_anim_body = (ui_move_anim_body_t *)anim;
-	uint32_t to_go = anim_body->d - anim_body->t;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	ui_move_anim_body_t *move_anim_body;
+	uint32_t remain_time;
+	int32_t gap_x, gap_y;
 
-	if (*dt <= to_go) {
-		to_go = *dt;
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	move_anim_body = (ui_move_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
 	}
-	anim_body->t += to_go;
-	*dt -= to_go;
+	anim_body->t += remain_time;
+	*dt -= remain_time;
 
-	switch (move_anim_body->intrp_type) {
-	case UI_INTRP_EASE_IN_QUAD:
-		widget_body->local_rect.x = (int32_t)ease_in_quad(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
-		widget_body->local_rect.y = (int32_t)ease_in_quad(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
-		break;
-	case UI_INTRP_EASE_OUT_QUAD:
-		widget_body->local_rect.x = (int32_t)ease_out_quad(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
-		widget_body->local_rect.y = (int32_t)ease_out_quad(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
-		break;
-	case UI_INTRP_EASE_INOUT_QUAD:
-		widget_body->local_rect.x = (int32_t)ease_inout_quad(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
-		widget_body->local_rect.y = (int32_t)ease_inout_quad(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
-		break;
-	case UI_INTRP_LINEAR:
-		widget_body->local_rect.x = (int32_t)ease_linear(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
-		widget_body->local_rect.y = (int32_t)ease_linear(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
-		break;
+	gap_x = move_anim_body->to_coord.x - move_anim_body->from_coord.x;
+	gap_y = move_anim_body->to_coord.y - move_anim_body->from_coord.y;
+
+	if (gap_x) {
+		widget_body->local_rect.x = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.x, gap_x, anim_body->d);
+	}
+	if (gap_y) {
+		widget_body->local_rect.y = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.y, gap_y, anim_body->d);
 	}
 
 	ui_widget_update_position_info(widget_body);
@@ -312,15 +339,19 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 
 static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body = (ui_widget_body_t *)widget;
-	ui_anim_body_t *anim_body = (ui_anim_body_t *)anim;
-	uint32_t to_go = anim_body->d - anim_body->t;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	uint32_t remain_time;
 
-	if (*dt <= to_go) {
-		to_go = *dt;
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
 	}
-	anim_body->t += to_go;
-	*dt -= to_go;
+	anim_body->t += remain_time;
+	*dt -= remain_time;
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -332,15 +363,19 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 
 static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body = (ui_widget_body_t *)widget;
-	ui_anim_body_t *anim_body = (ui_anim_body_t *)anim;
-	uint32_t to_go = anim_body->d - anim_body->t;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	uint32_t remain_time;
 
-	if (*dt <= to_go) {
-		to_go = *dt;
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
 	}
-	anim_body->t += to_go;
-	*dt -= to_go;
+	anim_body->t += remain_time;
+	*dt -= remain_time;
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -352,15 +387,19 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 
 static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body = (ui_widget_body_t *)widget;
-	ui_anim_body_t *anim_body = (ui_anim_body_t *)anim;
-	uint32_t to_go = anim_body->d - anim_body->t;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	uint32_t remain_time;
 
-	if (*dt <= to_go) {
-		to_go = *dt;
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
 	}
-	anim_body->t += to_go;
-	*dt -= to_go;
+	anim_body->t += remain_time;
+	*dt -= remain_time;
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -371,28 +410,33 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 }
 static bool _ui_anim_sequence_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body = (ui_widget_body_t *)widget;
-	ui_anim_body_t *anim_body = (ui_anim_body_t *)anim;
-	ui_sequence_anim_body_t *seq_anim_body = (ui_sequence_anim_body_t *)anim;
-	uint32_t to_go = anim_body->d - anim_body->t;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	ui_sequence_anim_body_t *sequence_anim_body;
 	ui_anim_body_t *child;
+	uint32_t remain_time;
 
-	if (*dt <= to_go) {
-		to_go = *dt;
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	sequence_anim_body = (ui_sequence_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
 	}
-	anim_body->t += to_go;
-	*dt -= to_go;
+	anim_body->t += remain_time;
+	*dt -= remain_time;
 
-	while (to_go > 0) {
-		child = seq_anim_body->sequence.data[seq_anim_body->seq_index];
+	while (remain_time > 0) {
+		child = sequence_anim_body->sequence.data[sequence_anim_body->index];
 
-		if (child->func(widget, (ui_anim_t)child, &to_go)) {
-			seq_anim_body->seq_index++;
+		if (child->func(widget, (ui_anim_t)child, &remain_time)) {
+			sequence_anim_body->index++;
 		}
 	}
 
 	if (anim_body->t == anim_body->d) {
-		seq_anim_body->seq_index = 0;
+		sequence_anim_body->index = 0;
 		anim_body->t = 0;
 		return true;
 	} else {
@@ -401,5 +445,42 @@ static bool _ui_anim_sequence_func(ui_widget_t widget, ui_anim_t anim, uint32_t 
 }
 static bool _ui_anim_spawn_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	return false;
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	ui_spawn_anim_body_t *spawn_anim_body;
+	ui_anim_body_t *child;
+	uint32_t remain_time, i, temp;
+
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	spawn_anim_body = (ui_spawn_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
+	}
+	anim_body->t += remain_time;
+	*dt -= remain_time;
+
+	temp = remain_time;
+	for (i = spawn_anim_body->index; i < spawn_anim_body->spawn.length; i++) {
+		child = spawn_anim_body->spawn.data[i];
+		if (child->func(widget, (ui_anim_t)child, &remain_time)) {
+			spawn_anim_body->index++;
+		}
+		remain_time = temp;
+	}
+
+	if (anim_body->t == anim_body->d) {
+		anim_body->t = 0;
+		spawn_anim_body->index = 0;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+static int _comp_anim_duration(const void *a, const void *b)
+{
+	return ((ui_anim_body_t *)(*(long *)a))->d - ((ui_anim_body_t *)(*(long *)b))->d;
 }

@@ -25,6 +25,7 @@
 
 typedef struct ui_anim_body_s ui_anim_body_t;
 typedef bool (*ui_anim_func)(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
+typedef float (*ui_intrp_func)(float t, float b, float c, float d);
 
 typedef enum {
 	UI_MOVE_ANIM,
@@ -46,7 +47,7 @@ typedef struct {
 	ui_anim_body_t base;
 	ui_coord_t from_coord;
 	ui_coord_t to_coord;
-	ui_intrp_type_t intrp_type;
+	ui_intrp_func intrp_func;
 } ui_move_anim_body_t;
 
 typedef struct {
@@ -70,12 +71,13 @@ typedef struct {
 typedef struct {
 	ui_anim_body_t base;
 	vec_void_t sequence;
-	uint32_t seq_index;
+	uint32_t index;
 } ui_sequence_anim_body_t;
 
 typedef struct {
 	ui_anim_body_t base;
-	// do something... for spawn
+	vec_void_t spawn;
+	uint32_t index;
 } ui_spawn_anim_body_t;
 
 #ifdef __cplusplus
