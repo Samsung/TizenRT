@@ -160,7 +160,7 @@ void *iotdev_handler(void *data)
 		int res = select(max_fd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
 			ibdbg("select error\n");
-			return NULL;
+			goto iotdev_exit;
 		}
 		if (FD_ISSET(sig, &rfds)) {
 			ibdbg("terminate thread\n");
@@ -179,6 +179,8 @@ void *iotdev_handler(void *data)
 			iotdev_callback((iotbus_int_type_e)buf[0]);
 		}
 	}
+
+iotdev_exit:
 	close(sig);
 	close(fd);
 
