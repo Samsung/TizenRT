@@ -191,7 +191,10 @@ static inline int usbhost_configdesc(const uint8_t *configdesc, int cfglen, stru
 
 	/* Loop while there are more descriptors to examine */
 
-	memset(id, 0, sizeof(FAR struct usbhost_id_s));
+	/* struct usb_desc_s is a sub structure of struct usbhost_id_s;
+	 * Only initialize the first two bytes of id */
+
+	memset(id, 0, sizeof(FAR struct usb_desc_s));
 	while (remaining >= sizeof(struct usb_desc_s)) {
 		/* What is the next descriptor? Is it an interface descriptor? */
 
