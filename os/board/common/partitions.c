@@ -93,8 +93,11 @@ static void type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno,
 
 			snprintf(partref, sizeof(partref), "p%d", partno);
 			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
-		}
+		} else
 #endif
+		{
+
+		}
 }
 
 static void move_to_next_part(const char **par)
