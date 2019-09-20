@@ -166,6 +166,10 @@ int load_binary(FAR const char *filename, load_attr_t *load_attr)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	tcb->ram_start = 0;
 	tcb = sched_gettcb(pid);
+	if (tcb == NULL) {
+		errcode = ESRCH;
+		goto errout_with_lock;
+	}
 	tcb->ram_start = (uint32_t)start_addr;
 	tcb->ram_size = size;
 #endif
