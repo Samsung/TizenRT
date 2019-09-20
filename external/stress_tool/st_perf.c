@@ -122,7 +122,7 @@ _run_smoke(st_smoke *smoke)
 				break;
 			}
 		}
-		printf("\n"); // pkbuild
+		printf("\n");
 	}
 }
 

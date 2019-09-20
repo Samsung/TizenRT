@@ -60,6 +60,10 @@ CSRCS += \
 CSRCS += \
 	tinyara_wrapper.c
 
+ifeq ($(CONFIG_LWNL80211_SLSI),y)
+CSRCS += slsi_drv.c
+endif
+
 # Include wireless devices build support
 
 DEPPATH += --dep-path wireless$(DELIM)scsc

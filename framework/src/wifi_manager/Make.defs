@@ -22,6 +22,7 @@ CSRCS += wifi_profile.c
 
 ifeq ($(CONFIG_LWNL80211), y)
 CSRCS += wifi_utils_lwnl80211.c
+CSRCS += wifi_event_monitor_internal.c wifi_event_monitor.c
 endif
 
 ifeq ($(CONFIG_SLSI_WPA_SUPPLICANT), y)

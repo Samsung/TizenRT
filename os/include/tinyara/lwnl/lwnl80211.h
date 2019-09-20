@@ -18,13 +18,9 @@
 #ifndef __INCLUDE_TINYARA_LWNL80211_H__
 #define __INCLUDE_TINYARA_LWNL80211_H__
 
-#include <tinyara/config.h>
-#include <tinyara/fs/ioctl.h>
-
+#include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <mqueue.h>
-#include <semaphore.h>
 #include <debug.h>
 
 /****************************************************************************
@@ -50,37 +46,27 @@
 		nldbg(LWNL80211_TAG"<---%s:%d\n", __FILE__, __LINE__);                   \
 	} while (0)
 
-#define LWNL80211_MQUEUE_PRIORITY        100
-#define LWNL80211_MQUEUE_MAX_DATA_LEN    1024
-#define LWNL80211_MQUEUE_MAX_DATA_NUM    128
+/* #define LWNL80211_MQUEUE_PRIORITY        100 */
+/* #define LWNL80211_MQUEUE_MAX_DATA_LEN    1024 */
+/* #define LWNL80211_MQUEUE_MAX_DATA_NUM    128 */
 
 #define LWNL80211_MACADDR_LEN            6
 #define LWNL80211_MACADDR_STR_LEN        17
 #define LWNL80211_SSID_LEN               32
 #define LWNL80211_PASSPHRASE_LEN         64
 
+
+/* Light-weight netlink domain definition */
+#define AF_LWNL 1
+
+/*  Event type */
+#define LWNL_ROUTE 1
+
+#define LWNL_NI_NAME_SIZE 7
+
 /* IOCTL commands ***********************************************************/
 
-/* Common operations */
-#define LWNL80211_INIT                          _LWNLIOC(1)
-#define LWNL80211_DEINIT                        _LWNLIOC(2)
-#define LWNL80211_SCAN_AP                       _LWNLIOC(3)
-#define LWNL80211_GET_INFO                      _LWNLIOC(4)
-#define LWNL80211_REGISTER_CALLBACK             _LWNLIOC(5)
-#define LWNL80211_SET_AUTOCONNECT               _LWNLIOC(6)
 
-/* STA operations */
-#define LWNL80211_START_STA                     _LWNLIOC(7)
-#define LWNL80211_CONNECT_AP                    _LWNLIOC(8)
-#define LWNL80211_DISCONNECT_AP                 _LWNLIOC(9)
-
-/* AP operations */
-#define LWNL80211_START_SOFTAP                  _LWNLIOC(10)
-#define LWNL80211_STOP_SOFTAP                   _LWNLIOC(11)
-
-/* Mqueue */
-#define LWNL80211_REGISTERMQ                    _LWNLIOC(12)
-#define LWNL80211_UNREGISTERMQ                  _LWNLIOC(13)
 
 /****************************************************************************
  * Public Types
@@ -154,7 +140,31 @@ typedef struct {
 	void *data;
 	uint32_t data_len;
 	lwnl80211_result_e res;
+	uint8_t name[LWNL_NI_NAME_SIZE];
 } lwnl80211_data;
+
+typedef enum {
+	LWNL80211_INIT,
+	LWNL80211_DEINIT,
+	LWNL80211_SCAN_AP,
+	LWNL80211_GET_INFO,
+	LWNL80211_REGISTER_CALLBACK,
+	LWNL80211_SET_AUTOCONNECT,
+	LWNL80211_START_STA,
+	LWNL80211_CONNECT_AP,
+	LWNL80211_DISCONNECT_AP,
+	LWNL80211_START_SOFTAP,
+	LWNL80211_STOP_SOFTAP,
+	LWNL80211_REQ_UNKNOWN,
+} lwnl_req;
+
+typedef struct {
+	uint8_t name[LWNL_NI_NAME_SIZE];
+	lwnl_req req_type;
+	uint32_t data_len;
+	void *data;
+	lwnl80211_result_e res;
+} lwnl80211_msg;
 
 typedef struct {
 	char ssid[LWNL80211_SSID_LEN + 1];              /**<  Service Set Identification         */
@@ -235,20 +245,8 @@ typedef struct lwnl80211_lowerhalf_s {
 	struct lwnl80211_ops_s *ops;
 	struct lwnl80211_upperhalf_s *parent;
 	lwnl80211_callback_t cbk;
+	void *priv;
 };
-
-/* Driver OPSs */
-lwnl80211_result_e lwnl80211_init(struct lwnl80211_lowerhalf_s *dev);
-lwnl80211_result_e lwnl80211_deinit(void);
-lwnl80211_result_e lwnl80211_scan_ap(lwnl80211_ap_config_s *config);
-lwnl80211_result_e lwnl80211_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
-lwnl80211_result_e lwnl80211_disconnect_ap(void *arg);
-lwnl80211_result_e lwnl80211_get_info(lwnl80211_info *wifi_info);
-lwnl80211_result_e lwnl80211_start_softap(lwnl80211_softap_config_s *softap_config);
-lwnl80211_result_e lwnl80211_start_sta(void);
-lwnl80211_result_e lwnl80211_stop_softap(void);
-lwnl80211_result_e lwnl80211_set_autoconnect(uint8_t check);
-lwnl80211_result_e lwnl80211_drv_ioctl(int cmd, unsigned long arg);
 
 /****************************************************************************
  * Public Functions
@@ -257,5 +255,5 @@ lwnl80211_result_e lwnl80211_drv_ioctl(int cmd, unsigned long arg);
 /* Registrations */
 int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev);
 int lwnl80211_unregister(struct lwnl80211_lowerhalf_s *dev);
-
+int lwnl80211_postmsg(lwnl80211_cb_status status, void *buffer);
 #endif /* __INCLUDE_TINYARA_LWNL80211_H__ */
