@@ -164,6 +164,9 @@ void net_initialize(void)
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);
 #endif
+#ifdef CONFIG_LWNL80211
+	lwnl_start_listener();
+#endif
 	return;
 }
 
