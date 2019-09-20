@@ -293,15 +293,19 @@ int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_
 
 	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 	if (request_msg.q_name == NULL) {
-		TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
-		TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+		if (((tm_broadcast_info_t *)request_msg.data)->cb_data != NULL) {
+			TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
+			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+		}
 		TM_FREE(request_msg.data);
 		return TM_OUT_OF_MEMORY;
 	}
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
-		TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+		if (((tm_broadcast_info_t *)request_msg.data)->cb_data != NULL) {	
+			TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
+			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
+		}
 		TM_FREE(request_msg.data);
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
