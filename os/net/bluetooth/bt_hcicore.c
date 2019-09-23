@@ -864,7 +864,7 @@ static void hci_le_meta_event(FAR struct bt_buf_s *buf)
 		break;
 
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-		le_adv_report(buf);
+		//le_adv_report(buf);
 		ble_adv_report(buf);
 		break;
 
