@@ -49,6 +49,9 @@
 #include <semaphore.h>
 #include <errno.h>
 #endif
+#ifdef CONFIG_LWNL80211
+#include <tinyara/lwnl/lwnl_event_listener.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -182,6 +185,10 @@ int preapp_start(int argc, char *argv[])
 			printf("awakened by signal..\n");
 		}
 	}
+#endif
+
+#ifdef CONFIG_LWNL80211
+	lwnl_start_listener();
 #endif
 	return 0;
 }
