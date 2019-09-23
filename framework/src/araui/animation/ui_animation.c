@@ -36,6 +36,7 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
+static bool _ui_anim_delay_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_sequence_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static bool _ui_anim_spawn_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
 static int _comp_anim_duration(const void *a, const void *b);
@@ -143,6 +144,27 @@ ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t 
 	ui_anim_init((ui_anim_body_t *)body, UI_SCALE_ANIM, duration);
 	body->from_scale = from_scale;
 	body->to_scale = to_scale;
+
+	return (ui_anim_t)body;
+}
+
+ui_anim_t ui_delay_anim_create(uint32_t duration)
+{
+	ui_delay_anim_body_t *body;
+	
+	if (!ui_is_running()) {
+		UI_LOGE("error: UI framework is not running!\n");
+		return UI_NULL;
+	}
+
+	body = (ui_delay_anim_body_t *)UI_ALLOC(sizeof(ui_delay_anim_body_t));
+	if (!body) {
+		UI_LOGE("error: out of memory!\n");
+		return UI_NULL;
+	}
+
+	memset(body, 0, sizeof(ui_delay_anim_body_t));
+	ui_anim_init((ui_anim_body_t *)body, UI_DELAY_ANIM, duration);
 
 	return (ui_anim_t)body;
 }
@@ -287,6 +309,9 @@ void ui_anim_init(ui_anim_body_t *body, ui_anim_type_t type, uint32_t duration)
 	case UI_OPACITY_ANIM:
 		body->func = _ui_anim_opacity_func;
 		break;
+	case UI_DELAY_ANIM:
+		body->func = _ui_anim_delay_func;
+		break;
 	case UI_SEQUENCE_ANIM:
 		body->func = _ui_anim_sequence_func;
 		break;
@@ -304,7 +329,7 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 	ui_anim_body_t *anim_body;
 	ui_move_anim_body_t *move_anim_body;
 	uint32_t remain_time;
-	int32_t gap_x, gap_y;
+	int32_t intrp_x, intrp_y;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
@@ -317,17 +342,10 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 	anim_body->t += remain_time;
 	*dt -= remain_time;
 
-	gap_x = move_anim_body->to_coord.x - move_anim_body->from_coord.x;
-	gap_y = move_anim_body->to_coord.y - move_anim_body->from_coord.y;
+	intrp_x = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
+	intrp_y = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
 
-	if (gap_x) {
-		widget_body->local_rect.x = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.x, gap_x, anim_body->d);
-	}
-	if (gap_y) {
-		widget_body->local_rect.y = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.y, gap_y, anim_body->d);
-	}
-
-	ui_widget_update_position_info(widget_body);
+	ui_widget_set_position(widget, intrp_x, intrp_y);
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -341,10 +359,12 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 {
 	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
+	ui_opacity_anim_body_t *opacity_anim_body;
 	uint32_t remain_time;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
+	opacity_anim_body = (ui_opacity_anim_body_t *)anim;
 	remain_time = anim_body->d - anim_body->t;
 
 	if (*dt <= remain_time) {
@@ -365,10 +385,13 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 {
 	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
+	ui_rotate_anim_body_t *rotate_anim_body;
 	uint32_t remain_time;
+	int32_t gap, intrp_value;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
+	rotate_anim_body = (ui_rotate_anim_body_t *)anim;
 	remain_time = anim_body->d - anim_body->t;
 
 	if (*dt <= remain_time) {
@@ -389,10 +412,13 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 {
 	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
+	ui_scale_anim_body_t *scale_anim_body;
 	uint32_t remain_time;
+	int32_t gap, intrp_value;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
+	scale_anim_body = (ui_scale_anim_body_t *)anim;
 	remain_time = anim_body->d - anim_body->t;
 
 	if (*dt <= remain_time) {
@@ -408,6 +434,33 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 		return false;
 	}
 }
+
+static bool _ui_anim_delay_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
+{
+	ui_widget_body_t *widget_body;
+	ui_anim_body_t *anim_body;
+	ui_delay_anim_body_t *delay_anim_body;
+	uint32_t remain_time;
+
+	widget_body = (ui_widget_body_t *)widget;
+	anim_body = (ui_anim_body_t *)anim;
+	delay_anim_body = (ui_delay_anim_body_t *)anim;
+	remain_time = anim_body->d - anim_body->t;
+
+	if (*dt <= remain_time) {
+		remain_time = *dt;
+	}
+	anim_body->t += remain_time;
+	*dt -= remain_time;
+
+	if (anim_body->t == anim_body->d) {
+		anim_body->t = 0;
+		return true;
+	} else {
+		return false;
+	}
+}
+
 static bool _ui_anim_sequence_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
 	ui_widget_body_t *widget_body;
