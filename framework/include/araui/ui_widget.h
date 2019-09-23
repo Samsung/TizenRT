@@ -319,22 +319,6 @@ ui_error_t ui_widget_remove_child(ui_widget_t widget, ui_widget_t child);
 ui_error_t ui_widget_remove_all_children(ui_widget_t widget);
 
 /**
- * @brief Set the align of the widget.
- *
- * The widget will be aligned based on the parent widget.
- * All widgets (including the image, text, scroll, and button widgets) can be aligned by using this API.
- *
- * Default align option is UI_ALIGN_LEFT | UI_ALIGN_TOP.
- *
- * @param[in] widget Handle of the widget
- * @param[in] align New align option
- * @return On success, UI_OK is returned. On failure, the defined error type is returned.
- *
- * @see ui_align_t
- */
-ui_error_t ui_widget_set_align(ui_widget_t widget, ui_align_t align);
-
-/**
  * @brief Set the pivot point of widget.
  *
  * Widgets will be rotated and scaled for this pivot points.
@@ -643,7 +627,7 @@ ui_error_t ui_scroll_widget_set_content_size(ui_widget_t widget, int32_t width, 
  * @brief Set an action of scroll widget when the scroll widget reaches the its minimum offset.
  *
  * @param[in] widget Handle of the scroll widget which want to set the action\n
-                     when the scroll widget reaches the its minimum offset
+					 when the scroll widget reaches the its minimum offset
  * @param[in] action_type Type of action when the scroll widget reaches its minimum offset
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  */
@@ -653,7 +637,7 @@ ui_error_t ui_scroll_widget_set_min_offset_reach_action(ui_widget_t widget, ui_r
  * @brief Set an action of scroll widget when the scroll widget reaches the its maximum offset.
  *
  * @param[in] widget Handle of the scroll widget which want to set the action\n
-                     when the scroll widget reaches the its maximum offset
+					 when the scroll widget reaches the its maximum offset
  * @param[in] action_type Type of action when the scroll widget reaches its maximum offset
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  */
