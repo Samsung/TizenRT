@@ -28,10 +28,6 @@
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
 #include <netutils/netlib.h>
-#ifdef CONFIG_ENABLE_IOTIVITY
-#include <mqueue.h>
-#include <fcntl.h>
-#endif
 #include "wifi_utils.h"
 #include "wifi_profile.h"
 
@@ -427,9 +423,6 @@ static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
 		pthread_join(g_manager_info.reconn_id, NULL);					\
 	} while (0)
 #endif
-#ifdef CONFIG_ENABLE_IOTIVITY
-static mqd_t g_dw_nwevent_mqfd;
-#endif
 
 /**
  * Internal functions
@@ -512,18 +505,6 @@ static const wifimgr_handler g_handler[] = {
 	_handler_on_scanning_state,
 };
 
-
-#ifdef CONFIG_ENABLE_IOTIVITY
-void __tizenrt_manual_linkset(const char *msg)
-{
-	nvdbg("[WM] send message : %s\n", msg);
-	int ret = mq_send(g_dw_nwevent_mqfd, msg, 3, 42);
-	if (ret < 0) {
-		ndbg("[WM] send message fail\n");
-		return;
-	}
-}
-#endif
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 /* wifi manager stores only one mac address of a node while it is running on softap mode
@@ -738,9 +719,6 @@ wifi_manager_result_e _start_dhcps(void)
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) == OK) {
 		ndbg("[WM] DHCP Server - started successfully\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-		__tizenrt_manual_linkset("gen");
-#endif
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		ndbg("[WM] DHCP Server - started fail\n");
@@ -757,9 +735,6 @@ wifi_manager_result_e _stop_dhcps(void)
 	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) == OK) {
 		ndbg("[WM] DHCP Server - stopped successfully\n");
 		wret = WIFI_MANAGER_SUCCESS;
-#ifdef CONFIG_ENABLE_IOTIVITY
-		__tizenrt_manual_linkset("del");
-#endif
 	}
 	return wret;
 }
@@ -816,14 +791,7 @@ wifi_manager_result_e _wifimgr_deinit(void)
 {
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), "[WM] wifi_utils_deinit fail", WIFI_MANAGER_FAIL);
-#ifdef CONFIG_ENABLE_IOTIVITY
-	int ret = mq_close(g_dw_nwevent_mqfd);
-	if (ret < 0) {
-		ndbg("[WM] close message queue fail\n");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
-		return WIFI_MANAGER_FAIL;
-	}
-#endif
+
 	int i = 0;
 	for (i = 0; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		if (g_manager_info.cb[i] != NULL) {
@@ -1038,19 +1006,6 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 		return WIFI_MANAGER_FAIL;
 	}
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-	struct mq_attr lq_attr;
-	lq_attr.mq_maxmsg = 10;
-	lq_attr.mq_msgsize = 4;
-	lq_attr.mq_flags = 0;
-	g_dw_nwevent_mqfd = mq_open("netlink_evtq", O_WRONLY | O_CREAT, 0666, &lq_attr);
-
-	if (g_dw_nwevent_mqfd == (mqd_t)ERROR) {
-		ndbg("[WM] iotivity connect event message queue init fail");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
-		return WIFI_MANAGER_FAIL;
-	}
-#endif
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_init(), "[WM] wifi_utils_init fail\n", WIFI_MANAGER_FAIL);
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
@@ -1451,9 +1406,6 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		switch (evt) {
 		case CB_STA_CONNECTED:
 			nvdbg("[WM] call sta connect success event\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-			__tizenrt_manual_linkset("gen");
-#endif
 			cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 			break;
 		case CB_STA_CONNECT_FAILED:
@@ -1463,30 +1415,18 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			break;
 		case CB_STA_DISCONNECTED:
 			nvdbg("[WM] call sta disconnect event\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-			__tizenrt_manual_linkset("del");
-#endif
 			cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
 			break;
 		case CB_STA_RECONNECTED:
 			nvdbg("[WM] call sta disconnect event\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-			__tizenrt_manual_linkset("del");
-#endif
 			cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
 			break;
 		case CB_STA_JOINED:
 			nvdbg("[WM] call sta join event\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-			__tizenrt_manual_linkset("gen");
-#endif
 			cbk->softap_sta_joined();
 			break;
 		case CB_STA_LEFT:
 			nvdbg("[WM] call sta leave event\n");
-#ifdef CONFIG_ENABLE_IOTIVITY
-			__tizenrt_manual_linkset("del");
-#endif
 			cbk->softap_sta_left();
 			break;
 		case CB_SCAN_DONE:
