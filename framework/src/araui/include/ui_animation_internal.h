@@ -32,6 +32,7 @@ typedef enum {
 	UI_ROTATE_ANIM,
 	UI_SCALE_ANIM,
 	UI_OPACITY_ANIM,
+	UI_DELAY_ANIM,
 	UI_SEQUENCE_ANIM,
 	UI_SPAWN_ANIM
 } ui_anim_type_t;
@@ -67,6 +68,10 @@ typedef struct {
 	int32_t from_opacity;
 	int32_t to_opacity;
 } ui_opacity_anim_body_t;
+
+typedef struct {
+	ui_anim_body_t base;
+} ui_delay_anim_body_t;
 
 typedef struct {
 	ui_anim_body_t base;
