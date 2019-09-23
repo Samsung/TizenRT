@@ -17,7 +17,7 @@
 * limitations under the License.
 *
 ******************************************************************/
-
+#include <tinyara/config.h>
 #include "caipinterface.h"
 
 #include <stdio.h>
@@ -33,7 +33,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <errno.h>
-#include <slsi_wifi/slsi_wifi_api.h>
+//#include <slsi_wifi/slsi_wifi_api.h>
 
 #include "octhread.h"
 #include "caipnwmonitor.h"
@@ -42,6 +42,7 @@
 #include "oic_malloc.h"
 #include "oic_string.h"
 #include <coap/utlist.h>
+#include <tinyara/lwnl/lwnl80211.h>
 
 #define TAG "OIC_CA_IP_MONITOR"
 
@@ -310,30 +311,43 @@ static CAInterface_t *CANewInterfaceItem(int index, const char *name, int family
     return ifitem;
 }
 
-extern mqd_t g_nwevent_mqfd; // pkmsgq
-
 u_arraylist_t *CAFindInterfaceChange()
 {
     u_arraylist_t *iflist = NULL;
+	lwnl80211_cb_status status;
+	uint32_t len;
+	char buf[8] = {0,};
 
-	int len = 0;
-	char buf[4];
-
-	len = mq_receive(g_nwevent_mqfd, buf, 4, NULL);
-	if(len <= 0) return NULL;
-
-	if(buf[0] == 'd' && buf[1] == 'e' && buf[2] == 'l') {
-		printf("Receive the event(IF is down)\n");
+	int nbytes = read(caglobals.ip.netlinkFd, (char *)buf, 8);
+	if (nbytes < 0) {
+		return NULL;
 	}
-	else if(buf[0] == 'g' && buf[1] == 'e' && buf[2] == 'n') {
+
+	memcpy(&status, buf, sizeof(lwnl80211_cb_status));
+	memcpy(&len, buf + sizeof(lwnl80211_cb_status), sizeof(uint32_t));
+	printf("status(%d) len(%d)\n", status, len);
+	// flush the event queue
+	// to do: this operation is unnecessary, so this should be fixed later
+	if (len > 0) {
+		char *tmp = (char *)malloc(len);
+		read(caglobals.ip.netlinkFd, tmp, len);
+		free(tmp);
+	}
+
+	if (status == LWNL80211_STA_CONNECTED ||
+		status == LWNL80211_SOFTAP_STA_JOINED) {
 		printf("Receive the event(IF is UP)\n");
 		iflist = CAIPGetInterfaceInformation(0);
         if (!iflist) {
             OIC_LOG_V(ERROR, TAG, "get interface info failed: %s", strerror(errno));
             return NULL;
         }
+	} else if (status == LWNL80211_STA_DISCONNECTED ||
+		status == LWNL80211_SOFTAP_STA_LEFT) {
+		printf("Receive the event(IF is down)\n");
+	} else {
+		printf("message not interest in\n");
 	}
-
 	return iflist;
 }
 

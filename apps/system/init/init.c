@@ -45,7 +45,9 @@
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
-
+#ifdef CONFIG_LWNL80211
+#include <tinyara/lwnl/lwnl_event_listener.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -157,5 +159,8 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_LWNL80211
+	lwnl_start_listener();
+#endif
 	return 0;
 }

@@ -57,21 +57,17 @@
 
 #include <tinyara/config.h>
 #ifdef CONFIG_NET
-
 #include <debug.h>
-
-#include <tinyara/net/net.h>
-
 #include <sys/socket.h>
-
+#include <tinyara/net/net.h>
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/tcpip.h>
 #include <net/lwip/init.h>
+#include <net/lwip/tcpip.h>
 #endif
-
 #include "netdev/netdev.h"
 #include "utils/utils.h"
 
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -163,9 +159,6 @@ void net_initialize(void)
 #ifdef CONFIG_NET_LWIP
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);
-#endif
-#ifdef CONFIG_LWNL80211
-	lwnl_start_listener();
 #endif
 	return;
 }
