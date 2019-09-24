@@ -27,13 +27,10 @@
 #define UI_RENDERER_PI (3.1415926535f)
 
 /**
- * Functional macros
+ * @brief Get weighted value between from ~ to.
+ * When t is 0.0f, it returns 'from' value. When t is 1.0f, it returns 'to' value.
  */
-// Get weighted value between from ~ to.
-// When t is 0.0f, it returns 'from' value. When t is 1.0f, it returns 'to' value.
 #define UI_GET_WEIGHTED_VALUE(from, to, t) ((from) + ((t) * ((to) - (from))))
-// Type-safe swap macro.
-#define UI_SWAP(a, b) do { typeof((a)) __temp; __temp = (a); (a) = (b); (b) = __temp; } while (false)
 
 /**
  * @brief 3-dimentional vector structure (x, y, w)
@@ -84,8 +81,11 @@ void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_
  * - ui_render_{geometry}_uv: Render geometry with texture uv.
  * - ui_render_{geometry}_col_uv: Render geometry with multiply of texture uv and color gradient.
  */
-void ui_render_hline_uv(int32_t x, int32_t y, int32_t len, ui_uv_t uv[2]);
-void ui_render_triangle_uv(ui_coord_t coord[3], ui_uv_t uv[3]);
-void ui_render_quad_uv(ui_coord_t coord[4], ui_uv_t uv[4]);
+void ui_render_triangle_uv(
+	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3,
+	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3);
+void ui_render_quad_uv(
+	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
+	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4);
 
 #endif // __UI_RENDERER_H__
