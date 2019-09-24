@@ -268,13 +268,13 @@ static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t dr
 	if (widget->visible) {
 		ui_renderer_push_matrix();
 
+		ui_renderer_scale(widget->scale_x, widget->scale_y);
+		ui_renderer_rotate(widget->degree);
+		ui_renderer_translate((float)widget->local_rect.x, (float)widget->local_rect.y);
+
 		if (widget->render_cb) {
 			new_vp = ui_rect_intersect(draw_area, widget->global_rect);
 			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
-
-			ui_renderer_scale(widget->scale_x, widget->scale_y);
-			ui_renderer_rotate(widget->degree);
-			ui_renderer_translate((float)widget->local_rect.x, (float)widget->local_rect.y);
 
 			widget->render_cb((ui_widget_t)widget, dt);
 			

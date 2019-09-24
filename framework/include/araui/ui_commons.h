@@ -38,6 +38,17 @@
 #define UI_FREE(a)  do { if (a) { free(a); a = UI_NULL; } } while (false)
 
 /**
+ * @brief Type-safe swap macro.
+ */
+#define UI_SWAP(a, b) \
+	do { \
+		typeof((a)) __swap; \
+		__swap = (a); \
+		(a) = (b); \
+		(b) = __swap; \
+	} while (false)
+
+/**
  * @brief Generating color macros. Color will be generated as big-endian.
  */
 #define UI_COLOR_ARGB8888(a, r, g, b) (((b) << 24) | ((g) << 16) | ((r) << 8) | ((a)))
@@ -167,7 +178,7 @@ typedef enum {
 /**
  * @brief Enumeration that represents the type of transition options
  */
-typedef enum{
+typedef enum {
 	UI_TRANSITION_FADE_OUT,
 	UI_TRANSITION_FADE_IN,
 	UI_TRANSITION_SLIDE

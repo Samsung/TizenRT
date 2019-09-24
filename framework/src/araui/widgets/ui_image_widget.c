@@ -112,7 +112,10 @@ static void _ui_image_widget_set_image_func(void *userdata)
 static void ui_image_widget_render_func(ui_widget_t widget, uint32_t dt)
 {
 	ui_image_widget_body_t *body;
-	ui_coord_t coord[4];
+	ui_vec3_t v1;
+	ui_vec3_t v2;
+	ui_vec3_t v3;
+	ui_vec3_t v4;
 
 	if (!widget) {
 		UI_LOGE("error: Invalid Parameter!\n");
@@ -124,24 +127,28 @@ static void ui_image_widget_render_func(ui_widget_t widget, uint32_t dt)
 	if (body->image) {
 		ui_renderer_set_texture(body->image->buf, body->image->width, body->image->height, body->image->pixel_format);
 
-		coord[0] = (ui_coord_t){
+		v1 = (ui_vec3_t){
 			.x = -body->base.pivot_x,
-			.y = -body->base.pivot_y
+			.y = -body->base.pivot_y,
+			1.0f
 		};
-		coord[1] = (ui_coord_t){
+		v2 = (ui_vec3_t){
 			.x = -body->base.pivot_x,
-			.y = -body->base.pivot_y + body->base.local_rect.height - 1
+			.y = -body->base.pivot_y + body->base.local_rect.height,
+			1.0f
 		};
-		coord[2] = (ui_coord_t){
-			.x = -body->base.pivot_x + body->base.local_rect.width - 1,
-			.y = -body->base.pivot_y + body->base.local_rect.height - 1
+		v3 = (ui_vec3_t){
+			.x = -body->base.pivot_x + body->base.local_rect.width,
+			.y = -body->base.pivot_y + body->base.local_rect.height,
+			1.0f
 		};
-		coord[3] = (ui_coord_t){
-			.x = -body->base.pivot_x + body->base.local_rect.width - 1,
-			.y = -body->base.pivot_y
+		v4 = (ui_vec3_t){
+			.x = -body->base.pivot_x + body->base.local_rect.width,
+			.y = -body->base.pivot_y,
+			1.0f
 		};
 
-		ui_render_quad_uv(coord, body->uv);
+		ui_render_quad_uv(v1, v2, v3, v4, body->uv[0], body->uv[1], body->uv[2], body->uv[3]);
 
 		ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
 	}

@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <float.h>
 #include <math.h>
 #include <vec/vec.h>
 #include <araui/ui_widget.h>
@@ -33,15 +34,14 @@
 #define MAX_RENDERER_MATRIX_STACK (256)
 #define UI_TM (g_rc.tm_stack[g_rc.sp])
 
+#define UI_SUB_DIVIDE_SHIFT (4)
+#define UI_SUB_DIVIDE_SIZE (1 << UI_SUB_DIVIDE_SHIFT)
+#define UI_SUB_PIX(a) (ceilf(a) - (a))
+
 /****************************************************************************
  * Private function declaration
  ****************************************************************************/
-static void _ui_fill_bottom_flat_triangle_uv(
-	ui_coord_t coord1, ui_coord_t coord2, ui_coord_t coord3,
-	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3);
-static void _ui_fill_top_flat_triangle_uv(
-	ui_coord_t coord1, ui_coord_t coord2, ui_coord_t coord3,
-	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3);
+static void ui_draw_triangle_segment(int32_t y1, int32_t y2);
 
 /****************************************************************************
  * Private types
@@ -66,6 +66,23 @@ ui_render_context_t g_rc = {
 	.tex_height = 0,
 	.tex_pf = UI_PIXEL_FORMAT_UNKNOWN
 };
+
+float g_left_dxdy;
+float g_right_dxdy;
+float g_leftx;
+float g_rightx;
+float g_left_dudy;
+float g_leftu;
+float g_left_dvdy;
+float g_leftv;
+float g_left_dzdy;
+float g_leftz;
+float g_pk_dudx;
+float g_pk_dvdx;
+float g_pk_dzdx;
+float g_pk_dudx_;
+float g_pk_dvdx_;
+float g_pk_dzdx_;
 
 /****************************************************************************
  * Public function implementation
@@ -188,216 +205,333 @@ void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_
 	}
 }
 
-void ui_render_hline_uv(int32_t x, int32_t y, int32_t len, ui_uv_t uv[2])
+void ui_render_triangle_uv(
+	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3,
+	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3)
 {
-	int32_t i;
-	int32_t offset;
-	float u_step = (uv[1].u - uv[0].u) / len;
-	float v_step = (uv[1].v - uv[0].v) / len;
-	float u = uv[0].u;
-	float v = uv[0].v;
-	int32_t iu, iv; //!< Convert to bitmap coord from uv coord
-	ui_color_rgba8888_t tex_color;
+	float u_a;
+	float v_a;
+	float z_a;
+	float u_b;
+	float v_b;
+	float z_b;
+	float u_c;
+	float v_c;
+	float z_c;
+	int32_t y1i;
+	int32_t y2i;
+	int32_t y3i;
+	float prestep;
+	float dXdY_V1V3;
+	float dXdY_V2V3;
+	float dXdY_V1V2;
+	float dUdY_V1V3;
+	float dUdY_V2V3;
+	float dUdY_V1V2;
+	float dVdY_V1V3;
+	float dVdY_V2V3;
+	float dVdY_V1V2;
+	float dZdY_V1V3;
+	float dZdY_V2V3;
+	float dZdY_V1V2;
+	float denom;
 
-	// If the 'uv' is passed, g_rc.texture must be set in advance.
-	UI_ASSERT(uv && g_rc.texture);
+	v1 = ui_mat3_vec3_multiply(&UI_TM, &v1);
+	v2 = ui_mat3_vec3_multiply(&UI_TM, &v2);
+	v3 = ui_mat3_vec3_multiply(&UI_TM, &v3);
 
-	for (i = 0; i < len; i++) {
-		iu = (int32_t)(u * (g_rc.tex_width - 1));
-		iv = (int32_t)(v * (g_rc.tex_height - 1));
+	if (v1.y > v2.y) {
+		UI_SWAP(v1, v2);
+		UI_SWAP(uv1, uv2);
+	}
+	if (v1.y > v3.y) {
+		UI_SWAP(v1, v3);
+		UI_SWAP(uv1, uv3);
+	}
+	if (v2.y > v3.y) {
+		UI_SWAP(v2, v3);
+		UI_SWAP(uv2, uv3);
+	}
 
-		// todo: Need to support various texture pixel format
-		offset = ((iv * g_rc.tex_width) + iu) << 2; // For only RGBA texture
+	y1i = (int32_t)ceilf(v1.y);
+	y2i = (int32_t)ceilf(v2.y);
+	y3i = (int32_t)ceilf(v3.y);
 
-		// todo: Need to apply pixel interpolation
-		tex_color.r = g_rc.texture[offset];
-		tex_color.g = g_rc.texture[offset + 1];
-		tex_color.b = g_rc.texture[offset + 2];
-		tex_color.a = g_rc.texture[offset + 3];
-		//ui_dal_put_pixel_rgba8888(x + i, y, *(ui_color_t *)&tex_color);
-		ui_dal_put_pixel_rgba8888(x + i, y, 0xff0000ff);
+	if (y1i == y3i) {
+		return;
+	}
 
-		u += u_step;
-		v += v_step;
+	u_a = uv1.u;
+	u_b = uv2.u;
+	u_c = uv3.u;
+	v_a = uv1.v;
+	v_b = uv2.v;
+	v_c = uv3.v;
+	z_a = 1.0f;
+	z_b = 1.0f;
+	z_c = 1.0f;
+
+	dXdY_V1V3 = (v3.x - v1.x) / (v3.y - v1.y);
+	dXdY_V2V3 = (v3.x - v2.x) / (v3.y - v2.y);
+	dXdY_V1V2 = (v2.x - v1.x) / (v2.y - v1.y);
+
+	dUdY_V1V3 = (u_c - u_a) / (v3.y - v1.y);
+	dUdY_V2V3 = (u_c - u_b) / (v3.y - v2.y);
+	dUdY_V1V2 = (u_b - u_a) / (v2.y - v1.y);
+
+	dVdY_V1V3 = (v_c - v_a) / (v3.y - v1.y);
+	dVdY_V2V3 = (v_c - v_b) / (v3.y - v2.y);
+	dVdY_V1V2 = (v_b - v_a) / (v2.y - v1.y);
+
+	dZdY_V1V3 = (z_c - z_a) / (v3.y - v1.y);
+	dZdY_V2V3 = (z_c - z_b) / (v3.y - v2.y);
+	dZdY_V1V2 = (z_b - z_a) / (v2.y - v1.y);
+
+	denom = ((v3.x - v1.x) * (v2.y - v1.y) - (v2.x - v1.x) * (v3.y - v1.y));
+
+	if (!denom) {
+		return;
+	}
+
+	denom = 1.0f / denom;
+
+	g_pk_dudx = ((u_c - u_a) * (v2.y - v1.y) - (u_b - u_a) * (v3.y - v1.y)) * denom;
+	g_pk_dvdx = ((v_c - v_a) * (v2.y - v1.y) - (v_b - v_a) * (v3.y - v1.y)) * denom;
+	g_pk_dzdx = ((z_c - z_a) * (v2.y - v1.y) - (z_b - z_a) * (v3.y - v1.y)) * denom;
+
+	g_pk_dudx_ = g_pk_dudx * UI_SUB_DIVIDE_SIZE;
+	g_pk_dvdx_ = g_pk_dvdx * UI_SUB_DIVIDE_SIZE;
+	g_pk_dzdx_ = g_pk_dzdx * UI_SUB_DIVIDE_SIZE;
+
+	bool mid = dXdY_V1V3 < dXdY_V1V2;
+	if (!mid) {
+		prestep = UI_SUB_PIX(v1.y);
+		if (y1i == y2i) {
+
+			g_left_dudy = dUdY_V2V3;
+			g_left_dvdy = dVdY_V2V3;
+			g_left_dzdy = dZdY_V2V3;
+			g_left_dxdy = dXdY_V2V3;
+			g_right_dxdy = dXdY_V1V3;
+
+			g_leftu = u_b + UI_SUB_PIX(v2.y) * g_left_dudy;
+			g_leftv = v_b + UI_SUB_PIX(v2.y) * g_left_dvdy;
+			g_leftz = z_b + UI_SUB_PIX(v2.y) * g_left_dzdy;
+			g_leftx = v2.x + UI_SUB_PIX(v2.y) * g_left_dxdy;
+			g_rightx = v1.x + prestep * g_right_dxdy;
+
+			ui_draw_triangle_segment(y1i, y3i);
+
+			return;
+		}
+
+		g_right_dxdy = dXdY_V1V3;
+
+		if (y1i < y2i) {
+
+			g_left_dudy = dUdY_V1V2;
+			g_left_dvdy = dVdY_V1V2;
+			g_left_dzdy = dZdY_V1V2;
+			g_left_dxdy = dXdY_V1V2;
+
+			g_leftu = u_a + prestep * g_left_dudy;
+			g_leftv = v_a + prestep * g_left_dvdy;
+			g_leftz = z_a + prestep * g_left_dzdy;
+			g_leftx = v1.x + prestep * g_left_dxdy;
+			g_rightx = v1.x + prestep * g_right_dxdy;
+
+			ui_draw_triangle_segment(y1i, y2i);
+		}
+
+		if (y2i < y3i) {
+
+			g_left_dxdy = dXdY_V2V3;
+			g_left_dudy = dUdY_V2V3;
+			g_left_dvdy = dVdY_V2V3;
+			g_left_dzdy = dZdY_V2V3;
+
+			g_leftu = u_b + UI_SUB_PIX(v2.y) * g_left_dudy;
+			g_leftv = v_b + UI_SUB_PIX(v2.y) * g_left_dvdy;
+			g_leftz = z_b + UI_SUB_PIX(v2.y) * g_left_dzdy;
+			g_leftx = v2.x + UI_SUB_PIX(v2.y) * g_left_dxdy;
+
+			ui_draw_triangle_segment(y2i, y3i);
+		}
+	} else if (mid) {
+
+		prestep = UI_SUB_PIX(v1.y);
+
+		if (y1i == y2i) {
+
+			g_left_dudy = dUdY_V1V3;
+			g_left_dvdy = dVdY_V1V3;
+			g_left_dzdy = dZdY_V1V3;
+			g_left_dxdy = dXdY_V1V3;
+			g_right_dxdy = dXdY_V2V3;
+
+			g_leftu = u_a + prestep * g_left_dudy;
+			g_leftv = v_a + prestep * g_left_dvdy;
+			g_leftz = z_a + prestep * g_left_dzdy;
+			g_leftx = v1.x + prestep * g_left_dxdy;
+			g_rightx = v2.x + UI_SUB_PIX(v2.y) * g_right_dxdy;
+
+			ui_draw_triangle_segment(y1i, y3i);
+			return;
+		}
+
+		g_left_dxdy = dXdY_V1V3;
+		g_left_dudy = dUdY_V1V3;
+		g_left_dvdy = dVdY_V1V3;
+		g_left_dzdy = dZdY_V1V3;
+
+		if (y1i < y2i) {
+
+			g_right_dxdy = dXdY_V1V2;
+
+			g_leftu = u_a + prestep * g_left_dudy;
+			g_leftv = v_a + prestep * g_left_dvdy;
+			g_leftz = z_a + prestep * g_left_dzdy;
+			g_leftx = v1.x + prestep * g_left_dxdy;
+			g_rightx = v1.x + prestep * g_right_dxdy;
+
+			ui_draw_triangle_segment(y1i, y2i);
+		}
+
+		if (y2i < y3i) {
+			g_right_dxdy = dXdY_V2V3;
+			g_rightx = v2.x + UI_SUB_PIX(v2.y) * g_right_dxdy;
+
+			ui_draw_triangle_segment(y2i, y3i);
+		}
 	}
 }
 
-/***
- * IMPORTANT!
- * ----------
- * ui_render_triangle uses 'ui_coord_t' instead of 'ui_vec3_t'.
- * It means this function only supports 'int32_t' coordinate system.
- * In near future, this function will support the 'float' coordinate system.
- */
-void ui_render_triangle_uv(ui_coord_t coord[3], ui_uv_t uv[3])
+static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 {
-	int i;
+	float u;
+	float v;
+	float z;
+	float Z;
+	int32_t du;
+	int32_t dv;
+	int32_t width;
+	int32_t U;
+	int32_t V;
+	int32_t U1;
+	int32_t V1;
+	int32_t U2;
+	int32_t V2;
+	int32_t x1;
+	int32_t x2;
+	int32_t y;
+	int32_t x;
+	int32_t iu;
+	int32_t iv;
+	int32_t uv_offset;
 
-	UI_ASSERT(coord && uv);
+	for (y = y1; y < y2; y++) {
 
-	ui_vec3_t _v;
-	ui_coord_t _coord[3];
-	ui_uv_t _uv[3];
-	ui_coord_t mid_coord;
+		x1 = ceilf(g_leftx);
+		x2 = ceilf(g_rightx);
 
-	// For prevent the parameters' original value,
-	// need to copy it in advance.
-	for (i = 0; i < 3; i++) {
-		_v.x = (float)coord[i].x;
-		_v.y = (float)coord[i].y;
-		_v.w = 1.0f;
-		_v = ui_mat3_vec3_multiply(&UI_TM, &_v);
+		u = g_leftu + UI_SUB_PIX(g_leftx) * g_pk_dudx;
+		v = g_leftv + UI_SUB_PIX(g_leftx) * g_pk_dvdx;
+		z = g_leftz + UI_SUB_PIX(g_leftx) * g_pk_dzdx;
 
-		_coord[i].x = (int32_t)_v.x;
-		_coord[i].y = (int32_t)_v.y;
+		Z = 65536.0f;
+		U2 = u * Z;
+		V2 = v * Z;
+		width = x2 - x1;
 
-		_uv[i] = uv[i];
-	}
+		while (width >= UI_SUB_DIVIDE_SIZE) {
 
-	// Sort by Y-coordiate
-	if (_coord[1].y > _coord[2].y) {
-		UI_SWAP(_coord[1], _coord[2]);
-		UI_SWAP(_uv[1], _uv[2]);
-	}
-	if (_coord[0].y > _coord[1].y) {
-		UI_SWAP(_coord[0], _coord[1]);
-		UI_SWAP(_uv[0], _uv[1]);
-	}
-	if (_coord[1].y > _coord[2].y) {
-		UI_SWAP(_coord[1], _coord[2]);
-		UI_SWAP(_uv[1], _uv[2]);
-	}
+			u += g_pk_dudx_;
+			v += g_pk_dvdx_;
+			z += g_pk_dzdx_;
 
-	if (_coord[1].y == _coord[2].y) {
-		_ui_fill_bottom_flat_triangle_uv(_coord[0], _coord[1], _coord[2], _uv[0], _uv[1], _uv[2]);
+			U1 = U2;
+			V1 = V2;
 
-	} else if (_coord[0].y == _coord[1].y) {
-		_ui_fill_top_flat_triangle_uv(_coord[0], _coord[1], _coord[2], _uv[0], _uv[1], _uv[2]);
+			Z = 65536.0f;
+			U2 = u * Z;
+			V2 = v * Z;
 
-	} else {
-		mid_coord = (ui_coord_t) {
-			(int32_t)(_coord[0].x + ((float)(_coord[1].y - _coord[0].y) / (_coord[2].y - _coord[0].y)) * (_coord[2].x - _coord[0].x)),
-			_coord[1].y,
-		};
+			du = (U2 - U1) >> UI_SUB_DIVIDE_SHIFT;
+			dv = (V2 - V1) >> UI_SUB_DIVIDE_SHIFT;
+			U = U1;
+			V = V1;
+			x = UI_SUB_DIVIDE_SIZE;
 
-		ui_uv_t mid_uv = (ui_uv_t) {
-			UI_GET_WEIGHTED_VALUE(_uv[0].u, _uv[2].u, (float)(_coord[1].y - _coord[0].y) / (_coord[2].y - _coord[0].y)),
-			UI_GET_WEIGHTED_VALUE(_uv[0].v, _uv[2].v, (float)(_coord[1].y - _coord[0].y) / (_coord[2].y - _coord[0].y))
-		};
+			while (x--) {
+				iu = (int32_t)((U / 65536.0f) * (g_rc.tex_width - 1) + 0.5f);
+				iv = (int32_t)((V / 65536.0f) * (g_rc.tex_height - 1) + 0.5f);
+				uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
 
-		_ui_fill_bottom_flat_triangle_uv(_coord[0], _coord[1], mid_coord, _uv[0], _uv[1], mid_uv);
-		_ui_fill_top_flat_triangle_uv(_coord[1], mid_coord, _coord[2], _uv[1], mid_uv, _uv[2]);
+				ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+					g_rc.texture[uv_offset + 0],
+					g_rc.texture[uv_offset + 1],
+					g_rc.texture[uv_offset + 2],
+					g_rc.texture[uv_offset + 3]
+				));
 
+				U += du;
+				V += dv;
+			}
+
+			width -= UI_SUB_DIVIDE_SIZE;
+		}
+
+		if (width > 0) {
+
+			U1 = U2;
+			V1 = V2;
+
+			u += (g_pk_dudx * width);
+			v += (g_pk_dvdx * width);
+			z += (g_pk_dzdx * width);
+
+			Z = 65536.0f;
+			U2 = u * Z;
+			V2 = v * Z;
+
+			du = (U2 - U1) / width;
+			dv = (V2 - V1) / width;
+			U = U1;
+			V = V1;
+
+			while (width--) {
+				iu = (int32_t)((U / 65536.0f) * (g_rc.tex_width - 1) + 0.5f);
+				iv = (int32_t)((V / 65536.0f) * (g_rc.tex_height - 1) + 0.5f);
+				uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
+
+				ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+					g_rc.texture[uv_offset + 0],
+					g_rc.texture[uv_offset + 1],
+					g_rc.texture[uv_offset + 2],
+					g_rc.texture[uv_offset + 3]
+				));
+
+				U += du;
+				V += dv;
+			}
+		}
+
+		g_leftu += g_left_dudy;
+		g_leftv += g_left_dvdy;
+		g_leftz += g_left_dzdy;
+		g_leftx += g_left_dxdy;
+		g_rightx += g_right_dxdy;
 	}
 }
 
-void ui_render_quad_uv(ui_coord_t coord[4], ui_uv_t uv[4])
+void ui_render_quad_uv(
+	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
+	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4)
 {
-	ui_coord_t _coord[2][3];
-	ui_uv_t _uv[2][3];
-
-	_coord[0][0] = coord[0];
-	_coord[0][1] = coord[1];
-	_coord[0][2] = coord[2];
-
-	_coord[1][0] = coord[0];
-	_coord[1][1] = coord[2];
-	_coord[1][2] = coord[3];
-
-	_uv[0][0] = uv[0];
-	_uv[0][1] = uv[1];
-	_uv[0][2] = uv[2];
-
-	_uv[1][0] = uv[0];
-	_uv[1][1] = uv[2];
-	_uv[1][2] = uv[3];
-
-	ui_render_triangle_uv(_coord[0], _uv[0]);
-	ui_render_triangle_uv(_coord[1], _uv[1]);
+	ui_render_triangle_uv(v1, v2, v3, uv1, uv2, uv3);
+	ui_render_triangle_uv(v1, v3, v4, uv1, uv3, uv4);
 }
 
 /****************************************************************************
  * Private function implementation
  ****************************************************************************/
-
-static void _ui_fill_bottom_flat_triangle_uv(
-	ui_coord_t coord1, ui_coord_t coord2, ui_coord_t coord3,
-	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3
-)
-{
-	ui_uv_t uv[2];
-	float weight;
-	int32_t scanline;
-	int32_t x;
-	int32_t len;
-
-	int32_t height = (coord2.y - coord1.y) + 1;
-	float invslope1 = (float)(coord2.x - coord1.x) / height;
-	float invslope2 = (float)(coord3.x - coord1.x) / height;
-	float curx1 = (float)coord1.x;
-	float curx2 = (float)coord1.x;
-
-	for (scanline = coord1.y; scanline <= coord2.y; scanline++) {
-		weight = (float)(scanline - coord1.y + 1) / (height);
-
-		uv[0].u = UI_GET_WEIGHTED_VALUE(uv1.u, uv2.u, weight);
-		uv[0].v = UI_GET_WEIGHTED_VALUE(uv1.v, uv2.v, weight);
-		uv[1].u = UI_GET_WEIGHTED_VALUE(uv1.u, uv3.u, weight);
-		uv[1].v = UI_GET_WEIGHTED_VALUE(uv1.v, uv3.v, weight);
-
-		if (curx2 >= curx1) {
-			x = (int32_t)curx1;
-			len = (int32_t)curx2 - x + 1;
-		} else {
-			x = (int32_t)curx2;
-			len = (int32_t)curx1 - x + 1;
-			UI_SWAP(uv[0], uv[1]);
-		}
-
-		ui_render_hline_uv(x, scanline, len, uv);
-
-		curx1 += invslope1;
-		curx2 += invslope2;
-	}
-}
-
-static void _ui_fill_top_flat_triangle_uv(
-	ui_coord_t coord1, ui_coord_t coord2, ui_coord_t coord3,
-	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3
-)
-{
-	ui_uv_t uv[2];
-	float weight;
-	int32_t scanline;
-	int32_t x;
-	int32_t len;
-
-	int32_t height = (coord3.y - coord1.y) + 1;
-	float invslope1 = (float)(coord3.x - coord1.x) / height;
-	float invslope2 = (float)(coord3.x - coord2.x) / height;
-	float curx1 = (float)coord3.x;
-	float curx2 = (float)coord3.x;
-
-	for (scanline = coord3.y; scanline >= coord1.y; scanline--) {
-		weight = (float)(scanline - coord1.y + 1) / (height);
-
-		uv[0].u = UI_GET_WEIGHTED_VALUE(uv1.u, uv3.u, weight);
-		uv[0].v = UI_GET_WEIGHTED_VALUE(uv1.v, uv3.v, weight);
-		uv[1].u = UI_GET_WEIGHTED_VALUE(uv2.u, uv3.u, weight);
-		uv[1].v = UI_GET_WEIGHTED_VALUE(uv2.v, uv3.v, weight);
-
-		if (curx2 >= curx1) {
-			x = (int32_t)curx1;
-			len = (int32_t)curx2 - x + 1;
-		} else {
-			x = (int32_t)curx2;
-			len = (int32_t)curx1 - x + 1;
-			UI_SWAP(uv[0], uv[1]);
-		}
-
-		ui_render_hline_uv(x, scanline, len, uv);
-
-		curx1 -= invslope1;
-		curx2 -= invslope2;
-	}
-}
