@@ -79,7 +79,7 @@ ui_anim_t ui_move_anim_create(int32_t from_x, int32_t from_y, int32_t to_x, int3
 	return (ui_anim_t)body;
 }
 
-ui_anim_t ui_opacity_anim_create(uint32_t from_opacity, uint32_t to_opacity, uint32_t duration)
+ui_anim_t ui_opacity_anim_create(uint32_t from_opacity, uint32_t to_opacity, uint32_t duration, ui_intrp_type_t intrp_type)
 {
 	ui_opacity_anim_body_t *body;
 	
@@ -98,11 +98,25 @@ ui_anim_t ui_opacity_anim_create(uint32_t from_opacity, uint32_t to_opacity, uin
 	ui_anim_init((ui_anim_body_t *)body, UI_OPACITY_ANIM, duration);
 	body->from_opacity = from_opacity;
 	body->to_opacity = to_opacity;
+	switch (intrp_type) {
+	case UI_INTRP_EASE_IN_QUAD:
+		body->intrp_func = ease_in_quad;
+		break;
+	case UI_INTRP_EASE_INOUT_QUAD:
+		body->intrp_func = ease_inout_quad;
+		break;
+	case UI_INTRP_EASE_OUT_QUAD:
+		body->intrp_func = ease_out_quad;
+		break;
+	case UI_INTRP_LINEAR:
+		body->intrp_func = ease_linear;
+		break;
+	}
 
 	return (ui_anim_t)body;
 }
 
-ui_anim_t ui_rotate_anim_create(int32_t from_degree, int32_t to_degree, uint32_t duration)
+ui_anim_t ui_rotate_anim_create(int32_t from_degree, int32_t to_degree, uint32_t duration, ui_intrp_type_t intrp_type)
 {
 	ui_rotate_anim_body_t *body;
 	
@@ -121,11 +135,25 @@ ui_anim_t ui_rotate_anim_create(int32_t from_degree, int32_t to_degree, uint32_t
 	ui_anim_init((ui_anim_body_t *)body, UI_ROTATE_ANIM, duration);
 	body->from_degree = from_degree;
 	body->to_degree = to_degree;
+	switch (intrp_type) {
+	case UI_INTRP_EASE_IN_QUAD:
+		body->intrp_func = ease_in_quad;
+		break;
+	case UI_INTRP_EASE_INOUT_QUAD:
+		body->intrp_func = ease_inout_quad;
+		break;
+	case UI_INTRP_EASE_OUT_QUAD:
+		body->intrp_func = ease_out_quad;
+		break;
+	case UI_INTRP_LINEAR:
+		body->intrp_func = ease_linear;
+		break;
+	}
 
 	return (ui_anim_t)body;
 }
 
-ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t duration)
+ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t duration, ui_intrp_type_t intrp_type)
 {
 	ui_scale_anim_body_t *body;
 	
@@ -144,6 +172,20 @@ ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t 
 	ui_anim_init((ui_anim_body_t *)body, UI_SCALE_ANIM, duration);
 	body->from_scale = from_scale;
 	body->to_scale = to_scale;
+	switch (intrp_type) {
+	case UI_INTRP_EASE_IN_QUAD:
+		body->intrp_func = ease_in_quad;
+		break;
+	case UI_INTRP_EASE_INOUT_QUAD:
+		body->intrp_func = ease_inout_quad;
+		break;
+	case UI_INTRP_EASE_OUT_QUAD:
+		body->intrp_func = ease_out_quad;
+		break;
+	case UI_INTRP_LINEAR:
+		body->intrp_func = ease_linear;
+		break;
+	}
 
 	return (ui_anim_t)body;
 }
@@ -360,7 +402,7 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
 	ui_opacity_anim_body_t *opacity_anim_body;
-	uint32_t remain_time;
+	uint32_t remain_time, intrp_opacity;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
@@ -372,6 +414,10 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 	}
 	anim_body->t += remain_time;
 	*dt -= remain_time;
+
+	intrp_opacity = opacity_anim_body->intrp_func(anim_body->t, opacity_anim_body->from_opacity, opacity_anim_body->to_opacity - opacity_anim_body->from_opacity, anim_body->d);
+
+	// ui_widget_set_opacity(widget, intrp_opacity);
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -387,7 +433,7 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 	ui_anim_body_t *anim_body;
 	ui_rotate_anim_body_t *rotate_anim_body;
 	uint32_t remain_time;
-	int32_t gap, intrp_value;
+	int32_t intrp_degree;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
@@ -399,6 +445,10 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 	}
 	anim_body->t += remain_time;
 	*dt -= remain_time;
+
+	intrp_degree = rotate_anim_body->intrp_func(anim_body->t, rotate_anim_body->from_degree, rotate_anim_body->to_degree - rotate_anim_body->from_degree, anim_body->d);
+
+	ui_widget_set_rotation(widget, intrp_degree);
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -413,8 +463,7 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
 	ui_scale_anim_body_t *scale_anim_body;
-	uint32_t remain_time;
-	int32_t gap, intrp_value;
+	uint32_t remain_time, intrp_scale;
 
 	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
@@ -426,6 +475,10 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 	}
 	anim_body->t += remain_time;
 	*dt -= remain_time;
+
+	intrp_scale = scale_anim_body->intrp_func(anim_body->t, scale_anim_body->from_scale, scale_anim_body->to_scale - scale_anim_body->from_scale, anim_body->d);
+
+	ui_widget_set_scale(widget, intrp_scale, intrp_scale);
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -437,14 +490,10 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 
 static bool _ui_anim_delay_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
-	ui_widget_body_t *widget_body;
 	ui_anim_body_t *anim_body;
-	ui_delay_anim_body_t *delay_anim_body;
 	uint32_t remain_time;
 
-	widget_body = (ui_widget_body_t *)widget;
 	anim_body = (ui_anim_body_t *)anim;
-	delay_anim_body = (ui_delay_anim_body_t *)anim;
 	remain_time = anim_body->d - anim_body->t;
 
 	if (*dt <= remain_time) {

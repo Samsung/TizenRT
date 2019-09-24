@@ -43,9 +43,9 @@ extern "C" {
 #endif
 
 ui_anim_t ui_move_anim_create(int32_t from_x, int32_t from_y, int32_t to_x, int32_t to_y, uint32_t duration, ui_intrp_type_t intrp_type);
-ui_anim_t ui_opacity_anim_create(uint32_t from_opacity, uint32_t to_opacity, uint32_t duration);
-ui_anim_t ui_rotate_anim_create(int32_t from_degree, int32_t to_degree, uint32_t duration);
-ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t duration);
+ui_anim_t ui_opacity_anim_create(uint32_t from_opacity, uint32_t to_opacity, uint32_t duration, ui_intrp_type_t intrp_type);
+ui_anim_t ui_rotate_anim_create(int32_t from_degree, int32_t to_degree, uint32_t duration, ui_intrp_type_t intrp_type);
+ui_anim_t ui_scale_anim_create(uint32_t from_scale, uint32_t to_scale, uint32_t duration, ui_intrp_type_t intrp_type);
 ui_anim_t ui_delay_anim_create(uint32_t duration);
 ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...);
 ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...);
