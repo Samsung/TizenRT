@@ -55,18 +55,21 @@ typedef struct {
 	ui_anim_body_t base;
 	int32_t from_degree;
 	int32_t to_degree;
+	ui_intrp_func intrp_func;
 } ui_rotate_anim_body_t;
 
 typedef struct {
 	ui_anim_body_t base;
 	int32_t from_scale;
 	int32_t to_scale;
+	ui_intrp_func intrp_func;
 } ui_scale_anim_body_t;
 
 typedef struct {
 	ui_anim_body_t base;
 	int32_t from_opacity;
 	int32_t to_opacity;
+	ui_intrp_func intrp_func;
 } ui_opacity_anim_body_t;
 
 typedef struct {
