@@ -57,8 +57,8 @@ SUDO=sudo
 
 # Following to read partition information
 PARTITION_KCONFIG=${OS_PATH}/board/common/Kconfig
-source ${OS_PATH}/.config
 
+CONFIG=${OS_PATH}/.config
 FLASH_START_ADDR=0x60000000
 TINYARA_BIN=${OUTBIN_PATH}/tinyara.bin
 
@@ -92,19 +92,18 @@ function imxrt1050_sanity_check()
 function bootstrap()
 {
 	source ${BOOTSTRAP_SCRIPT}
-	sleep 1
 
-	${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
-	sleep 1
-	${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
+	${SUDO} ${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
+	${SUDO} ${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
 }
 
 #Utility function to erase a part of flash
 #Input: Address and length
 function flash_erase()
 {
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $2
-	echo "Successfull erased flash region from $1 of size $2 KB"
+	echo -e "\nFLASH_ERASE: ADDR:$1 LENGTH:$2 KB"
+	size_in_bytes=$(($2 * 1024))
+	${SUDO} ${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
 }
 
 
@@ -112,7 +111,9 @@ function flash_erase()
 #Input: Address and filepath
 function flash_write()
 {
+	echo -e "\nFLASH_WRITE ADDR:$1 \nFILEPATH:$2 "
 	${SUDO} ${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
+	sleep 2
 }
 
 #Utility function to match partition name to binary name
