@@ -465,14 +465,23 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 			while (x--) {
 				iu = (int32_t)((U / 65536.0f) * (g_rc.tex_width - 1) + 0.5f);
 				iv = (int32_t)((V / 65536.0f) * (g_rc.tex_height - 1) + 0.5f);
-				uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
 
-				ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
-					g_rc.texture[uv_offset + 0],
-					g_rc.texture[uv_offset + 1],
-					g_rc.texture[uv_offset + 2],
-					g_rc.texture[uv_offset + 3]
-				));
+				if (g_rc.tex_pf == UI_PIXEL_FORMAT_RGBA8888) {
+					uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
+					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+						g_rc.texture[uv_offset + 0],
+						g_rc.texture[uv_offset + 1],
+						g_rc.texture[uv_offset + 2],
+						g_rc.texture[uv_offset + 3]
+					));
+				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_RGB888) {
+					uv_offset = ((iv * g_rc.tex_width) + iu) * 3;
+					ui_dal_put_pixel_rgb888(x1++, y, UI_COLOR_RGB888(
+						g_rc.texture[uv_offset + 0],
+						g_rc.texture[uv_offset + 1],
+						g_rc.texture[uv_offset + 2]
+					));
+				}
 
 				U += du;
 				V += dv;
@@ -504,12 +513,22 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 				iv = (int32_t)((V / 65536.0f) * (g_rc.tex_height - 1) + 0.5f);
 				uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
 
-				ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
-					g_rc.texture[uv_offset + 0],
-					g_rc.texture[uv_offset + 1],
-					g_rc.texture[uv_offset + 2],
-					g_rc.texture[uv_offset + 3]
-				));
+				if (g_rc.tex_pf == UI_PIXEL_FORMAT_RGBA8888) {
+					uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
+					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+						g_rc.texture[uv_offset + 0],
+						g_rc.texture[uv_offset + 1],
+						g_rc.texture[uv_offset + 2],
+						g_rc.texture[uv_offset + 3]
+					));
+				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_RGB888) {
+					uv_offset = ((iv * g_rc.tex_width) + iu) * 3;
+					ui_dal_put_pixel_rgb888(x1++, y, UI_COLOR_RGB888(
+						g_rc.texture[uv_offset + 0],
+						g_rc.texture[uv_offset + 1],
+						g_rc.texture[uv_offset + 2]
+					));
+				}
 
 				U += du;
 				V += dv;
