@@ -68,7 +68,7 @@ typedef struct {
 #define CONFIG_UI_GLYPH_BITMAP_HEIGHT     256
 
 static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const char *text);
-static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt);
+static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt);
 static void _ui_text_widget_removed_func(ui_widget_t widget);
 static void _ui_text_widget_set_text_func(void *userdata);
 static void _ui_text_widget_set_align_func(void *userdata);
@@ -121,7 +121,7 @@ ui_widget_t ui_text_widget_create(int32_t width, int32_t height, ui_asset_t font
 	// Fill the color variable by 0xff for white color
 	memset(&body->font_color, 0xff, sizeof(body->font_color));
 
-	body->base.render_cb = _ui_text_widget_draw_func;
+	body->base.render_cb = _ui_text_widget_render_func;
 	body->base.remove_cb = _ui_text_widget_removed_func;
 
 	return (ui_widget_t)body;
@@ -425,7 +425,7 @@ static void _ui_text_widget_set_color(void *userdata)
 	UI_FREE(info);
 }
 
-static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
+static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 {
 	ui_text_widget_body_t *body;
 	float scale;
@@ -448,6 +448,14 @@ static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
 	uint8_t g;
 	uint8_t b;
 	uint8_t a;
+
+#if defined(CONFIG_UI_ENABLE_EMOJI)
+	ui_bitmap_data_t *emoji_bitmap;
+	ui_vec3_t emoji_v1;
+	ui_vec3_t emoji_v2;
+	ui_vec3_t emoji_v3;
+	ui_vec3_t emoji_v4;
+#endif
 
 	if (!widget) {
 		UI_LOGE("error: Invalid Parameter!\n");
@@ -517,10 +525,6 @@ static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
 		b = ((ui_color_argb8888_t *)&(body->font_color))->b;
 #endif
 
-#if defined(CONFIG_UI_ENABLE_EMOJI)
-		// ui_rect_t emoji_size = {0, 0, 40, 40};
-#endif
-
 		while (draw_idx < utf_idx) {
 			if (body->utf_code[draw_idx] == '\n') {
 				draw_idx++;
@@ -530,13 +534,26 @@ static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
 #if defined(CONFIG_UI_ENABLE_EMOJI)
 			// If the code is emoji
 			if (is_emoji(body->utf_code[draw_idx])) {
-				if (emoji_get_asset(body->utf_code[draw_idx])) {
-					// todo
-					/*
-					ui_hal_draw_cropped_resized_image(
-						x, y, emoji_get_asset(body->utf_code[draw_idx]),
-						emoji_size, body->font_size, body->font_size);
-					*/
+				emoji_bitmap = emoji_get_bitmap(body->utf_code[draw_idx]);
+				if (emoji_bitmap) {
+					ui_renderer_set_texture(
+						((uint8_t *)emoji_bitmap) + sizeof(ui_bitmap_data_t),
+						emoji_bitmap->width,
+						emoji_bitmap->height,
+						emoji_bitmap->pf);
+
+						emoji_v1 = (ui_vec3_t){ .x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y, .w = 1.0f };
+						emoji_v2 = (ui_vec3_t){ .x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f };
+						emoji_v3 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f };
+						emoji_v4 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y, .w = 1.0f };
+
+						ui_render_quad_uv(emoji_v1, emoji_v2, emoji_v3, emoji_v4,
+							(ui_uv_t){ 0.0f, 0.0f },
+							(ui_uv_t){ 0.0f, 1.0f },
+							(ui_uv_t){ 1.0f, 1.0f },
+							(ui_uv_t){ 1.0f, 0.0f });
+
+						ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
 				}
 				x += body->font_size;
 			} else {

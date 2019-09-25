@@ -133,10 +133,6 @@ ui_error_t ui_start(void)
 
 	g_core.state = UI_CORE_STATE_RUNNING;
 
-#if defined(CONFIG_UI_ENABLE_EMOJI)
-	emoji_init();
-#endif
-
 	if (pthread_create(&g_core.pid, &attr, _ui_core_thread_loop, NULL)) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
@@ -169,10 +165,6 @@ ui_error_t ui_stop(void)
 		UI_LOGE("Error: Permission denied.\n");
 		return UI_OPERATION_FAIL;
 	}
-
-#if defined(CONFIG_UI_ENABLE_EMOJI)
-	emoji_deinit();
-#endif
 
 	g_core.state = UI_CORE_STATE_STOPPING;
 

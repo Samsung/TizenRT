@@ -21,19 +21,13 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <araui/ui_asset.h>
-#include "emoji_assets.h"
+#include <araui/ui_commons.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void emoji_init(void);
-
-void emoji_deinit(void);
-
-ui_asset_t emoji_get_asset(uint32_t utf_code);
-
+ui_bitmap_data_t *emoji_get_bitmap(uint32_t utf_code);
 bool is_emoji(uint32_t utf_code);
 
 #ifdef __cplusplus
