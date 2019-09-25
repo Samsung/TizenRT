@@ -106,7 +106,7 @@ void *iotapi_handler(void *data)
 		}
 
 		if (g_ia_evtlist[0].revents & POLLIN) {
-			
+
 #ifdef CONFIG_IOTAPI_DEBUG
 			int readed;
 			readed = read(g_ia_evtlist[0].fd, buf, 3);
@@ -114,7 +114,7 @@ void *iotapi_handler(void *data)
 #else
 			read(g_ia_evtlist[0].fd, buf, 3);
 #endif
-			
+
 			if (buf[0] == 's' && buf[1] == 't')
 				break;
 
@@ -241,10 +241,12 @@ int iotapi_insert(iotapi_elem * item)
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == IOTAPI_QUEUE_SIZE) {
 		pthread_mutex_unlock(&g_ia_lock);
-		ret = -1;
+		return -1;
 	}
-	if (g_ia_evt_size == 0)
+
+	if (g_ia_evt_size == 0) {
 		mode = 0;
+	}
 	g_ia_msg_queue[0].type = IOTAPI_MESSAGE_QUEUE_INSERT;
 	g_ia_msg_queue[0].evt.fd = item->fd;
 	g_ia_msg_queue[0].evt.data = item->data;
@@ -272,7 +274,7 @@ int iotapi_remove(iotapi_elem * item)
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == 0) {
 		pthread_mutex_unlock(&g_ia_lock);
-		ret = -1;
+		return -1;
 	}
 	g_ia_msg_queue[1].type = IOTAPI_MESSAGE_QUEUE_REMOVE;
 	g_ia_msg_queue[1].evt.fd = item->fd;
@@ -280,8 +282,9 @@ int iotapi_remove(iotapi_elem * item)
 	pthread_mutex_unlock(&g_ia_lock);
 
 	ret = iotapi_handler_restart();
-	if (ret < 0)
+	if (ret < 0) {
 		ibdbg("[iotcom] Restart iotapi_handler fail\n");
+	}
 
 	return ret;
 }
