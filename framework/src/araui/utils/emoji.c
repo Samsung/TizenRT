@@ -15,15 +15,22 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
+#include <stdint.h>
 #include <araui/ui_asset.h>
+#include "ui_asset_internal.h"
 #include "utils/emoji.h"
+
+#if defined(CONFIG_UI_USE_BUILTIN_EMOJI)
+#include "utils/emoji_assets.h"
+#endif
 
 #define UTF8_EMOJI_START (0x1f600)
 #define UTF8_EMOJI_END (0x1f644)
 #define UTF8_MAX_EMOJI_COUNT (UTF8_EMOJI_END + UTF8_EMOJI_START + 1)
 
 #if defined(CONFIG_UI_USE_BUILTIN_EMOJI)
-static const uint8_t *g_emoji_assets[UTF8_MAX_EMOJI_COUNT] = {
+static const uint8_t *g_emoji_bitmap[UTF8_MAX_EMOJI_COUNT] = {
 	__emoji_u1F600, __emoji_u1F601, __emoji_u1F602, __emoji_u1F603, __emoji_u1F604,
 	__emoji_u1F605, __emoji_u1F606, __emoji_u1F607, __emoji_u1F608, __emoji_u1F609,
 	__emoji_u1F60A, __emoji_u1F60B, __emoji_u1F60C, __emoji_u1F60D, __emoji_u1F60E,
@@ -40,39 +47,16 @@ static const uint8_t *g_emoji_assets[UTF8_MAX_EMOJI_COUNT] = {
 	__emoji_u1F641, __emoji_u1F642, __emoji_u1F643, __emoji_u1F644
 };
 #else
-static const uint8_t *g_emoji_assets[UTF8_MAX_EMOJI_COUNT] = { NULL, };
+static const uint8_t *g_emoji_bitmap[UTF8_MAX_EMOJI_COUNT] = { NULL, };
 #endif
 
-static ui_asset_t g_emoji[UTF8_MAX_EMOJI_COUNT];
-
-void emoji_init(void)
+ui_bitmap_data_t *emoji_get_bitmap(uint32_t utf_code)
 {
-	int i;
-	for (i = 0; i < UTF8_MAX_EMOJI_COUNT; i++) {
-		if (g_emoji_assets[i]) {
-			g_emoji[i] = ui_image_asset_create_from_buffer(g_emoji_assets[i]);
-		}
-	}
-}
-
-void emoji_deinit(void)
-{
-	int i;
-	for (i = 0; i < UTF8_MAX_EMOJI_COUNT; i++) {
-		if (g_emoji[i]) {
-			ui_image_asset_destroy(g_emoji[i]);
-			g_emoji[i] = UI_NULL;
-		}
-	}
-}
-
-ui_asset_t emoji_get_asset(uint32_t utf_code)
-{
-	if (is_emoji(utf_code) && g_emoji[utf_code - UTF8_EMOJI_START]) {
-		return g_emoji[utf_code - UTF8_EMOJI_START];
+	if (is_emoji(utf_code)) {
+		return (ui_bitmap_data_t *)(g_emoji_bitmap[utf_code - UTF8_EMOJI_START]);
 	}
 
-	return UI_NULL;
+	return NULL;
 }
 
 bool is_emoji(uint32_t utf_code)

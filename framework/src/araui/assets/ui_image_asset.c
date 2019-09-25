@@ -37,7 +37,7 @@ static size_t            _ui_get_bpp_from_pf(ui_pixel_format_t type);
 ui_asset_t ui_image_asset_create_from_buffer(const uint8_t *buf)
 {
 	ui_image_asset_body_t *body;
-	ui_image_data_t *data;
+	ui_bitmap_data_t *bitmap;
 
 	if (!ui_is_running()) {
 		UI_LOGE("error: UI framework is not running!\n");
@@ -58,13 +58,13 @@ ui_asset_t ui_image_asset_create_from_buffer(const uint8_t *buf)
 	memset(body, 0, sizeof(ui_image_asset_body_t));
 	((ui_asset_body_t *)body)->type = UI_IMAGE_ASSET;
 
-	data = (ui_image_data_t *)buf;
+	bitmap = (ui_bitmap_data_t *)buf;
 
-	body->width = data->width;
-	body->height = data->height;
-	body->buf = (uint8_t *)(buf + data->header_size);
+	body->width = bitmap->width;
+	body->height = bitmap->height;
+	body->buf = (uint8_t *)(buf + bitmap->header_size);
 
-	body->pixel_format = data->pf;
+	body->pixel_format = bitmap->pf;
 	body->bits_per_pixel = _ui_get_bpp_from_pf(body->pixel_format);
 	body->bytes_per_line = body->width * body->bits_per_pixel / 8;
 	body->from_buf = true;

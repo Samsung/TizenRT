@@ -53,7 +53,7 @@ typedef struct {
 	uint32_t header_size;
 	uint32_t data_size;
 	int32_t reserved[8];
-} ui_image_data_t;
+} ui_bitmap_data_t;
 
 typedef struct {
 	ui_asset_body_t base;
