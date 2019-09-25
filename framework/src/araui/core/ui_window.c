@@ -280,6 +280,13 @@ ui_error_t ui_window_add_redraw_list(ui_rect_t redraw_rect)
 	new_area->width = redraw_rect.width;
 	new_area->height = redraw_rect.height;
 
+	if (new_area->x + new_area->width >= CONFIG_UI_DISPLAY_WIDTH) {
+		new_area->width = CONFIG_UI_DISPLAY_WIDTH - new_area->x;
+	}
+	if (new_area->y + new_area->height >= CONFIG_UI_DISPLAY_HEIGHT) {
+		new_area->height = CONFIG_UI_DISPLAY_HEIGHT - new_area->y;
+	}
+
 	vec_foreach(&g_window_redraw_list, window, iter) {
 		// window is whole screen case
 		if ((window->x == 0) && (window->y == 0) &&
@@ -301,12 +308,6 @@ ui_error_t ui_window_add_redraw_list(ui_rect_t redraw_rect)
 		ret = ui_get_contain_rect(previous, *new_area);
 		new_area->x = ret.x;
 		new_area->y = ret.y;
-		if (ret.x + ret.width > CONFIG_UI_DISPLAY_WIDTH) {
-			ret.width = CONFIG_UI_DISPLAY_WIDTH - ret.x;
-		}
-		if (ret.y + ret.height > CONFIG_UI_DISPLAY_HEIGHT) {
-			ret.height = CONFIG_UI_DISPLAY_HEIGHT - ret.y;
-		}
 		new_area->width = ret.width;
 		new_area->height = ret.height;
 

@@ -266,26 +266,21 @@ static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t dr
 	}
 
 	if (widget->visible) {
-		ui_renderer_push_matrix();
-
-		ui_renderer_translate((float)widget->local_rect.x, (float)widget->local_rect.y);
-		ui_renderer_rotate(widget->degree);
-		ui_renderer_scale(widget->scale_x, widget->scale_y);
+		new_vp = ui_rect_intersect(draw_area, widget->global_rect);
+		ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
 
 		if (widget->render_cb) {
 			new_vp = ui_rect_intersect(draw_area, widget->global_rect);
 			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
 
 			widget->render_cb((ui_widget_t)widget, dt);
-			
+
 			ui_dal_set_viewport(draw_area.x, draw_area.y, draw_area.width, draw_area.height);
 		}
 
 		vec_foreach(&widget->children, child, iter) {
 			_ui_render_widget_recur(child, draw_area, dt);
 		}
-
-		ui_renderer_pop_matrix();
 	}
 
 	return UI_OK;
@@ -328,6 +323,49 @@ static void _ui_redraw(uint32_t dt)
 	}
 
 	ui_window_redraw_list_clear();
+}
+
+static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
+{
+	int iter;
+	static bool update_flag = false;
+	ui_widget_body_t *child;
+
+	if ((widget->update_flag || update_flag) && widget->parent) {
+		// Update previous area
+		ui_window_add_redraw_list(widget->global_rect);
+
+		ui_renderer_translate(&widget->parent->trans_mat, &widget->trans_mat, (float)widget->local_rect.x, (float)widget->local_rect.y);
+		ui_renderer_rotate(&widget->trans_mat, widget->degree);
+		ui_renderer_scale(&widget->trans_mat, widget->scale_x, widget->scale_y);
+
+		// Update new area
+		ui_widget_update_global_rect(widget);
+		ui_window_add_redraw_list(widget->global_rect);
+		widget->update_flag = false;
+		update_flag = true;
+	}
+
+	vec_foreach(&widget->children, child, iter) {
+		_ui_update_redraw_list_recur(child);
+	}
+
+	update_flag = false;
+}
+
+static void _ui_update_redraw_list(void)
+{
+	ui_window_body_t *window;
+
+	window = ui_window_get_current();
+	if (window) {
+		UI_ASSERT(window->root);
+		_ui_update_redraw_list_recur(window->root);
+	}
+
+	if (_ui_core_quick_panel_visible()) {
+		_ui_update_redraw_list_recur(g_quick_panel_info[g_core.visible_event_type]);
+	}
 }
 
 static void *_ui_core_thread_loop(void *param)
@@ -379,6 +417,7 @@ static void *_ui_core_thread_loop(void *param)
 			_ui_process_widget_recur(g_quick_panel_info[g_core.visible_event_type], dt);
 		}
 
+		_ui_update_redraw_list();
 		_ui_redraw(dt);
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)

@@ -26,10 +26,8 @@
 #define UI_ABS(x)           ((x) < (0) ? (-(x)) : (x))
 #define UI_MAX(a, b)        ((a) > (b) ? (a) : (b))
 #define UI_MIN(a, b)        ((a) > (b) ? (b) : (a))
-#define UI_MAX4(a, b, c, d) (UI_MAX(UI_MAX(a, b), UI_MAX(c, d)))
-#define UI_MIN4(a, b, c, d) (UI_MIN(UI_MIN(a, b), UI_MIN(c, d)))
-
-typedef float ui_mat_t[3][3];
+#define UI_MAX4(a, b, c, d) (UI_MAX(UI_MAX((a), (b)), UI_MAX((c), (d))))
+#define UI_MIN4(a, b, c, d) (UI_MIN(UI_MIN((a), (b)), UI_MIN((c), (d))))
 
 #ifdef __cplusplus
 extern "C" {

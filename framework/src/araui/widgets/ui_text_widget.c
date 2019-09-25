@@ -329,12 +329,7 @@ static void _ui_text_widget_set_text_func(void *userdata)
 		return;
 	}
 
-	if (ui_window_add_redraw_list(body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the redraw list!\n");
-		UI_FREE(info->text);
-		UI_FREE(info);
-		return;
-	}
+	body->base.update_flag = true;
 
 	UI_FREE(info->text);
 	UI_FREE(info);
@@ -382,11 +377,7 @@ static void _ui_text_widget_set_align_func(void *userdata)
 	info = (ui_set_align_info_t *)userdata;
 
 	info->body->align = info->align;
-	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the redraw list!\n");
-		UI_FREE(info);
-		return;
-	}
+	info->body->base.update_flag = true;
 
 	UI_FREE(info);
 }
@@ -653,11 +644,7 @@ static void _ui_text_widget_set_word_wrap_func(void *userdata)
 	// According to the text wrap option, a line number of the text widget can be differ from the current one.
 	// Therefore, this value should be recalculated.
 	_ui_text_widget_calculate_line_num(body);
-	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the redraw list!\n");
-		UI_FREE(info);
-		return;
-	}
+	body->base.update_flag = true;
 
 	UI_FREE(info);
 }
@@ -716,11 +703,7 @@ static void _ui_text_widget_set_font_size_func(void *userdata)
 	// According to the text wrap option, a line number of the text widget can be differ from the current one.
 	// Therefore, this value should be recalculated.
 	_ui_text_widget_calculate_line_num(body);
-	if (ui_window_add_redraw_list(info->body->base.global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the redraw list!\n");
-		UI_FREE(info);
-		return;
-	}
+	body->base.update_flag = true;
 
 	UI_FREE(info);
 }
