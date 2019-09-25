@@ -68,6 +68,15 @@ typedef void (*interval_callback)(ui_widget_t widget);
  */
 typedef void (*tween_finished_callback)(ui_widget_t widget);
 
+/**
+ * @brief Callback function type which is called when the animation is finished.
+ *
+ * @param widget Handle of the widget which performs animation
+ *
+ * @see ui_widget_play_anim()
+ */
+typedef void (*anim_finished_callback)(ui_widget_t widget);
+
 #if defined(CONFIG_UI_ENABLE_TOUCH)
 
 /**
@@ -384,7 +393,7 @@ ui_error_t ui_widget_set_userdata(ui_widget_t widget, void *userdata);
  */
 void *ui_widget_get_userdata(ui_widget_t widget);
 
-ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, bool loop);
+ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished_callback anim_finished_cb, bool loop);
 
 ui_error_t ui_widget_stop_anim(ui_widget_t widget);
 

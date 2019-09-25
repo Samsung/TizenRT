@@ -38,6 +38,7 @@
 #include "ui_widget_internal.h"
 #include "ui_window_internal.h"
 #include "ui_commons_internal.h"
+#include "ui_animation_internal.h"
 #include "ui_renderer.h"
 #include "dal/ui_dal.h"
 
@@ -70,6 +71,7 @@ static ui_widget_body_t *g_quick_panel_info[UI_QUICK_PANEL_TYPE_NUM];
 
 static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt);
 static void _ui_call_tween_finished_cb(void *userdata);
+static void _ui_call_anim_finished_cb(void *userdata);
 static void *_ui_core_thread_loop(void *param);
 static bool _ui_core_quick_panel_visible(void);
 
@@ -202,6 +204,7 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 {
 	int iter;
 	ui_widget_body_t *child;
+	ui_anim_body_t *anim;
 
 	if (!widget) {
 		UI_LOGE("Error: widget is null!\n");
@@ -223,9 +226,14 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 		}
 	}
 
-	if (widget->anim_cb) {
-		if (widget->anim_cb((ui_widget_t)widget, dt)) {
-			widget->anim_cb = UI_NULL;
+	anim = (ui_anim_body_t *)widget->anim;
+
+	if (anim) {
+		if (anim->func((ui_widget_t)widget, (ui_anim_t)anim, &dt)) {
+			widget->anim = UI_NULL;
+			if (ui_request_callback(_ui_call_anim_finished_cb, widget) != UI_OK) {
+				UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
+			}
 		}
 	}
 
@@ -304,6 +312,22 @@ static void _ui_call_tween_finished_cb(void *userdata)
 	if (body && body->tween_info.tween_finished_cb) {
 		body->tween_info.tween_finished_cb((ui_widget_t)body);
 	}
+}
+
+static void _ui_call_anim_finished_cb(void *userdata)
+{
+	ui_widget_body_t *body;
+
+	if (!userdata) {
+		UI_LOGE("error: Invalid Parameter!\n");
+		return;
+	}
+
+	body = (ui_widget_body_t *)userdata;
+	if (body && body->anim_finished_cb) {
+		body->anim_finished_cb((ui_widget_t)body);
+	}
+	body->anim_finished_cb = UI_NULL;
 }
 
 static void _ui_redraw(uint32_t dt)

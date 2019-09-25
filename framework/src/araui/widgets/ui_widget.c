@@ -98,6 +98,7 @@ typedef struct {
 typedef struct {
 	ui_widget_body_t *body;
 	ui_anim_t *anim;
+	anim_finished_callback anim_finished_cb;
 } ui_set_anim_info_t;
 
 static void _ui_widget_set_visible_func(void *userdata);
@@ -106,7 +107,6 @@ static void _ui_widget_set_size_func(void *userdata);
 static void _ui_widget_tween_moveto_func(void *userdata);
 static void _ui_widget_tween_move_func(ui_widget_t widget, uint32_t t);
 static void _ui_widget_play_anim(void *userdata);
-static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t);
 static void _ui_widget_stop_anim(void *userdata);
 static void _ui_widget_pause_anim(void *userdata);
 static void _ui_widget_resume_anim(void *userdata);
@@ -1008,7 +1008,7 @@ void *ui_widget_get_userdata(ui_widget_t widget)
 	return body->userdata;
 }
 
-ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, bool loop)
+ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished_callback anim_finished_cb, bool loop)
 {
 	ui_set_anim_info_t *info;
 
@@ -1028,6 +1028,7 @@ ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, bool loop)
 	memset(info, 0, sizeof(ui_set_anim_info_t));
 	info->body = (ui_widget_body_t *)widget;
 	info->anim = (ui_anim_t *)anim;
+	info->anim_finished_cb = anim_finished_cb;
 
 	if (ui_request_callback(_ui_widget_play_anim, info)) {
 		UI_FREE(info);
@@ -1042,7 +1043,7 @@ static void _ui_widget_play_anim(void *userdata)
 	ui_set_anim_info_t *info;
 	ui_widget_body_t *body;
 
-	if (!userdata || !((ui_set_anim_info_t *)userdata)->body || !((ui_set_anim_info_t *)userdata)->anim) {
+	if (!userdata) {
 		UI_LOGE("error: Invalid parameter!\n");
 		return;
 	}
@@ -1050,25 +1051,8 @@ static void _ui_widget_play_anim(void *userdata)
 	info = (ui_set_anim_info_t *)userdata;
 	body = (ui_widget_body_t *)info->body;
 
-	body->anim_cb = _ui_widget_play_anim_func;
-	
+	body->anim_finished_cb = info->anim_finished_cb;
 	body->anim = info->anim;
-}
-
-static bool _ui_widget_play_anim_func(ui_widget_t widget, uint32_t t)
-{
-	ui_widget_body_t *body;
-	ui_anim_body_t *anim;
-	ui_anim_t *item;
-
-	if (!widget) {
-		return UI_INVALID_PARAM;
-	}
-
-	body = (ui_widget_body_t *)widget;
-	anim = (ui_anim_body_t *)body->anim;
-
-	return anim->func(widget, (ui_anim_t)body->anim, &t);
 }
 
 ui_error_t ui_widget_stop_anim(ui_widget_t widget)
