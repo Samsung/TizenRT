@@ -158,36 +158,36 @@ void ui_renderer_load_identity(void)
 
 void ui_renderer_translate(float x, float y)
 {
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&(ui_mat3_t) {
+	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
 		.m = {
 			{ 1.0f, 0.0f, x },
 			{ 0.0f, 1.0f, y },
 			{ 0.0f, 0.0f, 1.0f }
 		}
-	}, &g_rc.tm_stack[g_rc.sp]);
+	});
 }
 
 void ui_renderer_rotate(int32_t deg)
 {
 	float rad = (deg * UI_RENDERER_PI) / 180.0f;
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&(ui_mat3_t) {
+	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
 		.m = {
 			{ cosf(rad), -sinf(rad), 0.0f },
 			{ sinf(rad), cosf(rad), 0.0f },
 			{ 0.0f, 0.0f, 1.0f }
 		}
-	}, &g_rc.tm_stack[g_rc.sp]);
+	});
 }
 
 void ui_renderer_scale(float x, float y)
 {
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&(ui_mat3_t) {
+	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
 		.m = {
 			{ x, 0.0f, 0.0f },
 			{ 0.0f, y, 0.0f },
 			{ 0.0f, 0.0f, 1.0f }
 		}
-	}, &g_rc.tm_stack[g_rc.sp]);
+	});
 }
 
 void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_pixel_format_t pf)
