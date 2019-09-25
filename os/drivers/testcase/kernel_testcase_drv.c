@@ -207,7 +207,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 
 		clock_ticks2time(comparison_tick - base_tick, &result_time);
 		if (result_time.tv_sec != 1) {
-			dbg("clock_abstime2ticks failed. %d.%d sec is not 1 sec.\n", result_time.tv_sec, result_time.tv_nsec);
+			dbg("clock_abstime2ticks failed. %d.%ld sec is not 1 sec.\n", result_time.tv_sec, result_time.tv_nsec);
 			ret = ERROR;
 			break;
 		}
