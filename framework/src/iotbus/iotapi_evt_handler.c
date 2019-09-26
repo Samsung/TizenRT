@@ -241,7 +241,7 @@ int iotapi_insert(iotapi_elem * item)
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == IOTAPI_QUEUE_SIZE) {
 		pthread_mutex_unlock(&g_ia_lock);
-		ret = -1;
+		return -1;
 	}
 	if (g_ia_evt_size == 0)
 		mode = 0;
@@ -272,7 +272,7 @@ int iotapi_remove(iotapi_elem * item)
 	pthread_mutex_lock(&g_ia_lock);
 	if (g_ia_evt_size == 0) {
 		pthread_mutex_unlock(&g_ia_lock);
-		ret = -1;
+		return -1;
 	}
 	g_ia_msg_queue[1].type = IOTAPI_MESSAGE_QUEUE_REMOVE;
 	g_ia_msg_queue[1].evt.fd = item->fd;
