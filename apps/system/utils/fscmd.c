@@ -828,7 +828,7 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 
 			ret = handler(fullpath, &buf, NULL);
 			if (ret != OK) {
-				FSCMD_OUTPUT("handler is failed at %d\n", fullpath);
+				FSCMD_OUTPUT("handler is failed at %s\n", fullpath);
 				fscmd_free(fullpath);
 				closedir(dirp);
 				return ERROR;
@@ -1040,6 +1040,7 @@ static int delete_entry(const char *fullpath)
 			ret = delete_entry(entrypath);
 			if (ret != OK) {
 				FSCMD_OUTPUT("delete_entry() failed with %s\n", entrypath);
+				closedir(dirp);
 				fscmd_free(entrypath);
 				return ret;
 			}
@@ -1048,6 +1049,7 @@ static int delete_entry(const char *fullpath)
 		ret = rmdir(fullpath);
 		if (ret != OK) {
 			FSCMD_OUTPUT("rmdir failed with %s\n", fullpath);
+			closedir(dirp);
 			return ret;
 		}
 
@@ -1126,7 +1128,7 @@ static int tash_rmdir(int argc, char **args)
 #endif
 static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
-	printf("%6ld %8ld %8ld  %8ld %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
+	printf("%6u %8d %8d  %8d %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
 
 	return OK;
 }
@@ -1250,7 +1252,7 @@ static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs
 
 	usedlabel = labels[which];
 
-	printf("%-10s %6ld%c %8ld%c  %8ld%c %s\n", get_fstype(statbuf), size, sizelabel, used, usedlabel, free, freelabel, mountpoint);
+	printf("%-10s %6u%c %8u%c  %8u%c %s\n", get_fstype(statbuf), size, sizelabel, used, usedlabel, free, freelabel, mountpoint);
 
 	return OK;
 }
