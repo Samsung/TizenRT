@@ -60,6 +60,7 @@ typedef struct {
  * @brief Graphics common functions
  */
 ui_vec3_t ui_mat3_vec3_multiply(ui_mat3_t *mat, ui_vec3_t *vec);
+ui_mat3_t ui_mat3_identity(void);
 ui_mat3_t ui_mat3_mat3_multiply(ui_mat3_t *left, ui_mat3_t *right);
 float ui_get_weighted_value(float from, float to, float weight);
 
@@ -69,9 +70,9 @@ float ui_get_weighted_value(float from, float to, float weight);
 void ui_renderer_push_matrix(void);
 void ui_renderer_pop_matrix(void);
 void ui_renderer_load_identity(void);
-void ui_renderer_translate(float x, float y);
-void ui_renderer_rotate(int32_t deg);
-void ui_renderer_scale(float x, float y);
+void ui_renderer_translate(ui_mat3_t *parent_mat, ui_mat3_t *mat, float x, float y);
+void ui_renderer_rotate(ui_mat3_t *mat, int32_t deg);
+void ui_renderer_scale(ui_mat3_t *mat, float x, float y);
 void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_pixel_format_t pf);
 
 /**
@@ -81,10 +82,10 @@ void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_
  * - ui_render_{geometry}_uv: Render geometry with texture uv.
  * - ui_render_{geometry}_col_uv: Render geometry with multiply of texture uv and color gradient.
  */
-void ui_render_triangle_uv(
+void ui_render_triangle_uv(ui_mat3_t *trans_mat,
 	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3,
 	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3);
-void ui_render_quad_uv(
+void ui_render_quad_uv(ui_mat3_t *trans_mat,
 	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
 	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4);
 

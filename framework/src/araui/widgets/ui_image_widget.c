@@ -104,7 +104,7 @@ static void _ui_image_widget_set_image_func(void *userdata)
 	info->body->uv[UV_BOTTOM_RIGHT] = (ui_uv_t){ .u = 1.0f, .v = 1.0f };
 	info->body->uv[UV_TOP_RIGHT] = (ui_uv_t){ .u = 1.0f, .v = 0.0f };
 
-	ui_window_add_redraw_list(info->body->base.global_rect);
+	info->body->base.update_flag = true;
 
 	UI_FREE(info);
 }
@@ -123,7 +123,6 @@ static void ui_image_widget_render_func(ui_widget_t widget, uint32_t dt)
 	}
 
 	body = (ui_image_widget_body_t *)widget;
-
 	if (body->image) {
 		ui_renderer_set_texture(body->image->buf, body->image->width, body->image->height, body->image->pixel_format);
 
@@ -148,7 +147,7 @@ static void ui_image_widget_render_func(ui_widget_t widget, uint32_t dt)
 			1.0f
 		};
 
-		ui_render_quad_uv(v1, v2, v3, v4, body->uv[0], body->uv[1], body->uv[2], body->uv[3]);
+		ui_render_quad_uv(&body->base.trans_mat, v1, v2, v3, v4, body->uv[0], body->uv[1], body->uv[2], body->uv[3]);
 
 		ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
 	}

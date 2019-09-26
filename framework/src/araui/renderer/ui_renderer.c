@@ -47,9 +47,6 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2);
  * Private types
  ****************************************************************************/
 typedef struct {
-	ui_mat3_t tm_stack[MAX_RENDERER_MATRIX_STACK]; //!< Transform Matrix
-	int32_t   sp; //!< TM stack pointer
-
 	uint8_t          *texture;
 	int32_t           tex_width;
 	int32_t           tex_height;
@@ -58,9 +55,6 @@ typedef struct {
 
 //!< Render context (global instance)
 ui_render_context_t g_rc = {
-	.tm_stack = { [0].m = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } } },
-	.sp = 0,
-
 	.texture = NULL,
 	.tex_width = 0,
 	.tex_height = 0,
@@ -137,28 +131,9 @@ ui_mat3_t ui_mat3_mat3_multiply(ui_mat3_t *left, ui_mat3_t *right)
 	return result;
 }
 
-void ui_renderer_push_matrix(void)
+void ui_renderer_translate(ui_mat3_t *parent_mat, ui_mat3_t *mat, float x, float y)
 {
-	g_rc.sp++;
-	UI_ASSERT(g_rc.sp < MAX_RENDERER_MATRIX_STACK);
-
-	g_rc.tm_stack[g_rc.sp] = g_rc.tm_stack[g_rc.sp - 1];
-}
-
-void ui_renderer_pop_matrix(void)
-{
-	g_rc.sp--;
-	UI_ASSERT(g_rc.sp >= 0);
-}
-
-void ui_renderer_load_identity(void)
-{
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_identity();
-}
-
-void ui_renderer_translate(float x, float y)
-{
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
+	*mat = ui_mat3_mat3_multiply(parent_mat, &(ui_mat3_t) {
 		.m = {
 			{ 1.0f, 0.0f, x },
 			{ 0.0f, 1.0f, y },
@@ -167,10 +142,11 @@ void ui_renderer_translate(float x, float y)
 	});
 }
 
-void ui_renderer_rotate(int32_t deg)
+void ui_renderer_rotate(ui_mat3_t *mat, int32_t deg)
 {
 	float rad = (deg * UI_RENDERER_PI) / 180.0f;
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
+
+	*mat = ui_mat3_mat3_multiply(mat, &(ui_mat3_t) {
 		.m = {
 			{ cosf(rad), -sinf(rad), 0.0f },
 			{ sinf(rad), cosf(rad), 0.0f },
@@ -179,9 +155,9 @@ void ui_renderer_rotate(int32_t deg)
 	});
 }
 
-void ui_renderer_scale(float x, float y)
+void ui_renderer_scale(ui_mat3_t *mat, float x, float y)
 {
-	g_rc.tm_stack[g_rc.sp] = ui_mat3_mat3_multiply(&g_rc.tm_stack[g_rc.sp], &(ui_mat3_t) {
+	*mat = ui_mat3_mat3_multiply(mat, &(ui_mat3_t) {
 		.m = {
 			{ x, 0.0f, 0.0f },
 			{ 0.0f, y, 0.0f },
@@ -205,7 +181,7 @@ void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_
 	}
 }
 
-void ui_render_triangle_uv(
+void ui_render_triangle_uv(ui_mat3_t *trans_mat,
 	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3,
 	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3)
 {
@@ -236,9 +212,9 @@ void ui_render_triangle_uv(
 	float dZdY_V1V2;
 	float denom;
 
-	v1 = ui_mat3_vec3_multiply(&UI_TM, &v1);
-	v2 = ui_mat3_vec3_multiply(&UI_TM, &v2);
-	v3 = ui_mat3_vec3_multiply(&UI_TM, &v3);
+	v1 = ui_mat3_vec3_multiply(trans_mat, &v1);
+	v2 = ui_mat3_vec3_multiply(trans_mat, &v2);
+	v3 = ui_mat3_vec3_multiply(trans_mat, &v3);
 
 	if (v1.y > v2.y) {
 		UI_SWAP(v1, v2);
@@ -543,12 +519,12 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 	}
 }
 
-void ui_render_quad_uv(
+void ui_render_quad_uv(ui_mat3_t *trans_mat,
 	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
 	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4)
 {
-	ui_render_triangle_uv(v1, v2, v3, uv1, uv2, uv3);
-	ui_render_triangle_uv(v1, v3, v4, uv1, uv3, uv4);
+	ui_render_triangle_uv(trans_mat, v1, v2, v3, uv1, uv2, uv3);
+	ui_render_triangle_uv(trans_mat, v1, v3, v4, uv1, uv3, uv4);
 }
 
 /****************************************************************************

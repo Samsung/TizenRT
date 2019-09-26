@@ -101,6 +101,19 @@ typedef struct {
 	anim_finished_callback anim_finished_cb;
 } ui_set_anim_info_t;
 
+/**
+ * @brief Matrix multiplication macros
+ */
+#define UI_GET_TRANS_X(widget, x, y) ( \
+	((widget)->trans_mat.m[0][0] * (x)) + \
+	((widget)->trans_mat.m[0][1] * (y)) + \
+	((widget)->trans_mat.m[0][2]))
+
+#define UI_GET_TRANS_Y(widget, x, y) ( \
+	((widget)->trans_mat.m[1][0] * (x)) + \
+	((widget)->trans_mat.m[1][1] * (y)) + \
+	((widget)->trans_mat.m[1][2]))
+
 static void _ui_widget_set_visible_func(void *userdata);
 static void _ui_widget_set_position_func(void *userdata);
 static void _ui_widget_set_size_func(void *userdata);
@@ -165,7 +178,7 @@ ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 
 	// Add update region to present newly located region
 	if (ui_window_add_redraw_list(widget->global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add update list!\n");
+		UI_LOGE("error: failed to add redraw list!\n");
 		return UI_OPERATION_FAIL;
 	}
 
@@ -218,9 +231,7 @@ static void _ui_widget_set_visible_func(void *userdata)
 	body = (ui_widget_body_t *)info->body;
 	body->visible = info->visible;
 
-	if (ui_window_add_redraw_list(body->global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add to the update list!\n");
-	}
+	body->update_flag = true;
 
 	UI_FREE(info);
 }
@@ -269,7 +280,7 @@ static void _ui_widget_set_position_func(void *userdata)
 	body->local_rect.x = info->coord.x;
 	body->local_rect.y = info->coord.y;
 
-	ui_widget_update_position_info(body);
+	body->update_flag = true;
 
 	UI_FREE(info);
 }
@@ -831,6 +842,7 @@ void ui_widget_init(ui_widget_body_t *body, int32_t width, int32_t height)
 	body->local_rect.height = height;
 	body->scale_x = 1.0f;
 	body->scale_y = 1.0f;
+	body->trans_mat = ui_mat3_identity();
 
 	vec_init(&body->children);
 }
@@ -978,8 +990,7 @@ static void _ui_widget_set_rotation_func(void *userdata)
 
 	info->body->degree = info->degree;
 
-	// todo: Add redraw list
-	ui_window_add_redraw_list((ui_rect_t){ 0, 0, 360, 360 });
+	info->body->update_flag = true;
 
 	UI_FREE(info);
 }
@@ -1084,3 +1095,23 @@ static void _ui_widget_resume_anim(void *userdata)
 {
 
 }
+
+void ui_widget_update_global_rect(ui_widget_body_t *widget)
+{
+	ui_vec3_t vertex[4];
+
+	vertex[0].x = UI_GET_TRANS_X(widget, - widget->pivot_x, - widget->pivot_y);
+	vertex[0].y = UI_GET_TRANS_Y(widget, - widget->pivot_x, - widget->pivot_y);
+	vertex[1].x = UI_GET_TRANS_X(widget, - widget->pivot_x + widget->local_rect.width, - widget->pivot_y);
+	vertex[1].y = UI_GET_TRANS_Y(widget, - widget->pivot_x + widget->local_rect.width, - widget->pivot_y);
+	vertex[2].x = UI_GET_TRANS_X(widget, - widget->pivot_x, - widget->pivot_y + widget->local_rect.height);
+	vertex[2].y = UI_GET_TRANS_Y(widget, - widget->pivot_x, - widget->pivot_y + widget->local_rect.height);
+	vertex[3].x = UI_GET_TRANS_X(widget, - widget->pivot_x + widget->local_rect.width, - widget->pivot_y + widget->local_rect.height);
+	vertex[3].y = UI_GET_TRANS_Y(widget, - widget->pivot_x + widget->local_rect.width, - widget->pivot_y + widget->local_rect.height);
+
+	widget->global_rect.x = (int32_t)UI_MIN4(vertex[0].x, vertex[1].x, vertex[2].x, vertex[3].x);
+	widget->global_rect.y = (int32_t)UI_MIN4(vertex[0].y, vertex[1].y, vertex[2].y, vertex[3].y);
+	widget->global_rect.width = (int32_t)UI_MAX4(vertex[0].x, vertex[1].x, vertex[2].x, vertex[3].x) - widget->global_rect.x;
+	widget->global_rect.height = (int32_t)UI_MAX4(vertex[0].y, vertex[1].y, vertex[2].y, vertex[3].y) - widget->global_rect.y;
+}
+

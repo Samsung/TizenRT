@@ -94,6 +94,8 @@ struct ui_widget_body_s {
 	int32_t degree;
 	int32_t pivot_x;
 	int32_t pivot_y;
+	ui_mat3_t trans_mat;
+	bool update_flag;
 
 	struct ui_widget_body_s *parent;
 	vec_void_t children;
@@ -237,6 +239,7 @@ bool ui_widget_check_widget_type(ui_widget_t widget, ui_widget_type_t type);
 ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget);
 void ui_widget_init(ui_widget_body_t *body, int32_t width, int32_t height);
 void ui_widget_deinit(ui_widget_body_t *body);
+void ui_widget_update_global_rect(ui_widget_body_t *widget);
 ui_error_t ui_widget_destroy_sync(ui_widget_body_t *body);
 
 ui_widget_body_t *ui_widget_search_by_coord(ui_widget_body_t *widget, ui_coord_t coord);
