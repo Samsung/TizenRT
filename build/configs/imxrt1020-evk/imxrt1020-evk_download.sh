@@ -237,6 +237,12 @@ ALL)
 		if [[ "$part" == "userfs" ]];then
 			continue
 		fi
+		if [[ "$part" == "ftl" ]];then
+			continue
+		fi
+		if [[ "$part" == "config" ]];then
+			continue
+		fi
 		gidx=$(get_partition_index $part)
 		flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
 		exe_name=$(get_executable_name ${parts[$gidx]})
