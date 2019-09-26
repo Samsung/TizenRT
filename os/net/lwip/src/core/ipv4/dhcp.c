@@ -77,9 +77,11 @@
  *
  */
 
+#include <tinyara/kmalloc.h>
+
 #include <net/lwip/opt.h>
 
-#if LWIP_IPV4 && LWIP_DHCP		/* don't build if not configured for use in lwipopts.h */
+#if LWIP_IPV4 && LWIP_DHCP /* don't build if not configured for use in lwipopts.h */
 
 #include <net/lwip/stats.h>
 #include <net/lwip/mem.h>
@@ -99,7 +101,7 @@
  * LWIP_RAND() (this overrides DHCP_GLOBAL_XID)
  */
 #ifndef DHCP_CREATE_RAND_XID
-#define DHCP_CREATE_RAND_XID        1
+#define DHCP_CREATE_RAND_XID 1
 #endif
 
 /** Default for DHCP_GLOBAL_XID is 0xABCD0000
@@ -108,17 +110,17 @@
  *  \#define DHCP_GLOBAL_XID rand()
  */
 #ifdef DHCP_GLOBAL_XID_HEADER
-#include DHCP_GLOBAL_XID_HEADER	/* include optional starting XID generation prototypes */
+#include DHCP_GLOBAL_XID_HEADER /* include optional starting XID generation prototypes */
 #endif
 
 /** DHCP_OPTION_MAX_MSG_SIZE is set to the MTU
  * MTU is checked to be big enough in dhcp_start */
-#define DHCP_MAX_MSG_LEN(netif)        (netif->mtu)
-#define DHCP_MAX_MSG_LEN_MIN_REQUIRED  576
+#define DHCP_MAX_MSG_LEN(netif) (netif->mtu)
+#define DHCP_MAX_MSG_LEN_MIN_REQUIRED 576
 /** Minimum length for reply before packet is parsed */
-#define DHCP_MIN_REPLY_LEN             44
+#define DHCP_MIN_REPLY_LEN 44
 
-#define REBOOT_TRIES                2
+#define REBOOT_TRIES 2
 
 #if LWIP_DNS && LWIP_DHCP_MAX_DNS_SERVERS
 #if DNS_MAX_SERVERS > LWIP_DHCP_MAX_DNS_SERVERS
@@ -147,11 +149,11 @@ enum dhcp_option_idx {
 #if LWIP_DHCP_PROVIDE_DNS_SERVERS
 	DHCP_OPTION_IDX_DNS_SERVER,
 	DHCP_OPTION_IDX_DNS_SERVER_LAST = DHCP_OPTION_IDX_DNS_SERVER + LWIP_DHCP_PROVIDE_DNS_SERVERS - 1,
-#endif							/* LWIP_DHCP_PROVIDE_DNS_SERVERS */
+#endif /* LWIP_DHCP_PROVIDE_DNS_SERVERS */
 #if LWIP_DHCP_GET_NTP_SRV
 	DHCP_OPTION_IDX_NTP_SERVER,
 	DHCP_OPTION_IDX_NTP_SERVER_LAST = DHCP_OPTION_IDX_NTP_SERVER + LWIP_DHCP_MAX_NTP_SERVERS - 1,
-#endif							/* LWIP_DHCP_GET_NTP_SRV */
+#endif /* LWIP_DHCP_GET_NTP_SRV */
 	DHCP_OPTION_IDX_MAX
 };
 
@@ -168,24 +170,30 @@ static u8_t dhcp_discover_request_options[] = {
 	DHCP_OPTION_ROUTER,
 	DHCP_OPTION_BROADCAST
 #if LWIP_DHCP_PROVIDE_DNS_SERVERS
-	, DHCP_OPTION_DNS_SERVER
-#endif							/* LWIP_DHCP_PROVIDE_DNS_SERVERS */
+	,
+	DHCP_OPTION_DNS_SERVER
+#endif /* LWIP_DHCP_PROVIDE_DNS_SERVERS */
 #if LWIP_DHCP_GET_NTP_SRV
-	, DHCP_OPTION_NTP
-#endif							/* LWIP_DHCP_GET_NTP_SRV */
+	,
+	DHCP_OPTION_NTP
+#endif /* LWIP_DHCP_GET_NTP_SRV */
 };
 
 #ifdef DHCP_GLOBAL_XID
 static u32_t xid;
 static u8_t xid_initialised;
-#endif							/* DHCP_GLOBAL_XID */
+#endif /* DHCP_GLOBAL_XID */
 
-#define dhcp_option_given(dhcp, idx)          (dhcp_rx_options_given[idx] != 0)
-#define dhcp_got_option(dhcp, idx)            (dhcp_rx_options_given[idx] = 1)
-#define dhcp_clear_option(dhcp, idx)          (dhcp_rx_options_given[idx] = 0)
-#define dhcp_clear_all_options(dhcp)          (memset(dhcp_rx_options_given, 0, sizeof(dhcp_rx_options_given)))
-#define dhcp_get_option_value(dhcp, idx)      (dhcp_rx_options_val[idx])
+#define dhcp_option_given(dhcp, idx) (dhcp_rx_options_given[idx] != 0)
+#define dhcp_got_option(dhcp, idx) (dhcp_rx_options_given[idx] = 1)
+#define dhcp_clear_option(dhcp, idx) (dhcp_rx_options_given[idx] = 0)
+#define dhcp_clear_all_options(dhcp) (memset(dhcp_rx_options_given, 0, sizeof(dhcp_rx_options_given)))
+#define dhcp_get_option_value(dhcp, idx) (dhcp_rx_options_val[idx])
 #define dhcp_set_option_value(dhcp, idx, val) (dhcp_rx_options_val[idx] = (val))
+
+#if LWIP_NETIF_HOSTNAME
+#define DHCP_HOSTNAME_DEFAULT "TizenRT"
+#endif
 
 static struct udp_pcb *dhcp_pcb;
 static u8_t dhcp_pcb_refcount;
@@ -196,7 +204,7 @@ static err_t dhcp_select(struct netif *netif);
 static void dhcp_bind(struct netif *netif);
 #if DHCP_DOES_ARP_CHECK
 static err_t dhcp_decline(struct netif *netif);
-#endif							/* DHCP_DOES_ARP_CHECK */
+#endif /* DHCP_DOES_ARP_CHECK */
 static err_t dhcp_rebind(struct netif *netif);
 static err_t dhcp_reboot(struct netif *netif);
 static void dhcp_set_state(struct dhcp *dhcp, u8_t new_state);
@@ -222,7 +230,7 @@ static void dhcp_option_short(struct dhcp *dhcp, u16_t value);
 static void dhcp_option_long(struct dhcp *dhcp, u32_t value);
 #if LWIP_NETIF_HOSTNAME
 static void dhcp_option_hostname(struct dhcp *dhcp, struct netif *netif);
-#endif							/* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 /* always add the DHCP options trailer to end and pad */
 static void dhcp_option_trailer(struct dhcp *dhcp);
 
@@ -280,7 +288,7 @@ static void dhcp_handle_nak(struct netif *netif)
 {
 	struct dhcp *dhcp = netif_dhcp_data(netif);
 
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_handle_nak(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_handle_nak(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	/* Change to a defined state - set this before assigning the address
 	   to ensure the callback can use dhcp_supplied_address() */
 	dhcp_set_state(dhcp, DHCP_STATE_BACKING_OFF);
@@ -305,7 +313,7 @@ static void dhcp_check(struct netif *netif)
 	struct dhcp *dhcp = netif_dhcp_data(netif);
 	err_t result;
 	u16_t msecs;
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_check(netif=%p) %c%c\n", (void *)netif, (s16_t) netif->name[0], (s16_t) netif->name[1]));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_check(netif=%p) %c%c\n", (void *)netif, (s16_t)netif->name[0], (s16_t)netif->name[1]));
 	dhcp_set_state(dhcp, DHCP_STATE_CHECKING);
 	/* create an ARP query for the offered IP address, expecting that no host
 	   responds, as the IP address should not be in use. */
@@ -320,7 +328,7 @@ static void dhcp_check(struct netif *netif)
 	dhcp->request_timeout = (msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS;
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_check(): set request timeout %" U16_F " msecs\n", msecs));
 }
-#endif							/* DHCP_DOES_ARP_CHECK */
+#endif /* DHCP_DOES_ARP_CHECK */
 
 /**
  * Remember the configuration offered by a DHCP server.
@@ -331,7 +339,7 @@ static void dhcp_handle_offer(struct netif *netif)
 {
 	struct dhcp *dhcp = netif_dhcp_data(netif);
 
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_handle_offer(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_handle_offer(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	/* obtain the server address */
 	if (dhcp_option_given(dhcp, DHCP_OPTION_IDX_SERVER_ID)) {
 		ip_addr_set_ip4_u32(&dhcp->server_ip_addr, lwip_htonl(dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_SERVER_ID)));
@@ -361,7 +369,7 @@ static err_t dhcp_select(struct netif *netif)
 	u16_t msecs;
 	u8_t i;
 
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_select(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_select(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	dhcp_set_state(dhcp, DHCP_STATE_REQUESTING);
 
 	/* create and initialize the DHCP message header */
@@ -384,7 +392,7 @@ static err_t dhcp_select(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 		dhcp_option_hostname(dhcp, netif);
-#endif							/* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 
 		dhcp_option_trailer(dhcp);
 		/* shrink the pbuf to the actual content length */
@@ -512,7 +520,7 @@ static void dhcp_timeout(struct netif *netif)
 			/* bind the interface to the offered address */
 			dhcp_bind(netif);
 		}
-#endif							/* DHCP_DOES_ARP_CHECK */
+#endif /* DHCP_DOES_ARP_CHECK */
 	} else if (dhcp->state == DHCP_STATE_REBOOTING) {
 		if (dhcp->tries < REBOOT_TRIES) {
 			dhcp_reboot(netif);
@@ -580,7 +588,7 @@ static void dhcp_handle_ack(struct netif *netif)
 
 #if LWIP_DHCP_PROVIDE_DNS_SERVERS || LWIP_DHCP_GET_NTP_SRV
 	u8_t n;
-#endif							/* LWIP_DHCP_PROVIDE_DNS_SERVERS || LWIP_DHCP_GET_NTP_SRV */
+#endif /* LWIP_DHCP_PROVIDE_DNS_SERVERS || LWIP_DHCP_GET_NTP_SRV */
 #if LWIP_DHCP_GET_NTP_SRV
 	ip4_addr_t ntp_server_addrs[LWIP_DHCP_MAX_NTP_SERVERS];
 #endif
@@ -590,7 +598,7 @@ static void dhcp_handle_ack(struct netif *netif)
 	ip4_addr_set_zero(&dhcp->offered_gw_addr);
 #if LWIP_DHCP_BOOTP_FILE
 	ip4_addr_set_zero(&dhcp->offered_si_addr);
-#endif							/* LWIP_DHCP_BOOTP_FILE */
+#endif /* LWIP_DHCP_BOOTP_FILE */
 
 	/* lease time given? */
 	if (dhcp_option_given(dhcp, DHCP_OPTION_IDX_LEASE_TIME)) {
@@ -622,7 +630,7 @@ static void dhcp_handle_ack(struct netif *netif)
 	/* copy boot server address,
 	   boot file name copied in dhcp_parse_reply if not overloaded */
 	ip4_addr_copy(dhcp->offered_si_addr, dhcp->msg_in->siaddr);
-#endif							/* LWIP_DHCP_BOOTP_FILE */
+#endif /* LWIP_DHCP_BOOTP_FILE */
 
 	/* subnet mask given? */
 	if (dhcp_option_given(dhcp, DHCP_OPTION_IDX_SUBNET_MASK)) {
@@ -643,7 +651,7 @@ static void dhcp_handle_ack(struct netif *netif)
 		ip4_addr_set_u32(&ntp_server_addrs[n], lwip_htonl(dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_NTP_SERVER + n)));
 	}
 	dhcp_set_ntp_servers(n, ntp_server_addrs);
-#endif							/* LWIP_DHCP_GET_NTP_SRV */
+#endif /* LWIP_DHCP_GET_NTP_SRV */
 
 #if LWIP_DHCP_PROVIDE_DNS_SERVERS
 	/* DNS servers */
@@ -652,7 +660,7 @@ static void dhcp_handle_ack(struct netif *netif)
 		ip_addr_set_ip4_u32(&dns_addr, lwip_htonl(dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_DNS_SERVER + n)));
 		dns_setserver(n, &dns_addr);
 	}
-#endif							/* LWIP_DHCP_PROVIDE_DNS_SERVERS */
+#endif /* LWIP_DHCP_PROVIDE_DNS_SERVERS */
 }
 
 /**
@@ -694,6 +702,28 @@ void dhcp_cleanup(struct netif *netif)
 	}
 }
 
+#if LWIP_NETIF_HOSTNAME
+void dhcp_hostname(struct netif *netif, char *name)
+{
+	char *name_heap;
+
+	if (netif == NULL || name == NULL) {
+		return;
+	}
+
+	if (netif->hostname != NULL) {
+		kmm_free(netif->hostname);
+		netif->hostname = NULL;
+	}
+
+	name_heap = (char *)kmm_malloc(strlen(name) + 1);
+	strncpy(name_heap, name, strlen(name) + 1);
+	name_heap[strlen(name)] = '\0'; //for safety
+
+	netif_set_hostname(netif, name_heap);
+}
+#endif
+
 /**
  * @ingroup dhcp4
  * Start DHCP negotiation for a network interface.
@@ -712,10 +742,14 @@ err_t dhcp_start(struct netif *netif)
 	struct dhcp *dhcp;
 	err_t result;
 
+#if LWIP_NETIF_HOSTNAME
+	dhcp_hostname(netif, DHCP_HOSTNAME_DEFAULT);
+#endif
+
 	LWIP_ERROR("netif != NULL", (netif != NULL), return ERR_ARG;);
 	LWIP_ERROR("netif is not up, old style port?", netif_is_up(netif), return ERR_ARG;);
 	dhcp = netif_dhcp_data(netif);
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_start(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_start(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 
 	/* check MTU of the netif */
 	if (netif->mtu < DHCP_MAX_MSG_LEN_MIN_REQUIRED) {
@@ -742,7 +776,7 @@ err_t dhcp_start(struct netif *netif)
 		LWIP_ASSERT("reply wasn't freed", dhcp->msg_in == NULL);
 
 		if (dhcp->pcb_allocated != 0) {
-			dhcp_dec_pcb_refcount();	/* free DHCP PCB if not needed any more */
+			dhcp_dec_pcb_refcount(); /* free DHCP PCB if not needed any more */
 		}
 		/* dhcp is cleared below, no need to reset flag */
 	}
@@ -753,7 +787,7 @@ err_t dhcp_start(struct netif *netif)
 
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_start(): starting DHCP configuration\n"));
 
-	if (dhcp_inc_pcb_refcount() != ERR_OK) {	/* ensure DHCP PCB is allocated */
+	if (dhcp_inc_pcb_refcount() != ERR_OK) { /* ensure DHCP PCB is allocated */
 		return ERR_MEM;
 	}
 	dhcp->pcb_allocated = 1;
@@ -764,7 +798,7 @@ err_t dhcp_start(struct netif *netif)
 		dhcp_set_state(dhcp, DHCP_STATE_INIT);
 		return ERR_OK;
 	}
-#endif							/* LWIP_DHCP_CHECK_LINK_UP */
+#endif /* LWIP_DHCP_CHECK_LINK_UP */
 
 	/* (re)start the DHCP negotiation */
 	result = dhcp_discover(netif);
@@ -793,7 +827,7 @@ void dhcp_inform(struct netif *netif)
 
 	LWIP_ERROR("netif != NULL", (netif != NULL), return;);
 
-	if (dhcp_inc_pcb_refcount() != ERR_OK) {	/* ensure DHCP PCB is allocated */
+	if (dhcp_inc_pcb_refcount() != ERR_OK) { /* ensure DHCP PCB is allocated */
 		return;
 	}
 
@@ -819,7 +853,7 @@ void dhcp_inform(struct netif *netif)
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_SERIOUS, ("dhcp_inform: could not allocate DHCP request\n"));
 	}
 
-	dhcp_dec_pcb_refcount();	/* delete DHCP PCB if not needed any more */
+	dhcp_dec_pcb_refcount(); /* delete DHCP PCB if not needed any more */
 }
 
 /** Handle a possible change in the network configuration.
@@ -854,7 +888,7 @@ void dhcp_network_changed(struct netif *netif)
 			autoip_stop(netif);
 			dhcp->autoip_coop_state = DHCP_AUTOIP_COOP_STATE_OFF;
 		}
-#endif							/* LWIP_DHCP_AUTOIP_COOP */
+#endif /* LWIP_DHCP_AUTOIP_COOP */
 		/* ensure we start with short timeouts, even if already discovering */
 		dhcp->tries = 0;
 		dhcp_discover(netif);
@@ -931,7 +965,7 @@ static err_t dhcp_decline(struct netif *netif)
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_decline(): set request timeout %" U16_F " msecs\n", msecs));
 	return result;
 }
-#endif							/* DHCP_DOES_ARP_CHECK */
+#endif /* DHCP_DOES_ARP_CHECK */
 
 /**
  * Start the DHCP process, discover a DHCP server.
@@ -959,6 +993,11 @@ static err_t dhcp_discover(struct netif *netif)
 		for (i = 0; i < LWIP_ARRAYSIZE(dhcp_discover_request_options); i++) {
 			dhcp_option_byte(dhcp, dhcp_discover_request_options[i]);
 		}
+
+#if LWIP_NETIF_HOSTNAME
+		dhcp_option_hostname(dhcp, netif);
+#endif /* LWIP_NETIF_HOSTNAME */
+
 		dhcp_option_trailer(dhcp);
 
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_discover: realloc()ing\n"));
@@ -980,7 +1019,7 @@ static err_t dhcp_discover(struct netif *netif)
 		dhcp->autoip_coop_state = DHCP_AUTOIP_COOP_STATE_ON;
 		autoip_start(netif);
 	}
-#endif							/* LWIP_DHCP_AUTOIP_COOP */
+#endif /* LWIP_DHCP_AUTOIP_COOP */
 	msecs = (dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000;
 	dhcp->request_timeout = (msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS;
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_discover(): set request timeout %" U16_F " msecs\n", msecs));
@@ -1000,7 +1039,7 @@ static void dhcp_bind(struct netif *netif)
 	LWIP_ERROR("dhcp_bind: netif != NULL", (netif != NULL), return;);
 	dhcp = netif_dhcp_data(netif);
 	LWIP_ERROR("dhcp_bind: dhcp != NULL", (dhcp != NULL), return;);
-	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 
 	/* reset time used of lease */
 	dhcp->lease_used = 0;
@@ -1012,7 +1051,7 @@ static void dhcp_bind(struct netif *netif)
 		if (timeout > 0xffff) {
 			timeout = 0xffff;
 		}
-		dhcp->t0_timeout = (u16_t) timeout;
+		dhcp->t0_timeout = (u16_t)timeout;
 		if (dhcp->t0_timeout == 0) {
 			dhcp->t0_timeout = 1;
 		}
@@ -1027,7 +1066,7 @@ static void dhcp_bind(struct netif *netif)
 		if (timeout > 0xffff) {
 			timeout = 0xffff;
 		}
-		dhcp->t1_timeout = (u16_t) timeout;
+		dhcp->t1_timeout = (u16_t)timeout;
 		if (dhcp->t1_timeout == 0) {
 			dhcp->t1_timeout = 1;
 		}
@@ -1041,7 +1080,7 @@ static void dhcp_bind(struct netif *netif)
 		if (timeout > 0xffff) {
 			timeout = 0xffff;
 		}
-		dhcp->t2_timeout = (u16_t) timeout;
+		dhcp->t2_timeout = (u16_t)timeout;
 		if (dhcp->t2_timeout == 0) {
 			dhcp->t2_timeout = 1;
 		}
@@ -1082,7 +1121,7 @@ static void dhcp_bind(struct netif *netif)
 		autoip_stop(netif);
 		dhcp->autoip_coop_state = DHCP_AUTOIP_COOP_STATE_OFF;
 	}
-#endif							/* LWIP_DHCP_AUTOIP_COOP */
+#endif /* LWIP_DHCP_AUTOIP_COOP */
 
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_bind(): IP: 0x%08" X32_F " SN: 0x%08" X32_F " GW: 0x%08" X32_F "\n", ip4_addr_get_u32(&dhcp->offered_ip_addr), ip4_addr_get_u32(&sn_mask), ip4_addr_get_u32(&gw_addr)));
 	/* netif is now bound to DHCP leased address - set this before assigning the address
@@ -1121,7 +1160,7 @@ err_t dhcp_renew(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 		dhcp_option_hostname(dhcp, netif);
-#endif							/* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 
 		/* append DHCP message trailer */
 		dhcp_option_trailer(dhcp);
@@ -1172,7 +1211,7 @@ static err_t dhcp_rebind(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 		dhcp_option_hostname(dhcp, netif);
-#endif							/* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 
 		dhcp_option_trailer(dhcp);
 
@@ -1272,7 +1311,7 @@ err_t dhcp_release(struct netif *netif)
 	ip4_addr_set_zero(&dhcp->offered_gw_addr);
 #if LWIP_DHCP_BOOTP_FILE
 	ip4_addr_set_zero(&dhcp->offered_si_addr);
-#endif							/* LWIP_DHCP_BOOTP_FILE */
+#endif /* LWIP_DHCP_BOOTP_FILE */
 	dhcp->offered_t0_lease = dhcp->offered_t1_renew = dhcp->offered_t2_rebind = 0;
 	dhcp->t1_renew_time = dhcp->t2_rebind_time = dhcp->lease_used = dhcp->t0_timeout = 0;
 
@@ -1324,16 +1363,22 @@ void dhcp_stop(struct netif *netif)
 			autoip_stop(netif);
 			dhcp->autoip_coop_state = DHCP_AUTOIP_COOP_STATE_OFF;
 		}
-#endif							/* LWIP_DHCP_AUTOIP_COOP */
+#endif /* LWIP_DHCP_AUTOIP_COOP */
 
 		LWIP_ASSERT("reply wasn't freed", dhcp->msg_in == NULL);
 		dhcp_set_state(dhcp, DHCP_STATE_OFF);
 
 		if (dhcp->pcb_allocated != 0) {
-			dhcp_dec_pcb_refcount();	/* free DHCP PCB if not needed any more */
+			dhcp_dec_pcb_refcount(); /* free DHCP PCB if not needed any more */
 			dhcp->pcb_allocated = 0;
 		}
 	}
+#if LWIP_NETIF_HOSTNAME
+	if (netif->hostname) {
+		kmm_free(netif->hostname);
+		netif->hostname = NULL;
+	}
+#endif
 }
 
 /*
@@ -1402,14 +1447,14 @@ static void dhcp_option_hostname(struct dhcp *dhcp, struct netif *netif)
 			LWIP_ASSERT("DHCP: hostname is too long!", namelen <= available);
 			len = LWIP_MIN(namelen, available);
 			LWIP_ASSERT("DHCP: hostname is too long!", len <= 0xFF);
-			dhcp_option(dhcp, DHCP_OPTION_HOSTNAME, (u8_t) len);
+			dhcp_option(dhcp, DHCP_OPTION_HOSTNAME, (u8_t)len);
 			while (len--) {
 				dhcp_option_byte(dhcp, *p++);
 			}
 		}
 	}
 }
-#endif							/* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 
 /**
  * Extract the DHCP message and the DHCP options.
@@ -1442,7 +1487,7 @@ static err_t dhcp_parse_reply(struct dhcp *dhcp, struct pbuf *p)
 #if LWIP_DHCP_BOOTP_FILE
 	/* clear boot file name */
 	dhcp->boot_file_name[0] = 0;
-#endif							/* LWIP_DHCP_BOOTP_FILE */
+#endif /* LWIP_DHCP_BOOTP_FILE */
 
 	/* parse options */
 
@@ -1462,7 +1507,7 @@ again:
 	}
 	offset = options_idx;
 	offset_max = options_idx_max;
-	options = (u8_t *) q->payload;
+	options = (u8_t *)q->payload;
 	/* at least 1 byte to read and no end marker, then at least 3 bytes to read? */
 	while ((q != NULL) && (options[offset] != DHCP_OPTION_END) && (offset < offset_max)) {
 		u8_t op = options[offset];
@@ -1474,7 +1519,7 @@ again:
 		if ((offset + 1) < q->len) {
 			len = options[offset + 1];
 		} else {
-			len = (q->next != NULL ? ((u8_t *) q->next->payload)[0] : 0);
+			len = (q->next != NULL ? ((u8_t *)q->next->payload)[0] : 0);
 		}
 		/* LWIP_DEBUGF(DHCP_DEBUG, ("msg_offset=%"U16_F", q->len=%"U16_F, msg_offset, q->len)); */
 		decode_len = len;
@@ -1491,7 +1536,7 @@ again:
 			decode_idx = DHCP_OPTION_IDX_SUBNET_MASK;
 			break;
 		case (DHCP_OPTION_ROUTER):
-			decode_len = 4;		/* only copy the first given router */
+			decode_len = 4; /* only copy the first given router */
 			LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
 			decode_idx = DHCP_OPTION_IDX_ROUTER;
 			break;
@@ -1504,7 +1549,7 @@ again:
 			LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
 			decode_idx = DHCP_OPTION_IDX_DNS_SERVER;
 			break;
-#endif							/* LWIP_DHCP_PROVIDE_DNS_SERVERS */
+#endif /* LWIP_DHCP_PROVIDE_DNS_SERVERS */
 		case (DHCP_OPTION_LEASE_TIME):
 			LWIP_ERROR("len == 4", len == 4, return ERR_VAL;);
 			decode_idx = DHCP_OPTION_IDX_LEASE_TIME;
@@ -1518,7 +1563,7 @@ again:
 			LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
 			decode_idx = DHCP_OPTION_IDX_NTP_SERVER;
 			break;
-#endif							/* LWIP_DHCP_GET_NTP_SRV */
+#endif /* LWIP_DHCP_GET_NTP_SRV */
 		case (DHCP_OPTION_OVERLOAD):
 			LWIP_ERROR("len == 1", len == 1, return ERR_VAL;);
 			/* decode overload only in options, not in file/sname: invalid packet */
@@ -1543,7 +1588,7 @@ again:
 			break;
 		default:
 			decode_len = 0;
-			LWIP_DEBUGF(DHCP_DEBUG, ("skipping option %" U16_F " in options\n", (u16_t) op));
+			LWIP_DEBUGF(DHCP_DEBUG, ("skipping option %" U16_F " in options\n", (u16_t)op));
 			break;
 		}
 		offset += len + 2;
@@ -1582,7 +1627,7 @@ decode_next:
 			if ((offset < offset_max) && offset_max) {
 				q = q->next;
 				LWIP_ASSERT("next pbuf was null", q);
-				options = (u8_t *) q->payload;
+				options = (u8_t *)q->payload;
 			} else {
 				/* We've run out of bytes, probably no end marker. Don't proceed. */
 				break;
@@ -1617,7 +1662,7 @@ decode_next:
 			/* make sure the string is really NULL-terminated */
 			dhcp->boot_file_name[DHCP_FILE_LEN - 1] = 0;
 		}
-#endif							/* LWIP_DHCP_BOOTP_FILE */
+#endif /* LWIP_DHCP_BOOTP_FILE */
 	}
 	if (parse_file_as_options) {
 		/* if both are overloaded, parse file first and then sname (RFC 2131 ch. 4.1) */
@@ -1670,13 +1715,13 @@ static void dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 	}
 
 	if (reply_msg->op != DHCP_BOOTREPLY) {
-		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("not a DHCP reply message, but type %" U16_F "\n", (u16_t) reply_msg->op));
+		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("not a DHCP reply message, but type %" U16_F "\n", (u16_t)reply_msg->op));
 		goto free_pbuf_and_return;
 	}
 	/* iterate through hardware address and match against DHCP message */
 	for (i = 0; i < netif->hwaddr_len && i < NETIF_MAX_HWADDR_LEN && i < DHCP_CHADDR_LEN; i++) {
 		if (netif->hwaddr[i] != reply_msg->chaddr[i]) {
-			LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("netif->hwaddr[%" U16_F "]==%02" X16_F " != reply_msg->chaddr[%" U16_F "]==%02" X16_F "\n", (u16_t) i, (u16_t) netif->hwaddr[i], (u16_t) i, (u16_t) reply_msg->chaddr[i]));
+			LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("netif->hwaddr[%" U16_F "]==%02" X16_F " != reply_msg->chaddr[%" U16_F "]==%02" X16_F "\n", (u16_t)i, (u16_t)netif->hwaddr[i], (u16_t)i, (u16_t)reply_msg->chaddr[i]));
 			goto free_pbuf_and_return;
 		}
 	}
@@ -1699,7 +1744,7 @@ static void dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 	}
 
 	/* read DHCP message type */
-	msg_type = (u8_t) dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_MSG_TYPE);
+	msg_type = (u8_t)dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_MSG_TYPE);
 	/* message type is DHCP ACK? */
 	if (msg_type == DHCP_ACK) {
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("DHCP_ACK received\n"));
@@ -1762,9 +1807,9 @@ static err_t dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t messag
 	 *  at runtime, any supporting function prototypes can be defined in DHCP_GLOBAL_XID_HEADER */
 #if DHCP_CREATE_RAND_XID && defined(LWIP_RAND)
 	static u32_t xid;
-#else							/* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
+#else  /* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
 	static u32_t xid = 0xABCD0000;
-#endif							/* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
+#endif /* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
 #else
 	if (!xid_initialised) {
 		xid = DHCP_GLOBAL_XID;
@@ -1788,9 +1833,9 @@ static err_t dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t messag
 		if (dhcp->tries == 0) {
 #if DHCP_CREATE_RAND_XID && defined(LWIP_RAND)
 			xid = LWIP_RAND();
-#else							/* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
+#else  /* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
 			xid++;
-#endif							/* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
+#endif /* DHCP_CREATE_RAND_XID && defined(LWIP_RAND) */
 		}
 		dhcp->xid = xid;
 	}
@@ -1810,8 +1855,8 @@ static err_t dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t messag
 	dhcp->msg_out->flags = 0;
 	ip4_addr_set_zero(&dhcp->msg_out->ciaddr);
 	/* set ciaddr to netif->ip_addr based on message_type and state */
-	if ((message_type == DHCP_INFORM) || (message_type == DHCP_DECLINE) || (message_type == DHCP_RELEASE) || ((message_type == DHCP_REQUEST) &&	/* DHCP_STATE_BOUND not used for sending! */
-			((dhcp->state == DHCP_STATE_RENEWING) || dhcp->state == DHCP_STATE_REBINDING))) {
+	if ((message_type == DHCP_INFORM) || (message_type == DHCP_DECLINE) || (message_type == DHCP_RELEASE) || ((message_type == DHCP_REQUEST) && /* DHCP_STATE_BOUND not used for sending! */
+																											  ((dhcp->state == DHCP_STATE_RENEWING) || dhcp->state == DHCP_STATE_REBINDING))) {
 		ip4_addr_copy(dhcp->msg_out->ciaddr, *netif_ip4_addr(netif));
 	}
 	ip4_addr_set_zero(&dhcp->msg_out->yiaddr);
@@ -1819,7 +1864,7 @@ static err_t dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t messag
 	ip4_addr_set_zero(&dhcp->msg_out->giaddr);
 	for (i = 0; i < DHCP_CHADDR_LEN; i++) {
 		/* copy netif hardware address, pad with zeroes */
-		dhcp->msg_out->chaddr[i] = (i < netif->hwaddr_len && i < NETIF_MAX_HWADDR_LEN) ? netif->hwaddr[i] : 0 /* pad byte */ ;
+		dhcp->msg_out->chaddr[i] = ((i < netif->hwaddr_len) && (i < NETIF_MAX_HWADDR_LEN)) ? netif->hwaddr[i] : 0 /* pad byte */;
 	}
 	for (i = 0; i < DHCP_SNAME_LEN; i++) {
 		dhcp->msg_out->sname[i] = 0;
@@ -1831,7 +1876,7 @@ static err_t dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t messag
 	dhcp->options_out_len = 0;
 	/* fill options field with an incrementing array (for debugging purposes) */
 	for (i = 0; i < DHCP_OPTIONS_LEN; i++) {
-		dhcp->msg_out->options[i] = (u8_t) i;	/* for debugging only, no matter if truncated */
+		dhcp->msg_out->options[i] = (u8_t)i; /* for debugging only, no matter if truncated */
 	}
 	/* Add option MESSAGE_TYPE */
 	dhcp_option(dhcp, DHCP_OPTION_MESSAGE_TYPE, DHCP_OPTION_MESSAGE_TYPE_LEN);
@@ -1871,7 +1916,7 @@ static void dhcp_option_trailer(struct dhcp *dhcp)
 	LWIP_ASSERT("dhcp_option_trailer: dhcp->options_out_len < DHCP_OPTIONS_LEN\n", dhcp->options_out_len < DHCP_OPTIONS_LEN);
 	dhcp->msg_out->options[dhcp->options_out_len++] = DHCP_OPTION_END;
 	/* packet is too small, or not 4 byte aligned? */
-	while (((dhcp->options_out_len < DHCP_MIN_OPTIONS_LEN) || (dhcp->options_out_len & 3)) && (dhcp->options_out_len < DHCP_OPTIONS_LEN)) {
+	while ((dhcp->options_out_len & 3) && (dhcp->options_out_len < DHCP_OPTIONS_LEN)) {
 		/* add a fill/padding byte */
 		dhcp->msg_out->options[dhcp->options_out_len++] = 0;
 	}
@@ -1906,4 +1951,4 @@ err_t dhcp_address_valid(struct netif *netif)
 	return ERR_OK;
 }
 
-#endif							/* LWIP_IPV4 && LWIP_DHCP */
+#endif /* LWIP_IPV4 && LWIP_DHCP */
