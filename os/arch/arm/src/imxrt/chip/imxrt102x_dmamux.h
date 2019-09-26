@@ -88,7 +88,7 @@
 #define IMXRT_DMACHAN_ADC_ETC         23	/* ADC ETC DMA */
 #define IMXRT_DMACHAN_ADC1            24	/* ADC1 DMA */
 #define IMXRT_DMACHAN_ACMP1           25	/* ACMP1 DMA */
-#define IMXRT_DMACHAN_ACMP3           26	/* ACMP2 DMA */
+#define IMXRT_DMACHAN_ACMP2           26	/* ACMP2 DMA */
 #define IMXRT_DMACHAN_FLEXSPI_RX      28	/* FlexSPI RX FIFO DMA */
 #define IMXRT_DMACHAN_FLEXSPI_TX      29	/* FlexSPI TX FIFO DMA */
 #define IMXRT_DMACHAN_XBAR1_0         30	/* XBAR1 DMA 0 */
