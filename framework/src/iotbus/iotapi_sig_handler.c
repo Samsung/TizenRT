@@ -124,6 +124,7 @@ static pthread_addr_t iotapi_sig_work(pthread_addr_t arg)
 			break;
 		default:
 			ibdbg("Fail to estimate interrupt type");
+			started = 0;
 		}
 	}
 	return NULL;
