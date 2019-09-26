@@ -426,11 +426,16 @@ void taskmgr_update_stop_status(int signo, siginfo_t *data)
 	int ret;
 	int handle;
 	handle = taskmgr_get_handle_by_pid(data->si_value.sival_int);
+	if (handle < 0) {
+		tmdbg("Fail to terminate the task, because of invalid pid.\n");
+		return;
+	}
 
 	/* Terminate based on task type */
 	ret = taskmgr_handle_tcb(TMIOC_TERMINATE, TM_PID(handle), NULL);
 	if (ret < 0) {
 		tmdbg("Fail to terminate the task\n");
+		return;
 	}
 
 	/* task or pthread terminated well */
