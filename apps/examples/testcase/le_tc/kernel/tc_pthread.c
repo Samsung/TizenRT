@@ -1290,27 +1290,30 @@ static void tc_pthread_pthread_cond_signal_wait(void)
 	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	ret_chk = pthread_create(&pthread_waiter, NULL, thread_cond_signal, NULL);
-	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_mutex_unlock(&g_mutex); pthread_mutex_destroy(&g_mutex));
 
 	/* if g_cond_sig_val is not matched with VAL_ONE, then TC fails. but we will not use g_mutex anymore, so destroy it */
-	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_destroy(&g_mutex));
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_unlock(&g_mutex); pthread_mutex_destroy(&g_mutex));
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_unlock", ret_chk, OK, pthread_mutex_destroy(&g_mutex));
 
 	sleep(SEC_1);
 
 	TC_ASSERT_EQ("pthread_cond_signal_wait", g_cond_sig_val, VAL_TWO);
 
 	ret_chk = pthread_cond_signal(&g_cond);
-	TC_ASSERT_EQ("pthread_cond_signal", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_signal", ret_chk, OK, pthread_mutex_unlock(&g_mutex); pthread_mutex_destroy(&g_mutex));
 
 	sleep(SEC_1);
 
-	TC_ASSERT_EQ("pthread_cond_signal", g_cond_sig_val, VAL_THREE);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_signal", g_cond_sig_val, VAL_THREE, pthread_mutex_destroy(&g_mutex));
 
 	pthread_cancel(pthread_waiter);
 	pthread_join(pthread_waiter, NULL);
+
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
