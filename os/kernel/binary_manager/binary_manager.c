@@ -176,7 +176,7 @@ int binary_manager(int argc, char *argv[])
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
-	if (g_binmgr_mq_fd < 0) {
+	if (g_binmgr_mq_fd == (mqd_t)ERROR) {
 		bmdbg("Failed to open message queue\n");
 		return 0;
 	}

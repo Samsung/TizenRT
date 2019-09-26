@@ -1493,7 +1493,7 @@ static int taskmgr_init_task_manager(void)
 	}
 
 	g_tm_recv_mqfd = mq_open(TM_PUBLIC_MQ, O_RDONLY | O_CREAT, 0666, &attr);
-	if (g_tm_recv_mqfd < 0) {
+	if (g_tm_recv_mqfd == (mqd_t)ERROR) {
 		tmdbg("Failed to open task manager public queue.\n");
 		close(taskmgr_fd);
 		return ERROR;
