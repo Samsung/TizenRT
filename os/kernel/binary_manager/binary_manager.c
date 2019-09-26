@@ -194,7 +194,6 @@ int binary_manager(int argc, char *argv[])
 	}
 
 	while (1) {
-		ret = ERROR;
 		bmvdbg("Wait for message\n");
 
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
@@ -211,10 +210,10 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		case BINMGR_GET_INFO:
-			ret = binary_manager_get_info_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
+			binary_manager_get_info_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
 			break;
 		case BINMGR_GET_INFO_ALL:
-			ret = binary_manager_get_info_all(request_msg.requester_pid);
+			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
 		case BINMGR_RELOAD:
 			memset(type_str, 0, 1);
@@ -222,16 +221,16 @@ int binary_manager(int argc, char *argv[])
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
 			loading_data[1] = (char *)request_msg.data.bin_name;
 			loading_data[2] = NULL;
-			ret = binary_manager_loading(loading_data);
+			binary_manager_loading(loading_data);
 			break;
 		case BINMGR_NOTIFY_STARTED:
-			ret = binary_manager_update_running_state(request_msg.requester_pid);
+			binary_manager_update_running_state(request_msg.requester_pid);
 			break;
 		case BINMGR_REGISTER_STATECB:
-			ret = binary_manager_register_statecb(request_msg.requester_pid, (binmgr_cb_t *)request_msg.data.cb_info);
+			binary_manager_register_statecb(request_msg.requester_pid, (binmgr_cb_t *)request_msg.data.cb_info);
 			break;
 		case BINMGR_UNREGISTER_STATECB:
-			ret = binary_manager_unregister_statecb(request_msg.requester_pid);
+			binary_manager_unregister_statecb(request_msg.requester_pid);
 			break;
 		default:
 			break;
