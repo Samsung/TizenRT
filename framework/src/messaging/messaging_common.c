@@ -209,15 +209,15 @@ void messaging_run_callback(int signo, siginfo_t *data)
 		return;
 	}
 
-	/* recv_packet is used for receiving message including header. */
-	recv_packet = (char *)MSG_ALLOC(attr.mq_msgsize);
-	if (recv_packet == NULL) {
-		MSG_FREE(recv_info);
-		msgdbg("[Messaging] recv fail : out of memory for including header.\n");
-		return;
-	}
-
 	while (1) {
+		/* recv_packet is used for receiving message including header. */
+		recv_packet = (char *)MSG_ALLOC(attr.mq_msgsize);
+		if (recv_packet == NULL) {
+			MSG_FREE(recv_info);
+			msgdbg("[Messaging] recv fail : out of memory for including header.\n");
+			return;
+		}
+
 		size = mq_receive(recv_info->mqdes, (char *)recv_packet, attr.mq_msgsize, 0);
 		if (size < 0) {
 			msgdbg("[Messaging] recv fail : mq_receive, errno %d\n", errno);
