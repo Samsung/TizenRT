@@ -271,7 +271,6 @@ static void reply_recv(int argc, FAR char *argv[])
 	}
 	if (ret != OK) {
 		tc_send_chk = TC_FAIL;
-		free(reply_data.msg);
 		goto cleanup_return;
 	}
 
