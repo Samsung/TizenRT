@@ -79,6 +79,9 @@ static void sync_test_cb(tm_msg_t *info)
 {
 	tm_msg_t reply_msg;
 
+	reply_msg.msg_size = 0;
+	reply_msg.msg = NULL;
+
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
 		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG) + 1);
 		if (reply_msg.msg != NULL) {
