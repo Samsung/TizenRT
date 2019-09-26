@@ -53,7 +53,7 @@ int micomapp_main(int argc, char **argv)
 #ifdef CONFIG_BINARY_MANAGER
 	ret = binary_manager_notify_binary_started();
 	if (ret < 0) {
-		printf("MICOM notify 'START' state FAIL\n", ret);
+		printf("MICOM notify 'START' state FAIL\n");
 	}
 #endif
 
