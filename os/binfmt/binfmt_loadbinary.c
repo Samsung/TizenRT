@@ -32,10 +32,10 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
-#ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
-#endif
+
 #include "binfmt.h"
+#include "binary_manager/binary_manager.h"
 
 #ifdef CONFIG_BINFMT_ENABLE
 
@@ -73,7 +73,7 @@ extern void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t siz
  *
  ****************************************************************************/
 #ifdef CONFIG_BINARY_MANAGER
-int load_binary(FAR const char *filename, load_attr_t *load_attr)
+int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr)
 {
 	FAR struct binary_s *bin;
 	int pid;
@@ -198,6 +198,11 @@ int load_binary(FAR const char *filename, load_attr_t *load_attr)
 #endif
 
 	binfo("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[0], pid);
+
+	/* Update binary id and state for fault handling before unlocking scheduling */
+
+	BIN_ID(binary_idx) = pid;
+	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
 
 	sched_unlock();
 	return pid;
