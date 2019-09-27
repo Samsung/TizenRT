@@ -120,6 +120,7 @@ void OutputHandler::flush()
 
 void OutputHandler::resetWorker()
 {
+	std::unique_lock<std::mutex> lock(mFlushMutex);
 	mIsFlushing = false;
 }
 

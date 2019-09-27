@@ -150,9 +150,10 @@ bool HttpInputDataSource::open()
 		}
 
 		size_t dlen = mBufferReader->copy(tempbuf, templen);
-		unsigned int channel;
-		unsigned int sampleRate;
-		bool ret = utils::buffer_header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
+		unsigned int channel = 0;
+		unsigned int sampleRate = 0;
+		unsigned int samplePerFrame = 0;
+		bool ret = utils::buffer_header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, &samplePerFrame, NULL);
 		delete[] tempbuf;
 
 		if (!ret) {

@@ -64,7 +64,7 @@ StreamBuffer::~StreamBuffer()
 bool StreamBuffer::init(size_t size)
 {
 	if (mRingBuf.buf != nullptr) {
-		mdbg("mRingBuf is already initialized.");
+		meddbg("mRingBuf is already initialized.");
 		return false;
 	}
 

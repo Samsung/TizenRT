@@ -66,6 +66,7 @@ bool SocketOutputDataSource::open()
 		return false;
 	}
 
+	memset(&serveraddr, 0, sizeof(struct sockaddr_in));
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(mPort);
 	serveraddr.sin_addr.s_addr = inet_addr(mIpAddr.c_str());
