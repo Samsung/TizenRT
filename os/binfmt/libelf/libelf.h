@@ -359,6 +359,9 @@ void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo);
 
 #ifdef CONFIG_ELF_CACHE_READ
 
+/* Cut-off ratio for number of blocks for caching */
+#define CUTOFF_RATIO_CACHE_BLOCKS 0.1f
+
 /* Struct for output buffers to cache uncompressed blocks */
 struct block_cache_s {
 	unsigned char *out_buffer;              /* Buffer that is going to hold uncompressed data */
