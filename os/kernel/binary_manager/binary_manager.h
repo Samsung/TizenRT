@@ -62,6 +62,7 @@
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
 #define MAX_WAIT_COUNT             3                          /* The maximum number of times you can wait to process a delayed free */
 #endif
+#define BINMGR_LOADING_TRYCNT      2
 
 /* Loading thread cmd types */
 enum loading_thread_cmd {

@@ -385,7 +385,7 @@ int binfmt_exit(FAR struct binary_s *bin);
  *
  ****************************************************************************/
 #ifdef CONFIG_BINARY_MANAGER
-int load_binary(FAR const char *filename, load_attr_t *load_attr);
+int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr);
 #endif
 
 #undef EXTERN
