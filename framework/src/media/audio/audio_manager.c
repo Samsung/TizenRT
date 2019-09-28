@@ -441,12 +441,11 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
 		}
 
+		used_frames += srcData.input_frames_used;
 		if (srcData.output_frames_gen > 0) {
 			resampled_frames += srcData.output_frames_gen;
-			used_frames += srcData.input_frames_used;
-			medvdbg("Record resampled in:%d/%d, out:%d\n", used_frames, frames, resampled_frames);
-		} else {
-			meddbg("Wrong output_frames_gen : %d\n", srcData.output_frames_gen);
+		} else if (frames != used_frames) {
+			meddbg("output_frames_gen 0, but did not use all input frames %d/%d\n", used_frames, frames);
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
 		}
 	}
@@ -489,11 +488,11 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
 		}
 
+		used_frames += srcData.input_frames_used;
 		if (srcData.output_frames_gen > 0) {
 			resampled_frames += srcData.output_frames_gen;
-			used_frames += srcData.input_frames_used;
-		} else {
-			meddbg("Wrong output_frames_gen : %d\n", srcData.output_frames_gen);
+		} else if (frames != used_frames) {
+			meddbg("output_frames_gen 0, but did not use all input frames %d/%d\n", used_frames, frames);
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
 		}
 		medvdbg("%d resampled from (%d/%d) @ 0x%x\t", resampled_frames, used_frames, frames, srcData.data_out);
