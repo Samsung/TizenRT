@@ -43,19 +43,16 @@ extern "C" {
  ****************************************************************************/
 /**
  * @enum  Define error codes.
- * @brief SRC_ERR_NO_ERROR means success, others mean failure.
+ * @brief SRC_ERR_NO_ERROR means success, negative values mean failure.
  */
 enum {
+	SRC_ERR_MALLOC_FAILED = -6,
+	SRC_ERR_NOT_SUPPORT = -5,
+	SRC_ERR_BAD_SRC_RATIO = -4,
+	SRC_ERR_BAD_CHANNEL_COUNT = -3,
+	SRC_ERR_BAD_PARAMS = -2,
 	SRC_ERR_UNKNOWN = -1,
-	SRC_ERR_NO_ERROR = 0,
-	SRC_ERR_BAD_PARAMS,
-	SRC_ERR_MALLOC_FAILED,
-	SRC_ERR_NOT_SUPPORT,
-	SRC_ERR_BAD_SRC_RATIO,
-	SRC_ERR_BAD_CHANNEL_COUNT,
-
-	/* This must be the last error number. */
-	SRC_ERR_MAX_ERROR
+	SRC_ERR_NO_ERROR = 0, // NO ERROR
 };
 
 /**
@@ -100,7 +97,6 @@ struct src_data_s {
 	/* output */
 	int output_frames_gen;      // number of output frames generated
 	int input_frames_used;      // number of frames used from input frames buffer
-	float src_ratio;            // desired_sample_rate/origin_sample_rate;
 };
 
 typedef struct src_data_s src_data_t;
@@ -138,29 +134,6 @@ src_handle_t src_init(int size);
  * @see     src_init()
  */
 int src_destroy(src_handle_t handle);
-
-/**
- * @brief   Interface for converting samples from stereo channel to mono channel.
- * @remarks Used for interlaced 16 bit PCM format, storing samples as: LRLRLR...
- * @param   samples: pointer to input sample data buffer, converted sample data
- *          will also be stored in this buffer, overwrite original datas.
- * @param   size: number of samples of stereo channel stored in 'samples' buffer.
- * @return  number of samples of mono channel in 'samples' buffer.
- * @see
- */
-int src_StereoToMono(short *samples, int size);
-
-/**
- * @brief   Interface for converting samples from mono channel to stereo channel.
- * @remarks Used for interlaced 16 bit PCM format, storing samples as: LRLRLR...
- * @param   samples: pointer to input sample data buffer, converted sample data
- *          will also be stored in this buffer, overwrite original data. So there
- *          should be enough (double 'size') space in 'samples' buffer!
- * @param   size: number of samples of mono channel stored in 'samples' buffer.
- * @return  number of samples of stereo channel in 'samples' buffer.
- * @see
- */
-int src_MonoToStereo(short *samples, int size);
 
 /**
  * @brief   Check if the conversion ratio is valid or not.
