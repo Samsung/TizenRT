@@ -37,7 +37,7 @@ typedef uint64_t clock_64b_t;
 
 #elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 
-#if defined __TARGET_FPU_FPV5_D16
+#if defined(__TARGET_FPU_FPV5_D16)
 typedef double clock_64b_t;
 #else
 typedef uint64_t clock_64b_t;

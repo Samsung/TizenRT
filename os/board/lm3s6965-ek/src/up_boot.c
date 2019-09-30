@@ -115,7 +115,7 @@ void tiva_boardinitialize(void)
 
 #ifdef CONFIG_BOARD_INITIALIZE
 
-#if defined(CONFIG_QEMU_SRAM) || defined (CONFIG_QEMU_SDRAM)
+#if defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM)
 
 #define 	QEMU_SMARTFS_PARTITION_START	(0)
 #define 	QEMU_SMARTFS_PARTITION_SIZE	(1024 * 1024) /* 1MB */
@@ -209,5 +209,5 @@ int board_initialize(void)
 
 	return OK;
 }
-#endif /* defined(CONFIG_QEMU_SRAM) || defined (CONFIG_QEMU_SDRAM) */
+#endif /* defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM) */
 #endif /* CONFIG_BOARD_INITIALIZE */

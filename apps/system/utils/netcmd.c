@@ -391,7 +391,7 @@ static int _cmd_ifconfig_setdns(struct ifconfig_cmd_info_s *info)
 	if (info->dns) {
 		ndbg("DNS: %s\n", info->dns);
 		addr.s_addr = inet_addr(info->dns);
-#if defined CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
+#ifdef CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
 		ip_addr_t dns_addr;
 		IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
 #ifdef CONFIG_NET_IPv6
