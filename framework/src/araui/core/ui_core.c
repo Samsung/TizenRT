@@ -203,6 +203,7 @@ ui_error_t ui_stop(void)
 static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt)
 {
 	int iter;
+	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
 	ui_anim_body_t *anim;
 
@@ -211,51 +212,61 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 		return UI_INVALID_PARAM;
 	}
 
-	if (widget->tween_cb) {
-		if (widget->tween_info.t > widget->tween_info.d) {
-			widget->tween_info.t = widget->tween_info.d;
-			widget->tween_cb((ui_widget_t)widget, widget->tween_info.t);
-			widget->tween_cb = UI_NULL;
+	ui_widget_queue_init();
+	ui_widget_queue_enqueue(widget);
 
-			if (ui_request_callback(_ui_call_tween_finished_cb, widget) != UI_OK) {
-				UI_LOGE("Error: cannot make a request to call.tween_finished_cb!\n");
+	while (!ui_widget_is_queue_empty()) {
+		curr_widget = ui_widget_queue_dequeue();
+		if (!curr_widget) {
+			continue;
+		}
+
+		if (curr_widget->tween_cb) {
+			if (curr_widget->tween_info.t > curr_widget->tween_info.d) {
+				curr_widget->tween_info.t = curr_widget->tween_info.d;
+				curr_widget->tween_cb((ui_widget_t)curr_widget, curr_widget->tween_info.t);
+				curr_widget->tween_cb = UI_NULL;
+
+				if (ui_request_callback(_ui_call_tween_finished_cb, curr_widget) != UI_OK) {
+					UI_LOGE("Error: cannot make a request to call.tween_finished_cb!\n");
+				}
+			} else {
+				curr_widget->tween_cb((ui_widget_t)curr_widget, curr_widget->tween_info.t);
+				curr_widget->tween_info.t += dt;
 			}
-		} else {
-			widget->tween_cb((ui_widget_t)widget, widget->tween_info.t);
-			widget->tween_info.t += dt;
 		}
-	}
 
-	anim = (ui_anim_body_t *)widget->anim;
+		anim = (ui_anim_body_t *)curr_widget->anim;
 
-	if (anim) {
-		if (anim->func((ui_widget_t)widget, (ui_anim_t)anim, &dt)) {
-			widget->anim = UI_NULL;
-			if (ui_request_callback(_ui_call_anim_finished_cb, widget) != UI_OK) {
-				UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
+		if (anim) {
+			if (anim->func((ui_widget_t)curr_widget, (ui_anim_t)anim, &dt)) {
+				curr_widget->anim = UI_NULL;
+				if (ui_request_callback(_ui_call_anim_finished_cb, curr_widget) != UI_OK) {
+					UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
+				}
 			}
 		}
-	}
 
-	if (widget->tick_cb) {
-		widget->tick_cb((ui_widget_t)widget, dt);
-	}
-
-	if (widget->interval_cb) {
-		widget->interval_info.current += dt;
-		if (widget->interval_info.current >= widget->interval_info.timeout) {
-			widget->interval_info.current -= widget->interval_info.timeout;
-			widget->interval_cb((ui_widget_t)widget);
-		}
-	}
-
-	if (widget->visible) {
-		if (widget->update_cb) {
-			widget->update_cb((ui_widget_t)widget, dt);
+		if (curr_widget->tick_cb) {
+			curr_widget->tick_cb((ui_widget_t)curr_widget, dt);
 		}
 
-		vec_foreach(&widget->children, child, iter) {
-			_ui_process_widget_recur(child, dt);
+		if (curr_widget->interval_cb) {
+			curr_widget->interval_info.current += dt;
+			if (curr_widget->interval_info.current >= curr_widget->interval_info.timeout) {
+				curr_widget->interval_info.current -= curr_widget->interval_info.timeout;
+				curr_widget->interval_cb((ui_widget_t)curr_widget);
+			}
+		}
+
+		if (curr_widget->visible) {
+			if (curr_widget->update_cb) {
+				curr_widget->update_cb((ui_widget_t)curr_widget, dt);
+			}
+		}
+
+		vec_foreach(&curr_widget->children, child, iter) {
+			ui_widget_queue_enqueue(child);
 		}
 	}
 
@@ -265,6 +276,7 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t draw_area, uint32_t dt)
 {
 	int iter;
+	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
 	ui_rect_t new_vp;
 
@@ -273,21 +285,31 @@ static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t dr
 		return UI_INVALID_PARAM;
 	}
 
-	if (widget->visible) {
-		new_vp = ui_rect_intersect(draw_area, widget->global_rect);
-		ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
+	ui_widget_queue_init();
+	ui_widget_queue_enqueue(widget);
 
-		if (widget->render_cb) {
-			new_vp = ui_rect_intersect(draw_area, widget->global_rect);
-			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
-
-			widget->render_cb((ui_widget_t)widget, dt);
-
-			ui_dal_set_viewport(draw_area.x, draw_area.y, draw_area.width, draw_area.height);
+	while (!ui_widget_is_queue_empty()) {
+		curr_widget = ui_widget_queue_dequeue();
+		if (!curr_widget) {
+			continue;
 		}
 
-		vec_foreach(&widget->children, child, iter) {
-			_ui_render_widget_recur(child, draw_area, dt);
+		if (curr_widget->visible) {
+			new_vp = ui_rect_intersect(draw_area, curr_widget->global_rect);
+			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
+
+			if (curr_widget->render_cb) {
+				new_vp = ui_rect_intersect(draw_area, curr_widget->global_rect);
+				ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
+
+				curr_widget->render_cb((ui_widget_t)curr_widget, dt);
+
+				ui_dal_set_viewport(draw_area.x, draw_area.y, draw_area.width, draw_area.height);
+			}
+
+			vec_foreach(&curr_widget->children, child, iter) {
+				ui_widget_queue_enqueue(child);
+			}
 		}
 	}
 
@@ -352,26 +374,45 @@ static void _ui_redraw(uint32_t dt)
 static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
 {
 	int iter;
-	static bool update_flag = false;
+	ui_mat3_t parent_mat;
+	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
+	bool update_flag;
 
-	if ((widget->update_flag || update_flag) && widget->parent) {
-		// Update previous area
-		ui_window_add_redraw_list(widget->global_rect);
+	ui_widget_queue_init();
+	ui_widget_queue_enqueue(widget);
 
-		ui_renderer_translate(&widget->parent->trans_mat, &widget->trans_mat, (float)widget->local_rect.x, (float)widget->local_rect.y);
-		ui_renderer_rotate(&widget->trans_mat, widget->degree);
-		ui_renderer_scale(&widget->trans_mat, widget->scale_x, widget->scale_y);
+	while (!ui_widget_is_queue_empty()) {
+		curr_widget = ui_widget_queue_dequeue();
+		if (!curr_widget) {
+			continue;
+		}
 
-		// Update new area
-		ui_widget_update_global_rect(widget);
-		ui_window_add_redraw_list(widget->global_rect);
-		widget->update_flag = false;
-		update_flag = true;
-	}
+		if (curr_widget->update_flag || update_flag) {
+			if (curr_widget->parent) {
+				parent_mat = curr_widget->parent->trans_mat;
+			} else {
+				parent_mat = ui_mat3_identity();
+			}
 
-	vec_foreach(&widget->children, child, iter) {
-		_ui_update_redraw_list_recur(child);
+			// Update previous area
+			ui_window_add_redraw_list(curr_widget->global_rect);
+
+			ui_renderer_translate(&parent_mat, &curr_widget->trans_mat, (float)curr_widget->local_rect.x, (float)curr_widget->local_rect.y);
+			ui_renderer_rotate(&curr_widget->trans_mat, curr_widget->degree);
+			ui_renderer_scale(&curr_widget->trans_mat, curr_widget->scale_x, curr_widget->scale_y);
+
+			// Update new area
+			ui_widget_update_global_rect(curr_widget);
+			ui_window_add_redraw_list(curr_widget->global_rect);
+
+			curr_widget->update_flag = false;
+			update_flag = true;
+		}
+
+		vec_foreach(&curr_widget->children, child, iter) {
+			ui_widget_queue_enqueue(child);
+		}
 	}
 
 	update_flag = false;
