@@ -33,7 +33,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <iotbus/iotbus_common.h>
+#include <tinyara/iotbus_sig.h>
 #include <iotbus/iotbus_error.h>
 
 

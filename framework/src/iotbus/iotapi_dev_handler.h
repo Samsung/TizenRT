@@ -2,7 +2,7 @@
 #define _IOTAPI_DEV_HANDLER_H__
 
 #include <tinyara/iotdev.h>
-#include <iotbus/iotbus_common.h>
+#include <tinyara/iotbus_sig.h>
 
 typedef struct _iotapi_dev_ctx_s *iotapi_hnd;
 
