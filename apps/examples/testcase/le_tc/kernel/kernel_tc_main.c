@@ -74,7 +74,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_GROUP
-#if (!defined CONFIG_SCHED_HAVE_PARENT) || (!defined CONFIG_SCHED_CHILD_STATUS)
+#if !defined(CONFIG_SCHED_HAVE_PARENT) || !defined(CONFIG_SCHED_CHILD_STATUS)
 #error CONFIG_SCHED_HAVE_PARENT and CONFIG_SCHED_CHILD_STATUS are needed for testing GROUP TC
 #endif
 	group_main();
@@ -97,7 +97,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_MISC
-#if (!defined CONFIG_DEBUG) || (!defined CONFIG_DEBUG_ERROR) || (!defined CONFIG_DEBUG_VERBOSE)
+#if !defined(CONFIG_DEBUG) || !defined(CONFIG_DEBUG_ERROR) || !defined(CONFIG_DEBUG_VERBOSE)
 #error CONFIG_DEBUG, CONFIG_DEBUG_ERROR and CONFIG_DEBUG_VERBOSE are needed for testing LIBC_MISC TC
 #endif
 	libc_misc_main();
@@ -128,7 +128,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_STDLIB
-#if (!defined CONFIG_FS_WRITABLE)
+#if !defined(CONFIG_FS_WRITABLE)
 #error CONFIG_FS_WRITABLE is needed for testing LIBC_STDLIB TC
 #endif
 	libc_stdlib_main();
