@@ -117,11 +117,11 @@ void tiva_boardinitialize(void)
 
 #if defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM)
 
-#define 	QEMU_SMARTFS_PARTITION_START	(0)
-#define 	QEMU_SMARTFS_PARTITION_SIZE	(1024 * 1024) /* 1MB */
-#define 	QEMU_SMARTFS_PARTITION_PARTNO	(0)
-#define 	QEMU_SMARTFS_PARTITION_MINORNO	(0)
-#define 	QEMU_SMARTFS_MOUNT_POINT	"/mnt"
+#define QEMU_SMARTFS_PARTITION_START    (0)
+#define QEMU_SMARTFS_PARTITION_SIZE     (1024 * 1024) /* 1MB */
+#define QEMU_SMARTFS_PARTITION_PARTNO   (0)
+#define QEMU_SMARTFS_PARTITION_MINORNO  (0)
+#define QEMU_SMARTFS_MOUNT_POINT        "/mnt"
 
 /************************************************************************************
  * Name: board_initialize
