@@ -843,6 +843,38 @@ config DEBUG_USB_INFO
 
 endif # DEBUG_USB
 
+config DEBUG_VIDEO
+        bool "Video Debug Features"
+        default n
+        depends on VIDEO_SOURCE
+        ---help---
+                Enable Video debug features.
+
+if DEBUG_VIDEO
+
+config DEBUG_VIDEO_ERROR
+        bool "Video Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable Video error output to SYSLOG.
+
+config DEBUG_VIDEO_WARN
+        bool "Video Warnings Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable Video warning output to SYSLOG.
+
+config DEBUG_VIDEO_INFO
+        bool "Video Informational Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable Video informational output to SYSLOG.
+
+endif # DEBUG_VIDEO
+
 config DEBUG_WATCHDOG
 	bool "Watchdog Timer Debug Feature"
 	default n

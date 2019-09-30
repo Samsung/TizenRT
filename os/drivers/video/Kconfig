@@ -22,3 +22,6 @@ config FB_OVERLAY_BLIT
 	depends on FB_OVERLAY
 	default n
 
+config VIDEO_SOURCE
+	bool "Driver for Video Source"
+	default n
