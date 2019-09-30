@@ -218,7 +218,8 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 	while (!ui_widget_is_queue_empty()) {
 		curr_widget = ui_widget_queue_dequeue();
 		if (!curr_widget) {
-			continue;
+			UI_LOGE("error: curr widget is NULL!\n");
+			break;
 		}
 
 		if (curr_widget->tween_cb) {
@@ -291,7 +292,8 @@ static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t dr
 	while (!ui_widget_is_queue_empty()) {
 		curr_widget = ui_widget_queue_dequeue();
 		if (!curr_widget) {
-			continue;
+			UI_LOGE("error: curr widget is NULL!\n");
+			break;
 		}
 
 		if (curr_widget->visible) {
@@ -385,7 +387,8 @@ static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
 	while (!ui_widget_is_queue_empty()) {
 		curr_widget = ui_widget_queue_dequeue();
 		if (!curr_widget) {
-			continue;
+			UI_LOGE("error: curr widget is NULL!\n");
+			break;
 		}
 
 		if (curr_widget->update_flag || update_flag) {
@@ -396,7 +399,10 @@ static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
 			}
 
 			// Update previous area
-			ui_window_add_redraw_list(curr_widget->global_rect);
+			if (ui_window_add_redraw_list(curr_widget->global_rect) != UI_OK) {
+				UI_LOGE("error: failed to add redraw list!\n");
+				break;
+			}
 
 			ui_renderer_translate(&parent_mat, &curr_widget->trans_mat, (float)curr_widget->local_rect.x, (float)curr_widget->local_rect.y);
 			ui_renderer_rotate(&curr_widget->trans_mat, curr_widget->degree);
@@ -404,7 +410,10 @@ static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
 
 			// Update new area
 			ui_widget_update_global_rect(curr_widget);
-			ui_window_add_redraw_list(curr_widget->global_rect);
+			if (ui_window_add_redraw_list(curr_widget->global_rect) != UI_OK) {
+				UI_LOGE("error: failed to add redraw list!\n");
+				break;
+			}
 
 			curr_widget->update_flag = false;
 			update_flag = true;

@@ -658,7 +658,8 @@ static void _ui_widget_destroy_recur(ui_widget_body_t *widget)
 	while (!ui_widget_is_queue_empty()) {
 		curr_widget = ui_widget_queue_dequeue();
 		if (!curr_widget) {
-			continue;
+			UI_LOGE("error: curr widget is NULL!\n");
+			break;
 		}
 
 		if (curr_widget->remove_cb) {
