@@ -3702,7 +3702,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_driver_mtd_config_ops();
 #endif
 
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 	tc_driver_mtd_ftl_ops();
 #endif
 
