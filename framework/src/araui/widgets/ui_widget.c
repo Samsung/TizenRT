@@ -139,6 +139,7 @@ static void _ui_widget_set_touchable_func(void *userdata);
 static void _ui_widget_destroy_recur(ui_widget_body_t *widget);
 
 static const ui_rect_t NULL_RECT = {0, };
+static ui_widget_body_queue_t g_widget_body_queue;
 
 inline bool ui_widget_check_widget_type(ui_widget_t widget, ui_widget_type_t type)
 {
@@ -642,6 +643,8 @@ static void _ui_widget_destroy_func(void *userdata)
 
 static void _ui_widget_destroy_recur(ui_widget_body_t *widget)
 {
+	int iter;
+	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
 
 	if (!widget) {
@@ -649,25 +652,34 @@ static void _ui_widget_destroy_recur(ui_widget_body_t *widget)
 		return;
 	}
 
-	if (widget->remove_cb) {
-		widget->remove_cb((ui_widget_t)widget);
-	}
+	ui_widget_queue_init();
+	ui_widget_queue_enqueue(widget);
 
-	if (widget->parent) {
-		vec_remove(&widget->parent->children, widget);
-	}
+	while (!ui_widget_is_queue_empty()) {
+		curr_widget = ui_widget_queue_dequeue();
+		if (!curr_widget) {
+			continue;
+		}
 
-	while (widget->children.length) {
-		child = vec_first(&widget->children);
+		if (curr_widget->remove_cb) {
+			curr_widget->remove_cb((ui_widget_t)curr_widget);
+		}
+
+		if (curr_widget->parent) {
+			vec_remove(&curr_widget->parent->children, curr_widget);
+		}
+
 
 		// In the below function, An item of the widget->children will be deleted.
 		// So this while loop will be finished when the all items are deleted.
-		_ui_widget_destroy_recur(child);
+		vec_foreach(&curr_widget->children, child, iter) {
+			ui_widget_queue_enqueue(child);
+		}
+
+		ui_widget_deinit(curr_widget);
+
+		UI_FREE(curr_widget);
 	}
-
-	ui_widget_deinit(widget);
-
-	UI_FREE(widget);
 }
 
 
@@ -1113,5 +1125,36 @@ void ui_widget_update_global_rect(ui_widget_body_t *widget)
 	widget->global_rect.y = (int32_t)UI_MIN4(vertex[0].y, vertex[1].y, vertex[2].y, vertex[3].y);
 	widget->global_rect.width = (int32_t)UI_MAX4(vertex[0].x, vertex[1].x, vertex[2].x, vertex[3].x) - widget->global_rect.x;
 	widget->global_rect.height = (int32_t)UI_MAX4(vertex[0].y, vertex[1].y, vertex[2].y, vertex[3].y) - widget->global_rect.y;
+}
+
+void ui_widget_queue_init(void)
+{
+	g_widget_body_queue.start = 0;
+	g_widget_body_queue.end = 0;
+}
+
+bool ui_widget_is_queue_empty(void)
+{
+	if (g_widget_body_queue.start == g_widget_body_queue.end) {
+		return true;
+	}
+
+	return false;
+}
+
+void ui_widget_queue_enqueue(ui_widget_body_t *body)
+{
+	g_widget_body_queue.queue[g_widget_body_queue.end] = body;
+	g_widget_body_queue.end++;
+}
+
+ui_widget_body_t *ui_widget_queue_dequeue(void)
+{
+	int curr_point;
+
+	curr_point = g_widget_body_queue.start;
+	g_widget_body_queue.start++;
+
+	return g_widget_body_queue.queue[curr_point];
 }
 
