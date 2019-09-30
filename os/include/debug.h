@@ -970,6 +970,30 @@ int get_errno(void);
 #define ibvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_VIDEO_ERROR
+#define videodbg(format, ...)   dbg(format, ##__VA_ARGS__)
+#define videovdbg(format, ...)  vdbg(format, ##__VA_ARGS__)
+#else
+#define videodbg(...)
+#define videovdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_VIDEO_WARN
+#define videowdbg(format, ...)  dbg(format, ##__VA_ARGS__)
+#define videowvdbg(format, ...) vdbg(format, ##__VA_ARGS__)
+#else
+#define videowdbg(...)
+#define videowvdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_VIDEO_INFO
+#define videoidbg(format, ...)  dbg(format, ##__VA_ARGS__)
+#define videoivdbg(format, ...) vdbg(format, ##__VA_ARGS__)
+#else
+#define videoidbg(...)
+#define videoivdbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1555,6 +1579,30 @@ int get_errno(void);
 #else
 #define ibdbg		(void)
 #define ibvdbg		(void)
+#endif
+
+#ifdef CONFIG_DEBUG_VIDEO_ERROR
+#define videodbg     dbg
+#define videovdbg    vdbg
+#else
+#define videodbg     (void)
+#define videovdbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_VIDEO_WARN
+#define videowdbg     dbg
+#define videowvdbg    vdbg
+#else
+#define videowdbg     (void)
+#define videowvdbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_VIDEO_INFO
+#define videoidbg     dbg
+#define videoivdbg    vdbg
+#else
+#define videoidbg     (void)
+#define videoivdbg    (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
