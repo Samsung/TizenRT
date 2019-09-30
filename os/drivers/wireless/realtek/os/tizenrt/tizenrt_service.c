@@ -686,7 +686,7 @@ _timerHandle _tizenrt_timerCreate(_timer *timer, const signed char *pcTimerName,
 		DBG_ERR("Fail to alloc timer->work_hdl");
 		rtw_timerDelete(timer, TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;
-		return;
+		return NULL;
 	}
 	timer->timevalue = 0;
 	timer->live = 0;
