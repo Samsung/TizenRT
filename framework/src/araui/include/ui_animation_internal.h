@@ -21,7 +21,9 @@
 
 #include <tinyara/config.h>
 #include <stdint.h>
-#include "vec/vec.h"
+#include <vec/vec.h>
+
+#define CONFIG_UI_MAX_ANIM_NUM         100
 
 typedef struct ui_anim_body_s ui_anim_body_t;
 typedef bool (*ui_anim_func)(ui_widget_t widget, ui_anim_t anim, uint32_t *dt);
@@ -88,11 +90,22 @@ typedef struct {
 	uint32_t index;
 } ui_spawn_anim_body_t;
 
+typedef struct {
+	ui_anim_body_t *queue[CONFIG_UI_MAX_ANIM_NUM];
+	int start;
+	int end;
+} ui_anim_body_queue_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void ui_anim_init(ui_anim_body_t *body, ui_anim_type_t type, uint32_t duration);
+
+void ui_anim_queue_init(void);
+bool ui_anim_is_queue_empty(void);
+void ui_anim_queue_enqueue(ui_anim_body_t *body);
+ui_anim_body_t *ui_anim_queue_dequeue(void);
 
 #ifdef __cplusplus
 }

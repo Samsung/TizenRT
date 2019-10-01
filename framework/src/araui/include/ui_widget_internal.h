@@ -45,7 +45,6 @@ typedef struct ui_widget_body_s ui_widget_body_t;
 typedef void (*add_callback)(ui_widget_t widget);
 typedef void (*remove_callback)(ui_widget_t widget);
 typedef void (*draw_callback)(ui_widget_t widget, uint32_t dt);
-typedef void (*tween_callback)(ui_widget_t widget, uint32_t t);
 typedef float (*easing_callback)(float t, float b, float c, float d);
 typedef void (*touch_callback)(ui_widget_body_t *widget, ui_touch_event_t event, ui_coord_t coord);
 typedef void (*update_callback)(ui_widget_t widget, uint32_t dt);
@@ -64,15 +63,6 @@ typedef struct {
 	uint32_t timeout;
 	uint32_t current;
 } interval_info_t;
-
-typedef struct {
-	ui_rect_t origin;
-	ui_rect_t gap;
-	tween_finished_callback tween_finished_cb;
-	easing_callback easing_cb;
-	uint32_t t;
-	uint32_t d;
-} tween_info_t;
 
 typedef struct {
 	ui_coord_t down_coord;
@@ -114,7 +104,6 @@ struct ui_widget_body_s {
 	add_callback add_cb;
 	remove_callback remove_cb;
 	draw_callback render_cb;
-	tween_callback tween_cb;
 	update_callback update_cb;
 	anim_finished_callback anim_finished_cb;
 
@@ -125,7 +114,6 @@ struct ui_widget_body_s {
 	touch_callback touch_cb;
 #endif
 	interval_info_t interval_info;
-	tween_info_t tween_info;
 
 	void *userdata;
 };
@@ -233,7 +221,6 @@ typedef struct {
 	ui_widget_body_t *focus;
 } ui_quick_panel_body_t;
 
-
 typedef struct {
 	ui_widget_body_t *queue[CONFIG_UI_MAX_WIDGET_NUM];
 	int start;
@@ -253,8 +240,8 @@ ui_error_t ui_widget_destroy_sync(ui_widget_body_t *body);
 
 ui_widget_body_t *ui_widget_search_by_coord(ui_widget_body_t *widget, ui_coord_t coord);
 
-void ui_quick_panel_disappear_tween_end_func(ui_widget_t widget);
-void ui_quick_panel_appear_tween_end_func(ui_widget_t widget);
+void ui_quick_panel_disappear_tween_end_func(ui_widget_t widget, ui_anim_t anim);
+void ui_quick_panel_appear_tween_end_func(ui_widget_t widget, ui_anim_t anim);
 void ui_widget_queue_init(void);
 bool ui_widget_is_queue_empty(void);
 void ui_widget_queue_enqueue(ui_widget_body_t *body);
