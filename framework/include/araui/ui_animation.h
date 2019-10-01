@@ -50,7 +50,7 @@ ui_anim_t ui_delay_anim_create(uint32_t duration);
 ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...);
 ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...);
 
-ui_error_t ui_anim_destory(ui_anim_t anim);
+ui_error_t ui_anim_destroy(ui_anim_t anim);
 
 #ifdef __cplusplus
 }

@@ -60,6 +60,8 @@ void ui_quick_panel_appear_tween_end_func(ui_widget_t widget)
 static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t event, ui_coord_t coord)
 {
 	ui_quick_panel_body_t *body;
+	ui_anim_t move;
+	ui_rect_t rect;
 
 	if (!widget) {
 		UI_LOGE("error: widget is null!\n");
@@ -67,6 +69,7 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 	}
 
 	body = (ui_quick_panel_body_t *)widget;
+	rect = ui_widget_get_rect((ui_widget_t)widget);
 
 	switch (event) {
 	case UI_TOUCH_EVENT_CANCEL: 
@@ -196,18 +199,12 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
 						if (coord.y < CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
 						// If the state of given quick panel is UI_QUICK_PANEL_STATE_AT_SCREEN,
@@ -217,18 +214,12 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 						// Otherwise, the given quick panel occupies the display again.
 						if ((body->touch_down.y - coord.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, -1 * CONFIG_UI_DISPLAY_HEIGHT,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					}
 				}
@@ -240,34 +231,22 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
 						if (coord.y > CONFIG_UI_DISPLAY_HEIGHT - CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, CONFIG_UI_DISPLAY_HEIGHT,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
 						if ((coord.y - body->touch_down.y) > CONFIG_UI_DISPLAY_HEIGHT / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, CONFIG_UI_DISPLAY_HEIGHT,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					}
 				}
@@ -279,34 +258,22 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
 						if (coord.x < CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
 						if ((body->touch_down.x - coord.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								-1 * CONFIG_UI_DISPLAY_WIDTH, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					}
 				}
@@ -318,34 +285,22 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 					if (body->state == UI_QUICK_PANEL_STATE_NONE) {
 						if (coord.x > CONFIG_UI_DISPLAY_WIDTH - CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_APPEAR_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								CONFIG_UI_DISPLAY_WIDTH, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					} else if (body->state == UI_QUICK_PANEL_STATE_AT_SCREEN) {
 						if ((coord.x - body->touch_down.x) > CONFIG_UI_DISPLAY_WIDTH / CONFIG_UI_QUICK_PANEL_RETURN_CONST) {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								CONFIG_UI_DISPLAY_WIDTH, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_disappear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_disappear_tween_end_func, false);
 						} else {
 							body->state = UI_QUICK_PANEL_STATE_TRANSITION;
-							ui_widget_tween_moveto((ui_widget_t)widget,
-								0, 0,
-								CONFIG_UI_QUICK_PANEL_TRANSITION_TIME,
-								TWEEN_EASE_OUT_QUAD,
-								ui_quick_panel_appear_tween_end_func);
+							move = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+							ui_widget_play_anim((ui_widget_t)widget, move, ui_quick_panel_appear_tween_end_func, false);
 						}
 					}
 				}
@@ -363,6 +318,10 @@ static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t
 
 	default:
 		break;
+	}
+
+	if (move) {
+		ui_anim_destroy(move);
 	}
 }
 

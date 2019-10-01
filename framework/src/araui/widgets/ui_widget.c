@@ -73,15 +73,6 @@ typedef struct {
 	ui_widget_body_t *body;
 	int32_t x;
 	int32_t y;
-	uint32_t duration;
-	ui_tween_type_t type;
-	tween_finished_callback tween_finished_cb;
-} ui_tween_moveto_info_t;
-
-typedef struct {
-	ui_widget_body_t *body;
-	int32_t x;
-	int32_t y;
 } ui_set_pivot_point_info_t;
 
 typedef struct {
@@ -117,8 +108,6 @@ typedef struct {
 static void _ui_widget_set_visible_func(void *userdata);
 static void _ui_widget_set_position_func(void *userdata);
 static void _ui_widget_set_size_func(void *userdata);
-static void _ui_widget_tween_moveto_func(void *userdata);
-static void _ui_widget_tween_move_func(ui_widget_t widget, uint32_t t);
 static void _ui_widget_play_anim(void *userdata);
 static void _ui_widget_stop_anim(void *userdata);
 static void _ui_widget_pause_anim(void *userdata);
@@ -393,106 +382,6 @@ ui_error_t ui_widget_set_interval_callback(ui_widget_t widget, interval_callback
 	body->interval_info.current = 0;
 
 	return UI_OK;
-}
-
-ui_error_t ui_widget_tween_moveto(ui_widget_t widget, int32_t x, int32_t y,
-	uint32_t duration, ui_tween_type_t type, tween_finished_callback tween_finished_cb)
-{
-	ui_tween_moveto_info_t *info;
-
-	if (!ui_is_running()) {
-		return UI_NOT_RUNNING;
-	}
-
-	if (!widget) {
-		return UI_INVALID_PARAM;
-	}
-
-	info = (ui_tween_moveto_info_t *)UI_ALLOC(sizeof(ui_tween_moveto_info_t));
-	if (!info) {
-		return UI_NOT_ENOUGH_MEMORY;
-	}
-
-	info->body = (ui_widget_body_t *)widget;
-	info->x = x;
-	info->y = y;
-	info->duration = duration;
-	info->type = type;
-	info->tween_finished_cb = tween_finished_cb;
-
-	if (ui_request_callback(_ui_widget_tween_moveto_func, info) != UI_OK) {
-		UI_FREE(info);
-		return UI_OPERATION_FAIL;
-	}
-
-	return UI_OK;
-}
-
-static void _ui_widget_tween_moveto_func(void *userdata)
-{
-	ui_tween_moveto_info_t *info;
-	ui_widget_body_t *body;
-
-	if (!userdata) {
-		UI_LOGE("error: Invalid Parameter!\n");
-		return;
-	}
-
-	info = (ui_tween_moveto_info_t *)userdata;
-	body = (ui_widget_body_t *)info->body;
-
-	body->tween_cb = _ui_widget_tween_move_func;
-
-	memset(&info->body->tween_info, 0, sizeof(tween_info_t));
-	info->body->tween_info.origin = ui_widget_get_rect((ui_widget_t)body);
-	info->body->tween_info.gap.x = info->x - info->body->tween_info.origin.x;
-	info->body->tween_info.gap.y = info->y - info->body->tween_info.origin.y;
-	info->body->tween_info.d = info->duration;
-	info->body->tween_info.tween_finished_cb = info->tween_finished_cb;
-
-	switch (info->type) {
-	case TWEEN_EASE_IN_QUAD:
-		body->tween_info.easing_cb = ease_in_quad;
-		break;
-
-	case TWEEN_EASE_OUT_QUAD:
-		body->tween_info.easing_cb = ease_out_quad;
-		break;
-
-	case TWEEN_EASE_INOUT_QUAD:
-		body->tween_info.easing_cb = ease_inout_quad;
-		break;
-
-	default:
-		body->tween_info.easing_cb = ease_linear;
-		break;
-	}
-
-	UI_FREE(info);
-}
-
-static void _ui_widget_tween_move_func(ui_widget_t widget, uint32_t t)
-{
-	ui_widget_body_t *body;
-
-	if (!widget) {
-		UI_LOGE("error: Invalid Parameter!\n");
-		return;
-	}
-
-	body = (ui_widget_body_t *)widget;
-
-	body->local_rect.x = (int32_t)body->tween_info.easing_cb(t,
-		body->tween_info.origin.x,
-		body->tween_info.gap.x,
-		body->tween_info.d);
-
-	body->local_rect.y = (int32_t)body->tween_info.easing_cb(t,
-		body->tween_info.origin.y,
-		body->tween_info.gap.y,
-		body->tween_info.d);
-
-	ui_widget_update_position_info(body);
 }
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)

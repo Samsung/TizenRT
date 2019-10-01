@@ -137,9 +137,6 @@ static void _ui_paginator_tween_finish(ui_widget_t widget)
 	}
 
 	if (body->direction == UI_DIRECTION_HORIZONTAL) {
-		body->cur_page->tween_cb = NULL;
-		body->prev_page->tween_cb = NULL;
-		body->next_page->tween_cb = NULL;
 		ui_widget_set_position((ui_widget_t)body->cur_page, 0, 0);
 		ui_widget_set_position((ui_widget_t)body->prev_page, -body->base.local_rect.width, 0);
 		ui_widget_set_position((ui_widget_t)body->next_page, body->base.local_rect.width, 0);
@@ -152,6 +149,12 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 {
 	ui_coord_t delta;
 	ui_paginator_widget_body_t *body;
+	ui_anim_t move_prev_page;
+	ui_anim_t move_cur_page;
+	ui_anim_t move_next_page;
+	ui_rect_t rect_prev_page;
+	ui_rect_t rect_cur_page;
+	ui_rect_t rect_next_page;
 
 	if (!widget) {
 		UI_LOGE("Error: widget is null!\n");
@@ -231,71 +234,45 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 					 */
 					body->state = UI_PAGINATOR_STATE_TWEEN_NEXT;
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->cur_page,
-						-body->base.local_rect.width,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						_ui_paginator_tween_finish);
+					rect_cur_page = ui_widget_get_rect((ui_widget_t)body->cur_page);
+					rect_next_page = ui_widget_get_rect((ui_widget_t)body->next_page);
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->next_page,
-						0,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						NULL);
+					move_cur_page = ui_move_anim_create(rect_cur_page.x, rect_cur_page.y, -body->base.local_rect.width, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+					move_next_page = ui_move_anim_create(rect_next_page.x, rect_next_page.y, 0, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+					
+					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
+					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, NULL, false);
 				} else if (body->offset > (body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
 					/**
 					 * Paging to Left
 					 */
 					body->state = UI_PAGINATOR_STATE_TWEEN_PREV;
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->cur_page,
-						body->base.local_rect.width,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						_ui_paginator_tween_finish);
+					rect_cur_page = ui_widget_get_rect((ui_widget_t)body->cur_page);
+					rect_prev_page = ui_widget_get_rect((ui_widget_t)body->prev_page);
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->prev_page,
-						0,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						NULL);
+					move_cur_page = ui_move_anim_create(rect_cur_page.x, rect_cur_page.y, body->base.local_rect.width, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+					move_prev_page = ui_move_anim_create(rect_prev_page.x, rect_prev_page.y, 0, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+
+					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
+					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, NULL, false);
 				} else {
 					/**
 					 * Paging to Current
 					 */
 					body->state = UI_PAGINATOR_STATE_TWEEN_CUR;
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->cur_page,
-						0,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						_ui_paginator_tween_finish);
+					rect_cur_page = ui_widget_get_rect((ui_widget_t)body->cur_page);
+					rect_prev_page = ui_widget_get_rect((ui_widget_t)body->prev_page);
+					rect_next_page = ui_widget_get_rect((ui_widget_t)body->next_page);
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->prev_page,
-						-body->base.local_rect.width,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						NULL);
+					move_cur_page = ui_move_anim_create(rect_cur_page.x, rect_cur_page.y, 0, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+					move_prev_page = ui_move_anim_create(rect_prev_page.x, rect_prev_page.y, -body->base.local_rect.width, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
+					move_next_page = ui_move_anim_create(rect_next_page.x, rect_next_page.y, body->base.local_rect.width, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
 
-					ui_widget_tween_moveto(
-						(ui_widget_t)body->next_page,
-						body->base.local_rect.width,
-						0,
-						CONFIG_UI_PAGINATOR_TWEEN_DURATION,
-						TWEEN_EASE_OUT_QUAD,
-						NULL);
+					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
+					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, NULL, false);
+					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, NULL, false);
 				}
 			} else if (body->direction == UI_DIRECTION_VERTICAL) {
 				// todo
@@ -312,6 +289,18 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 
 	default:
 		break;
+	}
+
+	if (move_cur_page) {
+		ui_anim_destroy(move_cur_page);
+	}
+
+	if (move_prev_page) {
+		ui_anim_destroy(move_prev_page);
+	}
+
+	if (move_next_page) {
+		ui_anim_destroy(move_next_page);
 	}
 }
 
