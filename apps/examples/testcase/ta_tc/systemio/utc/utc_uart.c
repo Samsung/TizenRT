@@ -57,6 +57,23 @@ static void utc_systemio_uart_initialize_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_systemio_uart_open_p(void)
+{
+	int device = -1;
+	sscanf(UART_FILE_PATH, "/dev/ttyS%d", &device);
+	
+	iotbus_uart_context_h m_uart = iotbus_uart_open(device);
+	TC_ASSERT_NEQ("iotbus_uart_open", m_uart, NULL);
+	uart = m_uart;
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_systemio_uart_open_n(void)
+{
+	TC_ASSERT_EQ("iotbus_uart_open", iotbus_uart_open(-1), NULL);
+	TC_SUCCESS_RESULT();
+}
+
 #ifdef CONFIG_SERIAL_TERMIOS
 static void utc_systemio_uart_set_baudrate_p(void)
 {
@@ -170,6 +187,8 @@ int utc_uart_main(void)
 {
 	utc_systemio_uart_initialize_p();
 	utc_systemio_uart_initialize_n();
+	utc_systemio_uart_open_p();
+	utc_systemio_uart_open_n();
 #ifdef CONFIG_SERIAL_TERMIOS
 	utc_systemio_uart_set_baudrate_p();
 	utc_systemio_uart_set_baudrate_n();	

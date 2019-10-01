@@ -122,7 +122,7 @@ int iotbus_spi_set_config(iotbus_spi_context_h hnd, const struct iotbus_spi_conf
 {
 	struct _iotbus_spi_s *handle;
 
-	if (!hnd || !hnd->handle) {
+	if (!hnd || !hnd->handle || !config) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
