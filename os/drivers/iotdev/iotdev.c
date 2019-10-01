@@ -106,7 +106,7 @@ struct id_upperhalf_s {
 };
 
 static struct id_open_s g_id_open;
-static struct id_upperhalf_s g_id_udev;
+static struct id_upperhalf_s *g_id_udev = NULL;
 
 /****************************************************************************
  * Private Functions
@@ -307,19 +307,27 @@ static ssize_t id_drv_write(FAR struct file *filep, FAR const char *buffer, size
 
 void id_drv_register(void)
 {
-	struct id_upperhalf_s *dev = &g_id_udev;
-
+	if (!g_id_udev) {
+		dbg("already registered\n");
+		return;
+	}
+	g_id_udev = (struct id_upperhalf_s *)malloc(sizeof(struct id_upperhalf_s));
+	if (!g_id_udev) {
+		dbg("memory allocation fail\n");
+		return;
+	}
+	struct id_upperhalf_s *dev = g_id_udev;
 	int i = 0;
 	for (; i < IOTDEV_NPOLLWAITERS; i++) {
 		g_id_open.io_fds[i] = NULL;
 	}
 
-	int res = sem_init(&g_id_udev.gu_exclsem, 0, 1);
+	int res = sem_init(&g_id_udev->gu_exclsem, 0, 1);
 	if (res == -1) {
 		dbg("register device fail\n");
 		return;
 	}
-	g_id_udev.gu_open = &g_id_open;
+	g_id_udev->gu_open = &g_id_open;
 
 	// initialize evt queue
 	dev->evt_queue.front = 0;
@@ -365,7 +373,7 @@ static void _id_trigger_evt(FAR struct id_upperhalf_s *priv, id_evt_type evt)
  */
 int id_post_evt(id_evt_type evt)
 {
-	struct id_upperhalf_s *dev = &g_id_udev;
+	struct id_upperhalf_s *dev = g_id_udev;
 
 	if (!dev) {
 		return -1;

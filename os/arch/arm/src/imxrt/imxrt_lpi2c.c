@@ -2249,7 +2249,7 @@ static void imxrt_lpi2c_commonirqhandler(LPI2C_Type *base, uint32_t instance)
 	}
 /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
   exception return operation might vector to incorrect interrupt */
-#if defined __CORTEX_M && (__CORTEX_M == 4U)
+#if defined(__CORTEX_M) && (__CORTEX_M == 4U)
 	__DSB();
 #endif
 }

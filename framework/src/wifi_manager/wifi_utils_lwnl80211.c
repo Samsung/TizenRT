@@ -251,8 +251,8 @@ int wifi_utils_callback_handler(int argc, char *argv[])
 				int ret = receive_scan_data(mqfd, scan_list);
 				if (ret == WIFI_UTILS_SUCCESS) {
 					g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
+					free_scan_data(scan_list);
 				}
-				free_scan_data(scan_list);
 			} else {
 				g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
 				free(&(scan_list->ap_info));

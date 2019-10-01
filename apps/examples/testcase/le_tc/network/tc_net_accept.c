@@ -152,12 +152,14 @@ void *Server(void *args)
 
 	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
+		close(socket_fd);
 		nw_error();
 		return 0;
 	}
 
 	ret = listen(socket_fd, 1);
 	if (ret < 0) {
+		close(socket_fd);
 		nw_error();
 		return 0;
 	}

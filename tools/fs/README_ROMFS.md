@@ -52,7 +52,7 @@ Select menu.
 File Systems -> ROMFS to y
 ```
 
-2. Put your contents at *tools/fs/contents* folder.
+2. Put your contents at *tools/fs/contents-romfs* folder.
 
 After these two steps, board specific steps should be executed.
 

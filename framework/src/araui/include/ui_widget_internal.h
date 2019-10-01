@@ -31,6 +31,8 @@
 #include "ui_commons_internal.h"
 #include "ui_renderer.h"
 
+#define CONFIG_UI_MAX_WIDGET_NUM         100
+
 enum {
 	UV_TOP_LEFT,
 	UV_BOTTOM_LEFT,
@@ -219,6 +221,13 @@ typedef struct {
 	ui_widget_body_t *focus;
 } ui_quick_panel_body_t;
 
+
+typedef struct {
+	ui_widget_body_t *queue[CONFIG_UI_MAX_WIDGET_NUM];
+	int start;
+	int end;
+} ui_widget_body_queue_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -234,6 +243,10 @@ ui_widget_body_t *ui_widget_search_by_coord(ui_widget_body_t *widget, ui_coord_t
 
 void ui_quick_panel_disappear_tween_end_func(ui_widget_t widget);
 void ui_quick_panel_appear_tween_end_func(ui_widget_t widget);
+void ui_widget_queue_init(void);
+bool ui_widget_is_queue_empty(void);
+void ui_widget_queue_enqueue(ui_widget_body_t *body);
+ui_widget_body_t *ui_widget_queue_dequeue(void);
 
 #ifdef __cplusplus
 }

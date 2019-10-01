@@ -64,7 +64,7 @@ void binary_manager_clear_bin_statecb(int bin_idx)
  *   This function clears registered callback for the changes of binary state.
  *
  ****************************************************************************/
-int binary_manager_unregister_statecb(int pid)
+void binary_manager_unregister_statecb(int pid)
 {
 	int bin_idx;
 	struct tcb_s *tcb;
@@ -108,7 +108,7 @@ int binary_manager_unregister_statecb(int pid)
 
 send_result:
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, pid);
-	return binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_statecb_response_t));
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_statecb_response_t));
 }
 
 /****************************************************************************
@@ -118,7 +118,7 @@ send_result:
  *   This function registers callback for the changes of binary state.
  *
  ****************************************************************************/
-int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
+void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 {
 	int bin_idx;
 	struct tcb_s *tcb;
@@ -174,7 +174,7 @@ int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 
 send_result:
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, pid);
-	return binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_statecb_response_t));
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_statecb_response_t));
 }
 
 /****************************************************************************
@@ -282,7 +282,7 @@ errout:
  *   This function sends callback message to other binaries if registered callbacks exist.
  *
  ****************************************************************************/
-int binary_manager_notify_state_changed(int bin_idx, uint8_t state)
+void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 {
 	int ret;
 	int count;
@@ -291,7 +291,7 @@ int binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 
 	if (bin_idx <= 0 || state >= BINARY_STATE_MAX) {
 		bmdbg("Invalid parameter: bin idx %d, state %d\n", bin_idx, state);
-		return BINMGR_INVALID_PARAM;
+		return;
 	}
 
 	count = binary_manager_get_binary_count();
@@ -309,8 +309,5 @@ int binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 
 	if (fail_count > 0) {
 		bmdbg("Invalid parameter: bin idx %d, state %d\n", bin_idx, state);
-		return BINMGR_OPERATION_FAIL;
 	}
-
-	return BINMGR_OK;
 }

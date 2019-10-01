@@ -283,6 +283,14 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 		pthread_mutex_unlock(&g_manager_info.info_lock);	\
 	} while (0)
 
+#define WIFIMGR_RESET_NUM_CLIENT							\
+	do {													\
+		pthread_mutex_lock(&g_manager_info.info_lock);		\
+		g_manager_info.num_sta = 0;							\
+		pthread_mutex_unlock(&g_manager_info.info_lock);	\
+	} while (0)
+
+
 #define WIFIMGR_SPC // to pass the code check ruls
 #define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
 	do {														\
@@ -919,7 +927,7 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
-	g_manager_info.num_sta = 0;
+	WIFIMGR_RESET_NUM_CLIENT;
 
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);

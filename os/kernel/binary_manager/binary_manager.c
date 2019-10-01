@@ -123,26 +123,26 @@ void binary_manager_register_partition(int part_num, int part_type, char *name, 
 }
 
 /* Update binary state to BINARY_RUNNING state */
-int binary_manager_update_running_state(int bin_id)
+void binary_manager_update_running_state(int bin_id)
 {
 	int bin_idx;
 
 	if (bin_id <= 0) {
 		bmdbg("Invalid parameter: bin id %d\n", bin_id);
-		return BINMGR_INVALID_PARAM;
+		return;
 	}
 
 	bin_idx = binary_manager_get_index_with_binid(bin_id);
 	if (bin_idx < 0) {
 		bmdbg("Failed to get index of binary %d\n", bin_id);
-		return BINMGR_NOT_FOUND;
+		return;
 	}
 
 	BIN_STATE(bin_idx) = BINARY_RUNNING;
 	bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
 
 	/* Notify that binary is started. */
-	return binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
+	binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
 }
 
 /****************************************************************************
@@ -176,7 +176,7 @@ int binary_manager(int argc, char *argv[])
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
-	if (g_binmgr_mq_fd < 0) {
+	if (g_binmgr_mq_fd == (mqd_t)ERROR) {
 		bmdbg("Failed to open message queue\n");
 		return 0;
 	}
@@ -194,7 +194,6 @@ int binary_manager(int argc, char *argv[])
 	}
 
 	while (1) {
-		ret = ERROR;
 		bmvdbg("Wait for message\n");
 
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
@@ -211,10 +210,10 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		case BINMGR_GET_INFO:
-			ret = binary_manager_get_info_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
+			binary_manager_get_info_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
 			break;
 		case BINMGR_GET_INFO_ALL:
-			ret = binary_manager_get_info_all(request_msg.requester_pid);
+			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
 		case BINMGR_RELOAD:
 			memset(type_str, 0, 1);
@@ -222,16 +221,16 @@ int binary_manager(int argc, char *argv[])
 			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
 			loading_data[1] = (char *)request_msg.data.bin_name;
 			loading_data[2] = NULL;
-			ret = binary_manager_loading(loading_data);
+			binary_manager_loading(loading_data);
 			break;
 		case BINMGR_NOTIFY_STARTED:
-			ret = binary_manager_update_running_state(request_msg.requester_pid);
+			binary_manager_update_running_state(request_msg.requester_pid);
 			break;
 		case BINMGR_REGISTER_STATECB:
-			ret = binary_manager_register_statecb(request_msg.requester_pid, (binmgr_cb_t *)request_msg.data.cb_info);
+			binary_manager_register_statecb(request_msg.requester_pid, (binmgr_cb_t *)request_msg.data.cb_info);
 			break;
 		case BINMGR_UNREGISTER_STATECB:
-			ret = binary_manager_unregister_statecb(request_msg.requester_pid);
+			binary_manager_unregister_statecb(request_msg.requester_pid);
 			break;
 		default:
 			break;

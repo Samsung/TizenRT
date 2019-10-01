@@ -170,10 +170,10 @@ static void nonblock_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_da
 		} else {
 			tc_reply_chk = TC_OK;
 		}
+		free(reply.msg);
 	} else {
 		tc_nonblock_chk = TC_FAIL;
 	}
-	free(reply.msg);
 }
 
 static void utc_messaging_recv_nonblock_n(void)

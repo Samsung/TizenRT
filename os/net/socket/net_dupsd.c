@@ -113,6 +113,10 @@ int net_dupsd(int sockfd)
 	/* Allocate a new netconn with same type as that of sock1 */
 
 	conn = netconn_new(sock1->conn->type);
+	if (!conn) {
+		err = ENOMEM;
+		goto errout;
+	}
 
 	sockfd2 = alloc_socket(conn, 0);
 	if (sockfd2 < 0) {

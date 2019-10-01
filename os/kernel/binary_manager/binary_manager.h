@@ -147,19 +147,19 @@ void binary_manager_recovery(int pid);
 mqd_t binary_manager_get_mqfd(void);
 #endif
 
-int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
-int binary_manager_unregister_statecb(int pid);
+void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
+void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
-int binary_manager_notify_state_changed(int bin_idx, uint8_t state);
+void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
 int binary_manager_load_binary(int bin_idx);
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
-int binary_manager_get_info_with_name(int request_pid, char *bin_name);
-int binary_manager_get_info_all(int request_pid);
+void binary_manager_get_info_with_name(int request_pid, char *bin_name);
+void binary_manager_get_info_all(int request_pid);
 
-int binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
+void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 
 /****************************************************************************
  * Binary Manager Main Thread

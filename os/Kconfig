@@ -373,14 +373,6 @@ config DOWNLOAD_IMAGE
 	---help---
 		Create download image based on RAW binary
 
-config SMARTFS_IMAGE
-	bool "Make smartfs binary image"
-	select RAW_BINARY
-	depends on !WINDOWS_NATIVE
-	---help---
-		Generate smartfs image by using nxfuse tools
-		Note that libfuse-dev should be installed on your build system
-
 endmenu # Binary Output Formats
 
 menu "Customize Header Files"

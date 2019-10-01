@@ -59,7 +59,7 @@ FSTOOL_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 # When location of this script is changed, only OS_PATH should be changed together!!!
 OS_PATH=${FSTOOL_PATH}/../../os
 BIN_PATH=${OS_PATH}/../build/output/bin
-CONTENTS_PATH=${FSTOOL_PATH}/contents
+CONTENTS_PATH=${FSTOOL_PATH}/contents-romfs
 ROMFS_IMG=${BIN_PATH}/romfs.img
 
 # Sanity checks

@@ -30,7 +30,7 @@
 #include "clock/clock.h"
 #include "signal/signal.h"
 #include "timer/timer.h"
-#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 #include "task/task.h"
 #include "group/group.h"
 #endif
@@ -42,7 +42,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
 static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 
-#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 static int group_exitchild_func(int argc, char *argv[])
 {
 	task_delete(0);
@@ -412,7 +412,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = OK;
 	}
 	break;
-#if (defined CONFIG_SCHED_HAVE_PARENT) && (defined CONFIG_SCHED_CHILD_STATUS)
+#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	case TESTIOC_GROUP_ADD_FINED_REMOVE_TEST: {
 		struct tcb_s *st_tcb;
 		struct task_group_s *group;

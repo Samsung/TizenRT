@@ -426,11 +426,16 @@ void taskmgr_update_stop_status(int signo, siginfo_t *data)
 	int ret;
 	int handle;
 	handle = taskmgr_get_handle_by_pid(data->si_value.sival_int);
+	if (handle < 0) {
+		tmdbg("Fail to terminate the task, because of invalid pid.\n");
+		return;
+	}
 
 	/* Terminate based on task type */
 	ret = taskmgr_handle_tcb(TMIOC_TERMINATE, TM_PID(handle), NULL);
 	if (ret < 0) {
 		tmdbg("Fail to terminate the task\n");
+		return;
 	}
 
 	/* task or pthread terminated well */
@@ -1488,7 +1493,7 @@ static int taskmgr_init_task_manager(void)
 	}
 
 	g_tm_recv_mqfd = mq_open(TM_PUBLIC_MQ, O_RDONLY | O_CREAT, 0666, &attr);
-	if (g_tm_recv_mqfd < 0) {
+	if (g_tm_recv_mqfd == (mqd_t)ERROR) {
 		tmdbg("Failed to open task manager public queue.\n");
 		close(taskmgr_fd);
 		return ERROR;

@@ -286,7 +286,7 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 
 	if (wifi_on(RTW_MODE_AP) < 0) {
 		ndbg("\n\rERROR: Wifi on failed!");
-		return;
+		return -1;
 	}
 
 	nvdbg("\n\rStarting AP ...");
@@ -374,11 +374,7 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		key_id = 1; //Foucus
 		if ((password_len != 5) && (password_len != 13)) {
 			ndbg("\n\rWrong WEP key length. Must be 5 or 13 ASCII characters.");
-			return;
-		}
-		if ((key_id < 0) || (key_id > 3)) {
-			ndbg("\n\rWrong WEP key id. Must be one of 0,1,2, or 3.");
-			return;
+			return -1;
 		}
 		semaphore = NULL;
 		break;
@@ -398,7 +394,7 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 
 	if (wifi_on(RTW_MODE_STA) < 0) {
 		ndbg("\n\rERROR: Wifi on failed!");
-		return;
+		return -1;
 	}
 
 	ret = wifi_connect(ssid,
@@ -438,7 +434,7 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 
 	if ((argc != 3) && (argc != 4) && (argc != 5) && (argc != 6)) {
 		ndbg("\n\rUsage: wifi_connect_bssid 0/1 [SSID] BSSID / xx:xx:xx:xx:xx:xx [WPA PASSWORD / (5 or 13) ASCII WEP KEY] [WEP KEY ID 0/1/2/3]");
-		return;
+		return -1;
 	}
 
 	//Check if in AP mode
@@ -451,7 +447,7 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		vTaskDelay(20);
 		if (wifi_on(RTW_MODE_STA) < 0) {
 			ndbg("\n\rERROR: Wifi on failed!");
-			return;
+			return -1;
 		}
 	}
 	//check ssid
@@ -460,7 +456,7 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		ssid_len = strlen((const char *)argv[2]);
 		if ((ssid_len <= 0) || (ssid_len > 32)) {
 			ndbg("\n\rWrong ssid. Length must be less than 32.");
-			return;
+			return -1;
 		}
 		ssid = argv[2];
 	}
@@ -490,11 +486,11 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		key_id = atoi(argv[4 + index]);
 		if ((password_len != 5) && (password_len != 13)) {
 			ndbg("\n\rWrong WEP key length. Must be 5 or 13 ASCII characters.");
-			return;
+			return -1;
 		}
 		if ((key_id < 0) || (key_id > 3)) {
 			ndbg("\n\rWrong WEP key id. Must be one of 0,1,2, or 3.");
-			return;
+			return -1;
 		}
 		semaphore = NULL;
 	}
@@ -511,10 +507,12 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 
 	if (ret != RTW_SUCCESS) {
 		ndbg("\n\rERROR: Operation failed!");
-		return;
+		return -1;
 	} else {
 		ndbg("\r\nConnected\n");
 	}
+
+	return 0;
 }
 
 int8_t cmd_wifi_disconnect(void)
@@ -729,7 +727,7 @@ static void _free_scanlist(void)
 	while (g_scan_list) {
 		wifi_utils_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree(cur, sizeof(cur));
+		rtw_mfree(cur, sizeof(wifi_utils_scan_list_s));
 	}
 	g_scan_num = 0;
 }
@@ -742,7 +740,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 	scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(sizeof(wifi_utils_scan_list_s));
 	if (scan_list == NULL) {
 		ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
-		return;
+		return RTW_ERROR;
 	}
 
 	if (malloced_scan_result->scan_complete != RTW_TRUE) {

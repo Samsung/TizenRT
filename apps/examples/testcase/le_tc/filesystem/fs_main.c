@@ -97,6 +97,8 @@
 
 #define DEV_NEW_NULL_PATH "/dev/NULL"
 
+#define DEVNAME_LEN 32
+
 #define VFS_LOOP_COUNT 5
 
 #define LONG_FILE_PATH MOUNT_DIR"long"
@@ -134,15 +136,7 @@
 #define INV_FD -3
 
 #define MTD_CONFIG_PATH "/dev/config"
-#if defined(CONFIG_ARCH_BOARD_CY4390x)
-#define MTD_FTL_PATH "/dev/mtdblock4"
-#elif defined(CONFIG_ARCH_BOARD_IMXRT1020_EVK)
-#define MTD_FTL_PATH "/dev/smart0p6"
-#else
-#define MTD_FTL_PATH "/dev/mtdblock1"
-#endif
 #define BUF_SIZE 4096
-
 #define DEV_PATH "/dev"
 #define DEV_INVALID_DIR "/dev/invalid"
 #define DEV_EMPTY_FOLDER_PATH "/dev/folder"
@@ -1639,17 +1633,31 @@ static void tc_driver_mtd_config_ops(void)
 * @precondition     NA
 * @postcondition    NA
 */
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 static void tc_driver_mtd_ftl_ops(void)
 {
 	int fd;
 	int ret;
 	char *buf;
+	char *types = CONFIG_FLASH_PART_TYPE;
+	char MTD_FTL_PATH[DEVNAME_LEN];
+	int partno = 0;
 
 	buf = (char *)malloc(BUF_SIZE);
 	if (!buf) {
 		printf("Memory not allocated \n");
 		return;
+	}
+
+	memset(MTD_FTL_PATH, 0, DEVNAME_LEN);
+	while (*types) {
+		if (!strncmp(types, "ftl,", 4)) {
+			snprintf(MTD_FTL_PATH, sizeof(MTD_FTL_PATH), "/dev/mtdblock%d", partno);
+			break;
+		} else {
+			while (*types++ != ',');
+			partno++;
+		}
 	}
 
 	fd = open(MTD_FTL_PATH, O_RDWR);
@@ -3694,7 +3702,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_driver_mtd_config_ops();
 #endif
 
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 	tc_driver_mtd_ftl_ops();
 #endif
 

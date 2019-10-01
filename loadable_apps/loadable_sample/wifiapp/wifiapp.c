@@ -69,7 +69,7 @@ int wifiapp_main(int argc, char **argv)
 	int ret;
 	ret = binary_manager_notify_binary_started();
 	if (ret < 0) {
-		printf("WIFI notify 'START' state FAIL\n", ret);
+		printf("WIFI notify 'START' state FAIL\n");
 	}
 #endif
 
