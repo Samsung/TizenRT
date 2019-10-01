@@ -1,18 +1,99 @@
 package smartfs_dump_visualizer.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import smartfs_dump_parser.data_model.EntryType;
+import smartfs_dump_parser.data_model.Header;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.data_model.Sector;
 import smartfs_dump_parser.data_model.SmartFile;
 
 public class SmartFSOrganizer {
 
+	public static boolean organizeSmartFS(String filePath, String fileName) {
+		boolean ret = true;
+
+		byte[] buffer = new byte[SmartFileSystem.getSectorSize()];
+		try {
+			FileInputStream fis = new FileInputStream(new File(filePath, fileName));
+			int sectorId = 0;
+			while (fis.read(buffer) > 0) {
+				SmartFSOrganizer.addSector(sectorId, buffer);
+				if (sectorId == 0 || sectorId == 3) {
+					System.out.println(printSector(buffer, sectorId));
+				}
+				sectorId++;
+				buffer = new byte[SmartFileSystem.getSectorSize()];
+			}
+			fis.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("[ERROR] Parsing failed with the opened file..\nPlease check it.");
+		}
+
+		createDirectoryHierarchy();
+
+		return ret;
+	}
+
+	private static void addSector(int physicalSectorNum, byte[] sectorData) {
+		Sector sector = new Sector(sectorData);
+		int logicalSectorId = makePositiveValue(sectorData[0]) + (makePositiveValue(sectorData[1]) << 8);
+		int status = makePositiveValue(sectorData[4]);
+		Header header = new Header(physicalSectorNum, logicalSectorId, makePositiveValue(sectorData[2]),
+				makePositiveValue(sectorData[3]), status);
+		sector.setHeader(header);
+		SmartFileSystem.getSectors().add(sector);
+
+		byte statusValue = sectorData[4];
+		if (SmartFileSystem.isActiveSector(statusValue)) {
+			SmartFileSystem.getActiveSectors().add(sector);
+
+			if (SmartFileSystem.isSignatureLogicalSector(logicalSectorId)) {
+				SmartFileSystem.setValidSmartFS(true);
+			} else if (SmartFileSystem.isRootLogicalSector(logicalSectorId)) {
+				List<Sector> sectorList = new ArrayList<Sector>();
+				sectorList.add(sector);
+				SmartFile rootDir = new SmartFile(SmartFileSystem.getSmartFSRoot(), EntryType.DIRECTORY, null,
+						sectorList);
+				SmartFileSystem.setRootDirectory(rootDir);
+			}
+		} else if (SmartFileSystem.isDirtySector(statusValue)) {
+			SmartFileSystem.getDirtySectors().add(sector);
+		} else {
+			SmartFileSystem.getCleanSectors().add(sector);
+		}
+
+	}
+
+	private static int makePositiveValue(byte value) {
+		return (value + 256) % 256;
+	}
+
+	public static String printSector(byte[] buffer, int sectorId) {
+		StringBuffer stbuf = new StringBuffer();
+		stbuf.append("Sector " + sectorId + "\n");
+		for (int i = 0; i < SmartFileSystem.getSectorSize(); i++) {
+			int value = (buffer[i] + 256) % 256;
+			stbuf.append(value);
+			for (int j = 0; j < 3 - new String(value + "").length(); j++)
+				stbuf.append(" ");
+			if ((i + 1) % 16 == 0)
+				stbuf.append("\n");
+			else
+				stbuf.append(" ");
+		}
+		stbuf.append("\n");
+
+		return stbuf.toString();
+	}
+
 	public static void createDirectoryHierarchy() {
 		List<SmartFile> queue = new ArrayList<SmartFile>();
-		SmartFile root = SmartFileSystem.getRootDir();
+		SmartFile root = SmartFileSystem.getRootDirectory();
 		if (root == null) {
 			System.out.println("Root is null");
 		}
@@ -39,7 +120,7 @@ public class SmartFSOrganizer {
 		int offset = SmartFileSystem.getSectorHeaderSize();
 
 		// Get the information of 'struct smartfs_chain_header_s'
-		int type = SmartFileSystem.makePositiveValue(flashData[offset]);
+		int type = makePositiveValue(flashData[offset]);
 		if (type == 0x0) {
 			System.out.println("File " + sf.getFileName() + " has no children..");
 			return sf.getEntries().size();
@@ -48,7 +129,7 @@ public class SmartFSOrganizer {
 		// Get the information of 'struct smartfs_entry_header_s'
 		offset += SmartFileSystem.getChainHeaderSize();
 		while ((offset + SmartFileSystem.getEntryHeaderSize() < SmartFileSystem.getSectorSize())
-				&& (SmartFileSystem.makePositiveValue(flashData[offset]) != 255)) {
+				&& (makePositiveValue(flashData[offset]) != 255)) {
 			boolean isDirectory = true;
 			if ((flashData[offset] & 0x20) == 0x0) {
 				isDirectory = false;
@@ -58,7 +139,7 @@ public class SmartFSOrganizer {
 			int fileNameLength = SmartFileSystem.getFileNameLength();
 			char[] fileNameArray = new char[fileNameLength];
 			for (int i = 0; i < fileNameLength; i++) {
-				int character = SmartFileSystem.makePositiveValue(flashData[offset + i]);
+				int character = makePositiveValue(flashData[offset + i]);
 				if (character > 0) {
 					fileNameArray[i] = (char) ('a' + character - 97);
 				} else {
