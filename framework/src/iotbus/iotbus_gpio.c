@@ -481,6 +481,11 @@ int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int
 	close(fd);
 	return IOTBUS_ERROR_NONE;
 }
+
+void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev)
+{
+	return (void *)dev->handle->cb;
+}
 #endif
 
 /**
@@ -600,11 +605,6 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e * 
 	*drive = handle->drive;
 
 	return IOTBUS_ERROR_NONE;
-}
-
-void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev)
-{
-	return (void *)dev->handle->cb;
 }
 
 #ifdef __cplusplus
