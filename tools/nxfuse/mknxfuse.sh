@@ -30,6 +30,8 @@ DEST_INLCUDE_DIR=$NXFUSE_TOOL_PATH/include
 
 APPNAME=nxfuse
 
+. $BASE_DIR/os/.config
+
 echo "==========Copying Smartfs files====================="
 mkdir -p $DEST_INLCUDE_DIR
 mkdir -p $DEST_INLCUDE_DIR/sys
@@ -42,12 +44,18 @@ ln -sf $SMARTFSDIR/smartfs_utils.c $SMARTFS_TMPDIR/smartfs_utils.c
 ln -sf $SMARTFSDIR/smartfs_smart.c $SMARTFS_TMPDIR/smartfs_smart.c
 ln -sf $SMARTFSDIR/../driver/mtd/smart.c $SMARTFS_TMPDIR/smart.c
 
+#libc queue source folder
+if [ $CONFIG_SMARTFS_SECTOR_RECOVERY ]; then
+ln -svf $BASE_DIR/lib/libc/queue $SRCDIR/
+fi
+
 #Header Files
 ln -sf $BASE_INCLUDE_DIR/crc16.h $DEST_INLCUDE_DIR/crc16.h
 ln -sf $BASE_INCLUDE_DIR/crc32.h $DEST_INLCUDE_DIR/crc32.h
 ln -sf $BASE_INCLUDE_DIR/crc8.h $DEST_INLCUDE_DIR/crc8.h
 ln -sf $BASE_INCLUDE_DIR/debug.h $DEST_INLCUDE_DIR/debug.h
 ln -sf $BASE_INCLUDE_DIR/dirent.h $DEST_INLCUDE_DIR/dirent.h
+ln -sf $BASE_INCLUDE_DIR/errno.h $DEST_INLCUDE_DIR/errno.h
 ln -sf $BASE_INCLUDE_DIR/fixedmath.h $DEST_INLCUDE_DIR/fixedmath.h
 ln -sf $BASE_INCLUDE_DIR/queue.h $DEST_INLCUDE_DIR/queue.h
 ln -sf $BASE_INCLUDE_DIR/sys/statfs.h $DEST_INLCUDE_DIR/sys/statfs.h
@@ -69,7 +77,7 @@ ln -sf $BASE_DIR/lib/libc/misc/lib_crc8.c $SRCDIR/lib_crc8.c
 echo "Copying Done"
 
 echo "============Executing Make command====================="
-make -C $NXFUSE_TOOL_PATH
+make -C $NXFUSE_TOOL_PATH || exit 1
 
 #Waiting for make to complete
 #After build done, remove the copied source & header files
@@ -79,6 +87,7 @@ rm -rf $DEST_INLCUDE_DIR/crc32.h
 rm -rf $DEST_INLCUDE_DIR/crc8.h
 rm -rf $DEST_INLCUDE_DIR/debug.h
 rm -rf $DEST_INLCUDE_DIR/dirent.h
+rm -rf $DEST_INLCUDE_DIR/errno.h
 rm -rf $DEST_INLCUDE_DIR/fixedmath.h
 rm -rf $DEST_INLCUDE_DIR/queue.h
 rm -rf $DEST_INLCUDE_DIR/sys/statfs.h
@@ -95,6 +104,9 @@ rm -rf $DEST_INLCUDE_DIR/tinyara/fs/ioctl.h
 rm -rf $DEST_INLCUDE_DIR/sys
 rm -rf $DEST_INLCUDE_DIR/tinyara/fs
 rm -rf $SMARTFS_TMPDIR
+if [ $CONFIG_SMARTFS_SECTOR_RECOVERY ]; then
+rm -rf $SRCDIR/queue
+fi
 rm -rf $DEPDIR
 rm -rf $OBJDIR
 
