@@ -454,15 +454,15 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compressio
 	elf_compress_type = compression_type;
 
 	/* Set number of blocks to use for caching */
-	if (CONFIG_ELF_CACHE_BLOCKS_COUNT < (CUTOFF_RATIO_CACHE_BLOCKS) * (number_of_blocks)) {
-		number_blocks_caching = CONFIG_ELF_CACHE_BLOCKS_COUNT;
-	} else {
-		number_blocks_caching = ((CUTOFF_RATIO_CACHE_BLOCKS) * (number_of_blocks));
+	if (CONFIG_ELF_CACHE_BLOCKS_COUNT > (CUTOFF_RATIO_CACHE_BLOCKS) * (number_of_blocks)) {
+		number_blocks_caching = (CUTOFF_RATIO_CACHE_BLOCKS) * (number_of_blocks);
 	}
 
 	/* Extra unaligned data apart from blocksize */
-	if (file_len % cache_blocks_size)
+	if (file_len % cache_blocks_size) {
 		number_of_blocks++;
+		number_blocks_caching++;
+	}
 
 	/* Initialize max_accesed_count to 0 */
 	max_accessed_count = 0;
