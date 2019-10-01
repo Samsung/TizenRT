@@ -629,60 +629,47 @@ ui_error_t ui_widget_destroy(ui_widget_t widget)
 
 static void _ui_widget_destroy_func(void *userdata)
 {
-	ui_widget_body_t *body;
+	int iter;
+	ui_widget_body_t *widget;
+	ui_widget_body_t *child;
 
 	if (!userdata) {
 		UI_LOGE("error: Invalid Parameter!\n");
 		return;
 	}
 
-	body = (ui_widget_body_t *)userdata;
-
-	_ui_widget_destroy_recur(body);
-}
-
-static void _ui_widget_destroy_recur(ui_widget_body_t *widget)
-{
-	int iter;
-	ui_widget_body_t *curr_widget;
-	ui_widget_body_t *child;
-
-	if (!widget) {
-		UI_LOGE("error: Invalid Parameter!\n");
-		return;
-	}
+	widget = (ui_widget_body_t *)userdata;
 
 	ui_widget_queue_init();
 	ui_widget_queue_enqueue(widget);
 
 	while (!ui_widget_is_queue_empty()) {
-		curr_widget = ui_widget_queue_dequeue();
-		if (!curr_widget) {
+		widget = ui_widget_queue_dequeue();
+		if (!widget) {
 			UI_LOGE("error: curr widget is NULL!\n");
 			break;
 		}
 
-		if (curr_widget->remove_cb) {
-			curr_widget->remove_cb((ui_widget_t)curr_widget);
+		if (widget->remove_cb) {
+			widget->remove_cb((ui_widget_t)widget);
 		}
 
-		if (curr_widget->parent) {
-			vec_remove(&curr_widget->parent->children, curr_widget);
+		if (widget->parent) {
+			vec_remove(&widget->parent->children, widget);
 		}
 
 
 		// In the below function, An item of the widget->children will be deleted.
 		// So this while loop will be finished when the all items are deleted.
-		vec_foreach(&curr_widget->children, child, iter) {
+		vec_foreach(&widget->children, child, iter) {
 			ui_widget_queue_enqueue(child);
 		}
 
-		ui_widget_deinit(curr_widget);
+		ui_widget_deinit(widget);
 
-		UI_FREE(curr_widget);
+		UI_FREE(widget);
 	}
 }
-
 
 ui_error_t ui_widget_add_child(ui_widget_t widget, ui_widget_t child, int32_t x, int32_t y)
 {

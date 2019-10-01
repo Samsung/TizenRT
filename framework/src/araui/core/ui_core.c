@@ -69,7 +69,7 @@ typedef struct {
 static ui_core_t g_core;
 static ui_widget_body_t *g_quick_panel_info[UI_QUICK_PANEL_TYPE_NUM];
 
-static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt);
+static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt);
 static void _ui_call_tween_finished_cb(void *userdata);
 static void _ui_call_anim_finished_cb(void *userdata);
 static void *_ui_core_thread_loop(void *param);
@@ -200,7 +200,7 @@ ui_error_t ui_stop(void)
 	return UI_OK;
 }
 
-static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt)
+static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt)
 {
 	int iter;
 	ui_widget_body_t *curr_widget;
@@ -274,7 +274,7 @@ static ui_error_t _ui_process_widget_recur(ui_widget_body_t *widget, uint32_t dt
 	return UI_OK;
 }
 
-static ui_error_t _ui_render_widget_recur(ui_widget_body_t *widget, ui_rect_t draw_area, uint32_t dt)
+static ui_error_t _ui_render_widget(ui_widget_body_t *widget, ui_rect_t draw_area, uint32_t dt)
 {
 	int iter;
 	ui_widget_body_t *curr_widget;
@@ -358,11 +358,11 @@ static void _ui_redraw(uint32_t dt)
 	vec_foreach(ui_window_get_redraw_list(), redraw_rect, iter) {
 		window = ui_window_get_current();
 		if (window) {
-			_ui_render_widget_recur(window->root, *redraw_rect, dt);
+			_ui_render_widget(window->root, *redraw_rect, dt);
 		}
 
 		if (_ui_core_quick_panel_visible()) {
-			_ui_render_widget_recur(g_quick_panel_info[g_core.visible_event_type], *redraw_rect, dt);
+			_ui_render_widget(g_quick_panel_info[g_core.visible_event_type], *redraw_rect, dt);
 		}
 
 		if (window || _ui_core_quick_panel_visible()) {
@@ -373,13 +373,18 @@ static void _ui_redraw(uint32_t dt)
 	ui_window_redraw_list_clear();
 }
 
-static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
+static void _ui_update_redraw_list(ui_widget_body_t *widget)
 {
 	int iter;
 	ui_mat3_t parent_mat;
 	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
 	bool update_flag;
+
+	if (!widget) {
+		UI_LOGE("error: invalid widget!\n");
+		return;
+	}
 
 	ui_widget_queue_init();
 	ui_widget_queue_enqueue(widget);
@@ -427,21 +432,6 @@ static void _ui_update_redraw_list_recur(ui_widget_body_t *widget)
 	update_flag = false;
 }
 
-static void _ui_update_redraw_list(void)
-{
-	ui_window_body_t *window;
-
-	window = ui_window_get_current();
-	if (window) {
-		UI_ASSERT(window->root);
-		_ui_update_redraw_list_recur(window->root);
-	}
-
-	if (_ui_core_quick_panel_visible()) {
-		_ui_update_redraw_list_recur(g_quick_panel_info[g_core.visible_event_type]);
-	}
-}
-
 static void *_ui_core_thread_loop(void *param)
 {
 	ui_widget_body_t *root;
@@ -482,16 +472,17 @@ static void *_ui_core_thread_loop(void *param)
 			prev_window = window;
 			root = window->root;
 
-			if (_ui_process_widget_recur(root, dt) != UI_OK) {
+			if (_ui_process_widget(root, dt) != UI_OK) {
 				UI_LOGE("error: processing widget recursively failed!\n");
 			}
+			_ui_update_redraw_list(window->root);
 		}
 
 		if (_ui_core_quick_panel_visible()) {
-			_ui_process_widget_recur(g_quick_panel_info[g_core.visible_event_type], dt);
+			_ui_process_widget(g_quick_panel_info[g_core.visible_event_type], dt);
+			_ui_update_redraw_list(g_quick_panel_info[g_core.visible_event_type]);
 		}
 
-		_ui_update_redraw_list();
 		_ui_redraw(dt);
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)
