@@ -315,24 +315,34 @@
 #define SYS_fstat                      (__SYS_filedesc + 4)
 #define SYS_fstatfs                    (__SYS_filedesc + 5)
 #define SYS_lseek                      (__SYS_filedesc + 6)
+#if defined(CONFIG_PIPES)
 #define SYS_mkfifo                     (__SYS_filedesc + 7)
-#define SYS_mmap                       (__SYS_filedesc + 8)
-#define SYS_open                       (__SYS_filedesc + 9)
-#define SYS_opendir                    (__SYS_filedesc + 10)
-#define SYS_pipe                       (__SYS_filedesc + 11)
-#define SYS_readdir                    (__SYS_filedesc + 12)
-#define SYS_rewinddir                  (__SYS_filedesc + 13)
-#define SYS_seekdir                    (__SYS_filedesc + 14)
-#define SYS_stat                       (__SYS_filedesc + 15)
-#define SYS_statfs                     (__SYS_filedesc + 16)
-#define SYS_telldir                    (__SYS_filedesc + 17)
+#define __SYS_mmap                     (__SYS_filedesc + 8)
+#else
+#define __SYS_mmap                     (__SYS_filedesc + 7)
+#endif
+#define SYS_mmap                       (__SYS_mmap + 0)
+#define SYS_open                       (__SYS_mmap + 1)
+#define SYS_opendir                    (__SYS_mmap + 2)
+#if defined(CONFIG_PIPES)
+#define SYS_pipe                       (__SYS_mmap + 3)
+#define __SYS_readdir                  (__SYS_mmap + 4)
+#else
+#define __SYS_readdir                  (__SYS_mmap + 3)
+#endif
+#define SYS_readdir                    (__SYS_readdir + 0)
+#define SYS_rewinddir                  (__SYS_readdir + 1)
+#define SYS_seekdir                    (__SYS_readdir + 2)
+#define SYS_stat                       (__SYS_readdir + 3)
+#define SYS_statfs                     (__SYS_readdir + 4)
+#define SYS_telldir                    (__SYS_readdir + 5)
 
 #if CONFIG_NFILE_STREAMS > 0
-#define SYS_fs_fdopen                  (__SYS_filedesc + 18)
-#define SYS_sched_getstreams           (__SYS_filedesc + 19)
-#define __SYS_mountpoint               (__SYS_filedesc + 20)
+#define SYS_fs_fdopen                  (__SYS_readdir + 6)
+#define SYS_sched_getstreams           (__SYS_readdir + 7)
+#define __SYS_mountpoint               (__SYS_readdir + 8)
 #else
-#define __SYS_mountpoint               (__SYS_filedesc + 18)
+#define __SYS_mountpoint               (__SYS_readdir + 6)
 #endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT)
