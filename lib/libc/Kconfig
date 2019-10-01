@@ -455,3 +455,9 @@ config LIBC_EXECFUNCS
 		non-standard binfmt function 'exec', and then (2) exit(0).  Since
 		the new thread will be terminated by the exec[l|v] call, it really
 		served no purpose other than to suport Unix compatility.
+
+config LIBC_SYMTAB
+	bool "Enable symbol table library"
+	default n
+	---help---
+		Enable symbol table library. It can be used for getting symbol information.
