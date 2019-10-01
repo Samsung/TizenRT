@@ -36,6 +36,9 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC)
 #define TC_AUDIO_STACK  4096
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_COMPRESSION
+#define TC_COMPRESSION_STACK   16384
+#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_DM_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_DM_ITC)
 #define TC_DM_STACK  2048
 #endif
@@ -51,8 +54,8 @@
 #ifdef CONFIG_LIBCXX_UTC
 #define TC_LIBCXX_STACK  4096
 #endif
-#if defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC)	
-#define TC_MEDIA_STACK  8192	
+#if defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC)
+#define TC_MEDIA_STACK  8192
 #endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_MESSAGING_UTC)
 #define TC_MESSAGING_STACK  4096
@@ -89,6 +92,7 @@ int total_pass;
 int total_fail;
 
 /* Library&Environment Test Case as le_tc*/
+extern int tc_compression_main(int argc, char *argv[]);
 extern int tc_drivers_main(int argc, char *argv[]);
 extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
@@ -137,6 +141,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC
 	{"audio_itc", itc_audio_main, TASH_EXECMD_ASYNC},
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_COMPRESSION
+	{"compression_tc", tc_compression_main, TASH_EXECMD_ASYNC},
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_DM_UTC
 	{"dm_utc", utc_dm_main, TASH_EXECMD_ASYNC},
 #endif
@@ -155,14 +162,14 @@ static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_LIBCXX_UTC
 	{"libcxx_utc", utc_libcxx_main, TASH_EXECMD_ASYNC},
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC	
-	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},	
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC
+	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC	
-	{"media_itc", itc_media_main, TASH_EXECMD_ASYNC},	
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC
+	{"media_itc", itc_media_main, TASH_EXECMD_ASYNC},
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_MESSAGING_UTC	
-	{"messaging_utc", utc_messaging_main, TASH_EXECMD_ASYNC},	
+#ifdef CONFIG_EXAMPLES_TESTCASE_MESSAGING_UTC
+	{"messaging_utc", utc_messaging_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 	{"mpu_tc", tc_mpu_main, TASH_EXECMD_ASYNC},
@@ -258,7 +265,7 @@ int tc_main(int argc, char *argv[])
 	tash_cmdlist_install(tc_cmds);
 #endif
 	printf("\nTestcase registers TASH commands named \"<MODULE_NAME>_tc\".\nPlease find them using \"help\" and execute them in TASH\n");
-#else // !CONFIG_TASH
+#else							// !CONFIG_TASH
 	int pid;
 
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
@@ -283,6 +290,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("audioitc", SCHED_PRIORITY_DEFAULT, TC_AUDIO_STACK, itc_audio_main, argv);
 	if (pid < 0) {
 		printf("Audio itc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_COMPRESSION
+	pid = task_create("compressiontc", SCHED_PRIORITY_DEFAULT, TC_COMPRESSION_STACK, tc_compression_main, argv);
+	if (pid < 0) {
+		printf("Compression tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_DM_UTC

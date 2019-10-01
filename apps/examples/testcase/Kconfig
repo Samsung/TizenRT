@@ -14,6 +14,7 @@ config DISABLE_MANUAL_TESTCASE
 	bool "Disable Manual Testcase"
 	default n
 
+source "$APPSDIR/examples/testcase/le_tc/compression/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/drivers/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/filesystem/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/kernel/Kconfig"
