@@ -1,13 +1,11 @@
 package smartfs_dump_parser.handlers;
 
-import java.io.File;
-import java.io.FileInputStream;
-
 import javax.inject.Inject;
 
 import org.eclipse.e4.core.di.annotations.Execute;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.workbench.modeling.EPartService;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
@@ -24,6 +22,11 @@ public class OpenHandler {
 	public void execute(Shell shell) {
 		FileDialog dialog = new FileDialog(shell);
 		if (dialog.open() != null) {
+			if (SmartFileSystem.isValidSmartFS()) {
+				MessageDialog.openInformation(shell, "Information",
+						"A dump file " + " is already opened.");
+				return;
+			}
 			String filePath = dialog.getFilterPath();
 			String fileName = dialog.getFileName();
 			System.out.println("filename = " + fileName);
@@ -31,45 +34,10 @@ public class OpenHandler {
 			MPart mpart = partService.findPart("SmartFS_Dump_Parser.part.sample");
 			DumpViewer dv = (DumpViewer) mpart.getObject();
 
-			byte[] buffer = new byte[SmartFileSystem.getSectorSize()];
-			try {
-				FileInputStream fis = new FileInputStream(new File(filePath, fileName));
-				int sectorId = 0;
-				while (fis.read(buffer) > 0) {
-					SmartFileSystem.addSector(sectorId, buffer);
-					if (sectorId == 0 || sectorId == 3) {
-						System.out.println(printSector(buffer, sectorId));
-					}
-					sectorId++;
-					buffer = new byte[SmartFileSystem.getSectorSize()];
-				}
-				fis.close();
-			} catch (Exception e) {
-				e.printStackTrace();
+			if (SmartFSOrganizer.organizeSmartFS(filePath, fileName)) {
+				dv.getTableViewer().refresh();
+				dv.getDirectoryViewer().refresh();
 			}
-			dv.getTableViewer().refresh();
-
-			SmartFSOrganizer.createDirectoryHierarchy();
-
-			dv.getDirectoryViewer().refresh();
 		}
-	}
-
-	public String printSector(byte[] buffer, int sectorId) {
-		StringBuffer stbuf = new StringBuffer();
-		stbuf.append("Sector " + sectorId + "\n");
-		for (int i = 0; i < SmartFileSystem.getSectorSize(); i++) {
-			int value = (buffer[i] + 256) % 256;
-			stbuf.append(value);
-			for (int j = 0; j < 3 - new String(value + "").length(); j++)
-				stbuf.append(" ");
-			if ((i + 1) % 16 == 0)
-				stbuf.append("\n");
-			else
-				stbuf.append(" ");
-		}
-		stbuf.append("\n");
-
-		return stbuf.toString();
 	}
 }
