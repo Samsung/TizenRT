@@ -30,6 +30,7 @@
 #include <time.h>
 #include <vec/vec.h>
 #include <araui/ui_commons.h>
+#include <araui/ui_animation.h>
 #include "ui_renderer.h"
 #include "ui_request_callback.h"
 #include "ui_debug.h"
@@ -39,7 +40,6 @@
 #include "ui_window_internal.h"
 #include "ui_commons_internal.h"
 #include "ui_animation_internal.h"
-#include "ui_renderer.h"
 #include "dal/ui_dal.h"
 
 #if defined(CONFIG_UI_ENABLE_EMOJI)
@@ -70,7 +70,6 @@ static ui_core_t g_core;
 static ui_widget_body_t *g_quick_panel_info[UI_QUICK_PANEL_TYPE_NUM];
 
 static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt);
-static void _ui_call_tween_finished_cb(void *userdata);
 static void _ui_call_anim_finished_cb(void *userdata);
 static void *_ui_core_thread_loop(void *param);
 static bool _ui_core_quick_panel_visible(void);
@@ -222,28 +221,16 @@ static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt)
 			return UI_OPERATION_FAIL;
 		}
 
-		if (curr_widget->tween_cb) {
-			if (curr_widget->tween_info.t > curr_widget->tween_info.d) {
-				curr_widget->tween_info.t = curr_widget->tween_info.d;
-				curr_widget->tween_cb((ui_widget_t)curr_widget, curr_widget->tween_info.t);
-				curr_widget->tween_cb = UI_NULL;
-
-				if (ui_request_callback(_ui_call_tween_finished_cb, curr_widget) != UI_OK) {
-					UI_LOGE("Error: cannot make a request to call.tween_finished_cb!\n");
-				}
-			} else {
-				curr_widget->tween_cb((ui_widget_t)curr_widget, curr_widget->tween_info.t);
-				curr_widget->tween_info.t += dt;
-			}
-		}
-
 		anim = (ui_anim_body_t *)curr_widget->anim;
 
 		if (anim) {
 			if (anim->func((ui_widget_t)curr_widget, (ui_anim_t)anim, &dt)) {
-				curr_widget->anim = UI_NULL;
-				if (ui_request_callback(_ui_call_anim_finished_cb, curr_widget) != UI_OK) {
-					UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
+				if (curr_widget->anim_finished_cb) {
+					if (ui_request_callback(_ui_call_anim_finished_cb, curr_widget) != UI_OK) {
+						UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
+					}
+				} else {
+					curr_widget->anim = UI_NULL;
 				}
 			}
 		}
@@ -318,21 +305,6 @@ static ui_error_t _ui_render_widget(ui_widget_body_t *widget, ui_rect_t draw_are
 	return UI_OK;
 }
 
-static void _ui_call_tween_finished_cb(void *userdata)
-{
-	ui_widget_body_t *body;
-
-	if (!userdata) {
-		UI_LOGE("error: Invalid Parameter!\n");
-		return;
-	}
-
-	body = (ui_widget_body_t *)userdata;
-	if (body && body->tween_info.tween_finished_cb) {
-		body->tween_info.tween_finished_cb((ui_widget_t)body);
-	}
-}
-
 static void _ui_call_anim_finished_cb(void *userdata)
 {
 	ui_widget_body_t *body;
@@ -344,9 +316,10 @@ static void _ui_call_anim_finished_cb(void *userdata)
 
 	body = (ui_widget_body_t *)userdata;
 	if (body && body->anim_finished_cb) {
-		body->anim_finished_cb((ui_widget_t)body);
+		body->anim_finished_cb((ui_widget_t)body, *body->anim);
+		body->anim_finished_cb = UI_NULL;
+		body->anim = UI_NULL;
 	}
-	body->anim_finished_cb = UI_NULL;
 }
 
 static void _ui_redraw(uint32_t dt)
@@ -705,6 +678,8 @@ void ui_core_unlock_and_deliver_touch(ui_widget_body_t *body, ui_touch_event_t t
 ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type)
 {
 	ui_quick_panel_body_t *body;
+	ui_anim_t swipe_panel;
+	ui_rect_t rect;
 
 	if (!ui_is_running()) {
 		return UI_NOT_RUNNING;
@@ -726,7 +701,9 @@ ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type)
 	case UI_QUICK_PANEL_LEFT_SWIPE:
 	case UI_QUICK_PANEL_RIGHT_SWIPE:
 		if (body->transition_type == UI_TRANSITION_SLIDE) {
-			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_appear_tween_end_func);
+			rect = ui_widget_get_rect((ui_widget_t)g_quick_panel_info[event_type]);
+			swipe_panel = ui_move_anim_create(rect.x, rect.y, 0, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+			ui_widget_play_anim((ui_widget_t)g_quick_panel_info[event_type], swipe_panel, ui_quick_panel_appear_tween_end_func, false);
 		}
 		break;
 
@@ -743,6 +720,8 @@ ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type)
 ui_error_t ui_core_quick_panel_disappear(ui_quick_panel_event_type_t event_type)
 {
 	ui_quick_panel_body_t *body;
+	ui_anim_t swipe_panel;
+	ui_rect_t rect;
 
 	if (!ui_is_running()) {
 		return UI_NOT_RUNNING;
@@ -759,21 +738,26 @@ ui_error_t ui_core_quick_panel_disappear(ui_quick_panel_event_type_t event_type)
 	}
 
 	if (body->transition_type == UI_TRANSITION_SLIDE) {
+		rect = ui_widget_get_rect((ui_widget_t)g_quick_panel_info[event_type]);
 		switch (event_type) {
 		case UI_QUICK_PANEL_TOP_SWIPE:
-			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
+			swipe_panel = ui_move_anim_create(rect.x, rect.y, 0, -1 * CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+			ui_widget_play_anim((ui_widget_t)g_quick_panel_info[event_type], swipe_panel, ui_quick_panel_disappear_tween_end_func, false);
 			break;
 
 		case UI_QUICK_PANEL_BOTTOM_SWIPE:
-			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
+			swipe_panel = ui_move_anim_create(rect.x, rect.y, 0, CONFIG_UI_DISPLAY_HEIGHT, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+			ui_widget_play_anim((ui_widget_t)g_quick_panel_info[event_type], swipe_panel, ui_quick_panel_disappear_tween_end_func, false);
 			break;
 
 		case UI_QUICK_PANEL_LEFT_SWIPE:
-			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
+			swipe_panel = ui_move_anim_create(rect.x, rect.y, -1 * CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+			ui_widget_play_anim((ui_widget_t)g_quick_panel_info[event_type], swipe_panel, ui_quick_panel_disappear_tween_end_func, false);
 			break;
 
 		case UI_QUICK_PANEL_RIGHT_SWIPE:
-			ui_widget_tween_moveto((ui_widget_t)g_quick_panel_info[event_type], CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, TWEEN_EASE_OUT_QUAD, ui_quick_panel_disappear_tween_end_func);
+			swipe_panel = ui_move_anim_create(rect.x, rect.y, CONFIG_UI_DISPLAY_WIDTH, 0, CONFIG_UI_QUICK_PANEL_TRANSITION_TIME, UI_INTRP_EASE_OUT_QUAD);
+			ui_widget_play_anim((ui_widget_t)g_quick_panel_info[event_type], swipe_panel, ui_quick_panel_disappear_tween_end_func, false);
 			break;
 
 		case UI_QUICK_PANEL_BUTTON:

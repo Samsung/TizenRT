@@ -60,22 +60,13 @@ typedef void (*tick_callback)(ui_widget_t widget, uint32_t dt);
 typedef void (*interval_callback)(ui_widget_t widget);
 
 /**
- * @brief Callback function type which is called when the tween animation is finished.
- *
- * @param widget Handle of the widget which performs tween animation
- *
- * @see ui_widget_tween_moveto()
- */
-typedef void (*tween_finished_callback)(ui_widget_t widget);
-
-/**
  * @brief Callback function type which is called when the animation is finished.
  *
  * @param widget Handle of the widget which performs animation
  *
  * @see ui_widget_play_anim()
  */
-typedef void (*anim_finished_callback)(ui_widget_t widget);
+typedef void (*anim_finished_callback)(ui_widget_t widget, ui_anim_t anim);
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)
 
@@ -92,18 +83,6 @@ typedef void (*button_touched_callback)(ui_widget_t widget);
 
 typedef void (*quick_panel_event_callback)(ui_widget_t widget,
 	uint32_t dt, ui_touch_event_t touch_event, ui_coord_t touch_coord); 
-
-/**
- * @brief Easing function type that is used on the Tween Animation
- *
- * @see ui_widget_tween_moveto()
- */
-typedef enum {
-	TWEEN_LINEAR,            //!< Linear
-	TWEEN_EASE_IN_QUAD,      //!< Ease In Quadratic
-	TWEEN_EASE_OUT_QUAD,     //!< Ease Out Quadratic
-	TWEEN_EASE_INOUT_QUAD    //!< Ease In/Out Quadratic
-} ui_tween_type_t;
 
 typedef enum {
 	UI_QUICK_PANEL_TOP_SWIPE = 0,
@@ -255,24 +234,6 @@ ui_error_t ui_widget_set_tick_callback(ui_widget_t widget, tick_callback tick_cb
  * @see interval_callback
  */
 ui_error_t ui_widget_set_interval_callback(ui_widget_t widget, interval_callback interval_cb, uint32_t timeout);
-
-/**
- * @brief Move the widget through the tween animation.
- *
- * @param[in] widget Handle of the widget to move
- * @param[in] x x coordinate of the moved widget
- * @param[in] y y coordinate of the moved widget
- * @param[in] duration Time duration of the widget move (msec)
- * @param[in] type Type of the tween animation
- * @param[in] tween_finished_cb Callback function when the widget finished movement.\n
- *            If this value is set to NULL, the callback function is not called.
- * @return On success, UI_OK is returned. On failure, the defined error type is returned.
- *
- * @see ui_tween_type_t
- * @see tween_finished_callback
- */
-ui_error_t ui_widget_tween_moveto(ui_widget_t widget, int32_t x, int32_t y,
-	uint32_t duration, ui_tween_type_t type, tween_finished_callback tween_finished_cb);
 
 /**
  * @brief Add the child widget to the parent widget and set the relative coordinates of child widget.
