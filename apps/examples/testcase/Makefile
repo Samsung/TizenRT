@@ -143,6 +143,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC),y)
 	$(Q) $(call REGISTER,audio_itc,itc_audio_main,TASH_EXECMD_ASYNC,100,2048)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_COMPRESSION),y)
+	$(Q) $(call REGISTER,compression_tc,tc_compression_main,TASH_EXECMD_ASYNC,100,16384)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_DM_UTC),y)
 	$(Q) $(call REGISTER,dm_utc,utc_dm_main,TASH_EXECMD_ASYNC,100,2048)
 endif

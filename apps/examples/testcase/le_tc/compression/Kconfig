@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_COMPRESSION
+	bool "Compression TestCase Example"
+	default n
+	---help---
+		Enable the Compression TestCase Example
+
+if EXAMPLES_TESTCASE_COMPRESSION
+
+config TC_LZMA
+	bool "LZMA Compression/Decompression testcase"
+	default y
+	select LIBLZMA
+
+endif
