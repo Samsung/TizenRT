@@ -184,18 +184,6 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 
 #ifdef CONFIG_IOTDEV
 /**
- * @brief Set uart interrupt.
- *
- * @details @b #include <iotbus/iotbus_uart.h>
- * @param[in] hnd handle of uart_context
- * @param[in] int_type interrupt type to enable or disable
- * @param[in] cb callback function
- * @return On success, size is returned. On failure, a negative value is returned.
- * @since TizenRT v1.0
- */
-int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb);
-
-/**
  * @brief Get uart device number.
  *
  * @details @b #include <iotbus/iotbus_uart.h>

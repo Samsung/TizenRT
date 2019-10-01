@@ -19,7 +19,7 @@
 
 ifeq ($(CONFIG_IOTDEV),y)
 
-CSRCS += iotdev.c iotbus_sig.c
+CSRCS += iotbus_sig.c
 
 #CFLAGS += -I$(TOPDIR)/kernel
 

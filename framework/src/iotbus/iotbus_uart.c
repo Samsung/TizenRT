@@ -393,44 +393,6 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 }
 
 #ifdef CONFIG_IOTDEV
-int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb)
-{
-	struct _iotbus_uart_s *handle;
-	int i;
-
-	if (!hnd || !hnd->handle || !cb) {
-		return IOTBUS_ERROR_INVALID_PARAMETER;
-	}
-
-	handle = (struct _iotbus_uart_s *)hnd->handle;
-
-	if (enable) {
-		// To check already registered int_type;
-		for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
-			if (!handle->evt_hnd[i]) {
-				iotapi_dev_init(&handle->evt_hnd[i]);
-				iotapi_dev_register(handle->evt_hnd[i], int_type, cb, (void *)hnd);
-				break;
-			}
-		}
-		if (i >= CONFIG_IOTBUS_UART_EVENT_SIZE) {
-			return IOTBUS_ERROR_QUEUE_FULL;
-		}
-	} else {
-		// Find int_type
-		for (i = 0; i < CONFIG_IOTBUS_UART_EVENT_SIZE; i++) {
-			if (!handle->evt_hnd[i]) {
-				if (iotapi_dev_get_int_type(handle->evt_hnd[i]) == int_type) {
-					iotapi_dev_unregister(handle->evt_hnd[i]);
-					handle->evt_hnd[i] = NULL;
-				}
-			}
-		}
-	}
-
-	return IOTBUS_ERROR_NONE;
-}
-
 /**
  * @brief Gets a device number of the UART.
  */
