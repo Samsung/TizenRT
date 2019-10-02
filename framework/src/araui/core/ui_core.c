@@ -379,7 +379,7 @@ static void _ui_update_redraw_list(ui_widget_body_t *widget)
 	ui_mat3_t parent_mat;
 	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
-	bool update_flag;
+	bool update_flag = false;
 
 	if (!widget) {
 		UI_LOGE("error: invalid widget!\n");
@@ -428,8 +428,6 @@ static void _ui_update_redraw_list(ui_widget_body_t *widget)
 			ui_widget_queue_enqueue(child);
 		}
 	}
-
-	update_flag = false;
 }
 
 static void *_ui_core_thread_loop(void *param)

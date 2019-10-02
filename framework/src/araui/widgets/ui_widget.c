@@ -136,8 +136,6 @@ static void _ui_widget_set_rotation_func(void *userdata);
 static void _ui_widget_set_touchable_func(void *userdata);
 #endif
 
-static void _ui_widget_destroy_recur(ui_widget_body_t *widget);
-
 static const ui_rect_t NULL_RECT = {0, };
 static ui_widget_body_queue_t g_widget_body_queue;
 
@@ -148,44 +146,11 @@ inline bool ui_widget_check_widget_type(ui_widget_t widget, ui_widget_type_t typ
 
 ui_error_t ui_widget_update_position_info(ui_widget_body_t *widget)
 {
-	int32_t x;
-	int32_t y;
-	ui_widget_body_t *child;
-	int iter;
-
 	if (!widget) {
 		return UI_INVALID_PARAM;
 	}
 
-	// Add redraw region to clear previously located region
-	if (ui_window_add_redraw_list(widget->global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add redraw list!\n");
-		return UI_OPERATION_FAIL;
-	}
-
-	widget->global_rect.width = widget->local_rect.width;
-	widget->global_rect.height = widget->local_rect.height;
-
-	if (widget->parent) {
-		x = widget->local_rect.x + widget->parent->global_rect.x;
-		y = widget->local_rect.y + widget->parent->global_rect.y;
-	} else {
-		x = widget->local_rect.x;
-		y = widget->local_rect.y;
-	}
-
-	widget->global_rect.x = x;
-	widget->global_rect.y = y;
-
-	// Add update region to present newly located region
-	if (ui_window_add_redraw_list(widget->global_rect) != UI_OK) {
-		UI_LOGE("error: failed to add redraw list!\n");
-		return UI_OPERATION_FAIL;
-	}
-
-	vec_foreach(&widget->children, child, iter) {
-		ui_widget_update_position_info(child);
-	}
+	widget->update_flag = true;
 
 	return UI_OK;
 }
