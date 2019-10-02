@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <mqueue.h>
 #include <string.h>
+#include <stdbool.h>
 #include <queue.h>
 #include <sys/types.h>
 #include <messaging/messaging.h>
@@ -70,7 +71,7 @@ int messaging_cleanup(const char *port_name)
 	int ret = ERROR;
 	int cleanup_pid = INVALID_PID;
 	msg_port_info_t *port_info;
-	pid_t my_pid = getpid();
+	pid_t my_pid;
 
 	if (port_name == NULL) {
 		msgdbg("[Messaging] cleanup fail : invalid param.\n");
@@ -84,7 +85,13 @@ int messaging_cleanup(const char *port_name)
 
 	/* Remove the receiver information by port_name from the info list. */
 	port_info = (msg_port_info_t *)sq_peek(&g_port_info_list);
-	while (port_info != NULL) {
+	if (port_info == NULL) {
+		/* There is no registered port. So we don't need to clean anything. */
+		return OK;
+	}
+
+	my_pid = getpid();
+	do {
 		if ((strncmp(port_info->name, port_name, strlen(port_name) + 1) == 0) && (my_pid == port_info->pid)) {
 			cleanup_pid = port_info->pid;
 			mq_close(port_info->mqdes);
@@ -94,12 +101,10 @@ int messaging_cleanup(const char *port_name)
 			break;
 		}
 		port_info = (msg_port_info_t *)sq_next(port_info);
-	}
+	} while (port_info != NULL);
 
 	if (cleanup_pid != INVALID_PID) {
 		ret = messaging_unlink_internalport(port_name, cleanup_pid);
-	} else if (port_info == NULL) {
-		ret = OK;
 	} else {
 		ret = ERROR;
 	}
