@@ -1517,25 +1517,6 @@ static void tc_pthread_pthread_setcanceltype(void)
 }
 #endif
 
-/**
-* @fn                   :tc_libc_pthread_pthread_testcancel
-* @brief                :This tc tests pthread_testcancel()
-* @Scenario             :The function shall create a cancellation point in the calling thread
-*                        It has no effect if cancelability is disabled.
-* @API'scovered         :pthread_testcancel
-* @Preconditions        :none
-* @Postconditions       :none
-* @return               :void
-*/
-#ifdef CONFIG_CANCELLATION_POINTS
-static void tc_pthread_pthread_testcancel(void)
-{
-	pthread_testcancel();
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-
 /****************************************************************************
  * Name: pthread_main
  ****************************************************************************/
@@ -1568,7 +1549,6 @@ int pthread_main(void)
 	tc_pthread_pthread_setgetname_np();
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_pthread_pthread_setcanceltype();
-	tc_pthread_pthread_testcancel();
 #endif
 
 	return 0;
