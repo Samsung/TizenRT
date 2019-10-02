@@ -1,9 +1,3 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *
- ******************************************************************************/
-
 #include <osdep_service.h>
 #if CONFIG_USE_TCM_HEAP
 #include "tcm_heap.h"

@@ -1,24 +1,5 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
- ******************************************************************************/
-#ifndef __FREERTOS_RECV_H_
-#define __FREERTOS_RECV_H_
+#ifndef __TIZENRT_RECV_H_
+#define __TIZENRT_RECV_H_
 
 extern sint _rtw_init_recv_priv(struct recv_priv *precvpriv, _adapter *padapter);
 extern void _rtw_free_recv_priv(struct recv_priv *precvpriv);
@@ -49,4 +30,4 @@ void rtw_init_recv_timer(struct recv_reorder_ctrl *preorder_ctrl);
 
 void rltk_netif_rx(struct sk_buff *skb);
 
-#endif //__FREERTOS_RECV_H_
+#endif //__TIZENRT_RECV_H_

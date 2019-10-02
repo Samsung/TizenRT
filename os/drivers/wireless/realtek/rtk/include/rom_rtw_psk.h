@@ -1,11 +1,3 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *
- * This is ROM code section.
- *
- *
- ******************************************************************************/
 #ifndef __ROM_RTW_PSK_H_
 #define __ROM_RTW_PSK_H_
 

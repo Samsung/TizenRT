@@ -6,7 +6,6 @@ ROM_F_RTW_MSGPOOL(DM_ANT_DIV_3, "*** MAC ID:[ %u ] , TargetAnt = (( %s )), decis
 ROM_F_RTW_MSGPOOL(DM_ANT_DIV_4, "*** Phy_AntSel_A=[ %d, %d, %d] \n")
 ROM_F_RTW_MSGPOOL(DM_ANT_DIV_5, "[ Update Rx-Idle-Ant ] RxIdleAnt =%s\n")
 
-// freertos_ioctl.c
 // 0x76 read sys
 ROM_F_RTW_MSGPOOL(READ_SYS_1, "read sys_reg(0x%x)=0x%x\n")
 // 0x77 write sys

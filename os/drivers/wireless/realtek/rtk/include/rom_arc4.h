@@ -1,11 +1,3 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2014 Realtek Corporation. All rights reserved.
- *
- * This is ROM code section.
- *
- *
- ******************************************************************************/
 #ifndef ROM_ARC4_H
 #define ROM_ARC4_H
 

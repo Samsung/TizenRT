@@ -1,25 +1,5 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
- ******************************************************************************/
-
-#ifndef __FREERTOS_INTFS_H_
-#define __FREERTOS_INTFS_H_
+#ifndef __TIZENRT_INTFS_H_
+#define __TIZENRT_INTFS_H_
 
 typedef struct _driver_priv {
 	int drv_registered;
@@ -79,4 +59,4 @@ extern int rtw_ioctl(struct net_device *dev, struct iwreq *rq, int cmd);
 u32 lextra_bus_dma_Interrupt(void *data);
 #endif
 
-#endif //__FREERTOS_INTFS_H_
+#endif //__TIZENRT_INTFS_H_

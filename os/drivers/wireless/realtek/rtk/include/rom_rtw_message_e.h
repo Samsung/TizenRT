@@ -36,7 +36,6 @@ ROM_E_RTW_MSGPOOL(DM_ADAPTIVITY_1, "IGI_Base=0x%x, TH_L2H_ini = %d, TH_EDCCA_HL_
 ROM_E_RTW_MSGPOOL(DM_ADAPTIVITY_2, "DynamicLinkAdaptivity = %d, Adaptivity_enable = %d\n")
 ROM_E_RTW_MSGPOOL(DM_ADAPTIVITY_3, "IGI=0x%x, TH_L2H_dmc = 0x%x, TH_H2L_dmc = 0x%x\n\n")
 
-// freertos_ioctl.c
 // mac_reg_dump, bb_reg_dump, rf_reg_dump
 ROM_E_RTW_MSGPOOL(MAC_REG_DUMP_1, "\n======= MAC REG =======\n")
 ROM_E_RTW_MSGPOOL(BB_REG_DUMP_1, "\n======= BB REG =======\n")

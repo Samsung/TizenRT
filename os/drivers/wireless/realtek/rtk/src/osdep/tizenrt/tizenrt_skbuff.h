@@ -1,5 +1,5 @@
-#ifndef _FREERTOS_SKBUFF_H_
-#define _FREERTOS_SKBUFF_H_
+#ifndef _TIZENRT_SKBUFF_H_
+#define _TIZENRT_SKBUFF_H_
 
 #if (RTL8195A_SUPPORT == 1) || (RTL8195B_SUPPORT == 1)
 // For Lextra(PCI-E like interface), RX buffer along with its skb is required to be
