@@ -43,6 +43,7 @@ static sem_t recv_sem;
 static bool tc_block_chk = TC_OK;
 static bool tc_nonblock_chk = TC_OK;
 static bool tc_reply_chk = TC_OK;
+static bool tc_cleanup_chk = false;
 
 static void utc_messaging_recv_block_n(void)
 {
@@ -255,6 +256,8 @@ static void nonblock_recv(int argc, FAR char *argv[])
 	msg_callback_info_t cb_info;
 	cb_info.cb_func = nonblock_callback;
 
+	tc_cleanup_chk = false;
+
 	ret = sem_wait(&recv_sem);
 	if (ret != OK) {
 		tc_nonblock_chk = TC_FAIL;
@@ -281,6 +284,11 @@ static void nonblock_recv(int argc, FAR char *argv[])
 
 	/* wait not to finish before receiving message. */
 	sleep(2);
+
+	ret = messaging_cleanup(TC_NONBLOCK_PORT);
+	if (ret == OK) {
+		tc_cleanup_chk = true;
+	}
 }
 
 static void utc_messaging_recv_nonblock_p(void)
@@ -332,10 +340,7 @@ static void utc_messaging_cleanup_n(void)
 
 static void utc_messaging_cleanup_p(void)
 {
-	int ret;
-
-	ret = messaging_cleanup(TC_NONBLOCK_PORT);
-	TC_ASSERT_EQ("messaging_cleanup", ret, OK);
+	TC_ASSERT_EQ("messaging_cleanup", tc_cleanup_chk, true);
 
 	TC_SUCCESS_RESULT();
 }
