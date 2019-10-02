@@ -666,23 +666,6 @@ static void tc_sched_task_setcanceltype(void)
 errout:
 	tcb->flags |= defferred_flag;
 }
-
-/**
- * @fn                   :tc_sched_task_testcancel
- * @brief                :This tc tests tc_sched_task_testcancel()
- * @Scenario             :The task_testcancel() function creates a cancellation point in the calling thread.
- *                        It has no effect if cancelability is disabled
- * @API'scovered         :task_testcancel
- * @Preconditions        :none
- * @Postconditions       :none
- * @return               :void
- */
-static void tc_sched_task_testcancel(void)
-{
-	task_testcancel();
-
-	TC_SUCCESS_RESULT();
-}
 #endif
 #endif
 
@@ -712,7 +695,6 @@ int sched_main(void)
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_sched_task_setcanceltype();
-	tc_sched_task_testcancel();
 #endif
 #endif
 
