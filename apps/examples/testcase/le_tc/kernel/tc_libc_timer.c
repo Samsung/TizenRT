@@ -321,6 +321,9 @@ static void tc_libc_timer_strftime(void)
 	st_time.tm_mday = 19;
 	st_time.tm_mon = 5;
 	st_time.tm_year = 2017 - TM_YEAR_BASE;
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	st_time.tm_wday = 5;
+#endif
 
 	/* Verifying year and month filled in time structure.
 	 * time structure has month in range 0-11,
@@ -335,7 +338,18 @@ static void tc_libc_timer_strftime(void)
 
 	/* Check the full name for the day of the week */
 	strftime(buffer, BUFF_SIZE, "%a", &st_time);
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "Fri", strlen("Fri") + 1), 0);
+#else
 	TC_ASSERT_EQ("strftime", strncmp(buffer, "Day", strlen("Day") + 1), 0);
+#endif
+
+	strftime(buffer, BUFF_SIZE, "%A", &st_time);
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "Friday", strlen("Friday") + 1), 0);
+#else
+	TC_ASSERT_EQ("strftime", strncmp(buffer, "Day", strlen("Day") + 1), 0);
+#endif
 
 	/* Check the full month name */
 	strftime(buffer, BUFF_SIZE, "%B", &st_time);

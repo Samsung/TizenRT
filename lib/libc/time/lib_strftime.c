@@ -127,6 +127,8 @@ static const char *const g_monthname[12] = {
  *   ter,  and  terminated  by  a  conversion  specifier  character, and are
  *   replaced in s as follows:
  *
+ *   %a     A three-letter abbreviation for the day of the week.
+ *   %A     The full name for the day of the week.
  *   %b     The abbreviated month name according to the current locale.
  *   %B     The full month name according to the current locale.
  *   %C     The century number (year/100) as a 2-digit integer. (SU)
