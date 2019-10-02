@@ -1601,8 +1601,11 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 			UNLOCK_WIFIMGR;
 			WIFIMGR_WAIT_DISCONNECT_CALLBACK;
 			res = _handle_request(&msg);
+		} else if (g_manager_info.state == WIFIMGR_STA_DISCONNECTED) {
+			UNLOCK_WIFIMGR;
+			res = _handle_request(&msg);
 		} else {
-			nvdbg("[WM] T%d Mode switching to softap (not connected STA)\n", getpid());
+			nvdbg("[WM] T%d Mode switching to softap (%d - not connected STA)\n", getpid(), g_manager_info.state);
 			UNLOCK_WIFIMGR;
 		}
 	}
