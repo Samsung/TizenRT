@@ -30,6 +30,8 @@ LDLIBPATH += -L $(TINYARALIB)
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 
+OBJCOPY = $(CROSSDEV)objcopy
+
 ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
 BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
@@ -70,6 +72,7 @@ install:
 	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
 ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
+	$(Q) $(OBJCOPY) --remove-section .comment $(USER_BIN_DIR)/$(BIN)
 	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
 endif
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
