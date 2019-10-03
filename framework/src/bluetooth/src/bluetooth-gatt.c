@@ -2712,9 +2712,11 @@ int bt_gatt_server_deinitialize(void)
 		gatt_server_list = NULL;
 #else
 		bt_gatt_server_s *serv = (bt_gatt_server_s *)sq_peek(&gatt_server_list);
+		bt_gatt_server_s *curr_serv = NULL;
 		while (serv) {
-			bt_gatt_server_destroy(serv);
+			curr_serv = serv;
 			serv = (bt_gatt_server_s *)sq_next(serv);
+			bt_gatt_server_destroy(curr_serv);
 		}
 #endif
 
