@@ -161,6 +161,12 @@ static int write_local_name(const char *name)
 	struct hci_cp_write_local_name_s *name_cp;
 	int err;
 
+	size_t len = strlen(name);
+
+	if (len >= sizeof(*name)) {
+		return -ENOMEM;
+	}
+
 	/* Set local name */
 	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
 	if (!buf) {
