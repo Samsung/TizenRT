@@ -14,7 +14,10 @@ import smartfs_dump_parser.data_model.SmartFile;
 public class SmartFSOrganizer {
 
 	public static boolean organizeSmartFS(String filePath, String fileName) {
-		boolean ret = true;
+		SmartFile root = SmartFileSystem.getRootDirectory();
+		if (root != null) {
+			SmartFileSystem.clearFileSystem();
+		}
 
 		byte[] buffer = new byte[SmartFileSystem.getSectorSize()];
 		try {
@@ -32,11 +35,12 @@ public class SmartFSOrganizer {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("[ERROR] Parsing failed with the opened file..\nPlease check it.");
+			SmartFileSystem.clearFileSystem();
+
+			return false;
 		}
 
-		createDirectoryHierarchy();
-
-		return ret;
+		return createDirectoryHierarchy();
 	}
 
 	private static void addSector(int physicalSectorNum, byte[] sectorData) {
@@ -66,7 +70,6 @@ public class SmartFSOrganizer {
 		} else {
 			SmartFileSystem.getCleanSectors().add(sector);
 		}
-
 	}
 
 	private static int makePositiveValue(byte value) {
@@ -91,11 +94,12 @@ public class SmartFSOrganizer {
 		return stbuf.toString();
 	}
 
-	public static void createDirectoryHierarchy() {
+	public static boolean createDirectoryHierarchy() {
 		List<SmartFile> queue = new ArrayList<SmartFile>();
 		SmartFile root = SmartFileSystem.getRootDirectory();
 		if (root == null) {
 			System.out.println("Root is null");
+			return false;
 		}
 		SmartFileSystem.getTopDummyDirectory().getEntries().add(root);
 		queue.add(root);
@@ -107,6 +111,8 @@ public class SmartFSOrganizer {
 			}
 		}
 		System.out.println("Directory hierarchy is organized.");
+
+		return true;
 	}
 
 	private static int analyzeChildrenEntries(SmartFile sf) {

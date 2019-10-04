@@ -3,8 +3,6 @@ package smartfs_dump_parser.data_model;
 import java.util.ArrayList;
 import java.util.List;
 
-import smartfs_dump_visualizer.controllers.SmartFSOrganizer;
-
 public class SmartFileSystem {
 
 	private static final int SECTOR_SIZE = 512;
@@ -121,5 +119,15 @@ public class SmartFileSystem {
 
 	public static boolean isRootLogicalSector(int logicalSectorId) {
 		return (logicalSectorId == ROOT_LOGICAL_SECTOR_ID);
+	}
+
+	public static void clearFileSystem() {
+		isValidSmartFS = false;
+		sectorList.clear();
+		activeSectors.clear();
+		dirtySectors.clear();
+		cleanSectors.clear();
+		rootDir = null;
+		dummy.getEntries().clear();
 	}
 }
