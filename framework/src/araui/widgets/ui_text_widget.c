@@ -77,7 +77,7 @@ static void _ui_text_widget_set_word_wrap_func(void *userdata);
 static void _ui_text_widget_set_font_size_func(void *userdata);
 static void _ui_text_widget_calculate_line_num(ui_text_widget_body_t *body);
 
-uint8_t g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * CONFIG_UI_GLYPH_BITMAP_HEIGHT];
+static uint8_t g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * CONFIG_UI_GLYPH_BITMAP_HEIGHT];
 
 ui_widget_t ui_text_widget_create(int32_t width, int32_t height, ui_asset_t font, const char *text, size_t font_size)
 {
@@ -570,7 +570,7 @@ static void _ui_text_widget_draw_func(ui_widget_t widget, uint32_t dt)
 #endif
 			draw_idx++;
 		}
-		
+
 		y += body->font_size;
 	}
 }
@@ -777,11 +777,11 @@ static void _ui_text_widget_calculate_line_num(ui_text_widget_body_t *body)
 						stbtt_FindGlyphIndex(&(body->font->ttf_info), body->utf_code[utf_idx + 1]));
 					body->width_array[utf_idx] += kern * scale;
 				}
-			}
-			utf_idx++;
 #if defined(CONFIG_UI_ENABLE_EMOJI)
-		}
+			}
 #endif
+			utf_idx++;
+		}
 		body->line_num = line_num;
 	}
 }
