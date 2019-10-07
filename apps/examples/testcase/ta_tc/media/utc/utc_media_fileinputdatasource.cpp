@@ -210,12 +210,33 @@ static void utc_media_FileInputDataSource_read_n(void)
 	/* read nullptr buffer */
 	{
 		media::stream::FileInputDataSource source(dummyfilepath);
+		TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), EOF);
 
+		source.open();
 		TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(nullptr, 100), EOF);
 	}
 
 	TC_SUCCESS_RESULT();
 }
+
+static void utc_media_FileInputDataSource_constructor_p(void)
+{
+	media::stream::FileInputDataSource source;
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_constructor_p", source.isPrepared(), false);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_operator_p(void)
+{
+	media::stream::FileInputDataSource source;
+	media::stream::FileInputDataSource source2;
+	source = source2;
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_constructor_p", source.isPrepared(), false);
+	media::stream::FileInputDataSource source3(source2);
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_constructor_p", source3.isPrepared(), false);
+	TC_SUCCESS_RESULT();
+}
+
 
 int utc_media_FileInputDataSource_main(void)
 {
@@ -241,6 +262,10 @@ int utc_media_FileInputDataSource_main(void)
 
 	utc_media_FileInputDataSource_read_p();
 	utc_media_FileInputDataSource_read_n();
+
+	utc_media_FileInputDataSource_constructor_p();
+	utc_media_FileInputDataSource_operator_p();
+
 	TearDown();
 	return 0;
 }
