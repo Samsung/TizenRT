@@ -78,7 +78,7 @@ private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(stream_info_id_t id, std::shared_ptr<FocusChangeListener> listener);
+		FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener);
 		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		void notify(int focusChange);
 
