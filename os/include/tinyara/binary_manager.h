@@ -83,7 +83,7 @@ enum binmgr_partition_type {
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
-	BINMGR_RELOAD,
+	BINMGR_UPDATE,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
 	BINMGR_UNREGISTER_STATECB,
@@ -101,6 +101,7 @@ enum binmgr_response_result_type {
 	BINMGR_INVALID_PARAM = -4,
 	BINMGR_NOT_FOUND = -5,
 	BINMGR_ALREADY_REGISTERED = -6,
+	BINMGR_ALREADY_UPDATED = -7,
 };
 
 /****************************************************************************

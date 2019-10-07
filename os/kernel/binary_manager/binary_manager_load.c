@@ -133,6 +133,38 @@ errout_with_fd:
 	return ERROR;
 }
 
+/* Check for an update binary */
+static int binary_manager_check_update_binary(char *bin_name)
+{
+	int ret;
+	int version;
+	int bin_idx;
+	binary_header_t header_data;
+
+	if (bin_name == NULL) {
+		bmdbg("Invalid bin_name %s\n", bin_name);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	bin_idx = binary_manager_get_index_with_name(bin_name);
+	if (bin_idx < 0) {
+		bmdbg("binary %s is not registered\n", bin_name);
+		return BINMGR_NOT_FOUND;
+	}
+
+	ret = binary_manager_read_header(bin_idx, BIN_USEIDX(bin_idx) ^ 1, &header_data);
+	if (ret == OK) {
+		version = (int)atoi(header_data.bin_ver);
+		/* Update if it have new version */
+		if (version > (int)atoi(BIN_VER(bin_idx))) {
+			return BINMGR_OK;
+		}
+	}
+
+	bmdbg("Already latest version\n");
+	return BINMGR_ALREADY_UPDATED;
+}
+
 /* Load binary with index in binary table */
 int binary_manager_load_binary(int bin_idx)
 {
@@ -420,7 +452,7 @@ static int binary_manager_reload(char *bin_name)
 static int loading_thread(int argc, char *argv[])
 {
 	int ret;
-	int type;
+	int load_cmd;
 
 	if (argc <= 1) {
 		bmdbg("Invalid arguments\n");
@@ -428,12 +460,22 @@ static int loading_thread(int argc, char *argv[])
 	}
 
 	/* Arguments : [1] type */
-	type = (int)atoi(argv[1]);
+	load_cmd = (int)atoi(argv[1]);
 
 	ret = BINMGR_INVALID_PARAM;
-	switch (type) {
+	switch (load_cmd) {
 	case LOADCMD_LOAD_ALL:
 		ret = binary_manager_load_all();
+		break;
+	case LOADCMD_UPDATE:
+		if (argc <= 2) {
+			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
+			break;
+		}
+		ret = binary_manager_check_update_binary(argv[2]);
+		if (ret == BINMGR_OK) {
+			ret = binary_manager_reload(argv[2]);
+		}
 		break;
 	case LOADCMD_RELOAD:
 		if (argc <= 2) {
@@ -444,7 +486,7 @@ static int loading_thread(int argc, char *argv[])
 		ret = binary_manager_reload(argv[2]);
 		break;
 	default:
-		bmdbg("Invalid loading type %d\n", type);
+		bmdbg("Invalid loading command %d\n", load_cmd);
 	}
 	bmvdbg("Loading result %d\n", ret);
 

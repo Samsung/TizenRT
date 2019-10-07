@@ -68,6 +68,7 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
 	LOADCMD_LOAD_ALL = 1,
 	LOADCMD_RELOAD = 2,
+	LOADCMD_UPDATE = 3,          /* Reload on update request */
 	LOADCMD_LOAD_MAX,
 };
 

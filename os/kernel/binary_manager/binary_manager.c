@@ -215,10 +215,10 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
-		case BINMGR_RELOAD:
+		case BINMGR_UPDATE:
 			memset(type_str, 0, 1);
 			memset(data_str, 0, 1);
-			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
+			loading_data[0] = itoa(LOADCMD_UPDATE, type_str, 10);
 			loading_data[1] = (char *)request_msg.data.bin_name;
 			loading_data[2] = NULL;
 			binary_manager_loading(loading_data);
