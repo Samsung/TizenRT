@@ -440,7 +440,7 @@ static void utc_messaging_send_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void utc_messaging_send(void)
+void utc_messaging_send_main(void)
 {
 	utc_messaging_send_n();
 	utc_messaging_send_p();
