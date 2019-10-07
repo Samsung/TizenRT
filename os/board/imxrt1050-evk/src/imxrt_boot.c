@@ -258,13 +258,13 @@ void board_initialize(void)
 	/* Perform board initialization */
 
 	(void)imxrt_bringup();
-
+#if 0	// FIXME block belows temporarily to see serial logs
 	imxrt_iotbus_initialize();
 
 	imxrt_pwm_initialize();
 
 	imxrt_spi_initialize();
-
+#endif
 #ifdef CONFIG_WATCHDOG
 	imxrt_wdog_initialize(CONFIG_WATCHDOG_DEVPATH, IMXRT_WDOG1);
 #endif
