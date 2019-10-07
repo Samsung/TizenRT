@@ -211,14 +211,13 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 		return;
 	}
 
+	mCurState = PLAYER_STATE_PREPARING;
+
 	if (!mInputHandler.doStandBy()) {
 		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
 	}
-
-	mCurState = PLAYER_STATE_PREPARING;
-	return;
 }
 
 player_result_t MediaPlayerImpl::unprepare()
@@ -723,7 +722,11 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			mPlayerObserver->onPlaybackBufferDataReached(mPlayer, data, size);
 		} break;
 		case PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED:
-			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			player_error_t error = (player_error_t)va_arg(ap, int);
+			if (error != PLAYER_ERROR_NONE) {
+				mCurState = PLAYER_STATE_CONFIGURED;
+			}
+			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, mPlayer, error);
 			break;
 		}
 	}
