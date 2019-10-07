@@ -41,7 +41,7 @@ int binary_manager_update_binary(char *binary_name)
 		return BINMGR_INVALID_PARAM;
 	}
 
-	request_msg.cmd = BINMGR_RELOAD;
+	request_msg.cmd = BINMGR_UPDATE;
 	request_msg.requester_pid = getpid();
 	snprintf(request_msg.data.bin_name, BIN_NAME_MAX, "%s", binary_name);
 
