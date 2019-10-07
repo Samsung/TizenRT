@@ -2675,6 +2675,7 @@ int bt_gatt_server_initialize(void)
 
 	if (!is_gatt_server_initialized) {
 //		ret = bt_adapt_gatt_server_init(&instance_id, _bt_gatt_server_event_proxy, NULL);
+		ret = bt_adapt_gatt_server_init(&instance_id);
 
 		if (ret != BT_ERROR_NONE) {
 			BT_ERR("%s(0x%08x)",
