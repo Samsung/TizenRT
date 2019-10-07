@@ -469,6 +469,8 @@ char *_bt_convert_uuid_to_uuid128(const char *uuid)
 #else
 		len = snprintf(NULL, 0, "0000%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
+		if (uuid128 == NULL)
+			return NULL;
 		snprintf(uuid128, len + 1,  "0000%s-0000-1000-8000-00805f9b34fb", uuid);
 #endif
 		break;
@@ -479,6 +481,8 @@ char *_bt_convert_uuid_to_uuid128(const char *uuid)
 #else
 		len = snprintf(NULL, 0, "%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
+		if (uuid128 == NULL)
+			return NULL;
 		snprintf(uuid128, len + 1,  "%s-0000-1000-8000-00805f9b34fb", uuid);
 #endif
 		break; /* LCOV_EXCL_LINE */
