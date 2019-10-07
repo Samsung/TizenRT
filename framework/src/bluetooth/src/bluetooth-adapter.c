@@ -743,6 +743,9 @@ int bt_adapter_le_create_advertiser(bt_advertiser_h *advertiser)
 	BT_CHECK_INPUT_PARAMETER(advertiser);
 
 	__adv = (bt_advertiser_s *)calloc(1, sizeof(bt_advertiser_s));
+	if (__adv == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
+
 	__adv->handle = (int)__adv;
 
 	*advertiser = (bt_advertiser_h)__adv;
