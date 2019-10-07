@@ -583,6 +583,24 @@ static void utc_media_MediaPlayer_isPlaying_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_MediaPlayer_operator_equal_p(void)
+{
+	media::MediaPlayer mp;
+	bool isSame = mp == mp;
+	
+	TC_ASSERT("utc_media_MediaPlayer_operator_equal", isSame);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaPlayer_operator_equal_n(void)
+{
+	media::MediaPlayer mp1, mp2;
+	bool isSame = mp1 == mp2;
+	
+	TC_ASSERT("utc_media_MediaPlayer_operator_equal", !isSame);	
+	TC_SUCCESS_RESULT();
+}
+
 int utc_media_MediaPlayer_main(void)
 {
 	SetUp();
@@ -628,6 +646,9 @@ int utc_media_MediaPlayer_main(void)
 
 	utc_media_MediaPlayer_isPlaying_p();
 	utc_media_MediaPlayer_isPlaying_n();
+
+	utc_media_MediaPlayer_operator_equal_p();
+	utc_media_MediaPlayer_operator_equal_n();
 
 	TearDown();
 

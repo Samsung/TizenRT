@@ -613,6 +613,24 @@ static void utc_media_MediaRecorder_isRecording_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_MediaRecorder_operator_equal_p(void)
+{
+	MediaRecorder mr;
+	bool isSame = mr == mr;
+	
+	TC_ASSERT("utc_media_MediaRecorder_operator_equal", isSame);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaRecorder_operator_equal_n(void)
+{
+	MediaRecorder mr1, mr2;
+	bool isSame = mr1 == mr2;
+	
+	TC_ASSERT("utc_media_MediaRecorder_operator_equal", !isSame);	
+	TC_SUCCESS_RESULT();
+}
+
 int utc_media_mediarecorder_main(void)
 {
 	utc_media_MediaRecorder_create_p();
@@ -657,5 +675,7 @@ int utc_media_mediarecorder_main(void)
 	utc_media_MediaRecorder_isRecording_p();
 	utc_media_MediaRecorder_isRecording_n();
 
+	utc_media_MediaRecorder_operator_equal_p();
+	utc_media_MediaRecorder_operator_equal_n();
 	return 0;
 }
