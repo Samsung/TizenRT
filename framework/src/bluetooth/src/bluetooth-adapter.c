@@ -2062,6 +2062,9 @@ int bt_adapter_le_get_scan_result_service_data_list(const bt_adapter_le_device_s
 		return BT_ERROR_NO_DATA;
 
 	*data_list = calloc(1, sizeof(bt_adapter_le_service_data_s) * data_count);
+	if (*data_list == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
+
 	*count = data_count;
 
 	remain_data = adv_data;
@@ -2071,6 +2074,9 @@ int bt_adapter_le_get_scan_result_service_data_list(const bt_adapter_le_device_s
 		field_len = remain_data[0];
 		if (remain_data[1] == BT_ADAPTER_LE_ADVERTISING_DATA_SERVICE_DATA) {
 			(*data_list)[data_index].service_uuid = calloc(1, sizeof(char) *4 + 1);
+			if ((*data_list)[data_index].service_uuid == NULL)
+				return BT_ERROR_OUT_OF_MEMORY;
+
 			snprintf((*data_list)[data_index].service_uuid, 5,
 				"%2.2X%2.2X", remain_data[3], remain_data[2]);
 
@@ -2079,6 +2085,9 @@ int bt_adapter_le_get_scan_result_service_data_list(const bt_adapter_le_device_s
 							&remain_data[4], field_len - 3);
 #else
 			(*data_list)[data_index].service_data = calloc(1, field_len - 3);
+			if ((*data_list)[data_index].service_data == NULL)
+				return BT_ERROR_OUT_OF_MEMORY;
+
 			memcpy((*data_list)[data_index].service_data, &remain_data[4], field_len - 3);
 #endif
 			(*data_list)[data_index].service_data_len = field_len - 3;
