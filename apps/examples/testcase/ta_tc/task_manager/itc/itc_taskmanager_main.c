@@ -986,7 +986,7 @@ int itc_taskmanager_main(int argc, char *argv[])
 {
 	int status;
 
-	if (tc_handler(TC_START, "TaskManager ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "TaskManager ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -998,7 +998,7 @@ int itc_taskmanager_main(int argc, char *argv[])
 
 	(void)task_manager_unregister(handle_tm_itc, TM_NO_RESPONSE);
 
-	(void)tc_handler(TC_END, "TaskManager itc");
+	(void)testcase_state_handler(TC_END, "TaskManager itc");
 
 	return 0;
 }

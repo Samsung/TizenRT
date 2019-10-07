@@ -48,7 +48,7 @@ int main(int argc, FAR char *argv[])
 int itc_sysio_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "SystemIO ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "SystemIO ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -72,7 +72,7 @@ int itc_sysio_main(int argc, char *argv[])
 	itc_gpio_main();
 #endif
 
-	(void)tc_handler(TC_END, "SystemIO ITC");
+	(void)testcase_state_handler(TC_END, "SystemIO ITC");
 
 	return 0;
 }

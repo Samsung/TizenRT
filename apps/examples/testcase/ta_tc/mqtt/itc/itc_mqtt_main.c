@@ -822,7 +822,7 @@ int main(int argc, FAR char *argv[])
 int itc_mqtt_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "MQTT ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "MQTT ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -850,7 +850,7 @@ int itc_mqtt_main(int argc, char *argv[])
 		_itc_mqtt_deinit();
 	}
 
-	(void)tc_handler(TC_END, "MQTT ITC");
+	(void)testcase_state_handler(TC_END, "MQTT ITC");
 
 	return 0;
 }

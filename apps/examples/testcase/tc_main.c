@@ -207,7 +207,7 @@ static const tash_cmdlist_t tc_cmds[] = {
 #ifdef __cplusplus
 extern "C" {
 #endif
-int tc_handler(tc_op_type_t type, const char *tc_name)
+int testcase_state_handler(tc_op_type_t type, const char *tc_name)
 {
 	switch (type) {
 	case TC_START:

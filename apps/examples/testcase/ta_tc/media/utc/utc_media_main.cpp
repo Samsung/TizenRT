@@ -65,7 +65,7 @@ int main(int argc, FAR char *argv[])
 int utc_media_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Media UTC") == -1) {
+	if (testcase_state_handler(TC_START, "Media UTC") == -1) {
 		return -1;
 	}
 
@@ -89,7 +89,7 @@ int utc_media_main(int argc, char *argv[])
 #endif
 #endif
 
-	(void)tc_handler(TC_END, "Media UTC");
+	(void)testcase_state_handler(TC_END, "Media UTC");
 	return 0;
 }
 }

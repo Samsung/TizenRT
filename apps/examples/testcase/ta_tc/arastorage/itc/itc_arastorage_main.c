@@ -1741,7 +1741,7 @@ int main(int argc, FAR char *argv[])
 int itc_arastorage_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Arastorage ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Arastorage ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1807,6 +1807,6 @@ int itc_arastorage_main(int argc, char *argv[])
 	itc_arastorage_db_print_tuple_n_after_deinit();
 	itc_arastorage_db_print_value_n_after_deinit();
 
-	(void)tc_handler(TC_END, "Arastorage ITC");
+	(void)testcase_state_handler(TC_END, "Arastorage ITC");
 	return 0;
 }

@@ -33,7 +33,7 @@ int main(int argc, FAR char *argv[])
 int tc_network_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Network TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Network TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -133,7 +133,7 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_NET_CONNECT
 	itc_net_connect_main();
 #endif
-	(void)tc_handler(TC_END, "Network TC");
+	(void)testcase_state_handler(TC_END, "Network TC");
 
 	return 0;
 }
