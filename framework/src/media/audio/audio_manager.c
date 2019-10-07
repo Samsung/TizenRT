@@ -265,6 +265,9 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 			ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 		}
 	}
+#ifdef CONFIG_DEBUG_MEDIA_INFO
+	dump_audio_card_info();
+#endif
 
 error_out:
 	closedir(dir_info);
@@ -2105,9 +2108,9 @@ audio_manager_result_t get_stream_out_policy(stream_policy_t *policy)
 	return get_stream_policy(policy, OUTPUT);
 }
 
+#ifdef CONFIG_DEBUG_MEDIA_INFO
 void print_audio_card_info(audio_io_direction_t direct)
 {
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_MEDIA)
 	audio_card_info_t *card;
 	audio_card_status_t status;
 	int i, j, max_card, actual_card_id;
@@ -2184,11 +2187,13 @@ void print_audio_card_info(audio_io_direction_t direct)
 			}
 		}
 	}
-#endif
 }
+#endif
 
+#ifdef CONFIG_DEBUG_MEDIA_INFO
 void dump_audio_card_info()
 {
 	print_audio_card_info(INPUT);
 	print_audio_card_info(OUTPUT);
 }
+#endif

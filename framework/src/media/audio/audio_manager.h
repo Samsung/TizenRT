@@ -692,6 +692,7 @@ audio_manager_result_t get_stream_in_id(int *card_id, int *device_id);
  ****************************************************************************/
 audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
 
+#ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
  * Name: dump_audio_card_info
  *
@@ -705,6 +706,7 @@ audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
  *   None
  ****************************************************************************/
 void dump_audio_card_info(void);
+#endif
 
 #if defined(__cplusplus)
 }								/* extern "C" */
