@@ -32,7 +32,7 @@ int main(int argc, FAR char *argv[])
 int utc_messaging_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Messaging UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Messaging UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -42,7 +42,7 @@ int utc_messaging_main(int argc, char *argv[])
 
 	utc_messaging_multicast_main();
 
-	(void)tc_handler(TC_END, "Messaging UTC");
+	(void)testcase_state_handler(TC_END, "Messaging UTC");
 
 	return 0;
 }

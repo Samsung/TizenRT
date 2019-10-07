@@ -141,7 +141,7 @@ int main(int argc, FAR char *argv[])
 int utc_dm_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "DeviceManagement UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "DeviceManagement UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -184,7 +184,7 @@ int utc_dm_main(int argc, char *argv[])
 		wifiAutoConnectDeInit();
 	}
 
-	(void)tc_handler(TC_END, "DeviceManagement UTC");
+	(void)testcase_state_handler(TC_END, "DeviceManagement UTC");
 
 	return 0;
 }

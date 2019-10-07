@@ -1460,7 +1460,7 @@ int main(int argc, FAR char *argv[])
 int utc_audio_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Audio UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Audio UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1528,7 +1528,7 @@ int utc_audio_main(int argc, char *argv[])
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	(void)tc_handler(TC_END, "Audio UTC");
+	(void)testcase_state_handler(TC_END, "Audio UTC");
 
 	return 0;
 }

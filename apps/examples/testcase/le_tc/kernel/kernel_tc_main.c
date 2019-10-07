@@ -43,7 +43,7 @@ int main(int argc, FAR char *argv[])
 int tc_kernel_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Kernel TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Kernel TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -229,7 +229,7 @@ int tc_kernel_main(int argc, char *argv[])
 	close(g_tc_fd);
 	g_tc_fd = -1;
 
-	(void)tc_handler(TC_END, "Kernel TC");
+	(void)testcase_state_handler(TC_END, "Kernel TC");
 
 	return 0;
 }

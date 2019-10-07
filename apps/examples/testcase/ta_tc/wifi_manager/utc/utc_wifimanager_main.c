@@ -561,7 +561,7 @@ static void utc_wifimanager_unregister_cb_p(void)
 
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
-	if (tc_handler(TC_START, "WiFiManager UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "WiFiManager UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -619,7 +619,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 
 	utc_wifimanager_deinit_p(); // End of UTC
 
-	(void)tc_handler(TC_END, "WiFiManager UTC");
+	(void)testcase_state_handler(TC_END, "WiFiManager UTC");
 
 	return 0;
 }
