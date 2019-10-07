@@ -34,6 +34,11 @@ public:
 	void onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override;
+	void onAsyncPrepared(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
+	void cvAsyncWait();
+private:
+	std::mutex mtx;
+	std::condition_variable cvAsync;
 };
 
 void EmptyObserver::onPlaybackStarted(media::MediaPlayer &mediaPlayer)
@@ -62,6 +67,18 @@ void EmptyObserver::onPauseError(media::MediaPlayer &mediaPlayer, media::player_
 
 void EmptyObserver::onPlaybackPaused(media::MediaPlayer &mediaPlayer)
 {
+}
+
+void EmptyObserver::onAsyncPrepared(media::MediaPlayer &mediaPlayer, media::player_error_t error)
+{
+	printf("AsyncPrepared\n");
+	cvAsync.notify_one();
+}
+
+void EmptyObserver::cvAsyncWait()
+{
+	std::unique_lock<std::mutex> lock(mtx);
+	cvAsync.wait(lock);
 }
 
 static void SetUp(void)
@@ -263,6 +280,31 @@ static void utc_media_MediaPlayer_prepare_n(void)
 
 		mp.destroy();
 	}
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaPlayer_prepareAsync_p(void)
+{
+	media::MediaPlayer mp;
+	std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+	auto observer = std::make_shared<EmptyObserver>();
+	mp.create();
+	mp.setObserver(observer);
+	mp.setDataSource(std::move(source));
+
+	TC_ASSERT_EQ("utc_media_MediaPlayer_prepareAsync_p", mp.prepareAsync(), media::PLAYER_OK);
+	observer->cvAsyncWait();
+
+	mp.unprepare();
+	mp.destroy();
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaPlayer_prepareAsync_n(void)
+{
+	media::MediaPlayer mp;
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_prepareAsync_n", mp.prepareAsync(), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -559,6 +601,9 @@ int utc_media_MediaPlayer_main(void)
 
 	utc_media_MediaPlayer_prepare_p();
 	utc_media_MediaPlayer_prepare_n();
+
+	utc_media_MediaPlayer_prepareAsync_p();
+	utc_media_MediaPlayer_prepareAsync_n();
 
 	utc_media_MediaPlayer_unprepare_p();
 	utc_media_MediaPlayer_unprepare_n();

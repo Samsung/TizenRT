@@ -107,7 +107,9 @@ static void utc_media_FileOutputDataSource_CopyConstructor_p(void)
 static void utc_media_FileOutputDataSource_EqualOperator_p(void)
 {
 	FileOutputDataSource dummy(filePath);
-	FileOutputDataSource dataSource = dummy;
+	FileOutputDataSource dataSource("test");
+
+	dataSource = dummy;
 
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getChannels(), dummy.getChannels());
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getSampleRate(), dummy.getSampleRate());
@@ -158,13 +160,17 @@ static void utc_media_FileOutputDataSource_isPrepared_p(void)
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), true);
 	dataSource.close();
+	dataSource.open();
+
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_isPrepared_n(void)
 {
-	FileOutputDataSource dataSource(filePath);
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), false);
+	{
+		FileOutputDataSource dataSource(filePath);
+		TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), false);
+	}
 	TC_SUCCESS_RESULT();
 }
 
@@ -184,10 +190,15 @@ static void utc_media_FileOutputDataSource_write_p(void)
 static void utc_media_FileOutputDataSource_write_n(void)
 {
 	FileOutputDataSource dataSource(filePath);
+	unsigned char dummy[] = "dummy";
+	ssize_t dummySize = 6;
 
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 0), 0);
 	dataSource.close();
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(dummy, dummySize), EOF);;
 
 	TC_SUCCESS_RESULT();
 }

@@ -106,7 +106,8 @@ static void utc_media_BufferOutputDataSource_CopyConstructor_p(void)
 static void utc_media_BufferOutputDataSource_EqualOperator_p(void)
 {
 	BufferOutputDataSource dummy;
-	BufferOutputDataSource dataSource = dummy;
+	BufferOutputDataSource dataSource;
+	dataSource = dummy;
 
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_EqualOperator", dataSource.getChannels(), dummy.getChannels());
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_EqualOperator", dataSource.getSampleRate(), dummy.getSampleRate());
@@ -126,9 +127,10 @@ static void utc_media_BufferOutputDataSource_open_p(void)
 
 static void utc_media_BufferOutputDataSource_close_p(void)
 {
-	BufferOutputDataSource dataSource;
-
-	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_close", dataSource.close(), true);
+	{
+		BufferOutputDataSource dataSource;
+		TC_ASSERT_EQ("utc_media_BufferOutputDataSource_close", dataSource.close(), true);
+	}
 
 	TC_SUCCESS_RESULT();
 }
@@ -172,7 +174,9 @@ static void utc_media_BufferOutputDataSource_write_n(void)
 
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
+	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(nullptr, 0), 0);
 	dataSource.close();
+	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
 
 	TC_SUCCESS_RESULT();
 }
