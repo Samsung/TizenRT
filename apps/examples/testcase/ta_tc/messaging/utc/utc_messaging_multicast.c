@@ -209,7 +209,7 @@ static void utc_messaging_multicast_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void utc_messaging_multicast(void)
+void utc_messaging_multicast_main(void)
 {
 	utc_messaging_multicast_n();
 	utc_messaging_multicast_p();

@@ -403,7 +403,7 @@ static void tc_fs_mops_umount(const char *filesystemtype)
 	TC_ASSERT_EQ("umount", ret, OK);
 }
 
-void tc_fs_mops_testcase(const char *filesystemtype)
+static void tc_fs_mops_test_main(const char *filesystemtype)
 {
 	DIR *dir = NULL;
 	int fd1 = -1;
@@ -428,37 +428,20 @@ void tc_fs_mops_testcase(const char *filesystemtype)
 	tc_fs_mops_statfs(filesystemtype);
 	tc_fs_mops_unlink(filesystemtype);
 	tc_fs_mops_umount(filesystemtype);
-}
-
-void tc_fs_mops_romfs(void)
-{
-	tc_fs_mops_testcase("romfs");
-	TC_SUCCESS_RESULT();
-}
-
-void tc_fs_mops_smartfs(void)
-{
-	tc_fs_mops_testcase("smartfs");
-	TC_SUCCESS_RESULT();
-}
-
-void tc_fs_mops_tmpfs(void)
-{
-	tc_fs_mops_testcase("tmpfs");
 	TC_SUCCESS_RESULT();
 }
 
 void tc_fs_mops_main(void)
 {
 #ifdef CONFIG_TC_FS_TMPFS_MOPS
-	tc_fs_mops_tmpfs();
+	tc_fs_mops_test_main("tmpfs");
 #endif
 #ifdef CONFIG_TC_FS_ROMFS_MOPS
 #ifndef CONFIG_BUILD_PROTECTED
-	tc_fs_mops_romfs();
+	tc_fs_mops_test_main("romfs");
 #endif
 #endif
 #ifdef CONFIG_TC_FS_SMARTFS_MOPS
-	tc_fs_mops_smartfs();
+	tc_fs_mops_test_main("smartfs");
 #endif
 }

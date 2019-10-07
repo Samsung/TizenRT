@@ -345,7 +345,7 @@ static void utc_messaging_cleanup_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void utc_messaging_recv_reply_and_cleanup(void)
+void utc_messaging_recv_reply_and_cleanup_main(void)
 {
 	utc_messaging_recv_block_n();
 	utc_messaging_recv_block_p();

@@ -16,33 +16,9 @@
  *
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <messaging/messaging.h>
-#include "tc_common.h"
-#include "tc_internal.h"
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_messaging_main(int argc, char *argv[])
+#ifndef __MESSAGING_TC_INTERNAL_H
+#define __MESSAGING_TC_INTERNAL_H
+void utc_messaging_recv_reply_and_cleanup_main(void);
+void utc_messaging_send_main(void);
+void utc_messaging_multicast_main(void);
 #endif
-{
-	if (tc_handler(TC_START, "Messaging UTC") == ERROR) {
-		return ERROR;
-	}
-
-	utc_messaging_recv_reply_and_cleanup_main();
-
-	utc_messaging_send_main();
-
-	utc_messaging_multicast_main();
-
-	(void)tc_handler(TC_END, "Messaging UTC");
-
-	return 0;
-}
