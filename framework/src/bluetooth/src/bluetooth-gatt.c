@@ -2902,6 +2902,8 @@ static int __gatt_service_add_num_handle(bt_gatt_service_s *service)
 			desc_numhandles = __bt_sq_queue_length(chr->descriptors);
 			handles_count += desc_numhandles;
 		}
+
+		chr = (bt_gatt_characteristic_s *)sq_next(chr);
 	}
 #endif
 
