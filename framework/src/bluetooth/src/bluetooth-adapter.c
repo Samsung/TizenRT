@@ -1401,6 +1401,8 @@ int bt_adapter_le_add_advertising_manufacturer_data(bt_advertiser_h advertiser,
 	}
 
 	adv_data = calloc(1, sizeof(char) *(manufacturer_data_len + 2));
+	if (adv_data == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
 
 	adv_data[0] = manufacturer_id & 0xffffffff;
 	adv_data[1] = (manufacturer_id & 0xff00) >> 8;
