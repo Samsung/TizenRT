@@ -203,6 +203,26 @@ static void utc_media_MediaRecorder_getMaxVolume_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_MediaRecorder_getMaxVolume_n(void)
+{
+	/* getMaxVolume without create */
+	{
+		uint8_t volume;
+		media::MediaRecorder mr;
+		TC_ASSERT_EQ("utc_media_MediaRecorder_getMaxVolume", mr.getMaxVolume(&volume), media::RECORDER_ERROR_NOT_ALIVE);
+	}
+
+	/* getMaxVolume with nullptr */
+	{
+		media::MediaRecorder mr;
+		mr.create();
+		TC_ASSERT_EQ_CLEANUP("utc_media_MediaRecorder_getMaxVolume", mr.getMaxVolume(nullptr), media::RECORDER_ERROR_INVALID_PARAM, mr.destroy());
+		mr.destroy();
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_media_MediaRecorder_prepare_p(void)
 {
 	MediaRecorder mr;
@@ -611,6 +631,7 @@ int utc_media_mediarecorder_main(void)
 	utc_media_MediaRecorder_getVolume_n();
 
 	utc_media_MediaRecorder_getMaxVolume_p();
+	utc_media_MediaRecorder_getMaxVolume_n();
 
 	utc_media_MediaRecorder_prepare_p();
 	utc_media_MediaRecorder_prepare_n();
