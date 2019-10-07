@@ -1160,6 +1160,8 @@ static int __bt_append_adv_type_data(bt_advertiser_h advertiser,
 	}
 
 	new_adv = calloc(1, adv_len + new_data_len);
+	if (new_adv == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
 
 	for (i = 0; i < adv_len; i++) {
 		len = adv_data[i];
