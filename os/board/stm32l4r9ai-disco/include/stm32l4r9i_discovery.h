@@ -30,10 +30,7 @@
   * @brief  Define for STM32L4R9I_DISCOVERY board
   */
 
-
-
-/* Includes ------------------------------------------------------------------*/
-#include <stm32l4xx_hal.h>
+#include <hal/stm32l4xx_hal.h>
 #include <arch/board/stm32l4r9i_discovery_io.h>
 #include <arch/board/stm32l4r9i_discovery_lcd.h>
 
