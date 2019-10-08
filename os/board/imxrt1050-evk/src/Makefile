@@ -80,13 +80,15 @@ ifeq ($(CONFIG_IMXRT_ENET),y)
 CSRCS += imxrt_ethernet.c
 endif
 
-ifeq ($(CONFIG_FLASH_PARTITION),y)
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
+
+ifeq ($(CONFIG_FLASH_PARTITION),y)
 CSRCS += partitions.c
+endif
+
 ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += crashdump.c
-endif
 endif
 
 # boardctl support
