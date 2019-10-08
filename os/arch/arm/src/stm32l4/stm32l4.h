@@ -77,12 +77,11 @@
 //#include "stm32l4_sdmmc.h"
 #include "stm32l4_spi.h"
 //#include "stm32l4_tim.h"
-
 #include "stm32l4_uart.h"
 #include "stm32l4_usbdev.h"
 //#include "stm32l4_wdg.h"
 //#include "stm32l4_lowputc.h"
-//#include "stm32l4_dsi.h"
+#include "stm32l4_dsi.h"
 
 void up_sys_timer_initialize(void);
 void up_sys_timer_deinitialize(void);
