@@ -144,11 +144,11 @@ void taskmgr_stop_cb(int signo, siginfo_t *data)
 
 static int taskmgr_set_cb_common(int cmd, tm_request_t *request_msg, tm_termination_callback_t func, tm_msg_t *cb_data)
 {
-	int ret;
+	int ret = TM_OUT_OF_MEMORY;
 
 	memset(request_msg, 0, sizeof(tm_request_t));
 	/* Set the request msg */
-	request_msg->cmd = TASKMGRCMD_SET_STOP_CB;
+	request_msg->cmd = cmd;
 	request_msg->caller_pid = getpid();
 	request_msg->timeout = TM_NO_RESPONSE;
 	request_msg->data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
@@ -159,15 +159,13 @@ static int taskmgr_set_cb_common(int cmd, tm_request_t *request_msg, tm_terminat
 	if (cb_data != NULL) {
 		REQ_CBDATA(request_msg) = TM_ALLOC(sizeof(tm_msg_t));
 		if (REQ_CBDATA(request_msg) == NULL) {
-			TM_FREE(request_msg->data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free_data;
 		}
 		REQ_CBDATA_MSG_SIZE(request_msg) = cb_data->msg_size;
 		REQ_CBDATA_MSG(request_msg) = TM_ALLOC(cb_data->msg_size);
 		if (REQ_CBDATA_MSG(request_msg) == NULL) {
 			TM_FREE(REQ_CBDATA(request_msg));
-			TM_FREE(request_msg->data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free_data;
 		}
 		memcpy(REQ_CBDATA_MSG(request_msg), cb_data->msg, cb_data->msg_size);
 	} else {
@@ -180,11 +178,14 @@ static int taskmgr_set_cb_common(int cmd, tm_request_t *request_msg, tm_terminat
 			TM_FREE(REQ_CBDATA_MSG(request_msg));
 			TM_FREE(REQ_CBDATA(request_msg));
 		}
-		TM_FREE(request_msg->data);
-		return ret;
+		goto errout_with_free_data;
 	}
 
 	return ret;
+
+errout_with_free_data:
+		TM_FREE(request_msg->data);
+		return ret;
 }
 
 /****************************************************************************
