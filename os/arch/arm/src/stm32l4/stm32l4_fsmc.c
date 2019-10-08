@@ -1,5 +1,5 @@
 /************************************************************************************
- * arch/arm/src/stm32/stm32l4_fsmc.h
+ * arch/arm/src/stm32l4/stm32l4_fsmc.c
  *
  *   Copyright (C) 2019 Gregory Nutt. All rights reserved.
  *   Author: Jason T. Harris <sirmanlypowers@gmail.com>
@@ -33,41 +33,35 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_STM32L4_STM32L4_FSMC_H
-#define __ARCH_ARM_SRC_STM32L4_STM32L4_FSMC_H
-
 /************************************************************************************
  * Included Files
  ************************************************************************************/
 
 #include <tinyara/config.h>
 
-#include "chip.h"
+#include "stm32l4.h"
+#include "stm32l4xx_hal_interface.h"
+
+#define CONFIG_STM32L4_FSMC
+#if defined(CONFIG_STM32L4_FSMC)
 
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
 
-#ifndef __ASSEMBLY__
-
-#undef EXTERN
-#if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
 /****************************************************************************
- * Name: stm32l4_fsmc_enable
+ * Name: stm32_fsmc_enable
  *
  * Description:
  *   Enable clocking to the FSMC.
  *
  ****************************************************************************/
 
-void stm32l4_fsmc_enable(void);
+void stm32l4_fsmc_enable(void)
+{
+  __HAL_RCC_FSMC_CLK_ENABLE();
+  //modifyreg32(STM32_RCC_AHB3ENR, 0, RCC_AHB3ENR_FSMCEN);
+}
 
 /****************************************************************************
  * Name: stm32_fsmc_disable
@@ -76,13 +70,15 @@ void stm32l4_fsmc_enable(void);
  *   Disable clocking to the FSMC.
  *
  ****************************************************************************/
-
-void stm32l4_fsmc_disable(void);
-
-#undef EXTERN
-#if defined(__cplusplus)
+void stm32l4_fsmc_disable(void)
+{
+  __HAL_RCC_FSMC_CLK_DISABLE();
+  //modifyreg32(STM32_RCC_AHBENR, RCC_AHBENR_FSMCEN, 0);
 }
-#endif
 
-#endif /* __ASSEMBLY__ */
-#endif /* __ARCH_ARM_SRC_STM32L4_STM32L4_FSMC_H */
+#endif /* CONFIG_STM32L4_FSMC */
+
+
+
+
+
