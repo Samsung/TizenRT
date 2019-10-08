@@ -1642,6 +1642,7 @@ static void tc_driver_mtd_ftl_ops(void)
 	char *types = CONFIG_FLASH_PART_TYPE;
 	char MTD_FTL_PATH[DEVNAME_LEN];
 	int partno = 0;
+	long size;
 
 	buf = (char *)malloc(BUF_SIZE);
 	if (!buf) {
@@ -1662,6 +1663,9 @@ static void tc_driver_mtd_ftl_ops(void)
 
 	fd = open(MTD_FTL_PATH, O_RDWR);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buf));
+
+	ret = ioctl(fd, BIOC_XIPBASE, (unsigned long)&size);
+	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, goto cleanup);
 
 	ret = read(fd, buf, BUF_SIZE);
 	TC_ASSERT_EQ_CLEANUP("read", ret, BUF_SIZE, goto cleanup);

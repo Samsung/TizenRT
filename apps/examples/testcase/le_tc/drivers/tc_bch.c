@@ -85,7 +85,7 @@ static void tc_driver_bch_register(void)
 static void tc_driver_bch_unregister(void)
 {
 	int ret = 0;
-
+	printf("\n\n checkpoint %d\n\n", __LINE__);
 	ret = bchdev_unregister("/dev/tmpbchdevrw");
 	TC_ASSERT_GEQ("bchdev_unregister", ret, 0);
 
@@ -265,7 +265,7 @@ static void tc_driver_bch_ioctl(void)
 {
 	int fd = 0;
 	int ret = 0;
-
+	printf("\n\n checkpoint %d\n\n", __LINE__);
 	fd = open("/dev/tmpbchdevrw", O_RDWR);
 	TC_ASSERT_GT("bch_open", fd, 0);
 

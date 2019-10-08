@@ -93,7 +93,7 @@ int bchdev_unregister(FAR const char *chardev)
 		return -EINVAL;
 	}
 #endif
-
+	printf("\n\n checkpoint %d\n\n", __LINE__);
 	/* Open the character driver associated with chardev */
 	fd = open(chardev, O_RDONLY);
 	if (fd < 0) {

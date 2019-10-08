@@ -446,13 +446,13 @@ static int ftl_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	 * that command is just passed on to the MTD driver in a slightly
 	 * different form).
 	 */
-
+	printf("\n\n checkpoint %d\n\n", __LINE__);
 	if (cmd == BIOC_XIPBASE) {
 		/* The argument accompanying the BIOC_XIPBASE should be non-NULL.  If
 		 * DEBUG is enabled, we will catch it here instead of in the MTD
 		 * driver.
 		 */
-
+		printf("\n\n checkpoint %d\n\n", __LINE__);
 		if (arg == 0) {
 			dbg("ERROR: BIOC_XIPBASE argument is NULL\n");
 			return -EINVAL;

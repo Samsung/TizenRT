@@ -315,7 +315,7 @@ static int bch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	DEBUGASSERT(inode && inode->i_private);
 	bch = (FAR struct bchlib_s *)inode->i_private;
-
+	printf("\n\n checkpoint %d\n\n", __LINE__);
 	/* Is this a request to get the private data structure */
 	if (cmd == DIOC_GETPRIV) {
 		FAR struct bchlib_s **bchr = (FAR struct bchlib_s **)((uintptr_t)arg);
@@ -328,7 +328,7 @@ static int bch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			*bchr = bch;
 			ret = OK;
 		}
-
+		printf("\n\n checkpoint %d\n\n", __LINE__);
 		bchlib_semgive(bch);
 	}
 #ifdef CONFIG_BCH_ENCRYPTION
