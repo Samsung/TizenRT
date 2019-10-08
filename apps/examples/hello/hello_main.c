@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <565_390x390.h>
 
 /****************************************************************************
  * hello_main
@@ -67,6 +68,7 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
-	return 0;
+    dma2d_copybuffer((uint32_t *)image_390x390_rgb565, NULL, 0, 0, 390, 390);
+    printf("Hello, World!!\n");
+    return 0;
 }
