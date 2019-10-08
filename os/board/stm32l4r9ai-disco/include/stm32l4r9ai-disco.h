@@ -270,6 +270,6 @@ void stm32l4_usbinitialize(void);
  *   Called to setup LTDC and DSI.
  *
  ************************************************************************************/
-void stm32l4_lcdinitialize(void);
+uint8_t stm32l4_lcdinitialize(void);
 
 #endif /* __CONFIGS_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H */
