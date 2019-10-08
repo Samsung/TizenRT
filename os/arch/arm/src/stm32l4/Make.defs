@@ -93,7 +93,7 @@ endif
 CHIP_ASRCS  =
 CHIP_CSRCS  = stm32l4_allocateheap.c stm32l4_exti_gpio.c stm32l4_gpio.c
 CHIP_CSRCS += stm32l4_irq.c stm32l4_lowputc.c
-#CHIP_CSRCS += stm32l4_rcc.c
+CHIP_CSRCS += stm32l4_rcc.c
 CHIP_CSRCS += stm32l4_serial.c stm32l4_start.c stm32l4_waste.c stm32l4_uid.c
 CHIP_CSRCS += stm32l4_spi.c stm32l4_i2c.c stm32l4_lse.c stm32l4_lsi.c
 CHIP_CSRCS += stm32l4_pwr.c stm32l4_tim.c stm32l4_flash.c
@@ -106,8 +106,8 @@ CHIP_CSRCS += stm32l4xx_hal_dma.c stm32l4xx_hal_dma_ex.c
 CHIP_CSRCS += stm32l4xx_hal_spi.c stm32l4xx_hal_spi_ex.c stm32l4xx_hal_i2c.c
 CHIP_CSRCS += stm32l4xx_hal_pwr.c stm32l4xx_hal_pwr_ex.c 
 CHIP_CSRCS += stm32l4xx_hal_flash.c stm32l4xx_hal_flash_ex.c 
-#CHIP_CSRCS += stm32l4xx_hal_uart.c stm32l4xx_hal_uart_ex.c
-#CHIP_CSRCS += stm32l4xx_hal_usart.c stm32l4xx_hal_usart_ex.c
+CHIP_CSRCS += stm32l4xx_hal_uart.c stm32l4xx_hal_uart_ex.c
+CHIP_CSRCS += stm32l4xx_hal_usart.c stm32l4xx_hal_usart_ex.c
 CHIP_CSRCS += stm32l4xx_ll_dma.c stm32l4xx_ll_exti.c
 CHIP_CSRCS += stm32l4xx_ll_gpio.c stm32l4xx_ll_pwr.c stm32l4xx_ll_rcc.c stm32l4xx_ll_utils.c
 CHIP_CSRCS += stm32l4xx_ll_usart.c
@@ -131,14 +131,17 @@ endif
 
 ifeq ($(CONFIG_STM32L4_LTDC),y)
 CHIP_CSRCS += stm32l4xx_hal_ltdc.c stm32l4xx_hal_ltdc_ex.c
+CHIP_CSRCS += stm32l4_ltdc.c
 endif
 
 ifeq ($(CONFIG_STM32L4_DSI),y)
 CHIP_CSRCS += stm32l4xx_hal_dsi.c
+CHIP_CSRCS += stm32l4_dsi.c
 endif
 
 ifeq ($(CONFIG_STM32L4_DMA2D),y)
 CHIP_CSRCS += stm32l4xx_hal_dma2d.c
+CHIP_CSRCS += stm32l4_dma2d.c
 endif
 
 ifeq ($(CONFIG_USBDEV),y)
@@ -173,10 +176,6 @@ ifeq ($(CONFIG_STM32L4_IWDG),y)
 #CHIP_CSRCS += stm32l4xx_hal_iwdg.c
 endif
 
-ifeq ($(CONFIG_STM32L4_DSI),y)
-#CHIP_CSRCS += stm32l4xx_hal_dsi.c
-endif
-
 ifneq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
 CHIP_CSRCS += stm32l4_idle.c
 endif
@@ -206,14 +205,6 @@ endif
 ifeq ($(CONFIG_STM32L4_HAVE_HSI48),y)
 CHIP_CSRCS += stm32l4_hsi48.c
 endif
-
-# ST C defines
-#C_DEFS =  \
-#-DUSE_HAL_DRIVER \
-#-DSTM32L4R9xx \
-#-DUSE_HAL_DRIVER \
-#-DUSE_FULL_LL_DRIVER \
-#-DSTM32L4R9xx
 
 # ST Defines
 CFLAGS += \
