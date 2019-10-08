@@ -181,6 +181,7 @@ HAL_StatusTypeDef  HAL_SRAM_DeInit(SRAM_HandleTypeDef *hsram)
   *                the configuration information for SRAM module.
   * @retval None
   */
+#if 0
 __weak void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -190,13 +191,14 @@ __weak void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
             the HAL_SRAM_MspInit could be implemented in the user file
    */ 
 }
-
+#endif
 /**
   * @brief  DeInitialize the SRAM MSP.
   * @param  hsram pointer to a SRAM_HandleTypeDef structure that contains
   *                the configuration information for SRAM module.
   * @retval None
   */
+#if 0
 __weak void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -206,13 +208,14 @@ __weak void HAL_SRAM_MspDeInit(SRAM_HandleTypeDef *hsram)
             the HAL_SRAM_MspDeInit could be implemented in the user file
    */ 
 }
-
+#endif
 /**
   * @brief  DMA transfer complete callback.
   * @param  hdma pointer to a SRAM_HandleTypeDef structure that contains
   *                the configuration information for SRAM module.
   * @retval None
   */
+#if 0
 __weak void HAL_SRAM_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -222,13 +225,14 @@ __weak void HAL_SRAM_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma)
             the HAL_SRAM_DMA_XferCpltCallback could be implemented in the user file
    */ 
 }
-
+#endif
 /**
   * @brief  DMA transfer complete error callback.
   * @param  hdma pointer to a SRAM_HandleTypeDef structure that contains
   *                the configuration information for SRAM module.
   * @retval None
   */
+#if 0
 __weak void HAL_SRAM_DMA_XferErrorCallback(DMA_HandleTypeDef *hdma)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -238,7 +242,7 @@ __weak void HAL_SRAM_DMA_XferErrorCallback(DMA_HandleTypeDef *hdma)
             the HAL_SRAM_DMA_XferErrorCallback could be implemented in the user file
    */ 
 }
-
+#endif
 /**
   * @}
   */

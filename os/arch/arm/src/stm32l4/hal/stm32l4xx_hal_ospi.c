@@ -1876,6 +1876,7 @@ __weak void HAL_OSPI_FifoThresholdCallback(OSPI_HandleTypeDef *hospi)
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_CmdCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1885,7 +1886,7 @@ __weak void HAL_OSPI_CmdCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_CmdCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Rx Transfer completed callback.
   * @param  hospi : OSPI handle
