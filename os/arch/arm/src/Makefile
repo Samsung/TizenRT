@@ -89,6 +89,7 @@ ifeq ($(WINTOOL),y)
 else
   TINYARA = "$(TOPDIR)/$(OUTBIN_DIR)/tinyara$(EXEEXT)"
   CFLAGS += -I$(ARCH_SRCDIR)/chip
+  CFLAGS += -I$(ARCH_SRCDIR)/chip/hal	
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/$(ARCH_SUBDIR)
   CFLAGS += -I$(TOPDIR)/kernel
@@ -169,6 +170,7 @@ LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 
 VPATH += chip
+VPATH += chip/hal
 VPATH += common
 VPATH += $(ARCH_SUBDIR)
 

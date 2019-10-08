@@ -79,11 +79,11 @@ endif
 
 ifeq ($(CONFIG_STM32L4_LTDC),y)
 CSRCS += stm32_lcd.c
+CSRCS += stm32l4r9i_lcd.c
 endif
 
 CSRCS += stm32l4r9i_discovery.c
 CSRCS += stm32l4r9i_discovery_io.c
-#CSRCS += stm32l4r9i_discovery_lcd.c
 CSRCS += mfxstm32l152.c
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
