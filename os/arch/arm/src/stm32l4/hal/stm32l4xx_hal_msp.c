@@ -169,10 +169,10 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
   }
 
   /* NVIC configuration for LTDC interrupts that are now enabled */
-  HAL_NVIC_SetPriority(LTDC_IRQn, 3, 0);
-  HAL_NVIC_EnableIRQ(LTDC_IRQn);
-  HAL_NVIC_SetPriority(LTDC_ER_IRQn, 3, 0);
-  HAL_NVIC_EnableIRQ(LTDC_ER_IRQn);
+  //  HAL_NVIC_SetPriority(LTDC_IRQn, 3, 0);
+  //  HAL_NVIC_EnableIRQ(LTDC_IRQn);
+  //  HAL_NVIC_SetPriority(LTDC_ER_IRQn, 3, 0);
+  //  HAL_NVIC_EnableIRQ(LTDC_ER_IRQn);
 }
 
 /**
