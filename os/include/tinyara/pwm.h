@@ -131,16 +131,12 @@
  *
  *   ioctl argument:  None
  *
- * PWMIOC_IDLE - Stop the pulsed and start the fixed output(high or low).
- *
- *   ioctl argument:  Idle value
  */
 
 #define PWMIOC_SETCHARACTERISTICS _PWMIOC(1)
 #define PWMIOC_GETCHARACTERISTICS _PWMIOC(2)
 #define PWMIOC_START              _PWMIOC(3)
 #define PWMIOC_STOP               _PWMIOC(4)
-#define PWMIOC_IDLE               _PWMIOC(5)
 
 /****************************************************************************
  * Public Types

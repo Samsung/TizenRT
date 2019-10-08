@@ -136,17 +136,6 @@ int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty
 int iotbus_pwm_set_period(iotbus_pwm_context_h pwm, uint32_t period);
 
 /**
- * @brief sets the pwm idle value when pwm disabled.
- *
- * @details @b #include <iotbus/iotbus_pwm.h>
- * @param[in] pwm handle of pwm_context
- * @param[in] val pwm idle value
- * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since TizenRT v1.0
- */
-int iotbus_pwm_set_idle(iotbus_pwm_context_h pwm, iotbus_pwm_val_e val);
-
-/**
  * @brief sets the pwm state.
  *
  * @details @b #include <iotbus/iotbus_pwm.h>
