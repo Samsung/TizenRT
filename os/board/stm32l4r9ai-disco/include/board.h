@@ -46,7 +46,7 @@
 
 #include <stm32l4.h>
 #include <chip/stm32l4xx.h>
-#include <stm32l4xx_hal.h>
+#include <hal/stm32l4xx_hal.h>
 
 /************************************************************************************
  * Pre-processor Definitions
