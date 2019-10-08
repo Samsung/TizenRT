@@ -54,7 +54,7 @@
 #include "stm32l4_gpio.h"
 #include "stm32l4_userspace.h"
 #include "stm32l4_start.h"
-#include "stm32l4xx_hal_interface.h"
+#include "hal/stm32l4xx_hal_interface.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -359,7 +359,7 @@ void __start(void)
   //up_sys_timer_initialize();
 
   /* Initialize onboard resources */
-  board_initialize();
+  //board_initialize();
   showprogress('F');
 
   /* Then start NuttX */
