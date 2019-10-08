@@ -278,7 +278,7 @@
  *   Output one byte on the serial console
  *
  ****************************************************************************/
-#include "stm32l4xx_hal_interface.h"
+#include "hal/stm32l4xx_hal_interface.h"
 void up_lowputc(char ch)
 {
 #ifdef HAVE_CONSOLE
