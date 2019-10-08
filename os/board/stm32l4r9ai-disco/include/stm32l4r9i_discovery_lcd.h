@@ -186,7 +186,7 @@ uint8_t  BSP_LCD_SetColorKeying(uint32_t LayerIndex, uint32_t RGBValue);
 uint8_t  BSP_LCD_ResetColorKeying(uint32_t LayerIndex);
 
 uint8_t  BSP_LCD_SelectLayer(uint32_t LayerIndex);
-uint8_t  BSP_LCD_SetLayerVisible(uint32_t LayerIndex, FunctionalState State);
+//uint8_t  BSP_LCD_SetLayerVisible(uint32_t LayerIndex, FunctionalState State);
 
 void     BSP_LCD_SetTextColor(uint32_t Color);
 uint32_t BSP_LCD_GetTextColor(void);

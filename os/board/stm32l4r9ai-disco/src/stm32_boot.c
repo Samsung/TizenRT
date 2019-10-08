@@ -64,7 +64,6 @@
 void board_initialize(void)
 {
   /* Configure on-board LEDs if LED support has been selected. */
-
 #ifdef CONFIG_ARCH_LEDS
     board_led_initialize();
 #endif
@@ -86,9 +85,15 @@ void board_initialize(void)
     stm32l4_usbinitialize();
 #endif
 
+#ifdef CONFIG_STM32L4_DMA2D
+    stm32l4_dma2dinitialize();
+#endif
+
 #ifdef CONFIG_STM32L4_LTDC
     stm32l4_lcdinitialize();
 #endif
+    
+    stm32_dsi_refresh();
 }
 
 /****************************************************************************
