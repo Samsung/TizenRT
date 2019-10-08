@@ -84,7 +84,12 @@ endif
 
 CSRCS += stm32l4r9i_discovery.c
 CSRCS += stm32l4r9i_discovery_io.c
+CSRCS += stm32l4r9i_discovery_ts.c
 CSRCS += mfxstm32l152.c
+CSRCS += stm32_exflash.c
+CSRCS += stm32_psram.c
+
+CSRCS += ft3x67.c
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
