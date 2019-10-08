@@ -256,6 +256,7 @@ void messaging_run_callback(int signo, siginfo_t *data)
 			break;
 		}
 	}
+	return;
 
 errout_with_recv_packet:
 	MSG_FREE(recv_packet);
@@ -263,5 +264,4 @@ errout_with_mq_close:
 	mq_close(recv_info->mqdes);
 errout_with_recv_info:
 	MSG_FREE(recv_info);
-	return;
 }
