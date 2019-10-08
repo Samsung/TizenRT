@@ -107,6 +107,9 @@ static int not_builtin_task(int argc, char *argv[])
 
 static void *tm_pthread(void *param)
 {
+	while (1) {
+		usleep(1);
+	}	// This will be dead at utc_taskmanager_stop_p
 	return NULL;
 }
 
@@ -309,6 +312,9 @@ static void utc_taskmanager_start_n(void)
 static void utc_taskmanager_start_p(void)
 {
 	int ret;
+
+	ret = task_manager_start(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_start", ret, OK);	
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
@@ -768,6 +774,10 @@ static void utc_taskmanager_stop_p(void)
 
 	sleep(1);
 	cb_flag = false;
+
+	ret = task_manager_stop(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
+
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
@@ -906,7 +916,7 @@ static void utc_taskmanager_register_pthread_p(void)
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
-	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_pthread", tm_pthread_handle, 0);
 
 	TC_SUCCESS_RESULT();
