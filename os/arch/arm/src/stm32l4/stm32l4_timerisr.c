@@ -101,6 +101,8 @@ int up_timerisr(int irq, uint32_t *regs)
 {
     /* Process timer interrupt */
     sched_process_timer();
+    HAL_IncTick();
+
     return 0;
 }
 
