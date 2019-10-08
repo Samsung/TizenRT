@@ -121,9 +121,13 @@ struct stm32_ltdc_s {
  * include/tinyara/video/fb.h.
  */
 
-int stm32l4_ltdcinitialize(void);
+#ifdef USE_HAL_DRIVER
+uint8_t stm32l4_ltdc_initialize(void);
+#else
+int stm32l4_ltdc_initialize(void);
+#endif
 FAR struct fb_vtable_s *stm32l4_ltdcgetvplane(int vplane);
-void stm32l4_ltdcuninitialize(void);
+void stm32l4_ltdc_uninitialize(void);
 
 /************************************************************************************
  * Name: stm32_ltdcgetlayer

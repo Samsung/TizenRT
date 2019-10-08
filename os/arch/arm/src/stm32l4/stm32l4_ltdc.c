@@ -593,6 +593,8 @@ static int stm32_blit(FAR struct ltdc_layer_s *dest, FAR struct ltdc_layer_s *fo
 static int stm32_blend(FAR struct ltdc_layer_s *dest, FAR struct ltdc_layer_s *fore, fb_coord_t forexpos, fb_coord_t foreypos, FAR struct ltdc_layer_s *back, FAR const struct ltdc_area_s *backarea);
 #endif
 #endif							/* CONFIG_STM32L4_LTDC_INTERFACE */
+int up_ltdc_isr(int irq, uint32_t *regs);
+int up_ltdc_er_isr(int irq, uint32_t *regs);
 
 /****************************************************************************
  * Private Data
@@ -837,7 +839,8 @@ static const uintptr_t stm32_clutwr_layer_t[LTDC_NLAYERS] = {
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-
+LTDC_HandleTypeDef hltdc;
+LTDC_LayerCfgTypeDef hlayer;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -864,7 +867,7 @@ static void stm32_ltdc_gpioconfig(void)
 
 	for (i = 0; i < STM32_LTDC_NPINCONFIGS; i++) {
 		regvdbg("set gpio%d = %08x\n", i, g_ltdcpins[i]);
-		stm32_configgpio(g_ltdcpins[i]);
+		stm32l4_configgpio(g_ltdcpins[i]);
 	}
 }
 
@@ -2945,24 +2948,71 @@ FAR struct ltdc_layer_s *stm32_ltdcgetlayer(int lid)
  *   OK
  *
  ****************************************************************************/
+#ifdef USE_HAL_DRIVER
+uint8_t stm32l4_ltdc_initialize(void)
+{
+    //    (void)irq_attach(STM32L4_IRQ_LCD_TFT, (xcpt_t)up_ltdc_isr, NULL);
+    //    (void)irq_attach(STM32L4_IRQ_LCD_TFT_ER, (xcpt_t)up_ltdc_er_isr, NULL);
 
-int stm32l4_ltdcinitialize(void)
+    __HAL_LTDC_RESET_HANDLE_STATE(&hltdc);
+    hltdc.Instance = LTDC;
+    hltdc.Init.HSPolarity         = LTDC_HSPOLARITY_AL;
+    hltdc.Init.VSPolarity         = LTDC_VSPOLARITY_AL;
+    hltdc.Init.DEPolarity         = LTDC_DEPOLARITY_AL;
+    hltdc.Init.PCPolarity         = LTDC_PCPOLARITY_IPC;
+    hltdc.Init.HorizontalSync     = 0;   /* HSYNC width - 1 */
+    hltdc.Init.VerticalSync       = 0;   /* VSYNC width - 1 */
+    hltdc.Init.AccumulatedHBP     = 1;   /* HSYNC width + HBP - 1 */
+    hltdc.Init.AccumulatedVBP     = 1;   /* VSYNC width + VBP - 1 */
+    hltdc.Init.AccumulatedActiveW = 391; /* HSYNC width + HBP + Active width - 1 */
+    hltdc.Init.AccumulatedActiveH = 391; /* VSYNC width + VBP + Active height - 1 */
+    hltdc.Init.TotalWidth         = 392; /* HSYNC width + HBP + Active width + HFP - 1 */
+    hltdc.Init.TotalHeigh         = 392; /* VSYNC width + VBP + Active height + VFP - 1 */
+    hltdc.Init.Backcolor.Red      = 0;   /* Not used default value */
+    hltdc.Init.Backcolor.Green    = 0;   /* Not used default value */
+    hltdc.Init.Backcolor.Blue     = 0;   /* Not used default value */
+    hltdc.Init.Backcolor.Reserved = 0xFF;
+    if(HAL_LTDC_Init(&hltdc) != HAL_OK) {
+        return(LCD_ERROR);
+    }
+
+    /* LTDC layer 1 configuration */
+    hlayer.WindowX0        = 0;
+    hlayer.WindowX1        = 390;
+    hlayer.WindowY0        = 0;
+    hlayer.WindowY1        = 390;
+    hlayer.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;//LTDC_PIXEL_FORMAT_RGB565;//LTDC_PIXEL_FORMAT_RGB888;
+    hlayer.Alpha           = 0xFF; /* NU default value */
+    hlayer.Alpha0          = 0; /* NU default value */
+    hlayer.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA; /* Not Used: default value */
+    hlayer.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA; /* Not Used: default value */
+    hlayer.FBStartAdress   = STM32_LTDC_BUFFER_START;
+    hlayer.ImageWidth      = 390; /* virtual frame buffer contains 768 pixels per line for 24bpp */
+    /* (192 blocs * 16) / (24bpp/3) = 1024 pixels per ligne        */
+    hlayer.ImageHeight     = 390;
+    hlayer.Backcolor.Red   = 0; /* Not Used: default value */
+    hlayer.Backcolor.Green = 0; /* Not Used: default value */
+    hlayer.Backcolor.Blue  = 0; /* Not Used: default value */
+    hlayer.Backcolor.Reserved = 0xFF;
+    if(HAL_LTDC_ConfigLayer(&hltdc, &hlayer, LTDC_LAYER_1) != HAL_OK) {
+        return(LCD_ERROR);
+    }
+}
+#else
+int stm32l4_ltdc_initialize(void)
 {
 	gvdbg("Initialize LTDC driver\n");
 
 	/* Disable the LCD */
-
 	stm32_lcd_enable(false);
 
 	gvdbg("Configuring the LCD controller\n");
 
 	/* Configure LCD periphery */
-
 	gvdbg("Configure lcd periphery\n");
 	stm32_ltdc_periphconfig();
 
 	/* Configure global ltdc register */
-
 	gvdbg("Configure global register\n");
 	stm32_global_configure();
 
@@ -2980,26 +3030,20 @@ int stm32l4_ltdcinitialize(void)
 #ifdef CONFIG_STM32L4_LTDC_L2
 	stm32_ltdc_lenable(&LAYER_L2);
 #endif
-
 	/* Enable the backlight */
-
 #ifdef CONFIG_STM32L4_LCD_BACKLIGHT
 	stm32l4_backlight(true);
 #endif
-
 	/* Reload shadow register */
-
 	gvdbg("Reload shadow register\n");
 	stm32_ltdc_reload(LTDC_SRCR_IMR);
 
 	/* Turn the LCD on */
-
 	gvdbg("Enabling the display\n");
 	stm32_lcd_enable(true);
-
 	return OK;
 }
-
+#endif
 /****************************************************************************
  * Name: stm32_ltdcgetvplane
  *
@@ -3034,7 +3078,7 @@ struct fb_vtable_s *stm32l4_ltdcgetvplane(int vplane)
  *
  ****************************************************************************/
 
-void stm32l4_ltdcuninitialize(void)
+void stm32l4_ltdc_uninitialize(void)
 {
 	/* Disable the LCD controller */
 
@@ -3082,3 +3126,16 @@ void stm32l4_backlight(bool blon)
 	gdbg("Not supported\n");
 }
 #endif
+
+int up_ltdc_isr(int irq, uint32_t *regs)
+{
+    HAL_LTDC_IRQHandler(&hltdc);
+    lowputc('1');
+    return 0;
+}
+
+int up_ltdc_er_isr(int irq, uint32_t *regs)
+{
+    return 0;
+}
+
