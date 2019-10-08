@@ -345,7 +345,17 @@ void                    BSP_ErrorHandler(void);
 /**
   * @}
   */
+void stm32_exflash_initialize(void);
+void stm32_exflash_write(uint8_t* pData, uint32_t WriteAddr, uint32_t Size);
+void stm32_exflash_read(uint8_t* pData, uint32_t ReadAddr, uint32_t Size);
+void stm32_exflash_erase_sector(uint32_t sector);
+void stm32_exflash_erase_block(uint32_t block);
+void stm32_exflash_enter_memorymapped(void);
+void stm32_exflash_exit_memorymapped(void);
 
+void stm32_psram_initialize(void);
+void stm32_touch_initialize(void);
+void stm32_touch_printf_coord(void);
 /**
   * @}
   */
