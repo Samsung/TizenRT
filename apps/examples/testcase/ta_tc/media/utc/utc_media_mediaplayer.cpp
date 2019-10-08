@@ -198,6 +198,21 @@ static void utc_media_MediaPlayer_setDataSource_n(void)
 		mp.destroy();
 	}
 
+	/* setDataSource after configuration */
+	{
+		media::MediaPlayer mp;
+		auto source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		source->setSampleRate(20000);
+		source->setChannels(2);
+		mp.create();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(std::move(source)), media::PLAYER_OK);
+
+		source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(std::move(source)), media::PLAYER_OK);
+
+		mp.destroy();
+	}
 	TC_SUCCESS_RESULT();
 }
 
@@ -207,6 +222,9 @@ static void utc_media_MediaPlayer_setObserver_p(void)
 	auto observer = std::make_shared<EmptyObserver>();
 	mp.create();
 
+	TC_ASSERT_EQ("utc_media_MediaPlayer_setObserver", mp.setObserver(observer), media::PLAYER_OK);
+
+	/* setObserver twice */
 	TC_ASSERT_EQ("utc_media_MediaPlayer_setObserver", mp.setObserver(observer), media::PLAYER_OK);
 
 	mp.destroy();
