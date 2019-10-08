@@ -45,6 +45,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <tinyara/spi/spi.h>
+#include <tinyara/spi/ospi.h>
 
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9ai-disco.h>
@@ -90,7 +91,10 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_STM32L4_LTDC
+    stm32_psram_initialize();
+    stm32_exflash_initialize();
     stm32l4_lcdinitialize();
+    stm32_touch_initialize();
 #endif
     
     stm32_dsi_refresh();
