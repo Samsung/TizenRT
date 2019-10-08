@@ -156,6 +156,11 @@ struct dma2d_layer_s
                uint32_t forexpos, uint32_t foreypos,
                FAR struct stm32_dma2d_overlay_s *boverlay,
                FAR const struct fb_area_s *barea);
+
+#if 1//def USE_HAL_DRIVER
+  void (*copybuffer)(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                      uint16_t xsize, uint16_t ysize);
+#endif
 };
 
 /****************************************************************************
@@ -175,7 +180,7 @@ struct dma2d_layer_s
  *
  ****************************************************************************/
 
-FAR struct dma2d_layer_s *stm32_dma2ddev(void);
+FAR struct dma2d_layer_s *stm32l4_dma2ddev(void);
 
 /****************************************************************************
  * Name: up_dma2dinitialize

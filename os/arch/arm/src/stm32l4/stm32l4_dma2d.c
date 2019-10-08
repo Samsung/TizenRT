@@ -60,9 +60,8 @@
 #include "stm32l4.h"
 #include "chip/stm32l4_ltdc.h"
 #include "chip/stm32l4_dma2d.h"
-//#include "stm32l4_ccm.h"
 #include "stm32l4_dma2d.h"
-
+#include "stm32l4_ltdc.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -238,7 +237,10 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
                              uint32_t forexpos, uint32_t foreypos,
                              FAR struct stm32_dma2d_overlay_s *boverlay,
                              FAR const struct fb_area_s *barea);
-
+#ifdef USE_HAL_DRIVER
+static void stm32_dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                            uint16_t xsize, uint16_t ysize);
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -276,16 +278,20 @@ static struct stm32_interrupt_s g_interrupt =
   .sem     = &g_semirq
 };
 
+
 static struct stm32_dma2d_s g_dma2ddev =
 {
   .dma2d =
   {
 #ifdef CONFIG_STM32L4_FB_CMAP
-    .setclut   = stm32_dma2d_setclut,
+    .setclut     = stm32_dma2d_setclut,
 #endif
-    .fillcolor = stm32_dma2d_fillcolor,
-    .blit      = stm32_dma2d_blit,
-    .blend     = stm32_dma2d_blend
+    .fillcolor   = stm32_dma2d_fillcolor,
+    .blit        = stm32_dma2d_blit,
+    .blend       = stm32_dma2d_blend,
+#ifdef USE_HAL_DRIVER
+    .copybuffer  = stm32_dma2d_copybuffer
+#endif
   },
 #ifdef CONFIG_STM32L4_FB_CMAP
   .clut = g_clut,
@@ -296,7 +302,9 @@ static struct stm32_dma2d_s g_dma2ddev =
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-
+#ifdef USE_HAL_DRIVER
+DMA2D_HandleTypeDef   hdma2d;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -414,11 +422,11 @@ static int stm32_dma2dirq(int irq, void *context, FAR void *arg)
 
   /* Unlock the semaphore if locked */
 
-  ret = nxsem_post(priv->sem);
+  ret = sem_post(priv->sem);
 
   if (ret < 0)
     {
-      gdbg("ERROR: nxsem_post() failed\n");
+      gdbg("ERROR: sem_post() failed\n");
     }
 
   return OK;
@@ -442,11 +450,11 @@ static int stm32_dma2d_waitforirq(void)
   int ret;
   FAR struct stm32_interrupt_s *priv = &g_interrupt;
 
-  ret = nxsem_wait(priv->sem);
+  ret = sem_wait(priv->sem);
 
   if (ret < 0)
     {
-      gdbg("ERROR: nxsem_wait() failed\n");
+      gdbg("ERROR: sem_wait() failed\n");
       return ret;
     }
 
@@ -758,7 +766,7 @@ static int stm32_dma2d_setclut(FAR const struct fb_cmap_s *cmap)
 
   gdbg("cmap=%p\n", cmap);
 
-  nxsem_wait(priv->lock);
+  sem_wait(priv->lock);
 
   for (n = cmap->first; n < cmap->len - 1 && n < STM32_DMA2D_NCLUT; n++)
     {
@@ -792,7 +800,7 @@ static int stm32_dma2d_setclut(FAR const struct fb_cmap_s *cmap)
 #  endif
     }
 
-  nxsem_post(priv->lock);
+  sem_post(priv->lock);
 
   return OK;
 }
@@ -839,7 +847,7 @@ static int stm32_dma2d_fillcolor(FAR struct stm32_dma2d_overlay_s *oinfo,
     }
 #endif
 
-  nxsem_wait(priv->lock);
+  sem_wait(priv->lock);
 
   /* Set output pfc */
 
@@ -871,7 +879,7 @@ static int stm32_dma2d_fillcolor(FAR struct stm32_dma2d_overlay_s *oinfo,
       gdbg("ERROR: Returning ECANCELED\n");
     }
 
-  nxsem_post(priv->lock);
+  sem_post(priv->lock);
   return ret;
 }
 
@@ -910,7 +918,7 @@ static int stm32_dma2d_blit(FAR struct stm32_dma2d_overlay_s *doverlay,
   gdbg("doverlay=%p, destxpos=%d, destypos=%d, soverlay=%p, sarea=%p\n",
           doverlay, destxpos, destypos, soverlay, sarea);
 
-  nxsem_wait(priv->lock);
+  sem_wait(priv->lock);
 
   /* Set output pfc */
 
@@ -960,7 +968,7 @@ static int stm32_dma2d_blit(FAR struct stm32_dma2d_overlay_s *doverlay,
       gdbg("ERROR: Returning ECANCELED\n");
     }
 
-  nxsem_post(priv->lock);
+  sem_post(priv->lock);
   return ret;
 }
 
@@ -1021,7 +1029,7 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
     }
 #endif
 
-  nxsem_wait(priv->lock);
+  sem_wait(priv->lock);
 
   /* Set output pfc */
 
@@ -1069,10 +1077,25 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
       gdbg("ERROR: Returning ECANCELED\n");
     }
 
-  nxsem_post(priv->lock);
+  sem_post(priv->lock);
   return ret;
 }
 
+#ifdef USE_HAL_DRIVER
+extern LTDC_LayerCfgTypeDef hlayer;
+static void stm32_dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                                   uint16_t xsize, uint16_t ysize)
+{
+    uint32_t *des = (uint32_t *)hlayer.FBStartAdress;
+    pdst = des;
+    uint32_t destination = (uint32_t)pdst + (y * 390 + x) * 4;
+    uint32_t source      = (uint32_t)psrc;
+
+    if(HAL_DMA2D_Start(&hdma2d, source, destination, xsize, ysize) == HAL_OK){
+        HAL_DMA2D_PollForTransfer(&hdma2d, 100);
+    }
+}
+#endif
 /****************************************************************************
  * Name: stm32_dma2dinitialize
  *
@@ -1084,7 +1107,34 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
  *   An error if initializing failed.
  *
  ****************************************************************************/
+#ifdef USE_HAL_DRIVER
 
+int stm32l4_dma2dinitialize(void)
+{
+  hdma2d.Instance          = DMA2D;
+
+  /*##-1- Configure the DMA2D Mode, Color Mode and output offset #############*/
+  hdma2d.Init.Mode           = DMA2D_M2M_PFC;
+  hdma2d.Init.ColorMode      = DMA2D_OUTPUT_RGB565;
+  hdma2d.Init.OutputOffset   = 0;//1024 - 390;
+  hdma2d.Init.AlphaInverted  = DMA2D_REGULAR_ALPHA;  /* No Output Alpha Inversion */
+  hdma2d.Init.RedBlueSwap    = DMA2D_RB_REGULAR;     /* No Output Red & Blue swap */
+  hdma2d.Init.BytesSwap      = DMA2D_BYTES_REGULAR;  /* Regular output byte order */
+  hdma2d.Init.LineOffsetMode = DMA2D_LOM_PIXELS;     /* Pixel mode                */
+
+  /*##-2- Foreground Configuration ###########################################*/
+  hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+  hdma2d.LayerCfg[1].InputOffset    = 0;
+  hdma2d.LayerCfg[1].AlphaMode      = DMA2D_NO_MODIF_ALPHA;
+  hdma2d.LayerCfg[1].InputAlpha     = 0xFF;                /* Not used */
+  hdma2d.LayerCfg[1].RedBlueSwap    = DMA2D_RB_SWAP; //DMA2D_RB_REGULAR;    /* No ForeGround Red/Blue swap */
+  hdma2d.LayerCfg[1].AlphaInverted  = DMA2D_REGULAR_ALPHA; /* No ForeGround Alpha inversion */
+
+  /* DMA2D Initialization */
+  HAL_DMA2D_Init(&hdma2d);
+  HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+}
+#else
 int stm32l4_dma2dinitialize(void)
 {
   gdbg("Initialize DMA2D driver\n");
@@ -1093,7 +1143,7 @@ int stm32l4_dma2dinitialize(void)
     {
       /* Abort current dma2d data transfer */
 
-      stm32_dma2duninitialize();
+      stm32l4_dma2duninitialize();
 
       /* Enable dma2d is done in rcc_enableahb1, see
        * arch/arm/src/stm32/stm32f40xxx_rcc.c
@@ -1103,15 +1153,15 @@ int stm32l4_dma2dinitialize(void)
        * to the driver
        */
 
-      nxsem_init(&g_lock, 0, 1);
+      sem_init(&g_lock, 0, 1);
 
       /* Initialize the semaphore for interrupt handling.  This waitsem
        * semaphore is used for signaling and, hence, should not have
        * priority inheritance enabled.
        */
 
-      nxsem_init(g_interrupt.sem, 0, 0);
-      nxsem_setprotocol(g_interrupt.sem, SEM_PRIO_NONE);
+      sem_init(g_interrupt.sem, 0, 0);
+      sem_setprotocol(g_interrupt.sem, SEM_PRIO_NONE);
 
 #ifdef CONFIG_STM32L4_FB_CMAP
       /* Enable dma2d transfer and clut loading interrupts only */
@@ -1141,7 +1191,7 @@ int stm32l4_dma2dinitialize(void)
 
   return OK;
 }
-
+#endif
 /****************************************************************************
  * Name: stm32_dma2duninitialize
  *
@@ -1180,5 +1230,5 @@ void stm32l4_dma2duninitialize(void)
 
 FAR struct dma2d_layer_s *stm32l4_dma2ddev(void)
 {
-  return &g_dma2ddev.dma2d;
+    return &g_dma2ddev.dma2d;
 }
