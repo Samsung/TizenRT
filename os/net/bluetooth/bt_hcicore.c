@@ -955,7 +955,7 @@ static int hci_tx_kthread(int argc, FAR char *argv[])
 
 		do {
 			ret = sem_wait(&g_btdev.ncmd_sem);
-		} while (ret == -EINTR);
+		} while (errno == EINTR);
 
 		DEBUGASSERT(ret >= 0);
 

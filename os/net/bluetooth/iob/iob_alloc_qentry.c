@@ -139,7 +139,7 @@ static FAR struct iob_qentry_s *iob_allocwait_qentry(void)
 			 * the error should be returned.
 			 */
 
-			if (ret == -EINTR) {
+			if (errno == EINTR) {
 				/* Force a success indication so that we will continue looping. */
 
 				ret = OK;

@@ -148,7 +148,7 @@ static int conn_tx_kthread(int argc, FAR char *argv[])
 
 		do {
 			ret = sem_wait(&g_btdev.le_pkts_sem);
-		} while (ret == -EINTR);
+		} while (errno == EINTR);
 
 		DEBUGASSERT(ret == OK);
 
@@ -560,7 +560,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 
 		do {
 			ret = sem_wait(&g_conn_handoff.sync_sem);
-		} while (ret == -EINTR);
+		} while (errno == EINTR);
 
 		DEBUGASSERT(ret == OK);
 
@@ -577,7 +577,7 @@ void bt_conn_set_state(FAR struct bt_conn_s *conn, enum bt_conn_state_e state)
 
 		do {
 			ret = sem_wait(&g_conn_handoff.sync_sem);
-		} while (ret == -EINTR);
+		} while (errno == EINTR);
 
 		DEBUGASSERT(ret == OK);
 		sem_post(&g_conn_handoff.sync_sem);
