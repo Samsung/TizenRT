@@ -1503,8 +1503,6 @@ uint8_t get_process_type_audio_param_value(device_process_type_t type)
 	switch (type) {
 	case AUDIO_DEVICE_PROCESS_TYPE_NONE:
 		return AUDIO_PU_UNDEF;
-	case AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER:
-		return AUDIO_PU_STEREO_EXTENDER;
 	case AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR:
 		return AUDIO_PU_SPEECH_DETECT;
 	default:
@@ -1515,28 +1513,12 @@ uint8_t get_process_type_audio_param_value(device_process_type_t type)
 uint8_t get_subprocess_type_audio_param_value(device_process_subtype_t type)
 {
 	switch (type) {
-	case AUDIO_DEVICE_STEREO_EXTENDER_NONE:
-		return AUDIO_STEXT_UNDEF;
-	case AUDIO_DEVICE_STEREO_EXTENDER_ENABLE:
-		return AUDIO_STEXT_ENABLE;
-	case AUDIO_DEVICE_STEREO_EXTENDER_WIDTH:
-		return AUDIO_STEXT_WIDTH;
-	case AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW:
-		return AUDIO_STEXT_UNDERFLOW;
-	case AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW:
-		return AUDIO_STEXT_OVERFLOW;
-	case AUDIO_DEVICE_STEREO_EXTENDER_LATENCY:
-		return AUDIO_STEXT_LATENCY;
 	case AUDIO_DEVICE_SPEECH_DETECT_NONE:
 		return AUDIO_SD_UNDEF;
 	case AUDIO_DEVICE_SPEECH_DETECT_EPD:
 		return AUDIO_SD_ENDPOINT_DETECT;
 	case AUDIO_DEVICE_SPEECH_DETECT_KD:
 		return AUDIO_SD_KEYWORD_DETECT;
-	case AUDIO_DEVICE_SPEECH_DETECT_NS:
-		return AUDIO_SD_NS;
-	case AUDIO_DEVICE_SPEECH_DETECT_CLEAR:
-		return AUDIO_SD_CLEAR;
 	default:
 		return AUDIO_PU_UNDEF;
 	}

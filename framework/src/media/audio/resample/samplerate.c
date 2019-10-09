@@ -584,30 +584,3 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 
 	return SRC_ERR_NO_ERROR;
 }
-
-int src_StereoToMono(short *data, int len)
-{
-	int index = 0;
-	int channels = 2; // 2 channels stereo
-	for (index = 0; index < (len / channels); index++) {
-		// New Mono Sample = (L Sample + R Sample) / 2
-		// Use the average value simpley.
-		data[index] = (data[(index << 1) + 1] + data[index << 1]) >> 1;
-	}
-
-	return index;
-}
-
-int src_MonoToStereo(short *data, int len)
-{
-	int index = 0;
-	for (index = len - 1; index >= 0; index--) {
-		// L Sample = Mono Sample, R Sample = Mono Sample
-		// Copy Mono Sample as L/R Sample simply
-		data[(index << 1) + 1] = data[index];
-		data[index << 1] = data[index];
-	}
-
-	return len << 1;
-}
-

@@ -75,27 +75,18 @@ typedef enum audio_device_type_e audio_device_type_t;
  */
 enum audio_device_process_unit_type_e {
 	AUDIO_DEVICE_PROCESS_TYPE_NONE = 0,
-	AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER = 1,
-	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = 2,
+	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = 1,
 };
 
 typedef enum audio_device_process_unit_type_e device_process_type_t;
 
 enum audio_device_process_unit_subtype_e {
-	/* For Stream Out */
-	AUDIO_DEVICE_STEREO_EXTENDER_NONE = 0,
-	AUDIO_DEVICE_STEREO_EXTENDER_ENABLE = 1,
-	AUDIO_DEVICE_STEREO_EXTENDER_WIDTH = 2,
-	AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW = 3,
-	AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW = 4,
-	AUDIO_DEVICE_STEREO_EXTENDER_LATENCY = 5,
+	/* Nothing For Stream Out now */
 
 	/* For Stream In */
-	AUDIO_DEVICE_SPEECH_DETECT_NONE = 6,
-	AUDIO_DEVICE_SPEECH_DETECT_EPD = 7,
-	AUDIO_DEVICE_SPEECH_DETECT_KD = 8,
-	AUDIO_DEVICE_SPEECH_DETECT_NS = 9,
-	AUDIO_DEVICE_SPEECH_DETECT_CLEAR = 10
+	AUDIO_DEVICE_SPEECH_DETECT_NONE = 0,
+	AUDIO_DEVICE_SPEECH_DETECT_EPD = 1,
+	AUDIO_DEVICE_SPEECH_DETECT_KD = 2
 };
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
