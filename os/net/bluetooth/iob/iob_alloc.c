@@ -149,7 +149,7 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 			 * should be returned.
 			 */
 
-			if (ret == -EINTR) {
+			if (errno == EINTR) {
 				/* Force a success indication so that we will continue looping. */
 
 				ret = OK;

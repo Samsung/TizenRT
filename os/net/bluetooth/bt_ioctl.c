@@ -169,8 +169,8 @@ static void btnet_scan_callback(FAR const bt_addr_le_t *addr, int8_t rssi, uint8
 	/* Get exclusive access to the scan data */
 
 	while ((ret = sem_wait(&g_scanstate.bs_exclsem)) < 0) {
-		DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
-		if (ret != -EINTR) {
+		DEBUGASSERT(errno == EINTR || errno == ECANCELED);
+		if (errno != EINTR) {
 			return;
 		}
 	}
@@ -247,7 +247,7 @@ static int btnet_scan_result(FAR struct bt_scanresponse_s *result, uint8_t maxrs
 
 		ret = sem_wait(&g_scanstate.bs_exclsem);
 		if (ret < 0) {
-			DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
+			DEBUGASSERT(errno == EINTR || errno == ECANCELED);
 			return ret;
 		}
 	}
@@ -338,8 +338,8 @@ static uint8_t btnet_discover_func(FAR const struct bt_gatt_attr_s *attr, FAR vo
 	/* Get exclusive access to the discovered data */
 
 	while ((ret = sem_wait(&g_discoverstate.bd_exclsem)) < 0) {
-		DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
-		if (ret != -EINTR) {
+		DEBUGASSERT(errno == EINTR || errno == ECANCELED);
+		if (errno != EINTR) {
 			return BT_GATT_ITER_STOP;
 		}
 	}
@@ -443,7 +443,7 @@ static int btnet_discover_result(FAR struct bt_discresonse_s *result, uint8_t ma
 	if (discovering) {
 		ret = sem_wait(&g_discoverstate.bd_exclsem);
 		if (ret < 0) {
-			DEBUGASSERT(ret == -EINTR || ret == -ECANCELED);
+			DEBUGASSERT(errno == EINTR || errno == ECANCELED);
 			return ret;
 		}
 	}
