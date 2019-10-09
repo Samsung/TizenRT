@@ -181,10 +181,15 @@ int task_init(FAR struct tcb_s *tcb, const char *name, int priority, FAR uint32_
 	ret = group_initialize(ttcb);
 	if (ret < 0) {
 		errcode = -ret;
-		goto errout_with_group;
+		goto errout_with_setup;
 	}
 #endif
 	return OK;
+
+#ifdef HAVE_TASK_GROUP
+errout_with_setup:
+	sched_removeblocked((struct tcb_s *)ttcb);
+#endif
 
 errout_with_group:
 #ifdef HAVE_TASK_GROUP
