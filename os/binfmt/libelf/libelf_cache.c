@@ -105,6 +105,7 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 
 	actual_offset = binary_header_size + block_number * cache_blocks_size;
 
+#ifndef CONFIG_COMPRESSED_BINARY
 	/* Seek to location of this block in actual ELF file */
 	rpos = lseek(filfd, actual_offset, SEEK_SET);
 
@@ -115,6 +116,10 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 		berr("Failed to seek to position %lu: %d\n", (unsigned long)actual_offset, errval);
 		return -errval;
 	}
+
+#else
+	rpos = actual_offset;
+#endif
 
 	return rpos;
 }
