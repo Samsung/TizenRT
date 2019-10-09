@@ -439,20 +439,27 @@ static void utc_media_MediaRecorder_setDuration_n(void)
 
 static void utc_media_MediaRecorder_start_p(void)
 {
-	MediaRecorder mr;
-	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+	constexpr int channels[] = {1, 2};
+	constexpr int samprates[] = {41000, 32000, 20000, 16000, 14000, 8000, 6000};
 
-	auto observer = std::make_shared<RecorderTest>();
-	mr.create();
-	mr.setObserver(observer);
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
+	for (auto channel : channels) {
+		for (auto samprate : samprates) {
+			MediaRecorder mr;
+			auto dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channel, samprate, pcmFormat, filePath));
 
-	mr.start();
-	observer->waitStarted();
-	mr.stop();
-	mr.unprepare();
-	mr.destroy();
+			auto observer = std::make_shared<RecorderTest>();
+			mr.create();
+			mr.setObserver(observer);
+			mr.setDataSource(std::move(dataSource));
+			mr.prepare();
+
+			mr.start();
+			observer->waitStarted();
+			mr.stop();
+			mr.unprepare();
+			mr.destroy();
+		}
+	}
 
 	TC_SUCCESS_RESULT();
 }
