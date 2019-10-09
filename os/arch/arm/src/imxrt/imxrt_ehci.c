@@ -240,7 +240,7 @@ struct imxrt_qtd_s {
 /* The following is used to manage lists of free QHs and qTDs */
 
 struct imxrt_list_s {
-    struct imxrt_list_s *working;
+	struct imxrt_list_s *working;
 	struct imxrt_list_s *flink;	/* Link to next entry in the list */
 	/* Variable length entry data follows */
 };
@@ -1036,7 +1036,7 @@ static void imxrt_qh_free(struct imxrt_qh_s *qh)
 	struct imxrt_list_s *entry = (struct imxrt_list_s *)qh;
 
 	/* Put the QH structure back into the free list */
-    entry->working = (struct imxrt_list_s *)&g_asynchead;
+	entry->working = (struct imxrt_list_s *)&g_asynchead;
 	entry->flink = g_ehci.qhfree;
 	g_ehci.qhfree = entry;
 }
@@ -5085,7 +5085,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	ret = irq_attach(IMXRT_IRQ_USBOTG1, imxrt_ehci_interrupt, NULL);
 	if (ret != 0) {
-		usbhost_trace1(EHCI_TRACE1_IRQATTACH_FAILED, IMXRT_IRQ_USBOTG);
+		usbhost_trace1(EHCI_TRACE1_IRQATTACH_FAILED, IMXRT_IRQ_USBOTG1);
 		return NULL;
 	}
 
