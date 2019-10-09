@@ -73,6 +73,8 @@
 #define TESTIOC_GROUP_EXIT_CHILD_TEST          _TESTIOC(16)
 #define TESTIOC_GROUP_REMOVECHILDREN_TEST      _TESTIOC(17)
 #endif
+#define TESTIOC_TASK_INIT_TEST                 _TESTIOC(18)
+
 #define KERNEL_TC_DRVPATH                       "/dev/testcase"
 
 /****************************************************************************
