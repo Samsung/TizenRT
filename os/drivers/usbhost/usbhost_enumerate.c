@@ -315,6 +315,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 	int funcaddr = 0;
 	FAR uint8_t *buffer = NULL;
 	int ret;
+	bool isiobuff = false;
 
 	DEBUGASSERT(hport != NULL && hport->drvr != NULL);
 
@@ -467,8 +468,19 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	if (cfglen > maxlen) {
 		udbg("ERROR: Configuration doesn't fit in buffer, length=%d, maxlen=%d\n", cfglen, maxlen);
-		ret = -E2BIG;
-		goto errout;
+		/* Most of the USB class configuration descriptor would be with 128bytes limit,
+		 * but in case of uvc class the size of the configuration decriptor would be in the
+		 * range of 1000 - 2000bytes. Hence it is required to reallocate the initial buffer
+		 * used to read size of the configuration descriptor
+		 */
+		DRVR_FREE(hport->drvr, buffer);
+		buffer = NULL;
+		ret = DRVR_IOALLOC(hport->drvr, &buffer, cfglen);
+		if (ret < 0) {
+			udbg("DRVR_IOALLOC failed: %d\n", ret);
+			goto errout;
+		}
+		isiobuff = true;
 	}
 
 	/* Get all of the configuration descriptor data, index == 0 (Should not be
@@ -565,7 +577,11 @@ errout:
 	/* Release temporary buffers in any event */
 
 	if (buffer != NULL) {
-		DRVR_FREE(hport->drvr, buffer);
+		if (isiobuff) {
+			DRVR_IOFREE(hport->drvr, buffer);
+		} else {
+			DRVR_FREE(hport->drvr, buffer);
+		}
 	}
 
 	if (ctrlreq) {
