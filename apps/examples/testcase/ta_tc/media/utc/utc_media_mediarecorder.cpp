@@ -388,6 +388,10 @@ static void utc_media_MediaRecorder_setDuration_p(void)
 	mr.setObserver(observer);
 	mr.setDataSource(std::move(dataSource));
 
+	/* setDuration with 0. It means infinite time */
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(0), RECORDER_OK);
+
+	/* setDuration with positive number */
 	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(RECORD_DURATION), RECORDER_OK);
 	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.prepare(), RECORDER_OK);
 	mr.start();
@@ -418,21 +422,30 @@ static void utc_media_MediaRecorder_setDuration_p(void)
 
 static void utc_media_MediaRecorder_setDuration_n(void)
 {
-	MediaRecorder mr;
-	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+	/* setDuration before create */
+	{
+		MediaRecorder mr;
+		mr.setDuration(RECORD_DURATION);
+	}
 
-	auto observer = std::make_shared<RecorderTest>();
-	mr.create();
-	mr.setObserver(observer);
-	mr.setDataSource(std::move(dataSource));
-	mr.prepare();
+	/* setDuration at invalid state */
+	{
+		MediaRecorder mr;
+		auto dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(RECORD_DURATION), RECORDER_ERROR_INVALID_STATE);
-	mr.start();
-	observer->waitStarted();
-	mr.stop();
-	mr.unprepare();
-	mr.destroy();
+		auto observer = std::make_shared<RecorderTest>();
+		mr.create();
+		mr.setObserver(observer);
+		mr.setDataSource(std::move(dataSource));
+		mr.prepare();
+
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(RECORD_DURATION), RECORDER_ERROR_INVALID_STATE);
+		mr.start();
+		observer->waitStarted();
+		mr.stop();
+		mr.unprepare();
+		mr.destroy();
+	}
 
 	TC_SUCCESS_RESULT();
 }
@@ -560,9 +573,13 @@ static void utc_media_MediaRecorder_pause_n(void)
 static void utc_media_MediaRecorder_setObserver_p(void)
 {
 	MediaRecorder mr;
+	auto observer = std::make_shared<RecorderTest>();
 	mr.create();
 
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setObserver", mr.setObserver(nullptr), RECORDER_OK);
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setObserver", mr.setObserver(observer), RECORDER_OK);
+
+	/* setObserver twice */
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setObserver", mr.setObserver(observer), RECORDER_OK);
 
 	mr.destroy();
 	TC_SUCCESS_RESULT();
