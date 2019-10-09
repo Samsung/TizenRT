@@ -700,7 +700,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 
 	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
-		reset_audio_stream_out();
+		reset_audio_stream_in();
 	}
 
 	pthread_mutex_lock(&(card->card_mutex));
