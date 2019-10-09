@@ -43,6 +43,64 @@ static const std::string MP4_MIME_TYPE = "audio/mp4";
 static const std::string OPUS_MIME_TYPE = "audio/opus";
 static const std::string MP2T_MIME_TYPE = "video/MP2T";
 
+// Sample Rate(in Hz) tables
+static const int sampleRateTable[3][3] = {
+	{44100, 48000, 32000},
+	{22050, 24000, 16000},
+	{11025, 12000, 8000},
+};
+// Bit Rate (in kbps) tables
+// V1 - MPEG 1, V2 - MPEG 2 and MPEG 2.5
+// L1 - Layer 1, L2 - Layer 2, L3 - Layer 3
+static const int bitRateTable[3][3][14] = {
+	{
+		{32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448}, /* MPEG 1, Layer 1 */
+		{32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384},	/* MPEG 1, Layer 2 */
+		{32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320},	 /* MPEG 1, Layer 3 */
+	},
+	{
+		{32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256}, /* MPEG 2, Layer 1 */
+		{8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160},	  /* MPEG 2, Layer 2 */
+		{8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160},	  /* MPEG 2, Layer 3 */
+	},
+	{
+		{32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256}, /* MPEG 2.5, Layer 1 */
+		{8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160},	  /* MPEG 2.5, Layer 2 */
+		{8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160},	  /* MPEG 2.5, Layer 3 */
+	},
+};
+
+// MPEG version
+#define MPEG_1 3
+#define MPEG_2 2
+#define MPEG_UNDEFINED 1
+#define MPEG_2_5 0
+
+// MPEG layer
+#define LAYER_1 3
+#define LAYER_2 2
+#define LAYER_3 1
+#define LAYER_UNDEFINED 0
+
+// Bitrate index
+#define BITRATE_FREE 0x0 // Variable Bit Rate
+#define BITRATE_BAD 0xf  // Not allow
+
+// Sample Rate index
+#define SAMPLE_RATE_UNDEFINED 0x3
+
+// aau size = frame samples * (1 / sample rate) * bitrate / 8 + padding
+//            = frame samples * bitrate / 8 / sample rate + padding
+// Number of frame samples is constant value as below table:
+//        MPEG1  MPEG2(LSF)  MPEG2.5(LSF)
+// Layer1  384     384         384
+// Layer2  1152    1152        1152
+// Layer3  1152    576         576
+#define MPEG_LAYER1_AAU_SIZE(sr, br, pad) (384 * ((br)*1000) / 8 / (sr) + ((pad)*4))
+#define MPEG_LAYER2_AAU_SIZE(sr, br, pad) (1152 * ((br)*1000) / 8 / (sr) + (pad))
+#define MPEG1_LAYER3_AAU_SIZE(sr, br, pad) (1152 * ((br)*1000) / 8 / (sr) + (pad))
+#define MPEG2_LAYER3_AAU_SIZE(sr, br, pad) (576 * ((br)*1000) / 8 / (sr) + (pad))
+
 void toLowerString(std::string &str)
 {
 	for (char& c : str) {
@@ -127,70 +185,181 @@ audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
 	return audioType;
 }
 
-bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
+int buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, media::audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, unsigned int *samplePerFrame, media::audio_format_type_t *pcmFormat)
 {
-/**
-*mp3_header is AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
-*A - Frame sync
-*B - MPEG Audio version
-*...
-*F - Sampling rate frequency
-*.
-*I - Channel Mode
-*...
-*/
-	unsigned char bit;
-	unsigned int mpegVersion;
+	unsigned int headPoint = 0;
+	unsigned char *header = NULL;
+	bool isHeader = false;
+	switch (audioType) {
+	case AUDIO_TYPE_MP3:
+		while (headPoint < bufferSize) {
+			if ((((buffer[headPoint] & 0xFF) << 8) | (buffer[headPoint + 1] & 0xF0)) == 0xFFF0) {
+				if (mp3_header_parsing(&buffer[headPoint], channel, sampleRate, samplePerFrame) == true) {
+					isHeader = true;
+					break;
+				}
+			}
 
-	bit = header[1];
-	bit >>= 3;
-	bit &= (unsigned char)0x03;
-	/* we need B information so Shift header[1] three times to the right, and & 0x03 */
-	switch (bit) {
-	case 0:
-		mpegVersion = 2;
+			headPoint++;
+		}
+
+		if (!isHeader) {
+			return -1;
+		}
 		break;
-	case 2:
-		mpegVersion = 1;
+	case AUDIO_TYPE_AAC:
+		if (AAC_HEADER_LENGTH > bufferSize) {
+			medvdbg("no header\n");
+			return -1;
+		}
+		isHeader = false;
+		headPoint = 0;
+		while (headPoint < bufferSize) {
+			if (buffer[headPoint] == 0xFF) {
+				isHeader = true;
+				break;
+			}
+			headPoint++;
+		}
+		if (isHeader && AAC_HEADER_LENGTH <= bufferSize - headPoint) {
+			header = (unsigned char *)malloc(sizeof(unsigned char) * (AAC_HEADER_LENGTH + 1));
+			if (header == NULL) {
+				medvdbg("malloc failed error\n");
+				return -1;
+			}
+			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
+			if (!aac_header_parsing(header, channel, sampleRate)) {
+				free(header);
+				return -1;
+			}
+		} else {
+			medvdbg("no header\n");
+			return -1;
+		}
 		break;
-	case 3:
-		mpegVersion = 0;
+	case AUDIO_TYPE_WAVE:
+		if (WAVE_HEADER_LENGTH <= bufferSize) {
+			header = (unsigned char *)malloc(sizeof(unsigned char) * (WAVE_HEADER_LENGTH + 1));
+			if (header == NULL) {
+				medvdbg("malloc failed error\n");
+				return -1;
+			}
+			memcpy(header, buffer, WAVE_HEADER_LENGTH);
+			if (!wave_header_parsing(header, channel, sampleRate, pcmFormat)) {
+				free(header);
+				return -1;
+			}
+		} else {
+			medvdbg("no header\n");
+			return -1;
+		}
 		break;
 	default:
-		medvdbg("Not Supported Format mpeg version : %u\n", mpegVersion);
+		medvdbg("does not support header parsing\n");
+		return -1;
+	}
+
+	if (header != NULL) {
+		free(header);
+	}
+
+	return headPoint;
+}
+
+bool mp3_header_parsing(unsigned char *buffer, unsigned int *channel, unsigned int *sampleRate, unsigned int *samplePerFrame)
+{
+	unsigned int header;
+	unsigned int bitrate;
+	unsigned int aau_size;
+	unsigned int version_index;
+	unsigned int layer_index;
+
+	unsigned char version;
+	unsigned char layer;
+	unsigned char bitrate_index;
+	unsigned char sample_rate_index;
+	unsigned char padding;
+	unsigned char channel_mode;
+
+	header = buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3];
+
+	version = (header >> 19) & 0x3;
+	switch (version) {
+	case MPEG_1:
+		version_index = 0;
+		break;
+	case MPEG_2:
+		version_index = 1;
+		break;
+	case MPEG_2_5:
+		version_index = 2;
+		break;
+	default:
 		return false;
 	}
 
-	bit = header[2];
-	bit >>= 2;
-	bit &= 0x03;
-	/* we need F information so Shift header[1] two times to the right, and & 0x03 */
-	switch (bit) {
-	case 0:
-		*sampleRate = AUDIO_SAMPLE_RATE_44100;
+	layer = (header >> 17) & 0x3;
+	switch (layer) {
+	case LAYER_1:
+		layer_index = 0;
 		break;
-	case 1:
-		*sampleRate = AUDIO_SAMPLE_RATE_48000;
+	case LAYER_2:
+		layer_index = 1;
 		break;
-	case 2:
-		*sampleRate = AUDIO_SAMPLE_RATE_32000;
+	case LAYER_3:
+		layer_index = 2;
 		break;
 	default:
-		medvdbg("Not Supported Format sample rate : %u\n", sampleRate);
 		return false;
 	}
 
-	*sampleRate >>= mpegVersion;
+	bitrate_index = (header >> 12) & 0xf;
+	if ((bitrate_index == BITRATE_FREE) || bitrate_index == BITRATE_BAD) {
+		return false;
+	}
 
-	bit = header[3];
-	bit >>= 6;
-	/* we need I information so Shift header[3] six times to the right */
-	if (bit <= 2) {
+	sample_rate_index = (header >> 10) & 0x3;
+	if (sample_rate_index == SAMPLE_RATE_UNDEFINED) {
+		return false;
+	}
+	padding = (header >> 9) & 0x1;
+
+	bitrate = bitRateTable[version_index][layer_index][bitrate_index - 1];
+	*sampleRate = sampleRateTable[version_index][sample_rate_index];
+
+	channel_mode = (header >> 8) & 0x3;
+	if (channel_mode <= 2) {
 		*channel = 2;
 	} else {
 		*channel = 1;
 	}
-	return true;
+
+	switch (layer) {
+	case LAYER_1:
+		aau_size = MPEG_LAYER1_AAU_SIZE(*sampleRate, bitrate, padding);
+		break;
+	case LAYER_2:
+		aau_size = MPEG_LAYER2_AAU_SIZE(*sampleRate, bitrate, padding);
+		break;
+	case LAYER_3:
+		if (version == MPEG_1) {
+			aau_size = MPEG1_LAYER3_AAU_SIZE(*sampleRate, bitrate, padding);
+		} else {
+			aau_size = MPEG2_LAYER3_AAU_SIZE(*sampleRate, bitrate, padding);
+		}
+		break;
+	}
+
+	if (aau_size > 0) {
+		*samplePerFrame = aau_size;
+	}
+
+	if (buffer[0] == buffer[aau_size] && buffer[1] == buffer[aau_size + 1]) {
+		meddbg("aau_size : %d version : %d bitrate : %d samplerate : %d", aau_size, version, bitrate, *sampleRate);
+		return true;
+	}
+
+	return false;
 }
 
 bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
@@ -315,7 +484,7 @@ bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned 
 }
 
 #ifdef CONFIG_CONTAINER_MPEG2TS
-bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+int ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	// create temporary ts parser
 	auto tsDemuxer = media::TSDemuxer::create();
@@ -361,7 +530,9 @@ bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *au
 		*pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
 	}
 
-	return buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, pcmFormat);
+	unsigned int samplePerFrame = 0;
+
+	return buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, &samplePerFrame, pcmFormat);
 }
 #endif
 
@@ -411,7 +582,8 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 				return false;
 			}
 
-			if (!mp3_header_parsing(header, channel, sampleRate)) {
+			unsigned int samplePerFrame = 0;
+			if (mp3_header_parsing(header, channel, sampleRate, &samplePerFrame) == -1) {
 				meddbg("Header parsing failed\n");
 				free(header);
 				return false;
@@ -499,101 +671,6 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 	if (fseek(fp, 0, SEEK_SET) != 0) {
 		meddbg("file seek failed error\n");
 		return false;
-	}
-	return true;
-}
-
-bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
-{
-	unsigned int headPoint;
-	unsigned char *header;
-	bool isHeader;
-	switch (audioType) {
-	case AUDIO_TYPE_MP3:
-		if (MP3_HEADER_LENGTH > bufferSize) {
-			medvdbg("no header\n");
-			return false;
-		}
-		isHeader = false;
-		headPoint = 0;
-		while (headPoint < bufferSize) {
-			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
-			if ((buffer[headPoint]) == 0xFF && ((buffer[headPoint + 1] & 0xF0) == 0xF0)) {
-				isHeader = true;
-				break;
-			}
-			headPoint++;
-		}
-		if (isHeader && MP3_HEADER_LENGTH <= bufferSize - headPoint) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (MP3_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
-			if (!mp3_header_parsing(header, channel, sampleRate)) {
-				free(header);
-				return false;
-			}
-		} else {
-			medvdbg("no header\n");
-			return false;
-		}
-		break;
-	case AUDIO_TYPE_AAC:
-		if (AAC_HEADER_LENGTH > bufferSize) {
-			medvdbg("no header\n");
-			return false;
-		}
-		isHeader = false;
-		headPoint = 0;
-		while (headPoint < bufferSize) {
-			if (buffer[headPoint] == 0xFF) {
-				isHeader = true;
-				break;
-			}
-			headPoint++;
-		}
-		if (isHeader && AAC_HEADER_LENGTH <= bufferSize - headPoint) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (AAC_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
-			if (!aac_header_parsing(header, channel, sampleRate)) {
-				free(header);
-				return false;
-			}
-		} else {
-			medvdbg("no header\n");
-			return false;
-		}
-		break;
-	case AUDIO_TYPE_WAVE:
-		if (WAVE_HEADER_LENGTH <= bufferSize) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (WAVE_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer, WAVE_HEADER_LENGTH);
-			if (!wave_header_parsing(header, channel, sampleRate, pcmFormat)) {
-				free(header);
-				return false;
-			}
-		} else {
-			medvdbg("no header\n");
-			return false;
-		}
-		break;
-	default:
-		medvdbg("does not support header parsing\n");
-		return false;
-	}
-
-	if (header != NULL) {
-		free(header);
 	}
 	return true;
 }

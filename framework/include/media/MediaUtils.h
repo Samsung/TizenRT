@@ -91,11 +91,11 @@ bool file_header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel
  * @internal
  * @brief Parsing the audio type in buffer.
  * @details @b #include <media/MediaUtils.h>
- * @param[in] audio file buffer, buffer size, Audio type and channel, sample rate, pcm format address to receive.
- * @return true - parsing success. false - parsing fail.
+ * @param[in] audio file buffer, buffer size, Audio type and channel, sample rate, sample per frame(AAU size), pcm format address to receive.
+ * @return index of the first position in the header - parsing success. -1 parsing fail
  * @endcond
  */
-bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+int buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, unsigned int *samplePerFrame, audio_format_type_t *pcmFormat);
 /**
  * @cond
  * @internal
@@ -105,16 +105,18 @@ bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+#ifdef CONFIG_CONTAINER_MPEG2TS
+int ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
 /**
  * @cond
  * @internal
  * @brief Create a wav header in file.
  * @details @b #include <media/MediaUtils.h>
  * @param[in] audio file point.
- * @return true - create success. false - create fail.
+ * @return index of the first position in the header - parsing success. -1 parsing fail
  * @endcond
  */
+#endif
 bool createWavHeader(FILE *fp);
 /**
  * @cond
@@ -145,11 +147,11 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
  * @internal
  * @brief Parsing the audio information from mp3 header buffer.
  * @details @b #include <media/MediaUtils.h>
- * @param[in] header buffer pointer and channel, sample rate address to receive.
+ * @param[in] header buffer pointer and channel, sample rate, sample per frame(AAU size) address to receive.
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate);
+bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *samplePerFrame);
 /**
  * @cond
  * @internal

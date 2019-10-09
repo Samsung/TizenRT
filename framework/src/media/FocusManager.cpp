@@ -81,7 +81,7 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		mFocusList.front()->notify(FOCUS_LOSS);
 	}
 
-	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
+	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo()->id, focusRequest->getListener());
 	mFocusList.push_front(focusRequester);
 	focusRequester->notify(FOCUS_GAIN);
 
