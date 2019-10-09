@@ -369,50 +369,22 @@ static void utc_media_MediaPlayer_unprepare_n(void)
 
 static void utc_media_MediaPlayer_start_p(void)
 {
-	/* Basic play */
-	{
-		media::MediaPlayer mp;
-		auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath));
-		mp.create();
-		mp.setDataSource(std::move(source));
-		mp.prepare();
+	constexpr int channels[] = {1, 2};
+	constexpr int samprates[] = {41000, 32000, 20000, 16000, 14000, 8000, 6000};
+	for (auto channel : channels) {
+		for (auto samprate : samprates) {
+			media::MediaPlayer mp;
+			auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath));
+			source->setSampleRate(samprate);
+			mp.create();
+			mp.setDataSource(std::move(source));
+			mp.prepare();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
+			TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
 
-		mp.unprepare();
-		mp.destroy();
-	}
-
-	/* play with mono channel */
-	{
-		media::MediaPlayer mp;
-		auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath));
-		source->setChannels(1);
-		mp.create();
-		mp.setDataSource(std::move(source));
-		mp.prepare();
-
-		TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
-
-		mp.unprepare();
-		mp.destroy();
-	}
-
-	/* play with various samplerates */
-	constexpr int samprates[] = {32000, 20000, 14000, 8000};
-	for (auto samprate : samprates)
-	{
-		media::MediaPlayer mp;
-		auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath));
-		source->setSampleRate(samprate);
-		mp.create();
-		mp.setDataSource(std::move(source));
-		mp.prepare();
-
-		TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
-
-		mp.unprepare();
-		mp.destroy();
+			mp.unprepare();
+			mp.destroy();
+		}
 	}
 
 	TC_SUCCESS_RESULT();
