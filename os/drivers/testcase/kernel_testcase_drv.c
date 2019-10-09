@@ -36,6 +36,8 @@
 #include "task/task.h"
 #endif
 #endif
+#include "kernel_test_proto.h"
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -627,6 +629,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	}
 	break;
 #endif
+
 	case TESTIOC_TASK_REPARENT:
 	{
 #ifdef CONFIG_SCHED_HAVE_PARENT
@@ -668,6 +671,12 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 #endif
 	}
 	break;
+
+	case TESTIOC_TASK_INIT_TEST: {
+		ret = test_task_init();
+	}
+	break;
+
 	default: {
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 	}

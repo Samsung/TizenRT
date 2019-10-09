@@ -20,6 +20,7 @@
 ifeq ($(CONFIG_KERNEL_TEST_DRV),y)
 
 CSRCS += kernel_testcase_drv.c
+CSRCS += test_task_init.c
 
 CFLAGS += -I$(TOPDIR)/kernel
 

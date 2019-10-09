@@ -24,7 +24,6 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <tinyara/sched.h>
 #include <tinyara/testcase_drv.h>
 #include "tc_internal.h"
 
@@ -472,6 +472,13 @@ static void tc_task_task_reparent(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
+
+static void tc_task_task_init(void)
+{
+	TC_ASSERT_EQ("task_init", ioctl(tc_get_drvfd(), TESTIOC_TASK_INIT_TEST, 0), OK);
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: task
  ****************************************************************************/
@@ -492,6 +499,7 @@ int task_main(void)
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	tc_task_task_reparent();
 #endif
+	tc_task_task_init();
 
 	return 0;
 }
