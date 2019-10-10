@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <tinyara/binary_manager.h>
 
@@ -43,7 +44,7 @@
 int binary_manager_get_index_with_binid(int bin_id)
 {
 	int bin_idx;
-	int bin_count;
+	uint32_t bin_count;
 
 	if (bin_id <= 0) {
 		bmdbg("Invalid bin_id %d\n", bin_id);
@@ -66,7 +67,7 @@ int binary_manager_get_index_with_binid(int bin_id)
 int binary_manager_get_index_with_name(char *bin_name)
 {
 	int bin_idx;
-	int bin_count;
+	uint32_t bin_count;
 
 	if (bin_name == NULL) {
 		bmdbg("Invalid binary name, NULL\n");
@@ -89,7 +90,7 @@ int binary_manager_get_index_with_name(char *bin_name)
 void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 {
 	int bin_idx;
-	int bin_count;
+	uint32_t bin_count;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_getinfo_response_t response_msg;
 
@@ -124,7 +125,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 void binary_manager_get_info_all(int requester_pid)
 {
 	int bin_idx;
-	int bin_count;
+	uint32_t bin_count;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_getinfo_all_response_t response_msg;
 

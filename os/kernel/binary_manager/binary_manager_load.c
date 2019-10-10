@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -145,7 +146,7 @@ int binary_manager_load_binary(int bin_idx)
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
 	int wait_count;
 #endif
-	int valid_bin_count;
+	uint32_t valid_bin_count;
 	bool loadable;
 	bool is_new_bin;
 	bool is_sched_locked;
@@ -281,7 +282,7 @@ static int binary_manager_load_all(void)
 	int ret;
 	int bin_idx;
 	int load_cnt;
-	int bin_count;
+	uint32_t bin_count;
 
 	load_cnt = 0;
 	bin_count = binary_manager_get_binary_count();
