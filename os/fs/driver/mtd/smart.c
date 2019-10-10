@@ -173,6 +173,7 @@
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == 0 ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == 0 ? true : false)
+#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0xffff) ? true : false)
 #if SMART_STATUS_VERSION == 1
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && h.crc8 == 0xFF && h.status == 0xFF))
 #elif SMART_STATUS_VERSION == 2
@@ -183,6 +184,7 @@
 #else
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == SMART_STATUS_RELEASED ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == SMART_STATUS_COMMITTED ? true : false)
+#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0x0000) ? true : false)
 #if SMART_STATUS_VERSION == 1
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && h.crc8 == 0x00 && h.status == 0x00))
 #elif SMART_STATUS_VERSION == 2
@@ -411,9 +413,15 @@ static ssize_t smart_read(FAR struct inode *inode, unsigned char *buffer, size_t
 #ifdef CONFIG_FS_WRITABLE
 static ssize_t smart_write(FAR struct inode *inode, const unsigned char *buffer, size_t start_sector, unsigned int nsectors);
 #endif
+
+static void initialize_sector_information(uint16_t totalsectors, FAR struct smart_struct_s *dev, uint16_t *prerelease);
+static bool smart_validate_erase_block(FAR struct smart_struct_s *dev);
+static int smart_scan(FAR struct smart_struct_s *dev);
+
 static int smart_geometry(FAR struct inode *inode, struct geometry *geometry);
 static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg);
 
+static int find_free_physical_sector(uint16_t allocblock, FAR struct smart_struct_s *dev, uint8_t *sector_buff, uint16_t *physicalsector, bool *bitflipped);
 static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t canrelocate);
 
 #ifdef CONFIG_FS_WRITABLE
@@ -1694,76 +1702,288 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
  *              count, etc.
  *
  ****************************************************************************/
+static void initialize_sector_information(uint16_t totalsectors, FAR struct smart_struct_s *dev, uint16_t *prerelease)
+{
+	int sector;
 
+	/* Initialize the freecount and releasecount arrays. */
+
+	for (sector = 0; sector < dev->neraseblocks; sector++) {
+		if (sector == dev->neraseblocks - 1 && dev->totalsectors == 65534) {
+			*prerelease = 2;
+		} else {
+			*prerelease = 0;
+		}
+
+#ifdef CONFIG_MTD_SMART_PACK_COUNTS
+		smart_set_count(dev, dev->freecount, sector, dev->availSectPerBlk - *prerelease);
+		smart_set_count(dev, dev->releasecount, sector, *prerelease);
+#else
+		dev->freecount[sector] = dev->availSectPerBlk - *prerelease;
+		dev->releasecount[sector] = *prerelease;
+#endif
+	}
+
+	/* Initialize the sector map. */
+
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+	for (sector = 0; sector < totalsectors; sector++) {
+		dev->sMap[sector] = -1;
+	}
+#else
+	/* Clear all logical sector used bits. */
+
+	memset(dev->sBitMap, 0, (dev->totalsectors + 7) >> 3);
+#endif
+}
+
+static bool smart_validate_erase_block(FAR struct smart_struct_s *dev)
+{
+	FAR struct smart_sect_header_s header;
+	bool corrupted = false;
+	int i;
+	int ret;
+
+	memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
+
+	/* Check the crc of header first. */
+	ret = smart_validate_crc(dev);
+	if (ret != OK) {
+		if (HEADER_IS_CLEAN(header)) {
+			/* If header is erased state, then check contents */
+			for (i = sizeof(struct smart_sect_header_s); i < dev->sectorsize; i++) {
+				if (dev->rwbuffer[i] != CONFIG_SMARTFS_ERASEDSTATE) {
+					fdbg("It is not Erased value offset %u, %x------------------\n", i, dev->rwbuffer[i]);
+					corrupted = true;
+					break;
+				}
+			}
+		} else {
+			/* If header is not clean & crc is not matched, then it is corrupted sector */
+			fdbg("Header is not clean but crc is not matched logical : %d crc : %d sta :%d seq :%d\n", UINT8TOUINT16(header.logicalsector), header.crc8, header.status, header.seq);
+			corrupted = true;
+		}
+	} else {
+		/* Very rarely, crc can be matched with abnormal header value, so we should check boundary */
+		if (!SECTOR_IS_VALID(header, dev->totalsectors)) {
+			fdbg("header is out of boundary, sector : %x\n", header.logicalsector);
+			corrupted = true;
+		}
+	}
+
+	return corrupted;
+}
+
+#ifdef CONFIG_SMARTFS_BAD_SECTOR
+static void generate_bad_sector_information(uint16_t logicalsector, FAR struct smart_struct_s *dev)
+{
+	if (logicalsector == SMART_BAD_SECTOR_NUMBER) {
+		int bad_physical_sector_no = -1, bsm_ret;
+		int sect_header_size = sizeof(struct smart_sect_header_s);	// sector header size
+		int i, j, found_bad_physical_sector;
+
+		if (dev->bad_sector_rwbuffer != NULL) {
+			bad_physical_sector_no = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
+
+			if (bad_physical_sector_no == ERROR) {
+				fdbg("bad_physical_sector_no not found\n");
+			} else {
+				bsm_ret = MTD_BREAD(dev->mtd, bad_physical_sector_no * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->bad_sector_rwbuffer);
+
+				if (bsm_ret < 0) {
+					fdbg("error in sector read %d\n", bad_physical_sector_no);
+				} else {
+					int bad_sector_info = dev->totalsectors / dev->sectorsPerBlk;
+					for (i = sect_header_size; i < bad_sector_info + sect_header_size; i++) {
+						for (j = 7; j >= 0; j--) {
+							if (((dev->bad_sector_rwbuffer[i] >> j) & 1) == 0) {
+								/* byte = 8 bit; left shift 3 byte = 8 */
+								found_bad_physical_sector = ((i << 3) + j) - (sect_header_size << 3);
+								fvdbg("After reboot: Found bad physical sector #%d\n", found_bad_physical_sector);
+								dev->badSectorList[found_bad_physical_sector] = TRUE;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			fdbg("Error: dev->bad_sector_rwbuffer is NULL\n");
+		}
+	}
+}
+#endif
+
+static int check_logical_sector_duplication(FAR struct smart_struct_s *dev, uint16_t logicalsector, struct smart_sect_header_s header, uint32_t *readaddress, uint16_t *winner, int sector)
+{
+	int ret;
+	uint16_t seq1;
+	uint16_t seq2;
+	uint16_t loser;
+	uint32_t offset;
+#ifdef CONFIG_MTD_SMART_MINIMIZE_RAM
+	int dupsector;
+	uint16_t duplogsector;
+#endif
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+	if (dev->sMap[logicalsector] != 0xFFFF)
+#else
+	if (dev->sBitMap[logicalsector >> 3] & (1 << (logicalsector & 0x07)))
+#endif
+	{
+		/* Uh-oh, we found more than 1 physical sector claiming to be
+		 * the same logical sector.  Use the sequence number information
+		 * to resolve who wins.
+		 */
+
+#if SMART_STATUS_VERSION == 1
+		if (header.status & SMART_STATUS_CRC) {
+			seq2 = header.seq;
+		} else {
+			//seq2 = *((FAR uint16_t *)&header.seq);
+			seq2 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
+		}
+#else
+		seq2 = header.seq;
+#endif
+
+		/* We must re-read the 1st physical sector to get it's seq number. */
+
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+		*readaddress = dev->sMap[logicalsector] * dev->mtdBlksPerSector * dev->geo.blocksize;
+#else
+		/* For minimize RAM, we have to rescan to find the 1st sector claiming to
+		 * be this logical sector.
+		 */
+
+		for (dupsector = 0; dupsector < sector; dupsector++) {
+			/* Calculate the read address for this sector. */
+
+			*readaddress = dupsector * dev->mtdBlksPerSector * dev->geo.blocksize;
+
+			/* Read the header for this sector. */
+
+			ret = MTD_READ(dev->mtd, *readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+			if (ret != sizeof(struct smart_sect_header_s)) {
+				goto err_out;
+			}
+
+			/* Get the logical sector number for this physical sector. */
+
+			duplogsector = *((FAR uint16_t *)header.logicalsector);
+#if CONFIG_SMARTFS_ERASEDSTATE == 0x00
+			if (duplogsector == 0) {
+				duplogsector = -1;
+			}
+#endif
+
+			/* Test if this sector has been committed. */
+
+			if (!SECTOR_IS_COMMITTED(header)) {
+				continue;
+			}
+
+			/* Test if this sector has been release and skip it if it has. */
+
+			if (SECTOR_IS_RELEASED(header)) {
+				continue;
+			}
+
+			if ((header.status & SMART_STATUS_VERBITS) != SMART_STATUS_VERSION) {
+				continue;
+			}
+
+			/* Now compare if this logical sector matches the current sector. */
+
+			if (duplogsector == logicalsector) {
+				break;
+			}
+		}
+#endif
+
+		ret = MTD_READ(dev->mtd, *readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+		if (ret != sizeof(struct smart_sect_header_s)) {
+			return ERROR;
+		}
+#if SMART_STATUS_VERSION == 1
+		if (header.status & SMART_STATUS_CRC) {
+			seq1 = header.seq;
+		} else {
+			seq1 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
+		}
+#else
+		seq1 = header.seq;
+#endif
+
+		/* Now determine who wins. */
+
+		if ((seq1 > 0xFFF0 && seq2 < 10) || seq2 > seq1) {
+			/* Seq 2 is the winner ... bigger or it wrapped. */
+
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+			loser = dev->sMap[logicalsector];
+			dev->sMap[logicalsector] = sector;
+#else
+			loser = dupsector;
+#endif
+			*winner = sector;
+		} else {
+			/* We keep the original mapping and seq2 is the loser. */
+
+			loser = sector;
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+			*winner = dev->sMap[logicalsector];
+#else
+			*winner = smart_cache_lookup(dev, logicalsector);
+#endif
+		}
+
+		/* Now release the loser sector. */
+
+		*readaddress = loser * dev->mtdBlksPerSector * dev->geo.blocksize;
+		ret = MTD_READ(dev->mtd, *readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+		if (ret != sizeof(struct smart_sect_header_s)) {
+			return ERROR;
+		}
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+		header.status &= ~SMART_STATUS_RELEASED;
+#else
+		header.status |= SMART_STATUS_RELEASED;
+#endif
+		offset = *readaddress + offsetof(struct smart_sect_header_s, status);
+		ret = smart_bytewrite(dev, offset, 1, &header.status);
+		if (ret < 0) {
+			fdbg("Error %d releasing duplicate sector\n", -ret);
+			return ERROR;
+		}
+	}
+
+	return OK;
+}
 static int smart_scan(FAR struct smart_struct_s *dev)
 {
 	int sector;
 	int ret;
 	uint16_t totalsectors;
-	uint16_t sectorsize, prerelease;
+	uint16_t prerelease;
 	uint16_t logicalsector;
-	uint16_t loser;
 	uint16_t winner;
 	uint32_t readaddress;
-	uint32_t offset;
-	uint16_t seq1;
-	uint16_t seq2;
 	struct smart_sect_header_s header;
 	uint8_t *sector_seq_log = NULL;
 	bool status_released, status_committed;
 	bool corrupted;
-#ifdef CONFIG_MTD_SMART_MINIMIZE_RAM
-	int dupsector;
-	uint16_t duplogsector;
-#endif
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	int x;
 	char devname[22];
 	FAR struct smart_multiroot_device_s *rootdirdev;
 #endif
-	int i;
 
 	fvdbg("Entry\n");
 
-	/* Find the sector size on the volume by reading headers from
-	 * sectors of decreasing size.  On a formatted volume, the sector
-	 * size is saved in the header status byte of seach sector, so
-	 * by starting with the largest supported sector size and
-	 * decreasing from there, we will be sure to find data that is
-	 * a header and not sector data.
-	 */
-
-	sectorsize = 0xFFFF;
-	offset = 16384;
-
-	while (sectorsize == 0xFFFF) {
-		readaddress = 0;
-
-		while (readaddress < dev->erasesize * dev->geo.neraseblocks) {
-			/* Read the next sector from the device. */
-
-			ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-			if (ret != sizeof(struct smart_sect_header_s)) {
-				goto err_out;
-			}
-
-			if (header.status != CONFIG_SMARTFS_ERASEDSTATE) {
-				sectorsize = (header.status & SMART_STATUS_SIZEBITS) << 7;
-				break;
-			}
-
-			readaddress += offset;
-		}
-
-		offset >>= 1;
-		if (offset < 256 && sectorsize == 0xFFFF) {
-			sectorsize = CONFIG_MTD_SMART_SECTOR_SIZE;
-		}
-	}
-
-	/* Now set the sectorsize and other sectorsize derived variables. */
-
-	ret = smart_setsectorsize(dev, sectorsize);
+	// ToDo: Revert to the flexible logic that searches sectors and
+	//       reads sector sizes stored in the sectors instead of
+	//		 using CONFIG_MTD_SMART_SECTOR_SIZE.
+	ret = smart_setsectorsize(dev, CONFIG_MTD_SMART_SECTOR_SIZE);
 	if (ret != OK) {
 		goto err_out;
 	}
@@ -1783,35 +2003,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	dev->freesectors = dev->availSectPerBlk * dev->geo.neraseblocks;
 	dev->releasesectors = 0;
 
-	/* Initialize the freecount and releasecount arrays. */
-
-	for (sector = 0; sector < dev->neraseblocks; sector++) {
-		if (sector == dev->neraseblocks - 1 && dev->totalsectors == 65534) {
-			prerelease = 2;
-		} else {
-			prerelease = 0;
-		}
-
-#ifdef CONFIG_MTD_SMART_PACK_COUNTS
-		smart_set_count(dev, dev->freecount, sector, dev->availSectPerBlk - prerelease);
-		smart_set_count(dev, dev->releasecount, sector, prerelease);
-#else
-		dev->freecount[sector] = dev->availSectPerBlk - prerelease;
-		dev->releasecount[sector] = prerelease;
-#endif
-	}
-
-	/* Initialize the sector map. */
-
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-	for (sector = 0; sector < totalsectors; sector++) {
-		dev->sMap[sector] = -1;
-	}
-#else
-	/* Clear all logical sector used bits. */
-
-	memset(dev->sBitMap, 0, (dev->totalsectors + 7) >> 3);
-#endif
+	initialize_sector_information(totalsectors, dev, &prerelease);
 
 	/* Now scan the MTD device. */
 	sector_seq_log = (uint8_t *)kmm_zalloc(sizeof(uint8_t) * totalsectors);
@@ -1830,7 +2022,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		readaddress = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
 
-		/* Read the header for this sector. */
+		/* Read the whole data of this sector. */
 
 		ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (uint8_t *)dev->rwbuffer);
 		if (ret != dev->mtdBlksPerSector) {
@@ -1838,47 +2030,26 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			goto err_out;
 		}
 
-		memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
-		ret = smart_validate_crc(dev);
-		if (ret != OK) {
-			if (HEADER_IS_CLEAN(header)) {
-				/* Header is cleaned but all blocks are not cleaned, it means corruption occurs during erasing. */
-				for (i = sizeof(struct smart_sect_header_s); i < dev->sectorsize; i++) {
-					if (dev->rwbuffer[i] != 0xFF) {
-						fdbg("It is not Erased value sector %u, offset %u, %x------------------\n", sector, i, dev->rwbuffer[i]);
-						corrupted = true;
-						break;
-					}
-				}
-				if (corrupted) {
-					fdbg("It seems erase-fail, physical sector : %d eraseblock : %d\n", sector, sector / dev->sectorsPerBlk);
-					smart_erase_block_if_empty(dev, sector / dev->sectorsPerBlk, TRUE);
-					sector = ((sector / dev->sectorsPerBlk) * dev->sectorsPerBlk) + dev->sectorsPerBlk - 1;
-					continue;
-				}
-			} else {
-				fdbg("It seems corrupted, physical sector : %d eraseblock : %d\n", sector, sector / dev->sectorsPerBlk);
-#ifdef CONFIG_DEBUG_FS
-//#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_DEBUG_VERBOSE)
-				for (i = 0; i < sizeof(struct smart_sect_header_s); i++) {
-					fsdbg("%02x ", dev->rwbuffer[i]);
-				}
-				fsdbg("\n");
-#endif
-				fdbg("set Released and commited sector : %d\n", sector);
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-				header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-				header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-				ret = smart_bytewrite(dev, readaddress + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-				if (ret < 0) {
-					goto err_out;
-				}
+		/* copy header data only, will be used below */
 
+		memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
+
+		/* If the current sector is corrupted due to erase failure, restore it */
+		if (smart_validate_erase_block(dev)) {
+			fdbg("It seems that erase failed, release current sector. block : %d sector : %d\n", sector / dev->sectorsPerBlk, sector);
+
+			/* Erase the current block forcely */
+
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+			header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
+#else
+			header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
+#endif
+			ret = smart_bytewrite(dev, readaddress + offsetof(struct smart_sect_header_s, status), 1, &header.status);
+			if (ret < 0) {
+				goto err_out;
 			}
 		}
-
 
 		/* Get the logical sector number for this physical sector. */
 		logicalsector = UINT8TOUINT16(header.logicalsector);
@@ -1901,39 +2072,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 				/* Generate bad sector information from start. */
 #ifdef CONFIG_SMARTFS_BAD_SECTOR
-				if (logicalsector == SMART_BAD_SECTOR_NUMBER) {
-					int bad_physical_sector_no = -1, bsm_ret;
-					int sect_header_size = sizeof(struct smart_sect_header_s);	// sector header size
-					int i, j, found_bad_physical_sector;
-
-					if (dev->bad_sector_rwbuffer != NULL) {
-						bad_physical_sector_no = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
-
-						if (bad_physical_sector_no == ERROR) {
-							fdbg("bad_physical_sector_no not found\n");
-						} else {
-							bsm_ret = MTD_BREAD(dev->mtd, bad_physical_sector_no * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->bad_sector_rwbuffer);
-
-							if (bsm_ret < 0) {
-								fdbg("error in sector read %d\n", bad_physical_sector_no);
-							} else {
-								int bad_sector_info = dev->totalsectors / dev->sectorsPerBlk;
-								for (i = sect_header_size; i < bad_sector_info + sect_header_size; i++) {
-									for (j = 7; j >= 0; j--) {
-										if (((dev->bad_sector_rwbuffer[i] >> j) & 1) == 0) {
-											/* byte = 8 bit; left shift 3 byte = 8 */
-											found_bad_physical_sector = ((i << 3) + j) - (sect_header_size << 3);
-											fvdbg("After reboot: Found bad physical sector #%d\n", found_bad_physical_sector);
-											dev->badSectorList[found_bad_physical_sector] = TRUE;
-										}
-									}
-								}
-							}
-						}
-					} else {
-						fdbg("Error: dev->bad_sector_rwbuffer is NULL\n");
-					}
-				}				//if(logicalsector == SMART_BAD_SECTOR_NUMBER)
+				generate_bad_sector_information(dev, logicalsector);
 #endif							/*CONFIG_SMARTFS_BAD_SECTOR */
 			} else {
 				fvdbg("logicalsector : physicalsector -> %d : %d; status_released: %d, status_committed: %d\n", logicalsector, sector, status_released, status_committed);
@@ -2061,138 +2200,11 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		/* Test for duplicate logical sectors on the device. */
 
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		if (dev->sMap[logicalsector] != 0xFFFF)
-#else
-		if (dev->sBitMap[logicalsector >> 3] & (1 << (logicalsector & 0x07)))
-#endif
-		{
-			/* Uh-oh, we found more than 1 physical sector claiming to be
-			 * the same logical sector.  Use the sequence number information
-			 * to resolve who wins.
-			 */
-
-#if SMART_STATUS_VERSION == 1
-			if (header.status & SMART_STATUS_CRC) {
-				seq2 = header.seq;
-			} else {
-				//seq2 = *((FAR uint16_t *)&header.seq);
-				seq2 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
-			}
-#else
-			seq2 = header.seq;
-#endif
-
-			/* We must re-read the 1st physical sector to get it's seq number. */
-
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-			readaddress = dev->sMap[logicalsector] * dev->mtdBlksPerSector * dev->geo.blocksize;
-#else
-			/* For minimize RAM, we have to rescan to find the 1st sector claiming to
-			 * be this logical sector.
-			 */
-
-			for (dupsector = 0; dupsector < sector; dupsector++) {
-				/* Calculate the read address for this sector. */
-
-				readaddress = dupsector * dev->mtdBlksPerSector * dev->geo.blocksize;
-
-				/* Read the header for this sector. */
-
-				ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-				if (ret != sizeof(struct smart_sect_header_s)) {
-					goto err_out;
-				}
-
-				/* Get the logical sector number for this physical sector. */
-
-				duplogsector = *((FAR uint16_t *)header.logicalsector);
-#if CONFIG_SMARTFS_ERASEDSTATE == 0x00
-				if (duplogsector == 0) {
-					duplogsector = -1;
-				}
-#endif
-
-				/* Test if this sector has been committed. */
-
-				if (!SECTOR_IS_COMMITTED(header)) {
-					continue;
-				}
-
-				/* Test if this sector has been release and skip it if it has. */
-
-				if (SECTOR_IS_RELEASED(header)) {
-					continue;
-				}
-
-				if ((header.status & SMART_STATUS_VERBITS) != SMART_STATUS_VERSION) {
-					continue;
-				}
-
-				/* Now compare if this logical sector matches the current sector. */
-
-				if (duplogsector == logicalsector) {
-					break;
-				}
-			}
-#endif
-
-			ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-			if (ret != sizeof(struct smart_sect_header_s)) {
-				goto err_out;
-			}
-#if SMART_STATUS_VERSION == 1
-			if (header.status & SMART_STATUS_CRC) {
-				seq1 = header.seq;
-			} else {
-				seq1 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
-			}
-#else
-			seq1 = header.seq;
-#endif
-
-			/* Now determine who wins. */
-
-			if ((seq1 > 0xFFF0 && seq2 < 10) || seq2 > seq1) {
-				/* Seq 2 is the winner ... bigger or it wrapped. */
-
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-				loser = dev->sMap[logicalsector];
-				dev->sMap[logicalsector] = sector;
-#else
-				loser = dupsector;
-#endif
-				winner = sector;
-			} else {
-				/* We keep the original mapping and seq2 is the loser. */
-
-				loser = sector;
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-				winner = dev->sMap[logicalsector];
-#else
-				winner = smart_cache_lookup(dev, logicalsector);
-#endif
-			}
-
-			/* Now release the loser sector. */
-
-			readaddress = loser * dev->mtdBlksPerSector * dev->geo.blocksize;
-			ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-			if (ret != sizeof(struct smart_sect_header_s)) {
-				goto err_out;
-			}
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-			header.status &= ~SMART_STATUS_RELEASED;
-#else
-			header.status |= SMART_STATUS_RELEASED;
-#endif
-			offset = readaddress + offsetof(struct smart_sect_header_s, status);
-			ret = smart_bytewrite(dev, offset, 1, &header.status);
-			if (ret < 0) {
-				fdbg("Error %d releasing duplicate sector\n", -ret);
-				goto err_out;
-			}
+		ret = check_logical_sector_duplication(dev, logicalsector, header, &readaddress, &winner, sector);
+		if (ret < 0) {
+			goto err_out;
 		}
+
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		/* Update the logical to physical sector map. */
 
@@ -2995,8 +3007,6 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	FAR struct smart_sect_header_s *header;
 	uint8_t newstatus;
 
-	fvdbg("Entry\n");
-
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 
 	/* Increment the sequence number and clear the "commit" flag. */
@@ -3125,8 +3135,6 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 	FAR struct smart_allocsector_s *allocsector;
 #endif
-
-	fvdbg("Entry\n");
 
 	/* Perform collection on block with the most released sectors.
 	 * First mark the block as having no free sectors so we don't
@@ -3352,6 +3360,109 @@ errout:
 	return ret;
 }
 
+static int find_free_physical_sector(uint16_t allocblock, FAR struct smart_struct_s *dev, uint8_t *sector_buff, uint16_t *physicalsector, bool *bitflipped)
+{
+	int x;
+	int i;
+	int ret = -1;
+	uint32_t readaddr;
+	struct smart_sect_header_s header;
+
+	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
+		/* Check if this physical sector is available. */
+
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+		/* First check if there is a temporary alloc in place. */
+
+		FAR struct smart_allocsector_s *allocsect;
+		allocsect = dev->allocsector;
+
+		while (allocsect) {
+			if (allocsect->physical == x) {
+				break;
+			}
+			allocsect = allocsect->next;
+		}
+
+		/* If we found this physical sector above, then continue on
+		 * to the next physical sector in this block ... this one has
+		 * a temporary allocation assigned.
+		 */
+
+		if (allocsect) {
+			continue;
+		}
+#endif
+
+		/* Now check on the physical media. */
+
+		readaddr = x * dev->mtdBlksPerSector * dev->geo.blocksize;
+		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+		if (ret != sizeof(struct smart_sect_header_s)) {
+			fdbg("Error reading phys sector %d\n", physicalsector);
+			kmm_free(sector_buff);
+			return -1;
+		}
+		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
+#if SMART_STATUS_VERSION == 1
+			((header.seq == 0xFF) && (header.crc8 == 0xFF)) &&
+#else
+			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
+#endif
+			(!(SECTOR_IS_COMMITTED(header)))) {
+#ifdef CONFIG_SMARTFS_BAD_SECTOR
+			if (dev->badSectorList[x] == FALSE) {
+#endif
+				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
+				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
+					fdbg("Error reading physical sector %d\n", physicalsector);
+					kmm_free(sector_buff);
+					return -1;
+				}
+				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
+					if (sector_buff[i] != 0xff) {
+						break;
+					}
+				}
+
+				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
+					*physicalsector = x;
+					dev->lastallocblock = allocblock;
+					break;
+				} else {
+					*bitflipped = TRUE;
+					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
+					fdbg("set Released and commited to Erase%d\n", x);
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
+#else
+					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
+#endif
+					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
+					if (ret < 0) {
+						fdbg("Error %d releasing corrupted sector\n", -ret);
+						goto errout;
+					}
+#ifdef CONFIG_MTD_SMART_PACK_COUNTS
+					smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
+					smart_add_count(dev, dev->releasecount, allocblock, 1);
+#else
+					dev->freecount[x / dev->sectorsPerBlk]--;
+					dev->releasecount[allocblock]++;
+#endif
+					dev->freesectors--;
+					dev->releasesectors++;
+				}
+#ifdef CONFIG_SMARTFS_BAD_SECTOR
+			}
+#endif
+		}
+	}
+
+errout:
+	return ret;
+}
+
 /****************************************************************************
  * Name: smart_findfreephyssector
  *
@@ -3370,11 +3481,8 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 #endif
 	uint16_t physicalsector;
 	uint16_t x, block;
-	uint32_t readaddr;
-	struct smart_sect_header_s header;
 	int ret;
 	uint8_t   *sector_buff;
-	int i;
 	bool bitflipped;
 	/* Determine which erase block we should allocate the new
 	 * sector from. This is based on the number of free sectors
@@ -3500,104 +3608,19 @@ retry:
 
 	/* Now find a free physical sector within this selected
 	 * erase block to allocate. */
+
 	sector_buff = (uint8_t *)kmm_zalloc(dev->mtdBlksPerSector * dev->geo.blocksize);
 	if (sector_buff == NULL) {
 		fdbg("sector_buff allocation fail\n");
 		return physicalsector;
 	}
 
-	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
-		/* Check if this physical sector is available. */
-
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
-		/* First check if there is a temporary alloc in place. */
-
-		FAR struct smart_allocsector_s *allocsect;
-		allocsect = dev->allocsector;
-
-		while (allocsect) {
-			if (allocsect->physical == x) {
-				break;
-			}
-			allocsect = allocsect->next;
-		}
-
-		/* If we found this physical sector above, then continue on
-		 * to the next physical sector in this block ... this one has
-		 * a temporary allocation assigned.
-		 */
-
-		if (allocsect) {
-			continue;
-		}
-#endif
-
-		/* Now check on the physical media. */
-
-		readaddr = x * dev->mtdBlksPerSector * dev->geo.blocksize;
-		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-		if (ret != sizeof(struct smart_sect_header_s)) {
-			fdbg("Error reading phys sector %d\n", physicalsector);
-			kmm_free(sector_buff);
-			return -1;
-		}
-		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
-#if SMART_STATUS_VERSION == 1
-			((header.seq == 0xFF) && (header.crc8 == 0xFF)) &&
-#else
-			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
-#endif
-			(!(SECTOR_IS_COMMITTED(header)))) {
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			if (dev->badSectorList[x] == FALSE) {
-#endif
-				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
-				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
-					fdbg("Error reading physical sector %d\n", physicalsector);
-					kmm_free(sector_buff);
-					return -1;
-				}
-				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
-					if (sector_buff[i] != 0xff) {
-						break;
-					}
-				}
-
-				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
-					physicalsector = x;
-					dev->lastallocblock = allocblock;
-					break;
-				} else {
-					bitflipped = TRUE;
-					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
-					fdbg("set Released and commited to Erase%d\n", x);
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-					if (ret < 0) {
-						fdbg("Error %d releasing corrupted sector\n", -ret);
-						goto error;
-					}
-#ifdef CONFIG_MTD_SMART_PACK_COUNTS
-					smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
-					smart_add_count(dev, dev->releasecount, allocblock, 1);
-#else
-					dev->freecount[x / dev->sectorsPerBlk]--;
-					dev->releasecount[allocblock]++;
-#endif
-					dev->freesectors--;
-					dev->releasesectors++;
-				}
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			}
-#endif
-		}
+	ret = find_free_physical_sector(allocblock, dev, sector_buff, &physicalsector, &bitflipped);
+	if (ret < 0) {
+		fdbg("Failed to find a free physical sector..\n");
+		return ret;
 	}
 
-error:
 	if (physicalsector == 0xFFFF || physicalsector >= dev->totalsectors) {
 		if (bitflipped) {
 			fdbg("retry allocation \n");
