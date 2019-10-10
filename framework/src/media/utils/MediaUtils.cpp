@@ -45,7 +45,7 @@ static const std::string MP2T_MIME_TYPE = "video/MP2T";
 
 void toLowerString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('A' <= c && c <= 'Z') {
 			c += ('a' - 'A');
 		}
@@ -54,7 +54,7 @@ void toLowerString(std::string &str)
 
 void toUpperString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('a' <= c && c <= 'z') {
 			c -= ('a' - 'A');
 		}
@@ -773,5 +773,69 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
 	va_end(ap);
 	return ret;
 }
+
+float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)
+{
+	const int NOISE_MIN = 30;
+
+	int i = 0;
+	int frame_sample = 0;
+
+	float sum = 0.0f;
+	float noise = 0.0f;
+	float speechAverage = 0.0f;
+	float energyRatio = 0.0f;
+
+	va_list ap;
+	va_start(ap, index);
+
+	float *speechSum = va_arg(ap, float *);
+	float *noiseSum = va_arg(ap, float *);
+	float *noiseAverage = va_arg(ap, float *);
+
+	if (*index == 0) {
+		*noiseAverage = 32767;
+		*speechSum = 0;
+		*noiseSum = 0;
+		(*index)++;
+	}
+
+	sum = 0;
+	for (i = 0; i < size; i++) {
+		sum += buffer[i] > 0 ? buffer[i] : -buffer[i];
+	}
+
+	*noiseSum += sum;
+
+	if (*index % windows == 0) {
+		if ((noise = *noiseSum / (size * windows)) < NOISE_MIN) {
+			noise = NOISE_MIN;
+		}
+
+		if (noise < *noiseAverage) {
+			*noiseAverage = noise;
+		}
+		*noiseSum = 0;
+	}
+
+	if (*index > windows) {
+		*speechSum += sum;
+		frame_sample = size * (*index - windows);
+	}
+
+	medvdbg("frame_sample : %d\n", frame_sample);
+	if (frame_sample != 0) {
+		speechAverage = *speechSum / frame_sample;
+		energyRatio = speechAverage / *noiseAverage;
+	}
+
+	(*index)++;
+
+	medvdbg("SNR = %f, %f, %f\n", energyRatio, speechAverage, *noiseAverage);
+
+	va_end(ap);
+	return energyRatio;
+}
+
 } // namespace util
 } // namespace media

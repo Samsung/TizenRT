@@ -958,7 +958,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 	if (card->resample.ratio != 1) {
 		if (rechanneling_ratio < 1) {	// Stereo -> Mono
 			int i = 0;
-			int len = card->resample.rechanneling_buffer_size / device_channel_num * rechanneling_ratio;
+			int len = (int)(card->resample.rechanneling_buffer_size / device_channel_num * rechanneling_ratio);
 			short *src = (short *)card->resample.rechanneling_buffer;
 			short *dst = (short *)data;
 
@@ -973,7 +973,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 				}
 			}
 		} else {
-			ret = resample_stream_in(card, data, ret);
+			ret = resample_stream_in(card, data, (unsigned int)ret);
 		}
 		medvdbg("Resampled frames = %d\n", ret);
 	}
@@ -1119,7 +1119,7 @@ audio_manager_result_t pause_audio_stream_in(void)
 	ret = ioctl(pcm_get_file_descriptor(card->pcm), AUDIOIOC_PAUSE, 0UL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
-		pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
@@ -2115,7 +2115,9 @@ void print_audio_card_info(audio_io_direction_t direct)
 				card = &g_audio_out_cards[i];
 			}
 			status = card->config[j].status;
-			if (status != AUDIO_CARD_NONE) {
+			if (status == AUDIO_CARD_NONE) {
+				dbg_noarg("AUDIO_CARD_NONE(%d)\n", AUDIO_CARD_NONE);
+			} else {
 				get_card_path(path, i, j, direct);
 
 				dbg_noarg("\nDevice Path : %s\n", path);
@@ -2127,9 +2129,6 @@ void print_audio_card_info(audio_io_direction_t direct)
 				}
 				dbg_noarg("Status : ");
 				switch (status) {
-				case AUDIO_CARD_NONE:
-					dbg_noarg("%s(%d)\n", "AUDIO_CARD_NONE", AUDIO_CARD_NONE);
-					break;
 				case AUDIO_CARD_IDLE:
 					dbg_noarg("%s(%d)\n", "AUDIO_CARD_IDLE", AUDIO_CARD_IDLE);
 					break;
