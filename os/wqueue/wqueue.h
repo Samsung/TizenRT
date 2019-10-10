@@ -124,33 +124,30 @@ struct lp_wqueue_s {
  * Public Data
  ****************************************************************************/
 
-/* The state of the user mode work queue */
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
-extern struct wqueue_s g_usrwork;
+#ifdef CONFIG_BUILD_PROTECTED
+sem_t *get_usersem(void);
+#else
+pthread_mutex_t *get_usrmutex(void);
+#endif
+
+/* The state of the user mode work queue */
+struct wqueue_s *get_usrwork(void);
 
 #ifdef CONFIG_SCHED_HPWORK
 /* The state of the kernel mode, high priority work queue. */
 
-extern struct hp_wqueue_s g_hpwork;
+struct hp_wqueue_s *get_hpwork(void);
 #endif
 
 #ifdef CONFIG_SCHED_LPWORK
 /* The state of the kernel mode, low priority work queue(s). */
 
-extern struct lp_wqueue_s g_lpwork;
+struct lp_wqueue_s *get_lpwork(void);
 #endif
-
-/* This semaphore/mutex supports exclusive access to the user-mode work queue */
-
-#ifdef CONFIG_BUILD_PROTECTED
-extern sem_t g_usrsem;
-#else
-extern pthread_mutex_t g_usrmutex;
-#endif
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
 
 /****************************************************************************
  * Name: work_lock

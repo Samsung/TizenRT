@@ -65,6 +65,12 @@
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 
+#ifdef CONFIG_BUILD_PROTECTED
+static sem_t g_usrsem;
+#else
+static pthread_mutex_t g_usrmutex;
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -88,7 +94,17 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
+#ifdef CONFIG_BUILD_PROTECTED
+sem_t *get_usersem(void)
+{
+	return &g_usrsem;
+}
+#else
+pthread_mutex_t *get_usrmutex(void)
+{
+	return &g_usrmutex;
+}
+#endif
 /****************************************************************************
  * Name: work_lock
  *

@@ -83,7 +83,7 @@
 
 /* The state of the kernel mode, high priority work queue. */
 
-struct hp_wqueue_s g_hpwork;
+static struct hp_wqueue_s g_hpwork;
 
 /****************************************************************************
  * Private Data
@@ -196,6 +196,11 @@ int work_hpstart(void)
 	g_hpwork.worker[0].pid = pid;
 	g_hpwork.worker[0].busy = true;
 	return pid;
+}
+
+struct hp_wqueue_s *get_hpwork(void)
+{
+	return &g_hpwork;
 }
 
 #endif							/* CONFIG_SCHED_HPWORK */

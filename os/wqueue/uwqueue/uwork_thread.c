@@ -100,15 +100,9 @@
 
 /* The state of the user mode work queue. */
 
-struct wqueue_s g_usrwork;
+static struct wqueue_s g_usrwork;
 
 /* This semaphore supports exclusive access to the user-mode work queue */
-
-#ifdef CONFIG_BUILD_PROTECTED
-sem_t g_usrsem;
-#else
-pthread_mutex_t g_usrmutex;
-#endif
 
 /****************************************************************************
  * Private Data
@@ -164,6 +158,11 @@ static pthread_addr_t work_usrthread(pthread_addr_t arg)
  * Public Functions
  ****************************************************************************/
 
+struct wqueue_s *get_usrwork(void)
+{
+	return &g_usrwork;
+}
+
 /****************************************************************************
  * Name: work_usrstart
  *
@@ -190,7 +189,7 @@ int work_usrstart(void)
 	{
 		/* Set up the work queue lock */
 
-		(void)sem_init(&g_usrsem, 0, 1);
+		(void)sem_init(get_usersem(), 0, 1);
 
 		/* Start a user-mode worker thread for use by applications. */
 
@@ -214,7 +213,7 @@ int work_usrstart(void)
 
 		/* Set up the work queue lock */
 
-		(void)pthread_mutex_init(&g_usrmutex, NULL);
+		(void)pthread_mutex_init(get_usrmutex(), NULL);
 
 		/* Start a user-mode worker thread for use by applications. */
 

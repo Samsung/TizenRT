@@ -126,7 +126,7 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg,
 {
 	int ret;
 	if (qid == USRWORK) {
-		ret = work_qqueue(&g_usrwork, work, worker, arg, delay);
+		ret = work_qqueue(get_usrwork(), work, worker, arg, delay);
 		if (ret != OK) {
 			return ret;
 		}

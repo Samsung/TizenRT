@@ -321,6 +321,7 @@ void lpwork_boostpriority(uint8_t reqprio)
 {
 	irqstate_t flags;
 	int wndx;
+	struct lp_wqueue_s *lp_work = NULL;
 
 	/* Clip to the configured maximum priority */
 
@@ -336,7 +337,8 @@ void lpwork_boostpriority(uint8_t reqprio)
 	/* Adjust the priority of every worker thread */
 
 	for (wndx = 0; wndx < CONFIG_SCHED_LPNTHREADS; wndx++) {
-		lpwork_boostworker(g_lpwork.worker[wndx].pid, reqprio);
+		lp_work = get_lpwork();
+		lpwork_boostworker(lp_work->worker[wndx].pid, reqprio);
 	}
 
 	sched_unlock();
@@ -365,6 +367,7 @@ void lpwork_restorepriority(uint8_t reqprio)
 {
 	irqstate_t flags;
 	int wndx;
+	struct lp_wqueue_s *lp_work = NULL;
 
 	/* Clip to the configured maximum priority */
 
@@ -380,7 +383,8 @@ void lpwork_restorepriority(uint8_t reqprio)
 	/* Adjust the priority of every worker thread */
 
 	for (wndx = 0; wndx < CONFIG_SCHED_LPNTHREADS; wndx++) {
-		lpwork_restoreworker(g_lpwork.worker[wndx].pid, reqprio);
+		lp_work = get_lpwork();
+		lpwork_restoreworker(lp_work->worker[wndx].pid, reqprio);
 	}
 
 	sched_unlock();

@@ -86,7 +86,7 @@
 
 /* The state of the kernel mode, low priority work queue(s). */
 
-struct lp_wqueue_s g_lpwork;
+static struct lp_wqueue_s g_lpwork;
 
 /****************************************************************************
  * Private Data
@@ -242,6 +242,11 @@ int work_lpstart(void)
 
 	sched_unlock();
 	return g_lpwork.worker[0].pid;
+}
+
+struct lp_wqueue_s *get_lpwork(void)
+{
+	return &g_lpwork;
 }
 
 #endif							/* CONFIG_SCHED_LPWORK */

@@ -92,25 +92,31 @@ int work_signal(int qid)
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	if (qid == USRWORK) {
-		pid = g_usrwork.worker[0].pid;
+		struct wqueue_s *usr_work = NULL;
+		usr_work = get_usrwork();
+		pid = usr_work->worker[0].pid;
 	} else
 #endif
 #ifdef CONFIG_SCHED_HPWORK
 	if (qid == HPWORK) {
-		pid = g_hpwork.worker[0].pid;
+		struct hp_wqueue_s *hp_work = NULL;
+		hp_work = get_hpwork();
+		pid = hp_work->worker[0].pid;
 	} else
 #endif
 #ifdef CONFIG_SCHED_LPWORK
 	if (qid == LPWORK) {
 		int wndx;
 		int i;
+		struct lp_wqueue_s *lp_work = NULL;
 
+		lp_work = get_lpwork();
 		/* Find an IDLE worker thread */
 
 		for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
 			/* Is this worker thread busy? */
 
-			if (!g_lpwork.worker[i].busy) {
+			if (!lp_work->worker[i].busy) {
 				/* No.. select this thread */
 
 				wndx = i;
@@ -122,7 +128,7 @@ int work_signal(int qid)
 			* thread 0 if all of the worker threads are busy).
 			*/
 
-		pid = g_lpwork.worker[wndx].pid;
+		pid = lp_work->worker[wndx].pid;
 	} else
 #endif
 	{

@@ -115,7 +115,7 @@
 int work_cancel(int qid, FAR struct work_s *work)
 {
 	if (qid == USRWORK) {
-		return work_qcancel(&g_usrwork, work);
+		return work_qcancel(get_usrwork(), work);
 	} else {
 		return -EINVAL;
 	}
