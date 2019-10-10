@@ -39,7 +39,7 @@
  * Private Declarations
  ****************************************************************************/
 
-struct s_header compression_header;
+struct s_header *compression_header;
 struct s_buffer buffers;
 
 /****************************************************************************
@@ -61,9 +61,9 @@ static int compress_decompress_block(unsigned char *out_buffer, unsigned int *wr
 	int ret = ERROR;
 
 #if CONFIG_COMPRESSION_TYPE == 1
-	if (compression_header.compression_format == COMPRESSION_TYPE_LZMA) {
+	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
 		/* LZMA specific logic for decompression */
-		*writesize = compression_header.blocksize;
+		*writesize = compression_header->blocksize;
 		*size -= (LZMA_PROPS_SIZE);
 
 		ret = LzmaUncompress(&out_buffer[0], writesize, &read_buffer[LZMA_PROPS_SIZE], size, &read_buffer[0], LZMA_PROPS_SIZE);
@@ -92,7 +92,7 @@ static void compress_blocks_to_read(int *first_block, int *last_block, int *no_b
 {
 	int blocksize;
 
-	blocksize = compression_header.blocksize;
+	blocksize = compression_header->blocksize;
 
 	*first_block = offset / blocksize;
 	*last_block = (offset + readsize) / blocksize;
@@ -108,31 +108,47 @@ static void compress_blocks_to_read(int *first_block, int *last_block, int *no_b
  *
  * Returned value:
  *   OK (0) is Success
- *   ERROR (-1) on Failure
+ *   Negative value on Failure
  ****************************************************************************/
 static int compress_parse_header(int filfd, uint16_t offset)
 {
 	off_t rpos;					/* Position returned by lseek */
 	int nbytes;					/* Number of bytes read  */
+	int compheader_size;				/* Total size of compression header */
 
-	/* Seek to the next read position */
-
+	/* Seek to location of size of compression header */
 	rpos = lseek(filfd, offset, SEEK_SET);
 	if (rpos != offset) {
 		int errval = get_errno();
-		bmdbg("ERROR : leek to offset %lu failed: %d\n", (unsigned long)offset, errval);
+		bmdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
 		return -errval;
 	}
 
-	/* Read compression header data from the file data from offset */
+	/* Read compression header size from the file data */
+	nbytes = read(filfd, &compheader_size, sizeof(compheader_size));
+	if (nbytes != sizeof(compheader_size)) {
+		bmdbg("Read for compression header size from offset %lu failed\n", offset);
+		return ERROR;
+	}
 
-	nbytes = read(filfd, &compression_header, sizeof(struct s_header));
-	if (nbytes != sizeof(struct s_header)) {
+	/* Allocate memory for compression header now that we know it's size */
+	compression_header = (struct s_header *)kmm_malloc(compheader_size);
+	if (!compression_header) {
+		bmdbg("Failed kmm_malloc for compression_header\n");
+		return -ENOMEM;
+	}
+
+	/* Assign compresssion_header->size_header */
+	compression_header->size_header = compheader_size;
+
+	/* Read remaining compression header, including section offsets */
+	nbytes = read(filfd, ((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header));
+	if (nbytes != (compheader_size - sizeof(compression_header->size_header))) {
 		bmdbg("Read for compression header from offset %lu failed\n", offset);
 		return ERROR;
 	}
 
-	bmvdbg("Compressed Binary Header info: size (%d), compression format (%d), blocksize (%d), No. sections (%d), Uncompressed binary size = %d\n", compression_header.size_header, compression_header.compression_format, compression_header.blocksize, compression_header.sections, compression_header.binary_size);
+	bmvdbg("Compressed Binary Header info: size (%d), compression format (%d), blocksize (%d), No. sections (%d), Uncompressed binary size = %d\n", compression_header->size_header, compression_header->compression_format, compression_header->blocksize, compression_header->sections, compression_header->binary_size);
 
 	return OK;
 }
@@ -149,29 +165,12 @@ static int compress_parse_header(int filfd, uint16_t offset)
  ****************************************************************************/
 static off_t compress_offset_block(int filfd, uint16_t binary_header_size, int block_number)
 {
-	off_t rpos;
 	off_t position;
-	off_t block_offset;
-	int nbytes;
 
-	/* Seek to offset in compression header that has offset value for 'block_number' block */
-	position = binary_header_size + sizeof(struct s_header) + block_number * sizeof(int);
+	/* Return position for 'block_number' block */
+	position = binary_header_size + compression_header->size_header + compression_header->secoff[block_number];
 
-	rpos = lseek(filfd, position, SEEK_SET);
-	if (rpos != position) {
-		int errval = get_errno();
-		bmdbg("Failed to seek to position %lu: %d\n", (unsigned long)position, errval);
-		return -errval;
-	}
-
-	/* Read offset value into block_offset */
-	nbytes = read(filfd, &block_offset, sizeof(off_t));
-	if (nbytes != sizeof(off_t)) {
-		bmdbg("Read for block offset for block no. %d failed\n", block_number);
-		return ERROR;
-	}
-
-	return block_offset;
+	return position;
 }
 
 /****************************************************************************
@@ -187,22 +186,20 @@ static off_t compress_offset_block(int filfd, uint16_t binary_header_size, int b
 static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int block_number)
 {
 	off_t rpos;
-	off_t actual_offset;
 	off_t block_offset;
 
-	/* Calculate actual offset from start of file for start of 'block_number' block */
+	/* Calculate block offset from start of file for start of 'block_number' block */
 	block_offset = compress_offset_block(filfd, binary_header_size, block_number);
 	if (block_offset < 0) {
 		bmdbg("Incorrect offset for block number %d\n", block_number);
 		return block_offset;
 	}
-	actual_offset = binary_header_size + compression_header.size_header + block_offset;;
 
 	/* Seek to location of this block in compressed file */
-	rpos = lseek(filfd, actual_offset, SEEK_SET);
-	if (rpos != actual_offset) {
+	rpos = lseek(filfd, block_offset, SEEK_SET);
+	if (rpos != block_offset) {
 		int errval = get_errno();
-		bmdbg("Failed to seek to position %lu: %d\n", (unsigned long)actual_offset, errval);
+		bmdbg("Failed to seek to position %lu: %d\n", (unsigned long)block_offset, errval);
 		return -errval;
 	}
 
@@ -291,7 +288,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 	unsigned int size;
 
 	/* Setting first block, end block and number of blocks to read and decompressed */
-	blocksize = compression_header.blocksize;
+	blocksize = compression_header->blocksize;
 	compress_blocks_to_read(&first_block, &last_block, &no_blocks, offset, readsize);
 	if (first_block < 0 || no_blocks < 0) {
 		bmdbg("Incorrect first_block, no_blocks info\n");
@@ -377,13 +374,13 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 	}
 
 	/* Assign file length as that of uncompressed file */
-	*filelen = compression_header.binary_size;
+	*filelen = compression_header->binary_size;
 
 #if CONFIG_COMPRESSION_TYPE == 1
 	/* Allocating memory for read and out buffer to be used for LZMA decompression */
-	if (compression_header.compression_format == COMPRESSION_TYPE_LZMA) {
-		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header.blocksize + 5);
-		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header.blocksize);
+	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
+		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize + 5);
+		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
 	}
 #endif
 
@@ -404,9 +401,18 @@ void compress_uninit(void)
 {
 #if CONFIG_COMPRESSION_TYPE == 1
 	/* Freeing memory allocated to read_buffer and out_buffer for file decompression */
-	if (compression_header.compression_format == COMPRESSION_TYPE_LZMA) {
-		kmm_free(buffers.read_buffer);
-		kmm_free(buffers.out_buffer);
+	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
+		if (buffers.read_buffer) {
+			kmm_free(buffers.read_buffer);
+			buffers.read_buffer = NULL;
+		}
+		if (buffers.out_buffer) {
+			kmm_free(buffers.out_buffer);
+			buffers.out_buffer = NULL;
+		}
 	}
 #endif
+
+	kmm_free(compression_header);
+	compression_header = NULL;
 }
