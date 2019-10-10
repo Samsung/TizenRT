@@ -315,7 +315,12 @@ bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned 
 }
 
 #ifdef CONFIG_CONTAINER_MPEG2TS
-bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+/**
+ * @brief Parsing the mpeg2 transport stream data in buffer, to get audio stream codec type and other informations
+ * @param[in] buffer, buffer size, and audio type, channel, sample rate, pcm format adderss to receive.
+ * @return true - parsing success. false - parsing fail.
+ */
+static bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	// create temporary ts parser
 	auto tsDemuxer = media::TSDemuxer::create();
@@ -482,7 +487,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 
 		if (!ts_parsing(header, readSize, &audioType, channel, sampleRate, pcmFormat)) {
 			free(header);
-			meddbg("stream_parsing failed, can not get audio codec type!\n");
+			meddbg("ts_parsing failed, can not get audio information!\n");
 			return false;
 		}
 	} break;
@@ -506,7 +511,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned int headPoint;
-	unsigned char *header;
+	unsigned char *header = NULL;
 	bool isHeader;
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
@@ -560,7 +565,7 @@ bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio
 				medvdbg("malloc failed error\n");
 				return false;
 			}
-			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
+			memcpy(header, buffer + headPoint, AAC_HEADER_LENGTH);
 			if (!aac_header_parsing(header, channel, sampleRate)) {
 				free(header);
 				return false;
@@ -587,6 +592,14 @@ bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio
 			return false;
 		}
 		break;
+#ifdef CONFIG_CONTAINER_MPEG2TS
+	case AUDIO_TYPE_MP2T:
+		if (!ts_parsing(buffer, bufferSize, &audioType, channel, sampleRate, pcmFormat)) {
+			meddbg("ts_parsing failed, can not get audio information!\n");
+			return false;
+		}
+		break;
+#endif
 	default:
 		medvdbg("does not support header parsing\n");
 		return false;

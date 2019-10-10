@@ -99,16 +99,6 @@ bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio
 /**
  * @cond
  * @internal
- * @brief Parsing the mpeg2 transport stream data in buffer, to get audio stream codec type and other informations
- * @details @b #include <media/MediaUtils.h>
- * @param[in] buffer, buffer size, and audio type, channel, sample rate, pcm format adderss to receive.
- * @return true - parsing success. false - parsing fail.
- * @endcond
- */
-bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
-/**
- * @cond
- * @internal
  * @brief Create a wav header in file.
  * @details @b #include <media/MediaUtils.h>
  * @param[in] audio file point.
