@@ -312,6 +312,8 @@ public:
 		notifyError();
 	}
 
+	/** Wait until start() excuted, so if this function is not called, MediaRecorder.start() is failed
+	  * so we do not add TC_ASSERT for start, pause, finished, error(observer) **/
 	void waitStarted()
 	{
 		std::unique_lock<std::mutex> lock(mtx);
@@ -587,6 +589,9 @@ static void utc_media_MediaRecorder_pause_p(void)
 	mr.setObserver(observer);
 	mr.setDataSource(std::move(dataSource));
 	mr.prepare();
+	mr.start();
+	mr.pause();
+	observer->waitPaused();
 	mr.start();
 	mr.pause();
 	observer->waitPaused();

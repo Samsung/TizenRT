@@ -22,7 +22,7 @@
 #include <media/FileInputDataSource.h>
 #include "tc_common.h"
 
-static const char *dummyfilepath = "/mnt/fileinputdatasource.raw";
+static const char *dummyfilepath = "/tmp/fileinputdatasource.raw";
 
 class EmptyObserver : public media::MediaPlayerObserverInterface
 {
@@ -84,16 +84,21 @@ void EmptyObserver::cvAsyncWait()
 static void SetUp(void)
 {
 	FILE *fp = fopen(dummyfilepath, "w");
-
+	char *dummyData = new char[4096];
+	if (!dummyData) {
+		printf("Not Enough Memory!\n");
+		return;
+	}
 	if (fp != NULL) {
-		int ret = fputs("dummydata", fp);
-		if (ret != (int)strlen("dummydata")) {
+		int ret = fwrite(dummyData, 4096, 1, fp);
+		if (ret != 4096) {
 			printf("fail to fputs\n");
 		}
 		fclose(fp);
 	} else {
 		printf("fail to open %s, errno : %d\n", dummyfilepath, get_errno());
 	}
+	delete[] dummyData;
 }
 
 static void TearDown()
@@ -382,7 +387,7 @@ static void utc_media_MediaPlayer_start_p(void)
 			mp.prepare();
 
 			TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
-
+			mp.stop();
 			mp.unprepare();
 			mp.destroy();
 		}
@@ -408,8 +413,10 @@ static void utc_media_MediaPlayer_pause_p(void)
 	mp.setDataSource(std::move(source));
 	mp.prepare();
 	mp.start();
+	TC_ASSERT_EQ("utc_media_MediaPlayer_pause for resume test", mp.pause(), media::PLAYER_OK);
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_pause", mp.pause(), media::PLAYER_OK);
+	mp.start();
+	TC_ASSERT_EQ("utc_media_MediaPlayer_pause once again to pause", mp.pause(), media::PLAYER_OK);
 
 	mp.unprepare();
 	mp.destroy();
