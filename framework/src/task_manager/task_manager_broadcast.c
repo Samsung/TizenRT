@@ -78,8 +78,7 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
-		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-		TM_FREE(request_msg.q_name);
+		RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 	}
 
 	return status;

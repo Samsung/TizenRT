@@ -36,6 +36,15 @@
 #define REQ_CBDATA_MSG_SIZE(X) ((tm_msg_t *)((tm_termination_info_t *)X->data)->cb_data)->msg_size
 #define REQ_CBDATA_MSG(X)      ((tm_msg_t *)((tm_termination_info_t *)X->data)->cb_data)->msg
 
+#define REQUEST_MSG_DATA(request_msg)									\
+	do {													\
+		if (((tm_broadcast_info_t *)request_msg.data)->cb_data != NULL) {				\
+			TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);		\
+			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);				\
+		}												\
+		TM_FREE(request_msg.data);									\
+	} while (0)
+
 void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
@@ -294,20 +303,12 @@ int task_manager_set_broadcast_cb(int msg, tm_broadcast_callback_t func, tm_msg_
 
 	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 	if (request_msg.q_name == NULL) {
-		if (((tm_broadcast_info_t *)request_msg.data)->cb_data != NULL) {
-			TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
-			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
-		}
-		TM_FREE(request_msg.data);
+		REQUEST_MSG_DATA(request_msg);
 		return TM_OUT_OF_MEMORY;
 	}
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		if (((tm_broadcast_info_t *)request_msg.data)->cb_data != NULL) {	
-			TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)request_msg.data)->cb_data)->msg);
-			TM_FREE(((tm_broadcast_info_t *)request_msg.data)->cb_data);
-		}
-		TM_FREE(request_msg.data);
+		REQUEST_MSG_DATA(request_msg);
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
 		}
@@ -350,21 +351,7 @@ int task_manager_set_stop_cb(tm_termination_callback_t func, tm_msg_t *cb_data)
 		return TM_INVALID_PARAM;
 	}
 
-	act.sa_sigaction = (_sa_sigaction_t)taskmgr_stop_cb;
-	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
-
-	ret = sigaddset(&act.sa_mask, SIGTM_TERMINATION);
-	if (ret < 0) {
-		tmdbg("Failed to add signal set\n");
-		return TM_OPERATION_FAIL;
-	}
-
-	ret = sigaction(SIGTM_TERMINATION, &act, NULL);
-	if (ret == (int)SIG_ERR) {
-		tmdbg("sigaction Failed\n");
-		return TM_OPERATION_FAIL;
-	}
+	SET_TERMINATION_CB(taskmgr_stop_cb);
 
 	/* send stop callback function to task manager */
 	ret = taskmgr_set_cb_common(TASKMGRCMD_SET_STOP_CB, &request_msg, func, cb_data);

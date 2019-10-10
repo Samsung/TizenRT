@@ -43,25 +43,12 @@ int task_manager_restart(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
+	SET_QUEUE_NAME_WITH_DEALLOC_DATA(request_msg, timeout);
+	SEND_REQUEST_TO_TM_WITH_DEALLOC_DATA(request_msg, status);
 	if (timeout != TM_NO_RESPONSE) {
-		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
-		if (request_msg.q_name == NULL) {
-			return TM_OUT_OF_MEMORY;
-		}
-	}
-
-	status = taskmgr_send_request(&request_msg);
-	if (status < 0) {
-		if (request_msg.q_name != NULL) {
-			TM_FREE(request_msg.q_name);
-		}
-		return status;
-	}
-
-	if (timeout != TM_NO_RESPONSE) {
-		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-		TM_FREE(request_msg.q_name);
+		RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 	}
 
 	return status;

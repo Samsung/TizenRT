@@ -46,25 +46,11 @@ int task_manager_unset_broadcast_cb(int msg, int timeout)
 		return TM_OUT_OF_MEMORY;
 	}
 	*((int *)request_msg.data) = msg;
-	
+
+	SET_QUEUE_NAME_WITH_DEALLOC_DATA(request_msg, timeout);
+	SEND_REQUEST_TO_TM_WITH_DEALLOC_DATA(request_msg, status);
 	if (timeout != TM_NO_RESPONSE) {
-		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
-		if (request_msg.q_name == NULL) {
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
-		}
-	}
-	status = taskmgr_send_request(&request_msg);
-	if (status < 0) {
-		TM_FREE(request_msg.data);
-		if (request_msg.q_name != NULL) {
-			TM_FREE(request_msg.q_name);
-		}
-		return status;
-	}
-	if (timeout != TM_NO_RESPONSE) {
-		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-		TM_FREE(request_msg.q_name);
+		RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 	}
 	
 	return status;
