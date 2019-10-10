@@ -277,12 +277,16 @@ static void utc_systemio_gpio_close_n(void)
 static void utc_systemio_gpio_register_signal_p(void)
 {
 	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, IOTBUS_GPIO_EDGE_NONE), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, IOTBUS_GPIO_EDGE_BOTH), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, IOTBUS_GPIO_EDGE_RISING), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, IOTBUS_GPIO_EDGE_FALLING), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_systemio_gpio_register_signal_n(void)
 {
 	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, TEST_GPIO_INVALID), IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(NULL, TEST_GPIO_INVALID), IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
 

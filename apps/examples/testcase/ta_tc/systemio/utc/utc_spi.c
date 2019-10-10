@@ -98,6 +98,22 @@ static void utc_systemio_spi_recv_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_systemio_spi_transfer_buf_p(void)
+{
+	int ret = iotbus_spi_transfer_buf(spi, txbuf, rxbuf, 16);
+	TC_ASSERT_EQ("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NONE);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_systemio_spi_transfer_buf_n(void)
+{
+	int ret = iotbus_spi_transfer_buf(NULL, txbuf, rxbuf, 16);
+	TC_ASSERT_EQ("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_INVALID_PARAMETER);
+	ret = iotbus_spi_transfer_buf(spi, NULL, rxbuf, 16);
+	TC_ASSERT_EQ("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_systemio_spi_close_p(void)
 {
 	int ret = iotbus_spi_close(spi);
@@ -123,6 +139,10 @@ int utc_spi_main(void)
 	utc_systemio_spi_write_n();
 	utc_systemio_spi_recv_p();
 	utc_systemio_spi_recv_n();
+#ifdef CONFIG_SPI_EXCHANGE
+	utc_systemio_spi_transfer_buf_p();
+	utc_systemio_spi_transfer_buf_n();
+#endif	
 	utc_systemio_spi_close_n();
 	utc_systemio_spi_close_p();	
 
