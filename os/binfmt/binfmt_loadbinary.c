@@ -172,6 +172,9 @@ int load_binary(FAR const char *filename, load_attr_t *load_attr)
 	}
 	tcb->ram_start = (uint32_t)start_addr;
 	tcb->ram_size = size;
+	/* Set task name as binary name */
+	strncpy(tcb->name, load_attr->bin_name, CONFIG_TASK_NAME_SIZE);
+	tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
 #endif
 
 #if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_DISABLE_SIGNALS)
