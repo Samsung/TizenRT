@@ -147,7 +147,7 @@ static void utc_media_FileInputDataSource_open_n(void)
 	}
 
 	/* Test empty file */
-	constexpr char *paths[] = {"/mnt/fileinputdatasource.mp3", "/mnt/fileinputdatasource.aac", "/mnt/fileinputdatasource.wav", "/mnt/fileinputdatasource.ts"};
+	constexpr const char *const paths[] = {"/mnt/fileinputdatasource.mp3", "/mnt/fileinputdatasource.aac", "/mnt/fileinputdatasource.wav", "/mnt/fileinputdatasource.ts"};
 	for (auto path : paths)
 	{
 		FILE *fp = fopen(path, "w");
