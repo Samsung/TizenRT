@@ -2995,6 +2995,8 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	FAR struct smart_sect_header_s *header;
 	uint8_t newstatus;
 
+	fvdbg("Entry\n");
+
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 
 	/* Increment the sequence number and clear the "commit" flag. */
@@ -3123,6 +3125,8 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 	FAR struct smart_allocsector_s *allocsector;
 #endif
+
+	fvdbg("Entry\n");
 
 	/* Perform collection on block with the most released sectors.
 	 * First mark the block as having no free sectors so we don't
