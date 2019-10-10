@@ -29,7 +29,6 @@
 #include "messaging_internal.h"
 
 #define INVALID_PID (-1)
-extern sq_queue_t g_port_info_list;
 
 static int messaging_unlink_internalport(const char *port_name, int pid)
 {
@@ -72,6 +71,7 @@ int messaging_cleanup(const char *port_name)
 	int cleanup_pid = INVALID_PID;
 	msg_port_info_t *port_info;
 	pid_t my_pid;
+	sq_queue_t *port_info_list_ptr;
 
 	if (port_name == NULL) {
 		msgdbg("[Messaging] cleanup fail : invalid param.\n");
@@ -84,7 +84,8 @@ int messaging_cleanup(const char *port_name)
 	}
 
 	/* Remove the receiver information by port_name from the info list. */
-	port_info = (msg_port_info_t *)sq_peek(&g_port_info_list);
+	port_info_list_ptr = messaging_get_port_info_list();
+	port_info = (msg_port_info_t *)sq_peek(port_info_list_ptr);
 	if (port_info == NULL) {
 		/* There is no registered port. So we don't need to clean anything. */
 		return OK;
@@ -95,7 +96,7 @@ int messaging_cleanup(const char *port_name)
 		if ((strncmp(port_info->name, port_name, strlen(port_name) + 1) == 0) && (my_pid == port_info->pid)) {
 			cleanup_pid = port_info->pid;
 			mq_close(port_info->mqdes);
-			sq_rem((FAR sq_entry_t *)port_info, &g_port_info_list);
+			sq_rem((FAR sq_entry_t *)port_info, port_info_list_ptr);
 			MSG_FREE(port_info->data);
 			MSG_FREE(port_info);
 			break;
