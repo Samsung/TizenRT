@@ -115,17 +115,23 @@ static void multi_recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_
 	printf("[M] OK: Multicast(nonblock)Recv [%s].\n", (char *)recv_data->buf);
 }
 
-static int multi_recv_nonblock(int argc, FAR char *argv[])
+static void set_messaging_signal(void)
 {
-	int ret;
-	msg_callback_info_t cb_info;
-	msg_recv_buf_t data;
 	sigset_t sigset;
 
 	sigfillset(&sigset);
 	sigdelset(&sigset, SIGMSG_MESSAGING);
 	sigdelset(&sigset, SIGUSR1);
 	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
+}
+
+static int multi_recv_nonblock(int argc, FAR char *argv[])
+{
+	int ret;
+	msg_callback_info_t cb_info;
+	msg_recv_buf_t data;
+
+	set_messaging_signal();
 
 	cb_info.cb_func = multi_recv_callback;
 	cb_info.cb_data = NULL;
@@ -222,12 +228,8 @@ static int nonblock_recv_test(void)
 	int ret;
 	msg_callback_info_t cb_info;
 	msg_recv_buf_t data;
-	sigset_t sigset;
 
-	sigfillset(&sigset);
-	sigdelset(&sigset, SIGMSG_MESSAGING);
-	sigdelset(&sigset, SIGUSR1);
-	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
+	set_messaging_signal();
 
 	cb_info.cb_func = recv_callback;
 	cb_info.cb_data = NULL;
