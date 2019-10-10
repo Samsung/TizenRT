@@ -192,6 +192,24 @@ static void tc_signal_sigaction(void)
 	TC_SUCCESS_RESULT();
 }
 
+static int kill_handler_task(int argc, char *argv[])
+{
+	/* This task will be finished because of kill signal from main task. */
+	while (1) {
+		sleep(10);
+	}
+	return 0;
+}
+
+static void *kill_handler_thread(void *param)
+{
+	/* This pthread will be finished because of kill signal from main task. */
+	while (1) {
+		sleep(10);
+	}
+	return NULL;
+}
+
 /**
 * @fn                   :tc_signal_kill
 * @brief                :This Tc kill the system call.
@@ -206,6 +224,7 @@ static void tc_signal_kill(void)
 {
 	pid_t pid;
 	int ret_chk = ERROR;
+	struct sched_param param;
 
 	pid = getpid();
 
@@ -222,6 +241,27 @@ static void tc_signal_kill(void)
 		sleep(SEC_1);
 		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
 	}
+
+	pid = task_create("tc_sigkill", 100, 1024, kill_handler_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
+	ret_chk = kill(pid, SIGKILL);
+	sleep(SEC_1);
+	TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
+	ret_chk = sched_getparam(pid, &param);
+	TC_ASSERT_EQ("sched_getparam", ret_chk, ERROR);
+
+	ret_chk = pthread_create(&pid, NULL, kill_handler_thread, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	ret_chk = kill(pid, SIGKILL);
+	sleep(SEC_1);
+	TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
+	ret_chk = sched_getparam(pid, &param);
+	TC_ASSERT_EQ("sched_getparam", ret_chk, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
