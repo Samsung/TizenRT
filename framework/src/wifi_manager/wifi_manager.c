@@ -499,7 +499,7 @@ typedef wifi_manager_result_e (*wifimgr_handler)(_wifimgr_msg_s *msg);
 /*
  * g_handler should be matched to _wifimgr_state
  */
-const wifimgr_handler g_handler[] = {
+static const wifimgr_handler g_handler[] = {
 	_handler_on_uninitialized_state,
 	_handler_on_disconnected_state,
 	_handler_on_disconnecting_state,
