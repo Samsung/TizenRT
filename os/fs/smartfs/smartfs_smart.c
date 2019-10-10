@@ -93,6 +93,7 @@
 static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags, mode_t mode);
 static int smartfs_close(FAR struct file *filep);
 static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen);
+static int allocate_new_sector(size_t buflen, struct smartfs_mountpt_s *fs, struct smartfs_chain_header_s *header, struct smart_read_write_s *readwrite, struct smartfs_ofile_s *sf);
 static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t buflen);
 static off_t smartfs_seek(FAR struct file *filep, off_t offset, int whence);
 static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
@@ -712,6 +713,73 @@ errout:
 	return ret;
 }
 
+static int allocate_new_sector(size_t buflen, struct smartfs_mountpt_s *fs, struct smartfs_chain_header_s *header, struct smart_read_write_s *readwrite, struct smartfs_ofile_s *sf)
+{
+	int ret = OK;
+#ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
+	uint16_t t_sector;
+	uint16_t t_offset;
+#endif
+
+	if (buflen > 0) {
+		/* Allocate a new sector */
+
+		ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+		if (ret < 0) {
+			fdbg("Error %d allocating new sector\n", ret);
+			goto errout_with_semaphore;
+		}
+
+		/* Copy the new sector to the old one and chain it */
+
+		header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+		header->nextsector[0] = (uint8_t)(ret & 0x00FF);
+		header->nextsector[1] = (uint8_t)((ret >> 8) & 0x00FF);
+
+		readwrite->offset = offsetof(struct smartfs_chain_header_s, nextsector);
+		readwrite->buffer = (uint8_t *)header->nextsector;
+		readwrite->count = sizeof(uint16_t);
+#ifdef CONFIG_SMARTFS_JOURNALING
+		ret = smartfs_create_journalentry(fs, T_WRITE, readwrite->logsector,
+										  readwrite->offset, readwrite->count, 0, 0, readwrite->buffer, &t_sector, &t_offset);
+		if (ret != OK) {
+			fdbg("Journal entry creation failed.\n");
+			goto errout_with_semaphore;
+		}
+#endif
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)readwrite);
+#ifdef CONFIG_SMARTFS_JOURNALING
+		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
+		if (retj != OK) {
+			fdbg("Error finishing transaction\n");
+			ret = retj;
+			goto errout_with_semaphore;
+		}
+#endif
+		if (ret < 0) {
+			fdbg("Error %d writing next sector\n", ret);
+			goto errout_with_semaphore;
+		}
+
+		/* Record the new sector in our tracking variables and
+		 * reset the offset to "zero".
+		 */
+
+		if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
+			/* Error allocating logical sector! */
+
+			fdbg("Error - duplicate logical sector %d\n", sf->currsector);
+		}
+
+		sf->currsector = SMARTFS_NEXTSECTOR(header);
+		sf->curroffset = sizeof(struct smartfs_chain_header_s);
+	}
+
+errout_with_semaphore:
+	return ret;
+}
+
 /****************************************************************************
  * Name: smartfs_write
  ****************************************************************************/
@@ -724,7 +792,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	struct smart_read_write_s readwrite;
 	struct smartfs_chain_header_s *header;
 	size_t byteswritten;
-	int ret;
+	int ret = OK;
 
 #ifdef CONFIG_SMARTFS_JOURNALING
 	int retj;
@@ -962,58 +1030,9 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 			/* Allocate a new sector if needed */
 
-			if (buflen > 0) {
-				/* Allocate a new sector */
-
-				ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
-				if (ret < 0) {
-					fdbg("Error %d allocating new sector\n", ret);
-					goto errout_with_semaphore;
-				}
-
-				/* Copy the new sector to the old one and chain it */
-
-				header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-				header->nextsector[0] = (uint8_t)(ret & 0x00FF);
-				header->nextsector[1] = (uint8_t)((ret >> 8) & 0x00FF);
-
-				readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
-				readwrite.buffer = (uint8_t *)header->nextsector;
-				readwrite.count = sizeof(uint16_t);
-#ifdef CONFIG_SMARTFS_JOURNALING
-				ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector,
-												  readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
-				if (ret != OK) {
-					fdbg("Journal entry creation failed.\n");
-					goto errout_with_semaphore;
-				}
-#endif
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-#ifdef CONFIG_SMARTFS_JOURNALING
-				retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
-				if (retj != OK) {
-					fdbg("Error finishing transaction\n");
-					ret = retj;
-					goto errout_with_semaphore;
-				}
-#endif
-				if (ret < 0) {
-					fdbg("Error %d writing next sector\n", ret);
-					goto errout_with_semaphore;
-				}
-
-				/* Record the new sector in our tracking variables and
-				 * reset the offset to "zero".
-				 */
-
-				if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
-					/* Error allocating logical sector! */
-
-					fdbg("Error - duplicate logical sector %d\n", sf->currsector);
-				}
-
-				sf->currsector = SMARTFS_NEXTSECTOR(header);
-				sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			ret = allocate_new_sector(buflen, fs, header, &readwrite, sf);
+			if (ret < 0) {
+				goto errout_with_semaphore;
 			}
 		}
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
