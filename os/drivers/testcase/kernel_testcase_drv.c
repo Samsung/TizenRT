@@ -30,9 +30,11 @@
 #include "clock/clock.h"
 #include "signal/signal.h"
 #include "timer/timer.h"
-#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
-#include "task/task.h"
+#ifdef CONFIG_SCHED_HAVE_PARENT
 #include "group/group.h"
+#ifdef CONFIG_SCHED_CHILD_STATUS
+#include "task/task.h"
+#endif
 #endif
 /****************************************************************************
  * Private Function Prototypes
@@ -625,6 +627,47 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	}
 	break;
 #endif
+	case TESTIOC_TASK_REPARENT:
+	{
+#ifdef CONFIG_SCHED_HAVE_PARENT
+		int pid;
+		int before_parent_id = 0;
+		int after_parent_id = 0;
+		struct tcb_s *child_tcb;
+
+		pid = getpid();
+		child_tcb = sched_gettcb(pid);
+		if (child_tcb == NULL) {
+			ret = ERROR;
+			break;
+		}
+#ifdef HAVE_GROUP_MEMBERS
+		before_parent_id = child_tcb->group->tg_pgid;
+#else
+		before_parent_id = child_tcb->group->tg_ppid;
+#endif
+
+		ret = task_reparent((int)arg, pid);
+		if (ret != OK) {
+			ret = ERROR;
+			break;
+		}
+
+#ifdef HAVE_GROUP_MEMBERS
+		after_parent_id = child_tcb->group->tg_gpid;
+#else
+		after_parent_id = child_tcb->group->tg_ppid;
+#endif
+		if (before_parent_id != after_parent_id) {
+			ret = OK;
+		} else {
+			ret = ERROR;
+		}
+#else
+		ret = OK;
+#endif
+	}
+	break;
 	default: {
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 	}
