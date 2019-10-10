@@ -87,9 +87,9 @@
 
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
 
-struct _wifi_utils_s g_lwnl_hnd = {"", -1};
+static struct _wifi_utils_s g_lwnl_hnd = {"", -1};
 
-sem_t g_lwnl_signal;
+static sem_t g_lwnl_signal;
 
 static void close_cb_handler(void)
 {
