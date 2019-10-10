@@ -376,6 +376,7 @@ static void utc_media_MediaPlayer_start_p(void)
 			media::MediaPlayer mp;
 			auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath));
 			source->setSampleRate(samprate);
+			source->setChannels(channel);
 			mp.create();
 			mp.setDataSource(std::move(source));
 			mp.prepare();
