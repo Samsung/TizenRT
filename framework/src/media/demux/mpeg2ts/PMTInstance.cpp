@@ -120,7 +120,7 @@ size_t PMTInstance::numOfElementary(void)
 
 std::shared_ptr<PMTElementary> PMTInstance::getPMTElementary(uint32_t index)
 {
-	if ((size_t)index >= mElementaryStreams.size()) {
+	if ((size_t)index >= numOfElementary()) {
 		return nullptr;
 	}
 

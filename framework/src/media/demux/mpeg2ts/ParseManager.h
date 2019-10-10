@@ -49,8 +49,6 @@ public:
 protected:
 	// add new section parser
 	bool addParser(std::shared_ptr<SectionParser> pParser);
-	// remove section parser of the given table id
-	void removeParser(table_id_t tableId);
 	// get section parser of the given table id
 	std::shared_ptr<SectionParser> getParser(table_id_t tableId);
 	// sync program information from PAT parser when PAT received,

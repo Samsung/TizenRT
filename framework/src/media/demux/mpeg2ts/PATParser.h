@@ -41,10 +41,6 @@ public:
 	prog_num_t getProgramNumber(uint32_t index);
 	// get program map PID by program number
 	ts_pid_t getProgramMapPID(prog_num_t programNumber);
-	// get transport stream id
-	uint16_t getTansportStreamId(void);
-	// get NIT table PID
-	ts_pid_t getNetworkPID(void);
 	// check if PAT is received
 	bool isRecv(void);
 

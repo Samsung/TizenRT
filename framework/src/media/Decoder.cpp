@@ -119,18 +119,6 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	/*
-	 * Need to get the enough data to parse data format.
-	 */
-	if (mDecoder.audio_type == AUDIO_TYPE_UNKNOWN) {
-		mDecoder.audio_type = audio_decoder_get_audio_type(&mDecoder);
-
-		if (!mConfig(mDecoder.audio_type)) {
-			meddbg("Error! mConfig() failed!\n");
-			return false;
-		}
-	}
-
 	*size = audio_decoder_get_frames(&mDecoder, buf, *size, sampleRate, channels);
 	if (*size == 0) {
 		return false;
