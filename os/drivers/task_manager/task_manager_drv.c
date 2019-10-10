@@ -130,6 +130,10 @@ static int taskmgr_pthread_group_join(pid_t parent_pid, pid_t child_pid)
 
 	parent_group = taskmgr_get_group_struct(parent_pid);
 	child_tcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
+	if (child_tcb == NULL) {
+		tmdbg("[TM] Cannot find Child TCB.\n");
+		return ERROR;
+	}
 	ret = taskmgr_group_bind(parent_group, child_tcb);
 	if (ret != OK) {
 		tmdbg("[TM] Group bind is failed.\n");
