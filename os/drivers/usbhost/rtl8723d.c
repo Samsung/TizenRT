@@ -381,6 +381,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 static void usbhost_destroy(FAR void *arg)
 {
+#ifdef CONFIG_RTL8723D_REMOVABLE
 	FAR struct usbhost_rtk_wifi_s *priv = (FAR struct usbhost_rtk_wifi_s *)arg;
 	FAR struct usbhost_hubport_s *hport;
 	int i;
@@ -409,6 +410,7 @@ static void usbhost_destroy(FAR void *arg)
 	/* And free the class instance.  */
 
 	usbhost_freeclass(priv);
+#endif	
 }
 
 /****************************************************************************
@@ -435,6 +437,7 @@ static void usbhost_destroy(FAR void *arg)
 
 static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 {
+#ifdef CONFIG_RTL8723D_REMOVABLE
 	FAR struct usbhost_rtk_wifi_s *priv = (FAR struct usbhost_rtk_wifi_s *)usbclass;
 	irqstate_t flags;
 	int i;
@@ -470,6 +473,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	usbhost_destroy(priv);
 
 	irqrestore(flags);
+#endif	
 	return OK;
 }
 
