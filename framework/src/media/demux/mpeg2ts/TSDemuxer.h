@@ -45,8 +45,6 @@ class StreamBufferWriter;
 class TSDemuxer : public Demuxer
 {
 public:
-	// check if the given data stream is MPEG2-TS format stream
-	static bool isMpeg2Ts(const uint8_t *buffer, size_t size);
 	// create new TSDemuxer object
 	static std::shared_ptr<TSDemuxer> create(void);
 

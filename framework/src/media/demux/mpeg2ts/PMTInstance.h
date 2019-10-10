@@ -40,14 +40,6 @@ public:
 	size_t numOfElementary(void);
 	// get elementary stream by index
 	std::shared_ptr<PMTElementary> getPMTElementary(uint32_t index);
-	// get PID of this PMT table
-	ts_pid_t getPid(void) { return mPid; }
-	// get program number
-	prog_num_t getProgramNumber(void) { return mProgramNumber; }
-	// get PCR PID of this program
-	ts_pid_t getPcrPid(void) { return mPcrPid; }
-	// get program info length field value
-	uint16_t getProgramInfoLength(void) { return mProgramInfoLength; }
 
 protected:
 	// parse specific information in PMT

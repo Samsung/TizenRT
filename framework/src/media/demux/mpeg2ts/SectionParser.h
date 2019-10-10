@@ -47,17 +47,7 @@ public:
 	virtual bool parseSection(ts_pid_t pid, uint8_t *pData);
 	// getters
 	virtual bool isRecv(void) { return mIsRecv; }
-	virtual ts_pid_t getPid(void) { return mPid; }
 	virtual table_id_t getTableId(void) { return mTableId; }
-	virtual uint16_t getTableIdExt(void) { return mTableIdExtension; }
-	virtual uint8_t getSectionSyntaxIndicator(void) { return mSectionSyntaxIndicator; }
-	virtual uint8_t getPrivateIndicator(void) { return mPrivateIndicator; }
-	virtual uint16_t getSectionLength(void) { return mSectionLength; }
-	virtual uint8_t getVersionNumber(void) { return mVersionNumber; }
-	virtual bool getCurrentNextIndicator(void) { return mCurrentNextIndicator; }
-	virtual uint8_t getSectionNumber(void) { return mSectionNumber; }
-	virtual uint8_t getLastSectionNumber(void) { return mLastSectionNumber; }
-	virtual uint32_t getSectionCRC(void) { return mCrc32; }
 
 protected:
 	// Specific information parsing method, derived class should implement it

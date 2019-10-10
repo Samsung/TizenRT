@@ -263,11 +263,6 @@ bool ParserManager::addParser(std::shared_ptr<SectionParser> pParser)
 	return true;
 }
 
-void ParserManager::removeParser(table_id_t tableId)
-{
-	mTableParsers.erase(tableId);
-}
-
 std::shared_ptr<SectionParser> ParserManager::getParser(table_id_t tableId)
 {
 	auto it = mTableParsers.find(tableId);

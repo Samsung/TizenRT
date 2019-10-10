@@ -123,16 +123,6 @@ void PATParser::addProgram(prog_num_t programNumber, ts_pid_t programPID)
 	mProgramMap[programNumber] = programPID;
 }
 
-uint16_t PATParser::getTansportStreamId(void)
-{
-	return mTransportStreamId;
-}
-
-ts_pid_t PATParser::getNetworkPID(void)
-{
-	return mNetworkPID;
-}
-
 bool  PATParser::isRecv(void)
 {
 	if (SectionParser::isRecv()) {

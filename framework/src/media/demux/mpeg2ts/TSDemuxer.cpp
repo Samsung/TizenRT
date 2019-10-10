@@ -493,41 +493,4 @@ int TSDemuxer::prepare(void)
 	return ret;
 }
 
-bool TSDemuxer::isMpeg2Ts(const uint8_t *buffer, size_t size)
-{
-	if (!buffer || size < TSPacket::PACKET_SIZE) {
-		meddbg("invalid params\n");
-		return false;
-	}
-
-	int count;
-	size_t syncOffset;
-	for (syncOffset = 0; syncOffset < TSPacket::PACKET_SIZE; syncOffset++) {
-		if (buffer[syncOffset] != TSPacket::SYNC_BYTE) {
-			continue;
-		}
-
-		if (size < syncOffset + TS_SYNC_COUNT * TSPacket::PACKET_SIZE) {
-			meddbg("data in buffer is not enough for sync verification\n");
-			return false;
-		}
-
-		for (count = 1; count < TS_SYNC_COUNT; count++) {
-			if (buffer[syncOffset + count * TSPacket::PACKET_SIZE] != TSPacket::SYNC_BYTE) {
-				// sync not match
-				break;
-			}
-		}
-
-		if (count == TS_SYNC_COUNT) {
-			// sync verification succeed
-			medvdbg("It is MPEG2 Transport Stream!\n");
-			return true;
-		}
-	}
-
-	medwdbg("It's not MPEG2 Transport Stream!\n");
-	return false;
-}
-
 } // namespace media
