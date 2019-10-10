@@ -24,6 +24,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdint.h>
 
 #ifdef CONFIG_BINARY_MANAGER
 
@@ -137,7 +138,7 @@ typedef struct load_attr_s load_attr_t;
 
 /* The structure of binaries' information list */
 struct binary_update_info_list_s {
-	int bin_count;
+	uint32_t bin_count;
 	binary_update_info_t bin_info[BINARY_COUNT];
 };
 typedef struct binary_update_info_list_s binary_update_info_list_t;
