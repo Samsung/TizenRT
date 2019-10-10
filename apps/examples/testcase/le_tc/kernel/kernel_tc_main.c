@@ -97,9 +97,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_MISC
-#if !defined(CONFIG_DEBUG) || !defined(CONFIG_DEBUG_ERROR) || !defined(CONFIG_DEBUG_VERBOSE)
-#error CONFIG_DEBUG, CONFIG_DEBUG_ERROR and CONFIG_DEBUG_VERBOSE are needed for testing LIBC_MISC TC
-#endif
 	libc_misc_main();
 #endif
 
