@@ -379,49 +379,94 @@ static long get_file_size()
 
 static void utc_media_MediaRecorder_setDuration_p(void)
 {
-	long size;
-	MediaRecorder mr;
-	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+	{
+		long size;
+		MediaRecorder mr;
+		unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
 
-	auto observer = std::make_shared<RecorderTest>();
-	mr.create();
-	mr.setObserver(observer);
-	mr.setDataSource(std::move(dataSource));
+		auto observer = std::make_shared<RecorderTest>();
+		mr.create();
+		mr.setObserver(observer);
+		mr.setDataSource(std::move(dataSource));
 
-	/* setDuration with 0. It means infinite time */
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(0), RECORDER_OK);
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setFileSize(0), RECORDER_OK);
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setFileSize(-1), RECORDER_OK);
 
-	/* setDuration with positive number */
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(RECORD_DURATION), RECORDER_OK);
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.prepare(), RECORDER_OK);
-	mr.start();
-	sleep(RECORD_DURATION + 1);
-	mr.stop();
-	mr.unprepare();
-	mr.destroy();
+		size = channels * sampleRate * RECORD_DURATION * 2;
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setFileSize(size), RECORDER_OK);
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.prepare(), RECORDER_OK);
+		mr.start();
+		sleep(RECORD_DURATION + 1);
+		mr.stop();
+		mr.unprepare();
+		mr.destroy();
 
-	size = channels * sampleRate * RECORD_DURATION;
-
-	switch (pcmFormat) {
-	case AUDIO_FORMAT_TYPE_S8:
-		size *= 1;
-		break;
-	case AUDIO_FORMAT_TYPE_S16_LE:
-		size *= 2;
-		break;
-	case AUDIO_FORMAT_TYPE_S32_LE:
-		size *= 4;
-		break;
-	default:
-		break;
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), size);
 	}
-	TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), size);
+
+	{
+		long size;
+		MediaRecorder mr;
+		unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+
+		auto observer = std::make_shared<RecorderTest>();
+		mr.create();
+		mr.setObserver(observer);
+		mr.setDataSource(std::move(dataSource));
+
+		/* setDuration with 0. It means infinite time */
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(0), RECORDER_OK);
+
+		/* setDuration with positive number */
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setDuration(RECORD_DURATION), RECORDER_OK);
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.prepare(), RECORDER_OK);
+		mr.start();
+		sleep(RECORD_DURATION + 1);
+		mr.stop();
+		mr.unprepare();
+		mr.destroy();
+
+		size = channels * sampleRate * RECORD_DURATION;
+
+		switch (pcmFormat) {
+		case AUDIO_FORMAT_TYPE_S8:
+			size *= 1;
+			break;
+		case AUDIO_FORMAT_TYPE_S16_LE:
+			size *= 2;
+			break;
+		case AUDIO_FORMAT_TYPE_S32_LE:
+			size *= 4;
+			break;
+		default:
+			break;
+		}
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), size);
+	}
 
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaRecorder_setDuration_n(void)
 {
+	{
+		long size;
+		MediaRecorder mr;
+		unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+		auto observer = std::make_shared<RecorderTest>();
+
+		size = channels * sampleRate * RECORD_DURATION * 2;
+		TC_ASSERT_NEQ("utc_media_MediaRecorder_setDuration", mr.setFileSize(size), RECORDER_OK);
+		mr.create();
+		mr.setObserver(observer);
+		mr.setDataSource(std::move(dataSource));
+
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", mr.setFileSize(size), RECORDER_OK);
+		mr.destroy();
+
+		TC_ASSERT_EQ("utc_media_MediaRecorder_setDuration", get_file_size(), size);
+	}
+
 	/* setDuration before create */
 	{
 		MediaRecorder mr;
