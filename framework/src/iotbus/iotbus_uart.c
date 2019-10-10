@@ -53,14 +53,17 @@ struct _iotbus_uart_wrapper_s {
 	struct _iotbus_uart_s *handle;
 };
 
-int g_iotbus_uart_br[30] = {
+#ifdef CONFIG_SERIAL_TERMIOS
+static int g_iotbus_uart_br[30] = {
 B50, B75, B110, B134, B150,
 B200, B300, B600, B1200, B1800,
 B2400, B4800, B9600, B19200, B38400,
 B57600, B115200, B128000, B230400, B256000,
 B460800, B500000, B576000, B921600, B1000000,
 B1152000, B1500000, B2000000, B2500000, B3000000, };
-int g_iotbus_uart_size = 30;
+
+static int g_iotbus_uart_size = 30;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

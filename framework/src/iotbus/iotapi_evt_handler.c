@@ -37,14 +37,13 @@ struct _iotapi_msg_queue {
 	iotapi_elem evt;
 };
 
-struct _iotapi_msg_queue g_ia_msg_queue[2];
-pthread_mutex_t g_ia_lock;
-iotapi_elem g_ia_evt_queue[IOTAPI_QUEUE_SIZE];
+static struct _iotapi_msg_queue g_ia_msg_queue[2];
+static pthread_mutex_t g_ia_lock;
+static iotapi_elem g_ia_evt_queue[IOTAPI_QUEUE_SIZE];
 static int g_ia_evt_size = 0;
-struct pollfd g_ia_evtlist[IOTAPI_QUEUE_SIZE];
+static struct pollfd g_ia_evtlist[IOTAPI_QUEUE_SIZE];
 
-int g_pipes_handler[2];
-int g_max_fd;
+static int g_pipes_handler[2];
 
 /**
  * Private API
