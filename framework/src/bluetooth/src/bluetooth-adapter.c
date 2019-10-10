@@ -1018,9 +1018,17 @@ static int __bt_convert_string_to_uuid(const char *string,
 
 		/* ptr[4] contain "08x" and "04hx" */
 		ptr[5] = calloc(1, sizeof(char) * 8);
-		ptr[6] = calloc(1, sizeof(char) * 4);
-		if (ptr[5] == NULL || ptr[6] == NULL)
+		if (ptr[5] == NULL) {
+			free(data);
 			return BT_ERROR_OUT_OF_MEMORY;
+		}
+
+		ptr[6] = calloc(1, sizeof(char) * 4);
+		if (ptr[6] == NULL) {
+			free(data);
+			free(ptr[5]);
+			return BT_ERROR_OUT_OF_MEMORY;
+		}
 
 		strncpy(ptr[5], ptr[4], 8);
 		strncpy(ptr[6], ptr[4] + 8, 4);
