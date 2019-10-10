@@ -331,12 +331,6 @@ static audio_manager_result_t get_actual_audio_in_card_id()
 			if (g_audio_in_cards[i].config[j].status != AUDIO_CARD_NONE) {
 				if (g_audio_in_cards[i].config[j].status == AUDIO_CARD_IDLE) {
 					cnt++;
-				} else {
-					/* found activated one */
-					g_audio_in_cards[i].card_id = i;
-					g_audio_in_cards[i].device_id = j;
-					g_actual_audio_in_card_id = i;
-					return AUDIO_MANAGER_SUCCESS;
 				}
 			}
 		}
@@ -361,13 +355,6 @@ static audio_manager_result_t get_actual_audio_out_card_id()
 			if (g_audio_out_cards[i].config[j].status != AUDIO_CARD_NONE) {
 				if (g_audio_out_cards[i].config[j].status == AUDIO_CARD_IDLE) {
 					cnt++;
-				} else {
-					/* found activated one */
-					g_audio_out_cards[i].card_id = i;
-					g_audio_out_cards[i].device_id = j;
-					g_actual_audio_out_card_id = i;
-					return AUDIO_MANAGER_SUCCESS;
-
 				}
 			}
 		}
@@ -434,7 +421,7 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 	while (frames > used_frames) {
 		srcData.data_in = card->resample.buffer + get_card_input_frames_to_byte(used_frames);
 		srcData.input_frames = frames - used_frames;
-		srcData.data_out = data + get_card_input_frames_to_byte(resampled_frames);
+		srcData.data_out = data + get_user_input_frames_to_byte(resampled_frames);
 		medvdbg("data_in addr = 0x%x + %d\t", srcData.data_in, get_card_input_frames_to_byte(used_frames));
 		if (src_simple(card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 			meddbg("Fail to resample in:%d/%d, out:%d, to %u from %u\n", used_frames, frames, srcData.desired_sample_rate, srcData.origin_sample_rate);
@@ -481,7 +468,7 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 	while (frames > used_frames) {
 		srcData.data_in = data + (int)(get_user_output_frames_to_byte(used_frames) * rechanneling_ratio);
 		srcData.input_frames = frames - used_frames;
-		srcData.data_out = card->resample.buffer + (int)(get_user_output_frames_to_byte(resampled_frames) * rechanneling_ratio);
+		srcData.data_out = card->resample.buffer + (int)(get_card_output_frames_to_byte(resampled_frames) * rechanneling_ratio);
 		medvdbg("data_out addr = 0x%x   ", srcData.data_out);
 		if (src_simple(card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 			meddbg("Fail to resample in:%d/%d to %u from %u\n", used_frames, frames, srcData.desired_sample_rate, srcData.origin_sample_rate);
