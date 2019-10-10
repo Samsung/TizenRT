@@ -32,10 +32,14 @@
 #include <messaging/messaging.h>
 #include "messaging_internal.h"
 
-sq_queue_t g_port_info_list;
+static sq_queue_t g_port_info_list;
 /****************************************************************************
  * private functions
  ****************************************************************************/
+sq_queue_t *messaging_get_port_info_list(void)
+{
+	return &g_port_info_list;
+}
 /****************************************************************************
  * Name : messaging_recv_nonblock
  * 
