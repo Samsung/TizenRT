@@ -70,6 +70,20 @@ static int task_manager_pid;
 #define CB_MSG_OF(X)        (X)->cb_data->msg
 #define CB_MSGSIZE_OF(X)    (X)->cb_data->msg_size
 
+#define SET_REGISTER_INFO(handle, type, idx, caller_pid, permission)		\
+	do {					 				\
+		TM_TYPE(handle) = type;						\
+		TM_IDX(handle) = idx;						\
+		TM_GID(handle) = caller_pid;					\
+		TM_STATUS(handle) = TM_APP_STATE_STOP;				\
+		TM_PERMISSION(handle) = permission;				\
+		TM_STOP_CB_INFO(handle) = NULL;					\
+		TM_EXIT_CB_INFO(handle) = NULL;					\
+		sq_init(&TM_BROADCAST_INFO_LIST(handle));			\
+		tmvdbg("Registered handle %d\n", handle);			\
+	} while (0)
+
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -194,15 +208,8 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 		if (tm_app_list[handle].addr == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}
-		TM_TYPE(handle) = TM_BUILTIN_TASK;
-		TM_IDX(handle) = chk_idx;
-		TM_GID(handle) = caller_pid;
-		TM_STATUS(handle) = TM_APP_STATE_STOP;
-		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
-		sq_init(&TM_BROADCAST_INFO_LIST(handle));
-		tmvdbg("Registered handle %d\n", handle);
+
+		SET_REGISTER_INFO(handle, TM_BUILTIN_TASK, chk_idx, caller_pid, permission);
 		handle_cnt++;
 	}
 
@@ -609,10 +616,9 @@ static int taskmgr_resume(int handle, int caller_pid)
 	return OK;
 }
 
-static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
+static int taskmgr_unicast_check_validation(int handle, int caller_pid)
 {
 	int ret;
-	union sigval msg;
 
 	if (IS_INVALID_HANDLE(handle)) {
 		return TM_INVALID_PARAM;
@@ -631,6 +637,16 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 	if (ret < 0) {
 		return TM_OPERATION_FAIL;
 	}
+
+	return OK;
+}
+
+static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
+{
+	int ret;
+	union sigval msg;
+
+	taskmgr_unicast_check_validation(handle, caller_pid);
 
 	/* handle is in app_list */
 	msg.sival_ptr = data;
@@ -674,23 +690,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 	tm_msg_t recv_msg;
 	FAR struct timespec time;
 
-	if (IS_INVALID_HANDLE(handle)) {
-		return TM_INVALID_PARAM;
-	}
-
-	ret = taskmgr_get_task_state(handle);
-	if (ret != TM_APP_STATE_RUNNING) {
-		return -ret;
-	}
-
-	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_NO_PERMISSION;
-	}
-
-	ret = taskmgr_handle_tcb(TMIOC_UNICAST, TM_PID(handle), NULL);
-	if (ret < 0) {
-		return TM_OPERATION_FAIL;
-	}
+	taskmgr_unicast_check_validation(handle, caller_pid);
 
 	response_msg->data = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 	if (response_msg->data == NULL) {
@@ -1250,15 +1250,7 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 			handle = TM_OUT_OF_MEMORY;
 			goto end_func;
 		}
-		TM_TYPE(handle) = TM_TASK;
-		TM_IDX(handle) = task_cnt - 1;
-		TM_GID(handle) = caller_pid;
-		TM_STATUS(handle) = TM_APP_STATE_STOP;
-		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
-		sq_init(&TM_BROADCAST_INFO_LIST(handle));
-		tmvdbg("Registered handle %d\n", handle);
+		SET_REGISTER_INFO(handle, TM_TASK, task_cnt - 1, caller_pid, permission);
 		handle_cnt++;
 	}
 
@@ -1328,15 +1320,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 			handle = TM_OUT_OF_MEMORY;
 			goto end_func;
 		}
-		TM_TYPE(handle) = TM_PTHREAD;
-		TM_IDX(handle) = pthread_cnt - 1;
-		TM_GID(handle) = caller_pid;
-		TM_STATUS(handle) = TM_APP_STATE_STOP;
-		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB_INFO(handle) = NULL;
-		TM_EXIT_CB_INFO(handle) = NULL;
-		sq_init(&TM_BROADCAST_INFO_LIST(handle));
-		tmvdbg("Registered handle %d\n", handle);
+		SET_REGISTER_INFO(handle, TM_PTHREAD, pthread_cnt - 1, caller_pid, permission);
 		handle_cnt++;
 	}
 
@@ -1506,21 +1490,7 @@ static int taskmgr_init_task_manager(void)
 		return ERROR;
 	}
 
-	act.sa_sigaction = (_sa_sigaction_t)taskmgr_update_stop_status;
-	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
-
-	ret = sigaddset(&act.sa_mask, SIGTM_TERMINATION);
-	if (ret < 0) {
-		tmdbg("Failed to add signal set\n");
-		return TM_OPERATION_FAIL;
-	}
-
-	ret = sigaction(SIGTM_TERMINATION, &act, NULL);
-	if (ret == (int)SIG_ERR) {
-		tmdbg("sigaction Failed\n");
-		return TM_OPERATION_FAIL;
-	}
+	SET_TERMINATION_CB(taskmgr_update_stop_status);
 
 	return OK;
 }
