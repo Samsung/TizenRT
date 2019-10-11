@@ -19,10 +19,14 @@
 #include <memory>
 #include <string.h>
 #include <media/MediaPlayer.h>
+#include <media/MediaRecorder.h>
 #include <media/FileInputDataSource.h>
+#include <media/FileOutputDataSource.h>
 #include "tc_common.h"
 
 static const char *dummyfilepath = "/tmp/fileinputdatasource.raw";
+static const char *filePath_opus = "/tmp/record_opus.opus";
+static const char *filePath_wav = "/tmp/record_wav.wav";
 
 class EmptyObserver : public media::MediaPlayerObserverInterface
 {
@@ -387,6 +391,30 @@ static void utc_media_MediaPlayer_start_p(void)
 			mp.unprepare();
 			mp.destroy();
 		}
+	}
+
+	for (int i = 0; i < 2; ++i) {
+		media::MediaRecorder mr;
+		auto dataSource = std::unique_ptr<media::stream::FileOutputDataSource>(new media::stream::FileOutputDataSource( (i == 0 ? filePath_opus : filePath_wav) ));
+	
+		mr.create();
+		mr.setDataSource(std::move(dataSource));
+		mr.prepare();
+		TC_ASSERT_EQ("utc_media_MediaPlayer_start", mr.start(), media::RECORDER_OK);
+		mr.stop();
+		mr.unprepare();
+		mr.destroy();
+
+		media::MediaPlayer mp;
+		auto source = std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource( (i == 0 ? filePath_opus : filePath_wav) ));
+		mp.create();
+		mp.setDataSource(std::move(source));
+		mp.prepare();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
+		mp.stop();
+		mp.unprepare();
+		mp.destroy();
 	}
 
 	TC_SUCCESS_RESULT();
