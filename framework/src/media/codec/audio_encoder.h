@@ -38,16 +38,6 @@ typedef struct audio_encoder_s audio_encoder_t;
 typedef struct audio_encoder_s *audio_encoder_p;
 
 /**
- * @brief  input callback routine type.
- *
- * @param  user_data: Pointer to user callback data register via audio_encoder_init()
- * @param  encoder: Pointer to encoder object
- * @return size of audio data pushed to encoder via audio_encoder_pushdata().
- *         in case of return 0, that means end of PCM stream, then encoding will be terminated.
- */
-typedef size_t(*input_func_f)(void *user_data, audio_encoder_p encoder);
-
-/**
  * @struct  audio_encoder_s
  * @brief   Recorder structure, support encoding PCM stream to specified audio type, see enum audio_type_e.
  *          Currently, support encode type is OPUS. And might support other type in future.
@@ -60,10 +50,6 @@ struct audio_encoder_s {
 	// encoder buffer
 	void *enc_ext;              /* encoder external struct, user can pass configuration from it */
 	void *enc_mem;              /* encoder required memory, used internally */
-
-	// user callback func and data
-	void *cb_data;              /* data ptr user registered, be passed to callback function. */
-	input_func_f input_func;    /* input callback, be called when encoder request more data. */
 
 	// internal member used by encoder
 	rb_t ringbuffer;            /* ring-buffer object */
@@ -83,16 +69,6 @@ struct audio_encoder_s {
  * @return 0 on success, otherwise, return -1.
  */
 int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type, void *enc_ext);
-
-/**
- * @brief  stream encoder register user data and user input callback.
- *
- * @param  encoder : Pointer to encoder object
- * @param  data: ponter to user callback data
- * @param  input: audio data input callback routine
- * @return 0 on success, otherwise, return -1.
- */
-int audio_encoder_register_callbacks(audio_encoder_p encoder, void *data, input_func_f input);
 
 /**
  * @brief  stream encoder deinitialize.
