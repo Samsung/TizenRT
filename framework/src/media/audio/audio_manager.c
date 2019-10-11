@@ -1306,15 +1306,6 @@ unsigned int get_card_input_frames_to_byte(unsigned int frames)
 	return pcm_frames_to_bytes(g_audio_in_cards[g_actual_audio_in_card_id].pcm, frames);
 }
 
-unsigned int get_card_input_bytes_to_frame(unsigned int bytes)
-{
-	if ((g_actual_audio_in_card_id < 0) || (bytes == 0)) {
-		return 0;
-	}
-
-	return pcm_bytes_to_frames(g_audio_in_cards[g_actual_audio_in_card_id].pcm, bytes);
-}
-
 unsigned int get_user_input_frames_to_byte(unsigned int frames)
 {
 	int buffer_size = 0;
@@ -1362,15 +1353,6 @@ unsigned int get_card_output_frames_to_byte(unsigned int frames)
 	}
 
 	return pcm_frames_to_bytes(g_audio_out_cards[g_actual_audio_out_card_id].pcm, frames);
-}
-
-unsigned int get_card_output_bytes_to_frame(unsigned int bytes)
-{
-	if ((g_actual_audio_out_card_id < 0) || (bytes == 0)) {
-		return 0;
-	}
-
-	return pcm_bytes_to_frames(g_audio_out_cards[g_actual_audio_out_card_id].pcm, bytes);
 }
 
 unsigned int get_user_output_frames_to_byte(unsigned int frames)
