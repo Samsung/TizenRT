@@ -148,6 +148,19 @@ int elf_findsection(FAR struct elf_loadinfo_s *loadinfo, FAR const char *sectnam
 int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo);
 
 /****************************************************************************
+ * Name: elf_readsymtab
+ *
+ * Description:
+ *   Read the ELF symbol table into memory.
+ *
+ * Input Parameters:
+ *   loadinfo - Load state information
+ *
+ ****************************************************************************/
+
+void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo);
+
+/****************************************************************************
  * Name: elf_readsym
  *
  * Description:

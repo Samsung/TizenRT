@@ -63,6 +63,7 @@
 
 #include <tinyara/binfmt/elf.h>
 #include <tinyara/binfmt/symtab.h>
+#include <tinyara/kmalloc.h>
 
 #include "libelf.h"
 
@@ -204,6 +205,32 @@ int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo)
 }
 
 /****************************************************************************
+ * Name: elf_readsymtab
+ *
+ * Description:
+ *   Read the ELF symbol table into memory.
+ *
+ * Input Parameters:
+ *   loadinfo - Load state information
+ *
+ ****************************************************************************/
+void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
+{
+	FAR Elf32_Shdr *symtab = &loadinfo->shdr[loadinfo->symtabidx];
+
+	loadinfo->symtab = (uintptr_t)kmm_malloc(symtab->sh_size);
+
+	if (!loadinfo->symtab) {
+		berr("ERROR: Failed to allocate space for sym table. Size = %u\n", symtab->sh_size);
+		return;
+	}
+
+	if (elf_read(loadinfo, loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
+		berr("ERROR: Failed to load symbol table into memory\n");
+	}
+}
+
+/****************************************************************************
  * Name: elf_readsym
  *
  * Description:
@@ -232,13 +259,25 @@ int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *s
 		return -EINVAL;
 	}
 
-	/* Get the file offset to the symbol table entry */
+	if (loadinfo->symtab) {
+		/* Get the file offset to the symbol table entry */
 
-	offset = symtab->sh_offset + sizeof(Elf32_Sym) * index;
+		offset = sizeof(Elf32_Sym) * index;
 
-	/* And, finally, read the symbol table entry into memory */
+		/* And, finally, read the symbol table entry into memory */
 
-	return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
+		memcpy(sym, loadinfo->symtab + offset, sizeof(Elf32_Sym));
+		return OK;
+	} else {
+
+		/* Get the file offset to the symbol table entry */
+
+		offset = symtab->sh_offset + sizeof(Elf32_Sym) * index;
+
+		/* And, finally, read the symbol table entry into memory */
+
+		return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
+	}
 }
 
 /****************************************************************************
