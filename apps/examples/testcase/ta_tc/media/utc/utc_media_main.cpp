@@ -77,12 +77,16 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_MEDIA_PLAYER
 	utc_media_MediaPlayer_main();
 	utc_media_FileInputDataSource_main();
+	unlink("/tmp/record_opus.opus");
+	unlink("/tmp/record_wav.wav");
 #endif
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
 	utc_media_fileoutputdatasource_main();
 	utc_media_bufferoutputdatasource_main();
 	unlink("/tmp/record");
+	unlink("/tmp/record_opus.opus");
+	unlink("/tmp/record_wav.wav");
 #endif
 #ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
 	utc_media_SpeechDetector_main();

@@ -32,6 +32,8 @@ static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
 static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
 static const char *filePath = "/tmp/record";
+static const char *filePath_opus = "/tmp/record_opus.opus";
+static const char *filePath_wav = "/tmp/record_wav.wav";
 
 static void utc_media_MediaRecorder_create_p(void)
 {
@@ -519,6 +521,23 @@ static void utc_media_MediaRecorder_start_p(void)
 			mr.unprepare();
 			mr.destroy();
 		}
+	}
+
+	for (int i = 0; i < 2; ++i) {
+		MediaRecorder mr;
+		auto dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource( (i == 0 ? filePath_opus : filePath_wav) ));
+
+		auto observer = std::make_shared<RecorderTest>();
+		mr.create();
+		mr.setObserver(observer);
+		mr.setDataSource(std::move(dataSource));
+		mr.prepare();
+
+		mr.start();
+		observer->waitStarted();
+		mr.stop();
+		mr.unprepare();
+		mr.destroy();
 	}
 
 	TC_SUCCESS_RESULT();
