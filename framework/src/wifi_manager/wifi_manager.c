@@ -1248,9 +1248,8 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 
 		struct sockaddr_in serveraddr;
 		int sd = socket(PF_INET, SOCK_DGRAM, 0);
-		if (sd < 0) {
-			ndbg("[WM] socket create fail\n");
-		}
+		DEBUGASSERT(sd >= 0);
+
 		bzero(&serveraddr, sizeof(serveraddr));
 		serveraddr.sin_family = AF_INET;
 		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
