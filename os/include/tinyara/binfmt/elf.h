@@ -167,6 +167,8 @@ struct elf_loadinfo_s {
 	int filfd;					/* Descriptor for the file being loaded */
 	uint16_t offset;             /* elf offset when binary header is included */
 	uint8_t compression_type;		/* Binary Compression type */
+	uintptr_t symtab;			/* Copy of symbol table */
+	uintptr_t reltab;			/* Copy of relocation table */
 };
 
 /****************************************************************************
