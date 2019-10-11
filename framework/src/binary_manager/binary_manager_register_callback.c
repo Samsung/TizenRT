@@ -145,9 +145,10 @@ int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, voi
 
 	memset(&request_msg, 0, sizeof(binmgr_request_t));
 
-	request_msg.cmd = BINMGR_REGISTER_STATECB;
-	request_msg.requester_pid = getpid();
-	request_msg.data.cb_info = callback;
+	ret = binary_manager_set_request(&request_msg, BINMGR_REGISTER_STATECB, callback);
+	if (ret < 0) {
+		return BINMGR_COMMUNICATION_FAIL;
+	}
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
@@ -179,8 +180,10 @@ int binary_manager_unregister_state_changed_callback(void)
 
 	memset(&request_msg, 0, sizeof(binmgr_request_t));
 
-	request_msg.cmd = BINMGR_UNREGISTER_STATECB;
-	request_msg.requester_pid = getpid();
+	ret = binary_manager_set_request(&request_msg, BINMGR_UNREGISTER_STATECB, NULL);
+	if (ret < 0) {
+		return BINMGR_COMMUNICATION_FAIL;
+	}
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {
