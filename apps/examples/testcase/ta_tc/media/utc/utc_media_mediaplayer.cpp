@@ -33,7 +33,6 @@ public:
 	void onStartError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
-	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override;
 	void onAsyncPrepared(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void cvAsyncWait();
 private:
@@ -65,12 +64,9 @@ void EmptyObserver::onPauseError(media::MediaPlayer &mediaPlayer, media::player_
 {
 }
 
-void EmptyObserver::onPlaybackPaused(media::MediaPlayer &mediaPlayer)
-{
-}
-
 void EmptyObserver::onAsyncPrepared(media::MediaPlayer &mediaPlayer, media::player_error_t error)
 {
+	media::MediaPlayerObserverInterface::onAsyncPrepared(mediaPlayer, error);
 	printf("AsyncPrepared\n");
 	cvAsync.notify_one();
 }

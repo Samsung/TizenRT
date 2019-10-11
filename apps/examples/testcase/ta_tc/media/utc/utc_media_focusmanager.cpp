@@ -29,6 +29,7 @@ public:
 
 void TestFocusChangeListener::onFocusChange(int focusChange)
 {
+	media::FocusChangeListener::onFocusChange(focusChange);
 	if (focusChange == media::FOCUS_GAIN)
 	{
 		printf("GAIN\n");
