@@ -81,6 +81,14 @@
 /** @defgroup STM32L4R9I_DISCOVERY_TS_Private_Variables Private Variables
   * @{
   */
+#define MFX_IRQ_PENDING_GPIO    0x01
+#define MFX_IRQ_PENDING_IDD     0x02
+#define MFX_IRQ_PENDING_ERROR   0x04
+#define MFX_IRQ_PENDING_TS_DET  0x08
+#define MFX_IRQ_PENDING_TS_NE   0x10
+#define MFX_IRQ_PENDING_TS_TH   0x20
+#define MFX_IRQ_PENDING_TS_FULL 0x40
+#define MFX_IRQ_PENDING_TS_OVF  0x80
 
 static TS_DrvTypeDef *tsDriver;
 static uint8_t        I2C_Address   = 0;
@@ -90,12 +98,12 @@ static uint8_t        HwRotation    = 0;
   * @}
   */
 __IO bool TouchItOccurred = false;
-static TS_StateTypeDef  TS_State;
+static TS_StateTypeDef  gTS_State;
 
 static int mfx_interrupt(int irq, void *context, FAR void *arg)
 {
   __HAL_GPIO_EXTI_CLEAR_IT(MFX_INT_PIN);
-  BSP_IO_ITClear(TS_INT_PIN);
+  HAL_NVIC_DisableIRQ(MFX_INT_EXTI_IRQn);
   TouchItOccurred = true;
   return OK;
 }
@@ -122,14 +130,31 @@ void stm32_touch_initialize(void)
 
 void stm32_touch_printf_coord(void)
 {
-  if(BSP_TS_GetState(&TS_State) != TS_ERROR)
+  uint32_t irqPending;
+  uint32_t TouchEvent;
+
+  irqPending = MFX_IO_Read(IO_I2C_ADDRESS, MFXSTM32L152_REG_ADR_IRQ_PENDING);
+
+  if(irqPending & MFX_IRQ_PENDING_GPIO)
   {
-    printf("TS coord 0 : X = %d, Y = %d \n", TS_State.touchX[0], TS_State.touchY[0]);
+    uint32_t statusGpio = BSP_IO_ITGetStatus(RIGHT_JOY_PIN | LEFT_JOY_PIN | UP_JOY_PIN | DOWN_JOY_PIN | TS_INT_PIN | SD_DETECT_PIN);
+    TouchEvent = (statusGpio & TS_INT_PIN);
+
+    if(TouchEvent != 0)
+    {
+      if(BSP_TS_GetState(&gTS_State) != TS_ERROR)
+      {
+        printf("TS coord 0 : X = %d, Y = %d \n", gTS_State.touchX[0], gTS_State.touchY[0]);
+      }
+      else
+      {
+        printf("TS coord Error !!\n");
+      }
+    }
+    BSP_IO_ITClear(TouchEvent);
   }
-  else
-  {
-    printf("TS coord Error !!\n");
-  }
+  TouchItOccurred = false;
+  HAL_NVIC_EnableIRQ(MFX_INT_EXTI_IRQn);
 }
 
 /**
@@ -151,6 +176,7 @@ uint8_t BSP_TS_Init(uint16_t ts_SizeX, uint16_t ts_SizeY)
   /* Verify this is a FT3X67, otherwise this is an error case      */
   if(ft3x67_ts_drv.ReadID(TS_I2C_ADDRESS) == FT3X67_ID_VALUE)
   {
+    printf("TS ID O.K\n");
     /* Found FT3X67 : Initialize the TS driver structure */
     tsDriver    = &ft3x67_ts_drv;
     I2C_Address = TS_I2C_ADDRESS;

@@ -977,7 +977,7 @@ void MFX_IO_ITConfig(void)
   HAL_GPIO_Init(MFX_INT_GPIO_PORT, &GPIO_InitStruct);
 
   /* Enable and set GPIO EXTI Interrupt to the lowest priority */
-  HAL_NVIC_SetPriority((IRQn_Type)(MFX_INT_EXTI_IRQn), 0x0F, 0x0F);
+  HAL_NVIC_SetPriority((IRQn_Type)(MFX_INT_EXTI_IRQn), 0x07, 0x00);
   HAL_NVIC_EnableIRQ((IRQn_Type)(MFX_INT_EXTI_IRQn));
 }
 

@@ -74,31 +74,18 @@ int hello_main(int argc, char *argv[])
 {
     dma2d_copybuffer((uint32_t *)image_390x390_rgb565, NULL, 0, 0, 390, 390);
     printf("Hello, World!!\n");
-	board_button_initialize();
-	exflash_check();
-	psram_check();
 
-  uint8_t ButtonOccurred=0;
+    exflash_check();
+    psram_check();
 
-  while(1)
-  {
-    ButtonOccurred = board_buttons();
-
-    if(ButtonOccurred == 1)
-    {
-      ButtonOccurred = 0;
-      printf("GPIO Clicked !!\n");
+    while(1) {
+        if(TouchItOccurred == true) {
+            stm32_touch_printf_coord();
+            HAL_Delay(50);
+        }
+        HAL_Delay(100);
     }
-
-    if(TouchItOccurred == true)
-    {
-      TouchItOccurred = false;
-      stm32_touch_printf_coord();
-    }
-
-    usleep(500000);
-  }
-	return 0;
+    return 0;
 }
 
 
