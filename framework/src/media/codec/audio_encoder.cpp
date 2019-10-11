@@ -49,19 +49,6 @@ typedef struct priv_data_s *priv_data_p;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static size_t _input_callback(void *data, rbstream_p rbsp)
-{
-	audio_encoder_p encoder = (audio_encoder_p) data;
-	assert(encoder != NULL);
-
-	size_t wlen = 0;
-	RETURN_VAL_IF_FAIL((encoder->input_func != NULL), wlen);
-	wlen = encoder->input_func(encoder->cb_data, encoder);
-
-	return wlen;
-}
-
 static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 {
 	priv_data_p priv = (priv_data_p) encoder->priv_data;
@@ -192,9 +179,6 @@ int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type
 	RETURN_VAL_IF_FAIL(audio_encoder_check_audio_type(audio_type), AUDIO_ENCODER_ERROR);
 
 	encoder->audio_type = audio_type;
-	encoder->cb_data = NULL;
-	encoder->input_func = NULL;
-
 	// init private data
 	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
 	RETURN_VAL_IF_FAIL((priv != NULL), AUDIO_ENCODER_ERROR);
@@ -206,19 +190,10 @@ int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type
 
 	// init ring-buffer and open it as a stream
 	rb_init(&encoder->ringbuffer, rbuf_size);
-	encoder->rbsp = rbs_open(&encoder->ringbuffer, _input_callback, (void *)encoder);
+	encoder->rbsp = rbs_open(&encoder->ringbuffer);
 	RETURN_VAL_IF_FAIL((encoder->rbsp != NULL), AUDIO_ENCODER_ERROR);
 
 	rbs_ctrl(encoder->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
-	return AUDIO_ENCODER_OK;
-}
-
-int audio_encoder_register_callbacks(audio_encoder_p encoder, void *user_data, input_func_f input_func)
-{
-	// init encoder data
-	encoder->cb_data = user_data;
-	encoder->input_func = input_func;
-
 	return AUDIO_ENCODER_OK;
 }
 
