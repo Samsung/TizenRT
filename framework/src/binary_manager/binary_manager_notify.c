@@ -32,9 +32,10 @@ int binary_manager_notify_binary_started(void)
 	int ret;
 	binmgr_request_t request_msg;
 
-	request_msg.cmd = BINMGR_NOTIFY_STARTED;
-	request_msg.requester_pid = getpid();
-	snprintf(request_msg.data.bin_name, BIN_NAME_MAX, "%s", BINMGR_REQUEST_MQ);
+	ret = binary_manager_set_request(&request_msg, BINMGR_NOTIFY_STARTED, BINMGR_REQUEST_MQ);
+	if (ret < 0) {
+		return BINMGR_COMMUNICATION_FAIL;
+	}
 
 	ret = binary_manager_send_request(&request_msg);
 	if (ret < 0) {

@@ -24,9 +24,44 @@
 #include <errno.h>
 #include <debug.h>
 #include <sched.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <mqueue.h>
 #include <tinyara/binary_manager.h>
+
+int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg)
+{
+	if (request_msg == NULL) {
+		bmdbg("Invalid param\n");
+		return ERROR;
+	}
+
+	switch (cmd) {
+	case BINMGR_GET_INFO:
+	case BINMGR_NOTIFY_STARTED:
+	case BINMGR_UPDATE:
+		if (arg == NULL) {
+			bmdbg("Invalid param, cmd : %d\n", cmd);
+			return ERROR;
+		}
+		snprintf(request_msg->data.bin_name, BIN_NAME_MAX, "%s", (char *)arg);
+		break;
+	case BINMGR_REGISTER_STATECB:
+		if (arg == NULL) {
+			bmdbg("Invalid param, cmd : %d\n", cmd);
+			return ERROR;
+		}
+		request_msg->data.cb_info = (binmgr_cb_t *)arg;
+		break;
+	default:
+		break;
+	}
+
+	request_msg->cmd = cmd;
+	request_msg->requester_pid = getpid();
+
+	return OK;
+}
 
 int binary_manager_send_request(binmgr_request_t *request_msg)
 {
