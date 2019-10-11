@@ -1970,8 +1970,8 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint32_t readaddress;
 	struct smart_sect_header_s header;
 	uint8_t *sector_seq_log = NULL;
-	bool status_released, status_committed;
-	bool corrupted;
+	bool status_released;
+	bool status_committed;
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	int x;
 	char devname[22];
@@ -2015,7 +2015,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 	for (sector = 0; sector < totalsectors; sector++) {
 		winner = sector;
-		corrupted = false;
 		fvdbg("Scan sector %d\n", sector);
 
 		/* Calculate the read address for this sector. */
