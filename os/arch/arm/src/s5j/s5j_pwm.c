@@ -221,6 +221,28 @@ static int s5j_pwm_stop(FAR struct pwm_lowerhalf_s *dev)
 	return OK;
 }
 
+static int s5j_set_duty(FAR struct pwm_lowerhalf_s *dev, FAR const struct pwm_info_s *info)
+{
+	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
+	uint32_t tcntb;
+	uint32_t tcmpb;
+	uint32_t old_tcntb = pwm_getreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id));
+	uint32_t old_tcmpb = pwm_getreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id));
+
+	tcntb = pwm_clk_freq(priv) / info->frequency - 1;
+	tcmpb = (((uint64_t)(tcntb + 1) * info->duty) / 65536) - 1;
+
+	if (old_tcntb != tcntb) {
+		pwm_putreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id), tcntb);
+	}
+
+	if (old_tcmpb != tcmpb) {
+		pwm_putreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id), tcmpb);
+	}
+
+	return OK;
+}
+
 /****************************************************************************
  * Name: s5j_pwm_shutdown
  *
@@ -318,6 +340,7 @@ static const struct pwm_ops_s g_pwm_ops = {
 	.start		= s5j_pwm_start,
 	.stop		= s5j_pwm_stop,
 	.ioctl		= s5j_pwm_ioctl,
+	.set_duty	= s5j_set_duty,
 };
 
 #ifdef CONFIG_S5J_PWM0

@@ -213,6 +213,10 @@ struct pwm_ops_s {
 	/* Lower-half logic may support platform-specific ioctl commands */
 
 	CODE int (*ioctl)(FAR struct pwm_lowerhalf_s *dev, int cmd, unsigned long arg);
+
+	/* Change the duty cycle of pulsed output */
+
+	CODE int (*set_duty)(FAR struct pwm_lowerhalf_s *dev, FAR const struct pwm_info_s *info);
 };
 
 /* This structure is the generic form of state structure used by lower half

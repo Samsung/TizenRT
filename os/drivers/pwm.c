@@ -463,7 +463,7 @@ static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_PWM_PULSECOUNT
 			ret = lower->ops->start(lower, &upper->info, upper);
 #else
-			ret = lower->ops->start(lower, &upper->info);
+			ret = lower->ops->set_duty(lower, &upper->info);
 #endif
 		}
 	}
