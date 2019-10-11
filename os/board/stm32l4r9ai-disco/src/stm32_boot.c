@@ -64,6 +64,8 @@
 
 void board_initialize(void)
 {
+  up_hal_timer_initialize();
+
   /* Configure on-board LEDs if LED support has been selected. */
 #ifdef CONFIG_ARCH_LEDS
     board_led_initialize();

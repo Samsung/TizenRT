@@ -52,6 +52,7 @@
 
 #include "chip.h"
 #include "stm32l4.h"
+#include "stm32l4xx_hal_interface.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -101,7 +102,6 @@ int up_timerisr(int irq, uint32_t *regs)
 {
     /* Process timer interrupt */
     sched_process_timer();
-    HAL_IncTick();
 
     return 0;
 }
@@ -160,6 +160,16 @@ void up_timer_initialize(void)
   up_enable_irq(STM32L4_IRQ_SYSTICK);
 }
 
+
+/****************************************************************************
+ * Function:  arm_timer_initialize
+ *
+ * Description:
+ *   This function is called during start-up to initialize
+ *   the timer interrupt.
+ *
+ ****************************************************************************/
+
 int up_sys_timerisr(int irq, uint32_t *regs)
 {
     HAL_IncTick();
@@ -210,5 +220,59 @@ void up_sys_timer_deinitialize(void)
     up_disable_irq(STM32L4_IRQ_SYSTICK);
 }
 
+/****************************************************************************
+ * Function:  arm_timer_initialize
+ *
+ * Description:
+ *   This function is called during start-up to initialize
+ *   the timer interrupt.
+ *
+ ****************************************************************************/
+static TIM_HandleTypeDef htim17;
+
+int up_hal_timerisr(int irq, uint32_t *regs)
+{
+  __HAL_TIM_CLEAR_IT(&htim17, TIM_IT_UPDATE);
+  HAL_IncTick();
+  return 0;
+}
+
+void up_hal_timer_initialize(void)
+{
+  __HAL_RCC_TIM17_CLK_ENABLE();
+
+  htim17.Instance = TIM17;
+  htim17.Init.Prescaler = 1200 - 1;
+  htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim17.Init.Period = 100 - 1;
+  htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim17.Init.RepetitionCounter = 0;
+  htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+  if(HAL_TIM_Base_Init(&htim17) != HAL_OK)
+  {
+    printf("HAL TIM Base Init Error 1\n");
+  }
+
+  HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM17_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+
+  (void)irq_attach(STM32L4_IRQ_TIM17, (xcpt_t)up_hal_timerisr, NULL);
+  up_enable_irq(STM32L4_IRQ_TIM17);
+
+  if(HAL_TIM_Base_Start_IT(&htim17) != HAL_OK)
+  {
+    printf("HAL TIM Base Start IT Error 2\n");
+  }
+}
+
+
+void up_hal_timer_deinitialize(void)
+{
+  __HAL_RCC_TIM17_CLK_DISABLE();
+  HAL_NVIC_DisableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+  (void)irq_detach(STM32L4_IRQ_TIM17);
+  up_disable_irq(STM32L4_IRQ_TIM17);
+}
 
 
