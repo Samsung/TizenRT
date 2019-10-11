@@ -274,13 +274,32 @@ error_out:
 	return ret;
 }
 
+static audio_manager_result_t control_audio_stream_device(const char *path, int cmd, unsigned long arg)
+{
+	int fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("Failed to open device path : %s errno : %d\n", path, get_errno());
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	int ret = ioctl(fd, cmd, arg);
+	if (ret < 0) {
+		meddbg("Fail to ioctl(%d, %d, %lu), errno : %d\n", fd, cmd, arg, get_errno());
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+	} else {
+		ret = AUDIO_MANAGER_SUCCESS;
+	}
+
+	close(fd);
+	return ret;
+}
+
 static audio_manager_result_t get_supported_capability(audio_io_direction_t direct, unsigned int *channel)
 {
 	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
 	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	int fd;
+	audio_manager_result_t ret;
 
 	if (direct == INPUT) {
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
@@ -296,26 +315,13 @@ static audio_manager_result_t get_supported_capability(audio_io_direction_t dire
 
 	pthread_mutex_lock(&(card->card_mutex));
 
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
-		goto errout;
+	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		*channel = caps_desc.caps.ac_channels;
+		card->resample.samprate_types = caps_desc.caps.ac_controls.b[0];
+		medvdbg("Samprate_type : %d,  Channel_num : %d\n\n", card->resample.samprate_types, *channel);
 	}
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
-		meddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
-		goto errout_with_fd;
-	}
-
-	*channel = caps_desc.caps.ac_channels;
-	card->resample.samprate_types = caps_desc.caps.ac_controls.b[0];
-	medvdbg("Samprate_type : %d,  Channel_num : %d\n\n", card->resample.samprate_types, *channel);
-
-errout_with_fd:
-	close(fd);
-errout:
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 }
@@ -492,7 +498,6 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	int fd;
 	struct audio_caps_desc_s caps_desc;
 	uint8_t max_volume;
 	uint8_t cur_volume;
@@ -516,36 +521,24 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 	get_card_path(card_path, card->card_id, card->device_id, direct);
 
 	pthread_mutex_lock(card_mutex);
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
-		goto errout;
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		max_volume = caps_desc.caps.ac_controls.hw[0];
+		cur_volume = caps_desc.caps.ac_controls.hw[1];
+
+		/* scale here */
+		medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
+		cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
+		if (cur_volume > AUDIO_DEVICE_MAX_VOLUME) {
+			cur_volume = AUDIO_DEVICE_MAX_VOLUME;
+		}
+		config = &card->config[card->device_id];
+		config->max_volume = max_volume;
+		config->volume = cur_volume;
+		medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
 	}
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
-		meddbg("An ioctl error occurs\n");
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
-		goto errout_with_fd;
-	}
-
-	max_volume = caps_desc.caps.ac_controls.hw[0];
-	cur_volume = caps_desc.caps.ac_controls.hw[1];
-
-	/* scale here */
-	medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
-	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
-	if (cur_volume > AUDIO_DEVICE_MAX_VOLUME) {
-		cur_volume = AUDIO_DEVICE_MAX_VOLUME;
-	}
-	config = &card->config[card->device_id];
-	config->max_volume = max_volume;
-	config->volume = cur_volume;
-	medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
-
-errout_with_fd:
-	close(fd);
-errout:
 	pthread_mutex_unlock(card_mutex);
 	return ret;
 }
@@ -553,7 +546,6 @@ errout:
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume)
 {
 	audio_manager_result_t ret;
-	int fd;
 	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
 	audio_config_t *config;
@@ -588,31 +580,18 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 	get_card_path(card_path, card->card_id, card->device_id, direct);
 
 	pthread_mutex_lock(card_mutex);
-	fd = open(card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open device path : %s type : %d errno : %d\n", card_path, direct, errno);
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
-		goto errout;
-	}
 
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
-	if (ret < 0) {
-		meddbg("Fail to set a volume, ret = %d errno : %d\n", ret, errno);
-		if (errno == EACCES) {
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		config->volume = volume;
+		medvdbg("Volume = %d (%d)\n", volume, caps_desc.caps.ac_controls.hw[0]);
+	} else {
+		meddbg("Fail to set a volume, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
-		} else {
-			ret = AUDIO_MANAGER_DEVICE_FAIL;
 		}
-		goto errout_with_fd;
 	}
 
-	ret = AUDIO_MANAGER_SUCCESS;
-	config->volume = volume;
-	medvdbg("Volume = %d (%d)\n", volume, caps_desc.caps.ac_controls.hw[0]);
-
-errout_with_fd:
-	close(fd);
-errout:
 	pthread_mutex_unlock(card_mutex);
 	return ret;
 }
@@ -1474,10 +1453,10 @@ uint8_t get_subprocess_type_audio_param_value(device_process_subtype_t type)
 
 static audio_manager_result_t get_supported_process_type(int card_id, int device_id, audio_io_direction_t direct)
 {
-	int fd;
 	struct audio_caps_desc_s caps_desc;
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 	audio_card_info_t *card;
+	audio_manager_result_t ret;
 
 	if (direct == OUTPUT) {		// TODO add output logic in future.
 		medvdbg("Do not support output for now...\n");
@@ -1492,26 +1471,15 @@ static audio_manager_result_t get_supported_process_type(int card_id, int device
 	caps_desc.caps.ac_subtype = AUDIO_PU_UNDEF;
 
 	pthread_mutex_lock(&(card->card_mutex));
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
+
+	ret = control_audio_stream_device(path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		card->config[device_id].device_process_type = caps_desc.caps.ac_controls.b[0];
+		medvdbg("process type = 0x%x\n", card->config[device_id].device_process_type);
 	}
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
-		meddbg("An ioctl error occurs\n");
-		close(fd);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_DEVICE_FAIL;
-	}
-
-	card->config[device_id].device_process_type = caps_desc.caps.ac_controls.b[0];
-	close(fd);
 	pthread_mutex_unlock(&(card->card_mutex));
-	medvdbg("process type = 0x%x\n", card->config[device_id].device_process_type);
-
-	return AUDIO_MANAGER_SUCCESS;
+	return ret;
 }
 
 /* TODO below functions should be changed,
@@ -1519,7 +1487,6 @@ static audio_manager_result_t get_supported_process_type(int card_id, int device
 audio_manager_result_t find_stream_in_device_with_process_type(device_process_type_t type, device_process_subtype_t subtype, int *card_id, int *device_id)
 {
 	int i, j;
-	int fd;
 	uint8_t process_type;
 	uint8_t subprocess_type;
 	audio_manager_result_t ret;
@@ -1570,17 +1537,9 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 			if ((process_type & card->config[j].device_process_type) != 0) {
 				get_card_path(path, i, j, INPUT);
 				pthread_mutex_lock(&(card->card_mutex));
-				fd = open(path, O_RDONLY);
-				if (fd < 0) {
-					medvdbg("open failed, path : %s process type : 0x%x errno %d\n", path, type, errno);
-					/* open failed but check next one anyway */
-					pthread_mutex_unlock(&(card->card_mutex));
-					continue;
-				}
 
-				if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
+				if (control_audio_stream_device(path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 					medvdbg("An ioctl error occurs, find next anyway\n");
-					close(fd);
 					/* ioctl failed, try next one */
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
@@ -1590,12 +1549,10 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 				if ((subprocess_type & caps_desc.caps.ac_controls.b[0]) != 0) {
 					*card_id = i;
 					*device_id = j;
-					close(fd);
 					pthread_mutex_unlock(&(card->card_mutex));
 					medvdbg("found! card_id : %d device_id : %d subtype : %d\n", *card_id, *device_id, subtype);
 					return AUDIO_MANAGER_SUCCESS;
 				}
-				close(fd);
 				pthread_mutex_unlock(&(card->card_mutex));
 			}
 		}
@@ -1608,7 +1565,6 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 audio_manager_result_t request_stream_in_device_process_type(int card_id, int device_id, int cmd, device_process_subtype_t subtype)
 {
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	int fd;
 	audio_card_info_t *card;
 	audio_config_t *config;
 	uint8_t subprocess_type;
@@ -1624,22 +1580,12 @@ audio_manager_result_t request_stream_in_device_process_type(int card_id, int de
 
 	get_card_path(path, card_id, device_id, INPUT);
 	pthread_mutex_lock(&(card->card_mutex));
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
 
 	subprocess_type = get_subprocess_type_audio_param_value(subtype);
-	ret = ioctl(fd, cmd, subprocess_type);
-	close(fd);
+	ret = control_audio_stream_device(path, cmd, subprocess_type);
 	pthread_mutex_unlock(&(card->card_mutex));
-	if (ret < 0) {
-		meddbg("Failed to start process ret : %d\n", ret);
-		return AUDIO_MANAGER_DEVICE_FAIL;
-	}
-	return AUDIO_MANAGER_SUCCESS;
+
+	return ret;
 }
 
 audio_manager_result_t start_stream_in_device_process_type(int card_id, int device_id, device_process_subtype_t subtype)
@@ -1674,7 +1620,6 @@ audio_manager_result_t stop_stream_in_device_process_type(int card_id, int devic
 audio_manager_result_t register_stream_in_device_process_type(int card_id, int device_id, device_process_type_t type, device_process_subtype_t subtype)
 {
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	int fd;
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
 	uint8_t process_type;
@@ -1685,12 +1630,6 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 	get_card_path(path, card_id, device_id, INPUT);
 
 	pthread_mutex_lock(&(card->card_mutex));
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
 	process_type = get_process_type_audio_param_value(type);
 
 	subprocess_type = get_subprocess_type_audio_param_value(subtype);
@@ -1699,7 +1638,8 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 	cap_desc.caps.ac_subtype = process_type;
 	cap_desc.caps.ac_controls.w = subprocess_type;
 
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&cap_desc);
+	ret = control_audio_stream_device(path, AUDIOIOC_CONFIGURE, (unsigned long)&cap_desc);
+	pthread_mutex_unlock(&(card->card_mutex));
 	if (ret < 0) {
 		if (errno == EINVAL) {
 			meddbg("Device doesn't support it!\n");
@@ -1708,12 +1648,9 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 			meddbg("ioctl failed ret : %d\n", ret);
 			ret = AUDIO_MANAGER_OPERATION_FAIL;
 		}
-		close(fd);
-		pthread_mutex_unlock(&(card->card_mutex));
 		return ret;
 	}
-	close(fd);
-	pthread_mutex_unlock(&(card->card_mutex));
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -1721,7 +1658,6 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 {
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 	char mq_path[AUDIO_DEVICE_PROCESS_QUEUE_PATH_LENGTH];
-	int fd;
 	audio_card_info_t *card;
 	audio_config_t *config;
 	uint8_t process_type;
@@ -1756,12 +1692,6 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	get_card_path(path, card_id, device_id, INPUT);
 
 	pthread_mutex_lock(&(card->card_mutex));
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
 
 	/* Create a message queue */
 	attr.mq_maxmsg = 16;
@@ -1773,8 +1703,7 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 	config->handler_refcnt = 1;
 
 	/* Register our message queue with the audio device */
-	ret = ioctl(fd, AUDIOIOC_REGISTERPROCESS, (unsigned long)config->process_handler);
-	close(fd);
+	ret = control_audio_stream_device(path, AUDIOIOC_REGISTERPROCESS, (unsigned long)config->process_handler);
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	if (ret < 0) {
@@ -1788,16 +1717,15 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 			meddbg("Register Handler Error : %d\n", ret);
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
 		}
-		return ret;
 	}
-	return AUDIO_MANAGER_SUCCESS;
+
+	return ret;
 }
 
 audio_manager_result_t unregister_stream_in_device_process(int card_id, int device_id)
 {
 	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 	audio_manager_result_t ret;
-	int fd;
 	audio_card_info_t *card;
 	audio_config_t *config;
 
@@ -1815,16 +1743,9 @@ audio_manager_result_t unregister_stream_in_device_process(int card_id, int devi
 	get_card_path(path, card_id, device_id, INPUT);
 
 	pthread_mutex_lock(&(card->card_mutex));
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Failed to open audio driver, path : %s errno : %d\n", path, errno);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
 
 	/* Register our message queue with the audio device */
-	ret = ioctl(fd, AUDIOIOC_UNREGISTERPROCESS, 0);
-	close(fd);
+	ret = control_audio_stream_device(path, AUDIOIOC_UNREGISTERPROCESS, 0);
 	pthread_mutex_unlock(&(card->card_mutex));
 	if (ret < 0) {
 		meddbg("Unregister Failed : %d\n", ret);
