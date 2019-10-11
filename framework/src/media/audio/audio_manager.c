@@ -923,21 +923,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 
 	if (card->resample.ratio != 1) {
 		if (rechanneling_ratio < 1) {	// Stereo -> Mono
-			int i = 0;
-			int len = (int)(card->resample.rechanneling_buffer_size / device_channel_num * rechanneling_ratio);
-			short *src = (short *)card->resample.rechanneling_buffer;
-			short *dst = (short *)data;
-
 			ret = resample_stream_in(card, card->resample.rechanneling_buffer, ret);
-
-			medvdbg("\n\tlen = %d\n", len);
-			for (i = 0; i < len / 2; i++) {
-				// New Mono Sample = (L Sample + R Sample) / 2,
-				// Use the average value simply.
-				for (int j = 0; j < 2; j++) {
-					dst[i * 2 + j] = (src[i * 2 * 2 + j] + src[i * 2 * 2 + 2 + j]) >> 1;
-				}
-			}
 		} else {
 			ret = resample_stream_in(card, data, (unsigned int)ret);
 		}
