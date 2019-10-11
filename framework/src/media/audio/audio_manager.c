@@ -1085,20 +1085,22 @@ error_with_lock:
 	return ret;
 }
 
-audio_manager_result_t pause_audio_stream_in(void)
+static audio_manager_result_t pause_audio_stream(int card_id)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
+	enum audio_card_status_e *status;
 
-	if (g_actual_audio_in_card_id < 0) {
+	if (card_id < 0) {
 		meddbg("Found no active input audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	card = &g_audio_in_cards[card_id];
+	status = &(card->config[card->device_id].status);
 
-	if (card->config[card->device_id].status != AUDIO_CARD_RUNNING) {
-		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
+	if (*status != AUDIO_CARD_RUNNING) {
+		meddbg("Card status is wrong status : %d\n", *status);
 		return AUDIO_MANAGER_INVALID_DEVICE;
 	}
 	pthread_mutex_lock(&(card->card_mutex));
@@ -1110,43 +1112,21 @@ audio_manager_result_t pause_audio_stream_in(void)
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
-	card->config[card->device_id].status = AUDIO_CARD_PAUSE;
+	*status = AUDIO_CARD_PAUSE;
 
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
 
+audio_manager_result_t pause_audio_stream_in(void)
+{
+	return pause_audio_stream(g_actual_audio_in_card_id);
+}
+
 audio_manager_result_t pause_audio_stream_out(void)
 {
-	audio_manager_result_t ret;
-	audio_card_info_t *card;
-
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-
-	if (card->config[card->device_id].status != AUDIO_CARD_RUNNING) {
-		meddbg("Card status is wrong status : %d\n", card->config[card->device_id].status);
-		return AUDIO_MANAGER_INVALID_DEVICE;
-	}
-	pthread_mutex_lock(&(card->card_mutex));
-
-	ret = ioctl(pcm_get_file_descriptor(card->pcm), AUDIOIOC_PAUSE, 0UL);
-	if (ret < 0) {
-		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
-		pthread_mutex_unlock(&(card->card_mutex));
-		return AUDIO_MANAGER_DEVICE_FAIL;
-	}
-
-	card->config[card->device_id].status = AUDIO_CARD_PAUSE;
-
-	pthread_mutex_unlock(&(card->card_mutex));
-
-	return AUDIO_MANAGER_SUCCESS;
+	return pause_audio_stream(g_actual_audio_out_card_id);
 }
 
 audio_manager_result_t stop_audio_stream_in(void)
