@@ -1064,18 +1064,20 @@ error_with_lock:
 	return ret;
 }
 
-static audio_manager_result_t pause_audio_stream(int card_id)
+static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
 	enum audio_card_status_e *status;
+	int card_id;
 
+	card_id = (direct == INPUT) ? g_actual_audio_in_card_id : g_actual_audio_out_card_id;
 	if (card_id < 0) {
-		meddbg("Found no active input audio card\n");
+		meddbg("Found no active audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	card = &g_audio_in_cards[card_id];
+	card = (direct == INPUT) ? (&g_audio_in_cards[card_id]) : (&g_audio_out_cards[card_id]);
 	status = &(card->config[card->device_id].status);
 
 	if (*status != AUDIO_CARD_RUNNING) {
@@ -1100,12 +1102,12 @@ static audio_manager_result_t pause_audio_stream(int card_id)
 
 audio_manager_result_t pause_audio_stream_in(void)
 {
-	return pause_audio_stream(g_actual_audio_in_card_id);
+	return pause_audio_stream(INPUT);
 }
 
 audio_manager_result_t pause_audio_stream_out(void)
 {
-	return pause_audio_stream(g_actual_audio_out_card_id);
+	return pause_audio_stream(OUTPUT);
 }
 
 audio_manager_result_t stop_audio_stream_in(void)
