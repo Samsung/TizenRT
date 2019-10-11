@@ -39,8 +39,8 @@
  * Private Declarations
  ****************************************************************************/
 
-struct s_header *compression_header;
-struct s_buffer buffers;
+static struct s_header *compression_header;
+static struct s_buffer buffers;
 
 /****************************************************************************
  * Private Functions
