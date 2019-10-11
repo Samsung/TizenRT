@@ -157,7 +157,7 @@ static int part_procfs_stat(FAR const char *relpath, FAR struct stat *buf);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-struct mtd_partition_s *g_pfirstpartition = NULL;
+static struct mtd_partition_s *g_pfirstpartition = NULL;
 
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_PROCFS_EXCLUDE_PARTITIONS)
 const struct procfs_operations part_procfsoperations = {

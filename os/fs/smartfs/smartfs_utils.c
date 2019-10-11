@@ -1899,6 +1899,7 @@ errout_with_semaphore:
 }
 #endif
 
+#ifdef CONFIG_SMARTFS_JOURNALING
 int execute_unfinished_journal_data(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *journal)
 {
 	int ret;
@@ -1966,7 +1967,6 @@ int execute_unfinished_journal_data(struct smartfs_mountpt_s *fs, struct journal
 	return ret;
 }
 
-#ifdef CONFIG_SMARTFS_JOURNALING
 /****************************************************************************
  * Name: smartfs_journal_init
  *
