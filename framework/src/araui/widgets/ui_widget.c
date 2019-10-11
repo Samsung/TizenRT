@@ -871,9 +871,9 @@ static void _ui_widget_set_pivot_point_func(void *userdata)
 	info->body->pivot_x = info->x;
 	info->body->pivot_y = info->y;
 
-	UI_FREE(info);
+	info->body->update_flag = true;
 
-	// todo: Add redraw list
+	UI_FREE(info);
 }
 
 ui_error_t ui_widget_set_scale(ui_widget_t widget, float scale_x, float scale_y)
@@ -914,7 +914,7 @@ static void _ui_widget_set_scale_func(void *userdata)
 	info->body->scale_x = info->scale_x;
 	info->body->scale_y = info->scale_y;
 
-	// todo: Add redraw list
+	info->body->update_flag = true;
 
 	UI_FREE(info);
 }
