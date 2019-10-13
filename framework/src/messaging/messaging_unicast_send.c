@@ -44,6 +44,8 @@ static int messaging_send_param_validation(const char *port_name, msg_send_data_
 		msgdbg("[Messaging] unicast send sync fail : invalid param of send data.\n");
 		return ERROR;
 	}
+
+	return OK;
 }
 static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 {
