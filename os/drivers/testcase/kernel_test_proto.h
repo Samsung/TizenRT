@@ -18,5 +18,13 @@
 
 #ifndef __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
 #define __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
-int test_task_init(main_t entry);
+int test_task(int cmd, unsigned long arg);
+int test_sem(int cmd, unsigned long arg);
+int test_group(int cmd, unsigned long arg);
+int test_clock(int cmd, unsigned long arg);
+int test_timer(int cmd, unsigned long arg);
+int test_sched(int cmd, unsigned long arg);
+#ifndef CONFIG_DISABLE_SIGNALS
+int test_signal(int cmd, unsigned long arg);
+#endif
 #endif

@@ -20,6 +20,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -27,11 +28,13 @@
 #include <errno.h>
 #include <debug.h>
 #include <sched.h>
-
 #include <tinyara/sched.h>
-#include <tinyara/kmalloc.h>
-
-#include "sched/sched.h"
+#include <tinyara/testcase_drv.h>
+#include <sched/sched.h>
+#ifdef CONFIG_SCHED_HAVE_PARENT
+#include <group/group.h>
+#endif
+#include "kernel_test_proto.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -42,18 +45,47 @@
 #define TEST_TASK_NAME  ("test_taskinit")
 
 /****************************************************************************
- * Global Variables
+ * Private Function
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+static int test_task_reparent(unsigned long arg)
+{
+#ifdef CONFIG_SCHED_HAVE_PARENT
+	int ret;
+	int pid;
+	int before_parent_id = 0;
+	int after_parent_id = 0;
+	struct tcb_s *child_tcb;
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
+	pid = getpid();
+	child_tcb = sched_gettcb(pid);
+	if (child_tcb == NULL) {
+		return ERROR;
+	}
+#ifdef HAVE_GROUP_MEMBERS
+	before_parent_id = child_tcb->group->tg_pgid;
+#else
+	before_parent_id = child_tcb->group->tg_ppid;
+#endif
 
-int test_task_init(main_t entry)
+	ret = task_reparent((int)arg, pid);
+	if (ret != OK) {
+		return ERROR;
+	}
+
+#ifdef HAVE_GROUP_MEMBERS
+	after_parent_id = child_tcb->group->tg_pgid;
+#else
+	after_parent_id = child_tcb->group->tg_ppid;
+#endif
+	if (before_parent_id == after_parent_id) {
+		return ERROR;
+	}
+#endif
+	return OK;
+}
+
+static int test_task_init(main_t entry)
 {
 	struct task_tcb_s *tcb;
 	uint32_t *stack;
@@ -108,5 +140,23 @@ errout_with_stack:
 
 errout_with_tcb:
 	kmm_free(tcb);
+	return ret;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+int test_task(int cmd, unsigned long arg)
+{
+	int ret = -EINVAL;
+	switch (cmd) {
+	case TESTIOC_TASK_REPARENT:
+		ret = test_task_reparent(arg);
+		break;
+	case TESTIOC_TASK_INIT_TEST:
+		ret = test_task_init((main_t)arg);
+		break;
+	}
 	return ret;
 }
