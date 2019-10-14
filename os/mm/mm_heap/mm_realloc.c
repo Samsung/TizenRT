@@ -59,12 +59,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/sched.h>
 #endif
 #include <tinyara/mm/mm.h>
+#include "mm_node.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -267,11 +267,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			 * there may not be a successor node.
 			 */
 
-			DEBUGASSERT(prev->blink);
-			prev->blink->flink = prev->flink;
-			if (prev->flink) {
-				prev->flink->blink = prev->blink;
-			}
+			REMOVE_NODE_FROM_LIST(prev);
 
 			/* Extend the node into the previous free chunk */
 			/* Did we consume the entire preceding chunk? */
@@ -325,11 +321,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			 * may not be a successor node.
 			 */
 
-			DEBUGASSERT(next->blink);
-			next->blink->flink = next->flink;
-			if (next->flink) {
-				next->flink->blink = next->blink;
-			}
+			REMOVE_NODE_FROM_LIST(next);
 
 			/* Extend the node into the next chunk */
 			/* Did we consume the entire preceding chunk? */
