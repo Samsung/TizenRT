@@ -530,8 +530,6 @@ uint8_t stm32l4_fmc_psram_initialize(void)
   {
     static FMC_NORSRAM_TimingTypeDef Timing;
 
-    printf("PSRAM initialize\n");
-
     /* PSRAM device configuration */
     /* Timing configuration derived from system clock (up to 120Mhz)
     for 60Mhz as PSRAM clock frequency */

@@ -84,15 +84,8 @@ struct dsi_ops_s {
     uint8_t (*config)(void);
     void (*enable)(void);
     void (*disable)(void);
-    uint8_t (*swrite)(uint32_t ChannelID,
-                   uint32_t Mode,
-                   uint32_t Param1,
-                   uint32_t Param2);
-    uint8_t (*lwrite)(uint32_t ChannelID,
-                   uint32_t Mode,
-                   uint32_t NbParams,
-                   uint32_t Praram1,
-                   uint8_t *ParametersTable)
+    void (*refresh)(void);
+    
 };
 /************************************************************************************
  * Public Data

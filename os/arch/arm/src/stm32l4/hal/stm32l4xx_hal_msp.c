@@ -159,7 +159,7 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
   PeriphClkInit.PLLSAI2.PLLSAI2Source = RCC_PLLSOURCE_MSI;
   PeriphClkInit.PLLSAI2.PLLSAI2M = 1;
-  PeriphClkInit.PLLSAI2.PLLSAI2N = 60;
+  PeriphClkInit.PLLSAI2.PLLSAI2N = 20;//60; /* Change to 20 from 60 for asynchronoce PSRAM embedded on STM32L4R9IDISCO
   PeriphClkInit.PLLSAI2.PLLSAI2R = RCC_PLLR_DIV4;
   PeriphClkInit.LtdcClockSelection = RCC_LTDCCLKSOURCE_PLLSAI2_DIV4;
   PeriphClkInit.PLLSAI2.PLLSAI2ClockOut = RCC_PLLSAI2_LTDCCLK;
@@ -169,10 +169,10 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
   }
 
   /* NVIC configuration for LTDC interrupts that are now enabled */
-  //  HAL_NVIC_SetPriority(LTDC_IRQn, 3, 0);
-  //  HAL_NVIC_EnableIRQ(LTDC_IRQn);
-  //  HAL_NVIC_SetPriority(LTDC_ER_IRQn, 3, 0);
-  //  HAL_NVIC_EnableIRQ(LTDC_ER_IRQn);
+  HAL_NVIC_SetPriority(LTDC_IRQn, 0x05, 0);
+  HAL_NVIC_EnableIRQ(LTDC_IRQn);
+  HAL_NVIC_SetPriority(LTDC_ER_IRQn, 0x05, 0);
+  HAL_NVIC_EnableIRQ(LTDC_ER_IRQn);
 }
 
 /**
@@ -215,7 +215,7 @@ void HAL_DSI_MspInit(DSI_HandleTypeDef *hdsi)
   }
 
   /* NVIC configuration for DSI interrupt that is now enabled */
-  HAL_NVIC_SetPriority(DSI_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(DSI_IRQn, 0x05, 0);
   HAL_NVIC_EnableIRQ(DSI_IRQn);
 }
 

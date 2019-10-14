@@ -324,7 +324,7 @@
 #define STM32_LTDC_BUFFER_START (CONFIG_STM32L4_LTDC_FB_BASE + STM32_LTDC_BUFFER_FREE/2)
 
 #if STM32_LTDC_BUFFER_FREE < 0
-#error "STM32_LTDC_BUFFER_SIZE not large enough for frame buffers"
+//#error "STM32_LTDC_BUFFER_SIZE not large enough for frame buffers"
 #endif
 
 /* Layer frame buffer */
@@ -2949,10 +2949,21 @@ FAR struct ltdc_layer_s *stm32_ltdcgetlayer(int lid)
  *
  ****************************************************************************/
 #ifdef USE_HAL_DRIVER
+/* Physical frame buffer for background and foreground layers */
+/* 390*390 pixels with 32bpp - 20% */
+#if defined ( __ICCARM__ )  /* IAR Compiler */
+#pragma data_alignment = 16
+uint32_t              PhysFrameBuffer[121680];
+#elif defined (__GNUC__)    /* GNU Compiler */
+uint32_t              PhysFrameBuffer[121680] __attribute__ ((aligned (16)));
+#else                       /* ARM Compiler */
+__align(16) uint32_t  PhysFrameBuffer[121680];
+#endif
+#define BUFFER_ADD (0x60000000UL)
 uint8_t stm32l4_ltdc_initialize(void)
 {
-    //    (void)irq_attach(STM32L4_IRQ_LCD_TFT, (xcpt_t)up_ltdc_isr, NULL);
-    //    (void)irq_attach(STM32L4_IRQ_LCD_TFT_ER, (xcpt_t)up_ltdc_er_isr, NULL);
+    (void)irq_attach(STM32L4_IRQ_LCD_TFT, (xcpt_t)up_ltdc_isr, NULL);
+    (void)irq_attach(STM32L4_IRQ_LCD_TFT_ER, (xcpt_t)up_ltdc_er_isr, NULL);
 
     __HAL_LTDC_RESET_HANDLE_STATE(&hltdc);
     hltdc.Instance = LTDC;
@@ -2981,12 +2992,12 @@ uint8_t stm32l4_ltdc_initialize(void)
     hlayer.WindowX1        = 390;
     hlayer.WindowY0        = 0;
     hlayer.WindowY1        = 390;
-    hlayer.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;//LTDC_PIXEL_FORMAT_RGB565;//LTDC_PIXEL_FORMAT_RGB888;
+    hlayer.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;
     hlayer.Alpha           = 0xFF; /* NU default value */
     hlayer.Alpha0          = 0; /* NU default value */
     hlayer.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA; /* Not Used: default value */
     hlayer.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA; /* Not Used: default value */
-    hlayer.FBStartAdress   = STM32_LTDC_BUFFER_START;
+    hlayer.FBStartAdress   = (uint32_t)(0x60000000);//PhysFrameBuffer;
     hlayer.ImageWidth      = 390; /* virtual frame buffer contains 768 pixels per line for 24bpp */
     /* (192 blocs * 16) / (24bpp/3) = 1024 pixels per ligne        */
     hlayer.ImageHeight     = 390;
@@ -2997,6 +3008,7 @@ uint8_t stm32l4_ltdc_initialize(void)
     if(HAL_LTDC_ConfigLayer(&hltdc, &hlayer, LTDC_LAYER_1) != HAL_OK) {
         return(LCD_ERROR);
     }
+    return LCD_OK;
 }
 #else
 int stm32l4_ltdc_initialize(void)
@@ -3130,7 +3142,6 @@ void stm32l4_backlight(bool blon)
 int up_ltdc_isr(int irq, uint32_t *regs)
 {
     HAL_LTDC_IRQHandler(&hltdc);
-    lowputc('1');
     return 0;
 }
 

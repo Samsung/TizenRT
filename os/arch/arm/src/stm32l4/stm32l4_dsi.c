@@ -123,6 +123,7 @@ static const struct dsi_ops_s g_dsiops = {
   .config  = stm32l4_dsi_config,
   .enable  = stm32l4_dsi_enable,
   .disable = stm32l4_dsi_disable,
+  .refresh = stm32_dsi_refresh,
 };
 
 uint8_t stm32l4_dsi_config(void)

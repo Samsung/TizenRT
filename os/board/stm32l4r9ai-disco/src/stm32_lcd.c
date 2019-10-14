@@ -42,6 +42,8 @@
 static uint8_t stm32l4r9i_lcd_initialize(void);
 FAR struct dma2d_layer_s *up_dma2ddev(void);
 
+extern uint32_t bsp_lcd_initialized;
+
 static uint8_t stm32l4r9i_lcd_initialize(void)
 {
     FAR struct stm32l4_lcd_s *lcd = NULL;
@@ -258,6 +260,7 @@ uint8_t stm32l4_lcdinitialize(void)
         return res;
     }
     printf("LCD Initialization done\n");
+    bsp_lcd_initialized = 1;
 
     return res;
 }

@@ -1272,7 +1272,6 @@ struct ospi_dev_s *stm32l4_ospi_initialize(int intf)
 
   if (intf == 0)
   {
-    printf("ospi intf: %d\n", intf);
     priv = &g_ospi0dev;
 
     if (!priv->initialized)

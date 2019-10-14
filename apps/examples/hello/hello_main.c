@@ -56,8 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <565_390x390.h>
-
+#include <image_390x390_rgb888.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
@@ -72,12 +71,13 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-    dma2d_copybuffer((uint32_t *)image_390x390_rgb565, NULL, 0, 0, 390, 390);
     printf("Hello, World!!\n");
 
+    dma2d_copybuffer((uint32_t *)image_390x390_rgb888, NULL, 0, 0, 390, 390);
+#if 0
     exflash_check();
     psram_check();
-
+#endif
     while(1) {
         if(TouchItOccurred == true) {
             stm32_touch_printf_coord();
