@@ -45,25 +45,15 @@
  * Global Variables
  ****************************************************************************/
 
-static int is_done;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static int test_task_entry(int argc, char *argv[])
-{
-	printf("test task entry\n");
-	is_done = true;
-
-	return OK;
-}
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int test_task_init(void)
+int test_task_init(main_t entry)
 {
 	struct task_tcb_s *tcb;
 	uint32_t *stack;
@@ -84,7 +74,7 @@ int test_task_init(void)
 
 	/* positive test */
 
-	ret = task_init((struct tcb_s *)tcb, (const char *)TEST_TASK_NAME, (int)TEST_PRIORITY, stack, TEST_STACK_SIZE, test_task_entry, NULL);
+	ret = task_init((struct tcb_s *)tcb, (const char *)TEST_TASK_NAME, (int)TEST_PRIORITY, stack, TEST_STACK_SIZE, entry, NULL);
 	if (ret < 0) {
 		berr("Failed: task_init %d\n", ret);
 		ret = -get_errno();
@@ -93,7 +83,7 @@ int test_task_init(void)
 
 	/* Check the TCB values */
 
-	if ((tcb->cmn.sched_priority != TEST_PRIORITY) || (tcb->cmn.stack_alloc_ptr != stack) || (tcb->cmn.entry.main != test_task_entry)) {
+	if ((tcb->cmn.sched_priority != TEST_PRIORITY) || (tcb->cmn.stack_alloc_ptr != stack) || (tcb->cmn.entry.main != entry)) {
 		berr("Failed: set values, %d, %x, %x %d\n", tcb->cmn.pid, tcb->cmn.stack_alloc_ptr, tcb->cmn.entry.main);
 		ret = -ENXIO;
 		goto errout_with_task;
@@ -104,12 +94,6 @@ int test_task_init(void)
 		berr("Failed : task_activate() %d\n", ret);
 		ret = -get_errno();
 		goto errout_with_task;
-	}
-
-	usleep(1);
-
-	if (is_done == false) {
-		ret = ERROR;
 	}
 
 	return ret;

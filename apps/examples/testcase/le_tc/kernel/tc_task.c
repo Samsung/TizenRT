@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <tinyara/sched.h>
 #include <tinyara/testcase_drv.h>
 #include "tc_internal.h"
@@ -55,6 +56,7 @@ static int main_pid;
 static volatile int task_cnt;
 static volatile pid_t ppid;
 #endif
+static bool task_init_flag;
 
 /**
 * @fn                   :create_task
@@ -173,6 +175,19 @@ static int onexit_task(int argc, char *argv[])
 static int getpid_task(int argc, char *argv[])
 {
 	g_callback = (int)getpid();
+	return OK;
+}
+
+/**
+* @fn                   :test_task_entry
+* @brief                :utility function for tc_task_task_init
+* @return               :int
+*/
+static int test_task_entry(int argc, char *argv[])
+{
+	printf("test task entry\n");
+	task_init_flag = true;
+
 	return OK;
 }
 
@@ -473,9 +488,25 @@ static void tc_task_task_reparent(void)
 }
 #endif
 
+/**
+* @fn                   :tc_task_task_init
+* @brief                :Initialize a Task Control Block (TCB)
+* @Scenario             :Create and Initialize a Task Control Block (TCB)
+* API's covered         :task_init
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
 static void tc_task_task_init(void)
 {
-	TC_ASSERT_EQ("task_init", ioctl(tc_get_drvfd(), TESTIOC_TASK_INIT_TEST, 0), OK);
+	task_init_flag = false;
+
+	TC_ASSERT_EQ("task_init", ioctl(tc_get_drvfd(), TESTIOC_TASK_INIT_TEST, (unsigned long)test_task_entry), OK);
+
+	usleep(1);
+
+	TC_ASSERT_EQ("task_init", task_init_flag, true);
+
 	TC_SUCCESS_RESULT();
 }
 

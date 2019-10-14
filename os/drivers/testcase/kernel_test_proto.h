@@ -18,5 +18,5 @@
 
 #ifndef __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
 #define __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
-int test_task_init(void);
+int test_task_init(main_t entry);
 #endif

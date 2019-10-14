@@ -673,7 +673,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	break;
 
 	case TESTIOC_TASK_INIT_TEST: {
-		ret = test_task_init();
+		ret = test_task_init((main_t)arg);
 	}
 	break;
 
