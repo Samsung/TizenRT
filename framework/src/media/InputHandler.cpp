@@ -253,7 +253,6 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 		meddbg("Channel can not be zero\n");
 		return false;
 	} else if (channels > 2) {
-		medvdbg("Set multiple channel %u to stereo forcely!\n", channels);
 		channels = 2;
 		getDataSource()->setChannels(channels);
 	}
