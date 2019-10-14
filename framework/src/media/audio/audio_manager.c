@@ -854,8 +854,6 @@ int start_audio_stream_in(void *data, unsigned int frames)
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
 			goto error_with_lock;
 		}
-
-		medvdbg("Resume the input audio card!!\n");
 	}
 
 	card->config[card->device_id].status = AUDIO_CARD_RUNNING;
@@ -981,7 +979,6 @@ int start_audio_stream_out(void *data, unsigned int frames)
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
 			goto error_with_lock;
 		}
-		medvdbg("Resume the output audio card!!\n");
 	}
 
 	if ((device_channel_num = pcm_get_channels(card->pcm)) == 0) {
@@ -1644,12 +1641,11 @@ audio_manager_result_t register_stream_in_device_process_type(int card_id, int d
 	pthread_mutex_unlock(&(card->card_mutex));
 	if (ret < 0) {
 		if (errno == EINVAL) {
-			meddbg("Device doesn't support it!\n");
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
-			meddbg("ioctl failed ret : %d\n", ret);
 			ret = AUDIO_MANAGER_OPERATION_FAIL;
 		}
+		meddbg("register process type failed, ret : %d\n", ret);
 		return ret;
 	}
 
@@ -1710,15 +1706,13 @@ audio_manager_result_t register_stream_in_device_process_handler(int card_id, in
 
 	if (ret < 0) {
 		if (errno == EBUSY) {
-			meddbg("Already Registered\n");
 			ret = AUDIO_MANAGER_DEVICE_ALREADY_IN_USE;
 		} else if (errno == EINVAL) {
-			meddbg("Device doesn't support it!\n");
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		} else {
-			meddbg("Register Handler Error : %d\n", ret);
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
 		}
+		meddbg("Register Process failed, ret : %d\n", ret);
 	}
 
 	return ret;

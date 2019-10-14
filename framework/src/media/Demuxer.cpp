@@ -39,7 +39,6 @@ std::shared_ptr<Demuxer> Demuxer::create(container_type_t containerType)
 		break;
 #endif
 	default:
-		meddbg("container type %d is not supported!\n", containerType);
 		break;
 	}
 
