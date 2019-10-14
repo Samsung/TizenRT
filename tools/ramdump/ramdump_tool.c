@@ -33,6 +33,9 @@
 #define BINFILE_NAME_SIZE	(40)
 #define KB_CHECK_COUNT		(16 * 1024)
 
+#define TTYPATH_LEN		25
+#define TTYTYPE_LEN		7
+
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
 
@@ -332,25 +335,41 @@ int main(int argc, char *argv[])
 	int dev_fd;
 	int dev_lock_fd;
 	char *dev_file;
+	char tty_path[TTYPATH_LEN] = {0, };
+	char tty_type[TTYTYPE_LEN] = {0, };
 
 	ret = 1;
 
 	if (argc < 2) {
 		printf("Usage: ./ramdump <device>\n");
-		printf("Ex   : ./ramdump /dev/ttyUSB1\n");
+		printf("Ex   : ./ramdump /dev/ttyUSB1   or\n");
+		printf("       ./ramdump /dev/ttyACM0\n");
 		return -1;
 	}
 
 	dev_file = argv[1];
 
-	if (access("/var/lock/LCK..ttyUSB1", F_OK) == 0) {
-		printf("Error : couldnt lock serial port device %s\n", "/dev/ttyUSB1");
+	/* Get the tty type  */
+	if (!strcmp(dev_file, "/dev/ttyUSB1")) {
+		strncpy(tty_type, "ttyUSB1", TTYTYPE_LEN);
+	} else if (!strcmp(dev_file, "/dev/ttyACM0")) {
+		strncpy(tty_type, "ttyACM0", TTYTYPE_LEN);
+	} else {
+		printf("Undefined tty %s\n", dev_file);
+		return -1;
+	}
+
+	/* Compose tty path  */
+	snprintf(tty_path, TTYPATH_LEN, "/var/lock/LCK..%s", tty_type);
+
+	if (access(tty_path, F_OK) == 0) {
+		printf("Error : couldnt lock serial port device %s\n", dev_file);
 		printf("Please close any other process using this port first\n");
 		goto lock_check_err;
 	}
 
 	if ((dev_fd = open(dev_file, O_RDWR | O_NOCTTY | O_SYNC)) == -1) {
-		printf("%s open failed\n", dev_file);
+		printf("%s open failed!!\nPlease enter correct device port\n", dev_file);
 		goto dev_open_err;
 	}
 
@@ -359,7 +378,7 @@ int main(int argc, char *argv[])
 		goto tty_config_err;
 	}
 
-	if ((dev_lock_fd = open("/var/lock/LCK..ttyUSB1", O_CREAT, S_IRWXU)) == -1) {
+	if ((dev_lock_fd = open(tty_path, O_CREAT, S_IRWXU)) == -1) {
 		printf("tty lock  failed\n");
 		goto tty_lock_err;
 	}
@@ -390,7 +409,7 @@ ramdump_err:
 handshake_err:
 dl_mode_err:
 dl_cmd_err:
-	remove("/var/lock/LCK..ttyUSB1");
+	remove(tty_path);
 	close(dev_lock_fd);
 
 tty_lock_err:

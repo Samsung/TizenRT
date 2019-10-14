@@ -46,7 +46,33 @@ After you see this message, you can upload the ramdump by following the step bel
 cd $TIZENRT_BASEDIR/tools/ramdump/
 ./ramdump.sh
 ```
-3. Ramdump Tool receives the ram contents from target.
+3. Ramdump Tool will prompt for user's input for device adapter connected to the linux machine.
+```
+Please enter serial port adapter:
+For example: /dev/ttyUSB0 or /dev/ttyACM0
+Enter:
+/dev/ttyUSB0
+/dev/ttyUSB0 open failed!!
+Please enter correct device port
+Enter:
+```
+4. After entering device adapter information, tool will prompt for regions to be dumped
+```
+Enter:
+/dev/ttyUSB1
+Target Handshake successful do_handshake
+Target entered to ramdump mode
+
+=========================================================================
+Ramdump Region Options:
+1. ALL  ( Address: 02023800, Size: 968704 )
+
+=========================================================================
+Please enter desired ramdump option as below:
+        1 for ALL
+Please enter your input: 
+```
+5. Ramdump Tool receives the ram contents from target.
 ```
 Target Handshake successful do_handshake
 Target entered to ramdump mode
