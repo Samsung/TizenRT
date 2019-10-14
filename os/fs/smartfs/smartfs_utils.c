@@ -766,152 +766,6 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
  *
  ****************************************************************************/
 
-static int search_entry(uint16_t *offset, struct smartfs_entry_header_s *entry, struct smart_read_write_s *readwrite, uint16_t entrysize, struct smartfs_mountpt_s *fs, const char *ptr, struct smartfs_entry_s *direntry, struct smartfs_chain_header_s *header, const char **filename, uint16_t *parentdirsector, uint16_t *dirstack, uint16_t *depth, uint16_t *dirsector, const char **segment)
-{
-	int ret;
-
-	while (*offset < readwrite->count) {
-		/* Test if this entry is valid and active */
-
-		if (!(ENTRY_VALID(entry))) {
-			/* This entry isn't valid, skip it */
-
-			*offset += entrysize;
-			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[*offset];
-
-			continue;
-		}
-
-		/* Test if the name matches */
-
-		if (strncmp(entry->name, fs->fs_workbuffer, fs->fs_llformat.namesize) == 0) {
-			/* We found it!  If this is the last segment entry,
-			 * then report the entry.  If it isn't the last
-			 * entry, then validate it is a directory entry and
-			 * open it and continue searching.
-			 */
-
-			if (*ptr == '\0') {
-				/* We are at the last segment.  Report the entry */
-
-				/* Fill in the entry */
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				direntry->firstsector = smartfs_rdle16(&entry->firstsector);
-				direntry->flags = smartfs_rdle16(&entry->flags);
-				direntry->utc = smartfs_rdle32(&entry->utc);
-#else
-				direntry->firstsector = entry->firstsector;
-				direntry->flags = entry->flags;
-				direntry->utc = entry->utc;
-#endif
-				direntry->dsector = readwrite->logsector;
-				direntry->doffset = *offset;
-				direntry->dfirst = dirstack[*depth];
-				if (direntry->name == NULL) {
-					direntry->name = (char *)kmm_malloc(fs->fs_llformat.namesize + 1);
-					if (direntry->name == NULL) {
-						return ERROR;
-					}
-				}
-
-				memset(direntry->name, 0, fs->fs_llformat.namesize + 1);
-				strncpy(direntry->name, entry->name, fs->fs_llformat.namesize);
-				direntry->datlen = 0;
-
-				/* Scan the file's sectors to calculate the length and perform
-				 * a rudimentary check.
-				 */
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
-					*dirsector = smartfs_rdle16(&entry->firstsector);
-#else
-				if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
-					*dirsector = entry->firstsector;
-#endif
-					readwrite->count = sizeof(struct smartfs_chain_header_s);
-					readwrite->buffer = (uint8_t *)fs->fs_rwbuffer;
-					readwrite->offset = 0;
-
-					while (*dirsector != SMARTFS_ERASEDSTATE_16BIT) {
-						/* Read the next sector of the file */
-
-						readwrite->logsector = *dirsector;
-						ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)readwrite);
-						if (ret < 0) {
-							fdbg("Error in sector chain at %d!\n", *dirsector);
-							break;
-						}
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-						if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-
-							readwrite->count = fs->fs_llformat.availbytes;
-							readwrite->buffer = (uint8_t *)fs->fs_chunk_buffer;
-
-							ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)readwrite);
-							if (ret < 0) {
-								fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
-								break;
-							}
-							used_value = get_leftover_used_byte_count((uint8_t *)readwrite->buffer, get_used_byte_count((uint8_t *)header->used));
-							direntry->datlen += used_value;
-						} else {
-							direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
-						}
-						readwrite->buffer = (uint8_t *)fs->fs_rwbuffer;
-#else
-						/* Add used bytes to the total and point to next sector */
-						if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
-							direntry->datlen += SMARTFS_USED(header);
-						}
-#endif
-						*dirsector = SMARTFS_NEXTSECTOR(header);
-					}
-				}
-				*parentdirsector = dirstack[*depth];
-				*filename = *segment;
-				return OK;
-			} else {
-				/* Validate it's a directory */
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
-#else
-				if ((entry->flags & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
-#endif
-				{
-					/* Not a directory!  Report the error */
-
-					return -ENOTDIR;
-				}
-
-				/* "Push" the directory and continue searching */
-
-				if (*depth >= CONFIG_SMARTFS_DIRDEPTH - 1) {
-					/* Directory depth too big */
-
-					return -ENAMETOOLONG;
-				}
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				dirstack[++(*depth)] = smartfs_rdle16(&entry->firstsector);
-#else
-				dirstack[++(*depth)] = entry->firstsector;
-#endif
-				*segment = ptr + 1;
-				break;
-			}
-		}
-
-		/* Not this entry.  Skip to the next one */
-
-		*offset += entrysize;
-		entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[*offset];
-	}
-
-	return 1;
-}
-
 int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename)
 {
 	int ret = -ENOENT;
@@ -1031,9 +885,150 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 				offset = sizeof(struct smartfs_chain_header_s);
 				entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
-				ret = search_entry(&offset, entry, &readwrite, entrysize, fs, ptr, direntry, header, filename, parentdirsector, dirstack, &depth, &dirsector, &segment);
-				if (ret <= 0) {
-					goto errout;
+				while (offset < readwrite.count) {
+					/* Test if this entry is valid and active */
+
+					if (!(ENTRY_VALID(entry))) {
+						/* This entry isn't valid, skip it */
+
+						offset += entrysize;
+						entry = (struct smartfs_entry_header_s *)
+								&fs->fs_rwbuffer[offset];
+
+						continue;
+					}
+
+					/* Test if the name matches */
+
+					if (strncmp(entry->name, fs->fs_workbuffer, fs->fs_llformat.namesize) == 0) {
+						/* We found it!  If this is the last segment entry,
+						 * then report the entry.  If it isn't the last
+						 * entry, then validate it is a directory entry and
+						 * open it and continue searching.
+						 */
+
+						if (*ptr == '\0') {
+							/* We are at the last segment.  Report the entry */
+
+							/* Fill in the entry */
+
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+							direntry->firstsector = smartfs_rdle16(&entry->firstsector);
+							direntry->flags = smartfs_rdle16(&entry->flags);
+							direntry->utc = smartfs_rdle32(&entry->utc);
+#else
+							direntry->firstsector = entry->firstsector;
+							direntry->flags = entry->flags;
+							direntry->utc = entry->utc;
+#endif
+							direntry->dsector = readwrite.logsector;
+							direntry->doffset = offset;
+							direntry->dfirst = dirstack[depth];
+							if (direntry->name == NULL) {
+								direntry->name = (char *)kmm_malloc(fs->fs_llformat.namesize + 1);
+								if (direntry->name == NULL) {
+									ret = ERROR;
+									goto errout;
+								}
+							}
+
+							memset(direntry->name, 0, fs->fs_llformat.namesize + 1);
+							strncpy(direntry->name, entry->name, fs->fs_llformat.namesize);
+							direntry->datlen = 0;
+
+							/* Scan the file's sectors to calculate the length and perform
+							 * a rudimentary check.
+							 */
+
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+							if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
+								dirsector = smartfs_rdle16(&entry->firstsector);
+#else
+							if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
+								dirsector = entry->firstsector;
+#endif
+								readwrite.count = sizeof(struct smartfs_chain_header_s);
+								readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+								readwrite.offset = 0;
+
+								while (dirsector != SMARTFS_ERASEDSTATE_16BIT) {
+									/* Read the next sector of the file */
+
+									readwrite.logsector = dirsector;
+									ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+									if (ret < 0) {
+										fdbg("Error in sector chain at %d!\n", dirsector);
+										break;
+									}
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+									if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
+
+										readwrite.count = fs->fs_llformat.availbytes;
+										readwrite.buffer = (uint8_t *)fs->fs_chunk_buffer;
+
+										ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+										if (ret < 0) {
+											fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+											break;
+										}
+										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
+										direntry->datlen += used_value;
+									} else {
+										direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+									}
+									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+#else
+									/* Add used bytes to the total and point to next sector */
+									if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
+										direntry->datlen += SMARTFS_USED(header);
+									}
+#endif
+									dirsector = SMARTFS_NEXTSECTOR(header);
+								}
+							}
+
+							*parentdirsector = dirstack[depth];
+							*filename = segment;
+							ret = OK;
+							goto errout;
+						} else {
+							/* Validate it's a directory */
+
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+							if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
+#else
+							if ((entry->flags & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
+#endif
+							{
+								/* Not a directory!  Report the error */
+
+								ret = -ENOTDIR;
+								goto errout;
+							}
+
+							/* "Push" the directory and continue searching */
+
+							if (depth >= CONFIG_SMARTFS_DIRDEPTH - 1) {
+								/* Directory depth too big */
+
+								ret = -ENAMETOOLONG;
+								goto errout;
+							}
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+							dirstack[++depth] = smartfs_rdle16(&entry->firstsector);
+#else
+							dirstack[++depth] = entry->firstsector;
+#endif
+							segment = ptr + 1;
+							break;
+						}
+					}
+
+					/* Not this entry.  Skip to the next one */
+
+					offset += entrysize;
+					entry = (struct smartfs_entry_header_s *)
+							&fs->fs_rwbuffer[offset];
 				}
 
 				/* Test if a directory entry was found and break if it was */
@@ -1900,77 +1895,10 @@ errout_with_semaphore:
 #endif
 
 #ifdef CONFIG_SMARTFS_JOURNALING
-int execute_unfinished_journal_data(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *journal)
-{
-	int ret;
-	uint16_t startsector;
-	uint16_t readoffset;
-	uint16_t readsect;
-	struct smartfs_logging_entry_s *entry;
-
-#ifdef CONFIG_DEBUG_FS
-	print_journal_sectors(fs);
-#endif
-	startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	journal->sector = startsector;
-	readsect = startsector;
-	readoffset = 1;
-
-	while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-		/* Read transactions in journal sector */
-		fvdbg("readsector : %d offset : %d\n", readsect, readoffset);
-		ret = read_logging_entry(fs, journal, &readsect, &readoffset);
-		if (ret != OK) {
-			break;
-		}
-		entry = (struct smartfs_logging_entry_s *)journal->buffer;
-		if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
-			fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
-			break;
-		}
-		/* Check whether this transaction exists, and logging of transaction has been completed */
-		if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
-			journal->sector = readsect;
-			journal->offset = readoffset - sizeof(struct smartfs_logging_entry_s);
-
-			/* If this entry has additional data, read additional data
-			   Skip reading additional data if transaction os of type DELETE, where we have reused datalen field
-			 */
-			if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-				/* We skip reading additional data if transaction needs sync,
-				 * because these type of transactions are restored from list later.
-				 * So, we only increment the offset here */
-				/* If not a T_WRITE transaction which needs sync, read the additional data */
-				ret = read_logging_data(fs, journal, &readsect, &readoffset);
-				if (ret != OK) {
-					fdbg("Cannot read entry data.\n");
-					break;
-				}
-				if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
-					fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
-					break;
-				}
-			}
-			/* Restore the transaction. (T_WRITE with sync type transaction will not be
-			 * restored yet */
-			ret = process_transaction(fs);
-			if (ret != OK) {
-				fdbg("process_transaction failed, and cleaning journal areas\n");
-				break;
-			}
-		} else {
-			/* If a valid transaction does not exist here, stop checking further */
-			break;
-		}
-	}
-
-	return ret;
-}
-
 /****************************************************************************
  * Name: smartfs_journal_init
  *
- * Description: Initialize a journal manager
+ * Description: Initialize jornal manager
  *              Read logs to restore any previously failed transaction
  *
  ****************************************************************************/
@@ -1978,7 +1906,11 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 {
 	int ret;
 	uint16_t mapsize;
+	uint16_t readoffset;
+	uint16_t readsect;
+	uint16_t startsector;
 	struct smart_format_s fmt;
+	struct smartfs_logging_entry_s *entry;
 	struct journal_transaction_manager_s *journal;
 
 	journal = (struct journal_transaction_manager_s *)kmm_malloc(sizeof(struct journal_transaction_manager_s));
@@ -2019,7 +1951,61 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	memset(journal->active_sectors, 0, mapsize);
 
 	if (journal->jarea != -1) {
-		ret = execute_unfinished_journal_data(fs, journal);
+#ifdef CONFIG_DEBUG_FS
+		print_journal_sectors(fs);
+#endif
+		startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
+		journal->sector = startsector;
+		readsect = startsector;
+		readoffset = 1;
+
+		while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
+			/* Read transactions in journal sector */
+			fvdbg("readsector : %d offset : %d\n", readsect, readoffset);
+			ret = read_logging_entry(fs, journal, &readsect, &readoffset);
+			if (ret != OK) {
+				break;
+			}
+			entry = (struct smartfs_logging_entry_s *)journal->buffer;
+			if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
+				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
+				break;
+			}
+			/* Check whether this transaction exists, and logging of transaction has been completed */
+			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
+				journal->sector = readsect;
+				journal->offset = readoffset - sizeof(struct smartfs_logging_entry_s);
+
+				/* If this entry has additional data, read additional data
+				   Skip reading additional data if transaction os of type DELETE, where we have reused datalen field
+				 */
+				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
+					/* We skip reading additional data if transaction needs sync,
+					 * because these type of transactions are restored from list later.
+					 * So, we only increment the offset here */
+					/* If not a T_WRITE transaction which needs sync, read the additional data */
+					ret = read_logging_data(fs, journal, &readsect, &readoffset);
+					if (ret != OK) {
+						fdbg("Cannot read entry data.\n");
+						break;
+					}
+					if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
+						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
+						break;
+					}
+				}
+				/* Restore the transaction. (T_WRITE with sync type transaction will not be
+				 * restored yet */
+				ret = process_transaction(fs);
+				if (ret != OK) {
+					fdbg("process_transaction failed, but clean journal area\n");
+					break;
+				}
+			} else {
+				/* If a valid transaction does not exist here, stop checking further */
+				break;
+			}
+		}
 
 		if (journal->list) {
 			/* Now restore write transactions from the list */

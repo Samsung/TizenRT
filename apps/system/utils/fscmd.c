@@ -259,38 +259,6 @@ error:
  *   cat [OPTIONS] [source_file_path] [> or >>] [target_file_path]
  *   OPTIONS: '--help' - display the usage.
  ****************************************************************************/
-static int check_path(char **src_fullpath, redirection_t direction, char **args)
-{
-	if (direction.mode != FSCMD_NONE) {
-		FSCMD_OUTPUT(INVALID_ARGS FSCMD_CAT_USAGE, args[0]);
-		return ERROR;
-	}
-
-	*src_fullpath = get_fullpath(args[1]);
-	if (!(*src_fullpath)) {
-		FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
-		return ERROR;
-	}
-
-	return OK;
-}
-
-static int check_path_argument(char **src_fullpath, char **args)
-{
-	if (strcmp(args[1], args[3]) == 0) {
-		FSCMD_OUTPUT(INVALID_ARGS "Same File name", args[1]);
-		return ERROR;
-	}
-
-	*src_fullpath = get_fullpath(args[1]);
-	if (!(*src_fullpath)) {
-		FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
-		return ERROR;
-	}
-
-	return OK;
-}
-
 static int tash_cat(int argc, char **args)
 {
 	char *src_fullpath = NULL;
@@ -326,9 +294,15 @@ static int tash_cat(int argc, char **args)
 			return OK;
 		}
 		/* Basic case, cat <filepath> */
-		ret = check_path(&src_fullpath, direction, args);
-		if (ret < 0) {
-			return ret;
+		if (direction.mode != FSCMD_NONE) {
+			FSCMD_OUTPUT(INVALID_ARGS FSCMD_CAT_USAGE, args[0]);
+			return ERROR;
+		}
+
+		src_fullpath = get_fullpath(args[1]);
+		if (!src_fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+			return ERROR;
 		}
 
 		fd = open(src_fullpath, O_RDONLY);
@@ -350,14 +324,24 @@ static int tash_cat(int argc, char **args)
 	} else if (argc == 4) {
 		/* Below is redirection case */
 		flags = O_WRONLY | O_CREAT;
-		flags |= (direction.mode == FSCMD_TRUNCATE ? O_TRUNC : O_APPEND);
+		if (direction.mode == FSCMD_TRUNCATE) {
+			flags |= O_TRUNC;
+		} else {
+			flags |= O_APPEND;
+		}
 
 		if (direction.index == 2) {
 			/* copy contents from source file to target file
 			 * cat <source filepath> <redirection> <target filepath> */
-			ret = check_path_argument(&src_fullpath, args);
-			if (ret < 0) {
-				return ret;
+			if (strcmp(args[1], args[3]) == 0) {
+				FSCMD_OUTPUT(INVALID_ARGS "Same File name", args[1]);
+				return ERROR;
+			}
+
+			src_fullpath = get_fullpath(args[1]);
+			if (!src_fullpath) {
+				FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+				return ERROR;
 			}
 
 			fd = open(src_fullpath, O_RDONLY);
@@ -500,62 +484,10 @@ static int foreach_direntry(const char *cmd, const char *dirpath, direntry_handl
  * Description:
  *    ls_handler displays contents of specific directory.
  *    ls_recursive using ls_handler recursively to display whole contents
- *    under the specific directory
+ *    under the specific directoy
  *    ls_specialdir checks directory's name started '.' or '..'
  *
  ****************************************************************************/
-static void print_mode_details(struct stat buf)
-{
-	char details[] = "----------";
-	if (S_ISDIR(buf.st_mode)) {
-		details[0] = 'd';
-	} else if (S_ISCHR(buf.st_mode)) {
-		details[0] = 'c';
-	} else if (S_ISBLK(buf.st_mode)) {
-		details[0] = 'b';
-	} else if (!S_ISREG(buf.st_mode)) {
-		details[0] = '?';
-	}
-
-	if ((buf.st_mode & S_IRUSR) != 0) {
-		details[1] = 'r';
-	}
-
-	if ((buf.st_mode & S_IWUSR) != 0) {
-		details[2] = 'w';
-	}
-
-	if ((buf.st_mode & S_IXUSR) != 0) {
-		details[3] = 'x';
-	}
-
-	if ((buf.st_mode & S_IRGRP) != 0) {
-		details[4] = 'r';
-	}
-
-	if ((buf.st_mode & S_IWGRP) != 0) {
-		details[5] = 'w';
-	}
-
-	if ((buf.st_mode & S_IXGRP) != 0) {
-		details[6] = 'x';
-	}
-
-	if ((buf.st_mode & S_IROTH) != 0) {
-		details[7] = 'r';
-	}
-
-	if ((buf.st_mode & S_IWOTH) != 0) {
-		details[8] = 'w';
-	}
-
-	if ((buf.st_mode & S_IXOTH) != 0) {
-		details[9] = 'x';
-	}
-
-	FSCMD_OUTPUT(" %s", details);
-}
-
 static int ls_specialdir(const char *dir)
 {
 	/* '.' and '..' directories are not listed like normal directories */
@@ -593,7 +525,54 @@ static int ls_handler(FAR const char *dirpath, FAR struct dirent *entryp, FAR vo
 		}
 
 		if ((lsflags & LSFLAGS_LONG) != 0) {
-			print_mode_details(buf);
+			char details[] = "----------";
+			if (S_ISDIR(buf.st_mode)) {
+				details[0] = 'd';
+			} else if (S_ISCHR(buf.st_mode)) {
+				details[0] = 'c';
+			} else if (S_ISBLK(buf.st_mode)) {
+				details[0] = 'b';
+			} else if (!S_ISREG(buf.st_mode)) {
+				details[0] = '?';
+			}
+
+			if ((buf.st_mode & S_IRUSR) != 0) {
+				details[1] = 'r';
+			}
+
+			if ((buf.st_mode & S_IWUSR) != 0) {
+				details[2] = 'w';
+			}
+
+			if ((buf.st_mode & S_IXUSR) != 0) {
+				details[3] = 'x';
+			}
+
+			if ((buf.st_mode & S_IRGRP) != 0) {
+				details[4] = 'r';
+			}
+
+			if ((buf.st_mode & S_IWGRP) != 0) {
+				details[5] = 'w';
+			}
+
+			if ((buf.st_mode & S_IXGRP) != 0) {
+				details[6] = 'x';
+			}
+
+			if ((buf.st_mode & S_IROTH) != 0) {
+				details[7] = 'r';
+			}
+
+			if ((buf.st_mode & S_IWOTH) != 0) {
+				details[8] = 'w';
+			}
+
+			if ((buf.st_mode & S_IXOTH) != 0) {
+				details[9] = 'x';
+			}
+
+			FSCMD_OUTPUT(" %s", details);
 		}
 
 		if ((lsflags & LSFLAGS_SIZE) != 0) {
