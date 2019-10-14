@@ -657,7 +657,7 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		}
 
 #ifdef HAVE_GROUP_MEMBERS
-		after_parent_id = child_tcb->group->tg_gpid;
+		after_parent_id = child_tcb->group->tg_pgid;
 #else
 		after_parent_id = child_tcb->group->tg_ppid;
 #endif
