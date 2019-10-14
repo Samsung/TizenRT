@@ -29,7 +29,22 @@ gcc ramdump_tool.c -o ramdump
 RAMDUMP_FILE=./ramdump_0x*.bin
 rm -f ${RAMDUMP_FILE}
 ok=true
-sudo ./ramdump /dev/ttyUSB1 || ok=false
+
+# Take user input for device port
+echo Please enter serial port adapter:
+echo For example: /dev/ttyUSB1 or /dev/ttyACM0
+
+while [ $ok = true ]
+do
+echo Enter:
+read dev_port
+if sudo ./ramdump $dev_port;
+	then
+		ok=false
+	else
+		ok=true
+fi
+done
 
 if "$ok"; then
 echo "\nCopying..."
