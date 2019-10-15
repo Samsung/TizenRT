@@ -1,21 +1,17 @@
 /******************************************************************************
+ * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
  *
- * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  ******************************************************************************/
 
 /*This header file is for all driver teams to use the same station info.
@@ -166,13 +162,13 @@ struct rssi_info {
 struct ra_sta_info {
 	u8 rate_id;					   /*[PHYDM] ratr_idx*/
 	u8 rssi_level;				   /*[PHYDM]*/
-	u8 is_first_connect : 1;	   /*[PHYDM] CE: ra_rpt_linked, AP: H2C_rssi_rpt*/
-	u8 is_support_sgi : 1;		   /*[driver]*/
-	u8 is_vht_enable : 2;		   /*[driver]*/
-	u8 disable_ra : 1;			   /*[driver]*/
-	u8 disable_pt : 1;			   /*[driver] remove is_disable_power_training*/
-	u8 txrx_state : 2;			   /*[PHYDM] 0: Tx, 1:Rx, 2:bi-direction*/
-	u8 is_noisy : 1;			   /*[PHYDM]*/
+	u8 is_first_connect:1;	   /*[PHYDM] CE: ra_rpt_linked, AP: H2C_rssi_rpt*/
+	u8 is_support_sgi:1;		   /*[driver]*/
+	u8 is_vht_enable:2;		   /*[driver]*/
+	u8 disable_ra:1;			   /*[driver]*/
+	u8 disable_pt:1;			   /*[driver] remove is_disable_power_training*/
+	u8 txrx_state:2;			   /*[PHYDM] 0: Tx, 1:Rx, 2:bi-direction*/
+	u8 is_noisy:1;			   /*[PHYDM]*/
 	u8 curr_tx_rate;			   /*[PHYDM] FW->Driver*/
 	enum channel_width ra_bw_mode; /*[Driver] max bandwidth, for RA only*/
 	enum channel_width curr_tx_bw; /*[PHYDM] FW->Driver*/
@@ -183,8 +179,8 @@ struct ra_sta_info {
 struct dtp_info {
 	u8 dyn_tx_power; /*Dynamic Tx power offset*/
 	u8 last_tx_power;
-	u8 sta_tx_high_power_lvl : 4;
-	u8 sta_last_dtp_lvl : 4;
+	u8 sta_tx_high_power_lvl:4;
+	u8 sta_last_dtp_lvl:4;
 };
 
 struct cmn_sta_info {
@@ -198,13 +194,13 @@ struct cmn_sta_info {
 	struct ra_sta_info ra_info;				/*[Driver&PHYDM]*/
 	u16 tx_moving_average_tp;				/*[Driver] tx average MBps*/
 	u16 rx_moving_average_tp;				/*[Driver] rx average MBps*/
-	u8 stbc_en : 2;							/*[Driver] really transmitt STBC*/
-	u8 ldpc_en : 2;							/*[Driver] really transmitt LDPC*/
+	u8 stbc_en:2;							/*[Driver] really transmitt STBC*/
+	u8 ldpc_en:2;							/*[Driver] really transmitt LDPC*/
 	enum wireless_set support_wireless_set; /*[Driver]*/
 #ifdef CONFIG_BEAMFORMING
 	struct bf_cmn_info bf_info; /*[Driver]*/
 #endif
-	u8 sm_ps : 2;			  /*[Driver]*/
+	u8 sm_ps:2;			  /*[Driver]*/
 	struct dtp_info dtp_stat; /*[PHYDM] Dynamic Tx power offset*/
 							  /*u8		pw2cca_over_TH_cnt;*/
 							  /*u8		total_pw2cca_cnt;*/
@@ -226,12 +222,12 @@ struct phydm_phyinfo_struct {
 	s8 rx_snr[4];		/* per-path's SNR	*/
 	u8 ant_idx[4];		/*per-path's antenna index*/
 						/*ODM_PHY_STATUS_NEW_TYPE_SUPPORT*/
-	u8 rx_count : 2;	/* RX path counter---*/
-	u8 band_width : 2;
-	u8 rxsc : 4;		  /* sub-channel---*/
+	u8 rx_count:2;	/* RX path counter---*/
+	u8 band_width:2;
+	u8 rxsc:4;		  /* sub-channel---*/
 	u8 channel;			  /* channel number---*/
-	u8 is_mu_packet : 1;  /* is MU packet or not---boolean*/
-	u8 is_beamformed : 1; /* BF packet---boolean*/
+	u8 is_mu_packet:1;  /* is MU packet or not---boolean*/
+	u8 is_beamformed:1; /* BF packet---boolean*/
 	u8 cnt_pw2cca;
 	u8 cnt_cca2agc_rdy;
 	/*ODM_PHY_STATUS_NEW_TYPE_SUPPORT*/
@@ -240,12 +236,12 @@ struct phydm_phyinfo_struct {
 struct phydm_perpkt_info_struct {
 	u8 data_rate;
 	u8 station_id;
-	u8 is_cck_rate : 1;
-	u8 rate_ss : 3;				  /*spatial stream of data rate*/
-	u8 is_packet_match_bssid : 1; /*boolean*/
-	u8 is_packet_to_self : 1;	 /*boolean*/
-	u8 is_packet_beacon : 1;	  /*boolean*/
-	u8 is_to_self : 1;			  /*boolean*/
+	u8 is_cck_rate:1;
+	u8 rate_ss:3;				  /*spatial stream of data rate*/
+	u8 is_packet_match_bssid:1; /*boolean*/
+	u8 is_packet_to_self:1;	 /*boolean*/
+	u8 is_packet_beacon:1;	  /*boolean*/
+	u8 is_to_self:1;			  /*boolean*/
 	u8 ppdu_cnt;
 };
 
