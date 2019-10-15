@@ -122,7 +122,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 	DEBUGASSERT(work != NULL);
 
 #ifdef CONFIG_SCHED_WORKQUEUE_SORTING
-	struct work_s *next_work;
+	struct work_s *next_work = NULL;
 #endif
 	struct work_s *cur_work;
 
@@ -134,7 +134,6 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 #endif
 
 	/* check whether requested work is in queue list or not */
-	next_work = NULL;
 	cur_work = (struct work_s *)wqueue->q.head;
 	while (cur_work != NULL) {
 		if (cur_work == work) {

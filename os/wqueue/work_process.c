@@ -134,11 +134,12 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	clock_t ctick;
 	clock_t next;
 
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+#if (defined(CONFIG_SCHED_LPWORK) && CONFIG_SCHED_LPNTHREADS > 0) || defined(CONFIG_SCHED_WORKQUEUE_SORTING)
 	sigset_t set;
 	sigemptyset(&set);
 	sigaddset(&set, SIGWORK);
-#else 
+#endif
+#ifndef CONFIG_SCHED_WORKQUEUE_SORTING
 	clock_t remaining;
 #endif
 
