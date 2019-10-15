@@ -82,6 +82,12 @@ CSRCS += stm32_lcd.c
 CSRCS += stm32l4r9i_lcd.c
 endif
 
+ifeq ($(CONFIG_FLASH_PARTITION),y)
+DEPPATH += --dep-path $(TOPDIR)/board/common
+VPATH += :$(TOPDIR)/board/common
+CSRCS += partitions.c
+endif
+
 CSRCS += stm32l4r9i_discovery.c
 CSRCS += stm32l4r9i_discovery_io.c
 CSRCS += stm32l4r9i_discovery_ts.c
@@ -97,15 +103,20 @@ SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
+BOARD_SRCDIR = $(TOPDIR)/board
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   CFLAGS += -I$(ARCH_SRCDIR)\chip -I$(ARCH_SRCDIR)\common -I$(ARCH_SRCDIR)\armv7-m
 else
 ifeq ($(WINTOOL),y)
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/common}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
+  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
+  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
+  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-r}"
+  CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
 else
-  CFLAGS += -I$(ARCH_SRCDIR)/chip -I$(ARCH_SRCDIR)/common -I$(ARCH_SRCDIR)/armv7-m
+  CFLAGS += -I$(ARCH_SRCDIR)/chip
+  CFLAGS += -I$(ARCH_SRCDIR)/common
+  CFLAGS += -I$(ARCH_SRCDIR)/armv7-r
+  CFLAGS += -I$(BOARD_SRCDIR)/common
 endif
 endif
 
