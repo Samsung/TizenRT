@@ -215,6 +215,21 @@ void stm32_exflash_erase_block(uint32_t block)
  ****************************************************************************/
 void stm32_exflash_erase_sector(uint32_t sector)
 {
+  struct ospi_meminfo_s meminfo;
+
+  meminfo.flags = OSPIMEM_ERASESECT;
+  meminfo.addr = sector;
+
+  int error = g_ospi_ops->ops->memory(g_ospi_ops, &meminfo);
+
+  if(error != 0/*OSPI_NOR_OK*/)
+  {
+    printf("Flash erase sector failed : %d!!\n", error);
+  }
+  else
+  {
+    printf("Flash erase sector succeeded!!\n");
+  }
 }
 
 /****************************************************************************
@@ -255,6 +270,7 @@ void stm32_exflash_exit_memorymapped(void)
 {
   stm32l4_ospi_exit_memorymapped(g_ospi_ops);
 }
+
 
 
 
