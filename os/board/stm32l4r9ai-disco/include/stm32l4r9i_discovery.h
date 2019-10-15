@@ -345,17 +345,20 @@ void                    BSP_ErrorHandler(void);
 /**
   * @}
   */
-void stm32_exflash_initialize(void);
-void stm32_exflash_write(uint8_t* pData, uint32_t WriteAddr, uint32_t Size);
-void stm32_exflash_read(uint8_t* pData, uint32_t ReadAddr, uint32_t Size);
-void stm32_exflash_erase_sector(uint32_t sector);
-void stm32_exflash_erase_block(uint32_t block);
-void stm32_exflash_enter_memorymapped(void);
-void stm32_exflash_exit_memorymapped(void);
+extern void stm32_exflash_initialize(void);
+extern void stm32_exflash_write(uint8_t* pData, uint32_t WriteAddr, uint32_t Size);
+extern void stm32_exflash_read(uint8_t* pData, uint32_t ReadAddr, uint32_t Size);
+extern void stm32_exflash_erase_sector(uint32_t sector);
+extern void stm32_exflash_erase_block(uint32_t block);
+extern void stm32_exflash_enter_memorymapped(void);
+extern void stm32_exflash_exit_memorymapped(void);
 
-void stm32_psram_initialize(void);
-void stm32_touch_initialize(void);
-void stm32_touch_printf_coord(void);
+extern void stm32_psram_initialize(void);
+extern void stm32_touch_initialize(void);
+extern void stm32_touch_printf_coord(void);
+
+extern void stm32_dsi_refresh(void);
+extern void up_hal_timer_initialize(void);
 /**
   * @}
   */
