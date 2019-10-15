@@ -151,10 +151,14 @@ static void utc_media_FileInputDataSource_open_n(void)
 	for (auto path : paths)
 	{
 		FILE *fp = fopen(path, "w");
-		fclose(fp);
-		media::stream::FileInputDataSource source(path);
-		TC_ASSERT_EQ_CLEANUP("utc_media_FileInputDataSource_open", source.open(), false, remove(path));
-		remove(path);
+		if (fp != NULL) {
+			fclose(fp);
+			media::stream::FileInputDataSource source(path);
+			TC_ASSERT_EQ_CLEANUP("utc_media_FileInputDataSource_open", source.open(), false, remove(path));
+			remove(path);
+		} else {
+			printf("fail to open %s, errno : %d\n", path, get_errno());
+		}
 	}
 
 	TC_SUCCESS_RESULT();

@@ -83,12 +83,12 @@ void EmptyObserver::cvAsyncWait()
 
 static void SetUp(void)
 {
-	FILE *fp = fopen(dummyfilepath, "w");
 	char *dummyData = new char[4096];
 	if (!dummyData) {
 		printf("Not Enough Memory!\n");
 		return;
 	}
+	FILE *fp = fopen(dummyfilepath, "w");
 	if (fp != NULL) {
 		int ret = fwrite(dummyData, 4096, 1, fp);
 		if (ret != 4096) {
@@ -396,7 +396,7 @@ static void utc_media_MediaPlayer_start_p(void)
 	for (int i = 0; i < 2; ++i) {
 		media::MediaRecorder mr;
 		auto dataSource = std::unique_ptr<media::stream::FileOutputDataSource>(new media::stream::FileOutputDataSource( (i == 0 ? filePath_opus : filePath_wav) ));
-	
+
 		mr.create();
 		mr.setDataSource(std::move(dataSource));
 		mr.prepare();
@@ -645,7 +645,7 @@ static void utc_media_MediaPlayer_operator_equal_p(void)
 {
 	media::MediaPlayer mp;
 	bool isSame = mp == mp;
-	
+
 	TC_ASSERT("utc_media_MediaPlayer_operator_equal", isSame);
 	TC_SUCCESS_RESULT();
 }
@@ -654,8 +654,8 @@ static void utc_media_MediaPlayer_operator_equal_n(void)
 {
 	media::MediaPlayer mp1, mp2;
 	bool isSame = mp1 == mp2;
-	
-	TC_ASSERT("utc_media_MediaPlayer_operator_equal", !isSame);	
+
+	TC_ASSERT("utc_media_MediaPlayer_operator_equal", !isSame);
 	TC_SUCCESS_RESULT();
 }
 
