@@ -1,3 +1,19 @@
+/******************************************************************************
+ * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,10 +182,11 @@ int wext_set_key_ext(const char *ifname, __u16 alg, const __u8 *addr, int key_id
 
 	ext->addr.sa_family = ARPHRD_ETHER;
 
-	if (addr)
+	if (addr) {
 		memcpy(ext->addr.sa_data, addr, ETH_ALEN);
-	else
+	} else {
 		memset(ext->addr.sa_data, 0xff, ETH_ALEN);
+	}
 
 	if (key && key_len) {
 		memcpy(ext->key, key, key_len);
@@ -200,10 +217,11 @@ int wext_get_enc_ext(const char *ifname, __u16 *alg, __u8 *key_idx, __u8 *passph
 	struct iw_encode_ext *ext;
 
 	ext = (struct iw_encode_ext *)rtw_malloc(sizeof(struct iw_encode_ext) + 16);
-	if (ext == NULL)
+	if (ext == NULL) {
 		return -1;
-	else
+	} else {
 		memset(ext, 0, sizeof(struct iw_encode_ext) + 16);
+	}
 
 	iwr.u.encoding.pointer = ext;
 
@@ -218,8 +236,9 @@ int wext_get_enc_ext(const char *ifname, __u16 *alg, __u8 *key_idx, __u8 *passph
 			memcpy(passphrase, ext->key, ext->key_len);
 	}
 
-	if (ext != NULL)
-		rtw_mfree(ext,0);
+	if (ext != NULL) {
+		rtw_mfree(ext, 0);
+	}
 
 	return ret;
 }
@@ -274,8 +293,9 @@ int wext_enable_powersave(const char *ifname, __u8 ips_mode, __u8 lps_mode)
 
 	// Encode parameters as TLV (type, length, value) format
 	para = rtw_malloc(7 + (1 + 1 + 1) + (1 + 1 + 1));
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	snprintf((char *)para, cmd_len, "pm_set");
 	pindex = 7;
@@ -440,10 +460,11 @@ int wext_get_lps_dtim(const char *ifname, __u8 *lps_dtim)
 	}
 
 	//get result at the beginning of iwr.u.data.pointer
-	if ((para[0] == 3) && (para[1] == 1))
+	if ((para[0] == 3) && (para[1] == 1)) {
 		*lps_dtim = para[2];
-	else
+	} else {
 		RTW_API_INFO("\n\r%s error", __func__);
+	}
 
 exit:
 	rtw_free(para);
@@ -710,8 +731,9 @@ int wext_set_pscan_channel(const char *ifname, __u8 *ch, __u8 *pscan_config, __u
 	memset(&iwr, 0, sizeof(iwr));
 	//Format of para:function_name num_channel chan1... pscan_config1 ...
 	para = rtw_malloc((length + length + 1) + 12); //size:num_chan + num_time + length + function_name
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	//Cmd
 	snprintf((char *)para, 12, "PartialScan");
@@ -815,8 +837,9 @@ int wext_get_scan(const char *ifname, char *buf, __u16 buf_len)
 	if (iw_ioctl(ifname, SIOCGIWSCAN, &iwr) < 0) {
 		RTW_API_INFO("\n\rioctl[SIOCGIWSCAN] error");
 		ret = -1;
-	} else
+	} else {
 		ret = iwr.u.data.flags;
+	}
 	return ret;
 }
 
@@ -827,8 +850,9 @@ int wext_private_command_with_retval(const char *ifname, char *cmd, char *ret_bu
 	char *buf;
 
 	buf_size = 128;
-	if (strlen(cmd) >= buf_size)
+	if (strlen(cmd) >= buf_size) {
 		buf_size = strlen(cmd) + 1; // 1 : '\0'
+	}
 	buf = (char *)rtw_malloc(buf_size);
 	if (!buf) {
 		RTW_API_INFO("\n\rWEXT: Can't malloc memory");
@@ -845,8 +869,9 @@ int wext_private_command_with_retval(const char *ifname, char *cmd, char *ret_bu
 		RTW_API_INFO("\n\rioctl[SIOCDEVPRIVATE] error. ret=%d\n", ret);
 	}
 	if (ret_buf) {
-		if (ret_len > iwr.u.data.length)
+		if (ret_len > iwr.u.data.length) {
 			ret_len = iwr.u.data.length;
+		}
 		rtw_memcpy(ret_buf, (char *)iwr.u.data.pointer, ret_len);
 	}
 	rtw_free(buf);
@@ -862,13 +887,15 @@ int wext_private_command(const char *ifname, char *cmd, int show_msg)
 	u8 cmdname[17] = {0}; // IFNAMSIZ+1
 
 	sscanf(cmd, "%16s", cmdname);
-	if ((strcmp((const char *)cmdname, "config_get") == 0) || (strcmp((const char *)cmdname, "config_set") == 0) || (strcmp((const char *)cmdname, "efuse_get") == 0) || (strcmp((const char *)cmdname, "efuse_set") == 0) || (strcmp((const char *)cmdname, "mp_psd") == 0))
+	if ((strcmp((const char *)cmdname, "config_get") == 0) || (strcmp((const char *)cmdname, "config_set") == 0) || (strcmp((const char *)cmdname, "efuse_get") == 0) || (strcmp((const char *)cmdname, "efuse_set") == 0) || (strcmp((const char *)cmdname, "mp_psd") == 0)) {
 		buf_size = 2600; //2600 for config_get rmap,0,512 (or realmap)
-	else
+	} else {
 		buf_size = 512;
+	}
 
-	if (strlen(cmd) >= buf_size)
+	if (strlen(cmd) >= buf_size) {
 		buf_size = strlen(cmd) + 1; // 1 : '\0'
+	}
 	buf = (char *)rtw_malloc(buf_size);
 	if (!buf) {
 		RTW_API_INFO("\n\rWEXT: Can't malloc memory");
@@ -885,8 +912,9 @@ int wext_private_command(const char *ifname, char *cmd, int show_msg)
 		RTW_API_INFO("\n\rioctl[SIOCDEVPRIVATE] error. ret=%d\n", ret);
 	}
 	if (show_msg && iwr.u.data.length) {
-		if (iwr.u.data.length > buf_size)
+		if (iwr.u.data.length > buf_size) {
 			RTW_API_INFO("\n\rWEXT: Malloc memory is not enough");
+		}
 		RTW_API_INFO("\n\rPrivate Message: %s", (char *)iwr.u.data.pointer);
 	}
 	rtw_free(buf);
@@ -900,52 +928,58 @@ void wext_wlan_indicate(unsigned int cmd, union iwreq_data *wrqu, char *extra)
 	switch (cmd) {
 	case SIOCGIWAP:
 		if (wrqu->ap_addr.sa_family == ARPHRD_ETHER) {
-			if (!memcmp(wrqu->ap_addr.sa_data, null_mac, sizeof(null_mac)))
+			if (!memcmp(wrqu->ap_addr.sa_data, null_mac, sizeof(null_mac))) {
 				wifi_indication(WIFI_EVENT_DISCONNECT, wrqu->ap_addr.sa_data, sizeof(null_mac) + 2, 0);
-			else
+			} else {
 				wifi_indication(WIFI_EVENT_CONNECT, wrqu->ap_addr.sa_data, sizeof(null_mac), 0);
+			}
 		}
 		break;
 
 	case IWEVCUSTOM:
 		if (extra) {
-			if (!memcmp(IW_EXT_STR_FOURWAY_DONE, extra, strlen(IW_EXT_STR_FOURWAY_DONE)))
+			if (!memcmp(IW_EXT_STR_FOURWAY_DONE, extra, strlen(IW_EXT_STR_FOURWAY_DONE))) {
 				wifi_indication(WIFI_EVENT_FOURWAY_HANDSHAKE_DONE, extra, strlen(IW_EXT_STR_FOURWAY_DONE), 0);
-			else if (!memcmp(IW_EXT_STR_RECONNECTION_FAIL, extra, strlen(IW_EXT_STR_RECONNECTION_FAIL)))
+			} else if (!memcmp(IW_EXT_STR_RECONNECTION_FAIL, extra, strlen(IW_EXT_STR_RECONNECTION_FAIL))) {
 				wifi_indication(WIFI_EVENT_RECONNECTION_FAIL, extra, strlen(IW_EXT_STR_RECONNECTION_FAIL), 0);
-			else if (!memcmp(IW_EVT_STR_NO_NETWORK, extra, strlen(IW_EVT_STR_NO_NETWORK)))
+			} else if (!memcmp(IW_EVT_STR_NO_NETWORK, extra, strlen(IW_EVT_STR_NO_NETWORK))) {
 				wifi_indication(WIFI_EVENT_NO_NETWORK, extra, strlen(IW_EVT_STR_NO_NETWORK), 0);
-			else if (!memcmp(IW_EVT_STR_ICV_ERROR, extra, strlen(IW_EVT_STR_ICV_ERROR)))
+			} else if (!memcmp(IW_EVT_STR_ICV_ERROR, extra, strlen(IW_EVT_STR_ICV_ERROR))) {
 				wifi_indication(WIFI_EVENT_ICV_ERROR, extra, strlen(IW_EVT_STR_ICV_ERROR), 0);
-			else if (!memcmp(IW_EVT_STR_CHALLENGE_FAIL, extra, strlen(IW_EVT_STR_CHALLENGE_FAIL)))
+			} else if (!memcmp(IW_EVT_STR_CHALLENGE_FAIL, extra, strlen(IW_EVT_STR_CHALLENGE_FAIL))) {
 				wifi_indication(WIFI_EVENT_CHALLENGE_FAIL, extra, strlen(IW_EVT_STR_CHALLENGE_FAIL), 0);
+			}
 #if CONFIG_ENABLE_P2P || defined(CONFIG_AP_MODE)
-			else if (!memcmp(IW_EVT_STR_STA_ASSOC, extra, strlen(IW_EVT_STR_STA_ASSOC)))
+			else if (!memcmp(IW_EVT_STR_STA_ASSOC, extra, strlen(IW_EVT_STR_STA_ASSOC))) {
 				wifi_indication(WIFI_EVENT_STA_ASSOC, wrqu->data.pointer, wrqu->data.length, 0);
-			else if (!memcmp(IW_EVT_STR_STA_DISASSOC, extra, strlen(IW_EVT_STR_STA_DISASSOC)))
+			} else if (!memcmp(IW_EVT_STR_STA_DISASSOC, extra, strlen(IW_EVT_STR_STA_DISASSOC))) {
 				wifi_indication(WIFI_EVENT_STA_DISASSOC, wrqu->addr.sa_data, sizeof(null_mac), 0);
-			else if (!memcmp(IW_EVT_STR_SEND_ACTION_DONE, extra, strlen(IW_EVT_STR_SEND_ACTION_DONE)))
+			} else if (!memcmp(IW_EVT_STR_SEND_ACTION_DONE, extra, strlen(IW_EVT_STR_SEND_ACTION_DONE))) {
 				wifi_indication(WIFI_EVENT_SEND_ACTION_DONE, NULL, 0, wrqu->data.flags);
+			}
 #endif
 		}
 		break;
 	case SIOCGIWSCAN:
-		if (wrqu->data.pointer == NULL)
+		if (wrqu->data.pointer == NULL) {
 			wifi_indication(WIFI_EVENT_SCAN_DONE, NULL, 0, 0);
-		else
+		} else {
 			wifi_indication(WIFI_EVENT_SCAN_RESULT_REPORT, wrqu->data.pointer, wrqu->data.length, 0);
+		}
 		break;
 	case IWEVMGNTRECV:
 		wifi_indication(WIFI_EVENT_RX_MGNT, wrqu->data.pointer, wrqu->data.length, wrqu->data.flags);
 		break;
 #ifdef REPORT_STA_EVENT
 	case IWEVREGISTERED:
-		if (wrqu->addr.sa_family == ARPHRD_ETHER)
+		if (wrqu->addr.sa_family == ARPHRD_ETHER) {
 			wifi_indication(WIFI_EVENT_STA_ASSOC, wrqu->addr.sa_data, sizeof(null_mac), 0);
+		}
 		break;
 	case IWEVEXPIRED:
-		if (wrqu->addr.sa_family == ARPHRD_ETHER)
+		if (wrqu->addr.sa_family == ARPHRD_ETHER) {
 			wifi_indication(WIFI_EVENT_STA_DISASSOC, wrqu->addr.sa_data, sizeof(null_mac), 0);
+		}
 		break;
 #endif
 	default:
@@ -1011,8 +1045,9 @@ int wext_set_autoreconnect(const char *ifname, __u8 mode, __u8 retry_times, __u1
 	memset(&iwr, 0, sizeof(iwr));
 	cmd_len = sizeof("SetAutoRecnt");
 	para = rtw_malloc((4) + cmd_len); //size:para_len+cmd_len
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	//Cmd
 	snprintf((char *)para, cmd_len, "SetAutoRecnt");
@@ -1060,8 +1095,9 @@ int wext_get_drv_ability(const char *ifname, __u32 *ability)
 {
 	int ret = 0;
 	char *buf = (char *)rtw_zmalloc(33);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return -1;
+	}
 
 	snprintf(buf, 33, "get_drv_ability %x", ability);
 	ret = wext_private_command(ifname, buf, 0);
@@ -1085,8 +1121,9 @@ int wext_add_custom_ie(const char *ifname, void *cus_ie, int ie_num)
 	memset(&iwr, 0, sizeof(iwr));
 	cmd_len = sizeof("SetCusIE");
 	para = rtw_malloc((4) * 2 + cmd_len); //size:addr len+cmd_len
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	//Cmd
 	snprintf((char *)para, cmd_len, "SetCusIE");
@@ -1120,8 +1157,9 @@ int wext_update_custom_ie(const char *ifname, void *cus_ie, int ie_index)
 	memset(&iwr, 0, sizeof(iwr));
 	cmd_len = sizeof("UpdateIE");
 	para = rtw_malloc((4) * 2 + cmd_len); //size:addr len+cmd_len
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	//Cmd
 	snprintf((char *)para, cmd_len, "UpdateIE");
@@ -1178,8 +1216,9 @@ int wext_enable_forwarding(const char *ifname)
 	memset(&iwr, 0, sizeof(iwr));
 	cmd_len = sizeof("forwarding_set");
 	para = rtw_malloc(cmd_len + 1);
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	// forwarding_set 1
 	snprintf((char *)para, cmd_len, "forwarding_set");
@@ -1207,8 +1246,9 @@ int wext_disable_forwarding(const char *ifname)
 	memset(&iwr, 0, sizeof(iwr));
 	cmd_len = sizeof("forwarding_set");
 	para = rtw_malloc(cmd_len + 1);
-	if (para == NULL)
+	if (para == NULL) {
 		return -1;
+	}
 
 	// forwarding_set 0
 	snprintf((char *)para, cmd_len, "forwarding_set");
@@ -1232,8 +1272,9 @@ int wext_set_ch_deauth(const char *ifname, __u8 enable)
 {
 	int ret = 0;
 	char *buf = (char *)rtw_zmalloc(16);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return -1;
+	}
 
 	snprintf(buf, 16, "SetChDeauth %d", enable);
 	ret = wext_private_command(ifname, buf, 0);
@@ -1278,8 +1319,9 @@ int wext_get_auto_chl(const char *ifname, unsigned char *channel_set, unsigned c
 	int ret = -1;
 	int channel = 0;
 	wext_disable_powersave(ifname);
-	if ((channel = rltk_get_auto_chl(ifname, channel_set, channel_num)) != 0)
+	if ((channel = rltk_get_auto_chl(ifname, channel_set, channel_num)) != 0) {
 		ret = channel;
+	}
 	wext_enable_powersave(ifname, 1, 1);
 	return ret;
 }
