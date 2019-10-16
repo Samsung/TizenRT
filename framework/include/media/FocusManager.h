@@ -82,8 +82,11 @@ private:
 		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		void notify(int focusChange);
 
+		static bool compare(const FocusRequester a, const FocusRequester b);
+
 	private:
 		stream_info_id_t mId;
+		stream_policy_t mPolicy;
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 

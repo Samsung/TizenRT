@@ -21,13 +21,18 @@
 namespace media {
 
 FocusManager::FocusRequester::FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener)
-	: mId(stream_info->id), mListener(listener)
+	: mId(stream_info->id), mPolicy(stream_info->policy), mListener(listener)
 {
 }
 
 bool FocusManager::FocusRequester::hasSameId(std::shared_ptr<FocusRequest> focusRequest)
 {
 	return mId == focusRequest->getStreamInfo()->id;
+}
+
+bool FocusManager::FocusRequester::compare(const FocusManager::FocusRequester a, const FocusManager::FocusRequester b)
+{
+	return a.mPolicy >= b.mPolicy;
 }
 
 void FocusManager::FocusRequester::notify(int focusChange)
@@ -71,19 +76,45 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		return FOCUS_REQUEST_FAIL;
 	}
 
-	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest))) {
+	/* If list is empty, request always gain focus */
+	if (mFocusList.empty()) {
+		auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
+		mFocusList.push_front(focusRequester);
+		focusRequester->notify(FOCUS_GAIN);
+
+		return FOCUS_REQUEST_SUCCESS;
+	}
+
+	/* If request already gained focus, just return success */
+	if (mFocusList.front()->hasSameId(focusRequest)) {
 		return FOCUS_REQUEST_SUCCESS;
 	}
 
 	removeFocusElement(focusRequest);
 
-	if (!mFocusList.empty()) {
+	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
+	auto iter = mFocusList.begin();
+
+	/* If the policy of request is the highest prio */
+	if (FocusRequester::compare(*focusRequester, *(*iter))) {
 		mFocusList.front()->notify(FOCUS_LOSS);
+		mFocusList.push_front(focusRequester);
+		focusRequester->notify(FOCUS_GAIN);
+
+		return FOCUS_REQUEST_SUCCESS;
 	}
 
-	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
-	mFocusList.push_front(focusRequester);
-	focusRequester->notify(FOCUS_GAIN);
+	while (++iter != mFocusList.end()) {
+		if (FocusRequester::compare(*focusRequester, *(*iter))) {
+			mFocusList.insert(iter, focusRequester);
+			break;
+		}
+	}
+
+	/* the lowest prio case */
+	if (iter == mFocusList.end()) {
+		mFocusList.push_back(focusRequester);
+	}
 
 	return FOCUS_REQUEST_SUCCESS;
 }

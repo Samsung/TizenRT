@@ -66,7 +66,7 @@ static void utc_media_FocusManager_requestFocus_p(void)
 							.build();
 
 	stream_info_t *info2;
-	stream_info_create(STREAM_TYPE_MEDIA, &info2);
+	stream_info_create(STREAM_TYPE_EMERGENCY, &info2);
 	auto stream_info2 = std::shared_ptr<stream_info_t>(info2, deleter);
 	auto focusRequest2 = media::FocusRequest::Builder()
 							.setStreamInfo(stream_info2)
@@ -83,8 +83,13 @@ static void utc_media_FocusManager_requestFocus_p(void)
 	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS);
 	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", gain_counter, 1);
 
-	/* reqestFocus with other focusRequest. focus change callback will be called */
+	/* reqestFocus with a high prio focusRequest. focus change callback will be called */
 	ret = focusManger.requestFocus(focusRequest2);
+	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS);
+	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", gain_counter, 2);
+
+	/* requestFocus with a low prio focusRequest. focus change callback will not be called */
+	ret = focusManger.requestFocus(focusRequest);
 	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", ret, media::FOCUS_REQUEST_SUCCESS);
 	TC_ASSERT_EQ("utc_media_FocusManager_requestFocus", gain_counter, 2);
 
