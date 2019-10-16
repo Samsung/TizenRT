@@ -1,0 +1,107 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config UI
+	bool "AraUI Framework Support"
+	default n
+	select CLOCK_MONOTONIC
+	select EXTERNAL_VEC
+	---help---
+		Enables overall support for AraUI Framework
+
+if UI
+
+config UI_DISPLAY_WIDTH
+	int "Display width"
+	default 256
+	---help---
+		Display width value
+
+config UI_DISPLAY_HEIGHT
+	int "Display height"
+	default 96
+	---help---
+		Display height value
+
+choice
+	prompt "Display color depth"
+	default UI_DISPLAY_RGB565
+
+config UI_DISPLAY_RGB888
+	bool "24bit Color (RGB888)"
+
+config UI_DISPLAY_RGB565
+	bool "16bit Color (RGB565)"
+
+config UI_DISPLAY_GRAY4
+	bool "4bit Grayscale (GRAY4)"
+
+endchoice # Display color depth
+
+config UI_ENABLE_TOUCH
+	bool "Enable touch interface"
+	default n
+
+if UI_ENABLE_TOUCH
+
+config UI_TOUCH_THRESHOLD
+	int "Touch threshold"
+	default 10
+	---help---
+		Touch threshold value
+
+endif # UI_ENABLE_TOUCH
+
+config UI_ENABLE_EMOJI
+	bool "Enable UTF-8 Emoji"
+	default n
+
+if UI_ENABLE_EMOJI
+
+config UI_USE_BUILTIN_EMOJI
+	bool "Use build-in emoji graphics(40x40x32bpp)"
+	default y
+
+endif # UI_ENABLE_EMOJI
+
+config UI_STACK_SIZE
+	int "Stack size"
+	default 4096
+	---help---
+		Stack size
+
+config UI_MAXIMUM_FPS
+	int "Maximum FPS"
+	default 30
+	range 0 100
+	---help---
+		Maximum allowable frame rate of the UI framework
+		If this value is set to 0, then screen is continuously updated with
+		the maximum possible FPS.
+		The range of FPS is [0, 100].
+
+config UI_UPDATE_MEMPOOL_SIZE
+	int "Mempool size"
+	default 128
+	---help---
+		Maximum mempool size of the update list.
+
+config UI_USE_EXTERNAL_DAL_IMPL
+	bool "Use external DAL implementation"
+	default n
+
+config UI_ENABLE_HW_ACC
+	bool "Use the Hardware Acceleration"
+	default n
+
+if UI_ENABLE_HW_ACC
+
+config UI_ENABLE_HW_ACC_CHROM_ART
+	bool "Use the Chrom-Art(DMA2D)"
+	default n
+
+endif # UI_ENABLE_HW_ACC
+
+endif # UI

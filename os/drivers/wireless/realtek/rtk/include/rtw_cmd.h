@@ -127,7 +127,7 @@ extern void rtw_free_evt_obj(struct evt_obj *pcmd);
 
 thread_return rtw_cmd_thread(thread_context context);
 
-extern u32 rtw_init_cmd_priv(struct cmd_priv *pcmdpriv);
+extern u32 rtw_init_cmd_priv(struct cmd_priv *pcmdpriv, _adapter *padapter);
 extern void rtw_free_cmd_priv(struct cmd_priv *pcmdpriv);
 
 extern u32 rtw_init_evt_priv(struct evt_priv *pevtpriv);

@@ -87,9 +87,9 @@
 
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
 
-struct _wifi_utils_s g_lwnl_hnd = {"", -1};
+static struct _wifi_utils_s g_lwnl_hnd = {"", -1};
 
-sem_t g_lwnl_signal;
+static sem_t g_lwnl_signal;
 
 static void close_cb_handler(void)
 {
@@ -240,19 +240,19 @@ int wifi_utils_callback_handler(int argc, char *argv[])
 		{
 			wifi_utils_scan_list_s *scan_list;
 			scan_list = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
-			scan_list->next = NULL;
 			if (!scan_list) {
 				free_scan_data(scan_list);
 				WU_ERR;
 				break;
 			}
+			scan_list->next = NULL;
 			memcpy(&(scan_list->ap_info), &(msg.u.ap_info), sizeof(wifi_utils_ap_scan_info_s));
 			if (msg.md) {
 				int ret = receive_scan_data(mqfd, scan_list);
 				if (ret == WIFI_UTILS_SUCCESS) {
 					g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
+					free_scan_data(scan_list);
 				}
-				free_scan_data(scan_list);
 			} else {
 				g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
 				free(&(scan_list->ap_info));
@@ -292,7 +292,7 @@ wifi_utils_result_e wifi_utils_init(void)
 
 	snprintf(g_lwnl_hnd.mqname, sizeof(g_lwnl_hnd.mqname), "%01x", (unsigned long)((uintptr_t)&g_lwnl_hnd));
 
-	g_lwnl_hnd.cb_receiver = task_create("lwnl8021 cb handler", 110, 4096, (main_t)wifi_utils_callback_handler, NULL);
+	g_lwnl_hnd.cb_receiver = task_create("lwnl80211 cb handler", 110, 4096, (main_t)wifi_utils_callback_handler, NULL);
 
 	sem_wait(&g_lwnl_signal);
 

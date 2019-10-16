@@ -772,7 +772,11 @@ int wpa_supplicant_ap_wps_pin(struct wpa_supplicant *wpa_s, const u8 *bssid, con
 	}
 
 	if (pin == NULL) {
-		unsigned int rpin = wps_generate_pin();
+		unsigned int rpin;
+
+		if (wps_generate_pin(&rpin) < 0)
+			return -1;
+
 		ret_len = os_snprintf(buf, buflen, "%08d", rpin);
 		if (os_snprintf_error(buflen, ret_len)) {
 			return -1;
@@ -839,7 +843,8 @@ const char *wpas_wps_ap_pin_random(struct wpa_supplicant *wpa_s, int timeout)
 		return NULL;
 	}
 	hapd = wpa_s->ap_iface->bss[0];
-	pin = wps_generate_pin();
+	if (wps_generate_pin(&pin) < 0)
+		return NULL;
 	os_snprintf(pin_txt, sizeof(pin_txt), "%08u", pin);
 	os_free(hapd->conf->ap_pin);
 	hapd->conf->ap_pin = os_strdup(pin_txt);

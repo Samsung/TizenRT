@@ -120,6 +120,7 @@ void pthread_cleanup_popall(FAR struct pthread_tcb_s *tcb);
 int pthread_completejoin(pid_t pid, FAR void *exit_value);
 void pthread_destroyjoin(FAR struct task_group_s *group, FAR struct join_s *pjoin);
 FAR struct join_s *pthread_findjoininfo(FAR struct task_group_s *group, pid_t pid);
+int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, bool blocking);
 void pthread_release(FAR struct task_group_s *group);
 int pthread_sem_take(sem_t *sem, bool intr);
 #ifdef CONFIG_PTHREAD_MUTEX_UNSAFE

@@ -382,4 +382,19 @@ void up_wdog_keepalive(void)
 {
 	imxrt_wdog_refresh(WDOG1);
 }
+
+/****************************************************************************
+ * Name: up_watchdog_disable
+ *
+ * Description:
+ *   Disable board specific watchdog
+ *
+ * Cautions:
+ *   This can be only used if we cannot use driver structure like assert.
+ *
+ ****************************************************************************/
+void up_watchdog_disable(void)
+{
+	imxrt_wdog_disable_all();
+}
 #endif

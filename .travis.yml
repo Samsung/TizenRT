@@ -29,10 +29,8 @@ matrix:
     - env: BUILD_CONFIG=qemu/tc_64k
     - env: BUILD_CONFIG=qemu/build_test
     - env: BUILD_CONFIG=esp_wrover_kit/hello_with_tash
-    - env: BUILD_CONFIG=imxrt1020-evk/nxp_demo
-    - env: BUILD_CONFIG=imxrt1050-evk/nxp_demo
-    - if: branch = protection
-      env: BUILD_CONFIG=imxrt1020-evk/loadable_elf_apps
+    - env: BUILD_CONFIG=imxrt1050-evk/tc_protected
+    - env: BUILD_CONFIG=imxrt1020-evk/loadable_elf_apps
       
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}

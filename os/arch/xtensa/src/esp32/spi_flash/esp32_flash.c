@@ -81,7 +81,7 @@ static ssize_t esp32_erase_page(size_t page)
 {
     irqstate_t irqs;
     int32_t result = 0;
-    result = result;
+
     if (page > (ESP32_START_SECOTR + ESP32_NSECTORS)) {
         printf("Invalid page number\n");
         return -EFAULT;

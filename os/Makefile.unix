@@ -231,7 +231,7 @@ BIN = $(OUTBIN_DIR)/$(BIN_EXE)
 memstat: $(BIN) romfs
 
 all: memstat
-.PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
+.PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate smartfs
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -493,9 +493,9 @@ ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	fi
 endif
 ifeq ($(CONFIG_DEBUG_DISPLAY_SYMBOL),y)
-	cp ${OUTBIN_DIR}/System.map ${TOOLSDIR}/fs/contents/System.map
+	cp ${OUTBIN_DIR}/System.map ${TOOLSDIR}/fs/contents-romfs/System.map
 else
-	$(call DELFILE, ${TOOLSDIR}/fs/contents/System.map)
+	$(call DELFILE, ${TOOLSDIR}/fs/contents-romfs/System.map)
 endif
 
 # $(BIN)
@@ -688,7 +688,7 @@ endif
 # romfs
 #
 # The romfs target will make a romfs image by calling mkromfsimg.sh.
-# The content of romfs should be in $(TOPDIR)/../tools/fs/contents folder.
+# The content of romfs should be in $(TOPDIR)/../tools/fs/contents-romfs folder.
 
 romfs:
 ifeq ($(CONFIG_FS_ROMFS),y)
@@ -705,3 +705,11 @@ tools/compression/mkcompresstool.sh: include/tinyara/config.h
 ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 	$(Q) tools/compression/mkcompresstool.sh
 endif
+
+# smartfs
+#
+# The smartfs target will make a smartfs image by calling mksmartfsimg.sh and mknxfuse.sh
+# Contents need to be placed in $(TOPDIR)/../tools/fs/contents-smartfs/$BOARDNAME/base-files folder
+smartfs: include/tinyara/config.h
+	$(Q) ./../tools/nxfuse/mknxfuse.sh
+	$(Q) ./../tools/nxfuse/mksmartfsimg.sh

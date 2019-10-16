@@ -203,11 +203,12 @@ int sem_wait(FAR sem_t *sem)
 
 			sched_lock();
 
-			/* Boost the priority of any threads holding a count on the
-			 * semaphore.
-			 */
-
-			sem_boostpriority(sem);
+			if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+				/* Boost the priority of any threads holding a count on the
+				 * semaphore.
+				 */
+				sem_boostpriority(sem);
+			}
 #endif
 			/* Add the TCB to the prioritized semaphore wait queue */
 

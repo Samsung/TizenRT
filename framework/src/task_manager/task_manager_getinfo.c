@@ -25,6 +25,23 @@
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
+#define SET_QUEUE_NAME(request_msg)							\
+	do {										\
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());	\
+		if (request_msg.q_name == NULL) {					\
+			return NULL;							\
+		}									\
+	} while (0)
+
+#define SEND_REQUEST_TO_TM(request_msg, status)	\
+	do {							\
+		status = taskmgr_send_request(&request_msg);	\
+		if (status < 0) {				\
+			TM_FREE(request_msg.q_name);		\
+			return NULL;				\
+		}						\
+	} while (0)
+
 /****************************************************************************
  * task_manager_getinfo_with_name
  ****************************************************************************/
@@ -62,8 +79,7 @@ tm_appinfo_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 		return NULL;
 	}
 
-	status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-	TM_FREE(request_msg.q_name);
+	RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 
 	if (status < 0) {
 		return NULL;
@@ -92,19 +108,9 @@ tm_appinfo_t *task_manager_getinfo_with_handle(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.timeout = timeout;
 
-	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
-	if (request_msg.q_name == NULL) {
-		return NULL;
-	}
-
-	status = taskmgr_send_request(&request_msg);
-	if (status < 0) {
-		TM_FREE(request_msg.q_name);
-		return NULL;
-	}
-
-	status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-	TM_FREE(request_msg.q_name);
+	SET_QUEUE_NAME(request_msg);
+	SEND_REQUEST_TO_TM(request_msg, status);
+	RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 
 	if (status < 0) {
 		return NULL;
@@ -133,19 +139,9 @@ tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout)
 	request_msg.handle = group;
 	request_msg.timeout = timeout;
 
-	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
-	if (request_msg.q_name == NULL) {
-		return NULL;
-	}
-
-	status = taskmgr_send_request(&request_msg);
-	if (status < 0) {
-		TM_FREE(request_msg.q_name);
-		return NULL;
-	}
-
-	status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-	TM_FREE(request_msg.q_name);
+	SET_QUEUE_NAME(request_msg);
+	SEND_REQUEST_TO_TM(request_msg, status);
+	RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 
 	if (status < 0) {
 		return NULL;
@@ -173,19 +169,9 @@ tm_appinfo_t *task_manager_getinfo_with_pid(int pid, int timeout)
 	request_msg.caller_pid = pid;
 	request_msg.timeout = timeout;
 
-	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
-	if (request_msg.q_name == NULL) {
-		return NULL;
-	}
-
-	status = taskmgr_send_request(&request_msg);
-	if (status < 0) {
-		TM_FREE(request_msg.q_name);
-		return NULL;
-	}
-
-	status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-	TM_FREE(request_msg.q_name);
+	SET_QUEUE_NAME(request_msg);
+	SEND_REQUEST_TO_TM(request_msg, status);
+	RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 
 	if (status < 0) {
 		return NULL;

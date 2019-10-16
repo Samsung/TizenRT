@@ -170,6 +170,27 @@ static int IS_ADC_PIN(PORT_PROPERTY pin)
 }
 #endif
 
+/****************************************************************************
+ * Name: imxrt_spi_initialize
+ *
+ * Description:
+ *   SPI intialization for imxrt
+ *
+ ****************************************************************************/
+static void imxrt_spi_initialize(void)
+{
+#ifdef CONFIG_SPI
+	struct spi_dev_s *spi;
+	spi = up_spiinitialize(1);
+
+#ifdef CONFIG_SPI_USERIO
+	if (spi_uioregister(1, spi) < 0) {
+		lldbg("Failed to register SPI%d\n", 1);
+	}
+#endif
+#endif
+}
+
 void imxrt_iotbus_initialize(void)
 {
 	for (int port_idx = 0; port_idx < PORT_INIT_TABLE; port_idx++) {
@@ -200,6 +221,8 @@ void imxrt_iotbus_initialize(void)
 		{
 		}
 	}
+
+	imxrt_spi_initialize();
 }
 
 /****************************************************************************

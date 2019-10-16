@@ -271,7 +271,6 @@ static void reply_recv(int argc, FAR char *argv[])
 	}
 	if (ret != OK) {
 		tc_send_chk = TC_FAIL;
-		free(reply_data.msg);
 		goto cleanup_return;
 	}
 
@@ -306,10 +305,12 @@ static void utc_messaging_send_sync_n(void)
 	TC_ASSERT_EQ_CLEANUP("messaging_send_sync", ret, ERROR, free(send_data.msg); free(reply.buf));
 
 	free(reply.buf);
+	reply.buf = NULL;
 	ret = messaging_send_sync(TC_SYNC_PORT, &send_data, &reply);
 	TC_ASSERT_EQ_CLEANUP("messaging_send_sync", ret, ERROR, free(send_data.msg));
 
 	free(send_data.msg);
+	send_data.msg = NULL;
 	ret = messaging_send_sync(TC_SYNC_PORT, &send_data, &reply);
 	TC_ASSERT_EQ("messaging_send_sync", ret, ERROR);
 
@@ -360,10 +361,12 @@ static void utc_messaging_send_async_n(void)
 	TC_ASSERT_EQ_CLEANUP("messaging_send_async", ret, ERROR, free(send_data.msg); free(reply.buf));
 
 	free(reply.buf);
+	reply.buf = NULL;
 	ret = messaging_send_async(TC_ASYNC_PORT, &send_data, &reply, &cb_info);
 	TC_ASSERT_EQ_CLEANUP("messaging_send_async", ret, ERROR, free(send_data.msg));
 
 	free(send_data.msg);
+	send_data.msg = NULL;
 	ret = messaging_send_async(TC_ASYNC_PORT, &send_data, &reply, &cb_info);
 	TC_ASSERT_EQ("messaging_send_async", ret, ERROR);
 
@@ -410,6 +413,9 @@ static void utc_messaging_send_n(void)
 	ret = messaging_send(NULL, &send_data);
 	TC_ASSERT_EQ_CLEANUP("messaging_send", ret, ERROR, free(send_data.msg));
 
+	ret = messaging_send("temp_port", NULL);
+	TC_ASSERT_EQ_CLEANUP("messaging_send", ret, ERROR, free(send_data.msg));
+
 	free(send_data.msg);
 	TC_SUCCESS_RESULT();
 }
@@ -434,7 +440,7 @@ static void utc_messaging_send_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-void utc_messaging_send(void)
+void utc_messaging_send_main(void)
 {
 	utc_messaging_send_n();
 	utc_messaging_send_p();

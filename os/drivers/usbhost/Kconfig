@@ -278,6 +278,10 @@ config RTL8723D_PID
 	hex "RTL8723D PID"
 	default 0xd723
 
+config RTL8723D_REMOVABLE
+	bool "RTL8723D is removable"
+	default n
+
 endif # USBHOST_RTL8723D
 
 config USBHOST_TRACE

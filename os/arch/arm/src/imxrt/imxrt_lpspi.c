@@ -1901,13 +1901,9 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		if ((imxrt_lpspi_getreg32(priv, IMXRT_LPSPI_CR_OFFSET) & LPSPI_CR_MEN(1U)) == 0) {
 			/* Configure SPI1 pins: SCK, MISO, and MOSI */
 
-			(void)imxrt_config_gpio(GPIO_LPSPI4_SCK_1);
-			(void)imxrt_config_gpio(GPIO_LPSPI4_SDI_1);
-			(void)imxrt_config_gpio(GPIO_LPSPI4_SDO_1);
-
-			putreg32(0x1, IMXRT_INPUT_LPSPI4_SCK);
-			putreg32(0x1, IMXRT_INPUT_LPSPI4_SDI);
-			putreg32(0x1, IMXRT_INPUT_LPSPI4_SDO);
+			(void)imxrt_config_gpio(GPIO_LPSPI1_SCK_1);
+			(void)imxrt_config_gpio(GPIO_LPSPI1_SDI_1);
+			(void)imxrt_config_gpio(GPIO_LPSPI1_SDO_1);
 
 			/* Set up default configuration: Master, 8-bit, etc. */
 

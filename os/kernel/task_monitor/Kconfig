@@ -22,9 +22,20 @@ config TASK_MONITOR_PRIORITY
 
 config TASK_MONITOR_INTERVAL
 	int "Interval for checking alive(sec)"
-	default 10
+	default 5
 	---help---
 		Task Monitor checks the registered tasks/pthreads active status
-		every this interval.
+		every this interval. If TASK_MONITOR_INTERVAL set by 5, Interval
+		value can use as 5, 10, 15 .... and TASK_MONITOR_MAX_INTERVAL.
 
+config TASK_MONITOR_MAX_INTERVAL
+	int "Max interval for checking alive(sec)"
+	default 20
+	---help---
+		It is maximum interval for task check and should be set to 
+		a multiple of TASK_MONITOR_INTERVAL. If it is not a multiple
+		of TASK_MONITOR_INTERVAL, it is set to the previous multiple.
+		ex) If TASK_MONITOR_INTERVAL set by 5 and TASK_MONITOR_MAX_INTERVAL
+		set by 17, Interval value can use as 5, 10 and 15.
+		
 endif # TASK_MONITOR

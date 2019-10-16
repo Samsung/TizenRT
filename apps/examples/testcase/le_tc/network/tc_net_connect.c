@@ -42,9 +42,13 @@
    */
 static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
-	inet_pton(AF_INET, "192.168.1.3", &(sa->sin_addr));
+	int ret = inet_pton(AF_INET, "192.168.1.3", &(sa->sin_addr));
+	if (ret < 0) {
+		printf("[ERR] %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+		return;
+	}
 
-	int ret = connect(0, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
+	ret = connect(0, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 
 	TC_ASSERT_EQ("connect", ret, -1);
 	TC_SUCCESS_RESULT();

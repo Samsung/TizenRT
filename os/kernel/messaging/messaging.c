@@ -94,7 +94,7 @@ struct msg_recv_node_s {
 };
 typedef struct msg_recv_node_s msg_recv_node_t;
 
-sem_t port_list_sem = SEM_INITIALIZER(1);
+static sem_t port_list_sem = SEM_INITIALIZER(1);
 
 /****************************************************************************
  * Public Variables

@@ -16,9 +16,15 @@
  *
  ******************************************************************/
 
-#include "MediaUtils.h"
+#include <media/MediaUtils.h>
 #include <debug.h>
 #include <errno.h>
+#include <tinyara/config.h>
+#include <cstring>
+
+#ifdef CONFIG_CONTAINER_MPEG2TS
+#include "../demux/mpeg2ts/TSDemuxer.h"
+#endif
 
 namespace media {
 namespace utils {
@@ -35,10 +41,11 @@ static const std::string AACP_MIME_TYPE = "audio/aacp";
 static const std::string MPEG_MIME_TYPE = "audio/mpeg";
 static const std::string MP4_MIME_TYPE = "audio/mp4";
 static const std::string OPUS_MIME_TYPE = "audio/opus";
+static const std::string MP2T_MIME_TYPE = "video/MP2T";
 
 void toLowerString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('A' <= c && c <= 'Z') {
 			c += ('a' - 'A');
 		}
@@ -47,7 +54,7 @@ void toLowerString(std::string &str)
 
 void toUpperString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('a' <= c && c <= 'z') {
 			c -= ('a' - 'A');
 		}
@@ -85,6 +92,9 @@ audio_type_t getAudioTypeFromPath(std::string datapath)
 	} else if (extension.compare(AUDIO_EXT_TYPE_WAV) == 0) {
 		medvdbg("audio type : wav\n");
 		return AUDIO_TYPE_WAVE;
+	} else if (extension.compare("ts") == 0) {
+		medvdbg("audio type : ts\n");
+		return AUDIO_TYPE_MP2T;
 	} else {
 		medvdbg("audio type : unknown\n");
 		return AUDIO_TYPE_INVALID;
@@ -107,6 +117,8 @@ audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
 		audioType = AUDIO_TYPE_AAC;
 	} else if (mimeType.find(OPUS_MIME_TYPE) != std::string::npos) {
 		audioType = AUDIO_TYPE_OPUS;
+	} else if (mimeType.find(MP2T_MIME_TYPE) != std::string::npos) {
+		audioType = AUDIO_TYPE_MP2T;
 	} else {
 		meddbg("Unsupported mime type: %s\n", mimeType.c_str());
 		audioType = AUDIO_TYPE_UNKNOWN;
@@ -302,9 +314,65 @@ bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned 
 	return true;
 }
 
-bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+#ifdef CONFIG_CONTAINER_MPEG2TS
+/**
+ * @brief Parsing the mpeg2 transport stream data in buffer, to get audio stream codec type and other informations
+ * @param[in] buffer, buffer size, and audio type, channel, sample rate, pcm format adderss to receive.
+ * @return true - parsing success. false - parsing fail.
+ */
+static bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
-	unsigned char *header;
+	// create temporary ts parser
+	auto tsDemuxer = media::TSDemuxer::create();
+	if (!tsDemuxer) {
+		meddbg("TSDemuxer::create failed\n");
+		return false;
+	}
+
+	// push the given (ts) data into demux buffer
+	size_t ret = tsDemuxer->pushData(buffer, bufferSize);
+	if (ret < bufferSize) {
+		medwdbg("TSDemuxer accept part of data %u/%u\n", ret, bufferSize);
+	}
+
+	// pre parse to get PSI
+	if (tsDemuxer->prepare() < 0) {
+		meddbg("TSDemuxer parse failed\n");
+		return false;
+	}
+
+	// get programs in ts, usually we select the 1th one as default.
+	std::vector<unsigned short> programs;
+	tsDemuxer->getPrograms(programs);
+	medvdbg("There's %lu programs in the given transport stream\n", programs.size());
+	if (programs.empty()) {
+		meddbg("TSDemuxer didn't find any program! Failed!\n");
+		return false;
+	}
+
+	// get audio type (from PMT component stream type field)
+	*audioType = tsDemuxer->getAudioType((void *)&programs[0]);
+
+	// get ES data (we expect the given ts data is enough to form a PES packet)
+	unsigned char audioES[64]; // 64 bytes should be enough for header parsing
+	ssize_t audioESLen = tsDemuxer->pullData(audioES, sizeof(audioES), (void *)&programs[0]);
+	if (audioESLen < 0) {
+		meddbg("TSDemuxer get ES data failed!\n");
+		return false;
+	}
+
+	if (pcmFormat) {
+		// Asign default value (same in DataSource)
+		*pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
+	}
+
+	return buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, pcmFormat);
+}
+#endif
+
+bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+{
+	unsigned char *header = NULL;
 	unsigned char tag[2];
 	bool isHeader;
 	int ret;
@@ -369,7 +437,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 		if (isHeader) {
 			header = (unsigned char *)malloc(sizeof(unsigned char) * (AAC_HEADER_LENGTH + 1));
 			if (header == NULL) {
-				medvdbg("malloc failed error\n");
+				meddbg("malloc failed error\n");
 				return false;
 			}
 
@@ -384,14 +452,14 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 				return false;
 			}
 		} else {
-			medvdbg("no header\n");
+			meddbg("no header\n");
 			return false;
 		}
 		break;
 	case AUDIO_TYPE_WAVE:
 		header = (unsigned char *)malloc(sizeof(unsigned char) * (WAVE_HEADER_LENGTH + 1));
 		if (header == NULL) {
-			medvdbg("malloc failed error\n");
+			meddbg("malloc failed error\n");
 			return false;
 		}
 
@@ -400,6 +468,30 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 			return false;
 		}
 		break;
+#ifdef CONFIG_CONTAINER_MPEG2TS
+	case AUDIO_TYPE_MP2T: {
+		// has container, demux and parse stream data to get audio type
+		size_t bufferSize = CONFIG_DATASOURCE_PREPARSE_BUFFER_SIZE;
+		header = (unsigned char *)malloc(sizeof(unsigned char) * bufferSize);
+		if (!header) {
+			meddbg("run out of memory! size %u\n", bufferSize);
+			return false;
+		}
+
+		size_t readSize = fread(header, sizeof(unsigned char), bufferSize, fp);
+		if (readSize != bufferSize) {
+			free(header);
+			meddbg("can not read enough data for preparsing! read:%u\n", readSize);
+			return false;
+		}
+
+		if (!ts_parsing(header, readSize, &audioType, channel, sampleRate, pcmFormat)) {
+			free(header);
+			meddbg("ts_parsing failed, can not get audio information!\n");
+			return false;
+		}
+	} break;
+#endif
 	default:
 		medvdbg("does not support header parsing\n");
 		return false;
@@ -416,10 +508,10 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 	return true;
 }
 
-bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned int headPoint;
-	unsigned char *header;
+	unsigned char *header = NULL;
 	bool isHeader;
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
@@ -473,7 +565,7 @@ bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t
 				medvdbg("malloc failed error\n");
 				return false;
 			}
-			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
+			memcpy(header, buffer + headPoint, AAC_HEADER_LENGTH);
 			if (!aac_header_parsing(header, channel, sampleRate)) {
 				free(header);
 				return false;
@@ -500,6 +592,14 @@ bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t
 			return false;
 		}
 		break;
+#ifdef CONFIG_CONTAINER_MPEG2TS
+	case AUDIO_TYPE_MP2T:
+		if (!ts_parsing(buffer, bufferSize, &audioType, channel, sampleRate, pcmFormat)) {
+			meddbg("ts_parsing failed, can not get audio information!\n");
+			return false;
+		}
+		break;
+#endif
 	default:
 		medvdbg("does not support header parsing\n");
 		return false;
@@ -594,12 +694,12 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 		return false;
 	}
 
-	strncpy(header->headerRiff, "RIFF", 4);
+	memcpy(header->headerRiff, "RIFF", 4);
 
 	header->riffSize = fileSize - 8;
 
-	strncpy(header->headerWave, "WAVE", 4);
-	strncpy(header->headerFmt, "fmt ", 4);
+	memcpy(header->headerWave, "WAVE", 4);
+	memcpy(header->headerFmt, "fmt ", 4);
 
 	header->fmtSize = 16;
 	header->format = 1;
@@ -609,7 +709,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	header->blockAlign = blockAlign;
 	header->bitPerSample = bitPerSample;
 
-	strncpy(header->headerData, "data", 4);
+	memcpy(header->headerData, "data", 4);
 
 	header->dataSize = fileSize - WAVE_HEADER_LENGTH;
 
@@ -686,5 +786,69 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
 	va_end(ap);
 	return ret;
 }
+
+float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)
+{
+	const int NOISE_MIN = 30;
+
+	int i = 0;
+	int frame_sample = 0;
+
+	float sum = 0.0f;
+	float noise = 0.0f;
+	float speechAverage = 0.0f;
+	float energyRatio = 0.0f;
+
+	va_list ap;
+	va_start(ap, index);
+
+	float *speechSum = va_arg(ap, float *);
+	float *noiseSum = va_arg(ap, float *);
+	float *noiseAverage = va_arg(ap, float *);
+
+	if (*index == 0) {
+		*noiseAverage = 32767;
+		*speechSum = 0;
+		*noiseSum = 0;
+		(*index)++;
+	}
+
+	sum = 0;
+	for (i = 0; i < size; i++) {
+		sum += buffer[i] > 0 ? buffer[i] : -buffer[i];
+	}
+
+	*noiseSum += sum;
+
+	if (*index % windows == 0) {
+		if ((noise = *noiseSum / (size * windows)) < NOISE_MIN) {
+			noise = NOISE_MIN;
+		}
+
+		if (noise < *noiseAverage) {
+			*noiseAverage = noise;
+		}
+		*noiseSum = 0;
+	}
+
+	if (*index > windows) {
+		*speechSum += sum;
+		frame_sample = size * (*index - windows);
+	}
+
+	medvdbg("frame_sample : %d\n", frame_sample);
+	if (frame_sample != 0) {
+		speechAverage = *speechSum / frame_sample;
+		energyRatio = speechAverage / *noiseAverage;
+	}
+
+	(*index)++;
+
+	medvdbg("SNR = %f, %f, %f\n", energyRatio, speechAverage, *noiseAverage);
+
+	va_end(ap);
+	return energyRatio;
+}
+
 } // namespace util
 } // namespace media

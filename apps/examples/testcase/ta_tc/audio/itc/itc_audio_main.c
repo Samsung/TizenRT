@@ -1138,7 +1138,7 @@ int main(int argc, FAR char *argv[])
 int itc_audio_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Audio ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Audio ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1195,7 +1195,7 @@ int itc_audio_main(int argc, char *argv[])
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	(void)tc_handler(TC_END, "Audio ITC");
+	(void)testcase_state_handler(TC_END, "Audio ITC");
 
 	return 0;
 }

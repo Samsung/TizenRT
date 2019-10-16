@@ -83,32 +83,25 @@
 
 /* spi frequency based on os/board/stm32/stm32_spi.c */
 
-#if CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 1)
+#if CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 1)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd2	/* 000: fPCLK/2 */
 #define ILI93414WS_BAUD_DIVISOR   2
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 2)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 2)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd4	/* 001: fPCLK/4 */
 #define ILI93414WS_BAUD_DIVISOR   4
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 3)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 3)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd8	/* 010: fPCLK/8 */
 #define ILI93414WS_BAUD_DIVISOR   8
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 4)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 4)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd16	/* 011: fPCLK/16 */
 #define ILI93414WS_BAUD_DIVISOR   16
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 5)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 5)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd32	/* 100: fPCLK/32 */
 #define ILI93414WS_BAUD_DIVISOR   32
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 6)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 6)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd64	/* 101: fPCLK/64 */
 #define ILI93414WS_BAUD_DIVISOR   64
-#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= \
-                                        (STM32_PCLK1_FREQUENCY >> 7)
+#elif CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY >= (STM32_PCLK1_FREQUENCY >> 7)
 #define ILI93414WS_SPI_BR         SPI_CR1_FPCLCKd128	/* 110: fPCLK/128 */
 #define ILI93414WS_BAUD_DIVISOR   128
 #else
@@ -122,8 +115,8 @@
  */
 
 #define ILI93414WS_RECV_CLK         (STM32_SYSCLK_FREQUENCY / \
-                                    (STM32_PCLK1_FREQUENCY / \
-                                    ILI93414WS_BAUD_DIVISOR))
+									(STM32_PCLK1_FREQUENCY / \
+									ILI93414WS_BAUD_DIVISOR))
 
 /* Definition of the spi mcu register */
 
@@ -143,16 +136,6 @@
 #ifndef CONFIG_SPI_OWNBUS
 #define ILI93414WS_SPI
 #endif
-#endif
-
-/* Debug option */
-
-#ifdef CONFIG_DEBUG_LCD
-#define lcddbg       dbg
-#define lcdvdbg      vdbg
-#else
-#define lcddbg(x...)
-#define lcdvdbg(x...)
 #endif
 
 /******************************************************************************
@@ -472,7 +455,7 @@ static int stm32_ili93414ws_sendblock(FAR struct ili93414ws_lcd_s *lcd, const ui
 
 		while (nwords-- > 0) {
 			word = *src++;
-			stm32_ili93414ws_sndword((uint16_t) word);
+			stm32_ili93414ws_sndword((uint16_t)word);
 		}
 
 	}
@@ -686,10 +669,10 @@ static int stm32_ili93414ws_recvblock(FAR struct ili93414ws_lcd_s *lcd, uint16_t
 	else {
 		/* 8-bit mode */
 
-		uint8_t *dest = (uint8_t *) wd;
+		uint8_t *dest = (uint8_t *)wd;
 
 		while (nwords--) {
-			*dest++ = (uint8_t) stm32_ili93414ws_recvword();
+			*dest++ = (uint8_t)stm32_ili93414ws_recvword();
 		}
 	}
 
@@ -1067,7 +1050,7 @@ static int stm32_ili93414ws_recvparam(FAR struct ili9341_lcd_s *lcd, uint8_t *pa
 #endif
 
 	lcdvdbg("param=%04x\n", param);
-	return stm32_ili93414ws_recvblock(priv, (uint16_t *) param, 1);
+	return stm32_ili93414ws_recvblock(priv, (uint16_t *)param, 1);
 }
 
 /******************************************************************************

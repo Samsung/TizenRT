@@ -693,7 +693,7 @@ struct cdc_union_funcdesc_s {
 								 * interface in the union
 								 */
 };
-#define SIZEOF_UNION_FUNCDESC(n) ((n)+4)
+#define SIZEOF_UNION_FUNCDESC(n) ((n) + 4)
 
 /* Table 34: Country Selection Functional Descriptor */
 
@@ -708,7 +708,7 @@ struct cdc_country_funcdesc_s {
 								 * release date as specified in offset 3 for Nth country supported
 								 */
 };
-#define SIZEOF_COUNTRY_FUNCDESC(n) (sizeof(uint16_t)*(n) + 4)
+#define SIZEOF_COUNTRY_FUNCDESC(n) (sizeof(uint16_t) * (n) + 4)
 
 /* Table 35: USB Terminal Functional Descriptor */
 
@@ -726,7 +726,7 @@ struct cdc_usbterm_funcdesc_s {
 	uint8_t options;			/* bmOptions, bit-encoded options */
 	uint8_t child[1];			/* Nth ID of lower Terminal or Unit to which this Terminal is connected. */
 };
-#define SIZEOF_USBTERM_FUNCDESC(n) ((n)+7)
+#define SIZEOF_USBTERM_FUNCDESC(n) ((n) + 7)
 
 /* Table 36: Network Channel Terminal Functional Descriptor */
 
@@ -753,7 +753,7 @@ struct cdc_protounit_funcdesc_s {
 	uint8_t proto;				/* bProtocol, Protocol code as defined in Table 19 */
 	uint8_t child[1];			/* Nth ID of lower Terminal or Unit to which this Terminal is connected */
 };
-#define SIZEOF_PROTOUNIT_FUNCDESC(n) ((n)+5)
+#define SIZEOF_PROTOUNIT_FUNCDESC(n) ((n) + 5)
 
 /* Table 38: Extension Unit Functional Descriptor */
 
@@ -766,7 +766,7 @@ struct cdc_extunit_funcdesc_s {
 	uint8_t name;				/* iName, Index of string descriptor, describing the name of the Extension Unit */
 	uint8_t child[1];			/* Nth ID of lower Terminal or Unit to which this Terminal is connected */
 };
-#define SIZEOF_EXTUNIT_FUNCDESC(n) ((n)+6)
+#define SIZEOF_EXTUNIT_FUNCDESC(n) ((n) + 6)
 
 /* Table 39: Multi-Channel Management Functional Descriptor */
 

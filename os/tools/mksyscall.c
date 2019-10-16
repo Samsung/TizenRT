@@ -82,10 +82,10 @@ static bool is_vararg(const char *type, int ndx, int nparms)
 {
 	if (strcmp(type, "...") == 0) {
 		if (ndx != (nparms - 1)) {
-			fprintf(stderr, "%d: ... is not the last in the argument list\n", g_lineno);
+			fprintf(stderr, "%d: ... is not the last in the argument list\n", get_lineno());
 			exit(11);
 		} else if (nparms < 2) {
-			fprintf(stderr, "%d: Need one parameter before ...\n", g_lineno);
+			fprintf(stderr, "%d: Need one parameter before ...\n", get_lineno());
 			exit(14);
 		}
 
@@ -194,7 +194,7 @@ static void get_fieldname(const char *arg, char *fieldname)
 		}
 	}
 
-	fprintf(stderr, "%d: Missing union fieldname: %s\n", g_lineno, arg);
+	fprintf(stderr, "%d: Missing union fieldname: %s\n", get_lineno(), arg);
 	exit(15);
 }
 
@@ -203,7 +203,7 @@ static FILE *open_proxy(void)
 	char filename[MAX_PARMSIZE + 10];
 	FILE *stream;
 
-	snprintf(filename, MAX_PARMSIZE + 9, "PROXY_%s.c", g_parm[NAME_INDEX]);
+	snprintf(filename, MAX_PARMSIZE + 9, "PROXY_%s.c", get_parm(NAME_INDEX));
 	filename[MAX_PARMSIZE + 9] = '\0';
 
 	stream = fopen(filename, "w");
@@ -222,35 +222,37 @@ static void generate_proxy(int nparms)
 	bool bvarargs = false;
 	int nformal;
 	int nactual;
+	char *cond_parm;
 	int i;
 
 	/* Generate "up-front" information, include correct header files */
 
-	fprintf(stream, "/* Auto-generated %s proxy file -- do not edit */\n\n", g_parm[NAME_INDEX]);
+	fprintf(stream, "/* Auto-generated %s proxy file -- do not edit */\n\n", get_parm(NAME_INDEX));
 	fprintf(stream, "#include <tinyara/config.h>\n");
 
 	/* Does this function have a variable number of parameters?  If so then the
 	 * final parameter type will be encoded as "..."
 	 */
 
-	if (is_vararg(g_parm[PARM1_INDEX + nparms - 1], nparms - 1, nparms)) {
+	if (is_vararg(get_parm(PARM1_INDEX + nparms - 1), nparms - 1, nparms)) {
 		nformal = nparms - 1;
 		bvarargs = true;
 		fprintf(stream, "#include <stdarg.h>\n");
 	} else
 		nformal = nparms;
 
-	if (g_parm[HEADER_INDEX] && strlen(g_parm[HEADER_INDEX]) > 0)
-		fprintf(stream, "#include <%s>\n", g_parm[HEADER_INDEX]);
+	if (get_parm(HEADER_INDEX) && strlen(get_parm(HEADER_INDEX)) > 0)
+		fprintf(stream, "#include <%s>\n", get_parm(HEADER_INDEX));
 
 	fprintf(stream, "#include <syscall.h>\n\n");
 
-	if (g_parm[COND_INDEX][0] != '\0')
-		fprintf(stream, "#if %s\n\n", g_parm[COND_INDEX]);
+	cond_parm = get_parm(COND_INDEX);
+	if (cond_parm[0] != '\0')
+		fprintf(stream, "#if %s\n\n", cond_parm);
 
 	/* Generate the function definition that matches standard function prototype */
 
-	fprintf(stream, "%s %s(", g_parm[RETTYPE_INDEX], g_parm[NAME_INDEX]);
+	fprintf(stream, "%s %s(", get_parm(RETTYPE_INDEX), get_parm(NAME_INDEX));
 
 	/* Generate the formal parameter list */
 
@@ -262,7 +264,7 @@ static void generate_proxy(int nparms)
 			 * formal parameter type.
 			 */
 
-			get_formalparmtype(g_parm[PARM1_INDEX + i], formal);
+			get_formalparmtype(get_parm(PARM1_INDEX + i), formal);
 
 			/* Arguments after the first must be separated from the preceding
 			 * parameter with a comma.
@@ -302,27 +304,27 @@ static void generate_proxy(int nparms)
 	 */
 
 	nactual = bvarargs ? 6 : nparms;
-	if (strcmp(g_parm[RETTYPE_INDEX], "void") == 0)
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
 		fprintf(stream, "  (void)sys_call%d(", nactual);
 	else
-		fprintf(stream, "  return (%s)sys_call%d(", g_parm[RETTYPE_INDEX], nactual);
+		fprintf(stream, "  return (%s)sys_call%d(", get_parm(RETTYPE_INDEX), nactual);
 
 	/* Create the parameter list with the matching types.  The first parameter
 	 * is always the syscall number.
 	 */
 
-	fprintf(stream, "(unsigned int)SYS_%s", g_parm[NAME_INDEX]);
+	fprintf(stream, "(unsigned int)SYS_%s", get_parm(NAME_INDEX));
 
 	for (i = 0; i < nactual; i++) {
 		/* Is the parameter a union member */
 
-		if (i < nparms && is_union(g_parm[PARM1_INDEX + i])) {
+		if (i < nparms && is_union(get_parm(PARM1_INDEX + i))) {
 			/* Then we will have to pick a field name that can be cast to a
 			 * uintptr_t.  There probably should be some error handling here
 			 * to catch the case where the fieldname was not supplied.
 			 */
 
-			get_fieldname(g_parm[PARM1_INDEX + i], fieldname);
+			get_fieldname(get_parm(PARM1_INDEX + i), fieldname);
 			fprintf(stream, ", (uintptr_t)parm%d.%s", i + 1, fieldname);
 		} else
 			fprintf(stream, ", (uintptr_t)parm%d", i + 1);
@@ -330,14 +332,15 @@ static void generate_proxy(int nparms)
 
 	/* Handle the tail end of the function. */
 
-	if (is_noreturn_func(g_parm[NAME_INDEX])) {
-		fprintf(stream, ");%s\n}\n\n", "\n  while(1);");
+	if (is_noreturn_func(get_parm(NAME_INDEX))) {
+		fprintf(stream, ");%s\n}\n\n", "\n  while (1);");
 	} else {
 		fprintf(stream, ");\n}\n\n");
 	}
 
-	if (g_parm[COND_INDEX][0] != '\0')
-		fprintf(stream, "#endif /* %s */\n", g_parm[COND_INDEX]);
+	cond_parm = get_parm(COND_INDEX);
+	if (cond_parm[0] != '\0')
+		fprintf(stream, "#endif /* %s */\n", cond_parm);
 
 	fclose(stream);
 }
@@ -361,7 +364,7 @@ static FILE *open_stub(void)
 		char filename[MAX_PARMSIZE + 8];
 		FILE *stream;
 
-		snprintf(filename, MAX_PARMSIZE + 7, "STUB_%s.c", g_parm[NAME_INDEX]);
+		snprintf(filename, MAX_PARMSIZE + 7, "STUB_%s.c", get_parm(NAME_INDEX));
 		filename[MAX_PARMSIZE + 7] = '\0';
 
 		stream = fopen(filename, "w");
@@ -384,36 +387,38 @@ static void generate_stub(int nparms)
 	FILE *stream = open_stub();
 	char formal[MAX_PARMSIZE];
 	char actual[MAX_PARMSIZE];
+	char *cond_parm;
 	int i;
 	int j;
 
 	/* Generate "up-front" information, include correct header files */
 
-	fprintf(stream, "/* Auto-generated %s stub file -- do not edit */\n\n", g_parm[0]);
+	fprintf(stream, "/* Auto-generated %s stub file -- do not edit */\n\n", get_parm(0));
 	fprintf(stream, "#include <tinyara/config.h>\n");
 	fprintf(stream, "#include <stdint.h>\n");
 
-	if (g_parm[HEADER_INDEX] && strlen(g_parm[HEADER_INDEX]) > 0)
-		fprintf(stream, "#include <%s>\n", g_parm[HEADER_INDEX]);
+	if (get_parm(HEADER_INDEX) && strlen(get_parm(HEADER_INDEX)) > 0)
+		fprintf(stream, "#include <%s>\n", get_parm(HEADER_INDEX));
 
 	putc('\n', stream);
 
-	if (g_parm[COND_INDEX][0] != '\0')
-		fprintf(stream, "#if %s\n\n", g_parm[COND_INDEX]);
+	cond_parm = get_parm(COND_INDEX);
+	if (cond_parm[0] != '\0')
+		fprintf(stream, "#if %s\n\n", cond_parm);
 
 	/* Generate the function definition that matches standard function prototype */
 
 	if (g_inline)
 		fprintf(stream, "static inline ");
 
-	fprintf(stream, "uintptr_t STUB_%s(int nbr", g_parm[NAME_INDEX]);
+	fprintf(stream, "uintptr_t STUB_%s(int nbr", get_parm(NAME_INDEX));
 
 	/* Generate the formal parameter list */
 
 	for (i = 0; i < nparms; i++) {
 		/* Check for a variable number of arguments */
 
-		if (is_vararg(g_parm[PARM1_INDEX + i], i, nparms)) {
+		if (is_vararg(get_parm(PARM1_INDEX + i), i, nparms)) {
 			/* Always receive six arguments in this case */
 
 			for (j = i + 1; j <= 6; j++)
@@ -428,10 +433,10 @@ static void generate_stub(int nparms)
 	 * a special case.
 	 */
 
-	if (strcmp(g_parm[RETTYPE_INDEX], "void") == 0)
-		fprintf(stream, "  %s(", g_parm[NAME_INDEX]);
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
+		fprintf(stream, "  %s(", get_parm(NAME_INDEX));
 	else
-		fprintf(stream, "  return (uintptr_t)%s(", g_parm[NAME_INDEX]);
+		fprintf(stream, "  return (uintptr_t)%s(", get_parm(NAME_INDEX));
 
 	/* The pass all of the system call parameters, casting to the correct type
 	 * as necessary.
@@ -445,8 +450,8 @@ static void generate_stub(int nparms)
 		 * -- Yech.
 		 */
 
-		get_formalparmtype(g_parm[PARM1_INDEX + i], formal);
-		get_actualparmtype(g_parm[PARM1_INDEX + i], actual);
+		get_formalparmtype(get_parm(PARM1_INDEX + i), formal);
+		get_actualparmtype(get_parm(PARM1_INDEX + i), actual);
 
 		/* Treat the first argument in the list differently from the others..
 		 * It does not need a comma before it.
@@ -478,13 +483,14 @@ static void generate_stub(int nparms)
 	 * value, just return zero (OK).
 	 */
 
-	if (strcmp(g_parm[RETTYPE_INDEX], "void") == 0)
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
 		fprintf(stream, ");\n  return 0;\n}\n\n");
 	else
 		fprintf(stream, ");\n}\n\n");
 
-	if (g_parm[COND_INDEX][0] != '\0')
-		fprintf(stream, "#endif /* %s */\n", g_parm[COND_INDEX]);
+	cond_parm = get_parm(COND_INDEX);
+	if (cond_parm[0] != '\0')
+		fprintf(stream, "#endif /* %s */\n", cond_parm);
 	stub_close(stream);
 }
 
@@ -513,13 +519,13 @@ int main(int argc, char **argv, char **envp)
 
 	/* Parse command line options */
 
-	g_debug = false;
+	set_debug(false);
 	g_inline = false;
 
 	while ((ch = getopt(argc, argv, ":dps")) > 0) {
 		switch (ch) {
 		case 'd':
-			g_debug = true;
+			set_debug(true);
 			break;
 
 		case 'p':
@@ -574,7 +580,7 @@ int main(int argc, char **argv, char **envp)
 
 		int nargs = parse_csvline(ptr);
 		if (nargs < PARM1_INDEX) {
-			fprintf(stderr, "Only %d arguments found: %s\n", nargs, g_line);
+			fprintf(stderr, "Only %d arguments found: %s\n", nargs, get_line());
 			exit(8);
 		}
 

@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <debug.h>
 #include <media/FileOutputDataSource.h>
-#include "utils/MediaUtils.h"
+#include <media/MediaUtils.h>
 
 #ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
 #define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE 4096

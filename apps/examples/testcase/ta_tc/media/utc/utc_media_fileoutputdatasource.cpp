@@ -27,39 +27,39 @@ using namespace media::stream;
 static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
 static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
-static const char *filePath = "/tmp/record";
+static constexpr const char *filePaths[] = {"/tmp/record", "/tmp/record.wav"};
 
 static void utc_media_FileOutputDataSource_getChannels_p(void)
 {
-	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePaths[0]);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getChannels", dataSource.getChannels(), channels);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_getSampleRate_p(void)
 {
-	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePaths[0]);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getSampleRate", dataSource.getSampleRate(), sampleRate);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_getPcmFormat_p(void)
 {
-	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePaths[0]);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getPcmFormat", dataSource.getPcmFormat(), pcmFormat);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_getAudioType_p(void)
 {
-	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePaths[0]);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getAudioType", dataSource.getAudioType(), media::AUDIO_TYPE_INVALID);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_setChannels_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	unsigned int compare_channels = 3;
 	dataSource.setChannels(compare_channels);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setChannels", dataSource.getChannels(), compare_channels);
@@ -68,7 +68,7 @@ static void utc_media_FileOutputDataSource_setChannels_p(void)
 
 static void utc_media_FileOutputDataSource_setSampleRate_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	unsigned int compare_sampleRate = 32000;
 	dataSource.setSampleRate(compare_sampleRate);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setSampleRate", dataSource.getSampleRate(), compare_sampleRate);
@@ -77,7 +77,7 @@ static void utc_media_FileOutputDataSource_setSampleRate_p(void)
 
 static void utc_media_FileOutputDataSource_setPcmFormat_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	media::audio_format_type_t compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
 	dataSource.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setPcmFormat", dataSource.getPcmFormat(), compare_pcmFormat);
@@ -86,7 +86,7 @@ static void utc_media_FileOutputDataSource_setPcmFormat_p(void)
 
 static void utc_media_FileOutputDataSource_setAudioType_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	media::audio_type_t compare_audioType = media::AUDIO_TYPE_MP3;
 	dataSource.setAudioType(media::AUDIO_TYPE_MP3);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setAudioType", dataSource.getAudioType(), compare_audioType);
@@ -95,7 +95,7 @@ static void utc_media_FileOutputDataSource_setAudioType_p(void)
 
 static void utc_media_FileOutputDataSource_CopyConstructor_p(void)
 {
-	FileOutputDataSource dummy(filePath);
+	FileOutputDataSource dummy(filePaths[0]);
 	FileOutputDataSource dataSource(dummy);
 
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_CopyConstructor", dataSource.getChannels(), dummy.getChannels());
@@ -106,8 +106,10 @@ static void utc_media_FileOutputDataSource_CopyConstructor_p(void)
 
 static void utc_media_FileOutputDataSource_EqualOperator_p(void)
 {
-	FileOutputDataSource dummy(filePath);
-	FileOutputDataSource dataSource = dummy;
+	FileOutputDataSource dummy(filePaths[0]);
+	FileOutputDataSource dataSource("test");
+
+	dataSource = dummy;
 
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getChannels(), dummy.getChannels());
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getSampleRate(), dummy.getSampleRate());
@@ -117,10 +119,13 @@ static void utc_media_FileOutputDataSource_EqualOperator_p(void)
 
 static void utc_media_FileOutputDataSource_open_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	for (auto filePath : filePaths) {
+		FileOutputDataSource dataSource(filePath);
 
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_open", dataSource.open(), true);
-	dataSource.close();
+		TC_ASSERT_EQ("utc_media_FileOutputDataSource_open", dataSource.open(), true);
+		dataSource.close();
+		remove(filePath);
+	}
 
 	TC_SUCCESS_RESULT();
 }
@@ -136,17 +141,20 @@ static void utc_media_FileOutputDataSource_open_n(void)
 
 static void utc_media_FileOutputDataSource_close_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	for (auto filePath : filePaths) {
+		FileOutputDataSource dataSource(filePath);
+		dataSource.open();
 
-	dataSource.open();
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_close", dataSource.close(), true);
+		TC_ASSERT_EQ("utc_media_FileOutputDataSource_close", dataSource.close(), true);
+		remove(filePath);
+	}
 
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_close_n(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_close", dataSource.close(), false);
 	TC_SUCCESS_RESULT();
@@ -154,23 +162,27 @@ static void utc_media_FileOutputDataSource_close_n(void)
 
 static void utc_media_FileOutputDataSource_isPrepared_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), true);
 	dataSource.close();
+	dataSource.open();
+
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_isPrepared_n(void)
 {
-	FileOutputDataSource dataSource(filePath);
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), false);
+	{
+		FileOutputDataSource dataSource(filePaths[0]);
+		TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepared", dataSource.isPrepared(), false);
+	}
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_FileOutputDataSource_write_p(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
 	unsigned char dummy[] = "dummy";
 	ssize_t dummySize = 6;
 
@@ -183,11 +195,16 @@ static void utc_media_FileOutputDataSource_write_p(void)
 
 static void utc_media_FileOutputDataSource_write_n(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource(filePaths[0]);
+	unsigned char dummy[] = "dummy";
+	ssize_t dummySize = 6;
 
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 0), 0);
 	dataSource.close();
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(dummy, dummySize), EOF);;
 
 	TC_SUCCESS_RESULT();
 }

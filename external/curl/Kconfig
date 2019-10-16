@@ -123,6 +123,7 @@ if SSL_SUPPORT
 config MBEDTLS
 	bool "Mbed TLS"
 	default y
+	depends on NET_SECURITY_TLS
 
 endif #SSL_SUPPORT
 

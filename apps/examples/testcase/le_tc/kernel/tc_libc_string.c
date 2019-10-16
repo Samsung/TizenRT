@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <signal.h>
 
 #include <tinyara/float.h>
 #include <tinyara/math.h>
@@ -38,7 +39,8 @@
 
 #define BUFF_SIZE 5
 #define BUFF_SIZE_10 10
-#define BUFF_SIZE_12 12
+
+#define EBUSY_STR_SIZE (sizeof(EBUSY_STR))
 
 /****************************************************************************
  * Public Functions
@@ -396,12 +398,11 @@ static void tc_libc_string_strdup(void)
 static void tc_libc_string_strerror(void)
 {
 	char *dest_arr = NULL;
-	char src[BUFF_SIZE_12] = "Bad address";
 
 	/* EFAULT is defined as 14 which gives Bad address in strerror */
 	dest_arr = (char *)strerror(EFAULT);
 	TC_ASSERT_NEQ("strerror", dest_arr, NULL);
-	TC_ASSERT_EQ("strerror", strncmp(dest_arr, src, BUFF_SIZE_12), 0);
+	TC_ASSERT_EQ("strerror", strncmp(dest_arr, EFAULT_STR, sizeof(EFAULT_STR)), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -918,6 +919,81 @@ static void tc_libc_string_strtold(void)
 
 	TC_SUCCESS_RESULT();
 }
+#ifdef CONFIG_LIBC_STRERROR
+/**
+* @fn                   :tc_libc_string_strerror_r
+* @brief                :convert the error number to string
+* @Scenario             :put error number to strerror_r and check the return which points the string value
+* API's covered         :
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_string_strerror_r(void)
+{
+	char dest_arr[EBUSY_STR_SIZE];
+	int ret;
+
+	ret = strerror_r(EBUSY, dest_arr, EBUSY_STR_SIZE);
+	TC_ASSERT_EQ("strerror_r", ret, OK);
+	TC_ASSERT_EQ("strerror_r", strncmp(dest_arr, EBUSY_STR, EBUSY_STR_SIZE), 0);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+#ifndef CONFIG_DISABLE_SIGNALS
+/**
+* @fn                   :tc_libc_string_strsignal
+* @brief                :convert the signal number to string
+* @Scenario             :put signal number to strerror_r and check the return which points the string value
+* API's covered         :
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_string_strsignal(void)
+{
+	char *dest_arr = NULL;
+
+	dest_arr = strsignal(MAX_SIGNO + 1);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "Invalid Signal", sizeof("Invalid Signal")), 0);
+
+	dest_arr = strsignal(MIN_SIGNO);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "Signal 0", sizeof("Signal 0")), 0);
+
+#ifdef SIGUSR2
+	dest_arr = strsignal(SIGUSR2);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGUSR2", sizeof("SIGUSR2")), 0);
+#endif
+
+#ifdef SIGALRM
+	dest_arr = strsignal(SIGALRM);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGALRM", sizeof("SIGALRM")), 0);
+#endif
+
+#ifdef SIGCHLD
+	dest_arr = strsignal(SIGCHLD);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGCHLD", sizeof("SIGCHLD")), 0);
+#endif
+
+#ifdef SIGKILL
+	dest_arr = strsignal(SIGKILL);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGKILL", sizeof("SIGKILL")), 0);
+#endif
+
+#ifdef SIGCONDTIMEDOUT
+	dest_arr = strsignal(SIGCONDTIMEDOUT);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGCONDTIMEDOUT", sizeof("SIGCONDTIMEDOUT")), 0);
+#endif
+
+#ifdef SIGWORK
+	dest_arr = strsignal(SIGWORK);
+	TC_ASSERT_EQ("strsignal", strncmp(dest_arr, "SIGWORK", sizeof("SIGWORK")), 0);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+#endif
 
 /****************************************************************************
  * Name: libc_string
@@ -940,6 +1016,7 @@ int libc_string_main(void)
 	tc_libc_string_strdup();
 #ifdef CONFIG_LIBC_STRERROR
 	tc_libc_string_strerror();
+	tc_libc_string_strerror_r();
 #endif
 	tc_libc_string_strlen();
 	tc_libc_string_strncasecmp();
@@ -950,6 +1027,9 @@ int libc_string_main(void)
 	tc_libc_string_strnlen();
 	tc_libc_string_strpbrk();
 	tc_libc_string_strrchr();
+#ifndef CONFIG_DISABLE_SIGNALS
+	tc_libc_string_strsignal();
+#endif
 	tc_libc_string_strspn();
 	tc_libc_string_strstr();
 	tc_libc_string_strtok();

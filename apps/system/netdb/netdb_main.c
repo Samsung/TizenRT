@@ -174,7 +174,7 @@ int netdb_main(int argc, char *argv[])
 
 		host = gethostbyaddr(&addr, sizeof(struct in_addr), AF_INET);
 		if (!host) {
-			fprintf(stderr, "ERROR -- gethostbyaddr failed.  h_errno=%d\n\n", h_errno);
+			fprintf(stderr, "ERROR -- gethostbyaddr failed.\n\n");
 			return EXIT_FAILURE;
 		}
 	}
@@ -197,7 +197,7 @@ int netdb_main(int argc, char *argv[])
 
 		host = gethostbyaddr(&addr, sizeof(struct in6_addr), AF_INET6);
 		if (!host) {
-			fprintf(stderr, "ERROR -- gethostbyaddr failed.  h_errno=%d\n\n", h_errno);
+			fprintf(stderr, "ERROR -- gethostbyaddr failed.\n\n");
 			return EXIT_FAILURE;
 		}
 	}
@@ -210,7 +210,7 @@ int netdb_main(int argc, char *argv[])
 
 		host = gethostbyname(argv[2]);
 		if (!host) {
-			fprintf(stderr, "ERROR -- gethostbyname failed.  h_errno=%d\n\n", h_errno);
+			fprintf(stderr, "ERROR -- gethostbyname failed. \n\n");
 			return EXIT_FAILURE;
 		}
 	}
@@ -232,7 +232,7 @@ int netdb_main(int argc, char *argv[])
 
 	if (host->h_addrtype == AF_INET) {
 		if (inet_ntop(AF_INET, host->h_addr, buffer, 48) == NULL) {
-			fprintf(stderr, "ERROR -- gethostbyname failed.  h_errno=%d\n\n", h_errno);
+			fprintf(stderr, "ERROR -- gethostbyname failed.\n\n");
 			return EXIT_FAILURE;
 		}
 
@@ -243,7 +243,7 @@ int netdb_main(int argc, char *argv[])
 
 	else if (host->h_addrtype == AF_INET6) {
 		if (inet_ntop(AF_INET6, host->h_addr, buffer, 48) == NULL) {
-			fprintf(stderr, "ERROR -- gethostbyname failed.  h_errno=%d\n\n", h_errno);
+			fprintf(stderr, "ERROR -- gethostbyname failed.\n\n");
 			return EXIT_FAILURE;
 		}
 

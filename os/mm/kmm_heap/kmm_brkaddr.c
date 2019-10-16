@@ -80,7 +80,7 @@
 
 FAR void *kmm_brkaddr(int region)
 {
-	return mm_brkaddr(&g_kmmheap, region);
+	return mm_brkaddr(kmm_get_heap(), region);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

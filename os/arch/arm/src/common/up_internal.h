@@ -145,9 +145,9 @@
  */
 
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
-#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t *)current_regs)
 #else
-#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t *)current_regs)
 #endif
 #define up_restorestate(regs) (current_regs = regs)
 
@@ -162,9 +162,9 @@
  */
 
 #if defined(CONFIG_ARCH_FPU)
-#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t *)current_regs)
 #else
-#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t *)current_regs)
 #endif
 #define up_restorestate(regs) (current_regs = regs)
 
@@ -180,11 +180,11 @@
  */
 
 #if defined(CONFIG_ARCH_FPU)
-#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyarmstate(regs, (uint32_t *)current_regs)
 #else
-#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t*)current_regs)
+#define up_savestate(regs)  up_copyfullstate(regs, (uint32_t *)current_regs)
 #endif
-#define up_restorestate(regs) up_copyfullstate((uint32_t*)current_regs, regs)
+#define up_restorestate(regs) up_copyfullstate((uint32_t *)current_regs, regs)
 
 #endif
 

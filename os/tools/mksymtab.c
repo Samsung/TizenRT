@@ -141,12 +141,12 @@ int main(int argc, char **argv, char **envp)
 
 	/* Parse command line options */
 
-	g_debug = false;
+	set_debug(false);
 
 	while ((ch = getopt(argc, argv, ":d")) > 0) {
 		switch (ch) {
 		case 'd':
-			g_debug = true;
+			set_debug(true);
 			break;
 
 		case '?':
@@ -207,13 +207,13 @@ int main(int argc, char **argv, char **envp)
 
 		int nargs = parse_csvline(ptr);
 		if (nargs < PARM1_INDEX) {
-			fprintf(stderr, "Only %d arguments found: %s\n", nargs, g_line);
+			fprintf(stderr, "Only %d arguments found: %s\n", nargs, get_line());
 			exit(EXIT_FAILURE);
 		}
 
 		/* Add the header file to the list of header files we need to include */
 
-		add_hdrfile(g_parm[HEADER_INDEX]);
+		add_hdrfile(get_parm(HEADER_INDEX));
 	}
 
 	/* Back to the beginning */
@@ -246,21 +246,21 @@ int main(int argc, char **argv, char **envp)
 
 		int nargs = parse_csvline(ptr);
 		if (nargs < PARM1_INDEX) {
-			fprintf(stderr, "Only %d arguments found: %s\n", nargs, g_line);
+			fprintf(stderr, "Only %d arguments found: %s\n", nargs, get_line());
 			exit(EXIT_FAILURE);
 		}
 
 		/* Output any conditional compilation */
 
-		cond = (g_parm[COND_INDEX] && strlen(g_parm[COND_INDEX]) > 0);
+		cond = (get_parm(COND_INDEX) && strlen(get_parm(COND_INDEX)) > 0);
 		if (cond) {
-			fprintf(outstream, "%s#if %s\n", nextterm, g_parm[COND_INDEX]);
+			fprintf(outstream, "%s#if %s\n", nextterm, get_parm(COND_INDEX));
 			nextterm = "";
 		}
 
 		/* Output the symbol table entry */
 
-		fprintf(outstream, "%s  { \"%s\", (FAR const void *)%s }", nextterm, g_parm[NAME_INDEX], g_parm[NAME_INDEX]);
+		fprintf(outstream, "%s  { \"%s\", (FAR const void *)%s }", nextterm, get_parm(NAME_INDEX), get_parm(NAME_INDEX));
 
 		if (cond) {
 			nextterm = ",\n#endif\n";

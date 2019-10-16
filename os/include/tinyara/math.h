@@ -105,7 +105,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
+#endif
 #include <fixedmath.h>
 
 /****************************************************************************

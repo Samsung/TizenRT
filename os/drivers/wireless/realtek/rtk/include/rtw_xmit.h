@@ -83,7 +83,7 @@
 #ifndef CONFIG_HIGH_TP
 #define NR_XMITBUFF (2) //Decrease recv frame (8->2) due to memory limitation - YangJue
 #else
-#define NR_XMITBUFF (128)
+#define NR_XMITBUFF (50)
 #endif
 
 #elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)

@@ -106,3 +106,16 @@ Set `Primary RAM size` to `65536`(64KB) or `16777216`(16MB)
 
 ### How to run network stack on QEMU
 To run the network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md).
+
+### Trouble Shooting
+#### Issues on `./configure --target-list=arm-softmmu`
+If you encouter below log after `./configure --target-list=arm-softmmu`,
+```
+ERROR: pixman >= 0.21.8 not present.
+       Please install the pixman devel package.
+```
+
+install pixman to reslove issue.
+```
+sudo apt-get install libpixman-1-dev
+```

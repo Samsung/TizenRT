@@ -65,7 +65,7 @@ int main(int argc, FAR char *argv[])
 int utc_media_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Media UTC") == -1) {
+	if (testcase_state_handler(TC_START, "Media UTC") == -1) {
 		return -1;
 	}
 
@@ -77,19 +77,23 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_MEDIA_PLAYER
 	utc_media_MediaPlayer_main();
 	utc_media_FileInputDataSource_main();
+	unlink("/tmp/record_opus.opus");
+	unlink("/tmp/record_wav.wav");
 #endif
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
 	utc_media_fileoutputdatasource_main();
 	utc_media_bufferoutputdatasource_main();
 	unlink("/tmp/record");
+	unlink("/tmp/record_opus.opus");
+	unlink("/tmp/record_wav.wav");
 #endif
 #ifdef CONFIG_MEDIA_VOICE_SPEECH_DETECTOR
 	utc_media_SpeechDetector_main();
 #endif
 #endif
 
-	(void)tc_handler(TC_END, "Media UTC");
+	(void)testcase_state_handler(TC_END, "Media UTC");
 	return 0;
 }
 }

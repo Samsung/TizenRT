@@ -1182,7 +1182,7 @@ int wifi_on(rtw_mode_t mode)
 int wifi_off(void)
 {
 	int ret = 0;
-	int timeout = 2000;
+	int timeout = 20;
 
 	if ((rltk_wlan_running(WLAN0_IDX) == 0) &&
 		(rltk_wlan_running(WLAN1_IDX) == 0)) {
@@ -1202,7 +1202,7 @@ int wifi_off(void)
 	rltk_wlan_deinit();
 	_wifi_is_on = 0;
 	device_mutex_unlock(RT_DEV_LOCK_WLAN);
-
+    device_mutex_free(RT_DEV_LOCK_WLAN);
 	while (1) {
 		if ((rltk_wlan_running(WLAN0_IDX) == 0) &&
 			(rltk_wlan_running(WLAN1_IDX) == 0)) {
@@ -1216,7 +1216,7 @@ int wifi_off(void)
 			break;
 		}
 
-		rtw_msleep_os(5);
+		rtw_msleep_os(1000);
 		timeout--;
 	}
 

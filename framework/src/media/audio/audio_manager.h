@@ -40,6 +40,7 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_DEVICE_SUSPENDED = -13,
 	AUDIO_MANAGER_DEVICE_ALREADY_IN_USE = -12,
 	AUDIO_MANAGER_SET_STREAM_POLICY_NOT_ALLOWED = -11,
 	AUDIO_MANAGER_SET_STREAM_POLICY_FAIL = -10,
@@ -74,27 +75,18 @@ typedef enum audio_device_type_e audio_device_type_t;
  */
 enum audio_device_process_unit_type_e {
 	AUDIO_DEVICE_PROCESS_TYPE_NONE = 0,
-	AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER = 1,
-	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = 2,
+	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = 1,
 };
 
 typedef enum audio_device_process_unit_type_e device_process_type_t;
 
 enum audio_device_process_unit_subtype_e {
-	/* For Stream Out */
-	AUDIO_DEVICE_STEREO_EXTENDER_NONE = 0,
-	AUDIO_DEVICE_STEREO_EXTENDER_ENABLE = 1,
-	AUDIO_DEVICE_STEREO_EXTENDER_WIDTH = 2,
-	AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW = 3,
-	AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW = 4,
-	AUDIO_DEVICE_STEREO_EXTENDER_LATENCY = 5,
+	/* Nothing For Stream Out now */
 
 	/* For Stream In */
-	AUDIO_DEVICE_SPEECH_DETECT_NONE = 6,
-	AUDIO_DEVICE_SPEECH_DETECT_EPD = 7,
-	AUDIO_DEVICE_SPEECH_DETECT_KD = 8,
-	AUDIO_DEVICE_SPEECH_DETECT_NS = 9,
-	AUDIO_DEVICE_SPEECH_DETECT_CLEAR = 10
+	AUDIO_DEVICE_SPEECH_DETECT_NONE = 0,
+	AUDIO_DEVICE_SPEECH_DETECT_EPD = 1,
+	AUDIO_DEVICE_SPEECH_DETECT_KD = 2
 };
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
@@ -291,21 +283,6 @@ unsigned int get_input_frame_count(void);
 unsigned int get_card_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_card_input_bytes_to_frame
- *
- * Description:
- *   Get the number of frames for the given byte size with the channel value
- *   supported by the card for input stream.
- *
- * Input parameter:
- *   bytes: the target of which frame count is returned.
- *
- * Return Value:
- *   On success, the number of frames in input stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_card_input_bytes_to_frame(unsigned int bytes);
-
-/****************************************************************************
  * Name: get_user_input_frames_to_byte
  *
  * Description:
@@ -360,21 +337,6 @@ unsigned int get_output_frame_count(void);
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_card_output_frames_to_byte(unsigned int frames);
-
-/****************************************************************************
- * Name: get_card_output_bytes_to_frame
- *
- * Description:
- *   Get the number of frames for the given byte size with the channel value
- *   supported by the card for output stream.
- *
- * Input parameter:
- *   bytes: the target of which frame count is returned.
- *
- * Return Value:
- *   On success, the number of frames in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_user_output_frames_to_byte
@@ -691,6 +653,7 @@ audio_manager_result_t get_stream_in_id(int *card_id, int *device_id);
  ****************************************************************************/
 audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
 
+#ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
  * Name: dump_audio_card_info
  *
@@ -704,6 +667,7 @@ audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
  *   None
  ****************************************************************************/
 void dump_audio_card_info(void);
+#endif
 
 #if defined(__cplusplus)
 }								/* extern "C" */

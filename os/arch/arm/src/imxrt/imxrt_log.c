@@ -65,13 +65,13 @@ void imxrt_log_write_kernelbuffer(const uint8_t *log_string, const uint32_t log_
 {
 	memset(last_log_buffer, 0, LAST_LOG_BUF_LENGTH);
 
-	if(log_length > LAST_LOG_BUF_LENGTH-1) {
+	if (log_length > LAST_LOG_BUF_LENGTH - 1) {
 		memcpy(last_log_buffer, log_string, LAST_LOG_BUF_LENGTH-1);
 	} else {
 		memcpy(last_log_buffer, log_string, log_length);
 	}
 
-	if(current_log_length + log_length > LOG_BUF_LENGTH -1) {
+	if (current_log_length + log_length > LOG_BUF_LENGTH - 1) {
 		current_log_length = 0;
 		return;
 	}

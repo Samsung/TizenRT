@@ -33,14 +33,126 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
+
+#ifdef CONFIG_FLASH_PARTITION
+static FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
+{
+	FAR struct mtd_dev_s *mtd;
+#ifdef CONFIG_MTD_PROGMEM
+	mtd = progmem_initialize();
+	if (!mtd) {
+		lldbg("ERROR: progmem_initialize failed\n");
+		return NULL;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return NULL;
+	}
+#else
+	mtd = up_flashinitialize();
+	if (!mtd) {
+		lldbg("ERROR : up_flashinitializ failed\n");
+		return NULL;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return NULL;
+	}
+#endif
+	return mtd;
+}
+
+static void type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, const char *types)
+{
+#ifdef CONFIG_MTD_FTL
+		if (!strncmp(types, "ftl,", 4)
+#ifdef CONFIG_FS_ROMFS
+		|| !strncmp(types, "romfs,", 6)
+#endif
+#ifdef CONFIG_BINARY_MANAGER
+		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4)
+#endif
+		) {
+			if (ftl_initialize(partno, mtd_part)) {
+				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+				return;
+			}
+		} else
+#endif
+
+#ifdef CONFIG_MTD_CONFIG
+		if (!strncmp(types, "config,", 7)) {
+			mtdconfig_register(mtd_part);
+		} else
+#endif
+#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
+		if (!strncmp(types, "smartfs,", 8)) {
+			char partref[4];
+
+			snprintf(partref, sizeof(partref), "p%d", partno);
+			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
+		} else
+#endif
+		{
+
+		}
+}
+
+static void move_to_next_part(const char **par)
+{
+		/* Move to next part information. */
+		while (*(*par)++ != ',');
+}
+
+#ifdef CONFIG_MTD_PARTITION_NAMES
+static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char **names, int *index, char *part_name)
+{
+	if (*(*names)) {
+		while (*(*names)) {
+			if (*(*names) == ',') {
+				part_name[*index] = '\0';
+				*index = 0;
+				(*names)++;
+				break;
+			}
+			if (*index < MTD_PARTNAME_LEN) {
+				part_name[(*index)++] = *(*names)++;
+			} else {
+				part_name[*index] = '\0';
+				*index = 0;
+				lldbg("ERROR: Partition name is so long. Please make it smaller than %d\n", MTD_PARTNAME_LEN);
+				/* Move to next part name information. */
+				move_to_next_part(names);
+				break;
+			}
+		}
+		mtd_setpartitionname(mtd_part, part_name);
+	}
+}
+#endif
+
+#ifdef CONFIG_BINARY_MANAGER
+static void binary_manager_update_partition_info(int partno, char *part_name, int partsize, const char *types)
+{
+	if (!strncmp(types, "kernel,", 7)) {
+		binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
+	} else if (!strncmp(types, "bin,", 4)) {
+		binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
+	}
+}
+#endif
+#endif /* CONFIG_FLASH_PARTITION */
+
 void configure_partitions(void)
 {
-#if defined(CONFIG_FLASH_PARTITION)
+#ifdef CONFIG_FLASH_PARTITION
 	int partno;
 	int partoffset;
 	const char *parts = CONFIG_FLASH_PART_SIZE;
 	const char *types = CONFIG_FLASH_PART_TYPE;
-#if defined(CONFIG_MTD_PARTITION_NAMES)
+#ifdef CONFIG_MTD_PARTITION_NAMES
 	const char *names = CONFIG_FLASH_PART_NAME;
 	char part_name[MTD_PARTNAME_LEN + 1];
 	int index = 0;
@@ -48,29 +160,10 @@ void configure_partitions(void)
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
 
-#ifdef CONFIG_MTD_PROGMEM
-	mtd = progmem_initialize();
-	if (!mtd) {
-		lldbg("ERROR: progmem_initialize failed\n");
+	mtd = mtd_initialize(&geo);
+	if (mtd == NULL) {
 		return;
 	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return;
-	}
-#else
-	mtd = up_flashinitialize();
-	if (!mtd) {
-		lldbg("ERROR : up_flashinitializ failed\n");
-		return;
-	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return;
-	}
-#endif
 	partno = 0;
 	partoffset = 0;
 
@@ -97,91 +190,17 @@ void configure_partitions(void)
 			lldbg("ERROR: failed to create partition.\n");
 			return;
 		}
-#ifdef CONFIG_MTD_FTL
-		if (!strncmp(types, "ftl,", 4)
-#ifdef CONFIG_FS_ROMFS
-		|| !strncmp(types, "romfs,", 6)
-#endif
+
+		type_specific_initialize(mtd_part, partno, types);
+
+#ifdef CONFIG_MTD_PARTITION_NAMES
+		configure_partition_name(mtd_part, &names, &index, part_name);
 #ifdef CONFIG_BINARY_MANAGER
-		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4) || !strncmp(types, "loadparam,", 10)
+		binary_manager_update_partition_info(partno, part_name, partsize, types);
 #endif
-		) {
-			if (ftl_initialize(partno, mtd_part)) {
-				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
-				return;
-			}
-		} else
 #endif
-
-#ifdef CONFIG_MTD_CONFIG
-		if (!strncmp(types, "config,", 7)) {
-			mtdconfig_register(mtd_part);
-		} else
-#endif
-#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "smartfs,", 8)) {
-			char partref[4];
-
-			snprintf(partref, sizeof(partref), "p%d", partno);
-			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
-		} else
-#endif
-		{
-		}
-
-#if defined(CONFIG_MTD_PARTITION_NAMES)
-		if (*names) {
-			while (*names) {
-				if (*names == ',') {
-					part_name[index] = '\0';
-					index = 0;
-					names++;
-					break;
-				}
-				if (index < MTD_PARTNAME_LEN) {
-					part_name[index++] = *(names++);
-				} else {
-					part_name[index] = '\0';
-					index = 0;
-					lldbg("ERROR: Partition name is so long. Please make it smaller than %d\n", MTD_PARTNAME_LEN);
-					while (*names) {
-						if (*(names++) == ',') {
-							break;
-						}
-					}
-					break;
-				}
-			}
-			mtd_setpartitionname(mtd_part, part_name);
-#ifdef CONFIG_BINARY_MANAGER
-			if (!strncmp(types, "kernel,", 7)) {
-				binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
-			} else if (!strncmp(types, "bin,", 4)) {
-				binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
-			} else if (!strncmp(types, "loadparam,", 10)) {
-				binary_manager_register_partition(partno, BINMGR_PART_LOADPARAM, part_name, partsize);
-			}
-#endif
-		}
-
-#endif
-
-		while (*parts) {
-			if (*parts == ',') {
-				parts++;
-				break;
-			}
-			parts++;
-		}
-
-		while (*types) {
-			if (*types == ',') {
-				types++;
-				break;
-			}
-			types++;
-		}
-
+		move_to_next_part(&parts);
+		move_to_next_part(&types);
 		partno++;
 	}
 #endif /* CONFIG_FLASH_PARTITION */

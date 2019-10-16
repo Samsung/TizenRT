@@ -249,3 +249,18 @@ void s5j_watchdog_clear_int(void)
 {
 	putreg32(0xffffffff, S5J_WDT_WTCLRINT);
 }
+
+/****************************************************************************
+ * Name: up_watchdog_disable
+ *
+ * Description:
+ *   Disable board specific watchdog
+ *
+ * Cautions:
+ *   This can be only used if we cannot use driver structure like assert.
+ *
+ ****************************************************************************/
+void up_watchdog_disable(void)
+{
+	s5j_watchdog_disable();
+}

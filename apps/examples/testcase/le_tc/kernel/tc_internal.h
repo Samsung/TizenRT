@@ -86,7 +86,7 @@ int semaphore_main(void);
 int signal_main(void);
 int task_main(void);
 int termios_main(void);
-int timer_main(void);
+int timer_tc_main(void);
 int umm_heap_main(void);
 int tash_heapinfo_main(void);
 int tash_stackmonitor_main(void);

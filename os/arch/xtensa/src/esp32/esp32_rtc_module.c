@@ -165,13 +165,13 @@ typedef enum {
 
 #define ADC_CHECK_UNIT(unit) RTC_MODULE_CHECK(adc_unit < ADC_UNIT_2, "ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG)
 
-#define ADC1_CHECK_FUNCTION_RET(fun_ret) if(fun_ret!=ESP_OK){\
-    ESP_LOGE(RTC_MODULE_TAG,"%s:%d\n",__FUNCTION__,__LINE__);\
+#define ADC1_CHECK_FUNCTION_RET(fun_ret) if (fun_ret != ESP_OK) {\
+    ESP_LOGE(RTC_MODULE_TAG, "%s:%d\n", __FUNCTION__, __LINE__);\
     return ESP_FAIL;\
 }
 
-#define ADC2_CHECK_FUNCTION_RET(fun_ret) do { if(fun_ret!=ESP_OK){\
-    ESP_LOGE(RTC_MODULE_TAG,"%s:%d\n",__FUNCTION__,__LINE__);\
+#define ADC2_CHECK_FUNCTION_RET(fun_ret) do { if (fun_ret != ESP_OK) {\
+    ESP_LOGE(RTC_MODULE_TAG, "%s:%d\n", __FUNCTION__, __LINE__);\
     return ESP_FAIL;\
 } }while (0)
 

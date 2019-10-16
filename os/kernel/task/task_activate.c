@@ -61,13 +61,13 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
 #ifndef CONFIG_DISABLE_SIGNALS
-#include <pthread.h>
-#include <unistd.h>
 #include <signal.h>
-#include <errno.h>
 #include <tinyara/signal.h>
-#include "sched/sched.h"
+#include "task/task.h"
 #endif
 
 /****************************************************************************
@@ -93,40 +93,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifndef CONFIG_DISABLE_SIGNALS
-void thread_termination_handler(int signo, siginfo_t *data)
-{
-	struct tcb_s *rtcb = sched_gettcb(getpid());
-	if (!rtcb) {
-		set_errno(ESRCH);
-		return;
-	}
-
-#ifdef CONFIG_SIGKILL_HANDLER
-	if (rtcb->sigkillusrhandler != NULL) {
-		rtcb->sigkillusrhandler(signo, data, NULL);
-	}
-#endif
-
-	switch ((rtcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
-	case TCB_FLAG_TTYPE_TASK:
-	case TCB_FLAG_TTYPE_KERNEL:
-		/* tasks and kernel threads has to use this interface */
-		(void)task_delete(rtcb->pid);
-		break;
-#ifndef CONFIG_DISABLE_PTHREAD
-	case TCB_FLAG_TTYPE_PTHREAD:
-		(void)pthread_cancel(rtcb->pid);
-		(void)pthread_join(rtcb->pid, NULL);
-		break;
-#endif
-	default:
-		set_errno(EINVAL);
-		break;
-	}
-	return;
-}
-#endif
 
 /****************************************************************************
  * Public Functions

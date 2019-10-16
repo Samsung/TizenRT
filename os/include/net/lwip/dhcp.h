@@ -150,6 +150,10 @@ err_t dhcp_release(struct netif *netif);
 */
 void dhcp_stop(struct netif *netif);
 
+#if LWIP_DHCP_HOSTNAME
+void dhcp_hostname(struct netif *netif, char *name);
+#endif
+
 /// @cond
 /** inform server of our manual IP address */
 void dhcp_inform(struct netif *netif);

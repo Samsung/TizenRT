@@ -238,7 +238,7 @@ int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *s
 
 	/* And, finally, read the symbol table entry into memory */
 
-	return elf_read(loadinfo, (FAR uint8_t *) sym, sizeof(Elf32_Sym), offset);
+	return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
 }
 
 /****************************************************************************
@@ -316,7 +316,7 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 
 		binfo("SHN_UNDEF: name=%s %08x+%08x=%08x\n", loadinfo->iobuffer, sym->st_value, symbol->sym_value, sym->st_value + symbol->sym_value);
 
-		sym->st_value += (Elf32_Word)((uintptr_t) symbol->sym_value);
+		sym->st_value += (Elf32_Word)((uintptr_t)symbol->sym_value);
 	}
 	break;
 

@@ -85,9 +85,9 @@
 FAR void *kmm_zalloc(size_t size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_zalloc(&g_kmmheap, size, __builtin_return_address(0));
+	return mm_zalloc(kmm_get_heap(), size, __builtin_return_address(0));
 #else
-	return mm_zalloc(&g_kmmheap, size);
+	return mm_zalloc(kmm_get_heap(), size);
 #endif
 }
 

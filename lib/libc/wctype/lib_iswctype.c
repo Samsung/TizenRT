@@ -72,22 +72,22 @@ int iswalnum(wint_t c)
 
 int iswalpha(wint_t c)
 {
-	return (c < (wint_t) 0x100 ? isalpha(c) : 0);
+	return (c < (wint_t)0x100 ? isalpha(c) : 0);
 }
 
 int iswblank(wint_t c)
 {
-	return (c < (wint_t) 0x100 ? isblank(c) : 0);
+	return (c < (wint_t)0x100 ? isblank(c) : 0);
 }
 
 int iswcntrl(wint_t c)
 {
-	return (c < (wint_t) 0x100 ? iscntrl(c) : 0);
+	return (c < (wint_t)0x100 ? iscntrl(c) : 0);
 }
 
 int iswdigit(wint_t c)
 {
-	return (c >= (wint_t) '0' && c <= (wint_t) '9');
+	return (c >= (wint_t)'0' && c <= (wint_t)'9');
 }
 
 int iswgraph(wint_t c)
@@ -102,7 +102,7 @@ int iswlower(wint_t c)
 
 int iswprint(wint_t c)
 {
-	return (c < (wint_t) 0x100 ? isprint(c) : 0);
+	return (c < (wint_t)0x100 ? isprint(c) : 0);
 }
 
 int iswpunct(wint_t c)
@@ -122,7 +122,7 @@ int iswupper(wint_t c)
 
 int iswxdigit(wint_t c)
 {
-	return ((c >= (wint_t) '0' && c <= (wint_t) '9') || (c >= (wint_t) 'a' && c <= (wint_t) 'f') || (c >= (wint_t) 'A' && c <= (wint_t) 'F'));
+	return ((c >= (wint_t)'0' && c <= (wint_t)'9') || (c >= (wint_t)'a' && c <= (wint_t)'f') || (c >= (wint_t)'A' && c <= (wint_t)'F'));
 }
 
 int iswctype(wint_t c, wctype_t desc)

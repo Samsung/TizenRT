@@ -15,9 +15,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-
 ifeq ($(CONFIG_SECURITY_API), y)
-
 CSRCS += security_common.c security_utils.c
 
 ifeq ($(CONFIG_SECURITY_AUTH), y)
@@ -33,7 +31,7 @@ ifeq ($(CONFIG_SECURITY_SS), y)
 CSRCS += security_ss.c
 endif
 
-DEPPATH += --dep-path src/seclink
+DEPPATH += --dep-path src/security
 VPATH += :src/security
 
 endif

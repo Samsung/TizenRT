@@ -108,6 +108,9 @@
 #endif
 #endif
 
+#if defined(CONFIG_WOWLAN) && (defined(CONFIG_RTL8822B) || defined(CONFIG_RTL8821C) || defined(CONFIG_RTL8814A) || defined(CONFIG_RTL8822C) || defined(CONFIG_RTL8814B) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8197F))
+#define CONFIG_WOW_PATTERN_HW_CAM
+#endif
 //#include <rtl871x_byteorder.h>
 
 #endif // __DRV_CONF_H__

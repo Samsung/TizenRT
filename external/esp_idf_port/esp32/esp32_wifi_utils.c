@@ -36,8 +36,8 @@
 #include <tinyara/wdog.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
+#include <tinyara/wifi/wifi_common.h>
 
-#include "wifi_common.h"
 #include "wifi_utils.h"
 
 #include "esp_attr.h"

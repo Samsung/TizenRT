@@ -75,6 +75,8 @@
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
 #endif
+
+#define INDEX_ERROR (-1)
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -326,6 +328,10 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Make sure that there is a saved syscall return address. */
 
 		DEBUGASSERT(index >= 0);
+		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index < 0 || index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
 
 		/* Setup to return to the saved syscall return address in
 		 * the original mode.
@@ -544,6 +550,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 */
 
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
 
 		/* Setup to return to dispatch_syscall in privileged mode. */
 

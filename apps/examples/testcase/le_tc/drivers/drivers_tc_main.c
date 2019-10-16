@@ -31,7 +31,7 @@ int main(int argc, FAR char *argv[])
 int tc_drivers_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Drivers TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Drivers TC") == ERROR) {
 		return ERROR;
 	}
 #ifdef CONFIG_TC_DRIVERS_NULL
@@ -70,7 +70,7 @@ int tc_drivers_main(int argc, char *argv[])
 	i2c_main();
 #endif
 
-	(void)tc_handler(TC_END, "Drivers TC");
+	(void)testcase_state_handler(TC_END, "Drivers TC");
 
 	return 0;
 }

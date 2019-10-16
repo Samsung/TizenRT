@@ -56,7 +56,6 @@
 
 #include <tinyara/config.h>
 
-#include <assert.h>
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
@@ -64,6 +63,8 @@
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+#include "mm_node.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -173,11 +174,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		 * a successor node.
 		 */
 
-		DEBUGASSERT(node->blink);
-		node->blink->flink = node->flink;
-		if (node->flink) {
-			node->flink->blink = node->blink;
-		}
+		REMOVE_NODE_FROM_LIST(node);
 
 		/* Check if we have to split the free node into one of the allocated
 		 * size and another smaller freenode.  In some cases, the remaining

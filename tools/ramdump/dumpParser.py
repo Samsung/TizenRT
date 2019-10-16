@@ -442,7 +442,14 @@ class dumpParser:
 			else:
 				symname, offset = r # Update both symbol name and offset
 
-			pstring = (extra_str + '[<{0:x}>] {1}+0x{2:x}'.format(frame.pc, symname, offset))
+			address = '{0:x}'.format(frame.pc)
+			cmd = ['addr2line', '-e', self.elf, address]
+			fd_popen = subprocess.Popen(cmd, stdout=subprocess.PIPE).stdout
+			data = fd_popen.read()
+			temp = data.split('/')[-1]
+			line = temp.split(':')[-1].rstrip()
+			name = temp[:-len(line)-2]
+			pstring = (extra_str + '[<{0:x}>] {1}+0x{2:x} [Line {3} of {4}]'.format(frame.pc, symname, offset, line, name))
 
 			if output_file:
 				out_file.write(pstring + '\n')

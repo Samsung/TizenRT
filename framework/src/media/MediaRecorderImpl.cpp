@@ -152,7 +152,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	auto source = mOutputHandler.getOutputDataSource();
+	auto source = mOutputHandler.getDataSource();
 	audio_manager_result_t result = set_audio_stream_in(source->getChannels(), source->getSampleRate(),
 		(pcm_format)source->getPcmFormat());
 	if (result != AUDIO_MANAGER_SUCCESS) {
@@ -223,7 +223,7 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	auto source = mOutputHandler.getOutputDataSource();
+	auto source = mOutputHandler.getDataSource();
 	if (source->isPrepared()) {
 		mOutputHandler.close();
 	}

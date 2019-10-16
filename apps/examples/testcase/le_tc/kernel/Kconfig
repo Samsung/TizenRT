@@ -95,9 +95,6 @@ config TC_KERNEL_LIBC_MATH
 config TC_KERNEL_LIBC_MISC
 	bool "Libc Misc"
 	default n
-	select DEBUG
-	select DEBUG_ERROR
-	select DEBUG_VERBOSE
 
 config TC_KERNEL_LIBC_PTHREAD
 	bool "Libc Pthread"
@@ -167,7 +164,6 @@ config TC_KERNEL_SCHED
 config TC_KERNEL_SEMAPHORE
 	bool "Semaphore"
 	default n
-	select DEBUG
 
 config TC_KERNEL_SIGNAL
 	bool "Signal"
@@ -233,7 +229,6 @@ config ITC_KERNEL_LIBC_SEMAPHORE
 config ITC_KERNEL_SEMAPHORE
 	bool "ITC Semaphore"
 	default n
-	select DEBUG
 if ITC_KERNEL_SEMAPHORE
 config ITC_KERN_SEM_LOOP_SIZE
 	int "Iterator Count"

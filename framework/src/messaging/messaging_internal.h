@@ -19,6 +19,7 @@
 #include <mqueue.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <queue.h>
 #include <messaging/messaging.h>
 
 
@@ -137,6 +138,10 @@ void messaging_run_callback(int signo, siginfo_t *data);
  * @brief Internal function for parsing received packet
  */
 int messaging_parse_packet(char *packet, char *buf, int buflen, pid_t *sender_pid, int *msg_type);
+/**
+ * @brief Internal function for getting g_port_info_list
+ */
+sq_queue_t *messaging_get_port_info_list(void);
 /*
  *@endcond
  */

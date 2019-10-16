@@ -78,6 +78,12 @@
 FAR char *ether_ntoa(FAR const struct ether_addr *addr)
 {
 	static char buffer[20];
-	sprintf(buffer, "%02x:%02x:%02x:%02x:%02x:%02x", addr->ether_addr_octet[0], addr->ether_addr_octet[1], addr->ether_addr_octet[2], addr->ether_addr_octet[3], addr->ether_addr_octet[4], addr->ether_addr_octet[5]);
+	snprintf(buffer, 20, "%02x:%02x:%02x:%02x:%02x:%02x",
+			 addr->ether_addr_octet[0],
+			 addr->ether_addr_octet[1],
+			 addr->ether_addr_octet[2],
+			 addr->ether_addr_octet[3],
+			 addr->ether_addr_octet[4],
+			 addr->ether_addr_octet[5]);
 	return buffer;
 }

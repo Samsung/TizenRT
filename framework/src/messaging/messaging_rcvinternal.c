@@ -32,10 +32,14 @@
 #include <messaging/messaging.h>
 #include "messaging_internal.h"
 
-sq_queue_t g_port_info_list;
+static sq_queue_t g_port_info_list;
 /****************************************************************************
  * private functions
  ****************************************************************************/
+sq_queue_t *messaging_get_port_info_list(void)
+{
+	return &g_port_info_list;
+}
 /****************************************************************************
  * Name : messaging_recv_nonblock
  * 
@@ -166,7 +170,7 @@ static int messaging_rcv_block(mqd_t mqdes, const char *port_name, msg_recv_buf_
 	int ret = OK;
 	int recv_size;
 	char *recv_packet;
-	int msg_type;
+	int msg_type = OK;
 	char *internal_portname;
 
 	recv_size = MSG_HEADER_SIZE + recv_buf->buflen;

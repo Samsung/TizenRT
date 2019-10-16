@@ -145,9 +145,6 @@ typedef enum {
 	BT_EVENT_MAX
 } bt_event_e;
 
-#define BLUETOOTH_ADDRESS_LENGTH		6 /**< This specifies bluetooth device address length */
-#define BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX	31 /**< This specifies maximum AD data length */
-
 #define BLUETOOTH_EVENT_BASE            ((int)(0x0000))		/**< No event */
 #define BLUETOOTH_EVENT_GAP_BASE        ((int)(BLUETOOTH_EVENT_BASE + 0x0010))
 								/**< Base ID for GAP Event */
@@ -451,36 +448,6 @@ typedef void (*bluetooth_cb_func_ptr)(int event, bluetooth_event_param_t *param)
 
 void __bt_event_proxy(int event, bluetooth_event_param_t *param);
 void __bt_le_event_proxy(int event, bluetooth_event_param_t *param);
-
-/**
- * This is Bluetooth device address type, fixed to 6 bytes ##:##:##:##:##:##
- */
-typedef struct {
-	unsigned char addr[BLUETOOTH_ADDRESS_LENGTH];
-} bluetooth_device_address_t;
-
-/**
- * Advertising data
- */
-typedef struct {
-	uint8_t data[BLUETOOTH_ADVERTISING_DATA_LENGTH_MAX];
-} bluetooth_advertising_data_t;
-
-/**
-* structure to hold the LE device information
-*/
-typedef struct {
-	int data_len;		/**< manafacturer specific data length */
-	bluetooth_advertising_data_t data;		/**< manafacturer specific data */
-} bluetooth_le_advertising_data_t;
-
-typedef struct {
-	bluetooth_device_address_t device_address;	/**< device address */
-	int addr_type;			/**< address type*/
-	int rssi;			/**< received strength signal*/
-	bluetooth_le_advertising_data_t adv_ind_data;
-	bluetooth_le_advertising_data_t scan_resp_data;
-} bluetooth_le_device_info_t;
 
 typedef enum {
 	BT_GATT_ROLE_SERVER = 0x01,

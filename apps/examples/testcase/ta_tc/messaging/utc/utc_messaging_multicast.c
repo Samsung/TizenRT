@@ -37,6 +37,7 @@
 
 static bool tc_multi_chk = TC_OK;
 static int tc_multi_count = 0;
+static bool tc_cleanup_chk = false;
 
 static sem_t multi_sem;
 
@@ -81,6 +82,11 @@ static int multi_recv_nonblock(int argc, FAR char *argv[])
 	sleep(5);
 
 	free(multi_data.buf);
+
+	ret = messaging_cleanup(TC_MULTI_PORT);
+	if (ret == OK) {
+		tc_cleanup_chk = true;
+	}
 	return OK;
 }
 
@@ -107,6 +113,7 @@ static int multi_recv_block(int argc, FAR char *argv[])
 
 	tc_multi_count++;
 	free(msg.buf);
+
 	return OK;
 errout:
 	free(msg.buf);
@@ -197,13 +204,12 @@ static void utc_messaging_multicast_p(void)
 
 	(void)sem_destroy(&multi_sem);
 
-	ret = messaging_cleanup(TC_MULTI_PORT);
-	TC_ASSERT_EQ("messging_multicast", ret, OK);
+	TC_ASSERT_EQ("messging_multicast", tc_cleanup_chk, true);
 
 	TC_SUCCESS_RESULT();
 }
 
-void utc_messaging_multicast(void)
+void utc_messaging_multicast_main(void)
 {
 	utc_messaging_multicast_n();
 	utc_messaging_multicast_p();

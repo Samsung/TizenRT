@@ -79,6 +79,9 @@ static void sync_test_cb(tm_msg_t *info)
 {
 	tm_msg_t reply_msg;
 
+	reply_msg.msg_size = 0;
+	reply_msg.msg = NULL;
+
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
 		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG) + 1);
 		if (reply_msg.msg != NULL) {
@@ -104,6 +107,9 @@ static int not_builtin_task(int argc, char *argv[])
 
 static void *tm_pthread(void *param)
 {
+	while (1) {
+		usleep(1);
+	}	// This will be dead at utc_taskmanager_stop_p
 	return NULL;
 }
 
@@ -306,6 +312,9 @@ static void utc_taskmanager_start_n(void)
 static void utc_taskmanager_start_p(void)
 {
 	int ret;
+
+	ret = task_manager_start(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_start", ret, OK);	
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
@@ -765,6 +774,10 @@ static void utc_taskmanager_stop_p(void)
 
 	sleep(1);
 	cb_flag = false;
+
+	ret = task_manager_stop(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
+
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
@@ -903,7 +916,7 @@ static void utc_taskmanager_register_pthread_p(void)
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
-	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_pthread", tm_pthread_handle, 0);
 
 	TC_SUCCESS_RESULT();
@@ -1077,7 +1090,7 @@ int utc_taskmanager_main(int argc, char *argv[])
 {
 	int status;
 
-	if (tc_handler(TC_START, "TaskManager UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "TaskManager UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1089,7 +1102,8 @@ int utc_taskmanager_main(int argc, char *argv[])
 
 	(void)task_manager_unregister(handle_tm_utc, TM_NO_RESPONSE);
 
-	(void)tc_handler(TC_END, "TaskManager UTC");
+	sleep(1);
+	(void)testcase_state_handler(TC_END, "TaskManager UTC");
 
 	return 0;
 }

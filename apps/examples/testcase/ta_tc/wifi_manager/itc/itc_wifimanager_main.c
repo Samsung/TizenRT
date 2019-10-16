@@ -1140,7 +1140,7 @@ static void itc_wifimanager_get_connected_config_n(void)
 
 int wifi_manager_itc(int argc, FAR char *argv[])
 {
-	if (tc_handler(TC_START, "WiFiManager ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "WiFiManager ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1196,7 +1196,7 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 
 	itc_wifimanager_reconnect_p(); // System is crashing tested manually
 
-	(void)tc_handler(TC_END, "WiFiManager ITC");
+	(void)testcase_state_handler(TC_END, "WiFiManager ITC");
 
 	return 0;
 }

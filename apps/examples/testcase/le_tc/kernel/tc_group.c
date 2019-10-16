@@ -26,16 +26,9 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-#include "../../../../../os/kernel/group/group.h"
+#include <tinyara/testcase_drv.h>
 #include "tc_internal.h"
 
-#define TASK_STACKSIZE 2048
-
-static int group_exitchild_func(int argc, char *argv[])
-{
-	task_delete(0);
-	return ERROR;
-}
 
 /**
  * @fn                           :tc_group_group_add_find_remove_child
@@ -47,42 +40,13 @@ static int group_exitchild_func(int argc, char *argv[])
 
 static void tc_group_group_add_find_remove_child(void)
 {
-	struct tcb_s *st_tcb;
-	struct task_group_s *group;
-	struct child_status_s *child;
-	struct child_status_s *child_returned;
-	pid_t child_pid;
+	int fd;
+	int ret_chk;
 
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
+	fd = tc_get_drvfd();
+	ret_chk = ioctl(fd, TESTIOC_GROUP_ADD_FINED_REMOVE_TEST, 0);
+	TC_ASSERT_EQ("group_add_find_remove_chil", ret_chk, OK);
 
-	group = st_tcb->group;
-	TC_ASSERT_NEQ("sched_self", group, NULL);
-
-	child = group_allocchild();
-	TC_ASSERT_NEQ("group_allocchild", child, NULL);
-
-	child_pid = -1;
-	child->ch_flags = TCB_FLAG_TTYPE_TASK;
-	child->ch_pid = child_pid;
-	child->ch_status = 0;
-	/* Add the entry into the TCB list of children */
-	group_addchild(group, child);
-
-	/* cross check starts */
-	child_returned = group_findchild(group, child_pid);
-	TC_ASSERT_EQ("group_findchild", child, child_returned);
-
-	child_returned = group_removechild(group, child_pid);
-	TC_ASSERT_EQ("group_removechild", child, child_returned);
-
-	child_returned = group_findchild(group, child_pid);
-	TC_ASSERT_EQ_CLEANUP("group_removechild",
-						 child_returned,
-						 NULL,
-						 (group_removechild(group, child_pid), group_freechild(child)));
-
-	group_freechild(child);
 	TC_SUCCESS_RESULT();
 }
 
@@ -95,24 +59,12 @@ static void tc_group_group_add_find_remove_child(void)
  */
 static void tc_group_group_alloc_free_child(void)
 {
-	struct tcb_s *st_tcb;
-	struct task_group_s *group;
-	struct child_status_s *child;
-	struct child_status_s child_dummy;
+	int fd;
+	int ret_chk;
 
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
-
-	group = st_tcb->group;
-	TC_ASSERT_NEQ("sched_self", group, NULL);
-
-	child = group_allocchild();
-	TC_ASSERT_NEQ("group_allocchild", child, NULL);
-	TC_ASSERT_EQ("group_allocchild", child->flink, NULL);
-
-	child->flink = &child_dummy;
-	group_freechild(child);
-	TC_ASSERT_NEQ("group_allocchild", child->flink, &child_dummy);
+	fd = tc_get_drvfd();
+	ret_chk = ioctl(fd, TESTIOC_GROUP_ALLOC_FREE_TEST, 0);
+	TC_ASSERT_EQ("group_alloc_free_child", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -127,32 +79,12 @@ static void tc_group_group_alloc_free_child(void)
 
 static void tc_group_group_exit_child(void)
 {
-	struct tcb_s *st_tcb;
-	struct task_group_s *group;
-	struct child_status_s *child;
-	struct child_status_s *child_returned;
-	pid_t child_pid;
+	int fd;
+	int ret_chk;
 
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
-
-	group = st_tcb->group;
-	TC_ASSERT_NEQ("sched_self", group, NULL);
-
-	child_pid = task_create("group", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, group_exitchild_func, (char *const *)NULL);
-
-	child = group_findchild(group, child_pid);
-	TC_ASSERT_NEQ("group_findchild", child, NULL);
-
-	sleep(3);
-
-	child_returned = group_exitchild(group);
-	TC_ASSERT_EQ("group_exitchild", child, child_returned);
-
-	child_returned = group_removechild(group, child_pid);
-	TC_ASSERT_EQ("group_removechild", child, child_returned);
-
-	group_freechild(child);
+	fd = tc_get_drvfd();
+	ret_chk = ioctl(fd, TESTIOC_GROUP_EXIT_CHILD_TEST, 0);
+	TC_ASSERT_EQ("group_exit_child", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -166,34 +98,12 @@ static void tc_group_group_exit_child(void)
  */
 static void tc_group_group_removechildren(void)
 {
-	struct tcb_s *st_tcb;
-	struct task_group_s *group;
-	struct child_status_s *child;
-	struct child_status_s *child_returned;
-	pid_t child_pid;
+	int fd;
+	int ret_chk;
 
-	st_tcb = sched_self();
-	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
-
-	group = st_tcb->group;
-	TC_ASSERT_NEQ("sched_self", group, NULL);
-
-	child = group_allocchild();
-	TC_ASSERT_NEQ("group_allocchild", child, NULL);
-
-	child_pid = -1;
-	child->ch_flags = TCB_FLAG_TTYPE_TASK;
-	child->ch_pid = child_pid;
-	child->ch_status = 0;
-	/* Add the entry into the TCB list of children */
-	group_addchild(group, child);
-
-	/* cross check starts */
-	child_returned = group_findchild(group, child_pid);
-	TC_ASSERT_EQ("group_findchild", child, child_returned);
-
-	group_removechildren(group);
-	TC_ASSERT_EQ("group_removechildren", group->tg_children, NULL);
+	fd = tc_get_drvfd();
+	ret_chk = ioctl(fd, TESTIOC_GROUP_REMOVECHILDREN_TEST, 0);
+	TC_ASSERT_EQ("group_removechildren", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }

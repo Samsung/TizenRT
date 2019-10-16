@@ -212,7 +212,6 @@ static void tc_timer_timer_set_get_time(void)
 	st_timer_spec_set.it_value.tv_sec = 0;
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_set, NULL);
 	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));
-	st_timer_spec_set.it_value.tv_sec = 1;
 
 	/* Null it_value parameter check for timer_settime */
 
@@ -273,7 +272,7 @@ static void tc_timer_timer_initialize(void)
  * Name: timer
  ****************************************************************************/
 
-int timer_main(void)
+int timer_tc_main(void)
 {
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_timer_timer_create_delete();

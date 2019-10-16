@@ -90,26 +90,26 @@
 
 /* DWT Register Addresses **********************************************************************/
 
-#define DWT_CTRL                    (DWT_BASE+0x0000)	/* Control Register */
-#define DWT_CYCCNT                  (DWT_BASE+0x0004)	/* Cycle Count Register */
-#define DWT_CPICNT                  (DWT_BASE+0x0008)	/* CPI Count Register */
-#define DWT_EXCCNT                  (DWT_BASE+0x000c)	/* Exception Overhead Count Register */
-#define DWT_SLEEPCNT                (DWT_BASE+0x0010)	/* Sleep Count Register */
-#define DWT_LSUCNT                  (DWT_BASE+0x0014)	/* LSU Count Register */
-#define DWT_FOLDCNT                 (DWT_BASE+0x0018)	/* Folded-instruction Count Register */
-#define DWT_PCSR                    (DWT_BASE+0x001c)	/* Program Counter Sample Register */
-#define DWT_COMP0                   (DWT_BASE+0x0020)	/* Comparator Register 0 */
-#define DWT_MASK0                   (DWT_BASE+0x0024)	/* Mask Register 0 */
-#define DWT_FUNCTION0               (DWT_BASE+0x0028)	/* Function Register 0 */
-#define DWT_COMP1                   (DWT_BASE+0x0030)	/* Comparator Register 1 */
-#define DWT_MASK1                   (DWT_BASE+0x0034)	/* Mask Register 1 */
-#define DWT_FUNCTION1               (DWT_BASE+0x0038)	/* Function Register 1 */
-#define DWT_COMP2                   (DWT_BASE+0x0040)	/* Comparator Register 2 */
-#define DWT_MASK2                   (DWT_BASE+0x0044)	/* Mask Register 2 */
-#define DWT_FUNCTION2               (DWT_BASE+0x0048)	/* Function Register 2 */
-#define DWT_COMP3                   (DWT_BASE+0x0050)	/* Comparator Register 3 */
-#define DWT_MASK3                   (DWT_BASE+0x0054)	/* Mask Register 3 */
-#define DWT_FUNCTION3               (DWT_BASE+0x0058)	/* Function Register 3 */
+#define DWT_CTRL                    (DWT_BASE + 0x0000)	/* Control Register */
+#define DWT_CYCCNT                  (DWT_BASE + 0x0004)	/* Cycle Count Register */
+#define DWT_CPICNT                  (DWT_BASE + 0x0008)	/* CPI Count Register */
+#define DWT_EXCCNT                  (DWT_BASE + 0x000c)	/* Exception Overhead Count Register */
+#define DWT_SLEEPCNT                (DWT_BASE + 0x0010)	/* Sleep Count Register */
+#define DWT_LSUCNT                  (DWT_BASE + 0x0014)	/* LSU Count Register */
+#define DWT_FOLDCNT                 (DWT_BASE + 0x0018)	/* Folded-instruction Count Register */
+#define DWT_PCSR                    (DWT_BASE + 0x001c)	/* Program Counter Sample Register */
+#define DWT_COMP0                   (DWT_BASE + 0x0020)	/* Comparator Register 0 */
+#define DWT_MASK0                   (DWT_BASE + 0x0024)	/* Mask Register 0 */
+#define DWT_FUNCTION0               (DWT_BASE + 0x0028)	/* Function Register 0 */
+#define DWT_COMP1                   (DWT_BASE + 0x0030)	/* Comparator Register 1 */
+#define DWT_MASK1                   (DWT_BASE + 0x0034)	/* Mask Register 1 */
+#define DWT_FUNCTION1               (DWT_BASE + 0x0038)	/* Function Register 1 */
+#define DWT_COMP2                   (DWT_BASE + 0x0040)	/* Comparator Register 2 */
+#define DWT_MASK2                   (DWT_BASE + 0x0044)	/* Mask Register 2 */
+#define DWT_FUNCTION2               (DWT_BASE + 0x0048)	/* Function Register 2 */
+#define DWT_COMP3                   (DWT_BASE + 0x0050)	/* Comparator Register 3 */
+#define DWT_MASK3                   (DWT_BASE + 0x0054)	/* Mask Register 3 */
+#define DWT_FUNCTION3               (DWT_BASE + 0x0058)	/* Function Register 3 */
 
 /* DWT Register Bit Field Definitions **********************************************************/
 

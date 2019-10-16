@@ -98,6 +98,7 @@ function get_executable_name()
 		app) echo "tinyara_user.bin";;
 		micom) echo "micom";;
 		wifi) echo "wifi";;
+		userfs) echo "imxrt1020-evk_smartfs.bin";;
 		*) echo "No Binary Match"
 		exit 1
 	esac
@@ -111,6 +112,14 @@ function get_partition_index()
 		app | App | APP) echo "1";;
 		micom | Micom | MICOM) echo "2";;
 		wifi | Wifi | WIFI) echo "4";;
+		userfs | Userfs | USERFS)
+		for i in "${!parts[@]}"
+		do
+		   if [[ "${parts[$i]}" = "userfs" ]]; then
+			echo $i
+		   fi
+		done
+		;;
 		*) echo "No Matching Partition"
 		exit 1
 	esac
@@ -190,7 +199,7 @@ echo "PARTITION SIZES: ${sizes[@]}"
 echo "PARTIION NAMES: ${parts[@]}"
 
 if test $# -eq 0; then
-	echo -e "\n## INCORRECT USAGE: Refer HELP##"
+	echo "FAIL!! NO Given partition. Refer \"PARTITION NAMES\" above."
 	imxrt1020_dwld_help 1>&2
 	exit 1
 fi
@@ -212,6 +221,7 @@ for i in ${cmd_args[@]};do
 	done
 
 	if [[ "$result" != "yes" ]];then
+		echo "FAIL!! Given \"${i}\" partition is not available. Refer \"PARTITION NAMES\" above."
 		imxrt1020_dwld_help
 		exit 1
 	fi
@@ -225,6 +235,12 @@ case $1 in
 ALL)
 	for part in ${uniq_parts[@]}; do
 		if [[ "$part" == "userfs" ]];then
+			continue
+		fi
+		if [[ "$part" == "ftl" ]];then
+			continue
+		fi
+		if [[ "$part" == "config" ]];then
 			continue
 		fi
 		gidx=$(get_partition_index $part)

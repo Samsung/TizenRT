@@ -153,7 +153,7 @@ extern int total_fail;
 extern "C" {
 #endif
 
-int tc_handler(tc_op_type_t type, const char *tc_name);
+int testcase_state_handler(tc_op_type_t type, const char *tc_name);
 
 #ifdef __cplusplus
 }

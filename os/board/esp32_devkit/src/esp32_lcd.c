@@ -420,7 +420,7 @@ static int esp32_ili9341_sendgram(FAR struct ili9341_lcd_s *lcd, const uint16_t 
 	if (dma) {
 		dmasize = CONFIG_SPI_DMA_MAX_DATALEN / sizeof(uint16_t);
 
-		data_buf = (uint16_t*) LCD_MALLOC(dmasize * sizeof(uint16_t));
+		data_buf = (uint16_t*)LCD_MALLOC(dmasize * sizeof(uint16_t));
 		if (data_buf == NULL) {
 			lldbg("[sendgram]MALLOC FAILED!\n");
 			return 0;
