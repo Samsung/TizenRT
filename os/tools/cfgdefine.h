@@ -70,12 +70,11 @@
  * Public Data
  ****************************************************************************/
 
-extern char line[LINESIZE + 1];
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void generate_definitions(FILE * stream);
+char *get_line_ptr(void);
+void generate_definitions(FILE *stream);
 
 #endif							/* __TOOLS_CFGDEFINE_H */

@@ -72,6 +72,8 @@
 
 static inline char *getfilepath(const char *name)
 {
+	char *line = get_line_ptr();
+
 	snprintf(line, PATH_MAX, "%s/" DEFCONFIG, name);
 	line[PATH_MAX] = '\0';
 	return strdup(line);
