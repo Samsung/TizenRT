@@ -66,7 +66,7 @@
  * Public Data
  ****************************************************************************/
 
-char line[LINESIZE + 1];
+static char line[LINESIZE + 1];
 
 /****************************************************************************
  * Private Data
@@ -265,6 +265,11 @@ static char *dequote_value(const char *varname, char *varval)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+char *get_line_ptr(void)
+{
+       return line;
+}
 
 void generate_definitions(FILE * stream)
 {
