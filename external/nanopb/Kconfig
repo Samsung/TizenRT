@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NANOPB
+	bool "Nanopb"
+	default n
+	---help---
+		enable Nanopb - Protocol Buffers for Embedded Systems
