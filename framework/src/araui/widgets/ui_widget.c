@@ -109,9 +109,6 @@ static void _ui_widget_set_visible_func(void *userdata);
 static void _ui_widget_set_position_func(void *userdata);
 static void _ui_widget_set_size_func(void *userdata);
 static void _ui_widget_play_anim(void *userdata);
-static void _ui_widget_stop_anim(void *userdata);
-static void _ui_widget_pause_anim(void *userdata);
-static void _ui_widget_resume_anim(void *userdata);
 
 static void _ui_widget_destroy_func(void *userdata);
 static void _ui_widget_add_child_func(void *userdata);
@@ -918,36 +915,6 @@ static void _ui_widget_play_anim(void *userdata)
 
 	body->anim_finished_cb = info->anim_finished_cb;
 	body->anim = info->anim;
-}
-
-ui_error_t ui_widget_stop_anim(ui_widget_t widget)
-{
-	return UI_OK;
-}
-
-static void _ui_widget_stop_anim(void *userdata)
-{
-
-}
-
-ui_error_t ui_widget_pause_anim(ui_widget_t widget)
-{
-	return UI_OK;
-}
-
-static void _ui_widget_pause_anim(void *userdata)
-{
-
-}
-
-ui_error_t ui_widget_resume_anim(ui_widget_t widget)
-{
-	return UI_OK;
-}
-
-static void _ui_widget_resume_anim(void *userdata)
-{
-
 }
 
 void ui_widget_update_global_rect(ui_widget_body_t *widget)

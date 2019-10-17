@@ -42,7 +42,7 @@ void ui_quick_panel_disappear_tween_end_func(ui_widget_t widget, ui_anim_t anim)
 	body->base.visible = false;
 	body->state = UI_QUICK_PANEL_STATE_NONE;
 	body->focus = NULL;
-	ui_anim_destroy(((ui_widget_body_t *)widget)->anim);
+	ui_anim_destroy(anim);
 }
 
 void ui_quick_panel_appear_tween_end_func(ui_widget_t widget, ui_anim_t anim)
@@ -56,7 +56,7 @@ void ui_quick_panel_appear_tween_end_func(ui_widget_t widget, ui_anim_t anim)
 
 	body = (ui_quick_panel_body_t *)widget;
 	body->state = UI_QUICK_PANEL_STATE_AT_SCREEN;
-	ui_anim_destroy(((ui_widget_body_t *)widget)->anim);
+	ui_anim_destroy(anim);
 }
 
 static void ui_quick_panel_touch_func(ui_widget_body_t *widget, ui_touch_event_t event, ui_coord_t coord)

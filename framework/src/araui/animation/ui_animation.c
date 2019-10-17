@@ -356,6 +356,9 @@ static void _ui_anim_destroy_func(void *userdata)
 			}
 			vec_deinit(&spawn_body->spawn);
 			break;
+
+		default:
+			break;
 		}
 		anim->func = UI_NULL;
 		UI_FREE(anim);
@@ -436,7 +439,7 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 	ui_anim_body_t *anim_body;
 	ui_opacity_anim_body_t *opacity_anim_body;
 	uint32_t remain_time;
-	uint32_t intrp_opacity;
+	// uint32_t intrp_opacity;
 
 	anim_body = (ui_anim_body_t *)anim;
 	opacity_anim_body = (ui_opacity_anim_body_t *)anim;
@@ -448,7 +451,7 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 	anim_body->t += remain_time;
 	*dt -= remain_time;
 
-	intrp_opacity = opacity_anim_body->intrp_func(anim_body->t, opacity_anim_body->from_opacity, opacity_anim_body->to_opacity - opacity_anim_body->from_opacity, anim_body->d);
+	/* intrp_opacity =  */opacity_anim_body->intrp_func(anim_body->t, opacity_anim_body->from_opacity, opacity_anim_body->to_opacity - opacity_anim_body->from_opacity, anim_body->d);
 
 	// ui_widget_set_opacity(widget, intrp_opacity);
 	

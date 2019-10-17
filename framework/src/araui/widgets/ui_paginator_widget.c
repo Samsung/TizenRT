@@ -92,7 +92,7 @@ static void _ui_paginator_widget_set_direction_func(void *userdata)
 
 #if defined(CONFIG_UI_ENABLE_TOUCH)
 
-static void _ui_paginator_tween_finish(ui_widget_t widget)
+static void _ui_paginator_tween_finish(ui_widget_t widget, ui_anim_t anim)
 {
 	ui_widget_body_t *temp = NULL;
 	ui_paginator_widget_body_t *body;
@@ -143,6 +143,7 @@ static void _ui_paginator_tween_finish(ui_widget_t widget)
 	}
 
 	body->state = UI_PAGINATOR_STATE_NONE;
+	ui_anim_destroy(anim);
 }
 
 void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t event, ui_coord_t coord)
@@ -289,18 +290,6 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 
 	default:
 		break;
-	}
-
-	if (move_cur_page) {
-		ui_anim_destroy(move_cur_page);
-	}
-
-	if (move_prev_page) {
-		ui_anim_destroy(move_prev_page);
-	}
-
-	if (move_next_page) {
-		ui_anim_destroy(move_next_page);
 	}
 }
 
