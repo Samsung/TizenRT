@@ -355,11 +355,17 @@ wifi_utils_result_e wifi_utils_deinit(void)
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
 	WU_ENTER;
+	wifi_utils_ap_config_s *config = NULL;
+	uint32_t config_len = 0;
+	if (arg) {
+		config = (wifi_utils_ap_config_s *)arg;
+		config_len = sizeof(wifi_utils_ap_config_s);
+	}
 
 	int fd = open(LWNL80211_PATH, O_RDWR);
 	WU_CHECK_ERR(fd);
 
-	lwnl80211_data data_in = {NULL, 0, 0};
+	lwnl80211_data data_in = {(void *)config, config_len, 0};
 
 	WU_CALL(fd, LWNL80211_SCAN_AP, data_in);
 

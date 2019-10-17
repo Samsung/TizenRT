@@ -322,6 +322,7 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	int8_t result;
 	lwnl80211_scan_list_s *scan_list = NULL;
 	lwnl80211_cb_status status;
+
 	if (!g_dev) {
 		vddbg("Failed to find upper driver\n");
 		result = -1;
@@ -345,18 +346,23 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 
 	if (scan_filter_result.scan_flag) {
 		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
-	}
-
-	if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == LWNL80211_SUCCESS) {
 		status = LWNL80211_SCAN_DONE;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
+		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_filter_result.result_list);
+		sem_post(&scan_filter_result.scan_sem);
 	} else {
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == LWNL80211_SUCCESS) {
+			status = LWNL80211_SCAN_DONE;
+			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
+		} else {
+			status = LWNL80211_SCAN_FAILED;
+			g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		}
+		free_scan_results(scan_list);
 	}
 
 	WiFiFreeScanResults(&wifi_scan_result);
-	result = SLSI_STATUS_SUCCESS;
+
+	return SLSI_STATUS_SUCCESS;
 
 return_result:
 	if (scan_filter_result.scan_flag) {
@@ -421,7 +427,7 @@ lwnl80211_result_e slsidrv_deinit(void)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_scan_ap(void *arg)
+lwnl80211_result_e slsidrv_scan_ap(lwnl80211_ap_config_s *config)
 {
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
@@ -432,14 +438,14 @@ lwnl80211_result_e slsidrv_scan_ap(void *arg)
 	}
 
 	scan_filter_result.scan_flag = 0;
-	if (arg != NULL) {
+	memset(scan_filter_result.scan_ssid, 0, SLSI_SSID_LEN + 1);
+	if (config != NULL) {
 		scan_filter_result.scan_flag = 1;
 		if (scan_filter_result.result_list != NULL) {
 			free_scan_results(scan_filter_result.result_list);
 			scan_filter_result.result_list = NULL;
 		}
-		lwnl80211_ap_config_s *ap_connect_config = (lwnl80211_ap_config_s *)arg;
-		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length);
+		strncpy((char *)scan_filter_result.scan_ssid, (const char *)config->ssid, config->ssid_length + 1);
 	}
 
 	ret = WiFiScanNetwork();

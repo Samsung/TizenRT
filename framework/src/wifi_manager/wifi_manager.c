@@ -955,7 +955,6 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config)
 	if (!cbk->scan_ap_done) {
 		return WIFI_MANAGER_CALLBACK_NOT_REGISTERED;
 	}
-
 	if (config) {
 		strncpy(uconf.ssid, config->ssid, WIFIMGR_SSID_LEN);
 		uconf.ssid[WIFIMGR_SSID_LEN] = '\0';

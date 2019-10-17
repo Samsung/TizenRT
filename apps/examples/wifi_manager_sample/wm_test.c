@@ -76,6 +76,7 @@ struct options {
 	wifi_manager_ap_crypto_type_e  crypto_type;
 	char *softap_ssid;
 	char *softap_password;
+	int scan_specific;
 };
 
 typedef int (*exec_func)(struct options *opt, int argc, char *argv[]);
@@ -126,6 +127,7 @@ static int _wm_test_softap(struct options *opt, int argc, char *argv[]);
 static int _wm_test_join(struct options *opt, int argc, char *argv[]);
 static int _wm_test_set(struct options *opt, int argc, char *argv[]);
 static int _wm_test_auto(struct options *opt, int argc, char *argv[]);
+static int _wm_test_scan(struct options *opt, int argc, char *argv[]);
 
 static void wm_process(int argc, char *argv[]);
 static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
@@ -145,42 +147,33 @@ static wifi_manager_cb_s wifi_callbacks = {
 	wm_scan_done,
 };
 
-static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;;
-static pthread_cond_t g_wm_cond;
-static pthread_mutex_t g_wm_func_mutex = PTHREAD_MUTEX_INITIALIZER;;
-static pthread_cond_t g_wm_func_cond;
+static sem_t g_wm_sem = SEM_INITIALIZER(0);
+static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
+
 static int g_mode = 0; // check program is running
 
 #define WM_TEST_SIGNAL										\
 	do {													\
-		pthread_mutex_lock(&g_wm_mutex);					\
-		printf("T%d send signal\n", getpid());	\
-		pthread_cond_signal(&g_wm_cond);					\
-		pthread_mutex_unlock(&g_wm_mutex);					\
+		sem_post(&g_wm_sem);                                \
+		printf("T%d send signal\n", getpid());              \
 	} while (0)
 
 #define WM_TEST_WAIT								\
 	do {											\
-		pthread_mutex_lock(&g_wm_mutex);			\
+		sem_wait(&g_wm_sem);                        \
 		printf(" T%d wait signal\n", getpid());		\
-		pthread_cond_wait(&g_wm_cond, &g_wm_mutex);	\
-		pthread_mutex_unlock(&g_wm_mutex);			\
 	} while (0)
 
 #define WM_TEST_FUNC_SIGNAL								\
 	do {												\
-		pthread_mutex_lock(&g_wm_func_mutex);			\
+		sem_post(&g_wm_func_sem);                       \
 		printf(" T%d send func signal\n", getpid());	\
-		pthread_cond_signal(&g_wm_func_cond);			\
-		pthread_mutex_unlock(&g_wm_func_mutex);			\
 	} while (0)
 
 #define WM_TEST_FUNC_WAIT										\
 	do {														\
-		pthread_mutex_lock(&g_wm_func_mutex);					\
+		sem_wait(&g_wm_func_sem);                               \
 		printf(" T%d wait func signal\n", getpid());			\
-		pthread_cond_wait(&g_wm_func_cond, &g_wm_func_mutex);	\
-		pthread_mutex_unlock(&g_wm_func_mutex);					\
 	} while (0)
 
 #define WM_TEST_LOG_START						\
@@ -305,7 +298,7 @@ exec_func exec_table[WM_TEST_MAX] = {
 	_wm_test_set,                              /* WM_TEST_SET      */
 	NULL,                                      /* WM_TEST_GET      */
 	NULL,                                      /* WM_TEST_RESET    */
-	NULL,                                      /* WM_TEST_SCAN     */
+	_wm_test_scan,                             /* WM_TEST_SCAN     */
 	NULL,                                      /* WM_TEST_MODE     */
 	NULL,                                      /* WM_TEST_STATS    */
 	_wm_test_auto,                             /* WM_TEST_AUTO     */
@@ -448,38 +441,11 @@ int wm_signal_init(void)
 		return -1;
 	}
 	g_mode = 1;
-	int res = pthread_mutex_init(&g_wm_func_mutex, NULL);
-	if (res != 0) {
-		printf(" Pthread mutex func init fail(%d) (%d)\n", res, errno);
-		return -1;
-	}
-	res = pthread_cond_init(&g_wm_func_cond, NULL);
-	if (res != 0) {
-		printf(" Conditional mutex func init fail(%d) (%d)\n", res, errno);
-		return -1;
-	}
-
-	res = pthread_mutex_init(&g_wm_mutex, NULL);
-	if (res != 0) {
-		printf(" Pthread mutex init fail(%d) (%d)\n", res, errno);
-		return -1;
-	}
-
-	res = pthread_cond_init(&g_wm_cond, NULL);
-	if (res != 0) {
-		printf(" Conditional mutex init fail(%d) (%d)\n", res, errno);
-		return -1;
-	}
-
 	return 0;
 }
 
 void wm_signal_deinit(void)
 {
-	pthread_mutex_destroy(&g_wm_func_mutex);
-	pthread_cond_destroy(&g_wm_func_cond);
-	pthread_mutex_destroy(&g_wm_mutex);
-	pthread_cond_destroy(&g_wm_cond);
 	g_mode = 0;
 }
 
@@ -719,7 +685,19 @@ void wm_scan(void *arg)
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 
-	res = wifi_manager_scan_ap();
+	struct options *ap_info = (struct options *)arg;
+	if (ap_info->scan_specific) {
+		wifi_manager_ap_config_s config;
+		config.ssid_length = strlen(ap_info->ssid);
+		strncpy(config.ssid, ap_info->ssid, config.ssid_length + 1);
+		memset(config.passphrase, 0, WIFIMGR_PASSPHRASE_LEN + 1);
+		config.passphrase_length = 0;
+		config.ap_auth_type = 0;
+		config.ap_crypto_type = 0;
+		res = wifi_manager_scan_specific_ap(&config);
+	} else {
+		res = wifi_manager_scan_ap();
+	}
 	if (res != WIFI_MANAGER_SUCCESS) {
 		printf(" scan Fail\n");
 		return;
@@ -1063,6 +1041,17 @@ static int _wm_test_set(struct options *opt, int argc, char *argv[])
 		}
 	}
 	opt->password = argv[5];
+	return 0;
+}
+
+static int _wm_test_scan(struct options *opt, int argc, char *argv[])
+{
+	if (argc > 3) {
+		opt->ssid = argv[3];
+		opt->scan_specific = 1;
+	} else {
+		opt->scan_specific = 0;
+	}
 	return 0;
 }
 

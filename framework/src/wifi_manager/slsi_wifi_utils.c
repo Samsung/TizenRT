@@ -132,7 +132,6 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 				wifi_scan_iter = wifi_scan_iter->next;
 				continue;
 			}
-
 			cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
 			if (!cur) {
 				free_scan_results(*scan_list);
@@ -249,9 +248,10 @@ static void linkdown_handler(slsi_reason_t *reason)
 static int8_t wifi_scan_result_callback(slsi_reason_t *reason)
 {
 	wifi_utils_scan_list_s *scan_list = NULL;
+	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] Scan failed %d\n");
-		// todo: arg need to be passed, we didn't implement passing arg yet.
+		ndbg("[WU] Scan failed\n");
 		g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
 		if (scan_filter_result.scan_flag) {
 			sem_post(&(scan_filter_result.scan_sem));
@@ -264,18 +264,21 @@ static int8_t wifi_scan_result_callback(slsi_reason_t *reason)
 		if (scan_filter_result.scan_flag) {
 			sem_post(&(scan_filter_result.scan_sem));
 		}
+		ndbg("[WU] Scan failed\n");
 		return SLSI_STATUS_ERROR;
 	}
-	if (scan_filter_result.scan_flag) {
-		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
-		sem_post(&(scan_filter_result.scan_sem));
-	}
 	if (g_cbk.scan_done) {
-		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == WIFI_UTILS_SUCCESS) {
-			g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, NULL);
-			free_scan_results(scan_list);
+		if (scan_filter_result.scan_flag) {
+			wuret = fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
+			sem_post(&(scan_filter_result.scan_sem));
+			if (scan_filter_result.result_list == NULL) {
+				ndbg("[WU] cannot find target AP\n");
+			}
+			g_cbk.scan_done(wuret, scan_filter_result.result_list, NULL);
 		} else {
-			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
+			wuret = fetch_scan_results(&scan_list, &wifi_scan_result, NULL);
+			g_cbk.scan_done(wuret, scan_list, NULL);
+			free_scan_results(scan_list);
 		}
 	}
 	WiFiFreeScanResults(&wifi_scan_result);
@@ -350,6 +353,7 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 	}
 
 	scan_filter_result.scan_flag = 0;
+	memset(scan_filter_result.scan_ssid, 0, WIFI_UTILS_SSID_LEN + 1);
 	if (arg != NULL) {
 		wifi_utils_ap_config_s *ap_connect_config = (wifi_utils_ap_config_s *)arg;
 		scan_filter_result.scan_flag = 1;
@@ -357,7 +361,7 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 			free_scan_results(scan_filter_result.result_list);
 			scan_filter_result.result_list = NULL;
 		}
-		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length);
+		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length + 1);
 	}
 
 	ret = WiFiScanNetwork();
