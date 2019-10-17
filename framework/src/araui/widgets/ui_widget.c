@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -639,7 +640,9 @@ static void _ui_widget_remove_child_func(void *userdata)
 	vec_remove(&info->body->children, info->child);
 
 	info->child->parent = NULL;
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	ui_window_add_redraw_list(info->child->global_rect);
+#endif
 
 	UI_FREE(info);
 }
@@ -676,7 +679,9 @@ static void _ui_widget_remove_all_children_func(void *widget)
 
 	vec_foreach(&body->children, child, iter) {
 		child->parent = NULL;
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 		ui_window_add_redraw_list(child->global_rect);
+#endif
 	}
 	vec_clear(&body->children);
 }

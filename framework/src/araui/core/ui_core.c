@@ -101,11 +101,13 @@ ui_error_t ui_start(void)
 		return UI_INIT_FAILURE;
 	}
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	if (ui_window_redraw_list_init() != UI_OK) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
 		return UI_INIT_FAILURE;
 	}
+#endif
 
 	for (idx = 0; idx < UI_QUICK_PANEL_TYPE_NUM; idx++) {
 		g_quick_panel_info[idx] = NULL;
@@ -114,7 +116,9 @@ ui_error_t ui_start(void)
 	if (pthread_attr_init(&attr)) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 		ui_window_redraw_list_deinit();
+#endif
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
 		return UI_INIT_FAILURE;
 	}
@@ -126,7 +130,9 @@ ui_error_t ui_start(void)
 	if (ui_request_callback_init() != UI_OK) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 		ui_window_redraw_list_deinit();
+#endif
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
 		return UI_INIT_FAILURE;
 	}
@@ -136,7 +142,9 @@ ui_error_t ui_start(void)
 	if (pthread_create(&g_core.pid, &attr, _ui_core_thread_loop, NULL)) {
 		ui_dal_deinit();
 		ui_window_list_deinit();
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 		ui_window_redraw_list_deinit();
+#endif
 		ui_request_callback_deinit();
 		g_core.state = UI_CORE_STATE_STOP;
 		UI_LOGE("Error: UI_INIT_FAILURE.\n");
@@ -178,10 +186,12 @@ ui_error_t ui_stop(void)
 		return UI_OPERATION_FAIL;
 	}
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	if (ui_window_redraw_list_deinit() != UI_OK) {
 		UI_LOGE("ui_window_redraw_list_deinit failed.\n");
 		return UI_OPERATION_FAIL;
 	}
+#endif
 
 	if (ui_window_list_deinit() != UI_OK) {
 		UI_LOGE("ui_window_list_deinit failed.\n");
@@ -258,7 +268,9 @@ static ui_error_t _ui_render_widget(ui_widget_body_t *widget, ui_rect_t draw_are
 	int iter;
 	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	ui_rect_t new_vp;
+#endif
 
 	if (!widget) {
 		UI_LOGE("Error: widget is null!\n");
@@ -276,16 +288,15 @@ static ui_error_t _ui_render_widget(ui_widget_body_t *widget, ui_rect_t draw_are
 		}
 
 		if (curr_widget->visible) {
-			new_vp = ui_rect_intersect(draw_area, curr_widget->global_rect);
-			ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
-
 			if (curr_widget->render_cb) {
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 				new_vp = ui_rect_intersect(draw_area, curr_widget->global_rect);
 				ui_dal_set_viewport(new_vp.x, new_vp.y, new_vp.width, new_vp.height);
-
 				curr_widget->render_cb((ui_widget_t)curr_widget, dt);
-
 				ui_dal_set_viewport(draw_area.x, draw_area.y, draw_area.width, draw_area.height);
+#else
+				curr_widget->render_cb((ui_widget_t)curr_widget, dt);
+#endif
 			}
 
 			vec_foreach(&curr_widget->children, child, iter) {
@@ -316,10 +327,15 @@ static void _ui_call_anim_finished_cb(void *userdata)
 
 static void _ui_redraw(uint32_t dt)
 {
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	ui_rect_t *redraw_rect;
-	ui_window_body_t *window;
 	int iter;
+#else
+	ui_rect_t redraw_rect;
+#endif
+	ui_window_body_t *window;
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 	vec_foreach(ui_window_get_redraw_list(), redraw_rect, iter) {
 		window = ui_window_get_current();
 		if (window) {
@@ -336,6 +352,27 @@ static void _ui_redraw(uint32_t dt)
 	}
 
 	ui_window_redraw_list_clear();
+#else
+	redraw_rect.x = 0;
+	redraw_rect.y = 0;
+	redraw_rect.width = CONFIG_UI_DISPLAY_WIDTH;
+	redraw_rect.height = CONFIG_UI_DISPLAY_HEIGHT;
+
+	ui_dal_set_viewport(redraw_rect.x, redraw_rect.y, redraw_rect.width, redraw_rect.height);
+
+	window = ui_window_get_current();
+	if (window) {
+		_ui_render_widget(window->root, redraw_rect, dt);
+	}
+
+	if (_ui_core_quick_panel_visible()) {
+		_ui_render_widget(g_quick_panel_info[g_core.visible_event_type], redraw_rect, dt);
+	}
+
+	if (window || _ui_core_quick_panel_visible()) {
+		ui_dal_redraw(redraw_rect.x, redraw_rect.y, redraw_rect.width, redraw_rect.height);
+	}
+#endif // CONFIG_UI_PARTIAL_UPDATE
 }
 
 static void _ui_update_redraw_list(ui_widget_body_t *widget)
@@ -368,11 +405,13 @@ static void _ui_update_redraw_list(ui_widget_body_t *widget)
 				parent_mat = ui_mat3_identity();
 			}
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 			// Update previous area
 			if (ui_window_add_redraw_list(curr_widget->global_rect) != UI_OK) {
 				UI_LOGE("error: failed to add redraw list!\n");
 				break;
 			}
+#endif
 
 			ui_renderer_translate(&parent_mat, &curr_widget->trans_mat, (float)curr_widget->local_rect.x, (float)curr_widget->local_rect.y);
 			ui_renderer_rotate(&curr_widget->trans_mat, curr_widget->degree);
@@ -380,10 +419,12 @@ static void _ui_update_redraw_list(ui_widget_body_t *widget)
 
 			// Update new area
 			ui_widget_update_global_rect(curr_widget);
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 			if (ui_window_add_redraw_list(curr_widget->global_rect) != UI_OK) {
 				UI_LOGE("error: failed to add redraw list!\n");
 				break;
 			}
+#endif
 
 			curr_widget->update_flag = false;
 			update_flag = true;

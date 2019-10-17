@@ -29,14 +29,18 @@
 #include "ui_commons_internal.h"
 
 static vec_void_t g_window_list;
+static ui_window_body_t *g_current_window = UI_NULL;
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 static vec_void_t g_window_redraw_list;
 static ui_rect_t g_rect_mempool[CONFIG_UI_UPDATE_MEMPOOL_SIZE];
 static int g_rect_mempool_idx = 0;
-static ui_window_body_t *g_current_window = UI_NULL;
+#endif
 
 static void _ui_window_create_func(void *userdata);
 static void _ui_window_destroy_func(void *userdata);
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 static ui_rect_t *_ui_window_get_mempool_rect(void);
+#endif
 
 ui_error_t ui_window_list_init(void)
 {
@@ -58,6 +62,7 @@ ui_error_t ui_window_list_deinit(void)
 	return UI_OK;
 }
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 ui_error_t ui_window_redraw_list_init(void)
 {
 	vec_init(&g_window_redraw_list);
@@ -71,6 +76,7 @@ ui_error_t ui_window_redraw_list_deinit(void)
 
 	return UI_OK;
 }
+#endif
 
 ui_window_t ui_window_create(created_callback created_cb, destroyed_callback destroyed_cb, shown_callback shown_cb, hidden_callback hidden_cb)
 {
@@ -242,6 +248,7 @@ ui_error_t ui_window_add_widget(ui_window_t window, ui_widget_t widget, int32_t 
 	return UI_OK;
 }
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 vec_void_t *ui_window_get_redraw_list(void)
 {
 	return &g_window_redraw_list;
@@ -338,6 +345,7 @@ static ui_rect_t *_ui_window_get_mempool_rect(void)
 
 	return &g_rect_mempool[alloc_idx];
 }
+#endif // CONFIG_UI_PARTIAL_UPDATE
 
 ui_window_body_t *ui_window_get_current(void)
 {
