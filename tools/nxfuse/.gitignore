@@ -1,0 +1,4 @@
+.config
+include/tinyara/config.h
+nxfuse
+

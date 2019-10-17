@@ -72,12 +72,14 @@
 #include <arpa/inet.h>
 #include <netutils/netlib.h>
 
+/*  logger for sample program */
+#include "port_logger.h"
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 
 
-#define IOTIVITY_TEST_STACKSIZE   4096
+#define IOTIVITY_TEST_STACKSIZE   8092
 #define IOTIVITY_TEST_PRI   100
 #define IOTIVITY_TEST_SCHED_POLICIY SCHED_RR
 

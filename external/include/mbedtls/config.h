@@ -2701,9 +2701,9 @@
  *
  * This module is required for X.509 CRL parsing.
  */
-#if defined(MBEDTLS_OCF_PATCH)
+// #if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_X509_CRL_PARSE_C
-#endif
+// #endif
 
 /**
  * \def MBEDTLS_X509_CSR_PARSE_C
@@ -2882,7 +2882,7 @@
 #undef MBEDTLS_ERROR_STRERROR_DUMMY
 #undef MBEDTLS_GENPRIME
 
-#undef MBEDTLS_FS_IO
+// #undef MBEDTLS_FS_IO
 #undef MBEDTLS_MEMORY_DEBUG
 #undef MBEDTLS_HAVEGE_C
 

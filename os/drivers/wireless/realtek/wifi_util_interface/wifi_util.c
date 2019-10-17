@@ -219,7 +219,7 @@ int wext_get_enc_ext(const char *ifname, __u16 *alg, __u8 *key_idx, __u8 *passph
 	}
 
 	if (ext != NULL)
-		free(ext);
+		rtw_mfree(ext,0);
 
 	return ret;
 }

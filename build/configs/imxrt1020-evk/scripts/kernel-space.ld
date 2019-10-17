@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/imxrt1020-evk/scripts/user-space.ld
+ * build/configs/imxrt1020-evk/scripts/kernel-space.ld
  *
  *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

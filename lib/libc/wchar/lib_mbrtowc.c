@@ -84,7 +84,7 @@ size_t mbrtowc(FAR wchar_t *pwc, FAR const char *s, size_t n, mbstate_t *ps)
 	if (retval == -1) {
 		return (size_t)(-1);
 	} else {
-		return (size_t) retval;
+		return (size_t)retval;
 	}
 }
 #endif

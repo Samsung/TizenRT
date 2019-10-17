@@ -168,6 +168,9 @@ static sigq_t *sig_allocateblock(sq_queue_t *siglist, uint16_t nsigs, uint8_t si
 	/* Allocate a block of pending signal actions */
 
 	sigqalloc = (sigq_t *)kmm_malloc((sizeof(sigq_t)) * nsigs);
+	if (sigqalloc == NULL) {
+		return NULL;
+	}
 
 	sigq = sigqalloc;
 	for (i = 0; i < nsigs; i++) {
@@ -196,6 +199,9 @@ static sigpendq_t *sig_allocatependingsignalblock(sq_queue_t *siglist, uint16_t 
 	/* Allocate a block of pending signal structures  */
 
 	sigpendalloc = (sigpendq_t *)kmm_malloc((sizeof(sigpendq_t)) * nsigs);
+	if (sigpendalloc == NULL) {
+		return NULL;
+	}
 
 	sigpend = sigpendalloc;
 	for (i = 0; i < nsigs; i++) {
@@ -258,6 +264,9 @@ void sig_allocateactionblock(void)
 	/* Allocate a block of signal actions */
 
 	g_sigactionalloc = (sigactq_t *)kmm_malloc((sizeof(sigactq_t)) * NUM_SIGNAL_ACTIONS);
+	if (g_sigactionalloc == NULL) {
+		return;
+	}
 
 	sigact = g_sigactionalloc;
 	for (i = 0; i < NUM_SIGNAL_ACTIONS; i++) {

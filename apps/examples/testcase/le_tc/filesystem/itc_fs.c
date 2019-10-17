@@ -31,23 +31,13 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include "tc_common.h"
+#include "tc_internal.h"
 
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 
 #ifdef CONFIG_FS_SMARTFS
-#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME)
-#define TMP_MOUNT_DEV_DIR CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
-#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
-#else
-#define TMP_MOUNT_DEV_DIR "/dev/smart1"
-#endif
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 #define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"

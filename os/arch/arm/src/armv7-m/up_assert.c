@@ -93,6 +93,7 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <unistd.h>
 #include <mqueue.h>
+#include <stdbool.h>
 #include "binary_manager/binary_manager.h"
 #endif
 #include "irq/irq.h"
@@ -104,7 +105,6 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
 extern uint32_t g_assertpc;
-extern mqd_t g_binmgr_mq_fd;
 #endif
 /****************************************************************************
  * Pre-processor Definitions
@@ -440,29 +440,38 @@ static void _up_assert(int errorcode)
 static void recovery_user_assert(void)
 {
 	int ret;
+	mqd_t mqfd;
 	binmgr_request_t request_msg;
 	struct tcb_s *tcb;
 
-	request_msg.cmd = BINMGR_FAULT;
-	request_msg.requester_pid = getpid();
-	if (current_regs) {
-		tcb = sched_self();
-		sched_removereadytorun(tcb);
+	/* Get mqfd for sending recovery mesage to binary manager */
+	mqfd = binary_manager_get_mqfd();
+	if (mqfd != NULL) {
+		request_msg.cmd = BINMGR_FAULT;
+		request_msg.requester_pid = getpid();
+		if (current_regs) {
+			tcb = sched_self();
+			sched_removereadytorun(tcb);
 #if CONFIG_RR_INTERVAL > 0
-		tcb->timeslice = 0;
+			tcb->timeslice = 0;
 #endif
-		tcb->sched_priority = SCHED_PRIORITY_MIN;
-		sched_addreadytorun(tcb);
-	}
+			tcb->sched_priority = SCHED_PRIORITY_MIN;
+			sched_addreadytorun(tcb);
+		}
 
-	/* Send a message to binary manager with pid of the faulty task */
-
-	ret = mq_send(g_binmgr_mq_fd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
-	DEBUGASSERT(ret == 0);
-	if (current_regs) {
-		tcb = sched_self();
-		current_regs = tcb->xcp.regs;
+		/* Send a message to binary manager with pid of the faulty task */
+		ret = mq_send(mqfd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
+		if (ret == OK) {
+			if (current_regs) {
+				tcb = sched_self();
+				current_regs = tcb->xcp.regs;
+			}
+			/* Requested recovery to binary manager successfully */
+			return;
+		}
 	}
+	/* Failed to request for recovery to binary manager */
+	_up_assert(EXIT_FAILURE);
 }
 #endif
 
@@ -507,10 +516,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	uint32_t ksram_segment_end  = (uint32_t)__ksram_segment_start__  + (uint32_t)__ksram_segment_size__;
-	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
 	uint32_t assert_pc;
-	uint32_t is_kernel_assert   = false;
+	bool is_kernel_assert;
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
@@ -522,9 +529,8 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	/* Is the assert in Kernel? */
 
-	if ((assert_pc >= (uint32_t)__ksram_segment_start__ && assert_pc <= ksram_segment_end) || (assert_pc >= (uint32_t)__kflash_segment_start__ && assert_pc < kflash_segment_end)) {
-		is_kernel_assert = true;
-	}
+	is_kernel_assert = is_kernel_space(assert_pc);
+
 #endif  /* CONFIG_BINMGR_RECOVERY */
 
 	up_dumpstate();

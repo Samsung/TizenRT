@@ -942,18 +942,6 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 	return AUDIO_DECODER_OK;
 }
 
-static size_t _input_callback(void *data, rbstream_p rbsp)
-{
-	audio_decoder_p decoder = (audio_decoder_p) data;
-	assert(decoder != NULL);
-
-	size_t wlen = 0;
-	RETURN_VAL_IF_FAIL((decoder->input_func != NULL), wlen);
-	wlen = decoder->input_func(decoder->cb_data, decoder);
-
-	return wlen;
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1107,27 +1095,16 @@ int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 	priv->mResampler = NULL;
 
 	// init decoder data
-	decoder->cb_data = NULL;
-	decoder->input_func = NULL;
-
 	decoder->dec_ext = NULL;
 	decoder->dec_mem = NULL;
 	decoder->priv_data = priv;
 
 	// init ring-buffer and open it as a stream
 	rb_init(&decoder->ringbuffer, rbuf_size);
-	decoder->rbsp = rbs_open(&decoder->ringbuffer, _input_callback, (void *)decoder);
+	decoder->rbsp = rbs_open(&decoder->ringbuffer);
 	RETURN_VAL_IF_FAIL((decoder->rbsp != NULL), AUDIO_DECODER_ERROR);
 
 	rbs_ctrl(decoder->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
-	return AUDIO_DECODER_OK;
-}
-
-int audio_decoder_register_callbacks(audio_decoder_p decoder, void *user_data, input_func_f input_func)
-{
-	decoder->cb_data = user_data;
-	decoder->input_func = input_func;
-
 	return AUDIO_DECODER_OK;
 }
 

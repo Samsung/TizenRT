@@ -202,7 +202,7 @@ int exec_module(FAR const struct binary_s *binp)
 	if (ret < 0) {
 		ret = -get_errno();
 		berr("task_init() failed: %d\n", ret);
-		goto errout_with_addrenv;
+		goto errout_with_stack;
 	}
 
 #if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_APP_BINARY_SEPARATION)
@@ -324,14 +324,11 @@ int exec_module(FAR const struct binary_s *binp)
 	return (int)pid;
 
 errout_with_tcbinit:
-	tcb->cmn.stack_alloc_ptr = NULL;
 	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	mm_free(binp->uheap, stack);
-#else
-	kumm_free(stack);
-#endif
 	return ret;
+
+errout_with_stack:
+	kumm_free(stack);
 
 errout_with_addrenv:
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)

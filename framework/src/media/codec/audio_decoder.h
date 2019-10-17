@@ -41,16 +41,6 @@ typedef struct audio_decoder_s audio_decoder_t;
 typedef struct audio_decoder_s *audio_decoder_p;
 
 /**
- * @brief  input callback routine type.
- *
- * @param  user_data: Pointer to user callback data registered with callback routine
- * @param  decoder: Pointer to decoder object
- * @return size of audio data pushed to decoder via audio_decoder_pushdata().
- *         in case of return 0, that means end of stream, then decoding will be terminated.
- */
-typedef size_t(*input_func_f)(void *user_data, audio_decoder_p decoder);
-
-/**
  * @struct  audio_decoder_s
  * @brief   Decoder structure, support decoding various types of audio stream, see enum audio_type_e.
  *          User should define and mantain decoder object in stack or heap, and give object pointer
@@ -62,10 +52,6 @@ struct audio_decoder_s {
 	// decoder buffer
 	void *dec_ext;              /* decoder external struct, configured by user according to audio_type */
 	void *dec_mem;              /* decoder required memory, used internally */
-
-	// user callback func and data
-	void *cb_data;              /* data ptr user registered, be passed to callback function. */
-	input_func_f input_func;    /* input callback, be called when decoder request more data. */
 
 	// internal member used by decoder
 	rb_t ringbuffer;            /* ring-buffer object */
@@ -83,16 +69,6 @@ struct audio_decoder_s {
  * @return 0 on success, otherwise, return -1.
  */
 int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size);
-
-/**
- * @brief  stream decoder register callbacks.
- *         It's an optional function, it's possible to push data at any time.
- * @param  decoder : Pointer to decoder object
- * @param  data: ponter to user data, will be passed to callback routine
- * @param  input: audio data input callback routine
- * @return 0 on success, otherwise, return -1.
- */
-int audio_decoder_register_callbacks(audio_decoder_p decoder, void *data, input_func_f input);
 
 /**
  * @brief  stream decoder deinitialize.

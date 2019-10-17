@@ -24,5 +24,8 @@ void recovery_test(void);
 #ifdef CONFIG_EXAMPLES_MESSAGING_TEST
 void messaging_test(void);
 #endif
-
+#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
+void binary_update_test(void);
 #endif
+
+#endif /* __EXAMPLES_ELF_WIFIAPP_INTERNAL_H */

@@ -28,6 +28,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <task_manager/task_manager.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -42,12 +43,24 @@ struct tm_pthread_pid_s {
 typedef struct tm_pthread_pid_s tm_pthread_pid_t;
 #endif
 
+struct tm_drv_data_s {
+	int pid;
+	void *addr;
+};
+typedef struct tm_drv_data_s tm_drv_data_t;
+
 void task_manager_drv_register(void);
 
 /**
- * @brief function for run exit callback when task is terminated.
+ * @cond
+ * @internal
  */
-int task_manager_run_exit_cb(int pid);
+typedef void (*tm_exit_cb_t)(int);
+
+void tm_set_exit_cb(tm_exit_cb_t cb);
+/**
+ * @endcond
+ */
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

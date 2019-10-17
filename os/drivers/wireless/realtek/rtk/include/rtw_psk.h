@@ -191,8 +191,8 @@ typedef struct _OCTET_STRING {
 typedef union _LARGE_INTEGER {
 	unsigned char charData[8];
 	struct {
-		unsigned long HighPart;
-		unsigned long LowPart;
+		unsigned int HighPart;
+		unsigned int LowPart;
 	} field;
 } LARGE_INTEGER, *PLARGE_INTEGER;
 

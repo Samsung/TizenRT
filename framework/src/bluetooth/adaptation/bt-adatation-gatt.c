@@ -31,12 +31,10 @@ int bt_adapt_gatt_free_svc_property(bt_gatt_svc_prop_t *svc_pty)
 {
 #ifdef GLIB_SUPPORTED
 	g_free(svc_pty->uuid);
-	g_free(svc_pty->uuid);
 	g_free(svc_pty->handle);
 	g_strfreev(svc_pty->include_handles.handle);
 	g_strfreev(svc_pty->char_handle.handle);
 #else
-	FREE(svc_pty->uuid);
 	FREE(svc_pty->uuid);
 	FREE(svc_pty->handle);
 	FREEV(svc_pty->include_handles.handle);

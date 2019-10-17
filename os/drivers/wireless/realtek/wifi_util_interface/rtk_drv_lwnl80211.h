@@ -25,6 +25,8 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/sched.h>
 
+#include <tinyara/wifi/wifi_common.h>
+
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -36,7 +38,6 @@
 #include "../rtk/include/wifi_constants.h"
 #include "../rtk/include/wifi_structures.h"
 
-#include "wifi_common.h"
 #include "wifi_conf.h"
 #include "rtk_lwip_netconf.h"
 

@@ -286,7 +286,7 @@
 /* Big enough to hold our biggest descriptor */
 
 #define USBMSC_MXDESCLEN              (64)
-#define USBMSC_MAXSTRLEN              (USBMSC_MXDESCLEN-2)
+#define USBMSC_MAXSTRLEN              (USBMSC_MXDESCLEN - 2)
 
 /* String language */
 
@@ -304,7 +304,7 @@
 #undef CONFIG_USBMSC_STRBASE
 #define CONFIG_USBMSC_STRBASE       (0)
 #else
-#define USBMSC_INTERFACESTRID       (CONFIG_USBMSC_STRBASE+1)
+#define USBMSC_INTERFACESTRID       (CONFIG_USBMSC_STRBASE + 1)
 #endif
 
 #define USBMSC_LASTSTRID              USBMSC_INTERFACESTRID
@@ -385,7 +385,7 @@
 
 #define USBMSC_CFGGROUP_SIZE     (3)
 
-/* The size of the config descriptor: (9 + 2*7) = 23 */
+/* The size of the config descriptor: (9 + 2 * 7) = 23 */
 
 #define SIZEOF_USBMSC_CFGDESC \
 	(USB_SIZEOF_IFDESC + USBMSC_NENDPOINTS * USB_SIZEOF_EPDESC)

@@ -6,6 +6,7 @@
 config EXAMPLES_SELECT_TEST
 	bool "select_test"
 	default n
+	select PIPES
 	---help---
 		Enable select test
 

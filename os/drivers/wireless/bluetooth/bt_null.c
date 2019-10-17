@@ -63,6 +63,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <pthread.h>
 
 #include <tinyara/bluetooth/iob/iob.h>
 #include <tinyara/bluetooth/bluetooth.h>
@@ -94,7 +95,20 @@ static const bt_addr_t g_bt_addr = {
 	{0xfe, 0xed, 0xb0, 0x0b, 0xfa, 0xce}
 };
 
+static const bt_addr_t g_bt_addr2 = {
+	{0xe4, 0xfa, 0xed, 0x75, 0xd7, 0x11}
+};
+
+static const bt_addr_t g_bt_addr3 = {
+	{0x00, 0x02, 0x43, 0x94, 0x3e, 0x75}
+};
+
 static uint8_t local_name[HCI_MAX_NAME_LENGTH];
+
+uint8_t g_ad_data[31] = { 0x02, 0x01, 0x1a, 0x1b, 0xff, 0x75, 0x00, 0x42, 0x04, 0x01, 0x20, 0x6f,
+						  0x19, 0x0f, 0x00, 0x02, 0x01, 0x37, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+						  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						};
 
 /****************************************************************************
  * Private Functions
@@ -242,6 +256,95 @@ static void btnull_process_write_local_name_req(FAR struct bt_buf_s *buf)
 	}
 }
 
+static void btnull_format_le_adv_report(FAR struct bt_buf_s *buf)
+{
+	struct bt_hci_evt_hdr_s evt;
+	struct bt_hci_evt_le_meta_event_s cmd;
+	struct bt_hci_ev_le_advertising_info_s adv_info = {0, };
+	FAR uint8_t *data = buf->frame->io_data;
+	int ndx;
+	int len;
+	uint8_t num_reports = 3;
+	uint8_t rssi = 0x9f;
+
+	nvdbg("format_le_adv_report entered.\n\n");
+
+	/* Minimal setup for the command complete event */
+
+	len = sizeof(struct bt_hci_evt_hdr_s)
+			+ sizeof(struct bt_hci_evt_le_meta_event_s)
+			+ sizeof(uint8_t)
+			+ (num_reports * (sizeof(struct bt_hci_ev_le_advertising_info_s) + 31 + 1));
+	ndx = 0;
+
+	evt.evt = BT_HCI_EVT_LE_META_EVENT;
+	evt.len = len;
+	memcpy(&data[ndx], &evt, sizeof(struct bt_hci_evt_hdr_s));
+	ndx += sizeof(struct bt_hci_evt_hdr_s);
+
+	cmd.subevent = BT_HCI_EVT_LE_ADVERTISING_REPORT;
+	memcpy(&data[ndx], &cmd, sizeof(struct bt_hci_evt_le_meta_event_s));
+	ndx += sizeof(struct bt_hci_evt_le_meta_event_s);
+
+	memcpy(&data[ndx], &num_reports, sizeof(uint8_t));
+	ndx += sizeof(uint8_t);
+
+	adv_info.evt_type = 0x00; // BT_LE_ADV_IND
+	adv_info.addr.type = 0x00; // BT_ADDR_LE_PUBLIC
+	BLUETOOTH_ADDRCOPY(adv_info.addr.val, g_bt_addr.val);
+	adv_info.length = 31;
+	memcpy(&data[ndx], &adv_info, sizeof(struct bt_hci_ev_le_advertising_info_s));
+	ndx += sizeof(struct bt_hci_ev_le_advertising_info_s);
+	memcpy(&data[ndx], &g_ad_data, 31);
+	ndx += 31;
+	memcpy(&data[ndx], &rssi, sizeof(uint8_t));
+	ndx += sizeof(uint8_t);
+
+	adv_info.evt_type = 0x04; // BT_LE_ADV_SCAN_RSP
+	adv_info.addr.type = 0x00; // BT_ADDR_LE_PUBLIC
+	BLUETOOTH_ADDRCOPY(adv_info.addr.val, g_bt_addr2.val);
+	adv_info.length = 31;
+	memcpy(&data[ndx], &adv_info, sizeof(struct bt_hci_ev_le_advertising_info_s));
+	ndx += sizeof(struct bt_hci_ev_le_advertising_info_s);
+	memcpy(&data[ndx], &g_ad_data, 31);
+	ndx += 31;
+	memcpy(&data[ndx], &rssi, sizeof(uint8_t));
+	ndx += sizeof(uint8_t);
+
+	adv_info.evt_type = 0x00; // BT_LE_ADV_IND
+	adv_info.addr.type = 0x01; // BT_ADDR_LE_RANDOM
+	BLUETOOTH_ADDRCOPY(adv_info.addr.val, g_bt_addr3.val);
+	adv_info.length = 31;
+	memcpy(&data[ndx], &adv_info, sizeof(struct bt_hci_ev_le_advertising_info_s));
+	ndx += sizeof(struct bt_hci_ev_le_advertising_info_s);
+	memcpy(&data[ndx], &g_ad_data, 31);
+	ndx += 31;
+	memcpy(&data[ndx], &rssi, sizeof(uint8_t));
+	ndx += sizeof(uint8_t);
+
+	buf->frame->io_len = len;
+	buf->len = len;
+}
+
+static int btnull_adv_report(void *arg)
+{
+	FAR struct bt_buf_s *outbuf;
+
+	nvdbg("btnull_adv_report() enter.\n\n");
+
+	outbuf = bt_buf_alloc(BT_EVT, NULL, 0);
+	if (outbuf == NULL) {
+		ndbg("ERROR: Failed to allocate buffer\n");
+		return -ENOMEM;
+	}
+
+	sleep(1);
+	btnull_format_le_adv_report(outbuf);
+	bt_hci_receive(outbuf);
+
+	return 0;
+}
+
 static int btnull_send(FAR const struct bt_driver_s *dev, FAR struct bt_buf_s *buf)
 {
 	nvdbg("Bit bucket: length %d\n", (int)buf->len);
@@ -282,6 +385,25 @@ static int btnull_send(FAR const struct bt_driver_s *dev, FAR struct bt_buf_s *b
 
 		case BT_HCI_OP_READ_LOCAL_NAME:
 			btnull_format_read_local_name_rsp(outbuf, opcode);
+			break;
+
+		case BT_HCI_OP_LE_SET_SCAN_ENABLE:
+			{
+				int status;
+				pthread_t tid;
+				pthread_attr_t attr;
+
+				btnull_format_cmdcomplete(outbuf, opcode);
+
+				status = pthread_attr_init(&attr);
+				if (status != 0) {
+					ndbg("pthread_attr_init() failed.\n\n");
+				}
+				status = pthread_create(&tid, &attr, (pthread_startroutine_t)btnull_adv_report, NULL);
+				if (status < 0) {
+					ndbg("pthread_create() failed.\n\n");
+				}
+			}
 			break;
 
 		default:

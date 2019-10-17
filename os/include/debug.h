@@ -68,14 +68,25 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
 #include <tinyara/logm.h>
+#endif
 
 #include <syslog.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#ifdef NXFUSE_HOST_BUILD
+#define FAR
+#define DEBUGASSERT(x)
+#define ASSERT(x) DEBUGASSERT(x)
+#define OK    0
+#define ERROR 1
+
+int get_errno(void);
+#endif
 
 /* Debug macros to runtime filter the debug messages sent to the console.  In
  * general, there are four forms of the debug macros:
@@ -293,19 +304,19 @@
 #ifdef CONFIG_DEBUG_BINFMT_ERROR
 #  define berr(format, ...)     dbg(format, ##__VA_ARGS__)
 #else
-#  define berr(x...)
+#  define berr(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_WARN
 #  define bwarn(format, ...)   wdbg(format, ##__VA_ARGS__)
 #else
-#  define bwarn(x...)
+#  define bwarn(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_INFO
 #  define binfo(format, ...)   vdbg(format, ##__VA_ARGS__)
 #else
-#  define binfo(x...)
+#  define binfo(...)
 #endif
 
 #ifdef CONFIG_DEBUG_BINMGR_ERROR
@@ -1086,9 +1097,11 @@
 
 #ifdef CONFIG_DEBUG_FS_INFO
 #define fvdbg       vdbg
+#define fsdbg       dbg_noarg
 #define fllvdbg     llvdbg
 #else
 #define fvdbg       (void)
+#define fsdbg       (void)
 #define fllvdbg     (void)
 #endif
 

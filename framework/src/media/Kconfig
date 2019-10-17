@@ -52,6 +52,54 @@ config HTTPSOURCE_DOWNLOAD_STACKSIZE
 	default 8192
 	---help---
 
+config DATASOURCE_PREPARSE_BUFFER_SIZE
+	int "DataSource preparsing buffer size"
+	default 4096
+	---help---
+
+menuconfig CONTAINER_FORMAT
+	bool "Digital Container Formats Support"
+	default y
+	---help---
+		Enable multimedia container formats
+
+if CONTAINER_FORMAT
+
+comment "Containers for multi-media"
+
+config CONTAINER_MPEG2TS
+	bool "MPEG-2 transport stream"
+	default y
+	---help---
+
+config CONTAINER_MP4
+	bool "MPEG-4 multimedia portfolio"
+	default n
+	---help---
+		Not Supported Now
+
+config CONTAINER_OGG
+	bool "Xiph.org audio formats Vorbis and Opus"
+	default n
+	---help---
+		Not Supported Now
+
+comment "Containers exclusive to audio"
+
+config CONTAINER_WAV
+	bool "WAV/RIFF file format"
+	default n
+	---help---
+		Not Supported Now
+
+config DEMUX_BUFFER_SIZE
+	int "Demuxing buffer size"
+	default 4096
+	---help---
+		Buffer to cache stream data for demuxing
+
+endif #CONTAINER_FORMAT
+
 endif #MEDIA_PLAYER
 
 config MEDIA_RECORDER

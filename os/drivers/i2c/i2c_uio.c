@@ -243,11 +243,12 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 			ret = I2C_SETADDRESS(dev, -1, 10);
 		}
 		break;
+#ifdef CONFIG_I2C_TRANSFER
 	case I2C_RDWR:
 		rdwr = (struct i2c_rdwr_ioctl_data_s *)(arg);
 		ret = I2C_TRANSFER(dev, rdwr->msgs, rdwr->nmsgs);
 		break;
-
+#endif
 	case I2C_FREQUENCY:
 		freq = *((uint32_t *)arg);
 		ret = I2C_SETFREQUENCY(dev, freq);

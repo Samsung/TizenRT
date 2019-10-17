@@ -75,7 +75,7 @@ CSRCS += utc_gpio.c
 endif
 
 ifeq ($(CONFIG_SYSIO_UTC_ADC),y)
-CSRCS += utc_gpio.c
+CSRCS += utc_adc.c
 endif
 
 # Include system io build support

@@ -714,7 +714,6 @@ static void utc_audio_pcm_drop_p(void)
 	int frames_read;
 	int remain;
 	int size;
-	int total_frames;
 	int num_read;
 	int retry = PREPARE_RETRY_COUNT;
 
@@ -776,7 +775,6 @@ static void utc_audio_pcm_drop_p(void)
 	TC_ASSERT_GEQ_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
 
 	printf("Check now for recorded part. Nothing after drop should be heard\n");
-	total_frames = 0;
 	retry = PREPARE_RETRY_COUNT;
 	do {
 		if (retry == PREPARE_RETRY_COUNT) {
@@ -795,7 +793,6 @@ static void utc_audio_pcm_drop_p(void)
 			}
 
 			retry = PREPARE_RETRY_COUNT;
-			total_frames += num_read;
 			TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
 		}
 	} while (num_read > 0);
@@ -1463,7 +1460,7 @@ int main(int argc, FAR char *argv[])
 int utc_audio_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Audio UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Audio UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1531,7 +1528,7 @@ int utc_audio_main(int argc, char *argv[])
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	(void)tc_handler(TC_END, "Audio UTC");
+	(void)testcase_state_handler(TC_END, "Audio UTC");
 
 	return 0;
 }

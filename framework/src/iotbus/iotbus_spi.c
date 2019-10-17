@@ -122,7 +122,7 @@ int iotbus_spi_set_config(iotbus_spi_context_h hnd, const struct iotbus_spi_conf
 {
 	struct _iotbus_spi_s *handle;
 
-	if (!hnd || !hnd->handle) {
+	if (!hnd || !hnd->handle || !config) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
@@ -146,7 +146,7 @@ int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	if (!txbuf || length < 0) {
+	if (!txbuf) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
@@ -168,7 +168,7 @@ int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	if (!rxbuf || length < 0) {
+	if (!rxbuf) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
@@ -190,7 +190,7 @@ int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *r
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
-	if (!txbuf || !rxbuf || length < 0) {
+	if (!txbuf || !rxbuf) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 

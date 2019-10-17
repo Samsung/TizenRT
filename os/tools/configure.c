@@ -327,7 +327,9 @@ static void get_topdir(void)
 		exit(EXIT_FAILURE);
 	}
 
-	g_topdir = strdup(dirname(g_buffer));
+	g_topdir = (char *)calloc(BUFFER_SIZE, sizeof(char));
+	snprintf(g_topdir, BUFFER_SIZE, "%s%c%s%c%s%cos", g_buffer, g_delim, "..", g_delim, "..", g_delim);
+	//g_topdir = strdup(dirname(g_buffer));
 	debug("get_topdir: Checking topdir=%s\n", g_topdir);
 	verify_directory(g_topdir);
 }
@@ -418,7 +420,7 @@ static void check_configdir(void)
 {
 	/* Get the path to the top level configuration directory */
 
-	snprintf(g_buffer, BUFFER_SIZE, "%s%cconfigs", g_topdir, g_delim);
+	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs", g_topdir, g_delim, g_delim, g_delim);
 	debug("check_configdir: Checking configtop=%s\n", g_buffer);
 
 	verify_directory(g_buffer);
@@ -426,7 +428,7 @@ static void check_configdir(void)
 
 	/* Get and verify the path to the selected configuration */
 
-	snprintf(g_buffer, BUFFER_SIZE, "%s%cconfigs%c%s%c%s", g_topdir, g_delim, g_delim, g_boarddir, g_delim, g_configdir);
+	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs%c%s%c%s", g_topdir, g_delim, g_delim, g_delim, g_delim, g_boarddir, g_delim, g_configdir);
 	debug("check_configdir: Checking configpath=%s\n", g_buffer);
 
 	if (!verify_optiondir(g_buffer)) {

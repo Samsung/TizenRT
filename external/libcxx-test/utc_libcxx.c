@@ -20,7 +20,7 @@
 
 int utc_libcxx_main(int argc, char *argv[])
 {
-	if (tc_handler(TC_START, "Libc++ TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Libc++ TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -62,7 +62,7 @@ int utc_libcxx_main(int argc, char *argv[])
 #endif
 
 
-	tc_handler(TC_END, "Libc++ TC");
+	testcase_state_handler(TC_END, "Libc++ TC");
 
 	return OK;
 }

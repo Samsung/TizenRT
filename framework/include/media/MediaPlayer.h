@@ -189,17 +189,6 @@ public:
 	player_result_t setVolume(uint8_t);
 
 	/**
-	 * @brief Set the stream_info_t of MediaPlayer
-	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous API
-	 * It sets the user's function
-	 * @param[in] stream_info shared_ptr of stream_info_t.
-	 * @return The result of the setStreamInfo operation
-	 * @since TizenRT v2.0
-	 */
-	player_result_t setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
-
-	/**
 	 * @brief Set the DataSource of input data
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is a synchronous API

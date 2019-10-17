@@ -141,7 +141,7 @@
 #endif
 
 #define NENET_NBUFFERS \
-	(CONFIG_IMXRT_ENET_NTXBUFFERS+CONFIG_IMXRT_ENET_NRXBUFFERS)
+	(CONFIG_IMXRT_ENET_NTXBUFFERS + CONFIG_IMXRT_ENET_NRXBUFFERS)
 
 /* Normally you would clean the cache after writing new values to the DMA
  * memory so assure that the dirty cache lines are flushed to memory
@@ -166,7 +166,7 @@
  * second.
  */
 
-#define IMXRT_WDDELAY     (1*CLK_TCK)
+#define IMXRT_WDDELAY     (1 * CLK_TCK)
 
 /* Align assuming that the D-Cache is enabled (probably 32-bytes).
  *
@@ -184,9 +184,9 @@
 
 /* TX timeout = 1 minute */
 
-#define IMXRT_TXTIMEOUT   (60*CLK_TCK)
+#define IMXRT_TXTIMEOUT   (60 * CLK_TCK)
 #define MII_MAXPOLLS      (0x1ffff)
-#define LINK_WAITUS       (500*1000)
+#define LINK_WAITUS       (500 * 1000)
 #define LINK_NLOOPS       (10)
 
 #define MII_PHYCTRL1_MODE_DUPLEX   (4 << MII_PHYCTRL1_MODE_SHIFT) /* Full duplex */
@@ -255,7 +255,7 @@
  * locking up of the Ethernet interface.
  */
 
-#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR )
+#define CRITICAL_ERROR    (ENET_INT_UN | ENET_INT_RL | ENET_INT_EBERR)
 
 /* This is a helper pointer for accessing the contents of the Ethernet header */
 
@@ -346,7 +346,7 @@ static struct imxrt_driver_s g_enet[CONFIG_IMXRT_ENET_NETHIFS];
  * requirements.
  */
 
-static uint8_t g_desc_pool[NENET_NBUFFERS *sizeof(struct enet_desc_s)]
+static uint8_t g_desc_pool[NENET_NBUFFERS * sizeof(struct enet_desc_s)]
 __attribute__((aligned(ENET_ALIGN)));
 
 /* The DMA buffers.  Again, A unaligned uint8_t is used to allocate the
@@ -354,7 +354,7 @@ __attribute__((aligned(ENET_ALIGN)));
  * requirements.
  */
 
-static uint8_t g_buffer_pool[NENET_NBUFFERS *IMXRT_BUF_SIZE]
+static uint8_t g_buffer_pool[NENET_NBUFFERS * IMXRT_BUF_SIZE]
 __attribute__((aligned(ENET_ALIGN)));
 
 /****************************************************************************
@@ -438,46 +438,6 @@ static void imxrt_reset(struct imxrt_driver_s *priv);
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Function: imxrt_swap16/32
- *
- * Description:
- *   The descriptors are represented by structures  Unfortunately, when the
- *   structures are overlayed on the data, the bytes are reversed because
- *   the underlying hardware writes the data in big-endian byte order.
- *
- * Input Parameters:
- *   value  - The value to be byte swapped
- *
- * Returned Value:
- *   The byte swapped value
- *
- ****************************************************************************/
-
-#if 0							/* Use builtins if the compiler supports them */
-#ifndef CONFIG_ENDIAN_BIG
-static inline uint32_t imxrt_swap32(uint32_t value)
-{
-	uint32_t result = 0;
-
-	__asm__ __volatile__("rev %0, %1":"=r"(result)
-						 :"r"(value)
-						);
-	return result;
-}
-
-static inline uint16_t imxrt_swap16(uint16_t value)
-{
-	uint16_t result = 0;
-
-	__asm__ __volatile__("revsh %0, %1":"=r"(result)
-						 :"r"(value)
-						);
-	return result;
-}
-#endif
-#endif
 
 /****************************************************************************
  * Function: imxrt_txringfull
@@ -671,10 +631,9 @@ static int imxrt_txpoll(struct netif *dev)
 		#ifdef CONFIG_NET_MULTIBUFFER
 		priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 		#else
-		if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+		if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 			memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
-		}
-		else {
+		} else {
 			/* code */
 		}
 		#endif
@@ -868,7 +827,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			priv->dev.d_len = imxrt_swap16(rxdesc->length);
 			priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)rxdesc->data);
 			#else
-			if(rxdesc->length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+			if (rxdesc->length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)rxdesc->data), rxdesc->length);
 			} else {
 				/* code */
@@ -895,7 +854,7 @@ static void imxrt_receive(FAR struct imxrt_driver_s *priv)
 			#ifdef CONFIG_NET_MULTIBUFFER
 			priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 			#else
-			if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+			if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 				memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
 			} else {
 				/* code */
@@ -2281,10 +2240,9 @@ static void imxrt_initbuffers(struct imxrt_driver_s *priv)
 	#ifdef CONFIG_NET_MULTIBUFFER
 	priv->dev.d_buf = (uint8_t *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data);
 	#else
-	if(priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
+	if (priv->txdesc[priv->txhead].length < MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE) {
 		memcpy((void *)priv->dev.d_buf, (void *)imxrt_swap32((uint32_t)priv->txdesc[priv->txhead].data), priv->txdesc[priv->txhead].length);
-	}
-	else {
+	} else {
 		/* code */
 	}
 	#endif

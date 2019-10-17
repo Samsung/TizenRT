@@ -90,9 +90,9 @@
 FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_realloc(&g_kmmheap, oldmem, newsize, __builtin_return_address(0));
+	return mm_realloc(kmm_get_heap(), oldmem, newsize, __builtin_return_address(0));
 #else
-	return mm_realloc(&g_kmmheap, oldmem, newsize);
+	return mm_realloc(kmm_get_heap(), oldmem, newsize);
 #endif
 }
 

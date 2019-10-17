@@ -63,19 +63,19 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define VFORK_R4_OFFSET  (0*4)	/* Volatile register r4 */
-#define VFORK_R5_OFFSET  (1*4)	/* Volatile register r5 */
-#define VFORK_R6_OFFSET  (2*4)	/* Volatile register r6 */
-#define VFORK_R7_OFFSET  (3*4)	/* Volatile register r7 */
-#define VFORK_R8_OFFSET  (4*4)	/* Volatile register r8 */
-#define VFORK_R9_OFFSET  (5*4)	/* Volatile register r9 */
-#define VFORK_R10_OFFSET (6*4)	/* Volatile register r10 */
+#define VFORK_R4_OFFSET  (0 * 4)	/* Volatile register r4 */
+#define VFORK_R5_OFFSET  (1 * 4)	/* Volatile register r5 */
+#define VFORK_R6_OFFSET  (2 * 4)	/* Volatile register r6 */
+#define VFORK_R7_OFFSET  (3 * 4)	/* Volatile register r7 */
+#define VFORK_R8_OFFSET  (4 * 4)	/* Volatile register r8 */
+#define VFORK_R9_OFFSET  (5 * 4)	/* Volatile register r9 */
+#define VFORK_R10_OFFSET (6 * 4)	/* Volatile register r10 */
 
-#define VFORK_FP_OFFSET  (7*4)	/* Frame pointer */
-#define VFORK_SP_OFFSET  (8*4)	/* Stack pointer */
-#define VFORK_LR_OFFSET  (9*4)	/* Return address */
+#define VFORK_FP_OFFSET  (7 * 4)	/* Frame pointer */
+#define VFORK_SP_OFFSET  (8 * 4)	/* Stack pointer */
+#define VFORK_LR_OFFSET  (9 * 4)	/* Return address */
 
-#define VFORK_SIZEOF     (10*4)
+#define VFORK_SIZEOF     (10 * 4)
 
 /****************************************************************************
  * Public Types

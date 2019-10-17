@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "tc_common.h"
+#include "tc_internal.h"
 #include <stdbool.h>
 #include <tinyara/fs/mksmartfs.h>
 
@@ -47,20 +48,6 @@
 #define PROC_VERSION_PATH PROCFS_TEST_MOUNTPOINT"/version"
 #define PROC_INVALID_PATH PROCFS_TEST_MOUNTPOINT"/nofile"
 #define INVALID_PATH PROCFS_TEST_MOUNTPOINT"/fs/invalid"
-#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define SMARTFS_DEV_PATH CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define SMARTFS_DEV_PATH CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME)
-#define SMARTFS_DEV_PATH CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
-#define SMARTFS_DEV_PATH "/dev/smart0p0"
-#elif defined(CONFIG_IMXRT_AUTOMOUNT_USERFS)
-#define SMARTFS_DEV_PATH CONFIG_IMXRT_AUTOMOUNT_USERFS_DEVNAME
-#else
-#define SMARTFS_DEV_PATH "/dev/smart1"
-#endif
-
 #define PROC_SMARTFS_PATH PROCFS_TEST_MOUNTPOINT"/fs/smartfs"
 #define PROC_SMARTFS_FILE_PATH PROCFS_TEST_MOUNTPOINT"/fs/smartfs/file.txt"
 

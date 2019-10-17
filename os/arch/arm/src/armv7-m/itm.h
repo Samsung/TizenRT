@@ -96,27 +96,27 @@
 
 /* ITM Register Addresses **********************************************************************/
 
-#define ITM_PORT(i)              (ITM_BASE+(i*4))	/* Stimulus Port 32-bit */
-#define ITM_TER                  (ITM_BASE+0x0e00)	/* Trace Enable Register */
-#define ITM_TPR                  (ITM_BASE+0x0e40)	/* Trace Privilege Register */
-#define ITM_TCR                  (ITM_BASE+0x0e80)	/* Trace Control Register */
-#define ITM_IWR                  (ITM_BASE+0x0ef8)	/* Integration Write Register */
-#define ITM_IRR                  (ITM_BASE+0x0efc)	/* Integration Read Register */
-#define ITM_IMCR                 (ITM_BASE+0x0f00)	/* Integration Mode Control Register */
-#define ITM_LAR                  (ITM_BASE+0x0fb0)	/* Lock Access Register */
-#define ITM_LSR                  (ITM_BASE+0x0fb4)	/* Lock Status Register */
-#define ITM_PID4                 (ITM_BASE+0x0fd0)	/* Peripheral Identification Register #4 */
-#define ITM_PID5                 (ITM_BASE+0x0fd4)	/* Peripheral Identification Register #5 */
-#define ITM_PID6                 (ITM_BASE+0x0fd8)	/* Peripheral Identification Register #6 */
-#define ITM_PID7                 (ITM_BASE+0x0fdc)	/* Peripheral Identification Register #7 */
-#define ITM_PID0                 (ITM_BASE+0x0fe0)	/* Peripheral Identification Register #0 */
-#define ITM_PID1                 (ITM_BASE+0x0fe4)	/* Peripheral Identification Register #1 */
-#define ITM_PID2                 (ITM_BASE+0x0fe8)	/* Peripheral Identification Register #2 */
-#define ITM_PID3                 (ITM_BASE+0x0fec)	/* Peripheral Identification Register #3 */
-#define ITM_CID0                 (ITM_BASE+0x0ff0)	/* Component  Identification Register #0 */
-#define ITM_CID1                 (ITM_BASE+0x0ff4)	/* Component  Identification Register #1 */
-#define ITM_CID2                 (ITM_BASE+0x0ff8)	/* Component  Identification Register #2 */
-#define ITM_CID3                 (ITM_BASE+0x0ffc)	/* Component  Identification Register #3 */
+#define ITM_PORT(i)              (ITM_BASE + (i * 4))	/* Stimulus Port 32-bit */
+#define ITM_TER                  (ITM_BASE + 0x0e00)	/* Trace Enable Register */
+#define ITM_TPR                  (ITM_BASE + 0x0e40)	/* Trace Privilege Register */
+#define ITM_TCR                  (ITM_BASE + 0x0e80)	/* Trace Control Register */
+#define ITM_IWR                  (ITM_BASE + 0x0ef8)	/* Integration Write Register */
+#define ITM_IRR                  (ITM_BASE + 0x0efc)	/* Integration Read Register */
+#define ITM_IMCR                 (ITM_BASE + 0x0f00)	/* Integration Mode Control Register */
+#define ITM_LAR                  (ITM_BASE + 0x0fb0)	/* Lock Access Register */
+#define ITM_LSR                  (ITM_BASE + 0x0fb4)	/* Lock Status Register */
+#define ITM_PID4                 (ITM_BASE + 0x0fd0)	/* Peripheral Identification Register #4 */
+#define ITM_PID5                 (ITM_BASE + 0x0fd4)	/* Peripheral Identification Register #5 */
+#define ITM_PID6                 (ITM_BASE + 0x0fd8)	/* Peripheral Identification Register #6 */
+#define ITM_PID7                 (ITM_BASE + 0x0fdc)	/* Peripheral Identification Register #7 */
+#define ITM_PID0                 (ITM_BASE + 0x0fe0)	/* Peripheral Identification Register #0 */
+#define ITM_PID1                 (ITM_BASE + 0x0fe4)	/* Peripheral Identification Register #1 */
+#define ITM_PID2                 (ITM_BASE + 0x0fe8)	/* Peripheral Identification Register #2 */
+#define ITM_PID3                 (ITM_BASE + 0x0fec)	/* Peripheral Identification Register #3 */
+#define ITM_CID0                 (ITM_BASE + 0x0ff0)	/* Component  Identification Register #0 */
+#define ITM_CID1                 (ITM_BASE + 0x0ff4)	/* Component  Identification Register #1 */
+#define ITM_CID2                 (ITM_BASE + 0x0ff8)	/* Component  Identification Register #2 */
+#define ITM_CID3                 (ITM_BASE + 0x0ffc)	/* Component  Identification Register #3 */
 
 /* ITM Register Bit Field Definitions **********************************************************/
 

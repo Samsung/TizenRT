@@ -1186,7 +1186,7 @@ static int imxrt_lpi2c_isr_process(struct imxrt_lpi2c_priv_s *priv)
 			 */
 
 #ifdef CONFIG_I2C_POLLED
-			irqstate_t flags = enter_critical_section();
+			irqstate_t flags = irqsave();
 #endif
 
 			/* Receive a byte */
@@ -1195,7 +1195,7 @@ static int imxrt_lpi2c_isr_process(struct imxrt_lpi2c_priv_s *priv)
 			priv->dcnt--;
 
 #ifdef CONFIG_I2C_POLLED
-			leave_critical_section(flags);
+			irqrestore(flags);
 #endif
 			if ((priv->msgc <= 0) && (priv->dcnt == 0)) {
 				imxrt_lpi2c_sendstop(priv);

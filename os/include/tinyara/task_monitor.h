@@ -25,7 +25,7 @@
 
 #ifdef CONFIG_TASK_MONITOR
 
-void task_monitor_register(void);
+int task_monitor_register(int interval);
 void task_monitor_update_status(void);
 
 #ifdef __cplusplus

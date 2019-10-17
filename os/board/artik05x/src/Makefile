@@ -72,10 +72,6 @@ else ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
 CSRCS += artik055_alc5658char.c
 endif
 
-ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += artik05x_crashdump.c
-endif
-
 ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += artik05x_progmem.c
 endif
@@ -84,10 +80,15 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += artik05x_wlan.c
 endif
 
-ifeq ($(CONFIG_FLASH_PARTITION),y)
+
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
+ifeq ($(CONFIG_FLASH_PARTITION),y)
 CSRCS += partitions.c
+endif
+
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
 endif
 
 # boardctl support

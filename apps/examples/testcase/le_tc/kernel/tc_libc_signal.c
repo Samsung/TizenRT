@@ -226,6 +226,9 @@ static void tc_libc_signal_sigpause(void)
 	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
 
 	st_timer_spec_val.it_value.tv_sec = 2;
+	st_timer_spec_val.it_value.tv_nsec = 0;
+	st_timer_spec_val.it_interval.tv_sec = 0;
+	st_timer_spec_val.it_interval.tv_nsec = 0;
 
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_val, NULL);
 	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));

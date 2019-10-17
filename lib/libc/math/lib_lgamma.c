@@ -310,7 +310,7 @@ double lgamma_r(double x, int *signgamp)
 
 	/* purge off 1 and 2 */
 
-	if ((ix == 0x3ff00000 || ix == 0x40000000) && (uint32_t) u.i == 0) {
+	if ((ix == 0x3ff00000 || ix == 0x40000000) && (uint32_t)u.i == 0) {
 		r = 0;
 	} else {					/* for x < 2.0 */
 

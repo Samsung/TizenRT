@@ -418,7 +418,7 @@ int main(int argc, FAR char *argv[])
 int utc_mqtt_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "MQTT UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "MQTT UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -444,7 +444,7 @@ int utc_mqtt_main(int argc, char *argv[])
 
 	_utc_mqtt_deinit();
 exit:
-	(void)tc_handler(TC_END, "MQTT UTC");
+	(void)testcase_state_handler(TC_END, "MQTT UTC");
 
 	return 0;
 }

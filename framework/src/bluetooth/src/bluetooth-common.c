@@ -227,6 +227,19 @@ static bt_event2index_table_t event2index[] = {
 	{ 0, -1 }
 };
 
+typedef struct {
+	int origin_err;
+	int public_err;
+} bt_err2pub_table_t;
+
+static bt_err2pub_table_t err2pub[] = {
+	{ 0, BT_ERROR_NONE },
+	{ -EINVAL, BT_ERROR_INVALID_PARAMETER },
+	{ -EAGAIN, BT_ERROR_NOT_ENABLED },
+	{ -EALREADY, BT_ERROR_NOW_IN_PROGRESS },
+	{ 0xFF, BT_ERROR_OPERATION_FAILED }
+};
+
 static int __bt_get_cb_index(int event)
 {
 	int i;
@@ -243,7 +256,36 @@ static int __bt_get_bt_adapter_le_device_scan_info_s(
 			bt_adapter_le_device_scan_result_info_s **scan_info,
 			bluetooth_le_device_info_t *source_info)
 {
-	/* Need to implement */
+
+	BT_CHECK_INPUT_PARAMETER(source_info);
+
+	*scan_info = (bt_adapter_le_device_scan_result_info_s *)malloc(sizeof(bt_adapter_le_device_scan_result_info_s));
+	if (*scan_info == NULL)
+		return BT_ERROR_OUT_OF_MEMORY;
+
+	_bt_convert_address_to_string(&((*scan_info)->remote_address), &(source_info->device_address));
+
+	if (source_info->addr_type == 0x02)
+		(*scan_info)->address_type = BT_DEVICE_RANDOM_ADDRESS;
+	else
+		(*scan_info)->address_type = BT_DEVICE_PUBLIC_ADDRESS; /* LCOV_EXCL_LINE */
+	(*scan_info)->rssi = (int)source_info->rssi;
+	(*scan_info)->adv_data_len = source_info->adv_ind_data.data_len;
+	if ((*scan_info)->adv_data_len > 0) {
+		(*scan_info)->adv_data = malloc(source_info->adv_ind_data.data_len);
+		memcpy((*scan_info)->adv_data, source_info->adv_ind_data.data.data, source_info->adv_ind_data.data_len);
+	} else {
+		(*scan_info)->adv_data = NULL; /* LCOV_EXCL_LINE */
+	}
+
+	(*scan_info)->scan_data_len = source_info->scan_resp_data.data_len;
+	if ((*scan_info)->scan_data_len > 0) {
+		(*scan_info)->scan_data = malloc(source_info->scan_resp_data.data_len); /* LCOV_EXCL_LINE */
+		memcpy((*scan_info)->scan_data, source_info->scan_resp_data.data.data, source_info->scan_resp_data.data_len); /* LCOV_EXCL_LINE */
+	} else {
+		(*scan_info)->scan_data = NULL;
+	}
+
 	return BT_ERROR_NONE;
 }
 
@@ -257,11 +299,10 @@ void __bt_event_proxy(int event, bluetooth_event_param_t *param)
 
 	switch (event) {
 	case BLUETOOTH_EVENT_ENABLED:
-		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_ENABLED"); /* LCOV_EXCL_LINE */
+		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_ENABLED");
 		((bt_adapter_state_changed_cb) bt_event_slot_container[event_index].callback)
 		    (_bt_get_error_code(param->result), BT_ADAPTER_ENABLED, bt_event_slot_container[event_index].user_data);
 		break;
-/* LCOV_EXCL_START */
 	case BLUETOOTH_EVENT_DISABLED:
 		BT_INFO("bt_adapter_state_changed_cb() will be called with BT_ADAPTER_DISABLED");
 		((bt_adapter_state_changed_cb) bt_event_slot_container[event_index].callback)
@@ -393,7 +434,7 @@ int _bt_convert_address_to_string(char **addr_str, unsigned char *addr_hex)
 
 	BT_CHECK_INPUT_PARAMETER(addr_hex);
 
-	snprintf(address, 18, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", addr_hex[0], addr_hex[1], addr_hex[2], addr_hex[3], addr_hex[4], addr_hex[5]);
+	snprintf(address, 18, "%02X:%02X:%02X:%02X:%02X:%02X", addr_hex[0], addr_hex[1], addr_hex[2], addr_hex[3], addr_hex[4], addr_hex[5]);
 	*addr_str = strdup(address);
 
 	if (*addr_str != NULL)
@@ -404,6 +445,13 @@ int _bt_convert_address_to_string(char **addr_str, unsigned char *addr_hex)
 
 int _bt_get_error_code(int origin_error)
 {
+	int i;
+
+	for (i = 0; err2pub[i].origin_err != 0xFF; i++) {
+		if (err2pub[i].origin_err == origin_error)
+			return err2pub[i].public_err;
+	}
+
 	return BT_ERROR_OPERATION_FAILED;
 }
 
@@ -421,6 +469,8 @@ char *_bt_convert_uuid_to_uuid128(const char *uuid)
 #else
 		len = snprintf(NULL, 0, "0000%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
+		if (uuid128 == NULL)
+			return NULL;
 		snprintf(uuid128, len + 1,  "0000%s-0000-1000-8000-00805f9b34fb", uuid);
 #endif
 		break;
@@ -431,6 +481,8 @@ char *_bt_convert_uuid_to_uuid128(const char *uuid)
 #else
 		len = snprintf(NULL, 0, "%s-0000-1000-8000-00805f9b34fb", uuid);
 		uuid128 = malloc(len + 1);
+		if (uuid128 == NULL)
+			return NULL;
 		snprintf(uuid128, len + 1,  "%s-0000-1000-8000-00805f9b34fb", uuid);
 #endif
 		break; /* LCOV_EXCL_LINE */

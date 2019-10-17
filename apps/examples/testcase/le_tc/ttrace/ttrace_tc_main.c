@@ -141,7 +141,7 @@ int main(int argc, FAR char *argv[])
 int tc_ttrace_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "TTRACE TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "TTRACE TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -151,7 +151,7 @@ int tc_ttrace_main(int argc, char *argv[])
 	tc_libc_trace_end_uid();
 	tc_libc_trace_sched();
 
-	(void)tc_handler(TC_END, "TTRACE TC");
+	(void)testcase_state_handler(TC_END, "TTRACE TC");
 
 	return 0;
 }

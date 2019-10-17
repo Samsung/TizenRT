@@ -154,7 +154,7 @@ int main(int argc, FAR char *argv[])
 int itc_dm_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "DeviceManagement ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "DeviceManagement ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -195,7 +195,7 @@ int itc_dm_main(int argc, char *argv[])
 		wifiAutoConnectDeInit_itc();
 	}
 
-	(void)tc_handler(TC_END, "DeviceManagement ITC");
+	(void)testcase_state_handler(TC_END, "DeviceManagement ITC");
 
 	return 0;
 }

@@ -81,7 +81,7 @@
 #else
 /* Message lenght is the size of the message plus the null terminator */
 
-#  define TEST_MSGLEN         (strlen(TEST_MESSAGE)+1)
+#  define TEST_MSGLEN         (strlen(TEST_MESSAGE) + 1)
 #endif
 
 #define TEST_SEND_NMSGS     (10)

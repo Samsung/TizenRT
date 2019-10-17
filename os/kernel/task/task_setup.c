@@ -614,7 +614,7 @@ static inline int task_stackargsetup(FAR struct task_tcb_s *tcb, FAR char *const
 
 	stackargv[0] = str;
 	nbytes = strlen(name) + 1;
-	strcpy(str, name);
+	strncpy(str, name, nbytes);
 	str += nbytes;
 
 	/* Copy each argument */
@@ -627,7 +627,7 @@ static inline int task_stackargsetup(FAR struct task_tcb_s *tcb, FAR char *const
 
 		stackargv[i + 1] = str;
 		nbytes = strlen(argv[i]) + 1;
-		strcpy(str, argv[i]);
+		strncpy(str, argv[i], nbytes);
 		str += nbytes;
 	}
 

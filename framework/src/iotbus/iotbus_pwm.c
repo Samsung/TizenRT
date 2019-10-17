@@ -144,7 +144,7 @@ int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty
 	struct pwm_info_s *info;
 	struct _iotbus_pwm_s *handle;
 
-	if (!pwm || !pwm->handle || duty_cycle > IOTBUS_PWM_MAX_RESOLUTION) {
+	if (!pwm || !pwm->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
@@ -166,23 +166,6 @@ int iotbus_pwm_set_duty_cycle_in_integer(iotbus_pwm_context_h pwm, uint16_t duty
 	}
 
 	return IOTBUS_ERROR_NONE;
-}
-
-int iotbus_pwm_set_idle(iotbus_pwm_context_h pwm, iotbus_pwm_val_e val)
-{
-	if (!pwm || !pwm->handle) {
-		return IOTBUS_ERROR_INVALID_PARAMETER;
-	}
-
-	if (val == IOTBUS_PWM_HIGH) {
-		iotbus_pwm_set_duty_cycle_in_integer(pwm, IOTBUS_PWM_MAX_RESOLUTION);
-		return IOTBUS_ERROR_NONE;
-	} else if (val == IOTBUS_PWM_LOW) {
-		iotbus_pwm_set_duty_cycle_in_integer(pwm, 0);
-		return IOTBUS_ERROR_NONE;
-	}
-
-	return IOTBUS_ERROR_INVALID_PARAMETER;
 }
 
 // period : us

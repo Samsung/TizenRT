@@ -272,13 +272,13 @@ static void parse_args(int argc, char **argv)
 	/* Accumulate CFLAGS up to "--" */
 
 	for (argidx = 1; argidx < argc; argidx++) {
-		if (strcmp(argv[argidx], "--") == 0) {
+		if (strncmp(argv[argidx], "--", strlen("--") + 1) == 0) {
 			g_cc = g_cflags;
 			g_cflags = args;
 			args = NULL;
-		} else if (strcmp(argv[argidx], "--dep-debug") == 0)
+		} else if (strncmp(argv[argidx], "--dep-debug", strlen("--dep-debug") + 1) == 0)
 			g_debug++;
-		else if (strcmp(argv[argidx], "--dep-path") == 0) {
+		else if (strncmp(argv[argidx], "--dep-path", strlen("--dep-path") + 1) == 0) {
 			argidx++;
 			if (argidx >= argc)
 				show_usage(argv[0], "ERROR: Missing argument to --dep-path", EXIT_FAILURE);
@@ -287,22 +287,22 @@ static void parse_args(int argc, char **argv)
 				append(&args, argv[argidx]);
 			else
 				append(&g_altpath, argv[argidx]);
-		} else if (strcmp(argv[argidx], "--obj-path") == 0) {
+		} else if (strncmp(argv[argidx], "--obj-path", strlen("--obj-path") + 1) == 0) {
 			argidx++;
 			if (argidx >= argc)
 				show_usage(argv[0], "ERROR: Missing argument to --obj-path", EXIT_FAILURE);
 
 			g_objpath = argv[argidx];
-		} else if (strcmp(argv[argidx], "--obj-suffix") == 0) {
+		} else if (strncmp(argv[argidx], "--obj-suffix", strlen("--obj-suffix") + 1) == 0) {
 			argidx++;
 			if (argidx >= argc)
 				show_usage(argv[0], "ERROR: Missing argument to --obj-suffix", EXIT_FAILURE);
 
 			g_suffix = argv[argidx];
-		} else if (strcmp(argv[argidx], "--winnative") == 0)
+		} else if (strncmp(argv[argidx], "--winnative", strlen("--winnative") + 1) == 0)
 			g_winnative = true;
 #ifdef HAVE_WINPATH
-		else if (strcmp(argv[argidx], "--winpath") == 0) {
+		else if (strncmp(argv[argidx], "--winpath", strlen("--winpath") + 1) == 0) {
 			g_winpath = true;
 			if (g_topdir)
 				free(g_topdir);
@@ -314,7 +314,7 @@ static void parse_args(int argc, char **argv)
 			g_topdir = strdup(argv[argidx]);
 		}
 #endif
-		else if (strcmp(argv[argidx], "--help") == 0)
+		else if (strncmp(argv[argidx], "--help", strlen("--help") + 1) == 0)
 			show_usage(argv[0], NULL, EXIT_SUCCESS);
 		else
 			append(&args, argv[argidx]);
@@ -379,6 +379,7 @@ static void do_dependency(const char *file, char separator)
 	int filelen;
 	int totallen;
 	int ret;
+	size_t g_cflags_len;
 
 	/* Copy the compiler into the command buffer */
 
@@ -388,7 +389,7 @@ static void do_dependency(const char *file, char separator)
 		exit(EXIT_FAILURE);
 	}
 
-	strcpy(g_command, g_cc);
+	strncpy(g_command, g_cc, cmdlen + 1);
 
 	/* Copy " -M " */
 
@@ -405,6 +406,7 @@ static void do_dependency(const char *file, char separator)
 		char *dupname;
 		char *objname;
 		char *dotptr;
+		size_t tmp_len;
 
 		dupname = strdup(file);
 		if (!dupname) {
@@ -419,28 +421,30 @@ static void do_dependency(const char *file, char separator)
 
 		snprintf(tmp, NAME_MAX + 6, " -MT %s" DELIM "%s%s ", g_objpath, objname, g_suffix);
 
-		cmdlen += strlen(tmp);
+		tmp_len = strlen(tmp);
+		cmdlen += tmp_len;
 		if (cmdlen >= MAX_BUFFER) {
 			fprintf(stderr, "ERROR: Option string is too long [%d/%d]: %s\n", cmdlen, MAX_BUFFER, moption);
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, tmp);
+		strncat(g_command, tmp, tmp_len + 1);
 		free(dupname);
 	}
 
-	strcat(g_command, moption);
+	strncat(g_command, moption, strlen(moption) + 1);
 
 	/* Copy the CFLAGS into the command buffer */
 
 	if (g_cflags) {
-		cmdlen += strlen(g_cflags);
+		g_cflags_len = strlen(g_cflags);
+		cmdlen += g_cflags_len;
 		if (cmdlen >= MAX_BUFFER) {
 			fprintf(stderr, "ERROR: CFLAG string is too long [%d/%d]: %s\n", cmdlen, MAX_BUFFER, g_cflags);
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, g_cflags);
+		strncat(g_command, g_cflags, g_cflags_len + 1);
 	}
 
 	/* Add a space */
@@ -480,7 +484,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcpy(&g_command[cmdlen], path);
+		strncpy(&g_command[cmdlen], path, pathlen + 1);
 
 		if (g_command[totallen] != '\0') {
 			fprintf(stderr, "ERROR: Missing NUL terminator\n");
@@ -505,7 +509,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, file);
+		strncat(g_command, file, filelen + 1);
 
 		/* Check that a file actually exists at this path */
 

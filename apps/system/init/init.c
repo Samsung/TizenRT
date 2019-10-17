@@ -20,9 +20,6 @@
  ****************************************************************************/
 #include <stdio.h>
 #include <tinyara/config.h>
-#ifdef CONFIG_HAVE_CXXINITIALIZE
-#include <apps/platform/cxxinitialize.h>
-#endif
 #ifdef CONFIG_SCHED_USRWORK
 #include <tinyara/wqueue.h>
 #endif
@@ -48,7 +45,10 @@
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
-
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+#include <semaphore.h>
+#include <errno.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -106,35 +106,36 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
-#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
-	int pid;
-#endif
-#if defined(CONFIG_MEDIA)
+#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) ||\
+	defined(CONFIG_TASK_MANAGER) || defined(CONFIG_MEDIA)
 	int ret;
+#endif
+
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+	sem_t	sem;
+	sem_init(&sem, 0, 0);
+
+	up_cxxinitialize();
 #endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
 #endif
 
-#ifdef CONFIG_HAVE_CXXINITIALIZE
-	up_cxxinitialize();
-#endif
-
 #ifdef CONFIG_SCHED_USRWORK
 	/* Start the user-space work queue */
-	pid = work_usrstart();
-	if (pid <= 0) {
-		printf("user work queue is failed to start, error code is %d\n", pid);
-		goto error_out;
+	ret = work_usrstart();
+	if (ret <= 0) {
+		printf("user work queue is failed to start, error code is %d\n", ret);
+		return ret;
 	}
 #endif
 
 #ifdef CONFIG_TASH
-	pid = tash_start();
-	if (pid <= 0) {
-		printf("TASH is failed to start, error code is %d\n", pid);
-		goto error_out;
+	ret = tash_start();
+	if (ret <= 0) {
+		printf("TASH is failed to start, error code is %d\n", ret);
+		return ret;
 	}
 
 	tash_register_cmds();
@@ -143,18 +144,18 @@ int preapp_start(int argc, char *argv[])
 #ifdef CONFIG_TASK_MANAGER
 #define TASKMGR_STACK_SIZE 2048
 #define TASKMGR_PRIORITY 200
-	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
-	if (pid < 0) {
+	ret = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
+	if (ret < 0) {
 		printf("Failed to create Task Manager\n");
-		goto error_out;
+		return ret;
 	}
 #endif
 
 #ifdef CONFIG_EVENTLOOP
-	pid = eventloop_task_start();
-	if (pid <= 0) {
-		printf("eventloop is failed to start, error code is %d\n", pid);
-		goto error_out;
+	ret = eventloop_task_start();
+	if (ret <= 0) {
+		printf("eventloop is failed to start, error code is %d\n", ret);
+		return ret;
 	}
 #endif
 
@@ -166,10 +167,21 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) || defined(CONFIG_TASK_MANAGER)
-error_out:
-	return pid;
-#else
-	return 0;
+/***********************************************************************************
+ *	current preapp_start does the up_cxxinitialize which initializes the
+ *	static constructors. All the tasks and threads created by preapp refer to
+ *	these constructors. To make sure that c++ test cases from tash runs properly,
+ *	we need to keep preapp/constructor initializations alive with below changes.
+ **********************************************************************************/
+#ifdef CONFIG_HAVE_CXXINITIALIZE
+	while (sem_wait(&sem) != 0) {
+		/* The only case that an error should occur here is if the wait was
+		 * awakened by a signal.
+		 */
+		if (errno == EINTR) {
+			printf("awakened by signal..\n");
+		}
+	}
 #endif
+	return 0;
 }

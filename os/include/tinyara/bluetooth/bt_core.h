@@ -155,7 +155,7 @@ struct bt_eir_s {
 
 static inline int bt_addr_to_str(FAR const bt_addr_t *addr, FAR char *str, size_t len)
 {
-	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", addr->val[5], addr->val[4], addr->val[3], addr->val[2], addr->val[1], addr->val[0]);
+	return snprintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X", addr->val[0], addr->val[1], addr->val[2], addr->val[3], addr->val[4], addr->val[0]);
 }
 
 /****************************************************************************
@@ -182,19 +182,19 @@ static inline int bt_addr_le_to_str(FAR const bt_addr_le_t *addr, char *str, siz
 
 	switch (addr->type) {
 	case BT_ADDR_LE_PUBLIC:
-		strcpy(type, "public");
+		strncpy(type, "public", 7);
 		break;
 
 	case BT_ADDR_LE_RANDOM:
-		strcpy(type, "random");
+		strncpy(type, "random", 7);
 		break;
 
 	default:
-		sprintf(type, "0x%02x", addr->type);
+		snprintf(type, 7, "0x%02x", addr->type);
 		break;
 	}
 
-	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)", addr->val[5], addr->val[4], addr->val[3], addr->val[2], addr->val[1], addr->val[0], type);
+	return snprintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)", addr->val[0], addr->val[1], addr->val[2], addr->val[3], addr->val[4], addr->val[5], type);
 }
 
 /****************************************************************************

@@ -85,7 +85,7 @@
  *
  ****************************************************************************/
 
-#ifndef CONFIGC_ARCH_STPNCPY
+#ifndef CONFIG_ARCH_STPNCPY
 FAR char *stpncpy(FAR char *dest, FAR const char *src, size_t n)
 {
 	FAR char *end = dest + n;		/* End of dest buffer + 1 byte */

@@ -201,6 +201,58 @@ app_list_t *taskmger_get_applist(int handle);
 #define TM_STOP_CB_INFO(handle)         TM_LIST_ADDR(handle)->stop_cb_info
 #define TM_EXIT_CB_INFO(handle)         TM_LIST_ADDR(handle)->exit_cb_info
 
+#define SET_QUEUE_NAME_WITH_DEALLOC_DATA(request_msg, timeout)							\
+	do {													\
+		if (timeout != TM_NO_RESPONSE) {								\
+			TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);	\
+			if (request_msg.q_name == NULL) {							\
+				if (request_msg.data != NULL) {							\
+					TM_FREE(request_msg.data);						\
+				}										\
+				return TM_OUT_OF_MEMORY;							\
+			}											\
+		}												\
+	} while (0)
+
+#define SEND_REQUEST_TO_TM_WITH_DEALLOC_DATA(request_msg, status)	\
+	do {								\
+		status = taskmgr_send_request(&request_msg);		\
+		if (status < 0) {					\
+			if (request_msg.data != NULL) {			\
+				TM_FREE(request_msg.data);		\
+			}						\
+			if (request_msg.q_name != NULL) {		\
+				TM_FREE(request_msg.q_name);		\
+			}						\
+			return status;					\
+		}							\
+	} while (0)
+
+#define RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout)				\
+	do {												\
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);	\
+		TM_FREE(request_msg.q_name);							\
+	} while (0)
+
+#define SET_TERMINATION_CB(cb)						\
+	do {								\
+		act.sa_sigaction = (_sa_sigaction_t)cb;			\
+		act.sa_flags = 0;					\
+		(void)sigemptyset(&act.sa_mask);			\
+									\
+		ret = sigaddset(&act.sa_mask, SIGTM_TERMINATION);	\
+		if (ret < 0) {						\
+			tmdbg("Failed to add signal set\n");		\
+			return TM_OPERATION_FAIL;			\
+		}							\
+									\
+		ret = sigaction(SIGTM_TERMINATION, &act, NULL);		\
+		if (ret == (int)SIG_ERR) {				\
+			tmdbg("sigaction Failed\n");			\
+			return TM_OPERATION_FAIL;			\
+		}							\
+	} while (0)
+
 int taskmgr_send_request(tm_request_t *request_msg);
 void taskmgr_send_response(char *q_name, int timeout, tm_response_t *response_msg, int ret_status);
 int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int timeout);
@@ -211,5 +263,4 @@ int taskmgr_get_drvfd(void);
 int taskmgr_get_handle_by_pid(int pid);
 int taskmgr_calc_time(struct timespec *time, int timeout);
 int taskmgr_get_task_manager_pid(void);
-
 #endif

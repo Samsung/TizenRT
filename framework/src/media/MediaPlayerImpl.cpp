@@ -152,7 +152,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	auto source = mInputHandler.getInputDataSource();
+	auto source = mInputHandler.getDataSource();
 	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 							 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
@@ -211,14 +211,13 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 		return;
 	}
 
+	mCurState = PLAYER_STATE_PREPARING;
+
 	if (!mInputHandler.doStandBy()) {
 		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
 	}
-
-	mCurState = PLAYER_STATE_PREPARING;
-	return;
 }
 
 player_result_t MediaPlayerImpl::unprepare()
@@ -298,7 +297,7 @@ void MediaPlayerImpl::startPlayer()
 	}
 
 	if (mCurState == PLAYER_STATE_PAUSED) {
-		auto source = mInputHandler.getInputDataSource();
+		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_audio_stream_out fail\n");
@@ -525,43 +524,6 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 	return notifySync();
 }
 
-player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
-{
-	player_result_t ret = PLAYER_OK;
-
-	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setStreamInfo\n");
-
-	PlayerWorker &mpw = PlayerWorker::getWorker();
-	if (!mpw.isAlive()) {
-		meddbg("PlayerWorker is not alive\n");
-		return PLAYER_ERROR_NOT_ALIVE;
-	}
-
-	mpw.enQueue(&MediaPlayerImpl::setStreamInfo, shared_from_this(), stream_info);
-	mSyncCv.wait(lock);
-
-	return ret;
-}
-
-void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret)
-{
-	if (mCurState != PLAYER_STATE_IDLE) {
-		meddbg("%s Fail : invalid state\n", __func__);
-		LOG_STATE_DEBUG(mCurState);
-		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
-	}
-
-	if (!stream_info) {
-		meddbg("MediaPlayer setPlayerStreamInfo fail : invalid argument. stream_info should not be nullptr\n");
-		ret = PLAYER_ERROR_INVALID_PARAMETER;
-		return notifySync();
-	}
-	mStreamInfo = stream_info;
-	notifySync();
-}
-
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	player_result_t ret = PLAYER_OK;
@@ -723,7 +685,11 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			mPlayerObserver->onPlaybackBufferDataReached(mPlayer, data, size);
 		} break;
 		case PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED:
-			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			player_error_t error = (player_error_t)va_arg(ap, int);
+			if (error != PLAYER_ERROR_NONE) {
+				mCurState = PLAYER_STATE_CONFIGURED;
+			}
+			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, mPlayer, error);
 			break;
 		}
 	}
@@ -748,7 +714,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_FILE_OPEN_FAILED);
 		}
 
-		auto source = mInputHandler.getInputDataSource();
+		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");

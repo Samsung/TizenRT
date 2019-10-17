@@ -24,14 +24,17 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <tinyara/sched.h>
+#include <tinyara/testcase_drv.h>
 #include "tc_internal.h"
 
 #define TEST_STRING     "test"
@@ -43,12 +46,17 @@
 #define USEC_10         10
 #define PR_INVALID      -1
 #define PID_INVALID     -1
+#define TC_TASK_CREATE_FAIL    1
+#define TC_REPARENT_FAIL       2
 
+static int tc_reparent_chk = 0;
 static int g_callback;
+static int main_pid;
 #ifndef CONFIG_BUILD_PROTECTED
 static volatile int task_cnt;
 static volatile pid_t ppid;
 #endif
+static bool task_init_flag;
 
 /**
 * @fn                   :create_task
@@ -167,6 +175,19 @@ static int onexit_task(int argc, char *argv[])
 static int getpid_task(int argc, char *argv[])
 {
 	g_callback = (int)getpid();
+	return OK;
+}
+
+/**
+* @fn                   :test_task_entry
+* @brief                :utility function for tc_task_task_init
+* @return               :int
+*/
+static int test_task_entry(int argc, char *argv[])
+{
+	printf("test task entry\n");
+	task_init_flag = true;
+
 	return OK;
 }
 
@@ -412,6 +433,83 @@ static void tc_task_getpid(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_SCHED_HAVE_PARENT
+static int child_task(int argc, char *argv[])
+{
+	int fd;
+	int ret_chk;
+	fd = tc_get_drvfd();
+
+	ret_chk = ioctl(fd, TESTIOC_TASK_REPARENT, main_pid);
+	if (ret_chk != OK) {
+		tc_reparent_chk = TC_REPARENT_FAIL;
+	} else {
+		tc_reparent_chk = OK;
+	}
+
+	return 0;
+}
+
+static int parent_task(int argc, char *argv[])
+{
+	int pid;
+	pid = task_create("tc_reparent_1", 100, 1024, child_task, (char * const *)NULL);
+	if (pid <= 0) {
+		tc_reparent_chk = TC_TASK_CREATE_FAIL;
+	}
+
+	sleep(2);
+
+	return OK;
+}
+
+/**
+* @fn                   :tc_task_task_reparent
+* @brief                :Change a parent of task to another
+* @Scenario             :Create a task, and create another task from previous task. And reparent.
+* API's covered         :task_reparent
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_task_task_reparent(void)
+{
+	int pid;
+
+	main_pid = getpid();
+
+	pid = task_create("tc_reparent_1", 100, 1024, parent_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
+	sleep(3);
+	TC_ASSERT_EQ("task_reparent", tc_reparent_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @fn                   :tc_task_task_init
+* @brief                :Initialize a Task Control Block (TCB)
+* @Scenario             :Create and Initialize a Task Control Block (TCB)
+* API's covered         :task_init
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_task_task_init(void)
+{
+	task_init_flag = false;
+
+	TC_ASSERT_EQ("task_init", ioctl(tc_get_drvfd(), TESTIOC_TASK_INIT_TEST, (unsigned long)test_task_entry), OK);
+
+	usleep(1);
+
+	TC_ASSERT_EQ("task_init", task_init_flag, true);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: task
  ****************************************************************************/
@@ -429,6 +527,10 @@ int task_main(void)
 	tc_task_task_create();
 	tc_task_task_delete();
 	tc_task_task_restart();
+#ifdef CONFIG_SCHED_HAVE_PARENT
+	tc_task_task_reparent();
+#endif
+	tc_task_task_init();
 
 	return 0;
 }

@@ -70,15 +70,11 @@ enum {
 typedef struct rbstream_s  rbstream_t;
 typedef struct rbstream_s *rbstream_p;
 
-typedef size_t(*rbstream_input_f)(void *data, rbstream_p stream);
-
 struct rbstream_s {
 	rb_p rbp;                       /* pointer to the ring-buffer object */
 	volatile size_t wr_size;        /* total size written to ring-buffer */
 	volatile size_t rd_size;        /* total size read from ring-buffer  */
 	volatile size_t cur_pos;        /* current read position, range[rd_size,wr_size] */
-	void *data;                     /* callback data for user */
-	rbstream_input_f input_func;    /* callback function to request more data */
 	int options;                    /*  */
 };
 
@@ -86,11 +82,9 @@ struct rbstream_s {
  * @brief  Opens the given ring-buffer and associates a stream with it.
  *
  * @param  rbp : Pointer to the ring-buffer object
- * @param  input_func: callback funtion for user to push data stream to ring-buffer
- * @param  data: ponter to user callback data
  * @return ring-buffer stream handle, NULL is returned when failed.
  */
-rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void *data);
+rbstream_p rbs_open(rb_p rbp);
 
 /**
  * @brief  Close ring-buffer stream returned by rbs_open().
@@ -132,7 +126,8 @@ size_t rbs_write(const void *ptr, size_t size, size_t nmemb, rbstream_p stream);
  *         And more data stream will be requested if there's not enough data
  *         in ring-buffer. If can not request enough data, it returns failure.
  * @param  whence : SEEK_SET, SEEK_CUR, or SEEK_END
- * @return 0 is returned on success. Otherwise, -1 is returned.
+ * @return 0 is returned on success, and positive value means number of data wanted.
+ *         Otherwise, -1 is returned on failure.
  */
 int rbs_seek(rbstream_p stream, ssize_t offset, int whence);
 
@@ -145,7 +140,8 @@ int rbs_seek(rbstream_p stream, ssize_t offset, int whence);
  *         difference is that, rd_size indicator will be changed to same cur_pos.
  *         It's means data has been popped out and can never been read again.
  * @param  whence : SEEK_SET, SEEK_CUR, or SEEK_END
- * @return 0 is returned on success. Otherwise, -1 is returned.
+ * @return 0 is returned on success, and positive value means number of data wanted.
+ *         Otherwise, -1 is returned on failure.
  */
 int rbs_seek_ext(rbstream_p stream, ssize_t offset, int whence);
 

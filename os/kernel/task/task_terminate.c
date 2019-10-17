@@ -64,6 +64,12 @@
 #include <tinyara/sched.h>
 #include <tinyara/ttrace.h>
 
+#ifndef CONFIG_DISABLE_SIGNALS
+#ifndef CONFIG_DISABLE_PTHREAD
+#include <pthread.h>
+#endif
+#include <unistd.h>
+#endif
 #include <arch/irq.h>
 
 #include "sched/sched.h"
@@ -193,7 +199,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 	dtcb->task_state = TSTATE_TASK_INVALID;
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */
-	task_monitor_update_list(pid, NOT_MONITORED);
+	task_monitor_unregester_list(pid);
 #endif
 	irqrestore(saved_state);
 
@@ -207,3 +213,47 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	return sched_releasetcb(dtcb, dtcb->flags & TCB_FLAG_TTYPE_MASK);
 }
+
+/****************************************************************************
+ * Name: thread_termination_handler
+ *
+ * Description:
+ *   The handler called when SIGKILL is receive. Terminate the thread
+ *   that received the signal immediately.
+ *
+ * Inputs:
+ *   none
+ *
+ * Return Value:
+ *   none
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_SIGNALS
+void thread_termination_handler(void)
+{
+	struct tcb_s *rtcb = sched_self();
+	if (!rtcb) {
+		set_errno(ESRCH);
+		return;
+	}
+
+	switch ((rtcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
+	case TCB_FLAG_TTYPE_TASK:
+	case TCB_FLAG_TTYPE_KERNEL:
+		/* tasks and kernel threads has to use this interface */
+		(void)task_delete(rtcb->pid);
+		break;
+#ifndef CONFIG_DISABLE_PTHREAD
+	case TCB_FLAG_TTYPE_PTHREAD:
+		(void)pthread_cancel(rtcb->pid);
+		(void)pthread_join(rtcb->pid, NULL);
+		break;
+#endif
+	default:
+		set_errno(EINVAL);
+		break;
+	}
+	return;
+}
+#endif

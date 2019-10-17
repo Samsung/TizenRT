@@ -62,12 +62,14 @@
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)
 #define MAX_WAIT_COUNT             3                          /* The maximum number of times you can wait to process a delayed free */
 #endif
+#define BINMGR_LOADING_TRYCNT      2
 
 /* Loading thread cmd types */
 enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
 	LOADCMD_LOAD_ALL = 1,
 	LOADCMD_RELOAD = 2,
+	LOADCMD_UPDATE = 3,          /* Reload on update request */
 	LOADCMD_LOAD_MAX,
 };
 
@@ -102,26 +104,25 @@ struct statecb_node_s {
 };
 typedef struct statecb_node_s statecb_node_t;
 
-#define BIN_ID(bin_idx)                                 bin_table[bin_idx].bin_id
-#define BIN_STATE(bin_idx)                              bin_table[bin_idx].state
-#define BIN_USEIDX(bin_idx)                             bin_table[bin_idx].inuse_idx
-#define BIN_PARTSIZE(bin_idx, part_idx)                 bin_table[bin_idx].part_info[part_idx].part_size
-#define BIN_PARTNUM(bin_idx, part_idx)                  bin_table[bin_idx].part_info[part_idx].part_num
+binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
+#define BIN_ID(bin_idx)                                 binary_manager_get_binary_data(bin_idx)->bin_id
+#define BIN_STATE(bin_idx)                              binary_manager_get_binary_data(bin_idx)->state
+#define BIN_USEIDX(bin_idx)                             binary_manager_get_binary_data(bin_idx)->inuse_idx
+#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_size
+#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_num
 
-#define BIN_VER(bin_idx)                                bin_table[bin_idx].bin_ver
-#define BIN_KERNEL_VER(bin_idx)                         bin_table[bin_idx].kernel_ver
-#define BIN_CBLIST(bin_idx)                             bin_table[bin_idx].cb_list
+#define BIN_VER(bin_idx)                                binary_manager_get_binary_data(bin_idx)->bin_ver
+#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_binary_data(bin_idx)->kernel_ver
+#define BIN_CBLIST(bin_idx)                             binary_manager_get_binary_data(bin_idx)->cb_list
 
-#define BIN_LOAD_ATTR(bin_idx)                          bin_table[bin_idx].load_attr
-#define BIN_NAME(bin_idx)                               bin_table[bin_idx].load_attr.bin_name
-#define BIN_SIZE(bin_idx)                               bin_table[bin_idx].load_attr.bin_size
-#define BIN_RAMSIZE(bin_idx)                            bin_table[bin_idx].load_attr.ram_size
-#define BIN_OFFSET(bin_idx)                             bin_table[bin_idx].load_attr.offset
-#define BIN_STACKSIZE(bin_idx)                          bin_table[bin_idx].load_attr.stack_size
-#define BIN_PRIORITY(bin_idx)                           bin_table[bin_idx].load_attr.priority
-#define BIN_COMPRESSION_TYPE(bin_idx)                   bin_table[bin_idx].load_attr.compression_type
-
-extern binmgr_bininfo_t bin_table[BINARY_COUNT];
+#define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr
+#define BIN_NAME(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_name
+#define BIN_SIZE(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_size
+#define BIN_RAMSIZE(bin_idx)                            binary_manager_get_binary_data(bin_idx)->load_attr.ram_size
+#define BIN_OFFSET(bin_idx)                             binary_manager_get_binary_data(bin_idx)->load_attr.offset
+#define BIN_STACKSIZE(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr.stack_size
+#define BIN_PRIORITY(bin_idx)                           binary_manager_get_binary_data(bin_idx)->load_attr.priority
+#define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_binary_data(bin_idx)->load_attr.compression_type
 
 /****************************************************************************
  * Function Prototypes
@@ -145,21 +146,22 @@ extern binmgr_bininfo_t bin_table[BINARY_COUNT];
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
+mqd_t binary_manager_get_mqfd(void);
 #endif
 
-int binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
-int binary_manager_unregister_statecb(int pid);
+void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
+void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
-int binary_manager_notify_state_changed(int bin_idx, uint8_t state);
+void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
 int binary_manager_load_binary(int bin_idx);
 int binary_manager_loading(char *loading_data[]);
-int binary_manager_get_binary_count(void);
+uint32_t binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);
-int binary_manager_get_info_with_name(int request_pid, char *bin_name);
-int binary_manager_get_info_all(int request_pid);
+void binary_manager_get_info_with_name(int request_pid, char *bin_name);
+void binary_manager_get_info_all(int request_pid);
 
-int binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
+void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 
 /****************************************************************************
  * Binary Manager Main Thread

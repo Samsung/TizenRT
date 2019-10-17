@@ -11,7 +11,7 @@ examples/iotjs_startup
   
   * Configure romfs (CONFIG_*_FLASH_PART_* and *_AUTOMOUNT_*)
   * Build main javascript in image, for instance:
-    cat tools/fs/contents/example/index.js
+    cat tools/fs/contents-romfs/example/index.js
     console.log(JSON.stringify(process));
   * Set Application entry point to "StartUp example"
 

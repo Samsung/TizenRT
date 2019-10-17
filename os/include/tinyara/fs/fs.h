@@ -57,7 +57,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
+#endif
 
 #include <sys/types.h>
 #include <stdarg.h>
@@ -94,6 +96,10 @@
 #ifdef CONFIG_FS_TMPFS
 #define TMPFS_FSTYPE "tmpfs"
 #define TMPFS_MOUNT_POINT "/tmp"
+#endif
+#ifdef NXFUSE_HOST_BUILD
+#define  O_WROK    1
+#define  O_RDOK    2
 #endif
 
 /****************************************************************************
@@ -282,6 +288,9 @@ struct inode {
 struct file {
 	int f_oflags;				/* Open mode flags */
 	off_t f_pos;				/* File position */
+#ifdef NXFUSE_HOST_BUILD
+	off_t f_seekpos;                        /* File seek position */
+#endif
 	FAR struct inode *f_inode;	/* Driver interface */
 	void *f_priv;				/* Per file driver private data */
 };

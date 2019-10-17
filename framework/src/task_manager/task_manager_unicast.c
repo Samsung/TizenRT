@@ -33,7 +33,7 @@
  ****************************************************************************/
 int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, int timeout)
 {
-	int status;
+	int status = TM_OUT_OF_MEMORY;
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
@@ -52,8 +52,7 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
 		}
 		((tm_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(send_msg->msg_size);
 		if (((tm_internal_msg_t *)request_msg.data)->msg == NULL) {
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free2;
 		}
 		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, send_msg->msg, send_msg->msg_size);
 		((tm_internal_msg_t *)request_msg.data)->msg_size = send_msg->msg_size;
@@ -72,20 +71,16 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
 	if (timeout != TM_NO_RESPONSE) {
 		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
-			TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free1;
 		}
 	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-		TM_FREE(request_msg.data);
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
 		}
-		return status;
+		goto errout_with_free1;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
@@ -95,16 +90,20 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
 			reply_msg->msg_size = ((tm_msg_t *)response_msg.data)->msg_size;
 			reply_msg->msg = TM_ALLOC(reply_msg->msg_size);
 			if (reply_msg->msg == NULL) {
-				TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-				TM_FREE(request_msg.data);
-				return TM_OUT_OF_MEMORY;
+				status = TM_OUT_OF_MEMORY;
+				goto errout_with_free1;
 			}
 			memcpy(reply_msg->msg, ((tm_msg_t *)response_msg.data)->msg, reply_msg->msg_size);
 			TM_FREE(((tm_msg_t *)response_msg.data)->msg);
 			TM_FREE(response_msg.data);
 		}
 	}
+	return status;
 
+errout_with_free1:
+	TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
+errout_with_free2:
+	TM_FREE(request_msg.data);
 	return status;
 }
 
@@ -159,7 +158,6 @@ int task_manager_reply_unicast(tm_msg_t *reply_msg)
 		tmdbg("mq_close failed! ret %d, errno %d\n", ret, errno);
 	}
 
-	TM_FREE(data->msg);
 	TM_FREE(data);
 
 	return ret;

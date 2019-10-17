@@ -1739,7 +1739,9 @@ static int InitConfig(mbedtls_ssl_config * conf, int transport, int mode)
 
 #if !defined(NDEBUG) || defined(TB_LOG)
     mbedtls_ssl_conf_dbg(conf, DebugSsl, NULL);
+#ifdef MBEDTLS_DEBUG_C
     mbedtls_debug_set_threshold(MBED_TLS_DEBUG_LEVEL);
+#endif
 #endif
     OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
     return 0;

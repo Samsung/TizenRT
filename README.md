@@ -192,6 +192,10 @@ ARTIK055S [[details]](build/configs/artik055s/README.md)
 
 CY4390X [[details]](build/configs/cy4390x/README.md)
 
+iMX RT 1020 EVK [[details]](build/configs/imxrt1020-evk/README.md)
+
+iMX RT 1050 EVK [[details]](build/configs/imxrt1050-evk/README.md)
+
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 STM32F407-DISC1 [[details]](build/configs/stm32f407-disc1/README.md)

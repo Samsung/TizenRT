@@ -188,7 +188,7 @@ int dnsclient_main(int argc, FAR char *argv[])
 		return -1;
 	} else {
 		printf("DNS results\n");
-		printf("IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
+		printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *)shost->h_addr_list[0])));
 	}
 
 	return 0;

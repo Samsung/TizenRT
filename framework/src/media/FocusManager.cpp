@@ -20,8 +20,8 @@
 
 namespace media {
 
-FocusManager::FocusRequester::FocusRequester(stream_info_id_t id, std::shared_ptr<FocusChangeListener> listener)
-	: mId(id), mListener(listener)
+FocusManager::FocusRequester::FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener)
+	: mId(stream_info->id), mListener(listener)
 {
 }
 

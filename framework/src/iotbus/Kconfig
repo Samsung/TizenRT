@@ -6,6 +6,7 @@
 config IOTBUS
 	bool "IoTbus framework Support"
 	default y
+	select PIPES
 	---help---
 		Enables IoTBus (GPIO, I2C, PWM, SPI, UART, ADC) framework.
 

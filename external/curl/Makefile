@@ -63,7 +63,7 @@ $(COBJS): curl_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
-	cp curl-certificates.crt $(TOPDIR)/../tools/fs/contents
+	cp curl-certificates.crt $(TOPDIR)/../tools/fs/contents-romfs
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
@@ -76,7 +76,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm -f $(TOPDIR)/../tools/fs/contents/curl-certificates.crt
+	rm -f $(TOPDIR)/../tools/fs/contents-romfs/curl-certificates.crt
 
 distclean: clean
 	$(call DELFILE, Make.dep)

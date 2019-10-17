@@ -102,7 +102,7 @@
 
 FAR void *kmm_sbrk(intptr_t incr)
 {
-	return mm_sbrk(&g_kmmheap, incr, UINTPTR_MAX);
+	return mm_sbrk(kmm_get_heap(), incr, UINTPTR_MAX);
 }
 
 #endif							/* CONFIG_BUILD_KERNEL && __KERNEL__ */

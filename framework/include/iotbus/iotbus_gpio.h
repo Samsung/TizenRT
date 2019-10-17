@@ -33,7 +33,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/gpio.h>
-#include <iotbus/iotbus_common.h>
+#include <tinyara/iotbus_sig.h>
 
 /**
  * @brief Enumeration of Gpio signal value
@@ -210,6 +210,16 @@ int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_t
  */
 
 int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type);
+
+/**
+ * @brief get interrupt callback function.
+ *
+ * @details @b #include <iotbus/iotbus_gpio.h>
+ * @param[in] dev handle of gpio_context
+  * @return On success, the interrupt callback function is returned. On failure, NULL value is returned.
+ * @since TizenRT v2.1
+ */
+void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev);
 #endif
 
 /**
@@ -289,8 +299,6 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *d
 #ifndef CONFIG_DISABLE_SIGNALS
 int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);
 #endif
-
-void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev);
 
 #ifdef __cplusplus
 }

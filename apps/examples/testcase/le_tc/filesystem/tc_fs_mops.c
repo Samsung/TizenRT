@@ -32,6 +32,7 @@
 #include <sys/statfs.h>
 #include <dirent.h>
 #include "tc_common.h"
+#include "tc_internal.h"
 #include <tinyara/fs/ramdisk.h>
 
 /****************************************************************************
@@ -43,20 +44,6 @@
 #define SMARTFS_TEST_MOUNTPOINT "/smartfs_test"
 #define ROMFS_TEST_FILEPATH "/rom/init.d/rcS"
 #define ROMFS_MOUNT_DEV_DIR "/dev/ram0"
-
-#ifdef CONFIG_FS_SMARTFS
-#if defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME)
-#define TMP_MOUNT_DEV_DIR CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
-#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
-#else
-#define TMP_MOUNT_DEV_DIR "/dev/smart1"
-#endif
-#endif
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 #define SMARTFS_MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"
@@ -160,10 +147,13 @@ static void tc_fs_mops_mount(const char *filesystemtype)
 	if (strcmp(filesystemtype, "tmpfs") == 0) {
 		ret = umount(TMPFS_TEST_MOUNTPOINT);
 		ret = mount(NULL, TMPFS_TEST_MOUNTPOINT, "tmpfs", 0, NULL);
+#ifndef CONFIG_BUILD_PROTECTED
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		ret = umount("/rom");
 		romdisk_register(0, (FAR uint8_t *)romfs_img, 32, 512);
 		ret = mount(ROMFS_MOUNT_DEV_DIR, ROMFS_TEST_MOUNTPOINT, "romfs", 1, NULL);
+
+#endif
 	} else if (strcmp(filesystemtype, "smartfs") == 0) {
 		ret = umount(SMARTFS_TEST_MOUNTPOINT);
 		ret = mount(SMARTFS_MOUNT_DEV_DIR, SMARTFS_TEST_MOUNTPOINT, "smartfs", 0, NULL);
@@ -413,11 +403,10 @@ static void tc_fs_mops_umount(const char *filesystemtype)
 	TC_ASSERT_EQ("umount", ret, OK);
 }
 
-void tc_fs_mops_testcase(const char *filesystemtype)
+static void tc_fs_mops_test_main(const char *filesystemtype)
 {
 	DIR *dir = NULL;
 	int fd1 = -1;
-
 	tc_fs_mops_mount(filesystemtype);
 	tc_fs_mops_open(filesystemtype, &fd1);
 	tc_fs_mops_write(filesystemtype, fd1);
@@ -438,36 +427,21 @@ void tc_fs_mops_testcase(const char *filesystemtype)
 	tc_fs_mops_rename(filesystemtype);
 	tc_fs_mops_statfs(filesystemtype);
 	tc_fs_mops_unlink(filesystemtype);
-	tc_fs_mops_umount(filesystemtype);	
-}
-
-void tc_fs_mops_romfs(void)
-{
-	tc_fs_mops_testcase("romfs");
-	TC_SUCCESS_RESULT();
-}
-
-void tc_fs_mops_smartfs(void)
-{
-	tc_fs_mops_testcase("smartfs");
-	TC_SUCCESS_RESULT();
-}
-
-void tc_fs_mops_tmpfs(void)
-{
-	tc_fs_mops_testcase("tmpfs");
+	tc_fs_mops_umount(filesystemtype);
 	TC_SUCCESS_RESULT();
 }
 
 void tc_fs_mops_main(void)
 {
 #ifdef CONFIG_TC_FS_TMPFS_MOPS
-	tc_fs_mops_tmpfs();
+	tc_fs_mops_test_main("tmpfs");
 #endif
 #ifdef CONFIG_TC_FS_ROMFS_MOPS
-	tc_fs_mops_romfs();
+#ifndef CONFIG_BUILD_PROTECTED
+	tc_fs_mops_test_main("romfs");
+#endif
 #endif
 #ifdef CONFIG_TC_FS_SMARTFS_MOPS
-	tc_fs_mops_smartfs();
+	tc_fs_mops_test_main("smartfs");
 #endif
 }

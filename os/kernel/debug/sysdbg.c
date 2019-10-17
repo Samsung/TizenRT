@@ -333,7 +333,7 @@ static void sysdbg_read(void)
 #else
 		lldbg("%8lld%14d%10d%16X\n",
 #endif
-			  (uint64_t) sysdbg_struct->sched[idx].time,
+			  (uint64_t)sysdbg_struct->sched[idx].time,
 #if CONFIG_TASK_NAME_SIZE > 0
 			  sysdbg_struct->sched[idx].task,
 #endif
@@ -354,7 +354,7 @@ static void sysdbg_read(void)
 
 	idx = sysdbg_struct->irq_lastindex;
 	do {
-		lldbg("%8lld\t%8d\t%8X\n", (uint64_t) sysdbg_struct->irq[idx].time, sysdbg_struct->irq[idx].irq, sysdbg_struct->irq[idx].fn);
+		lldbg("%8lld\t%8d\t%8X\n", (uint64_t)sysdbg_struct->irq[idx].time, sysdbg_struct->irq[idx].irq, sysdbg_struct->irq[idx].fn);
 		idx--;
 		/* Keeping it circular buffer */
 		idx = idx & (max_irq_count - 1);
@@ -382,7 +382,7 @@ static void sysdbg_read(void)
 #else
 		lldbg("%8lld%18s%12X%12X%6d\n",
 #endif
-			  (uint64_t) sysdbg_struct->sem_log[idx].time, sysdbg_struct->sem_log[idx].status,
+			  (uint64_t)sysdbg_struct->sem_log[idx].time, sysdbg_struct->sem_log[idx].status,
 #if CONFIG_TASK_NAME_SIZE > 0
 			  sysdbg_struct->sem_log[idx].task_name,
 #endif

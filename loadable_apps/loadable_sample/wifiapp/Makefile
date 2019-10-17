@@ -59,7 +59,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
 SRCS += recovery.c
 endif
-
+ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE_TEST),y)
+SRCS += binary_update.c
+endif
 #########################################
 # Case of Loadable separated binary build
 # Make separated ELF type binary
@@ -70,7 +72,7 @@ BIN = wifi
 # need to update
 BIN_TYPE = ELF
 BIN_VER = 20190412
-DYNAMIC_RAM_SIZE = 51200
+DYNAMIC_RAM_SIZE = 512000
 KERNEL_VER = 2.0
 STACKSIZE = 8192
 PRIORITY = 180

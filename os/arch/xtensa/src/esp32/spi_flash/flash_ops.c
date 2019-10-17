@@ -65,10 +65,10 @@ static spi_flash_counters_t s_flash_stats;
 
 #define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
 #define COUNTER_STOP(counter)  \
-    do{ \
+    do { \
         s_flash_stats.counter.count++; \
         s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
-    } while(0)
+    } while (0)
 
 #define COUNTER_ADD_BYTES(counter, size) \
     do { \
@@ -116,7 +116,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
         if (!is_safe_write_address(ADDR, SIZE)) {                       \
             return ESP_ERR_INVALID_ARG;                                 \
         }                                                               \
-    } while(0)
+    } while (0)
 #endif							// CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
 
 static __attribute__((unused))

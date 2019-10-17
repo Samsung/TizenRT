@@ -458,7 +458,7 @@ int main(int argc, FAR char *argv[])
 int utc_eventloop_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Eventloop UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Eventloop UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -487,7 +487,7 @@ int utc_eventloop_main(int argc, char *argv[])
 
 	utc_eventloop_loop_stop_p();
 
-	(void)tc_handler(TC_END, "Eventloop UTC");
+	(void)testcase_state_handler(TC_END, "Eventloop UTC");
 
 	return 0;
 }

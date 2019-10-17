@@ -90,23 +90,23 @@
 
 /* TPI Register Addresses **********************************************************************/
 
-#define TPI_SSPSR                   (TPI_BASE+0x0000)	/* Supported Parallel Port Size Register */
-#define TPI_CSPSR                   (TPI_BASE+0x0004)	/* Current Parallel Port Size Register */
-#define TPI_ACPR                    (TPI_BASE+0x0010)	/* Asynchronous Clock Prescaler Register */
-#define TPI_SPPR                    (TPI_BASE+0x00f0)	/* Selected Pin Protocol Register */
-#define TPI_FFSR                    (TPI_BASE+0x0300)	/* Formatter and Flush Status Register */
-#define TPI_FFCR                    (TPI_BASE+0x0304)	/* Formatter and Flush Control Register */
-#define TPI_FSCR                    (TPI_BASE+0x0308)	/* Formatter Synchronization Counter Register */
-#define TPI_TRIGGER                 (TPI_BASE+0x0ee8)	/* TRIGGER */
-#define TPI_FIFO0                   (TPI_BASE+0x0eec)	/* Integration ETM Data */
-#define TPI_ITATBCTR2               (TPI_BASE+0x0ef0)	/* ITATBCTR2 */
-#define TPI_ITATBCTR0               (TPI_BASE+0x0ef8)	/* ITATBCTR0 */
-#define TPI_FIFO1                   (TPI_BASE+0x0efc)	/* Integration ITM Data */
-#define TPI_ITCTRL                  (TPI_BASE+0x0f00)	/* Integration Mode Control */
-#define TPI_CLAIMSET                (TPI_BASE+0x0fa0)	/* Claim tag set */
-#define TPI_CLAIMCLR                (TPI_BASE+0x0fa4)	/* Claim tag clear */
-#define TPI_DEVID                   (TPI_BASE+0x0fc8)	/* TPIU_DEVID */
-#define TPI_DEVTYPE                 (TPI_BASE+0x0fcc)	/* TPIU_DEVTYPE */
+#define TPI_SSPSR                   (TPI_BASE + 0x0000)	/* Supported Parallel Port Size Register */
+#define TPI_CSPSR                   (TPI_BASE + 0x0004)	/* Current Parallel Port Size Register */
+#define TPI_ACPR                    (TPI_BASE + 0x0010)	/* Asynchronous Clock Prescaler Register */
+#define TPI_SPPR                    (TPI_BASE + 0x00f0)	/* Selected Pin Protocol Register */
+#define TPI_FFSR                    (TPI_BASE + 0x0300)	/* Formatter and Flush Status Register */
+#define TPI_FFCR                    (TPI_BASE + 0x0304)	/* Formatter and Flush Control Register */
+#define TPI_FSCR                    (TPI_BASE + 0x0308)	/* Formatter Synchronization Counter Register */
+#define TPI_TRIGGER                 (TPI_BASE + 0x0ee8)	/* TRIGGER */
+#define TPI_FIFO0                   (TPI_BASE + 0x0eec)	/* Integration ETM Data */
+#define TPI_ITATBCTR2               (TPI_BASE + 0x0ef0)	/* ITATBCTR2 */
+#define TPI_ITATBCTR0               (TPI_BASE + 0x0ef8)	/* ITATBCTR0 */
+#define TPI_FIFO1                   (TPI_BASE + 0x0efc)	/* Integration ITM Data */
+#define TPI_ITCTRL                  (TPI_BASE + 0x0f00)	/* Integration Mode Control */
+#define TPI_CLAIMSET                (TPI_BASE + 0x0fa0)	/* Claim tag set */
+#define TPI_CLAIMCLR                (TPI_BASE + 0x0fa4)	/* Claim tag clear */
+#define TPI_DEVID                   (TPI_BASE + 0x0fc8)	/* TPIU_DEVID */
+#define TPI_DEVTYPE                 (TPI_BASE + 0x0fcc)	/* TPIU_DEVTYPE */
 
 /* TPI Register Bit Field Definitions **********************************************************/
 

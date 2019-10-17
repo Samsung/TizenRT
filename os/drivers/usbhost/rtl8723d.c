@@ -163,6 +163,10 @@ static FAR struct usbhost_rtk_wifi_s *usbhost_allocclass(void)
 
 	DEBUGASSERT(!up_interrupt_context());
 	priv = (FAR struct usbhost_rtk_wifi_s *)kmm_malloc(sizeof(struct usbhost_rtk_wifi_s));
+	if (priv == NULL) {
+		udbg("Failed to malloc\n");
+		return NULL;
+	}
 
 	memset(priv, 0, sizeof(FAR struct usbhost_rtk_wifi_s));
 
@@ -377,6 +381,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 static void usbhost_destroy(FAR void *arg)
 {
+#ifdef CONFIG_RTL8723D_REMOVABLE
 	FAR struct usbhost_rtk_wifi_s *priv = (FAR struct usbhost_rtk_wifi_s *)arg;
 	FAR struct usbhost_hubport_s *hport;
 	int i;
@@ -405,6 +410,7 @@ static void usbhost_destroy(FAR void *arg)
 	/* And free the class instance.  */
 
 	usbhost_freeclass(priv);
+#endif	
 }
 
 /****************************************************************************
@@ -431,6 +437,7 @@ static void usbhost_destroy(FAR void *arg)
 
 static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 {
+#ifdef CONFIG_RTL8723D_REMOVABLE
 	FAR struct usbhost_rtk_wifi_s *priv = (FAR struct usbhost_rtk_wifi_s *)usbclass;
 	irqstate_t flags;
 	int i;
@@ -466,6 +473,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	usbhost_destroy(priv);
 
 	irqrestore(flags);
+#endif	
 	return OK;
 }
 
@@ -482,10 +490,6 @@ static FAR struct usbhost_class_s *usbhost_create(FAR struct usbhost_hubport_s *
 
 		g_rtk_wifi_usb = priv;
 		return &priv->usbclass;
-	}
-
-	if (priv) {
-		usbhost_freeclass(priv);
 	}
 
 	return NULL;

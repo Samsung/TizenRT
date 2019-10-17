@@ -464,7 +464,7 @@ int copy_socket(void *arg)
 				sock_info->remote_port = 0;
 			}
 			if (pthread_getname_np(sockets[i].conn->pid, sock_info->pid_name)) {
-				strcpy(sock_info->pid_name, "NONE");
+				strncpy(sock_info->pid_name, "NONE", sizeof("NONE"));
 			}
 			sq_addlast((sq_entry_t *)sock_info, q_sock);
 		}

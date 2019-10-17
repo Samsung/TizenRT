@@ -1735,8 +1735,16 @@ void itc_arastorage_db_cursor_free_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-int itc_arastorage_launcher(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int itc_arastorage_main(int argc, char *argv[])
+#endif
 {
+	if (testcase_state_handler(TC_START, "Arastorage ITC") == ERROR) {
+		return ERROR;
+	}
+
 	itc_arastorage_startup_p();
 	//db_init being called once inside itc_arastorage_startup_p for below ITCs
 	itc_arastorage_db_query_p_create_remove_relation();
@@ -1799,21 +1807,6 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	itc_arastorage_db_print_tuple_n_after_deinit();
 	itc_arastorage_db_print_value_n_after_deinit();
 
-	return 0;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int itc_arastorage_main(int argc, char *argv[])
-#endif
-{
-	if (tc_handler(TC_START, "Arastorage ITC") == ERROR) {
-		return ERROR;
-	}
-
-	itc_arastorage_launcher(argc, argv);
-
-	(void)tc_handler(TC_END, "Arastorage ITC");
+	(void)testcase_state_handler(TC_END, "Arastorage ITC");
 	return 0;
 }

@@ -198,10 +198,12 @@ int prctl(int option, ...)
 		int ret;
 		ret = messaging_read_list(port_name, recv_arr, &total_cnt);
 		if (ret == ERROR) {
+			va_end(ap);
 			return ret;
 		}
 		curr_cnt += ret;
 		*recv_cnt = curr_cnt;
+		va_end(ap);
 		if (curr_cnt == total_cnt) {
 			/* Read whole receivers information. */
 			curr_cnt = 0;
@@ -216,6 +218,7 @@ int prctl(int option, ...)
 		int ret;
 		char *port_name = va_arg(ap, char *);
 		ret = messaging_remove_list(port_name);
+		va_end(ap);
 		return ret;
 	}
 	break;
@@ -244,7 +247,13 @@ int prctl(int option, ...)
 #ifdef CONFIG_TASK_MONITOR
 	case PR_MONITOR_REGISTER:
 	{
-		task_monitor_update_list(getpid(), MONITORED);
+		int interval = va_arg(ap, int);
+		int ret;
+		ret = task_monitor_register_list(getpid(), interval);
+		if (ret < 0) {
+			err = ret;
+			goto errout;
+		}
 	}
 	break;
 	case PR_MONITOR_UPDATE:

@@ -83,7 +83,7 @@ static int iotbus_sig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	FAR const struct iotbus_int_info_s *info = (FAR const struct iotbus_int_info_s *)((uintptr_t)arg);
 	if (info == NULL) {
-		return IOTBUS_ERROR_INVALID_PARAMETER;
+		return -EINVAL;
 	}
 	
 	switch (cmd) {
@@ -110,14 +110,14 @@ static int iotbus_sig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 		struct iotbus_int_info_s *data = (struct iotbus_int_info_s *)kmm_zalloc(sizeof(struct iotbus_int_info_s));
 		if (data == NULL) {
-			return IOTBUS_ERROR_OUT_OF_MEM;
+			return -ENOMEM;
 		}
 		memcpy(data, info, sizeof(struct iotbus_int_info_s));
 
 		struct int_node_s *node = (struct int_node_s *)kmm_zalloc(sizeof(struct int_node_s));
 		if (node == NULL) {
 			kmm_free(data);
-			return IOTBUS_ERROR_OUT_OF_MEM;
+			return -ENOMEM;
 		}
 		memset(node, 0, sizeof(struct int_node_s));
 		node->data = data;
