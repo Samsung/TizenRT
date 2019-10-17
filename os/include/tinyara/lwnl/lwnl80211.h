@@ -217,7 +217,7 @@ struct lwnl80211_upperhalf_s;
 struct lwnl80211_ops_s {
 	CODE lwnl80211_result_e (*init)(struct lwnl80211_lowerhalf_s *dev);
 	CODE lwnl80211_result_e (*deinit)(void);
-	CODE lwnl80211_result_e (*scan_ap)(void *arg);
+	CODE lwnl80211_result_e (*scan_ap)(lwnl80211_ap_config_s *config);
 	CODE lwnl80211_result_e (*connect_ap)(lwnl80211_ap_config_s *config, void *arg);
 	CODE lwnl80211_result_e (*disconnect_ap)(void *arg);
 	CODE lwnl80211_result_e (*get_info)(lwnl80211_info *info);
@@ -240,7 +240,7 @@ typedef struct lwnl80211_lowerhalf_s {
 /* Driver OPSs */
 lwnl80211_result_e lwnl80211_init(struct lwnl80211_lowerhalf_s *dev);
 lwnl80211_result_e lwnl80211_deinit(void);
-lwnl80211_result_e lwnl80211_scan_ap(void *arg);
+lwnl80211_result_e lwnl80211_scan_ap(lwnl80211_ap_config_s *config);
 lwnl80211_result_e lwnl80211_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
 lwnl80211_result_e lwnl80211_disconnect_ap(void *arg);
 lwnl80211_result_e lwnl80211_get_info(lwnl80211_info *wifi_info);

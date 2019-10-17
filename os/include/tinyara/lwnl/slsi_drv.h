@@ -54,7 +54,7 @@ struct slsi_drv_dev_s {
  ****************************************************************************/
 lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev);
 lwnl80211_result_e slsidrv_deinit(void);
-lwnl80211_result_e slsidrv_scan_ap(void *arg);
+lwnl80211_result_e slsidrv_scan_ap(lwnl80211_ap_config_s *config);
 lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
 lwnl80211_result_e slsidrv_disconnect_ap(void *arg);
 lwnl80211_result_e slsidrv_get_info(lwnl80211_info *wifi_info);

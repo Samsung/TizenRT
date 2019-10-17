@@ -226,7 +226,7 @@ lwnl80211_result_e rtkdrv_deinit(void)
 	return result;
 }
 
-lwnl80211_result_e rtkdrv_scan_ap(void *arg)
+lwnl80211_result_e rtkdrv_scan_ap(lwnl80211_ap_config_s *config)
 {
 	RTKDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;

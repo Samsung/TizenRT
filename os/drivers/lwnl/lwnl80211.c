@@ -278,14 +278,14 @@ static int _ops_stop_softap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_resul
 	return ret;
 }
 
-static int _ops_scan_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_result_e *res)
+static int _ops_scan_ap(struct lwnl80211_lowerhalf_s *lower, lwnl80211_ap_config_s *config, lwnl80211_result_e *res)
 {
 	int ret = -ENOSYS;
 	if (lower->ops->scan_ap == NULL) {
 		return ret;
 	}
 
-	*res = lower->ops->scan_ap(NULL);
+	*res = lower->ops->scan_ap(config);
 	if (*res == LWNL80211_SUCCESS) {
 		ret = OK;
 	}
@@ -365,7 +365,7 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		ret = _ops_stop_softap(lower, res);
 		break;
 	case LWNL80211_SCAN_AP:
-		ret = _ops_scan_ap(lower, res);
+		ret = _ops_scan_ap(lower, (lwnl80211_ap_config_s *)data_in->data, res);
 		break;
 	default:
 		ret = _ops_drv_ioctl(lower, cmd, arg, res);

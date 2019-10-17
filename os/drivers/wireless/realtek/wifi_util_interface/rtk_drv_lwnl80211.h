@@ -127,7 +127,7 @@ int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network
 
 lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev);
 lwnl80211_result_e rtkdrv_deinit(void);
-lwnl80211_result_e rtkdrv_scan_ap(void *arg);
+lwnl80211_result_e rtkdrv_scan_ap(lwnl80211_ap_config_s *config);
 lwnl80211_result_e rtkdrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
 lwnl80211_result_e rtkdrv_disconnect_ap(void *arg);
 lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info);
