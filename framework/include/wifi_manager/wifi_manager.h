@@ -214,7 +214,7 @@ typedef struct {
 	int interval;
 	// max_interval: it is the maximum wait time if type is EXPONENTIAL
 	//             : it is not used if type is INTERVAL
-	int max_interval; // 
+	int max_interval;
 } wifi_manager_reconnect_config_s;
 
 /**
@@ -338,6 +338,15 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
  * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_scan_ap(void);
+
+/**
+ * @brief Scan nearby access points
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config Required AP configuration, which SSID should be given.
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v3.0
+ */
+wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config);
 
 /**
  * @brief Save the AP configuration at persistent storage

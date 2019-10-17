@@ -351,12 +351,12 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 
 	scan_filter_result.scan_flag = 0;
 	if (arg != NULL) {
+		wifi_utils_ap_config_s *ap_connect_config = (wifi_utils_ap_config_s *)arg;
 		scan_filter_result.scan_flag = 1;
 		if (scan_filter_result.result_list != NULL) {
 			free_scan_results(scan_filter_result.result_list);
 			scan_filter_result.result_list = NULL;
 		}
-		wifi_utils_ap_config_s *ap_connect_config = (wifi_utils_ap_config_s *)arg;
 		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length);
 	}
 
@@ -638,7 +638,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
 	nvdbg("[WU] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
-	
+
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		ndbg("[WU] Link callback handles: register failed !\n");
