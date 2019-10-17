@@ -356,12 +356,6 @@ void *ui_widget_get_userdata(ui_widget_t widget);
 
 ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished_callback anim_finished_cb, bool loop);
 
-ui_error_t ui_widget_stop_anim(ui_widget_t widget);
-
-ui_error_t ui_widget_pause_anim(ui_widget_t widget);
-
-ui_error_t ui_widget_resume_anim(ui_widget_t widget);
-
 /********************************
  *
  * Image widget

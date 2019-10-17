@@ -42,6 +42,7 @@ CSRCS += $(UIFW_DIR)/widgets/ui_image_widget.c
 CSRCS += $(UIFW_DIR)/widgets/ui_widget.c
 CSRCS += $(UIFW_DIR)/renderer/ui_renderer.c
 CSRCS += $(UIFW_DIR)/renderer/ui_math.c
+CSRCS += $(UIFW_DIR)/animation/ui_animation.c
 CSRCS += $(UIFW_DIR)/utils/easing_fn.c
 CSRCS += $(EXTERNAL_DIR)/vec/vec.c
 
