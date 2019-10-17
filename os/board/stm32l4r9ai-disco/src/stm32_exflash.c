@@ -22,7 +22,39 @@ struct ospi_dev_s *g_ospi_ops;
 
 #define EXFLASH_BUFF_LEN        (100)
 static uint8_t exFlashRxData[EXFLASH_BUFF_LEN];
-static uint8_t exFlashTxData[EXFLASH_BUFF_LEN]="**********1234567890**********1234567890**********1234567890**********1234567890**********1234567890";
+static uint8_t exFlashTxData[EXFLASH_BUFF_LEN]="1234567890**********1234567890**********1234567890**********1234567890**********1234567890**********";
+
+static void initial_exflash_read_check(void)
+{
+  for(int i=0; i<0x4000; i=i+5)
+  {
+    stm32_exflash_read(&exFlashRxData[0], i, 5);
+    printf("0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
+        exFlashRxData[0],
+        exFlashRxData[1],
+        exFlashRxData[2],
+        exFlashRxData[3],
+        exFlashRxData[4]);
+  }
+}
+
+static void initial_exflash_write_check(void)
+{
+  for(int i=0; i<0x4000; i=i+5)
+  {
+    stm32_exflash_write(&exFlashTxData[0], i, 5);
+  }
+}
+
+static void initial_exflash_all_erase_check(void)
+{
+  for(int i=0; i<0x800; i++)
+  {
+    stm32_exflash_erase_sector(i);
+  }
+}
+
+
 static void initial_exflash_check(void)
 {
   int i;
@@ -83,7 +115,6 @@ static void initial_exflash_check(void)
 void stm32_exflash_initialize(void)
 {
   g_ospi_ops = stm32l4_ospi_initialize(0);
-  //initial_exflash_check();
 
 #if defined(CONFIG_FLASH_PARTITION)
     int ret;

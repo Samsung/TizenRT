@@ -298,8 +298,8 @@ typedef struct {
 
 
 /* Uncomment this line to use the memory in SDR mode */
-#define BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
-//#define BSP_OSPI_MEMORY_MAPPED_ENABLE
+//#define BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+#define BSP_OSPI_MEMORY_MAPPED_ENABLE
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -826,7 +826,10 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
       printf("Flash HAL_OSPI_Receive read error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
-
+#ifndef BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+    *(volatile uint32_t *)(0xA0001400) |= 0x02;
+    //volatile uint32_t dRead = *(volatile uint32_t *)(0xA0001450);
+#endif
     return OSPI_NOR_OK;
   }
   /* octo spi block erase mode*/
