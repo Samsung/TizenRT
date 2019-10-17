@@ -19,7 +19,7 @@ CFLAGS += -I$(EXTERNAL_DIR)/include
 CFLAGS += -I$(FRAMEWORK_DIR)/include
 CFLAGS += -I$(UIFW_DIR)
 CFLAGS += -I$(UIFW_DIR)/include
-CFLAGS += -I$(UIFW_DIR)/include/libs
+CFLAGS += -I$(UIFW_DIR)/include/utils
 
 LDFLAGS = -lpthread -lSDL2 -lSDL2_image -lm
 

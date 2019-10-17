@@ -399,7 +399,6 @@ static void *_ui_core_thread_loop(void *param)
 {
 	ui_widget_body_t *root;
 	ui_window_body_t *window;
-	static ui_window_body_t *prev_window;
 	struct timespec before;
 	struct timespec now;
 	uint32_t dt;
@@ -432,13 +431,12 @@ static void *_ui_core_thread_loop(void *param)
 
 		window = ui_window_get_current();
 		if (window) {
-			prev_window = window;
 			root = window->root;
 
 			if (_ui_process_widget(root, dt) != UI_OK) {
 				UI_LOGE("error: processing widget recursively failed!\n");
 			}
-			_ui_update_redraw_list(window->root);
+			_ui_update_redraw_list(root);
 		}
 
 		if (_ui_core_quick_panel_visible()) {

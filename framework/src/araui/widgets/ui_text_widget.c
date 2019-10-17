@@ -474,6 +474,9 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	stbtt_GetFontVMetrics(&(body->font->ttf_info), &ascent, NULL, NULL);
 	ascent *= scale;
 
+	x = 0;
+	y = 0;
+
 	memset(g_glyph_bitmap, 0, body->base.local_rect.width * body->base.local_rect.height);
 
 	if (body->align & UI_ALIGN_TOP) {
