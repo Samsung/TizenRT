@@ -40,6 +40,10 @@ config UI_DISPLAY_GRAY4
 
 endchoice # Display color depth
 
+config UI_PARTIAL_UPDATE
+	bool "Enable partial display update feature"
+	default n
+
 config UI_ENABLE_TOUCH
 	bool "Enable touch interface"
 	default n

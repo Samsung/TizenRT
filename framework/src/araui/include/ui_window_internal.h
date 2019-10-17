@@ -19,6 +19,7 @@
 #ifndef __UI_WINDOW_INTERNAL_H__
 #define __UI_WINDOW_INTERNAL_H__
 
+#include <tinyara/config.h>
 #include <vec/vec.h>
 #include <araui/ui_window.h>
 #include <araui/ui_commons.h>
@@ -48,12 +49,14 @@ extern "C" {
 ui_error_t ui_window_list_init(void);
 ui_error_t ui_window_list_deinit(void);
 
+#if defined(CONFIG_UI_PARTIAL_UPDATE)
 ui_error_t ui_window_redraw_list_init(void);
 ui_error_t ui_window_redraw_list_deinit(void);
 
 vec_void_t *ui_window_get_redraw_list(void);
 ui_error_t ui_window_add_redraw_list(ui_rect_t update);
 ui_error_t ui_window_redraw_list_clear(void);
+#endif
 
 ui_window_body_t *ui_window_get_current(void);
 
